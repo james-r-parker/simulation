@@ -213,7 +213,7 @@ describe('worldInfo and readyLayout', () => {
             effectCapacity: 512,
             effectWords: 8,
             bytes: run.layout.bytes,
-            headerWords: 9,
+            headerWords: 10,
             herdStride: 6,
             zoneStride: 4,
             zoneOrigins: { DEATH: 0, DUNG: 1 },

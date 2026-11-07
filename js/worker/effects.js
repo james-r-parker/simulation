@@ -1,29 +1,12 @@
-// Render effects: turns each tick's event records and the alive slots into bite, birth, death, call and smoke effects,
-// and writes the pending ones into a snapshot's effects part. Reads the world and never changes it.
+// Render effects: turns each tick's event records and the alive slots into bite, birth, death, call and smoke effects
+// (and, through effects-world.js, herd, dung, wilt and first-kill effects), and writes the pending ones into a snapshot's effects part. Reads the world and never changes it.
 
 import { BORN_CAUSE, DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { TIMER_CAP } from '../sim/world.js';
+import { beginEffect, EFFECT_CAPACITY, EFFECT_KIND, EFFECT_WORDS, placeEffect } from './effect-ring.js';
+import { addWorldEffect } from './effects-world.js';
 
-/** Effect kinds; the `kind` word of a record. */
-export const EFFECT_KIND = Object.freeze({
-    BORN: 1,
-    DIED: 2,
-    BITE: 3,
-    ALARM: 4,
-    PACK_CALL: 5,
-    SMOKE: 6,
-    ESCAPED: 7,
-    MATED: 8,
-    POLLINATED: 9,
-    STAMPEDE: 10,
-    STRAIN_EMERGED: 11,
-});
-
-/** Records the log holds; when full the oldest are dropped. */
-export const EFFECT_CAPACITY = 512;
-
-/** Words per record: `kind`, `tick`, `x`, `y`, then `a`, `b`, `c` and `d`. */
-export const EFFECT_WORDS = 8;
+export { EFFECT_CAPACITY, EFFECT_KIND, EFFECT_WORDS } from './effect-ring.js';
 
 /** Words of the header in the snapshot: `count` and `dropped`. */
 export const EFFECT_HEADER_WORDS = 2;
@@ -68,42 +51,6 @@ export function createEffectLog(maxAgents) {
         cacheSpec: new Uint8Array(maxAgents),
         cachePregnancy: new Uint16Array(maxAgents),
     };
-}
-
-/**
- * Starts a record, dropping the oldest when the log is full, and writes its kind and tick.
- * @param {EffectLog} log the log
- * @param {number} kind an `EFFECT_KIND`
- * @param {number} tick the tick it happened in
- * @returns {number} the word offset of the record; the caller writes `x` and `y` at `+ 2` and `+ 3` and words `a` to `d`
- *   at `+ 4` to `+ 7`
- */
-function begin(log, kind, tick) {
-    let index;
-    if (log.count === EFFECT_CAPACITY) {
-        index = log.start;
-        log.start = (log.start + 1) % EFFECT_CAPACITY;
-        log.dropped += 1;
-    } else {
-        index = (log.start + log.count) % EFFECT_CAPACITY;
-        log.count += 1;
-    }
-    const o = index * EFFECT_WORDS;
-    log.u32[o] = kind;
-    log.u32[o + 1] = tick;
-    return o;
-}
-
-/**
- * @param {EffectLog} log the log
- * @param {number} o a record's word offset
- * @param {number} x the x
- * @param {number} y the y
- * @returns {void}
- */
-function place(log, o, x, y) {
-    log.f32[o + 2] = x;
-    log.f32[o + 3] = y;
 }
 
 /**
@@ -163,8 +110,8 @@ function addMatedSingleTick(log, world, o, slotOf) {
         x = world.x[childSlot];
         y = world.y[childSlot];
     }
-    const m = begin(log, EFFECT_KIND.MATED, d[o + 1]);
-    place(log, m, x, y);
+    const m = beginEffect(log, EFFECT_KIND.MATED, d[o + 1]);
+    placeEffect(log, m, x, y);
     log.u32[m + 4] = motherGenome;
     log.u32[m + 5] = fatherGenome;
     log.u32[m + 6] = spec;
@@ -183,8 +130,8 @@ function addBorn(log, world, o, slotOf) {
     const d = world.events.data;
     const slot = d[o + 2];
     if (aliveIn(world, slot, d[o + 3])) {
-        const w = begin(log, EFFECT_KIND.BORN, d[o + 1]);
-        place(log, w, world.x[slot], world.y[slot]);
+        const w = beginEffect(log, EFFECT_KIND.BORN, d[o + 1]);
+        placeEffect(log, w, world.x[slot], world.y[slot]);
         log.u32[w + 4] = d[o + 3];
         log.u32[w + 5] = d[o + 4];
         log.u32[w + 6] = d[o + 5];
@@ -209,8 +156,8 @@ function addDied(log, world, o) {
     if (log.cacheGenome[slot] !== d[o + 3]) {
         return;
     }
-    const w = begin(log, EFFECT_KIND.DIED, d[o + 1]);
-    place(log, w, log.cacheX[slot], log.cacheY[slot]);
+    const w = beginEffect(log, EFFECT_KIND.DIED, d[o + 1]);
+    placeEffect(log, w, log.cacheX[slot], log.cacheY[slot]);
     const pack = d[o + 4] === DEATH_CAUSE.EATEN && d[o + 11] !== 0 ? PACK_FLAG : 0;
     log.u32[w + 4] = d[o + 3];
     log.u32[w + 5] = d[o + 5];
@@ -232,8 +179,8 @@ function addCall(log, world, o) {
     const genomeId = d[o + 3];
     const kind = type === EVENT_TYPE.ALARM_CALLED ? EFFECT_KIND.ALARM : EFFECT_KIND.PACK_CALL;
     const smoke = type === EVENT_TYPE.SMOKE_RELEASED;
-    const w = begin(log, smoke ? EFFECT_KIND.SMOKE : kind, d[o + 1]);
-    place(log, w, d[o + 5], d[o + 6]);
+    const w = beginEffect(log, smoke ? EFFECT_KIND.SMOKE : kind, d[o + 1]);
+    placeEffect(log, w, d[o + 5], d[o + 6]);
     log.u32[w + 4] = genomeId;
     log.u32[w + 5] = 0;
     if (smoke) {
@@ -253,8 +200,8 @@ function addCall(log, world, o) {
  * @returns {void}
  */
 function addPollinated(log, events, at) {
-    const w = begin(log, EFFECT_KIND.POLLINATED, events[at + 1]);
-    place(log, w, events[at + 7], events[at + 8]);
+    const w = beginEffect(log, EFFECT_KIND.POLLINATED, events[at + 1]);
+    placeEffect(log, w, events[at + 7], events[at + 8]);
     log.u32[w + 4] = Math.round((events[at + 6] + 1) * 0.5 * 4095);
     log.u32[w + 5] = log.u32[w + 6] = log.u32[w + 7] = 0;
 }
@@ -263,8 +210,8 @@ function addPollinated(log, events, at) {
 function addStampede(log, world, o) {
     const d = world.events.data;
     const group = d[o + 2];
-    const w = begin(log, EFFECT_KIND.STAMPEDE, d[o + 1]);
-    place(log, w, d[o + 5], d[o + 6]);
+    const w = beginEffect(log, EFFECT_KIND.STAMPEDE, d[o + 1]);
+    placeEffect(log, w, d[o + 5], d[o + 6]);
     log.u32[w + 4] = group;
     log.u32[w + 5] = d[o + 4];
     log.u32[w + 6] = 0;
@@ -275,8 +222,8 @@ function addStampede(log, world, o) {
 function addStrainEmerged(log, world, o) {
     const d = world.events.data;
     const host = d[o + 3];
-    const w = begin(log, EFFECT_KIND.STRAIN_EMERGED, d[o + 1]);
-    place(log, w, world.x[host], world.y[host]);
+    const w = beginEffect(log, EFFECT_KIND.STRAIN_EMERGED, d[o + 1]);
+    placeEffect(log, w, world.x[host], world.y[host]);
     log.u32[w + 4] = d[o + 2];
     log.u32[w + 5] = d[o + 4];
     log.u32[w + 6] = 0;
@@ -315,6 +262,7 @@ function addEventEffects(log, world, slotOf) {
                 addStrainEmerged(log, world, o);
                 break;
             default:
+                addWorldEffect(log, world, o, slotOf);
                 break;
         }
     }
@@ -336,8 +284,8 @@ function addBites(log, world, slotOf) {
             const biterSlot = slotOf.get(biter);
             const biterSpec =
                 biterSlot !== undefined && log.cacheGenome[biterSlot] === biter ? log.cacheSpec[biterSlot] : 0;
-            const w = begin(log, EFFECT_KIND.BITE, tick);
-            place(log, w, x[slot], y[slot]);
+            const w = beginEffect(log, EFFECT_KIND.BITE, tick);
+            placeEffect(log, w, x[slot], y[slot]);
             log.u32[w + 4] = biter;
             log.u32[w + 5] = genomeId[slot];
             log.u32[w + 6] = biterSpec + spec[slot] * (1 << SPEC_SHIFT);
@@ -366,8 +314,8 @@ function addMatedPregnancies(log, world) {
             log.cacheGenome[slot] === genomeId[slot] &&
             log.cachePregnancy[slot] === 0
         ) {
-            const w = begin(log, EFFECT_KIND.MATED, tick);
-            place(log, w, x[slot], y[slot]);
+            const w = beginEffect(log, EFFECT_KIND.MATED, tick);
+            placeEffect(log, w, x[slot], y[slot]);
             log.u32[w + 4] = genomeId[slot];
             log.u32[w + 5] = fatherId[slot];
             log.u32[w + 6] = spec[slot];

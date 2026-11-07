@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AURORA_MAX_LUMINANCE, SCENERY_MAX_LUMINANCE } from '../../../js/app/renderer/colors.js';
-import { createGroundLayer, GROUND_PEAK } from '../../../js/app/renderer/ground-layer.js';
+import { createGroundLayer, DROUGHT_FADE_MS, easeDrought, GROUND_PEAK } from '../../../js/app/renderer/ground-layer.js';
+import { makeSnapshot } from '../helpers/snapshots.js';
 import { smallReady } from '../helpers/ready.js';
 
 /**
@@ -48,6 +49,45 @@ describe('createGroundLayer', () => {
         const spring = [...layer.object.material.uniforms.uTint.value];
         layer.update?.(frameOf(3));
         expect([...layer.object.material.uniforms.uTint.value]).not.toEqual(spring);
+        layer.dispose();
+    });
+});
+
+describe('the drought tint', () => {
+    it('fades the basin under drought in and the other out over DROUGHT_FADE_MS', () => {
+        const shares = new Float32Array([0, 1]);
+        easeDrought(shares, 0, DROUGHT_FADE_MS / 2);
+        expect(Array.from(shares)).toEqual([0.5, 0.5]);
+        easeDrought(shares, 0, DROUGHT_FADE_MS);
+        expect(Array.from(shares)).toEqual([1, 0]);
+        easeDrought(shares, -1, DROUGHT_FADE_MS);
+        expect(Array.from(shares)).toEqual([0, 0]);
+    });
+
+    it('reads the basin from the snapshot header, only while the weather item draws', () => {
+        const { info } = smallReady();
+        const layer = createGroundLayer({ info });
+        const snapshot = makeSnapshot(1, []);
+        snapshot.u32[9] = 2;
+        const frame = /** @type {any} */ ({ season: 0, seasonProgress: 0, snapshot, dtMs: DROUGHT_FADE_MS });
+        layer.setLook?.({ terrain: 0, weather: 0 });
+        layer.update?.(frame);
+        const d = layer.object.material.uniforms.uDrought.value;
+        expect(Array.from(d)).toEqual([0, 1]);
+        layer.setLook?.({ terrain: 0, weather: -1 });
+        layer.update?.(frame);
+        expect(Array.from(d)).toEqual([0, 0]);
+        layer.dispose();
+    });
+});
+
+describe('the drought cracks cost', () => {
+    it('computes the cracks only inside a basin under drought, with one noise octave', () => {
+        const { info } = smallReady();
+        const layer = createGroundLayer({ info });
+        const fs = layer.object.material.fragmentShader;
+        expect(fs).toContain('if (dry > 0.0) {');
+        expect(fs).toContain('valueNoise(vWorld * 0.006)');
         layer.dispose();
     });
 });

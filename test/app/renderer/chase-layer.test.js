@@ -146,3 +146,38 @@ describe('a hidden chase layer', () => {
         layer.dispose();
     });
 });
+
+describe('a chase layer fed by the effects player', () => {
+    it('draws the pairs it is given without searching again', () => {
+        const pursuits = createPursuits();
+        const state = { pursuits, rules: { canHunt: new Uint8Array(0), maxVelocity: 1 }, find: false };
+        const agents = createInterpolated(4);
+        interpolateInto(
+            null,
+            makeSnapshot(1, [
+                { slot: 0, genomeId: 1, x: 0, y: 0, size: 10 },
+                { slot: 1, genomeId: 2, x: 200, y: 0, size: 10 },
+            ]),
+            1,
+            agents,
+        );
+        pursuits.count = 1;
+        pursuits.hunter[0] = 0;
+        pursuits.prey[0] = 1;
+        pursuits.closeness[0] = 0.5;
+        const lines = createLineBuffer(64);
+        expect(stepChase(agents, state, { lines, dashes: 8 })).toBe(1);
+        expect(pursuits.count).toBe(1);
+    });
+});
+
+describe('a hidden chase layer', () => {
+    it('does no work while its item is off', () => {
+        const pursuits = createPursuits();
+        const layer = createChaseLayer({ info, pursuits });
+        layer.setLook?.({ chase: -1 });
+        layer.update?.(/** @type {any} */ ({ agents: null }));
+        expect(layer.object.visible).toBe(false);
+        layer.dispose();
+    });
+});

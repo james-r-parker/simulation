@@ -126,3 +126,16 @@ describe('createTerrainLayer', () => {
         layer.dispose();
     });
 });
+
+describe('terrain layer: fruit glints', () => {
+    it('switches the fruit glints with the feeding item', () => {
+        const { info } = smallReady();
+        const layer = createTerrainLayer({ info: { ...info, floraPatchMax: 4 }, seed: 1 });
+        const glow = layer.object.children.find((/** @type {any} */ c) => c.material?.uniforms?.uFruit);
+        layer.setLook?.({ terrain: 0, flora: 0, feeding: -1 });
+        expect(glow.material.uniforms.uFruit.value).toBe(0);
+        layer.setLook?.({ terrain: 0, flora: 0, feeding: 0 });
+        expect(glow.material.uniforms.uFruit.value).toBe(1);
+        layer.dispose();
+    });
+});

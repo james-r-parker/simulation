@@ -1,4 +1,4 @@
-// The effect demo (`?fxdemo=<family|all>`, with `&fxhold=<ticks>` to freeze it): pauses the world, frames the middle of its west basin
+// The effect demo (`?fxdemo=<family|all>`, with `&fxhold=<ticks>` or `&fxhold=peak` to freeze it): pauses the world, frames the middle of its west basin
 // at the close zoom and plays every recipe of the family in its own grid cell, again each period, on the pool's own
 // clock (the paused playhead does not move). `?fxstress=1` instead plays recipes at random spots in view at 60 a
 // second through the budget, on a running world, to load the caps. Both are development tools.
@@ -7,6 +7,7 @@ import { moveCameraTo } from '../camera.js';
 import { createPrng } from '../prng.js';
 import { PALETTE } from './colors.js';
 import { FAMILY_RATE, FX_FAMILIES } from './fx-budget.js';
+import { curveAt, FX_CURVES } from './fx-curves.js';
 import { FX_RECIPES, playRecipe } from './fx-recipes.js';
 
 /** The demo replays every recipe this often, in ticks of its own clock. */
@@ -18,6 +19,8 @@ export const DEMO_ZOOM = 2;
 export const DEMO_FILL = 0.8;
 /** Where the demo grid sits across the world: the middle of the west basin, clear of the central wall. */
 export const DEMO_CENTRE_X = 0.25;
+/** The life the demo gives a part whose life is the effect's own (-1). */
+export const DEMO_LIFE = 40;
 /** Recipes the stress mode plays per second. */
 export const STRESS_PER_S = 60;
 
@@ -77,7 +80,7 @@ function spotAt(player, spot) {
     at.angle = 0;
     at.size = 24;
     at.reach = 60;
-    at.life = 40;
+    at.life = DEMO_LIFE;
     at.tick = spot.tick;
     at.rgb = PALETTE.recover;
     return at;
@@ -106,7 +109,12 @@ function playAt(player, recipe, spot) {
  * @property {number} clock the demo's own tick count
  * @property {number} lastSpawn the clock at the last replay
  * @property {number} owed stress recipes owed this frame
- * @property {number | null} hold freeze the clock this many ticks after each replay
+ * @property {number | 'peak' | null} hold freeze the clock this many ticks after each replay, or with every cell at
+ *   its recipe's brightest keyframe (`'peak'`)
+ * @property {number} base the playhead tick when the demo started
+ * @property {number[]} peaks each cell's `peakTicks`
+ * @property {number} peakHold the largest of them
+ * @property {boolean} frozen whether the clock is held this frame
  * @property {{x: number, y: number, tick: number}} spot scratch
  */
 
@@ -142,32 +150,76 @@ function stressStep(s, frame, player, camera) {
 function demoStep(s, frame, { player, camera, client }) {
     if (!s.started) {
         s.started = true;
+        s.base = frame.tick;
         client?.pause?.();
         const centre = { x: camera.world.width * DEMO_CENTRE_X, y: camera.world.height / 2 };
         moveCameraTo(camera, { ...centre, zoom: demoZoom(s.recipes.length, camera.canvas) }, true);
         demoGrid(s.recipes.length, centre).forEach((c, k) => s.cells.push({ name: s.recipes[k][0], x: c.x, y: c.y }));
     }
+    const hold = s.hold === 'peak' ? s.peakHold : s.hold;
     if (s.clock - s.lastSpawn >= DEMO_PERIOD) {
         s.lastSpawn = s.clock;
-        s.cells.forEach((c, k) => playAt(player, s.recipes[k][1], { x: c.x, y: c.y, tick: frame.tick + s.clock }));
+        const at = s.base + s.clock;
+        s.cells.forEach((c, k) => playAt(player, s.recipes[k][1], { x: c.x, y: c.y, tick: at + spawnLead(s, k) }));
     }
-    const frozen = s.hold !== null && s.clock - s.lastSpawn >= s.hold;
-    s.clock += frozen ? 0 : 1;
-    player.fx.pool.clockOffset = s.clock;
+    s.frozen = hold !== null && s.clock - s.lastSpawn >= hold;
+    s.clock += s.frozen ? 0 : 1;
+    // the shader's clock is the demo's own, whatever the paused playhead does: base + clock
+    player.fx.pool.clockOffset = s.base + s.clock - frame.tick;
 }
 
 /**
- * @param {{family: string | null, hold: number | null, stress: boolean}} options the URL's demo options
+ * @param {DemoState} s the demo
+ * @param {number} k a cell
+ * @returns {number} how many ticks after the replay the cell's recipe starts: under the peak hold, so that it is at its
+ *   peak when the clock freezes; else 0
+ */
+function spawnLead(s, k) {
+    return s.hold === 'peak' ? s.peakHold - s.peaks[k] : 0;
+}
+
+/**
+ * @param {import('./fx-recipes.js').FxRecipe} recipe a recipe
+ * @returns {number} the age in ticks at which its lead part is brightest (its alpha keys at their highest), at least 1
+ */
+export function peakTicks(recipe) {
+    const part = recipe.parts.find((p) => (p.delay ?? 0) === 0) ?? recipe.parts[0];
+    const life = part.life === -1 ? DEMO_LIFE : part.life;
+    const c = FX_CURVES[part.curve];
+    let best = 0;
+    let bestAlpha = -Infinity;
+    for (let i = 0; i <= 20; i++) {
+        const age = i / 20;
+        const a = curveAt(c, age, PROBE).alpha;
+        if (a > bestAlpha + 1e-9) {
+            bestAlpha = a;
+            best = age;
+        }
+    }
+    return Math.max(1, Math.min(life - 1, Math.round(best * life)));
+}
+
+const PROBE = { scale: 0, alpha: 0, t: 0 };
+
+/**
+ * @param {{family: string | null, hold: number | 'peak' | null, stress: boolean}} options the URL's demo options
  * @returns {{update: (frame: import('./scene.js').Frame, ctx: {player: any, camera: any, client: any}) => void,
- *   cells: {name: string, x: number, y: number}[]} | null} the demo, or null when neither mode is asked for
+ *   cells: {name: string, x: number, y: number}[], frozen: () => boolean} | null} the demo, or null when neither mode
+ *   is asked for
  */
 export function createFxDemo({ family, hold, stress }) {
     if (family === null && !stress) {
         return null;
     }
+    const recipes = demoRecipes(family ?? 'all');
+    const peaks = recipes.map(([, r]) => peakTicks(r));
     /** @type {DemoState} */
     const s = {
-        recipes: demoRecipes(family ?? 'all'),
+        recipes,
+        base: 0,
+        peaks,
+        peakHold: Math.max(1, ...peaks),
+        frozen: false,
         cells: [],
         prng: createPrng(17),
         started: false,
@@ -179,6 +231,7 @@ export function createFxDemo({ family, hold, stress }) {
     };
     return {
         cells: s.cells,
+        frozen: () => s.frozen,
         update(frame, ctx) {
             if (ctx.player === null) {
                 return;

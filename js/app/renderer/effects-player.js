@@ -10,8 +10,10 @@ import { createBodyTweens } from './body-tweens.js';
 import { playBite, playDeath } from './effects-combat.js';
 import { createEdgeState } from './effects-edges.js';
 import { createFlee } from './effects-flee.js';
+import { createCrossings } from './effects-terrain.js';
 import { bornNamesOf, playBirth, playMate } from './effects-life.js';
 import { playAtEffect, playCall, playPollinated, playSmoke } from './effects-signals.js';
+import { playWorldEffect } from './effects-world.js';
 export { playEdges } from './effects-edges.js';
 import { adaptFxBudget, beginFxFrame, logFxBudget } from './fx-budget.js';
 import { createFxPool } from './fx-pool.js';
@@ -54,6 +56,7 @@ export { BIRTH_SIZE, JAW_REACH } from './effects-combat.js';
  * @property {import('./effects-edges.js').EdgeState} edges the flag-edge state and the food grids
  * @property {Record<string, number>} bits `ready.layout.flags`
  * @property {import('./effects-flee.js').FleeState} flee the pursuit pairs and who flees this frame
+ * @property {import('./effects-terrain.js').CrossState} crossings each slot's side of the wall
  */
 
 /**
@@ -93,6 +96,7 @@ export function createEffectsPlayer({
         tweens,
         edges: /** @type {any} */ (null),
         flee: /** @type {any} */ (null),
+        crossings: /** @type {any} */ (null),
         bits: layout.flags ?? {},
         at: { x: 0, y: 0, angle: 0, size: 0, tick: 0, rgb: PALETTE.biteFlash, reach: 0 },
         who: { slot: 0, genome: 0 },
@@ -114,6 +118,7 @@ export function createEffectsPlayer({
     };
     player.edges = createEdgeState(player, info);
     player.flee = createFlee(info);
+    player.crossings = createCrossings(info);
     return player;
 }
 
@@ -157,6 +162,8 @@ function dispatchSignal(player, agents) {
         playAtEffect(player, 'stampede');
     } else if (e.kind === kinds.STRAIN_EMERGED) {
         playAtEffect(player, 'strain');
+    } else {
+        playWorldEffect(player);
     }
 }
 
