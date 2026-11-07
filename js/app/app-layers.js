@@ -23,6 +23,7 @@ import { createRingLayer, createRingPool } from './renderer/rings.js';
 import { createSmokeLayer } from './renderer/smoke-layer.js';
 import { createTerritoryLayer } from './renderer/territory-layer.js';
 import { createVisionLayer } from './renderer/vision-layer.js';
+import { createWeatherLayer } from './renderer/weather-layer.js';
 import { createSparkLayer, createSparkPool } from './renderer/sparks.js';
 import { createBorderLayer, createFoodLayer, createObstacleLayer } from './renderer/world-layers.js';
 
@@ -88,6 +89,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
             createDungLayer({ info, layout }),
             createTerritoryLayer({ info }),
             haze,
+            createWeatherLayer({ info, seed }),
             createFoodLayer({ info }),
             createPollenLayer({ info, seed, flags: layout.flags, player: refs.player }),
             createObstacleLayer({ info, seed }),

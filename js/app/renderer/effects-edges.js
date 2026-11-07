@@ -9,6 +9,7 @@ import { createFlagEdges, diffFlags, EDGE } from './flag-edges.js';
 import { buildFoodGrid, createFoodGrid, FOOD_KIND, nearestFood } from './food-grid.js';
 import { FX_RECIPES, playRecipe } from './fx-recipes.js';
 import { playPregnant } from './effects-life.js';
+import { createBreaths, playBreaths } from './effects-weather.js';
 
 /** How far from the mouth a meal is looked for, in eater radii, plus a margin in world units. */
 export const MEAL_REACH = 2;
@@ -23,6 +24,7 @@ const MOUTH = 0.8;
  * @property {import('../interpolate.js').Interpolated | null} agents the agents being diffed
  * @property {number} tick the playhead tick being played
  * @property {(edge: number, index: number) => void} emit the edge handler, made once
+ * @property {Int32Array} breaths each slot's last breath period (`createBreaths`)
  */
 
 /**
@@ -41,6 +43,7 @@ export function createEdgeState(player, info) {
         agents: null,
         tick: 0,
         emit: (edge, index) => onEdge(player, edge, index),
+        breaths: createBreaths(capacity),
     };
     return state;
 }
@@ -143,4 +146,5 @@ export function playEdges(player, agents, snapshot, tick) {
     edges.agents = agents;
     edges.tick = tick;
     diffFlags(edges.flags, agents, player.bits, edges.emit);
+    playBreaths(player, agents, tick);
 }

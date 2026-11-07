@@ -39,7 +39,8 @@ export { BIRTH_SIZE, JAW_REACH } from './effects-combat.js';
  * @property {import('./mate-threads.js').MateThreadPool} [threads]
  * @property {Record<string, number>} kinds `ready.layout.effectKinds`
  * @property {number} eatenCause `ready.layout.deathCauses.EATEN`
- * @property {{callRadius: number, callTicks: number}} info the call ranges
+ * @property {{callRadius: number, callTicks: number, cold01: number}} info the call ranges and the cold-stress
+ *   temperature over `temperatureMax` (`-Infinity` when unknown)
  * @property {import('../family-slots.js').FamilySlots} slots the family colour slots
  * @property {((effect: Effect) => void) | null} sink told of every effect that plays (the audio cues)
  * @property {Effect} effect the record being played, reused
@@ -105,7 +106,11 @@ export function createEffectsPlayer({
         kinds: layout.effectKinds,
         floraEnabled: true,
         eatenCause: layout.deathCauses.EATEN,
-        info: { callRadius: info.callRadius, callTicks: info.callTicks },
+        info: {
+            callRadius: info.callRadius,
+            callTicks: info.callTicks,
+            cold01: info.temperatureMax > 0 ? info.temperatureColdStress / info.temperatureMax : -Infinity,
+        },
         slots,
         sink,
         effect: { kind: 0, tick: 0, x: 0, y: 0, a: 0, b: 0, c: 0, d: 0 },

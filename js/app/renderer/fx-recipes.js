@@ -145,6 +145,9 @@ export const FX_RECIPES = Object.freeze({
         { curve: C.sparkle, count: 6, life: 30, size: 0.35, reach: 1.6, spread: 'ring', color: 'recover' },
         { curve: C.ring, count: 1, life: 30, size: 2, color: 'recover', gain: 0.8, minPx: 8 },
     ]),
+    breath: recipe(FAMILY.weather, RANK.weather, [
+        { curve: C.puffOut, count: 1, life: 30, size: 0.45, reach: 1.2, color: 'coolWhite', gain: 0.3 },
+    ]),
     toxicPip: feed([{ curve: C.pip, count: 1, life: 24, size: 0.45, color: 'toxin', minPx: 6 }]),
 });
 
