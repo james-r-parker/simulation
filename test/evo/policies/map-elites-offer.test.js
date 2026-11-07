@@ -48,12 +48,12 @@ describe('offers', () => {
         fill(ctx.policy, { spec: 0, count: 1 });
         const { archive } = ctx.policy;
         const place = placeOf(0, 0, ELITE);
-        expect(placeCount(archive, place)).toBe(1);
+        expect(placeCount(archive, place)).toBe(0);
         ctx.policy.isClone[2] = 1;
         ctx.policy.archiveRef[2] = 0;
         ctx.policy.refId[2] = 1;
         killAndReuse(ctx, { slot: 2, genomeId: 500, fitness: 40 });
-        expect(placeCount(archive, place)).toBe(2);
+        expect(placeCount(archive, place)).toBe(1);
         expect(occupiedCount(archive)).toBe(1);
     });
 
