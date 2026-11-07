@@ -105,6 +105,11 @@ describe('riverSeries', () => {
         expect(river.layers).toHaveLength(2);
     });
 
+    it('breaks a tie in peak share by the lower lineage id', () => {
+        const river = riverSeries(cols([[7, 4, 9]], [[0.2, 0.2, 0.2]]), 2);
+        expect(river.layers.map((l) => l.id)).toEqual([null, 7, 4]);
+    });
+
     it('keeps only the largest lineages by peak share, the rest joining others', () => {
         const river = riverSeries(cols([[1, 2, 3]], [[0.5, 0.3, 0.1]]), 2);
         expect(river.layers.map((l) => l.id)).toEqual([null, 2, 1]);

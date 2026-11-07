@@ -318,4 +318,22 @@ describe('the other messages', () => {
             expect.stringContaining('toWorker message'),
         ]);
     });
+
+    it('wraps a listener that throws a non-Error value before telling onFailure', () => {
+        /** @type {Error[]} */
+        const failures = [];
+        const client = createWorkerClient({
+            post: () => {},
+            listeners: {
+                onArchive: () => {
+                    throw 'plain text';
+                },
+                onFailure: (e) => failures.push(e),
+            },
+        });
+        client.handle({ type: 'archive', json: '{}' });
+        expect(failures).toHaveLength(1);
+        expect(failures[0]).toBeInstanceOf(Error);
+        expect(failures[0].message).toBe('plain text');
+    });
 });

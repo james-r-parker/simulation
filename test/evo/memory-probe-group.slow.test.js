@@ -37,12 +37,13 @@ function notesFor(control) {
 }
 
 describe('huntScore', () => {
-    it('gives an idle trio and an idle solo hunter no kills: the prey does not die on the wall', () => {
-        const idle = { name: 'idle', id: 0, spec: 1, weights: null, act: () => {} };
-        for (const control of Object.values(GROUP_CONTROL)) {
+    it.each(Object.entries(GROUP_CONTROL))(
+        'gives an idle trio and an idle solo hunter no kills under %s: the prey does not die on the wall',
+        (_, control) => {
+            const idle = { name: 'idle', id: 0, spec: 1, weights: null, act: () => {} };
             expect(huntScore(control, idle, { config: {}, view: 350, seed: 1, trials: 16 })).toBe(0);
-        }
-    }, 30000); // 48 full 600-tick trials: under a second alone, several under a busy machine
+        },
+    );
 
     it('stages a trio and a prey, or one hunter and a prey for the solo control', () => {
         expect(notesFor(GROUP_CONTROL.SENSES).map((n) => n.alive)).toEqual([TRIO + 1, TRIO + 1]);

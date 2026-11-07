@@ -36,8 +36,10 @@ function task(extra = {}) {
 
 describe('runEpisode', () => {
     it('replays bit for bit from the task', () => {
-        const a = runEpisode(task());
-        const b = runEpisode(task());
+        // Half the length of the other episodes: the replay claim needs offers to compare, not 3000 ticks.
+        const short = { ticks: 1800, offerFromTick: 600 };
+        const a = runEpisode(task(short));
+        const b = runEpisode(task(short));
         expect(a.offers.length).toBeGreaterThan(0);
         expect(b).toEqual(a);
     });
