@@ -1,23 +1,9 @@
 // The 1200 x 630 share card as an HTML page, for scripts/build-icons.mjs to screenshot. Pure and seeded: the same
 // seed places the same motes.
 
-const MOTE_COLOURS = Object.freeze(['#5ee6a8', '#5ee6a8', '#6cc6ff', '#ffbe3c', '#b48cff']);
+import { createPrng } from '../../js/app/prng.js';
 
-/**
- * A small seeded generator (mulberry32) returning floats in [0, 1).
- * @param {number} seed Any 32-bit integer.
- * @returns {() => number} The next value.
- */
-export function seededRandom(seed) {
-    let state = seed >>> 0;
-    return () => {
-        state = (state + 0x6d2b79f5) >>> 0;
-        let t = state;
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-}
+const MOTE_COLOURS = Object.freeze(['#5ee6a8', '#5ee6a8', '#6cc6ff', '#ffbe3c', '#b48cff']);
 
 /**
  * Glowing motes scattered over the card, fainter where the text sits.
@@ -25,7 +11,7 @@ export function seededRandom(seed) {
  * @returns {{ x: number, y: number, r: number, colour: string, alpha: number }[]} One entry per mote.
  */
 export function motes({ seed, count, width, height }) {
-    const next = seededRandom(seed);
+    const { next } = createPrng(seed);
     return Array.from({ length: count }, () => {
         const x = Math.round(next() * width);
         const y = Math.round(next() * height);

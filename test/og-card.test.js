@@ -1,24 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { motes, ogCardHtml, seededRandom } from '../scripts/lib/og-card.mjs';
-
-describe('seededRandom', () => {
-    it('repeats for a seed, differs between seeds and stays in [0, 1)', () => {
-        const a = seededRandom(7);
-        const b = seededRandom(7);
-        const c = seededRandom(8);
-        const first = Array.from({ length: 50 }, a);
-        expect(Array.from({ length: 50 }, b)).toEqual(first);
-        expect(c()).not.toBe(first[0]);
-        expect(first.every((x) => x >= 0 && x < 1)).toBe(true);
-    });
-});
+import { motes, ogCardHtml } from '../scripts/lib/og-card.mjs';
 
 describe('motes', () => {
     const field = { seed: 3, count: 200, width: 1200, height: 630 };
 
-    it('places the same motes for the same seed, inside the card', () => {
+    it('places the same motes for the same seed, other motes for another, inside the card', () => {
         const dots = motes(field);
         expect(motes(field)).toEqual(dots);
+        expect(motes({ ...field, seed: 4 })).not.toEqual(dots);
         expect(dots).toHaveLength(200);
         for (const m of dots) {
             expect(m.x).toBeGreaterThanOrEqual(0);
