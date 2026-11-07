@@ -126,6 +126,19 @@ describe('species spawning', () => {
         expect(Math.hypot(w.foodX[slot] - 500, w.foodY[slot] - 400)).toBeLessThanOrEqual(w.config.fertileZoneRadius);
     });
 
+    it('still grows in the last dung zone when the roll never crosses a zone (an unusable fertility sum)', () => {
+        const w = smallWorld({ foodPatchCount: 0, fertileZoneSpawnChance: 1 });
+        w.zoneAlive[0] = 1;
+        w.zoneOrigin[0] = ZONE_ORIGIN.DUNG;
+        w.zoneX[0] = 500;
+        w.zoneY[0] = 400;
+        w.zoneFertility[0] = Number.NaN;
+        w.zoneInitial[0] = 3;
+        const slot = spawnFoodItem(w);
+        expect(w.foodOrigin[slot]).toBe(FOOD_ORIGIN.DUNG_ZONE);
+        expect(Math.hypot(w.foodX[slot] - 500, w.foodY[slot] - 400)).toBeLessThanOrEqual(w.config.fertileZoneRadius);
+    });
+
     it('falls back to background placement when a dung zone disc is blocked', () => {
         const w = smallWorld({
             foodPatchCount: 0,
