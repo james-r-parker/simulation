@@ -47,7 +47,7 @@ export function createInstinctPools(config) {
             weight,
             canHunt: true,
             herdWary,
-            kinPull: config.juvenileDependency ? config.kinPullWeight : 0,
+            kinPull: config.kinPullWeight,
         }),
         other: instinctCells(layout, { weight, canHunt: false, herdWary }),
         founders: NaN,

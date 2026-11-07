@@ -29,7 +29,7 @@ Unbuilt docs in priority order - 1 is built next. Set in each doc's `**Priority:
 25. [Brain reflex tests](brain-reflex-tests.md) - a tool and a study that change no sim behaviour; it builds on the trainer and drills (training.md) and gets cheaper once the Rust brain kernel is adopted (wasm-kernels.md), so it queues behind both
 26. [Renderer event effects](renderer-event-effects.md) - a viewer cannot yet tell most features are firing (user, 2026-11-07); it changes no sim behaviour, so it queues behind the balance and scene work
 
-## Implemented (11)
+## Implemented (12)
 
 Describe shipped code. Trust these, and fix them when the code moves.
 
@@ -44,6 +44,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Megafauna](megafauna.md) - Phases 1–4 are built and enabled by default. T40's matched RTX 4090 run found no observed frame-time regression from the herd look; its GC-pause budget was exce...
 - [Predator and prey](predator-prey.md) - Phases 1 and 2 built: scent, calls, smoke, jaws and the tuned economy in the sim core (E19, E20), and the five combat metrics with the hunter, fleer and spammer...
 - [Reachable births](reachable-births.md) - willing agents mate within `mateRange`, a child's energy is a share of its mother's, the split threshold is lower and the default economy sustains foragers; jud...
+- [Web presence](web-presence.md) - a designed icon in every size, Open Graph and Twitter cards, a full `<head>`, an installable web app manifest with a splash, `robots.txt` and `sitemap.xml`
 
 ## In progress (13)
 
@@ -55,7 +56,7 @@ Partly built - the note says which phases are real.
 - [Mobile view](mobile-view.md) - Phase 1 built: two-finger pinch and pan, `pointercancel`, a fingertip-sized tap, the portrait home zoom that survives a turn, the pixel-ratio cap on every path,... _(validated e5ffd3d, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md))_
 - [Natural selection](natural-selection.md) - the big bang is merged (PR #217) and Phase 4's instruments, checks and speed chunks are merged (#220, #221, #222). Its screens (E81, E82, E85 to E87) found no p... _(validated 7396097, 2026-11-01)_ _(depends on [fitness-and-selection.md](fitness-and-selection.md))_
 - [Quality gates and test tiers](quality-gates-and-test-tiers.md) - tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test... _(validated 23eaea3, 2026-10-17)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
-- [Realistic keepers](realistic-keepers.md) - Phase 1 is built (T1 to T9: `satedBite`, `predatorRestTicks`, `provisionEnabled`, `juvenileDependency`, `rewardedHebb`, `coverConceals` and `coverFoodFree` as d... _(validated 12d9ba4, 2026-11-06)_ _(depends on [natural-selection.md](natural-selection.md), [refuge.md](refuge.md))_
+- [Realistic keepers](realistic-keepers.md) - Phases 1 and 2 are built: `E137` and the combined run `E138` kept every mechanism but provisioning, which is deleted; the six kept switches are on by default an... _(validated 12d9ba4, 2026-11-06)_ _(depends on [natural-selection.md](natural-selection.md), [refuge.md](refuge.md))_
 - [Refuge](refuge.md) - Phase 3 amended to a long-range refuge sense (2026-11-06); Phase 1 is built: the eight detectors, the refuge-access fixture and the diagnosis (`E130`: cover pro... _(validated 62a6758, 2026-11-06)_ _(depends on [natural-selection.md](natural-selection.md))_
 - [Training](training.md) - Phase 1 (drills) is built (T1 to T4). Phase 2 code is built (T6 to T11: the archive fixes, `runEpisode` and `mergeEpisode`, `npm run train`, the curriculum, che... _(validated f5c7880, 2026-11-07)_ _(depends on [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md))_
 - [WASM kernels](wasm-kernels.md) - Phase 1 is built and adopted (T1 to T8): every world runs the brain phase in the Rust/WASM kernel from birth and the JS brain kernel is deleted; Phase 2 (sense)... _(validated f5c7880, 2026-11-07)_ _(depends on [headless-sim-core.md](headless-sim-core.md))_

@@ -117,7 +117,7 @@ explains each row.
 | Evolution metrics       | `eval.*` metrics the phase must move and the `eval:compare` verdict required                              |
 | Determinism             | RNG streams used; what is replayable from seed and config                                                 |
 | Config and persistence  | New config keys with defaults; IndexedDB schema version changes; saved file formats                       |
-| Logging and diagnostics | `simLog` events added (name, level, fields), what each failure path logs, the replay command              |
+| Logging and diagnostics | sim log events (`log.log`) added (name, level, fields), what each failure path logs, the replay command   |
 | Browser compatibility   | Browsers and devices verified; WebGL, WebGPU and worker assumptions                                       |
 | Docs                    | Files touched; what this doc becomes once `Implemented`                                                   |
 | Verification            | Done-criteria: `scripts/check.sh`, the manual browser walk                                                |
@@ -130,7 +130,7 @@ both.
 - **Tests.** Each behaviour a phase adds has a test that pins it, including its failure paths. A bug fix starts
   with a test that fails before the fix. Simulation tests run headless on a seeded world - never on
   `Math.random`, wall-clock time or a real GPU.
-- **Log events.** Each decision point and failure path emits a structured `simLog` event with a stable name.
+- **Log events.** Each decision point and failure path emits a structured sim log event (`log.log`) with a stable name.
   Events carry the ids needed to follow one agent or one run (seed, tick, agent slot, genome id). Nothing logs
   per agent per tick.
 - **Debuggability.** The design doc's Logging and diagnostics row says what a failure looks like in the logs and

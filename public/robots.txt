@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://matrix.dotnethelp.co.uk/sitemap.xml

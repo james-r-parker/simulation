@@ -37,7 +37,7 @@ export const EVENT_TYPE = Object.freeze({
     HUNTER_LEDGER: 29,
     LAST_HUNTER_DIED: 30,
     HUNTER_KILL: 31,
-    PROVISIONED: 32,
+    PROVISIONED: 32, // unused since realistic-keepers T20 deleted provisioning; the code stays so later codes do not renumber
     COVER_CONFIG: 33,
     COVER_TOTALS: 34,
 });

@@ -9,7 +9,7 @@ own.
 
 ## Module design
 
-- **One responsibility per module.** A module's name says what it does (`spatial-hash.js`, `mutation.js`), and its
+- **One responsibility per module.** A module's name says what it does (`js/sim/spatial-hash.js`, `js/evo/mutation.js`), and its
   header comment says it in one line. If the description needs "and", it is two modules.
 - **Pure core, thin shell.** Simulation and evolution logic are pure functions over plain data and typed arrays.
   Side effects - DOM, rendering, IndexedDB, workers, files, timers, logging sinks - live in thin adapters at the edge

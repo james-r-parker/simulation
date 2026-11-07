@@ -229,7 +229,7 @@ Megafauna Phase 3 adds `eval.herd_follow_share`, `eval.dung_food_share` and `eva
 
 `POLICIES` maps a name to a factory, `create(options)`, with `options` `{ config, log, observer }` plus policy-specific fields;
 all per-run state lives in the object it returns: `{ name, brain, fitnessName, fitness, archive?, onEvent?, afterStep? }`.
-`brain` holds the core's policy hooks and is what `createWorld` and `step` receive; `log` is the run's `simLog`. `fitness(observer, slot, config)` reads only observer state, never world
+`brain` holds the core's policy hooks and is what `createWorld` and `step` receive; `log` is the run's sim log (`SimLog` in `js/sim/log.js`). `fitness(observer, slot, config)` reads only observer state, never world
 arrays, so it is valid after the slot has been reused. `onEvent` receives each event-ring record after the observer.
 
 ### Observer counters
