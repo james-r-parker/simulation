@@ -24,6 +24,7 @@ export const WATCH_INTENDED_LOWER = new Set([
     'eval.hunter_zero_kill_share',
     'eval.refuge_bite_deficit',
     'eval.prey_cover_distance',
+    'eval.winter_band_shift',
     'eval.hunter_first_kill_age',
     'eval.hunter_death_share.starved',
     ...['forager', 'predator', 'reproducer', 'scout', 'defender'].map((name) => `eval.herd_carcass_share.${name}`),

@@ -58,6 +58,8 @@ const WATCH = [
     'eval.childshare_by_condition',
     'eval.winter_basin_density',
     'eval.winter_shelter_distance',
+    'eval.winter_band_shift',
+    'eval.winter_patch_proximity',
     'eval.season_map_distance',
     'eval.herd_season_shift',
     'eval.style_separation',
