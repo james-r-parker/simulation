@@ -62,6 +62,13 @@ describe('createTerrainLayer', () => {
         layer.dispose();
     });
 
+    it('draws no frost when the world info has no terrain block at all', () => {
+        const bare = { ...smallReady().info, terrain: undefined };
+        const layer = createTerrainLayer({ info: { ...bare, patches: [{ x: 100, y: 100, radius: 40 }] } });
+        expect(layer.object.children).toHaveLength(2);
+        layer.dispose();
+    });
+
     it('creates frost and refuge meshes on basins layout and supports quality tiers', () => {
         const basinsInfo = {
             worldWidth: 6000,

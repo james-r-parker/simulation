@@ -148,6 +148,20 @@ describe('setLook', () => {
         layer.dispose();
     });
 
+    it('sets the flora, body, weather and courtship uniforms from their tiers, and treats a missing tier as off', () => {
+        const { info, layout } = smallReady();
+        const layer = createAgentsLayer({ info, flagBits: layout.flags });
+        const u = layer.object.children[0].material.uniforms;
+        const read = () => [u.uFlora.value, u.uBody.value, u.uWeather.value, u.uCourt.value];
+        layer.setLook?.({ motion: 0, flora: 0, body: 0, weather: 0, courtship: 0 });
+        expect(read()).toEqual([1, 1, 1, 1]);
+        layer.setLook?.({ motion: 0, flora: -1, body: 1, weather: -1, courtship: -1 });
+        expect(read()).toEqual([0, 0.5, 0, 0]);
+        layer.setLook?.({ motion: 0, flora: 0, body: 2 });
+        expect(read()).toEqual([1, 0, 0, 0]);
+        layer.dispose();
+    });
+
     it('sets the body, weather, courtship and flora gates from their items', () => {
         const { info, layout } = smallReady();
         const layer = createAgentsLayer({ info, flagBits: layout.flags });
