@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { decodeArchive, encodeArchive } from '../../js/evo/archive-codec.js';
-import { DEFAULT_CURRICULUM, planStages, stageAt } from '../../js/evo/curriculum.js';
+import { DEFAULT_CURRICULUM, planStages, stageAt, validateStageFloors } from '../../js/evo/curriculum.js';
 import { TRAINER_DESCRIPTOR, TRAINER_N_CAP, createTrainerArchive } from '../../js/evo/trainer.js';
 import { layoutStamp } from '../../js/sim/brain-layout.js';
 import { createConfig, rulesHash } from '../../js/sim/config.js';
@@ -35,6 +35,12 @@ export function loadStages(args) {
         : args.config
           ? [{ name: 'default', config: args.config }]
           : DEFAULT_CURRICULUM;
+    if (args.curriculum) {
+        validateStageFloors(entries, {
+            overridesOf: (config) => readJson(resolve(ROOT, config)),
+            targetMinAgents: createConfig({}).minAgents,
+        });
+    }
     const stages = planStages(entries, args.generations).map((stage) => {
         const overrides = stage.config === null ? {} : readJson(resolve(ROOT, stage.config));
         const config = createConfig(overrides);

@@ -7,12 +7,14 @@ import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { decodeArchive } from '../js/evo/archive-codec.js';
 import { exportBestPerSpec } from '../js/evo/champion-export.js';
+import { endsInTargetWorld } from '../js/evo/curriculum.js';
 import { GENOME_SPECS } from '../js/evo/genome.js';
 import { TRAINER_DESCRIPTOR } from '../js/evo/trainer.js';
 import { createConfig, rulesHash } from '../js/sim/config.js';
 import { exitCodeOf, parseFlags } from './lib/cli-args.mjs';
 import { readJson } from './lib/train-state.mjs';
 
+const PUBLIC_CHAMPIONS = fileURLToPath(new URL('../public/champions', import.meta.url));
 const USAGE = 'usage: train:export --archive <file> --out <dir> [--config <file.json>] [--label <name>]';
 
 /**
@@ -58,6 +60,11 @@ export function runExport(args) {
     const json = readJson(args.archive);
     // The archive's `rulesHash` is the curriculum stage's; the layout, version and descriptor are what must fit.
     const archive = decodeArchive({ ...json, rulesHash: rulesHash(config) }, config, undefined, TRAINER_DESCRIPTOR);
+    if (resolve(args.out).startsWith(PUBLIC_CHAMPIONS) && !endsInTargetWorld(json.stages, rulesHash(config))) {
+        throw new Error(
+            `${args.archive}: its last stage is not the target world, so its champions may not go into public/champions (export to another directory for local drills, tables and probes)`,
+        );
+    }
     const label = args.label ?? basename(args.archive).replace(/\.json$/, '');
     const files = exportBestPerSpec(archive, config, { label });
     if (files.length === 0) {

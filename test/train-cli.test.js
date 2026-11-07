@@ -101,10 +101,11 @@ describe('stage and resume checks', () => {
             curriculum,
             JSON.stringify([
                 { name: 'one', config: a, generations: 1 },
-                { name: 'two', config: b },
+                { name: 'two', config: b, generations: 1 },
+                { name: 'world', config: null },
             ]),
         );
-        const args = parseArgs(['--generations', '2', '--out', 'x', '--curriculum', curriculum]);
+        const args = parseArgs(['--generations', '3', '--out', 'x', '--curriculum', curriculum]);
         expect(() => loadStages(args)).toThrow(/stage "two" has another brain layout than "one"/);
     });
 
