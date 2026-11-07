@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 instruments built (T1 to T3, #343) and the T4 baseline run (`E143`, 16 floor-on seeds, in Baseline): no call on any seed, and the audience a call would reach is about 3 prey. The forced-call diagnosis (T5 to T7) is open; Phase 2 adds three default-off switches, Phase 3 judges them, Phase 4 adopts or deletes; none is built beyond the `alarmOnSight` controller.
 **Validated:** f5c7880 (2026-11-07)
-**Priority:** 21 - the Call, or don't scene is absent (alarm rate 0, precision null on every diagnosis seed); it follows the refuge and keepers work because a call needs prey near kin and a hunter to bite, which cover and juvenile dependency change
+**Priority:** 14 - the Call, or don't scene is absent (alarm rate 0, precision null on every diagnosis seed); it follows the refuge and keepers work because a call needs prey near kin and a hunter to bite, which cover and juvenile dependency change
 **Depends on:** [realistic-keepers.md](realistic-keepers.md), [refuge.md](refuge.md)
 
 The goal ([principles.md](../principles.md)) is a world that is interesting to watch. The scene **Call, or don't** reads: an
@@ -275,7 +275,7 @@ Every row is Delegated: the user was away and the doc's author answered the crea
 | `callRadius` is swept as a screen arm, not a switch                                                        | It is an existing numeric key; hearing range in nature follows where kin live (Marler 1955; Sherman 1977), and the keepers' `juvenileDependency` already moves where kin live                                                | Delegated |
 | Kin reach reads the D5 sample, not a new one                                                               | `sampleGroups` already counts same-lineage agents within `callRadius` of threatened and calm prey; a second sample would duplicate the pass and could disagree with `eval.group_cohesion_under_threat`                       | Delegated |
 | `alarmGuard` is swept (0.8, 0.6, 0.4), not fixed                                                           | No nature number gives the factor; the screen finds where it changes the picture                                                                                                                                             | Delegated |
-| Priority 21                                                                                                | The scene is a single watch row with no guard role; it queues behind the refuge, keepers and balance work whose adoptions change the kin and cover it depends on                                                             | Delegated |
+| Priority 14                                                                                                | The scene is a single watch row with no guard role; it queues behind the refuge, keepers and balance work whose adoptions change the kin and cover it depends on                                                             | Delegated |
 | Mate attraction and reciprocity are not candidates                                                         | Mate-advertising calls are a different signal (the sim has no call for it), and reciprocity has thin evidence in the wild (Hollen and Radford 2009)                                                                          | Delegated |
 
 ## Delivery requirements
