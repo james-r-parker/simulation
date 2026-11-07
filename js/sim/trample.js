@@ -32,11 +32,23 @@ function resolveContact(world, slot, animal) {
     }
 }
 
-/** Resolves every live herd contact for one agent slot. @param {World} world @param {number} slot @returns {void} */
+/**
+ * Resolves every live herd contact for one agent slot. A one-axis reject skips the animals whose x gap alone is at
+ * least the reach: `dx * dx >= reach * reach` is monotone in `|dx|`, and `distanceSq` only adds a non-negative term,
+ * so the skipped animals are exactly those `resolveContact` would return on. Order and float results are unchanged.
+ * @param {World} world @param {number} slot @returns {void}
+ */
 export function trampleHerds(world, slot) {
+    const { herdAlive, herdX } = world;
+    const reach = world.size[slot] + world.config.herdRadius;
     for (let animal = 0; animal < world.herdMax; animal++) {
-        if (world.herdAlive[animal] === 1) {
-            resolveContact(world, slot, animal);
+        if (herdAlive[animal] !== 1) {
+            continue;
         }
+        const dx = world.x[slot] - herdX[animal];
+        if (dx >= reach || -dx >= reach) {
+            continue;
+        }
+        resolveContact(world, slot, animal);
     }
 }

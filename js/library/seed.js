@@ -1,7 +1,7 @@
-// Seeding the library with the project's own champions: the rows, the R2 objects and the SQL, all pure. The shell
+// Seeding the library with the project's own champions: the rows, the file bodies and the SQL, all pure. The shell
 // that reads `public/champions/v1/` and calls `wrangler` is a script (the seed task in deployment-and-community.md).
 
-import { canonicalChampion, championId, genomeKey } from './canonical.js';
+import { canonicalChampion, championId } from './canonical.js';
 
 const { TextEncoder } = globalThis;
 
@@ -14,17 +14,17 @@ export const DEFAULT_SEED_ELO = 1500;
  */
 
 /**
- * @param {readonly Record<string, any>[]} files validated champion files (`validateChampion` accepted each)
+ * @param {readonly Record<string, any>[]} inputs validated champion files (`validateChampion` accepted each)
  * @param {{season: number, league: {champions: readonly {name: string, elo: number}[]}, now: number}} options the
  *   season they belong to, the league (the Elo by champion name), and the unix second to stamp rows with
- * @returns {Promise<{rows: ChampionRow[], objects: {key: string, body: string}[]}>} one `verified` official row per
- *   distinct canonical file, and the R2 object (key and canonical bytes) of each
+ * @returns {Promise<{rows: ChampionRow[], files: {id: string, body: string}[]}>} one `verified` official row per
+ *   distinct canonical file, and the file (id and canonical bytes) of each
  */
-export async function buildSeedRows(files, { season, league, now }) {
+export async function buildSeedRows(inputs, { season, league, now }) {
     const rows = [];
-    const objects = [];
+    const files = [];
     const seen = new Set();
-    for (const file of files) {
+    for (const file of inputs) {
         const body = canonicalChampion(file);
         const id = await championId(body);
         if (seen.has(id)) {
@@ -32,8 +32,7 @@ export async function buildSeedRows(files, { season, league, now }) {
         }
         seen.add(id);
         const entry = league.champions.find((champion) => champion.name === file.name);
-        const key = genomeKey(season, id);
-        objects.push({ key, body });
+        files.push({ id, body });
         rows.push({
             id,
             season,
@@ -52,10 +51,9 @@ export async function buildSeedRows(files, { season, league, now }) {
             verified_sha: null,
             attempts: 0,
             bytes: new TextEncoder().encode(body).length,
-            r2_key: key,
         });
     }
-    return { rows, objects };
+    return { rows, files };
 }
 
 /**
@@ -84,6 +82,20 @@ export function seasonSql(season) {
         season.major,
     ];
     return `INSERT OR REPLACE INTO seasons (season, rules_hash, input_count, brain_hidden, output_count, opened, major) VALUES (${values.map(literal).join(', ')});`;
+}
+
+/**
+ * @param {readonly {id: string, body: string}[]} files the seeded files
+ * @returns {string} one idempotent `INSERT OR REPLACE` per file, for `wrangler d1 execute --file`; run after
+ *   `championsSql` (the file's id references the champion row)
+ */
+export function filesSql(files) {
+    return files
+        .map(
+            (file) =>
+                `INSERT OR REPLACE INTO champion_files (id, body) VALUES (${literal(file.id)}, ${literal(file.body)});`,
+        )
+        .join('\n');
 }
 
 /**
