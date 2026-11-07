@@ -126,6 +126,39 @@ rewardedHebb, coverConceals, coverFoodFree, refugeSense) is backed out and the r
 | C     | T10 to T19 | The baseline and the nine verdict runs (a run chunk, no code) |
 | D     | T20 to T24 | Deletions, the combined run, the adoption and the close       |
 
+#### Results
+
+**E-L-1 (placeholder id; the coordinator assigns the real one) - E137: predatorRestTicks 60, rewardedHebb and coverConceals on 32 matched seeds.**
+Floor on, policy live, 200000 ticks, seeds 1 to 32 as two 16-seed reports per arm (the second with `--seed-offset 16`), main f5c7880. Pooled
+over the 32 seeds with the two halves concatenated, then `npm run eval:compare` against the pooled defaults (`--allow-config-diff` for the arm's key);
+the two share rows from a paired bootstrap on per-seed outcomes.
+
+Prediction, verbatim: "Hypothesis: under the user's paired-interval rule (2026-11-07), predatorRestTicks 60, rewardedHebb and coverConceals do no harm - their
+E134/E135 count failures were chance. Prediction: on 32 seeds no paired interval shows harm for coverConceals (near inert) or rewardedHebb (guards all
+no-difference on 16 seeds); predatorRestTicks is the most likely to show a worse hunters-alive share (it lowered predators at end -18% and population -10% on
+16 seeds, both no-difference) - perhaps an interval touching 0. If an interval excludes 0 on the worse side, that mechanism is deleted."
+
+| Measure (32 seeds)                 | Defaults | rest 60                | reward                 | conceal                |
+| ---------------------------------- | -------- | ---------------------- | ---------------------- | ---------------------- |
+| Hunters alive at end (of 32)       | 27       | 23                     | 20                     | 24                     |
+| Hunters-alive share diff, interval | -        | -0.125 [-0.313, 0.063] | -0.219 [-0.438, 0.000] | -0.094 [-0.281, 0.094] |
+| Seeds under 80 agents (of 32)      | 11       | 14                     | 11                     | 14                     |
+| Under-80 share diff, interval      | -        | 0.094 [-0.156, 0.344]  | 0.000 [-0.219, 0.219]  | 0.094 [-0.156, 0.313]  |
+| population_mean                    | 203.1    | 199.2 (-1.9%, ns)      | 211.4 (+4.1%, ns)      | 207.6 (+2.2%, ns)      |
+| predators_at_end                   | 23.22    | 19.09 (-17.8%, ns)     | 23.31 (+0.4%, ns)      | 22.84 (-1.6%, ns)      |
+| prey_types_at_end                  | 3.406    | 3.406 (0%, ns)         | 3.094 (-9.2%, ns)      | 3.188 (-6.4%, ns)      |
+| spec_effective                     | 3.937    | 3.851 (-2.2%, ns)      | 4.006 (+1.8%, ns)      | 3.856 (-2.0%, ns)      |
+| hunter_kill_conversion 1k-2k       | 0.0870   | 0.0840 (-3.5%, ns)     | 0.0793 (-8.9%, ns)     | 0.0857 (-1.5%, ns)     |
+| prey_extinctions                   | 8.125    | 7.625 (-6.2%, ns)      | 7.656 (-5.8%, ns)      | 8.281 (+1.9%, ns)      |
+
+(ns = no-difference.) **Verdict: no guard and no share interval excludes 0 on the worse side for any arm, so none is harmful by the paired rule and all
+three go into the combined run (T21).** The prediction held for coverConceals and rewardedHebb; for predatorRestTicks the hunters-alive interval did not
+touch 0 (it spans it widely), so the "perhaps touching 0" was too pessimistic; rewardedHebb's hunters-alive upper bound sits exactly at 0.000, the closest
+call. Non-guard readings, recorded for the combined run to watch: predatorRestTicks lowers `eval.coverage` (-11.1%), `eval.qd_score` (-11.9%) and
+`eval.p90_fitness.reproducer` (-7.0%), each flagged worse; coverConceals lowers `eval.basin_lineage_effective` (-11.5%) and reproducer mean and p90 fitness
+(-8%), and raises `eval.alarm_rate` from about 1e-6 to 8e-6 (flagged worse by direction, still near zero). None is on the keep rule's guard list, so none is
+harm under the rule as written.
+
 ### Phase 3 - Close
 
 **Targets:** bench.step_ms@500
