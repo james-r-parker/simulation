@@ -37,7 +37,7 @@ The project is being rebuilt as "v6" in short sessions, one design doc at a time
 The previous app (WebGPU, one big `game.js`) is deleted; [legacy-audit.md](docs/designs/legacy-audit.md) records what
 it did wrong and which design replaced each part.
 
-Time is counted in ticks, 60 a second at speed x1. A blob lives at most `maxAgeTicks` (36,000 ticks, 10 minutes at x1).
+Time is counted in ticks, 60 a second at speed x1. A blob lives at most `maxAgeTicks` (72,000 ticks, 20 minutes at x1).
 The speeds are x0.25 to x16 (`TICKS_PER_SECOND_CHOICES` in `js/worker/protocol.js`).
 
 ## Run it
@@ -103,48 +103,49 @@ and the largest type with its share (`scout 82%`). Sources: `js/app/ui/top-bar.j
 ## The brain
 
 Every blob has an Elman recurrent network: its hidden layer feeds back into itself on the next tick, so it can remember.
-One tick for one blob, `forwardAll` in `js/sim/brain.js`:
+One tick, for every blob: `forwardAll` in `js/sim/brain.js` makes one call into the Rust kernel `brain_forward` (`wasm/src/brain.rs`, built by `scripts/build-wasm.sh`), which pools, steps the hidden layer, writes the outputs and applies Hebbian learning. It is attached at world birth by `attachWasm` (`js/sim/wasm-arena.js`), called from `allocateWorld`; the JS brain was deleted, so every world runs it. The diagram shows what it computes for one blob:
 
 ```
- rays (16 x 9 = 144) -> pool: 8 channels x 2 strongest hits x (strength, cos, sin) = 48 + 2 food hues --+
- body inputs (33) ------------------------------------------------------------------------+--> 83 inputs --W_in--> (+ hidden_prev x W_rec + bias) --tanh--> leaky mix --> 32 hidden
+ rays (16 x 10) -> pool: 9 channels x 2 strongest hits x (strength, cos, sin) = 54 + 2 food hues --+
+ body inputs (36) ------------------------------------------------------------------------+--> 92 inputs --W_in--> (+ hidden_prev x W_rec + bias) --tanh--> leaky mix --> 32 hidden
                                                                                                          |
-        last tick's MEMORY_A, MEMORY_B (inputs 31, 32) <---------+                                      v
+        last tick's MEMORY_A, MEMORY_B (body inputs 31, 32) <---------+                                      v
                                                           11 outputs = tanh( hidden x W_out + pooled x W_skip + bias )
 ```
 
-- **Size.** `brainLayout` in `js/sim/brain-layout.js`: `inputCount = POOLED_VALUES + EXTRA_INPUTS = 8 x 2 x 3 + 2 + 33 = 83`,
-  `brainHidden = 32`, `OUTPUT_COUNT = 11`. One genome row is **4,578 floats**: `W_in` 83x32, `W_rec` 32x32, 32 hidden biases,
-  `W_out` 32x10, 10 output biases, `W_skip` 50x10, 4 trait genes and 32 leak genes. The `SPLIT` output keeps its slot in the
+- **Size.** `brainLayout` in `js/sim/brain-layout.js`: `inputCount = POOLED_VALUES + EXTRA_INPUTS = 9 x 2 x 3 + 2 + 36 = 92` (`rawInputCount` 196),
+  `brainHidden = 32`, `OUTPUT_COUNT = 11`. One genome row is **4,926 floats** (`weightCount`; read the offsets from `brainLayout`, not from this page): `W_in` 92x32, `W_rec` 32x32, 32 hidden biases,
+  `W_out` 32x10, 10 output biases, `W_skip` 56x10, 4 trait genes and 32 leak genes. The `SPLIT` output keeps its slot in the
   11-wide output row but has no genes and reads 0 (nothing reads it: a split needs energy and the gates).
-- **Skip.** `W_skip` joins the 50 pooled values straight to the outputs, before `tanh`, so a reflex (food ahead to thrust,
+- **Skip.** `W_skip` joins the 56 pooled values straight to the outputs, before `tanh`, so a reflex (food ahead to thrust,
   threat to turn away) needs no hidden unit. It sees only the pooled rays, never the body inputs, and is genome only.
-- **Activation.** `tanh` on hidden units and outputs, through `detTanhInto` (`js/sim/det-math.js`) so the result is the same
+- **Activation.** `tanh` on hidden units and outputs, through `det_tanh` (`wasm/src/det_math.rs`, the same function as `js/sim/det-math.js`) so the result is the same
   on every machine. An output above 0 means "do it" for the on/off actions.
 - **Memory.** (1) The recurrent hidden row persists in `world.hidden`. (2) Each hidden unit is leaky:
   `h = (1 - a) h_prev + a tanh(...)`, with `a = 0.02 + 0.98 x sigmoid(leak gene)` per unit (`leakMin` 0.02: a half-life of 34 ticks for the slowest) (`leakRateOf` in `js/sim/traits.js`),
   so evolution can pick slow and fast units. (3) Two spare outputs, `MEMORY_A` and `MEMORY_B`, are fed back as inputs next
   tick (`writeMemoryInputs` in `js/sim/body-inputs.js`). They do nothing else. A random genome starts every leak gene at 0
   (`leakGeneStart`, `a` about 0.5), so memory is there from generation 0.
-- **Inheritance.** A birth mutates each gene with probability `1 / sqrt(weightCount)` (`mutationRate` `invsqrt`, about 67 of
-  the 4,494 genes), and shrinks the `W_in` rows of silent inputs by `weightDecay` 0.005 (an input is silent when its active
+- **Inheritance.** A birth mutates each gene with probability `1 / sqrt(weightCount)` (`mutationRate` `invsqrt`, about 70 of
+  the 4,926 genes), and shrinks the `W_in` rows of silent inputs by `weightDecay` 0.005 (an input is silent when its active
   share is under 0.01 over at least 10,000 agent-samples; `world.inputActivity` in `js/sim/input-activity.js`).
-- **Lifetime learning.** With `hebbianRate > 0` (default 0.0001) the hidden-to-output block is plastic (`hebbianStep` in
+- **Lifetime learning.** With `hebbianRate > 0` (default 0.0001) the hidden-to-output block is plastic (inside the Rust kernel; constants in
   `js/sim/hebbian.js`). Each blob has its own copy, `fastOut`, which drifts by `eta x (hidden x output - 0.01 x (fastOut - genome weight))`
   with `eta = hebbianRate x sigmoid(learn gene)`, clamped to plus or minus 4. A child inherits the genome, never what its
   parent learned.
 
-### Inputs (83)
+### Inputs (92)
 
 | Group                | Count | What it is                                                                                                                                                                                       |
 | -------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Pooled rays          | 48    | The 16 raw rays (below) are pooled by `poolRays` in `js/sim/ray-pool.js`: for each of the eight ray channels (food, threat, prey, other, kin, wall, obstacle, smoke) the **two strongest hits**, strongest first, each as a strength (the ray's proximity) and the cosine and sine of its angle in the blob's own frame. An unused slot is 0. The raw rays stay in the `inputs` row for the observer and the scripted controllers. |
+| Pooled rays          | 54    | The 16 raw rays (below) are pooled in the Rust kernel (`pool_slot`, reached through `poolRays` in `js/sim/ray-pool.js`): for each of the nine ray channels (food, threat, prey, other, kin, wall, obstacle, smoke, megafauna) the **two strongest hits**, strongest first, each as a strength (the ray's proximity) and the cosine and sine of its angle in the blob's own frame. An unused slot is 0. The raw rays stay in the `inputs` row for the observer and the scripted controllers. |
 | Food hues            | 2     | Hue of the two pooled food hits, in matching order; absent hits are zero. Strength distinguishes an absent hit from a real hue of zero. |
 | Body (offsets 0-16)  | 17    | Energy; forward and sideways velocity; turn rate; size; pregnant; ready to mate; danger and attack scent here; just ate and just bitten (fade over 30 ticks); specialisation; age; four temperature inputs (level, distance from the optimal band, cold stress, heat stress). `writeBodyInputs` |
 | Scent and calls (17-29) | 13 | Danger and attack scent at a left and a right antenna (0.8 rad either side, 150 px out); hunt scent here and at both antennae; the loudest heard alarm and the loudest heard hunt call, each as loudness, ahead and side. `writeScentInputs` |
 | Sex and memory (30-32) | 3   | Sex (0 female, 1 male), and last tick's `MEMORY_A` and `MEMORY_B`.                                                                  |
+| Refuge (33-35)       | 3     | Bearing sine and cosine and nearness of the closest cover ring (`writeRefugeInputs` in `js/sim/refuge-sense.js`).                                                                                 |
 
-The nine values of one ray (`RAY_CHANNELS`, `writeRay` in `js/sim/ray-march.js`) describe the **nearest thing** the ray hits:
+The ten values of one ray (`RAY_CHANNELS`, `writeRay` in `js/sim/ray-march.js`) describe the **nearest thing** the ray hits:
 
 | Channel | Meaning                                          | Channel | Meaning                                              |
 | ------- | ------------------------------------------------ | ------- | ---------------------------------------------------- |
@@ -152,7 +153,7 @@ The nine values of one ray (`RAY_CHANNELS`, `writeRay` in `js/sim/ray-march.js`)
 | 1       | Food (plant or carcass): 1                       | 6       | Wall (the world edge): 1                             |
 | 2       | Agent that can bite me, value = proximity        | 7       | Obstacle (rock): 1                                   |
 | 3       | Agent I can bite, value = proximity              | 8       | Smoke cloud: 1                                       |
-| 4       | Any other agent, value = proximity               |         |                                                      |
+| 4       | Any other agent, value = proximity               | 9       | Megafauna (herd body): 1                             |
 
 Which agent class a hit falls in is decided in order: kin, then "can bite me", then "I can bite it", then other
 (`agentChannel`). "Can bite" is the bite rule in `js/sim/bite-rule.js`: only a specialisation with `canHunt`, never kin,
@@ -174,15 +175,15 @@ angle, and a predator sees prey as prey.
 | 6   | `SMOKE`    | Above `smokeThreshold` (0.8): release a cloud behind the blob that blocks rays (`js/sim/smoke.js`); `smokeCost` and a `smokeCooldown`                         |
 | 7   | `HUNT`     | Above `huntCallThreshold` (0.65), hunters only: pay `huntCallCost`, deposit hunt scent, call kin                                                              |
 | 8   | `SPLIT`    | **Not read by the sim any more.** Splitting happens on energy alone (`readyToSplit` in `js/sim/reproduction.js`); the output is kept so genomes keep their shape |
-| 9   | `MEMORY_A` | Fed back as input 33 next tick                                                                                                                               |
-| 10  | `MEMORY_B` | Fed back as input 34 next tick                                                                                                                               |
+| 9   | `MEMORY_A` | Fed back as body input 31 next tick                                                                                                                               |
+| 10  | `MEMORY_B` | Fed back as body input 32 next tick                                                                                                                               |
 
 ### How genomes encode and mutate
 
-A genome (`js/evo/genome.js`) is the 7,183-float row plus a specialisation, ids and a self-adapting step size `sigma`.
+A genome (`js/evo/genome.js`) is one brain row (`weightCount` floats in `brainLayout`, `js/sim/brain-layout.js`) plus a specialisation, ids and a self-adapting step size `sigma`.
 
 - **Random start.** `randomWeights` (`js/evo/mutation.js`): input and recurrent weights with standard deviation
-  `1 / sqrt(inputCount + hidden)`, output weights `1 / sqrt(hidden)`, biases 0, trait genes 0, leak genes 3 (so a unit starts keeping about 95% of its old value).
+  `1 / sqrt(inputCount + hidden)`, output weights `1 / sqrt(hidden)`, biases 0, trait genes 0, leak genes `leakGeneStart` (0, so a unit starts with `a` about 0.5 and keeps about half its old value each tick).
 - **Mutation.** `mutateSigma` first moves the child's step size log-normally (`SIGMA_MIN` 0.002 to `SIGMA_MAX` 0.5, start 0.05).
   `mutateWeights` then adds `sigma x N(0,1)` to every weight and clamps to plus or minus 4. Trait and leak genes use a fixed `TRAIT_SIGMA` of 0.1.
 - **Crossover (mating).** `crossNeurons` (`js/evo/crossover.js`) takes whole neurons: for each hidden unit one coin flip decides whether all its
@@ -209,11 +210,11 @@ so every feature listed below as "on" is on in the app.
 
 ### Food
 
-- Plant items use species energy, radius and lifetime traits. `foodEnergy`100 and `foodRadius`20 are reference scales. At most `maxFood`1,600 items, `initialFood`300 at the start.
+- Plant items use species energy, radius and lifetime traits. `foodEnergy`100 and `foodRadius`20 are reference scales. At most `maxFood` 3,600 items, `initialFood` 300 at the start.
 - **Food patches.** `foodPatchCount` = 16 initial live patches in a `floraPatchMax` = 32 slot pool, of radius 400, split between the two basins (`js/sim/food-patches.js`). Each holds a stock that
   each meal eaten inside depletes by 0.02 and that regrows logistically (0.0005 a tick); 20% of spawns ignore the patches. Food
   regrows per world area (`foodRegrowPerArea`) through the patches, not toward a per-blob target, so food does not scale with the population.
-- **Carcasses.** A dead blob leaves a meat item worth half the energy it took in during its life (`carcassShare`; `js/sim/carcass.js`), lasting 300 ticks.
+- **Carcasses.** A dead blob leaves a meat item worth `carcassShare` (0.8 by default) of the energy it held at death (`carcassShare`; `js/sim/carcass.js`), lasting 300 ticks.
   Predators digest meat fully; other types get 30% of it (`meatFoodValue`). Predators get 0 from plants (`plantFoodValue`).
 - Eating has limits: a blob at 95% of `maxEnergy` cannot eat (`satiationShare`), waits `digestTicks` (10) between meals and moves at 20% thrust for `handlingTicks` (20) after one.
 
@@ -235,7 +236,7 @@ Eating a pollinated flower or berry can load pollen. A later meal from another l
 
 ### Specialisations
 
-Five types (`specialisations` in the defaults; `GENOME_SPECS`). Each has its own body shape on screen (the help drawer's legend shows them). They differ in vision range and a few multipliers:
+Five types (`specialisations` in the defaults; `GENOME_SPECS` in `js/evo/genome.js` is the source, so check it before trusting a copy of this table). Each has its own body shape on screen (the help drawer's legend shows them). They differ in vision range and a few multipliers:
 
 | Type       | Vision | Difference                                                                                          |
 | ---------- | ------ | --------------------------------------------------------------------------------------------------- |
@@ -277,7 +278,7 @@ bite that lands costs the biter a kick (`biteCost`, scaled by the victim's size,
 
 ## Evolution
 
-`js/evo/` decides which brains get born. The sim calls a **policy** for every new genome; policies are registered in `js/evo/policies/index.js`.
+`js/evo/` decides which brains get born. The sim calls a **policy** for every new genome; policies are registered in `js/evo/policies/index.js` (that file is the source for the policy table below).
 
 | Policy            | What it does                                                                                                                              | Status                                         |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
@@ -424,15 +425,14 @@ Bite 10 lost lifespan on the second set (`worse`, -8.5%), so bite 8 became the d
 The natural-selection big bang ([natural-selection.md](docs/designs/natural-selection.md)) made `fitnessV6` and `map-elites-v6` the live policy and built
 the rules of [principles.md](docs/principles.md) into the default world: a floor that only guards against total extinction, poor entrants,
 no predator rescue or invasion pulse, a bite cost and recoil, the proof rule for archive entries and splits, mates ranked inside their own
-specialisation, and the 81-input pooled brain. What is left before the PR is the survival screen, which tunes the knobs (`biteCost`, `huntUpkeep`) until the
-world keeps its predators without rescue, and the Chromium and bench re-records. Afterwards the work is balancing: screens on those knobs, judged by the
-detectors and the principles.
+specialisation, and the pooled brain (sizes in `brainLayout`, `js/sim/brain-layout.js`). The big bang is merged. What remains is balancing: keeping
+hunters to the end without rescue, judged by the detectors and the principles. The open work is the Phase 4 balancing the Status line of
+[natural-selection.md](docs/designs/natural-selection.md) describes, so read that line rather than a copy here.
 
 The goal is worlds that keep getting more skilful and more watchable instead of settling into one dominant type.
 
-`npm run train` does not exist yet. [AGENTS.md](AGENTS.md) lists it as arriving with a planned design doc, and Phase 3 of
-[evolution-rework.md](docs/designs/evolution-rework.md) specifies it: a headless trainer that runs generations of episodes on
-its own seeds, resumes from an archive file and exports champion genomes for the league. It waits for the work above.
+`npm run train` runs a headless trainer: generations of episodes on its own seeds, resumable from an archive file, with
+`train:export` writing champion genomes for the league. [training.md](docs/designs/training.md) holds the plan and its status.
 An automated improvement loop is planned separately in [improvement-loop.md](docs/designs/improvement-loop.md). Today the
 loop is run by hand, by agents following the skill.
 
@@ -441,7 +441,7 @@ loop is run by hand, by agents following the skill.
 - **Determinism.** `step` in `js/sim/step.js` runs fixed phases in order (`STEP_PHASES`: environment, hash, sense, brain, signal, physics, lifecycle, field, merit, invariants). Randomness comes from named streams of one seeded generator (`js/sim/rng.js`),
   and `Math.tanh`, `exp` and friends are replaced by `det-math.js` so results do not depend on the engine. `test/sim/golden.json` pins a world hash for fixed seeds; `npm run browser:hash` checks it in Chromium.
 - **Evals.** Fixed-seed runs, comparisons, screens, the ladder and the league are described in [How agents improve, and how we measure it](#how-agents-improve-and-how-we-measure-it).
-- **Quality.** `scripts/check.sh` is the one gate (conventions, design index, format, lint, typecheck, deps, duplicates, tests with a coverage ratchet, benchmark check, build, eval smoke). CI runs the same script. Small modules, size limits and a test for every behaviour are enforced.
+- **Quality.** `scripts/check.sh` is the one gate (the gates in `TIER2_GATES` in `scripts/check.sh`; `scripts/check.sh --list` prints them). CI runs the same script. Small modules, size limits and a test for every behaviour are enforced.
 
 Commands, tiers and rules: [AGENTS.md](AGENTS.md) and [docs/coding-standards.md](docs/coding-standards.md). Measuring an evolution change: the `run-evolution-loop` skill in `.claude/skills/`. Verified platform facts and
 learnings: [docs/designs/sim-notes.md](docs/designs/sim-notes.md).
@@ -454,8 +454,8 @@ hunting - are in [docs/principles.md](docs/principles.md), each with the metrics
 
 The order of work is the **Build queue** in [docs/designs/README.md](docs/designs/README.md), which is generated and always current. In short:
 
-1. **Natural selection** ([natural-selection.md](docs/designs/natural-selection.md), priority 1, in progress). The big bang is built on one branch: the detectors, the old app and dead-code removal, and every change of the switch as the defaults. The survival screen, the re-records and the PR remain.
-2. **World balance and biology** ([world-balance.md](docs/designs/world-balance.md)). Phases 1 to 4 are built (sexes, patches, eras, carcasses, traits, leaky memory, Hebbian learning, terrain). Phase 5 settles the balance on a tuning night; Phase 6 adds disease.
+1. **Natural selection** ([natural-selection.md](docs/designs/natural-selection.md), priority 1, in progress). The big bang is merged; the open balancing work (Phase 4) is in the doc's Status line.
+2. **World balance and biology** ([world-balance.md](docs/designs/world-balance.md)). Phases 1 to 4 and Phase 5 round 1 are built (sexes, patches, eras, carcasses, traits, leaky memory, Hebbian learning, terrain); the next round is in its Status line. Disease is implemented ([disease.md](docs/designs/disease.md)).
 3. **Quality gates and test tiers** ([quality-gates-and-test-tiers.md](docs/designs/quality-gates-and-test-tiers.md)). Faster pre-commit checks, mutation testing, a browser smoke test and a pull-request performance job.
 4. **Worker and renderer** ([worker-and-renderer.md](docs/designs/worker-and-renderer.md)). The worker, renderer core, interface, director, audio, capture and Phase 6 Look (tasks T57–T75) are built; what remains is Phase 5: saving the archive between sessions.
 5. **Later.** The evolution trainer and champions ([evolution-rework.md](docs/designs/evolution-rework.md)), an automated improvement loop ([improvement-loop.md](docs/designs/improvement-loop.md)), v6 tidy-up with new screenshots and docs ([v6-tidy-up-and-docs.md](docs/designs/v6-tidy-up-and-docs.md)), and releases and community ([deployment-and-community.md](docs/designs/deployment-and-community.md)).
