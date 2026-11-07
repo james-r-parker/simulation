@@ -27,6 +27,19 @@ describe('stageWorld', () => {
         expect(world.obsX[1]).toBeGreaterThan(world.config.worldWidth);
     });
 
+    it('gives a food item the toxicity the stage names, and 0 otherwise', () => {
+        const { world } = stageWorld({
+            foods: [
+                { x: 500, y: 600, toxicity: 0.8 },
+                { x: 900, y: 600 },
+            ],
+            rocks: [],
+            agents: [agent],
+            seed: 3,
+        });
+        expect([world.foodTox[0], world.foodTox[1]]).toEqual([Math.fround(0.8), 0]);
+    });
+
     it('stays empty of anything the scene did not place: no regrowth', () => {
         const { world, policy } = stageWorld({ foods: [], rocks: [], agents: [agent], seed: 3 });
         expect(world.foodCount).toBe(0);
