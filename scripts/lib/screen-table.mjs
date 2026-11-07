@@ -28,6 +28,7 @@ const WATCH_HEADS = [
     'pred share cv',
     'basin pop cv',
     'pred-prey lag',
+    'summer min',
 ];
 
 /**
@@ -96,6 +97,14 @@ function huntersCell(hunters) {
 }
 
 /**
+ * @param {{ above: number, of: number } | undefined} summer an arm's summer-minimum count
+ * @returns {string} `k/n` seeds at or above 100 prey through every summer, `n/a` without the count
+ */
+function summerCell(summer) {
+    return summer === undefined ? 'n/a' : `${summer.above}/${summer.of}`;
+}
+
+/**
  * @param {Record<string, any>} verdict one arm's verdict
  * @returns {string[]} the row's cells
  */
@@ -114,6 +123,7 @@ function row(verdict) {
         seedsCell(c.specShare),
         seedsCell(c.popBelowMax),
         verdict.popMean === null ? 'n/a' : String(Math.round(verdict.popMean)),
+        summerCell(verdict.summer),
         ...TARGETS.map((metric) => deltaCell(verdict.deltas?.[metric])),
         ...WATCH_METRICS.map((metric) => watchCell(verdict.watch?.[metric])),
     ];
@@ -138,6 +148,7 @@ export function renderTable({ reference, arms }) {
         'spec <= 70%',
         'pop < max',
         'pop mean',
+        'summer >= 100',
         ...TARGET_HEADS.map((h) => `${h} vs ref`),
         ...WATCH_HEADS,
     ];
