@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { createCameraController } from '../../../js/app/camera.js';
 import { createEffectsPlayer } from '../../../js/app/renderer/effects-player.js';
-import { createFxDemo, DEMO_PERIOD, demoGrid, demoRecipes, demoZoom } from '../../../js/app/renderer/fx-demo.js';
+import {
+    createFxDemo,
+    DEMO_PERIOD,
+    demoGrid,
+    demoRecipes,
+    demoZoom,
+    peakTicks,
+} from '../../../js/app/renderer/fx-demo.js';
+import { isLive } from '../../../js/app/renderer/fx-pool.js';
 import { FX_RECIPES } from '../../../js/app/renderer/fx-recipes.js';
 
 /** @returns {{player: any, camera: any, client: any}} a context */
@@ -82,6 +90,14 @@ describe('createFxDemo', () => {
                 c.player.fx.budget.dropped.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0),
         ).toBeGreaterThan(59);
     });
+
+    it('does nothing before the effects player exists', () => {
+        const demo = /** @type {any} */ (createFxDemo({ family: 'combat', hold: 5, stress: false }));
+        const c = { ...ctx(), player: null };
+        demo.update(/** @type {any} */ ({ tick: 1, dtMs: 16 }), c);
+        expect(c.client.paused).not.toBe(true);
+        expect(demo.cells).toHaveLength(0);
+    });
 });
 
 describe('createFxDemo before a world', () => {
@@ -91,5 +107,32 @@ describe('createFxDemo before a world', () => {
         demo.update(/** @type {any} */ ({ tick: 1, dtMs: 16 }), { ...c, player: null });
         expect(c.client.paused).toBe(false);
         expect(demo.cells).toHaveLength(0);
+    });
+});
+
+describe('the peak hold', () => {
+    it('finds each recipe peak inside its life', () => {
+        for (const [name, r] of demoRecipes('all')) {
+            const p = peakTicks(r);
+            expect(p, name).toBeGreaterThanOrEqual(1);
+        }
+        expect(peakTicks(FX_RECIPES.biteJaw)).toBe(1);
+    });
+
+    it('freezes with every cell at its peak age, whatever the paused playhead does', () => {
+        const c = ctx();
+        const demo = /** @type {any} */ (createFxDemo({ family: 'combat', hold: 'peak', stress: false }));
+        let tick = 500;
+        for (let i = 0; i < 200; i++) {
+            demo.update(/** @type {any} */ ({ tick, dtMs: 16 }), c);
+            tick += i % 3 === 0 ? 1 : 0;
+        }
+        expect(demo.frozen()).toBe(true);
+        const pool = c.player.fx.pool;
+        const shaderTick = tick + pool.clockOffset;
+        const recipes = demoRecipes('combat');
+        const peak = Math.max(...recipes.map(([, r]) => peakTicks(r)));
+        expect(shaderTick).toBe(500 + peak);
+        expect(isLive(pool, 0, shaderTick)).toBe(true);
     });
 });

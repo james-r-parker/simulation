@@ -166,4 +166,28 @@ describe('the layer before any effect', () => {
         expect(layer.uniforms.uContrast.value).toBe(1);
         layer.dispose();
     });
+
+    it('hands the quality level and the look items to its budget', () => {
+        const pool = createFxPool();
+        const budget = createFxBudget();
+        const layer = createFxLayer({ pool, budget });
+        layer.setQuality?.(2);
+        expect(budget.level).toBe(2);
+        layer.setLook?.({});
+        expect(budget.tier.every((t) => t === LOOK_OFF)).toBe(true);
+        layer.dispose();
+    });
+
+    it('keeps the playhead off before any effect', () => {
+        const pool = createFxPool();
+        const layer = createFxLayer({ pool, budget: createFxBudget() });
+        const camera = createCameraController({
+            canvas: /** @type {any} */ ({ width: 100, height: 100 }),
+            world: { width: 100, height: 100 },
+        });
+        layer.update?.(/** @type {any} */ ({ tick: 5, camera, lenses: { calls: false } }));
+        expect(layer.uniforms.uFxTick.value).toBe(-1e9);
+        expect(layer.uniforms.uCallBoost.value).toBe(1);
+        layer.dispose();
+    });
 });

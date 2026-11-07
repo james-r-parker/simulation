@@ -28,6 +28,7 @@ export function spreadOf(samples) {
  * @param {PerfInputs} inputs the live values
  * @returns {{app: 'v6', refreshHz: number, frameMs: {p50: number, p95: number, p99: number}, drawMs: {p50: number,
  *   p95: number, p99: number}, gpuMs: {p50: number, p95: number, p99: number} | null, frames: number,
+ *   ignoredFrames: {hidden: number, zero: number, long: number},
  *   agents: number, ticksPerSecond: number, droppedTicks: number, heapMb: number | null, gpu: {geometries: number, textures: number,
  *   programs: number}, fx: Record<string, any> | null,
  *   drawCalls: number | null}} the payload
@@ -42,6 +43,7 @@ export function buildPerf(inputs) {
         drawMs: report.drawMs,
         gpuMs: gpuSamples === null ? null : spreadOf(gpuSamples),
         frames: report.frames,
+        ignoredFrames: report.ignored,
         agents: worker?.population ?? 0,
         ticksPerSecond: worker?.ticksPerSecond ?? 0,
         droppedTicks: worker?.droppedTicks ?? 0,

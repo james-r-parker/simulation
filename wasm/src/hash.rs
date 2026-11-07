@@ -6,6 +6,8 @@
 //! as the JS store into an `Int32Array` did. The entries of a cell keep the insertion order, so every reader of the hash
 //! (the ray march, the contact pass, feeding, mating, calls, disease) sees the cells exactly as before.
 
+use core::arch::wasm32::{v128, v128_any_true};
+
 use crate::det_math::floor;
 
 /// The parameter block JS writes (`js/sim/wasm-hash.js`, `writeHashParams`): byte offsets of the arrays, then sizes.
@@ -37,16 +39,45 @@ fn at<T>(base: u32) -> *mut T {
     base as usize as *mut T
 }
 
-/// `cellOf`: the clamped cell coordinate of a world coordinate; NaN lands in cell 0, as the JS `Int32Array` store did.
+/// `cellOf` after its division and floor: the clamped cell coordinate; NaN lands in cell 0, as the JS `Int32Array`
+/// store did.
 #[inline(always)]
-fn cell_of(v: f64, cell_size: f64, last: i32) -> i32 {
-    let c = floor(v / cell_size);
+fn clamp_cell(c: f64, last: i32) -> i32 {
     if c < 0.0 {
         0
     } else if c > last as f64 {
         last
     } else {
         c as i32
+    }
+}
+
+/// Calls `f(i)` for every `i` below `n` with `alive[i] == 1`, ascending. Sixteen bytes that are all 0 are skipped with
+/// one vector test, so a sparse array (a drill world's 3600 food slots) costs a sixteenth of a byte loop.
+///
+/// # Safety
+/// `alive` points at `n` readable bytes.
+#[inline(always)]
+unsafe fn for_each_live(alive: *const u8, n: usize, mut f: impl FnMut(usize)) {
+    let mut i = 0;
+    // SAFETY: every load reads bytes below `n`.
+    unsafe {
+        while i + 16 <= n {
+            if v128_any_true((alive.add(i) as *const v128).read_unaligned()) {
+                for j in i..i + 16 {
+                    if *alive.add(j) == 1 {
+                        f(j);
+                    }
+                }
+            }
+            i += 16;
+        }
+        while i < n {
+            if *alive.add(i) == 1 {
+                f(i);
+            }
+            i += 1;
+        }
     }
 }
 
@@ -67,10 +98,11 @@ impl Grid {
     /// `id` is below `maxAgents + maxFood`, so its four range words and every cell it counts are inside the arrays.
     #[inline(always)]
     unsafe fn count(&self, id: usize, x: f64, y: f64, r: f64) {
-        let c0 = cell_of(x - r, self.cell_size, self.last_col);
-        let r0 = cell_of(y - r, self.cell_size, self.last_row);
-        let c1 = cell_of(x + r, self.cell_size, self.last_col);
-        let r1 = cell_of(y + r, self.cell_size, self.last_row);
+        let cs = self.cell_size;
+        let c0 = clamp_cell(floor((x - r) / cs), self.last_col);
+        let r0 = clamp_cell(floor((y - r) / cs), self.last_row);
+        let c1 = clamp_cell(floor((x + r) / cs), self.last_col);
+        let r1 = clamp_cell(floor((y + r) / cs), self.last_row);
         // SAFETY: as documented above.
         unsafe {
             let range = self.ranges.add(4 * id);
@@ -132,11 +164,9 @@ unsafe fn count_all(p: &HashParams, g: &Grid) {
     // SAFETY: each array holds `maxAgents` or `maxFood` entries, read below those counts.
     unsafe {
         let (alive, x, y, size) = (at::<u8>(p.alive), at::<f32>(p.x), at::<f32>(p.y), at::<f32>(p.size));
-        for i in 0..p.max_agents as usize {
-            if *alive.add(i) == 1 {
-                g.count(i, *x.add(i) as f64, *y.add(i) as f64, *size.add(i) as f64);
-            }
-        }
+        for_each_live(alive, p.max_agents as usize, |i| {
+            g.count(i, *x.add(i) as f64, *y.add(i) as f64, *size.add(i) as f64);
+        });
         let (fa, fx, fy, fr) = (
             at::<u8>(p.food_alive),
             at::<f32>(p.food_x),
@@ -144,11 +174,9 @@ unsafe fn count_all(p: &HashParams, g: &Grid) {
             at::<f32>(p.food_radius),
         );
         let base = p.max_agents as usize;
-        for i in 0..p.max_food as usize {
-            if *fa.add(i) == 1 {
-                g.count(base + i, *fx.add(i) as f64, *fy.add(i) as f64, *fr.add(i) as f64);
-            }
-        }
+        for_each_live(fa, p.max_food as usize, |i| {
+            g.count(base + i, *fx.add(i) as f64, *fy.add(i) as f64, *fr.add(i) as f64);
+        });
     }
 }
 
@@ -160,12 +188,10 @@ unsafe fn insert_all(p: &HashParams, ins: &Insert) {
     // SAFETY: as for `count_all`; the box minimum is the JS `x[i] - size[i]` in double.
     unsafe {
         let (alive, x, y, size) = (at::<u8>(p.alive), at::<f32>(p.x), at::<f32>(p.y), at::<f32>(p.size));
-        for i in 0..p.max_agents as usize {
-            if *alive.add(i) == 1 {
-                let r = *size.add(i) as f64;
-                ins.insert(i, *x.add(i) as f64 - r, *y.add(i) as f64 - r);
-            }
-        }
+        for_each_live(alive, p.max_agents as usize, |i| {
+            let r = *size.add(i) as f64;
+            ins.insert(i, *x.add(i) as f64 - r, *y.add(i) as f64 - r);
+        });
         let (fa, fx, fy, fr) = (
             at::<u8>(p.food_alive),
             at::<f32>(p.food_x),
@@ -173,12 +199,10 @@ unsafe fn insert_all(p: &HashParams, ins: &Insert) {
             at::<f32>(p.food_radius),
         );
         let base = p.max_agents as usize;
-        for i in 0..p.max_food as usize {
-            if *fa.add(i) == 1 {
-                let r = *fr.add(i) as f64;
-                ins.insert(base + i, *fx.add(i) as f64 - r, *fy.add(i) as f64 - r);
-            }
-        }
+        for_each_live(fa, p.max_food as usize, |i| {
+            let r = *fr.add(i) as f64;
+            ins.insert(base + i, *fx.add(i) as f64 - r, *fy.add(i) as f64 - r);
+        });
     }
 }
 

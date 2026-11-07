@@ -156,6 +156,12 @@ describe('playhead', () => {
         expect(simTickAt(head)).toBe(100);
     });
 
+    it('sits at alpha 1 when both held snapshots are the same tick', () => {
+        const head = createPlayhead();
+        expect(stepPlayhead(head, { prev: a, latest: a }, 10)).toBe(1);
+        expect(simTickAt(head)).toBe(100);
+    });
+
     it('stays between the held snapshots and moves smoothly under regular arrivals', () => {
         const { alphas, ticks } = run();
         for (let i = 200; i < ticks.length; i++) {

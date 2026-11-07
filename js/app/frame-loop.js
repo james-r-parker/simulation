@@ -196,7 +196,7 @@ function drawAndRecord(deps, loop, { frame, started, interval }) {
     const drawMs = deps.clock() - started;
     loop.effectsAt.drawMs = drawMs;
     loop.effectsAt.gpuMs = deps.gpuTimer?.latest?.() ?? -1;
-    loop.effectsAt.intervalMs = interval;
+    loop.effectsAt.intervalMs = deps.hidden() ? 0 : interval;
     recordFrame(deps.stats, interval, drawMs, deps.hidden());
     recordFrame(loop.window, interval, drawMs, deps.hidden());
 }

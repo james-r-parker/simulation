@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { CLIENT_KIND } from '../../../js/app/renderer/client-kinds.js';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
 import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
 import { PALETTE } from '../../../js/app/renderer/colors.js';
 import { createEffectsPlayer, playEdges } from '../../../js/app/renderer/effects-player.js';
+import { CLIENT_KIND } from '../../../js/app/renderer/client-kinds.js';
 import { CURVE } from '../../../js/app/renderer/fx-curves.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
@@ -94,6 +94,29 @@ describe('playEdges: sickness', () => {
         run(player, [30, 30 | BITS.INFECTED, 30]);
         expect(player.fx.pool.spawned).toBe(8 + 7);
         expect(player.fx.pool.color[14 * 4]).toBeCloseTo(PALETTE.recover[0] * 0.8);
+    });
+});
+
+describe('playEdges: the sink', () => {
+    it('tells the sink of a meal and of each sickness edge as a client effect', () => {
+        /** @type {number[]} */
+        const kinds = [];
+        const player = createEffectsPlayer({ layout, info, sink: (e) => kinds.push(e.kind) });
+        step(player, { tick: 1, ate: 20, foods: [] });
+        step(player, { tick: 3, ate: 1, foods: [] });
+        expect(kinds).toEqual([CLIENT_KIND.MEAL]);
+        [30, 30 | BITS.SICK, 30, 30 | BITS.INFECTED, 30].forEach((flags, k) => {
+            const snapshot = makeSnapshot(10 + k, [{ slot: 2, genomeId: 8, x: 50, y: 50, size: 10, flags }]);
+            const agents = createInterpolated(8);
+            interpolateInto(null, snapshot, 1, agents);
+            playEdges(player, agents, snapshot, 10 + k);
+        });
+        expect(kinds.slice(1)).toEqual([
+            CLIENT_KIND.SICK,
+            CLIENT_KIND.CURED,
+            CLIENT_KIND.INFECTED,
+            CLIENT_KIND.RECOVERED,
+        ]);
     });
 });
 

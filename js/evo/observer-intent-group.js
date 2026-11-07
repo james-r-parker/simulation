@@ -76,6 +76,35 @@ function sampleFlee(intent, world, slot) {
 }
 
 /**
+ * Adds, for every threatened agent without `canHunt`, the others without `canHunt` of any lineage within `callRadius`
+ * to `run.opportunityNeighbourSum` (its count is `run.groupThreatN`): the audience a call would have (alarm-calls.md).
+ * Reads the sorted list `listByLineage` made, so it is one more pass over the threatened agents only.
+ * @param {Record<string, any>} intent the intent state
+ * @param {Record<string, any>} world the world
+ * @returns {void}
+ */
+function countOpportunity(intent, world) {
+    const { x, y } = world;
+    const { groupKeys } = intent;
+    const slots = world.alive.length;
+    const r2 = intent.callRadius * intent.callRadius;
+    for (let i = 0; groupKeys[i] !== Infinity; i++) {
+        const a = groupKeys[i] % slots;
+        if (intent.threatProx[a] < THREAT_PROXIMITY) {
+            continue;
+        }
+        for (let j = 0; groupKeys[j] !== Infinity; j++) {
+            const b = groupKeys[j] % slots;
+            const dx = x[b] - x[a];
+            const dy = y[b] - y[a];
+            if (b !== a && dx * dx + dy * dy <= r2) {
+                intent.run.opportunityNeighbourSum += 1;
+            }
+        }
+    }
+}
+
+/**
  * Takes one grouping sample over every alive agent without `canHunt`; an agent is threatened when its nearest
  * channel-2 ("can bite me") hit is at proximity `THREAT_PROXIMITY` or more this tick. The same pass takes each
  * agent's flee sample. Each lineage is counted on its own, so the
@@ -108,4 +137,5 @@ export function sampleGroups(intent, world) {
         }
         from = to;
     }
+    countOpportunity(intent, world);
 }

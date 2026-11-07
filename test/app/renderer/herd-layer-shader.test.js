@@ -24,3 +24,12 @@ describe('herd shape shaders', () => {
         expect(HERD_QUAD.across).toBeGreaterThan(1);
     });
 });
+
+describe('the graze', () => {
+    it('dips a slow animal head on a slow beat', () => {
+        expect(HERD_FRAGMENT).toContain('uniform float uTime;');
+        expect(HERD_FRAGMENT).toContain(
+            '(1.0 - smoothstep(0.05, 0.15, vSpeed)) * 0.08 * max(sin(uTime * 1.5 + vPhase), 0.0)',
+        );
+    });
+});

@@ -129,6 +129,21 @@ describe('combat controllers', () => {
         expect(out(world, 1)[O.SMOKE]).toBe(0);
     });
 
+    it('alarmOnSight raises the alarm on every tick a threat ray fires, flees like the fleer, and is silent otherwise', () => {
+        const { world, run } = setup('alarmOnSight');
+        hit(world, 0, 3, CH.threat);
+        hit(world, 1, 1, CH.food);
+        body(world, 2, BODY.bitten, 0.9);
+        run(world);
+        expect(out(world, 0)).toEqual([1, -1, 1, 0, 0, 1, 0, 0, 1, 0, 0]);
+        expect(out(world, 0)[O.ALARM]).toBe(1);
+        run(world);
+        expect(out(world, 0)[O.ALARM]).toBe(1);
+        expect(out(world, 1)[O.ALARM]).toBe(0);
+        expect(out(world, 2)[O.ALARM]).toBe(0);
+        expect(out(world, 2)[O.SMOKE]).toBe(0);
+    });
+
     it('the spammers seek food and hold one call output at 1', () => {
         for (const [name, output] of [
             ['alarmSpammer', O.ALARM],

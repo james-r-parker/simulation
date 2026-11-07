@@ -53,6 +53,8 @@ describe('weather layer', () => {
         layer.setLook?.({ weather: 1 });
         layer.update?.(frame);
         expect(layer.object.count).toBe(WEATHER_COUNT[1]);
+        layer.setQuality?.(1);
+        layer.setQuality?.(99);
         layer.setLook?.({ weather: LOOK_OFF });
         layer.update?.(frame);
         expect(layer.object.visible).toBe(false);

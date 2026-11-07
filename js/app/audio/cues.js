@@ -73,6 +73,8 @@ export const TONES = Object.freeze({
     oldAge: { wave: 'sine', tone: [1046, 1046, 600, 0.03], blips: 1 },
     trampled: { wave: 'sine', tone: [60, 40, 300, 0.12], blips: 1 },
     recovered: { wave: 'sine', tone: [880, 1320, 200, 0.03], blips: 1 },
+    herdDied: { wave: 'sine', tone: [55, 35, 400, 0.12], blips: 1 },
+    firstKill: { wave: 'triangle', tone: [784, 1175, 360, 0.07], blips: 2 },
 });
 /** Cues that sound only at the close zoom band (2 device px per world unit) and in view. */
 const CLOSE_ONLY = new Set(['bite', 'meal', 'oldAge']);
@@ -91,6 +93,8 @@ function toneOf(kind, kinds) {
         [kinds.SMOKE]: 'smoke',
         [kinds.POLLINATED]: 'pollen',
         [kinds.STRAIN_EMERGED]: 'strain',
+        [kinds.HERD_DIED]: 'herdDied',
+        [kinds.FIRST_KILL]: 'firstKill',
         [CLIENT_KIND.MEAL]: 'meal',
         [CLIENT_KIND.SICK]: 'sick',
         [CLIENT_KIND.INFECTED]: 'infected',

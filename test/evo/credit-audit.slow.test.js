@@ -103,17 +103,32 @@ describe('food credit: circling inside a dense patch', () => {
         return { deliberate, chance };
     }
 
-    it('a wide circle meets plenty of food and is paid for a small share of it as deliberate, far below a seeker', () => {
-        // The circle's constant turn counts as a turn towards every food hit on its turning side, and each lap closes
-        // on some of it: a false positive. The share is bounded here; the exploit suite bounds the fitness.
-        const seeker = circle('foodSeeker');
-        for (const arm of ['patchCircler', 'patchCirclerRight']) {
-            const c = circle(arm);
+    /** @type {Map<string, {deliberate: number, chance: number}>} */
+    const cache = new Map();
+    /**
+     * @param {string} arm the scripted arm
+     * @returns {{deliberate: number, chance: number}} the arm's credit over four seeds, run once per file
+     */
+    function circleOnce(arm) {
+        if (!cache.has(arm)) {
+            cache.set(arm, circle(arm));
+        }
+        return /** @type {{deliberate: number, chance: number}} */ (cache.get(arm));
+    }
+
+    // The circle's constant turn counts as a turn towards every food hit on its turning side, and each lap closes on
+    // some of it: a false positive. The share is bounded here; the exploit suite bounds the fitness. One test per arm,
+    // so each stays a few seconds under coverage.
+    it.each(['patchCircler', 'patchCirclerRight'])(
+        'a wide circle (%s) meets plenty of food and is paid for a small share of it as deliberate, far below a seeker',
+        (arm) => {
+            const seeker = circleOnce('foodSeeker');
+            const c = circleOnce(arm);
             expect(c.chance, arm).toBeGreaterThan(c.deliberate);
             expect(c.deliberate / (c.deliberate + c.chance), arm).toBeLessThan(0.2);
             expect(c.deliberate, arm).toBeLessThan(0.5 * seeker.deliberate);
-        }
-    });
+        },
+    );
 
     it('a tight circle (spinner) earns no deliberate credit at all', () => {
         let deliberate = 0;

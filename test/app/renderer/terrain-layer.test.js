@@ -62,6 +62,13 @@ describe('createTerrainLayer', () => {
         layer.dispose();
     });
 
+    it('draws no frost when the world info has no terrain block at all', () => {
+        const bare = { ...smallReady().info, terrain: undefined };
+        const layer = createTerrainLayer({ info: { ...bare, patches: [{ x: 100, y: 100, radius: 40 }] } });
+        expect(layer.object.children).toHaveLength(2);
+        layer.dispose();
+    });
+
     it('creates frost and refuge meshes on basins layout and supports quality tiers', () => {
         const basinsInfo = {
             worldWidth: 6000,
@@ -116,6 +123,19 @@ describe('createTerrainLayer', () => {
         layer.setLook?.({ terrain: -1, flora: 0 });
         layer.update?.(/** @type {any} */ ({ nowMs: 5000, agents }));
         expect(refuge.visible).toBe(false);
+        layer.dispose();
+    });
+});
+
+describe('terrain layer: fruit glints', () => {
+    it('switches the fruit glints with the feeding item', () => {
+        const { info } = smallReady();
+        const layer = createTerrainLayer({ info: { ...info, floraPatchMax: 4 }, seed: 1 });
+        const glow = layer.object.children.find((/** @type {any} */ c) => c.material?.uniforms?.uFruit);
+        layer.setLook?.({ terrain: 0, flora: 0, feeding: -1 });
+        expect(glow.material.uniforms.uFruit.value).toBe(0);
+        layer.setLook?.({ terrain: 0, flora: 0, feeding: 0 });
+        expect(glow.material.uniforms.uFruit.value).toBe(1);
         layer.dispose();
     });
 });
