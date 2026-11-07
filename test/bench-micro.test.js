@@ -106,6 +106,16 @@ describe('prepareRefTree', () => {
         expect(lstatSync(join(refTree, 'node_modules')).isSymbolicLink()).toBe(true);
     });
 
+    it("leaves the ref's own kernel binary, so --compare HEAD prices a rebuilt binary against the committed one", () => {
+        const { head, ref, refTree } = setup('{"v":1}');
+        mkdirSync(join(head, 'wasm'));
+        writeFileSync(join(head, 'wasm', 'blob-kernels.wasm'), 'rebuilt');
+        mkdirSync(join(refTree, 'wasm'));
+        writeFileSync(join(refTree, 'wasm', 'blob-kernels.wasm'), 'committed');
+        prepareRefTree(refTree, head, ref);
+        expect(readFileSync(join(refTree, 'wasm', 'blob-kernels.wasm'), 'utf8')).toBe('committed');
+    });
+
     it('installs rather than links when the lock file differs', () => {
         const { head, ref, refTree } = setup('{"v":2}');
         // The ref tree has no package.json, so the install fails: proof it was tried instead of a link.
