@@ -22,6 +22,8 @@ const TURN_GAIN = 4;
 const ARENA = {
     // the pre-T15d ratio these arena tests assume (the default is now 0.8)
     huntSizeRatio: 1.01,
+    // the arena scenes are not about the juvenile burn: a newborn hunter here pays the plain cost
+    juvenileBurn: 1,
     worldWidth: 8000,
     worldHeight: 4000,
     maxAgents: 8,

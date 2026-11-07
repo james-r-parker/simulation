@@ -1,5 +1,5 @@
-// satedBite (realistic-keepers T1): a canHunt biter for which canEatNow is false (full, or digesting) skips the bite
-// entirely; a hungry hunter, a non-hunter and the switch off leave the bite as it was.
+// Sated bite (realistic-keepers T1, adopted at T22): a canHunt biter for which canEatNow is false (full, or digesting) skips the bite
+// entirely; a hungry hunter and a non-hunter leave the bite as it was.
 
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
@@ -45,8 +45,8 @@ function run(w, biter, prey) {
     feed(w, hash);
 }
 
-describe('satedBite', () => {
-    const on = { satedBite: true, satiationShare: 0.9, digestTicks: 30 };
+describe('sated bite', () => {
+    const on = { satiationShare: 0.9, digestTicks: 30 };
 
     it('a full hunter does not bite, recoil or hurt the victim', () => {
         const { w, biter, prey } = setup(on, PREDATOR);
@@ -76,12 +76,5 @@ describe('satedBite', () => {
         run(w, biter, prey);
         expect(w.energy[prey]).toBe(PREY_ENERGY);
         expect(w.energy[biter]).toBe(before);
-    });
-
-    it('with the switch off a full hunter still bites', () => {
-        const { w, biter, prey } = setup({ ...on, satedBite: false }, PREDATOR);
-        w.energy[biter] = 0.95 * w.maxEnergyBySpec[PREDATOR];
-        run(w, biter, prey);
-        expect(w.energy[prey]).toBeLessThan(PREY_ENERGY);
     });
 });

@@ -1,6 +1,6 @@
 # Hunter learning
 
-**Status:** Implemented - hunters have time to learn to kill: Phase 1 adopted the flip reflex and the hunter territory (always on) and deleted provisioning, the juvenile dependency with the kin pull and the sated-bite brake (E123); Phase 2 reward-gated learning was screened in E124 and deleted, and its `eval.hunter_conversion_gain` detector stays.
+**Status:** Implemented - hunters have time to learn to kill: Phase 1 adopted the flip reflex and the hunter territory (always on) and deleted provisioning, the juvenile dependency with the kin pull and the sated-bite brake (E123; [realistic-keepers.md](realistic-keepers.md) later re-added `provisionEnabled`, `juvenileDependency` and `satedBite` as default-off switches to judge on 16 seeds); Phase 2 reward-gated learning was screened in E124 and deleted, and its `eval.hunter_conversion_gain` detector stays.
 **Depends on:** [natural-selection.md](natural-selection.md)
 
 On the world after E112 (`maxFood` 3600, short-lived toxic caps) hunters live on carcasses and chance bites and starve:

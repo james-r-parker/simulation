@@ -1,5 +1,5 @@
 // Writes the three refuge body inputs: the bearing to the nearest ring (sine and cosine in the agent's frame) and how
-// near its edge is. Zero when `refugeSense` is false or the world has no rings (refuge.md Phase 3).
+// near its edge is. Zero when the world has no rings (refuge.md Phase 3).
 
 import { BODY_INPUT, RAY_CHANNELS } from './brain-layout.js';
 import { ringRadius } from './terrain.js';
@@ -21,11 +21,11 @@ export function writeRefugeInputs(world, slot, cH, sH) {
     const o = slot * world.layout.rawInputCount + world.config.rayCount * RAY_CHANNELS;
     const out = world.inputs;
     const centres = world.refugeCentres;
-    const { refugeSense, refugeSenseRange } = world.config;
+    const { refugeSenseRange } = world.config;
     let sin = 0;
     let cos = 0;
     let near = 0;
-    if (refugeSense && centres.length > 0) {
+    if (centres.length > 0) {
         const x = world.x[slot];
         const y = world.y[slot];
         let best = Infinity;

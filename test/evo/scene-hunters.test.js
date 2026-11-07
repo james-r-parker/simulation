@@ -122,19 +122,6 @@ describe('the hunter birth, income and end metrics', () => {
         expect(hunterMetrics(createHunterScene(10), world())['eval.hunter_income_share.kill'].value).toBeNull();
     });
 
-    it('share the provisioned energy over the hunting specialisations stored income, null without income or totals', () => {
-        const w = world({ provisionTotals: Float64Array.of(25, 25) });
-        w.hunterIncomeBySpec[INCOME.CARCASS] = 900;
-        w.hunterIncomeBySpec[INCOME_KINDS + INCOME.BITE] = 100;
-        const m = hunterMetrics(createHunterScene(10), w);
-        expect(m['eval.provisioned_energy_share']).toEqual({ value: 0.25 });
-        expect(hunterMetrics(createHunterScene(10), world({ provisionTotals: new Float64Array(2) }))).toHaveProperty(
-            ['eval.provisioned_energy_share', 'value'],
-            null,
-        );
-        expect(hunterMetrics(createHunterScene(10), world())['eval.provisioned_energy_share'].value).toBeNull();
-    });
-
     it('give the local share of the hunters alive at the end, null when none is alive', () => {
         const w = world();
         expect(hunterMetrics(createHunterScene(10), w)['eval.predator_end_local_share'].reason).toBe(

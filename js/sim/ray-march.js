@@ -140,7 +140,7 @@ function isConcealed(coverRing, key, casterRing) {
 }
 
 /**
- * The nearest hit of one ray with `coverConceals`: an agent whose centre is inside a ring is skipped by a ray from outside that ring
+ * The nearest hit of one ray with rings: an agent whose centre is inside a ring is skipped by a ray from outside that ring
  * (a ray from inside the same ring sees it), so the ray goes on to whatever lies behind. Each skip is counted.
  * @param {World} world the world
  * @param {number} count the gathered rows in `world.rayLocal`
@@ -239,7 +239,7 @@ export function castRays(world, hash, slot) {
     noteMatesSeen(world, slot, count);
     const { rayCos, raySin } = world;
     const rowBase = slot * world.layout.rawInputCount;
-    const conceals = world.config.coverConceals;
+    const conceals = world.refugeCentres.length > 0;
     const casterRing = world.coverRing[slot];
     const rays = world.config.rayCount;
     if (conceals) {

@@ -73,7 +73,7 @@ describe('forwardAll with hebbianRate 0', () => {
 describe('forwardAll with hebbianRate above 0', () => {
     it('starts fastOut equal to the genome block and gives the first tick the old outputs', () => {
         const off = randomWorld({}, 9);
-        const on = randomWorld({ hebbianRate: 0.05 }, 9);
+        const on = randomWorld({ hebbianRate: 0.05, rewardedHebb: false }, 9);
         expect(plasticBlock(on)).toEqual(genomeBlock(on));
         forwardAll(off);
         forwardAll(on);
@@ -81,7 +81,7 @@ describe('forwardAll with hebbianRate above 0', () => {
     });
 
     it('moves fastOut by the Hebbian rule with decay and never changes the genome', () => {
-        const on = randomWorld({ hebbianRate: 0.05 }, 11);
+        const on = randomWorld({ hebbianRate: 0.05, rewardedHebb: false }, 11);
         const { layout } = on;
         const H = layout.hidden;
         const OUT = layout.outputCount;
@@ -103,7 +103,7 @@ describe('forwardAll with hebbianRate above 0', () => {
     });
 
     it('decays a displaced weight toward the genome when the unit is silent', () => {
-        const on = randomWorld({ hebbianRate: 0.5 }, 13);
+        const on = randomWorld({ hebbianRate: 0.5, rewardedHebb: false }, 13);
         const size = on.layout.hidden * on.layout.geneOutputs;
         const w = genomeBlock(on);
         on.fastOut.set(
@@ -122,7 +122,7 @@ describe('forwardAll with hebbianRate above 0', () => {
     });
 
     it('clamps the plastic weights to plus or minus HEBB_CLAMP', () => {
-        const on = randomWorld({ hebbianRate: 1 }, 15);
+        const on = randomWorld({ hebbianRate: 1, rewardedHebb: false }, 15);
         const size = on.layout.hidden * on.layout.geneOutputs;
         on.weights[on.layout.weightCount + on.layout.traitStart + TRAIT_INDEX.LEARN] = 40;
         on.fastOut.fill(HEBB_CLAMP, size, 2 * size);
@@ -141,8 +141,8 @@ describe('forwardAll with hebbianRate above 0', () => {
     });
 
     it('includes fastOut in hashWorld', () => {
-        const a = randomWorld({ hebbianRate: 0.05 }, 17);
-        const b = randomWorld({ hebbianRate: 0.05 }, 17);
+        const a = randomWorld({ hebbianRate: 0.05, rewardedHebb: false }, 17);
+        const b = randomWorld({ hebbianRate: 0.05, rewardedHebb: false }, 17);
         b.fastOut[a.layout.hidden * a.layout.geneOutputs] += 1;
         expect(hashWorld(b)).not.toBe(hashWorld(a));
     });
@@ -216,7 +216,7 @@ function naiveStep(world, fastOut) {
 describe('Hebbian learning in forwardAll against the naive rule', () => {
     it('matches bit for bit over random states, with saturated, zero and signed-zero weights', () => {
         for (let seed = 1; seed <= 40; seed++) {
-            const world = randomWorld({ hebbianRate: seed % 2 === 0 ? 0.9 : 0.05 }, seed);
+            const world = randomWorld({ hebbianRate: seed % 2 === 0 ? 0.9 : 0.05, rewardedHebb: false }, seed);
             const { layout } = world;
             const size = layout.hidden * layout.geneOutputs;
             const rng = createRng(seed + 1000);
@@ -302,7 +302,7 @@ describe('Hebbian learning with rewardedHebb', () => {
         const b = randomWorld(REWARD, 27);
         b.rewardTrace[1] = 0.5;
         expect(hashWorld(b)).not.toBe(hashWorld(a));
-        const off = randomWorld({ hebbianRate: 0.05 }, 27);
+        const off = randomWorld({ hebbianRate: 0.05, rewardedHebb: false }, 27);
         expect(off.rewardTrace).toBeUndefined();
     });
 });

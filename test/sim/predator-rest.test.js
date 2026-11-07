@@ -1,5 +1,5 @@
 // The post-kill rest (realistic-keepers T2): `predatorRestTicks` forces a hunter's thrust to 0 for that many ticks
-// after its bite kills, and only then; off at 0, hand-built worlds.
+// after its bite kills, and only then; off at 0 (the default is 60), hand-built worlds.
 
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
@@ -64,8 +64,8 @@ describe('predatorRestTicks', () => {
         expect(actOnce(w, biter)).toBeGreaterThan(0);
     });
 
-    it('does nothing at the default 0', () => {
-        const { w, biter } = biteOnce(5, {});
+    it('does nothing at 0', () => {
+        const { w, biter } = biteOnce(5, { predatorRestTicks: 0 });
         expect(w.restTimer).toBeUndefined();
         expect(actOnce(w, biter)).toBeGreaterThan(0);
     });
