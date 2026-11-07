@@ -35,12 +35,3 @@ export async function championId(text) {
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
     return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
-
-/**
- * @param {number} season the season
- * @param {string} id the content id
- * @returns {string} the R2 key of the champion's file
- */
-export function genomeKey(season, id) {
-    return `s${season}/${id}.json`;
-}

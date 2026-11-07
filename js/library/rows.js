@@ -19,11 +19,10 @@
  * @property {string | null} verified_sha
  * @property {number} attempts
  * @property {number} bytes
- * @property {string} r2_key
  */
 
 /**
- * The public view of a champion row: never `r2_key`, `attempts`, `uploader_id` or the reject reason.
+ * The public view of a champion row: never `attempts`, `uploader_id` or the reject reason.
  * @param {ChampionRow & {uploader?: string | null}} row the row, joined with the uploader's login when there is one
  * @returns {Record<string, unknown>} the metadata object the API returns
  */
