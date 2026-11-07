@@ -1,9 +1,9 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { parseArgs, prepareRefTree } from '../scripts/bench-micro.mjs';
+import { CONFIG_MODULES, parseArgs, prepareRefTree } from '../scripts/bench-micro.mjs';
 
 /** @type {string[]} */
 const dirs = [];
@@ -66,6 +66,12 @@ describe('parseArgs', () => {
 });
 
 describe('prepareRefTree', () => {
+    it('lists every local module the Vitest config imports', () => {
+        const config = readFileSync(join(import.meta.dirname, '..', 'vitest.config.js'), 'utf8');
+        const local = [...config.matchAll(/from '\.\/(.+?)'/g)].map((m) => m[1]);
+        expect(local.every((file) => CONFIG_MODULES.includes(file))).toBe(true);
+    });
+
     /**
      * @param {string} headLock the lock file text committed after the ref
      * @returns {{head: string, ref: string, refTree: string}} a head repo, the ref's sha and a bare ref tree
@@ -78,6 +84,10 @@ describe('prepareRefTree', () => {
         mkdirSync(join(head, 'bench', 'micro'), { recursive: true });
         writeFileSync(join(head, 'bench', 'micro', 'x.bench.js'), '// bench');
         writeFileSync(join(head, 'vitest.config.js'), '// config');
+        for (const file of CONFIG_MODULES) {
+            mkdirSync(join(head, file, '..'), { recursive: true });
+            writeFileSync(join(head, file), '// config module');
+        }
         mkdirSync(join(head, 'node_modules'));
         const refTree = mkdtempSync(join(tmpdir(), 'bench-micro-ref-'));
         dirs.push(refTree);
@@ -89,6 +99,10 @@ describe('prepareRefTree', () => {
         prepareRefTree(refTree, head, ref);
         expect(existsSync(join(refTree, 'bench', 'micro', 'x.bench.js'))).toBe(true);
         expect(existsSync(join(refTree, 'vitest.config.js'))).toBe(true);
+        // A ref older than the config's own imports must still load it (the busy-aware timeouts, quality-gates T20).
+        for (const file of CONFIG_MODULES) {
+            expect(existsSync(join(refTree, file))).toBe(true);
+        }
         expect(lstatSync(join(refTree, 'node_modules')).isSymbolicLink()).toBe(true);
     });
 

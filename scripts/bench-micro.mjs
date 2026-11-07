@@ -28,6 +28,9 @@ const ENV = Object.fromEntries(Object.entries(process.env).filter(([key]) => !ke
 // Quiet install for a ref whose lockfile differs: errors only, no scripts.
 const INSTALL_ARGS = ['ci', '--ignore-scripts', '--no-audit', '--no-fund', '--loglevel=error'];
 
+/** The local modules `vitest.config.js` imports; copied with it, since a ref older than them lacks them. */
+export const CONFIG_MODULES = ['scripts/lib/test-timeout.mjs', 'scripts/lib/load-state.mjs'];
+
 /**
  * @param {string[]} argv command-line arguments after the script name
  * @returns {{area: string | null, compare: string | null, runs: number, filter: string | null}} parsed options
@@ -83,7 +86,8 @@ export function runSuite(tree, filter) {
 }
 
 /**
- * Makes the ref's tree able to run this tree's bench files: they and the Vitest config are copied over it, and its
+ * Makes the ref's tree able to run this tree's bench files: they, the Vitest config and the modules it imports are
+ * copied over it, and its
  * dependencies are this tree's (a link) when the lockfile is the same, else installed.
  * @param {string} refTree a checkout of the ref
  * @param {string} head the tree being benchmarked
@@ -93,6 +97,9 @@ export function runSuite(tree, filter) {
 export function prepareRefTree(refTree, head, ref) {
     cpSync(join(head, 'bench', 'micro'), join(refTree, 'bench', 'micro'), { recursive: true });
     cpSync(join(head, 'vitest.config.js'), join(refTree, 'vitest.config.js'));
+    for (const file of CONFIG_MODULES) {
+        cpSync(join(head, file), join(refTree, file));
+    }
     if (git(['diff', '--name-only', ref, 'HEAD', '--', 'package-lock.json'], head) === '') {
         symlinkSync(join(head, 'node_modules'), join(refTree, 'node_modules'), 'dir');
     } else {

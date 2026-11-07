@@ -1,5 +1,5 @@
 import { configDefaults, defineConfig } from 'vitest/config';
-import { testTimeoutFor, timeoutFactorFor } from './scripts/lib/test-timeout.mjs';
+import { busyScale, testTimeoutFor, timeoutFactorFor } from './scripts/lib/test-timeout.mjs';
 
 // TEST_SCOPE=fast leaves out the *.slow.test.js files (real worlds over many ticks, worker pools, the golden runs). They
 // sit beside the fast test of the same module; CI runs the fast scope, every local run and the nightly run everything.
@@ -25,6 +25,9 @@ function excluded() {
     return SCOPE === 'coverage' ? [...configDefaults.exclude, ...STATISTICAL_TESTS] : configDefaults.exclude;
 }
 
+// A busy machine (load above nproc / 8) stretches every limit; a quiet one keeps them exactly.
+const BUSY = busyScale();
+
 export default defineConfig({
     test: {
         include: SCOPE === 'statistical' ? STATISTICAL_TESTS : ['test/**/*.test.js'],
@@ -32,8 +35,8 @@ export default defineConfig({
         environment: 'node',
         // Coverage slows the sim tests several times: a longer default, and tests scale explicit timeouts with
         // scaleTimeout (scripts/lib/test-timeout.mjs) from TEST_TIMEOUT_FACTOR.
-        testTimeout: testTimeoutFor(process.argv),
-        env: { TEST_TIMEOUT_FACTOR: String(timeoutFactorFor(process.argv)) },
+        testTimeout: testTimeoutFor(process.argv) * BUSY,
+        env: { TEST_TIMEOUT_FACTOR: String(timeoutFactorFor(process.argv) * BUSY) },
         benchmark: { include: ['bench/micro/**/*.bench.js'] },
         coverage: {
             provider: 'v8',
