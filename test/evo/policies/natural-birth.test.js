@@ -132,7 +132,7 @@ describe('the hunter reflexes at birth', () => {
      * @returns {{row: Float32Array, rng: any, world: any}} the child row after a birth from a zero row, and the stream
      */
     function born({ over = {}, mother, child, cause = BORN_CAUSE.SPLIT }) {
-        const world = smallWorld({ brainHidden: 4, maxAgents: 8, instinctWeight: 1, ...over });
+        const world = smallWorld({ brainHidden: 4, maxAgents: 8, instinctWeight: 1, kinPullWeight: 0, ...over });
         const birth = createBirth(world.config);
         const { weightCount } = world.layout;
         world.weights.fill(0, 0, 2 * weightCount);
@@ -201,8 +201,8 @@ describe('the hunter reflexes at birth', () => {
         }
     });
 
-    it('raises the kin cells of every hunter child under juvenileDependency, and no other', () => {
-        const over = { juvenileDependency: true, kinPullWeight: 0.5 };
+    it('raises the kin cells of every hunter child by kinPullWeight, and no other', () => {
+        const over = { kinPullWeight: 0.5 };
         for (const mother of [FORAGER, PREDATOR]) {
             const off = born({ mother, child: PREDATOR });
             const on = born({ over, mother, child: PREDATOR });
@@ -218,7 +218,7 @@ describe('the hunter reflexes at birth', () => {
     });
 
     it('changes nothing at instinctWeight 0', () => {
-        const over = { juvenileDependency: true, instinctWeight: 0 };
+        const over = { kinPullWeight: 0.5, instinctWeight: 0 };
         expect(born({ over, mother: FORAGER, child: PREDATOR }).row).toEqual(
             born({ over: { instinctWeight: 0 }, mother: FORAGER, child: PREDATOR }).row,
         );

@@ -231,15 +231,15 @@ function recoil(world, hunter, target) {
 }
 
 /**
- * Resolves one direction of a contact: a bite when the rule allows it, else the recoil of a refused lunge. Under
- * `satedBite` a `canHunt` biter that `canEatNow` refuses does neither.
+ * Resolves one direction of a contact: a bite when the rule allows it, else the recoil of a refused lunge. A
+ * `canHunt` biter that `canEatNow` refuses does neither.
  * @param {Record<string, any>} world the world
  * @param {number} biter the slot that may bite
  * @param {number} other the slot it touches
  * @returns {void}
  */
 function lunge(world, biter, other) {
-    if (world.config.satedBite && !canEatNow(world, biter) && specParams(world.config, world.spec[biter]).canHunt) {
+    if (!canEatNow(world, biter) && specParams(world.config, world.spec[biter]).canHunt) {
         return; // realistic-keepers T1: a full or digesting hunter does not bite (no damage, recoil or pheromone)
     }
     if (bites(world, biter, other)) {

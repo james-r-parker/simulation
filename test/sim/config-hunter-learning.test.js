@@ -9,9 +9,7 @@ const DEFAULT_KEYS = {
     juvenileTicks: 3000,
     territoryRadius: 600,
     territoryMax: 1,
-    satedBite: false,
-    predatorRestTicks: 0,
-    juvenileDependency: false,
+    predatorRestTicks: 60,
     juvenileBurn: 0.6,
     kinPullWeight: 0.5,
 };
@@ -28,9 +26,9 @@ describe('the hunter-learning Phase 1 keys', () => {
         expect(make({})[key]).toBe(value);
     });
 
-    it.each(['satedBite', 'juvenileDependency'])('%s is a boolean that accepts true', (key) => {
-        expect(make({ [key]: true })[key]).toBe(true);
-        expect(() => make({ [key]: 1 })).toThrow(new RegExp(key));
+    it.each(['satedBite', 'juvenileDependency'])('%s is gone: adopted at T22', (key) => {
+        expect(DEFAULTS).not.toHaveProperty(key);
+        expect(() => make({ [key]: true })).toThrow(new RegExp(key));
     });
 
     it.each([
@@ -72,7 +70,7 @@ describe('the hunter-learning Phase 1 keys', () => {
 });
 
 const REWARD_DEFAULTS = {
-    rewardedHebb: false,
+    rewardedHebb: true,
     rewardGain: 4,
     rewardBase: 0.25,
     rewardDecay: 0.02,

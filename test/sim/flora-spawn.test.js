@@ -149,7 +149,7 @@ describe('species spawning', () => {
     });
 });
 
-describe('coverFoodFree species spawning', () => {
+describe('species spawning out of the rings', () => {
     it('keeps patch food out of a ring over the patch, from the food stream', () => {
         const w = smallWorld({
             foodPatchCount: 1,
@@ -159,7 +159,6 @@ describe('coverFoodFree species spawning', () => {
             maxFood: 40,
         });
         w.coverCentres = Float64Array.of(w.patchX[0], w.patchY[0]);
-        w.config = { ...w.config, coverFoodFree: true };
         for (let i = 0; i < 30; i++) {
             const slot = spawnFoodItem(w);
             expect(ringIndexAt(w, w.foodX[slot], w.foodY[slot])).toBe(-1);
