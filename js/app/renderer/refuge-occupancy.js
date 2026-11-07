@@ -2,6 +2,7 @@
 // glow. A viewer sees the Refuge scene (prey stacking into a ring under threat, then leaking back out) as a ring that
 // lights up while it is used. A drawing cue read from the frame's agents; no allocation per call.
 
+import { pursuitRules } from '../pursuit.js';
 import { uploadInstances, VEC4 } from './instanced.js';
 
 /** Blobs inside a refuge that light it fully. */
@@ -15,6 +16,8 @@ export const REFUGE_SMOOTHING = 0.3;
  * @typedef {object} RefugeOccupancy
  * @property {readonly {x: number, y: number, radius: number}[]} refuges the discs
  * @property {Float32Array} level the smoothed level of each disc, 0 to 1
+ * @property {Uint8Array} canHunt 1 for the specs that hunt, which do not count as sheltering
+ * @property {boolean} paused true while the terrain item is off, so the glow is neither counted nor shown
  * @property {number} lastMs when the last count ran, -Infinity before the first
  */
 
@@ -24,14 +27,20 @@ export const REFUGE_SMOOTHING = 0.3;
  */
 export function createRefugeOccupancy(info) {
     const refuges = info.terrain?.refuges ?? [];
-    return { refuges, level: new Float32Array(refuges.length), lastMs: -Infinity };
+    return {
+        refuges,
+        level: new Float32Array(refuges.length),
+        canHunt: pursuitRules(info).canHunt,
+        paused: false,
+        lastMs: -Infinity,
+    };
 }
 
 /**
  * Counts the agents inside each disc and moves each level towards `count / REFUGE_FULL_COUNT`, at most once every
  * `REFUGE_COUNT_MS`.
  * @param {RefugeOccupancy} state the tracker
- * @param {{count: number, x: Float32Array, y: Float32Array}} agents the frame's agents
+ * @param {{count: number, x: Float32Array, y: Float32Array, spec: Uint32Array}} agents the frame's agents
  * @param {number} nowMs the frame clock
  * @returns {boolean} whether the levels changed
  */
@@ -48,7 +57,7 @@ export function stepRefugeOccupancy(state, agents, nowMs) {
         for (let i = 0; i < agents.count; i++) {
             const dx = agents.x[i] - disc.x;
             const dy = agents.y[i] - disc.y;
-            if (dx * dx + dy * dy <= r2) {
+            if (dx * dx + dy * dy <= r2 && state.canHunt[agents.spec[i]] !== 1) {
                 inside += 1;
             }
         }
@@ -69,7 +78,7 @@ export function stepRefugeOccupancy(state, agents, nowMs) {
  * @returns {void}
  */
 export function updateRefugeLevels(refuge, occupancy, frame) {
-    if (!refuge || !frame.agents || !stepRefugeOccupancy(occupancy, frame.agents, frame.nowMs)) {
+    if (!refuge || occupancy.paused || !frame.agents || !stepRefugeOccupancy(occupancy, frame.agents, frame.nowMs)) {
         return;
     }
     for (let r = 0; r < occupancy.level.length; r++) {

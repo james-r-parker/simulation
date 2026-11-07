@@ -102,12 +102,20 @@ describe('createTerrainLayer', () => {
             terrain: { layout: 'basins', coldMarginWidth: 0, refuges: [{ x: 1000, y: 1500, radius: 250 }] },
         };
         const layer = createTerrainLayer({ info, seed: 1 });
-        const agents = { count: 6, x: new Float32Array(6).fill(1000), y: new Float32Array(6).fill(1500) };
+        const agents = {
+            count: 6,
+            x: new Float32Array(6).fill(1000),
+            y: new Float32Array(6).fill(1500),
+            spec: new Uint32Array(6),
+        };
         layer.update?.(/** @type {any} */ ({ nowMs: 1000, agents }));
         const refuge = layer.object.children.find(
             (/** @type {any} */ c) => c.geometry?.getAttribute('iRefuge')?.array[2] === 250,
         );
         expect(refuge.geometry.getAttribute('iRefuge').array[3]).toBeGreaterThan(0);
+        layer.setLook?.({ terrain: -1, flora: 0 });
+        layer.update?.(/** @type {any} */ ({ nowMs: 5000, agents }));
+        expect(refuge.visible).toBe(false);
         layer.dispose();
     });
 });

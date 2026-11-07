@@ -357,6 +357,7 @@ export function createTerrainLayer({ info, seed = 0 }) {
             floraOn = look.flora !== LOOK_OFF;
             const terrainOn = tier >= 0 && tier < 2;
             setFloraVisibility(parts, terrainOn, floraOn);
+            occupancy.paused = !terrainOn;
             frostUniforms.uTier.value = tier;
         },
         update(frame) {

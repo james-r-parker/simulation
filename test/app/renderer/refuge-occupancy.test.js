@@ -5,20 +5,28 @@ import {
     REFUGE_FULL_COUNT,
     REFUGE_SMOOTHING,
     stepRefugeOccupancy,
+    updateRefugeLevels,
 } from '../../../js/app/renderer/refuge-occupancy.js';
 
 /**
  * @param {number[][]} points x, y pairs
- * @returns {{count: number, x: Float32Array, y: Float32Array}} agents
+ * @returns {{count: number, x: Float32Array, y: Float32Array, spec: Uint32Array}} agents
  */
 function agentsAt(points) {
     return {
         count: points.length,
         x: Float32Array.from(points.map((p) => p[0])),
         y: Float32Array.from(points.map((p) => p[1])),
+        spec: new Uint32Array(points.length),
     };
 }
 
+const hunting = {
+    specs: [
+        { index: 0, canHunt: false },
+        { index: 1, canHunt: true },
+    ],
+};
 const discs = [
     { x: 0, y: 0, radius: 100 },
     { x: 1000, y: 0, radius: 100 },
@@ -63,5 +71,34 @@ describe('stepRefugeOccupancy', () => {
         }
         expect(state.level[0]).toBe(0);
         expect(stepRefugeOccupancy(state, empty, t)).toBe(false);
+    });
+});
+
+describe('hunters and pausing', () => {
+    it('does not count a hunter as sheltering', () => {
+        const state = createRefugeOccupancy({ ...hunting, terrain: { refuges: discs } });
+        const agents = agentsAt([
+            [0, 0],
+            [10, 10],
+        ]);
+        agents.spec[1] = 1;
+        stepRefugeOccupancy(state, agents, 0);
+        expect(state.level[0]).toBeCloseTo((1 / REFUGE_FULL_COUNT) * REFUGE_SMOOTHING, 5);
+    });
+});
+
+describe('updateRefugeLevels', () => {
+    const frame = { nowMs: 0, agents: agentsAt([[0, 0]]) };
+    const info = { terrain: { refuges: discs } };
+
+    it('does nothing for a null refuge, absent agents or a paused tracker', () => {
+        const state = createRefugeOccupancy(info);
+        expect(() => updateRefugeLevels(null, state, frame)).not.toThrow();
+        const refuge = { packed: new Float32Array(8), mesh: { geometry: { getAttribute: () => null } } };
+        updateRefugeLevels(refuge, state, { nowMs: 0 });
+        state.paused = true;
+        updateRefugeLevels(refuge, state, frame);
+        expect(state.lastMs).toBe(-Infinity);
+        expect(refuge.packed[3]).toBe(0);
     });
 });

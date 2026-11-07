@@ -58,7 +58,10 @@ export function stepChase(agents, { pursuits, rules }, { lines, dashes }) {
         const dy = agents.y[p] - agents.y[h];
         const len = Math.hypot(dx, dy);
         const nose = agents.size[h];
-        const edge = Math.max(len - agents.size[p], nose);
+        const edge = len - agents.size[p];
+        if (edge <= nose) {
+            continue;
+        }
         ENDS.ax = agents.x[h] + (dx / len) * nose;
         ENDS.ay = agents.y[h] + (dy / len) * nose;
         ENDS.bx = agents.x[h] + (dx / len) * edge;

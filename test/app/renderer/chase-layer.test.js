@@ -66,6 +66,17 @@ describe('stepChase', () => {
     });
 });
 
+describe('stepChase with overlapping bodies', () => {
+    it('draws no tether when the bodies touch', () => {
+        const lines = createLineBuffer(CHASE_DASHES * 4);
+        const state = { pursuits: createPursuits(), rules: pursuitRules(info) };
+        const a = chaseFrame();
+        a.x[1] = 12;
+        expect(stepChase(a, state, { lines, dashes: CHASE_DASHES })).toBe(1);
+        expect(lines.vertices).toBe(0);
+    });
+});
+
 describe('createChaseLayer', () => {
     it('draws by tier and hides at level 2 or when the item is off', () => {
         const layer = createChaseLayer({ info });

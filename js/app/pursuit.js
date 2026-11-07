@@ -12,7 +12,7 @@ export const PURSUIT_AWAY = Math.PI / 2;
 export const HUNTER_RUN_SHARE = 0.45;
 /** The prey's speed, as a share of `maxVelocity`, below which it is not fleeing. */
 export const PREY_RUN_SHARE = 0.2;
-/** The most pursuits one frame reports. */
+/** The most pursuits one frame reports; past it the hunters with the higher indices are dropped. */
 export const MAX_PURSUITS = 48;
 
 /**
@@ -71,11 +71,12 @@ function arc(a, b) {
  * Whether agent `j` is a pursuit target of the running hunter `i`: smaller, not a hunter, ahead in the cone, running
  * away. Returns its distance, or -1 when it is not.
  * @param {import('./interpolate.js').Interpolated} a the frame's agents
- * @param {{i: number, j: number}} pair hunter and candidate indices
+ * @param {number} i the hunter's index
+ * @param {number} j the candidate's index
  * @param {{canHunt: Uint8Array, maxVelocity: number}} rules the rules
  * @returns {number} the distance, or -1
  */
-function targetDistance(a, { i, j }, rules) {
+function targetDistance(a, i, j, rules) {
     if (j === i || a.size[j] >= a.size[i] || rules.canHunt[a.spec[j]] === 1) {
         return -1;
     }
@@ -111,7 +112,7 @@ export function findPursuits(agents, rules, out) {
         let best = -1;
         let bestD = Infinity;
         for (let j = 0; j < agents.count; j++) {
-            const d = targetDistance(agents, { i, j }, rules);
+            const d = targetDistance(agents, i, j, rules);
             if (d >= 0 && d < bestD) {
                 best = j;
                 bestD = d;
