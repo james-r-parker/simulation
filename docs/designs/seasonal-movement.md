@@ -1,7 +1,7 @@
 # Seasonal movement
 
 **Status:** Proposed - Phase 1 (four seasonal detectors and a 32-seed baseline) is built first; Phase 2 adds the snowline and the green wave behind default-off switches.
-**Validated:** 8ed377b (2026-11-07)
+**Validated:** f5c7880 (2026-11-07)
 **Priority:** 22 - the Season changes the map scene reads flat (`eval.winter_basin_density` and `eval.winter_pop_ratio` about 1.0), but nothing in the keep rule waits on it; it queues behind the balance and refuge work
 **Depends on:** [natural-selection.md](natural-selection.md)
 
