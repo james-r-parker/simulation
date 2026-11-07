@@ -11,6 +11,8 @@ import { spawnBurst, spawnStampedeDust } from './sparks.js';
 import { viewBounds } from '../camera.js';
 import { createBodyTweens } from './body-tweens.js';
 import { BIRTH_SIZE, playBite, playDeath } from './effects-combat.js';
+import { createEdgeState } from './effects-edges.js';
+export { playEdges } from './effects-edges.js';
 import { beginFxFrame, logFxBudget } from './fx-budget.js';
 import { createFxPool } from './fx-pool.js';
 import { createFxPlayer } from './fx-recipes.js';
@@ -70,6 +72,8 @@ const RING = {
  * @property {import('./fx-recipes.js').FxAt} at scratch for a recipe's position
  * @property {{slot: number, genome: number}} who scratch for a tween's agent
  * @property {string[]} causeNames death cause names by number (`ready.layout.deathCauses`)
+ * @property {import('./effects-edges.js').EdgeState} edges the flag-edge state and the food grids
+ * @property {Record<string, number>} bits `ready.layout.flags`
  */
 
 /**
@@ -106,10 +110,13 @@ export function createEffectsPlayer({
     fx = createFxPlayer(createFxPool()),
     tweens = createBodyTweens(info.maxAgents ?? 1024),
 }) {
-    return {
+    /** @type {EffectsPlayer} */
+    const player = {
         fx,
         tweens,
-        at: { x: 0, y: 0, angle: 0, size: 0, tick: 0, rgb: PALETTE.biteFlash },
+        edges: /** @type {any} */ (null),
+        bits: layout.flags ?? {},
+        at: { x: 0, y: 0, angle: 0, size: 0, tick: 0, rgb: PALETTE.biteFlash, reach: 0 },
         who: { slot: 0, genome: 0 },
         causeNames: causeNamesOf(layout.deathCauses),
         rings,
@@ -124,6 +131,8 @@ export function createEffectsPlayer({
         effect: { kind: 0, tick: 0, x: 0, y: 0, a: 0, b: 0, c: 0, d: 0 },
         rgb: [0, 0, 0],
     };
+    player.edges = createEdgeState(player, info);
+    return player;
 }
 
 /**

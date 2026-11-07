@@ -6,7 +6,7 @@ import { appLog } from './app-log.js';
 import { followStep, updateCamera } from './camera.js';
 import { createFrameStats, frameReport, recordFrame } from './frame-stats.js';
 import { createInterpolated, createPlayhead, interpolateInto, simTickAt, stepPlayhead } from './interpolate.js';
-import { beginEffects, playEffects } from './renderer/effects-player.js';
+import { beginEffects, playEdges, playEffects } from './renderer/effects-player.js';
 import { findAgent } from './renderer/overlays.js';
 import { stepQuality } from './renderer/quality.js';
 import { lensUniforms } from './ui/lenses.js';
@@ -125,6 +125,7 @@ function advanceWorld(client, { refs, camera }, loop, nowMs) {
         if (client.effects !== null) {
             playEffects(refs.player, client.effects, loop.agents, at.tick);
         }
+        playEdges(refs.player, loop.agents, client.latest, at.tick);
     }
     if (client.field !== null && refs.haze !== null) {
         refs.haze.pushField(client.field.f32, nowMs);

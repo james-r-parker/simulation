@@ -15,7 +15,7 @@ import { spawnFx } from './fx-pool.js';
  * @property {number} count instances at the close band and tier 0
  * @property {number} life ticks
  * @property {number} size world size in agent radii
- * @property {number} [reach] how far it travels, in agent radii
+ * @property {number} [reach] how far it travels, in agent radii; -1 takes the effect's own `reach` in world units
  * @property {'ring' | 'heading' | 'random' | 'none'} [spread] `ring` evenly round, `heading` a fan ahead, `random`
  *   seeded angles, `none` the effect's own angle (default)
  * @property {string} [color] a `PALETTE` key; absent, the effect's own colour
@@ -44,6 +44,7 @@ function recipe(family, rank, parts) {
 
 const C = CURVE;
 const combat = (/** @type {FxPart[]} */ parts) => recipe(FAMILY.combat, RANK.kill, parts);
+const feed = (/** @type {FxPart[]} */ parts) => recipe(FAMILY.feeding, RANK.eat, parts);
 const ghost = (/** @type {number} */ curve, /** @type {number} */ life) => ({ curve, count: 1, life, size: 1.1 });
 
 /** Every recipe by name. */
@@ -87,6 +88,13 @@ export const FX_RECIPES = Object.freeze({
         { curve: C.streak, count: 3, life: 12, size: 0.3, reach: 1.2, spread: 'ring', color: 'coolWhite', gain: 0.5 },
     ]),
     died: combat([{ curve: C.moteOut, count: 10, life: 40, size: 0.2, reach: 2.4, spread: 'random' }]),
+    eatPlant: feed([{ curve: C.crumbIn, count: 5, life: 10, size: 0.2, reach: -1, spread: 'heading', gain: 2.5 }]),
+    eatMeat: feed([
+        { curve: C.crumbIn, count: 5, life: 10, size: 0.2, reach: -1, spread: 'heading', color: 'meat' },
+        { curve: C.crumbStay, count: 2, life: 20, size: 0.15, spread: 'random', color: 'meat', gain: 0.6 },
+    ]),
+    eatFungus: feed([{ curve: C.orbit, count: 5, life: 12, size: 0.2, reach: -1, spread: 'ring', gain: 2.5 }]),
+    toxicPip: feed([{ curve: C.pip, count: 1, life: 24, size: 0.45, color: 'toxin', minPx: 6 }]),
 });
 
 /** The recipe for each death cause name in `ready.layout.deathCauses`. */
@@ -108,6 +116,7 @@ export const DEATH_RECIPES = Object.freeze({
  * @property {number} size the agent radius the parts scale by, world units
  * @property {number} tick
  * @property {ArrayLike<number>} rgb the effect's own colour
+ * @property {number} [reach] world units, for a part whose reach is -1
  */
 
 /**
@@ -162,7 +171,7 @@ function setPart(fx, part, at) {
     rec.x = at.x;
     rec.y = at.y;
     rec.size = part.size * at.size;
-    rec.reach = (part.reach ?? 0) * at.size;
+    rec.reach = part.reach === -1 ? (at.reach ?? 0) : (part.reach ?? 0) * at.size;
     rec.r = rgb[0] * gain;
     rec.g = rgb[1] * gain;
     rec.b = rgb[2] * gain;
