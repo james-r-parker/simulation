@@ -17,6 +17,7 @@ export const FLEE_KICK_SPEED = 0.6;
  * @property {{canHunt: Uint8Array, maxVelocity: number}} rules who hunts, and the speed scale
  * @property {Uint8Array} fleeing 1 for each agent index under pursuit this frame
  * @property {Int32Array} kicked each slot's last kick period, by slot
+ * @property {Uint32Array} kickedGenome the body that kick period belongs to, so a reused slot starts afresh
  */
 
 /**
@@ -30,6 +31,7 @@ export function createFlee(info) {
         rules: pursuitRules(info),
         fleeing: new Uint8Array(capacity),
         kicked: new Int32Array(capacity).fill(-1),
+        kickedGenome: new Uint32Array(capacity),
     };
 }
 
@@ -50,6 +52,10 @@ export function playFlee(player, agents, tick) {
         flee.fleeing[i] = 1;
         const slot = agents.slot[i];
         const period = Math.floor(tick / FLEE_KICK_TICKS);
+        if (slot < flee.kicked.length && flee.kickedGenome[slot] !== agents.genomeId[i]) {
+            flee.kickedGenome[slot] = agents.genomeId[i];
+            flee.kicked[slot] = -1;
+        }
         if (agents.speed[i] >= fast && slot < flee.kicked.length && flee.kicked[slot] !== period) {
             flee.kicked[slot] = period;
             kick(player, agents, i, tick);
