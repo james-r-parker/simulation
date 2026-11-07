@@ -59,7 +59,7 @@ function mark(scene, world, { hunter, body }) {
     ) {
         return;
     }
-    let kind = JAWS.OTHER;
+    let kind = /** @type {number} */ (JAWS.OTHER);
     if (isKin(world, hunter, body)) {
         kind = JAWS.KIN;
     } else if (couldBite(world, hunter, body)) {

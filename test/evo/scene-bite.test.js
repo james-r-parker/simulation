@@ -134,7 +134,7 @@ describe('the false-positive reads', () => {
         });
         const scene = createBiteScene({ maxAgents: N });
         tickBite(scene, w);
-        expect(scene.opportunities.reduce((a, b) => a + b)).toBe(1);
+        expect(scene.opportunities.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b)).toBe(1);
         expect(scene.opportunities[3]).toBe(1);
     });
 });

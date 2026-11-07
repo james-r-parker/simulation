@@ -23,7 +23,8 @@ describe('observeScenes', () => {
         const r = observed();
         const { predator } = r.world.config.specialisations;
         addBlob(r.world, { spec: predator.index });
-        const total = () => r.observer.scenes.bite.opportunities.reduce((a, b) => a + b, 0);
+        const total = () =>
+            r.observer.scenes.bite.opportunities.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
         observe(r.observer, r.world);
         expect(total()).toBe(0);
         nextTick(r.world, 5);
