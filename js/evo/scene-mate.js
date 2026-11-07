@@ -3,7 +3,7 @@
 //
 // - `eval.mate_skill_gap`: the chosen mate's within-specialisation rank percentile minus the mean percentile of the
 //   candidates in range (alive, of her specialisation, of the other sex, within
-//   `size + size + mateRange`, and ready to mate; the chosen mate is always one). Positive when mates are chosen on rank.
+//   `size + size + mateReach`, and ready to mate; the chosen mate is always one). Positive when mates are chosen on rank.
 // - `eval.mate_hunter_lean`: the `canHunt` share of the matings minus the `canHunt` share of the other adults ready to
 //   mate at those matings; negative when grazers are favoured.
 //
@@ -12,6 +12,7 @@
 // Per-slot arrays only.
 
 import { isReadyToMate } from '../sim/mate-eligibility.js';
+import { mateReach } from '../sim/mate-search.js';
 import { fillScores, percentileInto } from '../sim/mate-rank.js';
 import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './burn-in.js';
@@ -52,7 +53,7 @@ export function resetMateSlot(scene, slot) {
 function isCandidate(world, { mother, other, father }) {
     const dx = world.x[other] - world.x[mother];
     const dy = world.y[other] - world.y[mother];
-    const reach = world.size[mother] + world.size[other] + world.config.mateRange;
+    const reach = world.size[mother] + world.size[other] + mateReach(world, mother);
     const sexOk = world.sex[other] !== world.sex[mother];
     const near = Math.sqrt(dx * dx + dy * dy) < reach;
     return (
