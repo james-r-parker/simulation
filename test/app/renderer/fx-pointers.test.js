@@ -47,6 +47,30 @@ describe('packPointers', () => {
     });
 });
 
+describe('packPointers edges and reuse', () => {
+    it('counts a moment exactly on the view edge as in view, and one just past it as off view', () => {
+        const at = (/** @type {number} */ x) =>
+            packPointers(logOf([[x, 500, 'kill', 0]]), { view: VIEW, zoom: 1, nowMs: 1 }, OUT());
+        expect(at(1000)).toBe(0);
+        expect(at(1000.5)).toBe(1);
+    });
+
+    it('writes into the same arrays over 10000 packs', () => {
+        const log = logOf([
+            [3000, 500, 'kill', 0],
+            [-50, 900, 'stampede', 0],
+        ]);
+        const out = OUT();
+        const { pose, color } = out;
+        for (let i = 0; i < 10000; i++) {
+            packPointers(log, { view: VIEW, zoom: 1 + (i % 3), nowMs: i % POINTER_MS }, out);
+        }
+        expect(out.pose).toBe(pose);
+        expect(out.color).toBe(color);
+        expect(pose.length).toBe(MOMENT_LOG_SIZE * 4);
+    });
+});
+
 describe('the pointer layer', () => {
     it('draws nothing while the combat item is off', () => {
         const layer = createFxPointersLayer({ moments: logOf([[3000, 500, 'kill', 0]]) });

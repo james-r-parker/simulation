@@ -3,6 +3,7 @@ import { createCameraController } from '../../../js/app/camera.js';
 import {
     createMomentLog,
     FOCUS_MAX_AGE_MS,
+    FOCUS_ZOOM,
     focusLast,
     MOMENT_LOG_SIZE,
     newestMoment,
@@ -45,5 +46,19 @@ describe('the moment log', () => {
         expect(focusLast(log, camera, 1000 + FOCUS_MAX_AGE_MS + 1)).toBe(false);
         expect(focusLast(log, camera, 2000)).toBe(true);
         expect([camera.targetX, camera.targetY]).toEqual([300, 7]);
+        expect(camera.targetZoom).toBeGreaterThanOrEqual(FOCUS_ZOOM);
+    });
+
+    it('logs a trampling, and keeps the same arrays over 10000 notes', () => {
+        const log = createMomentLog();
+        const arrays = [log.x, log.y, log.atMs, log.kind];
+        expect(noteMoment(log, { kind: 2, tick: 0, x: 1, y: 1, c: 5 << 8 }, CTX)).toBe(true);
+        expect(log.kind[newestMoment(log)]).toBe('trample');
+        for (let i = 0; i < 10000; i++) {
+            noteMoment(log, kill(i), CTX);
+        }
+        expect([log.x, log.y, log.atMs, log.kind]).toEqual(arrays);
+        arrays.forEach((a, i) => expect([log.x, log.y, log.atMs, log.kind][i]).toBe(a));
+        expect(log.kind.length).toBe(MOMENT_LOG_SIZE);
     });
 });

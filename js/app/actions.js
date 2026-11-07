@@ -200,7 +200,11 @@ const ACTIONS = Object.freeze({
         }
     },
     step: ({ getClient }) => void getClient()?.step(1),
-    focusLast: ({ camera, now, lastMoments }) => void focusLast(lastMoments?.() ?? null, camera, now()),
+    focusLast: ({ camera, now, lastMoments, state }) => {
+        if (focusLast(lastMoments?.() ?? null, camera, now())) {
+            state.followId = 0;
+        }
+    },
     step10: ({ getClient }) => void getClient()?.step(10),
     speedUp: (deps) => changeSpeed(deps, 1),
     speedDown: (deps) => changeSpeed(deps, -1),

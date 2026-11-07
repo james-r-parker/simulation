@@ -361,10 +361,12 @@ describe('focusLast', () => {
             { kinds: { FIRST_KILL: 16, DIED: 2 }, eatenCause: 1, trampled: 5, nowMs: 10 },
         );
         let moments = /** @type {any} */ (null);
+        const state = createAppState();
+        state.followId = 42;
         const act = createActions({
             getClient: () => null,
             camera,
-            state: createAppState(),
+            state,
             now: () => 20,
             chooseSeed: () => 1,
             config: {},
@@ -372,8 +374,10 @@ describe('focusLast', () => {
         });
         act('focusLast');
         expect(camera.targetX).not.toBe(1234);
+        expect(state.followId).toBe(42);
         moments = log;
         act('focusLast');
         expect([camera.targetX, camera.targetY]).toEqual([1234, 567]);
+        expect(state.followId).toBe(0);
     });
 });
