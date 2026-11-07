@@ -5,6 +5,8 @@
 //! dependencies, no fast-math: each operation rounds as the JS double operation it replaces.
 #![no_std]
 
+mod det_math;
+
 /// The kernel ABI version; `js/sim/wasm-loader.js` refuses a binary whose version it does not know.
 pub const ABI_VERSION: i32 = 1;
 
@@ -12,6 +14,34 @@ pub const ABI_VERSION: i32 = 1;
 #[unsafe(no_mangle)]
 pub extern "C" fn abi_version() -> i32 {
     ABI_VERSION
+}
+
+/// `detTanhInto` in place over `n` doubles at byte offset `ptr`: 0, or i + 1 for the first non-finite value.
+///
+/// # Safety
+/// `ptr` must address `n` doubles inside the memory.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn tanh_into(ptr: i32, n: i32) -> i32 {
+    // SAFETY: the caller passes an in-bounds range.
+    unsafe { det_math::tanh_in_place(ptr as usize as *mut f64, n as usize) as i32 }
+}
+
+/// `detTanh` of one finite value.
+#[unsafe(no_mangle)]
+pub extern "C" fn tanh_f64(x: f64) -> f64 {
+    det_math::det_tanh(x)
+}
+
+/// `detExp` of one value in [-708, 709].
+#[unsafe(no_mangle)]
+pub extern "C" fn exp_f64(x: f64) -> f64 {
+    det_math::det_exp(x)
+}
+
+/// `detSigmoid` of one finite value.
+#[unsafe(no_mangle)]
+pub extern "C" fn sigmoid_f64(x: f64) -> f64 {
+    det_math::det_sigmoid(x)
 }
 
 #[panic_handler]
