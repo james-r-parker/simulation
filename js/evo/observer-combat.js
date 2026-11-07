@@ -6,6 +6,7 @@ import { ESCAPE_TICKS } from '../sim/merit-state.js';
 import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { hunterTable, SPEC_RADIX } from './hunter-table.js';
 import { createAlarmFollow, noteAlarm, resolveAlarms } from './observer-alarm.js';
+import { createAlarmReach, noteAlarmReach } from './observer-alarm-reach.js';
 import { BITTEN_THIS_TICK, noteEscape } from './observer-intent-episode.js';
 import { createSmokeFollow, noteSmokeRelease, resolveSmoke } from './observer-smoke.js';
 
@@ -42,6 +43,7 @@ export function createCombatCounters(config) {
         huntKills: 0,
         packKills: 0,
         alarm: createAlarmFollow(config, hunterSpec),
+        alarmReach: createAlarmReach(),
         smoke: createSmokeFollow(),
     };
 }
@@ -156,6 +158,7 @@ function applyCombatEvents(combat, world) {
                 break;
             case EVENT_TYPE.ALARM_CALLED:
                 noteAlarm(combat.alarm, world, d[o + 2]);
+                noteAlarmReach(combat.alarmReach, { hunterSpec: combat.hunterSpec, world, caller: d[o + 2] });
                 break;
             case EVENT_TYPE.SMOKE_RELEASED:
                 noteSmokeRelease(combat.smoke, world, d[o + 2], d[o + 3]);

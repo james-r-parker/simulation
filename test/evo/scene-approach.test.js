@@ -153,10 +153,10 @@ describe('a resolved chase with no hook', () => {
 describe('the noteChase hook', () => {
     /**
      * @param {any} a the arena
-     * @returns {{slot: number, outcome: number, openedTick: number, hungry: boolean}[]} the calls the approach scene's hook will record
+     * @returns {{slot: number, outcome: number, openedTick: number, hungry: boolean, energy: number}[]} the calls the approach scene's hook will record
      */
     function record(a) {
-        /** @type {{slot: number, outcome: number, openedTick: number, hungry: boolean}[]} */
+        /** @type {{slot: number, outcome: number, openedTick: number, hungry: boolean, energy: number}[]} */
         const calls = [];
         a.observer.scenes.approach.onChase = (/** @type {any} */ _world, /** @type {any} */ chase) => calls.push(chase);
         return calls;
@@ -183,9 +183,27 @@ describe('the noteChase hook', () => {
         a.world.alive[v2] = 0;
         play(a, T0 + 1 + INTENT_WINDOW);
         expect(calls).toEqual([
-            { slot: h2, outcome: CHASE_OUTCOME.CAUGHT, openedTick: T0, hungry: expect.any(Boolean) },
-            { slot: h1, outcome: CHASE_OUTCOME.ESCAPED, openedTick: T0, hungry: expect.any(Boolean) },
-            { slot: h3, outcome: CHASE_OUTCOME.GAVE_UP, openedTick: T0, hungry: expect.any(Boolean) },
+            {
+                slot: h2,
+                outcome: CHASE_OUTCOME.CAUGHT,
+                openedTick: T0,
+                hungry: expect.any(Boolean),
+                energy: expect.any(Number),
+            },
+            {
+                slot: h1,
+                outcome: CHASE_OUTCOME.ESCAPED,
+                openedTick: T0,
+                hungry: expect.any(Boolean),
+                energy: expect.any(Number),
+            },
+            {
+                slot: h3,
+                outcome: CHASE_OUTCOME.GAVE_UP,
+                openedTick: T0,
+                hungry: expect.any(Boolean),
+                energy: expect.any(Number),
+            },
         ]);
     });
 
@@ -201,6 +219,10 @@ describe('the noteChase hook', () => {
         world.energy[h1] = 0; // empties after the opening
         world.energy[h2] = full + 1; // fills after the opening
         play(a, T0 + 1 + INTENT_WINDOW);
+        expect(calls.map((c) => [c.slot, c.energy]).sort()).toEqual([
+            [h1, full + 1],
+            [h2, 0],
+        ]);
         expect(calls.map((c) => [c.slot, c.hungry]).sort()).toEqual([
             [h1, false],
             [h2, true],
@@ -214,7 +236,13 @@ describe('the noteChase hook', () => {
         play(a, T0 + 20, { closing: a.hunters });
         play(a, T0 + 21 + INTENT_WINDOW);
         expect(calls).toEqual([
-            { slot: a.hunters[0], outcome: CHASE_OUTCOME.GAVE_UP, openedTick: T0, hungry: expect.any(Boolean) },
+            {
+                slot: a.hunters[0],
+                outcome: CHASE_OUTCOME.GAVE_UP,
+                openedTick: T0,
+                hungry: expect.any(Boolean),
+                energy: expect.any(Number),
+            },
         ]);
     });
 

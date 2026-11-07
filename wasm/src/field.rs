@@ -1,6 +1,6 @@
 //! The pheromone update of the field phase (`updatePheromones`, formerly the JS `updateGrid` in
 //! `js/sim/pheromones.js`): each of the danger, attack and hunt grids decays, is copied to the scratch, then diffuses
-//! to its four in-grid neighbours.
+//! to its four in-grid neighbours. The two loops run row by row, and rows of exact zeros are skipped (`update_grid`).
 //!
 //! Bit-identity rules (docs/designs/wasm-kernels.md): every cell is computed in `f64` from its `f32` values with the JS
 //! operations in the JS order and rounded to `f32` once, at the store (`Math.fround`). SIMD is vertical only: each lane
@@ -9,7 +9,7 @@
 
 use core::arch::wasm32::{
     f32x4_demote_f64x2_zero, f64x2_add, f64x2_mul, f64x2_promote_low_f32x4, f64x2_splat, f64x2_sub, i32x4_shuffle,
-    v128, v128_load, v128_store,
+    v128, v128_any_true, v128_load, v128_store,
 };
 
 /// The parameter block JS writes (`js/sim/wasm-field.js`, `writeFieldParams`): byte offsets, then the grid shape.
@@ -115,13 +115,45 @@ impl Grid {
     }
 }
 
-/// Decays every cell and copies it to the scratch (the first loop of `updateGrid`).
+/// True when the `n` cells at `row` are all `+0` (every bit clear); stops at the first nonzero group of four.
 ///
 /// # Safety
-/// `grid` and `s` hold `n` cells.
-unsafe fn decay(grid: *mut f32, s: *mut f32, n: usize, keep: f64) {
+/// `row` holds `n` cells.
+#[inline(always)]
+unsafe fn all_zero(row: *const f32, n: usize) -> bool {
     // SAFETY: every index is below `n`.
     unsafe {
+        let mut c = 0;
+        while c + 4 <= n {
+            if v128_any_true(v128_load(row.add(c) as *const v128)) {
+                return false;
+            }
+            c += 4;
+        }
+        while c < n {
+            if (*row.add(c)).to_bits() != 0 {
+                return false;
+            }
+            c += 1;
+        }
+        true
+    }
+}
+
+/// Decays one row of cells and copies it to the scratch (the first loop of `updateGrid`, one row of it). A row of `+0`
+/// cells decays to itself, so only its scratch row is written (0). Returns whether the row was all `+0`.
+///
+/// # Safety
+/// `grid` and `s` hold the `n` cells from `start`.
+#[inline(always)]
+unsafe fn decay_row(grid: *mut f32, s: *mut f32, start: usize, n: usize, keep: f64) -> bool {
+    // SAFETY: every index is below `start + n`.
+    unsafe {
+        let (grid, s) = (grid.add(start), s.add(start));
+        if all_zero(grid, n) {
+            core::ptr::write_bytes(s, 0, n);
+            return true;
+        }
         let kv = f64x2_splat(keep);
         let mut c = 0;
         while c + 4 <= n {
@@ -137,37 +169,61 @@ unsafe fn decay(grid: *mut f32, s: *mut f32, n: usize, keep: f64) {
             *s.add(c) = v;
             c += 1;
         }
+        false
     }
 }
 
-/// Diffuses the decayed copy back into the grid (the second loop of `updateGrid`).
+/// Diffuses one row of the decayed copy back into the grid (the second loop of `updateGrid`, one row of it).
+///
+/// # Safety
+/// `grid` and `g.s` hold `cols * rows` cells, `row` is below `rows`, and the scratch rows around it are decayed.
+#[inline(always)]
+unsafe fn diffuse_row(grid: *mut f32, g: &Grid, row: usize) {
+    let (cols, rows) = (g.cols, g.rows);
+    let start = row * cols;
+    let end = start + cols;
+    // SAFETY: every index is a cell of the grid; `inner4` reads only interior cells and their neighbours.
+    unsafe {
+        if row == 0 || row == rows - 1 || cols < 3 {
+            for c in start..end {
+                *grid.add(c) = g.edge_cell(c);
+            }
+            return;
+        }
+        *grid.add(start) = g.edge_cell(start);
+        let mut c = start + 1;
+        while c + 4 <= end - 1 {
+            v128_store(grid.add(c) as *mut v128, g.inner4(c));
+            c += 4;
+        }
+        while c < end - 1 {
+            *grid.add(c) = g.inner_cell(c);
+            c += 1;
+        }
+        *grid.add(end - 1) = g.edge_cell(end - 1);
+    }
+}
+
+/// Decays then diffuses one grid, row by row: row r + 1 decays before row r diffuses, which reads scratch rows r - 1 to
+/// r + 1 only, so every cell gets the values the two whole-grid loops gave it. A row whose own and neighbouring rows were
+/// all `+0` is skipped: each of its cells diffuses `+0` terms to `+0`, the value it already holds. The scratch ends as
+/// the decayed grid, as before.
 ///
 /// # Safety
 /// `grid` and `g.s` hold `cols * rows` cells.
-unsafe fn diffuse(grid: *mut f32, g: &Grid) {
+unsafe fn update_grid(grid: *mut f32, g: &Grid, keep: f64) {
     let (cols, rows) = (g.cols, g.rows);
-    // SAFETY: every index is a cell of the grid; `inner4` reads only interior cells and their neighbours.
+    // SAFETY: every row index is below `rows`.
     unsafe {
+        let mut zero_prev = true;
+        let mut zero_cur = decay_row(grid, g.s, 0, cols, keep);
         for row in 0..rows {
-            let start = row * cols;
-            let end = start + cols;
-            if row == 0 || row == rows - 1 || cols < 3 {
-                for c in start..end {
-                    *grid.add(c) = g.edge_cell(c);
-                }
-                continue;
+            let zero_next = row + 1 >= rows || decay_row(grid, g.s, (row + 1) * cols, cols, keep);
+            if !(zero_prev && zero_cur && zero_next) {
+                diffuse_row(grid, g, row);
             }
-            *grid.add(start) = g.edge_cell(start);
-            let mut c = start + 1;
-            while c + 4 <= end - 1 {
-                v128_store(grid.add(c) as *mut v128, g.inner4(c));
-                c += 4;
-            }
-            while c < end - 1 {
-                *grid.add(c) = g.inner_cell(c);
-                c += 1;
-            }
-            *grid.add(end - 1) = g.edge_cell(end - 1);
+            zero_prev = zero_cur;
+            zero_cur = zero_next;
         }
     }
 }
@@ -188,11 +244,12 @@ pub unsafe fn update_pheromones(params: u32, decay_rate: f64, diffusion: f64) {
             k,
             k4: k * 4.0,
         };
-        let n = g.cols * g.rows;
         let keep = 1.0 - decay_rate;
+        if g.cols == 0 || g.rows == 0 {
+            return;
+        }
         for grid in [p.danger, p.attack, p.hunt] {
-            decay(at::<f32>(grid), g.s, n, keep);
-            diffuse(at::<f32>(grid), &g);
+            update_grid(at::<f32>(grid), &g, keep);
         }
     }
 }

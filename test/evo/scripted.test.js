@@ -66,6 +66,7 @@ describe('SCRIPTED_CONTROLLERS', () => {
                 'thrust100',
                 'hunter',
                 'fleer',
+                'alarmOnSight',
                 'alarmSpammer',
                 'smokeSpammer',
                 'sloppyForager',

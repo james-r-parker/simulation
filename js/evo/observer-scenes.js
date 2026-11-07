@@ -15,12 +15,14 @@ import { createFamilyScene, sampleFamilies } from './scene-families.js';
 import { createDiseaseScene, noteDiseaseEvents, sampleDiseaseFamilies } from './scene-disease.js';
 import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
 import { createCompetenceScene, noteChase, noteCompetenceBirth, noteCompetenceRecord } from './scene-competence.js';
+import { createMatchedScene, noteMatchedChase } from './scene-matched.js';
 import { createGuardScene, sampleGuards } from './scene-guards.js';
 import { createKinProximityScene, sampleKinProximity } from './scene-kin-proximity.js';
 import { createHunterScene, noteHunterBirth, noteHunterRecord, tickHunters } from './scene-hunters.js';
 import { createConditionScene, flushCondition, resetConditionSlot, sampleCondition } from './scene-condition.js';
 import { createPatchScene, resetPatchSlot, samplePatches } from './scene-patch.js';
 import { createSeasonScene, sampleSeason } from './scene-season.js';
+import { createSeasonMapScene, sampleSeasonMap } from './scene-season-map.js';
 import { createSpendScene, noteSpendBirth, resetSpendSlot, sampleSpend } from './scene-spend.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { createHeritageScene, noteHeritageBirth, noteHeritageDeath, resetHeritageSlot } from './scene-heritage.js';
@@ -29,6 +31,7 @@ import { createNicheScene } from './scene-niche.js';
 import { createProofScene, noteProofDeath, noteProofKill, trackProof } from './scene-proof.js';
 import { trackSlots } from './observer-scenes-slots.js';
 import { createStyle, noteStyleAtDeath, noteStyleDeath, resetStyleSlot, tickStyle } from './style.js';
+import { createReachScene, sampleReach } from './scene-reach.js';
 import { createRefugeScene, sampleRefuge } from './scene-refuge.js';
 import { createRefugeOutcomeScene, sampleRefugeOutcome, tickRefugeBites } from './scene-refuge-outcome.js';
 import { createTerrainScene, sampleTerrain } from './scene-terrain.js';
@@ -42,14 +45,20 @@ import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
  */
 export function createScenes(config, runTicks = 0) {
     const competence = createCompetenceScene(config);
+    const matched = createMatchedScene(config);
     return {
         flora: createFloraScene(),
         herd: createHerdScene(config),
         patch: createPatchScene(config),
-        approach: createApproachScene(config, (world, chase) => noteChase(competence, world, chase)),
+        approach: createApproachScene(config, (world, chase) => {
+            noteChase(competence, world, chase);
+            noteMatchedChase(matched, world, chase);
+        }),
         competence,
+        matched,
         terrain: createTerrainScene(config),
         refuge: createRefugeScene(config),
+        reach: createReachScene(),
         refugeOutcome: createRefugeOutcomeScene(config),
         basin: createBasinScene(),
         balance: createBalanceScene(),
@@ -60,6 +69,7 @@ export function createScenes(config, runTicks = 0) {
         condition: createConditionScene(config),
         spend: createSpendScene(config),
         season: createSeasonScene(),
+        seasonMap: createSeasonMapScene(),
         heritage: createHeritageScene(config),
         niche: createNicheScene(),
         mate: createMateScene(config),
@@ -182,6 +192,7 @@ export function observeScenes(observer, world) {
     if (world.tick % GROUP_SAMPLE_TICKS === 0) {
         sampleTerrain(scenes.terrain, observer, world);
         sampleRefuge(scenes.refuge, observer, world);
+        sampleReach(scenes.reach, observer, world);
         sampleRefugeOutcome(scenes.refugeOutcome, observer, world);
         sampleBasins(scenes.basin, world);
         sampleSpend(scenes.spend, world);
@@ -192,6 +203,7 @@ export function observeScenes(observer, world) {
     }
     if (world.tick % BASIN_CHECKPOINT_TICKS === 0) {
         sampleSeason(scenes.season, scenes.terrain, world);
+        sampleSeasonMap(scenes.seasonMap, world);
         sampleBalance(scenes.balance, world);
         sampleFamilies(scenes.families, world);
         sampleDivergence(scenes.divergence, world);
