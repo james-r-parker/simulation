@@ -1,6 +1,6 @@
 # Renderer event effects
 
-**Status:** In progress - Phases 1 and 2 code built and conformance-reviewed (T1 to T14, T16 to T23): the effect pool and its adaptive budget, look items, flag edges, body tweens and states, every Phase 1 and 2 recipe, the weather layer, the agent state word, the flee cue, the gaits, the audio cues and the developer tools; the GPU reading of Phase 1 is recorded from the user's machine (T15), the perf:browser harness run with its baseline file is still owed, and the Phase 2 GPU reading (T22) waits for that machine; Phase 3 is next.
+**Status:** In progress - Phases 1 to 3 code built (T1 to T14, T16 to T29): the effect pool and its adaptive budget, look items, flag edges, body tweens and states, every recipe of the three phases, the weather layer, the agent state word and the drought word, the world effect kinds, the flee cue, the gaits, the haze flow and heat map, the audio cues and the developer tools; GPU readings via Claude in Chrome are recorded for Phases 1 and 2 (T15, T22), the perf:browser harness runs and the Phase 3 GPU reading are still owed; T30, the Phase 3 conformance review, then Phase 4 are next.
 **Validated:** e8904ad9 (2026-11-07)
 **Priority:** 26 - a viewer cannot yet tell most features are firing (user, 2026-11-07); it changes no sim behaviour, so it queues behind the balance and scene work
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md)
@@ -78,7 +78,7 @@ Each row is one sim feature or event. It gives the visual signature, its data so
 | Alarm call                 | Two staggered `CHEVRON` waves (a ring broken into 12 outward-pointing ticks) in `alarmRing` expand to `callRadius`, 8 ticks apart, `quadOut`. The caller plays `CALL_THROB` (radial 1.18x, three beats). While `ALARMING` holds, the caller throbs again every 20 ticks | Effect `ALARM`, `SNAPSHOT_FLAG.ALARMING`                  | Built two triangle blips               | 1     |
 | Pack call                  | Three amber `ARC`s (90-degree sound-wave arcs) project ahead along the caller's heading to `callRadius`. The caller plays `HOWL`: forward stretch 1.15x and a glow, three pulses                                                                                        | Effect `PACK_CALL`, `SNAPSHOT_FLAG.HUNT_CALLING`, heading | Built triangle at pad root             | 1     |
 | Smoke release              | Eight `PUFF`s burst from the releaser, 30 ticks. With the bitten bit, a red `CRESCENT` under the puff. The cloud body and its dimming are built                                                                                                                         | Effect `SMOKE` (word c bit 8 = bitten). Cloud section     | Falling triangle sweep, 1200 to 400 Hz | 1     |
-| Scent and pheromone trails | The haze fields (built). At tier 0 the haze flows: noise advects down the field gradient at 0.3 cells/s. Under the scent lens the field shows as a heat map with a three-stop ramp per channel and a corner legend                                                      | `field` message (danger, attack, hunt grids)              | -                                      | 3     |
+| Scent and pheromone trails | The haze fields (built). At tier 0 the haze flows: noise advects down the field gradient at 0.3 cells/s. Under the scent lens the field shows as a heat map with a three-stop ramp per channel (dim, the scent colour, white-hot)                                       | `field` message (danger, attack, hunt grids)              | -                                      | 3     |
 | Strain emerges             | Infected-role ring of radius 140 (built)                                                                                                                                                                                                                                | Effect `STRAIN_EMERGED`                                   | Low detuned swell                      | 1     |
 
 ### Movement and condition
@@ -317,7 +317,14 @@ As built:
 - `effects-flee.js` (`createFlee`, `playFlee`) finds the pursuit pairs once a frame. The chase layer draws the same pairs (`createChaseLayer({ pursuits })`).
 - `flag-edges.js` adds `REST_ON`, `COVER_ON` and `MATURED` from the state word, played as `restSettle`, `coverShimmer` and `matured`.
 
-Measured (T22, the T14 procedure, SwiftShader, 2560x1440, look all, 40 s, about 238 agents): draw CPU p95 2.6 ms at the Phase 1 head (59944d80) and 3.0 ms at the Phase 2 head (e364f9eb). In Node at 350 agents, `playEdges` with the flee and breath passes takes 18 us a frame and `packAgents` 43 us. The GPU reading waits for the user's machine.
+Measured (T22, the T14 procedure, SwiftShader, 2560x1440, look all, 40 s, about 238 agents): draw CPU p95 2.6 ms at the Phase 1 head (59944d80) and 3.0 ms at the Phase 2 head (e364f9eb). In Node at 350 agents, `playEdges` with the flee and breath passes takes 18 us a frame and `packAgents` 43 us. T22 GPU reading, via Claude in Chrome `__perf()`, not the perf:browser harness: f0caead3 on the user's RTX 4090, about 3840x1880, 244 Hz, look all, `?seed=1&agents=500`, 30 s.
+
+| frame p50/p95/p99 ms | GPU p50/p95 ms | draw CPU p50/p95 ms | combat shown/dropped | feeding shown/dropped | courtship shown/dropped | pool occupancy |
+| -------------------- | -------------- | ------------------- | -------------------- | --------------------- | ----------------------- | -------------- |
+| 4.2 / 4.3 / 4.5      | 0.94 / 1.93    | 0.8 / 1.9           | 12787 / 353          | 10669 / 261           | 1144 / 121              | 74             |
+
+- The frame stays vsync-locked at 244 Hz. Draw CPU p95 1.9 ms is under the 2.0 ms ceiling.
+- With the adaptive scale the drops fall from more than half to about 3% (combat was 2850 shown and 3243 dropped).
 
 Chunks:
 
@@ -331,6 +338,18 @@ Chunks:
 **Targets:** browser.draw_cpu_p95_ms, browser.gpu_frame_p95_ms
 
 The five effect kinds and the drought word. With them come the herd death, calf, dung and wilt signatures, graze bob and fruit glints, the drought haze, wall-gap shimmers, pheromone flow with the scent-lens heat map, and the first-kill mark.
+
+As built:
+
+- `js/worker/effects-world.js` (`addWorldEffect`) writes kinds 12 to 16 from `HERD_ANIMAL_DIED`, `HERD_ANIMAL_BORN`, `HERD_SEEDED`, `PATCH_DIED` and `HUNTER_KILL` (kills 1). The ring writers live in `js/worker/effect-ring.js` (`beginEffect`, `placeEffect`, `EFFECT_KIND`), which `effects.js` re-exports.
+- Header word 9 is `era[0] + 1` (`readSections` gives `droughtBasin`). The golden tests pass with `golden.json` unchanged. The busy golden world's effect stream self-pin in `test/worker/sim-host.slow.test.js` holds 1292 records (five world effects more), with the world hash unchanged.
+- `effects-world.js` (renderer, `playWorldEffect`) plays `herdDied`, `calfBorn`, `dungDropped`, `patchWilted` and `firstKill`. Herd deaths and first kills have cues (`herdDied`, `firstKill`).
+- `herd-layer-shader.js` dips a slow animal's head (graze) and `flora-glow.js` bobs four fruit glints (`FRUIT_GAIN`) above 70% fill.
+- `ground-layer.js` tints the basin under drought (`easeDrought`, `DROUGHT_FADE_MS` 5000) under the weather item. `effects-terrain.js` (`createCrossings`, `playCrossings`) lights `wallCross` at the wall when an agent changes side.
+- `haze-layer-shader.js` flows (`uFlow`, the motion item at full) and draws the heat map under the scent lens (`uLens`). The corner legend is not drawn: the lens colours are the scent colours of the existing lens key.
+- The legibility spec leaves the herd and flora family cells to `effects-world.test.js`, since those items stay on in its reference frame.
+
+Measured (T29, the T14 procedure, SwiftShader, 2560x1440, look all, 40 s): draw CPU p95 3.0 ms, the same as Phase 2. Only 20 frames came in under the 250 ms recording cap, against 78 for Phase 2; the flowing haze and the drought cracks add per-pixel noise. The GPU reading waits for the user's machine.
 
 Chunks:
 
@@ -421,15 +440,15 @@ Chunks:
 
 ### Phase 3 - World layers
 
-| #   | Task                                                                                                                                                                                                                                                            | Nature       | Depends on         |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------ |
-| T24 | Add effect kinds 12 to 16 to `collectEffects` and the `droughtBasin` header word to `writeSnapshot`, update the layout readers listed under Data plumbing, with `test/worker/effects.test.js` and `test/sim/snapshot.test.js`; the golden test passes unchanged | [judgement]  | T23                |
-| T25 | Add the herd and flora recipes (carcass thud, calf pop, dung plop and sprout, wilt), the graze bob in `herd-layer.js` and fruit glints in `flora-glow.js`, with tests                                                                                           | [judgement]  | T24                |
-| T26 | Add the drought haze and cracked tint in `ground-layer.js` and the wall-gap shimmer, with tests                                                                                                                                                                 | [judgement]  | T24                |
-| T27 | Add the pheromone flow at tier 0 and the scent-lens heat map with its legend in `haze-layer.js`, with tests                                                                                                                                                     | [judgement]  | T23                |
-| T28 | Add the first-kill recipe and its `fx-demo.js` cell, with tests                                                                                                                                                                                                 | [judgement]  | T24                |
-| T29 | Repeat T14 and T15 for Phase 3 and record the numbers                                                                                                                                                                                                           | [mechanical] | T25, T26, T27, T28 |
-| T30 | Conformance review by a fresh agent, in parallel with `scripts/check.sh`; move the status line and mark Phase 3 `(built)`                                                                                                                                       | [judgement]  | T29                |
+| #   | Task                                                                                                                                                                                                                                                                    | Nature       | Depends on         |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------ |
+| T24 | Add effect kinds 12 to 16 to `collectEffects` and the `droughtBasin` header word to `writeSnapshot`, update the layout readers listed under Data plumbing, with `test/worker/effects.test.js` and `test/sim/snapshot.test.js`; the golden test passes unchanged (built) | [judgement]  | T23                |
+| T25 | Add the herd and flora recipes (carcass thud, calf pop, dung plop and sprout, wilt), the graze bob in `herd-layer.js` and fruit glints in `flora-glow.js`, with tests (built)                                                                                           | [judgement]  | T24                |
+| T26 | Add the drought haze and cracked tint in `ground-layer.js` and the wall-gap shimmer, with tests (built)                                                                                                                                                                 | [judgement]  | T24                |
+| T27 | Add the pheromone flow at tier 0 and the scent-lens heat map with its legend in `haze-layer.js`, with tests (built)                                                                                                                                                     | [judgement]  | T23                |
+| T28 | Add the first-kill recipe and its `fx-demo.js` cell, with tests (built)                                                                                                                                                                                                 | [judgement]  | T24                |
+| T29 | Repeat T14 and T15 for Phase 3 and record the numbers (built)                                                                                                                                                                                                           | [mechanical] | T25, T26, T27, T28 |
+| T30 | Conformance review by a fresh agent, in parallel with `scripts/check.sh`; move the status line and mark Phase 3 `(built)`                                                                                                                                               | [judgement]  | T29                |
 
 ### Phase 4 - Director follows events
 
