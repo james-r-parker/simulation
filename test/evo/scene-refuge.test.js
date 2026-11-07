@@ -3,7 +3,15 @@
 
 import { describe, expect, it } from 'vitest';
 import { computeMetrics } from '../../js/evo/metrics.js';
-import { MIN_REFUGE_EPISODES, MIN_REFUGE_EXITS, REFUGE_WINDOW, sampleRefuge } from '../../js/evo/scene-refuge.js';
+import { createConfig } from '../../js/sim/config.js';
+import {
+    MIN_REFUGE_EPISODES,
+    MIN_REFUGE_EXITS,
+    REFUGE_WINDOW,
+    createRefugeScene,
+    refugeMetrics,
+    sampleRefuge,
+} from '../../js/evo/scene-refuge.js';
 import { refugeCentres } from '../../js/evo/scene-terrain.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
@@ -185,5 +193,41 @@ describe('eval.refuge_dwell_ticks and eval.refuge_exit_fed', () => {
         expect(r.observer.scenes.refuge.dwells).toBe(0);
         expect(read(r, 'refuge_dwell_ticks').value).toBeNull();
         expect(read(r, 'refuge_exit_fed').value).toBeNull();
+    });
+});
+
+describe('refuge bookkeeping edges', () => {
+    it('closes a still-open window as a miss when the same threat state starts again inside it', () => {
+        const r = setup();
+        const slots = agents(r, 1);
+        const scene = r.observer.scenes.refuge;
+        const path = [
+            [0, 0],
+            [1, 0],
+            [0, 0],
+            [1, 0],
+        ];
+        run(r, slots, 4, (/** @type {number} */ _slot, /** @type {number} */ i) => path[i]);
+        // The first threatened episode is closed as a miss by the second; the second is still open.
+        expect([scene.episodes[1], scene.entered[1]]).toEqual([1, 0]);
+    });
+
+    it('counts a ring exit as unfed when the prey leaves again before a meal, and when its agent dies waiting', () => {
+        const r = setup();
+        const slots = agents(r, 2);
+        const scene = r.observer.scenes.refuge;
+        const inside = [0, 1, 0, 1, 0];
+        run(r, slots, 5, (/** @type {number} */ slot, /** @type {number} */ i) =>
+            slot === slots[1] && i === 4 ? null : [0, inside[i]],
+        );
+        // One exit closed by the second exit of slot 0, one flushed by the death of slot 1.
+        expect([scene.exits, scene.exitsFed]).toEqual([2, 0]);
+    });
+
+    it('reports the last dwell bucket when the histogram holds fewer dwells than were counted', () => {
+        const scene = createRefugeScene(createConfig({}));
+        scene.dwells = MIN_REFUGE_EXITS;
+        const value = refugeMetrics(scene)['eval.refuge_dwell_ticks'].value;
+        expect(value).toBe((scene.dwell.length - 1) * 10);
     });
 });

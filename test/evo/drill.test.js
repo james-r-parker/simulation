@@ -29,6 +29,20 @@ describe('skipReason', () => {
         expect(skipReason(drill('prey-ahead'), referenceSubject('memoryless'), base)).toBeNull();
         expect(skipReason(drill('prey-ahead'), zero(0), base)).not.toBeNull();
     });
+
+    it('skips a hunting drill for a subject of the drill specialisation that cannot hunt, and drills one that can', () => {
+        const hunting = drill('prey-ahead');
+        const predator = { ...zero(hunting.spec) };
+        expect(skipReason(hunting, predator, base)).toBeNull();
+        const blind = {
+            ...base,
+            specialisations: {
+                ...base.specialisations,
+                predator: { ...base.specialisations.predator, canHunt: false },
+            },
+        };
+        expect(skipReason(hunting, predator, blind)).toBe('the specialisation cannot hunt');
+    });
 });
 
 describe('randomBrains', () => {
