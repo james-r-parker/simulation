@@ -3,6 +3,7 @@
 // before the one that showed it.
 
 import { floraColor } from './flora-colors.js';
+import { familyColor } from './colors.js';
 import { TWEEN } from './body-tweens.js';
 import { atBody, tweenAt } from './effects-combat.js';
 import { createFlagEdges, diffFlags, EDGE } from './flag-edges.js';
@@ -63,10 +64,29 @@ function onEdge(player, edge, index) {
         tellSink(player, agents, index, CLIENT_KIND.MEAL);
     } else if (edge === EDGE.PREGNANT_ON) {
         playPregnant(player, agents, index);
+    } else if (edge >= EDGE.REST_ON) {
+        playBodyEdge(player, agents, index, edge);
     } else {
         playSickness(player, agents, index, edge);
         tellSink(player, agents, index, SICK_KINDS[edge]);
     }
+}
+
+/** The recipe for each body edge, indexed by `EDGE` less `REST_ON`. */
+const BODY_RECIPES = Object.freeze([FX_RECIPES.restSettle, FX_RECIPES.coverShimmer, FX_RECIPES.matured]);
+
+/**
+ * A body settles to rest (a settle puff), enters a refuge ring (a rock-coloured shimmer) or matures (a family ring).
+ * @param {import('./effects-player.js').EffectsPlayer} player the player
+ * @param {import('../interpolate.js').Interpolated} agents the blended agents
+ * @param {number} i the agent's index
+ * @param {number} edge `REST_ON`, `COVER_ON` or `MATURED`
+ * @returns {void}
+ */
+function playBodyEdge(player, agents, i, edge) {
+    const at = atBody(player, agents, i, player.edges.tick);
+    at.rgb = familyColor(player.slots, agents.lineageId[i], 0.8, player.rgb);
+    playRecipe(player.fx, BODY_RECIPES[edge - EDGE.REST_ON], at);
 }
 
 /** The client effect kind for each sickness edge, indexed by `EDGE`. */

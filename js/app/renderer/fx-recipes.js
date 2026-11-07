@@ -157,6 +157,15 @@ export const FX_RECIPES = Object.freeze({
             gain: 30,
         },
     ]),
+    restSettle: recipe(FAMILY.combat, RANK.eat, [
+        { curve: C.puffRing, count: 1, life: 24, size: 1.6, color: 'coolWhite', gain: 0.25, minPx: 8 },
+    ]),
+    coverShimmer: recipe(FAMILY.courtship, RANK.mate, [
+        { curve: C.ringSlow, count: 1, life: 30, size: 2.4, color: 'rockRim', gain: 6, minPx: 10 },
+    ]),
+    matured: recipe(FAMILY.courtship, RANK.mate, [
+        { curve: C.ring, count: 1, life: 30, size: 2.2, gain: 0.8, minPx: 8 },
+    ]),
     breath: recipe(FAMILY.weather, RANK.weather, [
         { curve: C.puffOut, count: 1, life: 30, size: 0.45, reach: 1.2, color: 'coolWhite', gain: 0.3 },
     ]),

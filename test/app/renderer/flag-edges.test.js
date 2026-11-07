@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { SNAPSHOT_STATE } from '../../../js/sim/snapshot-state.js';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
-import { createFlagEdges, diffFlags, EDGE } from '../../../js/app/renderer/flag-edges.js';
+import { createFlagEdges, diffFlags, EDGE, STATE_EDGE_BITS } from '../../../js/app/renderer/flag-edges.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 const BITS = {
@@ -15,10 +16,19 @@ const BITS = {
 
 /**
  * @param {ReturnType<typeof createFlagEdges>} edges the state
- * @param {{slot: number, genomeId: number, flags: number}[]} agents agents this frame
+ * @param {{slot: number, genomeId: number, flags: number, state?: number}[]} agents agents this frame
  * @returns {[number, number][]} the edges as [edge, index]
  */
 function diff(edges, agents) {
+    return diffWith(edges, agents);
+}
+
+/**
+ * @param {ReturnType<typeof createFlagEdges>} edges the state
+ * @param {{slot: number, genomeId: number, flags: number, state?: number}[]} agents agents this frame
+ * @returns {[number, number][]} the edges as [edge, index]
+ */
+function diffWith(edges, agents) {
     const out = createInterpolated(8);
     interpolateInto(null, makeSnapshot(1, agents), 1, out);
     /** @type {[number, number][]} */
@@ -63,5 +73,29 @@ describe('diffFlags', () => {
         const edges = createFlagEdges(8);
         diff(edges, [{ slot: 1, genomeId: 5, flags: 30 }]);
         expect(diff(edges, [{ slot: 1, genomeId: 6, flags: BITS.SICK | 1 }])).toEqual([]);
+    });
+});
+
+describe('diffFlags: body edges from the state word', () => {
+    it('reports settling to rest, entering cover and growing up, each once', () => {
+        const edges = createFlagEdges(8);
+        const S = STATE_EDGE_BITS;
+        diff(edges, [{ slot: 1, genomeId: 5, flags: 30, state: S.JUVENILE }]);
+        expect(diff(edges, [{ slot: 1, genomeId: 5, flags: 30, state: S.JUVENILE | S.RESTING | S.IN_COVER }])).toEqual([
+            [EDGE.REST_ON, 0],
+            [EDGE.COVER_ON, 0],
+        ]);
+        expect(diff(edges, [{ slot: 1, genomeId: 5, flags: 30, state: S.RESTING | S.IN_COVER }])).toEqual([
+            [EDGE.MATURED, 0],
+        ]);
+        expect(diff(edges, [{ slot: 1, genomeId: 5, flags: 30, state: 0 }])).toEqual([]);
+    });
+
+    it('reads the state bits where SNAPSHOT_STATE writes them', () => {
+        expect(STATE_EDGE_BITS).toEqual({
+            RESTING: SNAPSHOT_STATE.RESTING,
+            IN_COVER: SNAPSHOT_STATE.IN_COVER,
+            JUVENILE: SNAPSHOT_STATE.JUVENILE,
+        });
     });
 });
