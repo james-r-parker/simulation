@@ -193,6 +193,9 @@ export const FX_RECIPES = Object.freeze({
         { curve: C.ring, count: 1, life: 60, size: 2.5, color: 'milestone', gain: 1.2, minPx: 12 },
         { curve: C.sparkle, count: 8, life: 60, size: 0.35, reach: 3, spread: 'ring', color: 'milestone', gain: 1.2 },
     ]),
+    wallCross: recipe(FAMILY.weather, RANK.weather, [
+        { curve: C.ringSlow, count: 1, life: 40, size: 1.8, color: 'coolWhite', gain: 0.6, stretch: 2.5, minPx: 8 },
+    ]),
     breath: recipe(FAMILY.weather, RANK.weather, [
         { curve: C.puffOut, count: 1, life: 30, size: 0.45, reach: 1.2, color: 'coolWhite', gain: 0.3 },
     ]),
