@@ -86,8 +86,8 @@ export function randomise(world, seed, { slots, edgy = false, scale = 1 }) {
 
 /** The configs of the per-call cases. */
 const CONFIGS = [
-    { name: 'no learning', over: { hebbianRate: 0 } },
-    { name: 'Hebbian', over: { hebbianRate: 0.05 } },
+    { name: 'no learning', over: { hebbianRate: 0, rewardedHebb: false } },
+    { name: 'Hebbian', over: { hebbianRate: 0.05, rewardedHebb: false } },
     { name: 'rewarded Hebbian', over: { hebbianRate: 0.05, rewardedHebb: true } },
 ];
 
@@ -107,7 +107,7 @@ export function unitCases() {
         }
     }
     for (let seed = 1; seed <= 40; seed++) {
-        const over = { hebbianRate: seed % 2 === 0 ? 0.1 : 0, brainHidden: 3 + (seed % 9) };
+        const over = { hebbianRate: seed % 2 === 0 ? 0.1 : 0, rewardedHebb: false, brainHidden: 3 + (seed % 9) };
         const scale = seed % 4 === 0 ? 40 : 1;
         cases.push({ key: `fuzz, seed ${seed}`, over, seed, slots: [1, 4, 5], edgy: true, scale, calls: 1 });
     }
