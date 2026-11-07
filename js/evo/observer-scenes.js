@@ -29,6 +29,7 @@ import { createNicheScene } from './scene-niche.js';
 import { createProofScene, noteProofDeath, noteProofKill, trackProof } from './scene-proof.js';
 import { trackSlots } from './observer-scenes-slots.js';
 import { createStyle, noteStyleAtDeath, noteStyleDeath, resetStyleSlot, tickStyle } from './style.js';
+import { createReachScene, sampleReach } from './scene-reach.js';
 import { createRefugeScene, sampleRefuge } from './scene-refuge.js';
 import { createRefugeOutcomeScene, sampleRefugeOutcome, tickRefugeBites } from './scene-refuge-outcome.js';
 import { createTerrainScene, sampleTerrain } from './scene-terrain.js';
@@ -50,6 +51,7 @@ export function createScenes(config, runTicks = 0) {
         competence,
         terrain: createTerrainScene(config),
         refuge: createRefugeScene(config),
+        reach: createReachScene(),
         refugeOutcome: createRefugeOutcomeScene(config),
         basin: createBasinScene(),
         balance: createBalanceScene(),
@@ -182,6 +184,7 @@ export function observeScenes(observer, world) {
     if (world.tick % GROUP_SAMPLE_TICKS === 0) {
         sampleTerrain(scenes.terrain, observer, world);
         sampleRefuge(scenes.refuge, observer, world);
+        sampleReach(scenes.reach, observer, world);
         sampleRefugeOutcome(scenes.refugeOutcome, observer, world);
         sampleBasins(scenes.basin, world);
         sampleSpend(scenes.spend, world);

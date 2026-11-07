@@ -21,6 +21,7 @@ import { REWARD_DIRECTIONS, rewardMetrics } from './metrics-reward.js';
 import { conditionMetrics } from './scene-condition.js';
 import { seasonMetrics } from './scene-season.js';
 import { spendMetrics } from './scene-spend.js';
+import { reachMetrics } from './scene-reach.js';
 import { refugeMetrics } from './scene-refuge.js';
 import { refugeOutcomeMetrics } from './scene-refuge-outcome.js';
 import { terrainMetrics } from './scene-terrain.js';
@@ -40,6 +41,9 @@ const WATCH = [
     'eval.refuge_crowding',
     'eval.refuge_bite_deficit',
     'eval.refuge_eligible_share',
+    'eval.prey_cover_distance',
+    'eval.prey_within_dash_share',
+    'eval.prey_in_patch_share',
     'eval.cold_margin_use_under_threat',
     'eval.carcass_meal_share',
     'eval.carcass_hunter_share',
@@ -114,6 +118,7 @@ export function sceneMetrics(observer, world) {
         ...approachMetrics(s.approach),
         ...terrainMetrics(s.terrain),
         ...refugeMetrics(s.refuge),
+        ...reachMetrics(s.reach),
         ...refugeOutcomeMetrics(s.refugeOutcome),
         ...carcassMetrics(s.carcass, observer),
         ...basinMetrics(s.basin),
