@@ -49,7 +49,7 @@ describe('buildCaseTable', () => {
         for (let t = 0; t < SEQUENCE_TICKS; t++) {
             expect([...rowAt(table, 0, t)]).toEqual([...expected]);
         }
-        expect(expected.some((v) => v > 0)).toBe(true);
+        expect(expected.some((/** @type {number} */ v) => v > 0)).toBe(true);
     });
 
     it('draws sequences per trial from the case stream and replays bit for bit', () => {
