@@ -119,6 +119,9 @@ export const AURORA_MAX_LUMINANCE = 0.01;
 /** The maximum luminance (linear Y) of any scenery colour (lichen, frost, refuge glow). */
 export const SCENERY_MAX_LUMINANCE = 0.012;
 
+/** The peak luminance (linear Y) of a weather mote: with the aurora it stays under the dimmest agent body. */
+export const WEATHER_MAX_LUMINANCE = 0.02;
+
 /**
  * The luminance (linear Y) of a megafauna outline. A herd animal is a body that tramples and is eaten, not scenery: it is
  * drawn like an agent, a lit membrane around a darker body, but with no halo or core and in muted earth tones. Its

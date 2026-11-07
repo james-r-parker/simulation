@@ -3,8 +3,6 @@ import { createInterpolated, interpolateInto } from '../../../js/app/interpolate
 import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
 import { indexOfGenome, tweenAt } from '../../../js/app/renderer/effects-combat.js';
 import { createEffectsPlayer } from '../../../js/app/renderer/effects-player.js';
-import { createRingPool } from '../../../js/app/renderer/rings.js';
-import { createSparkPool } from '../../../js/app/renderer/sparks.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 const layout = { effectKinds: {}, deathCauses: { STARVED: 0, EATEN: 1 } };
@@ -33,8 +31,6 @@ describe('indexOfGenome', () => {
 describe('tweenAt', () => {
     it('starts a tween on the agent at the effect tick, and ignores a missing agent or a slot past the tween store', () => {
         const player = createEffectsPlayer({
-            rings: createRingPool(),
-            sparks: createSparkPool(1),
             layout,
             info: { callRadius: 1, callTicks: 1, maxAgents: 4 },
         });
@@ -53,8 +49,6 @@ describe('tweenAt', () => {
 
     it('names each death cause by number from the layout', () => {
         const player = createEffectsPlayer({
-            rings: createRingPool(),
-            sparks: createSparkPool(1),
             layout,
             info: { callRadius: 1, callTicks: 1 },
         });

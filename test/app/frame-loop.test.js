@@ -5,8 +5,6 @@ import { createFrameLoop } from '../../js/app/frame-loop.js';
 import { createFrameStats, frameReport } from '../../js/app/frame-stats.js';
 import { AGENT_FIELD, HEADER_WORDS } from '../../js/app/interpolate.js';
 import { createEffectsPlayer } from '../../js/app/renderer/effects-player.js';
-import { createRingPool } from '../../js/app/renderer/rings.js';
-import { createSparkPool } from '../../js/app/renderer/sparks.js';
 import { createQuality } from '../../js/app/renderer/quality.js';
 import { createFamilySlots } from '../../js/app/family-slots.js';
 import { smallReady } from './helpers/ready.js';
@@ -142,8 +140,7 @@ describe('createFrameLoop', () => {
     it('plays the queued effects the playhead has reached', () => {
         const client = fakeClient();
         const { info, layout } = smallReady(0);
-        const rings = createRingPool();
-        const player = createEffectsPlayer({ rings, sparks: createSparkPool(1), layout, info });
+        const player = createEffectsPlayer({ layout, info });
         const buffer = new ArrayBuffer(4 * 8 * 4);
         const u32 = new Uint32Array(buffer);
         u32.set([layout.effectKinds.BORN, client.latest.tick - 1, 0, 0, 1, 1, 1, 1]);
@@ -152,7 +149,7 @@ describe('createFrameLoop', () => {
         deps.refs.player = player;
         loop.frame(1000);
         expect(client.effects.count).toBe(0);
-        expect(rings.next).toBe(1);
+        expect(player.fx.pool.spawned + player.fx.budget.culled[2]).toBeGreaterThan(0);
     });
 
     it('records intervals but not the first frame, and not while hidden', () => {

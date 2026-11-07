@@ -49,6 +49,7 @@ const ATTRIBUTES = /** @type {const} */ (['iPose', 'iColor', 'iTime', 'iMove']);
  * @property {number} dirtyHi the highest
  * @property {number} spawned instances spawned since creation
  * @property {number} overwrote live instances overwritten since creation
+ * @property {number} clockOffset ticks added to the playhead for the shader's clock (the demo's own clock), else 0
  */
 
 /**
@@ -67,6 +68,7 @@ export function createFxPool() {
         dirtyHi: -1,
         spawned: 0,
         overwrote: 0,
+        clockOffset: 0,
     };
 }
 
@@ -241,7 +243,7 @@ export function createFxLayer({ pool, budget }) {
         },
         update(frame) {
             uniforms.uZoom.value = frame.camera.zoom;
-            uniforms.uFxTick.value = Number.isNaN(pool.base) ? -1e9 : frame.tick - pool.base;
+            uniforms.uFxTick.value = Number.isNaN(pool.base) ? -1e9 : frame.tick + pool.clockOffset - pool.base;
             uniforms.uCallBoost.value = frame.lenses.calls ? 1 / 0.35 : 1;
             flushFx(pool, geometry.attributes);
         },

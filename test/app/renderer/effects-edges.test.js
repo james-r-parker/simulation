@@ -4,8 +4,6 @@ import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
 import { PALETTE } from '../../../js/app/renderer/colors.js';
 import { createEffectsPlayer, playEdges } from '../../../js/app/renderer/effects-player.js';
 import { CURVE } from '../../../js/app/renderer/fx-curves.js';
-import { createRingPool } from '../../../js/app/renderer/rings.js';
-import { createSparkPool } from '../../../js/app/renderer/sparks.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 const BITS = { ATE_SHIFT: 0, TIMER_MASK: 31, SICK: 1 << 18, INFECTED: 1 << 15, PREGNANT: 1 << 13 };
@@ -28,7 +26,7 @@ function step(player, { tick, ate, foods }) {
 
 /** @returns {any} a player */
 function build() {
-    return createEffectsPlayer({ rings: createRingPool(), sparks: createSparkPool(1), layout, info });
+    return createEffectsPlayer({ layout, info });
 }
 
 describe('playEdges: meals', () => {
@@ -62,5 +60,38 @@ describe('playEdges: meals', () => {
         step(player, { tick: 1, ate: 20, foods: [] });
         step(player, { tick: 3, ate: 1, foods: [] });
         expect(player.fx.pool.spawned).toBe(5);
+    });
+});
+
+describe('playEdges: sickness', () => {
+    /**
+     * @param {any} player the player
+     * @param {number[]} flagsByTick the agent's flags each frame
+     * @returns {void}
+     */
+    function run(player, flagsByTick) {
+        flagsByTick.forEach((flags, k) => {
+            const snapshot = makeSnapshot(k + 1, [{ slot: 2, genomeId: 8, x: 50, y: 50, size: 10, flags }]);
+            const agents = createInterpolated(8);
+            interpolateInto(null, snapshot, 1, agents);
+            playEdges(player, agents, snapshot, k + 1);
+        });
+    }
+
+    it('bubbles toxin at onset and shakes it off with a sparkle and a tween at recovery', () => {
+        const player = build();
+        run(player, [30, 30 | BITS.SICK]);
+        expect(player.fx.pool.spawned).toBe(6);
+        expect(player.fx.pool.time[2]).toBe(CURVE.drop);
+        run(player, [30 | BITS.SICK, 30]);
+        expect(player.fx.pool.spawned).toBe(10);
+        expect(player.tweens.kind[2]).toBe(TWEEN.SHAKE_OFF);
+    });
+
+    it('puffs spores when infected and rings the agent in the recovery colour when it clears', () => {
+        const player = build();
+        run(player, [30, 30 | BITS.INFECTED, 30]);
+        expect(player.fx.pool.spawned).toBe(8 + 7);
+        expect(player.fx.pool.color[14 * 4]).toBeCloseTo(PALETTE.recover[0] * 0.8);
     });
 });

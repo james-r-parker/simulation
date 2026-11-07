@@ -19,6 +19,9 @@ export function spreadOf(samples) {
  * @property {{geometries: number, textures: number, programs: number}} gpu `renderer.info` counts
  * @property {Float64Array | null} gpuSamples finished GPU frame times in ms, null without the timer query
  * @property {number | null} heapBytes `performance.memory.usedJSHeapSize`, null when the browser has none
+ * @property {Record<string, {spawned: number, dropped: number, culled: number}> | null} [fx] the effect budget's counts
+ *   by family, null before a world
+ * @property {number | null} [drawCalls] draw calls in the last rendered frame
  */
 
 /**
@@ -26,9 +29,11 @@ export function spreadOf(samples) {
  * @returns {{app: 'v6', refreshHz: number, frameMs: {p50: number, p95: number, p99: number}, drawMs: {p50: number,
  *   p95: number, p99: number}, gpuMs: {p50: number, p95: number, p99: number} | null, frames: number,
  *   agents: number, ticksPerSecond: number, droppedTicks: number, heapMb: number | null, gpu: {geometries: number, textures: number,
- *   programs: number}}} the payload
+ *   programs: number}, fx: Record<string, {spawned: number, dropped: number, culled: number}> | null,
+ *   drawCalls: number | null}} the payload
  */
-export function buildPerf({ stats, worker, gpu, gpuSamples, heapBytes }) {
+export function buildPerf(inputs) {
+    const { stats, worker, gpu, gpuSamples, heapBytes } = inputs;
     const report = frameReport(stats);
     return {
         app: 'v6',
@@ -42,7 +47,17 @@ export function buildPerf({ stats, worker, gpu, gpuSamples, heapBytes }) {
         droppedTicks: worker?.droppedTicks ?? 0,
         heapMb: heapBytes === null ? null : Math.round((heapBytes / 1048576) * 10) / 10,
         gpu: { geometries: gpu.geometries, textures: gpu.textures, programs: gpu.programs },
+        ...fxOf(inputs),
     };
+}
+
+/**
+ * @param {PerfInputs} inputs the live values
+ * @returns {{fx: Record<string, {spawned: number, dropped: number, culled: number}> | null, drawCalls: number | null}}
+ *   the effect counts and draw calls, null when absent
+ */
+function fxOf({ fx, drawCalls }) {
+    return { fx: fx ?? null, drawCalls: drawCalls ?? null };
 }
 
 /**
