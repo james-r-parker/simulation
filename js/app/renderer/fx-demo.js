@@ -1,4 +1,4 @@
-// The effect demo (`?fxdemo=<family|all>`, with `&fxhold=<ticks>` to freeze it): pauses the world, frames its centre
+// The effect demo (`?fxdemo=<family|all>`, with `&fxhold=<ticks>` to freeze it): pauses the world, frames the middle of its west basin
 // at the close zoom and plays every recipe of the family in its own grid cell, again each period, on the pool's own
 // clock (the paused playhead does not move). `?fxstress=1` instead plays recipes at random spots in view at 60 a
 // second through the budget, on a running world, to load the caps. Both are development tools.
@@ -14,6 +14,10 @@ export const DEMO_PERIOD = 90;
 /** A demo cell's side in world units, and the most the demo zooms in (device px per unit). */
 export const DEMO_CELL = 150;
 export const DEMO_ZOOM = 2;
+/** The share of the canvas width and height the demo grid fills. */
+export const DEMO_FILL = 0.8;
+/** Where the demo grid sits across the world: the middle of the west basin, clear of the central wall. */
+export const DEMO_CENTRE_X = 0.25;
 /** Recipes the stress mode plays per second. */
 export const STRESS_PER_S = 60;
 
@@ -38,11 +42,13 @@ export function demoShape(n) {
 /**
  * @param {number} n cells
  * @param {{width: number, height: number}} canvas the canvas in device px
- * @returns {number} the zoom that fits the whole grid in the canvas, at most `DEMO_ZOOM`
+ * @returns {number} the zoom that fits the whole grid in the middle `DEMO_FILL` of the canvas (clear of the top bar and
+ *   the edges), at most `DEMO_ZOOM`
  */
 export function demoZoom(n, canvas) {
     const { cols, rows } = demoShape(n);
-    return Math.min(DEMO_ZOOM, canvas.width / ((cols + 0.5) * DEMO_CELL), canvas.height / ((rows + 0.5) * DEMO_CELL));
+    const w = (canvas.width * DEMO_FILL) / (cols * DEMO_CELL);
+    return Math.min(DEMO_ZOOM, w, (canvas.height * DEMO_FILL) / (rows * DEMO_CELL));
 }
 
 /**
@@ -137,7 +143,7 @@ function demoStep(s, frame, { player, camera, client }) {
     if (!s.started) {
         s.started = true;
         client?.pause?.();
-        const centre = { x: camera.world.width / 2, y: camera.world.height / 2 };
+        const centre = { x: camera.world.width * DEMO_CENTRE_X, y: camera.world.height / 2 };
         moveCameraTo(camera, { ...centre, zoom: demoZoom(s.recipes.length, camera.canvas) }, true);
         demoGrid(s.recipes.length, centre).forEach((c, k) => s.cells.push({ name: s.recipes[k][0], x: c.x, y: c.y }));
     }

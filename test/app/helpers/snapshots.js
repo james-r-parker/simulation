@@ -17,6 +17,7 @@ import { HERD_STRIDE, ZONE_STRIDE } from '../../../js/app/snapshot-view.js';
  * @property {number} [spec]
  * @property {number} [lineageId]
  * @property {number} [flags]
+ * @property {number} [state]
  */
 
 /**
@@ -58,6 +59,7 @@ export function makeSnapshot(tick, agents, extra = {}) {
         f32[w + AGENT_FIELD.TEMPERATURE] = a.temperature ?? 0.5;
         f32[w + AGENT_FIELD.SPEED] = a.speed ?? 0;
         u32[w + AGENT_FIELD.FLAGS] = a.flags ?? 0;
+        u32[w + AGENT_FIELD.STATE] = a.state ?? 0;
     });
     let w = HEADER_WORDS + agents.length * AGENT_STRIDE;
     for (const row of foods) {

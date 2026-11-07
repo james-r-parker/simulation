@@ -17,9 +17,11 @@ export function hasGpuTimer(gl) {
 /**
  * @param {any} gl a WebGL2 context
  * @param {number} [capacity] results the ring keeps
- * @returns {{begin: () => void, end: () => void, poll: () => void, samples: () => Float64Array, reset: () => void} | null} the timer, null
+ * @returns {{begin: () => void, end: () => void, poll: () => void, samples: () => Float64Array, latest: () => number,
+ *   reset: () => void} | null} the timer, null
  *   when the extension is missing. `begin` and `end` bracket a frame's draw, `poll` collects finished queries (call it
- *   once a frame) and `samples` is the finished frame times in ms and `reset` forgets them.
+ *   once a frame), `samples` is the finished frame times in ms, `latest` the newest one (-1 before one) and `reset`
+ *   forgets them.
  */
 export function createGpuTimer(gl, capacity) {
     const ext = gl.getExtension('EXT_disjoint_timer_query_webgl2');
@@ -31,6 +33,7 @@ export function createGpuTimer(gl, capacity) {
     const pending = [];
     /** @type {any} */
     let open = null;
+    let last = -1;
     return {
         begin() {
             if (open === null && pending.length < MAX_IN_FLIGHT) {
@@ -50,12 +53,14 @@ export function createGpuTimer(gl, capacity) {
             while (pending.length > 0 && gl.getQueryParameter(pending[0], gl.QUERY_RESULT_AVAILABLE)) {
                 const query = pending.shift();
                 if (!disjoint) {
-                    ring.push(gl.getQueryParameter(query, gl.QUERY_RESULT) / 1e6);
+                    last = gl.getQueryParameter(query, gl.QUERY_RESULT) / 1e6;
+                    ring.push(last);
                 }
                 gl.deleteQuery(query);
             }
         },
         samples: () => ring.values(),
+        latest: () => last,
         reset() {
             ring = createFrameRing(capacity);
         },

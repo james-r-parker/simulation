@@ -300,4 +300,28 @@ describe('packAgents', () => {
         expect(store.buckets[1].tween[0]).toBe(0);
         expect(store.buckets[1].tween).toBe(t);
     });
+
+    it('unpacks the state word into the body row', () => {
+        const store = createAgentStore(16, 5, meshOfSpec, MIN_PX);
+        const out = interp([{ slot: 0, genomeId: 10, spec: 1, state: (7 << 24) | (255 << 16) | (51 << 8) | 0b1011 }]);
+        packAgents(out, store, BITS, { dtMs: 16, zoom: 1, slots: SLOTS, tick: 1 });
+        const b = store.buckets[1].body;
+        expect(b[0]).toBe(11);
+        expect(b[1]).toBeCloseTo(0.2);
+        expect(b[2]).toBe(1);
+        expect(b[3]).toBeCloseTo(7 / 255);
+    });
+
+    it('writes the fleeing mark of each agent index into the tween row', () => {
+        const store = createAgentStore(16, 5, meshOfSpec, MIN_PX);
+        store.fleeing = new Uint8Array(16);
+        store.fleeing[1] = 1;
+        const out = interp([
+            { slot: 0, genomeId: 10, spec: 1 },
+            { slot: 1, genomeId: 11, spec: 1 },
+        ]);
+        packAgents(out, store, BITS, { dtMs: 16, zoom: 1, slots: SLOTS, tick: 1 });
+        const t = store.buckets[1].tween;
+        expect([t[3], t[ITEM + 3]]).toEqual([0, 1]);
+    });
 });

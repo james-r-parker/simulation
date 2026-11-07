@@ -6,9 +6,12 @@ import { FOOD_KIND } from './carcass.js';
 import { SEX } from './sex.js';
 import { specParams } from './spec-params.js';
 import { terrainRockCount } from './terrain.js';
+import { agentState } from './snapshot-state.js';
+
+export { SNAPSHOT_STATE } from './snapshot-state.js';
 
 export const HEADER_WORDS = 9;
-const AGENT_STRIDE = 12;
+const AGENT_STRIDE = 13;
 const FOOD_STRIDE = 6;
 const PATCH_STRIDE = 5;
 const OBSTACLE_STRIDE = 3;
@@ -164,6 +167,7 @@ function writeAgents(world, { f32, u32 }) {
             f32[w + 9] = temperature[slot] / temperatureMax;
             f32[w + 10] = Math.sqrt(vx[slot] * vx[slot] + vy[slot] * vy[slot]);
             u32[w + 11] = agentFlags(world, slot);
+            u32[w + 12] = agentState(world, slot);
             w += AGENT_STRIDE;
             count += 1;
         }

@@ -9,7 +9,7 @@ import { DEATH_CAUSE, BORN_CAUSE } from '../sim/events.js';
 import { configHash, createConfig, rulesHash } from '../sim/config.js';
 import { createRng, fork } from '../sim/rng.js';
 import { createWorld } from '../sim/spawn.js';
-import { SNAPSHOT_FLAG } from '../sim/snapshot.js';
+import { SNAPSHOT_FLAG, SNAPSHOT_STATE } from '../sim/snapshot.js';
 import { REFUGE_ROCK_RADIUS, REFUGE_ROCKS, ringRadius, terrainRockCount } from '../sim/terrain.js';
 import { step } from '../sim/step.js';
 import {
@@ -237,6 +237,7 @@ export function readyLayout(run) {
         effectKinds: { ...EFFECT_KIND },
         zoneOrigins: { ...ZONE_ORIGIN },
         flags: { ...SNAPSHOT_FLAG },
+        stateBits: { ...SNAPSHOT_STATE },
         deathCauses: { ...DEATH_CAUSE },
         bornCauses: { ...BORN_CAUSE },
     };

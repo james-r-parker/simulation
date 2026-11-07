@@ -20,6 +20,10 @@ import {
     setFxQuality,
     VIEW_MARGIN,
     zoomBand,
+    adaptFxBudget,
+    MAX_SCALE,
+    MIN_SCALE,
+    TARGET_LOAD,
 } from '../../../js/app/renderer/fx-budget.js';
 import { LOOK_OFF } from '../../../js/app/renderer/quality.js';
 
@@ -51,9 +55,9 @@ describe('admitFx', () => {
         const who = { family: FAMILY.combat, rank: RANK.kill };
         expect(admitFx(b, who, 40, AT)).toBe(40);
         expect(admitFx(b, { family: FAMILY.feeding, rank: RANK.eat }, 40, AT)).toBe(0);
-        expect(admitFx(b, who, 100, AT)).toBe(20);
-        expect(b.spent).toBe(60);
-        expect(b.dropped[FAMILY.combat]).toBe(80);
+        expect(admitFx(b, who, 100, AT)).toBe(FAMILY_RATE[FAMILY.combat] - 40);
+        expect(b.spent).toBe(FAMILY_RATE[FAMILY.combat]);
+        expect(b.dropped[FAMILY.combat]).toBe(140 - FAMILY_RATE[FAMILY.combat]);
         expect(b.dropped[FAMILY.feeding]).toBe(40);
     });
 
@@ -142,5 +146,64 @@ describe('logFxBudget and fxStats', () => {
         const stats = fxStats(b);
         expect(Object.keys(stats)).toEqual([...FX_FAMILIES]);
         expect(stats.combat).toEqual({ spawned: 0, dropped: 0, culled: 0 });
+    });
+});
+
+describe('adaptFxBudget', () => {
+    /**
+     * @param {any} b the budget
+     * @param {{drawMs: number, gpuMs: number}} times the per-frame costs
+     * @param {number} frames frames to run at 4.1 ms
+     * @returns {number} the scale reached
+     */
+    function run(b, times, frames) {
+        for (let i = 0; i < frames; i++) {
+            adaptFxBudget(b, { ...times, intervalMs: 4.1, dtMs: 4.1 });
+        }
+        return b.scale;
+    }
+
+    it('scales the cap and the buckets up on a fast machine, toward TARGET_LOAD over the load', () => {
+        const b = createFxBudget();
+        const scale = run(b, { drawMs: 0.7, gpuMs: 1.1 }, 5000);
+        expect(scale).toBeCloseTo(TARGET_LOAD / (1.1 / 4.1), 1);
+        beginFxFrame(b, frame({ dtMs: 1000 }));
+        const cap = Math.floor(FRAME_CAP[0] * scale);
+        const tokens = Math.floor(FAMILY_RATE[FAMILY.combat] * scale);
+        expect(admitFx(b, { family: FAMILY.combat, rank: 0 }, 1000, AT)).toBe(Math.min(cap, tokens));
+        expect(b.tokens[FAMILY.feeding]).toBeCloseTo(FAMILY_RATE[FAMILY.feeding] * scale, 3);
+    });
+
+    it('sheds effects on a loaded machine, never below MIN_SCALE nor above MAX_SCALE', () => {
+        const slow = createFxBudget();
+        expect(run(slow, { drawMs: 6, gpuMs: 8 }, 5000)).toBeCloseTo(MIN_SCALE, 2);
+        const idle = createFxBudget();
+        expect(run(idle, { drawMs: 0.01, gpuMs: -1 }, 5000)).toBeCloseTo(MAX_SCALE, 2);
+    });
+
+    it('moves gradually and ignores frames with no measurement', () => {
+        const b = createFxBudget();
+        adaptFxBudget(b, { drawMs: 0.1, gpuMs: 0.1, intervalMs: 4, dtMs: 16 });
+        expect(b.scale).toBeGreaterThan(1);
+        expect(b.scale).toBeLessThan(1.1);
+        const before = b.scale;
+        adaptFxBudget(b, { drawMs: -1, gpuMs: -1, intervalMs: 0, dtMs: 16 });
+        expect(b.scale).toBe(before);
+    });
+});
+
+describe('logFxBudget: the scale', () => {
+    it('logs FxBudgetScale once the scale has moved by SCALE_LOG_STEP', () => {
+        const b = createFxBudget();
+        /** @type {any[]} */
+        const records = [];
+        const log = (/** @type {any} */ _l, /** @type {string} */ event, /** @type {any} */ f) =>
+            records.push({ event, ...f });
+        b.scale = 1.2;
+        logFxBudget(b, { nowMs: LOG_EVERY_MS, overwrote: 0, capacity: 2048 }, log);
+        expect(records).toEqual([]);
+        b.scale = 2;
+        expect(logFxBudget(b, { nowMs: 2 * LOG_EVERY_MS, overwrote: 0, capacity: 2048 }, log)).toBe(true);
+        expect(records).toEqual([{ event: 'FxBudgetScale', from: 1, to: 2, load: -1 }]);
     });
 });
