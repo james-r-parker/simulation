@@ -1,5 +1,5 @@
 // Seeded inputs for the function microbenchmarks, built once per process and shared by every bench file.
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { test } from 'vitest';
 import { cloneWithNoisePolicy } from '../../js/sim/birth-policy.js';
 import { createConfig } from '../../js/sim/config.js';
@@ -16,35 +16,23 @@ const SEED = 20261021;
 const cache = new Map();
 
 /**
- * With `BENCH_WASM=1` every micro world runs the WASM kernels (docs/designs/wasm-kernels.md), so
- * `npm run bench:parts -- --area brain --compare <ref>` prices the switch against a ref that runs the JS kernels. The
- * compare runs these files in the ref's tree too; a tree without the kernels runs the JS ones.
+ * Every world runs the brain in the WASM kernels from birth (docs/designs/wasm-kernels.md), so
+ * `npm run bench:parts -- --area brain --compare <ref>` against a ref from before the kernels prices them against the
+ * JS brain. The compare runs these files in the ref's tree too, so the arena module is imported only where it exists.
  */
 const ARENA_URL = new URL('../../js/sim/wasm-arena.js', import.meta.url);
-const WASM = process.env.BENCH_WASM === '1' && existsSync(ARENA_URL) ? await loadWasm() : null;
+const attachWasm = existsSync(ARENA_URL) ? (await import(ARENA_URL.href)).attachWasm : null;
 
 /**
- * @returns {Promise<{ attachWasm: Function, kernels: any }>} the attach function and the committed kernels
- */
-async function loadWasm() {
-    const { attachWasm } = await import(ARENA_URL.href);
-    const { loadKernels } = await import(new URL('../../js/sim/wasm-loader.js', import.meta.url).href);
-    const kernels = loadKernels(readFileSync(new URL('../../wasm/blob-kernels.wasm', import.meta.url)));
-    return { attachWasm, kernels };
-}
-
-/**
- * Moves a world into a WASM arena when `BENCH_WASM=1` and the tree has the kernels; otherwise does nothing.
- * @param {Record<string, any>} world a world from `createWorld`, or a copy with its own `agentRows`
+ * Moves a copy of a running world onto an arena of its own (the copy's `wasm` deleted and its `agentRows` its own).
+ * @param {Record<string, any>} world the copy
  * @returns {void}
  */
 export function benchAttach(world) {
-    if (WASM === null) {
-        return;
+    if (attachWasm === null) {
+        throw new Error('benchAttach: this tree has no WASM kernels');
     }
-    if (!WASM.attachWasm(world, WASM.kernels, { wasmKernels: true, midRun: true })) {
-        throw new Error('BENCH_WASM=1 but the WASM kernels did not attach');
-    }
+    attachWasm(world, undefined, { midRun: true });
 }
 
 /**
@@ -70,7 +58,6 @@ export function microWorld(overrides = {}) {
             step(world, brain);
         }
         buildHash(world.hash, world);
-        benchAttach(world);
         cache.set(key, world);
     }
     return world;

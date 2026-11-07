@@ -1,7 +1,7 @@
 # Mobile view
 
-**Status:** In progress - Phase 1 built: two-finger pinch and pan, `pointercancel`, a fingertip-sized tap, the portrait home zoom that survives a turn, the pixel-ratio cap on every path, and a phone layout for the HUD; Phase 2 (touch gestures for the keyboard-only actions, a phone quality start and a phone frame budget, portrait director shots) is next.
-**Validated:** efdc1ef (2026-11-03)
+**Status:** In progress - Phase 1 built: two-finger pinch and pan, `pointercancel`, a fingertip-sized tap, the portrait home zoom that survives a turn, the pixel-ratio cap on every path, and a phone layout for the HUD; Phase 2 chunk C2 built: double-tap zoom, two-finger-tap Home, long-press peek, the overflow menu, the coarse-pointer quality start and portrait director shots; the phone frame-budget row (T11, chunk C3, quiet machine) is next.
+**Validated:** e5ffd3dc (2026-11-07)
 **Priority:** 13 - the app's audience is the TV and the desktop; a phone is a second screen, so this queues after the v6 and deployment docs
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md)
 
@@ -33,6 +33,18 @@ screen and keeps clear of a notch and a home bar.
 `pointercancel` on the window. The top bar takes touches on a narrow screen so it can scroll, so a touch on it never
 reaches the canvas.
 A `pointerType` of `touch` marks the gesture a touch.
+
+Touch gestures (`createPointerInput` with the timing rules in [touch-gestures.js](../../js/app/touch-gestures.js)):
+
+| Gesture                                                                                          | Does                                                                                                        |
+| ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Two touch taps within `DOUBLE_TAP_MS` (300) and `DOUBLE_TAP_PX` (40 device px)                   | The second zooms 2x about the tap through `zoomAt` and does not pick; a mouse double click only picks twice |
+| Two fingers down and up within `TWO_FINGER_TAP_MS` (300), neither moving past `TAP_SLOP_PX` (12) | `Home`, as the `home` action does; nothing picks                                                            |
+| One finger held still `LONG_PRESS_MS` (500) over an agent                                        | `onLongPress` shows the hover peek at once; the release picks nothing. Over empty space nothing happens     |
+
+A touch never rests the hover peek on its own (a finger held on the canvas would flash it): `listenPointers` leaves
+`iface.pointer` to the mouse and calls `iface.peekHide` on a touch press. The clock and timers are injected, so the
+tests step time by hand.
 
 A touch picks with each specialisation's drawn minimum raised to `MIN_CSS_PX_TOUCH` (44 CSS px, in
 [display-size.js](../../js/app/display-size.js)) times the canvas's device pixels per CSS pixel. A mouse click picks
@@ -70,6 +82,15 @@ client width is above 2 gives the client size times 2.
 | `orientation: portrait` and `max-width: 760px` | A drawer is a bottom sheet: full width, `55dvh` tall, rounded top corners, sliding up from the bottom                                                                   |
 | `pointer: coarse`                              | Every `.control` is at least 2.75rem (44 CSS px) square; `--bar-height` is 3.25rem                                                                                      |
 
+## Overflow menu
+
+`mountOverflowMenu` in [overflow-menu.js](../../js/app/ui/overflow-menu.js) puts a `More actions` button at the end of
+the top bar. It opens a panel, fixed under the bar (the bar scrolls sideways on a phone and would clip a child), of
+every action the bar has no button for: step ten, the four lenses, screenshot, clip (only where `MediaRecorder`
+exists), the archive export, the debug bundle, audio, wake lock, fullscreen and the HUD. Each item is a `.control` with
+its shortcut in the title. A press outside, `Escape` or choosing an item closes it. The directly keyed actions that need
+no menu on touch (pan, zoom, `Home`, escape, volume, the seed field) are left out: gestures and the bar cover them.
+
 ## Phases
 
 ### Phase 1 - Touch, viewport and phone layout (built)
@@ -89,23 +110,29 @@ HUD rules above.
 - A long-press over an agent shows the hover peek (`ui/hover-peek.js`) for a touch.
 - An overflow menu button in the top bar holds every `KEYMAP` action that has no button (the lenses, step ten,
   screenshot, clip, the exports, audio, wake lock, fullscreen, HUD).
-- On a coarse pointer the quality rule (`stepQuality` in `renderer/quality.js`) starts one level down.
+- On a coarse pointer the quality rule (`stepQuality` in `renderer/quality.js`) starts one level down: `createQuality`
+  takes `coarse` (from `matchMedia('(pointer: coarse)')` in `detectHardware`), which starts level 1 unless a pin, a
+  software renderer or missing float targets say otherwise.
 - `npm run perf:browser -- --viewport 412x915` records a phone row in `bench/browser-baseline.json`; the phase holds
   `browser.frame_p95_ms` and `browser.draw_cpu_p95_ms` at or under it on a mid-range Android phone over `--cdp`.
 - The director's wide shots (`director/shots.js`) frame by `homeZoom` in portrait, so a shot never shows the world as
-  a band.
+  a band: `wideFraming` and the close shots floor at `homeZoom`, which is `fitZoom` on a landscape canvas, so desktop
+  shots do not change.
 
-| Chunk | Tasks                       | Built by |
-| ----- | --------------------------- | -------- |
-| C2    | T7, T8, T9, T10, T12, T13   | Sonnet   |
-| C3    | T11 (quiet machine, own PR) | Haiku    |
+| Chunk | Tasks                       | Built by       |
+| ----- | --------------------------- | -------------- |
+| C2    | T7, T8, T9, T10, T12, T13   | Sonnet (built) |
+| C3    | T11 (quiet machine, own PR) | Haiku          |
 
 ## Decisions
 
-| Decision                                                                                                             | Reason                                                                                   | Who               |
-| -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------- |
-| Phase 1 ships the straightforward fixes in one PR; gestures, menus, the budget and director framing wait for Phase 2 | The user asked for the MVP in a single PR, leaving the complex parts for another session | User (2026-11-03) |
-| Portrait fills the height instead of showing the whole world                                                         | At `fitZoom` a 16:9 world on a 412 x 915 phone is a band a quarter of the screen tall    | Manager           |
+| Decision                                                                                                             | Reason                                                                                                                 | Who                    |
+| -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| Phase 1 ships the straightforward fixes in one PR; gestures, menus, the budget and director framing wait for Phase 2 | The user asked for the MVP in a single PR, leaving the complex parts for another session                               | User (2026-11-03)      |
+| The overflow menu lists an explicit set of actions, not "every action without a button"                              | Pan, zoom, `Home`, escape, volume and the seed field have gesture or bar equivalents; a menu of 30 items is not usable | Delegated (2026-11-07) |
+| The coarse-pointer quality start sits in `createQuality`, read from `matchMedia` in `detectHardware`                 | One place already decides the start level for software and float targets                                               | Delegated (2026-11-07) |
+| T11 (the phone row) is not in this chunk                                                                             | It needs a quiet machine and a phone over `--cdp`; the plan already gives it its own PR                                | Delegated (2026-11-07) |
+| Portrait fills the height instead of showing the whole world                                                         | At `fitZoom` a 16:9 world on a 412 x 915 phone is a band a quarter of the screen tall                                  | Manager                |
 
 ## Delivery requirements
 

@@ -478,3 +478,16 @@ pub unsafe fn forward_all(params: u32, doubles: u32) -> i32 {
         }
     }
 }
+
+/// `poolRays` for one slot, alive or not: the pooled row the brain phase would read, for the tools that read pooling
+/// without running the brain (`js/evo/pool-discrimination.js`).
+///
+/// # Safety
+/// `params` addresses a `Params` block whose arrays lie inside the memory, and `slot` is below `slots`.
+pub unsafe fn pool_one(params: u32, slot: usize) {
+    // SAFETY: as documented.
+    unsafe {
+        let b = Brain::new(&*at::<Params>(params));
+        pool(&b, slot);
+    }
+}

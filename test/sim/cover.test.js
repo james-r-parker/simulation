@@ -12,7 +12,6 @@ import { hashWorld } from '../../js/sim/world-hash.js';
 import { addBlob, lifeWorld } from './helpers/life-world.js';
 
 const BASINS = { worldWidth: 4000, worldHeight: 2000, refugeCount: 2, refugeCluster: 1, wallGaps: 1 };
-const ON = { coverConceals: true, coverFoodFree: true };
 
 /**
  * @param {Record<string, any>} over config overrides
@@ -35,7 +34,7 @@ function blobAt(world, ring, offset = 0) {
 
 describe('stepCover', () => {
     it('writes the ring index plus one for an agent inside, 0 outside and for a dead slot', () => {
-        const world = ringWorld(ON);
+        const world = ringWorld();
         const first = blobAt(world, 0);
         const second = blobAt(world, 1, 10);
         const outside = addBlob(world, { x: 5, y: 5 });
@@ -47,7 +46,7 @@ describe('stepCover', () => {
     });
 
     it('treats the ring radius as inside and just past it as outside', () => {
-        const world = ringWorld({ coverConceals: true });
+        const world = ringWorld();
         const edge = ringRadius(world.config);
         const inside = blobAt(world, 0, edge - 1);
         const past = blobAt(world, 0, edge + 1);
@@ -55,8 +54,8 @@ describe('stepCover', () => {
         expect([world.coverRing[inside], world.coverRing[past]]).toEqual([1, 0]);
     });
 
-    it('does nothing with both switches off', () => {
-        const world = ringWorld();
+    it('does nothing in a world without refuges', () => {
+        const world = ringWorld({ refugeCount: 0 });
         blobAt(world, 0);
         stepCover(world);
         expect(world.coverRing.every((/** @type {number} */ b) => b === 0)).toBe(true);
@@ -65,7 +64,7 @@ describe('stepCover', () => {
     });
 
     it('counts the agents in rings now and in total', () => {
-        const world = ringWorld({ coverFoodFree: true });
+        const world = ringWorld();
         blobAt(world, 0);
         blobAt(world, 1);
         addBlob(world, { x: 5, y: 5 });
@@ -76,7 +75,7 @@ describe('stepCover', () => {
     });
 
     it('answers ringIndexAt from the cached centres and keeps them between calls', () => {
-        const world = ringWorld(ON);
+        const world = ringWorld();
         const centres = refugeCentresOf(world);
         expect(ringIndexAt(world, centres[2], centres[3])).toBe(1);
         const cached = world.coverCentres;
@@ -85,7 +84,7 @@ describe('stepCover', () => {
     });
 
     it('finds no ring in a world without refuges', () => {
-        const world = ringWorld({ ...ON, refugeCount: 0 });
+        const world = ringWorld({ refugeCount: 0 });
         addBlob(world, { x: 500, y: 500 });
         stepCover(world);
         expect(world.coverRing[0]).toBe(0);
@@ -107,8 +106,8 @@ describe('cover events', () => {
         return records;
     }
 
-    it('logs CoverConfig once, at tick 0, with the switches and the geometry', () => {
-        const world = ringWorld(ON);
+    it('logs CoverConfig once, at tick 0, with the geometry', () => {
+        const world = ringWorld();
         clearEvents(world.events);
         stepCover(world);
         const [record] = drain(world);
@@ -116,8 +115,6 @@ describe('cover events', () => {
             level: 'info',
             event: 'CoverConfig',
             tick: 0,
-            coverConceals: true,
-            coverFoodFree: true,
             refugeCount: 2,
             aperturePx: 2 * world.config.refugeSizeMax,
             interiorRadius: ringRadius(world.config),
@@ -129,7 +126,7 @@ describe('cover events', () => {
     });
 
     it('logs CoverTotals every COVER_LOG_TICKS at debug', () => {
-        const world = ringWorld(ON);
+        const world = ringWorld();
         blobAt(world, 0);
         world.coverTotals[COVER_TOTALS.CONCEALED_HITS] = 7;
         world.coverTotals[COVER_TOTALS.FOOD_REJECTED] = 3;
@@ -154,7 +151,7 @@ describe('cover events', () => {
 
 describe('assertCover', () => {
     it('accepts bytes up to refugeCount and rejects a higher one', () => {
-        const world = ringWorld(ON);
+        const world = ringWorld();
         world.coverRing[0] = 2;
         expect(() => assertCover(world)).not.toThrow();
         world.coverRing[0] = 3;
@@ -167,7 +164,6 @@ describe('the sense phase', () => {
     it('fills the ring bytes before the rays read them and survives a wiped cover state', () => {
         const overrides = {
             ...BASINS,
-            ...ON,
             worldHeight: 2400,
             maxAgents: 40,
             initialAgents: 30,

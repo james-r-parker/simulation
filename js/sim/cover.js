@@ -1,6 +1,6 @@
 // The cover state (docs/designs/realistic-keepers.md, T6 and T7): which refuge ring each alive agent stands in, refreshed at the start of the
 // `sense` phase so the rays and `feed` read this tick's positions. Derived from positions, so it is outside `worldHash`
-// and a world restored from a snapshot computes it before first use. Does nothing with both cover switches off.
+// and a world restored from a snapshot computes it before first use. Does nothing in a world without refuge rings.
 
 import { EVENT_TYPE, pushEvent } from './events.js';
 import { refugeCentresOf, refugeIndexAt, ringRadius } from './terrain.js';
@@ -47,15 +47,15 @@ export function ringIndexAt(world, x, y) {
 }
 
 /**
- * With `coverFoodFree`, tells whether a plant may not be placed at a point because it lies in a ring, and counts the
+ * Tells whether a plant may not be placed at a point because it lies in a ring, and counts the
  * refusal. Draws nothing, so the caller goes on to its next draw from the same stream.
  * @param {World} world the world
  * @param {number} x the point's x
  * @param {number} y the point's y
- * @returns {boolean} true when the switch is on and the point is inside a ring
+ * @returns {boolean} true when the point is inside a ring
  */
 export function rejectedByCover(world, x, y) {
-    if (!world.config.coverFoodFree || ringIndexAt(world, x, y) < 0) {
+    if (ringIndexAt(world, x, y) < 0) {
         return false;
     }
     world.coverTotals[COVER_TOTALS.FOOD_REJECTED] += 1;
@@ -71,11 +71,9 @@ function pushCoverRecords(world) {
     if (world.tick === 0) {
         const { config } = world;
         const o = pushEvent(world.events, EVENT_TYPE.COVER_CONFIG, world.tick);
-        d[o + 2] = config.coverConceals ? 1 : 0;
-        d[o + 3] = config.coverFoodFree ? 1 : 0;
-        d[o + 4] = config.refugeCount;
-        d[o + 5] = 2 * config.refugeSizeMax;
-        d[o + 6] = ringRadius(config);
+        d[o + 2] = config.refugeCount;
+        d[o + 3] = 2 * config.refugeSizeMax;
+        d[o + 4] = ringRadius(config);
     } else if (world.tick % COVER_LOG_TICKS === 0) {
         const t = world.coverTotals;
         const o = pushEvent(world.events, EVENT_TYPE.COVER_TOTALS, world.tick);
@@ -88,13 +86,12 @@ function pushCoverRecords(world) {
 
 /**
  * Writes `world.coverRing` for this tick (0 for a dead slot) and counts the agents in rings. Returns before any loop
- * when `coverConceals` and `coverFoodFree` are both off. Allocates nothing and draws no random number.
+ * in a world without refuge rings. Allocates nothing and draws no random number.
  * @param {World} world the world
  * @returns {void}
  */
 export function stepCover(world) {
-    const { coverConceals, coverFoodFree } = world.config;
-    if (!coverConceals && !coverFoodFree) {
+    if (!(world.config.refugeCount > 0)) {
         return;
     }
     const centres = centresOf(world);

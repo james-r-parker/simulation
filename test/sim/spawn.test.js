@@ -307,7 +307,7 @@ describe('spawnAgent entrantEnergy', () => {
     });
 });
 
-describe('coverFoodFree plant placement', () => {
+describe('plant placement out of the rings', () => {
     /**
      * @param {Record<string, any>} over config overrides
      * @returns {ReturnType<typeof createWorld>} a world whose one ring is large and sits at the middle
@@ -319,7 +319,7 @@ describe('coverFoodFree plant placement', () => {
     }
 
     it('keeps every plant point outside the ring and counts the rejections', () => {
-        const w = ringed({ coverFoodFree: true });
+        const w = ringed({});
         for (let i = 0; i < 200; i++) {
             placePlantClear(w, w.rng.food, 20);
             expect(ringIndexAt(w, w.point[0], w.point[1])).toBe(-1);
@@ -328,7 +328,7 @@ describe('coverFoodFree plant placement', () => {
     });
 
     it('keeps spawned food out of the ring, local and uniform placement alike', () => {
-        const w = ringed({ coverFoodFree: true, foodPatchCount: 1, foodPatchRadius: 200, maxFood: 200 });
+        const w = ringed({ foodPatchCount: 1, foodPatchRadius: 200, maxFood: 200 });
         w.coverCentres = Float64Array.of(w.patchX[0], w.patchY[0]);
         for (let i = 0; i < 100; i++) {
             const slot = spawnFoodItem(w);
@@ -336,18 +336,8 @@ describe('coverFoodFree plant placement', () => {
         }
     });
 
-    it('draws from the same stream as with the switch off, only discarding points', () => {
-        const off = ringed({});
-        const on = ringed({ coverFoodFree: true });
-        placePlantClear(off, off.rng.food, 20);
-        placePlantClear(on, on.rng.food, 20);
-        const redraws = on.coverTotals[COVER_TOTALS.FOOD_REJECTED];
-        expect(ringIndexAt(off, off.point[0], off.point[1]) >= 0).toBe(redraws > 0);
-        expect(off.coverTotals[COVER_TOTALS.FOOD_REJECTED]).toBe(0);
-    });
-
     it('leaves placeClear, which agents use, alone', () => {
-        const w = ringed({ coverFoodFree: true });
+        const w = ringed({});
         let inside = 0;
         for (let i = 0; i < 200; i++) {
             placeClear(w, w.rng.spawn, 20);

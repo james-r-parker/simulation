@@ -281,7 +281,7 @@ describe('assertInvariants', () => {
         });
     });
 
-    it('names the ten invariants', () => {
+    it('names the nine invariants', () => {
         expect({ ...INVARIANT }).toEqual({
             FINITE: 'finite',
             IN_WORLD: 'in-world',
@@ -292,18 +292,7 @@ describe('assertInvariants', () => {
             MERIT: 'merit',
             DOSE: 'dose',
             HERDS: 'herds',
-            PROVISION: 'provision',
         });
-    });
-
-    it('throws on provisioning totals that differ', () => {
-        const world = validWorld();
-        expect(() => assertInvariants(world)).not.toThrow();
-        world.provisionTotals = new Float64Array(2);
-        world.provisionTotals[0] = 5;
-        expect(() => assertInvariants(world)).toThrow(/provision/);
-        world.provisionTotals[1] = 5;
-        expect(() => assertInvariants(world)).not.toThrow();
     });
 
     it('accepts an agent at the origin corner', () => {

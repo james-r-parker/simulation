@@ -2083,6 +2083,15 @@ Reading it:
   `prey-ahead` win reads the sim's `deliberateKills` credit, not the prey's death.
 - The drill world has no refuges, so `refugeSense` inputs read 0 in every drill.
 
+### 2026-11-07 - parental provisioning deleted (realistic-keepers T20)
+
+`provisionEnabled` (a hunter hands `provisionShare` of a stored meal to its young in range) failed the keep rule in `E134`
+on 16 floor-on seeds: hunters alive 10/16 against the defaults' 14/16, 9 seeds ended under 80 agents (defaults 7) and
+`eval.prey_types_at_end` was worse. It was deleted with `provision.js`, `provision-state.js`, `eval.provisioned_energy_share`,
+the three keys (`provisionEnabled`, `provisionShare`, `provisionRange`), the invariant and the `Provisioned` log emitter.
+The `PROVISIONED` event code (32) stays in `events.js` unused so later codes do not renumber. The juvenile dependency, which
+keeps the kin-floor half of the reflex, stays.
+
 ### 2026-11-07 - WASM brain kernel: 3 to 8 times faster and bit-identical (wasm-kernels T6)
 
 The brain phase (`poolRays`, `hiddenStep`, `outputStep`, `hebbianStep`) runs in `wasm/blob-kernels.wasm` behind the
@@ -2110,6 +2119,30 @@ Toolchain facts found on the way:
 - `cargo build --config "target.<triple>.rustflags=[...]"` appends to the rustflags in `.cargo/config.toml` rather than
   replacing them, so the build script adds `--remap-path-prefix` without losing `--import-memory`; a build from another
   checkout path gives the same bytes.
+
+### 2026-11-07 - WASM brain kernel adopted: step 4.01 to 3.00 ms, drills 17% faster (wasm-kernels T7)
+
+Every world now runs the brain in the Rust kernel from birth (`allocateWorld` attaches) and the JS brain kernel is deleted.
+Measured under `flock /tmp/claude-1000/cpu.lock` on a machine also running evals (load about 10 of 32 cores), against
+`origin/main` (8cf1ccd10, which runs the JS brain):
+
+| Measure                                                                        | JS            | Rust          | Change                |
+| ------------------------------------------------------------------------------ | ------------- | ------------- | --------------------- |
+| `bench-compare --sizes=500 --runs=5`, `bench.step_ms@500`                      | 4.006         | 3.003         | -25.0%                |
+| Same, `bench.step_ms@500merit` / `@500w7680`                                   | 4.019 / 3.549 | 2.981 / 2.742 | -25.8% / -22.7%       |
+| Same, `bench.phase_ms.brain@500`                                               | 1.296         | 0.499         | -61.5% (2.6 times)    |
+| `bench:micro --area drill --compare origin/main --runs 3`, trials/s per worker | 49.6          | 58.2          | +17.2%, margin +-7.0% |
+
+- The step is under the 3.32 ms budget for the first time since the budget was set.
+- `bench-compare` flagged `bench.phase_ms.sense@500` at +12.7% (and `@500merit` +10.2%, `@500w7680` +2.4%); the sense micro
+  bench (`bench:parts --area sense --compare origin/main --runs 3`) shows +1.4%, margin +-10.2%, `same`. Typed-array views over
+  a `WebAssembly.Memory` buffer read as fast as plain ones in the JS rules; the flag looks like load noise in the whole-step
+  run, and Phase 2 moves the sense phase into the kernel anyway.
+- World birth: compiling the module and probing `__heap_base` once per thread leaves a drill-size world (8 slots, 4 pages) one
+  `Memory` plus one `Instance`, 28 us; the whole attach is about 35 us after the agent-row lookup moved from a scan per row
+  (61 us over 99 rows, the world object being in dictionary mode before its final spread) to one `Map`.
+- A synchronous `new WebAssembly.Module` of a 24 kB binary is fine in Node and in a worker; only a browser main thread limits
+  synchronous compiles, and no world is born there.
 
 ### 2026-11-07 - Trainer smoke run and ticks per second (training T8 to T11)
 
@@ -2157,6 +2190,27 @@ and `bench:parts` against origin/main (alternating runs, a loaded machine, so th
 
 End to end (`bench-compare --sizes=500 --runs=5`, load about 27): `bench.step_ms@500` 7.97 to 7.63 (-4.3%), sense phase
 1.60 to 1.37 ms; inside the gate's noise, not a quiet-machine number. The golden test passes unchanged.
+
+### 2026-11-07 - the realistic keepers adopted (realistic-keepers T21 and T22)
+
+The combined world (`satedBite`, `predatorRestTicks` 60, `juvenileDependency`, `rewardedHebb`, `coverConceals`, `coverFoodFree`,
+`refugeSense`) passed the keep rule on 32 seeds (hunters alive 13/16 and 14/16, no more seeds under 80 than the defaults, predators at
+end +49%). Its only worse guard, `eval.hunter_kill_conversion_by_age.1k-2k` (-25%), is the by-construction fall of `satedBite` (E136):
+the hungry-chase conversion is not worse (-9%, interval spans 0). All seven are the default now; the six plain switches are deleted
+(`predatorRestTicks` is a plain key at 60, `rewardedHebb` a default-true key until wasm-kernels.md deletes it with the Rust and JS off
+paths). Facts to know:
+
+- Ray casting takes the covered path (`nearestHitCovered`, one ray at a time) whenever the world has refuge rings, which the default
+  world does (8). The circle-major `nearestHitsAll` pass of the speed work runs only in worlds without rings (`refugeCount` 0, as in
+  most tests and the busy and disease golden cases). A sense-phase cost, to be measured at the baseline re-record.
+- `stepCover` and `rejectedByCover` now run in every default world: one ring byte per agent per tick, one ring test per plant placement.
+- Tests that are not about a juvenile hunter set `juvenileBurn` 1 (`test/sim/helpers/predator-arena.js`), and tests of the plain
+  Hebbian rule set `rewardedHebb` false.
+- Historic grids and configs (`evals/screens/hunter-*.grid.json`, `refuge*.grid.json`, `evals/sated-floor-off-config.json`) still name
+  the deleted keys; they record what was run and will not validate if rerun. Old reports carry `provisionEnabled`, so `eval:compare`
+  against them needs `--allow-config-diff` for the keys that differ.
+- Goldens re-pinned (default, busy, disease, full and short), the busy effect-stream pin in `test/worker/sim-host.slow.test.js`
+  moved with them, and `npm run browser:hash` matches in Chromium.
 
 ### 2026-11-07 - herd neighbour loops skip the grid (T73)
 

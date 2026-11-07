@@ -296,7 +296,13 @@ function detectHardware(renderer, quality, scale) {
     const name = rendererName(renderer.getContext());
     const software = isSoftwareRenderer(name);
     const renderScale = chooseRenderScale({ software, override: scale });
-    const state = createQuality({ pinned: quality, floatTargets: supportsFloatTargets(renderer.extensions), software });
+    const coarse = globalThis.matchMedia?.('(pointer: coarse)').matches === true;
+    const state = createQuality({
+        pinned: quality,
+        floatTargets: supportsFloatTargets(renderer.extensions),
+        software,
+        coarse,
+    });
     if (software) {
         appLog('info', 'SoftwareRenderer', { renderer: name, renderScale, level: state.level });
     }

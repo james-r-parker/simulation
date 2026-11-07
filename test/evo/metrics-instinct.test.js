@@ -108,9 +108,9 @@ describe('instinctCells with the kin pull', () => {
         );
     });
 
-    it('createInstinctPools puts the kin cells in the hunter pool only under juvenileDependency', () => {
-        const off = createInstinctPools(createConfig({ instinctWeight: 1, juvenileDependency: false }));
-        const on = createInstinctPools(createConfig({ instinctWeight: 1, juvenileDependency: true }));
+    it('createInstinctPools puts the kin cells in the hunter pool only with a kin pull', () => {
+        const off = createInstinctPools(createConfig({ instinctWeight: 1, kinPullWeight: 0 }));
+        const on = createInstinctPools(createConfig({ instinctWeight: 1, kinPullWeight: 0.5 }));
         expect(on.hunter.cells.length).toBe(off.hunter.cells.length + 2);
         expect(on.other.cells).toEqual(off.other.cells);
     });

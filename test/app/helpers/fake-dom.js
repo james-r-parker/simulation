@@ -89,9 +89,9 @@ export function fakeDocument(context = null) {
         addEventListener(/** @type {string} */ type, /** @type {Function} */ fn) {
             (listeners[type] ??= []).push(fn);
         },
-        dispatch(/** @type {string} */ type) {
+        dispatch(/** @type {string} */ type, /** @type {any} */ event = undefined) {
             for (const fn of listeners[type] ?? []) {
-                fn();
+                fn(event);
             }
         },
     };

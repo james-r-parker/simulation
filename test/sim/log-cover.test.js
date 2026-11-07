@@ -25,13 +25,11 @@ function drain(type, fields, level) {
 
 describe('the cover log events', () => {
     it('turns a CoverConfig record into an info event', () => {
-        expect(drain(EVENT_TYPE.COVER_CONFIG, [1, 0, 8, 60, 120.5], 'info')).toEqual([
+        expect(drain(EVENT_TYPE.COVER_CONFIG, [8, 60, 120.5], 'info')).toEqual([
             {
                 event: 'CoverConfig',
                 level: 'info',
                 tick: 9,
-                coverConceals: true,
-                coverFoodFree: false,
                 refugeCount: 8,
                 aperturePx: 60,
                 interiorRadius: 120.5,
