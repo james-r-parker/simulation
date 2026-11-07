@@ -1,65 +1,141 @@
 name: deploy
 
-# Interim pipeline (docs/designs/sim-notes.md, "Deploy on merge to main"): every green push to main goes straight to
-# production on Cloudflare Pages. deployment-and-community.md Phase 1 replaces it.
+# docs/designs/deployment-and-community.md, "Deploy workflow". After a green `check`, a push to main (or season/next)
+# goes to /next/ and a same-repo pull request goes to a preview. It never deploys production: production follows a
+# release (release.yml). Replaces the interim "every green main push is production" pipeline.
+#
+# Three jobs, so no job runs repository code and holds a secret:
+#   plan   - no secrets; reads the event and wrangler.toml
+#   build  - no secrets, no cache, no persisted credentials; runs the commit's own npm scripts
+#   deploy - environment `preview`; runs no repository npm script, only the lockfile-installed wrangler
+
 on:
   workflow_run:
     workflows: [check]
     types: [completed]
-    branches: [main]
-  # A manual redeploy of main's HEAD.
-  workflow_dispatch:
 
 permissions:
   contents: read
 
-# Deploys queue in order; a running deploy is never cancelled half-way.
 concurrency:
-  group: deploy-production
-  cancel-in-progress: false
+  group: deploy-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: ${{ github.event.workflow_run.event == 'pull_request' }}
 
 jobs:
-  deploy:
-    # Only a successful check of a push to main (not of a pull request) deploys; a manual run always does.
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+  plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    environment:
-      name: production
-      url: https://matrix.dotnethelp.co.uk
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      action: ${{ steps.plan.outputs.action }}
+      branch: ${{ steps.plan.outputs.branch }}
+      sha: ${{ steps.plan.outputs.sha }}
+      pr: ${{ steps.plan.outputs.pr }}
     steps:
-      - uses: actions/checkout@v7
+      # The default branch: workflow_run always runs the default branch's workflow file and script.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The commit check ran on; main's HEAD for a manual run.
-          ref: ${{ github.event.workflow_run.head_sha || 'main' }}
-
-      - uses: actions/setup-node@v7
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
-          cache: npm
+      - id: plan
+        run: node scripts/deploy-plan.mjs
 
-      - name: Install
-        run: npm ci
-
+  build:
+    needs: plan
+    if: needs.plan.outputs.action != 'skip'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+      # No `cache:`: a workflow_run build that wrote the npm cache would let pull request code poison the default branch.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+      - run: npm ci
       - name: Build
-        run: npm run build
+        env:
+          ACTION: ${{ needs.plan.outputs.action }}
+        run: |
+          if [[ "$ACTION" == next ]]; then
+            npx vite build --base /next/
+          else
+            npm run build
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: site
+          path: |
+            dist
+            functions
+            migrations
+          if-no-files-found: error
 
-      # The repo's own pinned wrangler (package.json); the project and its production branch are in wrangler.toml.
-      - name: Deploy
+  deploy:
+    needs: [plan, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: preview
+    permissions:
+      contents: read
+      pull-requests: write
+      deployments: write
+    steps:
+      # The default branch's wrangler.toml and the pinned wrangler; the artifact only adds dist/, functions/ and migrations/.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: site
+          path: .
+      - name: Install wrangler
+        working-directory: .github/deploy
+        run: npm ci --ignore-scripts
+      - name: Apply migrations to the preview database
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: .github/deploy/node_modules/.bin/wrangler d1 migrations apply blob-library-preview --env preview --remote
+      - name: Deploy
+        id: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PAGES_PROJECT: ${{ vars.PAGES_PROJECT }}
+          BRANCH: ${{ needs.plan.outputs.branch }}
+          SHA: ${{ needs.plan.outputs.sha }}
         run: |
-          # The default shell is `bash -e` without pipefail: without this, a failed wrangler piped into tee would pass.
           set -o pipefail
-          sha="$(git rev-parse HEAD)"
-          npx wrangler pages deploy dist --project-name matrix --branch main --commit-hash "$sha" --commit-dirty=true | tee deploy.log
+          .github/deploy/node_modules/.bin/wrangler pages deploy dist --project-name "$PAGES_PROJECT" --branch "$BRANCH" --commit-hash "$SHA" --commit-dirty=true | tee deploy.log
           url="$(grep -Eo 'https://[a-zA-Z0-9.-]+\.pages\.dev' deploy.log | tail -1 || true)"
-          {
-            echo "### Deployed to production"
-            echo "- Commit: \`$sha\`"
-            echo "- Site: https://matrix.dotnethelp.co.uk"
-            echo "- Deployment: ${url:-see the Cloudflare Pages dashboard}"
-          } >>"$GITHUB_STEP_SUMMARY"
+          echo "url=$url" >>"$GITHUB_OUTPUT"
+          echo "### Deployed $BRANCH" >>"$GITHUB_STEP_SUMMARY"
+          echo "- Commit: \`$SHA\`" >>"$GITHUB_STEP_SUMMARY"
+          echo "- Deployment: ${url:-see the Cloudflare Pages dashboard}" >>"$GITHUB_STEP_SUMMARY"
+      - name: Comment the preview URL
+        if: needs.plan.outputs.action == 'preview'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ needs.plan.outputs.pr }}
+          URL: ${{ steps.deploy.outputs.url }}
+          SHA: ${{ needs.plan.outputs.sha }}
+        run: |
+          marker='<!-- blob-evolution-preview -->'
+          body="$marker"$'\n'"Preview: $URL"$'\n\n'"Built from \`${SHA:0:7}\`. It reads the preview database, never production."
+          id="$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -1)"
+          if [[ -n "$id" ]]; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -f body="$body" >/dev/null
+          else
+            gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body "$body"
+          fi

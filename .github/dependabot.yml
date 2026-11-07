@@ -29,3 +29,11 @@ updates:
     ignore:
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+  # wrangler for the secret-holding deploy jobs (.github/deploy); it must stay equal to the root package.json pin
+  # (test/deploy-workflows.test.js), so bump both together.
+  - package-ecosystem: npm
+    directory: /.github/deploy
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
