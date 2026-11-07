@@ -33,7 +33,7 @@ describe('diffFlags', () => {
         expect(diff(edges, [{ slot: 2, genomeId: 9, flags: BITS.SICK | BITS.PREGNANT | 3 }])).toEqual([]);
     });
 
-    it('reports rising and falling edges of each state bit with the agent index', () => {
+    it('reports rising and falling edges of each state bit with the agent index, and none for a call', () => {
         const edges = createFlagEdges(8);
         diff(edges, [
             { slot: 1, genomeId: 5, flags: 30 },
@@ -46,8 +46,6 @@ describe('diffFlags', () => {
         expect(found).toEqual([
             [EDGE.SICK_ON, 0],
             [EDGE.PREGNANT_ON, 0],
-            [EDGE.ALARM_ON, 0],
-            [EDGE.HUNT_ON, 0],
             [EDGE.INFECTED_OFF, 1],
         ]);
         expect(diff(edges, [{ slot: 1, genomeId: 5, flags: 30 }])).toEqual([[EDGE.SICK_OFF, 0]]);

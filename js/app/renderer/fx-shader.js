@@ -19,6 +19,7 @@ attribute vec4 iMove;   // reach (world), stretch along the heading, least size 
 uniform float uFxTick;  // the playhead tick, rebased like iTime.x
 uniform float uZoom;
 uniform float uCallBoost;
+uniform float uContrast; // 1, or 1.5 under the high-contrast palette
 uniform vec4 uScale[${N}];
 uniform vec4 uAlpha[${N}];
 uniform vec4 uInfo[${N}];
@@ -74,7 +75,7 @@ void main() {
     vP = corner * ${FX_PAD.toFixed(1)};
     vec2 local = vP * size * vec2(max(iMove.y, 1.0), 1.0);
     vec2 world = at + vec2(dir.x * local.x - dir.y * local.y, dir.y * local.x + dir.x * local.y);
-    vColor = vec4(iColor.rgb * iColor.a, alpha);
+    vColor = vec4(iColor.rgb * iColor.a * uContrast, alpha);
     vShape = info.x;
     vAge = age;
     vSeed = iTime.w;
@@ -85,6 +86,7 @@ void main() {
 
 export const FX_FRAGMENT = /* glsl */ `
 varying vec2 vP;
+uniform float uContrast;
 varying vec4 vColor;
 varying float vShape;
 varying float vAge;
@@ -97,7 +99,7 @@ float capsule(vec2 p, vec2 a, vec2 b, float r) {
     return length(pa - ba * clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0)) - r;
 }
 
-float ringShape(vec2 p, float w) { return abs(length(p) - 0.85) - max(w, vPx * 1.2); }
+float ringShape(vec2 p, float w) { return abs(length(p) - 0.85) - max(w, vPx * 1.2) * (uContrast > 1.2 ? 2.0 : 1.0); }
 
 float star(vec2 p) {
     vec2 q = abs(p);

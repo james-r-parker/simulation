@@ -19,8 +19,8 @@ export function spreadOf(samples) {
  * @property {{geometries: number, textures: number, programs: number}} gpu `renderer.info` counts
  * @property {Float64Array | null} gpuSamples finished GPU frame times in ms, null without the timer query
  * @property {number | null} heapBytes `performance.memory.usedJSHeapSize`, null when the browser has none
- * @property {Record<string, {spawned: number, dropped: number, culled: number}> | null} [fx] the effect budget's counts
- *   by family, null before a world
+ * @property {Record<string, any> | null} [fx] the effect budget's counts by family and the pool's live instances, null
+ *   before a world
  * @property {number | null} [drawCalls] draw calls in the last rendered frame
  */
 
@@ -29,7 +29,7 @@ export function spreadOf(samples) {
  * @returns {{app: 'v6', refreshHz: number, frameMs: {p50: number, p95: number, p99: number}, drawMs: {p50: number,
  *   p95: number, p99: number}, gpuMs: {p50: number, p95: number, p99: number} | null, frames: number,
  *   agents: number, ticksPerSecond: number, droppedTicks: number, heapMb: number | null, gpu: {geometries: number, textures: number,
- *   programs: number}, fx: Record<string, {spawned: number, dropped: number, culled: number}> | null,
+ *   programs: number}, fx: Record<string, any> | null,
  *   drawCalls: number | null}} the payload
  */
 export function buildPerf(inputs) {
@@ -53,7 +53,7 @@ export function buildPerf(inputs) {
 
 /**
  * @param {PerfInputs} inputs the live values
- * @returns {{fx: Record<string, {spawned: number, dropped: number, culled: number}> | null, drawCalls: number | null}}
+ * @returns {{fx: Record<string, any> | null, drawCalls: number | null}}
  *   the effect counts and draw calls, null when absent
  */
 function fxOf({ fx, drawCalls }) {

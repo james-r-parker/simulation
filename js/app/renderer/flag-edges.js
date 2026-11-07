@@ -1,4 +1,5 @@
-// Edges in the snapshot flags: the frame an agent becomes sick, infected, pregnant or starts a call, recovers, or eats.
+// Edges in the snapshot flags: the frame an agent becomes sick, infected or pregnant, recovers, or eats. (A call that
+// is still sounding throbs in the agent shader from the flag itself.)
 // Keeps each slot's previous flags and genome; a slot whose genome changed holds a fresh body and reports nothing.
 // Preallocated per slot, so diffing allocates nothing.
 
@@ -9,9 +10,7 @@ export const EDGE = Object.freeze({
     INFECTED_ON: 2,
     INFECTED_OFF: 3,
     PREGNANT_ON: 4,
-    ALARM_ON: 5,
-    HUNT_ON: 6,
-    ATE: 7,
+    ATE: 5,
 });
 
 /**
@@ -65,12 +64,6 @@ function emitStateEdges(before, now, { bits, emit, index }) {
     }
     if (edgeOf(before, now, bits.PREGNANT) > 0) {
         emit(EDGE.PREGNANT_ON, index);
-    }
-    if (edgeOf(before, now, bits.ALARMING) > 0) {
-        emit(EDGE.ALARM_ON, index);
-    }
-    if (edgeOf(before, now, bits.HUNT_CALLING) > 0) {
-        emit(EDGE.HUNT_ON, index);
     }
 }
 

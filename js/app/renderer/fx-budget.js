@@ -63,6 +63,7 @@ export const LOG_EVERY_MS = 10000;
  * @property {number} lastLogMs when drops were last logged
  * @property {number} loggedDrops total drops at that log
  * @property {number} loggedOverwrites the pool's overwrite count at that log
+ * @property {Float64Array} loggedByFamily each family's drops at that log
  */
 
 /**
@@ -85,6 +86,7 @@ export function createFxBudget() {
         lastLogMs: 0,
         loggedDrops: 0,
         loggedOverwrites: 0,
+        loggedByFamily: new Float64Array(n),
     };
 }
 
@@ -217,6 +219,24 @@ function totalDropped(budget) {
 }
 
 /**
+ * @param {FxBudget} budget the budget
+ * @returns {Record<string, number>} each family's drops since the last log (families with none left out), and resets
+ *   the mark
+ */
+function freshByFamily(budget) {
+    /** @type {Record<string, number>} */
+    const out = {};
+    FX_FAMILIES.forEach((name, i) => {
+        const d = budget.dropped[i] - budget.loggedByFamily[i];
+        if (d > 0) {
+            out[name] = d;
+        }
+        budget.loggedByFamily[i] = budget.dropped[i];
+    });
+    return out;
+}
+
+/**
  * Logs `FxBudgetDropped` at most once per `LOG_EVERY_MS` while drops happen, and `FxPoolSaturated` when the pool
  * overwrote live instances since the last log.
  * @param {FxBudget} budget the budget
@@ -236,7 +256,12 @@ export function logFxBudget(budget, { nowMs, overwrote, capacity }, log = appLog
     budget.loggedDrops = total;
     budget.loggedOverwrites = overwrote;
     if (fresh > 0) {
-        log('info', 'FxBudgetDropped', { level: budget.level, dropped: fresh, windowMs: LOG_EVERY_MS });
+        log('info', 'FxBudgetDropped', {
+            level: budget.level,
+            dropped: fresh,
+            families: freshByFamily(budget),
+            windowMs: LOG_EVERY_MS,
+        });
     }
     if (over > 0) {
         log('info', 'FxPoolSaturated', { capacity, level: budget.level, overwrote: over });

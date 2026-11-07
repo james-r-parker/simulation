@@ -17,6 +17,7 @@ export const PAN_LIMIT = 0.8;
 
 const CAUSE_SHIFT = 8;
 const CAUSE_MASK = 255;
+const PACK_BIT = 65536;
 
 /**
  * @typedef {object} Cue
@@ -68,9 +69,13 @@ export const TONES = Object.freeze({
     smoke: { wave: 'triangle', tone: [1200, 400, 300, 0.03], blips: 1 },
     pollen: { wave: 'sine', tone: [1568, 1568, 180, 0.03], blips: 1 },
     strain: { wave: 'sawtooth', tone: [110, 98, 900, 0.05], blips: 1 },
+    packKill: { wave: 'sine', tone: [120, 75, 320, 0.14], blips: 1 },
+    oldAge: { wave: 'sine', tone: [1046, 1046, 600, 0.03], blips: 1 },
+    trampled: { wave: 'sine', tone: [60, 40, 300, 0.12], blips: 1 },
+    recovered: { wave: 'sine', tone: [880, 1320, 200, 0.03], blips: 1 },
 });
 /** Cues that sound only at the close zoom band (2 device px per world unit) and in view. */
-const CLOSE_ONLY = new Set(['bite', 'meal']);
+const CLOSE_ONLY = new Set(['bite', 'meal', 'oldAge']);
 const CLOSE_ZOOM = 2;
 
 /**
@@ -89,6 +94,8 @@ function toneOf(kind, kinds) {
         [CLIENT_KIND.MEAL]: 'meal',
         [CLIENT_KIND.SICK]: 'sick',
         [CLIENT_KIND.INFECTED]: 'infected',
+        [CLIENT_KIND.RECOVERED]: 'recovered',
+        [CLIENT_KIND.CURED]: 'recovered',
     };
     return /** @type {keyof typeof TONES | undefined} */ (byKind[kind]) ?? null;
 }
@@ -108,6 +115,27 @@ function toneCue(name, place, zoom) {
         ...place,
         blips: t.blips,
     });
+}
+
+/**
+ * @param {{c: number}} effect a `DIED` record
+ * @param {{deathCauses: Record<string, number>}} layout the layout
+ * @param {{pan: number, scale: number}} place pan and gain scale
+ * @param {number} zoom device px per world unit
+ * @returns {Cue | null} the eaten thud (lower for a pack kill), a trampling thud, a soft old-age tone at the close band,
+ *   else null
+ */
+function deathCue(effect, { deathCauses }, place, zoom) {
+    const cause = (effect.c >>> CAUSE_SHIFT) & CAUSE_MASK;
+    if (cause === deathCauses.EATEN) {
+        return (effect.c & PACK_BIT) !== 0
+            ? toneCue('packKill', place, zoom)
+            : makeCue('eaten', 'sine', [80, 50, 250, 0.14], place);
+    }
+    if (cause === deathCauses.TRAMPLED) {
+        return toneCue('trampled', place, zoom);
+    }
+    return cause === deathCauses.OLD_AGE ? toneCue('oldAge', place, zoom) : null;
 }
 
 /**
@@ -136,15 +164,13 @@ function bornCue(effect, layout, place, rootMidi) {
  * @returns {Cue | null} the cue to play, or null when the effect has no sound
  */
 export function cueFor(effect, { layout, camera, rootMidi }) {
-    const { effectKinds: kinds, deathCauses } = layout;
+    const { effectKinds: kinds } = layout;
     const place = viewPlacement(effect, camera);
     if (effect.kind === kinds.BORN) {
         return bornCue(/** @type {any} */ (effect), layout, place, rootMidi);
     }
     if (effect.kind === kinds.DIED) {
-        return ((effect.c >>> CAUSE_SHIFT) & CAUSE_MASK) === deathCauses.EATEN
-            ? makeCue('eaten', 'sine', [80, 50, 250, 0.14], place)
-            : null;
+        return deathCue(effect, layout, place, camera.zoom);
     }
     if (effect.kind === kinds.ALARM) {
         return makeCue('alarm', 'triangle', [660, 520, 220, 0.09], { ...place, blips: 2 });

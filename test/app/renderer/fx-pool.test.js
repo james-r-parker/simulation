@@ -127,8 +127,14 @@ describe('flushFx and the layer', () => {
             canvas: /** @type {any} */ ({ width: 100, height: 100 }),
             world: { width: 100, height: 100 },
         });
-        const frame = /** @type {any} */ ({ tick: 510.5, camera, lenses: { calls: true } });
+        const frame = /** @type {any} */ ({
+            tick: 510.5,
+            camera,
+            lenses: { calls: true },
+            family: { palette: 'high-contrast' },
+        });
         layer.update?.(frame);
+        expect(layer.uniforms.uContrast.value).toBe(1.5);
         expect(layer.object.count).toBe(FX_CAPACITY);
         expect(layer.uniforms.uFxTick.value).toBeCloseTo(10.5);
         expect(layer.uniforms.uCallBoost.value).toBeCloseTo(1 / 0.35);

@@ -12,6 +12,8 @@ import { createQuadGeometry, createQuadMesh, VEC4 } from './instanced.js';
 export const FX_CAPACITY = 2048;
 /** The active capacity at quality levels 0, 1 and 2. */
 export const FX_CAPACITY_BY_LEVEL = Object.freeze([2048, 1024, 256]);
+/** The effect colour gain under the high-contrast palette (ring strokes also double). */
+export const HIGH_CONTRAST_GAIN = 1.5;
 /** Rebase the stored ticks once the playhead is this far past the base. */
 export const REBASE_TICKS = 1 << 20;
 
@@ -196,6 +198,7 @@ function fxUniforms() {
         uFxTick: { value: 0 },
         uZoom: { value: 1 },
         uCallBoost: { value: 1 },
+        uContrast: { value: 1 },
         uScale: { value: vecs(tables.scale) },
         uAlpha: { value: vecs(tables.alpha) },
         uInfo: { value: vecs(tables.info) },
@@ -245,6 +248,7 @@ export function createFxLayer({ pool, budget }) {
             uniforms.uZoom.value = frame.camera.zoom;
             uniforms.uFxTick.value = Number.isNaN(pool.base) ? -1e9 : frame.tick + pool.clockOffset - pool.base;
             uniforms.uCallBoost.value = frame.lenses.calls ? 1 / 0.35 : 1;
+            uniforms.uContrast.value = frame.family?.palette === 'high-contrast' ? HIGH_CONTRAST_GAIN : 1;
             flushFx(pool, geometry.attributes);
         },
         dispose() {
