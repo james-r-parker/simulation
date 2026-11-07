@@ -38,7 +38,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Predator and prey](predator-prey.md) - Phases 1 and 2 built: scent, calls, smoke, jaws and the tuned economy in the sim core (E19, E20), and the five combat metrics with the hunter, fleer and spammer...
 - [Reachable births](reachable-births.md) - willing agents mate within `mateRange`, a child's energy is a share of its mother's, the split threshold is lower and the default economy sustains foragers; jud...
 
-## In progress (10)
+## In progress (11)
 
 Partly built - the note says which phases are real.
 
@@ -49,18 +49,18 @@ Partly built - the note says which phases are real.
 - [Quality gates and test tiers](quality-gates-and-test-tiers.md) - tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test... _(validated 23eaea3, 2026-10-17)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
 - [Realistic keepers](realistic-keepers.md) - Phase 1 is built (T1 to T9: `satedBite`, `predatorRestTicks`, `provisionEnabled`, `juvenileDependency`, `rewardedHebb`, `coverConceals` and `coverFoodFree` as d... _(validated 12d9ba4, 2026-11-06)_ _(depends on [natural-selection.md](natural-selection.md), [refuge.md](refuge.md))_
 - [Refuge](refuge.md) - Phase 3 amended to a long-range refuge sense (2026-11-06); Phase 1 is built: the eight detectors, the refuge-access fixture and the diagnosis (`E130`: cover pro... _(validated 62a6758, 2026-11-06)_ _(depends on [natural-selection.md](natural-selection.md))_
+- [Training](training.md) - Phase 1 (drills) is built (T1 to T4: `DRILLS`, `drillSubject` and `drillEdge`, `npm run drill`, the first table in sim-notes.md; the `package.json` script entry... _(validated f5c7880, 2026-11-07)_ _(depends on [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md))_
 - [Worker and renderer](worker-and-renderer.md) - Phase 1 built: the sim core and the live policy run in a Web Worker behind a validated message protocol; Phases 2 (renderer core) and 3 (interface) code merged... _(validated 1f2a4e7, 2026-10-29)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [predator-prey.md](predator-prey.md), [body-temperature.md](body-temperature.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [World balance and biology](world-balance.md) - Phases 1 to 4 and Phase 5 round 1 built; the post-feature round consumes merged flora and megafauna evidence, then tests predator persistence and genetic famili... _(validated 64a66de, 2026-11-02)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the docs and the README with s... _(validated 23eaea3, 2026-10-17)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (4)
+## Proposed (3)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
 - [Brain inspection](brain-inspection.md) - Phase 1 (the dossier: labelled weights, drill traces and unit ablation) is built first; Phase 2 adds the `inspect-brain` skill and the first inspection of train... _(validated 2dd6b77, 2026-11-04)_ _(depends on [training.md](training.md))_
 - [Deployment and community](deployment-and-community.md) - Phase 1 releases with Release Please, serves every release at `/v/<version>/` and the latest at `/`, deploys `main`, or the `season/next` line while one is open... _(validated 23eaea3, 2026-10-17)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated 23eaea3, 2026-10-17)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_
-- [Training](training.md) - Phase 1 (drills: fixed scenarios that test a genome's skills) is built first; Phase 2 adds the local trainer, Phase 3 puts champions in the live world after the... _(validated f5c7880, 2026-11-07)_ _(depends on [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md))_
 
 ## Reference (3)
 
