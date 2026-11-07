@@ -2413,3 +2413,9 @@ before and after. `npm run drill` on four fresh smoke champions (4 generations, 
 - **Fault, `eval.hunter_kills_per_life`**: a median per life, 0 on 15 of 16 seeds. It cannot register a gain. Phase 1b of `hunter-practice.md` replaces it with a mean beside `eval.chase_catch_share`.
 - **Fault, the catch rate's rot theory**: refused. `eval.catch_rate` counts fatal bites by hunters per 1,000 hunter agent-ticks, from `AGENT_DIED` events; food rot emits none. It is a speed, and the attempt read is `eval.chase_catch_share`.
 - **Tooling gap**: `scripts/eval-power.mjs` needs 2 times the arm size in seeds, and the smallest arm it takes is 16, so no 16-seed report can be powered. The alarm and hunter power reads need 32-seed runs or a change to that floor.
+
+### 2026-11-07 - Arm d replication (training T22)
+
+- Arm d (`evals/train-curriculum-iter2-d.json`, 60 generations, 32 episodes) on `--seed-offset` 0, 64 and 128 gives predator `prey-ahead` 0.16, 0.00 and 0.00 (memoryless reference 0.31): the +0.16 edge does not replicate (1 of 3 offsets above 0). Treat one archive's edge as a lead, not an effect.
+- The bite varies by offset: all three bite prey (share 1.00); offset 0 bites kin, offset 128 bites the too-big prey, offset 64 passes `bite-discrimination` at 1.00. Prey into BITE is +1.97 to +2.19 on all three, so the bite exists in the cell and the failure is in the chase and the discrimination, not in a missing output.
+- A full arm d run took about 9 minutes at 14 workers with the machine otherwise idle, not 25 to 30.
