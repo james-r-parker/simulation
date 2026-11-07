@@ -1,5 +1,8 @@
+import { createRng, fork } from '../../js/sim/rng.js';
+import { DRILLS } from '../../js/evo/drill-scenarios.js';
+import { couldBite } from '../../js/sim/bite-rule.js';
 import { describe, expect, it } from 'vitest';
-import { stageWorld } from '../../js/evo/pool-discrimination-stage.js';
+import { STAGE_MAX_FOOD, stageWorld } from '../../js/evo/pool-discrimination-stage.js';
 
 const agent = { x: 1000, y: 2000, angle: 0.5, spec: 0, energy: 800 };
 
@@ -49,5 +52,41 @@ describe('stageWorld', () => {
     it('refuses more rocks than the world has slots, naming the numbers', () => {
         const rocks = Array.from({ length: 500 }, () => ({ x: 0, y: 0, r: 1 }));
         expect(() => stageWorld({ foods: [], rocks, agents: [agent], seed: 3 })).toThrow(/500 rocks do not fit/);
+    });
+
+    it('sizes the food slots to the scenes: every drill places all its items with slots to spare for carcasses', () => {
+        for (const drill of DRILLS) {
+            const rng = fork(createRng(1), `stage:${drill.name}`);
+            for (let t = 0; t < 20; t++) {
+                const { stage } = drill.plan(rng, 300);
+                // A plan types its agents loosely (`Record<string, any>`); the stage needs the full `StagedAgent`.
+                const staged = /** @type {import('../../js/evo/pool-discrimination-stage.js').Stage} */ (
+                    /** @type {unknown} */ ({ ...stage, seed: 1 + t })
+                );
+                const { world } = stageWorld(staged);
+                expect(world.foodAlive.length).toBe(STAGE_MAX_FOOD);
+                expect(world.foodCount).toBe(stage.foods.length);
+                expect(stage.foods.length).toBeLessThanOrEqual(STAGE_MAX_FOOD / 4);
+            }
+        }
+    });
+
+    it('stages the prey-too-big prey so the hunter cannot bite it, and the prey-ahead prey so it can', () => {
+        for (const [name, bitable] of [
+            ['prey-too-big', false],
+            ['prey-ahead', true],
+        ]) {
+            const drill = DRILLS.find((d) => d.name === name);
+            const rng = fork(createRng(2), `stage:${name}`);
+            for (let t = 0; t < 10; t++) {
+                const { stage } = /** @type {NonNullable<typeof drill>} */ (drill).plan(rng, 300);
+                const { world } = stageWorld(
+                    /** @type {import('../../js/evo/pool-discrimination-stage.js').Stage} */ (
+                        /** @type {unknown} */ ({ ...stage, seed: 1 + t })
+                    ),
+                );
+                expect(couldBite(world, 0, 1)).toBe(bitable);
+            }
+        }
     });
 });
