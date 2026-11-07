@@ -46,7 +46,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Reachable births](reachable-births.md) - willing agents mate within `mateRange`, a child's energy is a share of its mother's, the split threshold is lower and the default economy sustains foragers; jud...
 - [Web presence](web-presence.md) - a designed icon in every size, Open Graph and Twitter cards, a full `<head>`, an installable web app manifest with a splash, `robots.txt` and `sitemap.xml`
 
-## In progress (13)
+## In progress (14)
 
 Partly built - the note says which phases are real.
 
@@ -58,13 +58,14 @@ Partly built - the note says which phases are real.
 - [Quality gates and test tiers](quality-gates-and-test-tiers.md) - tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test... _(validated 23eaea3, 2026-10-17)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
 - [Realistic keepers](realistic-keepers.md) - Phases 1 and 2 are built: `E137` and the combined run `E138` kept every mechanism but provisioning, which is deleted; the six kept switches are on by default an... _(validated 12d9ba4, 2026-11-06)_ _(depends on [natural-selection.md](natural-selection.md), [refuge.md](refuge.md))_
 - [Refuge](refuge.md) - Phase 3 amended to a long-range refuge sense (2026-11-06); Phase 1 is built: the eight detectors, the refuge-access fixture and the diagnosis (`E130`: cover pro... _(validated 62a6758, 2026-11-06)_ _(depends on [natural-selection.md](natural-selection.md))_
+- [Renderer event effects](renderer-event-effects.md) - Phase 1 code built (T1 to T14, T16): the effect pool, budget, look items, flag edges, body tweens, every Phase 1 recipe, the weather layer, the audio cues and t... _(validated e8904ad, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md))_
 - [Training](training.md) - Phase 1 (drills) is built (T1 to T4). Phase 2 code is built (T6 to T11: the archive fixes, `runEpisode` and `mergeEpisode`, `npm run train`, the curriculum, che... _(validated f5c7880, 2026-11-07)_ _(depends on [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md))_
 - [WASM kernels](wasm-kernels.md) - Phases 1 and 2 are built and adopted (T1 to T12): every world runs the brain phase and the ray march in the Rust/WASM kernels from birth, and the JS brain kerne... _(validated f5c7880, 2026-11-07)_ _(depends on [headless-sim-core.md](headless-sim-core.md))_
 - [Worker and renderer](worker-and-renderer.md) - Phase 1 built: the sim core and the live policy run in a Web Worker behind a validated message protocol; Phases 2 (renderer core) and 3 (interface) code merged... _(validated f5c7880, 2026-11-07)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [predator-prey.md](predator-prey.md), [body-temperature.md](body-temperature.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [World balance and biology](world-balance.md) - Phases 1 to 4 and Phase 5 round 1 built; the post-feature round consumes merged flora and megafauna evidence, then tests predator persistence and genetic famili... _(validated 64a66de, 2026-11-02)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the docs and the README with s... _(validated 23eaea3, 2026-10-17)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (8)
+## Proposed (7)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
@@ -74,7 +75,6 @@ Plans. Nothing built; do not read these as descriptions of the code.
 - [Habitat cover](habitat-cover.md) - nothing built; Phase 1 (reach instruments and a 32-seed baseline) is first, Phase 2 puts rings on the rims of the food patches behind `refugeAnchor` _(validated f5c7880, 2026-11-07)_ _(depends on [refuge.md](refuge.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Hunter practice](hunter-practice.md) - hunters improve with age: a probe that measures practice without survivorship, a learnable pursuit skill credited by the meal, and a sensitive period; nothing b... _(validated f5c7880, 2026-11-07)_ _(depends on [hunter-learning.md](hunter-learning.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated 23eaea3, 2026-10-17)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_
-- [Renderer event effects](renderer-event-effects.md) - Phase 1 (event effects for bites, kills, eating, mating, births, calls, sickness and the season's weather, on the existing snapshot and effect ring) is built fi... _(validated e8904ad, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md))_
 - [Seasonal movement](seasonal-movement.md) - Phase 1 (four seasonal detectors and a 32-seed baseline) is built first; Phase 2 adds the snowline and the green wave behind default-off switches _(validated f5c7880, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md))_
 
 ## Reference (3)
