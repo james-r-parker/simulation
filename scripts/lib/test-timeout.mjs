@@ -3,6 +3,8 @@
 // nightly runs them beside each other on 4 shared vCPUs. vitest.config.js reads these; tests wrap an explicit timeout
 // in `scaleTimeout`.
 
+import { coreCount, loadScale, readLoad } from './load-state.mjs';
+
 /** Vitest's default per-test timeout in ms. */
 export const DEFAULT_TIMEOUT_MS = 5000;
 /** The default per-test timeout in ms when coverage is on. */
@@ -44,4 +46,16 @@ export function timeoutFactorFor(argv) {
 export function scaleTimeout(ms, env = process.env) {
     const factor = Number(env.TEST_TIMEOUT_FACTOR);
     return Number.isFinite(factor) && factor > 1 ? ms * factor : ms;
+}
+
+/**
+ * What a busy machine stretches every test limit by (1 when quiet, never below). Load is read when vitest starts, so a
+ * run begun on a quiet machine keeps its strict limits. `TEST_LOAD_SCALE` overrides it (for tests of this).
+ * @param {Record<string, string | undefined>} [env] the environment
+ * @param {number} [cores] the thread count
+ * @returns {number} the multiplier
+ */
+export function busyScale(env = process.env, cores = coreCount()) {
+    const forced = Number(env.TEST_LOAD_SCALE);
+    return Number.isFinite(forced) && forced >= 1 ? forced : loadScale(readLoad(env), cores);
 }
