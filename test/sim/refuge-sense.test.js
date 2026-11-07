@@ -36,6 +36,17 @@ describe('refuge inputs', () => {
         expect(c).toBeCloseTo(cos, 6);
     });
 
+    it('keeps the nearest ring when a farther one is listed after it', () => {
+        const [s, c] = sensing({}, [800, 500, 100, 500]).read();
+        expect(s).toBeCloseTo(0, 6);
+        expect(c).toBeCloseTo(1, 6);
+    });
+
+    it('has no bearing at the exact ring centre (nothing to point at) and is fully inside', () => {
+        const [s, c, near] = sensing({}, [500, 500]).read();
+        expect([s, c, near]).toEqual([0, 0, 1]);
+    });
+
     it('measures the bearing from the heading, not from +x', () => {
         const { w, slot, read } = sensing({}, [900, 500]);
         w.angle[slot] = Math.PI / 2;

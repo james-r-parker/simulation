@@ -113,6 +113,29 @@ describe('DRILLS', () => {
         expect(dist(stage.agents[0], safe)).toBeCloseTo(0.7 * 300, 6);
     });
 
+    it('ends two-foods when one food is gone, and wins only when the toxic one is the one left', () => {
+        const plan = byName('two-foods').plan(stream('two-foods'), 300);
+        const world = (/** @type {number[]} */ alive, /** @type {number[]} */ tox) => ({
+            foodAlive: Uint8Array.from(alive),
+            foodTox: Float32Array.from(tox),
+        });
+        const control = /** @type {any} */ ({ name: 'intact' });
+        expect(plan.done(/** @type {any} */ (world([1, 1], [1, 0])), control)).toBe(false);
+        expect(plan.done(/** @type {any} */ (world([0, 1], [1, 0])), control)).toBe(true);
+        expect(plan.won(/** @type {any} */ (world([1, 0], [1, 0])))).toBe(true);
+        expect(plan.won(/** @type {any} */ (world([0, 1], [1, 0])))).toBe(false);
+        expect(plan.won(/** @type {any} */ (world([0, 0], [1, 0])))).toBe(false);
+    });
+
+    it('wins the hunter drills on a living subject, and the ring drill only after the subject entered the ring', () => {
+        const alive = /** @type {any} */ ({ alive: Uint8Array.of(1) });
+        const dead = /** @type {any} */ ({ alive: Uint8Array.of(0) });
+        const chase = byName('hunter-closing').plan(stream('hunter-closing'), 300);
+        expect([chase.won(alive), chase.won(dead)]).toEqual([true, false]);
+        const ring = byName('rock-refuge').plan(stream('rock-refuge'), 300);
+        expect([ring.won(alive), ring.won(dead)]).toEqual([false, false]);
+    });
+
     it('stages the hunter 500 px away and the prey of prey-too-big with twice the subject energy', () => {
         const closing = byName('hunter-closing').plan(stream('hunter-closing'), 300).stage;
         expect(dist(closing.agents[0], closing.agents[1])).toBeCloseTo(500, 6);

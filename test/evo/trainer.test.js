@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { occupiedCount } from '../../js/evo/archive.js';
 import { getPolicy, LIVE_POLICY } from '../../js/evo/policies/index.js';
-import { TRAINER_DESCRIPTOR, TRAINER_N_CAP, createTrainerArchive, episodeSeed } from '../../js/evo/trainer.js';
+import { snapshotArchive } from '../../js/evo/archive-snapshot.js';
+import {
+    TRAINER_DESCRIPTOR,
+    TRAINER_N_CAP,
+    createTrainerArchive,
+    episodeSeed,
+    runEpisode,
+} from '../../js/evo/trainer.js';
 import { createConfig } from '../../js/sim/config.js';
 
 describe('episodeSeed', () => {
@@ -19,5 +26,23 @@ describe('createTrainerArchive', () => {
         expect([occupiedCount(archive), archive.nCap]).toEqual([0, TRAINER_N_CAP]);
         const policy = getPolicy(LIVE_POLICY).create({ config });
         expect(policy.archive.descriptor.name).toBe(TRAINER_DESCRIPTOR.name);
+    });
+});
+
+describe('runEpisode metrics', () => {
+    const world = { initialAgents: 10, maxAgents: 20, minAgents: 5 };
+    const task = (/** @type {Record<string, any>} */ extra) => ({
+        seed: 4,
+        overrides: world,
+        snapshot: snapshotArchive(createTrainerArchive(createConfig(world))),
+        ticks: 10,
+        ...extra,
+    });
+
+    it('returns none by default, the asked-for ones by name, and null for a name that is not a metric', () => {
+        expect(runEpisode(task({})).metrics).toEqual({});
+        const { metrics } = runEpisode(task({ metrics: ['eval.food_energy_per_1k', 'eval.not_a_metric'] }));
+        expect(Object.keys(metrics)).toEqual(['eval.food_energy_per_1k', 'eval.not_a_metric']);
+        expect(metrics['eval.not_a_metric']).toBeNull();
     });
 });
