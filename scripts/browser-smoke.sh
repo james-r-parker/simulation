@@ -25,7 +25,7 @@ run_here() {
   trap cleanup EXIT
   node_modules/.bin/vite build --outDir "$tmp/dist" --emptyOutDir --logLevel warn
   port="$(node -e 'const s=require("net").createServer().listen(0,"127.0.0.1",()=>{console.log(s.address().port);s.close()})')"
-  node_modules/.bin/vite preview --outDir "$tmp/dist" --port "$port" --strictPort --host 127.0.0.1 >"$tmp/preview.log" 2>&1 &
+  BROWSER=none node_modules/.bin/vite preview --outDir "$tmp/dist" --port "$port" --strictPort --host 127.0.0.1 --open false >"$tmp/preview.log" 2>&1 &
   server_pid=$!
   local ready=0 i
   for i in $(seq 1 100); do
