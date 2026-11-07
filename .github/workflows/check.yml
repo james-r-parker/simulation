@@ -7,6 +7,12 @@ on:
   # The merge queue: `check` and `browser-smoke` (the required checks on main) run on the queued merge commit, which is
   # main plus the PR, so a PR no longer has to be re-run each time main moves.
   merge_group:
+  workflow_dispatch:
+    inputs:
+      noise:
+        description: Measure benchmark noise only (bench-compare --self) instead of the PR gates
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -21,6 +27,7 @@ jobs:
   # One job, always named check, whichever path it takes - so `gh pr checks` (and a required check, should the repo
   # ever get one) sees a result on every PR.
   check:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -79,6 +86,7 @@ jobs:
   # always runs and reports (a required check must not go missing); only its steps are skipped, so the image is pulled
   # only when a path the app is built from changed (scripts/change-scope.sh --browser) or the scope is unknown.
   browser-smoke:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -162,3 +170,28 @@ jobs:
           set -o pipefail
           node scripts/bench-compare.mjs --base "origin/${{ github.base_ref }}" --sizes=500 --runs=3 --threshold=0.10 | tee bench-compare.txt
           { echo '### bench-compare'; echo '```'; cat bench-compare.txt; echo '```'; } >>"$GITHUB_STEP_SUMMARY"
+
+  # Measures the noise alone: HEAD against a second checkout of itself (`gh workflow run check.yml -f noise=true`). T18 of
+  # docs/designs/quality-gates-and-test-tiers.md records the largest spread of these runs before it sets the perf threshold.
+  noise:
+    if: github.event_name == 'workflow_dispatch' && inputs.noise
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Compare HEAD with itself
+        run: |
+          set -o pipefail
+          node scripts/bench-compare.mjs --self --sizes=500 --runs=3 | tee bench-noise.txt
+          { echo '### bench-compare --self (noise)'; echo '```'; cat bench-noise.txt; echo '```'; } >>"$GITHUB_STEP_SUMMARY"

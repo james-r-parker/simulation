@@ -36,9 +36,14 @@ describe('workflows', () => {
 
         it('runs on merge_group, so the required checks report in the merge queue', () => {
             expect(/^on:[\s\S]*?^ {2}merge_group:/m.test(check)).toBe(true);
-            // The required checks (the main ruleset) have no job-level `if`: a skipped job reports no check.
+            // The required checks (the main ruleset) have no job-level `if` that can skip them on a pull request or in the
+            // queue: a skipped job reports no check. The only one allowed leaves out the manual noise dispatch (T17).
             for (const id of ['check', 'browser-smoke']) {
-                expect(job(id), id).not.toMatch(/^ {4}if:/m);
+                const conditions = [...job(id).matchAll(/^ {4}if: (.*)$/gm)].map((m) => m[1]);
+                expect(
+                    conditions.every((c) => c === "github.event_name != 'workflow_dispatch'"),
+                    `${id}: ${conditions}`,
+                ).toBe(true);
             }
         });
 
@@ -131,5 +136,23 @@ describe('workflows', () => {
         const perf = check.slice(check.indexOf('\n  perf:'));
         expect(Number(/timeout-minutes:\s*(\d+)/.exec(perf)?.[1])).toBeGreaterThanOrEqual(30);
         expect(Number(/bench-compare\.mjs[^\n]*--runs=(\d+)/.exec(perf)?.[1])).toBeLessThanOrEqual(3);
+    });
+
+    it('offer a noise dispatch on check.yml that runs bench-compare --self', () => {
+        const check = workflows.find(({ name }) => name === 'check.yml')?.text ?? '';
+        expect(check).toMatch(/workflow_dispatch:\s+inputs:\s+noise:/);
+        const noise = check.slice(check.indexOf('\n  noise:'));
+        expect(noise).toContain('bench-compare.mjs --self');
+    });
+
+    it('open a nightly-failure issue from a job that needs the nightly job', () => {
+        const nightly = workflows.find(({ name }) => name === 'nightly.yml')?.text ?? '';
+        const job = nightly.slice(nightly.indexOf('\n  nightly-failure:'));
+        expect(job).toMatch(/needs:\s*nightly/);
+        expect(job).toContain('failure()');
+        expect(job).toMatch(/issues:\s*write/);
+        expect(job).toContain('nightly-failure');
+        expect(job).toContain('scripts/lib/nightly-digest.mjs');
+        expect(nightly).toContain('reports/nightly-summary.txt');
     });
 });
