@@ -8,7 +8,8 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export PATH="$HOME/.cargo/bin:$PATH"
 
 out="${1:-$root/wasm/blob-kernels.wasm}"
-target_dir="${CARGO_TARGET_DIR:-$root/wasm/target}"
+# Outside the tree, so Prettier and the other gates never walk the build output.
+target_dir="${CARGO_TARGET_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/blob-kernels/target}"
 
 # Cargo reads wasm/.cargo/config.toml from the working directory, so build from inside the crate. The source path is
 # remapped so the bytes do not depend on where the checkout lives.
