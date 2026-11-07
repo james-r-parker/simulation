@@ -117,11 +117,11 @@ const WASM_OPT_VERSION = '120';
  * @returns {boolean} whether scripts/build-wasm.sh can run here
  */
 export function hasRebuildTools(env = process.env) {
-    const opts = { env: { ...env, PATH: `${join(homedir(), '.cargo/bin')}:${env.PATH ?? ''}` }, encoding: 'utf8' };
-    if (spawnSync('cargo', ['--version'], { ...opts, stdio: 'ignore' }).status !== 0) {
+    const childEnv = { ...env, PATH: `${join(homedir(), '.cargo/bin')}:${env.PATH ?? ''}` };
+    if (spawnSync('cargo', ['--version'], { env: childEnv, stdio: 'ignore' }).status !== 0) {
         return false;
     }
-    const opt = spawnSync('wasm-opt', ['--version'], opts);
+    const opt = spawnSync('wasm-opt', ['--version'], { env: childEnv, encoding: 'utf8' });
     return opt.status === 0 && new RegExp(`^wasm-opt version ${WASM_OPT_VERSION}(\\s|$)`).test(opt.stdout ?? '');
 }
 
