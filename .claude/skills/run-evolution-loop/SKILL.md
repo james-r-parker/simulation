@@ -32,8 +32,8 @@ repeated. Three cases from 2026-11-07:
 
 - The `prey-too-big` drill's prey was bitable (a forager's size is capped by its store), so a predator that never bit
   won it (fixed in #347).
-- `catch_rate` rose 0.55 to 0.65 in T12 iteration 2 arm b while the `prey-ahead` drill edge stayed 0.00: it is a rate,
-  and it counts rotted carcasses.
+- `catch_rate` rose 0.55 to 0.65 in T12 iteration 2 arm b while the `prey-ahead` drill edge stayed 0.00: it is a speed
+  (kills per 1,000 hunter-ticks), so it rises with prey density whether or not the hunters got better.
 - The reflex `approach-prey` scored 1.00 alongside a `prey-ahead` edge of 0.00: approaching is not catching.
 
 ## 1. Hypothesise

@@ -1,6 +1,6 @@
 # Habitat cover
 
-**Status:** Proposed - Phase 1 T1 built (#343) and the T2 baseline run (`E-D-2`, 32 floor-on seeds, in Baseline); T3 (the conformance review) is open. Phase 2 puts rings on the rims of the food patches behind `refugeAnchor` and is unbuilt.
+**Status:** Proposed - Phase 1 T1 built (#343) and the T2 baseline run (`E141`, 32 floor-on seeds, in Baseline); T3 (the conformance review) is open. Phase 2 puts rings on the rims of the food patches behind `refugeAnchor` and is unbuilt.
 **Validated:** f5c7880 (2026-11-07)
 **Priority:** 20 - it changes the map and re-pins the goldens, so it queues behind every unbuilt doc
 **Depends on:** [refuge.md](refuge.md), [realistic-keepers.md](realistic-keepers.md)
@@ -80,7 +80,7 @@ in the food. Phase 1 turns this table into a metric on 32 seeds.
 | Prey inside a patch disc                                                | 28 to 45%, seeds 1 to 4 (above)          |
 | `eval.refuge_use_under_threat` with `refugeSense` on, 16 seeds (`E133`) | -0.0029                                  |
 
-**Reach baseline (`E-D-2`, Phase 1 T2).** 32 seeds from `evals/seeds.json`, floor on, defaults, policy `live`, 200,000 ticks,
+**Reach baseline (`E141`, Phase 1 T2).** 32 seeds from `evals/seeds.json`, floor on, defaults, policy `live`, 200,000 ticks,
 config hash `ff8d890a5a70c14d`, on `c346a20e`. Samples every 10 ticks after burn-in; the ring metrics read `DASH_PX` 600.
 
 | Metric                          | Mean   | Range across seeds | SD    | Detectable change at 80% (16 v 16, `eval:power`) | False positive |
@@ -129,7 +129,7 @@ New `eval.*` metrics from the eval observer at the 10-tick sample, `watch`, none
 **Targets:** none - the three metrics are instruments (`watch`) and no existing metric moves; the phase ends with a 32-seed baseline.
 
 Done means: the three metrics run in `js/evo/scene-reach.js`, `npm run eval:power` has rated them, and the 32-seed floor-on
-baseline (`E-D-2`) replaces the four-seed diagnostic above with numbers in [sim-notes.md](sim-notes.md).
+baseline (`E141`) replaces the four-seed diagnostic above with numbers in [sim-notes.md](sim-notes.md).
 
 Chunks:
 
@@ -228,7 +228,7 @@ Chunks:
 | #   | Task                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Nature       | Depends on |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
 | T1  | (built, #343) Add `js/evo/scene-reach.js` with `eval.prey_cover_distance`, `eval.prey_within_dash_share` and `eval.prey_in_patch_share`, its test, and Metrics rows for them and for `eval.predators_at_end`, `eval.prey_types_at_end`, `eval.hunter_kill_conversion_by_age.1k-2k` and `eval.hunter_independent_kill_share` (built: the three reach metrics and their Metrics rows; the four others already existed in `scene-balance.js` and `scene-competence.js`, and `eval.predators_at_end` and `eval.prey_types_at_end` already have `higher` directions) | [mechanical] | -          |
-| T2  | (built) Run 32 floor-on seeds at 200,000 ticks (`E-D-2`), `eval:power` the three metrics; the table is in the Baseline section and the entry in `sim-notes.md` (2026-11-07 baseline entry); the metrics are built (T1), so run `npm run eval -- --seeds 32 --ticks 200000 --policy live --workers 8 --out /tmp/claude-1000/eval-out/D/reach-baseline.json`, then `npm run eval:power -- /tmp/claude-1000/eval-out/D/reach-baseline.json --include-watch --metrics eval.prey_cover_distance,eval.prey_within_dash_share,eval.prey_in_patch_share`                | [mechanical] | T1         |
+| T2  | (built) Run 32 floor-on seeds at 200,000 ticks (`E141`), `eval:power` the three metrics; the table is in the Baseline section and the entry in `sim-notes.md` (2026-11-07 baseline entry); the metrics are built (T1), so run `npm run eval -- --seeds 32 --ticks 200000 --policy live --workers 8 --out /tmp/claude-1000/eval-out/D/reach-baseline.json`, then `npm run eval:power -- /tmp/claude-1000/eval-out/D/reach-baseline.json --include-watch --metrics eval.prey_cover_distance,eval.prey_within_dash_share,eval.prey_in_patch_share`                 | [mechanical] | T1         |
 | T3  | Conformance review of Phase 1: a fresh agent checks every Delivery requirements row against the diff, in parallel with `scripts/check.sh`                                                                                                                                                                                                                                                                                                                                                                                                                       | [judgement]  | T2         |
 
 ### Phase 2 - Habitat on the patch rims
