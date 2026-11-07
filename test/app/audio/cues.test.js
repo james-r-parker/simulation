@@ -8,6 +8,8 @@ import {
     PENTATONIC,
 } from '../../../js/app/audio/cues.js';
 import { midiToHz } from '../../../js/app/audio/pad.js';
+import { TONES } from '../../../js/app/audio/cues.js';
+import { CLIENT_KIND } from '../../../js/app/renderer/client-kinds.js';
 
 const LAYOUT = {
     effectKinds: { BORN: 1, DIED: 2, BITE: 3, ALARM: 4, PACK_CALL: 5, SMOKE: 6 },
@@ -117,5 +119,53 @@ describe('createCueLimiter', () => {
         expect(limiter.allow('eaten', 310)).toBe(false);
 
         expect(limiter.allow('eaten', 1001)).toBe(true);
+    });
+});
+
+describe('the effect-family cues', () => {
+    const FULL = {
+        effectKinds: {
+            BORN: 1,
+            DIED: 2,
+            BITE: 3,
+            ALARM: 4,
+            PACK_CALL: 5,
+            SMOKE: 6,
+            MATED: 8,
+            STAMPEDE: 10,
+            STRAIN_EMERGED: 11,
+        },
+        deathCauses: { EATEN: 1 },
+        bornCauses: { INITIAL: 0, MATE: 1, SPLIT: 2, FLOOR: 3, IMMIGRANT: 4 },
+    };
+    const CLOSE = { ...CAMERA, zoom: 2 };
+    const at = (/** @type {number} */ kind, /** @type {number} */ d = 0) => ({ kind, x: 1000, y: 500, a: 3, c: 0, d });
+
+    it('gives mating, stampede, smoke, strain and the client sickness kinds their tones at any zoom', () => {
+        const ctx = { layout: FULL, camera: CAMERA, rootMidi: 50 };
+        expect(cueFor(at(8), ctx)?.kind).toBe('mate');
+        expect(cueFor(at(10), ctx)?.kind).toBe('stampede');
+        expect(cueFor(at(6), ctx)?.kind).toBe('smoke');
+        expect(cueFor(at(11), ctx)?.kind).toBe('strain');
+        expect(cueFor(at(CLIENT_KIND.SICK), ctx)?.kind).toBe('sick');
+        expect(cueFor(at(CLIENT_KIND.INFECTED), ctx)).toMatchObject({ wave: TONES.infected.wave });
+        expect(cueFor(at(CLIENT_KIND.CURED), ctx)).toBeNull();
+    });
+
+    it('sounds bites and meals only at the close zoom band and in view', () => {
+        expect(cueFor(at(3), { layout: FULL, camera: CAMERA, rootMidi: 50 })).toBeNull();
+        expect(cueFor(at(3), { layout: FULL, camera: CLOSE, rootMidi: 50 })?.kind).toBe('bite');
+        expect(cueFor(at(CLIENT_KIND.MEAL), { layout: FULL, camera: CLOSE, rootMidi: 50 })?.kind).toBe('meal');
+        const off = { ...at(3), x: 9000 };
+        expect(cueFor(off, { layout: FULL, camera: CLOSE, rootMidi: 50 })).toBeNull();
+    });
+
+    it('drops a split pluck an octave and rings a muted bell for a floor entrant', () => {
+        const ctx = { layout: FULL, camera: CAMERA, rootMidi: 50 };
+        const mate = cueFor(at(1, 1), ctx);
+        const split = cueFor(at(1, 2), ctx);
+        expect(split?.startHz).toBeCloseTo((mate?.startHz ?? 0) / 2);
+        expect(cueFor(at(1, 3), ctx)?.kind).toBe('arrival');
+        expect(cueFor(at(1, 4), ctx)?.kind).toBe('arrival');
     });
 });

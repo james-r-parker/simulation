@@ -43,6 +43,20 @@ describe('herd ecology sampling', () => {
         expect(scene.followBareTicks[0]).toBe(1);
     });
 
+    it('ignores a dead blob, a dead herd animal and a dead patch', () => {
+        const scene = followScene();
+        const world = followWorld();
+        world.alive = Uint8Array.of(0, 1);
+        world.x = Float64Array.of(10, 50);
+        world.y = Float64Array.of(0, 0);
+        world.herdAlive = Uint8Array.of(0);
+        samplePatchHerdFollowing(scene, world);
+        expect([scene.followBareBlobs[0], scene.followBareTicks[0], scene.followHerdedTicks[0]]).toEqual([1, 1, 0]);
+        world.patchAlive[0] = 0;
+        samplePatchHerdFollowing(scene, world);
+        expect(scene.followBareTicks[0]).toBe(1);
+    });
+
     it('counts HerdSeeded events only after burn-in', () => {
         const scene = { herdSeededPatches: 0 };
         const data = new Float64Array(EVENT_STRIDE * 2);

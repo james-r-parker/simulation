@@ -286,7 +286,7 @@ export function stepPlayhead(playhead, snapshots, nowMs) {
 
 /**
  * @param {Playhead} playhead the playhead
- * @returns {number} the tick that effects, rings and sparks are timed by
+ * @returns {number} the tick that effects are timed by
  */
 export function simTickAt(playhead) {
     return playhead.tick;

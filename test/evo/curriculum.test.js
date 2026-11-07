@@ -32,6 +32,9 @@ describe('planStages', () => {
 
     it('rejects an empty list, a missing generations before the last, a duplicate name and a bad config', () => {
         expect(() => planStages([], 3)).toThrow(/non-empty/);
+        for (const entry of [null, 'a', { config: null }, { name: '', config: null }]) {
+            expect(() => planStages([/** @type {any} */ (entry)], 3)).toThrow(/curriculum\[0\]: expected an object/);
+        }
         expect(() =>
             planStages(
                 [
