@@ -88,6 +88,29 @@ export function createPeekTracker({ restMs = PEEK_REST_MS } = {}) {
     };
 }
 
+/**
+ * What the pointer does to the tag: a mouse move restarts the rest; a long press shows it at once; a touch down hides it
+ * and keeps it hidden until the next move or long press.
+ * @param {ReturnType<typeof createPeekTracker>} tracker the rest tracker
+ * @param {{hide: () => void}} peek the tag
+ * @param {() => number} now wall time in ms
+ * @returns {{pointer: (x: number, y: number) => void, peekAt: (x: number, y: number) => void, peekHide: () => void}}
+ *   the three calls, in client px
+ */
+export function peekControls(tracker, peek, now) {
+    return {
+        pointer(x, y) {
+            tracker.move(x, y, now());
+            peek.hide();
+        },
+        peekAt: (x, y) => tracker.move(x, y, now() - PEEK_REST_MS),
+        peekHide() {
+            tracker.move(0, 0, Infinity);
+            peek.hide();
+        },
+    };
+}
+
 /** The gap between the cursor and the tag, in CSS px. */
 const OFFSET_PX = 14;
 

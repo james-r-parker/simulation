@@ -12,6 +12,7 @@ import { createFamilySlots } from './family-slots.js';
 import { createFrameLoop } from './frame-loop.js';
 import { clearFrameStats, createFrameStats } from './frame-stats.js';
 import { MIN_CSS_PX_TOUCH, minPxTable } from './display-size.js';
+import { clientToDevice, deviceToClient, devicePerCss } from './canvas-geometry.js';
 import { agentAt } from './hover-pick.js';
 import { largestOfLineage } from './picking.js';
 import { createGpuTimer } from './gpu-timer.js';
@@ -166,6 +167,10 @@ function pointerOptions(app) {
         getAgents: app.loop.agents,
         getMinPx: () => app.minPx,
         getTouchMinPx: () => MIN_CSS_PX_TOUCH * devicePerCss(app),
+        onLongPress(_id, x, y) {
+            const at = deviceToClient(app, { x, y });
+            app.iface.peekAt(at.x, at.y);
+        },
         onPick(id) {
             app.state.selectedId = id;
             app.supervisor.client()?.select(id);
@@ -216,31 +221,6 @@ function makeSupervisor(app) {
                   },
         log: appLog,
     });
-}
-
-/**
- * @param {App} app the page
- * @param {{x: number, y: number}} client a point in client pixels
- * @returns {{x: number, y: number}} the same point in device pixels on the canvas
- */
-function clientToDevice(app, client) {
-    const r = app.deps.scene?.canvas?.getBoundingClientRect();
-    if (!r) {
-        return { x: -1, y: -1 };
-    }
-    return {
-        x: ((client.x - r.left) * app.size.width) / r.width,
-        y: ((client.y - r.top) * app.size.height) / r.height,
-    };
-}
-
-/**
- * @param {App} app the page
- * @returns {number} device pixels per CSS pixel on the canvas, 1 before the scene exists
- */
-function devicePerCss(app) {
-    const width = app.deps.scene?.canvas?.getBoundingClientRect().width ?? 0;
-    return width > 0 ? app.size.width / width : 1;
 }
 
 /**

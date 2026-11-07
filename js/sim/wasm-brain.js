@@ -1,5 +1,5 @@
-// The brain phase in the WASM kernels (docs/designs/wasm-kernels.md): one `brain_forward` call runs `poolRays`,
-// `hiddenStep`, `outputStep` and `hebbianStep` for every alive slot, bit-identical to `forwardAll`'s JS path. The
+// The brain phase in the WASM kernels (docs/designs/wasm-kernels.md): one `brain_forward` call runs the pooling,
+// the hidden step, the outputs and Hebbian learning for every alive slot, bit-identical to the JS kernel it replaced. The
 // parameter block is written once when the world is attached; nothing crosses the boundary per agent.
 
 import {
@@ -114,6 +114,9 @@ export function writeBrainParams(arena, config, layout) {
  */
 export function wasmForwardAll(world) {
     const arena = world.wasm;
+    if (arena === undefined) {
+        throw new Error('forwardAll: the world has no WASM arena (worlds are attached by allocateWorld)');
+    }
     const { config, alive } = world;
     if (config.hebbianRate > 0 && config.rewardedHebb) {
         const scale = arena.views.rewardScale;
