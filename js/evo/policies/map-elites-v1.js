@@ -47,6 +47,21 @@ function clearClone(clones, slot) {
     clones.fromArchive[slot] = 0;
 }
 
+/**
+ * Lets the observer read what the policy keeps: the step sizes (the silent inputs a birth decays come from the world's
+ * input-activity sample) and, for each entrant, whether its genome came from the archive or a clone of one.
+ * @param {Record<string, any> | undefined} observer the eval observer, if any
+ * @param {{birth: ReturnType<typeof createBirth>, clones: ReturnType<typeof createClones>}} shared the birth half and the
+ *   per-slot clone marks
+ * @returns {void}
+ */
+function wireObserver(observer, { birth, clones }) {
+    if (observer !== undefined) {
+        shareBirth(observer, birth);
+        observer.archiveDraw = (/** @type {number} */ slot) => clones.fromArchive[slot] === 1;
+    }
+}
+
 /** The `v1` scoring: `fitnessV1` and no extra fields on `FitnessScored`. */
 const V1_SCORING = Object.freeze({
     fitnessName: 'v1',
@@ -60,7 +75,9 @@ const V1_SCORING = Object.freeze({
  * @param {Record<string, any>} options the eval runner's `{ config, log, observer }`, plus for a variant `name`,
  *   `cellDraws`, `archiveShare`, `cloneShareEnd` (the immigrant mix of `createSeeder`) and `scoring`:
  *   `{ fitnessName, descriptor, createScoring({ counters, observer, log }) }`, where `createScoring` returns `{ fitness,
- *   scoreFields }` and `scoreFields(row)` adds fields to the `FitnessScored` log event of the death-log row
+ *   scoreFields }` and `scoreFields(row)` adds fields to the `FitnessScored` log event of the death-log row; and, for
+ *   the trainer, `archive` (a prebuilt archive the policy seeds from, instead of an empty one) and `onOffer(item, tick)`
+ *   (called with each offer in place of `offer(archive, item)`, so the archive stays as given; `item` is reused, copy it)
  * @returns {Record<string, any>} `{ name, brain, fitnessName, fitness, afterStep, onEvent, archive, sigma,
  *   fatherSigma, archiveRef, refId, isClone, counters }`
  */
@@ -69,14 +86,9 @@ export function createMapElitesV1(options) {
     const birth = createBirth(config);
     const counters = createLifeCounters(config);
     const scoring = options.scoring ?? V1_SCORING;
-    const archive = createArchive(brainLayout(config), { descriptor: scoring.descriptor });
+    const archive = options.archive ?? createArchive(brainLayout(config), { descriptor: scoring.descriptor });
     const clones = createClones(config.maxAgents);
-    if (observer !== undefined) {
-        // The brain metrics read the step sizes (the silent inputs a birth decays come from the world's input-activity sample).
-        shareBirth(observer, birth);
-        // An entrant is in the archive lineage when its genome came from the archive or a clone of one.
-        observer.archiveDraw = (/** @type {number} */ slot) => clones.fromArchive[slot] === 1;
-    }
+    wireObserver(observer, { birth, clones });
     const { cellDraws, archiveShare, cloneShareEnd } = options;
     const { initSpec, initBrain } = createSeeder({
         archive,
@@ -91,6 +103,7 @@ export function createMapElitesV1(options) {
     const { onDeath, onEvent } = createOffers({
         config,
         archive,
+        onOffer: options.onOffer,
         observer,
         counters,
         clones,

@@ -1,0 +1,5 @@
+[
+  { "name": "nursery", "config": "evals/micro-world.json", "generations": 20 },
+  { "name": "hunt", "config": "evals/train-hunt-world.json", "generations": 20 },
+  { "name": "world", "config": null }
+]
