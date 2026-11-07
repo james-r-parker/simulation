@@ -17,6 +17,7 @@ import { GUARD_DIRECTIONS, guardMetrics } from './scene-guards.js';
 import { AGE_DIRECTIONS } from './scene-hunter-age.js';
 import { KIN_DIRECTIONS, kinProximityMetrics } from './scene-kin-proximity.js';
 import { HUNTER_METRIC_NAMES, hunterMetrics } from './scene-hunters.js';
+import { MATCHED_DIRECTIONS, matchedMetrics } from './scene-matched.js';
 import { PATCH_DIRECTIONS, patchMetrics } from './scene-patch.js';
 import { REWARD_DIRECTIONS, rewardMetrics } from './metrics-reward.js';
 import { conditionMetrics } from './scene-condition.js';
@@ -106,6 +107,7 @@ export const SCENE_DIRECTIONS = Object.freeze({
     ...Object.fromEntries(WATCH.map((name) => [name, 'watch'])),
     ...AGE_DIRECTIONS,
     ...COMPETENCE_DIRECTIONS,
+    ...MATCHED_DIRECTIONS,
     ...GUARD_DIRECTIONS,
     ...KIN_DIRECTIONS,
     ...ALARM_REACH_DIRECTIONS,
@@ -141,6 +143,7 @@ export function sceneMetrics(observer, world) {
         ...diseaseMetrics(s.disease),
         ...hunterMetrics(s.hunters, world),
         ...competenceMetrics(s.competence, world),
+        ...matchedMetrics(s.matched),
         ...guardMetrics(s.guards),
         ...kinProximityMetrics(s.kin),
         ...alarmReachMetrics(observer),

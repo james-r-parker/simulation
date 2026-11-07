@@ -15,6 +15,7 @@ import { createFamilyScene, sampleFamilies } from './scene-families.js';
 import { createDiseaseScene, noteDiseaseEvents, sampleDiseaseFamilies } from './scene-disease.js';
 import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
 import { createCompetenceScene, noteChase, noteCompetenceBirth, noteCompetenceRecord } from './scene-competence.js';
+import { createMatchedScene, noteMatchedChase } from './scene-matched.js';
 import { createGuardScene, sampleGuards } from './scene-guards.js';
 import { createKinProximityScene, sampleKinProximity } from './scene-kin-proximity.js';
 import { createHunterScene, noteHunterBirth, noteHunterRecord, tickHunters } from './scene-hunters.js';
@@ -44,12 +45,17 @@ import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
  */
 export function createScenes(config, runTicks = 0) {
     const competence = createCompetenceScene(config);
+    const matched = createMatchedScene(config);
     return {
         flora: createFloraScene(),
         herd: createHerdScene(config),
         patch: createPatchScene(config),
-        approach: createApproachScene(config, (world, chase) => noteChase(competence, world, chase)),
+        approach: createApproachScene(config, (world, chase) => {
+            noteChase(competence, world, chase);
+            noteMatchedChase(matched, world, chase);
+        }),
         competence,
+        matched,
         terrain: createTerrainScene(config),
         refuge: createRefugeScene(config),
         reach: createReachScene(),

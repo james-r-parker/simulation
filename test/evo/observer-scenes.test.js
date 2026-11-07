@@ -147,6 +147,7 @@ describe('observeScenes', () => {
             'heritage',
             'hunters',
             'kin',
+            'matched',
             'mate',
             'niche',
             'patch',
