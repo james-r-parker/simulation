@@ -8,6 +8,7 @@ import { BODY_INPUT, OUTPUT_COUNT, OUTPUT_INDEX, inputOffsets } from '../sim/bra
 import { resetFastOut } from '../sim/hebbian.js';
 import { applyGenes } from '../sim/traits.js';
 import { arenaConfig } from './memory-probe-run.js';
+import { createKindTally, kindScores, noteBite, notePass } from './reflex-kind-tally.js';
 import { stageWorld } from './pool-discrimination-stage.js';
 import { caseNamed } from './reflex-cases.js';
 import { SEQUENCE_TICKS, SETTLE_TICKS, readOutputs } from './reflex-stage.js';
@@ -33,6 +34,8 @@ const SLOT_ENERGY = 800;
  * @property {number} trials trials played
  * @property {number} passShare `passes / trials`
  * @property {number} fast the share of trials whose first row already passed
+ * @property {Record<string, import('./reflex-kind-tally.js').KindScore>} kinds the pass share and the share of scored
+ *   ticks with `BITE` above 0, per staging kind (`prey`, `too-big`, `kin`, ...)
  */
 
 /** @typedef {(world: Record<string, any>) => void} Think what runs the brains of a world's slots */
@@ -110,6 +113,7 @@ function loadRow(world, { row, hue }) {
  * @typedef {object} Tally the per-slot results of the sequences of one case
  * @property {Uint8Array} passed `slots x trials`: 1 while every sequence of the trial so far passed every scored tick
  * @property {Uint8Array} fast `slots x trials`: 1 while every sequence of the trial so far passed its first row
+ * @property {import('./reflex-kind-tally.js').KindTally} kinds the per-kind passes and bites
  */
 
 /**
@@ -162,6 +166,9 @@ function scoreTick({ world, table, run }, { index, tick, marks }) {
     for (let slot = 0; slot < marks.ok.length; slot++) {
         const pass = Number(run.check(readOutputs(world.outputs, slot, outputs), staging));
         marks.first[slot] = tick === 0 ? pass : marks.first[slot];
+        if (scored) {
+            noteBite(run.tally.kinds, { slot, sequence: index, bite: outputs.bite });
+        }
         const fresh = marks.ok[slot] === 1 && run.tally.passed[slot * table.trials + trial] === 1;
         if (scored && pass === 0 && fresh) {
             logFailure({ world, table, run }, { slot, index, tick });
@@ -197,6 +204,7 @@ function runSequence(world, table, { index, run }) {
     for (let slot = 0; slot < slots; slot++) {
         tally.passed[slot * table.trials + trial] &= marks.ok[slot];
         tally.fast[slot * table.trials + trial] &= marks.first[slot];
+        notePass(tally.kinds, { slot, sequence: index, ok: marks.ok[slot] });
     }
 }
 
@@ -222,6 +230,7 @@ function runCase(world, table, { think, ids, hooks }) {
     const tally = {
         passed: new Uint8Array(slots * table.trials).fill(1),
         fast: new Uint8Array(slots * table.trials).fill(1),
+        kinds: createKindTally(table.sequences, slots),
     };
     const run = { think, tally, check: caseNamed(table.name).check, ids, hooks };
     for (let index = 0; index < table.sequences.length; index++) {
@@ -230,7 +239,13 @@ function runCase(world, table, { think, ids, hooks }) {
     return Array.from({ length: slots }, (_, slot) => {
         const passes = countOf(tally.passed, slot, table.trials);
         const fast = countOf(tally.fast, slot, table.trials) / table.trials;
-        return { passes, trials: table.trials, passShare: passes / table.trials, fast };
+        return {
+            passes,
+            trials: table.trials,
+            passShare: passes / table.trials,
+            fast,
+            kinds: kindScores(tally.kinds, slot),
+        };
     });
 }
 
