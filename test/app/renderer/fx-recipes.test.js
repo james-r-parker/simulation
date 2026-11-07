@@ -107,3 +107,22 @@ describe('effect-owned reach and life', () => {
         expect(fx.pool.time[4 * 4 + 1]).toBe(30);
     });
 });
+
+describe('the Phase 2 recipes', () => {
+    it('play the flee dust, the rest settle, the cover shimmer and the maturing ring', () => {
+        const fx = createFxPlayer(createFxPool());
+        const want = {
+            fleeDust: [CURVE.dust, 2],
+            restSettle: [CURVE.puffRing, 1],
+            coverShimmer: [CURVE.ringSlow, 1],
+            matured: [CURVE.ring, 1],
+        };
+        for (const [name, [curve, count]] of Object.entries(want)) {
+            const before = fx.pool.spawned;
+            const first = fx.pool.next;
+            playRecipe(fx, FX_RECIPES[/** @type {keyof typeof FX_RECIPES} */ (name)], at());
+            expect(fx.pool.spawned - before, name).toBe(count);
+            expect(fx.pool.time[first * 4 + 2], name).toBe(curve);
+        }
+    });
+});

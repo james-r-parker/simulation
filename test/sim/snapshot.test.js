@@ -22,7 +22,7 @@ describe('snapshotLayout', () => {
         const layout = snapshotLayout(smallWorld().config);
         expect(layout).toMatchObject({
             headerWords: 9,
-            agentStride: 12,
+            agentStride: 13,
             rayStride: 4,
             foodStride: 6,
             obstacleStride: 3,
@@ -33,7 +33,7 @@ describe('snapshotLayout', () => {
         });
         expect(layout.bytes).toBe(
             (9 +
-                8 * (12 + 4) +
+                8 * (13 + 4) +
                 4 * 6 +
                 terrainRockCount(smallWorld().config) * 3 +
                 32 * 3 +
@@ -124,7 +124,7 @@ describe('writeSnapshot', () => {
         world.config = { ...world.config, foodPatchCapacity: 0 };
         const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
         writeSnapshot(world, views);
-        const start = HEADER_WORDS + 12 + world.obsX.length * 3;
+        const start = HEADER_WORDS + 13 + world.obsX.length * 3;
         expect(views.f32[start + 4]).toBe(0);
     });
 
@@ -147,12 +147,12 @@ describe('writeSnapshot', () => {
 
         expect(Array.from(u32.subarray(0, 6))).toEqual([12, 2, 1, world.obsX.length, 0, 0]);
         expect(u32[HEADER_WORDS + 8]).toBe(0);
-        expect(u32[HEADER_WORDS + 12 + 8]).toBe(2);
-        expect(f32[HEADER_WORDS + 12]).toBe(world.x[2]);
-        expect(f32[HEADER_WORDS + 12 + 4]).toBeCloseTo(world.energy[2] / 100, 6);
-        expect(Array.from(f32.subarray(33, 37))).toEqual([5, 6, 7, 0]);
-        expect(f32[39]).toBe(world.obsX[0]);
-        expect(f32[41]).toBe(world.obsRadius[0]);
+        expect(u32[HEADER_WORDS + 13 + 8]).toBe(2);
+        expect(f32[HEADER_WORDS + 13]).toBe(world.x[2]);
+        expect(f32[HEADER_WORDS + 13 + 4]).toBeCloseTo(world.energy[2] / 100, 6);
+        expect(Array.from(f32.subarray(35, 39))).toEqual([5, 6, 7, 0]);
+        expect(f32[41]).toBe(world.obsX[0]);
+        expect(f32[43]).toBe(world.obsRadius[0]);
     });
 
     it('writes the live clouds after the obstacles as x, y and the share of smokeTicks left', () => {
@@ -188,7 +188,7 @@ describe('writeSnapshot', () => {
             0.5,
             3,
         );
-        const start = HEADER_WORDS + 12 + world.obsX.length * 3;
+        const start = HEADER_WORDS + 13 + world.obsX.length * 3;
         expect(views.u32[6]).toBe(1);
         expect(Array.from(views.f32.subarray(start, start + 5))).toEqual([
             world.patchX[0],
@@ -248,7 +248,7 @@ describe('writeSnapshot exact layout', () => {
         expect(f32[13]).toBe(0.25);
         expect(Array.from(u32.subarray(14, 18))).toEqual([4, 21, 22, 3]);
         expect(Array.from(u32.subarray(0, 6))).toEqual([0, 1, 0, world.obsX.length, 0, 0]);
-        const obstacleStart = HEADER_WORDS + 12;
+        const obstacleStart = HEADER_WORDS + 13;
         expect(f32[obstacleStart]).toBe(world.obsX[0]);
         const after = obstacleStart + 3 * world.obsX.length;
         expect(Array.from(u32.subarray(after))).toEqual(new Array(u32.length - after).fill(0));
@@ -360,7 +360,7 @@ describe('writeSnapshot rays', () => {
         world.cloudCount = 1;
         writeSnapshot(world, views, true);
         const { rayCount } = world.config;
-        const start = HEADER_WORDS + 2 * 12 + 0 * 3 + world.obsX.length * 3 + 3;
+        const start = HEADER_WORDS + 2 * 13 + 0 * 3 + world.obsX.length * 3 + 3;
         expect(views.u32[5]).toBe(rayCount);
         const expected = [1, 3].flatMap((slot) => Array.from({ length: rayCount }, (_, k) => slot / 10 + k / 100));
         expect(Array.from(views.f32.subarray(start, start + 2 * rayCount))).toEqual(expected.map(Math.fround));
@@ -405,7 +405,7 @@ describe('writeSnapshot rays', () => {
 function zoneWords(views) {
     return (
         HEADER_WORDS +
-        views.u32[1] * 12 +
+        views.u32[1] * 13 +
         views.u32[2] * 6 +
         views.u32[3] * 3 +
         views.u32[4] * 3 +

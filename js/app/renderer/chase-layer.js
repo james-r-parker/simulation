@@ -44,13 +44,16 @@ const ENDS = { ax: 0, ay: 0, bx: 0, by: 0 };
 /**
  * Fills `lines` with a tether for every pursuit in `agents`.
  * @param {import('../interpolate.js').Interpolated} agents the frame's agents
- * @param {{pursuits: import('../pursuit.js').Pursuits, rules: ReturnType<typeof pursuitRules>}} state scratch and rules
+ * @param {{pursuits: import('../pursuit.js').Pursuits, rules: ReturnType<typeof pursuitRules>, find?: boolean}} state
+ *   the pairs and rules; `find` false when another module (the effects player) has filled the pairs this frame
  * @param {{lines: import('./line-buffer.js').LineBuffer, dashes: number}} target buffer and dashes per tether
  * @returns {number} tethers drawn
  */
-export function stepChase(agents, { pursuits, rules }, { lines, dashes }) {
+export function stepChase(agents, { pursuits, rules, find = true }, { lines, dashes }) {
     clearLines(lines);
-    findPursuits(agents, rules, pursuits);
+    if (find) {
+        findPursuits(agents, rules, pursuits);
+    }
     for (let k = 0; k < pursuits.count; k++) {
         const h = pursuits.hunter[k];
         const p = pursuits.prey[k];
@@ -72,13 +75,14 @@ export function stepChase(agents, { pursuits, rules }, { lines, dashes }) {
 }
 
 /**
- * @param {{info: Record<string, any>}} options `ready.info`
+ * @param {{info: Record<string, any>, pursuits?: import('../pursuit.js').Pursuits}} options `ready.info`, and the pairs
+ *   the effects player finds each frame (then the layer does not search again)
  * @returns {import('./scene.js').Layer} the chase layer
  */
-export function createChaseLayer({ info }) {
+export function createChaseLayer({ info, pursuits }) {
     const lines = createLineBuffer(MAX_PURSUITS * CHASE_DASHES);
     const mesh = createLineMesh(lines);
-    const state = { pursuits: createPursuits(), rules: pursuitRules(info) };
+    const state = { pursuits: pursuits ?? createPursuits(), rules: pursuitRules(info), find: pursuits === undefined };
     let dashes = CHASE_DASHES;
     mesh.object.visible = true;
     return {

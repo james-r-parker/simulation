@@ -26,7 +26,7 @@ const FALLBACK_SHAPE = SILHOUETTES.forager;
 const RAMP_TEXELS = 64;
 /** Dimming of agents under the scent lens. */
 export const SCENT_DIM = 0.55;
-const INSTANCED = ['iPose', 'iColor', 'iState', 'iExtra', 'iMotion', 'iTween'];
+const INSTANCED = ['iPose', 'iColor', 'iState', 'iExtra', 'iMotion', 'iTween', 'iBody'];
 
 /**
  * @param {Record<string, any>} info `ready.info`
@@ -80,8 +80,16 @@ function agentMesh(capacity, kind, shared) {
  * @returns {void}
  */
 function upload(mesh, bucket) {
-    const { pose, color, state, extra, motion, tween } = bucket;
-    const sources = { iPose: pose, iColor: color, iState: state, iExtra: extra, iMotion: motion, iTween: tween };
+    const { pose, color, state, extra, motion, tween, body } = bucket;
+    const sources = {
+        iPose: pose,
+        iColor: color,
+        iState: state,
+        iExtra: extra,
+        iMotion: motion,
+        iTween: tween,
+        iBody: body,
+    };
     uploadInstances(mesh, sources, bucket.count);
 }
 

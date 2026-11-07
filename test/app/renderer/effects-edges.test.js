@@ -140,3 +140,18 @@ describe('playEdges without a snapshot', () => {
         expect(player.edges.tick).toBe(4);
     });
 });
+
+describe('playEdges: body edges', () => {
+    it('plays a settle puff, a cover shimmer and a maturing ring', () => {
+        const player = build();
+        const frames = [8, 8 | 1, 8 | 1 | 4, 1 | 4];
+        frames.forEach((state, k) => {
+            const snapshot = makeSnapshot(k + 1, [{ slot: 1, genomeId: 5, x: 10, y: 10, size: 10, flags: 30, state }]);
+            const agents = createInterpolated(8);
+            interpolateInto(null, snapshot, 1, agents);
+            playEdges(player, agents, snapshot, k + 1);
+        });
+        const curves = [0, 1, 2].map((i) => player.fx.pool.time[i * 4 + 2]);
+        expect(curves).toEqual([CURVE.puffRing, CURVE.ringSlow, CURVE.ring]);
+    });
+});

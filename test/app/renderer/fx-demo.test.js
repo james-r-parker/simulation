@@ -36,7 +36,7 @@ describe('demoRecipes and demoGrid', () => {
 
     it('zooms so the whole grid fits the canvas, never past the most', () => {
         const z = demoZoom(45, { width: 1280, height: 720 });
-        expect(z * 150 * 9.5).toBeLessThanOrEqual(1280 + 1e-9);
+        expect(z * 150 * 9).toBeLessThanOrEqual(1280 * 0.8 + 1e-9);
         expect(demoZoom(1, { width: 4000, height: 4000 })).toBe(2);
     });
 

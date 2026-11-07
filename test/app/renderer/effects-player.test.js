@@ -299,3 +299,26 @@ describe('playEffects', () => {
         expect(b.ticksPerMs).toBeGreaterThan(0);
     });
 });
+
+describe('beginEffects and the adaptive budget', () => {
+    it('feeds the last frame times to the budget scale', () => {
+        const { player } = build();
+        const camera = createCameraController({
+            canvas: /** @type {any} */ ({ width: 100, height: 100 }),
+            world: { width: 100, height: 100 },
+        });
+        for (let i = 0; i < 400; i++) {
+            beginEffects(player, {
+                tick: i,
+                dtMs: 16,
+                nowMs: i * 16,
+                camera,
+                drawMs: 0.4,
+                gpuMs: 0.5,
+                intervalMs: 4.1,
+            });
+        }
+        expect(player.fx.budget.scale).toBeGreaterThan(3);
+        expect(player.fx.budget.load).toBeCloseTo(0.5 / 4.1, 2);
+    });
+});

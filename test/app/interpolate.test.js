@@ -233,3 +233,11 @@ describe('playhead with identical arrival times or repeated ticks', () => {
         expect(stepPlayhead(head, { prev: a, latest: a }, 20)).toBe(1);
     });
 });
+
+describe('the state word', () => {
+    it('carries each agent state word from the newest snapshot', () => {
+        const out = createInterpolated(4);
+        interpolateInto(null, makeSnapshot(1, [{ slot: 2, genomeId: 9, state: 0x07ff0109 }]), 1, out);
+        expect(out.state[0]).toBe(0x07ff0109);
+    });
+});

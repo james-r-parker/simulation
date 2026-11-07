@@ -44,7 +44,7 @@ describe('init', () => {
         expect(ready.info.specs).toHaveLength(5);
         expect(ready.layout).toMatchObject({
             headerWords: 9,
-            agentStride: 12,
+            agentStride: 13,
             herdStride: 6,
             zoneStride: 4,
             zoneOrigins: { DEATH: 0, DUNG: 1 },

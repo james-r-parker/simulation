@@ -27,7 +27,7 @@ export const MAX_DT_MS = 100;
  * @property {import('./family-slots.js').FamilySlots} slots the family colour slots and the palette
  * @property {import('./app-layers.js').LayerRefs} refs the haze and the effects player of the current layers
  * @property {import('./frame-stats.js').FrameStats} stats the frame and draw rings `__perf` reports
- * @property {{begin: () => void, end: () => void, poll: () => void} | null} gpuTimer the GPU timer, null without the
+ * @property {{begin: () => void, end: () => void, poll: () => void, latest?: () => number} | null} gpuTimer the GPU timer, null without the
  *   extension
  * @property {() => number} clock a high-resolution clock in ms, for the draw time
  * @property {() => boolean} hidden whether the tab is hidden
@@ -41,7 +41,8 @@ export const MAX_DT_MS = 100;
  * @property {import('./frame-stats.js').FrameStats} window the recent frames the quality rule reads
  * @property {number} lastNowMs the previous frame's time, 0 before one
  * @property {number} lastCheckMs when the quality rule last ran
- * @property {{tick: number, dtMs: number, nowMs: number, camera: any}} effectsAt the frame `beginEffects` reads, reused
+ * @property {{tick: number, dtMs: number, nowMs: number, camera: any, drawMs: number, gpuMs: number, intervalMs: number}}
+ *   effectsAt the frame `beginEffects` reads (with the previous frame's draw CPU and GPU times), reused
  */
 
 /**
@@ -55,7 +56,7 @@ function freshState(maxAgents) {
         window: createFrameStats(QUALITY_WINDOW_FRAMES),
         lastNowMs: 0,
         lastCheckMs: 0,
-        effectsAt: { tick: 0, dtMs: 0, nowMs: 0, camera: null },
+        effectsAt: { tick: 0, dtMs: 0, nowMs: 0, camera: null, drawMs: -1, gpuMs: -1, intervalMs: 0 },
     };
 }
 
@@ -193,6 +194,9 @@ function drawAndRecord(deps, loop, { frame, started, interval }) {
     deps.gpuTimer?.poll();
     deps.afterDraw?.(frame);
     const drawMs = deps.clock() - started;
+    loop.effectsAt.drawMs = drawMs;
+    loop.effectsAt.gpuMs = deps.gpuTimer?.latest?.() ?? -1;
+    loop.effectsAt.intervalMs = interval;
     recordFrame(deps.stats, interval, drawMs, deps.hidden());
     recordFrame(loop.window, interval, drawMs, deps.hidden());
 }
