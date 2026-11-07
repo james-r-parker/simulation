@@ -1,6 +1,6 @@
 # Training
 
-**Status:** In progress - Phase 1 (drills) is built (T1 to T4). Phase 2 code is built (T6 to T11: the archive fixes, `runEpisode` and `mergeEpisode`, `npm run train`, the curriculum, checkpoints and `train:curve`, `train:export`); its done run (T12) is not yet made, so the phase is not marked built. Phase 3 puts champions in the live world after the world gate.
+**Status:** In progress - Phase 1 (drills) is built (T1 to T4). Phase 2 code is built (T6 to T11: the archive fixes, `runEpisode` and `mergeEpisode`, `npm run train`, the curriculum, checkpoints and `train:curve`, `train:export`); its done run (T12, 2026-11-07) is made and fell short on `prey-ahead` (the predator champion's edge is 0.00), so the phase is not marked built; see "T12 result" under Phase 2. Phase 3 puts champions in the live world after the world gate.
 **Validated:** f5c7880 (2026-11-07)
 **Priority:** 4 - the drills and the trainer are tools that do not depend on the balance numbers, and the balance round needs trained champions to test whether unskilled founders cause the floor restarts (world-balance.md H10); champions reach the live world only after the world gate (user, 2026-10-16)
 **Depends on:** [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md)
@@ -62,6 +62,34 @@ Phase 3 only, after the world gate below. `npm run train:export -- --out public/
 **Targets:** none - champions stay local in this phase; Phase 3 judges them in the live world
 
 The trainer, the curriculum, checkpoints with drills, `train:curve` and `train:export` to a local directory, with the two archive fixes it needs: `seedArchive` in `js/evo/archive.js` stops adding a false 0 sample (it calls `welfordAdd(..., 0)` today), and `createArchive` takes `nCap`. Done when a run of `npm run train -- --generations 40 --curriculum evals/train-curriculum.json --out .sim/train/first` finishes, its curve shows the mean drill edge of the exported champions above 0 on `food-ahead` and `prey-ahead`, and its champions play `npm run league` without error. The curve and drill table go in [sim-notes.md](sim-notes.md).
+
+#### T12 result (T12 run, 2026-11-07)
+
+`npm run train -- --generations 40 --episodes 32 --ticks 60000 --curriculum evals/train-curriculum.json --checkpoint-every 5 --workers 8 --out /tmp/claude-1000/eval-out/train-t12/run`. All 40 generations (76.8 million ticks) took **751 s, about 12.5 minutes** on 8 workers, against the "days of CPU" the plan expected (the Rust kernels and the drill levers). Nursery generations 0 to 19, hunt generations 20 to 39; the `world` stage got none, as the curriculum says.
+
+| Gen | Stage   | Coverage | qd   | Drill edge | food_energy_per_1k | catch_rate | escape_rate |
+| --- | ------- | -------- | ---- | ---------- | ------------------ | ---------- | ----------- |
+| 5   | nursery | 0.120    | 1054 | 0.209      | 207                | 0.465      | 0.275       |
+| 10  | nursery | 0.128    | 1324 | 0.285      | 246                | 0.403      | 0.306       |
+| 20  | nursery | 0.132    | 1438 | 0.271      | 263                | 0.409      | 0.327       |
+| 30  | hunt    | 0.152    | 1645 | 0.271      | 376                | 0.302      | 0.425       |
+| 40  | hunt    | 0.204    | 2306 | 0.271      | 117                | 0.241      | 0.344       |
+
+`train:curve` reports no plateau; the archive was still growing (qd 2306) but the mean drill edge was flat at 0.27 from generation 10, and `catch_rate` fell through the hunt stage.
+
+Drills on the five exported champions (`npm run drill`, 32 trials, 4 random brains as the baseline):
+
+| Subject                    | food-ahead   | food-behind  | two-foods    | prey-ahead   | prey-too-big | hunter-closing | rock-refuge  | mean edge |
+| -------------------------- | ------------ | ------------ | ------------ | ------------ | ------------ | -------------- | ------------ | --------- |
+| archive-39-forager-cell6   | 1.00 (+0.84) | 0.88 (+0.70) | 0.00 (-0.11) | -            | -            | 0.47 (+0.47)   | 0.00 (+0.00) | +0.38     |
+| archive-39-predator-cell17 | -            | -            | -            | 0.00 (+0.00) | 1.00 (+0.01) | -              | -            | +0.00     |
+| reference memoryless       | 1.00 (+0.84) | 1.00 (+0.82) | 0.00 (-0.11) | 0.31 (+0.31) | 0.47 (-0.52) | 0.03 (+0.03)   | 0.00 (+0.00) | +0.20     |
+
+The defender, reproducer and scout champions have no drill. `npm run league` runs the forager and predator champions without error (0 games, Elo 1500: the league has no admitted champions; nothing was admitted).
+
+The `prey-too-big` column is from the fixed drill: its prey was bitable (a forager's size is capped at 33 by its store and the loaded hunter's is 31, over `huntSizeRatio` 0.8 of 33), so not biting won it by default; the prey now has base size 60 and a test asserts `couldBite` is false. The predator still scores 1.00 there, but only because it never bites at all (the random brains abstain too, edge +0.01); the memoryless reference scores 0.47, so it bites a third to half the time and the drill now separates a hunter that attacks from one that does not.
+
+**Done criterion: not met.** `food-ahead` is above 0 (+0.84), but `prey-ahead` is 0.00: the predator champion never kills the fleeing forager in the drill (it "wins" `prey-too-big` only by not attacking), and the memoryless reference scores 0.31 there. The league condition holds. What fell short is predator skill: the hunt stage lowered `catch_rate` from 0.41 to 0.24 instead of teaching a chase. The forager side is better than the earlier 6-generation smoke (`hunter-closing` +0.47 against +0.13) but `two-foods` and `rock-refuge` are still not learned. Phase 2 stays "In progress". Next to try, in the doc's own terms: more generations in the hunt stage or a hunt world with prey that stays in view longer, and a `minAgents` floor in the nursery. Champions stay local under `/tmp/claude-1000/eval-out/train-t12/champions` and are uploaded nowhere.
 
 ### Phase 3 - Champions in the live world
 
