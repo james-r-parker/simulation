@@ -3655,6 +3655,86 @@
       },
       "effect": "no-difference",
       "note": "Single-arm measurement against the Done table, no comparison arm. Hunters alive 13/16 (bar 14/16, keep rule 12 met); prey types 16/16; skill_heritability 0.41 (16/16 positive); skill_trend -0.032 (3/16 positive, miss); basin_recolonisations >=1 on 4/16 (bar 8/16, miss); social_return -2.19 negative on 16/16 (miss); spec_dominance 0.413, floor birth share 0.021, mating_share 0.441, alarm_rate about 0 pass. Status move to Implemented waits for the user's decision on the misses."
+    },
+    {
+      "id": "E141",
+      "date": "2026-11-07",
+      "branch": "eval/instrument-baselines",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference",
+      "hypothesis": "Reach baseline (habitat-cover T2): on the defaults prey live far from cover and inside the food patches.",
+      "prediction": "prey_cover_distance large, prey_within_dash_share low; the premise for rim rings holds.",
+      "targets": ["eval.prey_cover_distance", "eval.prey_within_dash_share", "eval.prey_in_patch_share"],
+      "before": "habitat-cover.md Phase 1 premise (no comparison arm)",
+      "after": "reach-baseline.json: defaults, floor on, 200000 ticks, configHash ff8d890a5a70c14d, 32 seeds",
+      "verdicts": {
+        "eval.prey_cover_distance": "-",
+        "eval.prey_within_dash_share": "-",
+        "eval.prey_in_patch_share": "-"
+      },
+      "note": "Single-arm baseline. prey_cover_distance 2070 px (1430-3150), within_dash 0.103, in_patch 0.341; premise holds. eval:power detectable change 30% / 50% / 15%."
+    },
+    {
+      "id": "E142",
+      "date": "2026-11-07",
+      "branch": "eval/instrument-baselines",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference",
+      "hypothesis": "Season baseline (seasonal-movement T5): the season barely changes where agents live.",
+      "prediction": "season_map_distance and winter_band_shift near flat on the defaults.",
+      "targets": [
+        "eval.season_map_distance",
+        "eval.herd_season_shift",
+        "eval.winter_band_shift",
+        "eval.winter_patch_proximity"
+      ],
+      "before": "seasonal-movement.md Phase 1 premise (no comparison arm)",
+      "after": "season-baseline.json: defaults, floor on, 200000 ticks, configHash ff8d890a5a70c14d, 32 seeds",
+      "verdicts": {
+        "eval.season_map_distance": "-",
+        "eval.herd_season_shift": "-",
+        "eval.winter_band_shift": "-",
+        "eval.winter_patch_proximity": "-"
+      },
+      "note": "Single-arm baseline. season_map_distance 0.346, herd_season_shift 0.619, winter_band_shift 0.016 (near 0, needs absolute units), winter_patch_proximity -0.115; season_map_distance direction unsettled (watch?)."
+    },
+    {
+      "id": "E143",
+      "date": "2026-11-07",
+      "branch": "eval/instrument-baselines",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference",
+      "hypothesis": "Alarm reach baseline (alarm-calls T4): calls are absent but call opportunities exist.",
+      "prediction": "No calls; neighbours and kin present within call range.",
+      "targets": ["eval.call_opportunity_neighbours", "eval.call_opportunity_kin"],
+      "before": "alarm-calls.md Phase 1 premise (no comparison arm)",
+      "after": "alarm-reach-baseline.json: defaults, floor on, 200000 ticks, configHash ff8d890a5a70c14d, 16 seeds",
+      "verdicts": {
+        "eval.call_opportunity_neighbours": "-",
+        "eval.call_opportunity_kin": "-"
+      },
+      "note": "Single-arm baseline. No call on any seed, so hearer metrics are null by construction; neighbours 3.17 (1.5-5.6), kin 2.44. eval:power refuses 16-seed reports."
+    },
+    {
+      "id": "E144",
+      "date": "2026-11-07",
+      "branch": "eval/instrument-baselines",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference",
+      "hypothesis": "Matched baseline (hunter-practice T6): matched detectors remove most of the age-driven fall in conversion seen in E124.",
+      "prediction": "Matched conversion falls less with age than pooled.",
+      "targets": ["eval.hunter_conversion_matched", "eval.hunter_conversion_by_dose"],
+      "before": "hunter-practice.md Phase 1 premise (no comparison arm)",
+      "after": "matched-baseline.json: defaults, floor on, 200000 ticks, configHash ff8d890a5a70c14d, 16 seeds",
+      "verdicts": {
+        "eval.hunter_conversion_matched": "-",
+        "eval.hunter_conversion_by_dose": "-"
+      },
+      "note": "Single-arm baseline. Matched fall 0.039 vs pooled 0.053, smaller on 13/16 seeds, no paired interval; by_dose -0.0002. catch_rate 0.213, chase_catch_share 0.054. hunter_kills_per_life is a median and 0 on 15/16 seeds."
     }
   ]
 }
