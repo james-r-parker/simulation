@@ -22,7 +22,9 @@ export const SENSE_CASES = Object.freeze([
     { name: 'default config', overrides: {}, ticks: 120 },
     { name: 'busy', overrides: BUSY, ticks: 200 },
     { name: 'disease', overrides: DISEASE, ticks: 200 },
-    { name: 'coverConceals, default', overrides: { coverConceals: true }, ticks: 200 },
+    { name: 'coverConceals, default', overrides: { coverConceals: true }, ticks: 200, mustConceal: true },
+    { name: 'odd ray count', overrides: { rayCount: 11 }, ticks: 80 },
+    { name: 'odd ray count, coverConceals', overrides: { coverConceals: true, rayCount: 13 }, ticks: 120 },
 ]);
 
 /** World arrays a cast writes that outlive it. */

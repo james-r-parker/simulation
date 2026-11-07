@@ -70,7 +70,7 @@ describe('the WASM sense kernel against the JS ray march', () => {
                     return jsCount;
                 });
                 expect(casts).toBeGreaterThan(c.ticks);
-                if (c.overrides.coverConceals) {
+                if (c.mustConceal) {
                     expect(concealed).toBeGreaterThan(0);
                 }
             },

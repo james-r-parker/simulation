@@ -7,7 +7,11 @@
 //! mate scan and the `coverConceals` count that read them in order see the same rows. The class of an agent hit and
 //! everything else that is a rule stays in JS.
 
-use core::arch::wasm32::{f64x2_extract_lane, f64x2_splat, f64x2_sqrt};
+use core::arch::wasm32::{
+    f64x2_add, f64x2_eq, f64x2_extract_lane, f64x2_ge, f64x2_gt, f64x2_lt, f64x2_mul, f64x2_neg, f64x2_splat,
+    f64x2_sqrt, f64x2_sub, i64x2_bitmask, v128, v128_and, v128_andnot, v128_any_true, v128_bitselect, v128_load,
+    v128_not, v128_or, v128_store,
+};
 
 use crate::det_math::floor;
 
@@ -166,7 +170,11 @@ impl Sense {
 fn fixture_c(range: f64, ox: f64, oy: f64, r: f64) -> Option<f64> {
     let reach = range + r;
     let d2 = ox * ox + oy * oy;
-    if d2 > reach * reach * REACH_SLACK { None } else { Some(d2 - r * r) }
+    if d2 > reach * reach * REACH_SLACK {
+        None
+    } else {
+        Some(d2 - r * r)
+    }
 }
 
 /// `appendObstacles`, `appendHerds` and the smoke loop of `appendFixtures`.
@@ -237,7 +245,12 @@ unsafe fn append_circle(g: &Sense, n: usize, id: usize) -> usize {
             let f = id - max_agents;
             let x = *at::<f32>(p.food_x).add(f) as f64;
             let y = *at::<f32>(p.food_y).add(f) as f64;
-            (x, y, *at::<f32>(p.food_radius).add(f) as f64, FOOD * KIND_STRIDE + f as f64)
+            (
+                x,
+                y,
+                *at::<f32>(p.food_radius).add(f) as f64,
+                FOOD * KIND_STRIDE + f as f64,
+            )
         };
         let ox = g.sc(OX) - cx;
         let oy = g.sc(OY) - cy;
@@ -352,28 +365,61 @@ unsafe fn seed_ray(g: &Sense, k: usize) -> f64 {
             wall_distance(g.sc(OX), dx, g.dbl(D_WIDTH)),
             wall_distance(g.sc(OY), dy, g.dbl(D_HEIGHT)),
         );
-        if t_wall >= 0.0 && t_wall <= g.sc(RANGE) { t_wall } else { f64::INFINITY }
+        if t_wall >= 0.0 && t_wall <= g.sc(RANGE) {
+            t_wall
+        } else {
+            f64::INFINITY
+        }
     }
 }
 
-/// `nearestHitsAll`: every ray's nearest hit among the gathered rows and the walls, ties to the lower key.
-unsafe fn nearest_all(g: &Sense, count: usize) {
-    // SAFETY: the best arrays hold `rayCount` doubles and `rayLocal` holds `count` rows.
+/// Seeds every ray: its direction into `dirs` (all x, then all y), its wall hit into the best arrays. Leaves the last
+/// ray's direction in the scratch, as the JS loops do.
+unsafe fn seed_all(g: &Sense) {
+    // SAFETY: the best arrays hold `rayCount` doubles and `dirs` twice that.
     unsafe {
         let rays = g.p.ray_count as usize;
-        let range = g.sc(RANGE);
-        let dirs = g.dirs;
         for k in 0..rays {
             *g.best_t.add(k) = seed_ray(g, k);
             *g.best_key.add(k) = WALL * KIND_STRIDE;
-            *dirs.add(2 * k) = g.sc(DX);
-            *dirs.add(2 * k + 1) = g.sc(DY);
+            *g.dirs.add(k) = g.sc(DX);
+            *g.dirs.add(rays + k) = g.sc(DY);
         }
+    }
+}
+
+/// One row against two rays, the first half of `circleHit` per lane: `b`, the discriminant, and the lanes that hit.
+#[inline(always)]
+fn reach2(dx: v128, dy: v128, lx: v128, ly: v128, lc: v128) -> (v128, v128, v128) {
+    let zero = f64x2_splat(0.0);
+    let b = f64x2_add(f64x2_mul(dx, lx), f64x2_mul(dy, ly));
+    let disc = f64x2_sub(f64x2_mul(b, b), lc);
+    let miss = v128_or(f64x2_lt(disc, zero), v128_and(f64x2_gt(b, zero), f64x2_gt(lc, zero)));
+    (b, disc, v128_not(miss))
+}
+
+/// The second half of `circleHit` per lane: the distance to the surface, 0 from inside.
+#[inline(always)]
+fn dist2(b: v128, disc: v128) -> v128 {
+    let zero = f64x2_splat(0.0);
+    let t0 = f64x2_sub(f64x2_neg(b), f64x2_sqrt(disc));
+    v128_bitselect(zero, t0, f64x2_lt(t0, zero))
+}
+
+/// `nearestHitsAll`: every ray's nearest hit among the gathered rows and the walls, ties to the lower key. Scalar and
+/// row-major, as in JS: a row is loaded once and tested against every ray, and a miss returns before the square root.
+/// (Two rays per `f64x2` measured slower here: most rows miss most rays, and the vector form pays for both lanes.)
+unsafe fn nearest_all(g: &Sense, count: usize) {
+    // SAFETY: the best arrays hold `rayCount` doubles, `dirs` twice that, and `rayLocal` holds `count` rows.
+    unsafe {
+        seed_all(g);
+        let rays = g.p.ray_count as usize;
+        let range = g.sc(RANGE);
         for row in 0..count {
             let r = g.local.add(row * LOCAL_STRIDE);
             let (lx, ly, lc, lk) = (*r, *r.add(1), *r.add(2), *r.add(3));
             for k in 0..rays {
-                let t = circle_hit(*dirs.add(2 * k) * lx + *dirs.add(2 * k + 1) * ly, lc);
+                let t = circle_hit(*g.dirs.add(k) * lx + *g.dirs.add(rays + k) * ly, lc);
                 let best = *g.best_t.add(k);
                 if t >= 0.0 && t <= range && (t < best || (t == best && lk < *g.best_key.add(k))) {
                     *g.best_t.add(k) = t;
@@ -395,18 +441,56 @@ unsafe fn concealed(ring: *const u8, key: f64, caster_ring: u8) -> bool {
     r != 0 && r != caster_ring
 }
 
-/// `nearestHitCovered` for every ray, in ray order; returns the count of concealed hits skipped.
+/// `nearestHitCovered` for every ray: the rows in order, a concealed agent that would be the ray's best so far skipped
+/// and counted, any other candidate taken. Two rays per `f64x2` (a row's concealment is the same for both lanes); an odd
+/// last ray runs alone. Returns the count of concealed hits skipped over all rays.
 unsafe fn nearest_covered(g: &Sense, count: usize, slot: usize) -> u32 {
     // SAFETY: as for `nearest_all`; `coverRing` holds `maxAgents` bytes.
     unsafe {
+        seed_all(g);
         let ring = at::<u8>(g.p.cover_ring);
         let caster_ring = *ring.add(slot);
+        let rays = g.p.ray_count as usize;
         let range = g.sc(RANGE);
+        let vrange = f64x2_splat(range);
+        let zero = f64x2_splat(0.0);
         let mut skipped = 0;
-        for k in 0..g.p.ray_count as usize {
-            let mut best_t = seed_ray(g, k);
-            let mut best_key = WALL * KIND_STRIDE;
-            let (dx, dy) = (g.sc(DX), g.sc(DY));
+        let mut k = 0;
+        while k + 2 <= rays {
+            let dx = v128_load(g.dirs.add(k) as *const v128);
+            let dy = v128_load(g.dirs.add(rays + k) as *const v128);
+            let mut best = v128_load(g.best_t.add(k) as *const v128);
+            let mut key = v128_load(g.best_key.add(k) as *const v128);
+            for row in 0..count {
+                let r = g.local.add(row * LOCAL_STRIDE);
+                let row_key = *r.add(3);
+                let lk = f64x2_splat(row_key);
+                let (b, disc, hit) = reach2(dx, dy, f64x2_splat(*r), f64x2_splat(*r.add(1)), f64x2_splat(*r.add(2)));
+                if !v128_any_true(hit) {
+                    continue;
+                }
+                let t = dist2(b, disc);
+                let worse = v128_or(f64x2_gt(t, best), v128_and(f64x2_eq(t, best), f64x2_ge(lk, key)));
+                let out = v128_or(v128_or(f64x2_lt(t, zero), f64x2_gt(t, vrange)), worse);
+                let pass = v128_andnot(hit, out);
+                if !v128_any_true(pass) {
+                    continue;
+                }
+                if concealed(ring, row_key, caster_ring) {
+                    skipped += (i64x2_bitmask(pass) as u32).count_ones();
+                } else {
+                    best = v128_bitselect(t, best, pass);
+                    key = v128_bitselect(lk, key, pass);
+                }
+            }
+            v128_store(g.best_t.add(k) as *mut v128, best);
+            v128_store(g.best_key.add(k) as *mut v128, key);
+            k += 2;
+        }
+        if k < rays {
+            let (dx, dy) = (*g.dirs.add(k), *g.dirs.add(rays + k));
+            let mut best_t = *g.best_t.add(k);
+            let mut best_key = *g.best_key.add(k);
             for row in 0..count {
                 let r = g.local.add(row * LOCAL_STRIDE);
                 let t = circle_hit(dx * *r + dy * *r.add(1), *r.add(2));
