@@ -425,9 +425,9 @@ Bite 10 lost lifespan on the second set (`worse`, -8.5%), so bite 8 became the d
 The natural-selection big bang ([natural-selection.md](docs/designs/natural-selection.md)) made `fitnessV6` and `map-elites-v6` the live policy and built
 the rules of [principles.md](docs/principles.md) into the default world: a floor that only guards against total extinction, poor entrants,
 no predator rescue or invasion pulse, a bite cost and recoil, the proof rule for archive entries and splits, mates ranked inside their own
-specialisation, and the pooled brain (sizes in `brainLayout`, `js/sim/brain-layout.js`). The big bang is merged. What remains is balancing: keeping
-hunters to the end without rescue, judged by the detectors and the principles. The open work is the Phase 4 balancing the Status line of
-[natural-selection.md](docs/designs/natural-selection.md) describes, so read that line rather than a copy here.
+specialisation, and the pooled brain (sizes in `brainLayout`, `js/sim/brain-layout.js`). The big bang is merged and the plan is closed: on the default world hunters are
+alive at the last tick on 13 of 16 seeds without rescue. What remains are the scenes the long run found absent (skill that grows with age, refuge,
+calls that pay, a map that changes with the season), each with its own plan listed under Where we are going.
 
 The goal is worlds that keep getting more skilful and more watchable instead of settling into one dominant type.
 
@@ -454,11 +454,11 @@ hunting - are in [docs/principles.md](docs/principles.md), each with the metrics
 
 The order of work is the **Build queue** in [docs/designs/README.md](docs/designs/README.md), which is generated and always current. In short:
 
-1. **Natural selection** ([natural-selection.md](docs/designs/natural-selection.md), priority 1, in progress). The big bang is merged; the open balancing work (Phase 4) is in the doc's Status line.
-2. **World balance and biology** ([world-balance.md](docs/designs/world-balance.md)). Phases 1 to 4 and Phase 5 round 1 are built (sexes, patches, eras, carcasses, traits, leaky memory, Hebbian learning, terrain); the next round is in its Status line. Disease is implemented ([disease.md](docs/designs/disease.md)).
-3. **Quality gates and test tiers** ([quality-gates-and-test-tiers.md](docs/designs/quality-gates-and-test-tiers.md)). Faster pre-commit checks, mutation testing, a browser smoke test and a pull-request performance job.
-4. **Worker and renderer** ([worker-and-renderer.md](docs/designs/worker-and-renderer.md)). The worker, renderer core, interface, director, audio, capture and Phase 6 Look (tasks T57–T75) are built; what remains is Phase 5: saving the archive between sessions.
-5. **Later.** The evolution trainer and champions ([evolution-rework.md](docs/designs/evolution-rework.md)), an automated improvement loop ([improvement-loop.md](docs/designs/improvement-loop.md)), v6 tidy-up with new screenshots and docs ([v6-tidy-up-and-docs.md](docs/designs/v6-tidy-up-and-docs.md)), and releases and community ([deployment-and-community.md](docs/designs/deployment-and-community.md)).
+1. **Done.** [Natural selection](docs/designs/natural-selection.md), [fitness and selection](docs/designs/fitness-and-selection.md), [refuge](docs/designs/refuge.md), [flora](docs/designs/flora.md), [megafauna](docs/designs/megafauna.md), [disease](docs/designs/disease.md) and [web presence](docs/designs/web-presence.md) are implemented. The long run on the default world (2026-11-07) keeps hunters on 13 of 16 seeds and misses three bars, which now belong to the plans below.
+2. **The world problems that remain.** Hunters that do not improve with age ([hunter-practice.md](docs/designs/hunter-practice.md)), refuge and basin recolonisation ([habitat-cover.md](docs/designs/habitat-cover.md)), calls that never pay ([alarm-calls.md](docs/designs/alarm-calls.md)) and a map that does not change with the season ([seasonal-movement.md](docs/designs/seasonal-movement.md)). Their first phases are instruments and baselines.
+3. **Closing out the keepers and the balance.** [Realistic keepers](docs/designs/realistic-keepers.md) (the perf check and the close), [world balance](docs/designs/world-balance.md) (the disease value screen), and [brain capacity and memory](docs/designs/brain-capacity-and-memory.md) (the screens not yet run).
+4. **Tools and speed.** [Training](docs/designs/training.md) (drills and the trainer are built; champions reach the live world after the world gate), [brain reflex tests](docs/designs/brain-reflex-tests.md), [WASM kernels](docs/designs/wasm-kernels.md) (the brain, ray march, hash, pheromone field and physics run in Rust), [quality gates](docs/designs/quality-gates-and-test-tiers.md) and the [improvement loop](docs/designs/improvement-loop.md).
+5. **The app.** [Worker and renderer](docs/designs/worker-and-renderer.md) (what remains is saving the archive between sessions), [renderer event effects](docs/designs/renderer-event-effects.md) (so a viewer can see features firing), [mobile view](docs/designs/mobile-view.md), the [v6 tidy-up](docs/designs/v6-tidy-up-and-docs.md) with new screenshots, and releases and community ([deployment-and-community.md](docs/designs/deployment-and-community.md): the storage back end is merged, the release pipeline is a draft waiting on the Cloudflare setup).
 
 ## Developing
 

@@ -1,7 +1,7 @@
 # Flora
 
 **Status:** Implemented
-**Depends on:** [natural-selection.md](natural-selection.md) (Phase 4 balancing paused; adopted split rules merged in PR #223), [brain-capacity-and-memory.md](brain-capacity-and-memory.md)
+**Depends on:** [natural-selection.md](natural-selection.md) (closed 2026-11-07; the adopted split rules merged in PR #223), [brain-capacity-and-memory.md](brain-capacity-and-memory.md)
 
 Today the world has one plant food: a 100 energy item with a 10% variant at 140, spawned by 16 regrowing patches (80% of spawns) and a background (20%), scaled by a season factor that changes only the amount, plus carcasses. Every food item looks the same, tastes the same and is there all year. This doc replaces it with plant species whose traits evolve through pollination, each fruiting in its own window of the year, some of them toxic, and gives the blob one new fact about each food it sees: its hue.
 

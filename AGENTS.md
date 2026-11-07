@@ -16,20 +16,21 @@ records why each part was replaced.
 
 ## Where things are
 
-| Path                        | Holds                                                                                                                                     |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `docs/designs/`             | Design docs - the plans and the as-built descriptions. Index: [docs/designs/README.md](docs/designs/README.md)                            |
-| `docs/designs/STYLE.md`     | Design doc conventions. Read before writing or editing any doc                                                                            |
-| `docs/designs/sim-notes.md` | Verified platform and library facts, and learnings from each phase                                                                        |
-| `.claude/skills/`           | Workflow skills for agents working on this repo (below)                                                                                   |
-| `scripts/check.sh`          | The local gate; CI runs it                                                                                                                |
-| `scripts/designs-index.mjs` | Design doc index generator and lint                                                                                                       |
-| `js/sim/`, `js/evo/`        | The headless sim core and evolution (DOM-free and deterministic)                                                                          |
-| `js/worker/`                | The sim worker and its message protocol (imports `js/sim/` and `js/evo/`; no DOM)                                                         |
-| `js/app/`                   | The app on `index.html`: `main.js`, the frame loop, `renderer/` (three, WebGL2), `ui/` (imports `three` and `js/worker/protocol.js` only) |
-| `test/`                     | Vitest tests                                                                                                                              |
-| `wasm/`                     | The Rust kernels crate (`src/`), the committed `blob-kernels.wasm`, its hash and the hash of its sources (docs/designs/wasm-kernels.md)   |
-| `public/`                   | Static files served at the site root, including the database worker                                                                       |
+| Path                         | Holds                                                                                                                                                                                                           |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/designs/`              | Design docs - the plans and the as-built descriptions. Index: [docs/designs/README.md](docs/designs/README.md)                                                                                                  |
+| `docs/designs/STYLE.md`      | Design doc conventions. Read before writing or editing any doc                                                                                                                                                  |
+| `docs/designs/sim-notes.md`  | Verified platform and library facts, and learnings from each phase                                                                                                                                              |
+| `.claude/skills/`            | Workflow skills for agents working on this repo (below)                                                                                                                                                         |
+| `scripts/check.sh`           | The local gate; CI runs it                                                                                                                                                                                      |
+| `scripts/designs-index.mjs`  | Design doc index generator and lint                                                                                                                                                                             |
+| `js/sim/`, `js/evo/`         | The headless sim core and evolution (DOM-free and deterministic)                                                                                                                                                |
+| `js/worker/`                 | The sim worker and its message protocol (imports `js/sim/` and `js/evo/`; no DOM)                                                                                                                               |
+| `js/app/`                    | The app on `index.html`: `main.js`, the frame loop, `renderer/` (three, WebGL2), `ui/` (imports `three` and `js/worker/protocol.js` only)                                                                       |
+| `test/`                      | Vitest tests                                                                                                                                                                                                    |
+| `js/library/`, `migrations/` | The gene library: pure modules (shapes, seasons, query, rows, release index) and the D1 migrations behind them; the Pages Functions that serve it are the draft PR for docs/designs/deployment-and-community.md |
+| `wasm/`                      | The Rust kernels crate (`src/`), the committed `blob-kernels.wasm`, its hash and the hash of its sources (docs/designs/wasm-kernels.md)                                                                         |
+| `public/`                    | Static files served at the site root, including the database worker                                                                                                                                             |
 
 ## Commands
 
@@ -74,6 +75,7 @@ records why each part was replaced.
 | Rebuild the WASM kernels                         | `scripts/build-wasm.sh` (after any change under `wasm/`; writes `wasm/blob-kernels.wasm`, its `.sha256`, `blob-kernels.src.sha256` and the embedded copy `js/sim/wasm-binary.js` every world compiles); `node scripts/check-wasm.mjs` checks them and, with cargo, rebuilds and compares (the `conventions` gate runs it)                                                                                                                                                                                                                                                                                                                                                                                               |
 | Benchmark a Rust kernel change                   | Edit `wasm/src`, run `scripts/build-wasm.sh`, then `flock /tmp/claude-1000/cpu.lock npm run bench:micro -- --area wasm --compare HEAD` (the ref tree is a checkout of `HEAD`, so its committed binary is the base and this tree's rebuilt one the head; each export timed raw: `brain_forward` and `sense_slot` at 500 agents, the det-math exports; `--area drill` prices drill trials per second; a change counts only outside the printed margin; `--runs 5` on a quiet machine)                                                                                                                                                                                                                                     |
 | Regenerate the design index                      | `node scripts/designs-index.mjs --write`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Rebuild the icons and share card                 | `npm run build:icons` (every icon file and the Open Graph card from `public/icons/icon.svg` with Playwright's Chromium; docs/designs/web-presence.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Production build / deploy                        | `npm run build`; a merge to `main` deploys to production (Cloudflare Pages) through `.github/workflows/deploy.yml`; `npm run deploy` stays for a manual deploy, only when the user asks                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## Build order
@@ -183,16 +185,16 @@ New code is small modules that each do one job and are tested on their own.
 
 ### Size limits (enforced)
 
-| Limit                              | Value                                                                | Gate                              |
-| ---------------------------------- | -------------------------------------------------------------------- | --------------------------------- |
-| Lines per source file              | 300 (blank lines and comments excluded)                              | `lint` (`max-lines`)              |
-| Lines per test file                | 400                                                                  | `lint` (`max-lines`)              |
-| Lines per function                 | 50                                                                   | `lint` (`max-lines-per-function`) |
-| Cyclomatic complexity per function | 10                                                                   | `lint` (`complexity`)             |
-| Nesting depth                      | 3                                                                    | `lint` (`max-depth`)              |
-| Parameters per function            | 4 - pass an options object beyond that                               | `lint` (`max-params`)             |
-| Test file per module               | `js/sim/x.js` -> `test/sim/x.test.js`, same for `js/evo`             | `conventions`                     |
-| Files directly under `js/`         | None - code lives in `js/sim/`, `js/evo/`, `js/worker/` or `js/app/` | `conventions`                     |
+| Limit                              | Value                                                                               | Gate                              |
+| ---------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------- |
+| Lines per source file              | 300 (blank lines and comments excluded)                                             | `lint` (`max-lines`)              |
+| Lines per test file                | 400                                                                                 | `lint` (`max-lines`)              |
+| Lines per function                 | 50                                                                                  | `lint` (`max-lines-per-function`) |
+| Cyclomatic complexity per function | 10                                                                                  | `lint` (`complexity`)             |
+| Nesting depth                      | 3                                                                                   | `lint` (`max-depth`)              |
+| Parameters per function            | 4 - pass an options object beyond that                                              | `lint` (`max-params`)             |
+| Test file per module               | `js/sim/x.js` -> `test/sim/x.test.js`, same for `js/evo`                            | `conventions`                     |
+| Files directly under `js/`         | None - code lives in `js/sim/`, `js/evo/`, `js/worker/`, `js/app/` or `js/library/` | `conventions`                     |
 
 A test that runs a real world for many ticks, a worker pool or a full eval (about 0.5 s or more) goes in
 `<module>.slow.test.js` beside the mirrored test; CI runs only the fast tests, every local run runs all

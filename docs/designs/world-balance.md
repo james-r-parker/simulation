@@ -1,8 +1,8 @@
 # World balance and biology
 
-**Status:** In progress - Phases 1 to 4 and Phase 5 round 1 built; the post-feature round consumes merged flora and megafauna evidence, then tests predator persistence and genetic families through the hypothesis queue below. No Phase 5 balance-round defaults are adopted. The contagion moved to [disease.md](disease.md), which lands before T84; the round's instruments are specified in full (Instruments for T80 to T83).
-**Validated:** 64a66de (2026-11-02)
-**Priority:** 7 - the post-feature balance round follows flora and megafauna; the current rank is unchanged
+**Status:** In progress - Phases 1 to 4 and Phase 5 round 1 built. The post-feature queue (T79 to T96) was not run as written: natural-selection.md Phase 4 (T48 to T67, closed 2026-11-07) ran the predator balance on the merged flora, megafauna and disease and spawned hunter-learning.md, refuge.md and realistic-keepers.md; the instruments of T80 to T83 were never built. What is left is the disease value screen (T94 to T96) and any new balance round, which needs a fresh plan from the `create-plan` skill.
+**Validated:** d6ca3e6c (2026-11-07)
+**Priority:** 7 - flora, megafauna and disease are Implemented and natural-selection.md ran the balance round, so what remains (the disease value screen, a re-plan of any further round) is small and queues behind the world fixes
 **Depends on:** [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md)
 
 The world is tuned until it passes the world gate in [evolution-rework.md](evolution-rework.md) Phase 3, then the
@@ -1250,6 +1250,8 @@ Findings (no blocker):
 **Targets:** eval.predators_at_end, eval.prey_types_at_end, eval.basin_family_effective, eval.food_energy_per_1k, eval.fed_median_lifespan, eval.floor_episodes
 
 #### Post-feature round - causal balance queue (not run)
+
+**Update 2026-11-07.** Flora, megafauna and disease have landed, and [natural-selection.md](natural-selection.md) Phase 4 (T48 to T67) ran the predator balance in their place, closing with the long run `E140`; none of T79 to T93 was built (no instrument of T80 to T83 exists in `js/evo`). Treat the queue below as the plan it was, not the state of the world; T94 to T96 (the disease value screen) are the live part.
 
 This round is the entry point after all phases of [flora.md](flora.md) and [megafauna.md](megafauna.md) land.
 The earlier round below is a historical record, including its old defaults, flags, hashes and baselines. It is not
