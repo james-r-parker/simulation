@@ -1,5 +1,5 @@
 // Turns an archive or champion files into drill subjects.
-import { CELLS, ELITE, archiveCv, lowerBound, placeOf, refOf } from '../../js/evo/archive.js';
+import { bestElitePerSpec } from '../../js/evo/champion-export.js';
 import { GENOME_SPECS } from '../../js/evo/genome.js';
 import { validateChampion } from '../../js/evo/league.js';
 
@@ -9,33 +9,13 @@ import { validateChampion } from '../../js/evo/league.js';
  *   bound, in specialisation order (a specialisation with no elite has none); the rows are copies
  */
 export function eliteSubjects(archive) {
-    const cv = archiveCv(archive);
-    const subjects = [];
-    for (let spec = 0; spec < GENOME_SPECS.length; spec++) {
-        let best = null;
-        let bestBound = -Infinity;
-        for (let cell = 0; cell < CELLS; cell++) {
-            const place = placeOf(spec, cell, ELITE);
-            if (archive.occupied[place] !== 1) {
-                continue;
-            }
-            const bound = lowerBound(archive, place, cv);
-            if (bound > bestBound) {
-                best = refOf(archive, place);
-                bestBound = bound;
-            }
-        }
-        if (best !== null) {
-            subjects.push({
-                name: `elite-${GENOME_SPECS[spec]}-cell${best.cell}`,
-                id: best.id,
-                spec,
-                weights: Float32Array.from(best.row),
-                act: null,
-            });
-        }
-    }
-    return subjects;
+    return bestElitePerSpec(archive).map((best) => ({
+        name: `elite-${GENOME_SPECS[best.spec]}-cell${best.cell}`,
+        id: best.id,
+        spec: best.spec,
+        weights: Float32Array.from(best.row),
+        act: null,
+    }));
 }
 
 /**
