@@ -32,8 +32,10 @@ describe('motes', () => {
     it('keeps motes behind the text fainter than the brightest on the left', () => {
         const dots = motes(field);
         const right = dots.filter((m) => m.x > 1200 * 0.42);
+        const left = dots.filter((m) => m.x <= 1200 * 0.42);
         expect(right.length).toBeGreaterThan(0);
         expect(Math.max(...right.map((m) => m.alpha))).toBeLessThanOrEqual(0.45);
+        expect(Math.max(...left.map((m) => m.alpha))).toBeGreaterThan(0.45);
     });
 });
 

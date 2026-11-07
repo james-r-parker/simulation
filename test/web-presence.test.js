@@ -86,6 +86,13 @@ describe('the page head', () => {
             expect(tagsWith('link', 'rel', rel), rel).toHaveLength(1);
         }
         expect(metaContent('name', 'twitter:card')).toBe('summary_large_image');
+        const title = head.match(/<title>([^<]*)<\/title>/)?.[1];
+        expect(metaContent('property', 'og:title')).toBe(title);
+        expect(metaContent('name', 'twitter:title')).toBe(title);
+        expect(metaContent('name', 'twitter:description')).toBe(metaContent('name', 'description'));
+        expect(metaContent('name', 'twitter:image:alt')).toBe(metaContent('property', 'og:image:alt'));
+        expect(metaContent('name', 'color-scheme')).toBe('dark');
+        expect(metaContent('name', 'robots')).toBe('index, follow');
     });
 
     it('points the canonical link and og:url at the production site', () => {
@@ -108,8 +115,8 @@ describe('the page head', () => {
         for (const link of links) {
             expect(link.href.startsWith('/'), `${link.href} is root-absolute for Vite's base`).toBe(true);
             expect(existsSync(publicPath(link.href)), link.href).toBe(true);
-            if (link.href.endsWith('.png')) {
-                expect(imageSize(publicPath(link.href)).width).toBe(180);
+            if (link.rel === 'apple-touch-icon') {
+                expect(imageSize(publicPath(link.href))).toEqual({ width: 180, height: 180 });
             }
         }
         expect(tagsWith('link', 'rel', 'icon').map((t) => t.href)).toEqual(['/favicon.ico', '/favicon.svg']);

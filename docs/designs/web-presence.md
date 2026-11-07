@@ -8,26 +8,26 @@ app. Everything here is a static file under `public/` or a tag in the `<head>` o
 
 ## Icon
 
-The mark is a single bioluminescent blob on a near-black tile, looking right.
+The mark is a single bioluminescent blob on a near-black tile, its eye on the right.
 
-| Part  | Shape                                                         | Colour                                                           |
-| ----- | ------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Tile  | Rounded square, corner radius 22 % of the side                | `#0f2033` at the centre to `#05080d` at the edge                 |
-| Body  | An organic blob, wider at the front, filling 62 % of the tile | `PALETTE.food` mint (`#5ee6a8`) to teal (`#17897d`), a mint halo |
-| Eye   | One round eye at the front, the pupil looking forward         | `PALETTE.eye` cool white (`#e8f4ff`), pupil `#05080d`            |
-| Rays  | Three faint vision rays from the eye, the middle one longest  | `#bfe9ff` at 22 % and 40 % opacity                               |
-| Spark | A glowing dot at the end of the middle ray: food              | `PALETTE.huntScent` amber (`#ffbe3c`)                            |
-| Bud   | A small blob behind the body: an offspring                    | The body's gradient and halo                                     |
+| Part  | Shape                                                          | Colour                                                                    |
+| ----- | -------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Tile  | Rounded square, corner radius 22 % of the side                 | `#0f2033` at the centre to `#05080d` at the edge                          |
+| Body  | An organic blob, wider at the front, filling 62 % of the tile  | mint `#5ee6a8` (close to `PALETTE.food`) to teal (`#17897d`), a mint halo |
+| Eye   | One round eye at the front, the pupil looking forward          | cool white `#e8f4ff` (close to `PALETTE.eye`), pupil `#05080d`            |
+| Rays  | Three faint vision rays from the eye, the middle one brightest | `#bfe9ff` at 22 % and 40 % opacity                                        |
+| Spark | A glowing dot at the end of the middle ray: food               | amber `#ffbe3c` (close to `PALETTE.huntScent`)                            |
+| Bud   | A small blob behind the body: an offspring                     | The body's gradient and halo                                              |
 
 - `public/icons/icon.svg` is the source of truth. Every other icon file is generated
   from it by `scripts/build-icons.mjs`.
 - The root `<svg>` takes a `data-variant` attribute that its own `<style>` reads:
 
-| `data-variant` | Draws                                                                                                              |
-| -------------- | ------------------------------------------------------------------------------------------------------------------ |
-| (none)         | Tile, body, eye, rays, spark and bud                                                                               |
-| `maskable`     | A full-bleed square tile; the rest scaled by 0.84 to sit inside the central 80 % safe circle                       |
-| `favicon`      | No tile; body and an eye 1.22 times larger, filling the frame, with a dark rim unless `prefers-color-scheme: dark` |
+| `data-variant` | Draws                                                                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| (none)         | Tile, body, eye, rays, spark and bud                                                                                            |
+| `maskable`     | A full-bleed square tile; the rest scaled by 0.84; body, eye, rays and the spark's core sit inside the central 80 % safe circle |
+| `favicon`      | No tile; body and an eye 1.22 times larger, filling the frame, with a dark rim unless `prefers-color-scheme: dark`              |
 
 ## Assets
 
@@ -36,7 +36,7 @@ The mark is a single bioluminescent blob on a near-black tile, looking right.
 | `public/icons/icon.svg`             | vector        | (none)     | Source; the manifest's `any` vector icon                         |
 | `public/favicon.svg`                | vector        | `favicon`  | `<link rel="icon" type="image/svg+xml">`                         |
 | `public/favicon.ico`                | 16, 32, 48 px | `favicon`  | `<link rel="icon" sizes="48x48">`, and `/favicon.ico` by default |
-| `public/favicon.png`                | 192 x 192     | (none)     | The `about/` and `blog/` pages' `<link rel="icon">`              |
+| `public/favicon.png`                | 192 x 192     | (none)     | A plain PNG favicon at the site root                             |
 | `public/icons/apple-touch-icon.png` | 180 x 180     | `maskable` | `<link rel="apple-touch-icon">` (iOS rounds the corners itself)  |
 | `public/icons/icon-192.png`         | 192 x 192     | (none)     | Manifest, `purpose: any`                                         |
 | `public/icons/icon-512.png`         | 512 x 512     | (none)     | Manifest, `purpose: any`; the splash on Android                  |
@@ -50,7 +50,7 @@ The mark is a single bioluminescent blob on a near-black tile, looking right.
   start-of-frame marker, and `readIco` an ICO's directory.
 - `variantSvg` writes the source with a `data-variant` and an optional pixel size; `public/favicon.svg` is its
   `favicon` output.
-- `ICON_OUTPUTS` there lists every generated file with its size and variant; the build script and the test both
+- `ICON_OUTPUTS` there lists every generated square PNG with its size and variant; `FAVICON_SVG`, `FAVICON_ICO` and `OG_IMAGE` name the other three outputs; the build script and the test both
   read it.
 
 ## Share card
@@ -73,10 +73,10 @@ The mark is a single bioluminescent blob on a near-black tile, looking right.
 | `meta name="description"`                                                                    | The existing one-sentence description                                                                     |
 | `link rel="canonical"`                                                                       | `https://matrix.dotnethelp.co.uk/`                                                                        |
 | `meta name="robots"`                                                                         | `index, follow`                                                                                           |
-| `meta name="color-scheme"`                                                                   | `dark` - the app draws on black only                                                                      |
+| `meta name="color-scheme"`                                                                   | `dark`                                                                                                    |
 | `meta name="theme-color"`                                                                    | `#05080d`, twice: `media="(prefers-color-scheme: light)"` and `dark`                                      |
 | `meta name="viewport"`                                                                       | Unchanged - [mobile-view.md](mobile-view.md) owns it                                                      |
-| `link rel="icon"`                                                                            | `favicon.ico` (`sizes="48x48"`) and `favicon.svg` (`type="image/svg+xml"`)                                |
+| `link rel="icon"`                                                                            | `favicon.ico` (`sizes="48x48"`) and `favicon.svg` (`type="image/svg+xml"`, `sizes="any"`)                 |
 | `link rel="apple-touch-icon"`                                                                | `icons/apple-touch-icon.png`                                                                              |
 | `link rel="manifest"`                                                                        | `manifest.webmanifest`                                                                                    |
 | `meta name="apple-mobile-web-app-capable"`, `mobile-web-app-capable`                         | `yes`                                                                                                     |
@@ -89,8 +89,7 @@ The mark is a single bioluminescent blob on a near-black tile, looking right.
 
 - Icon and manifest links are root-absolute (`/favicon.svg`). Vite rewrites them to the build's `--base`, so a
   `/v/<version>/` build links its own files.
-- `og:url`, `og:image` and the canonical link are absolute production URLs in every build: a versioned build is a
-  copy of the site, not a page of its own.
+- `og:url`, `og:image` and the canonical link are absolute production URLs in every build, `/v/<version>/` included.
 
 ## Manifest
 
@@ -115,7 +114,7 @@ The mark is a single bioluminescent blob on a near-black tile, looking right.
 
 - Every path is relative, so it resolves against the manifest's own URL: `/manifest.webmanifest` and
   `/v/<version>/manifest.webmanifest` each describe their own copy of the app.
-- `screenshots` is absent: the app's frame needs WebGL2, and a headless capture is not reproducible.
+- The manifest has no `screenshots`.
 
 ## Install and splash
 
@@ -123,11 +122,10 @@ The mark is a single bioluminescent blob on a near-black tile, looking right.
   `display: standalone` and a 192 px and a 512 px icon.
 - Android draws the splash itself from `name`, `background_color` and the 512 px icon (the maskable one when
   present), so the splash is the near-black field with the mark and the name.
-- iOS has no manifest splash. The app ships no `apple-touch-startup-image`: iOS matches it only by exact device size
-  and orientation (about 30 images), and the page's own black background shows for the moment before the first frame.
-- The app registers no service worker. Current Chromium installs a web app without a fetch-handler service worker, and a
-  caching worker would serve an old build's code after a deploy and across `/v/<version>/` copies
-  ([deployment-and-community.md](deployment-and-community.md)).
+- iOS has no manifest splash and the app ships no `apple-touch-startup-image`; the page's black background shows until
+  the first frame.
+- The app registers no service worker; current Chromium installs a web app without one, and no cache holds an old
+  build's code after a deploy ([deployment-and-community.md](deployment-and-community.md)).
 
 ## Crawlers
 
@@ -191,7 +189,7 @@ The mark is a single bioluminescent blob on a near-black tile, looking right.
 ## Verification
 
 1. `scripts/check.sh` is green, and `SMOKE_LOCAL=1 scripts/check.sh --only=browser-smoke` passes.
-2. `node scripts/build-icons.mjs` regenerates every file in `ICON_OUTPUTS` and the share card; `git status` shows no
+2. `node scripts/build-icons.mjs` regenerates every file in `ICON_OUTPUTS`, `favicon.svg`, `favicon.ico` and the share card; `git status` shows no
    change on a machine with the same Chromium.
 3. `npx vitest run test/web-presence.test.js test/icon-files.test.js test/og-card.test.js` passes.
 4. `npm run build`, then `dist/` holds `favicon.svg`, `favicon.ico`, `icons/`, `og/`, `manifest.webmanifest`,
