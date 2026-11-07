@@ -30,7 +30,7 @@ describe('FX_RECIPES', () => {
             for (const part of r.parts) {
                 expect(FX_CURVES[part.curve], name).toBeDefined();
                 expect(part.count, name).toBeGreaterThan(0);
-                expect(part.life, name).toBeGreaterThan(0);
+                expect(part.life === -1 || part.life > 0, name).toBe(true);
                 expect(part.size, name).toBeGreaterThan(0);
                 if (part.color !== undefined) {
                     expect(PALETTE[part.color], `${name} ${part.color}`).toBeDefined();

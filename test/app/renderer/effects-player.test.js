@@ -11,6 +11,7 @@ import { createCameraController } from '../../../js/app/camera.js';
 import { BAND } from '../../../js/app/renderer/fx-budget.js';
 import { createMateThreadPool } from '../../../js/app/renderer/mate-threads.js';
 import { isLive } from '../../../js/app/renderer/fx-pool.js';
+import { CURVE } from '../../../js/app/renderer/fx-curves.js';
 import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
 import { createRingPool, RING_CAPACITY } from '../../../js/app/renderer/rings.js';
 import { createSparkPool, SPARK_CAPACITY } from '../../../js/app/renderer/sparks.js';
@@ -70,22 +71,6 @@ function build() {
 }
 
 /**
- * @param {any} pool a ring or spark pool
- * @param {number} tick the tick
- * @returns {number} how many entries are alive at the tick
- */
-function live(pool, tick) {
-    let n = 0;
-    for (let i = 0; i < pool.startTick.length; i++) {
-        if (tick >= pool.startTick[i] && tick < pool.startTick[i] + pool.lifeTicks[i]) {
-            n += 1;
-        }
-    }
-    return n;
-}
-const liveRings = live;
-
-/**
  * @param {any} pool the effect pool
  * @param {number} tick the tick
  * @returns {number} instances drawing at the tick
@@ -97,50 +82,50 @@ function liveFx(pool, tick) {
     }
     return n;
 }
-const liveSparks = live;
 
 describe('playEffects', () => {
-    it('plays a strain emergence as one ring at the first host', () => {
-        const { player, rings, seen } = build();
+    it('plays a strain emergence as one wide ring at the first host', () => {
+        const { player, seen } = build();
         const q = queueOf([[11, 12, 140, 260, 2, 77, 0, 0]]);
         expect(playEffects(player, q, alive([]), 12)).toBe(1);
         expect(seen).toEqual([11]);
-        expect(liveRings(rings, 12)).toBe(1);
-        expect(rings.x[0]).toBe(140);
-        expect(rings.y[0]).toBe(260);
+        expect(liveFx(player.fx.pool, 12)).toBe(1);
+        expect(player.fx.pool.pose[0]).toBe(140);
+        expect(player.fx.pool.pose[1]).toBe(260);
+        expect(player.fx.pool.time[2]).toBe(CURVE.ringSlow);
     });
 
-    it('plays a stampede as dust particles at the herd centre', () => {
-        const { player, sparks, seen } = build();
+    it('plays a stampede as a ground ring and dust at the herd centre', () => {
+        const { player, seen } = build();
         const q = queueOf([[10, 12, 80, 90, 3, 5, 0, 0]]);
         expect(playEffects(player, q, alive([]), 12)).toBe(1);
         expect(seen).toEqual([10]);
-        expect(liveSparks(sparks, 12)).toBe(10);
-        expect(sparks.x[0]).toBe(80);
-        expect(sparks.y[0]).toBe(90);
+        expect(liveFx(player.fx.pool, 12)).toBe(15);
+        expect(player.fx.pool.pose[0]).toBe(80);
+        expect(player.fx.pool.pose[1]).toBe(90);
     });
 
     it('plays an effect once, when the playhead reaches its tick, and not before', () => {
-        const { player, rings, seen } = build();
+        const { player, seen } = build();
         const q = queueOf([[4, 100, 10, 20, 1, 0, 0, 1]]);
         expect(playEffects(player, q, alive([]), 99)).toBe(0);
         expect(q.count).toBe(1);
         expect(playEffects(player, q, alive([]), 100)).toBe(1);
         expect(playEffects(player, q, alive([]), 101)).toBe(0);
         expect(seen).toEqual([4]);
-        expect(liveRings(rings, 105)).toBe(1);
-        expect(rings.radius[0]).toBe(300);
+        expect(liveFx(player.fx.pool, 109)).toBe(2);
+        expect(player.fx.pool.pose[3]).toBeCloseTo(300 * 1.18);
     });
 
-    it('draws seeded patch effects as dim flora rings only when the flora look is on', () => {
-        const { player, rings } = build();
+    it('draws a seeded patch as a dim flora ring and a sprout, only when the flora look is on', () => {
+        const { player } = build();
         playEffects(player, queueOf([[9, 10, 20, 30, 4095, 0, 0, 0]]), alive([]), 10);
-        expect(liveRings(rings, 10)).toBe(1);
-        expect(rings.x[0]).toBe(20);
-        expect(rings.y[0]).toBe(30);
+        expect(liveFx(player.fx.pool, 10)).toBe(2);
+        expect(player.fx.pool.pose[0]).toBe(20);
+        expect(player.fx.pool.pose[1]).toBe(30);
         player.floraEnabled = false;
         playEffects(player, queueOf([[9, 11, 1, 2, 0, 0, 0, 0]]), alive([]), 11);
-        expect(liveRings(rings, 11)).toBe(1);
+        expect(liveFx(player.fx.pool, 11)).toBe(2);
     });
 
     it('keeps order, stopping at the first effect still ahead of the playhead', () => {
@@ -186,18 +171,30 @@ describe('playEffects', () => {
         expect(STALE_TICKS).toBeGreaterThan(40);
     });
 
-    it('a pack call spawns a hunt ring, an alarm an alarm ring', () => {
-        const { player, rings } = build();
-        playEffects(
-            player,
-            queueOf([
-                [5, 1, 0, 0, 0, 0, 0, 0],
-                [4, 1, 0, 0, 0, 0, 0, 0],
-            ]),
-            alive([]),
-            1,
-        );
-        expect(Array.from(rings.kind.slice(0, 2))).toEqual([1, 0]);
+    it('a pack call sends a hunt pulse and three arcs ahead and stretches the caller; an alarm two chevron waves', () => {
+        const { player } = build();
+        const agents = alive([{ slot: 1, genomeId: 3, x: 50, y: 60, angle: 1 }]);
+        playEffects(player, queueOf([[5, 1, 0, 0, 3, 0, 0, 0]]), agents, 1);
+        const { pool } = player.fx;
+        expect(liveFx(pool, 2)).toBe(4);
+        expect(pool.time[2]).toBe(CURVE.huntPulse);
+        expect(pool.time[6]).toBe(CURVE.arc);
+        expect(pool.pose[0]).toBe(50);
+        expect(pool.time[5]).toBe(40);
+        expect(player.tweens.kind[1]).toBe(TWEEN.HOWL);
+        const b = build();
+        playEffects(b.player, queueOf([[4, 1, 7, 8, 9, 0, 0, 0]]), alive([]), 1);
+        expect(b.player.fx.pool.time[2]).toBe(CURVE.chevron);
+        expect(b.player.fx.pool.time[4] - b.player.fx.pool.time[0]).toBe(8);
+    });
+
+    it('smoke bursts in puffs at the releaser, with a bite mark when it was bitten', () => {
+        const { player } = build();
+        playEffects(player, queueOf([[6, 1, 5, 5, 0, 0, 0, 0]]), alive([]), 1);
+        expect(liveFx(player.fx.pool, 2)).toBe(8);
+        const b = build();
+        playEffects(b.player, queueOf([[6, 1, 5, 5, 0, 0, 1 << 8, 0]]), alive([]), 1);
+        expect(liveFx(b.player.fx.pool, 2)).toBe(9);
     });
 
     it('a birth plays by its cause: mating, split, floor and immigrant differ, the founders play nothing', () => {
@@ -274,10 +271,9 @@ describe('playEffects', () => {
         expect(liveFx(b.player.fx.pool, 6)).toBe(6);
     });
 
-    it('ignores smoke effects but still tells the sink', () => {
-        const { player, rings, seen } = build();
+    it('tells the sink of every effect it plays', () => {
+        const { player, seen } = build();
         playEffects(player, queueOf([[6, 1, 0, 0, 0, 0, 0, 0]]), alive([]), 1);
-        expect(liveRings(rings, 2)).toBe(0);
         expect(seen).toEqual([6]);
     });
 

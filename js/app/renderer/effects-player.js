@@ -3,16 +3,14 @@
 // dropped unplayed.
 
 import { createFamilySlots } from '../family-slots.js';
-import { floraColor } from './flora-colors.js';
-import { PALETTE, SCENERY_MAX_LUMINANCE } from './colors.js';
+import { PALETTE } from './colors.js';
 import { spawnMateThread } from './mate-threads.js';
-import { BIRTH_TICKS, RING_COLORS, spawnRing } from './rings.js';
-import { spawnStampedeDust } from './sparks.js';
 import { viewBounds } from '../camera.js';
 import { createBodyTweens } from './body-tweens.js';
 import { playBite, playDeath } from './effects-combat.js';
 import { createEdgeState } from './effects-edges.js';
 import { bornNamesOf, playBirth, playMate } from './effects-life.js';
+import { playAtEffect, playCall, playPollinated, playSmoke } from './effects-signals.js';
 export { playEdges } from './effects-edges.js';
 import { beginFxFrame, logFxBudget } from './fx-budget.js';
 import { createFxPool } from './fx-pool.js';
@@ -20,19 +18,7 @@ import { createFxPlayer } from './fx-recipes.js';
 
 /** An effect this many ticks behind the playhead is stale and skipped. */
 export const STALE_TICKS = 180;
-/** How far from a newborn its birth ring spreads, in world units. */
-export const BIRTH_RING_RADIUS = 70;
 export { BIRTH_SIZE, JAW_REACH } from './effects-combat.js';
-/** The scratch record handed to `spawnRing`, which copies it out. */
-const RING = {
-    kind: /** @type {'alarm' | 'hunt' | 'birth' | 'pollen'} */ ('birth'),
-    x: 0,
-    y: 0,
-    tick: 0,
-    radius: 0,
-    life: 0,
-    rgb: /** @type {ArrayLike<number>} */ (PALETTE.biteFlash),
-};
 
 /**
  * @typedef {object} Effect
@@ -130,70 +116,6 @@ export function createEffectsPlayer({
 }
 
 /**
- * @param {EffectsPlayer} player effect player
- * @returns {void}
- */
-function playPollinated(player) {
-    const e = player.effect;
-    floraColor((e.a / 4095) * 2 - 1, player.rgb);
-    const y = 0.2126729 * player.rgb[0] + 0.7151522 * player.rgb[1] + 0.072175 * player.rgb[2];
-    const scale = SCENERY_MAX_LUMINANCE / y;
-    player.rgb[0] *= scale;
-    player.rgb[1] *= scale;
-    player.rgb[2] *= scale;
-    setRing('pollen', e, 70, BIRTH_TICKS);
-    RING.rgb = player.rgb;
-    spawnRing(player.rings, RING);
-}
-
-/**
- * Fills the shared ring scratch at the effect, leaving the colour to the caller.
- * @param {'birth' | 'alarm' | 'hunt' | 'pollen'} kind which ring
- * @param {Effect} e the effect
- * @param {number} radius its radius
- * @param {number} life its length in ticks
- * @returns {void}
- */
-function setRing(kind, e, radius, life) {
-    RING.kind = kind;
-    RING.x = e.x;
-    RING.y = e.y;
-    RING.tick = e.tick;
-    RING.radius = radius;
-    RING.life = life;
-}
-
-/**
- * @param {EffectsPlayer} player the player
- * @param {'alarm' | 'hunt'} kind which call
- * @returns {void}
- */
-function playCall(player, kind) {
-    const e = player.effect;
-    const { callRadius, callTicks } = player.info;
-    setRing(kind, e, callRadius, callTicks);
-    RING.rgb = RING_COLORS[kind];
-    spawnRing(player.rings, RING);
-}
-
-/** The ring that marks a strain's first host: wide and slow, in `PALETTE.infected`. */
-const STRAIN_RING_RADIUS = 140;
-const STRAIN_RING_TICKS = 90;
-
-/** @param {EffectsPlayer} player the player @returns {void} */
-function playStrain(player) {
-    setRing('birth', player.effect, STRAIN_RING_RADIUS, STRAIN_RING_TICKS);
-    RING.rgb = PALETTE.infected;
-    spawnRing(player.rings, RING);
-}
-
-/** @param {EffectsPlayer} player the player @returns {void} */
-function playStampede(player) {
-    const e = player.effect;
-    spawnStampedeDust(player.sparks, { x: e.x, y: e.y, tick: e.tick, group: e.a, animals: e.b });
-}
-
-/**
  * @param {EffectsPlayer} player the player, `player.effect` holding the record
  * @param {import('../interpolate.js').Interpolated} agents the blended agents
  * @returns {void}
@@ -206,17 +128,33 @@ function dispatch(player, agents) {
         playBirth(player, agents);
     } else if (e.kind === kinds.DIED) {
         playDeath(player, agents);
-    } else if (e.kind === kinds.ALARM) {
-        playCall(player, 'alarm');
-    } else if (e.kind === kinds.PACK_CALL) {
-        playCall(player, 'hunt');
-    } else if (e.kind === kinds.POLLINATED && player.floraEnabled) {
-        playPollinated(player);
     } else if (e.kind === kinds.MATED) {
         if (player.threads) {
             spawnMateThread(player.threads, e);
         }
         playMate(player, agents);
+    } else {
+        dispatchSignal(player, agents);
+    }
+}
+
+/**
+ * @param {EffectsPlayer} player the player, `player.effect` holding a call, smoke, pollination, stampede or strain
+ * @param {import('../interpolate.js').Interpolated} agents the blended agents
+ * @returns {void}
+ */
+function dispatchSignal(player, agents) {
+    const { kinds, effect: e } = player;
+    if (e.kind === kinds.ALARM || e.kind === kinds.PACK_CALL) {
+        playCall(player, agents, e.kind === kinds.PACK_CALL);
+    } else if (e.kind === kinds.SMOKE) {
+        playSmoke(player, agents);
+    } else if (e.kind === kinds.POLLINATED && player.floraEnabled) {
+        playPollinated(player);
+    } else if (e.kind === kinds.STAMPEDE) {
+        playAtEffect(player, 'stampede');
+    } else if (e.kind === kinds.STRAIN_EMERGED) {
+        playAtEffect(player, 'strain');
     }
 }
 
@@ -271,13 +209,7 @@ export function playEffects(player, queue, agents, tick) {
             continue;
         }
         played += 1;
-        if (e.kind === player.kinds.STAMPEDE) {
-            playStampede(player);
-        } else if (e.kind === player.kinds.STRAIN_EMERGED) {
-            playStrain(player);
-        } else {
-            dispatch(player, agents);
-        }
+        dispatch(player, agents);
         player.sink?.(e);
     }
     return played;

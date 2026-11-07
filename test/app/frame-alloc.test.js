@@ -86,7 +86,7 @@ describe('per-frame scratch reuse', () => {
         layer.dispose();
     });
 
-    it('the effects player reuses one burst, one ring and one effect-pool record for every effect', () => {
+    it('the effects player reuses one effect-pool record for every effect', () => {
         const layout = {
             effectKinds: { BORN: 1, DIED: 2, BITE: 3, ALARM: 4, PACK_CALL: 5, SMOKE: 6 },
             deathCauses: { EATEN: 1 },
@@ -110,9 +110,9 @@ describe('per-frame scratch reuse', () => {
         seen.bursts.length = 0;
         seen.fx.length = 0;
         expect(playEffects(player, queue, agents, 1)).toBe(kinds.length);
-        expect(seen.rings.length).toBe(4);
+        expect(seen.rings.length).toBe(0);
+        expect(seen.bursts.length).toBe(0);
         expect(seen.fx.length).toBeGreaterThan(10);
-        expect(new Set(seen.rings).size).toBe(1);
         expect(new Set(seen.fx).size).toBe(1);
     });
 });

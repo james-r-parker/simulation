@@ -13,7 +13,7 @@ import { spawnFx } from './fx-pool.js';
  * @typedef {object} FxPart
  * @property {number} curve an `FX_CURVES` index
  * @property {number} count instances at the close band and tier 0
- * @property {number} life ticks
+ * @property {number} life ticks; -1 takes the effect's own `life`
  * @property {number} size world size in agent radii
  * @property {number} [reach] how far it travels, in agent radii; -1 takes the effect's own `reach` in world units
  * @property {'ring' | 'heading' | 'random' | 'none'} [spread] `ring` evenly round, `heading` a fan ahead, `random`
@@ -112,6 +112,31 @@ export const FX_RECIPES = Object.freeze({
         { curve: C.arrive, count: 8, life: 40, size: 0.25, reach: 5, spread: 'heading', color: 'arrival' },
         { curve: C.ring, count: 1, life: 30, size: 2, color: 'arrival', delay: 30, gain: 0.7, minPx: 8 },
     ]),
+    alarm: recipe(FAMILY.calls, RANK.call, [
+        { curve: C.chevron, count: 1, life: -1, size: 1.18, color: 'alarmRing', minPx: 16 },
+        { curve: C.chevron, count: 1, life: -1, size: 1.18, color: 'alarmRing', delay: 8, minPx: 16 },
+    ]),
+    packCall: recipe(FAMILY.calls, RANK.call, [
+        { curve: C.huntPulse, count: 1, life: -1, size: 1.18, color: 'huntRing', minPx: 16 },
+        { curve: C.arc, count: 3, life: -1, size: 0.4, reach: -1, spread: 'heading', color: 'huntRing', minPx: 10 },
+    ]),
+    smoke: recipe(FAMILY.calls, RANK.call, [
+        { curve: C.puffOut, count: 8, life: 30, size: 0.6, reach: 1.8, spread: 'ring', color: 'coolWhite', gain: 0.3 },
+    ]),
+    smokeBitten: recipe(FAMILY.calls, RANK.call, [
+        { curve: C.crescent, count: 1, life: 30, size: 0.8, color: 'eatenFlash', minPx: 6 },
+    ]),
+    strain: recipe(FAMILY.sickness, RANK.sickness, [
+        { curve: C.ringSlow, count: 1, life: 90, size: 6.9, color: 'infected', minPx: 16 },
+    ]),
+    stampede: recipe(FAMILY.herds, RANK.firstKill, [
+        { curve: C.ringSlow, count: 1, life: 48, size: 14.7, color: 'stampedeDust', gain: 30, minPx: 20 },
+        { curve: C.dust, count: 14, life: 48, size: 0.6, reach: 1.6, spread: 'ring', color: 'stampedeDust', gain: 30 },
+    ]),
+    pollinated: recipe(FAMILY.flora, RANK.mate, [
+        { curve: C.ring, count: 1, life: 30, size: 3.4, minPx: 10 },
+        { curve: C.sprout, count: 1, life: 40, size: 0.8, gain: 40, minPx: 8 },
+    ]),
     toxicPip: feed([{ curve: C.pip, count: 1, life: 24, size: 0.45, color: 'toxin', minPx: 6 }]),
 });
 
@@ -135,6 +160,7 @@ export const DEATH_RECIPES = Object.freeze({
  * @property {number} tick
  * @property {ArrayLike<number>} rgb the effect's own colour
  * @property {number} [reach] world units, for a part whose reach is -1
+ * @property {number} [life] ticks, for a part whose life is -1
  */
 
 /**
@@ -189,19 +215,28 @@ function setPart(fx, part, at) {
     rec.x = at.x;
     rec.y = at.y;
     rec.size = part.size * at.size;
-    rec.reach = part.reach === -1 ? (at.reach ?? 0) : (part.reach ?? 0) * at.size;
+    rec.reach = reachOf(part, at);
     rec.r = rgb[0] * gain;
     rec.g = rgb[1] * gain;
     rec.b = rgb[2] * gain;
     rec.gain = 1;
     rec.tick = at.tick + (part.delay ?? 0);
-    rec.life = lifeFor(fx.budget, part.life);
+    rec.life = lifeFor(fx.budget, part.life === -1 ? (at.life ?? 1) : part.life);
     rec.curve = part.curve;
     rec.stretch = part.stretch ?? 1;
     rec.minPx = part.minPx ?? 3;
 }
 
 const WHERE = { k: 0, n: 0, turn: 0 };
+
+/**
+ * @param {FxPart} part the part
+ * @param {FxAt} at where
+ * @returns {number} the part's reach in world units
+ */
+function reachOf(part, at) {
+    return part.reach === -1 ? (at.reach ?? 0) : (part.reach ?? 0) * at.size;
+}
 
 /**
  * Spawns a recipe's parts, each at the count the budget allows.
