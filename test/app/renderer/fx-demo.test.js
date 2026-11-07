@@ -82,4 +82,12 @@ describe('createFxDemo', () => {
                 c.player.fx.budget.dropped.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0),
         ).toBeGreaterThan(59);
     });
+
+    it('does nothing before the effects player exists', () => {
+        const demo = /** @type {any} */ (createFxDemo({ family: 'combat', hold: 5, stress: false }));
+        const c = { ...ctx(), player: null };
+        demo.update(/** @type {any} */ ({ tick: 1, dtMs: 16 }), c);
+        expect(c.client.paused).not.toBe(true);
+        expect(demo.cells).toHaveLength(0);
+    });
 });

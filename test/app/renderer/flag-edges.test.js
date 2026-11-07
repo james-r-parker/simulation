@@ -66,4 +66,9 @@ describe('diffFlags', () => {
         diff(edges, [{ slot: 1, genomeId: 5, flags: 30 }]);
         expect(diff(edges, [{ slot: 1, genomeId: 6, flags: BITS.SICK | 1 }])).toEqual([]);
     });
+
+    it('starts with an emitter that ignores edges until diffFlags installs the real one', () => {
+        const edges = createFlagEdges(2);
+        expect(edges.ctx.emit(EDGE.ATE, 0)).toBeUndefined();
+    });
 });

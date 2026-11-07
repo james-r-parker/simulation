@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { createFxBudget } from '../../../js/app/renderer/fx-budget.js';
+import { LOOK_OFF } from '../../../js/app/renderer/quality.js';
 import { createCameraController } from '../../../js/app/camera.js';
 import {
     createFxLayer,
@@ -134,6 +136,17 @@ describe('flushFx and the layer', () => {
         expect(layer.uniforms.uCallBoost.value).toBeCloseTo(1 / 0.35);
         layer.setQuality?.(1);
         expect(pool.limit).toBe(1024);
+        layer.dispose();
+    });
+
+    it('hands the quality level and the look items to its budget', () => {
+        const pool = createFxPool();
+        const budget = createFxBudget();
+        const layer = createFxLayer({ pool, budget });
+        layer.setQuality?.(2);
+        expect(budget.level).toBe(2);
+        layer.setLook?.({});
+        expect(budget.tier.every((t) => t === LOOK_OFF)).toBe(true);
         layer.dispose();
     });
 });

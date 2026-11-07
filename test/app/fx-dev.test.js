@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createCameraController } from '../../js/app/camera.js';
-import { createFxDev, readFxParams } from '../../js/app/fx-dev.js';
+import { createFxDev, fxAfterDraw, fxPerf, fxSink, readFxParams } from '../../js/app/fx-dev.js';
 import { createEffectsPlayer } from '../../js/app/renderer/effects-player.js';
 import { fakeDocument } from './helpers/fake-dom.js';
 
@@ -52,5 +52,47 @@ describe('createFxDev', () => {
         dev.onEffect({ kind: 3, x: 0, y: 0, c: 0, d: 0 }, 1000);
         expect(target.__fxdemo.cells.length).toBeGreaterThan(0);
         expect(target.__fxdemo.cells[0].size).toBeCloseTo(150 * camera.zoom);
+    });
+});
+
+describe('the page hooks', () => {
+    it('fxSink tells the interface, then the overlay when there is one', () => {
+        /** @type {string[]} */
+        const seen = [];
+        const effect = { kind: 1 };
+        const app = { iface: { onEffect: () => seen.push('iface') }, fxDev: null };
+        fxSink(app, effect);
+        fxSink({ ...app, fxDev: { onEffect: () => seen.push('dev') } }, effect);
+        expect(seen).toEqual(['iface', 'iface', 'dev']);
+    });
+
+    it('fxAfterDraw always runs the interface hook and the overlay only when the URL asked for it', () => {
+        /** @type {any[]} */
+        const calls = [];
+        const player = {};
+        const app = {
+            iface: { afterDraw: () => calls.push('iface') },
+            fxDev: null,
+            deps: { refs: { player } },
+            camera: { canvas: { width: 200 } },
+            supervisor: { client: () => 'client' },
+            ready: 'ready',
+            container: { clientWidth: 100 },
+        };
+        fxAfterDraw(app, { tick: 1 });
+        expect(calls).toEqual(['iface']);
+        const dev = { afterDraw: (/** @type {any} */ f, /** @type {any} */ ctx) => calls.push(ctx) };
+        fxAfterDraw({ ...app, fxDev: dev }, { tick: 2 });
+        expect(calls[2]).toEqual({ player, camera: app.camera, client: 'client', ready: 'ready', cssScale: 0.5 });
+    });
+
+    it('fxPerf reports nulls before the player and the budget counts after it', () => {
+        expect(fxPerf({ deps: { refs: { player: null }, scene: null } })).toEqual({ fx: null, drawCalls: null });
+        const layout = { effectKinds: {}, deathCauses: {}, bornCauses: {} };
+        const player = createEffectsPlayer({ layout, info: { callRadius: 1, callTicks: 1, maxAgents: 4 } });
+        const scene = { renderer: { info: { render: { calls: 7 } } } };
+        const perf = fxPerf({ deps: { refs: { player }, scene } });
+        expect(perf.drawCalls).toBe(7);
+        expect(Object.keys(perf.fx ?? {}).length).toBeGreaterThan(0);
     });
 });
