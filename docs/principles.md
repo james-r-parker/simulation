@@ -268,10 +268,13 @@ fitness and merit (K9), and the pack term paid standers-by (K11).
   get a gorge-and-fast metabolism (a low resting burn, a larger fat store, a big meal per kill), as real carnivores do,
   not a restock.
 - A mechanism that adds realistic natural behaviour stays in the world when it does no harm, even if its scene has not
-  appeared yet: evolution or training may learn to use it later (user, 2026-11-06). No harm is judged on 16 seeds or
-  more, floor on and on matched seeds: the user keep rule holds (hunters alive at the last tick on 12 of 16 or more, and
-  no more seeds ending under 80 agents than the defaults) and `eval:compare` finds no guard worse. Eight seeds never
-  judge harm; their guard numbers swing by chance (`E131`). A kept mechanism is adopted on by default and its switch is
-  deleted (`AGENTS.md` "Delete what a switch replaces"). A mechanism that harms, or that nature does not do, is still
-  deleted. Example: cover that hides prey from a hunter's sight, or a remembered bearing to the nearest refuge, is kept
-  if it does no harm, though no prey uses either yet (`E131`, `E132`).
+  appeared yet: evolution or training may learn to use it later (user, 2026-11-06). No harm is judged by paired
+  intervals on 32 matched seeds, floor on (user, 2026-11-07): the mechanism does harm only if `eval:compare`, or the
+  same paired bootstrap on the share of seeds with hunters alive at the last tick and the share ending under 80 agents,
+  shows a guard worse with the interval excluding 0. The raw counts are not the test: a change that does nothing fails
+  "12 of 16 alive and no more seeds under 80 than the defaults" about 43% of the time at 16 seeds (`E135`). The user
+  keep rule (12 of 16 alive, no more seeds under 80 than the defaults) stays the bar for the combined world before
+  adoption. Eight seeds never judge harm. A kept mechanism is adopted on by default and its switch is deleted
+  (`AGENTS.md` "Delete what a switch replaces"). A mechanism that harms, or that nature does not do, is still deleted.
+  Example: cover that hides prey from a hunter's sight, or a remembered bearing to the nearest refuge, is kept if it
+  does no harm, though no prey uses either yet (`E131`, `E132`).
