@@ -53,6 +53,8 @@ describe('createHerdLayer', () => {
         layer.update?.(/** @type {any} */ ({ snapshot, camera, nowMs: 2500 }));
         expect(layer.object.visible).toBe(true);
         expect(layer.object.material.uniforms.uDetail.value).toBe(2);
+        layer.setLook?.({});
+        expect(layer.object.material.uniforms.uDetail.value).toBe(0);
         layer.setLook?.({ herds: 0 });
         layer.update?.(/** @type {any} */ ({ snapshot, camera, nowMs: 2500 }));
         expect(layer.object.visible).toBe(true);

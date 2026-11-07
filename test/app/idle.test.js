@@ -45,4 +45,16 @@ describe('createIdleTracker', () => {
         idle.reset();
         expect(idle.idleMs()).toBe(0);
     });
+
+    it('anchors a coordinate-less move at the origin and counts keys and presses that carry no position', () => {
+        const { clock, idle } = setup();
+        clock.t = 10;
+        expect(idle.input({ type: 'pointermove' })).toBe(false);
+        expect(idle.input({ type: 'pointermove', x: 1, y: 0 })).toBe(false);
+        expect(idle.input({ type: 'pointermove', x: MOVE_THRESHOLD_PX, y: 0 })).toBe(true);
+        clock.t = 20;
+        expect(idle.input({ type: 'keydown' })).toBe(true);
+        expect(idle.input({ type: 'pointermove' })).toBe(true);
+        expect(idle.idleMs()).toBe(0);
+    });
 });
