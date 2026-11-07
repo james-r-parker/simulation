@@ -7,6 +7,14 @@
 //   edge (the two lines `y = coldMarginWidth` and `y = worldHeight - coldMarginWidth`) at winter checkpoints, minus the
 //   same mean at the other checkpoints (negative when agents move towards shelter in winter).
 //
+// Seasonal-movement.md adds two, read in the same pass (winter group against the other checkpoints):
+//
+// - `eval.winter_band_shift`: the share of alive agents inside the cold margin, winter minus the others (negative when
+//   agents leave the snowline in winter). The margin is `snowMarginWidth` when the config has that key (seasonal-movement.md
+//   T8) and `coldMarginWidth` until then.
+// - `eval.winter_patch_proximity`: the share of alive agents within `foodPatchRadius` of an alive patch with positive
+//   weight, winter minus the others (higher when winter concentrates on the patches that fruit).
+//
 // Sums only; nothing is allocated.
 
 import { WINTER } from '../sim/eras.js';
@@ -24,7 +32,36 @@ export function createSeasonScene() {
         basin: new Float64Array(4),
         agents: new Float64Array(2),
         distance: new Float64Array(2),
+        inMargin: new Float64Array(2),
+        nearFruit: new Float64Array(2),
     };
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} config the world's config
+ * @returns {number} the width of the cold margin a winter shelter or band is read against
+ */
+function marginWidth(config) {
+    return config.snowMarginWidth ?? config.coldMarginWidth;
+}
+
+/**
+ * @param {Record<string, any>} world the world
+ * @param {number} slot an alive slot
+ * @returns {boolean} whether the agent is within `foodPatchRadius` of an alive patch with positive weight
+ */
+function nearFruitingPatch(world, slot) {
+    const radius = world.config.foodPatchRadius;
+    for (let p = 0; p < world.patchX.length; p++) {
+        if (world.patchAlive[p] === 1 && world.patchWeight[p] > 0) {
+            const dx = world.x[slot] - world.patchX[p];
+            const dy = world.y[slot] - world.patchY[p];
+            if (dx * dx + dy * dy <= radius * radius) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 /**
@@ -34,9 +71,9 @@ export function createSeasonScene() {
  * @returns {number} the distance to the nearest refuge ring edge or cold-margin edge
  */
 function shelterDistance(terrain, world, slot) {
-    const { coldMarginWidth, worldHeight } = world.config;
+    const width = marginWidth(world.config);
     const y = world.y[slot];
-    const margin = Math.min(Math.abs(y - coldMarginWidth), Math.abs(y - (worldHeight - coldMarginWidth)));
+    const margin = Math.min(Math.abs(y - width), Math.abs(y - (world.config.worldHeight - width)));
     return Math.min(margin, ringDistance(terrain, world, world.x[slot], y));
 }
 
@@ -54,11 +91,15 @@ export function sampleSeason(scene, terrain, world) {
     const group = world.season[0] === WINTER ? 0 : 1;
     scene.checkpoints[group] += 1;
     const half = world.config.worldWidth / 2;
+    const width = marginWidth(world.config);
     for (let slot = 0; slot < world.alive.length; slot++) {
         if (world.alive[slot] === 1) {
             scene.basin[group * 2 + (world.x[slot] < half ? 0 : 1)] += 1;
             scene.agents[group] += 1;
             scene.distance[group] += shelterDistance(terrain, world, slot);
+            const y = world.y[slot];
+            scene.inMargin[group] += y < width || y > world.config.worldHeight - width ? 1 : 0;
+            scene.nearFruit[group] += nearFruitingPatch(world, slot) ? 1 : 0;
         }
     }
 }
@@ -85,7 +126,7 @@ function density(scene) {
 
 /**
  * @param {Record<string, any>} scene the season scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the two season metrics
+ * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the four season metrics
  */
 export function seasonMetrics(scene) {
     const sampled = scene.agents[0] > 0 && scene.agents[1] > 0;
@@ -95,6 +136,12 @@ export function seasonMetrics(scene) {
         'eval.winter_basin_density': density(scene),
         'eval.winter_shelter_distance': sampled
             ? ok(winter - other)
+            : none('no winter and no other checkpoint with an alive agent after burn-in'),
+        'eval.winter_band_shift': sampled
+            ? ok(scene.inMargin[0] / scene.agents[0] - scene.inMargin[1] / scene.agents[1])
+            : none('no winter and no other checkpoint with an alive agent after burn-in'),
+        'eval.winter_patch_proximity': sampled
+            ? ok(scene.nearFruit[0] / scene.agents[0] - scene.nearFruit[1] / scene.agents[1])
             : none('no winter and no other checkpoint with an alive agent after burn-in'),
     };
 }

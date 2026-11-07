@@ -8,7 +8,10 @@
 //! examined. The rules that touch energy (wall and rock damage, trampling) stay in JS.
 
 use crate::det_math::floor;
-use core::arch::wasm32::{f64x2_extract_lane, f64x2_splat, f64x2_sqrt};
+use core::arch::wasm32::{
+    f64x2_abs, f64x2_add, f64x2_extract_lane, f64x2_lt, f64x2_promote_low_f32x4, f64x2_splat, f64x2_sqrt, f64x2_sub,
+    v128_and, v128_any_true, v128_load64_zero,
+};
 
 /// The parameter block JS writes (`js/sim/wasm-physics.js`, `writePhysicsParams`): byte offsets, then sizes.
 #[repr(C)]
@@ -345,12 +348,35 @@ pub unsafe fn bounce_rocks(params: u32, slot: usize, own: f64, from: u32) -> i32
     unsafe {
         let g = Bodies::new(params);
         let (ox, oy, or) = (at::<f32>(g.p.obs_x), at::<f32>(g.p.obs_y), at::<f32>(g.p.obs_radius));
-        for k in from as usize..g.p.obs_count as usize {
+        let near = |k: usize| {
             let reach = *or.add(k) as f64 + own;
-            let near_x = abs(Bodies::get(g.x, slot) - *ox.add(k) as f64) < reach;
-            if near_x && abs(Bodies::get(g.y, slot) - *oy.add(k) as f64) < reach && g.rock(slot, k) {
-                return k as i32;
+            abs(Bodies::get(g.x, slot) - *ox.add(k) as f64) < reach
+                && abs(Bodies::get(g.y, slot) - *oy.add(k) as f64) < reach
+        };
+        let (n, own2) = (g.p.obs_count as usize, f64x2_splat(own));
+        let mut k = from as usize;
+        // Two rocks per test while neither is near: the same comparisons on the same position, which only `rock` moves.
+        while k + 2 <= n {
+            let pair = |a: *const f32| f64x2_promote_low_f32x4(v128_load64_zero(a.add(k) as *const u64));
+            let reach = f64x2_add(pair(or), own2);
+            let px = f64x2_splat(Bodies::get(g.x, slot));
+            let py = f64x2_splat(Bodies::get(g.y, slot));
+            let hit = v128_and(
+                f64x2_lt(f64x2_abs(f64x2_sub(px, pair(ox))), reach),
+                f64x2_lt(f64x2_abs(f64x2_sub(py, pair(oy))), reach),
+            );
+            if v128_any_true(hit) {
+                // The first lane may move the agent, so the second is tested again on the new position.
+                for j in k..k + 2 {
+                    if near(j) && g.rock(slot, j) {
+                        return j as i32;
+                    }
+                }
             }
+            k += 2;
+        }
+        if k < n && near(k) && g.rock(slot, k) {
+            return k as i32;
         }
         -1
     }

@@ -129,6 +129,22 @@ function fleer({ world }) {
 }
 
 /**
+ * A prey that flees as `fleer` does but raises the alarm output on every tick a "can bite me" ray fires, and is silent
+ * otherwise (no smoke): the forced honest caller of alarm-calls.md, so reach, receiver and benefit can be read with
+ * calls guaranteed.
+ * @type {import('./scripted-parts.js').ControllerFactory}
+ */
+function alarmOnSight() {
+    return eachAlive((w, slot) => {
+        const k = nearestClassRay(w, slot, CH_THREAT, CH_THREAT);
+        steerFleer(w, slot, k);
+        if (k >= 0) {
+            setOutput(w, slot, OUTPUT_INDEX.ALARM, 1);
+        }
+    });
+}
+
+/**
  * @param {number} output the `OUTPUT_INDEX` value to hold at 1
  * @returns {import('./scripted-parts.js').ControllerFactory} a controller that seeks food and sets that output
  */
@@ -144,6 +160,7 @@ function spammer(output) {
 export const COMBAT_CONTROLLERS = Object.freeze({
     hunter,
     fleer,
+    alarmOnSight,
     alarmSpammer: spammer(OUTPUT_INDEX.ALARM),
     smokeSpammer: spammer(OUTPUT_INDEX.SMOKE),
 });
