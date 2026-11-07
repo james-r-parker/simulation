@@ -9,44 +9,62 @@ const layout = brainLayout(createConfig({ rayCount: 2, brainHidden: 4 }));
 /**
  * @param {number[]} qd qdScore per checkpoint
  * @param {number[]} food food energy per checkpoint
- * @param {(number | null)[]} edge mean drill edge per checkpoint
+ * @param {(number | null)[]} zero hunter zero-kill share per checkpoint
+ * @param {(number | null)[]} [edge] mean drill edge per checkpoint (a column only; `findPlateau` ignores it)
  * @returns {Record<string, any>[]} curve rows, generation 10 apart
  */
-function curve(qd, food, edge) {
+function curve(qd, food, zero, edge = []) {
     return qd.map((q, i) => ({
         generation: 10 * (i + 1),
         qdScore: q,
         'eval.food_energy_per_1k': food[i],
-        drillEdge: edge[i],
+        'eval.hunter_zero_kill_share': zero[i],
+        drillEdge: edge[i] ?? null,
     }));
 }
 
 describe('findPlateau', () => {
-    it('finds the first checkpoint after which all three series rise under 5% over the next 3', () => {
+    it('finds the first checkpoint after which qd and food rise and zero-kill share falls by under 5% over the next 3', () => {
         const rising = [10, 20, 30, 40, 40.5, 40.8, 41];
-        const plateau = findPlateau(curve(rising, rising, rising));
-        expect(plateau).toEqual({ index: 3, generation: 40 });
+        const falling = [0.9, 0.8, 0.7, 0.6, 0.59, 0.585, 0.58];
+        expect(findPlateau(curve(rising, rising, falling))).toEqual({ index: 3, generation: 40 });
     });
 
     it('finds none while a series still rises, or with too few checkpoints', () => {
         const flat = [10, 10, 10, 10, 10];
-        expect(findPlateau(curve(flat, flat, [0.1, 0.2, 0.3, 0.4, 0.5]))).toBeNull();
+        expect(findPlateau(curve([10, 20, 30, 40, 50], flat, flat))).toBeNull();
         expect(findPlateau(curve([1, 1, 1], [1, 1, 1], [1, 1, 1]))).toBeNull();
+    });
+
+    it('is no plateau while the zero-kill share is still falling', () => {
+        const flat = [10, 10, 10, 10, 10];
+        expect(findPlateau(curve(flat, flat, [0.9, 0.8, 0.7, 0.6, 0.5]))).toBeNull();
+    });
+
+    it('is a plateau for a flat zero-kill share, and a rising drill edge alone no longer hides it', () => {
+        const flat = [10, 10, 10, 10, 10];
+        const edge = [0.1, 0.2, 0.3, 0.4, 0.5];
+        expect(findPlateau(curve(flat, flat, [0.8, 0.8, 0.8, 0.8, 0.8], edge))).toEqual({ index: 0, generation: 10 });
+    });
+
+    it('counts a zero-kill share that rises as flat (no progress), not as a plateau-breaker', () => {
+        const flat = [10, 10, 10, 10];
+        expect(findPlateau(curve(flat, flat, [0.5, 0.6, 0.7, 0.8]))).toEqual({ index: 0, generation: 10 });
     });
 
     it('is not fooled by a late rise after a flat stretch', () => {
         const q = [10, 10, 10, 10, 10, 10, 30];
-        const found = findPlateau(curve(q, q, q));
-        expect(found).toEqual({ index: 0, generation: 10 });
+        const z = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
+        expect(findPlateau(curve(q, q, z))).toEqual({ index: 0, generation: 10 });
         const afterRise = [10, 10, 10, 30, 30];
-        expect(findPlateau(curve(afterRise, afterRise, afterRise))).toBeNull();
+        expect(findPlateau(curve(afterRise, afterRise, [0.5, 0.5, 0.5, 0.5, 0.5]))).toBeNull();
     });
 
-    it('treats a missing series value as no plateau, and a rise from 0 as a rise', () => {
+    it('treats a missing series value as no plateau, and a rise from 0 in qd as a rise', () => {
         const flat = [10, 10, 10, 10];
-        expect(findPlateau(curve(flat, flat, [null, 0, 0, 0]))).toBeNull();
-        expect(findPlateau(curve(flat, flat, [0, 0, 0, 0.01]))).toBeNull();
-        expect(findPlateau(curve(flat, flat, [0, 0, 0, 0]))).toEqual({ index: 0, generation: 10 });
+        expect(findPlateau(curve(flat, flat, [null, 0.5, 0.5, 0.5]))).toBeNull();
+        expect(findPlateau(curve([0, 0, 0, 0.01], flat, [0.5, 0.5, 0.5, 0.5]))).toBeNull();
+        expect(findPlateau(curve([0, 0, 0, 0], flat, [0.5, 0.5, 0.5, 0.5]))).toEqual({ index: 0, generation: 10 });
     });
 });
 

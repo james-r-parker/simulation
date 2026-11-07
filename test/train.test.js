@@ -92,6 +92,7 @@ describe('train:curve', () => {
             qdScore: 1,
             drillEdge: 0.2,
             'eval.food_energy_per_1k': 100,
+            'eval.hunter_zero_kill_share': 0.5,
         });
         writeFileSync(join(dir, 'curve.jsonl'), [10, 20, 30, 40, 50].map((g) => JSON.stringify(row(g))).join('\n'));
         const lines = formatCurve(readCurve(dir));
