@@ -11,6 +11,7 @@ import { playBite, playDeath } from './effects-combat.js';
 import { createEdgeState } from './effects-edges.js';
 import { createFlee } from './effects-flee.js';
 import { createCrossings } from './effects-terrain.js';
+import { createMomentLog, noteMoment } from '../director/moment-log.js';
 import { bornNamesOf, playBirth, playMate } from './effects-life.js';
 import { playAtEffect, playCall, playPollinated, playSmoke } from './effects-signals.js';
 import { playWorldEffect } from './effects-world.js';
@@ -57,6 +58,10 @@ export { BIRTH_SIZE, JAW_REACH } from './effects-combat.js';
  * @property {Record<string, number>} bits `ready.layout.flags`
  * @property {import('./effects-flee.js').FleeState} flee the pursuit pairs and who flees this frame
  * @property {import('./effects-terrain.js').CrossState} crossings each slot's side of the wall
+ * @property {import('../director/moment-log.js').MomentLog} moments the notable moments played, for the pointers and
+ *   `focusLast`
+ * @property {{kinds: Record<string, number>, eatenCause: number, trampled: number, nowMs: number}} momentCtx scratch for
+ *   `noteMoment`, its wall time set each frame
  */
 
 /**
@@ -97,6 +102,8 @@ export function createEffectsPlayer({
         edges: /** @type {any} */ (null),
         flee: /** @type {any} */ (null),
         crossings: /** @type {any} */ (null),
+        moments: /** @type {any} */ (null),
+        momentCtx: /** @type {any} */ (null),
         bits: layout.flags ?? {},
         at: { x: 0, y: 0, angle: 0, size: 0, tick: 0, rgb: PALETTE.biteFlash, reach: 0 },
         who: { slot: 0, genome: 0 },
@@ -119,6 +126,13 @@ export function createEffectsPlayer({
     player.edges = createEdgeState(player, info);
     player.flee = createFlee(info);
     player.crossings = createCrossings(info);
+    player.moments = createMomentLog();
+    player.momentCtx = {
+        kinds: layout.effectKinds,
+        eatenCause: layout.deathCauses.EATEN,
+        trampled: layout.deathCauses.TRAMPLED ?? -1,
+        nowMs: 0,
+    };
     return player;
 }
 
@@ -191,6 +205,7 @@ export function beginEffects(player, { tick, dtMs, nowMs, camera, drawMs = -1, g
     LOAD.dtMs = dtMs;
     adaptFxBudget(player.fx.budget, LOAD);
     beginFxFrame(player.fx.budget, FRAME);
+    player.momentCtx.nowMs = nowMs;
     const { pool } = player.fx;
     logFxBudget(player.fx.budget, { nowMs, overwrote: pool.overwrote, capacity: pool.limit });
 }
@@ -227,6 +242,7 @@ export function playEffects(player, queue, agents, tick) {
         }
         played += 1;
         dispatch(player, agents);
+        noteMoment(player.moments, e, player.momentCtx);
         player.sink?.(e);
     }
     return played;
