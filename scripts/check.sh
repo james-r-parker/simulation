@@ -21,6 +21,8 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
+# shellcheck source=lib/cpu-lock.sh
+source "$ROOT/scripts/lib/cpu-lock.sh"
 
 FIX=0
 CI=0
@@ -126,6 +128,8 @@ PASSED=0
 FAILED=0
 SKIPPED=0
 
+LOCKED_GATES="test,bench-check,eval-smoke,bench-compare,browser-smoke"
+
 wanted() { [[ -z "$ONLY" || ",$ONLY," == *",$1,"* ]]; }
 
 # digest <gate> <log>: what to act on, at most DIGEST_LINES lines, indented under the gate's line.
@@ -164,7 +168,20 @@ run_gate() {
   local label="${GATE_LABEL:-$name}"
   local log="$LOG_DIR/$name.log" start ms
   start=$(date +%s%N)
-  if "$@" >"$log" 2>&1; then
+  local rc=0
+  # The timing-sensitive gates hold the CPU lock while they run (scripts/lib/cpu-lock.sh; CHECK_CPU_LOCK=<file> or off,
+  # CHECK_CPU_LOCK_HELD=1 when the caller holds it); CI is one job on its own runner and takes none.
+  if [[ $CI -eq 0 && ",$LOCKED_GATES," == *",$name,"* ]]; then
+    with_cpu_lock "$@" >"$log" 2>&1 || rc=$?
+  else
+    "$@" >"$log" 2>&1 || rc=$?
+  fi
+  if [[ $rc -eq 3 && "$name" == bench-check ]]; then
+    # An over-limit step time on a busy machine is inconclusive, not a failure (scripts/bench-check.mjs).
+    SKIPPED=$((SKIPPED + 1))
+    [[ $QUIET -eq 1 ]] || printf '\033[33m-\033[0m %-15s skipped (%s)\n' "$label" "$(tail -n 1 "$log")"
+    rm -f "$log"
+  elif [[ $rc -eq 0 ]]; then
     ms=$((($(date +%s%N) - start) / 1000000))
     [[ $QUIET -eq 1 ]] || printf '\033[32m✓\033[0m %-15s %d.%ds\n' "$label" $((ms / 1000)) $((ms % 1000 / 100))
     PASSED=$((PASSED + 1))
@@ -253,12 +270,17 @@ gate_ratchet() {
     skip_gate ratchet "needs a passing test gate in the same run"
   fi
 }
-# gate_bench_check: the step time at 500 agents stays within 15% of bench/baseline.json (scripts/bench-check.mjs).
+# gate_bench_check: the step time at 500 agents stays within 15% of bench/baseline.json (scripts/bench-check.mjs). The
+# load average is read before and after the run: a step time over the limit on a busy machine (above nproc / 8) is
+# skipped, not failed, because load only slows a run; on a quiet machine the limit is unchanged.
+load_now() { cut -d' ' -f1 "${CHECK_LOADAVG_FILE:-/proc/loadavg}" 2>/dev/null || echo 0; }
 bench_check() {
-  local out status
+  local out status before after
   out="$(mktemp)"
+  before="$(load_now)"
   node scripts/bench.mjs --json --sizes=500 >"$out" || { rm -f "$out"; return 1; }
-  node scripts/bench-check.mjs bench/baseline.json "$out"
+  after="$(load_now)"
+  node scripts/bench-check.mjs bench/baseline.json "$out" --load="$before" --load="$after" --cores="$(nproc)"
   status=$?
   rm -f "$out"
   return "$status"
