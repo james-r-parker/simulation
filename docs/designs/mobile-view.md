@@ -1,7 +1,7 @@
 # Mobile view
 
 **Status:** In progress - Phase 1 built: two-finger pinch and pan, `pointercancel`, a fingertip-sized tap, the portrait home zoom that survives a turn, the pixel-ratio cap on every path, and a phone layout for the HUD; Phase 2 chunk C2 built: double-tap zoom, two-finger-tap Home, long-press peek, the overflow menu, the coarse-pointer quality start and portrait director shots; the phone frame-budget row (T11, chunk C3, quiet machine) is next.
-**Validated:** e5ffd3dc (2026-11-07)
+**Validated:** d6ca3e6c (2026-11-07)
 **Priority:** 13 - the app's audience is the TV and the desktop; a phone is a second screen, so this queues after the v6 and deployment docs
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md)
 
@@ -165,15 +165,15 @@ HUD rules above.
 
 ### Phase 2 - Gestures, phone budget and portrait shots
 
-| #   | Task                                                                                | Nature       | Depends on                |
-| --- | ----------------------------------------------------------------------------------- | ------------ | ------------------------- |
-| T7  | Double-tap zoom and two-finger-tap `Home` in `createPointerInput`                   | [judgement]  | T6                        |
-| T8  | Long-press shows the hover peek for a touch                                         | [judgement]  | T6                        |
-| T9  | Overflow menu for the `KEYMAP` actions with no button                               | [judgement]  | T6                        |
-| T10 | Coarse-pointer quality start one level down                                         | [mechanical] | T6                        |
-| T11 | Record the 412x915 phone row with `perf:browser` on a quiet machine                 | [mechanical] | T10                       |
-| T12 | Portrait director wide shots by `homeZoom`                                          | [judgement]  | T6                        |
-| T13 | Conformance review of Phase 2 against this doc, in parallel with `scripts/check.sh` | [judgement]  | T7, T8, T9, T10, T11, T12 |
+| #   | Task                                                                                                                                 | Nature       | Depends on                |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ------------------------- |
+| T7  | Double-tap zoom and two-finger-tap `Home` in `createPointerInput`                                                                    | [judgement]  | T6                        |
+| T8  | Long-press shows the hover peek for a touch                                                                                          | [judgement]  | T6                        |
+| T9  | Overflow menu for the `KEYMAP` actions with no button                                                                                | [judgement]  | T6                        |
+| T10 | (built, #326) Coarse-pointer quality start one level down                                                                            | [mechanical] | T6                        |
+| T11 | (open: chunk C3, needs a quiet machine and a phone over `--cdp`) Record the 412x915 phone row with `perf:browser` on a quiet machine | [mechanical] | T10                       |
+| T12 | (built, #326) Portrait director wide shots by `homeZoom`                                                                             | [judgement]  | T6                        |
+| T13 | (open: after T11) Conformance review of Phase 2 against this doc, in parallel with `scripts/check.sh`                                | [judgement]  | T7, T8, T9, T10, T11, T12 |
 
 ## Verification
 
