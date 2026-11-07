@@ -12,6 +12,14 @@ out="${1:-$root/wasm/blob-kernels.wasm}"
 # Outside the tree, so Prettier and the other gates never walk the build output.
 target_dir="${CARGO_TARGET_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/blob-kernels/target}"
 
+# wasm/rust-toolchain.toml pins rustc; wasm-opt is pinned here, since another version optimises to different bytes.
+WASM_OPT_VERSION=120
+found="$(wasm-opt --version 2>&1 | head -1)"
+if [[ ! "$found" =~ ^wasm-opt\ version\ ${WASM_OPT_VERSION}(\ |$) ]]; then
+  echo "build-wasm: need wasm-opt version ${WASM_OPT_VERSION}, found: $found" >&2
+  exit 1
+fi
+
 # Cargo reads wasm/.cargo/config.toml from the working directory, so build from inside the crate. The source path is
 # remapped so the bytes do not depend on where the checkout lives.
 cd "$root/wasm"

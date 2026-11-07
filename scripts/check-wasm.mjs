@@ -19,7 +19,7 @@ const WASM_DIR = join(ROOT, 'wasm');
 const SOURCE_HASH_FILE = join(WASM_DIR, 'blob-kernels.src.sha256');
 
 /** Sources outside `src/` that change the built bytes. */
-const BUILD_INPUTS = ['.cargo/config.toml', 'Cargo.lock', 'Cargo.toml'];
+const BUILD_INPUTS = ['.cargo/config.toml', 'Cargo.lock', 'Cargo.toml', 'rust-toolchain.toml'];
 
 /**
  * @param {string} wasmDir the crate directory
