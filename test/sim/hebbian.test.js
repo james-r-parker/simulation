@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { forwardAll } from '../../js/sim/brain.js';
 import { GENE_OUTPUTS, TRAIT_INDEX } from '../../js/sim/brain-layout.js';
 import { detSigmoid } from '../../js/sim/det-math.js';
-import { HEBB_CLAMP, HEBB_DECAY, hebbianStep } from '../../js/sim/hebbian.js';
+import { HEBB_CLAMP, HEBB_DECAY } from '../../js/sim/hebbian.js';
 import { createRng, nextGaussian } from '../../js/sim/rng.js';
 import { applyGenes } from '../../js/sim/traits.js';
 import { splitAll } from '../../js/sim/reproduction.js';
@@ -110,9 +110,10 @@ describe('forwardAll with hebbianRate above 0', () => {
             w.map((v) => v + 1),
             size,
         );
+        // No leak keeps the zeroed hidden row at 0 through the step, so every Hebbian product is 0.
+        on.leakRate.fill(0, on.layout.hidden, 2 * on.layout.hidden);
         on.hidden.fill(0, on.layout.hidden, 2 * on.layout.hidden);
-        on.outputs.fill(0, on.layout.outputCount, 2 * on.layout.outputCount);
-        hebbianStep(on, 1);
+        forwardAll(on);
         const eta = 0.5 * detSigmoid(on.weights[on.layout.weightCount + on.layout.traitStart + TRAIT_INDEX.LEARN]);
         const f = plasticBlock(on);
         for (let i = 0; i < size; i++) {
@@ -125,16 +126,16 @@ describe('forwardAll with hebbianRate above 0', () => {
         const size = on.layout.hidden * on.layout.geneOutputs;
         on.weights[on.layout.weightCount + on.layout.traitStart + TRAIT_INDEX.LEARN] = 40;
         on.fastOut.fill(HEBB_CLAMP, size, 2 * size);
+        on.leakRate.fill(0, on.layout.hidden, 2 * on.layout.hidden);
         on.hidden.fill(1, on.layout.hidden, 2 * on.layout.hidden);
-        on.outputs.fill(1, on.layout.outputCount, 2 * on.layout.outputCount);
         for (let t = 0; t < 20; t++) {
-            hebbianStep(on, 1);
+            forwardAll(on);
         }
         expect(plasticBlock(on).every((v) => v <= HEBB_CLAMP)).toBe(true);
         on.fastOut.fill(-HEBB_CLAMP, size, 2 * size);
-        on.outputs.fill(-1, on.layout.outputCount, 2 * on.layout.outputCount);
+        on.hidden.fill(-1, on.layout.hidden, 2 * on.layout.hidden);
         for (let t = 0; t < 20; t++) {
-            hebbianStep(on, 1);
+            forwardAll(on);
         }
         expect(plasticBlock(on).every((v) => v >= -HEBB_CLAMP)).toBe(true);
     });
@@ -187,12 +188,13 @@ describe('fastOut across births and slot reuse', () => {
 });
 
 /**
- * The rule as first written, with Math.min and Math.max for the clamp: the reference the optimised loop must equal.
- * @param {ReturnType<typeof smallWorld>} world a world with slot 1 alive
- * @returns {number[]} slot 1's plastic block after one step
+ * The rule as first written, with Math.min and Math.max for the clamp: the reference the kernel's loop must equal.
+ * @param {ReturnType<typeof smallWorld>} world a world with slot 1 alive, after its brain step
+ * @param {Float32Array} fastOut the plastic blocks before the step
+ * @returns {number[]} slot 1's plastic block after the step
  */
-function naiveStep(world) {
-    const { layout, weights, hidden, outputs, fastOut } = world;
+function naiveStep(world, fastOut) {
+    const { layout, weights, hidden, outputs } = world;
     const H = layout.hidden;
     const OUT = layout.outputCount;
     const G = layout.geneOutputs;
@@ -211,7 +213,7 @@ function naiveStep(world) {
     return result;
 }
 
-describe('hebbianStep against the naive rule', () => {
+describe('Hebbian learning in forwardAll against the naive rule', () => {
     it('matches bit for bit over random states, with saturated, zero and signed-zero weights', () => {
         for (let seed = 1; seed <= 40; seed++) {
             const world = randomWorld({ hebbianRate: seed % 2 === 0 ? 0.9 : 0.05 }, seed);
@@ -225,11 +227,9 @@ describe('hebbianStep against the naive rule', () => {
             for (let j = 0; j < layout.hidden; j++) {
                 world.hidden[layout.hidden + j] = nextGaussian(rng);
             }
-            for (let o = 0; o < layout.outputCount; o++) {
-                world.outputs[layout.outputCount + o] = nextGaussian(rng) * 4;
-            }
-            const expected = naiveStep(world);
-            hebbianStep(world, 1);
+            const before = world.fastOut.slice();
+            forwardAll(world);
+            const expected = naiveStep(world, before);
             const got = Array.from(world.fastOut.subarray(size, 2 * size));
             expect(got.map((v) => Object.is(v, -0))).toEqual(expected.map((v) => Object.is(v, -0)));
             expect(got).toEqual(expected);
@@ -237,7 +237,7 @@ describe('hebbianStep against the naive rule', () => {
     });
 });
 
-describe('hebbianStep with rewardedHebb', () => {
+describe('Hebbian learning with rewardedHebb', () => {
     const REWARD = { hebbianRate: 0.05, rewardedHebb: true, rewardBase: 0.25, rewardGain: 4, rewardDecay: 0.1 };
 
     /**
@@ -251,7 +251,7 @@ describe('hebbianStep with rewardedHebb', () => {
             world.rewardTrace[1] = trace;
         }
         const w = genomeBlock(world);
-        hebbianStep(world, 1);
+        forwardAll(world);
         return plasticBlock(world).map((v, i) => v - w[i]);
     }
 
@@ -273,25 +273,25 @@ describe('hebbianStep with rewardedHebb', () => {
     it('decays the trace by rewardDecay each step', () => {
         const world = randomWorld(REWARD, 23);
         world.rewardTrace[1] = 0.8;
-        hebbianStep(world, 1);
+        forwardAll(world);
         expect(world.rewardTrace[1]).toBeCloseTo(0.72, 6);
-        hebbianStep(world, 1);
+        forwardAll(world);
         expect(world.rewardTrace[1]).toBeCloseTo(0.648, 6);
     });
 
-    it('changes only fastOut and the trace: the genome, the hidden state and the other slots stay', () => {
+    it('learns into fastOut only: the genome and the other slots stay, and the step reads the same as without reward', () => {
         const world = randomWorld(REWARD, 25);
+        const plain = randomWorld({ ...REWARD, rewardedHebb: false }, 25);
         world.rewardTrace[1] = 0.5;
         const before = {
             weights: Array.from(world.weights),
-            hidden: Array.from(world.hidden),
-            outputs: Array.from(world.outputs),
             others: Array.from(world.fastOut.subarray(0, world.layout.hidden * world.layout.geneOutputs)),
         };
-        hebbianStep(world, 1);
+        forwardAll(world);
+        forwardAll(plain);
         expect(Array.from(world.weights)).toEqual(before.weights);
-        expect(Array.from(world.hidden)).toEqual(before.hidden);
-        expect(Array.from(world.outputs)).toEqual(before.outputs);
+        expect(Array.from(world.hidden)).toEqual(Array.from(plain.hidden));
+        expect(Array.from(world.outputs)).toEqual(Array.from(plain.outputs));
         expect(Array.from(world.fastOut.subarray(0, world.layout.hidden * world.layout.geneOutputs))).toEqual(
             before.others,
         );
