@@ -1,0 +1,37 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { checkHash, hasCargo, parseHashFile, sha256Hex } from '../scripts/check-wasm.mjs';
+
+const BINARY = readFileSync(new URL('../wasm/blob-kernels.wasm', import.meta.url));
+const HASH_TEXT = readFileSync(new URL('../wasm/blob-kernels.wasm.sha256', import.meta.url), 'utf8');
+
+describe('check-wasm', () => {
+    it('accepts the committed binary against its committed hash', () => {
+        expect(checkHash(BINARY, HASH_TEXT)).toEqual([]);
+    });
+
+    it('names a binary that differs from its hash', () => {
+        const edited = Uint8Array.from(BINARY);
+        edited[edited.length - 1] ^= 1;
+        const [problem] = checkHash(edited, HASH_TEXT);
+        expect(problem).toContain(`hashes to ${sha256Hex(edited)}`);
+        expect(problem).toContain('run scripts/build-wasm.sh');
+    });
+
+    it('names a missing binary, a missing hash file and a malformed one', () => {
+        expect(checkHash(null, HASH_TEXT)[0]).toContain('blob-kernels.wasm is missing');
+        expect(checkHash(BINARY, null)[0]).toContain('.sha256 is missing');
+        expect(checkHash(BINARY, 'not a hash')[0]).toContain('not a sha256sum line');
+    });
+
+    it('reads a sha256sum line in text and binary mode', () => {
+        const hex = 'a'.repeat(64);
+        expect(parseHashFile(`${hex}  blob-kernels.wasm\n`)).toBe(hex);
+        expect(parseHashFile(`${hex} *blob-kernels.wasm`)).toBe(hex);
+        expect(parseHashFile(`${hex}  other.wasm`)).toBeNull();
+    });
+
+    it('answers whether cargo can run without throwing when the PATH is empty', () => {
+        expect(typeof hasCargo({ PATH: '' })).toBe('boolean');
+    });
+});
