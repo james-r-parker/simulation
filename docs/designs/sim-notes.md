@@ -2413,3 +2413,12 @@ before and after. `npm run drill` on four fresh smoke champions (4 generations, 
 - **Fault, `eval.hunter_kills_per_life`**: a median per life, 0 on 15 of 16 seeds. It cannot register a gain. Phase 1b of `hunter-practice.md` replaces it with a mean beside `eval.chase_catch_share`.
 - **Fault, the catch rate's rot theory**: refused. `eval.catch_rate` counts fatal bites by hunters per 1,000 hunter agent-ticks, from `AGENT_DIED` events; food rot emits none. It is a speed, and the attempt read is `eval.chase_catch_share`.
 - **Tooling gap**: `scripts/eval-power.mjs` needs 2 times the arm size in seeds, and the smallest arm it takes is 16, so no 16-seed report can be powered. The alarm and hunter power reads need 32-seed runs or a change to that floor.
+
+### 2026-11-07 - The arm d predator bites prey and kin and loses the drill before the bite (training.md T20, partial)
+
+- **Subject:** the T12 iteration 2 arm d predator champion (`archive-59-predator-cell1`, `/tmp/claude-1000/eval-out/train-iter2/d/champions`). Run with the T18 and T19 tools: `npm run reflex -- --champions <dir> --cases bite-discrimination --trials 32 --level debug` and `npm run drill -- --champions <dir> --drills prey-ahead,prey-too-big --trials 32`, seed 1.
+- **`bite-discrimination` by staging (pass, bite share):** prey 1.00 and 1.00; too-big 1.00 and 0.00; kin 0.00 and 1.00. The combined pass is 0.00 (edge -0.11, random 0.11, reference 1.00, case valid). The kin bite is the whole failure.
+- **Skip cells:** prey into `BITE` +1.97, prey into `THRUST` +1.16, prey sine into `TURN` +1.20, kin into `BITE` -0.01, `other` into `BITE` -0.07. The inborn prey-bite prior (+2) survived 60 generations; nothing refuses kin.
+- **`prey-ahead`:** won 5 of 32 (0.16; memoryless reference 0.31). Lost-trial reasons: `never-in-jaws` 24, `prey-died-unkilled` 3, `never-bit` 0. The reference loses mostly to `never-in-jaws` (16) too; the random brains split between `never-in-jaws` and `never-bit`.
+- **Reading:** the bite works when the prey is in the jaws, and the too-big body is left alone by silence (it never reaches the `prey` channel). The predator has no wire against kin, though a kin lunge already costs `recoilEnergy` in the live world. The drill is lost on contact, not on the bite.
+- **Lever line:** row 2 for discrimination (hunter-learning.md Phase 3 kin refusal wire); contact for the drill (arm g, then the chase). Arms e and f (too-big price) are not needed.
