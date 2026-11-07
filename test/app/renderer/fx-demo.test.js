@@ -36,7 +36,7 @@ describe('demoRecipes and demoGrid', () => {
 
     it('zooms so the whole grid fits the canvas, never past the most', () => {
         const z = demoZoom(45, { width: 1280, height: 720 });
-        expect(z * 150 * 9.5).toBeLessThanOrEqual(1280 + 1e-9);
+        expect(z * 150 * 9).toBeLessThanOrEqual(1280 * 0.8 + 1e-9);
         expect(demoZoom(1, { width: 4000, height: 4000 })).toBe(2);
     });
 
@@ -81,5 +81,23 @@ describe('createFxDemo', () => {
             c.player.fx.pool.spawned +
                 c.player.fx.budget.dropped.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0),
         ).toBeGreaterThan(59);
+    });
+
+    it('does nothing before the effects player exists', () => {
+        const demo = /** @type {any} */ (createFxDemo({ family: 'combat', hold: 5, stress: false }));
+        const c = { ...ctx(), player: null };
+        demo.update(/** @type {any} */ ({ tick: 1, dtMs: 16 }), c);
+        expect(c.client.paused).not.toBe(true);
+        expect(demo.cells).toHaveLength(0);
+    });
+});
+
+describe('createFxDemo before a world', () => {
+    it('does nothing while there is no effects player', () => {
+        const c = ctx();
+        const demo = /** @type {any} */ (createFxDemo({ family: 'all', hold: null, stress: false }));
+        demo.update(/** @type {any} */ ({ tick: 1, dtMs: 16 }), { ...c, player: null });
+        expect(c.client.paused).toBe(false);
+        expect(demo.cells).toHaveLength(0);
     });
 });

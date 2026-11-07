@@ -49,4 +49,19 @@ describe('exportBundle', () => {
         expect(files).toEqual([]);
         expect(toasts).toHaveLength(1);
     });
+
+    it('names the file with tick 0 when no client has a frame yet', () => {
+        const files = /** @type {any[]} */ ([]);
+        for (const client of [null, {}]) {
+            exportBundle({
+                getReady: () => READY,
+                getClient: () => /** @type {any} */ (client),
+                overrides: {},
+                download: (f) => files.push(f),
+                toast: () => {},
+                takeFailed: () => null,
+            });
+        }
+        expect(files.map((f) => f.name)).toEqual(['blob-debug-3-0.json', 'blob-debug-3-0.json']);
+    });
 });

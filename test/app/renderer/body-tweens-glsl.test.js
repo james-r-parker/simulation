@@ -14,7 +14,7 @@ describe('body tween GLSL', () => {
     it('is spliced into the agent shader after the varyings it reads, and applied before the silhouette', () => {
         expect(AGENT_FRAGMENT).toContain('vec2 tweenP(vec2 p)');
         expect(AGENT_FRAGMENT.indexOf('varying vec4 vTween;')).toBeLessThan(AGENT_FRAGMENT.indexOf('vec2 tweenP'));
-        expect(AGENT_FRAGMENT).toContain('bodyStates(tweenP(vP), cold, hot)');
+        expect(AGENT_FRAGMENT).toContain('bodyStates(tweenP(gaitP(stateP(vP))), cold, hot)');
     });
 
     it('gates the one-shot tweens on uBody and the continuous states on uBody at full', () => {

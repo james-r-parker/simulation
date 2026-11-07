@@ -51,9 +51,11 @@ describe('createGpuTimer', () => {
         timer.end();
         timer.poll();
         expect(timer.samples()).toHaveLength(0);
+        expect(timer.latest()).toBe(-1);
         finish(2_500_000);
         timer.poll();
         expect(Array.from(timer.samples())).toEqual([2.5]);
+        expect(timer.latest()).toBe(2.5);
     });
 
     it('discards results after a disjoint event', () => {

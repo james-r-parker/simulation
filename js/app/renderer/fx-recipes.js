@@ -67,8 +67,17 @@ export const FX_RECIPES = Object.freeze({
         { curve: C.ring, count: 1, life: 36, size: 3.2, color: 'huntRing', delay: 6, minPx: 10 },
     ]),
     starved: combat([
-        { curve: C.ghostSink, count: 1, life: 60, size: 1.1, reach: 1.2, color: 'coolWhite', gain: 0.35 },
-        { curve: C.moteFall, count: 8, life: 60, size: 0.2, reach: 2, spread: 'random', color: 'coolWhite', gain: 0.4 },
+        { curve: C.ghostSink, count: 1, life: 60, size: 1.1, reach: 1.2, color: 'coolWhite', gain: 0.55 },
+        {
+            curve: C.moteFall,
+            count: 8,
+            life: 60,
+            size: 0.25,
+            reach: 2,
+            spread: 'random',
+            color: 'coolWhite',
+            gain: 0.7,
+        },
     ]),
     oldAge: combat([
         { curve: C.ghostRise, count: 1, life: 90, size: 1.1, reach: 1.5, color: 'coolWhite', gain: 0.7 },
@@ -92,8 +101,8 @@ export const FX_RECIPES = Object.freeze({
     died: combat([{ curve: C.moteOut, count: 10, life: 40, size: 0.2, reach: 2.4, spread: 'random' }]),
     eatPlant: feed([{ curve: C.crumbIn, count: 5, life: 10, size: 0.2, reach: -1, spread: 'heading', gain: 2.5 }]),
     eatMeat: feed([
-        { curve: C.crumbIn, count: 5, life: 10, size: 0.2, reach: -1, spread: 'heading', color: 'meat' },
-        { curve: C.crumbStay, count: 2, life: 20, size: 0.15, spread: 'random', color: 'meat', gain: 0.6 },
+        { curve: C.crumbIn, count: 5, life: 10, size: 0.28, reach: -1, spread: 'heading', color: 'meat', gain: 1.8 },
+        { curve: C.crumbStay, count: 2, life: 20, size: 0.2, spread: 'random', color: 'meat', gain: 1.2 },
     ]),
     eatFungus: feed([{ curve: C.orbit, count: 5, life: 12, size: 0.2, reach: -1, spread: 'ring', gain: 2.5 }]),
     mateOrbit: court(RANK.mate, [
@@ -110,7 +119,7 @@ export const FX_RECIPES = Object.freeze({
         { curve: C.moteOut, count: 4, life: 24, size: 0.2, reach: 1.4, spread: 'ring' },
     ]),
     birthArrival: court(RANK.birth, [
-        { curve: C.arrive, count: 8, life: 40, size: 0.25, reach: 5, spread: 'heading', color: 'arrival' },
+        { curve: C.arrive, count: 8, life: 40, size: 0.3, reach: 3, spread: 'heading', color: 'arrival', gain: 1.4 },
         { curve: C.ring, count: 1, life: 30, size: 2, color: 'arrival', delay: 30, gain: 0.7, minPx: 8 },
     ]),
     alarm: recipe(FAMILY.calls, RANK.call, [
@@ -144,6 +153,27 @@ export const FX_RECIPES = Object.freeze({
     infectedOff: sick([
         { curve: C.sparkle, count: 6, life: 30, size: 0.35, reach: 1.6, spread: 'ring', color: 'recover' },
         { curve: C.ring, count: 1, life: 30, size: 2, color: 'recover', gain: 0.8, minPx: 8 },
+    ]),
+    fleeDust: recipe(FAMILY.combat, RANK.eat, [
+        {
+            curve: C.dust,
+            count: 2,
+            life: 24,
+            size: 0.5,
+            reach: 0.8,
+            spread: 'heading',
+            color: 'stampedeDust',
+            gain: 30,
+        },
+    ]),
+    restSettle: recipe(FAMILY.combat, RANK.eat, [
+        { curve: C.puffRing, count: 1, life: 24, size: 1.6, color: 'coolWhite', gain: 0.25, minPx: 8 },
+    ]),
+    coverShimmer: recipe(FAMILY.courtship, RANK.mate, [
+        { curve: C.ringSlow, count: 1, life: 30, size: 2.4, color: 'rockRim', gain: 6, minPx: 10 },
+    ]),
+    matured: recipe(FAMILY.courtship, RANK.mate, [
+        { curve: C.ring, count: 1, life: 30, size: 2.2, gain: 0.8, minPx: 8 },
     ]),
     breath: recipe(FAMILY.weather, RANK.weather, [
         { curve: C.puffOut, count: 1, life: 30, size: 0.45, reach: 1.2, color: 'coolWhite', gain: 0.3 },

@@ -1,7 +1,8 @@
 // The effect budget: what may spawn this frame. Four limits, each counted by family when it refuses: the look item
 // (a family switched off spawns nothing), off-view culling, a per-frame instance cap shared by priority, and a token
 // bucket per family per second. It also gives the zoom band that sets how many instances a recipe spawns, and the
-// wall-time floor on an effect's life at high speed. Everything is preallocated; nothing here allocates per frame.
+// wall-time floor on an effect's life at high speed. The cap and the buckets scale with the measured headroom
+// (`adaptFxBudget`): a fast GPU shows nearly every effect, a loaded one sheds them. Nothing here allocates per frame.
 
 import { appLog } from '../app-log.js';
 import { LOOK_OFF } from './quality.js';
@@ -20,7 +21,7 @@ export const FX_FAMILIES = Object.freeze([
 /** Family index by name. */
 export const FAMILY = Object.freeze(Object.fromEntries(FX_FAMILIES.map((name, i) => [name, i])));
 /** Instances per second each family may spawn (the bucket also holds one second's worth). */
-export const FAMILY_RATE = Object.freeze([60, 40, 30, 30, 30, 20, 20, 20]);
+export const FAMILY_RATE = Object.freeze([80, 60, 30, 30, 30, 20, 20, 20]);
 /** Instances per frame at quality levels 0, 1 and 2. */
 export const FRAME_CAP = Object.freeze([96, 48, 12]);
 /** Recipe priority ranks: a lower rank may spend more of the frame cap. */
@@ -44,6 +45,18 @@ export const VIEW_MARGIN = 200;
 export const TYPICAL_RADIUS = 10;
 /** Zoom bands: an agent under 6 device px across radius is far, under 20 mid, else close. */
 export const BAND = Object.freeze({ FAR: 0, MID: 1, CLOSE: 2 });
+/** The share of the frame interval the draw may use before the budget sheds effects. */
+export const TARGET_LOAD = 0.75;
+/** The budget's scale on the cap and the buckets: at most 4x on a fast machine, at least 0.5x on a loaded one. */
+export const MIN_SCALE = 0.5;
+export const MAX_SCALE = 4;
+/** How fast the scale follows its target, per second. */
+const ADAPT_PER_S = 1;
+/** The scale change that logs `FxBudgetScale` (at most once per `LOG_EVERY_MS`). */
+export const SCALE_LOG_STEP = 0.5;
+/** The smoothing of the measured load, per frame. */
+const LOAD_SMOOTHING = 0.05;
+
 /** How often the budget logs drops and pool overwrites, in ms. */
 export const LOG_EVERY_MS = 10000;
 
@@ -63,6 +76,10 @@ export const LOG_EVERY_MS = 10000;
  * @property {number} lastLogMs when drops were last logged
  * @property {number} loggedDrops total drops at that log
  * @property {number} loggedOverwrites the pool's overwrite count at that log
+ * @property {Float64Array} loggedByFamily each family's drops at that log
+ * @property {number} scale the multiplier on the frame cap and the buckets (`adaptFxBudget`)
+ * @property {number} load the smoothed share of the frame interval the draw uses, -1 before a measurement
+ * @property {number} loggedScale the scale at the last `FxBudgetScale` log
  */
 
 /**
@@ -85,6 +102,10 @@ export function createFxBudget() {
         lastLogMs: 0,
         loggedDrops: 0,
         loggedOverwrites: 0,
+        loggedByFamily: new Float64Array(n),
+        scale: 1,
+        load: -1,
+        loggedScale: 1,
     };
 }
 
@@ -128,7 +149,8 @@ export function setFxQuality(budget, level) {
 export function beginFxFrame(budget, { tick, dtMs, zoom, view }) {
     budget.spent = 0;
     for (let i = 0; i < FAMILY_RATE.length; i++) {
-        budget.tokens[i] = Math.min(FAMILY_RATE[i], budget.tokens[i] + (FAMILY_RATE[i] * dtMs) / 1000);
+        const rate = FAMILY_RATE[i] * budget.scale;
+        budget.tokens[i] = Math.min(rate, budget.tokens[i] + (rate * dtMs) / 1000);
     }
     const v = budget.view;
     v.left = view.left - VIEW_MARGIN;
@@ -141,6 +163,26 @@ export function beginFxFrame(budget, { tick, dtMs, zoom, view }) {
         budget.ticksPerMs += (rate - budget.ticksPerMs) * 0.1;
     }
     budget.lastTick = tick;
+}
+
+/**
+ * Follows the measured headroom: the scale moves (at `ADAPT_PER_S`) toward `TARGET_LOAD` over the smoothed load, the
+ * larger of the draw's CPU time and the GPU's time over the frame interval, clamped to `MIN_SCALE`..`MAX_SCALE`.
+ * @param {FxBudget} budget the budget
+ * @param {{drawMs: number, gpuMs: number, intervalMs: number, dtMs: number}} at the last frame's draw CPU and GPU times
+ *   (`gpuMs` -1 without a GPU timer), its interval and the frame time
+ * @returns {number} the scale
+ */
+export function adaptFxBudget(budget, { drawMs, gpuMs, intervalMs, dtMs }) {
+    if (!(intervalMs > 0) || !(drawMs >= 0)) {
+        return budget.scale;
+    }
+    const load = Math.max(drawMs, gpuMs) / intervalMs;
+    budget.load = budget.load < 0 ? load : budget.load + (load - budget.load) * LOAD_SMOOTHING;
+    const target = Math.min(MAX_SCALE, Math.max(MIN_SCALE, TARGET_LOAD / Math.max(budget.load, 1e-3)));
+    const step = Math.min(1, (ADAPT_PER_S * dtMs) / 1000);
+    budget.scale += (target - budget.scale) * step;
+    return budget.scale;
 }
 
 /**
@@ -170,7 +212,7 @@ export function admitFx(budget, { family, rank }, want, at) {
         budget.culled[family] += want;
         return 0;
     }
-    const allowance = Math.floor(FRAME_CAP[budget.level] * (1 - rank / RANKS)) - budget.spent;
+    const allowance = Math.floor(FRAME_CAP[budget.level] * budget.scale * (1 - rank / RANKS)) - budget.spent;
     const granted = Math.max(0, Math.min(want, allowance, Math.floor(budget.tokens[family])));
     budget.spent += granted;
     budget.tokens[family] -= granted;
@@ -217,8 +259,26 @@ function totalDropped(budget) {
 }
 
 /**
- * Logs `FxBudgetDropped` at most once per `LOG_EVERY_MS` while drops happen, and `FxPoolSaturated` when the pool
- * overwrote live instances since the last log.
+ * @param {FxBudget} budget the budget
+ * @returns {Record<string, number>} each family's drops since the last log (families with none left out), and resets
+ *   the mark
+ */
+function freshByFamily(budget) {
+    /** @type {Record<string, number>} */
+    const out = {};
+    FX_FAMILIES.forEach((name, i) => {
+        const d = budget.dropped[i] - budget.loggedByFamily[i];
+        if (d > 0) {
+            out[name] = d;
+        }
+        budget.loggedByFamily[i] = budget.dropped[i];
+    });
+    return out;
+}
+
+/**
+ * Logs `FxBudgetDropped` at most once per `LOG_EVERY_MS` while drops happen, `FxPoolSaturated` when the pool
+ * overwrote live instances since the last log, and `FxBudgetScale` when the adaptive scale moved by `SCALE_LOG_STEP`.
  * @param {FxBudget} budget the budget
  * @param {{nowMs: number, overwrote: number, capacity: number}} at the time, the pool's overwrite count since creation
  *   and its active capacity
@@ -236,12 +296,22 @@ export function logFxBudget(budget, { nowMs, overwrote, capacity }, log = appLog
     budget.loggedDrops = total;
     budget.loggedOverwrites = overwrote;
     if (fresh > 0) {
-        log('info', 'FxBudgetDropped', { level: budget.level, dropped: fresh, windowMs: LOG_EVERY_MS });
+        log('info', 'FxBudgetDropped', {
+            level: budget.level,
+            dropped: fresh,
+            families: freshByFamily(budget),
+            windowMs: LOG_EVERY_MS,
+        });
     }
     if (over > 0) {
         log('info', 'FxPoolSaturated', { capacity, level: budget.level, overwrote: over });
     }
-    return fresh > 0 || over > 0;
+    const moved = Math.abs(budget.scale - budget.loggedScale) >= SCALE_LOG_STEP;
+    if (moved) {
+        log('info', 'FxBudgetScale', { from: budget.loggedScale, to: budget.scale, load: budget.load });
+        budget.loggedScale = budget.scale;
+    }
+    return fresh > 0 || over > 0 || moved;
 }
 
 /**

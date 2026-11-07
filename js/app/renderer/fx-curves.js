@@ -38,7 +38,7 @@ export const FLAG_CALL = 1;
  * @property {string} ease an `FX_EASE` name
  * @property {readonly number[]} scale four keys at ages 0, 1/3, 2/3 and 1 (after easing)
  * @property {readonly number[]} alpha four keys; above 1 lifts the colour over the bloom threshold
- * @property {number} [flags] `FLAG_CALL`
+ * @property {number} flags `FLAG_CALL` or 0
  */
 
 /**
@@ -89,7 +89,7 @@ export const FX_CURVES = Object.freeze([
     curve('orbit', ['ORBIT', 'orbit', 'sineInOut'], [0.8, 1, 1, 0.6], [1.2, 1, 0.6, 0]),
     curve('sparkle', ['SPARKLE', 'rise', 'quadOut'], [0.4, 1, 0.8, 0.3], [1.6, 1.2, 0.6, 0]),
     curve('fission', ['FISSION', 'fixed', 'quadOut'], [1, 1, 1, 0.9], [1.2, 1, 0.6, 0]),
-    curve('arrive', ['MOTE', 'in', 'quadIn'], [0.6, 0.8, 1, 0.6], [0.2, 0.8, 1, 0]),
+    curve('arrive', ['MOTE', 'in', 'quadIn'], [0.8, 0.9, 1, 0.6], [0.8, 1, 1, 0]),
     curve('sprout', ['SPROUT', 'fixed', 'backOut'], [0.2, 0.8, 1, 1], [0.8, 1, 0.8, 0]),
     curve('dust', ['PUFF', 'out', 'quadOut'], [0.5, 0.9, 1.1, 1.2], [0.7, 0.5, 0.3, 0]),
     curve('flake', ['SPARKLE', 'fall', 'linear'], [1, 1, 1, 1], [0, 0.6, 0.6, 0]),
@@ -162,7 +162,7 @@ export function curveUniforms() {
         out.info[i * 4] = FX_SHAPES.indexOf(c.shape);
         out.info[i * 4 + 1] = FX_MOTIONS.indexOf(c.motion);
         out.info[i * 4 + 2] = FX_EASE.indexOf(c.ease);
-        out.info[i * 4 + 3] = c.flags ?? 0;
+        out.info[i * 4 + 3] = c.flags;
     });
     return out;
 }

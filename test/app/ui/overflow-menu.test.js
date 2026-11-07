@@ -94,4 +94,18 @@ describe('mountOverflowMenu', () => {
         expect(byClass(hud, 'overflow-recordClip')).toEqual([]);
         expect(byClass(hud, 'overflow-screenshot')).toHaveLength(1);
     });
+
+    it('opens, toggles and closes through the returned controls', () => {
+        const { menu, panel, button } = setup();
+        expect(menu.open()).toBe(false);
+        menu.toggle();
+        expect(menu.open()).toBe(true);
+        expect(panel.hidden).toBe(false);
+        expect(button.getAttribute('aria-expanded')).toBe('true');
+        menu.close();
+        expect(menu.open()).toBe(false);
+        menu.toggle();
+        menu.toggle();
+        expect(panel.hidden).toBe(true);
+    });
 });

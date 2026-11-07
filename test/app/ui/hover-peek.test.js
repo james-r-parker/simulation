@@ -59,6 +59,16 @@ describe('peekView', () => {
         expect(view).toMatchObject({ type: 'forager', name: familyName(3, 5), now: 'pregnant' });
         expect(view.color).toMatch(/^rgb\(/);
     });
+
+    it('gives an empty type for a specialisation the info does not list', () => {
+        const agents = createInterpolated(4);
+        interpolateInto(null, makeSnapshot(1, [{ slot: 0, genomeId: 1, spec: 9, lineageId: 5, flags: 0 }]), 1, agents);
+        const slots = createFamilySlots();
+        assignSlots(slots, [{ id: 5 }]);
+        const info = { specs: [{ name: 'predator' }], maxVelocity: 10 };
+        const view = peekView({ agents, index: 0 }, { info, layout: { flags: BITS }, seed: 3, slots });
+        expect(view.type).toBe('');
+    });
 });
 
 describe('createPeekTracker', () => {
