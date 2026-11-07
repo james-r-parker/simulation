@@ -3,6 +3,7 @@
 // oldest slot. Ticks are stored relative to a base so a float32 keeps sub-tick precision on long runs.
 
 import { AdditiveBlending, DynamicDrawUsage, InstancedBufferAttribute, ShaderMaterial, Vector4 } from 'three';
+import { setFxLook, setFxQuality } from './fx-budget.js';
 import { curveUniforms } from './fx-curves.js';
 import { FX_FRAGMENT, FX_VERTEX } from './fx-shader.js';
 import { createQuadGeometry, createQuadMesh, VEC4 } from './instanced.js';
@@ -182,10 +183,9 @@ export function flushFx(pool, attributes) {
 }
 
 /**
- * @param {{pool: FxPool}} options the pool the effects player spawns into
- * @returns {import('./scene.js').Layer & {uniforms: Record<string, {value: any}>}} the pool's mesh, drawn additively
+ * @returns {Record<string, {value: any}>} the pool shader's uniforms, the curve table as vec4 arrays
  */
-export function createFxLayer({ pool }) {
+function fxUniforms() {
     const tables = curveUniforms();
     const n = tables.scale.length / VEC4;
     const vecs = (/** @type {Float32Array} */ a) =>
@@ -198,6 +198,16 @@ export function createFxLayer({ pool }) {
         uAlpha: { value: vecs(tables.alpha) },
         uInfo: { value: vecs(tables.info) },
     };
+    return uniforms;
+}
+
+/**
+ * @param {{pool: FxPool, budget?: import('./fx-budget.js').FxBudget}} options the pool the effects player spawns into
+ *   and the budget that follows the quality level and the look items
+ * @returns {import('./scene.js').Layer & {uniforms: Record<string, {value: any}>}} the pool's mesh, drawn additively
+ */
+export function createFxLayer({ pool, budget }) {
+    const uniforms = fxUniforms();
     const geometry = createQuadGeometry(1, []);
     const arrays = { iPose: pool.pose, iColor: pool.color, iTime: pool.time, iMove: pool.move };
     for (const name of ATTRIBUTES) {
@@ -220,6 +230,14 @@ export function createFxLayer({ pool }) {
         uniforms,
         setQuality(level) {
             setFxLevel(pool, level);
+            if (budget) {
+                setFxQuality(budget, level);
+            }
+        },
+        setLook(look) {
+            if (budget) {
+                setFxLook(budget, look);
+            }
         },
         update(frame) {
             uniforms.uZoom.value = frame.camera.zoom;

@@ -8,18 +8,18 @@ import { familyColor, PALETTE, SCENERY_MAX_LUMINANCE } from './colors.js';
 import { spawnMateThread } from './mate-threads.js';
 import { BIRTH_TICKS, RING_COLORS, spawnRing } from './rings.js';
 import { spawnBurst, spawnStampedeDust } from './sparks.js';
+import { viewBounds } from '../camera.js';
+import { createBodyTweens } from './body-tweens.js';
+import { BIRTH_SIZE, playBite, playDeath } from './effects-combat.js';
+import { beginFxFrame, logFxBudget } from './fx-budget.js';
+import { createFxPool } from './fx-pool.js';
+import { createFxPlayer } from './fx-recipes.js';
 
 /** An effect this many ticks behind the playhead is stale and skipped. */
 export const STALE_TICKS = 180;
 /** How far from a newborn its birth ring spreads, in world units. */
 export const BIRTH_RING_RADIUS = 70;
-/** A newborn's burst scale, in world units. */
-export const BIRTH_SIZE = 24;
-/** Where on the biter a bite flash starts, in biter radii ahead of its centre. */
-export const JAW_REACH = 0.9;
-
-const CAUSE_MASK = 255;
-const CAUSE_SHIFT = 8;
+export { BIRTH_SIZE, JAW_REACH } from './effects-combat.js';
 /** Scratch records handed to `spawnBurst` and `spawnRing`, which copy them out. */
 const BURST = {
     kind: /** @type {'bite' | 'born' | 'died'} */ ('bite'),
@@ -65,14 +65,34 @@ const RING = {
  * @property {Effect} effect the record being played, reused
  * @property {boolean} floraEnabled whether flora effects draw
  * @property {number[]} rgb scratch colour
+ * @property {import('./fx-recipes.js').FxPlayer} fx the effect pool's recipe player
+ * @property {import('./body-tweens.js').BodyTweens} tweens the agents' body tweens
+ * @property {import('./fx-recipes.js').FxAt} at scratch for a recipe's position
+ * @property {{slot: number, genome: number}} who scratch for a tween's agent
+ * @property {string[]} causeNames death cause names by number (`ready.layout.deathCauses`)
  */
+
+/**
+ * @param {Record<string, number>} causes `ready.layout.deathCauses`
+ * @returns {string[]} the names by number
+ */
+function causeNamesOf(causes) {
+    /** @type {string[]} */
+    const names = [];
+    for (const [name, n] of Object.entries(causes)) {
+        names[n] = name;
+    }
+    return names;
+}
 
 /**
  * @param {{rings: import('./rings.js').RingPool, sparks: import('./sparks.js').SparkPool,
  *   threads?: import('./mate-threads.js').MateThreadPool, layout: Record<string, any>,
  *   info: Record<string, any>, slots?: import('../family-slots.js').FamilySlots,
- *   sink?: ((effect: Effect) => void) | null}} options the pools to play into, `ready.layout` and `ready.info`, and
- *   the family colour slots (all neutral when absent)
+ *   sink?: ((effect: Effect) => void) | null, fx?: import('./fx-recipes.js').FxPlayer,
+ *   tweens?: import('./body-tweens.js').BodyTweens}} options the pools to play into, `ready.layout` and
+ *   `ready.info`, the family colour slots (all neutral when absent), the effect pool's player and the body tweens
+ *   (fresh ones when absent)
  * @returns {EffectsPlayer} a player
  */
 export function createEffectsPlayer({
@@ -83,8 +103,15 @@ export function createEffectsPlayer({
     info,
     slots = createFamilySlots(),
     sink = null,
+    fx = createFxPlayer(createFxPool()),
+    tweens = createBodyTweens(info.maxAgents ?? 1024),
 }) {
     return {
+        fx,
+        tweens,
+        at: { x: 0, y: 0, angle: 0, size: 0, tick: 0, rgb: PALETTE.biteFlash },
+        who: { slot: 0, genome: 0 },
+        causeNames: causeNamesOf(layout.deathCauses),
         rings,
         sparks,
         threads,
@@ -114,20 +141,6 @@ function playPollinated(player) {
     setRing('pollen', e, 70, BIRTH_TICKS);
     RING.rgb = player.rgb;
     spawnRing(player.rings, RING);
-}
-
-/**
- * @param {import('../interpolate.js').Interpolated} agents the blended agents
- * @param {number} genomeId the agent to find
- * @returns {number} its index, -1 when it is not alive
- */
-function indexOfGenome(agents, genomeId) {
-    for (let i = 0; i < agents.count; i++) {
-        if (agents.genomeId[i] === genomeId) {
-            return i;
-        }
-    }
-    return -1;
 }
 
 /**
@@ -166,32 +179,6 @@ function setRing(kind, e, radius, life) {
 
 /**
  * @param {EffectsPlayer} player the player
- * @param {import('../interpolate.js').Interpolated} agents the blended agents
- * @returns {void}
- */
-function playBite(player, agents) {
-    const e = player.effect;
-    const biter = indexOfGenome(agents, e.a);
-    let x = e.x;
-    let y = e.y;
-    let size = BIRTH_SIZE;
-    if (biter >= 0) {
-        size = agents.size[biter];
-        x = agents.x[biter] + Math.cos(agents.angle[biter]) * size * JAW_REACH;
-        y = agents.y[biter] + Math.sin(agents.angle[biter]) * size * JAW_REACH;
-    }
-    BURST.kind = 'bite';
-    BURST.x = x;
-    BURST.y = y;
-    BURST.tick = e.tick;
-    BURST.size = size;
-    BURST.rgb = PALETTE.biteFlash;
-    BURST.eaten = false;
-    spawnBurst(player.sparks, BURST);
-}
-
-/**
- * @param {EffectsPlayer} player the player
  * @returns {void}
  */
 function playBirth(player) {
@@ -201,19 +188,6 @@ function playBirth(player) {
     RING.rgb = rgb;
     spawnRing(player.rings, RING);
     setBurst('born', e, rgb);
-    spawnBurst(player.sparks, BURST);
-}
-
-/**
- * @param {EffectsPlayer} player the player
- * @returns {void}
- */
-function playDeath(player) {
-    const e = player.effect;
-    const rgb = familyColor(player.slots, e.d, 0.6, player.rgb);
-    const eaten = ((e.c >>> CAUSE_SHIFT) & CAUSE_MASK) === player.eatenCause;
-    setBurst('died', e, rgb);
-    BURST.eaten = eaten;
     spawnBurst(player.sparks, BURST);
 }
 
@@ -259,7 +233,7 @@ function dispatch(player, agents) {
     } else if (e.kind === kinds.BORN) {
         playBirth(player);
     } else if (e.kind === kinds.DIED) {
-        playDeath(player);
+        playDeath(player, agents);
     } else if (e.kind === kinds.ALARM) {
         playCall(player, 'alarm');
     } else if (e.kind === kinds.PACK_CALL) {
@@ -269,6 +243,26 @@ function dispatch(player, agents) {
     } else if (e.kind === kinds.MATED && player.threads) {
         spawnMateThread(player.threads, e);
     }
+}
+
+const VIEW = { left: 0, right: 0, top: 0, bottom: 0 };
+const FRAME = { tick: 0, dtMs: 0, zoom: 1, view: VIEW };
+
+/**
+ * Starts a frame of effects: refills the budget and takes the view, the zoom band and the playhead's rate, and logs
+ * drops and pool overwrites at most once per 10 s.
+ * @param {EffectsPlayer} player the player
+ * @param {{tick: number, dtMs: number, nowMs: number, camera: import('../camera.js').CameraController}} at the frame
+ * @returns {void}
+ */
+export function beginEffects(player, { tick, dtMs, nowMs, camera }) {
+    FRAME.tick = tick;
+    FRAME.dtMs = dtMs;
+    FRAME.zoom = camera.zoom;
+    viewBounds(camera, VIEW);
+    beginFxFrame(player.fx.budget, FRAME);
+    const { pool } = player.fx;
+    logFxBudget(player.fx.budget, { nowMs, overwrote: pool.overwrote, capacity: pool.limit });
 }
 
 /**

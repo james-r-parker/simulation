@@ -40,7 +40,11 @@ export const PALETTE = Object.freeze({
     coolWhite: [0.8, 0.92, 1.0],
     heat: [1.0, 0.35, 0.04],
     infected: [0.6, 0.6, 1.0],
-    courtship: [0.95, 0.5, 1.0],
+    courtship: [1.0, 0.3, 0.7],
+    toxin: [0.6, 0.7, 0.4],
+    arrival: [0.6, 0.4, 0.7],
+    recover: [0.7, 0.8, 1.0],
+    milestone: [1.0, 0.4, 0.0],
 });
 
 /**

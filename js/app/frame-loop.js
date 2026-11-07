@@ -6,7 +6,7 @@ import { appLog } from './app-log.js';
 import { followStep, updateCamera } from './camera.js';
 import { createFrameStats, frameReport, recordFrame } from './frame-stats.js';
 import { createInterpolated, createPlayhead, interpolateInto, simTickAt, stepPlayhead } from './interpolate.js';
-import { playEffects } from './renderer/effects-player.js';
+import { beginEffects, playEffects } from './renderer/effects-player.js';
 import { findAgent } from './renderer/overlays.js';
 import { stepQuality } from './renderer/quality.js';
 import { lensUniforms } from './ui/lenses.js';
@@ -41,6 +41,7 @@ export const MAX_DT_MS = 100;
  * @property {import('./frame-stats.js').FrameStats} window the recent frames the quality rule reads
  * @property {number} lastNowMs the previous frame's time, 0 before one
  * @property {number} lastCheckMs when the quality rule last ran
+ * @property {{tick: number, dtMs: number, nowMs: number, camera: any}} effectsAt the frame `beginEffects` reads, reused
  */
 
 /**
@@ -54,6 +55,7 @@ function freshState(maxAgents) {
         window: createFrameStats(QUALITY_WINDOW_FRAMES),
         lastNowMs: 0,
         lastCheckMs: 0,
+        effectsAt: { tick: 0, dtMs: 0, nowMs: 0, camera: null },
     };
 }
 
@@ -107,15 +109,22 @@ function checkQuality({ scene, hidden }, loop, nowMs) {
  * @param {number} nowMs wall time
  * @returns {void}
  */
-function advanceWorld(client, { refs }, loop, nowMs) {
+function advanceWorld(client, { refs, camera }, loop, nowMs) {
     const alpha = stepPlayhead(loop.playhead, /** @type {any} */ (client), nowMs);
     if (client.latest === null) {
         loop.agents.count = 0;
         return;
     }
     interpolateInto(client.prev, client.latest, alpha, loop.agents);
-    if (refs.player !== null && client.effects !== null) {
-        playEffects(refs.player, client.effects, loop.agents, simTickAt(loop.playhead));
+    if (refs.player !== null) {
+        const at = loop.effectsAt;
+        at.tick = simTickAt(loop.playhead);
+        at.nowMs = nowMs;
+        at.camera = camera;
+        beginEffects(refs.player, at);
+        if (client.effects !== null) {
+            playEffects(refs.player, client.effects, loop.agents, at.tick);
+        }
     }
     if (client.field !== null && refs.haze !== null) {
         refs.haze.pushField(client.field.f32, nowMs);
@@ -210,6 +219,7 @@ export function createFrameLoop(deps) {
             if (deps.scene === null || client === null) {
                 return;
             }
+            loop.effectsAt.dtMs = dtMs;
             advanceWorld(client, deps, loop, nowMs);
             moveCamera(deps, loop, dtMs);
             fillFrame(frame, { deps, loop, client }, { nowMs, dtMs });

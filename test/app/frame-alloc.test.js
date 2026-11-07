@@ -10,6 +10,7 @@ const seen = vi.hoisted(() => ({
     circles: /** @type {object[]} */ ([]),
     rings: /** @type {object[]} */ ([]),
     bursts: /** @type {object[]} */ ([]),
+    fx: /** @type {object[]} */ ([]),
 }));
 
 vi.mock('../../js/app/renderer/line-buffer.js', async (importOriginal) => {
@@ -39,6 +40,17 @@ vi.mock('../../js/app/renderer/sparks.js', async (importOriginal) => {
         spawnBurst: (/** @type {any} */ pool, /** @type {object} */ burst) => {
             seen.bursts.push(burst);
             return real.spawnBurst(pool, burst);
+        },
+    };
+});
+
+vi.mock('../../js/app/renderer/fx-pool.js', async (importOriginal) => {
+    const real = /** @type {any} */ (await importOriginal());
+    return {
+        ...real,
+        spawnFx: (/** @type {any} */ pool, /** @type {object} */ rec) => {
+            seen.fx.push(rec);
+            return real.spawnFx(pool, rec);
         },
     };
 });
@@ -74,7 +86,7 @@ describe('per-frame scratch reuse', () => {
         layer.dispose();
     });
 
-    it('the effects player reuses one burst and one ring record for every effect', () => {
+    it('the effects player reuses one burst, one ring and one effect-pool record for every effect', () => {
         const layout = {
             effectKinds: { BORN: 1, DIED: 2, BITE: 3, ALARM: 4, PACK_CALL: 5, SMOKE: 6 },
             deathCauses: { EATEN: 1 },
@@ -96,10 +108,13 @@ describe('per-frame scratch reuse', () => {
         const agents = createInterpolated(8);
         seen.rings.length = 0;
         seen.bursts.length = 0;
+        seen.fx.length = 0;
         expect(playEffects(player, queue, agents, 1)).toBe(kinds.length);
         expect(seen.rings.length).toBe(6);
-        expect(seen.bursts.length).toBe(6);
+        expect(seen.bursts.length).toBe(2);
+        expect(seen.fx.length).toBeGreaterThan(10);
         expect(new Set(seen.rings).size).toBe(1);
         expect(new Set(seen.bursts).size).toBe(1);
+        expect(new Set(seen.fx).size).toBe(1);
     });
 });
