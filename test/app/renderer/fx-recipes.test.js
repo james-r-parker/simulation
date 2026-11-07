@@ -126,3 +126,23 @@ describe('the Phase 2 recipes', () => {
         }
     });
 });
+
+describe('the Phase 3 recipes', () => {
+    it('play the herd, dung, wilt, first-kill and wall-crossing signatures', () => {
+        /** @type {Record<string, [number, number]>} */
+        const want = {
+            herdDied: [CURVE.puffRing, 2],
+            calfBorn: [CURVE.ring, 1],
+            dungDropped: [CURVE.puffRing, 2],
+            patchWilted: [CURVE.moteFall, 6],
+            firstKill: [CURVE.ring, 9],
+            wallCross: [CURVE.ringSlow, 1],
+        };
+        for (const [name, [curve, count]] of Object.entries(want)) {
+            const fx = createFxPlayer(createFxPool());
+            playRecipe(fx, FX_RECIPES[/** @type {keyof typeof FX_RECIPES} */ (name)], at());
+            expect(fx.pool.spawned, name).toBe(count);
+            expect(fx.pool.time[2], name).toBe(curve);
+        }
+    });
+});

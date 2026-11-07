@@ -58,3 +58,23 @@ describe('playFlee', () => {
         expect(player.flee.fleeing[0]).toBe(0);
     });
 });
+
+describe('playFlee and a reused slot', () => {
+    it('lets a new body in a slot kick in the period the old one already kicked', () => {
+        const player = createEffectsPlayer({ layout: { effectKinds: {}, deathCauses: {} }, info });
+        playFlee(player, chase(120), 0);
+        expect(player.fx.pool.spawned).toBe(2);
+        const reborn = createInterpolated(8);
+        interpolateInto(
+            null,
+            makeSnapshot(2, [
+                { slot: 0, genomeId: 1, spec: 0, x: 0, y: 0, angle: 0, size: 20, speed: 100 },
+                { slot: 1, genomeId: 9, spec: 1, x: 100, y: 0, angle: 0, size: 10, speed: 120 },
+            ]),
+            1,
+            reborn,
+        );
+        playFlee(player, reborn, 1);
+        expect(player.fx.pool.spawned).toBe(4);
+    });
+});

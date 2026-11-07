@@ -94,3 +94,17 @@ describe('createFrameRing', () => {
         expect(Array.from(ring.values())).toEqual([7]);
     });
 });
+
+describe('ignored frames', () => {
+    it('counts each frame it does not record, by reason, and clears the counts', () => {
+        const stats = createFrameStats(8);
+        recordFrame(stats, 4, 1, true);
+        recordFrame(stats, 0, 1);
+        recordFrame(stats, 400, 1);
+        recordFrame(stats, 4, 1);
+        expect(frameReport(stats).ignored).toEqual({ hidden: 1, zero: 1, long: 1 });
+        expect(frameReport(stats).frames).toBe(1);
+        clearFrameStats(stats, 8);
+        expect(frameReport(stats).ignored).toEqual({ hidden: 0, zero: 0, long: 0 });
+    });
+});

@@ -2295,9 +2295,110 @@ goldens and `npm run browser:hash` are unchanged. Measured under `flock /tmp/cla
 - The CPU lock keeps other timing runs away but not the evals of the parallel push (load average 5 to 30 during these
   runs); the A/B runs alternate, so the load widens the margins without favouring either side.
 
-### 2026-11-07 - Brain-value screen, the 600000-tick long run and the baseline-v5 re-record (E-NS-1, E-NS-2, T14)
+### 2026-11-07 - WASM Phase 5: drills 36% faster, the bench step unchanged, four squeezes reverted (wasm-kernels T20 to T28)
 
-- **E-NS-1 (placeholder id; T43)**: `weightDecay` 0 and `mutationRate` 1 and 0.1 against the defaults (0.005 and `invsqrt`), floor on, policy live, 200000 ticks. `mutationRate` 1 collapsed on seeds 1 to 16 (mating 0.19, population 83, hunters alive on 0.3 of seeds). `mutationRate` 0.1 looked better on seeds 1 to 16 (hunters alive 0.9 against 0.8, 3 seeds under 80 against 5) and lost on 32 matched seeds (hunters alive 23 of 32 against 27, `eval.hunter_ticks_last_quarter` -37%, `eval.predator_births` -24%, `eval.catch_rate` -11%). `weightDecay` 0 showed no gain and `eval.hunter_ticks_last_quarter` -33%. No default changed.
+- **Profile after the kernels.** `node --cpu-prof` names WASM frames `wasm-function[N]`; an exported function's `name`
+  property is its index, so `new WebAssembly.Instance(module, imports).exports` maps the index to the export. In the
+  500-agent bench world the kernels are about 65% of the step (`brain_forward` 38%, `sense_slot` 14%, `build_hash` 7%); no
+  JS function is above 4%.
+- **Drills waste time on empty slots.** The drill stage world (3000 x 4000, 8 agents) keeps the default `maxFood` 3600, so
+  `build_hash` walked 3600 dead food bytes twice a tick (32% of a trial) and the pheromone update ran over grids of exact
+  zeros (15%). Skipping sixteen dead bytes per `v128_any_true` and skipping rows of `+0` bits took drill throughput from
+  70.3 to 95.8 trials per second per worker (+36.4%, margin +-8.0%). `aliveFoods` in `js/evo/drill-scenarios.js` (3.7%)
+  and the stage's `maxFood` are the next drill levers, outside the kernels.
+- **Bench-world grids are never zero.** At every 500 ticks from 500 to 4500, none of the 81 rows of any pheromone grid
+  is all zero: decaying `f32` tails spread by diffusion to every cell, so zero skipping helps only small or new worlds.
+- **The brain does not respond to tanh or pass width.** Six divisions instead of 13 in the vector tanh made `tanh_into`
+  12% faster with no change in `forwardAll`, and 16 units per pass did nothing: the weighted sums of widened `f32` weights
+  are the cost, and out-of-order execution hides the divisions. `wasm-opt -O4` was mixed (one export +13%, another -2%).
+- **Bit-identity of a power-of-two divisor.** `r / 2^j` and `r * 2^-j` round the same real number, so they are equal for
+  every `r`; `(r / 3) * 0.5` equals `r / 6` only while both are normal (the power-of-two scaling commutes with rounding in
+  the normal range), so such a rewrite needs a guard for tiny `r`.
+- **Noise.** No quiet window held during the phase (load 2 to 9, other streams running); `bench:micro` margins ran from
+  2% to 28%, so `--runs 5` and only verdicts outside the margin were used.
+
+### 2026-11-07 - Reflex cases: what a brain-only case can sense, the bars and the throughput (brain-reflex-tests Phase 1)
+
+The six reflex cases of [brain-reflex-tests.md](brain-reflex-tests.md) are built from `stageWorld`, `buildHash` and `senseAll`, so
+what follows is what the sim's own sensing gives a brain, not a design choice. Each placement below was changed from the
+doc's first draft because the draft's scene could not be sensed.
+
+- **A ray hits only a target wider than the spacing between rays.** 16 rays are 22.5 degrees apart; a hunter of radius 31 at
+  210 px (0.7 of a forager's view) subtends 17 degrees, so one staging in ten left it unseen on a scored tick and even the
+  scripted reference failed. The hunter now closes from 0.5 to 0.3 of view and the prey stands at 0.35.
+- **Pooling keeps the two strongest hits per channel, so a nearer item can hide a farther one.** A toxic food at 0.4 of view
+  covers two rays and fills both food slots; the safe food behind it never reaches the brain. `pick-safe-food` stands each
+  food on one ray direction at a distance where the neighbouring rays miss it (0.55 and 0.8 of view).
+- **The brain's food hue is not in the `inputs` row.** Pooling reads `world.rayHue`, which `castSlot` writes beside
+  `inputs`; a table that copied only `inputs` would show every food hueless. The table snapshots both.
+- **A forager cannot be made too big to bite by energy.** `addEnergy` caps at the store (2000), so a forager's size stops at
+  25 + 8 = 33. `couldBite` holds while the biter's size exceeds `huntSizeRatio` (0.8) of the victim's, so a hunter of size 31
+  can bite any victim up to 38.75. The `prey-too-big` drill's prey (energy 3000) is size 33 and bitable: the ray shows it as
+  prey, and the drill's abort win is for not biting a bitable prey. A size gene at the top gives 1.3 x 25 + 8 = 40.5, which is
+  too big: `bite-discrimination` stages it that way.
+- **Dead behind has no turn side.** A food at 180 degrees is on ray 8, where `turnTowards` returns +1 whichever side it is
+  on; `approach-food` stops at 160 degrees and `flee-threat` asks only for thrust past 160.
+
+Bars (reference, random mean of 64 brains, best constant brain), the same on case seeds 1, 2, 3, 101, 105 and 116 to the
+precision shown unless a range is given; every case is valid (reference at least 0.9, the other two at most 0.5):
+
+| Case                  | Reference        | Random mean  | Best constant                                               |
+| --------------------- | ---------------- | ------------ | ----------------------------------------------------------- |
+| `flee-threat`         | 1.00             | 0.00         | 0.00 to 0.19 (thrust alone passes the dead-behind stagings) |
+| `approach-food`       | 1.00             | 0.01 to 0.04 | 0.06 to 0.25 (full thrust passes the ahead set)             |
+| `pick-safe-food`      | 1.00 (hue-aware) | 0.00 to 0.02 | 0.00                                                        |
+| `avoid-obstacle`      | 1.00             | 0.00 to 0.02 | 0.00                                                        |
+| `approach-prey`       | 1.00             | 0.00         | 0.00                                                        |
+| `bite-discrimination` | 1.00             | 0.03 to 0.11 | 0.00                                                        |
+
+`npm run reflex -- --policy map-elites-v6 --count 8 --workers 1` (seed 1, 20000 ticks, 16 trials; the pass share and, in
+brackets, the edge over the random mean):
+
+| Genome (best elite of the policy run) | flee-threat  | approach-food | pick-safe-food | avoid-obstacle | approach-prey | bite-discrimination |
+| ------------------------------------- | ------------ | ------------- | -------------- | -------------- | ------------- | ------------------- |
+| forager-cell4                         | 0.44 (+0.44) | 1.00 (+0.99)  | 0.00 (+0.00)   | 0.00 (-0.02)   | -             | -                   |
+| predator cell24, cell14, cell34       | -            | -             | -              | -              | 1.00 (+1.00)  | 1.00 (+0.89)        |
+
+The run's other genomes are defenders and scouts, which have no case. The evolved predators pass both predator cases
+and the one forager passes only `approach-food`: no genome passes `pick-safe-food` or `avoid-obstacle`, and the forager
+turns away from a closing hunter in under half the trials. One forager is a sample of one, not a verdict on the cases.
+
+Throughput (`npm run bench:reflex`, under `flock /tmp/claude-1000/cpu.lock` while other streams' evals ran): the four forager
+cases are 12 sequences a trial (2 + 2 + 2 + 6, each with its mirror), 16 trials, 6 ticks, so 1152 brain forwards per
+genome; 512 random brains in one batch took 1.9 ms a genome, **522 genomes per second**, 1.66 microseconds a forward with
+the scoring. The same kind of genomes through the five forager drills at 32 trials ran at 0.67 genomes per second, so the
+tier is **776 times** cheaper. The doc's first target (900) rested on 768 forwards; it is now 300, which both numbers clear.
+A table costs about 0.1 s to build (one `stageWorld` per distinct tick), paid once per case, seed and trials.
+
+### 2026-11-07 - Drill levers: staged food slots and an allocation-free food count (training Phase 2)
+
+Two drill-only changes (no live-sim code; `worldHash` and `golden.json` unchanged, golden test run): `STAGE_CONFIG` in
+`js/evo/pool-discrimination-stage.js` gets `maxFood` 48 (`STAGE_MAX_FOOD`; it inherited 3600, so every tiny drill world walked
+3600 food slots per tick in the hash build), and `aliveFoods` in `js/evo/drill-scenarios.js` (3.7% of a drill trial) became
+`aliveFoodCount` and `onlyAliveFood`, which allocate nothing. Drill outcomes did not move: the table below is identical
+before and after. `npm run drill` on four fresh smoke champions (4 generations, nursery) plus the references, wall time:
+
+| Workers | Before | After   | Change |
+| ------- | ------ | ------- | ------ |
+| 2       | 8.71 s | 5.37 s  | -38%   |
+| 4       | 5.40 s | not run | -      |
+| 8       | 3.52 s | 2.26 s  | -36%   |
+
+| Subject                   | food-ahead   | food-behind  | two-foods    | prey-ahead   | prey-too-big | hunter-closing | rock-refuge  | mean edge |
+| ------------------------- | ------------ | ------------ | ------------ | ------------ | ------------ | -------------- | ------------ | --------- |
+| archive-3-forager-cell5   | 1.00 (+0.84) | 1.00 (+0.82) | 0.00 (-0.11) | -            | -            | 0.13 (+0.13)   | 0.00 (+0.00) | +0.34     |
+| archive-3-predator-cell15 | -            | -            | -            | 0.00 (+0.00) | 0.97 (-0.03) | -              | -            | -0.02     |
+| reference memoryless      | 1.00 (+0.84) | 1.00 (+0.82) | 0.00 (-0.11) | 0.31 (+0.31) | 0.31 (-0.69) | 0.03 (+0.03)   | 0.00 (+0.00) | +0.17     |
+
+- The elites of the earlier smoke table were refused (rules and descriptor hashes have moved since), so the table was
+  re-made from a fresh 4-generation smoke run; the same champions fed both columns.
+- `bench:micro --area drill --compare origin/main --runs 3` under the CPU lock (base 5f85ab5dc, head the two levers): one
+  trial of each of the 7 drills 12.67 -> 16.10 ops/s, +27.0% (+-9.5%), so about 89 -> 113 trials per second per worker.
+  The T12 training run (8 workers) was started while this queued, so the margin is wider than on a quiet machine.
+
+### 2026-11-07 - Brain-value screen, the 600000-tick long run and the baseline-v5 re-record (E139, E140, T14)
+
+- **E139 (placeholder id; T43)**: `weightDecay` 0 and `mutationRate` 1 and 0.1 against the defaults (0.005 and `invsqrt`), floor on, policy live, 200000 ticks. `mutationRate` 1 collapsed on seeds 1 to 16 (mating 0.19, population 83, hunters alive on 0.3 of seeds). `mutationRate` 0.1 looked better on seeds 1 to 16 (hunters alive 0.9 against 0.8, 3 seeds under 80 against 5) and lost on 32 matched seeds (hunters alive 23 of 32 against 27, `eval.hunter_ticks_last_quarter` -37%, `eval.predator_births` -24%, `eval.catch_rate` -11%). `weightDecay` 0 showed no gain and `eval.hunter_ticks_last_quarter` -33%. No default changed.
 - **Why 16 seeds misled**: seeds 17 to 32 are harsher than 1 to 16 (E130), and a 2-seed margin on seeds under 80 flipped between the halves. Only the merged 32-seed pair judges a keep-rule arm. `scripts/screen.mjs` writes one report per half; to pair them, concatenate `seeds`, `traces`, `inputActivity` and each metric's `values` and `reasons` (recompute `mean` and `sd`), then `eval:compare` the merged files.
-- **E-NS-2 (placeholder id; replaces T34)**: the defaults on 16 seeds x 600000 ticks. Hunters alive on 13 of 16 seeds, a prey type on 16 of 16, `eval.skill_heritability` 0.41 (16 of 16 positive), `eval.skill_trend` -0.032 (3 of 16 positive), `eval.basin_recolonisations` at least 1 on 4 of 16, `eval.social_return` -2.19, `eval.spec_dominance` 0.41, `eval.mating_share` 0.44. Hunters do not get better with a longer horizon; that is hunter-practice.md's problem.
+- **E140 (placeholder id; replaces T34)**: the defaults on 16 seeds x 600000 ticks. Hunters alive on 13 of 16 seeds, a prey type on 16 of 16, `eval.skill_heritability` 0.41 (16 of 16 positive), `eval.skill_trend` -0.032 (3 of 16 positive), `eval.basin_recolonisations` at least 1 on 4 of 16, `eval.social_return` -2.19, `eval.spec_dominance` 0.41, `eval.mating_share` 0.44. Hunters do not get better with a longer horizon; that is hunter-practice.md's problem.
 - **T14, baselines re-recorded** (`baseline-v5` seeds 1 to 16 and `baseline-v5-o16` seeds 17 to 32, 16 seeds x 200000 ticks, on `6ce01567`, configHash `ff8d890a5a70c14d`): the scripted policy is harsher on the current world than at T48g. Means over seeds 1 to 16 and 17 to 32: population 190 and 186 to 18.5 and 18.2, food per 1k 404 and 374 to 175 and 167, fed median lifespan 5007 and 5071 to 3657 and 3578, floor episodes 59 and 68 to 26 and 26, and 89% to 90% of births now come from the floor (`floorTrigger` 8 refills an almost dead world, so the population sits under `minAgents`). Nothing reads these as a bar; they stay the instrument baseline for scripted policies.

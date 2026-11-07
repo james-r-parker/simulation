@@ -15,6 +15,7 @@ describe('readFxParams', () => {
             fxstress: true,
         });
         expect(readFxParams('?fxdemo=all').fxdemo).toBe('all');
+        expect(readFxParams('?fxhold=peak').fxhold).toBe('peak');
         expect(readFxParams('?fxdemo=sparkles&fxhold=x')).toEqual({
             fxlog: false,
             fxdemo: null,

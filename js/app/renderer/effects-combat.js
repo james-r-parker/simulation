@@ -62,6 +62,22 @@ function atOf(player, { x, y, angle, size }) {
 const SPOT = { x: 0, y: 0, angle: 0, size: 0 };
 
 /**
+ * Fills the player's scratch `at` at the effect record's position and tick, facing 0, at the birth size.
+ * @param {import('./effects-player.js').EffectsPlayer} player the player, `player.effect` holding the record
+ * @returns {import('./fx-recipes.js').FxAt} the scratch `at`
+ */
+export function atEffect(player) {
+    const e = player.effect;
+    const at = player.at;
+    at.x = e.x;
+    at.y = e.y;
+    at.angle = 0;
+    at.size = BIRTH_SIZE;
+    at.tick = e.tick;
+    return at;
+}
+
+/**
  * Fills the player's scratch `at` on an agent's body, facing 0.
  * @param {import('./effects-player.js').EffectsPlayer} player the player
  * @param {import('../interpolate.js').Interpolated} agents the blended agents
