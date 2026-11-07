@@ -2422,3 +2422,9 @@ before and after. `npm run drill` on four fresh smoke champions (4 generations, 
 - **`prey-ahead`:** won 5 of 32 (0.16; memoryless reference 0.31). Lost-trial reasons: `never-in-jaws` 24, `prey-died-unkilled` 3, `never-bit` 0. The reference loses mostly to `never-in-jaws` (16) too; the random brains split between `never-in-jaws` and `never-bit`.
 - **Reading:** the bite works when the prey is in the jaws, and the too-big body is left alone by silence (it never reaches the `prey` channel). The predator has no wire against kin, though a kin lunge already costs `recoilEnergy` in the live world. The drill is lost on contact, not on the bite.
 - **Lever line:** row 2 for discrimination (hunter-learning.md Phase 3 kin refusal wire); contact for the drill (arm g, then the chase). Arms e and f (too-big price) are not needed.
+
+### 2026-11-07 - Arm d replication (training T22)
+
+- Arm d (`evals/train-curriculum-iter2-d.json`, 60 generations, 32 episodes) on `--seed-offset` 0, 64 and 128 gives predator `prey-ahead` 0.16, 0.00 and 0.00 (memoryless reference 0.31): the +0.16 edge does not replicate (1 of 3 offsets above 0). Treat one archive's edge as a lead, not an effect.
+- The bite varies by offset: all three bite prey (share 1.00); offset 0 bites kin, offset 128 bites the too-big prey, offset 64 passes `bite-discrimination` at 1.00. Prey into BITE is +1.97 to +2.19 on all three, so the bite exists in the cell and the failure is in the chase and the discrimination, not in a missing output.
+- A full arm d run took about 9 minutes at 14 workers with the machine otherwise idle, not 25 to 30.
