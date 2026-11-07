@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 T1 built (#343) and the T2 baseline run (`E141`, 32 floor-on seeds, in Baseline); T3 (the conformance review) is open. Phase 2 puts rings on the rims of the food patches behind `refugeAnchor` and is unbuilt.
 **Validated:** f5c7880 (2026-11-07)
-**Priority:** 5 - the review of 2026-11-07 calls cover on the food-patch rims the right refuge idea and ranks it third, behind the bite diagnosis and the mating-edge screen; it changes the map and re-pins the goldens, so it queues behind the sim and keeper work already ranked
+**Priority:** 6 - the review of 2026-11-07 calls cover on the food-patch rims the right refuge idea and ranks it third, behind the bite diagnosis and the mating-edge screen; it changes the map and re-pins the goldens, so it queues behind the sim and keeper work already ranked
 **Depends on:** [refuge.md](refuge.md), [realistic-keepers.md](realistic-keepers.md)
 
 The scene this doc serves ([principles.md](../principles.md), Refuge): **under threat, prey stack into a rock ring or a
