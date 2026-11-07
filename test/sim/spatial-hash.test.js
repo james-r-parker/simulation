@@ -24,7 +24,7 @@ const CELL = 140;
 function setup() {
     const config = createConfig({ ...SIMPLE_WORLD, ...SMALL });
     const world = allocateWorld(config);
-    return { config, world, hash: createSpatialHash(config) };
+    return { config, world, hash: world.hash };
 }
 
 /**
@@ -103,7 +103,7 @@ function boxesOverlap(a, b) {
     return Math.abs(a.x - b.x) <= a.r + b.r && Math.abs(a.y - b.y) <= a.r + b.r;
 }
 
-describe('createSpatialHash', () => {
+describe('the world hash', () => {
     it('sizes the grid and buffers from the config', () => {
         const { hash } = setup();
         expect(hash.cols).toBe(Math.ceil(1000 / CELL));
@@ -114,6 +114,34 @@ describe('createSpatialHash', () => {
         expect(hash.range.length).toBe(4);
     });
 });
+
+describe('createSpatialHash', () => {
+    it('makes an unbound hash of the config: empty cells and no entries', () => {
+        const { config, hash } = setup();
+        const own = createSpatialHash(config);
+        expect([own.cols, own.rows, own.cellSize]).toEqual([hash.cols, hash.rows, hash.cellSize]);
+        expect(own.cellStart.length).toBe(hash.cols * hash.rows + 1);
+        expect(own.cellStart.every((v) => v === 0)).toBe(true);
+        expect(own.entries.length).toBe(0);
+        expect(own.entryCount).toBe(0);
+    });
+});
+
+/**
+ * Makes the first `count` agents circles that cover the whole 8 x 8 grid, 64 entries each.
+ * @param {any} world
+ * @param {number} count
+ */
+function blanket(world, count) {
+    world.alive.fill(0);
+    world.foodAlive.fill(0);
+    for (let i = 0; i < count; i++) {
+        world.alive[i] = 1;
+        world.x[i] = 500;
+        world.y[i] = 450;
+        world.size[i] = 5000;
+    }
+}
 
 describe('cellRange', () => {
     it('clamps a circle past every edge to the grid', () => {
@@ -207,28 +235,14 @@ describe('buildHash', () => {
         expect(hash.cellStart[hash.cols * hash.rows]).toBe(0);
     });
 
-    it('throws when the entries would overflow', () => {
+    it('accepts exactly as many entries as the capacity holds, and throws one circle past it', () => {
         const { world, hash } = setup();
-        populate(world, 9);
-        world.size[0] = 5000;
-        world.alive[0] = 1;
-        world.x[0] = 500;
-        world.y[0] = 450;
-        hash.entries = new Int32Array(4);
-        expect(() => buildHash(hash, world)).toThrow(/entries/);
-    });
-
-    it('accepts exactly as many entries as the capacity holds', () => {
-        const { world, hash } = setup();
-        world.alive[0] = 1;
-        world.x[0] = 500;
-        world.y[0] = 450;
-        world.size[0] = 10;
-        hash.entries = new Int32Array(1);
+        blanket(world, 18);
         buildHash(hash, world);
-        expect(hash.entryCount).toBe(1);
-        hash.entries = new Int32Array(0);
-        expect(() => buildHash(hash, world)).toThrow('spatial hash needs 1 entries but holds 0');
+        expect(hash.entryCount).toBe(9 * 128);
+        blanket(world, 19);
+        expect(() => buildHash(hash, world)).toThrow('spatial hash needs 1216 entries but holds 1152');
+        expect(hash.entryCount).toBe(9 * 128);
     });
 });
 

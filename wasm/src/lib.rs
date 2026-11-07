@@ -7,6 +7,9 @@
 
 mod brain;
 mod det_math;
+mod field;
+mod hash;
+mod physics;
 mod sense;
 
 /// The kernel ABI version; `js/sim/wasm-loader.js` refuses a binary whose version it does not know.
@@ -75,6 +78,56 @@ pub unsafe extern "C" fn pool_slot(params: i32, slot: i32) {
 pub unsafe extern "C" fn sense_slot(params: i32, slot: i32) -> i32 {
     // SAFETY: the caller passes the arena's sense parameter block and an alive slot.
     unsafe { sense::sense_slot(params as u32, slot as usize) as i32 }
+}
+
+/// Rebuilds the world's spatial hash (`buildHash`): the entry total, which JS checks against the capacity.
+///
+/// # Safety
+/// `params` addresses the block `js/sim/wasm-hash.js` wrote, describing arrays inside the memory.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn build_hash(params: i32, cell_size: f64) -> i32 {
+    // SAFETY: the caller passes the arena's hash parameter block.
+    unsafe { hash::build(params as u32, cell_size) }
+}
+
+/// Decays then diffuses the three pheromone grids (`updatePheromones`).
+///
+/// # Safety
+/// `params` addresses the block `js/sim/wasm-field.js` wrote, describing arrays inside the memory.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn update_pheromones(params: i32, decay: f64, diffusion: f64) {
+    // SAFETY: the caller passes the arena's field parameter block.
+    unsafe { field::update_pheromones(params as u32, decay, diffusion) }
+}
+
+/// Damps, caps and moves every alive agent (`moveAgent` for each).
+///
+/// # Safety
+/// `params` addresses the block `js/sim/wasm-physics.js` wrote, describing arrays inside the memory.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn move_agents(params: i32) {
+    // SAFETY: the caller passes the arena's physics parameter block.
+    unsafe { physics::move_all(params as u32) }
+}
+
+/// Bounces one agent off the rocks from index `from`: the rock it struck moving into it, or -1 when done.
+///
+/// # Safety
+/// `params` addresses the block `js/sim/wasm-physics.js` wrote, and `slot` is below `maxAgents`.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn bounce_rocks(params: i32, slot: i32, own: f64, from: i32) -> i32 {
+    // SAFETY: the caller passes the arena's physics parameter block and an agent slot.
+    unsafe { physics::bounce_rocks(params as u32, slot as usize, own, from as u32) }
+}
+
+/// Resolves every overlapping agent pair and clamps agents into the world: the contact count, or -1 on overflow.
+///
+/// # Safety
+/// `params` addresses the block `js/sim/wasm-physics.js` wrote, and the hash was built on the current agents.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn resolve_contacts(params: i32) -> i32 {
+    // SAFETY: the caller passes the arena's physics parameter block.
+    unsafe { physics::resolve_contacts(params as u32) }
 }
 
 #[panic_handler]

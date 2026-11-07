@@ -1,6 +1,6 @@
 # WASM kernels
 
-**Status:** In progress - Phases 1 and 2 are built and adopted (T1 to T12): every world runs the brain phase and the ray march in the Rust/WASM kernels from birth, and the JS brain kernel and JS ray march are deleted; Phase 3 (batched drill evaluation) and Phase 4 (the pheromone field and physics) are proposed.
+**Status:** In progress - Phases 1, 2 and 4 are built and adopted (T1 to T12, T13 to T19): every world runs the brain phase, the ray march, the spatial hash build, the pheromone update and the physics loops in the Rust/WASM kernels from birth, and the JS kernels they replaced are deleted; Phase 3 (batched drill evaluation) is proposed.
 **Validated:** f5c7880 (2026-11-07)
 **Priority:** 24 - a speed lever that changes no behaviour (the behaviour-changing levers are ruled out), so it queues behind the world-balance work and ahead of nothing that depends on it
 **Depends on:** [headless-sim-core.md](headless-sim-core.md)
@@ -34,7 +34,7 @@ port is being proven; once a kernel is adopted in Rust its JS code is deleted, s
 | Language     | Rust, edition 2024, target `wasm32-unknown-unknown`, `#![no_std]`, `panic = "abort"`; exports are plain `extern "C"` with `#[unsafe(no_mangle)]`         |
 | Bindings     | None: no `wasm-bindgen`, no `wasm-pack`. Arguments are `i32` offsets and counts; results are written into linear memory                                  |
 | Dependencies | None: the crate has no crates.io dependency, so the build needs no network and the lockfile has one package                                              |
-| Crate        | `wasm/` (`Cargo.toml`, `src/lib.rs`, one module per kernel: `brain.rs`, later `sense.rs`, plus `det_math.rs`)                                            |
+| Crate        | `wasm/` (`Cargo.toml`, `src/lib.rs`, one module per kernel: `brain.rs`, `sense.rs`, `hash.rs`, `field.rs`, `physics.rs`, plus `det_math.rs`)             |
 | Build        | `scripts/build-wasm.sh`: `cargo build --release --target wasm32-unknown-unknown`, then `wasm-opt -O3 --enable-simd`, written to `wasm/blob-kernels.wasm` |
 | Features     | WebAssembly MVP plus standard fixed-width SIMD (`+simd128`). Relaxed SIMD and fused multiply-add are not used                                            |
 | Float rules  | No fast-math. Rust never contracts `a * b + c` into a fused operation, so each operation rounds as the JS double operation does                          |
@@ -207,8 +207,8 @@ call costs tens of nanoseconds against about 1.2 us of kernel work per caster.
 
 - **Memory.** The circles' arrays (`x`, `y`, `size`, food, obstacles, herds, clouds, `coverRing`) and the ray scratch, stamps
   and gathered rows move into the arena at their allocated type and length (`senseSpecs`); `world.foodRows` is re-pointed like
-  the agent rows. The spatial hash's `cellStart` and `entries` are copied into an arena mirror once per `senseAll`
-  (`syncSense`), because tests and tools pass hashes of their own; the copy is a few kilobytes.
+  the agent rows. As built in Phase 2 the spatial hash was copied into an arena mirror once per `senseAll` (`syncSense`);
+  Phase 4 builds the hash in the arena and the kernel reads it in place.
 - **Speed.** The covered loop, the main path once refuge rings and `coverConceals` are the default, runs two rays per `f64x2`
   (each lane its own pass over the rows in order; a row's concealment is the same for both lanes; the square root only when a
   lane can hit). The uncovered loop stays scalar and row-major: two rays per vector measured slower there, because most rows
@@ -241,28 +241,49 @@ calls `brain_forward` once per tick for all of them. What it would take:
 - It pays only once the other phases are in the kernel too (Phase 2 for the spatial hash, and a later phase for the
   pheromone field and physics); with the brain alone the batch saves at most the 13% brain share.
 
-### Phase 4 - The pheromone field and physics (proposed, not built)
+### Phase 4 - The spatial hash, the pheromone field and physics
 
-**Targets:** bench.phase_ms.field@500, bench.phase_ms.physics@500, bench.drill_trials_per_s
+**Targets:** bench.phase_ms.hash@500, bench.phase_ms.field@500, bench.phase_ms.physics@500, bench.drill_trials_per_s
 
-The drill profile puts the pheromone update at about 25% of a trial's step and physics at about 19%, the spatial hash and grid
-build at 25 to 30% (the hash build is still JS after Phase 2; only the ray march moved). Each is a pure array loop with the same
-shape as the brain and the ray march:
+The drill profile put the hash and grid build at 25 to 30% of a trial's step, the pheromone update at about 25% and
+physics at about 19%. As built, each moved into the kernels by the Phase 1 and 2 path: a JS fixture recorded first, the
+port, the differential test against the fixture, the goldens and `npm run browser:hash`, then the JS deleted. Every port
+matched its fixture on the first build.
 
-- **Pheromone update** (`updatePheromones` and `updateGrid` in `js/sim/pheromones.js`): a grid diffusion and decay over the
-  `danger`, `attack` and `hunt` fields with `pheromoneScratch`. A natural SIMD kernel: four `f32` cells per vector, or two
-  `f64` lanes where the JS sums in double, each cell's terms in the JS order. The grids move into the arena (they are already
-  allocated once per world).
-- **Spatial hash build** (`buildHash` in `js/sim/spatial-hash.js`): the counting sort writes `cellStart` and `entries`; in
-  the kernel it would write the arena arrays directly and remove the `syncSense` copy for the world's own hash.
-- **Physics** (`integrate`, `resolveContacts`, `bounceObstacles` in `js/sim/physics.js`): the motion integration and the
-  contact pass over the hash. Integration is a straight per-agent loop; the contact pass reads the hash and applies the
-  trample and push rules, so like the sense port it would split into a kernel that finds the pairs and JS rules that apply.
-
-The same rules hold: every operation in the JS order, `f32` widened where JS widens, `Math.fround` at the same stores, no
-fused multiply-add, and the same proving path (a JS reference kept while proving, a differential test byte-equal every tick,
-the goldens, `npm run browser:hash`, a recorded fixture, then the JS deleted). The drill trials-per-second bench is a Target,
-because training is where these phases dominate.
+- **Spatial hash** (`wasm/src/hash.rs`, `js/sim/wasm-hash.js`): `build_hash` runs the counting sort into arena arrays
+  (`cellStart`, `entries`, `boxX`, `boxY`, plus `cellCount`, reused as the insert cursors, and `circleRange`); JS checks
+  the returned total against the capacity and throws the old error. Both builds per tick (before sense, after physics) use
+  it. `world.hash` is born in `attachWasm` as a descriptor over the arena views (a bench copy keeps its source's last
+  build), so `createWorld` no longer makes one. The sense kernel reads the cells in place: `syncSense` and its mirror are
+  gone, and `beginSense` writes the per-tick words. `createSpatialHash` stays for tests and tools: an unbound hash that
+  `buildHash` binds to the world's arrays. `assertArenaHash` refuses a hash that does not read the arena. `foodAlive`
+  moves into the arena. Deleted: `countRange`, `insertRange`, `countAll`, `insertAll` and the JS `buildHash` body.
+- **Pheromone update** (`wasm/src/field.rs`, `js/sim/wasm-field.js`): `update_pheromones` decays, copies and diffuses
+  `danger`, `attack` and `hunt` in the arena. Each cell is computed in `f64` from its `f32` values and rounded once at the
+  store; the decay loop and the interior cells run four cells per iteration as two vertical `f64x2` lanes (promotion is
+  exact, demotion rounds as `Math.fround`), the edge rows and columns stay scalar with the JS neighbour sum. Deposits and
+  samples stay JS rules on the same views. Deleted: `updateGrid`, `diffuseCell`, `neighbourSum`, `neighbourCount`. The
+  rest of the field phase is per-slot game logic (zone decay, mycelium, food and herd ageing) and stays in JS.
+- **Physics** (`wasm/src/physics.rs`, `js/sim/wasm-physics.js`): `move_agents` damps, caps and moves every agent in one
+  call; `integrate` now moves all agents first, then tramples, walls and rocks per agent, which computes every value in
+  the old order because a move reads only its own agent and the bounces before it write only theirs. `bounce_rocks` does
+  one agent's rock geometry and stops at each impact into a rock, so JS applies `obstacleDamage` (which shrinks the agent
+  through `updateSize`) before resuming at the next rock with the size the scan began with, as the JS loop did.
+  `resolve_contacts` runs the contact pass over the arena hash and the final clamp, returning -1 past `maxContacts` for
+  JS to throw. `vx`, `vy`, `spec`, `sprintBySpec` and `contacts` move into the arena. `actAll` (steering and thrust with
+  `detCos`, temperature, sickness and rest rules), `wallAxis` and `trampleHerds` stay in JS, since each applies damage.
+  Deleted: `moveAgent`, `obstacleBounce`, `normalPart`, `applyImpulse`, `separate`, `resolvePair`, `ownsPair`,
+  `resolveCell`, `clampAgents`.
+- **Proof.** `test/sim/wasm-hash.test.js`, `wasm-field.test.js` and `wasm-physics.test.js` reproduce the recorded digests
+  (`test/sim/fixtures/wasm-{hash,field,physics}-reference.json`, written by `test/sim/helpers/*-reference.js`): stepped
+  default, busy, disease and odd-parameter worlds every tick (the hash after physics and rebuilt at the tick's end; the
+  grids; the motion state, energy, ledger and contacts right after the physics phase), plus seeded fuzz: 180 hash worlds
+  with circles on and past every edge and past the grid, 252 grid updates over shapes from 1 x 1 to 30 x 24 with zeros,
+  subnormals and values at the cap, and 120 passes of a scrambled crowd with coincident centres, rocks and walls.
+- **Result.** Against `origin/main` (brain and sense kernels), `bench-compare --sizes=500 --runs=2`: `bench.step_ms@500`
+  2.665 to 2.384 ms (-10.5%), `bench.phase_ms.hash@500` 0.137 to 0.076 (-45%), `bench.phase_ms.field@500` 0.205 to 0.153
+  (-25%), `bench.phase_ms.physics@500` 0.298 to 0.190 (-36%). Drill throughput 60.5 to 73.8 trials per second per worker
+  (+22%, margin +-4.3%). Raw kernel times and the load caveat are in `sim-notes.md` (2026-11-07, WASM Phase 4).
 
 ## Decisions
 
@@ -287,9 +308,15 @@ because training is where these phases dominate.
 | No arena pool for drill worlds                                                                  | Measured: the attach is about 35 us of a 23 ms trial (module compiled once per thread); a pool would need an explicit release, since a shallow copy shares the views                                                                        | Delegated               |
 | `rayTables` moved from `world.js` to `ray-pool.js`                                              | `world.js` sat at the 300-line limit and needed the attach call; the ray angle tables are what pooling and the ray march read                                                                                                               | Delegated               |
 | The sense kernel is one call per caster, not per phase                                          | The mate sighting reads each caster's gathered rows and the hit class needs the kin and bite rules; a call costs tens of ns against about 1.2 us of kernel work per caster                                                                  | Delegated               |
-| The spatial hash is mirrored into the arena once per `senseAll`, not allocated there            | Tests and tools pass hashes of their own to `senseAll` and `castRays`; the copy is a few kilobytes per tick. Phase 4 can move `buildHash` into the kernel and drop it                                                                       | Delegated               |
+| The spatial hash is mirrored into the arena once per `senseAll`, not allocated there (Phase 2)  | Tests and tools pass hashes of their own to `senseAll` and `castRays`; the copy is a few kilobytes per tick. Superseded by Phase 4, which builds the hash in the arena                                                                      | Delegated               |
 | Two rays per `f64x2` in the covered loop only                                                   | Measured: the vector covered loop beat the scalar one, the vector uncovered loop lost to the scalar one (most rows miss most rays)                                                                                                          | Delegated               |
 | `rewardedHebb` deleted with its off path in Rust and JS                                         | #328 adopted it (default true, E137) and gave this doc the deletion; the kernel's `FLAG_REWARDED` went and the rate always takes `rewardScale`. Goldens unchanged; the 24 unchanged-config reference cases kept their digests               | Coordinator, 2026-11-07 |
+
+| `world.hash` lives in the arena; a test's own hash is bound to the world's arrays on build | About 20 test files make a hash with `createSpatialHash` and pass it to the rules; binding keeps them unchanged, and `assertArenaHash` turns a hash the kernels cannot read into a loud error instead of a stale read | Delegated |
+| Physics moves all agents in one call before the per-agent bounces | A move reads only its own agent and the bounces write only theirs, so the order of every value is unchanged; one call per phase instead of one per agent | Delegated |
+| The rock scan stops at each damaging impact and JS resumes it | `removeEnergy` shrinks the agent between rocks and is an energy rule with a ledger; porting it would move a rule into Rust | Delegated |
+| Trampling, walls and steering stay in JS | Each applies damage or reads the temperature, sickness and rest rules; their loops are small next to the scan and the contact pass | Delegated |
+| Phase 4 is one chunk branch with three kernels | Each kernel is a fixture commit and a port commit (6 commits plus docs), within one chunk's 4 to 8 tasks; `feat/wasm-hash` and `feat/wasm-field` mark the intermediate points | Delegated |
 
 ## Delivery requirements
 
@@ -330,6 +357,18 @@ because training is where these phases dominate.
 | T10 | Port the ray summary and pooling, extend the differential test, record the sense bench (built)                       | [judgement] | T9         |
 | T11 | Adopt: record the JS sense fixture, then delete the JS ray kernels (built)                                           | [judgement] | T10        |
 | T12 | Conformance review of Phase 2, in parallel with `scripts/check.sh` (built)                                           | [judgement] | T11        |
+
+### Phase 4 - The spatial hash, the pheromone field and physics
+
+| #   | Task                                                                                                          | Nature      | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T13 | Record the JS spatial hash build's reference fixture (built)                                                  | [judgement] | T12        |
+| T14 | Port `buildHash` to `build_hash`, the hash into the arena, drop the sense mirror, delete the JS build (built) | [judgement] | T13        |
+| T15 | Record the JS pheromone update's reference fixture (built)                                                    | [judgement] | T14        |
+| T16 | Port `updatePheromones` to `update_pheromones` with vertical SIMD, delete the JS grid loops (built)           | [judgement] | T15        |
+| T17 | Record the JS physics loops' reference fixture (built)                                                        | [judgement] | T16        |
+| T18 | Port the moves, the rock geometry and the contact pass, delete their JS loops (built)                         | [judgement] | T17        |
+| T19 | Record the Phase 4 bench and drill numbers; conformance review in parallel with `scripts/check.sh` (built)    | [judgement] | T18        |
 
 ## Verification
 

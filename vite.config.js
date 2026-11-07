@@ -10,8 +10,13 @@ export default defineConfig(({ command, mode }) => {
     publicDir: 'public', // Explicitly set public directory
     server: {
       port: 5173,
-      open: true, // Automatically open browser
+      open: true, // Automatically open browser for `npm run dev` (BROWSER=none turns it off)
       cors: true
+    },
+    // `vite preview` would otherwise inherit server.open: the browser smoke and agents' runs must never open a window
+    // on the user's desktop.
+    preview: {
+      open: false
     },
     // The sim worker (js/worker/sim-worker.js) is an ES module worker.
     worker: {
