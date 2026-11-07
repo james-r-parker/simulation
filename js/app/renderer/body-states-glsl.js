@@ -12,12 +12,42 @@ function glsl(rgb) {
     return `vec3(${rgb.map((c) => c.toFixed(3)).join(', ')})`;
 }
 
+/** Each silhouette's gait signature, by `uShape`: what `gaitP` does to the body as it moves. */
+export const GAITS = Object.freeze({
+    predator: 'low prowl: the head sways when it walks slowly',
+    forager: 'bob: the body rises and falls with its pace',
+    reproducer: 'round sway: a slow side to side',
+    scout: 'quick dart: stretched with speed, the nose flicks',
+    defender: 'slow and heavy: a thicker rim, no bounce',
+});
+
 /** The bit of each state in `iBody.x`, matching `SNAPSHOT_STATE` (resting 1, sated 2, in cover 4, juvenile 8). */
 export const BODY_BIT = Object.freeze({ RESTING: 0, SATED: 1, IN_COVER: 2, JUVENILE: 3 });
 
 export const BODY_STATE_GLSL = /* glsl */ `
 float stateBit(float k) {
     return mod(floor(vBody.x / pow(2.0, k)), 2.0);
+}
+
+vec2 gaitP(vec2 p) {
+    if (uBody < 0.75 || uMotion <= 0.0) return p;
+    float speed01 = vMotion.x;
+    float phase = vMotion.z * 6.2831853;
+    if (uShape < 0.5) {
+        p.y += 0.05 * sin(uTime * 3.0 + phase) * smoothstep(0.0, 1.0, p.x) * (1.0 - speed01);
+    } else if (uShape < 1.5) {
+        p.y += 0.04 * sin(uTime * (6.0 + 8.0 * speed01) + phase) * speed01;
+    } else if (uShape < 2.5) {
+        p.x += 0.03 * sin(uTime * 2.0 + phase);
+    } else if (uShape < 3.5) {
+        p.x /= 1.0 + 0.12 * speed01;
+        p.y += 0.03 * sin(uTime * 20.0 + phase) * smoothstep(0.5, 1.3, p.x);
+    }
+    return p;
+}
+
+float gaitRim() {
+    return uShape > 3.5 ? 1.4 : 1.0;
 }
 
 vec2 stateP(vec2 p) {

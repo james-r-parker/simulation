@@ -173,7 +173,7 @@ float body(vec2 p, float open, out float noseX) {
 void main() {
     float cold = clamp((uCold01 - vState.x) / max(uCold01, 0.01), 0.0, 1.0) * uWeather;
     float hot = clamp((vState.x - uHeat01) / max(1.0 - uHeat01, 0.01), 0.0, 1.0) * uWeather;
-    vec2 p = bodyStates(tweenP(stateP(vP)), cold, hot);
+    vec2 p = bodyStates(tweenP(gaitP(stateP(vP))), cold, hot);
     p.y += 0.04 * vSick * uFlora * sin(uSimTick * 0.05 + vMotion.z * 6.2831853 + p.x * 4.0);
     if (uMotion > 0.0) {
         float speed01 = vMotion.x;
@@ -202,7 +202,7 @@ void main() {
     float across = 2.0 / vPx;                        // the agent's width in device px
     float small = 1.0 - smoothstep(23.0, 25.0, across);
     float haloWidth = min(0.263, mix(9.0, 4.0, small) * vPx);
-    float rimWidth = min(2.2 * vPx * (1.0 + contrast), 0.12 * (1.0 + contrast));
+    float rimWidth = min(2.2 * vPx * (1.0 + contrast), 0.12 * (1.0 + contrast)) * gaitRim();
     float halo = exp(-max(d, 0.0) / haloWidth) * 0.8 * (1.0 - faint);
     float rim = exp(-abs(d) / rimWidth) * 1.0;
     float edge = smoothstep(-rimWidth * 5.0, 0.0, d);
