@@ -43,7 +43,7 @@ describe('computeMetrics on hand-built state', () => {
         const keys = Object.keys(computeMetrics(bareObserver(), EMPTY_WORLD));
         expect(keys).toEqual([...keys].sort());
         expect(keys).toHaveLength(
-            16 +
+            15 +
                 10 +
                 4 +
                 5 +

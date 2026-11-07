@@ -11,9 +11,6 @@ const DEFAULT_KEYS = {
     territoryMax: 1,
     satedBite: false,
     predatorRestTicks: 0,
-    provisionEnabled: false,
-    provisionShare: 0.3,
-    provisionRange: 120,
     juvenileDependency: false,
     juvenileBurn: 0.6,
     kinPullWeight: 0.5,
@@ -31,7 +28,7 @@ describe('the hunter-learning Phase 1 keys', () => {
         expect(make({})[key]).toBe(value);
     });
 
-    it.each(['satedBite', 'provisionEnabled', 'juvenileDependency'])('%s is a boolean that accepts true', (key) => {
+    it.each(['satedBite', 'juvenileDependency'])('%s is a boolean that accepts true', (key) => {
         expect(make({ [key]: true })[key]).toBe(true);
         expect(() => make({ [key]: 1 })).toThrow(new RegExp(key));
     });
@@ -42,9 +39,6 @@ describe('the hunter-learning Phase 1 keys', () => {
         ['juvenileBurn', 1],
         ['kinPullWeight', 0],
         ['kinPullWeight', 4],
-        ['provisionShare', 0],
-        ['provisionShare', 1],
-        ['provisionRange', 0.5],
         ['juvenileTicks', 1],
         ['territoryRadius', 0.5],
         ['territoryMax', 0],
@@ -59,10 +53,6 @@ describe('the hunter-learning Phase 1 keys', () => {
         ['kinPullWeight', -1],
         ['kinPullWeight', 4.5],
         ['kinPullWeight', NaN],
-        ['provisionShare', -0.1],
-        ['provisionShare', 1.1],
-        ['provisionRange', 0],
-        ['provisionRange', -5],
         ['predatorRestTicks', -1],
         ['predatorRestTicks', 65536],
         ['predatorRestTicks', 1.5],

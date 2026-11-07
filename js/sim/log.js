@@ -1,7 +1,7 @@
 // Level-filtered sim log: records go to an injected sink, and event-ring records become named log events.
 
 import { EVENT_STRIDE, EVENT_TYPE, readEvents } from './events.js';
-import { emitHunterKill, emitProvisioned } from './log-hunter.js';
+import { emitHunterKill } from './log-hunter.js';
 import { emitCoverConfig, emitCoverTotals } from './log-cover.js';
 
 /** Log levels by severity; a record is kept when its value is at least the log's level. */
@@ -476,7 +476,6 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.HUNTER_LEDGER]: { level: LOG_LEVEL.debug, emit: emitHunterLedger },
     [EVENT_TYPE.LAST_HUNTER_DIED]: { level: LOG_LEVEL.debug, emit: emitLastHunterDied },
     [EVENT_TYPE.HUNTER_KILL]: { level: LOG_LEVEL.debug, emit: emitHunterKill },
-    [EVENT_TYPE.PROVISIONED]: { level: LOG_LEVEL.debug, emit: emitProvisioned },
     [EVENT_TYPE.COVER_CONFIG]: { level: LOG_LEVEL.info, emit: emitCoverConfig },
     [EVENT_TYPE.COVER_TOTALS]: { level: LOG_LEVEL.debug, emit: emitCoverTotals },
 });

@@ -8,7 +8,7 @@ import { createSimLog, drainEvents } from '../../js/sim/log.js';
  * @returns {Record<string, any>[]} the debug records the one event drains to
  */
 function drain(type, fields) {
-    const ring = createEventRing(2);
+    const ring = createEventRing(1);
     const o = pushEvent(ring, type, 7);
     fields.forEach((v, i) => {
         ring.data[o + 2 + i] = v;
@@ -29,15 +29,8 @@ describe('the hunter-learning log events', () => {
         ]);
     });
 
-    it('turns a Provisioned record into a debug event with the giver, the energy and the young fed', () => {
-        expect(drain(EVENT_TYPE.PROVISIONED, [41, 12.5, 3])).toEqual([
-            { event: 'Provisioned', level: 'debug', tick: 7, genomeId: 41, energy: 12.5, young: 3 },
-        ]);
-    });
-
-    it('keeps both out of an info-level log', () => {
-        const ring = createEventRing(2);
-        pushEvent(ring, EVENT_TYPE.PROVISIONED, 1);
+    it('keeps it out of an info-level log', () => {
+        const ring = createEventRing(1);
         pushEvent(ring, EVENT_TYPE.HUNTER_KILL, 1);
         /** @type {Record<string, any>[]} */
         const records = [];
