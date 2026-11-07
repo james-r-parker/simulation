@@ -6,9 +6,14 @@ import { createRng, nextFloat, nextGaussian } from '../../js/sim/rng.js';
 import { attachWasm } from '../../js/sim/wasm-arena.js';
 import { PARAM_ARRAYS, STATUS_SLOT, wasmForwardAll, writeBrainParams } from '../../js/sim/wasm-brain.js';
 import { loadKernels } from '../../js/sim/wasm-loader.js';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
+import { golden } from './golden-run.js';
 import { smallWorld } from './helpers/small-world.js';
+import { runCase, stepPair } from './helpers/wasm-run.js';
 
 const kernels = loadKernels(readFileSync(new URL('../../wasm/blob-kernels.wasm', import.meta.url)));
+const TIMEOUT_MS = scaleTimeout(60_000);
+const BUSY = golden.shortCases.find((/** @type {any} */ c) => c.name === 'busy').overrides;
 
 /** Values a pooled input or a weight can take at the edges: zeros, subnormals, near-saturation and tiny ones. */
 const EDGES = [0, -0, 1e-40, -1e-40, 1e-30, 0.999999, -1, 1, 3e-8, 7.5, -12, 25];
@@ -147,4 +152,58 @@ describe('wasmForwardAll', () => {
         const { params } = world.wasm.views;
         expect(PARAM_ARRAYS.map((_, i) => params[i])).toEqual(PARAM_ARRAYS.map((n) => world.wasm.offsets[n]));
     });
+});
+
+// The differential test (docs/designs/wasm-kernels.md): the same seeded worlds stepped with each kernel, the brain arrays
+// byte-equal after every tick for 200 ticks and the world hashes equal at the end.
+describe('the WASM brain kernel in stepped worlds', () => {
+    const STEPPED = [
+        { name: 'default config', overrides: {} },
+        { name: 'Hebbian, rewarded', overrides: { ...BUSY, hebbianRate: 0.01, rewardedHebb: true } },
+        { name: 'odd hidden size, no learning', overrides: { ...BUSY, brainHidden: 13, hebbianRate: 0 } },
+    ];
+    for (const { name, overrides } of STEPPED) {
+        it(
+            `matches the JS kernel every tick for 200 ticks (${name})`,
+            () => {
+                const { mismatches, jsHash, wasmHash, alive } = stepPair(overrides, 200);
+                expect(mismatches).toEqual([]);
+                expect(wasmHash).toBe(jsHash);
+                expect(alive).toBeGreaterThan(0);
+            },
+            TIMEOUT_MS,
+        );
+    }
+
+    for (const testCase of golden.shortCases) {
+        it(
+            `reaches the pinned short golden hash with the switch on (${testCase.name})`,
+            () => {
+                const { hash, attached } = runCase(testCase, { wasm: true });
+                expect(attached).toBe(true);
+                expect(hash).toBe(testCase.worldHash);
+            },
+            TIMEOUT_MS,
+        );
+    }
+
+    it(
+        'falls back to the JS kernel when the binary is missing: one WasmFallback, the same golden hash',
+        () => {
+            /** @type {any[]} */
+            const records = [];
+            const log = {
+                log: (/** @type {string} */ level, /** @type {string} */ event, /** @type {object} */ f) =>
+                    records.push({ level, event, ...f }),
+            };
+            const testCase = golden.shortCases.find((/** @type {any} */ c) => c.name === 'busy');
+            const { hash, attached } = runCase(testCase, { wasm: true, kernels: loadKernels(undefined), log });
+            expect(attached).toBe(false);
+            expect(records).toEqual([
+                { level: 'warn', event: 'WasmFallback', reason: 'missing', detail: 'no kernel bytes' },
+            ]);
+            expect(hash).toBe(testCase.worldHash);
+        },
+        TIMEOUT_MS,
+    );
 });
