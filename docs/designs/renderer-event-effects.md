@@ -365,6 +365,25 @@ Chunks:
 
 The six moment kinds and their captions, the off-view pointers and `focusLast`. Each new kind's share of shots stays under the existing `director.max_kind_share` bound.
 
+**Measured (T34, unit-level simulation).** `npm run director:dry` (worker-and-renderer.md T50) does not exist yet, so T34
+measured with `directorSoak` in `test/app/director/helpers/director-soak.js`. It runs the default config with the noise
+policy through the worker's `tickOnce` for 72000 ticks, records the effect stream, and asks `findMoments` every
+simulated second over the last 10 s of effects. A shot takes the best candidate at or above `MOMENT_THRESHOLD` when no
+shot is on, and holds for 12 s with the repeat penalty. No snapshot is passed, so there are no chase candidates.
+`director-soak.slow.test.js` runs it on the small world. Seeds 1 to 4:
+
+| Seed | Shots | `director.shots_per_hour` | `director.max_kind_share` (kind) | Largest new kind (share)           |
+| ---- | ----- | ------------------------- | -------------------------------- | ---------------------------------- |
+| 1    | 49    | 147                       | 0.69 (`alarm-chorus`)            | `floor-arrival` (0.14)             |
+| 2    | 38    | 114                       | 0.45 (`alarm-chorus`)            | `floor-arrival` (0.26)             |
+| 3    | 35    | 105                       | 0.69 (`alarm-chorus`)            | `stampede`, `floor-arrival` (0.11) |
+| 4    | 51    | 153                       | 0.65 (`alarm-chorus`)            | `floor-arrival` (0.16)             |
+
+Every new kind stays under 0.4, so the phase's criterion holds. `outbreak` and `first-kill` took no shots. The
+0.4 bound on the whole director fails: `alarm-chorus`, a kind from before this doc, takes 45% to 69% of shots in a world
+with no chase candidates. Worker-and-renderer T50 stays open; it measures with snapshots and chases, and owns that
+bound and its fix.
+
 Chunks:
 
 | Chunk        | Tasks                   | Boundary                                                                                   |
