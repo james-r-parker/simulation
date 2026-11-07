@@ -77,30 +77,52 @@ function seedWithWall(world) {
     s[BEST_KEY] = WALL * KIND_STRIDE;
 }
 
+/** Per-ray scratch of `nearestHitsAll`: the ray's direction and its best hit so far. Sized on first use. */
+let rayDirX = new Float64Array(0);
+let rayDirY = new Float64Array(0);
+let rayBestT = new Float64Array(0);
+let rayBestKey = new Float64Array(0);
+
 /**
- * Finds the nearest hit of the current ray among the gathered circles and the walls: the least distance, ties going
- * to the lower kind and then the lower index. Leaves `BEST_T` (Infinity for none) and `BEST_KEY` in the scratch.
+ * The nearest hit of every ray of the caster at once among the gathered circles and the walls, walking the gathered circles once and testing each against all the
+ * rays. A ray's hit is the least distance, ties to the lower key, so the order the circles are met in does not change
+ * it. Leaves each ray's `rayBestT` (Infinity for none) and `rayBestKey`.
  * @param {World} world the world
  * @param {number} count the gathered rows in `world.rayLocal`
  * @returns {void}
  */
-function nearestHit(world, count) {
-    const { rayLocal: local, rayScratch: s } = world;
-    seedWithWall(world);
+function nearestHitsAll(world, count) {
+    const { rayLocal: local, rayScratch: s, rayCos, raySin } = world;
+    const rays = world.config.rayCount;
+    if (rayDirX.length < rays) {
+        rayDirX = new Float64Array(rays);
+        rayDirY = new Float64Array(rays);
+        rayBestT = new Float64Array(rays);
+        rayBestKey = new Float64Array(rays);
+    }
+    for (let k = 0; k < rays; k++) {
+        s[DX] = s[COS_H] * rayCos[k] - s[SIN_H] * raySin[k];
+        s[DY] = s[SIN_H] * rayCos[k] + s[COS_H] * raySin[k];
+        rayDirX[k] = s[DX];
+        rayDirY[k] = s[DY];
+        seedWithWall(world);
+        rayBestT[k] = s[BEST_T];
+        rayBestKey[k] = s[BEST_KEY];
+    }
     const range = s[RANGE];
-    const dx = s[DX];
-    const dy = s[DY];
-    let bestT = s[BEST_T];
-    let bestKey = s[BEST_KEY];
     for (let at = 0, end = count * LOCAL_STRIDE; at < end; at += LOCAL_STRIDE) {
-        const t = circleHit(dx * local[at] + dy * local[at + 1], local[at + 2]);
-        if (t >= 0 && t <= range && (t < bestT || (t === bestT && local[at + 3] < bestKey))) {
-            bestT = t;
-            bestKey = local[at + 3];
+        const lx = local[at];
+        const ly = local[at + 1];
+        const lc = local[at + 2];
+        const lk = local[at + 3];
+        for (let k = 0; k < rays; k++) {
+            const t = circleHit(rayDirX[k] * lx + rayDirY[k] * ly, lc);
+            if (t >= 0 && t <= range && (t < rayBestT[k] || (t === rayBestT[k] && lk < rayBestKey[k]))) {
+                rayBestT[k] = t;
+                rayBestKey[k] = lk;
+            }
         }
     }
-    s[BEST_T] = bestT;
-    s[BEST_KEY] = bestKey;
 }
 
 /**
@@ -118,7 +140,7 @@ function isConcealed(coverRing, key, casterRing) {
 }
 
 /**
- * `nearestHit` with `coverConceals`: an agent whose centre is inside a ring is skipped by a ray from outside that ring
+ * The nearest hit of one ray with `coverConceals`: an agent whose centre is inside a ring is skipped by a ray from outside that ring
  * (a ray from inside the same ring sees it), so the ray goes on to whatever lies behind. Each skip is counted.
  * @param {World} world the world
  * @param {number} count the gathered rows in `world.rayLocal`
@@ -219,14 +241,20 @@ export function castRays(world, hash, slot) {
     const rowBase = slot * world.layout.rawInputCount;
     const conceals = world.config.coverConceals;
     const casterRing = world.coverRing[slot];
-    for (let k = 0; k < world.config.rayCount; k++) {
-        s[DX] = s[COS_H] * rayCos[k] - s[SIN_H] * raySin[k];
-        s[DY] = s[SIN_H] * rayCos[k] + s[COS_H] * raySin[k];
-        if (conceals) {
+    const rays = world.config.rayCount;
+    if (conceals) {
+        for (let k = 0; k < rays; k++) {
+            s[DX] = s[COS_H] * rayCos[k] - s[SIN_H] * raySin[k];
+            s[DY] = s[SIN_H] * rayCos[k] + s[COS_H] * raySin[k];
             nearestHitCovered(world, count, casterRing);
-        } else {
-            nearestHit(world, count);
+            writeRay(world, slot, rowBase + k * RAY_CHANNELS, k);
         }
+        return;
+    }
+    nearestHitsAll(world, count);
+    for (let k = 0; k < rays; k++) {
+        s[BEST_T] = rayBestT[k];
+        s[BEST_KEY] = rayBestKey[k];
         writeRay(world, slot, rowBase + k * RAY_CHANNELS, k);
     }
 }

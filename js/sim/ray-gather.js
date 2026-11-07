@@ -76,6 +76,9 @@ function appendFixtures(world) {
     const { rayLocal: local, rayScratch: s, obsX, obsY, obsRadius, cloudX, cloudY } = world;
     const row = fixtureRow;
     let count = 0;
+    const herdRadius = world.config.herdRadius;
+    const herdReach = s[RANGE] + herdRadius;
+    const herdReach2 = herdReach * herdReach * REACH_SLACK;
     for (let i = 0; i < obsX.length; i++) {
         row[0] = s[OX] - obsX[i];
         row[1] = s[OY] - obsY[i];
@@ -90,8 +93,12 @@ function appendFixtures(world) {
             continue;
         }
         row[0] = s[OX] - world.herdX[i];
+        // One axis alone already past the reach: `fixtureC` would reject it too (d2 is at least ox * ox).
+        if (row[0] * row[0] > herdReach2) {
+            continue;
+        }
         row[1] = s[OY] - world.herdY[i];
-        row[2] = fixtureC(s, row[0], row[1], world.config.herdRadius);
+        row[2] = fixtureC(s, row[0], row[1], herdRadius);
         if (row[2] === row[2]) {
             row[3] = HERD * KIND_STRIDE + i;
             count = writeFixture(local, count, row);
