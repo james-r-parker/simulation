@@ -66,6 +66,7 @@ describe('parseArgs', () => {
 });
 
 describe('the report', () => {
+    /** @type {import('../scripts/lib/drill-report.mjs').DrillRow[]} */
     const rows = [
         { label: 'g', cells: { a: { winShare: 0.5, edge: 0.25 }, b: { winShare: 1, edge: -0.25 }, c: null } },
         { label: 'skipper', cells: { a: null } },

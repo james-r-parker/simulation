@@ -106,7 +106,7 @@ describe('DRILLS', () => {
 
     it('stages the toxic item nearer than the safe one', () => {
         const { stage } = byName('two-foods').plan(stream('two-foods'), 300);
-        const [toxic, safe] = stage.foods;
+        const [toxic, safe] = /** @type {any[]} */ (stage.foods);
         expect(toxic.toxicity).toBeGreaterThan(0);
         expect(safe.toxicity).toBe(0);
         expect(dist(stage.agents[0], toxic)).toBeCloseTo(0.4 * 300, 6);

@@ -1,7 +1,7 @@
 // Drills: plays genomes and the scripted reference through the fixed drills and prints each one's win share and edge over
 // random brains (`npm run drill`). Logs every trial at debug level to `.sim/logs/drill-<seed>x<trials>.jsonl`.
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { decodeArchive } from '../js/evo/archive-codec.js';
 import { DRILLS } from '../js/evo/drill-scenarios.js';
@@ -210,36 +210,44 @@ function rowsOf(args, { genomes, tasks, results, log }) {
 
 /**
  * @param {DrillArgs} args the options
+ * @param {import('../js/sim/log.js').SimLog} log the log
+ * @returns {Promise<import('./lib/drill-report.mjs').DrillRow[]>} the rows: a genome per row, then the reference
+ */
+async function drillRows(args, log) {
+    const config = args.config === null ? {} : JSON.parse(readFileSync(args.config, 'utf8'));
+    const genomes = await genomesOf(args, { config, log });
+    const tasks = buildTasks(args, { genomes, config });
+    const results = await runPool(
+        tasks.map((t) => t.task),
+        { workerUrl: WORKER_URL, workers: args.workers },
+    );
+    for (const record of results.flatMap((result) => result.records)) {
+        log.log('debug', 'DrillTrial', record);
+    }
+    return rowsOf(args, { genomes, tasks, results, log });
+}
+
+/**
+ * @param {DrillArgs} args the options
  * @param {{logDir?: string, print?: (line: string) => void}} [io] where the log goes, and the output
  * @returns {Promise<import('./lib/drill-report.mjs').DrillRow[]>} the rows: a genome per row, then the reference
  */
 export async function runDrills(args, { logDir = '.sim/logs', print = () => {} } = {}) {
     const path = join(logDir, `drill-${args.seed}x${args.trials}.jsonl`);
     rmSync(path, { force: true });
-    const jsonl = createJsonlSink(path);
-    const log = createSimLog(jsonl.sink, { level: 'debug' });
+    const sinkFile = createJsonlSink(path);
     try {
-        const config = args.config === null ? {} : JSON.parse(readFileSync(args.config, 'utf8'));
-        const genomes = await genomesOf(args, { config, log });
-        const tasks = buildTasks(args, { genomes, config });
-        const results = await runPool(
-            tasks.map((t) => t.task),
-            { workerUrl: WORKER_URL, workers: args.workers },
-        );
-        for (const record of results.flatMap((result) => result.records)) {
-            log.log('debug', 'DrillTrial', record);
-        }
-        const rows = rowsOf(args, { genomes, tasks, results, log });
-        const text = args.json
+        const rows = await drillRows(args, createSimLog(sinkFile.sink, { level: 'debug' }));
+        const table = args.json
             ? JSON.stringify(reportJson(args.drills, rows), null, 2)
             : formatTable(args.drills, rows).join('\n');
-        print(text);
+        print(table);
         if (args.out !== null) {
-            writeFileSync(args.out, `${text}\n`);
+            writeFileSync(args.out, `${table}\n`);
         }
         return rows;
     } finally {
-        await jsonl.close();
+        await sinkFile.close();
     }
 }
 
@@ -248,10 +256,11 @@ export async function runDrills(args, { logDir = '.sim/logs', print = () => {} }
  * @param {{logDir?: string}} [io] where the log goes
  * @returns {Promise<number>} the process exit code
  */
-export function main(argv, io = {}) {
-    return exitCodeOf(() => runDrills(parseArgs(argv), { ...io, print: (line) => console.log(line) }));
+export async function main(argv, io = {}) {
+    const code = await exitCodeOf(() => runDrills(parseArgs(argv), { ...io, print: console.log }));
+    return code;
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
     process.exitCode = await main(process.argv.slice(2));
 }
