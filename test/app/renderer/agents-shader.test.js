@@ -3,7 +3,7 @@ import { AGENT_FRAGMENT, AGENT_VERTEX, QUAD_HALF } from '../../../js/app/rendere
 
 describe('agent shader', () => {
     it('declares every attribute and uniform the layer feeds, and the quad size matches the design', () => {
-        for (const name of ['corner', 'iPose', 'iColor', 'iState', 'iExtra', 'iMotion']) {
+        for (const name of ['corner', 'iPose', 'iColor', 'iState', 'iExtra', 'iMotion', 'iTween']) {
             expect(AGENT_VERTEX).toContain(name);
         }
         for (const name of [
@@ -17,6 +17,11 @@ describe('agent shader', () => {
             'uSmoke',
             'uView',
             'uMotion',
+            'uBody',
+            'uWeather',
+            'uCourt',
+            'uCold01',
+            'uHeat01',
         ]) {
             expect(AGENT_FRAGMENT).toContain(name);
         }
@@ -44,5 +49,15 @@ describe('flora sickness', () => {
         expect(AGENT_VERTEX).toContain('vSick = iExtra.z');
         expect(AGENT_FRAGMENT).toContain('uSimTick * 0.05');
         expect(AGENT_FRAGMENT).toContain('vSick * uFlora');
+    });
+
+    it('glows the pregnant belly on every silhouette but the reproducer, under the courtship item', () => {
+        expect(AGENT_FRAGMENT).toContain('if (uShape < 1.5 || uShape > 2.5)');
+        expect(AGENT_FRAGMENT).toContain('belly * vPregnant * uCourt * cover');
+    });
+
+    it('tints the rim cool when cold and warm when hot, under the weather item', () => {
+        expect(AGENT_FRAGMENT).toContain('clamp((uCold01 - vState.x) / max(uCold01, 0.01), 0.0, 1.0) * uWeather');
+        expect(AGENT_FRAGMENT).toContain('* cold +');
     });
 });

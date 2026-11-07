@@ -78,6 +78,33 @@ describe('infected', () => {
     });
 });
 
+describe('the effect roles (renderer-event-effects.md, Colour roles)', () => {
+    const ROLES = ['courtship', 'toxin', 'arrival', 'recover', 'milestone'];
+
+    it('each clears every semantic colour by 15, and by 10 under each colour-vision simulation', () => {
+        for (const role of ROLES) {
+            for (const [what, semantic] of Object.entries(SEMANTIC)) {
+                expect(colorDistance(PALETTE[role], semantic), `${role} ${what}`).toBeGreaterThanOrEqual(15);
+                for (const [name, matrix] of Object.entries(MACHADO)) {
+                    const d = colorDistance(PALETTE[role], semantic, matrix);
+                    expect(d, `${role} ${what} ${name}`).toBeGreaterThanOrEqual(10);
+                }
+            }
+        }
+    });
+
+    it('are told apart from each other and from infected by 10', () => {
+        const all = [...ROLES, 'infected'];
+        for (const a of all) {
+            for (const b of all) {
+                if (a < b) {
+                    expect(colorDistance(PALETTE[a], PALETTE[b]), `${a} ${b}`).toBeGreaterThanOrEqual(10);
+                }
+            }
+        }
+    });
+});
+
 describe('meat', () => {
     it('is told from plant food by at least 30, and by 15 under each colour-vision simulation', () => {
         expect(colorDistance(PALETTE.meat, PALETTE.food)).toBeGreaterThanOrEqual(30);
