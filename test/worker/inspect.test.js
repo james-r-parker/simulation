@@ -75,7 +75,7 @@ describe('workerLayout', () => {
     it('keeps the sim layout fields for the reader', () => {
         const layout = workerLayout(smallWorld().config);
         expect(layout).toMatchObject({
-            headerWords: 9,
+            headerWords: 10,
             agentStride: 13,
             herdStride: 6,
             zoneStride: 4,

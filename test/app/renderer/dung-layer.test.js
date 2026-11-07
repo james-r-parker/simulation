@@ -14,7 +14,7 @@ describe('packDungMarks', () => {
             ],
         });
         const out = { origin: 1, body: new Float32Array(8), tint: new Float32Array(8) };
-        expect(packDungMarks(snapshot.f32, snapshot.u32, { zoneStart: 9, zoneCount: 2 }, out)).toBe(1);
+        expect(packDungMarks(snapshot.f32, snapshot.u32, { zoneStart: 10, zoneCount: 2 }, out)).toBe(1);
         expect(Array.from(out.body.slice(0, 4))).toEqual([10, 20, 46, 0.75]);
         expect(luminance(out.tint.slice(0, 3))).toBeCloseTo(0.5 * SCENERY_MAX_LUMINANCE);
     });
@@ -27,7 +27,7 @@ describe('packDungMarks', () => {
             ],
         });
         const out = { origin: 1, body: new Float32Array(4), tint: new Float32Array(4) };
-        expect(packDungMarks(snapshot.f32, snapshot.u32, { zoneStart: 9, zoneCount: 2 }, out)).toBe(1);
+        expect(packDungMarks(snapshot.f32, snapshot.u32, { zoneStart: 10, zoneCount: 2 }, out)).toBe(1);
         expect(out.body[3]).toBe(1);
     });
 });

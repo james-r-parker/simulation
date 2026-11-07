@@ -6,6 +6,7 @@
 
 import { appLog } from '../app-log.js';
 import { LOOK_OFF } from './quality.js';
+import { MAX_INTERVAL_MS } from '../frame-stats.js';
 
 /** The effect families, each tied to the look item of the same name. */
 export const FX_FAMILIES = Object.freeze([
@@ -167,14 +168,15 @@ export function beginFxFrame(budget, { tick, dtMs, zoom, view }) {
 
 /**
  * Follows the measured headroom: the scale moves (at `ADAPT_PER_S`) toward `TARGET_LOAD` over the smoothed load, the
- * larger of the draw's CPU time and the GPU's time over the frame interval, clamped to `MIN_SCALE`..`MAX_SCALE`.
+ * larger of the draw's CPU time and the GPU's time over the frame interval, clamped to `MIN_SCALE`..`MAX_SCALE`. A
+ * frame with no usable interval (none, or over `MAX_INTERVAL_MS`: a stall or a hidden tab) is no data and keeps the scale.
  * @param {FxBudget} budget the budget
  * @param {{drawMs: number, gpuMs: number, intervalMs: number, dtMs: number}} at the last frame's draw CPU and GPU times
  *   (`gpuMs` -1 without a GPU timer), its interval and the frame time
  * @returns {number} the scale
  */
 export function adaptFxBudget(budget, { drawMs, gpuMs, intervalMs, dtMs }) {
-    if (!(intervalMs > 0) || !(drawMs >= 0)) {
+    if (!(intervalMs > 0) || intervalMs > MAX_INTERVAL_MS || !(drawMs >= 0)) {
         return budget.scale;
     }
     const load = Math.max(drawMs, gpuMs) / intervalMs;

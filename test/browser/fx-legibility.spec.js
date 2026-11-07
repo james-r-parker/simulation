@@ -1,14 +1,14 @@
-// Legibility check for the effect recipes (docs/designs/renderer-event-effects.md): `?fxdemo=all&fxhold=10` pauses the
-// world and holds every recipe four ticks into its life, each in its own cell. The same page with the effect look items
+// Legibility check for the effect recipes (docs/designs/renderer-event-effects.md): `?fxdemo=all&fxhold=peak` pauses the
+// world and holds every recipe at its brightest keyframe, each in its own cell. The same page with the effect look items
 // off is the reference; in every cell enough pixels must brighten with the effects on to be seen. Runs in the browser smoke under
 // software GL; SMOKE_URL is set by scripts/browser-smoke.sh.
 import { test, expect } from '@playwright/test';
 
 /** Every look item that is not an effect family: the reference frame keeps the scenery and drops the effects. */
 const SCENERY = 'rocks,aurora,terrain,motion,threads,decay,finish,flora,herds,chase';
-/** Recipes drawn by the herds and flora items, which the reference keeps on. */
-const SCENERY_RECIPES = new Set(['stampede', 'pollinated']);
-const DEMO = '?seed=3&agents=60&quality=0&scale=0.5&fxdemo=all&fxhold=4';
+/** Recipes of the herds and flora families: their look items stay on in the reference, so their unit tests cover them. */
+const SCENERY_RECIPES = new Set(['stampede', 'pollinated', 'herdDied', 'calfBorn', 'dungDropped', 'patchWilted']);
+const DEMO = '?seed=3&agents=60&quality=0&scale=0.5&fxdemo=all&fxhold=peak';
 /** A pixel counts as lit by an effect when its luminance (0 to 1) rises by more than this. */
 const LIT_STEP = 0.08;
 /** The fewest lit pixels a cell needs for its effect to be visible. */
@@ -32,11 +32,9 @@ function appUrl() {
 async function capture(page, query) {
     await page.goto(appUrl() + query);
     await expect
-        .poll(() => page.evaluate(() => /** @type {any} */ (globalThis).__fxdemo?.cells?.length ?? 0), {
-            timeout: 30_000,
-        })
-        .toBeGreaterThan(0);
-    await page.waitForTimeout(2000);
+        .poll(() => page.evaluate(() => /** @type {any} */ (globalThis).__fxdemo?.frozen ?? false), { timeout: 30_000 })
+        .toBe(true);
+    await page.waitForTimeout(500);
     const png = (await page.locator('#canvas-container canvas').screenshot()).toString('base64');
     const cells = await page.evaluate(() => /** @type {any} */ (globalThis).__fxdemo.cells);
     return { png, cells };

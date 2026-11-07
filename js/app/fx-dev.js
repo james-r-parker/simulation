@@ -12,7 +12,8 @@ import { occupancy } from './renderer/fx-pool.js';
  * @typedef {object} FxParams
  * @property {boolean} fxlog name effects as they fire
  * @property {string | null} fxdemo a family name or `all` to demo, null for none
- * @property {number | null} fxhold freeze the demo this many ticks after each replay
+ * @property {number | 'peak' | null} fxhold freeze the demo this many ticks after each replay, or each cell at its
+ *   recipe's brightest keyframe (`peak`)
  * @property {boolean} fxstress play recipes at 60 a second through the budget
  */
 
@@ -27,7 +28,7 @@ export function readFxParams(search) {
     return {
         fxlog: query.get('fxlog') === '1',
         fxdemo: demo !== null && (demo === 'all' || FX_FAMILIES.includes(demo)) ? demo : null,
-        fxhold: hold !== null && /^\d{1,4}$/.test(hold) ? Number(hold) : null,
+        fxhold: hold === 'peak' ? 'peak' : hold !== null && /^\d{1,4}$/.test(hold) ? Number(hold) : null,
         fxstress: query.get('fxstress') === '1',
     };
 }
@@ -73,7 +74,7 @@ export function createFxDev({ params, doc, parent, target }) {
             ensureLog(ctx.ready);
             demo?.update(frame, ctx);
             if (demo !== null) {
-                target.__fxdemo = demoCells(demo.cells, ctx);
+                target.__fxdemo = demoCells(demo.cells, ctx, demo.frozen());
             }
             if (log !== null) {
                 updateFxLog(log, {
@@ -90,9 +91,11 @@ export function createFxDev({ params, doc, parent, target }) {
 /**
  * @param {{name: string, x: number, y: number}[]} cells the demo cells in world units
  * @param {FxDevContext} ctx the view
- * @returns {{cells: {name: string, x: number, y: number, size: number}[]}} each cell's centre and side in CSS px
+ * @param {boolean} frozen whether the demo clock is held
+ * @returns {{cells: {name: string, x: number, y: number, size: number}[], frozen: boolean}} each cell's centre and side
+ *   in CSS px, and whether the clock is held
  */
-function demoCells(cells, { camera, cssScale }) {
+function demoCells(cells, { camera, cssScale }, frozen) {
     const halfW = camera.canvas.width / 2;
     const halfH = camera.canvas.height / 2;
     const side = DEMO_CELL * camera.zoom * cssScale;
@@ -103,6 +106,7 @@ function demoCells(cells, { camera, cssScale }) {
             y: ((camera.y - c.y) * camera.zoom + halfH) * cssScale,
             size: side,
         })),
+        frozen,
     };
 }
 
