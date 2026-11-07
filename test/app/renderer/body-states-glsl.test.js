@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { smallReady } from '../helpers/ready.js';
 import { SNAPSHOT_STATE } from '../../../js/sim/snapshot-state.js';
 import { AGENT_FRAGMENT, AGENT_VERTEX } from '../../../js/app/renderer/agents-shader.js';
 import { DOSE_SHIFT, GESTATION_SHIFT, STATE_BITS, STRAIN_SHIFT } from '../../../js/app/renderer/agents-pack.js';
@@ -27,7 +28,7 @@ describe('body state GLSL', () => {
         expect(AGENT_FRAGMENT).toContain('(1.0 - concealment())');
         expect(AGENT_FRAGMENT).toContain('strainTint(');
         expect(AGENT_FRAGMENT).toContain('gestationArc(p) * cover');
-        expect(AGENT_FRAGMENT).toContain('max(vSick, vBody.z)');
+        expect(AGENT_FRAGMENT).toContain('max(vSick * (0.45 + 0.55 * vBody.z), 0.6 * vBody.z)');
     });
 
     it('gates the breathing, roundness, eye and dither on the body item at full, and the arc on courtship', () => {
@@ -48,5 +49,19 @@ describe('body state GLSL', () => {
             expect(BODY_STATE_GLSL).toContain(`uShape < ${shape}`);
         }
         expect(AGENT_FRAGMENT).toContain('* gaitRim()');
+    });
+});
+
+describe('rest and youth', () => {
+    it('curls a resting body, bobs a juvenile and softens its rim', () => {
+        expect(BODY_STATE_GLSL).toContain('(p.x * p.x - 0.3)');
+        expect(BODY_STATE_GLSL).toContain('0.03 * stateBit(3.0) * sin(uTime * 7.0');
+        expect(BODY_STATE_GLSL).toContain('1.0 + 0.3 * stateBit(3.0)');
+    });
+});
+
+describe('ready.layout', () => {
+    it('carries the state word layout the renderer unpacks', () => {
+        expect(smallReady().layout.stateBits).toEqual({ ...SNAPSHOT_STATE });
     });
 });

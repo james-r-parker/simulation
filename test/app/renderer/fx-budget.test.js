@@ -191,3 +191,19 @@ describe('adaptFxBudget', () => {
         expect(b.scale).toBe(before);
     });
 });
+
+describe('logFxBudget: the scale', () => {
+    it('logs FxBudgetScale once the scale has moved by SCALE_LOG_STEP', () => {
+        const b = createFxBudget();
+        /** @type {any[]} */
+        const records = [];
+        const log = (/** @type {any} */ _l, /** @type {string} */ event, /** @type {any} */ f) =>
+            records.push({ event, ...f });
+        b.scale = 1.2;
+        logFxBudget(b, { nowMs: LOG_EVERY_MS, overwrote: 0, capacity: 2048 }, log);
+        expect(records).toEqual([]);
+        b.scale = 2;
+        expect(logFxBudget(b, { nowMs: 2 * LOG_EVERY_MS, overwrote: 0, capacity: 2048 }, log)).toBe(true);
+        expect(records).toEqual([{ event: 'FxBudgetScale', from: 1, to: 2, load: -1 }]);
+    });
+});

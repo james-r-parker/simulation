@@ -52,6 +52,8 @@ export const MIN_SCALE = 0.5;
 export const MAX_SCALE = 4;
 /** How fast the scale follows its target, per second. */
 const ADAPT_PER_S = 1;
+/** The scale change that logs `FxBudgetScale` (at most once per `LOG_EVERY_MS`). */
+export const SCALE_LOG_STEP = 0.5;
 /** The smoothing of the measured load, per frame. */
 const LOAD_SMOOTHING = 0.05;
 
@@ -77,6 +79,7 @@ export const LOG_EVERY_MS = 10000;
  * @property {Float64Array} loggedByFamily each family's drops at that log
  * @property {number} scale the multiplier on the frame cap and the buckets (`adaptFxBudget`)
  * @property {number} load the smoothed share of the frame interval the draw uses, -1 before a measurement
+ * @property {number} loggedScale the scale at the last `FxBudgetScale` log
  */
 
 /**
@@ -102,6 +105,7 @@ export function createFxBudget() {
         loggedByFamily: new Float64Array(n),
         scale: 1,
         load: -1,
+        loggedScale: 1,
     };
 }
 
@@ -273,8 +277,8 @@ function freshByFamily(budget) {
 }
 
 /**
- * Logs `FxBudgetDropped` at most once per `LOG_EVERY_MS` while drops happen, and `FxPoolSaturated` when the pool
- * overwrote live instances since the last log.
+ * Logs `FxBudgetDropped` at most once per `LOG_EVERY_MS` while drops happen, `FxPoolSaturated` when the pool
+ * overwrote live instances since the last log, and `FxBudgetScale` when the adaptive scale moved by `SCALE_LOG_STEP`.
  * @param {FxBudget} budget the budget
  * @param {{nowMs: number, overwrote: number, capacity: number}} at the time, the pool's overwrite count since creation
  *   and its active capacity
@@ -302,7 +306,12 @@ export function logFxBudget(budget, { nowMs, overwrote, capacity }, log = appLog
     if (over > 0) {
         log('info', 'FxPoolSaturated', { capacity, level: budget.level, overwrote: over });
     }
-    return fresh > 0 || over > 0;
+    const moved = Math.abs(budget.scale - budget.loggedScale) >= SCALE_LOG_STEP;
+    if (moved) {
+        log('info', 'FxBudgetScale', { from: budget.loggedScale, to: budget.scale, load: budget.load });
+        budget.loggedScale = budget.scale;
+    }
+    return fresh > 0 || over > 0 || moved;
 }
 
 /**

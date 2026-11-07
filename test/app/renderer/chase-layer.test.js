@@ -119,3 +119,14 @@ describe('a chase layer fed by the effects player', () => {
         expect(pursuits.count).toBe(1);
     });
 });
+
+describe('a hidden chase layer', () => {
+    it('does no work while its item is off', () => {
+        const pursuits = createPursuits();
+        const layer = createChaseLayer({ info, pursuits });
+        layer.setLook?.({ chase: -1 });
+        layer.update?.(/** @type {any} */ ({ agents: null }));
+        expect(layer.object.visible).toBe(false);
+        layer.dispose();
+    });
+});

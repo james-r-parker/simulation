@@ -47,13 +47,16 @@ vec2 gaitP(vec2 p) {
 }
 
 float gaitRim() {
-    return uShape > 3.5 ? 1.4 : 1.0;
+    float soft = uBody > 0.75 ? 1.0 + 0.3 * stateBit(${BODY_BIT.JUVENILE}.0) : 1.0;
+    return (uShape > 3.5 ? 1.4 : 1.0) * soft;
 }
 
 vec2 stateP(vec2 p) {
     if (uBody < 0.75) return p;
     p /= 1.0 + 0.04 * stateBit(${BODY_BIT.RESTING}.0) * sin(uTime * 2.5132741);
     p.y /= 1.0 + 0.08 * stateBit(${BODY_BIT.SATED}.0);
+    p.y += 0.08 * stateBit(${BODY_BIT.RESTING}.0) * (p.x * p.x - 0.3);
+    p.y += 0.03 * stateBit(${BODY_BIT.JUVENILE}.0) * sin(uTime * 7.0 + vMotion.z * 6.2831853);
     p.x /= 1.0 + 0.15 * vTween.w;
     return p;
 }

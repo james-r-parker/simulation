@@ -196,7 +196,7 @@ void main() {
     float faint = contrast * vNeutral;                // a neutral family in the high-contrast palette
     float bright = (${BRIGHTNESS_FLOOR.toFixed(1)} + 1.5 * vColor.a) * (1.0 - 0.65 * faint);
     vec3 base = uTempLens > 0.5 ? texture2D(uRamp, vec2(clamp(vState.x, 0.0, 1.0), 0.5)).rgb : vColor.rgb;
-    base = mix(base, vec3(0.32, 0.4, 0.28) * length(base), 0.55 * max(vSick, vBody.z) * uFlora);
+    base = mix(base, vec3(0.32, 0.4, 0.28) * length(base), 0.55 * max(vSick * (0.45 + 0.55 * vBody.z), 0.6 * vBody.z) * uFlora);
     // The halo and the rim are sized in screen pixels (capped in radii for small agents), so zooming in never lets the
     // glow swallow the silhouette: a luminous membrane around a darker body with a glowing core.
     float across = 2.0 / vPx;                        // the agent's width in device px
