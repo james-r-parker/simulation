@@ -262,8 +262,10 @@ fitness and merit (K9), and the pack term paid standers-by (K11).
 - The app is checked by eye as well as by metrics: a phase that changes behaviour ends with a clip of the default
   world (`Shift+P`) for the user.
 - A gap marked "none yet" is planned as a metric before a change claims to fix it.
-- A training, drill or reflex outcome becomes new tasks only through the record in `docs/designs/training.md` ("From
-  outcome to task"): the theory is checked against the rules above first, and one that pays for an act is refused.
+- An evaluation outcome (an eval, screen, ladder, probe, long run, training, drill or reflex run) becomes new tasks only
+  through the practice in the `run-evolution-loop` skill ("Check the detector first" and "Outcome to task"): the
+  detector is checked before the sim is blamed, the theory is checked against the rules above, and one that pays for an
+  act is refused. The trainer's minimum evidence is in `docs/designs/training.md` ("From outcome to task").
 - When something fails (a type dies out, a population collapses, a behaviour never emerges), first find how nature
   meets the same problem and build the fix from that mechanism, before tuning a number or adding a rescue (user,
   2026-10-30). The plan's Decisions row and the PR body name the biology. Example: predators that starve as beginners
