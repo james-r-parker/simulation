@@ -12,6 +12,7 @@ import { drillEdges, averageMetrics } from '../scripts/lib/train-checkpoint.mjs'
 import { loadStages, saveArchive } from '../scripts/lib/train-state.mjs';
 import { formatCurve, readCurve } from '../scripts/train-curve.mjs';
 import { runExport } from '../scripts/train-export.mjs';
+import { loadChampions } from '../scripts/memory-probe.mjs';
 import { parseArgs } from '../scripts/train.mjs';
 
 const root = mkdtempSync(join(tmpdir(), 'train-'));
@@ -106,6 +107,9 @@ describe('train:export', () => {
         expect(index.champions).toHaveLength(2);
         const champion = JSON.parse(readFileSync(join(out, 'run-forager-cell4.json'), 'utf8'));
         expect(validateChampion(champion, createConfig({})).specialisation).toBe(0);
+        const log = { log: () => {} };
+        const subjects = loadChampions(out, { config: {}, log: /** @type {any} */ (log) });
+        expect(subjects.map((s) => s.spec)).toEqual([0, 1]);
     });
 
     it('refuses an archive with no elite', () => {
