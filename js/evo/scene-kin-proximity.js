@@ -1,5 +1,5 @@
 // Kin proximity of juvenile hunters (hunter-learning.md, Detectors). The `kin` channel covers parents, children and siblings, so
-// the kin floor of `juvenileDependency` pulls a juvenile towards any kin; this scene shows towards which. Sampled at the 1000-tick
+// the kin floor of the hunter reflex pulls a juvenile towards any kin; this scene shows towards which. Sampled at the 1000-tick
 // checkpoints after burn-in, over the living juvenile hunters (`canHunt`, `ageTicks` below `juvenileTicks`) that have both a
 // living parent and a living sibling (same `parentA` and `parentB`, the parents not 0):
 //

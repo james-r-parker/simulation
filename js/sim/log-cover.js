@@ -2,7 +2,7 @@
 // ring become log events. Split from `log.js`, which holds the table that uses them.
 
 /**
- * Emits one `CoverConfig` event: the cover switches and the ring geometry, once at tick 0.
+ * Emits one `CoverConfig` event: the ring geometry, once at tick 0.
  * @param {import('./log.js').SimLog} log the log
  * @param {Float64Array} d ring data
  * @param {number} o record offset
@@ -11,11 +11,9 @@
 export function emitCoverConfig(log, d, o) {
     log.log('info', 'CoverConfig', {
         tick: d[o + 1],
-        coverConceals: d[o + 2] === 1,
-        coverFoodFree: d[o + 3] === 1,
-        refugeCount: d[o + 4],
-        aperturePx: d[o + 5],
-        interiorRadius: d[o + 6],
+        refugeCount: d[o + 2],
+        aperturePx: d[o + 3],
+        interiorRadius: d[o + 4],
     });
 }
 
