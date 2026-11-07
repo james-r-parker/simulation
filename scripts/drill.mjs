@@ -12,6 +12,7 @@ import { createSimLog } from '../js/sim/log.js';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
 import { formatTable, reportJson } from './lib/drill-report.mjs';
 import { eliteSubjects, fileSubject } from './lib/drill-subjects.mjs';
+import { genomeSkipCells } from './lib/skip-cells-report.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { runPool } from './lib/worker-pool.mjs';
 import { loadChampions } from './memory-probe.mjs';
@@ -230,12 +231,14 @@ export async function drillGenomes(args, { genomes, config, log }) {
 /**
  * @param {DrillArgs} args the options
  * @param {import('../js/sim/log.js').SimLog} log the log
- * @returns {Promise<import('./lib/drill-report.mjs').DrillRow[]>} the rows: a genome per row, then the reference
+ * @returns {Promise<{rows: import('./lib/drill-report.mjs').DrillRow[], skip: import('./lib/skip-cells-report.mjs').SkipCellsReport | null}>}
+ *   the rows (a genome per row, then the reference) and, for `--champions`, the predators' skip cells (T34)
  */
 async function drillRows(args, log) {
     const config = args.config === null ? {} : JSON.parse(readFileSync(args.config, 'utf8'));
     const genomes = await genomesOf(args, { config, log });
-    return drillGenomes(args, { genomes, config, log });
+    const rows = await drillGenomes(args, { genomes, config, log });
+    return { rows, skip: args.champions === null ? null : genomeSkipCells(genomes, createConfig(config)) };
 }
 
 /**
@@ -248,10 +251,10 @@ export async function runDrills(args, { logDir = '.sim/logs', print = () => {} }
     rmSync(path, { force: true });
     const sinkFile = createJsonlSink(path);
     try {
-        const rows = await drillRows(args, createSimLog(sinkFile.sink, { level: 'debug' }));
+        const { rows, skip } = await drillRows(args, createSimLog(sinkFile.sink, { level: 'debug' }));
         const table = args.json
-            ? JSON.stringify(reportJson(args.drills, rows), null, 2)
-            : formatTable(args.drills, rows).join('\n');
+            ? JSON.stringify({ ...reportJson(args.drills, rows), skipCells: skip?.json ?? null }, null, 2)
+            : [...formatTable(args.drills, rows), ...(skip === null ? [] : ['', ...skip.lines])].join('\n');
         print(table);
         if (args.out !== null) {
             writeFileSync(args.out, `${table}\n`);

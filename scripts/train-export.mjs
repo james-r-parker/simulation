@@ -12,6 +12,7 @@ import { GENOME_SPECS } from '../js/evo/genome.js';
 import { TRAINER_DESCRIPTOR } from '../js/evo/trainer.js';
 import { createConfig, rulesHash } from '../js/sim/config.js';
 import { exitCodeOf, parseFlags } from './lib/cli-args.mjs';
+import { archiveSkipCells } from './lib/skip-cells-report.mjs';
 import { readJson } from './lib/train-state.mjs';
 
 const PUBLIC_CHAMPIONS = fileURLToPath(new URL('../public/champions', import.meta.url));
@@ -52,10 +53,12 @@ export function parseArgs(argv) {
 /**
  * Writes the champions.
  * @param {ExportArgs} args the options
+ * @param {(line: string) => void} [print] where the skip-cells table goes (default nowhere; `skip-cells.json` is written
+ *   either way)
  * @returns {Record<string, any>[]} the champion files written, in specialisation order
  * @throws {Error} naming the field when the archive does not fit the layout, or when it holds no tested elite
  */
-export function runExport(args) {
+export function runExport(args, print = () => {}) {
     const config = createConfig(args.config === null ? {} : readJson(args.config));
     const json = readJson(args.archive);
     // The archive's `rulesHash` is the curriculum stage's; the layout, version and descriptor are what must fit.
@@ -85,6 +88,9 @@ export function runExport(args) {
         join(args.out, 'index.json'),
         `${JSON.stringify({ archive: basename(args.archive), generation: json.generation ?? null, champions: index }, null, 2)}\n`,
     );
+    const skip = archiveSkipCells(archive, config);
+    writeFileSync(join(args.out, 'skip-cells.json'), `${JSON.stringify(skip.json, null, 2)}\n`);
+    skip.lines.forEach(print);
     return files;
 }
 
@@ -94,7 +100,7 @@ export function runExport(args) {
  */
 export async function main(argv) {
     return exitCodeOf(async () => {
-        const files = runExport(parseArgs(argv));
+        const files = runExport(parseArgs(argv), console.log);
         console.log(`wrote ${files.length} champion files`);
     });
 }

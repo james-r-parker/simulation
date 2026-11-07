@@ -115,10 +115,18 @@ describe('train:export', () => {
         const file = join(root, 'archive-0.json');
         writeFileSync(file, JSON.stringify({ ...encodeArchive(archive, config), generation: 1, stages: [] }));
         const out = join(root, 'champions');
-        const files = runExport({ archive: file, out, config: null, label: 'run' });
+        /** @type {string[]} */
+        const printed = [];
+        const files = runExport({ archive: file, out, config: null, label: 'run' }, (line) => printed.push(line));
         expect(files.map((f) => f.name)).toEqual(['run-forager-cell4', 'run-predator-cell9']);
         const index = JSON.parse(readFileSync(join(out, 'index.json'), 'utf8'));
         expect(index.champions).toHaveLength(2);
+        const skip = JSON.parse(readFileSync(join(out, 'skip-cells.json'), 'utf8'));
+        expect(skip.champions.count).toBe(1);
+        expect(skip.elites.predator.count).toBe(1);
+        expect(skip.champions.cells['prey>BITE'].min).toBeCloseTo(0.1, 6);
+        expect(printed.join('\n')).toContain('exported champions');
+        expect(printed.join('\n')).toContain('predator best 8 elites');
         const champion = JSON.parse(readFileSync(join(out, 'run-forager-cell4.json'), 'utf8'));
         expect(validateChampion(champion, createConfig({})).specialisation).toBe(0);
         const log = { log: () => {} };
