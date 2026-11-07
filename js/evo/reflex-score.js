@@ -103,34 +103,31 @@ export function isValid({ random, constant, reference }) {
 }
 
 /**
- * Scores subjects on one case, with the case's bars on the same table in the same batch.
+ * Scores subjects on one case, with the case's bars on the same table. The subjects run in a batch of their own, so the
+ * log (a `ReflexCase` record per failed trial) names them and not the baselines.
  * @param {import('./reflex-stage.js').ReflexCase} reflexCase the case
  * @param {readonly ReflexSubject[]} subjects the subjects to score
- * @param {{config?: Record<string, any>, seed?: number, trials?: number}} [options] the config overrides (default none),
- *   the case seed (default 1) and the trials (default `REFLEX_TRIALS`)
+ * @param {{config?: Record<string, any>, seed?: number, trials?: number, log?: import('../sim/log.js').SimLog}} [options]
+ *   the config overrides (default none), the case seed (default 1), the trials (default `REFLEX_TRIALS`) and the log
  * @returns {{name: string, scores: CaseScore[], bars: CaseBars}} each subject's score, in order, and the bars
  */
 export function evalCase(reflexCase, subjects, options = {}) {
-    const { config = {} } = options;
+    const { config = {}, log } = options;
     const table = tableFor(reflexCase, options);
     const random = reflexRandomBrains(reflexCase, options);
     const constants = constantBrains({ config });
-    const reference = referenceFor(reflexCase);
-    const all = evalReflex([...subjects, ...random, ...constants, reference], [table], { config }).map(
-        (record) => record[reflexCase.name],
+    const scored = subjects.length === 0 ? [] : evalReflex(subjects, [table], { config, log });
+    const base = evalReflex([...random, ...constants, referenceFor(reflexCase)], [table], { config }).map(
+        (record) => record[reflexCase.name].passShare,
     );
-    const at = subjects.length;
-    const mean = (/** @type {CaseScore[]} */ list) => list.reduce((sum, s) => sum + s.passShare, 0) / list.length;
     const bars = {
-        random: mean(all.slice(at, at + random.length)),
-        constant: Math.max(
-            ...all.slice(at + random.length, at + random.length + constants.length).map((s) => s.passShare),
-        ),
-        reference: all[all.length - 1].passShare,
+        random: base.slice(0, random.length).reduce((sum, share) => sum + share, 0) / random.length,
+        constant: Math.max(...base.slice(random.length, random.length + constants.length)),
+        reference: base[base.length - 1],
         valid: false,
     };
     bars.valid = isValid(bars);
-    return { name: reflexCase.name, scores: all.slice(0, at), bars };
+    return { name: reflexCase.name, scores: scored.map((record) => record[reflexCase.name]), bars };
 }
 
 /**
