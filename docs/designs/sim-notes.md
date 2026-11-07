@@ -2253,3 +2253,20 @@ The ray march (the gather and every ray's nearest hit) runs in `sense_slot`; the
   and the `wasm` area times the kernel exports raw.
 - A world copy that takes its own arena needs its own `foodRows` entries as well as its own `agentRows`, now that
   `attachWasm` re-points both.
+
+### 2026-11-07 - flaky tests 2026-11-07
+
+Mined the last 200 GitHub runs and stressed the slow files locally. Every real flake was a heavy test timing out under
+load or coverage, not shared state; the rest of the failures were a branch editing the workflow file
+(`test/perf-scope.test.js`, deterministic on that branch, passes on main) and the bench compare under noise.
+
+- Cause: one `it` ran several seconds of real worlds (2 to 3 s alone). With V8 coverage (4 to 5 times slower) on shared
+  vCPUs, a 20 s limit is only 2 to 3 times the cost. Under 8 busy loops on 4 cores with coverage, the old files failed
+  4 tests in the first run: memoryless gain-0, "wide circle", the group idle-trio test (a literal 30000 ms, never scaled)
+  and food-then-blind@600. The new files passed 3 runs of 3 under the same load.
+- Fix: split the heavy tests so each `it` is a fraction of the old cost (one per scenario, one per control, one per
+  circle arm with the seeker run once per file), dropped the literal 30000 ms, shortened the replay episode in
+  `test/evo/trainer.slow.test.js`. No limit raised; assertions unchanged.
+- Load is read once when vitest starts (`busyScale`), so a run begun quiet keeps strict limits when other jobs start
+  later: a failure there is the cost of the test, which is why the fix makes the tests cheaper.
+- `test/train.slow.test.js` (order dependent before #334) passes alone per test.
