@@ -3,6 +3,7 @@
 // build, after a context restore and for each new world.
 
 import { createAgentsLayer } from './renderer/agents-layer.js';
+import { createChaseLayer } from './renderer/chase-layer.js';
 import { createAuroraLayer } from './renderer/aurora-layer.js';
 import { createTerrainLayer } from './renderer/terrain-layer.js';
 import { createEffectsPlayer } from './renderer/effects-player.js';
@@ -82,6 +83,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
             smoke,
             createRingLayer({ pool: rings }),
             createSparkLayer({ pool: sparks }),
+            createChaseLayer({ info }),
             createMateThreadLayer({ pool: threads }),
             createOverlays({ info }),
             createBorderLayer({ info }),
