@@ -23,7 +23,7 @@ scripts/change-scope.sh` prints `docs`: Markdown under `docs/`, `.claude/` or th
    type errors, lint problems, unformatted files - and keeps the full output in `.checklogs/<gate>.log`. Act on the
    digest; open the log only when it is not enough. Never rerun `vitest`, `tsc` or `eslint` just to see the errors.
 2. **Tests and logs present:** every behaviour in the diff has a test that pins it, a bug fix has a test that failed
-   before the fix, and every new decision point or failure path emits a `simLog` event (once `simLog` exists, with
+   before the fix, and every new decision point or failure path emits a sim log event (`log.log` in `js/sim/log.js`, with
    `headless-sim-core.md`). Missing either blocks the PR; add them, do not defer them.
 3. **Coding standards:** the diff meets [docs/coding-standards.md](../../../docs/coding-standards.md) and the AGENTS.md size limits - each new module has a one-line purpose and a
    test file, no size limit is dodged with `eslint-disable`, errors are loud, hot paths allocate nothing.

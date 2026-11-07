@@ -1,22 +1,23 @@
 // Casts each agent's rays against the circles near it, writing proximity and the hit's class to its inputs row.
-// An agent class channel holds the hit's proximity; fixture channels hold 1.
+// An agent class channel holds the hit's proximity; fixture channels hold 1. The gather and the nearest hit of every
+// ray run in the sense kernel (`sense_slot` in wasm/src/sense.rs, docs/designs/wasm-kernels.md); the JS ray march was
+// deleted when the kernel was adopted (T11). The hit classes are rules and stay here.
 
 import { CH_MEGAFAUNA, RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { couldBite } from './bite-rule.js';
 import { isKin } from './kin.js';
-import { AGENT, FOOD, KIND_STRIDE, LOCAL_STRIDE, OBSTACLE, OX, OY, RANGE, WALL, gatherNear } from './ray-gather.js';
+import { AGENT, FOOD, KIND_STRIDE, OX, OY, RANGE } from './ray-gather.js';
 import { COVER_TOTALS } from './cover.js';
 import { visionOf } from './traits.js';
+import { SENSE_WORD, senseSlot, syncSense } from './wasm-sense.js';
 
 import { noteMatesSeen } from './mate-scarcity.js';
 
 /** @typedef {import('./world.js').World} World */
 /** @typedef {import('./spatial-hash.js').SpatialHash} SpatialHash */
 
-// Indices into `world.rayScratch` beyond the ones `ray-gather.js` owns.
-const DX = 4;
-const DY = 5;
+// Indices into `world.rayScratch` beyond the ones `ray-gather.js` owns (4 and 5 hold the last ray's direction).
 const BEST_T = 6;
 const BEST_KEY = 7;
 /** Where `castRays` leaves the casting agent's heading cosine and sine in `world.rayScratch`, for the other sensors. */
@@ -32,142 +33,6 @@ const CH_KIN = 5;
 const CH_WALL = 6;
 const CH_OBSTACLE = 7;
 const CH_SMOKE = 8;
-
-/**
- * @param {number} origin ray origin on one axis
- * @param {number} dir ray direction on that axis
- * @param {number} extent world size on that axis
- * @returns {number} distance to the boundary line the ray heads for, or Infinity when parallel
- */
-function wallDistance(origin, dir, extent) {
-    if (dir < 0) {
-        return -origin / dir;
-    }
-    return dir > 0 ? (extent - origin) / dir : Infinity;
-}
-
-/**
- * @param {number} b the ray direction dotted with the origin relative to the centre
- * @param {number} c the origin's squared distance to the centre less the squared radius
- * @returns {number} the distance to the circle's surface (0 from inside), or -1 for none
- */
-export function circleHit(b, c) {
-    const disc = b * b - c;
-    if (disc < 0 || (b > 0 && c > 0)) {
-        return -1;
-    }
-    const t = -b - Math.sqrt(disc);
-    // t < 0 means the origin is inside: a ray from outside (c > 0, b <= 0) always has -b >= sqrt(disc).
-    return t < 0 ? 0 : t;
-}
-
-/**
- * Seeds the current ray's best hit with the wall it heads for, when that lies within range.
- * @param {World} world the world
- * @returns {void}
- */
-function seedWithWall(world) {
-    const s = world.rayScratch;
-    const tWall = Math.min(
-        wallDistance(s[OX], s[DX], world.config.worldWidth),
-        wallDistance(s[OY], s[DY], world.config.worldHeight),
-    );
-    const near = tWall >= 0 && tWall <= s[RANGE];
-    s[BEST_T] = near ? tWall : Infinity;
-    s[BEST_KEY] = WALL * KIND_STRIDE;
-}
-
-/** Per-ray scratch of `nearestHitsAll`: the ray's direction and its best hit so far. Sized on first use. */
-let rayDirX = new Float64Array(0);
-let rayDirY = new Float64Array(0);
-let rayBestT = new Float64Array(0);
-let rayBestKey = new Float64Array(0);
-
-/**
- * The nearest hit of every ray of the caster at once among the gathered circles and the walls, walking the gathered circles once and testing each against all the
- * rays. A ray's hit is the least distance, ties to the lower key, so the order the circles are met in does not change
- * it. Leaves each ray's `rayBestT` (Infinity for none) and `rayBestKey`.
- * @param {World} world the world
- * @param {number} count the gathered rows in `world.rayLocal`
- * @returns {void}
- */
-function nearestHitsAll(world, count) {
-    const { rayLocal: local, rayScratch: s, rayCos, raySin } = world;
-    const rays = world.config.rayCount;
-    if (rayDirX.length < rays) {
-        rayDirX = new Float64Array(rays);
-        rayDirY = new Float64Array(rays);
-        rayBestT = new Float64Array(rays);
-        rayBestKey = new Float64Array(rays);
-    }
-    for (let k = 0; k < rays; k++) {
-        s[DX] = s[COS_H] * rayCos[k] - s[SIN_H] * raySin[k];
-        s[DY] = s[SIN_H] * rayCos[k] + s[COS_H] * raySin[k];
-        rayDirX[k] = s[DX];
-        rayDirY[k] = s[DY];
-        seedWithWall(world);
-        rayBestT[k] = s[BEST_T];
-        rayBestKey[k] = s[BEST_KEY];
-    }
-    const range = s[RANGE];
-    for (let at = 0, end = count * LOCAL_STRIDE; at < end; at += LOCAL_STRIDE) {
-        const lx = local[at];
-        const ly = local[at + 1];
-        const lc = local[at + 2];
-        const lk = local[at + 3];
-        for (let k = 0; k < rays; k++) {
-            const t = circleHit(rayDirX[k] * lx + rayDirY[k] * ly, lc);
-            if (t >= 0 && t <= range && (t < rayBestT[k] || (t === rayBestT[k] && lk < rayBestKey[k]))) {
-                rayBestT[k] = t;
-                rayBestKey[k] = lk;
-            }
-        }
-    }
-}
-
-/**
- * @param {Uint8Array} coverRing the ring byte of each agent slot (`stepCover`)
- * @param {number} key a gathered circle's packed key
- * @param {number} casterRing the casting agent's ring byte
- * @returns {boolean} true when the circle is an agent standing in a ring the caster is not in
- */
-function isConcealed(coverRing, key, casterRing) {
-    if (key < AGENT * KIND_STRIDE || key >= OBSTACLE * KIND_STRIDE) {
-        return false;
-    }
-    const ring = coverRing[key - AGENT * KIND_STRIDE];
-    return ring !== 0 && ring !== casterRing;
-}
-
-/**
- * The nearest hit of one ray with `coverConceals`: an agent whose centre is inside a ring is skipped by a ray from outside that ring
- * (a ray from inside the same ring sees it), so the ray goes on to whatever lies behind. Each skip is counted.
- * @param {World} world the world
- * @param {number} count the gathered rows in `world.rayLocal`
- * @param {number} casterRing the casting agent's ring byte (0 outside every ring)
- * @returns {void}
- */
-function nearestHitCovered(world, count, casterRing) {
-    const { rayLocal: local, rayScratch: s, coverRing, coverTotals } = world;
-    seedWithWall(world);
-    let bestT = s[BEST_T];
-    let bestKey = s[BEST_KEY];
-    for (let at = 0, end = count * LOCAL_STRIDE; at < end; at += LOCAL_STRIDE) {
-        const t = circleHit(s[DX] * local[at] + s[DY] * local[at + 1], local[at + 2]);
-        const key = local[at + 3];
-        if (t < 0 || t > s[RANGE] || t > bestT || (t === bestT && key >= bestKey)) {
-            continue;
-        }
-        if (isConcealed(coverRing, key, casterRing)) {
-            coverTotals[COVER_TOTALS.CONCEALED_HITS] += 1;
-        } else {
-            bestT = t;
-            bestKey = key;
-        }
-    }
-    s[BEST_T] = bestT;
-    s[BEST_KEY] = bestKey;
-}
 
 /** Class channel of each hit kind; an agent's channel depends on its class, so its entry is unused. */
 const CHANNEL_OF_KIND = Object.freeze([CH_FOOD, CH_THREAT, CH_OBSTACLE, CH_WALL, CH_SMOKE, CH_MEGAFAUNA]);
@@ -222,39 +87,54 @@ function writeRay(world, slot, base, ray) {
 }
 
 /**
- * Casts all of an agent's rays and writes `rayCount x RAY_CHANNELS` values at the start of its inputs row.
+ * Puts the caster's origin, vision range and heading cosine and sine into `world.rayScratch`.
  * @param {World} world the world
- * @param {SpatialHash} hash the hash built for this tick
- * @param {number} slot the alive agent
- * @returns {void}
+ * @param {number} slot the casting agent
+ * @returns {Float64Array} the scratch
  */
-export function castRays(world, hash, slot) {
+function setOrigin(world, slot) {
     const s = world.rayScratch;
     s[OX] = world.x[slot];
     s[OY] = world.y[slot];
     s[RANGE] = visionOf(world, slot);
     s[COS_H] = detCos(world.angle[slot]);
     s[SIN_H] = detSin(world.angle[slot]);
-    const count = gatherNear(world, hash, slot);
-    noteMatesSeen(world, slot, count);
-    const { rayCos, raySin } = world;
-    const rowBase = slot * world.layout.rawInputCount;
-    const conceals = world.config.coverConceals;
-    const casterRing = world.coverRing[slot];
-    const rays = world.config.rayCount;
-    if (conceals) {
-        for (let k = 0; k < rays; k++) {
-            s[DX] = s[COS_H] * rayCos[k] - s[SIN_H] * raySin[k];
-            s[DY] = s[SIN_H] * rayCos[k] + s[COS_H] * raySin[k];
-            nearestHitCovered(world, count, casterRing);
-            writeRay(world, slot, rowBase + k * RAY_CHANNELS, k);
-        }
-        return;
+    return s;
+}
+
+/**
+ * Casts one agent's rays in the WASM sense kernel and writes its ray block; the hash must be synced this tick
+ * (`syncSense`).
+ * @param {World} world the world
+ * @param {number} slot the alive agent
+ * @returns {number} the gathered row count
+ */
+export function castSlot(world, slot) {
+    const s = setOrigin(world, slot);
+    const count = senseSlot(world, slot);
+    const { views } = world.wasm;
+    if (views.senseParams[SENSE_WORD.conceals] === 1) {
+        world.coverTotals[COVER_TOTALS.CONCEALED_HITS] += views.senseParams[SENSE_WORD.concealed];
     }
-    nearestHitsAll(world, count);
-    for (let k = 0; k < rays; k++) {
-        s[BEST_T] = rayBestT[k];
-        s[BEST_KEY] = rayBestKey[k];
+    noteMatesSeen(world, slot, count);
+    const { rayBestT: bestT, rayBestKey: bestKey } = views;
+    const rowBase = slot * world.layout.rawInputCount;
+    for (let k = 0; k < world.config.rayCount; k++) {
+        s[BEST_T] = bestT[k];
+        s[BEST_KEY] = bestKey[k];
         writeRay(world, slot, rowBase + k * RAY_CHANNELS, k);
     }
+    return count;
+}
+
+/**
+ * Casts all of an agent's rays and writes `rayCount x RAY_CHANNELS` values at the start of its inputs row.
+ * @param {World} world the world
+ * @param {SpatialHash} hash the hash built for this tick
+ * @param {number} slot the alive agent
+ * @returns {number} the gathered row count
+ */
+export function castRays(world, hash, slot) {
+    syncSense(world, hash);
+    return castSlot(world, slot);
 }

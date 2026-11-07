@@ -15,16 +15,16 @@ nothing until the user ticks it.
 
 ## Source-of-truth map
 
-| Fact                | Source of truth                                                               | Mirrors to check                                       |
-| ------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------ |
-| Config keys         | `createConfig` defaults in `js/sim/config.js`                                 | Design docs' Config and persistence rows; README       |
-| npm scripts         | `package.json` `scripts`                                                      | AGENTS.md Commands table; skills                       |
-| Gate commands       | `scripts/check.sh`, `scripts/check-conventions.sh`, `.github/workflows/*.yml` | AGENTS.md; `dev-workflow-and-gate.md`; skills          |
-| Design status       | Each doc's `**Status:**` line                                                 | `docs/designs/README.md` (generated)                   |
-| Log events          | `simLog` event names in `js/sim/`                                             | Design docs' Logging and diagnostics rows; `debug-sim` |
-| Metrics             | The Metrics table in `evolution-evals.md` and the eval/bench scripts          | `**Targets:**` lines; `run-evolution-loop`             |
-| Saved formats       | IndexedDB version and stores, champion file version                           | Design docs' Config and persistence rows               |
-| Dependency versions | `package.json` (exact pins)                                                   | `docs/designs/sim-notes.md`                            |
+| Fact                | Source of truth                                                                                                                                             | Mirrors to check                                       |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Config keys         | `DEFAULTS` in `js/sim/config-defaults.js` (with `config-flora.js`, `config-herds.js`, `config-disease.js`), applied by `createConfig` in `js/sim/config.js` | Design docs' Config and persistence rows; README       |
+| npm scripts         | `package.json` `scripts`                                                                                                                                    | AGENTS.md Commands table; skills                       |
+| Gate commands       | `scripts/check.sh`, `scripts/check-conventions.sh`, `.github/workflows/*.yml`                                                                               | AGENTS.md; `dev-workflow-and-gate.md`; skills          |
+| Design status       | Each doc's `**Status:**` line                                                                                                                               | `docs/designs/README.md` (generated)                   |
+| Log events          | `log.log(level, Name, fields)` calls in `js/sim`, `js/evo` and `js/worker`                                                                                  | Design docs' Logging and diagnostics rows; `debug-sim` |
+| Metrics             | The Metrics table in `evolution-evals.md` and the eval/bench scripts                                                                                        | `**Targets:**` lines; `run-evolution-loop`             |
+| Saved formats       | IndexedDB version and stores, champion file version                                                                                                         | Design docs' Config and persistence rows               |
+| Dependency versions | `package.json` (exact pins)                                                                                                                                 | `docs/designs/sim-notes.md`                            |
 
 Skip rows whose source does not exist yet, and say so in the report.
 
@@ -34,8 +34,8 @@ Skip rows whose source does not exist yet, and say so in the report.
 2. **Diff each map row.** Extract the list from the source, extract the list from each mirror, compare.
     - npm scripts: `node -p "Object.keys(require('./package.json').scripts).join('\n')"`
     - gate flags and gates: `sed -n '2,15p' scripts/check.sh` and its `GATES=` line
-    - config keys: `rg -n 'createConfig' js/sim` then read the defaults object
-    - log events: `rg -no "simLog\.\w+\('(\w+)'" js` once `simLog` exists
+    - config keys: read `DEFAULTS` in `js/sim/config-defaults.js` (and the flora, herds and disease default files it merges), and `createConfig` in `js/sim/config.js`
+    - log events: `rg -no "log\?*\.log\('(\w+)', '(\w+)'" js`
 3. **Design index:** `node scripts/designs-index.mjs --check`. If stale, the fix is `--write` - never a hand edit.
 4. **Dead references:** every file path and symbol named in the docs must exist. Use `fd` for paths and
    `rg -n '\b<symbol>\b' js scripts test` or `sg` for symbols. The index gate already rejects design-doc links that

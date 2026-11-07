@@ -3,6 +3,7 @@
 
 import { drawnRadius } from '../display-size.js';
 import { slotOf } from '../family-slots.js';
+import { createBodyTweens, tweenAge } from './body-tweens.js';
 import { ENERGY_FLOOR, familyColor, lineageColor } from './colors.js';
 
 /** Floats per vec4 attribute, and the attributes per instance: pose, colour, state, extra and motion. */
@@ -67,6 +68,7 @@ export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
  * @property {Float32Array} state temperature01, ate flash, bitten flash, jaw open
  * @property {Float32Array} extra pregnant, neutral family (1 when the family holds no colour slot), sick, infected
  * @property {Float32Array} motion speed01, turn01, phase, 0
+ * @property {Float32Array} tween one-shot tween kind and age, call (1 alarming, 2 hunt calling, 0 none), 0
  * @property {number} count agents packed this frame
  */
 
@@ -78,6 +80,7 @@ export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
  * @property {Int8Array} meshOfSpec the mesh index for each `spec`, -1 for an unknown one
  * @property {Float32Array} minPx the least each mesh's agents are drawn across, in device px
  * @property {number[]} rgb scratch for the colour
+ * @property {import('./body-tweens.js').BodyTweens} tweens each slot's one-shot body tween
  */
 
 /**
@@ -96,6 +99,7 @@ export function createAgentStore(capacity, meshCount, meshOfSpec, minPx) {
             state: new Float32Array(capacity * ITEM),
             extra: new Float32Array(capacity * ITEM),
             motion: new Float32Array(capacity * ITEM),
+            tween: new Float32Array(capacity * ITEM),
             count: 0,
         });
     }
@@ -106,6 +110,7 @@ export function createAgentStore(capacity, meshCount, meshOfSpec, minPx) {
         meshOfSpec: Int8Array.from(meshOfSpec),
         minPx: Float32Array.from(minPx),
         rgb: [0, 0, 0],
+        tweens: createBodyTweens(capacity),
     };
 }
 
@@ -133,14 +138,36 @@ function packStatus(extra, o, flags, bits) {
 }
 
 /**
+ * Writes an agent's tween row: its running one-shot tween and age, and its call state.
+ * @param {AgentStore} store the store
+ * @param {{bucket: Bucket, o: number, i: number, tick: number}} at the bucket, the row offset, the agent's index and the
+ *   playhead tick
+ * @param {import('../interpolate.js').Interpolated} agents the blended agents
+ * @param {Record<string, number>} bits `ready.layout.flags`
+ * @returns {void}
+ */
+function packTween(store, { bucket, o, i, tick }, agents, bits) {
+    const slot = agents.slot[i];
+    const age = tweenAge(store.tweens, slot, agents.genomeId[i], tick);
+    const flags = agents.flags[i];
+    bucket.tween[o] = age >= 0 ? store.tweens.kind[slot] : 0;
+    bucket.tween[o + 1] = Math.max(age, 0);
+    bucket.tween[o + 2] = (flags & bits.ALARMING) !== 0 ? 1 : (flags & bits.HUNT_CALLING) !== 0 ? 2 : 0;
+    bucket.tween[o + 3] = 0;
+}
+
+const TWEEN_AT = { bucket: /** @type {Bucket} */ (/** @type {unknown} */ (null)), o: 0, i: 0, tick: 0 };
+
+/**
  * Writes every agent into its mesh's bucket and smooths the jaws.
  * @param {import('../interpolate.js').Interpolated} agents the blended agents
  * @param {AgentStore} store the store
  * @param {Record<string, number>} bits `ready.layout.flags`
- * @param {{dtMs: number, zoom: number, slots: import('../family-slots.js').FamilySlots, maxVelocity?: number}} view
+ * @param {{dtMs: number, zoom: number, slots: import('../family-slots.js').FamilySlots, maxVelocity?: number,
+ *   tick?: number}} view the frame time, zoom, colour slots, top speed and the playhead tick (for the tweens)
  * @returns {void}
  */
-export function packAgents(agents, store, bits, { dtMs, zoom, slots, maxVelocity = 200 }) {
+export function packAgents(agents, store, bits, { dtMs, zoom, slots, maxVelocity = 200, tick = 0 }) {
     for (const bucket of store.buckets) {
         bucket.count = 0;
     }
@@ -184,5 +211,10 @@ export function packAgents(agents, store, bits, { dtMs, zoom, slots, maxVelocity
         bucket.motion[o + 1] = m.turn01;
         bucket.motion[o + 2] = m.phase;
         bucket.motion[o + 3] = 0;
+        TWEEN_AT.bucket = bucket;
+        TWEEN_AT.o = o;
+        TWEEN_AT.i = i;
+        TWEEN_AT.tick = tick;
+        packTween(store, TWEEN_AT, agents, bits);
     }
 }

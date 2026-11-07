@@ -15,12 +15,14 @@ before starting any task, and restamp it when it checks out.
 
 ## Steps
 
-1. **Find the doc.** Read the **Build queue** in `docs/designs/README.md`: the doc ranked 1 by its `**Priority:**`
+1. **Check the nightly first.** An open `nightly-failure` issue (`gh issue list --label nightly-failure`) means the last
+   nightly run failed; read it before naming the next phase, and say so if it blocks the work.
+2. **Find the doc.** Read the **Build queue** in `docs/designs/README.md`: the doc ranked 1 by its `**Priority:**`
    line is next, unless the user names another. If the latest experiments in `evals/experiments.json` argue for a
    different order, say so and ask before re-ranking.
-2. **Read it fully.** Status line, Validated stamp, Depends on, every phase, the Delivery requirements and Task
+3. **Read it fully.** Status line, Validated stamp, Depends on, every phase, the Delivery requirements and Task
    breakdown tables. Also read any doc it depends on, and confirm those are `Implemented` or far enough along.
-3. **Measure drift.**
+4. **Measure drift.**
 
     ```bash
     git fetch origin
@@ -30,18 +32,18 @@ before starting any task, and restamp it when it checks out.
 
     Review relevant hunks with `git diff <validated-sha> origin/main -- <path>`.
 
-4. **Re-verify every reference.** For each file and symbol the doc names:
+5. **Re-verify every reference.** For each file and symbol the doc names:
     - files: `fd <name> js scripts test`
     - symbols: `rg -n '\b<symbol>\b' js scripts test` or `sg -p '<pattern>' -l js js`
     - built phases: confirm the code they describe actually exists on `origin/main`.
-5. **Check library facts.** Compare versions and API claims in the doc against `package.json` (exact pins) and
+6. **Check library facts.** Compare versions and API claims in the doc against `package.json` (exact pins) and
    `docs/designs/sim-notes.md`. Flag any API the doc relies on that the notes say has changed.
-6. **Check the baselines.** If the next phase has Targets, confirm the baselines it compares against exist
+7. **Check the baselines.** If the next phase has Targets, confirm the baselines it compares against exist
    (`bench/baseline.json`, `bench/legacy-baseline.json`, `bench/browser-baseline.json`, `evals/baselines/*.json`) and were recorded on this
    machine; a baseline from different hardware is not comparable for `bench.*` or `browser.*` metrics. The baselines
    are created by `dev-workflow-and-gate.md` Phase 2, `headless-sim-core.md` and `evolution-evals.md`; a phase whose
    baseline does not exist yet waits for the doc that creates it.
-7. **Update the doc** where the code moved: renamed symbols, moved files, tasks already done by other work, new
+8. **Update the doc** where the code moved: renamed symbols, moved files, tasks already done by other work, new
    dependencies. Keep STYLE.md voice. Then restamp:
 
     ```
@@ -50,7 +52,7 @@ before starting any task, and restamp it when it checks out.
 
     If the Status line is wrong, fix it, then run `node scripts/designs-index.mjs --write`.
 
-8. **Report** to the user:
+9. **Report** to the user:
     - the doc and its current status
     - drift summary (commits since the old stamp, anything that affected the plan)
     - edits made to the doc
@@ -58,8 +60,8 @@ before starting any task, and restamp it when it checks out.
       parallel
     - its Targets and the baselines they will be compared against
     - conflicts or open questions
-9. **Ask before starting.** Do not begin implementation until the user confirms the next step. When work starts,
-   branch off fresh `origin/main` (see `create-pr`).
+10. **Ask before starting.** Do not begin implementation until the user confirms the next step. When work starts,
+    branch off fresh `origin/main` (see `create-pr`).
 
 ## Red flags
 

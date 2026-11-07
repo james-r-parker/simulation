@@ -56,7 +56,7 @@ If unsure, ask the user in one line before writing a doc.
 5. Under every `### Phase N - ...` heading, add one `**Targets:**` line: the metrics the phase should move (the
    Metrics table in `evolution-evals.md` once it exists: `eval.*`, `bench.*`, `browser.*`), or
    `**Targets:** none - <reason>`. The `designs-index` gate fails an unbuilt phase without exactly one.
-6. Link code repo-relative and by symbol (`forwardAll` in `../../js/sim/brain.js`), never by line number. Verify
+6. Link code repo-relative and by symbol (`forwardAll` in `js/sim/brain.js`), never by line number. Verify
    every named symbol that already exists with `rg -n '\b<symbol>\b' js` or `sg -p '<pattern>' -l js js`. Name a doc
    that does not exist yet in code font, not as a link - the gate rejects links that do not resolve.
 7. Regenerate the index: `node scripts/designs-index.mjs --write`, and commit `docs/designs/README.md` with the
@@ -94,7 +94,7 @@ End the doc with a **Delivery requirements** table using exactly the rows in STY
 | Evolution metrics       | The `eval.*` metrics, seeds and ticks, and the `eval:compare` verdict that counts as done                                                                            |
 | Determinism             | RNG streams used (`fork(rng, '<name>')`); what replays from seed and config; what does not and why                                                                   |
 | Config and persistence  | Each new key in `createConfig` with type and default; schema version bumps and their upgrade path                                                                    |
-| Logging and diagnostics | Each new `simLog` event: name, level, fields; what every failure path logs; the `npm run replay` command that reproduces it                                          |
+| Logging and diagnostics | Each new sim log event (`log.log`): name, level, fields; what every failure path logs; the `npm run replay` command that reproduces it                               |
 | Browser compatibility   | Browsers verified; fallbacks when a feature is missing                                                                                                               |
 | Docs                    | Files touched (AGENTS.md, README, skills); what this doc becomes once `Implemented`; learnings for `sim-notes.md`                                                    |
 | Verification            | `scripts/check.sh` green plus the manual browser walk, step by step                                                                                                  |

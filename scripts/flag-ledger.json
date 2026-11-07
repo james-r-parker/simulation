@@ -22,47 +22,5 @@
     "plan": "docs/designs/natural-selection.md",
     "task": "T8 follow-up screen",
     "reason": "Kept for the 'offspring' fallback arm: adopted, with this key deleted, only if eval.mate_hunter_lean stays negative with 'rank' after a follow-up screen (offspring against rank, 16 seeds); deleted with the offspring path otherwise."
-  },
-  {
-    "key": "refugeSense",
-    "plan": "docs/designs/refuge.md",
-    "task": "T28",
-    "reason": "Kept as the control arm of the refuge-sense screen (refugeSense false zeroes the three refuge inputs, same layout); T28 sets it true and deletes the key on a win, or reverts T24 to T26 on a loss."
-  },
-  {
-    "key": "satedBite",
-    "plan": "docs/designs/realistic-keepers.md",
-    "task": "T22",
-    "reason": "Restored default-off under the keep rule: T11 judges it on 16 seeds, T20 deletes it on a loss, T22 sets it true and deletes the key on a pass."
-  },
-  {
-    "key": "provisionEnabled",
-    "plan": "docs/designs/realistic-keepers.md",
-    "task": "T22",
-    "reason": "Restored default-off under the keep rule: T13 judges it on 16 seeds, T20 deletes it on a loss, T22 sets it true and deletes the key on a pass."
-  },
-  {
-    "key": "juvenileDependency",
-    "plan": "docs/designs/realistic-keepers.md",
-    "task": "T22",
-    "reason": "Restored default-off under the keep rule: T14 judges it on 16 seeds, T20 deletes it on a loss, T22 sets it true and deletes the key on a pass."
-  },
-  {
-    "key": "rewardedHebb",
-    "plan": "docs/designs/realistic-keepers.md",
-    "task": "T22",
-    "reason": "Restored default-off under the keep rule: T16 judges it on 16 seeds, T20 deletes it on a loss, T22 sets it true and deletes the key on a pass."
-  },
-  {
-    "key": "coverConceals",
-    "plan": "docs/designs/realistic-keepers.md",
-    "task": "T22",
-    "reason": "Restored default-off under the keep rule: T17 judges it on 16 seeds, T20 deletes it on a loss, T22 sets it true and deletes the key on a pass."
-  },
-  {
-    "key": "coverFoodFree",
-    "plan": "docs/designs/realistic-keepers.md",
-    "task": "T22",
-    "reason": "Restored default-off under the keep rule: T18 judges it on 16 seeds, T20 deletes it on a loss, T22 sets it true and deletes the key on a pass."
   }
 ]

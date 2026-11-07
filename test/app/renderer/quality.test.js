@@ -37,6 +37,23 @@ function hold(q, report, fromMs, forMs) {
     return t;
 }
 
+describe('coarse pointer start', () => {
+    it('starts one level down and the rule still moves it', () => {
+        const q = createQuality({ coarse: true });
+        expect(q.level).toBe(1);
+        const t = hold(q, fast, 0, UP_AFTER_MS + 1000);
+        expect(q.level).toBe(0);
+        expect(t).toBeGreaterThan(0);
+    });
+
+    it('yields to a pin, to software and to missing float targets', () => {
+        expect(createQuality({ coarse: true, pinned: 0 }).level).toBe(0);
+        expect(createQuality({ coarse: true, software: true }).level).toBe(2);
+        expect(createQuality({ coarse: true, floatTargets: false }).level).toBe(2);
+        expect(createQuality().level).toBe(0);
+    });
+});
+
 describe('quality levels', () => {
     it('level 0 is everything, 1 halves bloom and motes, 2 turns both off', () => {
         expect(QUALITY_LEVELS[0]).toMatchObject({ bloom: true, bloomScale: 1, motes: 1 });
@@ -193,6 +210,13 @@ const TIERS = {
     flora: [0, 1, LOOK_OFF],
     herds: [0, 1, LOOK_OFF],
     chase: [0, 1, LOOK_OFF],
+    combat: [0, 1, 2],
+    feeding: [0, 1, LOOK_OFF],
+    courtship: [0, 1, 2],
+    calls: [0, 1, 2],
+    sickness: [0, 1, LOOK_OFF],
+    weather: [0, 1, LOOK_OFF],
+    body: [0, 1, LOOK_OFF],
 };
 
 describe('lookFor', () => {
@@ -224,8 +248,13 @@ describe('lookFor', () => {
         }
     });
 
-    it('never adds an item from one level to the next, under every mask', () => {
-        for (let mask = 0; mask <= LOOK_ALL; mask++) {
+    it('never adds an item from one level to the next, under every single-item mask, the full mask and 2000 others', () => {
+        // lookFor treats each bit on its own, so these masks cover every case without walking all 2^17 of them.
+        const masks = [0, LOOK_ALL, ...LOOK_ITEMS.map((_, bit) => 1 << bit)];
+        for (let k = 1; k <= 2000; k++) {
+            masks.push(Math.imul(k, 2654435761) & LOOK_ALL);
+        }
+        for (const mask of masks) {
             for (let level = 1; level < QUALITY_LEVELS.length; level++) {
                 const before = lookItems(lookFor(level - 1, mask));
                 for (const item of lookItems(lookFor(level, mask))) {

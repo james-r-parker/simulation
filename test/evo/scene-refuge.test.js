@@ -231,3 +231,52 @@ describe('refuge bookkeeping edges', () => {
         expect(value).toBe((scene.dwell.length - 1) * 10);
     });
 });
+
+describe('refuge bookkeeping edges (keepers)', () => {
+    it('restarts a window of the same kind that is still open when the threat flips back', () => {
+        const r = setup();
+        const [slot] = agents(r, 1);
+        const scene = r.observer.scenes.refuge;
+        const states = [
+            [0, 0],
+            [1, 0],
+            [0, 0],
+            [1, 0],
+        ];
+        run(r, [slot], 4, (/** @type {number} */ _slot, /** @type {number} */ i) => states[i]);
+        expect(scene.episodes[1]).toBe(1);
+        expect(scene.entered[1]).toBe(0);
+    });
+
+    it('counts a pending exit as unfed when the agent leaves a ring again before it resolves', () => {
+        const r = setup();
+        const [slot] = agents(r, 1);
+        const scene = r.observer.scenes.refuge;
+        const states = [
+            [0, 1],
+            [0, 0],
+            [0, 1],
+            [0, 0],
+        ];
+        run(r, [slot], 4, (/** @type {number} */ _slot, /** @type {number} */ i) => states[i]);
+        expect([scene.exits, scene.exitsFed]).toEqual([1, 0]);
+        expect(scene.exitTick[slot]).toBeGreaterThanOrEqual(0);
+    });
+
+    it('closes a pending exit as unfed when the agent dies before it resolves', () => {
+        const r = setup();
+        const [slot] = agents(r, 1);
+        const scene = r.observer.scenes.refuge;
+        const states = [[0, 1], [0, 0], null];
+        run(r, [slot], 3, (/** @type {number} */ _slot, /** @type {number} */ i) => states[i]);
+        expect([scene.exits, scene.exitsFed]).toEqual([1, 0]);
+        expect(scene.known[slot]).toBe(0);
+    });
+
+    it('reads the last dwell bucket when the histogram holds fewer dwells than counted', () => {
+        const scene = createRefugeScene(setup().world.config);
+        scene.dwells = MIN_REFUGE_EXITS;
+        const { value } = refugeMetrics(scene)['eval.refuge_dwell_ticks'];
+        expect(value).toBe((scene.dwell.length - 1) * 10);
+    });
+});

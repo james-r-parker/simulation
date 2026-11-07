@@ -74,7 +74,7 @@ export function applyHunterReflex(row, layout, { weight, prey, kinPull }) {
  * @param {Readonly<Record<string, any>>} layout a `brainLayout(config)` result
  * @param {{weight: number, canHunt: boolean, herdWary: number, kinPull?: number}} options `weight` is
  *   `config.instinctWeight`; 0 or `herdWary` 0 leaves its corresponding terms unchanged; `kinPull` (default 0) is the kin pull
- *   floor of a hunter, `kinPullWeight` while `juvenileDependency` is on
+ *   floor of a hunter, `kinPullWeight`
  * @returns {void}
  */
 export function applyInstinct(row, layout, { weight, canHunt, herdWary, kinPull = 0 }) {
@@ -113,6 +113,6 @@ export function randomGenome(world, slot, { row, rng }) {
         weight: config.instinctWeight,
         herdWary: config.herdWary,
         canHunt: specParams(config, world.spec[slot]).canHunt,
-        kinPull: config.juvenileDependency ? config.kinPullWeight : 0,
+        kinPull: config.kinPullWeight,
     });
 }

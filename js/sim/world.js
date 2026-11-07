@@ -13,11 +13,12 @@ import { allocLedgerState, ledgerSpecs } from './hunter-ledger.js';
 import { mateRankSpecs } from './mate-rank.js';
 import { rewardSpecs } from './reward.js';
 import { proofSpecs } from './proof.js';
-import { allocProvision } from './provision-state.js';
 import { splitGateSpecs } from './split-gate.js';
 import { MERIT_TALLY_SIZE, createMeritViews, meritSpecs, resetMeritSlot } from './merit-state.js';
 import { LOCAL_STRIDE } from './ray-gather.js';
+import { rayTables } from './ray-pool.js';
 import { terrainRockCount } from './terrain.js';
+import { attachWasm } from './wasm-arena.js';
 
 /** Cap, in ticks, on `ateTimer` and `bittenTimer`. */
 export const TIMER_CAP = 30;
@@ -31,7 +32,6 @@ export const HEARD_STRIDE = 6;
 /** Elements of the per-world call scratch row: the calling slot, the `heard` offset and the call's strength. */
 export const CALL_SCRATCH = 3;
 
-const PI = 3.141592653589793;
 const BYTE_PAIR = 0x0102;
 
 /**
@@ -126,14 +126,13 @@ function allocAgentArrays(world, layout) {
             ...ledgerSpecs(),
             ...diseaseSpecs(),
             ...mateRankSpecs(),
-            ...rewardSpecs(world.config),
+            ...rewardSpecs(),
             ...(world.config.predatorRestTicks > 0 ? singles(Uint16Array, ['restTimer']) : []),
         ],
         n,
     );
     createMeritViews(world);
     allocLedgerState(world);
-    allocProvision(world);
     allocDiseaseState(world);
     world.inputActivity = createInputActivity(layout);
     allocRows(world, [[Float32Array, 'hidden', layout.hidden]], n + 1);
@@ -228,21 +227,6 @@ function allocPatches(world) {
     allocRows(world, singles(Float32Array, ['patchX', 'patchY']), floraPatchMax);
     allocRows(world, singles(Float64Array, ['patchStock']), floraPatchMax);
     allocateFlora(world);
-}
-
-/**
- * @param {number} rayCount number of rays
- * @returns {{rayCos: Float64Array, raySin: Float64Array}} unit direction of each ray relative to the heading
- */
-function rayTables(rayCount) {
-    const rayCos = new Float64Array(rayCount);
-    const raySin = new Float64Array(rayCount);
-    for (let k = 0; k < rayCount; k++) {
-        const theta = (2 * PI * k) / rayCount;
-        rayCos[k] = detCos(theta);
-        raySin[k] = detSin(theta);
-    }
-    return { rayCos, raySin };
 }
 
 /**
@@ -380,6 +364,9 @@ export function allocateWorld(config) {
     allocPatches(world);
     allocHerdState(world);
     world.events = createEventRing(config.eventCapacity);
+    // Every world runs the brain in the WASM kernels from birth (docs/designs/wasm-kernels.md), before anything can
+    // hash or copy its arrays; the arena takes over the hot arrays here.
+    attachWasm(world);
     return { ...world };
 }
 

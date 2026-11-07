@@ -2,6 +2,7 @@
 // `--threshold=<fraction>` changes the 10%. `--noise=<k>` widens each metric's limit to `k` times its measured noise
 // (the larger relative standard deviation of the base and head runs) when that is above the threshold, so a noisy
 // shared runner does not fail the nightly (docs/designs/quality-gates-and-test-tiers.md).
+// `--self` benches HEAD against a second checkout of itself, so the change it prints is noise alone (never fails).
 // Exit codes: 0 within the limit, 1 regression or error, 3 skipped (the reason is on stdout as `skipped: ...`).
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -62,42 +63,47 @@ function parseNumber(arg) {
 
 /**
  * @param {string[]} argv command-line arguments after the script name
- * @returns {{base: string | null, sizes: string, skipCheck: boolean, runs: number, threshold: number, noise: number}} parsed
+ * @returns {{base: string | null, sizes: string, skipCheck: boolean, runs: number, threshold: number, noise: number, self: boolean}} parsed
  * options; `base` null means the default
  */
 export function parseArgs(argv) {
-    let base = null;
-    let sizes = DEFAULT_SIZES;
-    let skipCheck = false;
-    let runs = DEFAULT_RUNS;
-    let threshold = TOLERANCE;
-    let noise = 0;
+    /** @type {{base: string | null, sizes: string, runs: number, threshold: number, noise: number}} */
+    const values = { base: null, sizes: DEFAULT_SIZES, runs: DEFAULT_RUNS, threshold: TOLERANCE, noise: 0 };
+    const flags = new Set(['--skip-check', '--self']);
+    /** @type {Record<string, (arg: string) => void>} */
+    const valued = {
+        '--base=': (arg) => (values.base = arg.slice('--base='.length)),
+        '--sizes=': (arg) => (values.sizes = parseSizes(arg)),
+        '--runs=': (arg) => (values.runs = parseRuns(arg)),
+        '--threshold=': (arg) => (values.threshold = parseNumber(arg)),
+        '--noise=': (arg) => (values.noise = parseNumber(arg)),
+    };
+    const seen = new Set();
     for (let i = 0; i < argv.length; i++) {
         const arg = argv[i];
+        const prefix = Object.keys(valued).find((key) => arg.startsWith(key));
         if (arg === '--base') {
-            base = argv[++i];
-            if (!base) {
+            values.base = argv[++i];
+            if (!values.base) {
                 throw new Error('--base needs a git ref');
             }
-        } else if (arg.startsWith('--base=')) {
-            base = arg.slice('--base='.length);
-        } else if (arg.startsWith('--sizes=')) {
-            sizes = parseSizes(arg);
-        } else if (arg.startsWith('--runs=')) {
-            runs = parseRuns(arg);
-        } else if (arg.startsWith('--threshold=')) {
-            threshold = parseNumber(arg);
-        } else if (arg.startsWith('--noise=')) {
-            noise = parseNumber(arg);
-        } else if (arg === '--skip-check') {
-            skipCheck = true;
+        } else if (prefix) {
+            valued[prefix](arg);
+        } else if (flags.has(arg)) {
+            seen.add(arg);
         } else {
             throw new Error(
-                `unknown argument: ${arg} (expected --base <ref>, --sizes=500, --runs=5, --threshold=0.1, --noise=3 or --skip-check)`,
+                `unknown argument: ${arg} (expected --base <ref>, --sizes=500, --runs=5, --threshold=0.1, --noise=3, --self or --skip-check)`,
             );
         }
     }
-    return { base, sizes, skipCheck, runs, threshold, noise };
+    const self = seen.has('--self');
+    const skipCheck = seen.has('--skip-check');
+    const { base, sizes, runs, threshold, noise } = values;
+    if (self && base) {
+        throw new Error('--self compares HEAD with itself; it takes no --base');
+    }
+    return { base, sizes, skipCheck, runs, threshold, noise, self };
 }
 
 /**
@@ -300,15 +306,16 @@ function withWorktree(baseSha, work, cwd) {
  * @returns {number} the process exit code
  */
 export function main(argv, cwd = process.cwd()) {
-    const { base, sizes, skipCheck, runs, threshold, noise } = parseArgs(argv);
-    const baseSha = resolveBase(base, Math.floor(Date.now() / 1000), cwd);
+    const { base, sizes, skipCheck, runs, threshold, noise, self } = parseArgs(argv);
+    const baseSha = self ? git(['rev-parse', 'HEAD'], cwd) : resolveBase(base, Math.floor(Date.now() / 1000), cwd);
     if (baseSha === null) {
         console.log('skipped: no base (origin/main is missing or has no commit old enough)');
         return SKIP_EXIT;
     }
     const headSha = git(['rev-parse', 'HEAD'], cwd);
     const basePackageJson = gitOrNull(['show', `${baseSha}:package.json`], cwd);
-    const reason = skipReason({ baseSha, headSha, basePackageJson });
+    // --self compares HEAD with itself on purpose, so only the missing bench script can skip it.
+    const reason = skipReason({ baseSha: self ? '' : baseSha, headSha, basePackageJson });
     if (reason) {
         console.log(`skipped: ${reason}`);
         return SKIP_EXIT;
@@ -336,6 +343,10 @@ export function main(argv, cwd = process.cwd()) {
     }
     console.log(`base ${baseSha.slice(0, 9)} head ${headSha.slice(0, 9)}, median of ${runs} runs, --sizes=${sizes}`);
     console.log(formatRows(rows).join('\n'));
+    if (self) {
+        console.log('noise only (--self): the largest change above is the spread to record, not a regression');
+        return 0;
+    }
     return rows.every((row) => row.ok) ? 0 : 1;
 }
 

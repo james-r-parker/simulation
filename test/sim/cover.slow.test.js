@@ -28,8 +28,6 @@ const COVER_WORLD = {
     refugeCluster: 1,
     refugeSizeMax: 60,
     coldMarginWidth: 0,
-    coverConceals: true,
-    coverFoodFree: true,
 };
 
 /**

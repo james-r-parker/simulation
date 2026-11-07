@@ -4,6 +4,7 @@
 // docs/designs/worker-and-renderer.md.
 
 import { PALETTE } from './colors.js';
+import { TWEEN_GLSL } from './body-tweens-glsl.js';
 
 /**
  * @param {readonly number[]} rgb a linear RGB triple
@@ -32,11 +33,13 @@ attribute vec4 iColor;  // r, g, b, energy01
 attribute vec4 iState;  // temperature01, ate flash, bitten flash, jaw open
 attribute vec4 iExtra;  // pregnant, neutral family, sick, infected
 attribute vec4 iMotion; // speed01, turn01, phase, 0
+attribute vec4 iTween;  // one-shot tween kind, its age, call (1 alarm, 2 hunt), 0
 uniform float uZoom;    // device pixels per world unit
 varying vec2 vP;
 varying vec4 vColor;
 varying vec4 vState;
 varying vec4 vMotion;
+varying vec4 vTween;
 varying float vPregnant;
 varying float vNeutral;
 varying float vSick;
@@ -55,6 +58,7 @@ void main() {
     vColor = iColor;
     vState = iState;
     vMotion = iMotion;
+    vTween = iTween;
     vPregnant = iExtra.x;
     vNeutral = iExtra.y;
     vSick = iExtra.z;
@@ -74,6 +78,11 @@ uniform float uPalette;    // 2 for the high-contrast palette: a rim twice as wi
 uniform float uFlora;
 uniform float uSimTick;
 uniform float uMotion;     // 1 level 0 (wobble + squash), 0.5 level 1 (squash), 0 level 2
+uniform float uBody;       // the body look item: 1 every tween and state, 0.5 one-shot tweens only, 0 none
+uniform float uWeather;    // 1 when the weather item draws: the cold shiver and the heat pant
+uniform float uCourt;      // 1 when the courtship item draws: the pregnant belly glow
+uniform float uCold01;     // the cold-stress temperature over temperatureMax
+uniform float uHeat01;     // the heat-stress temperature over temperatureMax
 uniform sampler2D uRamp;
 uniform sampler2D uSmoke;  // smoke alpha over the view, quarter resolution
 uniform vec4 uView;        // left, bottom, width, height of the view in world units
@@ -81,12 +90,15 @@ varying vec2 vP;
 varying vec4 vColor;
 varying vec4 vState;
 varying vec4 vMotion;
+varying vec4 vTween;
 varying float vPregnant;
 varying float vNeutral;
 varying float vSick;
 varying float vInfected;
 varying vec2 vWorld;
 varying float vPx;
+
+${TWEEN_GLSL}
 
 float sdWedge(vec2 p, vec2 apex, float halfAngle) {
     vec2 q = vec2(p.x - apex.x, abs(p.y - apex.y));
@@ -152,7 +164,9 @@ float body(vec2 p, float open, out float noseX) {
 }
 
 void main() {
-    vec2 p = vP;
+    float cold = clamp((uCold01 - vState.x) / max(uCold01, 0.01), 0.0, 1.0) * uWeather;
+    float hot = clamp((vState.x - uHeat01) / max(1.0 - uHeat01, 0.01), 0.0, 1.0) * uWeather;
+    vec2 p = bodyStates(tweenP(vP), cold, hot);
     p.y += 0.04 * vSick * uFlora * sin(uSimTick * 0.05 + vMotion.z * 6.2831853 + p.x * 4.0);
     if (uMotion > 0.0) {
         float speed01 = vMotion.x;
@@ -189,6 +203,12 @@ void main() {
     float fill = ${BODY_CENTRE_FILL.toFixed(2)} + 0.5 * edge;
     vec3 rgb = base * bright * (cover * fill + halo * (1.0 - cover));
     rgb += base * bright * rim * ${RIM_GAIN.toFixed(2)};
+    rgb += (${glsl(PALETTE.coolWhite)} * cold + ${glsl(PALETTE.heat)} * hot) * rim * 0.7;
+    if (uShape < 1.5 || uShape > 2.5) {
+        // the pregnant belly: a soft glow behind the eye that pulses at 0.8 Hz (the reproducer pulses its hexagon)
+        float belly = exp(-dot(p - vec2(-0.2, 0.0), p - vec2(-0.2, 0.0)) * 5.0) * (0.6 + 0.4 * sin(uTime * 5.0265));
+        rgb += ${glsl(PALETTE.courtship)} * 0.55 * belly * vPregnant * uCourt * cover;
+    }
     rgb += mix(base, vec3(1.0), 0.4) * bright * nucleus * cover;
     if (uShape > 3.5) {
         rgb += base * bright * 0.9 * smoothstep(-0.2, -0.08, d) * (1.0 - smoothstep(-0.08, 0.0, d));

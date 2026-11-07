@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
-import { createEffectsPlayer, JAW_REACH, playEffects, STALE_TICKS } from '../../../js/app/renderer/effects-player.js';
+import {
+    beginEffects,
+    createEffectsPlayer,
+    JAW_REACH,
+    playEffects,
+    STALE_TICKS,
+} from '../../../js/app/renderer/effects-player.js';
+import { createCameraController } from '../../../js/app/camera.js';
+import { BAND } from '../../../js/app/renderer/fx-budget.js';
 import { createMateThreadPool } from '../../../js/app/renderer/mate-threads.js';
+import { isLive } from '../../../js/app/renderer/fx-pool.js';
+import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
 import { createRingPool, RING_CAPACITY } from '../../../js/app/renderer/rings.js';
 import { createSparkPool, SPARK_CAPACITY } from '../../../js/app/renderer/sparks.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
@@ -22,7 +32,7 @@ const layout = {
     },
     deathCauses: { STARVED: 0, EATEN: 1, COLLISION: 2, OLD_AGE: 3 },
 };
-const info = { callRadius: 300, callTicks: 40 };
+const info = { callRadius: 300, callTicks: 40, maxAgents: 8 };
 
 /**
  * @param {number[][]} records `[kind, tick, x, y, a, b, c, d]` rows
@@ -73,6 +83,19 @@ function live(pool, tick) {
     return n;
 }
 const liveRings = live;
+
+/**
+ * @param {any} pool the effect pool
+ * @param {number} tick the tick
+ * @returns {number} instances drawing at the tick
+ */
+function liveFx(pool, tick) {
+    let n = 0;
+    for (let i = 0; i < pool.limit; i++) {
+        n += isLive(pool, i, tick) ? 1 : 0;
+    }
+    return n;
+}
 const liveSparks = live;
 
 describe('playEffects', () => {
@@ -176,30 +199,55 @@ describe('playEffects', () => {
         expect(Array.from(rings.kind.slice(0, 2))).toEqual([1, 0]);
     });
 
-    it('a birth spawns a ring and 6 motes in the lineage colour; a death 10 motes, and a flash when eaten', () => {
+    it('a birth spawns a ring and 6 motes in the lineage colour', () => {
         const { player, rings, sparks } = build();
         playEffects(player, queueOf([[1, 5, 1, 2, 7, 3, 1, 0]]), alive([]), 5);
         expect(liveRings(rings, 6)).toBe(1);
         expect(liveSparks(sparks, 6)).toBe(6);
-        const b = build();
-        playEffects(b.player, queueOf([[2, 5, 1, 2, 7, 0, 1 | (1 << 8), 3]]), alive([]), 5);
-        expect(liveSparks(b.sparks, 6)).toBe(11);
-        const c = build();
-        playEffects(c.player, queueOf([[2, 5, 1, 2, 7, 0, 1, 3]]), alive([]), 5);
-        expect(liveSparks(c.sparks, 6)).toBe(10);
         expect(RING_CAPACITY + SPARK_CAPACITY).toBeGreaterThan(0);
     });
 
-    it('a bite starts at the biter jaw, or at the victim when the biter is gone', () => {
-        const { player, sparks } = build();
-        const agents = alive([{ slot: 0, genomeId: 9, x: 100, y: 100, angle: 0, size: 20 }]);
+    it('a death plays its cause recipe through the effect pool; each cause differs, a pack kill adds two rings', () => {
+        /** @type {Record<number, number>} */
+        const counts = {};
+        for (const cause of [0, 1, 2, 3]) {
+            const { player } = build();
+            playEffects(player, queueOf([[2, 5, 1, 2, 7, 0, cause << 8, 3]]), alive([]), 5);
+            counts[cause] = liveFx(player.fx.pool, 6);
+        }
+        expect(counts).toEqual({ 0: 9, 1: 8, 2: 3, 3: 7 });
+        const pack = build();
+        playEffects(pack.player, queueOf([[2, 5, 1, 2, 7, 0, (1 << 8) | 65536, 3]]), alive([]), 5);
+        expect(liveFx(pack.player.fx.pool, 6)).toBe(9);
+        expect(liveFx(pack.player.fx.pool, 12)).toBe(9);
+    });
+
+    it('an eaten death gulps the killer', () => {
+        const { player } = build();
+        const agents = alive([{ slot: 2, genomeId: 9, x: 100, y: 100 }]);
+        playEffects(player, queueOf([[2, 5, 1, 2, 7, 9, 1 << 8, 3]]), agents, 5);
+        expect(player.tweens.kind[2]).toBe(TWEEN.GULP);
+    });
+
+    it('a bite sprays from the biter jaw (or the effect when the biter is gone), marks the victim, and tweens both', () => {
+        const { player } = build();
+        const agents = alive([
+            { slot: 0, genomeId: 9, x: 100, y: 100, angle: 0, size: 20 },
+            { slot: 1, genomeId: 4, x: 160, y: 100, angle: 0, size: 20 },
+        ]);
         playEffects(player, queueOf([[3, 5, 400, 400, 9, 4, 0, 0]]), agents, 5);
-        expect(sparks.x[0]).toBeCloseTo(100 + 20 * JAW_REACH);
-        expect(sparks.y[0]).toBeCloseTo(100);
+        const pool = player.fx.pool;
+        expect(pool.pose[0]).toBeCloseTo(100 + 20 * JAW_REACH);
+        expect(pool.pose[1]).toBeCloseTo(100);
+        expect(liveFx(pool, 6)).toBe(7);
+        expect(pool.pose[6 * 4]).toBeCloseTo(160 - 20 * 0.75);
+        expect(player.tweens.kind[0]).toBe(TWEEN.LUNGE);
+        expect(player.tweens.kind[1]).toBe(TWEEN.FLINCH);
         const b = build();
-        playEffects(b.player, queueOf([[3, 5, 400, 300, 77, 4, 0, 0]]), agents, 5);
-        expect(b.sparks.x[0]).toBe(400);
-        expect(b.sparks.y[0]).toBe(300);
+        playEffects(b.player, queueOf([[3, 5, 400, 300, 77, 4, 0, 0]]), alive([]), 5);
+        expect(b.player.fx.pool.pose[0]).toBe(400);
+        expect(b.player.fx.pool.pose[1]).toBe(300);
+        expect(liveFx(b.player.fx.pool, 6)).toBe(6);
     });
 
     it('ignores smoke effects but still tells the sink', () => {
@@ -216,5 +264,23 @@ describe('playEffects', () => {
         expect(threads.motherGenome[0]).toBe(11);
         expect(threads.fatherGenome[0]).toBe(22);
         expect(seen).toEqual([8]);
+    });
+
+    it('beginEffects takes the view, the zoom band and the playhead rate into the budget', () => {
+        const { player } = build();
+        const camera = createCameraController({
+            canvas: /** @type {any} */ ({ width: 1000, height: 500 }),
+            world: { width: 10000, height: 5000 },
+        });
+        camera.x = 5000;
+        camera.y = 2500;
+        camera.zoom = 0.1;
+        beginEffects(player, { tick: 10, dtMs: 16, nowMs: 100, camera });
+        const b = player.fx.budget;
+        expect(b.band).toBe(BAND.FAR);
+        expect(b.view.left).toBeCloseTo(-200);
+        expect(b.view.right).toBeCloseTo(10200);
+        beginEffects(player, { tick: 14, dtMs: 16, nowMs: 116, camera });
+        expect(b.ticksPerMs).toBeGreaterThan(0);
     });
 });

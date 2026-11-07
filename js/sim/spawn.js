@@ -72,7 +72,7 @@ function placementError(world, radius) {
  * @param {World} world the world
  * @param {Rng} rng the stream to draw from
  * @param {number} radius the circle radius to keep clear
- * @param {boolean} plant whether the point is for a plant, which `coverFoodFree` keeps out of the rings
+ * @param {boolean} plant whether the point is for a plant, which are kept out of the rings
  * @returns {void}
  * @throws {Error} after `placementTries` rejections
  */
@@ -103,7 +103,7 @@ export function placeClear(world, rng, radius) {
 }
 
 /**
- * `placeClear` for a plant: with `coverFoodFree` it also rejects a point inside a refuge ring.
+ * `placeClear` for a plant: it also rejects a point inside a refuge ring.
  * @param {World} world the world
  * @param {Rng} rng the stream to draw from
  * @param {number} radius the circle radius to keep clear

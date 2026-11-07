@@ -7,6 +7,7 @@
 
 mod brain;
 mod det_math;
+mod sense;
 
 /// The kernel ABI version; `js/sim/wasm-loader.js` refuses a binary whose version it does not know.
 pub const ABI_VERSION: i32 = 1;
@@ -53,6 +54,27 @@ pub extern "C" fn sigmoid_f64(x: f64) -> f64 {
 pub unsafe extern "C" fn brain_forward(params: i32, doubles: i32) -> i32 {
     // SAFETY: the caller passes the arena's parameter blocks.
     unsafe { brain::forward_all(params as u32, doubles as u32) }
+}
+
+/// Pools one slot's raw inputs into its `pooled` row (`poolRays`), as the brain phase does before its hidden step.
+///
+/// # Safety
+/// `params` addresses the block `js/sim/wasm-brain.js` wrote, and `slot` is below `maxAgents`.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn pool_slot(params: i32, slot: i32) {
+    // SAFETY: the caller passes the arena's parameter block and a slot inside it.
+    unsafe { brain::pool_one(params as u32, slot as usize) }
+}
+
+/// Gathers one casting agent's circles and finds every ray's nearest hit (`castRays` without the hit classes): the
+/// gathered row count.
+///
+/// # Safety
+/// `params` addresses the block `js/sim/wasm-sense.js` wrote, and `slot` is below `maxAgents`.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn sense_slot(params: i32, slot: i32) -> i32 {
+    // SAFETY: the caller passes the arena's sense parameter block and an alive slot.
+    unsafe { sense::sense_slot(params as u32, slot as usize) as i32 }
 }
 
 #[panic_handler]
