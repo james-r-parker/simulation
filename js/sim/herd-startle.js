@@ -11,13 +11,21 @@ const EPSILON = 1e-9;
 /** @param {World} world @param {number} group @param {number} hunter @returns {boolean} */
 function threatensGroup(world, group, hunter) {
     const rangeSq = world.config.herdStartleRadius * world.config.herdStartleRadius;
+    const { herdAlive, herdX, herdY } = world;
+    const hx = world.x[hunter];
+    const hy = world.y[hunter];
     for (let animal = group * world.config.herdSize; animal < (group + 1) * world.config.herdSize; animal++) {
-        if (world.herdAlive[animal] !== 1) {
+        if (herdAlive[animal] !== 1) {
             continue;
         }
-        const dx = world.x[hunter] - world.herdX[animal];
-        const dy = world.y[hunter] - world.herdY[animal];
-        if (dx * dx + dy * dy <= rangeSq) {
+        const dx = hx - herdX[animal];
+        const dxSq = dx * dx;
+        // One-axis reject: `dy * dy` only adds to `dxSq`, so a strict excess already fails the `<=` test below.
+        if (dxSq > rangeSq) {
+            continue;
+        }
+        const dy = hy - herdY[animal];
+        if (dxSq + dy * dy <= rangeSq) {
             return true;
         }
     }
@@ -64,10 +72,11 @@ function senseGroupHunters(world, group) {
     let nearest = -1;
     let nearestDistance = Infinity;
     for (let hunter = 0; hunter < world.alive.length; hunter++) {
-        if (world.alive[hunter] !== 1 || !specParams(world.config, world.spec[hunter]).canHunt) {
+        // The cheap pure distance test runs before the spec lookup; both must pass, so the pick is unchanged.
+        if (world.alive[hunter] !== 1 || !threatensGroup(world, group, hunter)) {
             continue;
         }
-        if (!threatensGroup(world, group, hunter)) {
+        if (!specParams(world.config, world.spec[hunter]).canHunt) {
             continue;
         }
         const distance = centroidDistanceSq(world, group, hunter);
