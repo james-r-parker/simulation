@@ -18,6 +18,7 @@ function verdict(arm, over = {}) {
         means: { matingShare: { value: 0.25, pass: true }, bornShare: { value: 0.9, pass: true } },
         hunters: { predators: 5, ticks: 4000, kills: 2, chaseCatch: 0.31, aliveShare: 1, lowSeeds: 0, pass: true },
         popMean: 279.4,
+        summer: { above: 11, of: 16 },
         deltas: null,
         ...over,
     };
@@ -56,6 +57,8 @@ describe('renderTable', () => {
         expect(lines[3]).toMatch(/-20%.*\+50%.*\+0\.10.*n\/a.*0%/);
         expect(lines[0]).toContain('catch/1k > 0 (speed)');
         expect(lines[0].indexOf('chase catch share')).toBeGreaterThan(lines[0].indexOf('catch/1k'));
+        expect(lines[0]).toContain('summer >= 100');
+        expect(lines[2]).toContain('11/16');
         expect(lines[2]).toContain('0.31');
         expect(lines[2]).toContain('5/4000/2 alive 1 low 0 ok');
         expect(table).toContain('Reference arm: `ref`.');
@@ -95,7 +98,7 @@ describe('renderTable', () => {
         expect(row).toContain('0.44');
         expect(row).toContain('12346');
         expect(row).toContain('3.25');
-        expect(row.split('|').filter((c) => c.trim() === 'n/a')).toHaveLength(21);
+        expect(row.split('|').filter((c) => c.trim() === 'n/a')).toHaveLength(22);
     });
 });
 

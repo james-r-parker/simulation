@@ -13,7 +13,7 @@ import { familyMetrics } from './scene-families.js';
 import { diseaseMetrics } from './scene-disease.js';
 import { carcassMetrics } from './scene-carcass.js';
 import { competenceMetrics, COMPETENCE_DIRECTIONS } from './scene-competence.js';
-import { GUARD_DIRECTIONS, guardMetrics } from './scene-guards.js';
+import { GUARD_DIRECTIONS, SUMMER_DIRECTIONS, guardMetrics, summerMetrics } from './scene-guards.js';
 import { AGE_DIRECTIONS } from './scene-hunter-age.js';
 import { KIN_DIRECTIONS, kinProximityMetrics } from './scene-kin-proximity.js';
 import { HUNTER_METRIC_NAMES, hunterMetrics } from './scene-hunters.js';
@@ -109,6 +109,7 @@ export const SCENE_DIRECTIONS = Object.freeze({
     ...COMPETENCE_DIRECTIONS,
     ...MATCHED_DIRECTIONS,
     ...GUARD_DIRECTIONS,
+    ...SUMMER_DIRECTIONS,
     ...KIN_DIRECTIONS,
     ...ALARM_REACH_DIRECTIONS,
     ...REWARD_DIRECTIONS,
@@ -145,6 +146,7 @@ export function sceneMetrics(observer, world) {
         ...competenceMetrics(s.competence, world),
         ...matchedMetrics(s.matched),
         ...guardMetrics(s.guards),
+        ...summerMetrics(s.guards),
         ...kinProximityMetrics(s.kin),
         ...alarmReachMetrics(observer),
         ...rewardMetrics(observer, world),
