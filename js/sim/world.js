@@ -126,7 +126,7 @@ function allocAgentArrays(world, layout) {
             ...ledgerSpecs(),
             ...diseaseSpecs(),
             ...mateRankSpecs(),
-            ...rewardSpecs(world.config),
+            ...rewardSpecs(),
             ...(world.config.predatorRestTicks > 0 ? singles(Uint16Array, ['restTimer']) : []),
         ],
         n,

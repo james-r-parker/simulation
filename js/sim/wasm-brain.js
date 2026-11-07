@@ -38,9 +38,8 @@ export const PARAM_ARRAYS = Object.freeze([
 export const STATUS_SLOT = 38;
 export const STATUS_WHERE = 39;
 
-/** `flags` bits: Hebbian learning on; `rewardedHebb` on. */
+/** `flags` bit: Hebbian learning on. */
 const FLAG_LEARN = 1;
-const FLAG_REWARDED = 2;
 
 /**
  * @param {Readonly<Record<string, any>>} config the validated config
@@ -49,7 +48,7 @@ const FLAG_REWARDED = 2;
  */
 function paramValues(config, layout) {
     const learn = config.hebbianRate > 0;
-    const flags = (learn ? FLAG_LEARN : 0) | (learn && config.rewardedHebb ? FLAG_REWARDED : 0);
+    const flags = learn ? FLAG_LEARN : 0;
     return [
         config.maxAgents,
         layout.hidden,
@@ -102,7 +101,7 @@ export function writeBrainParams(arena, config, layout) {
 
 /**
  * Runs the brain of every alive agent in the kernel, slots ascending: updates `hidden` and `fastOut` and writes
- * `outputs`, as `forwardAll` does. With `rewardedHebb` the reward factors are taken first, in slot order, because
+ * `outputs`, as `forwardAll` does. With learning on the reward factors are taken first, in slot order, because
  * `rewardScale` decays the trace and nothing in the brain phase reads it.
  * @param {Record<string, any>} world a world `attachWasm` moved into an arena
  * @returns {void}
@@ -114,7 +113,7 @@ export function wasmForwardAll(world) {
         throw new Error('forwardAll: the world has no WASM arena (worlds are attached by allocateWorld)');
     }
     const { config, alive } = world;
-    if (config.hebbianRate > 0 && config.rewardedHebb) {
+    if (config.hebbianRate > 0) {
         const scale = arena.views.rewardScale;
         for (let slot = 0; slot < alive.length; slot++) {
             if (alive[slot] === 1) {

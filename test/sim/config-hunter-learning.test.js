@@ -70,7 +70,6 @@ describe('the hunter-learning Phase 1 keys', () => {
 });
 
 const REWARD_DEFAULTS = {
-    rewardedHebb: true,
     rewardGain: 4,
     rewardBase: 0.25,
     rewardDecay: 0.02,
@@ -83,7 +82,6 @@ describe('the reward-gated learning keys (realistic-keepers T5)', () => {
     });
 
     it.each([
-        ['rewardedHebb', true],
         ['rewardGain', 10],
         ['rewardBase', 0],
         ['rewardDecay', 1],
@@ -92,7 +90,6 @@ describe('the reward-gated learning keys (realistic-keepers T5)', () => {
     });
 
     it.each([
-        ['rewardedHebb', 1],
         ['rewardGain', 11],
         ['rewardBase', 1.5],
         ['rewardDecay', -0.1],

@@ -22,11 +22,5 @@
     "plan": "docs/designs/natural-selection.md",
     "task": "T8 follow-up screen",
     "reason": "Kept for the 'offspring' fallback arm: adopted, with this key deleted, only if eval.mate_hunter_lean stays negative with 'rank' after a follow-up screen (offspring against rank, 16 seeds); deleted with the offspring path otherwise."
-  },
-  {
-    "key": "rewardedHebb",
-    "plan": "docs/designs/wasm-kernels.md",
-    "task": "brain adopt",
-    "reason": "deletion owned by wasm-kernels.md (the Opus brain adopt removes the key and the off path in Rust and JS)"
   }
 ]
