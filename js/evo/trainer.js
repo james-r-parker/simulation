@@ -57,8 +57,8 @@ const CHECKPOINT_TICKS = 1000;
 
 /**
  * @param {readonly number[]} seeds the train seeds (`evals/train-seeds.json`)
- * @param {{generation: number, episodes: number, episode: number}} at the generation, episodes per generation and the
- *   episode's index in it
+ * @param {{generation: number, episodes: number, episode: number, offset?: number}} at the generation, episodes per generation and the
+ *   episode's index in it, and the seed index shift (default 0)
  * @returns {number} the train seed of the episode: entry `(generation x episodes + episode + offset) mod seeds.length`
  */
 export function episodeSeed(seeds, { generation, episodes, episode, offset = 0 }) {

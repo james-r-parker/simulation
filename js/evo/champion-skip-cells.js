@@ -70,35 +70,3 @@ export function skipCells(rows, layout) {
     const below = rows.filter((row) => row[bite] < BITE_FLOOR).length;
     return { count: rows.length, cells, preyBiteBelowOne: rows.length === 0 ? null : below / rows.length };
 }
-
-/**
- * @param {number | null} value a number
- * @returns {string} two decimals with a sign, or `-`
- */
-function signed(value) {
-    return value === null ? '-' : `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
-}
-
-/**
- * @param {readonly {label: string, skip: SkipCells}[]} sets the labelled sets of rows
- * @returns {string[]} a header, then a line per set: the rows read, each cell as `median / min`, and the share of rows
- *   with prey-to-bite below +1
- */
-export function formatSkipCells(sets) {
-    const table = [
-        ['skip cells (median / min)', 'rows', ...SKIP_CELLS.map((c) => c.name), 'prey>BITE < +1'],
-        ...sets.map(({ label, skip }) => [
-            label,
-            String(skip.count),
-            ...SKIP_CELLS.map((c) => `${signed(skip.cells[c.name].median)} / ${signed(skip.cells[c.name].min)}`),
-            skip.preyBiteBelowOne === null ? '-' : skip.preyBiteBelowOne.toFixed(2),
-        ]),
-    ];
-    const widths = table[0].map((_, col) => Math.max(...table.map((line) => line[col].length)));
-    return table.map((line) =>
-        line
-            .map((text, col) => text.padEnd(widths[col]))
-            .join('  ')
-            .trimEnd(),
-    );
-}

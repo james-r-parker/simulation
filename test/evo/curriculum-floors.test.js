@@ -6,6 +6,7 @@ describe('validateStageFloors', () => {
         'floor20.json': { minAgents: 20 },
         'floor60.json': { minAgents: 60 },
         'none.json': { minAgents: 0 },
+        'bare.json': {},
     });
     const world = { overridesOf: (/** @type {string} */ file) => overrides[file], targetMinAgents: 40 };
     const last = { name: 'world', config: null };
@@ -33,6 +34,15 @@ describe('validateStageFloors', () => {
         expect(() =>
             validateStageFloors([{ name: 'hunt-slow', config: 'floor20.json', generations: 5 }, last], world),
         ).toThrow(/hunter stage "hunt-slow"/);
+    });
+
+    it('takes a config without minAgents as the target world floor', () => {
+        expect(() =>
+            validateStageFloors([{ name: 'nursery', config: 'bare.json', generations: 5 }, last], world),
+        ).not.toThrow();
+        expect(() => validateStageFloors([{ name: 'hunt', config: 'bare.json', generations: 5 }, last], world)).toThrow(
+            /hunter stage "hunt"/,
+        );
     });
 
     it('refuses a final stage that is not the target world', () => {

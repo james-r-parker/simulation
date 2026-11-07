@@ -1,8 +1,8 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
-import { runHunterIncome } from '../scripts/hunter-income.mjs';
+import { afterAll, describe, expect, it, vi } from 'vitest';
+import { main, runHunterIncome } from '../scripts/hunter-income.mjs';
 
 const root = mkdtempSync(join(tmpdir(), 'hunter-income-'));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -30,6 +30,18 @@ describe('hunter-income', () => {
         expect(split.carcassShare).toBeCloseTo(0.4, 12);
         expect(split.zeroKillCarcassShare).toBeCloseTo(0.75, 12);
         expect(lines.some((line) => line.startsWith('carcassShare') && line.endsWith('0.400'))).toBe(true);
+    });
+
+    it('main exits 0 on a good log and 1 on a bad one', async () => {
+        const good = logOf('c.jsonl', [
+            { event: 'HunterLedger', kills: 1, carcassEnergy: 1, killEnergy: 1, biteGainEnergy: 1 },
+        ]);
+        const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+        expect(await main([good])).toBe(0);
+        expect(await main([])).toBe(1);
+        log.mockRestore();
+        err.mockRestore();
     });
 
     it('refuses a log with no ledger record, and a missing argument', () => {

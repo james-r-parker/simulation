@@ -63,7 +63,10 @@ export function runExport(args, print = () => {}) {
     const json = readJson(args.archive);
     // The archive's `rulesHash` is the curriculum stage's; the layout, version and descriptor are what must fit.
     const archive = decodeArchive({ ...json, rulesHash: rulesHash(config) }, config, undefined, TRAINER_DESCRIPTOR);
-    if (resolve(args.out).startsWith(PUBLIC_CHAMPIONS) && !endsInTargetWorld(json.stages, rulesHash(config))) {
+    if (
+        `${resolve(args.out)}/`.startsWith(`${PUBLIC_CHAMPIONS}/`) &&
+        !endsInTargetWorld(json.stages, rulesHash(config))
+    ) {
         throw new Error(
             `${args.archive}: its last stage is not the target world, so its champions may not go into public/champions (export to another directory for local drills, tables and probes)`,
         );

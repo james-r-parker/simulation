@@ -29,8 +29,14 @@ export function runHunterIncome(argv, print = () => {}) {
     return split;
 }
 
+/**
+ * @param {string[]} argv command-line arguments after the script name
+ * @returns {Promise<number>} the process exit code
+ */
+export function main(argv) {
+    return exitCodeOf(async () => runHunterIncome(argv, console.log));
+}
+
 if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
-    exitCodeOf(async () => runHunterIncome(process.argv.slice(2), console.log)).then((code) => {
-        process.exitCode = code;
-    });
+    process.exitCode = await main(process.argv.slice(2));
 }

@@ -1,9 +1,35 @@
 // Skip-cell reports for `npm run train:export` and `npm run drill --champions` (training.md T34): which weights the
 // predator genomes carry from prey, kin and other strength into `BITE`, `THRUST` and `TURN`.
 import { bestElitePerSpec, bestElites } from '../../js/evo/champion-export.js';
-import { formatSkipCells, skipCells } from '../../js/evo/champion-skip-cells.js';
+import { SKIP_CELLS, skipCells } from '../../js/evo/champion-skip-cells.js';
 import { GENOME_SPECS } from '../../js/evo/genome.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
+import { padTable } from './drill-report.mjs';
+
+/**
+ * @param {number | null} value a number
+ * @returns {string} two decimals with a sign, or `-`
+ */
+function signed(value) {
+    return value === null ? '-' : `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
+}
+
+/**
+ * @param {readonly {label: string, skip: import('../../js/evo/champion-skip-cells.js').SkipCells}[]} sets the labelled sets
+ * @returns {string[]} a header, then a line per set: the rows read, each cell as `median / min`, and the share of rows
+ *   with prey-to-bite below +1
+ */
+export function formatSkipCells(sets) {
+    return padTable([
+        ['skip cells (median / min)', 'rows', ...SKIP_CELLS.map((c) => c.name), 'prey>BITE < +1'],
+        ...sets.map(({ label, skip }) => [
+            label,
+            String(skip.count),
+            ...SKIP_CELLS.map((c) => `${signed(skip.cells[c.name].median)} / ${signed(skip.cells[c.name].min)}`),
+            skip.preyBiteBelowOne === null ? '-' : skip.preyBiteBelowOne.toFixed(2),
+        ]),
+    ]);
+}
 
 /** Elites of each predator specialisation the export reads beside its champions. */
 export const ELITE_COUNT = 8;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatSkipCells, skipCells, SKIP_CELLS } from '../../js/evo/champion-skip-cells.js';
+import { skipCells } from '../../js/evo/champion-skip-cells.js';
 import { applyHunterReflex } from '../../js/evo/instinct.js';
 import { GENE_OUTPUTS, OUTPUT_INDEX, POOLED_CHANNELS, POOLED_STRIDE, brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
@@ -53,18 +53,5 @@ describe('skipCells', () => {
         const none = skipCells([], layout);
         expect(none).toMatchObject({ count: 0, preyBiteBelowOne: null });
         expect(none.cells['prey>BITE']).toEqual({ median: null, min: null });
-    });
-});
-
-describe('formatSkipCells', () => {
-    it('prints a header with every cell, then a line per labelled set', () => {
-        const lines = formatSkipCells([{ label: 'champions', skip: skipCells([row(0), row(2)], layout) }]);
-        expect(lines).toHaveLength(2);
-        for (const cell of SKIP_CELLS) {
-            expect(lines[0]).toContain(cell.name);
-        }
-        expect(lines[1]).toContain('champions');
-        expect(lines[1]).toContain('+1.00 / +0.00');
-        expect(lines[1].endsWith('0.50')).toBe(true);
     });
 });

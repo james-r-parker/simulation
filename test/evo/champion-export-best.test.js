@@ -14,6 +14,7 @@ describe('bestElites', () => {
         [1, 3, 21, 1],
         [1, 4, 22, 9],
         [1, 5, 23, 5],
+        [1, 7, 25, 5],
         [0, 6, 24, 99],
     ];
     for (const [spec, cell, id, fitness] of elites) {
@@ -23,7 +24,8 @@ describe('bestElites', () => {
 
     it("takes one specialisation's elites, best lower bound first, up to the count", () => {
         expect(bestElites(archive, { spec: 1, count: 2 }).map((e) => e.id)).toEqual([22, 23]);
-        expect(bestElites(archive, { spec: 1, count: 8 })).toHaveLength(3);
+        expect(bestElites(archive, { spec: 1, count: 3 }).map((e) => e.id)).toEqual([22, 23, 25]);
+        expect(bestElites(archive, { spec: 1, count: 8 })).toHaveLength(4);
     });
 
     it('is empty for a specialisation with no elite', () => {
