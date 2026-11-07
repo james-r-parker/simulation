@@ -15,6 +15,12 @@ export const MOMENT_KIND = Object.freeze({
     EXTINCT: 'extinct',
     LAST_STAND: 'last-stand',
     FIRST: 'first',
+    OUTBREAK: 'outbreak',
+    STAMPEDE: 'stampede',
+    FIRST_KILL: 'first-kill',
+    SEASON_TURN: 'season-turn',
+    FLOOR_ARRIVAL: 'floor-arrival',
+    TRAMPLE: 'trample',
 });
 
 /** Maximum hunter-to-prey distance for a `chase` moment, in world units. */

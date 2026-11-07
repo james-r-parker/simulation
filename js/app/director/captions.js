@@ -4,6 +4,9 @@
 import { familyName } from '../renderer/colors.js';
 import { MOMENT_KIND } from './scoring.js';
 
+/** The season names, in `season` order. */
+const SEASON_NAMES = Object.freeze(['Spring', 'Summer', 'Autumn', 'Winter']);
+
 /** @type {Readonly<Record<string, string>>} */
 const FIRST_CAPTIONS = Object.freeze({
     'first-pack-kill': 'First pack kill',
@@ -49,6 +52,12 @@ const CAPTION_BUILDERS = Object.freeze({
     [MOMENT_KIND.EXTINCT]: (m, w) => `${resolveFamily(m, w)} has died out`,
     [MOMENT_KIND.LAST_STAND]: (m, w) => `Last stand of ${resolveFamily(m, w)}`,
     [MOMENT_KIND.FIRST]: (m) => FIRST_CAPTIONS[m.tickerKind ?? ''] ?? 'First pack kill',
+    [MOMENT_KIND.OUTBREAK]: (m) => `Outbreak - ${m.count ?? 3} infected`,
+    [MOMENT_KIND.STAMPEDE]: () => 'Stampede',
+    [MOMENT_KIND.FIRST_KILL]: () => 'A first kill',
+    [MOMENT_KIND.SEASON_TURN]: (m) => `${SEASON_NAMES[m.count ?? 0]} comes`,
+    [MOMENT_KIND.FLOOR_ARRIVAL]: (m) => `${m.count ?? 4} newcomers arrive`,
+    [MOMENT_KIND.TRAMPLE]: () => 'Trampled',
 });
 
 /**
