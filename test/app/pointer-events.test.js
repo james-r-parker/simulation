@@ -32,7 +32,11 @@ function setup() {
             cancel: record('cancel'),
             wheel: record('wheel'),
         },
-        iface: { noteInput: () => true, pointer: () => {} },
+        iface: {
+            noteInput: () => true,
+            pointer: (/** @type {number} */ x) => calls.push(['pointer', x]),
+            peekHide: () => calls.push(['peekHide']),
+        },
         toDevice: (e) => ({ x: e.clientX * 2, y: e.clientY * 2 }),
     });
     return { calls, captured, fire: (target, type, e) => handlers[`${target}:${type}`](e) };
@@ -47,11 +51,20 @@ describe('listenPointers', () => {
         fire('target', 'pointerup', { pointerId: 7, clientX: 5, clientY: 6 });
         expect(captured).toEqual([7, 1]);
         expect(calls).toEqual([
+            ['peekHide'],
             ['down', 2, 4, 7, true],
             ['down', 6, 8, 1, false],
+            ['pointer', 5],
             ['move', 10, 12, 7],
             ['up', 10, 12, 7],
         ]);
+    });
+
+    it('moves the hover peek for a mouse only', () => {
+        const { calls, fire } = setup();
+        fire('target', 'pointermove', { pointerId: 1, pointerType: 'mouse', clientX: 5, clientY: 6 });
+        fire('target', 'pointermove', { pointerId: 2, pointerType: 'touch', clientX: 7, clientY: 8 });
+        expect(calls.filter((c) => c[0] === 'pointer')).toEqual([['pointer', 5]]);
     });
 
     it('turns a pointercancel or a lost capture into a cancel of that pointer', () => {
