@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { createFamilySlots, assignSlots } from '../../../js/app/family-slots.js';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
 import { familyName } from '../../../js/app/renderer/colors.js';
-import { createPeekTracker, mountPeek, nowLine, PEEK_REST_MS, peekView } from '../../../js/app/ui/hover-peek.js';
+import {
+    createPeekTracker,
+    mountPeek,
+    nowLine,
+    PEEK_REST_MS,
+    peekControls,
+    peekView,
+} from '../../../js/app/ui/hover-peek.js';
 import { byClass, fakeDocument } from '../helpers/fake-dom.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
@@ -81,5 +88,26 @@ describe('mountPeek', () => {
         expect(byClass(root, 'peek-chip')[0].style.background).toBe('rgb(1, 2, 3)');
         peek.hide();
         expect(peek.visible()).toBe(false);
+    });
+});
+
+describe('peekControls', () => {
+    it('a mouse move restarts the rest, a long press rests at once, a touch down holds it hidden', () => {
+        const tracker = createPeekTracker();
+        const hidden = /** @type {boolean[]} */ ([]);
+        let clock = 1000;
+        const c = peekControls(tracker, { hide: () => hidden.push(true) }, () => clock);
+        c.pointer(5, 6);
+        expect(hidden).toEqual([true]);
+        expect(tracker.rested(clock)).toBe(false);
+        c.peekAt(50, 60);
+        expect(tracker.position()).toEqual({ x: 50, y: 60 });
+        expect(tracker.rested(clock)).toBe(true);
+        c.peekHide();
+        expect(hidden).toHaveLength(2);
+        expect(tracker.rested(clock + 1e9)).toBe(false);
+        clock += 10;
+        c.pointer(7, 8);
+        expect(tracker.rested(clock + PEEK_REST_MS)).toBe(true);
     });
 });
