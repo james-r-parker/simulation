@@ -29,6 +29,23 @@ describe('gatherNear', () => {
         expect(gather(w, me).sort()).toEqual([food, KIND_STRIDE + other, 4 * KIND_STRIDE + cloud].sort());
     });
 
+    it('keeps a herd body whose surface is on the vision edge and drops one past it, on either axis', () => {
+        const w = senseWorld({ herdCount: 3, herdSize: 1 });
+        const me = addAgent(w, 500, 500, 20);
+        const reach = VISION + w.config.herdRadius;
+        const spots = [
+            [500 + reach - 0.01, 500],
+            [500 - reach - 5, 500],
+            [500, 500 + reach - 0.01],
+        ];
+        spots.forEach(([x, y], i) => {
+            w.herdAlive[i] = 1;
+            w.herdX[i] = x;
+            w.herdY[i] = y;
+        });
+        expect(gather(w, me)).toEqual([HERD * KIND_STRIDE, HERD * KIND_STRIDE + 2]);
+    });
+
     it('lists a live herd body as an obstacle-channel hit kind', () => {
         const w = senseWorld({ herdCount: 1, herdSize: 1 });
         const me = addAgent(w, 500, 500, 20);
