@@ -175,6 +175,27 @@ export const FX_RECIPES = Object.freeze({
     matured: recipe(FAMILY.courtship, RANK.mate, [
         { curve: C.ring, count: 1, life: 30, size: 2.2, gain: 0.8, minPx: 8 },
     ]),
+    herdDied: recipe(FAMILY.herds, RANK.kill, [
+        { curve: C.puffRing, count: 1, life: 30, size: 2, color: 'stampedeDust', gain: 30, minPx: 10 },
+        { curve: C.ringSlow, count: 1, life: 40, size: 3, color: 'stampedeDust', gain: 25, minPx: 12 },
+    ]),
+    calfBorn: recipe(FAMILY.herds, RANK.birth, [
+        { curve: C.ring, count: 1, life: 30, size: 1.6, color: 'stampedeDust', gain: 30, minPx: 8 },
+    ]),
+    dungDropped: recipe(FAMILY.herds, RANK.mate, [
+        { curve: C.puffRing, count: 1, life: 20, size: 0.8, color: 'stampedeDust', gain: 25, minPx: 6 },
+        { curve: C.sprout, count: 1, life: 40, size: 0.8, gain: 2.5, delay: 10, minPx: 8 },
+    ]),
+    patchWilted: recipe(FAMILY.flora, RANK.mate, [
+        { curve: C.moteFall, count: 6, life: 90, size: 0.3, reach: 2, spread: 'random', gain: 2.5 },
+    ]),
+    firstKill: recipe(FAMILY.combat, RANK.firstKill, [
+        { curve: C.ring, count: 1, life: 60, size: 2.5, color: 'milestone', gain: 1.2, minPx: 12 },
+        { curve: C.sparkle, count: 8, life: 60, size: 0.35, reach: 3, spread: 'ring', color: 'milestone', gain: 1.2 },
+    ]),
+    wallCross: recipe(FAMILY.weather, RANK.weather, [
+        { curve: C.ringSlow, count: 1, life: 40, size: 1.8, color: 'coolWhite', gain: 0.6, stretch: 2.5, minPx: 8 },
+    ]),
     breath: recipe(FAMILY.weather, RANK.weather, [
         { curve: C.puffOut, count: 1, life: 30, size: 0.45, reach: 1.2, color: 'coolWhite', gain: 0.3 },
     ]),

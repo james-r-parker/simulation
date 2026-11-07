@@ -21,7 +21,7 @@ describe('snapshotLayout', () => {
     it('sizes the buffer for the config maxima', () => {
         const layout = snapshotLayout(smallWorld().config);
         expect(layout).toMatchObject({
-            headerWords: 9,
+            headerWords: 10,
             agentStride: 13,
             rayStride: 4,
             foodStride: 6,
@@ -32,7 +32,7 @@ describe('snapshotLayout', () => {
             zoneStride: 4,
         });
         expect(layout.bytes).toBe(
-            (9 +
+            (10 +
                 8 * (13 + 4) +
                 4 * 6 +
                 terrainRockCount(smallWorld().config) * 3 +
@@ -150,9 +150,9 @@ describe('writeSnapshot', () => {
         expect(u32[HEADER_WORDS + 13 + 8]).toBe(2);
         expect(f32[HEADER_WORDS + 13]).toBe(world.x[2]);
         expect(f32[HEADER_WORDS + 13 + 4]).toBeCloseTo(world.energy[2] / 100, 6);
-        expect(Array.from(f32.subarray(35, 39))).toEqual([5, 6, 7, 0]);
-        expect(f32[41]).toBe(world.obsX[0]);
-        expect(f32[43]).toBe(world.obsRadius[0]);
+        expect(Array.from(f32.subarray(36, 40))).toEqual([5, 6, 7, 0]);
+        expect(f32[42]).toBe(world.obsX[0]);
+        expect(f32[44]).toBe(world.obsRadius[0]);
     });
 
     it('writes the live clouds after the obstacles as x, y and the share of smokeTicks left', () => {
@@ -211,7 +211,7 @@ describe('writeSnapshot', () => {
         world.foodHue[0] = 0.5;
         const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
         writeSnapshot(world, views);
-        expect(Array.from(views.f32.subarray(12, 15))).toEqual([0.25, 3, 0.5]);
+        expect(Array.from(views.f32.subarray(13, 16))).toEqual([0.25, 3, 0.5]);
     });
 
     it('throws when the buffer is too small', () => {
@@ -245,8 +245,8 @@ describe('writeSnapshot exact layout', () => {
         writeSnapshot(world, views);
         const { f32, u32 } = views;
         expect(Array.from(f32.subarray(HEADER_WORDS, HEADER_WORDS + 4))).toEqual([11, 12, 1.5, 13]);
-        expect(f32[13]).toBe(0.25);
-        expect(Array.from(u32.subarray(14, 18))).toEqual([4, 21, 22, 3]);
+        expect(f32[14]).toBe(0.25);
+        expect(Array.from(u32.subarray(15, 19))).toEqual([4, 21, 22, 3]);
         expect(Array.from(u32.subarray(0, 6))).toEqual([0, 1, 0, world.obsX.length, 0, 0]);
         const obstacleStart = HEADER_WORDS + 13;
         expect(f32[obstacleStart]).toBe(world.obsX[0]);

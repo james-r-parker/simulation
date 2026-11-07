@@ -43,7 +43,7 @@ describe('init', () => {
         });
         expect(ready.info.specs).toHaveLength(5);
         expect(ready.layout).toMatchObject({
-            headerWords: 9,
+            headerWords: 10,
             agentStride: 13,
             herdStride: 6,
             zoneStride: 4,

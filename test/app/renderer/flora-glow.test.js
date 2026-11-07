@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     createFloraGlow,
+    FRUIT_GAIN,
     disposeFloraGlow,
     packFloraGlows,
     setFloraVisibility,
@@ -91,5 +92,23 @@ describe('live patch glows', () => {
         });
         disposeFloraGlow(null);
         expect(disposed).toEqual(['geometry', 'material', 'mesh']);
+    });
+});
+
+describe('fruit glints', () => {
+    it('bob four glints on a patch above 70% full, on the wall clock', () => {
+        const glow = createFloraGlow({ floraPatchMax: 2, foodPatchRadius: 10 });
+        expect(glow.mat.fragmentShader).toContain('smoothstep(0.7, 0.9, vTint.a)');
+        expect(glow.mat.fragmentShader).toContain(`* ${FRUIT_GAIN.toFixed(1)} * ripe * glints`);
+        glow.update(null, 2500);
+        expect(glow.mat.uniforms.uTime.value).toBe(2.5);
+    });
+});
+
+describe('fruit glints and the feeding item', () => {
+    it('draws the glints only while the feeding item draws', () => {
+        const glow = createFloraGlow({ floraPatchMax: 2, foodPatchRadius: 10 });
+        expect(glow.mat.fragmentShader).toContain('smoothstep(0.7, 0.9, vTint.a) * uFruit');
+        expect(glow.mat.uniforms.uFruit.value).toBe(1);
     });
 });

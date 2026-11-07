@@ -6,7 +6,7 @@
 import { floraColor } from './flora-colors.js';
 import { PALETTE, SCENERY_MAX_LUMINANCE } from './colors.js';
 import { TWEEN } from './body-tweens.js';
-import { BIRTH_SIZE, indexOfGenome, tweenAt } from './effects-combat.js';
+import { atEffect, BIRTH_SIZE, indexOfGenome, tweenAt } from './effects-combat.js';
 import { FX_RECIPES, playRecipe } from './fx-recipes.js';
 
 const SMOKE_BITTEN_SHIFT = 8;
@@ -71,13 +71,7 @@ export function playSmoke(player, agents) {
  * @returns {void}
  */
 export function playAtEffect(player, which) {
-    const e = player.effect;
-    const at = player.at;
-    at.x = e.x;
-    at.y = e.y;
-    at.angle = 0;
-    at.size = BIRTH_SIZE;
-    at.tick = e.tick;
+    const at = atEffect(player);
     at.rgb = PALETTE.infected;
     playRecipe(player.fx, FX_RECIPES[which], at);
 }

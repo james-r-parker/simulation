@@ -26,6 +26,7 @@ export const ZONE_STRIDE = 4;
  * @property {number} zoneCount
  * @property {number} rayStart word offset of the ray part
  * @property {number} rayCount rays written per agent, 0 when the part is absent
+ * @property {number} droughtBasin the basin under drought, -1 when none
  */
 
 /**
@@ -48,6 +49,7 @@ export function createSections() {
         zoneCount: 0,
         rayStart: 0,
         rayCount: 0,
+        droughtBasin: -1,
     };
 }
 
@@ -73,5 +75,6 @@ export function readSections(u32, out) {
     out.zoneStart = out.herdStart + out.herdCount * HERD_STRIDE;
     out.zoneCount = u32[8];
     out.rayStart = out.zoneStart + out.zoneCount * ZONE_STRIDE;
+    out.droughtBasin = u32[9] - 1;
     return out;
 }

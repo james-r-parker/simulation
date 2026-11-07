@@ -10,7 +10,7 @@ import { agentState } from './snapshot-state.js';
 
 export { SNAPSHOT_STATE } from './snapshot-state.js';
 
-export const HEADER_WORDS = 9;
+export const HEADER_WORDS = 10;
 const AGENT_STRIDE = 13;
 const FOOD_STRIDE = 6;
 const PATCH_STRIDE = 5;
@@ -21,6 +21,9 @@ export const ZONE_STRIDE = 4;
 const WORD_BYTES = 4;
 const HALF_PI = 1.5707963267948966;
 const PI = 3.141592653589793;
+
+/** Header word 9: the basin under drought plus 1, 0 when none (`era[0]`). */
+const DROUGHT_WORD = 9;
 
 /** Header word 5: the ray count written per agent, 0 when the ray part is absent. */
 const RAY_COUNT_WORD = 5;
@@ -351,7 +354,7 @@ function writeRays(world, f32, start) {
 /**
  * Writes the world into the buffer: header, alive agents, alive food, obstacles, clouds, live patches, herds and,
  * when `withRays` is set, each alive agent's ray proximities in agent order. Header word 5 is the ray count, word 6
- * the patch count, word 7 the herd count and word 8 the zone count.
+ * the patch count, word 7 the herd count, word 8 the zone count and word 9 the basin under drought plus 1 (0 for none).
  * @param {import('./world.js').World} world the world
  * @param {{f32: Float32Array, u32: Uint32Array}} views views from `createSnapshotViews`
  * @param {boolean} [withRays] write the ray part
@@ -380,6 +383,7 @@ export function writeSnapshot(world, views, withRays = false) {
     u32[4] = world.cloudCount;
     writeClouds(world, f32, w);
     u32[RAY_COUNT_WORD] = withRays ? rayCount : 0;
+    u32[DROUGHT_WORD] = world.era[0] + 1;
     const patchStart = writePatches(world, views, w + world.cloudCount * CLOUD_STRIDE);
     const herdStart = writeHerds(world, views, patchStart);
     const rayStart = writeZones(world, views, herdStart);
