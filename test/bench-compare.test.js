@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     BASE_INSTALL_ARGS,
+    MIN_MS_DELTA,
     SKIP_EXIT,
     compare,
     formatRows,
@@ -28,6 +29,20 @@ describe('compare', () => {
     it('passes a head median 9% above the base median', () => {
         const rows = compare(BASE, [10.9, 10.9, 10.9, 10.9, 10.9].map(run));
         expect(rows.every((row) => row.ok)).toBe(true);
+    });
+
+    it('passes a millisecond metric whose rise is below MIN_MS_DELTA, however large the ratio', () => {
+        // PR #319: the invariants phase read base 0.0001, head 0.0002 (+100%) on a phase that does nothing.
+        const tiny = compare(
+            [{ 'bench.phase_ms.invariants@500': 0.0001 }],
+            [{ 'bench.phase_ms.invariants@500': 0.0002 }],
+        );
+        expect(tiny[0].ok).toBe(true);
+        const real = compare(
+            [{ 'bench.phase_ms.sense@500': 1 }],
+            [{ 'bench.phase_ms.sense@500': 1 + MIN_MS_DELTA * 40 }],
+        );
+        expect(real[0].ok).toBe(false);
     });
 
     it('fails a head median 11% above the base median', () => {
