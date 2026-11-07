@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
     checkHash,
     checkSources,
-    hasCargo,
+    hasRebuildTools,
     parseHashFile,
     sha256Hex,
     sourceFiles,
@@ -40,8 +40,10 @@ describe('check-wasm', () => {
         expect(parseHashFile(`${hex}  other.wasm`)).toBeNull();
     });
 
-    it('answers whether cargo can run without throwing when the PATH is empty', () => {
-        expect(typeof hasCargo({ PATH: '' })).toBe('boolean');
+    it('needs both cargo and wasm-opt before it rebuilds', () => {
+        expect(typeof hasRebuildTools()).toBe('boolean');
+        // A hosted CI runner has cargo but no wasm-opt: an empty PATH hides wasm-opt even where ~/.cargo/bin has cargo.
+        expect(hasRebuildTools({ PATH: '' })).toBe(false);
     });
 
     it('finds every source the binary is built from recorded unchanged, so source drift fails without cargo', () => {

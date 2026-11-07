@@ -1,6 +1,6 @@
 // Checks the committed WASM kernels (docs/designs/wasm-kernels.md): the binary's sha256 must match
-// wasm/blob-kernels.wasm.sha256, and on a machine with cargo a fresh build from wasm/src must reproduce it. Without
-// cargo the rebuild is skipped with a note. wasm/blob-kernels.src.sha256 records the hash of every source the binary is
+// wasm/blob-kernels.wasm.sha256, and on a machine with cargo and wasm-opt a fresh build from wasm/src must reproduce it. Without
+// them the rebuild is skipped with a note. wasm/blob-kernels.src.sha256 records the hash of every source the binary is
 // built from, so a source change without a rebuild fails here (and in test/check-wasm.test.js) on a machine without cargo.
 // Prints one line per problem and exits 1 if there are any.
 // Usage: node scripts/check-wasm.mjs [--no-rebuild] | --write-sources (scripts/build-wasm.sh records the source hashes)
@@ -107,13 +107,22 @@ export function checkHash(bytes, hashText) {
           ];
 }
 
+/** The wasm-opt version scripts/build-wasm.sh pins; another version optimises to different bytes. */
+const WASM_OPT_VERSION = '120';
+
 /**
+ * Whether this machine has the whole rebuild toolchain: cargo (on the PATH or in ~/.cargo/bin) and wasm-opt at the
+ * pinned version. A hosted CI runner ships cargo but not wasm-opt, so cargo alone is not enough.
  * @param {Record<string, string | undefined>} env the environment
- * @returns {boolean} whether cargo can be run, on the PATH or in ~/.cargo/bin
+ * @returns {boolean} whether scripts/build-wasm.sh can run here
  */
-export function hasCargo(env = process.env) {
-    const path = `${join(homedir(), '.cargo/bin')}:${env.PATH ?? ''}`;
-    return spawnSync('cargo', ['--version'], { env: { ...env, PATH: path }, stdio: 'ignore' }).status === 0;
+export function hasRebuildTools(env = process.env) {
+    const opts = { env: { ...env, PATH: `${join(homedir(), '.cargo/bin')}:${env.PATH ?? ''}` }, encoding: 'utf8' };
+    if (spawnSync('cargo', ['--version'], { ...opts, stdio: 'ignore' }).status !== 0) {
+        return false;
+    }
+    const opt = spawnSync('wasm-opt', ['--version'], opts);
+    return opt.status === 0 && new RegExp(`^wasm-opt version ${WASM_OPT_VERSION}(\\s|$)`).test(opt.stdout ?? '');
 }
 
 /**
@@ -153,10 +162,12 @@ if (
     const recorded = existsSync(SOURCE_HASH_FILE) ? readFileSync(SOURCE_HASH_FILE, 'utf8') : null;
     const problems = [...checkHash(bytes, hashText), ...checkSources(recorded, sourceHashText())];
     if (problems.length === 0 && bytes !== null && !process.argv.includes('--no-rebuild')) {
-        if (hasCargo()) {
+        if (hasRebuildTools()) {
             problems.push(...checkRebuild(bytes));
         } else {
-            console.log('wasm: cargo not found - skipped the rebuild check (the hash check ran)');
+            console.log(
+                `wasm: cargo or wasm-opt ${WASM_OPT_VERSION} not found - skipped the rebuild check (the hash checks ran)`,
+            );
         }
     }
     for (const problem of problems) {
