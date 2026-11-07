@@ -111,7 +111,9 @@ describe('listSql', () => {
 
     it('lists only verified rows of the season, best Elo first with id as the tie break', () => {
         const ids = walk(db, 'limit=50');
-        const expected = [...all].sort((a, b) => b.elo - a.elo || (a.id < b.id ? -1 : 1)).map((r) => r.id);
+        const expected = [...all]
+            .sort((a, b) => (b.elo ?? 0) - (a.elo ?? 0) || (a.id < b.id ? -1 : 1))
+            .map((r) => r.id);
         expect(ids).toEqual(expected);
     });
 

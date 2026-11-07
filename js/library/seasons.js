@@ -69,6 +69,7 @@ export function daysBetween(from, to) {
  * @returns {string[]} one message per broken rule; empty when the list is valid
  */
 export function checkSeasons(seasons) {
+    /** @type {string[]} */
     const problems = [];
     seasons.forEach((entry, index) => {
         if (entry.major !== entry.season) {
