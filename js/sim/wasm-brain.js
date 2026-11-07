@@ -90,6 +90,11 @@ export function writeBrainParams(arena, config, layout) {
     if (FOOD_HUE_VALUES !== 2) {
         throw new Error(`writeBrainParams: the kernel pools 2 food hues, the layout has ${FOOD_HUE_VALUES}`);
     }
+    if (layout.geneOutputs + 1 !== layout.outputCount) {
+        throw new Error(
+            `writeBrainParams: the kernel expects one gene-less output (SPLIT), the layout has ${layout.geneOutputs} genes for ${layout.outputCount} outputs`,
+        );
+    }
     const { params, geneOutputIndex, paramDoubles } = arena.views;
     params.set(PARAM_ARRAYS.map((name) => arena.offsets[name]));
     params.set(paramValues(config, layout), PARAM_ARRAYS.length);

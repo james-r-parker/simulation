@@ -145,6 +145,13 @@ describe('wasmForwardAll', () => {
         }
     });
 
+    it('refuses a layout without exactly one gene-less output', () => {
+        const world = smallWorld();
+        attachWasm(world, kernels, { wasmKernels: true });
+        const layout = { ...world.layout, outputCount: world.layout.geneOutputs + 2 };
+        expect(() => writeBrainParams(world.wasm, world.config, layout)).toThrow(/one gene-less output/);
+    });
+
     it('writes every array offset into the parameter block', () => {
         const world = smallWorld();
         attachWasm(world, kernels, { wasmKernels: true });
