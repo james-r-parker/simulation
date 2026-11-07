@@ -7,6 +7,7 @@
 
 mod brain;
 mod det_math;
+mod hash;
 mod sense;
 
 /// The kernel ABI version; `js/sim/wasm-loader.js` refuses a binary whose version it does not know.
@@ -75,6 +76,16 @@ pub unsafe extern "C" fn pool_slot(params: i32, slot: i32) {
 pub unsafe extern "C" fn sense_slot(params: i32, slot: i32) -> i32 {
     // SAFETY: the caller passes the arena's sense parameter block and an alive slot.
     unsafe { sense::sense_slot(params as u32, slot as usize) as i32 }
+}
+
+/// Rebuilds the world's spatial hash (`buildHash`): the entry total, which JS checks against the capacity.
+///
+/// # Safety
+/// `params` addresses the block `js/sim/wasm-hash.js` wrote, describing arrays inside the memory.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn build_hash(params: i32, cell_size: f64) -> i32 {
+    // SAFETY: the caller passes the arena's hash parameter block.
+    unsafe { hash::build(params as u32, cell_size) }
 }
 
 #[panic_handler]

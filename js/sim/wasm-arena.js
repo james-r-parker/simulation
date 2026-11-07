@@ -4,6 +4,7 @@
 // the kernels read and write the same memory. `allocateWorld` attaches every world as it is born.
 
 import { writeBrainParams } from './wasm-brain.js';
+import { HASH_FIELDS, arenaHash, hashSpecs } from './wasm-hash.js';
 import { SENSE_FIELDS, senseSpecs, writeSenseParams } from './wasm-sense.js';
 import { embeddedKernels } from './wasm-loader.js';
 import { hasHashViews } from './world-hash.js';
@@ -38,8 +39,8 @@ export const BRAIN_FIELDS = Object.freeze([
     'raySin',
 ]);
 
-/** Every world field the arena takes over: the brain kernel's, then the sense kernel's. */
-export const WORLD_FIELDS = Object.freeze([...BRAIN_FIELDS, ...SENSE_FIELDS]);
+/** Every world field the arena takes over: the brain kernel's, then the sense kernel's, then the hash kernel's. */
+export const WORLD_FIELDS = Object.freeze([...BRAIN_FIELDS, ...SENSE_FIELDS, ...HASH_FIELDS]);
 
 /** @typedef {[string, Float64ArrayConstructor | Float32ArrayConstructor | Int32ArrayConstructor | Uint8ArrayConstructor, number]} ArenaSpec */
 
@@ -111,7 +112,8 @@ export function layoutArena(specs, start) {
  * @param {import('./wasm-loader.js').Kernels} kernels the compiled kernels and their `__heap_base`
  * @param {Readonly<Record<string, any>>} config the validated config
  * @param {import('./brain-layout.js').BrainLayout} layout the brain layout
- * @param {ArenaSpec[]} [extra] more arrays after the brain's (the sense kernel's, from `senseSpecs`)
+ * @param {ArenaSpec[]} [extra] more arrays after the brain's (the sense and hash kernels', from `senseSpecs` and
+ *   `hashSpecs`)
  * @returns {Arena} the arena, with one typed-array view per array
  * @throws {Error} when the arrays need more than `MAX_PAGES`
  */
@@ -192,7 +194,8 @@ function refuseAttach(world, midRun) {
 }
 
 /**
- * Moves the world's hot arrays into a new arena, sized for this world, and sets `world.wasm`. `allocateWorld` calls it
+ * Moves the world's hot arrays into a new arena, sized for this world, and sets `world.wasm` and `world.hash` (the
+ * spatial hash over the arena; a copy keeps its source's last build). `allocateWorld` calls it
  * for every world; a copy of a world that wants its own arena (its `wasm` deleted, its own `agentRows` and `foodRows`
  * entries) calls it again with `midRun`. Fails loudly: there is no JS kernel to fall back to.
  * @param {Record<string, any>} world a world from `allocateWorld`, or such a copy
@@ -202,7 +205,7 @@ function refuseAttach(world, midRun) {
  */
 export function attachWasm(world, kernels = embeddedKernels(), { midRun = false } = {}) {
     refuseAttach(world, midRun);
-    const arena = createArena(kernels, world.config, world.layout, senseSpecs(world));
+    const arena = createArena(kernels, world.config, world.layout, [...senseSpecs(world), ...hashSpecs(world)]);
     writeBrainParams(arena, world.config, world.layout);
     writeSenseParams(arena, world);
     repointRows(world, arena);
@@ -210,6 +213,7 @@ export function attachWasm(world, kernels = embeddedKernels(), { midRun = false 
         arena.views[name].set(world[name]);
         world[name] = arena.views[name];
     }
+    world.hash = arenaHash(arena, world, world.hash);
     world.wasm = arena;
     return true;
 }

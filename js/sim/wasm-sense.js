@@ -1,8 +1,9 @@
 // The ray march in the WASM kernels (docs/designs/wasm-kernels.md, Phase 2): one `sense_slot` call gathers a casting
 // agent's circles and finds every ray's nearest hit, bit-identical to the JS gather and nearest-hit loops it
-// replaced (deleted at T11). The circles' arrays live in the arena (zero copy); the spatial hash's two arrays are copied into an arena
-// mirror once per `senseAll` (`syncSense`), since a caller may pass any hash. The hit classes, the mate sighting and the
-// body and scent inputs are rules and stay in JS.
+// replaced (deleted at T11). The circles' arrays and the spatial hash (built in the arena by `build_hash`, Phase 4) are
+// read in place. The hit classes, the mate sighting and the body and scent inputs are rules and stay in JS.
+
+import { hashShape } from './wasm-hash.js';
 
 /** World fields the sense kernel reads or writes, taken over by the arena at their allocated type and length. */
 export const SENSE_FIELDS = Object.freeze([
@@ -83,19 +84,15 @@ const D_CELL_SIZE = 4;
 /**
  * @param {Record<string, any>} world the world, its fields not yet in an arena
  * @returns {import('./wasm-arena.js').ArenaSpec[]} the sense arrays: the world's at their own type and length, then the
- *   kernel's per-ray results, the hash mirror and the parameter blocks
+ *   kernel's per-ray results and the parameter blocks (the hash arrays it reads are `hashSpecs`')
  */
 export function senseSpecs(world) {
     const { config } = world;
-    const cells =
-        Math.ceil(config.worldWidth / config.hashCellSize) * Math.ceil(config.worldHeight / config.hashCellSize);
     return [
         ...SENSE_FIELDS.map((name) => /** @type {any} */ ([name, world[name].constructor, world[name].length])),
         ['rayBestT', Float64Array, config.rayCount],
         ['rayBestKey', Float64Array, config.rayCount],
         ['rayDirs', Float64Array, 2 * config.rayCount],
-        ['cellStart', Int32Array, cells + 1],
-        ['entries', Int32Array, 9 * (config.maxAgents + config.maxFood)],
         ['senseParams', Int32Array, SENSE_ARRAYS.length + WORDS.length],
         ['senseDoubles', Float64Array, 5],
     ];
@@ -116,6 +113,10 @@ export function writeSenseParams(arena, world) {
     p[SENSE_WORD.obsCount] = world.obsX.length;
     p[SENSE_WORD.herdMax] = world.herdMax;
     p[SENSE_WORD.rayCount] = config.rayCount;
+    const { cols, rows, cellSize } = hashShape(config);
+    p[SENSE_WORD.cols] = cols;
+    p[SENSE_WORD.rows] = rows;
+    d[D_CELL_SIZE] = cellSize;
     d[D_SMOKE_RADIUS] = config.smokeRadius;
     d[D_HERD_RADIUS] = config.herdRadius;
     d[D_WIDTH] = config.worldWidth;
@@ -123,36 +124,28 @@ export function writeSenseParams(arena, world) {
 }
 
 /**
- * Copies the hash's cell offsets and entries into the arena mirror and records the per-tick counts. Call once before
- * casting with a hash that was built since the last call.
+ * Records the per-tick words before a tick's casts, and checks the casts will read the hash the caller means: the
+ * world's own, built in the arena (a hash bound to it by `buildHash` shares its arrays).
  * @param {Record<string, any>} world a world on the WASM kernels
  * @param {import('./spatial-hash.js').SpatialHash} hash the hash built for this tick
  * @returns {void}
- * @throws {Error} when the hash has more cells or entries than the mirror holds
+ * @throws {Error} when the hash does not read the world's arena arrays
  */
-export function syncSense(world, hash) {
+export function beginSense(world, hash) {
     const { views } = world.wasm;
-    const cells = hash.cols * hash.rows;
-    if (cells + 1 > views.cellStart.length || hash.entryCount > views.entries.length) {
-        throw new Error(
-            `syncSense: a ${hash.cols}x${hash.rows} hash with ${hash.entryCount} entries overflows the mirror`,
-        );
+    if (hash.cellStart !== views.cellStart) {
+        throw new Error("beginSense: the hash is not the world's own; build it with buildHash(hash, world) first");
     }
-    views.cellStart.set(hash.cellStart.subarray(0, cells + 1));
-    views.entries.set(hash.entries.subarray(0, hash.entryCount));
     const p = views.senseParams;
-    p[SENSE_WORD.cols] = hash.cols;
-    p[SENSE_WORD.rows] = hash.rows;
     p[SENSE_WORD.cloudCount] = world.cloudCount;
     // Rings conceal: `refugeCentres` is placed by `createWorld`, after the arena is built.
     p[SENSE_WORD.conceals] = world.refugeCentres.length > 0 ? 1 : 0;
-    views.senseDoubles[D_CELL_SIZE] = hash.cellSize;
 }
 
 /**
  * Gathers one caster's circles and finds every ray's nearest hit into `rayBestT` and `rayBestKey`. The caster's origin,
  * range and heading must already be in `world.rayScratch`.
- * @param {Record<string, any>} world a world on the WASM kernels, synced by `syncSense` this tick
+ * @param {Record<string, any>} world a world on the WASM kernels, begun by `beginSense` this tick
  * @param {number} slot the casting agent
  * @returns {number} the gathered row count in `world.rayLocal`
  */

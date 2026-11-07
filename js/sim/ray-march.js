@@ -10,7 +10,7 @@ import { isKin } from './kin.js';
 import { AGENT, FOOD, KIND_STRIDE, OX, OY, RANGE } from './ray-gather.js';
 import { COVER_TOTALS } from './cover.js';
 import { visionOf } from './traits.js';
-import { SENSE_WORD, senseSlot, syncSense } from './wasm-sense.js';
+import { SENSE_WORD, senseSlot, beginSense } from './wasm-sense.js';
 
 import { noteMatesSeen } from './mate-scarcity.js';
 
@@ -103,8 +103,8 @@ function setOrigin(world, slot) {
 }
 
 /**
- * Casts one agent's rays in the WASM sense kernel and writes its ray block; the hash must be synced this tick
- * (`syncSense`).
+ * Casts one agent's rays in the WASM sense kernel and writes its ray block; the tick must be begun
+ * (`beginSense`).
  * @param {World} world the world
  * @param {number} slot the alive agent
  * @returns {number} the gathered row count
@@ -135,6 +135,6 @@ export function castSlot(world, slot) {
  * @returns {number} the gathered row count
  */
 export function castRays(world, hash, slot) {
-    syncSense(world, hash);
+    beginSense(world, hash);
     return castSlot(world, slot);
 }

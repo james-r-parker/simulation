@@ -3,7 +3,7 @@
 import { writeBodyInputs } from './body-inputs.js';
 import { COS_H, SIN_H, castSlot } from './ray-march.js';
 import { writeScentInputs } from './scent-inputs.js';
-import { syncSense } from './wasm-sense.js';
+import { beginSense } from './wasm-sense.js';
 
 /**
  * Senses for all alive agents in ascending slot order.
@@ -13,7 +13,7 @@ import { syncSense } from './wasm-sense.js';
  */
 export function senseAll(world, hash) {
     const { alive } = world;
-    syncSense(world, hash);
+    beginSense(world, hash);
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1) {
             castSlot(world, slot);

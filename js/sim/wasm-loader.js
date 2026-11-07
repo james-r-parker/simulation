@@ -15,6 +15,8 @@ export const REQUIRED_EXPORTS = Object.freeze([
     'tanh_into',
     'brain_forward',
     'pool_slot',
+    'sense_slot',
+    'build_hash',
 ]);
 
 /** Pages of the throwaway memory the probe instance reads `__heap_base` from; the kernels declare far fewer. */
