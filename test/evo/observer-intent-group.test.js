@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { alarmReachMetrics } from '../../js/evo/observer-alarm-reach.js';
 import { sampleGroups } from '../../js/evo/observer-intent-group.js';
 import { HEARD_STRIDE } from '../../js/sim/world.js';
 import { FORAGER, PREDATOR, intentArena } from './helpers/intent-world.js';
@@ -58,6 +59,38 @@ describe('sampleGroups', () => {
         sampleGroups(intent, world);
         const { run } = intent;
         expect([run.groupThreatSum, run.groupThreatN, run.groupCalmSum, run.groupCalmN]).toEqual(sums);
+    });
+});
+
+describe('call opportunity', () => {
+    it('adds the non-hunters of any lineage within callRadius of each threatened non-hunter', () => {
+        const { world, intent } = intentArena({ callRadius: 100 });
+        const a = addBorn(world, { spec: FORAGER, lineageId: 5, x: 100, y: 100 });
+        const b = addBorn(world, { spec: FORAGER, lineageId: 6, x: 150, y: 100 });
+        addBorn(world, { spec: FORAGER, lineageId: 7, x: 100, y: 190 });
+        addBorn(world, { spec: FORAGER, lineageId: 5, x: 100, y: 201 });
+        addBorn(world, { spec: PREDATOR, lineageId: 5, x: 110, y: 100 });
+        const dead = addBorn(world, { spec: FORAGER, lineageId: 8, x: 105, y: 100 });
+        world.alive[dead] = 0;
+        intent.threatProx[a] = 0.5;
+        intent.threatProx[b] = 0.9;
+        sampleGroups(intent, world);
+        // a has b and the lineage-7 agent (90 px) in range; b has a only (the lineage-7 agent is 90 px from a, 111 px from b).
+        expect(intent.run.opportunityNeighbourSum).toBe(3);
+        expect(intent.run.groupThreatN).toBe(2);
+    });
+
+    it('is the metric over the threatened agents, null with none, and the kin metric reads the kin sums', () => {
+        const { world, intent } = intentArena({ callRadius: 100 });
+        const a = addBorn(world, { spec: FORAGER, lineageId: 5, x: 100, y: 100 });
+        addBorn(world, { spec: FORAGER, lineageId: 5, x: 150, y: 100 });
+        addBorn(world, { spec: FORAGER, lineageId: 6, x: 100, y: 150 });
+        const observer = { intent, combat: { alarmReach: { calls: 0 }, hunterAgentTicks: 0 }, agentTicks: 0 };
+        expect(alarmReachMetrics(observer)['eval.call_opportunity_neighbours'].value).toBeNull();
+        intent.threatProx[a] = 0.5;
+        sampleGroups(intent, world);
+        expect(alarmReachMetrics(observer)['eval.call_opportunity_neighbours']).toEqual({ value: 2 });
+        expect(alarmReachMetrics(observer)['eval.call_opportunity_kin']).toEqual({ value: 1 });
     });
 });
 
