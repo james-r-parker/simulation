@@ -89,7 +89,7 @@ function femaleChoice(world, a, chance) {
 }
 
 /**
- * Walks the alive slots in ascending order; each ready one looks for a partner with a higher slot within `mateRange`
+ * Walks the alive slots in ascending order; each ready one looks for a partner with a higher slot within `mateReach`
  * and starts a pregnancy when one wins the lifecycle draw. Only the ready females search, each
  * choosing the highest ranked male in reach (`findMale`, on the mate ranks `refreshMateRanks` recomputes every
  * `MATE_RANK_INTERVAL` ticks) and being the mother whatever her slot. Uses the hash built this tick.

@@ -6,6 +6,7 @@ import {
     screenVerdicts,
     seedChecks,
     shareAbove,
+    summerSeeds,
     targetDeltas,
     WATCH_METRICS,
     watchMeans,
@@ -244,5 +245,20 @@ describe('screenVerdicts', () => {
         expect(out.arms.map((a) => a.arm)).toEqual(['ref', 'b']);
         expect(out.arms[1].deltas).not.toBeNull();
         expect(() => screenVerdicts({ b: report() }, 'ref')).toThrow(/no report/);
+    });
+});
+
+describe('summerSeeds', () => {
+    const arm = (/** @type {(number | null)[]} */ values) => ({
+        seeds: values.map((_, i) => i + 1),
+        metrics: { 'eval.prey_summer_min': { mean: 0, values } },
+    });
+
+    it('counts the seeds that keep 100 prey through every summer; a seed with no summer is not above', () => {
+        expect(summerSeeds(arm([100, 99, 250, 80, null]))).toEqual({ above: 2, of: 5 });
+    });
+
+    it('reads zero of the seeds run when the report lacks the metric', () => {
+        expect(summerSeeds({ seeds: [1, 2], metrics: {} })).toEqual({ above: 0, of: 2 });
     });
 });

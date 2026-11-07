@@ -83,6 +83,8 @@ export const DEFAULTS = deepFreeze({
     mateMinEnergy: 200, // MIN_ENERGY_TO_REPRODUCE
     mateCost: 15, // REPRODUCE_COST_BASE
     mateRange: 200, // new: the largest edge-to-edge gap between two mates (100 before T78)
+    mateRoamTicks: 0, // world-balance T99: ticks without a possible mate in view before the mate range starts to grow; 0 is off
+    mateRoamMax: 900, // world-balance T99: the extra edge-to-edge range reached after a second `mateRoamTicks` of roaming
     childEnergyShare: 0.5, // new: the share of its energy a mother gives a child
     childEnergyMin: 100, // new: the smallest gift a mating birth may make (200 before T78)
     splitMinEnergy: 900, // MIN_ENERGY_FOR_SPLITTING, lowered to 900

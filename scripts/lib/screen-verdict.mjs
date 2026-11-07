@@ -61,6 +61,7 @@ export const WATCH_METRICS = [
     'eval.predator_share_cv',
     'eval.basin_pop_cv',
     'eval.pred_prey_lag_corr',
+    'eval.prey_summer_min',
 ];
 
 /** Per-seed criteria in table order: key and what it checks. */
@@ -212,6 +213,22 @@ export function hunterGate(report, reference) {
     };
 }
 
+/** The prey count a seed must keep through every summer to be clear of the mating edge (world-balance Phase 6). */
+export const SUMMER_PREY_MIN = 100;
+
+/**
+ * @param {Record<string, any>} report an eval report
+ * @returns {{ above: number, of: number }} the seeds whose `eval.prey_summer_min` is at least `SUMMER_PREY_MIN`, and the seeds
+ *   run (a seed with no summer reads null and does not count as above)
+ */
+export function summerSeeds(report) {
+    const values = metricValues(report, 'eval.prey_summer_min');
+    return {
+        above: values.filter((v) => v !== null && v !== undefined && v >= SUMMER_PREY_MIN).length,
+        of: values.length,
+    };
+}
+
 /**
  * @param {Record<string, any>} report an eval report
  * @param {Record<string, any>} reference the reference arm's report
@@ -270,6 +287,7 @@ export function armVerdict(name, report, reference) {
         criteria,
         means,
         hunters,
+        summer: summerSeeds(report),
         popMean: report.metrics['eval.population_mean']?.mean ?? null,
         pass,
         deltas: report === reference ? null : targetDeltas(report, reference),
