@@ -145,6 +145,23 @@ export function createArena(module, config, layout) {
 }
 
 /**
+ * @param {Record<string, any>} world the world, its fields not yet re-pointed
+ * @param {any} array an agent row's array
+ * @returns {string | undefined} the world field the row is, by identity; the hidden row is the field's head, so it
+ *   matches by buffer and offset. Matching by buffer alone would map every row to `alive` once the fields share one
+ *   arena.
+ */
+function rowField(world, array) {
+    const name = WORLD_FIELDS.find((field) => world[field] === array);
+    if (name !== undefined) {
+        return name;
+    }
+    const { hidden } = world;
+    const isHidden = array.buffer === hidden.buffer && array.byteOffset === hidden.byteOffset;
+    return isHidden && array.length === world.config.maxAgents * world.layout.hidden ? 'hidden' : undefined;
+}
+
+/**
  * Points each world-owned entry of `world.agentRows` at its arena view (the hidden entry excludes the scratch row).
  * @param {Record<string, any>} world the world, its fields not yet re-pointed
  * @param {Arena} arena the arena
@@ -153,7 +170,7 @@ export function createArena(module, config, layout) {
 function repointRows(world, arena) {
     const n = world.config.maxAgents;
     for (const row of world.agentRows) {
-        const name = WORLD_FIELDS.find((field) => world[field].buffer === row.array.buffer);
+        const name = rowField(world, row.array);
         if (name === 'hidden') {
             row.array = arena.views.hidden.subarray(0, n * world.layout.hidden);
         } else if (name !== undefined) {
@@ -163,9 +180,21 @@ function repointRows(world, arena) {
 }
 
 /**
+ * Throws for a world that cannot be attached safely.
+ * @param {Record<string, any>} world the world
+ * @returns {void}
+ */
+function refuseAttach(world) {
+    if (world.wasm !== undefined) {
+        throw new Error('attachWasm: the world already runs the WASM kernels');
+    }
+}
+
+/**
  * Moves the world's hot arrays into a new arena and turns the WASM kernels on. With `wasmKernels` false nothing
  * changes. When the kernels are missing or the arena cannot be built, the world keeps its JS arrays and kernels and a
- * `WasmFallback` warning is logged. A cloned or restored world calls this again.
+ * `WasmFallback` warning is logged. A cloned or restored world calls this again; attaching a world that already runs the
+ * kernels throws. A shallow copy needs its own `agentRows` entries, which are re-pointed at its arena.
  * @param {Record<string, any>} world a world from `createWorld`
  * @param {import('./wasm-loader.js').Kernels} kernels the result of `loadKernels`
  * @param {{ wasmKernels?: boolean, log?: { log: (level: string, event: string, fields: object) => void } }} [options]
@@ -176,6 +205,7 @@ export function attachWasm(world, kernels, { wasmKernels = false, log } = {}) {
     if (!wasmKernels) {
         return false;
     }
+    refuseAttach(world);
     if (!kernels.ok) {
         log?.log('warn', 'WasmFallback', { reason: kernels.reason, detail: kernels.detail });
         return false;

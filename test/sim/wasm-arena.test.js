@@ -126,6 +126,35 @@ describe('attachWasm', () => {
         expect(world.weights[world.layout.weightCount]).toBe(0);
     });
 
+    it('refuses a second attach, so no agent row is re-pointed at the wrong array', () => {
+        const world = smallWorld({ initialAgents: 3 });
+        attachWasm(world, kernels, { wasmKernels: true });
+        expect(() => attachWasm(world, kernels, { wasmKernels: true })).toThrow(/already runs the WASM kernels/);
+        freeAgent(world, 0);
+        expect(Array.from(world.alive.subarray(0, 3))).toEqual([0, 1, 1]);
+    });
+
+    it('attaches a shallow copy of an attached world on its own arena, the original untouched', () => {
+        const world = smallWorld({ initialAgents: 3 });
+        attachWasm(world, kernels, { wasmKernels: true });
+        /** @type {Record<string, any>} */
+        const copy = { ...world, agentRows: world.agentRows.map((/** @type {any} */ row) => ({ ...row })) };
+        delete copy.wasm;
+        expect(attachWasm(copy, kernels, { wasmKernels: true })).toBe(true);
+        const H = world.layout.hidden;
+        world.hidden.fill(0.5, 0, 3 * H);
+        copy.hidden.fill(0.25, 0, 3 * H);
+        freeAgent(copy, 0);
+        expect(Array.from(copy.alive.subarray(0, 3))).toEqual([0, 1, 1]);
+        expect(Array.from(world.alive.subarray(0, 3))).toEqual([1, 1, 1]);
+        expect(copy.hidden[0]).toBe(0);
+        expect(copy.hidden[H]).toBe(0.25);
+        expect(world.hidden[0]).toBe(0.5);
+        expect(copy.agentRows.every((/** @type {any} */ row) => row.array.buffer !== world.wasm.memory.buffer)).toBe(
+            true,
+        );
+    });
+
     it('falls back with one WasmFallback warning when the binary is missing or the arena too big', () => {
         const world = smallWorld();
         const { records, log } = recordingLog();

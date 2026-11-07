@@ -15,6 +15,16 @@ export const INFO_DIR = '.bench-micro-info';
  * @returns {Record<string, any>} the copy
  */
 export function forkBrainWorld(world, over = {}) {
+    if (world.wasm !== undefined) {
+        // A WASM world's copy gets its own arena, which copies the arrays; its agent rows are copied so the original's
+        // stay on the original's arena.
+        /** @type {Record<string, any>} */
+        const wasmCopy = { ...world, brainScratch: world.brainScratch.slice(), ...over };
+        delete wasmCopy.wasm;
+        wasmCopy.agentRows = world.agentRows.map((/** @type {any} */ row) => ({ ...row }));
+        benchAttach(wasmCopy);
+        return wasmCopy;
+    }
     /** @type {Record<string, any>} */
     const copy = {
         ...world,
@@ -26,12 +36,6 @@ export function forkBrainWorld(world, over = {}) {
         brainScratch: world.brainScratch.slice(),
         ...over,
     };
-    if (world.wasm !== undefined) {
-        // A WASM world's copy needs its own arena; its agent rows are copied so the original's stay on its arena.
-        delete copy.wasm;
-        copy.agentRows = world.agentRows.map((/** @type {any} */ row) => ({ ...row }));
-        benchAttach(copy);
-    }
     return copy;
 }
 
