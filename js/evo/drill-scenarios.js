@@ -31,8 +31,15 @@ const SAFE = FLORA_DEFAULTS.grass;
 /** Share of the subject's view at which the two foods of `two-foods` sit. */
 const TOXIC_SHARE = 0.4;
 const SAFE_SHARE = 0.7;
-/** The prey of `prey-too-big` holds this multiple of the subject's energy (its size follows its energy). */
+/** The prey of `prey-too-big` holds this multiple of the subject's energy. */
 const BIG_FACTOR = 2;
+
+/**
+ * The base size of the `prey-too-big` prey. A forager's size is capped by its store (about 33), and a loaded hunter's
+ * is 31, which clears `huntSizeRatio` (0.8), so energy alone leaves the prey bitable. At 60 the prey is over 1.25 times
+ * the biggest hunter the drill can stage, so `couldBite` is false.
+ */
+const BIG_BASE_SIZE = 60;
 
 /**
  * @typedef {object} Drill
@@ -174,11 +181,11 @@ function killed(world) {
 
 /**
  * @param {string} name the drill's name
- * @param {{energy: number, maxTicks: number, abort: boolean}} prey the prey's energy, the length, and whether the
- *   drill is won by not biting
+ * @param {{energy: number, maxTicks: number, abort: boolean, baseSize?: number}} prey the prey's energy, the length,
+ *   whether the drill is won by not biting, and the prey's base size (default: the config's)
  * @returns {Drill} a predator drill with one scripted fleeing forager
  */
-function preyDrill(name, { energy, maxTicks, abort }) {
+function preyDrill(name, { energy, maxTicks, abort, baseSize }) {
     return {
         name,
         scene: abort ? 'Abort' : 'A real chase',
@@ -187,7 +194,7 @@ function preyDrill(name, { energy, maxTicks, abort }) {
         plan(rng, view) {
             const angle = heading(rng);
             const spot = around(angle + offset(rng, 0, 45), PREY_VIEW_SHARE * view);
-            const prey = { role: 'prey', ...spot, angle: heading(rng), spec: FORAGER_SPEC, energy };
+            const prey = { role: 'prey', ...spot, angle: heading(rng), spec: FORAGER_SPEC, energy, baseSize };
             let bitten = false;
             return {
                 stage: stage([subjectAt(PREDATOR_SPEC, angle), prey], []),
@@ -270,7 +277,12 @@ export const DRILLS = Object.freeze([
     foodDrill('food-behind', { share: 0.6, fromDeg: 120, toDeg: 180, maxTicks: 600 }),
     TWO_FOODS,
     preyDrill('prey-ahead', { energy: SUBJECT_ENERGY, maxTicks: 900, abort: false }),
-    preyDrill('prey-too-big', { energy: BIG_FACTOR * HUNTER_ENERGY, maxTicks: 600, abort: true }),
+    preyDrill('prey-too-big', {
+        energy: BIG_FACTOR * HUNTER_ENERGY,
+        maxTicks: 600,
+        abort: true,
+        baseSize: BIG_BASE_SIZE,
+    }),
     hunterDrill(false),
     hunterDrill(true),
 ]);
