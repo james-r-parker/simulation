@@ -1,6 +1,6 @@
 # WASM kernels
 
-**Status:** In progress - Phases 1, 2 and 4 are built and adopted (T1 to T12, T13 to T19): every world runs the brain phase, the ray march, the spatial hash build, the pheromone update and the physics loops in the Rust/WASM kernels from birth, and the JS kernels they replaced are deleted; Phase 3 (batched drill evaluation) is proposed.
+**Status:** In progress - Phases 1, 2 and 4 are built and adopted (T1 to T12, T13 to T19): every world runs the brain phase, the ray march, the spatial hash build, the pheromone update and the physics loops in the Rust/WASM kernels from birth, and the JS kernels they replaced are deleted; Phase 5 (profile and squeeze) is built (T20 to T28): the baseline re-recorded, the profile ranked, three kernel squeezes kept (drill throughput +36%) and four tried and reverted; Phase 3 (batched drill evaluation) is proposed.
 **Validated:** f5c7880 (2026-11-07)
 **Priority:** 24 - a speed lever that changes no behaviour (the behaviour-changing levers are ruled out), so it queues behind the world-balance work and ahead of nothing that depends on it
 **Depends on:** [headless-sim-core.md](headless-sim-core.md)
@@ -285,6 +285,102 @@ matched its fixture on the first build.
   (-25%), `bench.phase_ms.physics@500` 0.298 to 0.190 (-36%). Drill throughput 60.5 to 73.8 trials per second per worker
   (+22%, margin +-4.3%). Raw kernel times and the load caveat are in `sim-notes.md` (2026-11-07, WASM Phase 4).
 
+### Phase 5 - Profile and squeeze
+
+**Targets:** bench.step_ms@500, bench.phase_ms.brain@500, bench.phase_ms.hash@500, bench.drill_trials_per_s
+
+The user (2026-11-07): "once all rust work is merged, have another check on the main loop code to see if anything is worth
+moving over, and attempt benchmarking against the remaining js and rust code to try and squeeze any time we can from it."
+
+**Baseline (T20).** `bench/baseline.json` re-recorded on a quiet machine (load 1.8 to 2.6, under nproc / 8) under the CPU
+lock, the median of three `node scripts/bench.mjs --json` runs: `bench.step_ms@500` 3.92 to 2.57 ms; `sense@500` 0.48,
+`brain@500` 0.60, `physics@500` 0.20, `lifecycle@500` 0.17, `field@500` 0.16, `hash@500` 0.077, `merit@500` 0.037 ms.
+Drill throughput 72.8 trials per second per worker (`npm run bench:micro -- --area drill`, 10.40 ops/s x 7 drills, load 6).
+
+**Profile.** `node --cpu-prof` (50 us sampling) of the 500-agent bench world (defaults, 500 ticks warm, 4000 ticks
+profiled) and of the drill bench (40 rounds of the 7 drills); a WASM function is named by its export (`wasm-function[2]` is
+`brain_forward`). Self time, as a share of the profile:
+
+| Rank | Function (where)                                                                                                                                                                 | Bench world | Drill                         | Kind                                           |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ----------------------------- | ---------------------------------------------- |
+| 1    | `brain_forward` (Rust)                                                                                                                                                           | 38.4%       | 5.9%                          | Kernel                                         |
+| 2    | `sense_slot` (Rust)                                                                                                                                                              | 14.3%       | 0.9%                          | Kernel                                         |
+| 3    | `build_hash` (Rust, twice a tick)                                                                                                                                                | 7.0%        | 31.9%                         | Kernel                                         |
+| 4    | The sense glue: `senseAll`, `writeBodyInputs`, `writeScentInputs`, `writeRefugeInputs`, `agentChannel`, `setOrigin`, `writeRay`, `castSlot` (JS)                                 | 9.0%        | 1.8%                          | Rules: hit classes, mate sighting, body inputs |
+| 5    | The mating and split gates: `isReadyToMate`, `mate`, `tallyReady`, `splitRanked`, `findMale` (JS, `territoryAllows` inlined)                                                     | 6.9%        | -                             | Rules, with one O(n) scan per hunter           |
+| 6    | `grazeHerds`, `collectPlants` (JS)                                                                                                                                               | 3.3%        | -                             | Rules: herd eating                             |
+| 7    | `bounce_rocks` (Rust, once an agent) and `integrate` (JS)                                                                                                                        | 2.0%, 1.9%  | 0.3%                          | Kernel, then wall and trample rules            |
+| 8    | `meritPhase`, `trackTarget`, `speedAlong`, `scanRays` (JS)                                                                                                                       | 2.0%        | 0.8%                          | Rules                                          |
+| 9    | `update_pheromones` (Rust)                                                                                                                                                       | 1.9%        | 15.0%                         | Kernel                                         |
+| 10   | `applyCosts`, `tickCost` (JS)                                                                                                                                                    | 1.3%        | 0.5%                          | Energy ledger                                  |
+| 11   | `detCos`, `detLog` (JS)                                                                                                                                                          | 1.6%        | 0.4%                          | Scalar maths at rule sites                     |
+| 12   | `resolve_contacts` (Rust)                                                                                                                                                        | 0.8%        | 1.3%                          | Kernel                                         |
+| -    | Drill only: the field phase's food loops (`field`, `ageFood`), `aliveFoods` (js/evo), world birth (`attachWasm`, `clone`, `checkExactKeys`, `allocateWorld`), garbage collection | -           | 6 to 7%, 3.7%, about 8%, 2.4% | Loops over `maxFood`; set-up                   |
+
+Every kernel together is about 65% of the bench world step; the remaining JS is spread over rule functions, none above 4%.
+Two facts drive the decisions. In the bench world the brain is the step: `bench:parts --area brain` puts it at 0.81 ms
+with real inputs (31 nonzero inputs per agent) and 0.49 ms with every input 0, so the fixed part (the 32 x 32 recurrent rows,
+43 tanh values, the outputs and Hebbian learning) is 60% of it, and `tanh_into` measures 12 ns a value, so tanh alone is
+about 0.25 ms. In a drill the world is tiny (3000 x 4000, 8 agent slots, a 22 x 29 hash and a 30 x 40 pheromone grid) but
+`maxFood` stays 3600, so `build_hash` walks 3600 dead food bytes twice a tick and the pheromone update runs over grids that
+are mostly exactly zero. The territory scan is the one JS cost that grows with the square of the population: 100 to 265
+`territoryAllows` calls a tick (59 to 81 mature hunters), each walking all 500 slots.
+
+**Decisions.** A hot spot moves to Rust when it is a pure array loop and a meaningful share of the step or of a drill
+trial; it gets a JS optimisation when it is rule-heavy (RNG draws, branching game logic, event logging stay in JS); or it is
+left alone, with the reason.
+
+| Hot spot                                          | Decision                                                                                                                                                                                                                                                                          | Task |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| `build_hash`                                      | Rust squeeze: skip 16 dead slots at a time (one `v128_any_true` over the `alive` and `foodAlive` bytes), and compute the box's four cell edges as two `f64x2` divisions and floors instead of four scalar ones. Same values, same insertion order                                 | T21  |
+| `update_pheromones`                               | Rust squeeze: run decay and diffusion row by row (decay of row r + 1 before diffusion of row r, the same values), and skip a row whose own and neighbouring rows are all `+0` bits, writing its scratch row 0; the end state, scratch included, is unchanged                      | T22  |
+| `brain_forward`: tanh                             | Rust squeeze: in the vector tanh, divide by 2, 4 and 8 as exact multiplies by 0.5, 0.25 and 0.125, and take r / 6, r / 10, r / 12 from r / 3 and r / 5 times a power of two while r is normal (scaling by a power of two commutes with rounding there); 6 divisions instead of 13 | T23  |
+| `brain_forward`: the weighted sums                | Rust squeeze: 16 units per pass over the terms instead of 8, halving the term and row-address reloads; each lane's chain unchanged                                                                                                                                                | T24  |
+| `bounce_rocks`                                    | Rust squeeze: the box reject two rocks per `f64x2`, the first passing rock in index order handed to the scalar `rock`, so the rock order and every value are unchanged                                                                                                            | T25  |
+| Build flags                                       | Try `wasm-opt -O4` and `--converge` and Rust `-C target-cpu=generic` variants; keep only a change outside the margin                                                                                                                                                              | T26  |
+| `territoryAllows`                                 | Planned as a JS optimisation (a list of hunter slots; the count and early exit are order-free); dropped in the build, see As built. It is a rule, so it stays in JS                                                                                                               | T27  |
+| The sense glue                                    | Left alone: hit classes (kin, bite), the mate sighting and the body inputs are rules; each is under 4% and was trimmed in natural-selection T62                                                                                                                                   | -    |
+| `sense_slot` calls, one per caster                | Left alone: a call costs tens of nanoseconds against about 1 us of kernel work, and the rules between calls read each caster's gather (Phase 2)                                                                                                                                   | -    |
+| `grazeHerds`, `meritPhase`, `applyCosts`, `mate`  | Left alone: game logic with RNG draws, events or the energy ledger; none is a pure array loop and each is under 4%                                                                                                                                                                | -    |
+| `resolve_contacts`, `move_agents`                 | Left alone: 0.8% and under 0.1% of the step                                                                                                                                                                                                                                       | -    |
+| `ageFood`, `aliveFoods`, world birth (drill only) | Left alone here: `ageFood` removes rotten food with events (a rule); `aliveFoods` and the drill stage config (`maxFood` 3600 in a 3000 x 4000 arena) are in `js/evo`, outside this doc; recorded as a recommendation for the training stream                                      | -    |
+
+Each squeeze is kept only when it is outside the printed margin of `npm run bench:micro -- --area wasm --compare HEAD`
+(Rust, after `scripts/build-wasm.sh`) or `bench:parts --compare` (JS), and bit-identical (the wasm differential tests, the
+goldens and `npm run browser:hash`); a change that is not is reverted and recorded here. The phase ends with
+`bench-compare` against `origin/main` and a drill compare (T28).
+
+**As built.** Every measurement is `bench:micro --compare` with alternating runs under the CPU lock; the load was 2 to 9
+throughout (no quiet window held), so only verdicts outside the printed margin count.
+
+| Task | Change                                                                      | Measured                                                                                                      | Verdict    |
+| ---- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------- |
+| T21  | `build_hash` skips sixteen dead slots per `v128_any_true` (`for_each_live`) | Drill +19.1% (margin +-7.9%); `build_hash` at full occupancy same against `origin/main` (+0.7%, +-8.9%)       | Kept       |
+| T21  | ... and the four box edges as two `f64x2` divisions                         | Against the scalar edges -0.3% (+-8.1%)                                                                       | Reverted   |
+| T22  | `update_pheromones` row by row, rows of `+0` skipped                        | Drill +8.1% (+-2.5%); the full 144 x 81 grids same (-0.4%, +-2.4%), so the zero checks cost nothing there     | Kept       |
+| T23  | Vector tanh with 6 divisions                                                | `tanh_into` +11.6% (+-7.7%), but `forwardAll` same: every input 0 +0.5% (+-4.0%), real inputs -2.8% (+-19.5%) | Reverted   |
+| T24  | 16 units per pass in the weighted sums                                      | `brain_forward` +0.6%, +1.2%, +3.6% (+-5.2%, +-3.4%, +-4.3%)                                                  | Reverted   |
+| T25  | `bounce_rocks` tests two rocks per `f64x2`                                  | `bounce_rocks` +15.6% (+-8.5%)                                                                                | Kept       |
+| T26  | `wasm-opt -O4` for `-O3`                                                    | Brain and sense same, `build_hash` -2.4% (+-0.5%), `tanh_into` +13.4% (+-1.4%): mixed, no step share moves    | Reverted   |
+| T27  | A hunter list for `territoryAllows`                                         | Not built: see below                                                                                          | Left alone |
+
+The brain resists squeezing because its time is the weighted sums of 32 `f64` units over about 63 terms per agent with each
+`f32` weight widened; the tanh divisions overlap that work, and wider passes do not cut the loads that matter. Rust's
+generic wasm32 CPU already emits sign extension, non-trapping float-to-int and bulk memory, and `simd128` is on, so the
+codegen has no flag left to try. T27 was dropped: a list of hunter slots kept across calls goes stale when tests, staged
+worlds and tools write `alive`, `spec` or `ageTicks` directly, with no spawn to invalidate it, and a list built per call is
+still the O(n) walk; exactness wins over the about 2 to 4% the scan costs.
+
+**Result (T28).** Against `origin/main` (7625625, whose new commits change no step code):
+
+- Drill throughput 10.04 to 13.69 ops/s, +36.4% (margin +-8.0%): 70.3 to 95.8 trials per second per worker.
+- `bench-compare --sizes=500 --runs=3` (load 2 to 4): `bench.step_ms@500` 2.487 to 2.556 (+2.8%), `@500merit` -1.0%,
+  `@500w7680` -1.8%, every key inside the gate's 10%; the bench world's step does not move, as the profile predicted, since
+  what was kept targets dead slots and zero grids and the rocks are 2% of the step.
+- Bit-identical: the wasm differential tests, `golden.slow.test.js`, `check-wasm` and `npm run browser:hash` (default,
+  busy, disease) unchanged; new tests check the pheromone rows and scratch against a plain model of the two loops, and the
+  vector tanh path over 20000 fuzz values, r near 0 for every k and subnormal inputs.
+
 ## Decisions
 
 | Decision                                                                                        | Why                                                                                                                                                                                                                                         | Who                     |
@@ -317,6 +413,10 @@ matched its fixture on the first build.
 | The rock scan stops at each damaging impact and JS resumes it | `removeEnergy` shrinks the agent between rocks and is an energy rule with a ledger; porting it would move a rule into Rust | Delegated |
 | Trampling, walls and steering stay in JS | Each applies damage or reads the temperature, sickness and rest rules; their loops are small next to the scan and the contact pass | Delegated |
 | Phase 4 is one chunk branch with three kernels | Each kernel is a fixture commit and a port commit (6 commits plus docs), within one chunk's 4 to 8 tasks; `feat/wasm-hash` and `feat/wasm-field` mark the intermediate points | Delegated |
+| Phase 5 moves no new kernel to Rust | The profile finds no pure array loop outside the kernels above 1% of the step; what is left is rule code (RNG, events, the ledger), and the gain is in the kernels themselves (65% of the step) | Delegated |
+| Phase 5 squeezes are exact rewrites, not new arithmetic | A power-of-two scaling, a vector of the same scalar operations, a skipped row of exact zeros or a reordered loop with the same per-value operations gives the same bits; no reciprocal, FMA or reassociation | Delegated |
+| The territory scan stays in JS and stays O(n) | It is a rule called from four rule sites, so it is not ported; a hunter list kept across calls goes stale when tests, staged worlds or tools write `alive`, `spec` or `ageTicks` directly, and exactness is worth more than its 2 to 4% | Delegated |
+| Drill-world waste in `js/evo` is reported, not fixed | `aliveFoods` and the stage config's `maxFood` are another stream's files; the kernels' dead-slot skipping (T21) recovers most of the cost in the kernels | Delegated |
 
 ## Delivery requirements
 
@@ -369,6 +469,20 @@ matched its fixture on the first build.
 | T17 | Record the JS physics loops' reference fixture (built)                                                        | [judgement] | T16        |
 | T18 | Port the moves, the rock geometry and the contact pass, delete their JS loops (built)                         | [judgement] | T17        |
 | T19 | Record the Phase 4 bench and drill numbers; conformance review in parallel with `scripts/check.sh` (built)    | [judgement] | T18        |
+
+### Phase 5 - Profile and squeeze
+
+| #   | Task                                                                                                   | Nature       | Depends on                        |
+| --- | ------------------------------------------------------------------------------------------------------ | ------------ | --------------------------------- |
+| T20 | Re-record `bench/baseline.json` on a quiet machine; profile every phase and rank the self time (built) | [mechanical] | T19                               |
+| T21 | `build_hash`: skip dead slots 16 at a time (built; the paired edge divisions reverted)                 | [judgement]  | T20                               |
+| T22 | `update_pheromones`: row-interleaved decay and diffusion, all-zero rows skipped (built)                | [judgement]  | T20                               |
+| T23 | Vector tanh with 6 divisions instead of 13 (tried, reverted: the brain did not move)                   | [judgement]  | T20                               |
+| T24 | `brain_forward`: 16 units per pass in the weighted sums (tried, reverted: same)                        | [judgement]  | T20                               |
+| T25 | `bounce_rocks`: the box reject two rocks per `f64x2` (built)                                           | [judgement]  | T20                               |
+| T26 | `wasm-opt -O4` and codegen flags (tried, reverted: mixed, no step share moves)                         | [judgement]  | T21                               |
+| T27 | `territoryAllows` hunter list (dropped: a kept list goes stale under direct writes)                    | [judgement]  | T20                               |
+| T28 | Final `bench-compare` against `origin/main`, drill compare, `browser:hash`, doc as built (built)       | [judgement]  | T21, T22, T23, T24, T25, T26, T27 |
 
 ## Verification
 

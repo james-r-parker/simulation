@@ -4,6 +4,7 @@ import { FLORA_NAMES } from '../sim/config-flora.js';
 // `observer.scenes`. Each is `watch` unless its direction is set below, and each is `null` with a reason when nothing
 // fed it. They change no sim state and cost no per-tick allocation.
 
+import { ALARM_REACH_DIRECTIONS, alarmReachMetrics } from './observer-alarm-reach.js';
 import { approachMetrics } from './scene-approach.js';
 import { balanceMetrics } from './scene-balance.js';
 import { basinMetrics } from './scene-basin.js';
@@ -16,11 +17,14 @@ import { GUARD_DIRECTIONS, guardMetrics } from './scene-guards.js';
 import { AGE_DIRECTIONS } from './scene-hunter-age.js';
 import { KIN_DIRECTIONS, kinProximityMetrics } from './scene-kin-proximity.js';
 import { HUNTER_METRIC_NAMES, hunterMetrics } from './scene-hunters.js';
+import { MATCHED_DIRECTIONS, matchedMetrics } from './scene-matched.js';
 import { PATCH_DIRECTIONS, patchMetrics } from './scene-patch.js';
 import { REWARD_DIRECTIONS, rewardMetrics } from './metrics-reward.js';
 import { conditionMetrics } from './scene-condition.js';
 import { seasonMetrics } from './scene-season.js';
+import { seasonMapMetrics } from './scene-season-map.js';
 import { spendMetrics } from './scene-spend.js';
+import { reachMetrics } from './scene-reach.js';
 import { refugeMetrics } from './scene-refuge.js';
 import { refugeOutcomeMetrics } from './scene-refuge-outcome.js';
 import { terrainMetrics } from './scene-terrain.js';
@@ -40,6 +44,9 @@ const WATCH = [
     'eval.refuge_crowding',
     'eval.refuge_bite_deficit',
     'eval.refuge_eligible_share',
+    'eval.prey_cover_distance',
+    'eval.prey_within_dash_share',
+    'eval.prey_in_patch_share',
     'eval.cold_margin_use_under_threat',
     'eval.carcass_meal_share',
     'eval.carcass_hunter_share',
@@ -52,6 +59,10 @@ const WATCH = [
     'eval.childshare_by_condition',
     'eval.winter_basin_density',
     'eval.winter_shelter_distance',
+    'eval.winter_band_shift',
+    'eval.winter_patch_proximity',
+    'eval.season_map_distance',
+    'eval.herd_season_shift',
     'eval.style_separation',
     'eval.dodge_skill',
     'eval.disease_deaths_share',
@@ -96,8 +107,10 @@ export const SCENE_DIRECTIONS = Object.freeze({
     ...Object.fromEntries(WATCH.map((name) => [name, 'watch'])),
     ...AGE_DIRECTIONS,
     ...COMPETENCE_DIRECTIONS,
+    ...MATCHED_DIRECTIONS,
     ...GUARD_DIRECTIONS,
     ...KIN_DIRECTIONS,
+    ...ALARM_REACH_DIRECTIONS,
     ...REWARD_DIRECTIONS,
 });
 
@@ -114,6 +127,7 @@ export function sceneMetrics(observer, world) {
         ...approachMetrics(s.approach),
         ...terrainMetrics(s.terrain),
         ...refugeMetrics(s.refuge),
+        ...reachMetrics(s.reach),
         ...refugeOutcomeMetrics(s.refugeOutcome),
         ...carcassMetrics(s.carcass, observer),
         ...basinMetrics(s.basin),
@@ -123,13 +137,16 @@ export function sceneMetrics(observer, world) {
         ...conditionMetrics(s.condition, observer),
         ...spendMetrics(s.spend),
         ...seasonMetrics(s.season),
+        ...seasonMapMetrics(s.seasonMap),
         ...styleMetrics(s.style),
         ...herdMetrics(s.herd, s.carcass, observer),
         ...diseaseMetrics(s.disease),
         ...hunterMetrics(s.hunters, world),
         ...competenceMetrics(s.competence, world),
+        ...matchedMetrics(s.matched),
         ...guardMetrics(s.guards),
         ...kinProximityMetrics(s.kin),
+        ...alarmReachMetrics(observer),
         ...rewardMetrics(observer, world),
     };
 }

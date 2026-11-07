@@ -112,6 +112,7 @@ const RUN_TOTALS = [
     'groupThreatN',
     'groupCalmSum',
     'groupCalmN',
+    'opportunityNeighbourSum',
     'alarms',
     'alarmsPrecise',
     'alarmsBase',

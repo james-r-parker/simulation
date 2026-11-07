@@ -89,6 +89,25 @@ describe('wasm det-math', () => {
         }
     });
 
+    it('tanh_into equals detTanh on the vector path: the fuzz, tiny and subnormal inputs, and r near 0 for every k', () => {
+        // Sets of four fast values take the vector path. x = k ln2 / 2 (and its neighbours) makes the reduced argument
+        // r tiny for each k; x below 2^-1000 makes r itself tiny, which the 6-division chain hands to the 13-division one.
+        const nearZeroR = Array.from({ length: 58 }, (_, i) => ((i + 1) * Math.LN2) / 2).flatMap((x) => [
+            x,
+            x * (1 + 2 ** -52),
+            x * (1 - 2 ** -52),
+        ]);
+        const tiny = [5e-324, 1e-310, 2.2250738585072014e-308, 1e-305, 2 ** -1001, 2 ** -1000, 2 ** -999, 1e-290];
+        const fast = [...fuzzValues(20000), ...nearZeroR, ...tiny, ...tiny.map((x) => -x)].filter(
+            (x) => x !== 0 && Math.abs(x) <= 20,
+        );
+        const view = new Float64Array(memory.buffer, base, fast.length);
+        view.set(fast);
+        expect(k.tanh_into(base, fast.length)).toBe(0);
+        const misses = fast.filter((x, i) => bits(view[i]) !== bits(detTanh(x)));
+        expect(misses).toEqual([]);
+    });
+
     it('tanh_into stops at the first non-finite value and names it, where detTanh throws', () => {
         const view = new Float64Array(memory.buffer, base, 8);
         for (const bad of [NaN, Infinity, -Infinity]) {
