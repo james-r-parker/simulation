@@ -232,9 +232,15 @@ unsafe fn accumulate(acc: *mut f64, bias: *const f32, units: usize, tx: *const f
                 let lo = v128_load(row as *const v128);
                 let hi = v128_load(row.add(4) as *const v128);
                 a0 = f64x2_add(a0, f64x2_mul(f64x2_promote_low_f32x4(lo), x));
-                a1 = f64x2_add(a1, f64x2_mul(f64x2_promote_low_f32x4(i32x4_shuffle::<2, 3, 2, 3>(lo, lo)), x));
+                a1 = f64x2_add(
+                    a1,
+                    f64x2_mul(f64x2_promote_low_f32x4(i32x4_shuffle::<2, 3, 2, 3>(lo, lo)), x),
+                );
                 a2 = f64x2_add(a2, f64x2_mul(f64x2_promote_low_f32x4(hi), x));
-                a3 = f64x2_add(a3, f64x2_mul(f64x2_promote_low_f32x4(i32x4_shuffle::<2, 3, 2, 3>(hi, hi)), x));
+                a3 = f64x2_add(
+                    a3,
+                    f64x2_mul(f64x2_promote_low_f32x4(i32x4_shuffle::<2, 3, 2, 3>(hi, hi)), x),
+                );
             }
             (acc.add(j) as *mut v128).write_unaligned(a0);
             (acc.add(j + 2) as *mut v128).write_unaligned(a1);
@@ -319,7 +325,11 @@ unsafe fn output_step(b: &Brain, slot: usize) -> Result<(), Fault> {
     let scratch_row = p.slots as usize * h;
     // SAFETY: every index stays inside the slot's rows and the scratch.
     unsafe {
-        let block = if p.flags & FLAG_LEARN != 0 { b.fast.add(slot * h * g) } else { b.w.add(w_slot + p.w_out as usize) };
+        let block = if p.flags & FLAG_LEARN != 0 {
+            b.fast.add(slot * h * g)
+        } else {
+            b.w.add(w_slot + p.w_out as usize)
+        };
         let mut nt = 0;
         for j in 0..h {
             *b.tx.add(nt) = *b.hidden.add(scratch_row + j) as f64;
@@ -358,7 +368,13 @@ unsafe fn output_step(b: &Brain, slot: usize) -> Result<(), Fault> {
 /// One plastic weight pair: `f + eta (h out - HEBB_DECAY (f - w))`, clamped to plus or minus `HEBB_CLAMP`.
 #[inline(always)]
 fn hebb2(f: v128, w: v128, h_out: v128, eta: v128) -> v128 {
-    let next = f64x2_add(f, f64x2_mul(eta, f64x2_sub(h_out, f64x2_mul(f64x2_splat(HEBB_DECAY), f64x2_sub(f, w)))));
+    let next = f64x2_add(
+        f,
+        f64x2_mul(
+            eta,
+            f64x2_sub(h_out, f64x2_mul(f64x2_splat(HEBB_DECAY), f64x2_sub(f, w))),
+        ),
+    );
     // pmin(x, c) is `c < x ? c : x` and pmax(x, -c) is `x < -c ? -c : x`: the JS ternaries, NaN passing through.
     f64x2_pmax(f64x2_pmin(next, f64x2_splat(HEBB_CLAMP)), f64x2_splat(-HEBB_CLAMP))
 }

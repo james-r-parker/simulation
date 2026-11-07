@@ -76,15 +76,50 @@ fn is_fast(x: f64) -> bool {
 #[inline(always)]
 fn tanh2(x: v128) -> v128 {
     let one = f64x2_splat(1.0);
-    let m2a = f64x2_mul(f64x2_splat(-2.0), f64x2_abs(x));
-    let k = f64x2_floor(f64x2_add(f64x2_mul(m2a, f64x2_splat(INV_LN2)), f64x2_splat(0.5)));
-    let r = f64x2_sub(f64x2_sub(m2a, f64x2_mul(k, f64x2_splat(LN2_HI))), f64x2_mul(k, f64x2_splat(LN2_LO)));
+    let (r, k) = reduce2(x);
     let mut p = one;
     let mut d = EXP_DEGREE;
     while d >= 1 {
         p = f64x2_add(one, f64x2_mul(f64x2_div(r, f64x2_splat(d as f64)), p));
         d -= 1;
     }
+    finish2(x, p, k)
+}
+
+/// The exp-path tanh of four values in two `f64x2`; every lane must pass `is_fast`. The two Horner chains are
+/// independent, so they share one loop and the processor overlaps them.
+#[inline(always)]
+fn tanh4(x0: v128, x1: v128) -> (v128, v128) {
+    let one = f64x2_splat(1.0);
+    let (r0, k0) = reduce2(x0);
+    let (r1, k1) = reduce2(x1);
+    let (mut p0, mut p1) = (one, one);
+    let mut d = EXP_DEGREE;
+    while d >= 1 {
+        let dv = f64x2_splat(d as f64);
+        p0 = f64x2_add(one, f64x2_mul(f64x2_div(r0, dv), p0));
+        p1 = f64x2_add(one, f64x2_mul(f64x2_div(r1, dv), p1));
+        d -= 1;
+    }
+    (finish2(x0, p0, k0), finish2(x1, p1, k1))
+}
+
+/// The reduced argument and power of two of `exp(-2 |x|)` for two lanes (`tanhReduced`, `tanhExponent`).
+#[inline(always)]
+fn reduce2(x: v128) -> (v128, v128) {
+    let m2a = f64x2_mul(f64x2_splat(-2.0), f64x2_abs(x));
+    let k = f64x2_floor(f64x2_add(f64x2_mul(m2a, f64x2_splat(INV_LN2)), f64x2_splat(0.5)));
+    let r = f64x2_sub(
+        f64x2_sub(m2a, f64x2_mul(k, f64x2_splat(LN2_HI))),
+        f64x2_mul(k, f64x2_splat(LN2_LO)),
+    );
+    (r, k)
+}
+
+/// `tanhFinish` for two lanes: `sign(x) (1 - t) / (1 + t)` with `t = p 2^k`.
+#[inline(always)]
+fn finish2(x: v128, p: v128, k: v128) -> v128 {
+    let one = f64x2_splat(1.0);
     let ki = i64x2_extend_low_i32x4(i32x4_trunc_sat_f64x2_zero(k));
     let t = f64x2_mul(p, i64x2_shl(i64x2_add(ki, i64x2_splat(EXPONENT_BIAS)), 52));
     let sign = v128_or(v128_and(x, i64x2_splat(SIGN_MASK)), one);
@@ -99,6 +134,23 @@ fn tanh2(x: v128) -> v128 {
 #[inline(always)]
 pub unsafe fn tanh_in_place(v: *mut f64, n: usize) -> usize {
     let mut i = 0;
+    // Four at a time while every value takes the exp path; from the first group that does not, pairs and scalars.
+    while i + 4 <= n {
+        // SAFETY: i + 3 < n.
+        let fast =
+            unsafe { is_fast(*v.add(i)) && is_fast(*v.add(i + 1)) && is_fast(*v.add(i + 2)) && is_fast(*v.add(i + 3)) };
+        if !fast {
+            break;
+        }
+        // SAFETY: four doubles at v + i; unaligned access is allowed in wasm.
+        unsafe {
+            let p = v.add(i) as *mut v128;
+            let (y0, y1) = tanh4(p.read_unaligned(), p.add(1).read_unaligned());
+            p.write_unaligned(y0);
+            p.add(1).write_unaligned(y1);
+        }
+        i += 4;
+    }
     while i + 2 <= n {
         // SAFETY: i + 1 < n.
         let (x0, x1) = unsafe { (*v.add(i), *v.add(i + 1)) };
