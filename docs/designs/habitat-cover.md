@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 T1 built (#343) and the T2 baseline run (`E141`, 32 floor-on seeds, in Baseline); T3 (the conformance review) is open. Phase 2 puts rings on the rims of the food patches behind `refugeAnchor` and is unbuilt.
 **Validated:** f5c7880 (2026-11-07)
-**Priority:** 20 - it changes the map and re-pins the goldens, so it queues behind every unbuilt doc
+**Priority:** 6 - the review of 2026-11-07 calls cover on the food-patch rims the right refuge idea and ranks it third, behind the bite diagnosis and the mating-edge screen; it changes the map and re-pins the goldens, so it queues behind the sim and keeper work already ranked
 **Depends on:** [refuge.md](refuge.md), [realistic-keepers.md](realistic-keepers.md)
 
 The scene this doc serves ([principles.md](../principles.md), Refuge): **under threat, prey stack into a rock ring or a
@@ -203,7 +203,7 @@ Chunks:
 | Eight seeds screen, 32 matched seeds judge                                             | The principles: eight seeds never judge anything; harm is a paired interval on 32                                                                                                                                                             | Delegated |
 | Hunters are guarded, not exempted                                                      | Shelter on every patch also shelters prey from the hunters that work the patches; the keep rule and 80% conversion bound it                                                                                                                   | Delegated |
 | A flee-to-cover instinct is a later doc, only if reach is made and use is still absent | Habitat first: a reflex layered on cover prey cannot reach would be unmeasurable                                                                                                                                                              | Delegated |
-| Priority 20                                                                            | Changes the map, so it re-pins the goldens; it queues behind the balance round and the other unbuilt docs                                                                                                                                     | Delegated |
+| Priority 5                                                                             | Changes the map, so it re-pins the goldens; it queues behind the balance round and the other unbuilt docs                                                                                                                                     | Delegated |
 
 ## Delivery requirements
 

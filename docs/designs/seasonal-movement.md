@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 T1 and T2 built (#343) and the T5 baseline run (`E142`, 32 floor-on seeds, in Baseline). T3 (`scripts/season-map.mjs`) and T6 (the sim-notes diagnosis and conformance review) are still open; Phase 2 adds the snowline and the green wave behind default-off switches and is unbuilt.
 **Validated:** f5c7880 (2026-11-07)
-**Priority:** 22 - the Season changes the map scene reads flat (`eval.winter_basin_density` and `eval.winter_pop_ratio` about 1.0), but nothing in the keep rule waits on it; it queues behind the balance and refuge work
+**Priority:** 16 - the Season changes the map scene reads flat (`eval.winter_basin_density` and `eval.winter_pop_ratio` about 1.0), but nothing in the keep rule waits on it; it queues behind the balance and refuge work
 **Depends on:** [natural-selection.md](natural-selection.md)
 
 Build the scene **Season changes the map** ([principles.md](../principles.md)): winter in a basin is slower, tighter and nearer shelter, herds follow season-weighted fruiting patches, and summer spreads. Phase 1 measures where agents, food and herds sit by season. Phase 2 gives the map a seasonal gradient so that moving pays. Phase 3 adds shelter and torpor.
@@ -182,7 +182,7 @@ Chunks:
 | The `maxFood` cap and the background-food share are tested as arms (`foodBackgroundShare` 0.1, a larger `maxFood`) and not changed by default | The pool sits at the cap in three seasons (diagnosis 5); the Phase 1 numbers decide whether an arm is worth a key   | Delegated |
 | Phase 3 is conditional on the refuge sense                                                                                                    | Winter shelter is only used by a blob that can find a ring; today prey are 1,400 to 2,400 px from one               | Delegated |
 | Every switch key is off at its default and a loser's key and code are deleted at its verdict                                                  | AGENTS.md "Delete what a switch replaces"                                                                           | Delegated |
-| Priority 22                                                                                                                                   | Slot after the queued balance, refuge and training work; the user has not asked for this scene ahead of them        | Delegated |
+| Priority 15                                                                                                                                   | Slot after the queued balance, refuge and training work; the user has not asked for this scene ahead of them        | Delegated |
 
 ## Delivery requirements
 
