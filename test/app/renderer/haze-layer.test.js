@@ -99,7 +99,6 @@ describe('haze flow and lens', () => {
             info: { worldWidth: 100, worldHeight: 100, cols: 10, rows: 5, pheromoneMax: 1 },
         });
         const u = layer.object.material.uniforms;
-        expect(u.uTexel.value).toEqual([0.1, 0.2]);
         layer.setLook?.({ motion: 1 });
         expect(u.uFlow.value).toBe(0);
         layer.setLook?.({ motion: 0 });

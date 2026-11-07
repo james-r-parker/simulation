@@ -80,3 +80,14 @@ describe('the drought tint', () => {
         layer.dispose();
     });
 });
+
+describe('the drought cracks cost', () => {
+    it('computes the cracks only inside a basin under drought, with one noise octave', () => {
+        const { info } = smallReady();
+        const layer = createGroundLayer({ info });
+        const fs = layer.object.material.fragmentShader;
+        expect(fs).toContain('if (dry > 0.0) {');
+        expect(fs).toContain('valueNoise(vWorld * 0.006)');
+        layer.dispose();
+    });
+});

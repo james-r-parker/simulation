@@ -40,8 +40,12 @@ void main() {
     float fine = uDetail * (valueNoise(vWorld * 0.02) - 0.5) * 0.25;
     float level = clamp(0.25 + 0.75 * swell + 0.25 * lines * uDetail + fine, 0.0, 1.0);
     float dry = vWorld.x < uWallX ? uDrought.x : uDrought.y;
-    float crack = uDetail * (1.0 - smoothstep(0.0, 0.06, abs(fract(fbm2(vWorld * 0.006) * 7.0) - 0.5)));
-    vec3 dust = uDust * dry * (0.55 + 0.45 * crack);
+    vec3 dust = vec3(0.0);
+    if (dry > 0.0) {
+        // only a basin under drought pays for the cracks: one noise octave
+        float crack = uDetail * (1.0 - smoothstep(0.0, 0.06, abs(fract(valueNoise(vWorld * 0.006) * 7.0) - 0.5)));
+        dust = uDust * dry * (0.55 + 0.45 * crack);
+    }
     gl_FragColor = vec4(uTint * (uPeak * level) * (1.0 - 0.5 * dry) + dust, 1.0);
 }
 `;

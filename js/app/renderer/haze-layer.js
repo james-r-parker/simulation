@@ -90,7 +90,6 @@ function hazeUniforms(info, slots) {
         uHunt: { value: PALETTE.huntScent },
         uFlow: { value: 1 },
         uLens: { value: 0 },
-        uTexel: { value: [1 / Math.max(info.cols ?? 1, 1), 1 / Math.max(info.rows ?? 1, 1)] },
     };
 }
 

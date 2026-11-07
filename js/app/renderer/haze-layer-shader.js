@@ -28,7 +28,6 @@ uniform vec3 uAttack;
 uniform vec3 uHunt;
 uniform float uFlow;      // 1 when the haze flows (the motion item at full)
 uniform float uLens;      // 1 under the scent lens: the heat map
-uniform vec2 uTexel;      // one field cell in uv
 varying vec2 vUv;
 varying vec2 vWorld;
 ${NOISE_GLSL}
@@ -39,16 +38,13 @@ void main() {
     vec2 uv = clamp(vUv + warp, 0.0, 1.0);
     vec4 field = mix(texture2D(uPrev, uv), texture2D(uNext, uv), uMix);
     float mottle = 0.6 + 0.4 * fbm2(q * 1.7 + 5.0);
-    if (uFlow > 0.5) {
-        float total = field.r + field.g + field.b;
-        vec2 dx = vec2(uTexel.x, 0.0);
-        vec2 dy = vec2(0.0, uTexel.y);
-        vec4 fx = texture2D(uNext, uv + dx) - texture2D(uNext, uv - dx);
-        vec4 fy = texture2D(uNext, uv + dy) - texture2D(uNext, uv - dy);
-        vec2 grad = vec2(fx.r + fx.g + fx.b, fy.r + fy.g + fy.b);
-        vec2 down = -grad / max(length(grad), 1e-4);
+    float total = field.r + field.g + field.b;
+    // the gradient from screen-space derivatives (no extra texture reads), and one noise octave for the streaks
+    vec2 grad = vec2(dFdx(total), dFdy(total));
+    if (uFlow > 0.5 && total > 0.01) {
+        vec2 down = -grad / max(length(grad), 1e-6);
         vec2 s = (vWorld - down * uTime * 30.0) / 90.0;
-        mottle *= 0.7 + 0.6 * fbm2(s) * smoothstep(0.0, 0.05, total);
+        mottle *= 0.7 + 0.6 * valueNoise(s) * smoothstep(0.0, 0.05, total);
     }
     vec3 weight = field.rgb / max(field.r + field.g + field.b, 1.0);
     vec3 rgb = (uDanger * weight.r + uAttack * weight.g + uHunt * weight.b) * uCap * mottle;
