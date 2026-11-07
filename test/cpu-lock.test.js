@@ -77,7 +77,10 @@ describe('with_cpu_lock', { timeout: scaleTimeout(30_000) }, () => {
 
     it('runs at once with CHECK_CPU_LOCK_HELD=1 or CHECK_CPU_LOCK=off while the lock is held', async () => {
         await hold(4);
-        for (const env of [{ CHECK_CPU_LOCK_HELD: '1' }, { CHECK_CPU_LOCK: 'off' }]) {
+        for (const env of /** @type {Record<string, string>[]} */ ([
+            { CHECK_CPU_LOCK_HELD: '1' },
+            { CHECK_CPU_LOCK: 'off' },
+        ])) {
             const r = run('with_cpu_lock echo now', env);
             expect(r.stdout.trim()).toBe('now');
             expect(r.ms).toBeLessThan(2000);

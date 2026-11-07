@@ -7,6 +7,7 @@ import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 // Git exports GIT_DIR, GIT_INDEX_FILE and friends to hooks; a child git that inherits them acts on this repo, not
 // the temporary one, so every spawn gets an environment without them.
+/** @type {Record<string, string | undefined>} */
 const ENV = {
     ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_'))),
     CHECK_CPU_LOCK: 'off', // these tests spawn check.sh; they must not queue on a lock another agent holds

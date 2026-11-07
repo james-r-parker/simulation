@@ -67,7 +67,7 @@ export function main(baselinePath, measuredPath, machine = {}) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-    const flag = (name) =>
+    const flag = (/** @type {string} */ name) =>
         process.argv.filter((arg) => arg.startsWith(`--${name}=`)).map((arg) => Number(arg.split('=')[1]));
     process.exit(main(process.argv[2], process.argv[3], { loads: flag('load'), cores: flag('cores')[0] ?? 1 }));
 }
