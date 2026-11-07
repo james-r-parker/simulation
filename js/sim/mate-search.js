@@ -57,6 +57,11 @@ function isPartner(world, a, b, reach) {
     return Math.sqrt(dx * dx + dy * dy) < size[a] + size[b] + reach && canMatePair(world, a, b);
 }
 
+// The cell `bestInCell` is scanning, read by `isChoice`: module scratch, so the cheap tests run before the box test
+// without a fifth parameter. Single-threaded within a world and set before every read.
+let scanCol = 0;
+let scanRow = 0;
+
 /**
  * Whether entry `e` is a male the female `a` may mate with that the scan owns, and so is a choice.
  * @param {World} world the world
@@ -66,9 +71,14 @@ function isPartner(world, a, b, reach) {
  * @returns {boolean}
  */
 function isChoice(world, a, e, reach) {
-    const b = world.hash.entries[e];
+    const hash = world.hash;
+    const b = hash.entries[e];
     return (
-        b < world.hash.maxAgents && world.alive[b] === 1 && world.sex[b] === SEX.MALE && isPartner(world, a, b, reach)
+        b < hash.maxAgents &&
+        world.alive[b] === 1 &&
+        world.sex[b] === SEX.MALE &&
+        firstScannedCell(hash, e, scanCol, scanRow) &&
+        isPartner(world, a, b, reach)
     );
 }
 
@@ -98,12 +108,12 @@ function beats(world, b, pick) {
  */
 function bestInCell(world, a, cell, reach) {
     const hash = world.hash;
-    const col = cell % hash.cols;
-    const row = (cell - col) / hash.cols;
+    scanCol = cell % hash.cols;
+    scanRow = (cell - scanCol) / hash.cols;
     let pick = -1;
     for (let e = hash.cellStart[cell]; e < hash.cellStart[cell + 1]; e++) {
         const b = hash.entries[e];
-        if (firstScannedCell(hash, e, col, row) && isChoice(world, a, e, reach)) {
+        if (isChoice(world, a, e, reach)) {
             pick = beats(world, b, pick) ? b : pick;
         }
     }
