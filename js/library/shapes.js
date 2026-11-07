@@ -13,6 +13,8 @@ export const SORTS = Object.freeze(['elo', 'created']);
 export const STATUSES = Object.freeze(['pending', 'verified', 'rejected', 'removed']);
 /** The champion file format version this library stores (`CHAMPION_VERSION` in js/evo/league.js). */
 export const CHAMPION_FILE_VERSION = 1;
+/** Largest canonical champion file D1 stores, in characters (the files are ASCII). A real file is about 32 KB. */
+export const MAX_FILE_BYTES = 65536;
 /** A content id: SHA-256 as 64 lowercase hex characters. */
 export const ID_PATTERN = /^[0-9a-f]{64}$/;
 
