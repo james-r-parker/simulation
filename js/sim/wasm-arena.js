@@ -3,6 +3,7 @@
 // at a 16-byte aligned offset, and `attachWasm` re-points the world's fields at views over those bytes, so the JS rules
 // and the kernels read and write the same memory.
 
+import { writeBrainParams } from './wasm-brain.js';
 import { KERNEL_ABI } from './wasm-loader.js';
 
 /** Bytes per WebAssembly page. */
@@ -58,8 +59,9 @@ export function arenaSpecs(config, layout) {
         ['rayCos', Float64Array, config.rayCount],
         ['raySin', Float64Array, config.rayCount],
         ['rewardScale', Float64Array, n],
-        ['scratch', Float64Array, H + layout.geneOutputs + layout.outputCount + 2],
+        ['scratch', Float64Array, 2 * H + 2 * layout.geneOutputs + layout.outputCount + layout.inputCount],
         ['geneOutputIndex', Int32Array, layout.geneOutputs],
+        ['terms', Int32Array, layout.inputCount + H],
         ['params', Int32Array, PARAM_WORDS],
         ['paramDoubles', Float64Array, PARAM_DOUBLES],
     ];
@@ -187,6 +189,7 @@ export function attachWasm(world, kernels, { wasmKernels = false, log } = {}) {
         log?.log('warn', 'WasmFallback', { reason, detail: String(/** @type {Error} */ (error).message) });
         return false;
     }
+    writeBrainParams(arena, world.config, world.layout);
     repointRows(world, arena);
     for (const name of WORLD_FIELDS) {
         arena.views[name].set(world[name]);

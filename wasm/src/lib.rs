@@ -5,6 +5,7 @@
 //! dependencies, no fast-math: each operation rounds as the JS double operation it replaces.
 #![no_std]
 
+mod brain;
 mod det_math;
 
 /// The kernel ABI version; `js/sim/wasm-loader.js` refuses a binary whose version it does not know.
@@ -42,6 +43,16 @@ pub extern "C" fn exp_f64(x: f64) -> f64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn sigmoid_f64(x: f64) -> f64 {
     det_math::det_sigmoid(x)
+}
+
+/// Runs the brain phase for every alive slot (`forwardAll`): 0, or 1 with the fault written to the parameter block.
+///
+/// # Safety
+/// `params` and `doubles` address the blocks `js/sim/wasm-brain.js` wrote, describing arrays inside the memory.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn brain_forward(params: i32, doubles: i32) -> i32 {
+    // SAFETY: the caller passes the arena's parameter blocks.
+    unsafe { brain::forward_all(params as u32, doubles as u32) }
 }
 
 #[panic_handler]

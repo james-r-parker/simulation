@@ -5,7 +5,7 @@
 export const KERNEL_ABI = 1;
 
 /** Exports every kernel binary must have. */
-export const REQUIRED_EXPORTS = Object.freeze(['abi_version', '__heap_base', 'tanh_into']);
+export const REQUIRED_EXPORTS = Object.freeze(['abi_version', '__heap_base', 'tanh_into', 'brain_forward']);
 
 /**
  * @typedef {{ ok: true, module: WebAssembly.Module }
