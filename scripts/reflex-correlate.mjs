@@ -168,7 +168,7 @@ function archiveSubjects(archive, group) {
 function jsonIn(dir) {
     return existsSync(dir)
         ? readdirSync(dir)
-              .filter((n) => n.endsWith('.json') && n !== 'index.json')
+              .filter((n) => n.endsWith('.json') && n !== 'index.json' && n !== 'skip-cells.json')
               .sort()
         : [];
 }

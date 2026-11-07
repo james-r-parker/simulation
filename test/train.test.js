@@ -27,7 +27,13 @@ describe('parseArgs', () => {
             checkpointEvery: 10,
             curriculum: null,
             resume: null,
+            seedOffset: 0,
         });
+    });
+
+    it('reads --seed-offset and rejects a negative one', () => {
+        expect(parseArgs(['--generations', '1', '--out', 'x', '--seed-offset', '7']).seedOffset).toBe(7);
+        expect(() => parseArgs(['--generations', '1', '--out', 'x', '--seed-offset', '-1'])).toThrow(/--seed-offset/);
     });
 
     it('rejects a curriculum with a config, and unknown flags', () => {
@@ -62,8 +68,12 @@ describe('checkpoint helpers', () => {
         expect(edges['food-ahead']).toBeCloseTo(0.3);
         expect(edges['prey-ahead']).toBeCloseTo(0.3);
         expect(edges['two-foods']).toBeNull();
-        const m = averageMetrics([{ 'eval.catch_rate': 1 }, { 'eval.catch_rate': null }, { 'eval.catch_rate': 3 }]);
-        expect(m['eval.catch_rate']).toBe(2);
+        const m = averageMetrics([
+            { 'eval.hunter_zero_kill_share': 1 },
+            { 'eval.hunter_zero_kill_share': null },
+            { 'eval.hunter_zero_kill_share': 3 },
+        ]);
+        expect(m['eval.hunter_zero_kill_share']).toBe(2);
         expect(m['eval.escape_rate']).toBeNull();
     });
 });
@@ -82,10 +92,14 @@ describe('train:curve', () => {
             qdScore: 1,
             drillEdge: 0.2,
             'eval.food_energy_per_1k': 100,
+            'eval.hunter_zero_kill_share': 0.5,
         });
         writeFileSync(join(dir, 'curve.jsonl'), [10, 20, 30, 40, 50].map((g) => JSON.stringify(row(g))).join('\n'));
         const lines = formatCurve(readCurve(dir));
         expect(lines[0]).toMatch(/^gen\s+stage\s+ticks/);
+        for (const column of ['zero_kill_share', 'income.kill', 'income.carcass', 'kills/1k.mate-hunter-parent']) {
+            expect(lines[0]).toContain(column);
+        }
         expect(lines).toHaveLength(7);
         expect(lines.at(-1)).toBe('plateau: generation 10');
     });
@@ -101,10 +115,18 @@ describe('train:export', () => {
         const file = join(root, 'archive-0.json');
         writeFileSync(file, JSON.stringify({ ...encodeArchive(archive, config), generation: 1, stages: [] }));
         const out = join(root, 'champions');
-        const files = runExport({ archive: file, out, config: null, label: 'run' });
+        /** @type {string[]} */
+        const printed = [];
+        const files = runExport({ archive: file, out, config: null, label: 'run' }, (line) => printed.push(line));
         expect(files.map((f) => f.name)).toEqual(['run-forager-cell4', 'run-predator-cell9']);
         const index = JSON.parse(readFileSync(join(out, 'index.json'), 'utf8'));
         expect(index.champions).toHaveLength(2);
+        const skip = JSON.parse(readFileSync(join(out, 'skip-cells.json'), 'utf8'));
+        expect(skip.champions.count).toBe(1);
+        expect(skip.elites.predator.count).toBe(1);
+        expect(skip.champions.cells['prey>BITE'].min).toBeCloseTo(0.1, 6);
+        expect(printed.join('\n')).toContain('exported champions');
+        expect(printed.join('\n')).toContain('predator best 8 elites');
         const champion = JSON.parse(readFileSync(join(out, 'run-forager-cell4.json'), 'utf8'));
         expect(validateChampion(champion, createConfig({})).specialisation).toBe(0);
         const log = { log: () => {} };

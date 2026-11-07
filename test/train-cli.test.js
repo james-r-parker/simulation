@@ -71,7 +71,10 @@ describe('train:export CLI', () => {
         writeFileSync(file, JSON.stringify({ ...encodeArchive(archive, config), generation: 4 }));
         const out = join(root, 'exported');
         const result = await capture(() => exportMain(['--archive', file, '--out', out]));
-        expect([result.code, result.out]).toEqual([0, 'wrote 1 champion files']);
+        expect(result.code).toBe(0);
+        expect(result.out.split('\n').at(-1)).toBe('wrote 1 champion files');
+        expect(result.out).toContain('exported champions');
+        expect(JSON.parse(readFileSync(join(out, 'skip-cells.json'), 'utf8')).champions.count).toBe(0);
         const index = JSON.parse(readFileSync(join(out, 'index.json'), 'utf8'));
         expect([index.archive, index.generation, index.champions[0].file]).toEqual([
             'run7.json',
@@ -101,10 +104,11 @@ describe('stage and resume checks', () => {
             curriculum,
             JSON.stringify([
                 { name: 'one', config: a, generations: 1 },
-                { name: 'two', config: b },
+                { name: 'two', config: b, generations: 1 },
+                { name: 'world', config: null },
             ]),
         );
-        const args = parseArgs(['--generations', '2', '--out', 'x', '--curriculum', curriculum]);
+        const args = parseArgs(['--generations', '3', '--out', 'x', '--curriculum', curriculum]);
         expect(() => loadStages(args)).toThrow(/stage "two" has another brain layout than "one"/);
     });
 

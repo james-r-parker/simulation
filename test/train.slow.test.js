@@ -30,7 +30,8 @@ writeFileSync(
     curriculum,
     JSON.stringify([
         { name: 'one', config: fileA, generations: 1 },
-        { name: 'two', config: fileB },
+        { name: 'two', config: fileB, generations: 1 },
+        { name: 'world', config: null },
     ]),
 );
 
@@ -137,14 +138,16 @@ describe('npm run train', () => {
         expect(stages).toEqual([
             ['one', 0],
             ['two', 1],
+            ['world', 2],
         ]);
         const hashes = log.filter((r) => r.event === 'TrainStage').map((r) => r.rulesHash);
-        expect(hashes[0]).not.toBe(hashes[1]);
+        expect(new Set(hashes).size).toBe(3);
         expect(
             JSON.parse(archiveText('full', 2)).stages.map((/** @type {any} */ s) => [s.name, s.generations]),
         ).toEqual([
             ['one', 1],
-            ['two', 2],
+            ['two', 1],
+            ['world', 1],
         ]);
 
         await runTraining(parseArgs(['--generations', '2', ...base, ...small('part', [])]));

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { main, parseArgs, runReflex } from '../scripts/reflex.mjs';
-import { formatBars, formatReport, formatRows, reportJson } from '../scripts/lib/reflex-report.mjs';
+import { formatBars, formatKinds, formatReport, formatRows, reportJson } from '../scripts/lib/reflex-report.mjs';
 import { runReflexTask } from '../scripts/reflex-worker.mjs';
 import { caseNamed } from '../js/evo/reflex-cases.js';
 import { reflexRandomBrains } from '../js/evo/reflex-score.js';
@@ -73,7 +73,12 @@ describe('parseArgs', () => {
 });
 
 describe('the report', () => {
-    const cell = (/** @type {number} */ passShare, /** @type {number} */ edge) => ({ passShare, edge, fast: 0.5 });
+    const cell = (/** @type {number} */ passShare, /** @type {number} */ edge) => ({
+        passShare,
+        edge,
+        fast: 0.5,
+        kinds: {},
+    });
     /** @type {import('../scripts/lib/reflex-report.mjs').ReflexReportRow[]} */
     const rows = [
         {
@@ -100,6 +105,27 @@ describe('the report', () => {
         expect(a.split(/\s{2,}/)).toEqual(['a', '0.25', '0.10', '1.00', 'yes']);
         expect(b.split(/\s{2,}/)).toEqual(['b', '0.50', '0.60', '0.80', 'NO']);
         expect(formatReport(['a', 'b'], { rows, bars }).split('\n')).toContain('');
+    });
+
+    it('prints the pass share and bite share of each bite-discrimination kind apart, and nothing without that case', () => {
+        expect(formatKinds(rows)).toEqual([]);
+        const kinds = {
+            prey: { stagings: 8, passShare: 0.5, biteShare: 0.25 },
+            kin: { stagings: 8, passShare: 1, biteShare: 0 },
+        };
+        const biter = [
+            { label: 'b', row: { ...rows[0].row, cases: { 'bite-discrimination': { ...cell(0.5, 0), kinds } } } },
+        ];
+        const partial = {
+            label: 'p',
+            row: { ...rows[0].row, cases: { 'bite-discrimination': { ...cell(0.5, 0), kinds: { prey: kinds.prey } } } },
+        };
+        const [header, line, partialLine] = formatKinds(
+            /** @type {any} */ ([...biter, { label: 's', row: null }, partial]),
+        );
+        expect(partialLine.split(/\s{2,}/)).toEqual(['p', '0.50 bite 0.25', '-']);
+        expect(header.split(/\s{2,}/)).toEqual(['bite-discrimination (pass, bite share)', 'prey', 'kin']);
+        expect(line.split(/\s{2,}/)).toEqual(['b', '0.50 bite 0.25', '1.00 bite 0.00']);
     });
 
     it('is plain data as JSON', () => {

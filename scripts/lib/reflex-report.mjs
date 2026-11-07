@@ -36,6 +36,30 @@ function columns(table) {
     );
 }
 
+/** The case whose kinds are printed apart: it is the one where `BITE` decides the pass. */
+const KIND_CASE = 'bite-discrimination';
+
+/**
+ * @param {readonly ReflexReportRow[]} rows the rows
+ * @returns {string[]} a header, then a row per subject that faced `bite-discrimination`: its pass share and the share of
+ *   scored ticks with `BITE` above 0 for each staging kind (`prey`, `too-big`, `kin`); empty when no subject did
+ */
+export function formatKinds(rows) {
+    const faced = rows.filter(({ row }) => row?.cases[KIND_CASE]?.kinds !== undefined);
+    const kinds = [...new Set(faced.flatMap(({ row }) => Object.keys(row?.cases[KIND_CASE].kinds ?? {})))];
+    if (kinds.length === 0) {
+        return [];
+    }
+    const body = faced.map(({ label, row }) => [
+        label,
+        ...kinds.map((kind) => {
+            const cell = row?.cases[KIND_CASE].kinds[kind];
+            return cell === undefined ? '-' : `${cell.passShare.toFixed(2)} bite ${cell.biteShare.toFixed(2)}`;
+        }),
+    ]);
+    return columns([[`${KIND_CASE} (pass, bite share)`, ...kinds], ...body]);
+}
+
 /**
  * @param {readonly string[]} cases the case names, in column order
  * @param {readonly ReflexReportRow[]} rows the rows
@@ -82,7 +106,13 @@ export function formatBars(cases, bars) {
  * @returns {string} the whole text report: the subjects' table, a blank line, the bars' table
  */
 export function formatReport(cases, { rows, bars }) {
-    return [...formatRows(cases, rows), '', ...formatBars(cases, bars)].join('\n');
+    const kinds = formatKinds(rows);
+    return [
+        ...formatRows(cases, rows),
+        ...(kinds.length === 0 ? [] : ['', ...kinds]),
+        '',
+        ...formatBars(cases, bars),
+    ].join('\n');
 }
 
 /**

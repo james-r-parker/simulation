@@ -6,6 +6,7 @@ import { FLORA_DEFAULTS } from '../sim/config-flora.js';
 import { detCos, detSin } from '../sim/det-math.js';
 import { nextFloat } from '../sim/rng.js';
 import { REFUGE_ROCKS, REFUGE_ROCK_RADIUS, ringRadius } from '../sim/terrain.js';
+import { createPreyTrace, noteTick, traceFields } from './drill-trace.js';
 import {
     CENTRE_X,
     CENTRE_Y,
@@ -196,13 +197,16 @@ function preyDrill(name, { energy, maxTicks, abort, baseSize }) {
             const spot = around(angle + offset(rng, 0, 45), PREY_VIEW_SHARE * view);
             const prey = { role: 'prey', ...spot, angle: heading(rng), spec: FORAGER_SPEC, energy, baseSize };
             let bitten = false;
+            const trace = createPreyTrace();
             return {
                 stage: stage([subjectAt(PREDATOR_SPEC, angle), prey], []),
                 timing: null,
                 scent: false,
                 maxTicks,
+                trace: abort ? undefined : (won) => traceFields(trace, won),
                 done: (world) => {
                     bitten ||= world.lastBiter[1] === world.genomeId[0];
+                    noteTick(trace, world);
                     return world.alive[0] === 0 || world.alive[1] === 0 || (abort && bitten);
                 },
                 won: (world) => (abort ? world.alive[0] === 1 && !bitten : killed(world)),

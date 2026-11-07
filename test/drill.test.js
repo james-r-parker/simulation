@@ -112,6 +112,7 @@ describe('runDrills', () => {
         expect(rows[1].cells['food-ahead']).toBeNull();
         expect(rows[2].cells['food-ahead']?.winShare).toBe(1);
         expect(lines.join('\n')).toContain('mean edge');
+        expect(lines.join('\n')).toMatch(/skip cells[^\n]*prey>BITE[^\n]*\n[^\n]*champions/);
         const log = readFileSync(join(root, 'logs', 'drill-1x2.jsonl'), 'utf8')
             .split('\n')
             .filter(Boolean)

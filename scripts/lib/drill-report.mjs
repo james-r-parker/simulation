@@ -38,6 +38,20 @@ function cellText(cell) {
 }
 
 /**
+ * @param {string[][]} table rows of cells, the first the header
+ * @returns {string[]} the rows padded into columns, trailing blanks trimmed
+ */
+export function padTable(table) {
+    const widths = table[0].map((_, col) => Math.max(...table.map((line) => line[col].length)));
+    return table.map((line) =>
+        line
+            .map((text, col) => text.padEnd(widths[col]))
+            .join('  ')
+            .trimEnd(),
+    );
+}
+
+/**
  * @param {readonly string[]} drills the drill names, in column order
  * @param {readonly DrillRow[]} rows the rows
  * @returns {string[]} the table's lines: a header, then one row per subject with the mean edge last
@@ -47,14 +61,7 @@ export function formatTable(drills, rows) {
         const mean = meanEdge(row);
         return [row.label, ...drills.map((d) => cellText(row.cells[d] ?? null)), mean === null ? '-' : signed(mean)];
     });
-    const table = [['subject', ...drills, 'mean edge'], ...body];
-    const widths = table[0].map((_, col) => Math.max(...table.map((line) => line[col].length)));
-    return table.map((line) =>
-        line
-            .map((text, col) => text.padEnd(widths[col]))
-            .join('  ')
-            .trimEnd(),
-    );
+    return padTable([['subject', ...drills, 'mean edge'], ...body]);
 }
 
 /**
