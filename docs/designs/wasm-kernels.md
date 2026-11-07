@@ -1,6 +1,6 @@
 # WASM kernels
 
-**Status:** Proposed - Phase 1 is a spike: the brain forward pass in Rust/WASM behind a `wasmKernels` switch, bit-identical to the JS kernel; Phase 2 (sense) starts only when the spike clears its bar.
+**Status:** In progress - Phase 1's spike (T1 to T6) is built: the brain phase in Rust/WASM behind the `attachWasm` option `wasmKernels`, bit-identical to the JS kernel; T7 (adopt, deleting the JS kernel) and T8 wait on the coordinator's call on the T6 numbers; Phase 2 (sense) starts only after.
 **Validated:** f5c7880 (2026-11-07)
 **Priority:** 24 - a speed lever that changes no behaviour (the behaviour-changing levers are ruled out), so it queues behind the world-balance work and ahead of nothing that depends on it
 **Depends on:** [headless-sim-core.md](headless-sim-core.md)
@@ -53,16 +53,20 @@ imports it as a `?url` asset, so the browser, the worker pool, the eval workers 
 ### Memory
 
 `js/sim/wasm-arena.js` (`createArena`) instantiates the module with a fixed memory sized from `maxAgents`, the brain layout
-(`brainLayout`) and `rayCount`, and allocates each hot array once at a 16-byte aligned offset: `weights`, `hidden` (with its scratch
-row), `pooled`, `outputs`, `leakRate`, `fastOut`, `brainScratch`. The arena returns one typed-array view per array over `memory.buffer`.
+(`brainLayout`) and `rayCount`, and allocates each hot array once at a 16-byte aligned offset. As built (`arenaSpecs`), the world
+arrays are `alive`, `weights`, `hidden` (with its scratch row), `inputs`, `pooled`, `outputs`, `leakRate`, `fastOut`, `rayHue`,
+`rayCos` and `raySin`; the kernel's own are `rewardScale`, a `scratch` row of doubles, the term list, the gene-output map and the
+parameter block. `brainScratch` stays a JS array. The arena returns one typed-array view per array over `memory.buffer`.
 
 - **No growth.** The arena requests the whole size at instantiation and never calls `memory.grow`, because growth detaches every
   view. A size beyond the limit throws at startup and the loader falls back to the JS kernel.
 - **Views, not copies.** `world.weights` and the other fields are the views, so JS rules read and write the bytes the kernel uses.
-  `attachWasm(world, arena)` copies each array into the arena once and re-points the `world` field at the view; `createWorld` is not
-  touched for the spike.
-- **One call per phase.** `forwardAll` with the switch on calls `brain_forward(count)` once; the kernel loops over the alive slots
-  itself. Nothing crosses the boundary per agent.
+  `attachWasm(world, kernels, { wasmKernels, log })` builds the arena, copies each array into it once and re-points the `world`
+  field and its `agentRows` entry at the view (so `freeAgent` clears the arena bytes); `createWorld` is not touched for the spike.
+- **One call per phase.** `forwardAll` with the switch on calls `brain_forward(params, doubles)` once; the kernel loops over the
+  alive slots itself and runs `poolRays`, `hiddenStep`, `outputStep` and `hebbianStep` for each. Nothing crosses the boundary per
+  agent. With `rewardedHebb` the JS takes each alive slot's `rewardScale` first, in slot order, because nothing else in the phase
+  reads the trace.
 - A cloned or restored world calls `attachWasm` again.
 
 ### The switch
@@ -114,6 +118,17 @@ binary throws", and item 2 is unchanged.
 
 ### Go / no-go bar
 
+**T6 result (2026-11-07): the bar is met.** Both runs on a machine loaded by evals; the speed ratios are paired, so the load
+widens the margins but does not favour either side. The full output is in `sim-notes.md` (2026-11-07, WASM brain kernel).
+
+| Measure                                                                                         | JS (`origin/main`) | WASM | Change                           |
+| ----------------------------------------------------------------------------------------------- | ------------------ | ---- | -------------------------------- |
+| `bench:parts --area brain --compare origin/main`, `forwardAll, 500 agents, defaults` (ops/s)    | 110                | 881  | 8.0 times, margin +-13%          |
+| Same, `forwardAll, real inputs` (brain-parts, ops/s)                                            | 102                | 824  | 8.1 times, margin +-17%          |
+| Alternating A/B in one process, brain phase median ms per tick at 500 agents (12 rounds of 250) | 3.10               | 1.02 | 3.15 times (paired min 2.66)     |
+| Same run, whole step median ms per tick                                                         | 7.56               | 5.46 | 1.38 times (paired min 1.27)     |
+| Identity: differential test, the three 5000-tick goldens with the switch on, `golden.json`      | -                  | -    | byte-equal, all match, unchanged |
+
 Phase 1 reports `npm run bench:parts -- --area brain --compare origin/main` under `flock /tmp/claude-1000/cpu.lock`. Phase 2 starts
 only when **both** hold:
 
@@ -143,18 +158,21 @@ spatial hash arrays placed in the arena.
 
 ## Decisions
 
-| Decision                                                                         | Why                                                                                                                                                                     | Who              |
-| -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| Rust compiled to WASM for hot numeric paths                                      | The user said "I really like this RUST on hot paths idea"; the behaviour-changing speed levers are ruled out, so it is exact                                            | User, 2026-11-07 |
-| Hybrid: JS keeps the tick loop and every rule; WASM takes one call per phase     | A rewrite moves rules, RNG and logging and loses the reference; pure array loops are the part that gains                                                                | Delegated        |
-| No `wasm-bindgen`, plain `extern "C"` with offsets                               | Every argument is an integer offset into one memory; generated glue adds allocation and a build dependency for no gain                                                  | Delegated        |
-| The `.wasm` is a committed artifact with a hash check and a CI differential test | CI runners and `npm ci` need no Rust; every platform runs identical bytes; a stale binary fails a test                                                                  | Delegated        |
-| Fixed-size memory, hot arrays allocated once, views never rebuilt                | `memory.grow` detaches every typed-array view; sizing from `maxAgents` at start removes the failure mode                                                                | Delegated        |
-| Standard SIMD only, vertical lanes, no relaxed SIMD or fused multiply-add        | Relaxed SIMD and FMA round differently by engine; vertical lanes keep each unit's summation order and so the hash                                                       | Delegated        |
-| A replaced JS kernel is deleted at adoption; no long-lived fallback              | The user: "once items get replaced by RUST their JS code should be removed so we dont need to keep them in sync"; a recorded fixture and the goldens keep the reference | User, 2026-11-07 |
-| `wasmKernels` and the JS path exist only while a port is proven                  | The differential test needs a live reference during the spike; standard SIMD ships in every target browser, so no fallback is needed after                              | Delegated        |
-| Rust coding is done by Opus                                                      | The user: "any RUST dev should be done by opus"; bit-identical ports are high risk                                                                                      | User, 2026-11-07 |
-| The brain goes first, sense only after a 2 times and bit-identical bar           | The brain is pure arithmetic with the fewest inputs, so it prices the approach before the larger sense port                                                             | Delegated        |
+| Decision                                                                               | Why                                                                                                                                                                     | Who              |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| Rust compiled to WASM for hot numeric paths                                            | The user said "I really like this RUST on hot paths idea"; the behaviour-changing speed levers are ruled out, so it is exact                                            | User, 2026-11-07 |
+| Hybrid: JS keeps the tick loop and every rule; WASM takes one call per phase           | A rewrite moves rules, RNG and logging and loses the reference; pure array loops are the part that gains                                                                | Delegated        |
+| No `wasm-bindgen`, plain `extern "C"` with offsets                                     | Every argument is an integer offset into one memory; generated glue adds allocation and a build dependency for no gain                                                  | Delegated        |
+| The `.wasm` is a committed artifact with a hash check and a CI differential test       | CI runners and `npm ci` need no Rust; every platform runs identical bytes; a stale binary fails a test                                                                  | Delegated        |
+| Fixed-size memory, hot arrays allocated once, views never rebuilt                      | `memory.grow` detaches every typed-array view; sizing from `maxAgents` at start removes the failure mode                                                                | Delegated        |
+| Standard SIMD only, vertical lanes, no relaxed SIMD or fused multiply-add              | Relaxed SIMD and FMA round differently by engine; vertical lanes keep each unit's summation order and so the hash                                                       | Delegated        |
+| A replaced JS kernel is deleted at adoption; no long-lived fallback                    | The user: "once items get replaced by RUST their JS code should be removed so we dont need to keep them in sync"; a recorded fixture and the goldens keep the reference | User, 2026-11-07 |
+| `wasmKernels` and the JS path exist only while a port is proven                        | The differential test needs a live reference during the spike; standard SIMD ships in every target browser, so no fallback is needed after                              | Delegated        |
+| Rust coding is done by Opus                                                            | The user: "any RUST dev should be done by opus"; bit-identical ports are high risk                                                                                      | User, 2026-11-07 |
+| The brain goes first, sense only after a 2 times and bit-identical bar                 | The brain is pure arithmetic with the fewest inputs, so it prices the approach before the larger sense port                                                             | Delegated        |
+| Pooling and Hebbian learning run in the brain kernel too (T4)                          | An early bench put `poolRays` at about 28% of `forwardAll`; left in JS it would cap the gain near 2 times. One call per phase also needs `alive` in the arena           | Delegated        |
+| `WasmStatus` is the thrown error's `slot` and `where` fields, not a log record (spike) | The step has no log handle and `js/sim/events.js` belongs to another stream during the push; the throw keeps the failure loud with the JS message                       | Delegated        |
+| `BENCH_WASM=1` makes the micro bench worlds attach the kernels (T6)                    | `bench:parts --compare` runs this tree's bench files in both trees; a ref without the kernels runs the JS ones, so the compare prices the switch                        | Delegated        |
 
 ## Delivery requirements
 
@@ -167,7 +185,7 @@ spatial hash arrays placed in the arena.
 | Evolution metrics       | N/A - the switch changes no behaviour and `worldHash` is bit-identical, so no `eval.*` metric can move; the differential test is the evidence                                                                                                                                                                                                                                                   |
 | Determinism             | No RNG stream is drawn in a kernel. Replays from seed and config are bit-identical with the switch on or off, in Node and in Chromium (`npm run browser:hash`)                                                                                                                                                                                                                                  |
 | Config and persistence  | `wasmKernels` boolean, default `false` until the bar is met; a `scripts/flag-ledger.json` row (`key: wasmKernels`, `plan: wasm-kernels`, `task: T7`, the adopt task that deletes it, or T6 on a miss). No saved genome, archive, champion file or IndexedDB change                                                                                                                              |
-| Logging and diagnostics | `WasmFallback` (warn: reason `missing`, `instantiate` or `memory`, once per run) and `WasmStatus` (error: status word, tick, slot, then the throw). Reproduce with `npm run replay -- --seed <n> --ticks <n>` with and without the switch and compare `worldHash`                                                                                                                               |
+| Logging and diagnostics | `WasmFallback` (warn: reason `missing`, `instantiate` or `memory`, once per run, from `attachWasm`'s `log`) and, as built, the `detTanh` error thrown with the kernel's `slot` and `where` (1 hidden sum, 2 output sum, 3 learn gene) attached. Reproduce with `npm run replay -- --seed <n> --ticks <n>` with and without the switch and compare `worldHash`                                   |
 | Browser compatibility   | Chromium, Firefox and Safari with standard SIMD; during the spike a browser without SIMD takes the JS fallback; after adoption it fails loudly (standard SIMD is in Chrome 91, Firefox 89 and Safari 16.4 and later); each worker instantiates its own module and arena                                                                                                                         |
 | Docs                    | `AGENTS.md` Commands row for `scripts/build-wasm.sh` and the toolchain note (Rust 1.99, `wasm32-unknown-unknown`, `wasm-opt`); `sim-notes.md` entries for the measured gain and any engine surprise; this doc becomes the as-built description                                                                                                                                                  |
 | Verification            | `scripts/check.sh` green, the differential test, the bench numbers, and the steps below                                                                                                                                                                                                                                                                                                         |
@@ -176,16 +194,16 @@ spatial hash arrays placed in the arena.
 
 ### Phase 1 - Brain spike
 
-| #   | Task                                                                                                                        | Nature      | Depends on |
-| --- | --------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
-| T1  | Add the `wasm/` crate, `scripts/build-wasm.sh`, `scripts/check-wasm.mjs` and the committed binary with its hash             | [judgement] | -          |
-| T2  | Port `detExp`, `detTanh` and `detTanhInto` to `wasm/src/det_math.rs` with `wasm-det-math.test.js`                           | [judgement] | T1         |
-| T3  | Add `js/sim/wasm-loader.js` and `wasm-arena.js` (`attachWasm`) with their tests                                             | [judgement] | T1         |
-| T4  | Port `hiddenStep`, `outputStep` and `addSkip` to `wasm/src/brain.rs` and add `wasm-brain.js`                                | [judgement] | T2, T3     |
-| T5  | Dispatch `forwardAll` on the switch and add the differential test `wasm-brain.test.js` and the golden-run check             | [judgement] | T4         |
-| T6  | Record `npm run bench:parts -- --area brain --compare origin/main`; on a miss, record in `sim-notes.md` and delete T1 to T5 | [judgement] | T5         |
-| T7  | Adopt: record the JS reference fixture, then delete the JS brain kernel, the switch, the fallback and its ledger row        | [judgement] | T6         |
-| T8  | Conformance review of Phase 1, in parallel with `scripts/check.sh`                                                          | [judgement] | T7         |
+| #   | Task                                                                                                                                | Nature      | Depends on |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T1  | Add the `wasm/` crate, `scripts/build-wasm.sh`, `scripts/check-wasm.mjs` and the committed binary with its hash (built)             | [judgement] | -          |
+| T2  | Port `detExp`, `detTanh` and `detTanhInto` to `wasm/src/det_math.rs` with `wasm-det-math.test.js` (built)                           | [judgement] | T1         |
+| T3  | Add `js/sim/wasm-loader.js` and `wasm-arena.js` (`attachWasm`) with their tests (built)                                             | [judgement] | T1         |
+| T4  | Port `hiddenStep`, `outputStep` and `addSkip` to `wasm/src/brain.rs` and add `wasm-brain.js` (built)                                | [judgement] | T2, T3     |
+| T5  | Dispatch `forwardAll` on the switch and add the differential test `wasm-brain.test.js` and the golden-run check (built)             | [judgement] | T4         |
+| T6  | Record `npm run bench:parts -- --area brain --compare origin/main`; on a miss, record in `sim-notes.md` and delete T1 to T5 (built) | [judgement] | T5         |
+| T7  | Adopt: record the JS reference fixture, then delete the JS brain kernel, the switch, the fallback and its ledger row                | [judgement] | T6         |
+| T8  | Conformance review of Phase 1, in parallel with `scripts/check.sh`                                                                  | [judgement] | T7         |
 
 ### Phase 2 - Sense
 
