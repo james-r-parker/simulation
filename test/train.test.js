@@ -27,7 +27,13 @@ describe('parseArgs', () => {
             checkpointEvery: 10,
             curriculum: null,
             resume: null,
+            seedOffset: 0,
         });
+    });
+
+    it('reads --seed-offset and rejects a negative one', () => {
+        expect(parseArgs(['--generations', '1', '--out', 'x', '--seed-offset', '7']).seedOffset).toBe(7);
+        expect(() => parseArgs(['--generations', '1', '--out', 'x', '--seed-offset', '-1'])).toThrow(/--seed-offset/);
     });
 
     it('rejects a curriculum with a config, and unknown flags', () => {
