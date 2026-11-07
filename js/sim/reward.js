@@ -52,7 +52,7 @@ export function noteReward(world, slot, source, stored) {
 }
 
 /**
- * The factor `hebbianStep` multiplies its rate by this tick: `rewardBase + rewardGain x trace`. The trace then decays by
+ * The factor the brain kernel's Hebbian step multiplies its rate by this tick: `rewardBase + rewardGain x trace`. The trace then decays by
  * `rewardDecay`.
  * @param {Record<string, any>} world the world, with `rewardedHebb` on
  * @param {number} slot the alive slot
