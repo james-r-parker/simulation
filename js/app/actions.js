@@ -1,6 +1,7 @@
 // What each shortcut and button does: pause, step, speed, new world, selection, follow and the camera moves. Pure over
 // the injected worker client, camera and clock, so every action tests without a browser.
 
+import { focusLast } from './director/moment-log.js';
 import { moveCameraTo, panByPixels, zoomAt } from './camera.js';
 import { TICKS_PER_SECOND_CHOICES } from '../worker/protocol.js';
 import { LENSES, toggleLens } from './ui/lenses.js';
@@ -88,6 +89,8 @@ const NO_UI = Object.freeze({
  * @property {() => number} chooseSeed a fresh seed for a new world
  * @property {Record<string, any>} config the config overrides sent with a new world
  * @property {() => number} [leaderAgent] the genome id of the leading family's largest agent, 0 for none
+ * @property {() => import('./director/moment-log.js').MomentLog | null} [lastMoments] the live moment log, null before a
+ *   world
  * @property {UiHooks} [ui] the page's hooks; absent means none of the page actions do anything
  */
 
@@ -197,6 +200,7 @@ const ACTIONS = Object.freeze({
         }
     },
     step: ({ getClient }) => void getClient()?.step(1),
+    focusLast: ({ camera, now, lastMoments }) => void focusLast(lastMoments?.() ?? null, camera, now()),
     step10: ({ getClient }) => void getClient()?.step(10),
     speedUp: (deps) => changeSpeed(deps, 1),
     speedDown: (deps) => changeSpeed(deps, -1),
