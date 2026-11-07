@@ -67,7 +67,15 @@ parameter block. `brainScratch` stays a JS array. The arena returns one typed-ar
   alive slots itself and runs `poolRays`, `hiddenStep`, `outputStep` and `hebbianStep` for each. Nothing crosses the boundary per
   agent. With `rewardedHebb` the JS takes each alive slot's `rewardScale` first, in slot order, because nothing else in the phase
   reads the trace.
-- A cloned or restored world calls `attachWasm` again.
+- A cloned or restored world calls `attachWasm` again. `attachWasm` throws for a world that already runs the kernels, for one
+  `hashWorld` has already cached views of (the hash would keep reading the JS arrays), and for one past tick 0 unless the
+  caller passes `midRun` (the bench's warmed-up micro worlds). Rows are matched by identity, so a shallow copy with its own
+  `agentRows` entries attaches on its own arena.
+- **A kernel throw is fatal to the world.** When a non-finite value stops `brain_forward`, the slots before it are done and
+  the faulting slot may be half written, and that partial state is not the state the JS kernel leaves when it throws (the
+  kernel's tanh passes write in pairs and fours where `detTanhInto` writes in fours, and with `rewardedHebb` every alive
+  slot's reward factor was taken before the call). Nothing may step, hash or save the world after the throw; reproduce from
+  seed and config instead.
 
 ### The switch
 
