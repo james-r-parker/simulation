@@ -94,6 +94,22 @@ describe('createChaseLayer', () => {
         }
         layer.dispose?.();
     });
+
+    it('does not step or upload while hidden at level 2', () => {
+        const layer = createChaseLayer({ info });
+        layer.setLook?.({ chase: 0 });
+        layer.update?.(/** @type {any} */ ({ agents: chaseFrame() }));
+        const drawn = layer.object.geometry.drawRange.count;
+        expect(drawn).toBeGreaterThan(0);
+        const empty = createInterpolated(4);
+        layer.setLook?.({ chase: 2 });
+        layer.update?.(/** @type {any} */ ({ agents: empty }));
+        expect(layer.object.geometry.drawRange.count).toBe(drawn);
+        layer.setLook?.({ chase: 0 });
+        layer.update?.(/** @type {any} */ ({ agents: empty }));
+        expect(layer.object.geometry.drawRange.count).toBe(0);
+        layer.dispose?.();
+    });
 });
 
 describe('a chase layer fed by the effects player', () => {

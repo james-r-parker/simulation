@@ -3,6 +3,7 @@ import { createCameraController } from '../../js/app/camera.js';
 import { createPointerInput } from '../../js/app/pointer-input.js';
 import {
     createDoubleTap,
+    BROWSER_TIMERS,
     createLongPress,
     DOUBLE_TAP_MS,
     DOUBLE_TAP_PX,
@@ -214,5 +215,35 @@ describe('long press', () => {
         s.time.advance(LONG_PRESS_MS);
         s.input.up(100, 50, 2);
         expect(s.presses).toEqual([]);
+    });
+});
+
+describe('createDoubleTap reset', () => {
+    it('forgets the last tap, so the next one is a first tap again', () => {
+        const time = fakeTime();
+        const taps = createDoubleTap(time.now);
+        expect(taps.tap(10, 10)).toBe(false);
+        taps.reset();
+        time.advance(50);
+        expect(taps.tap(10, 10)).toBe(false);
+        time.advance(50);
+        expect(taps.tap(10, 10)).toBe(true);
+    });
+});
+
+describe('BROWSER_TIMERS', () => {
+    it('runs a timer on the real clock and a cleared one never fires', async () => {
+        let ran = 0;
+        const handle = BROWSER_TIMERS.set(() => ran++, 1);
+        BROWSER_TIMERS.clear(handle);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        expect(ran).toBe(0);
+        await new Promise((resolve) => {
+            BROWSER_TIMERS.set(() => {
+                ran++;
+                resolve(undefined);
+            }, 1);
+        });
+        expect(ran).toBe(1);
     });
 });

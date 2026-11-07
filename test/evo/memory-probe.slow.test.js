@@ -18,16 +18,17 @@ function genome(weight) {
 }
 
 describe('the reference controllers', () => {
-    it('a memoryless controller scores a gain of 0 in every scenario, and an equal score under each control', () => {
-        const result = probeSubject(referenceSubject('memoryless'), {
-            trials: 8,
-            scenarios: SCENARIOS.map((s) => s.name),
-        });
-        for (const scenario of result.scenarios) {
-            expect(scenario.gain).toBe(0);
-            expect(scenario.scores.amnesia).toBe(scenario.scores.blindfold ?? scenario.scores.intact);
-        }
-    });
+    it.each(SCENARIOS.map((s) => s.name))(
+        'a memoryless controller scores a gain of 0 and an equal score under each control in %s',
+        (name) => {
+            const result = probeSubject(referenceSubject('memoryless'), { trials: 8, scenarios: [name] });
+            expect(result.scenarios.length).toBeGreaterThan(0);
+            for (const scenario of result.scenarios) {
+                expect(scenario.gain).toBe(0);
+                expect(scenario.scores.amnesia).toBe(scenario.scores.blindfold ?? scenario.scores.intact);
+            }
+        },
+    );
 
     it.each(['food-then-blind', 'food-then-blind@600'])(
         'a controller that stores its target in MEMORY_A scores a clearly positive gain in %s',

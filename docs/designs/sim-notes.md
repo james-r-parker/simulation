@@ -2254,6 +2254,23 @@ The ray march (the gather and every ray's nearest hit) runs in `sense_slot`; the
 - A world copy that takes its own arena needs its own `foodRows` entries as well as its own `agentRows`, now that
   `attachWasm` re-points both.
 
+### 2026-11-07 - flaky tests 2026-11-07
+
+Mined the last 200 GitHub runs and stressed the slow files locally. Every real flake was a heavy test timing out under
+load or coverage, not shared state; the rest of the failures were a branch editing the workflow file
+(`test/perf-scope.test.js`, deterministic on that branch, passes on main) and the bench compare under noise.
+
+- Cause: one `it` ran several seconds of real worlds (2 to 3 s alone). With V8 coverage (4 to 5 times slower) on shared
+  vCPUs, a 20 s limit is only 2 to 3 times the cost. Under 8 busy loops on 4 cores with coverage, the old files failed
+  4 tests in the first run: memoryless gain-0, "wide circle", the group idle-trio test (a literal 30000 ms, never scaled)
+  and food-then-blind@600. The new files passed 3 runs of 3 under the same load.
+- Fix: split the heavy tests so each `it` is a fraction of the old cost (one per scenario, one per control, one per
+  circle arm with the seeker run once per file), dropped the literal 30000 ms, shortened the replay episode in
+  `test/evo/trainer.slow.test.js`. No limit raised; assertions unchanged.
+- Load is read once when vitest starts (`busyScale`), so a run begun quiet keeps strict limits when other jobs start
+  later: a failure there is the cost of the test, which is why the fix makes the tests cheaper.
+- `test/train.slow.test.js` (order dependent before #334) passes alone per test.
+
 ### 2026-11-07 - WASM Phase 4: hash, pheromones and physics in Rust, step 10% faster, drills 22% faster (wasm-kernels Phase 4)
 
 `build_hash`, `update_pheromones`, `move_agents`, `bounce_rocks` and `resolve_contacts` replace the JS spatial hash build,
@@ -2277,3 +2294,25 @@ goldens and `npm run browser:hash` are unchanged. Measured under `flock /tmp/cla
   shrinks the agent (`updateSize`) between rocks, so the kernel stops at each damaging impact and JS resumes it.
 - The CPU lock keeps other timing runs away but not the evals of the parallel push (load average 5 to 30 during these
   runs); the A/B runs alternate, so the load widens the margins without favouring either side.
+
+### 2026-11-07 - WASM Phase 5: drills 36% faster, the bench step unchanged, four squeezes reverted (wasm-kernels T20 to T28)
+
+- **Profile after the kernels.** `node --cpu-prof` names WASM frames `wasm-function[N]`; an exported function's `name`
+  property is its index, so `new WebAssembly.Instance(module, imports).exports` maps the index to the export. In the
+  500-agent bench world the kernels are about 65% of the step (`brain_forward` 38%, `sense_slot` 14%, `build_hash` 7%); no
+  JS function is above 4%.
+- **Drills waste time on empty slots.** The drill stage world (3000 x 4000, 8 agents) keeps the default `maxFood` 3600, so
+  `build_hash` walked 3600 dead food bytes twice a tick (32% of a trial) and the pheromone update ran over grids of exact
+  zeros (15%). Skipping sixteen dead bytes per `v128_any_true` and skipping rows of `+0` bits took drill throughput from
+  70.3 to 95.8 trials per second per worker (+36.4%, margin +-8.0%). `aliveFoods` in `js/evo/drill-scenarios.js` (3.7%)
+  and the stage's `maxFood` are the next drill levers, outside the kernels.
+- **Bench-world grids are never zero.** At every 500 ticks from 500 to 4500, none of the 81 rows of any pheromone grid
+  is all zero: decaying `f32` tails spread by diffusion to every cell, so zero skipping helps only small or new worlds.
+- **The brain does not respond to tanh or pass width.** Six divisions instead of 13 in the vector tanh made `tanh_into`
+  12% faster with no change in `forwardAll`, and 16 units per pass did nothing: the weighted sums of widened `f32` weights
+  are the cost, and out-of-order execution hides the divisions. `wasm-opt -O4` was mixed (one export +13%, another -2%).
+- **Bit-identity of a power-of-two divisor.** `r / 2^j` and `r * 2^-j` round the same real number, so they are equal for
+  every `r`; `(r / 3) * 0.5` equals `r / 6` only while both are normal (the power-of-two scaling commutes with rounding in
+  the normal range), so such a rewrite needs a guard for tiny `r`.
+- **Noise.** No quiet window held during the phase (load 2 to 9, other streams running); `bench:micro` margins ran from
+  2% to 28%, so `--runs 5` and only verdicts outside the margin were used.
