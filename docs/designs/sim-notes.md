@@ -2082,3 +2082,78 @@ Reading it:
 - A fleeing prey can starve at a sprint before it is caught (it did at tick 342 against a still subject), so the
   `prey-ahead` win reads the sim's `deliberateKills` credit, not the prey's death.
 - The drill world has no refuges, so `refugeSense` inputs read 0 in every drill.
+
+### 2026-11-07 - WASM brain kernel: 3 to 8 times faster and bit-identical (wasm-kernels T6)
+
+The brain phase (`poolRays`, `hiddenStep`, `outputStep`, `hebbianStep`) runs in `wasm/blob-kernels.wasm` behind the
+`attachWasm` option `wasmKernels`. Both measurements ran on a machine loaded by evals; the ratios are paired.
+
+- `BENCH_WASM=1 flock /tmp/claude-1000/cpu.lock npm run bench:parts -- --area brain --compare origin/main` (median of 3
+  alternating runs): `forwardAll, 500 agents, defaults` 110 to 881 ops/s (+703%, margin +-13%); `forwardAll, real inputs`
+  102 to 824 ops/s (+706%, +-17%); hidden sizes 16 to 64 gain 4.6 to 12 times; `poolRays`, `hebbianStep` alone and the
+  evolution functions unchanged (they still run in JS when called directly).
+- An alternating A/B of two identical 500-agent worlds in one Node process (12 rounds of 250 ticks, world hashes equal at
+  the end): brain phase median 3.10 to 1.02 ms per tick (3.15 times, paired min 2.66), whole step 7.56 to 5.46 ms (1.38
+  times). The micro bench's JS figure (about 9 ms per call) is slower than the in-step one, so its ratio overstates the
+  gain; read 3 times as the step-level figure.
+- Identity: outputs, hidden and fastOut byte-equal every tick for 200 ticks (default, rewarded Hebbian, 13 hidden units)
+  and 2000 ticks (default); the three 5000-tick golden cases reach their pinned hashes with the switch on;
+  `test/sim/golden.json` unchanged.
+
+Toolchain facts found on the way:
+
+- `f64::floor` is not in `core` for a `no_std` crate on Rust 1.99; the kernel uses the SIMD `f64x2_floor` on a splat,
+  which is IEEE round-toward-negative and so equals `Math.floor`.
+- `wasm-opt` 120 rejects rustc's output unless told the features rustc's generic wasm32 CPU emits
+  (`--enable-nontrapping-float-to-int --enable-bulk-memory --enable-sign-ext --enable-mutable-globals --enable-multivalue
+--enable-reference-types`, plus `--enable-simd`).
+- `cargo build --config "target.<triple>.rustflags=[...]"` appends to the rustflags in `.cargo/config.toml` rather than
+  replacing them, so the build script adds `--remap-path-prefix` without losing `--import-memory`; a build from another
+  checkout path gives the same bytes.
+
+### 2026-11-07 - Trainer smoke run and ticks per second (training T8 to T11)
+
+A short run, not the Phase 2 done run (that needs about 40 x 32 x 60000 ticks): `npm run train -- --generations 6
+--episodes 8 --ticks 30000 --offer-from 5000 --checkpoint-every 3 --curriculum evals/train-curriculum.json --workers 8`,
+all six generations in the nursery stage. It took 3 minutes on 8 workers and the archive grew from nothing to coverage 0.106
+(qd 628). Checkpoint at generation 6: mean drill edge +0.23, `eval.food_energy_per_1k` 289 (185 at generation 3),
+`eval.catch_rate` 0.38. Exported with `train:export`, the five champions drilled as:
+
+| Subject               | food-ahead   | food-behind  | two-foods    | prey-ahead   | prey-too-big | hunter-closing | rock-refuge  | mean edge |
+| --------------------- | ------------ | ------------ | ------------ | ------------ | ------------ | -------------- | ------------ | --------- |
+| smoke-forager-cell5   | 1.00 (+0.90) | 1.00 (+0.82) | 0.00 (-0.10) | -            | -            | 0.00 (+0.00)   | 0.00 (+0.00) | +0.32     |
+| smoke-predator-cell25 | -            | -            | -            | 0.00 (+0.00) | 0.97 (-0.03) | -              | -            | -0.02     |
+| reference memoryless  | 1.00 (+0.90) | 1.00 (+0.82) | 0.00 (-0.10) | 0.31 (+0.31) | 0.28 (-0.72) | 0.03 (+0.03)   | 0.00 (+0.00) | +0.18     |
+
+- Six small generations already beat the random brain on both food drills by +0.82 to +0.90 and match the memoryless
+  reference there; the predator wins none of `prey-ahead` (it never kills in the drill). `two-foods`, the hunter and refuge
+  drills are not learned yet. The `defender`, `reproducer` and `scout` champions have no drill (the drills only stage
+  foragers and predators).
+- Default world, 100 agents: about 2 ms per tick per worker (3000 ticks in 5.5 s), so a 60000-tick episode is about 2
+  minutes and one 32-episode generation about 8 minutes on 8 workers. Worker use per generation was only 25 to 41% in the
+  smoke run: 8 episodes on 8 workers wait for the slowest world (nursery worlds go extinct and finish early). The doc's 32
+  episodes keep the pool fuller.
+- `evals/predator-world.json` no longer passes `createConfig` (`hashCellSize` 140 is below the largest radius 532.5 that
+  `maxEnergy` 25000 gives); the hunt stage uses `evals/train-hunt-world.json`.
+- The nursery (`evals/micro-world.json`) has no floor (`minAgents` 0): random brains go extinct before tick 12000 on some
+  seeds, which ends those episodes early and offers few genomes. If the full run shows the nursery barely seeding the
+  archive, a `minAgents` above 0 in the stage is the first thing to try.
+- `npm run league` on a trained champion plays no games until the league has admitted champions, and prints Elo 1500.
+
+### 2026-11-07 - Speed pass 3 (T71, T72): one gather fix kept, the rest inside the margin
+
+Profile of the 500-agent step (`node --cpu-prof`, self time): `hiddenStep` 16 percent, `hebbianStep` 14, `castRays` 10,
+`appendFixtures` 6, `forwardAll` 6, `outputStep` 5, `gatherNear` 5, `buildHash` with its count pass 6, `integrate` 3.
+The brain, sense and hash code are moving to the WASM kernel, so only a gather fix was kept. Results on `bench:micro`
+and `bench:parts` against origin/main (alternating runs, a loaded machine, so the margins are wide):
+
+| Change                                                                      | Bench              | Change | Margin | Kept |
+| --------------------------------------------------------------------------- | ------------------ | ------ | ------ | ---- |
+| Obstacles rejected on one axis, fixture rows written straight to `rayLocal` | `gatherNear` x 484 | +23%   | 10.8%  | yes  |
+| Cell loop hoisted and `appendCircle` inlined                                | `gatherNear` x 484 | -4.9%  | 15.1%  | no   |
+| Count pass writes its cell box directly (no shared `range` array)           | physics buildHash  | +2.5%  | 13.4%  | no   |
+| Wall bounce of both axes in one function                                    | `integrate`        | 0.0%   | 7.8%   | no   |
+| Skip the square root when a lower bound already loses                       | `castRays` x 484   | -0.1%  | 10.9%  | no   |
+
+End to end (`bench-compare --sizes=500 --runs=5`, load about 27): `bench.step_ms@500` 7.97 to 7.63 (-4.3%), sense phase
+1.60 to 1.37 ms; inside the gate's noise, not a quiet-machine number. The golden test passes unchanged.

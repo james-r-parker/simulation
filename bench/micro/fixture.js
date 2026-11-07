@@ -1,4 +1,5 @@
 // Seeded inputs for the function microbenchmarks, built once per process and shared by every bench file.
+import { existsSync, readFileSync } from 'node:fs';
 import { test } from 'vitest';
 import { cloneWithNoisePolicy } from '../../js/sim/birth-policy.js';
 import { createConfig } from '../../js/sim/config.js';
@@ -13,6 +14,38 @@ const SEED = 20261021;
 
 /** @type {Map<string, Record<string, any>>} */
 const cache = new Map();
+
+/**
+ * With `BENCH_WASM=1` every micro world runs the WASM kernels (docs/designs/wasm-kernels.md), so
+ * `npm run bench:parts -- --area brain --compare <ref>` prices the switch against a ref that runs the JS kernels. The
+ * compare runs these files in the ref's tree too; a tree without the kernels runs the JS ones.
+ */
+const ARENA_URL = new URL('../../js/sim/wasm-arena.js', import.meta.url);
+const WASM = process.env.BENCH_WASM === '1' && existsSync(ARENA_URL) ? await loadWasm() : null;
+
+/**
+ * @returns {Promise<{ attachWasm: Function, kernels: any }>} the attach function and the committed kernels
+ */
+async function loadWasm() {
+    const { attachWasm } = await import(ARENA_URL.href);
+    const { loadKernels } = await import(new URL('../../js/sim/wasm-loader.js', import.meta.url).href);
+    const kernels = loadKernels(readFileSync(new URL('../../wasm/blob-kernels.wasm', import.meta.url)));
+    return { attachWasm, kernels };
+}
+
+/**
+ * Moves a world into a WASM arena when `BENCH_WASM=1` and the tree has the kernels; otherwise does nothing.
+ * @param {Record<string, any>} world a world from `createWorld`, or a copy with its own `agentRows`
+ * @returns {void}
+ */
+export function benchAttach(world) {
+    if (WASM === null) {
+        return;
+    }
+    if (!WASM.attachWasm(world, WASM.kernels, { wasmKernels: true, midRun: true })) {
+        throw new Error('BENCH_WASM=1 but the WASM kernels did not attach');
+    }
+}
 
 /**
  * A 500-agent world stepped 300 ticks from a fixed seed, so rays, hidden rows and outputs hold real values, with the
@@ -37,6 +70,7 @@ export function microWorld(overrides = {}) {
             step(world, brain);
         }
         buildHash(world.hash, world);
+        benchAttach(world);
         cache.set(key, world);
     }
     return world;

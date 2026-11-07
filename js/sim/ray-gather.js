@@ -49,23 +49,68 @@ function fixtureC(s, ox, oy, r) {
 }
 
 /**
- * Writes one kept fixture row.
- * @param {Float64Array} local the gathered rows
+ * Appends the obstacles near the origin. Each is rejected on one axis first (`d2` is at least `ox * ox`, so a gap past
+ * the reach on one axis fails the distance test too), so a far one costs a subtraction and a compare, with no store.
+ * @param {World} world the world
  * @param {number} count rows used so far
- * @param {Float64Array} row a scratch of the four values: origin-relative x and y, `c`, packed key
  * @returns {number} the new row count
  */
-function writeFixture(local, count, row) {
-    const at = count * LOCAL_STRIDE;
-    local[at] = row[0];
-    local[at + 1] = row[1];
-    local[at + 2] = row[2];
-    local[at + 3] = row[3];
-    return count + 1;
+function appendObstacles(world, count) {
+    const { rayLocal: local, rayScratch: s, obsX, obsY, obsRadius } = world;
+    const px = s[OX];
+    const range = s[RANGE];
+    let n = count;
+    for (let i = 0; i < obsX.length; i++) {
+        const ox = px - obsX[i];
+        const reach = range + obsRadius[i];
+        if (ox * ox > reach * reach * REACH_SLACK) {
+            continue;
+        }
+        const oy = s[OY] - obsY[i];
+        const c = fixtureC(s, ox, oy, obsRadius[i]);
+        if (c === c) {
+            const at = n++ * LOCAL_STRIDE;
+            local[at] = ox;
+            local[at + 1] = oy;
+            local[at + 2] = c;
+            local[at + 3] = OBSTACLE * KIND_STRIDE + i;
+        }
+    }
+    return n;
 }
 
-/** One fixture row before it is written, so the far ones cost no stores into `rayLocal`. */
-const fixtureRow = new Float64Array(LOCAL_STRIDE);
+/**
+ * Appends the live herd bodies near the origin, with the same one-axis reject.
+ * @param {World} world the world
+ * @param {number} count rows used so far
+ * @returns {number} the new row count
+ */
+function appendHerds(world, count) {
+    const { rayLocal: local, rayScratch: s, herdAlive, herdX, herdY } = world;
+    const herdRadius = world.config.herdRadius;
+    const herdReach = s[RANGE] + herdRadius;
+    const herdReach2 = herdReach * herdReach * REACH_SLACK;
+    let n = count;
+    for (let i = 0; i < world.herdMax; i++) {
+        if (herdAlive[i] !== 1) {
+            continue;
+        }
+        const ox = s[OX] - herdX[i];
+        if (ox * ox > herdReach2) {
+            continue;
+        }
+        const oy = s[OY] - herdY[i];
+        const c = fixtureC(s, ox, oy, herdRadius);
+        if (c === c) {
+            const at = n++ * LOCAL_STRIDE;
+            local[at] = ox;
+            local[at + 1] = oy;
+            local[at + 2] = c;
+            local[at + 3] = HERD * KIND_STRIDE + i;
+        }
+    }
+    return n;
+}
 
 /**
  * Appends obstacles, live herd bodies and smoke clouds near the origin, in the order and with the values the distance test keeps.
@@ -73,48 +118,22 @@ const fixtureRow = new Float64Array(LOCAL_STRIDE);
  * @returns {number} the row count
  */
 function appendFixtures(world) {
-    const { rayLocal: local, rayScratch: s, obsX, obsY, obsRadius, cloudX, cloudY } = world;
-    const row = fixtureRow;
-    let count = 0;
-    const herdRadius = world.config.herdRadius;
-    const herdReach = s[RANGE] + herdRadius;
-    const herdReach2 = herdReach * herdReach * REACH_SLACK;
-    for (let i = 0; i < obsX.length; i++) {
-        row[0] = s[OX] - obsX[i];
-        row[1] = s[OY] - obsY[i];
-        row[2] = fixtureC(s, row[0], row[1], obsRadius[i]);
-        if (row[2] === row[2]) {
-            row[3] = OBSTACLE * KIND_STRIDE + i;
-            count = writeFixture(local, count, row);
-        }
-    }
-    for (let i = 0; i < world.herdMax; i++) {
-        if (world.herdAlive[i] !== 1) {
-            continue;
-        }
-        row[0] = s[OX] - world.herdX[i];
-        // One axis alone already past the reach: `fixtureC` would reject it too (d2 is at least ox * ox).
-        if (row[0] * row[0] > herdReach2) {
-            continue;
-        }
-        row[1] = s[OY] - world.herdY[i];
-        row[2] = fixtureC(s, row[0], row[1], herdRadius);
-        if (row[2] === row[2]) {
-            row[3] = HERD * KIND_STRIDE + i;
-            count = writeFixture(local, count, row);
-        }
-    }
+    const { rayLocal: local, rayScratch: s, cloudX, cloudY } = world;
+    let n = appendHerds(world, appendObstacles(world, 0));
     const radius = world.config.smokeRadius;
     for (let i = 0; i < world.cloudCount; i++) {
-        row[0] = s[OX] - cloudX[i];
-        row[1] = s[OY] - cloudY[i];
-        row[2] = fixtureC(s, row[0], row[1], radius);
-        if (row[2] === row[2]) {
-            row[3] = SMOKE * KIND_STRIDE + i;
-            count = writeFixture(local, count, row);
+        const ox = s[OX] - cloudX[i];
+        const oy = s[OY] - cloudY[i];
+        const c = fixtureC(s, ox, oy, radius);
+        if (c === c) {
+            const at = n++ * LOCAL_STRIDE;
+            local[at] = ox;
+            local[at + 1] = oy;
+            local[at + 2] = c;
+            local[at + 3] = SMOKE * KIND_STRIDE + i;
         }
     }
-    return count;
+    return n;
 }
 
 /**

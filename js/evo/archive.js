@@ -45,18 +45,52 @@ const PLACES = SPEC_COUNT * CELLS * 2;
  * @property {Float64Array} scratch work array for the `cv` median
  * @property {Int32Array} near work array for `selectParent`
  * @property {import('./descriptors.js').Descriptor} descriptor how a dying agent is placed in a cell
+ * @property {number} nCap the most samples a genome's statistics keep (0: no cap); see `addFitness`
  */
 
 /**
+ * @param {number} nCap the sample cap
+ * @returns {void}
+ * @throws {Error} unless `nCap` is 0 (off) or an integer of at least 2
+ */
+function checkNCap(nCap) {
+    if (nCap !== 0 && !(Number.isInteger(nCap) && nCap >= 2)) {
+        throw new Error(`createArchive: nCap must be 0 (off) or an integer of at least 2, got ${nCap}`);
+    }
+}
+
+/**
+ * Adds a fitness to a place's statistics, holding the sample count at the archive's `nCap` (0: no cap). At the cap the
+ * oldest weight fades: the accumulator drops to `nCap - 1` samples with the same variance estimate, then takes the
+ * value, so the mean follows recent evaluations and the lower bound stays as wide as `nCap` samples allow.
+ * @param {Archive} archive the archive
+ * @param {number} place the place
+ * @param {number} fitness the fitness to add
+ * @returns {void}
+ */
+function addFitness(archive, place, fitness) {
+    const { stats, nCap } = archive;
+    const o = place * WELFORD_STRIDE;
+    const n = stats[o];
+    if (nCap > 0 && n >= nCap) {
+        stats[o + 2] *= (nCap - 2) / (n - 1);
+        stats[o] = nCap - 1;
+    }
+    welfordAdd(stats, o, fitness);
+}
+
+/**
  * @param {Readonly<Record<string, any>>} layout a `brainLayout` result
- * @param {{descriptor?: import('./descriptors.js').Descriptor}} [options] `descriptor`, the policy's descriptor
- *   (default `descriptorV1`)
+ * @param {{descriptor?: import('./descriptors.js').Descriptor, nCap?: number}} [options] `descriptor`, the policy's
+ *   descriptor (default `descriptorV1`), and `nCap`, the most fitness samples a genome keeps (default 0: no cap; at least 2)
  * @returns {Archive} an empty archive with every row allocated
  */
-export function createArchive(layout, { descriptor = descriptorV1 } = {}) {
+export function createArchive(layout, { descriptor = descriptorV1, nCap = 0 } = {}) {
+    checkNCap(nCap);
     return {
         layout,
         descriptor,
+        nCap,
         rows: new Float32Array(PLACES * layout.weightCount),
         sigmas: new Float32Array(PLACES),
         ids: new Float64Array(PLACES),
@@ -148,11 +182,15 @@ export function archiveCv(archive) {
  * @param {Archive} archive the archive
  * @param {number} place an occupied place
  * @param {number} [cv] the `cv` to use when `n < 2` (measured when omitted)
- * @returns {number} `mean - Z x sd / sqrt(n)`, with `sd = |mean| x cv` while `n < 2`
+ * @returns {number} `mean - Z x sd / sqrt(n)`, with `sd = |mean| x cv` while `n < 2`; `-Infinity` for a genome with no
+ *   samples (a seeded elite nobody has tested)
  */
 export function lowerBound(archive, place, cv) {
     const o = place * WELFORD_STRIDE;
     const n = archive.stats[o];
+    if (n === 0) {
+        return -Infinity;
+    }
     const mean = welfordMean(archive.stats, o);
     const sd = n >= 2 ? welfordSd(archive.stats, o) : Math.abs(mean) * (cv ?? archiveCv(archive));
     return mean - (Z * sd) / Math.sqrt(n);
@@ -270,18 +308,19 @@ function offerGenome(archive, cellIndex, item, log) {
     const chal = elite + 1;
     if (archive.occupied[elite] === 0) {
         fillPlace(archive, elite, item);
-        welfordAdd(archive.stats, elite * WELFORD_STRIDE, item.fitness);
+        addFitness(archive, elite, item.fitness);
         return 'elite';
     }
+    const untested = placeCount(archive, elite) === 0;
     const takes =
-        item.fitness >= welfordMean(archive.stats, elite * WELFORD_STRIDE) &&
+        (untested || item.fitness >= welfordMean(archive.stats, elite * WELFORD_STRIDE)) &&
         (archive.occupied[chal] === 0 ||
             (placeCount(archive, chal) === 1 && item.fitness > welfordMean(archive.stats, chal * WELFORD_STRIDE)));
     if (!takes) {
         return 'dropped';
     }
     fillPlace(archive, chal, item);
-    welfordAdd(archive.stats, chal * WELFORD_STRIDE, item.fitness);
+    addFitness(archive, chal, item.fitness);
     log?.log('debug', 'ChallengerSet', {
         spec: item.spec,
         cell: cellIndex % CELLS,
@@ -311,7 +350,7 @@ export function offer(archive, item, log) {
         if (!held) {
             return 'lost';
         }
-        welfordAdd(archive.stats, place * WELFORD_STRIDE, item.fitness);
+        addFitness(archive, place, item.fitness);
         outcome = 'clone';
     } else {
         cellIndex = item.spec * CELLS + (item.cell ?? cellOf(item.speed ?? 0, item.crowding ?? 0));
@@ -321,7 +360,8 @@ export function offer(archive, item, log) {
 }
 
 /**
- * Places a champion as the elite of its cell with `n = 1` and mean 0, so the first tested challenger can replace it.
+ * Places a champion as the elite of its cell with no samples (`n` 0), so any offer to the cell becomes its challenger
+ * and the first tested challenger replaces it.
  * @param {Archive} archive the archive
  * @param {{ spec?: number, specialisation?: string, cell: number, id: number, sigma: number, weights: Float32Array }} champion
  *   `spec` is the index; `specialisation` (a decoded genome's name) is used when `spec` is absent
@@ -354,7 +394,6 @@ export function seedArchive(archive, champion, log) {
     }
     const elite = placeOf(spec, champion.cell, ELITE);
     fillPlace(archive, elite, { row: champion.weights, sigma: champion.sigma, id: champion.id });
-    welfordAdd(archive.stats, elite * WELFORD_STRIDE, 0);
     archive.occupied[elite + 1] = 0;
 }
 

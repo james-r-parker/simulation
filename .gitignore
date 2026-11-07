@@ -162,6 +162,9 @@ coverage/
 # Stryker sandbox (mutation testing)
 .stryker-tmp/
 
+# Cargo output for the WASM kernels (scripts/build-wasm.sh builds outside the tree; a manual cargo build lands here)
+wasm/target/
+
 # Function microbenchmark results (scripts/bench-micro.mjs)
 .bench-micro/
 .bench-micro-info/
