@@ -109,7 +109,7 @@ describe('trampleHerds', () => {
     });
 
     it('matches the all-against-all reference bit for bit on a crowded herd', () => {
-        const run = (reject) => {
+        const run = (/** @type {boolean} */ reject) => {
             const world = build({ herdCount: 4, herdSize: 16, maxAgents: 8 });
             const slots = [];
             for (let i = 0; i < 6; i++) {
