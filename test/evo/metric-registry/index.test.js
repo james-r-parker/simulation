@@ -56,13 +56,14 @@ describe('metricName', () => {
 
 describe('withLiveness', () => {
     it('applies a generated reading to a fresh frozen entry without mutating its family', () => {
-        const family = { 'eval.food_energy_per_1k': METRICS['eval.food_energy_per_1k'] };
+        const original = METRICS['eval.food_energy_per_1k'];
+        const family = { 'eval.food_energy_per_1k': original };
         const reading = { nullShare: 0.05, distinct: 3, report: 'evals/power/defaults-floor-on.json' };
         const merged = withLiveness(family, { 'eval.food_energy_per_1k': reading });
 
         expect(merged['eval.food_energy_per_1k'].liveness).toEqual(reading);
         expect(Object.isFrozen(merged)).toBe(true);
-        expect(family['eval.food_energy_per_1k'].liveness).toBeNull();
+        expect(family['eval.food_energy_per_1k']).toBe(original);
     });
 });
 

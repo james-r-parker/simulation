@@ -3794,6 +3794,21 @@
         "eval.basin_families": "worse"
       },
       "note": "Hunters alive 27 -> 27 of 32, under 80 9 -> 9 (paired differences 0); population, food, births, mating, predators and prey types no difference. basin_families -5.6% [-0.54, -0.01], 1 of 68 verdicts, not a guard, unverified. Kept."
+    },
+    {
+      "id": "E148",
+      "date": "2026-11-08",
+      "branch": "chore/metrics-liveness-runs",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference",
+      "hypothesis": "metric-trust T22: the default floor-on and floor-off reports let the registry measure liveness across the full fixed seed pool.",
+      "prediction": "Both reports cover the same 128 fixed seeds and 200000 ticks; metrics that miss the liveness bar on both become T24 triage candidates.",
+      "targets": [],
+      "before": "evals/power/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d, 12622627",
+      "after": "evals/power/defaults-floor-off.json: defaults, floor off, 128 seeds x 200000 ticks, configHash 51c7a6e80234a2b5, 12622627",
+      "verdicts": {},
+      "note": "Characterization only; no policy or simulation code changed. The liveness bar misses on 30 metrics with floor on and 44 with floor off; all 30 floor-on misses also miss with floor off. The floor-on readings are recorded in js/evo/metric-registry/liveness.js."
     }
   ]
 }
