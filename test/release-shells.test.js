@@ -312,3 +312,29 @@ describe('the small real helpers', () => {
         expect(currentBranch({ env: { GITHUB_BASE_REF: 'season/next' } })).toBe('season/next');
     });
 });
+
+describe('the fallbacks', () => {
+    it('build-release reads a command killed by a signal as a failure', () => {
+        expect(buildDeps().run('node', ['-e', 'process.kill(process.pid, "SIGKILL")'])).toBe(1);
+    });
+
+    it('release-upload names wrangler by default and reads a statement with no results as no rows', () => {
+        expect(typeof uploadDeps({}).execute).toBe('function');
+        const noResults = fakeSpawn({ wr: { status: 0, stdout: JSON.stringify([{}]) } });
+        expect(makeD1Execute(noResults.spawn, 'wr')('db', 'x')).toEqual([]);
+    });
+});
+
+describe('the defaults', () => {
+    it('release-check checks against main when no base is named', () => {
+        const { git, calls } = fakeGit();
+        const out = runReleaseCheck({ env: {}, git, rulesHashAt: () => 'h', headHash: 'h', headSeasons: '[]' });
+        expect(out.line).toContain('base main');
+        expect(calls[0]).toEqual(['merge-base', 'HEAD', 'origin/main']);
+    });
+
+    it('preview-comment refuses an empty SHA', () => {
+        expect(() => commentFromEnv({ URL: 'u', SHA: '' })).toThrow('URL and SHA are required');
+        expect(() => commentFromEnv({ SHA: 'abc' })).toThrow('URL and SHA are required');
+    });
+});
