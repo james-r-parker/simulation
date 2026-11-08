@@ -1,186 +1,64 @@
-# Cloudflare Pages Deployment Guide
+# Deploying Blob Evolution
 
-This project is configured for deployment to Cloudflare Pages. Follow the instructions below to deploy.
+The site runs on Cloudflare Pages (project `matrix`, domain `matrix.dotnethelp.co.uk`), deployed by GitHub Actions. The
+design is [docs/designs/deployment-and-community.md](docs/designs/deployment-and-community.md); this page is the
+operator's view. Cloudflare's own Git integration is switched off, so nothing deploys twice.
 
-## Prerequisites
+## What deploys what
 
-1. **Cloudflare Account**: Sign up at [cloudflare.com](https://www.cloudflare.com/)
-2. **Wrangler CLI** (optional, for CLI deployment): Already included in `devDependencies`
-3. **Node.js**: Version 20 or higher (specified in `wrangler.toml`)
+| Event                                         | Workflow                           | Result                                                                                    |
+| --------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------- |
+| Merge of the Release Please PR                | `release-please.yml`, `deploy.yml` | Production: `/` serves the new release, `/v/<version>/` serves it forever                 |
+| Push to `main` (or `season/next`), check green | `preview.yml`                      | `/next/` (Pages branch `next`; `main-latest` while `season/next` exists)                  |
+| Pull request from this repo, check green      | `preview.yml`                      | A preview URL, commented on the PR; it reads the `-preview` database                      |
+| Pull request from a fork                      | none                               | Skipped (`DeploySkipped`, reason `fork`)                                                  |
+| `gh workflow run deploy.yml -f tag=v<x.y.z>`  | `deploy.yml`                       | Rebuilds that tag and redeploys it to `/` (rollback); the version and `releases` row are no-ops |
 
-## Deployment Methods
+A merge to `main` never changes production. Production changes only when the release PR is merged (or `deploy.yml` is
+dispatched by hand).
 
-### Method 1: Git Integration (Recommended)
+## One-time setup
 
-This is the easiest and most automated method. Cloudflare Pages will automatically build and deploy on every push to your repository.
+The numbered steps are in the design doc, "Phase 1 setup checklist (user)". In short:
 
-#### Steps:
+1. GitHub, Settings, Environments: `preview` and `production` each hold secrets `CLOUDFLARE_API_TOKEN` and
+   `CLOUDFLARE_ACCOUNT_ID`; `release` holds the Release App (`RELEASE_APP_ID` variable, `RELEASE_APP_PRIVATE_KEY` secret).
+   Repository variables: `PAGES_PROJECT` (`matrix`) and `SITE_DOMAIN` (`matrix.dotnethelp.co.uk`).
+2. Both tokens need `Account / Cloudflare Pages / Edit` and `Account / D1 / Edit`. Keep the preview and production tokens
+   separate: a pull request deploy must not reach production.
+3. In the Cloudflare dashboard, set automatic deployments for the Pages project to Disabled.
 
-1. **Push your code to a Git repository** (GitHub, GitLab, or Bitbucket)
+A job that finds its environment missing a secret fails at its first step and names the setting; it deploys nothing.
 
-2. **Connect to Cloudflare Pages**:
-   - Go to [Cloudflare Dashboard](https://dash.cloudflare.com/)
-   - Navigate to **Pages** → **Create a project**
-   - Click **Connect to Git**
-   - Select your repository
+## Releasing
 
-3. **Configure Build Settings** (CRITICAL - Set these in the dashboard):
-   - **Framework preset**: None (or Vite if available)
-   - **Build command**: `npm ci && npm run build` (or just `npm run build`)
-   - **Build output directory**: `dist`
-   - **Root directory**: `/` (leave as default)
-   - **Node version**: `20` (or leave default)
-   - **Deploy command**: `npm run pages:deploy` (no-op command - Cloudflare Pages handles deployment automatically)
-   
-   **IMPORTANT**: 
-   - Build settings must be configured in the Cloudflare Pages dashboard
-   - The `wrangler.toml` file does NOT support `[build]` sections for Pages projects
-   - The deploy command is a no-op because Cloudflare Pages automatically deploys after the build completes
-   - If the deploy command field cannot be empty, use: `npm run pages:deploy`
+1. Merge changes to `main` with conventional commit subjects (`feat:`, `fix:`, `feat!:`).
+2. Release Please keeps one release PR open (it edits `CHANGELOG.md`, `package.json` and the manifest). Its `check` and
+   `browser-smoke` must pass.
+3. Merge it. `release-please.yml` creates the tag and the GitHub Release and calls `deploy.yml` with the tag:
+   `build` runs `npm run build:release -- <version>` (the versioned build under `/v/<version>/`, the latest at `/`, the
+   tarball and `release-entry.json`); `deploy` applies the D1 migrations, deploys the version to its own Pages branch
+   `v<major>-<minor>-<patch>`, registers the release in the D1 `releases` table, then deploys `/`.
 
-4. **Deploy**:
-   - Click **Save and Deploy**
-   - Cloudflare will build and deploy your site
-   - You'll get a URL like: `https://your-project.pages.dev`
+A change to the game rules (`rulesHash`) is a breaking commit (`feat(sim)!: ...`) that targets `season/next`;
+`node scripts/release-check.mjs` fails a pull request that breaks this rule.
 
-5. **Custom Domain** (Optional):
-   - Go to your project settings
-   - Click **Custom domains**
-   - Add your domain and follow DNS setup instructions
-
-### Method 2: Wrangler CLI (Direct Deployment)
-
-Use this method if you want to deploy directly from your local machine without Git integration.
-
-#### Steps:
-
-1. **Install Wrangler** (if not already installed):
-   ```bash
-   npm install -g wrangler
-   ```
-
-2. **Login to Cloudflare**:
-   ```bash
-   npx wrangler login
-   ```
-   This will open a browser window for authentication.
-
-3. **Build and Deploy**:
-   ```bash
-   npm run deploy
-   ```
-   
-   Or manually:
-   ```bash
-   npm run build
-   npx wrangler pages deploy dist
-   ```
-
-4. **Deploy to Preview** (optional):
-   ```bash
-   npm run deploy:preview
-   ```
-
-### Method 3: Cloudflare Dashboard (Manual Upload)
-
-1. **Build locally**:
-   ```bash
-   npm run build
-   ```
-
-2. **Upload to Cloudflare**:
-   - Go to Cloudflare Dashboard → Pages
-   - Create a new project
-   - Select **Upload assets**
-   - Upload the `dist` folder contents
-   - Deploy
-
-## Build Configuration
-
-The project uses the following build settings (configure these in the Cloudflare Pages dashboard):
-
-- **Build Command**: `npm ci && npm run build`
-- **Output Directory**: `dist`
-- **Node Version**: 20 (or latest)
-- **Framework**: Vite (or None)
-
-**Important**: For Cloudflare Pages, build settings are configured in the dashboard when connecting your Git repository. The `wrangler.toml` file is minimal and only contains project metadata - it does NOT support `[build]` sections for Pages projects.
-
-## Project Structure for Cloudflare Pages
+## Rollback
 
 ```
-simulation/
-├── dist/                    # Build output (generated)
-├── public/
-│   └── _redirects           # SPA routing rules
-├── vite.config.js           # Vite build configuration
-├── wrangler.toml            # Cloudflare Pages configuration
-└── package.json             # Dependencies and scripts
+gh workflow run deploy.yml -f tag=v<previous version>
 ```
 
-## Important Files
+This rebuilds the older tag and redeploys it to `/`. `/v/index.json` is unchanged. (`wrangler pages deployment rollback`
+is not used until it is verified to exist; see the design doc's task T5.)
 
-- **`_redirects`**: Cloudflare Pages routing rules that handle:
-  - Static page redirects (`/about` → `/about.html`, `/blog` → `/blog.html`)
-  - Asset serving for JS/CSS files
-  - SPA routing (all other routes serve `index.html`)
-- **`wrangler.toml`**: Cloudflare Pages build configuration
-- **`vite.config.js`**: Vite build settings optimized for Cloudflare Pages
+## Manual deploy
 
-## Troubleshooting
+`npm run deploy` runs `wrangler pages deploy dist` from your machine with your own login. Do it only when you mean to
+change the site by hand; the workflows above are the normal path.
 
-### Deploy Command Errors
+## Local checks without a Cloudflare account
 
-If you see errors like "error occurred while running deploy command" or Wrangler authentication issues:
-
-1. **Check Dashboard Settings**: Go to your Pages project → Settings → Builds & deployments
-2. **Set Deploy Command**: Use `npm run pages:deploy` (this is a no-op command that does nothing)
-3. **Build Command**: `npm ci && npm run build` (or `npm run build`)
-4. **Save Changes**: Make sure to save the settings
-
-**Why**: With Git integration, Cloudflare Pages automatically deploys the build output. The deploy command field may be required by the UI, but we use a no-op command since Cloudflare handles deployment automatically after the build.
-
-### Build Fails
-
-1. **Check Node version**: Ensure Node.js 20+ is available
-2. **Check dependencies**: Run `npm ci` to ensure clean install
-3. **Check build logs**: Review Cloudflare Pages build logs for errors
-
-### Assets Not Loading
-
-1. **Check base path**: Ensure `vite.config.js` has `base: '/'`
-2. **Check asset paths**: All paths should be relative (starting with `./` or `/`)
-
-### Service Worker Errors
-
-The service worker registration is optional and fails gracefully. If you see errors in console, they can be safely ignored unless you've added a service worker file.
-
-## Environment Variables
-
-If you need environment variables:
-
-1. **Via Dashboard**: Go to your project → Settings → Environment variables
-2. **Via Wrangler**: Add to `wrangler.toml` under `[build.environment_variables]`
-
-## Continuous Deployment
-
-With Git integration, every push to your main branch will trigger a new deployment. You can also set up:
-- **Preview deployments**: Automatic previews for pull requests
-- **Branch deployments**: Deploy specific branches
-- **Custom build commands**: Override defaults per branch
-
-## Performance
-
-Cloudflare Pages automatically provides:
-- Global CDN distribution
-- Automatic HTTPS
-- DDoS protection
-- Fast edge caching
-
-## Support
-
-For issues with:
-- **Cloudflare Pages**: Check [Cloudflare Pages docs](https://developers.cloudflare.com/pages/)
-- **Wrangler CLI**: Check [Wrangler docs](https://developers.cloudflare.com/workers/wrangler/)
-- **Project-specific**: Check the main `README.md`
-
+- `npx vitest run test/library test/functions` runs the library modules and the Functions against SQLite.
+- `npx wrangler d1 migrations apply blob-library --local` applies `migrations/` to a local database in `.wrangler/`.
+- `npm run build && npx wrangler pages dev dist --d1 DB=blob-library` serves the site and `/api/` on Miniflare.
