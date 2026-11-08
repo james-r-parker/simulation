@@ -8,6 +8,7 @@ import { BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
 import { basinOf } from './eras.js';
 import { slotOfGenome } from './merit-state.js';
 import { isDependentKiller } from './dependent-killer.js';
+import { isDeliberateKill } from './kills.js';
 
 /**
  * How an agent came to be, stored in `birthSource`. A hunter child of a hunter is `MATE_HUNTER` or `SPLIT_HUNTER`; a hunter
@@ -103,16 +104,18 @@ export function noteChildSource(world, { child, mother, cause }) {
  * included) and as bite gain otherwise, and the kick the bite cost it.
  * @param {Record<string, any>} world the world
  * @param {number} biter the biting slot
- * @param {{gained: number, fatal: boolean, kick: number}} bite the energy gained, whether the victim died, the kick paid
+ * @param {{gained: number, fatal: boolean, kick: number, victim: number}} bite the energy gained, whether the victim died,
+ *   the kick paid and the victim, whose `lastBiter` is already this biter (a fatal bite is kill energy only when `isDeliberateKill`)
  * @returns {void}
  */
-export function noteBiteLedger(world, biter, { gained, fatal, kick }) {
-    if (fatal) {
+export function noteBiteLedger(world, biter, { gained, fatal, kick, victim }) {
+    const kill = fatal && isDeliberateKill(world, victim);
+    if (kill) {
         world.ledgerKillEnergy[biter] += gained;
     } else {
         world.ledgerBiteGain[biter] += gained;
     }
-    noteIncome(world, biter, { kind: fatal ? INCOME.KILL : INCOME.BITE, stored: gained });
+    noteIncome(world, biter, { kind: kill ? INCOME.KILL : INCOME.BITE, stored: gained });
     world.ledgerBiteCost[biter] += kick;
 }
 
@@ -133,15 +136,14 @@ function pushHunterKill(world, killer) {
 }
 
 /**
- * Credits an eaten victim to its killer, when the killer is alive and the victim's last noted bite was deliberate (the rule
- * of `noteKill`). Call it for every victim of a reap before any `noteHunterDeath`, so a killer that dies on the same tick
+ * Credits an eaten victim to its killer, when the killer is alive and the victim's last noted bite was deliberate (`isDeliberateKill`). Call it for every victim of a reap before any `noteHunterDeath`, so a killer that dies on the same tick
  * (at a lower slot too) still has the kill on its record.
  * @param {Record<string, any>} world the world
  * @param {number} victim the eaten slot
  * @returns {void}
  */
 export function noteLedgerKill(world, victim) {
-    if (world.lastBiteDeliberate[victim] !== 1 || world.lastBiter[victim] === 0) {
+    if (!isDeliberateKill(world, victim)) {
         return;
     }
     const killer = slotOfGenome(world, world.lastBiter[victim]);

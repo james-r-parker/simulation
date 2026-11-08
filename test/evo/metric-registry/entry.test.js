@@ -30,6 +30,21 @@ describe('entry', () => {
         });
     });
 
+    it('takes the source test and the deprecation reason when the author gives them', () => {
+        const given = entry('core', {
+            module: 'js/evo/metrics.js',
+            meaning: 'm',
+            counts: 'c',
+            unit: 'ticks',
+            direction: 'higher',
+            nullWhen: [],
+            source: 'test/evo/metric-source-core.test.js',
+            deprecated: 'no plantable answer',
+        });
+        expect(given.tests.source).toBe('test/evo/metric-source-core.test.js');
+        expect(given.deprecated).toBe('no plantable answer');
+    });
+
     it('is frozen', () => {
         expect(Object.isFrozen(built)).toBe(true);
     });

@@ -3,6 +3,28 @@
 import { entry } from './entry.js';
 
 export const CORE_2 = {
+    'eval.archive_lineage_share': entry('core', {
+        module: 'js/evo/metrics-selection.js',
+        meaning: 'How much of the population descends from archive seeding.',
+        counts: 'Summed archiveAgents over summed population across checkpoints at or after BURN_IN_TICKS.',
+        unit: 'share',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['no archive', 'no checkpoint after burn-in'],
+        arithmetic: 'test/evo/metrics-selection.test.js',
+        source: 'test/evo/metric-source-core-selection.test.js',
+    }),
+    'eval.kin_within_call_radius': entry('core', {
+        module: 'js/evo/metrics-selection.js',
+        meaning: 'How many kin are within hearing of an alarm call.',
+        counts: 'Sum of kin near the caller at each alarm call over the number of alarm calls (observer.intent.run).',
+        unit: 'agents',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['no alarm call'],
+        arithmetic: 'test/evo/metrics-selection.test.js',
+        source: 'test/evo/metric-source-core-selection.test.js',
+    }),
     'eval.deliberate_food_trend': entry('core', {
         module: 'js/evo/metrics-trend.js',
         meaning: 'Higher means the deliberate share of food grows over the run.',
@@ -15,6 +37,7 @@ export const CORE_2 = {
             'a compared span has no food',
         ],
         arithmetic: 'test/evo/metrics-trend.test.js',
+        source: 'test/evo/metric-source-core-trend.test.js',
     }),
     'eval.pursuit_trend': entry('core', {
         module: 'js/evo/metrics-trend.js',
@@ -29,6 +52,7 @@ export const CORE_2 = {
             'fewer than 4 compared windows have a hunter kill',
         ],
         arithmetic: 'test/evo/metrics-trend.test.js',
+        source: 'test/evo/metric-source-core-skill.test.js',
     }),
     'eval.evasion_trend': entry('core', {
         module: 'js/evo/metrics-trend.js',
@@ -43,6 +67,7 @@ export const CORE_2 = {
             'fewer than 4 compared windows have an escaped bite episode',
         ],
         arithmetic: 'test/evo/metrics-trend.test.js',
+        source: 'test/evo/metric-source-core-skill.test.js',
     }),
     'eval.skill_trend': entry('core', {
         module: 'js/evo/metrics-trend.js',
@@ -57,6 +82,7 @@ export const CORE_2 = {
             'every trend is null',
         ],
         arithmetic: 'test/evo/metrics-trend.test.js',
+        source: 'test/evo/metric-source-core-trend.test.js',
     }),
     'eval.spec_dominance': entry('core', {
         module: 'js/evo/metrics-dominance.js',
@@ -66,6 +92,7 @@ export const CORE_2 = {
         direction: 'lower',
         nullWhen: ['no checkpoint after burn-in with an alive agent'],
         arithmetic: 'test/evo/compare.test.js',
+        source: 'test/evo/metric-source-core-trend.test.js',
     }),
     'eval.spec_effective': entry('core', {
         module: 'js/evo/metrics-dominance.js',
@@ -75,6 +102,7 @@ export const CORE_2 = {
         direction: 'higher',
         nullWhen: ['no checkpoint after burn-in with an alive agent'],
         arithmetic: 'test/evo/compare.test.js',
+        source: 'test/evo/metric-source-core-trend.test.js',
     }),
     'eval.lineage_dominance': entry('core', {
         module: 'js/evo/metrics-dominance.js',
@@ -84,6 +112,7 @@ export const CORE_2 = {
         direction: 'lower',
         nullWhen: ['no checkpoint after burn-in with an alive agent'],
         arithmetic: 'test/evo/compare.test.js',
+        source: 'test/evo/metric-source-core-trend.test.js',
     }),
     'eval.lineage_effective': entry('core', {
         module: 'js/evo/metrics-dominance.js',
@@ -94,5 +123,6 @@ export const CORE_2 = {
         intended: 'higher',
         nullWhen: ['no checkpoint after burn-in with an alive agent'],
         arithmetic: 'test/evo/compare.test.js',
+        source: 'test/evo/metric-source-core-trend.test.js',
     }),
 };

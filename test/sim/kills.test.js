@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { INCOME, INCOME_KINDS } from '../../js/sim/hunter-ledger.js';
 import { creditKills, noteBite, noteKill } from '../../js/sim/kills.js';
 import { meritPhase } from '../../js/sim/merit-phase.js';
 import { reap } from '../../js/sim/population.js';
+import { fatalBite, EVENT_TYPE } from './helpers/fatal-bite.js';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
 
 const PREDATOR = 1;
@@ -88,5 +90,61 @@ describe('a kill', () => {
         w.energy[prey] = 0;
         reap(w, recordingPolicy([]));
         expect(w.killCount).toBe(0);
+    });
+});
+
+// One kill rule (docs/designs/metric-trust.md, "One kill"): a fatal bite is a kill when the bite itself was deliberate.
+// Today the ledger, the events and the observer read the deliberateness of the bite BEFORE the fatal one (the victim is
+// freed in `reap` before the merit phase notes the fatal bite), so these are marked `fails` until T14 routes them
+// through `isDeliberateKill`; T14 turns each `it.fails` into `it`.
+/** The `hunterIncomeBySpec` offset of the predator specialisation (index 1). */
+const PREDATOR_ROW = PREDATOR * INCOME_KINDS;
+
+describe('a fatal bite in the tick the victim dies', () => {
+    /** The kills a `HunterLedger` record holds. */
+    const ledgerKillsOf = (/** @type {number[]} */ record) => Math.floor(record[4] / 64);
+
+    it('is a kill in the ledger, the HunterKill events and the observer when the bite was deliberate', () => {
+        const { run, hunter, hunterId, events } = fatalBite({ deliberate: true });
+        const { world, observer } = run;
+        expect(world.ledgerKills[hunter]).toBe(1);
+        expect(events(EVENT_TYPE.HUNTER_KILL).map((r) => r[2])).toEqual([hunterId]);
+        expect(observer.intent.run.huntKillsDeliberate).toBe(1);
+        expect(world.ledgerKillEnergy[hunter]).toBe(1);
+        expect(world.hunterIncomeBySpec[PREDATOR_ROW + INCOME.KILL]).toBe(1);
+    });
+
+    it('is a kill in none of them when the bite was not deliberate', () => {
+        const { run, hunter, events } = fatalBite({ deliberate: false });
+        expect(run.world.ledgerKills[hunter]).toBe(0);
+        expect(events(EVENT_TYPE.HUNTER_KILL)).toEqual([]);
+        expect(run.observer.intent.run.huntKillsDeliberate).toBe(0);
+    });
+
+    it('books the energy a non-deliberate fatal bite gained as bite gain, not kill energy', () => {
+        const { run, hunter } = fatalBite({ deliberate: false });
+        const { world } = run;
+        expect(world.ledgerKillEnergy[hunter]).toBe(0);
+        expect(world.ledgerBiteGain[hunter]).toBe(1);
+        expect(world.hunterIncomeBySpec[PREDATOR_ROW + INCOME.KILL]).toBe(0);
+        expect(world.hunterIncomeBySpec[PREDATOR_ROW + INCOME.BITE]).toBe(1);
+    });
+
+    it('is credited to a killer that dies in the same tick, in the ledger record and the event', () => {
+        const { hunterId, events } = fatalBite({ deliberate: true, killerDiesToo: true });
+        expect(events(EVENT_TYPE.HUNTER_KILL).map((r) => r[2])).toEqual([hunterId]);
+        const [record] = events(EVENT_TYPE.HUNTER_LEDGER);
+        expect(record[2]).toBe(hunterId);
+        expect(ledgerKillsOf(record)).toBe(1);
+    });
+
+    it('is not credited to deliberateKills when the killer is gone, whatever the bite', () => {
+        const { w, prey } = bitten(true);
+        noteBite(w, prey);
+        noteKill(w, prey);
+        w.alive[0] = 0;
+        w.genomeId[0] = 0;
+        creditKills(w);
+        expect(w.deliberateKills[0]).toBe(0);
     });
 });

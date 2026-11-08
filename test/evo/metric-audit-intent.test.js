@@ -14,7 +14,7 @@ import { ESCAPE_TICKS } from '../../js/evo/observer-combat.js';
 import { RESPONSE_WINDOW } from '../../js/evo/observer-intent-state.js';
 import { CH, FORAGER, PREDATOR, clearRays, seeThreat } from './helpers/intent-world.js';
 import { auditArena, closeOn, metric, ticks } from './helpers/intent-audit.js';
-import { addBorn, pushDied } from './helpers/observer-world.js';
+import { addBorn, pushDied, pushKill } from './helpers/observer-world.js';
 
 // Forager A closes on food for 6 ticks (CLOSING_MIN) and eats 30 at tick 6: deliberate. Forager B closes for only
 // 5 and eats 10: chance. 30 of 40.
@@ -131,6 +131,9 @@ describe('audit: eval.pursuit_kill_share and eval.pack_convergence', () => {
                     world.lastBiteTick[slot] = 7;
                     world.alive[slot] = 0;
                     const by = genome(k.killer);
+                    if (k.killer === 'A' || k.killer === 'B') {
+                        pushKill(world, by); // the sim's verdict: A and B are the deliberate hunters
+                    }
                     const prevBiter = k.earlier ? genome(k.earlier) : 0;
                     pushDied(world, { slot, genomeId: world.genomeId[slot], cause: DEATH_CAUSE.EATEN, by, prevBiter });
                 }

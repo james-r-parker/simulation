@@ -36,6 +36,21 @@ export function noteBite(world, victim) {
 }
 
 /**
+ * The one rule for a kill (docs/designs/metric-trust.md): the victim was bitten to death, its biter is alive with
+ * `canHunt`, and the biter's bite is deliberate at the tick. Call it while the victim's slot is still allocated, in the
+ * tick of the bite (the feed phase or the reap): the victim is freed in `reap`, before the merit phase notes bites, so
+ * `lastBiteDeliberate` still holds the bite BEFORE the fatal one and is not read here. The biter's prey tracker is the
+ * one the merit phase updated at the end of the previous tick.
+ * @param {Record<string, any>} world the world
+ * @param {number} victim a bitten slot, `lastBiter` already set to the fatal biter
+ * @returns {boolean} whether the fatal bite is a deliberate kill
+ */
+export function isDeliberateKill(world, victim) {
+    const killer = slotOfGenome(world, world.lastBiter[victim]);
+    return killer >= 0 && world.huntBySpec[world.spec[killer]] === 1 && biteDeliberate(world, killer);
+}
+
+/**
  * Logs the killer of an eaten agent when the victim's last noted bite was deliberate. Call at the death, before the slot is freed.
  * @param {Record<string, any>} world the world
  * @param {number} victim the eaten slot

@@ -202,6 +202,13 @@ describe('the hunter ledger', () => {
     });
 });
 
+/** The hunter's prey tracker reads deliberate at the tick, so its bite on PREY is a deliberate one. */
+function deliberateBite(/** @type {any} */ world) {
+    world.meritPrey.seen[HUNTER] = world.tick;
+    world.meritPrey.bits[HUNTER] = 0xff;
+    world.meritPrey.turn[HUNTER] = world.tick;
+}
+
 describe('the hunter ledger on a starving tick', () => {
     it('splits only the energy actually removed across standing, moving and sprinting', () => {
         const world = createArena({ gap: 300, hunterEnergy: 2500 });
@@ -219,7 +226,7 @@ describe('the hunter ledger on a starving tick', () => {
         const killer = world.genomeId[HUNTER];
         world.lastBiter[PREY] = killer;
         world.lastBiteTick[PREY] = world.tick + 1;
-        world.lastBiteDeliberate[PREY] = 1;
+        deliberateBite(world);
         world.energy[PREY] = 0;
         world.energy[HUNTER] = 0;
         world.lastLoss[HUNTER] = LOSS_CAUSE.COST;
@@ -233,7 +240,7 @@ describe('the hunter ledger on a starving tick', () => {
     it('credits no one when the biter of an eaten victim is no longer alive', () => {
         const world = createArena({ gap: 300, hunterEnergy: 2500 });
         world.lastBiter[PREY] = 987654321;
-        world.lastBiteDeliberate[PREY] = 1;
+        deliberateBite(world);
         noteLedgerKill(world, PREY);
         expect(world.ledgerKills[HUNTER]).toBe(0);
         expect(world.ledgerKills[PREY]).toBe(0);
@@ -242,7 +249,6 @@ describe('the hunter ledger on a starving tick', () => {
     it('does not credit a kill whose last bite was not deliberate', () => {
         const world = createArena({ gap: 300, hunterEnergy: 2500 });
         world.lastBiter[PREY] = world.genomeId[HUNTER];
-        world.lastBiteDeliberate[PREY] = 0;
         world.energy[PREY] = 0;
         world.lastLoss[PREY] = LOSS_CAUSE.BITE;
         reap(world, { initBrain() {} });

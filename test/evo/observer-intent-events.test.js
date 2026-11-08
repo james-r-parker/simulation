@@ -7,7 +7,7 @@ import { intentMetrics } from '../../js/evo/metrics-intent.js';
 import { resetIntentSlot } from '../../js/evo/observer-intent-state.js';
 import { updateIntent } from '../../js/evo/observer-intent.js';
 import { CH, FORAGER, PREDATOR, clearRays, intentArena, seeThreat, setRay } from './helpers/intent-world.js';
-import { addBorn, nextTick, pushCall, pushDied } from './helpers/observer-world.js';
+import { addBorn, nextTick, pushCall, pushDied, pushKill } from './helpers/observer-world.js';
 
 /**
  * Observes one tick the way `observe` does before it reassigns slots.
@@ -194,17 +194,21 @@ describe('eaten deaths', () => {
         const b = addBorn(world, { spec: PREDATOR, lineageId: 4 });
         const victim = addBorn(world, { spec: FORAGER });
         start(arena);
+        intent.biterId[victim] = world.genomeId[a];
         intent.lastBiteDeliberate[victim] = last;
         intent.prevBiteDeliberate[victim] = prev;
-        tick(arena, 2, () =>
+        tick(arena, 2, () => {
+            if (last === 1) {
+                pushKill(world, world.genomeId[a]);
+            }
             pushDied(world, {
                 slot: victim,
                 genomeId: world.genomeId[victim],
                 cause: DEATH_CAUSE.EATEN,
                 by: world.genomeId[a],
                 prevBiter: world.genomeId[b],
-            }),
-        );
+            });
+        });
         return intent;
     }
 
@@ -217,7 +221,7 @@ describe('eaten deaths', () => {
         expect([none.huntKillsDeliberate, none.packKillsConvergent]).toEqual([0, 0]);
     });
 
-    it('reads the fatal bite of the killer, found by genome id, when it lands on the death tick', () => {
+    it('counts the kill the sim named by genome id (a HunterKill) in the tick of the death', () => {
         const arena = intentArena();
         const { world, intent } = arena;
         const hunter = addBorn(world, { spec: PREDATOR });
@@ -228,7 +232,7 @@ describe('eaten deaths', () => {
                 setRay(world, hunter, 0, t / 20, CH.PREY);
                 world.vx[hunter] = 0.5 * world.config.maxVelocity;
                 if (t === 6) {
-                    world.lastBiteTick[victim] = 6;
+                    pushKill(world, world.genomeId[hunter]);
                     pushDied(world, {
                         slot: victim,
                         genomeId: world.genomeId[victim],
@@ -238,7 +242,7 @@ describe('eaten deaths', () => {
                 }
             });
         }
-        expect([intent.lastBiteDeliberate[victim], intent.run.huntKillsDeliberate]).toEqual([1, 1]);
+        expect(intent.run.huntKillsDeliberate).toBe(1);
     });
 
     it('counts a kill by a killer that is gone as chance', () => {
@@ -258,7 +262,7 @@ describe('eaten deaths', () => {
                 by: world.genomeId[hunter],
             });
         });
-        expect(intent.lastBiteDeliberate[victim]).toBe(0);
+        expect(intent.run.huntKillsDeliberate).toBe(0);
     });
 });
 

@@ -39,17 +39,17 @@
 /**
  * Builds a frozen entry with the unmeasured fields at their empty values.
  * @param {string} family the family file's name
- * @param {Pick<MetricEntry, 'module' | 'meaning' | 'counts' | 'unit' | 'direction' | 'nullWhen'> & {intended?: 'higher' | 'lower', arithmetic?: string}} fields what the author wrote
+ * @param {Pick<MetricEntry, 'module' | 'meaning' | 'counts' | 'unit' | 'direction' | 'nullWhen'> & {intended?: 'higher' | 'lower', arithmetic?: string, source?: string, deprecated?: string}} fields what the author wrote
  * @returns {Readonly<MetricEntry>} the entry
  */
 export function entry(family, fields) {
-    const { arithmetic = '', ...rest } = fields;
+    const { arithmetic = '', source = '', ...rest } = fields;
     return Object.freeze({
         family,
         expectedFlat: null,
         renamedFrom: [],
         deprecated: null,
-        tests: { arithmetic, source: '' },
+        tests: { arithmetic, source },
         liveness: null,
         power: null,
         minSeeds: null,
