@@ -2444,3 +2444,55 @@ before and after. `npm run drill` on four fresh smoke champions (4 generations, 
 - **Carcass plus herd above 0.5:** not decided. `splitHunterIncome` reads `HunterLedger`, which has no herd field, and the E140 report with `eval.hunter_income_share.herd` is gone. Carcass alone is 0.46, so any herd share near 0.05 crosses 0.5.
 - **A third of carcass energy to zero-kill lives:** no, 0.13 (no seed above 0.23). The carcasses are eaten mostly by hunters that also kill. Theory (1b), hunters that live on carrion without killing, is not supported, so no new record opens for it.
 - **Caveat:** the ledger's kill count misses about 1 killing life in 10 (metric-trust.md, "One kill"), which counts some killers as zero-kill and raises the 0.13. The true share is lower, so the reading holds.
+  ||||||| parent of 3e3bb2f9 (docs(world-balance): the old mating screens re-read by the summer minimum (T98))
+
+### 2026-11-08 - The old mating screens re-read by the summer minimum (world-balance T98)
+
+- **What is on disk:** `evals/screens/results/mate-range` (E127) and `evals/screens/results/boom-damp` (E128), 8 seeds x 200000 ticks, floor off. E129's 16-seed reports (`evals/results/e129-*.json`) are gone.
+- **Proxy, not the metric:** the old traces keep the total population every 1000 ticks, not the prey count, so the read is the lowest total population at a summer checkpoint after burn-in (`eraSeasonTicks` 36000, season 1 of 4). That is an upper bound on `eval.prey_summer_min`: hunters are counted in.
+
+| Screen     | Arm                   | Seeds at or above 100 through summer | Median summer minimum | Under 80 at the end |
+| ---------- | --------------------- | ------------------------------------ | --------------------- | ------------------- |
+| both       | defaults              | 5 of 8                               | 197                   | 3                   |
+| mate-range | mate-350              | 2 of 8                               | 73                    | 3                   |
+| mate-range | mate-500              | 4 of 8                               | 179                   | 4                   |
+| mate-range | mate-700              | 4 of 8                               | 104                   | 3                   |
+| mate-range | mate-900              | 4 of 8                               | 116                   | 3                   |
+| mate-range | mate-900-clonal-off   | 0 of 8                               | 0                     | 7                   |
+| boom-damp  | flat-1.3              | 3 of 8                               | 39                    | 5                   |
+| boom-damp  | spring-1.2            | 2 of 8                               | 45                    | 6                   |
+| boom-damp  | margin-150            | 4 of 8                               | 165                   | 2                   |
+| boom-damp  | margin-250            | 5 of 8                               | 178                   | 3                   |
+| boom-damp  | margin-250-spring-1.2 | 4 of 8                               | 108                   | 4                   |
+| boom-damp  | margin-250-mate-500   | 4 of 8                               | 151                   | 4                   |
+
+- **Reading:** no arm beats the defaults on the proxy; a wider fixed `mateRange` does not lift the summer minimum, and spring 1.2 alone looked worse (2 of 8). This is 8 seeds on an older `main` (before the megafauna, keepers and WASM kernels), so it covers none of the T100 grid's arms: all seven stay in.
+
+### 2026-11-08 - The mating-edge screen: roaming does not lift the summer minimum (world-balance T100, T101, E145)
+
+- **Run:** `evals/screens/mating-edge.grid.json`, floor off, policy live (`map-elites-v6`), 16 seeds x 200000 ticks, on `e090f95e`, configHash `be4b83b3ae32b6b2` for the defaults; reports in `evals/screens/results/mating-edge/`. About 75 minutes on 30 workers.
+
+| Arm                  | Seeds at or above 100 through summer | `eval.prey_summer_min` mean (vs defaults, 95% interval) | Population mean | `eval.mating_share` | `eval.boom_bust_count` | `eval.basin_recolonisations` | Under 80 at the end |
+| -------------------- | ------------------------------------ | ------------------------------------------------------- | --------------- | ------------------- | ---------------------- | ---------------------------- | ------------------- |
+| defaults             | 7 of 16                              | 94                                                      | 211             | 0.40                | 0.06                   | 0.00                         | 9                   |
+| spring-1.2           | 3 of 16                              | 56 (-41%, -102 to +34)                                  | 136             | 0.37                | 0.13                   | 0.06                         | 11                  |
+| margin-25            | 10 of 16                             | 139 (+47%, -9 to +122)                                  | 241             | 0.42                | 0.13                   | 0.00                         | 6                   |
+| margin-100           | 8 of 16                              | 149 (+58%, -11 to +148)                                 | 230             | 0.43                | 0.13                   | 0.00                         | 8                   |
+| roam-3000            | 3 of 16                              | 57 (-40%, -102 to +22)                                  | 156             | 0.37                | 0.25                   | 0.06                         | 11                  |
+| roam-6000            | 4 of 16                              | 80 (-15%, -86 to +69)                                   | 201             | 0.40                | 0.19                   | 0.06                         | 12                  |
+| roam-3000-spring-1.2 | 5 of 16                              | 87 (-8%, -80 to +85)                                    | 183             | 0.38                | 0.06                   | 0.06                         | 11                  |
+
+- **`E-BC-2` is falsified.** The roaming arms were to be the only ones to lift the count, by at least 4 seeds; they read 3, 4 and 5 against the control's 7, and every summer-minimum interval holds 0. The control itself was below the predicted 9 to 11. A range that grows after a long stretch alone does not keep prey off the edge: the edge is not a range problem.
+- **The margin arms lead and are not a finalist.** Both sides of the default 50 rise (25 reads 10 of 16, 100 reads 8 of 16), the intervals hold 0, and E128 found 150 and 250 lost: a dose response that rises on both sides of the default reads as which seeds fall changing with any lever (E127), not as a lever. No arm goes to the floor-on check (T102).
+- **Spring 1.2 loses** on 16 seeds as it did on 8 in E128 (population mean -36%, interval -148 to -9).
+- **Next:** the roaming keys are deleted (T103). The edge is reached by another route, a refuge or density-dependent survival (E128's fallback), which [habitat-cover.md](habitat-cover.md) already plans as cover on the food-patch rims; the training.md Phase 3 gate stands.
+
+### 2026-11-08 - `npm run replay` defaults to the scripted policy, and does not take `live`
+
+- `scripts/replay.mjs` runs `baseline-v5` unless `--policy` is given, and its policy list is `baseline-v5` and `map-elites-v6` only: `--policy live` (the alias `npm run screen` and `npm run eval` accept, `LIVE_POLICY` in `js/evo/policies/index.js`) is refused. A replay meant to read the live world needs `--policy map-elites-v6`. Under `baseline-v5` the floor-off-looking collapse is the scripted policy's (seed 1 ends at 8 agents, 858 floor births in 200000 ticks).
+
+### 2026-11-08 - The roaming mate range harms on 32 floor-on seeds and is deleted (world-balance T102, T103, E146)
+
+- **Run:** `evals/screens/roam-harm.grid.json`, defaults against `mateRoamTicks` 6000 and `mateRoamMax` 900, floor on, policy live, 32 seeds x 200000 ticks, on `bb107b5b`; reports in `evals/screens/results/roam-harm/`.
+- **Keep rule (paired bootstrap, 4000 resamples):** hunters alive at the last tick 27 and 25 of 32 (difference -0.06, interval -0.22 to +0.09); seeds ending under 80 agents 9 and 18 of 32 (+0.28, interval +0.09 to +0.47). `eval:compare`: `eval.predators_at_end` 34.6 to 21.1 (-39%, `worse`), `eval.prey_types_at_end` 3.47 to 2.88 (-17%, `worse`), `eval.behaviour_coverage` +8% (`better`); `eval.prey_summer_min` 108 to 83 and `eval.population_mean` 236 to 211, intervals holding 0.
+- **Reading:** a range that grows after a long stretch alone makes worlds end small, not recover. Ranging wider when alone is realistic, but it harms here, so the keep rule deletes it. The 16-seed floor-off screen (E145) pointed the same way without an interval that excluded 0.
