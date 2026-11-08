@@ -17,6 +17,8 @@ export default [
             'js/evo/**/*.js',
             'js/worker/**/*.js',
             'js/app/**/*.js',
+            'js/library/**/*.js',
+            'functions/**/*.js',
             'scripts/**/*.{js,mjs}',
             'bench/**/*.js',
         ],
@@ -36,6 +38,8 @@ export default [
             'js/evo/**/*.js',
             'js/worker/**/*.js',
             'js/app/**/*.js',
+            'js/library/**/*.js',
+            'functions/**/*.js',
             'scripts/**/*.{js,mjs}',
             'bench/**/*.js',
             'test/**/*.js',
@@ -200,6 +204,12 @@ export default [
     {
         files: ['js/app/**/*.js'],
         languageOptions: { globals: { ...globals.browser, __PRODUCTION__: 'readonly' } },
+    },
+    // The gene library's pure modules and the Pages Functions run in the browser, on Node and in the Workers runtime:
+    // Web-standard globals only (docs/designs/deployment-and-community.md).
+    {
+        files: ['js/library/**/*.js', 'functions/**/*.js'],
+        languageOptions: { globals: { ...globals.worker } },
     },
     {
         files: ['scripts/**/*.{js,mjs}', 'bench/**/*.js', 'test/**/*.js', '*.config.js'],

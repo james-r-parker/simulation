@@ -41,7 +41,15 @@ export default defineConfig({
         coverage: {
             provider: 'v8',
             reporter: ['text-summary', 'json-summary'],
-            include: ['js/sim/**', 'js/evo/**', 'js/worker/**', 'js/app/**', 'scripts/**/*.{js,mjs}'],
+            include: [
+                'js/sim/**',
+                'js/evo/**',
+                'js/worker/**',
+                'js/app/**',
+                'js/library/**',
+                'functions/**',
+                'scripts/**/*.{js,mjs}',
+            ],
             // Shells measured end to end rather than by unit tests: alloc-check runs in a child process under
             // --expose-gc; the browser helpers only run inside Vite and Chromium (browser-perf, browser-hash).
             exclude: [

@@ -1,5 +1,5 @@
 // Layering rules (docs/designs/quality-gates-and-test-tiers.md, "Layering and duplication").
-const checked = '^(js/sim|js/evo|js/worker|js/app|scripts|test)/';
+const checked = '^(js/sim|js/evo|js/worker|js/app|js/library|functions|scripts|test)/';
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
@@ -34,8 +34,25 @@ module.exports = {
             to: { path: ['^js/app/', 'node_modules/(three|uplot)/'] },
         },
         {
+            name: 'library-standalone',
+            comment:
+                'js/library/ imports only js/library/: no sim, evo, worker or app code, no npm packages or Node built-ins.',
+            severity: 'error',
+            from: { path: '^js/library/' },
+            to: { pathNot: '^js/library/' },
+        },
+        {
+            name: 'functions-only-library',
+            comment:
+                'functions/ imports functions/ and js/library/ only: the Workers runtime has no sim, no Node built-ins and no npm packages.',
+            severity: 'error',
+            from: { path: '^functions/' },
+            to: { pathNot: '^(functions|js/library)/' },
+        },
+        {
             name: 'no-circular',
-            comment: 'No import cycles among js/sim/, js/evo/, js/worker/, js/app/, scripts/ and test/.',
+            comment:
+                'No import cycles among js/sim/, js/evo/, js/worker/, js/app/, js/library/, functions/, scripts/ and test/.',
             severity: 'error',
             from: { path: checked },
             to: { circular: true },
