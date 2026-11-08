@@ -1,13 +1,20 @@
 // The command-line shells of the release pipeline, run in-process with fake git, wrangler and files
 // (docs/designs/deployment-and-community.md). The libraries they call have their own tests.
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildRelease, cliDeps as buildDeps } from '../scripts/build-release.mjs';
-import { cliDeps as planDeps, runDeployPlan, seasonNextOf } from '../scripts/deploy-plan.mjs';
+import { cliDeps as planDeps, runDeployPlan, seasonNextOf, spawnStatus } from '../scripts/deploy-plan.mjs';
+import { currentBranch } from '../scripts/lib/release-check.mjs';
 import { commentFromEnv } from '../scripts/preview-comment.mjs';
-import { cliDeps as releaseCheckDeps, makeGit, makeRulesHashAt, runReleaseCheck } from '../scripts/release-check.mjs';
+import {
+    cliDeps as releaseCheckDeps,
+    makeGit,
+    makeRulesHashAt,
+    runReleaseCheck,
+    tempDirs,
+} from '../scripts/release-check.mjs';
 import { cliDeps as uploadDeps, makeD1Execute, releaseUpload } from '../scripts/release-upload.mjs';
 
 /**
@@ -282,5 +289,26 @@ describe('the real dependencies of each shell', () => {
         expect(commentFromEnv({ URL: 'https://pr-7.x.pages.dev', SHA: 'abc' })).toContain('https://pr-7.x.pages.dev');
         expect(() => commentFromEnv({ URL: '', SHA: 'abc' })).toThrow('URL and SHA are required');
         expect(() => commentFromEnv({ URL: 'u' })).toThrow('URL and SHA are required');
+    });
+});
+
+describe('the small real helpers', () => {
+    it('tempDirs makes a fresh temp directory and removes it', () => {
+        const { tempDir, removeDir } = tempDirs();
+        const dir = tempDir();
+        expect(dir).toContain('release-check-');
+        writeFileSync(join(dir, 'f'), 'x');
+        removeDir(dir);
+        expect(existsSync(dir)).toBe(false);
+    });
+
+    it('spawnStatus returns a command exit status', () => {
+        expect(spawnStatus('node', ['-e', 'process.exit(0)'])).toBe(0);
+        expect(spawnStatus('node', ['-e', 'process.exit(4)'])).toBe(4);
+    });
+
+    it('currentBranch asks git outside CI and returns a string', () => {
+        expect(typeof currentBranch({ env: {} })).toBe('string');
+        expect(currentBranch({ env: { GITHUB_BASE_REF: 'season/next' } })).toBe('season/next');
     });
 });

@@ -87,6 +87,17 @@ export function runReleaseCheck({ env, git: run, rulesHashAt: hashAt, headHash, 
 }
 
 /**
+ * @returns {{tempDir: () => string, removeDir: (dir: string) => void}} a fresh directory under the OS temp dir, and
+ *   its removal
+ */
+export function tempDirs() {
+    return {
+        tempDir: () => mkdtempSync(join(tmpdir(), 'release-check-')),
+        removeDir: (dir) => rmSync(dir, { recursive: true, force: true }),
+    };
+}
+
+/**
  * @param {Record<string, string | undefined>} env the environment
  * @returns {ReleaseCheckDeps} the real git, the temporary-worktree hasher, and this tree's hash and seasons file
  */
@@ -94,11 +105,7 @@ export function cliDeps(env) {
     return {
         env,
         git: makeGit(spawnText),
-        rulesHashAt: makeRulesHashAt({
-            spawn: spawnText,
-            tempDir: () => mkdtempSync(join(tmpdir(), 'release-check-')),
-            removeDir: (dir) => rmSync(dir, { recursive: true, force: true }),
-        }),
+        rulesHashAt: makeRulesHashAt({ spawn: spawnText, ...tempDirs() }),
         headHash: rulesHash(createConfig()),
         headSeasons: readFileSync('library/seasons.json', 'utf8'),
     };

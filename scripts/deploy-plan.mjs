@@ -36,6 +36,15 @@ export function runDeployPlan({ env, readFile, appendFile, seasonNext }) {
 }
 
 /**
+ * @param {string} cmd a command
+ * @param {string[]} args its arguments
+ * @returns {number | null} its exit status, its output discarded
+ */
+export function spawnStatus(cmd, args) {
+    return spawnSync(cmd, args, { stdio: 'ignore' }).status;
+}
+
+/**
  * @param {(cmd: string, args: string[]) => number | null} status runs a command and returns its exit status
  * @returns {boolean} whether origin has a `season/next` branch
  */
@@ -58,6 +67,6 @@ export function cliDeps(env, seasonNext) {
 }
 
 if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
-    const seasonNext = seasonNextOf((cmd, args) => spawnSync(cmd, args, { stdio: 'ignore' }).status);
+    const seasonNext = seasonNextOf(spawnStatus);
     console.log(runDeployPlan(cliDeps(process.env, seasonNext)).join('\n'));
 }
