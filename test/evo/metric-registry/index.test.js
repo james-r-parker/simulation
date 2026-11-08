@@ -3,7 +3,13 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { MIN_SEEDS, metricDirection } from '../../../js/evo/compare.js';
-import { DEFAULT_MIN_SEEDS, METRICS, metricName, minSeedsFor } from '../../../js/evo/metric-registry/index.js';
+import {
+    DEFAULT_MIN_SEEDS,
+    METRICS,
+    metricName,
+    minSeedsFor,
+    withLiveness,
+} from '../../../js/evo/metric-registry/index.js';
 
 /** @type {string[]} the 268 names of a live eval report, sorted */
 const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-names.json', import.meta.url), 'utf8'));
@@ -45,6 +51,18 @@ describe('metricName', () => {
 
     it('throws on a name with no entry', () => {
         expect(() => metricName('eval', 'nothing')).toThrow('unknown metric eval.nothing');
+    });
+});
+
+describe('withLiveness', () => {
+    it('applies a generated reading to a fresh frozen entry without mutating its family', () => {
+        const family = { 'eval.food_energy_per_1k': METRICS['eval.food_energy_per_1k'] };
+        const reading = { nullShare: 0.05, distinct: 3, report: 'evals/power/defaults-floor-on.json' };
+        const merged = withLiveness(family, { 'eval.food_energy_per_1k': reading });
+
+        expect(merged['eval.food_energy_per_1k'].liveness).toEqual(reading);
+        expect(Object.isFrozen(merged)).toBe(true);
+        expect(family['eval.food_energy_per_1k'].liveness).toBeNull();
     });
 });
 

@@ -13,9 +13,9 @@ const FIRST_32 = [
 ];
 
 describe('evals/seeds.json', () => {
-    it('holds 64 distinct seeds', () => {
-        expect(SEEDS).toHaveLength(64);
-        expect(new Set(SEEDS).size).toBe(64);
+    it('holds 128 distinct seeds', () => {
+        expect(SEEDS).toHaveLength(128);
+        expect(new Set(SEEDS).size).toBe(128);
     });
 
     it('keeps the first 32 values unchanged', () => {
@@ -25,12 +25,20 @@ describe('evals/seeds.json', () => {
     it('draws seeds 33 to 64 as 32 values of nextInt(rng, 1000000) from createRng(64)', () => {
         const rng = createRng(64);
         const drawn = Array.from({ length: 32 }, () => nextInt(rng, 1000000));
-        expect(SEEDS.slice(32)).toEqual(drawn);
+        expect(SEEDS.slice(32, 64)).toEqual(drawn);
+    });
+
+    it('appends 64 distinct values drawn from createRng(128)', () => {
+        const rng = createRng(128);
+        const added = Array.from({ length: 64 }, () => nextInt(rng, 1000000));
+        expect(new Set(added).size).toBe(64);
+        expect(added.some((seed) => SEEDS.slice(0, 64).includes(seed))).toBe(false);
+        expect(SEEDS.slice(64)).toEqual(added);
     });
 
     it('gives pickSeeds the first n by default and the calibration window with an offset of 32', () => {
         expect(pickSeeds(16, 0)).toEqual(FIRST_32.slice(0, 16));
         expect(pickSeeds(32, 0)).toEqual(FIRST_32);
-        expect(pickSeeds(32, 32)).toEqual(SEEDS.slice(32));
+        expect(pickSeeds(32, 32)).toEqual(SEEDS.slice(32, 64));
     });
 });
