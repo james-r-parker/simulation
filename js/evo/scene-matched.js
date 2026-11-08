@@ -16,7 +16,7 @@
 // growing log, nothing allocated per tick.
 
 import { createLog, ensureRoom } from './growable-log.js';
-import { none, ok } from './metrics-stats.js';
+import { bySuffix, none, ok } from './metrics-stats.js';
 import { CHASE_OUTCOME, CONVERSION_BANDS } from './scene-competence.js';
 
 /** Chases a stratum needs to count. */
@@ -33,12 +33,6 @@ const BAND_EDGES = Object.freeze([1000, 2000]);
 
 const TERCILES = 3;
 const PRIOR_CLASSES = 3;
-
-/** The direction of each metric of this module. */
-export const MATCHED_DIRECTIONS = Object.freeze({
-    ...Object.fromEntries(CONVERSION_BANDS.map((name) => [`eval.hunter_conversion_matched.${name}`, 'higher'])),
-    'eval.hunter_conversion_by_dose': 'higher',
-});
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
@@ -201,19 +195,19 @@ function doseSlope(scene) {
 
 /**
  * @param {Record<string, any>} scene the matched scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the matched conversions and the dose slope
+ * @returns {import('./metrics-stats.js').MetricRecord} the matched conversions and the dose slope
  */
 export function matchedMetrics(scene) {
     if (scene.rows === 0) {
         const reason = none('no chase resolved after burn-in');
         return {
-            ...Object.fromEntries(CONVERSION_BANDS.map((name) => [`eval.hunter_conversion_matched.${name}`, reason])),
+            ...bySuffix('eval.hunter_conversion_matched', CONVERSION_BANDS, () => reason),
             'eval.hunter_conversion_by_dose': reason,
         };
     }
     const bands = matchedByBand(scene);
     return {
-        ...Object.fromEntries(CONVERSION_BANDS.map((name, i) => [`eval.hunter_conversion_matched.${name}`, bands[i]])),
+        ...bySuffix('eval.hunter_conversion_matched', CONVERSION_BANDS, (i) => bands[i]),
         'eval.hunter_conversion_by_dose': doseSlope(scene),
     };
 }

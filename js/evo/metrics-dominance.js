@@ -35,7 +35,7 @@ function summarise(counts) {
 
 /**
  * @param {Record<string, any>} observer the observer, checkpointed during the run
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the four dominance metrics, keyed by name; all
+ * @returns {import('./metrics-stats.js').MetricRecord} the four dominance metrics, keyed by name; all
  *   `null` when no checkpoint at or after burn-in had an alive agent
  */
 export function dominanceMetrics(observer) {

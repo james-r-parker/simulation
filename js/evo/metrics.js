@@ -23,6 +23,8 @@ import { trendMetrics } from './metrics-trend.js';
 import * as series from './metrics-series.js';
 import { none, ok, per1k, quantile } from './metrics-stats.js';
 
+/** @typedef {import('./metric-registry/index.js').MetricName} MetricName */
+
 /**
  * @param {Record<string, any>} observer the observer
  * @returns {import('./metrics-stats.js').MetricResult} food energy eaten, dead plus living, per 1000 agent-ticks
@@ -106,13 +108,13 @@ function matingShare(observer) {
  * @param {{fitness?: (observer: any, slot: number, config: any) => number, fitnessName?: string, archive?: any}} [options]
  *   the policy's fitness (without it the fitness metrics are `null` with reason `no fitness`) and its archive
  *   (without it `eval.qd_score` and `eval.coverage` are `null` with reason `no archive`)
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} results keyed by metric name, in sorted order
+ * @returns {import('./metrics-stats.js').MetricRecord} results keyed by metric name, in sorted order
  */
 export function computeMetrics(observer, world, options = {}) {
     const grids = behaviourCoverage(observer);
     const { archive } = options;
     const { births, deathsByCause, agentTicks } = observer;
-    /** @type {Record<string, import('./metrics-stats.js').MetricResult>} */
+    /** @type {import('./metrics-stats.js').MetricRecord} */
     const all = {
         'eval.food_energy_per_1k': foodEnergyPer1k(observer),
         'eval.median_lifespan': medianLifespan(observer),
@@ -151,9 +153,10 @@ export function computeMetrics(observer, world, options = {}) {
         'eval.champion_elo': none('no league games'),
         'eval.champion_win_rate': none('no league games'),
     };
-    return Object.fromEntries(
-        Object.keys(all)
-            .sort()
-            .map((key) => [key, all[key]]),
-    );
+    /** @type {import('./metrics-stats.js').MetricRecord} */
+    const sorted = {};
+    for (const key of /** @type {MetricName[]} */ (Object.keys(all)).sort()) {
+        sorted[key] = all[key];
+    }
+    return sorted;
 }

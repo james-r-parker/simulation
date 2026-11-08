@@ -1,27 +1,24 @@
 import { floraMetrics } from './scene-flora.js';
-import { FLORA_NAMES } from '../sim/config-flora.js';
 // The scene metrics (natural-selection.md, Detectors): instruments for the scenes the world should show, read from
-// `observer.scenes`. Each is `watch` unless its direction is set below, and each is `null` with a reason when nothing
-// fed it. They change no sim state and cost no per-tick allocation.
+// `observer.scenes`. Each is `null` with a reason when nothing fed it.
+// They change no sim state and cost no per-tick allocation. Directions live in `js/evo/metric-registry/`.
 
-import { ALARM_REACH_DIRECTIONS, alarmReachMetrics } from './observer-alarm-reach.js';
-import { BITE_DIRECTIONS, biteMetrics } from './scene-bite.js';
-import { BITE_LIFE_DIRECTIONS, biteLifeMetrics } from './scene-bite-life.js';
+import { alarmReachMetrics } from './observer-alarm-reach.js';
+import { biteMetrics } from './scene-bite.js';
+import { biteLifeMetrics } from './scene-bite-life.js';
 import { approachMetrics } from './scene-approach.js';
 import { balanceMetrics } from './scene-balance.js';
 import { basinMetrics } from './scene-basin.js';
-import { DIVERGENCE_METRICS, divergenceMetrics } from './scene-divergence.js';
+import { divergenceMetrics } from './scene-divergence.js';
 import { familyMetrics } from './scene-families.js';
 import { diseaseMetrics } from './scene-disease.js';
-import { carcassMetrics } from './scene-carcass.js';
-import { competenceMetrics, COMPETENCE_DIRECTIONS } from './scene-competence.js';
-import { GUARD_DIRECTIONS, SUMMER_DIRECTIONS, guardMetrics, summerMetrics } from './scene-guards.js';
-import { AGE_DIRECTIONS } from './scene-hunter-age.js';
-import { KIN_DIRECTIONS, kinProximityMetrics } from './scene-kin-proximity.js';
-import { HUNTER_METRIC_NAMES, hunterMetrics } from './scene-hunters.js';
-import { MATCHED_DIRECTIONS, matchedMetrics } from './scene-matched.js';
-import { PATCH_DIRECTIONS, patchMetrics } from './scene-patch.js';
-import { REWARD_DIRECTIONS, rewardMetrics } from './metrics-reward.js';
+import { competenceMetrics } from './scene-competence.js';
+import { guardMetrics, summerMetrics } from './scene-guards.js';
+import { kinProximityMetrics } from './scene-kin-proximity.js';
+import { hunterMetrics } from './scene-hunters.js';
+import { matchedMetrics } from './scene-matched.js';
+import { patchMetrics } from './scene-patch.js';
+import { rewardMetrics } from './metrics-reward.js';
 import { conditionMetrics } from './scene-condition.js';
 import { seasonMetrics } from './scene-season.js';
 import { seasonMapMetrics } from './scene-season-map.js';
@@ -31,98 +28,12 @@ import { refugeMetrics } from './scene-refuge.js';
 import { refugeOutcomeMetrics } from './scene-refuge-outcome.js';
 import { terrainMetrics } from './scene-terrain.js';
 import { styleMetrics } from './style.js';
-import { herdMetrics, HERD_SPEC_NAMES } from './scene-herd-metrics.js';
-
-const WATCH = [
-    'eval.hunt_abort_rate',
-    'eval.chase_catch_share',
-    'eval.chase_escape_share',
-    'eval.chase_giveup_share',
-    'eval.refuge_use_under_threat',
-    'eval.refuge_prey_use_under_threat',
-    'eval.refuge_episode_entry',
-    'eval.refuge_dwell_ticks',
-    'eval.refuge_exit_fed',
-    'eval.refuge_crowding',
-    'eval.refuge_bite_deficit',
-    'eval.refuge_eligible_share',
-    'eval.prey_cover_distance',
-    'eval.prey_within_dash_share',
-    'eval.prey_in_patch_share',
-    'eval.cold_margin_use_under_threat',
-    'eval.carcass_meal_share',
-    'eval.carcass_hunter_share',
-    'eval.gap_crossers',
-    'eval.gap_never_share',
-    'eval.basin_pop_cv',
-    'eval.basin_recolonisations',
-    'eval.condition_gait_shift',
-    'eval.mother_wait_by_condition',
-    'eval.childshare_by_condition',
-    'eval.winter_basin_density',
-    'eval.winter_shelter_distance',
-    'eval.winter_band_shift',
-    'eval.winter_patch_proximity',
-    'eval.season_map_distance',
-    'eval.herd_season_shift',
-    'eval.style_separation',
-    'eval.dodge_skill',
-    'eval.disease_deaths_share',
-    'eval.strains_per_100k',
-    'eval.strain_family_focus',
-    'eval.disease_frequency_slope',
-    ...HUNTER_METRIC_NAMES,
-    ...DIVERGENCE_METRICS,
-];
-
-/** The direction of each scene metric, as the Detectors table names them. */
-export const SCENE_DIRECTIONS = Object.freeze({
-    ...PATCH_DIRECTIONS,
-    'eval.seasonal_diet_shift': 'watch',
-    'eval.pollination_rate': 'watch',
-    'eval.flora_hue_spread': 'watch',
-    'eval.flora_patch_pool_full_share': 'watch',
-    'eval.flora_patch_death_rate': 'watch',
-    'eval.flora_seed_bank_occupancy_share': 'watch',
-    'eval.toxic_avoidance': 'watch',
-    'eval.toxic_death_share': 'watch',
-    'eval.sick_share': 'watch',
-    'eval.trampled_share': 'watch',
-    'eval.herd_grazed_share': 'watch',
-    'eval.trample_unavoidable_share': 'watch',
-    'eval.herd_carcass_meal_share': 'watch',
-    'eval.herd_stampede_rate': 'watch',
-    'eval.herd_animals': 'watch',
-    'eval.herd_gap_crossings': 'watch',
-    'eval.herd_recolonisations': 'watch',
-    'eval.herd_follow_share': 'watch',
-    'eval.dung_food_share': 'watch',
-    'eval.herd_seeded_patches': 'watch',
-    ...Object.fromEntries(HERD_SPEC_NAMES.map((name) => [`eval.herd_carcass_share.${name}`, 'watch'])),
-    ...Object.fromEntries(FLORA_NAMES.map((name) => [`eval.food_species_share.${name}`, 'watch'])),
-    'eval.predators_at_end': 'higher',
-    'eval.prey_types_at_end': 'higher',
-    'eval.basin_lineages_alive': 'higher',
-    'eval.basin_lineage_effective': 'higher',
-    'eval.basin_families': 'higher',
-    'eval.basin_family_effective': 'higher',
-    ...Object.fromEntries(WATCH.map((name) => [name, 'watch'])),
-    ...AGE_DIRECTIONS,
-    ...COMPETENCE_DIRECTIONS,
-    ...MATCHED_DIRECTIONS,
-    ...GUARD_DIRECTIONS,
-    ...SUMMER_DIRECTIONS,
-    ...KIN_DIRECTIONS,
-    ...ALARM_REACH_DIRECTIONS,
-    ...REWARD_DIRECTIONS,
-    ...BITE_DIRECTIONS,
-    ...BITE_LIFE_DIRECTIONS,
-});
+import { herdMetrics } from './scene-herd-metrics.js';
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick
  * @param {Record<string, any>} world the world at the run's last tick
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the scene metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the scene metrics
  */
 export function sceneMetrics(observer, world) {
     const s = observer.scenes;
@@ -134,7 +45,6 @@ export function sceneMetrics(observer, world) {
         ...refugeMetrics(s.refuge),
         ...reachMetrics(s.reach),
         ...refugeOutcomeMetrics(s.refugeOutcome),
-        ...carcassMetrics(s.carcass, observer),
         ...basinMetrics(s.basin),
         ...balanceMetrics(s.balance, world),
         ...familyMetrics(s.families, world),

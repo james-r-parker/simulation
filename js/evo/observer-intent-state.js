@@ -162,6 +162,7 @@ export function createIntentState(config) {
         scan: new Float64Array(SCAN_SIZE),
         groupKeys: new Float64Array(config.maxAgents + 1).fill(Infinity),
         groupKin: new Int32Array(config.maxAgents),
+        fatalKillers: new Map(),
         calls: createHuntCalls(),
         alarmQueue: createAlarmQueue(),
         alarmMatchSlot: new Int32Array(config.maxAgents * ALARM_MATCH_CAP),

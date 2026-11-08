@@ -15,12 +15,6 @@ export const DEPLETED_SHARE = 0.5;
 
 const NONE = -1;
 
-/** The direction of each patch metric. */
-export const PATCH_DIRECTIONS = Object.freeze({
-    'eval.patch_stay_depleted': 'lower',
-    'eval.patch_leave_depleted': 'higher',
-});
-
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @returns {Record<string, any>} an empty scene: per slot the pending patch, genome and sample tick, and the counts
@@ -134,7 +128,7 @@ export function samplePatches(scene, world) {
 
 /**
  * @param {Record<string, any>} scene the patch scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the two patch metrics, `null` with a reason
+ * @returns {import('./metrics-stats.js').MetricRecord} the two patch metrics, `null` with a reason
  *   when no sample resolved
  */
 export function patchMetrics(scene) {

@@ -11,6 +11,7 @@ import { computeMetrics } from '../../js/evo/metrics.js';
 import { BORN_CAUSE, DEATH_CAUSE, EVENT_TYPE, pushEvent } from '../../js/sim/events.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { addBorn, nextTick, observed, pushBorn, pushDied } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const { MATE, SPLIT, FLOOR, IMMIGRANT, INITIAL } = BORN_CAUSE;
 
@@ -74,7 +75,7 @@ describe('audit: rates, lifespans and births from an event sequence', () => {
         observe(observer, world);
         const m = computeMetrics(observer, world);
         for (const name of ['food_energy_per_1k', 'births_per_1k', 'predation_per_1k']) {
-            expect(m[`eval.${name}`], name).toEqual({ value: null, reason: 'no agent-ticks' });
+            expect(loose(m)[`eval.${name}`], name).toEqual({ value: null, reason: 'no agent-ticks' });
         }
         nextTick(world, 1);
         pushDied(world, { slot: 0, genomeId: 1, ageTicks: 19, foodEnergy: 500 });
@@ -187,12 +188,12 @@ describe('audit: series metrics built by real checkpoints', () => {
     it('reads diversity as the mean pairwise L2 distance over sqrt(weightCount), averaged over checkpoints', () => {
         // 0 at 9000 (equal rows), (3 pairs x 2) / 6 = 1 at two checkpoints, (4 pairs x 2) / 10 = 0.8 with five agents
         const { m, n } = run();
-        expect(m['eval.diversity'].value).toBeCloseTo((0 + 1 + 1 + 0.8) / 4 / Math.sqrt(n), 6);
+        expect(m['eval.diversity']?.value).toBeCloseTo((0 + 1 + 1 + 0.8) / 4 / Math.sqrt(n), 6);
     });
 
     it('reads lineages_alive from checkpoints at or after tick 10000 only: (2 + 1 + 3) / 3', () => {
         // lineages alive: 9000 -> 2 (ignored), 10000 -> 2, 11000 -> 1, 12000 -> 3 (5, 6 and 8)
-        expect(run().m['eval.lineages_alive'].value).toBeCloseTo((2 + 1 + 3) / 3, 12);
+        expect(run().m['eval.lineages_alive']?.value).toBeCloseTo((2 + 1 + 3) / 3, 12);
     });
 
     it('counts a lineage that becomes dominant and was not in the previous 10 checkpoints', () => {
@@ -219,7 +220,7 @@ describe('audit: series metrics built by real checkpoints', () => {
         const shares = [0.25, 0.25, 0, 0.2];
         const mean = shares.reduce((a, b) => a + b, 0) / 4;
         const sd = Math.sqrt(shares.reduce((a, b) => a + (b - mean) ** 2, 0) / 4);
-        expect(run().m['eval.predator_share_cv'].value).toBeCloseTo(sd / mean, 12);
+        expect(run().m['eval.predator_share_cv']?.value).toBeCloseTo(sd / mean, 12);
     });
 
     it('is null with the exact reason for each series metric under its null condition', () => {
@@ -229,7 +230,7 @@ describe('audit: series metrics built by real checkpoints', () => {
         expect(m['eval.predator_share_cv']).toEqual({ value: null, reason: 'no checkpoint' });
         expect(m['eval.diversity']).toEqual({ value: null, reason: 'no checkpoint with 2 agents' });
         for (const name of ['lineages_alive', 'lineage_turnover', 'spec_turnover']) {
-            expect(m[`eval.${name}`], name).toEqual({ value: null, reason: 'no checkpoint after burn-in' });
+            expect(loose(m)[`eval.${name}`], name).toEqual({ value: null, reason: 'no checkpoint after burn-in' });
         }
         const { world, observer } = observed();
         addBlob(world);

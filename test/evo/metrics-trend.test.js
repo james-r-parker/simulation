@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { foodShare } from '../../js/evo/metrics-intent.js';
 import { RUN_TICKS, every, trendRun } from './helpers/trend-run.js';
+import { loose } from './helpers/metric-registry.js';
 
 /**
  * @param {[number, number][]} table a per-window table
@@ -21,7 +22,7 @@ const NAMES = ['deliberate_food_trend', 'pursuit_trend', 'evasion_trend', 'skill
  * @returns {{value: number | null, reason?: string}} the metric
  */
 function read(run, name) {
-    return computeMetrics(run.observer, run.world)[`eval.${name}`];
+    return loose(computeMetrics(run.observer, run.world))[`eval.${name}`];
 }
 
 // Windows 0, 1, 6 and 7 are compared; 2 to 5 are empty, and must not matter. Shares: window 0 is 0, 1 is 1/2, 6 is

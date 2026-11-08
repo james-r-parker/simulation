@@ -1,6 +1,6 @@
 // Aggregates the post-burn-in herd scene counters into the detector metrics.
 
-import { none, ok, share } from './metrics-stats.js';
+import { bySuffix, none, ok, share } from './metrics-stats.js';
 
 export const HERD_SPEC_NAMES = Object.freeze(['forager', 'predator', 'reproducer', 'scout', 'defender']);
 
@@ -23,7 +23,7 @@ function carcassTotals(scene, carcassScene, observer) {
     };
 }
 
-/** @param {Record<string, any>} scene @returns {Record<string, import('./metrics-stats.js').MetricResult>} */
+/** @param {Record<string, any>} scene @returns {import('./metrics-stats.js').MetricRecord} */
 function herdCoreMetrics(scene) {
     return {
         'eval.trampled_share': share(scene.trampled, scene.deaths, 'no deaths after burn-in'),
@@ -45,7 +45,7 @@ function herdCoreMetrics(scene) {
     };
 }
 
-/** @param {Record<string, any>} scene @returns {Record<string, import('./metrics-stats.js').MetricResult>} */
+/** @param {Record<string, any>} scene @returns {import('./metrics-stats.js').MetricRecord} */
 function populationMetrics(scene) {
     return {
         'eval.herd_stampede_rate':
@@ -65,7 +65,7 @@ function populationMetrics(scene) {
     };
 }
 
-/** @param {Record<string, any>} scene @param {Record<string, any>} carcassScene @param {Record<string, any>} observer @returns {Record<string, import('./metrics-stats.js').MetricResult>} */
+/** @param {Record<string, any>} scene @param {Record<string, any>} carcassScene @param {Record<string, any>} observer @returns {import('./metrics-stats.js').MetricRecord} */
 function carcassMetrics(scene, carcassScene, observer) {
     const totals = carcassTotals(scene, carcassScene, observer);
     const totalMeat = totals.totalCarcass + totals.hunterBites;
@@ -76,19 +76,15 @@ function carcassMetrics(scene, carcassScene, observer) {
     };
 }
 
-/** @param {Record<string, any>} scene @returns {Record<string, import('./metrics-stats.js').MetricResult>} */
+/** @param {Record<string, any>} scene @returns {import('./metrics-stats.js').MetricRecord} */
 function carcassShareBySpec(scene) {
-    /** @type {Record<string, import('./metrics-stats.js').MetricResult>} */
-    const metrics = {};
-    for (let spec = 0; spec < HERD_SPEC_NAMES.length; spec++) {
-        const name = HERD_SPEC_NAMES[spec];
-        metrics[`eval.herd_carcass_share.${name}`] = share(
+    return bySuffix('eval.herd_carcass_share', HERD_SPEC_NAMES, (spec) =>
+        share(
             scene.carcassEatenBySpec[spec],
             scene.foodEatenBySpec[spec],
-            `no meals for ${name} after burn-in`,
-        );
-    }
-    return metrics;
+            `no meals for ${HERD_SPEC_NAMES[spec]} after burn-in`,
+        ),
+    );
 }
 
 /** @param {Record<string, any>} scene @returns {import('./metrics-stats.js').MetricResult} */
@@ -111,7 +107,7 @@ function herdFollowingShare(scene) {
     return patches > 0 ? ok(ratios / patches) : none('no patch had 3 herded and bare checkpoints with blobs present');
 }
 
-/** @param {Record<string, any>} scene @param {Record<string, any>} carcassScene @param {Record<string, any>} observer @returns {Record<string, import('./metrics-stats.js').MetricResult>} */
+/** @param {Record<string, any>} scene @param {Record<string, any>} carcassScene @param {Record<string, any>} observer @returns {import('./metrics-stats.js').MetricRecord} */
 export function herdMetrics(scene, carcassScene, observer) {
     return {
         ...herdCoreMetrics(scene),

@@ -60,7 +60,7 @@ describe('eval.instinct_drift', () => {
             sampleInstinct(pools, observer, world);
         }
         expect(pools.founders).toBeCloseTo(0.1, 6);
-        expect(instinctMetrics({ instinct: pools })['eval.instinct_drift'].value).toBeCloseTo(3, 5);
+        expect(instinctMetrics({ instinct: pools })['eval.instinct_drift']?.value).toBeCloseTo(3, 5);
     });
 
     it('reads each genome against the prior of the specialisation it was born with, not its current one', () => {
@@ -78,13 +78,13 @@ describe('eval.instinct_drift', () => {
         const off = createInstinctPools(createConfig({ instinctWeight: 0 }));
         const offWorld = handWorld(off, { offset: 0.1, tick: BURN_IN_TICKS });
         sampleInstinct(off, offWorld.observer, offWorld.world);
-        expect(instinctMetrics({ instinct: off })['eval.instinct_drift'].value).toBeNull();
+        expect(instinctMetrics({ instinct: off })['eval.instinct_drift']?.value).toBeNull();
         const early = createInstinctPools(CONFIG);
         const { world, observer } = handWorld(early, { offset: 0.1, tick: 1000 });
         sampleInstinct(early, observer, world);
         const metric = instinctMetrics({ instinct: early })['eval.instinct_drift'];
-        expect(metric.value).toBeNull();
-        expect(metric.reason).toBeTypeOf('string');
+        expect(metric?.value).toBeNull();
+        expect(metric?.reason).toBeTypeOf('string');
     });
     it('leaves the founder reference unset when the checkpoint has no sampled agents', () => {
         const pools = createInstinctPools(CONFIG);
@@ -93,7 +93,7 @@ describe('eval.instinct_drift', () => {
         expect(priorDistance(pools, world, observer.sampled, observer.priorSpec)).toBeNaN();
         sampleInstinct(pools, observer, world);
         expect(pools.founders).toBeNaN();
-        expect(instinctMetrics({ instinct: pools })['eval.instinct_drift'].value).toBeNull();
+        expect(instinctMetrics({ instinct: pools })['eval.instinct_drift']?.value).toBeNull();
     });
 });
 

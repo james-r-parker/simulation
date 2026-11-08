@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
 import { createDivergenceScene, divergenceMetrics, sampleDivergence } from '../../js/evo/scene-divergence.js';
+import { loose } from './helpers/metric-registry.js';
 
 const CONFIG = createConfig({ worldWidth: 4000, maxAgents: 120 });
 const LAYOUT = brainLayout(CONFIG);
@@ -65,14 +66,14 @@ describe('basin divergence', () => {
         const same = createDivergenceScene(CONFIG);
         sampleDivergence(same, handWorld([...group(0, [[0, 0, 30]]), ...group(1, [[0, 0, 30]])], 1000));
         const m = divergenceMetrics(same, { tick: 1000 });
-        expect(m['eval.basin_spec_divergence'].value).toBe(0);
-        expect(m['eval.basin_cluster_divergence'].value).toBe(0);
+        expect(m['eval.basin_spec_divergence']?.value).toBe(0);
+        expect(m['eval.basin_cluster_divergence']?.value).toBe(0);
         const apart = createDivergenceScene(CONFIG);
         sampleDivergence(apart, handWorld([...group(0, [[0, 0, 30]]), ...group(1, [[1, 1, 30]])], 1000));
         const d = divergenceMetrics(apart, { tick: 1000 });
-        expect(d['eval.basin_spec_divergence'].value).toBe(1);
-        expect(d['eval.basin_cluster_divergence'].value).toBe(1);
-        expect(d['eval.basin_divergence'].value).toBe(1);
+        expect(d['eval.basin_spec_divergence']?.value).toBe(1);
+        expect(d['eval.basin_cluster_divergence']?.value).toBe(1);
+        expect(d['eval.basin_divergence']?.value).toBe(1);
     });
 
     it('matches a naive reference on mixed basins, averaged over the last quarter only', () => {
@@ -101,30 +102,30 @@ describe('basin divergence', () => {
             east.map((a) => a.family),
         );
         expect(spec).toBeCloseTo(0.5, 12);
-        expect(m['eval.basin_spec_divergence'].value).toBeCloseTo(spec, 12);
-        expect(m['eval.basin_cluster_divergence'].value).toBeCloseTo(cluster, 12);
-        expect(m['eval.basin_divergence'].value).toBeCloseTo((spec + cluster) / 2, 12);
+        expect(m['eval.basin_spec_divergence']?.value).toBeCloseTo(spec, 12);
+        expect(m['eval.basin_cluster_divergence']?.value).toBeCloseTo(cluster, 12);
+        expect(m['eval.basin_divergence']?.value).toBeCloseTo((spec + cluster) / 2, 12);
     });
 
     it('splits one basin across clusters even when specialisations match', () => {
         const scene = createDivergenceScene(CONFIG);
         sampleDivergence(scene, handWorld([...group(0, [[0, 0, 25]]), ...group(1, [[1, 0, 25]])], 1000));
         const m = divergenceMetrics(scene, { tick: 1000 });
-        expect(m['eval.basin_spec_divergence'].value).toBe(0);
-        expect(m['eval.basin_cluster_divergence'].value).toBe(1);
-        expect(m['eval.basin_divergence'].value).toBe(0.5);
+        expect(m['eval.basin_spec_divergence']?.value).toBe(0);
+        expect(m['eval.basin_cluster_divergence']?.value).toBe(1);
+        expect(m['eval.basin_divergence']?.value).toBe(0.5);
     });
 
     it('is null with a reason when a basin holds under 20 agents, or none sampled', () => {
         const thin = createDivergenceScene(CONFIG);
         sampleDivergence(thin, handWorld([...group(0, [[0, 0, 30]]), ...group(1, [[1, 1, 5]])], 1000));
         for (const name of Object.keys(divergenceMetrics(thin, { tick: 1000 }))) {
-            const result = divergenceMetrics(thin, { tick: 1000 })[name];
+            const result = loose(divergenceMetrics(thin, { tick: 1000 }))[name];
             expect(result.value).toBeNull();
             expect(result.reason).toContain('basin 1 held 5 agents');
         }
         const none = createDivergenceScene(CONFIG);
-        expect(divergenceMetrics(none, { tick: 1000 })['eval.basin_divergence'].value).toBeNull();
+        expect(divergenceMetrics(none, { tick: 1000 })['eval.basin_divergence']?.value).toBeNull();
     });
 
     it('is null with the no-checkpoint reason when each basin is thick on average but never both at once', () => {
@@ -132,7 +133,7 @@ describe('basin divergence', () => {
         sampleDivergence(scene, handWorld(group(0, [[0, 0, 40]]), 1900));
         sampleDivergence(scene, handWorld(group(1, [[1, 1, 40]]), 2000));
         const result = divergenceMetrics(scene, { tick: 2000 })['eval.basin_divergence'];
-        expect(result.value).toBeNull();
-        expect(result.reason).toContain('no checkpoint in the last quarter had both basins');
+        expect(result?.value).toBeNull();
+        expect(result?.reason).toContain('no checkpoint in the last quarter had both basins');
     });
 });

@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { metricDirection } from '../../js/evo/compare.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
-import { RULE_DIRECTIONS, ruleMetrics } from '../../js/evo/metrics-rules.js';
+import { ruleMetrics } from '../../js/evo/metrics-rules.js';
 import { selectionMetrics } from '../../js/evo/metrics-selection.js';
 import { observed } from './helpers/observer-world.js';
 import { EMPTY_WORLD } from './helpers/metrics-observer.js';
@@ -12,7 +12,6 @@ import { EMPTY_WORLD } from './helpers/metrics-observer.js';
 describe('the rule metrics', () => {
     it('are the Detectors table names, all watch in the compare table', () => {
         const names = Object.keys(ruleMetrics(observed().observer)).sort();
-        expect(names).toEqual(Object.keys(RULE_DIRECTIONS).sort());
         expect(names).toHaveLength(12);
         for (const name of names) {
             expect(metricDirection(name), name).toBe('watch');
@@ -32,7 +31,7 @@ describe('the rule metrics', () => {
         const o = observed().observer;
         const selection = selectionMetrics(o);
         const all = computeMetrics(o, EMPTY_WORLD);
-        for (const name of Object.keys(RULE_DIRECTIONS)) {
+        for (const name of Object.keys(ruleMetrics(o))) {
             expect(selection, name).toHaveProperty([name]);
             expect(all, name).toHaveProperty([name]);
         }

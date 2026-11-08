@@ -86,7 +86,7 @@ describe('call opportunity', () => {
         addBorn(world, { spec: FORAGER, lineageId: 5, x: 150, y: 100 });
         addBorn(world, { spec: FORAGER, lineageId: 6, x: 100, y: 150 });
         const observer = { intent, combat: { alarmReach: { calls: 0 }, hunterAgentTicks: 0 }, agentTicks: 0 };
-        expect(alarmReachMetrics(observer)['eval.call_opportunity_neighbours'].value).toBeNull();
+        expect(alarmReachMetrics(observer)['eval.call_opportunity_neighbours']?.value).toBeNull();
         intent.threatProx[a] = 0.5;
         sampleGroups(intent, world);
         expect(alarmReachMetrics(observer)['eval.call_opportunity_neighbours']).toEqual({ value: 2 });

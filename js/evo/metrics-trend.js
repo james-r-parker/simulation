@@ -12,7 +12,7 @@ const END_WINDOWS = 2;
 /**
  * @typedef {object} Trend a trend: its metric name, its share over two window deltas, the `WINDOW_FIELDS` columns
  *   those are, and the `null` reason when a compared window lacks the denominator
- * @property {string} name the metric
+ * @property {import('./metric-registry/index.js').MetricName} name the metric
  * @property {(a: number, b: number) => import('./metrics-stats.js').MetricResult} share the whole-run share formula
  * @property {[number, number]} columns the two `WINDOW_FIELDS` columns
  * @property {string} empty the reason
@@ -72,11 +72,11 @@ function trendOf(windows, trend) {
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the four trend metrics, keyed by name
+ * @returns {import('./metrics-stats.js').MetricRecord} the four trend metrics, keyed by name
  */
 export function trendMetrics(observer) {
     const { windows } = observer;
-    /** @type {Record<string, import('./metrics-stats.js').MetricResult>} */
+    /** @type {import('./metrics-stats.js').MetricRecord} */
     const out = {};
     if (!windowsComplete(windows)) {
         const reason =
@@ -91,9 +91,10 @@ export function trendMetrics(observer) {
     }
     const values = [];
     for (const trend of TRENDS) {
-        out[trend.name] = trendOf(windows, trend);
-        if (out[trend.name].value !== null) {
-            values.push(/** @type {number} */ (out[trend.name].value));
+        const result = trendOf(windows, trend);
+        out[trend.name] = result;
+        if (result.value !== null) {
+            values.push(result.value);
         }
     }
     out['eval.skill_trend'] = values.length > 0 ? ok(mean(values)) : none('every trend is null');

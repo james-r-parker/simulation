@@ -6,13 +6,13 @@ import { DEATH_CAUSE, EVENT_TYPE, createEventRing, pushEvent } from '../../js/si
 import { BIRTH_SOURCE } from '../../js/sim/hunter-ledger.js';
 import {
     AGE_BAND_NAMES,
-    AGE_DIRECTIONS,
     HUNTER_BIRTH_NAMES,
     ageMetrics,
     createAgeScene,
     noteAgeDeath,
     noteAgeKill,
 } from '../../js/evo/scene-hunter-age.js';
+import { directionOf, loose, namesOf } from './helpers/metric-registry.js';
 
 const J = 1000;
 
@@ -84,7 +84,7 @@ function naiveBandTicks(ages) {
 describe('the hunter age metrics', () => {
     it('are null with a reason on a fresh scene', () => {
         const m = ageMetrics(createAgeScene(J), worldWith([]));
-        expect(Object.keys(m).sort()).toEqual(Object.keys(AGE_DIRECTIONS).sort());
+        expect(Object.keys(m).sort()).toEqual(namesOf('js/evo/scene-hunter-age.js').sort());
         for (const [name, result] of Object.entries(m)) {
             expect(result.value, name).toBeNull();
             expect(result.reason, name).toBeTypeOf('string');
@@ -119,7 +119,10 @@ describe('the hunter age metrics', () => {
         const ticks = naiveBandTicks([...deaths, ...alive]);
         const kills = [1, 2, 1];
         AGE_BAND_NAMES.forEach((name, i) => {
-            expect(m[`eval.hunter_kill_rate_by_age.${name}`].value).toBeCloseTo((kills[i] / ticks[i]) * 1000, 12);
+            expect(loose(m)[`eval.hunter_kill_rate_by_age.${name}`].value).toBeCloseTo(
+                (kills[i] / ticks[i]) * 1000,
+                12,
+            );
         });
     });
 
@@ -136,9 +139,9 @@ describe('the hunter age metrics', () => {
         noteAgeDeath(scene, deathRecord({ age: 1000, kills: 2, source: BIRTH_SOURCE.SPEC_FLIP }), 0);
         noteAgeDeath(scene, deathRecord({ age: 500, kills: 4, source: BIRTH_SOURCE.FLOOR }), 0);
         const m = ageMetrics(scene, worldWith([{ age: 3000, kills: 1, source: BIRTH_SOURCE.SPEC_FLIP }]));
-        expect(m['eval.hunter_kill_rate_by_source.spec-flip'].value).toBeCloseTo((3 / 4000) * 1000, 12);
-        expect(m['eval.hunter_kill_rate_by_source.floor'].value).toBeCloseTo((4 / 500) * 1000, 12);
-        expect(m['eval.hunter_kill_rate_by_source.mate-hunter-parent'].value).toBeNull();
+        expect(m['eval.hunter_kill_rate_by_source.spec-flip']?.value).toBeCloseTo((3 / 4000) * 1000, 12);
+        expect(m['eval.hunter_kill_rate_by_source.floor']?.value).toBeCloseTo((4 / 500) * 1000, 12);
+        expect(m['eval.hunter_kill_rate_by_source.mate-hunter-parent']?.value).toBeNull();
     });
 
     it('leaves an immigrant hunter out of the source rates and keeps it in the bands', () => {
@@ -146,20 +149,20 @@ describe('the hunter age metrics', () => {
         noteAgeDeath(scene, deathRecord({ age: 400, kills: 3, source: BIRTH_SOURCE.IMMIGRANT }), 0);
         const m = ageMetrics(scene, worldWith([]));
         for (const name of HUNTER_BIRTH_NAMES) {
-            expect(m[`eval.hunter_kill_rate_by_source.${name}`].value).toBeNull();
+            expect(loose(m)[`eval.hunter_kill_rate_by_source.${name}`].value).toBeNull();
         }
-        expect(m['eval.hunter_kill_rate_by_age.juvenile'].value).toBe(0);
+        expect(m['eval.hunter_kill_rate_by_age.juvenile']?.value).toBe(0);
     });
 
     it('ignores alive agents that cannot hunt', () => {
         const w = worldWith([{ age: 2000, kills: 5, source: BIRTH_SOURCE.INITIAL }]);
         w.spec[0] = 0;
-        expect(ageMetrics(createAgeScene(J), w)['eval.hunter_kill_rate_by_age.young'].value).toBeNull();
+        expect(ageMetrics(createAgeScene(J), w)['eval.hunter_kill_rate_by_age.young']?.value).toBeNull();
     });
 
     it('names the direction of every metric: only the juvenile death share is a verdict', () => {
-        expect(AGE_DIRECTIONS['eval.hunter_juvenile_death_share']).toBe('lower');
-        expect(AGE_DIRECTIONS['eval.hunter_first_kill_age']).toBe('watch');
+        expect(directionOf('eval.hunter_juvenile_death_share')).toBe('lower');
+        expect(directionOf('eval.hunter_first_kill_age')).toBe('watch');
     });
 });
 
@@ -167,9 +170,9 @@ describe('an alive hunter whose birth source has no name', () => {
     it('counts its age in the bands but not in a source', () => {
         const scene = createAgeScene(J);
         const m = ageMetrics(scene, worldWith([{ age: 500, kills: 3, source: BIRTH_SOURCE.IMMIGRANT }]));
-        expect(m['eval.hunter_kill_rate_by_age.juvenile'].value).toBe(0);
+        expect(m['eval.hunter_kill_rate_by_age.juvenile']?.value).toBe(0);
         for (const name of HUNTER_BIRTH_NAMES) {
-            expect(m[`eval.hunter_kill_rate_by_source.${name}`].value).toBeNull();
+            expect(loose(m)[`eval.hunter_kill_rate_by_source.${name}`].value).toBeNull();
         }
     });
 });

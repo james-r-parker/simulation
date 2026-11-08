@@ -4,8 +4,8 @@ import { createHerdScene, noteHerdDeath, trackHerd } from '../../js/evo/scene-he
 import { herdMetrics } from '../../js/evo/scene-herd-metrics.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import { metricDirection } from '../../js/evo/compare.js';
-import { SCENE_DIRECTIONS } from '../../js/evo/metrics-scenes.js';
-import { intendedDirection } from '../../scripts/lib/watch-intent.mjs';
+import { METRICS } from '../../js/evo/metric-registry/index.js';
+import { intendedOf } from './helpers/metric-registry.js';
 
 function sceneWorld() {
     return {
@@ -56,7 +56,7 @@ function emptyMetrics(scene) {
 
 describe('scene-herd detectors', () => {
     it('registers the three Phase 1 detector directions', () => {
-        const names = Object.keys(SCENE_DIRECTIONS);
+        const names = Object.keys(METRICS);
         expect(names).toContain('eval.trampled_share');
         expect(names).toContain('eval.dodge_skill');
         expect(names).toContain('eval.herd_grazed_share');
@@ -64,15 +64,15 @@ describe('scene-herd detectors', () => {
         expect(names).toContain('eval.herd_carcass_meal_share');
         expect(names).toContain('eval.herd_carcass_share.predator');
         expect(metricDirection('eval.trampled_share')).toBe('watch');
-        expect(intendedDirection('eval.trampled_share')).toBe('lower');
-        expect(intendedDirection('eval.trample_unavoidable_share')).toBe('lower');
-        expect(intendedDirection('eval.herd_carcass_share.predator')).toBe('lower');
+        expect(intendedOf('eval.trampled_share')).toBe('lower');
+        expect(intendedOf('eval.trample_unavoidable_share')).toBe('lower');
+        expect(intendedOf('eval.herd_carcass_share.predator')).toBe('lower');
         expect(names).toContain('eval.herd_follow_share');
         expect(names).toContain('eval.dung_food_share');
         expect(names).toContain('eval.herd_seeded_patches');
-        expect(intendedDirection('eval.herd_follow_share')).toBe('higher');
-        expect(intendedDirection('eval.dung_food_share')).toBe('higher');
-        expect(intendedDirection('eval.herd_seeded_patches')).toBe('higher');
+        expect(intendedOf('eval.herd_follow_share')).toBe('higher');
+        expect(intendedOf('eval.dung_food_share')).toBe('higher');
+        expect(intendedOf('eval.herd_seeded_patches')).toBe('higher');
     });
 
     it('counts a lane approach as clear when the blob leaves before contact', () => {
@@ -84,7 +84,7 @@ describe('scene-herd detectors', () => {
         world.y[0] = 200;
         trackHerd(scene, world);
         expect(scene.episodesClear).toBe(1);
-        expect(emptyMetrics(scene)['eval.dodge_skill'].value).toBe(1);
+        expect(emptyMetrics(scene)['eval.dodge_skill']?.value).toBe(1);
     });
 
     it('counts contact as a hit and uses only post-burn-in deaths for trample share', () => {
@@ -103,7 +103,7 @@ describe('scene-herd detectors', () => {
             herdId: 51,
         });
         expect(scene.episodesHit).toBe(1);
-        expect(emptyMetrics(scene)['eval.trampled_share'].value).toBe(1);
+        expect(emptyMetrics(scene)['eval.trampled_share']?.value).toBe(1);
     });
 
     it('closes a matching dodge episode when that blob is trampled', () => {
@@ -190,8 +190,8 @@ describe('scene-herd detectors', () => {
         const scene = createHerdScene(sceneWorld().config);
         const world = sceneWorld();
         trackHerd(scene, world);
-        expect(emptyMetrics(scene)['eval.herd_grazed_share'].value).toBeCloseTo(30 / 100);
-        expect(emptyMetrics(createHerdScene(sceneWorld().config))['eval.herd_grazed_share'].value).toBeNull();
+        expect(emptyMetrics(scene)['eval.herd_grazed_share']?.value).toBeCloseTo(30 / 100);
+        expect(emptyMetrics(createHerdScene(sceneWorld().config))['eval.herd_grazed_share']?.value).toBeNull();
     });
 
     it('records seeded stampede rates, herd checkpoints, crossings and recolonisations', () => {
@@ -209,10 +209,10 @@ describe('scene-herd detectors', () => {
         world.events.count = 0;
         trackHerd(scene, world);
         const metrics = emptyMetrics(scene);
-        expect(metrics['eval.herd_stampede_rate'].value).toBeGreaterThan(0);
-        expect(metrics['eval.herd_animals'].value).toBe(1);
-        expect(metrics['eval.herd_gap_crossings'].value).toBeGreaterThan(0);
-        expect(metrics['eval.herd_recolonisations'].value).toBe(1);
+        expect(metrics['eval.herd_stampede_rate']?.value).toBeGreaterThan(0);
+        expect(metrics['eval.herd_animals']?.value).toBe(1);
+        expect(metrics['eval.herd_gap_crossings']?.value).toBeGreaterThan(0);
+        expect(metrics['eval.herd_recolonisations']?.value).toBe(1);
     });
 
     it("separates herd carcass energy from each specialisation's total food intake", () => {
@@ -223,8 +223,8 @@ describe('scene-herd detectors', () => {
         world.herdCarcassEatenBySpec[1] = 20;
         trackHerd(scene, world);
         const metrics = emptyMetrics(scene);
-        expect(metrics['eval.herd_carcass_share.predator'].value).toBeCloseTo(0.25);
-        expect(metrics['eval.herd_carcass_meal_share'].value).toBe(1);
+        expect(metrics['eval.herd_carcass_share.predator']?.value).toBeCloseTo(0.25);
+        expect(metrics['eval.herd_carcass_meal_share']?.value).toBe(1);
     });
 
     it('holds herd-follow comparisons per patch across herded and bare checkpoints', () => {
@@ -244,7 +244,7 @@ describe('scene-herd detectors', () => {
         }
         expect(scene.followHerdedTicks[0]).toBe(3);
         expect(scene.followBareTicks[0]).toBe(3);
-        expect(emptyMetrics(scene)['eval.herd_follow_share'].value).toBe(1);
+        expect(emptyMetrics(scene)['eval.herd_follow_share']?.value).toBe(1);
     });
 
     it('counts dung-zone plant energy and herd-seeded patches after burn-in', () => {
@@ -258,7 +258,7 @@ describe('scene-herd detectors', () => {
         world.events.count = 1;
         trackHerd(scene, world);
         const metrics = emptyMetrics(scene);
-        expect(metrics['eval.dung_food_share'].value).toBeCloseTo(0.2);
-        expect(metrics['eval.herd_seeded_patches'].value).toBe(1000);
+        expect(metrics['eval.dung_food_share']?.value).toBeCloseTo(0.2);
+        expect(metrics['eval.herd_seeded_patches']?.value).toBe(1000);
     });
 });

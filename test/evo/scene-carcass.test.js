@@ -5,12 +5,15 @@ import { FOOD_KIND, FOOD_ORIGIN } from '../../js/sim/carcass.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { FOOD_GONE, removeFood } from '../../js/sim/world.js';
 import { trackCarcasses } from '../../js/evo/scene-carcass.js';
+import { herdMetrics } from '../../js/evo/scene-herd-metrics.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import { trackHerd } from '../../js/evo/scene-herd.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
-const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
+const read = (/** @type {any} */ r, /** @type {string} */ name) =>
+    loose(computeMetrics(r.observer, r.world))[`eval.${name}`];
 
 /** Puts a meat item in a food slot. */
 function meat(
@@ -56,6 +59,24 @@ describe('the carcass metrics', () => {
         const eaten = 100 + 100 * grazerShare;
         expect(read(r, 'carcass_meal_share').value).toBeCloseTo(eaten / (eaten + 70), 12);
         expect(read(r, 'carcass_hunter_share').value).toBeCloseTo(100 / eaten, 12);
+    });
+
+    it("have one producer: the reported shares are the herd producer's, which read the carcass scene", () => {
+        const r = observed();
+        const { world, observer } = r;
+        const hunter = addBlob(world, { x: 500, spec: world.config.specialisations.predator.index });
+        meat(world, 0, 500, 0);
+        world.tick = BURN_IN_TICKS + 1;
+        trackCarcasses(observer.scenes.carcass, observer, world);
+        removeFood(world, 0, FOOD_GONE.EATEN, 100);
+        world.foodEnergy[hunter] = 100;
+        world.tick = BURN_IN_TICKS + 2;
+        trackCarcasses(observer.scenes.carcass, observer, world);
+        observer.intent.run.huntBiteDeliberate = 25;
+        const herd = herdMetrics(observer.scenes.herd, observer.scenes.carcass, observer);
+        expect(herd['eval.carcass_meal_share']?.value).toBeGreaterThan(0);
+        expect(read(r, 'carcass_meal_share')).toEqual(herd['eval.carcass_meal_share']);
+        expect(read(r, 'carcass_hunter_share')).toEqual(herd['eval.carcass_hunter_share']);
     });
 
     it('give a carcass two agents overlap to the lower slot, and none to a carcass nobody gained from', () => {

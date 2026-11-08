@@ -128,7 +128,7 @@ export function sampleCondition(scene, world) {
 /**
  * @param {Record<string, any>} scene the condition scene
  * @param {Record<string, any>} observer the observer; its tracked slots are the living
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} `eval.condition_gait_shift`
+ * @returns {import('./metrics-stats.js').MetricRecord} `eval.condition_gait_shift`
  */
 export function conditionMetrics(scene, observer) {
     let sum = scene.shiftSum;

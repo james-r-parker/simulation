@@ -221,7 +221,7 @@ function socialReturn(scene) {
 
 /**
  * @param {Record<string, any>} scene the heritage scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the two metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the two metrics
  */
 export function heritageMetrics(scene) {
     return { 'eval.skill_heritability': heritability(scene), 'eval.social_return': socialReturn(scene) };

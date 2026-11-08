@@ -201,7 +201,7 @@ export function trackApproaches(scene, observer, world) {
 
 /**
  * @param {Record<string, any>} scene the approach scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the abort rate and the three chase shares
+ * @returns {import('./metrics-stats.js').MetricRecord} the abort rate and the three chase shares
  */
 export function approachMetrics(scene) {
     const ended = scene.committed + scene.aborted;

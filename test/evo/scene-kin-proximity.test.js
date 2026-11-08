@@ -3,12 +3,8 @@
 
 import { describe, expect, it } from 'vitest';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
-import {
-    KIN_DIRECTIONS,
-    createKinProximityScene,
-    kinProximityMetrics,
-    sampleKinProximity,
-} from '../../js/evo/scene-kin-proximity.js';
+import { createKinProximityScene, kinProximityMetrics, sampleKinProximity } from '../../js/evo/scene-kin-proximity.js';
+import { directionOf, namesOf } from './helpers/metric-registry.js';
 
 const CONFIG = { maxAgents: 16 };
 const T = Math.ceil(BURN_IN_TICKS / 1000) * 1000;
@@ -104,8 +100,8 @@ describe('the kin-proximity metrics', () => {
         sampleKinProximity(scene, w);
         const m = kinProximityMetrics(scene);
         // parents: 50, 150, 250 (to slot 0) -> mean 150; siblings: 150, 100, 150 -> mean 400 / 3
-        expect(m['eval.juvenile_parent_distance'].value).toBeCloseTo(150, 9);
-        expect(m['eval.juvenile_sibling_distance'].value).toBeCloseTo(400 / 3, 9);
+        expect(m['eval.juvenile_parent_distance']?.value).toBeCloseTo(150, 9);
+        expect(m['eval.juvenile_sibling_distance']?.value).toBeCloseTo(400 / 3, 9);
     });
 
     it('uses the one living parent when the other is dead', () => {
@@ -186,7 +182,9 @@ describe('the kin-proximity metrics', () => {
     });
 
     it('names three watch metrics', () => {
-        expect(Object.values(KIN_DIRECTIONS)).toEqual(['watch', 'watch', 'watch']);
-        expect(Object.keys(kinProximityMetrics(createKinProximityScene(CONFIG)))).toEqual(Object.keys(KIN_DIRECTIONS));
+        expect(namesOf('js/evo/scene-kin-proximity.js').map(directionOf)).toEqual(['watch', 'watch', 'watch']);
+        expect(Object.keys(kinProximityMetrics(createKinProximityScene(CONFIG))).sort()).toEqual(
+            namesOf('js/evo/scene-kin-proximity.js'),
+        );
     });
 });

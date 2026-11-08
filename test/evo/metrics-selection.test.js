@@ -4,6 +4,7 @@ import { computeMetrics } from '../../js/evo/metrics.js';
 import { metricDirection } from '../../js/evo/compare.js';
 import { MIN_CORRELATION_DEATHS, selectionMetrics } from '../../js/evo/metrics-selection.js';
 import { addCheckpoint, addDeath, bareObserver, EMPTY_WORLD } from './helpers/metrics-observer.js';
+import { loose } from './helpers/metric-registry.js';
 
 const NAMES = [
     'eval.offspring_per_life',
@@ -25,7 +26,7 @@ describe('selectionMetrics', () => {
         expect(m['eval.offspring_per_life']).toEqual({ value: null, reason: 'no completed life after burn-in' });
         expect(m['eval.archive_lineage_share']).toEqual({ value: null, reason: 'no archive' });
         expect(m['eval.kin_within_call_radius']).toEqual({ value: null, reason: 'no alarm call' });
-        expect(m['eval.fitness_lrs_corr'].value).toBeNull();
+        expect(m['eval.fitness_lrs_corr']?.value).toBeNull();
     });
 
     it('uses only lives that end at or after burn-in', () => {
@@ -50,9 +51,9 @@ describe('selectionMetrics', () => {
         for (let i = 0; i < MIN_CORRELATION_DEATHS - 1; i++) {
             addDeath(o, { ...LATE, children: i, fitness: i });
         }
-        expect(selectionMetrics(o)['eval.fitness_lrs_corr'].value).toBeNull();
+        expect(selectionMetrics(o)['eval.fitness_lrs_corr']?.value).toBeNull();
         addDeath(o, { ...LATE, children: 40, fitness: 40 });
-        expect(selectionMetrics(o)['eval.fitness_lrs_corr'].value).toBeCloseTo(1, 12);
+        expect(selectionMetrics(o)['eval.fitness_lrs_corr']?.value).toBeCloseTo(1, 12);
     });
 
     it('skips immature deaths and deaths with no fitness, and is null when children are constant', () => {
@@ -73,12 +74,12 @@ describe('selectionMetrics', () => {
         addCheckpoint(o, { tick: 100, population: 10, archiveAgents: 10 });
         addCheckpoint(o, { tick: BURN_IN_TICKS, population: 10, archiveAgents: 2 });
         addCheckpoint(o, { tick: BURN_IN_TICKS + 100, population: 30, archiveAgents: 12 });
-        expect(selectionMetrics(o)['eval.archive_lineage_share'].value).toBeNull();
+        expect(selectionMetrics(o)['eval.archive_lineage_share']?.value).toBeNull();
         o.archiveDraw = () => false;
         expect(selectionMetrics(o)['eval.archive_lineage_share']).toEqual({ value: 0.35 });
         const none = bareObserver();
         none.archiveDraw = () => false;
-        expect(selectionMetrics(none)['eval.archive_lineage_share'].reason).toBe('no checkpoint after burn-in');
+        expect(selectionMetrics(none)['eval.archive_lineage_share']?.reason).toBe('no checkpoint after burn-in');
     });
 
     it('averages the kin around each alarm caller', () => {
@@ -90,7 +91,7 @@ describe('selectionMetrics', () => {
     it('is merged into computeMetrics and is watch-only', () => {
         const m = computeMetrics(bareObserver(), EMPTY_WORLD);
         for (const name of NAMES) {
-            expect(m[name], name).toBeDefined();
+            expect(loose(m)[name], name).toBeDefined();
             expect(metricDirection(name)).toBe('watch');
         }
     });

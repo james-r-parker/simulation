@@ -2,7 +2,7 @@
 
 import { readDependsOn, readPriority, readStatus, readTitle, readValidated, UNBUILT } from './header.mjs';
 import { validateDeliveryRequirements, validateTaskTable } from './lint-tables.mjs';
-import { lintLineReferences, validateTargets } from './lint-text.mjs';
+import { lintLineReferences, validateTargetNames, validateTargets } from './lint-text.mjs';
 import { DesignDocError, toLines } from './markdown.mjs';
 
 /**
@@ -52,6 +52,7 @@ function lintPlan(lines, fileName, head) {
     if (!head.stub) {
         validateTaskTable(lines, fileName);
         validateTargets(lines, fileName);
+        validateTargetNames(lines, fileName);
     }
     validateDeliveryRequirements(lines, fileName, head.stub);
     if (!head.priority) {

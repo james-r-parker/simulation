@@ -153,7 +153,7 @@ function lineageLifespan(observer) {
 
 /**
  * @param {Record<string, any>} observer the observer
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the two lineage metrics, keyed by name
+ * @returns {import('./metrics-stats.js').MetricRecord} the two lineage metrics, keyed by name
  */
 export function lineageMetrics(observer) {
     return {

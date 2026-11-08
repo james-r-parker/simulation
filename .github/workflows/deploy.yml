@@ -1,14 +1,21 @@
 name: deploy
 
-# Interim pipeline (docs/designs/sim-notes.md, "Deploy on merge to main"): every green push to main goes straight to
-# production on Cloudflare Pages. deployment-and-community.md Phase 1 replaces it.
+# docs/designs/deployment-and-community.md, "Phase 1a - Release PR and deploy on release". Production on Cloudflare Pages
+# changes only when the release PR is merged: release-please.yml calls this workflow with the new tag. A push to main
+# deploys nothing. A manual run redeploys a tag, or the dispatched ref when no tag is given (a rollback).
 on:
-  workflow_run:
-    workflows: [check]
-    types: [completed]
-    branches: [main]
-  # A manual redeploy of main's HEAD.
+  workflow_call:
+    inputs:
+      tag:
+        description: The release tag to build and deploy
+        required: true
+        type: string
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to redeploy (empty - the dispatched ref)
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -20,25 +27,21 @@ concurrency:
 
 jobs:
   deploy:
-    # Only a successful check of a push to main (not of a pull request) deploys; a manual run always does.
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment:
       name: production
       url: https://matrix.dotnethelp.co.uk
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The commit check ran on; main's HEAD for a manual run.
-          ref: ${{ github.event.workflow_run.head_sha || 'main' }}
+          # The tagged commit of the release; the dispatched commit for a manual run without a tag.
+          ref: ${{ inputs.tag || github.sha }}
+          persist-credentials: false
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
-          cache: npm
 
       - name: Install
         run: npm ci

@@ -193,7 +193,6 @@ function applyBite(world, biter, victim) {
     }
     gainTemperature(world, biter, (config.temperatureGainEat * world.transferGained) / config.foodEnergy);
     const paid = removeEnergy(world, biter, kick, LOSS_CAUSE.COST);
-    noteBiteLedger(world, biter, { gained, fatal, kick: paid });
     noteReward(world, biter, fatal ? REWARD_SOURCE.KILL : REWARD_SOURCE.BITE, gained);
     world.lastLoss[victim] = LOSS_CAUSE.BITE;
     const biterId = world.genomeId[biter];
@@ -203,6 +202,7 @@ function applyBite(world, biter, victim) {
     }
     world.lastBiter[victim] = biterId;
     world.lastBiteTick[victim] = world.tick;
+    noteBiteLedger(world, biter, { gained, fatal, kick: paid, victim });
     world.bittenTimer[victim] = 0;
     depositPheromone(world, world.attack, x[biter], y[biter]);
     depositPheromone(world, world.danger, x[victim], y[victim]);

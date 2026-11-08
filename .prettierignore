@@ -1,5 +1,7 @@
 # Generated
 docs/designs/README.md
+# Written by Release Please on its release PR
+CHANGELOG.md
 package-lock.json
 dist/
 test/fixtures/

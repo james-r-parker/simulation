@@ -60,7 +60,7 @@ function lift(precise, base, calls, reason) {
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} results keyed by metric name
+ * @returns {import('./metrics-stats.js').MetricRecord} results keyed by metric name
  */
 export function intentMetrics(observer) {
     const { intent, combat, agentTicks } = observer;

@@ -9,8 +9,10 @@ import { EVENT_TYPE } from '../../js/sim/events.js';
 import { HEARD_STRIDE } from '../../js/sim/world.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { nextTick, observed, pushCall } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
-const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
+const read = (/** @type {any} */ r, /** @type {string} */ name) =>
+    loose(computeMetrics(r.observer, r.world))[`eval.${name}`];
 
 /** A world with a caller at (500, 500), two prey hearers, one hunter hearer, one out of range and one that is deaf. */
 function scene() {

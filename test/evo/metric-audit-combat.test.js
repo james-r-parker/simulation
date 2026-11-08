@@ -12,6 +12,7 @@ import { ESCAPE_TICKS, ALARM_RESPONSE_TICKS } from '../../js/evo/observer-combat
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { observe } from '../../js/evo/observer.js';
 import { addBorn, nextTick, observed, pushCall, pushDied } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const FORAGER = 0;
 const PREDATOR = 1;
@@ -39,7 +40,7 @@ function ticks({ world, observer }, from, to, onTick = () => {}) {
  * @returns {import('../../js/evo/metrics-stats.js').MetricResult} the metric
  */
 function metric({ world, observer }, name) {
-    return computeMetrics(observer, world)[`eval.${name}`];
+    return loose(computeMetrics(observer, world))[`eval.${name}`];
 }
 
 describe('audit: eval.catch_rate', () => {

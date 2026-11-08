@@ -170,7 +170,7 @@ function slopeOf(fit) {
 
 /**
  * @param {Record<string, any>} scene the scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the four contagion metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the four contagion metrics
  */
 export function diseaseMetrics(scene) {
     if (!scene.on) {

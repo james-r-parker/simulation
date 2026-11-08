@@ -3,7 +3,7 @@ import { FOOD_KIND } from '../sim/carcass.js';
 import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { FLORA_NAMES } from '../sim/config-flora.js';
 import { BURN_IN_TICKS } from './burn-in.js';
-import { none, ok } from './metrics-stats.js';
+import { bySuffix, none, ok } from './metrics-stats.js';
 
 const SEASONS = 4;
 
@@ -159,7 +159,7 @@ function sampleSeedBankOccupancy(scene, world) {
 
 /**
  * @param {ReturnType<typeof createFloraScene>} scene the scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} patch turnover and seed-bank persistence
+ * @returns {import('./metrics-stats.js').MetricRecord} patch turnover and seed-bank persistence
  */
 function patchPersistenceMetrics(scene) {
     return {
@@ -276,13 +276,12 @@ function dietShift(scene, sums) {
 
 /**
  * @param {ReturnType<typeof createFloraScene>} scene the scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} species shares and seasonal diet shift
+ * @returns {import('./metrics-stats.js').MetricRecord} species shares and seasonal diet shift
  */
 export function floraMetrics(scene) {
     const sums = totals(scene);
     const total = sums.reduce((sum, n) => sum + n, 0);
-    /** @type {Record<string, import('./metrics-stats.js').MetricResult>} */
-    const result = {
+    return {
         'eval.seasonal_diet_shift': dietShift(scene, sums),
         'eval.pollination_rate':
             scene.ticks > 0 ? ok((1000 * scene.pollinations) / scene.ticks) : none('no observed ticks after burn-in'),
@@ -300,14 +299,12 @@ export function floraMetrics(scene) {
         'eval.sick_share':
             scene.agentTicks > 0 ? ok(scene.sickTicks / scene.agentTicks) : none('no alive agent-ticks after burn-in'),
         ...patchPersistenceMetrics(scene),
+        ...bySuffix('eval.food_species_share', FLORA_NAMES, (species) => {
+            let energy = 0;
+            for (let season = 0; season < SEASONS; season++) {
+                energy += scene.energy[season * 6 + species];
+            }
+            return total > 0 ? ok(energy / total) : none('no plant meals after burn-in');
+        }),
     };
-    for (let species = 0; species < FLORA_NAMES.length; species++) {
-        let energy = 0;
-        for (let season = 0; season < SEASONS; season++) {
-            energy += scene.energy[season * 6 + species];
-        }
-        result[`eval.food_species_share.${FLORA_NAMES[species]}`] =
-            total > 0 ? ok(energy / total) : none('no plant meals after burn-in');
-    }
-    return result;
 }

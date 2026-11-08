@@ -6,6 +6,7 @@ import { combatMetrics } from '../../js/evo/metrics-combat.js';
 import { metricDirection } from '../../js/evo/compare.js';
 import { bareObserver, EMPTY_WORLD } from './helpers/metrics-observer.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const NAMES = [
     'eval.catch_rate',
@@ -49,13 +50,13 @@ describe('combatMetrics', () => {
     it('gives a reason when alarms were called but none had a matched hearer', () => {
         const o = bareObserver();
         o.combat.alarm.calls = 2;
-        expect(combatMetrics(o)['eval.alarm_response'].reason).toMatch(/matched control/);
+        expect(combatMetrics(o)['eval.alarm_response']?.reason).toMatch(/matched control/);
     });
 
     it('is merged into computeMetrics and ranked higher-is-better by eval:compare', () => {
         const m = computeMetrics(bareObserver(), EMPTY_WORLD);
         for (const name of NAMES) {
-            expect(m[name], name).toBeDefined();
+            expect(loose(m)[name], name).toBeDefined();
             expect(metricDirection(name)).toBe('higher');
         }
     });

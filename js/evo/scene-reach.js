@@ -93,7 +93,7 @@ function medianDistance(scene) {
 
 /**
  * @param {Record<string, any>} scene the reach scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the three reach metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the three reach metrics
  */
 export function reachMetrics(scene) {
     const few = `fewer than ${MIN_REACH_SAMPLES} prey samples after burn-in`;

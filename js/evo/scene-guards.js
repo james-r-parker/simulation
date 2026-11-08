@@ -36,15 +36,6 @@ export const HUNTER_CRASH = 0.5;
 /** The most checkpoints an episode may span, from the trough to the hunter crash. */
 export const BOOM_BUST_WINDOW = 20;
 
-/** The direction of each metric of this module. */
-export const GUARD_DIRECTIONS = Object.freeze({
-    'eval.prey_extinctions': 'lower',
-    'eval.boom_bust_count': 'lower',
-});
-
-/** The direction of the summer minimum. */
-export const SUMMER_DIRECTIONS = Object.freeze({ 'eval.prey_summer_min': 'higher' });
-
 /** The season index of summer in a year of four. */
 const SUMMER = 1;
 
@@ -201,7 +192,7 @@ export function boomBustCount(hunters, prey) {
 
 /**
  * @param {Record<string, any>} scene the guard scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the extinction and boom-bust counts
+ * @returns {import('./metrics-stats.js').MetricRecord} the extinction and boom-bust counts
  */
 export function guardMetrics(scene) {
     if (scene.rows === 0) {
@@ -218,7 +209,7 @@ export function guardMetrics(scene) {
 
 /**
  * @param {Record<string, any>} scene the guard scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the lowest prey count at a summer checkpoint
+ * @returns {import('./metrics-stats.js').MetricRecord} the lowest prey count at a summer checkpoint
  */
 export function summerMetrics(scene) {
     if (scene.summerMin === Infinity) {

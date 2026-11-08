@@ -9,6 +9,7 @@ import { checkpoint, observe } from '../../js/evo/observer.js';
 import { drainObserverLogs } from '../../js/worker/observer-drain.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { addBorn, nextTick, observed, pushBorn, pushDied } from './helpers/observer-world.js';
+import { resultOf } from './helpers/metric-registry.js';
 
 const PATCHES = { floraPatchMax: 3, foodPatchCount: 3, foodPatchRadius: 100, maturityTicks: 50 };
 const CENTRES = [
@@ -60,7 +61,7 @@ function die({ world, observer }, tick, slot, ageTicks) {
     observe(observer, world);
 }
 
-const index = (/** @type {any} */ r) => computeMetrics(r.observer, r.world)['eval.migration_index'];
+const index = (/** @type {any} */ r) => resultOf(computeMetrics(r.observer, r.world), 'eval.migration_index');
 
 describe('eval.migration_index', () => {
     it('is the mean over mature deaths of distinct patches visited over foodPatchCount', () => {
@@ -171,7 +172,7 @@ function checkpointSpecs({ world, observer }, tick, specs) {
 
 describe('eval.predator_presence', () => {
     const { predator, forager } = observed().world.config.specialisations;
-    const presence = (/** @type {any} */ r) => computeMetrics(r.observer, r.world)['eval.predator_presence'];
+    const presence = (/** @type {any} */ r) => resultOf(computeMetrics(r.observer, r.world), 'eval.predator_presence');
 
     it('is the share of checkpoints from tick 10000 with an alive agent whose spec has canHunt', () => {
         const r = observed();
@@ -234,7 +235,7 @@ function feedWindows({ world, observer }, w) {
 }
 
 describe('eval.pred_prey_lag_corr', () => {
-    const lag = (/** @type {any} */ r) => computeMetrics(r.observer, r.world)['eval.pred_prey_lag_corr'];
+    const lag = (/** @type {any} */ r) => resultOf(computeMetrics(r.observer, r.world), 'eval.pred_prey_lag_corr');
     // Catch rate in window k is kills_k per 1000 hunter-ticks; evasion in window k is responded_k / 10.
     const fill = (/** @type {number} */ v) => Array(8).fill(v);
 
@@ -309,7 +310,7 @@ describe('eval.pred_prey_lag_corr', () => {
             escaped: fill(10),
         });
         const before = lag(r);
-        expect(before.value).not.toBeNull();
+        expect(before?.value).not.toBeNull();
         drainObserverLogs(r.observer);
         expect(lag(r)).toEqual(before);
     });

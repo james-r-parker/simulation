@@ -38,7 +38,7 @@ const CHECKPOINT_TICKS = 1000;
  * @property {number} [ticks] ticks to run (default `EPISODE_TICKS`)
  * @property {number} [offerFromTick] the first death tick offered (default `OFFER_FROM_TICK`)
  * @property {string} [policy] a registered policy that keeps an archive (default `LIVE_POLICY`)
- * @property {readonly string[]} [metrics] eval metric names to return (a checkpoint's eval episode); default none
+ * @property {readonly import('./metric-registry/index.js').MetricName[]} [metrics] eval metric names to return (a checkpoint's eval episode); default none
  */
 
 /**
@@ -108,7 +108,7 @@ function sum(values) {
 }
 
 /**
- * @param {readonly string[]} names the metrics to read
+ * @param {readonly import('./metric-registry/index.js').MetricName[]} names the metrics to read
  * @param {{observer: Record<string, any>, world: Record<string, any>, policy: Record<string, any>}} run the finished run
  * @returns {Record<string, number | null>} each metric's value (null when it has none)
  */

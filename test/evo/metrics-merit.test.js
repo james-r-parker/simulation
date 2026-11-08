@@ -11,11 +11,13 @@ import { TALLY } from '../../js/sim/merit-state.js';
 import { SEX } from '../../js/sim/sex.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { addBorn, nextTick, observed, pushBorn, pushDied } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const ON = { meritHalfLife: 0, maxAgents: 40 };
 const NO_AGENTS = 'no checkpoint after burn-in with an alive agent';
 
-const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
+const read = (/** @type {any} */ r, /** @type {string} */ name) =>
+    loose(computeMetrics(r.observer, r.world))[`eval.${name}`];
 
 /**
  * Adds an alive agent holding `merit` stamped at the world's tick.

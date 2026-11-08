@@ -8,6 +8,7 @@ import { refugeCentres } from '../../js/evo/scene-terrain.js';
 import { ringRadius } from '../../js/sim/terrain.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const T0 = 10000;
 const BASINS = { worldWidth: 4000, worldHeight: 2000, refugeCount: 2, wallGaps: 1, maxAgents: 256 };
@@ -35,7 +36,8 @@ function sample(/** @type {any} */ r, /** @type {number} */ tick = T0) {
     sampleReach(r.observer.scenes.reach, r.observer, r.world);
 }
 
-const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
+const read = (/** @type {any} */ r, /** @type {string} */ name) =>
+    loose(computeMetrics(r.observer, r.world))[`eval.${name}`];
 
 describe('eval.prey_cover_distance and eval.prey_within_dash_share', () => {
     it('reads a known distance, its dash share and zero inside a ring', () => {
