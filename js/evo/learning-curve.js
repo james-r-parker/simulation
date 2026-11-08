@@ -17,6 +17,9 @@ export const CURVE_METRICS = Object.freeze([
     'eval.hunter_income_share.herd',
     'eval.hunter_kill_rate_by_source.mate-hunter-parent',
     'eval.hunter_kill_rate_by_source.split-hunter-parent',
+    'eval.bite_on_prey',
+    'eval.bite_off_kin',
+    'eval.bite_off_other',
 ]);
 /** Checkpoints a series is read over by `findPlateau`. */
 export const PLATEAU_WINDOW = 3;
@@ -24,13 +27,15 @@ export const PLATEAU_WINDOW = 3;
 export const PLATEAU_RISE = 0.05;
 /**
  * The series `findPlateau` reads, by their key in a curve row, each with the direction that is progress: 1 when it should
- * rise, -1 when it should fall (a hunter that kills nothing is the failure, so its share falling is learning). The mean
- * drill edge stays a column of the curve and is not read here.
+ * rise, -1 when it should fall (a hunter that kills nothing is the failure, so its share falling is learning; a hunter that
+ * bites more often with prey in its jaws is learning the bite). The mean drill edge stays a column of the curve and is not
+ * read here.
  */
 export const PLATEAU_SERIES = Object.freeze([
     Object.freeze({ key: 'qdScore', direction: 1 }),
     Object.freeze({ key: 'eval.food_energy_per_1k', direction: 1 }),
     Object.freeze({ key: 'eval.hunter_zero_kill_share', direction: -1 }),
+    Object.freeze({ key: 'eval.bite_on_prey', direction: 1 }),
 ]);
 
 /**
@@ -124,8 +129,8 @@ function flatAfter(points, i, { key, direction }) {
 /**
  * @param {Record<string, any>[]} points the curve rows in order
  * @returns {{index: number, generation: number} | null} the first checkpoint after which `qdScore` and
- *   `eval.food_energy_per_1k` each rise, and `eval.hunter_zero_kill_share` falls, by less than 5% of its value over the
- *   next 3 checkpoints; null for "no plateau yet" (also when fewer than 4 checkpoints exist or a series has no value)
+ *   `eval.food_energy_per_1k` and `eval.bite_on_prey` each rise, and `eval.hunter_zero_kill_share` falls, by less than 5% of
+ *   its value over the next 3 checkpoints; null for "no plateau yet" (also when fewer than 4 checkpoints exist or a series has no value)
  */
 export function findPlateau(points) {
     for (let i = 0; i + PLATEAU_WINDOW < points.length; i++) {

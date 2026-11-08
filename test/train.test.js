@@ -93,11 +93,19 @@ describe('train:curve', () => {
             drillEdge: 0.2,
             'eval.food_energy_per_1k': 100,
             'eval.hunter_zero_kill_share': 0.5,
+            'eval.bite_on_prey': 0.4,
         });
         writeFileSync(join(dir, 'curve.jsonl'), [10, 20, 30, 40, 50].map((g) => JSON.stringify(row(g))).join('\n'));
         const lines = formatCurve(readCurve(dir));
         expect(lines[0]).toMatch(/^gen\s+stage\s+ticks/);
-        for (const column of ['zero_kill_share', 'income.kill', 'income.carcass', 'kills/1k.mate-hunter-parent']) {
+        for (const column of [
+            'zero_kill_share',
+            'income.kill',
+            'income.carcass',
+            'kills/1k.mate-hunter-parent',
+            'bite_on_prey',
+            'bite_off_kin',
+        ]) {
             expect(lines[0]).toContain(column);
         }
         expect(lines).toHaveLength(7);

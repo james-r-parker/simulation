@@ -11,15 +11,17 @@ const layout = brainLayout(createConfig({ rayCount: 2, brainHidden: 4 }));
  * @param {number[]} food food energy per checkpoint
  * @param {(number | null)[]} zero hunter zero-kill share per checkpoint
  * @param {(number | null)[]} [edge] mean drill edge per checkpoint (a column only; `findPlateau` ignores it)
+ * @param {(number | null)[]} [bite] bite-on-prey share per checkpoint (default a flat 0.5)
  * @returns {Record<string, any>[]} curve rows, generation 10 apart
  */
-function curve(qd, food, zero, edge = []) {
+function curve(qd, food, zero, edge = [], bite = qd.map(() => 0.5)) {
     return qd.map((q, i) => ({
         generation: 10 * (i + 1),
         qdScore: q,
         'eval.food_energy_per_1k': food[i],
         'eval.hunter_zero_kill_share': zero[i],
         drillEdge: edge[i] ?? null,
+        'eval.bite_on_prey': bite[i],
     }));
 }
 
@@ -45,6 +47,19 @@ describe('findPlateau', () => {
         const flat = [10, 10, 10, 10, 10];
         const edge = [0.1, 0.2, 0.3, 0.4, 0.5];
         expect(findPlateau(curve(flat, flat, [0.8, 0.8, 0.8, 0.8, 0.8], edge))).toEqual({ index: 0, generation: 10 });
+    });
+
+    it('is no plateau while the bite-on-prey share still rises, and is one once it is flat', () => {
+        const flat = [10, 10, 10, 10, 10];
+        const zero = [0.8, 0.8, 0.8, 0.8, 0.8];
+        expect(findPlateau(curve(flat, flat, zero, [], [0.2, 0.3, 0.4, 0.5, 0.6]))).toBeNull();
+        const seven = [10, 10, 10, 10, 10, 10, 10];
+        const settles = [0.2, 0.4, 0.6, 0.6, 0.6, 0.6, 0.6];
+        expect(findPlateau(curve(seven, seven, seven, [], settles))).toEqual({ index: 2, generation: 30 });
+        expect(findPlateau(curve(flat, flat, zero, [], [null, 0.5, 0.5, 0.5, 0.5]))).toEqual({
+            index: 1,
+            generation: 20,
+        });
     });
 
     it('counts a zero-kill share that rises as flat (no progress), not as a plateau-breaker', () => {
@@ -115,6 +130,9 @@ describe('curvePoint', () => {
             'eval.escape_rate',
             'eval.food_energy_per_1k',
             'eval.births_per_1k',
+            'eval.bite_on_prey',
+            'eval.bite_off_kin',
+            'eval.bite_off_other',
         ];
         expect([...CURVE_METRICS].sort()).toEqual([...names].sort());
         const metrics = Object.fromEntries(names.map((name, i) => [name, i + 1]));
