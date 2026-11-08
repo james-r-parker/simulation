@@ -123,6 +123,15 @@ export function runBench(args) {
 }
 
 /**
+ * Pure, so both precisions are tested on fixed values rather than on whatever the timed run measured.
+ * @param {Record<string, number>} metrics metric name -> value
+ * @returns {string[]} one `name value` line per metric: three decimals under 10, one from 10
+ */
+export function formatMetrics(metrics) {
+    return Object.entries(metrics).map(([name, value]) => `${name} ${value.toFixed(value < 10 ? 3 : 1)}`);
+}
+
+/**
  * @param {string[]} argv command-line arguments after the script name
  * @param {(line: string) => void} [print] where the metrics go
  * @returns {Promise<number>} the process exit code
@@ -131,13 +140,8 @@ export function main(argv, print = console.log) {
     return exitCodeOf(async () => {
         const args = parseArgs(argv);
         const metrics = runBench(args);
-        if (args.json) {
-            print(JSON.stringify(metrics, null, 2));
-        } else {
-            for (const [name, value] of Object.entries(metrics)) {
-                print(`${name} ${value.toFixed(value < 10 ? 3 : 1)}`);
-            }
-        }
+        const lines = args.json ? [JSON.stringify(metrics, null, 2)] : formatMetrics(metrics);
+        lines.forEach((line) => print(line));
     });
 }
 

@@ -2515,3 +2515,9 @@ before and after. `npm run drill` on four fresh smoke champions (4 generations, 
 
 - **Reading:** kill energy fell by a quarter and moved to bite gain, as expected when a non-deliberate fatal bite is no longer a kill; kills per life rose because a deliberate fatal bite now counts. 16 seeds is under the 32 the doc asks of a verdict, so only the shares with intervals clear of 0 are signals.
 - **Replay check:** `npm run replay -- --seed 1 --ticks 20000 --level debug --policy map-elites-v6`: 57 `HunterLedger` records, 11 with kills, none with kill energy above 0 and 0 kills.
+
+### 2026-11-08 - The scripts branch ratchet failed on measured speeds, not on test order
+
+- **Symptom:** `ci/release-please` failed `ratchet` with scripts branches at 89.22% against a baseline of 89.32%, then passed on a rerun. The test order was the suspect.
+- **Found:** coverage-final.json from the coverage pass under `TEST_SEED` 5268, 1, 2 and 3 (on `a0133a42`) differs in exactly two scripts branches, and seed 1 reproduces 89.22%. Both pick a side from a timed result, so they move with machine load, whatever the order: `main` in `scripts/bench-reflex.mjs` printed `value.toFixed(value < 10 ? 3 : 1)` from a real bench, and its three-decimal side ran only when `bench.reflex_ms_per_genome` came in under 10 ms (seed 1 ran at load 10 under coverage); `formatCompare` in `scripts/lib/micro-bench.mjs` reached the `''` side of `row.change >= 0 ? '+' : ''` only when a real timed compare in a slow test came out slower.
+- **Fix:** the bench-reflex formatting is the pure `formatMetrics`, and both functions are tested on fixed values for both sides. A branch chosen by a timing, a load or a clock in a script needs a unit test with fixed inputs; a test that runs the real measurement covers it only by chance. To find such a branch, diff `coverage-final.json` (`--coverage.reporter=json`) from a few `TEST_SEED` runs.
