@@ -78,6 +78,26 @@ describe('conventions flag ledger', { timeout: scaleTimeout(30_000) }, () => {
     });
 });
 
+describe('conventions metric names', { timeout: scaleTimeout(30_000) }, () => {
+    const STUB = 'scripts/check-metric-names.mjs';
+
+    it('reports each line the name check prints as a violation', () => {
+        const out = conventions({
+            [STUB]: "console.log('js/a.js:3: eval.nope is not a registered metric');\nprocess.exitCode = 1;\n",
+        });
+        expect(out).toContain('metric-names: js/a.js:3: eval.nope is not a registered metric');
+    });
+
+    it('reports a check that fails without printing anything', () => {
+        const out = conventions({ [STUB]: 'process.exitCode = 3;\n' });
+        expect(out).toContain('metric-names: scripts/check-metric-names.mjs exited 3 with no output');
+    });
+
+    it('stays quiet when the check passes', () => {
+        expect(conventions({ [STUB]: '' })).not.toContain('metric-names');
+    });
+});
+
 describe('conventions legacy guard', { timeout: scaleTimeout(30_000) }, () => {
     it('flags a file directly under js/ but not one in a module directory', () => {
         expect(conventions({ 'js/game.js': 'x\n' })).toContain('js/game.js: sits directly under js/');

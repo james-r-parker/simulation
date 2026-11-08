@@ -3,6 +3,7 @@
 
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { isRegistered, LET_THROUGH, targetUses } from '../lib/metric-names.mjs';
 import { DesignDocError, fail, MARKDOWN_LINK, unfenced } from './markdown.mjs';
 
 const LINE_REFERENCE = /\b[\w./-]+\.(?:js|mjs|cjs|ts|md|json|html|css|sh|wgsl|toml|yml|yaml)(?::\d+|#L\d+)\b/;
@@ -59,6 +60,25 @@ export function validateTargets(lines, fileName) {
         if (!built && count !== 1) {
             throw new DesignDocError(
                 `${fileName}: unbuilt Phase ${id} has ${count} **Targets:** lines; it needs exactly one under its heading. See docs/designs/STYLE.md.`,
+            );
+        }
+    }
+}
+
+/**
+ * Every `eval.` name on the `**Targets:**` line of an unbuilt phase is in the metric registry, or is the start of a name
+ * (`eval.family.*`): a Target the registry does not know cannot be measured (docs/designs/metric-trust.md).
+ * @param {string[]} lines
+ * @param {string} fileName
+ * @param {Parameters<typeof isRegistered>[1]} [metrics] the registry, default the real one
+ */
+export function validateTargetNames(lines, fileName, metrics) {
+    for (const use of targetUses(lines.join('\n'))) {
+        if (!isRegistered(use, metrics) && !Object.hasOwn(LET_THROUGH, use.name)) {
+            fail(
+                fileName,
+                use.line - 1,
+                `${use.name} is not a metric in js/evo/metric-registry/ - fix the name, or add the metric to the registry in the task that builds it.`,
             );
         }
     }

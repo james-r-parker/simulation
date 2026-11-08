@@ -113,6 +113,16 @@ if ((flag_status != 0)) && [[ -z "$flag_out" ]]; then
   fail "flag-ledger: scripts/check-flag-ledger.mjs exited $flag_status with no output"
 fi
 
+# Every `eval.` name in the code, the tests, the configs and the unbuilt phases' Targets is in the metric registry.
+names_out="$(node scripts/check-metric-names.mjs 2>&1)"
+names_status=$?
+while IFS= read -r line; do
+  [[ -n "$line" ]] && fail "metric-names: $line"
+done <<<"$names_out"
+if ((names_status != 0)) && [[ -z "$names_out" ]]; then
+  fail "metric-names: scripts/check-metric-names.mjs exited $names_status with no output"
+fi
+
 # The committed WASM kernels match their hash and their sources; without cargo the rebuild is skipped with a note.
 wasm_out="$(node scripts/check-wasm.mjs 2>&1)"
 wasm_status=$?

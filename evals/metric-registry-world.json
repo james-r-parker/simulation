@@ -1,0 +1,13 @@
+{
+  "worldWidth": 4800,
+  "worldHeight": 3200,
+  "initialAgents": 40,
+  "maxAgents": 80,
+  "minAgents": 0,
+  "maxFood": 60,
+  "initialFood": 60,
+  "wallGaps": 1,
+  "herdCount": 2,
+  "refugeCount": 2,
+  "coldMarginWidth": 200
+}
