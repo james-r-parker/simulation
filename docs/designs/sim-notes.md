@@ -2467,3 +2467,26 @@ before and after. `npm run drill` on four fresh smoke champions (4 generations, 
 | boom-damp  | margin-250-mate-500   | 4 of 8                               | 151                   | 4                   |
 
 - **Reading:** no arm beats the defaults on the proxy; a wider fixed `mateRange` does not lift the summer minimum, and spring 1.2 alone looked worse (2 of 8). This is 8 seeds on an older `main` (before the megafauna, keepers and WASM kernels), so it covers none of the T100 grid's arms: all seven stay in.
+
+### 2026-11-08 - The mating-edge screen: roaming does not lift the summer minimum (world-balance T100, T101, E145)
+
+- **Run:** `evals/screens/mating-edge.grid.json`, floor off, policy live (`map-elites-v6`), 16 seeds x 200000 ticks, on `e090f95e`, configHash `be4b83b3ae32b6b2` for the defaults; reports in `evals/screens/results/mating-edge/`. About 75 minutes on 30 workers.
+
+| Arm                  | Seeds at or above 100 through summer | `eval.prey_summer_min` mean (vs defaults, 95% interval) | Population mean | `eval.mating_share` | `eval.boom_bust_count` | `eval.basin_recolonisations` | Under 80 at the end |
+| -------------------- | ------------------------------------ | ------------------------------------------------------- | --------------- | ------------------- | ---------------------- | ---------------------------- | ------------------- |
+| defaults             | 7 of 16                              | 94                                                      | 211             | 0.40                | 0.06                   | 0.00                         | 9                   |
+| spring-1.2           | 3 of 16                              | 56 (-41%, -102 to +34)                                  | 136             | 0.37                | 0.13                   | 0.06                         | 11                  |
+| margin-25            | 10 of 16                             | 139 (+47%, -9 to +122)                                  | 241             | 0.42                | 0.13                   | 0.00                         | 6                   |
+| margin-100           | 8 of 16                              | 149 (+58%, -11 to +148)                                 | 230             | 0.43                | 0.13                   | 0.00                         | 8                   |
+| roam-3000            | 3 of 16                              | 57 (-40%, -102 to +22)                                  | 156             | 0.37                | 0.25                   | 0.06                         | 11                  |
+| roam-6000            | 4 of 16                              | 80 (-15%, -86 to +69)                                   | 201             | 0.40                | 0.19                   | 0.06                         | 12                  |
+| roam-3000-spring-1.2 | 5 of 16                              | 87 (-8%, -80 to +85)                                    | 183             | 0.38                | 0.06                   | 0.06                         | 11                  |
+
+- **`E-BC-2` is falsified.** The roaming arms were to be the only ones to lift the count, by at least 4 seeds; they read 3, 4 and 5 against the control's 7, and every summer-minimum interval holds 0. The control itself was below the predicted 9 to 11. A range that grows after a long stretch alone does not keep prey off the edge: the edge is not a range problem.
+- **The margin arms lead and are not a finalist.** Both sides of the default 50 rise (25 reads 10 of 16, 100 reads 8 of 16), the intervals hold 0, and E128 found 150 and 250 lost: a dose response that rises on both sides of the default reads as which seeds fall changing with any lever (E127), not as a lever. No arm goes to the floor-on check (T102).
+- **Spring 1.2 loses** on 16 seeds as it did on 8 in E128 (population mean -36%, interval -148 to -9).
+- **Next:** the roaming keys are deleted (T103). The edge is reached by another route, a refuge or density-dependent survival (E128's fallback), which [habitat-cover.md](habitat-cover.md) already plans as cover on the food-patch rims; the training.md Phase 3 gate stands.
+
+### 2026-11-08 - `npm run replay` defaults to the scripted policy, and does not take `live`
+
+- `scripts/replay.mjs` runs `baseline-v5` unless `--policy` is given, and its policy list is `baseline-v5` and `map-elites-v6` only: `--policy live` (the alias `npm run screen` and `npm run eval` accept, `LIVE_POLICY` in `js/evo/policies/index.js`) is refused. A replay meant to read the live world needs `--policy map-elites-v6`. Under `baseline-v5` the floor-off-looking collapse is the scripted policy's (seed 1 ends at 8 agents, 858 floor births in 200000 ticks).
