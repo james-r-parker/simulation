@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1 and 2 are built: `E137` and the combined run `E138` kept every mechanism but provisioning, which is deleted; the six kept switches are on by default and their flags deleted, goldens re-pinned in Node and Chromium (`rewardedHebb` was then deleted with its Rust and JS off paths in wasm-kernels.md Phase 1, so learning is always reward-gated); the `bench/baseline.json` re-record was made after the WASM kernels (T23, #342); remaining: the Phase 3 perf check (T25, the step is about 2.4 to 2.6 ms against the 3.32 ms budget) and the close (T26). Phase 4 (proposed, T27 to T29, 2026-11-07) freezes the bundle: no new keeper on survival alone, and a screen that removes the reward gating asks whether it does anything.
 **Validated:** edd4cd4b (2026-11-07)
-**Priority:** 5 - the adoption is built and what remains is small: the Phase 3 perf check and close, and the Phase 4 freeze with its reward-gating screen (review of 2026-11-07); it queues behind the bite diagnosis, the mating-edge screen and hunter-learning.md Phase 3, which build on the same evidence
+**Priority:** 6 - the adoption is built and what remains is small: the Phase 3 perf check and close, and the Phase 4 freeze with its reward-gating screen (review of 2026-11-07); it queues behind the bite diagnosis, the mating-edge screen and hunter-learning.md Phase 3, which build on the same evidence
 **Depends on:** [natural-selection.md](natural-selection.md), [refuge.md](refuge.md)
 
 The goal ([principles.md](../principles.md)) is a world that is interesting to watch. The user's rule (2026-11-06): **a realistic
