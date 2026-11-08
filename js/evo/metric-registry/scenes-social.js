@@ -11,6 +11,7 @@ export const SCENES_SOCIAL = {
         direction: 'higher',
         nullWhen: ['no basin held BASIN_MIN_ALIVE agents in the last quarter'],
         arithmetic: 'test/evo/scene-families.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
     'eval.basin_family_effective': entry('scenes-social', {
         module: 'js/evo/scene-families.js',
@@ -23,6 +24,7 @@ export const SCENES_SOCIAL = {
             'no basin held BASIN_MIN_ALIVE agents in the last quarter',
         ],
         arithmetic: 'test/evo/scene-families.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
     'eval.basin_spec_divergence': entry('scenes-social', {
         module: 'js/evo/scene-divergence.js',
@@ -36,6 +38,7 @@ export const SCENES_SOCIAL = {
             'no checkpoint in the last quarter had both basins at BASIN_MIN_ALIVE agents',
         ],
         arithmetic: 'test/evo/scene-divergence.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
     'eval.basin_cluster_divergence': entry('scenes-social', {
         module: 'js/evo/scene-divergence.js',
@@ -49,6 +52,7 @@ export const SCENES_SOCIAL = {
             'no checkpoint in the last quarter had both basins at BASIN_MIN_ALIVE agents',
         ],
         arithmetic: 'test/evo/scene-divergence.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
     'eval.basin_divergence': entry('scenes-social', {
         module: 'js/evo/scene-divergence.js',
@@ -62,6 +66,7 @@ export const SCENES_SOCIAL = {
             'no checkpoint in the last quarter had both basins at BASIN_MIN_ALIVE agents',
         ],
         arithmetic: 'test/evo/scene-divergence.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
     'eval.juvenile_parent_distance': entry('scenes-social', {
         module: 'js/evo/scene-kin-proximity.js',
@@ -72,6 +77,7 @@ export const SCENES_SOCIAL = {
         intended: 'higher',
         nullWhen: ['no juvenile hunter with a living parent and a living sibling at a checkpoint'],
         arithmetic: 'test/evo/scene-kin-proximity.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
     'eval.juvenile_sibling_distance': entry('scenes-social', {
         module: 'js/evo/scene-kin-proximity.js',
@@ -82,6 +88,7 @@ export const SCENES_SOCIAL = {
         intended: 'higher',
         nullWhen: ['no juvenile hunter with a living parent and a living sibling at a checkpoint'],
         arithmetic: 'test/evo/scene-kin-proximity.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
     'eval.juvenile_parent_pull': entry('scenes-social', {
         module: 'js/evo/scene-kin-proximity.js',
@@ -95,6 +102,7 @@ export const SCENES_SOCIAL = {
             'the juveniles stand on their parents',
         ],
         arithmetic: 'test/evo/scene-kin-proximity.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
     'eval.skill_heritability': entry('scenes-social', {
         module: 'js/evo/scene-heritage.js',
@@ -108,6 +116,7 @@ export const SCENES_SOCIAL = {
             'parent or child share is constant',
         ],
         arithmetic: 'test/evo/scene-heritage.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
     'eval.social_return': entry('scenes-social', {
         module: 'js/evo/scene-heritage.js',
@@ -119,6 +128,7 @@ export const SCENES_SOCIAL = {
         intended: 'higher',
         nullWhen: ['no age with both a credited and an uncredited mature death'],
         arithmetic: 'test/evo/scene-heritage.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
     'eval.mate_skill_gap': entry('scenes-social', {
         module: 'js/evo/scene-mate.js',
@@ -129,6 +139,7 @@ export const SCENES_SOCIAL = {
         intended: 'higher',
         nullWhen: ['no mating with a chosen mate after burn-in'],
         arithmetic: 'test/evo/scene-mate.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
     'eval.mate_hunter_lean': entry('scenes-social', {
         module: 'js/evo/scene-mate.js',
@@ -139,6 +150,7 @@ export const SCENES_SOCIAL = {
         intended: 'higher',
         nullWhen: ['no mating with a ready adult in view after burn-in'],
         arithmetic: 'test/evo/scene-mate.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
     'eval.niche_replacement': entry('scenes-social', {
         module: 'js/evo/scene-niche.js',
@@ -149,6 +161,7 @@ export const SCENES_SOCIAL = {
         intended: 'higher',
         nullWhen: ['no rare-niche lineage followed to a next checkpoint after burn-in'],
         arithmetic: 'test/evo/scene-niche.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
     'eval.style_separation': entry('scenes-social', {
         module: 'js/evo/style.js',
@@ -159,6 +172,7 @@ export const SCENES_SOCIAL = {
         intended: 'higher',
         nullWhen: ['no lineage with MIN_STYLE_DEATHS deaths after burn-in'],
         arithmetic: 'test/evo/style.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
     'eval.condition_gait_shift': entry('scenes-social', {
         module: 'js/evo/scene-condition.js',
@@ -169,6 +183,7 @@ export const SCENES_SOCIAL = {
         intended: 'higher',
         nullWhen: ['no agent sampled in both a neutral and a pregnant, cold or starving condition'],
         arithmetic: 'test/evo/scene-condition.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
     'eval.mother_wait_by_condition': entry('scenes-social', {
         module: 'js/evo/scene-spend.js',
@@ -179,6 +194,7 @@ export const SCENES_SOCIAL = {
         intended: 'higher',
         nullWhen: ['fewer than MIN_WAIT_PAIRS mother waits after burn-in'],
         arithmetic: 'test/evo/scene-spend.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
     'eval.childshare_by_condition': entry('scenes-social', {
         module: 'js/evo/scene-spend.js',
@@ -189,5 +205,6 @@ export const SCENES_SOCIAL = {
         intended: 'higher',
         nullWhen: ['no lineage with MIN_SLOPE_BIRTHS mate births after burn-in'],
         arithmetic: 'test/evo/scene-spend.test.js',
+        source: 'test/evo/metric-source-social.test.js',
     }),
 };
