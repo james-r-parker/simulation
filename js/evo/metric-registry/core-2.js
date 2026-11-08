@@ -52,6 +52,7 @@ export const CORE_2 = {
             'fewer than 4 compared windows have a hunter kill',
         ],
         arithmetic: 'test/evo/metrics-trend.test.js',
+        source: 'test/evo/metric-source-core-skill.test.js',
     }),
     'eval.evasion_trend': entry('core', {
         module: 'js/evo/metrics-trend.js',
@@ -66,6 +67,7 @@ export const CORE_2 = {
             'fewer than 4 compared windows have an escaped bite episode',
         ],
         arithmetic: 'test/evo/metrics-trend.test.js',
+        source: 'test/evo/metric-source-core-skill.test.js',
     }),
     'eval.skill_trend': entry('core', {
         module: 'js/evo/metrics-trend.js',
