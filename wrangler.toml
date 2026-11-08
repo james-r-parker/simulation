@@ -9,14 +9,13 @@ pages_build_output_dir = "dist"
 # Pages does not inherit bindings between environments, so the production set is the top level and the preview set is
 # repeated under [env.preview] with the `-preview` database.
 #
-# SETUP (user): the zero database ids below are placeholders. `npx wrangler d1 create blob-library` and
-# `npx wrangler d1 create blob-library-preview` print the real ids; paste them here. scripts/lib/deploy-plan.mjs
-# refuses to deploy while a placeholder id is in this file.
+# The database ids come from `npx wrangler d1 create blob-library` and `npx wrangler d1 create blob-library-preview`
+# (created 2026-11-08, region WEUR). scripts/lib/deploy-plan.mjs refuses to deploy while a placeholder id is in this file.
 
 [[d1_databases]]
 binding = "DB"
 database_name = "blob-library"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "fd4f11cc-2009-4f32-bc16-1103b9ebc85f"
 migrations_dir = "migrations"
 
 [env.preview]
@@ -24,7 +23,7 @@ migrations_dir = "migrations"
 [[env.preview.d1_databases]]
 binding = "DB"
 database_name = "blob-library-preview"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "0c502046-7aed-4383-93f4-c78dd45a7532"
 migrations_dir = "migrations"
 
 # PAGES_PROJECT is the Pages project's name; PAGES_SUBDOMAIN is the host label in `<branch>.<label>.pages.dev` (read-only
