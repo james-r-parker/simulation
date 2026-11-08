@@ -3,6 +3,6 @@
   "private": true,
   "description": "wrangler for the secret-holding deploy jobs; installed with npm ci --ignore-scripts and nothing else",
   "dependencies": {
-    "wrangler": "4.157.0"
+    "wrangler": "4.158.0"
   }
 }
