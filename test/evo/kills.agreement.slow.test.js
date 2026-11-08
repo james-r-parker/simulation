@@ -10,13 +10,14 @@ const TICKS = 4000;
 
 /**
  * @param {number} seed the world seed
- * @returns {{kills: number, mismatches: string[], events: number, ledger: number, observed: number}} the kills the sim
- *   counted, where it disagreed with the observer, and the kills the events, the ledger and the observer counted
+ * @returns {{kills: number, mismatches: string[], events: number, ledger: number, observed: number, positiveKillEnergyWithoutKill: number}}
+ *   the kills the sim counted, where it disagreed with the observer, and the kills the events, ledger and observer counted
  */
 function replay(seed) {
     let kills = 0;
     let events = 0;
     let retired = 0;
+    let positiveKillEnergyWithoutKill = 0;
     /** @type {string[]} */
     const mismatches = [];
     const run = playPredatorWorld(seed, TICKS, {
@@ -25,8 +26,14 @@ function replay(seed) {
             for (let i = 0; i < world.events.count; i++) {
                 events += d[i * EVENT_STRIDE] === EVENT_TYPE.HUNTER_KILL ? 1 : 0;
                 // A HunterLedger record holds `(kills * 8 + cause) * 8 + source` of a hunter that died.
-                retired +=
-                    d[i * EVENT_STRIDE] === EVENT_TYPE.HUNTER_LEDGER ? Math.floor(d[i * EVENT_STRIDE + 4] / 64) : 0;
+                if (d[i * EVENT_STRIDE] === EVENT_TYPE.HUNTER_LEDGER) {
+                    const offset = i * EVENT_STRIDE;
+                    const ledgerKills = Math.floor(d[offset + 4] / 64);
+                    retired += ledgerKills;
+                    if (d[offset + 9] > 0 && ledgerKills === 0) {
+                        positiveKillEnergyWithoutKill += 1;
+                    }
+                }
             }
             let total = 0;
             for (let slot = 0; slot < world.alive.length; slot++) {
@@ -49,7 +56,14 @@ function replay(seed) {
     for (let slot = 0; slot < world.alive.length; slot++) {
         living += world.alive[slot] === 1 ? world.ledgerKills[slot] : 0;
     }
-    return { kills, mismatches, events, ledger: retired + living, observed: observer.intent.run.huntKillsDeliberate };
+    return {
+        kills,
+        mismatches,
+        events,
+        ledger: retired + living,
+        observed: observer.intent.run.huntKillsDeliberate,
+        positiveKillEnergyWithoutKill,
+    };
 }
 
 describe('deliberateKills against the observer', () => {
@@ -65,6 +79,7 @@ describe('deliberateKills against the observer', () => {
                 named += result.events;
                 expect(result.ledger, `seed ${seed} ledger`).toBe(result.events);
                 expect(result.observed, `seed ${seed} observer`).toBe(result.events);
+                expect(result.positiveKillEnergyWithoutKill, `seed ${seed} kill energy`).toBe(0);
             }
             expect(kills).toBeGreaterThan(0);
             expect(named).toBeGreaterThan(0);
