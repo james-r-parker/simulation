@@ -12,6 +12,7 @@ export const WORLD = {
         intended: 'higher',
         nullWhen: ['no hunter births'],
         arithmetic: 'test/evo/scene-hunters.test.js',
+        source: 'test/evo/metric-source-world.test.js',
     }),
     'eval.hunter_birth_source_share.split-hunter-parent': entry('world', {
         module: 'js/evo/scene-hunters.js',
@@ -22,6 +23,7 @@ export const WORLD = {
         intended: 'higher',
         nullWhen: ['no hunter births'],
         arithmetic: 'test/evo/scene-hunters.test.js',
+        source: 'test/evo/metric-source-world.test.js',
     }),
     'eval.hunter_birth_source_share.spec-flip': entry('world', {
         module: 'js/evo/scene-hunters.js',
@@ -32,6 +34,7 @@ export const WORLD = {
         intended: 'higher',
         nullWhen: ['no hunter births'],
         arithmetic: 'test/evo/scene-hunters.test.js',
+        source: 'test/evo/metric-source-world.test.js',
     }),
     'eval.hunter_birth_source_share.floor': entry('world', {
         module: 'js/evo/scene-hunters.js',
@@ -42,6 +45,7 @@ export const WORLD = {
         intended: 'higher',
         nullWhen: ['no hunter births'],
         arithmetic: 'test/evo/scene-hunters.test.js',
+        source: 'test/evo/metric-source-world.test.js',
     }),
     'eval.hunter_birth_source_share.initial': entry('world', {
         module: 'js/evo/scene-hunters.js',
@@ -52,6 +56,7 @@ export const WORLD = {
         intended: 'higher',
         nullWhen: ['no hunter births'],
         arithmetic: '',
+        source: 'test/evo/metric-source-world.test.js',
     }),
     'eval.birth_source_share.split': entry('world', {
         module: 'js/evo/scene-births.js',
@@ -62,6 +67,7 @@ export const WORLD = {
         intended: 'higher',
         nullWhen: ['no birth after burn-in'],
         arithmetic: '',
+        source: 'test/evo/metric-source-world.test.js',
     }),
     'eval.birth_source_share.mate': entry('world', {
         module: 'js/evo/scene-births.js',
@@ -72,6 +78,7 @@ export const WORLD = {
         intended: 'higher',
         nullWhen: ['no birth after burn-in'],
         arithmetic: '',
+        source: 'test/evo/metric-source-world.test.js',
     }),
     'eval.birth_source_share.floor': entry('world', {
         module: 'js/evo/scene-births.js',
@@ -82,6 +89,7 @@ export const WORLD = {
         intended: 'higher',
         nullWhen: ['no birth after burn-in'],
         arithmetic: '',
+        source: 'test/evo/metric-source-world.test.js',
     }),
     'eval.birth_source_share.immigrant': entry('world', {
         module: 'js/evo/scene-births.js',
@@ -92,6 +100,8 @@ export const WORLD = {
         intended: 'higher',
         nullWhen: ['no birth after burn-in'],
         arithmetic: 'test/evo/metrics-rules.test.js',
+        deprecated:
+            'No config or step phase spawns BORN_CAUSE.IMMIGRANT births, so it always reads 0 on a real run; test/evo/metrics-rules.test.js pins its arithmetic.',
     }),
     'eval.proven_share': entry('world', {
         module: 'js/evo/scene-proof.js',
@@ -102,6 +112,7 @@ export const WORLD = {
         intended: 'higher',
         nullWhen: ['no death after burn-in'],
         arithmetic: 'test/evo/scene-proof.test.js',
+        source: 'test/evo/metric-source-world.test.js',
     }),
     'eval.established_share': entry('world', {
         module: 'js/evo/scene-proof.js',
@@ -112,6 +123,7 @@ export const WORLD = {
         intended: 'higher',
         nullWhen: ['no death after burn-in'],
         arithmetic: 'test/evo/scene-proof.test.js',
+        source: 'test/evo/metric-source-world.test.js',
     }),
     'eval.lineage_persistence': entry('world', {
         module: 'js/evo/scene-proof.js',
@@ -122,6 +134,7 @@ export const WORLD = {
         intended: 'higher',
         nullWhen: ['no established lineage at a winter start or in a hunted year after burn-in'],
         arithmetic: 'test/evo/scene-proof.test.js',
+        source: 'test/evo/metric-source-world.test.js',
     }),
     'eval.mean_fitness.forager': entry('world', {
         module: 'js/evo/metrics-fitness.js',
@@ -131,6 +144,7 @@ export const WORLD = {
         direction: 'higher',
         nullWhen: ['no fitness', 'no agents of forager'],
         arithmetic: 'test/evo/metrics-fitness.test.js',
+        source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.mean_fitness.predator': entry('world', {
         module: 'js/evo/metrics-fitness.js',
@@ -140,6 +154,7 @@ export const WORLD = {
         direction: 'higher',
         nullWhen: ['no fitness', 'no agents of predator'],
         arithmetic: 'test/evo/metric-audit-selection-fitness.test.js',
+        source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.mean_fitness.reproducer': entry('world', {
         module: 'js/evo/metrics-fitness.js',
@@ -149,6 +164,7 @@ export const WORLD = {
         direction: 'higher',
         nullWhen: ['no fitness', 'no agents of reproducer'],
         arithmetic: 'test/evo/metrics-fitness.test.js',
+        source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.mean_fitness.scout': entry('world', {
         module: 'js/evo/metrics-fitness.js',
@@ -158,6 +174,7 @@ export const WORLD = {
         direction: 'higher',
         nullWhen: ['no fitness', 'no agents of scout'],
         arithmetic: '',
+        source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.mean_fitness.defender': entry('world', {
         module: 'js/evo/metrics-fitness.js',
@@ -167,6 +184,7 @@ export const WORLD = {
         direction: 'higher',
         nullWhen: ['no fitness', 'no agents of defender'],
         arithmetic: 'test/evo/metrics.test.js',
+        source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.p90_fitness.forager': entry('world', {
         module: 'js/evo/metrics-fitness.js',
@@ -176,6 +194,7 @@ export const WORLD = {
         direction: 'higher',
         nullWhen: ['no fitness', 'no agents of forager'],
         arithmetic: 'test/evo/metrics-fitness.test.js',
+        source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.p90_fitness.predator': entry('world', {
         module: 'js/evo/metrics-fitness.js',
@@ -185,6 +204,7 @@ export const WORLD = {
         direction: 'higher',
         nullWhen: ['no fitness', 'no agents of predator'],
         arithmetic: 'test/evo/metrics-fitness.test.js',
+        source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.p90_fitness.reproducer': entry('world', {
         module: 'js/evo/metrics-fitness.js',
@@ -194,6 +214,7 @@ export const WORLD = {
         direction: 'higher',
         nullWhen: ['no fitness', 'no agents of reproducer'],
         arithmetic: '',
+        source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.p90_fitness.scout': entry('world', {
         module: 'js/evo/metrics-fitness.js',
@@ -203,6 +224,7 @@ export const WORLD = {
         direction: 'higher',
         nullWhen: ['no fitness', 'no agents of scout'],
         arithmetic: 'test/evo/metrics-fitness.test.js',
+        source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.p90_fitness.defender': entry('world', {
         module: 'js/evo/metrics-fitness.js',
@@ -212,6 +234,7 @@ export const WORLD = {
         direction: 'higher',
         nullWhen: ['no fitness', 'no agents of defender'],
         arithmetic: '',
+        source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.merit_mean': entry('world', {
         module: 'js/evo/metrics-merit.js',
@@ -222,6 +245,7 @@ export const WORLD = {
         intended: 'higher',
         nullWhen: ['no checkpoint after burn-in with an alive agent'],
         arithmetic: 'test/evo/metrics-merit.test.js',
+        source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.merit_p90': entry('world', {
         module: 'js/evo/metrics-merit.js',
@@ -232,6 +256,7 @@ export const WORLD = {
         intended: 'higher',
         nullWhen: ['no checkpoint after burn-in with an alive agent'],
         arithmetic: 'test/evo/metrics-merit.test.js',
+        source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.merit_mate_gain': entry('world', {
         module: 'js/evo/metrics-merit.js',
@@ -241,6 +266,7 @@ export const WORLD = {
         direction: 'higher',
         nullWhen: ['no mating birth after burn-in with a living father', 'no merit among the males'],
         arithmetic: 'test/evo/metrics-merit.test.js',
+        source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.split_gated_share': entry('world', {
         module: 'js/evo/metrics-merit.js',
@@ -251,6 +277,7 @@ export const WORLD = {
         intended: 'higher',
         nullWhen: ['no agent was ready to split'],
         arithmetic: 'test/evo/metrics-merit.test.js',
+        source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.merit_fitness_corr': entry('world', {
         module: 'js/evo/metrics-merit.js',
@@ -260,6 +287,7 @@ export const WORLD = {
         direction: 'higher',
         nullWhen: ['fewer than MIN_CORRELATION_DEATHS mature deaths with a fitness', 'merit or fitness is constant'],
         arithmetic: 'test/evo/metrics-merit.test.js',
+        source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.split_parent_delib_share': entry('world', {
         module: 'js/evo/metrics-diet.js',
@@ -270,5 +298,6 @@ export const WORLD = {
         intended: 'higher',
         nullWhen: ['no split birth after burn-in'],
         arithmetic: 'test/evo/metrics-diet.test.js',
+        source: 'test/evo/metric-source-world.test.js',
     }),
 };
