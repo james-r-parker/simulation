@@ -11,6 +11,7 @@ export const CORE = {
         direction: 'higher',
         nullWhen: [],
         arithmetic: 'test/evo/metrics.test.js',
+        source: 'test/evo/metric-source-core.test.js',
     }),
     'eval.median_lifespan': entry('core', {
         module: 'js/evo/metrics.js',
@@ -20,6 +21,7 @@ export const CORE = {
         direction: 'higher',
         nullWhen: ['no mature death'],
         arithmetic: 'test/evo/metrics.test.js',
+        source: 'test/evo/metric-source-core.test.js',
     }),
     'eval.fed_median_lifespan': entry('core', {
         module: 'js/evo/metrics.js',
@@ -29,6 +31,7 @@ export const CORE = {
         direction: 'higher',
         nullWhen: ['no mature death after a meal'],
         arithmetic: 'test/evo/metrics.test.js',
+        source: 'test/evo/metric-source-core.test.js',
     }),
     'eval.births_per_1k': entry('core', {
         module: 'js/evo/metrics.js',
@@ -38,6 +41,7 @@ export const CORE = {
         direction: 'higher',
         nullWhen: [],
         arithmetic: 'test/evo/metrics.test.js',
+        source: 'test/evo/metric-source-core.test.js',
     }),
     'eval.population_mean': entry('core', {
         module: 'js/evo/metrics-series.js',
@@ -48,6 +52,7 @@ export const CORE = {
         intended: 'higher',
         nullWhen: ['no checkpoint'],
         arithmetic: 'test/eval-power.test.js',
+        source: 'test/evo/metric-source-core-series.test.js',
     }),
     'eval.floor_episodes': entry('core', {
         module: 'js/evo/metrics.js',
@@ -57,6 +62,7 @@ export const CORE = {
         direction: 'lower',
         nullWhen: [],
         arithmetic: 'test/evo/metrics.test.js',
+        source: 'test/evo/metric-source-core.test.js',
     }),
     'eval.born_share': entry('core', {
         module: 'js/evo/metrics.js',
@@ -67,6 +73,7 @@ export const CORE = {
         intended: 'higher',
         nullWhen: ['no agent entered after burn-in'],
         arithmetic: 'test/evo/metrics.test.js',
+        source: 'test/evo/metric-source-core.test.js',
     }),
     'eval.mating_share': entry('core', {
         module: 'js/evo/metrics.js',
@@ -77,6 +84,7 @@ export const CORE = {
         intended: 'higher',
         nullWhen: ['no mating or split birth'],
         arithmetic: 'test/evo/metrics.test.js',
+        source: 'test/evo/metric-source-core.test.js',
     }),
     'eval.predation_per_1k': entry('core', {
         module: 'js/evo/metrics.js',
@@ -87,6 +95,7 @@ export const CORE = {
         intended: 'higher',
         nullWhen: [],
         arithmetic: 'test/evo/metrics.test.js',
+        source: 'test/evo/metric-source-core.test.js',
     }),
     'eval.diversity': entry('core', {
         module: 'js/evo/metrics-series.js',
@@ -96,6 +105,7 @@ export const CORE = {
         direction: 'higher',
         nullWhen: ['no checkpoint with 2 agents'],
         arithmetic: 'test/evo/metric-registry/index.test.js',
+        source: 'test/evo/metric-source-core-series.test.js',
     }),
     'eval.lineages_alive': entry('core', {
         module: 'js/evo/metrics-series.js',
@@ -105,6 +115,7 @@ export const CORE = {
         direction: 'higher',
         nullWhen: ['no checkpoint after burn-in'],
         arithmetic: 'test/evo/metric-registry/index.test.js',
+        source: 'test/evo/metric-source-core-series.test.js',
     }),
     'eval.lineage_turnover': entry('core', {
         module: 'js/evo/metrics-series.js',
@@ -114,6 +125,7 @@ export const CORE = {
         direction: 'higher',
         nullWhen: ['no checkpoint after burn-in', 'no ticks after burn-in'],
         arithmetic: 'test/evo/metric-registry/index.test.js',
+        source: 'test/evo/metric-source-core-series.test.js',
     }),
     'eval.spec_turnover': entry('core', {
         module: 'js/evo/metrics-series.js',
@@ -124,6 +136,7 @@ export const CORE = {
         intended: 'higher',
         nullWhen: ['no checkpoint after burn-in', 'no ticks after burn-in'],
         arithmetic: 'test/evo/metric-audit-core.test.js',
+        source: 'test/evo/metric-source-core-series.test.js',
     }),
     'eval.behaviour_coverage': entry('core', {
         module: 'js/evo/metrics-grids.js',
@@ -133,6 +146,7 @@ export const CORE = {
         direction: 'higher',
         nullWhen: ['no sampled mature death'],
         arithmetic: 'test/evo/metric-audit-core.test.js',
+        source: 'test/evo/metric-source-core-series.test.js',
     }),
     'eval.motion_coverage': entry('core', {
         module: 'js/evo/metrics-grids.js',
@@ -143,6 +157,7 @@ export const CORE = {
         intended: 'higher',
         nullWhen: ['no sampled mature death'],
         arithmetic: 'test/evo/metric-audit-core.test.js',
+        source: 'test/evo/metric-source-core-series.test.js',
     }),
     'eval.predator_share_cv': entry('core', {
         module: 'js/evo/metrics-series.js',
@@ -153,6 +168,7 @@ export const CORE = {
         intended: 'higher',
         nullWhen: ['no checkpoint', 'mean predator share is 0'],
         arithmetic: 'test/evo/metric-registry/index.test.js',
+        source: 'test/evo/metric-source-core-series.test.js',
     }),
     'eval.qd_score': entry('core', {
         module: 'js/evo/archive.js',
@@ -162,6 +178,7 @@ export const CORE = {
         direction: 'higher',
         nullWhen: ['no archive'],
         arithmetic: 'test/eval-worker-run.test.js',
+        source: 'test/evo/metric-source-core-trend.test.js',
     }),
     'eval.coverage': entry('core', {
         module: 'js/evo/archive.js',
@@ -171,6 +188,7 @@ export const CORE = {
         direction: 'higher',
         nullWhen: ['no archive'],
         arithmetic: 'test/eval-worker-run.test.js',
+        source: 'test/evo/metric-source-core-trend.test.js',
     }),
     'eval.champion_elo': entry('core', {
         module: 'js/evo/league.js',
@@ -181,6 +199,8 @@ export const CORE = {
         intended: 'higher',
         nullWhen: ['no league games'],
         arithmetic: 'test/evo/league.test.js',
+        deprecated:
+            'Computed by runLeague from league games; computeMetrics always returns null, so no scripted world can plant it. test/evo/league.test.js pins its arithmetic.',
     }),
     'eval.champion_win_rate': entry('core', {
         module: 'js/evo/league.js',
@@ -191,6 +211,8 @@ export const CORE = {
         intended: 'higher',
         nullWhen: ['no league games', 'no games'],
         arithmetic: 'test/evo/league.test.js',
+        deprecated:
+            'Computed by runLeague from league games; computeMetrics always returns null, so no scripted world can plant it. test/evo/league.test.js pins its arithmetic.',
     }),
     'eval.child_survival': entry('core', {
         module: 'js/evo/metrics-lineage.js',
@@ -205,6 +227,7 @@ export const CORE = {
             'no child born after burn-in with time to mature',
         ],
         arithmetic: 'test/evo/metrics-lineage.test.js',
+        source: 'test/evo/metric-source-core-selection.test.js',
     }),
     'eval.lineage_lifespan_p50': entry('core', {
         module: 'js/evo/metrics-lineage.js',
@@ -218,6 +241,7 @@ export const CORE = {
             'no lineage founded after burn-in',
         ],
         arithmetic: 'test/evo/metrics-lineage.test.js',
+        source: 'test/evo/metric-source-core-selection.test.js',
     }),
     'eval.offspring_per_life': entry('core', {
         module: 'js/evo/metrics-selection.js',
@@ -228,6 +252,7 @@ export const CORE = {
         intended: 'higher',
         nullWhen: ['no completed life after burn-in'],
         arithmetic: 'test/evo/metrics-selection.test.js',
+        source: 'test/evo/metric-source-core-selection.test.js',
     }),
     'eval.generation_depth_p90': entry('core', {
         module: 'js/evo/metrics-selection.js',
@@ -238,6 +263,7 @@ export const CORE = {
         intended: 'higher',
         nullWhen: ['no completed life after burn-in'],
         arithmetic: 'test/evo/metrics-selection.test.js',
+        source: 'test/evo/metric-source-core-selection.test.js',
     }),
     'eval.opportunity_for_selection': entry('core', {
         module: 'js/evo/metrics-selection.js',
@@ -248,6 +274,7 @@ export const CORE = {
         intended: 'higher',
         nullWhen: ['no completed life after burn-in', 'no children'],
         arithmetic: 'test/evo/metrics-selection.test.js',
+        source: 'test/evo/metric-source-core-selection.test.js',
     }),
     'eval.fitness_lrs_corr': entry('core', {
         module: 'js/evo/metrics-selection.js',
@@ -258,25 +285,6 @@ export const CORE = {
         intended: 'higher',
         nullWhen: ['fewer than 30 mature deaths with a fitness', 'fitness or children is constant'],
         arithmetic: 'test/evo/metrics-selection.test.js',
-    }),
-    'eval.archive_lineage_share': entry('core', {
-        module: 'js/evo/metrics-selection.js',
-        meaning: 'How much of the population descends from archive seeding.',
-        counts: 'Summed archiveAgents over summed population across checkpoints at or after BURN_IN_TICKS.',
-        unit: 'share',
-        direction: 'watch',
-        intended: 'higher',
-        nullWhen: ['no archive', 'no checkpoint after burn-in'],
-        arithmetic: 'test/evo/metrics-selection.test.js',
-    }),
-    'eval.kin_within_call_radius': entry('core', {
-        module: 'js/evo/metrics-selection.js',
-        meaning: 'How many kin are within hearing of an alarm call.',
-        counts: 'Sum of kin near the caller at each alarm call over the number of alarm calls (observer.intent.run).',
-        unit: 'agents',
-        direction: 'watch',
-        intended: 'higher',
-        nullWhen: ['no alarm call'],
-        arithmetic: 'test/evo/metrics-selection.test.js',
+        source: 'test/evo/metric-source-core-selection.test.js',
     }),
 };
