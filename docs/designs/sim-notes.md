@@ -2521,3 +2521,17 @@ before and after. `npm run drill` on four fresh smoke champions (4 generations, 
 - **Symptom:** `ci/release-please` failed `ratchet` with scripts branches at 89.22% against a baseline of 89.32%, then passed on a rerun. The test order was the suspect.
 - **Found:** coverage-final.json from the coverage pass under `TEST_SEED` 5268, 1, 2 and 3 (on `a0133a42`) differs in exactly two scripts branches, and seed 1 reproduces 89.22%. Both pick a side from a timed result, so they move with machine load, whatever the order: `main` in `scripts/bench-reflex.mjs` printed `value.toFixed(value < 10 ? 3 : 1)` from a real bench, and its three-decimal side ran only when `bench.reflex_ms_per_genome` came in under 10 ms (seed 1 ran at load 10 under coverage); `formatCompare` in `scripts/lib/micro-bench.mjs` reached the `''` side of `row.change >= 0 ? '+' : ''` only when a real timed compare in a slow test came out slower.
 - **Fix:** the bench-reflex formatting is the pure `formatMetrics`, and both functions are tested on fixed values for both sides. A branch chosen by a timing, a load or a clock in a script needs a unit test with fixed inputs; a test that runs the real measurement covers it only by chance. To find such a branch, diff `coverage-final.json` (`--coverage.reporter=json`) from a few `TEST_SEED` runs.
+
+### 2026-11-08 - The pre-commit hook's GIT_INDEX_FILE reached a test's `git worktree add`
+
+The 2026-10-11 rule (each test strips `GIT_*` from the environment of the git it spawns) leaves a gap: a test that
+spawns a script, which then spawns git, passes `process.env` through unless its author remembered. On
+`feat/deploy-pipeline-v2`, `test/release-check.slow.test.js` runs `scripts/release-check.mjs` with
+`{ ...process.env }`, and that script runs `git worktree add --detach <tmp> <merge-base>`. Under the hook, git exports
+`GIT_DIR` and `GIT_INDEX_FILE` (absolute paths in a worktree; `git commit <paths>` points `GIT_INDEX_FILE` at a
+`next-index-*.lock`), so the new worktree's checkout wrote the merge-base tree into the index being committed.
+Reproduced on a clone: the staged change vanished and 1684 paths showed as staged reverts. No test writes
+`.prettierignore`: it changed because the merge base held an older `.prettierignore`, and the corrupted index reverted
+it. `scripts/check.sh` now records `GIT_DIR`, `GIT_INDEX_FILE` and `GIT_WORK_TREE` after the staged-file read, unsets
+them, and hands them back only to the conventions gate (whose `git grep` must read the index being committed);
+`test/check-hook-env.test.js` pins that. Spawning git from tests with a stripped environment is still good practice.
