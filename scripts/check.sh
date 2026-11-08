@@ -257,13 +257,13 @@ gate_test_related() {
 # gate_deps: layering rules from .dependency-cruiser.cjs (dependency-cruiser).
 gate_deps() {
   local paths=() p
-  for p in js/sim js/evo js/worker js/app scripts test; do [[ -d $p ]] && paths+=("$p"); done
+  for p in js/sim js/evo js/worker js/app js/library functions scripts test; do [[ -d $p ]] && paths+=("$p"); done
   run_gate deps "$BIN/depcruise" --config .dependency-cruiser.cjs --output-type err "${paths[@]}"
 }
-# gate_dupes: copy-paste detection over js/sim, js/evo, js/worker, js/app and scripts (jscpd with .jscpd.json).
+# gate_dupes: copy-paste detection over js/sim, js/evo, js/worker, js/app, js/library, functions and scripts (jscpd with .jscpd.json).
 gate_dupes() {
   local paths=() p
-  for p in js/sim js/evo js/worker js/app scripts; do
+  for p in js/sim js/evo js/worker js/app js/library functions scripts; do
     [[ -e $p ]] && paths+=("$p")
   done
   if [[ ${#paths[@]} -eq 0 ]]; then

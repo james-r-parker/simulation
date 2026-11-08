@@ -168,3 +168,6 @@ wasm/target/
 # Function microbenchmark results (scripts/bench-micro.mjs)
 .bench-micro/
 .bench-micro-info/
+
+# Wrangler's local state (wrangler d1 --local, wrangler pages dev)
+.wrangler/

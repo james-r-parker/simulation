@@ -8,6 +8,8 @@
 # - Every module under js/sim/ and js/evo/ has a test at the mirrored path: js/sim/brain.js -> test/sim/brain.test.js.
 # - Every module under js/worker/ and js/app/ has a test at the mirrored path (test/worker/, test/app/), except the
 #   browser shells in BROWSER_SHELLS, which test/browser/app.spec.js covers (docs/designs/worker-and-renderer.md).
+# - Every module under js/library/ and functions/_lib/ is imported by some test under test/ (those tests are grouped by
+#   concern, not mirrored one to one: docs/designs/deployment-and-community.md).
 # - The legacy app stays deleted: no file directly under js/ (code lives in js/sim/, js/evo/, js/worker/ or js/app/),
 #   none of the deleted legacy paths (LEGACY_PATHS) comes back, and AGENTS.md, README.md and the skills under
 #   .claude/skills/ do not use the word "legacy" except on a line that links legacy-audit.md or bench/legacy-baseline.json.
@@ -67,6 +69,12 @@ for file in "${app_files[@]}"; do
   test_file="test/${file#js/}"
   test_file="${test_file%.js}.test.js"
   [[ -f "$test_file" ]] || fail "$file: no test at $test_file - every module ships with its tests"
+done
+
+mapfile -t library_files < <(git ls-files --cached --others --exclude-standard -- 'js/library/*.js' 'functions/_lib/*.js')
+for file in "${library_files[@]}"; do
+  grep -rqF --include='*.js' -e "/$file" test ||
+    fail "$file: no test under test/ imports it - every module ships with its tests"
 done
 
 while IFS= read -r file; do

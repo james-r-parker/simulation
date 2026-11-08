@@ -2542,3 +2542,10 @@ them, and hands them back only to the conventions gate (whose `git grep` must re
 - **Run:** defaults, floor on, policy live, 32 seeds x 200000 ticks, configHash `ff8d890a5a70c14d`, before `a1562fb0`, after `b56054ee`.
 - **Keep rule (paired):** hunters alive 27 and 27 of 32, seeds ending under 80 agents 9 and 9 (both differences 0). `eval.population_mean`, `eval.food_energy_per_1k`, `eval.births_per_1k`, `eval.mating_share`, `eval.predators_at_end` and `eval.prey_types_at_end` show no difference.
 - **One `worse`:** `eval.basin_families` 2.04 to 1.92 (-5.6%, interval -0.54 to -0.01), 1 of 68 metrics with a verdict, which is near the false-positive count at this interval, and not a keep-rule guard. It is unverified in the registry (metric-trust Phase 4 measures its power). T15 stays.
+
+### 2026-11-08 - The preview pipeline checked by hand on Cloudflare (deployment T5, partly)
+
+- `wrangler d1 migrations apply blob-library-preview --env preview --remote` applied 0001 and 0002. A `wrangler pages deploy dist --branch verify-375` preview read the preview database: `/api/champions` answered `{"items":[],"next":null}` while the production database still had no tables, so the `[env.preview]` binding is the one a preview branch uses.
+- `GET /api/seasons` answered `cache-control: public, s-maxage=300` and `cf-cache-status: HIT` on a repeat, so the Cache API path works on a deployed Function. A HEAD request shows `max-age=0, must-revalidate`: read the cache headers with GET.
+- A deploy with `--branch next` serves at `next.matrix-6be.pages.dev`, and `/next` on another deployment proxies to it with a 200.
+- Not checkable before a release: `/v/<version>/`, whether the `v6-0-0` branch deployment persists, a second workflow from the App-token release, and the rollback.

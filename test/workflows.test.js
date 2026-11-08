@@ -97,8 +97,15 @@ describe('workflows', () => {
             expect(nightly).not.toContain('merge_group');
         });
 
-        it('still checks every push to main, which deploy.yml waits on', () => {
-            expect(check).toMatch(/push:\s*\n\s*branches: \[main\]/);
+        it('still checks every push to main, and to season/next, which preview.yml waits on', () => {
+            expect(check).toMatch(/push:\s*\n\s*branches: \[main, season\/next\]/);
+        });
+
+        it('runs the release check on pull requests, with the title passed through the environment', () => {
+            const step = check.slice(check.indexOf('- name: Release check'));
+            expect(step).toContain("if: github.event_name == 'pull_request'");
+            expect(step).toContain('PR_TITLE: ${{ github.event.pull_request.title }}');
+            expect(step).toContain('run: node scripts/release-check.mjs');
         });
     });
 
