@@ -7,11 +7,12 @@
 // Targets line, and a template literal that goes on after an interpolation, match every name that starts with the part
 // before it.
 //
-// Not read: js/evo/metric-registry/ (it defines the names), test/fixtures/, the tests of this check and of the
-// designs-index Targets check (their made-up repos name made-up metrics), evals/experiments.json and evals/experiments/
-// (history: a record names a metric as it was called when the run was made, and a rename keeps the old name there),
-// evals/results/, evals/power/, evals/baselines/, evals/ladder/ and evals/screens/results/ (reports), and the Targets of
-// built phases (they describe what shipped). A made-up name that a test needs is listed in `LET_THROUGH` below with its reason.
+// Not read: js/evo/metric-registry/ (it defines the names), test/fixtures/, the tests of this check, of the
+// designs-index Targets check and of the metrics doc (their made-up repos and registries name made-up metrics),
+// evals/experiments.json and evals/experiments/ (history: a record names a metric as it was called when the run was
+// made, and a rename keeps the old name there), evals/results/, evals/power/, evals/baselines/, evals/ladder/ and
+// evals/screens/results/ (reports), and the Targets of built phases (they describe what shipped). A made-up name that a
+// test needs is listed in `LET_THROUGH` with its reason.
 // Usage: node scripts/check-metric-names.mjs
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -33,6 +34,7 @@ const SKIPPED = [
     'test/fixtures/',
     'test/check-metric-names.test.js',
     'test/designs-index.test.js',
+    'test/metrics-doc.test.js',
     'node_modules/',
 ];
 

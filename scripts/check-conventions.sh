@@ -123,6 +123,13 @@ if ((names_status != 0)) && [[ -z "$names_out" ]]; then
   fail "metric-names: scripts/check-metric-names.mjs exited $names_status with no output"
 fi
 
+# docs/designs/metrics.md is the table the registry generates; a stale one fails with the command that fixes it.
+metrics_out="$(node scripts/metrics-doc.mjs --check 2>&1)"
+metrics_status=$?
+if ((metrics_status != 0)); then
+  fail "metrics-doc: ${metrics_out:-scripts/metrics-doc.mjs exited $metrics_status with no output}"
+fi
+
 # The committed WASM kernels match their hash and their sources; without cargo the rebuild is skipped with a note.
 wasm_out="$(node scripts/check-wasm.mjs 2>&1)"
 wasm_status=$?

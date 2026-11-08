@@ -98,6 +98,29 @@ describe('conventions metric names', { timeout: scaleTimeout(30_000) }, () => {
     });
 });
 
+describe('conventions metrics doc', { timeout: scaleTimeout(30_000) }, () => {
+    const STUB = 'scripts/metrics-doc.mjs';
+
+    it('reports a stale doc with the command that fixes it', () => {
+        const out = conventions({
+            [STUB]: "console.error('docs/designs/metrics.md is stale. Run: node scripts/metrics-doc.mjs --write');\nprocess.exitCode = 1;\n",
+        });
+        expect(out).toContain(
+            'metrics-doc: docs/designs/metrics.md is stale. Run: node scripts/metrics-doc.mjs --write',
+        );
+    });
+
+    it('reports a check that fails without printing anything', () => {
+        expect(conventions({ [STUB]: 'process.exitCode = 3;\n' })).toContain(
+            'metrics-doc: scripts/metrics-doc.mjs exited 3 with no output',
+        );
+    });
+
+    it('stays quiet when the doc is up to date', () => {
+        expect(conventions({ [STUB]: "console.log('up to date');\n" })).not.toContain('metrics-doc');
+    });
+});
+
 describe('conventions legacy guard', { timeout: scaleTimeout(30_000) }, () => {
     it('flags a file directly under js/ but not one in a module directory', () => {
         expect(conventions({ 'js/game.js': 'x\n' })).toContain('js/game.js: sits directly under js/');
