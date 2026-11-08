@@ -235,15 +235,3 @@ export function hunterMetrics(scene, world) {
             scene.runTicks > 0 ? ok(scene.quarterTicks) : none('no run length (createObserver runTicks)'),
     };
 }
-
-/** The names of every hunter metric, for the direction tables. */
-export const HUNTER_METRIC_NAMES = Object.freeze([
-    'eval.hunter_kills_per_life',
-    'eval.hunter_zero_kill_share',
-    'eval.hunter_median_lifespan',
-    'eval.predator_end_local_share',
-    'eval.hunter_ticks_last_quarter',
-    ...HUNTER_DEATH_NAMES.map((n) => `eval.hunter_death_share.${n}`),
-    ...HUNTER_BIRTH_NAMES.map((n) => `eval.hunter_birth_source_share.${n}`),
-    ...HUNTER_INCOME_NAMES.map((n) => `eval.hunter_income_share.${n}`),
-]);

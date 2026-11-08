@@ -3,9 +3,10 @@
 
 import { describe, expect, it } from 'vitest';
 import { computeMetrics } from '../../js/evo/metrics.js';
-import { PATCH_DIRECTIONS, PATCH_STAY_TICKS, patchAt, samplePatches } from '../../js/evo/scene-patch.js';
+import { PATCH_STAY_TICKS, patchAt, samplePatches } from '../../js/evo/scene-patch.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { directionOf } from './helpers/metric-registry.js';
 
 const BURN_IN = 10000;
 const WORLD = { foodPatchCount: 2, foodPatchRadius: 100, foodPatchCapacity: 1000 };
@@ -101,10 +102,8 @@ describe('eval.patch_stay_depleted and eval.patch_leave_depleted', () => {
         const r = patchWorld();
         expect(read(r, 'patch_stay_depleted').value).toBeNull();
         expect(read(r, 'patch_leave_depleted').reason).toContain('no depleted-patch sample');
-        expect(PATCH_DIRECTIONS).toEqual({
-            'eval.patch_stay_depleted': 'lower',
-            'eval.patch_leave_depleted': 'higher',
-        });
+        expect(directionOf('eval.patch_stay_depleted')).toBe('lower');
+        expect(directionOf('eval.patch_leave_depleted')).toBe('higher');
     });
 
     it('does nothing in a world with no patches', () => {

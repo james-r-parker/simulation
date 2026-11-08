@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { REWARD_DIRECTIONS, rewardMetrics } from '../../js/evo/metrics-reward.js';
+import { rewardMetrics } from '../../js/evo/metrics-reward.js';
+import { directionOf, namesOf } from './helpers/metric-registry.js';
 
 describe('the reward event metrics', () => {
     it('reads the rewards per 1,000 hunter agent-ticks, by source', () => {
@@ -17,7 +18,7 @@ describe('the reward event metrics', () => {
 
     it('names exactly the metrics it returns, all watch', () => {
         const m = rewardMetrics({ combat: { hunterAgentTicks: 1 } }, { rewardCounts: new Float64Array(3) });
-        expect(Object.keys(m).sort()).toEqual(Object.keys(REWARD_DIRECTIONS).sort());
-        expect(new Set(Object.values(REWARD_DIRECTIONS))).toEqual(new Set(['watch']));
+        expect(Object.keys(m).sort()).toEqual(namesOf('js/evo/metrics-reward.js').sort());
+        expect(new Set(namesOf('js/evo/metrics-reward.js').map(directionOf))).toEqual(new Set(['watch']));
     });
 });

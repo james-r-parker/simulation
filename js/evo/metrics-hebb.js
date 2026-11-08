@@ -8,12 +8,6 @@ import { none, ok, share } from './metrics-stats.js';
 /** A sampled agent must be at least this old (ticks) to count. */
 export const MIN_AGE_TICKS = 600;
 
-/** The direction of each metric here. */
-export const HEBB_DIRECTIONS = Object.freeze({
-    'eval.hebb_drift': 'watch',
-    'eval.hebb_drift_clamped_share': 'watch',
-});
-
 /**
  * @returns {{driftSum: number, agents: number, clamped: number, entries: number}} empty pools
  */

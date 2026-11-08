@@ -12,17 +12,6 @@ import { none, ok, share } from './metrics-stats.js';
 /** A weight with an absolute value at least this counts as at the clamp (the clamp is 4). */
 export const CLAMP_LEVEL = 3.9;
 
-/** The direction of each metric here. */
-export const WEIGHT_DIRECTIONS = Object.freeze({
-    'eval.input_active_share': 'watch',
-    'eval.input_active_share.threat': 'watch',
-    'eval.input_active_share.prey': 'watch',
-    'eval.weight_drift_silent': 'watch',
-    'eval.weight_clamp_share': 'watch',
-    'eval.rare_input_saturation_jump': 'watch',
-    'eval.sigma_mean': 'watch',
-});
-
 /**
  * @param {Record<string, any>} activity the input-activity state (`active` counts per input, `samples`)
  * @param {string} channel a `POOLED_CHANNELS` name

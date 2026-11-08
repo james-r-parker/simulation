@@ -10,9 +10,6 @@ import { BURN_IN_TICKS } from './burn-in.js';
 import { applyInstinct } from './instinct.js';
 import { none, ok } from './metrics-stats.js';
 
-/** The direction of the metric here. */
-export const INSTINCT_DIRECTIONS = Object.freeze({ 'eval.instinct_drift': 'watch' });
-
 /**
  * @param {Readonly<Record<string, any>>} layout a `brainLayout(config)` result
  * @param {{weight: number, canHunt: boolean, herdWary: number, kinPull?: number}} options the instinct weight, whether the

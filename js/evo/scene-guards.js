@@ -36,15 +36,6 @@ export const HUNTER_CRASH = 0.5;
 /** The most checkpoints an episode may span, from the trough to the hunter crash. */
 export const BOOM_BUST_WINDOW = 20;
 
-/** The direction of each metric of this module. */
-export const GUARD_DIRECTIONS = Object.freeze({
-    'eval.prey_extinctions': 'lower',
-    'eval.boom_bust_count': 'lower',
-});
-
-/** The direction of the summer minimum. */
-export const SUMMER_DIRECTIONS = Object.freeze({ 'eval.prey_summer_min': 'higher' });
-
 /** The season index of summer in a year of four. */
 const SUMMER = 1;
 

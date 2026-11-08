@@ -5,16 +5,12 @@ import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT } from '../../js/sim/brain-layout.js';
 import { metricDirection } from '../../js/evo/compare.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
-import {
-    CIRCLE_PERIOD,
-    CIRCLE_WINDOW,
-    WATCHABILITY_DIRECTIONS,
-    trackCircling,
-} from '../../js/evo/metrics-watchability.js';
+import { CIRCLE_PERIOD, CIRCLE_WINDOW, trackCircling } from '../../js/evo/metrics-watchability.js';
 import { checkpoint, observe } from '../../js/evo/observer.js';
 import { EVENT_TYPE } from '../../js/sim/events.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { nextTick, observed, pushCall } from './helpers/observer-world.js';
+import { namesOf } from './helpers/metric-registry.js';
 
 const NAMES = ['circling_share', 'output_saturation', 'alarm_rate', 'mean_energy_share', 'energy_over_split'];
 const BURN_IN = 10000;
@@ -50,7 +46,7 @@ function circle(/** @type {any} */ world, /** @type {number} */ slot, /** @type 
 
 describe('the watchability metrics', () => {
     it('have the directions of the compare table', () => {
-        expect(Object.keys(WATCHABILITY_DIRECTIONS).sort()).toEqual(NAMES.map((n) => `eval.${n}`).sort());
+        expect(namesOf('js/evo/metrics-watchability.js').sort()).toEqual(NAMES.map((n) => `eval.${n}`).sort());
         for (const name of NAMES.slice(0, 3)) {
             expect(metricDirection(`eval.${name}`), name).toBe('lower');
         }

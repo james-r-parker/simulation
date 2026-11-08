@@ -16,12 +16,6 @@ import { createLog, ensureRoom } from './growable-log.js';
 import { splitHunterIncome } from './hunter-income-split.js';
 import { none, ok } from './metrics-stats.js';
 
-/** The direction of each metric of this module. */
-export const BITE_LIFE_DIRECTIONS = Object.freeze({
-    'eval.hunter_carrion_idle_share': 'lower',
-    'eval.hunter_recoil_per_life': 'watch',
-});
-
 /**
  * @returns {Record<string, any>} an empty scene: one row per hunter death, and the recoil ticks so far
  */

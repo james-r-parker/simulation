@@ -4,8 +4,8 @@ import { createHerdScene, noteHerdDeath, trackHerd } from '../../js/evo/scene-he
 import { herdMetrics } from '../../js/evo/scene-herd-metrics.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import { metricDirection } from '../../js/evo/compare.js';
-import { SCENE_DIRECTIONS } from '../../js/evo/metrics-scenes.js';
-import { intendedDirection } from '../../scripts/lib/watch-intent.mjs';
+import { METRICS } from '../../js/evo/metric-registry/index.js';
+import { intendedOf } from './helpers/metric-registry.js';
 
 function sceneWorld() {
     return {
@@ -56,7 +56,7 @@ function emptyMetrics(scene) {
 
 describe('scene-herd detectors', () => {
     it('registers the three Phase 1 detector directions', () => {
-        const names = Object.keys(SCENE_DIRECTIONS);
+        const names = Object.keys(METRICS);
         expect(names).toContain('eval.trampled_share');
         expect(names).toContain('eval.dodge_skill');
         expect(names).toContain('eval.herd_grazed_share');
@@ -64,15 +64,15 @@ describe('scene-herd detectors', () => {
         expect(names).toContain('eval.herd_carcass_meal_share');
         expect(names).toContain('eval.herd_carcass_share.predator');
         expect(metricDirection('eval.trampled_share')).toBe('watch');
-        expect(intendedDirection('eval.trampled_share')).toBe('lower');
-        expect(intendedDirection('eval.trample_unavoidable_share')).toBe('lower');
-        expect(intendedDirection('eval.herd_carcass_share.predator')).toBe('lower');
+        expect(intendedOf('eval.trampled_share')).toBe('lower');
+        expect(intendedOf('eval.trample_unavoidable_share')).toBe('lower');
+        expect(intendedOf('eval.herd_carcass_share.predator')).toBe('lower');
         expect(names).toContain('eval.herd_follow_share');
         expect(names).toContain('eval.dung_food_share');
         expect(names).toContain('eval.herd_seeded_patches');
-        expect(intendedDirection('eval.herd_follow_share')).toBe('higher');
-        expect(intendedDirection('eval.dung_food_share')).toBe('higher');
-        expect(intendedDirection('eval.herd_seeded_patches')).toBe('higher');
+        expect(intendedOf('eval.herd_follow_share')).toBe('higher');
+        expect(intendedOf('eval.dung_food_share')).toBe('higher');
+        expect(intendedOf('eval.herd_seeded_patches')).toBe('higher');
     });
 
     it('counts a lane approach as clear when the blob leaves before contact', () => {

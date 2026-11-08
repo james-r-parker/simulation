@@ -24,13 +24,6 @@ export const MIN_LIVES = 100;
 /** The class of a life. */
 export const LIFE_CLASS = Object.freeze({ FLAT: 0, NOISY: 1, SIGNAL: 2 });
 
-/** The direction of each metric here. */
-export const MEMORY_OUT_DIRECTIONS = Object.freeze({
-    'eval.memory_out_flat_share': 'watch',
-    'eval.memory_out_noisy_share': 'watch',
-    'eval.memory_out_signal_share': 'watch',
-});
-
 const OUTPUTS = 2;
 
 /**

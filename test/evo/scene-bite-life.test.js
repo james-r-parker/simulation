@@ -7,14 +7,9 @@ import { createEventRing, EVENT_TYPE, pushEvent } from '../../js/sim/events.js';
 import { feed } from '../../js/sim/feeding.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { splitHunterIncome } from '../../js/evo/hunter-income-split.js';
-import {
-    BITE_LIFE_DIRECTIONS,
-    biteLifeMetrics,
-    createBiteLifeScene,
-    noteBiteLifeRecord,
-    tickRecoil,
-} from '../../js/evo/scene-bite-life.js';
+import { biteLifeMetrics, createBiteLifeScene, noteBiteLifeRecord, tickRecoil } from '../../js/evo/scene-bite-life.js';
 import { addBlob, lifeWorld } from '../sim/helpers/life-world.js';
+import { directionOf } from './helpers/metric-registry.js';
 
 const NONE = { kills: 0, carcass: 0, kill: 0, bite: 0 };
 
@@ -126,7 +121,7 @@ describe('eval.hunter_recoil_per_life', () => {
 
 describe('the directions', () => {
     it('name the two metrics', () => {
-        expect(BITE_LIFE_DIRECTIONS['eval.hunter_carrion_idle_share']).toBe('lower');
-        expect(BITE_LIFE_DIRECTIONS['eval.hunter_recoil_per_life']).toBe('watch');
+        expect(directionOf('eval.hunter_carrion_idle_share')).toBe('lower');
+        expect(directionOf('eval.hunter_recoil_per_life')).toBe('watch');
     });
 });

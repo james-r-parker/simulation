@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { HEBB_CLAMP } from '../../js/sim/hebbian.js';
-import { HEBB_DIRECTIONS, hebbMetrics, sampleHebb } from '../../js/evo/metrics-hebb.js';
+import { hebbMetrics, sampleHebb } from '../../js/evo/metrics-hebb.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { directionOf, namesOf } from './helpers/metric-registry.js';
 
 /**
  * @param {Record<string, any>} over config overrides
@@ -70,6 +71,6 @@ describe('the Hebbian drift metrics', () => {
     });
 
     it('is watch', () => {
-        expect(Object.values(HEBB_DIRECTIONS)).toEqual(['watch', 'watch']);
+        expect(namesOf('js/evo/metrics-hebb.js').map(directionOf)).toEqual(['watch', 'watch']);
     });
 });

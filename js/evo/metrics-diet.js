@@ -8,13 +8,6 @@ import { none, ok } from './metrics-stats.js';
 /** A split parent whose deliberate share is below this is a bumper. */
 export const BUMPER_SHARE = 0.1;
 
-/** The direction of each parent-diet metric, as the metrics table names them. */
-export const DIET_DIRECTIONS = Object.freeze({
-    'eval.split_parent_delib_share': 'watch',
-    'eval.mate_parent_delib_share': 'watch',
-    'eval.split_bumper_share': 'watch',
-});
-
 /**
  * @returns {Record<string, any>} the parent-diet counters
  */

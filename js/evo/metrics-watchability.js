@@ -25,15 +25,6 @@ export const CIRCLE_MIN_TURN = 4 * Math.PI;
 /** An output is saturated when its magnitude is above this. */
 export const SATURATED = 0.95;
 
-/** The direction of each watchability metric, as the metrics table names them. */
-export const WATCHABILITY_DIRECTIONS = Object.freeze({
-    'eval.circling_share': 'lower',
-    'eval.output_saturation': 'lower',
-    'eval.alarm_rate': 'lower',
-    'eval.mean_energy_share': 'watch',
-    'eval.energy_over_split': 'watch',
-});
-
 const NO_WINDOW = 'no circling span after burn-in with a tracked agent';
 const NO_SAMPLE = 'no checkpoint after burn-in with an alive agent';
 const FIRST = CIRCLE_PERIOD - CIRCLE_WINDOW + 1;

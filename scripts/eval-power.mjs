@@ -5,10 +5,10 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { compareReports, metricDirection } from '../js/evo/compare.js';
+import { METRICS } from '../js/evo/metric-registry/index.js';
 import { validateReport } from '../js/evo/report.js';
 import { createRng, fork, nextInt } from '../js/sim/rng.js';
 import { intValue, parseFlags } from './lib/cli-args.mjs';
-import { intendedDirection } from './lib/watch-intent.mjs';
 
 const USAGE =
     'usage: eval:power <report.json> [--splits <n>] [--power-splits <n>] [--sizes <n,...>] [--metrics <m,...>] [--include-watch] [--json]';
@@ -167,6 +167,16 @@ function detectableChange(report, metric, { size, powerSplits, direction, rng })
         }
     }
     return null;
+}
+
+/**
+ * @param {string} metric a `watch` metric name
+ * @returns {'higher' | 'lower'} the registry's `intended` direction for it, `higher` when it has none
+ */
+function intendedDirection(metric) {
+    return Object.hasOwn(METRICS, metric)
+        ? (METRICS[/** @type {keyof typeof METRICS} */ (metric)].intended ?? 'higher')
+        : 'higher';
 }
 
 /**

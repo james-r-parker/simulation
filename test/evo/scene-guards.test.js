@@ -5,12 +5,12 @@ import { describe, expect, it } from 'vitest';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import {
     BOOM_BUST_WINDOW,
-    GUARD_DIRECTIONS,
     boomBustCount,
     createGuardScene,
     guardMetrics,
     sampleGuards,
 } from '../../js/evo/scene-guards.js';
+import { directionOf, namesOf } from './helpers/metric-registry.js';
 
 const CONFIG = { specialisations: { forager: {}, predator: {}, scout: {} } };
 const T = Math.ceil(BURN_IN_TICKS / 1000) * 1000;
@@ -108,7 +108,9 @@ describe('prey extinctions', () => {
         const m = guardMetrics(scene);
         expect(m['eval.prey_extinctions']).toEqual({ value: null, reason: 'no 1000-tick checkpoint after burn-in' });
         expect(m['eval.boom_bust_count'].reason).toBe('no 1000-tick checkpoint after burn-in');
-        expect(Object.keys(m).sort()).toEqual(Object.keys(GUARD_DIRECTIONS).sort());
+        expect(Object.keys(m).sort()).toEqual(
+            namesOf('js/evo/scene-guards.js').filter((name) => name !== 'eval.prey_summer_min'),
+        );
     });
 
     it('count each alive-to-none transition of a prey specialisation, and again after it returns and goes', () => {
@@ -193,6 +195,7 @@ describe('the guard metrics', () => {
     });
 
     it('are lower metrics', () => {
-        expect(GUARD_DIRECTIONS).toEqual({ 'eval.prey_extinctions': 'lower', 'eval.boom_bust_count': 'lower' });
+        expect(directionOf('eval.prey_extinctions')).toBe('lower');
+        expect(directionOf('eval.boom_bust_count')).toBe('lower');
     });
 });

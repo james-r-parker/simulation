@@ -6,11 +6,6 @@ import { REWARD_NAMES } from '../sim/reward.js';
 import { none, per1k } from './metrics-stats.js';
 
 /** The direction of each metric of this module. */
-/** @type {Readonly<Record<string, string>>} */
-export const REWARD_DIRECTIONS = Object.freeze(
-    Object.fromEntries(REWARD_NAMES.map((name) => [`eval.reward_events.${name}`, 'watch'])),
-);
-
 /**
  * @param {Record<string, any>} observer the observer (`combat.hunterAgentTicks`)
  * @param {Record<string, any>} world the world at the run's last tick

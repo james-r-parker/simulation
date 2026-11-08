@@ -6,13 +6,13 @@ import { DEATH_CAUSE, EVENT_TYPE, createEventRing, pushEvent } from '../../js/si
 import { BIRTH_SOURCE } from '../../js/sim/hunter-ledger.js';
 import {
     AGE_BAND_NAMES,
-    AGE_DIRECTIONS,
     HUNTER_BIRTH_NAMES,
     ageMetrics,
     createAgeScene,
     noteAgeDeath,
     noteAgeKill,
 } from '../../js/evo/scene-hunter-age.js';
+import { directionOf, namesOf } from './helpers/metric-registry.js';
 
 const J = 1000;
 
@@ -84,7 +84,7 @@ function naiveBandTicks(ages) {
 describe('the hunter age metrics', () => {
     it('are null with a reason on a fresh scene', () => {
         const m = ageMetrics(createAgeScene(J), worldWith([]));
-        expect(Object.keys(m).sort()).toEqual(Object.keys(AGE_DIRECTIONS).sort());
+        expect(Object.keys(m).sort()).toEqual(namesOf('js/evo/scene-hunter-age.js').sort());
         for (const [name, result] of Object.entries(m)) {
             expect(result.value, name).toBeNull();
             expect(result.reason, name).toBeTypeOf('string');
@@ -158,8 +158,8 @@ describe('the hunter age metrics', () => {
     });
 
     it('names the direction of every metric: only the juvenile death share is a verdict', () => {
-        expect(AGE_DIRECTIONS['eval.hunter_juvenile_death_share']).toBe('lower');
-        expect(AGE_DIRECTIONS['eval.hunter_first_kill_age']).toBe('watch');
+        expect(directionOf('eval.hunter_juvenile_death_share')).toBe('lower');
+        expect(directionOf('eval.hunter_first_kill_age')).toBe('watch');
     });
 });
 

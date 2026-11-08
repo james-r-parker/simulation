@@ -23,14 +23,6 @@ export const BITE_MIN_OPPORTUNITIES = 30;
 /** What is in a hunter's jaws, ordered by priority when several bodies are. */
 export const JAWS = Object.freeze({ IDLE: 0, OTHER: 1, KIN: 2, PREY: 3 });
 
-/** The direction of each metric of this module. */
-export const BITE_DIRECTIONS = Object.freeze({
-    'eval.bite_on_prey': 'higher',
-    'eval.bite_off_kin': 'lower',
-    'eval.bite_off_other': 'lower',
-    'eval.bite_idle': 'lower',
-});
-
 /**
  * @param {Readonly<Record<string, any>>} config the world's config (`maxAgents`)
  * @returns {Record<string, any>} an empty bite scene: the per-slot jaws scratch and, per `JAWS` kind, the hunter-ticks and

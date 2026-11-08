@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-    LEAK_SKILL_DIRECTIONS,
     createLeakSkillPools,
     leakSkillMetrics,
     lifeLeak,
@@ -9,6 +8,7 @@ import {
 import { leakRateOf } from '../../js/sim/traits.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { directionOf, namesOf } from './helpers/metric-registry.js';
 
 /**
  * Ends `lives` lives in one slot, each with a leak gene and counters from `life(i)`.
@@ -100,6 +100,6 @@ describe('the leak-skill correlations', () => {
     });
 
     it('is watch', () => {
-        expect(Object.values(LEAK_SKILL_DIRECTIONS)).toEqual(['watch', 'watch', 'watch']);
+        expect(namesOf('js/evo/metrics-leak-skill.js').map(directionOf)).toEqual(['watch', 'watch', 'watch']);
     });
 });

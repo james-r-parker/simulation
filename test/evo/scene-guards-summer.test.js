@@ -2,7 +2,8 @@
 // hand-built series.
 
 import { describe, expect, it } from 'vitest';
-import { createGuardScene, sampleGuards, summerMetrics, SUMMER_DIRECTIONS } from '../../js/evo/scene-guards.js';
+import { createGuardScene, sampleGuards, summerMetrics } from '../../js/evo/scene-guards.js';
+import { directionOf } from './helpers/metric-registry.js';
 
 const ERA = 36000;
 const CONFIG = { eraSeasonTicks: ERA, specialisations: { forager: {}, predator: {} } };
@@ -48,6 +49,6 @@ describe('eval.prey_summer_min', () => {
     });
 
     it('is a higher metric', () => {
-        expect(SUMMER_DIRECTIONS).toEqual({ 'eval.prey_summer_min': 'higher' });
+        expect(directionOf('eval.prey_summer_min')).toBe('higher');
     });
 });

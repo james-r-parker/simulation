@@ -34,12 +34,6 @@ const BAND_EDGES = Object.freeze([1000, 2000]);
 const TERCILES = 3;
 const PRIOR_CLASSES = 3;
 
-/** The direction of each metric of this module. */
-export const MATCHED_DIRECTIONS = Object.freeze({
-    ...Object.fromEntries(CONVERSION_BANDS.map((name) => [`eval.hunter_conversion_matched.${name}`, 'higher'])),
-    'eval.hunter_conversion_by_dose': 'higher',
-});
-
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @returns {Record<string, any>} an empty matched scene: per slot the life's genome id and resolved chases, and the log

@@ -6,13 +6,13 @@ import { EVENT_TYPE, createEventRing, pushEvent } from '../../js/sim/events.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import {
     CHASE_OUTCOME,
-    COMPETENCE_DIRECTIONS,
     competenceMetrics,
     createCompetenceScene,
     noteChase,
     noteCompetenceBirth,
     noteCompetenceRecord,
 } from '../../js/evo/scene-competence.js';
+import { directionOf, namesOf } from './helpers/metric-registry.js';
 
 const CONFIG = { juvenileTicks: 3000 };
 const T = BURN_IN_TICKS + 5000;
@@ -85,9 +85,9 @@ describe('kill conversion by age at the opening of a chase', () => {
             expect(result.value, name).toBeNull();
             expect(result.reason, name).toBeTypeOf('string');
         }
-        expect(Object.keys(m).sort()).toEqual(Object.keys(COMPETENCE_DIRECTIONS).sort());
-        expect(COMPETENCE_DIRECTIONS['eval.hunter_kill_conversion_by_age.1k-2k']).toBe('higher');
-        expect(COMPETENCE_DIRECTIONS['eval.hunter_kill_conversion_by_age.under1k']).toBe('watch');
+        expect(Object.keys(m).sort()).toEqual(namesOf('js/evo/scene-competence.js').sort());
+        expect(directionOf('eval.hunter_kill_conversion_by_age.1k-2k')).toBe('higher');
+        expect(directionOf('eval.hunter_kill_conversion_by_age.under1k')).toBe('watch');
     });
 
     it('bins by the age at the opening and not at the resolution, against a hand-built list', () => {
@@ -141,7 +141,7 @@ describe('kill conversion over chases opened hungry', () => {
     }
 
     it('is registered as watch and counts only hungry chases opened at 1000 to 1999', () => {
-        expect(COMPETENCE_DIRECTIONS['eval.hunter_kill_conversion_hungry.1k-2k']).toBe('watch');
+        expect(directionOf('eval.hunter_kill_conversion_hungry.1k-2k')).toBe('watch');
         const scene = createCompetenceScene(CONFIG);
         const w = world([{ id: 1, age: 0 }]);
         hungryChase(scene, w, [1200, true, CHASE_OUTCOME.CAUGHT]); // opened 1100, hungry
@@ -238,7 +238,7 @@ describe('the independent kill share', () => {
     });
 
     it('has the direction higher', () => {
-        expect(COMPETENCE_DIRECTIONS['eval.hunter_independent_kill_share']).toBe('higher');
+        expect(directionOf('eval.hunter_independent_kill_share')).toBe('higher');
     });
 });
 
@@ -299,7 +299,7 @@ describe('conversion gain within a lifetime', () => {
     });
 
     it('has the directions higher and watch', () => {
-        expect(COMPETENCE_DIRECTIONS['eval.hunter_conversion_gain']).toBe('higher');
-        expect(COMPETENCE_DIRECTIONS['eval.hunter_conversion_gain_hunters']).toBe('watch');
+        expect(directionOf('eval.hunter_conversion_gain')).toBe('higher');
+        expect(directionOf('eval.hunter_conversion_gain_hunters')).toBe('watch');
     });
 });

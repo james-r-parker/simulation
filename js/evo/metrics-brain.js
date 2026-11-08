@@ -5,33 +5,18 @@
 import { brainLayout } from '../sim/brain-layout.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { createInputActivity, sampleInputActivity } from '../sim/input-activity.js';
-import { createHebbPools, HEBB_DIRECTIONS, hebbMetrics, sampleHebb } from './metrics-hebb.js';
-import {
-    createLeakSkillPools,
-    LEAK_SKILL_DIRECTIONS,
-    leakSkillMetrics,
-    noteLeakSkillDeath,
-} from './metrics-leak-skill.js';
-import { createMemoryPools, MEMORY_DIRECTIONS, memoryMetrics, sampleMemory, snapshotHidden } from './metrics-memory.js';
+import { createHebbPools, hebbMetrics, sampleHebb } from './metrics-hebb.js';
+import { createLeakSkillPools, leakSkillMetrics, noteLeakSkillDeath } from './metrics-leak-skill.js';
+import { createMemoryPools, memoryMetrics, sampleMemory, snapshotHidden } from './metrics-memory.js';
 import {
     createMemoryOutPools,
-    MEMORY_OUT_DIRECTIONS,
     memoryOutMetrics,
     noteMemoryOutDeath,
     resetMemoryOutSlot,
     sampleMemoryOut,
 } from './metrics-memory-out.js';
-import { createWeightPools, sampleWeights, WEIGHT_DIRECTIONS, weightMetrics } from './metrics-weights.js';
+import { createWeightPools, sampleWeights, weightMetrics } from './metrics-weights.js';
 import { createSaturation, resetSaturationSlot, sampleSaturation } from './rare-saturation.js';
-
-/** The direction of each of the eighteen metrics. */
-export const BRAIN_DIRECTIONS = Object.freeze({
-    ...MEMORY_DIRECTIONS,
-    ...MEMORY_OUT_DIRECTIONS,
-    ...LEAK_SKILL_DIRECTIONS,
-    ...HEBB_DIRECTIONS,
-    ...WEIGHT_DIRECTIONS,
-});
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config

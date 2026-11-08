@@ -43,23 +43,6 @@ const PENDING = 0;
 const DONE = 1;
 
 /** The direction of each metric of this module. */
-/** @type {Readonly<Record<string, string>>} */
-export const COMPETENCE_DIRECTIONS = Object.freeze({
-    ...Object.fromEntries(
-        CONVERSION_BANDS.map((name) => [
-            `eval.hunter_kill_conversion_by_age.${name}`,
-            name === '1k-2k' ? 'higher' : 'watch',
-        ]),
-    ),
-    ...Object.fromEntries(CONVERSION_BANDS.map((name) => [`eval.hunter_chases_by_age.${name}`, 'watch'])),
-    'eval.hunter_kill_conversion_hungry.1k-2k': 'watch',
-    'eval.hunter_first_kill_km_median': 'lower',
-    'eval.hunter_first_kill_rmst': 'lower',
-    'eval.hunter_independent_kill_share': 'higher',
-    'eval.hunter_conversion_gain': 'higher',
-    'eval.hunter_conversion_gain_hunters': 'watch',
-});
-
 /**
  * @param {Readonly<Record<string, any>>} config the world's config (`juvenileTicks`)
  * @returns {Record<string, any>} an empty competence scene: caught and resolved chases per age band, the deliberate kills and

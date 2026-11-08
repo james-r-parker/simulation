@@ -2,13 +2,12 @@
 // real `observe`, read with `computeMetrics`. Pools count from tick 10000.
 
 import { describe, expect, it } from 'vitest';
-import { DIET_DIRECTIONS } from '../../js/evo/metrics-diet.js';
-import { MERIT_DIRECTIONS } from '../../js/evo/metrics-merit.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { observe } from '../../js/evo/observer.js';
 import { BORN_CAUSE } from '../../js/sim/events.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { nextTick, observed, pushBorn } from './helpers/observer-world.js';
+import { directionOf, namesOf } from './helpers/metric-registry.js';
 
 const ON = { maxAgents: 40 };
 const NAMES = ['split_parent_delib_share', 'mate_parent_delib_share', 'split_bumper_share'];
@@ -52,9 +51,8 @@ function birth(r, { mother, father = -1, fatherId = father < 0 ? 0 : r.world.gen
 
 describe('the parent diet metrics', () => {
     it('are watch metrics in the compare table', () => {
-        expect(Object.keys(DIET_DIRECTIONS).sort()).toEqual(NAMES.map((n) => `eval.${n}`).sort());
-        expect(Object.values(DIET_DIRECTIONS)).toEqual(['watch', 'watch', 'watch']);
-        expect(MERIT_DIRECTIONS).toMatchObject(DIET_DIRECTIONS);
+        expect(namesOf('js/evo/metrics-diet.js').sort()).toEqual(NAMES.map((n) => `eval.${n}`).sort());
+        expect(namesOf('js/evo/metrics-diet.js').map(directionOf)).toEqual(['watch', 'watch', 'watch']);
     });
 
     it('are null with no birth after burn-in', () => {

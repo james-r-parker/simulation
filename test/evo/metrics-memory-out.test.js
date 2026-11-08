@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import {
     LIFE_CLASS,
-    MEMORY_OUT_DIRECTIONS,
     classifyLife,
     memoryOutMetrics,
     noteMemoryOutDeath,
@@ -12,6 +11,7 @@ import {
 } from '../../js/evo/metrics-memory-out.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { directionOf, namesOf } from './helpers/metric-registry.js';
 
 /**
  * Samples one slot's two memory outputs through a series, one value per 4 ticks.
@@ -141,6 +141,10 @@ describe('the memory-output metrics', () => {
     });
 
     it('is a watch metric', () => {
-        expect(Object.values(MEMORY_OUT_DIRECTIONS).every((d) => d === 'watch')).toBe(true);
+        expect(
+            namesOf('js/evo/metrics-memory-out.js')
+                .map(directionOf)
+                .every((d) => d === 'watch'),
+        ).toBe(true);
     });
 });

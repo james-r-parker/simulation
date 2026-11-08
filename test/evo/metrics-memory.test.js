@@ -1,15 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import {
-    FLOOR_GENE,
-    MEMORY_DIRECTIONS,
-    SNAPSHOT_LEAD,
-    memoryMetrics,
-    sampleMemory,
-    snapshotHidden,
-} from '../../js/evo/metrics-memory.js';
+import { FLOOR_GENE, SNAPSHOT_LEAD, memoryMetrics, sampleMemory, snapshotHidden } from '../../js/evo/metrics-memory.js';
 import { detSigmoid } from '../../js/sim/det-math.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { directionOf, namesOf } from './helpers/metric-registry.js';
 
 const H = 4;
 
@@ -78,8 +72,12 @@ describe('the leak metrics', () => {
     });
 
     it('is a watch metric', () => {
-        expect(Object.values(MEMORY_DIRECTIONS).every((d) => d === 'watch')).toBe(true);
-        expect(Object.keys(MEMORY_DIRECTIONS)).toHaveLength(5);
+        expect(
+            namesOf('js/evo/metrics-memory.js')
+                .map(directionOf)
+                .every((d) => d === 'watch'),
+        ).toBe(true);
+        expect(namesOf('js/evo/metrics-memory.js')).toHaveLength(5);
     });
 });
 

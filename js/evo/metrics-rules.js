@@ -5,25 +5,10 @@
 // `metrics-selection.js` merges these into the selection metrics.
 
 import { mateMetrics } from './scene-mate.js';
-import { BIRTH_SOURCES, birthSourceMetrics } from './scene-births.js';
+import { birthSourceMetrics } from './scene-births.js';
 import { heritageMetrics } from './scene-heritage.js';
 import { nicheMetrics } from './scene-niche.js';
 import { proofMetrics } from './scene-proof.js';
-
-const NAMES = [
-    ...BIRTH_SOURCES.map((name) => `eval.birth_source_share.${name}`),
-    'eval.lineage_persistence',
-    'eval.skill_heritability',
-    'eval.niche_replacement',
-    'eval.social_return',
-    'eval.mate_skill_gap',
-    'eval.mate_hunter_lean',
-    'eval.proven_share',
-    'eval.established_share',
-];
-
-/** The direction of each rule metric: all `watch`. */
-export const RULE_DIRECTIONS = Object.freeze(Object.fromEntries(NAMES.map((name) => [name, 'watch'])));
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick

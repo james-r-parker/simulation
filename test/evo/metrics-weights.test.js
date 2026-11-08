@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
-import { CLAMP_LEVEL, WEIGHT_DIRECTIONS, sampleWeights, weightMetrics } from '../../js/evo/metrics-weights.js';
+import { CLAMP_LEVEL, sampleWeights, weightMetrics } from '../../js/evo/metrics-weights.js';
 import { MIN_EVENTS } from '../../js/evo/rare-saturation.js';
 import { POOLED_CHANNELS, POOLED_STRIDE } from '../../js/sim/brain-layout.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { directionOf, namesOf } from './helpers/metric-registry.js';
 
 const H = 3;
 
@@ -117,8 +118,8 @@ describe('eval.sigma_mean, eval.input_active_share and the saturation jump', () 
         const m = weightMetrics(observer);
         expect(m['eval.input_active_share.threat'].value).toBeCloseTo(15 / (10 * POOLED_STRIDE), 12);
         expect(m['eval.input_active_share.prey'].value).toBe(0);
-        expect(WEIGHT_DIRECTIONS['eval.input_active_share.threat']).toBe('watch');
-        expect(WEIGHT_DIRECTIONS['eval.input_active_share.prey']).toBe('watch');
+        expect(directionOf('eval.input_active_share.threat')).toBe('watch');
+        expect(directionOf('eval.input_active_share.prey')).toBe('watch');
     });
 
     it('reports the mean jump over at least 100 first firings', () => {
@@ -131,7 +132,11 @@ describe('eval.sigma_mean, eval.input_active_share and the saturation jump', () 
     });
 
     it('is watch throughout', () => {
-        expect(Object.keys(WEIGHT_DIRECTIONS)).toHaveLength(7);
-        expect(Object.values(WEIGHT_DIRECTIONS).every((d) => d === 'watch')).toBe(true);
+        expect(namesOf('js/evo/metrics-weights.js')).toHaveLength(7);
+        expect(
+            namesOf('js/evo/metrics-weights.js')
+                .map(directionOf)
+                .every((d) => d === 'watch'),
+        ).toBe(true);
     });
 });

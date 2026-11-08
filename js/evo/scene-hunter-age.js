@@ -36,14 +36,6 @@ BIRTH_INDEX[BIRTH_SOURCE.INITIAL] = 4;
 export const AGE_BAND_NAMES = Object.freeze(['juvenile', 'young', 'adult']);
 const YOUNG_SPAN = 3;
 
-/** The direction of each metric of this module. */
-export const AGE_DIRECTIONS = Object.freeze({
-    'eval.hunter_first_kill_age': 'watch',
-    'eval.hunter_juvenile_death_share': 'lower',
-    ...Object.fromEntries(AGE_BAND_NAMES.map((name) => [`eval.hunter_kill_rate_by_age.${name}`, 'watch'])),
-    ...Object.fromEntries(HUNTER_BIRTH_NAMES.map((name) => [`eval.hunter_kill_rate_by_source.${name}`, 'watch'])),
-});
-
 /**
  * @param {number} juvenileTicks the juvenile window in ticks (`config.juvenileTicks`)
  * @returns {Record<string, any>} an empty age scene

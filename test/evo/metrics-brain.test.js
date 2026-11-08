@@ -3,7 +3,6 @@ import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import { metricDirection } from '../../js/evo/compare.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import {
-    BRAIN_DIRECTIONS,
     brainMetrics,
     noteBrainDeath,
     observeBrain,
@@ -12,6 +11,7 @@ import {
 } from '../../js/evo/metrics-brain.js';
 import { OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { sampleInputActivity } from '../../js/sim/input-activity.js';
+import { directionOf } from './helpers/metric-registry.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
 
@@ -40,8 +40,8 @@ const NAMES = [
 
 describe('the registered metrics', () => {
     it('are the eighteen of the Metrics table and the two channel shares, all watch to eval:compare', () => {
-        expect(Object.keys(BRAIN_DIRECTIONS).sort()).toEqual([...NAMES].sort());
         for (const name of NAMES) {
+            expect(directionOf(name)).toBe('watch');
             expect(metricDirection(name)).toBe('watch');
         }
     });

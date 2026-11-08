@@ -16,13 +16,6 @@ import { none, ok } from './metrics-stats.js';
 import { BASIN_CHECKPOINT_TICKS } from './scene-basin.js';
 import { slotOfGenome } from '../sim/merit-state.js';
 
-/** The direction of each metric of this module. */
-export const KIN_DIRECTIONS = Object.freeze({
-    'eval.juvenile_parent_distance': 'watch',
-    'eval.juvenile_sibling_distance': 'watch',
-    'eval.juvenile_parent_pull': 'watch',
-});
-
 /**
  * @param {Readonly<Record<string, any>>} config the world's config (`maxAgents`)
  * @returns {Record<string, any>} an empty kin-proximity scene: the juvenile scratch list and the sums of the parent and sibling
@@ -132,7 +125,11 @@ export function sampleKinProximity(scene, world) {
 export function kinProximityMetrics(scene) {
     if (scene.count === 0) {
         const reason = none('no juvenile hunter with a living parent and a living sibling at a checkpoint');
-        return Object.fromEntries(Object.keys(KIN_DIRECTIONS).map((name) => [name, reason]));
+        return {
+            'eval.juvenile_parent_distance': reason,
+            'eval.juvenile_sibling_distance': reason,
+            'eval.juvenile_parent_pull': reason,
+        };
     }
     const parent = scene.parentSum / scene.count;
     const sibling = scene.siblingSum / scene.count;
