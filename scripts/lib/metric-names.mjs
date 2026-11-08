@@ -143,3 +143,14 @@ export function isRegistered({ name, prefix }, metrics = METRICS) {
     const known = Object.entries(metrics).flatMap(([current, entry]) => [current, ...entry.renamedFrom]);
     return prefix ? known.some((n) => n.startsWith(name)) : known.some((n) => n === name || n.startsWith(`${name}.`));
 }
+
+/**
+ * @param {{metrics: Record<string, unknown>}} report an eval report
+ * @param {Readonly<Record<string, unknown>>} [metrics] the registry
+ * @returns {string[]} the report's `eval.*` metric names that have no registry entry, sorted
+ */
+export function unregisteredReportNames(report, metrics = METRICS) {
+    return Object.keys(report.metrics)
+        .filter((name) => name.startsWith('eval.') && !Object.hasOwn(metrics, name))
+        .sort();
+}

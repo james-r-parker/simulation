@@ -13,12 +13,13 @@
 // made, and a rename keeps the old name there), evals/results/, evals/power/, evals/baselines/, evals/ladder/ and
 // evals/screens/results/ (reports), and the Targets of built phases (they describe what shipped). A made-up name that a
 // test needs is listed in `LET_THROUGH` with its reason.
-// Usage: node scripts/check-metric-names.mjs
+// Usage: node scripts/check-metric-names.mjs, or `--report <report.json>` to check that every `eval.*` metric of a fresh
+// eval report has a registry entry (the `eval-smoke` gate runs it on its two reports).
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { METRICS } from '../js/evo/metric-registry/index.js';
-import { isRegistered, LET_THROUGH, literalUses, targetUses } from './lib/metric-names.mjs';
+import { isRegistered, LET_THROUGH, literalUses, targetUses, unregisteredReportNames } from './lib/metric-names.mjs';
 
 export { LET_THROUGH };
 
@@ -110,8 +111,18 @@ export function checkMetricNames(root = ROOT, { letThrough = LET_THROUGH, metric
     return [...unknownNames(root, metrics, letThrough), ...stale];
 }
 
+/**
+ * @param {string} file a fresh eval report
+ * @returns {string[]} one problem line per `eval.*` metric of the report with no registry entry
+ */
+export function checkReportNames(file) {
+    const report = JSON.parse(readFileSync(file, 'utf8'));
+    return unregisteredReportNames(report).map((name) => `${file}: ${name} has no metric registry entry`);
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-    const problems = checkMetricNames();
+    const reportAt = process.argv.indexOf('--report');
+    const problems = reportAt > 0 ? checkReportNames(process.argv[reportAt + 1]) : checkMetricNames();
     for (const problem of problems) {
         console.log(problem);
     }

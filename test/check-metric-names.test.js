@@ -2,8 +2,14 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { checkMetricNames, LET_THROUGH } from '../scripts/check-metric-names.mjs';
-import { isRegistered, literalUses, stringLiterals, targetUses } from '../scripts/lib/metric-names.mjs';
+import { checkMetricNames, checkReportNames, LET_THROUGH } from '../scripts/check-metric-names.mjs';
+import {
+    isRegistered,
+    literalUses,
+    stringLiterals,
+    targetUses,
+    unregisteredReportNames,
+} from '../scripts/lib/metric-names.mjs';
 
 /** A made-up registry: one metric, one family and one renamed metric. */
 const FAKE = {
@@ -145,5 +151,21 @@ describe('checkMetricNames', () => {
         for (const reason of Object.values(LET_THROUGH)) {
             expect(reason.length).toBeGreaterThan(10);
         }
+    });
+});
+
+describe('report names (the eval-smoke check)', () => {
+    it('lists the eval metrics of a report that the registry lacks, and ignores bench and browser names', () => {
+        const report = { metrics: { 'eval.births_per_1k': {}, 'eval.not_a_metric': {}, 'bench.step_ms@500': {} } };
+        expect(unregisteredReportNames(report)).toEqual(['eval.not_a_metric']);
+        expect(unregisteredReportNames({ metrics: { 'eval.births_per_1k': {} } })).toEqual([]);
+    });
+
+    it('reads a report file and names each unregistered metric with the file', () => {
+        const dir = mkdtempSync(join(tmpdir(), 'report-names-'));
+        const file = join(dir, 'report.json');
+        writeFileSync(file, JSON.stringify({ metrics: { 'eval.births_per_1k': {}, 'eval.not_a_metric': {} } }));
+        expect(checkReportNames(file)).toEqual([`${file}: eval.not_a_metric has no metric registry entry`]);
+        rmSync(dir, { recursive: true });
     });
 });
