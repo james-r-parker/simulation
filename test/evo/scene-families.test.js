@@ -56,26 +56,26 @@ describe('families per basin', () => {
         sampleFamilies(scene, handWorld([...basinOf(0, [10, 10, 10]), ...basinOf(1, [15, 15])], 3000));
         sampleFamilies(scene, handWorld([...basinOf(0, [10, 10, 10]), ...basinOf(1, [15, 15])], 4000));
         const m = familyMetrics(scene, { tick: 4000 });
-        expect(m['eval.basin_families'].value).toBe(2);
-        expect(m['eval.basin_family_effective'].value).toBeCloseTo(2, 9);
+        expect(m['eval.basin_families']?.value).toBe(2);
+        expect(m['eval.basin_family_effective']?.value).toBeCloseTo(2, 9);
     });
 
     it('reads a dominant family as near 1 effective, and null for a thin basin or none of 20', () => {
         const scene = createFamilyScene(CONFIG);
         sampleFamilies(scene, handWorld([...basinOf(0, [27, 1, 1, 1]), ...basinOf(1, [5])], 1000));
         const m = familyMetrics(scene, { tick: 1000 });
-        expect(m['eval.basin_families'].value).toBe(4);
+        expect(m['eval.basin_families']?.value).toBe(4);
         // The 5-agent east basin is reported, not dropped: effective is null and says which basin was thin.
-        expect(m['eval.basin_family_effective'].value).toBeNull();
-        expect(m['eval.basin_family_effective'].reason).toContain('basin 1 held 5 agents');
+        expect(m['eval.basin_family_effective']?.value).toBeNull();
+        expect(m['eval.basin_family_effective']?.reason).toContain('basin 1 held 5 agents');
         const both = createFamilyScene(CONFIG);
         sampleFamilies(both, handWorld([...basinOf(0, [27, 1, 1, 1]), ...basinOf(1, [20])], 1000));
-        expect(familyMetrics(both, { tick: 1000 })['eval.basin_family_effective'].value).toBeCloseTo(
+        expect(familyMetrics(both, { tick: 1000 })['eval.basin_family_effective']?.value).toBeCloseTo(
             Math.min(900 / 732, 1),
             9,
         );
         const empty = createFamilyScene(CONFIG);
         sampleFamilies(empty, handWorld(basinOf(0, [5]), 1000));
-        expect(familyMetrics(empty, { tick: 1000 })['eval.basin_families'].value).toBeNull();
+        expect(familyMetrics(empty, { tick: 1000 })['eval.basin_families']?.value).toBeNull();
     });
 });

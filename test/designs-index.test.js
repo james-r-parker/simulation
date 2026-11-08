@@ -88,6 +88,19 @@ describe('parseDoc', () => {
         expect(() => parse(proposed({ targets: '**Targets:** Faster Things!' }))).toThrow(/is not/);
     });
 
+    it('needs every eval. Target to be a registered metric, or the start of one', () => {
+        expect(() => parse(proposed({ targets: '**Targets:** eval.not_a_real_metric' }))).toThrow(
+            /eval.not_a_real_metric is not a metric in js\/evo\/metric-registry/,
+        );
+        expect(() => parse(proposed({ targets: '**Targets:** eval.hunter_income_share.*' }))).not.toThrow();
+        expect(() => parse(proposed({ targets: '**Targets:** eval.median_lifespan, bench.anything@1' }))).not.toThrow();
+    });
+
+    it('does not check the Targets of a built phase', () => {
+        const built = proposed().replace('### Phase 1 - Build it', '### Phase 1 - Build it (built)');
+        expect(() => parse(built.replace('eval.food_energy_per_1k', 'eval.not_a_real_metric'))).not.toThrow();
+    });
+
     it('rejects a line-number reference outside code fences', () => {
         expect(() => parse(proposed({ body: 'See `js/agent.js:632`.' }))).toThrow(/pins a line number/);
         expect(() => parse(proposed({ body: 'See .github/workflows/check.yml:12.' }))).toThrow(/pins a line number/);

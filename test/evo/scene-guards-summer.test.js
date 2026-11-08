@@ -2,7 +2,8 @@
 // hand-built series.
 
 import { describe, expect, it } from 'vitest';
-import { createGuardScene, sampleGuards, summerMetrics, SUMMER_DIRECTIONS } from '../../js/evo/scene-guards.js';
+import { createGuardScene, sampleGuards, summerMetrics } from '../../js/evo/scene-guards.js';
+import { directionOf } from './helpers/metric-registry.js';
 
 const ERA = 36000;
 const CONFIG = { eraSeasonTicks: ERA, specialisations: { forager: {}, predator: {} } };
@@ -40,14 +41,14 @@ describe('eval.prey_summer_min', () => {
     it('is null with a reason for a seed with no summer yet, and without eraSeasonTicks', () => {
         const scene = createGuardScene(CONFIG);
         sampleGuards(scene, world(ERA - 1000, 90));
-        expect(summerMetrics(scene)['eval.prey_summer_min'].value).toBeNull();
-        expect(summerMetrics(scene)['eval.prey_summer_min'].reason).toMatch(/no summer/);
+        expect(summerMetrics(scene)['eval.prey_summer_min']?.value).toBeNull();
+        expect(summerMetrics(scene)['eval.prey_summer_min']?.reason).toMatch(/no summer/);
         const off = createGuardScene({ specialisations: CONFIG.specialisations });
         sampleGuards(off, world(ERA + 1000, 90));
-        expect(summerMetrics(off)['eval.prey_summer_min'].value).toBeNull();
+        expect(summerMetrics(off)['eval.prey_summer_min']?.value).toBeNull();
     });
 
     it('is a higher metric', () => {
-        expect(SUMMER_DIRECTIONS).toEqual({ 'eval.prey_summer_min': 'higher' });
+        expect(directionOf('eval.prey_summer_min')).toBe('higher');
     });
 });

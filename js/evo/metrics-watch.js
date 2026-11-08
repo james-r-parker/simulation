@@ -99,7 +99,7 @@ function lagCorr(windows) {
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick and checkpointed
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the four watch metrics, keyed by name
+ * @returns {import('./metrics-stats.js').MetricRecord} the four watch metrics, keyed by name
  */
 export function watchMetrics(observer) {
     const p = observer.watch;

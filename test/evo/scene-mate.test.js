@@ -7,10 +7,12 @@ import { computeMetrics } from '../../js/evo/metrics.js';
 import { trackMatings } from '../../js/evo/scene-mate.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const T0 = 10000;
 
-const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
+const read = (/** @type {any} */ r, /** @type {string} */ name) =>
+    loose(computeMetrics(r.observer, r.world))[`eval.${name}`];
 
 /** A world with a female of spec 0, four males of spec 0 with deliberate meals 0, 3, 6 and 9 of 10, and two hunters. */
 function herd() {

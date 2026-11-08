@@ -5,9 +5,10 @@ import { BORN_CAUSE } from '../../js/sim/events.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { BIRTH_SOURCES } from '../../js/evo/scene-births.js';
 import { observed } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const read = (/** @type {any} */ r, /** @type {string} */ name) =>
-    computeMetrics(r.observer, r.world)[`eval.birth_source_share.${name}`];
+    loose(computeMetrics(r.observer, r.world))[`eval.birth_source_share.${name}`];
 
 describe('eval.birth_source_share.*', () => {
     it('are the shares of births after burn-in by cause', () => {

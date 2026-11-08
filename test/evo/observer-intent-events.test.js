@@ -143,7 +143,7 @@ describe('call precision as lift over the caller base rate', () => {
         const { intent } = arena;
         expect([intent.alarmCalls[spam], intent.alarmCalls[only], intent.run.alarmsPrecise]).toEqual([39, 31, 62]);
         expect(intent.threatCueTicks[spam] / intent.aliveTicks[spam]).toBeCloseTo(base, 10);
-        const lift = intentMetrics(arena.observer)['eval.alarm_precision'].value ?? NaN;
+        const lift = intentMetrics(arena.observer)['eval.alarm_precision']?.value ?? NaN;
         // spammer: 31 precise - 39 * base = 0; cue-only: 31 - 31 * base = 31 * (1 - base)
         expect(lift).toBeCloseTo((31 * (1 - base)) / 70, 10);
     });
@@ -152,16 +152,16 @@ describe('call precision as lift over the caller base rate', () => {
         const { arena } = run('PACK_CALLED', (world, slot) => setRay(world, slot, 1, 0.6, CH.PREY));
         const { intent } = arena;
         expect(intent.run.huntCalls).toBe(70);
-        const lift = intentMetrics(arena.observer)['eval.hunt_call_precision'].value ?? NaN;
+        const lift = intentMetrics(arena.observer)['eval.hunt_call_precision']?.value ?? NaN;
         expect(lift).toBeCloseTo((62 - 70 * base) / 70, 10);
     });
 
     it('keeps the calls of a reused slot in the run, so a slot reset does not change the lift', () => {
         const { arena, spam } = run('ALARM_CALLED', (world, slot) => seeThreat(world, slot, 3));
-        const before = intentMetrics(arena.observer)['eval.alarm_precision'].value;
+        const before = intentMetrics(arena.observer)['eval.alarm_precision']?.value;
         resetIntentSlot(arena.intent, spam);
         expect(arena.intent.run.alarmsBase).toBeCloseTo(39 * base, 10);
-        expect(intentMetrics(arena.observer)['eval.alarm_precision'].value).toBeCloseTo(before ?? NaN, 10);
+        expect(intentMetrics(arena.observer)['eval.alarm_precision']?.value).toBeCloseTo(before ?? NaN, 10);
     });
 });
 

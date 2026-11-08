@@ -3,14 +3,14 @@
 // births, and no code spawns `immigrant` births any more, so that share reads 0.
 
 import { BORN_CAUSE } from '../sim/events.js';
-import { none, ok } from './metrics-stats.js';
+import { bySuffix, none, ok } from './metrics-stats.js';
 
 /** The metric suffixes, in the order the doc names them. */
 export const BIRTH_SOURCES = Object.freeze(['split', 'mate', 'floor', 'immigrant']);
 
 /**
  * @param {Record<string, any>} observer the observer
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} one share per source
+ * @returns {import('./metrics-stats.js').MetricRecord} one share per source
  */
 export function birthSourceMetrics(observer) {
     const after = observer.birthsAfterBurnIn;
@@ -24,10 +24,7 @@ export function birthSourceMetrics(observer) {
         after[BORN_CAUSE.FLOOR],
         after[BORN_CAUSE.IMMIGRANT],
     ];
-    return Object.fromEntries(
-        BIRTH_SOURCES.map((name, i) => [
-            `eval.birth_source_share.${name}`,
-            total > 0 ? ok(counts[i] / total) : none('no birth after burn-in'),
-        ]),
+    return bySuffix('eval.birth_source_share', BIRTH_SOURCES, (i) =>
+        total > 0 ? ok(counts[i] / total) : none('no birth after burn-in'),
     );
 }

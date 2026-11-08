@@ -38,31 +38,31 @@ function build(over = {}) {
 describe('herd scene metrics', () => {
     it('reports each carcass share over the matching all-meal denominator', () => {
         const metrics = build();
-        expect(metrics['eval.herd_carcass_share.predator'].value).toBeCloseTo(0.4);
-        expect(metrics['eval.herd_carcass_share.forager'].value).toBe(0);
-        expect(metrics['eval.herd_carcass_meal_share'].value).toBeCloseTo(0.5);
-        expect(metrics['eval.carcass_meal_share'].value).toBeCloseTo(0.875);
-        expect(metrics['eval.carcass_hunter_share'].value).toBeCloseTo(60 / 70);
+        expect(metrics['eval.herd_carcass_share.predator']?.value).toBeCloseTo(0.4);
+        expect(metrics['eval.herd_carcass_share.forager']?.value).toBe(0);
+        expect(metrics['eval.herd_carcass_meal_share']?.value).toBeCloseTo(0.5);
+        expect(metrics['eval.carcass_meal_share']?.value).toBeCloseTo(0.875);
+        expect(metrics['eval.carcass_hunter_share']?.value).toBeCloseTo(60 / 70);
     });
 
     it('returns null with a reason when a specialisation has not eaten', () => {
         const result = build()['eval.herd_carcass_share.reproducer'];
-        expect(result.value).toBeNull();
-        expect(result.reason).toContain('no meals for reproducer');
+        expect(result?.value).toBeNull();
+        expect(result?.reason).toContain('no meals for reproducer');
     });
 
     it('reports patch-held herd-follow comparisons and ecology rates', () => {
         const metrics = build();
-        expect(metrics['eval.herd_follow_share'].value).toBeCloseTo(1.25);
-        expect(metrics['eval.dung_food_share'].value).toBeCloseTo(0.2);
-        expect(metrics['eval.herd_seeded_patches'].value).toBeCloseTo(0.5);
+        expect(metrics['eval.herd_follow_share']?.value).toBeCloseTo(1.25);
+        expect(metrics['eval.dung_food_share']?.value).toBeCloseTo(0.2);
+        expect(metrics['eval.herd_seeded_patches']?.value).toBeCloseTo(0.5);
     });
 
     it('leaves out a patch whose bare checkpoints saw no blobs from the herd-follow ratio', () => {
         const metrics = build({ followBareBlobs: Float64Array.of(4, 0) });
-        expect(metrics['eval.herd_follow_share'].value).toBeCloseTo(2);
+        expect(metrics['eval.herd_follow_share']?.value).toBeCloseTo(2);
         const none = build({ followBareBlobs: Float64Array.of(0, 0) })['eval.herd_follow_share'];
-        expect(none.value).toBeNull();
-        expect(none.reason).toContain('no patch had 3 herded and bare checkpoints');
+        expect(none?.value).toBeNull();
+        expect(none?.reason).toContain('no patch had 3 herded and bare checkpoints');
     });
 });

@@ -6,10 +6,11 @@ import { computeMetrics } from '../../js/evo/metrics.js';
 import { flushCondition, gaitShift, sampleCondition } from '../../js/evo/scene-condition.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { resultOf } from './helpers/metric-registry.js';
 
 const T0 = 10000;
 
-const read = (/** @type {any} */ r) => computeMetrics(r.observer, r.world)['eval.condition_gait_shift'];
+const read = (/** @type {any} */ r) => resultOf(computeMetrics(r.observer, r.world), 'eval.condition_gait_shift');
 
 /** Samples the agent once at the next 100-tick mark with the given gait and condition. */
 function sample(/** @type {any} */ r, /** @type {number} */ slot, /** @type {Record<string, number>} */ f) {

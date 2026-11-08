@@ -7,6 +7,7 @@ import { GRID_COLS, GRID_ROWS, createSeasonMapScene, sampleSeasonMap } from '../
 import { WINTER } from '../../js/sim/eras.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const SUMMER = 1;
 const SPRING = 0;
@@ -39,7 +40,8 @@ function run(/** @type {any} */ r, /** @type {Array<[number, number[][]]>} */ ch
     });
 }
 
-const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
+const read = (/** @type {any} */ r, /** @type {string} */ name) =>
+    loose(computeMetrics(r.observer, r.world))[`eval.${name}`];
 
 describe('eval.season_map_distance', () => {
     it('is the winter-to-summer distance minus the summer half-against-half floor', () => {

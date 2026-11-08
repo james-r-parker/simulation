@@ -140,7 +140,7 @@ export function noteStyleDeath(observer, slot) {
 
 /**
  * @param {Record<string, any>} style the style state
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} `eval.style_separation`
+ * @returns {import('./metrics-stats.js').MetricRecord} `eval.style_separation`
  */
 export function styleMetrics(style) {
     const { rows, index, log } = style.deaths;

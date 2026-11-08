@@ -14,6 +14,7 @@ import {
 import { refugeCentres } from '../../js/evo/scene-terrain.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const BASINS = {
     worldWidth: 4000,
@@ -23,7 +24,8 @@ const BASINS = {
     maxAgents: 64,
 };
 
-const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
+const read = (/** @type {any} */ r, /** @type {string} */ name) =>
+    loose(computeMetrics(r.observer, r.world))[`eval.${name}`];
 
 /** Tracks a slot in the observer under its world spec and lineage. */
 function track(/** @type {any} */ r, /** @type {number} */ slot) {

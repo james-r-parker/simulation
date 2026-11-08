@@ -9,15 +9,16 @@ import { hashWorld } from '../../js/sim/world-hash.js';
 import { FOOD_KIND } from '../../js/sim/carcass.js';
 import { DEATH_CAUSE, EVENT_TYPE, clearEvents, pushEvent } from '../../js/sim/events.js';
 import { createScenes, observeScenes } from '../../js/evo/observer-scenes.js';
+import { loose, resultOf } from './helpers/metric-registry.js';
 
 describe('flora diet detectors', () => {
     it('returns reasons when no plant energy or only one season was observed', () => {
         const scene = createFloraScene();
-        expect(floraMetrics(scene)['eval.food_species_share.grass'].value).toBeNull();
-        expect(floraMetrics(scene)['eval.seasonal_diet_shift'].reason).toContain('two seasons');
+        expect(floraMetrics(scene)['eval.food_species_share.grass']?.value).toBeNull();
+        expect(floraMetrics(scene)['eval.seasonal_diet_shift']?.reason).toContain('two seasons');
         scene.energy[0] = 100;
-        expect(floraMetrics(scene)['eval.food_species_share.grass'].value).toBe(1);
-        expect(floraMetrics(scene)['eval.seasonal_diet_shift'].value).toBeNull();
+        expect(floraMetrics(scene)['eval.food_species_share.grass']?.value).toBe(1);
+        expect(floraMetrics(scene)['eval.seasonal_diet_shift']?.value).toBeNull();
     });
 
     it('reports species shares and maximal shift for disjoint seasonal diets', () => {
@@ -25,10 +26,10 @@ describe('flora diet detectors', () => {
         scene.energy[0] = 100;
         scene.energy[7] = 300;
         const metrics = floraMetrics(scene);
-        expect(metrics['eval.food_species_share.grass'].value).toBe(0.25);
-        expect(metrics['eval.food_species_share.berry'].value).toBe(0.75);
-        expect(metrics['eval.food_species_share.nut'].value).toBe(0);
-        expect(metrics['eval.seasonal_diet_shift'].value).toBe(1);
+        expect(metrics['eval.food_species_share.grass']?.value).toBe(0.25);
+        expect(metrics['eval.food_species_share.berry']?.value).toBe(0.75);
+        expect(metrics['eval.food_species_share.nut']?.value).toBe(0);
+        expect(metrics['eval.seasonal_diet_shift']?.value).toBe(1);
     });
 
     it('reports zero shift for an identical diet in every season', () => {
@@ -37,7 +38,7 @@ describe('flora diet detectors', () => {
             scene.energy[season * 6] = 10 * (season + 1);
             scene.energy[season * 6 + 1] = 30 * (season + 1);
         }
-        expect(floraMetrics(scene)['eval.seasonal_diet_shift'].value).toBe(0);
+        expect(floraMetrics(scene)['eval.seasonal_diet_shift']?.value).toBe(0);
     });
 
     it('excludes burn-in and counts each observed intake only once', () => {
@@ -94,13 +95,13 @@ describe('flora diet detectors', () => {
         pushEvent(w.events, EVENT_TYPE.AGENT_SICKENED, BURN_IN_TICKS);
         trackFlora(scene, w);
         trackFlora(scene, w);
-        expect(floraMetrics(scene)['eval.toxic_death_share'].value).toBe(0.5);
-        expect(floraMetrics(scene)['eval.sick_share'].value).toBe(0.5);
+        expect(floraMetrics(scene)['eval.toxic_death_share']?.value).toBe(0.5);
+        expect(floraMetrics(scene)['eval.sick_share']?.value).toBe(0.5);
         clearEvents(w.events);
         w.tick++;
         w.dose[0] = 0;
         trackFlora(scene, w);
-        expect(floraMetrics(scene)['eval.sick_share'].value).toBe(0.25);
+        expect(floraMetrics(scene)['eval.sick_share']?.value).toBe(0.25);
         expect(scene.deaths).toBe(2);
     });
 
@@ -124,29 +125,29 @@ describe('flora diet detectors', () => {
         trackFlora(scene, w);
         expect(hashWorld(w)).toBe(before);
         expect(scene.available[0]).toBe(2);
-        expect(floraMetrics(scene)['eval.toxic_avoidance'].value).toBeCloseTo(3 / 7);
+        expect(floraMetrics(scene)['eval.toxic_avoidance']?.value).toBeCloseTo(3 / 7);
         w.tick++;
         trackFlora(scene, w);
         expect(scene.available[0]).toBe(2);
         scene.meals[1] = 0;
-        expect(floraMetrics(scene)['eval.toxic_avoidance'].value).toBe(1);
+        expect(floraMetrics(scene)['eval.toxic_avoidance']?.value).toBe(1);
         scene.meals[1] = 5;
-        expect(floraMetrics(scene)['eval.toxic_avoidance'].value).toBe(0);
+        expect(floraMetrics(scene)['eval.toxic_avoidance']?.value).toBe(0);
         scene.available[1] = 0;
-        expect(floraMetrics(scene)['eval.toxic_avoidance'].value).toBe(-1);
+        expect(floraMetrics(scene)['eval.toxic_avoidance']?.value).toBe(-1);
         scene.meals[1] = 0;
-        expect(floraMetrics(scene)['eval.toxic_avoidance'].reason).toContain('no toxic');
+        expect(floraMetrics(scene)['eval.toxic_avoidance']?.reason).toContain('no toxic');
     });
 
     it('has null toxin metrics without their denominators', () => {
         const scene = createFloraScene();
         const metrics = floraMetrics(scene);
         for (const name of ['toxic_death_share', 'sick_share', 'toxic_avoidance']) {
-            expect(metrics[`eval.${name}`].value).toBeNull();
-            expect(metrics[`eval.${name}`].reason).toBeTypeOf('string');
+            expect(loose(metrics)[`eval.${name}`].value).toBeNull();
+            expect(loose(metrics)[`eval.${name}`].reason).toBeTypeOf('string');
         }
         scene.meals[0] = 10;
-        expect(floraMetrics(scene)['eval.toxic_avoidance'].value).toBeNull();
+        expect(floraMetrics(scene)['eval.toxic_avoidance']?.value).toBeNull();
     });
 
     it('counts a zero-net toxic plant meal before clearing it and excludes meat', () => {
@@ -180,7 +181,7 @@ describe('flora diet detectors', () => {
         w.tick = BURN_IN_TICKS;
         pushEvent(w.events, EVENT_TYPE.PATCH_SEEDED, BURN_IN_TICKS - 1);
         trackFlora(scene, w);
-        expect(floraMetrics(scene)['eval.pollination_rate'].value).toBeNull();
+        expect(floraMetrics(scene)['eval.pollination_rate']?.value).toBeNull();
         for (let tick = 1; tick <= 1000; tick++) {
             clearEvents(w.events);
             w.tick = BURN_IN_TICKS + tick;
@@ -192,7 +193,7 @@ describe('flora diet detectors', () => {
         }
         expect(scene.pollinations).toBe(2);
         expect(scene.ticks).toBe(1000);
-        expect(floraMetrics(scene)['eval.pollination_rate'].value).toBe(2);
+        expect(floraMetrics(scene)['eval.pollination_rate']?.value).toBe(2);
     });
 
     it('averages population hue deviations across live pollinated species and checkpoints', () => {
@@ -203,20 +204,20 @@ describe('flora diet detectors', () => {
         w.patchHue.set([-0.5, 0.5, 0, 1, -1, 1, -1, 0]);
         w.tick = BURN_IN_TICKS + 999;
         trackFlora(scene, w);
-        expect(floraMetrics(scene)['eval.flora_hue_spread'].value).toBeNull();
+        expect(floraMetrics(scene)['eval.flora_hue_spread']?.value).toBeNull();
         w.tick++;
         trackFlora(scene, w);
         trackFlora(scene, w);
-        expect(floraMetrics(scene)['eval.flora_hue_spread'].value).toBe(0.5);
+        expect(floraMetrics(scene)['eval.flora_hue_spread']?.value).toBe(0.5);
         w.tick += 1000;
         w.patchHue.fill(0);
         trackFlora(scene, w);
-        expect(floraMetrics(scene)['eval.flora_hue_spread'].value).toBe(0.25);
+        expect(floraMetrics(scene)['eval.flora_hue_spread']?.value).toBe(0.25);
         w.patchAlive.fill(0);
         w.tick += 1000;
         trackFlora(scene, w);
         expect(scene.hueCheckpoints).toBe(2);
-        expect(floraMetrics(scene)['eval.flora_hue_spread'].value).toBe(0.25);
+        expect(floraMetrics(scene)['eval.flora_hue_spread']?.value).toBe(0.25);
     });
 
     it('measures the patch pool full share at post-burn-in checkpoints', () => {
@@ -229,13 +230,13 @@ describe('flora diet detectors', () => {
             trackFlora(scene, w);
         }
         expect(scene.patchPoolCheckpoints).toBe(4);
-        expect(floraMetrics(scene)['eval.flora_patch_pool_full_share'].value).toBe(0.5);
+        expect(floraMetrics(scene)['eval.flora_patch_pool_full_share']?.value).toBe(0.5);
     });
 
     it('reports zero when the patch pool never fills and null before the first checkpoint', () => {
         const w = smallWorld({ floraPatchMax: 4 });
         const scene = createFloraScene();
-        const metric = () => floraMetrics(scene)['eval.flora_patch_pool_full_share'];
+        const metric = () => resultOf(floraMetrics(scene), 'eval.flora_patch_pool_full_share');
         expect(metric().value).toBeNull();
         expect(metric().reason).toContain('no patch-pool checkpoints');
         const firstCheckpoint = Math.ceil((BURN_IN_TICKS + 1) / 1000) * 1000;
@@ -250,11 +251,11 @@ describe('flora diet detectors', () => {
         const emptyScene = createFloraScene();
         emptyWorld.tick = BURN_IN_TICKS + 1;
         trackFlora(emptyScene, emptyWorld);
-        expect(floraMetrics(emptyScene)['eval.flora_patch_death_rate'].value).toBe(0);
+        expect(floraMetrics(emptyScene)['eval.flora_patch_death_rate']?.value).toBe(0);
 
         const w = smallWorld();
         const scene = createFloraScene();
-        const metric = () => floraMetrics(scene)['eval.flora_patch_death_rate'];
+        const metric = () => resultOf(floraMetrics(scene), 'eval.flora_patch_death_rate');
         expect(metric().value).toBeNull();
         expect(metric().reason).toContain('no observed ticks');
         w.tick = BURN_IN_TICKS + 1;
@@ -272,7 +273,7 @@ describe('flora diet detectors', () => {
     it('measures mean seed-bank slot occupancy at 1000-tick checkpoints', () => {
         const w = smallWorld({ floraPatchMax: 4 });
         const scene = createFloraScene();
-        const metric = () => floraMetrics(scene)['eval.flora_seed_bank_occupancy_share'];
+        const metric = () => resultOf(floraMetrics(scene), 'eval.flora_seed_bank_occupancy_share');
         expect(metric().value).toBeNull();
         expect(metric().reason).toContain('no seed-bank checkpoints');
         const firstCheckpoint = Math.ceil((BURN_IN_TICKS + 1) / 1000) * 1000;
@@ -296,13 +297,13 @@ describe('flora diet detectors', () => {
         const scene = createFloraScene();
         w.tick = BURN_IN_TICKS + 1000;
         trackFlora(scene, w);
-        expect(floraMetrics(scene)['eval.flora_hue_spread'].reason).toContain('no live pollinated');
-        expect(floraMetrics(scene)['eval.pollination_rate'].value).toBe(0);
+        expect(floraMetrics(scene)['eval.flora_hue_spread']?.reason).toContain('no live pollinated');
+        expect(floraMetrics(scene)['eval.pollination_rate']?.value).toBe(0);
         w.patchAlive[0] = 1;
         w.patchSpecies[0] = 3;
         w.patchHue[0] = 0.9;
         w.tick += 1000;
         trackFlora(scene, w);
-        expect(floraMetrics(scene)['eval.flora_hue_spread'].value).toBe(0);
+        expect(floraMetrics(scene)['eval.flora_hue_spread']?.value).toBe(0);
     });
 });

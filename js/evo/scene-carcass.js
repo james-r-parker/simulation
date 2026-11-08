@@ -4,16 +4,16 @@
 // energy this tick (`feed` walks the slots in order, so the lowest slot eats first). The energy counted is what `addEnergy` stored
 // (`foodTaken`, set by `removeFood`).
 //
-// - `eval.carcass_meal_share`: carcass energy eaten over all meat energy, that is carcass energy plus the bite energy
-//   of the hunters (the intent state's hunter bite totals).
-// - `eval.carcass_hunter_share`: the share of the carcass energy eaten by `canHunt` agents.
+// This scene only counts (`eaten`, `eatenByHunters`). `eval.carcass_meal_share` (carcass energy eaten over all meat
+// energy, that is carcass energy plus the bite energy of the hunters) and `eval.carcass_hunter_share` (the share of the
+// carcass energy eaten by `canHunt` agents) are computed in `scene-herd-metrics.js`, which adds the herd carcasses
+// this scene leaves out.
 //
 // Counts run over the whole run, as the intent state's bite totals do.
 // Preallocated arrays only.
 
 import { FOOD_GONE } from '../sim/world.js';
 import { FOOD_KIND, FOOD_ORIGIN } from '../sim/carcass.js';
-import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 
 /**
@@ -109,19 +109,4 @@ export function trackCarcasses(scene, observer, world) {
         scene.radius[food] = world.foodRadius[food];
     }
     scene.mark.set(world.foodEnergy);
-}
-
-/**
- * @param {Record<string, any>} scene the carcass scene
- * @param {Record<string, any>} observer the observer
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the two carcass metrics
- */
-export function carcassMetrics(scene, observer) {
-    const { huntBiteDeliberate, huntBiteChance } = observer.intent.run;
-    const meat = scene.eaten + huntBiteDeliberate + huntBiteChance;
-    return {
-        'eval.carcass_meal_share': meat > 0 ? ok(scene.eaten / meat) : none('no meat eaten after burn-in'),
-        'eval.carcass_hunter_share':
-            scene.eaten > 0 ? ok(scene.eatenByHunters / scene.eaten) : none('no carcass eaten after burn-in'),
-    };
 }

@@ -95,7 +95,7 @@ export const CORE = {
         unit: 'distance',
         direction: 'higher',
         nullWhen: ['no checkpoint with 2 agents'],
-        arithmetic: 'test/evo/compare-seeds.test.js',
+        arithmetic: 'test/evo/metric-registry/index.test.js',
     }),
     'eval.lineages_alive': entry('core', {
         module: 'js/evo/metrics-series.js',
@@ -104,7 +104,7 @@ export const CORE = {
         unit: 'lineages',
         direction: 'higher',
         nullWhen: ['no checkpoint after burn-in'],
-        arithmetic: 'test/evo/compare-seeds.test.js',
+        arithmetic: 'test/evo/metric-registry/index.test.js',
     }),
     'eval.lineage_turnover': entry('core', {
         module: 'js/evo/metrics-series.js',
@@ -113,7 +113,7 @@ export const CORE = {
         unit: 'dominant-lineage changes per 100k ticks',
         direction: 'higher',
         nullWhen: ['no checkpoint after burn-in', 'no ticks after burn-in'],
-        arithmetic: 'test/evo/compare-seeds.test.js',
+        arithmetic: 'test/evo/metric-registry/index.test.js',
     }),
     'eval.spec_turnover': entry('core', {
         module: 'js/evo/metrics-series.js',
@@ -152,7 +152,7 @@ export const CORE = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no checkpoint', 'mean predator share is 0'],
-        arithmetic: 'test/evo/compare-seeds.test.js',
+        arithmetic: 'test/evo/metric-registry/index.test.js',
     }),
     'eval.qd_score': entry('core', {
         module: 'js/evo/archive.js',

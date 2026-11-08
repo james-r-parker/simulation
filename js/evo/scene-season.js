@@ -126,7 +126,7 @@ function density(scene) {
 
 /**
  * @param {Record<string, any>} scene the season scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the four season metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the four season metrics
  */
 export function seasonMetrics(scene) {
     const sampled = scene.agents[0] > 0 && scene.agents[1] > 0;

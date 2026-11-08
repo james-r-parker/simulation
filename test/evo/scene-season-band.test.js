@@ -7,10 +7,12 @@ import { sampleSeason } from '../../js/evo/scene-season.js';
 import { WINTER } from '../../js/sim/eras.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const WORLD = { worldWidth: 4000, worldHeight: 2000, coldMarginWidth: 600, refugeCount: 2, wallGaps: 1, maxAgents: 64 };
 
-const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
+const read = (/** @type {any} */ r, /** @type {string} */ name) =>
+    loose(computeMetrics(r.observer, r.world))[`eval.${name}`];
 
 /** Kills every agent, then adds one at each `[x, y]`. */
 function place(/** @type {any} */ world, /** @type {number[][]} */ points) {

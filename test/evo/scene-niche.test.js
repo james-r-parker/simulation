@@ -5,10 +5,11 @@ import { computeMetrics } from '../../js/evo/metrics.js';
 import { checkpointNiche, noteNicheMatured } from '../../js/evo/scene-niche.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { resultOf } from './helpers/metric-registry.js';
 
 const T0 = 10000;
 
-const read = (/** @type {any} */ r) => computeMetrics(r.observer, r.world)['eval.niche_replacement'];
+const read = (/** @type {any} */ r) => resultOf(computeMetrics(r.observer, r.world), 'eval.niche_replacement');
 
 /** Eight agents: lineages 1-4 at skill 0.05, 5-7 at skill 0.55, 8 alone at skill 0.95. */
 function crowd() {

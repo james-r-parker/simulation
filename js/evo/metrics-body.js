@@ -86,7 +86,7 @@ export function sampleBody(pools, world) {
 
 /**
  * @param {Record<string, any>} observer the observer, checkpointed during the run
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the three body metrics, keyed by name; each
+ * @returns {import('./metrics-stats.js').MetricRecord} the three body metrics, keyed by name; each
  *   `null` with a reason when its feature is off or no checkpoint at or after burn-in had the agents it needs
  */
 export function bodyMetrics(observer) {

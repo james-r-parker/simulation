@@ -44,3 +44,34 @@ export function metricName(base, suffix) {
     }
     return /** @type {MetricName} */ (name);
 }
+
+/** The seed minimum for a metric whose entry has no `minSeeds`. */
+export const DEFAULT_MIN_SEEDS = 16;
+
+/**
+ * Metrics whose per-seed values were too noisy for 16 seeds before any power was measured: counts of rare episodes,
+ * lineage counts and a coefficient of variation. Each needs 32 seeds until its entry carries a measured `minSeeds`.
+ */
+const LEGACY_MIN_SEEDS = Object.freeze({
+    'eval.floor_episodes': 32,
+    'eval.lineages_alive': 32,
+    'eval.lineage_turnover': 32,
+    'eval.predator_share_cv': 32,
+});
+
+/**
+ * @param {string} metric a metric name
+ * @returns {number} the fewest seeds a verdict on it needs: its entry's `minSeeds`, else the legacy 32 of the four noisy
+ *   metrics, else `DEFAULT_MIN_SEEDS` (also for a name with no entry)
+ */
+export function minSeedsFor(metric) {
+    if (Object.hasOwn(METRICS, metric)) {
+        const measured = METRICS[/** @type {MetricName} */ (metric)].minSeeds;
+        if (measured !== null) {
+            return measured;
+        }
+    }
+    return Object.hasOwn(LEGACY_MIN_SEEDS, metric)
+        ? LEGACY_MIN_SEEDS[/** @type {keyof typeof LEGACY_MIN_SEEDS} */ (metric)]
+        : DEFAULT_MIN_SEEDS;
+}

@@ -177,7 +177,7 @@ export function trackProof(scene, world) {
 
 /**
  * @param {Record<string, any>} scene the proof scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the three proof metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the three proof metrics
  */
 export function proofMetrics(scene) {
     const deaths = scene.deaths > 0;

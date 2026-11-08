@@ -8,6 +8,7 @@ import { INTENT_WINDOW } from '../../js/evo/observer-intent-state.js';
 import { CHASE_OUTCOME } from '../../js/evo/scene-competence.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const T0 = 10000;
 const CLOSING = 0x3ff;
@@ -61,7 +62,8 @@ function play(a, tick, { closing = [], bites = [] } = {}) {
     }
 }
 
-const read = (/** @type {any} */ a, /** @type {string} */ name) => computeMetrics(a.observer, a.world)[`eval.${name}`];
+const read = (/** @type {any} */ a, /** @type {string} */ name) =>
+    loose(computeMetrics(a.observer, a.world))[`eval.${name}`];
 
 describe('hunt approaches and chases', () => {
     it('split a catch, an escape and a lapse into thirds, and abort one approach in three', () => {

@@ -9,6 +9,7 @@ import {
     sampleDiseaseFamilies,
 } from '../../js/evo/scene-disease.js';
 import { addBlob, lifeWorld } from '../sim/helpers/life-world.js';
+import { resultOf } from './helpers/metric-registry.js';
 
 /**
  * @param {Record<string, any>} [over] config overrides
@@ -54,10 +55,10 @@ describe('diseaseMetrics', () => {
         const w = world();
         const scene = createDiseaseScene(w.config);
         const m = diseaseMetrics(scene);
-        expect(m['eval.disease_deaths_share'].reason).toBe('no-deaths');
-        expect(m['eval.strains_per_100k'].reason).toBe('no-ticks');
-        expect(m['eval.strain_family_focus'].reason).toBe('no-infections');
-        expect(m['eval.disease_frequency_slope'].reason).toBe('few-points');
+        expect(m['eval.disease_deaths_share']?.reason).toBe('no-deaths');
+        expect(m['eval.strains_per_100k']?.reason).toBe('no-ticks');
+        expect(m['eval.strain_family_focus']?.reason).toBe('no-infections');
+        expect(m['eval.disease_frequency_slope']?.reason).toBe('few-points');
     });
 
     it('counts disease deaths after burn-in, strains per 100k ticks and the in-family share of passed infections', () => {
@@ -73,9 +74,9 @@ describe('diseaseMetrics', () => {
         push(w, EVENT_TYPE.AGENT_DIED, [6, 16, DEATH_CAUSE.STARVED]);
         noteDiseaseEvents(scene, w);
         const m = diseaseMetrics(scene);
-        expect(m['eval.disease_deaths_share'].value).toBe(0.5);
-        expect(m['eval.strains_per_100k'].value).toBeCloseTo(100000 / w.tick);
-        expect(m['eval.strain_family_focus'].value).toBeCloseTo(2 / 3);
+        expect(m['eval.disease_deaths_share']?.value).toBe(0.5);
+        expect(m['eval.strains_per_100k']?.value).toBeCloseTo(100000 / w.tick);
+        expect(m['eval.strain_family_focus']?.value).toBeCloseTo(2 / 3);
     });
 
     it('ignores deaths during burn-in', () => {
@@ -84,7 +85,7 @@ describe('diseaseMetrics', () => {
         w.tick = 5;
         push(w, EVENT_TYPE.AGENT_DIED, [5, 15, DEATH_CAUSE.DISEASE]);
         noteDiseaseEvents(scene, w);
-        expect(diseaseMetrics(scene)['eval.disease_deaths_share'].reason).toBe('no-deaths');
+        expect(diseaseMetrics(scene)['eval.disease_deaths_share']?.reason).toBe('no-deaths');
     });
 });
 
@@ -137,7 +138,7 @@ describe('eval.disease_frequency_slope', () => {
             }
             noteDiseaseEvents(scene, w);
         }
-        return diseaseMetrics(scene)['eval.disease_frequency_slope'];
+        return resultOf(diseaseMetrics(scene), 'eval.disease_frequency_slope');
     }
 
     it('is positive when the common family is infected more per head', () => {

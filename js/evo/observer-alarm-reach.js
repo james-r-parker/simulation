@@ -19,15 +19,6 @@
 import { HEARD_STRIDE } from '../sim/world.js';
 import { none, ok, per1k } from './metrics-stats.js';
 
-/** The direction of each metric of this module. */
-export const ALARM_REACH_DIRECTIONS = Object.freeze({
-    'eval.alarm_hearers_per_call': 'watch',
-    'eval.alarm_hunter_hearers_per_call': 'watch',
-    'eval.alarm_calls_with_threat_per_1k': 'watch',
-    'eval.call_opportunity_neighbours': 'watch',
-    'eval.call_opportunity_kin': 'watch',
-});
-
 /**
  * @returns {{calls: number, hearers: number, hunterHearers: number}} empty alarm-reach totals
  */
@@ -65,7 +56,7 @@ export function noteAlarmReach(reach, { hunterSpec, world, caller }) {
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the five alarm-reach metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the five alarm-reach metrics
  */
 export function alarmReachMetrics(observer) {
     const { alarmReach: reach, hunterAgentTicks } = observer.combat;

@@ -86,7 +86,7 @@ function archiveShare(observer) {
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick and checkpointed
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} results keyed by metric name
+ * @returns {import('./metrics-stats.js').MetricRecord} results keyed by metric name
  */
 export function selectionMetrics(observer) {
     const rows = rowsAfterBurnIn(observer, false);

@@ -262,7 +262,7 @@ function medianDwell(dwell, total) {
 
 /**
  * @param {Record<string, any>} scene the refuge scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the four refuge metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the four refuge metrics
  */
 export function refugeMetrics(scene) {
     const [calmN, threatN] = scene.episodes;

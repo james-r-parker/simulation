@@ -4,7 +4,10 @@
 import { BURN_IN_TICKS } from './burn-in.js';
 import { brainMetrics } from './metrics-brain.js';
 
-/** The metrics a summary carries, by field name. */
+/**
+ * The metrics a summary carries, by field name.
+ * @type {Readonly<Record<string, import('./metric-registry/index.js').MetricName>>}
+ */
 const FIELDS = Object.freeze({
     leakRateMean: 'eval.leak_rate_mean',
     leakSlowShare: 'eval.leak_slow_share',
@@ -26,7 +29,7 @@ export function memorySummaryFields(observer, tick) {
     /** @type {Record<string, number | null>} */
     const fields = { tick };
     for (const [field, name] of Object.entries(FIELDS)) {
-        fields[field] = metrics[name].value;
+        fields[field] = metrics[name]?.value ?? null;
     }
     return fields;
 }

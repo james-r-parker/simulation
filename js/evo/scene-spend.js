@@ -154,7 +154,7 @@ function shareSlope(scene) {
 
 /**
  * @param {Record<string, any>} scene the spend scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the two spend metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the two spend metrics
  */
 export function spendMetrics(scene) {
     return {

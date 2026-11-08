@@ -3,13 +3,8 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULTS } from '../../js/sim/config-defaults.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
-import {
-    BITE_DIRECTIONS,
-    BITE_MIN_OPPORTUNITIES,
-    biteMetrics,
-    createBiteScene,
-    tickBite,
-} from '../../js/evo/scene-bite.js';
+import { BITE_MIN_OPPORTUNITIES, biteMetrics, createBiteScene, tickBite } from '../../js/evo/scene-bite.js';
+import { directionOf, namesOf } from './helpers/metric-registry.js';
 
 const N = 8;
 const PREDATOR = DEFAULTS.specialisations.predator.index;
@@ -141,9 +136,9 @@ describe('the false-positive reads', () => {
 
 describe('the directions', () => {
     it('name the four metrics', () => {
-        expect(Object.keys(BITE_DIRECTIONS).sort()).toEqual(
+        expect(namesOf('js/evo/scene-bite.js').sort()).toEqual(
             Object.keys(read(world({ bodies: [HUNTER], bites: [0], pairs: [] }), 1)).sort(),
         );
-        expect(BITE_DIRECTIONS['eval.bite_on_prey']).toBe('higher');
+        expect(directionOf('eval.bite_on_prey')).toBe('higher');
     });
 });

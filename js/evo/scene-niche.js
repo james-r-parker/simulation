@@ -94,7 +94,7 @@ export function checkpointNiche(scene, observer, world) {
 
 /**
  * @param {Record<string, any>} scene the niche scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} `eval.niche_replacement`
+ * @returns {import('./metrics-stats.js').MetricRecord} `eval.niche_replacement`
  */
 export function nicheMetrics(scene) {
     const reason = 'no rare-niche lineage followed to a next checkpoint after burn-in';

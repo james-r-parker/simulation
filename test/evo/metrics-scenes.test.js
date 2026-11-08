@@ -1,11 +1,11 @@
-// The scene metrics as a set: their names, their directions in the compare table and in the watch-intent list, and the
+// The scene metrics as a set: their names, their registry directions and intended directions, and the
 // reason each carries on a fresh observer. Each detector's value is tested beside its `scene-*.js` module.
 
 import { describe, expect, it } from 'vitest';
 import { metricDirection } from '../../js/evo/compare.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
-import { SCENE_DIRECTIONS, sceneMetrics } from '../../js/evo/metrics-scenes.js';
-import { intendedDirection } from '../../scripts/lib/watch-intent.mjs';
+import { sceneMetrics } from '../../js/evo/metrics-scenes.js';
+import { directionOf, intendedOf } from './helpers/metric-registry.js';
 import { observed } from './helpers/observer-world.js';
 import { EMPTY_WORLD } from './helpers/metrics-observer.js';
 
@@ -13,18 +13,17 @@ describe('the scene metrics', () => {
     it('are the Detectors table names, and computeMetrics carries every one', () => {
         const { observer, world } = observed();
         const names = Object.keys(sceneMetrics(observer, world)).sort();
-        expect(names).toEqual(Object.keys(SCENE_DIRECTIONS).sort());
         const all = computeMetrics(observed().observer, EMPTY_WORLD);
         for (const name of names) {
             expect(all, name).toHaveProperty([name]);
         }
     });
 
-    it('have the table directions in the compare table: the patch pair has one, the rest are watch', () => {
+    it('have their registry directions in the compare table: the patch pair has one, the rest are watch', () => {
         expect(metricDirection('eval.patch_stay_depleted')).toBe('lower');
         expect(metricDirection('eval.patch_leave_depleted')).toBe('higher');
-        for (const [name, direction] of Object.entries(SCENE_DIRECTIONS)) {
-            expect(metricDirection(name), name).toBe(direction);
+        for (const name of Object.keys(sceneMetrics(observed().observer, observed().world))) {
+            expect(metricDirection(name), name).toBe(directionOf(name));
         }
         expect(metricDirection('eval.hunt_abort_rate')).toBe('watch');
     });
@@ -44,16 +43,16 @@ describe('the scene metrics', () => {
     });
 
     it('name an intended direction for the watch metrics where lower is better', () => {
-        expect(intendedDirection('eval.chase_giveup_share')).toBe('lower');
-        expect(intendedDirection('eval.gap_never_share')).toBe('lower');
-        expect(intendedDirection('eval.chase_catch_share')).toBe('higher');
-        expect(intendedDirection('eval.toxic_death_share')).toBe('lower');
-        expect(intendedDirection('eval.sick_share')).toBe('lower');
-        expect(intendedDirection('eval.toxic_avoidance')).toBe('higher');
-        expect(intendedDirection('eval.pollination_rate')).toBe('higher');
-        expect(intendedDirection('eval.flora_hue_spread')).toBe('higher');
-        expect(intendedDirection('eval.flora_patch_pool_full_share')).toBe('lower');
-        expect(intendedDirection('eval.flora_patch_death_rate')).toBe('lower');
-        expect(intendedDirection('eval.flora_seed_bank_occupancy_share')).toBe('lower');
+        expect(intendedOf('eval.chase_giveup_share')).toBe('lower');
+        expect(intendedOf('eval.gap_never_share')).toBe('lower');
+        expect(intendedOf('eval.chase_catch_share')).toBe('higher');
+        expect(intendedOf('eval.toxic_death_share')).toBe('lower');
+        expect(intendedOf('eval.sick_share')).toBe('lower');
+        expect(intendedOf('eval.toxic_avoidance')).toBe('higher');
+        expect(intendedOf('eval.pollination_rate')).toBe('higher');
+        expect(intendedOf('eval.flora_hue_spread')).toBe('higher');
+        expect(intendedOf('eval.flora_patch_pool_full_share')).toBe('lower');
+        expect(intendedOf('eval.flora_patch_death_rate')).toBe('lower');
+        expect(intendedOf('eval.flora_seed_bank_occupancy_share')).toBe('lower');
     });
 });

@@ -159,7 +159,7 @@ function biteDeficit(scene) {
 
 /**
  * @param {Record<string, any>} scene the outcome scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the four outcome metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the four outcome metrics
  */
 export function refugeOutcomeMetrics(scene) {
     return {

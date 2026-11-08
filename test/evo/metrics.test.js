@@ -21,7 +21,7 @@ describe('computeMetrics on hand-built state', () => {
         expect(m['eval.median_lifespan']).toEqual({ value: null, reason: 'no mature death' });
         expect(m['eval.fed_median_lifespan']).toEqual({ value: null, reason: 'no mature death after a meal' });
         expect(m['eval.floor_episodes']).toEqual({ value: 0 });
-        expect(m['eval.behaviour_coverage'].reason).toBe('no sampled mature death');
+        expect(m['eval.behaviour_coverage']?.reason).toBe('no sampled mature death');
         expect(m['eval.qd_score']).toEqual({ value: null, reason: 'no archive' });
         expect(m['eval.coverage']).toEqual({ value: null, reason: 'no archive' });
         expect(m['eval.champion_elo']).toEqual({ value: null, reason: 'no league games' });
@@ -101,10 +101,10 @@ describe('computeMetrics on hand-built state', () => {
         o.floorEpisodes = 2;
         addAlive(o, 0, { foodEnergy: 10 });
         const m = computeMetrics(o, EMPTY_WORLD);
-        expect(m['eval.food_energy_per_1k'].value).toBe(20);
-        expect(m['eval.births_per_1k'].value).toBe(2);
-        expect(m['eval.predation_per_1k'].value).toBe(3);
-        expect(m['eval.floor_episodes'].value).toBe(2);
+        expect(m['eval.food_energy_per_1k']?.value).toBe(20);
+        expect(m['eval.births_per_1k']?.value).toBe(2);
+        expect(m['eval.predation_per_1k']?.value).toBe(3);
+        expect(m['eval.floor_episodes']?.value).toBe(2);
     });
 
     it('is null with a reason for eval.born_share when no agent entered after burn-in', () => {
@@ -150,7 +150,7 @@ describe('computeMetrics on hand-built state', () => {
         for (const ageTicks of [5, 20, 40, 100, 1000]) {
             addDeath(o, { ageTicks });
         }
-        expect(computeMetrics(o, EMPTY_WORLD)['eval.median_lifespan'].value).toBe(70);
+        expect(computeMetrics(o, EMPTY_WORLD)['eval.median_lifespan']?.value).toBe(70);
     });
 
     it('takes the fed median lifespan over mature deaths that ate at least one food item', () => {
@@ -161,8 +161,8 @@ describe('computeMetrics on hand-built state', () => {
         addDeath(o, { ageTicks: 10, foodEnergy: meal * 3 });
         addDeath(o, { ageTicks: 300, foodEnergy: meal });
         addDeath(o, { ageTicks: 500, foodEnergy: meal * 2 });
-        expect(computeMetrics(o, EMPTY_WORLD)['eval.fed_median_lifespan'].value).toBe(400);
-        expect(computeMetrics(o, EMPTY_WORLD)['eval.median_lifespan'].value).toBe(2250);
+        expect(computeMetrics(o, EMPTY_WORLD)['eval.fed_median_lifespan']?.value).toBe(400);
+        expect(computeMetrics(o, EMPTY_WORLD)['eval.median_lifespan']?.value).toBe(2250);
     });
 
     it('combines series, grid and fitness metrics', () => {
@@ -171,13 +171,13 @@ describe('computeMetrics on hand-built state', () => {
         addDeath(o, { ageTicks: 100, samples: 1, spec: 0, fitness: 2 });
         addAlive(o, 1, { spec: 0, children: 4 });
         const m = computeMetrics(o, EMPTY_WORLD, { fitness });
-        expect(m['eval.population_mean'].value).toBe(4);
-        expect(m['eval.spec_turnover'].reason).toBe('no checkpoint after burn-in');
-        expect(m['eval.predator_share_cv'].value).toBe(0);
-        expect(m['eval.behaviour_coverage'].value).toBe(0.01);
-        expect(m['eval.mean_fitness.forager'].value).toBe(3);
-        expect(m['eval.mean_fitness.defender'].reason).toBe('no agents of defender');
-        expect(computeMetrics(o, EMPTY_WORLD)['eval.mean_fitness.forager'].reason).toBe('no fitness');
+        expect(m['eval.population_mean']?.value).toBe(4);
+        expect(m['eval.spec_turnover']?.reason).toBe('no checkpoint after burn-in');
+        expect(m['eval.predator_share_cv']?.value).toBe(0);
+        expect(m['eval.behaviour_coverage']?.value).toBe(0.01);
+        expect(m['eval.mean_fitness.forager']?.value).toBe(3);
+        expect(m['eval.mean_fitness.defender']?.reason).toBe('no agents of defender');
+        expect(computeMetrics(o, EMPTY_WORLD)['eval.mean_fitness.forager']?.reason).toBe('no fitness');
     });
 
     it('is deterministic for the same state and rng state', () => {
@@ -242,8 +242,8 @@ describe('computeMetrics on a real world', () => {
                 expect(Number.isFinite(result.value), name).toBe(true);
             }
         }
-        expect(metrics['eval.food_energy_per_1k'].value).not.toBeNull();
-        expect(metrics['eval.population_mean'].value).toBeGreaterThan(0);
-        expect(metrics['eval.mean_fitness.forager'].value).not.toBeNull();
+        expect(metrics['eval.food_energy_per_1k']?.value).not.toBeNull();
+        expect(metrics['eval.population_mean']?.value).toBeGreaterThan(0);
+        expect(metrics['eval.mean_fitness.forager']?.value).not.toBeNull();
     });
 });

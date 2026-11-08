@@ -14,13 +14,6 @@ export const MIN_FORAGE_LIVES = 200;
 /** Lives needed for the hunt and flee correlations. */
 export const MIN_SKILL_LIVES = 100;
 
-/** The direction of each metric here. */
-export const LEAK_SKILL_DIRECTIONS = Object.freeze({
-    'eval.leak_forage_corr': 'watch',
-    'eval.leak_hunt_corr': 'watch',
-    'eval.leak_flee_corr': 'watch',
-});
-
 /**
  * @returns {Record<string, any>} an empty per-life log with columns `leak`, `forage`, `hunt`, `flee` (NaN where the
  *   skill is undefined) and the row count
@@ -101,7 +94,7 @@ function correlation(pools, skill, minLives) {
 
 /**
  * @param {Record<string, any>} observer the observer
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the three correlations
+ * @returns {import('./metrics-stats.js').MetricRecord} the three correlations
  */
 export function leakSkillMetrics(observer) {
     const pools = observer.leakSkill;

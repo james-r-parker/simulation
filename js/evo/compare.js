@@ -3,100 +3,35 @@
 import { configHash } from '../sim/config.js';
 import { detExp, detLog } from '../sim/det-math.js';
 import { createRng, fork, nextInt } from '../sim/rng.js';
-import { DEFAULT_MIN_SEEDS, minSeedsFor } from './compare-seeds.js';
-import { MERIT_DIRECTIONS } from './metrics-merit.js';
+import { DEFAULT_MIN_SEEDS, METRICS, minSeedsFor } from './metric-registry/index.js';
+
+/** @typedef {import('./metric-registry/index.js').MetricName} MetricName */
 
 export const RESAMPLES = 10000;
 export const MIN_SEEDS = DEFAULT_MIN_SEEDS;
 export const MIN_EFFECT = 0.05;
 const BOOTSTRAP_SEED = 1;
 
-/**
- * Metric directions by exact name; the families below cover the parameterised names.
- * @type {Record<string, 'higher' | 'lower' | 'watch'>}
- */
-const DIRECTIONS = {
-    'eval.food_energy_per_1k': 'higher',
-    'eval.median_lifespan': 'higher',
-    'eval.fed_median_lifespan': 'higher',
-    'eval.births_per_1k': 'higher',
-    'eval.population_mean': 'watch',
-    'eval.floor_episodes': 'lower',
-    'eval.born_share': 'watch',
-    'eval.mating_share': 'watch',
-    'eval.predation_per_1k': 'watch',
-    'eval.diversity': 'higher',
-    'eval.lineages_alive': 'higher',
-    'eval.lineage_turnover': 'higher',
-    'eval.spec_turnover': 'watch',
-    'eval.behaviour_coverage': 'higher',
-    'eval.motion_coverage': 'watch',
-    'eval.predator_share_cv': 'watch',
-    'eval.qd_score': 'higher',
-    'eval.coverage': 'higher',
-    'eval.champion_elo': 'watch',
-    'eval.champion_win_rate': 'watch',
-    'eval.catch_rate': 'higher',
-    'eval.escape_rate': 'higher',
-    'eval.pack_kill_share': 'higher',
-    'eval.alarm_response': 'higher',
-    'eval.smoke_escapes': 'higher',
-    'eval.deliberate_food_share': 'higher',
-    'eval.deliberate_food_per_1k': 'watch',
-    'eval.chance_food_per_1k': 'watch',
-    'eval.pursuit_bite_share': 'watch',
-    'eval.pursuit_kill_share': 'higher',
-    'eval.pack_convergence': 'higher',
-    'eval.hunt_call_answer': 'watch',
-    'eval.evasion_skill': 'watch',
-    'eval.group_cohesion_under_threat': 'higher',
-    'eval.alarm_precision': 'watch',
-    'eval.hunt_call_precision': 'higher',
-    'eval.smoke_precision': 'watch',
-    'eval.idle_signals_per_1k': 'lower',
-    'eval.undefended_bite_share': 'lower',
-    'eval.unseen_bite_share': 'watch',
-    'eval.offspring_per_life': 'watch',
-    'eval.generation_depth_p90': 'watch',
-    'eval.opportunity_for_selection': 'watch',
-    'eval.fitness_lrs_corr': 'watch',
-    'eval.archive_lineage_share': 'watch',
-    'eval.kin_within_call_radius': 'watch',
-    'eval.deliberate_food_trend': 'higher',
-    'eval.pursuit_trend': 'watch',
-    'eval.evasion_trend': 'watch',
-    'eval.skill_trend': 'watch',
-    'eval.spec_dominance': 'lower',
-    'eval.spec_effective': 'higher',
-    'eval.lineage_dominance': 'lower',
-    'eval.lineage_effective': 'watch',
-    'eval.trait_spread': 'higher',
-    'eval.body_plan_coverage': 'higher',
-    'eval.sex_balance': 'watch',
-    'eval.child_survival': 'watch',
-    'eval.lineage_lifespan_p50': 'higher',
-    'eval.cold_stress_share': 'lower',
-    'eval.heat_stress_share': 'watch',
-    'eval.terrain_death_share': 'lower',
-    'eval.winter_pop_ratio': 'watch',
-    'eval.migration_index': 'higher',
-    'eval.predator_presence': 'higher',
-    'eval.predator_births': 'higher',
-    'eval.pred_prey_lag_corr': 'watch',
-    ...MERIT_DIRECTIONS,
+const FITNESS_PREFIXES = ['eval.p90_fitness.', 'eval.mean_fitness.'];
+
+/** @type {Record<string, 'higher' | 'lower'>} browser-run metrics, which are not eval metrics and have no registry entry */
+const BROWSER_DIRECTIONS = {
     'browser.frame_p95_ms': 'lower',
     'browser.main_long_tasks': 'lower',
     'browser.gc_pause_ms': 'lower',
 };
-const FITNESS_PREFIXES = ['eval.p90_fitness.', 'eval.mean_fitness.'];
 
 /**
  * @param {string} metric a metric name
- * @returns {'higher' | 'lower' | 'watch' | null} the direction that counts as better, or null for an unknown name
+ * @returns {'higher' | 'lower' | 'watch' | null} the direction that counts as better (the registry's `direction`, else a
+ *   fitness-prefixed, browser or `bench.` metric's), or null for an unknown name
  */
 export function metricDirection(metric) {
-    if (Object.hasOwn(DIRECTIONS, metric)) {
-        return DIRECTIONS[metric];
+    if (Object.hasOwn(METRICS, metric)) {
+        return METRICS[/** @type {MetricName} */ (metric)].direction;
+    }
+    if (Object.hasOwn(BROWSER_DIRECTIONS, metric)) {
+        return BROWSER_DIRECTIONS[metric];
     }
     if (FITNESS_PREFIXES.some((prefix) => metric.startsWith(prefix))) {
         return 'higher';

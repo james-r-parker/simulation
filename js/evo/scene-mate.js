@@ -118,7 +118,7 @@ export function trackMatings(scene, observer, world) {
 
 /**
  * @param {Record<string, any>} scene the mate scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the two mate metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the two mate metrics
  */
 export function mateMetrics(scene) {
     const lean =

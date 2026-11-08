@@ -8,6 +8,7 @@ import { checkpoint, observe } from '../../js/evo/observer.js';
 import { SEX } from '../../js/sim/sex.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { nextTick, observed } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const ON = { hashCellSize: 256 };
 const NAMES = ['trait_spread', 'body_plan_coverage', 'sex_balance'];
@@ -49,7 +50,7 @@ function checkpointWith({ world, observer }, tick, bodies) {
  */
 function read({ world, observer }) {
     const all = computeMetrics(observer, world);
-    return Object.fromEntries(NAMES.map((name) => [name, all[`eval.${name}`]]));
+    return Object.fromEntries(NAMES.map((name) => [name, loose(all)[`eval.${name}`]]));
 }
 
 describe('eval.trait_spread', () => {

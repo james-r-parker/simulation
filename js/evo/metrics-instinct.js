@@ -10,9 +10,6 @@ import { BURN_IN_TICKS } from './burn-in.js';
 import { applyInstinct } from './instinct.js';
 import { none, ok } from './metrics-stats.js';
 
-/** The direction of the metric here. */
-export const INSTINCT_DIRECTIONS = Object.freeze({ 'eval.instinct_drift': 'watch' });
-
 /**
  * @param {Readonly<Record<string, any>>} layout a `brainLayout(config)` result
  * @param {{weight: number, canHunt: boolean, herdWary: number, kinPull?: number}} options the instinct weight, whether the
@@ -105,7 +102,7 @@ export function sampleInstinct(pools, observer, world) {
 
 /**
  * @param {Record<string, any>} observer the observer, checkpointed
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} `eval.instinct_drift`
+ * @returns {import('./metrics-stats.js').MetricRecord} `eval.instinct_drift`
  */
 export function instinctMetrics(observer) {
     const pools = observer.instinct;

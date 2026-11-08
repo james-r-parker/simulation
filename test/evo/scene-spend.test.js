@@ -6,10 +6,12 @@ import { computeMetrics } from '../../js/evo/metrics.js';
 import { MIN_SLOPE_BIRTHS, MIN_WAIT_PAIRS, noteSpendBirth, sampleSpend } from '../../js/evo/scene-spend.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const T0 = 10000;
 
-const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
+const read = (/** @type {any} */ r, /** @type {string} */ name) =>
+    loose(computeMetrics(r.observer, r.world))[`eval.${name}`];
 
 /** A mate birth of `mother` into `child` at the world's tick. */
 function birth(/** @type {any} */ r, /** @type {number} */ mother, /** @type {number} */ child) {

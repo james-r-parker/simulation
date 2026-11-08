@@ -31,15 +31,6 @@ export const MIN_PAIRS = 30;
 /** Most agents one checkpoint samples (`DIVERSITY_SAMPLE`). */
 const MAX_SAMPLE = 64;
 
-/** The direction of each metric here, as the Metrics table names them. */
-export const MEMORY_DIRECTIONS = Object.freeze({
-    'eval.leak_rate_mean': 'watch',
-    'eval.leak_slow_share': 'watch',
-    'eval.leak_at_floor_share': 'watch',
-    'eval.leak_lineage_spread': 'watch',
-    'eval.hidden_persistence': 'watch',
-});
-
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @param {{checkpointTicks?: number}} [options] the ticks between the run's checkpoints; without it the 16-tick
@@ -197,7 +188,7 @@ export function sampleMemory(pools, observer, world) {
 
 /**
  * @param {Record<string, any>} observer the observer, checkpointed
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the five metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the five metrics
  */
 export function memoryMetrics(observer) {
     const p = observer.memory;
