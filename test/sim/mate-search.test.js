@@ -75,6 +75,15 @@ describe('findMale', () => {
         expect(findMale(w, 0, 1)).toBe(4);
     });
 
+    it('covers a range that spans many hash cells', () => {
+        const pair = [
+            { x: 500, y: 500, sex: 0 },
+            { x: 1400, y: 500, sex: 1 },
+        ];
+        expect(findMale(placed(pair, { mateRange: 900 }), 0, 1)).toBe(1);
+        expect(findMale(placed(pair, { mateRange: 800 }), 0, 1)).toBe(-1);
+    });
+
     it('draws once when there is a male, and not at all without one', () => {
         const w = placed([
             { x: 500, y: 500, sex: 0 },

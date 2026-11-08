@@ -8,23 +8,6 @@ import { cellOf, cellRange } from './spatial-hash.js';
 /** @typedef {import('./world.js').World} World */
 
 /**
- * The edge-to-edge range within which agent `a` looks for a mate: `mateRange`, plus a roaming extension that starts only
- * after `mateRoamTicks` ticks without a possible mate in view (`mateSeenAt`) and grows linearly to `mateRoamMax` over the
- * next `mateRoamTicks` ticks. A mate in view resets it. A `mateRoamTicks` of 0 is off. Draws nothing, allocates nothing.
- * @param {World} world the world
- * @param {number} a the searching agent
- * @returns {number} the range, at least `mateRange`
- */
-export function mateReach(world, a) {
-    const { mateRange, mateRoamTicks, mateRoamMax } = world.config;
-    if (mateRoamTicks === 0) {
-        return mateRange;
-    }
-    const grown = (world.tick - world.mateSeenAt[a] - mateRoamTicks) / mateRoamTicks;
-    return grown > 0 ? mateRange + mateRoamMax * Math.min(1, grown) : mateRange;
-}
-
-/**
  * Whether the cell `col`, `row` is the first cell of the scan that holds entry `e`: the cell of the corner of its box
  * clamped into the scanned range.
  * @param {import('./spatial-hash.js').SpatialHash} hash the hash, with `range` set to the scan
@@ -47,7 +30,7 @@ export function firstScannedCell(hash, e, col, row) {
  * @param {World} world the world
  * @param {number} a the searching agent
  * @param {number} b a candidate slot
- * @param {number} reach the searcher's `mateReach`
+ * @param {number} reach the edge-to-edge range, `mateRange`
  * @returns {boolean}
  */
 function isPartner(world, a, b, reach) {
@@ -67,7 +50,7 @@ let scanRow = 0;
  * @param {World} world the world
  * @param {number} a the searching female
  * @param {number} e the entry index
- * @param {number} reach the searcher's `mateReach`
+ * @param {number} reach the edge-to-edge range, `mateRange`
  * @returns {boolean}
  */
 function isChoice(world, a, e, reach) {
@@ -103,7 +86,7 @@ function beats(world, b, pick) {
  * @param {World} world the world
  * @param {number} a the searching female
  * @param {number} cell the cell index
- * @param {number} reach the searcher's `mateReach`
+ * @param {number} reach the edge-to-edge range, `mateRange`
  * @returns {number} the cell's best candidate, or -1
  */
 function bestInCell(world, a, cell, reach) {
@@ -122,7 +105,7 @@ function bestInCell(world, a, cell, reach) {
 
 /**
  * Female choice: the male with the highest mate rank (`mate-rank.js`; ties to the lower slot) among those of her specialisation
- * within `mateReach` that pass `canMatePair`, then one `lifecycle` draw against `chance`. Allocates nothing.
+ * within `mateRange` that pass `canMatePair`, then one `lifecycle` draw against `chance`. Allocates nothing.
  * @param {World} world the world, with the hash built this tick
  * @param {number} a the searching female, alive
  * @param {number} chance the probability that the chosen pair mates
@@ -130,7 +113,7 @@ function bestInCell(world, a, cell, reach) {
  */
 export function findMale(world, a, chance) {
     const hash = world.hash;
-    const reach = mateReach(world, a);
+    const reach = world.config.mateRange;
     const range = cellRange(hash, world.x[a], world.y[a], world.size[a] + reach);
     let best = -1;
     for (let row = range[1]; row <= range[3]; row++) {

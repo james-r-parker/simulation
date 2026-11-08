@@ -100,8 +100,6 @@ export const FEATURE_RULES = {
     splitMaxPerLife: int(0),
     splitClonalMax: int(1),
     splitMateScarceTicks: int(0),
-    mateRoamTicks: int(0),
-    mateRoamMax: num(0),
     juvenileBurn: UNIT,
     kinPullWeight: num(0, 4),
     juvenileTicks: int(1),
