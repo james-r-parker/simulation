@@ -12,6 +12,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['no input-activity sample after burn-in'],
         arithmetic: 'test/evo/metrics-weights.test.js',
+        source: 'test/evo/metric-source-brain.test.js',
     }),
     'eval.input_active_share.threat': entry('brain', {
         module: 'js/evo/metrics-weights.js',
@@ -22,6 +23,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['no input-activity sample after burn-in'],
         arithmetic: 'test/evo/metrics-weights.test.js',
+        source: 'test/evo/metric-source-brain.test.js',
     }),
     'eval.input_active_share.prey': entry('brain', {
         module: 'js/evo/metrics-weights.js',
@@ -32,6 +34,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['no input-activity sample after burn-in'],
         arithmetic: 'test/evo/metrics-weights.test.js',
+        source: 'test/evo/metric-source-brain.test.js',
     }),
     'eval.weight_drift_silent': entry('brain', {
         module: 'js/evo/metrics-weights.js',
@@ -43,6 +46,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['no input under 0.01, or none at or above'],
         arithmetic: 'test/evo/metrics-weights.test.js',
+        source: 'test/evo/metric-source-brain.test.js',
     }),
     'eval.weight_clamp_share': entry('brain', {
         module: 'js/evo/metrics-weights.js',
@@ -53,6 +57,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['no sampled agent after burn-in'],
         arithmetic: 'test/evo/metrics-weights.test.js',
+        source: 'test/evo/metric-source-brain.test.js',
     }),
     'eval.rare_input_saturation_jump': entry('brain', {
         module: 'js/evo/metrics-weights.js',
@@ -63,6 +68,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['fewer than MIN_EVENTS first firings of a rare input'],
         arithmetic: 'test/evo/metrics-weights.test.js',
+        source: 'test/evo/metric-source-brain.test.js',
     }),
     'eval.sigma_mean': entry('brain', {
         module: 'js/evo/metrics-weights.js',
@@ -73,6 +79,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['the policy has no sigma array', 'no alive agent after burn-in'],
         arithmetic: 'test/evo/metrics-weights.test.js',
+        source: 'test/evo/metric-source-brain.test.js',
     }),
     'eval.leak_rate_mean': entry('brain', {
         module: 'js/evo/metrics-memory.js',
@@ -83,6 +90,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['no sampled agent after burn-in'],
         arithmetic: 'test/evo/metrics-memory.test.js',
+        source: 'test/evo/metric-source-brain-memory.test.js',
     }),
     'eval.leak_slow_share': entry('brain', {
         module: 'js/evo/metrics-memory.js',
@@ -93,6 +101,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['no sampled agent after burn-in'],
         arithmetic: 'test/evo/metrics-memory.test.js',
+        source: 'test/evo/metric-source-brain-memory.test.js',
     }),
     'eval.leak_at_floor_share': entry('brain', {
         module: 'js/evo/metrics-memory.js',
@@ -103,6 +112,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['no sampled agent after burn-in'],
         arithmetic: 'test/evo/metrics-memory.test.js',
+        source: 'test/evo/metric-source-brain-memory.test.js',
     }),
     'eval.leak_lineage_spread': entry('brain', {
         module: 'js/evo/metrics-memory.js',
@@ -113,6 +123,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['fewer than MIN_SPREAD_CHECKPOINTS checkpoints with MIN_LINEAGES qualifying lineages'],
         arithmetic: 'test/evo/metrics-memory.test.js',
+        source: 'test/evo/metric-source-brain-memory.test.js',
     }),
     'eval.hidden_persistence': entry('brain', {
         module: 'js/evo/metrics-memory.js',
@@ -123,6 +134,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['fewer than MIN_PAIRS agent pairs'],
         arithmetic: 'test/evo/metrics-memory.test.js',
+        source: 'test/evo/metric-source-brain-memory.test.js',
     }),
     'eval.memory_out_flat_share': entry('brain', {
         module: 'js/evo/metrics-memory-out.js',
@@ -133,6 +145,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['fewer than MIN_LIVES lives of at least MIN_LIFE_TICKS ticks'],
         arithmetic: 'test/evo/metrics-memory-out.test.js',
+        source: 'test/evo/metric-source-brain-memory.test.js',
     }),
     'eval.memory_out_noisy_share': entry('brain', {
         module: 'js/evo/metrics-memory-out.js',
@@ -143,6 +156,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['fewer than MIN_LIVES lives of at least MIN_LIFE_TICKS ticks'],
         arithmetic: 'test/evo/metrics-brain.test.js',
+        source: 'test/evo/metric-source-brain-memory.test.js',
     }),
     'eval.memory_out_signal_share': entry('brain', {
         module: 'js/evo/metrics-memory-out.js',
@@ -153,6 +167,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['fewer than MIN_LIVES lives of at least MIN_LIFE_TICKS ticks'],
         arithmetic: 'test/evo/metrics-brain.test.js',
+        source: 'test/evo/metric-source-brain-memory.test.js',
     }),
     'eval.leak_forage_corr': entry('brain', {
         module: 'js/evo/metrics-leak-skill.js',
@@ -163,6 +178,8 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['fewer than 200 lives with a forage skill', 'no variance in leak or in the skill'],
         arithmetic: 'test/evo/metrics-leak-skill.test.js',
+        deprecated:
+            'freeAgent zeroes world.genomeId and world.weights during step before observe calls noteLeakSkillDeath, so computeMetrics on a real run always returns null; test/evo/metrics-leak-skill.test.js pins its arithmetic.',
     }),
     'eval.leak_hunt_corr': entry('brain', {
         module: 'js/evo/metrics-leak-skill.js',
@@ -173,6 +190,8 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['fewer than 100 lives with a hunt skill', 'no variance in leak or in the skill'],
         arithmetic: 'test/evo/metrics-leak-skill.test.js',
+        deprecated:
+            'freeAgent zeroes world.genomeId and world.weights during step before observe calls noteLeakSkillDeath, so computeMetrics on a real run always returns null; test/evo/metrics-leak-skill.test.js pins its arithmetic.',
     }),
     'eval.leak_flee_corr': entry('brain', {
         module: 'js/evo/metrics-leak-skill.js',
@@ -183,6 +202,8 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['fewer than 100 lives with a flee skill', 'no variance in leak or in the skill'],
         arithmetic: 'test/evo/metrics-leak-skill.test.js',
+        deprecated:
+            'freeAgent zeroes world.genomeId and world.weights during step before observe calls noteLeakSkillDeath, so computeMetrics on a real run always returns null; test/evo/metrics-leak-skill.test.js pins its arithmetic.',
     }),
     'eval.hebb_drift': entry('brain', {
         module: 'js/evo/metrics-hebb.js',
@@ -193,6 +214,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['hebbianRate is 0', 'no sampled agent aged 600 ticks'],
         arithmetic: 'test/evo/metrics-hebb.test.js',
+        source: 'test/evo/metric-source-brain.test.js',
     }),
     'eval.hebb_drift_clamped_share': entry('brain', {
         module: 'js/evo/metrics-hebb.js',
@@ -203,6 +225,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['hebbianRate is 0', 'no sampled agent aged 600 ticks'],
         arithmetic: 'test/evo/metrics-hebb.test.js',
+        source: 'test/evo/metric-source-brain.test.js',
     }),
     'eval.instinct_drift': entry('brain', {
         module: 'js/evo/metrics-instinct.js',
@@ -213,6 +236,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['instinctWeight is 0: there is no prior', 'no checkpoint sample after burn-in'],
         arithmetic: 'test/evo/metrics-instinct.test.js',
+        source: 'test/evo/metric-source-brain.test.js',
     }),
     'eval.reward_events.kill': entry('brain', {
         module: 'js/evo/metrics-reward.js',
@@ -223,6 +247,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['no reward counts', 'no agent-ticks'],
         arithmetic: 'test/evo/metrics-reward.test.js',
+        source: 'test/evo/metric-source-brain.test.js',
     }),
     'eval.reward_events.bite': entry('brain', {
         module: 'js/evo/metrics-reward.js',
@@ -233,6 +258,7 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['no reward counts', 'no agent-ticks'],
         arithmetic: 'test/evo/metrics-reward.test.js',
+        source: 'test/evo/metric-source-brain.test.js',
     }),
     'eval.reward_events.scavenge': entry('brain', {
         module: 'js/evo/metrics-reward.js',
@@ -243,5 +269,6 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['no reward counts', 'no agent-ticks'],
         arithmetic: 'test/evo/metrics-reward.test.js',
+        source: 'test/evo/metric-source-brain.test.js',
     }),
 };
