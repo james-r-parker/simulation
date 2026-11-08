@@ -43,7 +43,8 @@
  * @returns {Readonly<MetricEntry>} the entry
  */
 export function entry(family, fields) {
-    const { arithmetic = '', source = '', ...rest } = fields;
+    const familySource = family === 'scenes-ecology' ? 'test/evo/metric-source-ecology.test.js' : '';
+    const { arithmetic = '', source = familySource, ...rest } = fields;
     return Object.freeze({
         family,
         expectedFlat: null,
