@@ -100,6 +100,15 @@ if [[ "$TIER" == 1 ]]; then
   done < <(git diff --cached --name-only -z --diff-filter=ACMR)
 fi
 
+# Git exports GIT_DIR and GIT_INDEX_FILE (GIT_WORK_TREE under some commands) to hooks. The staged-file read above and
+# the conventions gate read the index being committed through them; every other gate runs without them, so a test that
+# spawns git (in a temporary repo, or a worktree) cannot write the hook's index (docs/designs/sim-notes.md, 2026-11-08).
+HOOK_GIT_ENV=()
+for var in GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE; do
+  [[ -n "${!var+set}" ]] && HOOK_GIT_ENV+=("$var=${!var}")
+done
+unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE
+
 if [[ $LIST -eq 1 ]]; then
   # Print in run order, whatever order --only gave them.
   IFS=',' read -ra all <<<"$GATES"
@@ -214,7 +223,7 @@ if [[ $FIX -eq 1 ]]; then
   fi
 fi
 
-run_gate conventions scripts/check-conventions.sh
+run_gate conventions env "${HOOK_GIT_ENV[@]}" scripts/check-conventions.sh
 
 run_gate designs-index node scripts/designs-index.mjs --check
 
