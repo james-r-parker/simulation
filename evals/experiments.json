@@ -3758,6 +3758,25 @@
         "eval.prey_summer_min": "no-difference"
       },
       "note": "Seeds at or above 100 through summer: defaults 7, spring-1.2 3, margin-25 10, margin-100 8, roam-3000 3, roam-6000 4, roam-3000-spring-1.2 5 (of 16). Every prey_summer_min interval holds 0. Prediction falsified: roaming does not lift the count. Margin arms rise on both sides of the default 50 (E128 lost at 150, 250), read as seed chaos; no finalist. spring-1.2 population mean -36% [-148, -9]. Roaming keys deleted (T103); the next lever is a refuge (habitat-cover.md)."
+    },
+    {
+      "id": "E146",
+      "date": "2026-11-08",
+      "branch": "chore/mating-edge-close",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "worse",
+      "hypothesis": "Keep-rule harm check (docs/principles.md) before deleting the roaming mate range: a realistic mechanism stays unless paired intervals on 32 matched floor-on seeds show harm.",
+      "prediction": "No harm: hunters-alive share and under-80 share differences hold 0, no guard worse; then the range is kept and turned on by default. (Written before the run, 2026-11-08.)",
+      "targets": ["eval.predators_at_end", "eval.prey_types_at_end", "eval.population_mean", "eval.prey_summer_min"],
+      "before": "evals/screens/results/roam-harm/defaults.report.json: defaults, floor on, 200000 ticks, configHash 0aad4ad6eb3a86ba, 32 seeds, bb107b5b",
+      "after": "evals/screens/results/roam-harm/roam-6000.report.json: mateRoamTicks 6000, mateRoamMax 900, same seeds",
+      "verdicts": {
+        "eval.predators_at_end": "worse",
+        "eval.prey_types_at_end": "worse",
+        "eval.behaviour_coverage": "better"
+      },
+      "note": "Under-80 seeds 9 -> 18 of 32, paired +0.28 [0.09, 0.47]; hunters alive 27 -> 25, -0.06 [-0.22, 0.09]. Harm shown; prediction falsified; mateReach and the keys deleted (T103)."
     }
   ]
 }
