@@ -1,0 +1,55 @@
+name: release-please
+
+# docs/designs/deployment-and-community.md, "Phase 1a - Release PR and deploy on release". Keeps one release PR open;
+# merging it creates the tag and the GitHub Release and, in this same run, calls deploy.yml, which is the only path to
+# production. The PR is opened with a GitHub App token because a PR opened with GITHUB_TOKEN starts no pull_request
+# workflow, so the required checks would never report.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: release
+    permissions:
+      contents: read
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      # Without the App nothing can open the release PR, so fail here and say which setting is missing.
+      - name: Require the release App
+        env:
+          APP_ID: ${{ vars.RELEASE_APP_ID }}
+          APP_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+        run: |
+          [[ -n "$APP_ID" ]] || { echo "::error::Missing variable RELEASE_APP_ID in the 'release' environment. Nothing is released or deployed."; exit 1; }
+          [[ -n "$APP_KEY" ]] || { echo "::error::Missing secret RELEASE_APP_PRIVATE_KEY in the 'release' environment. Nothing is released or deployed."; exit 1; }
+      - id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+      - id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ steps.app.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  # Production deploys only here: a release was created in this run.
+  deploy:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/deploy.yml
+    with:
+      tag: ${{ needs.release-please.outputs.tag_name }}
+    secrets: inherit
