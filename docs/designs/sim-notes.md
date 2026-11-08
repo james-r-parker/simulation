@@ -2549,3 +2549,14 @@ them, and hands them back only to the conventions gate (whose `git grep` must re
 - `GET /api/seasons` answered `cache-control: public, s-maxage=300` and `cf-cache-status: HIT` on a repeat, so the Cache API path works on a deployed Function. A HEAD request shows `max-age=0, must-revalidate`: read the cache headers with GET.
 - A deploy with `--branch next` serves at `next.matrix-6be.pages.dev`, and `/next` on another deployment proxies to it with a 200.
 - Not checkable before a release: `/v/<version>/`, whether the `v6-0-0` branch deployment persists, a second workflow from the App-token release, and the rollback.
+
+### 2026-11-08 - Release Please manifest mode defaults include-component-in-tag to true
+
+`googleapis/release-please-action` v5 passes `include-component-in-tag: false` as its default action input, but when
+`config-file` (`release-please-config.json`) is given, Release Please runs in manifest mode and reads the setting from
+the config file instead, where `include-component-in-tag` defaults to `true`. For a `node` package without
+`"include-component-in-tag": false` in `release-please-config.json`, Release Please prefixes the tag with the
+`package.json` `name` (`blob-evolution-simulation-v6.0.0`), which `deploy.yml` rejects because it requires `v<version>`.
+`release-please-config.json` sets `"include-component-in-tag": false` on `packages["."]`, and removes `"release-as": "6.0.0"`
+once `6.0.0` is released so later releases bump from the manifest version. `actions/create-github-app-token` v3 also
+deprecates its `app-id` input in favour of `client-id` (`RELEASE_CLIENT_ID`).
