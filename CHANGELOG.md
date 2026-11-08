@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.0.1](https://github.com/james-r-parker/simulation/compare/v6.0.0...v6.0.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* **release:** drop component prefix from release tags and use client-id ([2d7bc40](https://github.com/james-r-parker/simulation/commit/2d7bc4013ddce1dd397f6f93826983c7e9024734))
+
 ## [6.0.0](https://github.com/james-r-parker/simulation/compare/blob-evolution-simulation-v5.0.0...blob-evolution-simulation-v6.0.0) (2026-11-08)
 
 
