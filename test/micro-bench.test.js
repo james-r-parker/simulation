@@ -135,6 +135,14 @@ describe('formatting', () => {
         expect(lines[1]).toMatch(/^s: a +2,000 +2,200 +\+10\.0% +\+-0\.7% +faster$/);
     });
 
+    it('prints a slower change with its minus sign and no plus', () => {
+        const rows = compareRows(
+            new Map([['s: a', { ops: 2000, rme: 0.5 }]]),
+            new Map([['s: a', { ops: 1800, rme: 0.5 }]]),
+        );
+        expect(formatCompare(rows)[1]).toMatch(/^s: a +2,000 +1,800 +-10\.0% +\+-0\.7% +slower$/);
+    });
+
     it('prints a new benchmark with dashes and small rates with decimals', () => {
         const lines = formatCompare(compareRows(new Map(), new Map([['s: a', { ops: 12.345, rme: 1 }]])));
         expect(lines[1]).toMatch(/^s: a +- +12\.35 +new +- +new$/);
