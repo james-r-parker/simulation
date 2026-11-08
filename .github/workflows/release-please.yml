@@ -43,12 +43,13 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-  # Production deploys only here: a release was created in this run.
+  # Production deploys only here: a release was created in this run. deploy.yml attaches the build to the GitHub Release
+  # with the run's GITHUB_TOKEN, and a called workflow cannot hold more than its caller grants, so this job grants write.
   deploy:
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
     permissions:
-      contents: read
+      contents: write
     uses: ./.github/workflows/deploy.yml
     with:
       tag: ${{ needs.release-please.outputs.tag_name }}
