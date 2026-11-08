@@ -81,8 +81,8 @@ export function noteIntentDeath(observer, world, o) {
     const left = intent.fatalKillers.get(killerId) ?? 0;
     const deliberate = left > 0 ? 1 : 0;
     intent.fatalKillers.set(killerId, left - deliberate);
-    // The per-slot count stays on the bite before the fatal one, as the sim's `deliberateKills`, until T15 moves both.
-    if (intent.lastBiteDeliberate[slot] === 1) {
+    // The per-slot count is the sim's `deliberateKills`: the same verdict, a killer that is gone earns nothing.
+    if (deliberate === 1) {
         creditAgent(observer, world, intent.deliberateKills, killerId);
     }
     const kind = killKind(combat, killerId, previousId);
