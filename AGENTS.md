@@ -180,6 +180,12 @@ When one agent hands tasks to others (user, 2026-10-22):
   a plan that adds flags carries that deletion task. A kept path needs a written reason in the plan's Decisions table.
   `scripts/flag-ledger.json` lists every boolean or enum config rule with its deletion task or its reason to stay, and
   the `conventions` gate fails a rule missing from it.
+- Keep what does no harm (user, 2026-11-06 and 2026-11-07). Before deleting a mechanism, apply the keep rule in
+  [docs/principles.md](docs/principles.md) ("A mechanism that adds realistic natural behaviour stays"): a realistic
+  mechanism is deleted only when paired intervals on 32 matched floor-on seeds show a guard worse with the interval
+  excluding 0, or when nature does not do it. Not moving its scene, a screen naming no finalist, worse point estimates
+  and 8 or 16 seed counts are not harm. A plan row that says "delete on a fail" runs that check first; a kept mechanism
+  is turned on by default and its switch deleted, as above.
 
 ## Coding standards
 
