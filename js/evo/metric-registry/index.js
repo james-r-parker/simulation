@@ -8,6 +8,7 @@ import { INTENT } from './intent.js';
 import { SCENES_ECOLOGY } from './scenes-ecology.js';
 import { SCENES_ECOLOGY_2 } from './scenes-ecology-2.js';
 import { SCENES_ECOLOGY_3 } from './scenes-ecology-3.js';
+import { SCENES_SOCIAL } from './scenes-social.js';
 
 /** Every eval metric by full name; each key is a literal in a family file, so `MetricName` is a union. */
 export const METRICS = Object.freeze({
@@ -19,6 +20,7 @@ export const METRICS = Object.freeze({
     ...SCENES_ECOLOGY,
     ...SCENES_ECOLOGY_2,
     ...SCENES_ECOLOGY_3,
+    ...SCENES_SOCIAL,
 });
 
 /** @typedef {keyof typeof METRICS} MetricName a registered metric name */
