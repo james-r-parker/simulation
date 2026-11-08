@@ -64,26 +64,53 @@ export function decodeCursor(text) {
 
 /**
  * @param {URLSearchParams} params the request's query string
+ * @returns {number | null} the specialisation index, or null when `spec` is absent
+ */
+function parseSpec(params) {
+    if (!params.has('spec')) {
+        return null;
+    }
+    const spec = SPEC_NAMES.indexOf(params.get('spec') ?? '');
+    if (spec < 0) {
+        throw new ApiError(400, 'bad_query', `spec must be one of ${SPEC_NAMES.join(', ')}`, 'spec');
+    }
+    return spec;
+}
+
+/**
+ * @param {URLSearchParams} params the request's query string
+ * @returns {'elo' | 'created'} the sort, `elo` by default
+ */
+function parseSort(params) {
+    const sort = params.get('sort') ?? SORTS[0];
+    if (!SORTS.includes(sort)) {
+        throw new ApiError(400, 'bad_query', `sort must be one of ${SORTS.join(', ')}`, 'sort');
+    }
+    return /** @type {'elo' | 'created'} */ (sort);
+}
+
+/**
+ * @param {URLSearchParams} params the request's query string
+ * @returns {number} the page size, `LIST_LIMIT_DEFAULT` by default
+ */
+function parseLimit(params) {
+    const limit = params.has('limit') ? wholeNumber(params.get('limit') ?? '', 'limit') : LIST_LIMIT_DEFAULT;
+    if (limit < 1 || limit > LIST_LIMIT_MAX) {
+        throw new ApiError(400, 'bad_query', `limit must be 1 to ${LIST_LIMIT_MAX}`, 'limit');
+    }
+    return limit;
+}
+
+/**
+ * @param {URLSearchParams} params the request's query string
  * @returns {ListQuery} the parsed query, defaults applied
  * @throws {ApiError} `bad_query` or `bad_cursor` naming the field
  */
 export function parseListQuery(params) {
     const season = params.has('season') ? wholeNumber(params.get('season') ?? '', 'season') : null;
-    let spec = null;
-    if (params.has('spec')) {
-        spec = SPEC_NAMES.indexOf(params.get('spec') ?? '');
-        if (spec < 0) {
-            throw new ApiError(400, 'bad_query', `spec must be one of ${SPEC_NAMES.join(', ')}`, 'spec');
-        }
-    }
-    const sort = params.get('sort') ?? SORTS[0];
-    if (!SORTS.includes(sort)) {
-        throw new ApiError(400, 'bad_query', `sort must be one of ${SORTS.join(', ')}`, 'sort');
-    }
-    const limit = params.has('limit') ? wholeNumber(params.get('limit') ?? '', 'limit') : LIST_LIMIT_DEFAULT;
-    if (limit < 1 || limit > LIST_LIMIT_MAX) {
-        throw new ApiError(400, 'bad_query', `limit must be 1 to ${LIST_LIMIT_MAX}`, 'limit');
-    }
+    const spec = parseSpec(params);
+    const sort = parseSort(params);
+    const limit = parseLimit(params);
     const cursor = params.has('cursor') ? decodeCursor(params.get('cursor') ?? '') : null;
-    return { season, spec, sort: /** @type {'elo' | 'created'} */ (sort), limit, cursor };
+    return { season, spec, sort, limit, cursor };
 }
