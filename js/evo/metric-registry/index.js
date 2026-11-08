@@ -2,11 +2,15 @@
 
 import { CORE } from './core.js';
 import { CORE_2 } from './core-2.js';
+import { HUNTERS } from './hunters.js';
+import { HUNTERS_2 } from './hunters-2.js';
 
 /** Every eval metric by full name; each key is a literal in a family file, so `MetricName` is a union. */
 export const METRICS = Object.freeze({
     ...CORE,
     ...CORE_2,
+    ...HUNTERS,
+    ...HUNTERS_2,
 });
 
 /** @typedef {keyof typeof METRICS} MetricName a registered metric name */
