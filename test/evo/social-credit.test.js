@@ -11,7 +11,7 @@ import { observeCombat } from '../../js/evo/observer-combat.js';
 import { noteIntentEvents } from '../../js/evo/observer-intent-events.js';
 import { updateIntent } from '../../js/evo/observer-intent.js';
 import { FORAGER, PREDATOR, intentArena } from './helpers/intent-world.js';
-import { addBorn, nextTick, pushDied } from './helpers/observer-world.js';
+import { addBorn, nextTick, pushDied, pushKill } from './helpers/observer-world.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const CREDITS = ['convergedKills', 'deliberateKills', 'alarmCredits', 'huntCredits'];
@@ -54,9 +54,11 @@ function packKill(bystanders, { convergent = true, killerGone = false } = {}) {
         }
     }
     observeCombat(observer.combat, world, intent);
+    intent.biterId[victim] = world.genomeId[a];
     intent.lastBiteDeliberate[victim] = 1;
     intent.prevBiteDeliberate[victim] = convergent ? 1 : 0;
     tick(arena, 2, () => {
+        pushKill(world, world.genomeId[a]);
         world.alive[a] = killerGone ? 0 : 1;
         pushDied(world, {
             slot: victim,

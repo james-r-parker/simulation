@@ -9,9 +9,9 @@ const { cases } = JSON.parse(readFileSync(new URL('../sim/golden.json', import.m
 const byName = Object.fromEntries(cases.map((/** @type {any} */ c) => [c.name, c]));
 const TIMEOUT_MS = scaleTimeout(300_000);
 
-/** The FNV hash of the busy golden world's effect stream (every effect record, in order). A self-pin. */
-const BUSY_EFFECT_HASH = 'fac605e6581268fa';
-const BUSY_EFFECT_RECORDS = 1292;
+/** The FNV hash of the busy golden world's effect stream (every effect record, in order). A self-pin; re-pinned by the one kill rule (metric-trust T14), which drops one HunterKill record. */
+const BUSY_EFFECT_HASH = '0631fcf4b842f73b';
+const BUSY_EFFECT_RECORDS = 1291;
 
 describe('the golden world through the host', () => {
     it(

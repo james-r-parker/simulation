@@ -4,7 +4,7 @@
 import { TIMER_CAP } from '../sim/world.js';
 import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { KILL, killKind } from './observer-combat.js';
-import { biteDeliberate, findAlive, recordBite } from './observer-intent.js';
+import { findAlive } from './observer-intent.js';
 import { pruneAlarms, pushAlarm } from './observer-intent-alarms.js';
 import { BITTEN_THIS_TICK } from './observer-intent-episode.js';
 import { popResolvedHuntCall, pushHuntCall, sampleHearers } from './observer-intent-calls.js';
@@ -76,12 +76,13 @@ export function noteIntentDeath(observer, world, o) {
     const slot = d[o + 2];
     const killerId = d[o + 5];
     const previousId = d[o + 11];
-    if (world.lastBiteTick[slot] === world.tick) {
-        const killer = findAlive(world, observer.slotOf, killerId);
-        recordBite(intent, slot, killerId, killer >= 0 && biteDeliberate(intent, killer, world.tick));
-    }
-    const deliberate = intent.lastBiteDeliberate[slot];
-    if (deliberate === 1) {
+    // The sim's verdict on the fatal bite (`isDeliberateKill`), pushed as a HunterKill ahead of the AgentDied: the
+    // victim's slot is freed by now, so the observer cannot ask the world.
+    const left = intent.fatalKillers.get(killerId) ?? 0;
+    const deliberate = left > 0 ? 1 : 0;
+    intent.fatalKillers.set(killerId, left - deliberate);
+    // The per-slot count stays on the bite before the fatal one, as the sim's `deliberateKills`, until T15 moves both.
+    if (intent.lastBiteDeliberate[slot] === 1) {
         creditAgent(observer, world, intent.deliberateKills, killerId);
     }
     const kind = killKind(combat, killerId, previousId);
@@ -89,7 +90,9 @@ export function noteIntentDeath(observer, world, o) {
         intent.run.huntKillsDeliberate += deliberate;
     }
     if (kind === KILL.PACK) {
-        const convergent = deliberate & intent.prevBiteDeliberate[slot];
+        const sameBiter = intent.biterId[slot] === killerId;
+        const before = sameBiter ? intent.prevBiteDeliberate[slot] : intent.lastBiteDeliberate[slot];
+        const convergent = deliberate & before;
         intent.run.packKillsConvergent += convergent;
         if (convergent === 1) {
             creditAgent(observer, world, intent.convergedKills, killerId);
@@ -147,9 +150,12 @@ export function noteIntentEvents(observer, world) {
     const d = world.events.data;
     const end = world.events.count * EVENT_STRIDE;
     sampleHearers(intent, world);
+    intent.fatalKillers.clear();
     for (let o = 0; o < end; o += EVENT_STRIDE) {
         const type = d[o];
-        if (type === EVENT_TYPE.AGENT_DIED && d[o + 4] === DEATH_CAUSE.EATEN) {
+        if (type === EVENT_TYPE.HUNTER_KILL) {
+            intent.fatalKillers.set(d[o + 2], (intent.fatalKillers.get(d[o + 2]) ?? 0) + 1);
+        } else if (type === EVENT_TYPE.AGENT_DIED && d[o + 4] === DEATH_CAUSE.EATEN) {
             noteIntentDeath(observer, world, o);
         } else if (
             type === EVENT_TYPE.ALARM_CALLED ||

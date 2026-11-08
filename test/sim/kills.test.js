@@ -104,7 +104,7 @@ describe('a fatal bite in the tick the victim dies', () => {
     /** The kills a `HunterLedger` record holds. */
     const ledgerKillsOf = (/** @type {number[]} */ record) => Math.floor(record[4] / 64);
 
-    it.fails('is a kill in the ledger, the HunterKill events and the observer when the bite was deliberate', () => {
+    it('is a kill in the ledger, the HunterKill events and the observer when the bite was deliberate', () => {
         const { run, hunter, hunterId, events } = fatalBite({ deliberate: true });
         const { world, observer } = run;
         expect(world.ledgerKills[hunter]).toBe(1);
@@ -121,7 +121,7 @@ describe('a fatal bite in the tick the victim dies', () => {
         expect(run.observer.intent.run.huntKillsDeliberate).toBe(0);
     });
 
-    it.fails('books the energy a non-deliberate fatal bite gained as bite gain, not kill energy', () => {
+    it('books the energy a non-deliberate fatal bite gained as bite gain, not kill energy', () => {
         const { run, hunter } = fatalBite({ deliberate: false });
         const { world } = run;
         expect(world.ledgerKillEnergy[hunter]).toBe(0);
@@ -130,7 +130,7 @@ describe('a fatal bite in the tick the victim dies', () => {
         expect(world.hunterIncomeBySpec[PREDATOR_ROW + INCOME.BITE]).toBe(1);
     });
 
-    it.fails('is credited to a killer that dies in the same tick, in the ledger record and the event', () => {
+    it('is credited to a killer that dies in the same tick, in the ledger record and the event', () => {
         const { hunterId, events } = fatalBite({ deliberate: true, killerDiesToo: true });
         expect(events(EVENT_TYPE.HUNTER_KILL).map((r) => r[2])).toEqual([hunterId]);
         const [record] = events(EVENT_TYPE.HUNTER_LEDGER);

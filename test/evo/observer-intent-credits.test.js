@@ -6,7 +6,7 @@ import { ESCAPE_TICKS, observeCombat } from '../../js/evo/observer-combat.js';
 import { noteIntentEvents } from '../../js/evo/observer-intent-events.js';
 import { updateIntent } from '../../js/evo/observer-intent.js';
 import { CH, FORAGER, PREDATOR, clearRays, intentArena, seeThreat, setRay } from './helpers/intent-world.js';
-import { addBorn, nextTick, pushCall, pushDied } from './helpers/observer-world.js';
+import { addBorn, nextTick, pushCall, pushDied, pushKill } from './helpers/observer-world.js';
 
 /**
  * Observes one tick the way `observe` does before it reassigns slots.
@@ -51,9 +51,13 @@ describe('kill credits', () => {
         const b = addBorn(world, { spec: f.spec ?? PREDATOR, lineageId: 4 });
         const victim = addBorn(world, { spec: FORAGER });
         start(arena);
+        intent.biterId[victim] = world.genomeId[a];
         intent.lastBiteDeliberate[victim] = f.last;
         intent.prevBiteDeliberate[victim] = f.prev;
         tick(arena, 2, () => {
+            if (f.last === 1) {
+                pushKill(world, world.genomeId[a]);
+            }
             world.alive[a] = f.killerGone ? 0 : 1;
             world.alive[b] = f.previousGone ? 0 : 1;
             pushDied(world, {

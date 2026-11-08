@@ -3,7 +3,7 @@ import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../../js/sim/brain-layout.js';
 import { BURN_IN_TICKS } from '../../../js/evo/observer-events.js';
 import { CH, FORAGER, PREDATOR, clearRays, seeThreat } from './intent-world.js';
 import { auditArena, closeOn, ticks } from './intent-audit.js';
-import { addBorn, pushDied } from './observer-world.js';
+import { addBorn, pushDied, pushKill } from './observer-world.js';
 
 /** Eight windows of 400 ticks: room for an escaped bite episode (300 ticks) inside one window. */
 export const WINDOW = 400;
@@ -57,6 +57,9 @@ function killTick(world, prey, t, hunters) {
         world.alive[v.slot] = 0;
         world.bittenTimer[v.slot] = 30;
         world.lastBiteTick[v.slot] = t;
+        if (v.closer) {
+            pushKill(world, by); // the sim's verdict: the hunter closing on prey made a deliberate kill
+        }
         pushDied(world, { slot: v.slot, genomeId: world.genomeId[v.slot], cause: DEATH_CAUSE.EATEN, by });
     }
 }

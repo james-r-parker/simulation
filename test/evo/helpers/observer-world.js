@@ -75,3 +75,14 @@ export function addBorn(world, fields = {}) {
     pushBorn(world, { slot, genomeId: world.genomeId[slot], lineageId: world.lineageId[slot], spec: world.spec[slot] });
     return slot;
 }
+
+/**
+ * Pushes a `HunterKill` record: the sim's verdict that a fatal bite by this genome was a deliberate kill.
+ * @param {any} world the world
+ * @param {number} killerId the killer's genome id
+ * @returns {void}
+ */
+export function pushKill(world, killerId) {
+    const o = pushEvent(world.events, EVENT_TYPE.HUNTER_KILL, world.tick - 1);
+    world.events.data[o + 2] = killerId;
+}
