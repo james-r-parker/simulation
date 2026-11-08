@@ -5,8 +5,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { main, measureLiveness, renderLivenessModule } from '../scripts/metric-liveness.mjs';
+import { METRICS as REGISTRY } from '../js/evo/metric-registry/index.js';
 
-const METRICS = { 'eval.sample': {}, 'eval.flat': {} };
+const [SAMPLE, FLAT] = Object.keys(REGISTRY);
+const METRICS = { [SAMPLE]: {}, [FLAT]: {} };
 const REPORT = {
     version: 1,
     policy: 'live',
@@ -17,13 +19,13 @@ const REPORT = {
     seeds: [1, 2, 3, 4],
     sha: 'abc123',
     metrics: {
-        'eval.sample': {
+        [SAMPLE]: {
             values: [null, 0, 0, 1],
             reasons: ['not seen', null, null, null],
             mean: 1 / 3,
             sd: 1 / Math.sqrt(3),
         },
-        'eval.flat': {
+        [FLAT]: {
             values: [null, null, 5, 5],
             reasons: ['off', 'off', null, null],
             mean: 5,
@@ -44,13 +46,13 @@ afterEach(() => {
 describe('measureLiveness', () => {
     it('counts null seeds and distinct non-null values', () => {
         expect(measureLiveness(REPORT, 'evals/sample.json', METRICS)).toEqual({
-            'eval.flat': { nullShare: 0.5, distinct: 1, report: 'evals/sample.json' },
-            'eval.sample': { nullShare: 0.25, distinct: 2, report: 'evals/sample.json' },
+            [FLAT]: { nullShare: 0.5, distinct: 1, report: 'evals/sample.json' },
+            [SAMPLE]: { nullShare: 0.25, distinct: 2, report: 'evals/sample.json' },
         });
     });
 
     it('rejects reports whose metric names differ from the registry', () => {
-        expect(() => measureLiveness(REPORT, 'report.json', { 'eval.other': {} })).toThrow(/metric set differs/);
+        expect(() => measureLiveness(REPORT, 'report.json', {})).toThrow(/metric set differs/);
     });
 });
 
@@ -68,9 +70,9 @@ describe('metric-liveness CLI', () => {
         });
         const generated = readFileSync(output, 'utf8');
         expect(exit).toBe(0);
-        expect(lines).toContain('eval.sample null=25.0% distinct=2 flat');
-        expect(lines).toContain('eval.flat null=50.0% distinct=1 flat');
-        expect(generated).toContain("'eval.sample': Object.freeze({\n        nullShare: 0.25,");
+        expect(lines).toContain(`${SAMPLE} null=25.0% distinct=2 flat`);
+        expect(lines).toContain(`${FLAT} null=50.0% distinct=1 flat`);
+        expect(generated).toContain(`'${SAMPLE}': Object.freeze({\n        nullShare: 0.25,`);
         expect(renderLivenessModule(measureLiveness(REPORT, 'evals/sample.json', METRICS))).toBe(generated);
     });
 
