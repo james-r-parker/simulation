@@ -8,11 +8,23 @@ import { METRICS, metricName } from '../../../js/evo/metric-registry/index.js';
 const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-names.json', import.meta.url), 'utf8'));
 
 describe('METRICS', () => {
-    it('is frozen and keyed by names that are in the live report', () => {
+    it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        for (const name of Object.keys(METRICS)) {
-            expect(REPORT_NAMES, name).toContain(name);
-        }
+        expect(REPORT_NAMES).toHaveLength(268);
+        expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
+    });
+
+    it('puts every metric in one of the seven families', () => {
+        const families = new Set(Object.values(METRICS).map((e) => e.family));
+        expect([...families].sort()).toEqual([
+            'brain',
+            'core',
+            'hunters',
+            'intent',
+            'scenes-ecology',
+            'scenes-social',
+            'world',
+        ]);
     });
 
     it('gives each entry the family and fields the registry requires', () => {

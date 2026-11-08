@@ -10,6 +10,8 @@ import { SCENES_ECOLOGY_2 } from './scenes-ecology-2.js';
 import { SCENES_ECOLOGY_3 } from './scenes-ecology-3.js';
 import { SCENES_SOCIAL } from './scenes-social.js';
 import { BRAIN } from './brain.js';
+import { WORLD } from './world.js';
+import { WORLD_2 } from './world-2.js';
 
 /** Every eval metric by full name; each key is a literal in a family file, so `MetricName` is a union. */
 export const METRICS = Object.freeze({
@@ -23,6 +25,8 @@ export const METRICS = Object.freeze({
     ...SCENES_ECOLOGY_3,
     ...SCENES_SOCIAL,
     ...BRAIN,
+    ...WORLD,
+    ...WORLD_2,
 });
 
 /** @typedef {keyof typeof METRICS} MetricName a registered metric name */
