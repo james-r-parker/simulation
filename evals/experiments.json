@@ -3777,6 +3777,23 @@
         "eval.behaviour_coverage": "better"
       },
       "note": "Under-80 seeds 9 -> 18 of 32, paired +0.28 [0.09, 0.47]; hunters alive 27 -> 25, -0.06 [-0.22, 0.09]. Harm shown; prediction falsified; mateReach and the keys deleted (T103)."
+    },
+    {
+      "id": "E147",
+      "date": "2026-11-08",
+      "branch": "feat/sim-one-kill",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference",
+      "hypothesis": "metric-trust T15: the mate rank's deliberateKills reading the fatal bite's own deliberateness (as the ledger does since T14) changes no keep-rule guard.",
+      "prediction": "No harm: hunters-alive and under-80 shares unchanged within their paired intervals and no guard worse; if a guard is worse, T15 is reverted. (Written before the run, docs/designs/metric-trust.md T15a.)",
+      "targets": ["eval.population_mean", "eval.predators_at_end", "eval.prey_types_at_end", "eval.mating_share"],
+      "before": "/tmp/claude-1000/t15/before.json: defaults, floor on, 200000 ticks, configHash ff8d890a5a70c14d, 32 seeds, a1562fb0",
+      "after": "/tmp/claude-1000/t15/after.json: same seeds, b56054ee",
+      "verdicts": {
+        "eval.basin_families": "worse"
+      },
+      "note": "Hunters alive 27 -> 27 of 32, under 80 9 -> 9 (paired differences 0); population, food, births, mating, predators and prey types no difference. basin_families -5.6% [-0.54, -0.01], 1 of 68 verdicts, not a guard, unverified. Kept."
     }
   ]
 }

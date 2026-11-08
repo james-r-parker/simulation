@@ -3,9 +3,9 @@
 // and `test/evo/kills.agreement.slow.test.js` compares the two on a replay, so this ports its rule exactly:
 //
 // - Each tick the merit phase notes, for a victim bitten that tick, whether the biter's bite was deliberate
-//   (`lastBiteDeliberate`, the biter's prey tracker at the tick, as `noteBite`).
-// - When an agent is eaten, `noteKill` logs its killer's genome id if the victim's last noted bite was deliberate. The fatal
-//   bite itself is not noted, as the victim is freed before the merit phase: the record is the bite before it.
+//   (`lastBiteDeliberate`, the biter's prey tracker at the tick, as `noteBite`); the kill rule no longer reads it.
+// - When an agent is eaten, `noteKill` logs its killer's genome id if the fatal bite was a deliberate kill
+//   (`isDeliberateKill`, the one kill rule of docs/designs/metric-trust.md, T15).
 // - At the end of the merit phase `creditKills` credits each logged killer that is still alive (a killer that died in the
 //   same tick earns nothing, as in the observer).
 //
@@ -51,17 +51,13 @@ export function isDeliberateKill(world, victim) {
 }
 
 /**
- * Logs the killer of an eaten agent when the victim's last noted bite was deliberate. Call at the death, before the slot is freed.
+ * Logs the killer of an eaten agent when the fatal bite was a deliberate kill (`isDeliberateKill`). Call at the death, before the slot is freed.
  * @param {Record<string, any>} world the world
  * @param {number} victim the eaten slot
  * @returns {void}
  */
 export function noteKill(world, victim) {
-    if (
-        world.lastBiteDeliberate[victim] === 1 &&
-        world.lastBiter[victim] !== 0 &&
-        world.killCount < world.killLog.length
-    ) {
+    if (world.killCount < world.killLog.length && isDeliberateKill(world, victim)) {
         world.killLog[world.killCount++] = world.lastBiter[victim];
     }
 }

@@ -148,3 +148,22 @@ describe('a fatal bite in the tick the victim dies', () => {
         expect(w.deliberateKills[0]).toBe(0);
     });
 });
+
+describe('a fatal bite and deliberateKills', () => {
+    it('credits a living killer when the fatal bite was deliberate, with no earlier noted bite', () => {
+        const { run, hunter } = fatalBite({ deliberate: true });
+        expect(run.world.deliberateKills[hunter]).toBe(1);
+        expect(run.observer.intent.deliberateKills[hunter]).toBe(1);
+    });
+
+    it('credits nothing when the fatal bite was not deliberate', () => {
+        const { run, hunter } = fatalBite({ deliberate: false });
+        expect(run.world.deliberateKills[hunter]).toBe(0);
+        expect(run.observer.intent.deliberateKills[hunter]).toBe(0);
+    });
+
+    it('credits nothing to a killer that dies in the same tick', () => {
+        const { run, hunter } = fatalBite({ deliberate: true, killerDiesToo: true });
+        expect(run.world.deliberateKills[hunter]).toBe(0);
+    });
+});
