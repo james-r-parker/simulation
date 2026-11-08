@@ -86,9 +86,13 @@ export function runReleaseCheck({ env, git: run, rulesHashAt: hashAt, headHash, 
     return { ok: false, line };
 }
 
-if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
-    const { ok, line } = runReleaseCheck({
-        env: process.env,
+/**
+ * @param {Record<string, string | undefined>} env the environment
+ * @returns {ReleaseCheckDeps} the real git, the temporary-worktree hasher, and this tree's hash and seasons file
+ */
+export function cliDeps(env) {
+    return {
+        env,
         git: makeGit(spawnText),
         rulesHashAt: makeRulesHashAt({
             spawn: spawnText,
@@ -97,7 +101,11 @@ if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
         }),
         headHash: rulesHash(createConfig()),
         headSeasons: readFileSync('library/seasons.json', 'utf8'),
-    });
+    };
+}
+
+if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
+    const { ok, line } = runReleaseCheck(cliDeps(process.env));
     (ok ? console.log : console.error)(line);
     process.exit(ok ? 0 : 1);
 }

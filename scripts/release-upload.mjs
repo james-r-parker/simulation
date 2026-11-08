@@ -55,14 +55,18 @@ export function makeD1Execute(spawn, wrangler) {
     };
 }
 
-if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
-    const record = releaseUpload(process.argv.slice(2), {
+/**
+ * @param {Record<string, string | undefined>} env the environment (WRANGLER names the wrangler command)
+ * @returns {UploadDeps} the real file reader, the remote D1 runner and the clock
+ */
+export function cliDeps(env) {
+    return {
         readFile: (file) => readFileSync(file, 'utf8'),
-        execute: makeD1Execute(
-            (cmd, args) => spawnSync(cmd, args, { encoding: 'utf8' }),
-            process.env.WRANGLER ?? 'wrangler',
-        ),
+        execute: makeD1Execute((cmd, args) => spawnSync(cmd, args, { encoding: 'utf8' }), env.WRANGLER ?? 'wrangler'),
         now: Date.now,
-    });
-    console.log(JSON.stringify(record));
+    };
+}
+
+if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
+    console.log(JSON.stringify(releaseUpload(process.argv.slice(2), cliDeps(process.env))));
 }

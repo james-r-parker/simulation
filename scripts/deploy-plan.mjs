@@ -35,14 +35,29 @@ export function runDeployPlan({ env, readFile, appendFile, seasonNext }) {
     return [...lines, ...skipped];
 }
 
-if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
-    const seasonNext =
-        spawnSync('git', ['ls-remote', '--exit-code', 'origin', 'season/next'], { stdio: 'ignore' }).status === 0;
-    const lines = runDeployPlan({
-        env: process.env,
+/**
+ * @param {(cmd: string, args: string[]) => number | null} status runs a command and returns its exit status
+ * @returns {boolean} whether origin has a `season/next` branch
+ */
+export function seasonNextOf(status) {
+    return status('git', ['ls-remote', '--exit-code', 'origin', 'season/next']) === 0;
+}
+
+/**
+ * @param {Record<string, string | undefined>} env the environment
+ * @param {boolean} seasonNext whether origin has a `season/next` branch
+ * @returns {PlanDeps} the environment and the real file reader and appender
+ */
+export function cliDeps(env, seasonNext) {
+    return {
+        env,
         readFile: (file) => readFileSync(file, 'utf8'),
         appendFile: (file, text) => appendFileSync(file, text),
         seasonNext,
-    });
-    console.log(lines.join('\n'));
+    };
+}
+
+if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
+    const seasonNext = seasonNextOf((cmd, args) => spawnSync(cmd, args, { stdio: 'ignore' }).status);
+    console.log(runDeployPlan(cliDeps(process.env, seasonNext)).join('\n'));
 }

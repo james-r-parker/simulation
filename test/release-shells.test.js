@@ -1,11 +1,14 @@
 // The command-line shells of the release pipeline, run in-process with fake git, wrangler and files
 // (docs/designs/deployment-and-community.md). The libraries they call have their own tests.
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { buildRelease } from '../scripts/build-release.mjs';
-import { runDeployPlan } from '../scripts/deploy-plan.mjs';
-import { makeGit, makeRulesHashAt, runReleaseCheck } from '../scripts/release-check.mjs';
-import { makeD1Execute, releaseUpload } from '../scripts/release-upload.mjs';
+import { buildRelease, cliDeps as buildDeps } from '../scripts/build-release.mjs';
+import { cliDeps as planDeps, runDeployPlan, seasonNextOf } from '../scripts/deploy-plan.mjs';
+import { commentFromEnv } from '../scripts/preview-comment.mjs';
+import { cliDeps as releaseCheckDeps, makeGit, makeRulesHashAt, runReleaseCheck } from '../scripts/release-check.mjs';
+import { cliDeps as uploadDeps, makeD1Execute, releaseUpload } from '../scripts/release-upload.mjs';
 
 /**
  * @param {{log?: string, seasons?: string}} [out] what `git log` and `git show` print
@@ -226,5 +229,58 @@ describe('the process wrappers', () => {
         expect(makeD1Execute(fakeSpawn({ wr: { status: 0, stdout: '[]' } }).spawn, 'wr')('db', 'x')).toEqual([]);
         const bad = makeD1Execute(fakeSpawn({ wr: { status: 1, stderr: 'auth' } }).spawn, 'wr');
         expect(() => bad('db', 'x')).toThrow('d1 execute failed: auth');
+    });
+});
+
+describe('the real dependencies of each shell', () => {
+    it('release-check reads this tree: its git runs, and its hash and seasons file are this checkout', () => {
+        const deps = releaseCheckDeps({ BASE_REF: 'main' });
+        expect(deps.git(['--version'])).toMatch(/^git version/);
+        expect(deps.headHash).toMatch(/^[0-9a-f]+$/);
+        expect(deps.headSeasons).toBe(readFileSync('library/seasons.json', 'utf8'));
+        expect(typeof deps.rulesHashAt).toBe('function');
+    });
+
+    it('build-release runs commands, writes and sizes files, and stamps the date and rules hash', () => {
+        const deps = buildDeps();
+        expect(deps.run('node', ['-e', 'process.exit(0)'])).toBe(0);
+        expect(
+            deps.run('node', ['-e', 'process.exit(process.env.APP_VERSION === "6.1.0" ? 0 : 3)'], {
+                APP_VERSION: '6.1.0',
+            }),
+        ).toBe(0);
+        const dir = mkdtempSync(join(tmpdir(), 'build-deps-'));
+        const file = join(dir, 'x.txt');
+        deps.writeFile(file, 'abcd');
+        expect(deps.sizeOf(file)).toBe(4);
+        rmSync(dir, { recursive: true });
+        expect(deps.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        expect(deps.rules).toMatch(/^[0-9a-f]+$/);
+    });
+
+    it('deploy-plan reads and appends real files and asks git for season/next', () => {
+        const dir = mkdtempSync(join(tmpdir(), 'plan-deps-'));
+        const file = join(dir, 'out.txt');
+        const deps = planDeps({ GITHUB_REPOSITORY: 'o/r' }, true);
+        deps.appendFile(file, 'a=1\n');
+        deps.appendFile(file, 'b=2\n');
+        expect(deps.readFile(file)).toBe('a=1\nb=2\n');
+        expect(deps.seasonNext).toBe(true);
+        rmSync(dir, { recursive: true });
+        expect(seasonNextOf((cmd, args) => (cmd === 'git' && args.includes('season/next') ? 0 : 2))).toBe(true);
+        expect(seasonNextOf(() => 2)).toBe(false);
+    });
+
+    it('release-upload reads files, runs the named wrangler and has a clock', () => {
+        const deps = uploadDeps({ WRANGLER: 'false' });
+        expect(deps.readFile('package.json')).toContain('"name"');
+        expect(() => deps.execute('db', 'SELECT 1')).toThrow('d1 execute failed');
+        expect(deps.now()).toBeGreaterThan(0);
+    });
+
+    it('preview-comment needs URL and SHA and renders the comment', () => {
+        expect(commentFromEnv({ URL: 'https://pr-7.x.pages.dev', SHA: 'abc' })).toContain('https://pr-7.x.pages.dev');
+        expect(() => commentFromEnv({ URL: '', SHA: 'abc' })).toThrow('URL and SHA are required');
+        expect(() => commentFromEnv({ URL: 'u' })).toThrow('URL and SHA are required');
     });
 });

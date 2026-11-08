@@ -46,14 +46,20 @@ export function buildRelease(version, { run, writeFile, sizeOf, date, rules }) {
     return { event: 'ReleaseBuilt', version, season, bytes: sizeOf(tarball) };
 }
 
-if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
-    const record = buildRelease(process.argv[2], {
+/**
+ * @returns {BuildDeps} the real command runner, the files, today's date and this tree's rules hash
+ */
+export function cliDeps() {
+    return {
         run: (cmd, args, env = {}) =>
             spawnSync(cmd, args, { stdio: 'inherit', env: { ...process.env, ...env } }).status ?? 1,
         writeFile: (file, text) => writeFileSync(file, text),
         sizeOf: (file) => readFileSync(file).length,
         date: new Date().toISOString().slice(0, 10),
         rules: rulesHash(createConfig()),
-    });
-    console.log(JSON.stringify(record));
+    };
+}
+
+if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
+    console.log(JSON.stringify(buildRelease(process.argv[2], cliDeps())));
 }
