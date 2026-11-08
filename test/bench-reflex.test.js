@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { main, parseArgs, runBench, timeReflex } from '../scripts/bench-reflex.mjs';
+import { formatMetrics, main, parseArgs, runBench, timeReflex } from '../scripts/bench-reflex.mjs';
 
 describe('parseArgs', () => {
     it('defaults to 512 genomes, 5 reps, 2 drill genomes at 32 trials, drills on', () => {
@@ -50,6 +50,16 @@ describe('runBench', () => {
             'bench.reflex_genomes_per_s',
             'bench.reflex_ms_per_genome',
             'bench.reflex_forwards_per_genome',
+        ]);
+    });
+});
+
+describe('formatMetrics', () => {
+    it('prints values under 10 to three decimals and the rest to one', () => {
+        expect(formatMetrics({ 'bench.a': 3.14159, 'bench.b': 10, 'bench.c': 1234.56 })).toEqual([
+            'bench.a 3.142',
+            'bench.b 10.0',
+            'bench.c 1234.6',
         ]);
     });
 });
