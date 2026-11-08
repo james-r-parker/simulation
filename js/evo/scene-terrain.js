@@ -127,7 +127,7 @@ export function sampleTerrain(scene, observer, world) {
 
 /**
  * @param {Record<string, any>} scene the terrain scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the refuge and the two gap metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the refuge and the two gap metrics
  */
 export function terrainMetrics(scene) {
     const refuge =

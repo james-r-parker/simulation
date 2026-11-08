@@ -120,7 +120,7 @@ export function sampleKinProximity(scene, world) {
 
 /**
  * @param {Record<string, any>} scene the kin-proximity scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the three kin-proximity metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the three kin-proximity metrics
  */
 export function kinProximityMetrics(scene) {
     if (scene.count === 0) {

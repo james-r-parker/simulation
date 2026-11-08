@@ -119,7 +119,7 @@ function thinBasin(scene, lastTick) {
 /**
  * @param {Record<string, any>} scene the family scene
  * @param {Record<string, any>} world the world at the run's last tick
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the two family metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the two family metrics
  */
 export function familyMetrics(scene, world) {
     const lastTick = world.tick ?? 0;

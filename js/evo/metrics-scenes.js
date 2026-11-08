@@ -12,7 +12,6 @@ import { basinMetrics } from './scene-basin.js';
 import { divergenceMetrics } from './scene-divergence.js';
 import { familyMetrics } from './scene-families.js';
 import { diseaseMetrics } from './scene-disease.js';
-import { carcassMetrics } from './scene-carcass.js';
 import { competenceMetrics } from './scene-competence.js';
 import { guardMetrics, summerMetrics } from './scene-guards.js';
 import { kinProximityMetrics } from './scene-kin-proximity.js';
@@ -34,7 +33,7 @@ import { herdMetrics } from './scene-herd-metrics.js';
 /**
  * @param {Record<string, any>} observer the observer, fed every tick
  * @param {Record<string, any>} world the world at the run's last tick
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the scene metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the scene metrics
  */
 export function sceneMetrics(observer, world) {
     const s = observer.scenes;
@@ -46,7 +45,6 @@ export function sceneMetrics(observer, world) {
         ...refugeMetrics(s.refuge),
         ...reachMetrics(s.reach),
         ...refugeOutcomeMetrics(s.refugeOutcome),
-        ...carcassMetrics(s.carcass, observer),
         ...basinMetrics(s.basin),
         ...balanceMetrics(s.balance, world),
         ...familyMetrics(s.families, world),

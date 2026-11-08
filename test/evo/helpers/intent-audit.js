@@ -2,6 +2,7 @@ import { computeMetrics } from '../../../js/evo/metrics.js';
 import { observe } from '../../../js/evo/observer.js';
 import { CH, intentArena, setRay } from './intent-world.js';
 import { nextTick } from './observer-world.js';
+import { loose } from './metric-registry.js';
 
 /**
  * A small empty arena (16 rays, `PI / 4` bite arc) for the intent metric audits, with its first `observe` at tick 0.
@@ -37,7 +38,7 @@ export function ticks({ world, observer }, from, to, onTick = () => {}) {
  * @returns {import('../../../js/evo/metrics-stats.js').MetricResult} the metric
  */
 export function metric({ world, observer }, name) {
-    return computeMetrics(observer, world)[`eval.${name}`];
+    return loose(computeMetrics(observer, world))[`eval.${name}`];
 }
 
 /**

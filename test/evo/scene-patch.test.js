@@ -6,7 +6,7 @@ import { computeMetrics } from '../../js/evo/metrics.js';
 import { PATCH_STAY_TICKS, patchAt, samplePatches } from '../../js/evo/scene-patch.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
-import { directionOf } from './helpers/metric-registry.js';
+import { directionOf, loose } from './helpers/metric-registry.js';
 
 const BURN_IN = 10000;
 const WORLD = { foodPatchCount: 2, foodPatchRadius: 100, foodPatchCapacity: 1000 };
@@ -20,7 +20,8 @@ function patchWorld() {
     return r;
 }
 
-const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
+const read = (/** @type {any} */ r, /** @type {string} */ name) =>
+    loose(computeMetrics(r.observer, r.world))[`eval.${name}`];
 
 describe('patchAt', () => {
     it('finds the patch whose disc strictly contains the agent, the nearest centre first', () => {

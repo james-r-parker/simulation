@@ -139,7 +139,7 @@ function endState(world) {
  * @param {ReturnType<typeof createBalanceScene>} scene the balance scene
  * @param {Record<string, any>} world the world at the run's last tick; one without agents (a bare metrics world)
  *   reads `null` for the end state
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the four balance metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the four balance metrics
  */
 export function balanceMetrics(scene, world) {
     const lastTick = world.tick ?? 0;

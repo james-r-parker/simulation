@@ -1,6 +1,27 @@
 // Small statistics and the metric result shape shared by the eval metric modules.
 
+import { metricName } from './metric-registry/index.js';
+
 /** @typedef {{value: number | null, reason?: string}} MetricResult a metric's value, or `null` with the reason */
+
+/** @typedef {Partial<Record<import('./metric-registry/index.js').MetricName, MetricResult>>} MetricRecord results keyed by registered metric name */
+
+/**
+ * Builds the results of a parameterised metric: one per suffix, under the registered name `base.suffix`.
+ * @param {string} base a registered metric name without its suffix
+ * @param {readonly string[]} suffixes the suffixes (specialisations, sources, age bands), in order
+ * @param {(index: number) => MetricResult} resultAt the result of the suffix at that index
+ * @returns {MetricRecord} the results
+ * @throws {Error} `unknown metric <name>` when a joined name has no registry entry
+ */
+export function bySuffix(base, suffixes, resultAt) {
+    /** @type {MetricRecord} */
+    const out = {};
+    for (let i = 0; i < suffixes.length; i++) {
+        out[metricName(base, suffixes[i])] = resultAt(i);
+    }
+    return out;
+}
 
 /**
  * @param {number} value a finite number

@@ -123,7 +123,7 @@ function shift(counts, what) {
 
 /**
  * @param {Record<string, any>} scene the season-map scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the two season-map metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the two season-map metrics
  */
 export function seasonMapMetrics(scene) {
     return {

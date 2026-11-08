@@ -6,7 +6,7 @@ export const SCENES_ECOLOGY_2 = {
     'eval.carcass_hunter_share': entry('scenes-ecology', {
         module: 'js/evo/scene-herd-metrics.js',
         meaning: 'How much of the carcass energy eaten is eaten by hunters.',
-        counts: 'Carcass energy (herd and other) eaten by agents of hunting specialisations over all carcass energy eaten, after burn-in. The same name is also returned by scene-carcass.js, overwritten by scene-herd-metrics.js.',
+        counts: 'Carcass energy (herd and other) eaten by agents of hunting specialisations over all carcass energy eaten, after burn-in.',
         unit: 'share',
         direction: 'watch',
         intended: 'higher',

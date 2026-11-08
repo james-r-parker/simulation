@@ -107,7 +107,7 @@ describe('prey extinctions', () => {
         sampleGuards(scene, world(BURN_IN_TICKS - 1000, [0, 1]));
         const m = guardMetrics(scene);
         expect(m['eval.prey_extinctions']).toEqual({ value: null, reason: 'no 1000-tick checkpoint after burn-in' });
-        expect(m['eval.boom_bust_count'].reason).toBe('no 1000-tick checkpoint after burn-in');
+        expect(m['eval.boom_bust_count']?.reason).toBe('no 1000-tick checkpoint after burn-in');
         expect(Object.keys(m).sort()).toEqual(
             namesOf('js/evo/scene-guards.js').filter((name) => name !== 'eval.prey_summer_min'),
         );

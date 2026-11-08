@@ -40,21 +40,21 @@ describe('proven and established shares', () => {
             noteProofDeath(scene, r.observer, { slot, genomeId: r.observer.genomeId[slot], tick: T0 + 2 });
         }
         const m = proofMetrics(scene);
-        expect(m['eval.proven_share'].value).toBeCloseTo(2 / 3, 12);
-        expect(m['eval.established_share'].value).toBeCloseTo(1 / 3, 12);
+        expect(m['eval.proven_share']?.value).toBeCloseTo(2 / 3, 12);
+        expect(m['eval.established_share']?.value).toBeCloseTo(1 / 3, 12);
     });
 
     it('ignore a death before burn-in and one the observer does not track, and read null with none', () => {
         const r = observed();
         const scene = r.observer.scenes.proof;
-        expect(proofMetrics(scene)['eval.proven_share'].value).toBeNull();
+        expect(proofMetrics(scene)['eval.proven_share']?.value).toBeNull();
         const slot = mark(r, addBlob(r.world), { proven: 1, established: 1 });
         r.world.tick = T0 + 1;
         trackProof(scene, r.world);
         noteProofDeath(scene, r.observer, { slot, genomeId: r.observer.genomeId[slot], tick: T0 - 1 });
-        expect(proofMetrics(scene)['eval.proven_share'].value).toBeNull();
+        expect(proofMetrics(scene)['eval.proven_share']?.value).toBeNull();
         noteProofDeath(scene, r.observer, { slot, genomeId: 999, tick: T0 + 2 });
-        expect(proofMetrics(scene)['eval.proven_share'].value).toBe(0);
+        expect(proofMetrics(scene)['eval.proven_share']?.value).toBe(0);
     });
 });
 
@@ -85,7 +85,7 @@ describe('lineage persistence', () => {
         boundary(r, T0 + 3 * SEASON, WINTER);
         r.world.alive[slots[1]] = 0;
         boundary(r, T0 + 4 * SEASON, 0);
-        expect(proofMetrics(r.observer.scenes.proof)['eval.lineage_persistence'].value).toBe(0.5);
+        expect(proofMetrics(r.observer.scenes.proof)['eval.lineage_persistence']?.value).toBe(0.5);
     });
 
     it('scores a hunted year by the hunted lineages alive at its end, and ignores lineages never eaten', () => {
@@ -96,12 +96,12 @@ describe('lineage persistence', () => {
         noteProofKill(scene, { cause: DEATH_CAUSE.EATEN, lineageId: 20 });
         noteProofKill(scene, { cause: DEATH_CAUSE.EATEN, lineageId: 30 });
         boundary(r, T0 + 4 * SEASON, 0);
-        expect(proofMetrics(scene)['eval.lineage_persistence'].value).toBe(1);
+        expect(proofMetrics(scene)['eval.lineage_persistence']?.value).toBe(1);
         noteProofKill(scene, { cause: DEATH_CAUSE.EATEN, lineageId: 20 });
         r.world.alive[slots[1]] = 0;
         boundary(r, T0 + 8 * SEASON, 0);
         expect(scene.samples).toBe(2);
-        expect(proofMetrics(scene)['eval.lineage_persistence'].value).toBe(0.5);
+        expect(proofMetrics(scene)['eval.lineage_persistence']?.value).toBe(0.5);
     });
 
     it('is the mean of all the samples', () => {
@@ -113,7 +113,7 @@ describe('lineage persistence', () => {
         r.world.alive[slots[1]] = 0;
         boundary(r, T0 + 4 * SEASON, 0);
         expect(scene.samples).toBe(2);
-        expect(proofMetrics(scene)['eval.lineage_persistence'].value).toBe(0.25);
+        expect(proofMetrics(scene)['eval.lineage_persistence']?.value).toBe(0.25);
     });
 
     it('takes no sample and no snapshot at the start of a season that is neither spring nor winter', () => {
@@ -123,13 +123,13 @@ describe('lineage persistence', () => {
         r.world.alive[slots[1]] = 0;
         boundary(r, T0 + 4 * SEASON, 0);
         expect(r.observer.scenes.proof.samples).toBe(0);
-        expect(proofMetrics(r.observer.scenes.proof)['eval.lineage_persistence'].value).toBeNull();
+        expect(proofMetrics(r.observer.scenes.proof)['eval.lineage_persistence']?.value).toBeNull();
     });
 
     it('reads null before burn-in and with no established lineage', () => {
         const { r } = lineages();
         boundary(r, T0 - SEASON, WINTER);
         boundary(r, T0, 0);
-        expect(proofMetrics(r.observer.scenes.proof)['eval.lineage_persistence'].value).toBeNull();
+        expect(proofMetrics(r.observer.scenes.proof)['eval.lineage_persistence']?.value).toBeNull();
     });
 });

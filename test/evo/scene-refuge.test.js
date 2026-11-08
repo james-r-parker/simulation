@@ -15,6 +15,7 @@ import {
 import { refugeCentres } from '../../js/evo/scene-terrain.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { loose, resultOf } from './helpers/metric-registry.js';
 
 const T0 = 10000;
 const STEP = 10;
@@ -58,7 +59,8 @@ function agents(/** @type {any} */ r, /** @type {number} */ n) {
     return Array.from({ length: n }, () => addBlob(r.world));
 }
 
-const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
+const read = (/** @type {any} */ r, /** @type {string} */ name) =>
+    loose(computeMetrics(r.observer, r.world))[`eval.${name}`];
 
 describe('eval.refuge_prey_use_under_threat', () => {
     it('leaves hunters out of both shares', () => {
@@ -227,7 +229,7 @@ describe('refuge bookkeeping edges', () => {
     it('reports the last dwell bucket when the histogram holds fewer dwells than were counted', () => {
         const scene = createRefugeScene(createConfig({}));
         scene.dwells = MIN_REFUGE_EXITS;
-        const value = refugeMetrics(scene)['eval.refuge_dwell_ticks'].value;
+        const value = refugeMetrics(scene)['eval.refuge_dwell_ticks']?.value;
         expect(value).toBe((scene.dwell.length - 1) * 10);
     });
 });
@@ -276,7 +278,7 @@ describe('refuge bookkeeping edges (keepers)', () => {
     it('reads the last dwell bucket when the histogram holds fewer dwells than counted', () => {
         const scene = createRefugeScene(setup().world.config);
         scene.dwells = MIN_REFUGE_EXITS;
-        const { value } = refugeMetrics(scene)['eval.refuge_dwell_ticks'];
+        const { value } = resultOf(refugeMetrics(scene), 'eval.refuge_dwell_ticks');
         expect(value).toBe((scene.dwell.length - 1) * 10);
     });
 });

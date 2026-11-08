@@ -159,7 +159,7 @@ describe('kill conversion over chases opened hungry', () => {
         const scene = createCompetenceScene(CONFIG);
         const w = world([{ id: 1, age: 0 }]);
         hungryChase(scene, w, [1200, false, CHASE_OUTCOME.CAUGHT]);
-        expect(competenceMetrics(scene, w)['eval.hunter_kill_conversion_hungry.1k-2k'].value).toBeNull();
+        expect(competenceMetrics(scene, w)['eval.hunter_kill_conversion_hungry.1k-2k']?.value).toBeNull();
     });
 });
 
@@ -187,7 +187,7 @@ describe('the censored time to first kill', () => {
         );
         // observations: 300 event, 400 censored, 700 event, 900 event, 2500 censored
         expect(m['eval.hunter_first_kill_km_median']).toEqual({ value: 900 });
-        expect(m['eval.hunter_first_kill_rmst'].value).toBeCloseTo(
+        expect(m['eval.hunter_first_kill_rmst']?.value).toBeCloseTo(
             300 + 0.8 * 400 + ((0.8 * 2) / 3) * 200 + (0.8 / 3) * 5100,
             9,
         );
@@ -218,7 +218,7 @@ describe('the censored time to first kill', () => {
         born(scene, 1, { tick: 0 });
         const m = competenceMetrics(scene, world([{ id: 1, age: 700 }]));
         expect(m['eval.hunter_first_kill_rmst']).toEqual({ value: null, reason: 'no hunter born after burn-in' });
-        expect(m['eval.hunter_first_kill_km_median'].reason).toBe('no hunter born after burn-in');
+        expect(m['eval.hunter_first_kill_km_median']?.reason).toBe('no hunter born after burn-in');
     });
 });
 

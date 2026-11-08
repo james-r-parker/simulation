@@ -95,7 +95,7 @@ export function sampleBasins(scene, world) {
 
 /**
  * @param {Record<string, any>} scene the basin scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the two basin metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the two basin metrics
  */
 export function basinMetrics(scene) {
     let cvSum = 0;

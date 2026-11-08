@@ -41,11 +41,11 @@ describe('eval.prey_summer_min', () => {
     it('is null with a reason for a seed with no summer yet, and without eraSeasonTicks', () => {
         const scene = createGuardScene(CONFIG);
         sampleGuards(scene, world(ERA - 1000, 90));
-        expect(summerMetrics(scene)['eval.prey_summer_min'].value).toBeNull();
-        expect(summerMetrics(scene)['eval.prey_summer_min'].reason).toMatch(/no summer/);
+        expect(summerMetrics(scene)['eval.prey_summer_min']?.value).toBeNull();
+        expect(summerMetrics(scene)['eval.prey_summer_min']?.reason).toMatch(/no summer/);
         const off = createGuardScene({ specialisations: CONFIG.specialisations });
         sampleGuards(off, world(ERA + 1000, 90));
-        expect(summerMetrics(off)['eval.prey_summer_min'].value).toBeNull();
+        expect(summerMetrics(off)['eval.prey_summer_min']?.value).toBeNull();
     });
 
     it('is a higher metric', () => {

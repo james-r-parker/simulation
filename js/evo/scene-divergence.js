@@ -29,13 +29,6 @@ import { FAMILY_DISTANCE } from './scene-families.js';
 
 const COLUMNS = ['tick', 'alive0', 'alive1', 'spec', 'cluster'];
 
-/** The metric names this module owns. */
-export const DIVERGENCE_METRICS = Object.freeze([
-    'eval.basin_spec_divergence',
-    'eval.basin_cluster_divergence',
-    'eval.basin_divergence',
-]);
-
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @returns {Record<string, any>} an empty scene: the log, and the scratch counts of one checkpoint
@@ -150,7 +143,7 @@ function lastQuarterMean(scene, column, lastTick) {
 /**
  * @param {Record<string, any>} scene the divergence scene
  * @param {Record<string, any>} world the world at the run's last tick
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the three divergence metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the three divergence metrics
  */
 export function divergenceMetrics(scene, world) {
     const lastTick = world.tick ?? 0;
@@ -159,7 +152,11 @@ export function divergenceMetrics(scene, world) {
     const cluster = lastQuarterMean(scene, 'cluster', lastTick);
     if (reason !== null || Number.isNaN(spec)) {
         const why = reason ?? `no checkpoint in the last quarter had both basins at ${BASIN_MIN_ALIVE} agents`;
-        return Object.fromEntries(DIVERGENCE_METRICS.map((name) => [name, none(why)]));
+        return {
+            'eval.basin_spec_divergence': none(why),
+            'eval.basin_cluster_divergence': none(why),
+            'eval.basin_divergence': none(why),
+        };
     }
     return {
         'eval.basin_spec_divergence': ok(spec),

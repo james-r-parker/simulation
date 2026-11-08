@@ -192,7 +192,7 @@ export function boomBustCount(hunters, prey) {
 
 /**
  * @param {Record<string, any>} scene the guard scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the extinction and boom-bust counts
+ * @returns {import('./metrics-stats.js').MetricRecord} the extinction and boom-bust counts
  */
 export function guardMetrics(scene) {
     if (scene.rows === 0) {
@@ -209,7 +209,7 @@ export function guardMetrics(scene) {
 
 /**
  * @param {Record<string, any>} scene the guard scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the lowest prey count at a summer checkpoint
+ * @returns {import('./metrics-stats.js').MetricRecord} the lowest prey count at a summer checkpoint
  */
 export function summerMetrics(scene) {
     if (scene.summerMin === Infinity) {

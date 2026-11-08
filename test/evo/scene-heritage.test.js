@@ -15,10 +15,12 @@ import {
 } from '../../js/evo/scene-heritage.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { nextTick, observed, pushBorn } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const T0 = 10000;
 
-const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
+const read = (/** @type {any} */ r, /** @type {string} */ name) =>
+    loose(computeMetrics(r.observer, r.world))[`eval.${name}`];
 
 /** Plays `n` split births of one parent whose deliberate share is i / 10 and whose child reaches ten meals at `child(i)`. */
 function breed(/** @type {any} */ r, /** @type {number} */ n, /** @type {(i: number) => number} */ child) {

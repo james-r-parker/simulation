@@ -9,6 +9,7 @@ import {
     noteHunterLedger,
     tickHunters,
 } from '../../js/evo/scene-hunters.js';
+import { loose } from './helpers/metric-registry.js';
 
 const HUNT = new Float64Array([0, 1]);
 
@@ -64,10 +65,10 @@ describe('the hunter death metrics', () => {
             'eval.hunter_zero_kill_share',
             'eval.hunter_median_lifespan',
         ]) {
-            expect(m[name].value).toBeNull();
-            expect(m[name].reason).toBe('no hunter deaths');
+            expect(loose(m)[name].value).toBeNull();
+            expect(loose(m)[name].reason).toBe('no hunter deaths');
         }
-        expect(m['eval.hunter_death_share.starved'].value).toBeNull();
+        expect(m['eval.hunter_death_share.starved']?.value).toBeNull();
     });
 
     it('give the median kills, the zero-kill share, the median lifespan and the death shares', () => {
@@ -103,7 +104,7 @@ describe('the hunter birth, income and end metrics', () => {
         expect(m['eval.hunter_birth_source_share.spec-flip']).toEqual({ value: 0.25 });
         expect(m['eval.hunter_birth_source_share.floor']).toEqual({ value: 0.25 });
         expect(m['eval.hunter_birth_source_share.split-hunter-parent']).toEqual({ value: 0 });
-        expect(hunterMetrics(createHunterScene(10), w)['eval.hunter_birth_source_share.floor'].reason).toBe(
+        expect(hunterMetrics(createHunterScene(10), w)['eval.hunter_birth_source_share.floor']?.reason).toBe(
             'no hunter births',
         );
     });
@@ -119,12 +120,12 @@ describe('the hunter birth, income and end metrics', () => {
         expect(m['eval.hunter_income_share.bite']).toEqual({ value: 0.6 });
         expect(m['eval.hunter_income_share.carcass']).toEqual({ value: 0 });
         expect(m['eval.hunter_income_share.herd']).toEqual({ value: 0.3 });
-        expect(hunterMetrics(createHunterScene(10), world())['eval.hunter_income_share.kill'].value).toBeNull();
+        expect(hunterMetrics(createHunterScene(10), world())['eval.hunter_income_share.kill']?.value).toBeNull();
     });
 
     it('give the local share of the hunters alive at the end, null when none is alive', () => {
         const w = world();
-        expect(hunterMetrics(createHunterScene(10), w)['eval.predator_end_local_share'].reason).toBe(
+        expect(hunterMetrics(createHunterScene(10), w)['eval.predator_end_local_share']?.reason).toBe(
             'no hunter alive at the last tick',
         );
         const sources = [
@@ -153,7 +154,7 @@ describe('the hunter birth, income and end metrics', () => {
             tickHunters(scene, tick);
         }
         expect(hunterMetrics(scene, w)['eval.hunter_ticks_last_quarter']).toEqual({ value: 14 * 2 + 11 });
-        expect(hunterMetrics(createHunterScene(0), w)['eval.hunter_ticks_last_quarter'].value).toBeNull();
+        expect(hunterMetrics(createHunterScene(0), w)['eval.hunter_ticks_last_quarter']?.value).toBeNull();
     });
 });
 
@@ -170,6 +171,6 @@ describe('the age detectors on the hunter scene', () => {
         const m = hunterMetrics(scene, world());
         expect(m['eval.hunter_juvenile_death_share']).toEqual({ value: 0.5 });
         expect(m['eval.hunter_first_kill_age']).toEqual({ value: 300 });
-        expect(m['eval.hunter_kill_rate_by_age.juvenile'].value).toBeCloseTo((1 / 900) * 1000, 12);
+        expect(m['eval.hunter_kill_rate_by_age.juvenile']?.value).toBeCloseTo((1 / 900) * 1000, 12);
     });
 });

@@ -128,7 +128,7 @@ export function samplePatches(scene, world) {
 
 /**
  * @param {Record<string, any>} scene the patch scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the two patch metrics, `null` with a reason
+ * @returns {import('./metrics-stats.js').MetricRecord} the two patch metrics, `null` with a reason
  *   when no sample resolved
  */
 export function patchMetrics(scene) {

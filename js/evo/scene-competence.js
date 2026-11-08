@@ -24,7 +24,7 @@ import { EVENT_TYPE } from '../sim/events.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { kaplanMeier } from './kaplan-meier.js';
-import { none, ok, share } from './metrics-stats.js';
+import { bySuffix, none, ok, share } from './metrics-stats.js';
 
 /** The kill-conversion age bands, in order, and the ages at which the second and third begin. */
 export const CONVERSION_BANDS = Object.freeze(['under1k', '1k-2k', 'over2k']);
@@ -42,7 +42,6 @@ const HORIZON_JUVENILE_WINDOWS = 2;
 const PENDING = 0;
 const DONE = 1;
 
-/** The direction of each metric of this module. */
 /**
  * @param {Readonly<Record<string, any>>} config the world's config (`juvenileTicks`)
  * @returns {Record<string, any>} an empty competence scene: caught and resolved chases per age band, the deliberate kills and
@@ -125,7 +124,7 @@ function noteGainChase(scene, genomeId, { age, caught }) {
 
 /**
  * @param {Record<string, any>} scene the competence scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the late-minus-early conversion gain and the hunters it rests on
+ * @returns {import('./metrics-stats.js').MetricRecord} the late-minus-early conversion gain and the hunters it rests on
  */
 function gainMetrics(scene) {
     const { early, earlyCaught, late, lateCaught } = scene.gain;
@@ -249,7 +248,7 @@ function observations(scene, world) {
 /**
  * @param {Record<string, any>} scene the competence scene
  * @param {Record<string, any>} world the world at the last tick
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the first-kill time metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the first-kill time metrics
  */
 function firstKillMetrics(scene, world) {
     const { times, events } = observations(scene, world);
@@ -267,22 +266,16 @@ function firstKillMetrics(scene, world) {
 /**
  * @param {Record<string, any>} scene the competence scene
  * @param {Record<string, any>} world the world at the last tick
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the competence metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the competence metrics
  */
 export function competenceMetrics(scene, world) {
     const reason = 'no chase opened in the band';
     return {
-        ...Object.fromEntries(
-            CONVERSION_BANDS.map((name, i) => [
-                `eval.hunter_kill_conversion_by_age.${name}`,
-                share(scene.caught[i], scene.chases[i], reason),
-            ]),
+        ...bySuffix('eval.hunter_kill_conversion_by_age', CONVERSION_BANDS, (i) =>
+            share(scene.caught[i], scene.chases[i], reason),
         ),
-        ...Object.fromEntries(
-            CONVERSION_BANDS.map((name, i) => [
-                `eval.hunter_chases_by_age.${name}`,
-                scene.chases[i] > 0 ? ok(scene.chases[i]) : none(reason),
-            ]),
+        ...bySuffix('eval.hunter_chases_by_age', CONVERSION_BANDS, (i) =>
+            scene.chases[i] > 0 ? ok(scene.chases[i]) : none(reason),
         ),
         'eval.hunter_kill_conversion_hungry.1k-2k': share(
             scene.hungryCaught,

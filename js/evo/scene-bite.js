@@ -102,7 +102,7 @@ function wishShare(scene, kind, least) {
 
 /**
  * @param {Record<string, any>} scene the bite scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the four bite shares
+ * @returns {import('./metrics-stats.js').MetricRecord} the four bite shares
  */
 export function biteMetrics(scene) {
     return {

@@ -12,6 +12,7 @@ import {
 import { CHASE_OUTCOME } from '../../js/evo/scene-competence.js';
 import { observed } from './helpers/observer-world.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
+import { loose } from './helpers/metric-registry.js';
 
 const CAUGHT = CHASE_OUTCOME.CAUGHT;
 const ESCAPED = CHASE_OUTCOME.ESCAPED;
@@ -63,12 +64,12 @@ describe('noteMatchedChase', () => {
 describe('eval.hunter_conversion_matched.<band>', () => {
     it('is null with no chase, and with too few strata holding enough chases', () => {
         const r = setup();
-        expect(matchedMetrics(r.scene)['eval.hunter_conversion_matched.1k-2k'].value).toBeNull();
+        expect(matchedMetrics(r.scene)['eval.hunter_conversion_matched.1k-2k']?.value).toBeNull();
         for (let i = 0; i < MIN_STRATUM_CHASES; i++) {
             chase(r, { age: 1500, energy: 10, caught: true });
         }
-        expect(matchedMetrics(r.scene)['eval.hunter_conversion_matched.1k-2k'].value).toBeNull();
-        expect(matchedMetrics(r.scene)['eval.hunter_conversion_matched.under1k'].value).toBeNull();
+        expect(matchedMetrics(r.scene)['eval.hunter_conversion_matched.1k-2k']?.value).toBeNull();
+        expect(matchedMetrics(r.scene)['eval.hunter_conversion_matched.under1k']?.value).toBeNull();
     });
 
     it('averages the strata with equal weight, not by their chase counts', () => {
@@ -86,16 +87,16 @@ describe('eval.hunter_conversion_matched.<band>', () => {
         // Three strata (one per energy tercile), 5 chases each: caught 5/5, 2/5, 2/5.
         const metric = matchedMetrics(r.scene)['eval.hunter_conversion_matched.1k-2k'];
         expect(MIN_STRATA).toBe(3);
-        expect(metric.value).toBeCloseTo((1 + 0.4 + 0.4) / 3, 12);
+        expect(metric?.value).toBeCloseTo((1 + 0.4 + 0.4) / 3, 12);
     });
 
     it('is carried by computeMetrics for each band', () => {
         const { observer, world } = observed({ maxAgents: 8 });
         const all = computeMetrics(observer, world);
         for (const band of ['under1k', '1k-2k', 'over2k']) {
-            expect(all[`eval.hunter_conversion_matched.${band}`].value).toBeNull();
+            expect(loose(all)[`eval.hunter_conversion_matched.${band}`].value).toBeNull();
         }
-        expect(all['eval.hunter_conversion_by_dose'].value).toBeNull();
+        expect(all['eval.hunter_conversion_by_dose']?.value).toBeNull();
     });
 });
 
@@ -119,7 +120,7 @@ describe('eval.hunter_conversion_by_dose', () => {
         const slope =
             xs.reduce((a, x, i) => a + (x - mx) * (ys[i] - my), 0) / xs.reduce((a, x) => a + (x - mx) ** 2, 0);
         const metric = matchedMetrics(r.scene)['eval.hunter_conversion_by_dose'];
-        expect(metric.value).toBeCloseTo(slope, 12);
+        expect(metric?.value).toBeCloseTo(slope, 12);
         expect(slope).toBeGreaterThan(0);
     });
 
@@ -133,7 +134,7 @@ describe('eval.hunter_conversion_by_dose', () => {
             chase(r, { age: 500, energy: 10, caught: true });
             chase(r, { age: 4500, energy: 10, caught: true });
         }
-        expect(matchedMetrics(r.scene)['eval.hunter_conversion_by_dose'].value).toBeLessThan(0);
+        expect(matchedMetrics(r.scene)['eval.hunter_conversion_by_dose']?.value).toBeLessThan(0);
     });
 
     it('is null without a spread of prior counts', () => {
@@ -142,6 +143,6 @@ describe('eval.hunter_conversion_by_dose', () => {
             r.world.genomeId[0] = 200 + i;
             chase(r, { age: 2000, energy: 10, caught: true });
         }
-        expect(matchedMetrics(r.scene)['eval.hunter_conversion_by_dose'].value).toBeNull();
+        expect(matchedMetrics(r.scene)['eval.hunter_conversion_by_dose']?.value).toBeNull();
     });
 });

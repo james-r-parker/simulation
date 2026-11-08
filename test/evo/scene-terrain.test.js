@@ -12,6 +12,7 @@ import {
 import { REFUGE_ROCKS, ringRadius } from '../../js/sim/terrain.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const T0 = 10000;
 const BASINS = {
@@ -22,7 +23,8 @@ const BASINS = {
     maxAgents: 64,
 };
 
-const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
+const read = (/** @type {any} */ r, /** @type {string} */ name) =>
+    loose(computeMetrics(r.observer, r.world))[`eval.${name}`];
 
 describe('the refuge centres', () => {
     it('are the middles of the rings of eight rocks, each rock one ring radius away', () => {

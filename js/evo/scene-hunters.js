@@ -21,7 +21,7 @@ import { BIRTH_SOURCE } from '../sim/hunter-ledger.js';
 import { DEFAULTS } from '../sim/config-defaults.js';
 import { DEATH_CAUSE, EVENT_TYPE } from '../sim/events.js';
 import { createLog, ensureRoom } from './growable-log.js';
-import { none, ok, quantile, share } from './metrics-stats.js';
+import { bySuffix, none, ok, quantile, share } from './metrics-stats.js';
 import {
     ageMetrics,
     BIRTH_INDEX,
@@ -146,19 +146,19 @@ export function tickHunters(scene, tick) {
  * @param {readonly string[]} names the keys
  * @param {Float64Array} counts the count per key
  * @param {string} reason the reason when nothing was counted
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} one share metric per key
+ * @returns {import('./metrics-stats.js').MetricRecord} one share metric per key
  */
 function shares(prefix, names, counts, reason) {
     let total = 0;
     for (let i = 0; i < counts.length; i++) {
         total += counts[i];
     }
-    return Object.fromEntries(names.map((name, i) => [`${prefix}.${name}`, share(counts[i], total, reason)]));
+    return bySuffix(prefix, names, (i) => share(counts[i], total, reason));
 }
 
 /**
  * @param {Record<string, any>} scene the hunter scene
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the death-record metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the death-record metrics
  */
 function deathMetrics(scene) {
     const reason = 'no hunter deaths';
@@ -179,7 +179,7 @@ function deathMetrics(scene) {
 
 /**
  * @param {Record<string, any>} world the world at the last tick
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the income shares
+ * @returns {import('./metrics-stats.js').MetricRecord} the income shares
  */
 function incomeMetrics(world) {
     const reason = 'no hunter income';
@@ -222,7 +222,7 @@ function endLocalShare(world) {
 /**
  * @param {Record<string, any>} scene the hunter scene
  * @param {Record<string, any>} world the world at the last tick
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the hunter metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the hunter metrics
  */
 export function hunterMetrics(scene, world) {
     return {

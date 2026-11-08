@@ -66,14 +66,14 @@ describe('eval.hunter_carrion_idle_share', () => {
             { kills: 0, carcassEnergy: 30, killEnergy: 0, biteGainEnergy: 0 },
         ]);
         const living = { kills: 0, carcass: 30, kill: 0, bite: 0 };
-        const value = biteLifeMetrics(scene, world([living]))['eval.hunter_carrion_idle_share'].value;
+        const value = biteLifeMetrics(scene, world([living]))['eval.hunter_carrion_idle_share']?.value;
         expect(value).toBe(split.zeroKillCarcassOfIncome);
         expect(value).toBeCloseTo(90 / 130, 12);
     });
 
     it('is null with no income', () => {
         const m = biteLifeMetrics(createBiteLifeScene(), world())['eval.hunter_carrion_idle_share'];
-        expect(m.value).toBeNull();
+        expect(m?.value).toBeNull();
     });
 });
 
@@ -86,11 +86,11 @@ describe('eval.hunter_recoil_per_life', () => {
         tickRecoil(scene, w);
         expect(scene.recoilTicks).toBe(1);
         die(scene, NONE);
-        expect(biteLifeMetrics(scene, w)['eval.hunter_recoil_per_life'].value).toBeCloseTo(1 / 3, 12);
+        expect(biteLifeMetrics(scene, w)['eval.hunter_recoil_per_life']?.value).toBeCloseTo(1 / 3, 12);
     });
 
     it('is null with no lives', () => {
-        expect(biteLifeMetrics(createBiteLifeScene(), world())['eval.hunter_recoil_per_life'].value).toBeNull();
+        expect(biteLifeMetrics(createBiteLifeScene(), world())['eval.hunter_recoil_per_life']?.value).toBeNull();
     });
 
     it('counts a kin lunge through the real feed phase and not a lunge at prey', () => {

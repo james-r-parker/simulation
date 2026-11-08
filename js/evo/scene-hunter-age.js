@@ -13,7 +13,7 @@
 
 import { BIRTH_SOURCE } from '../sim/hunter-ledger.js';
 import { createLog, ensureRoom } from './growable-log.js';
-import { none, ok, per1k, quantile, share } from './metrics-stats.js';
+import { bySuffix, none, ok, per1k, quantile, share } from './metrics-stats.js';
 
 /** The hunter birth sources the metrics name, in order. */
 export const HUNTER_BIRTH_NAMES = Object.freeze([
@@ -137,7 +137,7 @@ function addAlive(world, totals) {
 /**
  * @param {Record<string, any>} scene the age scene
  * @param {Record<string, any>} world the world at the last tick; one without agents leaves the alive hunters out
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the age and source metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the age and source metrics
  */
 export function ageMetrics(scene, world) {
     const totals = {
@@ -153,17 +153,11 @@ export function ageMetrics(scene, world) {
     return {
         'eval.hunter_first_kill_age': first ?? none('no hunter made a deliberate kill'),
         'eval.hunter_juvenile_death_share': share(scene.juvenileDeaths, scene.deaths, 'no hunter deaths'),
-        ...Object.fromEntries(
-            AGE_BAND_NAMES.map((name, i) => [
-                `eval.hunter_kill_rate_by_age.${name}`,
-                per1k(scene.bandKills[i], totals.bandTicks[i]),
-            ]),
+        ...bySuffix('eval.hunter_kill_rate_by_age', AGE_BAND_NAMES, (i) =>
+            per1k(scene.bandKills[i], totals.bandTicks[i]),
         ),
-        ...Object.fromEntries(
-            HUNTER_BIRTH_NAMES.map((name, i) => [
-                `eval.hunter_kill_rate_by_source.${name}`,
-                per1k(totals.sourceKills[i], totals.sourceTicks[i]),
-            ]),
+        ...bySuffix('eval.hunter_kill_rate_by_source', HUNTER_BIRTH_NAMES, (i) =>
+            per1k(totals.sourceKills[i], totals.sourceTicks[i]),
         ),
     };
 }

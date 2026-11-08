@@ -93,8 +93,8 @@ describe('the end state', () => {
         expect(busted['eval.predators_at_end']).toEqual({ value: 0 });
         expect(busted['eval.prey_types_at_end']).toEqual({ value: 1 });
         const bare = balanceMetrics(createBalanceScene(), {});
-        expect(bare['eval.predators_at_end'].value).toBeNull();
-        expect(bare['eval.predators_at_end'].reason).toBeTypeOf('string');
+        expect(bare['eval.predators_at_end']?.value).toBeNull();
+        expect(bare['eval.predators_at_end']?.reason).toBeTypeOf('string');
     });
 });
 
@@ -106,8 +106,8 @@ describe('families per basin', () => {
         sampleBalance(scene, handWorld([...families(0, [10, 10, 10, 10]), ...families(1, [10, 10])], 3000));
         sampleBalance(scene, handWorld([...families(0, [10, 10, 10, 10]), ...families(1, [10, 10, 10, 10])], 4000));
         const metrics = balanceMetrics(scene, { tick: 4000 });
-        expect(metrics['eval.basin_lineages_alive'].value).toBeCloseTo(3, 12);
-        expect(metrics['eval.basin_lineage_effective'].value).toBeCloseTo(3, 12);
+        expect(metrics['eval.basin_lineages_alive']?.value).toBeCloseTo(3, 12);
+        expect(metrics['eval.basin_lineage_effective']?.value).toBeCloseTo(3, 12);
     });
 
     it('reads the one basin when only one qualifies, and null when none does', () => {
@@ -117,8 +117,8 @@ describe('families per basin', () => {
         const empty = createBalanceScene();
         sampleBalance(empty, handWorld(families(0, [5]), 1000));
         const metric = balanceMetrics(empty, { tick: 1000 })['eval.basin_lineage_effective'];
-        expect(metric.value).toBeNull();
-        expect(metric.reason).toBeTypeOf('string');
+        expect(metric?.value).toBeNull();
+        expect(metric?.reason).toBeTypeOf('string');
     });
 
     it('ignores dead slots', () => {

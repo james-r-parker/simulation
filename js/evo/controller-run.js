@@ -10,7 +10,10 @@ import { createObserver, observe, observerPhases } from './observer.js';
 import { createBaselineV5 } from './policies/baseline-v5.js';
 import { createRandomBrain } from './policies/random-brain.js';
 
-/** The metrics a rung records: food, births and the deliberate-behaviour metrics. */
+/**
+ * The metrics a rung records: food, births and the deliberate-behaviour metrics.
+ * @type {readonly import('./metric-registry/index.js').MetricName[]}
+ */
 export const RUNG_METRICS = Object.freeze([
     'eval.food_energy_per_1k',
     'eval.births_per_1k',
@@ -63,6 +66,6 @@ export function runControllerSeed({ rung, seed, ticks, overrides = {} }) {
         rung: rung.name,
         ticks,
         population: world.population,
-        metrics: Object.fromEntries(RUNG_METRICS.map((name) => [name, all[name].value])),
+        metrics: Object.fromEntries(RUNG_METRICS.map((name) => [name, all[name]?.value ?? null])),
     };
 }
