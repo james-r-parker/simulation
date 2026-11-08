@@ -1,12 +1,31 @@
 // Vite configuration for development server and Cloudflare Pages
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 
+// The version the build reports (`__APP_VERSION__`) and the season it belongs to (`__SEASON__`, its major). The release
+// build sets APP_VERSION; anything else reports package.json's version (docs/designs/deployment-and-community.md,
+// "Versioned build and paths"). The release build also passes `--base /v/<version>/` (or `/next/`), which overrides `base`.
+const packageVersion = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version;
+
+/**
+ * @param {string | undefined} fromEnv the APP_VERSION environment variable
+ * @returns {{version: string, season: number}} the version to report and its major
+ */
+export function appVersion(fromEnv) {
+  const version = fromEnv !== undefined && fromEnv !== '' ? fromEnv : packageVersion;
+  if (!/^\d+\.\d+\.\d+$/.test(version)) {
+    throw new Error(`APP_VERSION must be major.minor.patch, got "${version}"`);
+  }
+  return { version, season: Number(version.split('.')[0]) };
+}
+
 export default defineConfig(({ command, mode }) => {
+  const { version, season } = appVersion(process.env.APP_VERSION);
   // Determine if we're in production build
   const isProduction = command === 'build' || mode === 'production';
   
   return {
-    base: '/', // Use relative paths for Cloudflare Pages
+    base: '/', // The site root; a versioned or /next/ build passes `--base`
     publicDir: 'public', // Explicitly set public directory
     server: {
       port: 5173,
@@ -41,7 +60,9 @@ export default defineConfig(({ command, mode }) => {
     },
     // Define environment variables based on build mode
     define: {
-      __PRODUCTION__: isProduction
+      __PRODUCTION__: isProduction,
+      __APP_VERSION__: JSON.stringify(version),
+      __SEASON__: season
     }
   };
 });
