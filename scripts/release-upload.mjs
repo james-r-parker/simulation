@@ -40,26 +40,28 @@ export function releaseUpload(argv, { readFile, execute, now }) {
 }
 
 /**
- * @param {string} database the D1 database name
- * @param {string} sql one statement
- * @returns {any[]} the `results` rows of the statement
- * @throws {Error} when wrangler fails
+ * @param {(cmd: string, args: string[]) => {status: number | null, stdout: string, stderr: string}} spawn runs a command
+ * @param {string} wrangler the wrangler command
+ * @returns {(database: string, sql: string) => any[]} runs one statement on remote D1 and returns its `results` rows,
+ *   throwing when wrangler fails
  */
-function d1Execute(database, sql) {
-    const wrangler = process.env.WRANGLER ?? 'wrangler';
-    const done = spawnSync(wrangler, ['d1', 'execute', database, '--remote', '--json', '--command', sql], {
-        encoding: 'utf8',
-    });
-    if (done.status !== 0) {
-        throw new Error(`release-upload: d1 execute failed: ${done.stderr}`);
-    }
-    return JSON.parse(done.stdout)[0]?.results ?? [];
+export function makeD1Execute(spawn, wrangler) {
+    return (database, sql) => {
+        const done = spawn(wrangler, ['d1', 'execute', database, '--remote', '--json', '--command', sql]);
+        if (done.status !== 0) {
+            throw new Error(`release-upload: d1 execute failed: ${done.stderr}`);
+        }
+        return JSON.parse(done.stdout)[0]?.results ?? [];
+    };
 }
 
 if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
     const record = releaseUpload(process.argv.slice(2), {
         readFile: (file) => readFileSync(file, 'utf8'),
-        execute: d1Execute,
+        execute: makeD1Execute(
+            (cmd, args) => spawnSync(cmd, args, { encoding: 'utf8' }),
+            process.env.WRANGLER ?? 'wrangler',
+        ),
         now: Date.now,
     });
     console.log(JSON.stringify(record));

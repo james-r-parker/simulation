@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { buildRelease } from '../scripts/build-release.mjs';
 import { runDeployPlan } from '../scripts/deploy-plan.mjs';
-import { runReleaseCheck } from '../scripts/release-check.mjs';
-import { releaseUpload } from '../scripts/release-upload.mjs';
+import { makeGit, makeRulesHashAt, runReleaseCheck } from '../scripts/release-check.mjs';
+import { makeD1Execute, releaseUpload } from '../scripts/release-upload.mjs';
 
 /**
  * @param {{log?: string, seasons?: string}} [out] what `git log` and `git show` print
@@ -166,5 +166,65 @@ describe('releaseUpload', () => {
         });
         expect(record.action).toBe('noop');
         expect(dbs).toEqual(['blob-library']);
+    });
+});
+
+/**
+ * @param {Record<string, {status: number, stdout?: string, stderr?: string}>} byCmd the result for each command
+ * @returns {{spawn: (cmd: string, args: string[]) => {status: number, stdout: string, stderr: string}, calls: string[][]}}
+ *   a fake process runner and the command lines it saw
+ */
+function fakeSpawn(byCmd) {
+    /** @type {string[][]} */
+    const calls = [];
+    const spawn = (/** @type {string} */ cmd, /** @type {string[]} */ args) => {
+        calls.push([cmd, ...args]);
+        const { status, stdout = '', stderr = '' } = byCmd[cmd] ?? { status: 0 };
+        return { status, stdout, stderr };
+    };
+    return { spawn, calls };
+}
+
+describe('the process wrappers', () => {
+    it('makeGit returns the output and throws with stderr when git fails', () => {
+        expect(makeGit(fakeSpawn({ git: { status: 0, stdout: 'abc' } }).spawn)(['rev-parse', 'HEAD'])).toBe('abc');
+        const failing = makeGit(fakeSpawn({ git: { status: 1, stderr: 'bad ref' } }).spawn);
+        expect(() => failing(['show', 'x'])).toThrow('git show x failed: bad ref');
+    });
+
+    it('makeRulesHashAt hashes in a temporary worktree and always removes it', () => {
+        /** @type {string[]} */
+        const removed = [];
+        const ok = fakeSpawn({ git: { status: 0 }, node: { status: 0, stdout: 'h9\n' } });
+        const hashAt = makeRulesHashAt({ spawn: ok.spawn, tempDir: () => '/tmp/w', removeDir: (d) => removed.push(d) });
+        expect(hashAt('base123')).toBe('h9');
+        expect(ok.calls[0]).toEqual(['git', 'worktree', 'add', '--detach', '/tmp/w', 'base123']);
+        expect(ok.calls.at(-1)).toEqual(['git', 'worktree', 'remove', '--force', '/tmp/w']);
+        const bad = fakeSpawn({ git: { status: 0 }, node: { status: 1, stderr: 'boom' } });
+        const failing = makeRulesHashAt({
+            spawn: bad.spawn,
+            tempDir: () => '/tmp/v',
+            removeDir: (d) => removed.push(d),
+        });
+        expect(() => failing('s1')).toThrow('cannot hash the rules at s1: boom');
+        expect(removed).toEqual(['/tmp/w', '/tmp/v']);
+    });
+
+    it('makeD1Execute runs one remote statement and returns its rows, or throws with stderr', () => {
+        const ok = fakeSpawn({ wr: { status: 0, stdout: JSON.stringify([{ results: [{ n: 1 }] }]) } });
+        expect(makeD1Execute(ok.spawn, 'wr')('blob-library', 'SELECT 1')).toEqual([{ n: 1 }]);
+        expect(ok.calls[0]).toEqual([
+            'wr',
+            'd1',
+            'execute',
+            'blob-library',
+            '--remote',
+            '--json',
+            '--command',
+            'SELECT 1',
+        ]);
+        expect(makeD1Execute(fakeSpawn({ wr: { status: 0, stdout: '[]' } }).spawn, 'wr')('db', 'x')).toEqual([]);
+        const bad = makeD1Execute(fakeSpawn({ wr: { status: 1, stderr: 'auth' } }).spawn, 'wr');
+        expect(() => bad('db', 'x')).toThrow('d1 execute failed: auth');
     });
 });

@@ -10,37 +10,46 @@ import { fileURLToPath } from 'node:url';
 import { releaseCheck, seasonAdded } from './lib/release-check.mjs';
 import { createConfig, rulesHash } from '../js/sim/config.js';
 
+/** @typedef {(cmd: string, args: string[]) => {status: number | null, stdout: string, stderr: string}} Spawn */
+
+/** @type {Spawn} */
+const spawnText = (cmd, args) => spawnSync(cmd, args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+
 /**
- * @param {string[]} args git arguments
- * @returns {string} its standard output
- * @throws {Error} when git fails
+ * @param {Spawn} spawn runs a command
+ * @returns {(args: string[]) => string} git: its standard output, throwing when it fails
  */
-function git(args) {
-    const done = spawnSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-    if (done.status !== 0) {
-        throw new Error(`release-check: git ${args.join(' ')} failed: ${done.stderr}`);
-    }
-    return done.stdout;
+export function makeGit(spawn) {
+    return (args) => {
+        const done = spawn('git', args);
+        if (done.status !== 0) {
+            throw new Error(`release-check: git ${args.join(' ')} failed: ${done.stderr}`);
+        }
+        return done.stdout;
+    };
 }
 
 /**
- * @param {string} sha a commit
- * @returns {string} `rulesHash(createConfig())` of that commit, computed in a temporary worktree
+ * @param {{spawn: Spawn, tempDir: () => string, removeDir: (dir: string) => void}} deps the runner and the temp dir
+ * @returns {(sha: string) => string} `rulesHash(createConfig())` of a commit, computed in a temporary worktree
  */
-function rulesHashAt(sha) {
-    const dir = mkdtempSync(join(tmpdir(), 'release-check-'));
-    git(['worktree', 'add', '--detach', dir, sha]);
-    try {
-        const code = `import('${dir}/js/sim/config.js').then((m) => console.log(m.rulesHash(m.createConfig())))`;
-        const done = spawnSync('node', ['--input-type=module', '-e', code], { encoding: 'utf8' });
-        if (done.status !== 0) {
-            throw new Error(`release-check: cannot hash the rules at ${sha}: ${done.stderr}`);
+export function makeRulesHashAt({ spawn, tempDir, removeDir }) {
+    const git = makeGit(spawn);
+    return (sha) => {
+        const dir = tempDir();
+        git(['worktree', 'add', '--detach', dir, sha]);
+        try {
+            const code = `import('${dir}/js/sim/config.js').then((m) => console.log(m.rulesHash(m.createConfig())))`;
+            const done = spawn('node', ['--input-type=module', '-e', code]);
+            if (done.status !== 0) {
+                throw new Error(`release-check: cannot hash the rules at ${sha}: ${done.stderr}`);
+            }
+            return done.stdout.trim();
+        } finally {
+            git(['worktree', 'remove', '--force', dir]);
+            removeDir(dir);
         }
-        return done.stdout.trim();
-    } finally {
-        git(['worktree', 'remove', '--force', dir]);
-        rmSync(dir, { recursive: true, force: true });
-    }
+    };
 }
 
 /**
@@ -80,8 +89,12 @@ export function runReleaseCheck({ env, git: run, rulesHashAt: hashAt, headHash, 
 if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
     const { ok, line } = runReleaseCheck({
         env: process.env,
-        git,
-        rulesHashAt,
+        git: makeGit(spawnText),
+        rulesHashAt: makeRulesHashAt({
+            spawn: spawnText,
+            tempDir: () => mkdtempSync(join(tmpdir(), 'release-check-')),
+            removeDir: (dir) => rmSync(dir, { recursive: true, force: true }),
+        }),
         headHash: rulesHash(createConfig()),
         headSeasons: readFileSync('library/seasons.json', 'utf8'),
     });
