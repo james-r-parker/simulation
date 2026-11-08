@@ -12,6 +12,7 @@ export const WORLD_2 = {
         intended: 'higher',
         nullWhen: ['no mate birth after burn-in'],
         arithmetic: 'test/evo/metrics-diet.test.js',
+        source: 'test/evo/metric-source-world.test.js',
     }),
     'eval.split_bumper_share': entry('world', {
         module: 'js/evo/metrics-diet.js',
@@ -22,6 +23,7 @@ export const WORLD_2 = {
         intended: 'higher',
         nullWhen: ['no split birth after burn-in'],
         arithmetic: 'test/evo/metrics-diet.test.js',
+        source: 'test/evo/metric-source-world.test.js',
     }),
     'eval.circling_share': entry('world', {
         module: 'js/evo/metrics-watchability.js',
@@ -31,6 +33,7 @@ export const WORLD_2 = {
         direction: 'lower',
         nullWhen: ['no circling span after burn-in with a tracked agent'],
         arithmetic: 'test/evo/metrics-watchability.test.js',
+        source: 'test/evo/metric-source-world-watch.test.js',
     }),
     'eval.output_saturation': entry('world', {
         module: 'js/evo/metrics-watchability.js',
@@ -40,6 +43,7 @@ export const WORLD_2 = {
         direction: 'lower',
         nullWhen: ['no checkpoint after burn-in with an alive agent'],
         arithmetic: 'test/evo/metrics-watchability.test.js',
+        source: 'test/evo/metric-source-world-watch.test.js',
     }),
     'eval.alarm_rate': entry('world', {
         module: 'js/evo/metrics-watchability.js',
@@ -49,6 +53,7 @@ export const WORLD_2 = {
         direction: 'lower',
         nullWhen: ['no agent-ticks'],
         arithmetic: 'test/evo/metrics-watchability.test.js',
+        source: 'test/evo/metric-source-world-watch.test.js',
     }),
     'eval.mean_energy_share': entry('world', {
         module: 'js/evo/metrics-watchability.js',
@@ -59,6 +64,7 @@ export const WORLD_2 = {
         intended: 'lower',
         nullWhen: ['no checkpoint after burn-in with an alive agent'],
         arithmetic: 'test/evo/metrics-watchability.test.js',
+        source: 'test/evo/metric-source-world-watch.test.js',
     }),
     'eval.energy_over_split': entry('world', {
         module: 'js/evo/metrics-watchability.js',
@@ -69,6 +75,7 @@ export const WORLD_2 = {
         intended: 'lower',
         nullWhen: ['no checkpoint after burn-in with an alive agent'],
         arithmetic: 'test/evo/metrics-watchability.test.js',
+        source: 'test/evo/metric-source-world-watch.test.js',
     }),
     'eval.migration_index': entry('world', {
         module: 'js/evo/metrics-watch.js',
@@ -78,6 +85,7 @@ export const WORLD_2 = {
         direction: 'higher',
         nullWhen: ['no live patch observed', 'no mature death after burn-in'],
         arithmetic: 'test/evo/metrics-watch.test.js',
+        source: 'test/evo/metric-source-world-watch.test.js',
     }),
     'eval.predator_presence': entry('world', {
         module: 'js/evo/metrics-watch.js',
@@ -87,6 +95,7 @@ export const WORLD_2 = {
         direction: 'higher',
         nullWhen: ['no checkpoint after burn-in'],
         arithmetic: 'test/evo/metrics-watch.test.js',
+        source: 'test/evo/metric-source-world-watch.test.js',
     }),
     'eval.predator_births': entry('world', {
         module: 'js/evo/metrics-watch.js',
@@ -96,6 +105,7 @@ export const WORLD_2 = {
         direction: 'higher',
         nullWhen: [],
         arithmetic: 'test/evo/compare.test.js',
+        source: 'test/evo/metric-source-world-watch.test.js',
     }),
     'eval.pred_prey_lag_corr': entry('world', {
         module: 'js/evo/metrics-watch.js',
@@ -111,6 +121,7 @@ export const WORLD_2 = {
             'catch rate or evasion skill does not vary across the windows',
         ],
         arithmetic: 'test/evo/metrics-watch.test.js',
+        source: 'test/evo/metric-source-world-watch.test.js',
     }),
     'eval.cold_stress_share': entry('world', {
         module: 'js/evo/metrics-environment.js',
@@ -120,6 +131,7 @@ export const WORLD_2 = {
         direction: 'lower',
         nullWhen: ['no checkpoint after burn-in with an alive agent'],
         arithmetic: 'test/evo/metrics-environment.test.js',
+        source: 'test/evo/metric-source-world-watch.test.js',
     }),
     'eval.heat_stress_share': entry('world', {
         module: 'js/evo/metrics-environment.js',
@@ -130,6 +142,7 @@ export const WORLD_2 = {
         intended: 'lower',
         nullWhen: ['no checkpoint after burn-in with an alive agent'],
         arithmetic: 'test/evo/metrics-environment.test.js',
+        source: 'test/evo/metric-source-world-watch.test.js',
     }),
     'eval.terrain_death_share': entry('world', {
         module: 'js/evo/metrics-environment.js',
@@ -139,6 +152,7 @@ export const WORLD_2 = {
         direction: 'lower',
         nullWhen: ['no death after burn-in'],
         arithmetic: 'test/evo/metrics-environment.test.js',
+        source: 'test/evo/metric-source-world-watch.test.js',
     }),
     'eval.winter_pop_ratio': entry('world', {
         module: 'js/evo/metrics-environment.js',
@@ -149,6 +163,7 @@ export const WORLD_2 = {
         intended: 'higher',
         nullWhen: ['no winter checkpoint after burn-in', 'no non-winter checkpoint after burn-in with an alive agent'],
         arithmetic: 'test/evo/metrics-environment.test.js',
+        source: 'test/evo/metric-source-world-watch.test.js',
     }),
     'eval.trait_spread': entry('world', {
         module: 'js/evo/metrics-body.js',
@@ -158,6 +173,7 @@ export const WORLD_2 = {
         direction: 'higher',
         nullWhen: ['no checkpoint after burn-in with 2 alive agents'],
         arithmetic: 'test/evo/metrics-body.test.js',
+        source: 'test/evo/metric-source-world-watch.test.js',
     }),
     'eval.body_plan_coverage': entry('world', {
         module: 'js/evo/metrics-body.js',
@@ -167,6 +183,7 @@ export const WORLD_2 = {
         direction: 'higher',
         nullWhen: ['no checkpoint after burn-in with an alive agent'],
         arithmetic: 'test/evo/metrics-body.test.js',
+        source: 'test/evo/metric-source-world-watch.test.js',
     }),
     'eval.sex_balance': entry('world', {
         module: 'js/evo/metrics-body.js',
@@ -177,5 +194,6 @@ export const WORLD_2 = {
         intended: 'lower',
         nullWhen: ['no checkpoint after burn-in with an alive agent'],
         arithmetic: 'test/evo/metrics-body.test.js',
+        source: 'test/evo/metric-source-world-watch.test.js',
     }),
 };
