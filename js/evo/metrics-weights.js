@@ -153,7 +153,7 @@ export function sampleWeights(pools, observer, world) {
 
 /**
  * @param {Record<string, any>} observer the observer, checkpointed
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the seven metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the seven metrics
  */
 export function weightMetrics(observer) {
     const p = observer.weightPools;

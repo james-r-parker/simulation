@@ -102,7 +102,7 @@ export function sampleInstinct(pools, observer, world) {
 
 /**
  * @param {Record<string, any>} observer the observer, checkpointed
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} `eval.instinct_drift`
+ * @returns {import('./metrics-stats.js').MetricRecord} `eval.instinct_drift`
  */
 export function instinctMetrics(observer) {
     const pools = observer.instinct;

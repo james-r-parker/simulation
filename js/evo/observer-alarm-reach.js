@@ -56,7 +56,7 @@ export function noteAlarmReach(reach, { hunterSpec, world, caller }) {
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the five alarm-reach metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the five alarm-reach metrics
  */
 export function alarmReachMetrics(observer) {
     const { alarmReach: reach, hunterAgentTicks } = observer.combat;

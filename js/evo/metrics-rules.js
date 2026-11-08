@@ -12,7 +12,7 @@ import { proofMetrics } from './scene-proof.js';
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the rule metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the rule metrics
  */
 export function ruleMetrics(observer) {
     const s = observer.scenes;

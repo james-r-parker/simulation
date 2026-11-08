@@ -64,7 +64,7 @@ export function sampleHebb(pools, observer, world) {
 
 /**
  * @param {Record<string, any>} observer the observer
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the two metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the two metrics
  */
 export function hebbMetrics(observer) {
     const p = observer.hebb;

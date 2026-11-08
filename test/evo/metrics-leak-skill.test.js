@@ -51,7 +51,7 @@ describe('the leak-skill correlations', () => {
         const observer = run(200, (i) => ({ gene: genes[i], food: [(i % 20) + 1, 20 - (i % 20)] }));
         const leak = genes.map((g) => leakRateOf(g, 0.05));
         const share = genes.map((_, i) => ((i % 20) + 1) / 21);
-        const r = leakSkillMetrics(observer)['eval.leak_forage_corr'].value;
+        const r = leakSkillMetrics(observer)['eval.leak_forage_corr']?.value;
         const mean = (/** @type {number[]} */ v) => v.reduce((a, b) => a + b) / v.length;
         const ml = mean(leak);
         const ms = mean(share);
@@ -64,15 +64,15 @@ describe('the leak-skill correlations', () => {
 
     it('drops lives with nothing to measure, and is null below the life counts', () => {
         const observer = run(199, (i) => ({ gene: i % 7, food: [i % 3, 1] }));
-        expect(leakSkillMetrics(observer)['eval.leak_forage_corr'].reason).toMatch(/200 lives/);
-        expect(leakSkillMetrics(observer)['eval.leak_hunt_corr'].reason).toMatch(/100 lives/);
+        expect(leakSkillMetrics(observer)['eval.leak_forage_corr']?.reason).toMatch(/200 lives/);
+        expect(leakSkillMetrics(observer)['eval.leak_hunt_corr']?.reason).toMatch(/100 lives/);
         const empty = run(300, (i) => ({ gene: i % 7 }));
-        expect(leakSkillMetrics(empty)['eval.leak_forage_corr'].value).toBeNull();
+        expect(leakSkillMetrics(empty)['eval.leak_forage_corr']?.value).toBeNull();
     });
 
     it('is null without variance', () => {
         const observer = run(250, () => ({ gene: 1, food: [1, 1] }));
-        expect(leakSkillMetrics(observer)['eval.leak_forage_corr'].reason).toMatch(/no variance/);
+        expect(leakSkillMetrics(observer)['eval.leak_forage_corr']?.reason).toMatch(/no variance/);
     });
 
     it('reads the hunt skill only for a hunting specialisation and the flee skill from escaped episodes', () => {
@@ -84,11 +84,11 @@ describe('the leak-skill correlations', () => {
             escapes: /** @type {[number, number]} */ ([10 - (i % 10), 10]),
         });
         const hunting = run(120, life, hunter);
-        expect(leakSkillMetrics(hunting)['eval.leak_hunt_corr'].value).toBeGreaterThan(0.9);
-        expect(leakSkillMetrics(hunting)['eval.leak_flee_corr'].value).toBeLessThan(-0.9);
+        expect(leakSkillMetrics(hunting)['eval.leak_hunt_corr']?.value).toBeGreaterThan(0.9);
+        expect(leakSkillMetrics(hunting)['eval.leak_flee_corr']?.value).toBeLessThan(-0.9);
         const grazing = run(120, life, config.specialisations.forager.index);
-        expect(leakSkillMetrics(grazing)['eval.leak_hunt_corr'].value).toBeNull();
-        expect(leakSkillMetrics(grazing)['eval.leak_flee_corr'].value).toBeLessThan(-0.9);
+        expect(leakSkillMetrics(grazing)['eval.leak_hunt_corr']?.value).toBeNull();
+        expect(leakSkillMetrics(grazing)['eval.leak_flee_corr']?.value).toBeLessThan(-0.9);
     });
 
     it('skips a life whose slot the world has already refilled', () => {

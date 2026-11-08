@@ -9,6 +9,7 @@ import { DEATH_CAUSE } from '../../js/sim/events.js';
 import { WINTER } from '../../js/sim/eras.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { nextTick, observed, pushDied } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const ON = { hashCellSize: 256 };
 const NAMES = ['cold_stress_share', 'heat_stress_share', 'terrain_death_share', 'winter_pop_ratio'];
@@ -59,7 +60,7 @@ function die({ world, observer }, tick, cause) {
  */
 function read({ world, observer }) {
     const all = computeMetrics(observer, world);
-    return Object.fromEntries(NAMES.map((name) => [name, all[`eval.${name}`]]));
+    return Object.fromEntries(NAMES.map((name) => [name, loose(all)[`eval.${name}`]]));
 }
 
 describe('eval.cold_stress_share and eval.heat_stress_share', () => {

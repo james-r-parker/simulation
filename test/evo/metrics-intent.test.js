@@ -3,6 +3,7 @@ import { metricDirection } from '../../js/evo/compare.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { intentMetrics } from '../../js/evo/metrics-intent.js';
 import { bareObserver, EMPTY_WORLD } from './helpers/metrics-observer.js';
+import { loose } from './helpers/metric-registry.js';
 
 const NAMES = [
     'eval.deliberate_food_share',
@@ -45,7 +46,10 @@ describe('intentMetrics', () => {
         const m = intentMetrics(bareObserver());
         expect(Object.keys(m)).toEqual(NAMES);
         for (const name of NAMES) {
-            expect(m[name], name).toEqual({ value: null, reason: REASONS[/** @type {keyof typeof REASONS} */ (name)] });
+            expect(loose(m)[name], name).toEqual({
+                value: null,
+                reason: REASONS[/** @type {keyof typeof REASONS} */ (name)],
+            });
         }
     });
 
@@ -107,8 +111,8 @@ describe('intentMetrics', () => {
         intent.preyCueTicks[0] = 25;
         intent.huntCallCount[0] = 4;
         const m = intentMetrics(o);
-        expect(m['eval.alarm_precision'].value).toBeCloseTo((8 - (2 + 4 * 0.5)) / 10, 10);
-        expect(m['eval.hunt_call_precision'].value).toBeCloseTo((4 - 4 * 0.25) / 4, 10);
+        expect(m['eval.alarm_precision']?.value).toBeCloseTo((8 - (2 + 4 * 0.5)) / 10, 10);
+        expect(m['eval.hunt_call_precision']?.value).toBeCloseTo((4 - 4 * 0.25) / 4, 10);
     });
 
     it('is null for the group metric when there is a threatened agent but no unthreatened one', () => {
@@ -123,7 +127,7 @@ describe('intentMetrics', () => {
     it('is merged into computeMetrics with the directions of the design', () => {
         const m = computeMetrics(bareObserver(), EMPTY_WORLD);
         for (const name of NAMES) {
-            expect(m[name], name).toBeDefined();
+            expect(loose(m)[name], name).toBeDefined();
         }
         const lower = ['eval.idle_signals_per_1k', 'eval.undefended_bite_share'];
         // Moved to watch on eval:power's false-positive rate (world-balance T41, T42, T70); `deliberate_food_share` and

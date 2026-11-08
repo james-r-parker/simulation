@@ -74,7 +74,7 @@ export function noteDeath(pools, cause) {
 
 /**
  * @param {Record<string, any>} observer the observer, checkpointed during the run
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the four environment metrics, keyed by name;
+ * @returns {import('./metrics-stats.js').MetricRecord} the four environment metrics, keyed by name;
  *   each `null` with a reason when nothing at or after burn-in could feed it
  */
 export function environmentMetrics(observer) {

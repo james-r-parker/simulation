@@ -111,12 +111,12 @@ describe('the memory-output metrics', () => {
         const m = memoryOutMetrics(observer);
         const total = Object.values(m).reduce((s, r) => s + (r.value ?? 0), 0);
         expect(total).toBeCloseTo(1, 12);
-        expect(m['eval.memory_out_flat_share'].value).toBe(1);
-        expect(memoryOutMetrics(withLives(100, 599))['eval.memory_out_flat_share'].value).toBeNull();
+        expect(m['eval.memory_out_flat_share']?.value).toBe(1);
+        expect(memoryOutMetrics(withLives(100, 599))['eval.memory_out_flat_share']?.value).toBeNull();
     });
 
     it('is null below 100 lives', () => {
-        expect(memoryOutMetrics(withLives(99, 900))['eval.memory_out_flat_share'].reason).toMatch(/100 lives/);
+        expect(memoryOutMetrics(withLives(99, 900))['eval.memory_out_flat_share']?.reason).toMatch(/100 lives/);
     });
 
     it('resets a slot on reuse, so a new life starts from nothing', () => {

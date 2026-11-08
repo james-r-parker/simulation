@@ -36,7 +36,7 @@ describe('eval.weight_drift_silent', () => {
         }
         sampleWeights(observer.weightPools, observer, world);
         const rare = (2 + 1.5) / 2;
-        expect(weightMetrics(observer)['eval.weight_drift_silent'].value).toBeCloseTo(rare / 0.5, 6);
+        expect(weightMetrics(observer)['eval.weight_drift_silent']?.value).toBeCloseTo(rare / 0.5, 6);
     });
 
     it('is null when every weight on the other inputs is zero: there is no scale to read the rare ones against', () => {
@@ -48,17 +48,17 @@ describe('eval.weight_drift_silent', () => {
         world.weights.fill(0, base, base + layout.inputCount * H);
         world.weights.fill(1, base + H, base + 2 * H);
         sampleWeights(observer.weightPools, observer, world);
-        expect(weightMetrics(observer)['eval.weight_drift_silent'].value).toBeNull();
+        expect(weightMetrics(observer)['eval.weight_drift_silent']?.value).toBeNull();
     });
 
     it('is null with no rare input, and with every input rare', () => {
         const { world, observer } = setup(1);
         sampleWeights(observer.weightPools, observer, world);
-        expect(weightMetrics(observer)['eval.weight_drift_silent'].value).toBeNull();
+        expect(weightMetrics(observer)['eval.weight_drift_silent']?.value).toBeNull();
         observer.activity.rare.fill(1);
         observer.activity.rareCount = world.layout.inputCount;
         sampleWeights(observer.weightPools, observer, world);
-        expect(weightMetrics(observer)['eval.weight_drift_silent'].value).toBeNull();
+        expect(weightMetrics(observer)['eval.weight_drift_silent']?.value).toBeNull();
     });
 });
 
@@ -75,27 +75,27 @@ describe('eval.weight_clamp_share', () => {
         world.weights[base + layout.wIn + 1] = 3.8; // under the level
         sampleWeights(observer.weightPools, observer, world);
         const blocks = layout.bHidden - layout.wIn + (layout.bOut - layout.wOut);
-        expect(weightMetrics(observer)['eval.weight_clamp_share'].value).toBe(3 / blocks);
+        expect(weightMetrics(observer)['eval.weight_clamp_share']?.value).toBe(3 / blocks);
     });
 });
 
 describe('eval.sigma_mean, eval.input_active_share and the saturation jump', () => {
     it('averages sigma over the alive agents, and is null without a sigma array', () => {
         const { world, observer, slots } = setup(2);
-        expect(weightMetrics(observer)['eval.sigma_mean'].reason).toBe('the policy has no sigma array');
+        expect(weightMetrics(observer)['eval.sigma_mean']?.reason).toBe('the policy has no sigma array');
         observer.sigma = new Float32Array(8);
         observer.sigma[slots[0]] = 0.1;
         observer.sigma[slots[1]] = 0.3;
         sampleWeights(observer.weightPools, observer, world);
-        expect(weightMetrics(observer)['eval.sigma_mean'].value).toBeCloseTo(0.2, 6);
+        expect(weightMetrics(observer)['eval.sigma_mean']?.value).toBeCloseTo(0.2, 6);
     });
 
     it('reports the mean active share, null until a sample is taken', () => {
         const { observer } = setup(1);
-        expect(weightMetrics(observer)['eval.input_active_share'].value).toBeNull();
+        expect(weightMetrics(observer)['eval.input_active_share']?.value).toBeNull();
         observer.activity.samples = 4;
         observer.activity.active[0] = 4;
-        expect(weightMetrics(observer)['eval.input_active_share'].value).toBe(1 / observer.activity.inputCount);
+        expect(weightMetrics(observer)['eval.input_active_share']?.value).toBe(1 / observer.activity.inputCount);
     });
 
     it('includes hue activity in the 92-input denominator', () => {
@@ -103,12 +103,12 @@ describe('eval.sigma_mean, eval.input_active_share and the saturation jump', () 
         observer.activity.samples = 2;
         observer.activity.active[54] = 2;
         observer.activity.active[55] = 1;
-        expect(weightMetrics(observer)['eval.input_active_share'].value).toBe(3 / (2 * 92));
+        expect(weightMetrics(observer)['eval.input_active_share']?.value).toBe(3 / (2 * 92));
     });
 
     it('reports the threat and prey channels apart, from the same activity counts', () => {
         const { observer } = setup(1);
-        expect(weightMetrics(observer)['eval.input_active_share.threat'].value).toBeNull();
+        expect(weightMetrics(observer)['eval.input_active_share.threat']?.value).toBeNull();
         const threat = POOLED_CHANNELS.indexOf('threat') * POOLED_STRIDE;
         const prey = POOLED_CHANNELS.indexOf('prey') * POOLED_STRIDE;
         observer.activity.samples = 10;
@@ -116,8 +116,8 @@ describe('eval.sigma_mean, eval.input_active_share and the saturation jump', () 
         observer.activity.active[threat + 1] = 5;
         observer.activity.active[prey + POOLED_STRIDE] = 3; // a value next to the channel, which is not counted
         const m = weightMetrics(observer);
-        expect(m['eval.input_active_share.threat'].value).toBeCloseTo(15 / (10 * POOLED_STRIDE), 12);
-        expect(m['eval.input_active_share.prey'].value).toBe(0);
+        expect(m['eval.input_active_share.threat']?.value).toBeCloseTo(15 / (10 * POOLED_STRIDE), 12);
+        expect(m['eval.input_active_share.prey']?.value).toBe(0);
         expect(directionOf('eval.input_active_share.threat')).toBe('watch');
         expect(directionOf('eval.input_active_share.prey')).toBe('watch');
     });
@@ -125,10 +125,10 @@ describe('eval.sigma_mean, eval.input_active_share and the saturation jump', () 
     it('reports the mean jump over at least 100 first firings', () => {
         const { observer } = setup(1);
         observer.saturation.events = MIN_EVENTS - 1;
-        expect(weightMetrics(observer)['eval.rare_input_saturation_jump'].value).toBeNull();
+        expect(weightMetrics(observer)['eval.rare_input_saturation_jump']?.value).toBeNull();
         observer.saturation.events = MIN_EVENTS;
         observer.saturation.jumpSum = 25;
-        expect(weightMetrics(observer)['eval.rare_input_saturation_jump'].value).toBe(0.25);
+        expect(weightMetrics(observer)['eval.rare_input_saturation_jump']?.value).toBe(0.25);
     });
 
     it('is watch throughout', () => {

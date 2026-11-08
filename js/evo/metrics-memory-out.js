@@ -153,7 +153,7 @@ export function noteMemoryOutDeath(pools, slot, ageTicks) {
 
 /**
  * @param {Record<string, any>} observer the observer
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the three metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the three metrics
  */
 export function memoryOutMetrics(observer) {
     const { lives, classes } = observer.memoryOut;

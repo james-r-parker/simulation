@@ -106,7 +106,7 @@ export function resetBrainSlot(observer, slot) {
 
 /**
  * @param {Record<string, any>} observer the observer, checkpointed
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the eighteen metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the eighteen metrics
  */
 export function brainMetrics(observer) {
     return {

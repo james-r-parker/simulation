@@ -13,9 +13,9 @@ describe('fitnessMetrics', () => {
         addAlive(o, 2, { spec: 0, foodEnergy: 5 });
         expect(fitnessBySpec(o, fitness)).toEqual([[1, 3, 5], [10]]);
         const m = fitnessMetrics(o, fitness);
-        expect(m['eval.mean_fitness.forager'].value).toBe(3);
-        expect(m['eval.p90_fitness.forager'].value).toBeCloseTo(4.6, 12);
-        expect(m['eval.p90_fitness.predator'].value).toBe(10);
+        expect(m['eval.mean_fitness.forager']?.value).toBe(3);
+        expect(m['eval.p90_fitness.forager']?.value).toBeCloseTo(4.6, 12);
+        expect(m['eval.p90_fitness.predator']?.value).toBe(10);
     });
 
     it('is null per spec with no agents, naming the spec', () => {
@@ -34,6 +34,6 @@ describe('fitnessMetrics', () => {
     it('skips NaN death fitness', () => {
         const o = bareObserver();
         addDeath(o, { spec: 2 });
-        expect(fitnessMetrics(o, fitness)['eval.mean_fitness.reproducer'].value).toBeNull();
+        expect(fitnessMetrics(o, fitness)['eval.mean_fitness.reproducer']?.value).toBeNull();
     });
 });

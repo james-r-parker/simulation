@@ -54,9 +54,9 @@ describe('the leak metrics', () => {
         const all = genes.flat();
         const rates = all.map((g) => Math.fround(0.05 + 0.95 * detSigmoid(g)));
         const m = memoryMetrics(observer);
-        expect(m['eval.leak_rate_mean'].value).toBeCloseTo(rates.reduce((a, b) => a + b) / 8, 6);
-        expect(m['eval.leak_slow_share'].value).toBe(rates.filter((a) => a <= 0.1).length / 8);
-        expect(m['eval.leak_at_floor_share'].value).toBe(all.filter((g) => detSigmoid(g) <= 0.02).length / 8);
+        expect(m['eval.leak_rate_mean']?.value).toBeCloseTo(rates.reduce((a, b) => a + b) / 8, 6);
+        expect(m['eval.leak_slow_share']?.value).toBe(rates.filter((a) => a <= 0.1).length / 8);
+        expect(m['eval.leak_at_floor_share']?.value).toBe(all.filter((g) => detSigmoid(g) <= 0.02).length / 8);
     });
 
     it('puts the floor gene where sigmoid is 0.02', () => {
@@ -97,7 +97,7 @@ describe('eval.leak_lineage_spread', () => {
         const means = [-6, 0, 6].map((g) => Math.fround(0.05 + 0.95 * detSigmoid(g)));
         const mean = means.reduce((a, b) => a + b) / 3;
         const sd = Math.sqrt(means.reduce((a, b) => a + (b - mean) ** 2, 0) / 3);
-        expect(memoryMetrics(observer)['eval.leak_lineage_spread'].value).toBeCloseTo(sd, 6);
+        expect(memoryMetrics(observer)['eval.leak_lineage_spread']?.value).toBeCloseTo(sd, 6);
     });
 
     it('is null below 5 qualifying checkpoints and with lineages of one agent', () => {
@@ -105,13 +105,13 @@ describe('eval.leak_lineage_spread', () => {
         for (let c = 0; c < 4; c++) {
             sampleMemory(observer.memory, observer, world);
         }
-        expect(memoryMetrics(observer)['eval.leak_lineage_spread'].value).toBeNull();
+        expect(memoryMetrics(observer)['eval.leak_lineage_spread']?.value).toBeNull();
         const single = setup(6);
         single.slots.forEach((slot) => setLeak(single.world, slot, [0, 0, 0, 0]));
         for (let c = 0; c < 5; c++) {
             sampleMemory(single.observer.memory, single.observer, single.world);
         }
-        expect(memoryMetrics(single.observer)['eval.leak_lineage_spread'].value).toBeNull();
+        expect(memoryMetrics(single.observer)['eval.leak_lineage_spread']?.value).toBeNull();
     });
 });
 
@@ -142,7 +142,7 @@ describe('eval.hidden_persistence', () => {
             const dot = now.reduce((s, v, j) => s + v * rows[i][j], 0);
             return dot / Math.hypot(...now) / Math.hypot(...rows[i]);
         });
-        expect(memoryMetrics(observer)['eval.hidden_persistence'].value).toBeCloseTo(
+        expect(memoryMetrics(observer)['eval.hidden_persistence']?.value).toBeCloseTo(
             cos.reduce((a, b) => a + b) / cos.length,
             5,
         );
@@ -159,7 +159,7 @@ describe('eval.hidden_persistence', () => {
             const now = [0.5, 1, i % 2, 1];
             return now.reduce((s, v, j) => s + v * then[j], 0) / Math.hypot(...now) / Math.hypot(...then);
         });
-        expect(memoryMetrics(observer)['eval.hidden_persistence'].value).toBeCloseTo(
+        expect(memoryMetrics(observer)['eval.hidden_persistence']?.value).toBeCloseTo(
             cos.reduce((a, b) => a + b) / cos.length,
             5,
         );
@@ -171,13 +171,13 @@ describe('eval.hidden_persistence', () => {
             observer.genomeId[slot] += 1000;
         });
         sampleMemory(observer.memory, observer, world);
-        expect(memoryMetrics(observer)['eval.hidden_persistence'].value).toBeNull();
+        expect(memoryMetrics(observer)['eval.hidden_persistence']?.value).toBeNull();
     });
 
     it('is null below 30 pairs, and without a checkpoint interval no snapshot is taken', () => {
         const { world, observer } = withSnapshot(8);
         sampleMemory(observer.memory, observer, world);
-        expect(memoryMetrics(observer)['eval.hidden_persistence'].reason).toMatch(/30 agent pairs/);
+        expect(memoryMetrics(observer)['eval.hidden_persistence']?.reason).toMatch(/30 agent pairs/);
         const bare = observed({ brainHidden: H });
         bare.world.tick = 10000 - SNAPSHOT_LEAD;
         snapshotHidden(bare.observer.memory, bare.observer, bare.world);

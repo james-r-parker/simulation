@@ -10,13 +10,14 @@ import { checkpoint, observe } from '../../js/evo/observer.js';
 import { EVENT_TYPE } from '../../js/sim/events.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { nextTick, observed, pushCall } from './helpers/observer-world.js';
-import { namesOf } from './helpers/metric-registry.js';
+import { loose, namesOf } from './helpers/metric-registry.js';
 
 const NAMES = ['circling_share', 'output_saturation', 'alarm_rate', 'mean_energy_share', 'energy_over_split'];
 const BURN_IN = 10000;
 const START = CIRCLE_PERIOD - CIRCLE_WINDOW + 1;
 
-const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
+const read = (/** @type {any} */ r, /** @type {string} */ name) =>
+    loose(computeMetrics(r.observer, r.world))[`eval.${name}`];
 
 /**
  * Plays one circling window ending at `end` (a multiple of the period): `place(slot, i)` sets the agent's pose at

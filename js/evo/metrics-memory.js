@@ -188,7 +188,7 @@ export function sampleMemory(pools, observer, world) {
 
 /**
  * @param {Record<string, any>} observer the observer, checkpointed
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the five metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the five metrics
  */
 export function memoryMetrics(observer) {
     const p = observer.memory;

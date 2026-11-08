@@ -8,6 +8,7 @@ import { drainObserverLogs } from '../../js/worker/observer-drain.js';
 import { checkpoint, observe } from '../../js/evo/observer.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { nextTick, observed } from './helpers/observer-world.js';
+import { loose } from './helpers/metric-registry.js';
 
 const NAMES = ['spec_dominance', 'spec_effective', 'lineage_dominance', 'lineage_effective'];
 const NO_SAMPLE = 'no checkpoint after burn-in with an alive agent';
@@ -46,7 +47,7 @@ function effective(counts) {
  */
 function read({ world, observer }) {
     const all = computeMetrics(observer, world);
-    return Object.fromEntries(NAMES.map((name) => [name, all[`eval.${name}`]]));
+    return Object.fromEntries(NAMES.map((name) => [name, loose(all)[`eval.${name}`]]));
 }
 
 describe('dominance metrics from real checkpoints', () => {

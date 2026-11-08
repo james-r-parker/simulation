@@ -11,7 +11,7 @@ import {
 } from '../../js/evo/metrics-brain.js';
 import { OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { sampleInputActivity } from '../../js/sim/input-activity.js';
-import { directionOf } from './helpers/metric-registry.js';
+import { directionOf, loose } from './helpers/metric-registry.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
 
@@ -50,8 +50,8 @@ describe('the registered metrics', () => {
         const { world, observer } = observed();
         const all = computeMetrics(observer, world);
         for (const name of NAMES) {
-            expect(all[name].value).toBeNull();
-            expect(all[name].reason).toBeTypeOf('string');
+            expect(loose(all)[name].value).toBeNull();
+            expect(loose(all)[name].reason).toBeTypeOf('string');
         }
         expect(Object.keys(brainMetrics(observer)).sort()).toEqual([...NAMES].sort());
     });

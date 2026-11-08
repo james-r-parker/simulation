@@ -94,7 +94,7 @@ function correlation(pools, skill, minLives) {
 
 /**
  * @param {Record<string, any>} observer the observer
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the three correlations
+ * @returns {import('./metrics-stats.js').MetricRecord} the three correlations
  */
 export function leakSkillMetrics(observer) {
     const pools = observer.leakSkill;

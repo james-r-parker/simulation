@@ -74,7 +74,7 @@ function mean(pools, count, sum, what) {
 
 /**
  * @param {Record<string, any>} observer the observer
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the three parent-diet metrics
+ * @returns {import('./metrics-stats.js').MetricRecord} the three parent-diet metrics
  */
 export function dietMetrics(observer) {
     const pools = observer.diet;

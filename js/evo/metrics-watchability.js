@@ -171,7 +171,7 @@ export function sampleWatchability(pools, world) {
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick and checkpointed
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the five watchability metrics, each `null` with
+ * @returns {import('./metrics-stats.js').MetricRecord} the five watchability metrics, each `null` with
  *   a reason when nothing could feed it
  */
 export function watchabilityMetrics(observer) {

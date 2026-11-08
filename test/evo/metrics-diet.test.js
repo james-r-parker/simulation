@@ -7,12 +7,13 @@ import { observe } from '../../js/evo/observer.js';
 import { BORN_CAUSE } from '../../js/sim/events.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { nextTick, observed, pushBorn } from './helpers/observer-world.js';
-import { directionOf, namesOf } from './helpers/metric-registry.js';
+import { directionOf, loose, namesOf } from './helpers/metric-registry.js';
 
 const ON = { maxAgents: 40 };
 const NAMES = ['split_parent_delib_share', 'mate_parent_delib_share', 'split_bumper_share'];
 
-const read = (/** @type {any} */ r, /** @type {string} */ name) => computeMetrics(r.observer, r.world)[`eval.${name}`];
+const read = (/** @type {any} */ r, /** @type {string} */ name) =>
+    loose(computeMetrics(r.observer, r.world))[`eval.${name}`];
 
 /**
  * Adds a parent that has eaten `total` meals, `deliberate` of them deliberately.

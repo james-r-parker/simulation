@@ -169,7 +169,7 @@ function fitnessCorr(pools) {
 /**
  * @param {Record<string, any>} observer the observer, checkpointed and fed every tick
  * @param {Record<string, any>} world the world at the end of the run (the gate tally lives on it)
- * @returns {Record<string, import('./metrics-stats.js').MetricResult>} the five merit metrics, keyed by name; each
+ * @returns {import('./metrics-stats.js').MetricRecord} the five merit metrics, keyed by name; each
  *   `null` with a reason when nothing could feed it
  */
 export function meritMetrics(observer, world) {

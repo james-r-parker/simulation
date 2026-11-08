@@ -131,6 +131,33 @@ export default [
             ],
         },
     },
+    // The metric producers (docs/designs/metric-trust.md, Every new metric is registered): a result is built from literal
+    // keys, or from `metricName(base, suffix)` / `bySuffix`, which throw on a name with no registry entry. A computed key
+    // that starts at an interpolation or at `eval.` is a name the type check cannot see. The sim core's `**` bans repeat
+    // here, since a later block replaces them.
+    {
+        files: ['js/evo/metrics*.js', 'js/evo/scene-*.js'],
+        rules: {
+            'no-restricted-syntax': [
+                'error',
+                { selector: "BinaryExpression[operator='**']", message: POW_MSG },
+                { selector: "AssignmentExpression[operator='**=']", message: POW_MSG },
+                {
+                    selector: "CallExpression[callee.object.name='Object'][callee.property.name='fromEntries']",
+                    message: 'Build metric results from literal keys or bySuffix/metricName, not Object.fromEntries.',
+                },
+                {
+                    selector: 'Property[computed=true] > TemplateLiteral.key[quasis.0.value.raw=/^(eval\\..*)?$/]',
+                    message: 'Name a metric with a literal key or metricName(base, suffix), not a template literal.',
+                },
+                {
+                    selector:
+                        'MemberExpression[computed=true] > TemplateLiteral.property[quasis.0.value.raw=/^(eval\\..*)?$/]',
+                    message: 'Name a metric with a literal key or metricName(base, suffix), not a template literal.',
+                },
+            ],
+        },
+    },
     // The worker (docs/designs/worker-and-renderer.md): worker globals, but no DOM, no wall clock and no timers or ports
     // of its own - `postMessage`, `setTimeout` and the clock arrive as injected functions that `sim-worker.js` binds.
     {
