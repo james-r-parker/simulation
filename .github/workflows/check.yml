@@ -2,8 +2,9 @@ name: check
 
 on:
   pull_request:
+  # season/next batches the rule changes of the next season (docs/designs/deployment-and-community.md)
   push:
-    branches: [main]
+    branches: [main, season/next]
   # The merge queue: `check` and `browser-smoke` (the required checks on main) run on the queued merge commit, which is
   # main plus the PR, so a PR no longer has to be re-run each time main moves.
   merge_group:
@@ -17,7 +18,7 @@ on:
 permissions:
   contents: read
 
-# A new push to a pull request cancels that PR's older run. A push to main (deploy.yml waits on its result) and a merge
+# A new push to a pull request cancels that PR's older run. A push to main (preview.yml waits on its result) and a merge
 # group (the queue's verdict) are never cancelled.
 concurrency:
   group: check-${{ github.event.pull_request.number || github.ref }}
@@ -59,6 +60,15 @@ jobs:
 
       - name: Install
         run: npm ci
+
+      # A change to rulesHash is a breaking commit that targets season/next (scripts/lib/release-check.mjs). The title is
+      # passed through the environment, never interpolated into the script.
+      - name: Release check
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: node scripts/release-check.mjs
 
       - name: Local gate
         if: steps.scope.outputs.scope != 'docs'
