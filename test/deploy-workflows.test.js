@@ -106,13 +106,15 @@ describe('release-please.yml', () => {
         expect(triggers(source)).toMatch(/push:\n\s+branches:\s*\[main\]/);
         expect(source).toMatch(/environment:\s*release/);
         expect(source).toMatch(/create-github-app-token/);
+        expect(source).toMatch(/client-id:\s*\$\{\{\s*vars\.RELEASE_CLIENT_ID/);
+        expect(source).not.toMatch(/\bapp-id:/);
         expect(source).toMatch(/token:\s*\$\{\{\s*steps\.app\.outputs\.token/);
-        expect(source).toMatch(/vars\.RELEASE_APP_ID/);
+        expect(source).toMatch(/vars\.RELEASE_CLIENT_ID/);
         expect(source).toMatch(/secrets\.RELEASE_APP_PRIVATE_KEY/);
     });
 
     it('names a missing App variable or secret in a failing step before it mints the token', () => {
-        const check = source.indexOf('Missing variable RELEASE_APP_ID');
+        const check = source.indexOf('Missing variable RELEASE_CLIENT_ID');
         expect(check).toBeGreaterThan(-1);
         expect(source).toMatch(/Missing secret RELEASE_APP_PRIVATE_KEY/);
         expect(check).toBeLessThan(source.indexOf('create-github-app-token'));
@@ -137,18 +139,19 @@ describe('release-please configuration', () => {
     const manifest = JSON.parse(readFileSync('.release-please-manifest.json', 'utf8'));
     const root = JSON.parse(readFileSync('package.json', 'utf8'));
 
-    it('has one node package at the root with v-prefixed tags', () => {
+    it('has one node package at the root with v-prefixed tags and no component prefix', () => {
         expect(Object.keys(config.packages)).toEqual(['.']);
         expect(config.packages['.']).toMatchObject({
             'release-type': 'node',
             'changelog-path': 'CHANGELOG.md',
             'include-v-in-tag': true,
+            'include-component-in-tag': false,
             'bump-minor-pre-major': false,
         });
     });
 
-    it('starts from the package.json version and releases 6.0.0 first', () => {
+    it('keeps the manifest version equal to package.json and has no release-as override after 6.0.0', () => {
         expect(manifest['.']).toBe(root.version);
-        expect(config.packages['.']['release-as']).toBe('6.0.0');
+        expect(config.packages['.']['release-as']).toBeUndefined();
     });
 });

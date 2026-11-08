@@ -22,7 +22,7 @@ dispatched by hand).
 The numbered steps are in the design doc, "Phase 1 setup checklist (user)". In short:
 
 1. GitHub, Settings, Environments: `preview` and `production` each hold secrets `CLOUDFLARE_API_TOKEN` and
-   `CLOUDFLARE_ACCOUNT_ID`; `release` holds the Release App (`RELEASE_APP_ID` variable, `RELEASE_APP_PRIVATE_KEY` secret).
+   `CLOUDFLARE_ACCOUNT_ID`; `release` holds the Release App (`RELEASE_CLIENT_ID` variable, `RELEASE_APP_PRIVATE_KEY` secret).
    Repository variables: `PAGES_PROJECT` (`matrix`) and `SITE_DOMAIN` (`matrix.dotnethelp.co.uk`).
 2. Both tokens need `Account / Cloudflare Pages / Edit` and `Account / D1 / Edit`. Keep the preview and production tokens
    separate: a pull request deploy must not reach production.

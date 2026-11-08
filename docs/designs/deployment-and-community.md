@@ -80,7 +80,7 @@ Run once, in this order. Nothing here is committed except the names.
    No Cloudflare secret is a repository secret. Repository variables: `PAGES_PROJECT` = `matrix`, `SITE_DOMAIN` = `matrix.dotnethelp.co.uk`.
 5. GitHub, Settings, Developer settings, GitHub Apps, New: name `blob-evolution-release`, no webhook, repository
    permissions Contents (read and write), Pull requests (read and write) and Metadata (read), installed on this
-   repository only. Note the App ID and generate a private key. Add the `release` environment's variable `RELEASE_APP_ID`
+   repository only. Note the Client ID and generate a private key. Add the `release` environment's variable `RELEASE_CLIENT_ID`
    and secret `RELEASE_APP_PRIVATE_KEY`. Release Please opens its PR as this App, so the PR runs `check` and
    `browser-smoke` like any other.
 6. GitHub, repo Settings, Actions, General: workflow permissions "Read repository contents"; leave "Allow GitHub
@@ -218,10 +218,10 @@ Phase 1 (below) keeps versioned serving at `/v/<version>/`, `/next/`, previews a
 phase and extends the same `deploy.yml` with the versioned build, the version's own Pages deployment and the D1 release row.
 
 - `.github/workflows/release-please.yml` triggers on `push` to `main`. Its job `release-please` (environment `release`)
-  checks that `vars.RELEASE_APP_ID` and `secrets.RELEASE_APP_PRIVATE_KEY` are set, mints an App token with
-  `actions/create-github-app-token`, then runs `googleapis/release-please-action` with it, `release-please-config.json` and
-  `.release-please-manifest.json` (both as in Phase 1: one `node` package, `include-v-in-tag`, manifest `5.0.0`,
-  `release-as` `6.0.0`). Every action is pinned to a full commit SHA.
+  checks that `vars.RELEASE_CLIENT_ID` and `secrets.RELEASE_APP_PRIVATE_KEY` are set, mints an App token with
+  `actions/create-github-app-token` (`client-id`), then runs `googleapis/release-please-action` with it, `release-please-config.json` and
+  `.release-please-manifest.json` (both as in Phase 1: one `node` package, `include-v-in-tag` true,
+  `include-component-in-tag` false, manifest `5.0.0`, `release-as` `6.0.0` until `6.0.0` lands). Every action is pinned to a full commit SHA.
 - A missing variable or secret fails the job at the first step with an error that names it; no release PR opens, no tag is
   created and nothing deploys.
 - The job outputs `release_created` and `tag_name`. The workflow's second job `deploy` runs only when
@@ -243,12 +243,12 @@ phase and extends the same `deploy.yml` with the versioned build, the version's 
 
 #### Delivery requirements
 
-| Concern      | Requirement                                                                                                                                                                                                                |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Architecture | `.github/workflows/release-please.yml`, `.github/workflows/deploy.yml`, `release-please-config.json`, `.release-please-manifest.json`; no change under `js/`                                                               |
-| Unit tests   | `test/deploy-workflows.test.js` reads the files as text: `deploy.yml` has no `push` or `workflow_run` trigger, every action is SHA-pinned, `release-please.yml` uses the App token and gates `deploy` on `release_created` |
-| Setup        | The user creates the GitHub App (Contents, Pull requests and Issues write), the `release` environment with `RELEASE_APP_ID` (variable) and `RELEASE_APP_PRIVATE_KEY` (secret), and turns off "require branches up to date" |
-| Verification | `scripts/check.sh --only=lint,typecheck,format,conventions,designs-index` and the new test file; the first release PR and its deploy are walked with the user                                                              |
+| Concern      | Requirement                                                                                                                                                                                                                   |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Architecture | `.github/workflows/release-please.yml`, `.github/workflows/deploy.yml`, `release-please-config.json`, `.release-please-manifest.json`; no change under `js/`                                                                  |
+| Unit tests   | `test/deploy-workflows.test.js` reads the files as text: `deploy.yml` has no `push` or `workflow_run` trigger, every action is SHA-pinned, `release-please.yml` uses the App token and gates `deploy` on `release_created`    |
+| Setup        | The user creates the GitHub App (Contents, Pull requests and Issues write), the `release` environment with `RELEASE_CLIENT_ID` (variable) and `RELEASE_APP_PRIVATE_KEY` (secret), and turns off "require branches up to date" |
+| Verification | `scripts/check.sh --only=lint,typecheck,format,conventions,designs-index` and the new test file; the first release PR and its deploy are walked with the user                                                                 |
 
 ### Phase 1 - releases, build and deploy pipeline
 
@@ -257,14 +257,15 @@ phase and extends the same `deploy.yml` with the versioned build, the version's 
 #### Release Please
 
 `.github/workflows/release-please.yml` triggers on `push` to `main`. Its job `release-please` (environment `release`)
-first runs `actions/create-github-app-token` (pinned to a full commit SHA, version in a comment) with `RELEASE_APP_ID` and
+first runs `actions/create-github-app-token` (pinned to a full commit SHA, version in a comment) with `RELEASE_CLIENT_ID` (`client-id`) and
 `RELEASE_APP_PRIVATE_KEY`, then `googleapis/release-please-action` (same pinning) with that token, `release-please-config.json`
 and `.release-please-manifest.json`. The release PR is opened by the App, so it runs `check` and `browser-smoke` and can
 satisfy the `main` ruleset; a PR opened with `GITHUB_TOKEN` starts no `pull_request` workflow and would never merge:
 
 - Config: one package `.`, `release-type` `node`, `changelog-path` `CHANGELOG.md`, `include-v-in-tag` true,
-  `bump-minor-pre-major` false. The manifest holds `{ ".": "5.0.0" }`, equal to `package.json` `version`; the
-  config carries `"release-as": "6.0.0"` until the first release lands, so the first release is `6.0.0` (Season 6).
+  `include-component-in-tag` false, `bump-minor-pre-major` false. The manifest starts at `{ ".": "5.0.0" }`, equal to
+  `package.json` `version`; the config carries `"release-as": "6.0.0"` until the first release lands, so the first
+  release is `6.0.0` (Season 6), and drops `release-as` after that.
 - From the conventional commits since the last release the action keeps one release PR open that edits `CHANGELOG.md`,
   `package.json` and the manifest. Merging it creates the tag `v<version>` and the GitHub Release.
 

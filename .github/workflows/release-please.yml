@@ -26,15 +26,15 @@ jobs:
       # Without the App nothing can open the release PR, so fail here and say which setting is missing.
       - name: Require the release App
         env:
-          APP_ID: ${{ vars.RELEASE_APP_ID }}
+          CLIENT_ID: ${{ vars.RELEASE_CLIENT_ID }}
           APP_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
         run: |
-          [[ -n "$APP_ID" ]] || { echo "::error::Missing variable RELEASE_APP_ID in the 'release' environment. Nothing is released or deployed."; exit 1; }
+          [[ -n "$CLIENT_ID" ]] || { echo "::error::Missing variable RELEASE_CLIENT_ID in the 'release' environment. Nothing is released or deployed."; exit 1; }
           [[ -n "$APP_KEY" ]] || { echo "::error::Missing secret RELEASE_APP_PRIVATE_KEY in the 'release' environment. Nothing is released or deployed."; exit 1; }
       - id: app
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ vars.RELEASE_APP_ID }}
+          client-id: ${{ vars.RELEASE_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
       - id: release
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
