@@ -12,21 +12,41 @@ import { SCENES_SOCIAL } from './scenes-social.js';
 import { BRAIN } from './brain.js';
 import { WORLD } from './world.js';
 import { WORLD_2 } from './world-2.js';
+import { LIVENESS } from './liveness.js';
+
+/**
+ * @template {Record<string, import('./entry.js').MetricEntry>} T
+ * @param {T} entries one metric family
+ * @param {Readonly<Record<string, import('./entry.js').Liveness>>} [readings] generated readings
+ * @returns {T} the family with generated liveness reads applied
+ */
+export function withLiveness(entries, readings = LIVENESS) {
+    /** @type {Record<string, import('./entry.js').MetricEntry>} */
+    const merged = /** @type {Record<string, import('./entry.js').MetricEntry>} */ (
+        /** @type {unknown} */ ({ ...entries })
+    );
+    for (const [name, entry] of Object.entries(merged)) {
+        if (Object.hasOwn(readings, name)) {
+            merged[name] = Object.freeze({ ...entry, liveness: readings[name] });
+        }
+    }
+    return /** @type {T} */ (/** @type {unknown} */ (Object.freeze(merged)));
+}
 
 /** Every eval metric by full name; each key is a literal in a family file, so `MetricName` is a union. */
 export const METRICS = Object.freeze({
-    ...CORE,
-    ...CORE_2,
-    ...HUNTERS,
-    ...HUNTERS_2,
-    ...INTENT,
-    ...SCENES_ECOLOGY,
-    ...SCENES_ECOLOGY_2,
-    ...SCENES_ECOLOGY_3,
-    ...SCENES_SOCIAL,
-    ...BRAIN,
-    ...WORLD,
-    ...WORLD_2,
+    ...withLiveness(CORE),
+    ...withLiveness(CORE_2),
+    ...withLiveness(HUNTERS),
+    ...withLiveness(HUNTERS_2),
+    ...withLiveness(INTENT),
+    ...withLiveness(SCENES_ECOLOGY),
+    ...withLiveness(SCENES_ECOLOGY_2),
+    ...withLiveness(SCENES_ECOLOGY_3),
+    ...withLiveness(SCENES_SOCIAL),
+    ...withLiveness(BRAIN),
+    ...withLiveness(WORLD),
+    ...withLiveness(WORLD_2),
 });
 
 /** @typedef {keyof typeof METRICS} MetricName a registered metric name */
