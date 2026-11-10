@@ -111,3 +111,62 @@ export function park(world, slot, y) {
     world.vy[slot] = 0;
     world.energy[slot] = 800;
 }
+
+/** Ticks a chase thrusts toward visible prey before its outcome: more than `CLOSING_MIN` closing ticks open it. */
+export const CHASE_CLOSING_TICKS = 12;
+
+/**
+ * Runs one chase on row `y`: `hunter` at x 100 thrusts toward `prey` at x 260 (in view, held still) for
+ * `CHASE_CLOSING_TICKS` steps, which opens an approach on the observer's own tracker. Then, for `caught` or `escaped`,
+ * it is set beside the prey and bites it (energy 1, or 800 so it lives); for `gaveup` it stops. Afterwards the hunter
+ * faces away and the prey is parked out of sight.
+ * @param {any} run the run
+ * @param {{hunter: number, prey: number, outcome: 'caught' | 'escaped' | 'gaveup', y?: number, energy?: number}} chase
+ *   the pair, the outcome, the row and the hunter's energy at the opening (default 300)
+ * @returns {void}
+ */
+export function chaseSteps(run, { hunter, prey, outcome, y = 500, energy = 300 }) {
+    const { world } = run;
+    const preyEnergy = outcome === 'caught' ? 1 : 800;
+    const hold = (/** @type {number} */ slot, /** @type {number} */ x, /** @type {number} */ angle) => {
+        world.x[slot] = x;
+        world.y[slot] = y;
+        world.vx[slot] = 0;
+        world.vy[slot] = 0;
+        world.angle[slot] = angle;
+    };
+    hold(hunter, 100, 0);
+    world.energy[hunter] = energy;
+    run.want(hunter, OUTPUT_INDEX.THRUST);
+    for (let t = 0; t < CHASE_CLOSING_TICKS; t++) {
+        hold(prey, 260, Math.PI);
+        world.energy[prey] = preyEnergy;
+        run.tick();
+    }
+    run.release(hunter, OUTPUT_INDEX.THRUST);
+    if (outcome !== 'gaveup') {
+        hold(hunter, 230, 0);
+        world.meritPrey.seen[hunter] = world.tick;
+        world.meritPrey.bits[hunter] = 0xff;
+        world.meritPrey.turn[hunter] = world.tick;
+        run.want(hunter, OUTPUT_INDEX.BITE);
+        run.tick();
+        run.release(hunter, OUTPUT_INDEX.BITE);
+    }
+    hold(hunter, 100, Math.PI);
+    if (world.alive[prey] === 1) {
+        park(world, prey, y);
+    }
+}
+
+/**
+ * Steps until every open approach and bitten episode has resolved: the closing bits fade over about 5 ticks, then a
+ * lapse needs more than `INTENT_WINDOW` (30) ticks without a closing one.
+ * @param {any} run the run
+ * @returns {void}
+ */
+export function settleChases(run) {
+    for (let t = 0; t < 45; t++) {
+        run.tick();
+    }
+}
