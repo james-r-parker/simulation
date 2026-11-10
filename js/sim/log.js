@@ -145,6 +145,12 @@ function emitHunterLedger(log, d, o) {
     });
 }
 
+/** Emits the recoil energy charged over a hunter's life. */
+/** @param {SimLog} log sim log @param {Float64Array} d event ring @param {number} o record offset */
+function emitHunterRecoilLife(log, d, o) {
+    log.log('debug', 'HunterRecoilLife', { tick: d[o + 1], slot: d[o + 2], energy: d[o + 3] });
+}
+
 /**
  * Emits one `LastHunterDied` event: the last hunter died, in a basin, with the non-hunters alive in each.
  * @param {SimLog} log the log
@@ -476,6 +482,7 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.HUNTER_LEDGER]: { level: LOG_LEVEL.debug, emit: emitHunterLedger },
     [EVENT_TYPE.LAST_HUNTER_DIED]: { level: LOG_LEVEL.debug, emit: emitLastHunterDied },
     [EVENT_TYPE.HUNTER_KILL]: { level: LOG_LEVEL.debug, emit: emitHunterKill },
+    [EVENT_TYPE.HUNTER_RECOIL_LIFE]: { level: LOG_LEVEL.debug, emit: emitHunterRecoilLife },
     [EVENT_TYPE.COVER_CONFIG]: { level: LOG_LEVEL.info, emit: emitCoverConfig },
     [EVENT_TYPE.COVER_TOTALS]: { level: LOG_LEVEL.debug, emit: emitCoverTotals },
 });

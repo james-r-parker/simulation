@@ -147,10 +147,8 @@ export function noteLedgerKill(world, victim) {
         return;
     }
     const killer = slotOfGenome(world, world.lastBiter[victim]);
-    if (killer >= 0) {
-        world.ledgerKills[killer] += 1;
-        pushHunterKill(world, killer);
-    }
+    world.ledgerKills[killer] += 1;
+    pushHunterKill(world, killer);
 }
 
 /**
@@ -175,6 +173,9 @@ export function noteHunterDeath(world, slot, cause) {
     d[o + 9] = world.ledgerKillEnergy[slot];
     d[o + 10] = world.ledgerBiteGain[slot];
     d[o + 11] = world.ledgerBiteCost[slot];
+    const recoil = pushEvent(world.events, EVENT_TYPE.HUNTER_RECOIL_LIFE, world.tick);
+    world.events.data[recoil + 2] = slot;
+    world.events.data[recoil + 3] = world.recoilEnergyLife[slot];
     const tally = world.hunterTally;
     tally[0] += 1;
     tally[1] = basinOf(world, world.x[slot]);

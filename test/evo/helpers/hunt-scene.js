@@ -18,15 +18,20 @@ export const FORAGER = 0;
 export const PREDATOR = 1;
 
 /**
- * @param {{runTicks?: number, over?: Record<string, any>}} [options] the run length and config overrides
+ * @param {{runTicks?: number, over?: Record<string, any>, pooledBrain?: boolean}} [options] the run length, config overrides and whether to run the real brain kernel
  * @returns {{run: ReturnType<typeof sourceRun>, world: any, spawn: (spec: number, cause?: number, options?: SpawnOptions) => number}} the run,
  *   its world, and a spawn of a chosen specialisation and birth cause, with a lineage and a pose set before the observer
  *   sees the birth
  */
-export function huntRun({ runTicks = 0, over = {} } = {}) {
+export function huntRun({ runTicks = 0, over = {}, pooledBrain = false } = {}) {
     const next = { spec: FORAGER };
     const policy = { ...zeroPolicy(), initSpec: () => next.spec };
-    const run = sourceRun({ runTicks, policy, over: { maxAgents: 32, predatorRestTicks: 0, rayCount: 16, ...over } });
+    const run = sourceRun({
+        runTicks,
+        policy,
+        pooledBrain,
+        over: { maxAgents: 32, predatorRestTicks: 0, rayCount: 16, ...over },
+    });
     return {
         run,
         world: run.world,

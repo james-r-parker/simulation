@@ -201,7 +201,15 @@ function rowsOf(args, { genomes, tasks, results, log }) {
                 rows[row].cells[name] = null;
                 return;
             }
-            const cell = { winShare: results[at].winShare, edge: edgeOf(results[at].winShare, baselines) };
+            const records = results[at].records ?? [];
+            const lossReasons = /** @type {Record<string, number>} */ ({});
+            for (const record of records) {
+                if (record.won || record.reason === null || record.reason === undefined) {
+                    continue;
+                }
+                lossReasons[record.reason] = (lossReasons[record.reason] ?? 0) + 1;
+            }
+            const cell = { winShare: results[at].winShare, edge: edgeOf(results[at].winShare, baselines), lossReasons };
             rows[row].cells[name] = cell;
             log.log('info', 'DrillResult', { drill: name, subject: label, winShare: cell.winShare, edge: cell.edge });
         });

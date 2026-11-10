@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
+import { DEATH_CAUSE, EVENT_TYPE, createEventRing, pushEvent } from '../../js/sim/events.js';
 import { DRILLS } from '../../js/evo/drill-scenarios.js';
 import { createPreyTrace, lostReason, noteTick, traceFields } from '../../js/evo/drill-trace.js';
 import { drillSubject } from '../../js/evo/drill.js';
@@ -14,8 +15,19 @@ describe('lostReason', () => {
     it('gives each reason in order from a hand-built trace', () => {
         expect(lostReason(traceWith({ biteTicks: 0 }))).toBe('never-bit');
         expect(lostReason(traceWith({ biteTicks: 3, biteJawTicks: 0 }))).toBe('never-in-jaws');
-        expect(lostReason(traceWith({ biteTicks: 3, biteJawTicks: 1, subjectDied: true }))).toBe('subject-died-first');
         expect(lostReason(traceWith({ biteTicks: 3, biteJawTicks: 1 }))).toBe('bit-prey-lived');
+        expect(lostReason(traceWith({ biteTicks: 3, biteJawTicks: 1, subjectDied: true }))).toBe('bit-prey-lived');
+        expect(
+            lostReason(
+                traceWith({
+                    biteTicks: 3,
+                    biteJawTicks: 1,
+                    preyDied: true,
+                    subjectDied: true,
+                    subjectStarvedOrRecoiled: true,
+                }),
+            ),
+        ).toBe('subject-starved-or-recoiled-first');
         expect(lostReason(traceWith({ biteTicks: 3, biteJawTicks: 1, preyDied: true }))).toBe('prey-died-unkilled');
     });
 
@@ -51,6 +63,25 @@ describe('noteTick', () => {
         noteTick(trace, world);
         expect(trace.preyDied).toBe(true);
         expect(trace.closest).toBe(3);
+    });
+
+    it('records starvation and recoil on the subject death tick, and handles a missing event ring', () => {
+        const deadWorld = { alive: [0, 1], events: undefined };
+        const missing = createPreyTrace();
+        noteTick(missing, deadWorld);
+        expect(missing.subjectDied).toBe(true);
+
+        const events = createEventRing(3);
+        let o = pushEvent(events, EVENT_TYPE.AGENT_DIED, 1);
+        events.data[o + 2] = 0;
+        events.data[o + 4] = DEATH_CAUSE.STARVED;
+        o = pushEvent(events, EVENT_TYPE.HUNTER_RECOIL_LIFE, 1);
+        events.data[o + 2] = 0;
+        pushEvent(events, EVENT_TYPE.POPULATION_FLOOR, 1);
+        expect(events.count).toBe(3);
+        const trace = createPreyTrace();
+        noteTick(trace, { ...deadWorld, events });
+        expect(trace.subjectStarvedOrRecoiled).toBe(true);
     });
 });
 

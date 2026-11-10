@@ -16,6 +16,10 @@ const life = (kills, carcass, kill, bite) => ({
 });
 
 describe('splitHunterIncome', () => {
+    it('supplies eval.hunter_zero_kill_carcass_share from carcass energy only', () => {
+        const split = splitHunterIncome([life(1, 90, 100, 0), life(0, 10, 0, 0)]);
+        expect(split.zeroKillCarcassShare).toBe(0.1);
+    });
     it('gives the shares of kill, bite and carcass energy in all income', () => {
         const split = splitHunterIncome([life(2, 100, 50, 50), life(0, 200, 0, 0)]);
         expect(split).toMatchObject({ lives: 2, zeroKillLives: 1, income: 400 });

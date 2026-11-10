@@ -4,6 +4,7 @@
 
 import { OUTPUT_INDEX } from '../sim/brain-layout.js';
 import { canBite } from '../sim/bite-rule.js';
+import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 
 /**
  * The most the pair's distance may exceed the summed radii at the end of a tick and still count as touching: contact
@@ -13,7 +14,7 @@ const TOUCH_GAP = 1.01;
 
 /**
  * The ordered reasons a hunting trial is lost. The first that holds is the one reported.
- * @typedef {'never-bit' | 'never-in-jaws' | 'bit-prey-lived' | 'subject-died-first' | 'prey-died-unkilled'} LostReason
+ * @typedef {'never-bit' | 'never-in-jaws' | 'bit-prey-lived' | 'subject-starved-or-recoiled-first' | 'prey-died-unkilled'} LostReason
  */
 
 /**
@@ -24,6 +25,7 @@ const TOUCH_GAP = 1.01;
  * @property {number} biteJawTicks ticks with `BITE` above 0 and the prey inside the jaws
  * @property {boolean} preyDied whether the prey was dead at the last tick noted
  * @property {boolean} subjectDied whether the subject was dead at the last tick noted
+ * @property {boolean} subjectStarvedOrRecoiled whether the subject starved or paid recoil on a death tick
  */
 
 /** @returns {PreyTrace} a trace of a trial not yet played */
@@ -35,6 +37,7 @@ export function createPreyTrace() {
         biteJawTicks: 0,
         preyDied: false,
         subjectDied: false,
+        subjectStarvedOrRecoiled: false,
     };
 }
 
@@ -47,9 +50,33 @@ export function createPreyTrace() {
 export function noteTick(trace, world) {
     trace.subjectDied = world.alive[0] === 0;
     trace.preyDied = world.alive[1] === 0;
+    if (trace.subjectDied) {
+        noteSubjectDeath(trace, world);
+    }
     if (trace.subjectDied || trace.preyDied) {
         return;
     }
+    noteApproach(trace, world);
+}
+
+/** @param {PreyTrace} trace trace @param {Record<string, any>} world sim world */
+function noteSubjectDeath(trace, world) {
+    if (world.events === undefined) {
+        return;
+    }
+    const { data, count } = world.events;
+    for (let i = 0; i < count; i++) {
+        const o = i * EVENT_STRIDE;
+        const starved = data[o] === EVENT_TYPE.AGENT_DIED && data[o + 2] === 0 && data[o + 4] === DEATH_CAUSE.STARVED;
+        const recoiled = data[o] === EVENT_TYPE.HUNTER_RECOIL_LIFE && data[o + 2] === 0;
+        if (starved || recoiled) {
+            trace.subjectStarvedOrRecoiled = true;
+        }
+    }
+}
+
+/** @param {PreyTrace} trace trace @param {Record<string, any>} world sim world */
+function noteApproach(trace, world) {
     const dx = world.x[1] - world.x[0];
     const dy = world.y[1] - world.y[0];
     const gap = Math.sqrt(dx * dx + dy * dy) / (world.size[0] + world.size[1]);
@@ -63,7 +90,7 @@ export function noteTick(trace, world) {
 
 /**
  * Why a trial was lost, by the first reason that holds: the output never above 0; above 0 but the prey never in the
- * jaws; the subject starved or recoiled first; a bite landed and the prey lived. A prey that died without the subject's
+ * jaws; a bite landed and the prey lived; the subject starved or paid recoil first. A prey that died without the subject's
  * kill (it starved from sprinting) is the last, so the list is total.
  * @param {PreyTrace} trace the finished trace
  * @returns {LostReason} the reason
@@ -75,10 +102,13 @@ export function lostReason(trace) {
     if (trace.biteJawTicks === 0) {
         return 'never-in-jaws';
     }
-    if (trace.subjectDied) {
-        return 'subject-died-first';
+    if (!trace.preyDied && trace.biteJawTicks > 0) {
+        return 'bit-prey-lived';
     }
-    return trace.preyDied ? 'prey-died-unkilled' : 'bit-prey-lived';
+    if (trace.subjectStarvedOrRecoiled) {
+        return 'subject-starved-or-recoiled-first';
+    }
+    return 'prey-died-unkilled';
 }
 
 /**

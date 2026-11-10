@@ -14,9 +14,10 @@
 
 import { basinOf } from '../sim/eras.js';
 import { geneticDistance } from '../sim/genetics.js';
+import { metricName } from './metric-registry/index.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { BASIN_MIN_ALIVE, basinMean, LAST_SHARE, lastQuarterBasinMean } from './scene-balance.js';
-import { none } from './metrics-stats.js';
+import { none, ok } from './metrics-stats.js';
 
 /** Genomes closer than this share a family: under half the distance between two unrelated genomes. */
 export const FAMILY_DISTANCE = 0.5;
@@ -103,19 +104,6 @@ export function sampleFamilies(scene, world) {
  * @returns {import('./metrics-stats.js').MetricResult | null} `null` result with a reason naming a basin whose mean
  *   alive count over the last quarter is under `BASIN_MIN_ALIVE`, or `null` when no basin is thin
  */
-function thinBasin(scene, lastTick) {
-    const from = lastTick * (1 - LAST_SHARE);
-    for (let basin = 0; basin < 2; basin++) {
-        const alive = basinMean(scene, `alive${basin}`, basin, { from, floor: 0 });
-        if (alive < BASIN_MIN_ALIVE) {
-            return none(
-                `basin ${basin} held ${Math.round(alive * 10) / 10} agents (under ${BASIN_MIN_ALIVE}) in the last quarter`,
-            );
-        }
-    }
-    return null;
-}
-
 /**
  * @param {Record<string, any>} scene the family scene
  * @param {Record<string, any>} world the world at the run's last tick
@@ -123,8 +111,24 @@ function thinBasin(scene, lastTick) {
  */
 export function familyMetrics(scene, world) {
     const lastTick = world.tick ?? 0;
-    return {
+    const metrics = /** @type {import('./metrics-stats.js').MetricRecord} */ ({
         'eval.basin_families': lastQuarterBasinMean(scene, 'families', lastTick),
-        'eval.basin_family_effective': thinBasin(scene, lastTick) ?? lastQuarterBasinMean(scene, 'effective', lastTick),
-    };
+        'eval.basin_family_effective': lastQuarterBasinMean(scene, 'effective', lastTick),
+    });
+    for (const { basin, suffix } of [
+        { basin: 0, suffix: 'west' },
+        { basin: 1, suffix: 'east' },
+    ]) {
+        const from = lastTick * (1 - LAST_SHARE);
+        const alive = basinMean(scene, `alive${basin}`, basin, { from, floor: 0 });
+        const families = basinMean(scene, `families${basin}`, basin, { from, floor: 0 });
+        const effective = basinMean(scene, `effective${basin}`, basin, { from, floor: 0 });
+        metrics[metricName('eval.basin_families', suffix)] = Number.isNaN(alive)
+            ? none('no checkpoint in the last quarter')
+            : ok(alive < BASIN_MIN_ALIVE ? 0 : families);
+        metrics[metricName('eval.basin_family_effective', suffix)] = Number.isNaN(alive)
+            ? none('no checkpoint in the last quarter')
+            : ok(alive < BASIN_MIN_ALIVE ? 0 : effective);
+    }
+    return metrics;
 }

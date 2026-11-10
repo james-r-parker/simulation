@@ -35,6 +35,22 @@ export function drillEdges(rows, genomeCount) {
     );
 }
 
+/** @param {readonly Record<string, any>[]} rows drill table rows @param {number} genomeCount leading champions @returns {Record<string, Record<string, number> | null>} summed loss reasons by drill */
+export function drillLossReasons(rows, genomeCount) {
+    const genomes = rows.slice(0, genomeCount);
+    return Object.fromEntries(
+        DRILLS.map(({ name }) => {
+            const counts = /** @type {Record<string, number>} */ ({});
+            for (const row of genomes) {
+                for (const [reason, n] of Object.entries(row.cells[name]?.lossReasons ?? {})) {
+                    counts[reason] = (counts[reason] ?? 0) + n;
+                }
+            }
+            return [name, Object.keys(counts).length === 0 ? null : counts];
+        }),
+    );
+}
+
 /**
  * @param {readonly Record<string, number | null>[]} results the metrics of each eval episode
  * @returns {Record<string, number | null>} each curve metric's mean over the episodes that have a value
@@ -61,12 +77,12 @@ export function averageMetrics(results) {
 /**
  * Runs the drills on the archive's champions.
  * @param {CheckpointRun} run the checkpoint
- * @returns {Promise<Record<string, number | null>>} each drill's mean edge
+ * @returns {Promise<{edges: Record<string, number | null>, reasons: Record<string, Record<string, number> | null>}>} each drill's mean edge and summed loss reasons
  */
 async function drillPart({ archive, options, log }) {
     const genomes = eliteSubjects(archive);
     if (genomes.length === 0) {
-        return drillEdges([], 0);
+        return { edges: drillEdges([], 0), reasons: drillLossReasons([], 0) };
     }
     const args = /** @type {any} */ ({
         drills: DRILLS.map((d) => d.name),
@@ -75,7 +91,7 @@ async function drillPart({ archive, options, log }) {
         workers: options.workers,
     });
     const rows = await drillGenomes(args, { genomes, config: {}, log });
-    return drillEdges(rows, genomes.length);
+    return { edges: drillEdges(rows, genomes.length), reasons: drillLossReasons(rows, genomes.length) };
 }
 
 /**
@@ -104,13 +120,14 @@ async function evalPart({ archive, stage, options }) {
  * @returns {Promise<Record<string, any>>} the curve row
  */
 export async function runCheckpoint(run, dir) {
-    const edges = await drillPart(run);
+    const { edges, reasons } = await drillPart(run);
     const metrics = await evalPart(run);
     const point = curvePoint({
         ...run.progress,
         stage: run.stage.name,
         archive: run.archive,
         drillEdges: edges,
+        drillLossReasons: reasons,
         metrics,
     });
     appendFileSync(join(dir, 'curve.jsonl'), `${JSON.stringify(point)}\n`);

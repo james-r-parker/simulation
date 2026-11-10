@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { updateSize } from '../../js/sim/energy.js';
-import { createEventRing, EVENT_TYPE, pushEvent } from '../../js/sim/events.js';
+import { BORN_CAUSE, createEventRing, EVENT_TYPE, pushEvent } from '../../js/sim/events.js';
 import { feed } from '../../js/sim/feeding.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { splitHunterIncome } from '../../js/evo/hunter-income-split.js';
@@ -40,10 +40,15 @@ function world(alive = []) {
         spec: new Uint8Array(n).fill(1),
         huntBySpec: new Float64Array([0, 1]),
         recoilStamp: new Uint32Array(n),
+        recoilEnergyLife: new Float64Array(n),
+        biteSkipParent: new Uint8Array(n),
+        thrustSkipParent: new Uint8Array(n),
         ledgerKills: new Float64Array(n),
         ledgerCarcass: new Float64Array(n),
         ledgerKillEnergy: new Float64Array(n),
         ledgerBiteGain: new Float64Array(n),
+        genomeId: new Uint32Array(n),
+        ageTicks: new Uint32Array(n),
     };
     alive.forEach((l, i) => {
         w.alive[i] = 1;
@@ -78,15 +83,16 @@ describe('eval.hunter_carrion_idle_share', () => {
 });
 
 describe('eval.hunter_recoil_per_life', () => {
-    it('counts a stamp equal to world.tick once per hunter and divides by the lives', () => {
+    it('takes the median energy charged per hunter life, including the death-tick summary', () => {
         const scene = createBiteLifeScene();
         const w = world([NONE, NONE]);
-        w.recoilStamp[0] = w.tick;
-        w.recoilStamp[1] = w.tick - 1;
-        tickRecoil(scene, w);
-        expect(scene.recoilTicks).toBe(1);
-        die(scene, NONE);
-        expect(biteLifeMetrics(scene, w)['eval.hunter_recoil_per_life']?.value).toBeCloseTo(1 / 3, 12);
+        w.recoilEnergyLife[0] = 12;
+        w.recoilEnergyLife[1] = 40;
+        const ring = createEventRing(1);
+        const o = pushEvent(ring, EVENT_TYPE.HUNTER_RECOIL_LIFE, 10);
+        ring.data[o + 3] = 100;
+        noteBiteLifeRecord(scene, ring.data, o);
+        expect(biteLifeMetrics(scene, w)['eval.hunter_recoil_per_life']?.value).toBe(40);
     });
 
     it('is null with no lives', () => {
@@ -112,10 +118,82 @@ describe('eval.hunter_recoil_per_life', () => {
             w.tick += 1; // `step` ends with this increment
             const scene = createBiteLifeScene();
             tickRecoil(scene, w);
-            return scene.recoilTicks;
+            return w.recoilEnergyLife[hunter];
         };
-        expect(run(true)).toBe(1);
+        expect(run(true)).toBe(20);
         expect(run(false)).toBe(0);
+    });
+});
+
+describe('hunter reflex column crossover metrics', () => {
+    it('ignores a mating event when no world is supplied', () => {
+        const scene = createBiteLifeScene();
+        const births = createEventRing(1);
+        const o = pushEvent(births, EVENT_TYPE.AGENT_BORN, 1);
+        births.data[o + 8] = BORN_CAUSE.MATE;
+        noteBiteLifeRecord(scene, births.data, o);
+        expect(scene.reflexMateBirths).toBe(0);
+    });
+
+    it('ignores a mating birth from a non-hunter and a kill outside the tracked cohorts', () => {
+        const scene = createBiteLifeScene();
+        const w = world([NONE]);
+        w.spec[0] = 0;
+        const birth = createEventRing(1);
+        let o = pushEvent(birth, EVENT_TYPE.AGENT_BORN, 1);
+        birth.data[o + 2] = 0;
+        birth.data[o + 8] = BORN_CAUSE.MATE;
+        noteBiteLifeRecord(scene, birth.data, o, w);
+        const kill = createEventRing(1);
+        o = pushEvent(kill, EVENT_TYPE.HUNTER_KILL, 2);
+        kill.data[o + 2] = 999;
+        noteBiteLifeRecord(scene, kill.data, o, w);
+        expect(scene.reflexMateBirths).toBe(0);
+    });
+
+    it('reads mating births and pairs the split-child share with each cohort kill rate', () => {
+        const scene = createBiteLifeScene();
+        const w = world([NONE, NONE]);
+        w.genomeId.set([1, 2]);
+        w.ageTicks.set([100, 200]);
+        w.ledgerKills.set([1, 0]);
+        w.biteSkipParent[0] = 0;
+        w.thrustSkipParent[0] = 1;
+        w.biteSkipParent[1] = 0;
+        w.thrustSkipParent[1] = 0;
+        const births = createEventRing(1);
+        let o = pushEvent(births, EVENT_TYPE.AGENT_BORN, 1);
+        births.data[o + 2] = 0;
+        births.data[o + 3] = 1;
+        births.data[o + 8] = BORN_CAUSE.MATE;
+        noteBiteLifeRecord(scene, births.data, o, w);
+        const kill = createEventRing(1);
+        o = pushEvent(kill, EVENT_TYPE.HUNTER_KILL, 2);
+        kill.data[o + 2] = 1;
+        noteBiteLifeRecord(scene, kill.data, o, w);
+        const second = createEventRing(1);
+        o = pushEvent(second, EVENT_TYPE.AGENT_BORN, 1);
+        second.data[o + 2] = 1;
+        second.data[o + 3] = 2;
+        second.data[o + 8] = BORN_CAUSE.MATE;
+        noteBiteLifeRecord(scene, second.data, o, w);
+        const deaths = createEventRing(1);
+        o = pushEvent(deaths, EVENT_TYPE.HUNTER_LEDGER, 10);
+        deaths.data[o + 2] = 1;
+        deaths.data[o + 3] = 100;
+        deaths.data[o + 4] = 64;
+        noteBiteLifeRecord(scene, deaths.data, o, w);
+        const secondDeath = createEventRing(1);
+        o = pushEvent(secondDeath, EVENT_TYPE.HUNTER_LEDGER, 10);
+        secondDeath.data[o + 2] = 2;
+        secondDeath.data[o + 3] = 200;
+        noteBiteLifeRecord(scene, secondDeath.data, o, w);
+        w.alive.fill(0);
+        w.alive[0] = 1;
+        const m = biteLifeMetrics(scene, w);
+        expect(m['eval.hunter_reflex_column_split_share']).toEqual({ value: 0.5 });
+        expect(m['eval.hunter_reflex_column_split_kill_rate']).toEqual({ value: 10 });
+        expect(m['eval.hunter_reflex_column_same_kill_rate']).toEqual({ value: 0 });
     });
 });
 

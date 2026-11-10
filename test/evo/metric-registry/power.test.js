@@ -6,14 +6,14 @@ describe('generated metric power readings', () => {
     it('uses the registry power shape and delegates the seed minimum to the shared bar', () => {
         for (const [name, power] of Object.entries(POWER)) {
             expect(name.startsWith('eval.')).toBe(true);
-            expect(power).toMatchObject({
-                fpr16: expect.anything(),
-                fpr32: expect.anything(),
-                mde16: expect.anything(),
-                mde32: expect.anything(),
-                referenceMean: expect.any(Number),
-                report: expect.any(String),
-            });
+            expect(Object.keys(power)).toEqual(['fpr16', 'fpr32', 'mde16', 'mde32', 'referenceMean', 'report']);
+            expect(
+                [power.fpr16, power.fpr32, power.mde16, power.mde32].every(
+                    (value) => value === null || typeof value === 'number',
+                ),
+            ).toBe(true);
+            expect(power.referenceMean).toEqual(expect.any(Number));
+            expect(power.report).toEqual(expect.any(String));
         }
         expect(
             minSeedsFromPower({

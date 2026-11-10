@@ -2,11 +2,11 @@
 export default {
     'eval.basin_families': {
         value: null,
-        reason: 'no basin held 20 agents in the last quarter',
+        reason: 'both basins held under 20 agents in the last quarter',
     },
     'eval.basin_family_effective': {
         value: null,
-        reason: 'no basin held 20 agents in the last quarter',
+        reason: 'both basins held under 20 agents in the last quarter',
     },
     'eval.basin_spec_divergence': {
         value: null,
@@ -68,4 +68,8 @@ export default {
         value: null,
         reason: 'no lineage with 20 mate births after burn-in',
     },
+    'eval.basin_families.east': { value: null, reason: 'no checkpoint in the last quarter' },
+    'eval.basin_families.west': { value: null, reason: 'no checkpoint in the last quarter' },
+    'eval.basin_family_effective.east': { value: null, reason: 'no checkpoint in the last quarter' },
+    'eval.basin_family_effective.west': { value: null, reason: 'no checkpoint in the last quarter' },
 };

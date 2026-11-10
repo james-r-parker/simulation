@@ -118,17 +118,17 @@ export const LIVENESS = Object.freeze({
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
-    'eval.bite_off_kin': Object.freeze({
+    'eval.bite_wish_with_kin_in_jaws': Object.freeze({
         nullShare: 0,
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
-    'eval.bite_off_other': Object.freeze({
+    'eval.bite_wish_with_other_in_jaws': Object.freeze({
         nullShare: 0.0234375,
         distinct: 125,
         report: 'evals/power/defaults-floor-on.json',
     }),
-    'eval.bite_on_prey': Object.freeze({
+    'eval.bite_wish_with_prey_in_jaws': Object.freeze({
         nullShare: 0,
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',

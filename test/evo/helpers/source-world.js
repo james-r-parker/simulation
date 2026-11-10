@@ -32,14 +32,14 @@ export function zeroPolicy(spec = 0) {
 }
 
 /**
- * @param {{over?: Record<string, any>, runTicks?: number, policy?: any, fitness?: (observer: any, slot: number, config: any) => number}} [options] config overrides, the run length the
+ * @param {{over?: Record<string, any>, runTicks?: number, policy?: any, fitness?: (observer: any, slot: number, config: any) => number, pooledBrain?: boolean}} [options] config overrides, the run length the
  *   observer is told, the policy and the fitness `observe` scores deaths with
  * @returns {{world: any, observer: any, policy: any, want: (slot: number, output: number, value?: number) => void,
  *   release: (slot: number, output: number) => void, spawn: (cause?: number) => number,
  *   tick: (before?: (world: any) => void) => void, jump: (tick: number) => void, check: () => void,
  *   metrics: (options?: Record<string, any>) => Record<string, any>}} the run
  */
-export function sourceRun({ over = {}, runTicks = 0, policy = zeroPolicy(), fitness } = {}) {
+export function sourceRun({ over = {}, runTicks = 0, policy = zeroPolicy(), fitness, pooledBrain = false } = {}) {
     const config = createConfig({
         ...SIMPLE_WORLD,
         worldWidth: 1000,
@@ -64,6 +64,9 @@ export function sourceRun({ over = {}, runTicks = 0, policy = zeroPolicy(), fitn
     const phases = {
         ...observerPhases(observer),
         brain(/** @type {any} */ w) {
+            if (pooledBrain) {
+                forwardAll(w);
+            }
             for (const [cell, value] of wanted) {
                 w.outputs[cell] = value;
             }

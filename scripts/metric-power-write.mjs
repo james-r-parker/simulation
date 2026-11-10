@@ -6,10 +6,14 @@ import { METRICS } from '../js/evo/metric-registry/index.js';
 import { minSeedsFromPower } from '../js/evo/metric-registry/status.js';
 import { withCurrentNames } from '../js/evo/metric-registry/renames.js';
 import { validateReport } from '../js/evo/report.js';
+import { createMetricWriterMain, runAsCli } from './lib/metric-writer-cli.mjs';
 
 const OUTPUT = fileURLToPath(new URL('../js/evo/metric-registry/power.js', import.meta.url));
 const USAGE = 'usage: metric-power-write <power.json> --report <eval-report.json> [--write]';
 
+/** @typedef {{metric: string, size: number, falsePositive: number, detectable: number | null}} PowerRow */
+
+/** @param {unknown} rows @param {Readonly<Record<string, any>>} metrics @returns {PowerRow[]} */
 function checkRows(rows, metrics) {
     if (!Array.isArray(rows)) {
         throw new Error('power JSON must contain rows');
@@ -21,6 +25,7 @@ function checkRows(rows, metrics) {
     return rows;
 }
 
+/** @param {Record<string, import('../js/evo/metric-registry/entry.js').Power>} grouped @param {PowerRow} row @param {any} report @param {string} reportPath */
 function setReading(grouped, row, report, reportPath) {
     if (![16, 32].includes(row.size)) {
         return;
@@ -38,8 +43,13 @@ function setReading(grouped, row, report, reportPath) {
         referenceMean: current.mean ?? 0,
         report: reportPath,
     });
-    value[`fpr${row.size}`] = row.falsePositive;
-    value[`mde${row.size}`] = row.detectable;
+    if (row.size === 16) {
+        value.fpr16 = row.falsePositive;
+        value.mde16 = row.detectable;
+    } else {
+        value.fpr32 = row.falsePositive;
+        value.mde32 = row.detectable;
+    }
 }
 
 /** @param {string} source command output @returns {Record<string, any>} parsed JSON object */
@@ -67,7 +77,7 @@ export function readPower(rawPower, rawReport, reportPath, metrics = METRICS) {
     validateReport(rawReport);
     const report = withCurrentNames(rawReport, metrics);
     const rows = checkRows(rawPower?.rows, metrics);
-    /** @type {Record<string, Record<string, any>>} */
+    /** @type {Record<string, import('../js/evo/metric-registry/entry.js').Power>} */
     const grouped = {};
     for (const row of rows) {
         setReading(grouped, row, report, reportPath);
@@ -100,6 +110,7 @@ export function renderPowerModule(readings) {
 }
 
 /** @param {string[]} args CLI args */
+/** @param {string[]} args @returns {{powerPath: string, reportPath: string, write: boolean} | null} */
 function parseArgs(args) {
     const reportIndex = args.indexOf('--report');
     const powerPath = args.find((arg) => !arg.startsWith('--') && args[args.indexOf(arg) - 1] !== '--report');
@@ -115,6 +126,8 @@ function parseArgs(args) {
     return { powerPath, reportPath: args[reportIndex + 1], write: args.includes('--write') };
 }
 
+/** @param {{powerPath: string, reportPath: string, write: boolean}} parsed @param {{metrics: Readonly<Record<string, any>>, output: string, read?: (path: string) => any, print: (line: string) => void}} io */
+/** @param {{powerPath: string, reportPath: string, write: boolean}} parsed arguments @param {{metrics: Readonly<Record<string, any>>, output: string, read?: (path: string) => any, print: (line: string) => void}} io IO */
 function applyRead(parsed, { metrics, output, read, print }) {
     const load = read ?? readJson;
     const { powerPath, reportPath, write } = parsed;
@@ -129,25 +142,6 @@ function applyRead(parsed, { metrics, output, read, print }) {
     }
 }
 
-/** @param {string[]} args CLI args @param {{metrics?: Readonly<Record<string, any>>, output?: string, read?: (path: string) => any, print?: (line: string) => void}} [io] IO */
-export function main(
-    args,
-    { metrics = METRICS, output = OUTPUT, read, print = (line) => process.stdout.write(`${line}\n`) } = {},
-) {
-    const parsed = parseArgs(args);
-    if (parsed === null) {
-        process.stderr.write(`${USAGE}\n`);
-        return 2;
-    }
-    try {
-        applyRead(parsed, { metrics, output, read, print });
-        return 0;
-    } catch (error) {
-        process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-        return 1;
-    }
-}
+export const main = createMetricWriterMain({ parse: parseArgs, usage: USAGE }, METRICS, OUTPUT, applyRead);
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-    process.exitCode = main(process.argv.slice(2));
-}
+runAsCli(import.meta.url, main);
