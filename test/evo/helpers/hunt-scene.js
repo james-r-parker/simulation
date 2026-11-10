@@ -19,7 +19,7 @@ export const PREDATOR = 1;
 
 /**
  * @param {{runTicks?: number, over?: Record<string, any>}} [options] the run length and config overrides
- * @returns {{run: any, world: any, spawn: (spec: number, cause?: number, options?: SpawnOptions) => number}} the run,
+ * @returns {{run: ReturnType<typeof sourceRun>, world: any, spawn: (spec: number, cause?: number, options?: SpawnOptions) => number}} the run,
  *   its world, and a spawn of a chosen specialisation and birth cause, with a lineage and a pose set before the observer
  *   sees the birth
  */
