@@ -1,6 +1,7 @@
 // Leak against skill (brain-capacity-and-memory.md, Metrics): does a life's mean leak rate go with how well it foraged,
-// hunted or fled? At each death at or after burn-in the life's mean `leakRate` (from the genome row, since the slot's
-// `leakRate` row is already cleared) and three per-life skills go into a log; the three correlations are Pearson's over
+// hunted or fled? At each birth the life's mean `leakRate` is read from its genome row and kept per slot, because the step
+// frees a dead agent's slot (zeroing its genome row) before the observer sees the death. At each death at or after
+// burn-in that kept leak and three per-life skills go into a log; the three correlations are Pearson's over
 // the lives where the skill is defined. A skill is undefined for a life with nothing to measure it on: no food eaten,
 // no kill (or a specialisation that cannot hunt), no escaped bite episode. All `watch`.
 
@@ -15,11 +16,39 @@ export const MIN_FORAGE_LIVES = 200;
 export const MIN_SKILL_LIVES = 100;
 
 /**
+ * @param {number} maxAgents the world's slot count
  * @returns {Record<string, any>} an empty per-life log with columns `leak`, `forage`, `hunt`, `flee` (NaN where the
- *   skill is undefined) and the row count
+ *   skill is undefined), the row count, and `birthLeak`, each slot's life leak kept at birth (NaN when unknown)
  */
-export function createLeakSkillPools() {
-    return { log: createLog(['leak', 'forage', 'hunt', 'flee']), rows: 0 };
+export function createLeakSkillPools(maxAgents) {
+    return {
+        log: createLog(['leak', 'forage', 'hunt', 'flee']),
+        rows: 0,
+        birthLeak: new Float64Array(maxAgents).fill(NaN),
+    };
+}
+
+/**
+ * Keeps a newborn's life leak while its genome row is in the slot. A slot the world has already refilled (its genome id
+ * differs: the newborn died within its birth tick) keeps NaN, and that life is skipped at death.
+ * @param {Record<string, any>} pools the leak-skill pools
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the newborn's slot
+ * @param {number} genomeId the newborn's genome id
+ * @returns {void}
+ */
+export function noteLeakSkillBirth(pools, world, slot, genomeId) {
+    pools.birthLeak[slot] = world.genomeId[slot] === genomeId ? lifeLeak(world, slot) : NaN;
+}
+
+/**
+ * Forgets a slot's kept leak, for a reused slot.
+ * @param {Record<string, any>} pools the leak-skill pools
+ * @param {number} slot the slot
+ * @returns {void}
+ */
+export function resetLeakSkillSlot(pools, slot) {
+    pools.birthLeak[slot] = NaN;
 }
 
 /**
@@ -45,17 +74,16 @@ export function lifeLeak(world, slot) {
 }
 
 /**
- * Adds a dying life to the log. Call for deaths at or after burn-in, before the slot is reset. A slot the world has
- * already refilled (its genome id differs) has lost its row, so the life is skipped.
+ * Adds a dying life to the log, with the leak kept at its birth. Call for deaths at or after burn-in, before the
+ * observer resets the slot. A life with no kept leak is skipped.
  * @param {Record<string, any>} pools the leak-skill pools
- * @param {{observer: Record<string, any>, world: Record<string, any>}} state the observer and the world
- * @param {{slot: number, genomeId: number}} agent the dying agent
+ * @param {Record<string, any>} observer the observer
+ * @param {number} slot the dying agent's slot
  * @returns {void}
  */
-export function noteLeakSkillDeath(pools, state, agent) {
-    const { observer, world } = state;
-    const { slot } = agent;
-    if (world.genomeId[slot] !== agent.genomeId) {
+export function noteLeakSkillDeath(pools, observer, slot) {
+    const leak = pools.birthLeak[slot];
+    if (Number.isNaN(leak)) {
         return;
     }
     const { intent } = observer;
@@ -63,7 +91,7 @@ export function noteLeakSkillDeath(pools, state, agent) {
     ensureRoom(log, pools.rows);
     const row = pools.rows++;
     const hunts = intent.hunterSpec[observer.spec[slot]] === 1;
-    log.leak[row] = lifeLeak(world, slot);
+    log.leak[row] = leak;
     log.forage[row] = ratio(intent.deliberateFood[slot], intent.deliberateFood[slot] + intent.chanceFood[slot]);
     log.hunt[row] = hunts ? ratio(intent.deliberateKills[slot], observer.kills[slot]) : NaN;
     log.flee[row] = ratio(intent.respondedEscape[slot], intent.escapedLife[slot]);

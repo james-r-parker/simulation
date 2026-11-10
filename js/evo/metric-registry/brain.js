@@ -178,14 +178,15 @@ export const BRAIN = {
     'eval.leak_forage_corr': entry('brain', {
         module: 'js/evo/metrics-leak-skill.js',
         meaning: 'Whether slower brains (lower mean leak) forage more deliberately.',
-        counts: "Pearson correlation, over deaths at or after burn-in, of the life's mean leak rate (from the genome) against its deliberate share of food energy; needs 200 lives with food.",
+        counts: "Pearson correlation, over deaths at or after burn-in, of the life's mean leak rate (from its genome, kept at birth) against its deliberate share of food energy; needs 200 lives with food.",
         unit: 'correlation',
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['fewer than 200 lives with a forage skill', 'no variance in leak or in the skill'],
         arithmetic: 'test/evo/metrics-leak-skill.test.js',
-        deprecated:
-            'freeAgent zeroes world.genomeId and world.weights during step before observe calls noteLeakSkillDeath, so computeMetrics on a real run always returns null; test/evo/metrics-leak-skill.test.js pins its arithmetic.',
+        expectedFlat:
+            'The T22 reports predate the fix that keeps the leak at birth, so they read it null on every seed; the next defaults run reads it.',
+        source: 'test/evo/metric-source-brain-leak.test.js',
     }),
     'eval.leak_hunt_corr': entry('brain', {
         module: 'js/evo/metrics-leak-skill.js',
@@ -196,8 +197,9 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['fewer than 100 lives with a hunt skill', 'no variance in leak or in the skill'],
         arithmetic: 'test/evo/metrics-leak-skill.test.js',
-        deprecated:
-            'freeAgent zeroes world.genomeId and world.weights during step before observe calls noteLeakSkillDeath, so computeMetrics on a real run always returns null; test/evo/metrics-leak-skill.test.js pins its arithmetic.',
+        expectedFlat:
+            'The T22 reports predate the fix that keeps the leak at birth, so they read it null on every seed; the next defaults run reads it.',
+        source: 'test/evo/metric-source-brain-leak.test.js',
     }),
     'eval.leak_flee_corr': entry('brain', {
         module: 'js/evo/metrics-leak-skill.js',
@@ -208,8 +210,9 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['fewer than 100 lives with a flee skill', 'no variance in leak or in the skill'],
         arithmetic: 'test/evo/metrics-leak-skill.test.js',
-        deprecated:
-            'freeAgent zeroes world.genomeId and world.weights during step before observe calls noteLeakSkillDeath, so computeMetrics on a real run always returns null; test/evo/metrics-leak-skill.test.js pins its arithmetic.',
+        expectedFlat:
+            'The T22 reports predate the fix that keeps the leak at birth, so they read it null on every seed; the next defaults run reads it.',
+        source: 'test/evo/metric-source-brain-leak.test.js',
     }),
     'eval.hebb_drift': entry('brain', {
         module: 'js/evo/metrics-hebb.js',

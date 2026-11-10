@@ -14,7 +14,7 @@ import { noteBirthLineage, readDescendants, recordParents, releaseDeaths } from 
 import { resetIntentSlot } from './observer-intent.js';
 import { noteVisitDeath, resetVisits } from './watch-visits.js';
 import { noteHunterBirth } from './watch-births.js';
-import { noteBrainDeath, resetBrainSlot } from './metrics-brain.js';
+import { noteBrainBirth, noteBrainDeath, resetBrainSlot } from './metrics-brain.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 
 export { BURN_IN_TICKS };
@@ -231,6 +231,7 @@ function startBirth(observer, world, d, o) {
     observer.birthTick[slot] = d[o + 1];
     observer.eligibleChild[slot] = child ? 1 : 0;
     noteBirthBody(observer, world, slot, d[o + 3]);
+    noteBrainBirth(observer, world, slot, d[o + 3]);
     setLineage(observer, d, o);
     recordParents(observer, d, o);
     observer.slotOf.set(d[o + 3], slot);

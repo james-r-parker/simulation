@@ -4,6 +4,7 @@ import { metricDirection } from '../../js/evo/compare.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import {
     brainMetrics,
+    noteBrainBirth,
     noteBrainDeath,
     observeBrain,
     resetBrainSlot,
@@ -102,9 +103,10 @@ describe('the observer hooks', () => {
         expect(observer.weightPools.weights).toBeGreaterThan(0);
     });
 
-    it('notes a death in the life statistics and clears a slot on reuse', () => {
+    it('notes a birth and a death in the life statistics and clears a slot on reuse', () => {
         const { world, observer } = observed({ maxAgents: 8 });
         const slot = addBlob(world);
+        noteBrainBirth(observer, world, slot, world.genomeId[slot]);
         observer.memoryOut.count[slot] = 5;
         noteBrainDeath(observer, world, { slot, genomeId: world.genomeId[slot], ageTicks: 700 });
         expect(observer.memoryOut.lives).toBe(1);
@@ -113,5 +115,8 @@ describe('the observer hooks', () => {
         resetBrainSlot(observer, slot);
         expect(observer.memoryOut.count[slot]).toBe(0);
         expect(observer.saturation.lastShare[slot]).toBeNaN();
+        expect(observer.leakSkill.birthLeak[slot]).toBeNaN();
+        noteBrainDeath(observer, world, { slot, genomeId: world.genomeId[slot], ageTicks: 700 });
+        expect(observer.leakSkill.rows).toBe(1);
     });
 });
