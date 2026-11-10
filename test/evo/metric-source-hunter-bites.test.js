@@ -191,7 +191,7 @@ describe('pack_kills_per_eaten_death', () => {
     function packRun(kin) {
         const { run, world, spawn } = huntRun({ over: STILL });
         const first = spawn(PREDATOR);
-        const killer = spawn(PREDATOR, 0, kin ? world.lineageId[first] : undefined);
+        const killer = spawn(PREDATOR, 0, { lineage: kin ? world.lineageId[first] : undefined });
         const loner = spawn(PREDATOR);
         park(world, killer, 100);
         park(world, loner, 200);

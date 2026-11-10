@@ -8,13 +8,20 @@ import { spawnAgent } from '../../../js/sim/spawn.js';
 import { observe } from '../../../js/evo/observer.js';
 import { sourceRun, zeroPolicy } from './source-world.js';
 
+/**
+ * @typedef {object} SpawnOptions
+ * @property {number} [lineage] the newborn's lineage
+ * @property {[number, number, number?]} [at] its x, y and heading
+ */
+
 export const FORAGER = 0;
 export const PREDATOR = 1;
 
 /**
  * @param {{runTicks?: number, over?: Record<string, any>}} [options] the run length and config overrides
- * @returns {{run: any, world: any, spawn: (spec: number, cause?: number, lineage?: number) => number}} the run, its
- *   world, and a spawn of a chosen specialisation, birth cause and (before the observer sees the birth) lineage
+ * @returns {{run: any, world: any, spawn: (spec: number, cause?: number, options?: SpawnOptions) => number}} the run,
+ *   its world, and a spawn of a chosen specialisation and birth cause, with a lineage and a pose set before the observer
+ *   sees the birth
  */
 export function huntRun({ runTicks = 0, over = {} } = {}) {
     const next = { spec: FORAGER };
@@ -23,13 +30,16 @@ export function huntRun({ runTicks = 0, over = {} } = {}) {
     return {
         run,
         world: run.world,
-        spawn(spec, cause = BORN_CAUSE.INITIAL, lineage = undefined) {
+        spawn(spec, cause = BORN_CAUSE.INITIAL, { lineage, at } = {}) {
             next.spec = spec;
             const { world } = run;
             clearEvents(world.events);
             const slot = spawnAgent(world, policy, cause);
             if (lineage !== undefined) {
                 setBornLineage(world, slot, lineage);
+            }
+            if (at !== undefined) {
+                pose(world, slot, at);
             }
             observe(run.observer, world);
             next.spec = FORAGER;
@@ -174,4 +184,19 @@ export function settleChases(run) {
     for (let t = 0; t < 45; t++) {
         run.tick();
     }
+}
+
+/**
+ * Sets an agent's place and heading and stops it.
+ * @param {any} world the world
+ * @param {number} slot the agent
+ * @param {[number, number, number?]} at x, y and heading (default 0)
+ * @returns {void}
+ */
+export function pose(world, slot, [x, y, angle = 0]) {
+    world.x[slot] = x;
+    world.y[slot] = y;
+    world.vx[slot] = 0;
+    world.vy[slot] = 0;
+    world.angle[slot] = angle;
 }

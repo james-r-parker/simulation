@@ -75,6 +75,7 @@ export const INTENT = {
         expectedFlat:
             'Null unless hunters evolve hunt calls (PackCalled), which happened on 8 of 128 seeds with floor on and off; it moves with pack calling.',
         arithmetic: 'test/evo/metrics-intent.test.js',
+        source: 'test/evo/metric-source-intent-calls.test.js',
     }),
     'eval.evasion_response_share': entry('intent', {
         module: 'js/evo/metrics-intent.js',
@@ -110,6 +111,7 @@ export const INTENT = {
         expectedFlat:
             'Null unless a lineage evolves alarm calls, which happened on 5 of 128 seeds with floor on and off; it moves with alarm calling.',
         arithmetic: 'test/evo/metrics-intent.test.js',
+        source: 'test/evo/metric-source-intent-calls.test.js',
     }),
     'eval.hunt_call_lift': entry('intent', {
         module: 'js/evo/metrics-intent.js',
@@ -123,6 +125,7 @@ export const INTENT = {
         expectedFlat:
             'Null unless hunters evolve hunt calls (PackCalled), which happened on 8 of 128 seeds with floor on and off; it moves with pack calling.',
         arithmetic: 'test/evo/metrics-intent.test.js',
+        source: 'test/evo/metric-source-intent-calls.test.js',
     }),
     'eval.smoke_precision': entry('intent', {
         module: 'js/evo/metrics-intent.js',
@@ -135,6 +138,7 @@ export const INTENT = {
         expectedFlat:
             'Null unless an agent releases smoke, which happened on 7 of 128 seeds with floor on and off; it moves with smoke use.',
         arithmetic: 'test/evo/metrics-intent.test.js',
+        source: 'test/evo/metric-source-intent-calls.test.js',
     }),
     'eval.idle_signals_per_1k': entry('intent', {
         module: 'js/evo/metrics-intent.js',
@@ -144,6 +148,7 @@ export const INTENT = {
         direction: 'lower',
         nullWhen: ['no agent-ticks'],
         arithmetic: 'test/evo/metrics-intent.test.js',
+        source: 'test/evo/metric-source-intent-calls.test.js',
     }),
     'eval.undefended_bite_share': entry('intent', {
         module: 'js/evo/metrics-intent.js',
@@ -176,6 +181,7 @@ export const INTENT = {
         expectedFlat:
             'Null unless a lineage evolves alarm calls, which happened on 5 of 128 seeds with floor on and off; it moves with alarm calling.',
         arithmetic: 'test/evo/observer-alarm-reach.test.js',
+        source: 'test/evo/metric-source-intent-calls.test.js',
     }),
     'eval.alarm_hunter_hearers_per_call': entry('intent', {
         module: 'js/evo/observer-alarm-reach.js',
@@ -188,6 +194,7 @@ export const INTENT = {
         expectedFlat:
             'Null unless a lineage evolves alarm calls, which happened on 5 of 128 seeds with floor on and off; it moves with alarm calling.',
         arithmetic: 'test/evo/observer-alarm-reach.test.js',
+        source: 'test/evo/metric-source-intent-calls.test.js',
     }),
     'eval.alarm_calls_with_threat_per_1k': entry('intent', {
         module: 'js/evo/observer-alarm-reach.js',
@@ -198,6 +205,7 @@ export const INTENT = {
         intended: 'higher',
         nullWhen: ['no agent-ticks'],
         arithmetic: 'test/evo/observer-alarm-reach.test.js',
+        source: 'test/evo/metric-source-intent-calls.test.js',
     }),
     'eval.call_opportunity_neighbours': entry('intent', {
         module: 'js/evo/observer-alarm-reach.js',
