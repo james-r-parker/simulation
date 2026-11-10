@@ -6,7 +6,13 @@ import { brainLayout } from '../sim/brain-layout.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { createInputActivity, sampleInputActivity } from '../sim/input-activity.js';
 import { createHebbPools, hebbMetrics, sampleHebb } from './metrics-hebb.js';
-import { createLeakSkillPools, leakSkillMetrics, noteLeakSkillDeath } from './metrics-leak-skill.js';
+import {
+    createLeakSkillPools,
+    leakSkillMetrics,
+    noteLeakSkillBirth,
+    noteLeakSkillDeath,
+    resetLeakSkillSlot,
+} from './metrics-leak-skill.js';
 import { createMemoryPools, memoryMetrics, sampleMemory, snapshotHidden } from './metrics-memory.js';
 import {
     createMemoryOutPools,
@@ -30,7 +36,7 @@ export function createBrainPools(config, options = {}) {
         sampled: new Int32Array(0),
         memory: createMemoryPools(config, options),
         memoryOut: createMemoryOutPools(config),
-        leakSkill: createLeakSkillPools(),
+        leakSkill: createLeakSkillPools(config.maxAgents),
         hebb: createHebbPools(),
         activity: createInputActivity(layout),
         saturation: createSaturation(config, layout),
@@ -90,7 +96,7 @@ export function sampleBrainCheckpoint(observer, world) {
  */
 export function noteBrainDeath(observer, world, death) {
     noteMemoryOutDeath(observer.memoryOut, death.slot, death.ageTicks);
-    noteLeakSkillDeath(observer.leakSkill, { observer, world }, death);
+    noteLeakSkillDeath(observer.leakSkill, observer, death.slot);
 }
 
 /**
@@ -102,6 +108,19 @@ export function noteBrainDeath(observer, world, death) {
 export function resetBrainSlot(observer, slot) {
     resetMemoryOutSlot(observer.memoryOut, slot);
     resetSaturationSlot(observer.saturation, slot);
+    resetLeakSkillSlot(observer.leakSkill, slot);
+}
+
+/**
+ * Takes a birth into the brain instruments, while the newborn's genome row is in its slot. Call after `resetBrainSlot`.
+ * @param {Record<string, any>} observer the observer
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the newborn's slot
+ * @param {number} genomeId the newborn's genome id
+ * @returns {void}
+ */
+export function noteBrainBirth(observer, world, slot, genomeId) {
+    noteLeakSkillBirth(observer.leakSkill, world, slot, genomeId);
 }
 
 /**

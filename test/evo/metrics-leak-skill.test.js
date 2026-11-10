@@ -3,7 +3,9 @@ import {
     createLeakSkillPools,
     leakSkillMetrics,
     lifeLeak,
+    noteLeakSkillBirth,
     noteLeakSkillDeath,
+    resetLeakSkillSlot,
 } from '../../js/evo/metrics-leak-skill.js';
 import { leakRateOf } from '../../js/sim/traits.js';
 import { addBlob } from '../sim/helpers/life-world.js';
@@ -25,11 +27,12 @@ function run(lives, life, spec = 0) {
     for (let i = 0; i < lives; i++) {
         const f = life(i);
         world.weights.fill(f.gene, slot * layout.weightCount + layout.leakStart, (slot + 1) * layout.weightCount);
+        noteLeakSkillBirth(observer.leakSkill, world, slot, world.genomeId[slot]);
         const { intent } = observer;
         [intent.deliberateFood[slot], intent.chanceFood[slot]] = f.food ?? [0, 0];
         [intent.deliberateKills[slot], observer.kills[slot]] = f.kills ?? [0, 0];
         [intent.respondedEscape[slot], intent.escapedLife[slot]] = f.escapes ?? [0, 0];
-        noteLeakSkillDeath(observer.leakSkill, { observer, world }, { slot, genomeId: world.genomeId[slot] });
+        noteLeakSkillDeath(observer.leakSkill, observer, slot);
     }
     return observer;
 }
@@ -91,12 +94,28 @@ describe('the leak-skill correlations', () => {
         expect(leakSkillMetrics(grazing)['eval.leak_flee_corr']?.value).toBeLessThan(-0.9);
     });
 
-    it('skips a life whose slot the world has already refilled', () => {
+    it('keeps no leak for a newborn whose slot the world has already refilled, and skips that life', () => {
         const { world, observer } = observed({ brainHidden: 2, maxAgents: 8 });
         const slot = addBlob(world);
-        noteLeakSkillDeath(observer.leakSkill, { observer, world }, { slot, genomeId: world.genomeId[slot] + 1 });
+        noteLeakSkillBirth(observer.leakSkill, world, slot, world.genomeId[slot] + 1);
+        expect(observer.leakSkill.birthLeak[slot]).toBeNaN();
+        noteLeakSkillDeath(observer.leakSkill, observer, slot);
         expect(observer.leakSkill.rows).toBe(0);
-        expect(createLeakSkillPools().rows).toBe(0);
+    });
+
+    it('keeps the leak at birth, so a genome row cleared before the death does not change it', () => {
+        const { world, observer } = observed({ brainHidden: 2, maxAgents: 8 });
+        const slot = addBlob(world);
+        const { layout } = world;
+        world.weights.fill(2, slot * layout.weightCount + layout.leakStart, (slot + 1) * layout.weightCount);
+        noteLeakSkillBirth(observer.leakSkill, world, slot, world.genomeId[slot]);
+        const kept = lifeLeak(world, slot);
+        world.weights.fill(0, slot * layout.weightCount, (slot + 1) * layout.weightCount);
+        noteLeakSkillDeath(observer.leakSkill, observer, slot);
+        expect(observer.leakSkill.log.leak[0]).toBe(kept);
+        resetLeakSkillSlot(observer.leakSkill, slot);
+        expect(observer.leakSkill.birthLeak[slot]).toBeNaN();
+        expect(createLeakSkillPools(4).birthLeak).toEqual(new Float64Array(4).fill(NaN));
     });
 
     it('is watch', () => {

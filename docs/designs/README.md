@@ -83,5 +83,5 @@ Not designs of the simulation - audits, research, learnings and guides.
 
 - [Headless sim core - implementation contracts](headless-sim-core-contracts.md) - exact rules for building [headless-sim-core.md](headless-sim-core.md); that doc carries the status, phases and tasks
 - [Legacy audit](legacy-audit.md) - defects and inefficiencies in the legacy app (`js/*.js`), by file and symbol, each with the doc that removes it
-- [Metrics](metrics.md) - the 269 eval metrics of a live report, generated from `js/evo/metric-registry/`: 0 verified, 263 unverified, 6 deprecated
+- [Metrics](metrics.md) - the 269 eval metrics of a live report, generated from `js/evo/metric-registry/`: 0 verified, 266 unverified, 3 deprecated
 - [Simulation notes](sim-notes.md) - verified platform and library facts, and learnings from each phase
