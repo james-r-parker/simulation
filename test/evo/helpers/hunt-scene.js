@@ -3,7 +3,9 @@
 // A kill is deliberate when the hunter's prey tracker reads the prey (the one kill rule, `isDeliberateKill`).
 
 import { OUTPUT_INDEX } from '../../../js/sim/brain-layout.js';
-import { BORN_CAUSE } from '../../../js/sim/events.js';
+import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE, clearEvents } from '../../../js/sim/events.js';
+import { spawnAgent } from '../../../js/sim/spawn.js';
+import { observe } from '../../../js/evo/observer.js';
 import { sourceRun, zeroPolicy } from './source-world.js';
 
 export const FORAGER = 0;
@@ -11,8 +13,8 @@ export const PREDATOR = 1;
 
 /**
  * @param {{runTicks?: number, over?: Record<string, any>}} [options] the run length and config overrides
- * @returns {{run: any, world: any, spawn: (spec: number, cause?: number) => number}} the run, its world, and a spawn of
- *   a chosen specialisation and birth cause
+ * @returns {{run: any, world: any, spawn: (spec: number, cause?: number, lineage?: number) => number}} the run, its
+ *   world, and a spawn of a chosen specialisation, birth cause and (before the observer sees the birth) lineage
  */
 export function huntRun({ runTicks = 0, over = {} } = {}) {
     const next = { spec: FORAGER };
@@ -21,9 +23,15 @@ export function huntRun({ runTicks = 0, over = {} } = {}) {
     return {
         run,
         world: run.world,
-        spawn(spec, cause = BORN_CAUSE.INITIAL) {
+        spawn(spec, cause = BORN_CAUSE.INITIAL, lineage = undefined) {
             next.spec = spec;
-            const slot = run.spawn(cause);
+            const { world } = run;
+            clearEvents(world.events);
+            const slot = spawnAgent(world, policy, cause);
+            if (lineage !== undefined) {
+                setBornLineage(world, slot, lineage);
+            }
+            observe(run.observer, world);
             next.spec = FORAGER;
             return slot;
         },
@@ -31,32 +39,62 @@ export function huntRun({ runTicks = 0, over = {} } = {}) {
 }
 
 /**
- * Runs one step at the run's current tick in which `hunter` bites `victim` (energy 1) dead from 30 px away.
+ * Gives a newborn a lineage in the world and in its `AgentBorn` record, before the observer reads the birth.
+ * @param {any} world the world
+ * @param {number} slot the newborn
+ * @param {number} lineage the lineage id
+ * @returns {void}
+ */
+function setBornLineage(world, slot, lineage) {
+    world.lineageId[slot] = lineage;
+    const { data, count } = world.events;
+    for (let i = 0; i < count; i++) {
+        const o = i * EVENT_STRIDE;
+        if (data[o] === EVENT_TYPE.AGENT_BORN && data[o + 2] === slot) {
+            data[o + 4] = lineage;
+        }
+    }
+}
+
+/**
+ * Runs one step at the run's current tick in which `hunter` bites `victim` from 30 px away, clear of the wall at x 500.
  * @param {any} run the run
  * @param {number} hunter the biter's slot
  * @param {number} victim the victim's slot
- * @param {{deliberate?: boolean, age?: number}} [options] whether the prey tracker reads the prey, and the hunter's
- *   `ageTicks` before the step
+ * @param {{deliberate?: boolean, age?: number, victimEnergy?: number}} [options] whether the prey tracker reads the
+ *   prey, the hunter's `ageTicks` before the step, and the victim's energy (1 is a fatal bite; the default 800 is not)
  * @returns {void}
  */
-export function killStep(run, hunter, victim, { deliberate = true, age } = {}) {
+export function biteStep(run, hunter, victim, { deliberate = true, age, victimEnergy = 800 } = {}) {
     const { world } = run;
-    world.x[hunter] = 500;
+    world.x[hunter] = 200;
     world.y[hunter] = 500;
     world.angle[hunter] = 0;
     world.energy[hunter] = 800;
     if (age !== undefined) {
         world.ageTicks[hunter] = age;
     }
-    world.x[victim] = 530;
+    world.x[victim] = 230;
     world.y[victim] = 500;
-    world.energy[victim] = 1;
+    world.energy[victim] = victimEnergy;
     world.meritPrey.seen[hunter] = world.tick;
     world.meritPrey.bits[hunter] = deliberate ? 0xff : 0;
     world.meritPrey.turn[hunter] = world.tick;
     run.want(hunter, OUTPUT_INDEX.BITE);
     run.tick();
     run.release(hunter, OUTPUT_INDEX.BITE);
+}
+
+/**
+ * Runs one step in which `hunter` bites `victim` (energy 1) dead.
+ * @param {any} run the run
+ * @param {number} hunter the biter's slot
+ * @param {number} victim the victim's slot
+ * @param {{deliberate?: boolean, age?: number}} [options] as `biteStep`
+ * @returns {void}
+ */
+export function killStep(run, hunter, victim, options = {}) {
+    biteStep(run, hunter, victim, { ...options, victimEnergy: 1 });
 }
 
 /**

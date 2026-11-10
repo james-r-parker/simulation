@@ -44,6 +44,9 @@
 const SOURCE_BY_MODULE = Object.freeze({
     'js/evo/scene-hunters.js': 'test/evo/metric-source-hunters.test.js',
     'js/evo/scene-hunter-age.js': 'test/evo/metric-source-hunters.test.js',
+    'js/evo/scene-bite.js': 'test/evo/metric-source-hunter-bites.test.js',
+    'js/evo/scene-bite-life.js': 'test/evo/metric-source-hunter-bites.test.js',
+    'js/evo/metrics-combat.js': 'test/evo/metric-source-hunter-bites.test.js',
 });
 
 /**
