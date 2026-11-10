@@ -84,6 +84,14 @@ describe('the report', () => {
         expect(second.split(/\s{2,}/).at(-1)).toBe('-');
         expect(reportJson(['a'], rows).rows[0].meanEdge).toBe(0);
     });
+
+    it('prints first-match lost-trial reasons in the cell', () => {
+        const [, first] = formatTable(
+            ['prey-ahead'],
+            [{ label: 'g', cells: { 'prey-ahead': { winShare: 0.5, edge: 0.1, lossReasons: { 'never-bit': 2 } } } }],
+        );
+        expect(first).toContain('never-bit:2');
+    });
 });
 
 describe('eliteSubjects', () => {

@@ -99,21 +99,25 @@ describe('the end state', () => {
 });
 
 describe('families per basin', () => {
-    it('takes the smaller basin mean over the last quarter, skipping basins under BASIN_MIN_ALIVE', () => {
+    it('averages both basin means over the last quarter, with the under-floor basin contributing zero', () => {
         const scene = createBalanceScene();
         // Early on the west is richer than anything late; only the last quarter (ticks 3000 and 4000) counts.
         sampleBalance(scene, handWorld([...families(0, [5, 5, 5, 5, 5, 5]), ...families(1, [20])], 1000));
         sampleBalance(scene, handWorld([...families(0, [10, 10, 10, 10]), ...families(1, [10, 10])], 3000));
         sampleBalance(scene, handWorld([...families(0, [10, 10, 10, 10]), ...families(1, [10, 10, 10, 10])], 4000));
         const metrics = balanceMetrics(scene, { tick: 4000 });
-        expect(metrics['eval.basin_lineages_alive']?.value).toBeCloseTo(3, 12);
-        expect(metrics['eval.basin_lineage_effective']?.value).toBeCloseTo(3, 12);
+        expect(metrics['eval.basin_lineages_alive']?.value).toBeCloseTo(3.5, 12);
+        expect(metrics['eval.basin_lineage_effective']?.value).toBeCloseTo(3.5, 12);
+        expect(metrics['eval.basin_lineages_alive.west']?.value).toBe(4);
+        expect(metrics['eval.basin_lineages_alive.east']?.value).toBe(3);
+        expect(metrics['eval.basin_lineage_effective.west']?.value).toBe(4);
+        expect(metrics['eval.basin_lineage_effective.east']?.value).toBe(3);
     });
 
-    it('reads the one basin when only one qualifies, and null when none does', () => {
+    it('keeps the under-floor basin at zero and returns null only when both are under floor', () => {
         const one = createBalanceScene();
         sampleBalance(one, handWorld([...families(0, [10, 10]), ...families(1, [BASIN_MIN_ALIVE - 1])], 1000));
-        expect(balanceMetrics(one, { tick: 1000 })['eval.basin_lineages_alive']).toEqual({ value: 2 });
+        expect(balanceMetrics(one, { tick: 1000 })['eval.basin_lineages_alive']).toEqual({ value: 1 });
         const empty = createBalanceScene();
         sampleBalance(empty, handWorld(families(0, [5]), 1000));
         const metric = balanceMetrics(empty, { tick: 1000 })['eval.basin_lineage_effective'];
@@ -124,6 +128,6 @@ describe('families per basin', () => {
     it('ignores dead slots', () => {
         const scene = createBalanceScene();
         sampleBalance(scene, handWorld(families(0, [BASIN_MIN_ALIVE]), 1000));
-        expect(balanceMetrics(scene, { tick: 1000 })['eval.basin_lineages_alive']).toEqual({ value: 1 });
+        expect(balanceMetrics(scene, { tick: 1000 })['eval.basin_lineages_alive']).toEqual({ value: 0.5 });
     });
 });

@@ -17,9 +17,12 @@ export const CURVE_METRICS = Object.freeze([
     'eval.hunter_income_share.herd',
     'eval.hunter_kill_rate_by_source.mate-hunter-parent',
     'eval.hunter_kill_rate_by_source.split-hunter-parent',
-    'eval.bite_on_prey',
-    'eval.bite_off_kin',
-    'eval.bite_off_other',
+    'eval.bite_wish_with_prey_in_jaws',
+    'eval.bite_wish_with_kin_in_jaws',
+    'eval.bite_wish_with_other_in_jaws',
+    'eval.bite_on_prey_view',
+    'eval.bite_off_kin_view',
+    'eval.bite_off_other_view',
 ]);
 /** Checkpoints a series is read over by `findPlateau`. */
 export const PLATEAU_WINDOW = 3;
@@ -28,14 +31,14 @@ export const PLATEAU_RISE = 0.05;
 /**
  * The series `findPlateau` reads, by their key in a curve row, each with the direction that is progress: 1 when it should
  * rise, -1 when it should fall (a hunter that kills nothing is the failure, so its share falling is learning; a hunter that
- * bites more often with prey in its jaws is learning the bite). The mean drill edge stays a column of the curve and is not
+ * bites when prey is in its pooled view is learning the bite). The mean drill edge stays a column of the curve and is not
  * read here.
  */
 export const PLATEAU_SERIES = Object.freeze([
     Object.freeze({ key: 'qdScore', direction: 1 }),
     Object.freeze({ key: 'eval.food_energy_per_1k', direction: 1 }),
     Object.freeze({ key: 'eval.hunter_zero_kill_share', direction: -1 }),
-    Object.freeze({ key: 'eval.bite_on_prey', direction: 1 }),
+    Object.freeze({ key: 'eval.bite_on_prey_view', direction: 1 }),
 ]);
 
 /**
@@ -46,6 +49,7 @@ export const PLATEAU_SERIES = Object.freeze([
  * @property {number} wallSeconds wall time since the run began
  * @property {import('./archive.js').Archive} archive the archive at the checkpoint
  * @property {Record<string, number | null>} drillEdges each drill's mean edge over the champions it applies to (null: none)
+ * @property {Record<string, Record<string, number> | null>} [drillLossReasons] first-match lost-trial reason counts by drill
  * @property {Record<string, number | null>} metrics `CURVE_METRICS` averaged over the eval seeds (null: no value)
  */
 
@@ -83,7 +87,16 @@ export function meanDrillEdge(edges) {
  *   `coverage`, `qdScore`, `best` (each specialisation's best lower bound), `drill` (each drill's mean edge),
  *   `drillEdge` (their mean) and each of `CURVE_METRICS`
  */
-export function curvePoint({ generation, stage, trainTicks, wallSeconds, archive, drillEdges, metrics }) {
+export function curvePoint({
+    generation,
+    stage,
+    trainTicks,
+    wallSeconds,
+    archive,
+    drillEdges,
+    drillLossReasons = {},
+    metrics,
+}) {
     return {
         generation,
         stage,
@@ -93,6 +106,7 @@ export function curvePoint({ generation, stage, trainTicks, wallSeconds, archive
         qdScore: qdScore(archive),
         best: bestLowerBounds(archive),
         drill: drillEdges,
+        drillLossReasons,
         drillEdge: meanDrillEdge(drillEdges),
         ...Object.fromEntries(CURVE_METRICS.map((name) => [name, metrics[name] ?? null])),
     };
@@ -129,7 +143,7 @@ function flatAfter(points, i, { key, direction }) {
 /**
  * @param {Record<string, any>[]} points the curve rows in order
  * @returns {{index: number, generation: number} | null} the first checkpoint after which `qdScore` and
- *   `eval.food_energy_per_1k` and `eval.bite_on_prey` each rise, and `eval.hunter_zero_kill_share` falls, by less than 5% of
+ *   `eval.food_energy_per_1k` and `eval.bite_wish_with_prey_in_jaws` each rise, and `eval.hunter_zero_kill_share` falls, by less than 5% of
  *   its value over the next 3 checkpoints; null for "no plateau yet" (also when fewer than 4 checkpoints exist or a series has no value)
  */
 export function findPlateau(points) {

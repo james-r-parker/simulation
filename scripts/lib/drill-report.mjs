@@ -4,6 +4,7 @@
  * @typedef {object} DrillCell
  * @property {number} winShare the win share
  * @property {number} edge the win share minus the random brains' mean
+ * @property {Record<string, number>} [lossReasons] counts by first-match lost-trial reason
  */
 
 /**
@@ -34,7 +35,13 @@ function signed(value) {
  * @returns {string} `win (edge)`, or `-` for a skipped drill
  */
 function cellText(cell) {
-    return cell === null ? '-' : `${cell.winShare.toFixed(2)} (${signed(cell.edge)})`;
+    if (cell === null) {
+        return '-';
+    }
+    const reasons = Object.entries(cell.lossReasons ?? {})
+        .filter(([, n]) => n > 0)
+        .map(([why, n]) => `${why}:${n}`);
+    return `${cell.winShare.toFixed(2)} (${signed(cell.edge)}${reasons.length ? `; ${reasons.join(',')}` : ''})`;
 }
 
 /**

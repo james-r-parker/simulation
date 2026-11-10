@@ -26,9 +26,6 @@
     "eval.birth_source_share.split": "watch",
     "eval.births_per_1k": "higher",
     "eval.bite_idle": "lower",
-    "eval.bite_off_kin": "lower",
-    "eval.bite_off_other": "lower",
-    "eval.bite_on_prey": "higher",
     "eval.body_plan_coverage": "higher",
     "eval.boom_bust_count": "lower",
     "eval.born_share": "watch",
@@ -260,7 +257,10 @@
     "eval.winter_basin_density": "watch",
     "eval.winter_patch_proximity": "watch",
     "eval.winter_pop_ratio": "watch",
-    "eval.winter_shelter_distance": "watch"
+    "eval.winter_shelter_distance": "watch",
+    "eval.bite_wish_with_prey_in_jaws": "higher",
+    "eval.bite_wish_with_kin_in_jaws": "lower",
+    "eval.bite_wish_with_other_in_jaws": "lower"
   },
   "intendedLower": [
     "eval.chance_food_energy_per_1k",

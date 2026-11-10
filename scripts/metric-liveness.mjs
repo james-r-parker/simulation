@@ -6,6 +6,7 @@ import { METRICS } from '../js/evo/metric-registry/index.js';
 import { meetsLivenessBar } from '../js/evo/metric-registry/status.js';
 import { withCurrentNames } from '../js/evo/metric-registry/renames.js';
 import { validateReport } from '../js/evo/report.js';
+import { createMetricWriterMain, runAsCli } from './lib/metric-writer-cli.mjs';
 
 const OUTPUT = fileURLToPath(new URL('../js/evo/metric-registry/liveness.js', import.meta.url));
 const USAGE = 'usage: metric-liveness <report.json> [--write]';
@@ -90,38 +91,18 @@ function printReadings(readings, print) {
     }
 }
 
-/**
- * @param {string[]} args command-line arguments
- * @param {{metrics?: Readonly<Record<string, any>>, output?: string, read?: (path: string) => Record<string, any>,
- *   print?: (line: string) => void}} [options] injectable IO for the hand-built report tests
- * @returns {number} the process exit code
- */
-export function main(
-    args,
-    { metrics = METRICS, output = OUTPUT, read, print = (line) => process.stdout.write(`${line}\n`) } = {},
-) {
-    const parsed = parseArgs(args);
-    if (parsed === null) {
-        process.stderr.write(`${USAGE}\n`);
-        return 2;
-    }
+/** @param {{reportPath: string, write: boolean}} parsed arguments @param {{metrics: Readonly<Record<string, any>>, output: string, read?: (path: string) => any, print: (line: string) => void}} io IO */
+function applyRead(parsed, { metrics, output, read, print }) {
     const { reportPath, write } = parsed;
-    try {
-        const report = read === undefined ? JSON.parse(readFileSync(reportPath, 'utf8')) : read(reportPath);
-        const readings = measureLiveness(report, reportPath, metrics);
-        printReadings(readings, print);
-        if (write) {
-            writeFileSync(output, renderLivenessModule(readings));
-            print(`wrote ${output}`);
-        }
-        return 0;
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        process.stderr.write(`${message}\n`);
-        return 1;
+    const report = read === undefined ? JSON.parse(readFileSync(reportPath, 'utf8')) : read(reportPath);
+    const readings = measureLiveness(report, reportPath, metrics);
+    printReadings(readings, print);
+    if (write) {
+        writeFileSync(output, renderLivenessModule(readings));
+        print(`wrote ${output}`);
     }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-    process.exitCode = main(process.argv.slice(2));
-}
+export const main = createMetricWriterMain({ parse: parseArgs, usage: USAGE }, METRICS, OUTPUT, applyRead);
+
+runAsCli(import.meta.url, main);

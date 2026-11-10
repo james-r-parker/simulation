@@ -6,6 +6,10 @@ import { sourceRun, starve } from './helpers/source-world.js';
 import expected from './helpers/metric-source-scenes-social-baseline.js';
 
 const SOURCE_METRICS = [
+    'eval.basin_families.east',
+    'eval.basin_families.west',
+    'eval.basin_family_effective.east',
+    'eval.basin_family_effective.west',
     'eval.basin_families',
     'eval.basin_family_effective',
     'eval.basin_spec_divergence',
@@ -93,7 +97,7 @@ describe('social metrics from a scripted source run', () => {
         const registryNames = Object.entries(METRICS)
             .filter(([, entry]) => entry.family === 'scenes-social')
             .map(([name]) => name);
-        expect(names).toHaveLength(17);
+        expect(names).toHaveLength(21);
         expect(names).toEqual(registryNames);
         expect(Object.fromEntries(names.map((name) => [name, actual[name]]))).toEqual(expected);
         expect(run.observer.deathCount).toBe(2);
@@ -119,6 +123,8 @@ describe('social metrics from a scripted source run', () => {
         const metrics = basinSourceRun('full').metrics();
         expect(metrics['eval.basin_families']).toEqual({ value: 1 });
         expect(metrics['eval.basin_family_effective']).toEqual({ value: 1 });
+        expect(metrics['eval.basin_families.west']).toEqual({ value: 1 });
+        expect(metrics['eval.basin_families.east']).toEqual({ value: 1 });
     });
 
     it('measures living juvenile hunters at their parent and sibling distances', () => {

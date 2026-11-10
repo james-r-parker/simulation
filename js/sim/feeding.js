@@ -184,6 +184,7 @@ function applyBite(world, biter, victim) {
     transferEnergy(world, victim, biter, bite * taken);
     world.biteEnergy[biter] += world.transferGained;
     const fatal = wasAlive && world.energy[victim] <= 0;
+    noteFatalBiteObservation(world, biter, victim, fatal);
     let gained = world.transferGained;
     if (fatal && config.predatorKillEnergy > 0) {
         gained += addEnergy(world, biter, config.predatorKillEnergy, ENERGY_SOURCE.KILL);
@@ -208,6 +209,17 @@ function applyBite(world, biter, victim) {
     depositPheromone(world, world.danger, x[victim], y[victim]);
 }
 
+/** @param {Record<string, any>} world sim world @param {number} biter biter @param {number} victim victim @param {boolean} fatal whether the bite killed */
+function noteFatalBiteObservation(world, biter, victim, fatal) {
+    if (!fatal) {
+        return;
+    }
+    // `applyBite` is reached only through `canBite`, which requires a hunter and a prey-sized non-kin target.
+    const at = biter * 8;
+    world.fatalBiteObservations[at + 3] += 1;
+    world.fatalBiteObservations[at + 7] += 1;
+}
+
 /**
  * Charges `recoilEnergy` to a hunter that tries to bite something the bite rule refuses (kin, or too large), once per
  * tick however many it touches. The stamp (tick + 1, so a fresh slot's 0 never matches) is derived state outside
@@ -227,7 +239,9 @@ function recoil(world, hunter, target) {
         return;
     }
     recoilStamp[hunter] = world.tick + 1;
-    world.ledgerBiteCost[hunter] += removeEnergy(world, hunter, config.recoilEnergy, LOSS_CAUSE.COST);
+    const charged = removeEnergy(world, hunter, config.recoilEnergy, LOSS_CAUSE.COST);
+    world.ledgerBiteCost[hunter] += charged;
+    world.recoilEnergyLife[hunter] += charged;
 }
 
 /**
@@ -257,6 +271,7 @@ function lunge(world, biter, other) {
  */
 export function feed(world, hash) {
     const { alive, contacts, contactCount } = world;
+    world.fatalBiteObservations.fill(0);
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1) {
             eatAround(world, hash, slot);

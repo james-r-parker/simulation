@@ -102,16 +102,32 @@ export function basinMean(scene, name, basin, { from, floor }) {
  *   `<column><basin>` columns (this one and `scene-families.js`)
  * @param {string} column the per-basin column
  * @param {number} lastTick the run's last tick
- * @returns {import('./metrics-stats.js').MetricResult} the smaller basin mean over the last quarter's checkpoints
+ * @returns {import('./metrics-stats.js').MetricResult} the equal-weight mean of both basins' checkpoint means
  */
 export function lastQuarterBasinMean(scene, column, lastTick) {
     const from = lastTick * (1 - LAST_SHARE);
-    let smallest = Infinity;
+    let sum = 0;
+    let present = 0;
     for (let basin = 0; basin < 2; basin++) {
-        const mean = basinMean(scene, `${column}${basin}`, basin, { from, floor: BASIN_MIN_ALIVE });
-        smallest = Number.isNaN(mean) ? smallest : Math.min(smallest, mean);
+        const mean = basinMean(scene, `${column}${basin}`, basin, { from, floor: 0 });
+        const alive = basinMean(scene, `alive${basin}`, basin, { from, floor: 0 });
+        if (!Number.isNaN(mean) && alive >= BASIN_MIN_ALIVE) {
+            sum += mean;
+            present += 1;
+        }
     }
-    return smallest === Infinity ? none(`no basin held ${BASIN_MIN_ALIVE} agents in the last quarter`) : ok(smallest);
+    return present === 0 ? none(`both basins held under ${BASIN_MIN_ALIVE} agents in the last quarter`) : ok(sum / 2);
+}
+
+/** @param {Record<string, any>} scene the checkpoint log @param {string} column the per-basin column @param {number} lastTick last run tick @param {number} basin basin index @returns {import('./metrics-stats.js').MetricResult} one basin's last-quarter mean, zero when it stays below the floor */
+function lastQuarterBasinValue(scene, column, lastTick, basin) {
+    const from = lastTick * (1 - LAST_SHARE);
+    const alive = basinMean(scene, `alive${basin}`, basin, { from, floor: 0 });
+    if (Number.isNaN(alive)) {
+        return none('no checkpoint in the last quarter');
+    }
+    const value = basinMean(scene, `${column}${basin}`, basin, { from, floor: 0 });
+    return ok(alive < BASIN_MIN_ALIVE ? 0 : value);
 }
 
 /**
@@ -146,6 +162,10 @@ export function balanceMetrics(scene, world) {
     const families = {
         'eval.basin_lineages_alive': lastQuarterBasinMean(scene, 'lineages', lastTick),
         'eval.basin_lineage_effective': lastQuarterBasinMean(scene, 'effective', lastTick),
+        'eval.basin_lineages_alive.west': lastQuarterBasinValue(scene, 'lineages', lastTick, 0),
+        'eval.basin_lineages_alive.east': lastQuarterBasinValue(scene, 'lineages', lastTick, 1),
+        'eval.basin_lineage_effective.west': lastQuarterBasinValue(scene, 'effective', lastTick, 0),
+        'eval.basin_lineage_effective.east': lastQuarterBasinValue(scene, 'effective', lastTick, 1),
     };
     if (world.alive === undefined) {
         const reason = none('no world at the last tick');

@@ -55,6 +55,12 @@ describe('loadGenome', () => {
 });
 
 describe('evalReflex', () => {
+    it('resets plastic fast outputs between sequences when Hebbian learning is enabled', () => {
+        const hebbian = { hebbianRate: 0.05 };
+        const table = buildCaseTable(caseNamed('approach-food'), { trials: 1, config: hebbian });
+        expect(evalReflex(brains.slice(0, 1), [table], { config: hebbian })).toHaveLength(1);
+    });
+
     it('scores every genome on every case with passes, trials, pass share and the fast share', () => {
         const results = evalReflex(brains.slice(0, 2), tables);
         expect(Object.keys(results[0])).toEqual(tables.map((t) => t.name));

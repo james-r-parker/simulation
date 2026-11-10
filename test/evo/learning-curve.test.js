@@ -21,7 +21,7 @@ function curve(qd, food, zero, edge = [], bite = qd.map(() => 0.5)) {
         'eval.food_energy_per_1k': food[i],
         'eval.hunter_zero_kill_share': zero[i],
         drillEdge: edge[i] ?? null,
-        'eval.bite_on_prey': bite[i],
+        'eval.bite_on_prey_view': bite[i],
     }));
 }
 
@@ -97,6 +97,7 @@ describe('curvePoint', () => {
             wallSeconds: 3,
             archive,
             drillEdges: { 'food-ahead': 0.5, 'prey-ahead': -0.1, 'two-foods': null },
+            drillLossReasons: { 'prey-ahead': { 'never-bit': 2, 'never-in-jaws': 3 } },
             metrics,
         });
         expect(point).toMatchObject({
@@ -104,6 +105,7 @@ describe('curvePoint', () => {
             stage: 'nursery',
             trainTicks: 600,
             drillEdge: 0.2,
+            drillLossReasons: { 'prey-ahead': { 'never-bit': 2, 'never-in-jaws': 3 } },
             'eval.food_energy_per_1k': 0,
             'eval.escape_share': CURVE_METRICS.indexOf('eval.escape_share'),
         });
@@ -130,9 +132,12 @@ describe('curvePoint', () => {
             'eval.escape_share',
             'eval.food_energy_per_1k',
             'eval.births_per_1k',
-            'eval.bite_on_prey',
-            'eval.bite_off_kin',
-            'eval.bite_off_other',
+            'eval.bite_wish_with_prey_in_jaws',
+            'eval.bite_wish_with_kin_in_jaws',
+            'eval.bite_wish_with_other_in_jaws',
+            'eval.bite_on_prey_view',
+            'eval.bite_off_kin_view',
+            'eval.bite_off_other_view',
         ];
         expect([...CURVE_METRICS].sort()).toEqual([...names].sort());
         const metrics = Object.fromEntries(names.map((name, i) => [name, i + 1]));

@@ -1,19 +1,21 @@
 // The bite detectors (hunter-practice.md Phase 1c, T20 and T21): where a hunter's wish to bite goes. Each tick, over the
-// alive `canHunt` agents, the body in the jaws is classified as `agentChannel` in js/sim/ray-march.js classifies it (kin
-// first, then prey when `couldBite`, else other) and the brain's `BITE` output (the wish `recoil` in js/sim/feeding.js
-// reads) is tallied against it.
+// alive `canHunt` agents, each body in the jaws is classified (kin first, then prey when `couldBite`, else other) and the
+// brain's `BITE` output is tallied against each body independently.
 //
-// - `eval.bite_on_prey`: recall, the share of hunter-ticks with prey in the jaws with a wish above 0.
-// - `eval.bite_off_kin`, `eval.bite_off_other`: the share with a wish when kin, or a body too big to take, is in the jaws.
+// - `eval.bite_wish_with_prey_in_jaws`, `eval.bite_wish_with_kin_in_jaws` and
+//   `eval.bite_wish_with_other_in_jaws`: the share of each body opportunity with a wish above 0.
 // - `eval.bite_idle`: the share with a wish when nothing is in the jaws (biting air).
+// - `eval.bite_on_prey_view`, `eval.bite_off_kin_view` and `eval.bite_off_other_view`: the share with a wish while the
+//   corresponding pooled view channel is active, whether or not a body is in the jaws.
 //
 // The first three are `null` under 30 opportunities. Detectors only, never fitness. The tally reads the contact list the
-// feed phase used, after the step: a body that died in that step (a kill, a hunter that dies) is already zeroed and is
-// not counted, so the shares read the bites that did not finish the victim. A hunter with several bodies in the jaws is
-// counted once, as the highest of prey, kin, other. The scratch is preallocated; nothing is allocated per tick.
+// feed phase used, after the step. Fatal bites are preserved in preallocated sim scratch before `reap` frees the victim.
+// A hunter with several bodies in the jaws contributes each one as an opportunity. The view reads pooled inputs without
+// checking the jaws. Nothing is allocated per tick.
 
 import { couldBite, inJaws } from '../sim/bite-rule.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
+import { inputOffsets } from '../sim/brain-layout.js';
 import { isKin } from '../sim/kin.js';
 import { none, ok } from './metrics-stats.js';
 
@@ -22,17 +24,25 @@ export const BITE_MIN_OPPORTUNITIES = 30;
 
 /** What is in a hunter's jaws, ordered by priority when several bodies are. */
 export const JAWS = Object.freeze({ IDLE: 0, OTHER: 1, KIN: 2, PREY: 3 });
+const VIEW = Object.freeze({ PREY: 0, KIN: 1, OTHER: 2 });
+const VIEW_CHANNELS = Object.freeze([
+    Object.freeze({ name: 'prey', index: VIEW.PREY }),
+    Object.freeze({ name: 'kin', index: VIEW.KIN }),
+    Object.freeze({ name: 'other', index: VIEW.OTHER }),
+]);
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config (`maxAgents`)
- * @returns {Record<string, any>} an empty bite scene: the per-slot jaws scratch and, per `JAWS` kind, the hunter-ticks and
- *   the hunter-ticks with a wish to bite
+ * @returns {Record<string, any>} an empty bite scene: the per-slot contacted scratch and, per `JAWS` kind, body
+ *   opportunities and opportunities with a wish to bite
  */
 export function createBiteScene(config) {
     return {
         jaws: new Uint8Array(config.maxAgents),
         opportunities: new Float64Array(4),
         wishes: new Float64Array(4),
+        viewOpportunities: new Float64Array(3),
+        viewWishes: new Float64Array(3),
     };
 }
 
@@ -57,32 +67,75 @@ function mark(scene, world, { hunter, body }) {
     } else if (couldBite(world, hunter, body)) {
         kind = JAWS.PREY;
     }
-    if (kind > scene.jaws[hunter]) {
-        scene.jaws[hunter] = kind;
-    }
+    scene.jaws[hunter] = 1;
+    scene.opportunities[kind] += 1;
+    scene.wishes[kind] += world.outputs[hunter * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 ? 1 : 0;
 }
 
 /**
- * Tallies the tick: the body in each hunter's jaws against its wish to bite. Call it once a tick after `step`, with the
- * tick's contact list still in the world.
+ * Tallies the tick: each body in every hunter's jaws against its wish to bite. Call it once a tick after `step`, with the
+ * tick's contact list still in the world. The fatal-bite scratch preserves bodies freed by `reap`.
  * @param {Record<string, any>} scene the bite scene
  * @param {Record<string, any>} world the world
  * @returns {void}
  */
 export function tickBite(scene, world) {
+    addFatalBites(scene, world);
     const { contacts, contactCount } = world;
     const { jaws } = scene;
     for (let c = 0; c < contactCount; c++) {
         mark(scene, world, { hunter: contacts[2 * c], body: contacts[2 * c + 1] });
         mark(scene, world, { hunter: contacts[2 * c + 1], body: contacts[2 * c] });
     }
+    const offsets = world.pooled !== undefined && world.layout !== undefined ? inputOffsets(world.config) : null;
     for (let slot = 0; slot < jaws.length; slot++) {
-        if (world.alive[slot] === 1 && world.huntBySpec[world.spec[slot]] === 1) {
-            const kind = jaws[slot];
-            scene.opportunities[kind] += 1;
-            scene.wishes[kind] += world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 ? 1 : 0;
+        countHunterTick(scene, world, slot, offsets);
+    }
+}
+
+/** @param {Record<string, any>} scene bite scene @param {Record<string, any>} world sim world @returns {void} */
+function addFatalBites(scene, world) {
+    const fatal = world.fatalBiteObservations;
+    if (fatal === undefined) {
+        return;
+    }
+    for (let slot = 0; slot < world.alive.length; slot++) {
+        const at = slot * 8;
+        for (let kind = JAWS.OTHER; kind <= JAWS.PREY; kind++) {
+            const count = fatal[at + kind];
+            scene.opportunities[kind] += count;
+            scene.wishes[kind] += fatal[at + 4 + kind];
+            if (count > 0) {
+                scene.jaws[slot] = 1;
+            }
         }
-        jaws[slot] = 0;
+    }
+}
+
+/** @param {Record<string, any>} scene bite scene @param {Record<string, any>} world sim world @param {number} slot slot @param {any} offsets pooled offsets or null @returns {void} */
+function countHunterTick(scene, world, slot, offsets) {
+    if (world.alive[slot] === 1 && world.huntBySpec[world.spec[slot]] === 1) {
+        const wished = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0;
+        if (scene.jaws[slot] === 0) {
+            scene.opportunities[JAWS.IDLE] += 1;
+            scene.wishes[JAWS.IDLE] += wished ? 1 : 0;
+        }
+        countView(scene, world, { slot, offsets, wished });
+    }
+    scene.jaws[slot] = 0;
+}
+
+/** @param {Record<string, any>} scene scene @param {Record<string, any>} world sim world @param {{slot: number, offsets: any, wished: boolean}} sample current hunter */
+function countView(scene, world, { slot, offsets, wished }) {
+    if (offsets === null) {
+        return;
+    }
+    const input = slot * world.layout.inputCount;
+    for (const { name, index } of VIEW_CHANNELS) {
+        if (world.pooled[input + offsets.pooled[name]] > 0) {
+            scene.viewOpportunities[index] += 1;
+            scene.viewWishes[index] += wished ? 1 : 0;
+        }
     }
 }
 
@@ -105,10 +158,19 @@ function wishShare(scene, kind, least) {
  * @returns {import('./metrics-stats.js').MetricRecord} the four bite shares
  */
 export function biteMetrics(scene) {
+    const viewShare = (/** @type {number} */ index) => {
+        const n = scene.viewOpportunities[index];
+        return n < BITE_MIN_OPPORTUNITIES
+            ? none(`${n} hunter-ticks with that pooled view channel active (a share needs ${BITE_MIN_OPPORTUNITIES})`)
+            : ok(scene.viewWishes[index] / n);
+    };
     return {
-        'eval.bite_on_prey': wishShare(scene, JAWS.PREY, BITE_MIN_OPPORTUNITIES),
-        'eval.bite_off_kin': wishShare(scene, JAWS.KIN, BITE_MIN_OPPORTUNITIES),
-        'eval.bite_off_other': wishShare(scene, JAWS.OTHER, BITE_MIN_OPPORTUNITIES),
+        'eval.bite_wish_with_prey_in_jaws': wishShare(scene, JAWS.PREY, BITE_MIN_OPPORTUNITIES),
+        'eval.bite_wish_with_kin_in_jaws': wishShare(scene, JAWS.KIN, BITE_MIN_OPPORTUNITIES),
+        'eval.bite_wish_with_other_in_jaws': wishShare(scene, JAWS.OTHER, BITE_MIN_OPPORTUNITIES),
         'eval.bite_idle': wishShare(scene, JAWS.IDLE, 1),
+        'eval.bite_on_prey_view': viewShare(VIEW.PREY),
+        'eval.bite_off_kin_view': viewShare(VIEW.KIN),
+        'eval.bite_off_other_view': viewShare(VIEW.OTHER),
     };
 }

@@ -8,7 +8,7 @@ import { validateChampion } from '../js/evo/league.js';
 import { brainLayout } from '../js/sim/brain-layout.js';
 import { createConfig } from '../js/sim/config.js';
 import { TRAINER_DESCRIPTOR } from '../js/evo/trainer.js';
-import { drillEdges, averageMetrics } from '../scripts/lib/train-checkpoint.mjs';
+import { drillEdges, drillLossReasons, averageMetrics } from '../scripts/lib/train-checkpoint.mjs';
 import { loadStages, saveArchive } from '../scripts/lib/train-state.mjs';
 import { formatCurve, readCurve } from '../scripts/train-curve.mjs';
 import { runExport } from '../scripts/train-export.mjs';
@@ -68,6 +68,15 @@ describe('checkpoint helpers', () => {
         expect(edges['food-ahead']).toBeCloseTo(0.3);
         expect(edges['prey-ahead']).toBeCloseTo(0.3);
         expect(edges['two-foods']).toBeNull();
+        expect(
+            drillLossReasons(
+                [
+                    { cells: { 'prey-ahead': { lossReasons: { 'never-bit': 2 } } } },
+                    { cells: { 'prey-ahead': { lossReasons: { 'bit-prey-lived': 1 } } } },
+                ],
+                2,
+            )['prey-ahead'],
+        ).toEqual({ 'never-bit': 2, 'bit-prey-lived': 1 });
         const m = averageMetrics([
             { 'eval.hunter_zero_kill_share': 1 },
             { 'eval.hunter_zero_kill_share': null },
@@ -93,7 +102,7 @@ describe('train:curve', () => {
             drillEdge: 0.2,
             'eval.food_energy_per_1k': 100,
             'eval.hunter_zero_kill_share': 0.5,
-            'eval.bite_on_prey': 0.4,
+            'eval.bite_on_prey_view': 0.4,
         });
         writeFileSync(join(dir, 'curve.jsonl'), [10, 20, 30, 40, 50].map((g) => JSON.stringify(row(g))).join('\n'));
         const lines = formatCurve(readCurve(dir));

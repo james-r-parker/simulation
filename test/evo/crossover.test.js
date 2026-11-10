@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { crossNeurons } from '../../js/evo/crossover.js';
-import { POOLED_VALUES, TRAIT_GENES, brainLayout } from '../../js/sim/brain-layout.js';
+import { GENE_OUTPUTS, OUTPUT_INDEX, POOLED_VALUES, TRAIT_GENES, brainLayout } from '../../js/sim/brain-layout.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 
 const layout = brainLayout({ rayCount: 2, brainHidden: 12 });
@@ -39,6 +39,17 @@ function block(child, h) {
 }
 
 describe('crossNeurons', () => {
+    it('returns the parent of each reflex skip column without changing its draw order', () => {
+        const child = new Float32Array(layout.weightCount);
+        const mother = new Float32Array(layout.weightCount).fill(1);
+        const father = new Float32Array(layout.weightCount).fill(-1);
+        const sources = crossNeurons(child, mother, father, { layout, rng: createRng(37) });
+        expect(child[layout.wSkip + GENE_OUTPUTS.indexOf(OUTPUT_INDEX.BITE)]).toBe(sources.biteParent === 0 ? 1 : -1);
+        expect(child[layout.wSkip + GENE_OUTPUTS.indexOf(OUTPUT_INDEX.THRUST)]).toBe(
+            sources.thrustParent === 0 ? 1 : -1,
+        );
+    });
+
     it('takes every neuron block whole from one parent, and both parents appear', () => {
         const sources = new Set();
         for (let seed = 1; seed <= 5; seed++) {

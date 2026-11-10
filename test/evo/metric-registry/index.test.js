@@ -11,13 +11,13 @@ import {
     withLiveness,
 } from '../../../js/evo/metric-registry/index.js';
 
-/** @type {string[]} the 269 names of a live eval report, sorted */
+/** @type {string[]} the 284 names of a live eval report, sorted */
 const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-names.json', import.meta.url), 'utf8'));
 
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(269);
+        expect(REPORT_NAMES).toHaveLength(284);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -73,7 +73,27 @@ describe('withLiveness', () => {
  *   (js/evo/compare-seeds.js) held when they were deleted for the registry (metric-trust T8)
  */
 /** Metrics registered after the snapshot was taken (T25 added the mean beside the renamed median). */
-const ADDED_AFTER_T8 = ['eval.hunter_kills_per_life_mean'];
+const ADDED_AFTER_T8 = [
+    'eval.hunter_kills_per_life_mean',
+    'eval.basin_families.east',
+    'eval.basin_families.west',
+    'eval.basin_family_effective.east',
+    'eval.basin_family_effective.west',
+    'eval.basin_lineage_effective.east',
+    'eval.basin_lineage_effective.west',
+    'eval.basin_lineages_alive.east',
+    'eval.basin_lineages_alive.west',
+    'eval.hunter_zero_kill_carcass_share',
+    'eval.hunter_reflex_column_split_share',
+    'eval.hunter_reflex_column_split_kill_rate',
+    'eval.hunter_reflex_column_same_kill_rate',
+    'eval.bite_off_kin_view',
+    'eval.bite_off_other_view',
+    'eval.bite_on_prey_view',
+    'eval.bite_wish_with_kin_in_jaws',
+    'eval.bite_wish_with_other_in_jaws',
+    'eval.bite_wish_with_prey_in_jaws',
+];
 const SNAPSHOT = JSON.parse(readFileSync(new URL('../../fixtures/metric-directions.json', import.meta.url), 'utf8'));
 
 describe('the tables the registry replaced', () => {

@@ -5,6 +5,9 @@
 
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
+import { inputOffsets } from '../../js/sim/brain-layout.js';
+import { BORN_CAUSE, EVENT_TYPE } from '../../js/sim/events.js';
+import { noteBiteLifeRecord } from '../../js/evo/scene-bite-life.js';
 import { plantMeat, starve } from './helpers/source-world.js';
 import { FORAGER, PREDATOR, biteStep, huntRun, killStep, park } from './helpers/hunt-scene.js';
 
@@ -60,34 +63,123 @@ function jaws(kind, total, wishes, { bystanders = 0 } = {}) {
 
 describe('bite_on_prey, bite_off_kin, bite_off_other and bite_idle', () => {
     it('read the wish share of the hunter-ticks with that body in the jaws: 10 of 40 is 0.25', () => {
-        expect(jaws('prey', 40, 10)['eval.bite_on_prey']).toEqual({ value: 0.25 });
-        expect(jaws('kin', 40, 10)['eval.bite_off_kin']).toEqual({ value: 0.25 });
-        expect(jaws('other', 40, 10)['eval.bite_off_other']).toEqual({ value: 0.25 });
+        expect(jaws('prey', 40, 10)['eval.bite_wish_with_prey_in_jaws']).toEqual({ value: 0.25 });
+        expect(jaws('kin', 40, 10)['eval.bite_wish_with_kin_in_jaws']).toEqual({ value: 0.25 });
+        expect(jaws('other', 40, 10)['eval.bite_wish_with_other_in_jaws']).toEqual({ value: 0.25 });
         expect(jaws('idle', 40, 10)['eval.bite_idle']).toEqual({ value: 0.25 });
     });
 
     it('read 0 and 1 for a hunter that never and always wants to bite', () => {
-        expect(jaws('prey', 40, 0)['eval.bite_on_prey']).toEqual({ value: 0 });
-        expect(jaws('prey', 40, 40)['eval.bite_on_prey']).toEqual({ value: 1 });
+        expect(jaws('prey', 40, 0)['eval.bite_wish_with_prey_in_jaws']).toEqual({ value: 0 });
+        expect(jaws('prey', 40, 40)['eval.bite_wish_with_prey_in_jaws']).toEqual({ value: 1 });
     });
 
     it('count only the body in the jaws, and need 30 hunter-ticks', () => {
         const m = jaws('kin', 40, 10);
-        expect(m['eval.bite_on_prey'].value).toBeNull();
-        expect(m['eval.bite_off_other'].value).toBeNull();
-        expect(jaws('prey', 29, 10)['eval.bite_on_prey'].value).toBeNull();
+        expect(m['eval.bite_wish_with_prey_in_jaws'].value).toBeNull();
+        expect(m['eval.bite_wish_with_other_in_jaws'].value).toBeNull();
+        expect(jaws('prey', 29, 10)['eval.bite_wish_with_prey_in_jaws'].value).toBeNull();
+    });
+
+    it('counts fatal prey bites, including the final tick of the report', () => {
+        const { run, spawn } = huntRun({ over: STILL });
+        const hunter = spawn(PREDATOR);
+        for (let i = 0; i < 30; i++) {
+            killStep(run, hunter, spawn(FORAGER));
+        }
+        expect(run.observer.scenes.bite.opportunities[3]).toBeGreaterThanOrEqual(30);
+        expect(run.observer.scenes.bite.wishes[3]).toBeGreaterThanOrEqual(30);
+        expect(run.metrics()['eval.bite_wish_with_prey_in_jaws'].value).not.toBeNull();
+    });
+
+    it('counts a kin opportunity independently when the same hunter also kills prey', () => {
+        const { run, world, spawn } = huntRun({ over: STILL });
+        const hunter = spawn(PREDATOR);
+        const kin = spawn(FORAGER);
+        const prey = spawn(FORAGER);
+        pose(world, hunter, [200, 500, 800]);
+        pose(world, kin, [220, 500, 300]);
+        pose(world, prey, [230, 500, 1]);
+        world.parentA[kin] = world.genomeId[hunter];
+        world.meritPrey.seen[hunter] = world.tick;
+        world.meritPrey.bits[hunter] = 0xff;
+        world.meritPrey.turn[hunter] = world.tick;
+        run.want(hunter, OUTPUT_INDEX.BITE);
+        run.tick();
+        const m = run.metrics();
+        expect(m['eval.bite_wish_with_kin_in_jaws'].reason).toContain('hunter-ticks');
+        expect(m['eval.bite_wish_with_prey_in_jaws'].reason).toContain('hunter-ticks');
+        expect(run.observer.scenes.bite.opportunities[2]).toBeGreaterThan(0);
+        expect(run.observer.scenes.bite.opportunities[3]).toBeGreaterThan(0);
     });
 });
 
 describe('hunter_recoil_per_life', () => {
-    it('counts the refused lunges at kin and at a body too big, over hunter lives: 10, and 10 over 2 lives', () => {
-        expect(jaws('kin', 40, 10)['eval.hunter_recoil_per_life']).toEqual({ value: 10 });
-        expect(jaws('other', 40, 10)['eval.hunter_recoil_per_life']).toEqual({ value: 10 });
-        expect(jaws('kin', 40, 10, { bystanders: 1 })['eval.hunter_recoil_per_life']).toEqual({ value: 5 });
+    it('counts energy charged by refused lunges, as the median per hunter life', () => {
+        expect(jaws('kin', 40, 10)['eval.hunter_recoil_per_life']).toEqual({ value: 200 });
+        expect(jaws('other', 40, 10)['eval.hunter_recoil_per_life']).toEqual({ value: 200 });
+        expect(jaws('kin', 40, 10, { bystanders: 1 })['eval.hunter_recoil_per_life']).toEqual({ value: 100 });
     });
 
     it('is 0 when the hunter bites only prey', () => {
         expect(jaws('prey', 40, 10)['eval.hunter_recoil_per_life']).toEqual({ value: 0 });
+    });
+
+    it('keeps the energy charged on the tick recoil kills the hunter', () => {
+        const { run, world, spawn } = huntRun({ over: { recoilEnergy: 20 } });
+        const hunter = spawn(PREDATOR);
+        const kin = spawn(FORAGER);
+        pose(world, hunter, [200, 500, 20]);
+        pose(world, kin, [220, 500, 300]);
+        world.parentA[kin] = world.genomeId[hunter];
+        run.want(hunter, OUTPUT_INDEX.BITE);
+        run.tick();
+        expect(world.alive[hunter]).toBe(0);
+        expect(run.metrics()['eval.hunter_recoil_per_life']).toEqual({ value: 20 });
+    });
+});
+
+describe('mating-born hunter reflex column metrics', () => {
+    it('counts a mating-born hunter with separate BITE and THRUST skip parents', () => {
+        const { run, world, spawn } = huntRun({ over: STILL });
+        const hunter = spawn(PREDATOR);
+        world.biteSkipParent[hunter] = 0;
+        world.thrustSkipParent[hunter] = 1;
+        const scene = run.observer.scenes.biteLife;
+        const d = new Float64Array(11);
+        d[0] = EVENT_TYPE.AGENT_BORN;
+        d[2] = hunter;
+        d[3] = world.genomeId[hunter];
+        d[8] = BORN_CAUSE.MATE;
+        noteBiteLifeRecord(scene, d, 0, world);
+        const metrics = run.metrics();
+        expect(metrics['eval.hunter_reflex_column_split_share']).toEqual({ value: 1 });
+        expect(metrics['eval.hunter_reflex_column_split_kill_rate'].value).toBeNull();
+        expect(metrics['eval.hunter_reflex_column_same_kill_rate'].value).toBeNull();
+    });
+});
+
+describe('pooled bite view shares', () => {
+    it('read the prey-channel wish while the prey is visible but out of the jaws', () => {
+        const { run, world, spawn } = huntRun({ over: STILL, pooledBrain: true });
+        const hunter = spawn(PREDATOR);
+        const prey = spawn(FORAGER);
+        pose(world, hunter, [200, 500, 800]);
+        pose(world, prey, [260, 500, 800]);
+        for (let t = 0; t < 30; t++) {
+            run.want(hunter, OUTPUT_INDEX.BITE);
+            run.tick((w) => {
+                pose(w, hunter, [200, 500, 800]);
+                pose(w, prey, [260, 500, 800]);
+            });
+            run.release(hunter, OUTPUT_INDEX.BITE);
+        }
+        const input = hunter * world.layout.inputCount + inputOffsets(world.config).pooled.prey;
+        expect(world.pooled[input]).toBeGreaterThan(0);
+        expect(run.metrics()['eval.bite_on_prey_view']).toEqual({ value: 1 });
+        expect(run.metrics()['eval.bite_wish_with_prey_in_jaws'].value).toBeNull();
+        expect(run.metrics()['eval.bite_off_kin_view'].value).toBeNull();
+        expect(run.metrics()['eval.bite_off_other_view'].value).toBeNull();
     });
 });
 
@@ -123,6 +215,7 @@ describe('hunter_carrion_idle_share', () => {
         expect(want).toBeGreaterThan(0);
         expect(want).toBeLessThan(1);
         expect(m['eval.hunter_carrion_idle_share'].value).toBeCloseTo(want, 12);
+        expect(m['eval.hunter_zero_kill_carcass_share']).toEqual({ value: 1 });
     });
 
     it('is 1 when the carrion eater is the only earner, and 0 once it has a kill', () => {

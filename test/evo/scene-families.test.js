@@ -49,29 +49,31 @@ describe('families per basin', () => {
         expect(geneticDistance(world, 0, 2)).toBeGreaterThan(1);
     });
 
-    it('counts families and the effective number, the smaller basin over the last quarter', () => {
+    it('counts families and effective number across both basins over the last quarter', () => {
         const scene = createFamilyScene(CONFIG);
         // Early: one family per basin; the last quarter (ticks 3000 and 4000): three even families west, two east.
         sampleFamilies(scene, handWorld([...basinOf(0, [30]), ...basinOf(1, [30])], 1000));
         sampleFamilies(scene, handWorld([...basinOf(0, [10, 10, 10]), ...basinOf(1, [15, 15])], 3000));
         sampleFamilies(scene, handWorld([...basinOf(0, [10, 10, 10]), ...basinOf(1, [15, 15])], 4000));
         const m = familyMetrics(scene, { tick: 4000 });
-        expect(m['eval.basin_families']?.value).toBe(2);
-        expect(m['eval.basin_family_effective']?.value).toBeCloseTo(2, 9);
+        expect(m['eval.basin_families']?.value).toBe(2.5);
+        expect(m['eval.basin_family_effective']?.value).toBeCloseTo(2.5, 9);
+        expect(m['eval.basin_families.west']?.value).toBe(3);
+        expect(m['eval.basin_families.east']?.value).toBe(2);
+        expect(m['eval.basin_family_effective.west']?.value).toBeCloseTo(3, 9);
+        expect(m['eval.basin_family_effective.east']?.value).toBeCloseTo(2, 9);
     });
 
-    it('reads a dominant family as near 1 effective, and null for a thin basin or none of 20', () => {
+    it('includes an under-floor basin as zero and returns null only when both are under floor', () => {
         const scene = createFamilyScene(CONFIG);
         sampleFamilies(scene, handWorld([...basinOf(0, [27, 1, 1, 1]), ...basinOf(1, [5])], 1000));
         const m = familyMetrics(scene, { tick: 1000 });
-        expect(m['eval.basin_families']?.value).toBe(4);
-        // The 5-agent east basin is reported, not dropped: effective is null and says which basin was thin.
-        expect(m['eval.basin_family_effective']?.value).toBeNull();
-        expect(m['eval.basin_family_effective']?.reason).toContain('basin 1 held 5 agents');
+        expect(m['eval.basin_families']?.value).toBe(2);
+        expect(m['eval.basin_family_effective']?.value).toBeCloseTo(900 / 732 / 2, 9);
         const both = createFamilyScene(CONFIG);
         sampleFamilies(both, handWorld([...basinOf(0, [27, 1, 1, 1]), ...basinOf(1, [20])], 1000));
         expect(familyMetrics(both, { tick: 1000 })['eval.basin_family_effective']?.value).toBeCloseTo(
-            Math.min(900 / 732, 1),
+            (900 / 732 + 1) / 2,
             9,
         );
         const empty = createFamilyScene(CONFIG);

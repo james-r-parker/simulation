@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { createSnapshotViews, HEADER_WORDS, snapshotLayout, writeSnapshot } from '../../js/sim/snapshot.js';
 import { SNAPSHOT_STATE } from '../../js/sim/snapshot-state.js';
+import { agentState } from '../../js/sim/snapshot-state.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { smallWorld } from './helpers/small-world.js';
 
@@ -60,6 +61,20 @@ describe('the agent state word', () => {
         expect(byte(SNAPSHOT_STATE.GESTATION_SHIFT)).toBe(Math.round(0.75 * 255));
         expect(byte(SNAPSHOT_STATE.DOSE_SHIFT)).toBe(255);
         expect(byte(SNAPSHOT_STATE.STRAIN_SHIFT)).toBe(7);
+    });
+
+    it('leaves the dose byte at zero when sickness is disabled', () => {
+        const mock = /** @type {any} */ ({
+            config: { pregnancyTicks: 10, sickDose: 0, satiationShare: 0, juvenileTicks: 1 },
+            pregnancy: [0],
+            dose: [10],
+            infection: [0],
+            maxEnergyBySpec: [100],
+            spec: [0],
+            energy: [0],
+            ageTicks: [1],
+        });
+        expect(agentState(mock, 0) & (SNAPSHOT_STATE.BYTE << SNAPSHOT_STATE.DOSE_SHIFT)).toBe(0);
     });
 
     it('reads the world without changing it', () => {

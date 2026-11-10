@@ -181,12 +181,16 @@ export default {
     },
     'eval.basin_lineages_alive': {
         value: null,
-        reason: 'no basin held 20 agents in the last quarter',
+        reason: 'both basins held under 20 agents in the last quarter',
     },
     'eval.basin_lineage_effective': {
         value: null,
-        reason: 'no basin held 20 agents in the last quarter',
+        reason: 'both basins held under 20 agents in the last quarter',
     },
+    'eval.basin_lineage_effective.east': { value: null, reason: 'no checkpoint in the last quarter' },
+    'eval.basin_lineage_effective.west': { value: null, reason: 'no checkpoint in the last quarter' },
+    'eval.basin_lineages_alive.east': { value: null, reason: 'no checkpoint in the last quarter' },
+    'eval.basin_lineages_alive.west': { value: null, reason: 'no checkpoint in the last quarter' },
     'eval.refuge_prey_use_under_threat': {
         value: null,
         reason: 'no threatened and calm prey sample after burn-in',

@@ -42,53 +42,7 @@ describe('computeMetrics on hand-built state', () => {
     it('has a fixed sorted key order', () => {
         const keys = Object.keys(computeMetrics(bareObserver(), EMPTY_WORLD));
         expect(keys).toEqual([...keys].sort());
-        expect(keys).toHaveLength(
-            16 +
-                10 +
-                4 +
-                5 +
-                15 +
-                6 +
-                4 +
-                4 +
-                3 +
-                4 +
-                2 +
-                4 +
-                5 +
-                3 +
-                5 +
-                13 +
-                6 +
-                13 +
-                18 +
-                4 +
-                1 +
-                2 +
-                2 +
-                12 +
-                3 +
-                14 +
-                3 +
-                30 +
-                9 +
-                3 +
-                2 +
-                4 +
-                3 +
-                5 +
-                4 +
-                4 +
-                3 +
-                3 +
-                2 +
-                2 +
-                2 +
-                4 +
-                6 +
-                1 +
-                1, // eval.hunter_kills_per_life_mean (metric-trust T25)
-        );
+        expect(keys).toHaveLength(284);
     });
 
     it('reads the per-1k metrics from totals, the dead and the living', () => {

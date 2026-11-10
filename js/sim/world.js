@@ -18,6 +18,7 @@ import { MERIT_TALLY_SIZE, createMeritViews, meritSpecs, resetMeritSlot } from '
 import { LOCAL_STRIDE } from './ray-gather.js';
 import { rayTables } from './ray-pool.js';
 import { terrainRockCount } from './terrain.js';
+import { createObserverScratch } from './observer-scratch.js';
 import { attachWasm } from './wasm-arena.js';
 
 /** Cap, in ticks, on `ateTimer` and `bittenTimer`. */
@@ -312,14 +313,13 @@ function allocClouds(world) {
 }
 
 /**
- * Allocates every world array once; `rng` is filled in later by `createWorld`.
+ * Allocates world arrays; `rng` is filled in later by `createWorld`.
  * @param {Readonly<Record<string, any>>} config the validated config
  * @returns {World}
  */
 export function allocateWorld(config) {
     assertLittleEndian();
-    /** @type {World} */
-    const world = {
+    const world = /** @type {World} */ ({
         config,
         layout: brainLayout(config),
         rng: null,
@@ -327,10 +327,8 @@ export function allocateWorld(config) {
         nextId: 1,
         population: 0,
         foodCount: 0,
-        ledger: new Float64Array(2),
-        point: new Float64Array(2),
+        ...createObserverScratch(config),
         transferGained: 0,
-        contacts: new Int32Array(2 * config.maxContacts),
         contactCount: 0,
         season: new Float64Array(2),
         era: new Int32Array([-1]),
@@ -356,7 +354,7 @@ export function allocateWorld(config) {
         ),
         callScratch: new Float64Array(CALL_SCRATCH),
         brainScratch: new Float64Array(Math.max(config.brainHidden, OUTPUT_COUNT)),
-    };
+    });
     allocAgentArrays(world, world.layout);
     allocFoodAndObstacles(world);
     allocZonesAndPheromones(world);
@@ -381,6 +379,9 @@ export function allocAgent(world) {
         if (alive[slot] === 0) {
             alive[slot] = 1;
             world.population += 1;
+            world.recoilEnergyLife[slot] = 0;
+            world.biteSkipParent[slot] = 0;
+            world.thrustSkipParent[slot] = 0;
             resetMeritSlot(world, slot);
             return slot;
         }

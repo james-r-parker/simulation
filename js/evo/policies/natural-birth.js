@@ -100,7 +100,9 @@ export function createBirth(config) {
         const motherRow = rowOf(motherRows, world.weights, { slot: mother, count });
         if (mate) {
             const fatherRow = rowOf(fatherRows, world.fatherWeights, { slot: mother, count });
-            crossNeurons(row, motherRow, fatherRow, { layout, rng });
+            const columns = crossNeurons(row, motherRow, fatherRow, { layout, rng });
+            world.biteSkipParent[child] = columns.biteParent;
+            world.thrustSkipParent[child] = columns.thrustParent;
         } else {
             row.set(motherRow);
         }

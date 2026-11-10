@@ -40,6 +40,7 @@ export const EVENT_TYPE = Object.freeze({
     PROVISIONED: 32, // unused since realistic-keepers T20 deleted provisioning; the code stays so later codes do not renumber
     COVER_CONFIG: 33,
     COVER_TOTALS: 34,
+    HUNTER_RECOIL_LIFE: 35,
 });
 
 /** Why an agent was born, stored in the `cause` field of `AGENT_BORN`. */

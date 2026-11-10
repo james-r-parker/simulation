@@ -155,7 +155,7 @@ function noteEvents(scenes, observer, world) {
     }
     for (let o = 0; o < end; o += EVENT_STRIDE) {
         noteHunterRecord(scenes.hunters, d, o);
-        noteBiteLifeRecord(scenes.biteLife, d, o);
+        noteBiteLifeRecord(scenes.biteLife, d, o, world);
         noteCompetenceRecord(scenes.competence, d, o);
         if (d[o] === EVENT_TYPE.AGENT_BORN) {
             noteHunterBirth(scenes.hunters, world, d[o + 2]);
