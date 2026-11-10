@@ -184,8 +184,6 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['fewer than 200 lives with a forage skill', 'no variance in leak or in the skill'],
         arithmetic: 'test/evo/metrics-leak-skill.test.js',
-        expectedFlat:
-            'The T22 reports predate the fix that keeps the leak at birth, so they read it null on every seed; the next defaults run reads it.',
         source: 'test/evo/metric-source-brain-leak.test.js',
     }),
     'eval.leak_hunt_corr': entry('brain', {
@@ -198,7 +196,7 @@ export const BRAIN = {
         nullWhen: ['fewer than 100 lives with a hunt skill', 'no variance in leak or in the skill'],
         arithmetic: 'test/evo/metrics-leak-skill.test.js',
         expectedFlat:
-            'The T22 reports predate the fix that keeps the leak at birth, so they read it null on every seed; the next defaults run reads it.',
+            'Null with fewer than 100 hunter lives with a kill, as on 29 of 128 floor-on seeds where few hunters kill; it reads where hunters kill often.',
         source: 'test/evo/metric-source-brain-leak.test.js',
     }),
     'eval.leak_flee_corr': entry('brain', {
@@ -210,8 +208,6 @@ export const BRAIN = {
         intended: 'higher',
         nullWhen: ['fewer than 100 lives with a flee skill', 'no variance in leak or in the skill'],
         arithmetic: 'test/evo/metrics-leak-skill.test.js',
-        expectedFlat:
-            'The T22 reports predate the fix that keeps the leak at birth, so they read it null on every seed; the next defaults run reads it.',
         source: 'test/evo/metric-source-brain-leak.test.js',
     }),
     'eval.hebb_drift': entry('brain', {
