@@ -240,6 +240,8 @@ export const CORE = {
             'the run has not reached its length',
             'no lineage founded after burn-in',
         ],
+        expectedFlat:
+            'Needs a lineage founded after burn-in, and after burn-in only floor spawns found one: null on every seed with floor off and on 67 of 128 with floor on.',
         arithmetic: 'test/evo/metrics-lineage.test.js',
         source: 'test/evo/metric-source-core-selection.test.js',
     }),

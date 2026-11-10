@@ -261,6 +261,8 @@ export const HUNTERS_2 = {
         unit: 'speed change over max speed',
         direction: 'higher',
         nullWhen: ['no alarm call', 'no alarm call had a hearer with a matched control'],
+        expectedFlat:
+            'Null unless a lineage evolves alarm calls, which happened on 5 of 128 seeds with floor on and off; it moves with alarm calling.',
         arithmetic: 'test/evo/metrics-combat.test.js',
     }),
     'eval.smoke_escapes': entry('hunters', {
@@ -270,6 +272,8 @@ export const HUNTERS_2 = {
         unit: 'share',
         direction: 'higher',
         nullWhen: ['no smoke release after a bite'],
+        expectedFlat:
+            'Null unless a bitten agent releases smoke, which happened on 1 of 128 seeds with floor on and off; it moves with smoke use.',
         arithmetic: 'test/evo/metrics-combat.test.js',
     }),
 };

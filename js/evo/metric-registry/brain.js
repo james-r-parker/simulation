@@ -56,6 +56,8 @@ export const BRAIN = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no sampled agent after burn-in'],
+        expectedFlat:
+            'Reads 0 on every seed: no sampled wIn or wOut weight reached 3.9 (WEIGHT_CLAMP is 4) in 200000 ticks; it moves when selection pushes weights to the clamp.',
         arithmetic: 'test/evo/metrics-weights.test.js',
         source: 'test/evo/metric-source-brain.test.js',
     }),
@@ -100,6 +102,8 @@ export const BRAIN = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no sampled agent after burn-in'],
+        expectedFlat:
+            'Reads 0 on every seed: no sampled hidden unit evolved a leak rate at or under 0.1 in 200000 ticks; it moves when selection favours slow memory units.',
         arithmetic: 'test/evo/metrics-memory.test.js',
         source: 'test/evo/metric-source-brain-memory.test.js',
     }),
@@ -111,6 +115,8 @@ export const BRAIN = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no sampled agent after burn-in'],
+        expectedFlat:
+            'Reads 0 on every seed: no sampled leak gene reached FLOOR_GENE in 200000 ticks; it moves when selection pushes leak to the leakMin floor.',
         arithmetic: 'test/evo/metrics-memory.test.js',
         source: 'test/evo/metric-source-brain-memory.test.js',
     }),
@@ -224,6 +230,8 @@ export const BRAIN = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['hebbianRate is 0', 'no sampled agent aged 600 ticks'],
+        expectedFlat:
+            'Reads 0 on every seed: no sampled plastic weight reached HEBB_CLAMP (4) in 200000 ticks; it moves when learning drives fastOut to the clamp.',
         arithmetic: 'test/evo/metrics-hebb.test.js',
         source: 'test/evo/metric-source-brain.test.js',
     }),

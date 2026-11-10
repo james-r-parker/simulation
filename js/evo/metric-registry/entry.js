@@ -39,7 +39,7 @@
 /**
  * Builds a frozen entry with the unmeasured fields at their empty values.
  * @param {string} family the family file's name
- * @param {Pick<MetricEntry, 'module' | 'meaning' | 'counts' | 'unit' | 'direction' | 'nullWhen'> & {intended?: 'higher' | 'lower', arithmetic?: string, source?: string, deprecated?: string}} fields what the author wrote
+ * @param {Pick<MetricEntry, 'module' | 'meaning' | 'counts' | 'unit' | 'direction' | 'nullWhen'> & {intended?: 'higher' | 'lower', arithmetic?: string, source?: string, deprecated?: string, expectedFlat?: string}} fields what the author wrote
  * @returns {Readonly<MetricEntry>} the entry
  */
 export function entry(family, fields) {

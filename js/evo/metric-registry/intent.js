@@ -70,6 +70,8 @@ export const INTENT = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no resolved hunt call'],
+        expectedFlat:
+            'Null unless hunters evolve hunt calls (PackCalled), which happened on 8 of 128 seeds with floor on and off; it moves with pack calling.',
         arithmetic: 'test/evo/metrics-intent.test.js',
     }),
     'eval.evasion_skill': entry('intent', {
@@ -100,6 +102,8 @@ export const INTENT = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no alarm call'],
+        expectedFlat:
+            'Null unless a lineage evolves alarm calls, which happened on 5 of 128 seeds with floor on and off; it moves with alarm calling.',
         arithmetic: 'test/evo/metrics-intent.test.js',
     }),
     'eval.hunt_call_precision': entry('intent', {
@@ -110,6 +114,8 @@ export const INTENT = {
         unit: 'calls',
         direction: 'higher',
         nullWhen: ['no hunt call'],
+        expectedFlat:
+            'Null unless hunters evolve hunt calls (PackCalled), which happened on 8 of 128 seeds with floor on and off; it moves with pack calling.',
         arithmetic: 'test/evo/metrics-intent.test.js',
     }),
     'eval.smoke_precision': entry('intent', {
@@ -120,6 +126,8 @@ export const INTENT = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no smoke release'],
+        expectedFlat:
+            'Null unless an agent releases smoke, which happened on 7 of 128 seeds with floor on and off; it moves with smoke use.',
         arithmetic: 'test/evo/metrics-intent.test.js',
     }),
     'eval.idle_signals_per_1k': entry('intent', {
@@ -159,6 +167,8 @@ export const INTENT = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no alarm call'],
+        expectedFlat:
+            'Null unless a lineage evolves alarm calls, which happened on 5 of 128 seeds with floor on and off; it moves with alarm calling.',
         arithmetic: 'test/evo/observer-alarm-reach.test.js',
     }),
     'eval.alarm_hunter_hearers_per_call': entry('intent', {
@@ -169,6 +179,8 @@ export const INTENT = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no alarm call'],
+        expectedFlat:
+            'Null unless a lineage evolves alarm calls, which happened on 5 of 128 seeds with floor on and off; it moves with alarm calling.',
         arithmetic: 'test/evo/observer-alarm-reach.test.js',
     }),
     'eval.alarm_calls_with_threat_per_1k': entry('intent', {

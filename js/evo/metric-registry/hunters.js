@@ -142,6 +142,8 @@ export const HUNTERS = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no world at the last tick', 'no hunter alive at the last tick'],
+        expectedFlat:
+            'Null when no hunter is alive at the last tick (33 of 128 seeds floor on, 62 floor off); it reads where hunters persist.',
         arithmetic: 'test/evo/scene-hunters.test.js',
     }),
     'eval.hunter_ticks_last_quarter': entry('hunters', {
@@ -241,6 +243,8 @@ export const HUNTERS = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no agent-ticks'],
+        expectedFlat:
+            'Needs floor-spawned hunters: null on every seed with floor off, and on the 68 of 128 floor-on seeds where the floor spawned no hunter.',
         arithmetic: 'test/evo/scene-hunter-age.test.js',
     }),
     'eval.hunter_kill_rate_by_source.initial': entry('hunters', {
