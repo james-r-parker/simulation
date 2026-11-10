@@ -61,7 +61,8 @@ describe('the hunter death metrics', () => {
     it('are null with a reason when no hunter died', () => {
         const m = hunterMetrics(createHunterScene(1000), world());
         for (const name of [
-            'eval.hunter_kills_per_life',
+            'eval.hunter_kills_per_life_p50',
+            'eval.hunter_kills_per_life_mean',
             'eval.hunter_zero_kill_share',
             'eval.hunter_median_lifespan',
         ]) {
@@ -71,14 +72,15 @@ describe('the hunter death metrics', () => {
         expect(m['eval.hunter_death_share.starved']?.value).toBeNull();
     });
 
-    it('give the median kills, the zero-kill share, the median lifespan and the death shares', () => {
+    it('give the median and mean kills, the zero-kill share, the median lifespan and the death shares', () => {
         const scene = createHunterScene(1000);
         die(scene, { cause: DEATH_CAUSE.STARVED, kills: 0, age: 100 });
         die(scene, { cause: DEATH_CAUSE.STARVED, kills: 0, age: 300 });
         die(scene, { cause: DEATH_CAUSE.EATEN, kills: 4, age: 500 });
         die(scene, { cause: DEATH_CAUSE.POISONED, kills: 2, age: 700 });
         const m = hunterMetrics(scene, world());
-        expect(m['eval.hunter_kills_per_life']).toEqual({ value: 1 });
+        expect(m['eval.hunter_kills_per_life_p50']).toEqual({ value: 1 });
+        expect(m['eval.hunter_kills_per_life_mean']).toEqual({ value: 1.5 });
         expect(m['eval.hunter_zero_kill_share']).toEqual({ value: 0.5 });
         expect(m['eval.hunter_median_lifespan']).toEqual({ value: 400 });
         expect(m['eval.hunter_death_share.starved']).toEqual({ value: 0.5 });

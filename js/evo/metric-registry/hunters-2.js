@@ -227,31 +227,34 @@ export const HUNTERS_2 = {
         nullWhen: ['no hunter approach ended after burn-in'],
         arithmetic: 'test/evo/metrics-scenes.test.js',
     }),
-    'eval.catch_rate': entry('hunters', {
+    'eval.hunter_catches_per_1k': entry('hunters', {
         module: 'js/evo/metrics-combat.js',
         meaning: 'Higher means hunters turn more of their time into fatal bites.',
         counts: 'Eaten deaths whose killer is a known hunter (killKind is HUNT or PACK, deliberate or not), over the whole run, per 1000 hunter agent-ticks.',
         unit: 'per 1k hunter agent-ticks',
         direction: 'higher',
         nullWhen: ['no hunters'],
+        renamedFrom: ['eval.catch_rate'],
         arithmetic: 'test/evo/metrics-combat.test.js',
     }),
-    'eval.escape_rate': entry('hunters', {
+    'eval.escape_share': entry('hunters', {
         module: 'js/evo/metrics-combat.js',
         meaning: 'Higher means more bitten non-hunters survive the bite episode.',
         counts: 'Bite episodes on non-hunters that resolve as escaped (ESCAPE_TICKS after the last bite, still alive) over caught plus escaped, whole run.',
         unit: 'share',
         direction: 'higher',
         nullWhen: ['no resolved bite episode'],
+        renamedFrom: ['eval.escape_rate'],
         arithmetic: 'test/evo/metrics-combat.test.js',
     }),
-    'eval.pack_kill_share': entry('hunters', {
+    'eval.pack_kills_per_eaten_death': entry('hunters', {
         module: 'js/evo/metrics-combat.js',
         meaning: "Higher means more eaten deaths follow a bite from a second hunter of the killer's lineage.",
         counts: 'Eaten deaths whose killer and previous biter are hunters of one lineage within packWindow, over all eaten deaths (not over hunter kills).',
         unit: 'share',
         direction: 'higher',
         nullWhen: ['no eaten death'],
+        renamedFrom: ['eval.pack_kill_share'],
         arithmetic: 'test/evo/metrics-combat.test.js',
     }),
     'eval.alarm_response': entry('hunters', {
@@ -261,6 +264,8 @@ export const HUNTERS_2 = {
         unit: 'speed change over max speed',
         direction: 'higher',
         nullWhen: ['no alarm call', 'no alarm call had a hearer with a matched control'],
+        expectedFlat:
+            'Null unless a lineage evolves alarm calls, which happened on 5 of 128 seeds with floor on and off; it moves with alarm calling.',
         arithmetic: 'test/evo/metrics-combat.test.js',
     }),
     'eval.smoke_escapes': entry('hunters', {
@@ -270,6 +275,8 @@ export const HUNTERS_2 = {
         unit: 'share',
         direction: 'higher',
         nullWhen: ['no smoke release after a bite'],
+        expectedFlat:
+            'Null unless a bitten agent releases smoke, which happened on 1 of 128 seeds with floor on and off; it moves with smoke use.',
         arithmetic: 'test/evo/metrics-combat.test.js',
     }),
 };

@@ -16,7 +16,7 @@ const SOURCE_METRICS = [
     'eval.juvenile_parent_pull',
     'eval.skill_heritability',
     'eval.social_return',
-    'eval.mate_skill_gap',
+    'eval.mate_rank_gap',
     'eval.mate_hunter_lean',
     'eval.niche_replacement',
     'eval.style_separation',

@@ -50,7 +50,7 @@ that already respond.
 ### Diagnosis - why calling never evolves
 
 Evidence: diagnostic D1 (a 4-seed look, not an experiment; command and config under Baseline): `eval.alarm_rate` 0 on all four seeds,
-`eval.idle_signals_per_1k` 0, `eval.alarm_precision`, `eval.alarm_response` and `eval.kin_within_call_radius` all `null` ("no
+`eval.idle_signals_per_1k` 0, `eval.alarm_lift`, `eval.alarm_response` and `eval.kin_within_call_radius` all `null` ("no
 alarm call"), `eval.population_mean` 169, `eval.input_active_share.threat` 0.025. Not one `ALARM_CALLED` event in 120,000
 agent-ticks of world time per seed. The old alarm rate of 8.1 per 1000 (E42) was pre-instinct random drift with precision
 0.0003.
@@ -79,15 +79,15 @@ switch.
 **Reach baseline (`E143`, Phase 1 T4).** 16 seeds from `evals/seeds.json`, floor on, defaults (`alarmOnSight` off), policy
 `live`, 200,000 ticks, config hash `ff8d890a5a70c14d`, on `c346a20e`. Population mean 236 (the D1 table below is at 169).
 
-| Metric                                                                                      | Mean | Range across seeds  | Seeds with a value |
-| ------------------------------------------------------------------------------------------- | ---- | ------------------- | ------------------ |
-| `eval.call_opportunity_neighbours` (other non-hunters in 300 px of a threatened prey)       | 3.17 | 1.53 to 5.57        | 16 of 16           |
-| `eval.call_opportunity_kin` (same-lineage share of those)                                   | 2.44 | 1.10 to 5.33        | 16 of 16           |
-| `eval.alarm_rate`                                                                           | 0    | 0 on every seed     | 16 of 16 (zero)    |
-| `eval.alarm_calls_with_threat_per_1k`                                                       | 0    | 0 on every seed     | 16 of 16 (zero)    |
-| `eval.alarm_hearers_per_call`, `eval.alarm_hunter_hearers_per_call`, `eval.alarm_precision` | -    | no call on any seed | 0 of 16            |
-| `eval.predators_at_end`                                                                     | 24.7 | 0 to 97             | 16 of 16           |
-| `eval.prey_types_at_end`                                                                    | 3.44 | 1 to 4              | 16 of 16           |
+| Metric                                                                                 | Mean | Range across seeds  | Seeds with a value |
+| -------------------------------------------------------------------------------------- | ---- | ------------------- | ------------------ |
+| `eval.call_opportunity_neighbours` (other non-hunters in 300 px of a threatened prey)  | 3.17 | 1.53 to 5.57        | 16 of 16           |
+| `eval.call_opportunity_kin` (same-lineage share of those)                              | 2.44 | 1.10 to 5.33        | 16 of 16           |
+| `eval.alarm_rate`                                                                      | 0    | 0 on every seed     | 16 of 16 (zero)    |
+| `eval.alarm_calls_with_threat_per_1k`                                                  | 0    | 0 on every seed     | 16 of 16 (zero)    |
+| `eval.alarm_hearers_per_call`, `eval.alarm_hunter_hearers_per_call`, `eval.alarm_lift` | -    | no call on any seed | 0 of 16            |
+| `eval.predators_at_end`                                                                | 24.7 | 0 to 97             | 16 of 16           |
+| `eval.prey_types_at_end`                                                               | 3.44 | 1 to 4              | 16 of 16           |
 
 Reading. No blob calls on any seed, as the D1 diagnosis found, so every hearer metric is null by construction and cannot
 rank the forced-call arms until T5 supplies calls. The audience is real: a threatened prey has about 3 other prey within
@@ -109,7 +109,7 @@ node scripts/eval.mjs --seeds 4 --ticks 30000 --policy live --workers 2 --out /t
 | Metric                              | Value (D1, 4 seeds x 30,000 ticks, floor on)            |
 | ----------------------------------- | ------------------------------------------------------- |
 | `eval.alarm_rate`                   | 0 per 1000 agent-ticks on 4 of 4 seeds                  |
-| `eval.alarm_precision`              | `null` on 4 of 4 seeds                                  |
+| `eval.alarm_lift`                   | `null` on 4 of 4 seeds                                  |
 | `eval.alarm_response`               | `null` on 4 of 4 seeds                                  |
 | `eval.kin_within_call_radius`       | `null` on 4 of 4 seeds                                  |
 | `eval.input_active_share.threat`    | 0.025 mean over 4 seeds                                 |
@@ -118,7 +118,7 @@ node scripts/eval.mjs --seeds 4 --ticks 30000 --policy live --workers 2 --out /t
 
 The 16-seed, 200,000-tick baseline on the defaults current when T4 runs (E143) replaces this table; T4 records the config
 hash, because stream L may adopt `juvenileDependency` and other keepers first. The kin count in Phase 1 reads the same D5
-sample as `eval.group_cohesion_under_threat`, so the baseline value of that metric is the kin reference.
+sample as `eval.kin_nearby_threat_gain`, so the baseline value of that metric is the kin reference.
 
 ## Config keys and options
 
@@ -152,7 +152,7 @@ booleans are in the flag ledger from the commit that adds the keys, each with it
 
 ## Detectors
 
-The scene's detectors are `eval.alarm_precision`, `eval.alarm_response`, `eval.idle_signals_per_1k`,
+The scene's detectors are `eval.alarm_lift`, `eval.alarm_response`, `eval.idle_signals_per_1k`,
 `eval.kin_within_call_radius` and `eval.social_return` ([principles.md](../principles.md), Call, or don't). Phase 1 adds the
 instruments that read the opportunity and the reach, all `watch`, observer-only (`js/evo/`, no sim state):
 
@@ -169,7 +169,7 @@ made with no threat sighting must stay under half. A call with no hunter near pa
 nothing, because the guard acts only on a bite and no bite lands without a hunter.
 
 Pass bands for the scene on the default world after Phase 4, read before any adoption: calls with a threat are at least 50%
-of calls, `eval.alarm_precision` above 0.05 on at least 8 of 16 seeds, `eval.alarm_response` above 0 with an interval that
+of calls, `eval.alarm_lift` above 0.05 on at least 8 of 16 seeds, `eval.alarm_response` above 0 with an interval that
 excludes 0, and `eval.idle_signals_per_1k` not above the defaults. A switch that fails these still stays when it does no
 harm (the keep rule); the bands say whether the scene appeared.
 
@@ -194,7 +194,7 @@ Chunks:
 
 ### Phase 2 - Mechanisms behind switches
 
-**Targets:** eval.alarm_precision, eval.alarm_response, eval.kin_within_call_radius, eval.idle_signals_per_1k, eval.social_return, eval.hunt_abort_rate
+**Targets:** eval.alarm_lift, eval.alarm_response, eval.kin_within_call_radius, eval.idle_signals_per_1k, eval.social_return, eval.hunt_abort_rate
 
 Three switches, each its own commit and test, all default off:
 
@@ -225,7 +225,7 @@ Chunks:
 
 ### Phase 3 - Screen and confirm
 
-**Targets:** eval.alarm_precision, eval.alarm_response, eval.kin_within_call_radius, eval.idle_signals_per_1k, eval.social_return, eval.hunt_abort_rate
+**Targets:** eval.alarm_lift, eval.alarm_response, eval.kin_within_call_radius, eval.idle_signals_per_1k, eval.social_return, eval.hunt_abort_rate
 
 Runs only, no code. The screen (8 seeds, 200,000 ticks, floor on; orders the work, never judges) has the arms `reflex`,
 `deterrence`, `eavesdrop`, `reflex+deterrence`, `reflex+deterrence+eavesdrop`, `guard-0.8`, `guard-0.6` and `guard-0.4` (each
@@ -246,7 +246,7 @@ Chunks:
 
 ### Phase 4 - Adopt and delete
 
-**Targets:** eval.alarm_precision, eval.alarm_response, eval.idle_signals_per_1k
+**Targets:** eval.alarm_lift, eval.alarm_response, eval.idle_signals_per_1k
 
 One verdict per switch from the Phase 3 results. A switch that does no harm is adopted (default on) even when its scene
 metric does not move ([realistic-keepers.md](realistic-keepers.md) keep rule); a switch that harms is deleted with its
@@ -273,7 +273,7 @@ Every row is Delegated: the user was away and the doc's author answered the crea
 | `alarmReflex` writes existing cells only: `wSkip`, `bOut`, `wIn` and `wOut`; no block changes size         | The heard alarm is a body input with no `wSkip` row, so the receiver goes through two reserved hidden units; the layout name and archive version stay, so no champion or archive file is refused                             | Delegated |
 | The sender needs `REFLEX_BIAS` -0.5 and weight 3, not the silent bias                                      | At bias -2 and weight at most 2 the sum is at most 0, under the 0.78 the threshold needs; -0.5 + 3 x strength clears it above strength 0.43 and stays silent on a blank ray                                                  | Delegated |
 | `callRadius` is swept as a screen arm, not a switch                                                        | It is an existing numeric key; hearing range in nature follows where kin live (Marler 1955; Sherman 1977), and the keepers' `juvenileDependency` already moves where kin live                                                | Delegated |
-| Kin reach reads the D5 sample, not a new one                                                               | `sampleGroups` already counts same-lineage agents within `callRadius` of threatened and calm prey; a second sample would duplicate the pass and could disagree with `eval.group_cohesion_under_threat`                       | Delegated |
+| Kin reach reads the D5 sample, not a new one                                                               | `sampleGroups` already counts same-lineage agents within `callRadius` of threatened and calm prey; a second sample would duplicate the pass and could disagree with `eval.kin_nearby_threat_gain`                            | Delegated |
 | `alarmGuard` is swept (0.8, 0.6, 0.4), not fixed                                                           | No nature number gives the factor; the screen finds where it changes the picture                                                                                                                                             | Delegated |
 | Priority 14                                                                                                | The scene is a single watch row with no guard role; it queues behind the refuge, keepers and balance work whose adoptions change the kin and cover it depends on                                                             | Delegated |
 | Mate attraction and reciprocity are not candidates                                                         | Mate-advertising calls are a different signal (the sim has no call for it), and reciprocity has thin evidence in the wild (Hollen and Radford 2009)                                                                          | Delegated |

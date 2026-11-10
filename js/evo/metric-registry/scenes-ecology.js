@@ -234,6 +234,8 @@ export const SCENES_ECOLOGY = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no herd checkpoints after burn-in'],
+        expectedFlat:
+            "Reads 0 on every seed: no basin lost its herd and regained it at a 1000-tick checkpoint after burn-in; it moves when a basin's herd dies out and returns.",
         arithmetic: 'test/evo/scene-herd.test.js',
     }),
     'eval.herd_follow_share': entry('scenes-ecology', {

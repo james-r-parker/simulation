@@ -8,8 +8,8 @@ import { GENOME_SPECS } from './genome.js';
 export const CURVE_METRICS = Object.freeze([
     'eval.food_energy_per_1k',
     'eval.births_per_1k',
-    'eval.escape_rate',
-    'eval.hunter_kills_per_life',
+    'eval.escape_share',
+    'eval.hunter_kills_per_life_p50',
     'eval.hunter_zero_kill_share',
     'eval.hunter_income_share.kill',
     'eval.hunter_income_share.bite',

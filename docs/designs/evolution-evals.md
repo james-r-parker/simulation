@@ -225,7 +225,7 @@ fail the bound under `fitnessV5`, all for FIT-8 (pay for age, distance and explo
 and `biteSeeker` stay under half. The five chance-or-waste controllers ([world-balance.md](world-balance.md) Phase 1) are in the suite too: under `fitnessV1` all five stay within the bound; under `fitnessV5` the `sloppyForager`, `jawSitter` and `huntCallSpammer` are expected failures, each a FIT-8 finding (pay for age, distance, exploration and actions without matching intake), while the `grouper` and `cruiser` pass. The combat controllers (`hunter`, `fleer`, `alarmSpammer`, `smokeSpammer`) are in the same suite; under `fitnessV5` the `hunter` is an expected failure for FIT-5 (the specialisation score pays a flat amount per kill, not the energy the kill brings in), and passes under `fitnessV1`. `hunter` and
 `fleer` also run together on `evals/predator-world.json`, which is the micro-world plus `initialEnergy` 3000 (the
 micro-world's 800 lets foragers starve while sprinting before any outlasts the 300 ticks that count as an escape), so
-that `eval.catch_rate` and `eval.escape_rate` are above 0. The older controllers write thrust and turn only (sprint, mate and bite are 0).
+that `eval.hunter_catches_per_1k` and `eval.escape_share` are above 0. The older controllers write thrust and turn only (sprint, mate and bite are 0).
 
 ## Champion league (Phase 4)
 

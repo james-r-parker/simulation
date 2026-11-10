@@ -11,13 +11,13 @@ import {
     withLiveness,
 } from '../../../js/evo/metric-registry/index.js';
 
-/** @type {string[]} the 268 names of a live eval report, sorted */
+/** @type {string[]} the 269 names of a live eval report, sorted */
 const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-names.json', import.meta.url), 'utf8'));
 
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(268);
+        expect(REPORT_NAMES).toHaveLength(269);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -72,6 +72,8 @@ describe('withLiveness', () => {
  *   `DIRECTIONS` (js/evo/compare.js), `WATCH_INTENDED_LOWER` (scripts/lib/watch-intent.mjs) and `METRIC_MIN_SEEDS`
  *   (js/evo/compare-seeds.js) held when they were deleted for the registry (metric-trust T8)
  */
+/** Metrics registered after the snapshot was taken (T25 added the mean beside the renamed median). */
+const ADDED_AFTER_T8 = ['eval.hunter_kills_per_life_mean'];
 const SNAPSHOT = JSON.parse(readFileSync(new URL('../../fixtures/metric-directions.json', import.meta.url), 'utf8'));
 
 describe('the tables the registry replaced', () => {
@@ -84,7 +86,9 @@ describe('the tables the registry replaced', () => {
     });
 
     it('gives every registered metric not in DIRECTIONS the fitness prefix direction, higher', () => {
-        const unlisted = Object.keys(METRICS).filter((name) => !Object.hasOwn(SNAPSHOT.directions, name));
+        const unlisted = Object.keys(METRICS).filter(
+            (name) => !Object.hasOwn(SNAPSHOT.directions, name) && !ADDED_AFTER_T8.includes(name),
+        );
         expect(unlisted).toHaveLength(10);
         for (const name of unlisted) {
             expect(name).toMatch(/^eval\.(mean|p90)_fitness\./);

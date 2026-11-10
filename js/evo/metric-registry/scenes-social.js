@@ -23,6 +23,8 @@ export const SCENES_SOCIAL = {
             'basin <n> held <mean> agents (under BASIN_MIN_ALIVE) in the last quarter',
             'no basin held BASIN_MIN_ALIVE agents in the last quarter',
         ],
+        expectedFlat:
+            'Null when a basin holds under BASIN_MIN_ALIVE agents in the last quarter (39 of 128 seeds floor on, 64 floor off); it reads on worlds where both basins stay populated.',
         arithmetic: 'test/evo/scene-families.test.js',
         source: 'test/evo/metric-source-social.test.js',
     }),
@@ -37,6 +39,8 @@ export const SCENES_SOCIAL = {
             'basin <n> held <mean> agents (under BASIN_MIN_ALIVE) in the last quarter',
             'no checkpoint in the last quarter had both basins at BASIN_MIN_ALIVE agents',
         ],
+        expectedFlat:
+            'Null when a basin holds under BASIN_MIN_ALIVE agents in the last quarter (39 of 128 seeds floor on, 64 floor off); it reads on worlds where both basins stay populated.',
         arithmetic: 'test/evo/scene-divergence.test.js',
         source: 'test/evo/metric-source-social.test.js',
     }),
@@ -51,6 +55,8 @@ export const SCENES_SOCIAL = {
             'basin <n> held <mean> agents (under BASIN_MIN_ALIVE) in the last quarter',
             'no checkpoint in the last quarter had both basins at BASIN_MIN_ALIVE agents',
         ],
+        expectedFlat:
+            'Null when a basin holds under BASIN_MIN_ALIVE agents in the last quarter (39 of 128 seeds floor on, 64 floor off); it reads on worlds where both basins stay populated.',
         arithmetic: 'test/evo/scene-divergence.test.js',
         source: 'test/evo/metric-source-social.test.js',
     }),
@@ -65,6 +71,8 @@ export const SCENES_SOCIAL = {
             'basin <n> held <mean> agents (under BASIN_MIN_ALIVE) in the last quarter',
             'no checkpoint in the last quarter had both basins at BASIN_MIN_ALIVE agents',
         ],
+        expectedFlat:
+            'Null when a basin holds under BASIN_MIN_ALIVE agents in the last quarter (39 of 128 seeds floor on, 64 floor off); it reads on worlds where both basins stay populated.',
         arithmetic: 'test/evo/scene-divergence.test.js',
         source: 'test/evo/metric-source-social.test.js',
     }),
@@ -130,7 +138,7 @@ export const SCENES_SOCIAL = {
         arithmetic: 'test/evo/scene-heritage.test.js',
         source: 'test/evo/metric-source-social.test.js',
     }),
-    'eval.mate_skill_gap': entry('scenes-social', {
+    'eval.mate_rank_gap': entry('scenes-social', {
         module: 'js/evo/scene-mate.js',
         meaning: 'Whether mates are chosen on rank (positive).',
         counts: "At each mating start after burn-in, the chosen mate's within-specialisation rank percentile minus the mean percentile of the candidates in range (alive, her specialisation, other sex, within size + size + mateReach, ready to mate).",
@@ -138,6 +146,7 @@ export const SCENES_SOCIAL = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no mating with a chosen mate after burn-in'],
+        renamedFrom: ['eval.mate_skill_gap'],
         arithmetic: 'test/evo/scene-mate.test.js',
         source: 'test/evo/metric-source-social.test.js',
     }),

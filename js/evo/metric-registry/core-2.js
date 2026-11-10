@@ -22,6 +22,8 @@ export const CORE_2 = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no alarm call'],
+        expectedFlat:
+            'Null unless a lineage evolves alarm calls, which happened on 5 of 128 seeds with floor on and off; it moves with alarm calling.',
         arithmetic: 'test/evo/metrics-selection.test.js',
         source: 'test/evo/metric-source-core-selection.test.js',
     }),
@@ -51,6 +53,8 @@ export const CORE_2 = {
             'run ended before the final boundary',
             'fewer than 4 compared windows have a hunter kill',
         ],
+        expectedFlat:
+            'Null when fewer than 4 compared windows have a hunter kill, as where hunters die out (45 of 128 seeds floor on, 68 floor off); it reads where hunters persist.',
         arithmetic: 'test/evo/metrics-trend.test.js',
         source: 'test/evo/metric-source-core-skill.test.js',
     }),
@@ -66,6 +70,8 @@ export const CORE_2 = {
             'run ended before the final boundary',
             'fewer than 4 compared windows have an escaped bite episode',
         ],
+        expectedFlat:
+            'Null when fewer than 4 compared windows have an escaped bite episode, as where hunters die out (43 of 128 seeds floor on, 66 floor off); it reads where hunters persist.',
         arithmetic: 'test/evo/metrics-trend.test.js',
         source: 'test/evo/metric-source-core-skill.test.js',
     }),

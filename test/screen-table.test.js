@@ -72,7 +72,7 @@ describe('renderTable', () => {
                 verdict('ref', {
                     watch: {
                         'eval.skill_trend': 0.4375,
-                        'eval.chance_food_per_1k': 3.25,
+                        'eval.chance_food_energy_per_1k': 3.25,
                         'eval.lineage_lifespan_p50': 12345.6,
                     },
                 }),

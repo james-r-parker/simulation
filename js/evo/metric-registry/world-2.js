@@ -120,6 +120,8 @@ export const WORLD_2 = {
             'fewer than MIN_LAG_PAIRS usable pairs of a catch rate and the next evasion skill',
             'catch rate or evasion skill does not vary across the windows',
         ],
+        expectedFlat:
+            'Null with fewer than 5 usable span pairs of catch rate and next evasion skill, as where hunters die out (33 of 128 seeds floor on, 58 floor off); it reads where hunters persist.',
         arithmetic: 'test/evo/metrics-watch.test.js',
         source: 'test/evo/metric-source-world-watch.test.js',
     }),
@@ -144,13 +146,14 @@ export const WORLD_2 = {
         arithmetic: 'test/evo/metrics-environment.test.js',
         source: 'test/evo/metric-source-world-watch.test.js',
     }),
-    'eval.terrain_death_share': entry('world', {
+    'eval.collision_death_share': entry('world', {
         module: 'js/evo/metrics-environment.js',
         meaning: 'Lower means fewer deaths are collisions.',
         counts: 'Deaths after burn-in with cause COLLISION over all deaths after burn-in.',
         unit: 'share',
         direction: 'lower',
         nullWhen: ['no death after burn-in'],
+        renamedFrom: ['eval.terrain_death_share'],
         arithmetic: 'test/evo/metrics-environment.test.js',
         source: 'test/evo/metric-source-world-watch.test.js',
     }),

@@ -137,7 +137,7 @@ export function targetUses(text) {
  * @param {Pick<NameUse, 'name' | 'prefix'>} use a name or a prefix from a file
  * @param {Readonly<Record<string, { renamedFrom: readonly string[] }>>} [metrics] the registry
  * @returns {boolean} whether the registry knows it: an exact name, an old name in a `renamedFrom`, the base of a family
- *   (`eval.reward_events`, the first argument of `metricName`), or (for a prefix) the start of some name or old name
+ *   (`eval.reward_events_per_1k`, the first argument of `metricName`), or (for a prefix) the start of some name or old name
  */
 export function isRegistered({ name, prefix }, metrics = METRICS) {
     const known = Object.entries(metrics).flatMap(([current, entry]) => [current, ...entry.renamedFrom]);

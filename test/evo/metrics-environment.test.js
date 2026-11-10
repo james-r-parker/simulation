@@ -12,7 +12,7 @@ import { nextTick, observed, pushDied } from './helpers/observer-world.js';
 import { loose } from './helpers/metric-registry.js';
 
 const ON = { hashCellSize: 256 };
-const NAMES = ['cold_stress_share', 'heat_stress_share', 'terrain_death_share', 'winter_pop_ratio'];
+const NAMES = ['cold_stress_share', 'heat_stress_share', 'collision_death_share', 'winter_pop_ratio'];
 const NO_AGENTS = 'no checkpoint after burn-in with an alive agent';
 const NO_DEATHS = 'no death after burn-in';
 const SUMMER = 1;
@@ -95,24 +95,24 @@ describe('eval.cold_stress_share and eval.heat_stress_share', () => {
     });
 });
 
-describe('eval.terrain_death_share', () => {
+describe('eval.collision_death_share', () => {
     it('is collision deaths over all deaths from tick 10000 on', () => {
         const r = observed(ON);
         die(r, 10000, DEATH_CAUSE.COLLISION); // record tick 9999: burn-in, not counted
-        expect(read(r).terrain_death_share).toEqual({ value: null, reason: NO_DEATHS });
+        expect(read(r).collision_death_share).toEqual({ value: null, reason: NO_DEATHS });
         die(r, 10001, DEATH_CAUSE.COLLISION); // record tick 10000: the first counted tick
         die(r, 10002, DEATH_CAUSE.STARVED);
         die(r, 10003, DEATH_CAUSE.EATEN);
         die(r, 10004, DEATH_CAUSE.OLD_AGE);
-        expect(read(r).terrain_death_share).toEqual({ value: 1 / 4 });
+        expect(read(r).collision_death_share).toEqual({ value: 1 / 4 });
         die(r, 10005, DEATH_CAUSE.COLLISION);
-        expect(read(r).terrain_death_share).toEqual({ value: 2 / 5 });
+        expect(read(r).collision_death_share).toEqual({ value: 2 / 5 });
     });
 
     it('is 1 when every counted death is a collision', () => {
         const r = observed(ON);
         die(r, 20000, DEATH_CAUSE.COLLISION);
-        expect(read(r).terrain_death_share).toEqual({ value: 1 });
+        expect(read(r).collision_death_share).toEqual({ value: 1 });
     });
 });
 

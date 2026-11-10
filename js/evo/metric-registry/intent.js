@@ -13,7 +13,7 @@ export const INTENT = {
         nullWhen: ['no food eaten'],
         arithmetic: 'test/evo/metrics-intent.test.js',
     }),
-    'eval.deliberate_food_per_1k': entry('intent', {
+    'eval.deliberate_food_energy_per_1k': entry('intent', {
         module: 'js/evo/metrics-intent.js',
         meaning: 'How much food energy per tick alive is eaten on purpose.',
         counts: 'Food energy gained in deliberate meals, whole run, per 1000 agent-ticks.',
@@ -21,9 +21,10 @@ export const INTENT = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no agent-ticks'],
+        renamedFrom: ['eval.deliberate_food_per_1k'],
         arithmetic: 'test/evo/metrics-intent.test.js',
     }),
-    'eval.chance_food_per_1k': entry('intent', {
+    'eval.chance_food_energy_per_1k': entry('intent', {
         module: 'js/evo/metrics-intent.js',
         meaning: 'How much food energy per tick alive is eaten by chance (lower is intended).',
         counts: 'Food energy gained in meals not judged deliberate, whole run, per 1000 agent-ticks.',
@@ -31,6 +32,7 @@ export const INTENT = {
         direction: 'watch',
         intended: 'lower',
         nullWhen: ['no agent-ticks'],
+        renamedFrom: ['eval.chance_food_per_1k'],
         arithmetic: 'test/evo/metrics-intent.test.js',
     }),
     'eval.pursuit_bite_share': entry('intent', {
@@ -70,9 +72,11 @@ export const INTENT = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no resolved hunt call'],
+        expectedFlat:
+            'Null unless hunters evolve hunt calls (PackCalled), which happened on 8 of 128 seeds with floor on and off; it moves with pack calling.',
         arithmetic: 'test/evo/metrics-intent.test.js',
     }),
-    'eval.evasion_skill': entry('intent', {
+    'eval.evasion_response_share': entry('intent', {
         module: 'js/evo/metrics-intent.js',
         meaning: 'The share of escaped bite episodes in which the victim responded to the threat.',
         counts: 'Escaped bite episodes on non-hunters where the victim responded (flee lift over its calm base at least RESPONSE_LIFT) over all escaped episodes.',
@@ -80,18 +84,20 @@ export const INTENT = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no escaped bite episode'],
+        renamedFrom: ['eval.evasion_skill'],
         arithmetic: 'test/evo/metrics-intent.test.js',
     }),
-    'eval.group_cohesion_under_threat': entry('intent', {
+    'eval.kin_nearby_threat_gain': entry('intent', {
         module: 'js/evo/metrics-intent.js',
         meaning: 'Higher means threatened non-hunters have more same-lineage agents near them than unthreatened ones.',
         counts: 'Mean same-lineage non-hunters within callRadius of a threatened non-hunter minus the same mean for unthreatened ones, over per-tick grouping samples (threatened: nearest can-bite-me ray at THREAT_PROXIMITY or more).',
         unit: 'kin',
         direction: 'higher',
         nullWhen: ['no threatened agent in a grouping sample', 'no unthreatened agent in a grouping sample'],
+        renamedFrom: ['eval.group_cohesion_under_threat'],
         arithmetic: 'test/evo/metrics-intent.test.js',
     }),
-    'eval.alarm_precision': entry('intent', {
+    'eval.alarm_lift': entry('intent', {
         module: 'js/evo/metrics-intent.js',
         meaning:
             "The extra share of alarm calls made while a threat was in sight over what the callers' own time in sight predicts.",
@@ -100,9 +106,12 @@ export const INTENT = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no alarm call'],
+        renamedFrom: ['eval.alarm_precision'],
+        expectedFlat:
+            'Null unless a lineage evolves alarm calls, which happened on 5 of 128 seeds with floor on and off; it moves with alarm calling.',
         arithmetic: 'test/evo/metrics-intent.test.js',
     }),
-    'eval.hunt_call_precision': entry('intent', {
+    'eval.hunt_call_lift': entry('intent', {
         module: 'js/evo/metrics-intent.js',
         meaning:
             "Higher means hunt calls are made more often with prey in sight than the callers' own time in sight predicts.",
@@ -110,6 +119,9 @@ export const INTENT = {
         unit: 'calls',
         direction: 'higher',
         nullWhen: ['no hunt call'],
+        renamedFrom: ['eval.hunt_call_precision'],
+        expectedFlat:
+            'Null unless hunters evolve hunt calls (PackCalled), which happened on 8 of 128 seeds with floor on and off; it moves with pack calling.',
         arithmetic: 'test/evo/metrics-intent.test.js',
     }),
     'eval.smoke_precision': entry('intent', {
@@ -120,6 +132,8 @@ export const INTENT = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no smoke release'],
+        expectedFlat:
+            'Null unless an agent releases smoke, which happened on 7 of 128 seeds with floor on and off; it moves with smoke use.',
         arithmetic: 'test/evo/metrics-intent.test.js',
     }),
     'eval.idle_signals_per_1k': entry('intent', {
@@ -159,6 +173,8 @@ export const INTENT = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no alarm call'],
+        expectedFlat:
+            'Null unless a lineage evolves alarm calls, which happened on 5 of 128 seeds with floor on and off; it moves with alarm calling.',
         arithmetic: 'test/evo/observer-alarm-reach.test.js',
     }),
     'eval.alarm_hunter_hearers_per_call': entry('intent', {
@@ -169,6 +185,8 @@ export const INTENT = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no alarm call'],
+        expectedFlat:
+            'Null unless a lineage evolves alarm calls, which happened on 5 of 128 seeds with floor on and off; it moves with alarm calling.',
         arithmetic: 'test/evo/observer-alarm-reach.test.js',
     }),
     'eval.alarm_calls_with_threat_per_1k': entry('intent', {

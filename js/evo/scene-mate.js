@@ -1,7 +1,7 @@
 // Rule 5, who is chosen (natural-selection.md, Detectors), read at the start of each mating after burn-in (the tick a
 // mother turns pregnant, when the candidates are still where they were):
 //
-// - `eval.mate_skill_gap`: the chosen mate's within-specialisation rank percentile minus the mean percentile of the
+// - `eval.mate_rank_gap`: the chosen mate's within-specialisation rank percentile minus the mean percentile of the
 //   candidates in range (alive, of her specialisation, of the other sex, within
 //   `size + size + mateRange`, and ready to mate; the chosen mate is always one). Positive when mates are chosen on rank.
 // - `eval.mate_hunter_lean`: the `canHunt` share of the matings minus the `canHunt` share of the other adults ready to
@@ -126,7 +126,7 @@ export function mateMetrics(scene) {
             ? ok(scene.hunterMatings / scene.matings - scene.readyHunters / scene.readyAdults)
             : none('no mating with a ready adult in view after burn-in');
     return {
-        'eval.mate_skill_gap':
+        'eval.mate_rank_gap':
             scene.gapCount > 0 ? ok(scene.gapSum / scene.gapCount) : none('no mating with a chosen mate after burn-in'),
         'eval.mate_hunter_lean': lean,
     };

@@ -2567,3 +2567,61 @@ deprecates its `app-id` input in favour of `client-id` (`RELEASE_CLIENT_ID`).
 - `test/evo/kills.agreement.slow.test.js` confirms the ledger kill count matches `HunterKill` events and no dead hunter life has positive kill energy with zero kills. The core known-answer source test pins the exact `births_per_1k` formula.
 - The planned prey-summer trace comparison moves to T34: reports currently keep only total population per checkpoint, so they cannot provide the prey-only minimum. The ecology source test still pins the metric's known answers.
 - Tier 2 ran in a clean temporary worktree. 6115 of 6116 tests passed; the one check-tier test failed because `SMOKE_LOCAL=1` was set for the entire gate. It passed when rerun without that variable. The isolated local browser-smoke gate passed, as did conventions, design index, format, lint, typecheck, deps, dupes, bench-check, build and eval-smoke.
+
+### 2026-11-10 - Metric liveness triage (metric-trust T24, E148)
+
+`npm run metric:liveness` on `evals/power/defaults-floor-on.json` and `defaults-floor-off.json` (128 seeds x 200000 ticks):
+30 metrics miss the liveness bar with floor on and 44 with floor off, and all 30 floor-on misses also miss with floor off,
+so the floor-on readings in `js/evo/metric-registry/liveness.js` hold every metric T24 had to triage. None is deleted:
+each is a working detector whose source test plants its answer. The 24 that were not `deprecated` now have an
+`expectedFlat` reason; the 6 `deprecated` entries already state theirs. `test/evo/metric-registry/liveness.test.js`
+fails any future reading that misses the bar with neither.
+
+| Group                       | Metrics                                                                                                                     | On the defaults                                                                                       |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Rare signals                | `alarm_hearers_per_call`, `alarm_hunter_hearers_per_call`, `alarm_precision`, `alarm_response`, `kin_within_call_radius`    | Alarm calls on 5 of 128 seeds                                                                         |
+|                             | `hunt_call_answer`, `hunt_call_precision`                                                                                   | Hunt calls on 8 of 128 seeds                                                                          |
+|                             | `smoke_escapes`, `smoke_precision`                                                                                          | Smoke after a bite on 1 seed, any smoke on 7                                                          |
+| A basin empties             | `basin_cluster_divergence`, `basin_divergence`, `basin_spec_divergence`, `basin_family_effective`                           | Null on 39 seeds floor on, 64 floor off                                                               |
+| Hunters die out             | `evasion_trend`, `pursuit_trend`, `pred_prey_lag_corr`, `predator_end_local_share`                                          | Null on 33 to 45 seeds floor on, 58 to 68 floor off                                                   |
+| Needs floor spawns          | `hunter_kill_rate_by_source.floor`, `lineage_lifespan_p50`                                                                  | Null on every floor-off seed; after burn-in only floor spawns found a lineage                         |
+| Never reaches the threshold | `weight_clamp_share`, `hebb_drift_clamped_share`, `leak_slow_share`, `leak_at_floor_share`, `herd_recolonisations`          | 0 on every seed: no weight at the clamp, no slow or floored leak gene, no herd lost and regained      |
+| Already `deprecated`        | `birth_source_share.immigrant`, `champion_elo`, `champion_win_rate`, `leak_flee_corr`, `leak_forage_corr`, `leak_hunt_corr` | Nothing spawns immigrants; only `runLeague` sets the league pair; `freeAgent` clears the genome first |
+
+The 14 metrics that miss only with floor off (`floor_episodes`, the `birth_source_share.floor` pair, `born_share`,
+`archive_lineage_share`, three basin family and lineage counts, three winter reads, `season_map_distance`, `skill_trend`,
+`deliberate_food_trend`) are live on the floor-on reference and need no reason.
+
+### 2026-11-10 - Metric renames (metric-trust T25)
+
+T2 to T7 listed 34 names that misstate what they count. A name is renamed when it says something false about the
+quantity; when the name is only vague and the registry's `meaning` and `counts` say the rest, it stays.
+
+| Old name                           | New name                             | Why                                                                |
+| ---------------------------------- | ------------------------------------ | ------------------------------------------------------------------ |
+| `eval.catch_rate`                  | `eval.hunter_catches_per_1k`         | A speed (eaten deaths with a hunter killer per 1k hunter-ticks)    |
+| `eval.hunter_kills_per_life`       | `eval.hunter_kills_per_life_p50`     | A median; the new `eval.hunter_kills_per_life_mean` sits beside it |
+| `eval.pack_kill_share`             | `eval.pack_kills_per_eaten_death`    | Divides by all eaten deaths, not by hunter kills                   |
+| `eval.escape_rate`                 | `eval.escape_share`                  | A share of resolved bite episodes, not a rate                      |
+| `eval.evasion_skill`               | `eval.evasion_response_share`        | The responded share of escaped episodes, not a skill score         |
+| `eval.group_cohesion_under_threat` | `eval.kin_nearby_threat_gain`        | Threatened minus calm mean same-lineage neighbours                 |
+| `eval.deliberate_food_per_1k`      | `eval.deliberate_food_energy_per_1k` | Counts energy, not items                                           |
+| `eval.chance_food_per_1k`          | `eval.chance_food_energy_per_1k`     | Counts energy, not items                                           |
+| `eval.alarm_precision`             | `eval.alarm_lift`                    | Calls above the callers' base rate, per call; can be negative      |
+| `eval.hunt_call_precision`         | `eval.hunt_call_lift`                | As alarm                                                           |
+| `eval.mate_skill_gap`              | `eval.mate_rank_gap`                 | A percentile gap of mate rank, not of skill                        |
+| `eval.reward_events.*`             | `eval.reward_events_per_1k.*`        | A rate per 1k hunter-ticks, not a count                            |
+| `eval.terrain_death_share`         | `eval.collision_death_share`         | The share of `COLLISION` deaths                                    |
+
+Kept, with what the registry says instead: `hunter_first_kill_age` (survivor bias is in `meaning`),
+`hunter_chases_by_age.*` and `hunter_conversion_gain_hunters` (the names already say count), `hunter_kill_conversion_by_age.*`,
+`pursuit_kill_share` and `leak_hunt_corr` (kill-rule notes, fixed by T14), `herd_carcass_share.*`, `refuge_use_under_threat`,
+`herd_recolonisations`, `prey_extinctions`, `flora_patch_death_rate`, `basin_families` (families are genetic clusters by
+definition), `social_return`, `juvenile_parent_pull`, `hidden_persistence`, `leak_rate_mean`, `sigma_mean`,
+`mean_energy_share`, `energy_over_split`, `merit_mean`, `migration_index`, `predator_births`, `predator_presence`,
+`alarm_rate` and the two `birth_source_share` families.
+
+The mean is not named `eval.hunter_kills_per_life`: an old report holds the median under that name and
+`withCurrentNames` maps it to `_p50`, so reusing the name for the mean would pair a median with a mean.
+Design docs, `docs/principles.md`, README, grids, configs and tests use the new names; `evals/experiments.json`,
+stored reports and earlier sim-notes entries keep the old ones, which `renamedFrom` maps.

@@ -6,7 +6,7 @@ import { none, per1k, share } from './metrics-stats.js';
 /**
  * @param {number} huntKills eaten deaths by a `canHunt` killer
  * @param {number} hunterAgentTicks alive `canHunt` agent-ticks
- * @returns {import('./metrics-stats.js').MetricResult} `eval.catch_rate`, whole run or one window: kills per 1000
+ * @returns {import('./metrics-stats.js').MetricResult} `eval.hunter_catches_per_1k`, whole run or one window: kills per 1000
  *   hunter agent-ticks
  */
 export function catchShare(huntKills, hunterAgentTicks) {
@@ -33,9 +33,9 @@ export function combatMetrics(observer) {
     const { combat } = observer;
     const resolved = combat.caughtEpisodes + combat.escapedEpisodes;
     return {
-        'eval.catch_rate': catchShare(combat.huntKills, combat.hunterAgentTicks),
-        'eval.escape_rate': share(combat.escapedEpisodes, resolved, 'no resolved bite episode'),
-        'eval.pack_kill_share': share(combat.packKills, combat.eatenDeaths, 'no eaten death'),
+        'eval.hunter_catches_per_1k': catchShare(combat.huntKills, combat.hunterAgentTicks),
+        'eval.escape_share': share(combat.escapedEpisodes, resolved, 'no resolved bite episode'),
+        'eval.pack_kills_per_eaten_death': share(combat.packKills, combat.eatenDeaths, 'no eaten death'),
         'eval.alarm_response': alarmResponse(combat.alarm),
         'eval.smoke_escapes': share(combat.smoke.escapes, combat.smoke.bittenReleases, 'no smoke release after a bite'),
     };

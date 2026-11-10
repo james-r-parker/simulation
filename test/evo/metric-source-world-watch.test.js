@@ -198,7 +198,7 @@ describe('pred_prey_lag_corr', () => {
     });
 });
 
-describe('cold_stress_share, heat_stress_share, terrain_death_share and winter_pop_ratio', () => {
+describe('cold_stress_share, heat_stress_share, collision_death_share and winter_pop_ratio', () => {
     it('counts cold/heat stressed agent-checkpoints, collision deaths and winter vs non-winter population', () => {
         const r = sourceRun({ over: { maxAgents: 16, wallDamage: 500, temperatureLossPassive: 0 } });
         const [coldA, hotA, okA, crasher, starver] = Array.from({ length: 5 }, () => r.spawn());
@@ -230,7 +230,7 @@ describe('cold_stress_share, heat_stress_share, terrain_death_share and winter_p
         const m = r.metrics();
         expect(m['eval.cold_stress_share']).toEqual({ value: 2 / 7 });
         expect(m['eval.heat_stress_share']).toEqual({ value: 2 / 7 });
-        expect(m['eval.terrain_death_share']).toEqual({ value: 1 / 2 });
+        expect(m['eval.collision_death_share']).toEqual({ value: 1 / 2 });
         expect(m['eval.winter_pop_ratio']).toEqual({ value: 3 / 4 });
     });
 });

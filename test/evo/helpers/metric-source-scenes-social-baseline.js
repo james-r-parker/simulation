@@ -40,7 +40,7 @@ export default {
         value: null,
         reason: 'no age with both a credited and an uncredited mature death',
     },
-    'eval.mate_skill_gap': {
+    'eval.mate_rank_gap': {
         value: null,
         reason: 'no mating with a chosen mate after burn-in',
     },

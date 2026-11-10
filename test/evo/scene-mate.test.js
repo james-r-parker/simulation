@@ -33,12 +33,12 @@ function mate(/** @type {any} */ h, /** @type {number} */ father, /** @type {num
     trackMatings(h.observer.scenes.mate, h.observer, h.world);
 }
 
-describe('eval.mate_skill_gap and eval.mate_hunter_lean', () => {
+describe('eval.mate_rank_gap and eval.mate_hunter_lean', () => {
     it('are the chosen male percentile over the candidates mean, and the hunter share against the ready adults', () => {
         const h = herd();
         mate(h, h.males[3], T0);
         // The mother scores 0 and the four males 1/12, 4/12, 7/12 and 10/12: percentiles 0.25, 0.5, 0.75 and 1 of five.
-        expect(read(h, 'mate_skill_gap').value).toBeCloseTo(1 - (0.25 + 0.5 + 0.75 + 1) / 4, 12);
+        expect(read(h, 'mate_rank_gap').value).toBeCloseTo(1 - (0.25 + 0.5 + 0.75 + 1) / 4, 12);
         // One grazer mating; of six ready adults two hunt.
         expect(read(h, 'mate_hunter_lean').value).toBeCloseTo(0 - 2 / 6, 12);
     });
@@ -57,13 +57,13 @@ describe('eval.mate_skill_gap and eval.mate_hunter_lean', () => {
 
     it('count the hunter lean without a gap when the father is gone, and are null before any mating', () => {
         const h = herd();
-        expect(read(h, 'mate_skill_gap').value).toBeNull();
+        expect(read(h, 'mate_rank_gap').value).toBeNull();
         expect(read(h, 'mate_hunter_lean').value).toBeNull();
         h.world.fatherId[h.mother] = 4242;
         h.world.pregnancy[h.mother] = 10;
         h.world.tick = T0;
         trackMatings(h.observer.scenes.mate, h.observer, h.world);
-        expect(read(h, 'mate_skill_gap').value).toBeNull();
+        expect(read(h, 'mate_rank_gap').value).toBeNull();
         expect(read(h, 'mate_hunter_lean').value).not.toBeNull();
     });
 });

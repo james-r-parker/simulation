@@ -7,16 +7,16 @@ import { loose } from './helpers/metric-registry.js';
 
 const NAMES = [
     'eval.deliberate_food_share',
-    'eval.deliberate_food_per_1k',
-    'eval.chance_food_per_1k',
+    'eval.deliberate_food_energy_per_1k',
+    'eval.chance_food_energy_per_1k',
     'eval.pursuit_bite_share',
     'eval.pursuit_kill_share',
     'eval.pack_convergence',
     'eval.hunt_call_answer',
-    'eval.evasion_skill',
-    'eval.group_cohesion_under_threat',
-    'eval.alarm_precision',
-    'eval.hunt_call_precision',
+    'eval.evasion_response_share',
+    'eval.kin_nearby_threat_gain',
+    'eval.alarm_lift',
+    'eval.hunt_call_lift',
     'eval.smoke_precision',
     'eval.idle_signals_per_1k',
     'eval.undefended_bite_share',
@@ -25,16 +25,16 @@ const NAMES = [
 
 const REASONS = {
     'eval.deliberate_food_share': 'no food eaten',
-    'eval.deliberate_food_per_1k': 'no agent-ticks',
-    'eval.chance_food_per_1k': 'no agent-ticks',
+    'eval.deliberate_food_energy_per_1k': 'no agent-ticks',
+    'eval.chance_food_energy_per_1k': 'no agent-ticks',
     'eval.pursuit_bite_share': 'no bite energy gained by hunters',
     'eval.pursuit_kill_share': 'no hunter kill',
     'eval.pack_convergence': 'no pack kill',
     'eval.hunt_call_answer': 'no resolved hunt call',
-    'eval.evasion_skill': 'no escaped bite episode',
-    'eval.group_cohesion_under_threat': 'no threatened agent in a grouping sample',
-    'eval.alarm_precision': 'no alarm call',
-    'eval.hunt_call_precision': 'no hunt call',
+    'eval.evasion_response_share': 'no escaped bite episode',
+    'eval.kin_nearby_threat_gain': 'no threatened agent in a grouping sample',
+    'eval.alarm_lift': 'no alarm call',
+    'eval.hunt_call_lift': 'no hunt call',
     'eval.smoke_precision': 'no smoke release',
     'eval.idle_signals_per_1k': 'no agent-ticks',
     'eval.undefended_bite_share': 'no classified bite episode',
@@ -84,16 +84,16 @@ describe('intentMetrics', () => {
         const v = Object.fromEntries(Object.entries(intentMetrics(o)).map(([name, r]) => [name, r.value]));
         expect(v).toEqual({
             'eval.deliberate_food_share': 0.75,
-            'eval.deliberate_food_per_1k': 7.5,
-            'eval.chance_food_per_1k': 2.5,
+            'eval.deliberate_food_energy_per_1k': 7.5,
+            'eval.chance_food_energy_per_1k': 2.5,
             'eval.pursuit_bite_share': 0.25,
             'eval.pursuit_kill_share': 0.75,
             'eval.pack_convergence': 0.5,
             'eval.hunt_call_answer': 0.75,
-            'eval.evasion_skill': 0.25,
-            'eval.group_cohesion_under_threat': 2,
-            'eval.alarm_precision': 0.75,
-            'eval.hunt_call_precision': 0.2,
+            'eval.evasion_response_share': 0.25,
+            'eval.kin_nearby_threat_gain': 2,
+            'eval.alarm_lift': 0.75,
+            'eval.hunt_call_lift': 0.2,
             'eval.smoke_precision': 0.75,
             'eval.idle_signals_per_1k': 2,
             'eval.undefended_bite_share': 0.3,
@@ -111,14 +111,14 @@ describe('intentMetrics', () => {
         intent.preyCueTicks[0] = 25;
         intent.huntCallCount[0] = 4;
         const m = intentMetrics(o);
-        expect(m['eval.alarm_precision']?.value).toBeCloseTo((8 - (2 + 4 * 0.5)) / 10, 10);
-        expect(m['eval.hunt_call_precision']?.value).toBeCloseTo((4 - 4 * 0.25) / 4, 10);
+        expect(m['eval.alarm_lift']?.value).toBeCloseTo((8 - (2 + 4 * 0.5)) / 10, 10);
+        expect(m['eval.hunt_call_lift']?.value).toBeCloseTo((4 - 4 * 0.25) / 4, 10);
     });
 
     it('is null for the group metric when there is a threatened agent but no unthreatened one', () => {
         const o = bareObserver();
         Object.assign(o.intent.run, { groupThreatSum: 2, groupThreatN: 1 });
-        expect(intentMetrics(o)['eval.group_cohesion_under_threat']).toEqual({
+        expect(intentMetrics(o)['eval.kin_nearby_threat_gain']).toEqual({
             value: null,
             reason: 'no unthreatened agent in a grouping sample',
         });
@@ -133,12 +133,12 @@ describe('intentMetrics', () => {
         // Moved to watch on eval:power's false-positive rate (world-balance T41, T42, T70); `deliberate_food_share` and
         // `diversity` returned to `higher` on E35's rates (fitness-and-selection T13).
         const watch = [
-            'eval.deliberate_food_per_1k',
-            'eval.chance_food_per_1k',
+            'eval.deliberate_food_energy_per_1k',
+            'eval.chance_food_energy_per_1k',
             'eval.unseen_bite_share',
             'eval.pursuit_bite_share',
-            'eval.evasion_skill',
-            'eval.alarm_precision',
+            'eval.evasion_response_share',
+            'eval.alarm_lift',
             'eval.smoke_precision',
             'eval.hunt_call_answer',
         ];

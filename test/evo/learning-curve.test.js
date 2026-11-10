@@ -105,7 +105,7 @@ describe('curvePoint', () => {
             trainTicks: 600,
             drillEdge: 0.2,
             'eval.food_energy_per_1k': 0,
-            'eval.escape_rate': CURVE_METRICS.indexOf('eval.escape_rate'),
+            'eval.escape_share': CURVE_METRICS.indexOf('eval.escape_share'),
         });
         expect(point.coverage).toBeCloseTo(1 / 500);
         expect(point.best.forager).toBeTypeOf('number');
@@ -119,7 +119,7 @@ describe('curvePoint', () => {
 
     it('carries a field for each curve metric, the hunter ones included', () => {
         const names = [
-            'eval.hunter_kills_per_life',
+            'eval.hunter_kills_per_life_p50',
             'eval.hunter_zero_kill_share',
             'eval.hunter_income_share.kill',
             'eval.hunter_income_share.bite',
@@ -127,7 +127,7 @@ describe('curvePoint', () => {
             'eval.hunter_income_share.herd',
             'eval.hunter_kill_rate_by_source.mate-hunter-parent',
             'eval.hunter_kill_rate_by_source.split-hunter-parent',
-            'eval.escape_rate',
+            'eval.escape_share',
             'eval.food_energy_per_1k',
             'eval.births_per_1k',
             'eval.bite_on_prey',
@@ -148,7 +148,7 @@ describe('curvePoint', () => {
         for (const [i, name] of names.entries()) {
             expect(point[name]).toBe(i + 1);
         }
-        expect(CURVE_METRICS).not.toContain('eval.catch_rate');
+        expect(CURVE_METRICS).not.toContain('eval.hunter_catches_per_1k');
         expect(CURVE_METRICS).not.toContain('eval.fed_median_lifespan');
     });
 

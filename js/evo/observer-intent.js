@@ -34,7 +34,7 @@ export { SCAN_SIZE };
 
 /**
  * Whether the agent responds to the threat this tick: turns away from it, sprints, releases smoke or bites with it on
- * an arc ray (an alarm call is not one; it is judged by `alarm_precision`). Sitting inside smoke counts without a
+ * an arc ray (an alarm call is not one; it is judged by `alarm_lift`). Sitting inside smoke counts without a
  * threat. While the threat is out of sight, the side and arc flag of its last sighting stand in.
  * @param {Record<string, any>} intent the intent state
  * @param {Record<string, any>} world the world
@@ -111,7 +111,7 @@ function trackThreat(intent, world, slot) {
 
 /**
  * Counts an alive tick for the slot, and whether a threat sighting and prey ahead are current: the base rates
- * that `alarm_precision` and `hunt_call_precision` are lifts over.
+ * that `alarm_lift` and `hunt_call_lift` are lifts over.
  * @param {Record<string, any>} intent the intent state
  * @param {number} tick the observed tick
  * @param {number} slot an alive slot whose sightings are updated

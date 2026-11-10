@@ -20,7 +20,7 @@ export const MIN_HUNTER_SEED_SHARE = 0.75;
 export const LOW_POPULATION = 80;
 /**
  * ...and its medians of `eval.predators_at_end` and `eval.hunter_ticks_last_quarter` are not below the reference's.
- * `eval.hunter_kills_per_life` is reported beside them, not gated: a typical hunter life expects well under one kill.
+ * `eval.hunter_kills_per_life_p50` is reported beside them, not gated: a typical hunter life expects well under one kill.
  */
 
 /** The Phase 4 Targets, compared against the reference arm. */
@@ -38,8 +38,8 @@ export const TARGETS = [
  */
 export const WATCH_METRICS = [
     'eval.skill_trend',
-    'eval.deliberate_food_per_1k',
-    'eval.chance_food_per_1k',
+    'eval.deliberate_food_energy_per_1k',
+    'eval.chance_food_energy_per_1k',
     'eval.spec_dominance',
     'eval.lineage_effective',
     'eval.trait_spread',
@@ -134,7 +134,7 @@ export function seedChecks(report) {
         report.traces.map((/** @type {any} */ t) => shareAbove(t, minAgents)),
         (v) => v >= POP_ABOVE_SHARE,
     );
-    add('catchRate', metricValues(report, 'eval.catch_rate'), (v) => v > 0);
+    add('catchRate', metricValues(report, 'eval.hunter_catches_per_1k'), (v) => v > 0);
     add(
         'lineages',
         report.traces.map((/** @type {any} */ t) => t.lineages),
@@ -187,7 +187,7 @@ function lowSeeds(report) {
  * @param {Record<string, any>} reference the reference arm's report
  * @returns {{ predators: number | null, ticks: number | null, kills: number | null, chaseCatch: number | null,
  *   aliveShare: number, lowSeeds: number, pass: boolean }} the seed medians of `eval.predators_at_end`,
- *   `eval.hunter_ticks_last_quarter` and `eval.hunter_kills_per_life`, the mean `eval.chase_catch_share`, the share of
+ *   `eval.hunter_ticks_last_quarter` and `eval.hunter_kills_per_life_p50`, the mean `eval.chase_catch_share`, the share of
  *   seeds with a hunter at the last tick, the seeds ending under `LOW_POPULATION`, and whether the keep rules hold
  */
 export function hunterGate(report, reference) {
@@ -201,7 +201,7 @@ export function hunterGate(report, reference) {
     return {
         predators,
         ticks,
-        kills: seedMedian(report, 'eval.hunter_kills_per_life'),
+        kills: seedMedian(report, 'eval.hunter_kills_per_life_p50'),
         chaseCatch: report.metrics['eval.chase_catch_share']?.mean ?? null,
         aliveShare,
         lowSeeds: low,

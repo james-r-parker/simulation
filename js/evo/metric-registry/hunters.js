@@ -3,7 +3,7 @@
 import { entry } from './entry.js';
 
 export const HUNTERS = {
-    'eval.hunter_kills_per_life': entry('hunters', {
+    'eval.hunter_kills_per_life_p50': entry('hunters', {
         module: 'js/evo/scene-hunters.js',
         meaning: 'How many deliberate kills a typical hunter life holds (a median, so 0 when most lives kill nothing).',
         counts: 'Median of the ledger kill count (ledgerKills, credited by noteLedgerKill from the bite before the fatal one) over HunterLedger records of hunters that died, whole run.',
@@ -11,6 +11,7 @@ export const HUNTERS = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no hunter deaths'],
+        renamedFrom: ['eval.hunter_kills_per_life'],
         arithmetic: 'test/evo/scene-hunters.test.js',
     }),
     'eval.hunter_zero_kill_share': entry('hunters', {
@@ -142,6 +143,8 @@ export const HUNTERS = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no world at the last tick', 'no hunter alive at the last tick'],
+        expectedFlat:
+            'Null when no hunter is alive at the last tick (33 of 128 seeds floor on, 62 floor off); it reads where hunters persist.',
         arithmetic: 'test/evo/scene-hunters.test.js',
     }),
     'eval.hunter_ticks_last_quarter': entry('hunters', {
@@ -241,6 +244,8 @@ export const HUNTERS = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no agent-ticks'],
+        expectedFlat:
+            'Needs floor-spawned hunters: null on every seed with floor off, and on the 68 of 128 floor-on seeds where the floor spawned no hunter.',
         arithmetic: 'test/evo/scene-hunter-age.test.js',
     }),
     'eval.hunter_kill_rate_by_source.initial': entry('hunters', {

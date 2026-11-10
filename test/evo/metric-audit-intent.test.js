@@ -44,24 +44,24 @@ describe('audit: eval.deliberate_food_share', () => {
     });
 });
 
-describe('audit: eval.deliberate_food_per_1k and eval.chance_food_per_1k', () => {
+describe('audit: eval.deliberate_food_energy_per_1k and eval.chance_food_energy_per_1k', () => {
     // The same two foragers over 6 ticks: 12 agent-ticks; 30 deliberate and 10 chance food energy (bite energy is not
     // food). Per 1000 agent-ticks: 30 / 12 x 1000 = 2500 and 10 / 12 x 1000 = 833.33.
     it('are the deliberate and the chance food energy per 1000 agent-ticks: 2500 and 833.33', () => {
         const r = meals();
-        expect(metric(r, 'deliberate_food_per_1k')).toEqual({ value: 2500 });
-        expect(metric(r, 'chance_food_per_1k').value).toBeCloseTo(10000 / 12, 10);
+        expect(metric(r, 'deliberate_food_energy_per_1k')).toEqual({ value: 2500 });
+        expect(metric(r, 'chance_food_energy_per_1k').value).toBeCloseTo(10000 / 12, 10);
     });
 
     it('are 0 with agent-ticks and no food, and null with reason `no agent-ticks` without agent-ticks', () => {
         const fed = meals(false);
-        expect(metric(fed, 'deliberate_food_per_1k')).toEqual({ value: 0 });
-        expect(metric(fed, 'chance_food_per_1k')).toEqual({ value: 0 });
+        expect(metric(fed, 'deliberate_food_energy_per_1k')).toEqual({ value: 0 });
+        expect(metric(fed, 'chance_food_energy_per_1k')).toEqual({ value: 0 });
         const empty = auditArena();
         addBorn(empty.world, { spec: FORAGER });
         empty.start();
-        expect(metric(empty, 'deliberate_food_per_1k')).toEqual({ value: null, reason: 'no agent-ticks' });
-        expect(metric(empty, 'chance_food_per_1k')).toEqual({ value: null, reason: 'no agent-ticks' });
+        expect(metric(empty, 'deliberate_food_energy_per_1k')).toEqual({ value: null, reason: 'no agent-ticks' });
+        expect(metric(empty, 'chance_food_energy_per_1k')).toEqual({ value: null, reason: 'no agent-ticks' });
     });
 });
 
@@ -189,7 +189,7 @@ describe('audit: eval.pursuit_kill_share and eval.pack_convergence', () => {
     });
 });
 
-describe('audit: bite episodes (evasion_skill, undefended_bite_share, unseen_bite_share)', () => {
+describe('audit: bite episodes (evasion_response_share, undefended_bite_share, unseen_bite_share)', () => {
     // Every forager is bitten for the first time at tick 10 and never again. R1..R3 see the threat from tick 1 to 40
     // and sprint; U sees it and only calls an alarm (not a response); N1 never sees it; N2 first sees it at tick 11,
     // after the bite. A hunter is bitten too and is not classified. Episodes are classified at tick 40 (first bite +
@@ -242,11 +242,11 @@ describe('audit: bite episodes (evasion_skill, undefended_bite_share, unseen_bit
         expect(metric(done, 'unseen_bite_share')).toEqual({ value: 2 / 6 });
     });
 
-    it('reads evasion_skill as the responded share of escaped episodes, only once they escape: 3 of 6', () => {
+    it('reads evasion_response_share as the responded share of escaped episodes, only once they escape: 3 of 6', () => {
         const waiting = episodes(FIRST + ESCAPE_TICKS - 1);
-        expect(metric(waiting, 'evasion_skill')).toEqual({ value: null, reason: 'no escaped bite episode' });
+        expect(metric(waiting, 'evasion_response_share')).toEqual({ value: null, reason: 'no escaped bite episode' });
         const escaped = episodes(FIRST + ESCAPE_TICKS);
         expect(escaped.observer.combat.escapedEpisodes).toBe(6);
-        expect(metric(escaped, 'evasion_skill')).toEqual({ value: 0.5 });
+        expect(metric(escaped, 'evasion_response_share')).toEqual({ value: 0.5 });
     });
 });
