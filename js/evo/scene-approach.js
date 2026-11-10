@@ -50,6 +50,7 @@ export function createApproachScene(config, onChase = null) {
         openedEnergy: new Float64Array(n),
         victim: new Uint32Array(n),
         biteTick: new Float64Array(n),
+        resolvedTick: new Float64Array(n).fill(-1),
         committed: 0,
         aborted: 0,
         caught: 0,
@@ -65,6 +66,7 @@ export function createApproachScene(config, onChase = null) {
  */
 export function resetApproachSlot(scene, slot) {
     scene.phase[slot] = IDLE;
+    scene.resolvedTick[slot] = -1;
 }
 
 /**
@@ -78,6 +80,20 @@ function closingNow(prey, slot, tick) {
     return tick - prey.seen[slot] <= INTENT_WINDOW && popcount16(prey.bits[slot] & CLOSING_MASK) >= CLOSING_MIN;
 }
 
+/**
+ * Whether an idle hunter opens a new approach: it is closing on a sighting newer than its last ended chase. The closing
+ * bits of a chase outlive it by a few ticks, so without the second test a kill reopened an approach on the dead prey's
+ * last sighting, which lapsed 30 ticks later as a give-up (metric-trust T16).
+ * @param {Record<string, any>} scene the approach scene
+ * @param {Record<string, any>} prey the observer's prey tracker
+ * @param {number} slot the hunter
+ * @param {number} tick the tick
+ * @returns {boolean} whether it opens
+ */
+function opensNow(scene, prey, slot, tick) {
+    return prey.seen[slot] > scene.resolvedTick[slot] && closingNow(prey, slot, tick);
+}
+
 const OUTCOME_COUNTER = ['caught', 'escaped', 'aborted'];
 
 /**
@@ -88,6 +104,7 @@ const OUTCOME_COUNTER = ['caught', 'escaped', 'aborted'];
  * @returns {void}
  */
 function resolved(scene, world, { slot, outcome }) {
+    scene.resolvedTick[slot] = world.tick;
     if (world.tick < BURN_IN_TICKS) {
         return;
     }
@@ -162,12 +179,17 @@ function advance(scene, observer, world, slot) {
     if (scene.phase[slot] === BITTEN) {
         if (tick - scene.biteTick[slot] >= INTENT_WINDOW) {
             const lives = findAlive(world, observer.slotOf, scene.victim[slot]) >= 0;
+            scene.resolvedTick[slot] = tick;
             if (lives) {
                 resolved(scene, world, { slot, outcome: CHASE_OUTCOME.ESCAPED });
             }
             scene.phase[slot] = IDLE;
         }
-    } else if (closingNow(observer.intent.prey, slot, tick)) {
+    } else if (
+        scene.phase[slot] === OPEN
+            ? closingNow(observer.intent.prey, slot, tick)
+            : opensNow(scene, observer.intent.prey, slot, tick)
+    ) {
         if (scene.phase[slot] !== OPEN) {
             scene.openedTick[slot] = tick;
             scene.openedHungry[slot] = canEatNow(world, slot) ? 1 : 0;

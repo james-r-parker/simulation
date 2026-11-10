@@ -37,6 +37,22 @@
  */
 
 /**
+ * The source test of every metric a module produces, where one file covers the whole module (docs/designs/metric-trust.md,
+ * Source tests); an entry's own `source` wins.
+ * @type {Readonly<Record<string, string>>}
+ */
+const SOURCE_BY_MODULE = Object.freeze({
+    'js/evo/scene-hunters.js': 'test/evo/metric-source-hunters.test.js',
+    'js/evo/scene-hunter-age.js': 'test/evo/metric-source-hunters.test.js',
+    'js/evo/scene-bite.js': 'test/evo/metric-source-hunter-bites.test.js',
+    'js/evo/scene-bite-life.js': 'test/evo/metric-source-hunter-bites.test.js',
+    'js/evo/metrics-combat.js': 'test/evo/metric-source-hunter-bites.test.js',
+    'js/evo/scene-approach.js': 'test/evo/metric-source-hunter-chases.test.js',
+    'js/evo/scene-competence.js': 'test/evo/metric-source-hunter-chases.test.js',
+    'js/evo/scene-matched.js': 'test/evo/metric-source-hunter-chases.test.js',
+});
+
+/**
  * Builds a frozen entry with the unmeasured fields at their empty values.
  * @param {string} family the family file's name
  * @param {Pick<MetricEntry, 'module' | 'meaning' | 'counts' | 'unit' | 'direction' | 'nullWhen'> & {intended?: 'higher' | 'lower', arithmetic?: string, source?: string, deprecated?: string, expectedFlat?: string, renamedFrom?: readonly string[]}} fields what the author wrote
@@ -44,7 +60,7 @@
  */
 export function entry(family, fields) {
     const familySource = family === 'scenes-ecology' ? 'test/evo/metric-source-ecology.test.js' : '';
-    const { arithmetic = '', source = familySource, ...rest } = fields;
+    const { arithmetic = '', source = SOURCE_BY_MODULE[fields.module] ?? familySource, ...rest } = fields;
     return Object.freeze({
         family,
         expectedFlat: null,
