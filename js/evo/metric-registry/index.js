@@ -4,6 +4,7 @@ import { CORE } from './core.js';
 import { CORE_2 } from './core-2.js';
 import { HUNTERS } from './hunters.js';
 import { HUNTERS_2 } from './hunters-2.js';
+import { HUNTERS_3 } from './hunters-3.js';
 import { INTENT } from './intent.js';
 import { SCENES_ECOLOGY } from './scenes-ecology.js';
 import { SCENES_ECOLOGY_2 } from './scenes-ecology-2.js';
@@ -39,6 +40,7 @@ export const METRICS = Object.freeze({
     ...withLiveness(CORE_2),
     ...withLiveness(HUNTERS),
     ...withLiveness(HUNTERS_2),
+    ...withLiveness(HUNTERS_3),
     ...withLiveness(INTENT),
     ...withLiveness(SCENES_ECOLOGY),
     ...withLiveness(SCENES_ECOLOGY_2),

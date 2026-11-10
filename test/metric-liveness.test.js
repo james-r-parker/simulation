@@ -1,4 +1,4 @@
-// The per-metric liveness read and generated registry data (docs/designs/metric-trust.md, T23).
+// The per-metric liveness read and generated registry data (docs/designs/metric-trust.md, T23, T25).
 
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -8,7 +8,7 @@ import { main, measureLiveness, renderLivenessModule } from '../scripts/metric-l
 import { METRICS as REGISTRY } from '../js/evo/metric-registry/index.js';
 
 const [SAMPLE, FLAT] = Object.keys(REGISTRY);
-const METRICS = { [SAMPLE]: {}, [FLAT]: {} };
+const METRICS = { [SAMPLE]: { renamedFrom: [] }, [FLAT]: { renamedFrom: [] } };
 const REPORT = {
     version: 1,
     policy: 'live',
@@ -51,8 +51,22 @@ describe('measureLiveness', () => {
         });
     });
 
-    it('rejects reports whose metric names differ from the registry', () => {
-        expect(() => measureLiveness(REPORT, 'report.json', {})).toThrow(/metric set differs/);
+    it('rejects a report holding a metric the registry does not know', () => {
+        expect(() => measureLiveness(REPORT, 'report.json', { [SAMPLE]: { renamedFrom: [] } })).toThrow(
+            `report holds unregistered metrics: ${FLAT}`,
+        );
+    });
+
+    it('reads an old name through renamedFrom and gives a metric the report lacks no reading', () => {
+        const metrics = {
+            'x.sample_p50': { renamedFrom: [SAMPLE] },
+            [FLAT]: { renamedFrom: [] },
+            'x.added_later': { renamedFrom: [] },
+        };
+        expect(measureLiveness(REPORT, 'evals/sample.json', metrics)).toEqual({
+            [FLAT]: { nullShare: 0.5, distinct: 1, report: 'evals/sample.json' },
+            'x.sample_p50': { nullShare: 0.25, distinct: 2, report: 'evals/sample.json' },
+        });
     });
 });
 

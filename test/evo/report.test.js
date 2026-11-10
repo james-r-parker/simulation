@@ -140,7 +140,7 @@ describe('validateReport', () => {
             'sex_balance',
             'cold_stress_share',
             'heat_stress_share',
-            'terrain_death_share',
+            'collision_death_share',
             'winter_pop_ratio',
             'child_survival',
             'lineage_lifespan_p50',

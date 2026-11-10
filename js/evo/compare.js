@@ -4,6 +4,7 @@ import { configHash } from '../sim/config.js';
 import { detExp, detLog } from '../sim/det-math.js';
 import { createRng, fork, nextInt } from '../sim/rng.js';
 import { DEFAULT_MIN_SEEDS, METRICS, minSeedsFor } from './metric-registry/index.js';
+import { withCurrentNames } from './metric-registry/renames.js';
 
 /** @typedef {import('./metric-registry/index.js').MetricName} MetricName */
 
@@ -335,8 +336,10 @@ function compareMetric(metric, before, after, { level, minEffect, direction: dir
 
 /**
  * Compares two reports run on the same seeds, ticks and (up to `allowConfigDiff`) config. Different policies are fine.
- * @param {Record<string, any>} before the before report
- * @param {Record<string, any>} after the after report
+ * Each report's metrics are read under their current names first (`withCurrentNames`), so an old report pairs with a
+ * new one through the registry's `renamedFrom` names.
+ * @param {Record<string, any>} beforeReport the before report
+ * @param {Record<string, any>} afterReport the after report
  * @param {{ level?: number, minEffect?: number, allowConfigDiff?: string[], allowSeedDiff?: boolean,
  *   direction?: (metric: string) => ReturnType<typeof metricDirection> }} [options] the
  *   interval level (0.95), the minimum relative effect for a verdict (`MIN_EFFECT`), config keys allowed to differ,
@@ -348,8 +351,8 @@ function compareMetric(metric, before, after, { level, minEffect, direction: dir
  * @throws {Error} with `field` set when the reports cannot be compared
  */
 export function compareReports(
-    before,
-    after,
+    beforeReport,
+    afterReport,
     {
         level = 0.95,
         minEffect = MIN_EFFECT,
@@ -358,6 +361,8 @@ export function compareReports(
         direction = metricDirection,
     } = {},
 ) {
+    const before = withCurrentNames(beforeReport);
+    const after = withCurrentNames(afterReport);
     checkComparable(before, after, { allowConfigDiff, allowSeedDiff });
     const names = Object.keys(before.metrics)
         .filter((name) => Object.hasOwn(after.metrics, name))

@@ -18,7 +18,7 @@ export const LIVENESS = Object.freeze({
         distinct: 4,
         report: 'evals/power/defaults-floor-on.json',
     }),
-    'eval.alarm_precision': Object.freeze({
+    'eval.alarm_lift': Object.freeze({
         nullShare: 0.9609375,
         distinct: 5,
         report: 'evals/power/defaults-floor-on.json',
@@ -168,11 +168,6 @@ export const LIVENESS = Object.freeze({
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
-    'eval.catch_rate': Object.freeze({
-        nullShare: 0,
-        distinct: 128,
-        report: 'evals/power/defaults-floor-on.json',
-    }),
     'eval.champion_elo': Object.freeze({
         nullShare: 1,
         distinct: 0,
@@ -183,7 +178,7 @@ export const LIVENESS = Object.freeze({
         distinct: 0,
         report: 'evals/power/defaults-floor-on.json',
     }),
-    'eval.chance_food_per_1k': Object.freeze({
+    'eval.chance_food_energy_per_1k': Object.freeze({
         nullShare: 0,
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
@@ -228,6 +223,11 @@ export const LIVENESS = Object.freeze({
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
+    'eval.collision_death_share': Object.freeze({
+        nullShare: 0,
+        distinct: 128,
+        report: 'evals/power/defaults-floor-on.json',
+    }),
     'eval.condition_gait_shift': Object.freeze({
         nullShare: 0,
         distinct: 128,
@@ -238,7 +238,7 @@ export const LIVENESS = Object.freeze({
         distinct: 51,
         report: 'evals/power/defaults-floor-on.json',
     }),
-    'eval.deliberate_food_per_1k': Object.freeze({
+    'eval.deliberate_food_energy_per_1k': Object.freeze({
         nullShare: 0,
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
@@ -283,7 +283,7 @@ export const LIVENESS = Object.freeze({
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
-    'eval.escape_rate': Object.freeze({
+    'eval.escape_share': Object.freeze({
         nullShare: 0,
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
@@ -293,7 +293,7 @@ export const LIVENESS = Object.freeze({
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
-    'eval.evasion_skill': Object.freeze({
+    'eval.evasion_response_share': Object.freeze({
         nullShare: 0,
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
@@ -386,11 +386,6 @@ export const LIVENESS = Object.freeze({
     'eval.generation_depth_p90': Object.freeze({
         nullShare: 0,
         distinct: 66,
-        report: 'evals/power/defaults-floor-on.json',
-    }),
-    'eval.group_cohesion_under_threat': Object.freeze({
-        nullShare: 0,
-        distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
     'eval.heat_stress_share': Object.freeze({
@@ -493,7 +488,7 @@ export const LIVENESS = Object.freeze({
         distinct: 4,
         report: 'evals/power/defaults-floor-on.json',
     }),
-    'eval.hunt_call_precision': Object.freeze({
+    'eval.hunt_call_lift': Object.freeze({
         nullShare: 0.9375,
         distinct: 8,
         report: 'evals/power/defaults-floor-on.json',
@@ -524,6 +519,11 @@ export const LIVENESS = Object.freeze({
         report: 'evals/power/defaults-floor-on.json',
     }),
     'eval.hunter_carrion_idle_share': Object.freeze({
+        nullShare: 0,
+        distinct: 128,
+        report: 'evals/power/defaults-floor-on.json',
+    }),
+    'eval.hunter_catches_per_1k': Object.freeze({
         nullShare: 0,
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
@@ -708,7 +708,7 @@ export const LIVENESS = Object.freeze({
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
-    'eval.hunter_kills_per_life': Object.freeze({
+    'eval.hunter_kills_per_life_p50': Object.freeze({
         nullShare: 0,
         distinct: 3,
         report: 'evals/power/defaults-floor-on.json',
@@ -771,6 +771,11 @@ export const LIVENESS = Object.freeze({
     'eval.juvenile_sibling_distance': Object.freeze({
         nullShare: 0.0078125,
         distinct: 127,
+        report: 'evals/power/defaults-floor-on.json',
+    }),
+    'eval.kin_nearby_threat_gain': Object.freeze({
+        nullShare: 0,
+        distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
     'eval.kin_within_call_radius': Object.freeze({
@@ -853,7 +858,7 @@ export const LIVENESS = Object.freeze({
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
-    'eval.mate_skill_gap': Object.freeze({
+    'eval.mate_rank_gap': Object.freeze({
         nullShare: 0,
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
@@ -998,7 +1003,7 @@ export const LIVENESS = Object.freeze({
         distinct: 114,
         report: 'evals/power/defaults-floor-on.json',
     }),
-    'eval.pack_kill_share': Object.freeze({
+    'eval.pack_kills_per_eaten_death': Object.freeze({
         nullShare: 0,
         distinct: 127,
         report: 'evals/power/defaults-floor-on.json',
@@ -1158,17 +1163,17 @@ export const LIVENESS = Object.freeze({
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
-    'eval.reward_events.bite': Object.freeze({
+    'eval.reward_events_per_1k.bite': Object.freeze({
         nullShare: 0,
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
-    'eval.reward_events.kill': Object.freeze({
+    'eval.reward_events_per_1k.kill': Object.freeze({
         nullShare: 0,
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
-    'eval.reward_events.scavenge': Object.freeze({
+    'eval.reward_events_per_1k.scavenge': Object.freeze({
         nullShare: 0,
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
@@ -1266,11 +1271,6 @@ export const LIVENESS = Object.freeze({
     'eval.style_separation': Object.freeze({
         nullShare: 0,
         distinct: 119,
-        report: 'evals/power/defaults-floor-on.json',
-    }),
-    'eval.terrain_death_share': Object.freeze({
-        nullShare: 0,
-        distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
     'eval.toxic_avoidance': Object.freeze({

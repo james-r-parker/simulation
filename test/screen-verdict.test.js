@@ -39,10 +39,10 @@ function report(over = {}) {
         config: { minAgents: 100, maxAgents: 500 },
         traces: [good, good],
         metrics: {
-            'eval.catch_rate': metric(0.01),
+            'eval.hunter_catches_per_1k': metric(0.01),
             'eval.predators_at_end': metric(5),
             'eval.hunter_ticks_last_quarter': metric(4000),
-            'eval.hunter_kills_per_life': metric(2),
+            'eval.hunter_kills_per_life_p50': metric(2),
             'eval.chase_catch_share': metric(0.3),
             'eval.mating_share': metric(0.3),
             'eval.born_share': metric(0.9),
@@ -83,7 +83,7 @@ describe('seedChecks', () => {
                 trace(base.traces[0].pop, { lineages: 5, spec: [70, 10, 10, 5, 5] }),
                 trace(base.traces[0].pop, { lineages: 4, spec: [71, 10, 10, 5, 4] }),
             ],
-            metrics: { ...base.metrics, 'eval.catch_rate': metric(0, [0.01, 0]) },
+            metrics: { ...base.metrics, 'eval.hunter_catches_per_1k': metric(0, [0.01, 0]) },
         });
         const c = seedChecks(r);
         expect(c.lineages.pass).toEqual([true, false]);
@@ -100,13 +100,13 @@ describe('seedChecks', () => {
 
     it('fails a report that lacks the catch rate metric', () => {
         const r = report();
-        delete r.metrics['eval.catch_rate'];
+        delete r.metrics['eval.hunter_catches_per_1k'];
         expect(seedChecks(r).catchRate.pass).toEqual([false, false]);
     });
 
     it('fails a null catch rate, and throws without traces', () => {
         const r = report();
-        r.metrics['eval.catch_rate'] = { mean: null, values: [null, null] };
+        r.metrics['eval.hunter_catches_per_1k'] = { mean: null, values: [null, null] };
         expect(seedChecks(r).catchRate.pass).toEqual([false, false]);
         expect(() => seedChecks({ ...r, traces: undefined })).toThrow(/no traces/);
     });
@@ -160,7 +160,7 @@ describe('armVerdict', () => {
         expect(at('eval.predators_at_end', [4, 5]).pass).toBe(false);
         expect(at('eval.hunter_ticks_last_quarter', [3000, 4000]).pass).toBe(false);
         // Kills per life is reported beside the gate: a typical hunter life expects well under one kill.
-        const sparse = at('eval.hunter_kills_per_life', [0.1, 0.2]);
+        const sparse = at('eval.hunter_kills_per_life_p50', [0.1, 0.2]);
         expect(sparse.pass).toBe(true);
         expect(sparse.kills).toBeCloseTo(0.15);
         expect(hunterGate(report(), report())).toEqual({

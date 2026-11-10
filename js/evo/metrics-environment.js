@@ -84,7 +84,7 @@ export function environmentMetrics(observer) {
     return {
         'eval.cold_stress_share': share(p.cold, p.agents, NO_AGENTS),
         'eval.heat_stress_share': share(p.heat, p.agents, NO_AGENTS),
-        'eval.terrain_death_share': share(p.collisions, p.deaths, NO_DEATHS),
+        'eval.collision_death_share': share(p.collisions, p.deaths, NO_DEATHS),
         'eval.winter_pop_ratio': winterRatio(p),
     };
 }

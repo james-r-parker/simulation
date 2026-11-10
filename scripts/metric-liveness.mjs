@@ -4,30 +4,29 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { METRICS } from '../js/evo/metric-registry/index.js';
 import { meetsLivenessBar } from '../js/evo/metric-registry/status.js';
+import { withCurrentNames } from '../js/evo/metric-registry/renames.js';
 import { validateReport } from '../js/evo/report.js';
 
 const OUTPUT = fileURLToPath(new URL('../js/evo/metric-registry/liveness.js', import.meta.url));
 const USAGE = 'usage: metric-liveness <report.json> [--write]';
 
 /**
- * @param {Record<string, any>} report a validated eval report
+ * @param {Record<string, any>} rawReport an eval report, possibly holding old metric names
  * @param {string} reportPath the repo-relative path to record in the registry
  * @param {Readonly<Record<string, any>>} [metrics] the registry (injectable for tests)
- * @returns {Readonly<Record<string, import('../js/evo/metric-registry/entry.js').Liveness>>} one reading per metric
+ * @returns {Readonly<Record<string, import('../js/evo/metric-registry/entry.js').Liveness>>} one reading per metric the
+ *   report holds, under its current name; a metric registered after the report was run has no reading
  */
-export function measureLiveness(report, reportPath, metrics = METRICS) {
-    validateReport(report);
-    const missing = Object.keys(metrics).filter((name) => !Object.hasOwn(report.metrics, name));
+export function measureLiveness(rawReport, reportPath, metrics = METRICS) {
+    validateReport(rawReport);
+    const report = withCurrentNames(rawReport, metrics);
     const extra = Object.keys(report.metrics).filter((name) => !Object.hasOwn(metrics, name));
-    if (missing.length > 0 || extra.length > 0) {
-        throw new Error(
-            `metric set differs from registry: missing ${missing.slice(0, 5).join(', ') || '-'}; ` +
-                `unregistered ${extra.slice(0, 5).join(', ') || '-'}`,
-        );
+    if (extra.length > 0) {
+        throw new Error(`report holds unregistered metrics: ${extra.slice(0, 5).join(', ')}`);
     }
     /** @type {Record<string, import('../js/evo/metric-registry/entry.js').Liveness>} */
     const readings = {};
-    for (const name of Object.keys(metrics).sort()) {
+    for (const name of Object.keys(report.metrics).sort()) {
         const values = report.metrics[name].values;
         const present = values.filter((/** @type {number | null} */ value) => value !== null);
         readings[name] = {

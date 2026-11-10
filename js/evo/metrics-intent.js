@@ -40,7 +40,7 @@ export function killShare(deliberate, kills) {
 /**
  * @param {number} responded escaped bite episodes in which the victim responded
  * @param {number} escaped escaped bite episodes
- * @returns {import('./metrics-stats.js').MetricResult} `eval.evasion_skill`, whole run or one window
+ * @returns {import('./metrics-stats.js').MetricResult} `eval.evasion_response_share`, whole run or one window
  */
 export function evasionShare(responded, escaped) {
     return share(responded, escaped, 'no escaped bite episode');
@@ -69,16 +69,16 @@ export function intentMetrics(observer) {
     const huntBites = run.huntBiteDeliberate + run.huntBiteChance;
     return {
         'eval.deliberate_food_share': foodShare(run.foodDeliberate, run.foodChance),
-        'eval.deliberate_food_per_1k': per1k(run.foodDeliberate, agentTicks),
-        'eval.chance_food_per_1k': per1k(run.foodChance, agentTicks),
+        'eval.deliberate_food_energy_per_1k': per1k(run.foodDeliberate, agentTicks),
+        'eval.chance_food_energy_per_1k': per1k(run.foodChance, agentTicks),
         'eval.pursuit_bite_share': share(run.huntBiteDeliberate, huntBites, 'no bite energy gained by hunters'),
         'eval.pursuit_kill_share': killShare(run.huntKillsDeliberate, combat.huntKills),
         'eval.pack_convergence': share(run.packKillsConvergent, combat.packKills, 'no pack kill'),
         'eval.hunt_call_answer': share(calls.answeredCalls, calls.resolved, 'no resolved hunt call'),
-        'eval.evasion_skill': evasionShare(run.escapedResponded, combat.escapedEpisodes),
-        'eval.group_cohesion_under_threat': groupCohesion(run),
-        'eval.alarm_precision': lift(run.alarmsPrecise, bases.alarm, run.alarms, 'no alarm call'),
-        'eval.hunt_call_precision': lift(run.huntCallsPrecise, bases.hunt, run.huntCalls, 'no hunt call'),
+        'eval.evasion_response_share': evasionShare(run.escapedResponded, combat.escapedEpisodes),
+        'eval.kin_nearby_threat_gain': groupCohesion(run),
+        'eval.alarm_lift': lift(run.alarmsPrecise, bases.alarm, run.alarms, 'no alarm call'),
+        'eval.hunt_call_lift': lift(run.huntCallsPrecise, bases.hunt, run.huntCalls, 'no hunt call'),
         'eval.smoke_precision': share(run.smokesPrecise, run.smokes, 'no smoke release'),
         'eval.idle_signals_per_1k': per1k(run.idleSignals, agentTicks),
         'eval.undefended_bite_share': share(

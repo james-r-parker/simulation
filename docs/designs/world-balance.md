@@ -151,21 +151,21 @@ deaths for D3.
 `intentMetrics(observer)` in `js/evo/metrics-intent.js` adds these to `computeMetrics`. Each is `null` with a reason
 when its denominator is 0.
 
-| #   | Metric                             | Better | Definition                                                                                                                                                                                                                                                        |
-| --- | ---------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| D1  | `eval.deliberate_food_share`       | higher | Food energy from deliberate meals over all food energy eaten                                                                                                                                                                                                      |
-| D2  | `eval.pursuit_bite_share`          | higher | Bite energy from deliberate bites by `canHunt` agents over all bite energy gained by `canHunt` agents                                                                                                                                                             |
-| D2  | `eval.pursuit_kill_share`          | higher | Of the deaths `eval.catch_rate` counts, the share whose victim has `lastBiteDeliberate` set                                                                                                                                                                       |
-| D3  | `eval.pack_convergence`            | higher | Of the deaths `eval.pack_kill_share` counts, the share whose victim has both `lastBiteDeliberate` and `prevBiteDeliberate` set                                                                                                                                    |
-| D3  | `eval.hunt_call_answer`            | higher | Of `PackCalled` events, the share followed within `packWindow` ticks by a deliberate bite from a `canHunt` agent of the caller's lineage whose `heard` hunt loudness was above 0 on the tick after the call                                                       |
-| D4  | `eval.evasion_skill`               | higher | Of the episodes `eval.escape_rate` counts as escaped, the share with the episode latch's `responded` set                                                                                                                                                          |
-| D5  | `eval.group_cohesion_under_threat` | higher | Every `GROUP_SAMPLE_TICKS` ticks, the mean number of same-lineage agents without `canHunt` within `callRadius` of a threatened agent without `canHunt`, minus the same mean around unthreatened ones                                                              |
-| D6  | `eval.alarm_precision`             | higher | Lift: the mean over `AlarmCalled` events of (1 if the caller had a threat sighting within `INTENT_WINDOW` ticks, else 0) minus the caller's own share of alive ticks with one current; 0 for a spammer, 1 minus that share for a caller who calls only on the cue |
-| D6  | `eval.hunt_call_precision`         | higher | Lift: the same, with prey ahead within `INTENT_WINDOW` ticks as the cue and the caller's share of alive ticks with prey ahead as the base rate                                                                                                                    |
-| D7  | `eval.smoke_precision`             | higher | Of `SmokeReleased` events, the share whose releaser was bitten 1 to 28 ticks before (observed `bittenTimer` 2 to 29; 1 is a bite of the release tick, landed after the release) or had a threat sighting within `INTENT_WINDOW` ticks                             |
-| D6  | `eval.idle_signals_per_1k`         | lower  | Calls and smoke releases that fail their precision rule, per 1000 agent-ticks                                                                                                                                                                                     |
-| D8  | `eval.undefended_bite_share`       | lower  | Of classified bite episodes on agents without `canHunt`, the share counted `undefendedBite`                                                                                                                                                                       |
-| D8  | `eval.unseen_bite_share`           | watch  | Of the same episodes, the share counted `unseenBite`                                                                                                                                                                                                              |
+| #   | Metric                        | Better | Definition                                                                                                                                                                                                                                                        |
+| --- | ----------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | `eval.deliberate_food_share`  | higher | Food energy from deliberate meals over all food energy eaten                                                                                                                                                                                                      |
+| D2  | `eval.pursuit_bite_share`     | higher | Bite energy from deliberate bites by `canHunt` agents over all bite energy gained by `canHunt` agents                                                                                                                                                             |
+| D2  | `eval.pursuit_kill_share`     | higher | Of the deaths `eval.hunter_catches_per_1k` counts, the share whose victim has `lastBiteDeliberate` set                                                                                                                                                            |
+| D3  | `eval.pack_convergence`       | higher | Of the deaths `eval.pack_kills_per_eaten_death` counts, the share whose victim has both `lastBiteDeliberate` and `prevBiteDeliberate` set                                                                                                                         |
+| D3  | `eval.hunt_call_answer`       | higher | Of `PackCalled` events, the share followed within `packWindow` ticks by a deliberate bite from a `canHunt` agent of the caller's lineage whose `heard` hunt loudness was above 0 on the tick after the call                                                       |
+| D4  | `eval.evasion_response_share` | higher | Of the episodes `eval.escape_share` counts as escaped, the share with the episode latch's `responded` set                                                                                                                                                         |
+| D5  | `eval.kin_nearby_threat_gain` | higher | Every `GROUP_SAMPLE_TICKS` ticks, the mean number of same-lineage agents without `canHunt` within `callRadius` of a threatened agent without `canHunt`, minus the same mean around unthreatened ones                                                              |
+| D6  | `eval.alarm_lift`             | higher | Lift: the mean over `AlarmCalled` events of (1 if the caller had a threat sighting within `INTENT_WINDOW` ticks, else 0) minus the caller's own share of alive ticks with one current; 0 for a spammer, 1 minus that share for a caller who calls only on the cue |
+| D6  | `eval.hunt_call_lift`         | higher | Lift: the same, with prey ahead within `INTENT_WINDOW` ticks as the cue and the caller's share of alive ticks with prey ahead as the base rate                                                                                                                    |
+| D7  | `eval.smoke_precision`        | higher | Of `SmokeReleased` events, the share whose releaser was bitten 1 to 28 ticks before (observed `bittenTimer` 2 to 29; 1 is a bite of the release tick, landed after the release) or had a threat sighting within `INTENT_WINDOW` ticks                             |
+| D6  | `eval.idle_signals_per_1k`    | lower  | Calls and smoke releases that fail their precision rule, per 1000 agent-ticks                                                                                                                                                                                     |
+| D8  | `eval.undefended_bite_share`  | lower  | Of classified bite episodes on agents without `canHunt`, the share counted `undefendedBite`                                                                                                                                                                       |
+| D8  | `eval.unseen_bite_share`      | watch  | Of the same episodes, the share counted `unseenBite`                                                                                                                                                                                                              |
 
 The rows join the Metrics table in [evolution-evals.md](evolution-evals.md) and `DIRECTIONS` in `js/evo/compare.js`.
 
@@ -214,8 +214,8 @@ random first genomes, so every chance column is also checked against untrained b
 `test/evo/deliberate-controllers.slow.test.js` runs each pair for 5000 ticks on seeds 1 and 2, in
 `evals/micro-world.json` for the forage pair and `evals/predator-world.json` (predators on even slots, foragers on
 odd) for the rest. The chance arm's metric is at most 0.5 x the skill arm's (for a `lower` metric, the skill arm's is
-at most 0.5 x the chance arm's); a `null` on the chance arm counts as 0, and a `null` on the skill arm fails the test. `eval.group_cohesion_under_threat`, `eval.alarm_precision` and
-`eval.hunt_call_precision` are differences (lift over a base rate), so a negative chance value counts as 0 and the skill arm must be above 0. Only the D3 pairs run longer, 20000
+at most 0.5 x the chance arm's); a `null` on the chance arm counts as 0, and a `null` on the skill arm fails the test. `eval.kin_nearby_threat_gain`, `eval.alarm_lift` and
+`eval.hunt_call_lift` are differences (lift over a base rate), so a negative chance value counts as 0 and the skill arm must be above 0. Only the D3 pairs run longer, 20000
 ticks on seeds 1, 2 and 3, since pack kills need kin hunters born by splitting. `test/evo/helpers/predator-world.js`
 takes the predator and prey controllers by name.
 
@@ -231,18 +231,18 @@ rule or metric changed: only the D4 pair with `foodSeeker` prey holds, and it is
 `random` prey, D5 and the D8 pair with `random` prey fail on the survivable world too (see the Phase 1 note) and stay
 out. The other pairs keep the original duel.
 
-| #   | Metric                       | Chance arm                               | Skill arm                   |
-| --- | ---------------------------- | ---------------------------------------- | --------------------------- |
-| D1  | `eval.deliberate_food_share` | `wanderer`                               | `foodSeeker`                |
-| D1  | `eval.deliberate_food_share` | `cruiser`                                | `foodSeeker`                |
-| D1  | `eval.deliberate_food_share` | `random`                                 | `foodSeeker`                |
-| D2  | `eval.pursuit_bite_share`    | `jawSitter` predators, `foodSeeker` prey | `hunter`, `foodSeeker` prey |
-| D3  | `eval.pack_convergence`      | `jawSitter` predators, `foodSeeker` prey | `hunter`, `foodSeeker` prey |
-| D4  | `eval.evasion_skill`         | `hunter`, `foodSeeker` prey (survivable) | `hunter`, `fleer` prey      |
-| D6  | `eval.alarm_precision`       | `hunter`, `alarmSpammer` prey            | `hunter`, `fleer` prey      |
-| D6  | `eval.hunt_call_precision`   | `huntCallSpammer`, `foodSeeker` prey     | `hunter`, `foodSeeker` prey |
-| D7  | `eval.smoke_precision`       | `hunter`, `smokeSpammer` prey            | `hunter`, `fleer` prey      |
-| D8  | `eval.undefended_bite_share` | `hunter`, `foodSeeker` prey              | `hunter`, `fleer` prey      |
+| #   | Metric                        | Chance arm                               | Skill arm                   |
+| --- | ----------------------------- | ---------------------------------------- | --------------------------- |
+| D1  | `eval.deliberate_food_share`  | `wanderer`                               | `foodSeeker`                |
+| D1  | `eval.deliberate_food_share`  | `cruiser`                                | `foodSeeker`                |
+| D1  | `eval.deliberate_food_share`  | `random`                                 | `foodSeeker`                |
+| D2  | `eval.pursuit_bite_share`     | `jawSitter` predators, `foodSeeker` prey | `hunter`, `foodSeeker` prey |
+| D3  | `eval.pack_convergence`       | `jawSitter` predators, `foodSeeker` prey | `hunter`, `foodSeeker` prey |
+| D4  | `eval.evasion_response_share` | `hunter`, `foodSeeker` prey (survivable) | `hunter`, `fleer` prey      |
+| D6  | `eval.alarm_lift`             | `hunter`, `alarmSpammer` prey            | `hunter`, `fleer` prey      |
+| D6  | `eval.hunt_call_lift`         | `huntCallSpammer`, `foodSeeker` prey     | `hunter`, `foodSeeker` prey |
+| D7  | `eval.smoke_precision`        | `hunter`, `smokeSpammer` prey            | `hunter`, `fleer` prey      |
+| D8  | `eval.undefended_bite_share`  | `hunter`, `foodSeeker` prey              | `hunter`, `fleer` prey      |
 
 ### Skill ladder
 
@@ -675,7 +675,7 @@ choices and reasons within the plans").
 | Hot state objects built by keyed stores (`allocateWorld`, `createIntentState`) return a spread copy to stay in V8 fast mode                                                                                                                                                                                                         | A dictionary-mode world cost 37% to 50% of the step; the guard is a test, not a comment                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Manager                                                 |
 | The nearest-hunter scan keeps the existing contract (a hunter's entry is its distance to the nearest other hunter) although `noteAlarm` never reads it                                                                                                                                                                              | Changing it would change a tested contract for about 0.006 ms                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Manager                                                 |
 | T59 sets `hebbianRate` 0.0001 in `FEATURES_ON` (was 0.01)                                                                                                                                                                                                                                                                           | The 4-seed screen (seeds 29 to 32, 200000 ticks): 0.01 holds every seed at the floor (born_share 0.18, food/1k 165); 0.003 (0.31) and 0.001 (0.42) too; 0.0003 frees 1 of 4 (0.63); 0.0001 frees all 4 (0.86, like the defaults 0.88); 0.00003 is slower (0.76). Evidence in `E32`; the value stays Phase 5's to tune                                                                                                                                                                                                                       | Manager                                                 |
-| T59 proposes that T41 keeps `minAgents` 100, not 40, and leaves `sexesEnabled` off until the user decides (both open; no config changed)                                                                                                                                                                                            | `minAgents` 40, 60 and 80 pin the population at the floor on 4, 4 and 3 of 4 seeds (born_share 0.20, 0.24, 0.54; 100 gives 0.88) and all on with 40 collapses (born_share 0.07, `eval.catch_rate` 0 on 3 seeds); `sexesEnabled` alone pins it at the floor (born_share 0.15) with `splitCost` 50, 25 and 10. No value left in the feature fixes it, and the fix would be sim code, which T59 does not touch. `minAgents` 40 is a user decision (2026-10-21), so it waits for the user. Evidence in `E32`                                    | Manager                                                 |
+| T59 proposes that T41 keeps `minAgents` 100, not 40, and leaves `sexesEnabled` off until the user decides (both open; no config changed)                                                                                                                                                                                            | `minAgents` 40, 60 and 80 pin the population at the floor on 4, 4 and 3 of 4 seeds (born_share 0.20, 0.24, 0.54; 100 gives 0.88) and all on with 40 collapses (born_share 0.07, `eval.hunter_catches_per_1k` 0 on 3 seeds); `sexesEnabled` alone pins it at the floor (born_share 0.15) with `splitCost` 50, 25 and 10. No value left in the feature fixes it, and the fix would be sim code, which T59 does not touch. `minAgents` 40 is a user decision (2026-10-21), so it waits for the user. Evidence in `E32`                         | Manager                                                 |
 | Sexes are reworked before T41 (T69): splitting stays asexual for every agent and only mating needs a female and a male; the `SPLIT` gate on splitting goes. Sexes then switch on with everything else in T41                                                                                                                        | The collapse diagnosis showed the `SPLIT` gate cut splits from 464 to 71 per 50k ticks and males never split; after 1M ticks the world was still at the floor, so it does not learn its way out. Asexual splitting with sexual mating took off at about 150k ticks, like the defaults. Supersedes T59's proposal to leave sexes off                                                                                                                                                                                                         | User (2026-10-22)                                       |
 | `minAgents` stays 40 at the switch-on, under the area food rule (`foodAreaCapacity`); T41 confirms it with a 4-seed screen first and falls back to 100 if it collapses                                                                                                                                                              | Below 100 the population-scaled food rule starves a thin population faster than it breeds (an Allee effect); area food has no population term and 40 reached 500 agents on both diagnosis seeds. Supersedes T59's proposal to keep 100                                                                                                                                                                                                                                                                                                      | User (2026-10-22)                                       |
 | Births at the cap are fixed before T41 (T68): a pregnancy blocked by a full world waits and retries, and splitting stops `splitCapMargin` (50) short of `maxAgents`, both behind a switch that lands off                                                                                                                            | At the cap a freed slot goes to a splitter, so 97% of pregnancies are lost and `eval.mating_share` falls to about 0.01 against Phase 4's 0.2; together the two rules gave 0.20 on one seed                                                                                                                                                                                                                                                                                                                                                  | User (2026-10-22)                                       |
@@ -739,9 +739,9 @@ ladder at the defaults is recorded in [sim-notes.md](sim-notes.md).
 
 ### Phase 2 - Honest senses (built)
 
-**Targets:** eval.alarm_precision, eval.escape_rate, eval.idle_signals_per_1k, eval.food_energy_per_1k, eval.fed_median_lifespan, eval.births_per_1k
+**Targets:** eval.alarm_lift, eval.escape_share, eval.idle_signals_per_1k, eval.food_energy_per_1k, eval.fed_median_lifespan, eval.births_per_1k
 
-> **Note:** built 2026-10-21. Golden hashes re-pinned for `couldBite` in Node and Chromium (`npm run browser:hash`: default `42cbe86e5b351334`, busy `e37210196d2b6038`, plus `shortCases` and the busy effect stream). `baseline-v5` and `baseline-v5-o16` re-recorded; their A/A compare gives verdicts on `eval.evasion_skill` and `eval.pursuit_bite_share`, noise for `E29`'s `eval:power` to settle. `E26` deferred to `E29` (user). `E27` (seeds 1-32, paired with `E25`): `eval.food_energy_per_1k` +2.1%, `eval.fed_median_lifespan` -6.7% and `eval.births_per_1k` +8.7%, all no-difference, so none is worse; `eval.alarm_precision` -41% worse, `eval.escape_rate` and `eval.idle_signals_per_1k` no-difference, `eval.mating_share` 0.151. The anti-exploit suite and the paired test pass (22 of 22, survivable world re-chosen); the ladder is in sim-notes.md. `node scripts/bench-compare.mjs`: `bench.step_ms@500` +2.8%, `bench.phase_ms.sense@500` +5.3% (every row within its limit). The T26 review found the crowding bug (`sampleCrowding` read class channels by `=== 1`), fixed before `E27` ran.
+> **Note:** built 2026-10-21. Golden hashes re-pinned for `couldBite` in Node and Chromium (`npm run browser:hash`: default `42cbe86e5b351334`, busy `e37210196d2b6038`, plus `shortCases` and the busy effect stream). `baseline-v5` and `baseline-v5-o16` re-recorded; their A/A compare gives verdicts on `eval.evasion_response_share` and `eval.pursuit_bite_share`, noise for `E29`'s `eval:power` to settle. `E26` deferred to `E29` (user). `E27` (seeds 1-32, paired with `E25`): `eval.food_energy_per_1k` +2.1%, `eval.fed_median_lifespan` -6.7% and `eval.births_per_1k` +8.7%, all no-difference, so none is worse; `eval.alarm_lift` -41% worse, `eval.escape_share` and `eval.idle_signals_per_1k` no-difference, `eval.mating_share` 0.151. The anti-exploit suite and the paired test pass (22 of 22, survivable world re-chosen); the ladder is in sim-notes.md. `node scripts/bench-compare.mjs`: `bench.step_ms@500` +2.8%, `bench.phase_ms.sense@500` +5.3% (every row within its limit). The T26 review found the crowding bug (`sampleCrowding` read class channels by `=== 1`), fixed before `E27` ran.
 
 The ray classes tell an agent what can bite it and what it can bite, class channels carry proximity, and mating gets
 its own size band (B12, B14). Built before predator-prey.md Phase 3 (user, 2026-10-17).
@@ -848,9 +848,9 @@ Doc fixes made here: the spatial-hash sentence now matches the Decisions row, th
 > and six metrics moved to `watch` (T42). `E28` (all features on at the code defaults, 32 seeds x 200000 ticks, against `E27`):
 > `eval.food_energy_per_1k` +52.9% and `eval.fed_median_lifespan` +43.8% (better); `eval.births_per_1k` -30.6% and
 > `eval.lineages_alive` -47.6% (worse); `eval.mating_share` 0.056 against 0.151 (watch); `eval.born_share` 0.948 (passes). Per-seed
-> criteria on the traces (`seedChecks`): population above `minAgents` on 32 of 32 seeds, `eval.catch_rate` above 0 on 17 of 32,
+> criteria on the traces (`seedChecks`): population above `minAgents` on 32 of 32 seeds, `eval.hunter_catches_per_1k` above 0 on 17 of 32,
 > at least 5 lineages on 32 of 32, largest specialisation at most 70% on 9 of 32, population below `maxAgents` on 32 of 32. The
-> failures that remain, as reported to the user: predators die out (`eval.catch_rate` 0 on 15 of 32 seeds), specialisation
+> failures that remain, as reported to the user: predators die out (`eval.hunter_catches_per_1k` 0 on 15 of 32 seeds), specialisation
 > dominates (largest specialisation over 70% on 23 of 32 seeds), and mean `eval.mating_share` is 0.056 against 0.2. T62 reviewed Phase 4 and found no blocker (Review (T62), below); the user decided
 > to close the phase with those failures (Decisions, 2026-10-22), so it is built. Next: T15 (Phase 5 plan), then predator-prey Phase 3
 > (fitnessV2); T70 and T71 (Review (T62)) come before the Phase 5 night.
@@ -863,7 +863,7 @@ and one re-record of `baseline-v5` and `baseline-v5-o16`. Performance is measure
 machine with no other agent running: the tracked defaults row, `alloc-check`, and the Phase 1 observer budget (T10).
 Done when the calibration `E29` gives no verdict outside the metrics `eval:power` marks `watch`, and `E28` (all
 features on against `E27`, 16 seeds x 200000 ticks) shows no collapse: on every seed the population stays above its
-own arm's `minAgents` on at least 80% of checkpoints after burn-in and `eval.catch_rate` is above 0,
+own arm's `minAgents` on at least 80% of checkpoints after burn-in and `eval.hunter_catches_per_1k` is above 0,
 `eval.mating_share` is at least 0.2 and `eval.born_share` at least 0.5 in the mean, and B18 is gone (on every seed at
 200000 ticks at least 5 lineages are alive, no specialisation holds over 70% and the population stays below
 `maxAgents`), with every Target's verdict recorded. Values are left to the Phase 5 night. When a criterion fails, the
@@ -881,7 +881,7 @@ every 1000 ticks, the specialisation counts and the deaths by cause; the criteri
 with `obstacleCount` 0; `foodPatchCount` 16 with `foodAreaCapacity`; `traitsEnabled` with `hashCellSize` 140; `sexesEnabled`
 with `splitCost` 50 as `FEATURES_ON` has it; `plantFoodValue` predator 0 as `predplant`; `minagents40`), all other keys default
 (`minAgents` 100). Criteria per seed, as the Phase 4 text: population above the arm's `minAgents` on at least 80% of
-checkpoints after the 10000-tick burn-in; `eval.catch_rate` above 0; B18 (`eval.lineages_alive` at least 5 (this metric is the checkpoint
+checkpoints after the 10000-tick burn-in; `eval.hunter_catches_per_1k` above 0; B18 (`eval.lineages_alive` at least 5 (this metric is the checkpoint
 mean, not the count at 200000 ticks), the largest specialisation at most 70% of the alive agents, and the population below `maxAgents` 500 at the end);
 `eval.mating_share` at least 0.2 and `eval.born_share` at least 0.5 in the mean of the 4 seeds. Cells are seeds passing out of 4.
 The per-seed lines are in `evals/screens/results/summary.txt`.
@@ -948,8 +948,8 @@ Reading the table. The defaults already fail B18 on all 4 seeds (a monoculture p
       seeds (0.54); the default 100 does not (0.88). The floor's immigrants are what keeps the world alive early; below about 100 they
       cannot feed an evolving population. This is a user decision (2026-10-21), so it is reported, not changed.
 - **All on** (`allon`: `FEATURES_ON` with `hebbianRate` 0.01, `plantFoodValue` predator 0, `minAgents` 40) collapses on all 4 seeds (born_share
-  0.07, `eval.catch_rate` 0 on 3). With `minAgents` 100, no `hebbianRate` and no sexes (`allon-min100-nohebb-nosexes`) every seed passes
-  the 80% rule and has `eval.catch_rate` above 0, `eval.born_share` 0.99, but `eval.mating_share` 0.01 and the population sits at `maxAgents`
+  0.07, `eval.hunter_catches_per_1k` 0 on 3). With `minAgents` 100, no `hebbianRate` and no sexes (`allon-min100-nohebb-nosexes`) every seed passes
+  the 80% rule and has `eval.hunter_catches_per_1k` above 0, `eval.born_share` 0.99, but `eval.mating_share` 0.01 and the population sits at `maxAgents`
   with 5.9 to 11.7 lineages, so B18 is not gone and the mating target is missed.
 
 What T41 and E28 face: `hebbianRate` 0.0001 is settled; `sexesEnabled` has no value that does not collapse the world in the screen and `minAgents` 40
@@ -1101,10 +1101,10 @@ the T68 `cap-on` arm and reproduces its row):
 | `sexes-off`    | FAIL    | 0.07         | 4/4           | 1/4         | 436      | 4/4       | 4/4       | -                |
 
 Sexes on no longer pin the population at the floor (born_share 0.96 on all arms, against 0.15 before), and `minAgents` 40 no longer collapses it
-(pop mean 425, `eval.catch_rate` above 0 on 3 of 4 seeds). What remains failing in all three arms is `mating_share` (0.04 to 0.07 against 0.2) and
+(pop mean 425, `eval.hunter_catches_per_1k` above 0 on 3 of 4 seeds). What remains failing in all three arms is `mating_share` (0.04 to 0.07 against 0.2) and
 specialisation dominance (1/4 seeds under 70%); sexes cost 27% (min 100) and 50% (min 40) of the mating share against sexes off.
 
-**Split-cap margin sweep (2026-10-22, manager).** `npm run screen -- --grid evals/screens/capmargin.grid.json` (the T69 `sexes-min40` candidate, 4 seeds x 200000 ticks, offset 28; results in `evals/screens/results/capmargin/`): `splitCapMargin` 50/100/150/250 gives `eval.mating_share` 0.04/0.05/0.03/0.04, specialisation at most 70% on 1/2/1/0 of 4 seeds, population mean 425/379/334/241, `eval.catch_rate` above 0 on 3/3/4/4 seeds. No margin reaches the 0.2 mating criterion and wider margins only shrink the population, so 50 stays. Mating share and specialisation dominance fail in every arm including sexes off, as they did in the defaults before Phase 3; they are failures that remain, reported to the user (Phase 4 text), and T41 proceeds.
+**Split-cap margin sweep (2026-10-22, manager).** `npm run screen -- --grid evals/screens/capmargin.grid.json` (the T69 `sexes-min40` candidate, 4 seeds x 200000 ticks, offset 28; results in `evals/screens/results/capmargin/`): `splitCapMargin` 50/100/150/250 gives `eval.mating_share` 0.04/0.05/0.03/0.04, specialisation at most 70% on 1/2/1/0 of 4 seeds, population mean 425/379/334/241, `eval.hunter_catches_per_1k` above 0 on 3/3/4/4 seeds. No margin reaches the 0.2 mating criterion and wider margins only shrink the population, so 50 stays. Mating share and specialisation dominance fail in every arm including sexes off, as they did in the defaults before Phase 3; they are failures that remain, reported to the user (Phase 4 text), and T41 proceeds.
 
 **As built (T41, 2026-10-22).** Every Phase 3 feature is on at its code default (`js/sim/config-defaults.js`), with `minAgents` 40, `hashCellSize` 140, and the predator's `plantFoodValue` 0 (a nested `specialisations` override in `FEATURES_ON`, which `createConfig` deep-merges). `FEATURES_OFF` pins the predator's `plantFoodValue` at 1, so the frozen bench world is unchanged. Golden hashes re-pinned, and `npm run browser:hash` matches them in Chromium: default `2a03aeaa71df1be6`, busy `abe82332e76125d8` (busy sets `terrainLayout` open, since its 4 obstacles need it), short default `68b19afca2d2739e`, short busy `d3f0c6c10d19fd18`, busy effect stream `ffc76622f21cfa4a` (6537 records). Tests that assumed the old world spread `FEATURES_OFF`, and default-value checks now assert the off state; the league fixture uses the default config. The T69 `sexes-min40` screen stands for `minAgents` 40; mating share and specialisation dominance still fail, as reported.
 
@@ -1211,7 +1211,7 @@ a user row.
 **Can Phase 4 be marked built?** Yes, on the user's decision and not on the done criterion as written. The criterion
 (`E29` with no verdict outside `watch`, `E28` with no collapse and B18 gone) is not met: `E29` gave
 `eval.idle_signals_per_1k` better (-5.0%, inside its 6.7% false-positive rate, so a known false positive, not a
-Target), and `E28` fails `eval.mating_share` (0.056 against 0.2), `eval.catch_rate` above 0 (17 of 32 seeds) and the
+Target), and `E28` fails `eval.mating_share` (0.056 against 0.2), `eval.hunter_catches_per_1k` above 0 (17 of 32 seeds) and the
 70% specialisation cap (9 of 32); it passes population above the floor (32 of 32), `eval.born_share` (0.948),
 5 lineages (32 of 32) and population below `maxAgents` (32 of 32), so no seed collapsed. The phase text says a failure
 that remains is reported to the user before the phase is marked built; the user was told and the Decisions row
@@ -1225,12 +1225,12 @@ Findings (no blocker):
   `higher`. T41 and T42 listed six metrics (11.4% to 10.3%) and missed it. The `E28` verdict "worse on
   `hunt_call_answer` (-86.6%)" therefore sits on a metric that the rule makes `watch`. Move it to `watch` in
   `DIRECTIONS` and in `evolution-evals.md`, with the test; the `E28` conclusions do not change (predators dying out is
-  seen on `eval.catch_rate` and the predator fitness means).
+  seen on `eval.hunter_catches_per_1k` and the predator fitness means).
 - **Fix before Phase 5 - the full candidate was not screened with predator `plantFoodValue` 0 (T71).** T41's task says
   to screen the full candidate before the switch-on and the T41 note says the T69 `sexes-min40` screen stands for it.
   That arm's report (`evals/screens/results/t69/sexes-min40.report.json`) has `specialisations.predator.plantFoodValue`
   1; the only arm with predator 0 is `predplant` (T59), which ran with `minAgents` 100 and nothing else on. The switched-on
-  world (`E28`) has `eval.catch_rate` above 0 on 17 of 32 seeds against 3 of 4 in `sexes-min40` and 4 of 4 in `cap-on`, and
+  world (`E28`) has `eval.hunter_catches_per_1k` above 0 on 17 of 32 seeds against 3 of 4 in `sexes-min40` and 4 of 4 in `cap-on`, and
   `eval.mean_fitness.predator` -93.8% against `E27`. Predators that eat no plants may be why they die out, or the cause may
   be something else; nothing here separates the two. Run a 4-seed or larger screen (`npm run screen`) of the T41 defaults
   against the same with predator `plantFoodValue` 1, and record whether the 15 catch-free seeds come back. This is also
@@ -1247,7 +1247,7 @@ Findings (no blocker):
 - **Note - `E28` ran 32 seeds, the phase text says 16.** Recorded in T42 and in `E28`'s note; the text stays as the
   plan.
 
-**T70 and T71 (2026-10-22, manager).** T70: `eval.hunt_call_answer` is `watch` in `DIRECTIONS` and in evolution-evals.md, so E28's -86.6% on it is not a verdict. T71: `npm run screen -- --grid evals/screens/t71.grid.json` (the T41 defaults, 4 seeds x 200000 ticks, offset 28; results in `evals/screens/results/t71/`): predator `plantFoodValue` 0 (the default) / 1 / 0.3 gives `eval.catch_rate` above 0 on 2/3/2 of 4 seeds, specialisation at most 70% on 0/1/0, `eval.mating_share` 0.05/0.04/0.06. The plant value is not why predators die out; the default stays 0 and predator survival goes to fitnessV2 (predator-prey Phase 3) with specialisation dominance, as decided.
+**T70 and T71 (2026-10-22, manager).** T70: `eval.hunt_call_answer` is `watch` in `DIRECTIONS` and in evolution-evals.md, so E28's -86.6% on it is not a verdict. T71: `npm run screen -- --grid evals/screens/t71.grid.json` (the T41 defaults, 4 seeds x 200000 ticks, offset 28; results in `evals/screens/results/t71/`): predator `plantFoodValue` 0 (the default) / 1 / 0.3 gives `eval.hunter_catches_per_1k` above 0 on 2/3/2 of 4 seeds, specialisation at most 70% on 0/1/0, `eval.mating_share` 0.05/0.04/0.06. The plant value is not why predators die out; the default stays 0 and predator survival goes to fitnessV2 (predator-prey Phase 3) with specialisation dominance, as decided.
 
 ### Phase 5 - Settle the balance
 
@@ -1424,7 +1424,7 @@ A comparison does not authorize retaining a feature-off architecture or changing
 world-rule failure `fitnessV2` cannot change. The evidence says why it is low: a mating needs a ready, eligible
 female-male pair within `mateRange` (0.00 to 0.03 per census at 100 agents), 480 ticks of pregnancy and a free slot,
 while splitting needs only energy. Mating per agent rises with density (0.012 per 1000 agent-ticks at 103 agents, 0.051
-at 321), and `splitCapMargin` 50 to 250 did not lift it (Split-cap margin sweep). Predator survival (`eval.catch_rate` 0
+at 321), and `splitCapMargin` 50 to 250 did not lift it (Split-cap margin sweep). Predator survival (`eval.hunter_catches_per_1k` 0
 on 15 of 32 seeds) and specialisation dominance are not round 1 targets; they are guards (below).
 
 **Scorecard.** An arm of `npm run screen` (4 seeds, 200000 ticks, offset 28, the live policy) is judged in this order:
@@ -1574,7 +1574,7 @@ is recorded in `evals/experiments.json` and the learnings in `sim-notes.md`.
 | `all5-range300`                      | FAIL    | 4/4       | 0/4       | 0.29 ok            | 0.96 ok          | 4/4           | 2/4         | 4/4       | 394      | +497%         | +7%             | +28%             | -2%            | -24%            |
 | `all5-range200`                      | FAIL    | 4/4       | 3/4       | 0.21 ok            | 0.96 ok          | 4/4           | 2/4         | 4/4       | 436      | +325%         | 0%              | +11%             | +6%            | -15%            |
 
-**Finalists (T75, 2026-10-22, manager).** Mechanism: a wider mate range and a looser genetic-distance bar together multiply the eligible pairs in reach (each alone is capped by the other), and a cheaper minimum child and a shorter cooldown let a pair mate again sooner. Finalists: `range300_dist1` (0.24; the smallest change), `range300_dist1_childmin100` (0.25), `range300_dist1_cool150_childmin100` (0.26), `all5-range200` (0.21). `all5-range300` (0.29) is cut on the predator guard: `eval.catch_rate` above 0 on 0 of 4 seeds against 2 of 4 for base. Round C runs the finalists on seeds 1-32 x 200000 ticks (`evals/screens/phase5-c.grid.json`) and compares each with `E28` (the live policy at the current defaults on seeds 1-32): the plan named `baseline-v5` as the reference, but that is a different policy from the screens' live policy, and E28 already holds both seed sets, so no reference rerun is needed.
+**Finalists (T75, 2026-10-22, manager).** Mechanism: a wider mate range and a looser genetic-distance bar together multiply the eligible pairs in reach (each alone is capped by the other), and a cheaper minimum child and a shorter cooldown let a pair mate again sooner. Finalists: `range300_dist1` (0.24; the smallest change), `range300_dist1_childmin100` (0.25), `range300_dist1_cool150_childmin100` (0.26), `all5-range200` (0.21). `all5-range300` (0.29) is cut on the predator guard: `eval.hunter_catches_per_1k` above 0 on 0 of 4 seeds against 2 of 4 for base. Round C runs the finalists on seeds 1-32 x 200000 ticks (`evals/screens/phase5-c.grid.json`) and compares each with `E28` (the live policy at the current defaults on seeds 1-32): the plan named `baseline-v5` as the reference, but that is a different policy from the screens' live policy, and E28 already holds both seed sets, so no reference rerun is needed.
 
 **Round C and the win (T76, T77, 2026-10-23, manager; E34).** The four finalists ran on seeds 1-32 x 200000 ticks (`evals/screens/results/phase5-c/`) and were compared with `E28`:
 

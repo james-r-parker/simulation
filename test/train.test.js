@@ -74,7 +74,7 @@ describe('checkpoint helpers', () => {
             { 'eval.hunter_zero_kill_share': 3 },
         ]);
         expect(m['eval.hunter_zero_kill_share']).toBe(2);
-        expect(m['eval.escape_rate']).toBeNull();
+        expect(m['eval.escape_share']).toBeNull();
     });
 });
 

@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { compareReports, metricDirection } from '../js/evo/compare.js';
 import { METRICS } from '../js/evo/metric-registry/index.js';
+import { withCurrentNames } from '../js/evo/metric-registry/renames.js';
 import { validateReport } from '../js/evo/report.js';
 import { createRng, fork, nextInt } from '../js/sim/rng.js';
 import { intValue, parseFlags } from './lib/cli-args.mjs';
@@ -283,8 +284,9 @@ export function formatPower(rows) {
 export function main(argv, { print = console.log, error = console.error } = {}) {
     try {
         const { files, json, ...options } = parseArgs(argv);
-        const report = JSON.parse(readFileSync(files[0], 'utf8'));
-        validateReport(report);
+        const raw = JSON.parse(readFileSync(files[0], 'utf8'));
+        validateReport(raw);
+        const report = withCurrentNames(raw);
         const rows = evalPower(report, options);
         print(json ? JSON.stringify({ ...options, rows }, null, 2) : formatPower(rows).join('\n'));
         return 0;

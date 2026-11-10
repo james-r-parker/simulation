@@ -86,7 +86,8 @@ describe('computeMetrics on hand-built state', () => {
                 2 +
                 4 +
                 6 +
-                1,
+                1 +
+                1, // eval.hunter_kills_per_life_mean (metric-trust T25)
         );
     });
 

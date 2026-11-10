@@ -43,7 +43,7 @@ function metric({ world, observer }, name) {
     return loose(computeMetrics(observer, world))[`eval.${name}`];
 }
 
-describe('audit: eval.catch_rate', () => {
+describe('audit: eval.hunter_catches_per_1k', () => {
     // One hunter alive for ticks 1..500 = 500 hunter agent-ticks (a forager is not counted). Three deaths at tick 100:
     // eaten by the hunter (counts), eaten by a forager (does not), starved (does not).
     function run() {
@@ -66,7 +66,7 @@ describe('audit: eval.catch_rate', () => {
     }
 
     it('counts eaten deaths by a canHunt killer per 1000 hunter agent-ticks: 1 in 500 is 2', () => {
-        expect(metric(run(), 'catch_rate')).toEqual({ value: 2 });
+        expect(metric(run(), 'hunter_catches_per_1k')).toEqual({ value: 2 });
     });
 
     it('is null with reason `no hunters` exactly when no canHunt agent was alive for a tick', () => {
@@ -74,14 +74,14 @@ describe('audit: eval.catch_rate', () => {
         addBorn(r.world, { spec: FORAGER });
         observe(r.observer, r.world);
         ticks(r, 1, 5);
-        expect(metric(r, 'catch_rate')).toEqual({ value: null, reason: 'no hunters' });
+        expect(metric(r, 'hunter_catches_per_1k')).toEqual({ value: null, reason: 'no hunters' });
         r.world.spec[0] = PREDATOR; // from now the agent is a hunter: one agent-tick
         ticks(r, 6, 6);
-        expect(metric(r, 'catch_rate')).toEqual({ value: 0 });
+        expect(metric(r, 'hunter_catches_per_1k')).toEqual({ value: 0 });
     });
 });
 
-describe('audit: eval.escape_rate', () => {
+describe('audit: eval.escape_share', () => {
     // Prey A is bitten at tick 10 and 15 (one episode, resolves at 315, alive: escaped). B is bitten at 10 and 100 and
     // starves at 200 (caught). C is eaten at 50 (caught). D is bitten at 30 and unresolved at the run end (excluded),
     // as is a bite on the hunter. 1 escaped of 3 resolved.
@@ -111,7 +111,7 @@ describe('audit: eval.escape_rate', () => {
 
     it('is the share of resolved episodes whose victim lives ESCAPE_TICKS after the last bite: 1 of 3', () => {
         expect(ESCAPE_TICKS).toBe(300);
-        expect(metric(run(), 'escape_rate').value).toBeCloseTo(1 / 3, 12);
+        expect(metric(run(), 'escape_share').value).toBeCloseTo(1 / 3, 12);
     });
 
     it('is null with reason `no resolved bite episode` while every episode is still open', () => {
@@ -120,13 +120,13 @@ describe('audit: eval.escape_rate', () => {
         observe(r.observer, r.world);
         ticks(r, 1, 1, () => (r.world.bittenTimer[prey] = 1));
         ticks(r, 2, ESCAPE_TICKS, () => (r.world.bittenTimer[prey] = 5));
-        expect(metric(r, 'escape_rate')).toEqual({ value: null, reason: 'no resolved bite episode' });
+        expect(metric(r, 'escape_share')).toEqual({ value: null, reason: 'no resolved bite episode' });
         ticks(r, ESCAPE_TICKS + 1, ESCAPE_TICKS + 1);
-        expect(metric(r, 'escape_rate')).toEqual({ value: 1 });
+        expect(metric(r, 'escape_share')).toEqual({ value: 1 });
     });
 });
 
-describe('audit: eval.pack_kill_share', () => {
+describe('audit: eval.pack_kills_per_eaten_death', () => {
     // Four eaten deaths at tick 5 and a starved one: a pack kill (killer H1 with previous biter H2 of its lineage),
     // a kill with a previous biter of another lineage, a kill with none, and a kill by a forager. 1 of 4.
     function run() {
@@ -153,7 +153,7 @@ describe('audit: eval.pack_kill_share', () => {
     }
 
     it('is the share of eaten deaths with a killer and a previous biter that are hunters of one lineage: 1 of 4', () => {
-        expect(metric(run(), 'pack_kill_share')).toEqual({ value: 0.25 });
+        expect(metric(run(), 'pack_kills_per_eaten_death')).toEqual({ value: 0.25 });
     });
 
     it('is null with reason `no eaten death` when only other deaths occur', () => {
@@ -161,7 +161,7 @@ describe('audit: eval.pack_kill_share', () => {
         const slot = addBorn(r.world, { spec: FORAGER });
         observe(r.observer, r.world);
         ticks(r, 1, 1, () => pushDied(r.world, { slot, genomeId: r.world.genomeId[slot], cause: STARVED }));
-        expect(metric(r, 'pack_kill_share')).toEqual({ value: null, reason: 'no eaten death' });
+        expect(metric(r, 'pack_kills_per_eaten_death')).toEqual({ value: null, reason: 'no eaten death' });
     });
 });
 

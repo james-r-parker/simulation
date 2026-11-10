@@ -138,7 +138,7 @@ export const SCENES_SOCIAL = {
         arithmetic: 'test/evo/scene-heritage.test.js',
         source: 'test/evo/metric-source-social.test.js',
     }),
-    'eval.mate_skill_gap': entry('scenes-social', {
+    'eval.mate_rank_gap': entry('scenes-social', {
         module: 'js/evo/scene-mate.js',
         meaning: 'Whether mates are chosen on rank (positive).',
         counts: "At each mating start after burn-in, the chosen mate's within-specialisation rank percentile minus the mean percentile of the candidates in range (alive, her specialisation, other sex, within size + size + mateReach, ready to mate).",
@@ -146,6 +146,7 @@ export const SCENES_SOCIAL = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no mating with a chosen mate after burn-in'],
+        renamedFrom: ['eval.mate_skill_gap'],
         arithmetic: 'test/evo/scene-mate.test.js',
         source: 'test/evo/metric-source-social.test.js',
     }),

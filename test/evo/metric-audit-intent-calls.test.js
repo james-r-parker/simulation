@@ -63,15 +63,15 @@ describe('audit: call, smoke and idle-signal metrics', () => {
         return r;
     }
 
-    it('reads alarm_precision as the precise share minus the caller base rate: (2 - 4 x 0.6) / 4', () => {
+    it('reads alarm_lift as the precise share minus the caller base rate: (2 - 4 x 0.6) / 4', () => {
         // Two of four alarms follow a sighting within 30 ticks; a caller who called whatever it saw would have been
         // precise 60% of the time, so the lift is negative.
-        const m = metric(signals(), 'alarm_precision');
+        const m = metric(signals(), 'alarm_lift');
         expect(m.value).toBeCloseTo(-0.1, 12);
     });
 
-    it('reads hunt_call_precision as the precise share minus the caller base rate: (2 - 4 x 0.4) / 4', () => {
-        expect(metric(signals(), 'hunt_call_precision').value).toBeCloseTo(0.1, 12);
+    it('reads hunt_call_lift as the precise share minus the caller base rate: (2 - 4 x 0.4) / 4', () => {
+        expect(metric(signals(), 'hunt_call_lift').value).toBeCloseTo(0.1, 12);
     });
 
     it('reads smoke_precision as the share after a threat sighting or a bite 1 to 28 ticks before: 3 of 5', () => {
@@ -87,8 +87,8 @@ describe('audit: call, smoke and idle-signal metrics', () => {
 
     it('is null for each call metric with its reason exactly when there was none, and 0 idle with agent-ticks', () => {
         const none = signals(4);
-        expect(metric(none, 'alarm_precision')).toEqual({ value: null, reason: 'no alarm call' });
-        expect(metric(none, 'hunt_call_precision')).toEqual({ value: null, reason: 'no hunt call' });
+        expect(metric(none, 'alarm_lift')).toEqual({ value: null, reason: 'no alarm call' });
+        expect(metric(none, 'hunt_call_lift')).toEqual({ value: null, reason: 'no hunt call' });
         expect(metric(none, 'smoke_precision')).toEqual({ value: null, reason: 'no smoke release' });
         expect(metric(none, 'idle_signals_per_1k')).toEqual({ value: 0 });
         const empty = auditArena();
@@ -188,13 +188,13 @@ describe('audit: grouping and kin metrics', () => {
                 seeThreat(r.world, k2, 4, 0.4);
             }
         });
-        expect(metric(r, 'group_cohesion_under_threat').value).toBeCloseTo(1.5, 12);
+        expect(metric(r, 'kin_nearby_threat_gain').value).toBeCloseTo(1.5, 12);
     });
 
     it('is null with its reason when the sample has no threatened or no unthreatened agent', () => {
         const calm = group();
         ticks(calm.r, 1, 10);
-        expect(metric(calm.r, 'group_cohesion_under_threat')).toEqual({
+        expect(metric(calm.r, 'kin_nearby_threat_gain')).toEqual({
             value: null,
             reason: 'no threatened agent in a grouping sample',
         });
@@ -205,7 +205,7 @@ describe('audit: grouping and kin metrics', () => {
                 seeThreat(off.r.world, off.t, 4, 0.9);
             }
         });
-        expect(metric(off.r, 'group_cohesion_under_threat')).toEqual({
+        expect(metric(off.r, 'kin_nearby_threat_gain')).toEqual({
             value: null,
             reason: 'no threatened agent in a grouping sample',
         });
@@ -218,7 +218,7 @@ describe('audit: grouping and kin metrics', () => {
                 }
             }
         });
-        expect(metric(all.r, 'group_cohesion_under_threat')).toEqual({
+        expect(metric(all.r, 'kin_nearby_threat_gain')).toEqual({
             value: null,
             reason: 'no unthreatened agent in a grouping sample',
         });

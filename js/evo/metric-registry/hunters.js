@@ -3,7 +3,7 @@
 import { entry } from './entry.js';
 
 export const HUNTERS = {
-    'eval.hunter_kills_per_life': entry('hunters', {
+    'eval.hunter_kills_per_life_p50': entry('hunters', {
         module: 'js/evo/scene-hunters.js',
         meaning: 'How many deliberate kills a typical hunter life holds (a median, so 0 when most lives kill nothing).',
         counts: 'Median of the ledger kill count (ledgerKills, credited by noteLedgerKill from the bite before the fatal one) over HunterLedger records of hunters that died, whole run.',
@@ -11,6 +11,7 @@ export const HUNTERS = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no hunter deaths'],
+        renamedFrom: ['eval.hunter_kills_per_life'],
         arithmetic: 'test/evo/scene-hunters.test.js',
     }),
     'eval.hunter_zero_kill_share': entry('hunters', {

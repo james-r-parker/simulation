@@ -8,7 +8,7 @@
 /** The reward sources, as `noteReward` takes them and as `rewardCounts` is indexed. */
 export const REWARD_SOURCE = Object.freeze({ KILL: 0, BITE: 1, SCAVENGE: 2 });
 
-/** The source names of `eval.reward_events.<source>`, in `REWARD_SOURCE` order. */
+/** The source names of `eval.reward_events_per_1k.<source>`, in `REWARD_SOURCE` order. */
 export const REWARD_NAMES = Object.freeze(['kill', 'bite', 'scavenge']);
 
 /**

@@ -7,9 +7,9 @@ import { METRICS } from '../../../js/evo/metric-registry/index.js';
 import { meetsLivenessBar } from '../../../js/evo/metric-registry/status.js';
 
 describe('generated metric liveness', () => {
-    it('is frozen and holds either no baseline or a complete set of readings', () => {
+    it('is frozen and holds readings only for registered metrics', () => {
         expect(Object.isFrozen(LIVENESS)).toBe(true);
-        expect([0, 268]).toContain(Object.keys(LIVENESS).length);
+        expect(Object.keys(LIVENESS).filter((name) => !Object.hasOwn(METRICS, name))).toEqual([]);
         for (const reading of Object.values(LIVENESS)) {
             expect(reading.nullShare).toBeGreaterThanOrEqual(0);
             expect(reading.nullShare).toBeLessThanOrEqual(1);

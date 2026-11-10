@@ -9,9 +9,9 @@ import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 import { loose } from './helpers/metric-registry.js';
 
 const NAMES = [
-    'eval.catch_rate',
-    'eval.escape_rate',
-    'eval.pack_kill_share',
+    'eval.hunter_catches_per_1k',
+    'eval.escape_share',
+    'eval.pack_kills_per_eaten_death',
     'eval.alarm_response',
     'eval.smoke_escapes',
 ];
@@ -20,9 +20,9 @@ describe('combatMetrics', () => {
     it('is null with a reason for every metric on an empty observer', () => {
         const m = combatMetrics(bareObserver());
         expect(Object.keys(m)).toEqual(NAMES);
-        expect(m['eval.catch_rate']).toEqual({ value: null, reason: 'no hunters' });
-        expect(m['eval.escape_rate']).toEqual({ value: null, reason: 'no resolved bite episode' });
-        expect(m['eval.pack_kill_share']).toEqual({ value: null, reason: 'no eaten death' });
+        expect(m['eval.hunter_catches_per_1k']).toEqual({ value: null, reason: 'no hunters' });
+        expect(m['eval.escape_share']).toEqual({ value: null, reason: 'no resolved bite episode' });
+        expect(m['eval.pack_kills_per_eaten_death']).toEqual({ value: null, reason: 'no eaten death' });
         expect(m['eval.alarm_response']).toEqual({ value: null, reason: 'no alarm call' });
         expect(m['eval.smoke_escapes']).toEqual({ value: null, reason: 'no smoke release after a bite' });
     });
@@ -40,9 +40,9 @@ describe('combatMetrics', () => {
         Object.assign(o.combat.smoke, { bittenReleases: 4, escapes: 3 });
         Object.assign(o.combat.alarm, { calls: 3, matchedCalls: 2, sum: 0.5 });
         const m = combatMetrics(o);
-        expect(m['eval.catch_rate']).toEqual({ value: 1.5 });
-        expect(m['eval.escape_rate']).toEqual({ value: 0.25 });
-        expect(m['eval.pack_kill_share']).toEqual({ value: 0.25 });
+        expect(m['eval.hunter_catches_per_1k']).toEqual({ value: 1.5 });
+        expect(m['eval.escape_share']).toEqual({ value: 0.25 });
+        expect(m['eval.pack_kills_per_eaten_death']).toEqual({ value: 0.25 });
         expect(m['eval.smoke_escapes']).toEqual({ value: 0.75 });
         expect(m['eval.alarm_response']).toEqual({ value: 0.25 });
     });
@@ -67,7 +67,7 @@ describe('combatMetrics', () => {
         const metrics = computeMetrics(bareObserver(), EMPTY_WORLD);
         const report = buildReport({ ...input, perSeed: [metrics] });
         expect(() => validateReport(report)).not.toThrow();
-        expect(report.metrics['eval.catch_rate'].reasons).toEqual(['no hunters']);
+        expect(report.metrics['eval.hunter_catches_per_1k'].reasons).toEqual(['no hunters']);
         const older = Object.fromEntries(Object.entries(metrics).filter(([name]) => !NAMES.includes(name)));
         expect(() => validateReport(buildReport({ ...input, perSeed: [older] }))).not.toThrow();
     });

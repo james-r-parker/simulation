@@ -1,7 +1,8 @@
 // The hunter row (natural-selection.md T53): how hunters live, die and arrive, read from the sim's `HunterLedger` records
 // (one per `canHunt` death; js/sim/hunter-ledger.js) and from `AgentBorn`. The ledger is outside `worldHash`.
 //
-// - `eval.hunter_kills_per_life`, `eval.hunter_zero_kill_share`: the median kills of a hunter life, and the share of
+// - `eval.hunter_kills_per_life_p50`, `eval.hunter_kills_per_life_mean`, `eval.hunter_zero_kill_share`: the median and
+//   mean kills of a hunter life, and the share of
 //   hunter deaths with no kill.
 // - `eval.hunter_death_share.<cause>`: the share of hunter deaths by cause (starved, collision, eaten, trampled, disease,
 //   other: old age and poison).
@@ -166,11 +167,14 @@ function deathMetrics(scene) {
     const kills = scene.log.kills.subarray(0, n);
     const ages = scene.log.age.subarray(0, n);
     let zero = 0;
+    let total = 0;
     for (let i = 0; i < n; i++) {
         zero += kills[i] === 0 ? 1 : 0;
+        total += kills[i];
     }
     return {
-        'eval.hunter_kills_per_life': n > 0 ? ok(quantile(kills, 0.5)) : none(reason),
+        'eval.hunter_kills_per_life_p50': n > 0 ? ok(quantile(kills, 0.5)) : none(reason),
+        'eval.hunter_kills_per_life_mean': n > 0 ? ok(total / n) : none(reason),
         'eval.hunter_zero_kill_share': share(zero, n, reason),
         'eval.hunter_median_lifespan': n > 0 ? ok(quantile(ages, 0.5)) : none(reason),
         ...shares('eval.hunter_death_share', HUNTER_DEATH_NAMES, scene.deaths, reason),

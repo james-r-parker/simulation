@@ -256,7 +256,7 @@ describe('instinct_drift', () => {
     });
 });
 
-describe('reward_events.kill, reward_events.bite and reward_events.scavenge', () => {
+describe('reward_events_per_1k.kill, reward_events_per_1k.bite and reward_events_per_1k.scavenge', () => {
     it('counts non-fatal bites, fatal kills and scavenged meat per 1k hunter agent-ticks through the final tick', () => {
         const { next, policy } = specPolicy();
         const r = brainSourceRun({ policy, over: { predatorRestTicks: 0 } });
@@ -312,8 +312,8 @@ describe('reward_events.kill, reward_events.bite and reward_events.scavenge', ()
         });
         const m = r.metrics();
         expect(r.observer.combat.hunterAgentTicks).toBe(3);
-        expect(m['eval.reward_events.kill']).toEqual({ value: (1 / 3) * 1000 });
-        expect(m['eval.reward_events.bite']).toEqual({ value: (2 / 3) * 1000 });
-        expect(m['eval.reward_events.scavenge']).toEqual({ value: (2 / 3) * 1000 });
+        expect(m['eval.reward_events_per_1k.kill']).toEqual({ value: (1 / 3) * 1000 });
+        expect(m['eval.reward_events_per_1k.bite']).toEqual({ value: (2 / 3) * 1000 });
+        expect(m['eval.reward_events_per_1k.scavenge']).toEqual({ value: (2 / 3) * 1000 });
     });
 });

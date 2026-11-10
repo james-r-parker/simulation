@@ -13,7 +13,7 @@ import { bySuffix, none, per1k } from './metrics-stats.js';
 export function rewardMetrics(observer, world) {
     const ticks = observer.combat.hunterAgentTicks;
     if (world.rewardCounts === undefined) {
-        return bySuffix('eval.reward_events', REWARD_NAMES, () => none('no reward counts'));
+        return bySuffix('eval.reward_events_per_1k', REWARD_NAMES, () => none('no reward counts'));
     }
-    return bySuffix('eval.reward_events', REWARD_NAMES, (i) => per1k(world.rewardCounts[i], ticks));
+    return bySuffix('eval.reward_events_per_1k', REWARD_NAMES, (i) => per1k(world.rewardCounts[i], ticks));
 }

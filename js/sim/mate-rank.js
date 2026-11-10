@@ -13,7 +13,7 @@
 // corrected: the counters are lifetime, so older males rank higher. `refreshMateRanks` recomputes every rank each
 // `MATE_RANK_INTERVAL` ticks into the preallocated `mateRank` array by counting pairs inside each specialisation (about
 // 250,000 comparisons a pass at 500 agents, no sort, no allocation); a slot born since the last pass ranks 0. The eval
-// observer reads the same percentile (`fillScores`, `percentileInto`) for `eval.mate_skill_gap`.
+// observer reads the same percentile (`fillScores`, `percentileInto`) for `eval.mate_rank_gap`.
 //
 // `mateRank`, `maturedKids` are per-slot arrays zeroed by `freeAgent`, outside `worldHash`.
 

@@ -38,10 +38,10 @@ describe('evals/predator-world.json', () => {
                 const values = runs.map((m) => m[name].value).filter((v) => v !== null);
                 return values.reduce((a, b) => a + b, 0) / values.length;
             };
-            expect(mean('eval.catch_rate')).toBeGreaterThan(0);
-            expect(mean('eval.escape_rate')).toBeGreaterThan(0);
+            expect(mean('eval.hunter_catches_per_1k')).toBeGreaterThan(0);
+            expect(mean('eval.escape_share')).toBeGreaterThan(0);
             for (const run of runs) {
-                expect(run['eval.catch_rate'].value).toBeGreaterThan(0);
+                expect(run['eval.hunter_catches_per_1k'].value).toBeGreaterThan(0);
             }
         },
         scaleTimeout(60_000),

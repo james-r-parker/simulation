@@ -92,11 +92,11 @@ describe('bootstrapInterval', () => {
 
 /**
  * Metrics that world-balance T41, T42 and T70 moved to `watch` on E29's eval:power rates and that E35 does not return
- * (fitness-and-selection T13): a rate over 10% at 16 seeds, or too few verdicts (`evasion_skill`).
+ * (fitness-and-selection T13): a rate over 10% at 16 seeds, or too few verdicts (`evasion_response_share`).
  */
 const WATCH_AFTER_T13 = [
-    'eval.alarm_precision',
-    'eval.evasion_skill',
+    'eval.alarm_lift',
+    'eval.evasion_response_share',
     'eval.hunt_call_answer',
     'eval.pursuit_bite_share',
     'eval.smoke_precision',
@@ -114,7 +114,7 @@ const MOVED_BY_T13 = {
         'eval.lineage_lifespan_p50',
         'eval.spec_effective',
     ],
-    lower: ['eval.spec_dominance', 'eval.lineage_dominance', 'eval.cold_stress_share', 'eval.terrain_death_share'],
+    lower: ['eval.spec_dominance', 'eval.lineage_dominance', 'eval.cold_stress_share', 'eval.collision_death_share'],
 };
 
 /** New metrics T13 left on `watch`: a rate over 10%, a ceiling, too few non-null seeds, or no named direction. */
@@ -180,6 +180,14 @@ describe('compareReports verdicts', () => {
             expect(['no-difference', '-']).toContain(row.verdict);
             expect(row.diff).toBe(0);
         }
+    });
+
+    it('pairs an old report with a new one through renamedFrom', () => {
+        const old = report({ 'eval.catch_rate': BASE });
+        const now = report({ 'eval.hunter_catches_per_1k': shift(BASE, 3) });
+        const rows = compareReports(old, now).rows;
+        expect(rows.map((r) => r.metric)).toEqual(['eval.hunter_catches_per_1k']);
+        expect(rows[0]).toEqual(compareReports(report({ 'eval.hunter_catches_per_1k': BASE }), now).rows[0]);
     });
 
     it('scores a shifted metric by its direction', () => {

@@ -385,11 +385,11 @@ interval and no verdict.
 
 | Group              | Examples                                                                                                                                                                        |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Skill, not luck    | `eval.deliberate_food_share` (food eaten after seeing it and closing on it), `eval.pursuit_kill_share`, `eval.evasion_skill`, `eval.skill_trend` (is skill rising across the run?) |
-| Predators and prey | `eval.predator_presence`, `eval.predator_births`, `eval.catch_rate`, `eval.escape_rate`, `eval.pack_kill_share`                                                                 |
+| Skill, not luck    | `eval.deliberate_food_share` (food eaten after seeing it and closing on it), `eval.pursuit_kill_share`, `eval.evasion_response_share`, `eval.skill_trend` (is skill rising across the run?) |
+| Predators and prey | `eval.predator_presence`, `eval.predator_births`, `eval.hunter_catches_per_1k`, `eval.escape_share`, `eval.pack_kills_per_eaten_death`                                                                 |
 | Lineage            | `eval.lineages_alive`, `eval.lineage_lifespan_p50`, `eval.child_survival`, `eval.offspring_per_life`                                                                            |
 | Diversity          | `eval.spec_dominance` (lower is better), `eval.spec_effective`, `eval.body_plan_coverage`, `eval.trait_spread`, `eval.behaviour_coverage`                                       |
-| Worth watching     | `eval.migration_index`, `eval.lineage_turnover`, `eval.idle_signals_per_1k` (call and smoke spam, lower is better), `eval.alarm_precision`, `eval.hunt_call_precision`           |
+| Worth watching     | `eval.migration_index`, `eval.lineage_turnover`, `eval.idle_signals_per_1k` (call and smoke spam, lower is better), `eval.alarm_lift`, `eval.hunt_call_lift`           |
 | World health       | `eval.food_energy_per_1k`, `eval.fed_median_lifespan`, `eval.births_per_1k`, `eval.floor_episodes`, `eval.born_share`                                                           |
 | Merit (when on)    | `eval.merit_mean`, `eval.merit_mate_gain`, `eval.split_gated_share`, `eval.merit_fitness_corr`                                                                                  |
 
@@ -413,7 +413,7 @@ the reference (seeds 1-16 / 17-32):
 
 | Metric                     | Reference     | Bite 8        | Verdict                      |
 | -------------------------- | ------------- | ------------- | ---------------------------- |
-| `eval.catch_rate`          | 0.006 / 0.005 | 0.060 / 0.051 | `better` on both sets        |
+| `eval.hunter_catches_per_1k`          | 0.006 / 0.005 | 0.060 / 0.051 | `better` on both sets        |
 | `eval.predator_births`     | 3.6 / 5.2     | 127.4 / 39.5  | `better` on both sets        |
 | `eval.fed_median_lifespan` | 5802 / 6180   | 5743 / 5760   | `no-difference` on both sets |
 
