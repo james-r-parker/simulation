@@ -12,6 +12,7 @@ export const INTENT = {
         direction: 'higher',
         nullWhen: ['no food eaten'],
         arithmetic: 'test/evo/metrics-intent.test.js',
+        source: 'test/evo/metric-source-intent.test.js',
     }),
     'eval.deliberate_food_energy_per_1k': entry('intent', {
         module: 'js/evo/metrics-intent.js',
@@ -23,6 +24,7 @@ export const INTENT = {
         nullWhen: ['no agent-ticks'],
         renamedFrom: ['eval.deliberate_food_per_1k'],
         arithmetic: 'test/evo/metrics-intent.test.js',
+        source: 'test/evo/metric-source-intent.test.js',
     }),
     'eval.chance_food_energy_per_1k': entry('intent', {
         module: 'js/evo/metrics-intent.js',
@@ -34,6 +36,7 @@ export const INTENT = {
         nullWhen: ['no agent-ticks'],
         renamedFrom: ['eval.chance_food_per_1k'],
         arithmetic: 'test/evo/metrics-intent.test.js',
+        source: 'test/evo/metric-source-intent.test.js',
     }),
     'eval.pursuit_bite_share': entry('intent', {
         module: 'js/evo/metrics-intent.js',
@@ -44,6 +47,7 @@ export const INTENT = {
         intended: 'higher',
         nullWhen: ['no bite energy gained by hunters'],
         arithmetic: 'test/evo/metrics-intent.test.js',
+        source: 'test/evo/metric-source-intent.test.js',
     }),
     'eval.pursuit_kill_share': entry('intent', {
         module: 'js/evo/metrics-intent.js',
@@ -53,6 +57,7 @@ export const INTENT = {
         direction: 'higher',
         nullWhen: ['no hunter kill'],
         arithmetic: 'test/evo/metrics-intent.test.js',
+        source: 'test/evo/metric-source-intent.test.js',
     }),
     'eval.pack_convergence': entry('intent', {
         module: 'js/evo/metrics-intent.js',
@@ -62,6 +67,7 @@ export const INTENT = {
         direction: 'higher',
         nullWhen: ['no pack kill'],
         arithmetic: 'test/evo/metrics-intent.test.js',
+        source: 'test/evo/metric-source-intent.test.js',
     }),
     'eval.hunt_call_answer': entry('intent', {
         module: 'js/evo/metrics-intent.js',
@@ -87,6 +93,7 @@ export const INTENT = {
         nullWhen: ['no escaped bite episode'],
         renamedFrom: ['eval.evasion_skill'],
         arithmetic: 'test/evo/metrics-intent.test.js',
+        source: 'test/evo/metric-source-intent.test.js',
     }),
     'eval.kin_nearby_threat_gain': entry('intent', {
         module: 'js/evo/metrics-intent.js',
@@ -97,6 +104,7 @@ export const INTENT = {
         nullWhen: ['no threatened agent in a grouping sample', 'no unthreatened agent in a grouping sample'],
         renamedFrom: ['eval.group_cohesion_under_threat'],
         arithmetic: 'test/evo/metrics-intent.test.js',
+        source: 'test/evo/metric-source-intent.test.js',
     }),
     'eval.alarm_lift': entry('intent', {
         module: 'js/evo/metrics-intent.js',
@@ -158,6 +166,7 @@ export const INTENT = {
         direction: 'lower',
         nullWhen: ['no classified bite episode'],
         arithmetic: 'test/evo/metrics-intent.test.js',
+        source: 'test/evo/metric-source-intent.test.js',
     }),
     'eval.unseen_bite_share': entry('intent', {
         module: 'js/evo/metrics-intent.js',
@@ -169,6 +178,7 @@ export const INTENT = {
         intended: 'lower',
         nullWhen: ['no classified bite episode'],
         arithmetic: 'test/evo/metrics-intent.test.js',
+        source: 'test/evo/metric-source-intent.test.js',
     }),
     'eval.alarm_hearers_per_call': entry('intent', {
         module: 'js/evo/observer-alarm-reach.js',
@@ -216,6 +226,7 @@ export const INTENT = {
         intended: 'higher',
         nullWhen: ['no threatened agent in a grouping sample'],
         arithmetic: 'test/evo/observer-intent-group.test.js',
+        source: 'test/evo/metric-source-intent.test.js',
     }),
     'eval.call_opportunity_kin': entry('intent', {
         module: 'js/evo/observer-alarm-reach.js',
@@ -226,5 +237,6 @@ export const INTENT = {
         intended: 'higher',
         nullWhen: ['no threatened agent in a grouping sample'],
         arithmetic: 'test/evo/observer-intent-group.test.js',
+        source: 'test/evo/metric-source-intent.test.js',
     }),
 };
