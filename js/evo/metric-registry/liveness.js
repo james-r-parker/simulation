@@ -530,17 +530,17 @@ export const LIVENESS = Object.freeze({
     }),
     'eval.hunter_chases_by_age.1k-2k': Object.freeze({
         nullShare: 0.0078125,
-        distinct: 125,
+        distinct: 124,
         report: 'evals/power/defaults-floor-on.json',
     }),
     'eval.hunter_chases_by_age.over2k': Object.freeze({
         nullShare: 0,
-        distinct: 127,
+        distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
     'eval.hunter_chases_by_age.under1k': Object.freeze({
         nullShare: 0,
-        distinct: 125,
+        distinct: 124,
         report: 'evals/power/defaults-floor-on.json',
     }),
     'eval.hunter_conversion_by_dose': Object.freeze({
@@ -708,6 +708,11 @@ export const LIVENESS = Object.freeze({
         distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
+    'eval.hunter_kills_per_life_mean': Object.freeze({
+        nullShare: 0,
+        distinct: 128,
+        report: 'evals/power/defaults-floor-on.json',
+    }),
     'eval.hunter_kills_per_life_p50': Object.freeze({
         nullShare: 0,
         distinct: 3,
@@ -789,18 +794,18 @@ export const LIVENESS = Object.freeze({
         report: 'evals/power/defaults-floor-on.json',
     }),
     'eval.leak_flee_corr': Object.freeze({
-        nullShare: 1,
-        distinct: 0,
+        nullShare: 0.0625,
+        distinct: 120,
         report: 'evals/power/defaults-floor-on.json',
     }),
     'eval.leak_forage_corr': Object.freeze({
-        nullShare: 1,
-        distinct: 0,
+        nullShare: 0,
+        distinct: 128,
         report: 'evals/power/defaults-floor-on.json',
     }),
     'eval.leak_hunt_corr': Object.freeze({
-        nullShare: 1,
-        distinct: 0,
+        nullShare: 0.2265625,
+        distinct: 99,
         report: 'evals/power/defaults-floor-on.json',
     }),
     'eval.leak_lineage_spread': Object.freeze({

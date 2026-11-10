@@ -3809,6 +3809,21 @@
       "after": "evals/power/defaults-floor-off.json: defaults, floor off, 128 seeds x 200000 ticks, configHash 51c7a6e80234a2b5, 12622627",
       "verdicts": {},
       "note": "Characterization only; no policy or simulation code changed. The liveness bar misses on 30 metrics with floor on and 44 with floor off; all 30 floor-on misses also miss with floor off. The floor-on readings are recorded in js/evo/metric-registry/liveness.js."
+    },
+    {
+      "id": "E149",
+      "date": "2026-11-10",
+      "branch": "chore/metrics-t22-rerun",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference",
+      "hypothesis": "metric-trust T27 prerequisite: the T22 reports predate two observer fixes (leak-skill read, #387; phantom chase, #389), so the power reference is re-run on the same seeds and configs.",
+      "prediction": "Same configHashes as E148; the leak-skill, chase, competence and matched metrics read their fixed values; no sim value moves (worldHash unchanged).",
+      "targets": [],
+      "before": "evals/power/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d, 6a2e9fab",
+      "after": "evals/power/defaults-floor-off.json: defaults, floor off, 128 seeds x 200000 ticks, configHash 51c7a6e80234a2b5, 6a2e9fab",
+      "verdicts": {},
+      "note": "Characterization only, replacing E148 as the power reference. Liveness misses: 28 floor on (was 30), 43 floor off (was 44). leak_forage_corr and leak_flee_corr are now live; leak_hunt_corr is null on 29 of 128 floor-on seeds (fewer than 100 hunter lives with a kill). The floor-on readings are in js/evo/metric-registry/liveness.js."
     }
   ]
 }
