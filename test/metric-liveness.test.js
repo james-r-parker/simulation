@@ -1,9 +1,9 @@
 // The per-metric liveness read and generated registry data (docs/designs/metric-trust.md, T23, T25).
 
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { main, measureLiveness, renderLivenessModule } from '../scripts/metric-liveness.mjs';
 import { METRICS as REGISTRY } from '../js/evo/metric-registry/index.js';
 
@@ -88,6 +88,46 @@ describe('metric-liveness CLI', () => {
         expect(lines).toContain(`${FLAT} null=50.0% distinct=1 flat`);
         expect(generated).toContain(`'${SAMPLE}': Object.freeze({\n        nullShare: 0.25,`);
         expect(renderLivenessModule(measureLiveness(REPORT, 'evals/sample.json', METRICS))).toBe(generated);
+    });
+
+    it('reads the report from disk, and exits 1 with the reason when the report holds an unregistered metric', () => {
+        directory = mkdtempSync(join(tmpdir(), 'metric-liveness-'));
+        const path = join(directory, 'report.json');
+        writeFileSync(path, JSON.stringify(REPORT));
+        /** @type {string[]} */
+        const lines = [];
+        expect(main([path], { metrics: METRICS, print: (line) => lines.push(line) })).toBe(0);
+        expect(lines).toHaveLength(2);
+        const errors = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+        expect(main([path], { metrics: { [SAMPLE]: { renamedFrom: [] } }, print: () => {} })).toBe(1);
+        expect(errors).toHaveBeenCalledWith(`report holds unregistered metrics: ${FLAT}\n`);
+        errors.mockRestore();
+    });
+
+    it('renders an empty map with no readings, and reports a thrown non-Error as text', () => {
+        expect(renderLivenessModule({})).toContain('export const LIVENESS = Object.freeze({});');
+        const errors = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+        const read = () => {
+            throw 'unreadable';
+        };
+        expect(main(['report.json'], { metrics: METRICS, read, print: () => {} })).toBe(1);
+        expect(errors).toHaveBeenCalledWith('unreadable\n');
+        errors.mockRestore();
+    });
+
+    it('sorts the generated readings by name and prints a reading that meets the bar as live, to stdout by default', () => {
+        const live = { nullShare: 0, distinct: 3, report: 'evals/sample.json' };
+        const source = renderLivenessModule({ 'x.zeta': live, 'x.alpha': live });
+        expect(source.indexOf("'x.alpha'")).toBeLessThan(source.indexOf("'x.zeta'"));
+        const many = { ...REPORT.metrics[SAMPLE], values: [1, 2, 3, 4], reasons: [null, null, null, null] };
+        const out = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+        const exit = main(['report.json'], {
+            metrics: { [SAMPLE]: { renamedFrom: [] } },
+            read: () => ({ ...REPORT, metrics: { [SAMPLE]: many } }),
+        });
+        expect(exit).toBe(0);
+        expect(out).toHaveBeenCalledWith(`${SAMPLE} null=0.0% distinct=4 live\n`);
+        out.mockRestore();
     });
 
     it('requires one report and accepts only --write', () => {
