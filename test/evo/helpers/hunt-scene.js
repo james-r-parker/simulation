@@ -121,11 +121,12 @@ export const CHASE_CLOSING_TICKS = 12;
  * it is set beside the prey and bites it (energy 1, or 800 so it lives); for `gaveup` it stops. Afterwards the hunter
  * faces away and the prey is parked out of sight.
  * @param {any} run the run
- * @param {{hunter: number, prey: number, outcome: 'caught' | 'escaped' | 'gaveup', y?: number, energy?: number}} chase
- *   the pair, the outcome, the row and the hunter's energy at the opening (default 300)
+ * @param {{hunter: number, prey: number, outcome: 'caught' | 'escaped' | 'gaveup', y?: number, energy?: number,
+ *   age?: number}} chase the pair, the outcome, the row, the hunter's energy at the opening (default 300; it bites at 300,
+ *   so a full hunter can still strike) and its `ageTicks` at the start
  * @returns {void}
  */
-export function chaseSteps(run, { hunter, prey, outcome, y = 500, energy = 300 }) {
+export function chaseSteps(run, { hunter, prey, outcome, y = 500, energy = 300, age }) {
     const { world } = run;
     const preyEnergy = outcome === 'caught' ? 1 : 800;
     const hold = (/** @type {number} */ slot, /** @type {number} */ x, /** @type {number} */ angle) => {
@@ -137,6 +138,9 @@ export function chaseSteps(run, { hunter, prey, outcome, y = 500, energy = 300 }
     };
     hold(hunter, 100, 0);
     world.energy[hunter] = energy;
+    if (age !== undefined) {
+        world.ageTicks[hunter] = age;
+    }
     run.want(hunter, OUTPUT_INDEX.THRUST);
     for (let t = 0; t < CHASE_CLOSING_TICKS; t++) {
         hold(prey, 260, Math.PI);
@@ -146,6 +150,7 @@ export function chaseSteps(run, { hunter, prey, outcome, y = 500, energy = 300 }
     run.release(hunter, OUTPUT_INDEX.THRUST);
     if (outcome !== 'gaveup') {
         hold(hunter, 230, 0);
+        world.energy[hunter] = 300;
         world.meritPrey.seen[hunter] = world.tick;
         world.meritPrey.bits[hunter] = 0xff;
         world.meritPrey.turn[hunter] = world.tick;
