@@ -11,6 +11,7 @@ import { createApproachScene, noteApproachKill, resetApproachSlot, trackApproach
 import { BASIN_CHECKPOINT_TICKS, createBasinScene, noteBasinBirth, sampleBasins } from './scene-basin.js';
 import { createBalanceScene, sampleBalance } from './scene-balance.js';
 import { createCapacityScene, noteCapacityDeath, sampleCapacity } from './scene-capacity.js';
+import { createEatScene, sampleEat } from './scene-eat.js';
 import { createEdgeScene, noteEdgeBirth, noteEdgeDeath, sampleEdge } from './scene-edge.js';
 import { createDivergenceScene, sampleDivergence } from './scene-divergence.js';
 import { createFamilyScene, sampleFamilies } from './scene-families.js';
@@ -83,6 +84,7 @@ export function createScenes(config, runTicks = 0) {
         guards: createGuardScene(config),
         capacity: createCapacityScene(config),
         edge: createEdgeScene(),
+        eat: createEatScene(config),
         kin: createKinProximityScene(config),
         bite: createBiteScene(config),
         biteLife: createBiteLifeScene(),
@@ -225,6 +227,7 @@ export function observeScenes(observer, world) {
         sampleGuards(scenes.guards, world);
         sampleCapacity(scenes.capacity, world);
         sampleEdge(scenes.edge, world);
+        sampleEat(scenes.eat, world);
         sampleKinProximity(scenes.kin, world);
     }
 }
