@@ -156,6 +156,7 @@ describe('observeScenes', () => {
             'condition',
             'disease',
             'divergence',
+            'edge',
             'families',
             'flora',
             'guards',

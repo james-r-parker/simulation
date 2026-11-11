@@ -12,13 +12,13 @@ import {
     withPower,
 } from '../../../js/evo/metric-registry/index.js';
 
-/** @type {string[]} the 288 names of a live eval report, sorted */
+/** @type {string[]} the 300 names of a live eval report, sorted */
 const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-names.json', import.meta.url), 'utf8'));
 
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(288);
+        expect(REPORT_NAMES).toHaveLength(300);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -122,9 +122,26 @@ const ADDED_AFTER_T8 = [
     'eval.density_intake_slope',
     'eval.density_starve_slope',
     'eval.food_standing_share',
+    'eval.edge_birth_death_ratio',
+    'eval.edge_deaths_per_prey',
+    'eval.edge_eaten_per_prey',
+    'eval.edge_hunters_per_prey',
+    'eval.edge_intake_ratio',
+    'eval.edge_mate_births_per_prey',
+    'eval.edge_ref_eaten_per_prey',
+    'eval.edge_ref_mate_births_per_prey',
+    'eval.edge_ref_split_births_per_prey',
+    'eval.edge_ref_starve_per_prey',
+    'eval.edge_split_births_per_prey',
+    'eval.edge_starve_per_prey',
 ];
 /** Watch metrics registered after the snapshot whose intended direction is lower. */
-const ADDED_INTENDED_LOWER = ['eval.food_standing_share'];
+const ADDED_INTENDED_LOWER = [
+    'eval.food_standing_share',
+    'eval.edge_deaths_per_prey',
+    'eval.edge_ref_starve_per_prey',
+    'eval.edge_ref_eaten_per_prey',
+];
 const SNAPSHOT = JSON.parse(readFileSync(new URL('../../fixtures/metric-directions.json', import.meta.url), 'utf8'));
 
 describe('the tables the registry replaced', () => {

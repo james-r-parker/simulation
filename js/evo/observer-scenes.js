@@ -11,6 +11,7 @@ import { createApproachScene, noteApproachKill, resetApproachSlot, trackApproach
 import { BASIN_CHECKPOINT_TICKS, createBasinScene, noteBasinBirth, sampleBasins } from './scene-basin.js';
 import { createBalanceScene, sampleBalance } from './scene-balance.js';
 import { createCapacityScene, noteCapacityDeath, sampleCapacity } from './scene-capacity.js';
+import { createEdgeScene, noteEdgeBirth, noteEdgeDeath, sampleEdge } from './scene-edge.js';
 import { createDivergenceScene, sampleDivergence } from './scene-divergence.js';
 import { createFamilyScene, sampleFamilies } from './scene-families.js';
 import { createDiseaseScene, noteDiseaseEvents, sampleDiseaseFamilies } from './scene-disease.js';
@@ -81,6 +82,7 @@ export function createScenes(config, runTicks = 0) {
         hunters: createHunterScene(runTicks, config),
         guards: createGuardScene(config),
         capacity: createCapacityScene(config),
+        edge: createEdgeScene(),
         kin: createKinProximityScene(config),
         bite: createBiteScene(config),
         biteLife: createBiteLifeScene(),
@@ -149,6 +151,7 @@ function noteEvents(scenes, observer, world) {
                 noteApproachKill(scenes.approach, observer, world, { killerId: d[o + 5], victimId: d[o + 3] });
             }
             noteCapacityDeath(scenes.capacity, { cause: d[o + 4], foodEnergy: d[o + 9] });
+            noteEdgeDeath(scenes.edge, world, { cause: d[o + 4], spec: d[o + 6], foodEnergy: d[o + 9] });
             noteStyleAtDeath(observer, o / EVENT_STRIDE, { slot: d[o + 2], genomeId: d[o + 3] });
             noteDeath(scenes, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1], age: d[o + 8] });
             noteProofDeath(scenes.proof, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1] });
@@ -162,6 +165,7 @@ function noteEvents(scenes, observer, world) {
         noteCompetenceRecord(scenes.competence, d, o);
         if (d[o] === EVENT_TYPE.AGENT_BORN) {
             noteHunterBirth(scenes.hunters, world, d[o + 2]);
+            noteEdgeBirth(scenes.edge, world, { cause: d[o + 8], spec: d[o + 5] });
             noteCompetenceBirth(scenes.competence, world, d[o + 2]);
             resetSceneSlot(scenes, d[o + 2]);
             noteBasinBirth(scenes.basin, world, { slot: d[o + 2], cause: d[o + 8] });
@@ -220,6 +224,7 @@ export function observeScenes(observer, world) {
         sampleDiseaseFamilies(scenes.disease, world);
         sampleGuards(scenes.guards, world);
         sampleCapacity(scenes.capacity, world);
+        sampleEdge(scenes.edge, world);
         sampleKinProximity(scenes.kin, world);
     }
 }
