@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diagnose, render } from '../scripts/edge-diagnosis.mjs';
+import { diagnose, readProbes, render } from '../scripts/edge-diagnosis.mjs';
 import {
     episodes,
     flowTable,
@@ -159,5 +159,56 @@ describe('funnels and the printout', () => {
         expect(text).toContain('edge ratio: 2 seeds');
         expect(text).toContain('| mate | 0.600 | 0.600 |');
         expect(text).toContain('episodes: 1');
+    });
+});
+
+describe('probe readings', () => {
+    const probe = {
+        rows: {
+            prey: [200, 50, 50],
+            mate: [0, 10, 12],
+            split: [0, 10, 12],
+            deaths: [0, 40, 45],
+            starved: [0, 20, 22],
+            eaten: [0, 5, 5],
+        },
+        funnel: {
+            samples: 1,
+            prey: 50,
+            seen: { mates: 1, heat: 2 },
+            unseen: { mates: 0, heat: 1 },
+            seasons: [{ mates: 1, heat: 3 }, {}, {}, {}],
+        },
+        bandFunnel: {
+            samples: 1,
+            prey: 200,
+            seen: { mates: 0, heat: 4 },
+            unseen: { mates: 0, heat: 0 },
+            seasons: [{ mates: 0, heat: 4 }, {}, {}, {}],
+        },
+    };
+
+    it('reads and prints the band flows and both funnels', () => {
+        const r = report({
+            ratio: [0.9],
+            deaths: [0.2],
+            mateE: [0.05],
+            splitE: [0.1],
+            starveE: [0.1],
+            eatenE: [0.02],
+            mateR: [0.08],
+            splitR: [0.1],
+            starveR: [0.1],
+            eatenR: [0.02],
+        });
+        r.traces = [{ interval: 10000, prey: [300, 80, 120], pop: [305, 85, 125] }];
+        const d = diagnose(r);
+        d.probes = readProbes(r, [probe]);
+        expect(d.probes.edgeFunnel.seen.heat).toBe(2);
+        const text = render(d);
+        expect(text).toContain('probes: 1 seeds replayed');
+        expect(text).toContain('funnel at the edge (1 checkpoints');
+        expect(text).toContain('| heat | 2 | 1 |');
+        expect(text).toContain('funnel at 100 to 400 prey');
     });
 });

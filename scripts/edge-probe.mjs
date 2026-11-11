@@ -62,6 +62,7 @@ export function probeSeed({ seed, ticks }) {
     return { seed, ticks, rows, funnel, bandFunnel };
 }
 
+/* v8 ignore start -- thin CLI; probeSeed is tested */
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const args = process.argv.slice(2);
     const flag = (/** @type {string} */ name, /** @type {string} */ fallback) => {
@@ -77,3 +78,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         console.log(text);
     }
 }
+/* v8 ignore stop */

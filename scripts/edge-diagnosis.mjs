@@ -135,6 +135,7 @@ export function render(d) {
     return [...lines, ...(d.probes ? renderProbes(d.probes) : [])].join('\n');
 }
 
+/* v8 ignore start -- thin CLI; diagnose, readProbes and render are tested */
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const [path, ...flags] = process.argv.slice(2).filter((a) => !a.startsWith('--probes='));
     const probePaths =
@@ -157,3 +158,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     }
     console.log(flags.includes('--json') ? JSON.stringify(d, null, 2) : render(d));
 }
+/* v8 ignore stop */

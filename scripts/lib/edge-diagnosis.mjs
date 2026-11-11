@@ -2,6 +2,7 @@
 // the edge deficit and the share each rate swap closes, the edge ratio, and the prey traces (time under 100 prey, the
 // intervals by band and season, the falls into the edge). Pure functions over the report; `scripts/edge-diagnosis.mjs`
 // prints them.
+import { median } from './median.mjs';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 
 /** A prey count under this is the edge (`EDGE_PREY` in `js/evo/scene-edge.js`). */
@@ -11,15 +12,7 @@ export const BAND_TOP = 400;
 /** The seasons in a year, in the order `seasonAt` numbers them. */
 export const SEASON_NAMES = ['spring', 'summer', 'autumn', 'winter'];
 
-/**
- * @param {readonly number[]} values numbers
- * @returns {number} their median (NaN when empty)
- */
-export function median(values) {
-    const sorted = [...values].sort((a, b) => a - b);
-    const mid = sorted.length >> 1;
-    return sorted.length === 0 ? NaN : sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-}
+export { median };
 
 /** @param {Record<string, any>} report an eval report @param {string} name a metric @returns {(number | null)[]} its values */
 const valuesOf = (report, name) => report.metrics[name].values;

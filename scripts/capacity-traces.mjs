@@ -3,6 +3,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { median } from './lib/median.mjs';
 import { BURN_IN_TICKS } from '../js/evo/burn-in.js';
 import { aliveFlags, keepRule } from '../js/evo/keep-rule.js';
 
@@ -11,15 +12,7 @@ export const CRASH_POPULATION = 40;
 /** The prey count under which the plan reads intake per agent. */
 export const FEW_PREY = 50;
 
-/**
- * @param {readonly number[]} values numbers
- * @returns {number} their median (NaN when empty)
- */
-export function median(values) {
-    const sorted = [...values].sort((a, b) => a - b);
-    const mid = sorted.length >> 1;
-    return sorted.length === 0 ? NaN : sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-}
+export { median };
 
 /**
  * @param {readonly number[]} values numbers
