@@ -108,6 +108,8 @@ const RULES = {
     temperatureOptimalMax: num(0),
     temperatureHeatModerate: num(0),
     temperatureHeatStress: num(0),
+    temperatureCoolingExcess: num(0),
+    temperatureMatingMax: num(0),
     temperatureEfficiencyColdSevere: EFFICIENCY,
     temperatureEfficiencyColdModerate: EFFICIENCY,
     temperatureEfficiencyHeatModerate: EFFICIENCY,
@@ -153,6 +155,7 @@ const BELOW = [
     ['sickDose', 'lethalDose'],
     ['temperatureColdStress', 'temperatureColdModerate'],
     ['temperatureColdStress', 'temperatureOptimalMin'],
+    ['temperatureColdStress', 'temperatureMatingMax'],
     ['temperatureOptimalMax', 'temperatureHeatModerate'],
     ['temperatureHeatStress', 'temperatureMax'],
 ];

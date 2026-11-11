@@ -148,7 +148,54 @@ describe('thrustEfficiency', () => {
     });
 });
 
+describe('temperatureCoolingExcess', () => {
+    /** The step before the key existed: gain by movement, passive loss by season and latitude, clamped. */
+    const oldStep = (t, speed, season) => {
+        const loss = Math.max(0, 1 - config.seasons[season].temperatureModifier * config.temperatureSeasonSlope);
+        const next =
+            t +
+            Math.min(speed / config.maxVelocity, 1) * config.temperatureGainMove -
+            config.temperatureLossPassive * loss * 1;
+        return Math.fround(Math.min(config.temperatureMax, Math.max(0, next)));
+    };
+
+    it.each([20, 50, 65, 66, 80, 99])('at 0 a body at %i steps exactly as the old formula', (t) => {
+        const world = fakeWorld(t, 3, 1);
+        stepTemperature(world, 0);
+        expect(world.temperature[0]).toBe(oldStep(t, 3, 1));
+    });
+
+    it('above 0 a body over temperatureOptimalMax cools by the excess times the degrees above it', () => {
+        const hot = createConfig({ ...SIMPLE_WORLD, ...LEGACY_RATES, temperatureCoolingExcess: 0.01 });
+        const world = { ...fakeWorld(75, 0, 1), config: hot };
+        stepTemperature(world, 0);
+        expect(world.temperature[0]).toBeCloseTo(oldStep(75, 0, 1) - 0.01 * (75 - 65), 4);
+    });
+
+    it('above 0 a body at or under temperatureOptimalMax is unchanged', () => {
+        const hot = createConfig({ ...SIMPLE_WORLD, ...LEGACY_RATES, temperatureCoolingExcess: 0.01 });
+        for (const t of [30, 65]) {
+            const world = { ...fakeWorld(t, 0, 1), config: hot };
+            stepTemperature(world, 0);
+            expect(world.temperature[0]).toBe(oldStep(t, 0, 1));
+        }
+    });
+});
+
 describe('blocksMating', () => {
+    it('defaults temperatureMatingMax to the heat stress threshold, so the old rule holds', () => {
+        expect(config.temperatureMatingMax).toBe(config.temperatureHeatStress);
+    });
+
+    it('follows temperatureMatingMax on the heat side and temperatureColdStress on the cold side', () => {
+        const raised = createConfig({ ...SIMPLE_WORLD, temperatureMatingMax: 95 });
+        expect(blocksMating(raised, 90)).toBe(false);
+        expect(blocksMating(raised, 95)).toBe(false);
+        expect(blocksMating(raised, 95.01)).toBe(true);
+        expect(blocksMating(raised, 29.99)).toBe(true);
+        expect(thrustEfficiency(raised, 90)).toBe(raised.temperatureEfficiencyHeatSevere);
+    });
+
     it('blocks past either stress threshold and not at them', () => {
         expect(blocksMating(config, 29.99)).toBe(true);
         expect(blocksMating(config, 30)).toBe(false);

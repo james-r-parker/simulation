@@ -17,8 +17,19 @@ export function gainTemperature(world, slot, amount) {
 }
 
 /**
+ * The extra cooling of a hot body: `temperatureCoolingExcess` per degree over `temperatureOptimalMax`; 0 when the key is 0.
+ * @param {Config} c the config
+ * @param {number} t the temperature before the step
+ * @returns {number} the heat shed this tick, non-negative
+ */
+function coolingExcess(c, t) {
+    return c.temperatureCoolingExcess > 0 ? c.temperatureCoolingExcess * Math.max(0, t - c.temperatureOptimalMax) : 0;
+}
+
+/**
  * Advances one alive agent's temperature by a tick: movement warms it by its speed as a fraction of `maxVelocity`
- * (capped at 1), the passive loss cools it, scaled by the season; then clamps to 0 to `temperatureMax`.
+ * (capped at 1), the passive loss cools it, scaled by the season; a body over the optimal band also cools by `temperatureCoolingExcess` per
+ * degree over it (off at 0); then clamps to 0 to `temperatureMax`.
  * @param {World} world the world
  * @param {number} slot the agent slot
  * @returns {void}
@@ -34,7 +45,7 @@ export function stepTemperature(world, slot) {
         world.temperature[slot] +
         Math.min(speed / c.maxVelocity, 1) * c.temperatureGainMove -
         c.temperatureLossPassive * loss * coldFactor(c, world.y[slot]);
-    world.temperature[slot] = Math.min(c.temperatureMax, Math.max(0, next));
+    world.temperature[slot] = Math.min(c.temperatureMax, Math.max(0, next - coolingExcess(c, world.temperature[slot])));
 }
 
 /**
@@ -81,10 +92,11 @@ export function thrustEfficiency(config, t) {
 /**
  * @param {Config} config the config
  * @param {number} t the temperature
- * @returns {boolean} true when `t` is past either stress threshold, so the agent cannot start a mating
+ * @returns {boolean} true when `t` is under `temperatureColdStress` or over `temperatureMatingMax` (85 by default, the heat stress threshold,
+ * which it must stay above `temperatureColdStress` to leave a band), so the agent cannot start a mating
  */
 export function blocksMating(config, t) {
-    return t < config.temperatureColdStress || t > config.temperatureHeatStress;
+    return t < config.temperatureColdStress || t > config.temperatureMatingMax;
 }
 
 /**
