@@ -86,7 +86,9 @@ with an arithmetic test, a source test, a liveness read and a power read before 
 | `eval.edge_split_blocked_share.*` | At edge checkpoints, over mature, rested, not-pregnant prey, the share held by each gate first, in this order: `seen` (`mateScarce` false), `clonal` (`splitClonalMax`), `energy` (`splitMinBySpec`), `merit` (`splitDeliberateMin` and `splitDeliberateShareMin`), `proof` (`splitBraked`), `other` (`birthBudgetSpent`, `territoryAllows`, `splitMaxPerLife`); the shares sum to the blocked share | share, watch  |
 
 The per-span reference tallies (births, deaths and intake per prey in reference spans) are kept beside the edge tallies
-for the diagnosis. Nothing is allocated per tick; the two share detectors call the read-only predicates once per prey at
+for the diagnosis, and reach the report as watch metrics, since a report carries each metric per seed: `eval.edge_ref_mate_births_per_prey`,
+`eval.edge_ref_split_births_per_prey`, `eval.edge_ref_starve_per_prey` and `eval.edge_ref_eaten_per_prey`, with
+`eval.edge_deaths_per_prey` (the edge's all-cause death rate, which the deficit needs). Nothing is allocated per tick; the two share detectors call the read-only predicates once per prey at
 an edge checkpoint.
 
 ## Phases
@@ -130,7 +132,7 @@ an edge checkpoint.
 
 ### Phase 3 - Screen the brain-free levers
 
-**Targets:** eval.births_per_1k
+**Targets:** eval.births_per_1k, eval.edge_birth_death_ratio
 
 Every arm runs on the Phase 2 code, floor on, policy live, 200000 ticks, seeds 1 to 16 of `evals/seeds.json` for the
 first pass:
@@ -166,7 +168,7 @@ first pass:
 
 ### Phase 4 - The switch
 
-**Targets:** eval.births_per_1k, eval.mating_share, bench.step_ms@500
+**Targets:** eval.births_per_1k, eval.mating_share, eval.edge_birth_death_ratio, bench.step_ms@500
 
 One PR, a breaking commit (`feat!`) to `season/next`, since `rulesHash` changes.
 
@@ -201,7 +203,7 @@ When `held` is not `better` here, Phase 5 opens on top of the switch.
 
 ### Phase 5 - A receptive-mate scent
 
-**Targets:** eval.births_per_1k, eval.mating_share
+**Targets:** eval.births_per_1k, eval.mating_share, eval.edge_birth_death_ratio
 
 Opens only when Phase 3 names no finalist, or when Phase 4's `held` guard is not `better`.
 
@@ -268,15 +270,15 @@ before its run.
 
 ### Phase 2 - Measure the edge
 
-| #    | Task                                                                                                                                                                                                                                                      | Nature       | Depends on |
-| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T5   | `js/evo/scene-edge.js`: the span tallies and the seven rate and ratio detectors, registered in `world-3.js`, with arithmetic and source tests; `docs/designs/metrics.md` regenerated; `eval.edge_birth_death_ratio` added to the Targets of Phases 3 to 5 | [judgement]  | T4         |
-| T6   | The two share detectors, sampled at edge checkpoints, with tests                                                                                                                                                                                          | [judgement]  | T5         |
-| T7   | `E-LD-1` recorded in `evals/experiments.json` before the run                                                                                                                                                                                              | [mechanical] | T5         |
-| T8   | Run the 128-seed floor-on defaults reference with the detectors; commit the report under `evals/decisions/`                                                                                                                                               | [mechanical] | T6, T7     |
-| T9   | Liveness and power for the new detectors from T8, merged into the registry; `docs/designs/metrics.md` regenerated                                                                                                                                         | [mechanical] | T8         |
-| T10  | The diagnosis by rate swap, the gate with the largest blocked share, the `E-LD-1` verdict, a sim-notes entry, and Phase 3's grid adjusted where the ranking says so                                                                                       | [judgement]  | T9         |
-| T10a | Conformance review of Phase 2, in parallel with `scripts/check.sh`                                                                                                                                                                                        | [judgement]  | T10        |
+| #    | Task                                                                                                                                                                                                                                                                          | Nature       | Depends on |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T5   | (built: 2026-11-11) `js/evo/scene-edge.js`: the span tallies and the seven rate and ratio detectors, registered in `world-3.js`, with arithmetic and source tests; `docs/designs/metrics.md` regenerated; `eval.edge_birth_death_ratio` added to the Targets of Phases 3 to 5 | [judgement]  | T4         |
+| T6   | (built: 2026-11-11) The two share detectors, sampled at edge checkpoints, with tests                                                                                                                                                                                          | [judgement]  | T5         |
+| T7   | (built: 2026-11-11, as E155) `E-LD-1` recorded in `evals/experiments.json` before the run                                                                                                                                                                                     | [mechanical] | T5         |
+| T8   | Run the 128-seed floor-on defaults reference with the detectors; commit the report under `evals/decisions/`                                                                                                                                                                   | [mechanical] | T6, T7     |
+| T9   | Liveness and power for the new detectors from T8, merged into the registry; `docs/designs/metrics.md` regenerated                                                                                                                                                             | [mechanical] | T8         |
+| T10  | The diagnosis by rate swap, the gate with the largest blocked share, the `E-LD-1` verdict, a sim-notes entry, and Phase 3's grid adjusted where the ranking says so                                                                                                           | [judgement]  | T9         |
+| T10a | Conformance review of Phase 2, in parallel with `scripts/check.sh`                                                                                                                                                                                                            | [judgement]  | T10        |
 
 ### Phase 3 - Screen the brain-free levers
 

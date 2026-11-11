@@ -13,6 +13,7 @@ import { SCENES_SOCIAL } from './scenes-social.js';
 import { BRAIN } from './brain.js';
 import { WORLD } from './world.js';
 import { WORLD_2 } from './world-2.js';
+import { WORLD_3 } from './world-3.js';
 import { LIVENESS } from './liveness.js';
 import { POWER } from './power.js';
 import { minSeedsFromPower } from './status.js';
@@ -71,6 +72,7 @@ export const METRICS = Object.freeze({
     ...withPower(withLiveness(BRAIN)),
     ...withPower(withLiveness(WORLD)),
     ...withPower(withLiveness(WORLD_2)),
+    ...withPower(withLiveness(WORLD_3)),
 });
 
 /** @typedef {keyof typeof METRICS} MetricName a registered metric name */
