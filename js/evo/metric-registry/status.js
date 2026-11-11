@@ -43,13 +43,13 @@ function mdeWithinBar(unit, mde, referenceMean) {
 
 /**
  * @param {{unit: string, power: import('./entry.js').Power}} entry the unit and the power read of an entry
- * @param {16 | 32} seeds the seed count per arm
+ * @param {16 | 32 | 64} seeds the seed count per arm
  * @returns {boolean} whether the false-positive rate is at most 0.10 and the detectable change is within the bar for
- *   the unit at that seed count; `false` when either was not measured (`null`)
+ *   the unit at that seed count; `false` when either was not measured (`null`, or absent for 64)
  */
 export function meetsPowerBar({ unit, power }, seeds) {
-    const fpr = seeds === 16 ? power.fpr16 : power.fpr32;
-    const mde = seeds === 16 ? power.mde16 : power.mde32;
+    const reading = { 16: [power.fpr16, power.mde16], 32: [power.fpr32, power.mde32], 64: [power.fpr64, power.mde64] };
+    const [fpr = null, mde = null] = reading[seeds];
     if (fpr === null || mde === null) {
         return false;
     }
@@ -58,13 +58,10 @@ export function meetsPowerBar({ unit, power }, seeds) {
 
 /**
  * @param {{unit: string, power: import('./entry.js').Power}} entry the unit and the power read of an entry
- * @returns {16 | 32 | null} the fewest seeds per arm at which the power bar holds, or `null` when neither does
+ * @returns {16 | 32 | 64 | null} the fewest seeds per arm at which the power bar holds, or `null` when none does
  */
 export function minSeedsFromPower(entry) {
-    if (meetsPowerBar(entry, 16)) {
-        return 16;
-    }
-    return meetsPowerBar(entry, 32) ? 32 : null;
+    return /** @type {const} */ ([16, 32, 64]).find((seeds) => meetsPowerBar(entry, seeds)) ?? null;
 }
 
 /**

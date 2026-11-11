@@ -27,7 +27,7 @@ function checkRows(rows, metrics) {
 
 /** @param {Record<string, import('../js/evo/metric-registry/entry.js').Power>} grouped @param {PowerRow} row @param {any} report @param {string} reportPath */
 function setReading(grouped, row, report, reportPath) {
-    if (![16, 32].includes(row.size)) {
+    if (![16, 32, 64].includes(row.size)) {
         return;
     }
     const metric = row.metric;
@@ -38,17 +38,22 @@ function setReading(grouped, row, report, reportPath) {
     const value = (grouped[metric] ??= {
         fpr16: null,
         fpr32: null,
+        fpr64: null,
         mde16: null,
         mde32: null,
+        mde64: null,
         referenceMean: current.mean ?? 0,
         report: reportPath,
     });
     if (row.size === 16) {
         value.fpr16 = row.falsePositive;
         value.mde16 = row.detectable;
-    } else {
+    } else if (row.size === 32) {
         value.fpr32 = row.falsePositive;
         value.mde32 = row.detectable;
+    } else {
+        value.fpr64 = row.falsePositive;
+        value.mde64 = row.detectable;
     }
 }
 
@@ -93,8 +98,8 @@ export function renderPowerModule(readings) {
         .map(
             ([name, value]) =>
                 `    ${quote(name)}: Object.freeze({\n` +
-                `        fpr16: ${value.fpr16},\n        fpr32: ${value.fpr32},\n` +
-                `        mde16: ${value.mde16},\n        mde32: ${value.mde32},\n` +
+                `        fpr16: ${value.fpr16},\n        fpr32: ${value.fpr32},\n        fpr64: ${value.fpr64 ?? null},\n` +
+                `        mde16: ${value.mde16},\n        mde32: ${value.mde32},\n        mde64: ${value.mde64 ?? null},\n` +
                 `        referenceMean: ${value.referenceMean},\n        report: ${quote(value.report)},\n` +
                 '    }),',
         )
