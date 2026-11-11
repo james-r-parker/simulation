@@ -129,6 +129,37 @@ describe('renderTable T31 cells', () => {
     });
 });
 
+describe('renderTable paired seed cells (T31a)', () => {
+    it('prints the change against the reference with the seeds lost and regained, and WORSE when the paired test says so', () => {
+        const vs = (/** @type {Record<string, any>} */ over) => ({
+            diff: -0.19,
+            lost: 6,
+            regained: 0,
+            p: 0.03125,
+            worse: true,
+            ...over,
+        });
+        const table = renderTable({
+            reference: 'ref',
+            arms: [
+                verdict('ref'),
+                verdict('b', {
+                    seedsVs: {
+                        popAboveMin: vs({}),
+                        lineages: vs({ diff: 0.06, lost: 0, regained: 2, p: 0.5, worse: false }),
+                        specShare: vs({ worse: false }),
+                        popBelowMax: vs({ worse: false }),
+                    },
+                }),
+            ],
+        });
+        const arm = table.split('\n')[3];
+        expect(arm).toContain('-0.19 vs ref (-6/+0, p 0.031) WORSE');
+        expect(arm).toContain('+0.06 vs ref (-0/+2, p 0.5)');
+        expect(table.split('\n')[2]).not.toContain('vs ref (');
+    });
+});
+
 describe('lockCommand', () => {
     it('runs the script under flock with --no-lock appended', () => {
         expect(lockCommand({ lockPath: '/l', execPath: '/node', script: '/s.mjs', argv: ['--grid', 'g'] })).toEqual({

@@ -2,6 +2,7 @@
 // computed from eval reports that carry `traces`. Pure: no files, no clock.
 
 import { keepRule, LOW_POPULATION } from '../../js/evo/keep-rule.js';
+import { PAIRED_CRITERIA, seedsVsReference } from './screen-seeds.mjs';
 import { statusOf, thresholdReady } from '../../js/evo/compare-rules.js';
 import { BURN_IN_TICKS } from '../../js/evo/observer-events.js';
 import { quantile } from '../../js/evo/metrics-stats.js';
@@ -56,9 +57,6 @@ export const WATCH_METRICS = [
     'eval.mating_share',
     'eval.fed_median_lifespan',
 ];
-
-/** Per-seed criteria in table order: key and what it checks. */
-export const SEED_CRITERIA = ['popAboveMin', 'catchRate', 'lineages', 'specShare', 'popBelowMax'];
 
 /**
  * @typedef {object} SeedCheck
@@ -283,8 +281,10 @@ export function watchMeans(report) {
  * @param {Record<string, any>} reference the reference arm's report
  * @param {ScreenOptions} [options] the status and threshold-readiness lookups (`statusOf`, `thresholdReady`)
  * @returns {Record<string, any>} the arm's verdict: per-seed criteria, the two mean criteria, the mean population,
+ *   `seedsVs` (each of the four per-seed criteria's passing share against the reference, null on the reference),
  *   `hunters` (`hunterGate`), `keep` (`keepRule` against the reference, null on the reference), `pass` (every seed
- *   passes every criterion, both means pass and the hunter gate passes), the Target deltas against the reference
+ *   has the catch rate on every seed and no per-seed criterion worse than the reference's, both means pass and the
+ *   hunter gate passes), the Target deltas against the reference
  *   (`verified` metrics only) and the `WATCH_METRICS` means
  */
 export function armVerdict(name, report, reference, options = {}) {
@@ -294,8 +294,10 @@ export function armVerdict(name, report, reference, options = {}) {
         bornShare: meanAtLeast(report, 'eval.born_share', MIN_BORN_SHARE, options),
     };
     const hunters = hunterGate(report, reference, options);
+    const seedsVs = report === reference ? null : seedsVsReference(criteria, seedChecks(reference, options));
     const pass =
-        SEED_CRITERIA.every((key) => criteria[key].pass.every(Boolean)) &&
+        criteria.catchRate.pass.every(Boolean) &&
+        PAIRED_CRITERIA.every((key) => seedsVs === null || !seedsVs[key].worse) &&
         Object.values(means).every((m) => m.pass) &&
         hunters.pass;
     return {
@@ -304,6 +306,7 @@ export function armVerdict(name, report, reference, options = {}) {
         minAgents: report.config.minAgents,
         maxAgents: report.config.maxAgents,
         criteria,
+        seedsVs,
         means,
         hunters,
         summer: summerSeeds(report),

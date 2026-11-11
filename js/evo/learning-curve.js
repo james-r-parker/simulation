@@ -143,7 +143,7 @@ function flatAfter(points, i, { key, direction }) {
 /**
  * @param {Record<string, any>[]} points the curve rows in order
  * @returns {{index: number, generation: number} | null} the first checkpoint after which `qdScore` and
- *   `eval.food_energy_per_1k` and `eval.bite_wish_with_prey_in_jaws` each rise, and `eval.hunter_zero_kill_share` falls, by less than 5% of
+ *   `eval.food_energy_per_1k` and `eval.bite_on_prey_view` each rise, and `eval.hunter_zero_kill_share` falls, by less than 5% of
  *   its value over the next 3 checkpoints; null for "no plateau yet" (also when fewer than 4 checkpoints exist or a series has no value)
  */
 export function findPlateau(points) {

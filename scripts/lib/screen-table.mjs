@@ -57,6 +57,23 @@ function countWithInterval(count, of) {
 
 /**
  * @param {{ pass: boolean[] }} check one per-seed criterion
+ * @param {{ diff: number, lost: number, regained: number, p: number, worse: boolean } | null | undefined} [vs] the
+ *   criterion against the reference
+ * @returns {string} `k/n` seeds passing, with the interval of the count and, for an arm, the change in the passing
+ *   share against the reference, the seeds lost and regained and the exact p (`WORSE` when the paired test says so)
+ */
+function pairedCell(check, vs) {
+    const base = seedsCell(check);
+    if (vs === null || vs === undefined) {
+        return base;
+    }
+    const sign = vs.diff >= 0 ? '+' : '';
+    const p = Number(vs.p.toPrecision(2));
+    return `${base} ${sign}${vs.diff.toFixed(2)} vs ref (-${vs.lost}/+${vs.regained}, p ${p})${vs.worse ? ' WORSE' : ''}`;
+}
+
+/**
+ * @param {{ pass: boolean[] }} check one per-seed criterion
  * @returns {string} `k/n` seeds passing, with the interval of the count
  */
 function seedsCell(check) {
@@ -151,16 +168,16 @@ function row(verdict) {
     return [
         `\`${verdict.arm}\``,
         verdict.pass ? 'PASS' : 'FAIL',
-        seedsCell(c.popAboveMin),
+        pairedCell(c.popAboveMin, verdict.seedsVs?.popAboveMin),
         seedsCell(c.catchRate),
         chaseCell(verdict.hunters),
         huntersCell(verdict.hunters),
         keepCell(verdict.keep),
         meanCell(means.matingShare),
         meanCell(means.bornShare),
-        seedsCell(c.lineages),
-        seedsCell(c.specShare),
-        seedsCell(c.popBelowMax),
+        pairedCell(c.lineages, verdict.seedsVs?.lineages),
+        pairedCell(c.specShare, verdict.seedsVs?.specShare),
+        pairedCell(c.popBelowMax, verdict.seedsVs?.popBelowMax),
         verdict.popMean === null ? 'n/a' : String(Math.round(verdict.popMean)),
         summerCell(verdict.summer),
         ...TARGETS.map((metric) => deltaCell(verdict.deltas?.[metric])),

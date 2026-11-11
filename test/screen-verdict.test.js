@@ -197,12 +197,33 @@ describe('armVerdict', () => {
         expect(hunterGate(report(), ref).pass).toBe(true);
     });
 
-    it('fails when one seed fails one criterion', () => {
-        const r = report();
-        r.traces[1] = trace(Array(30).fill(100));
-        const v = armVerdict('a', r, report());
-        expect(v.pass).toBe(false);
-        expect(v.criteria.popAboveMin.pass).toEqual([true, false]);
+    it('judges each per-seed criterion against the reference: 2 of 32 seeds lost is not worse, 8 is', () => {
+        const withFailing = (/** @type {number} */ failing) => {
+            const bad = trace(Array(30).fill(100));
+            const good = report().traces[0];
+            return report({
+                seeds: Array.from({ length: 32 }, (_, i) => i + 1),
+                traces: Array.from({ length: 32 }, (_, i) => (i < failing ? bad : good)),
+            });
+        };
+        const few = armVerdict('a', withFailing(2), withFailing(0));
+        expect(few.criteria.popAboveMin.pass.filter(Boolean)).toHaveLength(30);
+        expect(few.seedsVs.popAboveMin).toMatchObject({ lost: 2, regained: 0, worse: false, pass: 30, of: 32 });
+        expect(few.pass).toBe(true);
+        const heavy = armVerdict('a', withFailing(8), withFailing(0));
+        expect(heavy.seedsVs.popAboveMin).toMatchObject({ lost: 8, worse: true });
+        expect(heavy.pass).toBe(false);
+    });
+
+    it('does not fail an arm for a per-seed criterion the reference fails as often (the defaults fail lineages on most seeds)', () => {
+        const lowLineages = report({
+            traces: [trace(Array(30).fill(150), { lineages: 2 }), trace(Array(30).fill(150), { lineages: 2 })],
+        });
+        expect(armVerdict('a', lowLineages, lowLineages).seedsVs).toBeNull();
+        const v = armVerdict('a', structuredClone(lowLineages), lowLineages);
+        expect(v.criteria.lineages.pass).toEqual([false, false]);
+        expect(v.seedsVs.lineages).toMatchObject({ lost: 0, regained: 0, worse: false });
+        expect(v.pass).toBe(true);
     });
 
     it('has no deltas for the reference itself', () => {
