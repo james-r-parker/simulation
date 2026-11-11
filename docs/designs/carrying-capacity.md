@@ -46,7 +46,7 @@ is the same to the digit, since the sim is unchanged). Trace readings use the `p
 | Edible food slots                                                             | about 3,590 of `maxFood` 3,600 | sim-notes 2026-11-06 (T66)                      |
 | `eval.food_standing_share`                                                    | 0.947 (SD 0.040)               | E151 report                                     |
 | `eval.density_starve_slope`, `eval.density_intake_slope`                      | -0.130 and -0.036 (no brake)   | E151 report                                     |
-| Plant meals per tick, 8 seeds                                                 | 1.59 (T66 counted 0.62)        | sim-notes 2026-11-11 (T6, probe)                |
+| Plant meals per tick, 8 seeds                                                 | 1.59 (T66 counted 0.62)        | `npm run food:ratio`, E152                      |
 
 Food supply: `areaExpected` in `js/sim/food.js` asks for about 10.5 items per tick at scarcity 1 (`foodRegrowPerArea`
 0.09 on a 14,400 by 8,100 world), and `spawnFood` clips that at `maxFood`. The map is full, so the realised turnover is
@@ -54,16 +54,17 @@ what is eaten and what rots: 1.20M and 0.57M slots over 16 runs of 120000 ticks 
 re-measured it (sim-notes 2026-11-11, T6): T66 counted an eaten item only when its slot was still empty at the end of the
 tick, and a new item often refills it first, so its eaten figure was about 2.4 times short. On 8 seeds of 200000 ticks the
 agents eat 1.59 plant items per tick (0.0075 per agent per tick), 0.33 rot and 1.94 are spawned; rot agrees with T66.
-The food ratio is defined as plant meals (`floraMeals[0]`) per tick over the offered rate (10.5 x 0.85 = 8.93), 0.18; it
-comes from 8 seeds of 200000 ticks run by an uncommitted throwaway probe, so it cannot be reproduced from the committed
-report. **An open gap:** `eval.food_energy_per_1k` in `E151` (539) at `foodEnergy` 100 implies about 1.14 plant items per
-tick at 211 agents, against the probe's 1.59. The candidate causes are carcass energy in the metric, how the time mean
-is pooled, and energy per item not being 100; none is checked. The Phase 2 arms below bracket both estimates (1.14 is
-about 0.0115 and 1.59 about 0.016). The
-formula offers more than 10 times what the world uses. A food arm brakes the population only when its supply is under
-the eaten rate, which at 1.59 items per tick is `foodRegrowPerArea` near 0.016 at the year's mean scarcity of 0.85 (the
-first read, 0.6 items per tick and 0.006, was the undercount); a world of 200 to 350 agents eats 1.5 to 2.6 items per
-tick, which is 0.015 to 0.026. Phase 2 T8 sets the arms from these figures.
+The food ratio is defined as plant meals (`floraMeals[0]`) per tick over the offered rate (10.5 x 0.85 = 8.92), 0.178.
+**The gap is settled** by `npm run food:ratio` (`scripts/food-ratio.mjs`, tested), run on the same 8 seeds for 200000
+ticks (`evals/decisions/E152/food-ratio-8x200000.json`): 1.587 plant meals per tick at a mean of 210.7 agents (0.0075 per
+agent per tick), each meal storing 62.3 energy, not 100 (`foodEnergy` is the energy of the item; a meal stores less after
+toxin and the energy cap). Plant energy is 98.8 per tick and carcass energy 16.8, so `eval.food_energy_per_1k` at 539 (548.9
+in the probe) is 114 to 116 energy per tick, which is not 1.14 items: the metric counts stored energy from plants and
+carcasses, and a plant item is worth 62. The probe's 1.59 stands, and pooling over seeds is not a cause (the mean of the
+products and the product of the means agree, 113.9 and 114.3). A food arm brakes the population only when its supply is
+under the eaten rate: `foodRegrowPerArea` 0.0160 at the year's mean scarcity of 0.85 (a world of 200 to 350 agents eats
+1.5 to 2.6 items per tick, which is 0.015 to 0.026). The formula offers 5.6 times what the world uses. The Phase 2 arms
+are 0.008, 0.012, 0.016 and 0.024.
 
 ## What changes
 
@@ -139,6 +140,7 @@ are config values only: a full factorial of four food values by two season setti
 | Food   | `foodRegrowPerArea` at 0.5, 0.75, 1.0 and 1.5 times the value whose supply equals the eaten rate of `E151` (about 0.008, 0.012, 0.016 and 0.024; T66's 0.003 to 0.009 undercounted) |
 | Season | as the defaults; or flat: all four `seasons` entries written in full with `reproductionBonus` 1.5, so the chance is 1 all year                                                      |
 
+- The grid (`evals/screens/carrying-capacity.grid.json`) has 10 arms: the defaults, the four food values, the same four on a flat season, and a flat season on default food (the arm `E-CC-1` says does not lift `held`).
 - `createConfig` replaces `seasons` whole, so a flat arm lists the four entries with their other fields unchanged.
 - A flat arm still draws the chance float in `findMale` (`js/sim/mate-search.js`, the `lifecycle` stream); the Phase 3
   code does not, so an arm and the switch are close, not bit-equal. The Phase 3 check is the judge.
@@ -258,13 +260,13 @@ The labels are for this doc; each prediction takes the next numeric id when T8 r
 
 ### Phase 2 - Calibrate on config alone
 
-| #    | Task                                                                                                                                                                                                                                                                                                 | Nature       | Depends on |
-| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T8   | Set the food arms from the eaten rate of `E151`; `evals/screens/carrying-capacity.grid.json`; the three predictions recorded in `evals/experiments.json` under numeric ids. First settle the food-ratio gap (1.14 against 1.59 items per tick, Baseline), ideally with a committed probe or a metric | [judgement]  | T7         |
-| T9   | First pass: 16 seeds per arm; rank by `held`, `alive` and `eval.cap_share`                                                                                                                                                                                                                           | [mechanical] | T8         |
-| T10  | Second pass: the two leading arms on seeds 1 to 64 against the defaults; `keepRule` output; reports committed                                                                                                                                                                                        | [mechanical] | T9         |
-| T11  | Name the finalist or record why the plan stops, with intake per agent under 50 prey per arm; sim-notes entry                                                                                                                                                                                         | [judgement]  | T10        |
-| T11a | Conformance review of Phase 2                                                                                                                                                                                                                                                                        | [judgement]  | T11        |
+| #    | Task                                                                                                                                                                                                                                                                                                                                                                                            | Nature       | Depends on |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T8   | (built: 2026-11-11, gap settled: stored energy per plant meal is 62, `npm run food:ratio`) Set the food arms from the eaten rate of `E151`; `evals/screens/carrying-capacity.grid.json`; the three predictions recorded in `evals/experiments.json` under numeric ids. First settle the food-ratio gap (1.14 against 1.59 items per tick, Baseline), ideally with a committed probe or a metric | [judgement]  | T7         |
+| T9   | First pass: 16 seeds per arm; rank by `held`, `alive` and `eval.cap_share`                                                                                                                                                                                                                                                                                                                      | [mechanical] | T8         |
+| T10  | Second pass: the two leading arms on seeds 1 to 64 against the defaults; `keepRule` output; reports committed                                                                                                                                                                                                                                                                                   | [mechanical] | T9         |
+| T11  | Name the finalist or record why the plan stops, with intake per agent under 50 prey per arm; sim-notes entry                                                                                                                                                                                                                                                                                    | [judgement]  | T10        |
+| T11a | Conformance review of Phase 2                                                                                                                                                                                                                                                                                                                                                                   | [judgement]  | T11        |
 
 ### Phase 3 - The switch
 

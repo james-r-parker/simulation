@@ -27,6 +27,7 @@
     "bench:parallel": "node scripts/bench-parallel.mjs",
     "replay": "node scripts/replay.mjs",
     "eval": "node scripts/eval.mjs",
+    "food:ratio": "node scripts/food-ratio.mjs",
     "drill": "node scripts/drill.mjs",
     "reflex": "node scripts/reflex.mjs",
     "bench:reflex": "node scripts/bench-reflex.mjs",
