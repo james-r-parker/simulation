@@ -149,7 +149,13 @@ describe('thrustEfficiency', () => {
 });
 
 describe('temperatureCoolingExcess', () => {
-    /** The step before the key existed: gain by movement, passive loss by season and latitude, clamped. */
+    /**
+     * The step before the key existed: gain by movement, passive loss by season and latitude, clamped.
+     * @param {number} t the temperature before the step
+     * @param {number} speed the agent's speed
+     * @param {number} season the season index
+     * @returns {number} the temperature after the step
+     */
     const oldStep = (t, speed, season) => {
         const loss = Math.max(0, 1 - config.seasons[season].temperatureModifier * config.temperatureSeasonSlope);
         const next =

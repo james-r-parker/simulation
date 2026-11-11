@@ -58,7 +58,7 @@ decides the edge before any lever is screened.
 | L4  | `seasons[].reproductionBonus` and `mateChanceScale` deleted; `findMale` takes no chance                                                                                                                                                              | Phase 4, when no keep-rule guard reads worse                                           |
 | L5  | A receptive-mate scent: a fourth pheromone grid and two scent inputs                                                                                                                                                                                 | Phase 5, which opens only when Phase 3 or 4 fails                                      |
 
-Body temperature exists to make over-eating and over-sprinting cost an agent, as cold costs one that sits still (body-temperature.md); a heat lever keeps that pressure and only rebalances its numbers. No flag is added; `temperatureCoolingExcess` (default 0) and `temperatureMatingMax` (default 85, the value `blocksMating` reads today) are numbers whose defaults leave every golden as it is. L1 and L4 are
+Body temperature exists to make over-eating and over-sprinting cost an agent, as cold costs one that sits still (body-temperature.md); a heat lever keeps that pressure and only rebalances its numbers. No flag is added; `temperatureCoolingExcess` (default 0) and `temperatureMatingMax` (default 85, the value `blocksMating` reads today) are numbers whose defaults leave every golden as it is. Any new config key still changes `rulesHash` (`rulesHash` in `js/sim/config.js` hashes the whole config), so the keys stay on the Phase 3 branch until the switch. L1 and L4 are
 realism changes and land on the keep rule (no guard worse); H1, H2 and F1 are levers and land only as the finalist
 (`held` better). Phase 2 (E155) found that a mating female with a mate in reach is held by heat (body temperature over
 `temperatureHeatStress`) in 58% of samples and by no reachable mate in 3.6%, and that split births are not short at the
@@ -172,10 +172,10 @@ keys>`, and the combined arm also with the heat arm alone; the reports are commi
 - When no arm reads `held` `better`, Phase 4 lands only `flat` and `reach` as above, and Phase 5 opens.
 - Done when the finalist is named with its keep-rule output at 64 seeds, or the record says why there is none.
 
-| Chunk | Tasks       | Contents                                                       |
-| ----- | ----------- | -------------------------------------------------------------- |
-| D     | T11, T11b   | The cooling key (code, no golden moves) and the `reach` commit |
-| E     | T12 to T15a | The two grids, the passes, the finalist (runs)                 |
+| Chunk | Tasks       | Contents                                                                                                                                                          |
+| ----- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D     | T11, T11b   | The heat keys and the `reach` commit, on the unmerged Phase 3 branch: a new config key changes `rulesHash`, so both land with the Phase 4 switch on `season/next` |
+| E     | T12 to T15a | The two grids, the passes, the finalist (runs)                                                                                                                    |
 
 ### Phase 4 - The switch
 
