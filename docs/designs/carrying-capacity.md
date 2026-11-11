@@ -233,7 +233,7 @@ The labels are for this doc; each prediction takes the next numeric id when T8 r
 | T2  | (built: 2026-11-11) `js/evo/scene-capacity.js`: the four detectors, registered in the metric registry, with arithmetic and source tests; `docs/designs/metrics.md` regenerated | [judgement]  | -          |
 | T3  | (built: 2026-11-11) A seed guard reads `better` as well as `worse` (the exact test in the good direction), printed by `formatKeepRule`, with tests                             | [mechanical] | T1         |
 | T4  | (built: 2026-11-11) `evals/decisions/` and the rule in `scripts/check-experiments.mjs` that a record from `E151` on names committed reports                                    | [mechanical] | -          |
-| T5  | Run `E151`: the defaults, 128 seeds, floor on, with the new metrics; commit the report under `evals/decisions/E151/`                                                           | [mechanical] | T2, T4     |
+| T5  | (built: 2026-11-11) Run `E151`: the defaults, 128 seeds, floor on, with the new metrics; commit the report under `evals/decisions/E151/`                                       | [mechanical] | T2, T4     |
 | T6  | Liveness and power readings for the new metrics from `E151`; re-read the Baseline table and the food ratio; sim-notes entry                                                    | [judgement]  | T5         |
 | T7  | Conformance review of Phase 1, in parallel with `scripts/check.sh`                                                                                                             | [judgement]  | T3, T6     |
 
