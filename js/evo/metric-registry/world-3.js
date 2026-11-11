@@ -13,6 +13,8 @@ export const WORLD_3 = {
             'no edge span (a span after burn-in that starts with 1 to 99 prey)',
             'no prey death in an edge span',
         ],
+        expectedFlat:
+            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
         arithmetic: 'test/evo/scene-edge.test.js',
         source: 'test/evo/metric-source-edge.test.js',
     }),
@@ -23,6 +25,8 @@ export const WORLD_3 = {
         unit: 'rate',
         direction: 'higher',
         nullWhen: ['no edge span (a span after burn-in that starts with 1 to 99 prey)'],
+        expectedFlat:
+            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
         arithmetic: 'test/evo/scene-edge.test.js',
         source: 'test/evo/metric-source-edge.test.js',
     }),
@@ -33,6 +37,8 @@ export const WORLD_3 = {
         unit: 'rate',
         direction: 'higher',
         nullWhen: ['no edge span (a span after burn-in that starts with 1 to 99 prey)'],
+        expectedFlat:
+            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
         arithmetic: 'test/evo/scene-edge.test.js',
         source: 'test/evo/metric-source-edge.test.js',
     }),
@@ -43,6 +49,8 @@ export const WORLD_3 = {
         unit: 'rate',
         direction: 'lower',
         nullWhen: ['no edge span (a span after burn-in that starts with 1 to 99 prey)'],
+        expectedFlat:
+            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
         arithmetic: 'test/evo/scene-edge.test.js',
         source: 'test/evo/metric-source-edge.test.js',
     }),
@@ -53,6 +61,8 @@ export const WORLD_3 = {
         unit: 'rate',
         direction: 'lower',
         nullWhen: ['no edge span (a span after burn-in that starts with 1 to 99 prey)'],
+        expectedFlat:
+            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
         arithmetic: 'test/evo/scene-edge.test.js',
         source: 'test/evo/metric-source-edge.test.js',
     }),
@@ -63,6 +73,8 @@ export const WORLD_3 = {
         unit: 'ratio',
         direction: 'lower',
         nullWhen: ['no edge span (a span after burn-in that starts with 1 to 99 prey)'],
+        expectedFlat:
+            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
         arithmetic: 'test/evo/scene-edge.test.js',
         source: 'test/evo/metric-source-edge.test.js',
     }),
@@ -78,6 +90,8 @@ export const WORLD_3 = {
             'no reference span (a span after burn-in that starts with 100 to 400 prey)',
             'no food energy taken in reference spans',
         ],
+        expectedFlat:
+            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
         arithmetic: 'test/evo/scene-edge.test.js',
         source: 'test/evo/metric-source-edge.test.js',
     }),
@@ -90,6 +104,8 @@ export const WORLD_3 = {
         direction: 'watch',
         intended: 'lower',
         nullWhen: ['no edge span (a span after burn-in that starts with 1 to 99 prey)'],
+        expectedFlat:
+            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
         arithmetic: 'test/evo/scene-edge.test.js',
         source: 'test/evo/metric-source-edge.test.js',
     }),
@@ -153,6 +169,8 @@ export const WORLD_3 = {
             'no edge checkpoint (a 1000-tick checkpoint after burn-in with 1 to 99 prey)',
             'no ready prey female at an edge checkpoint',
         ],
+        expectedFlat:
+            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
         arithmetic: 'test/evo/scene-edge-gates.test.js',
         source: 'test/evo/metric-source-edge-gates.test.js',
     }),
@@ -167,6 +185,8 @@ export const WORLD_3 = {
             'no edge checkpoint (a 1000-tick checkpoint after burn-in with 1 to 99 prey)',
             'no mature, rested, not-pregnant prey at an edge checkpoint',
         ],
+        expectedFlat:
+            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
         arithmetic: 'test/evo/scene-edge-gates.test.js',
         source: 'test/evo/metric-source-edge-gates.test.js',
     }),
@@ -181,6 +201,8 @@ export const WORLD_3 = {
             'no edge checkpoint (a 1000-tick checkpoint after burn-in with 1 to 99 prey)',
             'no mature, rested, not-pregnant prey at an edge checkpoint',
         ],
+        expectedFlat:
+            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
         arithmetic: 'test/evo/scene-edge-gates.test.js',
         source: 'test/evo/metric-source-edge-gates.test.js',
     }),
@@ -195,6 +217,8 @@ export const WORLD_3 = {
             'no edge checkpoint (a 1000-tick checkpoint after burn-in with 1 to 99 prey)',
             'no mature, rested, not-pregnant prey at an edge checkpoint',
         ],
+        expectedFlat:
+            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
         arithmetic: 'test/evo/scene-edge-gates.test.js',
         source: 'test/evo/metric-source-edge-gates.test.js',
     }),
@@ -209,6 +233,8 @@ export const WORLD_3 = {
             'no edge checkpoint (a 1000-tick checkpoint after burn-in with 1 to 99 prey)',
             'no mature, rested, not-pregnant prey at an edge checkpoint',
         ],
+        expectedFlat:
+            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
         arithmetic: 'test/evo/scene-edge-gates.test.js',
         source: 'test/evo/metric-source-edge-gates.test.js',
     }),
@@ -223,6 +249,8 @@ export const WORLD_3 = {
             'no edge checkpoint (a 1000-tick checkpoint after burn-in with 1 to 99 prey)',
             'no mature, rested, not-pregnant prey at an edge checkpoint',
         ],
+        expectedFlat:
+            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
         arithmetic: 'test/evo/scene-edge-gates.test.js',
         source: 'test/evo/metric-source-edge-gates.test.js',
     }),
@@ -237,6 +265,8 @@ export const WORLD_3 = {
             'no edge checkpoint (a 1000-tick checkpoint after burn-in with 1 to 99 prey)',
             'no mature, rested, not-pregnant prey at an edge checkpoint',
         ],
+        expectedFlat:
+            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
         arithmetic: 'test/evo/scene-edge-gates.test.js',
         source: 'test/evo/metric-source-edge-gates.test.js',
     }),
