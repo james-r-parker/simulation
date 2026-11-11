@@ -85,7 +85,7 @@ describe('keepRule', () => {
         const few = keepRule(report(), report({ low: SEEDS.map((_, i) => i < 3) }), { status: verified, seedsFor });
         expect(guardOf(few, 'under80').verdict).toBe('no-harm');
         const better = keepRule(report({ low: SEEDS.map((_, i) => i < 12) }), report(), { status: verified, seedsFor });
-        expect(guardOf(better, 'under80').verdict).toBe('no-harm');
+        expect(guardOf(better, 'under80')).toMatchObject({ verdict: 'better', harmed: 0, recovered: 12 });
         expect(better.worse).toBe(false);
     });
 
@@ -285,5 +285,43 @@ describe('the held guard', () => {
         expect(text.join('\n')).toMatch(
             /guard held: no-harm, 0 seeds harmed vs 0 recovered \(exact p 1\), smallest loss detected 6 seeds/,
         );
+    });
+});
+
+describe('a seed guard read in the good direction', () => {
+    const read = (/** @type {number[]} */ before, /** @type {number[]} */ after) =>
+        guardOf(keepRule(report({ alive: before }), report({ alive: after }), { status: verified, seedsFor }), 'alive');
+    const dead = (/** @type {number} */ k) => lostAlive(k);
+    const alive = SEEDS.map(() => 5);
+
+    it('reads better when enough more seeds moved to the good side: 5 gained is not, 6 gained is', () => {
+        expect(read(dead(5), alive)).toMatchObject({ verdict: 'no-harm', harmed: 0, recovered: 5 });
+        expect(read(dead(6), alive)).toMatchObject({ verdict: 'better', harmed: 0, recovered: 6 });
+        expect(read(dead(10), alive).verdict).toBe('better');
+    });
+
+    it('needs the exact test, not the net count: 12 gained against 10 lost is not better', () => {
+        const before = SEEDS.map((_, i) => (i < 12 ? 0 : 5));
+        const after = SEEDS.map((_, i) => (i < 12 ? 5 : i < 22 ? 0 : 5));
+        expect(read(before, after)).toMatchObject({ verdict: 'no-harm', harmed: 10, recovered: 12 });
+    });
+
+    it('keeps worse as worse, never sets the keep rule worse for a better guard, and prints better', () => {
+        expect(read(alive, dead(10)).verdict).toBe('worse');
+        const result = keepRule(report({ alive: dead(10) }), report(), { status: verified, seedsFor });
+        expect(result.worse).toBe(false);
+        expect(formatKeepRule(result).join('\n')).toMatch(
+            /guard alive: better, 0 seeds harmed vs 10 recovered \(exact p 0.00195\)/,
+        );
+        expect(formatKeepRule(result).join('\n')).toContain('keep rule: no harm detected at this size');
+    });
+
+    it('reads better on the held guard too', () => {
+        const none = SEEDS.map(() => false);
+        const result = keepRule(report({ held: none }), report({ held: SEEDS.map(() => true) }), {
+            status: verified,
+            seedsFor,
+        });
+        expect(guardOf(result, 'held')).toMatchObject({ verdict: 'better', recovered: N });
     });
 });
