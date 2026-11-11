@@ -2,7 +2,7 @@
 
 import { carryPollen } from './pollination.js';
 import { ingestToxin, isSick } from './toxin.js';
-import { canBite, couldBite } from './bite-rule.js';
+import { canBite, couldBite, inJaws } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
 import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, removeEnergy, transferEnergy } from './energy.js';
 import { depletePatchAt } from './food-patches.js';
@@ -279,7 +279,39 @@ function lunge(world, biter, other) {
 }
 
 /**
- * Runs the feed phase: every alive agent eats, then bites resolve over the contact list in order.
+ * eat-choice G4: stamps a hunter that has a body in its jaws this tick (tick + 1, so a fresh slot's 0 never matches;
+ * derived state outside `worldHash`, cleared by `freeAgent`).
+ * @param {Record<string, any>} world the world
+ * @param {number} hunter the slot that may have a body in its jaws
+ * @param {number} body the slot it touches
+ * @returns {void}
+ */
+function noteJaws(world, hunter, body) {
+    if (world.huntBySpec[world.spec[hunter]] === 1 && inJaws(world, hunter, body)) {
+        world.jawsStamp[hunter] = world.tick + 1;
+    }
+}
+
+/**
+ * eat-choice G4: a hunter holding `BITE` above 0 with no body in its jaws (`noteJaws`) loses `strikeMissCost` this
+ * tick, as a lunge at nothing costs effort; booked as a bite cost.
+ * @param {Record<string, any>} world the world
+ * @returns {void}
+ */
+function chargeStrikeMisses(world) {
+    const { alive, outputs, jawsStamp, config } = world;
+    const stamp = world.tick + 1;
+    for (let slot = 0; slot < alive.length; slot++) {
+        const wants = outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0;
+        if (alive[slot] === 1 && wants && world.huntBySpec[world.spec[slot]] === 1 && jawsStamp[slot] !== stamp) {
+            world.ledgerBiteCost[slot] += removeEnergy(world, slot, config.strikeMissCost, LOSS_CAUSE.COST);
+        }
+    }
+}
+
+/**
+ * Runs the feed phase: every alive agent eats, then bites resolve over the contact list in order, then a hunter that
+ * struck at nothing pays `strikeMissCost` (skipped at 0).
  * @param {Record<string, any>} world the world
  * @param {import('./spatial-hash.js').SpatialHash} hash the hash built this tick
  * @returns {void}
@@ -292,10 +324,18 @@ export function feed(world, hash) {
             eatAround(world, hash, slot);
         }
     }
+    const strikes = world.config.strikeMissCost > 0;
     for (let c = 0; c < contactCount; c++) {
         const a = contacts[2 * c];
         const b = contacts[2 * c + 1];
+        if (strikes) {
+            noteJaws(world, a, b);
+            noteJaws(world, b, a);
+        }
         lunge(world, a, b);
         lunge(world, b, a);
+    }
+    if (strikes) {
+        chargeStrikeMisses(world);
     }
 }

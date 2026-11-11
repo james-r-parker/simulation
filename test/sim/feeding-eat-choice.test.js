@@ -1,10 +1,10 @@
-// eat-choice (docs/designs/eat-choice.md): G1, a non-hunter eats only while it bites.
+// eat-choice (docs/designs/eat-choice.md): G1, a non-hunter eats only while it bites; G4, a strike at nothing costs.
 import { allocBody } from './helpers/body.js';
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { FOOD_KIND } from '../../js/sim/carcass.js';
 import { feed } from '../../js/sim/feeding.js';
-import { ENERGY_SOURCE, addEnergy } from '../../js/sim/energy.js';
+import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy } from '../../js/sim/energy.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { smallWorld } from './helpers/small-world.js';
 
@@ -105,5 +105,60 @@ describe('feed: a non-hunter eats only while it bites (eat-choice G1)', () => {
         run(w);
         expect(w.foodAlive[toxic]).toBe(1);
         expect(w.dose[a]).toBe(0);
+    });
+});
+
+describe('feed: strikeMissCost (eat-choice G4)', () => {
+    /**
+     * A hunter at (100, 100) facing +x, holding BITE as given, and optionally a small forager touching it.
+     * @param {{ cost: number, bite?: number, spec?: number, body?: number }} c the case: `body` is the forager's x
+     *   offset (ahead in the jaws at +, behind at -), none when undefined
+     * @returns {{ w: any, hunter: number }} the world after one feed phase
+     */
+    function strike({ cost, bite = 1, spec = PREDATOR, body }) {
+        const w = smallWorld({ strikeMissCost: cost, biteArc: Math.PI / 4, biteCost: 0, recoilEnergy: 0 });
+        const hunter = eater(w, { spec, bite, energy: 500 });
+        if (body !== undefined) {
+            const prey = eater(w, { spec: FORAGER, bite: 0, energy: 50 });
+            w.x[prey] = 100 + body;
+            w.size[prey] = w.size[hunter] / 2;
+            w.contacts[0] = hunter;
+            w.contacts[1] = prey;
+            w.contactCount = 1;
+        }
+        run(w);
+        return { w, hunter };
+    }
+
+    it('charges nothing at 0', () => {
+        expect(strike({ cost: 0 }).w.energy[0]).toBe(500);
+    });
+
+    it('charges a biting hunter with nothing in its jaws, as a bite cost', () => {
+        const { w, hunter } = strike({ cost: 5 });
+        expect(w.energy[hunter]).toBe(495);
+        expect(w.ledgerBiteCost[hunter]).toBe(5);
+        expect(w.lastLoss[hunter]).toBe(LOSS_CAUSE.COST);
+    });
+
+    it('charges a biting hunter whose only contact is behind it, outside the jaws', () => {
+        expect(strike({ cost: 5, body: -10 }).w.energy[0]).toBe(495);
+    });
+
+    it('charges nothing to a hunter with a body in its jaws', () => {
+        const charged = strike({ cost: 5, body: 10 });
+        const free = strike({ cost: 0, body: 10 });
+        expect(charged.w.energy[charged.hunter]).toBe(free.w.energy[free.hunter]);
+        expect(free.w.energy[free.hunter]).toBeGreaterThan(500);
+    });
+
+    it('charges nothing to a hunter that does not bite, or to a biting forager', () => {
+        expect(strike({ cost: 5, bite: 0 }).w.energy[0]).toBe(500);
+        expect(strike({ cost: 5, spec: FORAGER }).w.energy[0]).toBe(500);
+    });
+
+    it('refuses a negative strikeMissCost', () => {
+        expect(() => smallWorld({ strikeMissCost: -1 })).toThrow('strikeMissCost');
+        expect(smallWorld().config.strikeMissCost).toBe(0);
     });
 });
