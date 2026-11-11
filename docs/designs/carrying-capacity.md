@@ -1,6 +1,6 @@
 # Carrying capacity
 
-**Status:** Proposed - approved by the user on 2026-11-11, nothing built. The second big bang: food becomes the brake on the population, the calendar leaves the mating dice and the clonal backstop works when mates are out of reach. Phase 1 (instruments and the reference) is first.
+**Status:** In progress - approved by the user on 2026-11-11. Phase 1 T1 to T4 are built (the `held` guard, the four detectors, `better` on a seed guard, `evals/decisions/` and its check); T5 to T7 remain. The second big bang: food becomes the brake on the population, the calendar leaves the mating dice and the clonal backstop works when mates are out of reach. Phase 1 (instruments and the reference) is first.
 **Validated:** 572c3172 (2026-11-11)
 **Priority:** 2 - approved by the user on 2026-11-11 as the next build: every hunter extinction on the 128-seed reference is in a crashed world, so the brake comes before any skill or scene plan ([review-2026-11-11.md](../review-2026-11-11.md))
 **Depends on:** [metric-trust.md](metric-trust.md), [natural-selection.md](natural-selection.md)
@@ -231,7 +231,7 @@ The labels are for this doc; each prediction takes the next numeric id when T8 r
 | T1  | (built: 2026-11-11) `held` seed guard and `HELD_POPULATION` in `js/evo/keep-rule.js`, printed by `formatKeepRule`, with tests                                                  | [mechanical] | -          |
 | T2  | (built: 2026-11-11) `js/evo/scene-capacity.js`: the four detectors, registered in the metric registry, with arithmetic and source tests; `docs/designs/metrics.md` regenerated | [judgement]  | -          |
 | T3  | (built: 2026-11-11) A seed guard reads `better` as well as `worse` (the exact test in the good direction), printed by `formatKeepRule`, with tests                             | [mechanical] | T1         |
-| T4  | `evals/decisions/` and the rule in `scripts/check-experiments.mjs` that a record from `E151` on names committed reports                                                        | [mechanical] | -          |
+| T4  | (built: 2026-11-11) `evals/decisions/` and the rule in `scripts/check-experiments.mjs` that a record from `E151` on names committed reports                                    | [mechanical] | -          |
 | T5  | Run `E151`: the defaults, 128 seeds, floor on, with the new metrics; commit the report under `evals/decisions/E151/`                                                           | [mechanical] | T2, T4     |
 | T6  | Liveness and power readings for the new metrics from `E151`; re-read the Baseline table and the food ratio; sim-notes entry                                                    | [judgement]  | T5         |
 | T7  | Conformance review of Phase 1, in parallel with `scripts/check.sh`                                                                                                             | [judgement]  | T3, T6     |

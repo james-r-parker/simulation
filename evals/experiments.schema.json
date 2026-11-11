@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "evals/experiments.schema.json",
   "title": "Experiment ledger",
-  "description": "evals/experiments.json: an object with one key, experiments, the list the run-evolution-loop skill appends to. beforePolicy and afterPolicy may be omitted; the default (live) is applied by readers, the validator does not fill it in.",
+  "description": "evals/experiments.json: an object with one key, experiments, the list the run-evolution-loop skill appends to. beforePolicy and afterPolicy may be omitted; the default (live) is applied by readers, the validator does not fill it in. reports lists the committed report files a verdict rests on; scripts/check-experiments.mjs requires it from E151 on.",
   "type": "object",
   "required": ["experiments"],
   "additionalProperties": false,
@@ -41,7 +41,8 @@
             "additionalProperties": { "enum": ["better", "worse", "no-difference", "-"] }
           },
           "effect": { "enum": ["better", "worse", "no-difference", "exploit"] },
-          "note": { "type": "string" }
+          "note": { "type": "string" },
+          "reports": { "type": "array", "items": { "type": "string", "minLength": 1 } }
         }
       }
     }
