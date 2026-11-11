@@ -3,7 +3,7 @@
 //
 // Seven checkpoints from burn-in hold 8, 16, 24, 32, 40, 48 and 64 agents. Five agents (the eaters) eat one 10-energy meal in
 // every window and never die; in the window that starts at population x, x * x / 64 of the others starve, so the starvation
-// per agent is x / 64 (slope 1/64) and the food taken per agent is 50 / x. Three food items stand all run, out of reach:
+// per agent is x / 64 (elasticity 1) and the food taken per agent is 50 / x (elasticity from the slope, at a mean population of 28). Three food items stand all run, out of reach:
 // two edible and one toxic, of a maxFood of 12.
 
 import { describe, expect, it } from 'vitest';
@@ -73,17 +73,19 @@ describe('the capacity detectors in a scripted world', () => {
         expect(m['eval.food_standing_share']?.value).toBeCloseTo(2 / 12, 12);
     });
 
-    it('eval.density_starve_slope reads 1/64: the starvation per agent rises with the population', () => {
-        expect(m['eval.density_starve_slope']?.value).toBeCloseTo(1 / 64, 12);
+    it('eval.density_starve_slope reads elasticity 1: the starvation per agent (x / 64) is proportional to the population', () => {
+        expect(m['eval.density_starve_slope']?.value).toBeCloseTo(1, 12);
     });
 
-    it('eval.density_intake_slope reads the slope of 50 / x: the food taken per agent falls with the population', () => {
+    it('eval.density_intake_slope reads the elasticity of 50 / x: the food taken per agent falls with the population', () => {
         const xs = POPS.slice(0, 6);
         expect(m['eval.density_intake_slope']?.value).toBeCloseTo(
-            cramer(
+            (cramer(
                 xs,
                 xs.map((x) => (EATERS * MEAL) / x),
-            ),
+            ) *
+                28) /
+                (xs.reduce((a, x) => a + (EATERS * MEAL) / x, 0) / xs.length),
             12,
         );
         expect(m['eval.density_intake_slope']?.value).toBeLessThan(0);

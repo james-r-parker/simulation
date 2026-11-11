@@ -224,7 +224,7 @@ export const WORLD_2 = {
         module: 'js/evo/scene-capacity.js',
         meaning:
             'Higher means each agent starves more often as the population rises, the way a food-limited world does.',
-        counts: 'Per season, the least-squares slope of starvation deaths per agent in a 1000-tick span against the alive count at its start, over spans after burn-in with at least one agent at the start; the mean of the slopes of seasons with at least 5 spans of varying population.',
+        counts: 'Per season, the least-squares slope times mean population over mean rate (an elasticity at the season means) of starvation deaths per agent in a 1000-tick span against the alive count at its start, over spans after burn-in with at least one agent at the start; the mean over seasons with at least 5 spans of varying population and a mean rate above 0 (a season with mean rate 0 is skipped).',
         unit: 'trend',
         direction: 'higher',
         nullWhen: [
@@ -236,8 +236,9 @@ export const WORLD_2 = {
     }),
     'eval.density_intake_slope': entry('world', {
         module: 'js/evo/scene-capacity.js',
-        meaning: 'Lower means each agent takes less food as the population rises, the way a food-limited world does.',
-        counts: 'Per season, the least-squares slope of food energy taken per agent (foodEnergy: plant and carcass meals, not bites) in a 1000-tick span against the alive count at its start, over spans after burn-in with at least one agent at the start; the mean of the slopes of seasons with at least 5 spans of varying population.',
+        meaning:
+            'Lower means each agent takes less food as the population rises, the way a food-limited world does: the elasticity of food energy per agent with respect to population at the season means (negative: food per head falls with crowding).',
+        counts: 'Per season, the least-squares slope times mean population over mean rate (an elasticity at the season means) of food energy taken per agent (foodEnergy: plant and carcass meals, not bites) in a 1000-tick span against the alive count at its start, over spans after burn-in with at least one agent at the start; the mean over seasons with at least 5 spans of varying population and a mean rate above 0 (a season with mean rate 0 is skipped).',
         unit: 'trend',
         direction: 'lower',
         nullWhen: [

@@ -106,6 +106,15 @@ function cramer(x, y) {
     return (n * sxy - sx * sy) / (n * sxx - sx * sx);
 }
 
+/**
+ * The naive reference elasticity: the normal-equations slope times mean x over mean y.
+ * @param {number[]} x the regressor
+ * @param {number[]} y the response
+ * @returns {number} the elasticity at the means
+ */
+const elasticity = (x, y) =>
+    (cramer(x, y) * (x.reduce((a, b) => a + b, 0) / x.length)) / (y.reduce((a, b) => a + b, 0) / y.length);
+
 describe('eval.cap_share', () => {
     it('is the share of checkpoints at maxAgents less splitCapMargin or more', () => {
         const scene = run([{ pop: 449 }, { pop: 450 }, { pop: 500 }, { pop: 300 }]);
@@ -152,10 +161,12 @@ describe('eval.food_standing_share', () => {
 describe('the density slopes', () => {
     const pops = [100, 200, 300, 400, 500, 600, 700];
 
-    it('read the slope of the per-agent rate on the population at the window start', () => {
+    it('read the elasticity at the season means of the per-agent rate on the population at the window start', () => {
         const m = capacityMetrics(run(lawRows(pops, 0)));
-        expect(m['eval.density_starve_slope']?.value).toBeCloseTo(0.001, 12);
-        expect(m['eval.density_intake_slope']?.value).toBeCloseTo(-0.002, 12);
+        // Windows start at 100..600 (mean 350): starvation x / 1000 is proportional to x, so the elasticity is 1; intake
+        // 3 - 0.002 x has mean 2.3 and slope -0.002.
+        expect(m['eval.density_starve_slope']?.value).toBeCloseTo(1, 12);
+        expect(m['eval.density_intake_slope']?.value).toBeCloseTo((-0.002 * 350) / 2.3, 12);
         expect(directionOf('eval.density_starve_slope')).toBe('higher');
         expect(directionOf('eval.density_intake_slope')).toBe('lower');
     });
@@ -170,7 +181,7 @@ describe('the density slopes', () => {
         const rate = (/** @type {number} */ j) => 10 / (10 * (j + 1));
         const xs = [10, 20, 30, 40, 50, 60];
         expect(capacityMetrics(scene)['eval.density_intake_slope']?.value).toBeCloseTo(
-            cramer(
+            elasticity(
                 xs,
                 xs.map((_, j) => rate(j)),
             ),
@@ -189,8 +200,10 @@ describe('the density slopes', () => {
         points.push(...[1000, 1100, 1200, 1300, 1400, 1500, 1600].map((pop) => ({ pop, season: 1 })));
         const rows = lawSeries(points);
         const m = capacityMetrics(run(rows));
-        expect(m['eval.density_starve_slope']?.value).toBeCloseTo(0.001, 12);
-        expect(m['eval.density_intake_slope']?.value).toBeCloseTo(-0.002, 12);
+        // Season 0: starvation elasticity 1, intake -0.002 * 350 / 2.3. Season 1 (windows start at 1000..1500, mean 1250):
+        // starvation 0.001 x + 1 has mean 2.25, intake 3 - 0.002 x has mean 0.5.
+        expect(m['eval.density_starve_slope']?.value).toBeCloseTo((1 + 1.25 / 2.25) / 2, 12);
+        expect(m['eval.density_intake_slope']?.value).toBeCloseTo((-0.7 / 2.3 + -2.5 / 0.5) / 2, 12);
         const windows = rows.slice(1).map((r, i) => ({ x: rows[i].pop, y: r.starved / rows[i].pop }));
         const pooled = cramer(
             windows.map((w) => w.x),
@@ -199,18 +212,26 @@ describe('the density slopes', () => {
         expect(pooled).toBeGreaterThan(0.0015);
     });
 
-    it('average the per-season slopes and ignore a season with fewer than the minimum windows', () => {
+    it('average the per-season elasticities, ignore a season with too few windows or a mean rate of 0', () => {
         expect(MIN_SEASON_WINDOWS).toBe(5);
         const full = { x: [1, 2, 3, 4, 5], y: [2, 4, 6, 8, 10], season: [0, 0, 0, 0, 0] };
-        expect(withinSeasonSlope(full)).toBe(2);
+        expect(withinSeasonSlope(full)).toBe(1);
+        // Season 3: slope 1, mean x 3, mean y 4: 0.75.
         const two = {
-            x: [1, 2, 3, 4, 5, 1, 2, 3, 4, 5],
-            y: [2, 4, 6, 8, 10, 1, 2, 3, 4, 5],
-            season: [0, 0, 0, 0, 0, 3, 3, 3, 3, 3],
+            x: [...full.x, 1, 2, 3, 4, 5],
+            y: [...full.y, 2, 3, 4, 5, 6],
+            season: [...full.season, 3, 3, 3, 3, 3],
         };
-        expect(withinSeasonSlope(two)).toBe(1.5);
+        expect(withinSeasonSlope(two)).toBe(0.875);
         const short = { x: [...full.x, 1, 2, 3, 4], y: [...full.y, 9, 9, 9, 9], season: [...full.season, 1, 1, 1, 1] };
-        expect(withinSeasonSlope(short)).toBe(2);
+        expect(withinSeasonSlope(short)).toBe(1);
+        const zero = {
+            x: [...full.x, 1, 2, 3, 4, 5],
+            y: [...full.y, 0, 0, 0, 0, 0],
+            season: [...full.season, 2, 2, 2, 2, 2],
+        };
+        expect(withinSeasonSlope(zero)).toBe(1);
+        expect(withinSeasonSlope({ x: full.x, y: [0, 0, 0, 0, 0], season: full.season })).toBeNull();
     });
 
     it('are null with a reason when no season has the windows or the population never varies', () => {
@@ -225,9 +246,15 @@ describe('the density slopes', () => {
     });
 
     it('leave out a window that starts with nobody alive', () => {
-        const rows = [{ pop: 0 }, ...lawRows([100, 200, 300, 400, 500, 600], 0).map((r) => ({ ...r, starved: 0 }))];
-        // The first window (start pop 0) is dropped; six remain, all with starved 0: a flat 0 slope, not a division by 0.
-        expect(capacityMetrics(run(rows))['eval.density_starve_slope']).toEqual({ value: 0 });
+        const x = [100, 200, 300, 400, 500, 600];
+        const rows = [{ pop: 0 }, ...x.map((pop, i) => ({ pop, starved: i === 0 ? 0 : 0.2 * x[i - 1] }))];
+        // The first window (start pop 0) is dropped; six remain at a rate of 0.2: elasticity 0, not a division by 0.
+        expect(capacityMetrics(run(rows))['eval.density_starve_slope']?.value).toBeCloseTo(0, 12);
+    });
+
+    it('are null when the season has no starvation at all, whatever the population does', () => {
+        const rows = lawRows(pops, 0).map((r) => ({ ...r, starved: 0 }));
+        expect(capacityMetrics(run(rows))['eval.density_starve_slope']?.value).toBeNull();
     });
 });
 

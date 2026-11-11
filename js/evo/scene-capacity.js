@@ -3,13 +3,17 @@
 //
 // - `eval.cap_share` (lower): the share of checkpoints with the population at `maxAgents` less `splitCapMargin` or more.
 // - `eval.food_standing_share` (watch): the mean over checkpoints of the edible food slots (alive and not toxic) over `maxFood`.
-// - `eval.density_starve_slope` (higher): the slope of the starvation deaths per agent in a checkpoint window against the
-//   population at the window's start. A world that food holds starves more per head as it fills, so the slope is positive.
-// - `eval.density_intake_slope` (lower): the same slope for the food energy taken per agent (`foodEnergy`, the plant and
-//   carcass meals; a bite is not counted).
+// - `eval.density_starve_slope` (higher): the elasticity of the starvation deaths per agent in a checkpoint window with
+//   respect to the population at the window's start, at the season means. A world that food holds starves more per head as
+//   it fills, so it is positive; 0 is no density dependence.
+// - `eval.density_intake_slope` (lower): the same elasticity for the food energy taken per agent (`foodEnergy`, the plant
+//   and carcass meals; a bite is not counted); negative when food per head falls with crowding.
 //
-// A slope is fitted inside each season and the fits are averaged, since the season and the time since the start are
-// confounded (sim-notes 2026-11-06, T66). A season needs `MIN_SEASON_WINDOWS` windows with a population that varies.
+// Inside each season the least-squares slope of the per-agent rate on the population is multiplied by the mean population
+// over the mean rate, which makes it scale-free (the `trend` power bar is an absolute 0.10, so a raw slope of about 1e-3
+// would always pass it). The seasons' elasticities are averaged, since the season and the time since the start are
+// confounded (sim-notes 2026-11-06, T66). A season needs `MIN_SEASON_WINDOWS` windows with a population that varies and a
+// mean rate above 0; a season with a mean rate of 0 is skipped, and the metric is null when no season qualifies.
 //
 // The checkpoint is one pass over the agent slots and the food slots every 1000 ticks, and a death adds two numbers to the
 // run's totals; nothing is allocated per tick. The scene reads the world and writes only itself, so no hash can move.
@@ -120,11 +124,12 @@ export function olsSlope(x, y) {
 }
 
 /**
- * Fits the slope of `y` on `x` inside each season and averages the fits.
+ * Fits the elasticity of `y` with respect to `x` inside each season (the least-squares slope times mean `x` over mean `y`)
+ * and averages the fits.
  * @param {{x: ArrayLike<number>, y: ArrayLike<number>, season: ArrayLike<number>}} windows one entry per window: the
  *   population at its start, the per-agent rate in it, and the season it started in
- * @returns {number | null} the mean slope over the seasons with at least `MIN_SEASON_WINDOWS` windows and a slope; null
- *   when no season has one
+ * @returns {number | null} the mean elasticity over the seasons with at least `MIN_SEASON_WINDOWS` windows, a slope and a
+ *   mean `y` above 0 (a season with mean 0 is skipped); null when no season qualifies
  */
 export function withinSeasonSlope({ x, y, season }) {
     /** @type {Map<number, {x: number[], y: number[]}>} */
@@ -138,8 +143,9 @@ export function withinSeasonSlope({ x, y, season }) {
     const slopes = [];
     for (const group of groups.values()) {
         const slope = group.x.length < MIN_SEASON_WINDOWS ? null : olsSlope(group.x, group.y);
-        if (slope !== null) {
-            slopes.push(slope);
+        const meanRate = mean(group.y);
+        if (slope !== null && meanRate > 0) {
+            slopes.push((slope * mean(group.x)) / meanRate);
         }
     }
     return slopes.length === 0 ? null : mean(slopes);
@@ -170,7 +176,7 @@ function windowsOf(scene, column) {
 /**
  * @param {Record<string, any>} scene the capacity scene
  * @param {'starved' | 'intake'} column the running total to difference
- * @returns {import('./metrics-stats.js').MetricResult} the within-season slope of the column's per-agent rate
+ * @returns {import('./metrics-stats.js').MetricResult} the within-season elasticity of the column's per-agent rate
  */
 function slopeResult(scene, column) {
     const slope = withinSeasonSlope(windowsOf(scene, column));
