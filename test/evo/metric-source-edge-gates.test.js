@@ -1,11 +1,11 @@
-// Source answers for the share detectors of the low-density edge (low-density-edge.md, T6): a scripted world of real steps,
+// Source answers for the split-gate share detectors of the low-density edge (low-density-edge.md, T6): a scripted world of real steps,
 // the real sense phase that writes `mateSeenAt`, observer reads and computeMetrics.
 //
 // Five mature prey stand still at the checkpoint (T) with 5 alive, so it is an edge checkpoint. Female F at (200, 200) looks
-// east at male M1, 200 away: in view (visionRange 300) and out of reach (about size + size + mateRange 100). Female G at
-// (700, 700) has male M2 60 away. Female H at (100, 800) has nobody in view and a line that has split 3 times in a row.
-// So the ready females are F, G and H; F saw a mate and has none within reach (1 of 3). Every prey but H sees a mate, so the
-// `seen` gate holds 4 of the 5; H passes it and the `clonal` gate holds it.
+// east at male M1, 200 away: in view (visionRange 300) but out of reach (about size + size + mateRange 100), so the sense
+// does not note M1 and F is mate-scarce. Female G at (700, 700) has male M2 60 away. Female H at (100, 800) has nobody in
+// view and a line that has split 3 times in a row. F and M1 split at once (the shark rule, no mate in reach), so they are on
+// cooldown and leave the eligible prey. G and M2 see a mate in reach and H is held by `clonal`.
 
 import { describe, expect, it } from 'vitest';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
@@ -54,22 +54,20 @@ describe('the share detectors in a scripted world', () => {
     const { run, world, females } = scriptedRun();
     const m = run.metrics();
 
-    it('script the sense they say: the females in view of a mate wrote the tick before the checkpoint', () => {
+    it('script the sense they say: only a mate in reach is noted, so F and M1 split and G and M2 are seen', () => {
         const [f, g, h] = females;
         expect(world.tick).toBe(T);
-        expect(world.mateSeenAt[f]).toBe(T - 1);
+        expect(world.mateSeenAt[f]).toBeLessThan(T - 1);
+        expect(world.cooldown[f]).toBeGreaterThan(0);
         expect(world.mateSeenAt[g]).toBe(T - 1);
         expect(world.mateSeenAt[h]).toBeLessThan(T - 1);
         expect(run.observer.scenes.edge.gates.checkpoints).toBe(1);
     });
 
-    it('eval.edge_mate_unreached_share counts the female who saw a mate she cannot reach', () => {
-        expect(m['eval.edge_mate_unreached_share']).toEqual({ value: 1 / 3 });
-    });
-
     it('eval.edge_split_blocked_share.* hold the prey that saw a mate by seen and H by clonal', () => {
-        expect(m['eval.edge_split_blocked_share.seen']).toEqual({ value: 4 / 5 });
-        expect(m['eval.edge_split_blocked_share.clonal']).toEqual({ value: 1 / 5 });
+        // F and M1 are on cooldown after their split, so the eligible prey are G, M2 and H.
+        expect(m['eval.edge_split_blocked_share.seen']).toEqual({ value: 2 / 3 });
+        expect(m['eval.edge_split_blocked_share.clonal']).toEqual({ value: 1 / 3 });
         expect(m['eval.edge_split_blocked_share.energy']).toEqual({ value: 0 });
         expect(m['eval.edge_split_blocked_share.merit']).toEqual({ value: 0 });
         expect(m['eval.edge_split_blocked_share.proof']).toEqual({ value: 0 });

@@ -378,11 +378,6 @@ export const LIVENESS = Object.freeze({
         distinct: 61,
         report: 'evals/decisions/E164/defaults.report.json',
     }),
-    'eval.edge_mate_unreached_share': Object.freeze({
-        nullShare: 0.046875,
-        distinct: 60,
-        report: 'evals/decisions/E164/defaults.report.json',
-    }),
     'eval.edge_ref_eaten_per_prey': Object.freeze({
         nullShare: 0.015625,
         distinct: 63,
