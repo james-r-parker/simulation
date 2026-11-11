@@ -133,10 +133,11 @@ function seedGuard(name, before, after, direction) {
  * @param {string} metric a guard metric
  * @param {Record<string, any>} before the before report
  * @param {Record<string, any>} after the after report
- * @param {(metric: string) => string} status the status lookup
+ * @param {{ status: (metric: string) => string, seedsFor: (metric: string) => number }} lookups the status and seed
+ *   minimum lookups
  * @returns {string | null} why the metric cannot guard this pair, null when it can
  */
-function skipReason(metric, before, after, status) {
+function skipReason(metric, before, after, { status, seedsFor }) {
     const b = before.metrics[metric]?.values;
     const a = after.metrics[metric]?.values;
     if (b === undefined || a === undefined) {
@@ -145,8 +146,8 @@ function skipReason(metric, before, after, status) {
     if (status(metric) !== 'verified') {
         return 'unverified';
     }
-    if (before.seeds.length < minSeedsFor(metric)) {
-        return `needs ${minSeedsFor(metric)} seeds`;
+    if (before.seeds.length < seedsFor(metric)) {
+        return `needs ${seedsFor(metric)} seeds`;
     }
     if (b.includes(null) || a.includes(null)) {
         return 'null in a seed';
@@ -158,11 +159,12 @@ function skipReason(metric, before, after, status) {
  * @param {string} metric a guard metric
  * @param {Record<string, any>} before the before report
  * @param {Record<string, any>} after the after report
- * @param {(metric: string) => string} status the status lookup
+ * @param {{ status: (metric: string) => string, seedsFor: (metric: string) => number }} lookups the status and seed
+ *   minimum lookups
  * @returns {Guard} the metric guard, `unchecked` unless it is verified, has enough seeds and no null seed
  */
-function metricGuard(metric, before, after, status) {
-    const reason = skipReason(metric, before, after, status);
+function metricGuard(metric, before, after, lookups) {
+    const reason = skipReason(metric, before, after, lookups);
     if (reason !== null) {
         return unchecked(metric, reason);
     }
@@ -205,13 +207,17 @@ function count(flags) {
  * Judges whether `after` does harm against `before` on the same seeds.
  * @param {Record<string, any>} before the reference report
  * @param {Record<string, any>} after the arm's report
- * @param {{ guards?: string[], status?: (metric: string) => string }} [options] the guard metrics
- *   (`GUARD_METRICS`) and the status lookup (`statusOf`)
+ * @param {{ guards?: string[], status?: (metric: string) => string, seedsFor?: (metric: string) => number }} [options] the guard metrics
+ *   (`GUARD_METRICS`), the status lookup (`statusOf`) and the seed minimum lookup (`minSeedsFor`)
  * @returns {{ worse: boolean, guards: Guard[], adoption: ReturnType<typeof adoption> }} `worse` when any guard is
  *   `worse`; the guards (alive share, under-80 share, each verified guard metric) and the adoption bar's counts
  * @throws {Error} when the seed lists differ or are shorter than 2
  */
-export function keepRule(before, after, { guards: names = GUARD_METRICS, status = statusOf } = {}) {
+export function keepRule(
+    before,
+    after,
+    { guards: names = GUARD_METRICS, status = statusOf, seedsFor = minSeedsFor } = {},
+) {
     const same =
         before.seeds.length === after.seeds.length &&
         before.seeds.every((/** @type {number} */ s, /** @type {number} */ i) => s === after.seeds[i]);
@@ -222,7 +228,7 @@ export function keepRule(before, after, { guards: names = GUARD_METRICS, status 
     const guards = [
         seedGuard('alive', aliveFlags(before), aliveFlags(after), 'higher'),
         seedGuard('under80', under.before, under.after, 'lower'),
-        ...names.map((metric) => metricGuard(metric, before, after, status)),
+        ...names.map((metric) => metricGuard(metric, before, after, { status, seedsFor })),
     ];
     return {
         worse: guards.some((g) => g.verdict === 'worse'),
