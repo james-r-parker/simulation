@@ -3871,8 +3871,8 @@
         "eval.collision_death_share"
       ],
       "before": "evals/decisions/E151/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d",
-      "after": "not run yet: evals/screens/carrying-capacity.grid.json, 10 arms (defaults, four food values, the same four on a flat season, flat season on default food), floor on, live policy, 200000 ticks, seeds 1 to 16 then the two leading arms on 1 to 64",
-      "note": "Prediction recorded before any arm ran; no verdict yet. `reports` names the committed reference and the food-ratio probe the arms are set from, and is extended with the screen reports when they exist. First pass (16 seeds, ranked, no verdict): held 6/16 on the defaults and 0/16 on every food arm; alive 13/16 on the defaults and 5/16 to 12/16 on the food arms.",
+      "after": "evals/decisions/E152/screen16/: 10 arms x 16 seeds (1 to 16), floor on, live policy, 200000 ticks; the plan stopped at the first pass, T10 (64 seeds) not run",
+      "note": "Plan STOPPED at Phase 2: E-CC-1 falsified. Paired exact test, defaults against each food arm on seeds 1 to 16: held reads worse on all eight food arms (6 seeds lost, 0 gained, p 0.031; the defaults hold 6 of 16, every food arm 0 of 16); alive reads worse on food-0.5x and flat-food-0.5x (9 lost, 1 gained, p 0.021) and no-harm on the other six (food-0.75x and food-1.0x 6/1, p 0.13). Food brakes (eval.cap_share 0 to 0.04, starvation elasticity positive 0.02 to 0.22) but every food arm crashes as deep as the defaults, more often and with larger swings, at a smaller size; a flat season does not help (flat-defaults held 4/16). Seeds under 40 after burn-in: defaults 9/16, food-0.75x and food-0.5x 16/16. Detectors are unverified at 16 seeds, so this is a stop by the plan's rule, not a metric verdict. Next: the mating Allee edge, a new plan. T10 skipped (see Decisions in carrying-capacity.md).",
       "reports": [
         "evals/decisions/E151/defaults-floor-on.json",
         "evals/decisions/E152/food-ratio-8x200000.json",
@@ -3886,14 +3886,19 @@
         "evals/decisions/E152/screen16/food-0.75x.report.json",
         "evals/decisions/E152/screen16/food-1.0x.report.json",
         "evals/decisions/E152/screen16/food-1.5x.report.json",
-        "evals/decisions/E152/screen16-rank.md"
+        "evals/decisions/E152/screen16-rank.md",
+        "evals/decisions/E152/screen16-traces.md"
       ],
       "date": "2026-11-11",
       "branch": "feat/carrying-capacity-calibrate",
       "beforePolicy": "live",
       "afterPolicy": "live",
-      "effect": "no-difference",
-      "verdicts": {}
+      "effect": "worse",
+      "verdicts": {
+        "guard.held": "worse",
+        "guard.alive": "-",
+        "eval.cap_share": "-"
+      }
     },
     {
       "id": "E153",
@@ -3902,7 +3907,7 @@
       "targets": ["eval.chase_catch_share"],
       "before": "evals/decisions/E151/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d",
       "after": "not run yet: Phase 3 (T18), seeds 65 to 128",
-      "note": "Prediction recorded before any arm ran; no verdict yet. `reports` names the committed reference and the food-ratio probe the arms are set from, and is extended with the screen reports when they exist. Run in Phase 3.",
+      "note": "Not run: the plan stopped at Phase 2 (E152), so Phase 3 was not built. Prediction recorded before any arm ran; no verdict yet. `reports` names the committed reference and the food-ratio probe the arms are set from, and is extended with the screen reports when they exist. Run in Phase 3.",
       "reports": ["evals/decisions/E151/defaults-floor-on.json"],
       "date": "2026-11-11",
       "branch": "feat/carrying-capacity-calibrate",
@@ -3918,7 +3923,7 @@
       "targets": [],
       "before": "evals/decisions/E151/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d",
       "after": "not run yet: Phase 3 (T15), 64 matched seeds",
-      "note": "Prediction recorded before any arm ran; no verdict yet. `reports` names the committed reference and the food-ratio probe the arms are set from, and is extended with the screen reports when they exist. Run in Phase 3.",
+      "note": "Not run: the plan stopped at Phase 2 (E152), so Phase 3 was not built. Prediction recorded before any arm ran; no verdict yet. `reports` names the committed reference and the food-ratio probe the arms are set from, and is extended with the screen reports when they exist. Run in Phase 3.",
       "reports": ["evals/decisions/E151/defaults-floor-on.json"],
       "date": "2026-11-11",
       "branch": "feat/carrying-capacity-calibrate",
