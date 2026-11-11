@@ -1,0 +1,79 @@
+edge ratio: 107 seeds with an edge span (21 without), median 0.969, mean 0.972, under 0.6 on 2, at or over on 105
+swaps: 107 seeds with every rate, 65 with a positive deficit (median 0.017 per prey per 1000 ticks)
+| swap | median share | pooled share |
+| --- | --- | --- |
+| mate | 1.439 | 1.440 |
+| split | -0.784 | -0.641 |
+| starve | 0.698 | 0.660 |
+| eaten | -0.944 | -0.681 |
+time under 100 prey after burn-in: 107 of 128 seeds ever, 46 for at least half the samples, median share 0.346, 60 end under; median lowest population 17.5; 50 seeds reach the floor trigger
+episodes: 251 (60 last to the end), median length 13 samples (closed 9), 0.578 last 10 or more, 0.203 reach the floor trigger, 0.036 fall from over 400 prey
+descent: median 3 samples from peak to entry, 3 of them at 100 to 400 prey
+entry by season: spring 87, summer 67, autumn 54, winter 43; peak by season: spring 96, summer 56, autumn 53, winter 46
+| interval start | season | intervals | losing | mean change |
+| --- | --- | --- | --- | --- |
+| edge | all | 8777 | 0.503 | 0.036 |
+| edge | spring | 2412 | 0.424 | 0.047 |
+| edge | summer | 2209 | 0.577 | -0.001 |
+| edge | autumn | 2124 | 0.498 | 0.055 |
+| edge | winter | 2032 | 0.522 | 0.046 |
+| band | all | 12457 | 0.470 | 0.002 |
+| band | spring | 4567 | 0.352 | 0.023 |
+| band | summer | 3830 | 0.548 | -0.014 |
+| band | autumn | 2315 | 0.526 | -0.007 |
+| band | winter | 1745 | 0.532 | -0.007 |
+| high | all | 3086 | 0.498 | -0.004 |
+| high | spring | 957 | 0.386 | 0.003 |
+| high | summer | 1129 | 0.560 | -0.008 |
+| high | autumn | 169 | 0.562 | -0.005 |
+| high | winter | 831 | 0.529 | -0.005 |
+probes: 16 seeds replayed
+| interval start | season | intervals | mate | split | births | deaths | starved | eaten |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| edge | all | 1104 | 0.051 | 0.122 | 0.173 | 0.187 | 0.109 | 0.012 |
+| edge | spring | 247 | 0.064 | 0.119 | 0.183 | 0.147 | 0.082 | 0.010 |
+| edge | summer | 298 | 0.035 | 0.110 | 0.145 | 0.185 | 0.109 | 0.027 |
+| edge | autumn | 300 | 0.056 | 0.115 | 0.171 | 0.192 | 0.103 | 0.004 |
+| edge | winter | 259 | 0.055 | 0.151 | 0.206 | 0.234 | 0.149 | 0.001 |
+| band | all | 1565 | 0.092 | 0.110 | 0.202 | 0.198 | 0.102 | 0.031 |
+| band | spring | 640 | 0.109 | 0.099 | 0.208 | 0.187 | 0.095 | 0.029 |
+| band | summer | 458 | 0.056 | 0.119 | 0.175 | 0.187 | 0.095 | 0.036 |
+| band | autumn | 262 | 0.098 | 0.100 | 0.198 | 0.199 | 0.095 | 0.027 |
+| band | winter | 205 | 0.114 | 0.138 | 0.252 | 0.258 | 0.149 | 0.030 |
+| high | all | 371 | 0.098 | 0.039 | 0.137 | 0.139 | 0.087 | 0.010 |
+| high | spring | 105 | 0.104 | 0.029 | 0.133 | 0.129 | 0.073 | 0.010 |
+| high | summer | 140 | 0.063 | 0.042 | 0.105 | 0.109 | 0.065 | 0.007 |
+| high | autumn | 14 | 0.050 | 0.027 | 0.077 | 0.084 | 0.035 | 0.017 |
+| high | winter | 112 | 0.143 | 0.046 | 0.189 | 0.193 | 0.135 | 0.013 |
+funnel at the edge (1110 checkpoints; mature prey females by first failing class)
+| class | seen | unseen | spring | summer | autumn | winter |
+| --- | --- | --- | --- | --- | --- | --- |
+| pregnant | 990 | 348 | 382 | 278 | 371 | 307 |
+| cooldown | 28 | 435 | 95 | 142 | 110 | 116 |
+| energy | 681 | 1881 | 694 | 719 | 666 | 483 |
+| cold | 76 | 546 | 294 | 87 | 54 | 187 |
+| heat | 3945 | 4565 | 1819 | 3256 | 1990 | 1445 |
+| territory | 0 | 0 | 0 | 0 | 0 | 0 |
+| female-unwilling | 575 | 2518 | 673 | 1097 | 659 | 664 |
+| no-male-in-reach | 246 | 2380 | 681 | 752 | 620 | 573 |
+| male-not-ready | 269 | 0 | 57 | 95 | 68 | 49 |
+| male-unwilling | 33 | 0 | 7 | 6 | 12 | 8 |
+| pair-blocked | 2 | 0 | 0 | 1 | 0 | 1 |
+| mates | 4 | 0 | 0 | 0 | 1 | 3 |
+| total | 6849 | 12673 | 4702 | 6433 | 4551 | 3836 |
+funnel at 100 to 400 prey (1570 checkpoints; mature prey females by first failing class)
+| class | seen | unseen | spring | summer | autumn | winter |
+| --- | --- | --- | --- | --- | --- | --- |
+| pregnant | 14042 | 4150 | 8507 | 3165 | 3567 | 2953 |
+| cooldown | 259 | 2760 | 1090 | 1063 | 465 | 401 |
+| energy | 7695 | 11243 | 8492 | 4390 | 3843 | 2213 |
+| cold | 937 | 3140 | 2732 | 214 | 294 | 837 |
+| heat | 32409 | 25998 | 18124 | 24717 | 10619 | 4947 |
+| territory | 0 | 0 | 0 | 0 | 0 | 0 |
+| female-unwilling | 4267 | 12530 | 7562 | 4223 | 2962 | 2050 |
+| no-male-in-reach | 1831 | 17879 | 8316 | 4988 | 3683 | 2723 |
+| male-not-ready | 2581 | 0 | 913 | 837 | 477 | 354 |
+| male-unwilling | 268 | 0 | 136 | 46 | 41 | 45 |
+| pair-blocked | 158 | 0 | 105 | 10 | 26 | 17 |
+| mates | 50 | 0 | 7 | 4 | 15 | 24 |
+| total | 64497 | 77700 | 55984 | 43657 | 25992 | 16564 |
