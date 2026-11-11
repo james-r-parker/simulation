@@ -3998,18 +3998,26 @@
       "prediction": "A heat arm with the food brake (foodRegrowPerArea 0.016 or 0.024 on eat-1 or cool-5) holds more seeds (held of 16) than the same heat arm alone and than defaults, with alive not worse. Falsified when no combined arm holds more seeds than its heat arm alone, or the leading combined arm holds no more than defaults, or its alive guard reads worse.",
       "targets": ["eval.edge_birth_death_ratio", "eval.heat_stress_share", "eval.births_per_1k"],
       "before": "evals/decisions/E156/first-pass-rank.md: the first pass of E156 (heat arms alone and defaults, 16 seeds)",
-      "after": "not run yet: evals/screens/low-density-edge-heat-food.grid.json, 16 seeds, then the second pass at 64 seeds (T14)",
-      "note": "Prediction recorded before the run (T13a). Crosses eat-1 and cool-5, not only the leading heat arm, because the first pass shows cooling lifts births most (see the plan's Decisions table). `reports` names the E156 reports for now and is extended with the screen reports when they exist.",
+      "after": "evals/decisions/E157/rank.md: the heat-by-food grid, 16 seeds x 200000 ticks (held 1 eat-1-food-24, 0 the other three, against defaults' 6)",
+      "note": "Verdict (T13a, 16-seed first pass, not a 64-seed read): FALSIFIED on held. Every combined arm holds 0 or 1 of 16 seeds against defaults' 6 (eat-1-food-24 +0/-5, the other three +0/-6), so the food brake does not hold more seeds than the heat arm alone (eat-1 held 7, cool-5 held 1). Caveat: held (never under 100 after burn-in) penalises a world that settles smaller, and the food brake shrinks it (population mean 234 defaults, 194 eat-1-food-24, 135 cool-5-food-16, 114 eat-1-food-16, 156 cool-5-food-24). Crash depth, per arm: median lowest population after burn-in 22 defaults, 42 eat-1-food-24, 28 cool-5-food-16, 9 eat-1-food-16, 10 cool-5-food-24; seeds under 40: 9, 8, 12, 13, 11; eval.floor_episodes 1.75, 1.13, 2.19, 2.31, 2.31. eat-1-food-24 is steadier but lower; the other three crash as deep or deeper than defaults. The 64-seed pass should read crash depth beside held. Prediction recorded before the run; see docs/designs/sim-notes.md (2026-11-11, heat levers and the food brake).",
       "reports": [
         "evals/decisions/E156/first-pass-rank.md",
         "evals/decisions/E156/screen/table.md",
-        "evals/decisions/E156/screen/verdicts.json"
+        "evals/decisions/E156/screen/verdicts.json",
+        "evals/decisions/E157/rank.md",
+        "evals/decisions/E157/screen/table.md",
+        "evals/decisions/E157/screen/verdicts.json",
+        "evals/decisions/E157/screen/defaults.report.json",
+        "evals/decisions/E157/screen/eat-1-food-16.report.json",
+        "evals/decisions/E157/screen/eat-1-food-24.report.json",
+        "evals/decisions/E157/screen/cool-5-food-16.report.json",
+        "evals/decisions/E157/screen/cool-5-food-24.report.json"
       ],
       "date": "2026-11-11",
       "branch": "chore/low-density-edge-heat-screen",
       "beforePolicy": "live",
       "afterPolicy": "live",
-      "effect": "no-difference",
+      "effect": "worse",
       "verdicts": {}
     }
   ]
