@@ -8,10 +8,13 @@ import { fileURLToPath } from 'node:url';
 import { snapshotArchive } from '../js/evo/archive-snapshot.js';
 import { coverage, qdScore } from '../js/evo/archive.js';
 import { stageAt } from '../js/evo/curriculum.js';
+import { seedlessConfig } from '../js/evo/report.js';
 import { EPISODE_TICKS, OFFER_FROM_TICK, createTrainerArchive, episodeSeed, mergeEpisode } from '../js/evo/trainer.js';
+import { configHash } from '../js/sim/config.js';
 import { createSimLog } from '../js/sim/log.js';
 import { exitCodeOf } from './lib/cli-args.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
+import { logRunConfig } from './lib/run-config.mjs';
 import { parseArgs } from './lib/train-args.mjs';
 import { EVAL_TICKS, runCheckpoint } from './lib/train-checkpoint.mjs';
 import { loadResume, loadStages, readJson, saveArchive } from './lib/train-state.mjs';
@@ -137,6 +140,20 @@ async function runGeneration(run, { generation, drillTrials, print }) {
  */
 function startRun(args, log) {
     const stages = loadStages(args);
+    logRunConfig(log, {
+        tool: 'train',
+        policy: null,
+        configHash: configHash(seedlessConfig(stages[0].built)),
+        seeds: null,
+        ticks: args.ticks ?? EPISODE_TICKS,
+        extra: {
+            generations: args.generations,
+            episodes: args.episodes,
+            seedOffset: args.seedOffset,
+            resume: args.resume,
+            stages: stages.map((stage) => ({ name: stage.name, rulesHash: stage.rulesHash })),
+        },
+    });
     const resumed = args.resume === null ? null : loadResume(args.resume, stages, log);
     const archive = resumed?.archive ?? createTrainerArchive(stages[0].built);
     const workers = resolvePoolSize(args.workers, args.episodes);

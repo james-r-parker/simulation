@@ -3,7 +3,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createObserver, observerPhases } from '../js/evo/observer.js';
-import { getPolicy, POLICIES } from '../js/evo/policies/index.js';
+import { getPolicy, LIVE_POLICY, POLICIES } from '../js/evo/policies/index.js';
 import { configHash, createConfig } from '../js/sim/config.js';
 import { EVENT_STRIDE, EVENT_TYPE, readEvents } from '../js/sim/events.js';
 import { createSimLog, drainEvents, LOG_LEVEL } from '../js/sim/log.js';
@@ -16,12 +16,13 @@ import { intValue, parseFlags } from './lib/cli-args.mjs';
 import { createFollower } from './lib/follow.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { createMetrics } from './lib/otel.mjs';
+import { logRunConfig } from './lib/run-config.mjs';
 
 const CHECKPOINT_INTERVAL = 1000;
 const DEFAULT_BUDGET_MS = 8;
-const DEFAULT_POLICY = 'baseline-v5';
+const DEFAULT_POLICY = LIVE_POLICY;
 const USAGE =
-    'usage: replay --seed <n> --ticks <n> [--config <file.json>] [--dump <tick>] [--level debug|info|warn|error] [--budget-ms <n>] [--check-invariants] [--policy <name>] [--follow <genomeId>]';
+    'usage: replay --seed <n> --ticks <n> [--config <file.json>] [--dump <tick>] [--level debug|info|warn|error] [--budget-ms <n>] [--check-invariants] [--policy <name>|live] [--follow <genomeId>]';
 
 /** World fields that are not state data: config, derived tables, hash grid, event ring and row lists. */
 const DUMP_SKIPPED = new Set(['config', 'layout', 'hash', 'events', 'agentRows', 'foodRows', 'birthOptions']);
@@ -82,14 +83,17 @@ export function parseArgs(argv) {
 }
 
 /**
- * @param {string | undefined} value a policy name
- * @returns {string} the name, if known
+ * @param {string | undefined} value a policy name, or `live`
+ * @returns {string} the registered name (`live` is `LIVE_POLICY`), if known
  */
 function parsePolicy(value) {
-    if (value === undefined || !Object.hasOwn(POLICIES, value)) {
-        throw new Error(`--policy: Unknown policy "${value}"; known: ${Object.keys(POLICIES).join(', ')}\n${USAGE}`);
+    const name = value === 'live' ? LIVE_POLICY : value;
+    if (name === undefined || !Object.hasOwn(POLICIES, name)) {
+        throw new Error(
+            `--policy: Unknown policy "${value}"; known: live, ${Object.keys(POLICIES).join(', ')}\n${USAGE}`,
+        );
     }
-    return value;
+    return name;
 }
 
 /**
@@ -168,7 +172,7 @@ function countEvents(world) {
  * @property {keyof typeof LOG_LEVEL} [level]
  * @property {number} [budgetMs]
  * @property {boolean} [checkInvariants]
- * @property {string} [policy] a key of `POLICIES`, default baseline-v5
+ * @property {string} [policy] a key of `POLICIES`, default the live policy
  * @property {number | null} [follow] genome id to follow
  * @property {string} logDir directory for `<runId>.jsonl`
  * @property {string} dumpDir directory for `<runId>-<tick>.json`
@@ -305,6 +309,14 @@ export async function runReplay(options) {
     const jsonl = createJsonlSink(logPath);
     const log = createSimLog(jsonl.sink, { level });
     const { policyName, policy, run } = buildPolicy(options, config, log);
+    logRunConfig(log, {
+        tool: 'replay',
+        policy: policyName,
+        configHash: configHash(config),
+        seeds: [seed],
+        ticks,
+        extra: { runId },
+    });
     log.log('info', 'RunStarted', {
         runId,
         seed,

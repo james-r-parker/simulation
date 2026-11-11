@@ -405,6 +405,7 @@ new event-ring records into log events. Nothing is logged per agent per tick.
 
 | Event                | Level | Fields                                                                                                                                                                                 |
 | -------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RunConfig`          | info  | `tool`, `policy`, `configHash`, `seeds`, `ticks` and the tool's own fields; the first event of `replay`, `eval`, `screen` (one per arm), `train` and `drill` (metric-trust T33)        |
 | `RunStarted`         | info  | `runId`, `seed`, `configHash`, `configOverrides`, `policy`, `ticks`                                                                                                                    |
 | `AgentBorn`          | debug | `tick`, `slot`, `genomeId`, `lineageId`, `spec`, `parentA`, `parentB`, `cause` (`mate`, `split`, `floor`, `immigrant`, `initial`)                                                      |
 | `AgentDied`          | debug | `tick`, `slot`, `genomeId`, `cause` (`starved`, `eaten`, `collision`, `old-age`), `by` (`lastBiter` when `eaten`, else 0), `spec`, `lineageId`, `ageTicks`, `foodEnergy`, `biteEnergy` |

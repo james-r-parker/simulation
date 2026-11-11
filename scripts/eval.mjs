@@ -13,6 +13,7 @@ import { intValue, parseFlags } from './lib/cli-args.mjs';
 import { cpuUse } from './lib/cpu-use.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { createMetrics } from './lib/otel.mjs';
+import { runConfigRecord } from './lib/run-config.mjs';
 import { runPool } from './lib/worker-pool.mjs';
 
 const SEEDS_URL = new URL('../evals/seeds.json', import.meta.url);
@@ -286,6 +287,19 @@ function seedTasks(seeds, { ticks, policy, overrides, policyOptions, traceInterv
 }
 
 /**
+ * Logs `RunConfig`, then `EvalStarted`, as the first two records of the run's log.
+ * @param {import('./lib/jsonl-sink.mjs').JsonlSink} jsonl the log
+ * @param {{ policyName: string, policyOptions: Record<string, any>, seeds: number[], ticks: number, workers: number, hash: string }} run
+ *   the resolved run and the hash of its seedless config
+ * @returns {void}
+ */
+function logStart(jsonl, { policyName, policyOptions, seeds, ticks, workers, hash }) {
+    const run = { policy: policyName, configHash: hash, seeds, ticks };
+    jsonl.sink(runConfigRecord({ tool: 'eval', ...run, extra: { policyOptions } }));
+    jsonl.sink({ level: 'info', event: 'EvalStarted', ...run, policyOptions, workers });
+}
+
+/**
  * Runs the seeds across the pool and returns the validated report.
  * @param {EvalOptions} options the run options
  * @returns {Promise<{ report: Record<string, any>, out: string, results: Record<string, any>[] }>} the report, the
@@ -302,16 +316,7 @@ export async function runEval(options) {
     const metrics = options.metrics ?? (await createMetrics());
     const print = options.print ?? (() => {});
     const workers = options.workers ?? Math.min(availableParallelism(), seeds.length);
-    jsonl.sink({
-        level: 'info',
-        event: 'EvalStarted',
-        policy: policyName,
-        policyOptions,
-        seeds,
-        ticks,
-        workers,
-        configHash: configHash(seedlessConfig(config)),
-    });
+    logStart(jsonl, { policyName, policyOptions, seeds, ticks, workers, hash: configHash(seedlessConfig(config)) });
     const cpu = startCpuReport(print);
     const started = performance.now();
     try {

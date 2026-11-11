@@ -125,6 +125,16 @@ describe('runDrills', () => {
             .split('\n')
             .filter(Boolean)
             .map((l) => JSON.parse(l));
+        expect(log[0]).toMatchObject({
+            event: 'RunConfig',
+            tool: 'drill',
+            policy: null,
+            seeds: [1],
+            ticks: null,
+            trials: 2,
+            source: 'champions',
+        });
+        expect(log[0].configHash).toMatch(/^[0-9a-f]+$/);
         expect(log.filter((l) => l.event === 'DrillResult').length).toBe(4);
         expect(log.filter((l) => l.event === 'DrillTrial').length).toBeGreaterThan(0);
     });
