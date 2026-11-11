@@ -1,7 +1,7 @@
 # Metric trust
 
-**Status:** In progress - Phases 1 to 3, the Phase 4 power writer and detector corrections are built; T27 awaits corrected reference reports.
-**Validated:** ff5a8419 (2026-11-10)
+**Status:** In progress - Phases 1 to 3 and Phase 4 T26/T27 are built; T28 to T32 remain.
+**Validated:** fdbd15d3 (2026-11-11)
 **Priority:** 1 - pinned (user, 2026-11-08): every choice the other docs make reads these metrics; runs that rest on no suspect metric keep going
 **Depends on:** [evolution-evals.md](evolution-evals.md)
 
@@ -309,7 +309,7 @@ Every tool logs its policy and configHash first, replay takes `live`, traces kee
 | T26h | (built: 2026-11-10) Add `eval.hunter_reflex_column_split_share` and the matched kill rates of mating-born hunter children with split versus same-parent bite and thrust columns                                                              | [judgement]  | T26                                                        |
 | T26i | (built: 2026-11-10) Record the first loss reason for prey-ahead trials in drill output and checkpoint curves                                                                                                                                 | [judgement]  | T26                                                        |
 | T26j | (built: 2026-11-10) Keep prey-only lifespan and structural-zero kill median out of the curve and gates; pin that structural zeros do not become failed metrics or verdicts                                                                   | [mechanical] | T26                                                        |
-| T27  | Run `npm run eval:power -- <report> --include-watch --sizes 16,32 --json` on both corrected T22 reports and write only the floor-on result with T26's script                                                                                 | [mechanical] | T26a, T26b, T26c, T26d, T26e, T26f, T26g, T26h, T26i, T26j |
+| T27  | (built: E150; floor-on minSeeds 16/32/null: 61/34/189; floor-off: 52/30/202) Run `eval:power` on corrected E150 floor-on/off reports at 16 and 32 seeds; write only the floor-on result with T26's script                                    | [mechanical] | T26a, T26b, T26c, T26d, T26e, T26f, T26g, T26h, T26i, T26j |
 | T28  | Read the power table: name every decision metric (screen gate criteria, keep-rule guards, the training curve's plateau series) that misses the power bar at 32 seeds, and write in sim-notes.md the replacement or the seed count each needs | [judgement]  | T27                                                        |
 | T29  | `compareReports` prints `unverified` and logs `CompareUnverified` for a metric that is not `verified`, and `--fail-on-worse` ignores it; old names map through `renamedFrom` (built in T25)                                                  | [mechanical] | T27                                                        |
 | T30  | Add `keepRule` in `js/evo/keep-rule.js` with `test/evo/keep-rule.test.js`; `npm run screen` and `npm run eval:compare -- --keep-rule` print it beside the adoption-bar counts                                                                | [judgement]  | T27                                                        |
