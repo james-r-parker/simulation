@@ -8,7 +8,7 @@ Add or change a status in the doc itself, then re-run. Conventions: [STYLE.md](S
 Unbuilt docs in priority order - 1 is built next. Set in each doc's `**Priority:**` line; the evolution loop proposes re-ranks.
 
 1. [Metric trust](metric-trust.md) - pinned (user, 2026-11-08): every choice the other docs make reads these metrics; runs that rest on no suspect metric keep going
-2. [Carrying capacity](carrying-capacity.md) - approved by the user on 2026-11-11 as the next build: every hunter extinction on the 128-seed reference is in a crashed world, so the brake comes before any skill or scene plan ([review-2026-11-11.md](../review-2026-11-11.md))
+2. [Low-density edge](low-density-edge.md) - the food brake shrinks the world and it still crashes (E152), so the edge under 100 prey is the binding failure, and the crash gates every hunter-skill plan below it ([review-2026-11-11.md](../review-2026-11-11.md) H1, H2)
 3. [Training](training.md) - the review of 2026-11-07: hunters can be taught to close and the world still does not make killing what keeps them, so the bite diagnosis (T18 to T20) gates every other hunter-skill run; it runs first, with the arm d replication (T22) and the carrion split (T27, in parallel). The drills and the trainer do not depend on the balance numbers; champions reach the live world only after the world gate and the mating-edge screen (world-balance.md Phase 6)
 4. [World balance and biology](world-balance.md) - the review of 2026-11-07: the live crash is a mating Allee edge, not a skill problem (food stays full, starvation per prey is flat from 50 to 500 agents, mating births collapse near 100 prey), so the mating-edge screen (Phase 6) comes first among the sim work and gates training.md Phase 3; its evals run alongside the training diagnosis
 5. [Hunter practice](hunter-practice.md) - Phase 1c (the bite detectors `bite_on_prey`, `bite_off_kin`, `bite_off_other`, `bite_idle`, carrion and recoil) is what training T35 and hunter-learning Phase 3 judge by, so it is pulled up behind the bite diagnosis and the mating screen (coordinator, 2026-11-07); the within-lifetime gain is negative in every E124 arm and the cause is a weak channel plus a biased detector, not a missing feature; Phase 1c (the live bite detectors, T20 to T25) is small and is read by training.md Phase 6 (T35) and hunter-learning.md Phase 3, so it is built as those need it while the rest of the doc stays here
@@ -48,13 +48,12 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Refuge](refuge.md) - all three phases are built: the eight detectors, the refuge-access fixture and the diagnosis (`E130`: cover protects and fits, but threatened prey do not reach...
 - [Web presence](web-presence.md) - a designed icon in every size, Open Graph and Twitter cards, a full `<head>`, an installable web app manifest with a splash, `robots.txt` and `sitemap.xml`
 
-## In progress (15)
+## In progress (14)
 
 Partly built - the note says which phases are real.
 
 - [Brain capacity and memory](brain-capacity-and-memory.md) - the big bang (user, 2026-10-30): the instruments, the probes and a chosen brain (sparse mutation, silent-row decay, early memory, a lower leak floor, the skip b... _(validated d6ca3e6, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md), [fitness-and-selection.md](fitness-and-selection.md), [evolution-evals.md](evolution-evals.md), [world-balance.md](world-balance.md))_
 - [Brain reflex tests](brain-reflex-tests.md) - Phase 1 built: the six cases, the table builder, the batched evaluator, the bars, `npm run reflex` and `npm run bench:reflex` (522 genomes per second, 776 times... _(validated edd4cd4, 2026-11-07)_ _(depends on [training.md](training.md))_
-- [Carrying capacity](carrying-capacity.md) - stopped at Phase 2 (2026-11-11): the food brake shrinks the world but it still crashes at low density; Phases 3 and 4 not built; the mating edge is next (see si... _(validated 572c317, 2026-11-11)_ _(depends on [metric-trust.md](metric-trust.md), [natural-selection.md](natural-selection.md))_
 - [Deployment and community](deployment-and-community.md) - Phase 1a (Release Please opens the release PR; production deploys only when it is merged) is built on `main`; Phase 1 is built on branch `feat/deploy-pipeline-v... _(validated f5c7880, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Hunter learning](hunter-learning.md) - Phases 1 and 2 are built (hunters have time to learn to kill): Phase 1 adopted the flip reflex and the hunter territory (always on) and deleted provisioning, th... _(validated edd4cd4, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md), [training.md](training.md))_
 - [Metric trust](metric-trust.md) - Phases 1 to 4 and Phase 5 T33 to T35 are built; T36 and T37 remain _(validated 55e8f27, 2026-11-11)_ _(depends on [evolution-evals.md](evolution-evals.md))_
@@ -68,7 +67,7 @@ Partly built - the note says which phases are real.
 - [World balance and biology](world-balance.md) - Phases 1 to 4, Phase 5 round 1 and Phase 6 built. The post-feature queue (T79 to T96) was not run as written: natural-selection.md Phase 4 (T48 to T67, closed 2... _(validated edd4cd4, 2026-11-07)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the screenshots script, the RE... _(validated d6ca3e6, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (6)
+## Proposed (7)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
@@ -77,6 +76,7 @@ Plans. Nothing built; do not read these as descriptions of the code.
 - [Habitat cover](habitat-cover.md) - Phase 1 T1 built (#343) and the T2 baseline run (`E141`, 32 floor-on seeds, in Baseline); T3 (the conformance review) is open. Phase 2 puts rings on the rims of... _(validated f5c7880, 2026-11-07)_ _(depends on [refuge.md](refuge.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Hunter practice](hunter-practice.md) - Phase 1 T1 built (#343) and the T6 baseline run (`E144`, in Baseline): matched conversion falls less with age than the pooled read, and dose is near 0. T2 and T... _(validated edd4cd4, 2026-11-07)_ _(depends on [hunter-learning.md](hunter-learning.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated d6ca3e6, 2026-11-07)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_
+- [Low-density edge](low-density-edge.md) - a thin population still breeds: the edge is measured, then the mate-reach, clonal, split and calendar rules are screened for the mate drought. Phase 1 (the keep... _(validated 38339cb, 2026-11-11)_ _(depends on [metric-trust.md](metric-trust.md), [carrying-capacity.md](carrying-capacity.md))_
 - [Seasonal movement](seasonal-movement.md) - Phase 1 T1 and T2 built (#343) and the T5 baseline run (`E142`, 32 floor-on seeds, in Baseline). T3 (`scripts/season-map.mjs`) and T6 (the sim-notes diagnosis a... _(validated f5c7880, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md))_
 
 ## Reference (4)
@@ -87,3 +87,9 @@ Not designs of the simulation - audits, research, learnings and guides.
 - [Legacy audit](legacy-audit.md) - defects and inefficiencies in the legacy app (`js/*.js`), by file and symbol, each with the doc that removes it
 - [Metrics](metrics.md) - the 288 eval metrics of a live report, generated from `js/evo/metric-registry/`: 173 verified, 112 unverified, 3 deprecated
 - [Simulation notes](sim-notes.md) - verified platform and library facts, and learnings from each phase
+
+## Superseded (1)
+
+Kept for history only.
+
+- [Carrying capacity](carrying-capacity.md) - by [low-density-edge.md](low-density-edge.md). Phase 1 is built; Phase 2 stopped the plan (2026-11-11, E152): the food brake shrinks the world and it still cras...
