@@ -110,6 +110,8 @@ function splitVerdict(report, metric, { order, size, shift, direction }) {
             direction: () => /** @type {any} */ (direction),
             // Power estimates each requested size, so a previously measured minimum must not veto its own remeasurement.
             minSeedsFor: () => size,
+            // Power is how a metric becomes verified, so an unverified metric still gets its real verdict here.
+            status: () => 'verified',
         },
     );
     return rows[0].verdict;

@@ -159,6 +159,7 @@ function run(args, { print, error }) {
         minEffect: args.minEffect,
         allowConfigDiff: args.allowConfigDiff,
         allowSeedDiff: args.allowSeedDiff,
+        log: { log: (level, event, fields) => error(JSON.stringify({ level, event, ...fields })) },
     });
     const unknown = args.targets.filter((t) => !result.rows.some((r) => r.metric === t));
     if (unknown.length > 0) {

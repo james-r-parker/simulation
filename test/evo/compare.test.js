@@ -7,6 +7,7 @@ import {
     normalCdf,
     normalQuantile,
 } from '../../js/evo/compare.js';
+import { statusOf } from '../../js/evo/compare-rules.js';
 import { configHash } from '../../js/sim/config.js';
 
 const SEEDS = Array.from({ length: 16 }, (_, i) => i + 1);
@@ -216,6 +217,7 @@ describe('compareReports verdicts', () => {
             Object.fromEntries(
                 compareReports(report(metrics), report(up), {
                     direction: (m) => (m === 'eval.population_mean' ? way : metricDirection(m)),
+                    status: () => 'verified',
                 }).rows.map((r) => [r.metric, r.verdict]),
             );
         expect(rows('higher')['eval.population_mean']).toBe('better');
@@ -313,9 +315,56 @@ describe('compareReports verdicts', () => {
         const wide = [...BASE, ...BASE];
         const before = report({ 'eval.floor_episodes': wide }, { seeds });
         const after = report({ 'eval.floor_episodes': shift(wide, -5) }, { seeds });
-        const [row] = compareReports(before, after).rows;
+        // The seed minimum is under test, not the status.
+        const [row] = compareReports(before, after, { status: () => 'verified' }).rows;
         expect(row).toMatchObject({ verdict: 'better', minSeeds: 32 });
         expect(row.note).toBeUndefined();
+    });
+
+    it('leaves verified, bench and watch rows alone and logs nothing for them', () => {
+        const records = /** @type {any[]} */ ([]);
+        const log = {
+            log: (/** @type {string} */ level, /** @type {string} */ event, /** @type {object} */ f) =>
+                records.push({ level, event, ...f }),
+        };
+        const rows = Object.fromEntries(
+            compareReports(
+                report({ 'eval.population_mean': BASE, 'eval.births_per_1k': BASE, 'bench.step_ms@500': BASE }),
+                report({
+                    'eval.population_mean': shift(BASE, 3),
+                    'eval.births_per_1k': shift(BASE, 3),
+                    'bench.step_ms@500': shift(BASE, 3),
+                }),
+                { log },
+            ).rows.map((r) => [r.metric, r]),
+        );
+        expect(rows['eval.population_mean'].verdict).toBe('-');
+        expect(rows['eval.births_per_1k'].verdict).toBe('better');
+        expect(rows['bench.step_ms@500'].verdict).toBe('worse');
+        expect(records).toEqual([]);
+    });
+
+    it('gives a registry metric that is not verified the verdict `unverified` and one log record per row', () => {
+        const unverifiedName = 'eval.floor_episodes';
+        expect(statusOf(unverifiedName)).toBe('unverified');
+        const records = /** @type {any[]} */ ([]);
+        const log = {
+            log: (/** @type {string} */ level, /** @type {string} */ event, /** @type {object} */ f) =>
+                records.push({ level, event, ...f }),
+        };
+        const seeds = Array.from({ length: 32 }, (_, i) => i + 1);
+        const wide = [...BASE, ...BASE];
+        const [row] = compareReports(
+            report({ [unverifiedName]: wide }, { seeds }),
+            report({ [unverifiedName]: shift(wide, -5) }, { seeds }),
+            { log },
+        ).rows;
+        expect(row.verdict).toBe('unverified');
+        expect(row.diff).toBeLessThan(0);
+        expect(row.low).not.toBeNull();
+        expect(records).toEqual([
+            { level: 'info', event: 'CompareUnverified', metric: unverifiedName, status: 'unverified' },
+        ]);
     });
 
     it('skips metrics present in only one report', () => {

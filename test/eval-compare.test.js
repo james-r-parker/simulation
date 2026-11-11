@@ -151,6 +151,26 @@ describe('main exit codes', () => {
         expect(run([same, tiny, '--min-effect', '0.01']).out[0]).toMatch(/\+3\.\d%.*better/);
     });
 
+    it('prints `unverified` for a metric that is not verified, logs it and does not fail on it', () => {
+        const raw = (/** @type {number[]} */ values) => {
+            const r = report(values);
+            r.metrics['eval.floor_episodes'] = { ...r.metrics['eval.births_per_1k'] };
+            return r;
+        };
+        const seeds = Array.from({ length: 32 }, (_, i) => i + 1);
+        const wide = (/** @type {number} */ d) => raw([...BASE, ...BASE].map((v) => v - d));
+        const a = write('un-a.json', { ...wide(0), seeds });
+        const b = write('un-b.json', { ...wide(5), seeds });
+        const res = run([a, b, '--fail-on-worse']);
+        expect(res.out[0]).toMatch(/eval\.floor_episodes.*unverified/);
+        expect(res.out[0]).toMatch(/eval\.births_per_1k.*worse/);
+        expect(res.err.map((l) => JSON.parse(l))).toEqual([
+            { level: 'info', event: 'CompareUnverified', metric: 'eval.floor_episodes', status: 'unverified' },
+        ]);
+        const only = run([a, b, '--fail-on-worse', '--targets', 'eval.floor_episodes']);
+        expect(only.code).toBe(0);
+    });
+
     it('exits 1 on a worse verdict only with --fail-on-worse', () => {
         expect(run([same, worse]).code).toBe(0);
         expect(run([same, worse, '--fail-on-worse']).code).toBe(1);

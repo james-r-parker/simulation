@@ -142,6 +142,8 @@ describe('powerRow and evalPower', () => {
         const belowRegistryMinimum = powerRow(r, 'eval.floor_episodes', base);
         expect(belowRegistryMinimum.falsePositive).not.toBeNull();
         expect(belowRegistryMinimum.note).toBeUndefined();
+        // floor_episodes is not `verified`; eval:power still plants and detects a change in it, as power is how it would be.
+        expect(belowRegistryMinimum.detectable).not.toBeNull();
         expect(powerRow(r, 'eval.births_per_1k', base).note).toBe('no verdict at this size');
     });
 

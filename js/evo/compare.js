@@ -5,6 +5,7 @@ import { detExp, detLog } from '../sim/det-math.js';
 import { createRng, fork, nextInt } from '../sim/rng.js';
 import { DEFAULT_MIN_SEEDS, METRICS, minSeedsFor } from './metric-registry/index.js';
 import { withCurrentNames } from './metric-registry/renames.js';
+import { statusOf } from './compare-rules.js';
 
 /** @typedef {import('./metric-registry/index.js').MetricName} MetricName */
 
@@ -283,21 +284,48 @@ function verdictFor(direction, { low, high, diff, ref, minEffect }) {
  *   there is no diff or both means are 0
  * @property {number | null} low interval low
  * @property {number | null} high interval high
- * @property {'better' | 'worse' | 'no-difference' | '-'} verdict the verdict
+ * @property {'better' | 'worse' | 'no-difference' | 'unverified' | '-'} verdict the verdict; `unverified` for a registry
+ *   metric that is not `verified` (the numbers are kept, no judgement is made)
  * @property {number} minSeeds the seeds a verdict on this metric needs (`minSeedsFor`)
  * @property {string} [note] why the verdict is `-`, when it is not simply a watch metric
  */
 
 /**
+ * @param {CompareRow} filled the row with its numbers
+ * @param {{ direction: ReturnType<typeof metricDirection>, options: { status: (metric: string) => string,
+ *   log?: { log: (level: string, event: string, fields: object) => void } },
+ *   stats: { low: number, high: number, diff: number, ref: number, minEffect: number } }} context the metric's
+ *   direction, the status and log options, and the stats `verdictFor` reads
+ * @returns {CompareRow} the row with its verdict: none for a `watch` metric, `unverified` (and a `CompareUnverified`
+ *   record) for a metric that is not `verified`, a note for an unknown one
+ */
+function withVerdict(filled, { direction, options, stats }) {
+    if (direction === null) {
+        return { ...filled, note: 'unknown metric' };
+    }
+    if (direction === 'watch') {
+        return filled;
+    }
+    const status = options.status(filled.metric);
+    if (status !== 'verified') {
+        options.log?.log('info', 'CompareUnverified', { metric: filled.metric, status });
+        return { ...filled, verdict: 'unverified' };
+    }
+    return { ...filled, verdict: verdictFor(direction, stats) };
+}
+
+/**
  * @param {string} metric the metric name
  * @param {Record<string, any>} before the before report
  * @param {Record<string, any>} after the after report
- * @param {{ level: number, minEffect: number, direction: (metric: string) => ReturnType<typeof metricDirection>,
- *   minSeedsFor: (metric: string) => number }} options the confidence level, the minimum relative effect for a verdict,
- *   the direction lookup and the seed minimum lookup
+ * @param {{ level: number, minEffect: number,
+ *   direction: (metric: string) => ReturnType<typeof metricDirection>, minSeedsFor: (metric: string) => number,
+ *   status: (metric: string) => string, log?: { log: (level: string, event: string, fields: object) => void } }} options
+ *   the confidence level, the minimum relative effect, the direction, seed minimum and status lookups, and the log
  * @returns {CompareRow} the row
  */
-function compareMetric(metric, before, after, { level, minEffect, direction: directionOf, minSeedsFor: seedsFor }) {
+function compareMetric(metric, before, after, options) {
+    const { level, minEffect, direction: directionOf, minSeedsFor: seedsFor } = options;
     const b = before.metrics[metric];
     const a = after.metrics[metric];
     const row = {
@@ -327,12 +355,7 @@ function compareMetric(metric, before, after, { level, minEffect, direction: dir
     const diff = mean(diffs);
     const ref = reference(b.mean, a.mean);
     const filled = { ...row, diff, effect: ref === 0 ? null : diff / ref, low, high };
-    if (direction === null) {
-        return { ...filled, note: 'unknown metric' };
-    }
-    return direction === 'watch'
-        ? filled
-        : { ...filled, verdict: verdictFor(direction, { low, high, diff, ref, minEffect }) };
+    return withVerdict(filled, { direction, options, stats: { low, high, diff, ref, minEffect } });
 }
 
 /**
@@ -341,9 +364,13 @@ function compareMetric(metric, before, after, { level, minEffect, direction: dir
  * new one through the registry's `renamedFrom` names.
  * @param {Record<string, any>} beforeReport the before report
  * @param {Record<string, any>} afterReport the after report
- * @param {{ level?: number, minEffect?: number, allowConfigDiff?: string[], allowSeedDiff?: boolean,
- *   direction?: (metric: string) => ReturnType<typeof metricDirection>, minSeedsFor?: (metric: string) => number }} [options] the
- *   interval level (0.95), the minimum relative effect for a verdict (`MIN_EFFECT`), config keys allowed to differ,
+ * @param {{ level?: number, minEffect?: number, allowConfigDiff?: string[],
+ *   allowSeedDiff?: boolean, direction?: (metric: string) => ReturnType<typeof metricDirection>,
+ *   minSeedsFor?: (metric: string) => number, status?: (metric: string) => string,
+ *   log?: { log: (level: string, event: string, fields: object) => void } }} [options] the
+ *   interval level (0.95), the minimum relative effect for a verdict (`MIN_EFFECT`), the status lookup (`statusOf`:
+ *   a metric that is not `verified` gets `unverified` and a `CompareUnverified` log record in place of a verdict;
+ *   `eval:power` passes `() => 'verified'`, since power is how a metric becomes verified), config keys allowed to differ,
  *   whether different seed lists (of equal length) may be paired by position - for the calibration experiment, where
  *   the two arms are independent samples, not paired by seed - and the direction lookup (`metricDirection`; `eval:power`
  *   overrides it to score a `watch` metric in its intended direction)
@@ -357,6 +384,8 @@ export function compareReports(
     {
         level = 0.95,
         minEffect = MIN_EFFECT,
+        status = statusOf,
+        log,
         allowConfigDiff = [],
         allowSeedDiff = false,
         direction = metricDirection,
@@ -377,7 +406,14 @@ export function compareReports(
         seedCount: before.seeds.length,
         seeds: [...before.seeds],
         rows: names.map((name) =>
-            compareMetric(name, before, after, { level, minEffect, direction, minSeedsFor: seedsFor }),
+            compareMetric(name, before, after, {
+                level,
+                minEffect,
+                direction,
+                minSeedsFor: seedsFor,
+                status,
+                log,
+            }),
         ),
     };
 }
