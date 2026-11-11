@@ -160,7 +160,10 @@ grid holds the heat and realism arms:
   `mate-*` arm.
 - The second grid, recorded with its prediction `E-LD-2b` after the first pass and before its run, crosses the leading
   heat arm with the food brake: the heat arm with `foodRegrowPerArea` 0.016, and with 0.024, on seeds 1 to 16, ranked as
-  the first pass; the leading combined arm is the better of the two.
+  the first pass; the leading combined arm is the better of the two. First pass read (T13): `eat-1` leads, but the
+  cooling arms lift births most (59 to 70 percent) and hold fewer seeds, which is the case the food brake is for, so the
+  grid crosses `cool-5` as well as `eat-1` (`evals/screens/low-density-edge-heat-food.grid.json`, four combined arms);
+  the leading combined arm is the best of the four, and a second heat arm in the second pass is decided at T14.
 - The second pass runs seeds 1 to 64 for five arms: `defaults`, the leading heat arm, the leading combined arm, `flat`
   and `reach`. Each is compared with `defaults` by `npm run eval:compare -- --keep-rule --allow-config-diff <the arm's
 keys>`, and the combined arm also with the heat arm alone; the reports are committed under `evals/decisions/`.
@@ -301,7 +304,7 @@ before its run.
 | T11  | (built: 2026-11-11) `temperatureCoolingExcess` (a last, separate term in `stepTemperature`, skipped at 0) and `temperatureMatingMax` (read by `blocksMating`), in `config-defaults.js` and `config-validate.js`, with `test/sim/temperature.test.js`; no golden moves | [mechanical] | T10a       |
 | T11b | L1 on a commit of an unmerged branch: `noteMatesSeen` counts a possible mate only within `isPartner` reach, with the `mate-scarcity` tests                                                                                                                            | [judgement]  | T10a       |
 | T12  | (built: 2026-11-11) The purpose guard (the constant-thrust check on each heat arm's config, a script with a test), `evals/screens/low-density-edge-heat.grid.json` and `E-LD-2` recorded before the run                                                               | [judgement]  | T11        |
-| T13  | First pass: the heat grid on seeds 1 to 16, and `npm run eval` at T11b on the same seeds; ranked by `held`, `alive`, the edge ratio and heat stress                                                                                                                   | [mechanical] | T11b, T12  |
+| T13  | (built: 2026-11-11) First pass: the heat grid on seeds 1 to 16, and `npm run eval` at T11b on the same seeds; ranked by `held`, `alive`, the edge ratio and heat stress                                                                                               | [mechanical] | T11b, T12  |
 | T13a | The second grid (the leading heat arm with `foodRegrowPerArea` 0.016 and 0.024) and `E-LD-2b` recorded before its run; its first pass on seeds 1 to 16                                                                                                                | [judgement]  | T13        |
 | T14  | Second pass on seeds 1 to 64: `defaults`, the leading heat arm, the leading combined arm, `flat` and `reach`, each against `defaults` with `--keep-rule --allow-config-diff`, and the combined arm against the heat arm alone; reports committed                      | [mechanical] | T13a       |
 | T15  | Name the finalist and the realism changes that land, or record that there is none and why; the `E-LD-2` and `E-LD-2b` verdicts; a sim-notes entry                                                                                                                     | [judgement]  | T14        |
@@ -346,3 +349,4 @@ before its run.
 | H3 | `temperatureGainEat` lowered from 1.5, so an ordinary meal warms less and only repeated eating overheats | Phase 4, when it is the finalist |
 | `eat-1` | `temperatureGainEat` 1.0 |
 | Heat stays a pressure | A heat arm passes the constant-thrust purpose guard before it is ranked; heat is rebalanced, not removed | An arm that fails the guard is dropped |
+| The food grid crosses two heat arms | `eat-1` (the leading heat arm) and `cool-5` (the largest birth lift with a bounded `alive` loss) each with `foodRegrowPerArea` 0.016 and 0.024 (user, 2026-11-11: the hypothesis is about cooling above all) | The first pass reads cooling arms hold fewer seeds only for want of a brake; if no combined arm holds more seeds than its heat arm alone, the food value does not land |
