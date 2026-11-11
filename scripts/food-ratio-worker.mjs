@@ -1,13 +1,11 @@
 // Food-ratio worker: runs one seed and counts what the agents ate (see `scripts/food-ratio.mjs`).
 import { isMainThread } from 'node:worker_threads';
-import { createObserver, observerPhases } from '../js/evo/observer.js';
-import { getPolicy } from '../js/evo/policies/index.js';
+import { observerPhases } from '../js/evo/observer.js';
 import { createConfig } from '../js/sim/config.js';
-import { createSimLog } from '../js/sim/log.js';
-import { createRng, fork } from '../js/sim/rng.js';
 import { createWorld } from '../js/sim/spawn.js';
 import { step } from '../js/sim/step.js';
 import { feedPolicy } from './lib/feed-policy.mjs';
+import { observedPolicy } from './lib/observed-policy.mjs';
 import { serveTasks } from './lib/worker-pool.mjs';
 
 /**
@@ -29,9 +27,7 @@ function sum(values) {
  */
 export function runSeed({ seed, ticks, policy: policyName, overrides }) {
     const config = createConfig({ ...overrides, seed });
-    const observer = createObserver(config, fork(createRng(seed), 'eval'), { runTicks: ticks, checkpointTicks: 1000 });
-    const log = createSimLog(() => {}, { level: 'error' });
-    const policy = getPolicy(policyName).create({ config, log, observer });
+    const { observer, policy } = observedPolicy(config, { policy: policyName, ticks });
     const world = createWorld(config, policy.brain);
     const phases = observerPhases(observer);
     feedPolicy({ policy, observer }, world);

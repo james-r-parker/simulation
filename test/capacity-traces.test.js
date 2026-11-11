@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cv, median, seedGuards, traceRow } from '../scripts/capacity-traces.mjs';
+import { cv, median, renderTraces, seedGuards, traceRow } from '../scripts/capacity-traces.mjs';
 
 /**
  * @param {number[][]} pops per seed populations at 5000-tick samples (the first is before burn-in)
@@ -41,5 +41,13 @@ describe('capacity-traces', () => {
         const six = (/** @type {number} */ low) => Array.from({ length: 6 }, () => [5, 200, low]);
         const ones = [1, 1, 1, 1, 1, 1];
         expect(seedGuards(report(six(200), ones), report(six(20), ones))).toContain('held worse (6/0');
+    });
+
+    it('renders a row per arm with its guards', () => {
+        const row = traceRow('a', report([[5, 200, 30]], [1]));
+        const text = renderTraces([row], { a: 'held worse (1/0, p 1)' });
+        expect(text).toContain('| a | 30 | 1/1 |');
+        expect(text).toContain('held worse (1/0, p 1)');
+        expect(renderTraces([row], {})).toContain('| - |');
     });
 });

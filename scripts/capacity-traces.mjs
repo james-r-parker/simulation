@@ -48,9 +48,12 @@ function afterBurnIn(trace) {
 export function traceRow(name, report) {
     const per = report.traces.map(afterBurnIn);
     const lows = per.map((/** @type {{ pop: number[] }} */ s) => Math.min(...s.pop));
-    const checkpoints = per.reduce((n, /** @type {{ pop: number[] }} */ s) => n + s.pop.length, 0);
+    const checkpoints = per.reduce(
+        (/** @type {number} */ n, /** @type {{ pop: number[] }} */ s) => n + s.pop.length,
+        0,
+    );
     const fewPrey = per.reduce(
-        (n, /** @type {{ prey: number[] }} */ s) => n + s.prey.filter((p) => p < FEW_PREY).length,
+        (/** @type {number} */ n, /** @type {{ prey: number[] }} */ s) => n + s.prey.filter((p) => p < FEW_PREY).length,
         0,
     );
     return {

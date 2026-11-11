@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { LIVE_POLICY } from '../js/evo/policies/index.js';
 import { createConfig } from '../js/sim/config.js';
 import { pickSeeds } from './eval.mjs';
-import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
+import { exitCodeOf, intFlag, parseFlags } from './lib/cli-args.mjs';
 import { foodRatio } from './lib/food-ratio.mjs';
 import { runPool } from './lib/worker-pool.mjs';
 
@@ -19,10 +19,10 @@ export function parseArgs(argv) {
     return /** @type {any} */ (
         parseFlags(argv, {
             valueFlags: {
-                '--seeds': (value, flag) => ['seeds', intValue(flag, value, 1, USAGE)],
-                '--ticks': (value, flag) => ['ticks', intValue(flag, value, 1, USAGE)],
-                '--seed-offset': (value, flag) => ['seedOffset', intValue(flag, value, 0, USAGE)],
-                '--workers': (value, flag) => ['workers', intValue(flag, value, 1, USAGE)],
+                '--seeds': intFlag('seeds', 1, USAGE),
+                '--ticks': intFlag('ticks', 1, USAGE),
+                '--seed-offset': intFlag('seedOffset', 0, USAGE),
+                '--workers': intFlag('workers', 1, USAGE),
             },
             booleanFlags: { '--json': 'json' },
             usage: USAGE,
@@ -41,9 +41,9 @@ export async function runFoodRatio(argv, print) {
     const seeds = pickSeeds(args.seeds, args.seedOffset);
     const tasks = seeds.map((seed) => ({ seed, ticks: args.ticks, policy: LIVE_POLICY, overrides: {} }));
     const results = await runPool(tasks, { workerUrl: WORKER_URL, workers: args.workers ?? undefined });
-    const ratio = foodRatio(results, createConfig({ seed: 1 }));
+    const ratio = foodRatio(results, /** @type {any} */ (createConfig({ seed: 1 })));
     if (args.json) {
-        print(JSON.stringify({ seeds, ticks: args.ticks, ...ratio }, null, 2));
+        print(JSON.stringify({ ...ratio, seeds, ticks: args.ticks }, null, 2));
     } else {
         for (const [name, value] of Object.entries(ratio)) {
             print(`${name.padEnd(20)}${Number.isInteger(value) ? value : value.toPrecision(5)}`);
@@ -52,6 +52,8 @@ export async function runFoodRatio(argv, print) {
     return ratio;
 }
 
+/* v8 ignore start -- thin CLI; runFoodRatio is tested */
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exitCode = await exitCodeOf(() => runFoodRatio(process.argv.slice(2), console.log));
 }
+/* v8 ignore stop */
