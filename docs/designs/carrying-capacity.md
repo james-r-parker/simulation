@@ -110,9 +110,7 @@ Targets.
 
 ### Phase 2 - Calibrate on config alone
 
-**Targets:** eval.births_per_1k, eval.lineages_alive, eval.spec_effective, eval.deliberate_food_share, eval.collision_death_share
-
-T2 adds the Phase 1 detectors (`eval.cap_share`, `eval.density_starve_slope`, `eval.food_standing_share`) to this line and to the Phase 3 line once they are registered.
+**Targets:** eval.births_per_1k, eval.lineages_alive, eval.spec_effective, eval.deliberate_food_share, eval.collision_death_share, eval.cap_share, eval.density_starve_slope, eval.food_standing_share
 
 One screen on the unchanged code, floor on, policy live, 200000 ticks, on seeds 1 to 64 of `evals/seeds.json`. Arms
 are config values only: a full factorial of four food values by two season settings, and the defaults.
@@ -141,7 +139,7 @@ are config values only: a full factorial of four food values by two season setti
 
 ### Phase 3 - The switch
 
-**Targets:** eval.births_per_1k, eval.lineages_alive, eval.spec_effective, eval.deliberate_food_share, eval.chase_catch_share, eval.collision_death_share, bench.step_ms@500
+**Targets:** eval.births_per_1k, eval.lineages_alive, eval.spec_effective, eval.deliberate_food_share, eval.chase_catch_share, eval.collision_death_share, eval.cap_share, eval.density_starve_slope, eval.food_standing_share, bench.step_ms@500
 
 One PR, a breaking commit (`feat!`) to `season/next`, since `rulesHash` changes.
 
@@ -228,15 +226,15 @@ The labels are for this doc; each prediction takes the next numeric id when T8 r
 
 ### Phase 1 - Instruments and the reference
 
-| #   | Task                                                                                                                                                       | Nature       | Depends on |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | (built: 2026-11-11) `held` seed guard and `HELD_POPULATION` in `js/evo/keep-rule.js`, printed by `formatKeepRule`, with tests                              | [mechanical] | -          |
-| T2  | `js/evo/scene-capacity.js`: the four detectors, registered in the metric registry, with arithmetic and source tests; `docs/designs/metrics.md` regenerated | [judgement]  | -          |
-| T3  | A seed guard reads `better` as well as `worse` (the exact test in the good direction), printed by `formatKeepRule`, with tests                             | [mechanical] | T1         |
-| T4  | `evals/decisions/` and the rule in `scripts/check-experiments.mjs` that a record from `E151` on names committed reports                                    | [mechanical] | -          |
-| T5  | Run `E151`: the defaults, 128 seeds, floor on, with the new metrics; commit the report under `evals/decisions/E151/`                                       | [mechanical] | T2, T4     |
-| T6  | Liveness and power readings for the new metrics from `E151`; re-read the Baseline table and the food ratio; sim-notes entry                                | [judgement]  | T5         |
-| T7  | Conformance review of Phase 1, in parallel with `scripts/check.sh`                                                                                         | [judgement]  | T3, T6     |
+| #   | Task                                                                                                                                                                           | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
+| T1  | (built: 2026-11-11) `held` seed guard and `HELD_POPULATION` in `js/evo/keep-rule.js`, printed by `formatKeepRule`, with tests                                                  | [mechanical] | -          |
+| T2  | (built: 2026-11-11) `js/evo/scene-capacity.js`: the four detectors, registered in the metric registry, with arithmetic and source tests; `docs/designs/metrics.md` regenerated | [judgement]  | -          |
+| T3  | A seed guard reads `better` as well as `worse` (the exact test in the good direction), printed by `formatKeepRule`, with tests                                                 | [mechanical] | T1         |
+| T4  | `evals/decisions/` and the rule in `scripts/check-experiments.mjs` that a record from `E151` on names committed reports                                                        | [mechanical] | -          |
+| T5  | Run `E151`: the defaults, 128 seeds, floor on, with the new metrics; commit the report under `evals/decisions/E151/`                                                           | [mechanical] | T2, T4     |
+| T6  | Liveness and power readings for the new metrics from `E151`; re-read the Baseline table and the food ratio; sim-notes entry                                                    | [judgement]  | T5         |
+| T7  | Conformance review of Phase 1, in parallel with `scripts/check.sh`                                                                                                             | [judgement]  | T3, T6     |
 
 ### Phase 2 - Calibrate on config alone
 

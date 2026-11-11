@@ -150,6 +150,7 @@ describe('observeScenes', () => {
             'basin',
             'bite',
             'biteLife',
+            'capacity',
             'carcass',
             'competence',
             'condition',
