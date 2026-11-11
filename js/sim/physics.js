@@ -28,13 +28,29 @@ function grazeFactor(world, i) {
 }
 
 /**
- * The thrust an agent adds this tick: its output times `maxThrust` and its temperature's efficiency, then the graze,
- * sprint, rest, handling and sickness multipliers.
+ * eat-choice G2: a full store weighs an agent down, so thrust and turn rate are multiplied by
+ * `1 - fatSlowShare x energy / maxEnergyBySpec[spec]`; a full store slows every store size the same.
  * @param {import('./world.js').World} world the world
  * @param {number} i the agent slot
+ * @returns {number} the multiplier, 1 when `fatSlowShare` is 0
+ */
+function fatFactor(world, i) {
+    const { fatSlowShare } = world.config;
+    if (fatSlowShare === 0) {
+        return 1;
+    }
+    return 1 - (fatSlowShare * world.energy[i]) / world.maxEnergyBySpec[world.spec[i]];
+}
+
+/**
+ * The thrust an agent adds this tick: its output times `maxThrust` and its temperature's efficiency, then the graze,
+ * sprint, rest, handling, sickness and fat multipliers.
+ * @param {import('./world.js').World} world the world
+ * @param {number} i the agent slot
+ * @param {number} fat the agent's `fatFactor`
  * @returns {number} the thrust
  */
-function thrustOf(world, i) {
+function thrustOf(world, i, fat) {
     const { outputs, config } = world;
     const o = i * OUTPUT_COUNT;
     let thrust = outputs[o + OUTPUT_INDEX.THRUST] * config.maxThrust * thrustEfficiency(config, world.temperature[i]);
@@ -52,7 +68,7 @@ function thrustOf(world, i) {
     if (isSick(world, i)) {
         thrust *= config.sickThrust;
     }
-    return thrust;
+    return thrust * fat;
 }
 
 /**
@@ -64,8 +80,9 @@ export function actAll(world) {
     const { alive, angle, turnRate, vx, vy, outputs, config } = world;
     for (let i = 0; i < alive.length; i++) {
         if (alive[i] === 1) {
-            turnRate[i] =
-                outputs[i * OUTPUT_COUNT + OUTPUT_INDEX.TURN] * config.maxTurn * world.turnBySpec[world.spec[i]];
+            const fat = fatFactor(world, i);
+            const turn = outputs[i * OUTPUT_COUNT + OUTPUT_INDEX.TURN] * config.maxTurn;
+            turnRate[i] = turn * world.turnBySpec[world.spec[i]] * fat;
             let a = angle[i] + turnRate[i];
             if (a >= PI) {
                 a -= 2 * PI;
@@ -73,7 +90,7 @@ export function actAll(world) {
                 a += 2 * PI;
             }
             angle[i] = a;
-            const thrust = thrustOf(world, i);
+            const thrust = thrustOf(world, i, fat);
             vx[i] += thrust * detCos(a);
             vy[i] += thrust * detSin(a);
         }

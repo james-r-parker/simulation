@@ -217,6 +217,7 @@ export const DEFAULTS = deepFreeze({
     huntUpkeep: 0.002, // new: energy per tick a canHunt agent pays, only while specMutationRate is above 0 (T51)
     handlingThrust: 0.2, // new: thrust multiplier while handling a meal (T50)
     grazeThrust: 1, // eat-choice G1b: thrust multiplier while a non-hunter holds BITE above 0; 1 is off
+    fatSlowShare: 0, // eat-choice G2: a full store slows thrust and turn by this share; 0 is off
     carcassTicks: 300, // new: ticks a carcass lasts before it expires (T54)
     carcassShare: 0.8, // new: share of an agent's energy at death that its carcass holds (T54)
     wallGaps: 3, // new: gaps in the wall, basins only (T52)
