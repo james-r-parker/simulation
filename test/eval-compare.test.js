@@ -91,10 +91,12 @@ describe('parseArgs', () => {
             files: ['a.json', 'b.json'],
             targets: ['x', 'y'],
             failOnWorse: true,
+            keepRule: false,
             json: true,
             allowSeedDiff: false,
             allowConfigDiff: ['k'],
             minEffect: 0.05,
+            shareMinEffect: 0.02,
         });
     });
 
@@ -104,6 +106,11 @@ describe('parseArgs', () => {
             expect(() => parseArgs(['a', 'b', '--min-effect', bad])).toThrow(/fraction/);
         }
         expect(() => parseArgs(['a', 'b', '--min-effect'])).toThrow(/fraction/);
+    });
+
+    it('reads --share-min-effect and validates it is a fraction', () => {
+        expect(parseArgs(['a', 'b', '--share-min-effect', '0.03']).shareMinEffect).toBe(0.03);
+        expect(() => parseArgs(['a', 'b', '--share-min-effect', '3'])).toThrow(/fraction/);
     });
 
     it('rejects a wrong file count and unknown flags', () => {
@@ -127,6 +134,7 @@ describe('main exit codes', () => {
         expect(result.rows[0].verdict).toBe('better');
         expect(result.rows[0].effect).toBeGreaterThan(0.2);
         expect(result.minEffect).toBe(0.05);
+        expect(result.shareMinEffect).toBe(0.02);
     });
 
     it('prints the `needs 32 seeds` note in the table and `minSeeds` in --json rows', () => {
@@ -149,6 +157,54 @@ describe('main exit codes', () => {
         const tiny = write('tiny.json', report(BASE.map((v, i) => v + 0.3 + (i % 2) * 0.1)));
         expect(run([same, tiny]).out[0]).toMatch(/\+3\.\d%.*no-difference/);
         expect(run([same, tiny, '--min-effect', '0.01']).out[0]).toMatch(/\+3\.\d%.*better/);
+    });
+
+    it('prints `unverified` for a metric that is not verified, logs it and does not fail on it', () => {
+        const raw = (/** @type {number[]} */ values) => {
+            const r = report(values);
+            r.metrics['eval.floor_episodes'] = { ...r.metrics['eval.births_per_1k'] };
+            return r;
+        };
+        const seeds = Array.from({ length: 32 }, (_, i) => i + 1);
+        const wide = (/** @type {number} */ d) => raw([...BASE, ...BASE].map((v) => v - d));
+        const a = write('un-a.json', { ...wide(0), seeds });
+        const b = write('un-b.json', { ...wide(5), seeds });
+        const res = run([a, b, '--fail-on-worse']);
+        expect(res.out[0]).toMatch(/eval\.floor_episodes.*unverified/);
+        expect(res.out[0]).toMatch(/eval\.births_per_1k.*worse/);
+        expect(res.err.map((l) => JSON.parse(l))).toEqual([
+            { level: 'info', event: 'CompareUnverified', metric: 'eval.floor_episodes', status: 'unverified' },
+        ]);
+        const only = run([a, b, '--fail-on-worse', '--targets', 'eval.floor_episodes']);
+        expect(only.code).toBe(0);
+    });
+
+    it('--keep-rule prints the guards and the adoption bar, in the table and in --json, and --fail-on-worse reads it', () => {
+        const withHunters = (/** @type {number[]} */ ends) => {
+            const r = report(BASE);
+            r.metrics['eval.predators_at_end'] = { values: ends, reasons: ends.map(() => null), mean: 0, sd: 0 };
+            r.traces = ends.map(() => ({
+                interval: 100,
+                lineages: 5,
+                pop: [100],
+                mate: [0],
+                split: [0],
+                spec: [100],
+                deaths: [0],
+            }));
+            return r;
+        };
+        const alive = write('keep-a.json', withHunters(BASE.map(() => 5)));
+        const dead = write('keep-b.json', withHunters(BASE.map((_, i) => (i < 12 ? 0 : 5))));
+        const inert = run([alive, alive, '--keep-rule']);
+        expect(inert.out[0]).toMatch(/guard alive: no-harm/);
+        expect(inert.out[0]).toMatch(/adoption bar: hunters alive 16\/16/);
+        expect(inert.out[0]).toMatch(/keep rule: no harm detected/);
+        expect(run([alive, dead, '--keep-rule']).out[0]).toMatch(/keep rule: WORSE/);
+        expect(run([alive, dead, '--fail-on-worse']).code).toBe(0);
+        expect(run([alive, dead, '--fail-on-worse', '--keep-rule']).code).toBe(1);
+        expect(JSON.parse(run([alive, dead, '--keep-rule', '--json']).out[0]).keepRule.worse).toBe(true);
+        expect(JSON.parse(run([alive, dead, '--json']).out[0]).keepRule).toBeUndefined();
     });
 
     it('exits 1 on a worse verdict only with --fail-on-worse', () => {

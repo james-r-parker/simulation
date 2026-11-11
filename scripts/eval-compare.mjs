@@ -2,12 +2,14 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { compareReports, MIN_EFFECT } from '../js/evo/compare.js';
+import { formatKeepRule, keepRule } from '../js/evo/keep-rule.js';
+import { SHARE_MIN_EFFECT } from '../js/evo/compare-rules.js';
 import { canonicalOptions } from '../js/evo/policy-options.js';
 import { validateReport } from '../js/evo/report.js';
 import { parseFlags } from './lib/cli-args.mjs';
 
 const USAGE =
-    'usage: eval:compare <before.json> <after.json> [--targets <m,...>] [--fail-on-worse] [--allow-config-diff <key,...>] [--allow-seed-diff] [--min-effect <fraction>] [--json]';
+    'usage: eval:compare <before.json> <after.json> [--targets <m,...>] [--fail-on-worse] [--allow-config-diff <key,...>] [--allow-seed-diff] [--min-effect <fraction>] [--share-min-effect <fraction>] [--keep-rule] [--json]';
 
 /**
  * @param {string | undefined} value a comma-separated list
@@ -36,12 +38,14 @@ function fraction(value, flag) {
 
 /**
  * @param {string[]} argv command-line arguments after the script name
- * @returns {{ files: string[], targets: string[], failOnWorse: boolean, allowConfigDiff: string[], allowSeedDiff: boolean, minEffect: number, json: boolean }}
+ * @returns {{ files: string[], targets: string[], failOnWorse: boolean, allowConfigDiff: string[], allowSeedDiff: boolean, minEffect: number, shareMinEffect: number, keepRule: boolean, json: boolean }}
  *   parsed options
  */
 export function parseArgs(argv) {
     const flagged = argv.filter(
-        (arg, i) => arg.startsWith('--') || (i > 0 && /^--(targets|allow-config-diff|min-effect)$/.test(argv[i - 1])),
+        (arg, i) =>
+            arg.startsWith('--') ||
+            (i > 0 && /^--(targets|allow-config-diff|min-effect|share-min-effect)$/.test(argv[i - 1])),
     );
     const files = argv.filter((arg) => !flagged.includes(arg));
     const opts = parseFlags(flagged, {
@@ -49,13 +53,21 @@ export function parseArgs(argv) {
             '--targets': (value, flag) => ['targets', list(value, flag)],
             '--allow-config-diff': (value, flag) => ['allowConfigDiff', list(value, flag)],
             '--min-effect': (value, flag) => ['minEffect', fraction(value, flag)],
+            '--share-min-effect': (value, flag) => ['shareMinEffect', fraction(value, flag)],
         },
-        booleanFlags: { '--fail-on-worse': 'failOnWorse', '--json': 'json', '--allow-seed-diff': 'allowSeedDiff' },
+        booleanFlags: {
+            '--fail-on-worse': 'failOnWorse',
+            '--json': 'json',
+            '--keep-rule': 'keepRule',
+            '--allow-seed-diff': 'allowSeedDiff',
+        },
         defaults: {
             minEffect: MIN_EFFECT,
+            shareMinEffect: SHARE_MIN_EFFECT,
             targets: [],
             allowConfigDiff: [],
             failOnWorse: false,
+            keepRule: false,
             json: false,
             allowSeedDiff: false,
         },
@@ -147,6 +159,23 @@ function optionsOf([before, after]) {
 }
 
 /**
+ * @param {{ args: ReturnType<typeof parseArgs>, result: ReturnType<typeof compareReports>, options: ReturnType<typeof optionsOf>,
+ *   keep: ReturnType<typeof keepRule> | null }} parts what to print
+ * @returns {string} the JSON document, or the table, the keep-rule lines and the policy-options note
+ */
+function render({ args, result, options, keep }) {
+    if (args.json) {
+        const extra = keep ? { keepRule: keep } : {};
+        return JSON.stringify({ ...result, targets: args.targets, policyOptions: options, ...extra }, null, 2);
+    }
+    return [
+        ...formatTable(result, args.targets),
+        ...(keep ? formatKeepRule(keep) : []),
+        ...(options.differ ? [`policyOptions differ: before ${options.before}, after ${options.after}`] : []),
+    ].join('\n');
+}
+
+/**
  * @param {ReturnType<typeof parseArgs>} args the parsed options
  * @param {{ print: (line: string) => void, error: (line: string) => void }} io the output sinks
  * @returns {number} the exit code
@@ -157,23 +186,21 @@ function run(args, { print, error }) {
     const options = optionsOf(reports);
     const result = compareReports(before, after, {
         minEffect: args.minEffect,
+        shareMinEffect: args.shareMinEffect,
         allowConfigDiff: args.allowConfigDiff,
         allowSeedDiff: args.allowSeedDiff,
+        log: { log: (level, event, fields) => error(JSON.stringify({ level, event, ...fields })) },
     });
     const unknown = args.targets.filter((t) => !result.rows.some((r) => r.metric === t));
     if (unknown.length > 0) {
         error(`unknown target metrics: ${unknown.join(', ')}`);
         return 2;
     }
-    const text = args.json
-        ? JSON.stringify({ ...result, targets: args.targets, policyOptions: options }, null, 2)
-        : [
-              ...formatTable(result, args.targets),
-              ...(options.differ ? [`policyOptions differ: before ${options.before}, after ${options.after}`] : []),
-          ].join('\n');
-    print(text);
+    const keep = args.keepRule ? keepRule(before, after) : null;
+    print(render({ args, result, options, keep }));
     const scope = args.targets.length > 0 ? result.rows.filter((r) => args.targets.includes(r.metric)) : result.rows;
-    return args.failOnWorse && scope.some((r) => r.verdict === 'worse') ? 1 : 0;
+    const worse = scope.some((r) => r.verdict === 'worse') || keep?.worse === true;
+    return args.failOnWorse && worse ? 1 : 0;
 }
 
 /**

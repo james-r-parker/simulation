@@ -22,8 +22,10 @@ const BASE = {
 const power = (fpr, mde, referenceMean = 100) => ({
     fpr16: fpr,
     fpr32: fpr,
+    fpr64: fpr,
     mde16: mde,
     mde32: mde,
+    mde64: mde,
     referenceMean,
     report: 'r.json',
 });
@@ -86,7 +88,7 @@ describe('meetsPowerBar', () => {
     /**
      * @param {string} unit the unit
      * @param {import('../../../js/evo/metric-registry/entry.js').Power} p the power read
-     * @param {16 | 32} [seeds] the seed count
+     * @param {16 | 32 | 64} [seeds] the seed count
      * @returns {boolean} whether the bar holds
      */
     const at = (unit, p, seeds = 16) => meetsPowerBar({ unit, power: p }, seeds);
@@ -97,10 +99,12 @@ describe('meetsPowerBar', () => {
         expect(at('ticks', power(0.1, 0.21))).toBe(false);
     });
 
-    it('uses an absolute 0.05 for a share', () => {
-        expect(at('share', power(0.05, 0.5, 0.1))).toBe(true);
-        expect(at('share', power(0.05, 0.6, 0.1))).toBe(false);
-        expect(at('share', power(0.05, 0.21, 0.9))).toBe(false);
+    it('compares the detectable change of a share with an absolute 0.05, whatever the mean', () => {
+        expect(at('share', power(0.05, 0.05, 0.1))).toBe(true);
+        expect(at('share', power(0.05, 0.05, 0.9))).toBe(true);
+        expect(at('share', power(0.05, 0.075, 0.9))).toBe(false);
+        expect(at('share', power(0.05, 0.05, 0.1), 32)).toBe(true);
+        expect(at('share', power(0.05, 0.1, 0.1))).toBe(false);
     });
 
     it('uses an absolute 0.10 for a correlation or a trend', () => {
@@ -125,11 +129,29 @@ describe('meetsPowerBar', () => {
     });
 });
 
+describe('the 64-seed reading', () => {
+    it('is read for 64 seeds, and absent or null means the bar is not met', () => {
+        const p = { ...power(0.05, 0.1), fpr64: 0.5 };
+        expect(meetsPowerBar({ unit: 'ticks', power: p }, 32)).toBe(true);
+        expect(meetsPowerBar({ unit: 'ticks', power: p }, 64)).toBe(false);
+        const old = { ...power(0.05, 0.1), fpr64: undefined, mde64: undefined };
+        expect(meetsPowerBar({ unit: 'ticks', power: old }, 64)).toBe(false);
+        expect(meetsPowerBar({ unit: 'ticks', power: { ...old, fpr64: null, mde64: 0.1 } }, 64)).toBe(false);
+    });
+});
+
 describe('minSeedsFromPower', () => {
+    it('gives 64 when only 64 seeds meet the bar, and null when none does', () => {
+        const only64 = { ...power(0.05, 0.5), mde64: 0.2 };
+        expect(minSeedsFromPower({ unit: 'ticks', power: only64 })).toBe(64);
+        expect(minSeedsFromPower({ unit: 'ticks', power: { ...only64, mde64: 0.21 } })).toBe(null);
+        expect(minSeedsFromPower({ unit: 'share', power: { ...power(0.05, 0.1), mde64: 0.05 } })).toBe(64);
+    });
+
     it('gives 16 when 16 seeds meet the bar, 32 when only 32 do, null otherwise', () => {
         expect(minSeedsFromPower({ unit: 'ticks', power: power(0.05, 0.1) })).toBe(16);
         const late = { ...power(0.05, 0.1), mde16: 0.5 };
         expect(minSeedsFromPower({ unit: 'ticks', power: late })).toBe(32);
-        expect(minSeedsFromPower({ unit: 'ticks', power: { ...late, mde32: 0.5 } })).toBe(null);
+        expect(minSeedsFromPower({ unit: 'ticks', power: { ...late, mde32: 0.5, mde64: 0.5 } })).toBe(null);
     });
 });

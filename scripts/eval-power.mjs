@@ -5,6 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { compareReports, metricDirection } from '../js/evo/compare.js';
+import { isShare } from '../js/evo/compare-rules.js';
 import { METRICS } from '../js/evo/metric-registry/index.js';
 import { withCurrentNames } from '../js/evo/metric-registry/renames.js';
 import { validateReport } from '../js/evo/report.js';
@@ -18,6 +19,8 @@ const USAGE =
 export const DEFAULT_SIZES = [16, 32];
 /** Planted relative changes tried in order; the first detected in `POWER_TARGET` of splits is the detectable change. */
 export const EFFECT_GRID = [0.05, 0.1, 0.15, 0.2, 0.3, 0.5, 0.75, 1];
+/** Planted absolute changes for a metric of unit `share` (metric-trust T29a): a relative step of a share near 1 is the size of the share bar. */
+export const SHARE_GRID = [0.01, 0.02, 0.03, 0.05, 0.075, 0.1, 0.15, 0.2];
 export const POWER_TARGET = 0.8;
 const NOMINAL_ALPHA = 0.05;
 
@@ -110,6 +113,8 @@ function splitVerdict(report, metric, { order, size, shift, direction }) {
             direction: () => /** @type {any} */ (direction),
             // Power estimates each requested size, so a previously measured minimum must not veto its own remeasurement.
             minSeedsFor: () => size,
+            // Power is how a metric becomes verified, so an unverified metric still gets its real verdict here.
+            status: () => 'verified',
         },
     );
     return rows[0].verdict;
@@ -146,8 +151,10 @@ export function countVerdicts(report, metric, { size, splits, shift, direction, 
  * @property {string} metric the metric
  * @property {number} size seeds per arm
  * @property {number | null} falsePositive share of A/A splits with a `better` or `worse` verdict; null when there is none
- * @property {number | null} detectable the smallest grid change (a fraction of the mean) detected in 80% of splits;
- *   null when none up to 100% is, or the metric has no verdict at this size
+ * @property {number | null} detectable the smallest grid change detected in 80% of splits: a fraction of the mean, or
+ *   an absolute change for a metric of unit `share` (`detectableKind` says which); null when none on the grid is, or
+ *   the metric has no verdict at this size
+ * @property {'relative' | 'absolute'} [detectableKind] what `detectable` measures
  * @property {number} [validShare] share of the A/A splits that gave a verdict; the rest had a `null` seed in an
  *   arm, which `eval:compare` refuses to compare
  * @property {string} [direction] the direction the change was planted in, for a `watch` metric measured with
@@ -160,13 +167,14 @@ export function countVerdicts(report, metric, { size, splits, shift, direction, 
  * @param {string} metric a metric with a direction and a non-zero mean
  * @param {{ size: number, powerSplits: number, direction: string, rng: import('../js/sim/rng.js').Rng }} options the
  *   arm size, splits per grid step, the direction to plant in and the stream that draws the splits
- * @returns {number | null} the first `EFFECT_GRID` change detected in `POWER_TARGET` of splits; null when none is
+ * @returns {number | null} the first change detected in `POWER_TARGET` of splits, from `SHARE_GRID` (absolute) for a share
+ *   and `EFFECT_GRID` (a fraction of the mean) for the rest; null when none is
  */
 function detectableChange(report, metric, { size, powerSplits, direction, rng }) {
-    const reference = Math.abs(report.metrics[metric].mean);
+    const scale = isShare(metric) ? 1 : Math.abs(report.metrics[metric].mean);
     const sign = direction === 'higher' ? 1 : -1;
-    for (const effect of EFFECT_GRID) {
-        const shift = sign * effect * reference;
+    for (const effect of isShare(metric) ? SHARE_GRID : EFFECT_GRID) {
+        const shift = sign * effect * scale;
         const tally = countVerdicts(report, metric, { size, splits: powerSplits, shift, direction, rng });
         if (tally.better >= POWER_TARGET * tally.valid) {
             return effect;
@@ -186,6 +194,26 @@ function intendedDirection(metric) {
 }
 
 /**
+ * @param {string} metric a metric name
+ * @param {number} size seeds per arm
+ * @returns {PowerRow} a row with no numbers yet, tagged with the kind of change its metric is measured in
+ */
+function emptyRow(metric, size) {
+    /** @type {'absolute' | 'relative'} */
+    const detectableKind = isShare(metric) ? 'absolute' : 'relative';
+    return { metric, size, falsePositive: null, detectable: null, detectableKind };
+}
+
+/**
+ * @param {Record<string, any>} report the 64-seed report
+ * @param {string} metric a metric name
+ * @returns {boolean} whether the metric's change is relative (not a share) and its mean is 0, so no step can be planted
+ */
+function isZeroRelative(report, metric) {
+    return !isShare(metric) && Math.abs(report.metrics[metric].mean) === 0;
+}
+
+/**
  * @param {Record<string, any>} report the 64-seed report
  * @param {string} metric a metric name
  * @param {{ size: number, splits: number, powerSplits: number, includeWatch?: boolean }} options arm size and split
@@ -193,7 +221,7 @@ function intendedDirection(metric) {
  * @returns {PowerRow} the row for this metric and arm size
  */
 export function powerRow(report, metric, { size, splits, powerSplits, includeWatch = false }) {
-    const base = { metric, size, falsePositive: null, detectable: null };
+    const base = emptyRow(metric, size);
     const declared = metricDirection(metric);
     if (declared === null || (declared === 'watch' && !includeWatch)) {
         return { ...base, note: declared === null ? 'unknown metric' : 'watch' };
@@ -210,7 +238,7 @@ export function powerRow(report, metric, { size, splits, powerSplits, includeWat
         validShare: none.valid / splits,
         ...(declared === 'watch' ? { direction } : {}),
     };
-    if (Math.abs(report.metrics[metric].mean) === 0) {
+    if (isZeroRelative(report, metric)) {
         return { ...row, note: 'mean is 0' };
     }
     return { ...row, detectable: detectableChange(report, metric, { size, powerSplits, direction, rng }) };
@@ -264,12 +292,20 @@ function rowNote(row) {
  */
 export function formatPower(rows) {
     const pct = (/** @type {number | null} */ v) => (v === null ? '-' : `${(v * 100).toFixed(1)}%`);
+    const found = (/** @type {PowerRow} */ r) =>
+        r.detectableKind === 'absolute' ? `${r.detectable} abs` : pct(r.detectable);
     const head = ['metric', 'seeds', 'false positive', 'detectable at 80%', ''];
     const body = rows.map((r) => [
         r.metric,
         String(r.size),
         pct(r.falsePositive),
-        r.detectable === null ? (r.note === undefined ? '>100%' : '-') : `${pct(r.detectable)}`,
+        r.detectable === null
+            ? r.note === undefined
+                ? r.detectableKind === 'absolute'
+                    ? '>0.2 abs'
+                    : '>100%'
+                : '-'
+            : found(r),
         rowNote(r),
     ]);
     const widths = head.map((_, c) => Math.max(...[head, ...body].map((line) => line[c].length)));

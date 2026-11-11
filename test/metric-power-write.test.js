@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { main, parseJsonOutput, readPower } from '../scripts/metric-power-write.mjs';
+import { main, parseJsonOutput, readPower, renderPowerModule } from '../scripts/metric-power-write.mjs';
 import { withPower } from '../js/evo/metric-registry/index.js';
 
 const names = ['x.at16', 'x.at32', 'x.never', 'x.share', 'x.unknown'];
@@ -61,11 +61,29 @@ describe('metric-power-write', () => {
         expect(applied['x.at16'].power).toEqual({
             fpr16: 0.05,
             fpr32: 0.05,
+            fpr64: null,
             mde16: 0.15,
             mde32: 0.3,
+            mde64: null,
             referenceMean: 2,
             report: 'evals/power/sample.json',
         });
+    });
+
+    it('reads 64-seed rows, assigns minSeeds 64 when only 64 meets the bar, and renders the 64 columns', () => {
+        const only64 = [
+            { metric: 'x.at16', size: 16, falsePositive: 0.05, detectable: 0.5 },
+            { metric: 'x.at16', size: 32, falsePositive: 0.05, detectable: 0.3 },
+            { metric: 'x.at16', size: 64, falsePositive: 0.04, detectable: 0.2 },
+        ];
+        const readings = readPower({ rows: only64 }, report, 'evals/power/sample.json', metrics);
+        expect(readings['x.at16']).toMatchObject({ fpr64: 0.04, mde64: 0.2 });
+        const entries = { 'x.at16': { ...metrics['x.at16'], minSeeds: null } };
+        expect(withPower(entries, readings)['x.at16'].minSeeds).toBe(64);
+        const source = renderPowerModule(readings);
+        expect(source).toContain('fpr64: 0.04,');
+        expect(source).toContain('mde64: 0.2,');
+        expect(renderPowerModule(readPower({ rows }, report, 'r.json', metrics))).toContain('fpr64: null,');
     });
 
     it('fails when the power JSON contains an unregistered name', () => {

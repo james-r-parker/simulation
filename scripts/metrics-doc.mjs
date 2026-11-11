@@ -46,13 +46,19 @@ export function renderTable(rows) {
 
 /**
  * @param {import('../js/evo/metric-registry/entry.js').MetricEntry} entry a registry entry
- * @returns {string} the smallest detectable change at 32 seeds as a share of the reference mean, `-` before it is measured
+ * @returns {string} the smallest detectable change at 32 seeds (`<n> abs` for a share, a percentage of the reference mean
+ *   for the rest), `none` when no step is detected, `-` before it is measured
  */
 function mdeCell(entry) {
     if (entry.power === null) {
         return '-';
     }
-    return entry.power.mde32 === null ? 'none' : `${(entry.power.mde32 * 100).toFixed(0)}%`;
+    if (entry.power.mde32 === null) {
+        return 'none';
+    }
+    return entry.unit === 'share'
+        ? `${Number(entry.power.mde32.toPrecision(3))} abs`
+        : `${(entry.power.mde32 * 100).toFixed(0)}%`;
 }
 
 /**
@@ -99,8 +105,8 @@ export function renderMetricsDoc(metrics = METRICS) {
         '  rule or a screen gate rests only on `verified` metrics.',
         '- **Seeds** is the fewest seeds per arm a verdict needs: the measured `minSeeds`, else the legacy 32 of the four',
         '  noisy metrics, else 16.',
-        "- **MDE at 32** is the smallest change the verdict detects at 32 seeds per arm, as a share of the metric's mean in the",
-        '  reference run; `-` before it is measured.',
+        "- **MDE at 32** is the smallest change the verdict detects at 32 seeds per arm: a percentage of the metric's mean in the",
+        '  reference run, or an absolute change (`abs`) for a metric of unit `share`; `-` before it is measured.',
         '',
     ];
     for (const [family, title] of FAMILIES) {

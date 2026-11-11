@@ -61,6 +61,16 @@ describe('evalReflex', () => {
         expect(evalReflex(brains.slice(0, 1), [table], { config: hebbian })).toHaveLength(1);
     });
 
+    it('scores a world without Hebbian learning, where no plastic state needs resetting', () => {
+        const plain = { hebbianRate: 0 };
+        const table = buildCaseTable(caseNamed('approach-food'), { trials: 2, config: plain });
+        const results = evalReflex(brains.slice(0, 2), [table], { config: plain });
+        expect(results).toHaveLength(2);
+        expect(results[0]['approach-food'].trials).toBe(2);
+        // With the rate at 0 the plastic block never moves, so one genome scores the same alone and beside another.
+        expect(evalReflex([brains[0]], [table], { config: plain })[0]).toEqual(results[0]);
+    });
+
     it('scores every genome on every case with passes, trials, pass share and the fast share', () => {
         const results = evalReflex(brains.slice(0, 2), tables);
         expect(Object.keys(results[0])).toEqual(tables.map((t) => t.name));

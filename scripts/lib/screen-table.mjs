@@ -1,8 +1,9 @@
 // Screen table: renders the verdicts as one Markdown table, one row per arm. Pure.
 
+import { wilsonInterval } from '../../js/evo/binomial.js';
 import { TARGETS, WATCH_METRICS } from './screen-verdict.mjs';
 
-const TARGET_HEADS = ['mating', 'lineages', 'births/1k', 'food/1k', 'fed life'];
+const TARGET_HEADS = ['lineages', 'births/1k', 'food/1k'];
 const WATCH_HEADS = [
     'skill trend',
     'delib food/1k',
@@ -29,6 +30,8 @@ const WATCH_HEADS = [
     'basin pop cv',
     'pred-prey lag',
     'summer min',
+    'mating',
+    'fed life',
 ];
 
 /**
@@ -43,28 +46,60 @@ function watchCell(value) {
 }
 
 /**
+ * @param {number} count seeds counted
+ * @param {number} of seeds run
+ * @returns {string} `k/n` with the 95% Wilson interval of the count in seeds, to one place
+ */
+function countWithInterval(count, of) {
+    const { low, high } = wilsonInterval(count, of);
+    return `${count}/${of} [${(low * of).toFixed(1)}, ${(high * of).toFixed(1)}]`;
+}
+
+/**
  * @param {{ pass: boolean[] }} check one per-seed criterion
- * @returns {string} `k/n` seeds passing
+ * @param {{ diff: number, lost: number, regained: number, p: number, worse: boolean } | null | undefined} [vs] the
+ *   criterion against the reference
+ * @returns {string} `k/n` seeds passing, with the interval of the count and, for an arm, the change in the passing
+ *   share against the reference, the seeds lost and regained and the exact p (`WORSE` when the paired test says so)
+ */
+function pairedCell(check, vs) {
+    const base = seedsCell(check);
+    if (vs === null || vs === undefined) {
+        return base;
+    }
+    const sign = vs.diff >= 0 ? '+' : '';
+    const p = Number(vs.p.toPrecision(2));
+    return `${base} ${sign}${vs.diff.toFixed(2)} vs ref (-${vs.lost}/+${vs.regained}, p ${p})${vs.worse ? ' WORSE' : ''}`;
+}
+
+/**
+ * @param {{ pass: boolean[] }} check one per-seed criterion
+ * @returns {string} `k/n` seeds passing, with the interval of the count
  */
 function seedsCell(check) {
-    return `${check.pass.filter(Boolean).length}/${check.pass.length}`;
+    return countWithInterval(check.pass.filter(Boolean).length, check.pass.length);
 }
 
 /**
- * @param {{ value: number | null, pass: boolean }} mean a mean criterion
- * @returns {string} the mean to 2 places and `ok` or `FAIL`
+ * @param {{ value: number | null, pass: boolean, unchecked?: boolean }} mean a mean criterion
+ * @returns {string} the mean to 2 places and `ok`, `FAIL` or `UNCHECKED` (the metric lacks its arithmetic test, source
+ *   test or liveness read)
  */
 function meanCell(mean) {
-    return `${mean.value === null ? 'n/a' : mean.value.toFixed(2)} ${mean.pass ? 'ok' : 'FAIL'}`;
+    const verdict = mean.unchecked ? 'UNCHECKED' : mean.pass ? 'ok' : 'FAIL';
+    return `${mean.value === null ? 'n/a' : mean.value.toFixed(2)} ${verdict}`;
 }
 
 /**
- * @param {{ rel: number | null, delta: number | null } | undefined} delta a Target delta
+ * @param {{ rel: number | null, delta: number | null, unverified?: boolean } | undefined} delta a Target delta
  * @returns {string} the change against the reference as a signed percentage, `=` for the reference, `n/a` without one
  */
 function deltaCell(delta) {
     if (delta === undefined) {
         return '=';
+    }
+    if (delta.unverified) {
+        return 'unverified';
     }
     if (delta.rel === null) {
         return delta.delta === null ? 'n/a' : `${delta.delta >= 0 ? '+' : ''}${delta.delta.toFixed(2)}`;
@@ -98,10 +133,30 @@ function huntersCell(hunters) {
 
 /**
  * @param {{ above: number, of: number } | undefined} summer an arm's summer-minimum count
- * @returns {string} `k/n` seeds at or above 100 prey through every summer, `n/a` without the count
+ * @returns {string} `k/n` seeds at or above 100 prey through every summer, with the interval of the count; `n/a` without it
  */
 function summerCell(summer) {
-    return summer === undefined ? 'n/a' : `${summer.above}/${summer.of}`;
+    return summer === undefined ? 'n/a' : countWithInterval(summer.above, summer.of);
+}
+
+/**
+ * @param {{ worse: boolean, guards: { name: string, verdict: string, smallestSeeds: number | null }[],
+ *   adoption: { alive: { count: number, of: number, low: number, high: number } | null } } | null | undefined} keep
+ *   an arm's keep-rule result against the reference
+ * @returns {string} `WORSE` or `no harm` with the guards that are worse or the smallest alive loss it detects, and the
+ *   alive count with its interval in seeds; `=` on the reference row
+ */
+function keepCell(keep) {
+    if (keep === null || keep === undefined) {
+        return '=';
+    }
+    const bad = keep.guards.filter((g) => g.verdict === 'worse').map((g) => g.name);
+    const alive = keep.adoption.alive;
+    const aliveText =
+        alive === null ? '' : ` alive ${alive.count}/${alive.of} [${alive.low.toFixed(1)}, ${alive.high.toFixed(1)}]`;
+    const smallest = keep.guards.find((g) => g.name === 'alive')?.smallestSeeds;
+    const detects = smallest === null || smallest === undefined ? '' : ` (detects ${smallest} seeds)`;
+    return `${keep.worse ? `WORSE ${bad.join(',')}` : 'no harm'}${detects}${aliveText}`;
 }
 
 /**
@@ -113,15 +168,16 @@ function row(verdict) {
     return [
         `\`${verdict.arm}\``,
         verdict.pass ? 'PASS' : 'FAIL',
-        seedsCell(c.popAboveMin),
+        pairedCell(c.popAboveMin, verdict.seedsVs?.popAboveMin),
         seedsCell(c.catchRate),
         chaseCell(verdict.hunters),
         huntersCell(verdict.hunters),
+        keepCell(verdict.keep),
         meanCell(means.matingShare),
         meanCell(means.bornShare),
-        seedsCell(c.lineages),
-        seedsCell(c.specShare),
-        seedsCell(c.popBelowMax),
+        pairedCell(c.lineages, verdict.seedsVs?.lineages),
+        pairedCell(c.specShare, verdict.seedsVs?.specShare),
+        pairedCell(c.popBelowMax, verdict.seedsVs?.popBelowMax),
         verdict.popMean === null ? 'n/a' : String(Math.round(verdict.popMean)),
         summerCell(verdict.summer),
         ...TARGETS.map((metric) => deltaCell(verdict.deltas?.[metric])),
@@ -142,6 +198,7 @@ export function renderTable({ reference, arms }) {
         'catch/1k > 0 (speed)',
         'chase catch share',
         'hunters p50 (pred/ticks/kills), alive share, seeds <80',
+        'keep rule vs ref (paired)',
         'mating mean >= 0.2',
         'born mean >= 0.5',
         'lineages >= 5',

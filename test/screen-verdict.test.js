@@ -130,40 +130,53 @@ describe('armVerdict', () => {
         expect(at(0.19, 0.49).pass).toBe(false);
     });
 
-    it('keeps hunters on 6 of 8 seeds at the end, not on one seed with a hunter alive', () => {
-        const eight = (/** @type {number[]} */ ends) => {
-            const r = report({ seeds: ends.map((_, i) => i + 1), traces: ends.map(() => report().traces[0]) });
-            r.metrics['eval.predators_at_end'] = metric(0, ends);
-            r.metrics['eval.hunter_ticks_last_quarter'] = metric(
-                0,
-                ends.map(() => 4000),
-            );
-            return hunterGate(r, report());
-        };
-        expect(eight([0, 0, 5, 5, 5, 5, 5, 5])).toMatchObject({ aliveShare: 0.75, pass: true });
-        expect(eight([0, 0, 0, 5, 5, 5, 5, 9])).toMatchObject({ aliveShare: 0.625, pass: false });
+    /**
+     * @param {number} count seeds in the report
+     * @param {{ dead?: number, low?: number }} [loss] seeds that end without hunters, and seeds that end under 80 agents
+     * @returns {Record<string, any>} a report of `count` seeds
+     */
+    const many = (count, { dead = 0, low = 0 } = {}) => {
+        const ends = Array.from({ length: count }, (_, i) => (i < dead ? 0 : 5));
+        const lowTrace = trace([], { spec: [10, 10, 10, 10, 10] });
+        const r = report({
+            seeds: ends.map((_, i) => i + 1),
+            traces: ends.map((_, i) => (i < low ? lowTrace : report().traces[0])),
+        });
+        r.metrics['eval.predators_at_end'] = metric(0, ends);
+        r.metrics['eval.hunter_ticks_last_quarter'] = metric(
+            0,
+            ends.map(() => 4000),
+        );
+        return r;
+    };
+
+    it('reports the alive share, and fails the gate only when the paired test finds hunters lost', () => {
+        const gate = (/** @type {number} */ dead) => hunterGate(many(32, { dead }), many(32));
+        expect(gate(2)).toMatchObject({ aliveShare: 30 / 32, pass: true });
+        expect(gate(5).pass).toBe(true);
+        expect(gate(6)).toMatchObject({ aliveShare: 26 / 32, pass: false });
+        expect(gate(6).keep?.worse).toBe(true);
     });
 
-    it('fails an arm with more seeds under 80 agents than the reference, and passes it at the same count', () => {
-        const low = trace([], { spec: [10, 10, 10, 10, 10] });
-        const one = report({ traces: [low, report().traces[0]] });
-        expect(hunterGate(one, report())).toMatchObject({ lowSeeds: 1, pass: false });
-        expect(hunterGate(one, one).pass).toBe(true);
+    it('fails an arm with many more seeds under 80 agents than the reference, and passes it at the same count', () => {
+        expect(hunterGate(many(32, { low: 2 }), many(32))).toMatchObject({ lowSeeds: 2, pass: true });
+        expect(hunterGate(many(32, { low: 8 }), many(32))).toMatchObject({ lowSeeds: 8, pass: false });
+        const same = many(32, { low: 8 });
+        expect(hunterGate(same, same).pass).toBe(true);
     });
 
-    it('fails when the headcount or last-quarter hunter-ticks median falls below the reference, not on kills', () => {
+    it('reports the medians below the reference without testing them, and leaves kills as a number', () => {
         const at = (/** @type {string} */ name, /** @type {number[]} */ values) => {
             const r = report();
             r.metrics[name] = metric(0, values);
             return hunterGate(r, report());
         };
-        expect(at('eval.predators_at_end', [4, 5]).pass).toBe(false);
-        expect(at('eval.hunter_ticks_last_quarter', [3000, 4000]).pass).toBe(false);
-        // Kills per life is reported beside the gate: a typical hunter life expects well under one kill.
+        expect(at('eval.predators_at_end', [4, 5])).toMatchObject({ predators: 4.5, pass: true });
+        expect(at('eval.hunter_ticks_last_quarter', [3000, 4000])).toMatchObject({ ticks: 3500, pass: true });
         const sparse = at('eval.hunter_kills_per_life_p50', [0.1, 0.2]);
         expect(sparse.pass).toBe(true);
         expect(sparse.kills).toBeCloseTo(0.15);
-        expect(hunterGate(report(), report())).toEqual({
+        expect(hunterGate(report(), report())).toMatchObject({
             predators: 5,
             ticks: 4000,
             kills: 2,
@@ -174,23 +187,43 @@ describe('armVerdict', () => {
         });
         const bare = report();
         delete bare.metrics['eval.predators_at_end'];
-        expect(hunterGate(bare, report())).toMatchObject({ predators: null, aliveShare: 0, pass: false });
-        expect(armVerdict('a', bare, report()).pass).toBe(false);
+        expect(hunterGate(bare, report())).toMatchObject({ predators: null, aliveShare: 0 });
     });
 
-    it('passes the medians when the reference lacks them', () => {
+    it('passes a gate whose reference lacks the medians', () => {
         const ref = report();
         delete ref.metrics['eval.predators_at_end'];
         delete ref.metrics['eval.hunter_ticks_last_quarter'];
         expect(hunterGate(report(), ref).pass).toBe(true);
     });
 
-    it('fails when one seed fails one criterion', () => {
-        const r = report();
-        r.traces[1] = trace(Array(30).fill(100));
-        const v = armVerdict('a', r, report());
-        expect(v.pass).toBe(false);
-        expect(v.criteria.popAboveMin.pass).toEqual([true, false]);
+    it('judges each per-seed criterion against the reference: 2 of 32 seeds lost is not worse, 8 is', () => {
+        const withFailing = (/** @type {number} */ failing) => {
+            const bad = trace(Array(30).fill(100));
+            const good = report().traces[0];
+            return report({
+                seeds: Array.from({ length: 32 }, (_, i) => i + 1),
+                traces: Array.from({ length: 32 }, (_, i) => (i < failing ? bad : good)),
+            });
+        };
+        const few = armVerdict('a', withFailing(2), withFailing(0));
+        expect(few.criteria.popAboveMin.pass.filter(Boolean)).toHaveLength(30);
+        expect(few.seedsVs.popAboveMin).toMatchObject({ lost: 2, regained: 0, worse: false, pass: 30, of: 32 });
+        expect(few.pass).toBe(true);
+        const heavy = armVerdict('a', withFailing(8), withFailing(0));
+        expect(heavy.seedsVs.popAboveMin).toMatchObject({ lost: 8, worse: true });
+        expect(heavy.pass).toBe(false);
+    });
+
+    it('does not fail an arm for a per-seed criterion the reference fails as often (the defaults fail lineages on most seeds)', () => {
+        const lowLineages = report({
+            traces: [trace(Array(30).fill(150), { lineages: 2 }), trace(Array(30).fill(150), { lineages: 2 })],
+        });
+        expect(armVerdict('a', lowLineages, lowLineages).seedsVs).toBeNull();
+        const v = armVerdict('a', structuredClone(lowLineages), lowLineages);
+        expect(v.criteria.lineages.pass).toEqual([false, false]);
+        expect(v.seedsVs.lineages).toMatchObject({ lost: 0, regained: 0, worse: false });
+        expect(v.pass).toBe(true);
     });
 
     it('has no deltas for the reference itself', () => {
@@ -213,10 +246,22 @@ describe('targetDeltas', () => {
         const arm = report();
         arm.metrics['eval.lineages_alive'] = { mean: null, values: [null, null] };
         const ref = report();
-        ref.metrics['eval.mating_share'] = metric(0);
-        const d = targetDeltas(arm, ref);
+        ref.metrics['eval.births_per_1k'] = metric(0);
+        const d = targetDeltas(arm, ref, { status: () => 'verified' });
         expect(d['eval.lineages_alive']).toEqual({ mean: null, delta: null, rel: null });
-        expect(d['eval.mating_share'].rel).toBeNull();
+        expect(d['eval.births_per_1k'].rel).toBeNull();
+    });
+
+    it('reads only verified metrics: an unverified Target keeps its mean and gets no delta', () => {
+        const arm = report();
+        arm.metrics['eval.food_energy_per_1k'] = metric(450);
+        const status = (/** @type {string} */ m) => (m === 'eval.food_energy_per_1k' ? 'unverified' : 'verified');
+        const d = targetDeltas(arm, report(), { status });
+        expect(d['eval.food_energy_per_1k']).toEqual({ mean: 450, delta: null, rel: null, unverified: true });
+        expect(d['eval.births_per_1k'].unverified).toBeUndefined();
+        expect(Object.keys(d)).toEqual(['eval.lineages_alive', 'eval.births_per_1k', 'eval.food_energy_per_1k']);
+        expect(WATCH_METRICS).toContain('eval.mating_share');
+        expect(WATCH_METRICS).toContain('eval.fed_median_lifespan');
     });
 });
 
@@ -260,5 +305,31 @@ describe('summerSeeds', () => {
 
     it('reads zero of the seeds run when the report lacks the metric', () => {
         expect(summerSeeds({ seeds: [1, 2], metrics: {} })).toEqual({ above: 0, of: 2 });
+    });
+});
+
+describe('threshold criteria need their metric checked, not verified', () => {
+    it('passes with a ready metric and fails as unchecked without one, whatever the status', () => {
+        const ready = armVerdict('a', report(), report(), { thresholdReady: () => true, status: () => 'unverified' });
+        expect(ready.pass).toBe(true);
+        const bare = armVerdict('a', report(), report(), { thresholdReady: () => false });
+        expect(bare.pass).toBe(false);
+        expect(bare.means.matingShare).toMatchObject({ pass: false, unchecked: true });
+        expect(bare.means.bornShare.unchecked).toBe(true);
+        expect(bare.criteria.catchRate.pass).toEqual([false, false]);
+    });
+});
+
+describe('armVerdict keep rule', () => {
+    it('carries the paired keep rule against the reference, and null on the reference itself', () => {
+        const ref = report();
+        const lost = report({
+            metrics: { ...report().metrics, 'eval.predators_at_end': metric(0, [0, 0]) },
+        });
+        expect(armVerdict('ref', ref, ref).keep).toBeNull();
+        const arm = armVerdict('lost', lost, ref).keep;
+        expect(arm.guards.map((/** @type {any} */ g) => g.name)).toContain('alive');
+        expect(arm.guards.find((/** @type {any} */ g) => g.name === 'alive').diff).toBe(-1);
+        expect(armVerdict('same', report(), ref).keep.worse).toBe(false);
     });
 });

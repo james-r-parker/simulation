@@ -4,7 +4,16 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { configHash } from '../js/sim/config.js';
 import { createRng } from '../js/sim/rng.js';
-import { evalPower, formatPower, main, parseArgs, powerRow, shuffled } from '../scripts/eval-power.mjs';
+import {
+    EFFECT_GRID,
+    evalPower,
+    formatPower,
+    main,
+    parseArgs,
+    powerRow,
+    SHARE_GRID,
+    shuffled,
+} from '../scripts/eval-power.mjs';
 
 const SEEDS = Array.from({ length: 64 }, (_, i) => i + 1);
 const dir = mkdtempSync(join(tmpdir(), 'eval-power-'));
@@ -102,7 +111,8 @@ describe('powerRow and evalPower', () => {
 
     it('measures a watch metric when asked, in its intended direction, and says so', () => {
         const noise = Array.from({ length: 64 }, (_, i) => 100 + ((i * 7) % 11));
-        const r = report({ 'eval.population_mean': noise, 'eval.heat_stress_share': noise });
+        const shares = noise.map((v) => 0.4 + v / 1000);
+        const r = report({ 'eval.population_mean': noise, 'eval.heat_stress_share': shares });
         const on = { ...base, splits: 30, powerSplits: 6, includeWatch: true };
         const higher = powerRow(r, 'eval.population_mean', on);
         const lower = powerRow(r, 'eval.heat_stress_share', on);
@@ -116,6 +126,20 @@ describe('powerRow and evalPower', () => {
         }
         expect(powerRow(r, 'eval.population_mean', base)).toMatchObject({ note: 'watch', falsePositive: null });
         expect(powerRow(r, 'mystery', on).note).toBe('unknown metric');
+    });
+
+    it('plants absolute steps for a share, relative steps for the rest, and tags each row', () => {
+        const wide = Array.from({ length: 64 }, (_, i) => 0.3 + (i % 5) / 1000);
+        const spread = wide.map((v, i) => v + (i % 2) * 0.0001);
+        const r = report({ 'eval.born_share': spread, 'eval.births_per_1k': spread.map((v) => v * 100) });
+        const share = powerRow(r, 'eval.born_share', { ...base, splits: 8, powerSplits: 10, includeWatch: true });
+        const count = powerRow(r, 'eval.births_per_1k', { ...base, splits: 8, powerSplits: 10 });
+        expect(share.detectableKind).toBe('absolute');
+        expect([0.02, 0.03]).toContain(share.detectable);
+        expect(SHARE_GRID).toEqual([0.01, 0.02, 0.03, 0.05, 0.075, 0.1, 0.15, 0.2]);
+        expect(count.detectableKind).toBe('relative');
+        expect(EFFECT_GRID).toContain(count.detectable);
+        expect(formatPower([share, count]).join('\n')).toMatch(/0\.0[23] abs/);
     });
 
     it('does not change the numbers of a metric that already has a direction when watch metrics are included', () => {
@@ -142,6 +166,8 @@ describe('powerRow and evalPower', () => {
         const belowRegistryMinimum = powerRow(r, 'eval.floor_episodes', base);
         expect(belowRegistryMinimum.falsePositive).not.toBeNull();
         expect(belowRegistryMinimum.note).toBeUndefined();
+        // floor_episodes is not `verified`; eval:power still plants and detects a change in it, as power is how it would be.
+        expect(belowRegistryMinimum.detectable).not.toBeNull();
         expect(powerRow(r, 'eval.births_per_1k', base).note).toBe('no verdict at this size');
     });
 
