@@ -17,13 +17,23 @@ const verified = {
     minSeeds: /** @type {const} */ (32),
 };
 const FAKE = {
-    'eval.zeta': { ...base, family: 'core', meaning: 'Has a | pipe.', deprecated: 'kept until T24' },
+    'eval.zeta': {
+        ...base,
+        family: 'core',
+        meaning: 'Has a | pipe.',
+        deprecated: 'kept until T24',
+        power: null,
+        minSeeds: null,
+    },
     'eval.alpha': verified,
     'eval.mid': {
         ...base,
         family: 'world',
         direction: /** @type {const} */ ('watch'),
         intended: /** @type {const} */ ('lower'),
+        liveness: null,
+        power: null,
+        minSeeds: null,
     },
 };
 

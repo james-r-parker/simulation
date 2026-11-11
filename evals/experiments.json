@@ -3824,6 +3824,21 @@
       "after": "evals/power/defaults-floor-off.json: defaults, floor off, 128 seeds x 200000 ticks, configHash 51c7a6e80234a2b5, 6a2e9fab",
       "verdicts": {},
       "note": "Characterization only, replacing E148 as the power reference. Liveness misses: 28 floor on (was 30), 43 floor off (was 44). leak_forage_corr and leak_flee_corr are now live; leak_hunt_corr is null on 29 of 128 floor-on seeds (fewer than 100 hunter lives with a kill). The floor-on readings are in js/evo/metric-registry/liveness.js."
+    },
+    {
+      "id": "E150",
+      "date": "2026-11-11",
+      "branch": "chore/metrics-power-read",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference",
+      "hypothesis": "metric-trust T27: corrected detector definitions need a current power read on the fixed defaults seed pool.",
+      "prediction": "Floor-on and floor-off reports cover the same 128 fixed seeds and 200000 ticks at their E149 config hashes. eval:power measures each registry metric at 16 and 32 seeds; only floor-on readings are written.",
+      "targets": [],
+      "before": "evals/power/defaults-floor-on-E150.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d, fdbd15d3",
+      "after": "evals/power/defaults-floor-off-E150.json: defaults, floor off, 128 seeds x 200000 ticks, configHash 51c7a6e80234a2b5, fdbd15d3",
+      "verdicts": {},
+      "note": "Characterization only. At sizes 16 and 32, floor-on minSeeds counts are 61 and 34, with 189 null; floor-off counts are 52 and 30, with 202 null. Only the floor-on result is in js/evo/metric-registry/power.js. Both reports contain all 284 current registry metrics. See the metric-trust T27 sim-notes entry for the largest decision-set MDE32 values."
     }
   ]
 }

@@ -137,9 +137,11 @@ describe('powerRow and evalPower', () => {
         expect(row.validShare).toBeGreaterThan(0);
     });
 
-    it('gives no verdict below a metric seed minimum, and with nulls in every split', () => {
+    it('measures power below a verdict seed minimum, and gives no verdict with nulls in every split', () => {
         const r = report({ 'eval.floor_episodes': flat, 'eval.births_per_1k': flat.map(() => null) });
-        expect(powerRow(r, 'eval.floor_episodes', base).note).toBe('no verdict at this size');
+        const belowRegistryMinimum = powerRow(r, 'eval.floor_episodes', base);
+        expect(belowRegistryMinimum.falsePositive).not.toBeNull();
+        expect(belowRegistryMinimum.note).toBeUndefined();
         expect(powerRow(r, 'eval.births_per_1k', base).note).toBe('no verdict at this size');
     });
 

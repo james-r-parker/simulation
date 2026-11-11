@@ -105,7 +105,12 @@ function splitVerdict(report, metric, { order, size, shift, direction }) {
     const { rows } = compareReports(
         armReport(report, metric, arm(first, 0)),
         armReport(report, metric, arm(second, shift)),
-        { allowSeedDiff: true, direction: () => /** @type {any} */ (direction) },
+        {
+            allowSeedDiff: true,
+            direction: () => /** @type {any} */ (direction),
+            // Power estimates each requested size, so a previously measured minimum must not veto its own remeasurement.
+            minSeedsFor: () => size,
+        },
     );
     return rows[0].verdict;
 }

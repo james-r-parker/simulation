@@ -151,10 +151,12 @@ describe('minSeedsFor', () => {
         expect(Object.keys(SNAPSHOT.minSeeds)).toHaveLength(4);
     });
 
-    it('gives the default 16 for every other metric, including unknown and inherited names', () => {
+    it('uses measured minima for registered metrics and defaults to 16 for unknown and inherited names', () => {
         expect(DEFAULT_MIN_SEEDS).toBe(16);
         expect(MIN_SEEDS).toBe(DEFAULT_MIN_SEEDS);
-        for (const metric of ['eval.diversity', 'eval.qd_score', 'mystery', 'toString', 'constructor']) {
+        expect(minSeedsFor('eval.diversity')).toBe(16);
+        expect(minSeedsFor('eval.qd_score')).toBe(32);
+        for (const metric of ['mystery', 'toString', 'constructor']) {
             expect(minSeedsFor(metric)).toBe(16);
         }
     });

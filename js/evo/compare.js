@@ -292,11 +292,12 @@ function verdictFor(direction, { low, high, diff, ref, minEffect }) {
  * @param {string} metric the metric name
  * @param {Record<string, any>} before the before report
  * @param {Record<string, any>} after the after report
- * @param {{ level: number, minEffect: number, direction: (metric: string) => ReturnType<typeof metricDirection> }} options
- *   the confidence level, the minimum relative effect for a verdict and the direction lookup
+ * @param {{ level: number, minEffect: number, direction: (metric: string) => ReturnType<typeof metricDirection>,
+ *   minSeedsFor: (metric: string) => number }} options the confidence level, the minimum relative effect for a verdict,
+ *   the direction lookup and the seed minimum lookup
  * @returns {CompareRow} the row
  */
-function compareMetric(metric, before, after, { level, minEffect, direction: directionOf }) {
+function compareMetric(metric, before, after, { level, minEffect, direction: directionOf, minSeedsFor: seedsFor }) {
     const b = before.metrics[metric];
     const a = after.metrics[metric];
     const row = {
@@ -308,7 +309,7 @@ function compareMetric(metric, before, after, { level, minEffect, direction: dir
         low: null,
         high: null,
         verdict: /** @type {CompareRow['verdict']} */ ('-'),
-        minSeeds: minSeedsFor(metric),
+        minSeeds: seedsFor(metric),
     };
     if (before.seeds.length < row.minSeeds) {
         return { ...row, note: `needs ${row.minSeeds} seeds` };
@@ -341,7 +342,7 @@ function compareMetric(metric, before, after, { level, minEffect, direction: dir
  * @param {Record<string, any>} beforeReport the before report
  * @param {Record<string, any>} afterReport the after report
  * @param {{ level?: number, minEffect?: number, allowConfigDiff?: string[], allowSeedDiff?: boolean,
- *   direction?: (metric: string) => ReturnType<typeof metricDirection> }} [options] the
+ *   direction?: (metric: string) => ReturnType<typeof metricDirection>, minSeedsFor?: (metric: string) => number }} [options] the
  *   interval level (0.95), the minimum relative effect for a verdict (`MIN_EFFECT`), config keys allowed to differ,
  *   whether different seed lists (of equal length) may be paired by position - for the calibration experiment, where
  *   the two arms are independent samples, not paired by seed - and the direction lookup (`metricDirection`; `eval:power`
@@ -359,6 +360,7 @@ export function compareReports(
         allowConfigDiff = [],
         allowSeedDiff = false,
         direction = metricDirection,
+        minSeedsFor: seedsFor = minSeedsFor,
     } = {},
 ) {
     const before = withCurrentNames(beforeReport);
@@ -374,6 +376,8 @@ export function compareReports(
         paired,
         seedCount: before.seeds.length,
         seeds: [...before.seeds],
-        rows: names.map((name) => compareMetric(name, before, after, { level, minEffect, direction })),
+        rows: names.map((name) =>
+            compareMetric(name, before, after, { level, minEffect, direction, minSeedsFor: seedsFor }),
+        ),
     };
 }
