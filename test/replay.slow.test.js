@@ -53,10 +53,10 @@ describe('runReplay', () => {
     it(
         'logs RunStarted, Checkpoint and RunFinished',
         async () => {
-            const { records, result } = await run({ ticks: 1000 });
+            const { records, result } = await run({ ticks: 1000, policy: 'baseline-v5' });
 
             const named = (/** @type {string} */ event) => records.find((r) => r.event === event);
-            expect(records[0].event).toBe('RunStarted');
+            expect(records.slice(0, 2).map((r) => r.event)).toEqual(['RunConfig', 'RunStarted']);
             expect(records.at(-1).event).toBe('RunFinished');
             expect(named('RunStarted')).toMatchObject({
                 runId: result.runId,
@@ -79,8 +79,8 @@ describe('runReplay', () => {
         const { records, result } = await run({ ticks: 5, stepFn });
 
         expect(result.ok).toBe(false);
-        expect(records.map((r) => r.event)).toEqual(['RunStarted', 'InvariantViolated']);
-        expect(records[1]).toMatchObject({ level: 'error', tick: 0, invariant: 'ledger', slot: -1, value: 2.5 });
+        expect(records.map((r) => r.event)).toEqual(['RunConfig', 'RunStarted', 'InvariantViolated']);
+        expect(records[2]).toMatchObject({ level: 'error', tick: 0, invariant: 'ledger', slot: -1, value: 2.5 });
     });
 
     it('rethrows an error that is not an invariant violation', async () => {

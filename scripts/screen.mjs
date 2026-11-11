@@ -1,14 +1,16 @@
 // Screen runner: runs a grid of config arms on fixed seeds, scores each arm against the Phase 4 collapse criteria and
 // writes per-arm reports, `verdicts.json` and `table.md` (`npm run screen -- --grid <grid.json>`).
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
 import { DEFAULT_LOCK, lockCommand } from './lib/cpu-lock.mjs';
 import { expandGrid } from './lib/screen-grid.mjs';
-import { runScreen } from './lib/screen-run.mjs';
+import { createJsonlSink } from './lib/jsonl-sink.mjs';
+import { runConfigRecord } from './lib/run-config.mjs';
+import { resolveArm, runScreen } from './lib/screen-run.mjs';
 import { renderTable } from './lib/screen-table.mjs';
 import { screenVerdicts } from './lib/screen-verdict.mjs';
 
@@ -68,14 +70,42 @@ function planFrom(args) {
 }
 
 /**
+ * Logs one `RunConfig` per arm, first in `<logDir>/screen-<stem>.jsonl`.
+ * @param {import('./lib/screen-grid.mjs').ScreenPlan} plan the arms and seeds
+ * @param {string} path the log file, replaced
+ * @returns {Promise<void>}
+ */
+async function logArms(plan, path) {
+    rmSync(path, { force: true });
+    const jsonl = createJsonlSink(path);
+    for (const arm of plan.arms) {
+        const { expected } = resolveArm(arm, { plan });
+        const { policy, configHash, seeds, ticks, policyOptions } = expected;
+        jsonl.sink(
+            runConfigRecord({
+                tool: 'screen',
+                policy,
+                configHash,
+                seeds,
+                ticks,
+                extra: { arm: arm.name, policyOptions },
+            }),
+        );
+    }
+    await jsonl.close();
+}
+
+/**
  * Runs the grid, then writes `verdicts.json` and `table.md` beside the reports.
  * @param {Record<string, any>} args the parsed options
  * @param {(line: string) => void} print receives progress lines
+ * @param {{logDir?: string}} [dirs] where the log goes, default `.sim/logs`
  * @returns {Promise<{ outDir: string, table: string, verdicts: Record<string, any> }>} where it wrote, and what
  */
-export async function screen(args, print) {
+export async function screen(args, print, { logDir = '.sim/logs' } = {}) {
     const plan = planFrom(args);
     const stem = basename(args.grid).replace(/(\.grid)?\.json$/, '');
+    await logArms(plan, join(logDir, `screen-${stem}.jsonl`));
     const outDir = args.out ?? join('evals', 'screens', 'results', stem);
     const workers = args.workers ?? Math.max(1, availableParallelism() - RESERVED_CORES);
     const { reports } = await runScreen({

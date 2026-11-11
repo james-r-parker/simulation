@@ -90,6 +90,30 @@ describe('the hunter death metrics', () => {
     });
 });
 
+describe('the trampled and disease hunter death shares', () => {
+    it('count each cause over all hunter deaths, and keep the other causes at their own shares', () => {
+        const scene = createHunterScene(1000);
+        die(scene, { cause: DEATH_CAUSE.TRAMPLED, kills: 0, age: 100 });
+        die(scene, { cause: DEATH_CAUSE.TRAMPLED, kills: 1, age: 200 });
+        die(scene, { cause: DEATH_CAUSE.DISEASE, kills: 0, age: 300 });
+        die(scene, { cause: DEATH_CAUSE.STARVED, kills: 0, age: 400 });
+        const m = hunterMetrics(scene, world());
+        expect(m['eval.hunter_death_share.trampled']).toEqual({ value: 0.5 });
+        expect(m['eval.hunter_death_share.disease']).toEqual({ value: 0.25 });
+        expect(m['eval.hunter_death_share.starved']).toEqual({ value: 0.25 });
+        expect(m['eval.hunter_death_share.other']).toEqual({ value: 0 });
+    });
+
+    it('are 0 when hunters died of other causes and null when none died', () => {
+        const scene = createHunterScene(1000);
+        expect(hunterMetrics(scene, world())['eval.hunter_death_share.disease']?.value).toBeNull();
+        die(scene, { cause: DEATH_CAUSE.EATEN, kills: 0, age: 100 });
+        const m = hunterMetrics(scene, world());
+        expect(m['eval.hunter_death_share.trampled']).toEqual({ value: 0 });
+        expect(m['eval.hunter_death_share.disease']).toEqual({ value: 0 });
+    });
+});
+
 describe('the hunter birth, income and end metrics', () => {
     it('share the hunter births by source and ignore a non-hunter child and an immigrant', () => {
         const scene = createHunterScene(1000);

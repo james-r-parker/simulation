@@ -134,7 +134,7 @@ export const SCENES_ECOLOGY = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no plant meals after burn-in'],
-        arithmetic: '',
+        arithmetic: 'test/evo/scene-flora.test.js',
     }),
     'eval.food_species_share.fungus': entry('scenes-ecology', {
         module: 'js/evo/scene-flora.js',
@@ -144,7 +144,7 @@ export const SCENES_ECOLOGY = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no plant meals after burn-in'],
-        arithmetic: '',
+        arithmetic: 'test/evo/scene-flora.test.js',
     }),
     'eval.food_species_share.toxiccap': entry('scenes-ecology', {
         module: 'js/evo/scene-flora.js',
@@ -154,7 +154,7 @@ export const SCENES_ECOLOGY = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no plant meals after burn-in'],
-        arithmetic: '',
+        arithmetic: 'test/evo/scene-flora.test.js',
     }),
     'eval.trampled_share': entry('scenes-ecology', {
         module: 'js/evo/scene-herd.js',

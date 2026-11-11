@@ -45,6 +45,21 @@ describe('herd scene metrics', () => {
         expect(metrics['eval.carcass_hunter_share']?.value).toBeCloseTo(60 / 70);
     });
 
+    it('reports the scout and defender carcass shares as carcass energy over all their meals', () => {
+        const metrics = build({
+            carcassEatenBySpec: Float64Array.of(0, 40, 0, 15, 0),
+            foodEatenBySpec: Float64Array.of(80, 100, 0, 60, 40),
+        });
+        expect(metrics['eval.herd_carcass_share.scout']?.value).toBeCloseTo(15 / 60, 12);
+        expect(metrics['eval.herd_carcass_share.defender']?.value).toBe(0);
+        const idle = build({
+            carcassEatenBySpec: Float64Array.of(0, 40, 0, 0, 0),
+            foodEatenBySpec: Float64Array.of(80, 100, 0, 0, 0),
+        })['eval.herd_carcass_share.scout'];
+        expect(idle?.value).toBeNull();
+        expect(idle?.reason).toContain('no meals for scout');
+    });
+
     it('returns null with a reason when a specialisation has not eaten', () => {
         const result = build()['eval.herd_carcass_share.reproducer'];
         expect(result?.value).toBeNull();

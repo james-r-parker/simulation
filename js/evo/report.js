@@ -210,6 +210,8 @@ function checkInputActivity(table, count) {
 }
 
 const TRACE_ARRAYS = ['pop', 'mate', 'split', 'spec', 'deaths'];
+/** Series a report may lack: reports written before the trace kept prey and hunters (metric-trust T34). */
+const OPTIONAL_TRACE_ARRAYS = ['prey', 'hunters'];
 
 /**
  * @param {unknown} traces the report's optional `traces`
@@ -222,9 +224,10 @@ function checkTraces(traces, count) {
         need(isObject(trace), `traces[${i}]`, 'an object');
         need(Number.isInteger(trace.interval) && trace.interval > 0, `traces[${i}].interval`, 'a positive integer');
         need(Number.isInteger(trace.lineages), `traces[${i}].lineages`, 'an integer');
-        for (const key of TRACE_ARRAYS) {
+        for (const key of [...TRACE_ARRAYS, ...OPTIONAL_TRACE_ARRAYS]) {
+            const absent = trace[key] === undefined && OPTIONAL_TRACE_ARRAYS.includes(key);
             const ok = Array.isArray(trace[key]) && trace[key].every((/** @type {unknown} */ v) => Number.isFinite(v));
-            need(ok, `traces[${i}].${key}`, 'an array of finite numbers');
+            need(absent || ok, `traces[${i}].${key}`, 'an array of finite numbers');
         }
     });
 }

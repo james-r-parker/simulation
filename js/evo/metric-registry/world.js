@@ -66,7 +66,7 @@ export const WORLD = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no birth after burn-in'],
-        arithmetic: '',
+        arithmetic: 'test/evo/scene-births.test.js',
         source: 'test/evo/metric-source-world.test.js',
     }),
     'eval.birth_source_share.mate': entry('world', {
@@ -88,7 +88,7 @@ export const WORLD = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no birth after burn-in'],
-        arithmetic: '',
+        arithmetic: 'test/evo/scene-births.test.js',
         source: 'test/evo/metric-source-world.test.js',
     }),
     'eval.birth_source_share.immigrant': entry('world', {
@@ -173,7 +173,7 @@ export const WORLD = {
         unit: 'fitness',
         direction: 'higher',
         nullWhen: ['no fitness', 'no agents of scout'],
-        arithmetic: '',
+        arithmetic: 'test/evo/metrics-fitness.test.js',
         source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.mean_fitness.defender': entry('world', {
@@ -213,7 +213,7 @@ export const WORLD = {
         unit: 'fitness',
         direction: 'higher',
         nullWhen: ['no fitness', 'no agents of reproducer'],
-        arithmetic: '',
+        arithmetic: 'test/evo/metrics-fitness.test.js',
         source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.p90_fitness.scout': entry('world', {
@@ -233,7 +233,7 @@ export const WORLD = {
         unit: 'fitness',
         direction: 'higher',
         nullWhen: ['no fitness', 'no agents of defender'],
-        arithmetic: '',
+        arithmetic: 'test/evo/metrics-fitness.test.js',
         source: 'test/evo/metric-source-world-fitness.test.js',
     }),
     'eval.merit_mean': entry('world', {

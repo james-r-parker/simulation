@@ -2,10 +2,11 @@ import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { createConfig } from '../js/sim/config.js';
+import { LIVE_POLICY } from '../js/evo/policies/index.js';
+import { configHash, createConfig } from '../js/sim/config.js';
 import { createWorld } from '../js/sim/spawn.js';
 import { cloneWithNoisePolicy } from '../js/sim/birth-policy.js';
-import { dumpWorld, main, parseArgs, runIdFor } from '../scripts/replay.mjs';
+import { dumpWorld, main, parseArgs, runIdFor, runReplay } from '../scripts/replay.mjs';
 import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 const CONFIG = { initialAgents: 20, minAgents: 20, maxAgents: 40 };
@@ -21,7 +22,7 @@ describe('parseArgs', () => {
             level: 'debug',
             budgetMs: 2,
             checkInvariants: true,
-            policy: 'baseline-v5',
+            policy: 'map-elites-v6',
             follow: null,
         });
     });
@@ -32,9 +33,14 @@ describe('parseArgs', () => {
         expect(args).toMatchObject({ policy: 'baseline-v5', follow: 4 });
     });
 
+    it('defaults to the live policy, and --policy live names it', () => {
+        expect(parseArgs('--seed 1 --ticks 5'.split(' ')).policy).toBe(LIVE_POLICY);
+        expect(parseArgs('--seed 1 --ticks 5 --policy live'.split(' ')).policy).toBe(LIVE_POLICY);
+    });
+
     it('rejects an unknown policy, listing the known ones, and a bad --follow', () => {
         expect(() => parseArgs('--seed 1 --ticks 5 --policy nope'.split(' '))).toThrow(
-            /Unknown policy "nope"; known: baseline-v5[\s\S]*usage: replay/,
+            /Unknown policy "nope"; known: live, baseline-v5[\s\S]*usage: replay/,
         );
         expect(() => parseArgs('--seed 1 --ticks 5 --follow 0'.split(' '))).toThrow('--follow must be an integer >= 1');
     });
@@ -108,6 +114,39 @@ describe('main', () => {
                 .map((l) => JSON.parse(l));
             expect(lines.find((l) => l.event === 'FoodPatchesCreated')).toMatchObject({ count: 3 });
             print.mockRestore();
+        },
+        scaleTimeout(60000),
+    );
+});
+
+describe('RunConfig', () => {
+    it(
+        'runs map-elites-v6 for --policy live and logs RunConfig as the first event',
+        async () => {
+            const dir = mkdtempSync(join(tmpdir(), 'replay-live-'));
+            const args = parseArgs('--seed 1 --ticks 2 --policy live'.split(' '));
+            const result = await runReplay({
+                ...args,
+                configOverrides: CONFIG,
+                logDir: join(dir, 'logs'),
+                dumpDir: join(dir, 'dumps'),
+            });
+            const records = readFileSync(join(dir, 'logs', `${result.runId}.jsonl`), 'utf8')
+                .trim()
+                .split('\n')
+                .map((line) => JSON.parse(line));
+
+            expect(records[0]).toEqual({
+                level: 'info',
+                event: 'RunConfig',
+                tool: 'replay',
+                policy: 'map-elites-v6',
+                configHash: configHash(createConfig({ ...CONFIG, seed: 1 })),
+                seeds: [1],
+                ticks: 2,
+                runId: result.runId,
+            });
+            expect(records[1]).toMatchObject({ event: 'RunStarted', policy: 'map-elites-v6' });
         },
         scaleTimeout(60000),
     );

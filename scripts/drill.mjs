@@ -7,13 +7,15 @@ import { decodeArchive } from '../js/evo/archive-codec.js';
 import { DRILLS } from '../js/evo/drill-scenarios.js';
 import { DRILL_TRIALS, edgeOf, randomBrains, skipReason } from '../js/evo/drill.js';
 import { referenceSubject } from '../js/evo/memory-probe-references.js';
-import { createConfig } from '../js/sim/config.js';
+import { seedlessConfig } from '../js/evo/report.js';
+import { configHash, createConfig } from '../js/sim/config.js';
 import { createSimLog } from '../js/sim/log.js';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
 import { formatTable, reportJson } from './lib/drill-report.mjs';
 import { eliteSubjects, fileSubject } from './lib/drill-subjects.mjs';
 import { genomeSkipCells } from './lib/skip-cells-report.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
+import { logRunConfig } from './lib/run-config.mjs';
 import { runPool } from './lib/worker-pool.mjs';
 import { loadChampions } from './memory-probe.mjs';
 
@@ -238,12 +240,31 @@ export async function drillGenomes(args, { genomes, config, log }) {
 
 /**
  * @param {DrillArgs} args the options
+ * @returns {'champions' | 'archive' | 'policy'} which source flag was given
+ */
+function sourceOf(args) {
+    if (args.champions !== null) {
+        return 'champions';
+    }
+    return args.archive !== null ? 'archive' : 'policy';
+}
+
+/**
+ * @param {DrillArgs} args the options
  * @param {import('../js/sim/log.js').SimLog} log the log
  * @returns {Promise<{rows: import('./lib/drill-report.mjs').DrillRow[], skip: import('./lib/skip-cells-report.mjs').SkipCellsReport | null}>}
  *   the rows (a genome per row, then the reference) and, for `--champions`, the predators' skip cells (T34)
  */
 async function drillRows(args, log) {
     const config = args.config === null ? {} : JSON.parse(readFileSync(args.config, 'utf8'));
+    logRunConfig(log, {
+        tool: 'drill',
+        policy: args.policy,
+        configHash: configHash(seedlessConfig(createConfig(config))),
+        seeds: [args.seed],
+        ticks: null,
+        extra: { trials: args.trials, drills: args.drills, source: sourceOf(args) },
+    });
     const genomes = await genomesOf(args, { config, log });
     const rows = await drillGenomes(args, { genomes, config, log });
     return { rows, skip: args.champions === null ? null : genomeSkipCells(genomes, createConfig(config)) };

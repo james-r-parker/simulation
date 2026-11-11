@@ -35,6 +35,26 @@ describe('runSeed (direct)', () => {
         expect(result.trace.deaths).toHaveLength(7);
     });
 
+    it(
+        'returns prey and hunters beside the population, and the lowest post-burn-in summer prey is eval.prey_summer_min',
+        { timeout: scaleTimeout(60_000) },
+        () => {
+            const era = 2500;
+            const overrides = { ...SMALL, eraSeasonTicks: era };
+            const result = runSeed({ seed: 3, ticks: 15000, policy: 'baseline-v5', overrides });
+            const { pop, prey, hunters } = result.trace;
+            expect(prey).toHaveLength(pop.length);
+            expect(hunters).toHaveLength(pop.length);
+            expect(prey.map((/** @type {number} */ p, /** @type {number} */ i) => p + hunters[i])).toEqual(pop);
+            const summer = prey.filter((/** @type {number} */ _p, /** @type {number} */ i) => {
+                const tick = (i + 1) * 1000;
+                return tick >= 10000 && Math.floor(tick / era) % 4 === 1;
+            });
+            expect(summer.length).toBeGreaterThan(0);
+            expect(result.metrics['eval.prey_summer_min']).toEqual({ value: Math.min(...summer) });
+        },
+    );
+
     it('is deterministic for the same task', { timeout: scaleTimeout(30_000) }, () => {
         const task = { seed: 5, ticks: 50, policy: 'baseline-v5', overrides: SMALL };
         expect(runSeed(task).worldHash).toBe(runSeed(task).worldHash);

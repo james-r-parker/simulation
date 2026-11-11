@@ -103,7 +103,16 @@ describe('screen', () => {
         writeFileSync(gridFile, JSON.stringify(grid));
         const out = join(dir, 'out');
         const args = parseArgs(['--grid', gridFile, '--out', out, '--workers', '2', '--ticks', '1100']);
-        const result = await screen(args, () => {});
+        const result = await screen(args, () => {}, { logDir: join(dir, 'logs') });
+        const log = readFileSync(join(dir, 'logs', 'screen-tiny.jsonl'), 'utf8')
+            .trim()
+            .split('\n')
+            .map((line) => JSON.parse(line));
+        expect(log.map((r) => [r.event, r.tool, r.arm])).toEqual([
+            ['RunConfig', 'screen', 'ref'],
+            ['RunConfig', 'screen', 'wide'],
+        ]);
+        expect(log[0]).toMatchObject({ policy: 'baseline-v5', ticks: 1100 });
         const verdicts = JSON.parse(readFileSync(join(out, 'verdicts.json'), 'utf8'));
         expect(verdicts.arms.map((/** @type {any} */ a) => a.arm)).toEqual(['ref', 'wide']);
         expect(verdicts.arms[1].deltas).not.toBeNull();

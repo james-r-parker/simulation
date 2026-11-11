@@ -246,11 +246,12 @@ Chunks:
 
 ### Phase 3 - Adopt and close
 
-| #   | Task                                                                                                                                                                                                      | Nature       | Depends on |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T12 | Verdict: set the winning arm's values as defaults, delete `refugeAnchor` and the losing paths and keys with their ledger entries, re-pin the goldens in Node and Chromium; or write the flee-to-cover doc | [judgement]  | T11        |
-| T13 | Update `sim-notes.md`, the Refuge row of `principles.md`, the Metrics table, the status lines of `refuge.md` and `realistic-keepers.md`, and the index                                                    | [mechanical] | T12        |
-| T14 | Conformance review of Phase 3: a fresh agent checks every Delivery requirements row against the diff, in parallel with `scripts/check.sh`                                                                 | [judgement]  | T13        |
+| #   | Task                                                                                                                                                                                                        | Nature       | Depends on |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T12 | Verdict: set the winning arm's values as defaults, delete `refugeAnchor` and the losing paths and keys with their ledger entries, re-pin the goldens in Node and Chromium; or write the flee-to-cover doc   | [judgement]  | T11        |
+| T13 | Update `sim-notes.md`, the Refuge row of `principles.md`, the Metrics table, the status lines of `refuge.md` and `realistic-keepers.md`, and the index                                                      | [mechanical] | T12        |
+| T14 | Conformance review of Phase 3: a fresh agent checks every Delivery requirements row against the diff, in parallel with `scripts/check.sh`                                                                   | [judgement]  | T13        |
+| T15 | Re-read the `E140` miss on `eval.basin_recolonisations` (4 of 16 seeds, bar 8), which is `unverified` (metric-trust T35): confirm the bar is measurable on the T22 seed pool before Phase 2 is judged by it | [judgement]  | -          |
 
 ## Verification
 

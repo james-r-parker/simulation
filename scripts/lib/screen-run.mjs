@@ -78,10 +78,10 @@ export function loadReusable(path, expected) {
 
 /**
  * @param {import('./screen-grid.mjs').Arm} arm an arm
- * @param {ScreenRunOptions} options the run options
+ * @param {Pick<ScreenRunOptions, 'plan'>} options the plan
  * @returns {{ config: Record<string, any>, expected: Expected, seeds: number[] }} the arm resolved
  */
-function resolveArm(arm, { plan }) {
+export function resolveArm(arm, { plan }) {
     const policy = plan.policy === 'live' ? LIVE_POLICY : plan.policy;
     const seeds = pickSeeds(plan.seeds, plan.seedOffset);
     const config = createConfig(arm.overrides);

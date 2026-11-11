@@ -90,6 +90,22 @@ describe('eval.hunter_conversion_matched.<band>', () => {
         expect(metric?.value).toBeCloseTo((1 + 0.4 + 0.4) / 3, 12);
     });
 
+    it('reads only chases opened at an age of 2000 or more in eval.hunter_conversion_matched.over2k', () => {
+        const r = setup();
+        let genome = 300;
+        // Three energy terciles, 5 fresh lives each, caught 5/5, 1/5, 1/5; every chase is at age 2500, in the over2k band.
+        for (const energy of [1, 2, 3]) {
+            for (let i = 0; i < MIN_STRATUM_CHASES; i++) {
+                r.world.genomeId[0] = genome++;
+                chase(r, { age: 2500, energy, caught: energy === 1 ? true : i < 1 });
+            }
+        }
+        const metrics = matchedMetrics(r.scene);
+        expect(metrics['eval.hunter_conversion_matched.over2k']?.value).toBeCloseTo((1 + 0.2 + 0.2) / 3, 12);
+        expect(metrics['eval.hunter_conversion_matched.1k-2k']?.value).toBeNull();
+        expect(metrics['eval.hunter_conversion_matched.under1k']?.value).toBeNull();
+    });
+
     it('is carried by computeMetrics for each band', () => {
         const { observer, world } = observed({ maxAgents: 8 });
         const all = computeMetrics(observer, world);

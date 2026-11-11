@@ -24,6 +24,16 @@ describe('runTraining when an episode fails', () => {
             .split('\n')
             .filter(Boolean)
             .map((l) => JSON.parse(l));
+        expect(rows[0]).toMatchObject({
+            event: 'RunConfig',
+            tool: 'train',
+            policy: null,
+            seeds: null,
+            generations: 1,
+            episodes: 2,
+        });
+        expect(rows[0].configHash).toMatch(/^[0-9a-f]+$/);
+        expect(rows[0].stages).toHaveLength(1);
         const failed = rows.find((r) => r.event === 'TrainEpisodeFailed');
         expect(failed).toMatchObject({ generation: 0, episode: 1, message: 'task 1 failed: boom' });
         expect(failed.seed).toBeTypeOf('number');

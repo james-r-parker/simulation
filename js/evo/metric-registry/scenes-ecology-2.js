@@ -51,7 +51,7 @@ export const SCENES_ECOLOGY_2 = {
         direction: 'watch',
         intended: 'lower',
         nullWhen: ['no meals for scout after burn-in'],
-        arithmetic: '',
+        arithmetic: 'test/evo/scene-herd-metrics.test.js',
     }),
     'eval.herd_carcass_share.defender': entry('scenes-ecology', {
         module: 'js/evo/scene-herd-metrics.js',
@@ -61,7 +61,7 @@ export const SCENES_ECOLOGY_2 = {
         direction: 'watch',
         intended: 'lower',
         nullWhen: ['no meals for defender after burn-in'],
-        arithmetic: '',
+        arithmetic: 'test/evo/scene-herd-metrics.test.js',
     }),
     'eval.disease_deaths_share': entry('scenes-ecology', {
         module: 'js/evo/scene-disease.js',

@@ -32,6 +32,20 @@ describe('flora diet detectors', () => {
         expect(metrics['eval.seasonal_diet_shift']?.value).toBe(1);
     });
 
+    it('reports the flower, fungus and toxiccap shares of the plant energy eaten', () => {
+        const scene = createFloraScene();
+        scene.energy[0] = 40; // grass
+        scene.energy[3] = 10; // flower
+        scene.energy[4] = 20; // fungus
+        scene.energy[5] = 30; // toxiccap
+        scene.energy[6 + 4] = 100; // fungus, second season
+        const metrics = floraMetrics(scene);
+        expect(metrics['eval.food_species_share.flower']?.value).toBeCloseTo(10 / 200, 12);
+        expect(metrics['eval.food_species_share.fungus']?.value).toBeCloseTo(120 / 200, 12);
+        expect(metrics['eval.food_species_share.toxiccap']?.value).toBeCloseTo(30 / 200, 12);
+        expect(metrics['eval.food_species_share.grass']?.value).toBeCloseTo(40 / 200, 12);
+    });
+
     it('reports zero shift for an identical diet in every season', () => {
         const scene = createFloraScene();
         for (let season = 0; season < 4; season++) {

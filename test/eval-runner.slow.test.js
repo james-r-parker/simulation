@@ -88,8 +88,15 @@ describe('runEval', () => {
                 .trim()
                 .split('\n')
                 .map((line) => JSON.parse(line));
-            expect(lines.map((l) => l.event)).toEqual(['EvalStarted', 'SeedFinished', 'SeedFinished', 'EvalFinished']);
+            expect(lines.map((l) => l.event)).toEqual([
+                'RunConfig',
+                'EvalStarted',
+                'SeedFinished',
+                'SeedFinished',
+                'EvalFinished',
+            ]);
             const report = JSON.parse(readFileSync(join(dir, 'c.json'), 'utf8'));
+            expect(lines[0]).toMatchObject({ tool: 'eval', policy: 'baseline-v5', ticks: 2000, seeds: report.seeds });
             expect(lines[0].configHash).toBe(report.configHash);
         },
         scaleTimeout(60_000),
