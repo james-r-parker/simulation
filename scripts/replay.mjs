@@ -3,7 +3,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createObserver, observerPhases } from '../js/evo/observer.js';
-import { getPolicy, LIVE_POLICY, POLICIES } from '../js/evo/policies/index.js';
+import { getPolicy, LIVE_POLICY } from '../js/evo/policies/index.js';
 import { configHash, createConfig } from '../js/sim/config.js';
 import { EVENT_STRIDE, EVENT_TYPE, readEvents } from '../js/sim/events.js';
 import { createSimLog, drainEvents, LOG_LEVEL } from '../js/sim/log.js';
@@ -16,7 +16,7 @@ import { intValue, parseFlags } from './lib/cli-args.mjs';
 import { createFollower } from './lib/follow.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { createMetrics } from './lib/otel.mjs';
-import { logRunConfig } from './lib/run-config.mjs';
+import { logRunConfig, resolvePolicyFlag } from './lib/run-config.mjs';
 
 const CHECKPOINT_INTERVAL = 1000;
 const DEFAULT_BUDGET_MS = 8;
@@ -87,13 +87,7 @@ export function parseArgs(argv) {
  * @returns {string} the registered name (`live` is `LIVE_POLICY`), if known
  */
 function parsePolicy(value) {
-    const name = value === 'live' ? LIVE_POLICY : value;
-    if (name === undefined || !Object.hasOwn(POLICIES, name)) {
-        throw new Error(
-            `--policy: Unknown policy "${value}"; known: live, ${Object.keys(POLICIES).join(', ')}\n${USAGE}`,
-        );
-    }
-    return name;
+    return resolvePolicyFlag(value, USAGE);
 }
 
 /**

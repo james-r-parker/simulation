@@ -5,7 +5,7 @@ import { availableParallelism, cpus } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildReport, seedFields, seedlessConfig, validateReport } from '../js/evo/report.js';
-import { getPolicy, LIVE_POLICY, POLICIES } from '../js/evo/policies/index.js';
+import { getPolicy, LIVE_POLICY } from '../js/evo/policies/index.js';
 import { validatePolicyOptions } from '../js/evo/policy-options.js';
 import { configHash, createConfig } from '../js/sim/config.js';
 import { championsDirFor, writeChampionFiles } from './lib/champion-files.mjs';
@@ -13,7 +13,7 @@ import { intValue, parseFlags } from './lib/cli-args.mjs';
 import { cpuUse } from './lib/cpu-use.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { createMetrics } from './lib/otel.mjs';
-import { runConfigRecord } from './lib/run-config.mjs';
+import { resolvePolicyFlag, runConfigRecord } from './lib/run-config.mjs';
 import { runPool } from './lib/worker-pool.mjs';
 
 const SEEDS_URL = new URL('../evals/seeds.json', import.meta.url);
@@ -55,13 +55,7 @@ const VALUE_FLAGS = {
  * @returns {string} the policy name
  */
 function parsePolicy(value) {
-    const name = value === 'live' ? LIVE_POLICY : value;
-    if (name === undefined || !Object.hasOwn(POLICIES, name)) {
-        throw new Error(
-            `--policy: Unknown policy "${value}"; known: live, ${Object.keys(POLICIES).join(', ')}\n${USAGE}`,
-        );
-    }
-    return name;
+    return resolvePolicyFlag(value, USAGE);
 }
 
 /**

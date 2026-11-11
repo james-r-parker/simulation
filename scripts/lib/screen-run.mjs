@@ -78,7 +78,7 @@ export function loadReusable(path, expected) {
 
 /**
  * @param {import('./screen-grid.mjs').Arm} arm an arm
- * @param {ScreenRunOptions} options the run options
+ * @param {Pick<ScreenRunOptions, 'plan'>} options the plan
  * @returns {{ config: Record<string, any>, expected: Expected, seeds: number[] }} the arm resolved
  */
 export function resolveArm(arm, { plan }) {

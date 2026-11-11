@@ -1,4 +1,7 @@
-// The `RunConfig` record: the first event every run-style tool logs, so a log says which policy and config it ran.
+import { LIVE_POLICY, POLICIES } from '../../js/evo/policies/index.js';
+
+// The `RunConfig` record: the first event every run-style tool logs, so a log says which policy and config it ran, and
+// the `--policy` flag the tools that run a policy share.
 
 /**
  * @typedef {object} RunConfigFields
@@ -27,4 +30,20 @@ export function runConfigRecord({ tool, policy, configHash, seeds, ticks, extra 
 export function logRunConfig(log, fields) {
     const { level, event, ...rest } = runConfigRecord(fields);
     log.log(level, event, rest);
+}
+
+/**
+ * @param {string | undefined} value a `--policy` value: a policy name, or `live`
+ * @param {string} usage the tool's usage line, appended to the error
+ * @returns {string} the registered name (`live` is `LIVE_POLICY`)
+ * @throws {Error} on an unknown name, listing the known ones
+ */
+export function resolvePolicyFlag(value, usage) {
+    const name = value === 'live' ? LIVE_POLICY : value;
+    if (name === undefined || !Object.hasOwn(POLICIES, name)) {
+        throw new Error(
+            `--policy: Unknown policy "${value}"; known: live, ${Object.keys(POLICIES).join(', ')}\n${usage}`,
+        );
+    }
+    return name;
 }

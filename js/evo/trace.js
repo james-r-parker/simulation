@@ -105,8 +105,8 @@ function endState(world) {
  * @typedef {object} TraceRecord
  * @property {number} interval ticks between `pop` samples
  * @property {number[]} pop population at ticks `interval`, `2 * interval`, ...
- * @property {number[]} prey prey alive at the same ticks as `pop`
- * @property {number[]} hunters hunters alive at the same ticks as `pop`
+ * @property {number[]} [prey] prey alive at the same ticks as `pop` (absent in reports written before metric-trust T34)
+ * @property {number[]} [hunters] hunters alive at the same ticks as `pop` (absent in older reports)
  * @property {number[]} mate mating births in each equal window of the run
  * @property {number[]} split split births in each equal window
  * @property {number[]} spec alive agents per specialisation index at the last tick
