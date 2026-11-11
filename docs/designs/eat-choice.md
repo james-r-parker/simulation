@@ -197,13 +197,13 @@ Done criteria, on seeds 65 to 128 of `evals/seeds.json`, head against `origin/ma
 
 ### Phase 1 - Detectors and the reference
 
-| #   | Task                                                                                                                                            | Nature       | Depends on |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | `js/evo/scene-eat.js`: the three detectors, registered in `world-3.js`, with arithmetic and source tests; `docs/designs/metrics.md` regenerated | [judgement]  | -          |
-| T2  | Conformance review of chunk A, in parallel with `scripts/check.sh`                                                                              | [judgement]  | T1         |
-| T3  | Run the 128-seed floor-on defaults reference with the detectors; commit the report under `evals/decisions/`                                     | [mechanical] | T2         |
-| T4  | Liveness and power for the detectors, merged into the registry; a sim-notes entry                                                               | [mechanical] | T3         |
-| T5  | Conformance review of Phase 1                                                                                                                   | [judgement]  | T4         |
+| #   | Task                                                                                                                                                                                                             | Nature       | Depends on |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T1  | (built: 2026-11-11) `js/evo/scene-eat.js`: the three detectors, registered in `world-3.js`, with arithmetic and source tests; `docs/designs/metrics.md` regenerated                                              | [judgement]  | -          |
+| T2  | (built: 2026-11-11, by the delegating review: T1 conforms; sampling after burn-in, per-spec mean splits and the intended directions accepted) Conformance review of chunk A, in parallel with `scripts/check.sh` | [judgement]  | T1         |
+| T3  | Run the 128-seed floor-on defaults reference with the detectors; commit the report under `evals/decisions/`                                                                                                      | [mechanical] | T2         |
+| T4  | Liveness and power for the detectors, merged into the registry; a sim-notes entry                                                                                                                                | [mechanical] | T3         |
+| T5  | Conformance review of Phase 1                                                                                                                                                                                    | [judgement]  | T4         |
 
 ### Phase 2 - Screen the eat choice and fat
 
