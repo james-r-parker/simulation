@@ -181,7 +181,7 @@ function windowsOf(scene, column) {
 function slopeResult(scene, column) {
     const slope = withinSeasonSlope(windowsOf(scene, column));
     return slope === null
-        ? none(`no season with ${MIN_SEASON_WINDOWS} spans of varying population after burn-in`)
+        ? none(`no season with ${MIN_SEASON_WINDOWS} spans of varying population and a mean rate above 0 after burn-in`)
         : ok(slope);
 }
 

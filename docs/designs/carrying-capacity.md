@@ -1,6 +1,6 @@
 # Carrying capacity
 
-**Status:** In progress - approved by the user on 2026-11-11. Phase 1 T1 to T6 are built (the `held` guard, the four detectors, `better` on a seed guard, `evals/decisions/` and its check, the `E151` reference and its registry readings); T7, the conformance review, remains. The second big bang: food becomes the brake on the population, the calendar leaves the mating dice and the clonal backstop works when mates are out of reach. Phase 1 (instruments and the reference) is first.
+**Status:** In progress - approved by the user on 2026-11-11. Phase 1 is built; Phase 2 (calibration) is next (the `held` guard, the four detectors, `better` on a seed guard, `evals/decisions/` and its check, the `E151` reference and its registry readings, the conformance review). The second big bang: food becomes the brake on the population, the calendar leaves the mating dice and the clonal backstop works when mates are out of reach. Phase 1 (instruments and the reference) is first.
 **Validated:** 572c3172 (2026-11-11)
 **Priority:** 2 - approved by the user on 2026-11-11 as the next build: every hunter extinction on the 128-seed reference is in a crashed world, so the brake comes before any skill or scene plan ([review-2026-11-11.md](../review-2026-11-11.md))
 **Depends on:** [metric-trust.md](metric-trust.md), [natural-selection.md](natural-selection.md)
@@ -53,7 +53,13 @@ Food supply: `areaExpected` in `js/sim/food.js` asks for about 10.5 items per ti
 what is eaten and what rots: 1.20M and 0.57M slots over 16 runs of 120000 ticks in T66, about 0.9 items per tick. Phase 1
 re-measured it (sim-notes 2026-11-11, T6): T66 counted an eaten item only when its slot was still empty at the end of the
 tick, and a new item often refills it first, so its eaten figure was about 2.4 times short. On 8 seeds of 200000 ticks the
-agents eat 1.59 plant items per tick (0.0075 per agent per tick), 0.33 rot and 1.94 are spawned; rot agrees with T66. The
+agents eat 1.59 plant items per tick (0.0075 per agent per tick), 0.33 rot and 1.94 are spawned; rot agrees with T66.
+The food ratio is defined as plant meals (`floraMeals[0]`) per tick over the offered rate (10.5 x 0.85 = 8.93), 0.18; it
+comes from 8 seeds of 200000 ticks run by an uncommitted throwaway probe, so it cannot be reproduced from the committed
+report. **An open gap:** `eval.food_energy_per_1k` in `E151` (539) at `foodEnergy` 100 implies about 1.14 plant items per
+tick at 211 agents, against the probe's 1.59. The candidate causes are carcass energy in the metric, how the time mean
+is pooled, and energy per item not being 100; none is checked. The Phase 2 arms below bracket both estimates (1.14 is
+about 0.0115 and 1.59 about 0.016). The
 formula offers more than 10 times what the world uses. A food arm brakes the population only when its supply is under
 the eaten rate, which at 1.59 items per tick is `foodRegrowPerArea` near 0.016 at the year's mean scarcity of 0.85 (the
 first read, 0.6 items per tick and 0.006, was the undercount); a world of 200 to 350 agents eats 1.5 to 2.6 items per
@@ -105,11 +111,16 @@ Targets.
 **Targets:** none - detectors, the `held` guard and the reports directory; no sim behaviour changes and `worldHash` and the golden cases stay as they are.
 
 - The four `eval.*` detectors and the `held` guard are built and tested.
-- `evals/decisions/` exists, with the E150 pair moved into it by reference in the record.
+- `evals/decisions/` exists. The E150 pair stays in `evals/power/`, where the registry's power and liveness rows already
+  point, and the `E151` record's `before` names it; nothing is moved or copied.
 - One 128-seed floor-on reference of the defaults carries the new metrics (`E151`); `eval:power` and
   `npm run metric:liveness` fill their registry rows.
 - Done when each new metric is `verified` or its row says why it cannot be, and the baseline table above is re-read
   from `E151` with the food ratio measured.
+- Why each unverified metric is so (`E151` power read, T6): `eval.cap_share` has a detectable change of 0.20, 0.15 and
+  0.10 at 16, 32 and 64 seeds against the 0.05 share bar; `eval.density_starve_slope` and `eval.density_intake_slope`
+  detect no planted step up to 64 seeds and have a false-positive rate of about 0.10. Phase 3 judges all three by the
+  exact sign test on paired differences, not by `eval:compare`. `eval.food_standing_share` is verified at 16 seeds.
 
 | Chunk | Tasks    | Contents                                                                         |
 | ----- | -------- | -------------------------------------------------------------------------------- |
@@ -235,25 +246,25 @@ The labels are for this doc; each prediction takes the next numeric id when T8 r
 
 ### Phase 1 - Instruments and the reference
 
-| #   | Task                                                                                                                                                                           | Nature       | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
-| T1  | (built: 2026-11-11) `held` seed guard and `HELD_POPULATION` in `js/evo/keep-rule.js`, printed by `formatKeepRule`, with tests                                                  | [mechanical] | -          |
-| T2  | (built: 2026-11-11) `js/evo/scene-capacity.js`: the four detectors, registered in the metric registry, with arithmetic and source tests; `docs/designs/metrics.md` regenerated | [judgement]  | -          |
-| T3  | (built: 2026-11-11) A seed guard reads `better` as well as `worse` (the exact test in the good direction), printed by `formatKeepRule`, with tests                             | [mechanical] | T1         |
-| T4  | (built: 2026-11-11) `evals/decisions/` and the rule in `scripts/check-experiments.mjs` that a record from `E151` on names committed reports                                    | [mechanical] | -          |
-| T5  | (built: 2026-11-11) Run `E151`: the defaults, 128 seeds, floor on, with the new metrics; commit the report under `evals/decisions/E151/`                                       | [mechanical] | T2, T4     |
-| T6  | (built: 2026-11-11) Liveness and power readings for the new metrics from `E151`; re-read the Baseline table and the food ratio; sim-notes entry                                | [judgement]  | T5         |
-| T7  | Conformance review of Phase 1, in parallel with `scripts/check.sh`                                                                                                             | [judgement]  | T3, T6     |
+| #   | Task                                                                                                                                                                                       | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
+| T1  | (built: 2026-11-11) `held` seed guard and `HELD_POPULATION` in `js/evo/keep-rule.js`, printed by `formatKeepRule`, with tests                                                              | [mechanical] | -          |
+| T2  | (built: 2026-11-11) `js/evo/scene-capacity.js`: the four detectors, registered in the metric registry, with arithmetic and source tests; `docs/designs/metrics.md` regenerated             | [judgement]  | -          |
+| T3  | (built: 2026-11-11) A seed guard reads `better` as well as `worse` (the exact test in the good direction), printed by `formatKeepRule`, with tests                                         | [mechanical] | T1         |
+| T4  | (built: 2026-11-11) `evals/decisions/` and the rule in `scripts/check-experiments.mjs` that a record from `E151` on names committed reports                                                | [mechanical] | -          |
+| T5  | (built: 2026-11-11) Run `E151`: the defaults, 128 seeds, floor on, with the new metrics; commit the report under `evals/decisions/E151/`                                                   | [mechanical] | T2, T4     |
+| T6  | (built: 2026-11-11) Liveness and power readings for the new metrics from `E151`; re-read the Baseline table and the food ratio; sim-notes entry                                            | [judgement]  | T5         |
+| T7  | (built: 2026-11-11, review: no code fault; E150 wording, food-ratio source and gap, unverified reasons, nullWhen fixed) Conformance review of Phase 1, in parallel with `scripts/check.sh` | [judgement]  | T3, T6     |
 
 ### Phase 2 - Calibrate on config alone
 
-| #    | Task                                                                                                                                                                       | Nature       | Depends on |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T8   | Set the food arms from the eaten rate of `E151`; `evals/screens/carrying-capacity.grid.json`; the three predictions recorded in `evals/experiments.json` under numeric ids | [judgement]  | T7         |
-| T9   | First pass: 16 seeds per arm; rank by `held`, `alive` and `eval.cap_share`                                                                                                 | [mechanical] | T8         |
-| T10  | Second pass: the two leading arms on seeds 1 to 64 against the defaults; `keepRule` output; reports committed                                                              | [mechanical] | T9         |
-| T11  | Name the finalist or record why the plan stops, with intake per agent under 50 prey per arm; sim-notes entry                                                               | [judgement]  | T10        |
-| T11a | Conformance review of Phase 2                                                                                                                                              | [judgement]  | T11        |
+| #    | Task                                                                                                                                                                                                                                                                                                 | Nature       | Depends on |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T8   | Set the food arms from the eaten rate of `E151`; `evals/screens/carrying-capacity.grid.json`; the three predictions recorded in `evals/experiments.json` under numeric ids. First settle the food-ratio gap (1.14 against 1.59 items per tick, Baseline), ideally with a committed probe or a metric | [judgement]  | T7         |
+| T9   | First pass: 16 seeds per arm; rank by `held`, `alive` and `eval.cap_share`                                                                                                                                                                                                                           | [mechanical] | T8         |
+| T10  | Second pass: the two leading arms on seeds 1 to 64 against the defaults; `keepRule` output; reports committed                                                                                                                                                                                        | [mechanical] | T9         |
+| T11  | Name the finalist or record why the plan stops, with intake per agent under 50 prey per arm; sim-notes entry                                                                                                                                                                                         | [judgement]  | T10        |
+| T11a | Conformance review of Phase 2                                                                                                                                                                                                                                                                        | [judgement]  | T11        |
 
 ### Phase 3 - The switch
 

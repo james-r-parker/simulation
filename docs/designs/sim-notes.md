@@ -2978,6 +2978,14 @@ count. The same scan on these runs gives 0.67 eaten per tick against the true 1.
 0.62; its rot figure (0.30) matches the 0.33 here because rot empties slots after the spawn. The T66 turnover of 0.9 per
 tick was therefore about 1.9.
 
+**Open gap in the food ratio.** The ratio is plant meals (`floraMeals[0]`) per tick over the offered rate, from 8 seeds of
+200000 ticks and an uncommitted throwaway probe, so it cannot be reproduced from the committed report. `E151`'s
+`eval.food_energy_per_1k` (539) at `foodEnergy` 100 implies about 1.14 plant items per tick at 211 agents, against the
+probe's 1.59. Candidate causes, none checked: carcass energy in the metric, how the time mean is pooled (agent-ticks
+against ticks), and energy per item not being 100 (the probe saw 63 stored per meal). The arms below bracket both
+estimates: 1.14 is about 0.0115 and 1.59 about 0.016. T8 should settle the gap first, ideally with a committed probe or a
+metric.
+
 **What Phase 2 T8 needs.**
 
 - **Set the arms from 1.59 items per tick, not 0.6.** The `foodRegrowPerArea` whose supply equals the eaten rate is

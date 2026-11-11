@@ -238,7 +238,7 @@ describe('the density slopes', () => {
         const few = capacityMetrics(run(lawRows([100, 200, 300, 400, 500], 0)));
         expect(few['eval.density_starve_slope']).toEqual({
             value: null,
-            reason: 'no season with 5 spans of varying population after burn-in',
+            reason: 'no season with 5 spans of varying population and a mean rate above 0 after burn-in',
         });
         const still = capacityMetrics(run(lawRows([100, 100, 100, 100, 100, 100, 100], 0)));
         expect(still['eval.density_intake_slope']?.value).toBeNull();
@@ -254,7 +254,10 @@ describe('the density slopes', () => {
 
     it('are null when the season has no starvation at all, whatever the population does', () => {
         const rows = lawRows(pops, 0).map((r) => ({ ...r, starved: 0 }));
-        expect(capacityMetrics(run(rows))['eval.density_starve_slope']?.value).toBeNull();
+        expect(capacityMetrics(run(rows))['eval.density_starve_slope']).toEqual({
+            value: null,
+            reason: 'no season with 5 spans of varying population and a mean rate above 0 after burn-in',
+        });
     });
 });
 
