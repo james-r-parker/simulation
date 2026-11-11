@@ -1,8 +1,6 @@
 # Carrying capacity
 
-**Status:** In progress - stopped at Phase 2 (2026-11-11): the food brake shrinks the world but it still crashes at low density; Phases 3 and 4 not built; the mating edge is next (see sim-notes, "Calibration stop (carrying-capacity T11, E152)")
-**Validated:** 572c3172 (2026-11-11)
-**Priority:** 2 - approved by the user on 2026-11-11 as the next build: every hunter extinction on the 128-seed reference is in a crashed world, so the brake comes before any skill or scene plan ([review-2026-11-11.md](../review-2026-11-11.md))
+**Status:** Superseded - by [low-density-edge.md](low-density-edge.md). Phase 1 is built; Phase 2 stopped the plan (2026-11-11, E152): the food brake shrinks the world and it still crashes at low density (sim-notes "Calibration stop (carrying-capacity T11, E152)"). Phases 3 and 4 are not built; low-density-edge.md carries T13 (the calendar in the mating dice), T14 (a mate seen only within reach, as its L1) and T19 (the keep rule in the docs).
 **Depends on:** [metric-trust.md](metric-trust.md), [natural-selection.md](natural-selection.md)
 
 The scene this doc serves ([principles.md](../principles.md)): **Boom and bust** - a local population swells, strips a

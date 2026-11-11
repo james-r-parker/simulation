@@ -2,7 +2,7 @@
 
 **Status:** In progress - tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test, benchmark comparison and the nightly workflow (Phase 2) are built; Phase 3 is part built: the busy-aware `bench-check` with load-scaled test timeouts (T20, T22), the built-in CPU lock (T19) and the advisory CI `perf` job with `--self` and the `noise` dispatch (T17), the `bench-compare` digest and the `nightly-failure` issue job (T21, all but its `resume-plan` line) are in, as are the merge queue trigger, PR-only cancellation, app-path scope for the browser smoke and the no-container smoke job (T28 to T32; enabling the queue in the ruleset is a user step); the coverage ratchet was restored and the order-dependent and flaky slow tests fixed at the root (#334, #339); T18 (needs two weeks of `perf` runs), T23 (the smoke still counts frames only: `js/app/main.js` now exists, so it can read the tick), T24, T25 and T26 (the ratchet still skips in `--ci` without `--full`) are open.
 **Validated:** d6ca3e6c (2026-11-07)
-**Priority:** 10 - Phase 3 (PR perf job, CPU lock in check.sh, busy-aware bench-check) protects every other lane while several agents share the machine (manager, 2026-10-17)
+**Priority:** 9 - Phase 3 (PR perf job, CPU lock in check.sh, busy-aware bench-check) protects every other lane while several agents share the machine (manager, 2026-10-17)
 **Depends on:** [dev-workflow-and-gate.md](dev-workflow-and-gate.md)
 
 `scripts/check.sh` runs in three tiers. Each tier is a fixed set of gates, and a higher tier runs every gate of the
