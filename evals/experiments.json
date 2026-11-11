@@ -3931,6 +3931,31 @@
       "afterPolicy": "live",
       "effect": "no-difference",
       "verdicts": {}
+    },
+    {
+      "id": "E155",
+      "hypothesis": "low-density-edge Phase 2, E-LD-1: under 100 prey the prey lose more than they replace, and the mating rate is what falls furthest below its value at 100 to 400 prey.",
+      "prediction": "eval.edge_birth_death_ratio is under 0.6 on at least half the seeds with an edge span, and the mate-birth swap (the seed's edge mating-birth rate replaced by its reference-span rate) closes the largest median share of the edge deficit (prey deaths minus prey births in edge spans) of the four swaps: mate births, split births, starvation, predation. Falsified when the ratio is 0.6 or more on more than half those seeds, or the starvation or predation swap closes a larger share.",
+      "targets": [
+        "eval.edge_birth_death_ratio",
+        "eval.edge_mate_births_per_prey",
+        "eval.edge_split_births_per_prey",
+        "eval.edge_starve_per_prey",
+        "eval.edge_eaten_per_prey",
+        "eval.edge_hunters_per_prey",
+        "eval.edge_intake_ratio",
+        "eval.edge_mate_unreached_share"
+      ],
+      "before": "evals/decisions/E151/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d (carries none of the edge detectors, so it is the reference to re-run, not the reading)",
+      "after": "not run yet: Phase 2 (T8), the 128-seed floor-on defaults reference carrying the detectors, to be committed under evals/decisions/",
+      "note": "Not run: prediction recorded before the run (T7); no verdict yet. `reports` names the E151 reference for now; the T8 report is added when it exists. The detectors are unverified until T9 reads their liveness and power from that report, so the verdict is a reading of rates, not a metric verdict (docs/designs/low-density-edge.md, Experiments).",
+      "reports": ["evals/decisions/E151/defaults-floor-on.json"],
+      "date": "2026-11-11",
+      "branch": "feat/low-density-edge-detectors",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference",
+      "verdicts": {}
     }
   ]
 }
