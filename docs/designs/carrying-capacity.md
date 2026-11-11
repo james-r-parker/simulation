@@ -1,8 +1,8 @@
 # Carrying capacity
 
-**Status:** Proposed - the second big bang: food becomes the brake on the population, the calendar leaves the mating dice and the clonal backstop works when mates are out of reach. Phase 1 (instruments and the reference) is first.
+**Status:** Proposed - approved by the user on 2026-11-11, nothing built. The second big bang: food becomes the brake on the population, the calendar leaves the mating dice and the clonal backstop works when mates are out of reach. Phase 1 (instruments and the reference) is first.
 **Validated:** 572c3172 (2026-11-11)
-**Priority:** 21 - placeholder: [review-2026-11-11.md](../review-2026-11-11.md) proposes rank 2, behind the close of metric-trust.md; the queue is not renumbered until the user approves it
+**Priority:** 2 - approved by the user on 2026-11-11 as the next build: every hunter extinction on the 128-seed reference is in a crashed world, so the brake comes before any skill or scene plan ([review-2026-11-11.md](../review-2026-11-11.md))
 **Depends on:** [metric-trust.md](metric-trust.md), [natural-selection.md](natural-selection.md)
 
 The scene this doc serves ([principles.md](../principles.md)): **Boom and bust** - a local population swells, strips a
@@ -67,11 +67,11 @@ and `splitCapMargin`. No reward is added.
 
 ## What it deletes
 
-| Deleted                                                         | Condition                                                                                                                                                                                                                       | Task |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| `reproductionBonus` (four season entries) and `mateChanceScale` | The user approves the refusal of a world rule that reads the calendar (review P2). Animals breed by season through day length and condition, which a blob feels as temperature and food; no blob has a dice that knows the date | T13  |
-| `splitClonalMax`, `world.clonalDepth` and `noteClonalBirth`     | Only if the cap harms: on 64 matched seeds at the head, the cap on reads `WORSE` than `splitClonalMax` 100000 on a keep-rule guard. Aphids do cap clonal runs, so no harm means it stays                                        | T15  |
-| world-balance.md T79 to T96 and its "Open balance issues" table | With the docs task; none of those rows can run                                                                                                                                                                                  | T19  |
+| Deleted                                                         | Condition                                                                                                                                                                                                                                                    | Task |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
+| `reproductionBonus` (four season entries) and `mateChanceScale` | Always (approved by the user, 2026-11-11, with the refusal of a world rule that reads the calendar, review P2). Animals breed by season through day length and condition, which a blob feels as temperature and food; no blob has a dice that knows the date | T13  |
+| `splitClonalMax`, `world.clonalDepth` and `noteClonalBirth`     | Only if the cap harms: on 64 matched seeds at the head, the cap on reads `WORSE` than `splitClonalMax` 100000 on a keep-rule guard. Aphids do cap clonal runs, so no harm means it stays                                                                     | T15  |
+| world-balance.md T79 to T96 and its "Open balance issues" table | With the docs task; none of those rows can run                                                                                                                                                                                                               | T19  |
 
 No flag is added, so `scripts/flag-ledger.json` gains no row. `capBirthsEnabled` keeps its ledger row: it is the
 control for T22.
@@ -298,6 +298,6 @@ report and confirmed every figure but one, confirmed every named symbol, and fou
 | Two Done criteria were fixed thresholds on metrics that may stay unverified; the slope is confounded with season                        | Fixed: paired tests, a within-season slope                                                 |
 | The finalist was picked and judged on the same seeds                                                                                    | Fixed: seeds 1 to 64 pick, 65 to 128 judge                                                 |
 | T66 is also evidence against the cut: starvation is over half of prey deaths with the map full                                          | Fixed: a stop rule in Phase 2 and `E-CC-1`                                                 |
-| Deleting `reproductionBonus` rests on a refusal the user has not yet approved                                                           | Open: it is the condition in "What it deletes" and question 1 of the review                |
+| Deleting `reproductionBonus` rests on a refusal the user has not yet approved                                                           | Closed: the user approved the plan with the deletion on 2026-11-11                         |
 | The median lowest population is 17.5, not 13                                                                                            | Fixed                                                                                      |
 | `keepRule` had no `better` verdict; T18 mixed a run with a verdict                                                                      | Fixed: T3, T18a                                                                            |
