@@ -26,6 +26,8 @@ Before theorising about the sim, rule out the measure. Ask of every number that 
    exists (replay one trial and look).
 3. **Does a pass on it predict the outcome it stands for?** A detector that scores 1.00 beside an outcome edge of 0.00,
    or that moves while the outcome does not, is not measuring the outcome.
+4. **Is it `verified`, and at how many seeds?** `docs/designs/metrics.md` gives each metric's status and `minSeeds`. An
+   `unverified` metric gets no `eval:compare` verdict; a claim on it needs its missing check fixed first, or the clip.
 
 A detector fault becomes a task on the detector, and the sim theory waits until the detector is fixed and the run is
 repeated. Three cases from 2026-11-07:
@@ -90,7 +92,10 @@ For every metric that moved:
    bootstrap 95% interval and a verdict per metric, marks the targets and exits 1 if a target is `worse` (`--json`
    for the verdicts to record). `no-difference` means no difference - do not round it up to "slightly better". A verdict needs the interval to
    exclude 0 and a mean change of at least 5% of the before mean (`--min-effect`, shown as the `effect` column), so a
-   tiny but precise shift stays `no-difference`. With
+   tiny but precise shift stays `no-difference`. A metric of unit `share` uses an absolute 0.02 instead
+   (`--share-min-effect`); a metric with at least half its paired differences exactly 0 also needs an exact sign test
+   under 0.05; a metric that is not `verified` prints `unverified`. Run at least the seeds the registry's `minSeeds`
+   gives each target. With
    about 25 metrics, one `better` or `worse` off the targets is expected by chance at 95% (see `E0`).
 2. **Exploits.** A fitness jump without a matching move in `eval.food_energy_per_1k` or `eval.median_lifespan` is a
    suspected exploit. Replay the best agent (`npm run replay -- --policy <name> --seed <s> --ticks <t> --follow <genome-id>`) and
@@ -150,12 +155,12 @@ schema.
 
 ## 5. Act
 
-| Result                                   | Do                                                                                             |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `better` on the targets, nothing `worse` | Keep the change; attach the compare output to the PR (`create-pr`, Measurements)               |
-| `no-difference`                          | Revert unless the change is a simplification or a speed-up with no metric loss                 |
-| `worse` on any target                    | Do not merge; record it and go back to the hypothesis                                          |
-| `exploit`                                | Add the exploiting behaviour to the anti-exploit suite as a failing test, then fix the fitness |
+| Result                                   | Do                                                                                                                                                                                                                   |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `better` on the targets, nothing `worse` | Keep the change; attach the compare output to the PR (`create-pr`, Measurements)                                                                                                                                     |
+| `no-difference`                          | Revert unless the change is a simplification, a speed-up with no metric loss, or a realistic mechanism whose `--keep-rule` output on 64 matched floor-on seeds reads no guard `WORSE` (principles.md, the keep rule) |
+| `worse` on any target                    | Do not merge; record it and go back to the hypothesis                                                                                                                                                                |
+| `exploit`                                | Add the exploiting behaviour to the anti-exploit suite as a failing test, then fix the fitness                                                                                                                       |
 
 ## 6. Rebaseline
 
@@ -176,7 +181,8 @@ was kept or reverted, and what waits for approval.
 
 ## Red flags
 
-- Fewer than 16 seeds, or different seeds on the two arms.
+- Fewer than 16 seeds, fewer than a target's registry `minSeeds`, or different seeds on the two arms.
+- A keep or delete decision on fewer than 64 matched floor-on seeds, or without `--keep-rule`.
 - A sim theory built on a number whose detector was never checked (step 0).
 - An arm judged on a single archive or one seed offset.
 - A prediction written after the result.

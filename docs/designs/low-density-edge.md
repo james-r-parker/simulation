@@ -259,12 +259,12 @@ before its run.
 
 ### Phase 1 - The keep rule in the docs
 
-| #   | Task                                                                                                                                                             | Nature       | Depends on |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | (built: 2026-11-11) `docs/principles.md`: apply P5, P6 and P7 from review-2026-11-11.md as written; the review's status line records them applied                | [mechanical] | -          |
-| T2  | AGENTS.md and `.claude/skills/run-evolution-loop/SKILL.md`: name `keepRule`, `--keep-rule`, the 64-seed bar and the smallest detected loss (metric-trust.md T36) | [mechanical] | T1         |
-| T3  | metric-trust.md: T36 and T37 marked built by this doc, the status `Implemented`                                                                                  | [mechanical] | T2         |
-| T4  | Conformance review of Phase 1, in parallel with `scripts/check.sh --docs`                                                                                        | [judgement]  | T3         |
+| #   | Task                                                                                                                                                                                 | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
+| T1  | (built: 2026-11-11) `docs/principles.md`: apply P5, P6 and P7 from review-2026-11-11.md as written; the review's status line records them applied                                    | [mechanical] | -          |
+| T2  | (built: 2026-11-11) AGENTS.md and `.claude/skills/run-evolution-loop/SKILL.md`: name `keepRule`, `--keep-rule`, the 64-seed bar and the smallest detected loss (metric-trust.md T36) | [mechanical] | T1         |
+| T3  | metric-trust.md: T36 and T37 marked built by this doc, the status `Implemented`                                                                                                      | [mechanical] | T2         |
+| T4  | Conformance review of Phase 1, in parallel with `scripts/check.sh --docs`                                                                                                            | [judgement]  | T3         |
 
 ### Phase 2 - Measure the edge
 
