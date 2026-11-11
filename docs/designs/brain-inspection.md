@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 (the dossier: labelled weights, drill traces and unit ablation) is built first; Phase 2 adds the `inspect-brain` skill and the first inspection of trained champions.
 **Validated:** d6ca3e6c (2026-11-07)
-**Priority:** 16 - last in the queue (user, 2026-11-04): a diagnostic for champions that fail a drill, useful only once the drills and the trainer exist
+**Priority:** 17 - last in the queue (user, 2026-11-04): a diagnostic for champions that fail a drill, useful only once the drills and the trainer exist
 **Depends on:** [training.md](training.md)
 
 A champion that fails a drill gets a **dossier**: its weights labelled unit by unit, the hidden state and outputs of its brain tick by tick through the drill's trials, and the win share with each hidden unit silenced. An agent reads the dossier, names the unit or input path that blocks the skill, and tests that claim with an in-memory edit replayed on the same trials. The dossier is a detector: nothing in it enters fitness, merit, mate rank or archive rank ([principles.md](../principles.md), Measure scenes, reward them almost never), and an edited brain never leaves the process that tests it.

@@ -50,7 +50,7 @@ this. Drop the line once the doc is `Implemented`.
 ## Priority (required while `Proposed` or `In progress`)
 
 ```
-**Priority:** 4 - <why this rank, in one line>
+**Priority:** 5 - <why this rank, in one line>
 ```
 
 Directly under the validated stamp, above `**Depends on:**`. The number is the doc's rank in the build queue:
