@@ -228,7 +228,7 @@ export const WORLD_2 = {
         unit: 'trend',
         direction: 'higher',
         nullWhen: [
-            'no season with 5 spans of varying population after burn-in',
+            'no season with 5 spans of varying population and a mean rate above 0 after burn-in',
             'no 1000-tick checkpoint after burn-in',
         ],
         arithmetic: 'test/evo/scene-capacity.test.js',
@@ -242,7 +242,7 @@ export const WORLD_2 = {
         unit: 'trend',
         direction: 'lower',
         nullWhen: [
-            'no season with 5 spans of varying population after burn-in',
+            'no season with 5 spans of varying population and a mean rate above 0 after burn-in',
             'no 1000-tick checkpoint after burn-in',
         ],
         arithmetic: 'test/evo/scene-capacity.test.js',

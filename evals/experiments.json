@@ -3839,6 +3839,22 @@
       "after": "evals/power/defaults-floor-off-E150.json: defaults, floor off, 128 seeds x 200000 ticks, configHash 51c7a6e80234a2b5, fdbd15d3",
       "verdicts": {},
       "note": "Characterization only. At sizes 16 and 32, floor-on minSeeds counts are 61 and 34, with 189 null; floor-off counts are 52 and 30, with 202 null. Only the floor-on result is in js/evo/metric-registry/power.js. Both reports contain all 284 current registry metrics. See the metric-trust T27 sim-notes entry for the largest decision-set MDE32 values."
+    },
+    {
+      "id": "E151",
+      "date": "2026-11-11",
+      "branch": "chore/carrying-capacity-reference",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference",
+      "hypothesis": "carrying-capacity Phase 1: the four capacity detectors (eval.cap_share, eval.food_standing_share, eval.density_starve_slope, eval.density_intake_slope) need a 128-seed floor-on reference of the defaults, so Phase 2 can set its food arms from the measured eaten rate and read the Baseline from one report.",
+      "prediction": "Same configHash as E150 floor-on (ff8d890a5a70c14d) and the same 128 seeds; every older metric reads as in E150 (the sim is unchanged); the four new metrics are live; eval.cap_share is near the 0.14 read from the trace, and the density elasticities are near zero (the cap, not food, is the brake today).",
+      "targets": [],
+      "before": "evals/power/defaults-floor-on-E150.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d, fdbd15d3",
+      "after": "evals/decisions/E151/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d, 512af1d6",
+      "verdicts": {},
+      "note": "Characterization only; no sim value moves. 288 metrics. New detector means over 128 seeds (SD): eval.cap_share 0.132 (0.159), eval.food_standing_share 0.947 (0.040), eval.density_starve_slope -0.130 (0.439), eval.density_intake_slope -0.036 (0.269); none is null on any seed. Run with npm run eval -- --seeds 128 --ticks 200000 --policy live --workers 30, 2792 s.",
+      "reports": ["evals/decisions/E151/defaults-floor-on.json"]
     }
   ]
 }

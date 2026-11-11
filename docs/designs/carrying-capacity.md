@@ -1,6 +1,6 @@
 # Carrying capacity
 
-**Status:** In progress - approved by the user on 2026-11-11. Phase 1 T1 to T4 are built (the `held` guard, the four detectors, `better` on a seed guard, `evals/decisions/` and its check); T5 to T7 remain. The second big bang: food becomes the brake on the population, the calendar leaves the mating dice and the clonal backstop works when mates are out of reach. Phase 1 (instruments and the reference) is first.
+**Status:** In progress - approved by the user on 2026-11-11. Phase 1 is built; Phase 2 (calibration) is next (the `held` guard, the four detectors, `better` on a seed guard, `evals/decisions/` and its check, the `E151` reference and its registry readings, the conformance review). The second big bang: food becomes the brake on the population, the calendar leaves the mating dice and the clonal backstop works when mates are out of reach. Phase 1 (instruments and the reference) is first.
 **Validated:** 572c3172 (2026-11-11)
 **Priority:** 2 - approved by the user on 2026-11-11 as the next build: every hunter extinction on the 128-seed reference is in a crashed world, so the brake comes before any skill or scene plan ([review-2026-11-11.md](../review-2026-11-11.md))
 **Depends on:** [metric-trust.md](metric-trust.md), [natural-selection.md](natural-selection.md)
@@ -24,14 +24,15 @@ falls as agents rise, a season reaches a blob only as cold and as less food, and
 ## Baseline
 
 The defaults on 128 seeds, floor on, 200000 ticks, policy `map-elites-v6`
-(`evals/power/defaults-floor-on-E150.json`, configHash `ff8d890a5a70c14d`). Trace readings use the `pop` series at
-1000-tick checkpoints after tick 20000.
+(`evals/decisions/E151/defaults-floor-on.json`, configHash `ff8d890a5a70c14d`; every reading below that E150 and E151 share
+is the same to the digit, since the sim is unchanged). Trace readings use the `pop` series at 1000-tick checkpoints after
+`BURN_IN_TICKS` (tick 10000), the cut the detectors and the `held` guard use; the first version of this table cut at tick 20000.
 
 | Reading                                                                       | Value                          | Source                                          |
 | ----------------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------- |
-| Seeds that reach 450 agents (`maxAgents` less `splitCapMargin`)               | 89 of 128                      | trace `pop`                                     |
-| Share of checkpoints at 450 or more                                           | 0.14                           | trace `pop`                                     |
-| Seeds that stay at 100 or more                                                | 30 of 128                      | trace `pop`                                     |
+| Seeds that reach 450 agents (`maxAgents` less `splitCapMargin`)               | 90 of 128                      | trace `pop`                                     |
+| Share of checkpoints at 450 or more                                           | 0.13 (`eval.cap_share` 0.132)  | trace `pop`                                     |
+| Seeds that stay at 100 or more                                                | 29 of 128 (the `held` guard)   | trace `pop`                                     |
 | Seeds that fall under 40                                                      | 71 of 128                      | trace `pop`                                     |
 | Lowest population, median seed                                                | 17.5                           | trace `pop`                                     |
 | Seeds where the floor guard fires                                             | 61 of 128                      | `eval.floor_episodes` (unverified)              |
@@ -43,13 +44,26 @@ The defaults on 128 seeds, floor on, 200000 ticks, policy `map-elites-v6`
 | `eval.collision_death_share`                                                  | 0.27                           | verified at 32                                  |
 | Starvation per prey per 2000 ticks, 50 to 500 prey                            | 0.19 to 0.21 (flat)            | sim-notes 2026-11-06 (T66), 16 seeds, floor off |
 | Edible food slots                                                             | about 3,590 of `maxFood` 3,600 | sim-notes 2026-11-06 (T66)                      |
+| `eval.food_standing_share`                                                    | 0.947 (SD 0.040)               | E151 report                                     |
+| `eval.density_starve_slope`, `eval.density_intake_slope`                      | -0.130 and -0.036 (no brake)   | E151 report                                     |
+| Plant meals per tick, 8 seeds                                                 | 1.59 (T66 counted 0.62)        | sim-notes 2026-11-11 (T6, probe)                |
 
 Food supply: `areaExpected` in `js/sim/food.js` asks for about 10.5 items per tick at scarcity 1 (`foodRegrowPerArea`
 0.09 on a 14,400 by 8,100 world), and `spawnFood` clips that at `maxFood`. The map is full, so the realised turnover is
-what is eaten and what rots: 1.20M and 0.57M slots over 16 runs of 120000 ticks in T66, about 0.9 items per tick. The
+what is eaten and what rots: 1.20M and 0.57M slots over 16 runs of 120000 ticks in T66, about 0.9 items per tick. Phase 1
+re-measured it (sim-notes 2026-11-11, T6): T66 counted an eaten item only when its slot was still empty at the end of the
+tick, and a new item often refills it first, so its eaten figure was about 2.4 times short. On 8 seeds of 200000 ticks the
+agents eat 1.59 plant items per tick (0.0075 per agent per tick), 0.33 rot and 1.94 are spawned; rot agrees with T66.
+The food ratio is defined as plant meals (`floraMeals[0]`) per tick over the offered rate (10.5 x 0.85 = 8.93), 0.18; it
+comes from 8 seeds of 200000 ticks run by an uncommitted throwaway probe, so it cannot be reproduced from the committed
+report. **An open gap:** `eval.food_energy_per_1k` in `E151` (539) at `foodEnergy` 100 implies about 1.14 plant items per
+tick at 211 agents, against the probe's 1.59. The candidate causes are carcass energy in the metric, how the time mean
+is pooled, and energy per item not being 100; none is checked. The Phase 2 arms below bracket both estimates (1.14 is
+about 0.0115 and 1.59 about 0.016). The
 formula offers more than 10 times what the world uses. A food arm brakes the population only when its supply is under
-the eaten rate, about 0.6 items per tick, which is `foodRegrowPerArea` near 0.006 at the year's mean scarcity of 0.85.
-These figures come from a 16-seed floor-off note; Phase 1 measures them on `E151` before the arms are set.
+the eaten rate, which at 1.59 items per tick is `foodRegrowPerArea` near 0.016 at the year's mean scarcity of 0.85 (the
+first read, 0.6 items per tick and 0.006, was the undercount); a world of 200 to 350 agents eats 1.5 to 2.6 items per
+tick, which is 0.015 to 0.026. Phase 2 T8 sets the arms from these figures.
 
 ## What changes
 
@@ -97,11 +111,16 @@ Targets.
 **Targets:** none - detectors, the `held` guard and the reports directory; no sim behaviour changes and `worldHash` and the golden cases stay as they are.
 
 - The four `eval.*` detectors and the `held` guard are built and tested.
-- `evals/decisions/` exists, with the E150 pair moved into it by reference in the record.
+- `evals/decisions/` exists. The E150 pair stays in `evals/power/`, where the registry's power and liveness rows already
+  point, and the `E151` record's `before` names it; nothing is moved or copied.
 - One 128-seed floor-on reference of the defaults carries the new metrics (`E151`); `eval:power` and
   `npm run metric:liveness` fill their registry rows.
 - Done when each new metric is `verified` or its row says why it cannot be, and the baseline table above is re-read
   from `E151` with the food ratio measured.
+- Why each unverified metric is so (`E151` power read, T6): `eval.cap_share` has a detectable change of 0.20, 0.15 and
+  0.10 at 16, 32 and 64 seeds against the 0.05 share bar; `eval.density_starve_slope` and `eval.density_intake_slope`
+  detect no planted step up to 64 seeds and have a false-positive rate of about 0.10. Phase 3 judges all three by the
+  exact sign test on paired differences, not by `eval:compare`. `eval.food_standing_share` is verified at 16 seeds.
 
 | Chunk | Tasks    | Contents                                                                         |
 | ----- | -------- | -------------------------------------------------------------------------------- |
@@ -115,10 +134,10 @@ Targets.
 One screen on the unchanged code, floor on, policy live, 200000 ticks, on seeds 1 to 64 of `evals/seeds.json`. Arms
 are config values only: a full factorial of four food values by two season settings, and the defaults.
 
-| Factor | Values                                                                                                                                                   |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Food   | `foodRegrowPerArea` at 0.5, 0.75, 1.0 and 1.5 times the value whose supply equals the eaten rate of `E151` (about 0.003, 0.0045, 0.006 and 0.009 by T66) |
-| Season | as the defaults; or flat: all four `seasons` entries written in full with `reproductionBonus` 1.5, so the chance is 1 all year                           |
+| Factor | Values                                                                                                                                                                              |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Food   | `foodRegrowPerArea` at 0.5, 0.75, 1.0 and 1.5 times the value whose supply equals the eaten rate of `E151` (about 0.008, 0.012, 0.016 and 0.024; T66's 0.003 to 0.009 undercounted) |
+| Season | as the defaults; or flat: all four `seasons` entries written in full with `reproductionBonus` 1.5, so the chance is 1 all year                                                      |
 
 - `createConfig` replaces `seasons` whole, so a flat arm lists the four entries with their other fields unchanged.
 - A flat arm still draws the chance float in `findMale` (`js/sim/mate-search.js`, the `lifecycle` stream); the Phase 3
@@ -159,8 +178,8 @@ Done criteria, on seeds 65 to 128 of `evals/seeds.json` (64 matched floor-on see
 | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | `held` guard                                                                                                               | `better`: more seeds gained than lost, exact p under 0.05                                                                 | 0.23 of seeds |
 | `alive` guard                                                                                                              | not worse                                                                                                                 | 0.74 of seeds |
-| `eval.cap_share`                                                                                                           | lower: `eval:compare` `better` if the metric is verified, else an exact sign test on the paired differences, p under 0.05 | 0.14          |
-| `eval.density_starve_slope`                                                                                                | higher, by the same test as `eval.cap_share`                                                                              | about 0       |
+| `eval.cap_share`                                                                                                           | lower: `eval:compare` `better` if the metric is verified, else an exact sign test on the paired differences, p under 0.05 | 0.13          |
+| `eval.density_starve_slope`                                                                                                | higher, by the same test as `eval.cap_share`                                                                              | -0.13         |
 | Seeds where the floor guard fires                                                                                          | reported; not a bar (`eval.floor_episodes` is unverified)                                                                 | 61 of 128     |
 | `eval.births_per_1k`, `eval.lineages_alive`, `eval.spec_effective`, `eval.deliberate_food_share`, `eval.chase_catch_share` | `eval:compare` not `worse`; a fall in `eval.births_per_1k` is expected and is read against the population it sustains     | -             |
 | `bench.step_ms@500`                                                                                                        | within the budget of `bench-check`                                                                                        | -             |
@@ -227,25 +246,25 @@ The labels are for this doc; each prediction takes the next numeric id when T8 r
 
 ### Phase 1 - Instruments and the reference
 
-| #   | Task                                                                                                                                                                           | Nature       | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
-| T1  | (built: 2026-11-11) `held` seed guard and `HELD_POPULATION` in `js/evo/keep-rule.js`, printed by `formatKeepRule`, with tests                                                  | [mechanical] | -          |
-| T2  | (built: 2026-11-11) `js/evo/scene-capacity.js`: the four detectors, registered in the metric registry, with arithmetic and source tests; `docs/designs/metrics.md` regenerated | [judgement]  | -          |
-| T3  | (built: 2026-11-11) A seed guard reads `better` as well as `worse` (the exact test in the good direction), printed by `formatKeepRule`, with tests                             | [mechanical] | T1         |
-| T4  | (built: 2026-11-11) `evals/decisions/` and the rule in `scripts/check-experiments.mjs` that a record from `E151` on names committed reports                                    | [mechanical] | -          |
-| T5  | Run `E151`: the defaults, 128 seeds, floor on, with the new metrics; commit the report under `evals/decisions/E151/`                                                           | [mechanical] | T2, T4     |
-| T6  | Liveness and power readings for the new metrics from `E151`; re-read the Baseline table and the food ratio; sim-notes entry                                                    | [judgement]  | T5         |
-| T7  | Conformance review of Phase 1, in parallel with `scripts/check.sh`                                                                                                             | [judgement]  | T3, T6     |
+| #   | Task                                                                                                                                                                                       | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
+| T1  | (built: 2026-11-11) `held` seed guard and `HELD_POPULATION` in `js/evo/keep-rule.js`, printed by `formatKeepRule`, with tests                                                              | [mechanical] | -          |
+| T2  | (built: 2026-11-11) `js/evo/scene-capacity.js`: the four detectors, registered in the metric registry, with arithmetic and source tests; `docs/designs/metrics.md` regenerated             | [judgement]  | -          |
+| T3  | (built: 2026-11-11) A seed guard reads `better` as well as `worse` (the exact test in the good direction), printed by `formatKeepRule`, with tests                                         | [mechanical] | T1         |
+| T4  | (built: 2026-11-11) `evals/decisions/` and the rule in `scripts/check-experiments.mjs` that a record from `E151` on names committed reports                                                | [mechanical] | -          |
+| T5  | (built: 2026-11-11) Run `E151`: the defaults, 128 seeds, floor on, with the new metrics; commit the report under `evals/decisions/E151/`                                                   | [mechanical] | T2, T4     |
+| T6  | (built: 2026-11-11) Liveness and power readings for the new metrics from `E151`; re-read the Baseline table and the food ratio; sim-notes entry                                            | [judgement]  | T5         |
+| T7  | (built: 2026-11-11, review: no code fault; E150 wording, food-ratio source and gap, unverified reasons, nullWhen fixed) Conformance review of Phase 1, in parallel with `scripts/check.sh` | [judgement]  | T3, T6     |
 
 ### Phase 2 - Calibrate on config alone
 
-| #    | Task                                                                                                                                                                       | Nature       | Depends on |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T8   | Set the food arms from the eaten rate of `E151`; `evals/screens/carrying-capacity.grid.json`; the three predictions recorded in `evals/experiments.json` under numeric ids | [judgement]  | T7         |
-| T9   | First pass: 16 seeds per arm; rank by `held`, `alive` and `eval.cap_share`                                                                                                 | [mechanical] | T8         |
-| T10  | Second pass: the two leading arms on seeds 1 to 64 against the defaults; `keepRule` output; reports committed                                                              | [mechanical] | T9         |
-| T11  | Name the finalist or record why the plan stops, with intake per agent under 50 prey per arm; sim-notes entry                                                               | [judgement]  | T10        |
-| T11a | Conformance review of Phase 2                                                                                                                                              | [judgement]  | T11        |
+| #    | Task                                                                                                                                                                                                                                                                                                 | Nature       | Depends on |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T8   | Set the food arms from the eaten rate of `E151`; `evals/screens/carrying-capacity.grid.json`; the three predictions recorded in `evals/experiments.json` under numeric ids. First settle the food-ratio gap (1.14 against 1.59 items per tick, Baseline), ideally with a committed probe or a metric | [judgement]  | T7         |
+| T9   | First pass: 16 seeds per arm; rank by `held`, `alive` and `eval.cap_share`                                                                                                                                                                                                                           | [mechanical] | T8         |
+| T10  | Second pass: the two leading arms on seeds 1 to 64 against the defaults; `keepRule` output; reports committed                                                                                                                                                                                        | [mechanical] | T9         |
+| T11  | Name the finalist or record why the plan stops, with intake per agent under 50 prey per arm; sim-notes entry                                                                                                                                                                                         | [judgement]  | T10        |
+| T11a | Conformance review of Phase 2                                                                                                                                                                                                                                                                        | [judgement]  | T11        |
 
 ### Phase 3 - The switch
 
