@@ -1,8 +1,9 @@
 // Screen table: renders the verdicts as one Markdown table, one row per arm. Pure.
 
+import { wilsonInterval } from '../../js/evo/binomial.js';
 import { TARGETS, WATCH_METRICS } from './screen-verdict.mjs';
 
-const TARGET_HEADS = ['mating', 'lineages', 'births/1k', 'food/1k', 'fed life'];
+const TARGET_HEADS = ['lineages', 'births/1k', 'food/1k'];
 const WATCH_HEADS = [
     'skill trend',
     'delib food/1k',
@@ -29,6 +30,8 @@ const WATCH_HEADS = [
     'basin pop cv',
     'pred-prey lag',
     'summer min',
+    'mating',
+    'fed life',
 ];
 
 /**
@@ -43,28 +46,43 @@ function watchCell(value) {
 }
 
 /**
+ * @param {number} count seeds counted
+ * @param {number} of seeds run
+ * @returns {string} `k/n` with the 95% Wilson interval of the count in seeds, to one place
+ */
+function countWithInterval(count, of) {
+    const { low, high } = wilsonInterval(count, of);
+    return `${count}/${of} [${(low * of).toFixed(1)}, ${(high * of).toFixed(1)}]`;
+}
+
+/**
  * @param {{ pass: boolean[] }} check one per-seed criterion
- * @returns {string} `k/n` seeds passing
+ * @returns {string} `k/n` seeds passing, with the interval of the count
  */
 function seedsCell(check) {
-    return `${check.pass.filter(Boolean).length}/${check.pass.length}`;
+    return countWithInterval(check.pass.filter(Boolean).length, check.pass.length);
 }
 
 /**
- * @param {{ value: number | null, pass: boolean }} mean a mean criterion
- * @returns {string} the mean to 2 places and `ok` or `FAIL`
+ * @param {{ value: number | null, pass: boolean, unchecked?: boolean }} mean a mean criterion
+ * @returns {string} the mean to 2 places and `ok`, `FAIL` or `UNCHECKED` (the metric lacks its arithmetic test, source
+ *   test or liveness read)
  */
 function meanCell(mean) {
-    return `${mean.value === null ? 'n/a' : mean.value.toFixed(2)} ${mean.pass ? 'ok' : 'FAIL'}`;
+    const verdict = mean.unchecked ? 'UNCHECKED' : mean.pass ? 'ok' : 'FAIL';
+    return `${mean.value === null ? 'n/a' : mean.value.toFixed(2)} ${verdict}`;
 }
 
 /**
- * @param {{ rel: number | null, delta: number | null } | undefined} delta a Target delta
+ * @param {{ rel: number | null, delta: number | null, unverified?: boolean } | undefined} delta a Target delta
  * @returns {string} the change against the reference as a signed percentage, `=` for the reference, `n/a` without one
  */
 function deltaCell(delta) {
     if (delta === undefined) {
         return '=';
+    }
+    if (delta.unverified) {
+        return 'unverified';
     }
     if (delta.rel === null) {
         return delta.delta === null ? 'n/a' : `${delta.delta >= 0 ? '+' : ''}${delta.delta.toFixed(2)}`;
@@ -98,10 +116,10 @@ function huntersCell(hunters) {
 
 /**
  * @param {{ above: number, of: number } | undefined} summer an arm's summer-minimum count
- * @returns {string} `k/n` seeds at or above 100 prey through every summer, `n/a` without the count
+ * @returns {string} `k/n` seeds at or above 100 prey through every summer, with the interval of the count; `n/a` without it
  */
 function summerCell(summer) {
-    return summer === undefined ? 'n/a' : `${summer.above}/${summer.of}`;
+    return summer === undefined ? 'n/a' : countWithInterval(summer.above, summer.of);
 }
 
 /**

@@ -1,7 +1,8 @@
 // Screen verdicts: the Phase 4 collapse criteria per seed and per arm, and each arm's deltas against the reference arm,
 // computed from eval reports that carry `traces`. Pure: no files, no clock.
 
-import { keepRule } from '../../js/evo/keep-rule.js';
+import { keepRule, LOW_POPULATION } from '../../js/evo/keep-rule.js';
+import { statusOf, thresholdReady } from '../../js/evo/compare-rules.js';
 import { BURN_IN_TICKS } from '../../js/evo/observer-events.js';
 import { quantile } from '../../js/evo/metrics-stats.js';
 
@@ -12,26 +13,15 @@ export const MIN_MATING_SHARE = 0.2;
 export const MIN_BORN_SHARE = 0.5;
 
 /**
- * The hunter gate (T60, user's keep rules 2026-11-05): judged against the reference arm, not on absolute floors, and
- * on headcounts rather than "at least one alive". An arm keeps hunters at the last tick on at least this share of its
- * seeds (6 of 8)...
- */
-export const MIN_HUNTER_SEED_SHARE = 0.75;
-/** ...has no more seeds than the reference ending under this many agents... */
-export const LOW_POPULATION = 80;
-/**
- * ...and its medians of `eval.predators_at_end` and `eval.hunter_ticks_last_quarter` are not below the reference's.
- * `eval.hunter_kills_per_life_p50` is reported beside them, not gated: a typical hunter life expects well under one kill.
+ * The hunter gate (T60, user's keep rules 2026-11-05; metric-trust T31): the arm passes when `keepRule` against the
+ * reference finds no guard worse (a paired exact test on the seeds with hunters alive at the last tick and on the seeds
+ * ending under `LOW_POPULATION`, plus each verified guard metric). The medians of `eval.predators_at_end`,
+ * `eval.hunter_ticks_last_quarter` and `eval.hunter_kills_per_life_p50` are reported beside it, not tested: without an
+ * interval each failed an inert arm half the time.
  */
 
 /** The Phase 4 Targets, compared against the reference arm. */
-export const TARGETS = [
-    'eval.mating_share',
-    'eval.lineages_alive',
-    'eval.births_per_1k',
-    'eval.food_energy_per_1k',
-    'eval.fed_median_lifespan',
-];
+export const TARGETS = ['eval.lineages_alive', 'eval.births_per_1k', 'eval.food_energy_per_1k'];
 
 /**
  * The new evolution metrics the screen table shows as each arm's mean over its seeds. They carry no verdict; the table
@@ -63,6 +53,8 @@ export const WATCH_METRICS = [
     'eval.basin_pop_cv',
     'eval.pred_prey_lag_corr',
     'eval.prey_summer_min',
+    'eval.mating_share',
+    'eval.fed_median_lifespan',
 ];
 
 /** Per-seed criteria in table order: key and what it checks. */
@@ -112,10 +104,11 @@ function metricValues(report, metric) {
 
 /**
  * @param {Record<string, any>} report an eval report with `traces`
+ * @param {ScreenOptions} [options] the threshold-readiness lookup
  * @returns {Record<string, SeedCheck>} the per-seed criteria
  * @throws {Error} when the report has no traces
  */
-export function seedChecks(report) {
+export function seedChecks(report, { thresholdReady: ready = thresholdReady } = {}) {
     if (!Array.isArray(report.traces)) {
         throw new Error('report has no traces; rerun the arm with this version of the eval');
     }
@@ -135,7 +128,9 @@ export function seedChecks(report) {
         report.traces.map((/** @type {any} */ t) => shareAbove(t, minAgents)),
         (v) => v >= POP_ABOVE_SHARE,
     );
-    add('catchRate', metricValues(report, 'eval.hunter_catches_per_1k'), (v) => v > 0);
+    // A threshold criterion needs its metric's arithmetic test, source test and liveness read (T31).
+    const catchReady = ready('eval.hunter_catches_per_1k');
+    add('catchRate', metricValues(report, 'eval.hunter_catches_per_1k'), (v) => catchReady && v > 0);
     add(
         'lineages',
         report.traces.map((/** @type {any} */ t) => t.lineages),
@@ -158,11 +153,14 @@ export function seedChecks(report) {
  * @param {Record<string, any>} report an eval report
  * @param {string} metric a metric name
  * @param {number} floor the least mean that passes
- * @returns {{ value: number | null, pass: boolean }} the metric's mean over the seeds and whether it reaches `floor`
+ * @param {ScreenOptions} options the threshold-readiness lookup
+ * @returns {{ value: number | null, pass: boolean, unchecked?: boolean }} the metric's mean over the seeds and whether it
+ *   reaches `floor`; a threshold criterion needs the metric's arithmetic test, source test and liveness read, else it
+ *   fails with `unchecked: true`
  */
-function meanAtLeast(report, metric, floor) {
+function meanAtLeast(report, metric, floor, { thresholdReady: ready = thresholdReady } = {}) {
     const value = report.metrics[metric]?.mean ?? null;
-    return { value, pass: value !== null && value >= floor };
+    return ready(metric) ? { value, pass: value !== null && value >= floor } : { value, pass: false, unchecked: true };
 }
 
 /**
@@ -184,33 +182,35 @@ function lowSeeds(report) {
 }
 
 /**
+ * @typedef {object} ScreenOptions
+ * @property {(metric: string) => string} [status] the status lookup (`statusOf`); a comparison criterion reads only
+ *   `verified` metrics
+ * @property {(metric: string) => boolean} [thresholdReady] whether a threshold criterion's metric has its arithmetic
+ *   test, source test and liveness read (`thresholdReady`)
+ */
+
+/**
  * @param {Record<string, any>} report an eval report
  * @param {Record<string, any>} reference the reference arm's report
+ * @param {ScreenOptions} [options] the status lookup the keep rule's metric guards read
  * @returns {{ predators: number | null, ticks: number | null, kills: number | null, chaseCatch: number | null,
- *   aliveShare: number, lowSeeds: number, pass: boolean }} the seed medians of `eval.predators_at_end`,
- *   `eval.hunter_ticks_last_quarter` and `eval.hunter_kills_per_life_p50`, the mean `eval.chase_catch_share`, the share of
- *   seeds with a hunter at the last tick, the seeds ending under `LOW_POPULATION`, and whether the keep rules hold
+ *   aliveShare: number, lowSeeds: number, keep: ReturnType<typeof keepRule> | null, pass: boolean }} the seed medians of
+ *   `eval.predators_at_end`, `eval.hunter_ticks_last_quarter` and `eval.hunter_kills_per_life_p50` (reported, not
+ *   tested), the mean `eval.chase_catch_share`, the share of seeds with a hunter at the last tick, the seeds ending under
+ *   `LOW_POPULATION`, the keep rule against the reference (null for the reference itself) and whether no guard is worse
  */
-export function hunterGate(report, reference) {
-    const predators = seedMedian(report, 'eval.predators_at_end');
-    const ticks = seedMedian(report, 'eval.hunter_ticks_last_quarter');
+export function hunterGate(report, reference, { status = statusOf } = {}) {
     const ends = metricValues(report, 'eval.predators_at_end');
-    const aliveShare = ends.filter((v) => v !== null && v !== undefined && v > 0).length / report.seeds.length;
-    const low = lowSeeds(report);
-    const notBelow = (/** @type {number | null} */ v, /** @type {number | null} */ ref) =>
-        v !== null && (ref === null || v >= ref);
+    const keep = report === reference ? null : keepRule(reference, report, { status });
     return {
-        predators,
-        ticks,
+        predators: seedMedian(report, 'eval.predators_at_end'),
+        ticks: seedMedian(report, 'eval.hunter_ticks_last_quarter'),
         kills: seedMedian(report, 'eval.hunter_kills_per_life_p50'),
         chaseCatch: report.metrics['eval.chase_catch_share']?.mean ?? null,
-        aliveShare,
-        lowSeeds: low,
-        pass:
-            aliveShare >= MIN_HUNTER_SEED_SHARE &&
-            low <= lowSeeds(reference) &&
-            notBelow(predators, seedMedian(reference, 'eval.predators_at_end')) &&
-            notBelow(ticks, seedMedian(reference, 'eval.hunter_ticks_last_quarter')),
+        aliveShare: ends.filter((v) => v !== null && v !== undefined && v > 0).length / report.seeds.length,
+        lowSeeds: lowSeeds(report),
+        keep,
+        pass: keep === null || !keep.worse,
     };
 }
 
@@ -231,19 +231,35 @@ export function summerSeeds(report) {
 }
 
 /**
+ * @param {number | null} mean the arm's mean
+ * @param {number | null} ref the reference's mean
+ * @param {{ verified: boolean }} metric whether the metric is `verified`
+ * @returns {{ mean: number | null, delta: number | null, rel: number | null, unverified?: boolean }} the delta, or only
+ *   the mean with `unverified: true` for a metric that is not `verified`
+ */
+function oneDelta(mean, ref, { verified }) {
+    if (!verified) {
+        return { mean, delta: null, rel: null, unverified: true };
+    }
+    const delta = mean === null || ref === null ? null : mean - ref;
+    return { mean, delta, rel: delta === null || ref === null || ref === 0 ? null : delta / Math.abs(ref) };
+}
+
+/**
  * @param {Record<string, any>} report an eval report
  * @param {Record<string, any>} reference the reference arm's report
- * @returns {Record<string, { mean: number | null, delta: number | null, rel: number | null }>} per Target: the arm's
- *   mean, the difference from the reference's mean and that difference over the reference's magnitude
+ * @param {ScreenOptions} [options] the status lookup
+ * @returns {Record<string, { mean: number | null, delta: number | null, rel: number | null, unverified?: boolean }>}
+ *   per Target: the arm's mean, the difference from the reference's mean and that difference over the reference's
+ *   magnitude; a metric that is not `verified` keeps its mean, gets no delta and `unverified: true`
  */
-export function targetDeltas(report, reference) {
-    /** @type {Record<string, { mean: number | null, delta: number | null, rel: number | null }>} */
+export function targetDeltas(report, reference, { status = statusOf } = {}) {
+    /** @type {Record<string, { mean: number | null, delta: number | null, rel: number | null, unverified?: boolean }>} */
     const out = {};
     for (const metric of TARGETS) {
-        const mean = report.metrics[metric]?.mean ?? null;
-        const ref = reference.metrics[metric]?.mean ?? null;
-        const delta = mean === null || ref === null ? null : mean - ref;
-        out[metric] = { mean, delta, rel: delta === null || ref === 0 ? null : delta / Math.abs(ref) };
+        out[metric] = oneDelta(report.metrics[metric]?.mean ?? null, reference.metrics[metric]?.mean ?? null, {
+            verified: status(metric) === 'verified',
+        });
     }
     return out;
 }
@@ -265,17 +281,19 @@ export function watchMeans(report) {
  * @param {string} name the arm name
  * @param {Record<string, any>} report the arm's report
  * @param {Record<string, any>} reference the reference arm's report
+ * @param {ScreenOptions} [options] the status and threshold-readiness lookups (`statusOf`, `thresholdReady`)
  * @returns {Record<string, any>} the arm's verdict: per-seed criteria, the two mean criteria, the mean population,
- *   `hunters` (`hunterGate`), `keep` (`keepRule` against the reference, null on the reference), `pass` (every seed passes every criterion, both means pass and the hunter gate passes), the Target deltas against the reference and the
- *   `WATCH_METRICS` means
+ *   `hunters` (`hunterGate`), `keep` (`keepRule` against the reference, null on the reference), `pass` (every seed
+ *   passes every criterion, both means pass and the hunter gate passes), the Target deltas against the reference
+ *   (`verified` metrics only) and the `WATCH_METRICS` means
  */
-export function armVerdict(name, report, reference) {
-    const criteria = seedChecks(report);
+export function armVerdict(name, report, reference, options = {}) {
+    const criteria = seedChecks(report, options);
     const means = {
-        matingShare: meanAtLeast(report, 'eval.mating_share', MIN_MATING_SHARE),
-        bornShare: meanAtLeast(report, 'eval.born_share', MIN_BORN_SHARE),
+        matingShare: meanAtLeast(report, 'eval.mating_share', MIN_MATING_SHARE, options),
+        bornShare: meanAtLeast(report, 'eval.born_share', MIN_BORN_SHARE, options),
     };
-    const hunters = hunterGate(report, reference);
+    const hunters = hunterGate(report, reference, options);
     const pass =
         SEED_CRITERIA.every((key) => criteria[key].pass.every(Boolean)) &&
         Object.values(means).every((m) => m.pass) &&
@@ -291,8 +309,8 @@ export function armVerdict(name, report, reference) {
         summer: summerSeeds(report),
         popMean: report.metrics['eval.population_mean']?.mean ?? null,
         pass,
-        deltas: report === reference ? null : targetDeltas(report, reference),
-        keep: report === reference ? null : keepRule(reference, report),
+        deltas: report === reference ? null : targetDeltas(report, reference, options),
+        keep: hunters.keep,
         watch: watchMeans(report),
     };
 }
@@ -300,14 +318,15 @@ export function armVerdict(name, report, reference) {
 /**
  * @param {Record<string, Record<string, any>>} reports arm name to report
  * @param {string} reference the reference arm's name
+ * @param {ScreenOptions} [options] the status and threshold-readiness lookups
  * @returns {{ reference: string, arms: Record<string, any>[] }} one verdict per arm, in the order of `reports`
  */
-export function screenVerdicts(reports, reference) {
+export function screenVerdicts(reports, reference, options = {}) {
     if (!Object.hasOwn(reports, reference)) {
         throw new Error(`reference arm "${reference}" has no report`);
     }
     return {
         reference,
-        arms: Object.entries(reports).map(([name, report]) => armVerdict(name, report, reports[reference])),
+        arms: Object.entries(reports).map(([name, report]) => armVerdict(name, report, reports[reference], options)),
     };
 }
