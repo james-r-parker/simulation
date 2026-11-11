@@ -1,5 +1,6 @@
 // What a compare row needs before it may carry a verdict: the metric's status and its minimum effect. Pure.
 
+import { binomialTwoSidedP } from './binomial.js';
 import { METRICS } from './metric-registry/index.js';
 import { metricStatus } from './metric-registry/status.js';
 
@@ -34,4 +35,21 @@ export function isShare(metric) {
  */
 export function effectFloor(metric, ref, { minEffect, shareMinEffect }) {
     return isShare(metric) ? shareMinEffect : minEffect * ref;
+}
+
+/** The largest sign-test p that lets a sparse metric keep a verdict. */
+export const SIGN_ALPHA = 0.05;
+
+/**
+ * Sparse paired differences (at least half exactly 0) carry a verdict only when the exact two-sided sign test on the
+ * nonzero ones agrees: a BCa interval on a few same-signed differences excludes 0 on 2 seeds of 32 (T29c).
+ * @param {readonly number[]} diffs the per-seed paired differences
+ * @returns {number | null} the exact sign-test p when at least half the differences are 0, null when they are dense
+ */
+export function sparseSignP(diffs) {
+    const nonzero = diffs.filter((d) => d !== 0);
+    if (nonzero.length * 2 > diffs.length) {
+        return null;
+    }
+    return binomialTwoSidedP(nonzero.length, nonzero.filter((d) => d > 0).length);
 }

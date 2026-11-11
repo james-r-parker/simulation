@@ -5,7 +5,7 @@ import { detExp, detLog } from '../sim/det-math.js';
 import { createRng, fork, nextInt } from '../sim/rng.js';
 import { DEFAULT_MIN_SEEDS, METRICS, minSeedsFor } from './metric-registry/index.js';
 import { withCurrentNames } from './metric-registry/renames.js';
-import { effectFloor, SHARE_MIN_EFFECT, statusOf } from './compare-rules.js';
+import { effectFloor, SHARE_MIN_EFFECT, SIGN_ALPHA, sparseSignP, statusOf } from './compare-rules.js';
 
 /** @typedef {import('./metric-registry/index.js').MetricName} MetricName */
 
@@ -295,12 +295,12 @@ function verdictFor(direction, { low, high, diff, ref, floor }) {
  * @param {CompareRow} filled the row with its numbers
  * @param {{ direction: ReturnType<typeof metricDirection>, options: { status: (metric: string) => string,
  *   log?: { log: (level: string, event: string, fields: object) => void } },
- *   stats: { low: number, high: number, diff: number, ref: number, floor: number } }} context the metric's
- *   direction, the status and log options, and the stats `verdictFor` reads
+ *   stats: { low: number, high: number, diff: number, ref: number, floor: number }, diffs: number[] }} context the
+ *   metric's direction, the status and log options, the stats `verdictFor` reads and the paired differences
  * @returns {CompareRow} the row with its verdict: none for a `watch` metric, `unverified` (and a `CompareUnverified`
  *   record) for a metric that is not `verified`, a note for an unknown one
  */
-function withVerdict(filled, { direction, options, stats }) {
+function withVerdict(filled, { direction, options, stats, diffs }) {
     if (direction === null) {
         return { ...filled, note: 'unknown metric' };
     }
@@ -312,7 +312,12 @@ function withVerdict(filled, { direction, options, stats }) {
         options.log?.log('info', 'CompareUnverified', { metric: filled.metric, status });
         return { ...filled, verdict: 'unverified' };
     }
-    return { ...filled, verdict: verdictFor(direction, stats) };
+    const verdict = verdictFor(direction, stats);
+    const p = verdict === 'no-difference' ? null : sparseSignP(diffs);
+    if (p !== null && p >= SIGN_ALPHA) {
+        return { ...filled, verdict: 'no-difference', note: `sparse: sign p ${Number(p.toPrecision(2))}` };
+    }
+    return { ...filled, verdict };
 }
 
 /**
@@ -359,6 +364,7 @@ function compareMetric(metric, before, after, options) {
     return withVerdict(filled, {
         direction,
         options,
+        diffs,
         stats: { low, high, diff, ref, floor: effectFloor(metric, ref, floors) },
     });
 }
