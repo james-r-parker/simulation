@@ -1,8 +1,6 @@
 # Metric trust
 
-**Status:** In progress - Phases 1 to 4 and Phase 5 T33 to T35 are built; T36 and T37 remain.
-**Validated:** 55e8f276 (2026-11-11)
-**Priority:** 1 - pinned (user, 2026-11-08): every choice the other docs make reads these metrics; runs that rest on no suspect metric keep going
+**Status:** Implemented - Phases 1 to 5 are built; T36 and T37 were done by [low-density-edge.md](low-density-edge.md) T2 and T4 (the keep rule in AGENTS.md, the `run-evolution-loop` skill and `docs/principles.md`).
 **Depends on:** [evolution-evals.md](evolution-evals.md)
 
 The eval metrics are the rules every choice is made by: keep rules, screen verdicts, phase Targets, the training curve and its plateau. Every metric a live report carries is held to the same five checks, and the registry records each:
@@ -220,7 +218,7 @@ Every metric has `power` and `minSeeds`. `eval:compare`, `npm run screen` and th
 | J - Power (Code)         | T26, T27, T28                            | The power writer, its read, the bar check                                                  |
 | K - Verdict tools (Code) | T29 to T32 (with T29a, T29b, T29c, T31a) | `compareReports` and the share min-effect, the power re-read, `keepRule`, the screen table |
 
-### Phase 5 - Tools and past decisions
+### Phase 5 - Tools and past decisions (built)
 
 **Targets:** none - tool defaults and a re-read of recorded verdicts
 
@@ -324,7 +322,7 @@ Every tool logs its policy and configHash first, replay takes `live`, traces kee
 | T31a | (built: 2026-11-11) The per-seed screen criteria report the passing seed share and an exact paired test on the seeds that moved (lost against regained) in place of "every seed passes"; the `flatAfter` comment names `eval.bite_on_prey_view`                                                                                                                                                                                                                                                                       | [mechanical] | T31                                                        |
 | T32  | (built: 2026-11-11, review found no code fault; five doc wordings fixed) Conformance review of Phase 4, in parallel with `scripts/check.sh`                                                                                                                                                                                                                                                                                                                                                                           | [judgement]  | T28, T31a                                                  |
 
-### Phase 5 - Tools and past decisions
+### Phase 5 - Tools and past decisions (built)
 
 | #    | Task                                                                                                                                                                                                                                                                                    | Nature       | Depends on |
 | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
@@ -332,8 +330,8 @@ Every tool logs its policy and configHash first, replay takes `live`, traces kee
 | T34  | (built: 2026-11-11) `createTrace` keeps `prey` and `hunters` per checkpoint and reports carry them; tests compare `eval.prey_summer_min` with the lowest post-burn-in summer prey count                                                                                                 | [mechanical] | T32        |
 | T34a | (built: 2026-11-11, verified 157 to 172) Fill the 15 powered metrics that lack a test or liveness reading: liveness re-read on `evals/power/defaults-floor-on-E150.json` (`eval.bite_off_other_view`, `eval.bite_on_prey_view`), and arithmetic tests for the 13 suffixes that had none | [mechanical] | T34        |
 | T35  | Re-read every `evals/experiments.json` record from `E120` against the registry: list the verdicts that rest on a metric T14, T15, T24, T25 or T28 changed, and whether each still holds from the saved reports; a verdict that flips becomes a task in its owning doc                   | [judgement]  | T33, T34   |
-| T36  | AGENTS.md Hard rule and command row, the `run-evolution-loop` skill step 0, `docs/principles.md` names `keepRule` and the smallest loss its guards detect                                                                                                                               | [mechanical] | T35        |
-| T37  | Conformance review of Phase 5, in parallel with `scripts/check.sh`; status to `Implemented`                                                                                                                                                                                             | [judgement]  | T36        |
+| T36  | (built: 2026-11-11, by low-density-edge.md T2) AGENTS.md Hard rule and command row, the `run-evolution-loop` skill step 0, `docs/principles.md` names `keepRule` and the smallest loss its guards detect                                                                                | [mechanical] | T35        |
+| T37  | (built: 2026-11-11, by low-density-edge.md T4) Conformance review of Phase 5, in parallel with `scripts/check.sh`; status to `Implemented`                                                                                                                                              | [judgement]  | T36        |
 
 ## Verification
 

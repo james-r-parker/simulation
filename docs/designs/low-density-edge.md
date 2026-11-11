@@ -2,7 +2,7 @@
 
 **Status:** Proposed - a thin population still breeds: the edge is measured, then the mate-reach, clonal, split and calendar rules are screened for the mate drought. Phase 1 (the keep rule in the docs) is first.
 **Validated:** 38339cbd (2026-11-11)
-**Priority:** 2 - the food brake shrinks the world and it still crashes (E152), so the edge under 100 prey is the binding failure, and the crash gates every hunter-skill plan below it ([review-2026-11-11.md](../review-2026-11-11.md) H1, H2)
+**Priority:** 1 - the food brake shrinks the world and it still crashes (E152), so the edge under 100 prey is the binding failure, and the crash gates every hunter-skill plan below it ([review-2026-11-11.md](../review-2026-11-11.md) H1, H2)
 **Depends on:** [metric-trust.md](metric-trust.md), [carrying-capacity.md](carrying-capacity.md) (its built Phase 1: the `held` guard, `evals/decisions/` and the E151 reference)
 
 The scene this doc serves ([principles.md](../principles.md)): **Boom and bust** - a local population swells, strips a
@@ -263,7 +263,7 @@ before its run.
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
 | T1  | (built: 2026-11-11) `docs/principles.md`: apply P5, P6 and P7 from review-2026-11-11.md as written; the review's status line records them applied                                    | [mechanical] | -          |
 | T2  | (built: 2026-11-11) AGENTS.md and `.claude/skills/run-evolution-loop/SKILL.md`: name `keepRule`, `--keep-rule`, the 64-seed bar and the smallest detected loss (metric-trust.md T36) | [mechanical] | T1         |
-| T3  | metric-trust.md: T36 and T37 marked built by this doc, the status `Implemented`                                                                                                      | [mechanical] | T2         |
+| T3  | (built: 2026-11-11) metric-trust.md: T36 and T37 marked built by this doc, the status `Implemented`                                                                                  | [mechanical] | T2         |
 | T4  | Conformance review of Phase 1, in parallel with `scripts/check.sh --docs`                                                                                                            | [judgement]  | T3         |
 
 ### Phase 2 - Measure the edge
