@@ -27,7 +27,19 @@ export function isPossibleMate(world, slot, other) {
 }
 
 /**
- * Notes the tick when the caster has a possible mate among the `count` rows the sense kernel left in `world.rayLocal`.
+ * @param {World} world the world
+ * @param {number} slot the casting agent
+ * @param {number} other a possible mate in view
+ * @param {number} dx the row's x relative to the caster
+ * @param {number} dy the row's y relative to the caster
+ * @returns {boolean} whether `other` is within the reach `findMale` pairs at: `isPartner`'s distance test, edge to edge
+ */
+function inReach(world, slot, other, dx, dy) {
+    return Math.sqrt(dx * dx + dy * dy) < world.size[slot] + world.size[other] + world.config.mateRange;
+}
+
+/**
+ * Notes the tick when the caster has a possible mate within reach among the `count` rows the sense kernel left in `world.rayLocal`.
  * @param {World} world the world
  * @param {number} slot the casting agent
  * @param {number} count the gathered rows
@@ -37,7 +49,12 @@ export function noteMatesSeen(world, slot, count) {
     const local = world.rayLocal;
     for (let at = 3, end = count * LOCAL_STRIDE; at < end; at += LOCAL_STRIDE) {
         const other = local[at] - AGENT_KEY;
-        if (other >= 0 && other < KIND_STRIDE && isPossibleMate(world, slot, other)) {
+        if (
+            other >= 0 &&
+            other < KIND_STRIDE &&
+            isPossibleMate(world, slot, other) &&
+            inReach(world, slot, other, local[at - 3], local[at - 2])
+        ) {
             world.mateSeenAt[slot] = world.tick;
             return;
         }
