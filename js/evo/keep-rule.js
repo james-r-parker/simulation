@@ -1,15 +1,19 @@
-// The no-harm test of docs/principles.md ("A mechanism that adds realistic natural behaviour stays"): paired bootstrap
-// tests on the share of seeds with hunters alive at the last tick and the share ending under 80 agents, plus every
-// verified guard metric. The two seed guards use an exact McNemar test on the discordant seeds (a bootstrap interval
-// fails on sparse 0/1 differences); a metric guard is `worse` only when its paired bootstrap interval excludes 0. Pure.
+// The no-harm test of docs/principles.md ("A mechanism that adds realistic natural behaviour stays"): tests on the share
+// of seeds with hunters alive at the last tick, the share ending under 80 agents and the share that held 100 agents or
+// more after burn-in, plus every verified guard metric. The three seed guards use an exact McNemar test on the discordant
+// seeds (a bootstrap interval fails on sparse 0/1 differences); a metric guard is `worse` only when its paired
+// bootstrap interval excludes 0. Pure.
 
 import { binomialTwoSidedP, exactWorse, leastDetectedLoss, wilsonInterval } from './binomial.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 import { bootstrapInterval, metricDirection } from './compare.js';
 import { statusOf } from './compare-rules.js';
 import { minSeedsFor } from './metric-registry/index.js';
 
 /** Seeds ending under this many agents count as collapsed. */
 export const LOW_POPULATION = 80;
+/** A seed holds when its population never falls under this many agents after burn-in (carrying-capacity.md, Detectors). */
+export const HELD_POPULATION = 100;
 /** The adoption bar's alive share (12 of 16) and the guard metrics beyond the two seed shares. */
 export const ADOPTION_ALIVE_SHARE = 0.75;
 /** Metrics that guard the world besides the two seed shares; each counts only while `verified` (the hunter-skill guard). */
@@ -17,8 +21,9 @@ export const GUARD_METRICS = ['eval.hunter_catches_per_1k'];
 
 /**
  * @typedef {object} Guard
- * @property {string} name `alive`, `under80` or a metric name
- * @property {'worse' | 'no-harm' | 'unchecked'} verdict `worse` only when the interval excludes 0 in the bad direction
+ * @property {string} name `alive`, `under80`, `held` or a metric name
+ * @property {'worse' | 'no-harm' | 'unchecked'} verdict `worse` only when the interval excludes 0 in the bad
+ *   direction (a seed guard: the exact test)
  * @property {number | null} diff mean paired difference, after minus before (a share, or the metric's unit)
  * @property {number | null} low interval low (a metric guard's bootstrap interval; null for a seed guard)
  * @property {number | null} high interval high (null for a seed guard)
@@ -60,6 +65,29 @@ export function underFlags(report) {
         return null;
     }
     return report.traces.map((/** @type {any} */ t) => (sum(t.spec) < LOW_POPULATION ? 1 : 0));
+}
+
+/**
+ * @param {Record<string, any>} report an eval report
+ * @returns {number[] | null} per seed 1 when the trace `pop` has a sample after burn-in and none of those is under 100,
+ *   else 0; null when the report has no `pop` series or a seed has no sample after burn-in
+ */
+export function heldFlags(report) {
+    if (!Array.isArray(report.traces) || report.traces.some((/** @type {any} */ t) => !Array.isArray(t.pop))) {
+        return null;
+    }
+    /** @type {number[]} */
+    const flags = [];
+    for (const t of report.traces) {
+        const after = t.pop.filter(
+            (/** @type {number} */ _p, /** @type {number} */ j) => (j + 1) * t.interval >= BURN_IN_TICKS,
+        );
+        if (after.length === 0) {
+            return null;
+        }
+        flags.push(after.every((/** @type {number} */ p) => p >= HELD_POPULATION) ? 1 : 0);
+    }
+    return flags;
 }
 
 /**
@@ -228,6 +256,7 @@ export function keepRule(
     const guards = [
         seedGuard('alive', aliveFlags(before), aliveFlags(after), 'higher'),
         seedGuard('under80', under.before, under.after, 'lower'),
+        seedGuard('held', heldFlags(before), heldFlags(after), 'higher'),
         ...names.map((metric) => metricGuard(metric, before, after, { status, seedsFor })),
     ];
     return {

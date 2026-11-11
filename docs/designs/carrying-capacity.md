@@ -230,7 +230,7 @@ The labels are for this doc; each prediction takes the next numeric id when T8 r
 
 | #   | Task                                                                                                                                                       | Nature       | Depends on |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | `held` seed guard and `HELD_POPULATION` in `js/evo/keep-rule.js`, printed by `formatKeepRule`, with tests                                                  | [mechanical] | -          |
+| T1  | (built: 2026-11-11) `held` seed guard and `HELD_POPULATION` in `js/evo/keep-rule.js`, printed by `formatKeepRule`, with tests                              | [mechanical] | -          |
 | T2  | `js/evo/scene-capacity.js`: the four detectors, registered in the metric registry, with arithmetic and source tests; `docs/designs/metrics.md` regenerated | [judgement]  | -          |
 | T3  | A seed guard reads `better` as well as `worse` (the exact test in the good direction), printed by `formatKeepRule`, with tests                             | [mechanical] | T1         |
 | T4  | `evals/decisions/` and the rule in `scripts/check-experiments.mjs` that a record from `E151` on names committed reports                                    | [mechanical] | -          |
