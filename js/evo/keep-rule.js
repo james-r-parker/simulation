@@ -1,7 +1,9 @@
 // The no-harm test of docs/principles.md ("A mechanism that adds realistic natural behaviour stays"): paired bootstrap
-// intervals on the share of seeds with hunters alive at the last tick and the share ending under 80 agents, plus every
-// verified guard metric. A guard is `worse` only when its interval excludes 0. Pure: no clock, no files.
+// tests on the share of seeds with hunters alive at the last tick and the share ending under 80 agents, plus every
+// verified guard metric. The two seed guards use an exact McNemar test on the discordant seeds (a bootstrap interval
+// fails on sparse 0/1 differences); a metric guard is `worse` only when its paired bootstrap interval excludes 0. Pure.
 
+import { binomialTwoSidedP, exactWorse, leastDetectedLoss, wilsonInterval } from './binomial.js';
 import { bootstrapInterval, metricDirection } from './compare.js';
 import { statusOf } from './compare-rules.js';
 import { minSeedsFor } from './metric-registry/index.js';
@@ -18,11 +20,15 @@ export const GUARD_METRICS = ['eval.hunter_catches_per_1k'];
  * @property {string} name `alive`, `under80` or a metric name
  * @property {'worse' | 'no-harm' | 'unchecked'} verdict `worse` only when the interval excludes 0 in the bad direction
  * @property {number | null} diff mean paired difference, after minus before (a share, or the metric's unit)
- * @property {number | null} low interval low
- * @property {number | null} high interval high
- * @property {number | null} smallest the smallest loss this guard detects at this seed count: half the interval's width
- *   (a share for the seed guards, the metric's unit for a metric), at least one seed's share for a seed guard
- * @property {number | null} smallestSeeds `smallest` as seeds, for the seed guards
+ * @property {number | null} low interval low (a metric guard's bootstrap interval; null for a seed guard)
+ * @property {number | null} high interval high (null for a seed guard)
+ * @property {number | null} smallest the smallest loss this guard detects (a metric guard: half the interval's width in
+ *   the metric's unit; a seed guard: `smallestSeeds` over the seeds)
+ * @property {number | null} smallestSeeds a seed guard's least `harmed` count that its test calls worse, given the
+ *   `recovered` count observed; null when none up to the seeds run does
+ * @property {number} [harmed] seed guard: seeds that moved to the harmful side (`b` of the McNemar test)
+ * @property {number} [recovered] seed guard: seeds that moved back (`c`)
+ * @property {number} [p] seed guard: the exact two-sided p of `harmed` against `harmed + recovered`
  * @property {string} [note] why the guard is `unchecked`
  */
 
@@ -76,23 +82,19 @@ const unchecked = (name, note) => ({
  * @param {string} name the guard name
  * @param {readonly number[]} diffs the per-seed paired differences, after minus before
  * @param {'higher' | 'lower'} direction the better direction
- * @param {boolean} seedShare whether the values are 0/1 seed flags
- * @returns {Guard} the guard: `worse` when the interval excludes 0 on the bad side
+ * @returns {Guard} the metric guard: `worse` when the bootstrap interval excludes 0 on the bad side
  */
-function judge(name, diffs, direction, seedShare) {
+function judge(name, diffs, direction) {
     const { low, high } = bootstrapInterval(diffs);
-    const diff = sum(diffs) / diffs.length;
     const worse = direction === 'higher' ? high < 0 : low > 0;
-    const width = (high - low) / 2;
-    const smallest = seedShare ? Math.max(width, 1 / diffs.length) : width;
     return {
         name,
         verdict: worse ? 'worse' : 'no-harm',
-        diff,
+        diff: sum(diffs) / diffs.length,
         low,
         high,
-        smallest,
-        smallestSeeds: seedShare ? Math.round(smallest * diffs.length) : null,
+        smallest: (high - low) / 2,
+        smallestSeeds: null,
     };
 }
 
@@ -100,19 +102,31 @@ function judge(name, diffs, direction, seedShare) {
  * @param {string} name the guard name
  * @param {number[] | null} before per-seed 0/1 flags of the before report
  * @param {number[] | null} after the after report's
- * @param {'higher' | 'lower'} direction the better direction
- * @returns {Guard} the seed-share guard
+ * @param {'higher' | 'lower'} direction `higher` when a 1 is the good outcome (alive), `lower` when it is the bad one
+ * @returns {Guard} the seed-share guard: an exact McNemar test on the discordant seeds, `worse` when more seeds moved to
+ *   the harmful side than back and the exact two-sided p is below 0.05
  */
 function seedGuard(name, before, after, direction) {
     if (before === null || after === null) {
         return unchecked(name, 'the report lacks the values');
     }
-    return judge(
+    const lost = direction === 'higher' ? [1, 0] : [0, 1];
+    const moved = (/** @type {number[]} */ [from, to]) => after.filter((v, i) => before[i] === from && v === to).length;
+    const harmed = moved(lost);
+    const recovered = moved([lost[1], lost[0]]);
+    const smallestSeeds = leastDetectedLoss(recovered, before.length - recovered);
+    return {
         name,
-        after.map((v, i) => v - before[i]),
-        direction,
-        true,
-    );
+        verdict: exactWorse(harmed, recovered) ? 'worse' : 'no-harm',
+        diff: (sum(after) - sum(before)) / before.length,
+        low: null,
+        high: null,
+        smallest: smallestSeeds === null ? null : smallestSeeds / before.length,
+        smallestSeeds,
+        harmed,
+        recovered,
+        p: binomialTwoSidedP(harmed + recovered, harmed),
+    };
 }
 
 /**
@@ -154,7 +168,7 @@ function metricGuard(metric, before, after, status) {
     }
     const b = before.metrics[metric].values;
     const diffs = after.metrics[metric].values.map((/** @type {number} */ v, /** @type {number} */ i) => v - b[i]);
-    return judge(metric, diffs, /** @type {'higher' | 'lower'} */ (metricDirection(metric)), false);
+    return judge(metric, diffs, /** @type {'higher' | 'lower'} */ (metricDirection(metric)));
 }
 
 /**
@@ -180,10 +194,10 @@ function adoption(alive, under) {
 
 /**
  * @param {readonly number[]} flags 0/1 per seed
- * @returns {Count} the count with the bootstrap interval of the share, in seeds
+ * @returns {Count} the count with the Wilson interval of the share, in seeds
  */
 function count(flags) {
-    const { low, high } = bootstrapInterval(flags);
+    const { low, high } = wilsonInterval(sum(flags), flags.length);
     return { count: sum(flags), of: flags.length, low: low * flags.length, high: high * flags.length };
 }
 
@@ -227,8 +241,11 @@ export function formatKeepRule(result) {
         if (g.verdict === 'unchecked') {
             return `guard ${g.name}: unchecked (${g.note})`;
         }
-        const loss = g.smallestSeeds === null ? f(g.smallest) : `${f(g.smallest)} (${g.smallestSeeds} seeds)`;
-        return `guard ${g.name}: ${g.verdict}, diff ${f(g.diff)}, interval [${f(g.low)}, ${f(g.high)}], smallest loss detected ${loss}`;
+        if (g.harmed === undefined) {
+            return `guard ${g.name}: ${g.verdict}, diff ${f(g.diff)}, interval [${f(g.low)}, ${f(g.high)}], smallest loss detected ${f(g.smallest)}`;
+        }
+        const least = g.smallestSeeds === null ? 'none' : `${g.smallestSeeds} seeds`;
+        return `guard ${g.name}: ${g.verdict}, ${g.harmed} seeds harmed vs ${g.recovered} recovered (exact p ${f(g.p ?? null)}), smallest loss detected ${least}`;
     });
     const c = (/** @type {Count | null} */ n) =>
         n === null ? 'n/a' : `${n.count}/${n.of} [${f(n.low)}, ${f(n.high)}]`;
