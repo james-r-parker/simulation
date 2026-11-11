@@ -3,13 +3,15 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { METRICS } from '../js/evo/metric-registry/index.js';
+import { POWER } from '../js/evo/metric-registry/power.js';
 import { minSeedsFromPower } from '../js/evo/metric-registry/status.js';
 import { withCurrentNames } from '../js/evo/metric-registry/renames.js';
 import { validateReport } from '../js/evo/report.js';
 import { createMetricWriterMain, runAsCli } from './lib/metric-writer-cli.mjs';
 
 const OUTPUT = fileURLToPath(new URL('../js/evo/metric-registry/power.js', import.meta.url));
-const USAGE = 'usage: metric-power-write <power.json> --report <eval-report.json> [--write]';
+const USAGE = 'usage: metric-power-write <power.json> --report <eval-report.json> [--merge] [--write]';
+// --merge keeps the readings of metrics the power JSON does not name, so a partial run adds to the registry.
 
 /** @typedef {{metric: string, size: number, falsePositive: number, detectable: number | null}} PowerRow */
 
@@ -90,6 +92,15 @@ export function readPower(rawPower, rawReport, reportPath, metrics = METRICS) {
     return Object.freeze(grouped);
 }
 
+/**
+ * @param {Readonly<Record<string, import('../js/evo/metric-registry/entry.js').Power>>} existing the readings now in the registry
+ * @param {Readonly<Record<string, import('../js/evo/metric-registry/entry.js').Power>>} readings the new readings, which win
+ * @returns {Readonly<Record<string, import('../js/evo/metric-registry/entry.js').Power>>} both, the new over the old
+ */
+export function mergePower(existing, readings) {
+    return Object.freeze({ ...existing, ...readings });
+}
+
 /** @param {Readonly<Record<string, import('../js/evo/metric-registry/entry.js').Power>>} readings readings */
 export function renderPowerModule(readings) {
     const quote = (/** @type {string} */ value) => `'${value.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
@@ -115,7 +126,7 @@ export function renderPowerModule(readings) {
 }
 
 /** @param {string[]} args CLI args */
-/** @param {string[]} args @returns {{powerPath: string, reportPath: string, write: boolean} | null} */
+/** @param {string[]} args @returns {{powerPath: string, reportPath: string, write: boolean, merge: boolean} | null} */
 function parseArgs(args) {
     const reportIndex = args.indexOf('--report');
     const powerPath = args.find((arg) => !arg.startsWith('--') && args[args.indexOf(arg) - 1] !== '--report');
@@ -123,26 +134,30 @@ function parseArgs(args) {
         powerPath === undefined ||
         reportIndex < 0 ||
         args[reportIndex + 1] === undefined ||
-        args.some((arg) => arg.startsWith('--') && !['--report', '--write'].includes(arg))
+        args.some((arg) => arg.startsWith('--') && !['--report', '--write', '--merge'].includes(arg))
     ) {
         process.stderr.write(`${USAGE}\n`);
         return null;
     }
-    return { powerPath, reportPath: args[reportIndex + 1], write: args.includes('--write') };
+    return {
+        powerPath,
+        reportPath: args[reportIndex + 1],
+        write: args.includes('--write'),
+        merge: args.includes('--merge'),
+    };
 }
 
-/** @param {{powerPath: string, reportPath: string, write: boolean}} parsed @param {{metrics: Readonly<Record<string, any>>, output: string, read?: (path: string) => any, print: (line: string) => void}} io */
-/** @param {{powerPath: string, reportPath: string, write: boolean}} parsed arguments @param {{metrics: Readonly<Record<string, any>>, output: string, read?: (path: string) => any, print: (line: string) => void}} io IO */
+/** @param {{powerPath: string, reportPath: string, write: boolean, merge: boolean}} parsed arguments @param {{metrics: Readonly<Record<string, any>>, output: string, read?: (path: string) => any, print: (line: string) => void}} io IO */
 function applyRead(parsed, { metrics, output, read, print }) {
     const load = read ?? readJson;
-    const { powerPath, reportPath, write } = parsed;
+    const { powerPath, reportPath, write, merge } = parsed;
     const readings = readPower(load(powerPath), load(reportPath), reportPath, metrics);
     for (const [name, power] of Object.entries(readings)) {
         const minimum = minSeedsFromPower({ unit: metrics[name].unit, power });
         print(`${name} minSeeds=${minimum ?? 'null'}`);
     }
     if (write) {
-        writeFileSync(output, renderPowerModule(readings));
+        writeFileSync(output, renderPowerModule(merge ? mergePower(POWER, readings) : readings));
         print(`wrote ${output}`);
     }
 }

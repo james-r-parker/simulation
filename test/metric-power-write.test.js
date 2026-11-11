@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { main, parseJsonOutput, readPower, renderPowerModule } from '../scripts/metric-power-write.mjs';
+import { main, mergePower, parseJsonOutput, readPower, renderPowerModule } from '../scripts/metric-power-write.mjs';
 import { withPower } from '../js/evo/metric-registry/index.js';
 
 const names = ['x.at16', 'x.at32', 'x.never', 'x.share', 'x.unknown'];
@@ -130,6 +130,32 @@ describe('metric-power-write', () => {
         expect(main(['--report', 'report.json'], { metrics, read, print })).toBe(2);
         expect(main(['power.json', '--report', 'report.json', '--unsupported'], { metrics, read, print })).toBe(2);
         expect(main(['power.json', '--report', 'report.json'], { metrics, read: () => ({}), print })).toBe(1);
+    });
+
+    it('merges new readings over the old and keeps the metrics the new run does not name', () => {
+        const old = readPower({ rows }, report, 'old.json', metrics);
+        const fresh = readPower(
+            { rows: [{ metric: 'x.at16', size: 16, falsePositive: 0.01, detectable: 0.9 }] },
+            report,
+            'new.json',
+            metrics,
+        );
+        const merged = mergePower(old, fresh);
+        expect(Object.keys(merged).sort()).toEqual(Object.keys(old).sort());
+        expect(merged['x.at16']).toMatchObject({ fpr16: 0.01, report: 'new.json' });
+        expect(merged['x.at32']).toBe(old['x.at32']);
+    });
+
+    it('writes with --merge without dropping the registry readings', () => {
+        const directory = mkdtempSync(join(tmpdir(), 'metric-power-write-merge-'));
+        tempDirs.push(directory);
+        const output = join(directory, 'power.js');
+        const read = (/** @type {string} */ path) => (path === 'power.json' ? { rows } : report);
+        const args = ['power.json', '--report', 'report.json', '--write'];
+        expect(main(args, { metrics, output, read, print: () => {} })).toBe(0);
+        const replaced = readFileSync(output, 'utf8').split('Object.freeze({\n').length;
+        expect(main([...args, '--merge'], { metrics, output, read, print: () => {} })).toBe(0);
+        expect(readFileSync(output, 'utf8').split('Object.freeze({\n').length).toBeGreaterThan(replaced);
     });
 
     it('reads the JSON files when the CLI has no injected reader', () => {
