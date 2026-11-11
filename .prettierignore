@@ -19,3 +19,5 @@ vite.config.js
 start-server.*
 # Native eval output carries long numeric traces; preserve the report bytes.
 evals/screens/results/**/*.report.json
+# Committed decision reports keep the bytes the run wrote.
+evals/decisions/**/*.json

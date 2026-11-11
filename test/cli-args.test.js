@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { exitCodeOf, intValue, parseFlags } from '../scripts/lib/cli-args.mjs';
+import { exitCodeOf, intFlag, intValue, parseFlags } from '../scripts/lib/cli-args.mjs';
 
 const USAGE = 'usage: tool';
 /** @type {import('../scripts/lib/cli-args.mjs').FlagSpec} */
@@ -65,5 +65,13 @@ describe('exitCodeOf', () => {
         ).toBe(1);
         expect(spy).toHaveBeenCalledWith('boom');
         spy.mockRestore();
+    });
+});
+
+describe('intFlag', () => {
+    it('parses an integer flag into its key and rejects one under the minimum', () => {
+        const parse = intFlag('seeds', 1, 'usage: x');
+        expect(parse('4', '--seeds')).toEqual(['seeds', 4]);
+        expect(() => parse('0', '--seeds')).toThrow('--seeds must be an integer >= 1');
     });
 });

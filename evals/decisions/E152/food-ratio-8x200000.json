@@ -1,0 +1,14 @@
+{
+  "seeds": 8,
+  "ticks": 200000,
+  "meanPopulation": 210.668223125,
+  "mealsPerTick": 1.586539375,
+  "mealsPerAgentTick": 0.00753098569620833,
+  "storedPerMeal": 62.263361729699504,
+  "plantEnergyPerTick": 98.78327500403637,
+  "allEnergyPerTick": 115.62529435798544,
+  "allEnergyPer1k": 548.850190326897,
+  "offeredPerTick": 8.92296,
+  "ratio": 0.17780415635618674,
+  "regrowAtEaten": 0.016002374072056805
+}

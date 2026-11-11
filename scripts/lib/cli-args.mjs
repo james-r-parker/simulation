@@ -17,6 +17,16 @@ export function intValue(flag, text, min, usage) {
 }
 
 /**
+ * @param {string} key the option key the flag sets
+ * @param {number} min the smallest allowed value
+ * @param {string} usage the usage line appended to an error
+ * @returns {(value: string | undefined, flag: string) => [string, number]} a `valueFlags` parser for an integer flag
+ */
+export function intFlag(key, min, usage) {
+    return (value, flag) => [key, intValue(flag, value, min, usage)];
+}
+
+/**
  * @typedef {object} FlagSpec
  * @property {Record<string, (value: string | undefined, flag: string) => [string, any]>} valueFlags flags that take
  *   a value; each parser returns the option key and its parsed value

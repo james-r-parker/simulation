@@ -6,15 +6,12 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { BURN_IN_TICKS } from '../js/evo/burn-in.js';
 import { TERM_NAMES, createTermTally, tallyingFitness, termTable } from '../js/evo/fitness-by-spec.js';
-import { createObserver } from '../js/evo/observer.js';
-import { getPolicy } from '../js/evo/policies/index.js';
 import { createConfig } from '../js/sim/config.js';
-import { createSimLog } from '../js/sim/log.js';
-import { createRng, fork } from '../js/sim/rng.js';
 import { createWorld } from '../js/sim/spawn.js';
 import { step } from '../js/sim/step.js';
 import { intValue, parseFlags } from './lib/cli-args.mjs';
 import { feedPolicy } from './lib/feed-policy.mjs';
+import { observedPolicy } from './lib/observed-policy.mjs';
 
 const USAGE = 'usage: fitness-by-spec --seed <n> --ticks <n> [--config <file.json>]';
 
@@ -43,9 +40,7 @@ export function parse(argv) {
 export function run({ seed, ticks, config: file, from = BURN_IN_TICKS }) {
     const overrides = file === null ? {} : JSON.parse(readFileSync(file, 'utf8'));
     const config = createConfig({ ...overrides, seed });
-    const observer = createObserver(config, fork(createRng(seed), 'eval'), { runTicks: ticks, checkpointTicks: 1000 });
-    const log = createSimLog(() => {}, { level: 'error' });
-    const policy = getPolicy('map-elites-v6').create({ config, log, observer });
+    const { observer, policy } = observedPolicy(config, { policy: 'map-elites-v6', ticks });
     const tally = createTermTally();
     const world = createWorld(config, policy.brain);
     const fitness = tallyingFitness(policy.fitness, { tally, on: () => world.tick >= from });
