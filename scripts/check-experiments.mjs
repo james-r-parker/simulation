@@ -1,12 +1,18 @@
 // Validates evals/experiments.json against evals/experiments.schema.json (the `conventions` gate runs it).
 // Usage: node scripts/check-experiments.mjs [ledger.json] [schema.json]
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validate } from './lib/json-schema-lite.mjs';
 
 const LEDGER = new URL('../evals/experiments.json', import.meta.url);
 const SCHEMA = new URL('../evals/experiments.schema.json', import.meta.url);
+const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
+
+/** The first experiment id that must name committed reports (carrying-capacity.md, C6). */
+export const FIRST_REPORT_ID = 151;
+/** Where the reports a record names must live. */
+export const REPORT_DIR = 'evals/decisions/';
 
 /**
  * Names where an entry sits: `experiments[2] (E3)`, or just the index when it has no usable id.
@@ -55,12 +61,53 @@ function checkIds(entries) {
 }
 
 /**
+ * @param {string} path a path a record names
+ * @param {string} root the repo root
+ * @returns {string | null} why the path is not a committed report, null when it is one
+ */
+function reportProblem(path, root) {
+    if (!path.startsWith(REPORT_DIR) || path.split('/').includes('..')) {
+        return `${path}: a report lives under ${REPORT_DIR}`;
+    }
+    const file = resolve(root, path);
+    return existsSync(file) && statSync(file).isFile() ? null : `${path}: no such file`;
+}
+
+/**
+ * Checks that a record from `FIRST_REPORT_ID` on names its reports and that each is a file under `evals/decisions/`.
+ * @param {{ id?: unknown, reports?: unknown }[]} entries the entries that passed the schema
+ * @param {string} root the repo root the report paths are relative to
+ * @returns {string[]} problems
+ */
+function checkReports(entries, root) {
+    /** @type {string[]} */
+    const problems = [];
+    entries.forEach((entry, index) => {
+        if (Number(String(entry.id).slice(1)) < FIRST_REPORT_ID) {
+            return;
+        }
+        const reports = /** @type {string[]} */ (entry.reports ?? []);
+        if (reports.length === 0) {
+            problems.push(`${label(index, entry)}: from E${FIRST_REPORT_ID} on a record names its reports`);
+        }
+        for (const path of reports) {
+            const problem = reportProblem(path, root);
+            if (problem !== null) {
+                problems.push(`${label(index, entry)}: reports: ${problem}`);
+            }
+        }
+    });
+    return problems;
+}
+
+/**
  * Validates a ledger.
  * @param {unknown} ledger the parsed ledger
  * @param {Record<string, any>} schema the parsed schema
+ * @param {string} [root] the repo root the report paths are relative to
  * @returns {string[]} one line per problem; empty when the ledger is valid
  */
-export function checkLedger(ledger, schema) {
+export function checkLedger(ledger, schema, root = REPO_ROOT) {
     const entrySchema = schema.properties.experiments.items;
     /** @type {string[]} */
     const problems = [];
@@ -76,7 +123,7 @@ export function checkLedger(ledger, schema) {
         }
     });
     if (problems.length === 0) {
-        problems.push(...checkIds(entries));
+        problems.push(...checkIds(entries), ...checkReports(entries, root));
     }
     return problems;
 }

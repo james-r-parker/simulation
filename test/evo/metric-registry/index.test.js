@@ -12,13 +12,13 @@ import {
     withPower,
 } from '../../../js/evo/metric-registry/index.js';
 
-/** @type {string[]} the 284 names of a live eval report, sorted */
+/** @type {string[]} the 288 names of a live eval report, sorted */
 const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-names.json', import.meta.url), 'utf8'));
 
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(284);
+        expect(REPORT_NAMES).toHaveLength(288);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -118,7 +118,13 @@ const ADDED_AFTER_T8 = [
     'eval.bite_wish_with_kin_in_jaws',
     'eval.bite_wish_with_other_in_jaws',
     'eval.bite_wish_with_prey_in_jaws',
+    'eval.cap_share',
+    'eval.density_intake_slope',
+    'eval.density_starve_slope',
+    'eval.food_standing_share',
 ];
+/** Watch metrics registered after the snapshot whose intended direction is lower. */
+const ADDED_INTENDED_LOWER = ['eval.food_standing_share'];
 const SNAPSHOT = JSON.parse(readFileSync(new URL('../../fixtures/metric-directions.json', import.meta.url), 'utf8'));
 
 describe('the tables the registry replaced', () => {
@@ -154,7 +160,9 @@ describe('the tables the registry replaced', () => {
         const lower = new Set(SNAPSHOT.intendedLower);
         for (const [name, e] of Object.entries(METRICS)) {
             if (e.direction === 'watch') {
-                expect(e.intended, name).toBe(lower.has(name) ? 'lower' : 'higher');
+                expect(e.intended, name).toBe(
+                    lower.has(name) || ADDED_INTENDED_LOWER.includes(name) ? 'lower' : 'higher',
+                );
             }
         }
         for (const name of lower) {

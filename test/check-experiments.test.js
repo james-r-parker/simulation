@@ -1,5 +1,7 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { checkFiles, checkLedger } from '../scripts/check-experiments.mjs';
 import { validate } from '../scripts/lib/json-schema-lite.mjs';
@@ -86,6 +88,51 @@ describe('checkLedger', () => {
         expect(checkLedger([], schema)[0]).toBe('/type: [] is not of type object');
         expect(checkLedger({}, schema)).toEqual(['/required: missing required "experiments"']);
         expect(checkLedger({ experiments: {} }, schema)[0]).toContain('/properties/experiments/type');
+    });
+});
+
+describe('checkLedger reports', () => {
+    const root = mkdtempSync(join(tmpdir(), 'ledger-'));
+    mkdirSync(join(root, 'evals/decisions/E151'), { recursive: true });
+    mkdirSync(join(root, 'evals/results'), { recursive: true });
+    writeFileSync(join(root, 'evals/decisions/E151/report.json'), '{}');
+    writeFileSync(join(root, 'evals/results/r.json'), '{}');
+    const at = (/** @type {Record<string, unknown>[]} */ ...entries) =>
+        checkLedger({ experiments: entries }, schema, root);
+
+    it('asks nothing of a record before E151, and accepts reports on one', () => {
+        expect(at(entry({ id: 'E150' }))).toEqual([]);
+        expect(at(entry({ id: 'E7', reports: ['evals/results/r.json'] }))).toEqual([]);
+    });
+
+    it('requires a record from E151 on to name its reports', () => {
+        expect(at(entry({ id: 'E151' }))).toEqual(['experiments[0] (E151): from E151 on a record names its reports']);
+        expect(at(entry({ id: 'E152', reports: [] }))).toHaveLength(1);
+    });
+
+    it('accepts reports that exist under evals/decisions/', () => {
+        expect(at(entry({ id: 'E151', reports: ['evals/decisions/E151/report.json'] }))).toEqual([]);
+    });
+
+    it('names a report that is missing, a directory, outside evals/decisions/ or climbs out of it', () => {
+        const reports = [
+            'evals/decisions/E151/missing.json',
+            'evals/decisions/E151',
+            'evals/results/r.json',
+            'evals/decisions/../results/r.json',
+        ];
+        expect(at(entry({ id: 'E151', reports }))).toEqual([
+            'experiments[0] (E151): reports: evals/decisions/E151/missing.json: no such file',
+            'experiments[0] (E151): reports: evals/decisions/E151: no such file',
+            'experiments[0] (E151): reports: evals/results/r.json: a report lives under evals/decisions/',
+            'experiments[0] (E151): reports: evals/decisions/../results/r.json: a report lives under evals/decisions/',
+        ]);
+    });
+
+    it('reads the repo root by default, where evals/decisions/ exists', () => {
+        expect(
+            checkLedger({ experiments: [entry({ id: 'E151', reports: ['evals/decisions/.gitkeep'] })] }, schema),
+        ).toEqual([]);
     });
 });
 

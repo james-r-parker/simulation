@@ -10,6 +10,7 @@ import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE, DEATH_CAUSE } from '../sim/events
 import { createApproachScene, noteApproachKill, resetApproachSlot, trackApproaches } from './scene-approach.js';
 import { BASIN_CHECKPOINT_TICKS, createBasinScene, noteBasinBirth, sampleBasins } from './scene-basin.js';
 import { createBalanceScene, sampleBalance } from './scene-balance.js';
+import { createCapacityScene, noteCapacityDeath, sampleCapacity } from './scene-capacity.js';
 import { createDivergenceScene, sampleDivergence } from './scene-divergence.js';
 import { createFamilyScene, sampleFamilies } from './scene-families.js';
 import { createDiseaseScene, noteDiseaseEvents, sampleDiseaseFamilies } from './scene-disease.js';
@@ -79,6 +80,7 @@ export function createScenes(config, runTicks = 0) {
         disease: createDiseaseScene(config),
         hunters: createHunterScene(runTicks, config),
         guards: createGuardScene(config),
+        capacity: createCapacityScene(config),
         kin: createKinProximityScene(config),
         bite: createBiteScene(config),
         biteLife: createBiteLifeScene(),
@@ -146,6 +148,7 @@ function noteEvents(scenes, observer, world) {
             if (d[o + 4] === DEATH_CAUSE.EATEN) {
                 noteApproachKill(scenes.approach, observer, world, { killerId: d[o + 5], victimId: d[o + 3] });
             }
+            noteCapacityDeath(scenes.capacity, { cause: d[o + 4], foodEnergy: d[o + 9] });
             noteStyleAtDeath(observer, o / EVENT_STRIDE, { slot: d[o + 2], genomeId: d[o + 3] });
             noteDeath(scenes, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1], age: d[o + 8] });
             noteProofDeath(scenes.proof, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1] });
@@ -216,6 +219,7 @@ export function observeScenes(observer, world) {
         sampleDivergence(scenes.divergence, world);
         sampleDiseaseFamilies(scenes.disease, world);
         sampleGuards(scenes.guards, world);
+        sampleCapacity(scenes.capacity, world);
         sampleKinProximity(scenes.kin, world);
     }
 }

@@ -1,6 +1,6 @@
 # Carrying capacity
 
-**Status:** Proposed - approved by the user on 2026-11-11, nothing built. The second big bang: food becomes the brake on the population, the calendar leaves the mating dice and the clonal backstop works when mates are out of reach. Phase 1 (instruments and the reference) is first.
+**Status:** In progress - approved by the user on 2026-11-11. Phase 1 T1 to T4 are built (the `held` guard, the four detectors, `better` on a seed guard, `evals/decisions/` and its check); T5 to T7 remain. The second big bang: food becomes the brake on the population, the calendar leaves the mating dice and the clonal backstop works when mates are out of reach. Phase 1 (instruments and the reference) is first.
 **Validated:** 572c3172 (2026-11-11)
 **Priority:** 2 - approved by the user on 2026-11-11 as the next build: every hunter extinction on the 128-seed reference is in a crashed world, so the brake comes before any skill or scene plan ([review-2026-11-11.md](../review-2026-11-11.md))
 **Depends on:** [metric-trust.md](metric-trust.md), [natural-selection.md](natural-selection.md)
@@ -78,13 +78,13 @@ control for T22.
 
 ## Detectors
 
-| Detector                    | Meaning                                                                                                                                                                                                                               | Unit, better           | Module                           |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | -------------------------------- |
-| `held` (seed guard)         | 1 when the trace `pop` never falls under `HELD_POPULATION` (100) after burn-in                                                                                                                                                        | share of seeds, higher | `js/evo/keep-rule.js`            |
-| `eval.cap_share`            | Share of checkpoints after burn-in with the population at `maxAgents` less `splitCapMargin` or more                                                                                                                                   | share, lower           | `js/evo/scene-capacity.js` (new) |
-| `eval.food_standing_share`  | Mean over checkpoints of edible food slots over `maxFood`                                                                                                                                                                             | share, watch           | `js/evo/scene-capacity.js`       |
-| `eval.density_starve_slope` | Per seed, the slope of starvation deaths per agent per checkpoint window against the population at the window's start, over windows after burn-in, fitted inside each season and averaged, since season and time are confounded (T66) | trend, higher          | `js/evo/scene-capacity.js`       |
-| `eval.density_intake_slope` | The same slope for food energy taken per agent                                                                                                                                                                                        | trend, lower           | `js/evo/scene-capacity.js`       |
+| Detector                    | Meaning                                                                                                                                                                                                                                                                                                                                                                     | Unit, better           | Module                           |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | -------------------------------- |
+| `held` (seed guard)         | 1 when the trace `pop` never falls under `HELD_POPULATION` (100) after burn-in                                                                                                                                                                                                                                                                                              | share of seeds, higher | `js/evo/keep-rule.js`            |
+| `eval.cap_share`            | Share of checkpoints after burn-in with the population at `maxAgents` less `splitCapMargin` or more                                                                                                                                                                                                                                                                         | share, lower           | `js/evo/scene-capacity.js` (new) |
+| `eval.food_standing_share`  | Mean over checkpoints of edible food slots over `maxFood`                                                                                                                                                                                                                                                                                                                   | share, watch           | `js/evo/scene-capacity.js`       |
+| `eval.density_starve_slope` | Per seed, the elasticity at the season means of starvation deaths per agent per checkpoint window with respect to the population at the window's start (the least-squares slope times mean population over mean rate), over windows after burn-in, fitted inside each season and averaged, since season and time are confounded (T66); a season with mean rate 0 is skipped | trend, higher          | `js/evo/scene-capacity.js`       |
+| `eval.density_intake_slope` | The same elasticity at the season means for food energy taken per agent                                                                                                                                                                                                                                                                                                     | trend, lower           | `js/evo/scene-capacity.js`       |
 
 Each metric is registered in `js/evo/metric-registry/world-2.js` with an arithmetic test, a source test, a liveness
 read and a power read before any verdict rests on it (metric-trust.md). The existing metrics read beside them are in
@@ -110,9 +110,7 @@ Targets.
 
 ### Phase 2 - Calibrate on config alone
 
-**Targets:** eval.births_per_1k, eval.lineages_alive, eval.spec_effective, eval.deliberate_food_share, eval.collision_death_share
-
-T2 adds the Phase 1 detectors (`eval.cap_share`, `eval.density_starve_slope`, `eval.food_standing_share`) to this line and to the Phase 3 line once they are registered.
+**Targets:** eval.births_per_1k, eval.lineages_alive, eval.spec_effective, eval.deliberate_food_share, eval.collision_death_share, eval.cap_share, eval.density_starve_slope, eval.food_standing_share
 
 One screen on the unchanged code, floor on, policy live, 200000 ticks, on seeds 1 to 64 of `evals/seeds.json`. Arms
 are config values only: a full factorial of four food values by two season settings, and the defaults.
@@ -141,7 +139,7 @@ are config values only: a full factorial of four food values by two season setti
 
 ### Phase 3 - The switch
 
-**Targets:** eval.births_per_1k, eval.lineages_alive, eval.spec_effective, eval.deliberate_food_share, eval.chase_catch_share, eval.collision_death_share, bench.step_ms@500
+**Targets:** eval.births_per_1k, eval.lineages_alive, eval.spec_effective, eval.deliberate_food_share, eval.chase_catch_share, eval.collision_death_share, eval.cap_share, eval.density_starve_slope, eval.food_standing_share, bench.step_ms@500
 
 One PR, a breaking commit (`feat!`) to `season/next`, since `rulesHash` changes.
 
@@ -203,6 +201,7 @@ The labels are for this doc; each prediction takes the next numeric id when T8 r
 | ------------------------------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | The lever for density dependence                 | Food supply, the lever nature uses                                            | No food arm lifts `held`: the mating edge is primary. The next screen is a receptive-mate scent on the pheromone field (natural-selection.md T65 names it as never screened), in a new plan |
 | Flags                                            | None; arms are config values and commits                                      | -                                                                                                                                                                                           |
+| Density metrics are elasticities                 | Scale-free: slope times mean population over mean rate, per season, averaged  | The `trend` power bar is an absolute 0.10 (and `NEAR_ZERO_MEAN` uses the same), so a raw slope of about 1e-3 would always pass it                                                           |
 | The bar for "held"                               | 100 agents, the edge found in T66                                             | Phase 1 re-reads the edge on `E151`; the constant moves once, before Phase 2                                                                                                                |
 | Seeds                                            | 16 to rank; seeds 1 to 64 pick the finalist, seeds 65 to 128 judge the switch | -                                                                                                                                                                                           |
 | Unevolved brains starve on scarce food at tick 0 | The screen shows it: the `alive` and `held` guards read it                    | The finalist keeps a spring of plenty through `foodScarcity` only if the screen needs it; no rescue is added                                                                                |
@@ -228,15 +227,15 @@ The labels are for this doc; each prediction takes the next numeric id when T8 r
 
 ### Phase 1 - Instruments and the reference
 
-| #   | Task                                                                                                                                                       | Nature       | Depends on |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | `held` seed guard and `HELD_POPULATION` in `js/evo/keep-rule.js`, printed by `formatKeepRule`, with tests                                                  | [mechanical] | -          |
-| T2  | `js/evo/scene-capacity.js`: the four detectors, registered in the metric registry, with arithmetic and source tests; `docs/designs/metrics.md` regenerated | [judgement]  | -          |
-| T3  | A seed guard reads `better` as well as `worse` (the exact test in the good direction), printed by `formatKeepRule`, with tests                             | [mechanical] | T1         |
-| T4  | `evals/decisions/` and the rule in `scripts/check-experiments.mjs` that a record from `E151` on names committed reports                                    | [mechanical] | -          |
-| T5  | Run `E151`: the defaults, 128 seeds, floor on, with the new metrics; commit the report under `evals/decisions/E151/`                                       | [mechanical] | T2, T4     |
-| T6  | Liveness and power readings for the new metrics from `E151`; re-read the Baseline table and the food ratio; sim-notes entry                                | [judgement]  | T5         |
-| T7  | Conformance review of Phase 1, in parallel with `scripts/check.sh`                                                                                         | [judgement]  | T3, T6     |
+| #   | Task                                                                                                                                                                           | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
+| T1  | (built: 2026-11-11) `held` seed guard and `HELD_POPULATION` in `js/evo/keep-rule.js`, printed by `formatKeepRule`, with tests                                                  | [mechanical] | -          |
+| T2  | (built: 2026-11-11) `js/evo/scene-capacity.js`: the four detectors, registered in the metric registry, with arithmetic and source tests; `docs/designs/metrics.md` regenerated | [judgement]  | -          |
+| T3  | (built: 2026-11-11) A seed guard reads `better` as well as `worse` (the exact test in the good direction), printed by `formatKeepRule`, with tests                             | [mechanical] | T1         |
+| T4  | (built: 2026-11-11) `evals/decisions/` and the rule in `scripts/check-experiments.mjs` that a record from `E151` on names committed reports                                    | [mechanical] | -          |
+| T5  | Run `E151`: the defaults, 128 seeds, floor on, with the new metrics; commit the report under `evals/decisions/E151/`                                                           | [mechanical] | T2, T4     |
+| T6  | Liveness and power readings for the new metrics from `E151`; re-read the Baseline table and the food ratio; sim-notes entry                                                    | [judgement]  | T5         |
+| T7  | Conformance review of Phase 1, in parallel with `scripts/check.sh`                                                                                                             | [judgement]  | T3, T6     |
 
 ### Phase 2 - Calibrate on config alone
 
