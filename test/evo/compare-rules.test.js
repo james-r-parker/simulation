@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { effectFloor, isShare, SHARE_MIN_EFFECT, statusOf } from '../../js/evo/compare-rules.js';
+import { thresholdReady, effectFloor, isShare, SHARE_MIN_EFFECT, statusOf } from '../../js/evo/compare-rules.js';
 
 describe('statusOf', () => {
     it('reads the registry status of a registered metric', () => {
@@ -24,5 +24,29 @@ describe('effectFloor', () => {
         expect(effectFloor('eval.born_share', 0.98, floors)).toBe(0.02);
         expect(effectFloor('eval.births_per_1k', 20, floors)).toBeCloseTo(1, 12);
         expect(effectFloor('nope', 4, floors)).toBeCloseTo(0.2, 12);
+    });
+});
+
+describe('thresholdReady', () => {
+    it('needs the arithmetic test, the source test and a liveness read, and is false outside the registry', () => {
+        expect(thresholdReady('eval.born_share')).toBe(true);
+        expect(thresholdReady('nope')).toBe(false);
+        expect(thresholdReady('bench.step_ms@500')).toBe(false);
+        const live = { nullShare: 0, distinct: 3, report: 'r' };
+        const entry = (
+            /** @type {string} */ arithmetic,
+            /** @type {string} */ source,
+            /** @type {any} */ liveness,
+        ) => ({
+            tests: { arithmetic, source },
+            liveness,
+        });
+        const metrics = {
+            ok: entry('a.test.js', 's.test.js', live),
+            noArithmetic: entry('', 's.test.js', live),
+            noSource: entry('a.test.js', '', live),
+            noLiveness: entry('a.test.js', 's.test.js', null),
+        };
+        expect(Object.keys(metrics).map((name) => thresholdReady(name, metrics))).toEqual([true, false, false, false]);
     });
 });

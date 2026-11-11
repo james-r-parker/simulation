@@ -9,6 +9,7 @@ import {
     metricName,
     minSeedsFor,
     withLiveness,
+    withPower,
 } from '../../../js/evo/metric-registry/index.js';
 
 /** @type {string[]} the 284 names of a live eval report, sorted */
@@ -64,6 +65,30 @@ describe('withLiveness', () => {
         expect(merged['eval.food_energy_per_1k'].liveness).toEqual(reading);
         expect(Object.isFrozen(merged)).toBe(true);
         expect(family['eval.food_energy_per_1k']).toBe(original);
+    });
+});
+
+describe('withPower', () => {
+    it('applies a reading and its seed minimum, and leaves an entry with no reading as it was', () => {
+        const read = METRICS['eval.food_energy_per_1k'];
+        const bare = METRICS['eval.births_per_1k'];
+        const power = {
+            fpr16: 0.05,
+            fpr32: 0.05,
+            fpr64: 0.05,
+            mde16: 0.5,
+            mde32: 0.5,
+            mde64: 0.2,
+            referenceMean: 10,
+            report: 'r.json',
+        };
+        const merged = withPower(
+            { 'eval.food_energy_per_1k': read, 'eval.births_per_1k': bare },
+            { 'eval.food_energy_per_1k': power },
+        );
+        expect(merged['eval.food_energy_per_1k']).toMatchObject({ power, minSeeds: 64 });
+        expect(merged['eval.births_per_1k']).toBe(bare);
+        expect(Object.isFrozen(merged)).toBe(true);
     });
 });
 

@@ -135,3 +135,93 @@ describe('keepRule', () => {
         expect(() => keepRule(report(), { ...report(), seeds: SEEDS.map((s) => s + 1) })).toThrow(/same seeds/);
     });
 });
+
+describe('keepRule metric guards', () => {
+    const metricReport = (/** @type {string} */ name, /** @type {(number | null)[]} */ values) => {
+        const r = report();
+        r.metrics[name] = { values, reasons: values.map(() => null), mean: 0, sd: 0 };
+        return r;
+    };
+    const opts = (/** @type {string} */ name) => ({ guards: [name], status: verified, seedsFor });
+
+    it('scores a lower-is-better metric: a rise is worse, a fall is not', () => {
+        const name = 'bench.step_ms@500';
+        const low = metricReport(
+            name,
+            SEEDS.map((_, i) => 1 + (i % 3)),
+        );
+        const high = metricReport(
+            name,
+            SEEDS.map((_, i) => 4 + (i % 3)),
+        );
+        expect(guardOf(keepRule(low, high, opts(name)), name).verdict).toBe('worse');
+        expect(guardOf(keepRule(high, low, opts(name)), name).verdict).toBe('no-harm');
+        expect(guardOf(keepRule(low, high, opts(name)), name).smallest).toBe(0);
+    });
+
+    it('leaves a metric guard unchecked with a null seed, a missing metric or no direction', () => {
+        const name = 'eval.hunter_catches_per_1k';
+        const nulled = metricReport(
+            name,
+            SEEDS.map((_, i) => (i === 0 ? null : 5)),
+        );
+        expect(guardOf(keepRule(nulled, report(), opts(name)), name)).toMatchObject({
+            verdict: 'unchecked',
+            note: 'null in a seed',
+        });
+        expect(guardOf(keepRule(report(), report(), opts('eval.nope')), 'eval.nope')).toMatchObject({
+            note: 'the report lacks the metric',
+        });
+        const watch = 'eval.population_mean';
+        const w = metricReport(
+            watch,
+            SEEDS.map(() => 100),
+        );
+        expect(guardOf(keepRule(w, w, opts(watch)), watch)).toMatchObject({
+            verdict: 'unchecked',
+            note: 'no direction',
+        });
+    });
+});
+
+describe('formatKeepRule lines', () => {
+    it('prints a metric guard with its interval, an unchecked guard with its note, and a seed guard with its exact test', () => {
+        const metric = (/** @type {number[]} */ values) => ({
+            values,
+            reasons: values.map(() => null),
+            mean: 0,
+            sd: 0,
+        });
+        const before = report();
+        const after = report({ catches: SEEDS.map((_, i) => 4 + (i % 3)) });
+        before.metrics['eval.hunter_catches_per_1k'] = metric(SEEDS.map((_, i) => 10 + (i % 3)));
+        const text = formatKeepRule(keepRule(before, after, { status: verified, seedsFor })).join('\n');
+        expect(text).toMatch(
+            /guard eval\.hunter_catches_per_1k: worse, diff -?\d.*interval \[.*\], smallest loss detected \d/,
+        );
+        expect(text).toMatch(
+            /guard alive: no-harm, 0 seeds harmed vs 0 recovered \(exact p 1\), smallest loss detected 6 seeds/,
+        );
+        const skipped = formatKeepRule(keepRule(before, after, { status: () => 'unverified', seedsFor })).join('\n');
+        expect(skipped).toContain('guard eval.hunter_catches_per_1k: unchecked (unverified)');
+        expect(skipped).toContain('keep rule: no harm detected at this size');
+    });
+
+    it('prints n/a counts without traces or metrics, and the not-met and WORSE outcomes', () => {
+        const bare = { seeds: SEEDS, metrics: {} };
+        const text = formatKeepRule(keepRule(bare, bare, { status: verified, seedsFor })).join('\n');
+        expect(text).toContain('hunters alive n/a (need 0.75), seeds under 80: n/a vs reference n/a, not met');
+        const tiny = SEEDS.slice(0, 3);
+        const none = (/** @type {number[]} */ ends) => ({
+            ...report(),
+            seeds: tiny,
+            metrics: { 'eval.predators_at_end': { values: ends, reasons: [null, null, null], mean: 0, sd: 0 } },
+            traces: tiny.map(() => ({ spec: [100] })),
+        });
+        const met = formatKeepRule(keepRule(none([5, 5, 5]), none([5, 5, 5]), { status: verified, seedsFor })).join(
+            '\n',
+        );
+        expect(met).toContain(', met');
+        expect(met).toContain('keep rule: no harm detected');
+    });
+});

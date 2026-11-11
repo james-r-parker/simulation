@@ -58,13 +58,14 @@ export function sparseSignP(diffs) {
  * A threshold criterion tests one arm against a fixed floor, so power does not apply; it needs the metric's definition
  * checked, not full `verified` status (T31).
  * @param {string} metric a metric name
+ * @param {Record<string, any>} [metrics] the registry (`METRICS`)
  * @returns {boolean} whether the registry entry has `tests.arithmetic`, `tests.source` and `liveness` filled; false for
  *   a name outside the registry
  */
-export function thresholdReady(metric) {
-    if (!Object.hasOwn(METRICS, metric)) {
+export function thresholdReady(metric, metrics = /** @type {Record<string, any>} */ (METRICS)) {
+    if (!Object.hasOwn(metrics, metric)) {
         return false;
     }
-    const { tests, liveness } = METRICS[/** @type {keyof typeof METRICS} */ (metric)];
+    const { tests, liveness } = metrics[metric];
     return tests.arithmetic !== '' && tests.source !== '' && liveness !== null;
 }

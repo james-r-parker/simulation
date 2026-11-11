@@ -242,7 +242,7 @@ export function keepRule(
  * @returns {string[]} lines: one per guard with its verdict, interval and smallest detected loss, then the adoption counts
  */
 export function formatKeepRule(result) {
-    const f = (/** @type {number | null} */ n) => (n === null ? '-' : String(Number(n.toPrecision(3))));
+    const f = (/** @type {number | null | undefined} */ n) => String(Number(/** @type {number} */ (n).toPrecision(3)));
     const lines = result.guards.map((g) => {
         if (g.verdict === 'unchecked') {
             return `guard ${g.name}: unchecked (${g.note})`;
@@ -251,7 +251,7 @@ export function formatKeepRule(result) {
             return `guard ${g.name}: ${g.verdict}, diff ${f(g.diff)}, interval [${f(g.low)}, ${f(g.high)}], smallest loss detected ${f(g.smallest)}`;
         }
         const least = g.smallestSeeds === null ? 'none' : `${g.smallestSeeds} seeds`;
-        return `guard ${g.name}: ${g.verdict}, ${g.harmed} seeds harmed vs ${g.recovered} recovered (exact p ${f(g.p ?? null)}), smallest loss detected ${least}`;
+        return `guard ${g.name}: ${g.verdict}, ${g.harmed} seeds harmed vs ${g.recovered} recovered (exact p ${f(g.p)}), smallest loss detected ${least}`;
     });
     const c = (/** @type {Count | null} */ n) =>
         n === null ? 'n/a' : `${n.count}/${n.of} [${f(n.low)}, ${f(n.high)}]`;
