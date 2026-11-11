@@ -182,7 +182,10 @@ was kept or reverted, and what waits for approval.
 ## Red flags
 
 - Fewer than 16 seeds, fewer than a target's registry `minSeeds`, or different seeds on the two arms.
-- A keep or delete decision on fewer than 64 matched floor-on seeds, or without `--keep-rule`.
+- A keep or delete decision on fewer than 64 matched floor-on seeds, or without `--keep-rule`. Read the smallest loss
+  each guard prints: a guard that cannot see a loss of a quarter of the seeds has not shown no harm. A new brain input
+  or a slower step is a cost and needs a scene metric to move. A kept mechanism keeps its switch until its bundle has
+  been read once with it off, then the switch is deleted (`docs/principles.md`, the keep rule).
 - A sim theory built on a number whose detector was never checked (step 0).
 - An arm judged on a single archive or one seed offset.
 - A prediction written after the result.
