@@ -958,7 +958,7 @@ reworked, or accept a floor-bound world). `E32` records the re-screens.
 
 **As built (T67, 2026-10-22).** `npm run screen -- --grid <grid.json>` (`scripts/screen.mjs`; `evals/screens/t59.grid.json` is the T59
 screen as a grid). The eval worker now collects a per-seed `trace` from the observer (`js/evo/trace.js`; the sim core is untouched, golden
-hashes unchanged) and the report stores it as `traces`: population every 1000 ticks (`--trace-interval`), mating and splitting births in 4
+hashes unchanged) and the report stores it as `traces`: population, prey and hunters every 1000 ticks (`--trace-interval`; prey and hunters from metric-trust T34), mating and splitting births in 4
 equal windows, specialisation counts, deaths by cause and distinct lineages at the last tick. A grid holds a `base` overlay, `seeds`,
 `seedOffset`, `ticks`, `policy`, a `reference` arm, named `arms` and `each` (each key alone: `key: [v1, v2]` makes `key-v1`, `key-v2`).
 All arms' seeds run in one worker pool (`--workers <total>`, default cores minus 2) under one `flock` on the CPU lock for the whole

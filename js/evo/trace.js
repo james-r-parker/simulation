@@ -1,5 +1,5 @@
-// Run trace: the few per-seed series a screen needs and the report's metrics do not carry - the population over
-// time, births split by cause in equal windows, and the end state (specialisation counts, deaths by cause, lineages).
+// Run trace: the few per-seed series a screen needs and the report's metrics do not carry - the population, the prey and the
+// hunters over time, births split by cause in equal windows, and the end state (specialisation counts, deaths by cause, lineages).
 // Fed once per tick from the eval worker; it only reads the world and the observer, so a run is unchanged.
 
 import { BORN_CAUSE } from '../sim/events.js';
@@ -14,6 +14,8 @@ export const TRACE_WINDOWS = 4;
  * @property {number} ticks the run length
  * @property {number[]} ends the window end ticks before the last (the last ends with the run)
  * @property {number[]} pop population at every multiple of `interval`
+ * @property {number[]} prey alive agents of the specialisations that do not hunt, at the same ticks as `pop`
+ * @property {number[]} hunters alive agents of the specialisations that hunt, at the same ticks as `pop`
  * @property {number[]} cumMate cumulative mating births at each entry of `ends`
  * @property {number[]} cumSplit cumulative split births at each entry of `ends`
  */
@@ -28,7 +30,26 @@ export function createTrace({ ticks, interval = TRACE_INTERVAL, windows = TRACE_
     for (let k = 1; k < windows; k++) {
         ends.push(Math.max(1, Math.floor((ticks * k) / windows)));
     }
-    return { interval, windows, ticks, ends, pop: [], cumMate: [], cumSplit: [] };
+    return { interval, windows, ticks, ends, pop: [], prey: [], hunters: [], cumMate: [], cumSplit: [] };
+}
+
+/**
+ * Samples the prey and the hunters, counted as the guard scene counts them (`huntBySpec` of each alive agent's specialisation).
+ * @param {Trace} trace the trace
+ * @param {Record<string, any>} world the world
+ * @returns {void}
+ */
+function sampleKinds(trace, world) {
+    let hunters = 0;
+    let prey = 0;
+    for (let slot = 0; slot < world.alive.length; slot++) {
+        const alive = world.alive[slot] === 1;
+        const hunts = world.huntBySpec[world.spec[slot]] === 1;
+        hunters += alive && hunts ? 1 : 0;
+        prey += alive && !hunts ? 1 : 0;
+    }
+    trace.hunters.push(hunters);
+    trace.prey.push(prey);
 }
 
 /**
@@ -45,6 +66,7 @@ export function observeTrace(trace, world, observer) {
     }
     if (tick % trace.interval === 0) {
         trace.pop.push(world.population);
+        sampleKinds(trace, world);
     }
     const taken = trace.cumMate.length;
     if (taken < trace.ends.length && tick >= trace.ends[taken]) {
@@ -83,6 +105,8 @@ function endState(world) {
  * @typedef {object} TraceRecord
  * @property {number} interval ticks between `pop` samples
  * @property {number[]} pop population at ticks `interval`, `2 * interval`, ...
+ * @property {number[]} prey prey alive at the same ticks as `pop`
+ * @property {number[]} hunters hunters alive at the same ticks as `pop`
  * @property {number[]} mate mating births in each equal window of the run
  * @property {number[]} split split births in each equal window
  * @property {number[]} spec alive agents per specialisation index at the last tick
@@ -100,6 +124,8 @@ export function finishTrace(trace, world, observer) {
     return {
         interval: trace.interval,
         pop: trace.pop,
+        prey: trace.prey,
+        hunters: trace.hunters,
         mate: windowCounts(trace.cumMate, observer.births[BORN_CAUSE.MATE]),
         split: windowCounts(trace.cumSplit, observer.births[BORN_CAUSE.SPLIT]),
         deaths: Array.from(observer.deathsByCause),

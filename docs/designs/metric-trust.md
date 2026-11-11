@@ -120,7 +120,7 @@ Metrics read synchronously: `step` clears the event ring (`clearEvents`) at its 
 - `eval.birth_source_share.*` sums to 1 when any source has a value. The core source answer pins `eval.births_per_1k` to mate plus split births per 1000 agent-ticks.
 - A report from the worker pool (`runPool`) equals `computeMetrics` on the same seed run in-process, metric by metric.
 
-The `eval.prey_summer_min` lower-bound comparison waits for T34, which adds prey counts to the report trace. Current traces hold only total population; the ecology source test already pins known summer prey answers.
+The `eval.prey_summer_min` comparison with the report trace is in `test/evo/trace.test.js` (hand-built series) and `test/eval-worker-run.test.js` (a real run): the trace keeps `prey` and `hunters` beside `pop` (T34), and the lowest post-burn-in summer value in it equals the metric.
 
 ## Runs
 
@@ -329,7 +329,7 @@ Every tool logs its policy and configHash first, replay takes `live`, traces kee
 | #   | Task                                                                                                                                                                                                                                                                  | Nature       | Depends on |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
 | T33 | (built: 2026-11-11) `npm run replay` takes `live` (`LIVE_POLICY`) and defaults to it; `replay`, `eval`, `screen`, `train` and `drill` log `RunConfig` first; tests                                                                                                    | [mechanical] | T32        |
-| T34 | `createTrace` keeps `prey` and `hunters` per checkpoint and reports carry them; tests compare `eval.prey_summer_min` with the lowest post-burn-in summer prey count                                                                                                   | [mechanical] | T32        |
+| T34 | (built: 2026-11-11) `createTrace` keeps `prey` and `hunters` per checkpoint and reports carry them; tests compare `eval.prey_summer_min` with the lowest post-burn-in summer prey count                                                                               | [mechanical] | T32        |
 | T35 | Re-read every `evals/experiments.json` record from `E120` against the registry: list the verdicts that rest on a metric T14, T15, T24, T25 or T28 changed, and whether each still holds from the saved reports; a verdict that flips becomes a task in its owning doc | [judgement]  | T33, T34   |
 | T36 | AGENTS.md Hard rule and command row, the `run-evolution-loop` skill step 0, `docs/principles.md` names `keepRule` and the smallest loss its guards detect                                                                                                             | [mechanical] | T35        |
 | T37 | Conformance review of Phase 5, in parallel with `scripts/check.sh`; status to `Implemented`                                                                                                                                                                           | [judgement]  | T36        |

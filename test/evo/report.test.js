@@ -195,6 +195,18 @@ describe('report traces', () => {
         );
     });
 
+    it('accepts a trace without prey and hunters (older reports) and checks them when present', () => {
+        const withKinds = { ...trace, prey: [3, 4], hunters: [1, 1] };
+        const report = buildReport({ ...input, traces: [trace, withKinds, withKinds] });
+        expect(() => validateReport(report)).not.toThrow();
+        expect(() => validateReport({ ...report, traces: [trace, trace, { ...trace, prey: ['x'] }] })).toThrow(
+            /traces\[2\]\.prey/,
+        );
+        expect(() => validateReport({ ...report, traces: [trace, trace, { ...trace, hunters: 5 }] })).toThrow(
+            /traces\[2\]\.hunters/,
+        );
+    });
+
     it('leaves traces out when none are given', () => {
         expect(buildReport(input)).not.toHaveProperty('traces');
     });
