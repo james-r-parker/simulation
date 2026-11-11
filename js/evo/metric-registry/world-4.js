@@ -1,0 +1,40 @@
+// Registry entries of the world family (part 4): the eat-choice detectors (docs/designs/eat-choice.md).
+
+import { entry } from './entry.js';
+
+export const WORLD_4 = {
+    'eval.food_contact_bite_share': entry('world', {
+        module: 'js/evo/scene-eat.js',
+        meaning: 'Higher means more foragers that touch food they can eat are holding BITE.',
+        counts: 'At each 1000-tick checkpoint after burn-in, pooled: alive non-hunters (canHunt false) in contact with an alive food item their specialisation takes (plant or meat share above 0, the tryEat contact test) while canEatNow holds, whose BITE output is above 0, over all such non-hunters.',
+        unit: 'share',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['no non-hunter in contact with edible food at a checkpoint after burn-in'],
+        arithmetic: 'test/evo/scene-eat.test.js',
+        source: 'test/evo/metric-source-eat.test.js',
+    }),
+    'eval.full_contact_bite_share': entry('world', {
+        module: 'js/evo/scene-eat.js',
+        meaning: 'Lower means fewer foragers with a nearly full store still hold BITE on food.',
+        counts: 'The same as food_contact_bite_share, restricted to non-hunters whose store is at least 0.8 of their specialisation maximum; canEatNow closes at satiationShare (0.95), so the band is 0.8 up to satiationShare, where eating is still possible.',
+        unit: 'share',
+        direction: 'lower',
+        nullWhen: [
+            'no non-hunter with a store of 0.8 or more in contact with edible food at a checkpoint after burn-in',
+        ],
+        arithmetic: 'test/evo/scene-eat.test.js',
+        source: 'test/evo/metric-source-eat.test.js',
+    }),
+    'eval.fat_speed_ratio': entry('world', {
+        module: 'js/evo/scene-eat.js',
+        meaning: 'Lower means a fatter forager moves slower than a leaner one of its kind.',
+        counts: 'At each 1000-tick checkpoint after burn-in, per specialisation, the speed of moving non-hunters (speed above 0) is pooled by whether their store fraction (energy over the specialisation maximum) is above or below the specialisation mean at that checkpoint; the metric is the mean over specialisations with both sides of the mean speed above over the mean speed below.',
+        unit: 'ratio',
+        direction: 'watch',
+        intended: 'lower',
+        nullWhen: ['no specialisation with moving non-hunters above and below its mean store fraction'],
+        arithmetic: 'test/evo/scene-eat.test.js',
+        source: 'test/evo/metric-source-eat.test.js',
+    }),
+};

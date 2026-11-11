@@ -10,6 +10,7 @@ import { approachMetrics } from './scene-approach.js';
 import { balanceMetrics } from './scene-balance.js';
 import { basinMetrics } from './scene-basin.js';
 import { capacityMetrics } from './scene-capacity.js';
+import { eatMetrics } from './scene-eat.js';
 import { edgeMetrics } from './scene-edge.js';
 import { divergenceMetrics } from './scene-divergence.js';
 import { familyMetrics } from './scene-families.js';
@@ -65,6 +66,7 @@ export function sceneMetrics(observer, world) {
         ...summerMetrics(s.guards),
         ...capacityMetrics(s.capacity),
         ...edgeMetrics(s.edge),
+        ...eatMetrics(s.eat),
         ...kinProximityMetrics(s.kin),
         ...alarmReachMetrics(observer),
         ...rewardMetrics(observer, world),
