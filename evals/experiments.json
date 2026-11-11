@@ -3947,9 +3947,9 @@
         "eval.edge_mate_unreached_share"
       ],
       "before": "evals/decisions/E151/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d (carries none of the edge detectors, so it is the reference to re-run, not the reading)",
-      "after": "not run yet: Phase 2 (T8), the 128-seed floor-on defaults reference carrying the detectors, to be committed under evals/decisions/",
+      "after": "evals/decisions/E155/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d, run at 67d39a9c, carrying the edge detectors",
       "note": "Not run: prediction recorded before the run (T7); no verdict yet. `reports` names the E151 reference for now; the T8 report is added when it exists. The detectors are unverified until T9 reads their liveness and power from that report, so the verdict is a reading of rates, not a metric verdict (docs/designs/low-density-edge.md, Experiments).",
-      "reports": ["evals/decisions/E151/defaults-floor-on.json"],
+      "reports": ["evals/decisions/E151/defaults-floor-on.json", "evals/decisions/E155/defaults-floor-on.json"],
       "date": "2026-11-11",
       "branch": "feat/low-density-edge-detectors",
       "beforePolicy": "live",
