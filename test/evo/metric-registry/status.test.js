@@ -97,10 +97,12 @@ describe('meetsPowerBar', () => {
         expect(at('ticks', power(0.1, 0.21))).toBe(false);
     });
 
-    it('uses an absolute 0.05 for a share', () => {
-        expect(at('share', power(0.05, 0.5, 0.1))).toBe(true);
-        expect(at('share', power(0.05, 0.6, 0.1))).toBe(false);
-        expect(at('share', power(0.05, 0.21, 0.9))).toBe(false);
+    it('compares the detectable change of a share with an absolute 0.05, whatever the mean', () => {
+        expect(at('share', power(0.05, 0.05, 0.1))).toBe(true);
+        expect(at('share', power(0.05, 0.05, 0.9))).toBe(true);
+        expect(at('share', power(0.05, 0.075, 0.9))).toBe(false);
+        expect(at('share', power(0.05, 0.05, 0.1), 32)).toBe(true);
+        expect(at('share', power(0.05, 0.1, 0.1))).toBe(false);
     });
 
     it('uses an absolute 0.10 for a correlation or a trend', () => {

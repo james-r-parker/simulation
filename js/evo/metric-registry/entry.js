@@ -11,9 +11,9 @@
  * @typedef {object} Power a metric's measured power from split resampling of a 128-seed run (task T27)
  * @property {number | null} fpr16 false-positive rate at 16 seeds per arm
  * @property {number | null} fpr32 false-positive rate at 32 seeds per arm
- * @property {number | null} mde16 smallest detected change at 16 seeds, as a fraction of `referenceMean` (`null`: none up to 100%)
- * @property {number | null} mde32 smallest detected change at 32 seeds, as a fraction of `referenceMean`
- * @property {number} referenceMean the mean of the metric in the reference run, which turns a fraction into an absolute change
+ * @property {number | null} mde16 smallest detected change at 16 seeds: absolute for a metric of unit `share` (steps 0.01 to 0.2), else a fraction of `referenceMean` (`null`: none on the grid)
+ * @property {number | null} mde32 smallest detected change at 32 seeds, in the same unit as `mde16`
+ * @property {number} referenceMean the mean of the metric in the reference run, which turns a fraction into an absolute change (a `share` needs no such turn)
  * @property {string} report the repo path of the report the read came from
  */
 

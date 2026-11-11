@@ -95,6 +95,7 @@ describe('parseArgs', () => {
             allowSeedDiff: false,
             allowConfigDiff: ['k'],
             minEffect: 0.05,
+            shareMinEffect: 0.02,
         });
     });
 
@@ -104,6 +105,11 @@ describe('parseArgs', () => {
             expect(() => parseArgs(['a', 'b', '--min-effect', bad])).toThrow(/fraction/);
         }
         expect(() => parseArgs(['a', 'b', '--min-effect'])).toThrow(/fraction/);
+    });
+
+    it('reads --share-min-effect and validates it is a fraction', () => {
+        expect(parseArgs(['a', 'b', '--share-min-effect', '0.03']).shareMinEffect).toBe(0.03);
+        expect(() => parseArgs(['a', 'b', '--share-min-effect', '3'])).toThrow(/fraction/);
     });
 
     it('rejects a wrong file count and unknown flags', () => {
@@ -127,6 +133,7 @@ describe('main exit codes', () => {
         expect(result.rows[0].verdict).toBe('better');
         expect(result.rows[0].effect).toBeGreaterThan(0.2);
         expect(result.minEffect).toBe(0.05);
+        expect(result.shareMinEffect).toBe(0.02);
     });
 
     it('prints the `needs 32 seeds` note in the table and `minSeeds` in --json rows', () => {

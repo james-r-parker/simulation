@@ -2,12 +2,13 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { compareReports, MIN_EFFECT } from '../js/evo/compare.js';
+import { SHARE_MIN_EFFECT } from '../js/evo/compare-rules.js';
 import { canonicalOptions } from '../js/evo/policy-options.js';
 import { validateReport } from '../js/evo/report.js';
 import { parseFlags } from './lib/cli-args.mjs';
 
 const USAGE =
-    'usage: eval:compare <before.json> <after.json> [--targets <m,...>] [--fail-on-worse] [--allow-config-diff <key,...>] [--allow-seed-diff] [--min-effect <fraction>] [--json]';
+    'usage: eval:compare <before.json> <after.json> [--targets <m,...>] [--fail-on-worse] [--allow-config-diff <key,...>] [--allow-seed-diff] [--min-effect <fraction>] [--share-min-effect <fraction>] [--json]';
 
 /**
  * @param {string | undefined} value a comma-separated list
@@ -36,12 +37,14 @@ function fraction(value, flag) {
 
 /**
  * @param {string[]} argv command-line arguments after the script name
- * @returns {{ files: string[], targets: string[], failOnWorse: boolean, allowConfigDiff: string[], allowSeedDiff: boolean, minEffect: number, json: boolean }}
+ * @returns {{ files: string[], targets: string[], failOnWorse: boolean, allowConfigDiff: string[], allowSeedDiff: boolean, minEffect: number, shareMinEffect: number, json: boolean }}
  *   parsed options
  */
 export function parseArgs(argv) {
     const flagged = argv.filter(
-        (arg, i) => arg.startsWith('--') || (i > 0 && /^--(targets|allow-config-diff|min-effect)$/.test(argv[i - 1])),
+        (arg, i) =>
+            arg.startsWith('--') ||
+            (i > 0 && /^--(targets|allow-config-diff|min-effect|share-min-effect)$/.test(argv[i - 1])),
     );
     const files = argv.filter((arg) => !flagged.includes(arg));
     const opts = parseFlags(flagged, {
@@ -49,10 +52,12 @@ export function parseArgs(argv) {
             '--targets': (value, flag) => ['targets', list(value, flag)],
             '--allow-config-diff': (value, flag) => ['allowConfigDiff', list(value, flag)],
             '--min-effect': (value, flag) => ['minEffect', fraction(value, flag)],
+            '--share-min-effect': (value, flag) => ['shareMinEffect', fraction(value, flag)],
         },
         booleanFlags: { '--fail-on-worse': 'failOnWorse', '--json': 'json', '--allow-seed-diff': 'allowSeedDiff' },
         defaults: {
             minEffect: MIN_EFFECT,
+            shareMinEffect: SHARE_MIN_EFFECT,
             targets: [],
             allowConfigDiff: [],
             failOnWorse: false,
@@ -157,6 +162,7 @@ function run(args, { print, error }) {
     const options = optionsOf(reports);
     const result = compareReports(before, after, {
         minEffect: args.minEffect,
+        shareMinEffect: args.shareMinEffect,
         allowConfigDiff: args.allowConfigDiff,
         allowSeedDiff: args.allowSeedDiff,
         log: { log: (level, event, fields) => error(JSON.stringify({ level, event, ...fields })) },

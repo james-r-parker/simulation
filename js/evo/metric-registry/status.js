@@ -25,16 +25,16 @@ export function meetsLivenessBar(liveness) {
 
 /**
  * @param {string} unit the entry's unit
- * @param {number} mde the detectable change, a fraction of `referenceMean`
+ * @param {number} mde the detectable change: absolute for a `share` (T29a), else a fraction of `referenceMean`
  * @param {number} referenceMean the reference mean
  * @returns {boolean} whether the detectable change is within the bar for the unit: absolute 0.05 for `share`, absolute
  *   0.10 for `correlation`, `trend` or a mean within 0.01 of 0, else 0.20 of the mean
  */
 function mdeWithinBar(unit, mde, referenceMean) {
-    const absolute = mde * Math.abs(referenceMean);
     if (unit === 'share') {
-        return absolute <= MAX_SHARE_MDE;
+        return mde <= MAX_SHARE_MDE;
     }
+    const absolute = mde * Math.abs(referenceMean);
     if (unit === 'correlation' || unit === 'trend' || Math.abs(referenceMean) <= NEAR_ZERO_MEAN) {
         return absolute <= MAX_ABSOLUTE_MDE;
     }
