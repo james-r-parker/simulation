@@ -31,6 +31,12 @@ function world({ tick, prey, hunters, intake = 0 }) {
         alive: new Uint8Array(SLOTS),
         spec: new Uint8Array(SLOTS),
         foodEnergy: new Float64Array(SLOTS),
+        // Every agent is a newborn, so the share detectors at an edge checkpoint find no ready or eligible prey.
+        config: { maturityTicks: 20 },
+        sex: new Uint8Array(SLOTS),
+        ageTicks: new Uint32Array(SLOTS),
+        cooldown: new Uint32Array(SLOTS),
+        pregnancy: new Uint32Array(SLOTS),
     };
     for (let slot = 0; slot < prey + hunters; slot++) {
         w.alive[slot] = 1;
@@ -67,24 +73,24 @@ function run(rows) {
     rows.forEach((r, i) => {
         const w = world({ tick: T + 1000 * i, prey: r.prey, hunters: r.hunters ?? 0, intake: r.aliveIntake ?? 0 });
         const born = [
-            [BORN_CAUSE.MATE, r.mate, FORAGER],
-            [BORN_CAUSE.SPLIT, r.split, FORAGER],
-            [BORN_CAUSE.FLOOR, r.floor, FORAGER],
-            [BORN_CAUSE.IMMIGRANT, r.immigrant, FORAGER],
-            [BORN_CAUSE.MATE, r.hunterMate, PREDATOR],
+            [BORN_CAUSE.MATE, r.mate ?? 0, FORAGER],
+            [BORN_CAUSE.SPLIT, r.split ?? 0, FORAGER],
+            [BORN_CAUSE.FLOOR, r.floor ?? 0, FORAGER],
+            [BORN_CAUSE.IMMIGRANT, r.immigrant ?? 0, FORAGER],
+            [BORN_CAUSE.MATE, r.hunterMate ?? 0, PREDATOR],
         ];
-        for (const [cause, count = 0, spec] of born) {
+        for (const [cause, count, spec] of born) {
             for (let k = 0; k < count; k++) {
                 noteEdgeBirth(scene, w, { cause, spec });
             }
         }
         const died = [
-            [DEATH_CAUSE.STARVED, r.starved, 0, FORAGER],
-            [DEATH_CAUSE.EATEN, r.eaten, 0, FORAGER],
-            [DEATH_CAUSE.OLD_AGE, r.old, r.meal ?? 0, FORAGER],
-            [DEATH_CAUSE.STARVED, r.hunterDied, 999, PREDATOR],
+            [DEATH_CAUSE.STARVED, r.starved ?? 0, 0, FORAGER],
+            [DEATH_CAUSE.EATEN, r.eaten ?? 0, 0, FORAGER],
+            [DEATH_CAUSE.OLD_AGE, r.old ?? 0, r.meal ?? 0, FORAGER],
+            [DEATH_CAUSE.STARVED, r.hunterDied ?? 0, 999, PREDATOR],
         ];
-        for (const [cause, count = 0, foodEnergy, spec] of died) {
+        for (const [cause, count, foodEnergy, spec] of died) {
             for (let k = 0; k < count; k++) {
                 noteEdgeDeath(scene, w, { cause, spec, foodEnergy });
             }
@@ -149,15 +155,15 @@ describe('the edge detectors', () => {
     });
 
     it('count the boundaries as the doc sets them: 99 prey is an edge span, 100 and 400 reference, 401 neither', () => {
-        for (const [prey, edge, ref] of [
-            [99, true, false],
-            [100, false, true],
-            [400, false, true],
-            [401, false, false],
+        for (const { prey, edge, ref } of [
+            { prey: 99, edge: true, ref: false },
+            { prey: 100, edge: false, ref: true },
+            { prey: 400, edge: false, ref: true },
+            { prey: 401, edge: false, ref: false },
         ]) {
             const m = edgeMetrics(run([{ prey }, { prey, starved: 1 }]));
-            expect(m['eval.edge_starve_per_prey'].value !== null, `edge at ${prey}`).toBe(edge);
-            expect(m['eval.edge_ref_starve_per_prey'].value !== null, `reference at ${prey}`).toBe(ref);
+            expect(m['eval.edge_starve_per_prey']?.value !== null, `edge at ${prey}`).toBe(edge);
+            expect(m['eval.edge_ref_starve_per_prey']?.value !== null, `reference at ${prey}`).toBe(ref);
         }
         expect(EDGE_PREY).toBe(100);
     });
@@ -256,7 +262,7 @@ describe('the edge detectors with no span of a kind', () => {
 
 describe('the registry entries of the edge detectors', () => {
     it('are the names the module produces, each with the direction the doc gives', () => {
-        const names = namesOf('js/evo/scene-edge.js');
+        const names = [...namesOf('js/evo/scene-edge.js'), ...namesOf('js/evo/scene-edge-gates.js')].sort();
         expect(names).toEqual(Object.keys(edgeMetrics(createEdgeScene())).sort());
         expect(directionOf('eval.edge_birth_death_ratio')).toBe('higher');
         expect(directionOf('eval.edge_mate_births_per_prey')).toBe('higher');

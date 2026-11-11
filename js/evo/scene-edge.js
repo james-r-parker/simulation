@@ -17,12 +17,16 @@
 // all-cause death rate are registered beside them as watch metrics (`eval.edge_deaths_per_prey`, `eval.edge_ref_*`): a
 // report already carries each metric per seed, where a tally object would need a new report field.
 //
+// The two share detectors (`eval.edge_mate_unreached_share`, `eval.edge_split_blocked_share.*`) are in scene-edge-gates.js and
+// run at every edge checkpoint.
+//
 // The checkpoint is one pass over the agent slots; an event adds to a few running totals; nothing is allocated per tick.
 // The scene reads the world and writes only itself, so no hash can move.
 
 import { BORN_CAUSE, DEATH_CAUSE } from '../sim/events.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { createLog, ensureRoom } from './growable-log.js';
+import { createEdgeGates, edgeGateMetrics, sampleEdgeGates } from './scene-edge-gates.js';
 import { none, ok } from './metrics-stats.js';
 
 /** A span starts under this many prey to be an edge span. */
@@ -45,7 +49,8 @@ const TOTALS = ['mate', 'split', 'deaths', 'starved', 'eaten'];
 
 /**
  * @returns {Record<string, any>} an empty edge scene: the checkpoint rows (alive prey and hunters, and the running totals
- *   of the prey's mate and split births, deaths, starvation deaths, deaths by a hunter and food energy taken) and the totals
+ *   of the prey's mate and split births, deaths, starvation deaths, deaths by a hunter and food energy taken), the totals
+ *   and the share detectors' state
  */
 export function createEdgeScene() {
     return {
@@ -57,6 +62,7 @@ export function createEdgeScene() {
         starved: 0,
         eaten: 0,
         intakeDead: 0,
+        gates: createEdgeGates(EDGE_PREY),
     };
 }
 
@@ -94,16 +100,12 @@ export function noteEdgeDeath(scene, world, { cause, spec, foodEnergy }) {
 }
 
 /**
- * Takes the checkpoint at the world's tick, if it is a 1000-tick checkpoint at or after burn-in. Call it after the tick's
- * events are noted.
+ * Writes the checkpoint row: one pass over the agent slots.
  * @param {Record<string, any>} scene the edge scene
  * @param {Record<string, any>} world the world
- * @returns {void}
+ * @returns {number} the alive prey
  */
-export function sampleEdge(scene, world) {
-    if (world.tick < BURN_IN_TICKS || world.tick % CHECKPOINT_TICKS !== 0) {
-        return;
-    }
+function takeRow(scene, world) {
     let prey = 0;
     let hunters = 0;
     let intake = scene.intakeDead;
@@ -123,6 +125,25 @@ export function sampleEdge(scene, world) {
     log.intake[row] = intake;
     for (const name of TOTALS) {
         log[name][row] = scene[name];
+    }
+    return prey;
+}
+
+/**
+ * Takes the checkpoint at the world's tick, if it is a 1000-tick checkpoint at or after burn-in, and the share detectors'
+ * sample when 1 to `EDGE_PREY - 1` prey are alive. Call it after the tick's
+ * events are noted.
+ * @param {Record<string, any>} scene the edge scene
+ * @param {Record<string, any>} world the world
+ * @returns {void}
+ */
+export function sampleEdge(scene, world) {
+    if (world.tick < BURN_IN_TICKS || world.tick % CHECKPOINT_TICKS !== 0) {
+        return;
+    }
+    const prey = takeRow(scene, world);
+    if (prey > 0 && prey < EDGE_PREY) {
+        sampleEdgeGates(scene.gates, world);
     }
 }
 
@@ -217,5 +238,6 @@ export function edgeMetrics(scene) {
         'eval.edge_ref_split_births_per_prey': rate(ref, ref.split, NO_REFERENCE),
         'eval.edge_ref_starve_per_prey': rate(ref, ref.starved, NO_REFERENCE),
         'eval.edge_ref_eaten_per_prey': rate(ref, ref.eaten, NO_REFERENCE),
+        ...edgeGateMetrics(scene.gates),
     };
 }

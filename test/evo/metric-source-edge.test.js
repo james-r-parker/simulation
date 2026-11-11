@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import { BORN_CAUSE } from '../../js/sim/events.js';
 import { METRICS } from '../../js/evo/metric-registry/index.js';
+import { namesOf } from './helpers/metric-registry.js';
 import { eaten, plantFood, starve } from './helpers/source-world.js';
 import { FORAGER, PREDATOR, huntRun } from './helpers/hunt-scene.js';
 
@@ -114,7 +115,7 @@ describe('the edge detectors in a scripted world', () => {
     });
 
     it('are registered with a source test that names them', () => {
-        for (const name of Object.keys(METRICS).filter((n) => n.includes('.edge_'))) {
+        for (const name of namesOf('js/evo/scene-edge.js')) {
             expect(METRICS[/** @type {keyof typeof METRICS} */ (name)].tests.source).toBe(
                 'test/evo/metric-source-edge.test.js',
             );

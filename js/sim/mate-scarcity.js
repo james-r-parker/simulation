@@ -18,7 +18,7 @@ const AGENT_KEY = AGENT * KIND_STRIDE;
  * @param {number} other an agent in its view
  * @returns {boolean} whether `other` is a possible mate: same specialisation, other sex, mature
  */
-function isPossibleMate(world, slot, other) {
+export function isPossibleMate(world, slot, other) {
     return (
         world.spec[other] === world.spec[slot] &&
         world.sex[other] !== world.sex[slot] &&
