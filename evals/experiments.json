@@ -3960,6 +3960,22 @@
       "afterPolicy": "live",
       "effect": "no-difference",
       "verdicts": {}
+    },
+    {
+      "id": "E156",
+      "hypothesis": "low-density-edge Phase 3, E-LD-2: a heat lever (temperatureCoolingExcess, temperatureMatingMax or temperatureGainEat) lets prey mate at low density without removing heat as a pressure.",
+      "prediction": "A heat arm reads held better at 64 seeds with the alive guard not worse, and raises eval.edge_birth_death_ratio; heat-stressed mating blocks fall. Falsified when no arm reads held better, or the leading arm's alive guard reads worse, or its edge ratio does not rise.",
+      "targets": ["eval.edge_birth_death_ratio", "eval.heat_stress_share", "eval.births_per_1k"],
+      "before": "evals/decisions/E155/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d (the reference; the first pass re-runs defaults on seeds 1 to 16 inside the screen)",
+      "after": "not run yet: the heat screen (evals/screens/low-density-edge-heat.grid.json, 16 seeds), then the second pass at 64 seeds (T14)",
+      "note": "Prediction recorded before any arm ran (T12). Every heat arm first passes the constant-thrust purpose guard (scripts/heat-guard.mjs, evals/decisions/E156/heat-guard.txt). `reports` names the reference and the guard output, and is extended with the screen and eval reports when they exist.",
+      "reports": ["evals/decisions/E155/defaults-floor-on.json", "evals/decisions/E156/heat-guard.txt"],
+      "date": "2026-11-11",
+      "branch": "chore/low-density-edge-heat-screen",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference",
+      "verdicts": {}
     }
   ]
 }
