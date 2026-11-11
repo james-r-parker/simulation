@@ -1,5 +1,6 @@
 import { allocBody } from './helpers/body.js';
 import { describe, expect, it } from 'vitest';
+import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import {
     PATCH_FLOOR_SHARE,
     createPatches,
@@ -160,6 +161,7 @@ describe('depletion', () => {
         w.x[slot] = 200;
         w.y[slot] = 200;
         addEnergy(w, slot, 20, ENERGY_SOURCE.INITIAL);
+        w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = 1; // a forager eats only while it bites (eat-choice G1)
         const put = (/** @type {number} */ i, /** @type {number} */ x, /** @type {number} */ y) => {
             Object.assign(w.foodAlive, { [i]: 1 });
             w.foodX[i] = x;

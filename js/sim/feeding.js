@@ -122,13 +122,28 @@ function eatInCell(world, hash, slot, cell) {
 }
 
 /**
- * Makes one agent eat every alive food it overlaps.
+ * G1 (eat-choice): a non-hunter eats only while it holds `BITE` above 0, so eating is a choice the brain makes; a
+ * hunter's carcass meals need no bite. The choice is per tick, not per item: a biting forager eats every edible item it
+ * overlaps, and declines a toxic one only by releasing `BITE`.
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the agent
+ * @returns {boolean} whether the agent takes food this tick
+ */
+function choosesToEat(world, slot) {
+    return world.huntBySpec[world.spec[slot]] === 1 || world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0;
+}
+
+/**
+ * Makes one agent eat every alive food it overlaps, when it chooses to eat (`choosesToEat`).
  * @param {Record<string, any>} world the world
  * @param {import('./spatial-hash.js').SpatialHash} hash the hash built this tick
  * @param {number} slot the eating agent
  * @returns {void}
  */
 function eatAround(world, hash, slot) {
+    if (!choosesToEat(world, slot)) {
+        return;
+    }
     const range = cellRange(hash, world.x[slot], world.y[slot], world.size[slot]);
     const col0 = range[0];
     const row0 = range[1];
