@@ -1,6 +1,6 @@
 # Metric trust
 
-**Status:** In progress - Phases 1 to 4 are built; Phase 5 (T33 to T37) remains.
+**Status:** In progress - Phases 1 to 4 and Phase 5 T33 to T35 are built; T36 and T37 remain.
 **Validated:** 55e8f276 (2026-11-11)
 **Priority:** 1 - pinned (user, 2026-11-08): every choice the other docs make reads these metrics; runs that rest on no suspect metric keep going
 **Depends on:** [evolution-evals.md](evolution-evals.md)

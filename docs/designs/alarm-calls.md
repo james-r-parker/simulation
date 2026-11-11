@@ -331,12 +331,13 @@ Every row is Delegated: the user was away and the doc's author answered the crea
 
 ### Phase 4 - Adopt and delete
 
-| #   | Task                                                                                                                                          | Nature       | Depends on |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T19 | One verdict per switch from T16 and T17; delete each loser's switch, numeric keys and code and its flag-ledger row                            | [judgement]  | T18        |
-| T20 | Delete the flag, old path, numeric keys and ledger row of each switch adopted on                                                              | [mechanical] | T19        |
-| T21 | Re-pin the golden hashes in Node and Chromium and re-record the bench baseline, each in its own commit, on a quiet machine under the CPU lock | [mechanical] | T20        |
-| T22 | Move the status line, the principles Call, or don't row and the evolution-evals Metrics table; Phase 4 conformance review                     | [judgement]  | T21        |
+| #   | Task                                                                                                                                                                                            | Nature       | Depends on |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T19 | One verdict per switch from T16 and T17; delete each loser's switch, numeric keys and code and its flag-ledger row                                                                              | [judgement]  | T18        |
+| T20 | Delete the flag, old path, numeric keys and ledger row of each switch adopted on                                                                                                                | [mechanical] | T19        |
+| T21 | Re-pin the golden hashes in Node and Chromium and re-record the bench baseline, each in its own commit, on a quiet machine under the CPU lock                                                   | [mechanical] | T20        |
+| T22 | Move the status line, the principles Call, or don't row and the evolution-evals Metrics table; Phase 4 conformance review                                                                       | [judgement]  | T21        |
+| T23 | Re-read the `E140` miss on `eval.social_return` (negative on 16 of 16 seeds), which is `unverified` (metric-trust T35): check what it reads before the "social genes never pay" premise is used | [judgement]  | -          |
 
 ## Verification
 
