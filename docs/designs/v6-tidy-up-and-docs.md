@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the screenshots script, the README rewrite with screenshots and the final docs audit) is still to build: `scripts/screenshots.mjs` does not exist, and the README is kept current by the periodic audits meanwhile.
 **Validated:** d6ca3e6c (2026-11-07)
-**Priority:** 12 - the last stage of v6: nothing legacy is left and every doc describes the app as built
+**Priority:** 14 - the last stage of v6: nothing legacy is left and every doc describes the app as built
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md)
 
 The final stage of the v6 modernisation. [worker-and-renderer.md](worker-and-renderer.md) Phase 5 deletes the legacy

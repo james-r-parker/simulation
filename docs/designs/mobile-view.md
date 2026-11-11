@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 built: two-finger pinch and pan, `pointercancel`, a fingertip-sized tap, the portrait home zoom that survives a turn, the pixel-ratio cap on every path, and a phone layout for the HUD; Phase 2 chunk C2 built: double-tap zoom, two-finger-tap Home, long-press peek, the overflow menu, the coarse-pointer quality start and portrait director shots; the phone frame-budget row (T11, chunk C3, quiet machine) is next.
 **Validated:** d6ca3e6c (2026-11-07)
-**Priority:** 14 - the app's audience is the TV and the desktop; a phone is a second screen, so this queues after the v6 and deployment docs
+**Priority:** 16 - the app's audience is the TV and the desktop; a phone is a second screen, so this queues after the v6 and deployment docs
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md)
 
 The app on `index.html` runs on a phone or a tablet as well as on the desktop. A person can pinch to zoom, drag to
