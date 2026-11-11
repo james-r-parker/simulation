@@ -110,3 +110,25 @@ describe('lockCommand', () => {
         });
     });
 });
+
+describe('renderTable keep-rule column', () => {
+    const keep = (/** @type {boolean} */ worse) => ({
+        worse,
+        guards: [
+            { name: 'alive', verdict: worse ? 'worse' : 'no-harm', smallestSeeds: 6 },
+            { name: 'under80', verdict: 'no-harm', smallestSeeds: 5 },
+        ],
+        adoption: { alive: { count: 24, of: 32, low: 20.5, high: 28 } },
+    });
+
+    it('prints `=` on the reference, and the verdict, the smallest detected loss and the alive interval on an arm', () => {
+        const lines = renderTable({
+            reference: 'ref',
+            arms: [verdict('ref'), verdict('ok', { keep: keep(false) }), verdict('bad', { keep: keep(true) })],
+        }).split('\n');
+        expect(lines[0]).toContain('keep rule vs ref (paired)');
+        expect(lines[2]).toMatch(/\| = +\|/);
+        expect(lines[3]).toContain('no harm (detects 6 seeds) alive 24/32 [20.5, 28.0]');
+        expect(lines[4]).toContain('WORSE alive (detects 6 seeds) alive 24/32 [20.5, 28.0]');
+    });
+});

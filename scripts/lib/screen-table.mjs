@@ -105,6 +105,26 @@ function summerCell(summer) {
 }
 
 /**
+ * @param {{ worse: boolean, guards: { name: string, verdict: string, smallestSeeds: number | null }[],
+ *   adoption: { alive: { count: number, of: number, low: number, high: number } | null } } | null | undefined} keep
+ *   an arm's keep-rule result against the reference
+ * @returns {string} `WORSE` or `no harm` with the guards that are worse or the smallest alive loss it detects, and the
+ *   alive count with its interval in seeds; `=` on the reference row
+ */
+function keepCell(keep) {
+    if (keep === null || keep === undefined) {
+        return '=';
+    }
+    const bad = keep.guards.filter((g) => g.verdict === 'worse').map((g) => g.name);
+    const alive = keep.adoption.alive;
+    const aliveText =
+        alive === null ? '' : ` alive ${alive.count}/${alive.of} [${alive.low.toFixed(1)}, ${alive.high.toFixed(1)}]`;
+    const smallest = keep.guards.find((g) => g.name === 'alive')?.smallestSeeds;
+    const detects = smallest === null || smallest === undefined ? '' : ` (detects ${smallest} seeds)`;
+    return `${keep.worse ? `WORSE ${bad.join(',')}` : 'no harm'}${detects}${aliveText}`;
+}
+
+/**
  * @param {Record<string, any>} verdict one arm's verdict
  * @returns {string[]} the row's cells
  */
@@ -117,6 +137,7 @@ function row(verdict) {
         seedsCell(c.catchRate),
         chaseCell(verdict.hunters),
         huntersCell(verdict.hunters),
+        keepCell(verdict.keep),
         meanCell(means.matingShare),
         meanCell(means.bornShare),
         seedsCell(c.lineages),
@@ -142,6 +163,7 @@ export function renderTable({ reference, arms }) {
         'catch/1k > 0 (speed)',
         'chase catch share',
         'hunters p50 (pred/ticks/kills), alive share, seeds <80',
+        'keep rule vs ref (paired)',
         'mating mean >= 0.2',
         'born mean >= 0.5',
         'lineages >= 5',

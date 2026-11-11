@@ -91,6 +91,7 @@ describe('parseArgs', () => {
             files: ['a.json', 'b.json'],
             targets: ['x', 'y'],
             failOnWorse: true,
+            keepRule: false,
             json: true,
             allowSeedDiff: false,
             allowConfigDiff: ['k'],
@@ -176,6 +177,34 @@ describe('main exit codes', () => {
         ]);
         const only = run([a, b, '--fail-on-worse', '--targets', 'eval.floor_episodes']);
         expect(only.code).toBe(0);
+    });
+
+    it('--keep-rule prints the guards and the adoption bar, in the table and in --json, and --fail-on-worse reads it', () => {
+        const withHunters = (/** @type {number[]} */ ends) => {
+            const r = report(BASE);
+            r.metrics['eval.predators_at_end'] = { values: ends, reasons: ends.map(() => null), mean: 0, sd: 0 };
+            r.traces = ends.map(() => ({
+                interval: 100,
+                lineages: 5,
+                pop: [100],
+                mate: [0],
+                split: [0],
+                spec: [100],
+                deaths: [0],
+            }));
+            return r;
+        };
+        const alive = write('keep-a.json', withHunters(BASE.map(() => 5)));
+        const dead = write('keep-b.json', withHunters(BASE.map((_, i) => (i < 12 ? 0 : 5))));
+        const inert = run([alive, alive, '--keep-rule']);
+        expect(inert.out[0]).toMatch(/guard alive: no-harm/);
+        expect(inert.out[0]).toMatch(/adoption bar: hunters alive 16\/16/);
+        expect(inert.out[0]).toMatch(/keep rule: no harm detected/);
+        expect(run([alive, dead, '--keep-rule']).out[0]).toMatch(/keep rule: WORSE/);
+        expect(run([alive, dead, '--fail-on-worse']).code).toBe(0);
+        expect(run([alive, dead, '--fail-on-worse', '--keep-rule']).code).toBe(1);
+        expect(JSON.parse(run([alive, dead, '--keep-rule', '--json']).out[0]).keepRule.worse).toBe(true);
+        expect(JSON.parse(run([alive, dead, '--json']).out[0]).keepRule).toBeUndefined();
     });
 
     it('exits 1 on a worse verdict only with --fail-on-worse', () => {

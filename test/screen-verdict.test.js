@@ -262,3 +262,17 @@ describe('summerSeeds', () => {
         expect(summerSeeds({ seeds: [1, 2], metrics: {} })).toEqual({ above: 0, of: 2 });
     });
 });
+
+describe('armVerdict keep rule', () => {
+    it('carries the paired keep rule against the reference, and null on the reference itself', () => {
+        const ref = report();
+        const lost = report({
+            metrics: { ...report().metrics, 'eval.predators_at_end': metric(0, [0, 0]) },
+        });
+        expect(armVerdict('ref', ref, ref).keep).toBeNull();
+        const arm = armVerdict('lost', lost, ref).keep;
+        expect(arm.guards.map((/** @type {any} */ g) => g.name)).toContain('alive');
+        expect(arm.guards.find((/** @type {any} */ g) => g.name === 'alive').diff).toBe(-1);
+        expect(armVerdict('same', report(), ref).keep.worse).toBe(false);
+    });
+});

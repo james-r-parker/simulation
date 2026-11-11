@@ -1,6 +1,7 @@
 // Screen verdicts: the Phase 4 collapse criteria per seed and per arm, and each arm's deltas against the reference arm,
 // computed from eval reports that carry `traces`. Pure: no files, no clock.
 
+import { keepRule } from '../../js/evo/keep-rule.js';
 import { BURN_IN_TICKS } from '../../js/evo/observer-events.js';
 import { quantile } from '../../js/evo/metrics-stats.js';
 
@@ -265,7 +266,7 @@ export function watchMeans(report) {
  * @param {Record<string, any>} report the arm's report
  * @param {Record<string, any>} reference the reference arm's report
  * @returns {Record<string, any>} the arm's verdict: per-seed criteria, the two mean criteria, the mean population,
- *   `hunters` (`hunterGate`), `pass` (every seed passes every criterion, both means pass and the hunter gate passes), the Target deltas against the reference and the
+ *   `hunters` (`hunterGate`), `keep` (`keepRule` against the reference, null on the reference), `pass` (every seed passes every criterion, both means pass and the hunter gate passes), the Target deltas against the reference and the
  *   `WATCH_METRICS` means
  */
 export function armVerdict(name, report, reference) {
@@ -291,6 +292,7 @@ export function armVerdict(name, report, reference) {
         popMean: report.metrics['eval.population_mean']?.mean ?? null,
         pass,
         deltas: report === reference ? null : targetDeltas(report, reference),
+        keep: report === reference ? null : keepRule(reference, report),
         watch: watchMeans(report),
     };
 }
