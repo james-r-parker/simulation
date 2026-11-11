@@ -24,6 +24,20 @@ describe('eval.birth_source_share.*', () => {
         }
     });
 
+    it('give eval.birth_source_share.split and eval.birth_source_share.floor their own cause over all births', () => {
+        const r = observed();
+        const after = r.observer.birthsAfterBurnIn;
+        after[BORN_CAUSE.SPLIT] = 3;
+        after[BORN_CAUSE.FLOOR] = 1;
+        after[BORN_CAUSE.MATE] = 4;
+        expect(read(r, 'split')).toEqual({ value: 3 / 8 });
+        expect(read(r, 'floor')).toEqual({ value: 1 / 8 });
+        after[BORN_CAUSE.SPLIT] = 0;
+        after[BORN_CAUSE.FLOOR] = 0;
+        expect(read(r, 'split')).toEqual({ value: 0 });
+        expect(read(r, 'floor')).toEqual({ value: 0 });
+    });
+
     it('sum to 1 over the four sources', () => {
         const r = observed();
         r.observer.birthsAfterBurnIn[BORN_CAUSE.MATE] = 3;

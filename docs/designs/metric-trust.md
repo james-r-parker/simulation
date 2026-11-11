@@ -228,10 +228,10 @@ Every tool logs its policy and configHash first, replay takes `live`, traces kee
 
 #### Chunks
 
-| Chunk                 | Tasks      | Holds                                                        |
-| --------------------- | ---------- | ------------------------------------------------------------ |
-| L - Tools (Code)      | T33, T34   | Replay policy and `RunConfig`, trace series                  |
-| M - Re-read and rules | T35 to T37 | The re-read of past verdicts, AGENTS.md and the skill, close |
+| Chunk                 | Tasks          | Holds                                                        |
+| --------------------- | -------------- | ------------------------------------------------------------ |
+| L - Tools (Code)      | T33, T34, T34a | Replay policy and `RunConfig`, trace series                  |
+| M - Re-read and rules | T35 to T37     | The re-read of past verdicts, AGENTS.md and the skill, close |
 
 ## Delivery requirements
 
@@ -326,13 +326,14 @@ Every tool logs its policy and configHash first, replay takes `live`, traces kee
 
 ### Phase 5 - Tools and past decisions
 
-| #   | Task                                                                                                                                                                                                                                                                  | Nature       | Depends on |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T33 | (built: 2026-11-11) `npm run replay` takes `live` (`LIVE_POLICY`) and defaults to it; `replay`, `eval`, `screen`, `train` and `drill` log `RunConfig` first; tests                                                                                                    | [mechanical] | T32        |
-| T34 | (built: 2026-11-11) `createTrace` keeps `prey` and `hunters` per checkpoint and reports carry them; tests compare `eval.prey_summer_min` with the lowest post-burn-in summer prey count                                                                               | [mechanical] | T32        |
-| T35 | Re-read every `evals/experiments.json` record from `E120` against the registry: list the verdicts that rest on a metric T14, T15, T24, T25 or T28 changed, and whether each still holds from the saved reports; a verdict that flips becomes a task in its owning doc | [judgement]  | T33, T34   |
-| T36 | AGENTS.md Hard rule and command row, the `run-evolution-loop` skill step 0, `docs/principles.md` names `keepRule` and the smallest loss its guards detect                                                                                                             | [mechanical] | T35        |
-| T37 | Conformance review of Phase 5, in parallel with `scripts/check.sh`; status to `Implemented`                                                                                                                                                                           | [judgement]  | T36        |
+| #    | Task                                                                                                                                                                                                                                                                                    | Nature       | Depends on |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T33  | (built: 2026-11-11) `npm run replay` takes `live` (`LIVE_POLICY`) and defaults to it; `replay`, `eval`, `screen`, `train` and `drill` log `RunConfig` first; tests                                                                                                                      | [mechanical] | T32        |
+| T34  | (built: 2026-11-11) `createTrace` keeps `prey` and `hunters` per checkpoint and reports carry them; tests compare `eval.prey_summer_min` with the lowest post-burn-in summer prey count                                                                                                 | [mechanical] | T32        |
+| T34a | (built: 2026-11-11, verified 157 to 172) Fill the 15 powered metrics that lack a test or liveness reading: liveness re-read on `evals/power/defaults-floor-on-E150.json` (`eval.bite_off_other_view`, `eval.bite_on_prey_view`), and arithmetic tests for the 13 suffixes that had none | [mechanical] | T34        |
+| T35  | Re-read every `evals/experiments.json` record from `E120` against the registry: list the verdicts that rest on a metric T14, T15, T24, T25 or T28 changed, and whether each still holds from the saved reports; a verdict that flips becomes a task in its owning doc                   | [judgement]  | T33, T34   |
+| T36  | AGENTS.md Hard rule and command row, the `run-evolution-loop` skill step 0, `docs/principles.md` names `keepRule` and the smallest loss its guards detect                                                                                                                               | [mechanical] | T35        |
+| T37  | Conformance review of Phase 5, in parallel with `scripts/check.sh`; status to `Implemented`                                                                                                                                                                                             | [judgement]  | T36        |
 
 ## Verification
 

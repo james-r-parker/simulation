@@ -18,6 +18,21 @@ describe('fitnessMetrics', () => {
         expect(m['eval.p90_fitness.predator']?.value).toBe(10);
     });
 
+    it('gives the mean for scout and the 90th percentile for reproducer and defender', () => {
+        const o = bareObserver();
+        addDeath(o, { spec: 3, fitness: 2 });
+        addDeath(o, { spec: 3, fitness: 6 });
+        addAlive(o, 1, { spec: 3, foodEnergy: 10 });
+        addDeath(o, { spec: 2, fitness: 1 });
+        addDeath(o, { spec: 2, fitness: 5 });
+        addDeath(o, { spec: 4, fitness: 7 });
+        const m = fitnessMetrics(o, fitness);
+        expect(m['eval.mean_fitness.scout']?.value).toBe(6);
+        expect(m['eval.p90_fitness.reproducer']?.value).toBeCloseTo(4.6, 12);
+        expect(m['eval.p90_fitness.defender']?.value).toBe(7);
+        expect(m['eval.mean_fitness.defender']?.value).toBe(7);
+    });
+
     it('is null per spec with no agents, naming the spec', () => {
         const m = fitnessMetrics(bareObserver(), fitness);
         expect(m['eval.p90_fitness.scout']).toEqual({ value: null, reason: 'no agents of scout' });
