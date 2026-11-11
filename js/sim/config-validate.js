@@ -63,6 +63,7 @@ const RULES = {
     biteEnergy: num(0),
     biteCost: num(0),
     recoilEnergy: num(0),
+    grazeThrust: num(0, 1),
     huntSizeRatio: num(0.5),
     mateSizeRatio: { type: 'num', gt: 1 },
     mateMinEnergy: num(0),
