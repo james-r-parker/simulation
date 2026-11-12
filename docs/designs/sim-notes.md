@@ -3274,3 +3274,13 @@ changed. The nonzero inputs per agent barely moved (+3.6%, +1.3%); the bench wor
 500 cap (272 to 302, 162 to 197 a tick in the phase window), and the brain costs the same 1.6 to 1.7 us per alive agent.
 The `500` bench row is not 500 agents: read a phase change against the alive count before blaming a kernel. Sense and
 physics rose with it.
+
+### 2026-11-12 - The eat-choice contact shares are biased by feeding (eat-choice T24, T25, E164)
+
+Under G1 a forager eats an item only while it bites, and the item is removed in the same feed phase. An observer that
+samples contact after the step therefore sees mostly the agents that did not bite: non-hunters hold `BITE` in 75% of
+samples (`eval.graze_time_share`), but only 19% of those touching uneaten food do (`eval.food_contact_bite_share`).
+Sampling ten times as often did not lift the shares' power either (0.15 detectable at 32 seeds, as at 1000-tick
+checkpoints): the spread is between seeds. A tally that must see an action and its consumed target has to run where the
+action happens, not after it. Hunters on the defaults pay 0.42 of their income in strike misses
+(`eval.strike_miss_energy_ratio`), and `eval.split_bumper_share` is 0 on every seed of the eat-choice world, as `splitDeliberateShareMin` keeps a bumper from splitting.
