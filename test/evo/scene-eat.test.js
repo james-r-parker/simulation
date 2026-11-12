@@ -43,6 +43,9 @@ function world(agents, config = {}) {
             sickDose: 5,
             satiationShare: 0.95,
             digestTicks: 10,
+            worldWidth: 100 * n + 1000,
+            worldHeight: 1000,
+            maxFood: n,
             ...config,
         },
         huntBySpec: Float64Array.from([0, 1, 0]),
@@ -66,9 +69,6 @@ function world(agents, config = {}) {
         foodY: new Float32Array(n),
         foodRadius: new Float32Array(n).fill(RADIUS),
     };
-    w.config.worldWidth = 100 * n + 1000;
-    w.config.worldHeight = 1000;
-    w.config.maxFood = n;
     agents.forEach((a, i) => {
         w.alive[i] = a.alive === false ? 0 : 1;
         w.spec[i] = a.spec ?? FORAGER;

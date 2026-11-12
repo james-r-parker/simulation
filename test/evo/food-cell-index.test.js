@@ -84,7 +84,9 @@ describe('touchesFood', () => {
         const w = randomWorld(9);
         const index = createFoodCellIndex(CONFIG);
         buildFoodCellIndex(index, w);
-        expect(index.count).toBe(w.foodAlive.reduce((n, a) => n + a, 0));
+        expect(index.count).toBe(
+            Array.from(w.foodAlive).reduce((/** @type {number} */ n, /** @type {number} */ a) => n + a, 0),
+        );
     });
 
     it('is rebuilt from the world each time: food that is gone no longer touches', () => {
