@@ -4,7 +4,7 @@
 
 import { RAY_CHANNELS } from '../sim/brain-layout.js';
 import { nearestClassRay } from './observer-tick.js';
-import { CH_FOOD, SEEK_THRUST, eachAlive, turnTowards, write } from './scripted-parts.js';
+import { CH_FOOD, SEEK_THRUST, eachAlive, turnTowards, writeForage } from './scripted-parts.js';
 
 /** @typedef {import('./scripted-parts.js').ControllerFactory} ControllerFactory */
 
@@ -23,7 +23,7 @@ export const REVERSE_THRUST = -0.4;
  * @type {ControllerFactory}
  */
 function patchCircler() {
-    return eachAlive((w, slot) => write(w, slot, SEEK_THRUST, CIRCLE_TURN));
+    return eachAlive((w, slot) => writeForage(w, slot, SEEK_THRUST, CIRCLE_TURN));
 }
 
 /**
@@ -31,7 +31,7 @@ function patchCircler() {
  * @type {ControllerFactory}
  */
 function patchCirclerRight() {
-    return eachAlive((w, slot) => write(w, slot, SEEK_THRUST, -CIRCLE_TURN));
+    return eachAlive((w, slot) => writeForage(w, slot, SEEK_THRUST, -CIRCLE_TURN));
 }
 
 /**
@@ -43,15 +43,15 @@ function backingCollider() {
     return eachAlive((w, slot) => {
         const k = nearestClassRay(w, slot, CH_FOOD, CH_FOOD);
         if (k < 0) {
-            write(w, slot, 0, 0);
+            writeForage(w, slot, 0, 0);
             return;
         }
         const half = w.config.rayCount / 2;
         if (Math.abs(k - half) <= 1) {
-            write(w, slot, REVERSE_THRUST, 0);
+            writeForage(w, slot, REVERSE_THRUST, 0);
         } else {
             // Turn so the food slides round to the rear ray: away from it, then reverse once it is behind.
-            write(w, slot, 0, k < half ? -1 : 1);
+            writeForage(w, slot, 0, k < half ? -1 : 1);
         }
     });
 }
@@ -65,11 +65,11 @@ function nearMiss() {
     return eachAlive((w, slot) => {
         const k = nearestClassRay(w, slot, CH_FOOD, CH_FOOD);
         if (k < 0) {
-            write(w, slot, 0, 0);
+            writeForage(w, slot, 0, 0);
             return;
         }
         const near = w.inputs[slot * w.layout.rawInputCount + k * RAY_CHANNELS] > NEAR_MISS_PROXIMITY;
-        write(w, slot, near ? 0 : SEEK_THRUST, turnTowards(k, w.config.rayCount));
+        writeForage(w, slot, near ? 0 : SEEK_THRUST, turnTowards(k, w.config.rayCount));
     });
 }
 

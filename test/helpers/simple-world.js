@@ -2,7 +2,7 @@
  * The knobs a unit-test world switches off so that one rule can be seen alone, over the defaults: no meal limits
  * (satiation, digestion, handling), no predator rescue, call thresholds, hunt economy or specialisation drift, no food
  * patches, no mate distance limit, no birth budget or cap, an old-style mating range and cooldown, no merit split gate, shark wait or clonal cap on splits,
- * no learning, and a terrain of one wall gap without refuges or a cold margin. A test spreads it first and sets only
+ * no learning, no eat choice (grazing, fat and strike costs), and a terrain of one wall gap without refuges or a cold margin. A test spreads it first and sets only
  * the keys it is about.
  * @type {Readonly<Record<string, any>>}
  */
@@ -12,7 +12,9 @@ export const SIMPLE_WORLD = Object.freeze({
     childEnergyMin: 200,
     coldMarginWidth: 0,
     digestTicks: 0,
+    fatSlowShare: 0,
     foodPatchCount: 0,
+    grazeThrust: 1,
     handlingTicks: 0,
     hebbianRate: 0,
     huntCallThreshold: 0,
@@ -27,6 +29,7 @@ export const SIMPLE_WORLD = Object.freeze({
     specMutationRate: 0,
     splitMateScarceTicks: 0,
     splitClonalMax: 1000,
+    strikeMissCost: 0,
     instinctWeight: 0,
     specialisations: {
         predator: {

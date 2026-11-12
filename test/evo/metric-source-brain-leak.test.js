@@ -3,6 +3,7 @@
 // what the observer kept at birth, not from the cleared genome row. Every test has a death in its final tick.
 
 import { describe, expect, it } from 'vitest';
+import { OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { leakRateOf } from '../../js/sim/traits.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import { MIN_FORAGE_LIVES } from '../../js/evo/metrics-leak-skill.js';
@@ -46,7 +47,9 @@ function runLives(genes, { founder = false } = {}) {
     }
     r.jump(BURN_IN_TICKS);
     for (const slot of slots) {
+        r.want(slot, OUTPUT_INDEX.BITE); // a forager eats only while it bites (eat-choice G1); the brain phase runs here
         r.tick((/** @type {any} */ w) => plantFood(w, slot));
+        r.release(slot, OUTPUT_INDEX.BITE);
         r.tick((/** @type {any} */ w) => starve(w, slot, 50));
     }
     return { r, leakMin: r.world.config.leakMin };

@@ -1,0 +1,12 @@
+{
+  "seeds": 64,
+  "seedOffset": 0,
+  "ticks": 400000,
+  "policy": "live",
+  "reference": "gf-strike-1",
+  "arms": {
+    "gf-strike-1": { "grazeThrust": 0.5, "fatSlowShare": 0.5, "strikeMissCost": 1 },
+    "gf-strike-05": { "grazeThrust": 0.5, "fatSlowShare": 0.5, "strikeMissCost": 0.5 },
+    "gf3-strike-1": { "grazeThrust": 0.5, "fatSlowShare": 0.3, "strikeMissCost": 1 }
+  }
+}

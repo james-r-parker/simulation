@@ -59,6 +59,21 @@ export function write(world, slot, thrust, turn) {
 }
 
 /**
+ * `write` for a forager: the same row with `BITE` held at 1. A non-hunter eats only while `BITE` is above 0 (eat-choice
+ * G1), so a controller whose intent is to eat holds it, usually while food is in view (`seekFood`); the chance
+ * controllers, which meet food without steering at it, hold it on every tick.
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the agent
+ * @param {number} thrust thrust output
+ * @param {number} turn turn output
+ * @returns {void}
+ */
+export function writeForage(world, slot, thrust, turn) {
+    write(world, slot, thrust, turn);
+    world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = 1;
+}
+
+/**
  * @param {(world: Record<string, any>, slot: number) => void} perAgent writes one alive agent's outputs
  * @returns {ControllerRun}
  */
@@ -73,13 +88,23 @@ export function eachAlive(perAgent) {
 }
 
 /**
+ * Steers towards the nearest food at `SEEK_THRUST`. A forager bites while food is in view, so it takes the food it
+ * reaches and holds `BITE` off when there is none (a non-hunter's `BITE` is a signal the observer reads as a response
+ * to a threat); a hunter (`bite` false) never does, since its `BITE` is a strike and a strike at nothing costs
+ * (eat-choice G4).
  * @param {Record<string, any>} world the world
  * @param {number} slot the agent
+ * @param {boolean} [bite] whether a forager holds `BITE` (default true)
  * @returns {void}
  */
-export function seekFood(world, slot) {
+export function seekFood(world, slot, bite = true) {
     const k = nearestClassRay(world, slot, CH_FOOD, CH_FOOD);
-    write(world, slot, SEEK_THRUST, turnTowards(k, world.config.rayCount));
+    const turn = turnTowards(k, world.config.rayCount);
+    if (bite && k >= 0) {
+        writeForage(world, slot, SEEK_THRUST, turn);
+    } else {
+        write(world, slot, SEEK_THRUST, turn);
+    }
 }
 
 /**
@@ -113,7 +138,7 @@ export function createWander(world, rng) {
             Math.min(WANDER_BOUND, drift[slot] + (nextFloat(rng) - 0.5) * 2 * WANDER_STEP),
         );
         const k = nearestClassRay(w, slot, CH_FOOD, CH_FOOD);
-        write(w, slot, 1, k < 0 ? drift[slot] : -turnTowards(k, w.config.rayCount));
+        writeForage(w, slot, 1, k < 0 ? drift[slot] : -turnTowards(k, w.config.rayCount));
     };
 }
 

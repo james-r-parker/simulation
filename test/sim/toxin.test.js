@@ -19,7 +19,9 @@ import { addBlob, imbalance, lifeWorld, recordingPolicy } from './helpers/life-w
  */
 function body(over = {}) {
     const world = lifeWorld(over);
-    return { world, slot: addBlob(world, { energy: 100 }) };
+    const slot = addBlob(world, { energy: 100 });
+    world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = 1; // a forager eats only while it bites (eat-choice G1)
+    return { world, slot };
 }
 
 /**

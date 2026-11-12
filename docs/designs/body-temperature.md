@@ -62,6 +62,11 @@ At the defaults (`rayCount` 16, `brainHidden` 32) `inputCount` goes from 143 to 
   calls it with `temperatureGainEat x stored / foodEnergy` for each food eaten, with `stored` the energy `addEnergy`
   returns; `applyBite` calls it with `temperatureGainEat x world.transferGained / foodEnergy` for the biter. A food of
   `foodEnergy` gives `temperatureGainEat`; a bite of `biteEnergy` 5 gives 0.1. The bitten agent gains nothing.
+- **Eating is chosen (eat-choice.md).** A non-hunter reaches `tryEat` only while its `BITE` output is above 0, so only a
+  meal it chose warms it, and holding the bite slows it to `grazeThrust` (0.5) of its thrust. A fuller store slows an agent
+  too: thrust and turn are multiplied by `1 - fatSlowShare` (0.5) x `energy / maxEnergyBySpec[spec]`. A hunter sees only food
+  it can eat, and a bite at nothing costs it `strikeMissCost` (1) energy. These sit beside the temperature efficiency
+  and multiply with it in `actAll`.
 - **Tick.** `applyCosts` calls `stepTemperature(world, slot)` for each alive agent before it prices the tick; it reads `config.seasons[world.season[0]].temperatureModifier` directly and allocates nothing. With
   `speed = sqrt(vx x vx + vy x vy)` (the velocity left by `integrate` and `resolveContacts`) and `L` the season's loss
   multiplier `max(0, 1 - seasons[season].temperatureModifier x temperatureSeasonSlope)`: a warmer season cools an agent more slowly. At the defaults `L` is 1.15 in spring, 0.55 in summer, 0.85 in autumn and 1.45 in winter:
