@@ -4019,6 +4019,28 @@
       "afterPolicy": "live",
       "effect": "worse",
       "verdicts": {}
+    },
+    {
+      "id": "E158",
+      "hypothesis": "eat-choice Phase 2, E-EC-1: when holding BITE slows a forager (grazeThrust below 1), foragers bite at food and lift the bite to move, so the share of food contacts that bite falls below the plain bite arm's.",
+      "prediction": "With grazeThrust below 1, eval.food_contact_bite_share falls below bite's, with no keep-rule guard worse. Falsified when the share does not fall below bite's, or a guard reads WORSE.",
+      "targets": [
+        "eval.food_contact_bite_share",
+        "eval.deliberate_food_share",
+        "eval.food_energy_per_1k",
+        "eval.median_lifespan",
+        "eval.bite_idle"
+      ],
+      "before": "bite: G1 and G3 with the default config, seeds 1 to 16, 400000 ticks, read after tick 200000 (to be run)",
+      "after": "bite-graze-5 and bite-graze-3 (grazeThrust 0.5 and 0.3) on the same seeds (to be run)",
+      "note": "Recorded before the run (T8); no result yet. Grid evals/screens/eat-choice.grid.json. Every arm carries G1 and G3, so the comparison with the parent of G1 is a separate eval on main's code. See evals/decisions/E158/plan.md.",
+      "reports": ["evals/decisions/E158/plan.md"],
+      "date": "2026-11-12",
+      "branch": "exp/eat-choice-screen",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference",
+      "verdicts": {}
     }
   ]
 }

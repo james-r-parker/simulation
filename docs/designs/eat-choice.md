@@ -110,6 +110,18 @@ seeds 1 to 16 of `evals/seeds.json` for the first pass. Brains have never needed
 | `strike-2`       | the parent of G1, `strikeMissCost` 2                                        |
 | `strike-5`       | the parent of G1, `strikeMissCost` 5                                        |
 
+**The grid on the screen branch** (`evals/screens/eat-choice.grid.json`, E158, recorded before the run). The branch carries G1
+and G3 as code, so every arm in the grid runs with both on; the grid holds the config-only arms: `bite` (the reference,
+the defaults with G1 and G3), `bite-graze-5`, `bite-graze-3`, `bite-fat-3`, `bite-fat-5`, `bite-strike-2` and
+`bite-strike-5`, floor on, policy live, 400000 ticks, seeds 1 to 16. Two consequences:
+
+- The plan's `defaults` arm (the parent of G1, without G1 or G3) and its `fat-*` arms without G1 are one separate eval
+  on main's code (the commit before G1), also 400000 ticks and seeds 1 to 16: `defaults`, `fat-3` and `fat-5`. `strike-*`
+  and `bite-graze-fat` are read from the grid's `bite-strike-*` arms and from the second pass.
+- `sense-edible` is G1 and G3 against main's `defaults`; G3 alone is not separable on this branch (it has no key, so no
+  arm can switch it off). A G3-off arm would need a new config key, a flag-ledger row and a deletion task, which is not
+  cheap, so the deviation is recorded in Decisions.
+
 - `bite-graze-*` and `fat-*` arms first pass the purpose guard (`scripts/heat-guard.mjs`, low-density-edge.md T12) on
   their config: a sitter still dies of cold and a rusher of heat.
 - An arm whose floor episodes exceed twice the defaults' is reported and is not ranked.
@@ -166,16 +178,17 @@ Done criteria, on seeds 65 to 128 of `evals/seeds.json`, head against `origin/ma
 
 ## Decisions
 
-| Decision                      | Choice                                                                                                        | If it fails                                                                                                                                        |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The eat act                   | The existing `BITE` output, for non-hunters (user, 2026-11-11)                                                | A separate `EAT` output, which changes the brain layout and costs the champions                                                                    |
-| The price of holding the bite | Grazing slows thrust (`grazeThrust`), as a grazing animal moves slowly                                        | An energy cost per tick of holding `BITE`                                                                                                          |
-| Fatness                       | The store fraction, so a hunter's 5x store slows it no more than a forager's full store                       | -                                                                                                                                                  |
-| Fat in the same plan          | G2 beside G1 (user, 2026-11-11)                                                                               | -                                                                                                                                                  |
-| Hunters                       | Unchanged: a hunter already bites prey with `BITE` and eats carcasses on contact                              | -                                                                                                                                                  |
-| A hunter's food sense         | Only food it can eat lights its food channel (user, 2026-11-11: a hunter seemed to attack food patches)       | The `rayHue` cue stays the only plant-or-meat signal                                                                                               |
-| A strike at nothing           | Costs `strikeMissCost` energy                                                                                 | -                                                                                                                                                  |
-| Learning to bite from scratch | 400000-tick arms read after tick 200000, floor episodes listed; an arm over twice the defaults' is not ranked | When every `bite-*` arm is unranked, a run with each initial genome's `BITE` bias set positive separates the transition cost from the steady state |
+| Decision                      | Choice                                                                                                                           | If it fails                                                                                                                                        |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The eat act                   | The existing `BITE` output, for non-hunters (user, 2026-11-11)                                                                   | A separate `EAT` output, which changes the brain layout and costs the champions                                                                    |
+| The price of holding the bite | Grazing slows thrust (`grazeThrust`), as a grazing animal moves slowly                                                           | An energy cost per tick of holding `BITE`                                                                                                          |
+| Fatness                       | The store fraction, so a hunter's 5x store slows it no more than a forager's full store                                          | -                                                                                                                                                  |
+| Fat in the same plan          | G2 beside G1 (user, 2026-11-11)                                                                                                  | -                                                                                                                                                  |
+| Hunters                       | Unchanged: a hunter already bites prey with `BITE` and eats carcasses on contact                                                 | -                                                                                                                                                  |
+| A hunter's food sense         | Only food it can eat lights its food channel (user, 2026-11-11: a hunter seemed to attack food patches)                          | The `rayHue` cue stays the only plant-or-meat signal                                                                                               |
+| G3 on the screen branch       | G3 has no key, so no arm runs G1 without it; `sense-edible` reads as G1 and G3 against main's `defaults` (deviation, 2026-11-12) | A `senseEdible` key with a flag-ledger row and a deletion task, then a `bite` arm with it off                                                      |
+| A strike at nothing           | Costs `strikeMissCost` energy                                                                                                    | -                                                                                                                                                  |
+| Learning to bite from scratch | 400000-tick arms read after tick 200000, floor episodes listed; an arm over twice the defaults' is not ranked                    | When every `bite-*` arm is unranked, a run with each initial genome's `BITE` bias set positive separates the transition cost from the steady state |
 
 ## Delivery requirements
 

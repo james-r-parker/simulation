@@ -33,6 +33,11 @@ describe('heat guard setup', () => {
         ]);
     });
 
+    it('picks the eat-choice arms by name, and not the plain bite arm or the defaults', () => {
+        const names = ['defaults', 'bite', 'bite-graze-5', 'bite-fat-3', 'bite-strike-2', 'fat-5', 'strike-2', 'flat'];
+        expect(names.filter(isHeatArm)).toEqual(['bite-graze-5', 'bite-fat-3', 'bite-strike-2', 'fat-5', 'strike-2']);
+    });
+
     it('puts an arm key over the sweet-spot world', () => {
         const config = guardConfig({ temperatureCoolingExcess: 0.005 }, 2);
         expect(config.temperatureCoolingExcess).toBe(0.005);

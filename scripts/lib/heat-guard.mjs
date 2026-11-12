@@ -21,12 +21,15 @@ export const SCARCE_FOOD = Object.freeze({
     flora: { grass: { energy: 1, radius: 1, life: 10000 } },
 });
 
-/** The arm-name prefixes of the heat arms the guard checks. */
-const HEAT_PREFIXES = ['cool-', 'mate-', 'eat-'];
+/**
+ * The arm-name prefixes of the arms the guard checks: the heat arms (low-density-edge.md) and the eat-choice arms
+ * (`bite-graze-*`, `bite-fat-*`, `bite-strike-*`, `fat-*`, `strike-*`; eat-choice.md, Phase 2).
+ */
+const HEAT_PREFIXES = ['cool-', 'mate-', 'eat-', 'bite-', 'fat-', 'strike-'];
 
 /**
  * @param {string} name a grid arm name
- * @returns {boolean} whether the arm is a heat arm
+ * @returns {boolean} whether the guard checks the arm
  */
 export function isHeatArm(name) {
     return HEAT_PREFIXES.some((p) => name.startsWith(p));

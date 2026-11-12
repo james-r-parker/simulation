@@ -1,0 +1,28 @@
+{
+  "seeds": 16,
+  "seedOffset": 0,
+  "ticks": 400000,
+  "policy": "live",
+  "reference": "bite",
+  "arms": {
+    "bite": {},
+    "bite-graze-5": {
+      "grazeThrust": 0.5
+    },
+    "bite-graze-3": {
+      "grazeThrust": 0.3
+    },
+    "bite-fat-3": {
+      "fatSlowShare": 0.3
+    },
+    "bite-fat-5": {
+      "fatSlowShare": 0.5
+    },
+    "bite-strike-2": {
+      "strikeMissCost": 2
+    },
+    "bite-strike-5": {
+      "strikeMissCost": 5
+    }
+  }
+}
