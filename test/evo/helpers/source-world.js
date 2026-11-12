@@ -2,7 +2,7 @@
 // `step`, `observe` and `checkpoint`, a policy of zero weights, and no food, herds or mating unless a test asks. A test
 // plants state in the world between steps (an energy, an age, a bite) and reads `computeMetrics` on the finished run.
 
-import { OUTPUT_COUNT } from '../../../js/sim/brain-layout.js';
+import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../../js/sim/brain-layout.js';
 import { forwardAll } from '../../../js/sim/brain.js';
 import { FOOD_KIND } from '../../../js/sim/carcass.js';
 import { createConfig } from '../../../js/sim/config.js';
@@ -105,7 +105,10 @@ export function sourceRun({ over = {}, runTicks = 0, policy = zeroPolicy(), fitn
 }
 
 /**
- * Puts a plant food item of `value` energy on an agent, so the next step's feed phase eats it.
+ * Puts a plant food item of `value` energy on an agent, so the next step's feed phase eats it. A non-hunter eats only
+ * while its `BITE` output is above 0 (eat-choice G1), so an agent whose `BITE` is still at its default 0 is set to 1; a
+ * test that has set `BITE` itself (to hold it off with a negative value) keeps it. A test that runs the brain phase sets
+ * it with `want`.
  * @param {any} world the world
  * @param {number} slot the eating agent
  * @param {number} [value] the item's energy (one item is `config.foodEnergy`)
@@ -117,6 +120,10 @@ export function plantFood(world, slot, value = world.config.foodEnergy) {
     world.foodY[food] = world.y[slot];
     world.foodValue[food] = value;
     world.foodTox[food] = 0;
+    const bite = slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE;
+    if (world.outputs[bite] === 0) {
+        world.outputs[bite] = 1;
+    }
 }
 
 /**

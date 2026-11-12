@@ -14,17 +14,75 @@ import { bounceRocksKernel, moveAgentsKernel, resolveContactsKernel } from './wa
 const PI = 3.141592653589793;
 
 /**
+ * eat-choice G1b: a forager holding its mouth open to graze moves at `grazeThrust` of its thrust; a hunter never does.
+ * @param {import('./world.js').World} world the world
+ * @param {number} i the agent slot
+ * @returns {number} the thrust multiplier, 1 when the agent does not graze or `grazeThrust` is 1
+ */
+function grazeFactor(world, i) {
+    const { grazeThrust } = world.config;
+    if (grazeThrust === 1 || world.huntBySpec[world.spec[i]] === 1) {
+        return 1;
+    }
+    return world.outputs[i * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 ? grazeThrust : 1;
+}
+
+/**
+ * eat-choice G2: a full store weighs an agent down, so thrust and turn rate are multiplied by
+ * `1 - fatSlowShare x energy / maxEnergyBySpec[spec]`; a full store slows every store size the same.
+ * @param {import('./world.js').World} world the world
+ * @param {number} i the agent slot
+ * @returns {number} the multiplier, 1 when `fatSlowShare` is 0
+ */
+function fatFactor(world, i) {
+    const { fatSlowShare } = world.config;
+    if (fatSlowShare === 0) {
+        return 1;
+    }
+    return 1 - (fatSlowShare * world.energy[i]) / world.maxEnergyBySpec[world.spec[i]];
+}
+
+/**
+ * The thrust an agent adds this tick: its output times `maxThrust` and its temperature's efficiency, then the graze,
+ * sprint, rest, handling, sickness and fat multipliers.
+ * @param {import('./world.js').World} world the world
+ * @param {number} i the agent slot
+ * @param {number} fat the agent's `fatFactor`
+ * @returns {number} the thrust
+ */
+function thrustOf(world, i, fat) {
+    const { outputs, config } = world;
+    const o = i * OUTPUT_COUNT;
+    let thrust = outputs[o + OUTPUT_INDEX.THRUST] * config.maxThrust * thrustEfficiency(config, world.temperature[i]);
+    thrust *= grazeFactor(world, i);
+    if (outputs[o + OUTPUT_INDEX.SPRINT] > 0) {
+        thrust *= 1 + config.sprintMultiplier * world.sprintBySpec[world.spec[i]];
+    }
+    if (config.predatorRestTicks > 0 && world.restTimer[i] > 0) {
+        world.restTimer[i] -= 1; // realistic-keepers T2: a hunter lies up after a kill
+        thrust = 0;
+    }
+    if (world.ateTimer[i] < config.handlingTicks) {
+        thrust *= config.handlingThrust;
+    }
+    if (isSick(world, i)) {
+        thrust *= config.sickThrust;
+    }
+    return thrust * fat;
+}
+
+/**
  * Turns, wraps the heading to [-PI, PI) and adds thrust along the new heading for every alive agent.
  * @param {import('./world.js').World} world the world
  * @returns {void}
  */
 export function actAll(world) {
     const { alive, angle, turnRate, vx, vy, outputs, config } = world;
-    const { maxTurn, maxThrust, sprintMultiplier } = config;
     for (let i = 0; i < alive.length; i++) {
         if (alive[i] === 1) {
-            const o = i * OUTPUT_COUNT;
-            turnRate[i] = outputs[o + OUTPUT_INDEX.TURN] * maxTurn * world.turnBySpec[world.spec[i]];
+            const fat = fatFactor(world, i);
+            const turn = outputs[i * OUTPUT_COUNT + OUTPUT_INDEX.TURN] * config.maxTurn;
+            turnRate[i] = turn * world.turnBySpec[world.spec[i]] * fat;
             let a = angle[i] + turnRate[i];
             if (a >= PI) {
                 a -= 2 * PI;
@@ -32,20 +90,7 @@ export function actAll(world) {
                 a += 2 * PI;
             }
             angle[i] = a;
-            let thrust = outputs[o + OUTPUT_INDEX.THRUST] * maxThrust * thrustEfficiency(config, world.temperature[i]);
-            if (outputs[o + OUTPUT_INDEX.SPRINT] > 0) {
-                thrust *= 1 + sprintMultiplier * world.sprintBySpec[world.spec[i]];
-            }
-            if (config.predatorRestTicks > 0 && world.restTimer[i] > 0) {
-                world.restTimer[i] -= 1; // realistic-keepers T2: a hunter lies up after a kill
-                thrust = 0;
-            }
-            if (world.ateTimer[i] < config.handlingTicks) {
-                thrust *= config.handlingThrust;
-            }
-            if (isSick(world, i)) {
-                thrust *= config.sickThrust;
-            }
+            const thrust = thrustOf(world, i, fat);
             vx[i] += thrust * detCos(a);
             vy[i] += thrust * detSin(a);
         }

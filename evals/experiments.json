@@ -2111,7 +2111,7 @@
       "after": "Stage 1 and 2 reports in evals/screens/results/herds/ and herds-stage2/; candidate confirmation in herds/candidate-count6-startle200.report.json; matched carcass-duration extension reports/table in evals/screens/results/herds-carcass-duration/",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "Completed for Megafauna Phase 1 T14 after the user released the CPU. Stage 1 (16 seeds) and Stage 2 (8 seeds) results, including per-arm Phase 1 gate counts, are recorded in evals/screens/results/herds/phase1-gate.md; Stage 2 grid is evals/screens/herds-stage2.grid.json. The best tested candidate was herdStartleRadius 200 plus herdCount 6. A separate 16-seed confirmation produced positive herd_animals and herd_grazed_share on 16/16 seeds, but herd_carcass_meal_share on only 10/16, so it misses the plan\u2019s 12/16 gate. Candidate config: evals/experiments/E76-best-config.json. Power analysis of the 64-seed candidate report is recorded in evals/experiments/E76-power.json (source report evals/screens/results/herds/E76-power-64.report.json): carcass meal share, role carcass shares, gap crossings, stampede rate and trampled share are weak or sparse detectors at n=16/32; herd presence and grazing share are better powered. The screen\u2019s original generic scorecard did not include the phase-specific carcass-meal gate; that omission is corrected in the targets and transparent gate table. Exploratory follow-up (not registered in the original E76 grid): carcassTicks 12000 at radius 200/count 6 yielded carcass meals 6/8 (mean 0.004615) versus the registered count-6 stage-2 arm at 5/8 (mean 0.002305); see /tmp/mega-e76-carcass12000-8.report.json and /tmp/mega-e76-best-8.report.json. These 8-seed reports generated the extension hypothesis only and are not confirmatory. The matched 16-seed confirmation is preregistered in evals/screens/herds-carcass-duration.grid.json. Registered extension result (16 seeds x 200000 ticks, policy live, exact E76 seed set) is recorded in evals/screens/results/herds-carcass-duration/. With carcass lifetime 12000, herd animals and grazing were positive on 16/16, carcass meals on 11/16 (mean 0.005702); the matched 6000-tick reference had carcass meals on 10/16 (mean 0.002719). The extension improves meal share but still misses the 12/16 gate by one seed; predators at end fell from 2/16 to 0/16. This does not pass the original 12/16 carcass target or a survival gate. By explicit user direction, T15 adopts the measured improvement (mean carcass meal share about 110% higher; positive seeds 11/16 vs 10/16) and carries the one-seed shortfall and predator-presence decline (2/16 to 0/16) into balancing. These remain diagnostics/follow-ups, not claimed passes."
+      "note": "Completed for Megafauna Phase 1 T14 after the user released the CPU. Stage 1 (16 seeds) and Stage 2 (8 seeds) results, including per-arm Phase 1 gate counts, are recorded in evals/screens/results/herds/phase1-gate.md; Stage 2 grid is evals/screens/herds-stage2.grid.json. The best tested candidate was herdStartleRadius 200 plus herdCount 6. A separate 16-seed confirmation produced positive herd_animals and herd_grazed_share on 16/16 seeds, but herd_carcass_meal_share on only 10/16, so it misses the plan’s 12/16 gate. Candidate config: evals/experiments/E76-best-config.json. Power analysis of the 64-seed candidate report is recorded in evals/experiments/E76-power.json (source report evals/screens/results/herds/E76-power-64.report.json): carcass meal share, role carcass shares, gap crossings, stampede rate and trampled share are weak or sparse detectors at n=16/32; herd presence and grazing share are better powered. The screen’s original generic scorecard did not include the phase-specific carcass-meal gate; that omission is corrected in the targets and transparent gate table. Exploratory follow-up (not registered in the original E76 grid): carcassTicks 12000 at radius 200/count 6 yielded carcass meals 6/8 (mean 0.004615) versus the registered count-6 stage-2 arm at 5/8 (mean 0.002305); see /tmp/mega-e76-carcass12000-8.report.json and /tmp/mega-e76-best-8.report.json. These 8-seed reports generated the extension hypothesis only and are not confirmatory. The matched 16-seed confirmation is preregistered in evals/screens/herds-carcass-duration.grid.json. Registered extension result (16 seeds x 200000 ticks, policy live, exact E76 seed set) is recorded in evals/screens/results/herds-carcass-duration/. With carcass lifetime 12000, herd animals and grazing were positive on 16/16, carcass meals on 11/16 (mean 0.005702); the matched 6000-tick reference had carcass meals on 10/16 (mean 0.002719). The extension improves meal share but still misses the 12/16 gate by one seed; predators at end fell from 2/16 to 0/16. This does not pass the original 12/16 carcass target or a survival gate. By explicit user direction, T15 adopts the measured improvement (mean carcass meal share about 110% higher; positive seeds 11/16 vs 10/16) and carries the one-seed shortfall and predator-presence decline (2/16 to 0/16) into balancing. These remain diagnostics/follow-ups, not claimed passes."
     },
     {
       "id": "E77",
@@ -2165,7 +2165,7 @@
       "date": "2026-11-02",
       "branch": "feat/megafauna-p4-rendering",
       "hypothesis": "The complete Megafauna defaults preserve the behavioral and local ecology signals against the herd-free flora baseline while making trample avoidable and supporting scavenging.",
-      "prediction": "Preregistered before running: compare E75's 16-seed reference with the current final defaults on the same seeds at 200000 ticks using live policy. Expect herd presence and grazing to remain positive on at least 14/16, dodge_skill at least 0.5, trampled_share within 0.005\u20130.10, and at least some herd carcass meals. Compare local economy and ecology, and attach per-seed survival and family checks. Population, predator, prey, and basin-family misses are recorded as balancing diagnostics under the user's partial-acceptance direction; they are not hidden or treated as passes.",
+      "prediction": "Preregistered before running: compare E75's 16-seed reference with the current final defaults on the same seeds at 200000 ticks using live policy. Expect herd presence and grazing to remain positive on at least 14/16, dodge_skill at least 0.5, trampled_share within 0.005–0.10, and at least some herd carcass meals. Compare local economy and ecology, and attach per-seed survival and family checks. Population, predator, prey, and basin-family misses are recorded as balancing diagnostics under the user's partial-acceptance direction; they are not hidden or treated as passes.",
       "targets": [
         "eval.predators_at_end",
         "eval.prey_types_at_end",
@@ -3962,6 +3962,65 @@
       "verdicts": {}
     },
     {
+      "id": "E156",
+      "hypothesis": "low-density-edge Phase 3, E-LD-2: a heat lever (temperatureCoolingExcess, temperatureMatingMax or temperatureGainEat) lets prey mate at low density without removing heat as a pressure.",
+      "prediction": "A heat arm reads held better at 64 seeds with the alive guard not worse, and raises eval.edge_birth_death_ratio; heat-stressed mating blocks fall. Falsified when no arm reads held better, or the leading arm's alive guard reads worse, or its edge ratio does not rise.",
+      "targets": ["eval.edge_birth_death_ratio", "eval.heat_stress_share", "eval.births_per_1k"],
+      "before": "evals/decisions/E155/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d (the reference; the first pass re-runs defaults on seeds 1 to 16 inside the screen)",
+      "after": "first pass on seeds 1 to 16: evals/decisions/E156/first-pass-rank.md (held 7 eat-1, 6 defaults, 6 reach, 4 mate-95/flat/mate-90, 2 cool-10, 1 cool-5/cool-2); the 64-seed pass is T14",
+      "note": "Prediction recorded before any arm ran (T12). Every heat arm first passes the constant-thrust purpose guard (scripts/heat-guard.mjs, evals/decisions/E156/heat-guard.txt). `reports` names the reference and the guard output, and is extended with the screen and eval reports when they exist. First pass (T13): the cooling arms remove heat stress (0.002 to 0.022 against 0.419) and lift births per 1k by 59 to 70 percent but hold fewer seeds, since more births without a brake make bigger booms and deeper crashes (E155's no-restoring-force reading). eat-1 leads under the plan's rule (held 7, +4/-3 against defaults, alive 14, heat stress 0.274). No verdict yet; the 64-seed pass decides.",
+      "reports": [
+        "evals/decisions/E155/defaults-floor-on.json",
+        "evals/decisions/E156/heat-guard.txt",
+        "evals/decisions/E156/screen/cool-10.report.json",
+        "evals/decisions/E156/screen/cool-2.report.json",
+        "evals/decisions/E156/screen/cool-5.report.json",
+        "evals/decisions/E156/screen/defaults.report.json",
+        "evals/decisions/E156/screen/eat-1.report.json",
+        "evals/decisions/E156/screen/flat.report.json",
+        "evals/decisions/E156/screen/mate-90.report.json",
+        "evals/decisions/E156/screen/mate-95.report.json",
+        "evals/decisions/E156/reach-16.json",
+        "evals/decisions/E156/first-pass-rank.md",
+        "evals/decisions/E156/screen/table.md",
+        "evals/decisions/E156/screen/verdicts.json"
+      ],
+      "date": "2026-11-11",
+      "branch": "chore/low-density-edge-heat-screen",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference",
+      "verdicts": {}
+    },
+    {
+      "id": "E157",
+      "hypothesis": "low-density-edge Phase 3, E-LD-2b: a heat lever lifts births and the food brake holds the top, so the crash that follows more births is shallower.",
+      "prediction": "A heat arm with the food brake (foodRegrowPerArea 0.016 or 0.024 on eat-1 or cool-5) holds more seeds (held of 16) than the same heat arm alone and than defaults, with alive not worse. Falsified when no combined arm holds more seeds than its heat arm alone, or the leading combined arm holds no more than defaults, or its alive guard reads worse.",
+      "targets": ["eval.edge_birth_death_ratio", "eval.heat_stress_share", "eval.births_per_1k"],
+      "before": "evals/decisions/E156/first-pass-rank.md: the first pass of E156 (heat arms alone and defaults, 16 seeds)",
+      "after": "evals/decisions/E157/rank.md: the heat-by-food grid, 16 seeds x 200000 ticks (held 1 eat-1-food-24, 0 the other three, against defaults' 6)",
+      "note": "Verdict (T13a, 16-seed first pass, not a 64-seed read): FALSIFIED on held. Every combined arm holds 0 or 1 of 16 seeds against defaults' 6 (eat-1-food-24 +0/-5, the other three +0/-6), so the food brake does not hold more seeds than the heat arm alone (eat-1 held 7, cool-5 held 1). Caveat: held (never under 100 after burn-in) penalises a world that settles smaller, and the food brake shrinks it (population mean 234 defaults, 194 eat-1-food-24, 135 cool-5-food-16, 114 eat-1-food-16, 156 cool-5-food-24). Crash depth, per arm: median lowest population after burn-in 22 defaults, 42 eat-1-food-24, 28 cool-5-food-16, 9 eat-1-food-16, 10 cool-5-food-24; seeds under 40: 9, 8, 12, 13, 11; eval.floor_episodes 1.75, 1.13, 2.19, 2.31, 2.31. eat-1-food-24 is steadier but lower; the other three crash as deep or deeper than defaults. The 64-seed pass should read crash depth beside held. Prediction recorded before the run; see docs/designs/sim-notes.md (2026-11-11, heat levers and the food brake).",
+      "reports": [
+        "evals/decisions/E156/first-pass-rank.md",
+        "evals/decisions/E156/screen/table.md",
+        "evals/decisions/E156/screen/verdicts.json",
+        "evals/decisions/E157/rank.md",
+        "evals/decisions/E157/screen/table.md",
+        "evals/decisions/E157/screen/verdicts.json",
+        "evals/decisions/E157/screen/defaults.report.json",
+        "evals/decisions/E157/screen/eat-1-food-16.report.json",
+        "evals/decisions/E157/screen/eat-1-food-24.report.json",
+        "evals/decisions/E157/screen/cool-5-food-16.report.json",
+        "evals/decisions/E157/screen/cool-5-food-24.report.json"
+      ],
+      "date": "2026-11-11",
+      "branch": "chore/low-density-edge-heat-screen",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "worse",
+      "verdicts": {}
+    },
+    {
       "id": "E158",
       "hypothesis": "eat-choice Phase 1, T3: the eat-choice detectors (eval.food_contact_bite_share, eval.full_contact_bite_share, eval.fat_speed_ratio) need a 128-seed floor-on reference of the defaults, so Phase 2 can read its eat and fat arms against one report.",
       "prediction": "Same configHash as E155 (ff8d890a5a70c14d) and the same 128 seeds; every metric E155 holds reads as it does there (the sim is unchanged); the three new detectors are live; the forager BITE is near a coin flip at food and does not fall when full, and fatter agents move faster.",
@@ -3981,6 +4040,101 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "effect": "no-difference"
+    },
+    {
+      "id": "E159",
+      "hypothesis": "eat-choice Phase 2, E-EC-1: when holding BITE slows a forager (grazeThrust below 1), foragers bite at food and lift the bite to move, so the share of food contacts that bite falls below the plain bite arm's.",
+      "prediction": "With grazeThrust below 1, eval.food_contact_bite_share falls below bite's, with no keep-rule guard worse. Falsified when the share does not fall below bite's, or a guard reads WORSE.",
+      "targets": [
+        "eval.food_contact_bite_share",
+        "eval.deliberate_food_share",
+        "eval.food_energy_per_1k",
+        "eval.median_lifespan",
+        "eval.bite_idle"
+      ],
+      "before": "evals/decisions/E159/bite.report.json: G1 and G3 with the default config, seeds 1 to 16, 400000 ticks",
+      "after": "evals/decisions/E159/bite-graze-5.report.json and bite-graze-3.report.json (grazeThrust 0.5 and 0.3), same seeds; main's defaults in main-defaults.report.json",
+      "note": "First pass done. food_contact_bite_share: bite 0.204, graze-5 0.145 (interval includes 0), graze-3 0.136 (interval excludes 0); no keep-rule guard worse on either. Ranking by held, alive: strike-2 (8/16, 10/16), graze-5 (3, 15), graze-3 (3, 12), fat-5 (2, 12), fat-3 (2, 11); strike-5 kills hunters (WORSE alive); grazemiss-1 not ranked (44 floor episodes, population mean 22). G1 against main halves population mean (198 to 98), no guard worse at 16 seeds. Direction holds; the 64-seed pass (E160) decides. See evals/decisions/E159/results.md.",
+      "reports": [
+        "evals/decisions/E159/plan.md",
+        "evals/decisions/E159/results.md",
+        "evals/decisions/E159/table.md",
+        "evals/decisions/E159/main-defaults.report.json",
+        "evals/decisions/E159/bite.report.json",
+        "evals/decisions/E159/bite-graze-5.report.json",
+        "evals/decisions/E159/bite-graze-3.report.json",
+        "evals/decisions/E159/bite-fat-3.report.json",
+        "evals/decisions/E159/bite-fat-5.report.json",
+        "evals/decisions/E159/bite-strike-2.report.json",
+        "evals/decisions/E159/bite-strike-5.report.json",
+        "evals/decisions/E159/bite-grazemiss-1.report.json"
+      ],
+      "date": "2026-11-12",
+      "branch": "exp/eat-choice-screen",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "better",
+      "verdicts": {}
+    },
+    {
+      "id": "E160",
+      "hypothesis": "eat-choice Phase 2, E-EC-2 and the second pass: with fatSlowShare above 0 as well as grazeThrust below 1, agents near a full store stop eating once a full store costs speed.",
+      "prediction": "bite-graze-fat (grazeThrust 0.5, fatSlowShare 0.5) reads a lower eval.full_contact_bite_share than bite-graze-5, with no keep-rule guard worse against main's defaults. Falsified when it reads no lower share than bite-graze-5. The same pass reads G3 (bite vs main defaults), G1+G1b (bite-graze-5), G2 (bite-fat-5) and G4 (bite-strike-2, eval.bite_idle lower by the sign test) against main's defaults by the keep rule.",
+      "targets": [
+        "eval.full_contact_bite_share",
+        "eval.food_contact_bite_share",
+        "eval.bite_idle",
+        "eval.population_mean",
+        "eval.floor_episodes"
+      ],
+      "before": "evals/decisions/E160/main-defaults.report.json: main defaults on origin/main 4faea422, seeds 1 to 64, 400000 ticks",
+      "after": "evals/decisions/E160/<arm>.report.json for bite, bite-graze-5, bite-fat-5, bite-graze-fat, bite-strike-2 on the same seeds",
+      "note": "E-EC-2 holds: bite-graze-fat full_contact_bite_share 0.153 vs bite-graze-5 0.274, interval [-0.169, -0.078]. E-EC-1 falsified at 64 (graze-5 0.201 vs bite 0.183). Keep rule vs main: every arm WORSE - bite on under80, graze-5 and fat-5 on held, graze-fat only on hunter catches (-14%), strike-2 on hunters alive. See evals/decisions/E160/results.md.",
+      "reports": [
+        "evals/decisions/E160/results.md",
+        "evals/decisions/E160/table.md",
+        "evals/decisions/E160/main-defaults.report.json",
+        "evals/decisions/E160/bite.report.json",
+        "evals/decisions/E160/bite-graze-5.report.json",
+        "evals/decisions/E160/bite-fat-5.report.json",
+        "evals/decisions/E160/bite-graze-fat.report.json",
+        "evals/decisions/E160/bite-strike-2.report.json"
+      ],
+      "date": "2026-11-12",
+      "branch": "exp/eat-choice-screen",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "worse",
+      "verdicts": {}
+    },
+    {
+      "id": "E161",
+      "hypothesis": "eat-choice: a gentle strike cost pays back the hunter catches that graze plus fat loses, without the hunter die-off strike 2 caused, so G1 lands as a bundle.",
+      "prediction": "bite-graze-fat with strikeMissCost 0.5 or 1 reads no keep-rule guard worse against main's defaults on seeds 1 to 64 (held, alive, under80 and hunter catches). Falsified when every arm reads WORSE.",
+      "targets": [
+        "eval.hunter_catches_per_1k",
+        "eval.full_contact_bite_share",
+        "eval.population_mean",
+        "eval.floor_episodes"
+      ],
+      "before": "evals/decisions/E160/main-defaults.report.json",
+      "after": "evals/decisions/E161/<arm>.report.json for gf-strike-1, gf-strike-05, gf3-strike-1, seeds 1 to 64",
+      "note": "gf-strike-1 (grazeThrust 0.5, fatSlowShare 0.5, strikeMissCost 1) reads no harm against main (under80 better, 7 vs 22, p 0.008; held 4 vs 4; hunter catches +91%); population mean 198 vs 194. gf3-strike-1 also no harm; gf-strike-05 WORSE on held. Caveat: the alive guard detects only 24 seeds; point estimate 38/64 vs 47/64; T16 on seeds 65 to 128 must read it. See evals/decisions/E161/results.md.",
+      "reports": [
+        "evals/decisions/E161/results.md",
+        "evals/decisions/E161/table.md",
+        "evals/decisions/E161/gf-strike-1.report.json",
+        "evals/decisions/E161/gf-strike-05.report.json",
+        "evals/decisions/E161/gf3-strike-1.report.json"
+      ],
+      "date": "2026-11-12",
+      "branch": "exp/eat-choice-screen",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "better",
+      "verdicts": {
+        "keepRule": "no harm (gf-strike-1)"
+      }
     }
   ]
 }

@@ -44,6 +44,7 @@ pub struct SenseParams {
     cell_start: u32,
     entries: u32,
     sense_doubles: u32,
+    food_kind: u32,
     max_agents: u32,
     stamp_count: u32,
     obs_count: u32,
@@ -54,6 +55,8 @@ pub struct SenseParams {
     rows: u32,
     conceals: u32,
     concealed: u32,
+    see_plant: u32,
+    see_meat: u32,
 }
 
 /// Indices into the doubles block.
@@ -230,13 +233,23 @@ unsafe fn append_fixtures(g: &Sense) -> usize {
     }
 }
 
-/// `appendCircle`: one hash entry, kept when its surface lies within range.
+/// eat-choice G3: whether the caster sees food of this `foodKind` (0 a plant, else meat): only food it can eat.
+#[inline(always)]
+fn sees_food(p: &SenseParams, kind: u8) -> bool {
+    if kind == 0 { p.see_plant != 0 } else { p.see_meat != 0 }
+}
+
+/// `appendCircle`: one hash entry, kept when its surface lies within range; a food item the caster cannot eat is left
+/// out, so its rays pass through it to whatever lies behind.
 #[inline(always)]
 unsafe fn append_circle(g: &Sense, n: usize, id: usize) -> usize {
     // SAFETY: `id` is an agent slot or `maxAgents` plus a food slot.
     unsafe {
         let p = g.p;
         let max_agents = p.max_agents as usize;
+        if id >= max_agents && !sees_food(p, *at::<u8>(p.food_kind).add(id - max_agents)) {
+            return n;
+        }
         let (cx, cy, r, key) = if id < max_agents {
             let x = *at::<f32>(p.x).add(id) as f64;
             let y = *at::<f32>(p.y).add(id) as f64;

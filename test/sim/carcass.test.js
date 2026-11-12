@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { FOOD_KIND, leaveCarcass } from '../../js/sim/carcass.js';
 import { feed } from '../../js/sim/feeding.js';
 import { ageFood } from '../../js/sim/food.js';
@@ -148,6 +149,7 @@ describe('eating meat', () => {
         killOld(w, 80);
         const eater = addBlob(w, { energy: 100, spec, x: 300, y: 400 });
         w.ateTimer[eater] = 30;
+        w.outputs[eater * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = 1; // a forager eats only while it bites (eat-choice G1)
         const hash = createSpatialHash(w.config);
         buildHash(hash, w);
         feed(w, hash);
@@ -171,6 +173,7 @@ describe('eating meat', () => {
         killOld(w, 80);
         const eater = addBlob(w, { energy: 100, spec: 0, x: 300, y: 400 });
         w.ateTimer[eater] = 30;
+        w.outputs[eater * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = 1; // a forager eats only while it bites (eat-choice G1)
         const hash = createSpatialHash(w.config);
         buildHash(hash, w);
         feed(w, hash);

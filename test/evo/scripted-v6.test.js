@@ -85,7 +85,7 @@ describe('v6 exploit controllers', () => {
         expect(out(world)).toEqual([SEEK, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0]);
         hit(world, 0, 1, CH.food);
         run(world);
-        expect(out(world)).toEqual([SEEK, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0]);
+        expect(out(world)).toEqual([SEEK, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0]);
     });
 
     it('splitSpammer circles at a fixed turn and never steers at food', () => {
@@ -93,7 +93,7 @@ describe('v6 exploit controllers', () => {
         hit(world, 0, 3, CH.food);
         run(world);
         for (const slot of [0, 1, 2]) {
-            expect(out(world, slot)).toEqual([SEEK, Math.fround(SPAMMER_TURN), 0, 0, 0, 0, 0, 0, 1, 0, 0]);
+            expect(out(world, slot)).toEqual([SEEK, Math.fround(SPAMMER_TURN), 0, 0, 1, 0, 0, 0, 1, 0, 0]);
         }
     });
 
@@ -101,7 +101,7 @@ describe('v6 exploit controllers', () => {
         const { world, run } = setup('gateThenIdle');
         hit(world, 0, 1, CH.food);
         run(world);
-        expect(out(world)).toEqual([SEEK, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
+        expect(out(world)).toEqual([SEEK, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0]);
         world.foodEnergy[0] += FITNESS_V6_SKILL.GATE - 1;
         run(world);
         expect(out(world)[O.THRUST]).toBe(SEEK);
@@ -144,7 +144,7 @@ describe('v6 exploit controllers', () => {
         // Not ready (in cooldown): it seeks the food in sight and still holds MATE.
         world.cooldown[0] = 5;
         run(world);
-        expect(out(world, 0)).toEqual([SEEK, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0]);
+        expect(out(world, 0)).toEqual([SEEK, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0]);
         hit(world, 0, 3, CH.prey);
         world.cooldown[0] = 0;
         world.ageTicks[1] = maturityTicks;
@@ -159,7 +159,7 @@ describe('v6 exploit controllers', () => {
         hit(world, 1, 1, CH.food);
         run(world);
         expect(out(world, 0)).toEqual([1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
-        expect(out(world, 1)).toEqual([SEEK, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
+        expect(out(world, 1)).toEqual([SEEK, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0]);
         expect(out(world, 2)).toEqual([SEEK, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
     });
 
@@ -186,7 +186,7 @@ describe('v6 exploit controllers', () => {
         const { world, run } = setup('baiter');
         hit(world, 0, 1, CH.food);
         run(world);
-        expect(out(world)).toEqual([SEEK, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
+        expect(out(world)).toEqual([SEEK, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0]);
         bitten(world, 0, 1);
         run(world);
         bitten(world, 0, 0);

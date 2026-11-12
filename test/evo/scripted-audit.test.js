@@ -12,7 +12,7 @@ import { CH, clearRays, setRay } from './helpers/intent-world.js';
  * @param {number} turn the turn output
  * @returns {{thrust: number, turn: number, bite: number}} the outputs as the float32 output array holds them
  */
-const out = (thrust, turn) => ({ thrust: Math.fround(thrust), turn: Math.fround(turn), bite: 0 });
+const out = (thrust, turn) => ({ thrust: Math.fround(thrust), turn: Math.fround(turn), bite: 1 });
 
 /**
  * One forager alone in a staged world with every ray clear.

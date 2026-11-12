@@ -118,7 +118,7 @@ describe('combat controllers', () => {
         hit(world, 1, 1, CH.food);
         run(world);
         expect(out(world, 0)).toEqual([1, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
-        expect(out(world, 1)).toEqual([Math.fround(SEEK_THRUST), 1, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
+        expect(out(world, 1)).toEqual([Math.fround(SEEK_THRUST), 1, 0, 0, 1, 0, 0, 0, 1, 0, 0]);
     });
 
     it('fleer releases smoke while its bite-timer input shows a bite, and not otherwise', () => {
@@ -153,7 +153,7 @@ describe('combat controllers', () => {
             hit(world, 0, 1, CH.food);
             world.outputs.fill(0.7);
             run(world);
-            const expected = [Math.fround(SEEK_THRUST), 1, 0, 0, 0, 0, 0, 0, 1, 0, 0];
+            const expected = [Math.fround(SEEK_THRUST), 1, 0, 0, 1, 0, 0, 0, 1, 0, 0];
             expected[/** @type {number} */ (output)] = 1;
             expect(out(world, 0), String(name)).toEqual(expected);
         }

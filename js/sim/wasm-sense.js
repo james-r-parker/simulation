@@ -25,6 +25,7 @@ export const SENSE_FIELDS = Object.freeze([
     'rayLocal',
     'rayStamp',
     'rayScratch',
+    'foodKind',
 ]);
 
 /** The arena arrays whose byte offsets head the sense parameter block, in `SenseParams` order (wasm/src/sense.rs). */
@@ -55,6 +56,7 @@ export const SENSE_ARRAYS = Object.freeze([
     'cellStart',
     'entries',
     'senseDoubles',
+    'foodKind',
 ]);
 
 /** Words of the sense parameter block after the offsets, by name, in `SenseParams` order. */
@@ -69,6 +71,8 @@ const WORDS = Object.freeze([
     'rows',
     'conceals',
     'concealed',
+    'seePlant',
+    'seeMeat',
 ]);
 
 /** Index of each named word in the sense parameter block. */
@@ -140,7 +144,7 @@ export function beginSense(world, hash) {
 }
 
 /**
- * Gathers one caster's circles and finds every ray's nearest hit into `rayBestT` and `rayBestKey`. The caster's origin,
+ * Gathers one caster's circles (the food among them only of a kind it can eat) and finds every ray's nearest hit into `rayBestT` and `rayBestKey`. The caster's origin,
  * range and heading must already be in `world.rayScratch`.
  * @param {Record<string, any>} world a world on the WASM kernels, begun by `beginSense` this tick
  * @param {number} slot the casting agent
@@ -148,5 +152,10 @@ export function beginSense(world, hash) {
  */
 export function senseSlot(world, slot) {
     const arena = world.wasm;
+    const p = arena.views.senseParams;
+    const spec = world.spec[slot];
+    // eat-choice G3: the caster's rays see only the food it can eat.
+    p[SENSE_WORD.seePlant] = world.plantFoodBySpec[spec] > 0 ? 1 : 0;
+    p[SENSE_WORD.seeMeat] = world.meatFoodBySpec[spec] > 0 ? 1 : 0;
     return arena.exports.sense_slot(arena.offsets.senseParams, slot);
 }

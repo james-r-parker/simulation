@@ -50,6 +50,7 @@ describe('deliberate_food_share, deliberate_food_energy_per_1k and chance_food_e
             pose(world, eater, [100, 500]);
             foodAt(world, [260, 500, 100]);
             run.want(eater, OUTPUT_INDEX.THRUST);
+            run.want(eater, OUTPUT_INDEX.BITE); // a forager eats only while it bites (eat-choice G1)
             for (let t = 0; t < 12; t++) {
                 world.y[eater] = 500;
                 world.energy[eater] = 300;
@@ -58,6 +59,7 @@ describe('deliberate_food_share, deliberate_food_energy_per_1k and chance_food_e
             run.release(eater, OUTPUT_INDEX.THRUST);
             pose(world, eater, [255, 500]);
             run.tick();
+            run.release(eater, OUTPUT_INDEX.BITE);
         }
         for (let i = 0; i < chance; i++) {
             pose(world, eater, [100, 200, Math.PI]);

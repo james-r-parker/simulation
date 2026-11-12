@@ -302,7 +302,19 @@ describe('castRays smoke', () => {
 });
 
 /**
- * Reference caster: tests every circle, obstacle and wall with the ray-circle formula.
+ * @param {ReturnType<typeof senseWorld>} w
+ * @param {number} me the caster
+ * @param {number} f a food slot
+ * @returns {boolean} whether the caster can eat the item (eat-choice G3: a ray sees only that food), from the config
+ */
+function edible(w, me, f) {
+    const spec = Object.values(w.config.specialisations).find((e) => e.index === w.spec[me]);
+    return (w.foodKind[f] === 0 ? spec.plantFoodValue : spec.meatFoodValue) > 0;
+}
+
+/**
+ * Reference caster: tests every circle, obstacle and wall with the ray-circle formula; food the caster cannot eat is
+ * not there for it.
  * @param {ReturnType<typeof senseWorld>} w
  * @param {number} me
  * @param {number} k
@@ -343,7 +355,7 @@ function brute(w, me, k) {
         best = { t: Math.min(tx, ty), kind: 3, idx: 0 };
     }
     for (let f = 0; f < w.foodAlive.length; f++) {
-        if (w.foodAlive[f]) {
+        if (w.foodAlive[f] && edible(w, me, f)) {
             test(w.foodX[f], w.foodY[f], w.foodRadius[f], 0, f);
         }
     }
@@ -389,7 +401,9 @@ function bruteAgentClass(w, me, other) {
 describe('castRays against a brute-force caster', () => {
     it.each(Array.from({ length: 30 }, (_, i) => i + 1))('matches on seeded world %i', (seed) => {
         const rng = createRng(seed);
-        const w = senseWorld({ rayCount: 8, maxAgents: 12, maxFood: 40, smokeRadius: 60 });
+        // A predator that cannot eat plants and a forager that cannot eat meat, so some food is hidden (eat-choice G3).
+        const specialisations = { predator: { plantFoodValue: 0 }, forager: { meatFoodValue: 0 } };
+        const w = senseWorld({ rayCount: 8, maxAgents: 12, maxFood: 40, smokeRadius: 60, specialisations });
         const place = () => 20 + nextFloat(rng) * (1000 - 2 * 20);
         for (let i = 0; i < 12; i++) {
             const a = addAgent(w, place(), place(), 10 + nextFloat(rng) * 40);
@@ -399,7 +413,8 @@ describe('castRays against a brute-force caster', () => {
         w.parentA[3] = w.genomeId[2];
         w.parentA[7] = w.genomeId[1];
         for (let i = 0; i < 40; i++) {
-            addFood(w, place(), place(), 5 + nextFloat(rng) * 25);
+            const f = addFood(w, place(), place(), 5 + nextFloat(rng) * 25);
+            w.foodKind[f] = i % 3 === 0 ? 1 : 0;
         }
         for (let i = 0; i < 2; i++) {
             w.obsX[i] = place();

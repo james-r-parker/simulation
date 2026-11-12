@@ -15,6 +15,7 @@ import {
     setOutput,
     turnTowards,
     write,
+    writeForage,
 } from './scripted-parts.js';
 
 /** @typedef {import('./scripted-parts.js').ControllerFactory} ControllerFactory */
@@ -117,7 +118,7 @@ function grouper(context) {
  * @type {ControllerFactory}
  */
 function cruiser() {
-    return eachAlive((w, slot) => write(w, slot, SEEK_THRUST, 0));
+    return eachAlive((w, slot) => writeForage(w, slot, SEEK_THRUST, 0));
 }
 
 /** The chance-or-waste controllers by name, merged into `SCRIPTED_CONTROLLERS`. */

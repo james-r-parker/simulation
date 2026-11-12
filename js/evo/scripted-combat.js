@@ -63,7 +63,7 @@ function hunter({ world }) {
         const k = nearestClassRay(w, slot, CH_PREY, CH_PREY);
         const scent = attackTurn(w, slot);
         if (k < 0 && scent === 0) {
-            seekFood(w, slot);
+            seekFood(w, slot, false);
             firstSight(w, slot, false);
             return;
         }
