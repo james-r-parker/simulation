@@ -4,7 +4,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { aliveFlags, heldFlags } from '../js/evo/keep-rule.js';
+import { armRow } from './lib/arm-row.mjs';
 
 const METRICS = [
     'eval.cap_share',
@@ -15,29 +15,12 @@ const METRICS = [
 ];
 
 /**
- * @param {readonly number[] | null} flags per-seed 0/1 flags
- * @returns {number} how many seeds are 1 (-1 when the report cannot say)
- */
-const count = (flags) => (flags === null ? -1 : flags.reduce((a, b) => a + b, 0));
-
-/**
  * @param {string} name the arm
  * @param {Record<string, any>} report its eval report
- * @returns {{ name: string, seeds: number, held: number, alive: number, means: Record<string, number | null> }} its row
+ * @returns {ReturnType<typeof armRow>} its row
  */
 export function rowOf(name, report) {
-    /** @type {Record<string, number | null>} */
-    const means = {};
-    for (const metric of METRICS) {
-        means[metric] = report.metrics[metric]?.mean ?? null;
-    }
-    return {
-        name,
-        seeds: report.seeds.length,
-        held: count(heldFlags(report)),
-        alive: count(aliveFlags(report)),
-        means,
-    };
+    return armRow(name, report, METRICS);
 }
 
 /**

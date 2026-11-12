@@ -12,6 +12,7 @@ const USAGE = 'usage: node scripts/heat-guard.mjs --grid <grid.json> [--seeds 1]
  * @returns {{ grid: string, seeds: number[], arms: string[] | null, ticks: number | undefined }} the options
  */
 export function parseArgs(argv) {
+    /** @type {{ grid: string, seeds: number[], arms: string[] | null, ticks: number | undefined }} */
     const opts = { grid: '', seeds: [1], arms: null, ticks: undefined };
     for (let i = 0; i < argv.length; i++) {
         const flag = argv[i];

@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { paired, rank, renderRank } from '../scripts/heat-rank.mjs';
 
-/** @returns {any} a row with the given held flags */
+/**
+ * @param {string} name the arm
+ * @param {number[]} flags its per-seed held flags
+ * @param {number} [alive] seeds with hunters alive
+ * @param {number} [edge] its edge birth/death ratio
+ * @returns {any} a row with the given held flags
+ */
 const row = (name, flags, alive = 10, edge = 0.5) => ({
     name,
     seeds: flags.length,
-    held: flags.reduce((a, b) => a + b, 0),
+    held: flags.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0),
     alive,
     flags,
     means: { 'eval.edge_birth_death_ratio': edge },
