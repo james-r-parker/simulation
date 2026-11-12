@@ -7,7 +7,9 @@
 //   forager D: store 0.85, in contact, no BITE, speed 1
 //   forager F: store 0.99, in contact, holds BITE, speed 1 (above `satiationShare`: it cannot eat, so it is not counted)
 //   forager G: store 0.9, holds BITE, no food within reach
-//   predator H: store 0.9, in contact, holds BITE (a hunter is never read)
+//   predator H: store 0.9, in contact with plant food, holds BITE, speed 1 (a hunter is never read by the forager metrics)
+//   predator H2: in contact with plant food, speed 5 (above the closing speed of 0.25 x maxVelocity 8 = 2)
+//   predator H3: no food, speed 1
 // The graze detectors read the same agents: the seven foragers, of whom A, C, C2, F and G hold BITE.
 
 import { describe, expect, it } from 'vitest';
@@ -38,6 +40,8 @@ function scriptedRun() {
         { spec: FORAGER, store: 0.99, bite: true, speed: 1, food: true },
         { spec: FORAGER, store: 0.9, bite: true, speed: 1, food: false },
         { spec: PREDATOR, store: 0.9, bite: true, speed: 1, food: true },
+        { spec: PREDATOR, store: 0.9, bite: true, speed: 5, food: true },
+        { spec: PREDATOR, store: 0.9, bite: true, speed: 1, food: false },
     ].map((a, i) => ({ ...a, slot: spawn(a.spec, undefined, { at: [100 + 100 * i, 500] }) }));
     run.tick();
     clearEvents(world.events);
@@ -84,8 +88,16 @@ describe('the eat-choice detectors in a scripted world', () => {
         expect(m['eval.graze_speed_ratio']?.value).toBeCloseTo(0.7, 12);
     });
 
+    it('read the hunter plant linger share: of the six hunter samples (three before the staging, none lingering, three after), H lingers', () => {
+        expect(m['eval.hunter_plant_linger_share']?.value).toBeCloseTo(1 / 6, 12);
+    });
+
     it('are registered with a source test that names them', () => {
-        for (const name of [...namesOf('js/evo/scene-eat.js'), ...namesOf('js/evo/scene-graze.js')]) {
+        for (const name of [
+            ...namesOf('js/evo/scene-eat.js'),
+            ...namesOf('js/evo/scene-graze.js'),
+            ...namesOf('js/evo/scene-linger.js'),
+        ]) {
             expect(METRICS[/** @type {keyof typeof METRICS} */ (name)].tests.source).toBe(
                 'test/evo/metric-source-eat.test.js',
             );

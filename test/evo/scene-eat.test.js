@@ -202,6 +202,24 @@ describe('the fat speed ratio', () => {
     });
 });
 
+describe('the graze and linger detectors on the same sample', () => {
+    it('read the non-hunters for the graze time share and the hunters for the plant linger share', () => {
+        const w = world(
+            [
+                { bite: true, gap: 50 }, // a forager holding BITE
+                { bite: false, gap: 50 }, // a forager not holding it
+                { spec: PREDATOR, speed: 0.5 }, // a hunter on plant, slow
+                { spec: PREDATOR, speed: 5 }, // a hunter on plant, fast
+                { spec: PREDATOR, speed: 0, alive: false },
+            ],
+            { maxVelocity: 8 },
+        );
+        const scene = sampled(w);
+        expect(read(scene, 'eval.graze_time_share')).toBe(0.5);
+        expect(read(scene, 'eval.hunter_plant_linger_share')).toBe(0.5);
+    });
+});
+
 describe('the sample', () => {
     it('is taken only on a 100-tick multiple at or after burn-in', () => {
         for (const tick of [T - 100, T + 1, T + 99]) {

@@ -182,6 +182,7 @@
   "eval.hunter_kills_per_life_mean",
   "eval.hunter_kills_per_life_p50",
   "eval.hunter_median_lifespan",
+  "eval.hunter_plant_linger_share",
   "eval.hunter_recoil_per_life",
   "eval.hunter_reflex_column_same_kill_rate",
   "eval.hunter_reflex_column_split_kill_rate",

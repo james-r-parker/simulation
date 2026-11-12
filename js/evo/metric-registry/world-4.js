@@ -57,4 +57,15 @@ export const WORLD_4 = {
         arithmetic: 'test/evo/scene-graze.test.js',
         source: 'test/evo/metric-source-eat.test.js',
     }),
+    'eval.hunter_plant_linger_share': entry('world', {
+        module: 'js/evo/scene-linger.js',
+        meaning: 'Lower means fewer hunters stop on grass they sensed.',
+        counts: 'At every 100th tick after burn-in, pooled: alive hunters (canHunt true) in contact with an alive plant food item (the tryEat contact test, whatever their specialisation takes) while moving below CLOSING_SPEED x maxVelocity, over all alive hunters.',
+        unit: 'share',
+        direction: 'watch',
+        intended: 'lower',
+        nullWhen: ['no hunter at a sample after burn-in'],
+        arithmetic: 'test/evo/scene-linger.test.js',
+        source: 'test/evo/metric-source-eat.test.js',
+    }),
 };
