@@ -12,7 +12,7 @@ import { createLineagePools } from './metrics-lineage.js';
 import { createDietPools } from './metrics-diet.js';
 import { createWatchabilityPools, trackCircling } from './metrics-watchability.js';
 import { createMeritPools, snapshotMerit } from './metrics-merit.js';
-import { checkpoint, createDominancePools } from './observer-checkpoint.js';
+import { checkpoint as checkpointRow, createDominancePools } from './observer-checkpoint.js';
 import { applyEvents, BURN_IN_TICKS } from './observer-events.js';
 import { createCellGrid } from './cell-grid.js';
 import { createCombatCounters, observeCombat } from './observer-combat.js';
@@ -26,7 +26,18 @@ import { createWindows, noteWindows } from './observer-windows.js';
 import { CELL_SIZE, countCollisions, countTick, MOTION_SAMPLE_TICKS } from './observer-tick.js';
 import { STEP_PHASES } from '../sim/step.js';
 
-export { checkpoint };
+/**
+ * Appends a checkpoint row; refuses a lean observer, which keeps none of the pools a checkpoint reads.
+ * @param {Record<string, any>} observer the observer
+ * @param {Record<string, any>} world the world
+ * @returns {void}
+ */
+export function checkpoint(observer, world) {
+    if (observer.lean) {
+        throw new Error('checkpoint: the observer is lean');
+    }
+    checkpointRow(observer, world);
+}
 
 /** Per-slot arrays reset on `AgentBorn`, with their types. */
 const SLOT_TYPES = {
@@ -95,9 +106,10 @@ const DEATH_CAUSES = Object.keys(DEATH_CAUSE).length;
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @param {Record<string, any>} rng the `eval` stream, `fork(createRng(config.seed), 'eval')`; kept as `observer.rng`
- * @param {{runTicks?: number, checkpointTicks?: number}} [options] `runTicks`, the run length the trend metrics cut
+ * @param {{runTicks?: number, checkpointTicks?: number, lean?: boolean}} [options] `runTicks`, the run length the trend metrics cut
  *   into windows; without it (or at most the burn-in) they are `null`. `checkpointTicks`, the ticks between the run's
- *   checkpoints, times the hidden-state snapshot; without it `eval.hidden_persistence` is `null`
+ *   checkpoints, times the hidden-state snapshot; without it `eval.hidden_persistence` is `null`. `lean`, the
+ *   policy core only (lean-observer.md): `observe` skips the eval layer, and `computeMetrics` and `checkpoint` refuse
  * @returns {Record<string, any>} a fresh observer with every counter at zero
  */
 export function createObserver(config, rng, options = {}) {
@@ -105,6 +117,7 @@ export function createObserver(config, rng, options = {}) {
     const observer = {
         config,
         rng,
+        lean: options.lean === true,
         slotArrays: Object.keys(SLOT_TYPES),
         // Spread, not keyed stores, so the observer stays in V8's fast-properties mode (test/sim/world-shape.test.js).
         ...Object.fromEntries(Object.entries(SLOT_TYPES).map(([name, Type]) => [name, new Type(n)])),
@@ -142,7 +155,7 @@ export function createObserver(config, rng, options = {}) {
         watchability: createWatchabilityPools(config),
         combat: createCombatCounters(config),
         intent: createIntentState(config),
-        scenes: createScenes(config, options.runTicks ?? 0),
+        scenes: createScenes(config, options.runTicks ?? 0, options.lean === true),
         windows: createWindows(options.runTicks ?? 0),
         ...createBrainPools(config, options),
         instinct: createInstinctPools(config),
@@ -167,29 +180,50 @@ export function observe(observer, world, fitness) {
     noteIntentEvents(observer, world);
     observeScenes(observer, world);
     applyEvents(observer, world, fitness);
-    snapshotMerit(observer.merit, world);
+    const full = !observer.lean;
+    if (full) {
+        snapshotMerit(observer.merit, world);
+    }
     if (world.tick === 0) {
         return;
     }
     noteMatured(observer, world);
     countTick(observer, world);
+    if (full) {
+        observeEvalTick(observer, world);
+    }
+    observer.agentTicks += world.population;
+    observer.ticks = world.tick;
+    if (full) {
+        noteWindows(observer.windows, observer, world.tick);
+    }
+}
+
+/**
+ * The eval layer's per-tick samples: visits, circling and the brain pools.
+ * @param {Record<string, any>} observer the observer
+ * @param {Record<string, any>} world the world
+ * @returns {void}
+ */
+function observeEvalTick(observer, world) {
     if (world.tick % MOTION_SAMPLE_TICKS === 0) {
         sampleVisits(observer.watch, world);
     }
     trackCircling(observer.watchability, world, BURN_IN_TICKS);
     observeBrain(observer, world);
-    observer.agentTicks += world.population;
-    observer.ticks = world.tick;
-    noteWindows(observer.windows, observer, world.tick);
 }
 
 /**
  * The `step` overrides an observed run passes: the physics phase unchanged, then `countCollisions`. The world is
- * only read, so an observed run steps bit for bit like an unobserved one.
+ * only read, so an observed run steps bit for bit like an unobserved one. A lean observer counts no collisions and
+ * overrides nothing.
  * @param {Record<string, any>} observer the observer
  * @returns {Readonly<Record<string, (world: any, policy: any) => void>>} overrides keyed by phase name
  */
 export function observerPhases(observer) {
+    if (observer.lean) {
+        return Object.freeze({});
+    }
     const physics = STEP_PHASES.find((phase) => phase.name === 'physics');
     if (physics === undefined) {
         throw new Error('observerPhases: step has no physics phase');

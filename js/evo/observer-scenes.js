@@ -47,9 +47,13 @@ import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @param {number} [runTicks] the run length in ticks, for the last-quarter hunter ticks
+ * @param {boolean} [lean] build only the style and terrain scenes (the policy core, lean-observer.md)
  * @returns {Record<string, any>} the scenes, each empty
  */
-export function createScenes(config, runTicks = 0) {
+export function createScenes(config, runTicks = 0, lean = false) {
+    if (lean) {
+        return { lean: true, terrain: createTerrainScene(config), style: createStyle(config) };
+    }
     const competence = createCompetenceScene(config);
     const matched = createMatchedScene(config);
     return {
@@ -100,6 +104,10 @@ export function createScenes(config, runTicks = 0) {
  * @returns {void}
  */
 export function resetSceneSlot(scenes, slot) {
+    if (scenes.lean === true) {
+        resetStyleSlot(scenes.style, slot);
+        return;
+    }
     resetPatchSlot(scenes.patch, slot);
     resetApproachSlot(scenes.approach, slot);
     resetStyleSlot(scenes.style, slot);
@@ -132,7 +140,81 @@ function noteDeath(scenes, observer, { slot, genomeId, tick, age }) {
 }
 
 /**
- * Applies a tick's deaths, then its births, as `applyEvents` orders them.
+ * The lean observer's death note: only the style scene sees it.
+ * @param {Record<string, any>} observer the observer
+ * @param {Float64Array} d the event data
+ * @param {number} o the record offset of the `AgentDied`
+ * @returns {void}
+ */
+function noteLeanDeath(observer, d, o) {
+    const slot = d[o + 2];
+    noteStyleAtDeath(observer, o / EVENT_STRIDE, { slot, genomeId: d[o + 3] });
+    if (observer.genomeId[slot] === d[o + 3] && d[o + 1] >= BURN_IN_TICKS) {
+        noteStyleDeath(observer, slot);
+    }
+    resetSceneSlot(observer.scenes, slot);
+}
+
+/**
+ * A dying agent's notes to every scene.
+ * @param {Record<string, any>} scenes the scenes
+ * @param {Record<string, any>} observer the observer
+ * @param {{world: Record<string, any>, o: number}} record the world and the `AgentDied` record's offset
+ * @returns {void}
+ */
+function noteFullDeath(scenes, observer, { world, o }) {
+    const d = world.events.data;
+    noteHerdDeath(scenes.herd, {
+        tick: d[o + 1],
+        slot: d[o + 2],
+        genomeId: d[o + 3],
+        cause: d[o + 4],
+        herdId: d[o + 5],
+        pinned: d[o + 11] === 1,
+    });
+    if (d[o + 4] === DEATH_CAUSE.EATEN) {
+        noteApproachKill(scenes.approach, observer, world, { killerId: d[o + 5], victimId: d[o + 3] });
+    }
+    noteCapacityDeath(scenes.capacity, { cause: d[o + 4], foodEnergy: d[o + 9] });
+    noteEdgeDeath(scenes.edge, world, { cause: d[o + 4], spec: d[o + 6], foodEnergy: d[o + 9] });
+    noteStyleAtDeath(observer, o / EVENT_STRIDE, { slot: d[o + 2], genomeId: d[o + 3] });
+    noteDeath(scenes, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1], age: d[o + 8] });
+    noteProofDeath(scenes.proof, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1] });
+    noteProofKill(scenes.proof, { cause: d[o + 4], lineageId: d[o + 7] });
+    resetSceneSlot(scenes, d[o + 2]);
+}
+
+/**
+ * One event record's notes to every scene, after the tick's deaths: the records the scenes read and the births.
+ * @param {Record<string, any>} scenes the scenes
+ * @param {Record<string, any>} world the world
+ * @param {number} o the record offset
+ * @returns {void}
+ */
+function noteFullRecord(scenes, world, o) {
+    const d = world.events.data;
+    noteHunterRecord(scenes.hunters, d, o);
+    noteBiteLifeRecord(scenes.biteLife, d, o, world);
+    noteCompetenceRecord(scenes.competence, d, o);
+    if (d[o] !== EVENT_TYPE.AGENT_BORN) {
+        return;
+    }
+    noteHunterBirth(scenes.hunters, world, d[o + 2]);
+    noteEdgeBirth(scenes.edge, world, { cause: d[o + 8], spec: d[o + 5] });
+    noteCompetenceBirth(scenes.competence, world, d[o + 2]);
+    resetSceneSlot(scenes, d[o + 2]);
+    noteBasinBirth(scenes.basin, world, { slot: d[o + 2], cause: d[o + 8] });
+    if (d[o + 8] === BORN_CAUSE.MATE) {
+        noteSpendBirth(scenes.spend, world, { child: d[o + 2], motherId: d[o + 6] });
+    }
+    if (d[o + 8] === BORN_CAUSE.MATE || d[o + 8] === BORN_CAUSE.SPLIT) {
+        noteHeritageBirth(scenes.heritage, world, d[o + 2]);
+    }
+}
+
+/**
+ * Applies a tick's deaths, then its births, as `applyEvents` orders them. A lean observer's scenes (`scenes.lean`)
+ * note only the style scene.
  * @param {Record<string, any>} scenes the scenes
  * @param {Record<string, any>} observer the observer
  * @param {Record<string, any>} world the world
@@ -141,45 +223,36 @@ function noteDeath(scenes, observer, { slot, genomeId, tick, age }) {
 function noteEvents(scenes, observer, world) {
     const d = world.events.data;
     const end = world.events.count * EVENT_STRIDE;
+    const lean = scenes.lean === true;
     for (let o = 0; o < end; o += EVENT_STRIDE) {
-        if (d[o] === EVENT_TYPE.AGENT_DIED) {
-            noteHerdDeath(scenes.herd, {
-                tick: d[o + 1],
-                slot: d[o + 2],
-                genomeId: d[o + 3],
-                cause: d[o + 4],
-                herdId: d[o + 5],
-                pinned: d[o + 11] === 1,
-            });
-            if (d[o + 4] === DEATH_CAUSE.EATEN) {
-                noteApproachKill(scenes.approach, observer, world, { killerId: d[o + 5], victimId: d[o + 3] });
-            }
-            noteCapacityDeath(scenes.capacity, { cause: d[o + 4], foodEnergy: d[o + 9] });
-            noteEdgeDeath(scenes.edge, world, { cause: d[o + 4], spec: d[o + 6], foodEnergy: d[o + 9] });
-            noteStyleAtDeath(observer, o / EVENT_STRIDE, { slot: d[o + 2], genomeId: d[o + 3] });
-            noteDeath(scenes, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1], age: d[o + 8] });
-            noteProofDeath(scenes.proof, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1] });
-            noteProofKill(scenes.proof, { cause: d[o + 4], lineageId: d[o + 7] });
-            resetSceneSlot(scenes, d[o + 2]);
+        if (d[o] !== EVENT_TYPE.AGENT_DIED) {
+            continue;
+        }
+        if (lean) {
+            noteLeanDeath(observer, d, o);
+        } else {
+            noteFullDeath(scenes, observer, { world, o });
         }
     }
     for (let o = 0; o < end; o += EVENT_STRIDE) {
-        noteHunterRecord(scenes.hunters, d, o);
-        noteBiteLifeRecord(scenes.biteLife, d, o, world);
-        noteCompetenceRecord(scenes.competence, d, o);
-        if (d[o] === EVENT_TYPE.AGENT_BORN) {
-            noteHunterBirth(scenes.hunters, world, d[o + 2]);
-            noteEdgeBirth(scenes.edge, world, { cause: d[o + 8], spec: d[o + 5] });
-            noteCompetenceBirth(scenes.competence, world, d[o + 2]);
+        if (!lean) {
+            noteFullRecord(scenes, world, o);
+        } else if (d[o] === EVENT_TYPE.AGENT_BORN) {
             resetSceneSlot(scenes, d[o + 2]);
-            noteBasinBirth(scenes.basin, world, { slot: d[o + 2], cause: d[o + 8] });
-            if (d[o + 8] === BORN_CAUSE.MATE) {
-                noteSpendBirth(scenes.spend, world, { child: d[o + 2], motherId: d[o + 6] });
-            }
-            if (d[o + 8] === BORN_CAUSE.MATE || d[o + 8] === BORN_CAUSE.SPLIT) {
-                noteHeritageBirth(scenes.heritage, world, d[o + 2]);
-            }
         }
+    }
+}
+
+/**
+ * Feeds the lean scenes one tick: the style scene's births, deaths and bite chains.
+ * @param {Record<string, any>} observer the observer
+ * @param {Record<string, any>} world the world
+ * @returns {void}
+ */
+function observeLean(observer, world) {
+    noteEvents(observer.scenes, observer, world);
+    if (world.tick !== 0) {
+        tickStyle(observer, world);
     }
 }
 
@@ -191,6 +264,10 @@ function noteEvents(scenes, observer, world) {
  */
 export function observeScenes(observer, world) {
     const scenes = observer.scenes;
+    if (scenes.lean === true) {
+        observeLean(observer, world);
+        return;
+    }
     noteEvents(scenes, observer, world);
     noteDiseaseEvents(scenes.disease, world);
     tickHunters(scenes.hunters, world.tick);

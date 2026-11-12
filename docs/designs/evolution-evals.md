@@ -23,17 +23,18 @@ every 1000 ticks from tick 1000. "After burn-in" means from tick 10000.
 
 Every `eval.*` metric (268 in a live report) has one entry in the metric registry, `js/evo/metric-registry/`: its meaning, what it counts, unit, direction, when it is `null`, the tests that pin it and, once measured, its liveness and power. [metrics.md](metrics.md) lists them with their status, the seeds a verdict needs and the smallest change each detects; it is generated (`node scripts/metrics-doc.mjs --write`), and [metric-trust.md](metric-trust.md) describes the registry and the checks on it. The table below holds the `bench.*` and `browser.*` metrics, which the registry does not.
 
-| Metric                       | Better | Definition                                                                                                                              |
-| ---------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `bench.step_ms@<n>`          | lower  | Median ms per tick at `n` agents (`npm run bench`, [headless-sim-core.md](headless-sim-core.md))                                        |
-| `bench.phase_ms.<phase>@<n>` | lower  | Median ms per tick of one `STEP_PHASES` phase at `n` agents                                                                             |
-| `browser.frame_p50_ms`       | lower  | Median interval between animation frames over a 60 s run ([worker-and-renderer.md](worker-and-renderer.md))                             |
-| `browser.frame_p95_ms`       | lower  | 95th percentile frame time over a 60 s run (`scripts/browser-perf.mjs`, [dev-workflow-and-gate.md](dev-workflow-and-gate.md))           |
-| `browser.frame_p99_ms`       | lower  | 99th percentile frame time over the same run                                                                                            |
-| `browser.draw_cpu_p95_ms`    | lower  | 95th percentile time spent in the animation callback (the draw's CPU cost)                                                              |
-| `browser.gpu_frame_p95_ms`   | lower  | 95th percentile GPU time per frame from `EXT_disjoint_timer_query_webgl2`; `null` without the extension; reported, not a done criterion |
-| `browser.main_long_tasks`    | lower  | Main-thread long tasks over the same 60 s run                                                                                           |
-| `browser.gc_pause_ms`        | lower  | Total GC pause over the same 60 s run ([worker-and-renderer.md](worker-and-renderer.md))                                                |
+| Metric                       | Better | Definition                                                                                                                                                                                                                                  |
+| ---------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bench.step_ms@<n>`          | lower  | Median ms per tick at `n` agents (`npm run bench`, [headless-sim-core.md](headless-sim-core.md))                                                                                                                                            |
+| `bench.phase_ms.<phase>@<n>` | lower  | Median ms per tick of one `STEP_PHASES` phase at `n` agents                                                                                                                                                                                 |
+| `bench.observe_ms@<n>`       | lower  | Median ms per tick of `feedPolicy` (the observer and the policy hooks) at `n` agents, in `npm run bench -- --policy <name>` runs only; `@<n>lean` is the same with a lean observer (the app worker's, [lean-observer.md](lean-observer.md)) |
+| `browser.frame_p50_ms`       | lower  | Median interval between animation frames over a 60 s run ([worker-and-renderer.md](worker-and-renderer.md))                                                                                                                                 |
+| `browser.frame_p95_ms`       | lower  | 95th percentile frame time over a 60 s run (`scripts/browser-perf.mjs`, [dev-workflow-and-gate.md](dev-workflow-and-gate.md))                                                                                                               |
+| `browser.frame_p99_ms`       | lower  | 99th percentile frame time over the same run                                                                                                                                                                                                |
+| `browser.draw_cpu_p95_ms`    | lower  | 95th percentile time spent in the animation callback (the draw's CPU cost)                                                                                                                                                                  |
+| `browser.gpu_frame_p95_ms`   | lower  | 95th percentile GPU time per frame from `EXT_disjoint_timer_query_webgl2`; `null` without the extension; reported, not a done criterion                                                                                                     |
+| `browser.main_long_tasks`    | lower  | Main-thread long tasks over the same 60 s run                                                                                                                                                                                               |
+| `browser.gc_pause_ms`        | lower  | Total GC pause over the same 60 s run ([worker-and-renderer.md](worker-and-renderer.md))                                                                                                                                                    |
 
 The two behaviour grids bin per-agent lifetime values, sampled every 100 ticks; an agent with no sample is excluded.
 
@@ -93,6 +94,14 @@ all per-run state lives in the object it returns: `{ name, brain, fitnessName, f
 arrays, so it is valid after the slot has been reused. `onEvent` receives each event-ring record after the observer.
 
 ### Observer counters
+
+The observer has two layers ([lean-observer.md](lean-observer.md)). The policy core is what the live policy and the
+app's panels read: combat and intent, the style scene and the terrain ring geometry, the death log and its fitness, the
+slot counters, the lineage counters behind `descendantsAlive`, and the run counters. The eval layer is everything that
+feeds `computeMetrics` and `checkpoint`: the other scenes and the lineage, environment, merit, mate, split, body, brain
+and watch pools. `createObserver(config, rng, { lean: true })` builds the policy core only; `computeMetrics` and
+`checkpoint` throw on it. Eval, replay, bench, the trainer, the league, the probes and the screens use the full
+observer, and the app's worker uses the lean one.
 
 The observer caches each slot's `genomeId`, `lineageId`, `spec` and birth tick on `AgentBorn`, and handles each tick's
 `AgentDied` records before its `AgentBorn` records.

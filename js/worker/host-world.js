@@ -34,7 +34,7 @@ export const BASE_TICKS_PER_SECOND = 60;
  * @typedef {object} Run
  * @property {Readonly<Record<string, any>>} config the validated config
  * @property {Record<string, any>} world the world
- * @property {Record<string, any>} observer the eval observer
+ * @property {Record<string, any>} observer the lean observer: the policy core and the panels' counters, no eval layer
  * @property {Record<string, any>} policy the policy object
  * @property {Readonly<Record<string, (world: any, policy: any) => void>>} phases the observed `step` overrides
  * @property {import('./effects.js').EffectLog} effects the pending render effects
@@ -57,7 +57,7 @@ export const BASE_TICKS_PER_SECOND = 60;
  */
 export function buildRun({ seed, overrides, createPolicy, log, policyName }) {
     const config = createConfig({ ...overrides, seed });
-    const observer = createObserver(config, fork(createRng(seed), 'eval'));
+    const observer = createObserver(config, fork(createRng(seed), 'eval'), { lean: true });
     const policy = createPolicy({ config, log, observer, policyName });
     const world = createWorld(config, policy.brain);
     feedPolicy({ policy, observer }, world);

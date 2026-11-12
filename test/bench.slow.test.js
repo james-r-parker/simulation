@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { benchSize, main as benchMain } from '../scripts/bench.mjs';
+import { LEAN_VARIANT, benchSize, main as benchMain } from '../scripts/bench.mjs';
 import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 describe('benchSize', () => {
@@ -27,6 +27,17 @@ describe('benchSize', () => {
         () => {
             const metrics = benchSize(8, 'map-elites-v6');
             expect(metrics['bench.step_ms@8']).toBeGreaterThan(0);
+            expect(metrics['bench.observe_ms@8']).toBeGreaterThan(0);
+        },
+        scaleTimeout(60000),
+    );
+
+    it(
+        'times the feed of a lean observer under its own suffix, and none without a policy',
+        () => {
+            const lean = benchSize(8, 'map-elites-v6', LEAN_VARIANT);
+            expect(lean['bench.observe_ms@8lean']).toBeGreaterThan(0);
+            expect(Object.keys(benchSize(8)).some((key) => key.includes('observe'))).toBe(false);
         },
         scaleTimeout(60000),
     );

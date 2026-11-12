@@ -32,6 +32,12 @@ function small() {
 }
 
 describe('buildRun', () => {
+    it('builds a lean observer, which keeps the policy core and the panels counters', () => {
+        const run = small();
+        expect(run.observer.lean).toBe(true);
+        expect(Object.keys(run.observer.scenes).sort()).toEqual(['lean', 'style', 'terrain']);
+    });
+
     it('builds a world at tick 0 whose observer already tracks the initial population', () => {
         const run = small();
         expect(run.world.tick).toBe(0);
