@@ -1,6 +1,6 @@
 # Eat choice
 
-**Status:** Proposed - eating becomes a choice with a cost: a forager eats only while it holds the bite, grazing slows it, a full store slows it, and a hunter senses only food it can eat and pays for a strike at nothing. Phase 1 (the detectors and the reference) is first.
+**Status:** In progress - Phase 1 is built; Phase 2 (screen the eat choice, fat and the hunter food sense) is next. eating becomes a choice with a cost: a forager eats only while it holds the bite, grazing slows it, a full store slows it, and a hunter senses only food it can eat and pays for a strike at nothing. Phase 1 (the detectors and the reference) is first.
 **Validated:** e2455f2f (2026-11-11)
 **Priority:** 1 - after low-density-edge.md T13 (its 16-seed heat pass): 58% of the food energy on the defaults is eaten with no closing approach, and passive eating changes the heat and edge pictures, so it comes before low-density-edge.md's 64-seed pass and switch
 **Depends on:** [metric-trust.md](metric-trust.md), [low-density-edge.md](low-density-edge.md) (T12, the purpose guard `scripts/heat-guard.mjs`)
@@ -75,7 +75,7 @@ and drill tools and the BITE gene case in `js/evo/crossover.js` read hunters onl
 
 ## Phases
 
-### Phase 1 - Detectors and the reference
+### Phase 1 - Detectors and the reference (built)
 
 **Targets:** none - detectors and a reference run; no sim behaviour changes, and `worldHash` and the goldens stay as they are
 
@@ -195,15 +195,15 @@ Done criteria, on seeds 65 to 128 of `evals/seeds.json`, head against `origin/ma
 
 ## Task breakdown
 
-### Phase 1 - Detectors and the reference
+### Phase 1 - Detectors and the reference (built)
 
-| #   | Task                                                                                                                                                                                                                      | Nature       | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | (built: 2026-11-11) `js/evo/scene-eat.js`: the three detectors, registered in `world-3.js`, with arithmetic and source tests; `docs/designs/metrics.md` regenerated                                                       | [judgement]  | -          |
-| T2  | (built: 2026-11-11, by the delegating review: T1 conforms; sampling after burn-in, per-spec mean splits and the intended directions accepted) Conformance review of chunk A, in parallel with `scripts/check.sh`          | [judgement]  | T1         |
-| T3  | (built: 2026-11-12, E158) Run the 128-seed floor-on defaults reference with the detectors; commit the report under `evals/decisions/`                                                                                     | [mechanical] | T2         |
-| T4  | (built: 2026-11-12, E158: `eval.fat_speed_ratio` verified at 16 seeds; the two share detectors stay unverified on power, see sim-notes) Liveness and power for the detectors, merged into the registry; a sim-notes entry | [mechanical] | T3         |
-| T5  | Conformance review of Phase 1                                                                                                                                                                                             | [judgement]  | T4         |
+| #   | Task                                                                                                                                                                                                                           | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
+| T1  | (built: 2026-11-11) `js/evo/scene-eat.js`: the three detectors, registered in `world-3.js`, with arithmetic and source tests; `docs/designs/metrics.md` regenerated                                                            | [judgement]  | -          |
+| T2  | (built: 2026-11-11, by the delegating review: T1 conforms; sampling after burn-in, per-spec mean splits and the intended directions accepted) Conformance review of chunk A, in parallel with `scripts/check.sh`               | [judgement]  | T1         |
+| T3  | (built: 2026-11-12, E158) Run the 128-seed floor-on defaults reference with the detectors; commit the report under `evals/decisions/`                                                                                          | [mechanical] | T2         |
+| T4  | (built: 2026-11-12, E158: `eval.fat_speed_ratio` verified at 16 seeds; the two share detectors stay unverified on power, see sim-notes) Liveness and power for the detectors, merged into the registry; a sim-notes entry      | [mechanical] | T3         |
+| T5  | (built: 2026-11-12, by the delegating review: Phase 1 conforms; the two bite shares are unverified (detectable 0.10 to 0.15 against the 0.05 share bar), so Phase 2 reads them by the sign test) Conformance review of Phase 1 | [judgement]  | T4         |
 
 ### Phase 2 - Screen the eat choice and fat
 
