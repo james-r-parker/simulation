@@ -4135,6 +4135,32 @@
       "verdicts": {
         "keepRule": "no-difference"
       }
+    },
+    {
+      "id": "E162",
+      "hypothesis": "eat-choice Phase 3 (T16): the switched world reads no keep-rule guard worse than main on fresh seeds, and only chosen meals warm a body (E-EC-3).",
+      "prediction": "On seeds 65 to 128 the head reads no guard worse against origin/main, eval.full_contact_bite_share lower than G1 alone, eval.deliberate_food_share, eval.food_energy_per_1k and eval.median_lifespan not worse, and eval.heat_stress_share lower. Falsified when a guard reads WORSE.",
+      "targets": [
+        "eval.full_contact_bite_share",
+        "eval.deliberate_food_share",
+        "eval.food_energy_per_1k",
+        "eval.median_lifespan",
+        "eval.heat_stress_share"
+      ],
+      "before": "evals/decisions/E162/main.report.json: origin/main 4faea422 defaults, seeds 65 to 128, 400000 ticks",
+      "after": "evals/decisions/E162/head.report.json: feat/eat-choice-switch, same seeds",
+      "note": "Keep rule no harm (alive 13 vs 14, under80 8 vs 17, held 2 vs 2). full_contact_bite_share 0.53 to 0.19; heat_stress_share 0.40 to 0.19 (E-EC-3 holds); bite_idle -6% interval crosses 0 (E-EC-4 not shown). Missed bars: deliberate_food_share 0.43 to 0.31 and food_energy_per_1k -29% (worse): isDeliberate needs closing, so in-place grazing counts as chance; less intake is the satiety effect (fed life +9%, population +9%). Diversity and lineages_alive -18%. See evals/decisions/E162/results.md.",
+      "reports": [
+        "evals/decisions/E162/results.md",
+        "evals/decisions/E162/main.report.json",
+        "evals/decisions/E162/head.report.json"
+      ],
+      "date": "2026-11-12",
+      "branch": "feat/eat-choice-switch",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "better",
+      "verdicts": {}
     }
   ]
 }

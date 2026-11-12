@@ -1,6 +1,6 @@
 # Eat choice
 
-**Status:** In progress - Phases 1 and 2 are built, and Phase 3 (the switch) is building: T12, T13 and T15 are built; the bench re-record, the 64-seed paired check and the Done criteria are next. Eating becomes a choice with a cost: a forager eats only while it holds the bite, grazing slows it, a full store slows it, and a hunter senses only food it can eat and pays for a strike at nothing. Phase 1 (the detectors and the reference) is first.
+**Status:** In progress - Phases 1 to 3 are built: the eat choice is the default on `season/next` (E159 to E162; keep rule no harm on seeds 1 to 64 and 65 to 128). Phase 4 (the deliberate-meal detector sees in-place grazing) is next. Eating becomes a choice with a cost: a forager eats only while it holds the bite, grazing slows it, a full store slows it, and a hunter senses only food it can eat and pays for a strike at nothing.
 **Validated:** e2455f2f (2026-11-11)
 **Priority:** 1 - after low-density-edge.md T13 (its 16-seed heat pass): 58% of the food energy on the defaults is eaten with no closing approach, and passive eating changes the heat and edge pictures, so it comes before low-density-edge.md's 64-seed pass and switch
 **Depends on:** [metric-trust.md](metric-trust.md), [low-density-edge.md](low-density-edge.md) (T12, the purpose guard `scripts/heat-guard.mjs`)
@@ -143,7 +143,7 @@ the defaults with G1 and G3), `bite-graze-5`, `bite-graze-3`, `bite-fat-3`, `bit
 | C     | T6 to T7e  | G1 to G4b on the screen branch (code)    |
 | D     | T8 to T11a | The grid, the passes, the landing (runs) |
 
-### Phase 3 - The switch
+### Phase 3 - The switch (built)
 
 **Targets:** eval.deliberate_food_share, eval.chance_food_energy_per_1k, eval.food_energy_per_1k, bench.step_ms@500
 
@@ -164,10 +164,33 @@ Done criteria, on seeds 65 to 128 of `evals/seeds.json`, head against `origin/ma
 | `eval.food_energy_per_1k`, `eval.median_lifespan` | `eval:compare` not `worse`                                    | 539, -             |
 | `bench.step_ms@500`                               | within the budget of `bench-check`                            | -                  |
 
+**Record (E162, seeds 65 to 128).** The keep rule reads no harm, and the hunters-alive caveat of E161 does not replicate
+(13 seeds harmed, 14 recovered). Met: the guards, `eval.full_contact_bite_share` (0.19 against main's 0.53; 0.199 against
+G1 alone's 0.260 on seeds 1 to 64), `eval.median_lifespan` and the bench. Missed: `eval.deliberate_food_share` (0.43 to
+0.31) and `eval.food_energy_per_1k` (-29%). The first is the detector: `isDeliberate` needs the eater to be closing on the
+food, so bites taken while grazing in place count as chance (deliberate energy -48%, chance -14%). The second is the
+intended satiety effect: full foragers stop biting, and the fed median life and the population mean each rise 9%. The
+mechanisms stay under the keep rule (principles.md); Phase 4 fixes the detector and re-reads the bar. E-EC-3 holds
+(`eval.heat_stress_share` 0.40 to 0.19); E-EC-4 does not (`eval.bite_idle` -6%, interval crosses 0). Outside the guards,
+`eval.diversity` and `eval.lineages_alive` fall 18%. Record: `evals/decisions/E162/results.md`.
+
 | Chunk | Tasks      | Contents                                |
 | ----- | ---------- | --------------------------------------- |
 | E     | T12 to T15 | The landing, the re-pins (code)         |
 | F     | T16, T17   | The paired check and its verdict (runs) |
+
+### Phase 4 - The deliberate-meal detector sees grazing
+
+**Targets:** eval.deliberate_food_share
+
+`isDeliberate` counts a meal only while the eater closes on the food, so a forager grazing in place under G1b scores its
+later bites as chance. A meal also counts as deliberate when the eater holds `BITE` on food it reached by a deliberate
+approach in the same contact, without leaving it. `isDeliberate` lives in js/sim/merit-state.js; if merit or fitness reads it, the change moves the
+hash and goes to `season/next`. The bar is re-read on seeds 65 to 128 with the new detector.
+
+| Chunk | Tasks    | Contents                            |
+| ----- | -------- | ----------------------------------- |
+| G     | T18, T19 | The detector change and the re-read |
 
 ## Experiments
 
@@ -180,19 +203,20 @@ Done criteria, on seeds 65 to 128 of `evals/seeds.json`, head against `origin/ma
 
 ## Decisions
 
-| Decision                              | Choice                                                                                                                                                                                                        | If it fails                                                                                                                                        |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The fat arms                          | `fatSlowShare` exists only after G2 on this branch, so the fat arms run with G1 and G3 (`bite-fat-*`) and read against `bite`; the only main-code comparison is `defaults` at 400000 ticks (user, 2026-11-12) | A key-less fat switch on main, which is not worth a commit                                                                                         |
-| Non-hunters pay for a bite at nothing | G4b `grazeMissCost`, the forager twin of G4 (user, 2026-11-12)                                                                                                                                                | Drop the key when `bite-grazemiss-1` reads no guard worse and no change in the bite share                                                          |
-| The eat act                           | The existing `BITE` output, for non-hunters (user, 2026-11-11)                                                                                                                                                | A separate `EAT` output, which changes the brain layout and costs the champions                                                                    |
-| The price of holding the bite         | Grazing slows thrust (`grazeThrust`), as a grazing animal moves slowly                                                                                                                                        | An energy cost per tick of holding `BITE`                                                                                                          |
-| Fatness                               | The store fraction, so a hunter's 5x store slows it no more than a forager's full store                                                                                                                       | -                                                                                                                                                  |
-| Fat in the same plan                  | G2 beside G1 (user, 2026-11-11)                                                                                                                                                                               | -                                                                                                                                                  |
-| Hunters                               | Unchanged: a hunter already bites prey with `BITE` and eats carcasses on contact                                                                                                                              | -                                                                                                                                                  |
-| A hunter's food sense                 | Only food it can eat lights its food channel (user, 2026-11-11: a hunter seemed to attack food patches)                                                                                                       | The `rayHue` cue stays the only plant-or-meat signal                                                                                               |
-| G3 on the screen branch               | G3 has no key, so no arm runs G1 without it; `sense-edible` reads as G1 and G3 against main's `defaults` (deviation, 2026-11-12)                                                                              | A `senseEdible` key with a flag-ledger row and a deletion task, then a `bite` arm with it off                                                      |
-| A strike at nothing                   | Costs `strikeMissCost` energy                                                                                                                                                                                 | -                                                                                                                                                  |
-| Learning to bite from scratch         | 400000-tick arms read after tick 200000, floor episodes listed; an arm over twice the defaults' is not ranked                                                                                                 | When every `bite-*` arm is unranked, a run with each initial genome's `BITE` bias set positive separates the transition cost from the steady state |
+| Decision                              | Choice                                                                                                                                                                                                                                    | If it fails                                                                                                                                        |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The missed Done bars (E162)           | The switch lands with `eval.deliberate_food_share` and `eval.food_energy_per_1k` worse: the first is a detector that cannot see grazing in place, the second the satiety effect the plan wanted; the keep rule reads no harm on 128 seeds | Phase 4's re-read still reads `worse`: the eat choice makes foraging less deliberate, and the plan reopens G1b                                     |
+| The fat arms                          | `fatSlowShare` exists only after G2 on this branch, so the fat arms run with G1 and G3 (`bite-fat-*`) and read against `bite`; the only main-code comparison is `defaults` at 400000 ticks (user, 2026-11-12)                             | A key-less fat switch on main, which is not worth a commit                                                                                         |
+| Non-hunters pay for a bite at nothing | G4b `grazeMissCost`, the forager twin of G4 (user, 2026-11-12)                                                                                                                                                                            | Drop the key when `bite-grazemiss-1` reads no guard worse and no change in the bite share                                                          |
+| The eat act                           | The existing `BITE` output, for non-hunters (user, 2026-11-11)                                                                                                                                                                            | A separate `EAT` output, which changes the brain layout and costs the champions                                                                    |
+| The price of holding the bite         | Grazing slows thrust (`grazeThrust`), as a grazing animal moves slowly                                                                                                                                                                    | An energy cost per tick of holding `BITE`                                                                                                          |
+| Fatness                               | The store fraction, so a hunter's 5x store slows it no more than a forager's full store                                                                                                                                                   | -                                                                                                                                                  |
+| Fat in the same plan                  | G2 beside G1 (user, 2026-11-11)                                                                                                                                                                                                           | -                                                                                                                                                  |
+| Hunters                               | Unchanged: a hunter already bites prey with `BITE` and eats carcasses on contact                                                                                                                                                          | -                                                                                                                                                  |
+| A hunter's food sense                 | Only food it can eat lights its food channel (user, 2026-11-11: a hunter seemed to attack food patches)                                                                                                                                   | The `rayHue` cue stays the only plant-or-meat signal                                                                                               |
+| G3 on the screen branch               | G3 has no key, so no arm runs G1 without it; `sense-edible` reads as G1 and G3 against main's `defaults` (deviation, 2026-11-12)                                                                                                          | A `senseEdible` key with a flag-ledger row and a deletion task, then a `bite` arm with it off                                                      |
+| A strike at nothing                   | Costs `strikeMissCost` energy                                                                                                                                                                                                             | -                                                                                                                                                  |
+| Learning to bite from scratch         | 400000-tick arms read after tick 200000, floor episodes listed; an arm over twice the defaults' is not ranked                                                                                                                             | When every `bite-*` arm is unranked, a run with each initial genome's `BITE` bias set positive separates the transition cost from the steady state |
 
 ## Delivery requirements
 
@@ -248,16 +272,23 @@ G4b `grazeMissCost` was falsified in E159 (floor episodes 44, population mean 22
 deleted in T12 rather than kept. Caveat for T16: the alive guard detects only 24 seeds at 64, so it must be read on the
 fresh seeds 65 to 128 at the head, not taken from E161 alone.
 
-### Phase 3 - The switch
+### Phase 3 - The switch (built)
 
-| #   | Task                                                                                                                                                                               | Nature       | Depends on |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T12 | (built: 2026-11-12) G1 to G4 as Phase 2 named them; an unused key and its code deleted; the config, feeding and physics tests                                                      | [judgement]  | T11a       |
-| T13 | (built: 2026-11-12, Node only; Chromium is not installed on the build machine, so `npm run browser:hash` is left to a machine that has it) Re-pin the goldens in Node and Chromium | [mechanical] | T12        |
-| T14 | Re-record `bench/baseline.json` on a quiet machine under the CPU lock                                                                                                              | [mechanical] | T13        |
-| T15 | (built: 2026-11-12) README.md and body-temperature.md describe the eat choice and fat                                                                                              | [mechanical] | T12        |
-| T16 | Run the paired check on seeds 65 to 128 at the head against `origin/main`; reports committed                                                                                       | [mechanical] | T14        |
-| T17 | Read the Done criteria; `E-EC-3`; a sim-notes entry; conformance review of Phase 3 in parallel with `scripts/check.sh`; status line moved                                          | [judgement]  | T15, T16   |
+| #   | Task                                                                                                                                                                                                 | Nature       | Depends on |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T12 | (built: 2026-11-12) G1 to G4 as Phase 2 named them; an unused key and its code deleted; the config, feeding and physics tests                                                                        | [judgement]  | T11a       |
+| T13 | (built: 2026-11-12, Node only; Chromium is not installed on the build machine, so `npm run browser:hash` is left to a machine that has it) Re-pin the goldens in Node and Chromium                   | [mechanical] | T12        |
+| T14 | (built: 2026-11-12, 1.875 ms) Re-record `bench/baseline.json` on a quiet machine under the CPU lock                                                                                                  | [mechanical] | T13        |
+| T15 | (built: 2026-11-12) README.md and body-temperature.md describe the eat choice and fat                                                                                                                | [mechanical] | T12        |
+| T16 | (built: 2026-11-12, E162) Run the paired check on seeds 65 to 128 at the head against `origin/main`; reports committed                                                                               | [mechanical] | T14        |
+| T17 | (built: 2026-11-12, E162; two bars missed, see the record) Read the Done criteria; `E-EC-3`; a sim-notes entry; conformance review of Phase 3 in parallel with `scripts/check.sh`; status line moved | [judgement]  | T15, T16   |
+
+### Phase 4 - The deliberate-meal detector sees grazing
+
+| #   | Task                                                                                                                                                 | Nature      | Depends on |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T18 | `isDeliberate` and its observer count a held bite on food reached deliberately, in the same contact, as deliberate; a test against a naive reference | [judgement] | T17        |
+| T19 | Re-read the E162 reports' meals with the new detector (re-run if the reports cannot be re-read), and the Done bar on `eval.deliberate_food_share`    | [judgement] | T18        |
 
 ## Verification
 
