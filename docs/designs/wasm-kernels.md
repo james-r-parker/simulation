@@ -1,6 +1,6 @@
 # WASM kernels
 
-**Status:** In progress - Phases 1, 2 and 4 are built and adopted (T1 to T12, T13 to T19): every world runs the brain phase, the ray march, the spatial hash build, the pheromone update and the physics loops in the Rust/WASM kernels from birth, and the JS kernels they replaced are deleted; Phase 5 (profile and squeeze) is built (T20 to T28): the baseline re-recorded, the profile ranked, three kernel squeezes kept (drill throughput +36%) and four tried and reverted; Phase 3 (batched drill evaluation) is proposed.
+**Status:** In progress - Phases 1, 2 and 4 are built and adopted (T1 to T12, T13 to T19): every world runs the brain phase, the ray march, the spatial hash build, the pheromone update and the physics loops in the Rust/WASM kernels from birth, and the JS kernels they replaced are deleted; Phase 5 (profile and squeeze) is built (T20 to T28): the baseline re-recorded, the profile ranked, three kernel squeezes kept (drill throughput +36%) and four tried and reverted; Phase 6 (the brain phase on the eat-choice world) is in progress (T29 to T32); Phase 3 (batched drill evaluation) is proposed.
 **Validated:** f5c7880 (2026-11-07)
 **Priority:** 21 - a speed lever that changes no behaviour (the behaviour-changing levers are ruled out), so it queues behind the world-balance work and ahead of nothing that depends on it
 **Depends on:** [headless-sim-core.md](headless-sim-core.md)
@@ -383,6 +383,37 @@ still the O(n) walk; exactness wins over the about 2 to 4% the scan costs.
   busy, disease) unchanged; new tests check the pheromone rows and scratch against a plain model of the two loops, and the
   vector tanh path over 20000 fuzz values, r near 0 for every k and subnormal inputs.
 
+### Phase 6 - Brain phase on the eat-choice world
+
+**Targets:** bench.phase_ms.brain@500, bench.phase_ms.brain@500w7680
+
+The CI perf job on the eat-choice season read `bench.phase_ms.brain@500` +12% and `@500w7680` +24 to 30% against the
+pre-season base while the total step fell, and no brain code changed (user, 2026-11-12: make the brain phase faster). The
+working cause is the world's shape: `hidden_step` skips zero pooled inputs and `output_step` zero skip inputs, so more
+nonzero inputs per agent cost more terms in every hidden and output sum.
+
+The plan, in order:
+
+1. Diagnose before optimising (T29): `bench:parts --area brain` on this tree and with `--compare v6.1.0` (the release
+   before the season), reading the nonzero inputs per agent it prints, to confirm or refute the cause.
+2. `tanh_in_place` (T30): the four-wide fast loop stops at the first group holding a value off the exp path (zero,
+   saturated beyond 20, or non-finite) and never returns to four-wide, so one saturated unit early in a row demotes the
+   rest of the row to pairs and scalars. Handle that group in pairs and scalars and resume four-wide. Each element's tanh
+   is independent and the first non-finite still returns its index, so the results are bit-identical.
+3. Any further bit-identical win in `pool`, `hidden_step`, `output_step`, `hebbian_step` or `forward_all` (T31): work done
+   per slot that can be hoisted, redundant zeroing, the `f32` to `f64` widening pattern. The summation order is the
+   contract, so a change that reorders any sum is out.
+
+Each change is kept only when bit-identical (the wasm differential tests, the goldens and `check-wasm`) and outside the
+printed margin of `bench:micro --area wasm --compare HEAD` or `bench:parts --area brain --compare HEAD`; a change inside
+the margin is reverted and recorded here. The phase ends with the baseline re-recorded if the brain moved, and the gate.
+
+Chunks:
+
+| Chunk                    | Tasks      | Boundary                                                                                         |
+| ------------------------ | ---------- | ------------------------------------------------------------------------------------------------ |
+| A - Brain squeeze (Code) | T29 to T32 | Diagnosis numbers, each squeeze kept or reverted on its measurement, goldens identical, the gate |
+
 ## Decisions
 
 | Decision                                                                                        | Why                                                                                                                                                                                                                                         | Who                     |
@@ -485,6 +516,15 @@ still the O(n) walk; exactness wins over the about 2 to 4% the scan costs.
 | T26 | `wasm-opt -O4` and codegen flags (tried, reverted: mixed, no step share moves)                         | [judgement]  | T21                               |
 | T27 | `territoryAllows` hunter list (dropped: a kept list goes stale under direct writes)                    | [judgement]  | T20                               |
 | T28 | Final `bench-compare` against `origin/main`, drill compare, `browser:hash`, doc as built (built)       | [judgement]  | T21, T22, T23, T24, T25, T26, T27 |
+
+### Phase 6 - Brain phase on the eat-choice world
+
+| #   | Task                                                                                                  | Nature      | Depends on |
+| --- | ----------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T29 | Diagnose: `bench:parts --area brain` against `v6.1.0`, nonzero inputs per agent and brain ms          | [judgement] | T28        |
+| T30 | `tanh_in_place`: handle a slow group in pairs and scalars and resume four-wide                        | [judgement] | T29        |
+| T31 | Further bit-identical squeezes in `pool`, `hidden_step`, `output_step`, `hebbian_step`, `forward_all` | [judgement] | T29        |
+| T32 | Re-record `bench/baseline.json` if the brain moved; record the phase as built; `scripts/check.sh`     | [judgement] | T30, T31   |
 
 ## Verification
 
