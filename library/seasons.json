@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "season": 7,
+    "rulesHash": "bc2fd948bd4ecf66",
+    "layout": { "name": "pooled-v5", "inputCount": 92, "brainHidden": 32, "outputCount": 11 },
+    "opened": "2026-11-12",
+    "major": 7
+  }
+]
