@@ -53,8 +53,8 @@ function act(over, a) {
 
 describe('actAll: grazeThrust (eat-choice G1b)', () => {
     it('leaves thrust unchanged at grazeThrust 1, biting or not', () => {
-        const free = act({}, { spec: FORAGER, bite: 0 });
-        expect(act({ grazeThrust: 1 }, { spec: FORAGER, bite: 1 })).toEqual(free);
+        const free = act({ fatSlowShare: 0 }, { spec: FORAGER, bite: 0 });
+        expect(act({ grazeThrust: 1, fatSlowShare: 0 }, { spec: FORAGER, bite: 1 })).toEqual(free);
     });
 
     it("scales a biting forager's thrust by grazeThrust, and not its turn", () => {
@@ -72,7 +72,7 @@ describe('actAll: grazeThrust (eat-choice G1b)', () => {
     it('refuses a grazeThrust outside 0 to 1', () => {
         expect(() => createConfig({ grazeThrust: 1.1 })).toThrow('grazeThrust');
         expect(() => createConfig({ grazeThrust: -0.1 })).toThrow('grazeThrust');
-        expect(createConfig().grazeThrust).toBe(1);
+        expect(createConfig().grazeThrust).toBe(0.5);
     });
 });
 
@@ -87,14 +87,14 @@ describe('actAll: fatSlowShare (eat-choice G2)', () => {
 
     it('leaves thrust and turn unchanged at fatSlowShare 0, at any store', () => {
         for (const spec of [FORAGER, PREDATOR]) {
-            const empty = act({}, { spec, bite: 0, energy: 1 });
+            const empty = act({ fatSlowShare: 0 }, { spec, bite: 0, energy: 1 });
             expect(act({ fatSlowShare: 0 }, { spec, bite: 0, energy: full(spec) })).toEqual(empty);
         }
     });
 
     it('slows thrust and turn by 1 - fatSlowShare at a full store, for a forager and a hunter alike', () => {
         for (const spec of [FORAGER, PREDATOR]) {
-            const free = act({}, { spec, bite: 0, energy: full(spec) });
+            const free = act({ fatSlowShare: 0 }, { spec, bite: 0, energy: full(spec) });
             const fat = act({ fatSlowShare: 0.4 }, { spec, bite: 0, energy: full(spec) });
             expect(fat.thrust).toBeCloseTo(free.thrust * 0.6, 6);
             expect(fat.turn).toBeCloseTo(free.turn * 0.6, 6);
@@ -103,7 +103,7 @@ describe('actAll: fatSlowShare (eat-choice G2)', () => {
 
     it('slows in proportion to the store share', () => {
         const spec = FORAGER;
-        const free = act({}, { spec, bite: 0, energy: full(spec) / 4 });
+        const free = act({ fatSlowShare: 0 }, { spec, bite: 0, energy: full(spec) / 4 });
         const fat = act({ fatSlowShare: 0.4 }, { spec, bite: 0, energy: full(spec) / 4 });
         expect(fat.thrust).toBeCloseTo(free.thrust * 0.9, 6);
     });
@@ -111,6 +111,6 @@ describe('actAll: fatSlowShare (eat-choice G2)', () => {
     it('refuses a fatSlowShare below 0 or at 1', () => {
         expect(() => createConfig({ fatSlowShare: 1 })).toThrow('fatSlowShare');
         expect(() => createConfig({ fatSlowShare: -0.1 })).toThrow('fatSlowShare');
-        expect(createConfig().fatSlowShare).toBe(0);
+        expect(createConfig().fatSlowShare).toBe(0.5);
     });
 });

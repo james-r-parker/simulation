@@ -2,6 +2,7 @@
 import { allocBody } from './helpers/body.js';
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
+import { createConfig } from '../../js/sim/config.js';
 import { FOOD_KIND } from '../../js/sim/carcass.js';
 import { feed } from '../../js/sim/feeding.js';
 import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy } from '../../js/sim/energy.js';
@@ -159,56 +160,6 @@ describe('feed: strikeMissCost (eat-choice G4)', () => {
 
     it('refuses a negative strikeMissCost', () => {
         expect(() => smallWorld({ strikeMissCost: -1 })).toThrow('strikeMissCost');
-        expect(smallWorld().config.strikeMissCost).toBe(0);
-    });
-});
-
-describe('feed: grazeMissCost (eat-choice G4b)', () => {
-    /**
-     * A forager at (100, 100) holding BITE as given, with food `dx` away when `dx` is set.
-     * @param {{ cost: number, bite?: number, dx?: number, spec?: number, full?: boolean }} c the case
-     * @returns {{ w: any, slot: number }} the world after one feed phase
-     */
-    function graze({ cost, bite = 1, dx, spec = FORAGER, full = false }) {
-        const w = smallWorld({ grazeMissCost: cost, satiationShare: 0.95 });
-        const slot = eater(w, { spec, bite, energy: full ? w.maxEnergyBySpec[spec] : 20 });
-        if (dx !== undefined) {
-            item(w, { dx });
-        }
-        run(w);
-        return { w, slot };
-    }
-
-    it('charges nothing at 0', () => {
-        expect(graze({ cost: 0 }).w.energy[0]).toBe(20);
-    });
-
-    it('charges a biting forager with no food in contact, as a bite cost', () => {
-        const { w, slot } = graze({ cost: 3 });
-        expect(w.energy[slot]).toBe(17);
-        expect(w.ledgerBiteCost[slot]).toBe(3);
-        expect(w.lastLoss[slot]).toBe(LOSS_CAUSE.COST);
-        expect(graze({ cost: 3, dx: 200 }).w.energy[0]).toBe(17);
-    });
-
-    it('charges nothing to a biting forager with edible food in contact', () => {
-        const { w, slot } = graze({ cost: 3, dx: 0 });
-        expect(w.energy[slot]).toBeGreaterThan(20);
-    });
-
-    it('charges nothing when edible food is in contact but the forager is too full to eat it', () => {
-        const { w, slot } = graze({ cost: 3, dx: 0, full: true });
-        expect(w.energy[slot]).toBe(w.maxEnergyBySpec[FORAGER]);
-        expect(Array.from(w.foodAlive).includes(1)).toBe(true);
-    });
-
-    it('charges nothing to a forager that does not bite, or to a hunter', () => {
-        expect(graze({ cost: 3, bite: 0 }).w.energy[0]).toBe(20);
-        expect(graze({ cost: 3, spec: PREDATOR }).w.energy[0]).toBe(20);
-    });
-
-    it('refuses a negative grazeMissCost', () => {
-        expect(() => smallWorld({ grazeMissCost: -1 })).toThrow('grazeMissCost');
-        expect(smallWorld().config.grazeMissCost).toBe(0);
+        expect(createConfig().strikeMissCost).toBe(1);
     });
 });

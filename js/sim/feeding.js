@@ -39,20 +39,13 @@ function tryEat(world, slot, food) {
     if (world.foodAlive[food] !== 1 || shareOf(world, slot, food) === 0) {
         return;
     }
-    const eats = canEatNow(world, slot);
-    const grazes = world.config.grazeMissCost > 0;
-    if (!eats && !grazes) {
+    if (!canEatNow(world, slot)) {
         return;
     }
     const dx = world.foodX[food] - world.x[slot];
     const dy = world.foodY[food] - world.y[slot];
     if (Math.sqrt(dx * dx + dy * dy) < world.size[slot] + world.foodRadius[food]) {
-        if (grazes && world.huntBySpec[world.spec[slot]] === 0) {
-            world.jawsStamp[slot] = world.tick + 1; // eat-choice G4b: edible food in contact, so no bite at nothing
-        }
-        if (eats) {
-            consumeFood(world, slot, food);
-        }
+        consumeFood(world, slot, food);
     }
 }
 
@@ -303,9 +296,8 @@ function noteJaws(world, hunter, body) {
 }
 
 /**
- * eat-choice G4 and G4b: an agent holding `BITE` above 0 with nothing in reach loses a cost this tick, booked as a bite
- * cost: a hunter with no body in its jaws (`noteJaws`) pays `strikeMissCost`; a non-hunter with no edible food in
- * contact (stamped by `tryEat`) pays `grazeMissCost`. Both stamps share `jawsStamp`; a slot is one or the other.
+ * eat-choice G4: a hunter holding `BITE` above 0 with no body in its jaws (`noteJaws`) loses `strikeMissCost` this tick,
+ * booked as a bite cost.
  * @param {Record<string, any>} world the world
  * @returns {void}
  */
@@ -313,19 +305,20 @@ function chargeStrikeMisses(world) {
     const { alive, outputs, jawsStamp, config } = world;
     const stamp = world.tick + 1;
     for (let slot = 0; slot < alive.length; slot++) {
-        if (alive[slot] !== 1 || outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] <= 0 || jawsStamp[slot] === stamp) {
-            continue;
-        }
-        const cost = world.huntBySpec[world.spec[slot]] === 1 ? config.strikeMissCost : config.grazeMissCost;
-        if (cost > 0) {
-            world.ledgerBiteCost[slot] += removeEnergy(world, slot, cost, LOSS_CAUSE.COST);
+        if (
+            alive[slot] === 1 &&
+            world.huntBySpec[world.spec[slot]] === 1 &&
+            outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 &&
+            jawsStamp[slot] !== stamp
+        ) {
+            world.ledgerBiteCost[slot] += removeEnergy(world, slot, config.strikeMissCost, LOSS_CAUSE.COST);
         }
     }
 }
 
 /**
  * Runs the feed phase: every alive agent eats, then bites resolve over the contact list in order, then a hunter that
- * struck at nothing pays `strikeMissCost`, and a forager that bit at nothing pays `grazeMissCost` (each skipped at 0).
+ * struck at nothing pays `strikeMissCost` (skipped at 0).
  * @param {Record<string, any>} world the world
  * @param {import('./spatial-hash.js').SpatialHash} hash the hash built this tick
  * @returns {void}
@@ -349,7 +342,7 @@ export function feed(world, hash) {
         lunge(world, a, b);
         lunge(world, b, a);
     }
-    if (strikes || world.config.grazeMissCost > 0) {
+    if (strikes) {
         chargeStrikeMisses(world);
     }
 }
