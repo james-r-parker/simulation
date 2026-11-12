@@ -287,7 +287,6 @@ bite that lands costs the biter a kick (`biteCost`, scaled by the victim's size,
 
 | Policy            | What it does                                                                                                                              | Status                                         |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `baseline-v5`     | The v5 fitness on the new core, for comparison                                                                                        | Instrument                                     |
 | `map-elites-v6`   | The MAP-Elites archive scored by `fitnessV6` and placed by `descriptorV7` (role skill by style); children by crossover and mutation, seeded from the archive | **Live** (`LIVE_POLICY`): the app and nightly evals |
 
 **Natural selection inside the world.** Blobs that eat, avoid being eaten and reach maturity pass genes on by mating and splitting, whatever the policy.
