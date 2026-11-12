@@ -1,5 +1,33 @@
 # Changelog
 
+## [7.1.0](https://github.com/james-r-parker/simulation/compare/v7.0.0...v7.1.0) (2026-11-12)
+
+
+### Features
+
+* **bench:** report bench.observe_ms for the full and the lean observer (lean-observer T3) ([c731bbf](https://github.com/james-r-parker/simulation/commit/c731bbf2cc338656c69b0b29fd0be13666d20a03))
+* **evo:** lean observer mode that skips the eval layer (lean-observer T1) ([8676117](https://github.com/james-r-parker/simulation/commit/867611782835d56231fc37ca62037f000e601ec0))
+* **evo:** the eat scene samples every 100 ticks through a food cell index (eat-choice T20) ([75ddd8f](https://github.com/james-r-parker/simulation/commit/75ddd8ff3d89177b5a4c5fc89daf7b5edb5dc6e5))
+* **evo:** the eat-choice detectors the switch lacked (eat-choice Phase 5, chunk H) ([cfc30d5](https://github.com/james-r-parker/simulation/commit/cfc30d5063ea474984e29d76a7151c0fa940c181))
+* **evo:** the graze time share and speed ratio (eat-choice T21) ([daddc8e](https://github.com/james-r-parker/simulation/commit/daddc8e186eb889851f89765b7e3809726b48df5))
+* **evo:** the hunter plant linger share (eat-choice T22) ([b4b8917](https://github.com/james-r-parker/simulation/commit/b4b8917ea0deb7c439cb5c3f22adcfca3db4fdfe))
+* **evo:** the strike miss energy share (eat-choice T23) ([64f079f](https://github.com/james-r-parker/simulation/commit/64f079fbc28b94543afb3e8589faf2b7111e37d1))
+* **sim:** a held bite on deliberately reached food stays deliberate (eat-choice T18) ([6107599](https://github.com/james-r-parker/simulation/commit/6107599968d59366244b127716322cd0e3d08604))
+* **sim:** the graze hold - grazing after a deliberate approach stays deliberate (eat-choice Phase 4) ([3f8bf12](https://github.com/james-r-parker/simulation/commit/3f8bf122f49a96a78b4d1df9d88c954feeaeab59))
+* **worker:** buildRun feeds the policy a lean observer (lean-observer T4) ([cdabe65](https://github.com/james-r-parker/simulation/commit/cdabe655c4862182682d58f5ee1f3ba23738990d))
+* **worker:** the lean observer - the app skips the eval-only detectors (lean-observer Phase 1) ([d0b3f2f](https://github.com/james-r-parker/simulation/commit/d0b3f2f521c2830498fbc10d30cc2b561a93d33b))
+
+
+### Bug Fixes
+
+* **evo:** point the plain brain's rng type imports at js/sim ([787c2f7](https://github.com/james-r-parker/simulation/commit/787c2f73dc19a80395a10ab5f70b0cc9135e8b74))
+
+
+### Performance Improvements
+
+* **wasm:** tanh_in_place resumes four-wide after a slow group (wasm-kernels Phase 6) ([dbb7737](https://github.com/james-r-parker/simulation/commit/dbb7737a4399057080b3c6206ad401625fb338c5))
+* **wasm:** tanh_in_place resumes four-wide after a slow group (wasm-kernels T30) ([3b1fbe0](https://github.com/james-r-parker/simulation/commit/3b1fbe0cacac8c55e5a6864572154e2319531ba3))
+
 ## [7.0.0](https://github.com/james-r-parker/simulation/compare/v6.1.0...v7.0.0) (2026-11-12)
 
 
