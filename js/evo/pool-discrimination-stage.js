@@ -17,7 +17,8 @@ export const STAGE_MAX_FOOD = 48;
 
 /**
  * The knobs that keep a staged world to the scene: no regrowth, no hazards, no reproduction pressure, one wall gap and
- * no refuges; its rocks are rewritten by `stageWorld`.
+ * no refuges, and no eat-choice costs (grazing, fat, strike), so a scene scores the rule it is about; its rocks are
+ * rewritten by `stageWorld`.
  */
 const STAGE_CONFIG = Object.freeze({
     // The scenes place at most a handful of foods; the rest is headroom for carcasses. The default 3600 slots would be
@@ -42,6 +43,9 @@ const STAGE_CONFIG = Object.freeze({
     digestTicks: 0,
     handlingTicks: 0,
     satiationShare: 0,
+    grazeThrust: 1,
+    fatSlowShare: 0,
+    strikeMissCost: 0,
     hebbianRate: 0,
     specMutationRate: 0,
     checkInvariants: false,

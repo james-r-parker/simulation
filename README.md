@@ -217,6 +217,11 @@ so every feature listed below as "on" is on in the app.
 - **Carcasses.** A dead blob leaves a meat item worth `carcassShare` (0.8 by default) of the energy it held at death (`carcassShare`; `js/sim/carcass.js`), lasting 300 ticks.
   Predators digest meat fully; other types get 30% of it (`meatFoodValue`). Predators get 0 from plants (`plantFoodValue`).
 - Eating has limits: a blob at 95% of `maxEnergy` cannot eat (`satiationShare`), waits `digestTicks` (10) between meals and moves at 20% thrust for `handlingTicks` (20) after one.
+- **Eating is a choice.** A forager eats a plant it touches only while its `BITE` output is above 0, and holding the bite slows it
+  to `grazeThrust` (0.5) of its thrust, as a grazing animal moves slowly; it keeps its feet free by not biting. A fuller store
+  slows an agent too: thrust and turn are scaled by `1 - fatSlowShare` (0.5) x the store fraction, so a full blob moves at half speed.
+  A hunter's food ray shows only food it can eat (meat), and a hunter that holds `BITE` with nothing in its jaws pays
+  `strikeMissCost` (1) energy that tick. The eat-choice design is `docs/designs/eat-choice.md`.
 
 Plants have species and fruiting seasons: background grass, berries, nuts, flowers, toxic caps and mark-based fungi. A plant item keeps its source traits; the brain receives the two seen food hues. Toxic meals add a dose that slows thrust, blocks eating and drains energy until recovery. Direct poison death is unreachable from the starting cap dose under the current no-eating-while-sick rule; that balancing question remains open.
 
@@ -231,7 +236,7 @@ Eating a pollinated flower or berry can load pollen. A later meal from another l
 ### Body, energy and temperature
 
 - Energy: start 800, max 2,000 (`maxEnergy`: a small store, so a mother has little to lose to a winter before she is dead). Costs per tick are a passive loss, movement, turning, size and vision. A blob's radius is `baseSize` (25, x the size trait) plus energy / 250, never below `minSize`.
-- **Temperature** (`js/sim/temperature.js`): each blob has a body temperature from 0 to 100, starting at 50. Moving and eating warm it; passive loss cools it (faster in winter and in the cold margin).
+- **Temperature** (`js/sim/temperature.js`): each blob has a body temperature from 0 to 100, starting at 50. Moving and eating (a forager eats only while it bites) warm it; passive loss cools it (faster in winter and in the cold margin).
   The optimal band is 40 to 65. Outside it passive energy loss rises (up to 2x), thrust efficiency drops (down to 0.3 cold, 0.6 hot), and past the stress thresholds a blob cannot mate.
 
 ### Specialisations

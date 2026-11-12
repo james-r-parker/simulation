@@ -14,6 +14,7 @@ import {
     setOutput,
     turnTowards,
     write,
+    writeForage,
 } from './scripted-parts.js';
 
 /** What `MEMORY_A` holds: the kind of target last seen, signed so a flight and a search differ. */
@@ -62,7 +63,7 @@ function chase(world, slot, prey) {
  * @returns {number} what to store: `REMEMBER_FOOD`
  */
 function seek(world, slot, food) {
-    write(world, slot, SEEK_THRUST, food >= 0 ? turnTowards(food, world.config.rayCount) : 0);
+    writeForage(world, slot, SEEK_THRUST, food >= 0 ? turnTowards(food, world.config.rayCount) : 0);
     return REMEMBER_FOOD;
 }
 

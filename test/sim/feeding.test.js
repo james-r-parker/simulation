@@ -33,7 +33,9 @@ function agent(w, a) {
     w.spec[slot] = a.spec ?? FORAGER;
     w.genomeId[slot] = a.genomeId ?? slot + 1;
     addEnergy(w, slot, a.energy, ENERGY_SOURCE.INITIAL);
-    w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = a.bite ? 1 : 0;
+    // A non-hunter eats only while it holds BITE (eat-choice G1), so it bites unless the test says otherwise.
+    const bite = a.bite ?? w.huntBySpec[w.spec[slot]] !== 1;
+    w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = bite ? 1 : 0;
     w.ateTimer[slot] = 30;
     w.bittenTimer[slot] = 30;
     return slot;

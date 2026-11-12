@@ -2,7 +2,7 @@
 // ray, the other reads only the pooled row (the two strongest hits per channel). Both aim with the same `steer`.
 
 import { HIT_STRIDE, OUTPUT_INDEX, RAY_CHANNELS, inputOffsets } from '../sim/brain-layout.js';
-import { setOutput, write } from './scripted-parts.js';
+import { setOutput, write, writeForage } from './scripted-parts.js';
 
 const CH_FOOD = 1;
 const CH_THREAT = 2;
@@ -112,11 +112,11 @@ function pooledHit(world, slot, name, which = 0) {
 export function seekFood(world, slot, pooled) {
     if (pooled) {
         const food = pooledHit(world, slot, 'food');
-        write(world, slot, SEEK_THRUST, food.s > 0 ? steer(food.cos, food.sin) : 0);
+        writeForage(world, slot, SEEK_THRUST, food.s > 0 ? steer(food.cos, food.sin) : 0);
         return;
     }
     const k = strongestRay(world, slot, CH_FOOD);
-    write(world, slot, SEEK_THRUST, k < 0 ? 0 : steer(world.rayCos[k], world.raySin[k]));
+    writeForage(world, slot, SEEK_THRUST, k < 0 ? 0 : steer(world.rayCos[k], world.raySin[k]));
 }
 
 /**
@@ -148,7 +148,7 @@ export function flee(world, slot, pooled) {
 }
 
 /**
- * Drives down a passage between two rows of rocks, away from the rocks. The raw controller balances the proximity of
+ * Drives down a passage between two rows of rocks, away from the rocks. It bites as it goes, since the scene is won by eating the food at the end. The raw controller balances the proximity of
  * every rock ray on each side; the pooled one does the same over its two strongest rock hits.
  * @param {Record<string, any>} world the world
  * @param {number} slot the agent
@@ -166,7 +166,7 @@ export function followCorridor(world, slot, pooled) {
         const v = rayVector(world, slot, CH_OBSTACLE);
         lateral = v.y / Math.max(1, v.n);
     }
-    write(world, slot, CORRIDOR_THRUST, clamp1(-CORRIDOR_GAIN * lateral));
+    writeForage(world, slot, CORRIDOR_THRUST, clamp1(-CORRIDOR_GAIN * lateral));
 }
 
 /**
@@ -225,5 +225,5 @@ export function seekFoodHue(world, slot, pooled) {
     } else {
         rawHueVector(world, slot);
     }
-    write(world, slot, sum.n > 0 ? SEEK_THRUST : 0, sum.n > 0 ? steer(sum.x, sum.y) : 1);
+    writeForage(world, slot, sum.n > 0 ? SEEK_THRUST : 0, sum.n > 0 ? steer(sum.x, sum.y) : 1);
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import {
     agePollen,
     carryPollen,
@@ -199,6 +200,7 @@ describe('pollen carriage and seeding', () => {
 
     it('runs from accepted plant meals before clearing the source record, but not from meat', () => {
         const w = floraGarden();
+        w.outputs[0 * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = 1; // a forager eats only while it bites (eat-choice G1)
         const food = patchMeal(w, 0);
         buildHash(w.hash, w);
         feed(w, w.hash);

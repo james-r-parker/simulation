@@ -5,6 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
+import { removeFood } from '../../js/sim/world.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import { sourceRun, starve, zeroPolicy } from './helpers/source-world.js';
 
@@ -127,6 +128,13 @@ function runEscapes(table) {
         }
         const bite = k === 7 ? RUN_TICKS - ESCAPE_TICKS - 1 : b + 60;
         run.jump(bite);
+        // The last window's bodies left carcasses. They used to be eaten in passing by every agent; now only a hunter
+        // eats one without biting, so clear them and leave the bite as the only event of the window.
+        for (let food = 0; food < world.foodAlive.length; food++) {
+            if (world.foodAlive[food] === 1) {
+                removeFood(world, food);
+            }
+        }
         for (const { hunter, prey, sprints } of pairs) {
             world.x[hunter] = world.x[prey] - 30;
             world.angle[hunter] = 0;

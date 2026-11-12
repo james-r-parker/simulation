@@ -132,7 +132,7 @@ describe('intent controllers', () => {
         hit(world, 1, 2, CH.threat);
         run(world);
         for (const slot of [0, 1, 2]) {
-            expect(out(world, slot)).toEqual(fullRow({ [O.THRUST]: Math.fround(SEEK_THRUST) }));
+            expect(out(world, slot)).toEqual(fullRow({ [O.THRUST]: Math.fround(SEEK_THRUST), [O.BITE]: 1 }));
         }
     });
 

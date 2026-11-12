@@ -18,6 +18,7 @@ import {
     createWander,
     eachAlive,
     seekFood,
+    writeForage,
     turnTowards,
     write,
 } from './scripted-parts.js';
@@ -62,13 +63,14 @@ function constantThrust(thrust) {
     return () =>
         eachAlive((world, slot) => {
             const k = nearestClassRay(world, slot, CH_FOOD, CH_FOOD);
-            write(world, slot, thrust, turnTowards(k, world.config.rayCount));
+            const turn = turnTowards(k, world.config.rayCount);
+            (k >= 0 ? writeForage : write)(world, slot, thrust, turn);
         });
 }
 
 /** @type {ControllerFactory} */
 function spinner() {
-    return eachAlive((world, slot) => write(world, slot, 0.5, 1));
+    return eachAlive((world, slot) => writeForage(world, slot, 0.5, 1));
 }
 
 /** @type {ControllerFactory} */

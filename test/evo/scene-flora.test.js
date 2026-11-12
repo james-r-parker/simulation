@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createFloraScene, floraMetrics, trackFlora } from '../../js/evo/scene-flora.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
+import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { smallWorld } from '../sim/helpers/small-world.js';
 import { feed } from '../../js/sim/feeding.js';
 import { buildHash } from '../../js/sim/spatial-hash.js';
@@ -72,6 +73,7 @@ describe('flora diet detectors', () => {
         const w = smallWorld();
         const scene = createFloraScene();
         const slot = allocBody(w);
+        w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = 1; // a forager eats only while it bites (eat-choice G1)
         w.x[slot] = w.y[slot] = 500;
         w.energy[slot] = 100;
         w.foodAlive[0] = 1;
@@ -167,6 +169,7 @@ describe('flora diet detectors', () => {
     it('counts a zero-net toxic plant meal before clearing it and excludes meat', () => {
         const w = smallWorld({ toxinCost: 2 });
         const slot = allocBody(w);
+        w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = 1; // a forager eats only while it bites (eat-choice G1)
         w.x[slot] = w.y[slot] = 500;
         w.energy[slot] = 100;
         w.foodAlive[0] = 1;
