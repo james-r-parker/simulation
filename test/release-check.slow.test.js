@@ -20,7 +20,7 @@ function prBase() {
 
 describe('scripts/release-check.mjs', () => {
     it(
-        'passes when HEAD is its own merge base: the rules hash did not change',
+        'passes against the base a pull request from this checkout targets (main, or season/next on a rules branch)',
         () => {
             const done = spawnSync('node', ['scripts/release-check.mjs'], {
                 encoding: 'utf8',
