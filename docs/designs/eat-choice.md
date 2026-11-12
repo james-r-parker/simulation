@@ -1,6 +1,6 @@
 # Eat choice
 
-**Status:** In progress - Phases 1 to 3 are built: the eat choice is the default on `season/next` (E159 to E162; keep rule no harm on seeds 1 to 64 and 65 to 128); two Done bars missed, see the Phase 3 record, and the Chromium golden hashes are open. Phase 4 (the deliberate-meal detector sees in-place grazing) is next. Eating becomes a choice with a cost: a forager eats only while it holds the bite, grazing slows it, a full store slows it, and a hunter senses only food it can eat and pays for a strike at nothing.
+**Status:** In progress - Phases 1 to 3 are built: the eat choice is the default on `season/next` (E159 to E162; keep rule no harm on seeds 1 to 64 and 65 to 128); two Done bars missed, see the Phase 3 record, and the Chromium golden hashes are open. Phase 4 is built: the graze hold sees in-place grazing (E163), the Done bar on `eval.deliberate_food_share` is still missed (0.43 to 0.35), and G1b is reopened (T26). Eating becomes a choice with a cost: a forager eats only while it holds the bite, grazing slows it, a full store slows it, and a hunter senses only food it can eat and pays for a strike at nothing.
 **Validated:** e2455f2f (2026-11-11)
 **Priority:** 1 - after low-density-edge.md T13 (its 16-seed heat pass): 58% of the food energy on the defaults is eaten with no closing approach, and passive eating changes the heat and edge pictures, so it comes before low-density-edge.md's 64-seed pass and switch
 **Depends on:** [metric-trust.md](metric-trust.md), [low-density-edge.md](low-density-edge.md) (T12, the purpose guard `scripts/heat-guard.mjs`)
@@ -193,6 +193,14 @@ hash and goes to `season/next`. The bar is re-read on seeds 65 to 128 with the n
 | ----- | -------- | ----------------------------------- |
 | G     | T18, T19 | The detector change and the re-read |
 
+**Record (E163, 2026-11-12).** T18 adds the graze hold (`js/sim/graze-hold.js`): after a deliberate meal, meals stay
+deliberate while the eater holds `BITE` and eats again within `HOLD_WINDOW` ticks. Merit reads it, so the goldens moved.
+On seeds 65 to 128 the share reads 0.35 against main's 0.43 (worse) and the unheld switch's 0.31 (better): the hold closes
+about a quarter of the gap, and the rest is foragers eating without a closing approach. The hold is kept on its own
+merits: against the unheld switch the alive and under-80 guards read better (5 vs 18, 7 vs 23), the population mean
+rises 34%, and diversity and toxic avoidance recover part of E162's loss; `eval.lineages_alive` falls 10%. As the
+Decisions row says, G1b is reopened (T26).
+
 ## Experiments
 
 | Label    | Prediction, written before the run                                                                                                                              | Falsified when                                                                                     |
@@ -286,10 +294,11 @@ fresh seeds 65 to 128 at the head, not taken from E161 alone.
 
 ### Phase 4 - The deliberate-meal detector sees grazing
 
-| #   | Task                                                                                                                                                 | Nature      | Depends on |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
-| T18 | `isDeliberate` and its observer count a held bite on food reached deliberately, in the same contact, as deliberate; a test against a naive reference | [judgement] | T17        |
-| T19 | Re-read the E162 reports' meals with the new detector (re-run if the reports cannot be re-read), and the Done bar on `eval.deliberate_food_share`    | [judgement] | T18        |
+| #   | Task                                                                                                                                                                                                  | Nature      | Depends on |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T18 | (built: 2026-11-12, `js/sim/graze-hold.js`) `isDeliberate` and its observer count a held bite on food reached deliberately, in the same contact, as deliberate; a test against a naive reference      | [judgement] | T17        |
+| T19 | (built: 2026-11-12, E163; bar missed, G1b reopened) Re-read the E162 reports' meals with the new detector (re-run if the reports cannot be re-read), and the Done bar on `eval.deliberate_food_share` | [judgement] | T18        |
+| T26 | Reopen G1b with the hold on: screen `grazeThrust` at 0.5, 0.75 and 1 against the defaults on 64 seeds; adopt a value only on a keep-rule no-harm read that lifts `eval.deliberate_food_share`         | [judgement] | T19        |
 
 ## Verification
 

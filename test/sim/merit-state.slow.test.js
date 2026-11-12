@@ -63,6 +63,8 @@ function agreementHarness() {
             check(
                 atPhaseTick(world, () => mealDeliberate(world, slot)) === isDeliberate(intent.food, slot, world.tick),
             );
+            // The graze hold (js/sim/graze-hold.js), every tick; the observer stamps the tick `step` has left behind.
+            check(world.meritFoodHold[slot] + 1 === intent.foodHold[slot]);
             check(
                 atPhaseTick(world, () => biteDeliberate(world, slot)) === isDeliberate(intent.prey, slot, world.tick),
             );
@@ -72,7 +74,8 @@ function agreementHarness() {
             biteMark[slot] = world.biteEnergy[slot];
             stats.meals += meal > 0 ? 1 : 0;
             stats.bites += bite > 0 ? 1 : 0;
-            if (meal > 0 && atPhaseTick(world, () => mealDeliberate(world, slot))) {
+            // A meal is deliberate exactly when the merit phase renewed the hold at its tick.
+            if (meal > 0 && world.meritFoodHold[slot] === world.tick - 1) {
                 foodDeliberate[slot] += meal;
                 stats.deliberateMeals += 1;
             }

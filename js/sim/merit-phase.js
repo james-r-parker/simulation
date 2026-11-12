@@ -1,19 +1,13 @@
 // The `merit` step phase: runs after `lifecycle` has aged and fed the agents. Pass 1
-// advances every alive agent's deliberate-intake tracker; pass 2 credits what the tick brought (the meal and bite
+// advances every alive agent's deliberate-intake tracker and graze hold; pass 2 credits what the tick brought (the meal and bite
 // energy gained, a landed bite opening an escape episode, a resolved escape, a child reaching maturity) in slot order,
 // the same order and classification the observer's intent state uses; then a `MeritSummary` when one is due.
 // Matings are credited at once by `startMating`. No RNG, no allocation per tick.
 
 import { creditKills, noteBite } from './kills.js';
 import { creditEscape, creditIntake, creditMatured } from './merit.js';
-import {
-    biteDeliberate,
-    mealDeliberate,
-    noteMeritBite,
-    resolveEscape,
-    slotOfGenome,
-    trackMerit,
-} from './merit-state.js';
+import { biteDeliberate, noteMeritBite, resolveEscape, slotOfGenome, trackMerit } from './merit-state.js';
+import { heldMealDeliberate, trackHold } from './graze-hold.js';
 import { pushMeritSummary, summaryDue } from './merit-summary.js';
 import { specParams } from './spec-params.js';
 
@@ -32,7 +26,7 @@ function creditEnergy(world, slot) {
     const meal = world.foodEnergy[slot] - world.meritFoodMark[slot];
     world.meritFoodMark[slot] = world.foodEnergy[slot];
     if (meal > 0) {
-        creditIntake(world, slot, meal, mealDeliberate(world, slot));
+        creditIntake(world, slot, meal, heldMealDeliberate(world.meritFood, slot, world.tick));
     }
     const bite = world.biteEnergy[slot] - world.meritBiteMark[slot];
     world.meritBiteMark[slot] = world.biteEnergy[slot];
@@ -72,6 +66,7 @@ export function meritPhase(world) {
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1) {
             trackMerit(world, slot);
+            trackHold(world, slot, world.meritFoodHold);
         }
     }
     for (let slot = 0; slot < alive.length; slot++) {
