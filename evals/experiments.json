@@ -3960,6 +3960,65 @@
       "afterPolicy": "live",
       "effect": "no-difference",
       "verdicts": {}
+    },
+    {
+      "id": "E156",
+      "hypothesis": "low-density-edge Phase 3, E-LD-2: a heat lever (temperatureCoolingExcess, temperatureMatingMax or temperatureGainEat) lets prey mate at low density without removing heat as a pressure.",
+      "prediction": "A heat arm reads held better at 64 seeds with the alive guard not worse, and raises eval.edge_birth_death_ratio; heat-stressed mating blocks fall. Falsified when no arm reads held better, or the leading arm's alive guard reads worse, or its edge ratio does not rise.",
+      "targets": ["eval.edge_birth_death_ratio", "eval.heat_stress_share", "eval.births_per_1k"],
+      "before": "evals/decisions/E155/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d (the reference; the first pass re-runs defaults on seeds 1 to 16 inside the screen)",
+      "after": "first pass on seeds 1 to 16: evals/decisions/E156/first-pass-rank.md (held 7 eat-1, 6 defaults, 6 reach, 4 mate-95/flat/mate-90, 2 cool-10, 1 cool-5/cool-2); the 64-seed pass is T14",
+      "note": "Prediction recorded before any arm ran (T12). Every heat arm first passes the constant-thrust purpose guard (scripts/heat-guard.mjs, evals/decisions/E156/heat-guard.txt). `reports` names the reference and the guard output, and is extended with the screen and eval reports when they exist. First pass (T13): the cooling arms remove heat stress (0.002 to 0.022 against 0.419) and lift births per 1k by 59 to 70 percent but hold fewer seeds, since more births without a brake make bigger booms and deeper crashes (E155's no-restoring-force reading). eat-1 leads under the plan's rule (held 7, +4/-3 against defaults, alive 14, heat stress 0.274). No verdict yet; the 64-seed pass decides.",
+      "reports": [
+        "evals/decisions/E155/defaults-floor-on.json",
+        "evals/decisions/E156/heat-guard.txt",
+        "evals/decisions/E156/screen/cool-10.report.json",
+        "evals/decisions/E156/screen/cool-2.report.json",
+        "evals/decisions/E156/screen/cool-5.report.json",
+        "evals/decisions/E156/screen/defaults.report.json",
+        "evals/decisions/E156/screen/eat-1.report.json",
+        "evals/decisions/E156/screen/flat.report.json",
+        "evals/decisions/E156/screen/mate-90.report.json",
+        "evals/decisions/E156/screen/mate-95.report.json",
+        "evals/decisions/E156/reach-16.json",
+        "evals/decisions/E156/first-pass-rank.md",
+        "evals/decisions/E156/screen/table.md",
+        "evals/decisions/E156/screen/verdicts.json"
+      ],
+      "date": "2026-11-11",
+      "branch": "chore/low-density-edge-heat-screen",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference",
+      "verdicts": {}
+    },
+    {
+      "id": "E157",
+      "hypothesis": "low-density-edge Phase 3, E-LD-2b: a heat lever lifts births and the food brake holds the top, so the crash that follows more births is shallower.",
+      "prediction": "A heat arm with the food brake (foodRegrowPerArea 0.016 or 0.024 on eat-1 or cool-5) holds more seeds (held of 16) than the same heat arm alone and than defaults, with alive not worse. Falsified when no combined arm holds more seeds than its heat arm alone, or the leading combined arm holds no more than defaults, or its alive guard reads worse.",
+      "targets": ["eval.edge_birth_death_ratio", "eval.heat_stress_share", "eval.births_per_1k"],
+      "before": "evals/decisions/E156/first-pass-rank.md: the first pass of E156 (heat arms alone and defaults, 16 seeds)",
+      "after": "evals/decisions/E157/rank.md: the heat-by-food grid, 16 seeds x 200000 ticks (held 1 eat-1-food-24, 0 the other three, against defaults' 6)",
+      "note": "Verdict (T13a, 16-seed first pass, not a 64-seed read): FALSIFIED on held. Every combined arm holds 0 or 1 of 16 seeds against defaults' 6 (eat-1-food-24 +0/-5, the other three +0/-6), so the food brake does not hold more seeds than the heat arm alone (eat-1 held 7, cool-5 held 1). Caveat: held (never under 100 after burn-in) penalises a world that settles smaller, and the food brake shrinks it (population mean 234 defaults, 194 eat-1-food-24, 135 cool-5-food-16, 114 eat-1-food-16, 156 cool-5-food-24). Crash depth, per arm: median lowest population after burn-in 22 defaults, 42 eat-1-food-24, 28 cool-5-food-16, 9 eat-1-food-16, 10 cool-5-food-24; seeds under 40: 9, 8, 12, 13, 11; eval.floor_episodes 1.75, 1.13, 2.19, 2.31, 2.31. eat-1-food-24 is steadier but lower; the other three crash as deep or deeper than defaults. The 64-seed pass should read crash depth beside held. Prediction recorded before the run; see docs/designs/sim-notes.md (2026-11-11, heat levers and the food brake).",
+      "reports": [
+        "evals/decisions/E156/first-pass-rank.md",
+        "evals/decisions/E156/screen/table.md",
+        "evals/decisions/E156/screen/verdicts.json",
+        "evals/decisions/E157/rank.md",
+        "evals/decisions/E157/screen/table.md",
+        "evals/decisions/E157/screen/verdicts.json",
+        "evals/decisions/E157/screen/defaults.report.json",
+        "evals/decisions/E157/screen/eat-1-food-16.report.json",
+        "evals/decisions/E157/screen/eat-1-food-24.report.json",
+        "evals/decisions/E157/screen/cool-5-food-16.report.json",
+        "evals/decisions/E157/screen/cool-5-food-24.report.json"
+      ],
+      "date": "2026-11-11",
+      "branch": "chore/low-density-edge-heat-screen",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "worse",
+      "verdicts": {}
     }
   ]
 }

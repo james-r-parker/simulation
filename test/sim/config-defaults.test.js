@@ -44,9 +44,9 @@ describe('DEFAULTS', () => {
         expect(hunters.map(([name]) => name)).toEqual(['predator']);
     });
 
-    it('holds the seventeen temperature keys and the season modifiers', () => {
+    it('holds the nineteen temperature keys and the season modifiers', () => {
         const keys = Object.keys(DEFAULTS).filter((key) => key.startsWith('temperature'));
-        expect(keys).toHaveLength(17);
+        expect(keys).toHaveLength(19);
         expect(DEFAULTS.temperatureMax).toBe(100);
         expect(DEFAULTS.temperatureStart).toBe(50);
         expect([DEFAULTS.temperatureGainMove, DEFAULTS.temperatureGainEat, DEFAULTS.temperatureLossPassive]).toEqual([

@@ -237,6 +237,8 @@ export const DEFAULTS = deepFreeze({
     temperatureOptimalMax: 65, // TEMPERATURE_OPTIMAL_MAX
     temperatureHeatModerate: 70, // TEMPERATURE_HEAT_MODERATE_THRESHOLD
     temperatureHeatStress: 85, // TEMPERATURE_HEAT_STRESS_THRESHOLD
+    temperatureCoolingExcess: 0, // new (low-density-edge H1): extra cooling per degree over temperatureOptimalMax; 0 is off
+    temperatureMatingMax: 85, // new (low-density-edge H2): the heat side of blocksMating; 85 is temperatureHeatStress
     temperatureEfficiencyColdSevere: 0.3, // TEMPERATURE_EFFICIENCY_COLD_SEVERE
     temperatureEfficiencyColdModerate: 0.7, // TEMPERATURE_EFFICIENCY_COLD_MODERATE
     temperatureEfficiencyHeatModerate: 0.9, // TEMPERATURE_EFFICIENCY_HEAT_MODERATE (tuned, E17)

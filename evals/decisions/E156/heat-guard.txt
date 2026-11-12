@@ -1,0 +1,39 @@
+# seed 1, the seed the scripted-temperature test pins (10000 ticks)
+cool-2: PASS
+  seed 1: thrust0 0 (dies), thrust100 61 (dies), thrust20 144 of 100 (grows)
+cool-5: PASS
+  seed 1: thrust0 0 (dies), thrust100 49 (dies), thrust20 144 of 100 (grows)
+cool-10: PASS
+  seed 1: thrust0 0 (dies), thrust100 53 (dies), thrust20 160 of 100 (grows)
+mate-90: PASS
+  seed 1: thrust0 0 (dies), thrust100 39 (dies), thrust20 131 of 100 (grows)
+mate-95: PASS
+  seed 1: thrust0 0 (dies), thrust100 39 (dies), thrust20 131 of 100 (grows)
+eat-1: PASS
+  seed 1: thrust0 0 (dies), thrust100 43 (dies), thrust20 154 of 100 (grows)
+heat-guard: all arms pass
+exit 0
+
+# control: defaults
+defaults: PASS
+  seed 1: thrust0 0 (dies), thrust100 39 (dies), thrust20 131 of 100 (grows)
+
+# seeds 2 and 3, for information: seed 2 leaves one frozen agent alive at 10000 ticks on defaults too, so it is not an arm effect
+cool-2: FAIL
+  seed 2: thrust0 1 (LIVES), thrust100 42 (dies), thrust20 149 of 100 (grows)
+  seed 3: thrust0 0 (dies), thrust100 38 (dies), thrust20 147 of 100 (grows)
+cool-5: FAIL
+  seed 2: thrust0 1 (LIVES), thrust100 51 (dies), thrust20 145 of 100 (grows)
+  seed 3: thrust0 0 (dies), thrust100 40 (dies), thrust20 136 of 100 (grows)
+cool-10: FAIL
+  seed 2: thrust0 1 (LIVES), thrust100 48 (dies), thrust20 146 of 100 (grows)
+  seed 3: thrust0 0 (dies), thrust100 39 (dies), thrust20 144 of 100 (grows)
+mate-90: FAIL
+  seed 2: thrust0 1 (LIVES), thrust100 41 (dies), thrust20 163 of 100 (grows)
+  seed 3: thrust0 0 (dies), thrust100 48 (dies), thrust20 142 of 100 (grows)
+mate-95: FAIL
+  seed 2: thrust0 1 (LIVES), thrust100 41 (dies), thrust20 163 of 100 (grows)
+  seed 3: thrust0 0 (dies), thrust100 48 (dies), thrust20 142 of 100 (grows)
+eat-1: FAIL
+  seed 2: thrust0 1 (LIVES), thrust100 43 (dies), thrust20 154 of 100 (grows)
+  seed 3: thrust0 0 (dies), thrust100 33 (dies), thrust20 174 of 100 (grows)
