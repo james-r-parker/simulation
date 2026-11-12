@@ -37,6 +37,12 @@ export const TRACKED_VARIANTS = Object.freeze([
     { suffix: 'w7680', overrides: Object.freeze({ worldWidth: 7680, worldHeight: 4320 }) },
 ]);
 
+/**
+ * The extra `--policy` row at 500 agents: the same policy fed by a lean observer (lean-observer.md), so
+ * `bench.observe_ms@500lean` sits beside the full observer's `bench.observe_ms@500`.
+ */
+export const LEAN_VARIANT = Object.freeze({ suffix: 'lean', overrides: Object.freeze({}), lean: true });
+
 const TRACKED_SIZE = 500;
 
 const USAGE = 'usage: bench [--json] [--sizes=100,250,500] [--policy <name>]';
@@ -151,16 +157,25 @@ export function formatLines(metrics) {
  * (`map-elites-v1`) does its archive work inside the timed tick.
  * @param {Record<string, any>} config the world config
  * @param {string | undefined} name a registered policy name, or undefined for the reference policy
- * @returns {{brain: any, advance: (world: Record<string, any>) => void, observe: (world: Record<string, any>) => void,
- *   policy?: Record<string, any>}} the brain, one timed tick, the feed for the freshly created world, and the policy
+ * @param {boolean} [lean] feed the policy a lean observer, as the app's worker does
+ * @returns {{brain: any, advance: (world: Record<string, any>) => number, observe: (world: Record<string, any>) => void,
+ *   policy?: Record<string, any>}} the brain, one tick (it returns the ms `feedPolicy` took, 0 without a policy), the
+ *   feed for the freshly created world, and the policy
  */
-export function createSubject(config, name) {
+export function createSubject(config, name, lean = false) {
     if (name === undefined) {
         const brain = cloneWithNoisePolicy();
-        return { brain, advance: (world) => step(world, brain), observe: () => {} };
+        return {
+            brain,
+            advance: (world) => {
+                step(world, brain);
+                return 0;
+            },
+            observe: () => {},
+        };
     }
     const log = createSimLog(() => {}, { level: 'error' });
-    const observer = createObserver(config, fork(createRng(config.seed), 'eval'));
+    const observer = createObserver(config, fork(createRng(config.seed), 'eval'), { lean });
     const policy = getPolicy(name).create({ config, log, observer });
     const phases = observerPhases(observer);
     const run = { policy, observer };
@@ -169,34 +184,21 @@ export function createSubject(config, name) {
         policy,
         advance(world) {
             step(world, policy.brain, phases);
+            const start = performance.now();
             feedPolicy(run, world);
+            return performance.now() - start;
         },
         observe: (world) => feedPolicy(run, world),
     };
 }
 
 /**
- * @param {number} size population size, held fixed by min = max = initial
- * @param {string} [policyName] a registered policy to bench with its hooks; the reference policy when omitted
- * @param {{suffix?: string, overrides?: Record<string, any>}} [variant] a tracked variant: the key suffix and the
- *   overrides on today's defaults; the defaults alone when omitted
- * @returns {Record<string, number>} the metrics for that size
+ * Times each `STEP_PHASES` phase on its own over `MEASURED_TICKS` ticks, advancing the world as `step` does.
+ * @param {Record<string, any>} world a warmed-up world
+ * @param {any} brain the policy's brain
+ * @returns {Record<string, number>} the median ms per phase name
  */
-export function benchSize(size, policyName, variant) {
-    const base = variant?.overrides ?? {};
-    const config = createConfig({ ...base, initialAgents: size, minAgents: size, maxAgents: size });
-    const { brain, advance, observe } = createSubject(config, policyName);
-    const world = createWorld(config, brain);
-    observe(world);
-    for (let i = 0; i < WARMUP_TICKS; i++) {
-        advance(world);
-    }
-    const stepTimes = new Float64Array(MEASURED_TICKS);
-    for (let i = 0; i < MEASURED_TICKS; i++) {
-        const start = performance.now();
-        advance(world);
-        stepTimes[i] = performance.now() - start;
-    }
+function phaseMedians(world, brain) {
     const phaseTimes = STEP_PHASES.map(() => new Float64Array(MEASURED_TICKS));
     for (let i = 0; i < MEASURED_TICKS; i++) {
         clearEvents(world.events);
@@ -212,7 +214,39 @@ export function benchSize(size, policyName, variant) {
     STEP_PHASES.forEach(({ name }, p) => {
         phaseMs[name] = median(phaseTimes[p]);
     });
-    return formatMetrics(size, median(stepTimes), phaseMs, variant?.suffix);
+    return phaseMs;
+}
+
+/**
+ * @param {number} size population size, held fixed by min = max = initial
+ * @param {string} [policyName] a registered policy to bench with its hooks; the reference policy when omitted
+ * @param {{suffix?: string, overrides?: Record<string, any>, lean?: boolean}} [variant] a tracked variant: the key
+ *   suffix, the overrides on today's defaults and whether the observer is lean; the defaults alone when omitted. A
+ *   policy run adds `bench.observe_ms@<n>`, the median `feedPolicy` time per tick
+ * @returns {Record<string, number>} the metrics for that size
+ */
+export function benchSize(size, policyName, variant) {
+    const base = variant?.overrides ?? {};
+    const config = createConfig({ ...base, initialAgents: size, minAgents: size, maxAgents: size });
+    const { brain, advance, observe } = createSubject(config, policyName, variant?.lean === true);
+    const world = createWorld(config, brain);
+    observe(world);
+    for (let i = 0; i < WARMUP_TICKS; i++) {
+        advance(world);
+    }
+    const stepTimes = new Float64Array(MEASURED_TICKS);
+    const observeTimes = new Float64Array(MEASURED_TICKS);
+    for (let i = 0; i < MEASURED_TICKS; i++) {
+        const start = performance.now();
+        observeTimes[i] = advance(world);
+        stepTimes[i] = performance.now() - start;
+    }
+    const phaseMs = phaseMedians(world, brain);
+    const metrics = formatMetrics(size, median(stepTimes), phaseMs, variant?.suffix);
+    if (policyName !== undefined) {
+        metrics[`bench.observe_ms@${size}${variant?.suffix ?? ''}`] = round4(median(observeTimes));
+    }
+    return metrics;
 }
 
 /**
@@ -245,7 +279,7 @@ export async function main(argv, { trackedSize = TRACKED_SIZE } = {}) {
     for (const size of sizes) {
         Object.assign(all, benchSize(size, policy));
         if (size === trackedSize) {
-            for (const variant of TRACKED_VARIANTS) {
+            for (const variant of policy === undefined ? TRACKED_VARIANTS : [...TRACKED_VARIANTS, LEAN_VARIANT]) {
                 Object.assign(all, benchSize(size, policy, variant));
             }
         }
