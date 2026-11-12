@@ -1,6 +1,6 @@
 # Lean observer
 
-**Status:** In progress - Phase 1 built, conformance review pending
+**Status:** In progress - Phase 1 built; the perf:browser comparison is open (no GPU Chrome on the build machine)
 **Validated:** 3f8bf122 (2026-11-12)
 **Priority:** 2 - a worker-only change that moves no sim behaviour, so it does not wait on the balance work
 
@@ -23,14 +23,14 @@ panels read and skips the rest.
 `createObserver(config, rng, { lean: true })` builds an observer whose `lean` field is `true`. `observe` then runs the
 policy core and skips the eval layer.
 
-| Step of `observe`                                                                             | Policy core (runs when lean)                                                                                                                                                                                | Eval layer (skipped when lean)                                                                         |
-| --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Combat and intent                                                                             | `observeCombat`, `updateIntent`, `noteIntentEvents`                                                                                                                                                         | -                                                                                                      |
-| Chases (`noteChase` in [observer-watch-counters.js](../../js/evo/observer-watch-counters.js)) | `creditBite` and its `noteStyleBite` call, which build the style scene's bite chains                                                                                                                        | the watch counters and the competence and matched scenes' chase notes                                  |
-| Scenes (`observeScenes`)                                                                      | `tickStyle`, and in the birth and death notes (`noteEvents`, `resetSceneSlot`) only `noteStyleAtDeath`, `noteStyleDeath` and `resetStyleSlot`                                                               | every other scene's tick, sample, birth, death and slot reset                                          |
-| Events (`applyEvents`)                                                                        | `finishDeath` (the death log and its fitness), `noteFloor`, `resetIntentSlot`, and the lineage counters behind `descendantsAlive` (`noteBirthLineage`, `recordParents`, `readDescendants`, `releaseDeaths`) | the lineage, parentage, environment, merit, mate, split, body and brain pools fed on births and deaths |
-| Per tick                                                                                      | `noteMatured`, `countTick`                                                                                                                                                                                  | `snapshotMerit`, `sampleVisits`, `trackCircling`, `observeBrain`, `noteWindows`                        |
-| `observerPhases`                                                                              | the physics phase                                                                                                                                                                                           | `countCollisions`                                                                                      |
+| Step of `observe`                                                                             | Policy core (runs when lean)                                                                                                                                                                                | Eval layer (skipped when lean)                                                                                                        |
+| --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Combat and intent                                                                             | `observeCombat`, `updateIntent`, `noteIntentEvents`                                                                                                                                                         | -                                                                                                                                     |
+| Chases (`noteChase` in [observer-watch-counters.js](../../js/evo/observer-watch-counters.js)) | `creditBite` and its `noteStyleBite` call, which build the style scene's bite chains                                                                                                                        | the competence and matched scenes' chase notes, skipped because those scenes are not built when lean (`noteChase` has no lean branch) |
+| Scenes (`observeScenes`)                                                                      | `tickStyle`, and in the birth and death notes (`noteEvents`, `resetSceneSlot`) only `noteStyleAtDeath`, `noteStyleDeath` and `resetStyleSlot`                                                               | every other scene's tick, sample, birth, death and slot reset                                                                         |
+| Events (`applyEvents`)                                                                        | `finishDeath` (the death log and its fitness), `noteFloor`, `resetIntentSlot`, and the lineage counters behind `descendantsAlive` (`noteBirthLineage`, `recordParents`, `readDescendants`, `releaseDeaths`) | the lineage, parentage, environment, merit, mate, split, body and brain pools fed on births and deaths                                |
+| Per tick                                                                                      | `noteMatured`, `countTick`                                                                                                                                                                                  | `snapshotMerit`, `sampleVisits`, `trackCircling`, `observeBrain`, `noteWindows`                                                       |
+| `observerPhases`                                                                              | the physics phase                                                                                                                                                                                           | `countCollisions`                                                                                                                     |
 
 `checkpoint` is never called by `observe`, and a lean observer refuses it. `createScenes` takes the same flag and
 builds only the style and terrain scenes when lean; the terrain scene keeps the ring geometry `inRefuge` reads, and
@@ -54,12 +54,9 @@ keep the full observer.
   lean observer; done when the lean one is at most 0.7 of the full one at 500 agents.
 - `buildRun` uses the lean observer.
 
-**Phase 1 record (2026-11-12).** `npm run bench -- --policy map-elites-v6 --sizes=500` under the CPU lock, twice (`live`
-is an alias of `eval` and `screen`, not of `bench`, so the plan's `--policy live` reads `--policy map-elites-v6`):
+**Phase 1 record (2026-11-12).** `npm run bench -- --policy map-elites-v6 --sizes=500` under the CPU lock, twice:
 `bench.observe_ms@500` 0.1416 and 0.1425 full, `bench.observe_ms@500lean` 0.0966 and 0.0928 lean, a ratio of 0.68 and
-0.65, so the 0.7 target holds. `bench.step_ms@500` (step plus `feedPolicy`) 1.8748 and 1.8868 full, 1.8561 and 1.8432
-lean. The equality test needed no call moved between the layers. `npm run perf:browser` was not run: no Chrome with a GPU
-was available to the builder.
+0.65. `bench.step_ms@500` (step plus `feedPolicy`) 1.8748 and 1.8868 full, 1.8561 and 1.8432 lean.
 
 ## Delivery requirements
 
@@ -87,7 +84,7 @@ was available to the builder.
 | T2  | `test/evo/observer-lean.slow.test.js` and `test/evo/observer-lean.test.js`: the lean and full observers give identical policy and panel state over 6000 ticks (built: 2026-11-12)                                             | [judgement]  | T1         |
 | T3  | `bench.observe_ms@500` in `scripts/bench.mjs` for `--policy` runs, full and lean, and its Metrics table row (built: 2026-11-12)                                                                                               | [mechanical] | T1         |
 | T4  | `buildRun` passes `{ lean: true }`; the host tests and `test/worker/sim-host.slow.test.js` pass unchanged (built: 2026-11-12)                                                                                                 | [mechanical] | T2         |
-| T5  | Measure `bench.observe_ms@500` full and lean under the CPU lock, and `npm run perf:browser`; the docs updated (built: 2026-11-12)                                                                                             | [mechanical] | T3, T4     |
+| T5  | Measure `bench.observe_ms@500` full and lean under the CPU lock, and `npm run perf:browser`; the docs updated (built: 2026-11-12; perf:browser open)                                                                          | [mechanical] | T3, T4     |
 | T6  | Conformance review by a fresh agent in parallel with `scripts/check.sh`; status line moved                                                                                                                                    | [judgement]  | T5         |
 
 ## Verification

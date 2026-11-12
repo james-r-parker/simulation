@@ -72,6 +72,13 @@ describe('lean observer', () => {
             expect(rows(lean.observer.deaths, count, [...columns, 'fitness', 'roleSkill', 'style'])).toEqual(
                 rows(full.observer.deaths, count, [...columns, 'fitness', 'roleSkill', 'style']),
             );
+            expect([...lean.observer.slotOf].sort((a, b) => a[0] - b[0])).toEqual(
+                [...full.observer.slotOf].sort((a, b) => a[0] - b[0]),
+            );
+            for (const name of ['maturedChildren', 'descendantsAlive']) {
+                expect(Array.from(lean.observer[name])).toEqual(Array.from(full.observer[name]));
+            }
+            expect(lean.observer.deathsDrained).toBe(full.observer.deathsDrained);
             expect(lean.observer.intent.run).toEqual(full.observer.intent.run);
             expect(lean.observer.scenes.style).toEqual(full.observer.scenes.style);
             for (const name of ['combat', 'births', 'birthsAfterBurnIn', 'deathsByCause']) {
