@@ -4,7 +4,7 @@ import { canonicalOptions, mergeOptions, validatePolicyOptions } from '../../js/
 describe('validatePolicyOptions', () => {
     it('accepts none, and every option the map-elites-v6 policy takes', () => {
         expect(validatePolicyOptions('map-elites-v6', undefined)).toEqual({});
-        expect(validatePolicyOptions('baseline-v5', {})).toEqual({});
+        expect(validatePolicyOptions('no-options-policy', {})).toEqual({});
         const options = {
             fitnessOverrides: { BORN: 5 },
             archiveShare: 0.2,
@@ -14,9 +14,9 @@ describe('validatePolicyOptions', () => {
         expect(validatePolicyOptions('map-elites-v6', options)).toEqual(options);
     });
 
-    it('lets baseline-v5 take no options and map-elites-v6 the immigrant mix', () => {
+    it('lets a policy that lists none take no options and map-elites-v6 the immigrant mix', () => {
         expect(validatePolicyOptions('map-elites-v6', { archiveShare: 0.1 })).toEqual({ archiveShare: 0.1 });
-        expect(() => validatePolicyOptions('baseline-v5', { archiveShare: 0.1 })).toThrow(/takes: none/);
+        expect(() => validatePolicyOptions('no-options-policy', { archiveShare: 0.1 })).toThrow(/takes: none/);
     });
 
     it('names a fitness weight that is not in FITNESS_V6', () => {

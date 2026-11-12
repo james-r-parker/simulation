@@ -6,6 +6,8 @@ import { SIMPLE_WORLD } from './helpers/simple-world.js';
 const seenTicks = [];
 /** @type {Record<string, any>[]} */
 const created = [];
+/** Set to make the mocked policy keep no archive, as a policy without one would. */
+let dropArchive = false;
 
 vi.mock('../js/evo/policies/index.js', async (importOriginal) => {
     /** @type {Record<string, any>} */
@@ -16,7 +18,8 @@ vi.mock('../js/evo/policies/index.js', async (importOriginal) => {
             create: (/** @type {Record<string, any>} */ options) => (
                 created.push(options),
                 {
-                    ...original.getPolicy('baseline-v5').create(options),
+                    ...original.getPolicy('map-elites-v6').create(options),
+                    ...(dropArchive ? { archive: undefined } : {}),
                     onEvent(/** @type {Record<string, any>} */ world, /** @type {number} */ offset) {
                         if (world.events.data[offset] === EVENT_TYPE.AGENT_BORN) {
                             seenTicks.push(world.events.data[offset + 1]);
@@ -32,6 +35,7 @@ vi.mock('../js/evo/policies/index.js', async (importOriginal) => {
 describe('runSeed', () => {
     beforeEach(() => {
         seenTicks.length = 0;
+        dropArchive = false;
     });
 
     it('passes the initial births from createWorld to onEvent before the first step', async () => {
@@ -44,7 +48,7 @@ describe('runSeed', () => {
             worldWidth: 1500,
             worldHeight: 1000,
         };
-        await runSeed({ seed: 3, ticks: 5, policy: 'baseline-v5', overrides });
+        await runSeed({ seed: 3, ticks: 5, policy: 'map-elites-v6', overrides });
         expect(seenTicks.filter((tick) => tick === 0)).toHaveLength(12);
     });
 
@@ -52,8 +56,26 @@ describe('runSeed', () => {
         const { runSeed } = await import('../scripts/eval-worker.mjs');
         const overrides = { ...SIMPLE_WORLD, maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500 };
         created.length = 0;
-        await runSeed({ seed: 3, ticks: 2, policy: 'baseline-v5', overrides, policyOptions: { archiveShare: 0.2 } });
+        await runSeed({ seed: 3, ticks: 2, policy: 'map-elites-v6', overrides, policyOptions: { archiveShare: 0.2 } });
         expect(created[0]).toMatchObject({ archiveShare: 0.2 });
         expect(created[0]).toHaveProperty('observer');
+    });
+
+    it('reports no archive metrics for a policy without an archive', async () => {
+        const { runSeed } = await import('../scripts/eval-worker.mjs');
+        const overrides = { ...SIMPLE_WORLD, maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500 };
+        dropArchive = true;
+        const result = await runSeed({ seed: 3, ticks: 20, policy: 'map-elites-v6', overrides });
+        expect(result.metrics['eval.qd_score']).toEqual({ value: null, reason: 'no archive' });
+    });
+
+    it('refuses --save-champions for a policy without an archive, naming it', async () => {
+        const { runSeed } = await import('../scripts/eval-worker.mjs');
+        const overrides = { ...SIMPLE_WORLD, maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500 };
+        dropArchive = true;
+        const task = { seed: 3, ticks: 20, overrides, policy: 'map-elites-v6', saveChampions: 2 };
+        await expect(async () => runSeed(task)).rejects.toThrow(
+            '--save-champions needs a policy with an archive; "map-elites-v6" has none',
+        );
     });
 });

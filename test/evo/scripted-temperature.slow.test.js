@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SCRIPTED_CONTROLLERS } from '../../js/evo/scripted.js';
-import { createBaselineV5 } from '../../js/evo/policies/baseline-v5.js';
+import { plainBrain } from '../../js/evo/plain-brain.js';
 import { createConfig } from '../../js/sim/config.js';
 import { createRng, fork } from '../../js/sim/rng.js';
 import { createWorld } from '../../js/sim/spawn.js';
@@ -60,7 +60,7 @@ describe('body temperature cold band', () => {
                 minAgents: 0,
                 specialisations: { predator: { biteMultiplier: 1, turnMultiplier: 1, sprintBoost: 1 } },
             });
-            const brain = createBaselineV5().brain;
+            const brain = plainBrain;
             const world = createWorld(config, brain);
             const run = SCRIPTED_CONTROLLERS.foodSeeker({ world, rng: fork(createRng(1), 'scripted') });
             /** @type {Map<number, number>} slot to the genome that started cold there */

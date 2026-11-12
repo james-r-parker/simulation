@@ -58,8 +58,8 @@ describe('validateMessage', () => {
 
     it('accepts an init or reset with or without a policy name', () => {
         expect(validateMessage({ ...GOOD.init, policy: 'map-elites-v6' }).policy).toBe('map-elites-v6');
-        expect(validateMessage({ type: 'reset', seed: 2, config: {}, policy: 'baseline-v5' }).policy).toBe(
-            'baseline-v5',
+        expect(validateMessage({ type: 'reset', seed: 2, config: {}, policy: 'map-elites-v6' }).policy).toBe(
+            'map-elites-v6',
         );
         expect(validateMessage(GOOD.init).policy).toBeUndefined();
     });

@@ -3,7 +3,7 @@ import { OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from '../../js/sim/brain-lay
 import { createConfig } from '../../js/sim/config.js';
 import { createRng, fork } from '../../js/sim/rng.js';
 import { createWorld } from '../../js/sim/spawn.js';
-import { createBaselineV5 } from '../../js/evo/policies/baseline-v5.js';
+import { plainBrain } from '../../js/evo/plain-brain.js';
 import { COMBAT_CONTROLLERS } from '../../js/evo/scripted-combat.js';
 import { SCRIPTED_CONTROLLERS, SEEK_THRUST } from '../../js/evo/scripted.js';
 
@@ -18,7 +18,7 @@ const BODY = { bitten: 10, attackLeft: 19, attackRight: 20 };
  */
 function setup(name) {
     const config = createConfig({ seed: 1, initialAgents: 3, maxAgents: 6, minAgents: 0 });
-    const world = createWorld(config, createBaselineV5().brain);
+    const world = createWorld(config, plainBrain);
     return { world, run: COMBAT_CONTROLLERS[name]({ world, rng: fork(createRng(1), 'scripted') }) };
 }
 

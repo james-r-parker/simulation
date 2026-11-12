@@ -1,6 +1,6 @@
 # Evolution evals
 
-**Status:** Implemented - the observer, metrics, `baseline-v5` and `npm run eval` on a worker pool with `npm run bench:parallel` and the recorded baseline (Phase 1); `eval:compare`, the experiments ledger with calibration `E0` and the `eval-smoke` gate (Phase 2); the anti-exploit suite (Phase 3); Elo and the champion league (Phase 4).
+**Status:** Implemented - the observer, metrics, the baseline policy (since deleted) and `npm run eval` on a worker pool with `npm run bench:parallel` and the recorded baseline (Phase 1); `eval:compare`, the experiments ledger with calibration `E0` and the `eval-smoke` gate (Phase 2); the anti-exploit suite (Phase 3); Elo and the champion league (Phase 4).
 **Depends on:** [headless-sim-core.md](headless-sim-core.md)
 
 Evals measure what a simulation run produces: whether agents eat, live, breed, diversify and keep changing. Every
@@ -54,7 +54,7 @@ Megafauna Phase 3 adds `eval.herd_follow_share`, `eval.dung_food_share` and `eva
 (`scripts/eval.mjs`):
 
 - Seeds are `n` consecutive entries of `evals/seeds.json` (64 fixed seeds: 1-32 from the original draw, 33-64 from `createRng(64)`) from `--seed-offset` (default 0). Defaults: `--seeds 16`, `--ticks 200000`,
-  `--policy baseline-v5`, the default config. `--policy live` runs `LIVE_POLICY`.
+  `--policy live`, the default config. `--policy live` runs `LIVE_POLICY`.
 - Seeds run on `scripts/lib/worker-pool.mjs`: a pull queue of tasks over `worker_threads` workers, each running
   `scripts/eval-worker.mjs`. A free worker takes the next task, so no core waits for a slow seed. Results are
   returned in task order, so a report never depends on the worker count or on which worker finished first.
@@ -75,18 +75,17 @@ Megafauna Phase 3 adds `eval.herd_follow_share`, `eval.dung_food_share` and `eva
 - `onEvent` receives `(world, offset)` for each record, the offset of its first field in `world.events.data`, starting
   with the initial births from `createWorld`.
 
-| Module                           | Exports                                                                                                 | Does                                                                                                                                                                                                                            |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `js/evo/observer.js`             | `createObserver`, `observe`, `checkpoint`, `observerPhases`                                             | Per-slot counters (below), reset on `AgentBorn`; checkpoint samples into typed arrays. Helpers: `observer-events.js`, `observer-tick.js`, `observer-checkpoint.js`, `growable-log.js`                                           |
-| `js/evo/metrics.js`              | `computeMetrics`                                                                                        | Observer state to the Metrics table values for one seed, `null` with a reason where undefined. Helpers: `metrics-series.js`, `metrics-grids.js`, `metrics-fitness.js`, `metrics-stats.js` (percentiles by linear interpolation) |
-| `js/evo/policies/index.js`       | `POLICIES`, `getPolicy`, `LIVE_POLICY`                                                                  | Name to policy; an unknown name throws listing the known ones; `LIVE_POLICY` names the policy the browser and nightly evals run                                                                                                 |
-| `js/evo/policies/baseline-v5.js` | `createBaselineV5`                                                                                      | The legacy approach on the new core (below)                                                                                                                                                                                     |
-| `js/evo/fitness-v5.js`           | `fitnessV5`                                                                                             | The legacy fitness formula on observer counters, in ticks                                                                                                                                                                       |
-| `js/evo/report.js`               | `buildReport`, `validateReport`                                                                         | Report shape and its validation                                                                                                                                                                                                 |
-| `js/evo/compare.js`              | `compareReports`, `bootstrapInterval`                                                                   | BCa intervals and verdicts (Phase 2)                                                                                                                                                                                            |
-| `js/evo/scripted.js`             | `SCRIPTED_CONTROLLERS`                                                                                  | Hand-written controllers for the anti-exploit suite (Phase 3)                                                                                                                                                                   |
-| `js/evo/elo.js`                  | `expectedScore`, `updateElo`                                                                            | Elo with K = 32 from 1500 (Phase 4)                                                                                                                                                                                             |
-| `js/evo/league.js`               | `matchPolicy`, `playMatch`, `runLeague`, `decide`, `validateChampion`, `encodeWeights`, `decodeWeights` | Head-to-head games between champion files, and the champion file codec and checks (Phase 4)                                                                                                                                     |
+| Module                     | Exports                                                                                                 | Does                                                                                                                                                                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `js/evo/observer.js`       | `createObserver`, `observe`, `checkpoint`, `observerPhases`                                             | Per-slot counters (below), reset on `AgentBorn`; checkpoint samples into typed arrays. Helpers: `observer-events.js`, `observer-tick.js`, `observer-checkpoint.js`, `growable-log.js`                                           |
+| `js/evo/metrics.js`        | `computeMetrics`                                                                                        | Observer state to the Metrics table values for one seed, `null` with a reason where undefined. Helpers: `metrics-series.js`, `metrics-grids.js`, `metrics-fitness.js`, `metrics-stats.js` (percentiles by linear interpolation) |
+| `js/evo/policies/index.js` | `POLICIES`, `getPolicy`, `LIVE_POLICY`                                                                  | Name to policy; an unknown name throws listing the known ones; `LIVE_POLICY` names the policy the browser and nightly evals run                                                                                                 |
+| `js/evo/plain-brain.js`    | `plainBrain`                                                                                            | The N(0, 0.1) init, uniform crossover and Gaussian mutation brain ops (below); no policy, no fitness                                                                                                                            |
+| `js/evo/report.js`         | `buildReport`, `validateReport`                                                                         | Report shape and its validation                                                                                                                                                                                                 |
+| `js/evo/compare.js`        | `compareReports`, `bootstrapInterval`                                                                   | BCa intervals and verdicts (Phase 2)                                                                                                                                                                                            |
+| `js/evo/scripted.js`       | `SCRIPTED_CONTROLLERS`                                                                                  | Hand-written controllers for the anti-exploit suite (Phase 3)                                                                                                                                                                   |
+| `js/evo/elo.js`            | `expectedScore`, `updateElo`                                                                            | Elo with K = 32 from 1500 (Phase 4)                                                                                                                                                                                             |
+| `js/evo/league.js`         | `matchPolicy`, `playMatch`, `runLeague`, `decide`, `validateChampion`, `encodeWeights`, `decodeWeights` | Head-to-head games between champion files, and the champion file codec and checks (Phase 4)                                                                                                                                     |
 
 `POLICIES` maps a name to a factory, `create(options)`, with `options` `{ config, log, observer }` plus policy-specific fields;
 all per-run state lives in the object it returns: `{ name, brain, fitnessName, fitness, archive?, onEvent?, afterStep? }`.
@@ -110,14 +109,11 @@ The observer caches each slot's `genomeId`, `lineageId`, `spec` and birth tick o
 | `turnsTowardsFood`               | Ticks with absolute `turnRate` above `0.1 x maxTurn`, turning towards the nearest food ray hit                                                         |
 | `speedSum`, `turnSum`, `samples` | Sampled every 100 ticks for the motion grid                                                                                                            |
 
-`fitnessV5` maps `calculateFitness` in the legacy `js/agent.js` onto these counters with `ageTicks / 60` in place of
-wall-clock seconds and `cellsVisited` in place of the legacy exploration grid; `fitnessName` is `v5`. It keeps the
-legacy weights (`FITNESS_CATEGORIES`, `SURVIVAL_SCORING`, `ACTION_SCORING`, `SPECIALIZATION_SCORING`) and the
-estimated terms recorded in [legacy-audit.md](legacy-audit.md) FIT-3 and FIT-5, copied as named constants.
+### The plain brain
 
-### `baseline-v5`
-
-`baseline-v5` is the legacy approach on the new core, with `fitnessV5` and no archive:
+`plainBrain` (`js/evo/plain-brain.js`) holds the brain operations of the deleted `baseline-v5` policy: the league and the
+controller runs use it as a fixed brain, and nothing selects on it. It is not a registered policy and has no fitness
+and no archive:
 
 - Random genomes draw each weight and bias from `N(0, NN_WEIGHT_INIT_STD_DEV)` (0.1).
 - A child copies its mother's row. On a mating each weight comes from the father with probability
@@ -128,8 +124,9 @@ estimated terms recorded in [legacy-audit.md](legacy-audit.md) FIT-3 and FIT-5, 
 - The rate is fixed at `BASE_MUTATION_RATE`. The legacy adaptive rate, half-rate splits, per-fitness scaling and
   fitness-weighted crossover are not ported.
 
-`evals/baselines/baseline-v5.json` is its report at 16 seeds x 200000 ticks. `npm run replay` takes `--policy <name>`
-(default `baseline-v5`) and `--follow <genomeId>`, which logs `FollowSample` every 10 ticks until that agent dies.
+`evals/baselines/baseline-v5.json` is the deleted policy's report at 16 seeds x 200000 ticks, kept as a record.
+`npm run replay` takes `--policy <name>` (default `live`) and `--follow <genomeId>`, which logs `FollowSample` every 10
+ticks until that agent dies.
 
 ## Compare (Phase 2)
 
@@ -218,11 +215,7 @@ Each agent is scored at death or, if alive, at the last tick. For each fitness f
 mean fitness, as a share of the `foodSeeker`'s, is at most the larger of 0.5 and its intake share (food energy plus
 bite energy) of the `foodSeeker`'s plus 0.1: fitness that comes with feeding is not an exploit, fitness without intake is. (The bound was a
 flat half until [evolution-rework.md](evolution-rework.md) Phase 1: `explorerAfterMeal` eats about two thirds of
-what the `foodSeeker` eats in the micro-world, so any honest food-paying fitness scored it above half.) Against `fitnessV5` the exploiters that exceed that bound are marked
-`test.fails`, each naming the [legacy-audit.md](legacy-audit.md) finding it demonstrates; [evolution-rework.md](evolution-rework.md) Phase 1 adds its
-fitness to the suite with no expected failures. As built, the `sitter`, `spinner`, `bumper` and `explorerAfterMeal`
-fail the bound under `fitnessV5`, all for FIT-8 (pay for age, distance and exploration without food); the `wanderer`
-and `biteSeeker` stay under half. The five chance-or-waste controllers ([world-balance.md](world-balance.md) Phase 1) are in the suite too: under `fitnessV1` all five stay within the bound; under `fitnessV5` the `sloppyForager`, `jawSitter` and `huntCallSpammer` are expected failures, each a FIT-8 finding (pay for age, distance, exploration and actions without matching intake), while the `grouper` and `cruiser` pass. The combat controllers (`hunter`, `fleer`, `alarmSpammer`, `smokeSpammer`) are in the same suite; under `fitnessV5` the `hunter` is an expected failure for FIT-5 (the specialisation score pays a flat amount per kill, not the energy the kill brings in), and passes under `fitnessV1`. `hunter` and
+what the `foodSeeker` eats in the micro-world, so any honest food-paying fitness scored it above half.) The suite once ran the legacy `fitnessV5` too, with its exploiters marked `test.fails` for the [legacy-audit.md](legacy-audit.md) findings FIT-5 and FIT-8; that arm was deleted with the score (Decisions). The five chance-or-waste controllers ([world-balance.md](world-balance.md) Phase 1) are in the suite too: under `fitnessV1` all five stay within the bound. The combat controllers (`hunter`, `fleer`, `alarmSpammer`, `smokeSpammer`) are in the same suite and pass under `fitnessV1`. `hunter` and
 `fleer` also run together on `evals/predator-world.json`, which is the micro-world plus `initialEnergy` 3000 (the
 micro-world's 800 lets foragers starve while sprinting before any outlasts the 300 ticks that count as an escape), so
 that `eval.hunter_catches_per_1k` and `eval.escape_share` are above 0. The older controllers write thrust and turn only (sprint, mate and bite are 0).
@@ -235,7 +228,7 @@ that `eval.hunter_catches_per_1k` and `eval.escape_share` are above 0. The older
   from the running config, naming the field.
 - `evals/league.json` is `{ "version": 1, "champions": [{ "file", "name", "elo" }] }`, `file` relative to the repo.
 - `matchPolicy(a, b)` builds a policy whose `initBrain` writes `a`'s weights into even slots and `b`'s into odd ones,
-  whose `initSpec` returns that champion's specialisation, and whose `childBrain` is `baseline-v5`'s.
+  whose `initSpec` returns that champion's specialisation, and whose `childBrain` is `plainBrain`'s.
 - `playMatch(a, b, seed)` runs a 100-agent world with that policy, `minAgents` 0 and no immigration for 50000 ticks,
   stopping early once both sides have died out. A side's agents are those whose `lineageId` is one of its founders'
   `genomeId`s. The side with more agents alive at the end wins; when both died out, the side whose last agent lived
@@ -276,10 +269,11 @@ Planned work that extends the evals lives in other docs; this doc describes only
 
 ## Decisions
 
-| Decision                                                                    | Reason                                                                                          | By                |
-| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------- |
-| The Compare text states that every metric reuses the one `bootstrap` stream | `bootstrapInterval` forks `createRng(1)` per call; the earlier text claimed a stream per metric | Specialist review |
-| Planned eval additions are listed by owner and are not described here       | The doc is `Implemented`; a plan belongs in the doc that builds it                              | Specialist review |
+| Decision                                                                    | Reason                                                                                                                                                                                   | By                |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| The Compare text states that every metric reuses the one `bootstrap` stream | `bootstrapInterval` forks `createRng(1)` per call; the earlier text claimed a stream per metric                                                                                          | Specialist review |
+| Planned eval additions are listed by owner and are not described here       | The doc is `Implemented`; a plan belongs in the doc that builds it                                                                                                                       | Specialist review |
+| `baseline-v5` and `fitnessV5` deleted                                       | Nothing selects on them since `fitnessV6`; their brain ops live on in `plainBrain` for the league and the controller runs. Old reports and ledger records that name them stay as history | user, 2026-11-12  |
 
 ## Phases
 

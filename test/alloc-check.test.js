@@ -8,7 +8,7 @@ describe('alloc-check arguments', () => {
 
     it('reads --policy in both spellings', () => {
         expect(parseArgs(['--policy', 'map-elites-v6'])).toEqual({ policy: 'map-elites-v6' });
-        expect(parseArgs(['--policy=baseline-v5'])).toEqual({ policy: 'baseline-v5' });
+        expect(parseArgs(['--policy=map-elites-v6'])).toEqual({ policy: 'map-elites-v6' });
     });
 
     it('rejects a missing policy name and unknown arguments', () => {

@@ -23,7 +23,7 @@ function report(metrics, over = {}) {
     return {
         version: 1,
         policy: 'live',
-        fitnessName: 'v5',
+        fitnessName: 'v6',
         config,
         configHash: configHash(config),
         ticks: 1000,
@@ -431,6 +431,6 @@ describe('compareReports refusals', () => {
     });
 
     it('allows different policies', () => {
-        expect(refusedField(report(m), report(m, { policy: 'baseline-v5' }))).toBeUndefined();
+        expect(refusedField(report(m), report(m, { policy: 'map-elites-v6' }))).toBeUndefined();
     });
 });

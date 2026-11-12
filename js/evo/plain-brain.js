@@ -1,9 +1,9 @@
-// baseline-v5: the legacy brain approach on the new core (init N(0, 0.1), uniform crossover, Gaussian mutation).
+// The plain brain: the legacy brain operations on the new core (init N(0, 0.1), uniform crossover, Gaussian mutation).
+// Not a registered policy and it selects on nothing; the league and the controller runs use it as a fixed brain.
 
-import { fitnessV5 } from '../../evo/fitness-v5.js';
-import { nextFloat, nextGaussian } from '../../sim/rng.js';
-import { BORN_CAUSE } from '../../sim/events.js';
-import { TRAIT_SIGMA, WEIGHT_CLAMP } from '../../evo/mutation.js';
+import { nextFloat, nextGaussian } from '../sim/rng.js';
+import { BORN_CAUSE } from '../sim/events.js';
+import { TRAIT_SIGMA, WEIGHT_CLAMP } from './mutation.js';
 
 /** NN_WEIGHT_INIT_STD_DEV */
 export const INIT_SIGMA = 0.1;
@@ -23,7 +23,7 @@ export const CLAMP_MAX = 3;
 /**
  * @param {Record<string, any>} world
  * @param {number} slot
- * @param {import('../../sim/rng.js').Rng} rng
+ * @param {import('../sim/rng.js').Rng} rng
  * @returns {void}
  */
 function initBrain(world, slot, rng) {
@@ -42,7 +42,7 @@ function initBrain(world, slot, rng) {
  * @param {Record<string, any>} world
  * @param {number} child
  * @param {number} mother
- * @param {{cause: number, rng: import('../../sim/rng.js').Rng}} opts
+ * @param {{cause: number, rng: import('../sim/rng.js').Rng}} opts
  * @returns {void}
  */
 function childBrain(world, child, mother, opts) {
@@ -70,15 +70,5 @@ function childBrain(world, child, mother, opts) {
     }
 }
 
-/**
- * Builds the baseline-v5 policy object. It keeps no per-run state and has no archive and no `initSpec`.
- * @returns {{name: string, brain: {initBrain: typeof initBrain, childBrain: typeof childBrain}, fitnessName: string, fitness: typeof fitnessV5}}
- */
-export function createBaselineV5() {
-    return {
-        name: 'baseline-v5',
-        brain: { initBrain, childBrain },
-        fitnessName: 'v5',
-        fitness: fitnessV5,
-    };
-}
+/** The plain brain hooks `{ initBrain, childBrain }`; they keep no per-run state. */
+export const plainBrain = Object.freeze({ initBrain, childBrain });

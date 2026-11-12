@@ -29,7 +29,7 @@ function report(metrics, count = 64) {
     return {
         version: 1,
         policy: 'live',
-        fitnessName: 'v5',
+        fitnessName: 'v6',
         config,
         configHash: configHash(config),
         ticks: 1000,

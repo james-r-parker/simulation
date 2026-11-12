@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createBaselineV5 } from '../../../js/evo/policies/baseline-v5.js';
-import { BORN_CAUSE } from '../../../js/sim/events.js';
-import { createRng, nextFloat, nextGaussian } from '../../../js/sim/rng.js';
+import { plainBrain } from '../../js/evo/plain-brain.js';
+import { BORN_CAUSE } from '../../js/sim/events.js';
+import { createRng, nextFloat, nextGaussian } from '../../js/sim/rng.js';
 
 const N = 20000;
 
@@ -27,12 +27,8 @@ const stats = (xs) => {
     return { mean, sd };
 };
 
-describe('baseline-v5', () => {
-    const { brain, fitnessName } = createBaselineV5();
-
-    it('names its fitness v5', () => {
-        expect(fitnessName).toBe('v5');
-    });
+describe('plainBrain', () => {
+    const brain = plainBrain;
 
     it('initialises every weight from N(0, 0.1)', () => {
         const world = makeWorld(N);

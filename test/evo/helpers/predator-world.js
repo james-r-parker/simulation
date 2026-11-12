@@ -3,7 +3,7 @@ import { createConfig } from '../../../js/sim/config.js';
 import { RANDOM_ARM, createControllerBrain } from '../../../js/evo/controller-brain.js';
 import { computeMetrics } from '../../../js/evo/metrics.js';
 import { createObserver, observe, observerPhases } from '../../../js/evo/observer.js';
-import { createBaselineV5 } from '../../../js/evo/policies/baseline-v5.js';
+import { plainBrain } from '../../../js/evo/plain-brain.js';
 import { createRandomBrain } from '../../../js/evo/policies/random-brain.js';
 import { createRng, fork } from '../../../js/sim/rng.js';
 import { createWorld } from '../../../js/sim/spawn.js';
@@ -28,13 +28,13 @@ const PREDATOR = 1;
 const FORAGER = 0;
 
 /**
- * The test policy of `evals/predator-world.json`: the brain hooks given (default baseline-v5's), with predators in the
+ * The test policy of `evals/predator-world.json`: the brain hooks given (default the plain brain), with predators in the
  * even slots and foragers in the odd ones.
  * @param {any} [brain] the brain hooks
  * @param {number} [predatorEvery] one slot in this many is a predator (default 2: even slots)
  * @returns {any} the policy
  */
-export function predatorPolicy(brain = createBaselineV5().brain, predatorEvery = 2) {
+export function predatorPolicy(brain = plainBrain, predatorEvery = 2) {
     return {
         ...brain,
         initSpec: (/** @type {any} */ _w, /** @type {number} */ slot) =>
@@ -98,7 +98,7 @@ export function playPredatorWorld(
  */
 export function playMicroWorld(seed, ticks, arm, extra = {}, onTick = () => {}) {
     const config = createConfig({ ...SIMPLE_WORLD, ...PRE_T15D, ...microWorld, ...extra, seed });
-    const policy = arm === RANDOM_ARM ? createRandomBrain(config).brain : createBaselineV5().brain;
+    const policy = arm === RANDOM_ARM ? createRandomBrain(config).brain : plainBrain;
     const world = createWorld(config, policy);
     const observer = createObserver(config, fork(createRng(seed), 'eval'));
     observe(observer, world);

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { createRng, fork } from '../../js/sim/rng.js';
 import { createWorld } from '../../js/sim/spawn.js';
-import { createBaselineV5 } from '../../js/evo/policies/baseline-v5.js';
+import { plainBrain } from '../../js/evo/plain-brain.js';
 import { CONSTANT_THRUSTS, MEAL_ENERGY, SCRIPTED_CONTROLLERS, SEEK_THRUST } from '../../js/evo/scripted.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 
@@ -19,7 +19,7 @@ const CH = { food: 1, threat: 2, prey: 3, other: 4, kin: 5, wall: 6, obstacle: 7
  */
 function setup(name, seed = 1) {
     const config = createConfig({ seed, initialAgents: 3, maxAgents: 6, minAgents: 0 });
-    const world = createWorld(config, createBaselineV5().brain);
+    const world = createWorld(config, plainBrain);
     const run = SCRIPTED_CONTROLLERS[name]({ world, rng: fork(createRng(seed), 'scripted') });
     return { world, run };
 }

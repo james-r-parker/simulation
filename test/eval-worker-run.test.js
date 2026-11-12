@@ -14,8 +14,8 @@ const UNPLACEABLE = {
 
 describe('runSeed (direct)', () => {
     it('returns the metrics, hash and checkpoints for a seed', { timeout: scaleTimeout(30_000) }, () => {
-        const result = runSeed({ seed: 3, ticks: 2100, policy: 'baseline-v5', overrides: SMALL });
-        expect(result).toMatchObject({ seed: 3, fitnessName: 'v5' });
+        const result = runSeed({ seed: 3, ticks: 2100, policy: 'map-elites-v6', overrides: SMALL });
+        expect(result).toMatchObject({ seed: 3, fitnessName: 'v6' });
         expect(result.worldHash).toEqual(expect.any(String));
         expect(result.wallMs).toBeGreaterThanOrEqual(0);
         expect(result.checkpoints.map((/** @type {{ tick: number }} */ c) => c.tick)).toEqual([1000, 2000]);
@@ -28,7 +28,7 @@ describe('runSeed (direct)', () => {
     });
 
     it('returns a trace with a population sample per interval', { timeout: scaleTimeout(30_000) }, () => {
-        const result = runSeed({ seed: 3, ticks: 2100, policy: 'baseline-v5', overrides: SMALL, traceInterval: 700 });
+        const result = runSeed({ seed: 3, ticks: 2100, policy: 'map-elites-v6', overrides: SMALL, traceInterval: 700 });
         expect(result.trace.pop).toHaveLength(3);
         expect(result.trace).toMatchObject({ interval: 700, deaths: expect.any(Array), lineages: expect.any(Number) });
         expect(result.trace.mate).toHaveLength(4);
@@ -41,7 +41,7 @@ describe('runSeed (direct)', () => {
         () => {
             const era = 2500;
             const overrides = { ...SMALL, eraSeasonTicks: era };
-            const result = runSeed({ seed: 3, ticks: 15000, policy: 'baseline-v5', overrides });
+            const result = runSeed({ seed: 3, ticks: 15000, policy: 'map-elites-v6', overrides });
             const { pop, prey, hunters } = result.trace;
             expect(prey).toHaveLength(pop.length);
             expect(hunters).toHaveLength(pop.length);
@@ -56,20 +56,18 @@ describe('runSeed (direct)', () => {
     );
 
     it('is deterministic for the same task', { timeout: scaleTimeout(30_000) }, () => {
-        const task = { seed: 5, ticks: 50, policy: 'baseline-v5', overrides: SMALL };
+        const task = { seed: 5, ticks: 50, policy: 'map-elites-v6', overrides: SMALL };
         expect(runSeed(task).worldHash).toBe(runSeed(task).worldHash);
     });
 
     it('names the seed and tick when the world fails', () => {
-        expect(() => runSeed({ seed: 9, ticks: 50, policy: 'baseline-v5', overrides: UNPLACEABLE })).toThrow(
+        expect(() => runSeed({ seed: 9, ticks: 50, policy: 'map-elites-v6', overrides: UNPLACEABLE })).toThrow(
             /^seed 9 failed at tick 0: /,
         );
     });
 
-    it('reports archive metrics for a policy with an archive and none for one without', () => {
+    it('reports archive metrics for a policy with an archive', () => {
         const task = { seed: 3, ticks: 20, overrides: SMALL };
-        const plain = runSeed({ ...task, policy: 'baseline-v5' });
-        expect(plain.metrics['eval.qd_score']).toEqual({ value: null, reason: 'no archive' });
         const learned = runSeed({ ...task, policy: 'map-elites-v6' });
         expect(learned.metrics['eval.qd_score'].value).toBe(0);
         expect(learned.metrics['eval.coverage'].value).toBe(0);
@@ -77,11 +75,6 @@ describe('runSeed (direct)', () => {
 
     it('returns no champions unless asked', () => {
         expect(runSeed({ seed: 3, ticks: 20, overrides: SMALL, policy: 'map-elites-v6' }).champions).toEqual([]);
-    });
-
-    it('refuses --save-champions for a policy without an archive, naming it', () => {
-        const task = { seed: 3, ticks: 20, overrides: SMALL, policy: 'baseline-v5', saveChampions: 2 };
-        expect(() => runSeed(task)).toThrow('--save-champions needs a policy with an archive; "baseline-v5" has none');
     });
 
     it('returns at most the asked number of champion files from the archive', { timeout: scaleTimeout(60_000) }, () => {
