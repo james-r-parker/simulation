@@ -1,5 +1,41 @@
 # Changelog
 
+## [6.1.0](https://github.com/james-r-parker/simulation/compare/v6.0.1...v6.1.0) (2026-11-11)
+
+
+### Features
+
+* **evals:** require committed reports from E151 on (carrying-capacity T4) ([8857466](https://github.com/james-r-parker/simulation/commit/8857466e581a1af76e2c46908876637fa6227e9b))
+* **evo:** absolute min-effect and power steps for share metrics (metric-trust T29a) ([45ec383](https://github.com/james-r-parker/simulation/commit/45ec383c4cf4345059e3fd68431d4bb36ba4afe8))
+* **evo:** add the four capacity detectors (carrying-capacity T2) ([455a8c5](https://github.com/james-r-parker/simulation/commit/455a8c50ae5ef28401d4e447fb730aa3bee9d63c))
+* **evo:** add the held seed guard to the keep rule (carrying-capacity T1) ([91955ca](https://github.com/james-r-parker/simulation/commit/91955ca1bd158500567623a188db7b2e06d00fb9))
+* **evo:** carrying-capacity Phase 1 chunk A - held guard, capacity detectors, decision reports ([eb83b8b](https://github.com/james-r-parker/simulation/commit/eb83b8b71a9b502226264e7a64a090140547ff86))
+* **evo:** compare prints unverified for a metric that is not verified (metric-trust T29) ([f133d16](https://github.com/james-r-parker/simulation/commit/f133d1640aeef2e3da10718d7ccc85770a604eca))
+* **evo:** keepRule, the paired no-harm test (metric-trust T30) ([bd68cec](https://github.com/james-r-parker/simulation/commit/bd68ceca25a50697276773d9cc43496b320cbe4b))
+* **evo:** let a seed guard read better (carrying-capacity T3) ([8504acc](https://github.com/james-r-parker/simulation/commit/8504acc6bf52c30b8ab24c8c76e6618b57afd2af))
+* **evo:** low-density-edge Phase 2 chunk B - the edge detectors and E-LD-1 ([9ea7472](https://github.com/james-r-parker/simulation/commit/9ea74722507e4bfd8997f43642ee0a6ab8ae402a))
+* **evo:** metric-trust Phase 4 - verdicts read the registry, share min-effect, sparse sign test, keepRule ([c999314](https://github.com/james-r-parker/simulation/commit/c9993143362a34e212642ca7743d859a34972202))
+* **evo:** metric-trust Phase 5 T33 to T35 - RunConfig, trace counts, 15 metrics filled, past verdicts re-read ([572c317](https://github.com/james-r-parker/simulation/commit/572c3172c87766b4d0c4e1a5f53cc221c1c25d0f))
+* **evo:** read a 64-seed power result into the registry (metric-trust T29b, code) ([9ae870c](https://github.com/james-r-parker/simulation/commit/9ae870ce0b690559a517c57df6181f7e0a121187))
+* **evo:** report traces keep prey and hunters per checkpoint (metric-trust T34) ([dcd7f14](https://github.com/james-r-parker/simulation/commit/dcd7f144d7325ed265a0c6dc3de6ae9f54152bd1))
+* **evo:** the edge span tallies and rate detectors (low-density-edge T5) ([eca9ad9](https://github.com/james-r-parker/simulation/commit/eca9ad9c61848a96805bc174cbf7288e8fef7432))
+* **evo:** the unreached-mate and split-gate share detectors (low-density-edge T6) ([8bf7ee4](https://github.com/james-r-parker/simulation/commit/8bf7ee495241d567e19e75801e1655749e909079))
+* **screen:** per-seed criteria report the passing share against the reference (metric-trust T31a) ([8a123cb](https://github.com/james-r-parker/simulation/commit/8a123cb220113d25b207a8ff9bb925bc193ccc99))
+* **screen:** verdicts read verified metrics, thresholds need checked ones (metric-trust T31) ([11206f3](https://github.com/james-r-parker/simulation/commit/11206f356a34c33bc21af2efab4d08d5a3b0627f))
+* **scripts:** metric-power-write --merge keeps unnamed readings (carrying-capacity T6) ([e96c0fa](https://github.com/james-r-parker/simulation/commit/e96c0faea11845f0ddc4081893adc918c60afbb6))
+* **scripts:** replay takes live and every run tool logs RunConfig first (metric-trust T33) ([c34081c](https://github.com/james-r-parker/simulation/commit/c34081c69853ff81674c5c832ca68c13f9fc7b3e))
+
+
+### Bug Fixes
+
+* **evo:** density slopes as elasticities at the season means (carrying-capacity T2) ([512af1d](https://github.com/james-r-parker/simulation/commit/512af1d61c7f455d50ca35d901128c860dc541bc))
+* **evo:** keep each life's leak at birth for the leak-skill metrics ([#387](https://github.com/james-r-parker/simulation/issues/387)) ([125ade5](https://github.com/james-r-parker/simulation/commit/125ade58daf03ffc1a03d9a1dab2bb9d809a5da2))
+* **evo:** keepRule seed guards use an exact McNemar test (metric-trust T30) ([464580c](https://github.com/james-r-parker/simulation/commit/464580c2ed1c2ca68cbe4d0746e3bd3b947e5408))
+* **evo:** sparse paired differences need a sign test for a verdict (metric-trust T29c) ([be50295](https://github.com/james-r-parker/simulation/commit/be50295c55f6ae5868acc48146282dff92faa847))
+* **scripts:** share one median and cover the edge diagnosis scripts (low-density-edge T10) ([06c90b0](https://github.com/james-r-parker/simulation/commit/06c90b02b5ce2245d35d2edbed4e378706c0deae))
+* **scripts:** type the capacity scripts, share their setup and cover their functions (carrying-capacity T8, T11) ([5e83924](https://github.com/james-r-parker/simulation/commit/5e83924b8774a2eab0b96d182e9f2eb540163701))
+* **scripts:** type the screen arm resolve, make trace prey optional, share the policy flag (metric-trust T33, T34) ([070042e](https://github.com/james-r-parker/simulation/commit/070042e45475388e1e4fff548c73d4d1cd2e120c))
+
 ## [6.0.1](https://github.com/james-r-parker/simulation/compare/v6.0.0...v6.0.1) (2026-11-08)
 
 
