@@ -4118,15 +4118,23 @@
         "eval.floor_episodes"
       ],
       "before": "evals/decisions/E160/main-defaults.report.json",
-      "after": "evals/screens/eat-choice-bundle.grid.json arms on seeds 1 to 64 (to be run)",
-      "note": "Recorded before the run. Arms: grazeThrust 0.5 with fatSlowShare 0.5 and strikeMissCost 0.5 or 1, and fatSlowShare 0.3 with strikeMissCost 1.",
-      "reports": ["evals/decisions/E160/results.md"],
+      "after": "evals/decisions/E161/<arm>.report.json for gf-strike-1, gf-strike-05, gf3-strike-1, seeds 1 to 64",
+      "note": "gf-strike-1 (grazeThrust 0.5, fatSlowShare 0.5, strikeMissCost 1) reads no harm against main (under80 better, 7 vs 22, p 0.008; held 4 vs 4; hunter catches +91%); population mean 198 vs 194. gf3-strike-1 also no harm; gf-strike-05 WORSE on held. Caveat: the alive guard detects only 24 seeds; point estimate 38/64 vs 47/64; T16 on seeds 65 to 128 must read it. See evals/decisions/E161/results.md.",
+      "reports": [
+        "evals/decisions/E161/results.md",
+        "evals/decisions/E161/table.md",
+        "evals/decisions/E161/gf-strike-1.report.json",
+        "evals/decisions/E161/gf-strike-05.report.json",
+        "evals/decisions/E161/gf3-strike-1.report.json"
+      ],
       "date": "2026-11-12",
       "branch": "exp/eat-choice-screen",
       "beforePolicy": "live",
       "afterPolicy": "live",
-      "effect": "no-difference",
-      "verdicts": {}
+      "effect": "better",
+      "verdicts": {
+        "keepRule": "no harm (gf-strike-1)"
+      }
     }
   ]
 }
