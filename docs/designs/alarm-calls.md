@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 instruments built (T1 to T3, #343) and the T4 baseline run (`E143`, 16 floor-on seeds, in Baseline): no call on any seed, and the audience a call would reach is about 3 prey. The forced-call diagnosis (T5 to T7) is open; Phase 2 adds three default-off switches, Phase 3 judges them, Phase 4 adopts or deletes; none is built beyond the `alarmOnSight` controller.
 **Validated:** f5c7880 (2026-11-07)
-**Priority:** 18 - the Call, or don't scene is absent (alarm rate 0, precision null on every diagnosis seed); it follows the refuge and keepers work because a call needs prey near kin and a hunter to bite, which cover and juvenile dependency change
+**Priority:** 19 - the Call, or don't scene is absent (alarm rate 0, precision null on every diagnosis seed); it follows the refuge and keepers work because a call needs prey near kin and a hunter to bite, which cover and juvenile dependency change
 **Depends on:** [realistic-keepers.md](realistic-keepers.md), [refuge.md](refuge.md)
 
 The goal ([principles.md](../principles.md)) is a world that is interesting to watch. The scene **Call, or don't** reads: an

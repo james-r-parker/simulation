@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 T1 and T2 built (#343) and the T5 baseline run (`E142`, 32 floor-on seeds, in Baseline). T3 (`scripts/season-map.mjs`) and T6 (the sim-notes diagnosis and conformance review) are still open; Phase 2 adds the snowline and the green wave behind default-off switches and is unbuilt.
 **Validated:** f5c7880 (2026-11-07)
-**Priority:** 19 - the Season changes the map scene reads flat (`eval.winter_basin_density` and `eval.winter_pop_ratio` about 1.0), but nothing in the keep rule waits on it; it queues behind the balance and refuge work
+**Priority:** 20 - the Season changes the map scene reads flat (`eval.winter_basin_density` and `eval.winter_pop_ratio` about 1.0), but nothing in the keep rule waits on it; it queues behind the balance and refuge work
 **Depends on:** [natural-selection.md](natural-selection.md)
 
 Build the scene **Season changes the map** ([principles.md](../principles.md)): winter in a basin is slower, tighter and nearer shelter, herds follow season-weighted fruiting patches, and summer spreads. Phase 1 measures where agents, food and herds sit by season. Phase 2 gives the map a seasonal gradient so that moving pays. Phase 3 adds shelter and torpor.

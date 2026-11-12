@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 built: the six cases, the table builder, the batched evaluator, the bars, `npm run reflex` and `npm run bench:reflex` (522 genomes per second, 776 times the drills); Phase 2 has its study script (T9) but `E-RT-1` has not run, so the tier has no verdict and no use yet.
 **Validated:** edd4cd4b (2026-11-07)
-**Priority:** 21 - a tool and a study that change no sim behaviour; it builds on the trainer and drills (training.md) and runs on the Rust brain kernel (wasm-kernels.md, adopted), so it queues behind both
+**Priority:** 22 - a tool and a study that change no sim behaviour; it builds on the trainer and drills (training.md) and runs on the Rust brain kernel (wasm-kernels.md, adopted), so it queues behind both
 **Depends on:** [training.md](training.md)
 
 Idea (user, 2026-11-07): train or test a brain on its own, with known inputs and known good outputs - danger in sight: run; food to one side: turn towards it; do not crash. A brain that passes these fast checks is then trained in a sim.
