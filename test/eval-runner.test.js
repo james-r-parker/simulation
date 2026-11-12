@@ -153,7 +153,7 @@ describe('main', () => {
             writeFileSync(config, JSON.stringify({ ...SMALL, mateDistanceMax: JSON_MATE_OFF }));
             const target = join(dir, 'main.json');
             const { code, out } = await runMain(
-                ['--seeds', '1', '--ticks', '50', '--policy', 'baseline-v5', '--config', config, '--out', target],
+                ['--seeds', '1', '--ticks', '50', '--policy', 'map-elites-v6', '--config', config, '--out', target],
                 'ok',
             );
             expect(code).toBe(0);
@@ -196,7 +196,7 @@ describe('main', () => {
                     '--ticks',
                     '50',
                     '--policy',
-                    'baseline-v5',
+                    'map-elites-v6',
                     '--config',
                     config,
                     '--out',
@@ -208,10 +208,10 @@ describe('main', () => {
             expect(code).toBe(1);
             expect(err[0]).toContain(`seed ${seed} failed at tick 0`);
             expect(err[1]).toBe(
-                `reproduce: npm run replay -- --policy baseline-v5 --config ${config} --seed ${seed} --ticks 1`,
+                `reproduce: npm run replay -- --policy map-elites-v6 --config ${config} --seed ${seed} --ticks 1`,
             );
             const logs = readFileSync(
-                join(dir, 'logs-bad', 'eval-baseline-v5-' + shaOf(join(dir, 'logs-bad')) + '.jsonl'),
+                join(dir, 'logs-bad', 'eval-map-elites-v6-' + shaOf(join(dir, 'logs-bad')) + '.jsonl'),
                 'utf8',
             );
             expect(logs).toContain('"event":"SeedFailed"');
@@ -229,9 +229,9 @@ describe('main', () => {
 
 /**
  * @param {string} logDir a log directory holding one eval log
- * @returns {string} the log's name between `eval-baseline-v5-` and `.jsonl`
+ * @returns {string} the log's name between `eval-map-elites-v6-` and `.jsonl`
  */
 function shaOf(logDir) {
     const name = readdirSync(logDir)[0];
-    return name.slice('eval-baseline-v5-'.length, -'.jsonl'.length);
+    return name.slice('eval-map-elites-v6-'.length, -'.jsonl'.length);
 }

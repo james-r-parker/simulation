@@ -53,7 +53,7 @@ describe('runReplay', () => {
     it(
         'logs RunStarted, Checkpoint and RunFinished',
         async () => {
-            const { records, result } = await run({ ticks: 1000, policy: 'baseline-v5' });
+            const { records, result } = await run({ ticks: 1000, policy: 'map-elites-v6' });
 
             const named = (/** @type {string} */ event) => records.find((r) => r.event === event);
             expect(records.slice(0, 2).map((r) => r.event)).toEqual(['RunConfig', 'RunStarted']);
@@ -61,7 +61,7 @@ describe('runReplay', () => {
             expect(named('RunStarted')).toMatchObject({
                 runId: result.runId,
                 seed: 1,
-                policy: 'baseline-v5',
+                policy: 'map-elites-v6',
                 ticks: 1000,
             });
             expect(named('Checkpoint')).toMatchObject({ tick: 1000, worldHash: result.hashes[0] });

@@ -11,14 +11,14 @@ const perSeed = [
 
 /** @returns {Record<string, any>} a fresh valid report */
 function sample() {
-    return buildReport({ policy: 'p', fitnessName: 'v5', config, ticks: 100, seeds: [1, 2, 3], sha: 'abc', perSeed });
+    return buildReport({ policy: 'p', fitnessName: 'v6', config, ticks: 100, seeds: [1, 2, 3], sha: 'abc', perSeed });
 }
 
 describe('buildReport with ragged metrics', () => {
     it('reports "not computed" for a metric a seed lacks or leaves without a reason', () => {
         const report = buildReport({
             policy: 'p',
-            fitnessName: 'v5',
+            fitnessName: 'v6',
             config,
             ticks: 100,
             seeds: [1, 2],
@@ -51,7 +51,7 @@ describe('buildReport', () => {
         expect(report).toMatchObject({
             version: 1,
             policy: 'p',
-            fitnessName: 'v5',
+            fitnessName: 'v6',
             ticks: 100,
             seeds: [1, 2, 3],
             sha: 'abc',
@@ -77,7 +77,7 @@ describe('buildReport', () => {
     it('gives sd 0 for a single value and sorts the metric keys', () => {
         const report = buildReport({
             policy: 'p',
-            fitnessName: 'v5',
+            fitnessName: 'v6',
             config,
             ticks: 1,
             seeds: [1],
@@ -163,7 +163,7 @@ describe('validateReport', () => {
             );
         const report = buildReport({
             policy: 'p',
-            fitnessName: 'v5',
+            fitnessName: 'v6',
             config,
             ticks: 100,
             seeds: [1, 2, 3],
@@ -183,7 +183,7 @@ describe('validateReport', () => {
 
 describe('report traces', () => {
     const trace = { interval: 1000, pop: [1, 2], mate: [1], split: [0], spec: [1], deaths: [0], lineages: 1 };
-    const input = { policy: 'p', fitnessName: 'v5', config, ticks: 100, seeds: [1, 2, 3], sha: 'abc', perSeed };
+    const input = { policy: 'p', fitnessName: 'v6', config, ticks: 100, seeds: [1, 2, 3], sha: 'abc', perSeed };
 
     it('stores traces when given and validates them', () => {
         const report = buildReport({ ...input, traces: [trace, trace, trace] });

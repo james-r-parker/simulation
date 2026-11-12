@@ -28,9 +28,9 @@ describe('parseArgs', () => {
     });
 
     it('reads --policy and --follow', () => {
-        const args = parseArgs('--seed 1 --ticks 5 --policy baseline-v5 --follow 4'.split(' '));
+        const args = parseArgs('--seed 1 --ticks 5 --policy map-elites-v6 --follow 4'.split(' '));
 
-        expect(args).toMatchObject({ policy: 'baseline-v5', follow: 4 });
+        expect(args).toMatchObject({ policy: 'map-elites-v6', follow: 4 });
     });
 
     it('defaults to the live policy, and --policy live names it', () => {
@@ -40,7 +40,7 @@ describe('parseArgs', () => {
 
     it('rejects an unknown policy, listing the known ones, and a bad --follow', () => {
         expect(() => parseArgs('--seed 1 --ticks 5 --policy nope'.split(' '))).toThrow(
-            /Unknown policy "nope"; known: live, baseline-v5[\s\S]*usage: replay/,
+            /Unknown policy "nope"; known: live, map-elites-v6[\s\S]*usage: replay/,
         );
         expect(() => parseArgs('--seed 1 --ticks 5 --follow 0'.split(' '))).toThrow('--follow must be an integer >= 1');
     });

@@ -3,7 +3,6 @@ import { createArchive, offer } from '../../js/evo/archive.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { checkpoint, createObserver, observe, observerPhases } from '../../js/evo/observer.js';
-import { fitnessV5 } from '../../js/evo/fitness-v5.js';
 import { createConfig } from '../../js/sim/config.js';
 import { BORN_CAUSE, DEATH_CAUSE } from '../../js/sim/events.js';
 import { createRng, fork } from '../../js/sim/rng.js';
@@ -180,15 +179,15 @@ describe('computeMetrics on a real world', () => {
         const world = createWorld(config, policy);
         const observer = createObserver(config, fork(createRng(config.seed), 'eval'));
         const overrides = observerPhases(observer);
-        observe(observer, world, fitnessV5);
+        observe(observer, world, fitness);
         for (let t = 0; t < 2000; t++) {
             step(world, policy, overrides);
-            observe(observer, world, fitnessV5);
+            observe(observer, world, fitness);
             if (world.tick % 1000 === 0) {
                 checkpoint(observer, world);
             }
         }
-        const metrics = computeMetrics(observer, world, { fitness: fitnessV5, fitnessName: 'fitness-v5' });
+        const metrics = computeMetrics(observer, world, { fitness, fitnessName: 'children' });
         expect(observer.deathCount).toBeGreaterThan(0);
         for (const [name, result] of Object.entries(metrics)) {
             if (result.value === null) {

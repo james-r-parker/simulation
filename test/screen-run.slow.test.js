@@ -20,7 +20,7 @@ const SMALL = {
 const grid = {
     seeds: 2,
     ticks: 1200,
-    policy: 'baseline-v5',
+    policy: 'map-elites-v6',
     reference: 'ref',
     arms: { ref: SMALL, wide: { ...SMALL, maxAgents: 60 } },
 };
@@ -112,7 +112,7 @@ describe('screen', () => {
             ['RunConfig', 'screen', 'ref'],
             ['RunConfig', 'screen', 'wide'],
         ]);
-        expect(log[0]).toMatchObject({ policy: 'baseline-v5', ticks: 1100 });
+        expect(log[0]).toMatchObject({ policy: 'map-elites-v6', ticks: 1100 });
         const verdicts = JSON.parse(readFileSync(join(out, 'verdicts.json'), 'utf8'));
         expect(verdicts.arms.map((/** @type {any} */ a) => a.arm)).toEqual(['ref', 'wide']);
         expect(verdicts.arms[1].deltas).not.toBeNull();

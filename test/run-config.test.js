@@ -30,7 +30,7 @@ describe('logRunConfig', () => {
 describe('resolvePolicyFlag', () => {
     it('names the live policy for live, passes a registered name and rejects the rest with the usage', () => {
         expect(resolvePolicyFlag('live', 'u')).toBe('map-elites-v6');
-        expect(resolvePolicyFlag('baseline-v5', 'u')).toBe('baseline-v5');
+        expect(resolvePolicyFlag('map-elites-v6', 'u')).toBe('map-elites-v6');
         expect(() => resolvePolicyFlag('nope', 'usage: x')).toThrow(/Unknown policy "nope"; known: live, .*\nusage: x/);
         expect(() => resolvePolicyFlag(undefined, 'u')).toThrow('Unknown policy "undefined"');
     });

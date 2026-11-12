@@ -32,7 +32,7 @@ function run(name, workers) {
     return runEval({
         seeds: 2,
         ticks: 2000,
-        policy: 'baseline-v5',
+        policy: 'map-elites-v6',
         configOverrides: SMALL,
         out: join(dir, `${name}.json`),
         logDir: join(dir, 'logs'),
@@ -51,7 +51,7 @@ describe('runEval', () => {
             expect(() => validateReport(JSON.parse(readFileSync(join(dir, 'a.json'), 'utf8')))).not.toThrow();
             expect(a.report.seeds).toEqual(pickSeeds(2, 0));
             expect(a.results.map((r) => r.worldHash)).toEqual(b.results.map((r) => r.worldHash));
-            expect(a.report.fitnessName).toBe('v5');
+            expect(a.report.fitnessName).toBe('v6');
         },
         scaleTimeout(60_000),
     );
@@ -84,7 +84,7 @@ describe('runEval', () => {
         'logs the start, each seed and the finish',
         async () => {
             await run('c', 2);
-            const lines = readFileSync(join(dir, 'logs', 'eval-baseline-v5-test-2x2000.jsonl'), 'utf8')
+            const lines = readFileSync(join(dir, 'logs', 'eval-map-elites-v6-test-2x2000.jsonl'), 'utf8')
                 .trim()
                 .split('\n')
                 .map((line) => JSON.parse(line));
@@ -96,7 +96,7 @@ describe('runEval', () => {
                 'EvalFinished',
             ]);
             const report = JSON.parse(readFileSync(join(dir, 'c.json'), 'utf8'));
-            expect(lines[0]).toMatchObject({ tool: 'eval', policy: 'baseline-v5', ticks: 2000, seeds: report.seeds });
+            expect(lines[0]).toMatchObject({ tool: 'eval', policy: 'map-elites-v6', ticks: 2000, seeds: report.seeds });
             expect(lines[0].configHash).toBe(report.configHash);
         },
         scaleTimeout(60_000),
@@ -109,14 +109,14 @@ describe('runEval', () => {
                 seeds: 1,
                 ticks: 100,
                 seedOffset: 8,
-                policy: 'baseline-v5',
+                policy: 'map-elites-v6',
                 configOverrides: SMALL,
                 out: join(dir, 'd.json'),
                 logDir: join(dir, 'logs'),
                 workers: 1,
                 sha: 'test',
             });
-            expect(readFileSync(join(dir, 'logs', 'eval-baseline-v5-test-1x100-o8.jsonl'), 'utf8')).toContain(
+            expect(readFileSync(join(dir, 'logs', 'eval-map-elites-v6-test-1x100-o8.jsonl'), 'utf8')).toContain(
                 'EvalStarted',
             );
         },

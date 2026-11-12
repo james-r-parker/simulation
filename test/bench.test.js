@@ -17,8 +17,8 @@ describe('parseArgs', () => {
     });
 
     it('reads --policy as a separate or joined value', () => {
-        expect(parseArgs(['--policy', 'baseline-v5'])).toMatchObject({ policy: 'baseline-v5' });
-        expect(parseArgs(['--policy=baseline-v5']).policy).toBe('baseline-v5');
+        expect(parseArgs(['--policy', 'map-elites-v6'])).toMatchObject({ policy: 'map-elites-v6' });
+        expect(parseArgs(['--policy=map-elites-v6']).policy).toBe('map-elites-v6');
     });
 
     it('rejects an unknown or missing policy with the known names and usage', () => {
