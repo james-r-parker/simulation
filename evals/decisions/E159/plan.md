@@ -1,4 +1,4 @@
-# E158 - E-EC-1: the eat-choice first pass (recorded before the run)
+# E159 - E-EC-1: the eat-choice first pass (recorded before the run)
 
 Prediction (docs/designs/eat-choice.md, Labels): with `grazeThrust` below 1, `eval.food_contact_bite_share` falls below
 `bite`'s, with no keep-rule guard worse. Falsified when the share does not fall below `bite`'s, or a guard reads `WORSE`.

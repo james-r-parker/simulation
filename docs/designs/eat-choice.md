@@ -110,7 +110,7 @@ seeds 1 to 16 of `evals/seeds.json` for the first pass. Brains have never needed
 | `strike-2`       | the parent of G1, `strikeMissCost` 2                                        |
 | `strike-5`       | the parent of G1, `strikeMissCost` 5                                        |
 
-**The grid on the screen branch** (`evals/screens/eat-choice.grid.json`, E158, recorded before the run). The branch carries G1
+**The grid on the screen branch** (`evals/screens/eat-choice.grid.json`, E159, recorded before the run). The branch carries G1
 and G3 as code, so every arm in the grid runs with both on; the grid holds the config-only arms: `bite` (the reference,
 the defaults with G1 and G3), `bite-graze-5`, `bite-graze-3`, `bite-fat-3`, `bite-fat-5`, `bite-strike-2` and
 `bite-strike-5`, floor on, policy live, 400000 ticks, seeds 1 to 16. Two consequences:
