@@ -13,7 +13,7 @@
 //   store fraction is above the specialisation's mean at that sample, over the mean speed of those below it, pooled
 //   over the samples; then the mean over the specialisations that have both. An agent at the mean is in neither side.
 //
-// The same sample feeds the graze detectors (`scene-graze.js`) and the hunter linger share (`scene-linger.js`).
+// The same sample feeds the graze detectors (`scene-graze.js`).
 // Every accumulator is a fixed array made with the scene; nothing is allocated per sample. The scene reads the world
 // and writes only itself, so no hash can move.
 
@@ -21,6 +21,7 @@ import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
 import { canEatNow } from '../sim/feeding.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { CONTACT, buildFoodCellIndex, createFoodCellIndex, touchesFood } from './food-cell-index.js';
+import { createGrazeScene, grazeMetrics, tallyGraze } from './scene-graze.js';
 import { none, ok } from './metrics-stats.js';
 
 /** Ticks between the samples. */
@@ -42,6 +43,7 @@ export function createEatScene(config) {
     const specs = Math.max(...Object.values(config.specialisations).map((s) => s.index)) + 1;
     return {
         index: createFoodCellIndex(config),
+        graze: createGrazeScene(config),
         contact: 0,
         contactBite: 0,
         full: 0,
@@ -140,6 +142,7 @@ export function sampleEat(scene, world) {
     for (let slot = 0; slot < world.alive.length; slot++) {
         if (world.alive[slot] === 1 && world.huntBySpec[world.spec[slot]] === 0) {
             tallyContact(scene, world, slot);
+            tallyGraze(scene.graze, world, slot);
         }
     }
     tallyFat(scene, world);
@@ -172,5 +175,6 @@ export function eatMetrics(scene) {
         'eval.food_contact_bite_share': scene.contact === 0 ? none(NO_CONTACT) : ok(scene.contactBite / scene.contact),
         'eval.full_contact_bite_share': scene.full === 0 ? none(NO_FULL) : ok(scene.fullBite / scene.full),
         'eval.fat_speed_ratio': fatSpeedRatio(scene),
+        ...grazeMetrics(scene.graze),
     };
 }

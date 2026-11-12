@@ -113,6 +113,8 @@
   "eval.gap_crossers",
   "eval.gap_never_share",
   "eval.generation_depth_p90",
+  "eval.graze_speed_ratio",
+  "eval.graze_time_share",
   "eval.heat_stress_share",
   "eval.hebb_drift",
   "eval.hebb_drift_clamped_share",

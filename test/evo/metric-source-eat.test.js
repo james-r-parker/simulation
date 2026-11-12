@@ -8,6 +8,7 @@
 //   forager F: store 0.99, in contact, holds BITE, speed 1 (above `satiationShare`: it cannot eat, so it is not counted)
 //   forager G: store 0.9, holds BITE, no food within reach
 //   predator H: store 0.9, in contact, holds BITE (a hunter is never read)
+// The graze detectors read the same agents: the seven foragers, of whom A, C, C2, F and G hold BITE.
 
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
@@ -75,8 +76,16 @@ describe('the eat-choice detectors in a scripted world', () => {
         expect(m['eval.fat_speed_ratio']?.value).toBeCloseTo(1 / 3, 12);
     });
 
+    it('read the graze time share: five of the seven foragers hold BITE at the staged read, none at the read before it', () => {
+        expect(m['eval.graze_time_share']?.value).toBeCloseTo(5 / 14, 12);
+    });
+
+    it('read the graze speed ratio: the foragers holding BITE move at 7 / 5 on average and the others at 2', () => {
+        expect(m['eval.graze_speed_ratio']?.value).toBeCloseTo(0.7, 12);
+    });
+
     it('are registered with a source test that names them', () => {
-        for (const name of namesOf('js/evo/scene-eat.js')) {
+        for (const name of [...namesOf('js/evo/scene-eat.js'), ...namesOf('js/evo/scene-graze.js')]) {
             expect(METRICS[/** @type {keyof typeof METRICS} */ (name)].tests.source).toBe(
                 'test/evo/metric-source-eat.test.js',
             );
