@@ -1,6 +1,6 @@
 # Eat choice
 
-**Status:** In progress - Phase 1 is built; Phase 2 (screen the eat choice, fat and the hunter food sense) is next. eating becomes a choice with a cost: a forager eats only while it holds the bite, grazing slows it, a full store slows it, and a hunter senses only food it can eat and pays for a strike at nothing. Phase 1 (the detectors and the reference) is first.
+**Status:** In progress - Phases 1 and 2 are built, and Phase 3 (the switch) is building: T12, T13 and T15 are built; the bench re-record, the 64-seed paired check and the Done criteria are next. Eating becomes a choice with a cost: a forager eats only while it holds the bite, grazing slows it, a full store slows it, and a hunter senses only food it can eat and pays for a strike at nothing. Phase 1 (the detectors and the reference) is first.
 **Validated:** e2455f2f (2026-11-11)
 **Priority:** 1 - after low-density-edge.md T13 (its 16-seed heat pass): 58% of the food energy on the defaults is eaten with no closing approach, and passive eating changes the heat and edge pictures, so it comes before low-density-edge.md's 64-seed pass and switch
 **Depends on:** [metric-trust.md](metric-trust.md), [low-density-edge.md](low-density-edge.md) (T12, the purpose guard `scripts/heat-guard.mjs`)
@@ -90,7 +90,7 @@ and drill tools and the BITE gene case in `js/evo/crossover.js` read hunters onl
 | A     | T1, T2   | The detectors (code)                           |
 | B     | T3 to T5 | The reference, the readings, the review (runs) |
 
-### Phase 2 - Screen the eat choice and fat
+### Phase 2 - Screen the eat choice and fat (built)
 
 **Targets:** eval.deliberate_food_share, eval.chance_food_energy_per_1k, eval.food_energy_per_1k, eval.median_lifespan, eval.bite_idle
 
@@ -149,7 +149,7 @@ the defaults with G1 and G3), `bite-graze-5`, `bite-graze-3`, `bite-fat-3`, `bit
 
 One PR, a breaking commit (`feat!`) to `season/next`, beside the low-density-edge.md switch.
 
-- G1 to G4b land as Phase 2 named them; an unused `grazeThrust`, `fatSlowShare`, `strikeMissCost` or `grazeMissCost` is deleted with its code.
+- G1 to G4 land as Phase 2 named them; `grazeMissCost` (G4b) was falsified and is deleted with its code (T12).
 - The goldens are re-pinned in Node and Chromium, and `bench/baseline.json` is re-recorded on a quiet machine under the
   CPU lock, each in its own commit.
 - low-density-edge.md's 64-seed pass (its T14) and finalist are run on the switched world.
@@ -222,7 +222,7 @@ Done criteria, on seeds 65 to 128 of `evals/seeds.json`, head against `origin/ma
 | T4  | (built: 2026-11-12, E158: `eval.fat_speed_ratio` verified at 16 seeds; the two share detectors stay unverified on power, see sim-notes) Liveness and power for the detectors, merged into the registry; a sim-notes entry      | [mechanical] | T3         |
 | T5  | (built: 2026-11-12, by the delegating review: Phase 1 conforms; the two bite shares are unverified (detectable 0.10 to 0.15 against the 0.05 share bar), so Phase 2 reads them by the sign test) Conformance review of Phase 1 | [judgement]  | T4         |
 
-### Phase 2 - Screen the eat choice and fat
+### Phase 2 - Screen the eat choice and fat (built)
 
 | #    | Task                                                                                                                                                                                                                           | Nature       | Depends on |
 | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
@@ -231,24 +231,33 @@ Done criteria, on seeds 65 to 128 of `evals/seeds.json`, head against `origin/ma
 | T7a  | (built: 2026-11-11) G2 on the same branch: `fatSlowShare` in `actAll`, skipped at 0, with the physics tests                                                                                                                    | [judgement]  | T7         |
 | T7b  | (built: 2026-11-11) G3 on the same branch: `writeRay` and the WASM sense kernel (`wasm/src/sense.rs`, rebuilt with `scripts/build-wasm.sh`, Rust work by Opus) set the food channel only for edible food, with the sense tests | [judgement]  | T7a        |
 | T7c  | (built: 2026-11-11) G4 on the same branch: `strikeMissCost` charged in the feed phase, skipped at 0, with the feeding tests                                                                                                    | [judgement]  | T7b        |
-| T7d  | Scripted controllers and the source fixtures bite when they mean to eat                                                                                                                                                        | [judgement]  | T7c        |
-| T7e  | G4b on the same branch: `grazeMissCost` charged in the feed phase, skipped at 0, with the feeding tests                                                                                                                        | [judgement]  | T7d        |
+| T7d  | (built: 2026-11-11) Scripted controllers and the source fixtures bite when they mean to eat                                                                                                                                    | [judgement]  | T7c        |
+| T7e  | (built: 2026-11-11, then deleted in T12: E159 falsified it) G4b on the same branch: `grazeMissCost` charged in the feed phase, skipped at 0, with the feeding tests                                                            | [judgement]  | T7d        |
 | T8   | (built: 2026-11-12, E159; the guard passes on all eight arms, evals/decisions/E159/heat-guard.txt) The grid, the purpose guard on its arms, and `E-EC-1` recorded before the run                                               | [judgement]  | T7e        |
-| T9   | First pass on seeds 1 to 16 for 400000 ticks; ranked; `bite-graze-fat` and `E-EC-2` recorded, then run                                                                                                                         | [mechanical] | T8         |
-| T10  | Second pass on seeds 1 to 64 with `--keep-rule`; reports committed                                                                                                                                                             | [mechanical] | T9         |
-| T11  | Name what lands, or why nothing does; the verdicts; a sim-notes entry                                                                                                                                                          | [judgement]  | T10        |
-| T11a | Conformance review of Phase 2                                                                                                                                                                                                  | [judgement]  | T11        |
+| T9   | (built: 2026-11-12, E159) First pass on seeds 1 to 16 for 400000 ticks; ranked; `bite-graze-fat` and `E-EC-2` recorded, then run                                                                                               | [mechanical] | T8         |
+| T10  | (built: 2026-11-12, E160) Second pass on seeds 1 to 64 with `--keep-rule`; reports committed                                                                                                                                   | [mechanical] | T9         |
+| T11  | (built: 2026-11-12, E161) Name what lands, or why nothing does; the verdicts; a sim-notes entry                                                                                                                                | [judgement]  | T10        |
+| T11a | (built: 2026-11-12) Conformance review of Phase 2                                                                                                                                                                              | [judgement]  | T11        |
+
+**Phase 2 record (built).** E159 ran the first pass on seeds 1 to 16, E160 the second pass on seeds 1 to 64 with `--keep-rule`, and E161 the chosen
+bundle against main (reports and verdicts under `evals/decisions/E159/`, `E160/` and `E161/`). What lands is G1 (a
+non-hunter eats only while `BITE` is above 0) and G3 (a hunter's food channel shows only edible food), both already
+unconditional on the branch, with `grazeThrust` 0.5, `fatSlowShare` 0.5 and `strikeMissCost` 1 as the new defaults: the
+bundle read no guard worse than main, and `E-EC-2` held (every arm alone read `WORSE` on the guards, the bundle did not).
+G4b `grazeMissCost` was falsified in E159 (floor episodes 44, population mean 22), so its key, code and tests were
+deleted in T12 rather than kept. Caveat for T16: the alive guard detects only 24 seeds at 64, so it must be read on the
+fresh seeds 65 to 128 at the head, not taken from E161 alone.
 
 ### Phase 3 - The switch
 
-| #   | Task                                                                                                                                      | Nature       | Depends on |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T12 | G1 to G4 as Phase 2 named them; an unused key and its code deleted; the config, feeding and physics tests                                 | [judgement]  | T11a       |
-| T13 | Re-pin the goldens in Node and Chromium                                                                                                   | [mechanical] | T12        |
-| T14 | Re-record `bench/baseline.json` on a quiet machine under the CPU lock                                                                     | [mechanical] | T13        |
-| T15 | README.md and body-temperature.md describe the eat choice and fat                                                                         | [mechanical] | T12        |
-| T16 | Run the paired check on seeds 65 to 128 at the head against `origin/main`; reports committed                                              | [mechanical] | T14        |
-| T17 | Read the Done criteria; `E-EC-3`; a sim-notes entry; conformance review of Phase 3 in parallel with `scripts/check.sh`; status line moved | [judgement]  | T15, T16   |
+| #   | Task                                                                                                                                                                               | Nature       | Depends on |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T12 | (built: 2026-11-12) G1 to G4 as Phase 2 named them; an unused key and its code deleted; the config, feeding and physics tests                                                      | [judgement]  | T11a       |
+| T13 | (built: 2026-11-12, Node only; Chromium is not installed on the build machine, so `npm run browser:hash` is left to a machine that has it) Re-pin the goldens in Node and Chromium | [mechanical] | T12        |
+| T14 | Re-record `bench/baseline.json` on a quiet machine under the CPU lock                                                                                                              | [mechanical] | T13        |
+| T15 | (built: 2026-11-12) README.md and body-temperature.md describe the eat choice and fat                                                                                              | [mechanical] | T12        |
+| T16 | Run the paired check on seeds 65 to 128 at the head against `origin/main`; reports committed                                                                                       | [mechanical] | T14        |
+| T17 | Read the Done criteria; `E-EC-3`; a sim-notes entry; conformance review of Phase 3 in parallel with `scripts/check.sh`; status line moved                                          | [judgement]  | T15, T16   |
 
 ## Verification
 
