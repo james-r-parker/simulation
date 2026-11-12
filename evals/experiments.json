@@ -3960,6 +3960,27 @@
       "afterPolicy": "live",
       "effect": "no-difference",
       "verdicts": {}
+    },
+    {
+      "id": "E158",
+      "hypothesis": "eat-choice Phase 1, T3: the eat-choice detectors (eval.food_contact_bite_share, eval.full_contact_bite_share, eval.fat_speed_ratio) need a 128-seed floor-on reference of the defaults, so Phase 2 can read its eat and fat arms against one report.",
+      "prediction": "Same configHash as E155 (ff8d890a5a70c14d) and the same 128 seeds; every metric E155 holds reads as it does there (the sim is unchanged); the three new detectors are live; the forager BITE is near a coin flip at food and does not fall when full, and fatter agents move faster.",
+      "targets": [
+        "eval.food_contact_bite_share",
+        "eval.full_contact_bite_share",
+        "eval.fat_speed_ratio",
+        "eval.bite_idle"
+      ],
+      "before": "evals/decisions/E155/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d (carries none of the eat-choice detectors)",
+      "after": "evals/decisions/E158/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d, run at e86ea555 (code-identical to main), carrying the eat-choice detectors",
+      "verdicts": {},
+      "note": "Characterization only; no sim value moves. 310 metrics. Means over 128 seeds (SD): eval.food_contact_bite_share 0.498 (0.152), eval.full_contact_bite_share 0.504 (0.168), eval.fat_speed_ratio 1.317 (0.124); eval.bite_idle 0.724 (0.137). None of the three is null on any seed. Run with npm run eval -- --seeds 128 --ticks 200000 --policy live --workers 30, 2938 s.",
+      "reports": ["evals/decisions/E158/defaults-floor-on.json"],
+      "date": "2026-11-12",
+      "branch": "chore/eat-choice-reference",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
     }
   ]
 }
