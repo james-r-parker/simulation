@@ -23,6 +23,9 @@
     },
     "bite-strike-5": {
       "strikeMissCost": 5
+    },
+    "bite-grazemiss-1": {
+      "grazeMissCost": 1
     }
   }
 }

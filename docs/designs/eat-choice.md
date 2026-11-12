@@ -46,8 +46,9 @@ The defaults, 128 seeds, floor on, 200000 ticks, policy live (`evals/decisions/E
 | G2  | `fatSlowShare` (new number, default 0): thrust and turn rate are multiplied by `1 - fatSlowShare x energy / maxEnergyBySpec[spec]`, so a full store slows an agent the same at any store size                                           | Phase 3, at the screen's value               |
 | G3  | `writeRay` sets the food channel only for food the caster can eat (`plantFoodBySpec` for a plant, `meatFoodBySpec` for meat, above 0); food it cannot eat leaves the ray empty, as a carnivore ignores grass. A forager still sees both | Phase 3, when no keep-rule guard reads worse |
 | G4  | `strikeMissCost` (new number, default 0): a hunter holding `BITE` above 0 with nothing in its jaws loses this much energy that tick, as a lunge at nothing costs effort                                                                 | Phase 3, at the screen's value               |
+| G4b | `grazeMissCost` (new number, default 0): a non-hunter holding `BITE` above 0 with no edible food in contact (the `tryEat` contact rule, food its spec can eat) loses this much energy that tick, as a bite at nothing costs effort      | Phase 3, at the screen's value               |
 
-No flag is added. At their defaults `grazeThrust` 1, `fatSlowShare` 0 and `strikeMissCost` 0 change nothing and are skipped; G3 has no key and is screened from its commit. Every change
+No flag is added. At their defaults `grazeThrust` 1, `fatSlowShare` 0 and `strikeMissCost` 0 and `grazeMissCost` 0 change nothing and are skipped; G3 has no key and is screened from its commit. Every change
 here is a rules change (`rulesHash` hashes the whole config, sim-notes 2026-11-11), so the screen runs from an unmerged
 branch and the switch targets `season/next`, in the same season line as the low-density-edge.md switch.
 
@@ -97,37 +98,38 @@ The screen runs from an unmerged branch carrying G1, G1b and G2 as one commit ea
 seeds 1 to 16 of `evals/seeds.json` for the first pass. Brains have never needed to bite to eat, so every arm runs
 400000 ticks, reads its metrics after tick 200000, and lists `eval.floor_episodes`.
 
-| Arm              | Code and config                                                             |
-| ---------------- | --------------------------------------------------------------------------- |
-| `defaults`       | the parent of G1                                                            |
-| `bite`           | G1, `grazeThrust` 1                                                         |
-| `bite-graze-5`   | G1, `grazeThrust` 0.5                                                       |
-| `bite-graze-3`   | G1, `grazeThrust` 0.3                                                       |
-| `fat-3`          | the parent of G1, `fatSlowShare` 0.3                                        |
-| `fat-5`          | the parent of G1, `fatSlowShare` 0.5                                        |
-| `bite-graze-fat` | G1, the leading `grazeThrust`, the leading `fatSlowShare` of the first pass |
-| `sense-edible`   | G3 on the parent of G1                                                      |
-| `strike-2`       | the parent of G1, `strikeMissCost` 2                                        |
-| `strike-5`       | the parent of G1, `strikeMissCost` 5                                        |
+| Arm                | Code and config                                                             |
+| ------------------ | --------------------------------------------------------------------------- |
+| `defaults`         | the parent of G1                                                            |
+| `bite`             | G1, `grazeThrust` 1                                                         |
+| `bite-graze-5`     | G1, `grazeThrust` 0.5                                                       |
+| `bite-graze-3`     | G1, `grazeThrust` 0.3                                                       |
+| `bite-graze-fat`   | G1, the leading `grazeThrust`, the leading `fatSlowShare` of the first pass |
+| `sense-edible`     | G3 on the parent of G1                                                      |
+| `strike-2`         | the parent of G1, `strikeMissCost` 2                                        |
+| `strike-5`         | the parent of G1, `strikeMissCost` 5                                        |
+| `bite-grazemiss-1` | G1, `grazeMissCost` 1                                                       |
 
 **The grid on the screen branch** (`evals/screens/eat-choice.grid.json`, E159, recorded before the run). The branch carries G1
 and G3 as code, so every arm in the grid runs with both on; the grid holds the config-only arms: `bite` (the reference,
-the defaults with G1 and G3), `bite-graze-5`, `bite-graze-3`, `bite-fat-3`, `bite-fat-5`, `bite-strike-2` and
-`bite-strike-5`, floor on, policy live, 400000 ticks, seeds 1 to 16. Two consequences:
+the defaults with G1 and G3), `bite-graze-5`, `bite-graze-3`, `bite-fat-3`, `bite-fat-5`, `bite-strike-2`,
+`bite-strike-5` and `bite-grazemiss-1`, floor on, policy live, 400000 ticks, seeds 1 to 16. Two consequences:
 
-- The plan's `defaults` arm (the parent of G1, without G1 or G3) and its `fat-*` arms without G1 are one separate eval
-  on main's code (the commit before G1), also 400000 ticks and seeds 1 to 16: `defaults`, `fat-3` and `fat-5`. `strike-*`
-  and `bite-graze-fat` are read from the grid's `bite-strike-*` arms and from the second pass.
+- The plan's `defaults` arm (the parent of G1, without G1 or G3) is one separate eval on main's code (`origin/main`,
+  `defaults`), also 400000 ticks and seeds 1 to 16, read against the grid's `bite` arm (G1 and G3 together against
+  main). There are no `fat-*` arms without G1: `fatSlowShare` exists only after G2 on this branch, so the `bite-fat-*`
+  arms are read against `bite`. `strike-*` and `bite-graze-fat` are read from the grid's `bite-strike-*` arms and from
+  the second pass.
 - `sense-edible` is G1 and G3 against main's `defaults`; G3 alone is not separable on this branch (it has no key, so no
   arm can switch it off). A G3-off arm would need a new config key, a flag-ledger row and a deletion task, which is not
   cheap, so the deviation is recorded in Decisions.
 
-- `bite-graze-*` and `fat-*` arms first pass the purpose guard (`scripts/heat-guard.mjs`, low-density-edge.md T12) on
+- `bite-graze-*`, `bite-fat-*`, `bite-strike-*` and `bite-grazemiss-*` arms first pass the purpose guard (`scripts/heat-guard.mjs`, low-density-edge.md T12) on
   their config: a sitter still dies of cold and a rusher of heat.
 - An arm whose floor episodes exceed twice the defaults' is reported and is not ranked.
 - The first pass ranks by `held`, then `alive`, then `eval.full_contact_bite_share` (lower). `bite-graze-fat` takes its
   values from that ranking and is recorded with its prediction before it runs.
-- The second pass runs seeds 1 to 64 for `defaults`, the leading `bite-graze-*` arm, the leading `fat-*` arm and
+- The second pass runs seeds 1 to 64 for `defaults`, the leading `bite-graze-*` arm, the leading `bite-fat-*` arm and
   `bite-graze-fat`, `sense-edible` and the leading `strike-*` arm. Each is compared with `defaults` by `npm run eval:compare -- --keep-rule --allow-config-diff <keys>`.
   The guards include hunters alive. The reports are committed under `evals/decisions/`.
 - G3 lands when `sense-edible` reads no keep-rule guard worse. G4 lands at the leading `strikeMissCost` when its arm reads no guard worse and `eval.bite_idle` lower than the defaults' by the sign test.
@@ -138,7 +140,7 @@ the defaults with G1 and G3), `bite-graze-5`, `bite-graze-3`, `bite-fat-3`, `bit
 
 | Chunk | Tasks      | Contents                                 |
 | ----- | ---------- | ---------------------------------------- |
-| C     | T6 to T7c  | G1 to G4 on the screen branch (code)     |
+| C     | T6 to T7e  | G1 to G4b on the screen branch (code)    |
 | D     | T8 to T11a | The grid, the passes, the landing (runs) |
 
 ### Phase 3 - The switch
@@ -147,7 +149,7 @@ the defaults with G1 and G3), `bite-graze-5`, `bite-graze-3`, `bite-fat-3`, `bit
 
 One PR, a breaking commit (`feat!`) to `season/next`, beside the low-density-edge.md switch.
 
-- G1 to G4 land as Phase 2 named them; an unused `grazeThrust`, `fatSlowShare` or `strikeMissCost` is deleted with its code.
+- G1 to G4b land as Phase 2 named them; an unused `grazeThrust`, `fatSlowShare`, `strikeMissCost` or `grazeMissCost` is deleted with its code.
 - The goldens are re-pinned in Node and Chromium, and `bench/baseline.json` is re-recorded on a quiet machine under the
   CPU lock, each in its own commit.
 - low-density-edge.md's 64-seed pass (its T14) and finalist are run on the switched world.
@@ -178,17 +180,19 @@ Done criteria, on seeds 65 to 128 of `evals/seeds.json`, head against `origin/ma
 
 ## Decisions
 
-| Decision                      | Choice                                                                                                                           | If it fails                                                                                                                                        |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The eat act                   | The existing `BITE` output, for non-hunters (user, 2026-11-11)                                                                   | A separate `EAT` output, which changes the brain layout and costs the champions                                                                    |
-| The price of holding the bite | Grazing slows thrust (`grazeThrust`), as a grazing animal moves slowly                                                           | An energy cost per tick of holding `BITE`                                                                                                          |
-| Fatness                       | The store fraction, so a hunter's 5x store slows it no more than a forager's full store                                          | -                                                                                                                                                  |
-| Fat in the same plan          | G2 beside G1 (user, 2026-11-11)                                                                                                  | -                                                                                                                                                  |
-| Hunters                       | Unchanged: a hunter already bites prey with `BITE` and eats carcasses on contact                                                 | -                                                                                                                                                  |
-| A hunter's food sense         | Only food it can eat lights its food channel (user, 2026-11-11: a hunter seemed to attack food patches)                          | The `rayHue` cue stays the only plant-or-meat signal                                                                                               |
-| G3 on the screen branch       | G3 has no key, so no arm runs G1 without it; `sense-edible` reads as G1 and G3 against main's `defaults` (deviation, 2026-11-12) | A `senseEdible` key with a flag-ledger row and a deletion task, then a `bite` arm with it off                                                      |
-| A strike at nothing           | Costs `strikeMissCost` energy                                                                                                    | -                                                                                                                                                  |
-| Learning to bite from scratch | 400000-tick arms read after tick 200000, floor episodes listed; an arm over twice the defaults' is not ranked                    | When every `bite-*` arm is unranked, a run with each initial genome's `BITE` bias set positive separates the transition cost from the steady state |
+| Decision                              | Choice                                                                                                                                                                                                        | If it fails                                                                                                                                        |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The fat arms                          | `fatSlowShare` exists only after G2 on this branch, so the fat arms run with G1 and G3 (`bite-fat-*`) and read against `bite`; the only main-code comparison is `defaults` at 400000 ticks (user, 2026-11-12) | A key-less fat switch on main, which is not worth a commit                                                                                         |
+| Non-hunters pay for a bite at nothing | G4b `grazeMissCost`, the forager twin of G4 (user, 2026-11-12)                                                                                                                                                | Drop the key when `bite-grazemiss-1` reads no guard worse and no change in the bite share                                                          |
+| The eat act                           | The existing `BITE` output, for non-hunters (user, 2026-11-11)                                                                                                                                                | A separate `EAT` output, which changes the brain layout and costs the champions                                                                    |
+| The price of holding the bite         | Grazing slows thrust (`grazeThrust`), as a grazing animal moves slowly                                                                                                                                        | An energy cost per tick of holding `BITE`                                                                                                          |
+| Fatness                               | The store fraction, so a hunter's 5x store slows it no more than a forager's full store                                                                                                                       | -                                                                                                                                                  |
+| Fat in the same plan                  | G2 beside G1 (user, 2026-11-11)                                                                                                                                                                               | -                                                                                                                                                  |
+| Hunters                               | Unchanged: a hunter already bites prey with `BITE` and eats carcasses on contact                                                                                                                              | -                                                                                                                                                  |
+| A hunter's food sense                 | Only food it can eat lights its food channel (user, 2026-11-11: a hunter seemed to attack food patches)                                                                                                       | The `rayHue` cue stays the only plant-or-meat signal                                                                                               |
+| G3 on the screen branch               | G3 has no key, so no arm runs G1 without it; `sense-edible` reads as G1 and G3 against main's `defaults` (deviation, 2026-11-12)                                                                              | A `senseEdible` key with a flag-ledger row and a deletion task, then a `bite` arm with it off                                                      |
+| A strike at nothing                   | Costs `strikeMissCost` energy                                                                                                                                                                                 | -                                                                                                                                                  |
+| Learning to bite from scratch         | 400000-tick arms read after tick 200000, floor episodes listed; an arm over twice the defaults' is not ranked                                                                                                 | When every `bite-*` arm is unranked, a run with each initial genome's `BITE` bias set positive separates the transition cost from the steady state |
 
 ## Delivery requirements
 
@@ -228,7 +232,8 @@ Done criteria, on seeds 65 to 128 of `evals/seeds.json`, head against `origin/ma
 | T7b  | (built: 2026-11-11) G3 on the same branch: `writeRay` and the WASM sense kernel (`wasm/src/sense.rs`, rebuilt with `scripts/build-wasm.sh`, Rust work by Opus) set the food channel only for edible food, with the sense tests | [judgement]  | T7a        |
 | T7c  | (built: 2026-11-11) G4 on the same branch: `strikeMissCost` charged in the feed phase, skipped at 0, with the feeding tests                                                                                                    | [judgement]  | T7b        |
 | T7d  | Scripted controllers and the source fixtures bite when they mean to eat                                                                                                                                                        | [judgement]  | T7c        |
-| T8   | The grid, the purpose guard on its arms, and `E-EC-1` recorded before the run                                                                                                                                                  | [judgement]  | T7d        |
+| T7e  | G4b on the same branch: `grazeMissCost` charged in the feed phase, skipped at 0, with the feeding tests                                                                                                                        | [judgement]  | T7d        |
+| T8   | The grid, the purpose guard on its arms, and `E-EC-1` recorded before the run                                                                                                                                                  | [judgement]  | T7e        |
 | T9   | First pass on seeds 1 to 16 for 400000 ticks; ranked; `bite-graze-fat` and `E-EC-2` recorded, then run                                                                                                                         | [mechanical] | T8         |
 | T10  | Second pass on seeds 1 to 64 with `--keep-rule`; reports committed                                                                                                                                                             | [mechanical] | T9         |
 | T11  | Name what lands, or why nothing does; the verdicts; a sim-notes entry                                                                                                                                                          | [judgement]  | T10        |

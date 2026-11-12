@@ -219,6 +219,7 @@ export const DEFAULTS = deepFreeze({
     grazeThrust: 1, // eat-choice G1b: thrust multiplier while a non-hunter holds BITE above 0; 1 is off
     fatSlowShare: 0, // eat-choice G2: a full store slows thrust and turn by this share; 0 is off
     strikeMissCost: 0, // eat-choice G4: energy a hunter loses on a tick it holds BITE with no body in its jaws; 0 is off
+    grazeMissCost: 0, // eat-choice G4b: energy a non-hunter loses on a tick it holds BITE with no edible food in contact; 0 is off
     carcassTicks: 300, // new: ticks a carcass lasts before it expires (T54)
     carcassShare: 0.8, // new: share of an agent's energy at death that its carcass holds (T54)
     wallGaps: 3, // new: gaps in the wall, basins only (T52)
