@@ -68,7 +68,7 @@ export const WORLD_4 = {
         arithmetic: 'test/evo/scene-linger.test.js',
         source: 'test/evo/metric-source-eat.test.js',
     }),
-    'eval.strike_miss_energy_share': entry('world', {
+    'eval.strike_miss_energy_ratio': entry('world', {
         module: 'js/evo/scene-strike-miss.js',
         meaning: 'Lower means hunters spend less of what they earn on strikes at nothing.',
         counts: 'Over the run, each tick an alive hunter holds BITE above 0 with no body in its jaws (jawsStamp is not the tick the observer reads after the step) is priced at strikeMissCost (not the energy removeEnergy took, which is less for a hunter with less than the cost), over the energy hunters stored (hunterIncomeBySpec: kill, bite, carcass and herd). 0 with strikeMissCost 0. It can exceed 1: a hunter that misses more than it earns.',

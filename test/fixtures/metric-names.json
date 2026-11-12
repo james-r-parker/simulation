@@ -297,7 +297,7 @@
   "eval.split_parent_delib_share",
   "eval.strain_family_focus",
   "eval.strains_per_100k",
-  "eval.strike_miss_energy_share",
+  "eval.strike_miss_energy_ratio",
   "eval.style_separation",
   "eval.toxic_avoidance",
   "eval.toxic_death_share",

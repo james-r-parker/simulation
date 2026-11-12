@@ -4,7 +4,7 @@
 // raises `world.tick` by 1, so after the step a hunter that had a body in its jaws has `jawsStamp === world.tick`. A hunter
 // alive with `BITE` above 0 and a stamp of another value struck at nothing.
 //
-// - `eval.strike_miss_energy_share` (lower): over the run, the strike misses priced at `strikeMissCost`, over the energy
+// - `eval.strike_miss_energy_ratio` (lower): over the run, the strike misses priced at `strikeMissCost`, over the energy
 //   hunters stored (`hunterIncomeBySpec`: kill, bite, carcass and herd meals, as `eval.hunter_income_share` counts it).
 //   0 with `strikeMissCost` 0; null with no hunter income. A ratio, not a share: a run in which the hunters miss more than
 //   they earn reads above 1 (seed 2 of the invariants test does).
@@ -69,7 +69,7 @@ function hunterIncome(world) {
 export function strikeMissMetrics(scene, world) {
     const income = world.hunterIncomeBySpec === undefined ? 0 : hunterIncome(world);
     return {
-        'eval.strike_miss_energy_share':
+        'eval.strike_miss_energy_ratio':
             income > 0 ? ok((scene.misses * world.config.strikeMissCost) / income) : none(NO_INCOME),
     };
 }

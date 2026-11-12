@@ -5,7 +5,7 @@ import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { createStrikeMissScene, strikeMissMetrics, tickStrikeMiss } from '../../js/evo/scene-strike-miss.js';
 import { directionOf, namesOf } from './helpers/metric-registry.js';
 
-const NAME = 'eval.strike_miss_energy_share';
+const NAME = 'eval.strike_miss_energy_ratio';
 const TICK = 50;
 
 /**

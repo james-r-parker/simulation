@@ -147,7 +147,7 @@ const ADDED_AFTER_T8 = [
     'eval.graze_time_share',
     'eval.graze_speed_ratio',
     'eval.hunter_plant_linger_share',
-    'eval.strike_miss_energy_share',
+    'eval.strike_miss_energy_ratio',
 ];
 /** Watch metrics registered after the snapshot whose intended direction is lower. */
 const ADDED_INTENDED_LOWER = [

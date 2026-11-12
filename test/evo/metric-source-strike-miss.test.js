@@ -48,7 +48,7 @@ describe('the jaws stamp the observer reads after the step', () => {
     });
 });
 
-describe('eval.strike_miss_energy_share in a real world', () => {
+describe('eval.strike_miss_energy_ratio in a real world', () => {
     it('counts each idle strike once and equals the energy the sim charged for them', () => {
         const { run, world, spawn } = huntRun({ over: OVER });
         const hunter = spawn(PREDATOR);
@@ -82,7 +82,7 @@ describe('eval.strike_miss_energy_share in a real world', () => {
             run.tick();
         }
         expect(world.ledgerCarcass[hunter]).toBe(50);
-        expect(run.metrics()['eval.strike_miss_energy_share']).toEqual({ value: (10 * COST) / 50 });
+        expect(run.metrics()['eval.strike_miss_energy_ratio']).toEqual({ value: (10 * COST) / 50 });
     });
 
     it('is null with no hunter income, and 0 with strikeMissCost 0', () => {
@@ -90,13 +90,13 @@ describe('eval.strike_miss_energy_share in a real world', () => {
         const hunter = idle.spawn(PREDATOR);
         idle.run.want(hunter, OUTPUT_INDEX.BITE);
         idle.run.tick();
-        expect(idle.run.metrics()['eval.strike_miss_energy_share']?.value).toBeNull();
+        expect(idle.run.metrics()['eval.strike_miss_energy_ratio']?.value).toBeNull();
         const free = huntRun({ over: { ...OVER, strikeMissCost: 0 } });
         const freeHunter = free.spawn(PREDATOR);
         free.run.want(freeHunter, OUTPUT_INDEX.BITE);
         pose(free.world, freeHunter, [200, 500, 300]);
         plantMeat(free.world, freeHunter, 50);
         free.run.tick();
-        expect(free.run.metrics()['eval.strike_miss_energy_share']).toEqual({ value: 0 });
+        expect(free.run.metrics()['eval.strike_miss_energy_ratio']).toEqual({ value: 0 });
     });
 });
