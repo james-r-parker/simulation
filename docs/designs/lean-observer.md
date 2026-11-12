@@ -1,6 +1,6 @@
 # Lean observer
 
-**Status:** Proposed - one phase: the app's sim worker runs the observer without the eval-only detectors.
+**Status:** In progress - Phase 1 built, conformance review pending
 **Validated:** 3f8bf122 (2026-11-12)
 **Priority:** 2 - a worker-only change that moves no sim behaviour, so it does not wait on the balance work
 
@@ -44,15 +44,22 @@ keep the full observer.
 
 ## Phases
 
-### Phase 1 - The lean observer in the worker
+### Phase 1 - The lean observer in the worker (built)
 
 **Targets:** bench.observe_ms@500
 
 - `observe`, `applyEvents`, `noteChase` and `createScenes` honour `lean`; `computeMetrics` and `checkpoint` refuse a lean observer.
 - A lean and a full observer on the same seeded world give identical policy and panel state over 6000 ticks.
-- `npm run bench -- --policy live` reports `bench.observe_ms@500` (the `feedPolicy` time per tick) for the full and the
+- `npm run bench -- --policy map-elites-v6` reports `bench.observe_ms@500` (the `feedPolicy` time per tick) for the full and the
   lean observer; done when the lean one is at most 0.7 of the full one at 500 agents.
 - `buildRun` uses the lean observer.
+
+**Phase 1 record (2026-11-12).** `npm run bench -- --policy map-elites-v6 --sizes=500` under the CPU lock, twice (`live`
+is an alias of `eval` and `screen`, not of `bench`, so the plan's `--policy live` reads `--policy map-elites-v6`):
+`bench.observe_ms@500` 0.1416 and 0.1425 full, `bench.observe_ms@500lean` 0.0966 and 0.0928 lean, a ratio of 0.68 and
+0.65, so the 0.7 target holds. `bench.step_ms@500` (step plus `feedPolicy`) 1.8748 and 1.8868 full, 1.8561 and 1.8432
+lean. The equality test needed no call moved between the layers. `npm run perf:browser` was not run: no Chrome with a GPU
+was available to the builder.
 
 ## Delivery requirements
 
@@ -72,7 +79,7 @@ keep the full observer.
 
 ## Task breakdown
 
-### Phase 1 - The lean observer in the worker
+### Phase 1 - The lean observer in the worker (built)
 
 | #   | Task                                                                                                                                                                                                                          | Nature       | Depends on |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
@@ -80,13 +87,13 @@ keep the full observer.
 | T2  | `test/evo/observer-lean.slow.test.js` and `test/evo/observer-lean.test.js`: the lean and full observers give identical policy and panel state over 6000 ticks (built: 2026-11-12)                                             | [judgement]  | T1         |
 | T3  | `bench.observe_ms@500` in `scripts/bench.mjs` for `--policy` runs, full and lean, and its Metrics table row (built: 2026-11-12)                                                                                               | [mechanical] | T1         |
 | T4  | `buildRun` passes `{ lean: true }`; the host tests and `test/worker/sim-host.slow.test.js` pass unchanged (built: 2026-11-12)                                                                                                 | [mechanical] | T2         |
-| T5  | Measure `bench.observe_ms@500` full and lean under the CPU lock, and `npm run perf:browser`; the docs updated                                                                                                                 | [mechanical] | T3, T4     |
+| T5  | Measure `bench.observe_ms@500` full and lean under the CPU lock, and `npm run perf:browser`; the docs updated (built: 2026-11-12)                                                                                             | [mechanical] | T3, T4     |
 | T6  | Conformance review by a fresh agent in parallel with `scripts/check.sh`; status line moved                                                                                                                                    | [judgement]  | T5         |
 
 ## Verification
 
 1. `scripts/check.sh` passes.
-2. `flock /tmp/claude-1000/cpu.lock npm run bench -- --policy live --sizes=500` prints `bench.observe_ms@500` for both
+2. `flock /tmp/claude-1000/cpu.lock npm run bench -- --policy map-elites-v6 --sizes=500` prints `bench.observe_ms@500` for both
    observers, the lean one at most 0.7 of the full one.
 3. `npm run dev`: the stats panel counts births, deaths and kills, the inspector opens an agent, and the archive view
    fills, as on `main`.

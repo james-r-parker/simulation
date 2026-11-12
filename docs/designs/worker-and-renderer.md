@@ -8,8 +8,9 @@
 The browser app runs the simulation in a dedicated worker and only draws on the main thread. It runs unattended on a TV
 for hours:
 
-- The worker owns the world, the live policy (`LIVE_POLICY`), the observer and the archive. It steps on a fixed
-  timestep and posts snapshots as transferable buffers. There is no `SharedArrayBuffer`.
+- The worker owns the world, the live policy (`LIVE_POLICY`), the observer and the archive. The host builds a lean
+  observer (`buildRun` passes `{ lean: true }`, [lean-observer.md](lean-observer.md)): the policy core and the panels'
+  counters, without the eval layer. It steps on a fixed timestep and posts snapshots as transferable buffers. There is no `SharedArrayBuffer`.
 - The main thread interpolates between the two newest snapshots and draws at the display's refresh rate with
   `three` (WebGL2): instanced meshes, custom shader materials and bloom. Draw code allocates nothing per frame.
 - The look is a bioluminescent abyss: a near-black background with a very dim, slowly moving aurora, rock outcrops with glowing lichen, and agents that glow like deep-sea life.

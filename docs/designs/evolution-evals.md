@@ -95,6 +95,14 @@ arrays, so it is valid after the slot has been reused. `onEvent` receives each e
 
 ### Observer counters
 
+The observer has two layers ([lean-observer.md](lean-observer.md)). The policy core is what the live policy and the
+app's panels read: combat and intent, the style scene and the terrain ring geometry, the death log and its fitness, the
+slot counters, the lineage counters behind `descendantsAlive`, and the run counters. The eval layer is everything that
+feeds `computeMetrics` and `checkpoint`: the other scenes and the lineage, environment, merit, mate, split, body, brain
+and watch pools. `createObserver(config, rng, { lean: true })` builds the policy core only; `computeMetrics` and
+`checkpoint` throw on it. Eval, replay, bench, the trainer, the league, the probes and the screens use the full
+observer, and the app's worker uses the lean one.
+
 The observer caches each slot's `genomeId`, `lineageId`, `spec` and birth tick on `AgentBorn`, and handles each tick's
 `AgentDied` records before its `AgentBorn` records.
 
