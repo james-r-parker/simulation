@@ -102,6 +102,16 @@ function matingShare(observer) {
 }
 
 /**
+ * @param {Record<string, any>} observer the observer
+ * @returns {void}
+ */
+function assertFull(observer) {
+    if (observer.lean) {
+        throw new Error('computeMetrics: the observer is lean');
+    }
+}
+
+/**
  * Computes every metric from the observer after the run. `bench.*` and `browser.*` are not here.
  * @param {Record<string, any>} observer the observer, fed every tick and checkpointed
  * @param {Record<string, any>} world the world at the end (the observer holds most of what the metrics need; the split-gate tally lives on the world)
@@ -111,6 +121,7 @@ function matingShare(observer) {
  * @returns {import('./metrics-stats.js').MetricRecord} results keyed by metric name, in sorted order
  */
 export function computeMetrics(observer, world, options = {}) {
+    assertFull(observer);
     const grids = behaviourCoverage(observer);
     const { archive } = options;
     const { births, deathsByCause, agentTicks } = observer;

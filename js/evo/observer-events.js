@@ -31,8 +31,10 @@ export function resetSlot(observer, slot) {
     }
     clearCells(observer, slot);
     resetIntentSlot(observer.intent, slot);
-    resetVisits(observer.watch, slot);
-    resetBrainSlot(observer, slot);
+    if (!observer.lean) {
+        resetVisits(observer.watch, slot);
+        resetBrainSlot(observer, slot);
+    }
 }
 
 /**
@@ -106,7 +108,9 @@ function finishDeath(observer, record, fitness) {
         observer.lineageId[slot] = d[o + 7];
         observer.spec[slot] = d[o + 6];
         observer.ghosts.add(genomeId);
-        noteBody(observer, slot, 1, 1);
+        if (!observer.lean) {
+            noteBody(observer, slot, 1, 1);
+        }
     }
     observer.ageTicks[slot] = d[o + 8];
     readDescendants(observer, slot, genomeId);
@@ -121,7 +125,7 @@ function finishDeath(observer, record, fitness) {
         fitness ? fitness(observer, slot, observer.config) : NaN,
     );
     observer.deathsByCause[d[o + 4]] += 1;
-    if (d[o + 1] >= BURN_IN_TICKS) {
+    if (d[o + 1] >= BURN_IN_TICKS && !observer.lean) {
         noteDeath(observer.environment, d[o + 4]);
         noteVisitDeath(observer.watch, slot, d[o + 8]);
         noteBrainDeath(observer, world, { slot, genomeId, ageTicks: d[o + 8] });
@@ -199,6 +203,26 @@ function noteDietBirth(observer, world, d, o) {
 }
 
 /**
+ * The eval layer's birth notes: the hunter, diet and lineage pools.
+ * @param {Record<string, any>} observer the observer
+ * @param {Record<string, any>} world the world
+ * @param {Float64Array} d the event data
+ * @param {number} o the record offset
+ * @returns {boolean} whether the birth is an eligible child
+ */
+function noteEvalBirth(observer, world, d, o) {
+    noteHunterBirth(observer, d, o);
+    if (d[o + 1] >= BURN_IN_TICKS) {
+        noteDietBirth(observer, world, d, o);
+    }
+    const child = isEligibleChild(observer.lineage, d, o);
+    if (child) {
+        noteChild(observer.lineage, observer.ghosts.has(d[o + 3]));
+    }
+    return child;
+}
+
+/**
  * Starts tracking a newborn in its slot with zeroed counters.
  * @param {Record<string, any>} observer the observer
  * @param {Record<string, any>} world the world
@@ -212,14 +236,8 @@ function startBirth(observer, world, d, o) {
     if (d[o + 1] >= BURN_IN_TICKS) {
         observer.birthsAfterBurnIn[d[o + 8]] += 1;
     }
-    noteHunterBirth(observer, d, o);
-    if (d[o + 1] >= BURN_IN_TICKS) {
-        noteDietBirth(observer, world, d, o);
-    }
-    const child = isEligibleChild(observer.lineage, d, o);
-    if (child) {
-        noteChild(observer.lineage, observer.ghosts.has(d[o + 3]));
-    }
+    const lean = observer.lean;
+    const child = lean ? false : noteEvalBirth(observer, world, d, o);
     if (observer.ghosts.has(d[o + 3])) {
         return;
     }
@@ -227,12 +245,14 @@ function startBirth(observer, world, d, o) {
     observer.genomeId[slot] = d[o + 3];
     observer.lineageId[slot] = d[o + 4];
     observer.spec[slot] = d[o + 5];
-    observer.priorSpec[slot] = priorSpecOf(observer, d, o);
     observer.birthTick[slot] = d[o + 1];
-    observer.eligibleChild[slot] = child ? 1 : 0;
-    noteBirthBody(observer, world, slot, d[o + 3]);
-    noteBrainBirth(observer, world, slot, d[o + 3]);
-    setLineage(observer, d, o);
+    if (!lean) {
+        observer.priorSpec[slot] = priorSpecOf(observer, d, o);
+        observer.eligibleChild[slot] = child ? 1 : 0;
+        noteBirthBody(observer, world, slot, d[o + 3]);
+        noteBrainBirth(observer, world, slot, d[o + 3]);
+        setLineage(observer, d, o);
+    }
     recordParents(observer, d, o);
     observer.slotOf.set(d[o + 3], slot);
 }
@@ -285,8 +305,10 @@ export function applyEvents(observer, world, fitness) {
     const count = world.events.count;
     observer.ghosts.clear();
     creditRelations(observer, d, count);
-    noteLineages(observer.lineage, d, count);
-    noteParentage(observer, d, count);
+    if (!observer.lean) {
+        noteLineages(observer.lineage, d, count);
+        noteParentage(observer, d, count);
+    }
     noteBirthLineage(observer, d, count);
     for (let i = 0; i < count; i++) {
         if (d[i * EVENT_STRIDE] === EVENT_TYPE.AGENT_DIED) {

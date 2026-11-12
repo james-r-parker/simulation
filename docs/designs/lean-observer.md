@@ -74,14 +74,14 @@ keep the full observer.
 
 ### Phase 1 - The lean observer in the worker
 
-| #   | Task                                                                                                                                                                                                      | Nature       | Depends on |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | `createObserver` option `lean`; `observe`, `observerPhases`, `noteChase`, `applyEvents`, `createScenes` and `observeScenes` skip the eval layer; `computeMetrics` and `checkpoint` refuse a lean observer | [judgement]  | -          |
-| T2  | `test/evo/observer-lean.slow.test.js` and `test/evo/observer-lean.test.js`: the lean and full observers give identical policy and panel state over 6000 ticks                                             | [judgement]  | T1         |
-| T3  | `bench.observe_ms@500` in `scripts/bench.mjs` for `--policy` runs, full and lean, and its Metrics table row                                                                                               | [mechanical] | T1         |
-| T4  | `buildRun` passes `{ lean: true }`; the host tests and `test/worker/sim-host.slow.test.js` pass unchanged                                                                                                 | [mechanical] | T2         |
-| T5  | Measure `bench.observe_ms@500` full and lean under the CPU lock, and `npm run perf:browser`; the docs updated                                                                                             | [mechanical] | T3, T4     |
-| T6  | Conformance review by a fresh agent in parallel with `scripts/check.sh`; status line moved                                                                                                                | [judgement]  | T5         |
+| #   | Task                                                                                                                                                                                                                          | Nature       | Depends on |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T1  | `createObserver` option `lean`; `observe`, `observerPhases`, `noteChase`, `applyEvents`, `createScenes` and `observeScenes` skip the eval layer; `computeMetrics` and `checkpoint` refuse a lean observer (built: 2026-11-12) | [judgement]  | -          |
+| T2  | `test/evo/observer-lean.slow.test.js` and `test/evo/observer-lean.test.js`: the lean and full observers give identical policy and panel state over 6000 ticks                                                                 | [judgement]  | T1         |
+| T3  | `bench.observe_ms@500` in `scripts/bench.mjs` for `--policy` runs, full and lean, and its Metrics table row                                                                                                                   | [mechanical] | T1         |
+| T4  | `buildRun` passes `{ lean: true }`; the host tests and `test/worker/sim-host.slow.test.js` pass unchanged                                                                                                                     | [mechanical] | T2         |
+| T5  | Measure `bench.observe_ms@500` full and lean under the CPU lock, and `npm run perf:browser`; the docs updated                                                                                                                 | [mechanical] | T3, T4     |
+| T6  | Conformance review by a fresh agent in parallel with `scripts/check.sh`; status line moved                                                                                                                                    | [judgement]  | T5         |
 
 ## Verification
 

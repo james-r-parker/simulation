@@ -47,9 +47,13 @@ import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @param {number} [runTicks] the run length in ticks, for the last-quarter hunter ticks
+ * @param {boolean} [lean] build only the style and terrain scenes (the policy core, lean-observer.md)
  * @returns {Record<string, any>} the scenes, each empty
  */
-export function createScenes(config, runTicks = 0) {
+export function createScenes(config, runTicks = 0, lean = false) {
+    if (lean) {
+        return { lean: true, terrain: createTerrainScene(config), style: createStyle(config) };
+    }
     const competence = createCompetenceScene(config);
     const matched = createMatchedScene(config);
     return {
@@ -100,6 +104,10 @@ export function createScenes(config, runTicks = 0) {
  * @returns {void}
  */
 export function resetSceneSlot(scenes, slot) {
+    if (scenes.lean === true) {
+        resetStyleSlot(scenes.style, slot);
+        return;
+    }
     resetPatchSlot(scenes.patch, slot);
     resetApproachSlot(scenes.approach, slot);
     resetStyleSlot(scenes.style, slot);
@@ -127,6 +135,33 @@ function noteDeath(scenes, observer, { slot, genomeId, tick, age }) {
         noteStyleDeath(observer, slot);
         if (age >= observer.config.maturityTicks) {
             noteHeritageDeath(scenes.heritage, observer, { slot, age });
+        }
+    }
+}
+
+/**
+ * The lean observer's `noteEvents`: a tick's deaths and births reach only the style scene.
+ * @param {Record<string, any>} scenes the lean scenes
+ * @param {Record<string, any>} observer the observer
+ * @param {Record<string, any>} world the world
+ * @returns {void}
+ */
+function noteLeanEvents(scenes, observer, world) {
+    const d = world.events.data;
+    const end = world.events.count * EVENT_STRIDE;
+    for (let o = 0; o < end; o += EVENT_STRIDE) {
+        if (d[o] === EVENT_TYPE.AGENT_DIED) {
+            const slot = d[o + 2];
+            noteStyleAtDeath(observer, o / EVENT_STRIDE, { slot, genomeId: d[o + 3] });
+            if (observer.genomeId[slot] === d[o + 3] && d[o + 1] >= BURN_IN_TICKS) {
+                noteStyleDeath(observer, slot);
+            }
+            resetSceneSlot(scenes, slot);
+        }
+    }
+    for (let o = 0; o < end; o += EVENT_STRIDE) {
+        if (d[o] === EVENT_TYPE.AGENT_BORN) {
+            resetSceneSlot(scenes, d[o + 2]);
         }
     }
 }
@@ -184,6 +219,20 @@ function noteEvents(scenes, observer, world) {
 }
 
 /**
+ * Feeds the lean scenes one tick: the style scene's births, deaths and bite chains.
+ * @param {Record<string, any>} scenes the lean scenes
+ * @param {Record<string, any>} observer the observer
+ * @param {Record<string, any>} world the world
+ * @returns {void}
+ */
+function observeLean(scenes, observer, world) {
+    noteLeanEvents(scenes, observer, world);
+    if (world.tick !== 0) {
+        tickStyle(observer, world);
+    }
+}
+
+/**
  * Feeds the scenes one tick. Call it once right after `createWorld` and once after every `step`.
  * @param {Record<string, any>} observer the observer, whose intent state is current for this tick
  * @param {Record<string, any>} world the world
@@ -191,6 +240,10 @@ function noteEvents(scenes, observer, world) {
  */
 export function observeScenes(observer, world) {
     const scenes = observer.scenes;
+    if (scenes.lean === true) {
+        observeLean(scenes, observer, world);
+        return;
+    }
     noteEvents(scenes, observer, world);
     noteDiseaseEvents(scenes.disease, world);
     tickHunters(scenes.hunters, world.tick);
