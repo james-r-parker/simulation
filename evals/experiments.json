@@ -4177,6 +4177,30 @@
       "verdicts": {},
       "effect": "better",
       "note": "Prediction falsified: deliberate_food_share 0.43 (main) to 0.35, worse; against the unheld switch (E162 head) it reads better (0.31 to 0.35). The hold is a gain: keep rule alive 5 vs 18 and under80 7 vs 23 better than the unheld switch, population mean +34%, diversity +7%, toxic_avoidance +4%; lineages_alive -10% worse. Hold kept; G1b reopened (T26). See evals/decisions/E163/results.md."
+    },
+    {
+      "id": "E164",
+      "hypothesis": "eat-choice Phase 5, T24: the new eat-choice detectors need a reference of the defaults on main (the eat choice), so their liveness and power can be read.",
+      "prediction": "Every new detector is live on every seed; the 100-tick sampling lifts the contact shares to a detectable change of 0.05 at 32 seeds; the graze, linger and strike-miss detectors reach verified.",
+      "targets": [
+        "eval.food_contact_bite_share",
+        "eval.full_contact_bite_share",
+        "eval.graze_speed_ratio",
+        "eval.graze_time_share",
+        "eval.hunter_plant_linger_share",
+        "eval.strike_miss_energy_ratio",
+        "eval.bite_idle"
+      ],
+      "before": "evals/decisions/E158/defaults-floor-on.json: pre-season defaults, 128 seeds x 200000 ticks, the 1000-tick eat sampling",
+      "after": "evals/decisions/E164/defaults.report.json: defaults on main dbb7737a (season 7), seeds 1 to 64, 400000 ticks, policy live, configHash 1323ad792ac41e9e",
+      "verdicts": {},
+      "note": "Characterization; partly falsified. All live. Verified: graze_speed_ratio, hunter_plant_linger_share, strike_miss_energy_ratio (and fat_speed_ratio again). Unverified: the contact shares (0.15 detectable at 32 seeds; biased by feeding, T27), graze_time_share (0.10), bite_idle (0.15). split_bumper_share is 0 on every seed. Run with npm run eval -- --seeds 64 --ticks 400000 --policy live --workers 30.",
+      "reports": ["evals/decisions/E164/defaults.report.json"],
+      "date": "2026-11-12",
+      "branch": "chore/eat-choice-phase5-reference",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
     }
   ]
 }

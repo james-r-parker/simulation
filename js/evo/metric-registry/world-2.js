@@ -22,6 +22,8 @@ export const WORLD_2 = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no split birth after burn-in'],
+        expectedFlat:
+            'splitDeliberateShareMin (0.2) lets a parent split only above a deliberate meal share of 0.2, so a bumper (under 0.1) cannot split; it reads 0 on every seed while the gate is on (E158: 2 of 128 seeds above 0; E164: none of 64).',
         arithmetic: 'test/evo/metrics-diet.test.js',
         source: 'test/evo/metric-source-world.test.js',
     }),

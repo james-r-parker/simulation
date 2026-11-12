@@ -1,6 +1,6 @@
 # Eat choice
 
-**Status:** In progress - Phases 1 to 3 are built: the eat choice is the default on `season/next` (E159 to E162; keep rule no harm on seeds 1 to 64 and 65 to 128); two Done bars missed, see the Phase 3 record, and the Chromium golden hashes are open. Phase 4 is built: the graze hold sees in-place grazing (E163), the Done bar on `eval.deliberate_food_share` is still missed (0.43 to 0.35), and G1b is reopened (T26). Eating becomes a choice with a cost: a forager eats only while it holds the bite, grazing slows it, a full store slows it, and a hunter senses only food it can eat and pays for a strike at nothing.
+**Status:** In progress - Phases 1 to 5 are built: the eat choice is the default on `main` (season 7) (E159 to E162; keep rule no harm on seeds 1 to 64 and 65 to 128); two Done bars missed, see the Phase 3 record, and the Chromium golden hashes are open. Phase 4 is built: the graze hold sees in-place grazing (E163), the Done bar on `eval.deliberate_food_share` is still missed (0.43 to 0.35), and G1b is reopened (T26). Phase 5 is built (E164): `eval.graze_speed_ratio`, `eval.hunter_plant_linger_share` and `eval.strike_miss_energy_ratio` are verified; the contact shares stay unverified and are biased by feeding (T27). Eating becomes a choice with a cost: a forager eats only while it holds the bite, grazing slows it, a full store slows it, and a hunter senses only food it can eat and pays for a strike at nothing.
 **Validated:** e2455f2f (2026-11-11)
 **Priority:** 1 - after low-density-edge.md T13 (its 16-seed heat pass): 58% of the food energy on the defaults is eaten with no closing approach, and passive eating changes the heat and edge pictures, so it comes before low-density-edge.md's 64-seed pass and switch
 **Depends on:** [metric-trust.md](metric-trust.md), [low-density-edge.md](low-density-edge.md) (T12, the purpose guard `scripts/heat-guard.mjs`)
@@ -242,6 +242,27 @@ since the keep rule belongs to principles.md.
 | H     | T20 to T23 | The detectors (code)                   |
 | I     | T24, T25   | The reference, the power, the readings |
 
+**Record (E164, 2026-11-12).** The defaults on `main`, seeds 1 to 64, 400000 ticks, policy live
+(`evals/decisions/E164/defaults.report.json`, configHash `1323ad792ac41e9e`). Power from `eval:power --include-watch` at 16
+and 32 seeds (a 64-seed report holds no 64-seed split). Every detector is live on every seed.
+
+| Detector                         | Mean (SD)     | Detectable at 16 / 32 seeds | Status     |
+| -------------------------------- | ------------- | --------------------------- | ---------- |
+| `eval.food_contact_bite_share`   | 0.192 (0.157) | 0.20 / 0.15 absolute        | unverified |
+| `eval.full_contact_bite_share`   | 0.247 (0.194) | - / 0.15 absolute           | unverified |
+| `eval.fat_speed_ratio`           | 0.933 (0.079) | 0.10 / 0.10 relative        | verified   |
+| `eval.graze_speed_ratio`         | 0.775 (0.123) | 0.20 / 0.15 relative        | verified   |
+| `eval.graze_time_share`          | 0.748 (0.111) | 0.15 / 0.10 absolute        | unverified |
+| `eval.hunter_plant_linger_share` | 0.057 (0.022) | 0.03 / 0.03 absolute        | verified   |
+| `eval.strike_miss_energy_ratio`  | 0.421 (0.076) | 0.20 / 0.15 relative        | verified   |
+| `eval.bite_idle`                 | 0.744 (0.154) | 0.20 / 0.15 absolute        | unverified |
+
+Sampling every 100 ticks does not lift the contact shares' power: the spread is between seeds. The two contact shares
+are also biased under G1: a forager that bites eats the item it touches in the same tick and the item is removed, so
+the agents still in contact at a sample are mostly those not biting (`eval.graze_time_share` 0.75 against
+`eval.food_contact_bite_share` 0.19). T27 moves the tally into the feed phase. `eval.split_bumper_share` reads 0 on
+every seed of this world and carries an `expectedFlat` reason.
+
 ## Experiments
 
 | Label    | Prediction, written before the run                                                                                                                              | Falsified when                                                                                     |
@@ -343,14 +364,15 @@ fresh seeds 65 to 128 at the head, not taken from E161 alone.
 
 ### Phase 5 - The detectors the switch lacked
 
-| #   | Task                                                                                                                                                                                                                  | Nature       | Depends on    |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------- |
-| T20 | (built: 2026-11-12) `js/evo/scene-eat.js` samples every `EAT_SAMPLE_TICKS` through a food cell index; the contact shares and `eval.fat_speed_ratio` read the denser samples; a test against the O(agents x food) scan | [judgement]  | T17           |
-| T21 | (built: 2026-11-12) `eval.graze_speed_ratio` and `eval.graze_time_share` in `js/evo/scene-graze.js`, fed by the eat sample, registered, with arithmetic and source tests                                              | [judgement]  | T20           |
-| T22 | (built: 2026-11-12) `eval.hunter_plant_linger_share` in `js/evo/scene-linger.js`, fed by the eat sample, registered, with arithmetic and source tests                                                                 | [judgement]  | T20           |
-| T23 | (built: 2026-11-12) `eval.strike_miss_energy_ratio` in `js/evo/scene-strike-miss.js`, read by the observer after the step, registered, with arithmetic and source tests; `docs/designs/metrics.md` regenerated        | [judgement]  | T17           |
-| T24 | The 64-seed reference of the defaults on `main` (seeds 1 to 64, 400000 ticks, floor on, policy live), report under `evals/decisions/`; `eval:power` at 16, 32 and 64 seeds; `metric-power-write --merge`              | [mechanical] | T21, T22, T23 |
-| T25 | Read the reference: each detector `verified` or the sim-notes entry says why not; `eval.diversity`, `eval.lineages_alive` and `eval.toxic_avoidance` named as readings in T19 and low-density-edge.md T14             | [judgement]  | T24           |
+| #   | Task                                                                                                                                                                                                                                                                                                            | Nature       | Depends on    |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------- |
+| T20 | (built: 2026-11-12) `js/evo/scene-eat.js` samples every `EAT_SAMPLE_TICKS` through a food cell index; the contact shares and `eval.fat_speed_ratio` read the denser samples; a test against the O(agents x food) scan                                                                                           | [judgement]  | T17           |
+| T21 | (built: 2026-11-12) `eval.graze_speed_ratio` and `eval.graze_time_share` in `js/evo/scene-graze.js`, fed by the eat sample, registered, with arithmetic and source tests                                                                                                                                        | [judgement]  | T20           |
+| T22 | (built: 2026-11-12) `eval.hunter_plant_linger_share` in `js/evo/scene-linger.js`, fed by the eat sample, registered, with arithmetic and source tests                                                                                                                                                           | [judgement]  | T20           |
+| T23 | (built: 2026-11-12) `eval.strike_miss_energy_ratio` in `js/evo/scene-strike-miss.js`, read by the observer after the step, registered, with arithmetic and source tests; `docs/designs/metrics.md` regenerated                                                                                                  | [judgement]  | T17           |
+| T24 | (built: 2026-11-12, E164; power at 16 and 32 seeds) The 64-seed reference of the defaults on `main` (seeds 1 to 64, 400000 ticks, floor on, policy live), report under `evals/decisions/`; `eval:power` at 16, 32 and 64 seeds; `metric-power-write --merge`                                                    | [mechanical] | T21, T22, T23 |
+| T25 | (built: 2026-11-12, E164) Read the reference: each detector `verified` or the sim-notes entry says why not; `eval.diversity`, `eval.lineages_alive` and `eval.toxic_avoidance` named as readings in T19 and low-density-edge.md T14                                                                             | [judgement]  | T24           |
+| T27 | The contact shares tallied in the feed phase, where `tryEat` tests contact, before the item is removed: a counter pair per non-hunter contact (contact, contact while `BITE` above 0, and the same in the full band) read by the observer; the old sampled shares deleted; power re-read on a 64-seed reference | [judgement]  | T25           |
 
 ## Verification
 
