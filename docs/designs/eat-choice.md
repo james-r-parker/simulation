@@ -222,7 +222,7 @@ E162 left four mechanisms with no detector, or one too weak to give a verdict (u
   `maxVelocity`, as a hunter that sensed grass and stopped on it. G3 itself is a ray rule with its own unit test; this
   reads its effect.
 - **G4, weak and missing.** `eval.bite_idle` (the share of hunter ticks biting air) is `unverified` on power, and
-  nothing prices the strike cost. `eval.strike_miss_energy_share` (share, lower): over the run, the energy hunters are
+  nothing prices the strike cost. `eval.strike_miss_energy_share` (ratio, lower; registered as a ratio because a run whose hunters miss more than they earn reads above 1): over the run, the energy hunters are
   charged for strikes at nothing (each tick a hunter holds `BITE` above 0 with no body in its jaws, `jawsStamp` not this
   tick, priced at `strikeMissCost`), over the food and bite energy hunters gained. It is read by the observer after the
   step; it is 0 with `strikeMissCost` 0 and null with no hunter income. `bite_idle` keeps its definition; its power is
@@ -348,7 +348,7 @@ fresh seeds 65 to 128 at the head, not taken from E161 alone.
 | T20 | (built: 2026-11-12) `js/evo/scene-eat.js` samples every `EAT_SAMPLE_TICKS` through a food cell index; the contact shares and `eval.fat_speed_ratio` read the denser samples; a test against the O(agents x food) scan | [judgement]  | T17           |
 | T21 | (built: 2026-11-12) `eval.graze_speed_ratio` and `eval.graze_time_share` in `js/evo/scene-graze.js`, fed by the eat sample, registered, with arithmetic and source tests                                              | [judgement]  | T20           |
 | T22 | (built: 2026-11-12) `eval.hunter_plant_linger_share` in `js/evo/scene-linger.js`, fed by the eat sample, registered, with arithmetic and source tests                                                                 | [judgement]  | T20           |
-| T23 | `eval.strike_miss_energy_share` read by the observer after the step, registered, with arithmetic and source tests; `docs/designs/metrics.md` regenerated                                                              | [judgement]  | T17           |
+| T23 | (built: 2026-11-12) `eval.strike_miss_energy_share` in `js/evo/scene-strike-miss.js`, read by the observer after the step, registered, with arithmetic and source tests; `docs/designs/metrics.md` regenerated        | [judgement]  | T17           |
 | T24 | The 64-seed reference of the defaults on `main` (seeds 1 to 64, 400000 ticks, floor on, policy live), report under `evals/decisions/`; `eval:power` at 16, 32 and 64 seeds; `metric-power-write --merge`              | [mechanical] | T21, T22, T23 |
 | T25 | Read the reference: each detector `verified` or the sim-notes entry says why not; `eval.diversity`, `eval.lineages_alive` and `eval.toxic_avoidance` named as readings in T19 and low-density-edge.md T14             | [judgement]  | T24           |
 
