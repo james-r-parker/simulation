@@ -23,7 +23,7 @@ export const CLAMP_MAX = 3;
 /**
  * @param {Record<string, any>} world
  * @param {number} slot
- * @param {import('../../sim/rng.js').Rng} rng
+ * @param {import('../sim/rng.js').Rng} rng
  * @returns {void}
  */
 function initBrain(world, slot, rng) {
@@ -42,7 +42,7 @@ function initBrain(world, slot, rng) {
  * @param {Record<string, any>} world
  * @param {number} child
  * @param {number} mother
- * @param {{cause: number, rng: import('../../sim/rng.js').Rng}} opts
+ * @param {{cause: number, rng: import('../sim/rng.js').Rng}} opts
  * @returns {void}
  */
 function childBrain(world, child, mother, opts) {
