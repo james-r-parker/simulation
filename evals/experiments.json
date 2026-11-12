@@ -4133,7 +4133,7 @@
       "afterPolicy": "live",
       "effect": "better",
       "verdicts": {
-        "keepRule": "no harm (gf-strike-1)"
+        "keepRule": "no-difference"
       }
     }
   ]
