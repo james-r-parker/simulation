@@ -1,6 +1,19 @@
-import { describe, expect, it } from 'vitest';
-import { formatArm, guardConfig, isHeatArm, judge } from '../scripts/lib/heat-guard.mjs';
-import { parseArgs } from '../scripts/heat-guard.mjs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { describe, expect, it, vi } from 'vitest';
+import { formatArm, guardArm, guardConfig, isHeatArm, judge } from '../scripts/lib/heat-guard.mjs';
+import { main, parseArgs } from '../scripts/heat-guard.mjs';
+
+/**
+ * @param {Record<string, any>} arms the grid's arms
+ * @returns {string} the path of a grid file holding them
+ */
+function gridFile(arms) {
+    const path = join(mkdtempSync(join(tmpdir(), 'heat-guard-')), 'grid.json');
+    writeFileSync(path, JSON.stringify({ arms }));
+    return path;
+}
 
 describe('judge', () => {
     it('passes when a sitter dies, a rusher dies and a forager grows', () => {
@@ -66,5 +79,42 @@ describe('heat guard setup', () => {
         expect(parseArgs(['--grid', 'g.json', '--seeds', '1,2']).seeds).toEqual([1, 2]);
         expect(() => parseArgs([])).toThrow(/usage/);
         expect(() => parseArgs(['--grid', 'g.json', '--bogus', '1'])).toThrow(/unknown/);
+    });
+});
+
+describe('guardArm and main', () => {
+    it('runs the three controllers per seed and judges each row', () => {
+        const rows = guardArm({}, [1], 30);
+        expect(rows).toHaveLength(1);
+        const [row] = rows;
+        expect(row.seed).toBe(1);
+        expect(row.start).toBe(guardConfig({}, 1).initialAgents);
+        expect(row.pass).toBe(judge(row).pass);
+    });
+
+    it('checks only the heat arms of a grid and exits 1 when one fails', () => {
+        const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+        // 30 ticks is too short for a sitter to freeze, so the arm fails the guard.
+        const code = main(['--grid', gridFile({ defaults: {}, 'cool-2': {} }), '--ticks', '30']);
+        const printed = log.mock.calls.map((c) => String(c[0])).join('\n');
+        log.mockRestore();
+        expect(code).toBe(1);
+        expect(printed).toContain('cool-2: FAIL');
+        expect(printed).not.toContain('defaults:');
+        expect(printed).toContain('1 arm(s) FAIL');
+    });
+
+    it('refuses an arm the grid does not have', () => {
+        expect(() => main(['--grid', gridFile({ 'cool-2': {} }), '--arms', 'nope', '--ticks', '1'])).toThrow(
+            /no arm nope/,
+        );
+    });
+
+    it('needs a value after each flag', () => {
+        expect(() => parseArgs(['--grid'])).toThrow(/needs a value/);
+        expect(parseArgs(['--grid', 'g.json', '--arms', 'a,b', '--ticks', '5'])).toMatchObject({
+            arms: ['a', 'b'],
+            ticks: 5,
+        });
     });
 });
