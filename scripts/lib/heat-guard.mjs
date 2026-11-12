@@ -2,7 +2,7 @@
 // pressure when a sitter still freezes, a rusher still overheats and a gentle forager still grows, as
 // test/evo/scripted-temperature.slow.test.js defines it. The test and the guard share these cases.
 import { SCRIPTED_CONTROLLERS } from '../../js/evo/scripted.js';
-import { createBaselineV5 } from '../../js/evo/policies/baseline-v5.js';
+import { plainBrain } from '../../js/evo/plain-brain.js';
 import { createConfig } from '../../js/sim/config.js';
 import { createRng, fork } from '../../js/sim/rng.js';
 import { createWorld } from '../../js/sim/spawn.js';
@@ -54,7 +54,7 @@ export function guardConfig(overrides, seed) {
  */
 export function populationAfter(name, overrides = {}, seed = 1, ticks = GUARD_TICKS) {
     const config = guardConfig(overrides, seed);
-    const brain = createBaselineV5().brain;
+    const brain = plainBrain;
     const world = createWorld(config, brain);
     const run = SCRIPTED_CONTROLLERS[name]({ world, rng: fork(createRng(seed), 'scripted') });
     for (let t = 0; t < ticks && world.population > 0; t++) {

@@ -6,7 +6,7 @@ import { createWorld } from '../sim/spawn.js';
 import { step } from '../sim/step.js';
 import { decodeWeights } from './base64.js';
 import { ELO_START, expectedScore, updateElo } from './elo.js';
-import { createBaselineV5 } from './policies/baseline-v5.js';
+import { plainBrain } from './plain-brain.js';
 
 /** Ticks in one league game. */
 export const MATCH_TICKS = 50000;
@@ -84,7 +84,7 @@ export function validateChampion(file, config) {
  * @returns {import("../sim/spawn.js").Policy & {childBrain: Function}} the policy passed to `createWorld` and `step`
  */
 export function matchPolicy(a, b) {
-    const { childBrain } = createBaselineV5().brain;
+    const { childBrain } = plainBrain;
     return {
         initSpec: (/** @type {any} */ _world, /** @type {number} */ slot) => (slot % 2 === 0 ? a : b).specialisation,
         initBrain(/** @type {any} */ world, /** @type {number} */ slot) {

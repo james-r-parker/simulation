@@ -4,7 +4,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { createRng, fork } from '../../js/sim/rng.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { FITNESS_V6_SKILL } from '../../js/evo/fitness-v6-skill.js';
-import { createBaselineV5 } from '../../js/evo/policies/baseline-v5.js';
+import { plainBrain } from '../../js/evo/plain-brain.js';
 import { BAIT_FLEE_TICKS, PATROL_REACH, SPAMMER_TURN, V6_CONTROLLERS } from '../../js/evo/scripted-v6.js';
 import { SCRIPTED_CONTROLLERS, SEEK_THRUST } from '../../js/evo/scripted.js';
 
@@ -26,7 +26,7 @@ function setup(name, extra = {}) {
         minAgents: 0,
         ...extra,
     });
-    const world = createWorld(config, createBaselineV5().brain);
+    const world = createWorld(config, plainBrain);
     return { world, run: V6_CONTROLLERS[name]({ world, rng: fork(createRng(1), 'scripted') }) };
 }
 
