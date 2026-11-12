@@ -1,45 +1,47 @@
-// Does a forager that touches food bite, and does a full one move slower (eat-choice.md, Detectors)? At each 1000-tick
-// checkpoint from `BURN_IN_TICKS`, after the step (the feed phase has run), the scene reads every alive non-hunter
-// (`huntBySpec` 0) once and pools three tallies over the run:
+// Does a forager that touches food bite, and does a full one move slower (eat-choice.md, Detectors)? Every
+// `EAT_SAMPLE_TICKS` (100) ticks from `BURN_IN_TICKS`, after the step (the feed phase has run), the scene reads every alive
+// non-hunter (`huntBySpec` 0) once and pools three tallies over the run:
 //
 // - `eval.food_contact_bite_share` (watch): of the non-hunters in contact with edible food, the share whose `BITE` output
 //   is above 0. Contact is the test of `tryEat` (`sqrt(dx*dx + dy*dy) < size + foodRadius`); the food is alive, of a kind
-//   the agent's specialisation takes (`plantFoodBySpec` or `meatFoodBySpec` above 0) and `canEatNow` holds. The scan is
-//   O(agents x food), once per checkpoint.
+//   the agent's specialisation takes (`plantFoodBySpec` or `meatFoodBySpec` above 0) and `canEatNow` holds. The food is
+//   read once per sample into a cell index (`food-cell-index.js`), so the scan is near O(agents).
 // - `eval.full_contact_bite_share` (lower): the same among those whose store is at least `FULL_SHARE` (0.8) of
 //   `maxEnergyBySpec`. `canEatNow` closes at `satiationShare` (0.95), so the band is 0.8 up to `satiationShare`, where
 //   eating is still possible; with `satiationShare` 0 it runs to a full store.
 // - `eval.fat_speed_ratio` (watch): per specialisation, the mean speed of the moving non-hunters (speed above 0) whose
-//   store fraction is above the specialisation's mean at that checkpoint, over the mean speed of those below it, pooled
-//   over the checkpoints; then the mean over the specialisations that have both. An agent at the mean is in neither side.
+//   store fraction is above the specialisation's mean at that sample, over the mean speed of those below it, pooled
+//   over the samples; then the mean over the specialisations that have both. An agent at the mean is in neither side.
 //
-// Every accumulator is a fixed array made with the scene; nothing is allocated per checkpoint. The scene reads the world
+// The same sample feeds the graze detectors (`scene-graze.js`) and the hunter linger share (`scene-linger.js`).
+// Every accumulator is a fixed array made with the scene; nothing is allocated per sample. The scene reads the world
 // and writes only itself, so no hash can move.
 
-import { FOOD_KIND } from '../sim/carcass.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
 import { canEatNow } from '../sim/feeding.js';
 import { BURN_IN_TICKS } from './burn-in.js';
+import { CONTACT, buildFoodCellIndex, createFoodCellIndex, touchesFood } from './food-cell-index.js';
 import { none, ok } from './metrics-stats.js';
 
-/** Ticks between the checkpoints (the 1000-tick checkpoint every scene shares). */
-const CHECKPOINT_TICKS = 1000;
+/** Ticks between the samples. */
+export const EAT_SAMPLE_TICKS = 100;
 
 /** The lowest store fraction of the full band. */
 export const FULL_SHARE = 0.8;
 
-const NO_CONTACT = 'no non-hunter in contact with edible food at a checkpoint after burn-in';
-const NO_FULL = `no non-hunter with a store of ${FULL_SHARE} or more in contact with edible food at a checkpoint after burn-in`;
+const NO_CONTACT = 'no non-hunter in contact with edible food at a sample after burn-in';
+const NO_FULL = `no non-hunter with a store of ${FULL_SHARE} or more in contact with edible food at a sample after burn-in`;
 const NO_SPEC = 'no specialisation with moving non-hunters above and below its mean store fraction';
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @returns {Record<string, any>} an empty eat scene: the pooled contact counts, and per specialisation the fraction sums
- *   of a checkpoint and the speed sums and counts of the agents above and below the mean fraction
+ *   of a sample and the speed sums and counts of the agents above and below the mean fraction
  */
 export function createEatScene(config) {
     const specs = Math.max(...Object.values(config.specialisations).map((s) => s.index)) + 1;
     return {
+        index: createFoodCellIndex(config),
         contact: 0,
         contactBite: 0,
         full: 0,
@@ -54,30 +56,6 @@ export function createEatScene(config) {
 }
 
 /**
- * @param {Record<string, any>} world the world
- * @param {number} slot an alive non-hunter
- * @returns {boolean} whether it touches an alive food item its specialisation takes while it `canEatNow`
- */
-function touchesEdibleFood(world, slot) {
-    if (!canEatNow(world, slot)) {
-        return false;
-    }
-    const spec = world.spec[slot];
-    for (let food = 0; food < world.foodAlive.length; food++) {
-        if (world.foodAlive[food] !== 1) {
-            continue;
-        }
-        const table = world.foodKind[food] === FOOD_KIND.MEAT ? world.meatFoodBySpec : world.plantFoodBySpec;
-        const dx = world.foodX[food] - world.x[slot];
-        const dy = world.foodY[food] - world.y[slot];
-        if (table[spec] > 0 && Math.sqrt(dx * dx + dy * dy) < world.size[slot] + world.foodRadius[food]) {
-            return true;
-        }
-    }
-    return false;
-}
-
-/**
  * Adds a non-hunter's contact to the pooled counts.
  * @param {Record<string, any>} scene the eat scene
  * @param {Record<string, any>} world the world
@@ -85,7 +63,7 @@ function touchesEdibleFood(world, slot) {
  * @returns {void}
  */
 function tallyContact(scene, world, slot) {
-    if (!touchesEdibleFood(world, slot)) {
+    if (!canEatNow(world, slot) || !touchesFood(scene.index, world, { slot, mode: CONTACT.EDIBLE })) {
         return;
     }
     const bites = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 ? 1 : 0;
@@ -122,7 +100,7 @@ function addSide(scene, { spec, fraction, speed }) {
 
 /**
  * Pools the speeds of the moving non-hunters of each specialisation by whether their store fraction is above or below the
- * specialisation's mean at this checkpoint (two passes: the mean, then the split).
+ * specialisation's mean at this sample (two passes: the mean, then the split).
  * @param {Record<string, any>} scene the eat scene
  * @param {Record<string, any>} world the world
  * @returns {void}
@@ -149,15 +127,16 @@ function tallyFat(scene, world) {
 }
 
 /**
- * Samples the world when its tick is a 1000-tick checkpoint at or after burn-in. Call it after the step.
+ * Samples the world when its tick is an `EAT_SAMPLE_TICKS` multiple at or after burn-in. Call it after the step.
  * @param {Record<string, any>} scene the eat scene
  * @param {Record<string, any>} world the world
  * @returns {void}
  */
 export function sampleEat(scene, world) {
-    if (world.tick < BURN_IN_TICKS || world.tick % CHECKPOINT_TICKS !== 0) {
+    if (world.tick < BURN_IN_TICKS || world.tick % EAT_SAMPLE_TICKS !== 0) {
         return;
     }
+    buildFoodCellIndex(scene.index, world);
     for (let slot = 0; slot < world.alive.length; slot++) {
         if (world.alive[slot] === 1 && world.huntBySpec[world.spec[slot]] === 0) {
             tallyContact(scene, world, slot);

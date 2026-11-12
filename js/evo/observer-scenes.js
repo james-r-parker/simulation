@@ -216,6 +216,7 @@ export function observeScenes(observer, world) {
     if (world.tick % MOTION_SAMPLE_TICKS === 0) {
         samplePatches(scenes.patch, world);
         sampleCondition(scenes.condition, world);
+        sampleEat(scenes.eat, world);
     }
     if (world.tick % BASIN_CHECKPOINT_TICKS === 0) {
         sampleSeason(scenes.season, scenes.terrain, world);
@@ -227,7 +228,6 @@ export function observeScenes(observer, world) {
         sampleGuards(scenes.guards, world);
         sampleCapacity(scenes.capacity, world);
         sampleEdge(scenes.edge, world);
-        sampleEat(scenes.eat, world);
         sampleKinProximity(scenes.kin, world);
     }
 }

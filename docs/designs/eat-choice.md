@@ -343,14 +343,14 @@ fresh seeds 65 to 128 at the head, not taken from E161 alone.
 
 ### Phase 5 - The detectors the switch lacked
 
-| #   | Task                                                                                                                                                                                                      | Nature       | Depends on    |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------- |
-| T20 | `js/evo/scene-eat.js` samples every `EAT_SAMPLE_TICKS` through a food cell index; the contact shares and `eval.fat_speed_ratio` read the denser samples; a test against the O(agents x food) scan         | [judgement]  | T17           |
-| T21 | `eval.graze_speed_ratio` and `eval.graze_time_share` in `js/evo/scene-eat.js`, registered, with arithmetic and source tests                                                                               | [judgement]  | T20           |
-| T22 | `eval.hunter_plant_linger_share`, registered, with arithmetic and source tests                                                                                                                            | [judgement]  | T20           |
-| T23 | `eval.strike_miss_energy_share` read by the observer after the step, registered, with arithmetic and source tests; `docs/designs/metrics.md` regenerated                                                  | [judgement]  | T17           |
-| T24 | The 64-seed reference of the defaults on `main` (seeds 1 to 64, 400000 ticks, floor on, policy live), report under `evals/decisions/`; `eval:power` at 16, 32 and 64 seeds; `metric-power-write --merge`  | [mechanical] | T21, T22, T23 |
-| T25 | Read the reference: each detector `verified` or the sim-notes entry says why not; `eval.diversity`, `eval.lineages_alive` and `eval.toxic_avoidance` named as readings in T19 and low-density-edge.md T14 | [judgement]  | T24           |
+| #   | Task                                                                                                                                                                                                                  | Nature       | Depends on    |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------- |
+| T20 | (built: 2026-11-12) `js/evo/scene-eat.js` samples every `EAT_SAMPLE_TICKS` through a food cell index; the contact shares and `eval.fat_speed_ratio` read the denser samples; a test against the O(agents x food) scan | [judgement]  | T17           |
+| T21 | `eval.graze_speed_ratio` and `eval.graze_time_share` in `js/evo/scene-eat.js`, registered, with arithmetic and source tests                                                                                           | [judgement]  | T20           |
+| T22 | `eval.hunter_plant_linger_share`, registered, with arithmetic and source tests                                                                                                                                        | [judgement]  | T20           |
+| T23 | `eval.strike_miss_energy_share` read by the observer after the step, registered, with arithmetic and source tests; `docs/designs/metrics.md` regenerated                                                              | [judgement]  | T17           |
+| T24 | The 64-seed reference of the defaults on `main` (seeds 1 to 64, 400000 ticks, floor on, policy live), report under `evals/decisions/`; `eval:power` at 16, 32 and 64 seeds; `metric-power-write --merge`              | [mechanical] | T21, T22, T23 |
+| T25 | Read the reference: each detector `verified` or the sim-notes entry says why not; `eval.diversity`, `eval.lineages_alive` and `eval.toxic_avoidance` named as readings in T19 and low-density-edge.md T14             | [judgement]  | T24           |
 
 ## Verification
 

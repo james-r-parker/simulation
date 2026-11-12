@@ -91,7 +91,7 @@ describe('the eat-choice detectors before any checkpoint', () => {
         run.tick();
         expect(run.metrics()['eval.food_contact_bite_share']).toEqual({
             value: null,
-            reason: 'no non-hunter in contact with edible food at a checkpoint after burn-in',
+            reason: 'no non-hunter in contact with edible food at a sample after burn-in',
         });
     });
 });
