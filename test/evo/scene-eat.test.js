@@ -43,6 +43,9 @@ function world(agents, config = {}) {
             sickDose: 5,
             satiationShare: 0.95,
             digestTicks: 10,
+            worldWidth: 100 * n + 1000,
+            worldHeight: 1000,
+            maxFood: n,
             ...config,
         },
         huntBySpec: Float64Array.from([0, 1, 0]),
@@ -136,7 +139,7 @@ describe('the bite shares', () => {
         const scene2 = createEatScene(w.config);
         sampleEat(scene2, w);
         w.outputs[OUTPUT_INDEX.BITE] = 0;
-        w.tick = T + 1000;
+        w.tick = T + 100;
         sampleEat(scene2, w);
         expect(read(scene2, 'eval.food_contact_bite_share')).toBe(0.5);
     });
@@ -175,7 +178,7 @@ describe('the fat speed ratio', () => {
         sampleEat(scene, w);
         w.vx[0] = 4;
         w.vx[2] = 3;
-        w.tick = T + 1000;
+        w.tick = T + 100;
         sampleEat(scene, w);
         // forager: above (1 + 3) / 2 = 2 over below 4; scout: 3 over 2 both times
         expect(read(scene, 'eval.fat_speed_ratio')).toBeCloseTo((0.5 + 1.5) / 2, 12);
@@ -199,9 +202,27 @@ describe('the fat speed ratio', () => {
     });
 });
 
-describe('the checkpoint', () => {
-    it('samples only a 1000-tick checkpoint at or after burn-in', () => {
-        for (const tick of [T - 1000, T + 1]) {
+describe('the graze and linger detectors on the same sample', () => {
+    it('read the non-hunters for the graze time share and the hunters for the plant linger share', () => {
+        const w = world(
+            [
+                { bite: true, gap: 50 }, // a forager holding BITE
+                { bite: false, gap: 50 }, // a forager not holding it
+                { spec: PREDATOR, speed: 0.5 }, // a hunter on plant, slow
+                { spec: PREDATOR, speed: 5 }, // a hunter on plant, fast
+                { spec: PREDATOR, speed: 0, alive: false },
+            ],
+            { maxVelocity: 8 },
+        );
+        const scene = sampled(w);
+        expect(read(scene, 'eval.graze_time_share')).toBe(0.5);
+        expect(read(scene, 'eval.hunter_plant_linger_share')).toBe(0.5);
+    });
+});
+
+describe('the sample', () => {
+    it('is taken only on a 100-tick multiple at or after burn-in', () => {
+        for (const tick of [T - 100, T + 1, T + 99]) {
             const w = world([{ bite: true }]);
             w.tick = tick;
             expect(sampled(w).contact).toBe(0);

@@ -176,6 +176,7 @@ describe('observeScenes', () => {
             'season',
             'seasonMap',
             'spend',
+            'strikeMiss',
             'style',
             'terrain',
         ]);

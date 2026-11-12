@@ -201,6 +201,47 @@ merits: against the unheld switch the alive and under-80 guards read better (5 v
 rises 34%, and diversity and toxic avoidance recover part of E162's loss; `eval.lineages_alive` falls 10%. As the
 Decisions row says, G1b is reopened (T26).
 
+### Phase 5 - The detectors the switch lacked
+
+**Targets:** none - detectors and a reference run; no sim behaviour changes, and `worldHash` and the goldens stay as they are
+
+E162 left four mechanisms with no detector, or one too weak to give a verdict (user, 2026-11-12: fix them all):
+
+- **G1, weak.** `eval.food_contact_bite_share` and `eval.full_contact_bite_share` are `unverified` on power: at 64
+  seeds they detect a change of 0.10, and a share needs 0.05 (`MAX_SHARE_MDE`). They sample once per 1000-tick
+  checkpoint, so few agents are in contact at each. `js/evo/scene-eat.js` samples every `EAT_SAMPLE_TICKS` (100) ticks
+  instead; the contact scan reads the food once per sample through a per-sample food cell index built from fixed
+  arrays, so the scan is near O(agents) and nothing is allocated. If the 64-seed power still misses the bar, the
+  sim-notes entry says so and the two stay `watch`.
+- **G1b, none.** `eval.graze_speed_ratio` (ratio, watch lower): per specialisation, the mean speed of moving
+  non-hunters holding `BITE` above 0 over the mean speed of those not holding it, pooled over the samples, then the
+  mean over the specialisations with both. `eval.graze_time_share` (share, watch): of the non-hunter samples, the share
+  holding `BITE` above 0. Both in `js/evo/scene-eat.js`.
+- **G3, none.** `eval.hunter_plant_linger_share` (share, watch lower): of the hunter samples, the share in contact
+  with plant food (the `tryEat` contact test, `FOOD_KIND.PLANT`, any spec) while moving below `CLOSING_SPEED` x
+  `maxVelocity`, as a hunter that sensed grass and stopped on it. G3 itself is a ray rule with its own unit test; this
+  reads its effect.
+- **G4, weak and missing.** `eval.bite_idle` (the share of hunter ticks biting air) is `unverified` on power, and
+  nothing prices the strike cost. `eval.strike_miss_energy_ratio` (ratio, lower; a ratio because a run whose hunters miss more than they earn reads above 1): over the run, the energy hunters are
+  charged for strikes at nothing (each tick a hunter holds `BITE` above 0 with no body in its jaws, `jawsStamp` not this
+  tick, priced at `strikeMissCost`), over the food and bite energy hunters gained. It is read by the observer after the
+  step; it is 0 with `strikeMissCost` 0 and null with no hunter income. `bite_idle` keeps its definition; its power is
+  re-measured on the new reference.
+
+Each new metric is registered with arithmetic and source tests, liveness and power, like Phase 1's. The reference is
+the defaults on `main` (the eat choice), 64 floor-on seeds at 400000 ticks, policy live, committed under
+`evals/decisions/`; `eval:power` and `metric-power-write --merge` fill the rows.
+
+The pass also names readings the keep rule does not guard and E162 moved: `eval.diversity` and `eval.lineages_alive`
+(both `worse`, -18%) and `eval.toxic_avoidance` (0.94 to 0.89, interval below 0). They are read beside the guards in
+T19, in low-density-edge.md's 64-seed pass, and in every later eat-choice run; none becomes a keep-rule guard here,
+since the keep rule belongs to principles.md.
+
+| Chunk | Tasks      | Contents                               |
+| ----- | ---------- | -------------------------------------- |
+| H     | T20 to T23 | The detectors (code)                   |
+| I     | T24, T25   | The reference, the power, the readings |
+
 ## Experiments
 
 | Label    | Prediction, written before the run                                                                                                                              | Falsified when                                                                                     |
@@ -299,6 +340,17 @@ fresh seeds 65 to 128 at the head, not taken from E161 alone.
 | T18 | (built: 2026-11-12, `js/sim/graze-hold.js`) `isDeliberate` and its observer count a held bite on food reached deliberately, in the same contact, as deliberate; a test against a naive reference      | [judgement] | T17        |
 | T19 | (built: 2026-11-12, E163; bar missed, G1b reopened) Re-read the E162 reports' meals with the new detector (re-run if the reports cannot be re-read), and the Done bar on `eval.deliberate_food_share` | [judgement] | T18        |
 | T26 | Reopen G1b with the hold on: screen `grazeThrust` at 0.5, 0.75 and 1 against the defaults on 64 seeds; adopt a value only on a keep-rule no-harm read that lifts `eval.deliberate_food_share`         | [judgement] | T19        |
+
+### Phase 5 - The detectors the switch lacked
+
+| #   | Task                                                                                                                                                                                                                  | Nature       | Depends on    |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------- |
+| T20 | (built: 2026-11-12) `js/evo/scene-eat.js` samples every `EAT_SAMPLE_TICKS` through a food cell index; the contact shares and `eval.fat_speed_ratio` read the denser samples; a test against the O(agents x food) scan | [judgement]  | T17           |
+| T21 | (built: 2026-11-12) `eval.graze_speed_ratio` and `eval.graze_time_share` in `js/evo/scene-graze.js`, fed by the eat sample, registered, with arithmetic and source tests                                              | [judgement]  | T20           |
+| T22 | (built: 2026-11-12) `eval.hunter_plant_linger_share` in `js/evo/scene-linger.js`, fed by the eat sample, registered, with arithmetic and source tests                                                                 | [judgement]  | T20           |
+| T23 | (built: 2026-11-12) `eval.strike_miss_energy_ratio` in `js/evo/scene-strike-miss.js`, read by the observer after the step, registered, with arithmetic and source tests; `docs/designs/metrics.md` regenerated        | [judgement]  | T17           |
+| T24 | The 64-seed reference of the defaults on `main` (seeds 1 to 64, 400000 ticks, floor on, policy live), report under `evals/decisions/`; `eval:power` at 16, 32 and 64 seeds; `metric-power-write --merge`              | [mechanical] | T21, T22, T23 |
+| T25 | Read the reference: each detector `verified` or the sim-notes entry says why not; `eval.diversity`, `eval.lineages_alive` and `eval.toxic_avoidance` named as readings in T19 and low-density-edge.md T14             | [judgement]  | T24           |
 
 ## Verification
 
