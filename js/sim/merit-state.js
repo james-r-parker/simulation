@@ -67,6 +67,7 @@ const MERIT_FIELDS = [
     [Float64Array, 'meritFoodTurn', NEVER],
     [Float64Array, 'meritFoodOff', NEVER],
     [Float64Array, 'meritFoodStart', NEVER],
+    [Float64Array, 'meritFoodHold', NEVER],
     [Float64Array, 'meritPreySeen', NEVER],
     [Uint16Array, 'meritPreyBits', 0],
     [Float64Array, 'meritPreyTurn', NEVER],
@@ -111,7 +112,7 @@ export function arcRays(config) {
  * @param {Record<string, any>} world the world with its merit arrays
  * @param {string} name `Food` or `Prey`
  * @param {number} at the offset of the kind's hit in a scan row: 0 for food, 2 for prey
- * @returns {Record<string, any>} the kind's state arrays, `at`, and whether turning away clears its closing history
+ * @returns {Record<string, any>} the kind's state arrays (`hold`, js/sim/graze-hold.js, for food only), `at`, and whether turning away clears its closing history
  */
 function targetView(world, name, at) {
     const array = (/** @type {string} */ field) => world[`merit${name}${field}`];
@@ -122,6 +123,7 @@ function targetView(world, name, at) {
         off: array('Off'),
         start: array('Start'),
         prox: array('Prox'),
+        hold: array('Hold'),
         at,
         clears: at === 0,
         ambush: at !== 0,

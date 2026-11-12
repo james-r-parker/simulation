@@ -3,6 +3,7 @@
 // state `step` leaves behind and draws no randomness. See docs/designs/world-balance.md (Intent state).
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
+import { heldMealDeliberate, trackHold } from '../sim/graze-hold.js';
 import { isDeliberate, trackTarget } from '../sim/merit-state.js';
 import { answerHuntCall } from './observer-intent-calls.js';
 import { BITTEN_THIS_TICK, trackIntentEpisode } from './observer-intent-episode.js';
@@ -134,6 +135,7 @@ function senseSlot(intent, world, slot) {
     summariseRays(world, slot, intent.scan, intent.arc);
     trackTarget(world, slot, intent.food, intent.scan);
     trackTarget(world, slot, intent.prey, intent.scan);
+    trackHold(world, slot, intent.foodHold);
     trackThreat(intent, world, slot);
     countCueTicks(intent, world.tick, slot);
     if (intent.hunterSpec[world.spec[slot]] === 0) {
@@ -191,7 +193,7 @@ function creditMeal(intent, world, slot) {
     if (gained <= 0) {
         return;
     }
-    if (isDeliberate(intent.food, slot, world.tick)) {
+    if (heldMealDeliberate(intent.food, slot, world.tick)) {
         intent.deliberateFood[slot] += gained;
         intent.run.foodDeliberate += gained;
     } else {
