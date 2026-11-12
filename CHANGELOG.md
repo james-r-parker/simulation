@@ -1,5 +1,33 @@
 # Changelog
 
+## [7.0.0](https://github.com/james-r-parker/simulation/compare/v6.1.0...v7.0.0) (2026-11-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* the default rules change (rulesHash bc2fd948bd4ecf66); champions and archives from 6.x do not seed this season.
+* **sim:** the eat choice is the default - graze 0.5, fat 0.5, a strike at nothing costs 1; delete grazeMissCost
+
+### Features
+
+* **evo:** eat-choice Phase 1 chunk A - the eat-choice detectors ([8a30dc3](https://github.com/james-r-parker/simulation/commit/8a30dc3593c39e8a8934832658fe9e231f88019a))
+* **evo:** the eat-choice detectors (eat-choice T1) ([d00a2ec](https://github.com/james-r-parker/simulation/commit/d00a2ec63a86125adac8c5e86c73cfc84724399a))
+* open season 7, the eat-choice ruleset ([58c60e4](https://github.com/james-r-parker/simulation/commit/58c60e4d3794f7017e5f617f4510ead11aa9e8f4))
+* **sim:** a non-hunter eats only while it bites (eat-choice T6) ([04444f4](https://github.com/james-r-parker/simulation/commit/04444f4e665c17d672ae05823f54ec668d1b984d))
+* **sim:** a ray sees only the food its caster can eat (eat-choice T7b) ([c51424a](https://github.com/james-r-parker/simulation/commit/c51424a98cb09eb1c5e05dec22c49e2f48dc8a45))
+* **sim:** fatSlowShare slows a full store (eat-choice T7a) ([2d1cdda](https://github.com/james-r-parker/simulation/commit/2d1cdda9e05d21a61f128d6a36100f7834ba3713))
+* **sim:** grazeMissCost charges a forager biting at nothing (eat-choice T7e) ([b3281c6](https://github.com/james-r-parker/simulation/commit/b3281c681a1745b2f41cfd05ef86b381e332bdf5))
+* **sim:** grazeThrust slows a forager holding BITE (eat-choice T7) ([b2ccf93](https://github.com/james-r-parker/simulation/commit/b2ccf938e1be2c45545c23f8ab632205f7220511))
+* **sim:** strikeMissCost charges a hunter biting air (eat-choice T7c) ([640bdea](https://github.com/james-r-parker/simulation/commit/640bdea0d287b53a9348078fd6a0eb36a32a0663))
+* **sim:** the eat choice is the default - graze 0.5, fat 0.5, a strike at nothing costs 1; delete grazeMissCost ([67ddb78](https://github.com/james-r-parker/simulation/commit/67ddb78b9f93270178014f527acd9a5915d0b615))
+
+
+### Bug Fixes
+
+* **evals:** E161 keepRule verdict uses the schema's enum ([8de87ef](https://github.com/james-r-parker/simulation/commit/8de87ef205cdd8869da6968ee734d02bedc5ac64))
+* **evo:** scripted foragers bite to eat (eat-choice T7d) ([e485636](https://github.com/james-r-parker/simulation/commit/e4856369575aba2214329caff423761689f2d2be))
+* **scripts:** the heat scripts typecheck and share the arm row; the release-check shell test targets season/next on a rules line ([273bd60](https://github.com/james-r-parker/simulation/commit/273bd60290195114d96928a5766020690b76504d))
+
 ## [6.1.0](https://github.com/james-r-parker/simulation/compare/v6.0.1...v6.1.0) (2026-11-11)
 
 

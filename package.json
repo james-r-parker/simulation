@@ -1,6 +1,6 @@
 {
   "name": "blob-evolution-simulation",
-  "version": "6.1.0",
+  "version": "7.0.0",
   "description": "Artificial life simulation using neuroevolution with WebGL rendering",
   "type": "module",
   "scripts": {
