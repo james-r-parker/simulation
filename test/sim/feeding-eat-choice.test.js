@@ -199,7 +199,7 @@ describe('feed: grazeMissCost (eat-choice G4b)', () => {
     it('charges nothing when edible food is in contact but the forager is too full to eat it', () => {
         const { w, slot } = graze({ cost: 3, dx: 0, full: true });
         expect(w.energy[slot]).toBe(w.maxEnergyBySpec[FORAGER]);
-        expect(w.foodAlive.some((a) => a === 1)).toBe(true);
+        expect(Array.from(w.foodAlive).includes(1)).toBe(true);
     });
 
     it('charges nothing to a forager that does not bite, or to a hunter', () => {
