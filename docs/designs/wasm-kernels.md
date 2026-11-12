@@ -1,6 +1,6 @@
 # WASM kernels
 
-**Status:** In progress - Phases 1, 2 and 4 are built and adopted (T1 to T12, T13 to T19): every world runs the brain phase, the ray march, the spatial hash build, the pheromone update and the physics loops in the Rust/WASM kernels from birth, and the JS kernels they replaced are deleted; Phase 5 (profile and squeeze) is built (T20 to T28): the baseline re-recorded, the profile ranked, three kernel squeezes kept (drill throughput +36%) and four tried and reverted; Phase 3 (batched drill evaluation) is proposed.
+**Status:** In progress - Phases 1, 2 and 4 are built and adopted (T1 to T12, T13 to T19): every world runs the brain phase, the ray march, the spatial hash build, the pheromone update and the physics loops in the Rust/WASM kernels from birth, and the JS kernels they replaced are deleted; Phase 5 (profile and squeeze) is built (T20 to T28): the baseline re-recorded, the profile ranked, three kernel squeezes kept (drill throughput +36%) and four tried and reverted; Phase 6 (the brain phase on the eat-choice world) is built (T29 to T32): the brain rise is more agents alive, not dearer agents, and one tanh squeeze kept (brain_forward +3%); Phase 3 (batched drill evaluation) is proposed.
 **Validated:** f5c7880 (2026-11-07)
 **Priority:** 21 - a speed lever that changes no behaviour (the behaviour-changing levers are ruled out), so it queues behind the world-balance work and ahead of nothing that depends on it
 **Depends on:** [headless-sim-core.md](headless-sim-core.md)
@@ -383,6 +383,73 @@ still the O(n) walk; exactness wins over the about 2 to 4% the scan costs.
   busy, disease) unchanged; new tests check the pheromone rows and scratch against a plain model of the two loops, and the
   vector tanh path over 20000 fuzz values, r near 0 for every k and subnormal inputs.
 
+### Phase 6 - Brain phase on the eat-choice world
+
+**Targets:** bench.phase_ms.brain@500, bench.phase_ms.brain@500w7680
+
+The CI perf job on the eat-choice season read `bench.phase_ms.brain@500` +12% and `@500w7680` +24 to 30% against the
+pre-season base while the total step fell, and no brain code changed (user, 2026-11-12: make the brain phase faster). The
+working cause is the world's shape: `hidden_step` skips zero pooled inputs and `output_step` zero skip inputs, so more
+nonzero inputs per agent cost more terms in every hidden and output sum.
+
+The plan, in order:
+
+1. Diagnose before optimising (T29): `bench:parts --area brain` on this tree and with `--compare v6.1.0` (the release
+   before the season), reading the nonzero inputs per agent it prints, to confirm or refute the cause.
+2. `tanh_in_place` (T30): the four-wide fast loop stops at the first group holding a value off the exp path (zero,
+   saturated beyond 20, or non-finite) and never returns to four-wide, so one saturated unit early in a row demotes the
+   rest of the row to pairs and scalars. Handle that group in pairs and scalars and resume four-wide. Each element's tanh
+   is independent and the first non-finite still returns its index, so the results are bit-identical.
+3. Any further bit-identical win in `pool`, `hidden_step`, `output_step`, `hebbian_step` or `forward_all` (T31): work done
+   per slot that can be hoisted, redundant zeroing, the `f32` to `f64` widening pattern. The summation order is the
+   contract, so a change that reorders any sum is out.
+
+Each change is kept only when bit-identical (the wasm differential tests, the goldens and `check-wasm`) and outside the
+printed margin of `bench:micro --area wasm --compare HEAD` or `bench:parts --area brain --compare HEAD`; a change inside
+the margin is reverted and recorded here. The phase ends with the baseline re-recorded if the brain moved, and the gate.
+
+Chunks:
+
+| Chunk                    | Tasks      | Boundary                                                                                         |
+| ------------------------ | ---------- | ------------------------------------------------------------------------------------------------ |
+| A - Brain squeeze (Code) | T29 to T32 | Diagnosis numbers, each squeeze kept or reverted on its measurement, goldens identical, the gate |
+
+**As built.** Every timing is under the CPU lock (load 1.5 to 5), `bench:micro --compare` and `bench-compare` with
+alternating runs; only a verdict outside the printed margin counts.
+
+Diagnosis (T29). The hypothesis is refuted: the brain kernel did not get dearer per agent, the eat-choice world keeps more
+agents alive. `bench-compare --base v6.1.0 --sizes=500 --runs=3` reproduces the CI reading (`brain@500` 0.430 to
+0.479 ms, +11.4%; `@500merit` +10.2%; `@500w7680` 0.267 to 0.338 ms, +26.3%) while `step_ms@500` falls 5.7%. On the
+fixed micro world `bench:parts --area brain --compare v6.1.0` reads `forwardAll` same (real inputs +2.0%, +-2.8%; every
+input 0 +0.2%, +-1.2%), 29.6 nonzero inputs per agent. In the bench's own phase window (ticks 2500 to 4500, a script
+stepping both trees' bench world):
+
+| World      | Tree   | Alive per tick | Nonzero inputs per agent | Nonzero pooled (skip) inputs | Brain ms | Brain us per alive agent |
+| ---------- | ------ | -------------- | ------------------------ | ---------------------------- | -------- | ------------------------ |
+| `500`      | v6.1.0 | 272.1          | 29.15                    | 4.99                         | 0.430    | 1.58                     |
+| `500`      | main   | 302.3 (+11.1%) | 30.20 (+3.6%)            | 6.11                         | 0.479    | 1.58                     |
+| `500w7680` | v6.1.0 | 162.0          | 35.49                    | 10.47                        | 0.267    | 1.65                     |
+| `500w7680` | main   | 197.4 (+21.9%) | 35.96 (+1.3%)            | 11.03                        | 0.338    | 1.71                     |
+
+The sense (+15 to 19%) and physics (+11 to 12%) phases rise with the same headcount. The brain costs what it did per
+agent; the season's world is more crowded below the 500 cap.
+
+The squeezes, each against the commit before it (`bench:micro --area wasm --compare HEAD --runs 5`, `brain_forward` on
+the 500-slot micro world):
+
+| Task | Change                                                                                    | Measured                                                                                                                                                                    | Verdict  |
+| ---- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| T30  | `tanh_in_place` runs a slow group as two pairs and resumes four-wide                      | Real inputs +2.1% (+-1.9%) and +3.5% (+-2.5%), Hebbian on +0.7% (+-0.7%) and +2.7% (+-2.6%), every input 0 +2.7% and +3.2%; `bench:parts` `forwardAll` same (-0.5%, +-2.9%) | Kept     |
+| T31  | Output tanh over the ten contiguous gene sums before the scatter (split's 0 left out)     | Every input 0 +4.4% (+-3.2%) then -0.9% (+-1.6%); real inputs +2.4% (+-5.2%) then +0.5% (+-1.9%)                                                                            | Reverted |
+| T31  | Branchless compaction of the nonzero inputs (`nt += (x != 0) as usize`)                   | Every input 0 -9.8% (+-2.8%), real inputs -2.6% (+-4.0%)                                                                                                                    | Reverted |
+| T31  | The ten output sums in one pass over the terms (`accumulate10`) instead of eight then two | Real inputs -0.2% (+-4.5%), every input 0 +2.2% (+-5.4%)                                                                                                                    | Reverted |
+| T31  | `hebbian_step` reads four plastic and genome weights per load                             | Real inputs -0.7% (+-1.7%), every input 0 -2.0% (+-1.2%)                                                                                                                    | Reverted |
+
+Result (T32). `bench-compare --base origin/main --sizes=500 --runs=3` with T30: `brain@500` +0.8%, `@500merit` +1.4%,
+`@500w7680` -0.3%, `step_ms@500` -0.6%: the kernel's 3% does not reach the step bench, so `bench/baseline.json` is not
+re-recorded. The brain phase is now about 1.6 us per alive agent, most of it the hidden sums over 62 or so terms of 32
+units; what is left to try changes either the sum order or the `f32` weight storage, both outside this doc's contract.
+
 ## Decisions
 
 | Decision                                                                                        | Why                                                                                                                                                                                                                                         | Who                     |
@@ -485,6 +552,15 @@ still the O(n) walk; exactness wins over the about 2 to 4% the scan costs.
 | T26 | `wasm-opt -O4` and codegen flags (tried, reverted: mixed, no step share moves)                         | [judgement]  | T21                               |
 | T27 | `territoryAllows` hunter list (dropped: a kept list goes stale under direct writes)                    | [judgement]  | T20                               |
 | T28 | Final `bench-compare` against `origin/main`, drill compare, `browser:hash`, doc as built (built)       | [judgement]  | T21, T22, T23, T24, T25, T26, T27 |
+
+### Phase 6 - Brain phase on the eat-choice world
+
+| #   | Task                                                                                                                                                      | Nature      | Depends on |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T29 | Diagnose: `bench:parts --area brain` against `v6.1.0`, nonzero inputs per agent and brain ms (built: more agents alive, not more inputs)                  | [judgement] | T28        |
+| T30 | `tanh_in_place`: handle a slow group in pairs and scalars and resume four-wide (built)                                                                    | [judgement] | T29        |
+| T31 | Further bit-identical squeezes in `pool`, `hidden_step`, `output_step`, `hebbian_step`, `forward_all` (tried, four reverted: inside the margin or slower) | [judgement] | T29        |
+| T32 | Re-record `bench/baseline.json` if the brain moved; record the phase as built; `scripts/check.sh` (built; the step bench did not move, no re-record)      | [judgement] | T30, T31   |
 
 ## Verification
 

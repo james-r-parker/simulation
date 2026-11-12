@@ -126,6 +126,31 @@ fn finish2(x: v128, p: v128, k: v128) -> v128 {
     f64x2_div(f64x2_mul(sign, f64x2_sub(one, t)), f64x2_add(one, t))
 }
 
+/// Two values at `v + i` in place: one `tanh2` when both take the exp path, else each by `det_tanh`. Returns 0, or
+/// j + 1 for the first non-finite value at j, which is left unchanged.
+///
+/// # Safety
+/// `v + i` must point at two readable and writable doubles.
+#[inline(always)]
+unsafe fn tanh_pair(v: *mut f64, i: usize) -> usize {
+    // SAFETY: two doubles at v + i.
+    let (x0, x1) = unsafe { (*v.add(i), *v.add(i + 1)) };
+    if is_fast(x0) && is_fast(x1) {
+        // SAFETY: two doubles at v + i; unaligned access is allowed in wasm.
+        unsafe { (v.add(i) as *mut v128).write_unaligned(tanh2((v.add(i) as *const v128).read_unaligned())) };
+        return 0;
+    }
+    for j in i..i + 2 {
+        // SAFETY: j is i or i + 1.
+        let x = unsafe { *v.add(j) };
+        if !x.is_finite() {
+            return j + 1;
+        }
+        unsafe { *v.add(j) = det_tanh(x) };
+    }
+    0
+}
+
 /// Writes `detTanh(v[i])` back over `v[i]` for i below n (`detTanhInto` in place). Returns 0, or i + 1 for the first
 /// non-finite value, which is left unchanged: the JS function throws there, and so does the caller.
 ///
@@ -134,38 +159,38 @@ fn finish2(x: v128, p: v128, k: v128) -> v128 {
 #[inline(always)]
 pub unsafe fn tanh_in_place(v: *mut f64, n: usize) -> usize {
     let mut i = 0;
-    // Four at a time while every value takes the exp path; from the first group that does not, pairs and scalars.
+    // Four at a time; a group holding a value off the exp path goes as two pairs, and the next group is four-wide again.
     while i + 4 <= n {
         // SAFETY: i + 3 < n.
         let fast =
             unsafe { is_fast(*v.add(i)) && is_fast(*v.add(i + 1)) && is_fast(*v.add(i + 2)) && is_fast(*v.add(i + 3)) };
-        if !fast {
-            break;
-        }
-        // SAFETY: four doubles at v + i; unaligned access is allowed in wasm.
-        unsafe {
-            let p = v.add(i) as *mut v128;
-            let (y0, y1) = tanh4(p.read_unaligned(), p.add(1).read_unaligned());
-            p.write_unaligned(y0);
-            p.add(1).write_unaligned(y1);
+        if fast {
+            // SAFETY: four doubles at v + i; unaligned access is allowed in wasm.
+            unsafe {
+                let p = v.add(i) as *mut v128;
+                let (y0, y1) = tanh4(p.read_unaligned(), p.add(1).read_unaligned());
+                p.write_unaligned(y0);
+                p.add(1).write_unaligned(y1);
+            }
+        } else {
+            // SAFETY: i + 3 < n.
+            let bad = unsafe { tanh_pair(v, i) };
+            if bad != 0 {
+                return bad;
+            }
+            // SAFETY: i + 3 < n.
+            let bad = unsafe { tanh_pair(v, i + 2) };
+            if bad != 0 {
+                return bad;
+            }
         }
         i += 4;
     }
-    while i + 2 <= n {
+    if i + 2 <= n {
         // SAFETY: i + 1 < n.
-        let (x0, x1) = unsafe { (*v.add(i), *v.add(i + 1)) };
-        if is_fast(x0) && is_fast(x1) {
-            // SAFETY: two doubles at v + i; unaligned access is allowed in wasm.
-            unsafe { (v.add(i) as *mut v128).write_unaligned(tanh2((v.add(i) as *const v128).read_unaligned())) };
-        } else {
-            for j in i..i + 2 {
-                // SAFETY: j < n.
-                let x = unsafe { *v.add(j) };
-                if !x.is_finite() {
-                    return j + 1;
-                }
-                unsafe { *v.add(j) = det_tanh(x) };
-            }
+        let bad = unsafe { tanh_pair(v, i) };
+        if bad != 0 {
+            return bad;
         }
         i += 2;
     }

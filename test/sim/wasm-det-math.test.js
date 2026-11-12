@@ -108,6 +108,30 @@ describe('wasm det-math', () => {
         expect(misses).toEqual([]);
     });
 
+    it('tanh_into resumes four-wide after a group with a value off the exp path, every value still detTanh', () => {
+        // A zero or saturated value in one group sends that group through pairs and scalars; the groups after it are
+        // four-wide again, and the first non-finite value after such a group is still the one named.
+        const fast = fuzzValues(64).filter((x) => x !== 0 && Math.abs(x) <= 20);
+        const row = fast.slice(0, 40);
+        for (const [at, slow] of [
+            [0, 0],
+            [5, 25],
+            [10, -0],
+            [21, -30],
+            [38, 20.5],
+        ]) {
+            row[at] = slow;
+        }
+        const view = new Float64Array(memory.buffer, base, row.length);
+        view.set(row);
+        expect(k.tanh_into(base, row.length)).toBe(0);
+        expect(Array.from(view, bits)).toEqual(row.map((x) => bits(detTanh(x))));
+        view.set([25, 0.5, -1, 3, 0.25, 2, NaN, 1]);
+        expect(k.tanh_into(base, 8)).toBe(7);
+        expect(view[5]).toBe(detTanh(2));
+        expect(view[6]).toBeNaN();
+    });
+
     it('tanh_into stops at the first non-finite value and names it, where detTanh throws', () => {
         const view = new Float64Array(memory.buffer, base, 8);
         for (const bad of [NaN, Infinity, -Infinity]) {
