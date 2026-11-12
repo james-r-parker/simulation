@@ -89,7 +89,7 @@ describe('guardArm and main', () => {
         const [row] = rows;
         expect(row.seed).toBe(1);
         expect(row.start).toBe(guardConfig({}, 1).initialAgents);
-        expect(row.pass).toBe(judge(row).pass);
+        expect(row.pass).toBe(judge(/** @type {any} */ (row)).pass);
     });
 
     it('checks only the heat arms of a grid and exits 1 when one fails', () => {
