@@ -17,6 +17,7 @@ import {
     eachAlive,
     rayTowardPoint,
     seekFood,
+    writeForage,
     setOutput,
     turnTowards,
     write,
@@ -104,7 +105,7 @@ function gateThenIdle({ world }) {
  * @type {ControllerFactory}
  */
 function splitSpammer() {
-    return eachAlive((w, slot) => write(w, slot, SEEK_THRUST, SPAMMER_TURN));
+    return eachAlive((w, slot) => writeForage(w, slot, SEEK_THRUST, SPAMMER_TURN));
 }
 
 /**

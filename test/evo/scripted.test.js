@@ -96,8 +96,8 @@ describe('SCRIPTED_CONTROLLERS', () => {
             hit(world, 0, 1, CH.food);
             hit(world, 1, RAYS - 1, CH.food);
             run(world);
-            expect(out(world, 0), name).toEqual([Math.fround(thrust), 1, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
-            expect(out(world, 1), name).toEqual([Math.fround(thrust), -1, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
+            expect(out(world, 0), name).toEqual([Math.fround(thrust), 1, 0, 0, 1, 0, 0, 0, 1, 0, 0]);
+            expect(out(world, 1), name).toEqual([Math.fround(thrust), -1, 0, 0, 1, 0, 0, 0, 1, 0, 0]);
             expect(out(world, 2), name).toEqual([Math.fround(thrust), 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
         }
     });
@@ -107,8 +107,8 @@ describe('SCRIPTED_CONTROLLERS', () => {
         hit(world, 0, 1, CH.food);
         hit(world, 1, RAYS - 1, CH.food);
         run(world);
-        expect(out(world, 0)).toEqual([SEEK, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
-        expect(out(world, 1)).toEqual([SEEK, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
+        expect(out(world, 0)).toEqual([SEEK, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0]);
+        expect(out(world, 1)).toEqual([SEEK, -1, 0, 0, 1, 0, 0, 0, 1, 0, 0]);
         expect(out(world, 2)).toEqual([SEEK, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
     });
 
@@ -133,7 +133,7 @@ describe('SCRIPTED_CONTROLLERS', () => {
         const { world, run } = setup('spinner');
         hit(world, 0, 13, CH.food);
         run(world);
-        expect(out(world, 0)).toEqual([0.5, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
+        expect(out(world, 0)).toEqual([0.5, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0]);
     });
 
     it('bumper turns towards the nearest agent of any class and ignores food', () => {
@@ -161,7 +161,7 @@ describe('SCRIPTED_CONTROLLERS', () => {
         hit(world, 0, 2, CH.food);
         for (let i = 0; i < 50; i++) {
             run(world);
-            expect(out(world, 0)).toEqual([1, -1, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
+            expect(out(world, 0)).toEqual([1, -1, 0, 0, 1, 0, 0, 0, 1, 0, 0]);
             expect(Math.abs(out(world, 1)[1])).toBeLessThanOrEqual(0.3);
         }
         const turns = new Set();
@@ -177,7 +177,7 @@ describe('SCRIPTED_CONTROLLERS', () => {
         hit(world, 0, 1, CH.food);
         hit(world, 0, 0, CH.wall, 0.9);
         run(world);
-        expect(out(world, 0)).toEqual([SEEK, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0]);
+        expect(out(world, 0)).toEqual([SEEK, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0]);
         world.foodEnergy[0] += MEAL_ENERGY;
         run(world);
         expect(out(world, 0)).toEqual([1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0]);

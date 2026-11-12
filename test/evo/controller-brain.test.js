@@ -27,7 +27,9 @@ describe('createControllerBrain', () => {
         const predator = addBlob(world, { spec: 1 });
         createControllerBrain(world, createRng(1), { canHunt: 'jawSitter', rest: 'cruiser' })(world);
         expect(world.outputs[predator * OUTPUT_COUNT + OUTPUT_INDEX.BITE]).toBe(1);
-        expect(world.outputs[forager * OUTPUT_COUNT + OUTPUT_INDEX.BITE]).toBe(0);
+        expect(world.outputs[predator * OUTPUT_COUNT + OUTPUT_INDEX.THRUST]).toBe(0);
+        // The cruiser holds BITE on every tick, to take what it meets (eat-choice G1); it also moves, the sitter does not.
+        expect(world.outputs[forager * OUTPUT_COUNT + OUTPUT_INDEX.BITE]).toBe(1);
         expect(world.outputs[forager * OUTPUT_COUNT + OUTPUT_INDEX.THRUST]).toBeGreaterThan(0);
     });
 

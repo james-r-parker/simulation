@@ -59,6 +59,7 @@ function runMeals(meals) {
             world.foodTox[item] = 0;
             world.foodRadius[item] = 10;
             r.want(eater, OUTPUT_INDEX.THRUST);
+            r.want(eater, OUTPUT_INDEX.BITE); // a forager eats only while it bites (eat-choice G1)
             for (let step = 0; step < APPROACH; step++) {
                 r.tick();
             }
@@ -66,6 +67,7 @@ function runMeals(meals) {
             for (let idle = 0; idle < FLUSH; idle++) {
                 r.tick(); // the closing history is 16 observed ticks long
             }
+            r.release(eater, OUTPUT_INDEX.BITE);
         });
     });
     expect(r.observer.ticks).toBe(RUN_TICKS);
