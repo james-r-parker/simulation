@@ -1,5 +1,5 @@
 // A food cell index for the observer's contact scans (eat-choice.md, Phase 5, T20). Once per sample `buildFoodCellIndex`
-// sorts the alive food into a uniform grid by counting sort; `touchesFood` then reads only the cells a body's circle
+// sorts the alive food into a uniform grid by counting sort; `touchesPlant` then reads only the cells a body's circle
 // can reach, so a scan over the agents is near O(agents) instead of O(agents x food). The arrays are made once with the
 // scene (`config.worldWidth`, `worldHeight`, `maxFood`); building and querying allocate nothing. The index reads the
 // world and writes only itself, so no hash can move. Positions outside the grid clamp to its edge cells on both sides of
@@ -9,14 +9,6 @@ import { FOOD_KIND } from '../sim/carcass.js';
 
 /** Cell edge length in world units: a few agent sizes, so a body's circle reaches about four cells. */
 const CELL_SIZE = 120;
-
-/** What counts as food for a query. */
-export const CONTACT = Object.freeze({
-    /** Food the agent's specialisation takes (`plantFoodBySpec` or `meatFoodBySpec` above 0). */
-    EDIBLE: 0,
-    /** Plant food of any specialisation. */
-    PLANT: 1,
-});
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config (`worldWidth`, `worldHeight`, `maxFood`)
@@ -82,14 +74,10 @@ export function buildFoodCellIndex(index, world) {
  * @param {Record<string, any>} world the world
  * @param {number} slot the agent
  * @param {number} food an alive food item
- * @param {number} mode a `CONTACT` mode
- * @returns {boolean} whether the item counts for the mode and its circle overlaps the agent's (the test of `tryEat`)
+ * @returns {boolean} whether the item is plant food and its circle overlaps the agent's (the test of `tryEat`)
  */
-function touches(world, slot, food, mode) {
-    const meat = world.foodKind[food] === FOOD_KIND.MEAT;
-    const takes =
-        mode === CONTACT.EDIBLE ? (meat ? world.meatFoodBySpec : world.plantFoodBySpec)[world.spec[slot]] > 0 : !meat;
-    if (!takes) {
+function touchesPlantItem(world, slot, food) {
+    if (world.foodKind[food] === FOOD_KIND.MEAT) {
         return false;
     }
     const dx = world.foodX[food] - world.x[slot];
@@ -100,12 +88,13 @@ function touches(world, slot, food, mode) {
 /**
  * @param {Record<string, any>} index the index
  * @param {Record<string, any>} world the world
- * @param {{slot: number, mode: number, cell: number}} query an alive agent, a `CONTACT` mode and one cell
- * @returns {boolean} whether the agent touches an item of the cell the mode counts
+ * @param {number} slot an alive agent
+ * @param {number} cell one cell
+ * @returns {boolean} whether the agent touches a plant item of the cell
  */
-function touchesInCell(index, world, { slot, mode, cell }) {
+function touchesInCell(index, world, slot, cell) {
     for (let e = index.cellStart[cell]; e < index.cellStart[cell + 1]; e++) {
-        if (touches(world, slot, index.entries[e], mode)) {
+        if (touchesPlantItem(world, slot, index.entries[e])) {
             return true;
         }
     }
@@ -115,10 +104,10 @@ function touchesInCell(index, world, { slot, mode, cell }) {
 /**
  * @param {Record<string, any>} index an index built from this world's food this tick
  * @param {Record<string, any>} world the world
- * @param {{slot: number, mode: number}} query an alive agent and a `CONTACT` mode
- * @returns {boolean} whether the agent's circle overlaps an alive food item the mode counts
+ * @param {number} slot an alive agent
+ * @returns {boolean} whether the agent's circle overlaps an alive plant food item, whatever its specialisation takes
  */
-export function touchesFood(index, world, { slot, mode }) {
+export function touchesPlant(index, world, slot) {
     const reach = world.size[slot] + index.maxRadius;
     const x = world.x[slot];
     const y = world.y[slot];
@@ -127,7 +116,7 @@ export function touchesFood(index, world, { slot, mode }) {
     const row1 = Math.floor(last / index.cols);
     for (let row = Math.floor(first / index.cols); row <= row1; row++) {
         for (let col = first % index.cols; col <= last % index.cols; col++) {
-            if (touchesInCell(index, world, { slot, mode, cell: row * index.cols + col })) {
+            if (touchesInCell(index, world, slot, row * index.cols + col)) {
                 return true;
             }
         }

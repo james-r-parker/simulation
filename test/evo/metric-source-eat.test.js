@@ -1,7 +1,8 @@
 // The eat-choice detectors in a scripted world (docs/designs/metric-trust.md, "Source tests"): the real `step` and
-// `observe` run to the first checkpoint after burn-in, then agents are put on food items with BITE set and the observer
-// reads that tick again, so the answer is known by construction. (Staging after the step matters: the step's own feed
-// phase eats the food an agent can reach.)
+// `observe` run to the first checkpoint after burn-in, where the contact tally takes its base. The agents are then put on
+// food items with BITE wanted (held through the brain phase) and one real step runs, so the feed phase tallies their
+// contacts as it eats the food; the run jumps to the next checkpoint and the agents are staged again (speed, store, BITE),
+// so the observer reads their motion and BITE at a known state.
 //   forager A, B: store 0.4, in contact; A holds BITE, speed 3 (B does not hold it, speed 3)
 //   forager C, C2: store 0.9, in contact, hold BITE, speed 1
 //   forager D: store 0.85, in contact, no BITE, speed 1
@@ -24,34 +25,46 @@ import { FORAGER, PREDATOR, huntRun } from './helpers/hunt-scene.js';
 
 const T = Math.ceil(BURN_IN_TICKS / 1000) * 1000;
 
-/** @returns {{run: ReturnType<typeof huntRun>['run']}} the scripted run at its first checkpoint after burn-in */
+const STAGED = [
+    { spec: FORAGER, store: 0.4, bite: true, speed: 3, food: true },
+    { spec: FORAGER, store: 0.4, bite: false, speed: 3, food: true },
+    { spec: FORAGER, store: 0.9, bite: true, speed: 1, food: true },
+    { spec: FORAGER, store: 0.9, bite: true, speed: 1, food: true },
+    { spec: FORAGER, store: 0.85, bite: false, speed: 1, food: true },
+    { spec: FORAGER, store: 0.99, bite: true, speed: 1, food: true },
+    { spec: FORAGER, store: 0.9, bite: true, speed: 1, food: false },
+    { spec: PREDATOR, store: 0.9, bite: true, speed: 1, food: true },
+    { spec: PREDATOR, store: 0.9, bite: true, speed: 5, food: true },
+    { spec: PREDATOR, store: 0.9, bite: true, speed: 1, food: false },
+];
+
+/** @returns {{run: ReturnType<typeof huntRun>['run']}} the scripted run, read at the second checkpoint after burn-in */
 function scriptedRun() {
     const { run, world, spawn } = huntRun({
         runTicks: T + 1000,
         over: { maxAgents: 32, maxFood: 8, digestTicks: 0, satiationShare: 0.95 },
     });
     run.jump(T - 1);
-    const staged = [
-        { spec: FORAGER, store: 0.4, bite: true, speed: 3, food: true },
-        { spec: FORAGER, store: 0.4, bite: false, speed: 3, food: true },
-        { spec: FORAGER, store: 0.9, bite: true, speed: 1, food: true },
-        { spec: FORAGER, store: 0.9, bite: true, speed: 1, food: true },
-        { spec: FORAGER, store: 0.85, bite: false, speed: 1, food: true },
-        { spec: FORAGER, store: 0.99, bite: true, speed: 1, food: true },
-        { spec: FORAGER, store: 0.9, bite: true, speed: 1, food: false },
-        { spec: PREDATOR, store: 0.9, bite: true, speed: 1, food: true },
-        { spec: PREDATOR, store: 0.9, bite: true, speed: 5, food: true },
-        { spec: PREDATOR, store: 0.9, bite: true, speed: 1, food: false },
-    ].map((a, i) => ({ ...a, slot: spawn(a.spec, undefined, { at: [100 + 100 * i, 500] }) }));
+    const staged = STAGED.map((a, i) => ({ ...a, slot: spawn(a.spec, undefined, { at: [100 + 100 * i, 500] }) }));
     run.tick();
+    clearEvents(world.events);
+    for (const a of staged) {
+        world.energy[a.slot] = a.store * world.maxEnergyBySpec[a.spec];
+        run.want(a.slot, OUTPUT_INDEX.BITE, a.bite ? 1 : -1);
+        if (a.food) {
+            plantFood(world, a.slot);
+        }
+    }
+    run.tick();
+    run.jump(T + 100);
     clearEvents(world.events);
     for (const a of staged) {
         world.energy[a.slot] = a.store * world.maxEnergyBySpec[a.spec];
         world.vx[a.slot] = a.speed;
         world.vy[a.slot] = 0;
         world.outputs[a.slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = a.bite ? 1 : -1;
-        if (a.food) {
-            plantFood(world, a.slot);
+        if (a.food && a.spec === PREDATOR) {
+            plantFood(world, a.slot); // a hunter may have eaten its item in the step
         }
     }
     observe(run.observer, world);
@@ -63,9 +76,9 @@ describe('the eat-choice detectors in a scripted world', () => {
     const m = run.metrics();
 
     it('stage the checkpoint they say', () => {
-        expect(run.world.tick).toBe(T);
+        expect(run.world.tick).toBe(T + 100);
         const { eat } = run.observer.scenes;
-        expect([eat.contact, eat.contactBite, eat.full, eat.fullBite]).toEqual([5, 3, 3, 2]);
+        expect(Array.from(eat.latest, (n, k) => n - eat.base[k])).toEqual([5, 3, 3, 2]);
     });
 
     it('read the bite share of the foragers that touch food they can eat: A, B, C, C2 and D, of whom A, C and C2 bite', () => {
@@ -112,7 +125,7 @@ describe('the eat-choice detectors before any checkpoint', () => {
         run.tick();
         expect(run.metrics()['eval.food_contact_bite_share']).toEqual({
             value: null,
-            reason: 'no non-hunter in contact with edible food at a sample after burn-in',
+            reason: 'no non-hunter contact with edible food after burn-in',
         });
     });
 });

@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { FOOD_KIND } from '../../js/sim/carcass.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
-import { FULL_SHARE, createEatScene, eatMetrics, sampleEat } from '../../js/evo/scene-eat.js';
+import { EAT_CONTACT } from '../../js/sim/eat-contact.js';
+import { createEatScene, eatMetrics, sampleEat } from '../../js/evo/scene-eat.js';
 import { directionOf, intendedOf, namesOf } from './helpers/metric-registry.js';
 
 const T = Math.ceil(BURN_IN_TICKS / 1000) * 1000;
@@ -63,6 +64,7 @@ function world(agents, config = {}) {
         dose: new Float64Array(n),
         ateTimer: new Uint32Array(n),
         outputs: new Float32Array(n * OUTPUT_COUNT),
+        eatContacts: new Float64Array(EAT_CONTACT.COUNT),
         foodAlive: new Uint8Array(n),
         foodKind: new Uint8Array(n),
         foodX: new Float32Array(n),
@@ -99,58 +101,65 @@ function sampled(w) {
 const read = (scene, name) => /** @type {any} */ (eatMetrics(scene))[name].value;
 
 describe('the bite shares', () => {
-    const agents = [
-        { fraction: 0.5, bite: true }, // contact, bites
-        { fraction: 0.85, bite: false }, // contact, full, does not bite
-        { fraction: 0.9, bite: true }, // contact, full, bites
-        { fraction: 0.97, bite: true }, // satiated: canEatNow is false, so not counted
-        { fraction: FULL_SHARE, bite: true }, // the band's lower edge is in
-        { fraction: 0.79, bite: true }, // just under the band: contact only
-        { bite: true, gap: SIZE + RADIUS }, // touching exactly is not contact
-        { bite: true, foodAlive: false }, // the food is gone
-        { spec: PREDATOR, bite: true }, // a hunter is never looked at
-        { spec: SCOUT, bite: true, kind: FOOD_KIND.PLANT }, // plant is not its food
-        { spec: SCOUT, bite: false, kind: FOOD_KIND.MEAT }, // meat is: contact, does not bite
-        { bite: true, alive: false }, // dead
-        { bite: true, dose: 5 }, // sick
-        { bite: true, ateTimer: 3 }, // still digesting
-    ];
-    const scene = sampled(world(agents));
+    /** @param {Record<string, any>} w a world @param {number[]} counts contact, contact and bite, full, full and bite */
+    const count = (w, counts) => w.eatContacts.set(counts);
 
-    it('counts the non-hunters in contact with edible food they can eat now, and those that hold BITE', () => {
-        expect(scene.contact).toBe(6);
-        expect(scene.contactBite).toBe(4);
+    it('read the tallies the feed phase wrote: bites over contacts, and in the full band', () => {
+        const w = world([{ gap: 50 }]);
+        const scene = createEatScene(w.config);
+        sampleEat(scene, w);
+        count(w, [6, 4, 3, 2]);
+        w.tick = T + 100;
+        sampleEat(scene, w);
         expect(read(scene, 'eval.food_contact_bite_share')).toBeCloseTo(4 / 6, 12);
-    });
-
-    it('counts the band from 0.8 up to the satiation share', () => {
-        expect(scene.full).toBe(3);
-        expect(scene.fullBite).toBe(2);
         expect(read(scene, 'eval.full_contact_bite_share')).toBeCloseTo(2 / 3, 12);
     });
 
-    it('runs the band to a full store when satiation is off', () => {
-        const off = sampled(world([{ fraction: 1, bite: true }], { satiationShare: 0 }));
-        expect(read(off, 'eval.full_contact_bite_share')).toBe(1);
-    });
-
-    it('pools the checkpoints', () => {
-        const w = world([{ bite: true }]);
-        const scene2 = createEatScene(w.config);
-        sampleEat(scene2, w);
-        w.outputs[OUTPUT_INDEX.BITE] = 0;
+    it('count only what was tallied after the first sample from burn-in', () => {
+        const w = world([{ gap: 50 }]);
+        count(w, [100, 100, 40, 40]); // before burn-in: every contact bit
+        const scene = createEatScene(w.config);
+        sampleEat(scene, w);
+        count(w, [104, 101, 41, 40]);
         w.tick = T + 100;
-        sampleEat(scene2, w);
-        expect(read(scene2, 'eval.food_contact_bite_share')).toBe(0.5);
+        sampleEat(scene, w);
+        expect(read(scene, 'eval.food_contact_bite_share')).toBeCloseTo(1 / 4, 12);
+        expect(read(scene, 'eval.full_contact_bite_share')).toBe(0);
     });
 
-    it('is null with a reason when no non-hunter touches food, or none touches it with a nearly full store', () => {
-        const none = sampled(world([{ gap: 50 }]));
-        expect(eatMetrics(none)['eval.food_contact_bite_share']?.value).toBeNull();
-        expect(eatMetrics(none)['eval.full_contact_bite_share']?.value).toBeNull();
-        const lean = sampled(world([{ fraction: 0.2 }]));
-        expect(read(lean, 'eval.food_contact_bite_share')).toBe(0);
-        expect(eatMetrics(lean)['eval.full_contact_bite_share']?.value).toBeNull();
+    it('ignore the tally before burn-in and off the sample ticks', () => {
+        const w = world([{ gap: 50 }]);
+        const scene = createEatScene(w.config);
+        w.tick = BURN_IN_TICKS - 1;
+        count(w, [5, 5, 5, 5]);
+        sampleEat(scene, w);
+        w.tick = T + 1;
+        sampleEat(scene, w);
+        expect(scene.based).toBe(false);
+        expect(read(scene, 'eval.food_contact_bite_share')).toBeNull();
+    });
+
+    it('are not read off the sampled agents: foragers in contact at the sample add nothing the feed phase did not tally', () => {
+        const w = world([{ bite: true }, { fraction: 0.9, bite: false }]);
+        const scene = createEatScene(w.config);
+        sampleEat(scene, w);
+        expect(read(scene, 'eval.food_contact_bite_share')).toBeNull();
+        expect(read(scene, 'eval.full_contact_bite_share')).toBeNull();
+    });
+
+    it('is null with a reason when nothing was tallied, or nothing in the full band', () => {
+        const w = world([{ gap: 50 }]);
+        const scene = createEatScene(w.config);
+        sampleEat(scene, w);
+        expect(eatMetrics(scene)['eval.food_contact_bite_share']).toEqual({
+            value: null,
+            reason: 'no non-hunter contact with edible food after burn-in',
+        });
+        count(w, [3, 3, 0, 0]);
+        w.tick = T + 100;
+        sampleEat(scene, w);
+        expect(read(scene, 'eval.food_contact_bite_share')).toBe(1);
+        expect(eatMetrics(scene)['eval.full_contact_bite_share']?.value).toBeNull();
     });
 });
 
@@ -225,9 +234,9 @@ describe('the sample', () => {
         for (const tick of [T - 100, T + 1, T + 99]) {
             const w = world([{ bite: true }]);
             w.tick = tick;
-            expect(sampled(w).contact).toBe(0);
+            expect(sampled(w).based).toBe(false);
         }
-        expect(sampled(world([{ bite: true }])).contact).toBe(1);
+        expect(sampled(world([{ bite: true }])).based).toBe(true);
     });
 });
 

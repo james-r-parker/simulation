@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { FOOD_KIND } from '../../js/sim/carcass.js';
-import { CONTACT, buildFoodCellIndex, createFoodCellIndex, touchesFood } from '../../js/evo/food-cell-index.js';
+import { buildFoodCellIndex, createFoodCellIndex, touchesPlant } from '../../js/evo/food-cell-index.js';
 
 const CONFIG = { worldWidth: 1000, worldHeight: 600, maxFood: 300 };
 
@@ -46,14 +46,11 @@ function randomWorld(seed) {
  * The scan the index replaces: every food item against the agent, by the contact test of `tryEat`.
  * @param {Record<string, any>} w the world
  * @param {number} slot the agent
- * @param {number} mode a `CONTACT` mode
- * @returns {boolean} whether the agent touches an alive item the mode counts
+ * @returns {boolean} whether the agent touches an alive plant item
  */
-function naive(w, slot, mode) {
+function naive(w, slot) {
     for (let food = 0; food < w.foodAlive.length; food++) {
-        const meat = w.foodKind[food] === FOOD_KIND.MEAT;
-        const counts =
-            mode === CONTACT.EDIBLE ? (meat ? w.meatFoodBySpec : w.plantFoodBySpec)[w.spec[slot]] > 0 : !meat;
+        const counts = w.foodKind[food] !== FOOD_KIND.MEAT;
         const dx = w.foodX[food] - w.x[slot];
         const dy = w.foodY[food] - w.y[slot];
         if (w.foodAlive[food] === 1 && counts && Math.sqrt(dx * dx + dy * dy) < w.size[slot] + w.foodRadius[food]) {
@@ -63,21 +60,19 @@ function naive(w, slot, mode) {
     return false;
 }
 
-describe('touchesFood', () => {
+describe('touchesPlant', () => {
     it.each([1, 2, 3, 4, 5, 6, 7, 8])('equals the naive scan on a seeded random world (seed %i)', (seed) => {
         const w = randomWorld(seed);
         const index = createFoodCellIndex(CONFIG);
         buildFoodCellIndex(index, w);
         let hits = 0;
-        for (const mode of [CONTACT.EDIBLE, CONTACT.PLANT]) {
-            for (let slot = 0; slot < w.x.length; slot++) {
-                const expected = naive(w, slot, mode);
-                hits += expected ? 1 : 0;
-                expect(touchesFood(index, w, { slot, mode }), `slot ${slot} mode ${mode}`).toBe(expected);
-            }
+        for (let slot = 0; slot < w.x.length; slot++) {
+            const expected = naive(w, slot);
+            hits += expected ? 1 : 0;
+            expect(touchesPlant(index, w, slot), `slot ${slot}`).toBe(expected);
         }
-        expect(hits).toBeGreaterThan(10);
-        expect(hits).toBeLessThan(2 * w.x.length - 10);
+        expect(hits).toBeGreaterThan(5);
+        expect(hits).toBeLessThan(w.x.length - 5);
     });
 
     it('reads only the alive food, and counts them', () => {
@@ -97,7 +92,7 @@ describe('touchesFood', () => {
         buildFoodCellIndex(index, w);
         expect(index.count).toBe(0);
         for (let slot = 0; slot < w.x.length; slot++) {
-            expect(touchesFood(index, w, { slot, mode: CONTACT.PLANT })).toBe(false);
+            expect(touchesPlant(index, w, slot)).toBe(false);
         }
     });
 
@@ -115,8 +110,8 @@ describe('touchesFood', () => {
         w.spec[0] = 0;
         const index = createFoodCellIndex(CONFIG);
         buildFoodCellIndex(index, w);
-        expect(touchesFood(index, w, { slot: 0, mode: CONTACT.EDIBLE })).toBe(false);
+        expect(touchesPlant(index, w, 0)).toBe(false);
         w.x[0] = 106.9;
-        expect(touchesFood(index, w, { slot: 0, mode: CONTACT.EDIBLE })).toBe(true);
+        expect(touchesPlant(index, w, 0)).toBe(true);
     });
 });
