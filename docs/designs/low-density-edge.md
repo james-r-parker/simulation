@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1 and 2 are built; Phase 3 is built (E165, E166): no lever finalist; `flat` and `reach` read no guard worse on 128 seeds and land in Phase 4, the switch, which is next.
 **Validated:** 38339cbd (2026-11-11)
-**Priority:** 4 - the food brake shrinks the world and it still crashes (E152), so the edge under 100 prey is the binding failure, and the crash gates every hunter-skill plan below it ([review-2026-11-11.md](../review-2026-11-11.md) H1, H2)
+**Priority:** 3 - the food brake shrinks the world and it still crashes (E152), so the edge under 100 prey is the binding failure, and the crash gates every hunter-skill plan below it ([review-2026-11-11.md](../review-2026-11-11.md) H1, H2)
 **Depends on:** [metric-trust.md](metric-trust.md), [carrying-capacity.md](carrying-capacity.md) (its built Phase 1: the `held` guard, `evals/decisions/` and the E151 reference)
 
 The scene this doc serves ([principles.md](../principles.md)): **Boom and bust** - a local population swells, strips a
