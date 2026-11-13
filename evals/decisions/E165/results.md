@@ -19,8 +19,6 @@ rusher survives there (447); the food brake is not a heat lever, and the heat ke
 **Runs:** `npm run screen -- --grid evals/screens/low-density-edge-t14.grid.json` (`defaults`, `eat-1`, `eat-1-food-24`,
 `flat`) and `npm run eval -- --seeds 64 --ticks 200000 --policy live` at the `reach` commit (`exp/ld-reach-t14`).
 
-Results follow when the runs end.
-
 ## Results
 
 Seeds 1 to 64, 200000 ticks, floor on, policy live. Keep rule against `defaults` (`eval:compare --keep-rule
