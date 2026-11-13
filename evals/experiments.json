@@ -4222,6 +4222,22 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "effect": "no-difference"
+    },
+    {
+      "id": "E166",
+      "hypothesis": "low-density-edge T15b: flat (a mating chance of 1 all year) and reach (T11b, a possible mate counted only within findMale's reach) do no harm on the eat-choice world.",
+      "prediction": "On seeds 65 to 128, and on the 128 matched seeds with E165, flat and reach each read no keep-rule guard worse against defaults, and each guard sees a loss of a quarter of the seeds or less. Falsified when a guard reads worse.",
+      "targets": ["eval.births_per_1k", "eval.edge_birth_death_ratio"],
+      "before": "defaults arm of evals/decisions/E166/screen, seeds 65 to 128, 200000 ticks, floor on, policy live",
+      "after": "flat arm of the same screen, and evals/decisions/E166/reach.report.json at exp/ld-reach-t14",
+      "verdicts": {},
+      "note": "Recorded before the run.",
+      "reports": ["evals/decisions/E166/results.md"],
+      "date": "2026-11-13",
+      "branch": "exp/low-density-edge-t14",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
     }
   ]
 }
