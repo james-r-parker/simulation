@@ -4201,6 +4201,48 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "effect": "no-difference"
+    },
+    {
+      "id": "E165",
+      "hypothesis": "low-density-edge T14 (E-LD-2, E-LD-2b at 64 seeds): on the eat-choice world, the leading heat arm (eat-1) or the leading combined arm (eat-1-food-24) holds more seeds above 100 than the defaults, with no fewer seeds keeping hunters alive.",
+      "prediction": "eat-1 or eat-1-food-24 reads held better against defaults with alive not worse and a higher edge_birth_death_ratio (E-LD-2); eat-1-food-24 reads held better than eat-1 (E-LD-2b). flat and reach read no guard worse. Falsified when no arm reads held better with alive not worse, or the combined arm is not better than eat-1.",
+      "targets": ["eval.births_per_1k", "eval.edge_birth_death_ratio", "eval.heat_stress_share"],
+      "before": "defaults arm of evals/decisions/E165/screen: main (season 7, 7.1.0) defaults, seeds 1 to 64, 200000 ticks, floor on, policy live",
+      "after": "eat-1, eat-1-food-24 and flat arms of the same screen, and evals/decisions/E165/reach.report.json at exp/ld-reach-t14",
+      "verdicts": {},
+      "note": "Falsified (E-LD-2 and E-LD-2b). No arm reads held better at 64 seeds; eat-1-food-24 reads held worse than eat-1 (15 vs 5, p 0.041). flat and reach read no guard worse, but the guards see only 17 to 28 seed losses, so they are re-read on seeds 65 to 128 before landing. eat-1 and reach lift the median lowest population from 9 to 43 and 44.5 without moving held. See evals/decisions/E165/results.md.",
+      "reports": [
+        "evals/decisions/E165/results.md",
+        "evals/decisions/E165/screen/table.md",
+        "evals/decisions/E165/screen/verdicts.json",
+        "evals/decisions/E165/reach.report.json"
+      ],
+      "date": "2026-11-13",
+      "branch": "exp/low-density-edge-t14",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
+    },
+    {
+      "id": "E166",
+      "hypothesis": "low-density-edge T15b: flat (a mating chance of 1 all year) and reach (T11b, a possible mate counted only within findMale's reach) do no harm on the eat-choice world.",
+      "prediction": "On seeds 65 to 128, and on the 128 matched seeds with E165, flat and reach each read no keep-rule guard worse against defaults, and each guard sees a loss of a quarter of the seeds or less. Falsified when a guard reads worse.",
+      "targets": ["eval.births_per_1k", "eval.edge_birth_death_ratio"],
+      "before": "defaults arm of evals/decisions/E166/screen, seeds 65 to 128, 200000 ticks, floor on, policy live",
+      "after": "flat arm of the same screen, and evals/decisions/E166/reach.report.json at exp/ld-reach-t14",
+      "verdicts": {},
+      "note": "No guard worse for flat or reach on seeds 65 to 128 or on the 128 matched seeds; the guard-power clause fails (alive sees a 41 and 45 seed loss on 128 seeds, the most the seed list holds). Both land in Phase 4 under the plan rule. See evals/decisions/E166/results.md.",
+      "reports": [
+        "evals/decisions/E166/results.md",
+        "evals/decisions/E166/screen/table.md",
+        "evals/decisions/E166/screen/verdicts.json",
+        "evals/decisions/E166/reach.report.json"
+      ],
+      "date": "2026-11-13",
+      "branch": "exp/low-density-edge-t14",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
     }
   ]
 }
