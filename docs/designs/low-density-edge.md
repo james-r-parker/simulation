@@ -259,6 +259,7 @@ before its run.
 | `E-LD-2`  | A heat arm, alone or with the food brake, reads `held` `better` at 64 seeds with the `alive` guard not worse, and raises `eval.edge_birth_death_ratio`               | No arm reads `held` `better`, or the leading arm's `alive` guard reads worse, or its edge ratio does not rise     |
 | `E-LD-2b` | The leading heat arm with the food brake reads `held` `better` than the heat arm alone at 64 seeds, with the `alive` guard not worse                                 | The combined arm's `held` is not `better` than the heat arm alone; the food value does not land                   |
 | `E-LD-3`  | On the switched world hunters are alive at the last tick on 0.9 or more of held seeds, with `eval.chase_catch_share` not worse                                       | Hunters die out on more than 0.1 of held seeds                                                                    |
+| `E-LD-4`  | A `mateScentDeposit` arm reads `held` `better` than the scent off at 64 seeds, with the `alive` guard not worse and `eval.mating_share` higher                       | No scent arm reads `held` `better`, or the leading arm's `alive` guard reads `worse`                              |
 
 ## Decisions
 

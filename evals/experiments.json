@@ -4259,6 +4259,22 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "effect": "no-difference"
+    },
+    {
+      "id": "E168",
+      "hypothesis": "low-density-edge Phase 5 (T27, E-LD-4): a receptive-mate scent that ready females leave and males can smell lets mates find each other at low density, so more seeds hold above 100.",
+      "prediction": "A mateScentDeposit arm (0.5, 1 or 2) reads held better than the scent off at 64 seeds, with alive not worse and eval.mating_share higher. Falsified when no scent arm reads held better, or the leading arm's alive guard reads worse.",
+      "targets": ["eval.births_per_1k", "eval.mating_share", "eval.edge_birth_death_ratio"],
+      "before": "off arm (mateScentDeposit 0) of evals/decisions/E168/screen, feat/receptive-mate-scent (pooled-v6), 200000 ticks, floor on, policy live",
+      "after": "scent-0.5, scent-1 and scent-2 arms of the same screen",
+      "verdicts": {},
+      "note": "Recorded before the run.",
+      "reports": ["evals/decisions/E168/results.md"],
+      "date": "2026-11-13",
+      "branch": "feat/receptive-mate-scent",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
     }
   ]
 }
