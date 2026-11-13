@@ -23,3 +23,34 @@ by `held`, then `alive`, then `eval.mating_share`. **Second pass:** the leading 
 `scent-2` leads by `held`, then `alive`, then `eval.mating_share`, and the crash depth rises with the deposit (8, 29, 70).
 Since the trend has not levelled at 2, the second pass adds `scent-4` (recorded here, before it runs): `off`, `scent-2` and
 `scent-4` on seeds 1 to 64, each against `off` with `--keep-rule`, and `scent-4` against `scent-2`.
+
+## Second pass (seeds 1 to 64)
+
+`npm run screen -- --grid evals/screens/low-density-edge-mate-scent-64.grid.json`; each arm against `off` with
+`npm run eval:compare -- <off> <arm> --keep-rule --allow-config-diff mateScentDeposit`, and the crash depth from
+`node scripts/capacity-traces.mjs`.
+
+| Arm       | `held` harmed/recovered (p) | `alive` harmed/recovered (p) | `under80` | Catches/1k | `eval.mating_share` | `eval.births_per_1k` | Median lowest pop | Hunters alive at end | Other verdicts                                                     |
+| --------- | --------------------------- | ---------------------------- | --------- | ---------- | ------------------- | -------------------- | ----------------- | -------------------- | ------------------------------------------------------------------ |
+| `off`     | -                           | -                            | -         | 0.384      | 0.675               | 0.170                | 10.5              | 48/64                | -                                                                  |
+| `scent-2` | 11 / 4 (0.12)               | 11 / 13 (0.84)               | 10 / 10   | 0.404 =    | 0.669               | 0.174 =              | 14                | 50/64                | `qd_score`, predator fitness, food intake better; cold stress less |
+| `scent-4` | 9 / 8 (1)                   | 6 / 13 (0.17)                | 9 / 9     | 0.373 =    | 0.660               | 0.165 =              | 29                | 55/64                | `qd_score` better; hunter juvenile deaths fewer                    |
+
+Smallest loss each guard could detect: `alive` 27 seeds, `under80` 21 to 23, `held` 13 (`scent-2`) and 20 (`scent-4`).
+`scent-4` against `scent-2` reads `WORSE` on catches/1k (-7.7%, interval [-0.063, -0.0005]).
+
+## Verdict
+
+**E-LD-4 is falsified.** No scent arm reads `held` `better`: `scent-2` leans the wrong way (11 seeds lost against 4
+held) and `scent-4` is level (9 / 8). The scene the scent serves did not move either: `eval.mating_share` is a little
+lower in both arms, `eval.births_per_1k` reads `no-difference`, and the edge mate-birth rate is flat. The first pass
+lead of `scent-2` (median lowest 70) did not replicate on 64 seeds (14).
+
+The keep rule reads no harm for both arms, but the guards cannot see a loss of a quarter of the seeds (`alive` 27), and
+the scent is a new brain input, which `docs/principles.md` counts as a cost that needs a scene metric to move. None
+did: the `qd_score` and hunter gains are not the mating scene, and with no change in mating they are more likely the
+two extra inputs than the scent. **The scent does not land.** T28 (the switch) is not built; the grid, the inputs and
+`pooled-v6` stay on the unmerged branch `feat/receptive-mate-scent` (`0bab9926`, `0fd685aa`), and season 8 stays.
+
+Reading: mating is not what limits recovery at the edge on the switched world. Males already find ready females on two
+thirds of births (`eval.mating_share` 0.67), and a stronger lure does not change how many prey are left to find.
