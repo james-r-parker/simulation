@@ -9,7 +9,7 @@ import { brainLayout, layoutStamp } from '../sim/brain-layout.js';
 import { rulesHash } from '../sim/config.js';
 
 /** The archive format version. */
-export const ARCHIVE_VERSION = 7;
+export const ARCHIVE_VERSION = 8;
 
 /**
  * @param {import('./archive.js').Archive} archive the archive

@@ -81,12 +81,14 @@ const BODY_INPUTS = Object.freeze([
     ['refuge bearing sin', 'Refuge'],
     ['refuge bearing cos', 'Refuge'],
     ['refuge near', 'Refuge'],
+    ['mate left', 'Scent antennae'],
+    ['mate right', 'Scent antennae'],
 ]);
 
 /**
  * The names the inspector labels its bars with.
  * @returns {{rayChannels: string[], bodyInputs: {name: string, group: string}[], outputs: string[]}} the ten ray
- *   channel names, the 36 body inputs with their group, and the eleven output names in `OUTPUT_INDEX` order
+ *   channel names, the 38 body inputs with their group, and the eleven output names in `OUTPUT_INDEX` order
  */
 export function inspectLabels() {
     const outputs = Object.entries(OUTPUT_INDEX)

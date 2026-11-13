@@ -17,7 +17,7 @@ function makeGenome() {
         parents: [4, 5],
         specialisation: 'scout',
         layout: {
-            name: 'pooled-v5',
+            name: 'pooled-v6',
             inputCount: layout.inputCount,
             brainHidden: layout.hidden,
             outputCount: layout.outputCount,
@@ -38,7 +38,7 @@ describe('assertGenomeFits', () => {
         [
             'layout.name',
             (/** @type {any} */ g) => (g.layout.name = 'elman-v1'),
-            /genome\.layout\.name: expected pooled-v5/,
+            /genome\.layout\.name: expected pooled-v6/,
         ],
         ['layout.inputCount', (/** @type {any} */ g) => (g.layout.inputCount += 1), /genome\.layout\.inputCount/],
         [
@@ -90,14 +90,23 @@ describe('encodeGenome and decodeGenome', () => {
         expect(decodeGenome(encoded).weights).toHaveLength(brainLayout({ rayCount: 0, brainHidden: 4 }).weightCount);
         encoded.layout.inputCount = 179;
         expect(() => decodeGenome(encoded)).toThrow(
-            /genome\.layout: expected 92 inputs and 11 outputs, got 179 and 11/,
+            /genome\.layout: expected 94 inputs and 11 outputs, got 179 and 11/,
         );
     });
 
     it('refuses a genome of the same sizes but another layout name when decoding', () => {
         const encoded = encodeGenome(makeGenome());
         encoded.layout.name = 'elman-v1';
-        expect(() => decodeGenome(encoded)).toThrow(/genome\.layout\.name: expected pooled-v5, got elman-v1/);
+        expect(() => decodeGenome(encoded)).toThrow(/genome\.layout\.name: expected pooled-v6, got elman-v1/);
+    });
+
+    it('refuses a pooled-v5 genome, from before the receptive-mate scent, by name', () => {
+        const encoded = encodeGenome(makeGenome());
+        encoded.layout.name = 'pooled-v5';
+        expect(() => decodeGenome(encoded)).toThrow(/genome\.layout\.name: expected pooled-v6, got pooled-v5/);
+        expect(() =>
+            assertGenomeFits({ ...makeGenome(), layout: { ...makeGenome().layout, name: 'pooled-v5' } }, layout),
+        ).toThrow(/genome\.layout\.name: expected pooled-v6, got pooled-v5/);
     });
 
     it('rejects weights of the wrong size', () => {

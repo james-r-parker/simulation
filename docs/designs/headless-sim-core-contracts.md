@@ -408,9 +408,12 @@ offset)`: `t / temperatureMax`; `min(abs(t - middle) / (temperatureMax / 2), 1)`
   alarm and hunt call with their ahead and side components. The antennae sit `antennaReach` from the agent at the heading
   plus and minus `antennaAngle`. [predator-prey.md](predator-prey.md) lists every offset.
 - Body inputs 31 to 33 (offsets 30 to 32 from the start of the body block, `BODY_INPUT`): `sex` (0 female, 1 male)
-  and last tick's `MEMORY_A` and `MEMORY_B` outputs. There are no season inputs: the body block is 33 inputs.
+  and last tick's `MEMORY_A` and `MEMORY_B` outputs. There are no season inputs.
   `writeBodyInputs` writes offsets 0 to 16 and 30 to 32. The block sits at `rawBodyStart` in the raw `inputs` row and at
   `POOLED_VALUES` (56) in the pooled row.
+- Offsets 33 to 35 are the refuge inputs of `refuge-sense.js`, and offsets 36 and 37 (`BODY_INPUT.MATE_SCENT`) the
+  receptive-mate scent (`world.mate`) at the left then the right antenna, written by `writeScentInputs`: the body block
+  is 38 inputs (`EXTRA_INPUTS`, layout `pooled-v6`).
 - The season: `seasonAt(world, tick)` in `environment.js` writes the index and phase into `world.season`
   (`Float64Array(2)`, not hashed); `updateSeason` calls it once per tick. The year is `yearTicks(config)`: `4 x eraSeasonTicks`, so every rule keyed by season index or
   phase - `foodScarcity`, `energyDrain` and `temperatureModifier` - stretches with it.

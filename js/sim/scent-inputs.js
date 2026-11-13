@@ -1,4 +1,5 @@
-// Writes an agent's scent and call body inputs (offsets 17 to 29): antenna samples, hunt scent and heard calls.
+// Writes an agent's scent and call body inputs (offsets 17 to 29, 36 and 37): antenna samples, hunt scent, heard calls
+// and the receptive-mate scent.
 
 import { BODY_INPUT, RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
@@ -10,12 +11,16 @@ import { HEARD_STRIDE } from './world.js';
 /** The first scent input within the body inputs; offsets 0 to 16 belong to `writeBodyInputs`. */
 const FIRST_SCENT_INPUT = BODY_INPUT.SCENT;
 
+/** Offset from the first scent input to the receptive-mate scent at the left antenna. */
+const SCENT_TO_MATE = BODY_INPUT.MATE_SCENT - FIRST_SCENT_INPUT;
+
 /** Offset from the alarm half of a `heard` row to the hunt half. */
 const ALARM_TO_HUNT = 3;
 
 /**
  * Writes body inputs 17 to 29 of an agent: danger and attack at the left and right antennae, the hunt scent here and
- * at both antennae, then the loudest heard alarm and hunt call as loudness, ahead and side.
+ * at both antennae, then the loudest heard alarm and hunt call as loudness, ahead and side; and inputs 36 and 37, the
+ * receptive-mate scent (`world.mate`) at the left and right antennae.
  * @param {World} world the world
  * @param {number} slot the alive agent
  * @param {number} [cH] the cosine of the agent's heading, when the caller has it
@@ -23,7 +28,7 @@ const ALARM_TO_HUNT = 3;
  * @returns {void}
  */
 export function writeScentInputs(world, slot, cH = detCos(world.angle[slot]), sH = detSin(world.angle[slot])) {
-    const { danger, attack, hunt, antennaCos, antennaSin, config, x, y } = world;
+    const { danger, attack, hunt, mate, antennaCos, antennaSin, config, x, y } = world;
     const o = slot * world.layout.rawInputCount + config.rayCount * RAY_CHANNELS + FIRST_SCENT_INPUT;
     const out = world.inputs;
     const reach = config.antennaReach;
@@ -43,6 +48,8 @@ export function writeScentInputs(world, slot, cH = detCos(world.angle[slot]), sH
     out[o + 4] = samplePheromone(world, hunt, px, py);
     out[o + 5] = samplePheromone(world, hunt, lx, ly);
     out[o + 6] = samplePheromone(world, hunt, rx, ry);
+    out[o + SCENT_TO_MATE] = samplePheromone(world, mate, lx, ly);
+    out[o + SCENT_TO_MATE + 1] = samplePheromone(world, mate, rx, ry);
     // The loudest heard alarm (half 0) then hunt call (half 3): loudness, ahead and side.
     const { heard } = world;
     for (let h = 0; h < 2; h++) {

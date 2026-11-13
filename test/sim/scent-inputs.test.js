@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
+import { BODY_INPUT, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 import { writeScentInputs } from '../../js/sim/scent-inputs.js';
 import { HEARD_STRIDE } from '../../js/sim/world.js';
 import { addAgent, senseWorld } from './helpers/sense-world.js';
@@ -43,6 +43,17 @@ function antennae(x, y, a, spread, reach) {
         left: [x + reach * Math.cos(a + spread), y + reach * Math.sin(a + spread)],
         right: [x + reach * Math.cos(a - spread), y + reach * Math.sin(a - spread)],
     };
+}
+
+/**
+ * @param {ReturnType<typeof senseWorld>} w the world
+ * @param {number} slot the agent
+ * @returns {number[]} the receptive-mate scent at the left and right antennae (body inputs 36 and 37)
+ */
+function mateScent(w, slot) {
+    writeScentInputs(w, slot);
+    const base = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS + BODY_INPUT.MATE_SCENT;
+    return Array.from(w.inputs.subarray(base, base + 2));
 }
 
 describe('writeScentInputs antennae', () => {
@@ -158,7 +169,7 @@ describe('writeScentInputs heard calls', () => {
         expect(scent(w, me).slice(7)).toEqual([0, 0, 0, 0, 0, 0]);
     });
 
-    it('writes only offsets 17 to 29 of its own row', () => {
+    it('writes only offsets 17 to 29, 36 and 37 of its own row', () => {
         const w = senseWorld();
         const me = addAgent(w, 500, 500, 20);
         const other = addAgent(w, 700, 700, 20);
@@ -166,12 +177,44 @@ describe('writeScentInputs heard calls', () => {
         writeScentInputs(w, me);
         const start = me * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS + 17;
         const touched = Array.from(w.inputs).flatMap((v, i) => (v !== 9 ? [i] : []));
-        expect(touched.every((i) => i >= start && i < start + 13)).toBe(true);
-        expect(start + 19).toBe((me + 1) * w.layout.rawInputCount);
+        const mate = start - 17 + BODY_INPUT.MATE_SCENT;
+        expect(touched.every((i) => (i >= start && i < start + 13) || i === mate || i === mate + 1)).toBe(true);
+        expect(touched).toContain(mate + 1);
+        expect(start + 21).toBe((me + 1) * w.layout.rawInputCount);
         expect(
             w.inputs
                 .subarray(other * w.layout.rawInputCount, (other + 1) * w.layout.rawInputCount)
                 .every((/** @type {number} */ v) => v === 9),
         ).toBe(true);
+    });
+});
+
+describe('writeScentInputs receptive-mate scent', () => {
+    it('samples world.mate at the left then the right antenna, into body inputs 36 and 37', () => {
+        const w = senseWorld({ antennaAngle: 0.8, antennaReach: 150 });
+        const me = addAgent(w, 500, 500, 20);
+        w.angle[me] = 2.2;
+        const { left, right } = antennae(500, 500, 2.2, 0.8, 150);
+        setCell(w, w.mate, left[0], left[1], 0.35);
+        setCell(w, w.mate, right[0], right[1], 0.65);
+        setCell(w, w.mate, 500, 500, 0.9);
+        expect(BODY_INPUT.MATE_SCENT).toBe(36);
+        expect(mateScent(w, me)).toEqual([0.35, 0.65].map(Math.fround));
+    });
+
+    it('leaves the other scent inputs alone and reads 0 on an empty grid', () => {
+        const w = senseWorld({ antennaAngle: 0.8, antennaReach: 150 });
+        const me = addAgent(w, 500, 500, 20);
+        expect(mateScent(w, me)).toEqual([0, 0]);
+        const { left } = antennae(500, 500, 0, 0.8, 150);
+        setCell(w, w.mate, left[0], left[1], 0.5);
+        expect(scent(w, me)).toEqual(new Array(13).fill(0));
+    });
+
+    it('clamps the samples to 0..1', () => {
+        const w = senseWorld({ antennaAngle: 0.8, antennaReach: 150 });
+        const me = addAgent(w, 500, 500, 20);
+        w.mate.fill(4);
+        expect(mateScent(w, me)).toEqual([1, 1]);
     });
 });

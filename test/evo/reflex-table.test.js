@@ -68,14 +68,14 @@ describe('buildCaseTable', () => {
         const table = buildCaseTable(caseNamed('approach-prey'), { trials: 1 });
         expect(table.layoutName).toBe(BRAIN_LAYOUT_NAME);
         expect(table.rulesHash).toMatch(/^[0-9a-f]{16}$/);
-        expect(table.rawInputCount).toBe(16 * RAY_CHANNELS + 36);
+        expect(table.rawInputCount).toBe(16 * RAY_CHANNELS + 38);
         expect(table.spec).toBe(1);
     });
 
     it('changes with the ray count', () => {
         const wide = buildCaseTable(caseNamed('approach-food'), { trials: 1 });
         const narrow = buildCaseTable(caseNamed('approach-food'), { trials: 1, config: { rayCount: 8 } });
-        expect(narrow.rawInputCount).toBe(8 * RAY_CHANNELS + 36);
+        expect(narrow.rawInputCount).toBe(8 * RAY_CHANNELS + 38);
         expect(narrow.rawInputCount).not.toBe(wide.rawInputCount);
         expect(narrow.rulesHash).not.toBe(wide.rulesHash);
     });
