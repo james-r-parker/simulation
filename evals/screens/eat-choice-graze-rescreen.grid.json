@@ -1,0 +1,16 @@
+{
+  "seeds": 64,
+  "seedOffset": 0,
+  "ticks": 400000,
+  "policy": "live",
+  "reference": "graze-0.5",
+  "arms": {
+    "graze-0.5": {},
+    "graze-0.75": {
+      "grazeThrust": 0.75
+    },
+    "graze-1": {
+      "grazeThrust": 1
+    }
+  }
+}
