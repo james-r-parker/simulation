@@ -4259,6 +4259,26 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "effect": "no-difference"
+    },
+    {
+      "id": "E168",
+      "hypothesis": "low-density-edge Phase 5 (T27, E-LD-4): a receptive-mate scent that ready females leave and males can smell lets mates find each other at low density, so more seeds hold above 100.",
+      "prediction": "A mateScentDeposit arm (0.5, 1 or 2) reads held better than the scent off at 64 seeds, with alive not worse and eval.mating_share higher. Falsified when no scent arm reads held better, or the leading arm's alive guard reads worse.",
+      "targets": ["eval.births_per_1k", "eval.mating_share", "eval.edge_birth_death_ratio"],
+      "before": "off arm (mateScentDeposit 0) of evals/decisions/E168/screen, feat/receptive-mate-scent (pooled-v6), 200000 ticks, floor on, policy live",
+      "after": "scent-0.5, scent-1 and scent-2 arms (seeds 1 to 16, evals/decisions/E168/screen16), then scent-2 and scent-4 against off on seeds 1 to 64 (evals/decisions/E168/screen64)",
+      "verdicts": {},
+      "note": "Falsified: no scent arm reads held better at 64 seeds (scent-2 11 harmed vs 4 recovered, scent-4 9 vs 8). mating_share slightly lower in both, births_per_1k no-difference, edge mate births flat. Keep rule no harm, but the scent is a new brain input and no scene metric moved, so it does not land; T28 not built, the code stays on the unmerged branch feat/receptive-mate-scent. See evals/decisions/E168/results.md.",
+      "reports": [
+        "evals/decisions/E168/results.md",
+        "evals/decisions/E168/screen16/table.md",
+        "evals/decisions/E168/screen64/table.md"
+      ],
+      "date": "2026-11-13",
+      "branch": "feat/receptive-mate-scent",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
     }
   ]
 }

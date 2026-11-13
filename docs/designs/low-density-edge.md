@@ -1,6 +1,6 @@
 # Low-density edge
 
-**Status:** In progress - Phases 1 to 3 are built; Phase 4 (the switch: `reach` and `flat` land, the unused heat keys are deleted, season 8) is built (E167: no harm, `held` not better), its clip and the Chromium golden hashes (`npm run browser:hash`) open; Phase 5 (a receptive-mate scent) is next.
+**Status:** In progress - Phases 1 to 4 are built; Phase 5 (a receptive-mate scent) is falsified (E168: no scent arm holds more seeds, mating does not move), so the scent stays on the unmerged branch `feat/receptive-mate-scent`; Phase 4's clip and the Chromium golden hashes (`npm run browser:hash`) are open.
 **Validated:** 38339cbd (2026-11-11)
 **Priority:** 3 - the food brake shrinks the world and it still crashes (E152), so the edge under 100 prey is the binding failure, and the crash gates every hunter-skill plan below it ([review-2026-11-11.md](../review-2026-11-11.md) H1, H2)
 **Depends on:** [metric-trust.md](metric-trust.md), [carrying-capacity.md](carrying-capacity.md) (its built Phase 1: the `held` guard, `evals/decisions/` and the E151 reference)
@@ -248,6 +248,13 @@ Opens only when Phase 3 names no finalist, or when Phase 4's `held` guard is not
 | ----- | ---------- | -------------------------------------------------------- |
 | I     | T25 to T29 | The grid, the inputs, the screen, the switch, the review |
 
+**Record (E168, 2026-11-13).** On the switched world with the scent inputs (`pooled-v6`), `mateScentDeposit` 0.5,
+1 and 2 on seeds 1 to 16, then 2 and 4 against the scent off on seeds 1 to 64. No arm reads `held` `better` (`scent-2`
+11 seeds harmed, 4 recovered; `scent-4` 9 and 8), `eval.mating_share` is a little lower in both, and
+`eval.births_per_1k` reads `no-difference`. The keep rule reads no harm, but the scent is a new brain input and no
+scene metric moved, so it does not land: `E-LD-4` is falsified, T28 is not built and season 8 stays. The table is in
+`evals/decisions/E168/results.md`.
+
 ## Experiments
 
 The labels are for this doc; each prediction takes the next numeric id in `evals/experiments.json` when it is recorded,
@@ -259,6 +266,7 @@ before its run.
 | `E-LD-2`  | A heat arm, alone or with the food brake, reads `held` `better` at 64 seeds with the `alive` guard not worse, and raises `eval.edge_birth_death_ratio`               | No arm reads `held` `better`, or the leading arm's `alive` guard reads worse, or its edge ratio does not rise     |
 | `E-LD-2b` | The leading heat arm with the food brake reads `held` `better` than the heat arm alone at 64 seeds, with the `alive` guard not worse                                 | The combined arm's `held` is not `better` than the heat arm alone; the food value does not land                   |
 | `E-LD-3`  | On the switched world hunters are alive at the last tick on 0.9 or more of held seeds, with `eval.chase_catch_share` not worse                                       | Hunters die out on more than 0.1 of held seeds                                                                    |
+| `E-LD-4`  | A `mateScentDeposit` arm reads `held` `better` than the scent off at 64 seeds, with the `alive` guard not worse and `eval.mating_share` higher                       | No scent arm reads `held` `better`, or the leading arm's `alive` guard reads `worse`                              |
 
 ## Decisions
 
@@ -340,13 +348,13 @@ before its run.
 
 ### Phase 5 - A receptive-mate scent
 
-| #   | Task                                                                                                                                                                     | Nature       | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
-| T25 | The `world.mate` grid and the deposit by ready females; decay and diffusion in `wasm/src/field.rs`, rebuilt with `scripts/build-wasm.sh` (Rust work goes to Opus); tests | [judgement]  | T15a       |
-| T26 | Two inputs in `BODY_INPUT` written by `writeScentInputs`, `BRAIN_LAYOUT_NAME` `pooled-v6`, `pooled-v5` refused by `genome.js`; tests                                     | [judgement]  | T25        |
-| T27 | The `mateScentDeposit` grid, its prediction, and the 16-seed and 64-seed passes with `--keep-rule`; reports committed                                                    | [judgement]  | T26        |
-| T28 | The switch: the screen's value as the default, goldens and bench re-pinned, the 64-seed paired check on seeds 65 to 128                                                  | [mechanical] | T27        |
-| T29 | Conformance review of Phase 5, in parallel with `scripts/check.sh`; status line moved                                                                                    | [judgement]  | T28        |
+| #   | Task                                                                                                                                                                                                                            | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T25 | (built on `feat/receptive-mate-scent`, unmerged: E168) The `world.mate` grid and the deposit by ready females; decay and diffusion in `wasm/src/field.rs`, rebuilt with `scripts/build-wasm.sh` (Rust work goes to Opus); tests | [judgement]  | T15a       |
+| T26 | (built on `feat/receptive-mate-scent`, unmerged: E168) Two inputs in `BODY_INPUT` written by `writeScentInputs`, `BRAIN_LAYOUT_NAME` `pooled-v6`, `pooled-v5` refused by `genome.js`; tests                                     | [judgement]  | T25        |
+| T27 | (built: 2026-11-13, E168: E-LD-4 falsified, the scent does not land) The `mateScentDeposit` grid, its prediction, and the 16-seed and 64-seed passes with `--keep-rule`; reports committed                                      | [judgement]  | T26        |
+| T28 | (not built: E168 falsified E-LD-4, so there is nothing to switch) The switch: the screen's value as the default, goldens and bench re-pinned, the 64-seed paired check on seeds 65 to 128                                       | [mechanical] | T27        |
+| T29 | (built: 2026-11-13; the record only, no code lands) Conformance review of Phase 5, in parallel with `scripts/check.sh`; status line moved                                                                                       | [judgement]  | T28        |
 
 ## Verification
 
