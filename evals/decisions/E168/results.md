@@ -56,3 +56,30 @@ two extra inputs than the scent. **The scent does not land.** T28 (the switch) i
 
 Reading: mating is not what limits recovery at the edge on the switched world. Males already find ready females on two
 thirds of births (`eval.mating_share` 0.67), and a stronger lure does not change how many prey are left to find.
+
+## Do males follow the scent? (2026-11-13)
+
+The verdict above left one gap: the scent inputs start with random weights, so a 200000-tick run might end before
+brains learn to use them. `scent-follow.mjs` (in this folder; results in `scent-follow.json`) re-runs the `scent-4` world
+on seeds 1 to 8 for 200000 ticks on `feat/receptive-mate-scent` and measures steering, sampled every 5 ticks: for each
+agent, its mean turn output when the left antenna smells more mate scent minus its mean turn when the right one does
+(turn runs from -1 to 1; positive steers toward the scent). The placebo is the same contrast for ready males against
+a smooth field no brain can sense, sampled at the same antenna points; it shows what movement alone produces.
+
+| Ticks           | Mate-ready males | Everyone else  | Placebo (ready males) |
+| --------------- | ---------------- | -------------- | --------------------- |
+| 0 - 20000       | 0.012 +- 0.010   | 0.038 +- 0.006 | -0.003 +- 0.007       |
+| 20000 - 40000   | 0.012 +- 0.005   | 0.036 +- 0.004 | -0.005 +- 0.004       |
+| 80000 - 100000  | 0.025 +- 0.005   | 0.037 +- 0.006 | -0.012 +- 0.005       |
+| 180000 - 200000 | 0.014 +- 0.003   | 0.033 +- 0.007 | -0.001 +- 0.006       |
+
+Means over the 8 seeds, +- one standard error. Ready males smell the scent on 85% to 100% of their samples at the end,
+so the signal reaches them.
+
+**Reading: brains do not learn to follow the scent.** The placebo sits at 0, so the method is sound. Ready males lean
+slightly toward the scent (about 1% of a full turn), but they did so from the first 20000 ticks, the lean does not grow
+over 200000 ticks, and agents with no reason to seek a mate (females and males not ready) lean about twice as much.
+The lean is what any agent shows by heading for food and company, which the scent overlaps, not a mate search. The
+verdict stands, and the gap it left is closed for this design: a longer run would not have helped, because selection
+did not start to shape the response. A scent that males do follow would need a reason the scent alone gives, such as
+one that is not everywhere: the ready-male scent coverage near 1 says deposit 4 spreads it over most of where males are.
