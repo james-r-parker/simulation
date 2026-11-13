@@ -1,5 +1,24 @@
 # Changelog
 
+## [8.0.0](https://github.com/james-r-parker/simulation/compare/v7.1.0...v8.0.0) (2026-11-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* the rules changed (rulesHash bc2fd948bd4ecf66 to ca640c7579b94d0d); genes of season 7 do not carry over.
+* **sim:** temperatureCoolingExcess and temperatureMatingMax are no longer config keys.
+* **sim:** seasons[].reproductionBonus and mateChanceScale are no longer config keys, and findMale makes no lifecycle draw, which changes the sim stream and rulesHash.
+* **sim:** noteMatesSeen counts a mate only within findMale's reach, which changes mateSeenAt and so the sim stream and rulesHash.
+
+### Features
+
+* **library:** no season gap while uploads are closed (deployment-and-community Phase 1c) ([22acff5](https://github.com/james-r-parker/simulation/commit/22acff5ebd237db9c568c374604afba777e9f0a2))
+* **library:** no season gap while uploads are closed (deployment-and-community T43) ([cc979be](https://github.com/james-r-parker/simulation/commit/cc979be9e9cc15aa1a255cc42dd7bf857469971d))
+* open season 8, the low-density-edge switch ([650bf0f](https://github.com/james-r-parker/simulation/commit/650bf0f5223b69a4984bf730cf4b6a2eb36b8532))
+* **sim:** delete the unused heat keys (low-density-edge T18) ([deb7f3f](https://github.com/james-r-parker/simulation/commit/deb7f3f1fe2dda5c36c6dfdc18b3e35ed20b3329))
+* **sim:** mating takes no seasonal chance (low-density-edge T17) ([c57f48e](https://github.com/james-r-parker/simulation/commit/c57f48e69d601fa7768fc9ace3fecbae4b6616f5))
+* **sim:** noteMatesSeen counts a mate only within findMale's reach (low-density-edge T16) ([b2eb8fc](https://github.com/james-r-parker/simulation/commit/b2eb8fc14ae994d2d1f51fa8e646f193106d9507))
+
 ## [7.1.0](https://github.com/james-r-parker/simulation/compare/v7.0.0...v7.1.0) (2026-11-12)
 
 
