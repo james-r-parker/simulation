@@ -1,6 +1,6 @@
 # Low-density edge
 
-**Status:** In progress - Phases 1 and 2 are built; Phase 3 is built (E165, E166): no lever finalist; `flat` and `reach` read no guard worse on 128 seeds and land in Phase 4, the switch, which is next.
+**Status:** In progress - Phases 1 to 3 are built; Phase 4 (the switch: `reach` and `flat` land, the unused heat keys are deleted, season 8) is built (E167: no harm, `held` not better), its clip open; Phase 5 (a receptive-mate scent) is next.
 **Validated:** 38339cbd (2026-11-11)
 **Priority:** 3 - the food brake shrinks the world and it still crashes (E152), so the edge under 100 prey is the binding failure, and the crash gates every hunter-skill plan below it ([review-2026-11-11.md](../review-2026-11-11.md) H1, H2)
 **Depends on:** [metric-trust.md](metric-trust.md), [carrying-capacity.md](carrying-capacity.md) (its built Phase 1: the `held` guard, `evals/decisions/` and the E151 reference)
@@ -223,6 +223,12 @@ When `held` is not `better` here, Phase 5 opens on top of the switch.
 | G     | T21, T22   | The 64-seed paired check and its verdict (runs, kept apart from code) |
 | H     | T23, T24   | The clip and the docs, the review                                     |
 
+**Record (E167, 2026-11-13).** The switch (`reach`, `flat`, the unused heat keys deleted) on seeds 65 to 128 against
+`main`: no keep-rule guard reads worse, `held` is not `better` (11 seeds harmed, 9 recovered), and `E-LD-3` holds
+(hunters alive on 13 of 13 held seeds, `eval.chase_catch_share` +2.5%). `eval.births_per_1k`, `eval.mating_share` and
+`eval.edge_birth_death_ratio` do not rise, so Phase 5 opens on top of the switch. The table is in
+`evals/decisions/E167/results.md`.
+
 ### Phase 5 - A receptive-mate scent
 
 **Targets:** eval.births_per_1k, eval.mating_share, eval.edge_birth_death_ratio
@@ -320,17 +326,17 @@ before its run.
 
 ### Phase 4 - The switch
 
-| #   | Task                                                                                                                                                                                        | Nature       | Depends on    |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------- |
-| T16 | (built: 2026-11-13) L1 from T11b when it landed by T15, deleting `eval.edge_mate_unreached_share`; the finalist's values as the defaults (none when there is no finalist); the config tests | [mechanical] | T15a          |
-| T17 | (built: 2026-11-13) L4 when it landed by T15: delete `seasons[].reproductionBonus` and `mateChanceScale` from the config, the validation rules and `mate`; tests                            | [mechanical] | T15a          |
-| T18 | (built: 2026-11-13) Delete `temperatureCoolingExcess` or `temperatureMatingMax` and its code when the finalist does not use it, or there is no finalist; tests                              | [mechanical] | T16           |
-| T19 | (built: 2026-11-13, Node only; Chromium not run) Re-pin the goldens in Node and Chromium                                                                                                    | [mechanical] | T16, T17, T18 |
-| T20 | (built: 2026-11-13) Re-record `bench/baseline.json` on a quiet machine under the CPU lock                                                                                                   | [mechanical] | T19           |
-| T21 | Run the paired check on seeds 65 to 128 at the head against `origin/main`; reports committed                                                                                                | [mechanical] | T20           |
-| T22 | Read the Done criteria from T21: `keepRule`, `eval:compare`, the sign tests; the `E-LD-3` verdict; a sim-notes entry                                                                        | [judgement]  | T21           |
-| T23 | The clip of the default world for the user; README.md and world-balance.md Phase 6 closed                                                                                                   | [judgement]  | T22           |
-| T24 | Conformance review of Phase 4, in parallel with `scripts/check.sh`; status line moved                                                                                                       | [judgement]  | T23           |
+| #   | Task                                                                                                                                                                                                    | Nature       | Depends on    |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------- |
+| T16 | (built: 2026-11-13) L1 from T11b when it landed by T15, deleting `eval.edge_mate_unreached_share`; the finalist's values as the defaults (none when there is no finalist); the config tests             | [mechanical] | T15a          |
+| T17 | (built: 2026-11-13) L4 when it landed by T15: delete `seasons[].reproductionBonus` and `mateChanceScale` from the config, the validation rules and `mate`; tests                                        | [mechanical] | T15a          |
+| T18 | (built: 2026-11-13) Delete `temperatureCoolingExcess` or `temperatureMatingMax` and its code when the finalist does not use it, or there is no finalist; tests                                          | [mechanical] | T16           |
+| T19 | (built: 2026-11-13, Node only; Chromium not run) Re-pin the goldens in Node and Chromium                                                                                                                | [mechanical] | T16, T17, T18 |
+| T20 | (built: 2026-11-13) Re-record `bench/baseline.json` on a quiet machine under the CPU lock                                                                                                               | [mechanical] | T19           |
+| T21 | (built: 2026-11-13, E167) Run the paired check on seeds 65 to 128 at the head against `origin/main`; reports committed                                                                                  | [mechanical] | T20           |
+| T22 | (built: 2026-11-13, E167: no harm, `held` not better, E-LD-3 holds; Phase 5 opens) Read the Done criteria from T21: `keepRule`, `eval:compare`, the sign tests; the `E-LD-3` verdict; a sim-notes entry | [judgement]  | T21           |
+| T23 | The clip of the default world for the user; README.md and world-balance.md Phase 6 closed                                                                                                               | [judgement]  | T22           |
+| T24 | Conformance review of Phase 4, in parallel with `scripts/check.sh`; status line moved                                                                                                                   | [judgement]  | T23           |
 
 ### Phase 5 - A receptive-mate scent
 
