@@ -81,16 +81,15 @@ function startMating(world, policy, mother, father) {
 /**
  * @param {World} world the world
  * @param {number} a a ready agent
- * @param {number} chance the probability that the chosen pair mates
- * @returns {number} the male the female `a` chooses, or -1 when `a` is a male or no choice wins the draw
+ * @returns {number} the male the female `a` chooses, or -1 when `a` is a male or none is in reach
  */
-function femaleChoice(world, a, chance) {
-    return world.sex[a] === SEX.FEMALE ? findMale(world, a, chance) : -1;
+function femaleChoice(world, a) {
+    return world.sex[a] === SEX.FEMALE ? findMale(world, a) : -1;
 }
 
 /**
  * Walks the alive slots in ascending order; each ready one looks for a partner with a higher slot within `mateRange`
- * and starts a pregnancy when one wins the lifecycle draw. Only the ready females search, each
+ * and starts a pregnancy when one is in reach. Only the ready females search, each
  * choosing the highest ranked male in reach (`findMale`, on the mate ranks `refreshMateRanks` recomputes every
  * `MATE_RANK_INTERVAL` ticks) and being the mother whatever her slot. Uses the hash built this tick.
  * @param {World} world the world
@@ -102,12 +101,9 @@ export function mate(world, policy) {
     if (mateRankDue(world)) {
         refreshMateRanks(world);
     }
-    const { mateChanceScale } = world.config;
-    const { reproductionBonus } = world.config.seasons[world.season[0]];
-    const chance = Math.min(1, reproductionBonus / mateChanceScale);
     for (let a = 0; a < alive.length; a++) {
         if (alive[a] === 1 && readyToMate(world, a)) {
-            const b = femaleChoice(world, a, chance);
+            const b = femaleChoice(world, a);
             if (b >= 0) {
                 startMating(world, policy, a, b);
             }

@@ -43,7 +43,7 @@ describe('findMale', () => {
             { x: 560, y: 500, sex: 1, rank: 0.5 },
         ]);
         w.energy[3] = 5000;
-        expect(findMale(w, 0, 1)).toBe(2);
+        expect(findMale(w, 0)).toBe(2);
     });
 
     it('breaks a rank tie toward the lower slot', () => {
@@ -52,7 +52,7 @@ describe('findMale', () => {
             { x: 560, y: 500, sex: 1 },
             { x: 520, y: 500, sex: 1 },
         ]);
-        expect(findMale(w, 0, 1)).toBe(1);
+        expect(findMale(w, 0)).toBe(1);
     });
 
     it('can choose a male with a lower slot than the female', () => {
@@ -60,7 +60,7 @@ describe('findMale', () => {
             { x: 520, y: 500, sex: 1 },
             { x: 500, y: 500, sex: 0 },
         ]);
-        expect(findMale(w, 1, 1)).toBe(0);
+        expect(findMale(w, 1)).toBe(0);
     });
 
     it('ignores females, males out of range and males of another specialisation', () => {
@@ -72,7 +72,7 @@ describe('findMale', () => {
             { x: 530, y: 500, sex: 1, rank: 0.1 },
         ]);
         w.spec[3] = 1;
-        expect(findMale(w, 0, 1)).toBe(4);
+        expect(findMale(w, 0)).toBe(4);
     });
 
     it('covers a range that spans many hash cells', () => {
@@ -80,23 +80,22 @@ describe('findMale', () => {
             { x: 500, y: 500, sex: 0 },
             { x: 1400, y: 500, sex: 1 },
         ];
-        expect(findMale(placed(pair, { mateRange: 900 }), 0, 1)).toBe(1);
-        expect(findMale(placed(pair, { mateRange: 800 }), 0, 1)).toBe(-1);
+        expect(findMale(placed(pair, { mateRange: 900 }), 0)).toBe(1);
+        expect(findMale(placed(pair, { mateRange: 800 }), 0)).toBe(-1);
     });
 
-    it('draws once when there is a male, and not at all without one', () => {
+    it('draws nothing, with a male in reach or without one', () => {
         const w = placed([
             { x: 500, y: 500, sex: 0 },
             { x: 520, y: 500, sex: 1 },
         ]);
-        const ref = { seed: 0, s: Uint32Array.from(lifecycleState(w)) };
-        nextFloat(ref);
-        expect(findMale(w, 0, 0)).toBe(-1);
-        expect(lifecycleState(w)).toEqual(Array.from(ref.s));
+        const start = lifecycleState(w);
+        expect(findMale(w, 0)).toBe(1);
+        expect(lifecycleState(w)).toEqual(start);
         const lone = placed([{ x: 500, y: 500, sex: 0 }]);
-        const start = lifecycleState(lone);
-        expect(findMale(lone, 0, 1)).toBe(-1);
-        expect(lifecycleState(lone)).toEqual(start);
+        const loneStart = lifecycleState(lone);
+        expect(findMale(lone, 0)).toBe(-1);
+        expect(lifecycleState(lone)).toEqual(loneStart);
     });
 });
 
@@ -121,13 +120,11 @@ describe('findMale against an O(n^2) reference', () => {
                 w.alive[s] = nextFloat(rng) < 0.1 ? 0 : 1;
             }
             buildHash(w.hash, w);
-            const chance = nextFloat(rng);
             for (let a = 0; a < count; a++) {
                 if (w.alive[a] === 1 && w.sex[a] === 0) {
-                    const ref = { seed: 0, s: Uint32Array.from(w.rng.lifecycle.s) };
-                    const expected = referenceFindMate(w, a, chance, ref);
-                    expect(findMale(w, a, chance)).toBe(expected);
-                    expect(lifecycleState(w)).toEqual(Array.from(ref.s));
+                    const start = lifecycleState(w);
+                    expect(findMale(w, a)).toBe(referenceFindMate(w, a));
+                    expect(lifecycleState(w)).toEqual(start);
                 }
             }
         }

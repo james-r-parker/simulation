@@ -3,10 +3,8 @@ import { BLOCKED_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../../js/sim/events.js'
 import { advancePregnancies, mate, splitAll } from '../../js/sim/reproduction.js';
 import { detCos, detSin } from '../../js/sim/det-math.js';
 import { nextFloat } from '../../js/sim/rng.js';
-import { createConfig } from '../../js/sim/config.js';
 import { buildHash } from '../../js/sim/spatial-hash.js';
 import { addBlob, lifeWorld, recordingPolicy } from './helpers/life-world.js';
-import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const MATE = { mateOut: 1, energy: 700 };
 
@@ -44,15 +42,6 @@ function peekLifecycle(w, skip = 0) {
     return nextFloat(copy);
 }
 
-/**
- * @param {number} bonus the reproduction bonus of every season
- * @returns {any[]} four seasons
- */
-function seasonsWith(bonus) {
-    const base = createConfig({ ...SIMPLE_WORLD }).seasons;
-    return base.map((/** @type {any} */ season) => ({ ...season, reproductionBonus: bonus }));
-}
-
 describe('mate thresholds', () => {
     it.each([
         ['exactly the size ratio limit', 20, 10, true],
@@ -85,23 +74,6 @@ describe('mate thresholds', () => {
         expect(w.fatherWeights[(m - 1) * n + 0]).toBe(0);
         expect(w.fatherWeights[f * n]).toBe(0);
         expect(w.fatherId[m]).toBe(w.genomeId[f]);
-    });
-
-    it.each([
-        ['at exactly the chance', 1, false],
-        ['just under the chance', 1.01, true],
-    ])('draws %s and mates only when under it', (_name, factor, mates) => {
-        let seed = 1;
-        let draw = 1;
-        for (; seed < 200; seed++) {
-            draw = peekLifecycle(pair({ seed }));
-            if (draw < 0.4) {
-                break;
-            }
-        }
-        const w = pair({ seed, mateChanceScale: 2, seasons: seasonsWith(2 * draw * factor) });
-        mate(w, recordingPolicy([]));
-        expect(w.pregnancy[0] > 0).toBe(mates);
     });
 });
 

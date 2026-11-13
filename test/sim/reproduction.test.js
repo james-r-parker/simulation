@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BLOCKED_CAUSE, BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../../js/sim/events.js';
 import { advancePregnancies, mate, splitAll } from '../../js/sim/reproduction.js';
-import { nextFloat } from '../../js/sim/rng.js';
 import { TIMER_CAP } from '../../js/sim/world.js';
 import { LOSS_CAUSE } from '../../js/sim/energy.js';
 import { buildHash } from '../../js/sim/spatial-hash.js';
@@ -94,29 +93,15 @@ describe('mate', () => {
         expect(lifecycleState(w)).toEqual(before);
     });
 
-    it('draws once per eligible pair and mates only when the draw is under the chance', () => {
-        const w = pair();
-        w.season[0] = 3;
-        let unlucky = 0;
-        for (let i = 0; i < 40; i++) {
-            w.pregnancy[0] = 0;
-            w.cooldown[0] = 0;
-            w.cooldown[1] = 0;
-            w.energy[0] = 700;
-            w.energy[1] = 700;
+    it('mates an eligible pair in every season, with no seasonal chance and no draw', () => {
+        for (let season = 0; season < 4; season++) {
+            const w = pair();
+            w.season[0] = season;
+            const before = lifecycleState(w);
             mate(w, recordingPolicy([]));
-            unlucky += w.pregnancy[0] === 0 ? 1 : 0;
+            expect(w.pregnancy[0]).toBeGreaterThan(0);
+            expect(lifecycleState(w)).toEqual(before);
         }
-        expect(unlucky).toBeGreaterThan(0);
-        expect(unlucky).toBeLessThan(40);
-    });
-
-    it('draws exactly once for an eligible pair', () => {
-        const w = pair();
-        const ref = { seed: 0, s: Uint32Array.from(w.rng.lifecycle.s) };
-        nextFloat(ref);
-        mate(w, recordingPolicy([]));
-        expect(lifecycleState(w)).toEqual(Array.from(ref.s));
     });
 
     it('does not pay or draw when no partner is within mateRange', () => {
@@ -173,7 +158,7 @@ describe('advancePregnancies', () => {
             motherId,
             w.genomeId[1],
             1,
-            0,
+            1, // the child's sex: the first lifecycle draw, no longer preceded by the mating draw
             0,
             0,
         ]);

@@ -4,7 +4,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { smallWorld } from './helpers/small-world.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
-const SEASON = { foodScarcity: 1, energyDrain: 1, reproductionBonus: 1, temperatureModifier: 0 };
+const SEASON = { foodScarcity: 1, energyDrain: 1, temperatureModifier: 0 };
 // 1000 x 1000 px is 1 unit of area, so foodRegrowPerArea is the expected spawns per tick.
 const AREA = {
     maxFood: 400,

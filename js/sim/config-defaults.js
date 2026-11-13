@@ -95,10 +95,10 @@ export const DEFAULTS = deepFreeze({
     pregnancyTicks: 480, // PREGNANCY_DURATION_FRAMES
     maturityTicks: 600, // MATURATION_AGE_FRAMES
     seasons: [
-        { foodScarcity: 1.2, energyDrain: 1.0, reproductionBonus: 1.5, temperatureModifier: -5 }, // spring, SEASON_*
-        { foodScarcity: 1.0, energyDrain: 1.3, reproductionBonus: 1.2, temperatureModifier: 15 }, // summer, SEASON_*
-        { foodScarcity: 0.8, energyDrain: 1.1, reproductionBonus: 0.7, temperatureModifier: 5 }, // autumn, SEASON_*
-        { foodScarcity: 0.4, energyDrain: 1.8, reproductionBonus: 0.3, temperatureModifier: -15 }, // winter, SEASON_*
+        { foodScarcity: 1.2, energyDrain: 1.0, temperatureModifier: -5 }, // spring, SEASON_*
+        { foodScarcity: 1.0, energyDrain: 1.3, temperatureModifier: 15 }, // summer, SEASON_*
+        { foodScarcity: 0.8, energyDrain: 1.1, temperatureModifier: 5 }, // autumn, SEASON_*
+        { foodScarcity: 0.4, energyDrain: 1.8, temperatureModifier: -15 }, // winter, SEASON_*
     ],
     fertileZoneMax: 100, // FERTILE_ZONE_MAX_COUNT
     fertileZoneSpawnChance: 0.4, // FERTILE_ZONE_SPAWN_CHANCE
@@ -202,7 +202,6 @@ export const DEFAULTS = deepFreeze({
     checkInvariants: false, // new
     restitution: 0.5, // new
     splitCooldownMultiplier: 1.5, // new
-    mateChanceScale: 1.5, // new
     fertileZoneRadius: 150, // new
     fertileZoneFertility: 0.05, // FERTILE_ZONE_FERTILITY_FACTOR
     placementTries: 100, // new

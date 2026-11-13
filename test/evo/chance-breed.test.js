@@ -45,7 +45,7 @@ describe('chance energy moves nothing that breeds', () => {
         refreshMateRanks(w);
         expect(w.merit[lucky]).toBe(0);
         buildHash(w.hash, w);
-        expect(findMale(w, 0, 1)).toBe(skilled);
+        expect(findMale(w, 0)).toBe(skilled);
     });
 
     it('leaves the archive rank as it was: chance food and bites add nothing to the fitness', () => {
