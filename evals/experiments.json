@@ -4243,6 +4243,22 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "effect": "no-difference"
+    },
+    {
+      "id": "E167",
+      "hypothesis": "low-density-edge Phase 4 (T21, T22): the switch (reach and flat, the unused heat keys deleted) does no harm on fresh seeds, and keeps hunters alive on held seeds (E-LD-3).",
+      "prediction": "On seeds 65 to 128 no keep-rule guard reads worse against main; held is not expected to read better; hunters alive at the last tick on 0.9 or more of held seeds with chase_catch_share not worse; lineages_alive, spec_effective and chase_catch_share not worse. Falsified when a guard reads worse, or hunters die out on more than 0.1 of held seeds.",
+      "targets": ["eval.births_per_1k", "eval.mating_share", "eval.edge_birth_death_ratio"],
+      "before": "evals/decisions/E166/screen/defaults.report.json: main defaults (sim unchanged since), seeds 65 to 128, 200000 ticks, floor on, policy live",
+      "after": "evals/decisions/E167/head.report.json: feat/low-density-edge-switch (season 8), same seeds",
+      "verdicts": {},
+      "note": "Recorded before the run.",
+      "reports": ["evals/decisions/E167/results.md"],
+      "date": "2026-11-13",
+      "branch": "feat/low-density-edge-switch",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
     }
   ]
 }
