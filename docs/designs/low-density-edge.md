@@ -1,6 +1,6 @@
 # Low-density edge
 
-**Status:** In progress - Phases 1 to 3 are built; Phase 4 (the switch: `reach` and `flat` land, the unused heat keys are deleted, season 8) is built (E167: no harm, `held` not better), its clip open; Phase 5 (a receptive-mate scent) is next.
+**Status:** In progress - Phases 1 to 3 are built; Phase 4 (the switch: `reach` and `flat` land, the unused heat keys are deleted, season 8) is built (E167: no harm, `held` not better), its clip and the Chromium golden hashes (`npm run browser:hash`) open; Phase 5 (a receptive-mate scent) is next.
 **Validated:** 38339cbd (2026-11-11)
 **Priority:** 3 - the food brake shrinks the world and it still crashes (E152), so the edge under 100 prey is the binding failure, and the crash gates every hunter-skill plan below it ([review-2026-11-11.md](../review-2026-11-11.md) H1, H2)
 **Depends on:** [metric-trust.md](metric-trust.md), [carrying-capacity.md](carrying-capacity.md) (its built Phase 1: the `held` guard, `evals/decisions/` and the E151 reference)
@@ -336,7 +336,7 @@ before its run.
 | T21 | (built: 2026-11-13, E167) Run the paired check on seeds 65 to 128 at the head against `origin/main`; reports committed                                                                                  | [mechanical] | T20           |
 | T22 | (built: 2026-11-13, E167: no harm, `held` not better, E-LD-3 holds; Phase 5 opens) Read the Done criteria from T21: `keepRule`, `eval:compare`, the sign tests; the `E-LD-3` verdict; a sim-notes entry | [judgement]  | T21           |
 | T23 | The clip of the default world for the user; README.md and world-balance.md Phase 6 closed                                                                                                               | [judgement]  | T22           |
-| T24 | Conformance review of Phase 4, in parallel with `scripts/check.sh`; status line moved                                                                                                                   | [judgement]  | T23           |
+| T24 | (built: 2026-11-13; the README and contracts doc fixed, the Chromium hashes open) Conformance review of Phase 4, in parallel with `scripts/check.sh`; status line moved                                 | [judgement]  | T23           |
 
 ### Phase 5 - A receptive-mate scent
 

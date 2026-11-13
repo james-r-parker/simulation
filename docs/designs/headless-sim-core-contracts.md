@@ -80,7 +80,6 @@ The core needs these beyond the design doc's Config table. All are "new" in Sour
 | ------------------------- | ------- | ---------------------------------------------------------------------------- |
 | `restitution`             | `0.5`   | Elasticity of agent-agent impulses                                           |
 | `splitCooldownMultiplier` | `1.5`   | The split cooldown factor                                                    |
-| `mateChanceScale`         | `1.5`   | Mating chance is `min(1, reproductionBonus / mateChanceScale)`               |
 | `fertileZoneRadius`       | `150`   | Food from a zone lands within this distance of its centre                    |
 | `fertileZoneFertility`    | `0.05`  | `FERTILE_ZONE_FERTILITY_FACTOR`: a zone starts at `size x` this              |
 | `placementTries`          | `100`   | Rejection-sampling attempts before `placeClear` throws                       |
@@ -138,29 +137,29 @@ both. `minAgents` is 40. `rulesHash` covers every key.
 
 Validation runs after the merge. Integer means `Number.isInteger`. A failure throws naming the key path (`seasons[2].energyDrain`), the value and the rule.
 
-| Keys                                                                                                       | Rule                                                                                                  |
-| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `seed`                                                                                                     | Integer `0 .. 2^32 - 1`                                                                               |
-| `worldWidth`, `worldHeight`                                                                                | `1000 .. 100000`                                                                                      |
-| `maxAgents`                                                                                                | Integer `1 .. 4096`                                                                                   |
-| `initialAgents`, `minAgents`                                                                               | Integer `0 .. maxAgents`                                                                              |
-| `maxFood`                                                                                                  | Integer `1 .. 20000`; `initialFood` integer `0 .. maxFood`                                            |
-| `foodMaxAge`, `maxAgeTicks`, `pregnancyTicks`                                                              | Integer `>= 1`                                                                                        |
-| `reproductionCooldown`, `maturityTicks`                                                                    | Integer `>= 0`                                                                                        |
-| `rayCount`                                                                                                 | Integer `1 .. 64`; `brainHidden` integer `1 .. 128`                                                   |
-| `hashCellSize`, `pheromoneCellSize`                                                                        | `> 0`; `maxContacts`, `eventCapacity`, `placementTries` integer `>= 1`                                |
-| `damping`, `highFoodChance`, `fertileZoneSpawnChance`, `pheromoneDecay`, `restitution`, `fertileZoneDecay` | `0 .. 1`                                                                                              |
-| `pheromoneDiffusion`                                                                                       | `0 .. 1`                                                                                              |
-| `huntSizeRatio`                                                                                            | `>= 1`                                                                                                |
-| `mateSizeRatio`                                                                                            | `> 1`; the larger parent may be at most this times the smaller                                        |
-| `temperatureMax`                                                                                           | `> 0`; `temperatureStart` `0 .. temperatureMax`                                                       |
-| `temperatureGainMove`, `temperatureGainEat`, `temperatureLossPassive`, `temperatureSeasonSlope`            | `>= 0`                                                                                                |
-| `temperaturePassiveLossFactor`                                                                             | `>= 1`                                                                                                |
-| `temperatureColdStress`                                                                                    | `> 0`                                                                                                 |
-| `temperatureEfficiencyColdSevere`, `...ColdModerate`, `...HeatModerate`, `...HeatSevere`                   | `> 0` and `<= 1`                                                                                      |
-| `initialEnergy`                                                                                            | `> 0` and `<= maxEnergy`; `minSize <= baseSize`                                                       |
-| Every other number                                                                                         | Finite and `>= 0`; sizes, radii, energies and the divisors `energyToSize` and `mateChanceScale` `> 0` |
-| `checkInvariants`                                                                                          | Boolean                                                                                               |
+| Keys                                                                                                       | Rule                                                                           |
+| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `seed`                                                                                                     | Integer `0 .. 2^32 - 1`                                                        |
+| `worldWidth`, `worldHeight`                                                                                | `1000 .. 100000`                                                               |
+| `maxAgents`                                                                                                | Integer `1 .. 4096`                                                            |
+| `initialAgents`, `minAgents`                                                                               | Integer `0 .. maxAgents`                                                       |
+| `maxFood`                                                                                                  | Integer `1 .. 20000`; `initialFood` integer `0 .. maxFood`                     |
+| `foodMaxAge`, `maxAgeTicks`, `pregnancyTicks`                                                              | Integer `>= 1`                                                                 |
+| `reproductionCooldown`, `maturityTicks`                                                                    | Integer `>= 0`                                                                 |
+| `rayCount`                                                                                                 | Integer `1 .. 64`; `brainHidden` integer `1 .. 128`                            |
+| `hashCellSize`, `pheromoneCellSize`                                                                        | `> 0`; `maxContacts`, `eventCapacity`, `placementTries` integer `>= 1`         |
+| `damping`, `highFoodChance`, `fertileZoneSpawnChance`, `pheromoneDecay`, `restitution`, `fertileZoneDecay` | `0 .. 1`                                                                       |
+| `pheromoneDiffusion`                                                                                       | `0 .. 1`                                                                       |
+| `huntSizeRatio`                                                                                            | `>= 1`                                                                         |
+| `mateSizeRatio`                                                                                            | `> 1`; the larger parent may be at most this times the smaller                 |
+| `temperatureMax`                                                                                           | `> 0`; `temperatureStart` `0 .. temperatureMax`                                |
+| `temperatureGainMove`, `temperatureGainEat`, `temperatureLossPassive`, `temperatureSeasonSlope`            | `>= 0`                                                                         |
+| `temperaturePassiveLossFactor`                                                                             | `>= 1`                                                                         |
+| `temperatureColdStress`                                                                                    | `> 0`                                                                          |
+| `temperatureEfficiencyColdSevere`, `...ColdModerate`, `...HeatModerate`, `...HeatSevere`                   | `> 0` and `<= 1`                                                               |
+| `initialEnergy`                                                                                            | `> 0` and `<= maxEnergy`; `minSize <= baseSize`                                |
+| Every other number                                                                                         | Finite and `>= 0`; sizes, radii, energies and the divisor `energyToSize` `> 0` |
+| `checkInvariants`                                                                                          | Boolean                                                                        |
 
 Cross-key rule: `0 < temperatureColdStress < temperatureColdModerate <= temperatureOptimalMax < temperatureHeatModerate
 <= temperatureHeatStress < temperatureMax` and `temperatureColdStress < temperatureOptimalMin <= temperatureOptimalMax`.
@@ -169,7 +168,7 @@ below `hashCellSize`, so a circle spans at most 3 x 3 cells. The base size is `b
 Cross-key rule: with `foodPatchCount` above 0, `2 x foodPatchRadius` is at most the shorter world side. Cross-key rule: `terrainProblem` in `terrain.js` rejects a terrain unless the wall gaps leave wall between them, the refuges (in groups of `refugeCluster`) fit the basins, the cold margins leave room between them and (with patches) a patch disc fits a basin.
 
 - `seasons` is an array of exactly four objects in the order spring, summer, autumn, winter, each with exactly the
-  keys `foodScarcity`, `energyDrain`, `reproductionBonus`, each finite and `>= 0`, and `temperatureModifier`, finite
+  keys `foodScarcity` and `energyDrain`, each finite and `>= 0`, and `temperatureModifier`, finite
   and of either sign. The season index is
   `Math.floor(phase x 4)`.
 - `specialisations` is an object with exactly the keys `forager`, `predator`, `reproducer`, `scout`, `defender`. Each
@@ -414,7 +413,7 @@ offset)`: `t / temperatureMax`; `min(abs(t - middle) / (temperatureMax / 2), 1)`
   `POOLED_VALUES` (56) in the pooled row.
 - The season: `seasonAt(world, tick)` in `environment.js` writes the index and phase into `world.season`
   (`Float64Array(2)`, not hashed); `updateSeason` calls it once per tick. The year is `yearTicks(config)`: `4 x eraSeasonTicks`, so every rule keyed by season index or
-  phase - `foodScarcity`, `energyDrain`, `reproductionBonus` and `temperatureModifier` - stretches with it.
+  phase - `foodScarcity`, `energyDrain` and `temperatureModifier` - stretches with it.
 - Eras (`eras.js`): `advanceEra` runs in the `environment` phase after `updateSeason`. On every
   tick above 0 divisible by `eraSeasonTicks` it pushes `SeasonChanged` (`world.season[0]`, the zero-based year
   `floor(tick / (4 x eraSeasonTicks))`) and updates `world.era[0]`: outside summer it becomes -1; at the start of summer

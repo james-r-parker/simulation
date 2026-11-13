@@ -229,7 +229,7 @@ Eating a pollinated flower or berry can load pollen. A later meal from another l
 
 ### Time, seasons and eras
 
-- A season modifies food (`foodScarcity`), energy drain, mating chance (`reproductionBonus`) and temperature. A season lasts
+- A season modifies food (`foodScarcity`), energy drain and temperature; mating takes no seasonal chance. A season lasts
   `eraSeasonTicks` = 36,000 ticks (10 minutes at x1) and a year is four of them, 40 minutes (`js/sim/eras.js`).
 - Winter cuts patch regrowth to 20% (`winterRegrow`), summer raises it to 150%. Each year there is a 25% chance (`droughtChance`) that one basin's patches stop regrowing for the summer.
 
