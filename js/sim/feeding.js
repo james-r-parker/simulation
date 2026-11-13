@@ -1,5 +1,6 @@
 // The feed phase: agents eat the food they overlap, then biters take energy from the agents they touch.
 
+import { tallyEatContact } from './eat-contact.js';
 import { carryPollen } from './pollination.js';
 import { ingestToxin, isSick } from './toxin.js';
 import { canBite, couldBite, inJaws } from './bite-rule.js';
@@ -29,7 +30,8 @@ function shareOf(world, slot, food) {
 }
 
 /**
- * Eats one food if the agent's circle overlaps it.
+ * Eats one food if the agent's circle overlaps it and it chooses to eat. A non-hunter's contact is tallied first
+ * (`tallyEatContact`), whether or not it eats, before the item is removed.
  * @param {Record<string, any>} world the world
  * @param {number} slot the eating agent
  * @param {number} food the food slot
@@ -45,7 +47,12 @@ function tryEat(world, slot, food) {
     const dx = world.foodX[food] - world.x[slot];
     const dy = world.foodY[food] - world.y[slot];
     if (Math.sqrt(dx * dx + dy * dy) < world.size[slot] + world.foodRadius[food]) {
-        consumeFood(world, slot, food);
+        if (world.huntBySpec[world.spec[slot]] === 0) {
+            tallyEatContact(world, slot);
+        }
+        if (choosesToEat(world, slot)) {
+            consumeFood(world, slot, food);
+        }
     }
 }
 
@@ -137,16 +144,14 @@ function choosesToEat(world, slot) {
 }
 
 /**
- * Makes one agent eat every alive food it overlaps, when it chooses to eat (`choosesToEat`).
+ * Walks the cells an agent overlaps: it eats every alive food it overlaps when it chooses to eat (`choosesToEat`), and a
+ * non-hunter that does not choose still has its contacts tallied.
  * @param {Record<string, any>} world the world
  * @param {import('./spatial-hash.js').SpatialHash} hash the hash built this tick
  * @param {number} slot the eating agent
  * @returns {void}
  */
 function eatAround(world, hash, slot) {
-    if (!choosesToEat(world, slot)) {
-        return;
-    }
     const range = cellRange(hash, world.x[slot], world.y[slot], world.size[slot]);
     const col0 = range[0];
     const row0 = range[1];
