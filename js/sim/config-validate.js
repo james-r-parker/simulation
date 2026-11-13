@@ -87,6 +87,7 @@ const RULES = {
     pheromoneDiffusion: UNIT,
     pheromoneDeposit: num(0),
     pheromoneMax: num(0),
+    mateScentDeposit: num(0),
     hashCellSize: positive(),
     maxContacts: int(1),
     eventCapacity: int(1),

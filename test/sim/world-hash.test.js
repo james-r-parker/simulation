@@ -95,6 +95,7 @@ const COVERED = [
     'danger',
     'attack',
     'hunt',
+    'mate',
     'cloudX',
     'cloudY',
     'cloudTtl',

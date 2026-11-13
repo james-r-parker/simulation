@@ -99,6 +99,7 @@ const FIELD_ARRAYS = [
     'danger',
     'attack',
     'hunt',
+    'mate',
     'cloudX',
     'cloudY',
     'cloudTtl',

@@ -108,6 +108,7 @@ export const DEFAULTS = deepFreeze({
     pheromoneDiffusion: 0.05, // new
     pheromoneDeposit: 1, // new
     pheromoneMax: 5, // new
+    mateScentDeposit: 0, // new: the receptive-mate scent a ready female leaves each tick (low-density-edge L5); 0 is off
     hashCellSize: 140, // new
     maxContacts: 2000, // new
     eventCapacity: 8192, // megafauna: includes five events per herd animal and two per herd

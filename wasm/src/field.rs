@@ -1,5 +1,5 @@
 //! The pheromone update of the field phase (`updatePheromones`, formerly the JS `updateGrid` in
-//! `js/sim/pheromones.js`): each of the danger, attack and hunt grids decays, is copied to the scratch, then diffuses
+//! `js/sim/pheromones.js`): each of the danger, attack, hunt and mate grids decays, is copied to the scratch, then diffuses
 //! to its four in-grid neighbours. The two loops run row by row, and rows of exact zeros are skipped (`update_grid`).
 //!
 //! Bit-identity rules (docs/designs/wasm-kernels.md): every cell is computed in `f64` from its `f32` values with the JS
@@ -18,6 +18,7 @@ pub struct FieldParams {
     danger: u32,
     attack: u32,
     hunt: u32,
+    mate: u32,
     scratch: u32,
     cols: u32,
     rows: u32,
@@ -228,7 +229,7 @@ unsafe fn update_grid(grid: *mut f32, g: &Grid, keep: f64) {
     }
 }
 
-/// Decays then diffuses the danger, attack and hunt grids (`updatePheromones`).
+/// Decays then diffuses the danger, attack, hunt and mate grids (`updatePheromones`).
 ///
 /// # Safety
 /// `params` addresses the block `js/sim/wasm-field.js` wrote, describing arrays inside the memory.
@@ -248,7 +249,7 @@ pub unsafe fn update_pheromones(params: u32, decay_rate: f64, diffusion: f64) {
         if g.cols == 0 || g.rows == 0 {
             return;
         }
-        for grid in [p.danger, p.attack, p.hunt] {
+        for grid in [p.danger, p.attack, p.hunt, p.mate] {
             update_grid(at::<f32>(grid), &g, keep);
         }
     }

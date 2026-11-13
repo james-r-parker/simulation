@@ -1,16 +1,16 @@
 // The pheromone update in the WASM kernels (docs/designs/wasm-kernels.md, Phase 4): one `update_pheromones` call decays
-// and diffuses the danger, attack and hunt grids in the arena, bit-identical to the JS grid loops it replaced. Deposits
+// and diffuses the danger, attack, hunt and mate grids in the arena, bit-identical to the JS grid loops it replaced. Deposits
 // and samples are single-cell rules and stay in JS (`js/sim/pheromones.js`), reading the same arena views.
 
 /** World fields the field kernel reads and writes, taken over by the arena at their allocated type and length. */
-export const FIELD_FIELDS = Object.freeze(['danger', 'attack', 'hunt', 'pheromoneScratch']);
+export const FIELD_FIELDS = Object.freeze(['danger', 'attack', 'hunt', 'mate', 'pheromoneScratch']);
 
-/** Words of the field parameter block: the four grids' byte offsets, then `cols` and `rows` (`FieldParams`). */
+/** Words of the field parameter block: the four grids' and the scratch's byte offsets, then `cols` and `rows` (`FieldParams`). */
 const PARAM_WORDS = FIELD_FIELDS.length + 2;
 
 /**
  * @param {Record<string, any>} world the world, its fields not yet in an arena
- * @returns {import('./wasm-arena.js').ArenaSpec[]} the three grids and the scratch at their own type and length, then
+ * @returns {import('./wasm-arena.js').ArenaSpec[]} the four grids and the scratch at their own type and length, then
  *   the parameter block
  */
 export function fieldSpecs(world) {
@@ -32,7 +32,7 @@ export function writeFieldParams(arena, world) {
 }
 
 /**
- * Decays then diffuses the danger, attack and hunt grids in the kernel.
+ * Decays then diffuses the danger, attack, hunt and mate grids in the kernel.
  * @param {Record<string, any>} world a world on the WASM kernels
  * @returns {void}
  */

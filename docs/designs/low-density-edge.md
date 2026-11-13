@@ -340,13 +340,13 @@ before its run.
 
 ### Phase 5 - A receptive-mate scent
 
-| #   | Task                                                                                                                                                                     | Nature       | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
-| T25 | The `world.mate` grid and the deposit by ready females; decay and diffusion in `wasm/src/field.rs`, rebuilt with `scripts/build-wasm.sh` (Rust work goes to Opus); tests | [judgement]  | T15a       |
-| T26 | Two inputs in `BODY_INPUT` written by `writeScentInputs`, `BRAIN_LAYOUT_NAME` `pooled-v6`, `pooled-v5` refused by `genome.js`; tests                                     | [judgement]  | T25        |
-| T27 | The `mateScentDeposit` grid, its prediction, and the 16-seed and 64-seed passes with `--keep-rule`; reports committed                                                    | [judgement]  | T26        |
-| T28 | The switch: the screen's value as the default, goldens and bench re-pinned, the 64-seed paired check on seeds 65 to 128                                                  | [mechanical] | T27        |
-| T29 | Conformance review of Phase 5, in parallel with `scripts/check.sh`; status line moved                                                                                    | [judgement]  | T28        |
+| #   | Task                                                                                                                                                                                         | Nature       | Depends on |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T25 | (built: 2026-11-13) The `world.mate` grid and the deposit by ready females; decay and diffusion in `wasm/src/field.rs`, rebuilt with `scripts/build-wasm.sh` (Rust work goes to Opus); tests | [judgement]  | T15a       |
+| T26 | Two inputs in `BODY_INPUT` written by `writeScentInputs`, `BRAIN_LAYOUT_NAME` `pooled-v6`, `pooled-v5` refused by `genome.js`; tests                                                         | [judgement]  | T25        |
+| T27 | The `mateScentDeposit` grid, its prediction, and the 16-seed and 64-seed passes with `--keep-rule`; reports committed                                                                        | [judgement]  | T26        |
+| T28 | The switch: the screen's value as the default, goldens and bench re-pinned, the 64-seed paired check on seeds 65 to 128                                                                      | [mechanical] | T27        |
+| T29 | Conformance review of Phase 5, in parallel with `scripts/check.sh`; status line moved                                                                                                        | [judgement]  | T28        |
 
 ## Verification
 

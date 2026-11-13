@@ -216,7 +216,7 @@ function allocZonesAndPheromones(world) {
         rows: Math.ceil(worldHeight / pheromoneCellSize),
     });
     const cells = world.pheromoneGrid.cols * world.pheromoneGrid.rows;
-    allocRows(world, singles(Float32Array, ['danger', 'attack', 'hunt', 'pheromoneScratch']), cells);
+    allocRows(world, singles(Float32Array, ['danger', 'attack', 'hunt', 'mate', 'pheromoneScratch']), cells);
 }
 
 /**

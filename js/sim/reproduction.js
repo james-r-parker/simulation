@@ -19,6 +19,7 @@ import { applyGenes, childShareOf } from './traits.js';
 import { slotOfGenome } from './merit-state.js';
 import { noteProofBirth, splitBraked } from './proof.js';
 import { noteMateScarcityBirth } from './mate-scarcity.js';
+import { depositMateScent } from './pheromones.js';
 import { noteClonalBirth, noteSplit, splitKeysAllow } from './split-gate.js';
 import { TIMER_CAP, allocAgent } from './world.js';
 
@@ -79,12 +80,17 @@ function startMating(world, policy, mother, father) {
 }
 
 /**
+ * A ready female leaves her receptive-mate scent (`depositMateScent`), then chooses a male.
  * @param {World} world the world
  * @param {number} a a ready agent
  * @returns {number} the male the female `a` chooses, or -1 when `a` is a male or none is in reach
  */
 function femaleChoice(world, a) {
-    return world.sex[a] === SEX.FEMALE ? findMale(world, a) : -1;
+    if (world.sex[a] !== SEX.FEMALE) {
+        return -1;
+    }
+    depositMateScent(world, a);
+    return findMale(world, a);
 }
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { depositPheromone, samplePheromone, updatePheromones } from '../../js/sim/pheromones.js';
+import { depositMateScent, depositPheromone, samplePheromone, updatePheromones } from '../../js/sim/pheromones.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { smallWorld } from './helpers/small-world.js';
 
@@ -51,6 +51,23 @@ describe('depositPheromone', () => {
     });
 });
 
+describe('depositMateScent', () => {
+    it('leaves mateScentDeposit on the mate grid under the agent', () => {
+        const w = smallWorld({ pheromoneCellSize: CELL, mateScentDeposit: 0.75 });
+        w.x[0] = 250;
+        w.y[0] = 340;
+        depositMateScent(w, 0);
+        expect(w.mate[3 * COLS + 2]).toBe(0.75);
+        expect(total(w.mate)).toBe(0.75);
+    });
+
+    it('leaves nothing at mateScentDeposit 0', () => {
+        const w = smallWorld({ pheromoneCellSize: CELL, mateScentDeposit: 0 });
+        depositMateScent(w, 0);
+        expect(total(w.mate)).toBe(0);
+    });
+});
+
 describe('updatePheromones', () => {
     it('decays an isolated value before spreading it', () => {
         const w = build();
@@ -90,6 +107,15 @@ describe('updatePheromones', () => {
         const decayed = total(w.hunt) * (1 - 0.1);
         updatePheromones(w);
         expect(Math.abs(total(w.hunt) - decayed) / decayed).toBeLessThan(1e-6);
+    });
+
+    it('decays and diffuses the mate grid like the others, alone', () => {
+        const w = build();
+        w.mate[55] = 1;
+        updatePheromones(w);
+        expect(w.mate[55]).toBeCloseTo(0.9 * (1 - 0.4), 6);
+        expect(w.mate[54]).toBeCloseTo(0.9 * 0.1, 6);
+        expect(total(w.danger) + total(w.attack) + total(w.hunt)).toBe(0);
     });
 
     it('diffuses a corner cell to its two neighbours only', () => {
@@ -155,13 +181,13 @@ describe('updatePheromones against a naive reference', () => {
             pheromoneDiffusion: 0.05,
         });
         const rng = createRng(5);
-        for (const grid of [w.danger, w.attack, w.hunt]) {
+        for (const grid of [w.danger, w.attack, w.hunt, w.mate]) {
             for (let i = 0; i < grid.length; i++) {
                 grid[i] = nextFloat(rng) * 5;
             }
         }
-        const expected = [w.danger, w.attack, w.hunt].map((g) => reference(g, w.pheromoneGrid, w.config));
+        const expected = [w.danger, w.attack, w.hunt, w.mate].map((g) => reference(g, w.pheromoneGrid, w.config));
         updatePheromones(w);
-        [w.danger, w.attack, w.hunt].forEach((g, n) => expect(Array.from(g)).toEqual(Array.from(expected[n])));
+        [w.danger, w.attack, w.hunt, w.mate].forEach((g, n) => expect(Array.from(g)).toEqual(Array.from(expected[n])));
     });
 });

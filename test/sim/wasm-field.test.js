@@ -93,7 +93,7 @@ describe('the row-skipping pheromone update against the two-loop model', () => {
             });
             const { cols, rows } = world.pheromoneGrid;
             expect([cols, rows]).toEqual([13, 20]);
-            const want = FIELD_FIELDS.slice(0, 3).map((name, g) => {
+            const want = FIELD_FIELDS.slice(0, 4).map((name, g) => {
                 const grid = world[name];
                 for (let r = 0; r < rows; r++) {
                     for (let c = 0; c < cols; c++) {
@@ -108,7 +108,7 @@ describe('the row-skipping pheromone update against the two-loop model', () => {
                 for (const g of want) {
                     naiveUpdate(g, scratch, { cols, rows, decay: 0.03, diffusion: 0.2 });
                 }
-                FIELD_FIELDS.slice(0, 3).forEach((name, g) => {
+                FIELD_FIELDS.slice(0, 4).forEach((name, g) => {
                     expect(new Uint32Array(world[name].slice().buffer)).toEqual(new Uint32Array(want[g].buffer));
                 });
                 expect(new Uint32Array(world.pheromoneScratch.slice().buffer)).toEqual(new Uint32Array(scratch.buffer));
