@@ -17,7 +17,7 @@ const PI = 3.141592653589793;
 const MAX_U16 = 65535;
 const MAX_WEIGHT_FLOATS = 16777216; // 2^24: 64 MB of float32 weights
 const SEASON_COUNT = 4;
-const SEASON_KEYS = ['foodScarcity', 'energyDrain', 'reproductionBonus', 'temperatureModifier'];
+const SEASON_KEYS = ['foodScarcity', 'energyDrain', 'temperatureModifier'];
 
 /** @type {Rule} a finite number of either sign */
 const SIGNED = { type: 'num', min: -Infinity };
@@ -94,7 +94,6 @@ const RULES = {
     checkInvariants: BOOL,
     restitution: UNIT,
     splitCooldownMultiplier: num(0),
-    mateChanceScale: positive(),
     fertileZoneRadius: positive(),
     fertileZoneFertility: num(0),
     placementTries: int(1),
@@ -111,8 +110,6 @@ const RULES = {
     temperatureOptimalMax: num(0),
     temperatureHeatModerate: num(0),
     temperatureHeatStress: num(0),
-    temperatureCoolingExcess: num(0),
-    temperatureMatingMax: num(0),
     temperatureEfficiencyColdSevere: EFFICIENCY,
     temperatureEfficiencyColdModerate: EFFICIENCY,
     temperatureEfficiencyHeatModerate: EFFICIENCY,
@@ -158,7 +155,6 @@ const BELOW = [
     ['sickDose', 'lethalDose'],
     ['temperatureColdStress', 'temperatureColdModerate'],
     ['temperatureColdStress', 'temperatureOptimalMin'],
-    ['temperatureColdStress', 'temperatureMatingMax'],
     ['temperatureOptimalMax', 'temperatureHeatModerate'],
     ['temperatureHeatStress', 'temperatureMax'],
 ];

@@ -9,10 +9,10 @@ const BASE = {
     maxFood: 40,
     foodRegrowPerArea: 4,
     seasons: [
-        { foodScarcity: 1, energyDrain: 1, reproductionBonus: 1, temperatureModifier: 0 },
-        { foodScarcity: 0.5, energyDrain: 1, reproductionBonus: 1, temperatureModifier: 0 },
-        { foodScarcity: 1, energyDrain: 1, reproductionBonus: 1, temperatureModifier: 0 },
-        { foodScarcity: 1, energyDrain: 1, reproductionBonus: 1, temperatureModifier: 0 },
+        { foodScarcity: 1, energyDrain: 1, temperatureModifier: 0 },
+        { foodScarcity: 0.5, energyDrain: 1, temperatureModifier: 0 },
+        { foodScarcity: 1, energyDrain: 1, temperatureModifier: 0 },
+        { foodScarcity: 1, energyDrain: 1, temperatureModifier: 0 },
     ],
 };
 

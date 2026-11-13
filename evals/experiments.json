@@ -4226,7 +4226,7 @@
     {
       "id": "E166",
       "hypothesis": "low-density-edge T15b: flat (a mating chance of 1 all year) and reach (T11b, a possible mate counted only within findMale's reach) do no harm on the eat-choice world.",
-      "prediction": "On seeds 65 to 128, and on the 128 matched seeds with E165, flat and reach each read no keep-rule guard worse against defaults, and each guard sees a loss of a quarter of the seeds or less. Falsified when a guard reads worse.",
+      "prediction": "On seeds 65 to 128, and on the 128 matched seeds with E165, flat and reach each read no keep-rule guard worse against defaults, and each guard sees a loss of a quarter of the seeds or less. Falsified on harm when a guard reads worse, and on power when a guard sees a loss of more than a quarter of the seeds.",
       "targets": ["eval.births_per_1k", "eval.edge_birth_death_ratio"],
       "before": "defaults arm of evals/decisions/E166/screen, seeds 65 to 128, 200000 ticks, floor on, policy live",
       "after": "flat arm of the same screen, and evals/decisions/E166/reach.report.json at exp/ld-reach-t14",
@@ -4240,6 +4240,22 @@
       ],
       "date": "2026-11-13",
       "branch": "exp/low-density-edge-t14",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
+    },
+    {
+      "id": "E167",
+      "hypothesis": "low-density-edge Phase 4 (T21, T22): the switch (reach and flat, the unused heat keys deleted) does no harm on fresh seeds, and keeps hunters alive on held seeds (E-LD-3).",
+      "prediction": "On seeds 65 to 128 no keep-rule guard reads worse against main; held is not expected to read better; hunters alive at the last tick on 0.9 or more of held seeds with chase_catch_share not worse; lineages_alive, spec_effective and chase_catch_share not worse. Falsified when a guard reads worse, or hunters die out on more than 0.1 of held seeds.",
+      "targets": ["eval.births_per_1k", "eval.mating_share", "eval.edge_birth_death_ratio"],
+      "before": "evals/decisions/E166/screen/defaults.report.json: main defaults (sim unchanged since), seeds 65 to 128, 200000 ticks, floor on, policy live",
+      "after": "evals/decisions/E167/head.report.json: feat/low-density-edge-switch (season 8), same seeds",
+      "verdicts": {},
+      "note": "Prediction holds: no keep-rule guard worse on seeds 65 to 128 (alive 17 vs 14, held 11 vs 9, under80 11 vs 9); held not better, so Phase 5 opens on top of the switch. E-LD-3 holds (hunters alive on 13 of 13 held seeds; chase_catch_share +2.5%). births_per_1k and mating_share do not rise; toxic_avoidance -3%. See evals/decisions/E167/results.md.",
+      "reports": ["evals/decisions/E167/results.md", "evals/decisions/E167/head.report.json"],
+      "date": "2026-11-13",
+      "branch": "feat/low-density-edge-switch",
       "beforePolicy": "live",
       "afterPolicy": "live",
       "effect": "no-difference"

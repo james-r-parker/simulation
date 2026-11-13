@@ -52,8 +52,8 @@ describe('heat guard setup', () => {
     });
 
     it('puts an arm key over the sweet-spot world', () => {
-        const config = guardConfig({ temperatureCoolingExcess: 0.005 }, 2);
-        expect(config.temperatureCoolingExcess).toBe(0.005);
+        const config = guardConfig({ temperatureGainMove: 0.5 }, 2);
+        expect(config.temperatureGainMove).toBe(0.5);
         expect(config.seed).toBe(2);
         expect(config.minAgents).toBe(0);
         expect(config.foodRegrowPerArea).toBe(0.003);

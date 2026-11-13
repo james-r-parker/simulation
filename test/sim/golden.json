@@ -23,7 +23,7 @@
         "coldMarginWidth": 0
       },
       "ticks": 5000,
-      "worldHash": "574f7e861b6125a8"
+      "worldHash": "0b248796d99ef93d"
     },
     {
       "name": "disease",
@@ -43,7 +43,7 @@
         "diseaseSeedRate": 0.01
       },
       "ticks": 5000,
-      "worldHash": "a03a6901e9cc59a8"
+      "worldHash": "cb3370835be2a863"
     }
   ],
   "shortCases": [

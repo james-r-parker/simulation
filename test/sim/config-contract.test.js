@@ -27,10 +27,10 @@ describe('DEFAULTS tables', () => {
 
     it('holds the design doc season table', () => {
         expect(DEFAULTS.seasons).toEqual([
-            { foodScarcity: 1.2, energyDrain: 1.0, reproductionBonus: 1.5, temperatureModifier: -5 },
-            { foodScarcity: 1.0, energyDrain: 1.3, reproductionBonus: 1.2, temperatureModifier: 15 },
-            { foodScarcity: 0.8, energyDrain: 1.1, reproductionBonus: 0.7, temperatureModifier: 5 },
-            { foodScarcity: 0.4, energyDrain: 1.8, reproductionBonus: 0.3, temperatureModifier: -15 },
+            { foodScarcity: 1.2, energyDrain: 1.0, temperatureModifier: -5 },
+            { foodScarcity: 1.0, energyDrain: 1.3, temperatureModifier: 15 },
+            { foodScarcity: 0.8, energyDrain: 1.1, temperatureModifier: 5 },
+            { foodScarcity: 0.4, energyDrain: 1.8, temperatureModifier: -15 },
         ]);
     });
 
@@ -62,7 +62,7 @@ describe('createConfig isolation', () => {
     });
 
     it('copies an override array instead of freezing the caller own array', () => {
-        const season = { foodScarcity: 1, energyDrain: 1, reproductionBonus: 1, temperatureModifier: 0 };
+        const season = { foodScarcity: 1, energyDrain: 1, temperatureModifier: 0 };
         const seasons = [season, season, season, season];
         const config = createConfig({ ...SIMPLE_WORLD, seasons });
         expect(config.seasons).not.toBe(seasons);

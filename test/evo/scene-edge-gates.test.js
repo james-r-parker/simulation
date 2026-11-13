@@ -1,9 +1,7 @@
-// The two share detectors of the low-density edge (low-density-edge.md, T6): the unreached-mate share and the split-gate
-// shares, on real worlds with state planted in the slots, and the gate order against the sim's own predicates.
+// The split-gate share detectors of the low-density edge (low-density-edge.md, T6), on real worlds with state planted in the slots, and the gate order against the sim's own predicates.
 
 import { describe, expect, it } from 'vitest';
 import { readyBeforeGate, splitGateOpen } from '../../js/sim/reproduction.js';
-import { SEX } from '../../js/sim/sex.js';
 import { UNPROVEN_KIDS_BRAKE } from '../../js/sim/proof.js';
 import {
     GATES,
@@ -209,107 +207,24 @@ describe('the split-gate shares', () => {
     });
 });
 
-describe('the unreached-mate share', () => {
-    /**
-     * @param {any} world the world
-     * @param {number} slot an agent
-     * @param {{x: number, y: number, sex?: number}} at its place and sex
-     * @returns {void}
-     */
-    function place(world, slot, { x, y, sex }) {
-        world.x[slot] = x;
-        world.y[slot] = y;
-        if (sex !== undefined) {
-            world.sex[slot] = sex;
-        }
-    }
-
-    it('counts a ready female that saw a mate in the latest sense and has none within reach', () => {
-        const { world, spawn } = setup();
-        const female = spawn();
-        const male = spawn();
-        place(world, female, { x: 100, y: 100, sex: SEX.FEMALE });
-        place(world, male, { x: 400, y: 100, sex: SEX.MALE });
-        world.mateSeenAt[female] = TICK - 1;
-        const gates = createEdgeGates(40);
-        sampleEdgeGates(gates, world);
-        // The only ready female is `female` (the male is not a female): 1 of 1.
-        expect(edgeGateMetrics(gates)['eval.edge_mate_unreached_share']).toEqual({ value: 1 });
-    });
-
-    it('does not count a female with a possible mate inside size + size + mateRange', () => {
-        const { world, spawn } = setup();
-        const female = spawn();
-        const male = spawn();
-        const reach = world.size[female] + world.size[male] + world.config.mateRange;
-        place(world, female, { x: 100, y: 100, sex: SEX.FEMALE });
-        place(world, male, { x: 100 + reach - 1, y: 100, sex: SEX.MALE });
-        world.mateSeenAt[female] = TICK - 1;
-        const gates = createEdgeGates(40);
-        sampleEdgeGates(gates, world);
-        expect(edgeGateMetrics(gates)['eval.edge_mate_unreached_share']).toEqual({ value: 0 });
-        // One unit past the reach it is unreached.
-        place(world, male, { x: 100 + reach + 1, y: 100 });
-        const past = createEdgeGates(40);
-        sampleEdgeGates(past, world);
-        expect(edgeGateMetrics(past)['eval.edge_mate_unreached_share']).toEqual({ value: 1 });
-    });
-
-    it('counts a mate that is no possible mate (immature, same sex) or no prey at all (a hunter) as none in reach', () => {
-        const { world, spawn } = setup();
-        const female = spawn();
-        place(world, female, { x: 100, y: 100, sex: SEX.FEMALE });
-        world.mateSeenAt[female] = TICK - 1;
-        const kid = spawn();
-        place(world, kid, { x: 110, y: 100, sex: SEX.MALE });
-        world.ageTicks[kid] = 5;
-        const hunter = spawn(PREDATOR);
-        place(world, hunter, { x: 105, y: 100, sex: SEX.MALE });
-        const sister = spawn();
-        place(world, sister, { x: 110, y: 110, sex: SEX.FEMALE });
-        const gates = createEdgeGates(40);
-        sampleEdgeGates(gates, world);
-        // Ready females: `female` and `sister`; only `female` saw a mate this sense.
-        expect(edgeGateMetrics(gates)['eval.edge_mate_unreached_share']).toEqual({ value: 1 / 2 });
-    });
-
-    it('leaves a ready female that saw no mate in the numerator, and a female that is not ready out of the whole', () => {
-        const { world, spawn } = setup();
-        const blind = spawn();
-        place(world, blind, { x: 100, y: 100, sex: SEX.FEMALE });
-        world.mateSeenAt[blind] = TICK - 2;
-        const tired = spawn();
-        place(world, tired, { x: 300, y: 300, sex: SEX.FEMALE });
-        world.mateSeenAt[tired] = TICK - 1;
-        world.cooldown[tired] = 5;
-        const gates = createEdgeGates(40);
-        sampleEdgeGates(gates, world);
-        expect(edgeGateMetrics(gates)['eval.edge_mate_unreached_share']).toEqual({ value: 0 });
-    });
-});
-
 describe('the share detectors with nothing to read', () => {
     const NO_CHECKPOINT = 'no edge checkpoint (a 1000-tick checkpoint after burn-in with 1 to 99 prey)';
 
     it('read null with a reason when no edge checkpoint was sampled', () => {
         const m = edgeGateMetrics(createEdgeGates(40));
-        expect(Object.keys(m)).toHaveLength(7);
+        expect(Object.keys(m)).toHaveLength(6);
         for (const result of Object.values(m)) {
             expect(result).toEqual({ value: null, reason: NO_CHECKPOINT });
         }
     });
 
-    it('read null with a reason when no ready female or no eligible prey stood at the checkpoints', () => {
+    it('read null with a reason when no eligible prey stood at the checkpoints', () => {
         const { world, spawn } = setup();
         const kid = spawn();
         world.ageTicks[kid] = 1;
         const gates = createEdgeGates(40);
         sampleEdgeGates(gates, world);
         const m = edgeGateMetrics(gates);
-        expect(m['eval.edge_mate_unreached_share']).toEqual({
-            value: null,
-            reason: 'no ready prey female at an edge checkpoint',
-        });
         expect(m['eval.edge_split_blocked_share.seen']).toEqual({
             value: null,
             reason: 'no mature, rested, not-pregnant prey at an edge checkpoint',

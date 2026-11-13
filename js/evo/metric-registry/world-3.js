@@ -157,23 +157,6 @@ export const WORLD_3 = {
         arithmetic: 'test/evo/scene-edge.test.js',
         source: 'test/evo/metric-source-edge.test.js',
     }),
-    'eval.edge_mate_unreached_share': entry('world', {
-        module: 'js/evo/scene-edge-gates.js',
-        meaning:
-            'Lower means fewer ready prey females in a thin population see a mate they cannot reach, so the drought clock is not reset by a mate that cannot be met (0 by construction once noteMatesSeen counts only reachable mates).',
-        counts: 'At the 1000-tick checkpoints after burn-in with 1 to 99 prey alive (edge checkpoints), pooled: ready prey females (mature, rested, not pregnant, above mateMinEnergy) that saw a possible mate (same specialisation, other sex, mature) in the latest sense and have none within size + size + mateRange of them, over all ready prey females.',
-        unit: 'share',
-        direction: 'watch',
-        intended: 'lower',
-        nullWhen: [
-            'no edge checkpoint (a 1000-tick checkpoint after burn-in with 1 to 99 prey)',
-            'no ready prey female at an edge checkpoint',
-        ],
-        expectedFlat:
-            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
-        arithmetic: 'test/evo/scene-edge-gates.test.js',
-        source: 'test/evo/metric-source-edge-gates.test.js',
-    }),
     'eval.edge_split_blocked_share.seen': entry('world', {
         module: 'js/evo/scene-edge-gates.js',
         meaning: 'Lower means fewer thin-population prey are kept from splitting by the seen gate.',

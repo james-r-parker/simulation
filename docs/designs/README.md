@@ -61,7 +61,7 @@ Partly built - the note says which phases are real.
 - [Eat choice](eat-choice.md) - Phases 1 to 5 are built: the eat choice is the default on `main` (season 7) (E159 to E162; keep rule no harm on seeds 1 to 64 and 65 to 128); two Done bars miss... _(validated e2455f2, 2026-11-11)_ _(depends on [metric-trust.md](metric-trust.md), [low-density-edge.md](low-density-edge.md))_
 - [Hunter learning](hunter-learning.md) - Phases 1 and 2 are built (hunters have time to learn to kill): Phase 1 adopted the flip reflex and the hunter territory (always on) and deleted provisioning, th... _(validated edd4cd4, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md), [training.md](training.md))_
 - [Lean observer](lean-observer.md) - Phase 1 built; the perf:browser comparison is open (no GPU Chrome on the build machine) _(validated 3f8bf12, 2026-11-12)_
-- [Low-density edge](low-density-edge.md) - Phases 1 and 2 are built; Phase 3 is built (E165, E166): no lever finalist; `flat` and `reach` read no guard worse on 128 seeds and land in Phase 4, the switch,... _(validated 38339cb, 2026-11-11)_ _(depends on [metric-trust.md](metric-trust.md), [carrying-capacity.md](carrying-capacity.md))_
+- [Low-density edge](low-density-edge.md) - Phases 1 to 3 are built; Phase 4 (the switch: `reach` and `flat` land, the unused heat keys are deleted, season 8) is built (E167: no harm, `held` not better),... _(validated 38339cb, 2026-11-11)_ _(depends on [metric-trust.md](metric-trust.md), [carrying-capacity.md](carrying-capacity.md))_
 - [Mobile view](mobile-view.md) - Phase 1 built: two-finger pinch and pan, `pointercancel`, a fingertip-sized tap, the portrait home zoom that survives a turn, the pixel-ratio cap on every path,... _(validated d6ca3e6, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md))_
 - [Quality gates and test tiers](quality-gates-and-test-tiers.md) - tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test... _(validated d6ca3e6, 2026-11-07)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
 - [Realistic keepers](realistic-keepers.md) - Phases 1 and 2 are built: `E137` and the combined run `E138` kept every mechanism but provisioning, which is deleted; the six kept switches are on by default an... _(validated edd4cd4, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md), [refuge.md](refuge.md))_
@@ -90,7 +90,7 @@ Not designs of the simulation - audits, research, learnings and guides.
 
 - [Headless sim core - implementation contracts](headless-sim-core-contracts.md) - exact rules for building [headless-sim-core.md](headless-sim-core.md); that doc carries the status, phases and tasks
 - [Legacy audit](legacy-audit.md) - defects and inefficiencies in the legacy app (`js/*.js`), by file and symbol, each with the doc that removes it
-- [Metrics](metrics.md) - the 314 eval metrics of a live report, generated from `js/evo/metric-registry/`: 180 verified, 131 unverified, 3 deprecated
+- [Metrics](metrics.md) - the 313 eval metrics of a live report, generated from `js/evo/metric-registry/`: 180 verified, 130 unverified, 3 deprecated
 - [Simulation notes](sim-notes.md) - verified platform and library facts, and learnings from each phase
 
 ## Superseded (1)

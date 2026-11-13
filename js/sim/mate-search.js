@@ -1,7 +1,6 @@
 // Female choice: finds the male a ready female mates with among the agents within `mateRange`, using the tick's spatial hash.
 
 import { canMatePair } from './mate-eligibility.js';
-import { nextFloat } from './rng.js';
 import { SEX } from './sex.js';
 import { cellOf, cellRange } from './spatial-hash.js';
 
@@ -105,13 +104,12 @@ function bestInCell(world, a, cell, reach) {
 
 /**
  * Female choice: the male with the highest mate rank (`mate-rank.js`; ties to the lower slot) among those of her specialisation
- * within `mateRange` that pass `canMatePair`, then one `lifecycle` draw against `chance`. Allocates nothing.
+ * within `mateRange` that pass `canMatePair`. Draws nothing and allocates nothing.
  * @param {World} world the world, with the hash built this tick
  * @param {number} a the searching female, alive
- * @param {number} chance the probability that the chosen pair mates
- * @returns {number} the male's slot, or -1 when there is none or the draw fails (no draw is made without a male)
+ * @returns {number} the male's slot, or -1 when there is none
  */
-export function findMale(world, a, chance) {
+export function findMale(world, a) {
     const hash = world.hash;
     const reach = world.config.mateRange;
     const range = cellRange(hash, world.x[a], world.y[a], world.size[a] + reach);
@@ -122,5 +120,5 @@ export function findMale(world, a, chance) {
             best = pick >= 0 && beats(world, pick, best) ? pick : best;
         }
     }
-    return best >= 0 && nextFloat(world.rng.lifecycle) < chance ? best : -1;
+    return best;
 }

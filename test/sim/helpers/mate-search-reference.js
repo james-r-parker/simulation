@@ -1,16 +1,13 @@
 import { canMatePair } from '../../../js/sim/mate-eligibility.js';
-import { nextFloat } from '../../../js/sim/rng.js';
 
 /**
  * Female choice in O(n) per agent: every male in reach that passes `canMatePair` is a candidate, the one with the highest
- * mate rank (ties to the lower slot) is chosen, and one draw against `chance` decides.
+ * mate rank (ties to the lower slot) is chosen.
  * @param {any} w the world
  * @param {number} a the searching female
- * @param {number} chance the probability that the chosen pair mates
- * @param {{ seed: number, s: Uint32Array }} rng a copy of the lifecycle stream, advanced by the draw
  * @returns {number} the male's slot, or -1
  */
-function referenceFindMale(w, a, chance, rng) {
+function referenceFindMale(w, a) {
     let best = -1;
     for (let b = 0; b < w.alive.length; b++) {
         const d = Math.hypot(w.x[b] - w.x[a], w.y[b] - w.y[a]);
@@ -19,17 +16,15 @@ function referenceFindMale(w, a, chance, rng) {
             best = best < 0 || w.mateRank[b] > w.mateRank[best] ? b : best;
         }
     }
-    return best >= 0 && nextFloat(rng) < chance ? best : -1;
+    return best;
 }
 
 /**
  * Female choice in O(n) per agent (see `referenceFindMale`), exported under the name the tests call.
  * @param {any} w the world, with the hash built from its current positions
  * @param {number} a the searching agent
- * @param {number} chance the probability that an eligible pair mates
- * @param {{ seed: number, s: Uint32Array }} rng a copy of the lifecycle stream, advanced by the draw
  * @returns {number} the partner slot, or -1
  */
-export function referenceFindMate(w, a, chance, rng) {
-    return referenceFindMale(w, a, chance, rng);
+export function referenceFindMate(w, a) {
+    return referenceFindMale(w, a);
 }

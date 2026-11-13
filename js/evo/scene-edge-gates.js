@@ -1,13 +1,7 @@
-// Why does a thin prey population not breed (low-density-edge.md, Detectors)? Two share detectors, sampled only at the
-// edge checkpoints (a 1000-tick checkpoint after burn-in with 1 to `EDGE_PREY - 1` prey alive), each from one pass over the
+// Why does a thin prey population not breed (low-density-edge.md, Detectors)? A share detector, sampled only at the
+// edge checkpoints (a 1000-tick checkpoint after burn-in with 1 to `EDGE_PREY - 1` prey alive), from one pass over the
 // alive prey:
 //
-// - `eval.edge_mate_unreached_share` (watch, lower): of the ready prey females (`isReadyToMate`), the share that saw a
-//   possible mate in the latest sense (`mateSeenAt` is the tick before the checkpoint's, since `step` advances `tick` after
-//   the sense phase) and have none within `size[a] + size[b] + mateRange` of them. The reach is the distance half of
-//   `isPartner` in `js/sim/mate-search.js`; the mate is `isPossibleMate`, the test `noteMatesSeen` uses (the other half of
-//   `isPartner`, `canMatePair`, asks for the brain to want it, so it would not read 0 once `noteMatesSeen` counts only
-//   reachable mates). It reads 0 by construction once the reach lands.
 // - `eval.edge_split_blocked_share.*` (watch, lower): of the mature, rested, not-pregnant prey, the share whose first
 //   closed split gate is `seen` (`mateScarce` is false), `clonal` (`splitClonalMax`), `energy` (`splitMinBySpec`), `merit`
 //   (`splitDeliberateMin`, `splitDeliberateShareMin`), `proof` (`splitBraked`) or `other` (`splitMaxPerLife`,
@@ -17,10 +11,8 @@
 // prey is allocated with the scene. The scene writes only itself, so no hash can move.
 
 import { birthBudgetSpent } from '../sim/birth-budget.js';
-import { isPossibleMate, mateScarce } from '../sim/mate-scarcity.js';
-import { isReadyToMate } from '../sim/mate-eligibility.js';
+import { mateScarce } from '../sim/mate-scarcity.js';
 import { splitBraked } from '../sim/proof.js';
-import { SEX } from '../sim/sex.js';
 import { territoryAllows } from '../sim/territory.js';
 import { none, ok } from './metrics-stats.js';
 
@@ -37,43 +29,9 @@ export function createEdgeGates(limit) {
     return {
         prey: new Int32Array(limit),
         checkpoints: 0,
-        females: 0,
-        unreached: 0,
         eligible: 0,
         held: { seen: 0, clonal: 0, energy: 0, merit: 0, proof: 0, other: 0 },
     };
-}
-
-/**
- * @param {Record<string, any>} world the world
- * @param {number} slot an alive prey
- * @returns {boolean} whether the prey saw a possible mate in the latest sense (`step` ran it at the tick before this one)
- */
-function sawMate(world, slot) {
-    return world.mateSeenAt[slot] === world.tick - 1;
-}
-
-/**
- * @param {Record<string, any>} gates the gate scene, its `prey` list filled to `count`
- * @param {Record<string, any>} world the world
- * @param {number} count the prey in the list
- * @param {number} slot a ready prey female
- * @returns {boolean} whether some prey in the list is a possible mate of `slot` within reach
- */
-function mateInReach(gates, world, count, slot) {
-    const { x, y, size } = world;
-    for (let i = 0; i < count; i++) {
-        const other = gates.prey[i];
-        if (isPossibleMate(world, slot, other)) {
-            const dx = x[other] - x[slot];
-            const dy = y[other] - y[slot];
-            const reach = size[slot] + size[other] + world.config.mateRange;
-            if (dx * dx + dy * dy < reach * reach) {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 /**
@@ -145,16 +103,12 @@ function listPrey(gates, world) {
 
 /**
  * Adds one prey to the pooled counts.
- * @param {Record<string, any>} gates the gate scene, its `prey` list filled to `count`
+ * @param {Record<string, any>} gates the gate scene
  * @param {Record<string, any>} world the world
- * @param {{slot: number, count: number}} prey the prey and the length of the list
+ * @param {number} slot a prey
  * @returns {void}
  */
-function tallyPrey(gates, world, { slot, count }) {
-    if (world.sex[slot] === SEX.FEMALE && isReadyToMate(world, slot)) {
-        gates.females += 1;
-        gates.unreached += sawMate(world, slot) && !mateInReach(gates, world, count, slot) ? 1 : 0;
-    }
+function tallyPrey(gates, world, slot) {
     if (
         world.ageTicks[slot] >= world.config.maturityTicks &&
         world.cooldown[slot] === 0 &&
@@ -179,23 +133,21 @@ export function sampleEdgeGates(gates, world) {
     const count = listPrey(gates, world);
     gates.checkpoints += 1;
     for (let i = 0; i < count; i++) {
-        tallyPrey(gates, world, { slot: gates.prey[i], count });
+        tallyPrey(gates, world, gates.prey[i]);
     }
 }
 
 /**
  * @param {Record<string, any>} gates the gate scene
- * @returns {import('./metrics-stats.js').MetricRecord} the unreached share and the six blocked shares, null with a reason
- *   when no edge checkpoint was sampled (or no ready female, or no eligible prey, stood in one)
+ * @returns {import('./metrics-stats.js').MetricRecord} the six blocked shares, null with a reason when no edge
+ *   checkpoint was sampled (or no eligible prey stood in one)
  */
 export function edgeGateMetrics(gates) {
-    const noFemale = 'no ready prey female at an edge checkpoint';
     const noPrey = 'no mature, rested, not-pregnant prey at an edge checkpoint';
     const sampled = gates.checkpoints > 0;
     const share = (/** @type {number} */ count, /** @type {number} */ whole, /** @type {string} */ reason) =>
         !sampled ? none(NO_CHECKPOINT) : whole === 0 ? none(reason) : ok(count / whole);
     return {
-        'eval.edge_mate_unreached_share': share(gates.unreached, gates.females, noFemale),
         'eval.edge_split_blocked_share.seen': share(gates.held.seen, gates.eligible, noPrey),
         'eval.edge_split_blocked_share.clonal': share(gates.held.clonal, gates.eligible, noPrey),
         'eval.edge_split_blocked_share.energy': share(gates.held.energy, gates.eligible, noPrey),

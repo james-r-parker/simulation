@@ -64,6 +64,20 @@ describe('mateScarce', () => {
         expect(splitGateOpen(w, slot)).toBe(false);
     });
 
+    it('does not reset the drought for a mate in view beyond mateRange, and does for one within it', () => {
+        const GAP = 250; // inside every forager vision, so only the reach decides
+        const far = sharkWorld({ mateRange: 20 });
+        addBlob(far.w, { spec: FORAGER, ageTicks: MATURE, x: 500 + GAP, y: 500 });
+        expect(far.w.size[far.slot] + far.w.size[far.slot + 1] + 20).toBeLessThan(GAP);
+        senseAt(far.w, SCARCE);
+        expect(mateScarce(far.w, far.slot)).toBe(true);
+        const near = sharkWorld({ mateRange: 200 });
+        addBlob(near.w, { spec: FORAGER, ageTicks: MATURE, x: 500 + GAP, y: 500 });
+        expect(near.w.size[near.slot] + near.w.size[near.slot + 1] + 200).toBeGreaterThan(GAP);
+        senseAt(near.w, SCARCE);
+        expect(mateScarce(near.w, near.slot)).toBe(false);
+    });
+
     it('does not count another type, the same sex, an immature agent or one out of view as a mate', () => {
         const { w, slot } = sharkWorld();
         addBlob(w, { spec: PREDATOR, ageTicks: MATURE, x: 560, y: 500 });

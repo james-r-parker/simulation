@@ -74,7 +74,6 @@
   "eval.edge_hunters_per_prey",
   "eval.edge_intake_ratio",
   "eval.edge_mate_births_per_prey",
-  "eval.edge_mate_unreached_share",
   "eval.edge_ref_eaten_per_prey",
   "eval.edge_ref_mate_births_per_prey",
   "eval.edge_ref_split_births_per_prey",

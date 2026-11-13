@@ -12,13 +12,13 @@ import {
     withPower,
 } from '../../../js/evo/metric-registry/index.js';
 
-/** @type {string[]} the 314 names of a live eval report, sorted */
+/** @type {string[]} the 313 names of a live eval report, sorted */
 const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-names.json', import.meta.url), 'utf8'));
 
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(314);
+        expect(REPORT_NAMES).toHaveLength(313);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -134,7 +134,6 @@ const ADDED_AFTER_T8 = [
     'eval.edge_ref_starve_per_prey',
     'eval.edge_split_births_per_prey',
     'eval.edge_starve_per_prey',
-    'eval.edge_mate_unreached_share',
     'eval.edge_split_blocked_share.seen',
     'eval.edge_split_blocked_share.clonal',
     'eval.edge_split_blocked_share.energy',
@@ -155,7 +154,6 @@ const ADDED_INTENDED_LOWER = [
     'eval.edge_deaths_per_prey',
     'eval.edge_ref_starve_per_prey',
     'eval.edge_ref_eaten_per_prey',
-    'eval.edge_mate_unreached_share',
     'eval.edge_split_blocked_share.seen',
     'eval.edge_split_blocked_share.clonal',
     'eval.edge_split_blocked_share.energy',

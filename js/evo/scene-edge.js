@@ -17,7 +17,7 @@
 // all-cause death rate are registered beside them as watch metrics (`eval.edge_deaths_per_prey`, `eval.edge_ref_*`): a
 // report already carries each metric per seed, where a tally object would need a new report field.
 //
-// The two share detectors (`eval.edge_mate_unreached_share`, `eval.edge_split_blocked_share.*`) are in scene-edge-gates.js and
+// The split-gate share detectors (`eval.edge_split_blocked_share.*`) are in scene-edge-gates.js and
 // run at every edge checkpoint.
 //
 // The checkpoint is one pass over the agent slots; an event adds to a few running totals; nothing is allocated per tick.
