@@ -1,6 +1,6 @@
 # Deployment and community
 
-**Status:** In progress - Phase 1c (seasons while uploads are closed: no season gap) is next; Phase 1a (Release Please opens the release PR; production deploys only when it is merged) is built on `main`; Phase 1 is built on branch `feat/deploy-pipeline-v2` (the versioned build and `/v/`, `/s/`, `/next/` Functions, `preview.yml`, the D1 release index, the `release-check` gate, the widened lint, type and coverage configs) except T5, the live verification with the user (remote D1 migrations, the `next` alias, the Cache API on a deployed Function), and T6; Phase 2 storage back end is merged on `main` (#311 and #320: pure `js/library/` modules, `migrations/0001_library.sql`; champion files and the release index live in D1, `migrations/0002_champion_files.sql`, because the account is on the free plan only) and its read API is built with Phase 1. Phase 1 releases with Release Please, serves every release at `/v/<version>/` and the latest at `/`, deploys `main`, or the `season/next` line while one is open, to `/next/` and every same-repo PR to a preview; Phases 2 to 4 add a read-only gene library, verified community uploads and an `npx` contributor trainer.
+**Status:** In progress - Phase 1c is built (no season gap while uploads are closed), conformance review pending; Phase 1a (Release Please opens the release PR; production deploys only when it is merged) is built on `main`; Phase 1 is built on branch `feat/deploy-pipeline-v2` (the versioned build and `/v/`, `/s/`, `/next/` Functions, `preview.yml`, the D1 release index, the `release-check` gate, the widened lint, type and coverage configs) except T5, the live verification with the user (remote D1 migrations, the `next` alias, the Cache API on a deployed Function), and T6; Phase 2 storage back end is merged on `main` (#311 and #320: pure `js/library/` modules, `migrations/0001_library.sql`; champion files and the release index live in D1, `migrations/0002_champion_files.sql`, because the account is on the free plan only) and its read API is built with Phase 1. Phase 1 releases with Release Please, serves every release at `/v/<version>/` and the latest at `/`, deploys `main`, or the `season/next` line while one is open, to `/next/` and every same-repo PR to a preview; Phases 2 to 4 add a read-only gene library, verified community uploads and an `npx` contributor trainer.
 **Validated:** 626f040f (2026-11-13)
 **Priority:** 2 - Phase 1c is small and unblocks every rules change: with the 28-day gap, the low-density-edge switch could not reach `main` until 2026-12-10
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
@@ -36,8 +36,8 @@ and the champion rows.
 - A `conventions` test (`test/library/seasons.test.js`) fails when, on any branch but `season/next`, the newest entry's
   `rulesHash` differs from `rulesHash(createConfig())`; when a new entry's `major` is not the previous entry's `major`
   plus 1; when its `major` is neither the `package.json` major nor that major plus 1 (the release PR that bumps
-  `package.json` makes them equal); or when its `opened` date is fewer than `MIN_SEASON_GAP_DAYS` (28, in
-  `js/library/seasons.js`) after the previous entry's. The branch is read through `currentBranch()` in
+  `package.json` makes them equal); or when its `opened` date is fewer than `MIN_SEASON_GAP_DAYS` (0 while
+  uploads are closed, 28 from Phase 3, in `js/library/seasons.js`) after the previous entry's. The branch is read through `currentBranch()` in
   `scripts/lib/release-check.mjs` (`GITHUB_BASE_REF` or `GITHUB_REF_NAME` in CI, `git branch --show-current` locally).
 - A change to `rulesHash` is a breaking change: its commit subject ends `!` (`feat(sim)!: ...`) or its body has a
   `BREAKING CHANGE:` footer, so Release Please bumps the major. `releaseCheck` ([Release check](#release-check)) fails a
@@ -49,17 +49,17 @@ and the champion rows.
 
 ### The next-season line
 
-Rule changes batch on one long-lived branch, so a season opens at most every 4 weeks however many sweeps and rules
-phases land in between.
+Rule changes batch on one long-lived branch. While uploads are closed a season opens as soon as its rules are read;
+from Phase 3 it opens at most every 4 weeks however many sweeps and rules phases land in between.
 
-| Item             | Rule                                                                                                                                                                                                                                                                                                     |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Branch           | `season/next`, created from `main` by the first PR that changes `rulesHash` once `library/seasons.json` has an entry, and deleted when the season opens. At most one exists. It has the same ruleset as `main` (required checks, strict, no force-push or deletion)                                      |
-| Rules changes    | A PR that changes `rulesHash` (a sweep default, a rules phase) takes `season/next` as its base and carries a breaking commit. `releaseCheck` fails a PR whose base is `main` and which changes `rulesHash` without adding a `library/seasons.json` entry (reason `rules-change-on-main`)                 |
-| Everything else  | Merges to `main`. The manager merges `main` into `season/next` by a PR (`chore/sync-season-next`, merge method) at least weekly while the line is open and before the season opens                                                                                                                       |
-| Preview          | `/next/` serves `season/next` while it exists and the latest `main` otherwise ([Deploy workflow](#deploy-workflow)); `check.yml` runs on pushes to `season/next`                                                                                                                                         |
-| Opening a season | One PR, `season/next` into `main`, merged with the merge method so its breaking commits reach `main`: a new `library/seasons.json` entry with its `major` and `opened`, retrained champions, `evals/league.json` repopulated (`--admit`). The release PR that follows bumps the package to `<major>.0.0` |
-| Cadence          | `seasons.test.js` rejects an entry whose `opened` is under 28 days after the previous entry's                                                                                                                                                                                                            |
+| Item             | Rule                                                                                                                                                                                                                                                                                                                          |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Branch           | `season/next`, created from `main` by the first PR that changes `rulesHash` once `library/seasons.json` has an entry, and deleted when the season opens. At most one exists. It has the same ruleset as `main` (required checks, strict, no force-push or deletion)                                                           |
+| Rules changes    | A PR that changes `rulesHash` (a sweep default, a rules phase) takes `season/next` as its base and carries a breaking commit. `releaseCheck` fails a PR whose base is `main` and which changes `rulesHash` without adding a `library/seasons.json` entry (reason `rules-change-on-main`)                                      |
+| Everything else  | Merges to `main`. The manager merges `main` into `season/next` by a PR (`chore/sync-season-next`, merge method) at least weekly while the line is open and before the season opens                                                                                                                                            |
+| Preview          | `/next/` serves `season/next` while it exists and the latest `main` otherwise ([Deploy workflow](#deploy-workflow)); `check.yml` runs on pushes to `season/next`                                                                                                                                                              |
+| Opening a season | One PR, `season/next` into `main`, merged with the merge method so its breaking commits reach `main`: a new `library/seasons.json` entry with its `major` and `opened`; from Phase 3 also retrained champions and `evals/league.json` repopulated (`--admit`). The release PR that follows bumps the package to `<major>.0.0` |
+| Cadence          | `seasons.test.js` rejects an entry whose `opened` is under `MIN_SEASON_GAP_DAYS` after the previous entry's: 0 while uploads are closed, 28 from Phase 3                                                                                                                                                                      |
 
 ## Phase 1 setup checklist (user)
 
@@ -430,14 +430,14 @@ The hard rule "Push and open PRs only when the user asks. Deploy only when the u
 > Push and open PRs only when the user asks. Deploy by hand (`npm run deploy`, `wrangler`) only when the user asks.
 > The standing exceptions: `.github/workflows/preview.yml` deploys a PR from this repo to a preview and a merge to
 > `main` (or `season/next`) to `/next/` after `check` passes; `.github/workflows/deploy.yml` deploys production when the Release Please
-> PR is merged, and the user merges it. A change to `rulesHash` is a breaking commit (`!`) that targets `season/next`. `CHANGELOG.md` and the
+> PR is merged, and the user merges it. A change to `rulesHash` is a breaking commit (`!`) that targets `season/next`, and opens a season on `main` as soon as it is read (no season gap while uploads are closed). `CHANGELOG.md` and the
 > `package.json` version are written by the release PR only. Secrets live in GitHub and Cloudflare, never in the repo.
 
 The Commands table row "Production build / deploy" names the two workflows and gains `npm run build:release -- <version>`
 and `node scripts/release-check.mjs`. Phase 4 adds the package-publish path to the same exception: only `publish.yml`,
 called from the release run, publishes, after the user approves the `npm-publish` environment.
 
-### Phase 1c - Seasons while uploads are closed
+### Phase 1c - Seasons while uploads are closed (built)
 
 **Targets:** none - release rules; no `bench.*`, `browser.*` or `eval.*` metric moves
 
@@ -790,10 +790,10 @@ day at most, 6 verified a night.
 
 ### Phase 1c - Seasons while uploads are closed
 
-| #   | Task                                                                                                                                                                                                                                                                                                                                   | Nature       | Depends on |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T43 | `MIN_SEASON_GAP_DAYS` `0`, with `test/library/library-modules.test.js` changed to match (its `28` and next-day-failure assertions become a same-day season passing `checkSeasons`; a skipped `major` still fails); the Seasons section, the Cadence and Opening a season rows, the unit-test row's gap wording and `AGENTS.md` updated | [mechanical] | -          |
-| T44 | Conformance review of Phase 1c, in parallel with `scripts/check.sh`                                                                                                                                                                                                                                                                    | [judgement]  | T43        |
+| #   | Task                                                                                                                                                                                                                                                                                                                                                       | Nature       | Depends on |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T43 | (built: 2026-11-13) `MIN_SEASON_GAP_DAYS` `0`, with `test/library/library-modules.test.js` changed to match (its `28` and next-day-failure assertions become a same-day season passing `checkSeasons`; a skipped `major` still fails); the Seasons section, the Cadence and Opening a season rows, the unit-test row's gap wording and `AGENTS.md` updated | [mechanical] | -          |
+| T44 | Conformance review of Phase 1c, in parallel with `scripts/check.sh`                                                                                                                                                                                                                                                                                        | [judgement]  | T43        |
 
 ### Phase 2 - read-only gene library
 
