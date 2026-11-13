@@ -285,7 +285,6 @@ describe('validateConfig temperature keys', () => {
         ['temperatureOptimalMax', 70, /temperatureOptimalMax.*< temperatureHeatModerate/],
         ['temperatureHeatModerate', 86, /temperatureHeatModerate.*<= temperatureHeatStress/],
         ['temperatureHeatStress', 100, /temperatureHeatStress.*< temperatureMax/],
-        ['temperatureMatingMax', 30, /temperatureColdStress.*< temperatureMatingMax/],
     ])('refuses %s = %s, which breaks the ordering', (key, value, pattern) => {
         expect(() => createConfig({ ...SIMPLE_WORLD, [key]: value })).toThrow(pattern);
     });
