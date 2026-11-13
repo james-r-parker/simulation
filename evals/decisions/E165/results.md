@@ -20,3 +20,26 @@ rusher survives there (447); the food brake is not a heat lever, and the heat ke
 `flat`) and `npm run eval -- --seeds 64 --ticks 200000 --policy live` at the `reach` commit (`exp/ld-reach-t14`).
 
 Results follow when the runs end.
+
+## Results
+
+Seeds 1 to 64, 200000 ticks, floor on, policy live. Keep rule against `defaults` (`eval:compare --keep-rule
+--allow-config-diff <the arm's keys>`); crash depth from `node scripts/capacity-traces.mjs`.
+
+| Arm             | `held` (harmed vs recovered) | `alive`         | `under80`       | Smallest loss seen (alive / held) | Median lowest pop | Pop mean | `heat_stress_share` | `lineages_alive` |
+| --------------- | ---------------------------- | --------------- | --------------- | --------------------------------- | ----------------- | -------- | ------------------- | ---------------- |
+| `defaults`      | -                            | -               | -               | -                                 | 9                 | 234      | 0.165               | 4.56             |
+| `eat-1`         | no harm (7 vs 12)            | no harm (14/14) | no harm (12/15) | 28 / 25 seeds                     | 43                | 272      | 0.086 (-48%)        | 4.41             |
+| `eat-1-food-24` | no harm (10 vs 5)            | no harm (10/12) | no harm (17/13) | 25 / 15 seeds                     | 8.5               | 184      | 0.073 (-56%)        | 3.99 (worse)     |
+| `flat`          | no harm (5 vs 6)             | no harm (7/10)  | no harm (11/8)  | 23 / 17 seeds                     | 22.5              | 259      | 0.169               | 4.32             |
+| `reach`         | no harm (5 vs 6)             | no harm (12/14) | no harm (11/10) | 28 / 17 seeds                     | 44.5              | 273      | 0.178               | 4.19 (worse)     |
+
+`eat-1-food-24` against `eat-1`: `held` worse (15 harmed vs 5 recovered, exact p 0.041), population mean -32%,
+`lineages_alive` worse. `eval.diversity` is no-difference on every arm; `eval.toxic_avoidance` rises under `eat-1`
+(+4.7%, interval above 0). `eval.edge_birth_death_ratio` is null in a seed on every arm and gives no verdict.
+
+**Verdict.** `E-LD-2` is falsified: no arm reads `held` `better`. `E-LD-2b` is falsified: the food brake reads `held`
+worse than `eat-1` alone. There is no lever finalist. `flat` and `reach` read no guard worse, but at 64 seeds their
+guards see a loss only of 17 to 28 seeds, more than a quarter, so no harm is not yet shown; they are re-read on seeds 65
+to 128 before Phase 4 lands them. `eat-1` and `reach` each lift the median lowest population from 9 to 43 and 44.5
+without moving `held`: the crashes get shallower, not rarer.

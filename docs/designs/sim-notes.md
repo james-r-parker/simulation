@@ -3284,3 +3284,11 @@ Sampling ten times as often did not lift the shares' power either (0.15 detectab
 checkpoints): the spread is between seeds. A tally that must see an action and its consumed target has to run where the
 action happens, not after it. Hunters on the defaults pay 0.42 of their income in strike misses
 (`eval.strike_miss_energy_ratio`), and `eval.split_bumper_share` is 0 on every seed of the eat-choice world, as `splitDeliberateShareMin` keeps a bumper from splitting.
+
+### 2026-11-13 - On the eat-choice world the heat lever makes crashes shallower, not rarer (low-density-edge T14, E165)
+
+With the eat choice already halving heat stress, `temperatureGainEat` 1.0 halves it again (0.165 to 0.086) and lifts the
+median lowest population after burn-in from 9 to 43, but `held` does not move (7 seeds harmed, 12 recovered). The mate
+reach fix (T11b) does the same (44.5). `held` counts seeds that never fall under 100, so a world whose troughs rise from
+single digits to the forties still fails it. The food brake shrinks the world (population mean 234 to 184) and reads
+`held` worse than the heat arm alone. At 64 seeds a no-harm guard sees only a 17 to 28 seed loss.
