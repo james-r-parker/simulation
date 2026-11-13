@@ -1,6 +1,6 @@
 # Low-density edge
 
-**Status:** In progress - Phases 1 and 2 are built; Phase 3 has run its 64-seed pass (E165): no lever finalist, and `flat` and `reach` are re-read on seeds 65 to 128 (T15b) before Phase 4.
+**Status:** In progress - Phases 1 and 2 are built; Phase 3 is built (E165, E166): no lever finalist; `flat` and `reach` read no guard worse on 128 seeds and land in Phase 4, the switch, which is next.
 **Validated:** 38339cbd (2026-11-11)
 **Priority:** 3 - the food brake shrinks the world and it still crashes (E152), so the edge under 100 prey is the binding failure, and the crash gates every hunter-skill plan below it ([review-2026-11-11.md](../review-2026-11-11.md) H1, H2)
 **Depends on:** [metric-trust.md](metric-trust.md), [carrying-capacity.md](carrying-capacity.md) (its built Phase 1: the `held` guard, `evals/decisions/` and the E151 reference)
@@ -184,7 +184,7 @@ keys>`, and the combined arm also with the heat arm alone; the reports are commi
 **Record (E165, 2026-11-13).** On the eat-choice world, seeds 1 to 64: no arm reads `held` `better` (`E-LD-2`
 falsified), and the food brake reads `held` worse than `eat-1` alone (`E-LD-2b` falsified), so there is no lever
 finalist. `flat` and `reach` read no guard worse, with each guard seeing only a 17 to 28 seed loss; T15b re-reads them on
-seeds 65 to 128. `eat-1` and `reach` lift the median lowest population after burn-in from 9 to 43 and 44.5 without
+seeds 65 to 128; on the 128 matched seeds (E166) neither reads a guard worse, the `alive` guard seeing only a 41 and 45 seed loss, and both land in Phase 4. `eat-1` and `reach` lift the median lowest population after burn-in from 9 to 43 and 44.5 without
 moving `held`. The full table is in `evals/decisions/E165/results.md`.
 
 ### Phase 4 - The switch
@@ -315,7 +315,7 @@ before its run.
 | T13a | (built: 2026-11-11, E157 falsified on held) The second grid (the leading heat arm with `foodRegrowPerArea` 0.016 and 0.024) and `E-LD-2b` recorded before its run; its first pass on seeds 1 to 16                                                                                                                                                                                           | [judgement]  | T13        |
 | T14  | (built: 2026-11-13, E165) Second pass on seeds 1 to 64: `defaults`, the leading heat arm, the leading combined arm, `flat` and `reach`, each against `defaults` with `--keep-rule --allow-config-diff`, and the combined arm against the heat arm alone, reading `eval.diversity`, `eval.lineages_alive` and `eval.toxic_avoidance` beside the guards (eat-choice.md T25); reports committed | [mechanical] | T13a       |
 | T15  | (built: 2026-11-13, E165: no finalist; `flat` and `reach` re-read on seeds 65 to 128, T15b) Name the finalist and the realism changes that land, or record that there is none and why; the `E-LD-2` and `E-LD-2b` verdicts; a sim-notes entry                                                                                                                                                | [judgement]  | T14        |
-| T15b | `flat` and `reach` on seeds 65 to 128 against `defaults`, each with `--keep-rule`; they land in Phase 4 only when no guard reads worse on the 128 matched seeds and each guard sees a loss of a quarter of the seeds                                                                                                                                                                         | [mechanical] | T15        |
+| T15b | (built: 2026-11-13, E166: no guard worse on 128 seeds; both land) `flat` and `reach` on seeds 65 to 128 against `defaults`, each with `--keep-rule`; they land in Phase 4 when no guard reads worse on the 128 matched seeds                                                                                                                                                                 | [mechanical] | T15        |
 | T15a | Conformance review of Phase 3                                                                                                                                                                                                                                                                                                                                                                | [judgement]  | T15        |
 
 ### Phase 4 - The switch

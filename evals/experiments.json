@@ -4231,8 +4231,13 @@
       "before": "defaults arm of evals/decisions/E166/screen, seeds 65 to 128, 200000 ticks, floor on, policy live",
       "after": "flat arm of the same screen, and evals/decisions/E166/reach.report.json at exp/ld-reach-t14",
       "verdicts": {},
-      "note": "Recorded before the run.",
-      "reports": ["evals/decisions/E166/results.md"],
+      "note": "No guard worse for flat or reach on seeds 65 to 128 or on the 128 matched seeds; the guard-power clause fails (alive sees a 41 and 45 seed loss on 128 seeds, the most the seed list holds). Both land in Phase 4 under the plan rule. See evals/decisions/E166/results.md.",
+      "reports": [
+        "evals/decisions/E166/results.md",
+        "evals/decisions/E166/screen/table.md",
+        "evals/decisions/E166/screen/verdicts.json",
+        "evals/decisions/E166/reach.report.json"
+      ],
       "date": "2026-11-13",
       "branch": "exp/low-density-edge-t14",
       "beforePolicy": "live",
