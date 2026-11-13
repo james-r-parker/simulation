@@ -1,7 +1,7 @@
 // Seasons: one ruleset each. Pure functions over the `library/seasons.json` list (oldest first).
 
-/** The fewest days between two seasons opening. */
-export const MIN_SEASON_GAP_DAYS = 28;
+/** The fewest days between two seasons opening: 0 while uploads are closed, 28 from deployment-and-community.md Phase 3 (T45). */
+export const MIN_SEASON_GAP_DAYS = 0;
 
 /**
  * @typedef {object} Layout

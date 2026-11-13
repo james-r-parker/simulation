@@ -106,13 +106,16 @@ describe('seasons', () => {
     });
 
     it('counts days and checks the rules', () => {
-        expect(daysBetween('2026-11-01', '2026-11-29')).toBe(MIN_SEASON_GAP_DAYS);
+        expect(daysBetween('2026-11-01', '2026-11-29')).toBe(28);
         expect(checkSeasons([])).toEqual([]);
         expect(checkSeasons([six, seven])).toEqual([]);
-        expect(checkSeasons([six, { ...seven, opened: '2026-11-28' }])).toHaveLength(1);
+        // While uploads are closed (deployment-and-community.md Phase 1c) a season may open the day after, or the same day.
+        expect(MIN_SEASON_GAP_DAYS).toBe(0);
+        expect(checkSeasons([six, { ...seven, opened: '2026-11-02' }])).toEqual([]);
+        expect(checkSeasons([six, { ...seven, opened: '2026-11-01' }])).toEqual([]);
+        expect(checkSeasons([six, { ...seven, opened: '2026-10-31' }])).toHaveLength(1);
         expect(checkSeasons([six, { ...seven, season: 8, major: 8 }])).toHaveLength(1);
         expect(checkSeasons([{ ...six, major: 5 }])).toHaveLength(1);
-        expect(MIN_SEASON_GAP_DAYS).toBe(28);
     });
 });
 

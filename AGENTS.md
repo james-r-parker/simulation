@@ -149,7 +149,7 @@ When one agent hands tasks to others (user, 2026-10-22):
   (`docs/principles.md`) in its body, and the detector metric that shows it.
 - Never commit to `main`. Branch `<type>/<short-desc>` (`docs/<doc-name>` for design docs); conventional commit
   subjects; the "why" goes in commit and PR bodies.
-- Push and open PRs only when the user asks. A manual deploy needs the user's ask; merging the release PR deploys production automatically (a merge to `main` does not; it deploys `/next/` through `preview.yml`, and a pull request from this repo deploys a preview). A change to `rulesHash` is a breaking commit (`!`) that targets `season/next`. `CHANGELOG.md` and the `package.json` version are written by the release PR only. Secrets live in GitHub and Cloudflare, never in the repo.
+- Push and open PRs only when the user asks. A manual deploy needs the user's ask; merging the release PR deploys production automatically (a merge to `main` does not; it deploys `/next/` through `preview.yml`, and a pull request from this repo deploys a preview). A change to `rulesHash` is a breaking commit (`!`) that targets `season/next`; while uploads are closed there is no season gap, so the season opens on `main` as soon as its keep-rule read is done, with retrained champions and the league required only from Phase 3 (`docs/designs/deployment-and-community.md` Phase 1c). `CHANGELOG.md` and the `package.json` version are written by the release PR only. Secrets live in GitHub and Cloudflare, never in the repo.
 - A doc's `**Status:**` line moves in the same PR as the code it describes. Never hand-edit
   `docs/designs/README.md`.
 - Name code by symbol (`forwardAll` in `js/sim/brain.js`), never by line number, in anything committed.
