@@ -18,6 +18,8 @@ import { cloudShape } from './cloud-shape.js';
 const ITEM = 4;
 /** Fruit glints show above this fill. */
 export const RIPE_FILL = 0.7;
+/** How bright the patch and zone outlines are drawn: background terrain, well below the organisms. */
+export const TERRAIN_DIM = 0.25;
 /** A zone's drawn radius at full fertility, world units. */
 export const ZONE_RADIUS = 46;
 const BOB_HZ = 0.7;
@@ -71,6 +73,19 @@ function color(b, o, rgb, fill) {
     b.neon[o + 1] = rgb[1];
     b.neon[o + 2] = rgb[2];
     b.neon[o + 3] = fill;
+}
+
+/**
+ * @param {Record<string, any>} b a bucket
+ * @param {number} o the row offset
+ * @param {ArrayLike<number>} rgb a display colour
+ * @returns {void}
+ */
+function dimmed(b, o, rgb) {
+    b.neon[o] = rgb[0] * TERRAIN_DIM;
+    b.neon[o + 1] = rgb[1] * TERRAIN_DIM;
+    b.neon[o + 2] = rgb[2] * TERRAIN_DIM;
+    b.neon[o + 3] = 0;
 }
 
 /**
@@ -131,7 +146,7 @@ function packPatches(pack, snap, { s, radius, timeSec }) {
         b.pose[o + 1] = snap.f32[w + 1];
         b.pose[o + 2] = 0;
         b.pose[o + 3] = radius;
-        color(b, o, toDisplay(floraColor(snap.f32[w + 3], pack.rgb), pack.rgb), 0);
+        dimmed(b, o, toDisplay(floraColor(snap.f32[w + 3], pack.rgb), pack.rgb));
         b.gate[o] = fill;
         b.gate[o + 1] = fill > RIPE_FILL ? 1 : 0;
         b.rig2[o] = 1;
@@ -155,7 +170,7 @@ function packZones(pack, snap, { s, dung }) {
         b.count += 1;
         put2(b.pose, o, snap.f32[w], snap.f32[w + 1]);
         put2(b.pose, o + 2, 0, ZONE_RADIUS * (0.6 + 0.4 * snap.f32[w + 2]));
-        color(b, o, NEON.forager, 0);
+        dimmed(b, o, b === pack.dung ? NEON.dust : NEON.forager);
     }
 }
 

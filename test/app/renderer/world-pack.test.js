@@ -111,3 +111,29 @@ describe('createWorldPack defaults', () => {
         expect(withRefuge.refuge.pose[3]).toBe(40);
     });
 });
+
+describe('terrain outlines are dimmed', () => {
+    it('draws patch and zone outlines at TERRAIN_DIM of their colour', async () => {
+        const { TERRAIN_DIM } = await import('../../../js/app/renderer/world-pack.js');
+        const { floraColor } = await import('../../../js/app/renderer/flora-colors.js');
+        const { toDisplay } = await import('../../../js/app/renderer/palette.js');
+        const info = { foodPatchRadius: 100, smokeRadius: 10, floraPatchMax: 1, fertileZoneMax: 2, maxClouds: 1 };
+        const pack = createWorldPack(info, 1);
+        packWorld(
+            patchSnapshot(
+                [[0, 0, 1, 0.4, 0.5]],
+                [
+                    [1, 1, 1, 0],
+                    [2, 2, 1, 1],
+                ],
+            ),
+            pack,
+            { info, dung: 1, levels: null, timeSec: 0 },
+        );
+        const full = toDisplay(floraColor(0.4, [0, 0, 0]));
+        expect(pack.patch.neon[0]).toBeCloseTo(full[0] * TERRAIN_DIM);
+        expect(pack.fertile.neon[1]).toBeCloseTo(NEON.forager[1] * TERRAIN_DIM);
+        expect(pack.dung.neon[0]).toBeCloseTo(NEON.dust[0] * TERRAIN_DIM);
+        expect(TERRAIN_DIM).toBeLessThan(0.5);
+    });
+});
