@@ -3319,3 +3319,30 @@ The 16-seed lead of deposit 2 (median lowest population 70 against 16.5) did not
 10.5), no arm held more seeds, and `eval.mating_share` stayed at 0.67. Two lessons: a 16-seed crash-depth median is
 noise at this effect size, and mating is not what limits recovery under 100 prey - males already find ready females
 for two thirds of births. The scent stays on the unmerged branch `feat/receptive-mate-scent`.
+
+### 2026-11-14 - three's WebGPURenderer drops canvas MSAA under tone mapping or a colour-space conversion (crisp-renderer)
+
+three 0.187's `Renderer` draws through an internal framebuffer target whenever `toneMapping` is not `NoToneMapping` or
+the output colour space differs from `ColorManagement.workingColorSpace` (`needsFrameBufferTarget`), and then
+`currentSamples` is 0 on the canvas plus one full-screen pass. The crisp stage sets `NoToneMapping`,
+`outputColorSpace = LinearSRGBColorSpace` and `ColorManagement.enabled = false`, and writes display values straight to
+the canvas, so 4x MSAA stays on the canvas with no extra pass.
+
+### 2026-11-14 - TSL's chained `mix` takes the receiver as the blend factor (crisp-renderer)
+
+In `three/tsl`, `a.mix(b, t)` is `mix(b, t, a)`: the node the method is called on is the factor, not the first colour.
+`acc.rgb.mix(color, alpha)` therefore washed every fill towards pastel. Use the function form `mix(a, b, t)`.
+
+### 2026-11-14 - Headless Chromium's WebGPU is a SwiftShader fallback adapter that cannot present (crisp-renderer)
+
+Headless Chromium (Playwright's build, with or without `--enable-unsafe-webgpu`) reports a WebGPU adapter with
+`info.isFallbackAdapter` true (`vendor: google`, `architecture: swiftshader`). `renderer.init()` succeeds, but the canvas
+screenshots blank and `readRenderTargetPixelsAsync` fails with "A valid external Instance reference no longer exists".
+The stage's `chooseBackend` takes WebGL2 on a fallback adapter, so the smoke tests draw; `?backend=webgpu` still forces
+it.
+
+### 2026-11-14 - `resolveTimestampsAsync` sums every pass since the last resolve (crisp-renderer)
+
+`renderer.resolveTimestampsAsync('render')` returns the summed GPU milliseconds of every render pass since the previous
+resolve, the last value while a resolve is pending, and `undefined` without `trackTimestamp` or the `timestamp-query`
+feature. `gpu-time.js` keeps one resolve in flight and divides by the frames drawn since the previous one.

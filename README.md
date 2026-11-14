@@ -32,7 +32,7 @@ The project is being rebuilt as "v6" in short sessions, one design doc at a time
 | -------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Headless sim core          | `js/sim/`            | The world and its rules as typed arrays. Deterministic: the same seed and config give the same bits. No DOM, no clock, no `Math.random` (all randomness is `js/sim/rng.js`).    |
 | Evolution                  | `js/evo/`            | Genomes, mutation, crossover, the fitness functions, the MAP-Elites archive, the policies that decide which brains get born, and the observer and metrics the evals read.      |
-| Worker and renderer (app)  | `js/worker/`, `js/app/` | The app on `index.html`. The sim and the live policy run in a Web Worker behind a validated message protocol (`js/worker/protocol.js`); the main thread only draws (three.js, WebGL2) and runs the interface. |
+| Worker and renderer (app)  | `js/worker/`, `js/app/` | The app on `index.html`. The sim and the live policy run in a Web Worker behind a validated message protocol (`js/worker/protocol.js`); the main thread only draws (three.js WebGPURenderer with a WebGL2 fallback, crisp neon vector models on true black) and runs the interface. |
 
 The previous app (WebGPU, one big `game.js`) is deleted; [legacy-audit.md](docs/designs/legacy-audit.md) records what
 it did wrong and which design replaced each part.
@@ -42,7 +42,7 @@ The speeds are x0.25 to x16 (`TICKS_PER_SECOND_CHOICES` in `js/worker/protocol.j
 
 ## Run it
 
-Needs Node 24 (`package.json` `engines`) and a current browser with WebGL2.
+Needs Node 24 (`package.json` `engines`) and a current browser with WebGPU or WebGL2.
 
 ```bash
 npm ci
@@ -82,7 +82,8 @@ Read by `readParams` in `js/app/url-params.js`; a bad value is ignored, never an
 | `?seed=<n>`              | World seed (unsigned 32-bit)                                                                                                                         |
 | `?agents=<n>`            | Starting population, 1 to 4096; raises `maxAgents` above the default 500 and lowers `minAgents` to at most `n`                                       |
 | `?speed=<x>`             | 0.25, 0.5, 1, 2, 4, 8 or 16                                                                                                                          |
-| `?quality=<0..2>`, `?scale=<0.25..1>` | Pin the quality level and the render scale (software rendering defaults to 0.5)                                                         |
+| `?backend=<webgpu\|webgl2>` | Force the GPU backend; by default WebGPU on a hardware adapter, WebGL2 otherwise                                                          |
+| `?gputime=1`             | Record GPU frame times through timestamp queries (what `npm run perf:browser` uses)                                                                  |
 | `?tv=1`                  | TV mode: HUD hidden, director running, wake lock on                                                                                                  |
 | `?audio=1`               | Start with generative audio on                                                                                                                       |
 | `?policy=<name>`         | Preview a registered policy such as `map-elites-v6` (an unknown name stops the worker and lists the known ones)                                      |
