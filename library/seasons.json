@@ -22,5 +22,17 @@
     },
     "opened": "2026-11-13",
     "major": 8
+  },
+  {
+    "season": 9,
+    "rulesHash": "c7e7238455e0d21c",
+    "layout": {
+      "name": "pooled-v5",
+      "inputCount": 92,
+      "brainHidden": 32,
+      "outputCount": 11
+    },
+    "opened": "2026-11-14",
+    "major": 9
   }
 ]
