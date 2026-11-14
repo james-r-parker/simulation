@@ -21,11 +21,13 @@ export function keyedAt(keys, t) {
     for (let i = 1; i < keys.length; i++) {
         const [t1, v1, ease] = keys[i];
         if (t <= /** @type {number} */ (t1)) {
-            const [t0, v0] = keys[i - 1];
-            const span = /** @type {number} */ (t1) - /** @type {number} */ (t0);
-            const u = span > 0 ? (t - /** @type {number} */ (t0)) / span : 1;
+            const t0 = /** @type {number} */ (keys[i - 1][0]);
+            const v0 = /** @type {number} */ (keys[i - 1][1]);
+            const span = /** @type {number} */ (t1) - t0;
+            const u = span > 0 ? (t - t0) / span : 1;
             const e = easeAt(u, ease === undefined ? 0 : FX_EASE.indexOf(/** @type {string} */ (ease)));
-            return /** @type {number} */ (v0) + /** @type {number} */ (v1 - /** @type {number} */ (v0)) * e;
+            const v1n = /** @type {number} */ (v1);
+            return v0 + (v1n - v0) * e;
         }
     }
     return /** @type {number} */ (keys[keys.length - 1][1]);

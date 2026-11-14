@@ -36,7 +36,7 @@ describe('clips', () => {
             if (!clip.loop) {
                 continue;
             }
-            expect(/** @type {number} */ (clip.rate), name).toBeGreaterThan(0);
+            expect(/** @type {any} */ (clip).rate, name).toBeGreaterThan(0);
             for (const track of clip.tracks) {
                 expect(track.keys[0][1], `${name}.${track.channel}`).toBeCloseTo(
                     /** @type {number} */ (track.keys[track.keys.length - 1][1]),

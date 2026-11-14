@@ -41,14 +41,14 @@ describe('the model catalogue', () => {
         ]);
         expect(MOTE_MODELS).toHaveLength(4);
         expect(PARTICLE_BY_SHAPE).toHaveLength(FX_SHAPES.length);
-        PARTICLE_BY_SHAPE.forEach((model, i) => expect(model?.name).toBe(FX_SHAPES[i]));
+        PARTICLE_BY_SHAPE.forEach((model, i) => expect(/** @type {any} */ (model)?.name).toBe(FX_SHAPES[i]));
         for (const name of ['herd', 'rock', 'refuge', 'patch', 'fertile', 'dung', 'frostTick', 'crack', 'cloud']) {
             expect(MODELS[name], name).toBeDefined();
         }
     });
 
     it('falls back to the forager for an unknown spec and says so', () => {
-        const missing = [];
+        const missing = /** @type {any[]} */ ([]);
         expect(modelFor('nope', (n) => missing.push(n))).toBe(AGENT_MODELS.forager);
         expect(modelFor('predator')).toBe(AGENT_MODELS.predator);
         expect(missing).toEqual(['nope']);
@@ -65,7 +65,9 @@ describe('modelBounds', () => {
         for (const model of Object.values(MODELS)) {
             const bound = modelBounds(model);
             for (const part of model.parts) {
-                expect(bound, `${model.name}.${part.name}`).toBeGreaterThanOrEqual(partExtent(part));
+                expect(bound, `${model.name}.${/** @type {any} */ (part).name}`).toBeGreaterThanOrEqual(
+                    partExtent(part),
+                );
             }
         }
     });
