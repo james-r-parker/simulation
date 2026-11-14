@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 built; the perf:browser comparison is open (no GPU Chrome on the build machine)
 **Validated:** 3f8bf122 (2026-11-12)
-**Priority:** 2 - a worker-only change that moves no sim behaviour, so it does not wait on the balance work
+**Priority:** 3 - a worker-only change that moves no sim behaviour, so it does not wait on the balance work
 
 The app's sim worker builds the full eval observer (`buildRun` in [host-world.js](../../js/worker/host-world.js) calls
 `createObserver`) and feeds it every tick through `feedPolicy` in [feed-policy.js](../../js/evo/feed-policy.js). The
