@@ -44,3 +44,22 @@ not far enough:
 **Next.** The patch stock is a realistic mechanism (energy is conserved), so it is kept if the keep rule finds no
 harm: `y1-b2` on seeds 1 to 64 against the E173 reference (`evals/decisions/E173/reference.report.json`, same seeds,
 ticks and policy; with the flag off every world hash is unchanged), `--keep-rule`.
+
+## Keep-rule pass (64 seeds, 400000 ticks)
+
+`y1-b2` (`evals/decisions/E174/y1-b2.report.json`) against the E173 reference, `npm run eval:compare --
+evals/decisions/E173/reference.report.json evals/decisions/E174/y1-b2.report.json --keep-rule --allow-config-diff
+patchStockEnergy,foodPatchCapacity,foodBackgroundShare`:
+
+| Guard                      | Result                                                       |
+| -------------------------- | ------------------------------------------------------------ |
+| alive                      | no harm, 6 harmed vs 11 recovered (p 0.33), detects 24 seeds |
+| held                       | no harm, 6 harmed vs 10 recovered (p 0.45), detects 23 seeds |
+| under80                    | better, 1 harmed vs 19 recovered (p 0.00004)                 |
+| eval.hunter_catches_per_1k | no harm, diff 0.0008 [-0.022, 0.024]                         |
+| adoption bar               | hunters alive 53/64, seeds under 80: 1/64 against 19/64, met |
+
+**Keep rule: no harm.** Adopted as a realistic mechanism (T6). The targets: `eval.density_starve_slope` -0.85 to
+-0.49 (+0.36 [0.11, 0.66], unverified), `eval.patch_leave_depleted` no difference, chance food up 6%
+([2.9, 28.6]), `eval.deliberate_food_share` no difference. `eval.lineages_alive` reads worse (3.35 to 2.35); it is
+not a guard and goes to Phase 4 (the edge breeds), which targets lineages at low density.

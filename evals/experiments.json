@@ -4381,8 +4381,12 @@
         "eval.chance_food_energy_per_1k": "-",
         "eval.deliberate_food_share": "-"
       },
-      "note": "Screen falsified: no arm puts density_starve_slope above 0 (best y1-b5 -0.14 against control -0.41); chance food above deliberate on every seed. Finalist y1-b2 goes to the 64-seed keep-rule pass as a realistic mechanism.",
-      "reports": ["evals/decisions/E174/results.md", "evals/decisions/E174/screen-table.md"],
+      "note": "Screen falsified: no arm puts density_starve_slope above 0 (best y1-b5 -0.14 against control -0.41); chance food above deliberate on every seed. Finalist y1-b2 goes to the 64-seed keep-rule pass as a realistic mechanism. Keep rule on 64 seeds: no harm (under80 better, 1/64 against 19/64); adopted at foodPatchCapacity 83000, foodBackgroundShare 0.02. lineages_alive worse (3.35 to 2.35), not a guard.",
+      "reports": [
+        "evals/decisions/E174/results.md",
+        "evals/decisions/E174/screen-table.md",
+        "evals/decisions/E174/y1-b2.report.json"
+      ],
       "date": "2026-11-14",
       "branch": "season/next",
       "beforePolicy": "live",
