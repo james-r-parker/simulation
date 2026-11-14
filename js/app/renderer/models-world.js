@@ -143,20 +143,19 @@ export const ZONE_MODELS = Object.freeze([
     {
         name: 'fertile',
         parts: [
-            { name: 'bound', shape: 'ring', r: 1, width: 0.03, dashes: 16, color: 'forager', style: 'solid' },
-            { name: 'seeds', shape: 'dots', r: 0.06, count: 3, ring: 0.35, color: 'forager', style: 'solid' },
+            { name: 'bound', shape: 'ring', r: 1, width: 0.03, dashes: 16, style: 'solid' },
+            { name: 'seeds', shape: 'dots', r: 0.06, count: 3, ring: 0.35, style: 'solid' },
         ],
     },
     {
         name: 'dung',
         parts: [
-            { name: 'bound', shape: 'ring', r: 1, width: 0.03, dashes: 16, color: 'dust', style: 'solid' },
-            { name: 'hatchA', shape: 'segment', ...seg([-0.5, -0.3], [0.1, 0.4], 0.06), color: 'dust', style: 'solid' },
+            { name: 'bound', shape: 'ring', r: 1, width: 0.03, dashes: 16, style: 'solid' },
+            { name: 'hatchA', shape: 'segment', ...seg([-0.5, -0.3], [0.1, 0.4], 0.06), style: 'solid' },
             {
                 name: 'hatchB',
                 shape: 'segment',
                 ...seg([-0.1, -0.45], [0.5, 0.25], 0.06),
-                color: 'dust',
                 style: 'solid',
             },
         ],
@@ -172,9 +171,9 @@ export const MARK_MODELS = Object.freeze([
     {
         name: 'crack',
         parts: [
-            { name: 'a', shape: 'segment', ...seg([-1, 0], [-0.3, 0.35], 0.1), color: 'dust', style: 'solid' },
-            { name: 'b', shape: 'segment', ...seg([-0.3, 0.35], [0.3, -0.35], 0.1), color: 'dust', style: 'solid' },
-            { name: 'c', shape: 'segment', ...seg([0.3, -0.35], [1, 0], 0.1), color: 'dust', style: 'solid' },
+            { name: 'a', shape: 'segment', ...seg([-1, 0], [-0.3, 0.35], 0.1), style: 'solid' },
+            { name: 'b', shape: 'segment', ...seg([-0.3, 0.35], [0.3, -0.35], 0.1), style: 'solid' },
+            { name: 'c', shape: 'segment', ...seg([0.3, -0.35], [1, 0], 0.1), style: 'solid' },
         ],
     },
     {

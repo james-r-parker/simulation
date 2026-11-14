@@ -38,7 +38,7 @@ describe('createBorderLines', () => {
     it('draws the four world edges', () => {
         const layer = createBorderLines({ info: { worldWidth: 100, worldHeight: 50 } });
         expect(layer.object.geometry.instanceCount).toBe(4);
-        expect(Array.from(layer.object.geometry.attributes.iSeg.array.slice(4, 8))).toEqual([100, 0, 100, 50]);
+        expect(Array.from(layer.object.geometry.attributes.iSeg.data.array.slice(8, 12))).toEqual([100, 0, 100, 50]);
         layer.dispose();
     });
 });

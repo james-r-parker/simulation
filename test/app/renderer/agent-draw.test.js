@@ -83,3 +83,20 @@ describe('createAgentDraw fallbacks', () => {
         warn.mockRestore();
     });
 });
+
+describe('createAgentDraw on WebGPU', () => {
+    it('binds no mesh to more than the 8 vertex buffers WebGPU allows by default', async () => {
+        const { vertexBufferCount } = await import('../../../js/app/renderer/instances.js');
+        const ready = smallReady();
+        const layer = createAgentDraw({
+            info: ready.info,
+            flagBits: ready.layout.flags,
+            stateBits: ready.layout.stateBits,
+        });
+        for (const mesh of layer.object.children) {
+            expect(vertexBufferCount(mesh.geometry)).toBeLessThanOrEqual(8);
+            expect(Object.keys(mesh.geometry.attributes).length).toBeLessThanOrEqual(16);
+        }
+        layer.dispose();
+    });
+});

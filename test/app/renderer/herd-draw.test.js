@@ -19,7 +19,7 @@ describe('createHerdDraw', () => {
             }),
         );
         expect(layer.object.geometry.instanceCount).toBe(1);
-        expect(layer.object.geometry.attributes.iPose.array[0]).toBeCloseTo(5);
+        expect(layer.object.geometry.attributes.iPose.data.array[0]).toBeCloseTo(5);
         layer.update?.(/** @type {any} */ ({ snapshot: null }));
         expect(layer.object.geometry.instanceCount).toBe(0);
         layer.dispose();

@@ -151,15 +151,17 @@ describe('per-frame scratch reuse in the crisp layers', () => {
         expect(new Set(seen.clips).size).toBe(1);
     });
 
-    it('motionAt returns one scratch and the upload walks one fixed attribute list', async () => {
+    it('motionAt returns one scratch and the upload reuses its lanes and interleaved buffer', async () => {
         const { motionAt } = await import('../../js/app/renderer/fx-pack.js');
         const { createInstances, uploadInstances } = await import('../../js/app/renderer/instances.js');
         const at = { t: 0.5, angle: 0, reach: 1, seed: 0 };
         expect(motionAt(1, at)).toBe(motionAt(5, at));
         const inst = createInstances(2, ['iPose', 'iNeon']);
-        const attributeList = inst.list;
+        const lanes = inst.lanes;
+        const data = inst.data;
         uploadInstances(inst, 1);
         uploadInstances(inst, 2);
-        expect(inst.list).toBe(attributeList);
+        expect(inst.lanes).toBe(lanes);
+        expect(inst.data).toBe(data);
     });
 });
