@@ -387,3 +387,28 @@ test('every control button has a title with its key and an aria-label', async ({
     await page.locator('.control-toggleHelp').click();
     await expect(page.locator('.drawer-help.open')).toBeAttached();
 });
+
+test('draws crisp shapes on true black: no veil, halo, grain or bloom fills the background', async ({ page }) => {
+    await page.goto(appUrl() + WORLD);
+    await worldRunning(page);
+    await page.waitForTimeout(2000);
+    const png = (await page.locator('#canvas-container canvas').screenshot()).toString('base64');
+    const { black, faint, total } = await page.evaluate(async (b64) => {
+        const g = /** @type {any} */ (globalThis);
+        const bitmap = await g.createImageBitmap(await (await fetch(`data:image/png;base64,${b64}`)).blob());
+        const canvas = new g.OffscreenCanvas(bitmap.width, bitmap.height);
+        const ctx = /** @type {any} */ (canvas.getContext('2d'));
+        ctx.drawImage(bitmap, 0, 0);
+        const d = ctx.getImageData(0, 0, bitmap.width, bitmap.height).data;
+        let zero = 0;
+        let dim = 0;
+        for (let i = 0; i < d.length; i += 4) {
+            const peak = Math.max(d[i], d[i + 1], d[i + 2]);
+            zero += peak === 0 ? 1 : 0;
+            dim += peak > 0 && peak <= 6 ? 1 : 0;
+        }
+        return { black: zero, faint: dim, total: d.length / 4 };
+    }, png);
+    expect(black / total, 'most of the canvas is exactly black').toBeGreaterThan(0.6);
+    expect(faint / total, 'almost nothing is a faint veil of light').toBeLessThan(0.02);
+});
