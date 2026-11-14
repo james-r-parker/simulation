@@ -70,6 +70,7 @@ export const FEATURE_RULES = {
     foodPatchRadius: positive(),
     foodPatchCapacity: positive(),
     foodPatchDepletion: num(0),
+    patchStockEnergy: BOOL,
     foodPatchRegrow: UNIT,
     foodBackgroundShare: UNIT,
     foodRegrowPerArea: num(0),

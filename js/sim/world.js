@@ -1,6 +1,7 @@
 // Allocates the world's typed arrays once and manages agent and food slots.
 
 import { allocateFlora } from './flora-state.js';
+import { releaseItem } from './patch-reserve.js';
 import { birthRingSpec } from './birth-budget.js';
 import { OUTPUT_COUNT, brainLayout } from './brain-layout.js';
 import { createInputActivity } from './input-activity.js';
@@ -226,7 +227,7 @@ function allocZonesAndPheromones(world) {
 function allocPatches(world) {
     const { floraPatchMax } = world.config;
     allocRows(world, singles(Float32Array, ['patchX', 'patchY']), floraPatchMax);
-    allocRows(world, singles(Float64Array, ['patchStock']), floraPatchMax);
+    allocRows(world, singles(Float64Array, ['patchStock', 'patchReserved']), floraPatchMax);
     allocateFlora(world);
 }
 
@@ -429,6 +430,9 @@ export const FOOD_GONE = Object.freeze({ NONE: 0, EATEN: 1, ROTTED: 2 });
 export function removeFood(world, slot, gone = FOOD_GONE.ROTTED, taken = 0) {
     if (world.foodAlive[slot] !== 1) {
         throw new Error(`removeFood: food slot ${slot} is not alive`);
+    }
+    if (world.config.patchStockEnergy) {
+        releaseItem(world, slot);
     }
     zeroSlot(world.foodRows, slot);
     world.foodGone[slot] = gone;

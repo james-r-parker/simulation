@@ -22,5 +22,11 @@
     "plan": null,
     "task": null,
     "reason": "Kept for the 'offspring' fallback arm: its follow-up screen (offspring against rank, 16 seeds) was never run before natural-selection.md closed (Decisions, 2026-11-07); delete the key with the offspring path if a later screen shows eval.mate_hunter_lean is not negative with 'rank'."
+  },
+  {
+    "key": "patchStockEnergy",
+    "plan": "docs/designs/honest-budgets.md",
+    "task": "T6",
+    "reason": "Kept as the control arm of the Phase 1 screen (the weight model against the energy stock); T6 deletes the weight model and this key when the finalist is adopted, or the branch is parked."
   }
 ]

@@ -261,6 +261,7 @@ export const DEFAULTS = deepFreeze({
     foodPatchRadius: 400, // new
     foodPatchCapacity: 1, // new: the largest stock of a patch
     foodPatchDepletion: 0.02, // new: stock taken by each food eaten inside a patch
+    patchStockEnergy: false, // new: a patch holds energy, its items reserve it, a meal spends it (honest-budgets Phase 1); false is the weight model
     foodPatchRegrow: 0.0005, // new: logistic regrowth rate per tick
     foodBackgroundShare: 0.2, // new: the share of food spawns that ignore the patches
     foodRegrowPerArea: 0.09, // E95 (was 0.06): items per tick per 1,000,000 px2 of world, through the patches
