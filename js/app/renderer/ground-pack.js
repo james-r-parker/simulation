@@ -8,6 +8,10 @@ const ITEM = 4;
 export const FROST_TICKS = 700;
 export const CRACKS_PER_BASIN = 90;
 export const SEASON_MOTES = 384;
+/** Depth points, their drawn size in device px and their brightness range. */
+export const DEPTH_POINTS = 1200;
+export const DEPTH_PX = 1.2;
+export const DEPTH_BRIGHTNESS = Object.freeze({ min: 0.12, max: 0.4 });
 /** The share of a season after which motes start to switch to the next season's model. */
 export const MOTE_SWITCH_FROM = 0.95;
 const MOTE_DRIFT = 6;
@@ -95,6 +99,24 @@ function layMotes(prng, { W, H }) {
 }
 
 /**
+ * @param {{next: () => number}} prng the stream
+ * @param {{W: number, H: number}} world the world size
+ * @returns {{pose: Float32Array, neon: Float32Array, count: number}} the depth points: still specks across the world in
+ *   dim greys (their radius is set each frame from the zoom)
+ */
+function layDepth(prng, { W, H }) {
+    const depth = bucket(DEPTH_POINTS);
+    for (let i = 0; i < DEPTH_POINTS; i++) {
+        const o = i * ITEM;
+        const k = DEPTH_BRIGHTNESS.min + (DEPTH_BRIGHTNESS.max - DEPTH_BRIGHTNESS.min) * prng.next() ** 2;
+        put(depth, o, [prng.next() * W, prng.next() * H, 0, 1]);
+        depth.neon.set([k, k, k, 0], o);
+    }
+    depth.count = DEPTH_POINTS;
+    return depth;
+}
+
+/**
  * @param {Record<string, any>} info `ready.info` (world size, `terrain.coldMarginWidth`, `terrain.wallX`)
  * @param {number} seed the world seed
  * @returns {Record<string, any>} the frost, crack and mote buckets with their seeded layouts
@@ -112,6 +134,7 @@ export function createGroundPack(info, seed) {
         crack: bucket(CRACKS_PER_BASIN),
         cracks: layCracks(prng, world),
         motes: layMotes(prng, world),
+        depth: layDepth(prng, world),
         moteBuckets: [0, 1, 2, 3].map(() => bucket(SEASON_MOTES)),
         ...world,
     };
@@ -129,13 +152,26 @@ function wrap(v, size) {
 }
 
 /**
- * Writes this frame's cracks and motes (frost is static).
- * @param {Record<string, any>} pack the ground pack
- * @param {{timeSec: number, season: number, seasonProgress: number, droughtBasin: number}} view the wall time, the
- *   season index and progress and the basin under drought (-1 for none)
+ * @param {{pose: Float32Array, count: number}} depth the depth points
+ * @param {number} zoom device px per world unit
  * @returns {void}
  */
-export function packGround(pack, { timeSec, season, seasonProgress, droughtBasin }) {
+function sizeDepth(depth, zoom) {
+    const speck = DEPTH_PX / 2 / Math.max(zoom, 1e-6);
+    for (let i = 0; i < depth.count; i++) {
+        depth.pose[i * ITEM + 3] = speck;
+    }
+}
+
+/**
+ * Writes this frame's depth point sizes, cracks and motes (frost is static).
+ * @param {Record<string, any>} pack the ground pack
+ * @param {{timeSec: number, season: number, seasonProgress: number, droughtBasin: number, zoom?: number}} view the
+ *   wall time, the season index and progress, the basin under drought (-1 for none) and the zoom (device px per unit)
+ * @returns {void}
+ */
+export function packGround(pack, { timeSec, season, seasonProgress, droughtBasin, zoom = 1 }) {
+    sizeDepth(pack.depth, zoom);
     pack.crack.count = 0;
     if (droughtBasin === 0 || droughtBasin === 1) {
         pack.crack.pose.set(

@@ -115,3 +115,34 @@ export function sdBlob(p, { amp, phase }) {
         .sub(float(1).sub(h.mul(0.5).add(0.5).mul(0.12)))
         .mul(0.9);
 }
+
+/**
+ * @param {any} p point
+ * @param {{rx: any, ry: any, amp: any, lobes: number, phase: any}} cell the membrane (`sdMembrane` in sdf-math.js)
+ * @returns {any} the approximate distance to the rippling membrane
+ */
+export function sdMembrane(p, { rx, ry, amp, lobes, phase }) {
+    const q = p.div(vec2(rx, ry));
+    const ripple = float(amp).mul(sin(atan(q.y, q.x).mul(lobes).add(phase)));
+    return length(q)
+        .sub(1)
+        .sub(ripple)
+        .mul(min(float(rx), float(ry)))
+        .mul(0.9);
+}
+
+/**
+ * @param {any} p point
+ * @param {{from: number, to: number, amp: any, freq: number, phase: any, width: any}} whip the flagellum (`sdWave`)
+ * @returns {any} the approximate distance to the beating stroke
+ */
+export function sdWave(p, { from, to, amp, freq, phase, width }) {
+    const t = clamp(p.x.sub(from).div(to - from), 0, 1);
+    const ax = t.mul(to - from).add(from);
+    const ay = float(amp)
+        .mul(t)
+        .mul(sin(abs(ax.sub(from)).mul(freq).sub(phase)));
+    return length(vec2(p.x.sub(ax), p.y.sub(ay)))
+        .mul(0.8)
+        .sub(float(width).mul(0.5));
+}

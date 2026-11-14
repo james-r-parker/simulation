@@ -1,11 +1,19 @@
-// The world layers, back to front: the ground (frost ticks and drought cracks), the zones, the flora patches, the rocks
-// and refuges, the smoke clouds and the season motes. One shared pack is written per frame by the ground layer, which
+// The world layers, back to front: the depth points of the void, the ground (frost ticks and drought cracks), the zones, the flora patches, the rocks
+// and refuges, the smoke clouds and the season motes. One shared pack is written per frame by the depth layer, which
 // draws first; the others read it.
 
 import { appLog } from '../app-log.js';
 import { createGroundPack, MOTE_ROLES, packGround } from './ground-pack.js';
 import { createModelMeshes } from './model-meshes.js';
-import { MARK_MODELS, MOTE_MODELS, PATCH_MODEL, REFUGE_MODEL, ROCK_MODEL, ZONE_MODELS } from './models-world.js';
+import {
+    DEPTH_MODEL,
+    MARK_MODELS,
+    MOTE_MODELS,
+    PATCH_MODEL,
+    REFUGE_MODEL,
+    ROCK_MODEL,
+    ZONE_MODELS,
+} from './models-world.js';
 import { FILL_SHARE, NEON } from './palette.js';
 import { createRefugeOccupancy, stepRefugeOccupancy } from './refuge-occupancy.js';
 import { createWorldPack, packWorld } from './world-pack.js';
@@ -33,6 +41,7 @@ function paint(b, rgb) {
 function meshGroups({ world, ground }) {
     const one = (/** @type {any} */ b) => Math.max(b.pose.length / 4, 1);
     return {
+        depth: createModelMeshes([DEPTH_MODEL], { buckets: [ground.depth] }),
         ground: createModelMeshes([FROST, CRACK], {
             capacity: one(ground.frost),
             buckets: [ground.frost, ground.crack],
@@ -56,7 +65,7 @@ function meshGroups({ world, ground }) {
 /**
  * @param {{info: Record<string, any>, layout: Record<string, any>, seed: number}} context `ready.info`,
  *   `ready.layout` and the world seed
- * @returns {Record<string, import('./stage.js').Layer>} the six layers by name, to be mounted in that order
+ * @returns {Record<string, import('./stage.js').Layer>} the seven layers by name, to be mounted in that order
  */
 export function createWorldLayers({ info, layout, seed }) {
     const world = createWorldPack(info, seed);
@@ -70,7 +79,7 @@ export function createWorldLayers({ info, layout, seed }) {
     const occupancy = createRefugeOccupancy(info);
     const dung = layout.zoneOrigins?.DUNG ?? 1;
     const view = { info, dung, levels: occupancy.level, timeSec: 0 };
-    const groundView = { timeSec: 0, season: 0, seasonProgress: 0, droughtBasin: -1 };
+    const groundView = { timeSec: 0, season: 0, seasonProgress: 0, droughtBasin: -1, zoom: 1 };
     if (!info.terrain) {
         appLog('warn', 'WorldTerrainMissing', {});
     }
@@ -81,7 +90,7 @@ export function createWorldLayers({ info, layout, seed }) {
             object: group.object,
             update(frame) {
                 group.setPalette(frame.family?.palette);
-                if (name === 'ground' && frame.snapshot !== null) {
+                if (name === 'depth' && frame.snapshot !== null) {
                     stepRefugeOccupancy(occupancy, frame.agents, frame.nowMs);
                     view.timeSec = frame.nowMs / 1000;
                     const s = packWorld(frame.snapshot, world, view);
@@ -89,6 +98,7 @@ export function createWorldLayers({ info, layout, seed }) {
                     groundView.season = frame.season;
                     groundView.seasonProgress = frame.seasonProgress;
                     groundView.droughtBasin = s.droughtBasin;
+                    groundView.zoom = frame.camera.zoom;
                     packGround(ground, groundView);
                 }
                 if (frame.snapshot === null) {

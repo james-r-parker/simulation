@@ -53,6 +53,7 @@ function agentInputs({ dim, ringFloor }) {
             calling: gate2.x,
             inCover: gate2.y,
             gestation: gate2.z,
+            wave: gate2.w,
         },
         colors: { pollenColor: attribute('iAccent', 'vec4').xyz, callColor: attribute('iCall', 'vec4').xyz },
         dim,

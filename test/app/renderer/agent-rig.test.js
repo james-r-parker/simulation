@@ -126,3 +126,15 @@ describe('rigBucket palettes', () => {
         expect(out.neon[3]).toBeCloseTo(FILL_SHARE.default);
     });
 });
+
+describe('wavePhase', () => {
+    it('wraps into one turn and runs faster as the cell swims faster', async () => {
+        const { wavePhase, WAVE_HZ } = await import('../../../js/app/renderer/agent-rig.js');
+        expect(wavePhase(0, 0, 0.25)).toBeCloseTo(Math.PI / 2);
+        expect(wavePhase(1 / WAVE_HZ.rest, 0, 0)).toBeCloseTo(0, 5);
+        const slow = wavePhase(0.1, 0, 0);
+        const fast = wavePhase(0.1, 1, 0);
+        expect(fast).toBeGreaterThan(slow);
+        expect(wavePhase(100.37, 0.5, 0.9)).toBeLessThan(Math.PI * 2);
+    });
+});

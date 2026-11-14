@@ -11,6 +11,20 @@ import { FILL_FLOOR, FILL_SHARE, NEON, toDisplay } from './palette.js';
 
 const N = CHANNELS.length;
 const ITEM = 4;
+/** The membrane ripple's rate at rest and at top speed, Hz. */
+export const WAVE_HZ = Object.freeze({ rest: 0.6, top: 3 });
+
+/**
+ * @param {number} timeSec wall time
+ * @param {number} speed01 the agent's speed share of the top speed
+ * @param {number} phase01 the agent's own phase, 0 to 1
+ * @returns {number} the wave phase in radians, wrapped to [0, 2 pi): faster as the cell swims faster
+ */
+export function wavePhase(timeSec, speed01, phase01) {
+    const turns = timeSec * (WAVE_HZ.rest + (WAVE_HZ.top - WAVE_HZ.rest) * speed01) + phase01;
+    return (turns - Math.floor(turns)) * Math.PI * 2;
+}
+
 /** Eye scale of a juvenile. */
 export const JUVENILE_EYE = 1.4;
 /** How much a bitten flash lifts the body towards white. */
@@ -26,7 +40,7 @@ export const STALK_SPEED = 0.35;
  * @property {Float32Array} rig1 sy, open, eye, flash
  * @property {Float32Array} rig2 ring, ringAlpha, limb, head
  * @property {Float32Array} gate pregnant, sick, infected, pollen
- * @property {Float32Array} gate2 calling, in cover, gestation01, 0
+ * @property {Float32Array} gate2 calling, in cover, gestation01, the membrane and flagellum wave phase
  * @property {Float32Array} accent pollen colour r, g, b and the call kind (1 alarm, 2 pack call)
  * @property {Float32Array} call call colour r, g, b, 0
  */
@@ -226,7 +240,7 @@ function gateRow(ctx, { bucket, o, flags }, out, rgb) {
     out.gate2[o] = callKind > 0 ? 1 : 0;
     out.gate2[o + 1] = (bucket.body[o] & ctx.stateBits.IN_COVER) !== 0 ? 1 : 0;
     out.gate2[o + 2] = bucket.body[o + 1];
-    out.gate2[o + 3] = 0;
+    out.gate2[o + 3] = wavePhase(ctx.timeSec, bucket.motion[o], bucket.motion[o + 2]);
     const hue = ((flags >>> ctx.flags.POLLEN_HUE_SHIFT) & ctx.flags.POLLEN_HUE_MASK) / ctx.flags.POLLEN_HUE_MASK;
     toDisplay(floraColor(hue * 2 - 1, rgb), rgb);
     putRgb(out.accent, o, pollen ? rgb : NEON.pollen, callKind);

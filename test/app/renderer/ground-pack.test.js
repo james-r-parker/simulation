@@ -61,3 +61,20 @@ describe('ground pack without cold margins', () => {
         expect(createGroundPack({ worldWidth: 2000, worldHeight: 1000 }, 3).frost.count).toBe(0);
     });
 });
+
+describe('depth points', () => {
+    it('scatter dim, still specks across the world, a fixed device size at any zoom', async () => {
+        const { DEPTH_BRIGHTNESS, DEPTH_POINTS, DEPTH_PX } = await import('../../../js/app/renderer/ground-pack.js');
+        const pack = createGroundPack(INFO, 5);
+        expect(pack.depth.count).toBe(DEPTH_POINTS);
+        for (let i = 0; i < DEPTH_POINTS; i++) {
+            const k = pack.depth.neon[i * 4];
+            expect(k).toBeGreaterThanOrEqual(DEPTH_BRIGHTNESS.min - 1e-6);
+            expect(k).toBeLessThanOrEqual(DEPTH_BRIGHTNESS.max + 1e-6);
+        }
+        const x = pack.depth.pose[0];
+        packGround(pack, { ...VIEW, timeSec: 50, zoom: 4 });
+        expect(pack.depth.pose[0]).toBe(x);
+        expect(pack.depth.pose[3]).toBeCloseTo(DEPTH_PX / 2 / 4);
+    });
+});

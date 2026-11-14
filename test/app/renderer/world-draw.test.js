@@ -6,10 +6,10 @@ import { createFamilySlots } from '../../../js/app/family-slots.js';
 import { smallReady } from '../helpers/ready.js';
 
 describe('createWorldLayers', () => {
-    it('builds the six layers in order and draws the rocks of a real world', () => {
+    it('builds the seven layers in order and draws the rocks of a real world', () => {
         const ready = smallReady();
         const layers = createWorldLayers({ info: ready.info, layout: ready.layout, seed: 3 });
-        expect(Object.keys(layers)).toEqual(['ground', 'zones', 'patches', 'rocks', 'clouds', 'motes']);
+        expect(Object.keys(layers)).toEqual(['depth', 'ground', 'zones', 'patches', 'rocks', 'clouds', 'motes']);
         const agents = createInterpolated(ready.info.maxAgents);
         interpolateInto(null, ready.snapshot, 1, agents);
         const frame = /** @type {any} */ ({
@@ -43,7 +43,7 @@ describe('createWorldLayers without terrain', () => {
         const info = { ...ready.info, terrain: undefined };
         const layers = createWorldLayers({ info, layout: { flags: {} }, seed: 1 });
         expect(warn.mock.calls.some(([r]) => r.event === 'WorldTerrainMissing')).toBe(true);
-        layers.ground.update?.(
+        layers.depth.update?.(
             /** @type {any} */ ({
                 snapshot: ready.snapshot,
                 agents: { count: 0 },
@@ -51,6 +51,7 @@ describe('createWorldLayers without terrain', () => {
                 season: 0,
                 seasonProgress: 0,
                 family: { palette: 'default' },
+                camera: { zoom: 1 },
             }),
         );
         Object.values(layers).forEach((l) => l.dispose());

@@ -8,6 +8,7 @@ import { NEON } from './palette.js';
 import {
     FOOD_MODELS,
     HERD_MODEL,
+    DEPTH_MODEL,
     MARK_MODELS,
     MOTE_MODELS,
     PATCH_MODEL,
@@ -22,7 +23,18 @@ export const MAX_PARTS = 16;
 /** The most polygon vertices. */
 export const MAX_POINTS = 10;
 /** The primitives a part may use. */
-export const SHAPES = Object.freeze(['circle', 'ring', 'box', 'poly', 'segment', 'arc', 'dots', 'blob']);
+export const SHAPES = Object.freeze([
+    'circle',
+    'ring',
+    'box',
+    'poly',
+    'segment',
+    'arc',
+    'dots',
+    'blob',
+    'membrane',
+    'wave',
+]);
 /** The rig channels a part may bind to. */
 export const BINDS = Object.freeze(['jawUp', 'jawDown', 'eye', 'ring', 'limbA', 'limbB', 'head']);
 /** How a part is painted: rim and flat fill, a solid fill in the full colour, or the rim alone. */
@@ -33,22 +45,20 @@ export const MAX_RING_SCALE = 1.7;
 /** The widest a jaw opens, radians. */
 export const JAW_OPEN = 0.6;
 
+const WAVE = { in: 'wave' };
+
 /**
- * @param {number} from where the line starts, behind the nose
- * @param {number} to where it ends
- * @returns {object} the spine: a hairline along the heading that the `eye` channel lengthens and shortens (juvenile,
- *   resting and fleeing read from it), in place of a face
+ * @param {Record<string, number>} shape the membrane's half axes, ripple share and lobes
+ * @returns {object} the cell membrane, rippling with the agent's wave phase
  */
-const spine = (from, to) => ({
-    name: 'spine',
-    shape: 'segment',
-    a: [from, 0],
-    b: [to, 0],
-    width: 0.05,
-    pivot: [from, 0],
-    bind: 'eye',
-    style: 'solid',
-});
+const membrane = (shape) => ({ name: 'membrane', shape: 'membrane', phase: WAVE, ...shape });
+
+/**
+ * @param {number} x where the nucleus sits on the heading axis
+ * @param {number} r its radius
+ * @returns {object} the nucleus: the organelle the `eye` channel swells and shrinks (juvenile, resting, fleeing)
+ */
+const nucleus = (x, r) => ({ name: 'nucleus', shape: 'circle', r, at: [x, 0], pivot: [x, 0], bind: 'eye' });
 
 /** Parts every agent model carries, each gated by its state, all thin marks rather than blobs. */
 export const SHARED_PARTS = Object.freeze([
@@ -56,19 +66,19 @@ export const SHARED_PARTS = Object.freeze([
         name: 'gestation',
         shape: 'arc',
         r: 0.42,
-        width: 0.05,
+        width: 0.04,
         start: Math.PI / 2,
         sweep: { in: 'gestation', mul: 2 * Math.PI },
         gate: 'pregnant',
         color: 'court',
         style: 'solid',
     },
-    { name: 'sick', shape: 'ring', r: 0.62, width: 0.035, dashes: 6, gate: 'sick', color: 'toxic', style: 'solid' },
+    { name: 'sick', shape: 'ring', r: 0.62, width: 0.03, dashes: 6, gate: 'sick', color: 'toxic', style: 'solid' },
     {
         name: 'infected',
         shape: 'ring',
         r: 0.74,
-        width: 0.03,
+        width: 0.025,
         dashes: 12,
         gate: 'infected',
         color: 'infected',
@@ -77,10 +87,10 @@ export const SHARED_PARTS = Object.freeze([
     {
         name: 'pollen',
         shape: 'dots',
-        r: 0.055,
+        r: 0.05,
         count: 3,
-        ring: 0.18,
-        at: [-1.25, 0],
+        ring: 0.16,
+        at: [-1.2, 0],
         gate: 'pollen',
         color: { in: 'pollenColor' },
         style: 'solid',
@@ -88,14 +98,24 @@ export const SHARED_PARTS = Object.freeze([
     {
         name: 'callRing',
         shape: 'ring',
-        r: 1.45,
-        width: 0.04,
+        r: 1.4,
+        width: 0.035,
         bind: 'ring',
         gate: 'calling',
         color: { in: 'callColor' },
         style: 'solid',
     },
-    { name: 'cover', shape: 'ring', r: 1.3, width: 0.04, dashes: 8, gate: 'inCover', color: 'rock', style: 'solid' },
+    {
+        name: 'callRipple',
+        shape: 'ring',
+        r: 1.75,
+        width: 0.025,
+        bind: 'ring',
+        gate: 'calling',
+        color: { in: 'callColor' },
+        style: 'solid',
+    },
+    { name: 'cover', shape: 'ring', r: 1.3, width: 0.035, dashes: 8, gate: 'inCover', color: 'rock', style: 'solid' },
 ]);
 
 /**
@@ -107,115 +127,81 @@ function agent(name, own) {
     return Object.freeze({ name, parts: Object.freeze([...own, ...SHARED_PARTS]) });
 }
 
-const SHIELD = [
-    [0.85, 0],
-    [0.35, 0.78],
-    [-0.8, 0.62],
-    [-0.8, -0.62],
-    [0.35, -0.78],
-];
-
-/** The five agent models by specialisation name. */
+/** The five agent models by specialisation name: cells told apart by their organelles and how they swim. */
 export const AGENT_MODELS = Object.freeze({
     predator: agent('predator', [
+        membrane({ rx: 0.95, ry: 0.58, amp: 0.035, lobes: 7 }),
         {
-            name: 'body',
-            shape: 'poly',
-            points: [
-                [0.55, 0.3],
-                [-0.35, 0.42],
-                [-0.82, 0.68],
-                [-0.62, 0.2],
-                [-0.95, 0],
-                [-0.62, -0.2],
-                [-0.82, -0.68],
-                [-0.35, -0.42],
-                [0.55, -0.3],
-            ],
-        },
-        {
-            name: 'jawUp',
-            shape: 'poly',
-            points: [
-                [0.5, 0.02],
-                [1.25, 0.05],
-                [0.5, 0.32],
-            ],
-            pivot: [0.5, 0.02],
+            name: 'lipUp',
+            shape: 'arc',
+            r: 0.38,
+            width: 0.06,
+            start: 0.15,
+            sweep: 1.1,
+            at: [0.62, 0],
+            pivot: [0.62, 0],
             bind: 'jawUp',
+            style: 'solid',
         },
         {
-            name: 'jawDown',
-            shape: 'poly',
-            points: [
-                [0.5, -0.02],
-                [0.5, -0.32],
-                [1.25, -0.05],
-            ],
-            pivot: [0.5, -0.02],
+            name: 'lipDown',
+            shape: 'arc',
+            r: 0.38,
+            width: 0.06,
+            start: -1.25,
+            sweep: 1.1,
+            at: [0.62, 0],
+            pivot: [0.62, 0],
             bind: 'jawDown',
+            style: 'solid',
         },
-        spine(-0.55, 0.3),
+        nucleus(-0.25, 0.14),
     ]),
-    forager: agent('forager', [
-        {
-            name: 'body',
-            shape: 'poly',
-            points: [
-                [1.05, 0],
-                [0, 0.62],
-                [-0.95, 0],
-                [0, -0.62],
-            ],
-        },
-        spine(-0.5, 0.55),
-    ]),
+    forager: agent('forager', [membrane({ rx: 0.9, ry: 0.78, amp: 0.045, lobes: 5 }), nucleus(0.28, 0.2)]),
     reproducer: agent('reproducer', [
-        {
-            name: 'body',
-            shape: 'poly',
-            points: [0, 1, 2, 3, 4, 5].map((k) => [Math.cos((k * Math.PI) / 3), Math.sin((k * Math.PI) / 3)]),
-        },
-        { name: 'inner', shape: 'ring', r: 0.55, width: 0.035, style: 'solid' },
-        spine(0.2, 0.75),
+        membrane({ rx: 0.95, ry: 0.95, amp: 0.04, lobes: 4 }),
+        { name: 'nuclei', shape: 'dots', r: 0.17, count: 2, ring: { in: 'gestation', mul: 0.32 }, phase: Math.PI / 2 },
     ]),
     scout: agent('scout', [
         {
-            name: 'antennaUp',
+            name: 'flagellum',
+            shape: 'wave',
+            from: -0.7,
+            to: -1.9,
+            amp: 0.28,
+            freq: 7,
+            phase: WAVE,
+            width: 0.05,
+            style: 'solid',
+        },
+        {
+            name: 'ciliumUp',
             shape: 'segment',
-            a: [0.7, 0.08],
-            b: [1.6, 0.62],
-            width: 0.045,
-            pivot: [0.7, 0.08],
+            a: [0.65, 0.08],
+            b: [1.25, 0.42],
+            width: 0.035,
+            pivot: [0.65, 0.08],
             bind: 'limbA',
             style: 'solid',
         },
         {
-            name: 'antennaDown',
+            name: 'ciliumDown',
             shape: 'segment',
-            a: [0.7, -0.08],
-            b: [1.6, -0.62],
-            width: 0.045,
-            pivot: [0.7, -0.08],
+            a: [0.65, -0.08],
+            b: [1.25, -0.42],
+            width: 0.035,
+            pivot: [0.65, -0.08],
             bind: 'limbB',
             style: 'solid',
         },
-        {
-            name: 'body',
-            shape: 'poly',
-            points: [
-                [1.15, 0],
-                [-0.6, 0.5],
-                [-0.3, 0],
-                [-0.6, -0.5],
-            ],
-        },
-        spine(-0.2, 0.7),
+        membrane({ rx: 0.75, ry: 0.42, amp: 0.03, lobes: 6 }),
+        nucleus(0.15, 0.1),
     ]),
     defender: agent('defender', [
-        { name: 'body', shape: 'poly', points: SHIELD },
-        { name: 'inner', shape: 'poly', points: SHIELD.map(([x, y]) => [x * 0.6, y * 0.6]), style: 'outline' },
-        spine(-0.45, 0.5),
+        { name: 'spines', shape: 'ring', r: 1.07, width: 0.16, dashes: 16, style: 'solid' },
+        membrane({ rx: 0.92, ry: 0.92, amp: 0.02, lobes: 9 }),
+        { name: 'wall', shape: 'ring', r: 0.74, width: 0.03, style: 'solid' },
+        nucleus(0, 0.16),
     ]),
 });
 
@@ -231,6 +217,7 @@ export const MODELS = Object.freeze(
             PATCH_MODEL,
             ...ZONE_MODELS,
             ...MARK_MODELS,
+            DEPTH_MODEL,
             ...MOTE_MODELS,
             ...PARTICLE_MODELS,
         ].map((m) => [m.name, m]),
@@ -252,27 +239,34 @@ export function modelFor(spec, onMissing) {
 }
 
 /**
+ * @param {number | {in: string, mul?: number}} value a part dimension, or one bound to an instance input in 0 to 1
+ * @returns {number} the largest it can be
+ */
+function most(value) {
+    return typeof value === 'number' ? value : (value.mul ?? 1);
+}
+
+/** Each primitive's reach from its own origin, in model units, from the part's (largest) dimensions. */
+const EXTENTS = Object.freeze({
+    membrane: (/** @type {any} */ p) => Math.max(p.rx, p.ry) * (1 + p.amp),
+    wave: (/** @type {any} */ p) => Math.max(Math.abs(p.from), Math.abs(p.to)) + p.amp + p.width / 2,
+    circle: (/** @type {any} */ p) => most(p.r),
+    ring: (/** @type {any} */ p) => most(p.r) + most(p.width) / 2,
+    arc: (/** @type {any} */ p) => most(p.r) + most(p.width) / 2,
+    box: (/** @type {any} */ p) => Math.hypot(p.hx, p.hy),
+    poly: (/** @type {any} */ p) => Math.max(...p.points.map((/** @type {number[]} */ q) => Math.hypot(q[0], q[1]))),
+    segment: (/** @type {any} */ p) =>
+        Math.max(Math.hypot(p.a[0], p.a[1]), Math.hypot(p.b[0], p.b[1])) + most(p.width) / 2,
+    dots: (/** @type {any} */ p) => most(p.ring) + most(p.r),
+});
+
+/**
  * @param {Record<string, any>} part a part
- * @returns {number} the farthest the part's shape reaches from its own origin, in model units
+ * @returns {number} the farthest the part's shape reaches from its own origin, in model units (1 for a `blob`)
  */
 function shapeExtent(part) {
-    switch (part.shape) {
-        case 'circle':
-            return part.r;
-        case 'ring':
-        case 'arc':
-            return part.r + part.width / 2;
-        case 'box':
-            return Math.hypot(part.hx, part.hy);
-        case 'poly':
-            return Math.max(...part.points.map((/** @type {number[]} */ p) => Math.hypot(p[0], p[1])));
-        case 'segment':
-            return Math.max(Math.hypot(part.a[0], part.a[1]), Math.hypot(part.b[0], part.b[1])) + part.width / 2;
-        case 'dots':
-            return part.ring + part.r;
-        default:
-            return 1;
-    }
+    const extent = /** @type {Record<string, (p: any) => number>} */ (EXTENTS)[part.shape];
+    return extent === undefined ? 1 : extent(part);
 }
 
 /**

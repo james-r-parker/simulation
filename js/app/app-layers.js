@@ -64,6 +64,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
     const world = createWorldLayers({ info, layout, seed });
     const [particles, flashes] = createFxLayers({ pool: fx.pool });
     return [
+        world.depth,
         world.ground,
         world.zones,
         world.patches,

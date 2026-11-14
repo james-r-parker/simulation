@@ -7,7 +7,20 @@ import { MeshBasicNodeMaterial } from 'three/webgpu';
 import { cos, float, fwidth, max, min, mix, positionGeometry, sin, varying, vec2, vec3 } from 'three/tsl';
 import { JAW_OPEN, modelBounds } from './models.js';
 import { NEON } from './palette.js';
-import { coverage, rimCoverage, sdArc, sdBlob, sdBox, sdCircle, sdDots, sdPoly, sdRing, sdSegment } from './sdf.js';
+import {
+    coverage,
+    rimCoverage,
+    sdArc,
+    sdBlob,
+    sdBox,
+    sdCircle,
+    sdDots,
+    sdMembrane,
+    sdPoly,
+    sdRing,
+    sdSegment,
+    sdWave,
+} from './sdf.js';
 
 /**
  * The instance inputs a material reads, as TSL nodes (attributes, uniforms or constants).
@@ -98,6 +111,23 @@ function param(value, inputs) {
 
 /** Each primitive's distance: `(point, part, param)`, where `param` resolves a number, node or `{in, mul}`. */
 const DISTANCES = Object.freeze({
+    membrane: (/** @type {any} */ p, /** @type {any} */ part, /** @type {any} */ v) =>
+        sdMembrane(p, {
+            rx: v(part.rx),
+            ry: v(part.ry),
+            amp: v(part.amp),
+            lobes: part.lobes,
+            phase: v(part.phase ?? 0),
+        }),
+    wave: (/** @type {any} */ p, /** @type {any} */ part, /** @type {any} */ v) =>
+        sdWave(p, {
+            from: part.from,
+            to: part.to,
+            amp: v(part.amp),
+            freq: part.freq,
+            phase: v(part.phase ?? 0),
+            width: v(part.width),
+        }),
     circle: (/** @type {any} */ p, /** @type {any} */ part, /** @type {any} */ v) => sdCircle(p, v(part.r)),
     ring: (/** @type {any} */ p, /** @type {any} */ part, /** @type {any} */ v) =>
         sdRing(p, { radius: v(part.r), width: v(part.width), dashes: part.dashes ?? 0 }),

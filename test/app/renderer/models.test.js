@@ -102,3 +102,11 @@ describe('validateModel on every rule', () => {
         ).toHaveLength(1);
     });
 });
+
+describe('modelBounds with bound dimensions', () => {
+    it('takes a bound dimension at its multiplier, or 1 without one', () => {
+        const bound = { name: 'b', shape: 'dots', r: 0.1, count: 2, ring: { in: 'spread' } };
+        expect(partExtent(bound)).toBeCloseTo(1.1);
+        expect(partExtent({ ...bound, ring: { in: 'spread', mul: 0.5 } })).toBeCloseTo(0.6);
+    });
+});

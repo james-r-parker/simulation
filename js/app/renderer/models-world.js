@@ -4,100 +4,59 @@
 
 const seg = (/** @type {number[]} */ a, /** @type {number[]} */ b, width = 0.14) => ({ a, b, width });
 
-/** Megafauna, nose along +x: a capsule, fine legs and a small wedge head. */
+/** Megafauna as a colony organism: a gel envelope, a ring of member cells that turns as it swims, an inner ring that
+ * turns the other way and a core that drifts forward as it grazes. */
 export const HERD_MODEL = Object.freeze({
     name: 'herd',
     parts: [
-        {
-            name: 'legFL',
-            shape: 'segment',
-            ...seg([0.45, 0.42], [0.52, 0.78], 0.09),
-            pivot: [0.45, 0.42],
-            bind: 'limbA',
-            style: 'solid',
-        },
-        {
-            name: 'legBR',
-            shape: 'segment',
-            ...seg([-0.5, -0.42], [-0.57, -0.78], 0.09),
-            pivot: [-0.5, -0.42],
-            bind: 'limbA',
-            style: 'solid',
-        },
-        {
-            name: 'legFR',
-            shape: 'segment',
-            ...seg([0.45, -0.42], [0.52, -0.78], 0.09),
-            pivot: [0.45, -0.42],
-            bind: 'limbB',
-            style: 'solid',
-        },
-        {
-            name: 'legBL',
-            shape: 'segment',
-            ...seg([-0.5, 0.42], [-0.57, 0.78], 0.09),
-            pivot: [-0.5, 0.42],
-            bind: 'limbB',
-            style: 'solid',
-        },
-        { name: 'body', shape: 'box', hx: 0.95, hy: 0.52, corner: 0.48 },
-        { name: 'spine', shape: 'segment', ...seg([-0.6, 0], [0.4, 0], 0.04), style: 'solid' },
-        {
-            name: 'head',
-            shape: 'poly',
-            points: [
-                [1.3, 0],
-                [0.9, 0.2],
-                [0.9, -0.2],
-            ],
-            bind: 'head',
-        },
+        { name: 'envelope', shape: 'ring', r: 1.02, width: 0.025, style: 'solid' },
+        { name: 'members', shape: 'dots', r: 0.2, count: 8, ring: 0.76, pivot: [0, 0], bind: 'limbA' },
+        { name: 'inner', shape: 'dots', r: 0.09, count: 5, ring: 0.36, pivot: [0, 0], bind: 'limbB', style: 'solid' },
+        { name: 'core', shape: 'circle', r: 0.16, bind: 'head' },
     ],
 });
 
-/** Food models by species (`FLORA_NAMES` order), then the carcass: small geometric glyphs. */
+/** Food models by species (`FLORA_NAMES` order), then the carcass: plankton and diatom shells. */
 export const FOOD_MODELS = Object.freeze([
-    { name: 'grass', parts: [{ name: 'blade', shape: 'segment', ...seg([0, -0.8], [0, 0.8], 0.22), style: 'solid' }] },
-    { name: 'berry', parts: [{ name: 'fruit', shape: 'circle', r: 0.55 }] },
+    { name: 'grass', parts: [{ name: 'rod', shape: 'segment', ...seg([-0.55, 0], [0.55, 0], 0.42) }] },
+    {
+        name: 'berry',
+        parts: [
+            { name: 'shell', shape: 'circle', r: 0.52 },
+            { name: 'core', shape: 'circle', r: 0.14, style: 'solid' },
+        ],
+    },
     {
         name: 'nut',
         parts: [
             {
-                name: 'shell',
+                name: 'valve',
                 shape: 'poly',
-                points: [
-                    [0, 0.85],
-                    [0.55, 0],
-                    [0, -0.85],
-                    [-0.55, 0],
-                ],
+                points: [0, 1, 2, 3, 4, 5, 6, 7].map((k) => [
+                    0.85 * Math.cos((k * Math.PI) / 4),
+                    0.36 * Math.sin((k * Math.PI) / 4),
+                ]),
             },
+            { name: 'raphe', shape: 'segment', ...seg([-0.6, 0], [0.6, 0], 0.05), style: 'solid' },
         ],
     },
     {
         name: 'flower',
-        parts: [{ name: 'petals', shape: 'dots', r: 0.16, count: 5, ring: 0.5, phase: Math.PI / 2, style: 'solid' }],
+        parts: [
+            { name: 'valve', shape: 'ring', r: 0.75, width: 0.06, style: 'solid' },
+            { name: 'areolae', shape: 'dots', r: 0.1, count: 6, ring: 0.42, style: 'solid' },
+            { name: 'centre', shape: 'circle', r: 0.12, style: 'solid' },
+        ],
     },
     {
         name: 'fungus',
-        parts: [
-            {
-                name: 'caps',
-                shape: 'dots',
-                r: 0.2,
-                count: 3,
-                ring: 0.38,
-                phase: Math.PI / 2,
-                color: 'fungus',
-                style: 'solid',
-            },
-        ],
+        parts: [{ name: 'spores', shape: 'dots', r: 0.2, count: 3, ring: 0.38, phase: Math.PI / 2, color: 'fungus' }],
     },
     {
         name: 'toxiccap',
         parts: [
             {
-                name: 'warning',
+                name: 'valve',
                 shape: 'poly',
                 points: [
                     [0, 0.85],
@@ -106,23 +65,24 @@ export const FOOD_MODELS = Object.freeze([
                 ],
                 color: 'toxic',
             },
+            {
+                name: 'pores',
+                shape: 'dots',
+                r: 0.08,
+                count: 3,
+                ring: 0.3,
+                phase: Math.PI / 2,
+                color: 'toxic',
+                style: 'solid',
+            },
         ],
     },
     {
         name: 'carcass',
         parts: [
-            {
-                name: 'chunk',
-                shape: 'poly',
-                points: [
-                    [-0.9, -0.3],
-                    [-0.5, 0.7],
-                    [0.4, 0.85],
-                    [0.95, 0.1],
-                    [0.6, -0.7],
-                    [-0.3, -0.8],
-                ],
-            },
+            { name: 'shredA', shape: 'arc', r: 0.7, width: 0.12, start: 0.3, sweep: 2.2 },
+            { name: 'shredB', shape: 'arc', r: 0.55, width: 0.1, start: 3.4, sweep: 1.8 },
+            { name: 'debris', shape: 'dots', r: 0.07, count: 4, ring: 0.3, style: 'solid' },
         ],
     },
 ]);
@@ -135,6 +95,7 @@ export const REFUGE_MODEL = Object.freeze({
     name: 'refuge',
     parts: [
         { name: 'bound', shape: 'ring', r: 1, width: 0.03, dashes: 24, color: 'rock', style: 'solid' },
+        { name: 'lattice', shape: 'ring', r: 0.93, width: 0.02, dashes: 36, color: 'rock', style: 'solid' },
         {
             name: 'occupancy',
             shape: 'arc',
@@ -222,6 +183,12 @@ export const MARK_MODELS = Object.freeze([
     },
 ]);
 
+/** A depth point: one of the sparse, still specks of the void behind everything. */
+export const DEPTH_MODEL = Object.freeze({
+    name: 'depthPoint',
+    parts: [{ name: 'speck', shape: 'circle', r: 1, style: 'solid' }],
+});
+
 /** Season motes by season (spring, summer, autumn, winter). */
 export const MOTE_MODELS = Object.freeze([
     { name: 'pollenMote', parts: [{ name: 'dot', shape: 'circle', r: 0.6, color: 'pollen', style: 'solid' }] },
@@ -233,23 +200,24 @@ export const MOTE_MODELS = Object.freeze([
         name: 'leafMote',
         parts: [
             {
-                name: 'leaf',
+                name: 'shard',
                 shape: 'poly',
                 points: [
-                    [-1, 0],
-                    [-0.2, 0.55],
+                    [-0.8, -0.5],
                     [1, 0],
-                    [-0.2, -0.55],
+                    [-0.6, 0.6],
                 ],
                 color: 'leaf',
+                style: 'outline',
             },
         ],
     },
     {
         name: 'frostMote',
         parts: [
-            { name: 'a', shape: 'segment', ...seg([-1, 0], [1, 0], 0.22), color: 'frost', style: 'solid' },
-            { name: 'b', shape: 'segment', ...seg([0, -1], [0, 1], 0.22), color: 'frost', style: 'solid' },
+            { name: 'a', shape: 'segment', ...seg([-1, 0], [1, 0], 0.16), color: 'frost', style: 'solid' },
+            { name: 'b', shape: 'segment', ...seg([-0.5, -0.87], [0.5, 0.87], 0.16), color: 'frost', style: 'solid' },
+            { name: 'c', shape: 'segment', ...seg([-0.5, 0.87], [0.5, -0.87], 0.16), color: 'frost', style: 'solid' },
         ],
     },
 ]);

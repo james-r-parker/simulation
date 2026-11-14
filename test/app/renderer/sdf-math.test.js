@@ -111,3 +111,24 @@ describe('degenerate shapes', () => {
         expect(sdSegment(3, 4, { a: [0, 0], b: [0, 0], width: 2 })).toBeCloseTo(4);
     });
 });
+
+describe('cell primitives', () => {
+    it('membrane: zero on a still circle, inside at the centre, rippling with phase', async () => {
+        const { sdMembrane } = await import('../../../js/app/renderer/sdf-math.js');
+        const still = { rx: 1, ry: 1, amp: 0, lobes: 5, phase: 0 };
+        expect(sdMembrane(1, 0, still)).toBeCloseTo(0);
+        expect(sdMembrane(0, 0, still)).toBeLessThan(0);
+        const rippled = { ...still, amp: 0.1, phase: Math.PI / 2 };
+        expect(sdMembrane(1.1, 0, rippled)).toBeCloseTo(0);
+        expect(sdMembrane(0, 0.5, { rx: 1, ry: 0.5, amp: 0, lobes: 3, phase: 0 })).toBeCloseTo(0);
+    });
+
+    it('wave: on the stroke at the root, swinging at the tip with phase', async () => {
+        const { sdWave } = await import('../../../js/app/renderer/sdf-math.js');
+        const whip = { from: 0, to: -1, amp: 0.2, freq: 6, phase: 0, width: 0.1 };
+        expect(sdWave(0, 0, whip)).toBeCloseTo(-0.05);
+        const tipY = 0.2 * Math.sin(6);
+        expect(sdWave(-1, tipY, whip)).toBeCloseTo(-0.05);
+        expect(sdWave(-0.5, 1, whip)).toBeGreaterThan(0.5);
+    });
+});

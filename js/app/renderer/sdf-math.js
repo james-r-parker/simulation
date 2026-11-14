@@ -157,3 +157,32 @@ export function sdBlob(x, y, shape) {
         shape[2] * Math.sin(5 * a + shape[5]);
     return (Math.hypot(x, y) - (1 - 0.12 * (0.5 + 0.5 * h))) * 0.9;
 }
+
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {{rx: number, ry: number, amp: number, lobes: number, phase: number}} cell a cell membrane: an ellipse of half
+ *   axes `rx`, `ry` whose outline ripples by `amp` (a share of the radius) in `lobes` waves, turned by `phase`
+ * @returns {number} the approximate distance to the membrane (exact on a still circle, scaled by 0.9 elsewhere)
+ */
+export function sdMembrane(x, y, { rx, ry, amp, lobes, phase }) {
+    const qx = x / rx;
+    const qy = y / ry;
+    const ripple = amp * Math.sin(lobes * Math.atan2(qy, qx) + phase);
+    return (Math.hypot(qx, qy) - 1 - ripple) * Math.min(rx, ry) * 0.9;
+}
+
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {{from: number, to: number, amp: number, freq: number, phase: number, width: number}} whip a flagellum along
+ *   the x axis from `from` (the root) to `to` (the tip): a sine of `freq` radians per unit, swinging up to `amp` at the
+ *   tip and 0 at the root, moved along by `phase`
+ * @returns {number} the approximate distance to the stroke
+ */
+export function sdWave(x, y, { from, to, amp, freq, phase, width }) {
+    const t = Math.min(Math.max((x - from) / (to - from), 0), 1);
+    const ax = from + (to - from) * t;
+    const ay = amp * t * Math.sin(freq * Math.abs(ax - from) - phase);
+    return Math.hypot(x - ax, y - ay) * 0.8 - width / 2;
+}

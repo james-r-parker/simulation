@@ -33,10 +33,8 @@ describe('world models', () => {
         }
     });
 
-    it('binds the herd legs in two alternating pairs and the head to the head channel', () => {
+    it('turns the colony rings in opposite senses and drifts its core with the head channel', () => {
         const binds = HERD_MODEL.parts.map((p) => /** @type {any} */ (p).bind).filter(Boolean);
-        expect(binds.filter((b) => b === 'limbA')).toHaveLength(2);
-        expect(binds.filter((b) => b === 'limbB')).toHaveLength(2);
-        expect(binds).toContain('head');
+        expect(binds).toEqual(['limbA', 'limbB', 'head']);
     });
 });

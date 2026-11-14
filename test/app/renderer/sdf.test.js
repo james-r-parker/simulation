@@ -8,9 +8,11 @@ import {
     sdBox,
     sdCircle,
     sdDots,
+    sdMembrane,
     sdPoly,
     sdRing,
     sdSegment,
+    sdWave,
 } from '../../../js/app/renderer/sdf.js';
 
 const P = vec2(0.3, -0.2);
@@ -35,6 +37,8 @@ describe('sdf nodes', () => {
             sdArc(P, { radius: 1, width: 0.1, start: 0, sweep: float(1) }),
             sdDots(P, { radius: 0.1, count: 3, ring: 0.6 }),
             sdBlob(P, { amp: vec3(0.1, 0.2, 0.1), phase: vec3(0, 1, 2) }),
+            sdMembrane(P, { rx: 1, ry: 0.7, amp: 0.05, lobes: 5, phase: float(0.3) }),
+            sdWave(P, { from: -0.8, to: -1.8, amp: 0.2, freq: 6, phase: float(1), width: 0.06 }),
             coverage(float(0), 0.01),
             rimCoverage(float(0), 1.5, float(0.01)),
         ];

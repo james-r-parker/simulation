@@ -101,3 +101,17 @@ describe('modelMaterial bound parameters', () => {
         expect(modelMaterial(arc, { inputs, look: LOOK }).colorNode.isNode).toBe(true);
     });
 });
+
+describe('modelMaterial cell primitives', () => {
+    it('builds a still membrane and flagellum when no phase is bound', () => {
+        const cell = {
+            name: 'still',
+            parts: [
+                { name: 'm', shape: 'membrane', rx: 1, ry: 0.8, amp: 0.05, lobes: 5 },
+                { name: 'w', shape: 'wave', from: -0.8, to: -1.6, amp: 0.2, freq: 6, width: 0.05 },
+            ],
+        };
+        const inputs = { center: vec2(0, 0), angle: float(0), radius: float(1), color: vec3(1, 1, 1) };
+        expect(modelMaterial(cell, { inputs, look: LOOK }).opacityNode.isNode).toBe(true);
+    });
+});

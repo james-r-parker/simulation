@@ -6,25 +6,25 @@
 
 > Supersedes the drawing parts of [worker-and-renderer.md](worker-and-renderer.md) (Renderer, Look, the Phase 2 budgets, Phases 6 and 7 drawing) and [renderer-event-effects.md](renderer-event-effects.md) (the visual signatures, Ambient layers and Toggles). Their data parts stay: the protocol, the snapshot, interpolation, the effect records, flag edges, body tweens, the effect budget, the director and the audio.
 
-The renderer draws every item from a designed vector model with keyframed animation clips, on true black, through three's `WebGPURenderer` with its WebGL2 fallback. It ships as one pull request; the old renderer is deleted in it.
+The world reads as cell-type organisms living in the depths of space or the quantum realm (user, 2026-11-14). The renderer draws every item from a designed vector model with keyframed animation clips, on true black, through three's `WebGPURenderer` with its WebGL2 fallback. It ships as one pull request; the old renderer is deleted in it.
 
 ## Look
 
 Crisp neon vector. Every rule below holds at every frame rate and on both GPU backends.
 
-| Rule              | Value                                                                                                                                                                                  |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Background        | `#000000`, cleared once per frame, never tinted, never changed by season, lens, load or backend                                                                                        |
-| Shapes            | Signed distance fields per model part; coverage is `smoothstep` over one `fwidth` of the distance (analytic anti-aliasing), plus 4x MSAA on the canvas                                 |
-| Rim               | A bright outline of `RIM_PX` (1.5 device px) at every zoom, in the item's role colour                                                                                                  |
-| Fill              | Flat and faint, `FILL_SHARE` (0.18) of the rim colour; no gradient, no noise, no texture                                                                                               |
-| Idle glow         | None. No halo, bloom, haze, vignette, grain or blur anywhere                                                                                                                           |
-| Event flash       | Bite, kill, birth, mate, call and pollination flash an additive radial glow for at most `FLASH_MAX_TICKS` (24) ticks with the wall-time floor `FX_MIN_MS` (250 ms); nothing else glows |
-| Least size        | A body is drawn at least `MIN_PX_HUNTER` (24) or `MIN_PX_OTHER` (20) device px across (`minPxTable` in [display-size.js](../../js/app/display-size.js))                                |
-| Seasons           | Shown by crisp elements on the map (the season motes, frost ticks, drought cracks), never by background colour                                                                         |
-| Lenses            | Crisp contour lines and outlined shapes; a lens dims nothing below 0.55 and blurs nothing                                                                                              |
-| Degrading         | Only effect particle counts drop under load (`adaptFxBudget`); every model, clip and layer draws at all times                                                                          |
-| Colour management | `ColorManagement.enabled` is false, `toneMapping` is `NoToneMapping`, `outputColorSpace` is `LinearSRGBColorSpace`: every colour is a display value written straight to the canvas     |
+| Rule              | Value                                                                                                                                                                                                          |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Background        | `#000000`, cleared once per frame, never tinted or changed by season, lens, load or backend; only a sparse field of still depth points (`DEPTH_POINTS` 1200, 1.2 device px, brightness 0.12 to 0.4) sits on it |
+| Shapes            | Signed distance fields per model part; coverage is `smoothstep` over one `fwidth` of the distance (analytic anti-aliasing), plus 4x MSAA on the canvas                                                         |
+| Rim               | A bright outline of `RIM_PX` (1.5 device px) at every zoom, in the item's role colour                                                                                                                          |
+| Fill              | Flat and faint, `FILL_SHARE` (0.18) of the rim colour; no gradient, no noise, no texture                                                                                                                       |
+| Idle glow         | None. No halo, bloom, haze, vignette, grain or blur anywhere                                                                                                                                                   |
+| Event flash       | Bite, kill, birth, mate, call and pollination flash an additive radial glow for at most `FLASH_MAX_TICKS` (24) ticks with the wall-time floor `FX_MIN_MS` (250 ms); nothing else glows                         |
+| Least size        | A body is drawn at least `MIN_PX_HUNTER` (24) or `MIN_PX_OTHER` (20) device px across (`minPxTable` in [display-size.js](../../js/app/display-size.js))                                                        |
+| Seasons           | Shown by crisp elements on the map (the season motes, frost ticks, drought cracks), never by background colour                                                                                                 |
+| Lenses            | Crisp contour lines and outlined shapes; a lens dims nothing below 0.55 and blurs nothing                                                                                                                      |
+| Degrading         | Only effect particle counts drop under load (`adaptFxBudget`); every model, clip and layer draws at all times                                                                                                  |
+| Colour management | `ColorManagement.enabled` is false, `toneMapping` is `NoToneMapping`, `outputColorSpace` is `LinearSRGBColorSpace`: every colour is a display value written straight to the canvas                             |
 
 > Note: three's `Renderer` draws through an extra framebuffer target, which turns MSAA off on the canvas and adds a full-screen pass, whenever `toneMapping` is not `NoToneMapping` or the output colour space differs from `ColorManagement.workingColorSpace` (`needsFrameBufferTarget`). With colour management on, a hex `Color` is also converted from sRGB to linear, which would darken the display values.
 
@@ -62,66 +62,73 @@ The family palettes `default`, `cvd-safe` and `high-contrast` (`FAMILY_PALETTES`
 
 A model is a list of parts. A part is one SDF primitive with a pivot, a role colour, a draw order and an optional state gate. `models.js` holds the catalogue as pure data; `model-material.js` turns one model into one TSL node material. Every rendered item has exactly one model, and a model has at most `MAX_PARTS` (16) parts.
 
-| Primitive | Parameters                                          |
-| --------- | --------------------------------------------------- |
-| `circle`  | radius                                              |
-| `ring`    | radius, width, dash count (0 solid)                 |
-| `box`     | half width, half height, corner                     |
-| `poly`    | up to `MAX_POINTS` (10) vertices, convex or concave |
-| `segment` | two points, width                                   |
-| `arc`     | radius, width, start, sweep                         |
-| `dots`    | radius, count, ring radius, phase                   |
-| `blob`    | the instance's `rockShape` harmonics (`sdBlob`)     |
+| Primitive  | Parameters                                           |
+| ---------- | ---------------------------------------------------- |
+| `circle`   | radius                                               |
+| `ring`     | radius, width, dash count (0 solid)                  |
+| `box`      | half width, half height, corner                      |
+| `poly`     | up to `MAX_POINTS` (10) vertices, convex or concave  |
+| `segment`  | two points, width                                    |
+| `arc`      | radius, width, start, sweep                          |
+| `dots`     | radius, count, ring radius, phase                    |
+| `blob`     | the instance's `rockShape` harmonics (`sdBlob`)      |
+| `membrane` | half axes, ripple share, lobes, phase (`sdMembrane`) |
+| `wave`     | root, tip, swing, frequency, phase, width (`sdWave`) |
 
 A part's distance is in model units (body radius 1). Parts combine by draw order: a later part's fill covers an earlier one, and every part keeps its rim. A gated part draws only while its state bit or value is set.
 
 ### Agent models
 
-Restrained, not cartoon: thin outlines with a faint fill, no faces, no decorative dots. Each agent carries a hairline
-spine along its heading (`spine`, bound to `eye`), whose length carries the juvenile, resting and fleeing cues.
+Cells, not icons: a rippling membrane (`membrane`, its phase the agent's wave phase), organelles inside and the way it
+swims, with thin rims and faint fills and no faces. The nucleus (bound to `eye`) swells and shrinks with the juvenile,
+resting and fleeing cues.
 
-| Model        | Parts                                                                                                              |
-| ------------ | ------------------------------------------------------------------------------------------------------------------ |
-| `predator`   | A narrow barbed arrow (`poly`, two small swept tail barbs), an upper and a lower jaw hinged at the nose, the spine |
-| `forager`    | A diamond (`poly`) and the spine                                                                                   |
-| `reproducer` | A hexagon (`poly`), a thin inner `ring` and the spine                                                              |
-| `scout`      | A slim dart (`poly`), two fine antennae (`segment`, bound to `limbA` and `limbB`) and the spine                    |
-| `defender`   | A pentagon shield (`poly`), an inner outline of it at 0.6 and the spine                                            |
+| Model        | Parts                                                                                                                                   |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `predator`   | An elongated membrane, two lips at the front (`arc`, bound to `jawUp` and `jawDown`) that open and close round prey, a nucleus set back |
+| `forager`    | A round membrane and one nucleus sitting forward                                                                                        |
+| `reproducer` | A round membrane and two nuclei (`dots`) whose spacing grows with gestation01, so the cell is seen to divide                            |
+| `scout`      | A small slim membrane, a beating flagellum (`wave`) behind it, two sensory cilia (bound to `limbA` and `limbB`) and a nucleus           |
+| `defender`   | A round membrane inside a ring of short spines (a dashed `ring`), a thin inner wall and a central nucleus                               |
+
+`wavePhase` in `agent-rig.js` gives each agent's wave phase (into `gate2.w`): its own phase plus wall time at 0.6 Hz
+at rest rising to 3 Hz at top speed, so membranes ripple and flagella beat faster as a cell swims faster.
 
 Every agent model also carries the shared gated parts, all thin marks:
 
-| Part        | Primitive          | Gate               | Look                                                          |
-| ----------- | ------------------ | ------------------ | ------------------------------------------------------------- |
-| `gestation` | `arc`              | `PREGNANT`         | A thin `court` arc that sweeps with gestation01               |
-| `sick`      | `ring` (6 dashes)  | `SICK`             | A thin dashed `toxic` ring; the `sick` loop sways by dose01   |
-| `infected`  | `ring` (12 dashes) | `INFECTED`         | A finer dashed `infected` ring                                |
-| `callRing`  | `ring`             | a call (`tween.z`) | `alarm` (alarm) or `huntCall` (pack call), scaled by the clip |
-| `pollen`    | `dots` (3)         | the `POLLEN` flag  | Three small points trailing the body in the pollen hue        |
-| `cover`     | `ring` (8 dashes)  | `IN_COVER`         | A dashed `rock` ring round the body                           |
+| Part                     | Primitive          | Gate               | Look                                                                                  |
+| ------------------------ | ------------------ | ------------------ | ------------------------------------------------------------------------------------- |
+| `gestation`              | `arc`              | `PREGNANT`         | A thin `court` arc that sweeps with gestation01                                       |
+| `sick`                   | `ring` (6 dashes)  | `SICK`             | A thin dashed `toxic` ring; the `sick` loop sways by dose01                           |
+| `infected`               | `ring` (12 dashes) | `INFECTED`         | A finer dashed `infected` ring                                                        |
+| `callRing`, `callRipple` | two `ring`s        | a call (`tween.z`) | Interference ripples in `alarm` (alarm) or `huntCall` (pack call), scaled by the clip |
+| `pollen`                 | `dots` (3)         | the `POLLEN` flag  | Three small points trailing the body in the pollen hue                                |
+| `cover`                  | `ring` (8 dashes)  | `IN_COVER`         | A dashed `rock` ring round the body                                                   |
 
-`JUVENILE` lengthens the spine 1.4x; `SATED` plays the `sated` loop. A spec name not in the catalogue draws with the
+`JUVENILE` swells the nucleus 1.4x; `SATED` plays the `sated` loop. A spec name not in the catalogue draws with the
 `forager` model and logs `ModelMissing` once.
 
 ### World models
 
-| Model       | Parts                                                                                                                       | Source                                                                                         |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `herd`      | A capsule body (`box`), a small wedge head (`poly`, bound to `head`), four fine leg strokes (`segment`)                     | Herd records, interpolated (`herd-track.js`)                                                   |
-| `grass`     | A short dash (`segment`)                                                                                                    | Food species 0 (`FLORA_NAMES`)                                                                 |
-| `berry`     | A small `circle`                                                                                                            | Food species 1                                                                                 |
-| `nut`       | A small rhombus (`poly`)                                                                                                    | Food species 2                                                                                 |
-| `flower`    | A tight ring of five points (`dots`)                                                                                        | Food species 3                                                                                 |
-| `fungus`    | Three small points (`dots`) in `fungus`                                                                                     | Food species 4                                                                                 |
-| `toxiccap`  | A warning triangle (`poly`) in `toxic`                                                                                      | Food species 5                                                                                 |
-| `carcass`   | An angular chunk (`poly`); colour from `meat` to `rot` by `age01`, shrinking to 70%                                         | Food with a negative radius                                                                    |
-| `rock`      | A `blob` from the `rockShape` harmonics, the outline `rockOutline` draws                                                    | Obstacle records: the wall and the refuge rings are rocks                                      |
-| `refuge`    | A ring of `rock` parts and an inner occupancy `arc`                                                                         | `ready.info.terrain` refuges, [refuge-occupancy.js](../../js/app/renderer/refuge-occupancy.js) |
-| `patch`     | A dashed `ring` in the patch hue, a fill `arc` that sweeps with fill01, four fruit glints (`dots`) gated on fill01 over 0.7 | Patch records                                                                                  |
-| `zone`      | A dashed `ring` with three seed `dots` (fertile zone) or a hatch of `segment`s (dung)                                       | Zone records                                                                                   |
-| `frostTick` | A short `segment`                                                                                                           | The cold margins (`terrain.coldMarginWidth`)                                                   |
-| `crack`     | A three-`segment` zigzag                                                                                                    | The drought basin (`droughtBasin`)                                                             |
-| `cloud`     | Four overlapping `ring` outlines, shrinking with remaining life                                                             | Cloud records (smoke)                                                                          |
-| `mote`      | Spring: a pollen dot; summer: a heat dash; autumn: a leaf `poly`; winter: a frost cross                                     | The season (`frame.season`)                                                                    |
+| Model        | Parts                                                                                                                                                                                                                     | Source                                                                                         |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `herd`       | A colony organism: a gel envelope (`ring`), a ring of eight member cells (`dots`, bound to `limbA`), an inner ring turning the other way (bound to `limbB`) and a core that drifts forward as it grazes (bound to `head`) | Herd records, interpolated (`herd-track.js`)                                                   |
+| `grass`      | A rod-shaped bacterium (a capsule `segment`)                                                                                                                                                                              | Food species 0 (`FLORA_NAMES`)                                                                 |
+| `berry`      | A coccus: a round shell and a bright core                                                                                                                                                                                 | Food species 1                                                                                 |
+| `nut`        | A pennate diatom: an elongated valve (`poly`) with its central raphe                                                                                                                                                      | Food species 2                                                                                 |
+| `flower`     | A centric diatom: a valve ring, six areolae (`dots`) and a centre                                                                                                                                                         | Food species 3                                                                                 |
+| `fungus`     | Three spores (`dots`) in `fungus`                                                                                                                                                                                         | Food species 4                                                                                 |
+| `toxiccap`   | A triangular diatom (`poly`) with three pores, in `toxic`                                                                                                                                                                 | Food species 5                                                                                 |
+| `carcass`    | A lysed cell: two torn membrane shreds (`arc`) and debris; colour from `meat` to `rot` by `age01`, shrinking to 70%                                                                                                       | Food with a negative radius                                                                    |
+| `rock`       | A dark crystalline mass: a `blob` from the `rockShape` harmonics                                                                                                                                                          | Obstacle records: the wall and the refuge rings are rocks                                      |
+| `refuge`     | A crystal lattice: two dashed rings on its rocks and an inner occupancy `arc`                                                                                                                                             | `ready.info.terrain` refuges, [refuge-occupancy.js](../../js/app/renderer/refuge-occupancy.js) |
+| `patch`      | A dashed `ring` in the patch hue, a fill `arc` that sweeps with fill01, four fruit glints (`dots`) gated on fill01 over 0.7                                                                                               | Patch records                                                                                  |
+| `zone`       | A dashed `ring` with three seed `dots` (fertile zone) or a hatch of `segment`s (dung)                                                                                                                                     | Zone records                                                                                   |
+| `frostTick`  | A short `segment`                                                                                                                                                                                                         | The cold margins (`terrain.coldMarginWidth`)                                                   |
+| `crack`      | A three-`segment` zigzag                                                                                                                                                                                                  | The drought basin (`droughtBasin`)                                                             |
+| `depthPoint` | A speck (`circle`) a fixed 1.2 device px across                                                                                                                                                                           | The depth points (`ground-pack.js`)                                                            |
+| `cloud`      | Four overlapping `ring` outlines, shrinking with remaining life                                                                                                                                                           | Cloud records (smoke)                                                                          |
+| `mote`       | Drifting matter: spring a pollen speck, summer a heat dash, autumn a dust shard (outline), winter a six-pointed ice crystal                                                                                               | The season (`frame.season`)                                                                    |
 
 ### Particle models
 
@@ -230,6 +237,7 @@ Each layer keeps the `Layer` shape (`object`, `update(frame)`, `resize`, `dispos
 
 | #   | Layer        | Module            | Draws                                                              | Draw calls |
 | --- | ------------ | ----------------- | ------------------------------------------------------------------ | ---------- |
+| 0   | Depth        | `world-draw.js`   | The depth points of the void                                       | 1          |
 | 1   | Ground       | `world-draw.js`   | Frost ticks and drought cracks                                     | 2          |
 | 2   | Zones        | `world-draw.js`   | Fertile and dung zones                                             | 2          |
 | 3   | Patches      | `world-draw.js`   | Flora patches with fruit glints                                    | 1          |
