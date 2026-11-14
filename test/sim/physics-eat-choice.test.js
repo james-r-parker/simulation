@@ -72,7 +72,7 @@ describe('actAll: grazeThrust (eat-choice G1b)', () => {
     it('refuses a grazeThrust outside 0 to 1', () => {
         expect(() => createConfig({ grazeThrust: 1.1 })).toThrow('grazeThrust');
         expect(() => createConfig({ grazeThrust: -0.1 })).toThrow('grazeThrust');
-        expect(createConfig().grazeThrust).toBe(0.5);
+        expect(createConfig().grazeThrust).toBe(0.6);
     });
 });
 

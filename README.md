@@ -219,7 +219,7 @@ so every feature listed below as "on" is on in the app.
   Predators digest meat fully; other types get 30% of it (`meatFoodValue`). Predators get 0 from plants (`plantFoodValue`).
 - Eating has limits: a blob at 95% of `maxEnergy` cannot eat (`satiationShare`), waits `digestTicks` (10) between meals and moves at 20% thrust for `handlingTicks` (20) after one.
 - **Eating is a choice.** A forager eats a plant it touches only while its `BITE` output is above 0, and holding the bite slows it
-  to `grazeThrust` (0.5) of its thrust, as a grazing animal moves slowly; it keeps its feet free by not biting. A fuller store
+  to `grazeThrust` (0.6) of its thrust, as a grazing animal moves slowly; it keeps its feet free by not biting. A fuller store
   slows an agent too: thrust and turn are scaled by `1 - fatSlowShare` (0.5) x the store fraction, so a full blob moves at half speed.
   A hunter's food ray shows only food it can eat (meat), and a hunter that holds `BITE` with nothing in its jaws pays
   `strikeMissCost` (1) energy that tick. The eat-choice design is `docs/designs/eat-choice.md`.

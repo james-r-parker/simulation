@@ -4311,6 +4311,38 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "effect": "no-difference"
+    },
+    {
+      "id": "E171",
+      "hypothesis": "eat-choice T28: a smaller easing of the graze slowdown (0.6 or 0.65) keeps part of the forager gain of 0.75 without its hunter cost.",
+      "prediction": "On seeds 65 to 128 at 200000 ticks against main, at least one of grazeThrust 0.6 and 0.65 reads eval.deliberate_food_share better with no keep-rule guard WORSE, hunter_catches_per_1k included. Falsified when every arm that lifts the share reads a guard WORSE.",
+      "targets": ["eval.deliberate_food_share", "eval.hunter_catches_per_1k"],
+      "before": "evals/decisions/E167/head.report.json: main defaults (grazeThrust 0.5, sim unchanged since), seeds 65 to 128, 200000 ticks, floor on, policy live",
+      "after": "evals/decisions/E171/graze-0.6.report.json and graze-0.65.report.json, same seeds",
+      "verdicts": {},
+      "note": "Prediction holds: graze-0.6 deliberate_food_share 0.355 to 0.391 (better), keep rule no harm (catches -5.9%, interval includes 0; held 6 vs 15); graze-0.65 0.396 (better), no harm (catches -6.4%; held 8 vs 10). 0.6 leads by held, then alive; E172 runs it on seeds 1 to 64. See evals/decisions/E171/results.md.",
+      "reports": ["evals/decisions/E171/results.md"],
+      "date": "2026-11-14",
+      "branch": "chore/eat-choice-graze-midpoints",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "better"
+    },
+    {
+      "id": "E172",
+      "hypothesis": "eat-choice T28: grazeThrust 0.6 keeps its E171 result on the other seed half.",
+      "prediction": "On seeds 1 to 64 at 200000 ticks, grazeThrust 0.6 against the defaults reads eval.deliberate_food_share better and no keep-rule guard WORSE, hunter_catches_per_1k included. Falsified when the share is not better or a guard reads WORSE.",
+      "targets": ["eval.deliberate_food_share", "eval.hunter_catches_per_1k"],
+      "before": "graze-0.5 arm (main defaults) of evals/decisions/E172/screen, seeds 1 to 64, 200000 ticks, floor on, policy live",
+      "after": "graze-0.6 arm of the same screen",
+      "verdicts": {},
+      "note": "Prediction holds: deliberate_food_share 0.342 to 0.371 (better), food and births better, keep rule no harm (catches -4.4%, interval [-0.046, 0.011]; held 5 vs 10, alive 6 vs 9); median lifespan -7%. 0.6 becomes the default (season 9). See evals/decisions/E172/results.md.",
+      "reports": ["evals/decisions/E172/results.md"],
+      "date": "2026-11-14",
+      "branch": "chore/eat-choice-graze-midpoints",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "better"
     }
   ]
 }
