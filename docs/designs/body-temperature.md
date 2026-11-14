@@ -63,7 +63,7 @@ At the defaults (`rayCount` 16, `brainHidden` 32) `inputCount` goes from 143 to 
   returns; `applyBite` calls it with `temperatureGainEat x world.transferGained / foodEnergy` for the biter. A food of
   `foodEnergy` gives `temperatureGainEat`; a bite of `biteEnergy` 5 gives 0.1. The bitten agent gains nothing.
 - **Eating is chosen (eat-choice.md).** A non-hunter reaches `tryEat` only while its `BITE` output is above 0, so only a
-  meal it chose warms it, and holding the bite slows it to `grazeThrust` (0.5) of its thrust. A fuller store slows an agent
+  meal it chose warms it, and holding the bite slows it to `grazeThrust` (0.75) of its thrust. A fuller store slows an agent
   too: thrust and turn are multiplied by `1 - fatSlowShare` (0.5) x `energy / maxEnergyBySpec[spec]`. A hunter sees only food
   it can eat, and a bite at nothing costs it `strikeMissCost` (1) energy. These sit beside the temperature efficiency
   and multiply with it in `actAll`.
