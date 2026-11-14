@@ -99,3 +99,19 @@ export function coverage(d, px) {
 export function rimCoverage(d, rimPx, px) {
     return coverage(abs(d).sub(float(rimPx).mul(px).mul(0.5)), px);
 }
+
+/**
+ * @param {any} p point
+ * @param {{amp: any, phase: any}} shape the rock's harmonic amplitudes (vec3 node) and phases (vec3 node)
+ * @returns {any} the approximate distance to the rock outline (`sdBlob` in sdf-math.js)
+ */
+export function sdBlob(p, { amp, phase }) {
+    const a = atan(p.y, p.x);
+    const h = amp.x
+        .mul(sin(a.mul(2).add(phase.x)))
+        .add(amp.y.mul(sin(a.mul(3).add(phase.y))))
+        .add(amp.z.mul(sin(a.mul(5).add(phase.z))));
+    return length(p)
+        .sub(float(1).sub(h.mul(0.5).add(0.5).mul(0.12)))
+        .mul(0.9);
+}

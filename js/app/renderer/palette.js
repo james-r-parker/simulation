@@ -44,6 +44,7 @@ export const NEON = Object.freeze({
     bite: rgb(0xff2a2a),
     birth: rgb(0xfff2a8),
     pollen: rgb(0xfff07a),
+    bone: rgb(0xe8e0d0),
 });
 
 /** The rim role of each specialisation name; an unknown name takes `forager`. */

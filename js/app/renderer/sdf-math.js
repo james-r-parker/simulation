@@ -141,3 +141,19 @@ export function coverage(d, px) {
 export function rimCoverage(d, rimPx, px) {
     return coverage(Math.abs(d) - (rimPx * px) / 2, px);
 }
+
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {ArrayLike<number>} shape a `rockShape` (amplitudes 0 to 2, phases 3 to 5)
+ * @returns {number} the approximate distance to the rock outline of `rockOutline` at radius 1 (exact on the outline,
+ *   scaled by 0.9 elsewhere so the harmonics never overshoot)
+ */
+export function sdBlob(x, y, shape) {
+    const a = Math.atan2(y, x);
+    const h =
+        shape[0] * Math.sin(2 * a + shape[3]) +
+        shape[1] * Math.sin(3 * a + shape[4]) +
+        shape[2] * Math.sin(5 * a + shape[5]);
+    return (Math.hypot(x, y) - (1 - 0.12 * (0.5 + 0.5 * h))) * 0.9;
+}

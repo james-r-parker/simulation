@@ -3,6 +3,7 @@ import {
     coverage,
     rimCoverage,
     sdArc,
+    sdBlob,
     sdBox,
     sdCircle,
     sdDots,
@@ -76,6 +77,18 @@ describe('sdf primitives', () => {
         expect(sdDots(0, 1, dots)).toBeCloseTo(-0.1);
         expect(sdDots(Math.SQRT1_2, Math.SQRT1_2, dots)).toBeGreaterThan(0.5);
         expect(sdDots(0, 1, { ...dots, count: 1 })).toBeCloseTo(Math.SQRT2 - 0.1);
+    });
+});
+
+describe('sdBlob', () => {
+    it('is zero on the rockOutline outline at every angle', async () => {
+        const { rockOutline, rockShape } = await import('../../../js/app/renderer/rock-shape.js');
+        const shape = rockShape(7, 3);
+        for (let a = 0; a < 6.28; a += 0.37) {
+            const r = rockOutline(shape, a);
+            expect(sdBlob(r * Math.cos(a), r * Math.sin(a), shape)).toBeCloseTo(0, 5);
+        }
+        expect(sdBlob(0, 0, shape)).toBeLessThan(0);
     });
 });
 

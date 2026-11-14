@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { float, vec2 } from 'three/tsl';
+import { float, vec2, vec3 } from 'three/tsl';
 import {
     coverage,
     rimCoverage,
     sdArc,
+    sdBlob,
     sdBox,
     sdCircle,
     sdDots,
@@ -33,6 +34,7 @@ describe('sdf nodes', () => {
             sdPoly(P, SQUARE),
             sdArc(P, { radius: 1, width: 0.1, start: 0, sweep: float(1) }),
             sdDots(P, { radius: 0.1, count: 3, ring: 0.6 }),
+            sdBlob(P, { amp: vec3(0.1, 0.2, 0.1), phase: vec3(0, 1, 2) }),
             coverage(float(0), 0.01),
             rimCoverage(float(0), 1.5, float(0.01)),
         ];
