@@ -4288,13 +4288,13 @@
       "before": "graze-0.5 arm (main defaults, season 8) of evals/decisions/E169/screen, seeds 1 to 64, 400000 ticks, floor on, policy live",
       "after": "graze-0.75 and graze-1 arms of the same screen",
       "verdicts": {},
-      "note": "Recorded before the run.",
+      "note": "Prediction holds for graze-0.75: deliberate_food_share 0.336 to 0.399 (better), keep rule no harm, held better (2 harmed vs 14 recovered, p 0.004), food and births better, lineages_alive -8.7% and median lifespan -8%. graze-1 reads WORSE (alive 24 vs 10, catches -19%). Switch to 0.75 with a paired check on seeds 65 to 128. See evals/decisions/E169/results.md.",
       "reports": ["evals/decisions/E169/results.md"],
       "date": "2026-11-13",
       "branch": "chore/eat-choice-graze-rescreen",
       "beforePolicy": "live",
       "afterPolicy": "live",
-      "effect": "no-difference"
+      "effect": "better"
     }
   ]
 }
