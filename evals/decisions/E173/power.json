@@ -1,0 +1,49 @@
+{
+  "splits": 1000,
+  "powerSplits": 200,
+  "sizes": [
+    16,
+    32
+  ],
+  "metrics": [
+    "eval.food_contact_bite_share",
+    "eval.full_contact_bite_share"
+  ],
+  "includeWatch": true,
+  "rows": [
+    {
+      "metric": "eval.food_contact_bite_share",
+      "size": 16,
+      "falsePositive": 0.087,
+      "detectable": 0.15,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_contact_bite_share",
+      "size": 32,
+      "falsePositive": 0.063,
+      "detectable": 0.1,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.full_contact_bite_share",
+      "size": 16,
+      "falsePositive": 0.114,
+      "detectable": 0.15,
+      "detectableKind": "absolute",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.full_contact_bite_share",
+      "size": 32,
+      "falsePositive": 0.07,
+      "detectable": 0.075,
+      "detectableKind": "absolute",
+      "validShare": 1
+    }
+  ]
+}
