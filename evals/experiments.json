@@ -4304,7 +4304,7 @@
       "before": "evals/decisions/E167/head.report.json: main defaults (season 8, sim unchanged since), seeds 65 to 128, 200000 ticks, floor on, policy live",
       "after": "evals/decisions/E170/head.report.json: chore/eat-choice-graze-rescreen (season 9, grazeThrust 0.75), same seeds",
       "verdicts": {},
-      "note": "Recorded before the results.",
+      "note": "Falsified: the keep rule reads WORSE on eval.hunter_catches_per_1k (0.390 to 0.330, -15.5%, interval [-0.092, -0.026]); alive, held and under80 no harm. Forager gains replicate (deliberate_food_share 0.355 to 0.418 better, food, births, lineages_alive better, escape_share +6%). The switch does not land; season 8 stays; the switch is kept on feat/graze-thrust-075. See evals/decisions/E170/results.md.",
       "reports": ["evals/decisions/E170/results.md"],
       "date": "2026-11-14",
       "branch": "chore/eat-choice-graze-rescreen",
