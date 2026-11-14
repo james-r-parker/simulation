@@ -3285,6 +3285,8 @@ checkpoints): the spread is between seeds. A tally that must see an action and i
 action happens, not after it. Hunters on the defaults pay 0.42 of their income in strike misses
 (`eval.strike_miss_energy_ratio`), and `eval.split_bumper_share` is 0 on every seed of the eat-choice world, as `splitDeliberateShareMin` keeps a bumper from splitting.
 
+**Fixed 2026-11-13 (eat-choice T27).** `tryEat` in `js/sim/feeding.js` now counts every non-hunter contact with food it can eat (those holding `BITE`, and the same in the 0.8 full band) into `world.eatContacts` before the item is removed; a non-hunter that does not bite still walks its cells so its contact counts. The observer reads the difference from the first checkpoint after burn-in. The counts are observer scratch the step never reads, so `worldHash` and the goldens did not move. A contact is one agent and one item in a tick, so an agent on several items counts several times. The power of the new shares is not yet re-read.
+
 ### 2026-11-13 - On the eat-choice world the heat lever makes crashes shallower, not rarer (low-density-edge T14, E165)
 
 With the eat choice already halving heat stress, `temperatureGainEat` 1.0 halves it again (0.165 to 0.086) and lifts the

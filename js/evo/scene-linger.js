@@ -10,7 +10,7 @@
 // The scene reads the world and writes only itself, so no hash can move. Nothing is allocated per sample.
 
 import { CLOSING_SPEED } from '../sim/merit-state.js';
-import { CONTACT, touchesFood } from './food-cell-index.js';
+import { touchesPlant } from './food-cell-index.js';
 import { none, ok } from './metrics-stats.js';
 
 const NO_HUNTER = 'no hunter at a sample after burn-in';
@@ -30,7 +30,7 @@ export function createLingerScene() {
 export function tallyLinger(scene, world, { index, slot }) {
     const speed = Math.sqrt(world.vx[slot] * world.vx[slot] + world.vy[slot] * world.vy[slot]);
     scene.hunters += 1;
-    if (speed < CLOSING_SPEED * world.config.maxVelocity && touchesFood(index, world, { slot, mode: CONTACT.PLANT })) {
+    if (speed < CLOSING_SPEED * world.config.maxVelocity && touchesPlant(index, world, slot)) {
         scene.lingering += 1;
     }
 }

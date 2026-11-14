@@ -11,6 +11,7 @@ describe('observer scratch', () => {
         expect(scratch.biteSkipParent).toHaveLength(7);
         expect(scratch.thrustSkipParent).toHaveLength(7);
         expect(scratch.contacts).toHaveLength(22);
+        expect(scratch.eatContacts).toHaveLength(4);
         expect(scratch.ledger).toHaveLength(2);
         expect(scratch.point).toHaveLength(2);
     });
