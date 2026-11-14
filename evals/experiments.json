@@ -4311,6 +4311,22 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "effect": "no-difference"
+    },
+    {
+      "id": "E171",
+      "hypothesis": "eat-choice T28: a smaller easing of the graze slowdown (0.6 or 0.65) keeps part of the forager gain of 0.75 without its hunter cost.",
+      "prediction": "On seeds 65 to 128 at 200000 ticks against main, at least one of grazeThrust 0.6 and 0.65 reads eval.deliberate_food_share better with no keep-rule guard WORSE, hunter_catches_per_1k included. Falsified when every arm that lifts the share reads a guard WORSE.",
+      "targets": ["eval.deliberate_food_share", "eval.hunter_catches_per_1k"],
+      "before": "evals/decisions/E167/head.report.json: main defaults (grazeThrust 0.5, sim unchanged since), seeds 65 to 128, 200000 ticks, floor on, policy live",
+      "after": "evals/decisions/E171/graze-0.6.report.json and graze-0.65.report.json, same seeds",
+      "verdicts": {},
+      "note": "Recorded before the run.",
+      "reports": ["evals/decisions/E171/results.md"],
+      "date": "2026-11-14",
+      "branch": "chore/eat-choice-graze-midpoints",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
     }
   ]
 }
