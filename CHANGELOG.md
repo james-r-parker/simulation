@@ -1,5 +1,49 @@
 # Changelog
 
+## [9.0.0](https://github.com/james-r-parker/simulation/compare/v8.0.0...v9.0.0) (2026-11-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* **app:** the ?quality, ?scale and ?look URL parameters and the
+
+### Features
+
+* **app:** add the animation clips and their sampler (crisp-renderer T8) ([c1916f3](https://github.com/james-r-parker/simulation/commit/c1916f3fc02a893f2950d416ec5d8c90d8b203c0))
+* **app:** add the crisp neon palette (crisp-renderer T4) ([f9ecdc9](https://github.com/james-r-parker/simulation/commit/f9ecdc970b84bd346651d8064d0e5f8c01489643))
+* **app:** add the kill clamp tween on the killer (crisp-renderer T7) ([7bf7899](https://github.com/james-r-parker/simulation/commit/7bf7899871b6ac892d1a0f9a660596962fe64681))
+* **app:** add the SDF primitives in JS and TSL (crisp-renderer T5) ([8566d5a](https://github.com/james-r-parker/simulation/commit/8566d5a6518b4f58b62c5ad0bf005258d49ba2f8))
+* **app:** add the vector model catalogue (crisp-renderer T6) ([bda3a08](https://github.com/james-r-parker/simulation/commit/bda3a0876295a58c6d5ebfae4fc1a07d8b057d14))
+* **app:** add the WebGPU stage (crisp-renderer T10) ([5f4f661](https://github.com/james-r-parker/simulation/commit/5f4f6614244ce73f9c197bdae7c1593190eb2e78))
+* **app:** blend herds between snapshots by slot (crisp-renderer T3) ([fcd6cc7](https://github.com/james-r-parker/simulation/commit/fcd6cc76e4000c4c1672b9b390087d763f14ab44))
+* **app:** cells in the void (crisp-renderer) ([a47bbc1](https://github.com/james-r-parker/simulation/commit/a47bbc14be631d49d18d23f70440d447be99cbbb))
+* **app:** compile catalogue models into TSL materials (crisp-renderer T9) ([4e83d77](https://github.com/james-r-parker/simulation/commit/4e83d779ff9b0d5fdff630693a202eecc8a48ecf))
+* **app:** draw crisp lines and contour lenses (crisp-renderer T20, T21) ([7a6cc35](https://github.com/james-r-parker/simulation/commit/7a6cc351c407d8b590145b8f8f41e9070251e243))
+* **app:** draw the crisp agents (crisp-renderer T12) ([cef4433](https://github.com/james-r-parker/simulation/commit/cef4433bc9985ea23ec28637819a2dcec059d9ff))
+* **app:** draw the effect particles and event flashes (crisp-renderer T19) ([56398bd](https://github.com/james-r-parker/simulation/commit/56398bdc91dc08e22d00c756c25f941eb19d70bb))
+* **app:** draw the food from its models (crisp-renderer T14) ([32fa445](https://github.com/james-r-parker/simulation/commit/32fa4452711dc6741211cd5e6043edc600b26473))
+* **app:** draw the herds blended at the frame rate (crisp-renderer T13) ([ff08d19](https://github.com/james-r-parker/simulation/commit/ff08d198f431517e80076591a73de72c4f5f2029))
+* **app:** draw the world from its models (crisp-renderer T15-T17) ([864ed74](https://github.com/james-r-parker/simulation/commit/864ed744718dbc954d6dfa6229f1da9ed6de3802))
+* **app:** read the GPU frame time from three's timestamps (crisp-renderer T11) ([22509a8](https://github.com/james-r-parker/simulation/commit/22509a8e5fff781c677ad30f20eda2ddec28e940))
+* **app:** switch the app to the crisp WebGPU renderer (crisp-renderer T22) ([13fc647](https://github.com/james-r-parker/simulation/commit/13fc647418e20f6e16c346184f0e17311c316b8e))
+* **evo:** count the eat-choice contact shares in the feed phase (eat-choice T27) ([e378e48](https://github.com/james-r-parker/simulation/commit/e378e48025b1552e34ea6a739ac2f13c59cb23e8))
+* **evo:** read the contact shares from the feed-phase tally (eat-choice T27) ([4b29ed2](https://github.com/james-r-parker/simulation/commit/4b29ed2128f1606088c12ec4c31c0f5c545fe127))
+* **sim:** carry the herd animal slot in the snapshot (crisp-renderer T2) ([8da452c](https://github.com/james-r-parker/simulation/commit/8da452cc4d7b7ac121684a3ade7688bfcf0dace2))
+* **sim:** tally non-hunter food contacts in the feed phase (eat-choice T27) ([80d8964](https://github.com/james-r-parker/simulation/commit/80d8964b71ea38b4327aaa8197a1d152b80c7af9))
+
+
+### Bug Fixes
+
+* **app:** draw the agents on WebGPU ([a4d8ba1](https://github.com/james-r-parker/simulation/commit/a4d8ba1392bc96cba9f0d861e461203e74655482))
+* **app:** draw the agents on WebGPU (one interleaved instance buffer) ([c38ac4e](https://github.com/james-r-parker/simulation/commit/c38ac4e8a469ff200f18387dd3a1c6fe72f50297))
+* **app:** make the pregnancy ring legible on its own ([53d0d6e](https://github.com/james-r-parker/simulation/commit/53d0d6ebf9e7943710ab68cd7c9a25e36e3f6411))
+* **app:** review fixes and a restrained look (crisp-renderer T26) ([8832e58](https://github.com/james-r-parker/simulation/commit/8832e58806b72652b7e5dcc3d1636fa596494732))
+
+
+### Performance Improvements
+
+* browser --look option are removed. ([13fc647](https://github.com/james-r-parker/simulation/commit/13fc647418e20f6e16c346184f0e17311c316b8e))
+
 ## [8.0.0](https://github.com/james-r-parker/simulation/compare/v7.1.0...v8.0.0) (2026-11-13)
 
 
