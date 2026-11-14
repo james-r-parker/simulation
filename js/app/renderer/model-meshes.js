@@ -58,12 +58,13 @@ function inputsOf(bucket, more) {
 
 /**
  * @param {readonly {name: string, parts: readonly object[]}[]} models the models, one per bucket
- * @param {{capacity: number, buckets: Bucket[], more?: (lanes: {gate: any, extra: any}) => Record<string, any>,
- *   blending?: number}} options the bucket capacity, the buckets and the model-specific inputs
+ * @param {{capacity?: number, buckets: Bucket[], more?: (lanes: {gate: any, extra: any}) => Record<string, any>,
+ *   blending?: number}} options the buckets (each mesh holds as many rows as its bucket's `pose`), the model-specific
+ *   inputs and an optional blending
  * @returns {{object: any, rimPx: any, upload: () => void, clear: () => void, setPalette: (name: string) => void,
  *   dispose: () => void}} the group, the rim width uniform and the per-frame calls
  */
-export function createModelMeshes(models, { capacity, buckets, more = () => ({}), blending }) {
+export function createModelMeshes(models, { buckets, more = () => ({}), blending }) {
     const rimPx = uniform(RIM_PX.default);
     const meshes = models.map((model, k) => {
         const bucket = buckets[k];
@@ -75,7 +76,7 @@ export function createModelMeshes(models, { capacity, buckets, more = () => ({})
                 shared[name] = array;
             }
         }
-        const instances = createInstances(capacity, Object.keys(shared), shared);
+        const instances = createInstances(bucket.pose.length / 4, Object.keys(shared), shared);
         const material = modelMaterial(model, { inputs: inputsOf(bucket, more), look: { rimPx, fillShare: 0.28 } });
         if (blending !== undefined) {
             material.blending = blending;
