@@ -167,7 +167,7 @@ function freeFoodSlot(world) {
 /**
  * Places a food item from the `food` stream into the lowest free slot.
  * @param {World} world the world
- * @returns {number} the food slot
+ * @returns {number} the food slot, or -1 when the energy model's patch could not pay for the item
  * @throws {Error} when `maxFood` items are alive
  */
 export function spawnFoodItem(world) {
