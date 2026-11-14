@@ -4336,13 +4336,13 @@
       "before": "graze-0.5 arm (main defaults) of evals/decisions/E172/screen, seeds 1 to 64, 200000 ticks, floor on, policy live",
       "after": "graze-0.6 arm of the same screen",
       "verdicts": {},
-      "note": "Recorded before the run.",
+      "note": "Prediction holds: deliberate_food_share 0.342 to 0.371 (better), food and births better, keep rule no harm (catches -4.4%, interval [-0.046, 0.011]; held 5 vs 10, alive 6 vs 9); median lifespan -7%. 0.6 becomes the default (season 9). See evals/decisions/E172/results.md.",
       "reports": ["evals/decisions/E172/results.md"],
       "date": "2026-11-14",
       "branch": "chore/eat-choice-graze-midpoints",
       "beforePolicy": "live",
       "afterPolicy": "live",
-      "effect": "no-difference"
+      "effect": "better"
     }
   ]
 }
