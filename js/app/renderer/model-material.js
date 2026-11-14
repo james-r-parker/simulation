@@ -4,7 +4,7 @@
 // front with one-pixel analytic coverage, so edges are crisp at any zoom and nothing is blurred.
 
 import { MeshBasicNodeMaterial } from 'three/webgpu';
-import { cos, float, fwidth, max, min, mix, positionGeometry, sin, varying, vec2, vec3, vec4 } from 'three/tsl';
+import { cos, float, fwidth, max, min, mix, positionGeometry, sin, varying, vec2, vec3 } from 'three/tsl';
 import { JAW_OPEN, modelBounds } from './models.js';
 import { NEON } from './palette.js';
 import { coverage, rimCoverage, sdArc, sdBlob, sdBox, sdCircle, sdDots, sdPoly, sdRing, sdSegment } from './sdf.js';
@@ -21,6 +21,7 @@ import { coverage, rimCoverage, sdArc, sdBlob, sdBox, sdCircle, sdDots, sdPoly, 
  * @property {Record<string, any>} [values] float inputs named by gates and bound parameters
  * @property {Record<string, any>} [colors] vec3 inputs named by `{in}` colours
  * @property {{amp: any, phase: any}} [blob] vec3 harmonics for a `blob` part
+ * @property {any} [dim] float the final colour is multiplied by (a lens dims the layer)
  */
 
 /**
@@ -239,7 +240,7 @@ export function modelMaterial(model, { inputs, look, flash = 0.6 }) {
         acc = paintPart(acc, part, { p: local, px, rig, inputs, look });
     }
     const lit = mix(acc.rgb, vec3(1, 1, 1), min(rig.flash.mul(flash), 1));
-    material.colorNode = vec4(lit, 1).xyz;
+    material.colorNode = inputs.dim === undefined ? lit : lit.mul(inputs.dim);
     material.opacityNode = acc.a;
     material.alphaTest = 0.002;
     return material;
