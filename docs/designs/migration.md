@@ -2,7 +2,7 @@
 
 **Status:** Proposed - migrants arrive at the map edges at a steady rate from a balanced mainland, whatever the headcount, and replace the floor refill that drops agents into an emptied world. Phase 1 (the principle edit and the detectors) is first.
 **Validated:** e2455f2f (2026-11-11)
-**Priority:** 4 - built after the attempts to make the world stand on its own (eat-choice.md, low-density-edge.md), since migration would hide a world that cannot
+**Priority:** 5 - built after the attempts to make the world stand on its own (eat-choice.md, low-density-edge.md), since migration would hide a world that cannot
 **Depends on:** [eat-choice.md](eat-choice.md), [low-density-edge.md](low-density-edge.md)
 
 The scene this doc serves ([principles.md](../principles.md)): **Boom and bust** - a world thins and is refilled by

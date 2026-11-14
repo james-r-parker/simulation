@@ -10,7 +10,7 @@ import {
 import { createCameraController } from '../../../js/app/camera.js';
 import { BAND } from '../../../js/app/renderer/fx-budget.js';
 import { createMateThreadPool } from '../../../js/app/renderer/mate-threads.js';
-import { isLive } from '../../../js/app/renderer/fx-pool.js';
+import { isLive } from '../../../js/app/renderer/fx-ring.js';
 import { CURVE } from '../../../js/app/renderer/fx-curves.js';
 import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
@@ -238,11 +238,11 @@ describe('playEffects', () => {
         expect(liveFx(pack.player.fx.pool, 12)).toBe(9);
     });
 
-    it('an eaten death gulps the killer', () => {
+    it('an eaten death plays the kill clamp on the killer', () => {
         const { player } = build();
         const agents = alive([{ slot: 2, genomeId: 9, x: 100, y: 100 }]);
         playEffects(player, queueOf([[2, 5, 1, 2, 7, 9, 1 << 8, 3]]), agents, 5);
-        expect(player.tweens.kind[2]).toBe(TWEEN.GULP);
+        expect(player.tweens.kind[2]).toBe(TWEEN.KILL);
     });
 
     it('a bite sprays from the biter jaw (or the effect when the biter is gone), marks the victim, and tweens both', () => {

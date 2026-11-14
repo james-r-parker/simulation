@@ -3,12 +3,11 @@
 // see who is hunting whom without opening the inspector.
 
 import { clearLines, createLineBuffer, pushVertex, setLineColor } from './line-buffer.js';
-import { createLineMesh } from './line-mesh.js';
+import { createLineMesh } from './line-draw.js';
 import { createPursuits, findPursuits, MAX_PURSUITS, pursuitRules } from '../pursuit.js';
 
 /** Dashes per tether at level 0 and at level 1. */
 export const CHASE_DASHES = 8;
-export const CHASE_DASHES_LOW = 4;
 /** The tether's colour (linear, above 1 so the bloom lifts it) and its alpha at touching range. */
 export const CHASE_COLOR = Object.freeze([1.4, 0.55, 0.3]);
 export const CHASE_ALPHA = 0.7;
@@ -77,25 +76,16 @@ export function stepChase(agents, { pursuits, rules, find = true }, { lines, das
 /**
  * @param {{info: Record<string, any>, pursuits?: import('../pursuit.js').Pursuits}} options `ready.info`, and the pairs
  *   the effects player finds each frame (then the layer does not search again)
- * @returns {import('./scene.js').Layer} the chase layer
+ * @returns {import('./stage.js').Layer} the chase layer
  */
 export function createChaseLayer({ info, pursuits }) {
     const lines = createLineBuffer(MAX_PURSUITS * CHASE_DASHES);
     const mesh = createLineMesh(lines);
     const state = { pursuits: pursuits ?? createPursuits(), rules: pursuitRules(info), find: pursuits === undefined };
-    let dashes = CHASE_DASHES;
-    mesh.object.visible = true;
+    const dashes = CHASE_DASHES;
     return {
         object: mesh.object,
-        setLook(look) {
-            const tier = /** @type {number} */ (look.chase);
-            dashes = tier === 0 ? CHASE_DASHES : CHASE_DASHES_LOW;
-            mesh.object.visible = tier >= 0 && tier < 2;
-        },
         update(frame) {
-            if (!mesh.object.visible) {
-                return;
-            }
             stepChase(frame.agents, state, { lines, dashes });
             mesh.upload();
         },

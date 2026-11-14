@@ -1,8 +1,6 @@
 # Renderer event effects
 
-**Status:** In progress - Phases 1 to 4 code built and conformance-reviewed (T1 to T14, T16 to T35): the effect pool and its adaptive budget, look items, flag edges, body tweens and states, every recipe of the three effect phases, the weather layer, the agent state word and the drought word, the world effect kinds, the flee cue, the gaits, the haze flow and heat map, the audio cues, the developer tools, the six world moments and their captions, the live moment log with its off-view pointers and `focusLast` on `L`; GPU readings via Claude in Chrome are recorded for Phases 1 and 2 (T15, T22), the perf:browser harness runs and the Phase 3 GPU reading are still owed, and the director's own soak waits for `director:dry` (worker-and-renderer.md T50).
-**Validated:** e8904ad9 (2026-11-07)
-**Priority:** 23 - a viewer cannot yet tell most features are firing (user, 2026-11-07); it changes no sim behaviour, so it queues behind the balance and scene work
+**Status:** Superseded - the visual signatures, ambient layers and toggles by [crisp-renderer.md](crisp-renderer.md); its effect data (the effect records, recipes, flag edges, body tweens, the budget and the director) stays in use there.
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md)
 
 > Companion to [worker-and-renderer.md](worker-and-renderer.md), whose Phases 1 to 7 built the renderer, the look items, the director and the audio this doc extends.
@@ -205,7 +203,7 @@ The director scores new moment kinds and each caption names the event (Phase 4):
 
 ## Toggles
 
-Seven look items extend `LOOK_ITEMS` in [`quality.js`](../../js/app/renderer/quality.js). They take bits 10 to 16, so `LOOK_ALL` covers them and `?look=` / `--look` name them. `lookFor` and the tier table give each a tier per quality level.
+Seven look items extend `LOOK_ITEMS` in `quality.js` (deleted by [crisp-renderer.md](crisp-renderer.md)). They take bits 10 to 16, so `LOOK_ALL` covers them and `?look=` / `--look` name them. `lookFor` and the tier table give each a tier per quality level.
 
 | Item        | Draws                                                                         | Level 0 | Level 1              | Level 2                |
 | ----------- | ----------------------------------------------------------------------------- | ------- | -------------------- | ---------------------- |

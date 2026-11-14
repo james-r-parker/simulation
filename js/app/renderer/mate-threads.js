@@ -2,15 +2,24 @@
 // family colour mixed 40% towards white at intensity 1.1, following both agents while they live.
 
 import { familyColor } from './colors.js';
-import { smoothstep } from './curves.js';
 import { clearLines, createLineBuffer, pushVertex, setLineColor } from './line-buffer.js';
-import { createLineMesh } from './line-mesh.js';
+import { createLineMesh } from './line-draw.js';
 
 export const MATE_TICKS = 45;
 export const MATE_FADE_TICKS = 6;
 export const MATE_SEGMENTS = 12;
-export const MATE_SEGMENTS_LOW = 4;
 export const MATE_POOL_CAPACITY = 32;
+
+/**
+ * @param {number} edge0 where the curve leaves 0
+ * @param {number} edge1 where it reaches 1
+ * @param {number} x the input
+ * @returns {number} the smooth step
+ */
+function smoothstep(edge0, edge1, x) {
+    const t = Math.min(Math.max((x - edge0) / (edge1 - edge0), 0), 1);
+    return t * t * (3 - 2 * t);
+}
 
 /**
  * Alpha envelope of a courtship thread over its normalised age.
@@ -213,7 +222,7 @@ function colorThread(lines, family, lineageId, alpha) {
  * @param {MateThreadPool} pool thread pool
  * @param {{agents: import('../interpolate.js').Interpolated, tick?: number, family: import('../family-slots.js').FamilySlots}} frame frame
  * @param {import('./line-buffer.js').LineBuffer} lines line buffer
- * @param {number} [segments] segments per thread (`MATE_SEGMENTS` at level 0, `MATE_SEGMENTS_LOW` at level 1)
+ * @param {number} [segments] segments per thread
  * @returns {void}
  */
 export function stepMateThreads(pool, frame, lines, segments = MATE_SEGMENTS) {
@@ -242,24 +251,15 @@ export function stepMateThreads(pool, frame, lines, segments = MATE_SEGMENTS) {
 /**
  * Creates the mate thread layer.
  * @param {{pool: MateThreadPool}} options pool
- * @returns {import('./scene.js').Layer} thread layer
+ * @returns {import('./stage.js').Layer} thread layer
  */
 export function createMateThreadLayer({ pool }) {
     const lines = createLineBuffer(MATE_POOL_CAPACITY * MATE_SEGMENTS);
     const mesh = createLineMesh(lines);
-    let segments = MATE_SEGMENTS;
     return {
         object: mesh.object,
-        setLook(look) {
-            const tier = /** @type {number} */ (look.threads);
-            segments = tier === 0 ? MATE_SEGMENTS : MATE_SEGMENTS_LOW;
-            mesh.object.visible = tier >= 0 && tier < 2;
-        },
         update(frame) {
-            if (!mesh.object.visible) {
-                return;
-            }
-            stepMateThreads(pool, frame, lines, segments);
+            stepMateThreads(pool, frame, lines, MATE_SEGMENTS);
             mesh.upload();
         },
         dispose() {

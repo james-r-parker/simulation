@@ -3,7 +3,7 @@
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-/** Path data by specialisation name, matching `SILHOUETTES` in the renderer. */
+/** Path data by specialisation name, matching `AGENT_MODELS` in the renderer's model catalogue. */
 export const ICON_PATHS = Object.freeze({
     predator: 'M12 2 L19.5 21 L12 16.5 L4.5 21 Z',
     forager: 'M12 4 A8 8 0 1 0 12.01 4 Z',

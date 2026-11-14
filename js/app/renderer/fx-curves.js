@@ -1,7 +1,7 @@
 // The keyframe tables of the effect pool: each curve names a shape, a motion, an ease and four scale and four alpha keys.
-// The shader evaluates the same table from uniforms; `curveAt` is its JS reference, used by tests and the demo.
+// `packFx` in fx-pack.js evaluates the table per live instance; `curveAt` is the same evaluation, used by the demo.
 
-/** The SDF shapes `fx-shader.js` draws, by index. */
+/** The particle shapes (one model each in models-particles.js), by index. */
 export const FX_SHAPES = Object.freeze([
     'RING',
     'STREAK',
@@ -103,7 +103,7 @@ const BACK = 1.70158;
 /**
  * @param {number} t age, 0 to 1
  * @param {number} id an `FX_EASE` index
- * @returns {number} the eased age; the GLSL `ease` in `fx-shader.js` is the same function
+ * @returns {number} the eased age
  */
 export function easeAt(t, id) {
     switch (id) {
@@ -145,24 +145,5 @@ export function curveAt(c, age, out) {
     out.t = easeAt(age, FX_EASE.indexOf(c.ease));
     out.scale = keysAt(c.scale, out.t);
     out.alpha = keysAt(c.alpha, out.t);
-    return out;
-}
-
-/**
- * Packs the table into the shader's uniform arrays: per curve a scale vec4, an alpha vec4 and an info vec4 of shape,
- * motion, ease and flags indices.
- * @returns {{scale: Float32Array, alpha: Float32Array, info: Float32Array}} 4 floats per curve each
- */
-export function curveUniforms() {
-    const n = FX_CURVES.length;
-    const out = { scale: new Float32Array(n * 4), alpha: new Float32Array(n * 4), info: new Float32Array(n * 4) };
-    FX_CURVES.forEach((c, i) => {
-        out.scale.set(c.scale, i * 4);
-        out.alpha.set(c.alpha, i * 4);
-        out.info[i * 4] = FX_SHAPES.indexOf(c.shape);
-        out.info[i * 4 + 1] = FX_MOTIONS.indexOf(c.motion);
-        out.info[i * 4 + 2] = FX_EASE.indexOf(c.ease);
-        out.info[i * 4 + 3] = c.flags;
-    });
     return out;
 }

@@ -77,6 +77,7 @@ export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
  * @property {Float32Array} motion speed01, turn01, phase, 0
  * @property {Float32Array} tween one-shot tween kind and age, call (1 alarming, 2 hunt calling, 0 none), fleeing
  * @property {Float32Array} body the state word's bits (0 to 15), gestation01, dose01 and strain / 255
+ * @property {Int32Array} index each row's index in the blended agents
  * @property {number} count agents packed this frame
  */
 
@@ -111,6 +112,7 @@ export function createAgentStore(capacity, meshCount, meshOfSpec, minPx) {
             motion: new Float32Array(capacity * ITEM),
             tween: new Float32Array(capacity * ITEM),
             body: new Float32Array(capacity * ITEM),
+            index: new Int32Array(capacity),
             count: 0,
         });
     }
@@ -174,6 +176,17 @@ function packTween(store, { bucket, o, i, tick }, agents, bits) {
     bucket.tween[o + 3] = store.fleeing === null ? 0 : store.fleeing[i];
 }
 
+/**
+ * @param {Bucket} bucket the bucket
+ * @param {number} i the agent's index in the blended agents
+ * @returns {number} the offset of the bucket's next row, now claimed
+ */
+function claimRow(bucket, i) {
+    bucket.index[bucket.count] = i;
+    bucket.count += 1;
+    return (bucket.count - 1) * ITEM;
+}
+
 const TWEEN_AT = { bucket: /** @type {Bucket} */ (/** @type {unknown} */ (null)), o: 0, i: 0, tick: 0 };
 
 /**
@@ -200,8 +213,7 @@ export function packAgents(agents, store, bits, { dtMs, zoom, slots, maxVelocity
         const slot = agents.slot[i];
         const target = (flags & bits.JAW_OPEN) !== 0 ? 1 : 0;
         store.jaw[slot] += (target - store.jaw[slot]) * ease;
-        const o = bucket.count * ITEM;
-        bucket.count += 1;
+        const o = claimRow(bucket, i);
         const rgb = familyColor(slots, agents.lineageId[i], agents.energy[i], store.rgb);
         COLOR_AGENT.mesh = mesh;
         COLOR_AGENT.lineageId = agents.lineageId[i];

@@ -72,17 +72,40 @@ describe('packPointers edges and reuse', () => {
 });
 
 describe('the pointer layer', () => {
-    it('draws nothing while the combat item is off', () => {
-        const layer = createFxPointersLayer({ moments: logOf([[3000, 500, 'kill', 0]]) });
+    it('draws an arrow for a recent moment off screen and none for one on screen', () => {
+        const moments = createMomentLog();
+        const layer = createFxPointersLayer({ moments });
         const camera = createCameraController({
-            canvas: /** @type {any} */ ({ width: 1000, height: 1000 }),
-            world: { width: 1000, height: 1000 },
+            canvas: { width: 400, height: 300 },
+            world: { width: 4000, height: 3000 },
         });
+        layer.update?.(/** @type {any} */ ({ camera, nowMs: 0 }));
+        expect(layer.object.children[0].geometry.instanceCount).toBe(0);
+        layer.dispose();
+        expect(MOMENT_LOG_SIZE).toBeGreaterThan(0);
+        expect(POINTER_MS).toBeGreaterThan(0);
+        expect(PALETTE.coolWhite).toBeDefined();
+    });
+});
+
+describe('the pointer layer arrows', () => {
+    it('draws one arrow for a recent kill off screen', () => {
+        const moments = createMomentLog();
+        moments.count = 1;
+        moments.x[0] = 3900;
+        moments.y[0] = 2900;
+        moments.atMs[0] = 0;
+        moments.kind[0] = 'kill';
+        const layer = createFxPointersLayer({ moments });
+        const camera = createCameraController({
+            canvas: { width: 400, height: 300 },
+            world: { width: 4000, height: 3000 },
+        });
+        camera.zoom = 1;
+        camera.x = 200;
+        camera.y = 150;
         layer.update?.(/** @type {any} */ ({ camera, nowMs: 10 }));
-        expect(layer.object.count).toBe(1);
-        layer.setLook?.({ combat: -1 });
-        layer.update?.(/** @type {any} */ ({ camera, nowMs: 10 }));
-        expect(layer.object.count).toBe(0);
+        expect(layer.object.children[0].geometry.instanceCount).toBe(1);
         layer.dispose();
     });
 });

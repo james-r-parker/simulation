@@ -167,6 +167,15 @@ function foodAndZoneCapacities(config) {
     return { maxFood: config.maxFood, fertileZoneMax: config.fertileZoneMax };
 }
 
+/** @param {Record<string, any>} config the run's config @returns {{herdMax: number, herdRadius: number, herdRunSpeed: number}} the herd capacity, the animal radius and the run speed (the app's herd blend reads them) */
+function herdInfo(config) {
+    return {
+        herdMax: config.herdCount * config.herdSize,
+        herdRadius: config.herdRadius,
+        herdRunSpeed: config.herdRunSpeed,
+    };
+}
+
 /**
  * The world and rule constants the app draws with.
  * @param {Run} run the run
@@ -180,7 +189,7 @@ export function worldInfo({ config, world }) {
         maxAgents: config.maxAgents,
         ...foodAndZoneCapacities(config),
         floraPatchMax: config.floraPatchMax,
-        herdMax: config.herdCount * config.herdSize,
+        ...herdInfo(config),
         foodPatchRadius: config.foodPatchRadius,
         obstacleCount: terrainRockCount(config),
         maxClouds: config.maxClouds,

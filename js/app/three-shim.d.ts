@@ -2,3 +2,5 @@
 // (`any`) for the type check. Tests and the browser spec cover the renderer's use of them.
 declare module 'three';
 declare module 'three/examples/jsm/*';
+declare module 'three/webgpu';
+declare module 'three/tsl';

@@ -7,7 +7,7 @@ import { createPrng } from '../prng.js';
 import { PALETTE } from './colors.js';
 import { admitFx, countFor, createFxBudget, FAMILY, lifeFor, RANK } from './fx-budget.js';
 import { CURVE } from './fx-curves.js';
-import { spawnFx } from './fx-pool.js';
+import { spawnFx } from './fx-ring.js';
 
 /**
  * @typedef {object} FxPart
@@ -194,7 +194,7 @@ export const FX_RECIPES = Object.freeze({
         { curve: C.sparkle, count: 8, life: 60, size: 0.35, reach: 3, spread: 'ring', color: 'milestone', gain: 1.2 },
     ]),
     wallCross: recipe(FAMILY.weather, RANK.weather, [
-        { curve: C.ringSlow, count: 1, life: 40, size: 1.8, color: 'coolWhite', gain: 0.6, stretch: 2.5, minPx: 8 },
+        { curve: C.ring, count: 1, life: 40, size: 3, color: 'coolWhite', gain: 1, stretch: 2.5, minPx: 12 },
     ]),
     breath: recipe(FAMILY.weather, RANK.weather, [
         { curve: C.puffOut, count: 1, life: 30, size: 0.45, reach: 1.2, color: 'coolWhite', gain: 0.3 },
@@ -227,14 +227,14 @@ export const DEATH_RECIPES = Object.freeze({
 
 /**
  * @typedef {object} FxPlayer
- * @property {import('./fx-pool.js').FxPool} pool
+ * @property {import('./fx-ring.js').FxPool} pool
  * @property {import('./fx-budget.js').FxBudget} budget
  * @property {import('../prng.js').Prng} prng scatter, the app's own generator
- * @property {import('./fx-pool.js').FxRecord} rec scratch record
+ * @property {import('./fx-ring.js').FxRecord} rec scratch record
  */
 
 /**
- * @param {import('./fx-pool.js').FxPool} pool the pool to spawn into
+ * @param {import('./fx-ring.js').FxPool} pool the pool to spawn into
  * @param {import('./fx-budget.js').FxBudget} [budget] the budget; a fresh one when absent
  * @param {number} [seed] the scatter seed
  * @returns {FxPlayer} a recipe player

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createIcon, ICON_PATHS, iconPath } from '../../../js/app/ui/silhouette-icons.js';
-import { SILHOUETTES } from '../../../js/app/renderer/agents-layer.js';
+import { AGENT_MODELS } from '../../../js/app/renderer/models.js';
 import { fakeDocument } from '../helpers/fake-dom.js';
 
 describe('silhouette icons', () => {
     it('has a path for every specialisation the renderer draws', () => {
-        expect(Object.keys(ICON_PATHS).sort()).toEqual(Object.keys(SILHOUETTES).sort());
+        expect(Object.keys(ICON_PATHS).sort()).toEqual(Object.keys(AGENT_MODELS).sort());
     });
 
     it('falls back to the disc for an unknown name', () => {

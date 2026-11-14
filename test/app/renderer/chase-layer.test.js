@@ -5,7 +5,6 @@ import { createPursuits, pursuitRules } from '../../../js/app/pursuit.js';
 import {
     CHASE_ALPHA,
     CHASE_DASHES,
-    CHASE_DASHES_LOW,
     createChaseLayer,
     pushTether,
     stepChase,
@@ -78,106 +77,63 @@ describe('stepChase with overlapping bodies', () => {
     });
 });
 
+describe('a chase layer fed by the effects player', () => {
+    it('draws the pairs it is given without searching again', () => {
+        const pursuits = createPursuits();
+        const state = { pursuits, rules: { canHunt: new Uint8Array(0), maxVelocity: 1 }, find: false };
+        const agents = createInterpolated(4);
+        interpolateInto(
+            null,
+            makeSnapshot(1, [
+                { slot: 0, genomeId: 1, x: 0, y: 0, size: 10 },
+                { slot: 1, genomeId: 2, x: 200, y: 0, size: 10 },
+            ]),
+            1,
+            agents,
+        );
+        pursuits.count = 1;
+        pursuits.hunter[0] = 0;
+        pursuits.prey[0] = 1;
+        pursuits.closeness[0] = 0.5;
+        const lines = createLineBuffer(64);
+        expect(stepChase(agents, state, { lines, dashes: 8 })).toBe(1);
+        expect(pursuits.count).toBe(1);
+    });
+});
+
+describe('a chase layer fed by the effects player', () => {
+    it('draws the pairs it is given without searching again', () => {
+        const pursuits = createPursuits();
+        const state = { pursuits, rules: { canHunt: new Uint8Array(0), maxVelocity: 1 }, find: false };
+        const agents = createInterpolated(4);
+        interpolateInto(
+            null,
+            makeSnapshot(1, [
+                { slot: 0, genomeId: 1, x: 0, y: 0, size: 10 },
+                { slot: 1, genomeId: 2, x: 200, y: 0, size: 10 },
+            ]),
+            1,
+            agents,
+        );
+        pursuits.count = 1;
+        pursuits.hunter[0] = 0;
+        pursuits.prey[0] = 1;
+        pursuits.closeness[0] = 0.5;
+        const lines = createLineBuffer(64);
+        expect(stepChase(agents, state, { lines, dashes: 8 })).toBe(1);
+        expect(pursuits.count).toBe(1);
+    });
+});
+
 describe('createChaseLayer', () => {
-    it('draws by tier and hides at level 2 or when the item is off', () => {
-        const layer = createChaseLayer({ info });
-        const frame = /** @type {any} */ ({ agents: chaseFrame() });
-        layer.setLook?.({ chase: 0 });
-        layer.update?.(frame);
-        expect(layer.object.geometry.drawRange.count).toBe(CHASE_DASHES * 2);
-        layer.setLook?.({ chase: 1 });
-        layer.update?.(frame);
-        expect(layer.object.geometry.drawRange.count).toBe(CHASE_DASHES_LOW * 2);
-        for (const tier of [-1, 2]) {
-            layer.setLook?.({ chase: tier });
-            expect(layer.object.visible).toBe(false);
-        }
-        layer.dispose?.();
-    });
-
-    it('does not step or upload while hidden at level 2', () => {
-        const layer = createChaseLayer({ info });
-        layer.setLook?.({ chase: 0 });
-        layer.update?.(/** @type {any} */ ({ agents: chaseFrame() }));
-        const drawn = layer.object.geometry.drawRange.count;
-        expect(drawn).toBeGreaterThan(0);
-        const empty = createInterpolated(4);
-        layer.setLook?.({ chase: 2 });
-        layer.update?.(/** @type {any} */ ({ agents: empty }));
-        expect(layer.object.geometry.drawRange.count).toBe(drawn);
-        layer.setLook?.({ chase: 0 });
-        layer.update?.(/** @type {any} */ ({ agents: empty }));
-        expect(layer.object.geometry.drawRange.count).toBe(0);
-        layer.dispose?.();
-    });
-});
-
-describe('a chase layer fed by the effects player', () => {
-    it('draws the pairs it is given without searching again', () => {
-        const pursuits = createPursuits();
-        const state = { pursuits, rules: { canHunt: new Uint8Array(0), maxVelocity: 1 }, find: false };
+    it('always draws: an empty frame gives no segments', () => {
+        const layer = createChaseLayer({
+            info: { maxVelocity: 10, specs: [{ index: 0, name: 'predator', canHunt: true }] },
+            pursuits: undefined,
+        });
         const agents = createInterpolated(4);
-        interpolateInto(
-            null,
-            makeSnapshot(1, [
-                { slot: 0, genomeId: 1, x: 0, y: 0, size: 10 },
-                { slot: 1, genomeId: 2, x: 200, y: 0, size: 10 },
-            ]),
-            1,
-            agents,
-        );
-        pursuits.count = 1;
-        pursuits.hunter[0] = 0;
-        pursuits.prey[0] = 1;
-        pursuits.closeness[0] = 0.5;
-        const lines = createLineBuffer(64);
-        expect(stepChase(agents, state, { lines, dashes: 8 })).toBe(1);
-        expect(pursuits.count).toBe(1);
-    });
-});
-
-describe('a hidden chase layer', () => {
-    it('does no work while its item is off', () => {
-        const pursuits = createPursuits();
-        const layer = createChaseLayer({ info, pursuits });
-        layer.setLook?.({ chase: -1 });
-        layer.update?.(/** @type {any} */ ({ agents: null }));
-        expect(layer.object.visible).toBe(false);
-        layer.dispose();
-    });
-});
-
-describe('a chase layer fed by the effects player', () => {
-    it('draws the pairs it is given without searching again', () => {
-        const pursuits = createPursuits();
-        const state = { pursuits, rules: { canHunt: new Uint8Array(0), maxVelocity: 1 }, find: false };
-        const agents = createInterpolated(4);
-        interpolateInto(
-            null,
-            makeSnapshot(1, [
-                { slot: 0, genomeId: 1, x: 0, y: 0, size: 10 },
-                { slot: 1, genomeId: 2, x: 200, y: 0, size: 10 },
-            ]),
-            1,
-            agents,
-        );
-        pursuits.count = 1;
-        pursuits.hunter[0] = 0;
-        pursuits.prey[0] = 1;
-        pursuits.closeness[0] = 0.5;
-        const lines = createLineBuffer(64);
-        expect(stepChase(agents, state, { lines, dashes: 8 })).toBe(1);
-        expect(pursuits.count).toBe(1);
-    });
-});
-
-describe('a hidden chase layer', () => {
-    it('does no work while its item is off', () => {
-        const pursuits = createPursuits();
-        const layer = createChaseLayer({ info, pursuits });
-        layer.setLook?.({ chase: -1 });
-        layer.update?.(/** @type {any} */ ({ agents: null }));
-        expect(layer.object.visible).toBe(false);
+        layer.update?.(/** @type {any} */ ({ agents }));
+        expect(layer.object.geometry.instanceCount).toBe(0);
         layer.dispose();
     });
 });

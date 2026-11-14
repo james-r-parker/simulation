@@ -15,13 +15,13 @@ import { MIN_CSS_PX_TOUCH, minPxTable } from './display-size.js';
 import { clientToDevice, deviceToClient, devicePerCss } from './canvas-geometry.js';
 import { agentAt } from './hover-pick.js';
 import { largestOfLineage } from './picking.js';
-import { createGpuTimer } from './gpu-timer.js';
+import { gpuTimeFor } from './gpu-time.js';
 import { createInterface } from './interface.js';
-import { installPerf } from './perf.js';
+import { gpuCounts, installPerf } from './perf.js';
 import { listenPointers } from './pointer-events.js';
 import { createPointerInput } from './pointer-input.js';
 import { canvasPixelSize } from './renderer/canvas-size.js';
-import { createScene } from './renderer/scene.js';
+import { createStage } from './renderer/stage.js';
 import { chooseSeed } from './seed.js';
 import { createSupervisor } from './supervisor.js';
 import { createDownloader } from './ui/download.js';
@@ -104,19 +104,42 @@ function observeSize(container, onSize) {
  * @property {(action: string) => void} perform runs a shortcut action
  * @property {ReturnType<typeof createInterface>} iface the top bar, ticker, drawers and controls
  * @property {ReturnType<typeof createFxDev>} fxDev the effect developer tools, null unless the URL asks
+ * @property {Promise<void> | null} [building] the stage being built for the first world
  */
 
-/**
- * @param {App} app the page
- * @returns {void}
- */
-function attachGpuTimer(app) {
-    const gl = app.deps.scene?.renderer.getContext();
-    app.deps.gpuTimer = gl === undefined ? null : createGpuTimer(gl);
+/** Builds the GPU stage for the first world, hooks the pointer input to it and starts the loop. @param {App} app the page @returns {Promise<void>} settles once it draws, or after the failure is logged and shown */
+async function buildStage(app) {
+    const ready = /** @type {Record<string, any>} */ (app.ready);
+    const stage = await createStage({
+        container: app.container,
+        info: ready.info,
+        params: { backend: app.params.backend, gputime: app.params.gputime },
+        buildLayers: createLayerBuilder({
+            refs: app.deps.refs,
+            getReady: () => app.ready,
+            slots: app.slots,
+            sink: (effect) => fxSink(app, effect),
+        }),
+        onRestored: () => (app.deps.gpuTimer = gpuTimeFor(app.deps.scene)),
+    }).catch(() => null);
+    if (stage === null) {
+        return;
+    }
+    app.deps.scene = stage;
+    app.deps.scene.resize(app.size.width, app.size.height);
+    listen({
+        canvas: app.deps.scene.canvas,
+        perform: app.perform,
+        input: createPointerInput(pointerOptions(app)),
+        iface: app.iface,
+        toDevice: (e) => clientToDevice(app, { x: e.clientX, y: e.clientY }),
+    });
+    startWorld(app);
 }
 
 /**
- * A world is ready: build the scene on the first one, rebuild its layers on later ones, and restart the loop.
+ * A world is ready: build the stage on the first one (asynchronously), rebuild its layers on later ones, and restart
+ * the loop.
  * @param {App} app the page
  * @param {Record<string, any>} message the `ready` message
  * @returns {void}
@@ -127,33 +150,17 @@ function onReady(app, message) {
     const world = { width: message.info.worldWidth, height: message.info.worldHeight };
     Object.assign(app.camera, createCameraController({ canvas: app.size, world }));
     if (app.deps.scene === null) {
-        app.deps.scene = createScene({
-            container: app.container,
-            info: message.info,
-            quality: app.params.quality,
-            scale: app.params.scale,
-            look: app.params.look,
-            buildLayers: createLayerBuilder({
-                refs: app.deps.refs,
-                getReady: () => app.ready,
-                slots: app.slots,
-                sink: (effect) => fxSink(app, effect),
-            }),
-            onRestored: () => attachGpuTimer(app),
-        });
-        app.deps.scene.resize(app.size.width, app.size.height);
-        listen({
-            canvas: app.deps.scene.canvas,
-            perform: app.perform,
-            input: createPointerInput(pointerOptions(app)),
-            iface: app.iface,
-            toDevice: (e) => clientToDevice(app, { x: e.clientX, y: e.clientY }),
-        });
-    } else {
-        app.deps.scene.rebuild();
+        app.building ??= buildStage(app);
+        return;
     }
-    attachGpuTimer(app);
-    app.loop.reset(message.info.maxAgents);
+    app.deps.scene.rebuild();
+    startWorld(app);
+}
+
+/** Restarts the loop on the current world and applies a requested speed. @param {App} app the page @returns {void} */
+function startWorld(app) {
+    app.deps.gpuTimer = gpuTimeFor(app.deps.scene);
+    app.loop.reset(/** @type {Record<string, any>} */ (app.ready).info.maxAgents);
     if (app.state.requestedTicksPerSecond !== DEFAULT_TICKS_PER_SECOND) {
         app.supervisor.client()?.setSpeed(app.state.requestedTicksPerSecond);
     }
@@ -334,15 +341,6 @@ function createApp(container) {
         ui: app.iface.hooks,
     });
     return app;
-}
-
-/**
- * @param {any} info `renderer.info`, undefined before the scene exists
- * @returns {{geometries: number, textures: number, programs: number}} the counts `__perf` reports
- */
-function gpuCounts(info) {
-    const m = info?.memory;
-    return { geometries: m?.geometries ?? 0, textures: m?.textures ?? 0, programs: info?.programs?.length ?? 0 };
 }
 
 /**

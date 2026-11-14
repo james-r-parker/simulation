@@ -13,6 +13,7 @@ describe('readFxParams', () => {
             fxdemo: 'combat',
             fxhold: 12,
             fxstress: true,
+            fxoff: false,
         });
         expect(readFxParams('?fxdemo=all').fxdemo).toBe('all');
         expect(readFxParams('?fxhold=peak').fxhold).toBe('peak');
@@ -21,6 +22,7 @@ describe('readFxParams', () => {
             fxdemo: null,
             fxhold: null,
             fxstress: false,
+            fxoff: false,
         });
     });
 });

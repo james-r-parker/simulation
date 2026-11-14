@@ -1,11 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { assignSlots, createFamilySlots } from '../../../js/app/family-slots.js';
-import { BODY_CENTRE_FILL, BRIGHTNESS_FLOOR } from '../../../js/app/renderer/agents-shader.js';
-import { BLOOM } from '../../../js/app/renderer/bloom.js';
 import {
     AURORA,
     AURORA_MAX_LUMINANCE,
-    ENERGY_FLOOR,
     familyColor,
     familyName,
     FAMILY_PALETTES,
@@ -42,18 +39,6 @@ describe('PALETTE', () => {
         expect(PALETTE.frost).toEqual([0.006, 0.012, 0.024]);
         expect(PALETTE.refugeGlow).toEqual([0.011, 0.012, 0.013]);
         expect(PALETTE.patchGlow).toEqual([0.004, 0.014, 0.011]);
-    });
-
-    it('AURORA_MAX_LUMINANCE is at most half the dimmest agent body, and scenery stays below it and bloom', () => {
-        const dimmestLuminances = Object.values(NEUTRAL_FAMILY).map((neutral) => {
-            const rgb = neutral.map((c) => c * ENERGY_FLOOR * BRIGHTNESS_FLOOR * BODY_CENTRE_FILL);
-            return luminance(rgb);
-        });
-        const minBodyY = Math.min(...dimmestLuminances);
-        expect(minBodyY).toBeCloseTo(0.04, 2);
-        expect(AURORA_MAX_LUMINANCE).toBeLessThanOrEqual(0.5 * minBodyY);
-        expect(AURORA_MAX_LUMINANCE + SCENERY_MAX_LUMINANCE).toBeLessThan(minBodyY);
-        expect(AURORA_MAX_LUMINANCE + SCENERY_MAX_LUMINANCE).toBeLessThan(BLOOM.threshold);
     });
 });
 

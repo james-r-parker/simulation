@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1, 2 and 4 are built and adopted (T1 to T12, T13 to T19): every world runs the brain phase, the ray march, the spatial hash build, the pheromone update and the physics loops in the Rust/WASM kernels from birth, and the JS kernels they replaced are deleted; Phase 5 (profile and squeeze) is built (T20 to T28): the baseline re-recorded, the profile ranked, three kernel squeezes kept (drill throughput +36%) and four tried and reverted; Phase 6 (the brain phase on the eat-choice world) is built (T29 to T32): the brain rise is more agents alive, not dearer agents, and one tanh squeeze kept (brain_forward +3%); Phase 3 (batched drill evaluation) is proposed.
 **Validated:** f5c7880 (2026-11-07)
-**Priority:** 21 - a speed lever that changes no behaviour (the behaviour-changing levers are ruled out), so it queues behind the world-balance work and ahead of nothing that depends on it
+**Priority:** 22 - a speed lever that changes no behaviour (the behaviour-changing levers are ruled out), so it queues behind the world-balance work and ahead of nothing that depends on it
 **Depends on:** [headless-sim-core.md](headless-sim-core.md)
 
 The goal ([principles.md](../principles.md)) is a world that is interesting to watch. Step time at 500 agents sat at about 3.9 to 4.1 ms

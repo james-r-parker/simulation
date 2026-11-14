@@ -9,7 +9,24 @@ import { makeSnapshot } from './helpers/snapshots.js';
 const seen = vi.hoisted(() => ({
     circles: /** @type {object[]} */ ([]),
     fx: /** @type {object[]} */ ([]),
+    clips: /** @type {object[]} */ ([]),
 }));
+
+vi.mock('../../js/app/renderer/clip-sampler.js', async (importOriginal) => {
+    const real = /** @type {any} */ (await importOriginal());
+    return {
+        ...real,
+        applyClip: (
+            /** @type {any} */ table,
+            /** @type {number} */ id,
+            /** @type {number} */ t,
+            /** @type {object} */ into,
+        ) => {
+            seen.clips.push(into);
+            real.applyClip(table, id, t, into);
+        },
+    };
+});
 
 vi.mock('../../js/app/renderer/line-buffer.js', async (importOriginal) => {
     const real = /** @type {any} */ (await importOriginal());
@@ -22,7 +39,7 @@ vi.mock('../../js/app/renderer/line-buffer.js', async (importOriginal) => {
     };
 });
 
-vi.mock('../../js/app/renderer/fx-pool.js', async (importOriginal) => {
+vi.mock('../../js/app/renderer/fx-ring.js', async (importOriginal) => {
     const real = /** @type {any} */ (await importOriginal());
     return {
         ...real,
@@ -84,5 +101,65 @@ describe('per-frame scratch reuse', () => {
         expect(playEffects(player, queue, agents, 1)).toBe(kinds.length);
         expect(seen.fx.length).toBeGreaterThan(10);
         expect(new Set(seen.fx).size).toBe(1);
+    });
+});
+
+describe('per-frame scratch reuse in the crisp layers', () => {
+    it('the agent rig and the herd pack hand applyClip one scratch per module, frame after frame', async () => {
+        const { createAgentDraw } = await import('../../js/app/renderer/agent-draw.js');
+        const { createHerdDraw } = await import('../../js/app/renderer/herd-draw.js');
+        const { createFamilySlots } = await import('../../js/app/family-slots.js');
+        const ready = smallReady(20);
+        const agents = createInterpolated(ready.info.maxAgents);
+        interpolateInto(null, ready.snapshot, 1, agents);
+        const camera = createCameraController({
+            canvas: { width: 800, height: 600 },
+            world: { width: ready.info.worldWidth, height: ready.info.worldHeight },
+        });
+        const frame = /** @type {any} */ ({
+            agents,
+            camera,
+            family: createFamilySlots(),
+            lenses: {},
+            nowMs: 0,
+            dtMs: 16,
+            tick: 1,
+            alpha: 1,
+        });
+        const layer = createAgentDraw({
+            info: ready.info,
+            flagBits: ready.layout.flags,
+            stateBits: ready.layout.stateBits,
+        });
+        seen.clips.length = 0;
+        layer.update?.(frame);
+        frame.nowMs = 16;
+        layer.update?.(frame);
+        expect(seen.clips.length).toBeGreaterThan(agents.count);
+        expect(new Set(seen.clips).size).toBe(1);
+        const herds = createHerdDraw({ info: { herdMax: 4, herdRadius: 80, herdRunSpeed: 6 } });
+        seen.clips.length = 0;
+        const snapshot = makeSnapshot(1, [], {
+            herds: [
+                [0, 0, 0, 0, 0, 0],
+                [9, 9, 1, 0.9, 0, 0],
+            ],
+        });
+        herds.update?.(/** @type {any} */ ({ snapshot, alpha: 1, nowMs: 0 }));
+        herds.update?.(/** @type {any} */ ({ snapshot, alpha: 1, nowMs: 16 }));
+        expect(seen.clips).toHaveLength(4);
+        expect(new Set(seen.clips).size).toBe(1);
+    });
+
+    it('motionAt returns one scratch and the upload walks one fixed attribute list', async () => {
+        const { motionAt } = await import('../../js/app/renderer/fx-pack.js');
+        const { createInstances, uploadInstances } = await import('../../js/app/renderer/instances.js');
+        const at = { t: 0.5, angle: 0, reach: 1, seed: 0 };
+        expect(motionAt(1, at)).toBe(motionAt(5, at));
+        const inst = createInstances(2, ['iPose', 'iNeon']);
+        const attributeList = inst.list;
+        uploadInstances(inst, 1);
+        uploadInstances(inst, 2);
+        expect(inst.list).toBe(attributeList);
     });
 });

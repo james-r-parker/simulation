@@ -72,6 +72,7 @@ export function makeSnapshot(tick, agents, extra = {}) {
     }
     for (const row of herds) {
         f32.set(row.slice(0, 5), w);
+        u32[w + 2] = row[2] ?? 0;
         u32[w + 5] = row[5] ?? 0;
         w += HERD_STRIDE;
     }

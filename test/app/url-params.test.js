@@ -1,18 +1,18 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { MERIT_PREVIEW, configOverrides, readParams } from '../../js/app/url-params.js';
-import { LOOK_ALL, LOOK_ITEMS } from '../../js/app/renderer/quality.js';
 
 describe('readParams', () => {
     it('reads every parameter', () => {
         expect(
-            readParams('?seed=42&agents=300&speed=4&quality=1&scale=0.75&tv=1&audio=true&policy=map-elites-v6&merit=1'),
+            readParams(
+                '?seed=42&agents=300&speed=4&backend=webgl2&gputime=1&tv=1&audio=true&policy=map-elites-v6&merit=1',
+            ),
         ).toEqual({
             seed: 42,
             agents: 300,
             speed: 4,
-            quality: 1,
-            scale: 0.75,
-            look: LOOK_ALL,
+            backend: 'webgl2',
+            gputime: true,
             tv: true,
             audio: true,
             policy: 'map-elites-v6',
@@ -25,9 +25,8 @@ describe('readParams', () => {
             seed: null,
             agents: null,
             speed: null,
-            quality: null,
-            scale: null,
-            look: LOOK_ALL,
+            backend: null,
+            gputime: false,
             tv: false,
             audio: false,
             policy: null,
@@ -36,14 +35,13 @@ describe('readParams', () => {
     });
 
     it('ignores invalid values rather than throwing', () => {
-        const p = readParams('?seed=-1&agents=0&speed=3&quality=5&tv=yes&audio=0&merit=yes&policy=Not%20A%20Name');
+        const p = readParams('?seed=-1&agents=0&speed=3&backend=vulkan&tv=yes&audio=0&merit=yes&policy=Not%20A%20Name');
         expect(p).toEqual({
             seed: null,
             agents: null,
             speed: null,
-            quality: null,
-            scale: null,
-            look: LOOK_ALL,
+            backend: null,
+            gputime: false,
             tv: false,
             audio: false,
             policy: null,
@@ -55,37 +53,17 @@ describe('readParams', () => {
         expect(readParams('?seed=abc&speed=fast').seed).toBeNull();
     });
 
-    it('accepts the fractional speeds and quality 0', () => {
+    it('accepts the fractional speeds and either backend', () => {
         expect(readParams('?speed=0.25').speed).toBe(0.25);
         expect(readParams('?speed=16').speed).toBe(16);
-        expect(readParams('?quality=0').quality).toBe(0);
-    });
-});
-
-describe('readParams look', () => {
-    it('reads a comma list of look items as a mask', () => {
-        const mask = readParams('?look=rocks,finish').look;
-        expect(mask).toBe((1 << LOOK_ITEMS.indexOf('rocks')) | (1 << LOOK_ITEMS.indexOf('finish')));
+        expect(readParams('?backend=webgpu').backend).toBe('webgpu');
     });
 
-    it('reads all and none', () => {
-        expect(readParams('?look=all').look).toBe(LOOK_ALL);
-        expect(readParams('?look=none').look).toBe(0);
-    });
-
-    it('reads every item on its own', () => {
-        LOOK_ITEMS.forEach((item, bit) => expect(readParams(`?look=${item}`).look).toBe(1 << bit));
-    });
-
-    it('ignores an unknown item, draws everything and logs the allowed list', () => {
-        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        expect(readParams('?look=rocks,sparkles').look).toBe(LOOK_ALL);
-        expect(readParams('?look=').look).toBe(LOOK_ALL);
-        expect(warn).toHaveBeenCalledTimes(2);
-        const record = warn.mock.calls[0][0];
-        expect(record).toMatchObject({ level: 'warn', event: 'LookParamIgnored', value: 'rocks,sparkles' });
-        expect(record.allowed).toBe(`all,none,${LOOK_ITEMS.join(',')}`);
-        warn.mockRestore();
+    it('ignores the removed quality, scale and look parameters', () => {
+        const p = /** @type {Record<string, any>} */ (readParams('?quality=1&scale=0.5&look=none'));
+        expect(p.quality).toBeUndefined();
+        expect(p.scale).toBeUndefined();
+        expect(p.look).toBeUndefined();
     });
 });
 
@@ -145,19 +123,5 @@ describe('policy and merit', () => {
         });
         const { createConfig } = await import('../../js/sim/config.js');
         expect(createConfig({ ...MERIT_PREVIEW, seed: 1 }).meritBirthBoost).toBe(0.25);
-    });
-});
-
-describe('scale', () => {
-    it('reads a render scale from 0.25 to 1', () => {
-        expect(readParams('?scale=1').scale).toBe(1);
-        expect(readParams('?scale=0.5').scale).toBe(0.5);
-        expect(readParams('?scale=.25').scale).toBe(0.25);
-    });
-
-    it('ignores a missing or out-of-range scale', () => {
-        for (const bad of ['', '?scale=0.2', '?scale=1.5', '?scale=abc', '?scale=-1']) {
-            expect(readParams(bad).scale, bad).toBeNull();
-        }
     });
 });
