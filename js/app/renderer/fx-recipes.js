@@ -108,7 +108,9 @@ export const FX_RECIPES = Object.freeze({
     mateOrbit: court(RANK.mate, [
         { curve: C.orbit, count: 6, life: 30, size: 0.25, reach: -1, spread: 'ring', color: 'courtship' },
     ]),
-    pregnant: court(RANK.mate, [{ curve: C.ringSlow, count: 1, life: 30, size: 2.2, color: 'courtship', gain: 0.8 }]),
+    pregnant: court(RANK.mate, [
+        { curve: C.ringSlow, count: 1, life: 30, size: 2.8, color: 'courtship', gain: 1, minPx: 12 },
+    ]),
     birthMate: court(RANK.birth, [
         { curve: C.ring, count: 1, life: 30, size: 3.4, gain: 0.6, minPx: 10 },
         { curve: C.moteOut, count: 6, life: 30, size: 0.2, reach: 1.6, spread: 'random' },

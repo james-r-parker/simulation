@@ -35,6 +35,6 @@ describe('a pregnancy edge', () => {
         expect(pool.spawned).toBe(1);
         expect(pool.time[2]).toBe(CURVE.ringSlow);
         expect(pool.pose[0]).toBe(40);
-        expect(pool.color[0]).toBeCloseTo(PALETTE.courtship[0] * 0.8);
+        expect(pool.color[0]).toBeCloseTo(PALETTE.courtship[0]);
     });
 });
