@@ -1,5 +1,20 @@
 # Changelog
 
+## [10.0.0](https://github.com/james-r-parker/simulation/compare/v9.0.0...v10.0.0) (2026-11-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* the rules changed (rulesHash ca640c7579b94d0d to 98ee549b9ecb959c); genes of seasons 8 and 9 do not carry over.
+* the rules changed (rulesHash ca640c7579b94d0d to 98ee549b9ecb959c); genes of season 8 do not carry over.
+* **sim:** the rules change (rulesHash ca640c7579b94d0d to 98ee549b9ecb959c).
+
+### Features
+
+* open season 9, grazeThrust 0.6 ([33ae748](https://github.com/james-r-parker/simulation/commit/33ae748db42648158eb1342563f27ad807b21e2b))
+* season 9 records 9.0.0, season 10 opens with grazeThrust 0.6 ([2548143](https://github.com/james-r-parker/simulation/commit/2548143d7ee2e85278e4155592fb99d92ff48b1e))
+* **sim:** grazeThrust 0.6 by default (eat-choice T28) ([6301867](https://github.com/james-r-parker/simulation/commit/630186720b206a48648375652a078c99bf409951))
+
 ## [9.0.0](https://github.com/james-r-parker/simulation/compare/v8.0.0...v9.0.0) (2026-11-14)
 
 
