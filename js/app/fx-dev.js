@@ -6,7 +6,8 @@ import { createFxDemo, DEMO_CELL } from './renderer/fx-demo.js';
 import { FX_FAMILIES, fxStats } from './renderer/fx-budget.js';
 import { createFxLog, noteFx, updateFxLog } from './renderer/fx-log-overlay.js';
 import { createFxNames } from './renderer/fx-names.js';
-import { occupancy } from './renderer/fx-pool.js';
+import { FX_SWITCH } from './renderer/fx-draw.js';
+import { occupancy } from './renderer/fx-ring.js';
 
 /**
  * @typedef {object} FxParams
@@ -15,6 +16,7 @@ import { occupancy } from './renderer/fx-pool.js';
  * @property {number | 'peak' | null} fxhold freeze the demo this many ticks after each replay, or each cell at its
  *   recipe's brightest keyframe (`peak`)
  * @property {boolean} fxstress play recipes at 60 a second through the budget
+ * @property {boolean} fxoff hide the particle and flash layers (the legibility test's effects-off frame)
  */
 
 /**
@@ -30,6 +32,7 @@ export function readFxParams(search) {
         fxdemo: demo !== null && (demo === 'all' || FX_FAMILIES.includes(demo)) ? demo : null,
         fxhold: hold === 'peak' ? 'peak' : hold !== null && /^\d{1,4}$/.test(hold) ? Number(hold) : null,
         fxstress: query.get('fxstress') === '1',
+        fxoff: query.get('fxoff') === '1',
     };
 }
 
@@ -49,6 +52,7 @@ export function readFxParams(search) {
  *   the tools, null when none is asked for
  */
 export function createFxDev({ params, doc, parent, target }) {
+    FX_SWITCH.on = !params.fxoff;
     const demo = createFxDemo({ family: params.fxdemo, hold: params.fxhold, stress: params.fxstress });
     if (!params.fxlog && demo === null) {
         return null;

@@ -13,6 +13,7 @@ import { CLIPS } from './clips.js';
 import { temperatureBands } from './colors.js';
 import { createInstances, instancedMesh, uploadInstances } from './instances.js';
 import { modelMaterial } from './model-material.js';
+import { standardInputs } from './model-meshes.js';
 import { modelFor } from './models.js';
 import { RIM_PX } from './palette.js';
 
@@ -38,17 +39,10 @@ export function meshTable(info) {
  * @returns {import('./model-material.js').ModelInputs} the agent inputs, read from the instance attributes
  */
 function agentInputs(dim) {
-    const pose = attribute('iPose', 'vec4');
-    const neon = attribute('iNeon', 'vec4');
     const gate = attribute('iGate', 'vec4');
     const gate2 = attribute('iGate2', 'vec4');
     return {
-        center: pose.xy,
-        angle: pose.z,
-        radius: pose.w,
-        color: neon.xyz,
-        fill: neon.w,
-        rig: [attribute('iRig0', 'vec4'), attribute('iRig1', 'vec4'), attribute('iRig2', 'vec4')],
+        ...standardInputs(),
         values: {
             pregnant: gate.x,
             sick: gate.y,

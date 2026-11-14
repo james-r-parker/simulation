@@ -74,3 +74,12 @@ export function installPerf(target, { read, reset }) {
     perf.reset = reset;
     target.__perf = perf;
 }
+
+/**
+ * @param {any} info `renderer.info`, undefined before the stage exists
+ * @returns {{geometries: number, textures: number, programs: number}} the counts `__perf` reports
+ */
+export function gpuCounts(info) {
+    const m = info?.memory;
+    return { geometries: m?.geometries ?? 0, textures: m?.textures ?? 0, programs: info?.programs?.length ?? 0 };
+}

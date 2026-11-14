@@ -121,7 +121,7 @@ function playAt(player, recipe, spot) {
 /**
  * Stress mode: plays the recipes owed this frame at random spots in view, through the budget.
  * @param {DemoState} s the demo
- * @param {import('./scene.js').Frame} frame the frame
+ * @param {import('./stage.js').Frame} frame the frame
  * @param {any} player the effects player
  * @param {any} camera the view
  * @returns {void}
@@ -143,7 +143,7 @@ function stressStep(s, frame, player, camera) {
  * Demo mode: on the first frame pauses the world and frames the grid; then replays every cell each period on the
  * pool's own clock, which freezes `hold` ticks after a replay when asked.
  * @param {DemoState} s the demo
- * @param {import('./scene.js').Frame} frame the frame
+ * @param {import('./stage.js').Frame} frame the frame
  * @param {{player: any, camera: any, client: any}} ctx the effects player, the view and the worker client
  * @returns {void}
  */
@@ -203,7 +203,7 @@ const PROBE = { scale: 0, alpha: 0, t: 0 };
 
 /**
  * @param {{family: string | null, hold: number | 'peak' | null, stress: boolean}} options the URL's demo options
- * @returns {{update: (frame: import('./scene.js').Frame, ctx: {player: any, camera: any, client: any}) => void,
+ * @returns {{update: (frame: import('./stage.js').Frame, ctx: {player: any, camera: any, client: any}) => void,
  *   cells: {name: string, x: number, y: number}[], frozen: () => boolean} | null} the demo, or null when neither mode
  *   is asked for
  */

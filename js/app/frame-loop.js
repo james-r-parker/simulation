@@ -1,46 +1,39 @@
 // One animation frame: advance the camera, blend the two newest snapshots at the playhead, play the effects that are
-// due, hand a new field to the haze, draw, and keep the frame statistics and the quality level. Everything it touches is
+// due, hand a new field to the scent lens, draw, and keep the frame statistics. Everything it touches is
 // injected, so it runs against fakes; it allocates nothing per frame except the once-a-second report.
 
-import { appLog } from './app-log.js';
 import { followStep, updateCamera } from './camera.js';
-import { createFrameStats, frameReport, recordFrame } from './frame-stats.js';
+import { recordFrame } from './frame-stats.js';
 import { createInterpolated, createPlayhead, interpolateInto, simTickAt, stepPlayhead } from './interpolate.js';
 import { beginEffects, playEdges, playEffects } from './renderer/effects-player.js';
 import { findAgent } from './renderer/overlays.js';
-import { stepQuality } from './renderer/quality.js';
 import { lensUniforms } from './ui/lenses.js';
 
-/** The quality rule's window of recent frames, and how often it is consulted, in ms. */
-export const QUALITY_WINDOW_FRAMES = 600;
-export const QUALITY_CHECK_MS = 1000;
 /** The longest frame time the layers are told about, so a stalled tab does not jump motion. */
 export const MAX_DT_MS = 100;
 
 /**
  * @typedef {object} LoopDeps
  * @property {() => Record<string, any> | null} getClient the current worker client
- * @property {{draw: (frame: any) => boolean, setQualityLevel: (level: number) => void, quality: import('./renderer/quality.js').Quality} | null} scene
+ * @property {{draw: (frame: any) => boolean} | null} scene
  *   the scene, null until the first `ready`
- * @property {import('./renderer/scene.js').Frame['camera']} camera the view
+ * @property {import('./renderer/stage.js').Frame['camera']} camera the view
  * @property {import('./actions.js').AppState} state the selection and follow
  * @property {import('./family-slots.js').FamilySlots} slots the family colour slots and the palette
- * @property {import('./app-layers.js').LayerRefs} refs the haze and the effects player of the current layers
+ * @property {import('./app-layers.js').LayerRefs} refs the scent lens and the effects player of the current layers
  * @property {import('./frame-stats.js').FrameStats} stats the frame and draw rings `__perf` reports
  * @property {{begin: () => void, end: () => void, poll: () => void, latest?: () => number} | null} gpuTimer the GPU timer, null without the
  *   extension
  * @property {() => number} clock a high-resolution clock in ms, for the draw time
  * @property {() => boolean} hidden whether the tab is hidden
- * @property {(frame: import('./renderer/scene.js').Frame) => void} [afterDraw] runs right after `scene.draw` (for `P` screenshots)
+ * @property {(frame: import('./renderer/stage.js').Frame) => void} [afterDraw] runs right after `scene.draw` (for `P` screenshots)
  */
 
 /**
  * @typedef {object} LoopState
  * @property {import('./interpolate.js').Playhead} playhead the render tick
  * @property {import('./interpolate.js').Interpolated} agents the blended agents, sized for `maxAgents`
- * @property {import('./frame-stats.js').FrameStats} window the recent frames the quality rule reads
  * @property {number} lastNowMs the previous frame's time, 0 before one
- * @property {number} lastCheckMs when the quality rule last ran
  * @property {{tick: number, dtMs: number, nowMs: number, camera: any, drawMs: number, gpuMs: number, intervalMs: number}}
  *   effectsAt the frame `beginEffects` reads (with the previous frame's draw CPU and GPU times), reused
  */
@@ -53,9 +46,7 @@ function freshState(maxAgents) {
     return {
         playhead: createPlayhead(),
         agents: createInterpolated(maxAgents),
-        window: createFrameStats(QUALITY_WINDOW_FRAMES),
         lastNowMs: 0,
-        lastCheckMs: 0,
         effectsAt: { tick: 0, dtMs: 0, nowMs: 0, camera: null, drawMs: -1, gpuMs: -1, intervalMs: 0 },
     };
 }
@@ -76,29 +67,6 @@ function moveCamera({ camera, state }, { agents }, dtMs) {
         followStep(camera, agents.x[i], agents.y[i], dtMs);
     } else {
         updateCamera(camera, dtMs);
-    }
-}
-
-/**
- * Consults the quality rule about once a second and applies a change.
- * @param {LoopDeps} deps the dependencies
- * @param {LoopState} loop the loop state
- * @param {number} nowMs wall time
- * @returns {void}
- */
-function checkQuality({ scene, hidden }, loop, nowMs) {
-    if (scene === null || nowMs - loop.lastCheckMs < QUALITY_CHECK_MS) {
-        return;
-    }
-    loop.lastCheckMs = nowMs;
-    const { quality } = scene;
-    const before = quality.level;
-    const report = frameReport(loop.window);
-    stepQuality(quality, report, nowMs, !hidden());
-    if (quality.changed) {
-        scene.setQualityLevel(quality.level);
-        loop.window = createFrameStats(QUALITY_WINDOW_FRAMES);
-        appLog('info', 'QualityChanged', { from: before, to: quality.level, p95: report.frameMs.p95 });
     }
 }
 
@@ -137,7 +105,7 @@ function advanceWorld(client, { refs, camera }, loop, nowMs) {
 /**
  * @param {LoopDeps} deps the dependencies
  * @param {LoopState} loop the loop state
- * @returns {import('./renderer/scene.js').Frame} the frame object the layers read, rewritten each frame
+ * @returns {import('./renderer/stage.js').Frame} the frame object the layers read, rewritten each frame
  */
 function newFrame(deps, loop) {
     return {
@@ -147,6 +115,7 @@ function newFrame(deps, loop) {
         dtMs: 0,
         agents: loop.agents,
         snapshot: null,
+        prevSnapshot: null,
         camera: deps.camera,
         selectedId: 0,
         followId: 0,
@@ -155,11 +124,13 @@ function newFrame(deps, loop) {
         seasonProgress: 0,
         family: deps.slots,
         lenses: { temperature: false, scent: false, territory: false, vision: false, calls: false },
+        width: 0,
+        height: 0,
     };
 }
 
 /**
- * @param {import('./renderer/scene.js').Frame} frame the frame object
+ * @param {import('./renderer/stage.js').Frame} frame the frame object
  * @param {{deps: LoopDeps, loop: LoopState, client: Record<string, any>}} source where its values come from
  * @param {{nowMs: number, dtMs: number}} time the frame's times
  * @returns {void}
@@ -171,6 +142,7 @@ function fillFrame(frame, { deps, loop, client }, { nowMs, dtMs }) {
     frame.dtMs = dtMs;
     frame.agents = loop.agents;
     frame.snapshot = client.latest;
+    frame.prevSnapshot = client.prev;
     frame.selectedId = deps.state.selectedId;
     frame.followId = deps.state.followId;
     frame.leadLineageId = client.stats?.lineages?.top?.[0]?.id ?? 0;
@@ -183,7 +155,7 @@ function fillFrame(frame, { deps, loop, client }, { nowMs, dtMs }) {
  * Draws the frame inside the GPU timer's query and records how long the callback took.
  * @param {LoopDeps} deps the dependencies; `scene` is not null
  * @param {LoopState} loop the loop state
- * @param {{frame: import('./renderer/scene.js').Frame, started: number, interval: number}} at the frame to draw, when
+ * @param {{frame: import('./renderer/stage.js').Frame, started: number, interval: number}} at the frame to draw, when
  *   the callback began and the interval since the previous one
  * @returns {void}
  */
@@ -198,7 +170,6 @@ function drawAndRecord(deps, loop, { frame, started, interval }) {
     loop.effectsAt.gpuMs = deps.gpuTimer?.latest?.() ?? -1;
     loop.effectsAt.intervalMs = deps.hidden() ? 0 : interval;
     recordFrame(deps.stats, interval, drawMs, deps.hidden());
-    recordFrame(loop.window, interval, drawMs, deps.hidden());
 }
 
 /**
@@ -229,7 +200,6 @@ export function createFrameLoop(deps) {
             moveCamera(deps, loop, dtMs);
             fillFrame(frame, { deps, loop, client }, { nowMs, dtMs });
             drawAndRecord(deps, loop, { frame, started, interval });
-            checkQuality(deps, loop, nowMs);
         },
     };
 }

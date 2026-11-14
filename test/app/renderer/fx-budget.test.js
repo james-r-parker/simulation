@@ -16,8 +16,6 @@ import {
     LOG_EVERY_MS,
     logFxBudget,
     RANK,
-    setFxLook,
-    setFxQuality,
     VIEW_MARGIN,
     zoomBand,
     adaptFxBudget,
@@ -25,7 +23,6 @@ import {
     MIN_SCALE,
     TARGET_LOAD,
 } from '../../../js/app/renderer/fx-budget.js';
-import { LOOK_OFF } from '../../../js/app/renderer/quality.js';
 
 const VIEW = { left: 0, right: 1000, top: 1000, bottom: 0 };
 const AT = { x: 500, y: 500 };
@@ -49,6 +46,15 @@ describe('zoomBand', () => {
 });
 
 describe('admitFx', () => {
+    it('culls off view beyond the margin', () => {
+        const b = createFxBudget();
+        beginFxFrame(b, frame());
+        const who = { family: FAMILY.combat, rank: 0 };
+        expect(inFxView(b, -VIEW_MARGIN + 1, 500)).toBe(true);
+        expect(admitFx(b, who, 5, { x: -VIEW_MARGIN - 1, y: 500 })).toBe(0);
+        expect(b.culled[FAMILY.combat]).toBe(5);
+    });
+
     it('grants within the frame cap, which lower ranks may spend more of', () => {
         const b = createFxBudget();
         beginFxFrame(b, frame());
@@ -73,40 +79,15 @@ describe('admitFx', () => {
         beginFxFrame(b, frame({ dtMs: 500 }));
         expect(admitFx(b, who, 100, AT)).toBe(FAMILY_RATE[FAMILY.weather] / 2);
     });
-
-    it('culls off view beyond the margin, and spawns nothing for a family switched off', () => {
-        const b = createFxBudget();
-        beginFxFrame(b, frame());
-        const who = { family: FAMILY.combat, rank: 0 };
-        expect(inFxView(b, -VIEW_MARGIN + 1, 500)).toBe(true);
-        expect(admitFx(b, who, 5, { x: -VIEW_MARGIN - 1, y: 500 })).toBe(0);
-        expect(b.culled[FAMILY.combat]).toBe(5);
-        setFxLook(b, { combat: LOOK_OFF });
-        expect(admitFx(b, who, 5, AT)).toBe(0);
-        expect(b.dropped[FAMILY.combat]).toBe(0);
-    });
-
-    it('the frame cap follows the quality level', () => {
-        const b = createFxBudget();
-        setFxQuality(b, 2);
-        beginFxFrame(b, frame());
-        expect(admitFx(b, { family: FAMILY.combat, rank: 0 }, 100, AT)).toBe(FRAME_CAP[2]);
-        setFxQuality(b, 9);
-        expect(b.level).toBe(2);
-    });
 });
 
 describe('countFor and lifeFor', () => {
-    it('one lead instance far or at tier 2, half at mid or tier 1, a quarter at both', () => {
+    it('draws every family in full at the close band, half at mid and one lead instance far', () => {
         const b = createFxBudget();
-        setFxLook(b, { combat: 0, feeding: 1, calls: 2 });
         b.band = BAND.CLOSE;
         expect(countFor(b, FAMILY.combat, 7)).toBe(7);
-        expect(countFor(b, FAMILY.feeding, 7)).toBe(4);
-        expect(countFor(b, FAMILY.calls, 7)).toBe(1);
         b.band = BAND.MID;
-        expect(countFor(b, FAMILY.combat, 7)).toBe(4);
-        expect(countFor(b, FAMILY.feeding, 7)).toBe(2);
+        expect(countFor(b, FAMILY.feeding, 7)).toBe(4);
         b.band = BAND.FAR;
         expect(countFor(b, FAMILY.combat, 7)).toBe(1);
         expect(countFor(b, FAMILY.combat, 0)).toBe(0);

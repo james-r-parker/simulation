@@ -8,8 +8,8 @@ const allowlist = JSON.parse(readFileSync(new URL('./known-console-errors.json',
 /** @type {RegExp[]} */
 const knownErrors = allowlist.patterns.map((/** @type {string} */ pattern) => new RegExp(pattern));
 
-/** A small, quick world: fixed seed, few agents, bloom off so software GL keeps up. */
-const WORLD = '?seed=3&agents=100&quality=2';
+/** A small, quick world: fixed seed, few agents. */
+const WORLD = '?seed=3&agents=100';
 const TICK = '.help-tick';
 const SPEED = '#top-bar .top-bar-speed';
 const STATUS = '#top-bar .top-bar-status';
@@ -106,11 +106,9 @@ test('draws frames: the animation loop runs and the canvas is not blank', async 
     expect(shot.length, 'a drawn world compresses to more than a flat black PNG').toBeGreaterThan(8000);
 });
 
-// Quality 0 draws every Phase 6 look item (aurora, terrain, threads, finish...) so a shader that fails to link is a
-// console error here; the other flows run at quality 2 where most of them are off.
-for (const look of ['all', 'none']) {
-    test(`loads at quality 0 with ?look=${look} and logs no error`, async ({ page }) => {
-        await page.goto(`${appUrl()}?seed=3&agents=100&quality=0&scale=0.25&look=${look}`);
+for (const backend of ['webgl2', 'webgpu']) {
+    test(`loads with ?backend=${backend} (or falls back) and logs no error`, async ({ page }) => {
+        await page.goto(`${appUrl()}?seed=3&agents=100&backend=${backend}`);
         await worldRunning(page);
         await page.waitForTimeout(2000);
         const shot = await page.locator('#canvas-container canvas').screenshot();
@@ -204,7 +202,7 @@ test('F follows the lead agent, clicking selects it in the inspector, and Escape
     await expect(page.locator('.inspector-body')).toBeHidden();
 });
 
-test('recovers from a lost WebGL context', async ({ page }) => {
+test('rebuilds the stage after a lost GPU context', async ({ page }) => {
     await page.goto(appUrl() + WORLD);
     await worldRunning(page);
     await page.evaluate(() => {
@@ -214,13 +212,12 @@ test('recovers from a lost WebGL context', async ({ page }) => {
         /** @type {any} */ (globalThis).__lose = lose;
         lose.loseContext();
     });
-    await expect.poll(() => consoleLines.some((line) => line.includes('ContextLost'))).toBe(true);
-    await page.evaluate(() => /** @type {any} */ (globalThis).__lose.restoreContext());
-    await expect.poll(() => consoleLines.some((line) => line.includes('ContextRestored'))).toBe(true);
+    await expect.poll(() => consoleLines.some((line) => line.includes('DeviceLost'))).toBe(true);
+    await expect.poll(() => consoleLines.some((line) => line.includes('DeviceRestored'))).toBe(true);
     const before = await tickOf(page);
     await expect.poll(() => tickOf(page), { timeout: 20_000 }).toBeGreaterThan(before);
     const shot = await page.locator('#canvas-container canvas').screenshot();
-    expect(shot.length, 'the world draws again after the restore').toBeGreaterThan(8000);
+    expect(shot.length, 'the world draws again after the rebuild').toBeGreaterThan(8000);
 });
 
 test('the top bar shows the status, the calendar with the generation, the counts by type and the born share', async ({
@@ -255,7 +252,7 @@ test('without the preview parameters the live policy runs, merit on by default',
 
 test('a first visit shows the title card at x2 and any key dismisses it for good', async ({ page }) => {
     await page.addInitScript(() => globalThis.localStorage.removeItem('blobEvolution.prefs.v1'));
-    await page.goto(appUrl() + '?seed=3&agents=100&quality=2');
+    await page.goto(appUrl() + '?seed=3&agents=100');
     await expect(page.locator('.title-card')).toBeVisible({ timeout: 30_000 });
     await expect(page.locator('.title-card .legend-item')).toHaveCount(5);
     await expect(page.locator(SPEED)).toHaveText(/^x2/);

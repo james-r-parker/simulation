@@ -1,13 +1,14 @@
 // The megafauna, drawn by the herd model: animals blended between the two held snapshots by slot (`trackHerds`), so they
 // move at the frame rate like the agents, with legs, head and gait from their clips.
 
-import { attribute, uniform } from 'three/tsl';
+import { uniform } from 'three/tsl';
 import { bakeClips } from './clip-sampler.js';
 import { CLIPS } from './clips.js';
 import { createHerdPack, packHerds } from './herd-pack.js';
 import { createHerdTrack, trackHerds } from './herd-track.js';
 import { createInstances, instancedMesh, uploadInstances } from './instances.js';
 import { modelMaterial } from './model-material.js';
+import { standardInputs } from './model-meshes.js';
 import { HERD_MODEL } from './models-world.js';
 import { RIM_PX } from './palette.js';
 
@@ -26,20 +27,8 @@ export function createHerdDraw({ info }) {
         iRig1: pack.rig1,
         iRig2: pack.rig2,
     });
-    const pose = attribute('iPose', 'vec4');
-    const neon = attribute('iNeon', 'vec4');
     const rimPx = uniform(RIM_PX.default);
-    const material = modelMaterial(HERD_MODEL, {
-        inputs: {
-            center: pose.xy,
-            angle: pose.z,
-            radius: pose.w,
-            color: neon.xyz,
-            fill: neon.w,
-            rig: [attribute('iRig0', 'vec4'), attribute('iRig1', 'vec4'), attribute('iRig2', 'vec4')],
-        },
-        look: { rimPx, fillShare: 0.28 },
-    });
+    const material = modelMaterial(HERD_MODEL, { inputs: standardInputs(), look: { rimPx, fillShare: 0.28 } });
     const table = bakeClips(CLIPS);
     const rules = { track, runSpeed: info.herdRunSpeed ?? 0, radius: info.herdRadius ?? 0 };
     const ctx = { table, radius: info.herdRadius ?? 1, timeSec: 0 };

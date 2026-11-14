@@ -9,7 +9,7 @@ import {
     demoZoom,
     peakTicks,
 } from '../../../js/app/renderer/fx-demo.js';
-import { isLive } from '../../../js/app/renderer/fx-pool.js';
+import { isLive } from '../../../js/app/renderer/fx-ring.js';
 import { FX_RECIPES } from '../../../js/app/renderer/fx-recipes.js';
 
 /** @returns {{player: any, camera: any, client: any}} a context */

@@ -11,7 +11,7 @@ The scenes it serves ([principles.md](../principles.md)): **Scavenge** (a herd c
 
 Scope: the herd model in `js/sim/`, contact damage and its death cause, the ninth pooled ray channel and its instinct, grazing, dung and seed carrying, the detectors, and the look in `js/app/renderer/`. Out of scope: a herd animal with a brain, a genome or any evolution; a blob bite on a herd animal; trampling of food; predators that hunt herds as prey; a second herd species.
 
-Symbols marked (new) do not exist before this doc's task that adds them. Flora symbols come from [flora.md](flora.md) and are named with their flora task. Renderer symbols ([`LOOK_ITEMS` and `lookFor`](../../js/app/renderer/quality.js), [`SCENERY_MAX_LUMINANCE`](../../js/app/renderer/colors.js), the [rock shape](../../js/app/renderer/rock-shape.js)) are in the tree: the Look PR (`e2cd534`) is merged into the big-bang branch.
+Symbols marked (new) do not exist before this doc's task that adds them. Flora symbols come from [flora.md](flora.md) and are named with their flora task. Renderer symbols (`LOOK_ITEMS` and `lookFor` (deleted by [crisp-renderer.md](crisp-renderer.md)), [`SCENERY_MAX_LUMINANCE`](../../js/app/renderer/colors.js), the [rock shape](../../js/app/renderer/rock-shape.js)) are in the tree: the Look PR (`e2cd534`) is merged into the big-bang branch.
 
 ## Baseline
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CURVE, FX_SHAPES } from '../../../js/app/renderer/fx-curves.js';
-import { createFxLayers } from '../../../js/app/renderer/fx-draw.js';
+import { createFxLayers, FX_SWITCH } from '../../../js/app/renderer/fx-draw.js';
 import { createFxPool, spawnFx } from '../../../js/app/renderer/fx-ring.js';
 
 describe('createFxLayers', () => {
@@ -36,6 +36,17 @@ describe('createFxLayers', () => {
         expect(particles.object.children[FX_SHAPES.indexOf('RING')].geometry.instanceCount).toBe(1);
         expect(flashes.object.geometry.instanceCount).toBe(1);
         expect(flashes.object.material.blending).toBe(2);
+        FX_SWITCH.on = false;
+        particles.update?.(
+            /** @type {any} */ ({
+                tick: 102,
+                camera: { zoom: 1 },
+                lenses: { calls: false },
+                family: { palette: 'default' },
+            }),
+        );
+        expect(flashes.object.geometry.instanceCount).toBe(0);
+        FX_SWITCH.on = true;
         particles.dispose();
         flashes.dispose();
     });

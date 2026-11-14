@@ -27,6 +27,14 @@ module.exports = {
             to: { path: '^js/(sim|evo|worker)/', pathNot: '^js/worker/protocol\\.js$' },
         },
         {
+            name: 'app-webgpu-only',
+            comment:
+                'js/app/ draws through three/webgpu and three/tsl (docs/designs/crisp-renderer.md): never the WebGL `three` root entry.',
+            severity: 'error',
+            from: { path: '^js/app/' },
+            to: { path: 'node_modules/three/build/three\\.(module|cjs|core)\\.js$' },
+        },
+        {
             name: 'worker-no-dom',
             comment: 'js/worker/ imports js/sim/, js/evo/ and js/worker/ only: not the app, and not three or uplot.',
             severity: 'error',

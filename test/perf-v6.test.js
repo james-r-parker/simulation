@@ -116,18 +116,18 @@ describe('overBudget', () => {
             'browser.gc_pause_ms': null,
         });
         expect(over).toEqual([
-            { metric: 'browser.frame_p95_ms', value: 9, max: 8.4, criterion: true },
-            { metric: 'browser.gpu_frame_p95_ms', value: 5, max: 4, criterion: false },
+            { metric: 'browser.frame_p95_ms', value: 9, max: 4.2, criterion: true },
+            { metric: 'browser.gpu_frame_p95_ms', value: 5, max: 3, criterion: true },
         ]);
     });
 
     it('holds the budgets of the design doc', () => {
         expect(Object.fromEntries(Object.entries(BUDGETS).map(([k, v]) => [k, v.max]))).toEqual({
-            'browser.frame_p50_ms': 4.5,
-            'browser.frame_p95_ms': 8.4,
-            'browser.frame_p99_ms': 12.5,
-            'browser.draw_cpu_p95_ms': 2,
-            'browser.gpu_frame_p95_ms': 4,
+            'browser.frame_p50_ms': 4.2,
+            'browser.frame_p95_ms': 4.2,
+            'browser.frame_p99_ms': 6,
+            'browser.draw_cpu_p95_ms': 1.5,
+            'browser.gpu_frame_p95_ms': 3,
             'browser.main_long_tasks': 0,
             'browser.gc_pause_ms': 30,
         });
@@ -186,22 +186,34 @@ describe('formatReport', () => {
     const entry = buildV6Entry({ perf, longTaskTimes: [], gcPauseMs: 1, run });
 
     it('lists the run, every metric and says the budgets are met', () => {
-        const lines = formatReport({ viewport: '3840x2160', entry });
+        const fast = {
+            ...entry,
+            metrics: { ...entry.metrics, 'browser.frame_p95_ms': 4.1, 'browser.frame_p99_ms': 5.9 },
+        };
+        const lines = formatReport({ viewport: '3840x2160', entry: fast });
         expect(lines[0]).toBe('Viewport 3840x2160: 14000 frames, 500 agents, 240 Hz, RTX');
-        expect(lines).toContain('browser.frame_p95_ms: 5.1');
+        expect(lines).toContain('browser.frame_p95_ms: 4.1');
         expect(lines.at(-1)).toBe('Budgets: met');
     });
 
-    it('names each metric over budget and fails the verdict only for a done criterion', () => {
+    it('names each metric over budget and fails the verdict on a done criterion', () => {
         const slow = {
             ...entry,
             metrics: { ...entry.metrics, 'browser.frame_p95_ms': 12, 'browser.gpu_frame_p95_ms': 6 },
         };
         const lines = formatReport({ viewport: '3840x2160', entry: slow });
-        expect(lines).toContain('OVER BUDGET: browser.frame_p95_ms 12 > 8.4');
-        expect(lines).toContain('over (reported only): browser.gpu_frame_p95_ms 6 > 4');
+        expect(lines).toContain('OVER BUDGET: browser.frame_p95_ms 12 > 4.2');
+        expect(lines).toContain('OVER BUDGET: browser.gpu_frame_p95_ms 6 > 3');
         expect(lines.at(-1)).toBe('Budgets: not met');
-        const gpuOnly = { ...entry, metrics: { ...entry.metrics, 'browser.gpu_frame_p95_ms': 6 } };
-        expect(formatReport({ viewport: 'v', entry: gpuOnly }).at(-1)).toBe('Budgets: met');
+        const gpuOnly = {
+            ...entry,
+            metrics: {
+                ...entry.metrics,
+                'browser.frame_p95_ms': 4.1,
+                'browser.frame_p99_ms': 5.9,
+                'browser.gpu_frame_p95_ms': 6,
+            },
+        };
+        expect(formatReport({ viewport: 'v', entry: gpuOnly }).at(-1)).toBe('Budgets: not met');
     });
 });

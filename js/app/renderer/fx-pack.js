@@ -4,6 +4,7 @@
 
 import { easeAt, FLAG_CALL, FX_CURVES, FX_EASE, FX_MOTIONS, FX_SHAPES, keysAt } from './fx-curves.js';
 import { FX_CAPACITY } from './fx-ring.js';
+import { toDisplay } from './palette.js';
 
 const ITEM = 4;
 /** The curve drawn as a soft glow instead of a crisp shape: the event flash. */
@@ -54,6 +55,30 @@ export function motionAt(motion, { t, angle, reach, seed }) {
 }
 
 const AT = { t: 0, angle: 0, reach: 0, seed: 0 };
+const RGB = [0, 0, 0];
+/** The least intensity a recipe's gain gives an effect, so a dim recipe still reads on black. */
+export const MIN_GAIN = 0.75;
+
+/**
+ * Writes an instance's colour lifted to the neon lightness (`toDisplay`) and scaled by its intensity.
+ * @param {Float32Array} neon a bucket's colour lane
+ * @param {number} r the row offset
+ * @param {import('./fx-ring.js').FxPool} pool the ring, `RING_ROW` naming the instance
+ * @param {number} k the intensity, 0 to 1
+ * @returns {void}
+ */
+function neonRow(neon, r, pool, k) {
+    const o = RING_ROW.o;
+    RGB[0] = pool.color[o];
+    RGB[1] = pool.color[o + 1];
+    RGB[2] = pool.color[o + 2];
+    toDisplay(RGB, RGB);
+    neon[r] = RGB[0] * k;
+    neon[r + 1] = RGB[1] * k;
+    neon[r + 2] = RGB[2] * k;
+}
+
+const RING_ROW = { o: 0 };
 
 /**
  * @param {Float32Array} rig0 a bucket's first rig lane
@@ -91,6 +116,7 @@ export function packFx(pool, pack, { tick, zoom, callBoost, contrast }) {
         if (!(age >= 0 && age < 1)) {
             continue;
         }
+        RING_ROW.o = o;
         const c = pool.time[o + 2] | 0;
         const curve = FX_CURVES[c];
         if (curve === undefined) {
@@ -115,10 +141,7 @@ export function packFx(pool, pack, { tick, zoom, callBoost, contrast }) {
             pool.pose[o + 3] * keysAt(curve.scale, t),
             (0.5 * pool.move[o + 2]) / Math.max(zoom, 1e-6),
         );
-        const k = pool.color[o + 3] * contrast * bright;
-        b.neon[r] = Math.min(pool.color[o] * k, 1);
-        b.neon[r + 1] = Math.min(pool.color[o + 1] * k, 1);
-        b.neon[r + 2] = Math.min(pool.color[o + 2] * k, 1);
+        neonRow(b.neon, r, pool, bright * Math.min(1, Math.max(pool.color[o + 3] * contrast, MIN_GAIN)));
         b.neon[r + 3] = 0.28;
         stretchRow(b.rig0, r, pool.move[o + 1]);
     }

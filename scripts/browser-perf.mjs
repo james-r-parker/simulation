@@ -55,7 +55,6 @@ const PARSERS = {
     '--viewport': (_arg, value) => ({ viewport: parseViewport(value) }),
     '--out': (_arg, value) => ({ out: value }),
     '--cdp': (_arg, value) => ({ cdp: value }),
-    '--look': (_arg, value) => ({ look: value }),
 };
 
 /**
@@ -84,7 +83,6 @@ function applyValueFlag(options, arg) {
  * @property {'v6'} app which app to measure
  * @property {number} agents v6: the starting agent count
  * @property {{width: number, height: number}} viewport v6: the canvas size
- * @property {string} look v6: the ?look= parameter
  */
 
 /**
@@ -104,7 +102,6 @@ export function parseArgs(argv) {
         app: 'v6',
         agents: DEFAULT_AGENTS,
         viewport: parseViewport(DEFAULT_VIEWPORT),
-        look: '',
     };
     for (let i = 0; i < argv.length; i++) {
         const arg = argv[i];

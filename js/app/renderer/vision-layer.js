@@ -37,7 +37,7 @@ export function pushFans(lines, { agents, snapshot }, info) {
 
 /**
  * @param {{info: Record<string, any>}} context `ready.info`
- * @returns {import('./scene.js').Layer} the vision layer, hidden unless the lens is on
+ * @returns {import('./stage.js').Layer} the vision layer, hidden unless the lens is on
  */
 export function createVisionLayer({ info }) {
     const lines = createLineBuffer(info.maxAgents * info.rayCount);

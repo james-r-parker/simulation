@@ -1,35 +1,28 @@
-// Assembles the renderer's layers for a world: the ones the scene draws before the bloom, the motes after it, the
-// pools the effects player spawns into and the references the frame loop writes through. Called by the scene on first
-// build, after a context restore and for each new world.
+// Assembles the renderer's layers for a world, back to front, with the pools the effects player spawns into and the
+// references the frame loop writes through. Called by the stage on first build, after a device loss and for each new
+// world.
 
-import { createAgentsLayer } from './renderer/agents-layer.js';
+import { createAgentDraw } from './renderer/agent-draw.js';
 import { createChaseLayer } from './renderer/chase-layer.js';
-import { createAuroraLayer } from './renderer/aurora-layer.js';
-import { createTerrainLayer } from './renderer/terrain-layer.js';
+import { createScentContours, createTerritoryContours } from './renderer/contour-draw.js';
 import { createEffectsPlayer } from './renderer/effects-player.js';
+import { createFoodDraw } from './renderer/food-draw.js';
 import { createFxBudget } from './renderer/fx-budget.js';
-import { createFxLayer, createFxPool } from './renderer/fx-pool.js';
-import { createFxPlayer } from './renderer/fx-recipes.js';
+import { createFxLayers } from './renderer/fx-draw.js';
 import { createFxPointersLayer } from './renderer/fx-pointers.js';
-import { createGroundLayer } from './renderer/ground-layer.js';
-import { createFinishLayer } from './renderer/finish-layer.js';
-import { createHazeLayer } from './renderer/haze-layer.js';
-import { createHerdLayer } from './renderer/herd-layer.js';
-import { createDungLayer } from './renderer/dung-layer.js';
-import { createOverlays } from './renderer/overlays.js';
-import { createPollenLayer } from './renderer/pollen-layer.js';
-import { createParticles } from './renderer/particles.js';
+import { createFxPlayer } from './renderer/fx-recipes.js';
+import { createFxPool } from './renderer/fx-ring.js';
+import { createHerdDraw } from './renderer/herd-draw.js';
+import { createBorderLines } from './renderer/line-draw.js';
 import { createMateThreadLayer, createMateThreadPool } from './renderer/mate-threads.js';
-import { createSmokeLayer } from './renderer/smoke-layer.js';
-import { createTerritoryLayer } from './renderer/territory-layer.js';
+import { createOverlays } from './renderer/overlays.js';
 import { createVisionLayer } from './renderer/vision-layer.js';
-import { createWeatherLayer } from './renderer/weather-layer.js';
-import { createBorderLayer, createFoodLayer, createObstacleLayer } from './renderer/world-layers.js';
+import { createWorldLayers } from './renderer/world-draw.js';
 
 /**
  * What the frame loop reaches the current layers through; rewritten each time the layers are built.
  * @typedef {object} LayerRefs
- * @property {ReturnType<typeof createHazeLayer> | null} haze the scent haze, which takes each new field
+ * @property {ReturnType<typeof createScentContours> | null} haze the scent lens, which takes each new field
  * @property {ReturnType<typeof createEffectsPlayer> | null} player the effects player
  */
 
@@ -57,59 +50,47 @@ function worldOf(ready, slots, sink) {
  * @param {{info: Record<string, any>, layout: Record<string, any>, seed: number,
  *   slots: import('./family-slots.js').FamilySlots,
  *   sink: ((effect: import('./renderer/effects-player.js').Effect) => void) | undefined}} world the world and slots
- * @returns {import('./renderer/scene.js').LayerSet} the layers
+ * @returns {import('./renderer/stage.js').Layer[]} the layers, back to front
  */
 function buildFor(refs, { info, layout, seed, slots, sink }) {
-    const agents = createAgentsLayer({ info, flagBits: layout.flags });
-    const haze = createHazeLayer({ info });
-    const smoke = createSmokeLayer({ info });
-    agents.setSmokeTexture(smoke.texture);
+    const agents = createAgentDraw({ info, flagBits: layout.flags, stateBits: layout.stateBits });
+    const scent = createScentContours({ info });
     const threads = createMateThreadPool();
     const fx = createFxPlayer(createFxPool(), createFxBudget(), seed);
-    refs.haze = haze;
-    const player = createEffectsPlayer({
-        threads,
-        layout,
-        info,
-        slots,
-        sink,
-        fx,
-        tweens: agents.store.tweens,
-    });
+    refs.haze = scent;
+    const player = createEffectsPlayer({ threads, layout, info, slots, sink, fx, tweens: agents.store.tweens });
     agents.store.fleeing = player.flee.fleeing;
     refs.player = player;
-    return {
-        layers: [
-            createAuroraLayer({ info }),
-            createGroundLayer({ info }),
-            createTerrainLayer({ info, seed }),
-            createDungLayer({ info, layout }),
-            createTerritoryLayer({ info }),
-            haze,
-            createWeatherLayer({ info, seed }),
-            createFoodLayer({ info }),
-            createPollenLayer({ info, seed, flags: layout.flags, player: refs.player }),
-            createObstacleLayer({ info, seed }),
-            createHerdLayer({ info }),
-            agents,
-            createVisionLayer({ info }),
-            smoke,
-            createFxLayer({ pool: fx.pool, budget: fx.budget }),
-            createFxPointersLayer({ moments: player.moments }),
-            createChaseLayer({ info, pursuits: player.flee.pursuits }),
-            createMateThreadLayer({ pool: threads }),
-            createOverlays({ info }),
-            createBorderLayer({ info }),
-        ],
-        afterBloom: [createParticles({ seed }), createFinishLayer()],
-    };
+    const world = createWorldLayers({ info, layout, seed });
+    const [particles, flashes] = createFxLayers({ pool: fx.pool });
+    return [
+        world.ground,
+        world.zones,
+        world.patches,
+        scent,
+        createTerritoryContours({ info }),
+        createFoodDraw({ info }),
+        world.rocks,
+        world.clouds,
+        createHerdDraw({ info }),
+        agents,
+        createVisionLayer({ info }),
+        world.motes,
+        createChaseLayer({ info, pursuits: player.flee.pursuits }),
+        createMateThreadLayer({ pool: threads }),
+        createOverlays({ info }),
+        particles,
+        flashes,
+        createFxPointersLayer({ moments: player.moments }),
+        createBorderLines({ info }),
+    ];
 }
 
 /**
  * @param {{refs: LayerRefs, getReady: () => Record<string, any> | null, slots: import('./family-slots.js').FamilySlots,
  *   sink?: (effect: import('./renderer/effects-player.js').Effect) => void}} options the references to fill, the newest
  *   `ready` message, the family colour slots and an optional effect sink
- * @returns {() => import('./renderer/scene.js').LayerSet} the `buildLayers` function the scene calls
+ * @returns {() => import('./renderer/stage.js').Layer[]} the `buildLayers` function the stage calls
  * @throws {Error} when called before a `ready` message arrived
  */
 export function createLayerBuilder({ refs, getReady, slots, sink }) {

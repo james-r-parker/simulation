@@ -38,6 +38,23 @@ const NAMES = /** @type {const} */ ([
  */
 
 /**
+ * @returns {import('./model-material.js').ModelInputs} the inputs every instanced model reads: centre, heading and
+ *   radius from `iPose`, the rim colour and fill share from `iNeon` and the rig from `iRig0` to `iRig2`
+ */
+export function standardInputs() {
+    const pose = attribute('iPose', 'vec4');
+    const neon = attribute('iNeon', 'vec4');
+    return {
+        center: pose.xy,
+        angle: pose.z,
+        radius: pose.w,
+        color: neon.xyz,
+        fill: neon.w,
+        rig: [attribute('iRig0', 'vec4'), attribute('iRig1', 'vec4'), attribute('iRig2', 'vec4')],
+    };
+}
+
+/**
  * @param {Bucket} bucket a bucket
  * @param {(lanes: {gate: any, extra: any}) => {values?: Record<string, any>, colors?: Record<string, any>,
  *   blob?: any}} more the model-specific inputs from the gate and extra lanes

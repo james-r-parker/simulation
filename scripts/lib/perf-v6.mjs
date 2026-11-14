@@ -21,16 +21,16 @@ export const GC_TRACE_CATEGORIES = Object.freeze(['v8', 'disabled-by-default-v8.
 const SOFTWARE_RENDERER = /swiftshader|llvmpipe|software|softpipe/i;
 
 /**
- * The Phase 2 and 3 budgets on the dev machine (3840x2160 and 2560x1440, 500 agents, quality 0, 60 s). A metric with a
- * `null` value is reported but is not a done criterion.
+ * The crisp-renderer budgets on the dev machine (docs/designs/crisp-renderer.md Phase 1: 3840x2160 on the 240 Hz
+ * display, 1000 agents, 60 s). A metric with a `null` value is reported but is not a done criterion.
  * @type {Readonly<Record<string, {max: number, criterion: boolean}>>}
  */
 export const BUDGETS = Object.freeze({
-    'browser.frame_p50_ms': { max: 4.5, criterion: true },
-    'browser.frame_p95_ms': { max: 8.4, criterion: true },
-    'browser.frame_p99_ms': { max: 12.5, criterion: true },
-    'browser.draw_cpu_p95_ms': { max: 2.0, criterion: true },
-    'browser.gpu_frame_p95_ms': { max: 4.0, criterion: false },
+    'browser.frame_p50_ms': { max: 4.2, criterion: true },
+    'browser.frame_p95_ms': { max: 4.2, criterion: true },
+    'browser.frame_p99_ms': { max: 6.0, criterion: true },
+    'browser.draw_cpu_p95_ms': { max: 1.5, criterion: true },
+    'browser.gpu_frame_p95_ms': { max: 3.0, criterion: true },
     'browser.main_long_tasks': { max: 0, criterion: true },
     'browser.gc_pause_ms': { max: 30, criterion: true },
 });

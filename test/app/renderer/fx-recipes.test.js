@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { PALETTE } from '../../../js/app/renderer/colors.js';
-import { BAND, FAMILY, setFxLook } from '../../../js/app/renderer/fx-budget.js';
+import { BAND, FAMILY } from '../../../js/app/renderer/fx-budget.js';
 import { CURVE, FX_CURVES } from '../../../js/app/renderer/fx-curves.js';
-import { createFxPool, isLive } from '../../../js/app/renderer/fx-pool.js';
+import { createFxPool, isLive } from '../../../js/app/renderer/fx-ring.js';
 import { createFxPlayer, DEATH_RECIPES, FX_RECIPES, playRecipe } from '../../../js/app/renderer/fx-recipes.js';
-import { LOOK_OFF } from '../../../js/app/renderer/quality.js';
 
 /** @returns {import('../../../js/app/renderer/fx-recipes.js').FxAt} a spot */
 function at() {
@@ -12,7 +11,7 @@ function at() {
 }
 
 /**
- * @param {import('../../../js/app/renderer/fx-pool.js').FxPool} pool the pool
+ * @param {import('../../../js/app/renderer/fx-ring.js').FxPool} pool the pool
  * @param {number} tick the tick
  * @returns {number} live instances
  */
@@ -55,6 +54,13 @@ describe('FX_RECIPES', () => {
 });
 
 describe('playRecipe', () => {
+    it('collapses to one lead instance per part at the far band', () => {
+        const fx = createFxPlayer(createFxPool());
+        fx.budget.band = BAND.FAR;
+        expect(playRecipe(fx, FX_RECIPES.eaten, at())).toBe(3);
+        expect(FAMILY.combat).toBe(0);
+    });
+
     it('spawns each part at its count, scaled by the agent size, coloured by its role or the effect', () => {
         const fx = createFxPlayer(createFxPool());
         expect(playRecipe(fx, FX_RECIPES.eaten, at())).toBe(8);
@@ -76,15 +82,6 @@ describe('playRecipe', () => {
         const g = createFxPlayer(createFxPool());
         playRecipe(g, FX_RECIPES.packKill, at());
         expect(g.pool.time[4] - g.pool.time[0]).toBe(6);
-    });
-
-    it('collapses to one lead instance per part at the far band, and spawns nothing for a family switched off', () => {
-        const fx = createFxPlayer(createFxPool());
-        fx.budget.band = BAND.FAR;
-        expect(playRecipe(fx, FX_RECIPES.eaten, at())).toBe(3);
-        setFxLook(fx.budget, { combat: LOOK_OFF });
-        expect(playRecipe(fx, FX_RECIPES.eaten, at())).toBe(0);
-        expect(FAMILY.combat).toBe(0);
     });
 
     it('floors each life at the wall-time minimum', () => {
@@ -136,7 +133,7 @@ describe('the Phase 3 recipes', () => {
             dungDropped: [CURVE.puffRing, 2],
             patchWilted: [CURVE.moteFall, 6],
             firstKill: [CURVE.ring, 9],
-            wallCross: [CURVE.ringSlow, 1],
+            wallCross: [CURVE.ring, 1],
         };
         for (const [name, [curve, count]] of Object.entries(want)) {
             const fx = createFxPlayer(createFxPool());

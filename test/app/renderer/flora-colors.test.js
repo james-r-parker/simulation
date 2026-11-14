@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FLORA_MAX_LUMINANCE, floraColor } from '../../../js/app/renderer/flora-colors.js';
 import { PALETTE } from '../../../js/app/renderer/colors.js';
-import { FOOD_FRAGMENT } from '../../../js/app/renderer/world-layers-shader.js';
-import { FOOD_INTENSITY } from '../../../js/app/renderer/world-layers.js';
 import { colorDistance, luminance } from './helpers/color-metrics.js';
 
 describe('flora hue ramp', () => {
@@ -19,9 +17,7 @@ describe('flora hue ramp', () => {
         expect(colorDistance(floraColor(-1, [0, 0, 0]), out)).toBeGreaterThan(15);
     });
 
-    it('matches the shader hue and luminance math at representative coordinates', () => {
-        expect(FOOD_FRAGMENT).toContain('120.0 - 90.0 * (clamp(hue, -1.0, 1.0) + 1.0)');
-        expect(FOOD_FRAGMENT).toContain('0.2126729, 0.7151522, 0.072175');
+    it('keeps the hue and luminance math at representative coordinates', () => {
         for (const hue of [-1, -1 / 3, 0, 1 / 3, 2 / 3, 1]) {
             const h = ((120 - 90 * (hue + 1) + 360) % 360) / 60;
             const x = 1 - Math.abs((h % 2) - 1);
@@ -35,7 +31,7 @@ describe('flora hue ramp', () => {
     });
 
     it('never exceeds the existing food luminance and clamps out-of-range hues', () => {
-        expect(FLORA_MAX_LUMINANCE).toBeCloseTo(luminance(PALETTE.food) * FOOD_INTENSITY);
+        expect(FLORA_MAX_LUMINANCE).toBeCloseTo(luminance(PALETTE.food) * 0.4);
         for (let h = -1; h <= 1; h += 0.01) {
             expect(luminance(floraColor(h, [0, 0, 0]))).toBeLessThanOrEqual(FLORA_MAX_LUMINANCE + 1e-7);
         }

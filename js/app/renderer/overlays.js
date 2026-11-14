@@ -100,7 +100,7 @@ export function pushTrail(lines, trails, style) {
 }
 
 /**
- * @param {import('./scene.js').Frame} frame the frame
+ * @param {import('./stage.js').Frame} frame the frame
  * @param {Record<string, any>} info `ready.info`
  * @param {import('./line-buffer.js').LineBuffer} lines the buffer
  * @returns {void}
@@ -153,7 +153,7 @@ function setMarker(id, alpha, scale) {
 }
 
 /**
- * @param {import('./scene.js').Frame} frame the frame
+ * @param {import('./stage.js').Frame} frame the frame
  * @param {import('./line-buffer.js').LineBuffer} lines the buffer
  * @param {{id: number, alpha: number, scale: number}} marker the agent to ring, and how strongly and how wide
  * @returns {void}
@@ -174,7 +174,7 @@ function pushMarker(frame, lines, marker) {
 
 /**
  * @param {{info: Record<string, any>}} context `ready.info`
- * @returns {import('./scene.js').Layer} the overlays
+ * @returns {import('./stage.js').Layer} the overlays
  */
 export function createOverlays({ info }) {
     const capacity = info.rayCount + 2 + CIRCLE_SIDES + 2 * MARKER_SIDES + TRAIL_AGENTS * (TRAIL_POINTS - 1);

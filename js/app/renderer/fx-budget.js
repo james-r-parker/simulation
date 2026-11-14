@@ -5,7 +5,6 @@
 // (`adaptFxBudget`): a fast GPU shows nearly every effect, a loaded one sheds them. Nothing here allocates per frame.
 
 import { appLog } from '../app-log.js';
-import { LOOK_OFF } from './quality.js';
 import { MAX_INTERVAL_MS } from '../frame-stats.js';
 
 /** The effect families, each tied to the look item of the same name. */
@@ -66,7 +65,7 @@ export const LOG_EVERY_MS = 10000;
  * @property {number} level the quality level
  * @property {number} spent instances admitted this frame
  * @property {Float32Array} tokens per family
- * @property {Int8Array} tier per family: its look item's tier, `LOOK_OFF` when off
+ * @property {Int8Array} tier per family: its count tier (0 full); every family draws
  * @property {Float64Array} spawned per family, since creation
  * @property {Float64Array} dropped per family, refused by the cap or the bucket
  * @property {Float64Array} culled per family, off view
@@ -118,26 +117,6 @@ export function createFxBudget() {
 export function zoomBand(pxPerUnit, radius = TYPICAL_RADIUS) {
     const px = pxPerUnit * radius;
     return px < 6 ? BAND.FAR : px < 20 ? BAND.MID : BAND.CLOSE;
-}
-
-/**
- * @param {FxBudget} budget the budget
- * @param {Record<string, number>} look each look item's tier (`lookFor`)
- * @returns {void}
- */
-export function setFxLook(budget, look) {
-    FX_FAMILIES.forEach((name, i) => {
-        budget.tier[i] = look[name] ?? LOOK_OFF;
-    });
-}
-
-/**
- * @param {FxBudget} budget the budget
- * @param {number} level the quality level, 0 to 2
- * @returns {void}
- */
-export function setFxQuality(budget, level) {
-    budget.level = Math.max(0, Math.min(FRAME_CAP.length - 1, level));
 }
 
 /**
@@ -207,7 +186,7 @@ export function inFxView(budget, x, y) {
  * @returns {number} instances granted, 0 to `want`
  */
 export function admitFx(budget, { family, rank }, want, at) {
-    if (want <= 0 || budget.tier[family] === LOOK_OFF) {
+    if (want <= 0 || budget.tier[family] < 0) {
         return 0;
     }
     if (!inFxView(budget, at.x, at.y)) {

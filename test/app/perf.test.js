@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createFrameStats, recordFrame } from '../../js/app/frame-stats.js';
-import { buildPerf, installPerf, spreadOf } from '../../js/app/perf.js';
+import { buildPerf, installPerf, spreadOf, gpuCounts } from '../../js/app/perf.js';
 
 const GPU = { geometries: 9, textures: 4, programs: 7 };
 
@@ -86,5 +86,16 @@ describe('installPerf', () => {
         });
         target.__perf?.reset?.();
         expect(resets).toBe(1);
+    });
+});
+
+describe('gpuCounts', () => {
+    it('reads the renderer memory counts and zeroes what is missing', () => {
+        expect(gpuCounts({ memory: { geometries: 3, textures: 2 } })).toEqual({
+            geometries: 3,
+            textures: 2,
+            programs: 0,
+        });
+        expect(gpuCounts(undefined)).toEqual({ geometries: 0, textures: 0, programs: 0 });
     });
 });

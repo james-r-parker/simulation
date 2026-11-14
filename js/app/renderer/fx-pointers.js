@@ -2,12 +2,15 @@
 // `POINTER_MS` shows a chevron at the edge of the view, pointing at it and fading, so a viewer driving the camera sees
 // where something just happened. At most `MOMENT_LOG_SIZE` chevrons, packed into preallocated arrays.
 
-import { AdditiveBlending, ShaderMaterial } from 'three';
+import { AdditiveBlending } from 'three/webgpu';
 import { viewBounds } from '../camera.js';
 import { MOMENT_LOG_SIZE } from '../director/moment-log.js';
 import { PALETTE } from './colors.js';
-import { createQuadGeometry, createQuadMesh, uploadInstances, VEC4 } from './instanced.js';
-import { LOOK_OFF } from './quality.js';
+import { createModelMeshes } from './model-meshes.js';
+import { MODELS } from './models.js';
+import { toDisplay } from './palette.js';
+
+const VEC4 = 4;
 
 /** How long a pointer shows, ms. */
 export const POINTER_MS = 3000;
@@ -15,33 +18,6 @@ export const POINTER_MS = 3000;
 export const POINTER_INSET_PX = 36;
 export const POINTER_PX = 18;
 const KILLS = new Set(['kill', 'pack-kill', 'trample']);
-
-const VERTEX = /* glsl */ `
-attribute vec2 corner;
-attribute vec4 iPose;   // x, y, angle, size (world)
-attribute vec4 iColor;  // r, g, b, alpha
-varying vec2 vP;
-varying vec4 vColor;
-void main() {
-    vP = corner;
-    vColor = iColor;
-    vec2 dir = vec2(cos(iPose.z), sin(iPose.z));
-    vec2 local = corner * iPose.w;
-    vec2 world = iPose.xy + vec2(dir.x * local.x - dir.y * local.y, dir.y * local.x + dir.x * local.y);
-    gl_Position = projectionMatrix * viewMatrix * vec4(world, 0.0, 1.0);
-}`;
-
-const FRAGMENT = /* glsl */ `
-varying vec2 vP;
-varying vec4 vColor;
-void main() {
-    vec2 q = vec2(vP.x, abs(vP.y));
-    float d = abs(q.x + q.y * 0.9 - 0.3) - 0.14;
-    float body = (1.0 - smoothstep(-0.04, 0.04, d)) * step(q.y, 0.75);
-    gl_FragColor = vec4(vColor.rgb * vColor.a * body, 1.0);
-    #include <tonemapping_fragment>
-    #include <colorspace_fragment>
-}`;
 
 /**
  * Places a pointer for each recent off-view moment.
@@ -86,37 +62,35 @@ const VIEW = { left: 0, right: 0, top: 0, bottom: 0 };
 const AT = { view: VIEW, zoom: 1, nowMs: 0 };
 
 /**
- * @param {{moments: import('../director/moment-log.js').MomentLog}} options the live moment log
- * @returns {import('./scene.js').Layer} the pointers, under the combat look item
+ * @param {{moments: import('../director/moment-log.js').MomentLog}} context the notable moments played
+ * @returns {import('./stage.js').Layer} arrows at the screen edge pointing at recent moments off screen
  */
 export function createFxPointersLayer({ moments }) {
-    const geometry = createQuadGeometry(MOMENT_LOG_SIZE, ['iPose', 'iColor']);
-    const material = new ShaderMaterial({
-        vertexShader: VERTEX,
-        fragmentShader: FRAGMENT,
-        blending: AdditiveBlending,
-        transparent: true,
-        depthTest: false,
-        depthWrite: false,
-    });
-    const mesh = createQuadMesh(geometry, material, MOMENT_LOG_SIZE);
     const out = { pose: new Float32Array(MOMENT_LOG_SIZE * VEC4), color: new Float32Array(MOMENT_LOG_SIZE * VEC4) };
-    let on = true;
+    const bucket = { pose: out.pose, neon: new Float32Array(MOMENT_LOG_SIZE * VEC4), count: 0 };
+    const meshes = createModelMeshes([MODELS.SHARD], { buckets: [bucket], blending: AdditiveBlending });
+    const rgb = [0, 0, 0];
     return {
-        object: mesh,
-        setLook(look) {
-            on = look.combat !== undefined && look.combat !== LOOK_OFF;
-        },
+        object: meshes.object,
         update(frame) {
             viewBounds(frame.camera, VIEW);
             AT.zoom = frame.camera.zoom;
             AT.nowMs = frame.nowMs;
-            uploadInstances(mesh, { iPose: out.pose, iColor: out.color }, on ? packPointers(moments, AT, out) : 0);
+            bucket.count = packPointers(moments, AT, out);
+            for (let i = 0; i < bucket.count; i++) {
+                const o = i * VEC4;
+                rgb[0] = out.color[o];
+                rgb[1] = out.color[o + 1];
+                rgb[2] = out.color[o + 2];
+                toDisplay(rgb, rgb);
+                const a = Math.min(out.color[o + 3], 1);
+                bucket.neon[o] = rgb[0] * a;
+                bucket.neon[o + 1] = rgb[1] * a;
+                bucket.neon[o + 2] = rgb[2] * a;
+                bucket.neon[o + 3] = 0.28;
+            }
+            meshes.upload();
         },
-        dispose() {
-            geometry.dispose();
-            material.dispose();
-            mesh.dispose();
-        },
+        dispose: () => meshes.dispose(),
     };
 }

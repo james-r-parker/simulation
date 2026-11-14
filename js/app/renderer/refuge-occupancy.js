@@ -3,7 +3,6 @@
 // lights up while it is used. A drawing cue read from the frame's agents; no allocation per call.
 
 import { pursuitRules } from '../pursuit.js';
-import { uploadInstances, VEC4 } from './instanced.js';
 
 /** Blobs inside a refuge that light it fully. */
 export const REFUGE_FULL_COUNT = 6;
@@ -68,21 +67,4 @@ export function stepRefugeOccupancy(state, agents, nowMs) {
         state.level[r] = settled;
     }
     return changed;
-}
-
-/**
- * Counts the blobs in each refuge and, when a level moved, writes the levels into the glow instances.
- * @param {any} refuge the refuge mesh info, or null
- * @param {import('./refuge-occupancy.js').RefugeOccupancy} occupancy the tracker
- * @param {any} frame the frame
- * @returns {void}
- */
-export function updateRefugeLevels(refuge, occupancy, frame) {
-    if (!refuge || occupancy.paused || !frame.agents || !stepRefugeOccupancy(occupancy, frame.agents, frame.nowMs)) {
-        return;
-    }
-    for (let r = 0; r < occupancy.level.length; r++) {
-        refuge.packed[r * VEC4 + 3] = occupancy.level[r];
-    }
-    uploadInstances(refuge.mesh, { iRefuge: refuge.packed }, occupancy.level.length);
 }

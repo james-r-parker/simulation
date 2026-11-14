@@ -22,7 +22,7 @@ vi.mock('../../js/app/renderer/line-buffer.js', async (importOriginal) => {
     };
 });
 
-vi.mock('../../js/app/renderer/fx-pool.js', async (importOriginal) => {
+vi.mock('../../js/app/renderer/fx-ring.js', async (importOriginal) => {
     const real = /** @type {any} */ (await importOriginal());
     return {
         ...real,

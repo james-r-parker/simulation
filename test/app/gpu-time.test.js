@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createGpuTime } from '../../js/app/gpu-time.js';
+import { createGpuTime, gpuTimeFor } from '../../js/app/gpu-time.js';
 
 /** @returns {{renderer: any, settle: (v: any) => void, calls: () => number}} a renderer whose resolves the test settles */
 function fake() {
@@ -65,5 +65,12 @@ describe('createGpuTime', () => {
         await tick();
         timer.reset();
         expect(timer.samples()).toHaveLength(0);
+    });
+});
+
+describe('gpuTimeFor', () => {
+    it('makes a timer for a stage and none before one', () => {
+        expect(gpuTimeFor(null)).toBeNull();
+        expect(gpuTimeFor({ renderer: fake().renderer })?.latest()).toBe(-1);
     });
 });

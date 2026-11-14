@@ -9,7 +9,6 @@ import { createFrameLoop } from '../../js/app/frame-loop.js';
 import { createFrameStats } from '../../js/app/frame-stats.js';
 import { buildPerf } from '../../js/app/perf.js';
 import { createEffectsPlayer } from '../../js/app/renderer/effects-player.js';
-import { createQuality } from '../../js/app/renderer/quality.js';
 import { smallReady } from './helpers/ready.js';
 
 /**
@@ -23,7 +22,7 @@ function rig({ hidden = false } = {}) {
     let clockMs = 0;
     const deps = {
         getClient: () => client,
-        scene: { draw: () => ((clockMs += 0.5), true), setQualityLevel() {}, quality: createQuality({ pinned: 0 }) },
+        scene: { draw: () => ((clockMs += 0.5), true) },
         camera: createCameraController({
             canvas: /** @type {any} */ ({ width: 1920, height: 1080 }),
             world: { width: info.worldWidth, height: info.worldHeight },

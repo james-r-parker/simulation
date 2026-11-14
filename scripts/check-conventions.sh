@@ -28,8 +28,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 LARGE_FILE_ALLOWLIST=()
 LARGE_FILE_BYTES=$((5 * 1024 * 1024))
 
-# Shells that need a real worker, window, WebGL context or AudioContext; the browser spec covers them.
-BROWSER_SHELLS=("js/worker/sim-worker.js" "js/app/main.js" "js/app/renderer/scene.js" "js/app/renderer/bloom.js" "js/app/audio/engine.js")
+# Shells that need a real worker, window, GPU context or AudioContext; the browser spec covers them.
+BROWSER_SHELLS=("js/worker/sim-worker.js" "js/app/main.js" "js/app/audio/engine.js")
 
 # Paths of the deleted legacy app (pathspecs); a tracked file under any of them is a violation.
 LEGACY_PATHS=("legacy.html" "js/constants" "js/dev" "css/style.css" "css/toast.css" "public/database-worker.js")

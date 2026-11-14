@@ -205,7 +205,7 @@ The director scores new moment kinds and each caption names the event (Phase 4):
 
 ## Toggles
 
-Seven look items extend `LOOK_ITEMS` in [`quality.js`](../../js/app/renderer/quality.js). They take bits 10 to 16, so `LOOK_ALL` covers them and `?look=` / `--look` name them. `lookFor` and the tier table give each a tier per quality level.
+Seven look items extend `LOOK_ITEMS` in `quality.js` (deleted by [crisp-renderer.md](crisp-renderer.md)). They take bits 10 to 16, so `LOOK_ALL` covers them and `?look=` / `--look` name them. `lookFor` and the tier table give each a tier per quality level.
 
 | Item        | Draws                                                                         | Level 0 | Level 1              | Level 2                |
 | ----------- | ----------------------------------------------------------------------------- | ------- | -------------------- | ---------------------- |

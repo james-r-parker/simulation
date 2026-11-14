@@ -47,3 +47,11 @@ export function createGpuTime(renderer, capacity) {
         },
     };
 }
+
+/**
+ * @param {{renderer: any} | null} stage the stage, null before it exists
+ * @returns {ReturnType<typeof createGpuTime> | null} a timer on its renderer, null without a stage
+ */
+export function gpuTimeFor(stage) {
+    return stage === null ? null : createGpuTime(stage.renderer);
+}

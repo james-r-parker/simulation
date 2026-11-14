@@ -4,7 +4,7 @@ import { createFamilySlots } from '../../js/app/family-slots.js';
 import { smallReady } from './helpers/ready.js';
 
 describe('createLayerBuilder', () => {
-    it('builds the layers back to front with the motes after the bloom', () => {
+    it('builds the layers back to front, the scent lens among them', () => {
         const { info, layout } = smallReady();
         const refs = createLayerRefs();
         const build = createLayerBuilder({
@@ -12,11 +12,10 @@ describe('createLayerBuilder', () => {
             getReady: () => ({ info, layout, seed: 3 }),
             slots: createFamilySlots(),
         });
-        const set = build();
-        expect(set.layers).toHaveLength(20);
-        expect(set.layers[5]).toBe(refs.haze);
-        expect(set.afterBloom).toHaveLength(2);
-        for (const layer of [...set.layers, ...set.afterBloom]) {
+        const layers = build();
+        expect(layers).toHaveLength(19);
+        expect(layers[3]).toBe(refs.haze);
+        for (const layer of layers) {
             expect(layer.object).toBeDefined();
             layer.dispose();
         }

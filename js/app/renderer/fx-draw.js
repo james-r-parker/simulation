@@ -10,6 +10,9 @@ import { PARTICLE_MODELS } from './models-particles.js';
 import { HIGH_CONTRAST_GAIN } from './fx-ring.js';
 import { createFxPack, packFx } from './fx-pack.js';
 
+/** The dev switch `?fxoff=1` clears: while off, the particle and flash layers draw nothing. */
+export const FX_SWITCH = { on: true };
+
 /** The calls lens raises call effects by this much. */
 export const CALL_BOOST = 1 / 0.35;
 /** The glow disc's radius over the flash's size. */
@@ -56,6 +59,11 @@ export function createFxLayers({ pool }) {
                 view.contrast = frame.family?.palette === 'high-contrast' ? HIGH_CONTRAST_GAIN : 1;
                 particles.setPalette(frame.family?.palette);
                 packFx(pool, pack, view);
+                if (!FX_SWITCH.on) {
+                    particles.clear();
+                    uploadInstances(glowInstances, 0);
+                    return;
+                }
                 particles.upload();
                 uploadInstances(glowInstances, pack.glow.count);
             },

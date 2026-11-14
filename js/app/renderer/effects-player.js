@@ -17,7 +17,7 @@ import { playAtEffect, playCall, playPollinated, playSmoke } from './effects-sig
 import { playWorldEffect } from './effects-world.js';
 export { playEdges } from './effects-edges.js';
 import { adaptFxBudget, beginFxFrame, logFxBudget } from './fx-budget.js';
-import { createFxPool } from './fx-pool.js';
+import { createFxPool } from './fx-ring.js';
 import { createFxPlayer } from './fx-recipes.js';
 
 /** An effect this many ticks behind the playhead is stale and skipped. */

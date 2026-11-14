@@ -5,7 +5,6 @@ import { createFrameLoop } from '../../js/app/frame-loop.js';
 import { createFrameStats, frameReport } from '../../js/app/frame-stats.js';
 import { AGENT_FIELD, HEADER_WORDS } from '../../js/app/interpolate.js';
 import { createEffectsPlayer } from '../../js/app/renderer/effects-player.js';
-import { createQuality } from '../../js/app/renderer/quality.js';
 import { createFamilySlots } from '../../js/app/family-slots.js';
 import { smallReady } from './helpers/ready.js';
 
@@ -43,7 +42,6 @@ function setup(client) {
         scene: {
             draw: (/** @type {any} */ frame) => drawn.push({ ...frame }) > 0,
             setQualityLevel: (/** @type {number} */ level) => levels.push(level),
-            quality: createQuality(),
         },
         camera: createCameraController({
             canvas: { width: 1920, height: 1080 },
@@ -185,18 +183,6 @@ describe('createFrameLoop', () => {
         deps.state.followId = 999999;
         loop.frame(1016);
         expect(deps.state.followId).toBe(0);
-    });
-
-    it('moves the quality level down after sustained slow frames and starts a fresh window', () => {
-        const { deps, levels, loop } = setup(fakeClient());
-        let now = 1000;
-        for (let i = 0; i < 1200 && levels.length === 0; i++) {
-            now += i % 5 === 0 ? 50 : 10;
-            loop.frame(now);
-        }
-        expect(levels).toEqual([1]);
-        expect(deps.scene.quality.level).toBe(1);
-        expect(deps.scene.quality.changed).toBe(true);
     });
 
     it('starts a new world with fresh agents and an empty playhead', () => {

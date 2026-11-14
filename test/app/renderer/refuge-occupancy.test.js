@@ -5,7 +5,6 @@ import {
     REFUGE_FULL_COUNT,
     REFUGE_SMOOTHING,
     stepRefugeOccupancy,
-    updateRefugeLevels,
 } from '../../../js/app/renderer/refuge-occupancy.js';
 
 /**
@@ -84,21 +83,5 @@ describe('hunters and pausing', () => {
         agents.spec[1] = 1;
         stepRefugeOccupancy(state, agents, 0);
         expect(state.level[0]).toBeCloseTo((1 / REFUGE_FULL_COUNT) * REFUGE_SMOOTHING, 5);
-    });
-});
-
-describe('updateRefugeLevels', () => {
-    const frame = { nowMs: 0, agents: agentsAt([[0, 0]]) };
-    const info = { terrain: { refuges: discs } };
-
-    it('does nothing for a null refuge, absent agents or a paused tracker', () => {
-        const state = createRefugeOccupancy(info);
-        expect(() => updateRefugeLevels(null, state, frame)).not.toThrow();
-        const refuge = { packed: new Float32Array(8), mesh: { geometry: { getAttribute: () => null } } };
-        updateRefugeLevels(refuge, state, { nowMs: 0 });
-        state.paused = true;
-        updateRefugeLevels(refuge, state, frame);
-        expect(state.lastMs).toBe(-Infinity);
-        expect(refuge.packed[3]).toBe(0);
     });
 });

@@ -9,7 +9,6 @@ import {
     MATE_FADE_TICKS,
     MATE_POOL_CAPACITY,
     MATE_SEGMENTS,
-    MATE_SEGMENTS_LOW,
     MATE_TICKS,
     spawnMateThread,
     stepMateThreads,
@@ -144,8 +143,8 @@ describe('stepMateThreads segments', () => {
         agents.x[1] = 80;
         const lines = createLineBuffer(4 * MATE_SEGMENTS);
         const frame = { agents, tick: 100 + MATE_TICKS * 0.3, family: createFamilySlots() };
-        stepMateThreads(pool, frame, lines, MATE_SEGMENTS_LOW);
-        expect(lines.vertices).toBe(MATE_SEGMENTS_LOW * 2);
+        stepMateThreads(pool, frame, lines, 4);
+        expect(lines.vertices).toBe(4 * 2);
     });
 
     it('joins the segments end to end', () => {
@@ -167,19 +166,17 @@ describe('stepMateThreads segments', () => {
 });
 
 describe('createMateThreadLayer', () => {
-    it('draws at levels 0 and 1 and not when the level or the ?look= mask leaves threads off', () => {
+    it('draws every live thread at full segments', () => {
         const pool = createMateThreadPool(4);
+        spawnMateThread(pool, { x: 0, y: 0, tick: 0, a: 1, b: 2, d: 0 });
         const layer = createMateThreadLayer({ pool });
-
-        expect(layer.object.visible).toBe(true);
-        layer.setLook?.({ threads: 2 });
-        expect(layer.object.visible).toBe(false);
-        layer.setLook?.({ threads: -1 });
-        expect(layer.object.visible).toBe(false);
-        layer.setLook?.({ threads: 1 });
-        expect(layer.object.visible).toBe(true);
-        layer.setLook?.({ threads: 0 });
-        expect(layer.object.visible).toBe(true);
+        const agents = createInterpolated(4);
+        agents.count = 2;
+        agents.genomeId[0] = 1;
+        agents.genomeId[1] = 2;
+        agents.x[1] = 80;
+        layer.update?.(/** @type {any} */ ({ agents, tick: MATE_TICKS * 0.3, family: createFamilySlots() }));
+        expect(layer.object.geometry.instanceCount).toBe(MATE_SEGMENTS);
         layer.dispose();
     });
 });
