@@ -4,7 +4,7 @@
       "name": "default",
       "overrides": {},
       "ticks": 5000,
-      "worldHash": "fa5d0f6c7a7546ca"
+      "worldHash": "9abded0b62739a90"
     },
     {
       "name": "busy",
@@ -23,7 +23,7 @@
         "coldMarginWidth": 0
       },
       "ticks": 5000,
-      "worldHash": "0b248796d99ef93d"
+      "worldHash": "8fb7fbfb522f4ed3"
     },
     {
       "name": "disease",
@@ -43,7 +43,7 @@
         "diseaseSeedRate": 0.01
       },
       "ticks": 5000,
-      "worldHash": "cb3370835be2a863"
+      "worldHash": "de834200a36233cc"
     }
   ],
   "shortCases": [
@@ -51,7 +51,7 @@
       "name": "default",
       "overrides": {},
       "ticks": 300,
-      "worldHash": "e51864771b0bf0a7"
+      "worldHash": "7643119d5e197e07"
     },
     {
       "name": "busy",
@@ -70,7 +70,7 @@
         "coldMarginWidth": 0
       },
       "ticks": 300,
-      "worldHash": "5b367dbb76c681ab"
+      "worldHash": "d9fae92038ecc19a"
     },
     {
       "name": "disease",
@@ -90,7 +90,7 @@
         "diseaseSeedRate": 0.01
       },
       "ticks": 300,
-      "worldHash": "8b585b8e363bf9ef"
+      "worldHash": "aa63f704b520938e"
     }
   ]
 }
