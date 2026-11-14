@@ -4295,6 +4295,22 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "effect": "better"
+    },
+    {
+      "id": "E170",
+      "hypothesis": "eat-choice T26: the grazeThrust 0.75 switch keeps its E169 gains on fresh seeds.",
+      "prediction": "On seeds 65 to 128 at 200000 ticks the switch against main reads no keep-rule guard WORSE and eval.deliberate_food_share better; held leans better. Falsified when a guard reads WORSE or the deliberate share is not better.",
+      "targets": ["eval.deliberate_food_share"],
+      "before": "evals/decisions/E167/head.report.json: main defaults (season 8, sim unchanged since), seeds 65 to 128, 200000 ticks, floor on, policy live",
+      "after": "evals/decisions/E170/head.report.json: chore/eat-choice-graze-rescreen (season 9, grazeThrust 0.75), same seeds",
+      "verdicts": {},
+      "note": "Recorded before the results.",
+      "reports": ["evals/decisions/E170/results.md"],
+      "date": "2026-11-14",
+      "branch": "chore/eat-choice-graze-rescreen",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
     }
   ]
 }
