@@ -89,7 +89,7 @@ describe('mate thread layer', () => {
         const { info } = smallReady();
         const frame = { ...frameOf(info, null), agents, tick: 120 };
         layer.update?.(frame);
-        expect(layer.object.geometry.drawRange.count).toBeGreaterThan(0);
+        expect(layer.object.geometry.instanceCount * 2).toBeGreaterThan(0);
         layer.setLook?.({ threads: -1 });
         layer.update?.(frame);
         expect(layer.object.visible).toBe(false);

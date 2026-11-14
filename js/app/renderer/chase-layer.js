@@ -3,7 +3,7 @@
 // see who is hunting whom without opening the inspector.
 
 import { clearLines, createLineBuffer, pushVertex, setLineColor } from './line-buffer.js';
-import { createLineMesh } from './line-mesh.js';
+import { createLineMesh } from './line-draw.js';
 import { createPursuits, findPursuits, MAX_PURSUITS, pursuitRules } from '../pursuit.js';
 
 /** Dashes per tether at level 0 and at level 1. */

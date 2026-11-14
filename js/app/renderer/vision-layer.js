@@ -3,7 +3,7 @@
 
 import { createSections, readSections } from '../snapshot-view.js';
 import { clearLines, createLineBuffer } from './line-buffer.js';
-import { createLineMesh } from './line-mesh.js';
+import { createLineMesh } from './line-draw.js';
 import { pushRays } from './overlays.js';
 
 /** The alpha of every ray in every fan. */

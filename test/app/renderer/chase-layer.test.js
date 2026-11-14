@@ -84,10 +84,10 @@ describe('createChaseLayer', () => {
         const frame = /** @type {any} */ ({ agents: chaseFrame() });
         layer.setLook?.({ chase: 0 });
         layer.update?.(frame);
-        expect(layer.object.geometry.drawRange.count).toBe(CHASE_DASHES * 2);
+        expect(layer.object.geometry.instanceCount * 2).toBe(CHASE_DASHES * 2);
         layer.setLook?.({ chase: 1 });
         layer.update?.(frame);
-        expect(layer.object.geometry.drawRange.count).toBe(CHASE_DASHES_LOW * 2);
+        expect(layer.object.geometry.instanceCount * 2).toBe(CHASE_DASHES_LOW * 2);
         for (const tier of [-1, 2]) {
             layer.setLook?.({ chase: tier });
             expect(layer.object.visible).toBe(false);
@@ -99,15 +99,15 @@ describe('createChaseLayer', () => {
         const layer = createChaseLayer({ info });
         layer.setLook?.({ chase: 0 });
         layer.update?.(/** @type {any} */ ({ agents: chaseFrame() }));
-        const drawn = layer.object.geometry.drawRange.count;
+        const drawn = layer.object.geometry.instanceCount * 2;
         expect(drawn).toBeGreaterThan(0);
         const empty = createInterpolated(4);
         layer.setLook?.({ chase: 2 });
         layer.update?.(/** @type {any} */ ({ agents: empty }));
-        expect(layer.object.geometry.drawRange.count).toBe(drawn);
+        expect(layer.object.geometry.instanceCount * 2).toBe(drawn);
         layer.setLook?.({ chase: 0 });
         layer.update?.(/** @type {any} */ ({ agents: empty }));
-        expect(layer.object.geometry.drawRange.count).toBe(0);
+        expect(layer.object.geometry.instanceCount * 2).toBe(0);
         layer.dispose?.();
     });
 });

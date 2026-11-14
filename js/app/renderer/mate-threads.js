@@ -4,7 +4,7 @@
 import { familyColor } from './colors.js';
 import { smoothstep } from './curves.js';
 import { clearLines, createLineBuffer, pushVertex, setLineColor } from './line-buffer.js';
-import { createLineMesh } from './line-mesh.js';
+import { createLineMesh } from './line-draw.js';
 
 export const MATE_TICKS = 45;
 export const MATE_FADE_TICKS = 6;

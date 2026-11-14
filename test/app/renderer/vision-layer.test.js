@@ -62,7 +62,7 @@ describe('createVisionLayer', () => {
         expect(layer.object.visible).toBe(false);
         layer.update?.(/** @type {any} */ ({ lenses: { vision: true }, snapshot, agents }));
         expect(layer.object.visible).toBe(true);
-        expect(layer.object.geometry.drawRange.count).toBe(16);
+        expect(layer.object.geometry.instanceCount * 2).toBe(16);
         layer.dispose();
     });
 });

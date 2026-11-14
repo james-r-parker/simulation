@@ -71,10 +71,10 @@ describe('createOverlays', () => {
             lenses: {},
         };
         layer.update?.(/** @type {any} */ (frame));
-        expect(layer.object.geometry.drawRange.count).toBe(0);
+        expect(layer.object.geometry.instanceCount * 2).toBe(0);
         const picked = { ...frame, selectedId: 2 };
         layer.update?.(/** @type {any} */ (picked));
-        expect(layer.object.geometry.drawRange.count).toBe(4 * 2 + 2 * 2 + 48 * 2 + 32 * 2);
+        expect(layer.object.geometry.instanceCount * 2).toBe(4 * 2 + 2 * 2 + 48 * 2 + 32 * 2);
         layer.dispose();
     });
 
@@ -99,7 +99,7 @@ describe('createOverlays', () => {
                     lenses: {},
                 }),
             );
-            count = layer.object.geometry.drawRange.count;
+            count = layer.object.geometry.instanceCount * 2;
         }
         expect(count).toBe(2 * 2 * 2 + 32 * 2);
     });

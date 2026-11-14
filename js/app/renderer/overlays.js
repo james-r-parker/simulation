@@ -3,7 +3,7 @@
 
 import { createSections, readSections } from '../snapshot-view.js';
 import { PALETTE } from './colors.js';
-import { createLineMesh } from './line-mesh.js';
+import { createLineMesh } from './line-draw.js';
 import { clearLines, createLineBuffer, pushCircle, pushRay, pushVertex, setLineColor } from './line-buffer.js';
 import { createTrails, recordTrails, trackTrails, TRAIL_AGENTS, TRAIL_POINTS, trailIndex } from './trails.js';
 
