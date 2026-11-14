@@ -1,5 +1,5 @@
 // One-shot keyframed tweens on agent bodies: a lunge on a bite, a flinch when bitten, a gulp on a meal, a throb on a
-// call, a bounce when courting, a pop at birth and a shake when sickness passes. Each slot holds one tween; a new one
+// call, a bounce when courting, a pop at birth, a shake when sickness passes and the jaw clamp of a kill. Each slot holds one tween; a new one
 // replaces it only when it ranks at least as high. The agent shader keys the curve from the kind and the age that
 // `packAgents` writes; a slot whose genome changed drops its tween. Preallocated per slot.
 
@@ -14,11 +14,12 @@ export const TWEEN = Object.freeze({
     COURT: 6,
     BIRTH_POP: 7,
     SHAKE_OFF: 8,
+    KILL: 9,
 });
 /** Each kind's length in ticks. */
-export const TWEEN_TICKS = Object.freeze([0, 8, 10, 12, 30, 30, 20, 18, 12]);
+export const TWEEN_TICKS = Object.freeze([0, 8, 10, 12, 30, 30, 20, 18, 12, 24]);
 /** Each kind's rank: a running tween yields only to one of equal or higher rank. */
-export const TWEEN_RANK = Object.freeze([0, 3, 4, 1, 2, 2, 1, 5, 2]);
+export const TWEEN_RANK = Object.freeze([0, 3, 4, 1, 2, 2, 1, 5, 2, 5]);
 
 /**
  * @typedef {object} BodyTweens

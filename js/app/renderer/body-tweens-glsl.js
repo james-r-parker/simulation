@@ -36,7 +36,8 @@ vec2 tweenP(vec2 p) {
     if (k < ${K.HOWL}) return p / vec2(1.0 + 0.15 * abs(sin(a * 9.42477796)), 1.0);
     if (k < ${K.COURT}) return p / (1.0 + 0.1 * abs(sin(a * 6.28318531)));
     if (k < ${K.BIRTH_POP}) return p / max(mix(0.2, 1.0, easeElastic(a)), 0.05);
-    return p + vec2(sin(a * 40.0) * 0.06 * (1.0 - a), 0.0);
+    if (k < ${K.SHAKE_OFF}) return p + vec2(sin(a * 40.0) * 0.06 * (1.0 - a), 0.0);
+    return p / (1.0 + gulpScale(a));
 }
 
 vec2 bodyStates(vec2 p, float cold, float hot) {

@@ -238,11 +238,11 @@ describe('playEffects', () => {
         expect(liveFx(pack.player.fx.pool, 12)).toBe(9);
     });
 
-    it('an eaten death gulps the killer', () => {
+    it('an eaten death plays the kill clamp on the killer', () => {
         const { player } = build();
         const agents = alive([{ slot: 2, genomeId: 9, x: 100, y: 100 }]);
         playEffects(player, queueOf([[2, 5, 1, 2, 7, 9, 1 << 8, 3]]), agents, 5);
-        expect(player.tweens.kind[2]).toBe(TWEEN.GULP);
+        expect(player.tweens.kind[2]).toBe(TWEEN.KILL);
     });
 
     it('a bite sprays from the biter jaw (or the effect when the biter is gone), marks the victim, and tweens both', () => {

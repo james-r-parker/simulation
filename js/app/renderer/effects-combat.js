@@ -131,8 +131,8 @@ export function playBite(player, agents) {
 }
 
 /**
- * A death: the recipe for its cause in the family colour, the pack kill's double ring, and a gulp on the killer of a
- * body eaten.
+ * A death: the recipe for its cause in the family colour, the pack kill's double ring, and the kill clamp on the
+ * killer of a body eaten.
  * @param {import('./effects-player.js').EffectsPlayer} player the player, `player.effect` holding the record
  * @param {import('../interpolate.js').Interpolated} agents the blended agents
  * @returns {void}
@@ -152,6 +152,6 @@ export function playDeath(player, agents) {
         playRecipe(player.fx, FX_RECIPES.packKill, atOf(player, SPOT));
     }
     if (name === 'EATEN') {
-        tweenAt(player, agents, indexOfGenome(agents, e.b), TWEEN.GULP);
+        tweenAt(player, agents, indexOfGenome(agents, e.b), TWEEN.KILL);
     }
 }
