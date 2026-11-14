@@ -6,7 +6,7 @@ import { appLog } from '../app-log.js';
 import { createGroundPack, MOTE_ROLES, packGround } from './ground-pack.js';
 import { createModelMeshes } from './model-meshes.js';
 import { MARK_MODELS, MOTE_MODELS, PATCH_MODEL, REFUGE_MODEL, ROCK_MODEL, ZONE_MODELS } from './models-world.js';
-import { NEON } from './palette.js';
+import { FILL_SHARE, NEON } from './palette.js';
 import { createRefugeOccupancy, stepRefugeOccupancy } from './refuge-occupancy.js';
 import { createWorldPack, packWorld } from './world-pack.js';
 
@@ -22,7 +22,7 @@ function paint(b, rgb) {
         b.neon[o] = rgb[0];
         b.neon[o + 1] = rgb[1];
         b.neon[o + 2] = rgb[2];
-        b.neon[o + 3] = 0.28;
+        b.neon[o + 3] = FILL_SHARE.default;
     }
 }
 

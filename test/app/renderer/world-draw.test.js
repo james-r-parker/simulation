@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createCameraController } from '../../../js/app/camera.js';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
 import { createWorldLayers } from '../../../js/app/renderer/world-draw.js';
@@ -33,5 +33,27 @@ describe('createWorldLayers', () => {
             layer.update?.({ ...frame, snapshot: null });
             layer.dispose();
         }
+    });
+});
+
+describe('createWorldLayers without terrain', () => {
+    it('warns once and still draws', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const ready = smallReady();
+        const info = { ...ready.info, terrain: undefined };
+        const layers = createWorldLayers({ info, layout: { flags: {} }, seed: 1 });
+        expect(warn.mock.calls.some(([r]) => r.event === 'WorldTerrainMissing')).toBe(true);
+        layers.ground.update?.(
+            /** @type {any} */ ({
+                snapshot: ready.snapshot,
+                agents: { count: 0 },
+                nowMs: 0,
+                season: 0,
+                seasonProgress: 0,
+                family: { palette: 'default' },
+            }),
+        );
+        Object.values(layers).forEach((l) => l.dispose());
+        warn.mockRestore();
     });
 });

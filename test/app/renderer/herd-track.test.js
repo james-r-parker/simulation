@@ -69,3 +69,11 @@ describe('trackHerds', () => {
         expect(trackHerds(null, next, 1, { track, ...RULES })).toBe(1);
     });
 });
+
+describe('trackHerds with slots past capacity', () => {
+    it('draws an animal whose slot is beyond the track at its newest position', () => {
+        const track = createHerdTrack(2);
+        trackHerds(snap(1, [[0, 0, 7, 0, 0, 0]]), snap(2, [[4, 0, 7, 0, 0, 0]]), 0.5, { track, ...RULES });
+        expect(track.x[0]).toBe(4);
+    });
+});

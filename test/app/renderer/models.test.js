@@ -78,3 +78,27 @@ describe('modelBounds', () => {
         expect(sdCircle(partExtent(disc.parts[0]), 0, 1)).toBe(0);
     });
 });
+
+describe('validateModel on every rule', () => {
+    it('reports no parts, too many parts, an unknown style and a polygon with too few points', () => {
+        expect(validateModel({ name: 'empty', parts: [] })).toHaveLength(1);
+        const many = Array.from({ length: MAX_PARTS + 1 }, (_, i) => ({ name: `p${i}`, shape: 'circle', r: 1 }));
+        expect(validateModel({ name: 'many', parts: many })).toHaveLength(1);
+        expect(validateModel({ name: 's', parts: [{ name: 'x', shape: 'circle', style: 'glow' }] })).toHaveLength(1);
+        expect(
+            validateModel({
+                name: 'p',
+                parts: [
+                    {
+                        name: 'x',
+                        shape: 'poly',
+                        points: [
+                            [0, 0],
+                            [1, 0],
+                        ],
+                    },
+                ],
+            }),
+        ).toHaveLength(1);
+    });
+});

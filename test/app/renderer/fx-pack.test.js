@@ -49,14 +49,15 @@ describe('packFx', () => {
         expect(pack.buckets.every((b) => b.count === 0)).toBe(true);
     });
 
-    it('keeps a tiny instance at least half its least px across and stretches along the heading', () => {
+    it('keeps a tiny instance at least half its least px across, grows its quad by the stretch and squeezes it across', () => {
         const pool = createFxPool();
         spawnFx(pool, rec(CURVE.crescent, { size: 0.001, minPx: 8, stretch: 3 }));
         const pack = createFxPack(64);
         packFx(pool, pack, { ...VIEW, zoom: 2 });
         const b = pack.buckets[FX_SHAPES.indexOf('CRESCENT')];
-        expect(b.pose[3]).toBeCloseTo(2);
-        expect(b.rig0[3]).toBe(3);
+        expect(b.pose[3]).toBeCloseTo(6);
+        expect(b.rig0[3]).toBe(1);
+        expect(b.rig1[0]).toBeCloseTo(1 / 3);
     });
 
     it('packs nothing before the first spawn', () => {
@@ -80,5 +81,19 @@ describe('motionAt', () => {
         expect(motionAt(FX_MOTIONS.indexOf('fall'), at).y).toBeCloseTo(-5);
         const orbit = motionAt(FX_MOTIONS.indexOf('orbit'), at);
         expect(Math.hypot(orbit.x, orbit.y)).toBeCloseTo(5);
+    });
+});
+
+describe('packFx edges', () => {
+    it('skips an instance whose curve is unknown and lifts a call effect by the lens boost', () => {
+        const pool = createFxPool();
+        spawnFx(pool, rec(999));
+        spawnFx(pool, rec(CURVE.callRing));
+        const pack = createFxPack(64);
+        expect(packFx(pool, pack, { ...VIEW, callBoost: 3 })).toBe(1);
+        const plain = createFxPack(64);
+        packFx(pool, plain, VIEW);
+        const ring = FX_SHAPES.indexOf('RING');
+        expect(pack.buckets[ring].neon[0]).toBeGreaterThan(plain.buckets[ring].neon[0]);
     });
 });

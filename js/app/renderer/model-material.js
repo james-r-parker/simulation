@@ -22,6 +22,7 @@ import { coverage, rimCoverage, sdArc, sdBlob, sdBox, sdCircle, sdDots, sdPoly, 
  * @property {Record<string, any>} [colors] vec3 inputs named by `{in}` colours
  * @property {{amp: any, phase: any}} [blob] vec3 harmonics for a `blob` part
  * @property {any} [dim] float the final colour is multiplied by (a lens dims the layer)
+ * @property {any} [ringFloor] float the least opacity of a `ring`-bound part (the calls lens raises it)
  */
 
 /**
@@ -201,7 +202,7 @@ function paintPart(acc, part, { p, px, rig, inputs, look }) {
         throw new Error(`modelMaterial: no gate input named ${part.gate}`);
     }
     if (part.bind === 'ring') {
-        gate = gate.mul(rig.ringAlpha);
+        gate = gate.mul(inputs.ringFloor === undefined ? rig.ringAlpha : max(rig.ringAlpha, inputs.ringFloor));
     }
     const color = partColor(part, inputs);
     const style = part.style ?? 'shape';
@@ -243,5 +244,6 @@ export function modelMaterial(model, { inputs, look, flash = 0.6 }) {
     material.colorNode = inputs.dim === undefined ? lit : lit.mul(inputs.dim);
     material.opacityNode = acc.a;
     material.alphaTest = 0.002;
+    material.premultipliedAlpha = true;
     return material;
 }

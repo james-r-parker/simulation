@@ -54,7 +54,7 @@ describe('palette', () => {
     it('has rim and fill settings for every family palette', () => {
         for (const name of Object.keys(FAMILY_PALETTES)) {
             expect(RIM_PX[/** @type {keyof typeof RIM_PX} */ (name)]).toBeGreaterThan(1);
-            expect(FILL_SHARE[/** @type {keyof typeof FILL_SHARE} */ (name)]).toBeGreaterThan(0.2);
+            expect(FILL_SHARE[/** @type {keyof typeof FILL_SHARE} */ (name)]).toBeGreaterThan(0.1);
         }
     });
 });
@@ -103,5 +103,12 @@ describe('toDisplay', () => {
     it('may write in place', () => {
         const c = [0.1, 0.2, 0.05];
         expect(toDisplay(c, c)).toBe(c);
+    });
+});
+
+describe('toDisplay at a dark lightness', () => {
+    it('lifts to any lightness asked for, below half as well as above', () => {
+        const out = toDisplay([0.3, 0.1, 0], [0, 0, 0], 0.3);
+        expect(lightness(out)).toBeCloseTo(0.3, 4);
     });
 });

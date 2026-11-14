@@ -51,3 +51,37 @@ describe('createFxLayers', () => {
         flashes.dispose();
     });
 });
+
+describe('createFxLayers lenses', () => {
+    it('boosts call effects under the calls lens and the high-contrast palette', () => {
+        const pool = createFxPool();
+        spawnFx(pool, {
+            x: 0,
+            y: 0,
+            angle: 0,
+            size: 4,
+            r: 1,
+            g: 1,
+            b: 1,
+            gain: 1,
+            tick: 100,
+            life: 10,
+            seed: 0,
+            reach: 10,
+            stretch: 1,
+            minPx: 2,
+            curve: CURVE.callRing,
+        });
+        const [particles] = createFxLayers({ pool });
+        particles.update?.(
+            /** @type {any} */ ({
+                tick: 101,
+                camera: { zoom: 1 },
+                lenses: { calls: true },
+                family: { palette: 'high-contrast' },
+            }),
+        );
+        expect(particles.object.children[FX_SHAPES.indexOf('RING')].geometry.instanceCount).toBe(1);
+        particles.dispose();
+    });
+});

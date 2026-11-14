@@ -70,14 +70,18 @@ const THREE = { ColorManagement, NoToneMapping, LinearSRGBColorSpace };
 
 /**
  * @param {{backend?: string | null, gputime?: boolean}} params the URL parameters
- * @returns {Promise<any>} an initialised, configured renderer
+ * @param {{Renderer?: any, gpu?: any}} [deps] the renderer class and `navigator.gpu` (the real ones by default)
+ * @returns {Promise<any>} an initialised, configured renderer on the backend `chooseBackend` picks
  */
-async function startRenderer(params) {
-    const gpu = /** @type {any} */ (globalThis.navigator)?.gpu;
-    const adapter = gpu === undefined ? null : await gpu.requestAdapter({ powerPreference: 'high-performance' });
+export async function startRenderer(
+    params,
+    { Renderer = WebGPURenderer, gpu = /** @type {any} */ (globalThis.navigator)?.gpu } = {},
+) {
+    const adapter =
+        gpu === undefined || gpu === null ? null : await gpu.requestAdapter({ powerPreference: 'high-performance' });
     const info = adapter === null ? null : (adapter.info ?? {});
     const backend = chooseBackend(params.backend, info);
-    const renderer = new WebGPURenderer(stageOptions({ backend, gputime: params.gputime }));
+    const renderer = new Renderer(stageOptions({ backend, gputime: params.gputime }));
     await renderer.init();
     configureRenderer(renderer, THREE);
     renderer.domElement.style.cssText = 'width:100%;height:100%;display:block;background:#000';
@@ -266,7 +270,7 @@ async function firstRenderer(start, params, container) {
  */
 export async function createStage(options) {
     const { container, info, buildLayers, params = {}, onRestored } = options;
-    const start = options.start ?? startRenderer;
+    const start = options.start ?? ((/** @type {any} */ p) => startRenderer(p));
     const renderer = await firstRenderer(start, params, container);
     /** @type {Rig} */
     const rig = {

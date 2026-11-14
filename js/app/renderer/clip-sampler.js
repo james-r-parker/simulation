@@ -24,7 +24,7 @@ export function keyedAt(keys, t) {
             const t0 = /** @type {number} */ (keys[i - 1][0]);
             const v0 = /** @type {number} */ (keys[i - 1][1]);
             const span = /** @type {number} */ (t1) - t0;
-            const u = span > 0 ? (t - t0) / span : 1;
+            const u = (t - t0) / span;
             const e = easeAt(u, ease === undefined ? 0 : FX_EASE.indexOf(/** @type {string} */ (ease)));
             const v1n = /** @type {number} */ (v1);
             return v0 + (v1n - v0) * e;

@@ -8,7 +8,7 @@ import { MOMENT_LOG_SIZE } from '../director/moment-log.js';
 import { PALETTE } from './colors.js';
 import { createModelMeshes } from './model-meshes.js';
 import { MODELS } from './models.js';
-import { toDisplay } from './palette.js';
+import { FILL_SHARE, toDisplay } from './palette.js';
 
 const VEC4 = 4;
 
@@ -87,7 +87,7 @@ export function createFxPointersLayer({ moments }) {
                 bucket.neon[o] = rgb[0] * a;
                 bucket.neon[o + 1] = rgb[1] * a;
                 bucket.neon[o + 2] = rgb[2] * a;
-                bucket.neon[o + 3] = 0.28;
+                bucket.neon[o + 3] = FILL_SHARE.default;
             }
             meshes.upload();
         },

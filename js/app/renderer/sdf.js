@@ -92,7 +92,7 @@ export function sdDots(p, { radius, count, ring, phase = 0 }) {
 
 /** @param {any} d distance @param {any} px one pixel in the same units @returns {any} the share of the pixel inside */
 export function coverage(d, px) {
-    return smoothstep(float(px).mul(0.5), float(px).mul(-0.5), d);
+    return smoothstep(float(px).mul(-0.5), float(px).mul(0.5), d).oneMinus();
 }
 
 /** @param {any} d distance @param {any} rimPx rim width in px @param {any} px one pixel @returns {any} rim coverage */

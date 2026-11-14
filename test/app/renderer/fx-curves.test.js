@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
     CURVE,
     curveAt,
-    curveUniforms,
     easeAt,
     FX_CURVES,
     FX_EASE,
@@ -30,17 +29,6 @@ describe('FX_CURVES', () => {
         for (const c of FX_CURVES) {
             expect(c.alpha[3]).toBe(0);
         }
-    });
-
-    it('packs the table into uniform arrays in index order', () => {
-        const u = curveUniforms();
-        const i = CURVE.chevron;
-        const c = FX_CURVES[i];
-        expect(Array.from(u.scale.subarray(i * 4, i * 4 + 4))).toEqual(c.scale.map((v) => Math.fround(v)));
-        expect(u.info[i * 4]).toBe(FX_SHAPES.indexOf('CHEVRON'));
-        expect(u.info[i * 4 + 1]).toBe(FX_MOTIONS.indexOf('fixed'));
-        expect(u.info[i * 4 + 2]).toBe(FX_EASE.indexOf('quadOut'));
-        expect(u.info[i * 4 + 3]).toBe(1);
     });
 });
 

@@ -25,3 +25,14 @@ describe('createHerdDraw', () => {
         layer.dispose();
     });
 });
+
+describe('createHerdDraw without the newer info fields', () => {
+    it('draws from one snapshot with no older one, family or radius', () => {
+        const layer = createHerdDraw({ info: { herdMax: 2 } });
+        layer.update?.(
+            /** @type {any} */ ({ snapshot: makeSnapshot(1, [], { herds: [[5, 5, 0, 0, 0, 0]] }), alpha: 1, nowMs: 0 }),
+        );
+        expect(layer.object.geometry.instanceCount).toBe(1);
+        layer.dispose();
+    });
+});

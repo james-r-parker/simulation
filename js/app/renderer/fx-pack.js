@@ -4,7 +4,7 @@
 
 import { easeAt, FLAG_CALL, FX_CURVES, FX_EASE, FX_MOTIONS, FX_SHAPES, keysAt } from './fx-curves.js';
 import { FX_CAPACITY } from './fx-ring.js';
-import { toDisplay } from './palette.js';
+import { FILL_SHARE, toDisplay } from './palette.js';
 
 const ITEM = 4;
 /** The curve drawn as a soft glow instead of a crisp shape: the event flash. */
@@ -14,12 +14,16 @@ const CURVE_MOTION = FX_CURVES.map((c) => FX_MOTIONS.indexOf(c.motion));
 const CURVE_EASE = FX_CURVES.map((c) => FX_EASE.indexOf(c.ease));
 const CURVE_GLOW = FX_CURVES.map((c) => c.name === GLOW_CURVE);
 
-/** @param {number} capacity rows @returns {{pose: Float32Array, neon: Float32Array, rig0: Float32Array, count: number}} a bucket */
+/**
+ * @param {number} capacity rows
+ * @returns {{pose: Float32Array, neon: Float32Array, rig0: Float32Array, rig1: Float32Array, count: number}} a bucket
+ */
 function bucket(capacity) {
     return {
         pose: new Float32Array(capacity * ITEM),
         neon: new Float32Array(capacity * ITEM),
         rig0: new Float32Array(capacity * ITEM),
+        rig1: new Float32Array(capacity * ITEM),
         count: 0,
     };
 }
@@ -81,16 +85,22 @@ function neonRow(neon, r, pool, k) {
 const RING_ROW = { o: 0 };
 
 /**
- * @param {Float32Array} rig0 a bucket's first rig lane
+ * Squeezes the model across its heading by the stretch; the caller has already grown its radius by it, so the
+ * stretched shape stays inside its quad.
+ * @param {{rig0: Float32Array, rig1: Float32Array}} b a bucket
  * @param {number} r the row offset
- * @param {number} stretch length over width along the heading
+ * @param {number} stretch length over width along the heading, at least 1
  * @returns {void}
  */
-function stretchRow(rig0, r, stretch) {
-    rig0[r] = 0;
-    rig0[r + 1] = 0;
-    rig0[r + 2] = 0;
-    rig0[r + 3] = Math.max(stretch, 1);
+function stretchRow(b, r, stretch) {
+    b.rig0[r] = 0;
+    b.rig0[r + 1] = 0;
+    b.rig0[r + 2] = 0;
+    b.rig0[r + 3] = 1;
+    b.rig1[r] = 1 / stretch;
+    b.rig1[r + 1] = 0;
+    b.rig1[r + 2] = 1;
+    b.rig1[r + 3] = 0;
 }
 
 /**
@@ -137,13 +147,15 @@ export function packFx(pool, pack, { tick, zoom, callBoost, contrast }) {
         b.pose[r] = pool.pose[o] + move.x;
         b.pose[r + 1] = pool.pose[o + 1] + move.y;
         b.pose[r + 2] = AT.angle;
-        b.pose[r + 3] = Math.max(
+        const stretch = Math.max(pool.move[o + 1], 1);
+        const size = Math.max(
             pool.pose[o + 3] * keysAt(curve.scale, t),
             (0.5 * pool.move[o + 2]) / Math.max(zoom, 1e-6),
         );
+        b.pose[r + 3] = size * stretch;
         neonRow(b.neon, r, pool, bright * Math.min(1, Math.max(pool.color[o + 3] * contrast, MIN_GAIN)));
-        b.neon[r + 3] = 0.28;
-        stretchRow(b.rig0, r, pool.move[o + 1]);
+        b.neon[r + 3] = FILL_SHARE.default;
+        stretchRow(b, r, stretch);
     }
     return live;
 }

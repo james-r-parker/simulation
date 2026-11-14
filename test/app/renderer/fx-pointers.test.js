@@ -87,3 +87,25 @@ describe('the pointer layer', () => {
         expect(PALETTE.coolWhite).toBeDefined();
     });
 });
+
+describe('the pointer layer arrows', () => {
+    it('draws one arrow for a recent kill off screen', () => {
+        const moments = createMomentLog();
+        moments.count = 1;
+        moments.x[0] = 3900;
+        moments.y[0] = 2900;
+        moments.atMs[0] = 0;
+        moments.kind[0] = 'kill';
+        const layer = createFxPointersLayer({ moments });
+        const camera = createCameraController({
+            canvas: { width: 400, height: 300 },
+            world: { width: 4000, height: 3000 },
+        });
+        camera.zoom = 1;
+        camera.x = 200;
+        camera.y = 150;
+        layer.update?.(/** @type {any} */ ({ camera, nowMs: 10 }));
+        expect(layer.object.children[0].geometry.instanceCount).toBe(1);
+        layer.dispose();
+    });
+});

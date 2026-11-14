@@ -21,7 +21,8 @@ import {
 } from 'three/tsl';
 import { createInstances, instancedMesh, uploadInstances } from './instances.js';
 import { createLineBuffer, pushVertex, setLineColor } from './line-buffer.js';
-import { NEON, toDisplay } from './palette.js';
+import { PALETTE } from './colors.js';
+import { toDisplay } from './palette.js';
 
 /** The default stroke width, device px. */
 export const LINE_PX = 1.5;
@@ -78,7 +79,7 @@ function lineMaterial(widthPx) {
     const pa = p.sub(a);
     const h = clamp(dot(pa, delta).div(max(dot(delta, delta), 1e-8)), 0, 1);
     const dPx = length(pa.sub(delta.mul(h))).div(pxWorld);
-    const cover = smoothstep(float(widthPx / 2 + 0.5), float(widthPx / 2 - 0.5), dPx);
+    const cover = smoothstep(float(widthPx / 2 - 0.5), float(widthPx / 2 + 0.5), dPx).oneMinus();
     material.colorNode = color.xyz.mul(cover);
     return material;
 }
@@ -113,7 +114,7 @@ export function createLineMesh(lines, { widthPx = LINE_PX } = {}) {
 export function createBorderLines({ info }) {
     const lines = createLineBuffer(4);
     const { worldWidth: w, worldHeight: h } = info;
-    setLineColor(lines, NEON.rock, 0.9);
+    setLineColor(lines, PALETTE.border, 0.9);
     const corners = [0, 0, w, 0, w, h, 0, h, 0, 0];
     for (let k = 0; k < 4; k++) {
         pushVertex(lines, corners[k * 2], corners[k * 2 + 1]);

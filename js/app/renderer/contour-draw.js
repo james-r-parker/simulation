@@ -73,7 +73,9 @@ function isoLines(value) {
     const scaled = value.mul(CONTOUR_LEVELS + 1);
     const distance = abs(fract(scaled.sub(0.5)).sub(0.5)).div(max(fwidth(scaled), 1e-5));
     const inside = smoothstep(float(0.02), float(0.06), value);
-    return smoothstep(float(CONTOUR_PX / 2 + 0.5), float(CONTOUR_PX / 2 - 0.5), distance).mul(inside);
+    return smoothstep(float(CONTOUR_PX / 2 - 0.5), float(CONTOUR_PX / 2 + 0.5), distance)
+        .oneMinus()
+        .mul(inside);
 }
 
 /**

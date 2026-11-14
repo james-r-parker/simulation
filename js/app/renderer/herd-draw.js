@@ -10,7 +10,7 @@ import { createInstances, instancedMesh, uploadInstances } from './instances.js'
 import { modelMaterial } from './model-material.js';
 import { standardInputs } from './model-meshes.js';
 import { HERD_MODEL } from './models-world.js';
-import { RIM_PX } from './palette.js';
+import { FILL_SHARE, RIM_PX } from './palette.js';
 
 /**
  * @param {{info: Record<string, any>}} context `ready.info` (`herdMax`, `herdRadius`, `herdRunSpeed`)
@@ -28,7 +28,10 @@ export function createHerdDraw({ info }) {
         iRig2: pack.rig2,
     });
     const rimPx = uniform(RIM_PX.default);
-    const material = modelMaterial(HERD_MODEL, { inputs: standardInputs(), look: { rimPx, fillShare: 0.28 } });
+    const material = modelMaterial(HERD_MODEL, {
+        inputs: standardInputs(),
+        look: { rimPx, fillShare: FILL_SHARE.default },
+    });
     const table = bakeClips(CLIPS);
     const rules = { track, runSpeed: info.herdRunSpeed ?? 0, radius: info.herdRadius ?? 0 };
     const ctx = { table, radius: info.herdRadius ?? 1, timeSec: 0 };

@@ -127,9 +127,6 @@ async function buildStage(app) {
     }
     app.deps.scene = stage;
     app.deps.scene.resize(app.size.width, app.size.height);
-    if (app.ready !== ready) {
-        app.deps.scene.rebuild();
-    }
     listen({
         canvas: app.deps.scene.canvas,
         perform: app.perform,
@@ -137,8 +134,7 @@ async function buildStage(app) {
         iface: app.iface,
         toDevice: (e) => clientToDevice(app, { x: e.clientX, y: e.clientY }),
     });
-    app.deps.gpuTimer = gpuTimeFor(app.deps.scene);
-    app.loop.reset(/** @type {Record<string, any>} */ (app.ready).info.maxAgents);
+    startWorld(app);
 }
 
 /**
@@ -158,8 +154,13 @@ function onReady(app, message) {
         return;
     }
     app.deps.scene.rebuild();
+    startWorld(app);
+}
+
+/** Restarts the loop on the current world and applies a requested speed. @param {App} app the page @returns {void} */
+function startWorld(app) {
     app.deps.gpuTimer = gpuTimeFor(app.deps.scene);
-    app.loop.reset(message.info.maxAgents);
+    app.loop.reset(/** @type {Record<string, any>} */ (app.ready).info.maxAgents);
     if (app.state.requestedTicksPerSecond !== DEFAULT_TICKS_PER_SECOND) {
         app.supervisor.client()?.setSpeed(app.state.requestedTicksPerSecond);
     }

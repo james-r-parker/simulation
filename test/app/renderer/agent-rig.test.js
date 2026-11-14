@@ -119,3 +119,10 @@ describe('rigBucket', () => {
         expect(out.rig0[ITEM + CH.sx]).toBe(0);
     });
 });
+
+describe('rigBucket palettes', () => {
+    it('falls back to the default fill share for an unknown palette', () => {
+        const out = rigOf([{ slot: 0, genomeId: 1, energy: 1 }], { ctx: { palette: 'nope' } });
+        expect(out.neon[3]).toBeCloseTo(FILL_SHARE.default);
+    });
+});

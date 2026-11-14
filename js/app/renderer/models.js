@@ -28,53 +28,48 @@ export const BINDS = Object.freeze(['jawUp', 'jawDown', 'eye', 'ring', 'limbA', 
 /** How a part is painted: rim and flat fill, a solid fill in the full colour, or the rim alone. */
 export const STYLES = Object.freeze(['shape', 'solid', 'outline']);
 /** The largest scale any clip gives a body, and a call ring. */
-export const MAX_BODY_SCALE = 1.35;
+export const MAX_BODY_SCALE = 1.5;
 export const MAX_RING_SCALE = 1.7;
 /** The widest a jaw opens, radians. */
 export const JAW_OPEN = 0.6;
 
-const eye = (/** @type {number} */ x, /** @type {number} */ r = 0.12) => ({
-    name: 'eye',
-    shape: 'circle',
-    r,
-    at: [x, 0],
-    pivot: [x, 0],
+/**
+ * @param {number} from where the line starts, behind the nose
+ * @param {number} to where it ends
+ * @returns {object} the spine: a hairline along the heading that the `eye` channel lengthens and shortens (juvenile,
+ *   resting and fleeing read from it), in place of a face
+ */
+const spine = (from, to) => ({
+    name: 'spine',
+    shape: 'segment',
+    a: [from, 0],
+    b: [to, 0],
+    width: 0.05,
+    pivot: [from, 0],
     bind: 'eye',
     style: 'solid',
 });
 
-/** Parts every agent model carries, each gated by its state. */
+/** Parts every agent model carries, each gated by its state, all thin marks rather than blobs. */
 export const SHARED_PARTS = Object.freeze([
-    { name: 'belly', shape: 'circle', r: 0.26, at: [-0.15, 0], gate: 'pregnant', color: 'court', style: 'solid' },
     {
         name: 'gestation',
         shape: 'arc',
         r: 0.42,
-        width: 0.07,
+        width: 0.05,
         start: Math.PI / 2,
         sweep: { in: 'gestation', mul: 2 * Math.PI },
         gate: 'pregnant',
         color: 'court',
         style: 'solid',
     },
+    { name: 'sick', shape: 'ring', r: 0.62, width: 0.035, dashes: 6, gate: 'sick', color: 'toxic', style: 'solid' },
     {
-        name: 'sickSpots',
-        shape: 'dots',
-        r: 0.09,
-        count: 3,
-        ring: 0.45,
-        phase: 0.5,
-        gate: 'sick',
-        color: 'toxic',
-        style: 'solid',
-    },
-    {
-        name: 'infectSpots',
-        shape: 'dots',
-        r: 0.08,
-        count: 3,
-        ring: 0.5,
-        phase: 1.55,
+        name: 'infected',
+        shape: 'ring',
+        r: 0.74,
+        width: 0.03,
+        dashes: 12,
         gate: 'infected',
         color: 'infected',
         style: 'solid',
@@ -82,10 +77,10 @@ export const SHARED_PARTS = Object.freeze([
     {
         name: 'pollen',
         shape: 'dots',
-        r: 0.08,
+        r: 0.055,
         count: 3,
-        ring: 0.22,
-        at: [-1.3, 0],
+        ring: 0.18,
+        at: [-1.25, 0],
         gate: 'pollen',
         color: { in: 'pollenColor' },
         style: 'solid',
@@ -94,13 +89,13 @@ export const SHARED_PARTS = Object.freeze([
         name: 'callRing',
         shape: 'ring',
         r: 1.45,
-        width: 0.06,
+        width: 0.04,
         bind: 'ring',
         gate: 'calling',
         color: { in: 'callColor' },
         style: 'solid',
     },
-    { name: 'cover', shape: 'ring', r: 1.3, width: 0.07, dashes: 8, gate: 'inCover', color: 'rock', style: 'solid' },
+    { name: 'cover', shape: 'ring', r: 1.3, width: 0.04, dashes: 8, gate: 'inCover', color: 'rock', style: 'solid' },
 ]);
 
 /**
@@ -112,6 +107,14 @@ function agent(name, own) {
     return Object.freeze({ name, parts: Object.freeze([...own, ...SHARED_PARTS]) });
 }
 
+const SHIELD = [
+    [0.85, 0],
+    [0.35, 0.78],
+    [-0.8, 0.62],
+    [-0.8, -0.62],
+    [0.35, -0.78],
+];
+
 /** The five agent models by specialisation name. */
 export const AGENT_MODELS = Object.freeze({
     predator: agent('predator', [
@@ -119,15 +122,15 @@ export const AGENT_MODELS = Object.freeze({
             name: 'body',
             shape: 'poly',
             points: [
-                [0.6, 0.42],
-                [-0.3, 0.62],
-                [-0.85, 1.0],
-                [-0.62, 0.3],
-                [-1.0, 0],
-                [-0.62, -0.3],
-                [-0.85, -1.0],
-                [-0.3, -0.62],
-                [0.6, -0.42],
+                [0.55, 0.3],
+                [-0.35, 0.42],
+                [-0.82, 0.68],
+                [-0.62, 0.2],
+                [-0.95, 0],
+                [-0.62, -0.2],
+                [-0.82, -0.68],
+                [-0.35, -0.42],
+                [0.55, -0.3],
             ],
         },
         {
@@ -135,8 +138,8 @@ export const AGENT_MODELS = Object.freeze({
             shape: 'poly',
             points: [
                 [0.5, 0.02],
-                [1.32, 0.07],
-                [0.5, 0.44],
+                [1.25, 0.05],
+                [0.5, 0.32],
             ],
             pivot: [0.5, 0.02],
             bind: 'jawUp',
@@ -146,45 +149,26 @@ export const AGENT_MODELS = Object.freeze({
             shape: 'poly',
             points: [
                 [0.5, -0.02],
-                [0.5, -0.44],
-                [1.32, -0.07],
+                [0.5, -0.32],
+                [1.25, -0.05],
             ],
             pivot: [0.5, -0.02],
             bind: 'jawDown',
         },
-        eye(0.2, 0.13),
+        spine(-0.55, 0.3),
     ]),
     forager: agent('forager', [
         {
             name: 'body',
             shape: 'poly',
             points: [
-                [1.1, 0],
-                [0, 0.75],
-                [-1.0, 0],
-                [0, -0.75],
+                [1.05, 0],
+                [0, 0.62],
+                [-0.95, 0],
+                [0, -0.62],
             ],
         },
-        {
-            name: 'eyeUp',
-            shape: 'segment',
-            a: [0.5, 0],
-            b: [0.2, 0.22],
-            width: 0.09,
-            pivot: [0.5, 0],
-            bind: 'eye',
-            style: 'solid',
-        },
-        {
-            name: 'eyeDown',
-            shape: 'segment',
-            a: [0.5, 0],
-            b: [0.2, -0.22],
-            width: 0.09,
-            pivot: [0.5, 0],
-            bind: 'eye',
-            style: 'solid',
-        },
+        spine(-0.5, 0.55),
     ]),
     reproducer: agent('reproducer', [
         {
@@ -192,27 +176,27 @@ export const AGENT_MODELS = Object.freeze({
             shape: 'poly',
             points: [0, 1, 2, 3, 4, 5].map((k) => [Math.cos((k * Math.PI) / 3), Math.sin((k * Math.PI) / 3)]),
         },
-        { name: 'inner', shape: 'ring', r: 0.62, width: 0.06, style: 'solid' },
-        eye(0.6, 0.1),
+        { name: 'inner', shape: 'ring', r: 0.55, width: 0.035, style: 'solid' },
+        spine(0.2, 0.75),
     ]),
     scout: agent('scout', [
         {
             name: 'antennaUp',
             shape: 'segment',
-            a: [0.7, 0.1],
-            b: [1.7, 0.75],
-            width: 0.07,
-            pivot: [0.7, 0.1],
+            a: [0.7, 0.08],
+            b: [1.6, 0.62],
+            width: 0.045,
+            pivot: [0.7, 0.08],
             bind: 'limbA',
             style: 'solid',
         },
         {
             name: 'antennaDown',
             shape: 'segment',
-            a: [0.7, -0.1],
-            b: [1.7, -0.75],
-            width: 0.07,
-            pivot: [0.7, -0.1],
+            a: [0.7, -0.08],
+            b: [1.6, -0.62],
+            width: 0.045,
+            pivot: [0.7, -0.08],
             bind: 'limbB',
             style: 'solid',
         },
@@ -220,18 +204,18 @@ export const AGENT_MODELS = Object.freeze({
             name: 'body',
             shape: 'poly',
             points: [
-                [1.2, 0],
-                [-0.6, 0.58],
+                [1.15, 0],
+                [-0.6, 0.5],
                 [-0.3, 0],
-                [-0.6, -0.58],
+                [-0.6, -0.5],
             ],
         },
-        eye(0.45, 0.1),
+        spine(-0.2, 0.7),
     ]),
     defender: agent('defender', [
-        { name: 'body', shape: 'box', hx: 0.9, hy: 0.85, corner: 0.35 },
-        { name: 'studs', shape: 'dots', r: 0.12, count: 4, ring: 0.6, phase: Math.PI / 4, style: 'solid' },
-        eye(0.5, 0.11),
+        { name: 'body', shape: 'poly', points: SHIELD },
+        { name: 'inner', shape: 'poly', points: SHIELD.map(([x, y]) => [x * 0.6, y * 0.6]), style: 'outline' },
+        spine(-0.45, 0.5),
     ]),
 });
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createCameraController } from '../../../js/app/camera.js';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
 import { createAgentDraw, meshTable, SCENT_DIM } from '../../../js/app/renderer/agent-draw.js';
@@ -58,5 +58,28 @@ describe('createAgentDraw', () => {
 
     it('maps spec indices to meshes', () => {
         expect(meshTable({ specs: [{ index: 2 }, { index: 0 }] })).toEqual([1, -1, 0]);
+    });
+});
+
+describe('createAgentDraw fallbacks', () => {
+    it('draws an unknown spec with the forager model, logs it, and handles the cvd-safe palette and the calls lens', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const ready = smallReady();
+        const info = {
+            ...ready.info,
+            specs: ready.info.specs.map((/** @type {any} */ s, /** @type {number} */ i) =>
+                i === 0 ? { ...s, name: 'mystery' } : s,
+            ),
+        };
+        const layer = createAgentDraw({ info, flagBits: ready.layout.flags, stateBits: ready.layout.stateBits });
+        expect(warn.mock.calls.some(([r]) => r.event === 'ModelMissing' && r.spec === 'mystery')).toBe(true);
+        layer.update?.(
+            frameOf(ready, {
+                family: createFamilySlots('cvd-safe'),
+                lenses: { temperature: true, scent: false, calls: true },
+            }),
+        );
+        expect(layer.object.children.length).toBe(info.specs.length);
+        warn.mockRestore();
     });
 });

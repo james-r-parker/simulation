@@ -194,7 +194,9 @@ function putRgb(target, o, rgb, w) {
  * @param {number[]} rgb scratch
  * @returns {void}
  */
-function colorRow(ctx, { bucket, o, flags }, out, rgb) {
+function colorRow(ctx, row, out, rgb) {
+    const { bucket, o } = row;
+    ROW_REF.row = row;
     const lens = ctx.temperatureLens;
     const source = lens === null ? bucket.color : temperatureColor(bucket.state[o], lens, rgb);
     rgb[0] = source[lens === null ? o : 0];
@@ -203,7 +205,7 @@ function colorRow(ctx, { bucket, o, flags }, out, rgb) {
     toDisplay(rgb, rgb);
     const full = FILL_SHARE[/** @type {keyof typeof FILL_SHARE} */ (ctx.palette)] ?? FILL_SHARE.default;
     putRgb(out.neon, o, rgb, FILL_FLOOR + (full - FILL_FLOOR) * Math.min(Math.max(bucket.color[o + 3], 0), 1));
-    gateRow(ctx, { bucket, o, flags }, out, rgb);
+    gateRow(ctx, ROW_REF.row, out, rgb);
 }
 
 /**
@@ -232,6 +234,7 @@ function gateRow(ctx, { bucket, o, flags }, out, rgb) {
 }
 
 const ROW = { bucket: /** @type {any} */ (null), o: 0, flags: 0 };
+const ROW_REF = { row: ROW };
 
 /**
  * Fills the rig arrays of one bucket from its packed rows.

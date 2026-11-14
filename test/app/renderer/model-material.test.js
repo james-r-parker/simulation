@@ -62,3 +62,42 @@ describe('modelMaterial', () => {
         expect(() => modelMaterial(MODELS.rock, { inputs, look: LOOK })).toThrow(/blob/);
     });
 });
+
+describe('modelMaterial input checks', () => {
+    const base = { center: vec2(0, 0), angle: float(0), radius: float(1), color: vec3(1, 1, 1) };
+
+    it('names a missing bound parameter, colour or gate', () => {
+        const param = {
+            name: 'p',
+            parts: [{ name: 'a', shape: 'arc', r: 1, width: 0.1, start: 0, sweep: { in: 'level', mul: 1 } }],
+        };
+        expect(() => modelMaterial(param, { inputs: base, look: LOOK })).toThrow(/no input named level/);
+        const colour = { name: 'c', parts: [{ name: 'a', shape: 'circle', r: 1, color: { in: 'tint' } }] };
+        expect(() => modelMaterial(colour, { inputs: base, look: LOOK })).toThrow(/no colour input named tint/);
+        const gate = { name: 'g', parts: [{ name: 'a', shape: 'circle', r: 1, gate: 'lit' }] };
+        expect(() => modelMaterial(gate, { inputs: base, look: LOOK })).toThrow(/no gate input named lit/);
+    });
+
+    it('raises a ring part to the floor it is given and dims the whole model', () => {
+        const ring = { name: 'r', parts: [{ name: 'a', shape: 'ring', r: 1, width: 0.1, bind: 'ring' }] };
+        const m = modelMaterial(ring, { inputs: { ...base, ringFloor: float(0.5), dim: float(0.5) }, look: LOOK });
+        expect(m.premultipliedAlpha).toBe(true);
+    });
+});
+
+describe('modelMaterial bound parameters', () => {
+    it('takes a bound parameter at face value when it names no multiplier', () => {
+        const arc = {
+            name: 'a',
+            parts: [{ name: 'a', shape: 'arc', r: 1, width: 0.1, start: 0, sweep: { in: 'level' } }],
+        };
+        const inputs = {
+            center: vec2(0, 0),
+            angle: float(0),
+            radius: float(1),
+            color: vec3(1, 1, 1),
+            values: { level: float(1) },
+        };
+        expect(modelMaterial(arc, { inputs, look: LOOK }).colorNode.isNode).toBe(true);
+    });
+});

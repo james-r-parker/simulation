@@ -49,3 +49,15 @@ describe('ground pack', () => {
         }
     });
 });
+
+describe('ground pack without cold margins', () => {
+    it('leaves winter motes where they drift', () => {
+        const pack = createGroundPack(
+            { worldWidth: 2000, worldHeight: 1000, terrain: { coldMarginWidth: 0, wallX: 1000 } },
+            3,
+        );
+        packGround(pack, { ...VIEW, season: 3 });
+        expect(pack.moteBuckets[3].count).toBe(SEASON_MOTES);
+        expect(createGroundPack({ worldWidth: 2000, worldHeight: 1000 }, 3).frost.count).toBe(0);
+    });
+});

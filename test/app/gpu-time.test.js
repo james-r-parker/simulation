@@ -74,3 +74,18 @@ describe('gpuTimeFor', () => {
         expect(gpuTimeFor({ renderer: fake().renderer })?.latest()).toBe(-1);
     });
 });
+
+describe('createGpuTime failures', () => {
+    it('records nothing when a resolve rejects, and begin is a no-op', async () => {
+        const renderer = { resolveTimestampsAsync: () => Promise.reject(new Error('lost')) };
+        const timer = createGpuTime(renderer);
+        timer.begin();
+        timer.end();
+        timer.poll();
+        await new Promise((r) => setTimeout(r, 0));
+        expect(timer.latest()).toBe(-1);
+        timer.end();
+        timer.poll();
+        expect(timer.samples()).toHaveLength(0);
+    });
+});

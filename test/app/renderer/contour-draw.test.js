@@ -47,3 +47,19 @@ describe('the contour lenses', () => {
         territory.dispose();
     });
 });
+
+describe('the territory lens refresh', () => {
+    it('skips the work while hidden, without a new snapshot or before the refresh is due', () => {
+        const info = { worldWidth: 100, worldHeight: 100 };
+        const layer = createTerritoryContours({ info });
+        const family = createFamilySlots();
+        const snapshot = makeSnapshot(1, []);
+        layer.update?.(/** @type {any} */ ({ lenses: { territory: false }, family, snapshot, nowMs: 0 }));
+        expect(layer.object.visible).toBe(false);
+        layer.update?.(/** @type {any} */ ({ lenses: { territory: true }, family, snapshot, nowMs: 1000 }));
+        layer.update?.(/** @type {any} */ ({ lenses: { territory: true }, family, snapshot, nowMs: 1001 }));
+        layer.update?.(/** @type {any} */ ({ lenses: { territory: true }, family, snapshot: null, nowMs: 2000 }));
+        expect(layer.object.visible).toBe(true);
+        layer.dispose();
+    });
+});

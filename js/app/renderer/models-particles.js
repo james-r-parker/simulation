@@ -68,9 +68,9 @@ export const PARTICLE_MODELS = Object.freeze([
     {
         name: 'SPROUT',
         parts: [
-            { name: 'stem', shape: 'segment', ...seg([0, -1], [0, 0.4], 0.14), color: 'forager', style: 'solid' },
-            { name: 'leafL', shape: 'circle', r: 0.28, at: [-0.3, 0.45], color: 'forager', style: 'solid' },
-            { name: 'leafR', shape: 'circle', r: 0.28, at: [0.3, 0.6], color: 'forager', style: 'solid' },
+            { name: 'stem', shape: 'segment', ...seg([0, -1], [0, 0.4], 0.14), style: 'solid' },
+            { name: 'leafL', shape: 'circle', r: 0.28, at: [-0.3, 0.45], style: 'solid' },
+            { name: 'leafR', shape: 'circle', r: 0.28, at: [0.3, 0.6], style: 'solid' },
         ],
     },
     {

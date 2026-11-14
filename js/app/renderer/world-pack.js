@@ -11,7 +11,7 @@ import {
     ZONE_STRIDE,
 } from '../snapshot-view.js';
 import { floraColor } from './flora-colors.js';
-import { NEON, toDisplay } from './palette.js';
+import { FILL_SHARE, NEON, toDisplay } from './palette.js';
 import { rockShape, SHAPE_FLOATS } from './rock-shape.js';
 import { cloudShape } from './cloud-shape.js';
 
@@ -95,7 +95,7 @@ function packRocks(pack, snap, s) {
         const k = (i % (pack.shapes.length / SHAPE_FLOATS)) * SHAPE_FLOATS;
         put2(b.pose, o, snap.f32[w], snap.f32[w + 1]);
         put2(b.pose, o + 2, 0, snap.f32[w + 2]);
-        color(b, o, NEON.rock, 0.28);
+        color(b, o, NEON.rock, FILL_SHARE.default);
         put2(b.gate, o, pack.shapes[k], pack.shapes[k + 1]);
         put2(b.gate, o + 2, pack.shapes[k + 2], 0);
         put2(b.extra, o, pack.shapes[k + 3], pack.shapes[k + 4]);
@@ -175,6 +175,8 @@ function packClouds(pack, snap, { s, smokeRadius }) {
     }
 }
 
+const AT = { s: /** @type {any} */ (null), radius: 0, timeSec: 0, dung: 0, smokeRadius: 0 };
+
 /**
  * @param {{f32: Float32Array, u32: Uint32Array}} snapshot the newest snapshot
  * @param {Record<string, any>} pack the world pack
@@ -186,8 +188,13 @@ export function packWorld(snapshot, pack, { info, dung, levels, timeSec }) {
     const s = readSections(snapshot.u32, pack.sections);
     packRocks(pack, snapshot, s);
     packRefuges(pack, info, levels);
-    packPatches(pack, snapshot, { s, radius: info.foodPatchRadius, timeSec });
-    packZones(pack, snapshot, { s, dung });
-    packClouds(pack, snapshot, { s, smokeRadius: info.smokeRadius });
+    AT.s = s;
+    AT.radius = info.foodPatchRadius;
+    AT.timeSec = timeSec;
+    AT.dung = dung;
+    AT.smokeRadius = info.smokeRadius;
+    packPatches(pack, snapshot, AT);
+    packZones(pack, snapshot, AT);
+    packClouds(pack, snapshot, AT);
     return s;
 }

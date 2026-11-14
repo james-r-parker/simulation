@@ -2,14 +2,15 @@
 // colour management), and `toDisplay`, which turns the linear, over-1 colours of the kept colour modules into the same
 // neon lightness at their own hue. Pure.
 
-/** HSL lightness every converted colour is lifted to. */
+/** HSL lightness every converted colour is lifted to, and the saturation it is capped at (vivid, not candy). */
 export const NEON_LIGHTNESS = 0.62;
+export const MAX_SATURATION = 0.72;
 /** Rim width in device pixels, by palette. */
 export const RIM_PX = Object.freeze({ default: 1.5, 'cvd-safe': 1.5, 'high-contrast': 2.5 });
 /** The share of the rim colour a part's flat fill takes, by palette. */
-export const FILL_SHARE = Object.freeze({ default: 0.28, 'cvd-safe': 0.28, 'high-contrast': 0.4 });
+export const FILL_SHARE = Object.freeze({ default: 0.18, 'cvd-safe': 0.18, 'high-contrast': 0.3 });
 /** The fill share of an agent at zero energy; full energy fills at `FILL_SHARE`. */
-export const FILL_FLOOR = 0.18;
+export const FILL_FLOOR = 0.1;
 
 /**
  * @param {number} hex a 24-bit colour
@@ -149,7 +150,9 @@ export function toDisplay(linear, out = [0, 0, 0], lightness = NEON_LIGHTNESS) {
     out[0] = encode(linear[0] / max);
     out[1] = encode(linear[1] / max);
     out[2] = encode(linear[2] / max);
-    const [h, s] = toHsl(out);
+    toHsl(out);
+    const h = HSL[0];
+    const s = Math.min(HSL[1], MAX_SATURATION);
     const q = lightness < 0.5 ? lightness * (1 + s) : lightness + s - lightness * s;
     const p = 2 * lightness - q;
     out[0] = hueChannel(p, q, h + 1 / 3);

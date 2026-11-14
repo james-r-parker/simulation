@@ -105,3 +105,9 @@ describe('coverage', () => {
         expect(rimCoverage(-0.2, 1.5, 0.1)).toBe(0);
     });
 });
+
+describe('degenerate shapes', () => {
+    it('treats a zero-length segment as a disc of half its width', () => {
+        expect(sdSegment(3, 4, { a: [0, 0], b: [0, 0], width: 2 })).toBeCloseTo(4);
+    });
+});

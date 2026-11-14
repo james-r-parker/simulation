@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Object3D } from 'three/webgpu';
-import { createStage } from '../../../js/app/renderer/stage.js';
+import { createStage, startRenderer } from '../../../js/app/renderer/stage.js';
 
 /** @returns {any} a renderer stand-in that records calls */
 function fakeRenderer() {
@@ -141,5 +141,115 @@ describe('createStage', () => {
         stage.dispose();
         expect(log).toContainEqual(['dispose', 'a']);
         expect(renderer.disposed).toBe(true);
+    });
+});
+
+describe('startRenderer', () => {
+    /** @returns {any} a renderer class that records its options */
+    function fakeClass() {
+        return class {
+            /** @param {any} options the options */
+            constructor(options) {
+                this.options = options;
+                this.domElement = { style: { cssText: '' } };
+            }
+            async init() {}
+            setClearColor() {}
+            setPixelRatio() {}
+        };
+    }
+
+    it('picks WebGPU on a hardware adapter and WebGL2 on a fallback adapter or no GPU', async () => {
+        const Renderer = fakeClass();
+        const hardware = { requestAdapter: async () => ({ info: { isFallbackAdapter: false } }) };
+        const fallback = { requestAdapter: async () => ({}) };
+        expect((await startRenderer({}, { Renderer, gpu: hardware })).options.forceWebGL).toBe(false);
+        expect(
+            (
+                await startRenderer(
+                    {},
+                    { Renderer, gpu: { requestAdapter: async () => ({ info: { isFallbackAdapter: true } }) } },
+                )
+            ).options.forceWebGL,
+        ).toBe(true);
+        expect(
+            (await startRenderer({}, { Renderer, gpu: { requestAdapter: async () => null } })).options.forceWebGL,
+        ).toBe(true);
+        expect((await startRenderer({ gputime: true }, { Renderer, gpu: null })).options).toMatchObject({
+            forceWebGL: true,
+            trackTimestamp: true,
+        });
+        const made = await startRenderer({}, { Renderer, gpu: fallback });
+        expect(made.toneMapping).toBe(0);
+        expect(made.domElement.style.cssText).toContain('background:#000');
+    });
+});
+
+describe('the stage after a build', () => {
+    it('rebuilds its layers, and fails when a restart cannot start a renderer', async () => {
+        vi.spyOn(console, 'info').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const log = /** @type {any[]} */ ([]);
+        let calls = 0;
+        const container = fakeContainer();
+        const stage = await createStage({
+            container,
+            info: {},
+            buildLayers: layers(log),
+            start: async () => {
+                calls += 1;
+                if (calls > 1) {
+                    throw new Error('gone for good');
+                }
+                return fakeRenderer();
+            },
+        });
+        stage.rebuild();
+        expect(log.filter((e) => e[0] === 'dispose')).toHaveLength(2);
+        stage.renderer.onDeviceLost({});
+        await vi.waitFor(() =>
+            expect(error.mock.calls.some(([r]) => r.event === 'RendererFailed' && r.message === 'gone for good')).toBe(
+                true,
+            ),
+        );
+    });
+});
+
+describe('createStage edges', () => {
+    it('logs a loss with no details, and a restart that throws a non-Error', async () => {
+        vi.spyOn(console, 'info').mockImplementation(() => {});
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        let calls = 0;
+        const stage = await createStage({
+            container: fakeContainer(),
+            info: {},
+            buildLayers: layers([]),
+            start: async () => {
+                calls += 1;
+                if (calls > 1) {
+                    throw 'no device';
+                }
+                return fakeRenderer();
+            },
+        });
+        stage.renderer.onDeviceLost(undefined);
+        expect(warn.mock.calls.some(([r]) => r.event === 'DeviceLost' && r.reason === null && r.message === '')).toBe(
+            true,
+        );
+        await vi.waitFor(() =>
+            expect(error.mock.calls.some(([r]) => r.event === 'RendererFailed' && r.message === 'no device')).toBe(
+                true,
+            ),
+        );
+    });
+
+    it('starts the real renderer when no start is given, and reports when it cannot', async () => {
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const container = fakeContainer();
+        await expect(createStage({ container, info: {}, buildLayers: layers([]) })).rejects.toBeDefined();
+        expect(error.mock.calls.some(([r]) => r.event === 'RendererInitFailed')).toBe(true);
     });
 });

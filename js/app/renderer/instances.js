@@ -21,6 +21,7 @@ const INDEX = new Uint16Array([0, 1, 2, 0, 2, 3]);
  * @property {Record<string, Float32Array>} arrays each attribute's array, `capacity x 4`
  * @property {Record<string, any>} attributes each `InstancedBufferAttribute`
  * @property {number} capacity the most instances
+ * @property {any[]} list the attributes in a fixed array, for the per-frame upload
  */
 
 /**
@@ -49,7 +50,7 @@ export function createInstances(capacity, names, shared = {}) {
         attributes[name] = attribute;
     }
     geometry.instanceCount = 0;
-    return { geometry, arrays, attributes, capacity };
+    return { geometry, arrays, attributes, capacity, list: Object.values(attributes) };
 }
 
 /**
@@ -63,7 +64,7 @@ export function uploadInstances(instances, count) {
     if (n === 0) {
         return;
     }
-    for (const attribute of Object.values(instances.attributes)) {
+    for (const attribute of instances.list) {
         attribute.clearUpdateRanges();
         attribute.addUpdateRange(0, n * VEC4);
         attribute.needsUpdate = true;

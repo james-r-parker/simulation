@@ -180,3 +180,15 @@ describe('createMateThreadLayer', () => {
         layer.dispose();
     });
 });
+
+describe('stepMateThreads outside a thread age', () => {
+    it('frees a thread that has not started yet and draws nothing for it', () => {
+        const pool = createMateThreadPool(4);
+        spawnMateThread(pool, { x: 0, y: 0, tick: 500, a: 1, b: 2, d: 0 });
+        const agents = createInterpolated(4);
+        const lines = createLineBuffer(4 * MATE_SEGMENTS);
+        stepMateThreads(pool, { agents, tick: 100, family: createFamilySlots() }, lines, MATE_SEGMENTS);
+        expect(lines.vertices).toBe(0);
+        expect(pool.alive[0]).toBe(0);
+    });
+});

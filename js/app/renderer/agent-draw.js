@@ -15,10 +15,12 @@ import { createInstances, instancedMesh, uploadInstances } from './instances.js'
 import { modelMaterial } from './model-material.js';
 import { standardInputs } from './model-meshes.js';
 import { modelFor } from './models.js';
-import { RIM_PX } from './palette.js';
+import { FILL_SHARE, RIM_PX } from './palette.js';
 
 /** How far the scent lens dims the agents. */
 export const SCENT_DIM = 0.55;
+/** The least opacity of a calling agent's ring while the calls lens is on. */
+export const CALL_RING_FLOOR = 0.5;
 const RIG_NAMES = /** @type {const} */ (['neon', 'rig0', 'rig1', 'rig2', 'gate', 'gate2', 'accent', 'call']);
 
 /**
@@ -35,10 +37,10 @@ export function meshTable(info) {
 }
 
 /**
- * @param {any} dim the scent-lens dim uniform
+ * @param {{dim: any, ringFloor: any}} uniforms the scent-lens dim and the calls-lens ring floor
  * @returns {import('./model-material.js').ModelInputs} the agent inputs, read from the instance attributes
  */
-function agentInputs(dim) {
+function agentInputs({ dim, ringFloor }) {
     const gate = attribute('iGate', 'vec4');
     const gate2 = attribute('iGate2', 'vec4');
     return {
@@ -54,13 +56,14 @@ function agentInputs(dim) {
         },
         colors: { pollenColor: attribute('iAccent', 'vec4').xyz, callColor: attribute('iCall', 'vec4').xyz },
         dim,
+        ringFloor,
     };
 }
 
 /**
  * @param {Record<string, any>} info `ready.info`
  * @param {{store: import('./agents-pack.js').AgentStore, rig: ReturnType<typeof createAgentRig>,
- *   uniforms: {rimPx: any, dim: any}}} from the packed buckets, their rig arrays and the shared uniforms
+ *   uniforms: {rimPx: any, dim: any, ringFloor: any}}} from the packed buckets, their rig arrays and the shared uniforms
  * @returns {{instances: import('./instances.js').Instances, material: any, mesh: any, hunter: boolean}[]} one mesh per
  *   spec over its bucket's arrays
  */
@@ -74,8 +77,8 @@ function buildMeshes(info, { store, rig, uniforms }) {
             shared[`i${name[0].toUpperCase()}${name.slice(1)}`] = rig.arrays[b][name];
         }
         const instances = createInstances(info.maxAgents, Object.keys(shared), shared);
-        const look = { rimPx: uniforms.rimPx, fillShare: 0.28 };
-        const material = modelMaterial(model, { inputs: agentInputs(uniforms.dim), look });
+        const look = { rimPx: uniforms.rimPx, fillShare: FILL_SHARE.default };
+        const material = modelMaterial(model, { inputs: agentInputs(uniforms), look });
         return { instances, material, mesh: instancedMesh(instances, material), hunter: spec.canHunt };
     });
 }
@@ -111,13 +114,14 @@ function rigContext(info, flags, stateBits) {
 export function createAgentDraw({ info, flagBits, stateBits }) {
     const store = createAgentStore(info.maxAgents, info.specs.length, meshTable(info), minPxTable(info));
     const rig = createAgentRig(info.maxAgents, info.specs.length);
-    const uniforms = { rimPx: uniform(RIM_PX.default), dim: uniform(1) };
+    const uniforms = { rimPx: uniform(RIM_PX.default), dim: uniform(1), ringFloor: uniform(0) };
     const meshes = buildMeshes(info, { store, rig, uniforms });
     const group = new Group();
     meshes.forEach((m) => group.add(m.mesh));
     const ctx = rigContext(info, flagBits, stateBits);
     const bands = temperatureBands(info);
     const view = { dtMs: 0, zoom: 1, slots: /** @type {any} */ (null), maxVelocity: info.maxVelocity, tick: 0 };
+    const into = { rig, out: rig.arrays[0], ctx };
     return {
         object: group,
         store,
@@ -130,11 +134,13 @@ export function createAgentDraw({ info, flagBits, stateBits }) {
             ctx.timeSec = frame.nowMs / 1000;
             ctx.palette = frame.family.palette;
             ctx.temperatureLens = frame.lenses.temperature ? bands : null;
-            uniforms.rimPx.value = RIM_PX[/** @type {keyof typeof RIM_PX} */ (frame.family.palette)] ?? RIM_PX.default;
+            uniforms.rimPx.value = RIM_PX[/** @type {keyof typeof RIM_PX} */ (frame.family.palette)];
             uniforms.dim.value = frame.lenses.scent ? SCENT_DIM : 1;
+            uniforms.ringFloor.value = frame.lenses.calls ? CALL_RING_FLOOR : 0;
             for (let b = 0; b < meshes.length; b++) {
                 ctx.hunter = meshes[b].hunter;
-                rigBucket(/** @type {any} */ (store.buckets[b]), frame.agents, { rig, out: rig.arrays[b], ctx });
+                into.out = rig.arrays[b];
+                rigBucket(/** @type {any} */ (store.buckets[b]), frame.agents, into);
                 uploadInstances(meshes[b].instances, store.buckets[b].count);
             }
         },

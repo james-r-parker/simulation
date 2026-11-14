@@ -104,3 +104,14 @@ describe('applyClip', () => {
         expect(rig[CH.sx]).toBe(1);
     });
 });
+
+describe('keyedAt edges', () => {
+    it('holds the last key past the end and the first before the start', () => {
+        const keys = [
+            [0.2, 1],
+            [0.8, 3],
+        ];
+        expect(keyedAt(keys, 1.5)).toBe(3);
+        expect(keyedAt(keys, 0)).toBe(1);
+    });
+});

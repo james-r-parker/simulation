@@ -7,7 +7,7 @@ import { Group } from 'three/webgpu';
 import { attribute, uniform, vec4 } from 'three/tsl';
 import { createInstances, instancedMesh, uploadInstances } from './instances.js';
 import { modelMaterial } from './model-material.js';
-import { RIM_PX } from './palette.js';
+import { FILL_SHARE, RIM_PX } from './palette.js';
 
 /** The rest values of the three rig vec4 (`tx ty rot sx`, `sy open eye flash`, `ring ringAlpha limb head`). */
 const REST = [
@@ -94,7 +94,10 @@ export function createModelMeshes(models, { buckets, more = () => ({}), blending
             }
         }
         const instances = createInstances(bucket.pose.length / 4, Object.keys(shared), shared);
-        const material = modelMaterial(model, { inputs: inputsOf(bucket, more), look: { rimPx, fillShare: 0.28 } });
+        const material = modelMaterial(model, {
+            inputs: inputsOf(bucket, more),
+            look: { rimPx, fillShare: FILL_SHARE.default },
+        });
         if (blending !== undefined) {
             material.blending = blending;
         }

@@ -4,64 +4,61 @@
 
 const seg = (/** @type {number[]} */ a, /** @type {number[]} */ b, width = 0.14) => ({ a, b, width });
 
-/** Megafauna, nose along +x. */
+/** Megafauna, nose along +x: a capsule, fine legs and a small wedge head. */
 export const HERD_MODEL = Object.freeze({
     name: 'herd',
     parts: [
         {
             name: 'legFL',
             shape: 'segment',
-            ...seg([0.45, 0.45], [0.55, 0.95], 0.16),
-            pivot: [0.45, 0.45],
+            ...seg([0.45, 0.42], [0.52, 0.78], 0.09),
+            pivot: [0.45, 0.42],
             bind: 'limbA',
             style: 'solid',
         },
         {
             name: 'legBR',
             shape: 'segment',
-            ...seg([-0.5, -0.45], [-0.6, -0.95], 0.16),
-            pivot: [-0.5, -0.45],
+            ...seg([-0.5, -0.42], [-0.57, -0.78], 0.09),
+            pivot: [-0.5, -0.42],
             bind: 'limbA',
             style: 'solid',
         },
         {
             name: 'legFR',
             shape: 'segment',
-            ...seg([0.45, -0.45], [0.55, -0.95], 0.16),
-            pivot: [0.45, -0.45],
+            ...seg([0.45, -0.42], [0.52, -0.78], 0.09),
+            pivot: [0.45, -0.42],
             bind: 'limbB',
             style: 'solid',
         },
         {
             name: 'legBL',
             shape: 'segment',
-            ...seg([-0.5, 0.45], [-0.6, 0.95], 0.16),
-            pivot: [-0.5, 0.45],
+            ...seg([-0.5, 0.42], [-0.57, 0.78], 0.09),
+            pivot: [-0.5, 0.42],
             bind: 'limbB',
             style: 'solid',
         },
-        { name: 'body', shape: 'box', hx: 0.95, hy: 0.6, corner: 0.5 },
-        { name: 'spine', shape: 'segment', ...seg([-0.6, 0], [0.4, 0], 0.08), style: 'solid' },
-        { name: 'head', shape: 'circle', r: 0.34, at: [1.05, 0], bind: 'head' },
+        { name: 'body', shape: 'box', hx: 0.95, hy: 0.52, corner: 0.48 },
+        { name: 'spine', shape: 'segment', ...seg([-0.6, 0], [0.4, 0], 0.04), style: 'solid' },
+        {
+            name: 'head',
+            shape: 'poly',
+            points: [
+                [1.3, 0],
+                [0.9, 0.2],
+                [0.9, -0.2],
+            ],
+            bind: 'head',
+        },
     ],
 });
 
-/** Food models by species (`FLORA_NAMES` order), then the carcass. */
+/** Food models by species (`FLORA_NAMES` order), then the carcass: small geometric glyphs. */
 export const FOOD_MODELS = Object.freeze([
-    {
-        name: 'grass',
-        parts: [
-            { name: 'bladeA', shape: 'segment', ...seg([-0.35, -0.9], [-0.15, 0.9], 0.3), style: 'solid' },
-            { name: 'bladeB', shape: 'segment', ...seg([0.3, -0.9], [0.5, 0.75], 0.3), style: 'solid' },
-        ],
-    },
-    {
-        name: 'berry',
-        parts: [
-            { name: 'stalk', shape: 'segment', ...seg([0.1, 0.4], [0.5, 1.0], 0.16), style: 'solid' },
-            { name: 'fruit', shape: 'circle', r: 0.72, at: [0, -0.15] },
-        ],
-    },
+    { name: 'grass', parts: [{ name: 'blade', shape: 'segment', ...seg([0, -0.8], [0, 0.8], 0.22), style: 'solid' }] },
+    { name: 'berry', parts: [{ name: 'fruit', shape: 'circle', r: 0.55 }] },
     {
         name: 'nut',
         parts: [
@@ -69,55 +66,45 @@ export const FOOD_MODELS = Object.freeze([
                 name: 'shell',
                 shape: 'poly',
                 points: [
-                    [0, 1],
-                    [0.62, 0.25],
-                    [0.5, -0.5],
-                    [0, -0.88],
-                    [-0.5, -0.5],
-                    [-0.62, 0.25],
+                    [0, 0.85],
+                    [0.55, 0],
+                    [0, -0.85],
+                    [-0.55, 0],
                 ],
             },
-            { name: 'seam', shape: 'segment', ...seg([0, 0.75], [0, -0.6], 0.08), style: 'solid' },
         ],
     },
     {
         name: 'flower',
-        parts: [
-            { name: 'petals', shape: 'dots', r: 0.36, count: 5, ring: 0.58, phase: Math.PI / 2 },
-            { name: 'centre', shape: 'circle', r: 0.3, color: 'pollen', style: 'solid' },
-        ],
+        parts: [{ name: 'petals', shape: 'dots', r: 0.16, count: 5, ring: 0.5, phase: Math.PI / 2, style: 'solid' }],
     },
     {
         name: 'fungus',
-        parts: [{ name: 'caps', shape: 'dots', r: 0.44, count: 3, ring: 0.5, phase: Math.PI / 2, color: 'fungus' }],
+        parts: [
+            {
+                name: 'caps',
+                shape: 'dots',
+                r: 0.2,
+                count: 3,
+                ring: 0.38,
+                phase: Math.PI / 2,
+                color: 'fungus',
+                style: 'solid',
+            },
+        ],
     },
     {
         name: 'toxiccap',
         parts: [
-            { name: 'stem', shape: 'box', hx: 0.22, hy: 0.35, corner: 0.1, at: [0, -0.55], color: 'toxic' },
             {
-                name: 'dome',
+                name: 'warning',
                 shape: 'poly',
                 points: [
-                    [-1, -0.25],
-                    [-0.8, 0.4],
-                    [-0.35, 0.8],
-                    [0.35, 0.8],
-                    [0.8, 0.4],
-                    [1, -0.25],
+                    [0, 0.85],
+                    [0.8, -0.6],
+                    [-0.8, -0.6],
                 ],
                 color: 'toxic',
-            },
-            {
-                name: 'spots',
-                shape: 'dots',
-                r: 0.12,
-                count: 3,
-                ring: 0.4,
-                phase: Math.PI / 2,
-                at: [0, 0.2],
-                color: 'toxic',
-                style: 'solid',
             },
         ],
     },
@@ -135,20 +122,6 @@ export const FOOD_MODELS = Object.freeze([
                     [0.6, -0.7],
                     [-0.3, -0.8],
                 ],
-            },
-            {
-                name: 'boneA',
-                shape: 'segment',
-                ...seg([-0.55, -0.55], [0.55, 0.55], 0.14),
-                color: 'bone',
-                style: 'solid',
-            },
-            {
-                name: 'boneB',
-                shape: 'segment',
-                ...seg([-0.55, 0.55], [0.55, -0.55], 0.14),
-                color: 'bone',
-                style: 'solid',
             },
         ],
     },
@@ -245,7 +218,7 @@ export const MARK_MODELS = Object.freeze([
     },
     {
         name: 'cloud',
-        parts: [{ name: 'puffs', shape: 'dots', r: 0.5, count: 4, ring: 0.45, color: 'select', style: 'outline' }],
+        parts: [{ name: 'puffs', shape: 'dots', r: 0.5, count: 4, ring: 0.45, style: 'outline' }],
     },
 ]);
 
