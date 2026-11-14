@@ -9,15 +9,15 @@ describe('packHerdBodies', () => {
     it('packs heading, speed and group colour, capped at capacity', () => {
         const snapshot = makeSnapshot(1, [], {
             herds: [
-                [10, 20, 80, 0.3, -1, 2],
-                [30, 40, 90, 0.8, 2, 3],
+                [10, 20, 0, 0.3, -1, 2],
+                [30, 40, 1, 0.8, 2, 3],
             ],
         });
         const section = readSections(snapshot.u32, createSections());
         const body = new Float32Array(4);
         const motion = new Float32Array(4);
         const colors = new Float32Array(4);
-        expect(packHerdBodies(snapshot.f32, snapshot.u32, section, { body, motion, colors })).toBe(1);
+        expect(packHerdBodies(snapshot.f32, snapshot.u32, section, { body, motion, colors, radius: 80 })).toBe(1);
         expect(Array.from(body.slice(0, 3))).toEqual([10, 20, 80]);
         expect(body[3]).toBeCloseTo(0.3);
         expect(motion[0]).toBe(-1);
@@ -28,8 +28,8 @@ describe('packHerdBodies', () => {
 
 describe('createHerdLayer', () => {
     it('draws shaped snapshot herds, tracks time and zoom, and clears on a missing snapshot', () => {
-        const snapshot = makeSnapshot(3, [], { herds: [[100, 200, 80, 0.5, 1.2, 0]] });
-        const layer = createHerdLayer({ info: { herdMax: 4 } });
+        const snapshot = makeSnapshot(3, [], { herds: [[100, 200, 0, 0.5, 1.2, 0]] });
+        const layer = createHerdLayer({ info: { herdMax: 4, herdRadius: 80 } });
         const camera = createCameraController({
             canvas: { width: 400, height: 400 },
             world: { width: 400, height: 400 },

@@ -272,7 +272,8 @@ function heading(vx, vy) {
     return vy < 0 ? -angle : angle;
 }
 
-/** Writes alive animals in slot order as x, y, radius, speed01, heading and group index.
+/** Writes alive animals in slot order as x, y, slot (u32), speed01, heading and group index. The slot lets the app
+ * blend an animal between two snapshots; the radius is `config.herdRadius` (`ready.info.herdRadius`).
  * @param {import('./world.js').World} world the world
  * @param {{f32: Float32Array, u32: Uint32Array}} views snapshot views
  * @param {number} start first herd word
@@ -288,7 +289,7 @@ function writeHerds(world, views, start) {
         }
         f32[w] = world.herdX[animal];
         f32[w + 1] = world.herdY[animal];
-        f32[w + 2] = world.config.herdRadius;
+        u32[w + 2] = animal;
         const vx = world.herdVx[animal];
         const vy = world.herdVy[animal];
         const speed = Math.sqrt(vx * vx + vy * vy);

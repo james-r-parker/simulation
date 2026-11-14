@@ -59,14 +59,12 @@ describe('writeSnapshot', () => {
         writeSnapshot(world, views);
         const start = HEADER_WORDS + world.obsX.length * 3;
         expect(views.u32[7]).toBe(1);
-        expect(Array.from(views.f32.subarray(start, start + HERD_STRIDE))).toEqual([
-            123,
-            456,
-            world.config.herdRadius,
-            Math.fround(5 / world.config.herdRunSpeed),
-            expect.closeTo(0.9273, 3),
-            world.herdGroup[1],
-        ]);
+        expect(views.f32[start]).toBe(123);
+        expect(views.f32[start + 1]).toBe(456);
+        expect(views.u32[start + 2]).toBe(1);
+        expect(views.f32[start + 3]).toBe(Math.fround(5 / world.config.herdRunSpeed));
+        expect(views.f32[start + 4]).toBeCloseTo(0.9273, 3);
+        expect(views.u32[start + 5]).toBe(world.herdGroup[1]);
     });
 
     it('writes live zones after herds with a fertility share and origin code', () => {

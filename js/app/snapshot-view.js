@@ -9,6 +9,10 @@ export const CLOUD_STRIDE = 3;
 export const HERD_STRIDE = 6;
 export const ZONE_STRIDE = 4;
 
+/** Offsets of a herd animal's fields within its record (`writeHerds` in js/sim/snapshot.js). `SLOT` and `GROUP` are
+ * words; the rest are floats. */
+export const HERD_FIELD = Object.freeze({ X: 0, Y: 1, SLOT: 2, SPEED: 3, HEADING: 4, GROUP: 5 });
+
 /**
  * @typedef {object} Sections
  * @property {number} agentCount
