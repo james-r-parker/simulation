@@ -42,6 +42,8 @@ All computed by the eval observer; none is a reward.
 
 **Targets:** none - detectors only; `worldHash` and golden cases are unchanged
 
+The baseline is the shared run of [detector-baseline.md](detector-baseline.md), read once for every plan that has its prediction written.
+
 Add `js/evo/scene-kinematics.js` with the three kinematics detectors and run a 16-seed baseline (`E-CP-1`, 400,000 ticks, floor on) plus `npm run audit:chase` from `senses-and-motor.md` to record the pre-inertia catch envelope.
 
 #### Chunks

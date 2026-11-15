@@ -39,6 +39,8 @@ All computed by the eval observer; none is a reward.
 
 **Targets:** none - detectors only; `worldHash` and the golden cases are unchanged
 
+The baseline is the shared run of [detector-baseline.md](detector-baseline.md), read once for every plan that has its prediction written.
+
 The first five detectors, and a 16-seed baseline on the defaults (`E-SB-1`). Prediction, written before the run: `eval.sprint_share.hunter` is above 0.5 and `eval.chase_sprint_lift` is under 1.2, so the sprint is held, not chosen. Phase 2 is built only if the sprint share is above 0.5 for either role or `eval.sprint_cost_share` is under 0.02; otherwise this doc closes with the detectors kept.
 
 ### Phase 2 - The store

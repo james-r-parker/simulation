@@ -197,6 +197,8 @@ All computed by the eval observer; none is a reward. The findings they answer ar
 
 **Targets:** none - detectors only; a per-chase and per-kill tally in the observer, `worldHash` and the golden cases unchanged
 
+The baseline is the shared run of [detector-baseline.md](detector-baseline.md), read once for every plan that has its prediction written.
+
 The detectors of the table above, the Wilson bounds in the drill and reflex reports, and one baseline run with `npm run eval:power`. A metric with no measured power is not cited by a later phase.
 
 #### Chunks

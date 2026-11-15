@@ -40,6 +40,8 @@ All computed by the eval observer; none is a reward.
 
 **Targets:** none - detectors only; `worldHash` and golden cases are unchanged
 
+The baseline is the shared run of [detector-baseline.md](detector-baseline.md), read once for every plan that has its prediction written.
+
 Add `js/evo/scene-scent.js` with `eval.chase_reacquire_share` and `eval.scavenge_approach_share`, and run a 16-seed baseline (`E-ST2-1`, 400,000 ticks, floor on).
 
 #### Chunks

@@ -52,6 +52,8 @@ All computed by the eval observer; none is a reward.
 
 **Targets:** none - detectors only; `worldHash` and golden cases are unchanged
 
+The baseline is the shared run of [detector-baseline.md](detector-baseline.md), read once for every plan that has its prediction written.
+
 Add the four new guild detectors in `js/evo/scene-guilds.js` and run a 16-seed baseline (`E-PG-1`, 400,000 ticks, floor on) on the post-`honest-budgets` defaults. Prediction, written before the run: `eval.defender_repel_per_1k` is `0` (not yet implemented), `eval.scout_alarm_lead_share` is null or under `0.1`, and `eval.guild_survival.*` differs by less than `0.05` across `forager`, `reproducer`, `scout` and `defender`.
 
 #### Chunks
