@@ -41,25 +41,44 @@ export function spawnFood(world) {
 }
 
 /**
- * Ages every alive food item by one tick and removes those older than `foodLife` (a carcass: `carcassTicks`).
+ * Ages one alive food item by a tick. A blob carcass priced by the body (`carcassBody`) loses value linearly: its value
+ * falls from the stored value to 0 over `carcassFadeTicks` (each tick keeps `(life - age) / (life - age + 1)` of it) and
+ * it is gone at age `life`. Every other item lasts its `life` and keeps its value.
+ * @param {World} world the world
+ * @param {number} i the food slot
+ * @returns {void}
+ */
+function ageItem(world, i) {
+    const { foodAge, foodKind, foodOrigin, foodLife } = world;
+    foodAge[i] += 1;
+    const meat = foodKind[i] === FOOD_KIND.MEAT;
+    const herd = foodOrigin[i] === FOOD_ORIGIN.HERD_CARCASS;
+    if (meat && !herd && world.config.carcassBody) {
+        const left = foodLife[i] - foodAge[i];
+        if (left <= 0) {
+            removeFood(world, i);
+        } else {
+            world.foodValue[i] *= left / (left + 1);
+        }
+        return;
+    }
+    const life = !meat || (herd && foodLife[i] > 0) ? foodLife[i] : world.config.carcassTicks;
+    if (foodAge[i] > life) {
+        removeFood(world, i);
+    }
+}
+
+/**
+ * Ages every alive food item by one tick and removes those older than `foodLife` (a carcass: `carcassTicks`, or
+ * `carcassFadeTicks` with `carcassBody`).
  * @param {World} world the world
  * @returns {void}
  */
 export function ageFood(world) {
-    const { foodAlive, foodAge, foodKind, foodOrigin, foodLife } = world;
-    const { carcassTicks } = world.config;
+    const { foodAlive } = world;
     for (let i = 0; i < foodAlive.length; i++) {
         if (foodAlive[i] === 1) {
-            foodAge[i] += 1;
-            const life =
-                foodKind[i] !== FOOD_KIND.MEAT
-                    ? foodLife[i]
-                    : foodOrigin[i] === FOOD_ORIGIN.HERD_CARCASS && foodLife[i] > 0
-                      ? foodLife[i]
-                      : carcassTicks;
-            if (foodAge[i] > life) {
-                removeFood(world, i);
-            }
+            ageItem(world, i);
         }
     }
 }

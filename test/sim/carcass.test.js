@@ -257,3 +257,67 @@ describe('carcass snapshot and hash', () => {
         expect(hashWorld(w)).not.toBe(before);
     });
 });
+
+describe('carcassBody', () => {
+    const BODY = { ...ON, carcassBody: true, carcassFadeTicks: 10, carcassShare: 0.5, killShare: 0.25 };
+
+    it("keeps today's lifetime-intake carcass while off", () => {
+        const w = lifeWorld({ ...ON, killShare: 0.25 });
+        expect(w.foodValue[killOld(w, 80)]).toBe(300);
+    });
+
+    it('holds carcassShare of the energy the body held at death (old age: the store)', () => {
+        const w = lifeWorld(BODY);
+        expect(w.foodValue[killOld(w, 80)]).toBe(40);
+    });
+
+    it('holds carcassShare of the remainder a kill left, which the killer did not take', () => {
+        const w = lifeWorld(BODY);
+        const slot = addBlob(w, { energy: 0, x: 300, y: 400, ...FED });
+        w.carcassHeld[slot] = 120;
+        w.lastBiter[slot] = 9;
+        leaveCarcass(w, slot);
+        expect(w.foodValue[w.foodAlive.indexOf(1)]).toBe(60);
+    });
+
+    it('leaves none for a starved body, which held nothing', () => {
+        const w = lifeWorld(BODY);
+        addBlob(w, { energy: 0, lastLoss: 1, x: 300, y: 400, ...FED });
+        reap(w, recordingPolicy([]));
+        expect(w.foodCount).toBe(0);
+    });
+
+    it('fades the value linearly to 0 over carcassFadeTicks, and a meal takes the value at that tick', () => {
+        const w = lifeWorld(BODY);
+        const food = killOld(w, 80);
+        for (let age = 1; age < 10; age++) {
+            ageFood(w);
+            expect(w.foodValue[food]).toBeCloseTo(40 * (1 - age / 10), 9);
+        }
+        expect(w.foodAlive[food]).toBe(1);
+        ageFood(w);
+        expect(w.foodAlive[food]).toBe(0);
+    });
+
+    it('leaves a herd carcass its own life and value', () => {
+        const w = lifeWorld({ ...BODY, herdCarcassTicks: 100 });
+        const food = killOld(w, 80);
+        w.foodOrigin[food] = 1;
+        w.foodLife[food] = 100;
+        for (let i = 0; i < 20; i++) {
+            ageFood(w);
+        }
+        expect(w.foodValue[food]).toBe(40);
+        expect(w.foodAlive[food]).toBe(1);
+    });
+
+    it('keeps the energy ledger balanced: the death books the store out, the meal books the carcass in', () => {
+        const w = lifeWorld(BODY);
+        const slot = addBlob(w, { energy: 80, ageTicks: 10, x: 300, y: 400, ...FED });
+        const booked = w.ledger[0] - w.ledger[1];
+        reap(w, recordingPolicy([]));
+        expect(w.alive[slot]).toBe(0);
+        expect(w.ledger[0] - w.ledger[1]).toBeCloseTo(booked - 80, 9);
+        expect(() => assertInvariants(w)).not.toThrow();
+    });
+});
