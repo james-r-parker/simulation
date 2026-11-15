@@ -70,8 +70,8 @@ describe('seasonAdded', () => {
 });
 
 describe('movesUnreleasedSeason', () => {
-    const season = (rulesHash, n = 10) => ({ season: n, major: n, rulesHash });
-    const file = (...entries) => JSON.stringify(entries);
+    const season = (/** @type {string} */ rulesHash, n = 10) => ({ season: n, major: n, rulesHash });
+    const file = (/** @type {object[]} */ ...entries) => JSON.stringify(entries);
     const before = file(season('x', 9), season('a'));
 
     it('is true when the newest season keeps its number, its hash moves and it has no release tag', () => {
