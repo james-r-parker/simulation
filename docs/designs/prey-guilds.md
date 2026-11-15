@@ -127,6 +127,10 @@ Verify all four prey guilds together against the pre-guild baseline on 64 matche
 | ----- | ---------- | ------------------------------------------------------------------------------------------------------------- |
 | E     | T17 to T20 | 64-seed combined validation `E-PG-8`, [sim-notes.md](sim-notes.md) verdict, arena clip and conformance review |
 
+### Coexistence checks
+
+T2a maps prey vulnerability by age, condition and habitat using matched encounters and whole-world baselines. T17a tests the combined guild world through seasonal troughs with rescue disabled, after [honest-budgets.md](honest-budgets.md) Phase 6 recruitment diagnostics exist. Report hunter descendant replacement alongside guild survival; standing founder hunters are not proof of coexistence. Compare each defence alone and together, including an undefended control. A refuge must require a feeding excursion; a defender pays for repelling; a scout's call remains a choice. Identify prey accessible to a young hunter without making every guild uniformly vulnerable. No role quota, hunter restocking or rewarded vulnerability is introduced. Clips cover refuge exit, an aborted attack on defended prey and local recolonisation from living neighbours; an absent scene stays an open result.
+
 ## Delivery requirements
 
 | Concern                 | Names                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -147,11 +151,12 @@ Verify all four prey guilds together against the pre-guild baseline on 64 matche
 
 ### Phase 1 - Guild detectors and baseline
 
-| #   | Task                                                                                                                                                                                                                                                           | Nature       | Depends on |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | Add `js/evo/scene-guilds.js` (`eval.guild_share.*`, `eval.guild_survival.*`, `eval.defender_repel_per_1k`, `eval.scout_alarm_lead_share`, `eval.reproducer_recovery_rate`), registry + `liveness.js` entries, `metrics.md` and `test/evo/scene-guilds.test.js` | [judgement]  | -          |
-| T2  | Run `E-PG-1` (16 floor-on seeds x 400,000 ticks) on post-`honest-budgets` defaults, record baseline under `evals/decisions/E-PG-1/` and in [sim-notes.md](sim-notes.md)                                                                                        | [mechanical] | T1         |
-| T3  | Conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                            | [judgement]  | T1, T2     |
+| #   | Task                                                                                                                                                                                                                                                           | Nature       | Depends on  |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| T1  | Add `js/evo/scene-guilds.js` (`eval.guild_share.*`, `eval.guild_survival.*`, `eval.defender_repel_per_1k`, `eval.scout_alarm_lead_share`, `eval.reproducer_recovery_rate`), registry + `liveness.js` entries, `metrics.md` and `test/evo/scene-guilds.test.js` | [judgement]  | -           |
+| T2  | Run `E-PG-1` (16 floor-on seeds x 400,000 ticks) on post-`honest-budgets` defaults, record baseline under `evals/decisions/E-PG-1/` and in [sim-notes.md](sim-notes.md)                                                                                        | [mechanical] | T1          |
+| T2a | Add age/condition/habitat vulnerability encounter fixtures and baseline tables, with tests distinguishing unavailable prey from failed pursuit; record in sim-notes                                                                                            | [judgement]  | T2          |
+| T3  | Conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                            | [judgement]  | T1, T2, T2a |
 
 ### Phase 2 - `defender` as active guard
 
@@ -183,12 +188,13 @@ Verify all four prey guilds together against the pre-guild baseline on 64 matche
 
 ### Phase 5 - Combined guild balance and verification
 
-| #   | Task                                                                                                                   | Nature       | Depends on |
-| --- | ---------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T17 | Run `E-PG-8`: 64 matched seeds comparing the full guild world against the pre-Phase-2 baseline                         | [mechanical] | T16        |
-| T18 | Record the guild balance verdict and per-guild survival/fitness table in [sim-notes.md](sim-notes.md)                  | [judgement]  | T17        |
-| T19 | Watch an arena clip of the final season verifying scouts warning, defenders repelling, and reproducers recovering      | [judgement]  | T18        |
-| T20 | Conformance review of Phase 5 by a fresh agent, in parallel with `scripts/check.sh`; move Status line to `Implemented` | [judgement]  | T19        |
+| #    | Task                                                                                                                                                                             | Nature       | Depends on |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T17  | Run `E-PG-8`: 64 matched seeds comparing the full guild world against the pre-Phase-2 baseline                                                                                   | [mechanical] | T16        |
+| T17a | Run no-rescue seasonal coexistence and defence ablations using honest-budgets Phase 6 cohort diagnostics; report descendant replacement and refuge feeding excursions with clips | [judgement]  | T17        |
+| T18  | Record the guild balance verdict and per-guild survival/fitness table in [sim-notes.md](sim-notes.md)                                                                            | [judgement]  | T17a       |
+| T19  | Watch an arena clip of the final season verifying scouts warning, defenders repelling, and reproducers recovering                                                                | [judgement]  | T18        |
+| T20  | Conformance review of Phase 5 by a fresh agent, in parallel with `scripts/check.sh`; move Status line to `Implemented`                                                           | [judgement]  | T19        |
 
 ## Verification
 

@@ -56,9 +56,13 @@ Add `trackDeposit`, `trackSpeedMin` and `carrionDeposit` behind `scentTrailsEnab
 
 #### Chunks
 
-| Chunk | Tasks    | Contents                                                                                                         |
-| ----- | -------- | ---------------------------------------------------------------------------------------------------------------- |
-| B     | T4 to T8 | Track & carrion scent deposits, `E-ST2-2` screen, `E-ST2-3` keep rule, switch, arena clip and conformance review |
+| Chunk | Tasks         | Contents                                             |
+| ----- | ------------- | ---------------------------------------------------- |
+| B     | T3a, T4 to T8 | Channel checks, deposits, screens, switch and review |
+
+### Scent must carry usable local evidence
+
+T3a checks the shared channel before deposit tuning: prey tracks, carrion and existing hunt signals may attract to different things. Fixtures cover a dead trail, an exhausted carcass, crossing trails, a rock barrier and slot reuse. No source identity or target coordinates enter the brain. Compare track-only, carrion-only and combined arms against the same no-scent control; report wrong-source approaches and time/energy wasted as well as successful reacquisition. Scent diffusion must not provide an effortless route through sealed cover. T6 includes juvenile access to carcasses and hunter descendant replacement from [honest-budgets.md](honest-budgets.md) Phase 6 before adoption. More approaches without food or offspring is not a success. Replay clips show a lost trail and a late scavenger finding a depleted body as well as successful tracking.
 
 ## Delivery requirements
 
@@ -90,7 +94,8 @@ Add `trackDeposit`, `trackSpeedMin` and `carrionDeposit` behind `scentTrailsEnab
 
 | #   | Task                                                                                                                                                          | Nature       | Depends on |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T4  | Add `trackSpeedMin`, `trackDeposit` and `carrionDeposit` in `pheromones.js` and `carcass.js` behind `scentTrailsEnabled`; add `test/sim/scent-trails.test.js` | [judgement]  | T3         |
+| T3a | Add channel-interference and stale-source fixtures with observer tests; specify scent ablations and wrong-source approach costs                               | [judgement]  | T3         |
+| T4  | Add `trackSpeedMin`, `trackDeposit` and `carrionDeposit` in `pheromones.js` and `carcass.js` behind `scentTrailsEnabled`; add `test/sim/scent-trails.test.js` | [judgement]  | T3a        |
 | T5  | Write `evals/screens/scent-trails.grid.json` and prediction; run 16-seed screen `E-ST2-2`                                                                     | [judgement]  | T4         |
 | T6  | Run finalist vs. control on 64 matched seeds with `--keep-rule` (`E-ST2-3`)                                                                                   | [mechanical] | T5         |
 | T7  | Switch: adopt winning scent defaults, delete `scentTrailsEnabled`, open new season, re-pin goldens and `browser:hash`; watch arena clip                       | [judgement]  | T6         |
