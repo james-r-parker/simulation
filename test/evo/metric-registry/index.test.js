@@ -12,13 +12,13 @@ import {
     withPower,
 } from '../../../js/evo/metric-registry/index.js';
 
-/** @type {string[]} the 313 names of a live eval report, sorted */
+/** @type {string[]} the 324 names of a live eval report, sorted */
 const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-names.json', import.meta.url), 'utf8'));
 
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(313);
+        expect(REPORT_NAMES).toHaveLength(324);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -147,6 +147,17 @@ const ADDED_AFTER_T8 = [
     'eval.graze_speed_ratio',
     'eval.hunter_plant_linger_share',
     'eval.strike_miss_energy_ratio',
+    'eval.guild_share.forager',
+    'eval.guild_share.reproducer',
+    'eval.guild_share.scout',
+    'eval.guild_share.defender',
+    'eval.guild_survival.forager',
+    'eval.guild_survival.reproducer',
+    'eval.guild_survival.scout',
+    'eval.guild_survival.defender',
+    'eval.defender_repel_per_1k',
+    'eval.scout_alarm_lead_share',
+    'eval.reproducer_recovery_rate',
 ];
 /** Watch metrics registered after the snapshot whose intended direction is lower. */
 const ADDED_INTENDED_LOWER = [

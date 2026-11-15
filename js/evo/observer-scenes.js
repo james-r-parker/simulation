@@ -21,6 +21,14 @@ import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
 import { createCompetenceScene, noteChase, noteCompetenceBirth, noteCompetenceRecord } from './scene-competence.js';
 import { createMatchedScene, noteMatchedChase } from './scene-matched.js';
 import { createGuardScene, sampleGuards } from './scene-guards.js';
+import {
+    createGuildScene,
+    noteGuildAlarm,
+    noteGuildBirth,
+    noteGuildDeath,
+    sampleGuilds,
+    tickGuilds,
+} from './scene-guilds.js';
 import { createKinProximityScene, sampleKinProximity } from './scene-kin-proximity.js';
 import { createBiteScene, tickBite } from './scene-bite.js';
 import { createBiteLifeScene, noteBiteLifeRecord, tickRecoil } from './scene-bite-life.js';
@@ -87,6 +95,7 @@ export function createScenes(config, runTicks = 0, lean = false) {
         disease: createDiseaseScene(config),
         hunters: createHunterScene(runTicks, config),
         guards: createGuardScene(config),
+        guilds: createGuildScene(config),
         capacity: createCapacityScene(config),
         edge: createEdgeScene(),
         eat: createEatScene(config),
@@ -177,6 +186,7 @@ function noteFullDeath(scenes, observer, { world, o }) {
     }
     noteCapacityDeath(scenes.capacity, { cause: d[o + 4], foodEnergy: d[o + 9] });
     noteEdgeDeath(scenes.edge, world, { cause: d[o + 4], spec: d[o + 6], foodEnergy: d[o + 9] });
+    noteGuildDeath(scenes.guilds, { tick: d[o + 1], spec: d[o + 6], age: d[o + 8] });
     noteStyleAtDeath(observer, o / EVENT_STRIDE, { slot: d[o + 2], genomeId: d[o + 3] });
     noteDeath(scenes, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1], age: d[o + 8] });
     noteProofDeath(scenes.proof, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1] });
@@ -196,9 +206,13 @@ function noteFullRecord(scenes, world, o) {
     noteHunterRecord(scenes.hunters, d, o);
     noteBiteLifeRecord(scenes.biteLife, d, o, world);
     noteCompetenceRecord(scenes.competence, d, o);
+    if (d[o] === EVENT_TYPE.ALARM_CALLED) {
+        noteGuildAlarm(scenes.guilds, world, d[o + 2]);
+    }
     if (d[o] !== EVENT_TYPE.AGENT_BORN) {
         return;
     }
+    noteGuildBirth(scenes.guilds, { tick: d[o + 1], spec: d[o + 5], cause: d[o + 8] });
     noteHunterBirth(scenes.hunters, world, d[o + 2]);
     noteEdgeBirth(scenes.edge, world, { cause: d[o + 8], spec: d[o + 5] });
     noteCompetenceBirth(scenes.competence, world, d[o + 2]);
@@ -256,6 +270,21 @@ function observeLean(observer, world) {
     }
 }
 
+/** @param {Record<string, any>} scenes @param {Record<string, any>} world */
+function sampleCheckpoints(scenes, world) {
+    sampleSeason(scenes.season, scenes.terrain, world);
+    sampleSeasonMap(scenes.seasonMap, world);
+    sampleBalance(scenes.balance, world);
+    sampleFamilies(scenes.families, world);
+    sampleDivergence(scenes.divergence, world);
+    sampleDiseaseFamilies(scenes.disease, world);
+    sampleGuards(scenes.guards, world);
+    sampleGuilds(scenes.guilds, world);
+    sampleCapacity(scenes.capacity, world);
+    sampleEdge(scenes.edge, world);
+    sampleKinProximity(scenes.kin, world);
+}
+
 /**
  * Feeds the scenes one tick. Call it once right after `createWorld` and once after every `step`.
  * @param {Record<string, any>} observer the observer, whose intent state is current for this tick
@@ -283,6 +312,7 @@ export function observeScenes(observer, world) {
     trackApproaches(scenes.approach, observer, world);
     trackCarcasses(scenes.carcass, observer, world);
     tickStyle(observer, world);
+    tickGuilds(scenes.guilds, world);
     tickRefugeBites(scenes.refugeOutcome, observer, world);
     trackSlots(scenes, observer, world);
     if (world.tick % GROUP_SAMPLE_TICKS === 0) {
@@ -299,15 +329,6 @@ export function observeScenes(observer, world) {
         sampleEat(scenes.eat, world);
     }
     if (world.tick % BASIN_CHECKPOINT_TICKS === 0) {
-        sampleSeason(scenes.season, scenes.terrain, world);
-        sampleSeasonMap(scenes.seasonMap, world);
-        sampleBalance(scenes.balance, world);
-        sampleFamilies(scenes.families, world);
-        sampleDivergence(scenes.divergence, world);
-        sampleDiseaseFamilies(scenes.disease, world);
-        sampleGuards(scenes.guards, world);
-        sampleCapacity(scenes.capacity, world);
-        sampleEdge(scenes.edge, world);
-        sampleKinProximity(scenes.kin, world);
+        sampleCheckpoints(scenes, world);
     }
 }

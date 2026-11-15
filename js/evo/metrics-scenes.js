@@ -18,6 +18,7 @@ import { familyMetrics } from './scene-families.js';
 import { diseaseMetrics } from './scene-disease.js';
 import { competenceMetrics } from './scene-competence.js';
 import { guardMetrics, summerMetrics } from './scene-guards.js';
+import { guildMetrics } from './scene-guilds.js';
 import { kinProximityMetrics } from './scene-kin-proximity.js';
 import { hunterMetrics } from './scene-hunters.js';
 import { matchedMetrics } from './scene-matched.js';
@@ -65,6 +66,7 @@ export function sceneMetrics(observer, world) {
         ...matchedMetrics(s.matched),
         ...guardMetrics(s.guards),
         ...summerMetrics(s.guards),
+        ...guildMetrics(s.guilds),
         ...capacityMetrics(s.capacity),
         ...edgeMetrics(s.edge),
         ...eatMetrics(s.eat),

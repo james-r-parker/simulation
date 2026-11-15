@@ -267,4 +267,47 @@ export default {
         value: null,
         reason: 'fewer than 100 prey samples after burn-in',
     },
+    'eval.guild_share.forager': {
+        value: null,
+        reason: 'no 100-tick checkpoint after burn-in',
+    },
+    'eval.guild_share.reproducer': {
+        value: null,
+        reason: 'no 100-tick checkpoint after burn-in',
+    },
+    'eval.guild_share.scout': {
+        value: null,
+        reason: 'no 100-tick checkpoint after burn-in',
+    },
+    'eval.guild_share.defender': {
+        value: null,
+        reason: 'no 100-tick checkpoint after burn-in',
+    },
+    'eval.guild_survival.forager': {
+        value: 1 / 3600,
+    },
+    'eval.guild_survival.reproducer': {
+        value: null,
+        reason: 'no death of this guild after burn-in',
+    },
+    'eval.guild_survival.scout': {
+        value: null,
+        reason: 'no death of this guild after burn-in',
+    },
+    'eval.guild_survival.defender': {
+        value: null,
+        reason: 'no death of this guild after burn-in',
+    },
+    'eval.defender_repel_per_1k': {
+        value: null,
+        reason: 'no defender tick after burn-in',
+    },
+    'eval.scout_alarm_lead_share': {
+        value: null,
+        reason: 'no scout alarm with a threat after burn-in',
+    },
+    'eval.reproducer_recovery_rate': {
+        value: null,
+        reason: 'no birth during post-bust recovery after burn-in',
+    },
 };

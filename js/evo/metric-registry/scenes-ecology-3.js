@@ -2,6 +2,36 @@
 
 import { entry } from './entry.js';
 
+/** @param {string} spec */
+function guildShareEntry(spec) {
+    return entry('scenes-ecology', {
+        module: 'js/evo/scene-guilds.js',
+        meaning: `Mean share of alive agents in the ${spec} guild after burn-in.`,
+        counts: `${spec} alive count over total alive agents across 100-tick checkpoints after burn-in.`,
+        unit: 'share',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['no 100-tick checkpoint after burn-in'],
+        arithmetic: 'test/evo/scene-guilds.test.js',
+        source: 'test/evo/metric-source-ecology.test.js',
+    });
+}
+
+/** @param {string} spec */
+function guildSurvivalEntry(spec) {
+    return entry('scenes-ecology', {
+        module: 'js/evo/scene-guilds.js',
+        meaning: `Mean lifespan relative to maxAgeTicks for the ${spec} guild.`,
+        counts: `Mean age / maxAgeTicks across ${spec} deaths after burn-in.`,
+        unit: 'share',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['no death of this guild after burn-in'],
+        arithmetic: 'test/evo/scene-guilds.test.js',
+        source: 'test/evo/metric-source-ecology.test.js',
+    });
+}
+
 export const SCENES_ECOLOGY_3 = {
     'eval.cold_margin_use_under_threat': entry('scenes-ecology', {
         module: 'js/evo/scene-refuge-outcome.js',
@@ -168,6 +198,47 @@ export const SCENES_ECOLOGY_3 = {
         direction: 'higher',
         nullWhen: ['no checkpoint in the last quarter'],
         arithmetic: 'test/evo/scene-balance.test.js',
+        source: 'test/evo/metric-source-ecology.test.js',
+    }),
+    'eval.guild_share.forager': guildShareEntry('forager'),
+    'eval.guild_share.reproducer': guildShareEntry('reproducer'),
+    'eval.guild_share.scout': guildShareEntry('scout'),
+    'eval.guild_share.defender': guildShareEntry('defender'),
+    'eval.guild_survival.forager': guildSurvivalEntry('forager'),
+    'eval.guild_survival.reproducer': guildSurvivalEntry('reproducer'),
+    'eval.guild_survival.scout': guildSurvivalEntry('scout'),
+    'eval.guild_survival.defender': guildSurvivalEntry('defender'),
+    'eval.defender_repel_per_1k': entry('scenes-ecology', {
+        module: 'js/evo/scene-guilds.js',
+        meaning: 'Active defensive repels landed by defender agents on hunters per 1,000 defender-ticks.',
+        counts: 'Defender repel events times 1000 over alive defender agent-ticks after burn-in.',
+        unit: 'per 1k ticks',
+        direction: 'higher',
+        nullWhen: ['no defender tick after burn-in'],
+        expectedFlat: 'zero on defaults until prey-guilds Phase 2 adds active defender repel',
+        arithmetic: 'test/evo/scene-guilds.test.js',
+        source: 'test/evo/metric-source-ecology.test.js',
+    }),
+    'eval.scout_alarm_lead_share': entry('scenes-ecology', {
+        module: 'js/evo/scene-guilds.js',
+        meaning:
+            'Share of threat-seen scout alarm calls fired before the nearest hunter closed within half callRadius.',
+        counts: 'Scout AlarmCalled events with alarmSeen = 1 and nearest hunter >= 0.5 * callRadius over all threat-seen scout alarms after burn-in.',
+        unit: 'share',
+        direction: 'higher',
+        nullWhen: ['no scout alarm with a threat after burn-in'],
+        arithmetic: 'test/evo/scene-guilds.test.js',
+        source: 'test/evo/metric-source-ecology.test.js',
+    }),
+    'eval.reproducer_recovery_rate': entry('scenes-ecology', {
+        module: 'js/evo/scene-guilds.js',
+        meaning: 'Reproducer share of births during post-bust recovery ticks (population below 120).',
+        counts: 'Reproducer mate/split births over all mate/split births on ticks starting below 120 alive agents after burn-in.',
+        unit: 'share',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['no birth during post-bust recovery after burn-in'],
+        arithmetic: 'test/evo/scene-guilds.test.js',
         source: 'test/evo/metric-source-ecology.test.js',
     }),
 };
