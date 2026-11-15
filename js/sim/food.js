@@ -41,7 +41,7 @@ export function spawnFood(world) {
 }
 
 /**
- * Ages one alive food item by a tick. A blob carcass priced by the body (`carcassBody`) loses value linearly: its value
+ * Ages one alive food item by a tick. A blob carcass loses value linearly: its value
  * falls from the stored value to 0 over `carcassFadeTicks` (each tick keeps `(life - age) / (life - age + 1)` of it) and
  * it is gone at age `life`. Every other item lasts its `life` and keeps its value.
  * @param {World} world the world
@@ -53,7 +53,7 @@ function ageItem(world, i) {
     foodAge[i] += 1;
     const meat = foodKind[i] === FOOD_KIND.MEAT;
     const herd = foodOrigin[i] === FOOD_ORIGIN.HERD_CARCASS;
-    if (meat && !herd && world.config.carcassBody) {
+    if (meat && !herd) {
         const left = foodLife[i] - foodAge[i];
         if (left <= 0) {
             removeFood(world, i);
@@ -62,15 +62,13 @@ function ageItem(world, i) {
         }
         return;
     }
-    const life = !meat || (herd && foodLife[i] > 0) ? foodLife[i] : world.config.carcassTicks;
-    if (foodAge[i] > life) {
+    if (foodAge[i] > foodLife[i]) {
         removeFood(world, i);
     }
 }
 
 /**
- * Ages every alive food item by one tick and removes those older than `foodLife` (a carcass: `carcassTicks`, or
- * `carcassFadeTicks` with `carcassBody`).
+ * Ages every alive food item by one tick and removes those older than `foodLife` (a blob carcass: `carcassFadeTicks`).
  * @param {World} world the world
  * @returns {void}
  */

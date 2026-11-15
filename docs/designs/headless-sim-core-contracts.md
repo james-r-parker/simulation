@@ -110,14 +110,14 @@ number and writes no hashed state where this file says so.
 | `satiationShare`, `digestTicks`, `handlingTicks`, `handlingThrust`            | `0.95`, `10`, `20`, `0.2`           | `0 .. 1`; integer `0 .. 30`; integer `0 .. 30`; `0 .. 1` |
 | `specMutationRate`, `huntUpkeep`                                              | `0.02`, `0.002`                     | `0 .. 1`; `>= 0`                                         |
 | `alarmThreshold`, `huntCallThreshold`                                         | `0.65`, `0.65`                      | `0 .. 0.95` each; 0 fires on any output above 0          |
-| `predatorKillEnergy`                                                          | `150`                               | `0 .. 1000`; 0 is off                                    |
+| `killShare`, `killGorgeCap`                                                   | `0.25`, `2000`                      | `0 .. 1`; above 0 (honest-budgets Phase 2)               |
 | `floorTrigger`, `entrantEnergy`                                               | `8`, `200`                          | Integer `>= 0`; `>= 0` (0 means `initialEnergy`)         |
 | `diseaseSeedRate`, `diseaseMinHosts`, `diseaseRadius`                         | `0`, `30`, `60`                     | `0 .. 1` (0 is off); integer `>= 0`; `> 0`               |
 | `diseaseTransmission`, `diseaseSpecificity`, `diseaseDrain`, `diseaseTicks`   | `0.05`, `0.8`, `0.3`, `600`         | `0 .. 1`; `> 0`; `>= 0`; integer `>= 1`                  |
 | `biteCost`, `recoilEnergy`                                                    | `8`, `20`                           | `>= 0` each; 0 is off                                    |
 | `specialisations.<s>.passiveLossMultiplier`, `.splitMinEnergyMultiplier`      | per type                            | `> 0 .. 2`; `0.25 .. 2`                                  |
 | `specialisations.<s>.kickMultiplier`                                          | `1` (defender `2`)                  | `> 0`                                                    |
-| `carcassTicks`, `carcassShare`                                                | `300`, `0.8`                        | Integer `>= 1`; `0 .. 1`                                 |
+| `carcassFadeTicks`, `carcassShare`                                            | `1500`, `0.8`                       | Integer `>= 1`; `0 .. 1`                                 |
 | `specialisations.<s>.plantFoodValue`, `.meatFoodValue`                        | `1` (meat `0.3`, predator plants 0) | `0 .. 1`                                                 |
 | `foodPatchCount`, `foodPatchRadius`, `foodPatchCapacity`                      | `16`, `400`, `83000`                | Integer `0 .. 256`; `> 0`; `> 0`                         |
 | `foodPatchRegrow`, `foodBackgroundShare`                                      | `0.0005`, `0.02`                    | `0 .. 1`; `0 .. 1`                                       |
@@ -373,9 +373,9 @@ minAgents)`. Below it, it spawns `FLOOR` agents until `population === minAgents`
   victim's specialisation, read before the bite moves energy, for every bite that lands. A `canHunt` agent with `BITE`
   above 0 touching an agent `couldBite` refuses (kin, or too large) loses `recoilEnergy` once per tick, with loss cause
   `cost`; a per-slot tick stamp (derived, not hashed) keeps it to once.
-- Predator economy keys (fitness-and-selection T15f). `applyBite` (`feeding.js`) pays `predatorKillEnergy` to the biter,
-  through `addEnergy` with source `ENERGY_SOURCE.KILL` (booked in `ledger[0]`, capped at `maxEnergy`), when the bite takes
-  its victim from above 0 to 0 energy; a victim already at 0 pays nothing. `tickCost` (`energy.js`) multiplies the standing
+- Predator economy keys (fitness-and-selection T15f). `applyBite` (`feeding.js`) mints nothing on a kill (honest-budgets Phase 2 deleted
+  `predatorKillEnergy`): a bite that leaves the victim at or under `killShare` x its maximum energy kills it, and the killer
+  takes what remains up to `killGorgeCap` (`takeBody` in `kill-body.js`). `tickCost` (`energy.js`) multiplies the standing
   term (`passiveLoss`, the size term and the vision term, before the temperature factor) by the specialisation's
   `passiveLossMultiplier`, read from the `specParams` entry it already holds. `readyToSplit` (`reproduction.js`) compares
   energy with `world.splitMinBySpec[spec]`, the table `splitMinEnergy x splitMinEnergyMultiplier` built once in
@@ -424,7 +424,7 @@ offset)`: `t / temperatureMax`; `min(abs(t - middle) / (temperatureMax / 2), 1)`
 
 ### Feeding
 
-Plant item expiry uses its copied `foodLife`; meat expiry uses `carcassTicks`. The field phase ages mycelium, regrows patches, refreshes fruiting weights, then spawns and ages food.
+Plant item expiry uses its copied `foodLife`; a blob carcass fades over `carcassFadeTicks` and a herd carcass lasts `herdCarcassTicks`. The field phase ages mycelium, regrows patches, refreshes fruiting weights, then spawns and ages food.
 
 - `feed` visits alive agents in ascending slot. Each eats every alive food it overlaps, found through `cellRange`
   of its circle, cells ascending and entries in cell order. Food is removed when eaten even if the eater stored
@@ -575,7 +575,7 @@ detTanh(g)` with `TRAIT_SPAN` 0.3. With `hebbianRate` above 0 it copies the geno
 - `regrowPatches` (first in the `field` phase) sets each patch's stock to
   `min(foodPatchCapacity, s + foodPatchRegrow x factor x s x (1 - s / foodPatchCapacity))`, with `s` the stock clamped to
   `[0.05 x foodPatchCapacity, foodPatchCapacity]` and `factor` from `patchRegrowFactor` (1 without eras). It draws nothing.
-- `ageFood` adds 1 to each alive food's age, then removes food whose age exceeds `foodMaxAge` (`carcassTicks` for meat).
+- `ageFood` adds 1 to each alive food's age, then removes food whose age exceeds `foodMaxAge` (a meat item's own `foodLife`: `carcassFadeTicks` for a blob, `herdCarcassTicks` for a herd).
 - `leaveCarcass(world, slot)` writes, into the lowest free food slot (no draw; nothing when none is free), a meat item
   at the dead agent's position with radius `size[slot]`, age 0 and value `carcassShare x (foodEnergy + biteEnergy)` of the
   agent, when that value is above 0. The energy enters the ledger when eaten, like plant food.
@@ -664,7 +664,7 @@ a `Uint32Array` view; `writeSnapshot(world, views, withRays = false)` writes it 
 | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Header, 9 (`Uint32`)                                      | `tick`, agent count, food count, obstacle count, cloud count, ray count written (0 or `rayCount`), live patch count, live herd animal count, live zone count                                              |
 | Agents, `agentStride` 12 each, alive only, ascending slot | `x`, `y`, `angle`, `size`, `energy / maxEnergy` (`Float32`); `spec`, `lineageId`, `genomeId`, `slot` (`Uint32`); `temperature / temperatureMax`, `speed` (`Float32`); `flags` (`Uint32`, `SNAPSHOT_FLAG`) |
-| Food, `foodStride` 6 each, alive only                     | `x`, `y`, `radius`, `age01`, `species`, `hue` (`Float32`); meat has negative radius and uses `foodAge / carcassTicks`; plants use `foodAge / foodLife`                                                    |
+| Food, `foodStride` 6 each, alive only                     | `x`, `y`, `radius`, `age01`, `species`, `hue` (`Float32`); meat has negative radius; every item uses `foodAge / foodLife`                                                                                 |
 | Obstacles, 3 each                                         | `x`, `y`, `radius` (`Float32`), `terrainRockCount(config)` of them: the static rocks                                                                                                                      |
 | Clouds, `cloudStride` 3 each, live only                   | `x`, `y`, `cloudTtl / smokeTicks` (`Float32`)                                                                                                                                                             |
 | Patches, `patchStride` 5 each, alive only                 | `x`, `y`, `species`, `hue`, normalized fruiting weight (`Float32`)                                                                                                                                        |

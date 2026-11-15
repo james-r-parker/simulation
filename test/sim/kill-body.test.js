@@ -12,7 +12,6 @@ const NEUTRAL = {
     huntSizeRatio: 1.01,
     biteCost: 0,
     maxEnergy: MAX,
-    predatorKillEnergy: 0,
     specialisations: { predator: { biteMultiplier: 1, turnMultiplier: 1, sprintBoost: 1, maxEnergyMultiplier: 1 } },
 };
 
@@ -50,7 +49,7 @@ function bite(w) {
     feed(w, hash);
 }
 
-describe('a kill with predatorKillEnergy 0', () => {
+describe('a kill', () => {
     it('mints nothing: the biter gains only the victim energy it took', () => {
         const w = duel({}, { hunter: 600, prey: 5 });
         const before = w.ledger[0];
@@ -110,9 +109,9 @@ describe('killShare', () => {
         expect(w.ledger[0] - w.ledger[1]).toBeCloseTo(w.energy[0] + w.energy[1], 9);
     });
 
-    it('is the plain kill at the default 0: a victim above empty is not killed', () => {
+    it('is the plain kill at killShare 0: a victim above empty is not killed', () => {
         const b = w0();
-        const w = duel({}, { hunter: 600, prey: b + 1 });
+        const w = duel({ killShare: 0 }, { hunter: 600, prey: b + 1 });
         bite(w);
         expect(w.energy[1]).toBe(1);
         expect(w.carcassHeld[1]).toBe(0);

@@ -230,16 +230,12 @@ function applyBite(world, biter, victim) {
     const fatal = wasAlive && world.energy[victim] <= killLine(config, world.maxEnergyBySpec[world.spec[victim]]);
     noteFatalBiteObservation(world, biter, victim, fatal);
     const moved = world.transferGained + settleKill(world, biter, victim, fatal);
-    let gained = moved;
-    if (fatal && config.predatorKillEnergy > 0) {
-        gained += addEnergy(world, biter, config.predatorKillEnergy, ENERGY_SOURCE.KILL);
-    }
     if (fatal && config.predatorRestTicks > 0 && specParams(config, world.spec[biter]).canHunt) {
         world.restTimer[biter] = config.predatorRestTicks;
     }
     gainTemperature(world, biter, (config.temperatureGainEat * moved) / config.foodEnergy);
     const paid = removeEnergy(world, biter, kick, LOSS_CAUSE.COST);
-    noteReward(world, biter, fatal ? REWARD_SOURCE.KILL : REWARD_SOURCE.BITE, gained);
+    noteReward(world, biter, fatal ? REWARD_SOURCE.KILL : REWARD_SOURCE.BITE, moved);
     world.lastLoss[victim] = LOSS_CAUSE.BITE;
     const biterId = world.genomeId[biter];
     if (wasAlive) {
@@ -252,7 +248,7 @@ function applyBite(world, biter, victim) {
         world.lastBiter[victim] = biterId;
         world.lastBiteTick[victim] = world.tick;
     }
-    noteBiteLedger(world, biter, { gained, fatal, kick: paid, victim });
+    noteBiteLedger(world, biter, { gained: moved, fatal, kick: paid, victim });
     world.bittenTimer[victim] = 0;
     depositPheromone(world, world.attack, x[biter], y[biter]);
     depositPheromone(world, world.danger, x[victim], y[victim]);

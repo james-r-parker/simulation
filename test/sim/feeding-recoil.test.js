@@ -21,7 +21,7 @@ const RECOIL = 20;
  * @returns {any} a world with the cost of a landed bite off, so only the recoil moves a hunter's energy
  */
 function recoilWorld(over = {}) {
-    return lifeWorld({ biteArc: Math.PI / 4, biteCost: 0, recoilEnergy: RECOIL, predatorKillEnergy: 0, ...over });
+    return lifeWorld({ biteArc: Math.PI / 4, biteCost: 0, recoilEnergy: RECOIL, ...over });
 }
 
 /**

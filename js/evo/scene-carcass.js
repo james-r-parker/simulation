@@ -1,6 +1,6 @@
 // Scavenge (natural-selection.md, Detectors). No event carries the food kind, so the observer reads it from the food
 // arrays: a meat item that was alive at the end of the last observed tick and is gone now, before its age ran out
-// (`carcassTicks`, or `carcassFadeTicks` with `carcassBody`, where a blob carcass's value also falls each tick), was eaten (`foodGone`, set by `removeFood`; a rotted item is not a meal). The eater is the lowest alive slot that overlaps the item's last place and gained food
+// (`carcassFadeTicks`, over which a blob carcass's value also falls each tick), was eaten (`foodGone`, set by `removeFood`; a rotted item is not a meal). The eater is the lowest alive slot that overlaps the item's last place and gained food
 // energy this tick (`feed` walks the slots in order, so the lowest slot eats first). The energy counted is what `addEnergy` stored
 // (`foodTaken`, set by `removeFood`).
 //

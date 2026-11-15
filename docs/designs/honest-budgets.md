@@ -1,6 +1,6 @@
 # Honest budgets
 
-**Status:** In progress - Phase 1 (patch stock pays for plant food) built in season 10; Phase 2 (the kill is the body) is next.
+**Status:** In progress - Phase 1 (patch stock pays for plant food) and Phase 2 (the kill is the body) built in season 10; Phase 3 (impacts, not contact) is next.
 **Validated:** 2fc8f7f5 (2026-11-15)
 **Priority:** 2 - the 128-seed read of [review-2026-11-11.md](../review-2026-11-11.md): most seeds boom to the cap and fall under 40 while food never runs short, so every scene that needs a standing prey population is tuned on top of the crash; food, the kill and the rocks come before any skill, refuge or call work
 **Depends on:** [metric-trust.md](metric-trust.md)
@@ -103,7 +103,7 @@ adopted as a realistic mechanism; the slope target carries to Phases 2 to 5.
 | B     | T4, T5   | The 16-seed screen and the 64-seed keep-rule pass (runs)  |
 | C     | T6, T7   | The switch and the conformance review                     |
 
-### Phase 2 - The kill is the body
+### Phase 2 - The kill is the body (built)
 
 **Targets:** eval.hunter_income_share.carcass, eval.hunter_catches_per_1k, eval.hunter_zero_kill_carcass_share
 
@@ -115,7 +115,7 @@ adopted as a realistic mechanism; the slope target carries to Phases 2 to 5.
 | `leaveCarcass` stores `carcassShare` x the energy the body held at death: on a kill, the remainder the killer did not take; on a starvation or collision death, about 0; on old age, the store. Like plant food, the carcass enters the ledger when eaten, and the death books the same energy out                                                                                                   |
 | A blob carcass's value falls linearly from its stored value to 0 over `carcassFadeTicks`, which replaces `carcassTicks` (`ageFood`, `consumeFood`, `snapshot.js`, `scene-carcass.js`); a meal takes the value at that tick. Herd carcasses keep their own life                                                                                                                                       |
 | The `foodEnergy` and `biteEnergy` counters stay as ledgers and price nothing                                                                                                                                                                                                                                                                                                                         |
-| `carcassBody` (boolean, default false, flag-ledger entry naming T13) switches the carcass rule and the fade on; the arms of the table below set it to true with `predatorKillEnergy` 0, and T13 makes it the default and deletes it with `carcassTicks`                                                                                                                                              |
+| `carcassBody` (boolean, default false) switched the carcass rule and the fade on in the arms of the table below, with `predatorKillEnergy` 0; the switch (T13) made the body the default and deleted `carcassBody`, `predatorKillEnergy` and `carcassTicks`                                                                                                                                          |
 
 | Arm         | `killShare` | `killGorgeCap` | `carcassFadeTicks` | Predator `passiveLossMultiplier` |
 | ----------- | ----------- | -------------- | ------------------ | -------------------------------- |
@@ -128,6 +128,13 @@ adopted as a realistic mechanism; the slope target carries to Phases 2 to 5.
 | Done when                                                                                                                       | Stop when                              |
 | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
 | `keepRule` on 64 matched seeds reads no guard `WORSE`, hunter catches included, and `eval.hunter_zero_kill_carcass_share` falls | Every arm reads hunter catches `WORSE` |
+
+As built, E175 met Done-when: `body-k25r` is the default (`killShare` 0.25, `killGorgeCap` 2000, `carcassFadeTicks` 1500,
+predator `passiveLossMultiplier` 0.2). On 64 matched seeds the keep rule read no guard `WORSE`: `eval.hunter_income_share.carcass`
+fell 0.479 to 0.008, `eval.hunter_income_share.kill` rose 0.092 to 0.254, `eval.hunter_catches_per_1k` rose 0.389 to 1.347 and
+`eval.hunter_zero_kill_carcass_share` fell 0.108 to 0.084 (the interval includes 0). Hunters stay alive on 46 of 64 seeds
+against 53, which the guard does not call harm; juvenile hunter deaths rose (`eval.hunter_juvenile_death_share` 0.52 to
+0.76) and the next balance pass watches hunter recruitment.
 
 #### Chunks
 

@@ -2,7 +2,7 @@
 // maximum energy is fatal. The killer then takes the victim's remaining energy up to `killGorgeCap` (and its own
 // headroom), and what it does not take leaves the victim as a bite loss and is held in `carcassHeld` for the carcass
 // `leaveCarcass` leaves, so a killed body's store is 0. With `killShare` 0 nothing remains to take or hold and the kill
-// is today's. A blob carcass priced by the body (`carcassBody`) fades linearly over `carcassFadeTicks`.
+// is today's. A blob carcass fades linearly over `carcassFadeTicks`.
 //
 // `carcassHeld` is derived state: zeroed by `freeAgent`, outside `worldHash`, no RNG, no allocation per tick.
 
@@ -40,12 +40,4 @@ export function takeBody(world, biter, victim) {
     world.biteEnergy[biter] += stored;
     world.carcassHeld[victim] += removeEnergy(world, victim, world.energy[victim], LOSS_CAUSE.BITE);
     return stored;
-}
-
-/**
- * @param {Readonly<Record<string, any>>} config the world's config
- * @returns {number} the ticks a blob carcass lasts: `carcassFadeTicks` when the body prices it, else `carcassTicks`
- */
-export function blobCarcassLife(config) {
-    return config.carcassBody ? config.carcassFadeTicks : config.carcassTicks;
 }

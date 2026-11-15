@@ -371,8 +371,8 @@ describe('writeSnapshot rays', () => {
         expect(views.u32[5]).toBe(0);
     });
 
-    it('writes foodAge / carcassTicks for meat and 0 for plants', () => {
-        const world = smallWorld({ carcassTicks: 100 });
+    it('writes foodAge / foodLife for meat and 0 for plants', () => {
+        const world = smallWorld();
         world.foodAlive[0] = 1;
         world.foodX[0] = 10;
         world.foodY[0] = 20;
@@ -386,6 +386,7 @@ describe('writeSnapshot rays', () => {
         world.foodRadius[1] = 8;
         world.foodKind[1] = FOOD_KIND.MEAT;
         world.foodAge[1] = 25;
+        world.foodLife[1] = 100;
 
         world.foodCount = 2;
         const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));

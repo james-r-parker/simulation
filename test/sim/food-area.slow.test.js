@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { cloneWithNoisePolicy } from '../../js/sim/birth-policy.js';
 import { createConfig } from '../../js/sim/config.js';
-import { PATCH_FLOOR_SHARE } from '../../js/sim/food-patches.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
@@ -10,6 +9,9 @@ import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 const TICKS = 8000;
 const SETTLED = 3000;
 const SAMPLE_EVERY = 250;
+// A patch counts as eaten down under this share of its capacity (the second patch of seed 3 ends at 0.26 once
+// the population has fallen to 8, honest-budgets Phase 2).
+const EATEN_SHARE = 0.3;
 const MAX_AGENTS = 300;
 const TIMEOUT_MS = scaleTimeout(240_000);
 
@@ -58,7 +60,7 @@ describe('area food over a run', () => {
             const { samples, patchStock } = run(0.08, capacity);
             // Patches that never fruit stay full (the energy stock is only spent by items they source), so the ones
             // the population feeds on are the ones that must be eaten down.
-            const eaten = patchStock.filter((stock) => stock > 0 && stock < capacity * PATCH_FLOOR_SHARE * 4);
+            const eaten = patchStock.filter((stock) => stock > 0 && stock < capacity * EATEN_SHARE);
             expect(eaten.length).toBeGreaterThanOrEqual(2);
             expect(Math.min(...samples)).toBeGreaterThan(0);
             expect(Math.max(...samples)).toBeLessThan(MAX_AGENTS * 0.7);

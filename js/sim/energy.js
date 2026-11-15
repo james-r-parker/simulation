@@ -23,7 +23,6 @@ export const ENERGY_SOURCE = Object.freeze({
     INITIAL: 1,
     FLOOR: 2,
     IMMIGRANT: 3,
-    KILL: 4,
 });
 
 /** @type {number[]} */

@@ -215,7 +215,7 @@ so every feature listed below as "on" is on in the app.
 - **Food patches.** `foodPatchCount` = 16 initial live patches in a `floraPatchMax` = 32 slot pool, of radius 400, split between the two basins (`js/sim/food-patches.js`). Each holds a stock that
   each meal eaten inside depletes by 0.02 and that regrows logistically (0.0005 a tick); 20% of spawns ignore the patches. Food
   regrows per world area (`foodRegrowPerArea`) through the patches, not toward a per-blob target, so food does not scale with the population.
-- **Carcasses.** A dead blob leaves a meat item worth `carcassShare` (0.8 by default) of the energy it held at death (`carcassShare`; `js/sim/carcass.js`), lasting 300 ticks.
+- **Carcasses.** A dead blob leaves a meat item worth `carcassShare` (0.8 by default) of the energy it held at death (`carcassShare`; `js/sim/carcass.js`), fading linearly to nothing over `carcassFadeTicks` (1500).
   Predators digest meat fully; other types get 30% of it (`meatFoodValue`). Predators get 0 from plants (`plantFoodValue`).
 - Eating has limits: a blob at 95% of `maxEnergy` cannot eat (`satiationShare`), waits `digestTicks` (10) between meals and moves at 20% thrust for `handlingTicks` (20) after one.
 - **Eating is a choice.** A forager eats a plant it touches only while its `BITE` output is above 0, and holding the bite slows it
@@ -257,7 +257,7 @@ bite that lands costs the biter a kick (`biteCost`, scaled by the victim's size,
 
 ### Fighting, signalling and scent
 
-- **Bites.** A hunter bites a target that is kin-free, smaller than 0.8x its size and inside its `biteArc` (a 90-degree half-angle forward cone). A fatal bite pays the biter `predatorKillEnergy`.
+- **Bites.** A hunter bites a target that is kin-free, smaller than 0.8x its size and inside its `biteArc` (a 90-degree half-angle forward cone). A bite that leaves its victim at or under `killShare` (0.25) of its maximum energy is a kill: the killer takes the rest of the victim's energy up to `killGorgeCap` (2000) and what it leaves becomes the carcass. A kill mints no energy.
 - **Calls.** Alarm and hunt calls are heard within `callRadius` (300) for 60 ticks and feed the "heard" inputs; each also drops scent.
 - **Smoke** blocks rays for `smokeTicks` (180) and costs 20 energy.
 - **Scent** (`js/sim/pheromones.js`): three decaying, diffusing grids. `danger` (dropped by alarms and where a blob is bitten), `attack` (where a blob bites) and `hunt` (hunt calls).

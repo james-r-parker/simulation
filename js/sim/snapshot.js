@@ -2,8 +2,7 @@
 // each agent's ray proximities when asked) into one ArrayBuffer.
 
 import { OUTPUT_INDEX, RAY_CHANNELS } from './brain-layout.js';
-import { FOOD_KIND, FOOD_ORIGIN } from './carcass.js';
-import { blobCarcassLife } from './kill-body.js';
+import { FOOD_KIND } from './carcass.js';
 import { SEX } from './sex.js';
 import { specParams } from './spec-params.js';
 import { terrainRockCount } from './terrain.js';
@@ -182,7 +181,7 @@ function writeAgents(world, { f32, u32 }) {
 
 /**
  * Writes the alive food as `x`, `y`, radius, `age01`. A carcass has its radius written negative, so the layout is the same
- * with carcasses off. A blob carcass uses its life (`blobCarcassLife`), other meat carcassTicks and plants use their own foodLife for age01.
+ * with carcasses off. Every item, a carcass too, uses its own foodLife for age01.
  * @param {import('./world.js').World} world the world
  * @param {Float32Array} f32 the float view
  * @param {number} start the first word of the section
@@ -190,8 +189,6 @@ function writeAgents(world, { f32, u32 }) {
  */
 function writeFood(world, f32, start) {
     const { foodAlive, foodX, foodY, foodRadius, foodKind, foodAge } = world;
-    const { carcassTicks } = world.config;
-    const blobLife = blobCarcassLife(world.config);
     let w = start;
     for (let slot = 0; slot < foodAlive.length; slot++) {
         if (foodAlive[slot] === 1) {
@@ -199,8 +196,7 @@ function writeFood(world, f32, start) {
             f32[w] = foodX[slot];
             f32[w + 1] = foodY[slot];
             f32[w + 2] = isMeat ? -foodRadius[slot] : foodRadius[slot];
-            const blob = world.foodOrigin[slot] !== FOOD_ORIGIN.HERD_CARCASS;
-            const life = isMeat ? (blob ? blobLife : carcassTicks) : world.foodLife[slot];
+            const life = world.foodLife[slot];
             f32[w + 3] = life > 0 ? foodAge[slot] / life : 0;
             f32[w + 4] = world.foodSpecies[slot];
             f32[w + 5] = world.foodHue[slot];

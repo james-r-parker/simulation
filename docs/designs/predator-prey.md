@@ -173,8 +173,8 @@ once per `callTicks`. Smoke does not block sound.
 - Food and meat (world-balance Phase 3): `tryEat` multiplies a food item's energy by the eater's `plantFoodValue`
   (plant) or `meatFoodValue` (meat), per specialisation, and an eater whose share is 0 leaves the item. The default
   `plantFoodValue` is 1 for every specialisation; world-balance.md sets the predator's to 0 at the switch-on (T41), so a
-  predator then lives on bite energy and meat. With `carcassesEnabled` a death leaves a meat item (`carcassShare` x the energy the agent took in,
-  for `carcassTicks`); `meatFoodValue` is 1 for the predator and 0.3 for the rest. With `specMutationRate` above 0 a
+  predator then lives on bite energy and meat. With `carcassesEnabled` a death leaves a meat item (`carcassShare` x the energy the body holds at death,
+  fading over `carcassFadeTicks`); `meatFoodValue` is 1 for the predator and 0.3 for the rest. With `specMutationRate` above 0 a
   `canHunt` agent pays `huntUpkeep` energy per tick.
 - Honest ray classes (world-balance Phase 2): an agent hit on a ray is "can bite me" (channel 2) when `couldBite`
   says it could bite the caster if it faced it, "I can bite it" (channel 3) when the caster could bite it, kin (5) before either,
