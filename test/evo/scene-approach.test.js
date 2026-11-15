@@ -136,6 +136,51 @@ describe('hunt approaches and chases', () => {
         expect(a.observer.scenes.approach.phase[a.prey[0]]).toBe(0);
         expect(read(a, 'hunt_abort_rate').reason).toContain('no hunter approach');
     });
+
+    it('ignores a kill by a hunter with no approach, and a kill of someone other than the one it bit', () => {
+        const a = arena(1, 2);
+        const scene = a.observer.scenes.approach;
+        const kill = (/** @type {number} */ victim) =>
+            noteApproachKill(scene, a.observer, a.world, {
+                killerId: a.world.genomeId[a.hunters[0]],
+                victimId: a.world.genomeId[victim],
+            });
+        a.world.tick = T0;
+        kill(a.prey[0]);
+        expect(scene.tally.byClass[CHASE_OUTCOME.CAUGHT]).toBe(0);
+        play(a, T0, { closing: a.hunters });
+        play(a, T0 + 1, { closing: a.hunters, bites: [[a.hunters[0], a.prey[0]]] });
+        kill(a.prey[1]);
+        expect(scene.tally.byClass[CHASE_OUTCOME.CAUGHT]).toBe(0);
+        kill(a.prey[0]);
+        expect(scene.tally.byClass[CHASE_OUTCOME.CAUGHT]).toBe(1);
+    });
+
+    it('does not count a kill or a first bite before burn-in as a committed approach', () => {
+        const kill = arena(1, 1);
+        play(kill, T0 - 100, { closing: kill.hunters });
+        noteApproachKill(kill.observer.scenes.approach, kill.observer, kill.world, {
+            killerId: kill.world.genomeId[kill.hunters[0]],
+            victimId: kill.world.genomeId[kill.prey[0]],
+        });
+        expect(kill.observer.scenes.approach.committed).toBe(0);
+        const bite = arena(1, 1);
+        play(bite, T0 - 100, { closing: bite.hunters });
+        play(bite, T0 - 99, { closing: bite.hunters, bites: [[bite.hunters[0], bite.prey[0]]] });
+        expect(bite.observer.scenes.approach.committed).toBe(0);
+    });
+
+    it('keeps the first bite of an approach when it bites again, with no bite hook', () => {
+        const a = arena(1, 1);
+        a.observer.scenes.approach.onBite = null;
+        play(a, T0, { closing: a.hunters });
+        play(a, T0 + 1, { closing: a.hunters, bites: [[a.hunters[0], a.prey[0]]] });
+        const scene = a.observer.scenes.approach;
+        expect([scene.committed, scene.biteTick[a.hunters[0]]]).toEqual([1, T0 + 1]);
+        a.world.bittenTimer[a.prey[0]] = 100;
+        play(a, T0 + 2, { closing: a.hunters, bites: [[a.hunters[0], a.prey[0]]] });
+        expect([scene.committed, scene.biteTick[a.hunters[0]]]).toEqual([1, T0 + 1]);
+    });
 });
 
 describe('the bite hook', () => {

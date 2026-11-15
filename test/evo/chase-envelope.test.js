@@ -23,4 +23,21 @@ describe('runEnvelope', () => {
         ]);
         expect(only.byDistance).toHaveLength(5);
     }, 30_000);
+
+    it('plays every hunting specialisation against every body when no pairs are named', () => {
+        const config = arenaConfig();
+        const specs = Object.entries(config.specialisations);
+        const hunters = specs.filter(([, spec]) => /** @type {any} */ (spec).canHunt);
+        expect(hunters.length).toBeGreaterThan(0);
+        expect(hunters.length).toBeLessThan(specs.length);
+        const results = runEnvelope(config, { trials: 1 });
+        expect(results).toHaveLength(hunters.length * specs.length);
+        expect(new Set(results.map((r) => r.pursuer))).toEqual(new Set(hunters.map(([name]) => name)));
+    }, 120_000);
+
+    it('rejects a named pair with an unknown specialisation, listing the known ones', () => {
+        expect(() => runEnvelope(arenaConfig(), { pairs: [['dragon', 'forager']], trials: 1 })).toThrow(
+            /unknown specialisation "dragon"; known: .*forager/,
+        );
+    });
 });

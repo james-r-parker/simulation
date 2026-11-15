@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
-import { JINK_RANGE, evaderBrain, pursuerBrain, wrap } from '../../js/evo/chase-oracles.js';
+import { JINK_RANGE, evaderBrain, pursuerBrain, steer, wrap } from '../../js/evo/chase-oracles.js';
 import { arenaConfig, stageArena } from '../../js/evo/chase-arena.js';
 
 const FORAGER = 0;
@@ -77,5 +77,34 @@ describe('evaderBrain', () => {
         const without = out(w, 1, OUTPUT_INDEX.TURN);
         evaderBrain({ pursuer: 0, evader: 1, sprint: true, wallMargin: 600 })(w);
         expect(out(w, 1, OUTPUT_INDEX.TURN)).toBeGreaterThan(without + 0.5);
+    });
+
+    it('breaks to the positive side when the pursuer is dead ahead', () => {
+        const ahead = pair({ x: 4040, y: 4000, angle: 0 });
+        evaderBrain({ pursuer: 0, evader: 1, sprint: true })(ahead);
+        expect(out(ahead, 1, OUTPUT_INDEX.TURN)).toBe(1);
+    });
+
+    it("breaks across the pursuer's velocity, not its facing, once the pursuer is moving", () => {
+        const w = pair({ x: 4040, y: 4030, angle: 0 });
+        w.vx[0] = 0;
+        w.vy[0] = 5;
+        evaderBrain({ pursuer: 0, evader: 1, sprint: true })(w);
+        expect(out(w, 1, OUTPUT_INDEX.TURN)).toBeCloseTo(0, 6);
+    });
+
+    it('stays finite when the evader stands on the pursuer and bends along a wall', () => {
+        const w = pair({ x: 4000, y: 4000, angle: 0 });
+        evaderBrain({ pursuer: 0, evader: 1, sprint: true, jinkRange: 0, wallMargin: 600 })(w);
+        expect(Number.isFinite(out(w, 1, OUTPUT_INDEX.TURN))).toBe(true);
+    });
+});
+
+describe('steer', () => {
+    it('is 0 for a zero aim and a full turn for an aim exactly behind', () => {
+        const w = pair({ x: 4100, y: 4000 });
+        expect(steer(w, 0, { x: 0, y: 0 })).toBe(0);
+        expect(steer(w, 0, { x: -50, y: 0 })).toBe(1);
+        expect(steer(w, 0, { x: -50, y: -1 })).toBe(-1);
     });
 });
