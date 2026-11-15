@@ -4,6 +4,8 @@
  * @typedef {object} DrillCell
  * @property {number} winShare the win share
  * @property {number} edge the win share minus the random brains' mean
+ * @property {number} [winShareLow] the 95% Wilson low bound of the win share
+ * @property {number} [edgeLow] `winShareLow` minus the Wilson high bound of the random brains' pooled win share
  * @property {Record<string, number>} [lossReasons] counts by first-match lost-trial reason
  */
 
@@ -32,7 +34,8 @@ function signed(value) {
 
 /**
  * @param {DrillCell | null} cell a cell
- * @returns {string} `win (edge)`, or `-` for a skipped drill
+ * @returns {string} `win [low] (edge, low)` with the lost-trial reasons, or `-` for a skipped drill; a cell without bounds
+ *   prints `win (edge)`
  */
 function cellText(cell) {
     if (cell === null) {
@@ -41,7 +44,9 @@ function cellText(cell) {
     const reasons = Object.entries(cell.lossReasons ?? {})
         .filter(([, n]) => n > 0)
         .map(([why, n]) => `${why}:${n}`);
-    return `${cell.winShare.toFixed(2)} (${signed(cell.edge)}${reasons.length ? `; ${reasons.join(',')}` : ''})`;
+    const low = cell.winShareLow === undefined ? '' : ` [${cell.winShareLow.toFixed(2)}]`;
+    const edgeLow = cell.edgeLow === undefined ? '' : `, ${signed(cell.edgeLow)}`;
+    return `${cell.winShare.toFixed(2)}${low} (${signed(cell.edge)}${edgeLow}${reasons.length ? `; ${reasons.join(',')}` : ''})`;
 }
 
 /**

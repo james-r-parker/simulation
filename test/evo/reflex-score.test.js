@@ -117,7 +117,18 @@ describe('reflexRow', () => {
         expect(row?.score).toBeCloseTo(0.625, 12);
         expect(row?.edge).toBeCloseTo(0.25, 12);
         expect(row?.fast).toBeCloseTo(0.375, 12);
-        expect(row?.cases.a).toEqual({ passShare: 0.75, edge: 0.5, fast: 0.5, kinds: {} });
+        // the 95% Wilson interval of 12 of 16 written out: centre (p + z2 / 2n) / (1 + z2 / n)
+        const z2 = 1.96 ** 2;
+        const centre = (0.75 + z2 / 32) / (1 + z2 / 16);
+        const half = (1.96 * Math.sqrt((0.75 * 0.25) / 16 + z2 / 1024)) / (1 + z2 / 16);
+        expect(row?.cases.a).toEqual({
+            passShare: 0.75,
+            passLow: expect.closeTo(centre - half, 3),
+            passHigh: expect.closeTo(centre + half, 3),
+            edge: 0.5,
+            fast: 0.5,
+            kinds: {},
+        });
         expect(row?.cases.b.edge).toBeCloseTo(0, 12);
     });
 

@@ -63,15 +63,20 @@ export function formatKinds(rows) {
 /**
  * @param {readonly string[]} cases the case names, in column order
  * @param {readonly ReflexReportRow[]} rows the rows
- * @returns {string[]} a header, then a row per subject: pass share and edge per case (`-` for a case the subject does
- *   not face), then the score, the edge and the first-row share
+ * @returns {string[]} a header, then a row per subject: pass share with its 95% Wilson bounds and edge per case (`-` for a
+ *   case the subject does not face), then the score, the edge and the first-row share
  */
 export function formatRows(cases, rows) {
     const body = rows.map(({ label, row }) => [
         label,
         ...cases.map((name) => {
             const cell = row?.cases[name];
-            return cell === undefined ? '-' : `${cell.passShare.toFixed(2)} (${signed(cell.edge)})`;
+            if (cell === undefined) {
+                return '-';
+            }
+            const bounds =
+                cell.passLow === undefined ? '' : ` [${cell.passLow.toFixed(2)}, ${cell.passHigh.toFixed(2)}]`;
+            return `${cell.passShare.toFixed(2)}${bounds} (${signed(cell.edge)})`;
         }),
         row === null ? '-' : row.score.toFixed(2),
         row === null ? '-' : signed(row.edge),

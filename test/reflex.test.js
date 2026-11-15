@@ -75,6 +75,8 @@ describe('parseArgs', () => {
 describe('the report', () => {
     const cell = (/** @type {number} */ passShare, /** @type {number} */ edge) => ({
         passShare,
+        passLow: passShare - 0.1,
+        passHigh: passShare + 0.1,
         edge,
         fast: 0.5,
         kinds: {},
@@ -95,7 +97,15 @@ describe('the report', () => {
     it('prints a cell per case with - for one the subject does not face, then score, edge and fast', () => {
         const [header, first, second] = formatRows(['a', 'b', 'c'], rows);
         expect(header.split(/\s{2,}/)).toEqual(['subject', 'a', 'b', 'c', 'score', 'edge', 'fast']);
-        expect(first.split(/\s{2,}/)).toEqual(['g', '0.75 (+0.50)', '0.25 (-0.25)', '-', '0.50', '+0.25', '0.50']);
+        expect(first.split(/\s{2,}/)).toEqual([
+            'g',
+            '0.75 [0.65, 0.85] (+0.50)',
+            '0.25 [0.15, 0.35] (-0.25)',
+            '-',
+            '0.50',
+            '+0.25',
+            '0.50',
+        ]);
         expect(second.split(/\s{2,}/)).toEqual(['skipped', '-', '-', '-', '-', '-', '-']);
     });
 
