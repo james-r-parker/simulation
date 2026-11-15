@@ -85,6 +85,14 @@ describe('the report', () => {
         expect(reportJson(['a'], rows).rows[0].meanEdge).toBe(0);
     });
 
+    it('prints the Wilson low bounds in the cell when the row has them, and leaves them out when it does not', () => {
+        const [, first] = formatTable(
+            ['a'],
+            [{ label: 'g', cells: { a: { winShare: 0.75, edge: 0.5, winShareLow: 0.58, edgeLow: 0.31 } } }],
+        );
+        expect(first.split(/\s{2,}/)[1]).toBe('0.75 [0.58] (+0.50, +0.31)');
+    });
+
     it('prints first-match lost-trial reasons in the cell', () => {
         const [, first] = formatTable(
             ['prey-ahead'],

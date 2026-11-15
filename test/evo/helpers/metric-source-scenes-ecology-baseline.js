@@ -59,7 +59,7 @@ export default {
     'eval.trampled_share': {
         value: 0,
     },
-    'eval.dodge_skill': {
+    'eval.herd_dodge_share': {
         value: null,
         reason: 'no completed herd-approach episodes after burn-in',
     },

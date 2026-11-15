@@ -5,6 +5,7 @@
 import { GENE_OUTPUTS, OUTPUT_INDEX, brainLayout } from '../sim/brain-layout.js';
 import { createConfig } from '../sim/config.js';
 import { createRng, fork } from '../sim/rng.js';
+import { wilsonInterval } from './binomial.js';
 import { referenceSubject } from './memory-probe-references.js';
 import { randomWeights } from './mutation.js';
 import { casesFor } from './reflex-cases.js';
@@ -132,8 +133,8 @@ export function evalCase(reflexCase, subjects, options = {}) {
 
 /**
  * @typedef {object} ReflexRow one genome's reflex result
- * @property {Record<string, {passShare: number, edge: number, fast: number, kinds: Record<string, import('./reflex-kind-tally.js').KindScore>}>} cases
- *   each case's pass share, edge over the random baseline, first-row pass share and per-kind scores
+ * @property {Record<string, {passShare: number, passLow: number, passHigh: number, edge: number, fast: number, kinds: Record<string, import('./reflex-kind-tally.js').KindScore>}>} cases
+ *   each case's pass share with its 95% Wilson bounds, edge over the random baseline, first-row pass share and per-kind scores
  * @property {number} score the mean pass share over the cases of the genome's specialisation
  * @property {number} edge the mean edge over the same cases
  * @property {number} fast the mean first-row pass share over the same cases
@@ -153,8 +154,9 @@ export function reflexRow(scores, bars) {
     /** @type {ReflexRow['cases']} */
     const cases = {};
     for (const name of names) {
-        const { passShare, fast, kinds } = scores[name];
-        cases[name] = { passShare, edge: passShare - bars[name].random, fast, kinds };
+        const { passes, trials, passShare, fast, kinds } = scores[name];
+        const { low: passLow, high: passHigh } = wilsonInterval(passes, trials);
+        cases[name] = { passShare, passLow, passHigh, edge: passShare - bars[name].random, fast, kinds };
     }
     const mean = (/** @type {(c: ReflexRow['cases'][string]) => number} */ pick) =>
         names.reduce((sum, name) => sum + pick(cases[name]), 0) / names.length;

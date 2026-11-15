@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { decodeArchive } from '../js/evo/archive-codec.js';
 import { DRILLS } from '../js/evo/drill-scenarios.js';
-import { DRILL_TRIALS, edgeOf, randomBrains, skipReason } from '../js/evo/drill.js';
+import { DRILL_TRIALS, edgeOf, randomBrains, skipReason, winBounds } from '../js/evo/drill.js';
 import { referenceSubject } from '../js/evo/memory-probe-references.js';
 import { seedlessConfig } from '../js/evo/report.js';
 import { configHash, createConfig } from '../js/sim/config.js';
@@ -194,9 +194,10 @@ function rowsOf(args, { genomes, tasks, results, log }) {
         cells: /** @type {Record<string, any>} */ ({}),
     }));
     for (const name of args.drills) {
-        const baselines = tasks.flatMap((t, i) =>
-            t.drill === name && t.kind === 'random' ? [results[i].winShare] : [],
+        const randoms = /** @type {{wins: number, trials: number, winShare: number}[]} */ (
+            tasks.flatMap((t, i) => (t.drill === name && t.kind === 'random' ? [results[i]] : []))
         );
+        const baselines = randoms.map((score) => score.winShare);
         labels.forEach((label, row) => {
             const at = tasks.findIndex((t) => t.drill === name && t.label === label && t.kind !== 'random');
             if (at < 0) {
@@ -211,9 +212,22 @@ function rowsOf(args, { genomes, tasks, results, log }) {
                 }
                 lossReasons[record.reason] = (lossReasons[record.reason] ?? 0) + 1;
             }
-            const cell = { winShare: results[at].winShare, edge: edgeOf(results[at].winShare, baselines), lossReasons };
+            const { winShare } = results[at];
+            const cell = {
+                winShare,
+                edge: edgeOf(winShare, baselines),
+                ...winBounds({ wins: results[at].wins, trials: results[at].trials }, randoms),
+                lossReasons,
+            };
             rows[row].cells[name] = cell;
-            log.log('info', 'DrillResult', { drill: name, subject: label, winShare: cell.winShare, edge: cell.edge });
+            log.log('info', 'DrillResult', {
+                drill: name,
+                subject: label,
+                winShare: cell.winShare,
+                edge: cell.edge,
+                winShareLow: cell.winShareLow,
+                edgeLow: cell.edgeLow,
+            });
         });
     }
     return rows;

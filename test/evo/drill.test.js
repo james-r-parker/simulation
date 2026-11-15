@@ -2,7 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
 import { DRILLS } from '../../js/evo/drill-scenarios.js';
-import { RANDOM_BRAINS, drillEdge, drillSubject, edgeOf, randomBrains, skipReason } from '../../js/evo/drill.js';
+import {
+    RANDOM_BRAINS,
+    drillEdge,
+    drillSubject,
+    edgeOf,
+    randomBrains,
+    skipReason,
+    winBounds,
+} from '../../js/evo/drill.js';
 import { referenceSubject } from '../../js/evo/memory-probe-references.js';
 
 const drill = (/** @type {string} */ name) => /** @type {any} */ (DRILLS.find((d) => d.name === name));
@@ -18,6 +26,36 @@ describe('edgeOf', () => {
     it('is the win share minus the mean of the baselines', () => {
         expect(edgeOf(0.75, [0.25, 0.5, 0, 0.25])).toBeCloseTo(0.5, 12);
         expect(edgeOf(0, [0.5, 0.5])).toBe(-0.5);
+    });
+});
+
+/** The 95% Wilson score interval written out plainly, as the reference for the arithmetic. */
+function naiveWilson(/** @type {number} */ k, /** @type {number} */ n) {
+    const z = 1.96;
+    const p = k / n;
+    const centre = p + (z * z) / (2 * n);
+    const spread = z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n));
+    const scale = 1 + (z * z) / n;
+    return { low: (centre - spread) / scale, high: (centre + spread) / scale };
+}
+
+describe('winBounds', () => {
+    it('is the Wilson low bound of the win share and that bound minus the high bound of the pooled random share', () => {
+        const random = [
+            { wins: 2, trials: 32 },
+            { wins: 0, trials: 32 },
+            { wins: 3, trials: 32 },
+            { wins: 1, trials: 32 },
+        ];
+        const { winShareLow, edgeLow } = winBounds({ wins: 28, trials: 32 }, random);
+        expect(winShareLow).toBeCloseTo(naiveWilson(28, 32).low, 3);
+        expect(edgeLow).toBeCloseTo(naiveWilson(28, 32).low - naiveWilson(6, 128).high, 3);
+        expect(edgeLow).toBeGreaterThan(0);
+    });
+
+    it('reads a subject no better than the random brains as an edge low bound under 0', () => {
+        const same = Array.from({ length: 4 }, () => ({ wins: 8, trials: 32 }));
+        expect(winBounds({ wins: 8, trials: 32 }, same).edgeLow).toBeLessThan(0);
     });
 });
 
@@ -71,10 +109,14 @@ describe('drillSubject and drillEdge', () => {
         expect(edge.winShare).toBe(1);
         expect(edge.edge).toBeCloseTo(1 - /** @type {number} */ (edge.baseline), 12);
         expect(edge.edge).toBeGreaterThan(0);
+        expect(edge.winShareLow).toBeCloseTo(naiveWilson(4, 4).low, 3);
+        expect(edge.edgeLow).toBeLessThan(/** @type {number} */ (edge.edge));
         expect(drillEdge(drill('food-ahead'), zero(1), { trials: 4 })).toEqual({
             winShare: null,
             baseline: null,
             edge: null,
+            winShareLow: null,
+            edgeLow: null,
             skipped: expect.any(String),
         });
     });

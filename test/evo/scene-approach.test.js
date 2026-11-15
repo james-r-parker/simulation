@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { noteApproachKill, trackApproaches } from '../../js/evo/scene-approach.js';
 import { INTENT_WINDOW } from '../../js/evo/observer-intent-state.js';
-import { CHASE_OUTCOME } from '../../js/evo/chase-outcome.js';
+import { CHASE_FLAG, CHASE_OUTCOME } from '../../js/evo/chase-outcome.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
 import { loose } from './helpers/metric-registry.js';
@@ -138,6 +138,40 @@ describe('hunt approaches and chases', () => {
     });
 });
 
+describe('the bite hook', () => {
+    it('is called with the slot of each alive biter of a bite on a live victim, with or without an open approach', () => {
+        const a = arena(2, 2);
+        /** @type {number[]} */
+        const biters = [];
+        a.observer.scenes.approach.onBite = (/** @type {any} */ _world, /** @type {number} */ biter) =>
+            biters.push(biter);
+        const [h1, h2] = a.hunters;
+        const [v1, v2] = a.prey;
+        play(a, T0, { closing: [h1] });
+        play(a, T0 + 1, {
+            closing: [h1],
+            bites: [
+                [h1, v1],
+                [h2, v2],
+            ],
+        });
+        expect(biters).toEqual([h1, h2]);
+    });
+});
+
+describe('a bite by a biter the observer does not track', () => {
+    it('calls no bite hook and opens no chase', () => {
+        const a = arena(1, 1);
+        /** @type {number[]} */
+        const calls = [];
+        a.observer.scenes.approach.onBite = () => calls.push(1);
+        a.world.bittenTimer[a.prey[0]] = 1;
+        a.world.lastBiter[a.prey[0]] = 999999;
+        trackApproaches(a.observer.scenes.approach, a.observer, a.world);
+        expect(calls).toEqual([]);
+    });
+});
+
 describe('a resolved chase with no hook', () => {
     it('still counts the outcome when the scene has no onChase hook', () => {
         const a = arena(1, 1);
@@ -207,7 +241,7 @@ describe('the noteChase hook', () => {
                 openedTick: T0,
                 hungry: expect.any(Boolean),
                 energy: expect.any(Number),
-                flags: 0,
+                flags: CHASE_FLAG.LAPSE_LOST,
             },
         ]);
     });
@@ -247,7 +281,7 @@ describe('the noteChase hook', () => {
                 openedTick: T0,
                 hungry: expect.any(Boolean),
                 energy: expect.any(Number),
-                flags: 0,
+                flags: CHASE_FLAG.LAPSE_LOST,
             },
         ]);
     });

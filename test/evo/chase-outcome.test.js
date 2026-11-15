@@ -50,7 +50,7 @@ describe('chase-outcome', () => {
     it('throws on a chase that fits no end class or carries an unknown flag', () => {
         const t = createChaseTally();
         expect(() => tallyChase(t, { outcome: 3 })).toThrow(/end class 3/);
-        expect(() => tallyChase(t, { outcome: CAUGHT, flags: 32 })).toThrow(/flags 32/);
+        expect(() => tallyChase(t, { outcome: CAUGHT, flags: 128 })).toThrow(/flags 128/);
         expect(() => chasesFlagged(t, 3)).toThrow(/not a CHASE_FLAG/);
         expect(t.total).toBe(0);
     });

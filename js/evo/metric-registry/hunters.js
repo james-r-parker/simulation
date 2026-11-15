@@ -16,12 +16,12 @@ export const HUNTERS = {
     }),
     'eval.hunter_zero_kill_share': entry('hunters', {
         module: 'js/evo/scene-hunters.js',
-        meaning: 'Lower means fewer hunter lives end without a deliberate kill.',
-        counts: 'HunterLedger records with a ledger kill count of 0 over all HunterLedger records (hunters that died, whole run).',
+        meaning: 'Lower means fewer hunter lives, after burn-in, end or stand without a deliberate kill.',
+        counts: 'HunterLedger records at or after burn-in with a ledger kill count of 0, plus hunters alive at the last tick with a ledger kill count of 0 (at their end age), over those records plus the hunters alive at the last tick.',
         unit: 'share',
         direction: 'watch',
         intended: 'lower',
-        nullWhen: ['no hunter deaths'],
+        nullWhen: ['no hunter life after burn-in'],
         arithmetic: 'test/evo/scene-hunters.test.js',
     }),
     'eval.hunter_median_lifespan': entry('hunters', {

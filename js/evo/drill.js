@@ -5,6 +5,7 @@
 import { brainLayout } from '../sim/brain-layout.js';
 import { createConfig } from '../sim/config.js';
 import { createRng, fork } from '../sim/rng.js';
+import { wilsonInterval } from './binomial.js';
 import { randomWeights } from './mutation.js';
 import { playTrial, viewOf } from './memory-probe-run.js';
 
@@ -107,10 +108,26 @@ export function edgeOf(winShare, baselines) {
 }
 
 /**
+ * The 95% Wilson low bound of the subject's win share, and that bound minus the Wilson high bound of the random brains'
+ * pooled win share: an `edgeLow` above 0 is an edge the trials can tell from the baseline's luck.
+ * @param {{wins: number, trials: number}} subject the subject's score
+ * @param {readonly {wins: number, trials: number}[]} baselines the random brains' scores
+ * @returns {{winShareLow: number, edgeLow: number}} the two low bounds
+ */
+export function winBounds(subject, baselines) {
+    const wins = baselines.reduce((sum, score) => sum + score.wins, 0);
+    const trials = baselines.reduce((sum, score) => sum + score.trials, 0);
+    const { low } = wilsonInterval(subject.wins, subject.trials);
+    return { winShareLow: low, edgeLow: low - wilsonInterval(wins, trials).high };
+}
+
+/**
  * @typedef {object} DrillEdge
  * @property {number | null} winShare the subject's win share; null when skipped
  * @property {number | null} baseline the random brains' mean win share; null when skipped
  * @property {number | null} edge `winShare - baseline`; null when skipped
+ * @property {number | null} winShareLow the Wilson low bound of the win share; null when skipped
+ * @property {number | null} edgeLow `winShareLow` minus the Wilson high bound of the random brains' pooled share; null when skipped
  * @property {string | null} skipped why the subject was not drilled, or null
  */
 
@@ -124,12 +141,19 @@ export function edgeOf(winShare, baselines) {
 export function drillEdge(drill, subject, options = {}) {
     const skipped = skipReason(drill, subject, createConfig(options.config ?? {}));
     if (skipped !== null) {
-        return { winShare: null, baseline: null, edge: null, skipped };
+        return { winShare: null, baseline: null, edge: null, winShareLow: null, edgeLow: null, skipped };
     }
-    const { winShare } = drillSubject(drill, subject, options);
-    const shares = randomBrains(drill, options).map(
-        (brain) => drillSubject(drill, brain, { ...options, log: undefined }).winShare,
+    const score = drillSubject(drill, subject, options);
+    const scores = randomBrains(drill, options).map((brain) =>
+        drillSubject(drill, brain, { ...options, log: undefined }),
     );
+    const shares = scores.map((s) => s.winShare);
     const baseline = shares.reduce((sum, share) => sum + share, 0) / shares.length;
-    return { winShare, baseline, edge: edgeOf(winShare, shares), skipped: null };
+    return {
+        winShare: score.winShare,
+        baseline,
+        edge: edgeOf(score.winShare, shares),
+        ...winBounds(score, scores),
+        skipped: null,
+    };
 }

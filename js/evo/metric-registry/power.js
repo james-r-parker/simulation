@@ -673,7 +673,7 @@ export const POWER = Object.freeze({
         referenceMean: 0.08906193213181571,
         report: 'evals/power/defaults-floor-on-E150.json',
     }),
-    'eval.dodge_skill': Object.freeze({
+    'eval.herd_dodge_share': Object.freeze({
         fpr16: 0.124,
         fpr32: 0.123,
         fpr64: 0.015,

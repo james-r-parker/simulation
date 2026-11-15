@@ -170,6 +170,7 @@ describe('observeScenes', () => {
             'matched',
             'mate',
             'niche',
+            'packLift',
             'patch',
             'proof',
             'reach',

@@ -62,7 +62,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Refuge](refuge.md) - all three phases are built: the eight detectors, the refuge-access fixture and the diagnosis (`E130`: cover protects and fits, but threatened prey do not reach...
 - [Web presence](web-presence.md) - a designed icon in every size, Open Graph and Twitter cards, a full `<head>`, an installable web app manifest with a splash, `robots.txt` and `sitemap.xml`
 
-## In progress (21)
+## In progress (22)
 
 Partly built - the note says which phases are real.
 
@@ -83,12 +83,13 @@ Partly built - the note says which phases are real.
 - [Realistic keepers](realistic-keepers.md) - Phases 1 and 2 are built: `E137` and the combined run `E138` kept every mechanism but provisioning, which is deleted; the six kept switches are on by default an... _(validated edd4cd4, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md), [refuge.md](refuge.md))_
 - [Senses and motor](senses-and-motor.md) - Phase 1 built (interface checks; no sign or class bug, three findings recorded for T13); Phase 2 built (`npm run audit:chase`; `E-SM-1`, record E185, falsified:... _(validated f5ebac7, 2026-11-15)_ _(depends on [training.md](training.md))_
 - [Training](training.md) - Phase 1 (drills) is built (T1 to T4). Phase 2 code is built (T6 to T11: the archive fixes, `runEpisode` and `mergeEpisode`, `npm run train`, the curriculum, che... _(validated edd4cd4, 2026-11-07)_ _(depends on [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md))_
+- [Training stages](training-stages.md) - Phase 1 code built (T1 to T4, chunk A), T5 and T6 open; a gated ladder of stage worlds, cross-play between hunters and prey, an opponent pool, scene drills and... _(validated f5ebac7, 2026-11-15)_ _(depends on [training.md](training.md), [senses-and-motor.md](senses-and-motor.md))_
 - [WASM kernels](wasm-kernels.md) - Phases 1, 2 and 4 are built and adopted (T1 to T12, T13 to T19): every world runs the brain phase, the ray march, the spatial hash build, the pheromone update a... _(validated f5c7880, 2026-11-07)_ _(depends on [headless-sim-core.md](headless-sim-core.md))_
 - [Worker and renderer](worker-and-renderer.md) - the drawing parts (Renderer, Look, the Phase 2 budgets and the drawing of Phases 6 and 7) are superseded by [crisp-renderer.md](crisp-renderer.md); Phase 1 buil... _(validated f5c7880, 2026-11-07)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [predator-prey.md](predator-prey.md), [body-temperature.md](body-temperature.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [World balance and biology](world-balance.md) - Phases 1 to 4, Phase 5 round 1 and Phase 6 built. The post-feature queue (T79 to T96) was not run as written: natural-selection.md Phase 4 (T48 to T67, closed 2... _(validated edd4cd4, 2026-11-07)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the screenshots script, the RE... _(validated d6ca3e6, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (13)
+## Proposed (12)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
@@ -104,7 +105,6 @@ Plans. Nothing built; do not read these as descriptions of the code.
 - [Sprint burst](sprint-burst.md) - stub: measure how the `SPRINT` output is used, then, only if it reads as free, make a sprint a store that empties and refills; Phase 1 (detectors and baseline)... _(validated f5ebac7, 2026-11-15)_ _(depends on [honest-budgets.md](honest-budgets.md), [training-stages.md](training-stages.md))_
 - [Stillness](stillness.md) - stub: measure whether blobs freeze or lie in wait today, then, if they cannot gain from it, make a still body fainter on another blob's rays; Phase 1 (detectors... _(validated f5ebac7, 2026-11-15)_ _(depends on [honest-budgets.md](honest-budgets.md), [habitat-cover.md](habitat-cover.md), [training-stages.md](training-stages.md))_
 - [Throughput](throughput.md) - find and take the speed the kernel squeezes left: why 16 worlds on 16 cores run at 63% of one world's speed, loops over empty slots, set-up cost in small worlds... _(validated a1813ff, 2026-11-15)_ _(depends on [wasm-kernels.md](wasm-kernels.md))_
-- [Training stages](training-stages.md) - a gated ladder of stage worlds, cross-play between hunters and prey, an opponent pool, scene drills and one exam that says whether a champion set is good; Phase... _(validated f5ebac7, 2026-11-15)_ _(depends on [training.md](training.md), [senses-and-motor.md](senses-and-motor.md))_
 
 ## Reference (5)
 
@@ -112,7 +112,7 @@ Not designs of the simulation - audits, research, learnings and guides.
 
 - [Headless sim core - implementation contracts](headless-sim-core-contracts.md) - exact rules for building [headless-sim-core.md](headless-sim-core.md); that doc carries the status, phases and tasks
 - [Legacy audit](legacy-audit.md) - defects and inefficiencies in the legacy app (`js/*.js`), by file and symbol, each with the doc that removes it
-- [Metrics](metrics.md) - the 327 eval metrics of a live report, generated from `js/evo/metric-registry/`: 180 verified, 144 unverified, 3 deprecated
+- [Metrics](metrics.md) - the 336 eval metrics of a live report, generated from `js/evo/metric-registry/`: 180 verified, 153 unverified, 3 deprecated
 - [Simulation notes](sim-notes.md) - verified platform and library facts, and learnings from each phase
 - [Training research](training-research.md) - a survey for [training-stages.md](training-stages.md): what the training tools are today, what their runs showed, how staged multi-agent training is done and ju...
 
