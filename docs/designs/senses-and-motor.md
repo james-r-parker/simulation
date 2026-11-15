@@ -1,6 +1,6 @@
 # Senses and motor
 
-**Status:** In progress - Phase 1 built (interface checks; no sign or class bug, three findings recorded for T13); Phase 2 has its tool (T4, `npm run audit:chase`) but `E-SM-1` has not run (T5). Phases 3 and 4 are not built. An audit of what a brain is told and what its outputs do: interface checks for bugs, the envelope of a chase, a census of every input and output, and probes that say whether each lesson is reachable and whether the senses suffice for it.
+**Status:** In progress - Phase 1 built (interface checks; no sign or class bug, three findings recorded for T13); Phase 2 built (`npm run audit:chase`; `E-SM-1`, record E185, falsified: no fair band beyond 0.2 of view). Phase 3 code is built (T6 to T9: `npm run audit:signals`, the lesson oracles and the input reader, `npm run probe:learn`); its runs (T10 to T12) and Phase 4 are not. An audit of what a brain is told and what its outputs do: interface checks for bugs, the envelope of a chase, a census of every input and output, and probes that say whether each lesson is reachable and whether the senses suffice for it.
 **Validated:** f5ebac76 (2026-11-15)
 **Priority:** 10 - a sign error, a dead input or a chase that cannot be won voids every training run and scene verdict built on it, and Phases 1 to 3 change no behaviour, so they come before the stage ladder
 **Depends on:** [training.md](training.md)
@@ -25,17 +25,17 @@ Scenes served: every scene, through the trait "Senses are local and lossy" and t
 
 Read from the code on 2026-11-15. Each is a question for a task, not a finding.
 
-| #   | Lead                                                                                                                                                                                                                                         | Checked by |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| L1  | An action fires when its output is above 0 (`OUTPUT_INDEX`). An output near 0 flips the action every tick: a bite, a sprint or a call that chatters                                                                                          | T7         |
-| L2  | A pooled channel keeps its two strongest hits, strongest first (`POOLED_HITS`). When two hits are near in strength they swap slots, and six inputs jump at once                                                                              | T7         |
-| L3  | 16 rays ring the agent (`rayCount`), 22.5 degrees apart. At a `visionRange` of 300 two neighbouring rays are about 117 px apart at their tips, so a small body at range falls between rays and is seen in flashes                            | T7         |
-| L4  | `actAll` sets the heading change straight from `TURN` (up to `maxTurn` 0.2 rad a tick, a full circle in 32 ticks) and adds thrust along the new heading. `THRUST` below 0 pushes backwards at full strength. There is no turning inertia     | T4         |
-| L5  | The age input is `ageTicks / maxAgeTicks` (72000). The median life is 3670 ticks (review of 2026-11-11), so the input spends a life under 0.06                                                                                               | T6         |
-| L6  | The alarm, hunt-call, smoke and megafauna inputs read 0 on most seeds (no call on 123 of 128 seeds). The three refuge inputs were kept with no measured effect (review of 2026-11-11, H5)                                                    | T6         |
-| L7  | A predator's `sprintBoost` is 1.6 and its `turnMultiplier` 0.7; a forager's are 1 and 1. Whether a predator at a sprint can reach a forager that turns, and whether that forager can ever get away in the open, is not written down anywhere | T4, T5     |
-| L8  | Thrust is scaled by temperature, grazing, handling, sickness, fat and the rest timer (`thrustOf`). The brain is told some of these states and not others, so the same output moves the body differently for reasons it cannot sense          | T3         |
-| L9  | The hunt reflex seeds prey sine into `TURN` (`applyHunterReflex` in `js/evo/instinct.js`). The sign that turns towards a body is fixed by `actAll`'s heading convention and the pooled sine's; one test pins both together                   | T1         |
+| #   | Lead                                                                                                                                                                                                                                                                                                       | Checked by |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| L1  | `BITE`, `SPRINT` and `MATE` fire when their output is above 0 (`OUTPUT_INDEX`); the alarm, hunt call and smoke fire above `alarmThreshold`, `huntCallThreshold` and `smokeThreshold` (0.65, 0.65, 0.8). An output near its threshold flips the action every tick: a bite, a sprint or a call that chatters | T7         |
+| L2  | A pooled channel keeps its two strongest hits, strongest first (`POOLED_HITS`). When two hits are near in strength they swap slots, and six inputs jump at once                                                                                                                                            | T7         |
+| L3  | 16 rays ring the agent (`rayCount`), 22.5 degrees apart. At a `visionRange` of 300 two neighbouring rays are about 117 px apart at their tips, so a small body at range falls between rays and is seen in flashes                                                                                          | T7         |
+| L4  | `actAll` sets the heading change straight from `TURN` (up to `maxTurn` 0.2 rad a tick, a full circle in 32 ticks) and adds thrust along the new heading. `THRUST` below 0 pushes backwards at full strength. There is no turning inertia                                                                   | T4         |
+| L5  | The age input is `ageTicks / maxAgeTicks` (72000). The median life is 3670 ticks (review of 2026-11-11), so the input spends a life under 0.06                                                                                                                                                             | T6         |
+| L6  | The alarm, hunt-call, smoke and megafauna inputs read 0 on most seeds (no call on 123 of 128 seeds). The three refuge inputs were kept with no measured effect (review of 2026-11-11, H5)                                                                                                                  | T6         |
+| L7  | A predator's `sprintBoost` is 1.6 and its `turnMultiplier` 0.7; a forager's are 1 and 1. Whether a predator at a sprint can reach a forager that turns, and whether that forager can ever get away in the open, is not written down anywhere                                                               | T4, T5     |
+| L8  | Thrust is scaled by temperature, grazing, handling, sickness, fat and the rest timer (`thrustOf`). The brain is told some of these states and not others, so the same output moves the body differently for reasons it cannot sense                                                                        | T3         |
+| L9  | The hunt reflex seeds prey sine into `TURN` (`applyHunterReflex` in `js/evo/instinct.js`). The sign that turns towards a body is fixed by `actAll`'s heading convention and the pooled sine's; one test pins both together                                                                                 | T1         |
 
 ## Interface checks
 
@@ -116,11 +116,11 @@ Result (2026-11-15; the entry in [sim-notes.md](sim-notes.md) holds the failing 
 frame bug was found, so no fix commit was needed. Three findings stay open as candidate outcomes for T13, none fixed here because each
 changes what a brain reads or does and so moves the golden hashes:
 
-| #   | Finding                                                                                                                                                         | Proposed fix                                                     |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| F1  | The forward and lateral velocity inputs reach 1.5 to 1.8 on a sprint; `poolRays` documents [-1, 1]                                                              | Divide by the agent's own sprint cap or clamp; a new layout name |
-| F2  | The alarm, hunt call and smoke fire above `alarmThreshold`, `huntCallThreshold` and `smokeThreshold`, not above 0 (L1 is true of `BITE`, `SPRINT`, `MATE` only) | Correct the `OUTPUT_INDEX` comment and lead L1; no behaviour     |
-| F3  | `THRUST` from 0.6 to 1 gives the same speed (the cap binds); reverse is as strong as forward; turning has no inertia                                            | Weigh in the chase envelope (T4, T5) before any `actAll` change  |
+| #   | Finding                                                                                                                                                         | Proposed fix                                                         |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| F1  | The forward and lateral velocity inputs reach 1.5 to 1.8 on a sprint; `poolRays` documents [-1, 1]                                                              | Divide by the agent's own sprint cap or clamp; a new layout name     |
+| F2  | The alarm, hunt call and smoke fire above `alarmThreshold`, `huntCallThreshold` and `smokeThreshold`, not above 0 (L1 is true of `BITE`, `SPRINT`, `MATE` only) | Done: the `OUTPUT_INDEX` comment and lead L1 corrected; no behaviour |
+| F3  | `THRUST` from 0.6 to 1 gives the same speed (the cap binds); reverse is as strong as forward; turning has no inertia                                            | Weigh in the chase envelope (T4, T5) before any `actAll` change      |
 
 #### Chunks
 
@@ -128,11 +128,13 @@ changes what a brain reads or does and so moves the golden hashes:
 | ----- | -------- | -------------------------------------- |
 | A     | T1 to T3 | The interface and motor tests (Sonnet) |
 
-### Phase 2 - Chase envelope
+### Phase 2 - Chase envelope (built)
 
 **Targets:** none - a scripted tool; no sim behaviour change
 
-`npm run audit:chase` and its table for the defaults. T4 built the tool: the oracle pursuer aims at where the evader will be, the oracle evader runs from it and breaks across its path inside `JINK_RANGE` (120), both play the sim's own `step` from rest at half a store in an arena with no food, herds or refuges, and a catch is the evader's death within 250 ticks. They are heuristics, so a catch share is what the bodies allow against this evader and not a bound; `--straight` (an evader that never breaks) is the upper bound for the pursuer. Prediction, written before the run (`E-SM-1`): a predator at a sprint catches a forager from inside 0.6 of its view at every bearing, a fair band exists between 0.6 and 1.0 of view, and a kill returns more energy than the chase costs only inside the fair band's near half.
+`npm run audit:chase` and its table for the defaults. T4 built the tool: the oracle pursuer aims at where the evader will be, the oracle evader runs from it and breaks across its path inside `JINK_RANGE` (120), both play the sim's own `step` from rest at half a store in an arena with no food, herds or refuges, and a catch is the evader's death within 250 ticks. They are heuristics, so a catch share is what the bodies allow against this evader and not a bound; `--straight` (an evader that never breaks) is the upper bound for the pursuer. Prediction, written before the run (`E-SM-1`, ledger record E185): a predator at a sprint catches a forager from inside 0.6 of its view at every bearing, a fair band exists between 0.6 and 1.0 of view, and a kill returns more energy than the chase costs only inside the fair band's near half.
+
+Result (2026-11-15; `evals/decisions/E185/`, [sim-notes.md](sim-notes.md)): the prediction is falsified. A predator catches a forager that breaks only from inside 0.2 of its view (0.31 there, 0 at 0.4 to 1.0), against 0.75 to 0.88 for a straight runner, so no fair band exists between 0.6 and 1.0. The 1.2x sprint edge is spent by the 75 px sprint turning circle against the forager's 32 (lead L7). Handed to the world work and to T13, not tuned here.
 
 #### Chunks
 
@@ -145,6 +147,8 @@ changes what a brain reads or does and so moves the golden hashes:
 **Targets:** none - detectors and probes; `worldHash` and the golden cases are unchanged
 
 The census, the oracle and reference controllers for every drill, the learn probe, and one table per lesson with the four bars. Prediction (`E-SM-2`): the alarm, hunt-call, smoke and refuge inputs are dead or unused; `BITE` chatters more than `THRUST` changes sign; the food hits swap slots on more than a tenth of ticks in a patch. Prediction (`E-SM-3`): `food-ahead` is reached on 8 of 8 populations inside 50 generations; `prey-ahead` is reached on under half; the oracle wins `prey-ahead` on over 0.8 of trials, so the gap to the reference's 0.31 lies in the senses or the reference, not the body.
+
+Built (2026-11-15, chunk C): the census (`js/evo/signal-census.js` and `signal-census-ticks.js`, sampled by the tool's own loop through `noteCensusTick` after each `step`, not by the eval observer, so `npm run eval` is unchanged), `js/evo/lesson-oracles.js`, the `input-reader` reference (`js/evo/lesson-reference.js`, reached through `referenceSubject('input-reader')` and kept out of `REFERENCES`, which the memory probe prints in full) and the learn probe. No genome is written. First win shares on 16 trials of seed 1, oracle then reader: `food-ahead` 1 and 1, `food-behind` 1 and 1, `two-foods` 1 and 0.81, `prey-ahead` 0.19 to 0.38 and 0.75, `prey-too-big` 1 and 1, `hunter-closing` 0.63 and 0.06, `rock-refuge` 0 and 0. Two readings for T11 follow. The `prey-ahead` oracle wins less than the reader, so on that drill it is a lower bound on the body and "oracle low" cannot be read until a better oracle exists. The `rock-refuge` oracle cannot win: the scripted hunter reaches an agent that has settled inside the ring, so that drill's win needs more than reaching the refuge. Census choices: an input is `narrow` when it is not 0 and its span is under 0.1 (a tenth of the unit span, since the inputs have no per-input range); a flash counts a body inside `visionRange` while its pooled channel holds no hit, so an occluded body counts too and the rate is an upper bound.
 
 #### Chunks
 
@@ -215,7 +219,7 @@ Done when each confirmed finding has a verdict: adopted with its switch deleted,
 | T2  | Add `test/sim/interface-motor.test.js`: terminal speed, the velocity inputs, the turn rate, reverse thrust and each action's firing and cost                                                                      | [judgement] | -          |
 | T3  | Table every multiplier on thrust and turn (`thrustOf`, `actAll`) against the input that tells the brain of it, in [sim-notes.md](sim-notes.md); conformance review of Phase 1 in parallel with `scripts/check.sh` | [judgement] | T1, T2     |
 
-### Phase 2 - Chase envelope
+### Phase 2 - Chase envelope (built)
 
 | #   | Task                                                                                                                                                                       | Nature       | Depends on |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |

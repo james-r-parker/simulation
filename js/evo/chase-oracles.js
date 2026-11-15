@@ -38,7 +38,7 @@ const length = (x, y) => Math.sqrt(x * x + y * y);
  * @returns {number} the `TURN` output that closes the gap to the aim in one tick: the sine of the gap over the turn rate
  *   (its angle for a small gap), clamped to [-1, 1]; a full turn to the nearer side when the aim is behind
  */
-function steer(world, slot, aim) {
+export function steer(world, slot, aim) {
     const rate = world.config.maxTurn * world.turnBySpec[world.spec[slot]];
     const hx = detCos(world.angle[slot]);
     const hy = detSin(world.angle[slot]);
@@ -97,13 +97,34 @@ export function pursuerBrain({ pursuer, evader, sprint }) {
 }
 
 /**
+ * Adds a push away from a wall to an aim: inside `margin` of a wall the aim gains a component along the inward normal
+ * that grows from 0 at the margin to the aim's own length at the wall (and beyond), so an evader bends along a wall
+ * instead of running into it.
+ * @param {Record<string, any>} world the world
+ * @param {{slot: number, aim: {x: number, y: number}, margin: number}} body the evader, its aim and the margin
+ * @returns {{x: number, y: number}} the aim with the push added
+ */
+function wallPushed(world, { slot, aim, margin }) {
+    const size = length(aim.x, aim.y) || 1;
+    const { worldWidth, worldHeight } = world.config;
+    const x = world.x[slot];
+    const y = world.y[slot];
+    const along = (/** @type {number} */ d) => (size * Math.max(0, margin - d)) / margin;
+    return {
+        x: aim.x + along(x) - along(worldWidth - x),
+        y: aim.y + along(y) - along(worldHeight - y),
+    };
+}
+
+/**
  * The evader's brain: runs straight away from the pursuer; inside `jinkRange` it turns square across the pursuer's
  * line of travel, on the side it already stands, so the pursuer must turn through the most.
- * @param {{pursuer: number, evader: number, sprint: boolean, jinkRange?: number}} slots the two bodies, whether the
- *   evader sprints, and the distance at which it breaks (`JINK_RANGE`; 0 runs straight)
+ * @param {{pursuer: number, evader: number, sprint: boolean, jinkRange?: number, wallMargin?: number}} slots the two
+ *   bodies, whether the evader sprints, the distance at which it breaks (`JINK_RANGE`; 0 runs straight) and the
+ *   distance from a wall at which it starts to bend away (default 0: it does not)
  * @returns {(world: Record<string, any>) => void} a `brain` phase body
  */
-export function evaderBrain({ pursuer, evader, sprint, jinkRange = JINK_RANGE }) {
+export function evaderBrain({ pursuer, evader, sprint, jinkRange = JINK_RANGE, wallMargin = 0 }) {
     return (world) => {
         const dx = world.x[evader] - world.x[pursuer];
         const dy = world.y[evader] - world.y[pursuer];
@@ -112,6 +133,8 @@ export function evaderBrain({ pursuer, evader, sprint, jinkRange = JINK_RANGE })
             const t = travelOf(world, pursuer);
             const side = Math.sign(t.x * dy - t.y * dx) || 1;
             aim = { x: -side * t.y, y: side * t.x };
+        } else if (wallMargin > 0) {
+            aim = wallPushed(world, { slot: evader, aim, margin: wallMargin });
         }
         drive(world, evader, { turn: steer(world, evader, aim), sprint, bite: false });
     };
