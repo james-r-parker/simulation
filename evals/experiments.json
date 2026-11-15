@@ -4456,8 +4456,16 @@
         "eval.edge_starve_per_prey": "-",
         "eval.childshare_by_condition": "-"
       },
-      "note": "Screen on the Phase 2 defaults: no arm reads edge_starve_per_prey worse; lifting the clonal cap raises the split share of births from 0.35 to about 0.5 and lowers the mating share. Finalist nocap-g-r (edge starve 0.107 against 0.112, childshare_by_condition 0.0008); costs: spec under 70% on 7/16 seeds against 12/16, mating share 0.40 against 0.66. The 64-seed keep rule (T25) is not run yet.",
-      "reports": ["evals/decisions/E177/results.md", "evals/decisions/E177/screen-table.md"],
+      "note": "Screen on the Phase 2 defaults: no arm reads edge_starve_per_prey worse; lifting the clonal cap raises the split share of births from 0.35 to about 0.5 and lowers the mating share. Finalist nocap-g-r (edge starve 0.107 against 0.112, childshare_by_condition 0.0008); costs: spec under 70% on 7/16 seeds against 12/16, mating share 0.40 against 0.66. Keep rule on 64 matched seeds (finalist nocap-g-r against the season 10 defaults): no harm detected. Guards: alive 18 seeds harmed, 12 recovered (exact p 0.362; smallest loss detected 25 seeds), under80 4 against 3 (p 1; 12 seeds), held 7 against 2 (p 0.18; 10 seeds), hunter_catches_per_1k -0.028 [-0.102, 0.045] (0.073). Adoption bar not met (hunters alive 40/64 against 0.75), as for the control. eval.edge_ref_starve_per_prey 0.118 to 0.089 (better), births_per_1k +12%, coverage and qd_score better; hunter first-kill age, juvenile hunter deaths and predator fitness worse (open). The switch is made (T26).",
+      "reports": [
+        "evals/decisions/E177/results.md",
+        "evals/decisions/E177/screen-table.md",
+        "evals/decisions/E177/defaults-s10c.report.json",
+        "evals/decisions/E177/nocap-g-r.report.json",
+        "evals/decisions/E177/nocap-g-r.config.json",
+        "evals/decisions/E177/compare.txt",
+        "evals/decisions/E177/compare.json"
+      ],
       "date": "2026-11-15",
       "branch": "season/next",
       "beforePolicy": "live",
