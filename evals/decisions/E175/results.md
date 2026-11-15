@@ -34,6 +34,34 @@ finalist and the control on seeds 1 to 64 with `--keep-rule` (T12).
 - `body-k25r` is the finalist: the lowest zero-kill carcass share and the most hunters alive of the body arms (the
   predators' passive loss is 0.2).
 
-**Next.** `body-k25r` (`evals/decisions/E175/body-k25r.config.json`) on seeds 1 to 64 against the 64-seed default
-run (`evals/decisions/E174/y1-b2.report.json`, the same defaults; Phase 2's code leaves every hash unchanged with its
-switch off), `--keep-rule`.
+## Keep rule (64 seeds, 400000 ticks)
+
+`npm run eval:compare -- evals/decisions/E174/y1-b2.report.json evals/decisions/E175/body-k25r.report.json --keep-rule`
+(`--allow-config-diff` for the arm's keys and for `patchStockEnergy`, `foodPatchDepletion` and the seasons'
+`foodScarcity`, which the Phase 1 switch deleted and which the control ran with at their stock-rule values; `impactDamage`
+0 is off).
+
+**Verdict: no harm; the switch goes ahead (T13).**
+
+| Guard                        | Result                                               |
+| ---------------------------- | ---------------------------------------------------- |
+| alive                        | no harm: 12 seeds harmed, 5 recovered, exact p 0.143 |
+| held                         | no harm: 11 harmed, 5 recovered, exact p 0.21        |
+| under80                      | no harm: 3 harmed, 1 recovered, exact p 0.625        |
+| `eval.hunter_catches_per_1k` | better: 0.389 to 1.347, interval [0.89, 1.03]        |
+
+| Target                                | Control | body-k25r | Interval         |
+| ------------------------------------- | ------- | --------- | ---------------- |
+| `eval.hunter_zero_kill_carcass_share` | 0.108   | 0.084     | [-0.047, 0.012]  |
+| `eval.hunter_income_share.carcass`    | 0.479   | 0.008     | [-0.478, -0.463] |
+| `eval.hunter_income_share.kill`       | 0.092   | 0.254     | [0.151, 0.175]   |
+| `eval.hunter_first_kill_rmst`         | 2591    | 1397      | better           |
+
+- Hunters now live on the bodies they catch: the carcass share of their income falls from 48% to under 1%, and the
+  zero-kill carcass share falls 22% (the interval includes 0).
+- Hunters stay alive on 46 of 64 seeds against 53; the guard cannot call it harm, and the adoption bar (0.75 of seeds)
+  is not met. Juvenile hunter deaths rise (`eval.hunter_juvenile_death_share` 0.52 to 0.76, worse), and the hunter
+  births from a specialisation flip double. The next balance pass watches hunter recruitment.
+- Also worse: `eval.food_energy_per_1k` (442 to 361), `eval.escape_share` (0.61 to 0.44), `eval.behaviour_coverage`,
+  `eval.coverage`, `eval.cold_stress_share`. Better: `eval.collision_death_share` (0.242 to 0.218),
+  `eval.hunter_carrion_idle_share`.

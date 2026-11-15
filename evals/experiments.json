@@ -4404,14 +4404,22 @@
       ],
       "before": "control arm of evals/screens/honest-kill.grid.json (season 10 defaults), seeds 1 to 16, 400000 ticks, floor on, policy live",
       "after": "the carcassBody arms of the same screen",
-      "verdicts": {},
-      "note": "Prediction recorded before the run (T10); the screen (T11) and the 64-seed keep-rule pass (T12) are not run yet.",
-      "reports": ["evals/decisions/E175/results.md"],
+      "verdicts": {
+        "eval.hunter_zero_kill_carcass_share": "-",
+        "eval.hunter_catches_per_1k": "better",
+        "eval.hunter_income_share.carcass": "-"
+      },
+      "note": "Screen: every body arm moves hunter income onto kills; finalist body-k25r. Keep rule on 64 seeds against E174 y1-b2: no harm (alive 12 harmed vs 5 recovered, p 0.143), catches 0.39 to 1.35 better, carcass income share 0.48 to 0.008, zero-kill carcass share 0.108 to 0.084 (interval includes 0). Hunters alive 46/64 against 53, adoption bar not met; juvenile hunter deaths worse. Adopted at the switch (T13).",
+      "reports": [
+        "evals/decisions/E175/results.md",
+        "evals/decisions/E175/screen-table.md",
+        "evals/decisions/E175/body-k25r.report.json"
+      ],
       "date": "2026-11-15",
       "branch": "season/next",
       "beforePolicy": "live",
       "afterPolicy": "live",
-      "effect": "no-difference"
+      "effect": "better"
     },
     {
       "id": "E176",
