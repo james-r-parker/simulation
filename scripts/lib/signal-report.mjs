@@ -34,6 +34,20 @@ function mean(values) {
 }
 
 /**
+ * @param {readonly (number | null)[]} values numbers or nulls
+ * @returns {number | null} their mean, null when they are null
+ */
+function meanOrNull(values) {
+    return values[0] === null ? null : mean(/** @type {number[]} */ (values));
+}
+
+/**
+ * @param {number | null} value a rate
+ * @returns {string} the rate to three places, or `-`
+ */
+const rate = (value) => (value === null ? '-' : value.toFixed(3));
+
+/**
  * @typedef {object} MergedInput
  * @property {number} index the input's index
  * @property {number} nonzeroShare mean over seeds
@@ -44,6 +58,8 @@ function mean(values) {
  * @property {boolean} narrow whether it was narrow on every seed
  * @property {number} use mean over seeds
  * @property {string} verdict the best verdict any seed reached (dead only when dead on every seed)
+ * @property {number | null} swapRate mean over seeds, null for an input with none
+ * @property {number | null} flashRate mean over seeds, null for an input with none
  */
 
 /**
@@ -64,6 +80,8 @@ export function mergeInputs(perSeed) {
             narrow: rows.every((r) => r.narrow),
             use: mean(rows.map((r) => r.use)),
             verdict,
+            swapRate: meanOrNull(rows.map((r) => r.swapRate)),
+            flashRate: meanOrNull(rows.map((r) => r.flashRate)),
         };
     });
 }
@@ -74,7 +92,7 @@ export function mergeInputs(perSeed) {
  */
 export function formatInputs(rows) {
     const names = inputNames();
-    const head = ['#', 'input', 'nonzero', 'mean', 'sd', 'min', 'max', 'use', 'verdict'];
+    const head = ['#', 'input', 'nonzero', 'mean', 'sd', 'min', 'max', 'use', 'swap', 'flash', 'verdict'];
     const body = rows.map((r) => [
         String(r.index),
         names[r.index] ?? '?',
@@ -84,6 +102,8 @@ export function formatInputs(rows) {
         r.min.toFixed(2),
         r.max.toFixed(2),
         r.use.toFixed(2),
+        rate(r.swapRate),
+        rate(r.flashRate),
         r.narrow ? `${r.verdict} narrow` : r.verdict,
     ]);
     return padTable([head, ...body]).join('\n');
@@ -94,7 +114,7 @@ export function formatInputs(rows) {
  * @returns {string} the output table, averaged over seeds
  */
 export function formatOutputs(perSeed) {
-    const head = ['output', 'nonzero', 'mean', 'sd', 'fire share'];
+    const head = ['output', 'nonzero', 'mean', 'sd', 'fire share', 'chatter/100'];
     const body = perSeed[0].map((first, o) => {
         const rows = perSeed.map((seed) => seed[o]);
         const fire = first.fireShare === null ? '-' : mean(rows.map((r) => r.fireShare ?? 0)).toFixed(3);
@@ -104,6 +124,7 @@ export function formatOutputs(perSeed) {
             mean(rows.map((r) => r.mean)).toFixed(3),
             mean(rows.map((r) => r.sd)).toFixed(3),
             fire,
+            first.chatter === null ? '-' : mean(rows.map((r) => r.chatter ?? 0)).toFixed(2),
         ];
     });
     return padTable([head, ...body]).join('\n');

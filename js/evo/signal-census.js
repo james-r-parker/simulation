@@ -2,6 +2,7 @@
 // distribution, how much weight leaves it, and how often each action output fires. A detector: it reads the world and
 // changes nothing, and no fitness, merit or archive rank reads it.
 
+import { createTickTrackers, limitsOf, noteTickTrackers, trackerRows } from './signal-census-ticks.js';
 import { GENE_OUTPUT_COUNT, OUTPUT_COUNT, OUTPUT_INDEX, POOLED_VALUES, brainLayout } from '../sim/brain-layout.js';
 
 /** Input samples are taken when `world.tick` divides by this. */
@@ -40,6 +41,8 @@ export const ACTIONS = Object.freeze([
  * @property {Float64Array} outNonzero agent-ticks each output was not 0
  * @property {Float64Array} fired agent-ticks each action fired (by `ACTIONS` index)
  * @property {number} outputTicks agent-ticks the outputs were counted over
+ * @property {import('./signal-census-ticks.js').TickTrackers} ticks the swap, flash and chatter trackers
+ * @property {number[]} limits the output index and firing limit of each action (`limitsOf`)
  */
 
 /**
@@ -49,6 +52,8 @@ export const ACTIONS = Object.freeze([
 export function createCensus(config) {
     const n = brainLayout(config).inputCount;
     return {
+        limits: limitsOf(config, ACTIONS),
+        ticks: createTickTrackers(config, CENSUS_AGENTS, ACTIONS.length),
         samples: 0,
         nonzero: new Float64Array(n),
         sum: new Float64Array(n),
@@ -130,7 +135,8 @@ function countOutputs(census, world, slot) {
     }
     ACTIONS.forEach((action, a) => {
         const limit = action.threshold === null ? 0 : world.config[action.threshold];
-        census.fired[a] += world.outputs[row + OUTPUT_INDEX[action.output]] > limit ? 1 : 0;
+        census.fired[a] +=
+            world.outputs[row + OUTPUT_INDEX[/** @type {keyof typeof OUTPUT_INDEX} */ (action.output)]] > limit ? 1 : 0;
     });
     census.outputTicks += 1;
 }
@@ -153,6 +159,7 @@ export function noteCensusTick(census, world) {
             }
         }
     }
+    noteTickTrackers(census.ticks, world, { sample, limit, limits: census.limits });
 }
 
 /**
@@ -178,6 +185,10 @@ export function verdictOf(nonzeroShare, use) {
  * @property {boolean} narrow whether it was not 0 and never left a span of `NARROW_SPAN`
  * @property {number} use mean absolute weight leaving it over the mean of all inputs
  * @property {'dead' | 'unused' | 'alive'} verdict its verdict
+ * @property {number | null} swapRate for a pooled hit's strength: the share of ticks with both of its channel's hits present
+ *   on which they traded slots; null for any other input
+ * @property {number | null} flashRate for the first hit's strength of food, threat, prey, other and kin: the share of
+ *   samples with a body of that class in vision on which no ray held it; null for any other input
  */
 
 /**
@@ -201,6 +212,10 @@ function moments(sum, sumSq, n) {
 export function inputRows(census) {
     const n = census.nonzero.length;
     const samples = census.samples;
+    const extra = trackerRows(
+        census.ticks,
+        ACTIONS.map((a) => a.output),
+    );
     const meanWeight = samples === 0 ? 0 : census.weightSum.reduce((a, b) => a + b, 0) / samples / n;
     return Array.from({ length: n }, (_, i) => {
         const { mean, sd } = moments(census.sum[i], census.sumSq[i], samples);
@@ -218,6 +233,8 @@ export function inputRows(census) {
             narrow: share > 0 && max - min < NARROW_SPAN,
             use,
             verdict: verdictOf(share, use),
+            swapRate: extra.swapByInput.get(i) ?? null,
+            flashRate: extra.flashByInput.get(i) ?? null,
         };
     });
 }
@@ -229,6 +246,7 @@ export function inputRows(census) {
  * @property {number} mean its mean
  * @property {number} sd its standard deviation
  * @property {number | null} fireShare for an action: the share of agent-ticks it fired; null for the others
+ * @property {number | null} chatter for an action: state changes per 100 agent-ticks on which the inputs hardly moved
  */
 
 /**
@@ -240,6 +258,10 @@ export function outputRows(census) {
         .sort((a, b) => a[1] - b[1])
         .map(([name]) => name);
     const ticks = census.outputTicks;
+    const extra = trackerRows(
+        census.ticks,
+        ACTIONS.map((a) => a.output),
+    );
     return names.map((name, o) => {
         const { mean, sd } = moments(census.outSum[o], census.outSumSq[o], ticks);
         const a = ACTIONS.findIndex((action) => action.output === name);
@@ -247,6 +269,13 @@ export function outputRows(census) {
         if (a >= 0) {
             fireShare = ticks === 0 ? 0 : census.fired[a] / ticks;
         }
-        return { name, nonzeroShare: ticks === 0 ? 0 : census.outNonzero[o] / ticks, mean, sd, fireShare };
+        return {
+            name,
+            nonzeroShare: ticks === 0 ? 0 : census.outNonzero[o] / ticks,
+            mean,
+            sd,
+            fireShare,
+            chatter: extra.chatterBy.get(name) ?? null,
+        };
     });
 }

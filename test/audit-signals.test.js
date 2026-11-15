@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseArgs } from '../scripts/audit-signals.mjs';
 import { formatInputs, formatOutputs, inputNames, mergeInputs } from '../scripts/lib/signal-report.mjs';
 
-const row = (/** @type {number} */ index, /** @type {string} */ verdict, share = 0.5) => ({
+const row = (/** @type {number} */ index, /** @type {'dead' | 'unused' | 'alive'} */ verdict, share = 0.5) => ({
     index,
     nonzeroShare: share,
     mean: 0.1,
@@ -12,6 +12,8 @@ const row = (/** @type {number} */ index, /** @type {string} */ verdict, share =
     narrow: false,
     use: 1,
     verdict,
+    swapRate: null,
+    flashRate: null,
 });
 
 describe('parseArgs', () => {
@@ -45,7 +47,9 @@ describe('the report', () => {
         const text = formatInputs(mergeInputs([[row(0, 'alive'), row(1, 'dead', 0)]]));
         expect(text.split('\n')).toHaveLength(3);
         expect(text).toMatch(/food hit1 cos.*dead/);
-        const out = formatOutputs([[{ name: 'BITE', nonzeroShare: 1, mean: 0, sd: 0, fireShare: 0.25 }]]);
+        const out = formatOutputs([
+            [{ name: 'BITE', nonzeroShare: 1, mean: 0, sd: 0, fireShare: 0.25, chatter: null }],
+        ]);
         expect(out).toMatch(/BITE\s+1\.000\s+0\.000\s+0\.000\s+0\.250/);
     });
 });
