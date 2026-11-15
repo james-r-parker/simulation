@@ -1,0 +1,50 @@
+{
+  "seeds": 16,
+  "seedOffset": 0,
+  "ticks": 400000,
+  "policy": "live",
+  "reference": "control",
+  "arms": {
+    "control": {
+      "defenderRepelEnergy": 0,
+      "defenderRepelCost": 0,
+      "defenderRepelImpulse": 0
+    },
+    "repel-low": {
+      "defenderRepelEnergy": 25,
+      "defenderRepelCost": 5,
+      "defenderRepelImpulse": 2.5,
+      "specialisations": {
+        "defender": {
+          "turnMultiplier": 0.85,
+          "splitMinEnergyMultiplier": 1.2,
+          "maxEnergyMultiplier": 1.2
+        }
+      }
+    },
+    "repel-med": {
+      "defenderRepelEnergy": 40,
+      "defenderRepelCost": 5,
+      "defenderRepelImpulse": 4.0,
+      "specialisations": {
+        "defender": {
+          "turnMultiplier": 0.85,
+          "splitMinEnergyMultiplier": 1.2,
+          "maxEnergyMultiplier": 1.4
+        }
+      }
+    },
+    "repel-high": {
+      "defenderRepelEnergy": 60,
+      "defenderRepelCost": 5,
+      "defenderRepelImpulse": 5.0,
+      "specialisations": {
+        "defender": {
+          "turnMultiplier": 0.85,
+          "splitMinEnergyMultiplier": 1.2,
+          "maxEnergyMultiplier": 1.4
+        }
+      }
+    }
+  }
+}
