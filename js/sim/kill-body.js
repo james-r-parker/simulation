@@ -4,17 +4,9 @@
 // `leaveCarcass` leaves, so a killed body's store is 0. With `killShare` 0 nothing remains to take or hold and the kill
 // is today's. A blob carcass fades linearly over `carcassFadeTicks`.
 //
-// `carcassHeld` is derived state: zeroed by `freeAgent`, outside `worldHash`, no RNG, no allocation per tick.
+// `carcassHeld` (allocated in `allocateWorld`) is derived state: zeroed by `freeAgent`, outside `worldHash`, no RNG, no allocation per tick.
 
 import { LOSS_CAUSE, removeEnergy, transferEnergy } from './energy.js';
-
-/**
- * @returns {[Float64ArrayConstructor, string, number][]} the allocation specs for `allocateWorld`, one element per slot:
- *   `carcassHeld`
- */
-export function bodySpecs() {
-    return [[Float64Array, 'carcassHeld', 1]];
-}
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
