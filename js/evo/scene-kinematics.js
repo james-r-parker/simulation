@@ -5,8 +5,8 @@
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { none, ok } from './metrics-stats.js';
+import { CHASE_FLAG, CHASE_OUTCOME, chasesEvaded, chasesFlagged } from './chase-outcome.js';
 import { findAlive } from './observer-intent.js';
-import { CHASE_OUTCOME } from './scene-competence.js';
 import { refugeCentres, ringDistance } from './scene-terrain.js';
 
 const OVERSHOOT_SCALE = 1.25;
@@ -30,10 +30,6 @@ export function createKinematicsScene(config) {
         hasTurnSample: new Uint8Array(n),
         turnReversals: new Uint32Array(n),
         turnPairs: new Uint32Array(n),
-        resolvedChases: 0,
-        overshootChases: 0,
-        evadedChases: 0,
-        coverEvadedChases: 0,
         totalTurnReversals: 0,
         totalTurnPairs: 0,
     };
@@ -120,10 +116,12 @@ export function tickKinematics(scene, observer, world) {
 }
 
 /**
- * Commits a resolved chase's overshoot, cover-use, and turn-jitter totals.
+ * Flags a resolved chase that overshot or crossed cover on its record (`chase-outcome.js`) and commits its turn-jitter
+ * totals. The record's tally holds the chase counts; the flags are set on every chase, and the metrics read them over
+ * the chases that were not caught.
  * @param {Record<string, any>} scene the kinematics scene
  * @param {Record<string, any>} world the world
- * @param {{slot: number, outcome: number}} chase the resolved chase
+ * @param {{slot: number, outcome: number, flags: number}} chase the resolved chase, its `flags` updated in place
  * @returns {void}
  */
 export function noteKinematicsChase(scene, world, chase) {
@@ -132,15 +130,11 @@ export function noteKinematicsChase(scene, world, chase) {
         return;
     }
     const s = chase.slot;
-    scene.resolvedChases += 1;
-    if (chase.outcome !== CHASE_OUTCOME.CAUGHT && scene.overshot[s] === 1) {
-        scene.overshootChases += 1;
+    if (scene.overshot[s] === 1) {
+        chase.flags |= CHASE_FLAG.OVERSHOT;
     }
-    if (chase.outcome !== CHASE_OUTCOME.CAUGHT) {
-        scene.evadedChases += 1;
-        if (scene.coverUsed[s] === 1) {
-            scene.coverEvadedChases += 1;
-        }
+    if (scene.coverUsed[s] === 1) {
+        chase.flags |= CHASE_FLAG.CROSSED_COVER;
     }
     scene.totalTurnReversals += scene.turnReversals[s];
     scene.totalTurnPairs += scene.turnPairs[s];
@@ -149,14 +143,19 @@ export function noteKinematicsChase(scene, world, chase) {
 
 /**
  * @param {Record<string, any>} scene the kinematics scene
+ * @param {import('./chase-outcome.js').ChaseTally} tally the approach scene's tally of chase records
  * @returns {import('./metrics-stats.js').MetricRecord} the three chase-kinematics metrics
  */
-export function kinematicsMetrics(scene) {
+export function kinematicsMetrics(scene, tally) {
+    const evaded = chasesEvaded(tally);
+    const notCaught = [CHASE_OUTCOME.ESCAPED, CHASE_OUTCOME.GAVE_UP];
     return {
         'eval.chase_overshoot_share':
-            scene.resolvedChases === 0 ? none(NO_CHASES) : ok(scene.overshootChases / scene.resolvedChases),
+            tally.total === 0
+                ? none(NO_CHASES)
+                : ok(chasesFlagged(tally, CHASE_FLAG.OVERSHOT, notCaught) / tally.total),
         'eval.chase_cover_use_share':
-            scene.evadedChases === 0 ? none(NO_EVADED) : ok(scene.coverEvadedChases / scene.evadedChases),
+            evaded === 0 ? none(NO_EVADED) : ok(chasesFlagged(tally, CHASE_FLAG.CROSSED_COVER, notCaught) / evaded),
         'eval.chase_turn_jitter':
             scene.totalTurnPairs === 0 ? none(NO_TURN_PAIRS) : ok(scene.totalTurnReversals / scene.totalTurnPairs),
     };

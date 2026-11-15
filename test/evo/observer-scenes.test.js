@@ -60,7 +60,7 @@ describe('observeScenes', () => {
         });
         r.world.alive[prey] = 0;
         observe(r.observer, r.world);
-        expect(r.observer.scenes.approach.caught).toBe(1);
+        expect(r.observer.scenes.approach.tally.byClass[0]).toBe(1);
         expect(r.observer.scenes.approach.phase[hunter]).toBe(0);
     });
 

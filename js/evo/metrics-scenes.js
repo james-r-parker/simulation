@@ -65,7 +65,7 @@ export function sceneMetrics(observer, world) {
         ...hunterMetrics(s.hunters, world),
         ...competenceMetrics(s.competence, world),
         ...matchedMetrics(s.matched),
-        ...kinematicsMetrics(s.kinematics),
+        ...kinematicsMetrics(s.kinematics, s.approach.tally),
         ...guardMetrics(s.guards),
         ...summerMetrics(s.guards),
         ...guildMetrics(s.guilds),
