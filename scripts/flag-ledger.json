@@ -1,5 +1,11 @@
 [
   {
+    "key": "specFlipNoHunt",
+    "plan": "docs/designs/honest-budgets.md",
+    "task": "T37",
+    "reason": "The switch blocking specMutationRate flips across canHunt (Phase 6); T37 adopts or deletes it based on the honest-recruit screen."
+  },
+  {
     "key": "splitGiftGene",
     "plan": "docs/designs/honest-budgets.md",
     "task": "T26",

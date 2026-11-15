@@ -221,6 +221,7 @@ export const DEFAULTS = deepFreeze({
     carcassFadeTicks: 1500, // honest-budgets E175: ticks a blob carcass takes to fade linearly to 0; a herd carcass keeps its own life
     killShare: 0.25, // honest-budgets E175 (was 0): a bite is fatal at or under this share of the victim's maximum energy; 0 is a kill at an empty store
     killGorgeCap: 2000, // honest-budgets E175: the most energy a killer takes from the body it just killed (read only above killShare 0)
+    killGorgeShare: 1, // honest-budgets Phase 6: the most share of the victim's remaining energy a killer takes; 1 is cap-only
     impactDamage: 0, // honest-budgets Phase 3: energy per unit of speed above impactDeadband that a wall or rock impact costs; 0 is off
     impactDeadband: 2, // honest-budgets Phase 3: the speed into a wall or rock an impact is free up to (read only above impactDamage 0)
     carcassShare: 0.8, // new: share of an agent's energy at death that its carcass holds (T54)
@@ -293,6 +294,8 @@ export const DEFAULTS = deepFreeze({
     juvenileBurn: 0.6, // realistic-keepers T4: multiplier on the standing, movement and turn cost of a juvenile hunter, in [0, 1]
     kinPullWeight: 0.5, // realistic-keepers T4: the kin thrust and turn cells of a hunter are raised to at least this x instinctWeight, in [0, 4]
     juvenileTicks: 3000, // hunter-learning: a canHunt young is juvenile while ageTicks is below this; the detectors' age bands use it too
+    juvenilePlantShare: 0, // honest-budgets Phase 6: plant food share a canHunt agent takes while ageTicks is below juvenileTicks; 0 is off
+    specFlipNoHunt: false, // honest-budgets Phase 6: when true, specMutationRate flips never cross canHunt (forager hidden weights never seed a hunter)
     territoryRadius: 600, // hunter-learning: the territory radius in world units
     territoryMax: 1, // hunter-learning: other mature hunters a breeding hunter tolerates in its territory
     predatorRestTicks: 60, // realistic-keepers T2, adopted at T22: ticks a hunter's thrust is forced to 0 after its bite kills; 0 is off
