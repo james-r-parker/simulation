@@ -49,7 +49,8 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
     - append learnings to `docs/designs/sim-notes.md` under a dated heading (`### YYYY-MM-DD - <topic>` under
       `## Learned while building`)
 7. **Last step before `git add`:** when no code changed after step 1 (only docs, the plan or the commit message),
-   `scripts/check.sh --fix --only=conventions,designs-index,format` is enough; when code changed, run the step 1
+   `scripts/check.sh --fix --only=designs-index,format` is enough (it only applies the fixes; the pre-commit hook runs
+   the conventions, format and lint check at commit time, so it is not repeated here); when code changed, run the step 1
    command again.
 
 ## Git conventions
@@ -58,7 +59,7 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
 origin/main` (e.g. `feat/headless-sim-core-phase-1`). Design docs in the planning stage go on `docs/<doc-name>`.
 - Stage explicit paths: `git add js/sim/rng.js test/sim/rng.test.js`. Never `git add -A` or `git add .`. Review
   first with `git diff --staged`.
-- One self-contained commit per task; each commit passes the pre-commit hook and its own test files. The full gate and CI run once per chunk PR (4 to 8 tasks, AGENTS.md "Build in chunks").
+- One self-contained commit per task; each commit passes the pre-commit hook, whose `test-related` gate runs the tests of the staged files, so the task's own tests run at commit time (`npx vitest run <files>` is for iterating before the commit, not a second run). The full gate and CI run once per chunk PR (4 to 8 tasks, AGENTS.md "Build in chunks").
 - Conventional subject: `<type>(<optional scope>): <subject>`.
     - types: `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `revert`, `style`, `test`
     - lower-case subject, no trailing period, <= 100 characters

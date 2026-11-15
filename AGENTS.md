@@ -119,7 +119,8 @@ When one agent hands tasks to others (user, 2026-10-22):
   and the plan doc, and the rework costs more than the parallelism saves.
 - **Build in chunks (user, 2026-10-29).** One PR carries one chunk: 4 to 8 related tasks, usually most of a phase,
   built in order by one subagent on one branch, one commit per task. During the chunk each commit runs only the
-  pre-commit hook (`scripts/check.sh --tier 1`) and the task's own test files (`npx vitest run <files>`); the full gate
+  pre-commit hook (`scripts/check.sh --tier 1`), whose `test-related` gate runs the tests of the staged files, so the
+  task's own tests run at commit time (`npx vitest run <files>` is for iterating before it, not a second run); the full gate
   (`scripts/check.sh`) and CI run once per chunk PR. The delegating agent still reviews each task's commit against its
   plan row. Golden re-pins keep their own commit inside the chunk. Long runs stay separate: evals, screens and timing
   runs (quiet machine) never go in a code chunk; the one exception is a baseline re-record, a [mechanical] commit of its
