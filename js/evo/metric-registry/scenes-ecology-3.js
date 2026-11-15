@@ -83,8 +83,9 @@ export const SCENES_ECOLOGY_3 = {
     }),
     'eval.boom_bust_count': entry('scenes-ecology', {
         module: 'js/evo/scene-guards.js',
-        meaning: 'Lower means fewer hunter booms followed by a prey crash and a hunter crash.',
-        counts: 'Boom-bust episodes found by a scan over 1000-tick checkpoints: hunters reach BOOM_FACTOR times their trough, prey fall to PREY_CRASH of their trough level, then hunters fall to HUNTER_CRASH of their peak, within BOOM_BUST_WINDOW checkpoints.',
+        meaning:
+            'Lower means fewer boom-bust episodes (hunter-prey cycles or total-population booms followed by crashes).',
+        counts: 'Maximum of hunter-prey boom-bust episodes and total-population boom-bust episodes (total reaches BOOM_FACTOR times its trough then falls to PREY_CRASH of its peak within BOOM_BUST_WINDOW checkpoints).',
         unit: 'count',
         direction: 'lower',
         nullWhen: ['no 1000-tick checkpoint after burn-in'],
