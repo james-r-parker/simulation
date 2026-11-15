@@ -230,6 +230,36 @@ against 53, which the guard does not call harm; juvenile hunter deaths rose (`ev
 | N     | T29, T30 | The screen and the keep-rule pass (runs) |
 | O     | T31, T32 | The switch and the conformance review    |
 
+### Phase 6 - Predator recruitment and juvenile survival
+
+**Targets:** eval.hunter_juvenile_death_share, eval.hunter_catches_per_1k, eval.hunter_income_share.carcass, eval.boom_bust_count
+
+In E175 (`carcassBody`, `killGorgeCap` 2000), predators moved onto kills, but `eval.hunter_juvenile_death_share` rose from 0.52 to 0.76 and median predator headcount fell from 10 to 1. Four structural bottlenecks suppress predator recruitment even when hunting brains exist:
+
+- Newborn predators (`size` ~26) cannot clear `huntSizeRatio` 0.8 against full-grown foragers (`size` ~31 to 33), `plantFoodValue` is 0, `provisionEnabled` was deleted in E138 (before E175 removed free carcasses), and `killGorgeCap` 2000 lets a killer swallow a whole prey body and leave no carcass.
+- `territoryAllows` (`territoryRadius` 600, `territoryMax` 1) blocks breeding whenever mature hunters cluster in a prey patch, directly conflicting with `kinPullWeight` 0.5 and **Pack, or loner**—and blocking recovery when the few surviving hunters on a map share one patch.
+- `predator.splitMinEnergyMultiplier` 0.6 (`540` energy, 5.4% of `maxEnergy` 10,000) lets a predator split a `~270`-energy child that burns through its birth gift in a few `biteCost` 8 / `recoilEnergy` 20 contacts.
+- `specMutationRate` 0.02 spawns predator-labelled children carrying forager hidden weights (`applyBirthReflex` seeds only the skip block), and `eval.boom_bust_count` reads 0 on 101 of 128 seeds despite population crashes.
+
+| Rule                                                                                                                                                                                              |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fix `eval.boom_bust_count` to detect total-population troughs alongside hunter troughs so boom-and-bust dynamics are readable                                                                     |
+| Leave real carcasses after kills: cap the immediate kill gorge as a share of the victim's energy (`killGorgeShare`, or lower `killGorgeCap`) so juveniles and scavengers find food                |
+| Juvenile ontogenetic diet or size parity: screen `juvenilePlantShare` (a small `plantFoodValue` while `ageTicks < juvenileTicks`) vs lowering `huntSizeRatio` / raising predator `baseSize`       |
+| Relax `territoryAllows` (`territoryMax` / `territoryRadius` arms) and raise `predator.splitMinEnergyMultiplier` (e.g. `0.8`–`1.0`) so surviving hunters in a patch can breed and fund viable cubs |
+| Stop `specMutationRate` from seeding forager hidden weights into predators (`specMutationRate` 0 for `canHunt` flips, or keep `specMutationRate` 0 during hunter balance screens)                 |
+
+| Done when                                                                                                                                               | Stop when                                                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `eval.hunter_juvenile_death_share` falls below 0.55, predators stay alive on at least 48 of 64 seeds, and `keepRule` on 64 seeds reads no guard `WORSE` | Every arm reads `eval.hunter_catches_per_1k` or `held` `WORSE` |
+
+#### Chunks
+
+| Chunk | Tasks      | Contents                                                    |
+| ----- | ---------- | ----------------------------------------------------------- |
+| P     | T33 to T35 | `eval.boom_bust_count` fix, gorge share and juvenile screen |
+| Q     | T36 to T38 | 64-seed keep-rule pass, switch and conformance review       |
+
 ## Delivery requirements
 
 | Concern                 | Names                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -304,6 +334,17 @@ against 53, which the guard does not call harm; juvenile hunter deaths rose (`ev
 | T30 | The finalist and the control on 64 matched seeds with `--keep-rule`; the liar check on calls without a threat | [judgement]  | T29        |
 | T31 | The switch: the default and a new season, re-pins; or the branch parked                                       | [mechanical] | T30        |
 | T32 | Conformance review of Phase 5, in parallel with `scripts/check.sh`; status line moved                         | [judgement]  | T31        |
+
+### Phase 6 - Predator recruitment and juvenile survival
+
+| #   | Task                                                                                                                                                                              | Nature       | Depends on |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T33 | Fix `eval.boom_bust_count` to scan total-population troughs alongside hunter troughs; tests                                                                                       | [judgement]  | T32        |
+| T34 | Add `killGorgeShare` (leaving a real carcass), `territoryMax`/`territoryRadius`/`splitMinEnergyMultiplier` arms and the juvenile diet / `huntSizeRatio` / `childSpec` arms; tests | [judgement]  | T33        |
+| T35 | Write `evals/screens/honest-recruit.grid.json`, the E-record prediction and run the 16-seed screen; name the finalist                                                             | [judgement]  | T34        |
+| T36 | Run the finalist against the control on 64 matched seeds with `--keep-rule`; record the verdict                                                                                   | [mechanical] | T35        |
+| T37 | The switch: adopt the winning defaults, delete replaced keys/switches, open a new season, re-pin goldens; or park the branch                                                      | [mechanical] | T36        |
+| T38 | Conformance review of Phase 6, in parallel with `scripts/check.sh`; move the Status line                                                                                          | [judgement]  | T37        |
 
 ## Verification
 

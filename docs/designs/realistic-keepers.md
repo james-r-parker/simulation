@@ -49,7 +49,7 @@ A switch is kept when, over 16 floor-on seeds against the defaults on matched se
 | `refugeSense` (long-range refuge input)     | Prey know where cover is (home range, escape routes)                       | On main, default false (#292); the `E133` 16-seed reports (refuge.md T27)                                                                                                     | Today                | Verdict T19, adopt T22       |
 
 The first four rows have 16-seed evidence but were measured before the flip reflex and the hunter territory became defaults
-(#277). The next four have 8-seed evidence only, which is inert or neutral and never judged harm.
+(#277). The next four have 8-seed evidence only, which is inert or neutral and never judged harm. Note: `provisionEnabled` was deleted in `E137`/`E138` _before_ [honest-budgets.md](honest-budgets.md) Phase 2 (`E175`) removed lifetime-intake carcasses and spiked `eval.hunter_juvenile_death_share` to `0.76`; parent-kill sharing (`killGorgeShare` / juvenile access) is re-examined in `honest-budgets.md` Phase 6.
 
 ### What exists today
 
