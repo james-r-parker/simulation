@@ -57,13 +57,13 @@ Add `js/evo/scene-traits.js` with the four trait-distribution detectors and map 
 
 **Targets:** eval.hunter_catches_per_1k, eval.hunter_juvenile_death_share, eval.bite_on_prey_view
 
-Replace the discrete `canHunt`, `plantFoodValue`, `meatFoodValue`, `biteMultiplier`, `biteTakenMultiplier`, `kickMultiplier` and `turnMultiplier` lookups with continuous curves over `carnivoryGene` and `bulkGene` behind a `continuousTraits` switch. Screen the trade-off exponents (`E-BG-2`, 16 seeds) and run the 64-seed keep rule (`E-BG-3`), checking that carnivores and herbivores diverge (`eval.trait_bimodality.carnivory > 0.55`) without `specMutationRate` flips.
+Replace the discrete `canHunt`, `plantFoodValue`, `meatFoodValue`, `biteMultiplier`, `biteTakenMultiplier`, `kickMultiplier` and `turnMultiplier` lookups with continuous curves over `carnivoryGene` and `bulkGene` behind a `continuousTraits` switch. Screen the trade-off exponents (`E-BG-2`, 16 seeds) and run the 64-seed keep rule (`E-BG-3`), checking functional diet and descendant replacement without `specMutationRate` flips; report bimodality without requiring two peaks.
 
 #### Chunks
 
-| Chunk | Tasks    | Contents                                                                                                        |
-| ----- | -------- | --------------------------------------------------------------------------------------------------------------- |
-| B     | T4 to T8 | `js/sim/body-genes.js`, layout stamp update, `E-BG-2` screen, `E-BG-3` keep rule, switch and conformance review |
+| Chunk | Tasks         | Contents                                                                                                        |
+| ----- | ------------- | --------------------------------------------------------------------------------------------------------------- |
+| B     | T3a, T4 to T8 | `js/sim/body-genes.js`, layout stamp update, `E-BG-2` screen, `E-BG-3` keep rule, switch and conformance review |
 
 ### Phase 3 - Continuous `burstGene` and `paceGene`
 
@@ -73,9 +73,9 @@ Move `sprintBoost`, `passiveLossMultiplier`, `maxEnergyMultiplier`, `splitMinEne
 
 #### Chunks
 
-| Chunk | Tasks     | Contents                                                                                                                |
-| ----- | --------- | ----------------------------------------------------------------------------------------------------------------------- |
-| C     | T9 to T13 | `burstGene` / `paceGene` wiring, `E-BG-4` screen, `E-BG-5` keep rule, template retirement switch and conformance review |
+| Chunk | Tasks           | Contents                                                                                                                |
+| ----- | --------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| C     | T9 to T13, T11a | `burstGene` / `paceGene` wiring, `E-BG-4` screen, `E-BG-5` keep rule, template retirement switch and conformance review |
 
 ### Phase 4 - Co-evolutionary archive and season graduation
 
@@ -88,6 +88,14 @@ Update MAP-Elites archive descriptors (`descriptorV7` / `descriptorV8`) so archi
 | Chunk | Tasks      | Contents                                                                          |
 | ----- | ---------- | --------------------------------------------------------------------------------- |
 | D     | T14 to T17 | Archive descriptor update, `E-BG-6` validation, arena clip and conformance review |
+
+## Trade-off and ecological continuity checks
+
+T3a audits the complete phenotype budget before any trait screen. Tabulate endpoint and intermediate bodies at equal age and stored energy: speed, acceleration, turn, standing loss, movement and sprint expenditure, maximum store, edible diet, bite cost and reproductive investment. Compare compound trait corners as well as each axis alone. The provisional high-`burstGene` endpoint currently combines higher sprint and capacity with lower passive loss; it is not accepted as an endurance trade-off without a measured counter-cost. T3a specifies and tests that cost, or rewrites the axis before Phase 3. No exact replacement constants are adopted by this planning task.
+
+T11a preserves the ecological meaning of the guild experiments when labels disappear. Audit every specialisation-indexed lookup in sensing, prey/threat classification, feeding, reproduction, territory, archive, worker snapshots, renderer and eval. Classify from expressed body capabilities where needed; keep stable ancestry separate from changing body traits. Test small mutations on both sides of `carnivoryThreshold`, mixed-parent offspring and juvenile-to-adult transitions: a smooth gene change must not silently grant a free diet, remove a sensed threat or strand a body with no viable meal. Discontinuous permissions are documented and screened explicitly.
+
+Translate [prey-guilds.md](prey-guilds.md)'s interaction matrix and rare-role tests into phenotype bands fixed before the run. Report intermediate omnivores and scavengers as outcomes, not failures merely because the distribution is unimodal. `trait_bimodality` and a brain-weight correlation are descriptive evidence, not sufficient proof of functional roles or mandatory adoption bars. Demonstrate diet, affordable pursuit, family replacement and local habitat use with the same checks used for guilds. Re-run the exact mixed-population release test of [training-stages.md](training-stages.md) after a layout/rules change; old champions cannot prove the new bodies work.
 
 ## Delivery requirements
 
@@ -119,7 +127,8 @@ Update MAP-Elites archive descriptors (`descriptorV7` / `descriptorV8`) so archi
 
 | #   | Task                                                                                                                                                                   | Nature       | Depends on |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T4  | Add `js/sim/body-genes.js`, extend `TRAIT_GENES` in `brain-layout.js` (`BRAIN_LAYOUT_NAME` bump), wire `carnivoryGene` and `bulkGene` behind `continuousTraits`; tests | [judgement]  | T3         |
+| T3a | Audit endpoint/intermediate and compound body budgets with deterministic fixtures; specify a priced burst/endurance trade-off before screening                         | [judgement]  | T3         |
+| T4  | Add `js/sim/body-genes.js`, extend `TRAIT_GENES` in `brain-layout.js` (`BRAIN_LAYOUT_NAME` bump), wire `carnivoryGene` and `bulkGene` behind `continuousTraits`; tests | [judgement]  | T3, T3a    |
 | T5  | Write `evals/screens/body-genes-diet.grid.json` and prediction; run 16-seed screen `E-BG-2`                                                                            | [judgement]  | T4         |
 | T6  | Run finalist vs. control on 64 matched seeds with `--keep-rule` (`E-BG-3`)                                                                                             | [mechanical] | T5         |
 | T7  | Switch: adopt winning curves, delete `continuousTraits` flag, open new season, re-pin goldens and `browser:hash`                                                       | [mechanical] | T6         |
@@ -127,19 +136,20 @@ Update MAP-Elites archive descriptors (`descriptorV7` / `descriptorV8`) so archi
 
 ### Phase 3 - Continuous `burstGene` and `paceGene`
 
-| #   | Task                                                                                                                                                 | Nature       | Depends on |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T9  | Wire `burstGene` and `paceGene` behind `continuousPace` in `body-genes.js`, `energy.js`, `physics.js` and `reproduction.js`; tests                   | [judgement]  | T8         |
-| T10 | Write `evals/screens/body-genes-pace.grid.json` and prediction; run 16-seed screen `E-BG-4`                                                          | [judgement]  | T9         |
-| T11 | Run finalist vs. control on 64 matched seeds with `--keep-rule` (`E-BG-5`)                                                                           | [mechanical] | T10        |
-| T12 | Switch: adopt continuous traits, retire discrete `specialisations` templates (if `E-BG-5` holds), open new season, re-pin goldens and `browser:hash` | [judgement]  | T11        |
-| T13 | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`                                                                  | [judgement]  | T12        |
+| #    | Task                                                                                                                                                                      | Nature       | Depends on |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T9   | Wire `burstGene` and `paceGene` behind `continuousPace` in `body-genes.js`, `energy.js`, `physics.js` and `reproduction.js`; tests                                        | [judgement]  | T8         |
+| T10  | Write `evals/screens/body-genes-pace.grid.json` and prediction; run 16-seed screen `E-BG-4`                                                                               | [judgement]  | T9         |
+| T11  | Run finalist vs. control on 64 matched seeds with `--keep-rule` (`E-BG-5`)                                                                                                | [mechanical] | T10        |
+| T11a | Audit specialisation consumers and threshold transitions; specify phenotype-band interaction reports and test mixed-parent/juvenile continuity before template retirement | [judgement]  | T11        |
+| T12  | Switch: adopt continuous traits, retire discrete `specialisations` templates (if `E-BG-5` holds), open new season, re-pin goldens and `browser:hash`                      | [judgement]  | T11, T11a  |
+| T13  | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`                                                                                       | [judgement]  | T12        |
 
 ### Phase 4 - Co-evolutionary archive and season graduation
 
 | #   | Task                                                                                                                   | Nature       | Depends on |
 | --- | ---------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T14 | Update `js/evo/descriptors.js` to index continuous body-gene axes alongside style                                      | [judgement]  | T13        |
+| T14 | Update `js/evo/descriptors.js` to index continuous body-gene axes alongside style                                      | [judgement]  | T13, T11a  |
 | T15 | Run 64-seed validation `E-BG-6` and record verdict in [sim-notes.md](sim-notes.md)                                     | [mechanical] | T14        |
 | T16 | Watch arena clip verifying emergent body/brain divergence                                                              | [judgement]  | T15        |
 | T17 | Conformance review of Phase 4 by a fresh agent, in parallel with `scripts/check.sh`; move Status line to `Implemented` | [judgement]  | T16        |
@@ -149,4 +159,4 @@ Update MAP-Elites archive descriptors (`descriptorV7` / `descriptorV8`) so archi
 1. `scripts/check.sh --fix --docs` for this doc; `scripts/check.sh` green on each chunk PR.
 2. Phase 1: `npm run eval` reports `eval.trait_spread.*` and `eval.trait_bimodality.carnivory`.
 3. Phases 2–3: 16-seed screens and 64-seed `eval:compare --keep-rule` verdicts committed under `evals/decisions/E-BG-*/`, and `npm run browser:hash` matches re-pinned goldens.
-4. Phase 4: `eval.trait_bimodality.carnivory > 0.55`, `eval.trait_brain_alignment > 0`, predators persist, and the arena clip shows distinct emergent body types.
+4. Phase 4: functional phenotype groups persist and replace themselves, trait-distribution and alignment diagnostics are reported, and the arena clip shows distinct behaviour. Unimodality alone does not fail the phase.
