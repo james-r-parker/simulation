@@ -50,7 +50,8 @@ describe('rayReachTable', () => {
     it("holds each specialisation's row at its index, symmetric left and right", () => {
         const rays = 16;
         const { rayReachBySpec } = rayReachTable(configWith({ predator: 0.4, defender: 0.8 }, rays));
-        const row = (index) => Array.from(rayReachBySpec.subarray(index * rays, (index + 1) * rays));
+        const row = (/** @type {number} */ index) =>
+            Array.from(rayReachBySpec.subarray(index * rays, (index + 1) * rays));
         expect(row(0).every((f) => f === 1)).toBe(true);
         const predator = row(1);
         expect(predator[0]).toBe(1);
