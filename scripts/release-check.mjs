@@ -7,7 +7,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { releaseCheck, seasonAdded } from './lib/release-check.mjs';
+import { movesUnreleasedSeason, releaseCheck, seasonAdded } from './lib/release-check.mjs';
 import { createConfig, rulesHash } from '../js/sim/config.js';
 
 /** @typedef {(cmd: string, args: string[]) => {status: number | null, stdout: string, stderr: string}} Spawn */
@@ -76,8 +76,13 @@ export function runReleaseCheck({ env, git: run, rulesHashAt: hashAt, headHash, 
         messages.push(env.PR_TITLE);
     }
     const baseHash = hashAt(mergeBase);
-    const addsSeason = seasonAdded(run(['show', `${mergeBase}:library/seasons.json`]), headSeasons);
-    const verdict = releaseCheck({ baseHash, headHash, messages, base, addsSeason });
+    const baseSeasons = run(['show', `${mergeBase}:library/seasons.json`]);
+    const addsSeason = seasonAdded(baseSeasons, headSeasons);
+    const tags = run(['tag', '--list'])
+        .split('\n')
+        .filter((t) => t !== '');
+    const movesUnreleased = movesUnreleasedSeason(baseSeasons, headSeasons, tags);
+    const verdict = releaseCheck({ baseHash, headHash, messages, base, addsSeason, movesUnreleased });
     if (verdict.ok) {
         const rules = baseHash === headHash ? 'unchanged' : 'changed';
         return { ok: true, line: `release-check ok (base ${base}, rulesHash ${rules})` };
