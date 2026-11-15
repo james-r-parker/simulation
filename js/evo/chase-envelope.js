@@ -8,6 +8,7 @@ import { createRng, fork, nextFloat } from '../sim/rng.js';
 import { step } from '../sim/step.js';
 import { ARENA_CENTRE, arenaConfig, stageArena } from './chase-arena.js';
 import { STORE_SHARE } from './chase-body.js';
+import { CHASE_OUTCOME } from './chase-outcome.js';
 import { evaderBrain, pursuerBrain } from './chase-oracles.js';
 
 /** The longest a trial runs: 250 ticks at the fastest sprint (14.4) is 3600, inside the 4000 clear of the wall. */
@@ -25,7 +26,7 @@ const DISTANCE_JITTER = 0.05;
 
 /**
  * @typedef {object} Trial one chase
- * @property {boolean} caught whether the pursuer killed the evader
+ * @property {number} outcome `CHASE_OUTCOME.CAUGHT` when the pursuer killed the evader, else `ESCAPED` (the shared record of chase-outcome.js; a scripted chase never gives up)
  * @property {number} ticks the ticks played (the kill's tick when caught)
  * @property {number} spent the pursuer's energy spent on standing, moving, sprinting and bites
  * @property {number} returned the energy the kill and its bites returned to the pursuer
@@ -74,7 +75,7 @@ export function playTrial(config, { pursuer, evader, distance, bearing, rng }, {
     }
     const spent = world.ledgerStanding[0] + world.ledgerMove[0] + world.ledgerSprint[0] + world.ledgerBiteCost[0];
     return {
-        caught: world.alive[1] === 0 && world.alive[0] === 1,
+        outcome: world.alive[1] === 0 && world.alive[0] === 1 ? CHASE_OUTCOME.CAUGHT : CHASE_OUTCOME.ESCAPED,
         ticks,
         spent,
         returned: world.ledgerKillEnergy[0] + world.ledgerBiteGain[0],
@@ -104,7 +105,7 @@ export function playCell(config, { pursuer, evader, share, bearing }, { trials, 
     const cell = { share: 0, caught: 0, trials, spent: 0, returned: 0 };
     for (let k = 0; k < trials; k++) {
         const t = playTrial(config, { pursuer, evader, distance, bearing, rng }, { sprint, straight });
-        if (t.caught) {
+        if (t.outcome === CHASE_OUTCOME.CAUGHT) {
             cell.caught += 1;
             cell.spent += t.spent;
             cell.returned += t.returned;
