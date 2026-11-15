@@ -65,6 +65,16 @@ jobs:
       - name: Install
         run: npm ci
 
+      # Prettier's content-keyed cache (scripts/check.sh PRETTIER_CACHE): a file that passed before is not formatted
+      # again; a new or edited file has a new hash and is always checked. After `npm ci`, which empties node_modules.
+      - name: Prettier cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/prettier
+          key: prettier-${{ hashFiles('package-lock.json', '.prettierrc.json', '.prettierignore', '.editorconfig') }}-${{ github.sha }}
+          restore-keys: |
+            prettier-${{ hashFiles('package-lock.json', '.prettierrc.json', '.prettierignore', '.editorconfig') }}-
+
       # A change to rulesHash is a breaking commit that targets season/next (scripts/lib/release-check.mjs). The title is
       # passed through the environment, never interpolated into the script.
       - name: Release check

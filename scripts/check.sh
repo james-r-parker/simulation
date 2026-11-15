@@ -235,6 +235,10 @@ skip_gate() {
   SKIPPED=$((SKIPPED + 1))
 }
 
+# Whole-tree Prettier runs cache by file content (a passing file is skipped; a new or edited file is always checked), so
+# a second run, or CI with its restored cache, costs a hash per file instead of a format.
+PRETTIER_CACHE=(--cache --cache-strategy content --cache-location node_modules/.cache/prettier/.cache)
+
 # Fix pass first, so the checks below see the fixed tree.
 if [[ $FIX -eq 1 ]]; then
   wanted designs-index && node scripts/designs-index.mjs --write >/dev/null
@@ -242,7 +246,7 @@ if [[ $FIX -eq 1 ]]; then
     # Tier 1 formats only the staged files and does not re-stage them.
     [[ ${#FORMAT_FILES[@]} -eq 0 ]] || { wanted format && "$BIN/prettier" --write --ignore-unknown --log-level warn "${FORMAT_FILES[@]}" >/dev/null; }
   else
-    wanted format && "$BIN/prettier" --write --log-level warn . >/dev/null
+    wanted format && "$BIN/prettier" --write "${PRETTIER_CACHE[@]}" --log-level warn . >/dev/null
   fi
 fi
 
@@ -251,7 +255,7 @@ run_gate conventions env "${HOOK_GIT_ENV[@]}" scripts/check-conventions.sh
 run_gate designs-index node scripts/designs-index.mjs --check
 
 if [[ "$TIER" != 1 ]]; then
-  run_gate format "$BIN/prettier" --check .
+  run_gate format "$BIN/prettier" --check "${PRETTIER_CACHE[@]}" .
   run_gate lint "$BIN/eslint" --max-warnings 0 .
 else
   if [[ ${#FORMAT_FILES[@]} -gt 0 ]]; then
@@ -344,16 +348,15 @@ gate_browser_smoke() {
 # error and a report that passes validateReport (eval.mjs validates before writing and exits 1 otherwise). The report goes
 # to a temporary directory. The eval's own output is the log, so a failure's digest shows the reason.
 eval_smoke() {
-  local out status
+  local out status=0 pid
   out="$(mktemp -d)"
+  # The two policies are independent, so they run side by side; each has its own report and log.
+  node scripts/eval.mjs --seeds 2 --ticks 10000 --policy map-elites-v6 --config evals/smoke-config.json \
+    --out "$out/report-v6.json" >"$out/v6.log" 2>&1 && node scripts/check-metric-names.mjs --report "$out/report-v6.json" >>"$out/v6.log" 2>&1 &
+  pid=$!
   node scripts/eval.mjs --seeds 2 --ticks 10000 --policy live --config evals/smoke-config.json \
-    --out "$out/report.json" && node scripts/check-metric-names.mjs --report "$out/report.json"
-  status=$?
-  if [ "$status" -eq 0 ]; then
-    node scripts/eval.mjs --seeds 2 --ticks 10000 --policy map-elites-v6 --config evals/smoke-config.json \
-      --out "$out/report-v6.json" && node scripts/check-metric-names.mjs --report "$out/report-v6.json"
-    status=$?
-  fi
+    --out "$out/report.json" && node scripts/check-metric-names.mjs --report "$out/report.json" || status=1
+  wait "$pid" || { cat "$out/v6.log"; status=1; }
   rm -rf "$out"
   return "$status"
 }
