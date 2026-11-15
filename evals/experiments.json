@@ -4444,9 +4444,12 @@
       "targets": ["eval.edge_starve_per_prey", "eval.childshare_by_condition"],
       "before": "control arm of evals/screens/honest-edge.grid.json (season 10 defaults), seeds 1 to 16, 400000 ticks, floor on, policy live",
       "after": "the edge arms of the same screen (nocap, nocap-g, nocap-g-r)",
-      "verdicts": {},
-      "note": "Prediction recorded before the run (T23); the screen (T24) and the 64-seed keep-rule pass (T25) are not run yet.",
-      "reports": ["evals/decisions/E177/results.md"],
+      "verdicts": {
+        "eval.edge_starve_per_prey": "-",
+        "eval.childshare_by_condition": "-"
+      },
+      "note": "Screen on the Phase 2 defaults: no arm reads edge_starve_per_prey worse; lifting the clonal cap raises the split share of births from 0.35 to about 0.5 and lowers the mating share. Finalist nocap-g-r (edge starve 0.107 against 0.112, childshare_by_condition 0.0008); costs: spec under 70% on 7/16 seeds against 12/16, mating share 0.40 against 0.66. The 64-seed keep rule (T25) is not run yet.",
+      "reports": ["evals/decisions/E177/results.md", "evals/decisions/E177/screen-table.md"],
       "date": "2026-11-15",
       "branch": "season/next",
       "beforePolicy": "live",
