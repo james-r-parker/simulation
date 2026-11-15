@@ -2,7 +2,7 @@
 
 **Status:** Proposed - stub: measure how the `SPRINT` output is used, then, only if it reads as free, make a sprint a store that empties and refills; Phase 1 (detectors and baseline) is first.
 **Validated:** f5ebac76 (2026-11-15)
-**Priority:** 27 - a chase needs an end that is not luck, but the world must hold a standing prey population first ([honest-budgets.md](honest-budgets.md)), and Phase 1 reads the chase detectors of [training-stages.md](training-stages.md)
+**Priority:** 28 - a chase needs an end that is not luck, but the world must hold a standing prey population first ([honest-budgets.md](honest-budgets.md)), and Phase 1 reads the chase detectors of [training-stages.md](training-stages.md)
 **Depends on:** [honest-budgets.md](honest-budgets.md), [training-stages.md](training-stages.md)
 
 A sprint multiplies thrust by `1 + sprintMultiplier x sprintBoost` (`thrustOf` in `js/sim/physics.js`), raises the speed cap in the Rust kernel (`move_agent` in `wasm/src/physics.rs`) and costs `sprintCost` (0.05) energy a tick (`tickCost` in `js/sim/energy.js`). No metric reads the `SPRINT` output. If a sprint is held most of the time it is a free action ([principles.md](../principles.md), "What to refuse"), a chase is decided by top speed alone, and a courser and an ambusher cannot differ. This doc measures that first.
