@@ -12,6 +12,7 @@
 #                              # the design-doc tests; combines with --fix and --ci
 #   scripts/check.sh --quiet   # print only failed gates and the summary line
 #   scripts/check.sh --tier 1  # tier 1 (pre-commit), 2 (default, the PR gate) or 3 (nightly); not with --only/--docs
+#   scripts/check.sh --skip=browser-smoke,eval-smoke   # the selected gates minus these (CI runs them on a clean runner)
 #   scripts/check.sh --list    # print the gates the other flags select, one per line, and run nothing
 #
 # A failed gate prints a digest under its line (failed tests with their assertion, type errors, lint problems,
@@ -30,6 +31,7 @@ FULL=0
 DOCS=0
 QUIET=0
 ONLY=""
+SKIP=""
 TIER=""
 LIST=0
 args=("$@")
@@ -49,7 +51,8 @@ while [[ $i -lt ${#args[@]} ]]; do
     --docs) DOCS=1 ;;
     --quiet) QUIET=1 ;;
     --only=*) ONLY="${arg#--only=}" ;;
-    -h|--help) sed -n '2,19p' "$0"; exit 0 ;;
+    --skip=*) SKIP="${arg#--skip=}" ;;
+    -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
     *) echo "unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
@@ -73,13 +76,33 @@ if [[ $DOCS -eq 1 ]]; then
   [[ -z "$ONLY" ]] || { echo "--docs and --only cannot be combined" >&2; exit 2; }
   ONLY="conventions,designs-index,format,docs-tests"
 fi
+# Whether the caller picked the gates (--only, --docs or --tier) rather than taking the default selection.
+GATES_CHOSEN=0
+[[ -z "$ONLY" ]] || GATES_CHOSEN=1
 [[ -n "$ONLY" ]] || ONLY="$TIER2_GATES"
+# In CI the browser-smoke job runs the smoke (with --only), so the `check` job leaves it out of the default selection.
+[[ $CI -eq 1 && $GATES_CHOSEN -eq 0 ]] && SKIP="${SKIP:+$SKIP,}browser-smoke"
 [[ -z "${TEST_SEED:-}" || "$TEST_SEED" =~ ^[0-9]+$ ]] || { echo "TEST_SEED must be a non-negative integer, got: $TEST_SEED" >&2; exit 2; }
 if [[ -n "$ONLY" ]]; then
   IFS=',' read -ra requested <<<"$ONLY"
   for gate in "${requested[@]}"; do
     [[ ",$GATES," == *",$gate,"* ]] || { echo "unknown gate: $gate (expected one of $GATES)" >&2; exit 2; }
   done
+fi
+
+# --skip removes gates from whatever the other flags selected.
+if [[ -n "$SKIP" ]]; then
+  IFS=',' read -ra skipped <<<"$SKIP"
+  for gate in "${skipped[@]}"; do
+    [[ ",$GATES," == *",$gate,"* ]] || { echo "unknown gate: $gate (expected one of $GATES)" >&2; exit 2; }
+  done
+  kept=""
+  IFS=',' read -ra selected <<<"$ONLY"
+  for gate in "${selected[@]}"; do
+    [[ ",$SKIP," == *",$gate,"* ]] || kept="${kept:+$kept,}$gate"
+  done
+  [[ -n "$kept" ]] || { echo "--skip removed every selected gate" >&2; exit 2; }
+  ONLY="$kept"
 fi
 
 # Tier 1 (pre-commit) checks the staged files, as they are in the working tree; deleted files have nothing to check.
@@ -212,6 +235,10 @@ skip_gate() {
   SKIPPED=$((SKIPPED + 1))
 }
 
+# Whole-tree Prettier runs cache by file content (a passing file is skipped; a new or edited file is always checked), so
+# a second run, or CI with its restored cache, costs a hash per file instead of a format.
+PRETTIER_CACHE=(--cache --cache-strategy content --cache-location node_modules/.cache/prettier/.cache)
+
 # Fix pass first, so the checks below see the fixed tree.
 if [[ $FIX -eq 1 ]]; then
   wanted designs-index && node scripts/designs-index.mjs --write >/dev/null
@@ -219,7 +246,7 @@ if [[ $FIX -eq 1 ]]; then
     # Tier 1 formats only the staged files and does not re-stage them.
     [[ ${#FORMAT_FILES[@]} -eq 0 ]] || { wanted format && "$BIN/prettier" --write --ignore-unknown --log-level warn "${FORMAT_FILES[@]}" >/dev/null; }
   else
-    wanted format && "$BIN/prettier" --write --log-level warn . >/dev/null
+    wanted format && "$BIN/prettier" --write "${PRETTIER_CACHE[@]}" --log-level warn . >/dev/null
   fi
 fi
 
@@ -228,7 +255,7 @@ run_gate conventions env "${HOOK_GIT_ENV[@]}" scripts/check-conventions.sh
 run_gate designs-index node scripts/designs-index.mjs --check
 
 if [[ "$TIER" != 1 ]]; then
-  run_gate format "$BIN/prettier" --check .
+  run_gate format "$BIN/prettier" --check "${PRETTIER_CACHE[@]}" .
   run_gate lint "$BIN/eslint" --max-warnings 0 .
 else
   if [[ ${#FORMAT_FILES[@]} -gt 0 ]]; then
@@ -307,12 +334,10 @@ gate_bench_check() {
   fi
 }
 # gate_browser_smoke: the built app loads in a browser (scripts/browser-smoke.sh). It needs the Playwright image: skipped
-# without Docker (a failure under --ci). In CI the `check` job leaves it to the browser-smoke job, which passes --only.
+# without Docker (a failure under --ci). In CI the default selection leaves it out (the browser-smoke job passes --only).
 gate_browser_smoke() {
   wanted browser-smoke || return 0
-  if [[ $CI -eq 1 && -z "$ONLY" ]]; then
-    skip_gate browser-smoke "runs in the browser-smoke job"
-  elif [[ $CI -eq 0 && "${PLAYWRIGHT_BROWSERS_PATH:-}" != /ms-playwright && "${SMOKE_LOCAL:-}" != 1 ]] \
+  if [[ $CI -eq 0 && "${PLAYWRIGHT_BROWSERS_PATH:-}" != /ms-playwright && "${SMOKE_LOCAL:-}" != 1 ]] \
     && ! docker info >/dev/null 2>&1; then
     skip_gate browser-smoke "no Docker (SMOKE_LOCAL=1 uses the local Chromium)"
   else
@@ -323,16 +348,15 @@ gate_browser_smoke() {
 # error and a report that passes validateReport (eval.mjs validates before writing and exits 1 otherwise). The report goes
 # to a temporary directory. The eval's own output is the log, so a failure's digest shows the reason.
 eval_smoke() {
-  local out status
+  local out status=0 pid
   out="$(mktemp -d)"
+  # The two policies are independent, so they run side by side; each has its own report and log.
+  node scripts/eval.mjs --seeds 2 --ticks 10000 --policy map-elites-v6 --config evals/smoke-config.json \
+    --out "$out/report-v6.json" >"$out/v6.log" 2>&1 && node scripts/check-metric-names.mjs --report "$out/report-v6.json" >>"$out/v6.log" 2>&1 &
+  pid=$!
   node scripts/eval.mjs --seeds 2 --ticks 10000 --policy live --config evals/smoke-config.json \
-    --out "$out/report.json" && node scripts/check-metric-names.mjs --report "$out/report.json"
-  status=$?
-  if [ "$status" -eq 0 ]; then
-    node scripts/eval.mjs --seeds 2 --ticks 10000 --policy map-elites-v6 --config evals/smoke-config.json \
-      --out "$out/report-v6.json" && node scripts/check-metric-names.mjs --report "$out/report-v6.json"
-    status=$?
-  fi
+    --out "$out/report.json" && node scripts/check-metric-names.mjs --report "$out/report.json" || status=1
+  wait "$pid" || { cat "$out/v6.log"; status=1; }
   rm -rf "$out"
   return "$status"
 }

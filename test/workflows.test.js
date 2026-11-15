@@ -47,6 +47,21 @@ describe('workflows', () => {
             }
         });
 
+        it('scopes a push against the previous tip, falling back to the full scope when it is unknown', () => {
+            for (const [id, fallback] of [
+                ['check', 'full'],
+                ['browser-smoke', 'browser'],
+            ]) {
+                const text = job(id);
+                expect(text).toContain('BEFORE: ${{ github.event.before }}');
+                expect(text).toContain('"$BEFORE"');
+                expect(text).toContain('^0+$');
+                expect(text).toContain('git cat-file -e');
+                expect(text).toContain(`|| echo ${fallback})`);
+                expect(text).toContain(`scope=${fallback}\n`);
+            }
+        });
+
         it('skips the advisory perf job in the merge queue', () => {
             expect(job('perf')).toContain("if: github.event_name == 'pull_request'");
         });

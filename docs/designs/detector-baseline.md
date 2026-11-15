@@ -119,8 +119,8 @@ The run, the power and liveness read, and each plan's Baseline table.
 
 | #   | Task                                                                                                                                                                                         | Nature       | Depends on |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T5  | Add `scripts/baseline-table.mjs` and `npm run baseline:table`, with a test on a fixture report                                                                                               | [mechanical] | -          |
-| T6  | Add `scripts/baseline-status.mjs` and `npm run baseline:status`, with a test of a matching and a differing `rulesHash`                                                                       | [mechanical] | -          |
+| T5  | (built) Add `scripts/baseline-table.mjs` and `npm run baseline:table`, with a test on a fixture report                                                                                       | [mechanical] | -          |
+| T6  | (built) Add `scripts/baseline-status.mjs` and `npm run baseline:status`, with a test of a matching and a differing `rulesHash`                                                               | [mechanical] | -          |
 | T7  | Run the baseline: 128 floor-on and 128 floor-off seeds x 200000 ticks, `--save-champions 2`; commit the reports; record the experiment                                                       | [mechanical] | T4         |
 | T8  | Run `eval:power --include-watch` and `metric:liveness` for every new metric; write the readings to the registry; regenerate [metrics.md](metrics.md); fill each served plan's Baseline table | [mechanical] | T5, T7     |
 | T9  | Read each plan's prediction against the table and write its verdict in that plan; conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`; move the Status line  | [judgement]  | T6, T8     |
