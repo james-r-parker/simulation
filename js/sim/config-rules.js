@@ -49,6 +49,8 @@ export const FEATURE_RULES = {
     carcassFadeTicks: int(1),
     killShare: { type: 'num', min: 0, lt: 1 },
     killGorgeCap: positive(),
+    impactDamage: num(0),
+    impactDeadband: num(0),
     wallGaps: int(0, 8),
     wallGapWidth: positive(),
     refugeCount: int(0, 32),

@@ -223,6 +223,8 @@ export const DEFAULTS = deepFreeze({
     carcassFadeTicks: 1500, // honest-budgets Phase 2: ticks a body-priced carcass takes to fade linearly to 0 (read only with carcassBody)
     killShare: 0, // honest-budgets Phase 2: a bite is fatal at or under this share of the victim's maximum energy; 0 is a kill at an empty store
     killGorgeCap: 2000, // honest-budgets Phase 2: the most energy a killer takes from the body it just killed (read only above killShare 0)
+    impactDamage: 0, // honest-budgets Phase 3: energy per unit of speed above impactDeadband that a wall or rock impact costs; 0 is off
+    impactDeadband: 2, // honest-budgets Phase 3: the speed into a wall or rock an impact is free up to (read only above impactDamage 0)
     carcassShare: 0.8, // new: share of an agent's energy at death that its carcass holds (T54)
     wallGaps: 3, // new: gaps in the wall, basins only (T52)
     wallGapWidth: 200, // new: width of each wall gap in px (T52; 200 since the big bang, from 300)

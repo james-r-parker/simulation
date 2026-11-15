@@ -1,6 +1,6 @@
 // Moves agents: steering and thrust, damping, wall and obstacle bounces, and agent-agent contact impulses. The damping,
 // speed cap and move, the rock bounce geometry and the contact pass run in the WASM kernels (wasm/src/physics.rs); the
-// steering, thrust, trampling, walls and every energy rule stay here.
+// steering, thrust, trampling, walls and every energy rule (the contact damages and the impact cost) stay here.
 
 import { isSick } from './toxin.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
@@ -9,7 +9,7 @@ import { LOSS_CAUSE, removeEnergy } from './energy.js';
 import { thrustEfficiency } from './temperature.js';
 import { trampleHerds } from './trample.js';
 import { assertArenaHash } from './wasm-hash.js';
-import { bounceRocksKernel, moveAgentsKernel, resolveContactsKernel } from './wasm-physics.js';
+import { bounceRocksKernel, moveAgentsKernel, resolveContactsKernel, rockImpactSpeed } from './wasm-physics.js';
 
 const PI = 3.141592653589793;
 
@@ -102,34 +102,50 @@ export function actAll(world) {
  * @param {import('./world.js').World} world the world
  * @param {number} slot the agent slot
  * @param {boolean} horizontal true for the x axis, false for y
- * @returns {boolean} true when the agent hit a wall moving into it
+ * @returns {number} the agent's speed into the wall before the reflection when it hit one moving into it, else 0
  */
 function wallAxis(world, slot, horizontal) {
     const pos = horizontal ? world.x : world.y;
     const vel = horizontal ? world.vx : world.vy;
     const limit = horizontal ? world.config.worldWidth : world.config.worldHeight;
     const r = world.size[slot];
-    let hit = false;
+    let speed = 0;
     if (pos[slot] < r) {
         pos[slot] = r;
         if (vel[slot] < 0) {
-            vel[slot] = -vel[slot];
-            hit = true;
+            speed = -vel[slot];
+            vel[slot] = speed;
         }
     } else if (pos[slot] > limit - r) {
         pos[slot] = limit - r;
         if (vel[slot] > 0) {
-            vel[slot] = -vel[slot];
-            hit = true;
+            speed = vel[slot];
+            vel[slot] = -speed;
         }
     }
-    return hit;
+    return speed;
+}
+
+/**
+ * honest-budgets Phase 3: an impact costs `impactDamage x (speed - impactDeadband)` when that is above 0, so a body
+ * resting against a surface or brushing it pays nothing; walls and rocks share the rule. Nothing at `impactDamage` 0.
+ * @param {import('./world.js').World} world the world
+ * @param {number} slot the agent slot
+ * @param {number} speed the agent's speed into the surface, 0 for no impact
+ * @returns {void}
+ */
+function chargeImpact(world, slot, speed) {
+    const { impactDamage, impactDeadband } = world.config;
+    const cost = impactDamage * (speed - impactDeadband);
+    if (cost > 0) {
+        removeEnergy(world, slot, cost, LOSS_CAUSE.COLLISION);
+    }
 }
 
 /**
  * Bounces one agent off every rock in index order (the geometry in the kernel); each impact moving into a rock costs
- * `obstacleDamage`, applied before the scan resumes, so the next rock sees the agent's new size. The box test keeps the
- * size the scan began with, as the JS loop did.
+ * `obstacleDamage` and the impact cost of its speed along the rock's normal, applied before the scan resumes, so the
+ * next rock sees the agent's new size. The box test keeps the size the scan began with, as the JS loop did.
  * @param {import('./world.js').World} world the world
  * @param {number} slot the agent slot
  * @returns {void}
@@ -138,13 +154,15 @@ function bounceObstacles(world, slot) {
     const own = world.size[slot];
     for (let k = bounceRocksKernel(world, slot, own, 0); k >= 0; k = bounceRocksKernel(world, slot, own, k + 1)) {
         removeEnergy(world, slot, world.config.obstacleDamage, LOSS_CAUSE.COLLISION);
+        chargeImpact(world, slot, rockImpactSpeed(world, slot));
     }
 }
 
 /**
- * Damps, caps and moves every alive agent, then bounces each off the herds, walls and obstacles. The moves all run
- * first, in one kernel call: an agent's move reads only its own velocity, and the bounces of the agents before it
- * write only their own state, so the order of every value is the per-agent order.
+ * Damps, caps and moves every alive agent, then bounces each off the herds, walls and obstacles. A wall hit costs
+ * `wallDamage` once, and each axis's impact its impact cost. The moves all run first, in one kernel call: an agent's
+ * move reads only its own velocity, and the bounces of the agents before it write only their own state, so the order
+ * of every value is the per-agent order.
  * @param {import('./world.js').World} world the world
  * @returns {void}
  */
@@ -154,11 +172,13 @@ export function integrate(world) {
     for (let i = 0; i < alive.length; i++) {
         if (alive[i] === 1) {
             trampleHerds(world, i);
-            const hitX = wallAxis(world, i, true);
-            const hitY = wallAxis(world, i, false);
-            if (hitX || hitY) {
+            const speedX = wallAxis(world, i, true);
+            const speedY = wallAxis(world, i, false);
+            if (speedX > 0 || speedY > 0) {
                 removeEnergy(world, i, config.wallDamage, LOSS_CAUSE.COLLISION);
             }
+            chargeImpact(world, i, speedX);
+            chargeImpact(world, i, speedY);
             bounceObstacles(world, i);
         }
     }
