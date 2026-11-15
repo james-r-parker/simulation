@@ -36,18 +36,16 @@ const REFUGE_SENSED = 0;
  * @returns {number} the ray of the nearest food that is not the toxic one, or -1
  */
 function nearestSafeFood(world, slot) {
-    const stride = world.layout.rawInputCount;
-    let best = -1;
-    let bestProximity = -1;
-    for (let k = 0; k < world.config.rayCount; k++) {
-        const base = slot * stride + k * RAY_CHANNELS;
-        const toxic = Math.abs(world.rayHue[slot * world.config.rayCount + k] - FLORA_DEFAULTS.toxiccap.hue) < SAME_HUE;
-        if (world.inputs[base + CH_FOOD] > 0 && !toxic && world.inputs[base] > bestProximity) {
-            bestProximity = world.inputs[base];
-            best = k;
-        }
+    const { rayCount } = world.config;
+    const base = (/** @type {number} */ k) => slot * world.layout.rawInputCount + k * RAY_CHANNELS;
+    const isSafe = (/** @type {number} */ k) =>
+        world.inputs[base(k) + CH_FOOD] > 0 &&
+        Math.abs(world.rayHue[slot * rayCount + k] - FLORA_DEFAULTS.toxiccap.hue) >= SAME_HUE;
+    const safe = Array.from({ length: rayCount }, (_, k) => k).filter(isSafe);
+    if (safe.length === 0) {
+        return -1;
     }
-    return best;
+    return safe.reduce((best, k) => (world.inputs[base(k)] > world.inputs[base(best)] ? k : best));
 }
 
 /**

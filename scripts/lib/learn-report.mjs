@@ -1,19 +1,7 @@
 // Formats the learn probe for `npm run probe:learn`: one row per lesson with its populations' final scores.
 import { generationsToReach, REACHED_SHARE } from '../../js/evo/learn-probe.js';
 import { padTable } from './drill-report.mjs';
-
-/**
- * @param {readonly number[]} values numbers
- * @returns {number | null} the median, null for none
- */
-function median(values) {
-    if (values.length === 0) {
-        return null;
-    }
-    const sorted = [...values].sort((a, b) => a - b);
-    const mid = sorted.length >> 1;
-    return sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-}
+import { median } from './median.mjs';
 
 /**
  * @typedef {object} LessonSummary
@@ -40,7 +28,7 @@ export function summarise(results) {
             mean: runs.reduce((sum, r) => sum + r.reached, 0) / runs.length,
             populations: runs.length,
             hit: reaches.length,
-            medianGenerations: median(/** @type {number[]} */ (reaches)),
+            medianGenerations: reaches.length === 0 ? null : median(/** @type {number[]} */ (reaches)),
         };
     });
 }

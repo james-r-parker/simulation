@@ -1,14 +1,12 @@
 // The signal census (`npm run audit:signals`): runs a policy on fixed seeds with the census attached and prints one row
 // per brain input and per output (docs/designs/senses-and-motor.md, Signal census). Logs one `SignalCensusRow` per input
 // and output at info level to `.sim/logs/audit-signals-<first seed>x<seeds>.jsonl`.
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { LIVE_POLICY } from '../js/evo/policies/index.js';
 import { configHash, createConfig } from '../js/sim/config.js';
-import { createSimLog } from '../js/sim/log.js';
+import { emitReport, runAsMain, sharedFlags, withLogFile } from './lib/audit-io.mjs';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
-import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { logRunConfig, resolvePolicyFlag } from './lib/run-config.mjs';
 import { formatInputs, formatOutputs, inputNames, mergeInputs } from './lib/signal-report.mjs';
 import { runPool } from './lib/worker-pool.mjs';
@@ -40,9 +38,7 @@ export function parseArgs(argv) {
                 '--ticks': (v, f) => ['ticks', intValue(f, v, 1, USAGE)],
                 '--seed-offset': (v, f) => ['seedOffset', intValue(f, v, 0, USAGE)],
                 '--policy': (v) => ['policy', resolvePolicyFlag(v, USAGE)],
-                '--config': (v) => ['config', String(v)],
-                '--workers': (v, f) => ['workers', intValue(f, v, 1, USAGE)],
-                '--out': (v) => ['out', String(v)],
+                ...sharedFlags(USAGE),
             },
             defaults: {
                 seeds: 16,
@@ -67,10 +63,7 @@ export async function runSignalsAudit(args, { logDir = '.sim/logs', print = cons
     const overrides = args.config === null ? {} : JSON.parse(readFileSync(args.config, 'utf8'));
     const seeds = Array.from({ length: args.seeds }, (_, i) => args.seedOffset + i + 1);
     const path = join(logDir, `audit-signals-${seeds[0]}x${args.seeds}.jsonl`);
-    rmSync(path, { force: true });
-    const file = createJsonlSink(path);
-    try {
-        const log = createSimLog(file.sink, { level: 'info' });
+    return withLogFile({ path, level: 'info' }, async (log) => {
         logRunConfig(log, {
             tool: 'audit-signals',
             policy: args.policy,
@@ -93,14 +86,9 @@ export async function runSignalsAudit(args, { logDir = '.sim/logs', print = cons
             formatInputs(merged),
             formatOutputs(results.map((r) => r.outputs)),
         ].join('\n\n');
-        print(text);
-        if (args.out !== null) {
-            writeFileSync(args.out, `${text}\n`);
-        }
+        emitReport(text, { print, out: args.out });
         return results;
-    } finally {
-        await file.close();
-    }
+    });
 }
 
 /**
@@ -112,6 +100,4 @@ export async function main(argv, io = {}) {
     return exitCodeOf(() => runSignalsAudit(parseArgs(argv), io));
 }
 
-if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
-    process.exitCode = await main(process.argv.slice(2));
-}
+await runAsMain(import.meta.url, main);

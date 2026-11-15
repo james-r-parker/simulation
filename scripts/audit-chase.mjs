@@ -1,17 +1,15 @@
 // The chase envelope (`npm run audit:chase`): the body table, then the catch grid, fair band and energy per kill of every
 // hunting specialisation against every specialisation (docs/designs/senses-and-motor.md, Phase 2). Logs every cell at
 // debug level to `.sim/logs/audit-chase-<seed>.jsonl`.
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { bodyTable } from '../js/evo/chase-body.js';
 import { DISTANCE_SHARES, runEnvelope, TRIALS } from '../js/evo/chase-envelope.js';
 import { arenaConfig } from '../js/evo/chase-arena.js';
 import { configHash } from '../js/sim/config.js';
-import { createSimLog } from '../js/sim/log.js';
+import { emitReport, runAsMain, withLogFile } from './lib/audit-io.mjs';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
 import { formatBodies, formatPair } from './lib/chase-report.mjs';
-import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { logRunConfig } from './lib/run-config.mjs';
 
 const USAGE =
@@ -85,10 +83,7 @@ export async function runChase(args, { logDir = '.sim/logs', print = console.log
     const overrides = args.config === null ? {} : JSON.parse(readFileSync(args.config, 'utf8'));
     const config = arenaConfig({ ...overrides, seed: args.seed });
     const path = join(logDir, `audit-chase-${args.seed}.jsonl`);
-    rmSync(path, { force: true });
-    const file = createJsonlSink(path);
-    try {
-        const log = createSimLog(file.sink, { level: 'debug' });
+    return withLogFile({ path, level: 'debug' }, async (log) => {
         logRunConfig(log, {
             tool: 'audit-chase',
             policy: null,
@@ -114,14 +109,9 @@ export async function runChase(args, { logDir = '.sim/logs', print = console.log
         const text = args.json
             ? JSON.stringify({ bodies: bodyTable(config), pairs: results }, null, 2)
             : [formatBodies(bodyTable(config)), ...results.map(formatPair)].join('\n\n');
-        print(text);
-        if (args.out !== null) {
-            writeFileSync(args.out, `${text}\n`);
-        }
+        emitReport(text, { print, out: args.out });
         return results;
-    } finally {
-        await file.close();
-    }
+    });
 }
 
 /**
@@ -134,6 +124,4 @@ export async function main(argv, io = {}) {
     return code;
 }
 
-if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
-    process.exitCode = await main(process.argv.slice(2));
-}
+await runAsMain(import.meta.url, main);

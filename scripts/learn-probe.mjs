@@ -1,15 +1,13 @@
 // The learn probe (`npm run probe:learn`): evolves populations of random brains on one lesson's win share and prints what
 // they reach (docs/designs/senses-and-motor.md, Lesson probes). It writes no genome and no champion file: the
 // populations are discarded. Logs `LearnGeneration` at debug level to `.sim/logs/learn-<seeds>x<generations>.jsonl`.
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { DRILLS } from '../js/evo/drill-scenarios.js';
 import { LEARN_GENERATIONS, LEARN_POPULATION, LEARN_SEEDS, LEARN_TRIALS } from '../js/evo/learn-probe.js';
 import { configHash, createConfig } from '../js/sim/config.js';
-import { createSimLog } from '../js/sim/log.js';
+import { emitReport, runAsMain, sharedFlags, withLogFile } from './lib/audit-io.mjs';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
-import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { formatLearn, summarise } from './lib/learn-report.mjs';
 import { logRunConfig } from './lib/run-config.mjs';
 import { runPool } from './lib/worker-pool.mjs';
@@ -58,9 +56,7 @@ export function parseArgs(argv) {
                 '--seeds': (v, f) => ['seeds', intValue(f, v, 1, USAGE)],
                 '--population': (v, f) => ['population', intValue(f, v, 2, USAGE)],
                 '--trials': (v, f) => ['trials', intValue(f, v, 1, USAGE)],
-                '--config': (v) => ['config', String(v)],
-                '--workers': (v, f) => ['workers', intValue(f, v, 1, USAGE)],
-                '--out': (v) => ['out', String(v)],
+                ...sharedFlags(USAGE),
             },
             defaults: {
                 lessons: NAMES,
@@ -85,10 +81,7 @@ export function parseArgs(argv) {
 export async function runLearnProbe(args, { logDir = '.sim/logs', print = console.log } = {}) {
     const config = args.config === null ? {} : JSON.parse(readFileSync(args.config, 'utf8'));
     const path = join(logDir, `learn-${args.seeds}x${args.generations}.jsonl`);
-    rmSync(path, { force: true });
-    const file = createJsonlSink(path);
-    try {
-        const log = createSimLog(file.sink, { level: 'debug' });
+    return withLogFile({ path, level: 'debug' }, async (log) => {
         const seeds = Array.from({ length: args.seeds }, (_, i) => i + 1);
         logRunConfig(log, {
             tool: 'probe-learn',
@@ -115,14 +108,9 @@ export async function runLearnProbe(args, { logDir = '.sim/logs', print = consol
             );
         }
         const text = formatLearn(summarise(results));
-        print(text);
-        if (args.out !== null) {
-            writeFileSync(args.out, `${text}\n`);
-        }
+        emitReport(text, { print, out: args.out });
         return results;
-    } finally {
-        await file.close();
-    }
+    });
 }
 
 /**
@@ -134,6 +122,4 @@ export async function main(argv, io = {}) {
     return exitCodeOf(() => runLearnProbe(parseArgs(argv), io));
 }
 
-if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
-    process.exitCode = await main(process.argv.slice(2));
-}
+await runAsMain(import.meta.url, main);
