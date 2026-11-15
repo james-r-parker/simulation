@@ -106,11 +106,21 @@ Two probes say on which side of "too hard to train, too simple to see" each less
 
 ## Phases
 
-### Phase 1 - Interface checks
+### Phase 1 - Interface checks (built)
 
 **Targets:** none - tests only; a failing check becomes a bug fix with its own failing test
 
-The checks of the table, on the JS path and the WASM kernels. Done when every check passes or has a recorded bug.
+The checks of the table, on the WASM kernels (the JS sense and pool paths no longer exist). Done when every check passes or has a recorded bug.
+
+Result (2026-11-15; the entry in [sim-notes.md](sim-notes.md) holds the failing cases): every check passes and no sign, class, mirror or
+frame bug was found, so no fix commit was needed. Three findings stay open as candidate outcomes for T13, none fixed here because each
+changes what a brain reads or does and so moves the golden hashes:
+
+| #   | Finding                                                                                                                                                         | Proposed fix                                                     |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| F1  | The forward and lateral velocity inputs reach 1.5 to 1.8 on a sprint; `poolRays` documents [-1, 1]                                                              | Divide by the agent's own sprint cap or clamp; a new layout name |
+| F2  | The alarm, hunt call and smoke fire above `alarmThreshold`, `huntCallThreshold` and `smokeThreshold`, not above 0 (L1 is true of `BITE`, `SPRINT`, `MATE` only) | Correct the `OUTPUT_INDEX` comment and lead L1; no behaviour     |
+| F3  | `THRUST` from 0.6 to 1 gives the same speed (the cap binds); reverse is as strong as forward; turning has no inertia                                            | Weigh in the chase envelope (T4, T5) before any `actAll` change  |
 
 #### Chunks
 
