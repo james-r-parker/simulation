@@ -259,7 +259,7 @@ describe('observer events', () => {
     });
 
     it('tracks births and deaths in a lean observer, including a newborn that died in its tick', () => {
-        const { world, observer } = observed({}, { lean: true });
+        const { world, observer } = observed({}, /** @type {any} */ ({ lean: true }));
         pushBorn(world, { slot: 0, genomeId: 1, cause: BORN_CAUSE.MATE });
         observe(observer, world);
         nextTick(world, 1);
