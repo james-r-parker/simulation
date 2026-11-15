@@ -21,6 +21,7 @@ import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
 import { createCompetenceScene, noteChase, noteCompetenceBirth, noteCompetenceRecord } from './scene-competence.js';
 import { createMatchedScene, noteMatchedChase } from './scene-matched.js';
 import { createGuardScene, sampleGuards } from './scene-guards.js';
+import { createKinematicsScene, noteKinematicsChase, resetKinematicsSlot, tickKinematics } from './scene-kinematics.js';
 import {
     createGuildScene,
     noteGuildAlarm,
@@ -64,6 +65,7 @@ export function createScenes(config, runTicks = 0, lean = false) {
     }
     const competence = createCompetenceScene(config);
     const matched = createMatchedScene(config);
+    const kinematics = createKinematicsScene(config);
     return {
         flora: createFloraScene(),
         herd: createHerdScene(config),
@@ -71,9 +73,11 @@ export function createScenes(config, runTicks = 0, lean = false) {
         approach: createApproachScene(config, (world, chase) => {
             noteChase(competence, world, chase);
             noteMatchedChase(matched, world, chase);
+            noteKinematicsChase(kinematics, world, chase);
         }),
         competence,
         matched,
+        kinematics,
         terrain: createTerrainScene(config),
         refuge: createRefugeScene(config),
         reach: createReachScene(),
@@ -119,6 +123,7 @@ export function resetSceneSlot(scenes, slot) {
     }
     resetPatchSlot(scenes.patch, slot);
     resetApproachSlot(scenes.approach, slot);
+    resetKinematicsSlot(scenes.kinematics, slot);
     resetStyleSlot(scenes.style, slot);
     resetConditionSlot(scenes.condition, slot);
     resetSpendSlot(scenes.spend, slot);
@@ -310,6 +315,7 @@ export function observeScenes(observer, world) {
     tickRecoil(scenes.biteLife, world);
     trackProof(scenes.proof, world);
     trackApproaches(scenes.approach, observer, world);
+    tickKinematics(scenes.kinematics, observer, world);
     trackCarcasses(scenes.carcass, observer, world);
     tickStyle(observer, world);
     tickGuilds(scenes.guilds, world);

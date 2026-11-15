@@ -310,4 +310,16 @@ export default {
         value: null,
         reason: 'no birth during post-bust recovery after burn-in',
     },
+    'eval.chase_overshoot_share': {
+        value: null,
+        reason: 'no resolved chase after burn-in',
+    },
+    'eval.chase_cover_use_share': {
+        value: null,
+        reason: 'no evaded chase after burn-in',
+    },
+    'eval.chase_turn_jitter': {
+        value: null,
+        reason: 'no active chase turn samples after burn-in',
+    },
 };
