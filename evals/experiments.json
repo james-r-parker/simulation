@@ -4436,6 +4436,22 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "effect": "no-difference"
+    },
+    {
+      "id": "E177",
+      "hypothesis": "honest-budgets Phase 4: with no clonal cap (splitClonalMax out of reach), a split that gives the childShare gene's share (splitGiftGene) and a birthReserve that blocks a birth under the reserve, the edge breeds: a line splits while no mate is in reach, and the tick a mate is in reach the next birth is a mating.",
+      "prediction": "On the 16-seed screen (honest-edge.grid.json, 400000 ticks), the finalist reads eval.edge_starve_per_prey not worse than control, and the 64-seed keep rule reads held not worse with no guard WORSE and eval.childshare_by_condition above 0. Falsified when eval.edge_starve_per_prey reads WORSE on every arm.",
+      "targets": ["eval.edge_starve_per_prey", "eval.childshare_by_condition"],
+      "before": "control arm of evals/screens/honest-edge.grid.json (season 10 defaults), seeds 1 to 16, 400000 ticks, floor on, policy live",
+      "after": "the edge arms of the same screen (nocap, nocap-g, nocap-g-r)",
+      "verdicts": {},
+      "note": "Prediction recorded before the run (T23); the screen (T24) and the 64-seed keep-rule pass (T25) are not run yet.",
+      "reports": ["evals/decisions/E177/results.md"],
+      "date": "2026-11-15",
+      "branch": "season/next",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
     }
   ]
 }
