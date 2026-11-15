@@ -1,8 +1,8 @@
 // The physics phase's numeric loops in the WASM kernels (docs/designs/wasm-kernels.md, Phase 4): `move_agents` damps,
 // caps and moves every agent, `bounce_rocks` does one agent's rock bounce geometry (stopping at each damaging impact so
-// JS applies the damage), and `resolve_contacts` runs the contact pass over the arena's spatial hash and the final
-// clamp, bit-identical to the JS loops they replaced. Steering, thrust, trampling, the walls and every energy rule stay
-// in JS (`js/sim/physics.js`).
+// JS applies the damage, with the impact's speed into the rock in `physicsImpact`), and `resolve_contacts` runs the
+// contact pass over the arena's spatial hash and the final clamp, bit-identical to the JS loops they replaced.
+// Steering, thrust, trampling, the walls and every energy rule stay in JS (`js/sim/physics.js`).
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 
@@ -29,6 +29,7 @@ const ARRAYS = Object.freeze([
     'boxY',
     'contacts',
     'physicsDoubles',
+    'physicsImpact',
 ]);
 
 /** Words of the physics parameter block after the offsets, in `PhysicsParams` order. */
@@ -48,13 +49,15 @@ const DOUBLES = Object.freeze([
 /**
  * @param {Record<string, any>} world the world, its fields not yet in an arena
  * @returns {import('./wasm-arena.js').ArenaSpec[]} the physics fields at their own type and length, then the parameter
- *   blocks
+ *   blocks, then the impact output (one entry per agent; the kernels' own, not a world field, so no hash or snapshot
+ *   reads it)
  */
 export function physicsSpecs(world) {
     return [
         ...PHYSICS_FIELDS.map((name) => /** @type {any} */ ([name, world[name].constructor, world[name].length])),
         ['physicsParams', Int32Array, ARRAYS.length + WORDS.length],
         ['physicsDoubles', Float64Array, DOUBLES.length],
+        ['physicsImpact', Float64Array, world.config.maxAgents],
     ];
 }
 
@@ -100,6 +103,16 @@ export function moveAgentsKernel(world) {
 export function bounceRocksKernel(world, slot, own, from) {
     const arena = world.wasm;
     return arena.exports.bounce_rocks(arena.offsets.physicsParams, slot, own, from);
+}
+
+/**
+ * The speed along the rock's normal into it of the impact `bounceRocksKernel` last returned for `slot`.
+ * @param {Record<string, any>} world a world on the WASM kernels
+ * @param {number} slot the agent
+ * @returns {number} the speed, above 0 after an impact; 0 once the agent's scan is done
+ */
+export function rockImpactSpeed(world, slot) {
+    return world.wasm.views.physicsImpact[slot];
 }
 
 /**

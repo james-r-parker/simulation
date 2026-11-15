@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { integrate, resolveContacts } from '../../js/sim/physics.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
-import { PHYSICS_FIELDS } from '../../js/sim/wasm-physics.js';
+import { PHYSICS_FIELDS, bounceRocksKernel, rockImpactSpeed } from '../../js/sim/wasm-physics.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 import { PHYSICS_CASES, readPhysicsReference, runPhysicsCase, runPhysicsFuzz } from './helpers/physics-reference.js';
 import { smallWorld } from './helpers/small-world.js';
@@ -83,5 +83,17 @@ describe('the physics arena', () => {
         integrate(world);
         expect(world.vx[slot]).toBeLessThan(0);
         expect(before - world.energy[slot]).toBe(7);
+    });
+
+    it('writes the speed into the rock along its normal for an impact, and 0 once the scan is done', () => {
+        const world = smallWorld();
+        const slot = place(world, world.obsX[0] - world.obsRadius[0] - 4, world.obsY[0], 5);
+        world.vx[slot] = 3;
+        world.vy[slot] = 4;
+        expect(bounceRocksKernel(world, slot, 5, 0)).toBe(0);
+        expect(rockImpactSpeed(world, slot)).toBeCloseTo(3, 5);
+        expect(world.vy[slot]).toBe(4);
+        expect(bounceRocksKernel(world, slot, 5, 1)).toBe(-1);
+        expect(rockImpactSpeed(world, slot)).toBe(0);
     });
 });

@@ -3,7 +3,7 @@
 //! The JS worker keeps the tick loop and every rule; it calls one export per phase. Every argument is an `i32` byte
 //! offset or count into the one imported memory, and results are written back into that memory. No allocation, no
 //! dependencies, no fast-math: each operation rounds as the JS double operation it replaces.
-#![no_std]
+#![cfg_attr(not(test), no_std)]
 
 mod brain;
 mod det_math;
@@ -130,6 +130,7 @@ pub unsafe extern "C" fn resolve_contacts(params: i32) -> i32 {
     unsafe { physics::resolve_contacts(params as u32) }
 }
 
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     core::arch::wasm32::unreachable()
