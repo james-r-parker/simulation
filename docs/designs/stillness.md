@@ -38,6 +38,8 @@ All computed by the eval observer; none is a reward.
 
 **Targets:** none - detectors only; `worldHash` and the golden cases are unchanged
 
+The baseline is the shared run of [detector-baseline.md](detector-baseline.md), read once for every plan that has its prediction written.
+
 The first three detectors and a 16-seed baseline on the defaults (`E-ST-1`). Prediction, written before the run: `eval.freeze_under_threat` is at or under 0 (threatened prey move more, not less), `eval.freeze_survival_gain` has an interval that includes 0, and `eval.ambush_kill_share` is under 0.1. Phase 2 is built only if the prediction holds: if blobs already freeze or ambush with a gain, the world gives the reason and this doc closes with the detectors kept.
 
 ### Phase 2 - A still body is fainter

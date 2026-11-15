@@ -45,6 +45,8 @@ All computed by the eval observer; none is a reward.
 
 **Targets:** none - detectors only; `worldHash` and golden cases are unchanged
 
+The baseline is the shared run of [detector-baseline.md](detector-baseline.md), read once for every plan that has its prediction written.
+
 Add `js/evo/scene-traits.js` with the four trait-distribution detectors and map the existing five specialisations to initial trait-gene priors so seeded populations start with familiar guilds before continuous evolution takes over.
 
 #### Chunks
