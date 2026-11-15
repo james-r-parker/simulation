@@ -1,0 +1,13 @@
+{
+  "seeds": 16,
+  "seedOffset": 0,
+  "ticks": 400000,
+  "policy": "live",
+  "reference": "control",
+  "arms": {
+    "control": {},
+    "d2-x8": { "impactDeadband": 2, "impactDamage": 8, "obstacleDamage": 0, "wallDamage": 0 },
+    "d4-x12": { "impactDeadband": 4, "impactDamage": 12, "obstacleDamage": 0, "wallDamage": 0 },
+    "d4-x25": { "impactDeadband": 4, "impactDamage": 25, "obstacleDamage": 0, "wallDamage": 0 }
+  }
+}
