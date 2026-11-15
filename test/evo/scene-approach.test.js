@@ -138,6 +138,27 @@ describe('hunt approaches and chases', () => {
     });
 });
 
+describe('the bite hook', () => {
+    it('is called with the slot of each alive biter of a bite on a live victim, with or without an open approach', () => {
+        const a = arena(2, 2);
+        /** @type {number[]} */
+        const biters = [];
+        a.observer.scenes.approach.onBite = (/** @type {any} */ _world, /** @type {number} */ biter) =>
+            biters.push(biter);
+        const [h1, h2] = a.hunters;
+        const [v1, v2] = a.prey;
+        play(a, T0, { closing: [h1] });
+        play(a, T0 + 1, {
+            closing: [h1],
+            bites: [
+                [h1, v1],
+                [h2, v2],
+            ],
+        });
+        expect(biters).toEqual([h1, h2]);
+    });
+});
+
 describe('a resolved chase with no hook', () => {
     it('still counts the outcome when the scene has no onChase hook', () => {
         const a = arena(1, 1);

@@ -4,13 +4,12 @@
 import { describe, expect, it } from 'vitest';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import { SPEC_RADIX } from '../../js/evo/hunter-table.js';
-import { BITTEN_THIS_TICK } from '../../js/evo/observer-intent-episode.js';
 import {
     MIN_PAIRED_KILLS,
     createPackLiftScene,
     notePackKill,
     packLiftMetrics,
-    trackPackBites,
+    notePackBite,
 } from '../../js/evo/scene-pack-lift.js';
 import { directionOf, namesOf } from './helpers/metric-registry.js';
 
@@ -91,7 +90,7 @@ describe('eval.pack_lift', () => {
         const kills = mixedKills(15);
         const scene = createPackLiftScene();
         kill(scene, kills);
-        expect(packLiftMetrics(scene)['eval.pack_lift'].value).toBeCloseTo(1, 12);
+        expect(packLiftMetrics(scene)['eval.pack_lift']?.value).toBeCloseTo(1, 12);
         expect(naiveLift(kills)).toBeCloseTo(1, 12);
     });
 
@@ -99,37 +98,29 @@ describe('eval.pack_lift', () => {
         const kills = mixedKills(30);
         const scene = createPackLiftScene();
         kill(scene, kills);
-        expect(packLiftMetrics(scene)['eval.pack_lift'].value).toBeCloseTo(naiveLift(kills), 12);
+        expect(packLiftMetrics(scene)['eval.pack_lift']?.value).toBeCloseTo(naiveLift(kills), 12);
         expect(naiveLift(kills)).toBeCloseTo(2, 12);
     });
 
-    it('counts a live bite by a hunter in the lineage shares, not a forager bite', () => {
+    it('counts a live bite by a hunter in the lineage shares, not a bite by a forager, nor one before burn-in', () => {
         const scene = createPackLiftScene();
-        const o = {
-            ...observer(),
-            slotOf: new Map([[11, 0]]),
-            lineageId: Uint32Array.of(1),
-            intent: { hunterSpec: Uint8Array.from([0, 1]) },
-        };
         const w = {
             tick: BURN_IN_TICKS + 1,
-            alive: Uint8Array.of(1, 1),
-            bittenTimer: Uint8Array.of(100, BITTEN_THIS_TICK),
             spec: Uint8Array.of(HUNTER, 0),
-            genomeId: Uint32Array.of(11, 40),
-            lastBiter: Uint32Array.of(0, 11),
+            lineageId: Uint32Array.of(1, 2),
+            huntBySpec: Uint8Array.from([0, 1]),
         };
-        trackPackBites(scene, o, w);
+        notePackBite(scene, w, 0);
+        notePackBite(scene, w, 1);
+        notePackBite(scene, { ...w, tick: BURN_IN_TICKS - 1 }, 0);
         expect(scene.bites).toBe(1);
-        o.intent.hunterSpec[HUNTER] = 0;
-        trackPackBites(scene, o, w);
-        expect(scene.bites).toBe(1);
+        expect(scene.lineages.log.bites[scene.lineages.index.get(1) ?? -1]).toBe(1);
     });
 
     it('is null under the paired-kill minimum and before burn-in', () => {
         const scene = createPackLiftScene();
         kill(scene, mixedKills(15).slice(0, MIN_PAIRED_KILLS - 1));
-        expect(packLiftMetrics(scene)['eval.pack_lift'].value).toBeNull();
+        expect(packLiftMetrics(scene)['eval.pack_lift']?.value).toBeNull();
         const early = createPackLiftScene();
         notePackKill(early, observer(), {
             world: { tick: 5, size: Float32Array.of(1) },
@@ -154,7 +145,7 @@ describe('eval.pack_prey_size_ratio', () => {
             Array.from({ length: 10 }, () => [11, 0]),
             1.5,
         );
-        expect(packLiftMetrics(scene)['eval.pack_prey_size_ratio'].value).toBeCloseTo(2, 12);
+        expect(packLiftMetrics(scene)['eval.pack_prey_size_ratio']?.value).toBeCloseTo(2, 12);
     });
 
     it('is null under 10 pack kills or 10 solo kills', () => {
@@ -167,7 +158,7 @@ describe('eval.pack_prey_size_ratio', () => {
             scene,
             Array.from({ length: 10 }, () => [11, 0]),
         );
-        expect(packLiftMetrics(scene)['eval.pack_prey_size_ratio'].value).toBeNull();
+        expect(packLiftMetrics(scene)['eval.pack_prey_size_ratio']?.value).toBeNull();
     });
 });
 

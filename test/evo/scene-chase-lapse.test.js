@@ -85,8 +85,9 @@ describe('lapse split', () => {
         play(a, T0, { closing: a.hunters });
         play(a, LAPSE_AT);
         const m = computeMetrics(a.observer, a.world);
-        const sum = ['quit', 'lost', 'outrun'].reduce((s, n) => s + loose(m)[`eval.chase_${n}_share`].value, 0);
-        expect(sum).toBeCloseTo(loose(m)['eval.chase_giveup_share'].value, 12);
+        const share = (/** @type {string} */ name) => /** @type {number} */ (loose(m)[`eval.${name}`].value);
+        const sum = share('chase_quit_share') + share('chase_lost_share') + share('chase_outrun_share');
+        expect(sum).toBeCloseTo(share('chase_giveup_share'), 12);
         expect(loose(m)['eval.chase_lost_share'].value).toBe(1);
     });
 

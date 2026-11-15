@@ -21,7 +21,7 @@ import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
 import { createCompetenceScene, noteChase, noteCompetenceBirth, noteCompetenceRecord } from './scene-competence.js';
 import { createMatchedScene, noteMatchedChase } from './scene-matched.js';
 import { createGuardScene, sampleGuards } from './scene-guards.js';
-import { createPackLiftScene, notePackKill, trackPackBites } from './scene-pack-lift.js';
+import { createPackLiftScene, notePackBite, notePackKill } from './scene-pack-lift.js';
 import { createKinematicsScene, noteKinematicsChase, resetKinematicsSlot, tickKinematics } from './scene-kinematics.js';
 import {
     createGuildScene,
@@ -57,18 +57,22 @@ import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
 /**
  * The scenes fed by each resolved chase: the approach scene resolves it and hands it to the others' hooks.
  * @param {Readonly<Record<string, any>>} config the world's config
- * @returns {Record<string, any>} the approach, competence, matched and kinematics scenes
+ * @returns {Record<string, any>} the approach, competence, matched, kinematics and pack-lift scenes
  */
 function createChaseScenes(config) {
     const competence = createCompetenceScene(config);
     const matched = createMatchedScene(config);
     const kinematics = createKinematicsScene(config);
-    const approach = createApproachScene(config, (world, chase) => {
-        noteChase(competence, world, chase);
-        noteMatchedChase(matched, world, chase);
-        noteKinematicsChase(kinematics, world, chase);
+    const packLift = createPackLiftScene();
+    const approach = createApproachScene(config, {
+        onChase: (world, chase) => {
+            noteChase(competence, world, chase);
+            noteMatchedChase(matched, world, chase);
+            noteKinematicsChase(kinematics, world, chase);
+        },
+        onBite: (world, biter) => notePackBite(packLift, world, biter),
     });
-    return { approach, competence, matched, kinematics };
+    return { approach, competence, matched, kinematics, packLift };
 }
 
 /**
@@ -86,7 +90,6 @@ export function createScenes(config, runTicks = 0, lean = false) {
         herd: createHerdScene(config),
         patch: createPatchScene(config),
         ...createChaseScenes(config),
-        packLift: createPackLiftScene(),
         terrain: createTerrainScene(config),
         refuge: createRefugeScene(config),
         reach: createReachScene(),
@@ -326,7 +329,6 @@ export function observeScenes(observer, world) {
     trackProof(scenes.proof, world);
     trackApproaches(scenes.approach, observer, world);
     tickKinematics(scenes.kinematics, observer, world);
-    trackPackBites(scenes.packLift, observer, world);
     trackCarcasses(scenes.carcass, observer, world);
     tickStyle(observer, world);
     tickGuilds(scenes.guilds, world);

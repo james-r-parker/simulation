@@ -194,7 +194,9 @@ function rowsOf(args, { genomes, tasks, results, log }) {
         cells: /** @type {Record<string, any>} */ ({}),
     }));
     for (const name of args.drills) {
-        const randoms = tasks.flatMap((t, i) => (t.drill === name && t.kind === 'random' ? [results[i]] : []));
+        const randoms = /** @type {{wins: number, trials: number, winShare: number}[]} */ (
+            tasks.flatMap((t, i) => (t.drill === name && t.kind === 'random' ? [results[i]] : []))
+        );
         const baselines = randoms.map((score) => score.winShare);
         labels.forEach((label, row) => {
             const at = tasks.findIndex((t) => t.drill === name && t.label === label && t.kind !== 'random');
@@ -214,7 +216,7 @@ function rowsOf(args, { genomes, tasks, results, log }) {
             const cell = {
                 winShare,
                 edge: edgeOf(winShare, baselines),
-                ...winBounds(results[at], randoms),
+                ...winBounds({ wins: results[at].wins, trials: results[at].trials }, randoms),
                 lossReasons,
             };
             rows[row].cells[name] = cell;

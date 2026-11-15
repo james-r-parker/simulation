@@ -17,8 +17,6 @@
 
 import { BURN_IN_TICKS } from './burn-in.js';
 import { none, ok } from './metrics-stats.js';
-import { BITTEN_THIS_TICK } from './observer-intent-episode.js';
-import { findAlive } from './observer-intent.js';
 import { KILL, killKind } from './observer-combat.js';
 import { SPEC_RADIX } from './hunter-table.js';
 import { createKeyed, rowOf } from './scene-keyed.js';
@@ -57,26 +55,15 @@ function addBite(scene, lineage) {
 }
 
 /**
- * Counts the hunter bites of the tick on live victims, by the biter's lineage.
+ * Counts a hunter's bite on a live victim, by the biter's lineage (the approach scene's bite hook).
  * @param {Record<string, any>} scene the pack-lift scene
- * @param {Record<string, any>} observer the observer
  * @param {Record<string, any>} world the world
+ * @param {number} biter the biter's slot
  * @returns {void}
  */
-export function trackPackBites(scene, observer, world) {
-    if (world.tick < BURN_IN_TICKS) {
-        return;
-    }
-    const { alive, bittenTimer, spec } = world;
-    const { hunterSpec } = observer.intent;
-    for (let victim = 0; victim < alive.length; victim++) {
-        if (alive[victim] !== 1 || bittenTimer[victim] !== BITTEN_THIS_TICK) {
-            continue;
-        }
-        const biter = findAlive(world, observer.slotOf, world.lastBiter[victim]);
-        if (biter >= 0 && hunterSpec[spec[biter]] === 1) {
-            addBite(scene, observer.lineageId[biter]);
-        }
+export function notePackBite(scene, world, biter) {
+    if (world.tick >= BURN_IN_TICKS && world.huntBySpec[world.spec[biter]] === 1) {
+        addBite(scene, world.lineageId[biter]);
     }
 }
 

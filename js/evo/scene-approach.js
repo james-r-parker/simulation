@@ -35,15 +35,22 @@ const CLOSING_MASK = (1 << CLOSING_BITS) - 1;
  */
 
 /**
+ * @typedef {(world: Record<string, any>, biter: number) => void} BiteHook called with the slot of the alive biter of each
+ *   bite landed on a live victim this tick, whatever the biter's approach
+ */
+
+/**
  * @param {Readonly<Record<string, any>>} config the world's config
- * @param {ChaseHook | null} [onChase] the hook told of each counted chase
+ * @param {{onChase?: ChaseHook | null, onBite?: BiteHook | null}} [hooks] the hook told of each counted chase, and the hook told
+ *   of each bite by an alive biter
  * @returns {Record<string, any>} an empty scene: per slot the phase, last closing tick, tick the chase opened, victim and
  *   bite tick, the count of committed approaches and the tally of resolved chases (`chase-outcome.js`)
  */
-export function createApproachScene(config, onChase = null) {
+export function createApproachScene(config, { onChase = null, onBite = null } = {}) {
     const n = config.maxAgents;
     return {
         onChase,
+        onBite,
         phase: new Uint8Array(n),
         lastClosing: new Float64Array(n),
         openedTick: new Float64Array(n),
@@ -159,7 +166,13 @@ function noteBites(scene, observer, world) {
             continue;
         }
         const biter = findAlive(world, observer.slotOf, world.lastBiter[victim]);
-        if (biter >= 0 && scene.phase[biter] === OPEN) {
+        if (biter < 0) {
+            continue;
+        }
+        if (scene.onBite !== null) {
+            scene.onBite(world, biter);
+        }
+        if (scene.phase[biter] === OPEN) {
             scene.phase[biter] = BITTEN;
             scene.victim[biter] = world.genomeId[victim];
             scene.biteTick[biter] = world.tick;
