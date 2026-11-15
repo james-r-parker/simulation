@@ -90,6 +90,9 @@ const SOURCE_METRICS = [
     'eval.defender_repel_per_1k',
     'eval.scout_alarm_lead_share',
     'eval.reproducer_recovery_rate',
+    'eval.chase_overshoot_share',
+    'eval.chase_cover_use_share',
+    'eval.chase_turn_jitter',
 ];
 
 const FLORA = ['grass', 'berry', 'nut', 'flower', 'fungus', 'toxiccap'];
@@ -163,7 +166,7 @@ describe('ecology metrics from a scripted source run', () => {
         const registryNames = Object.entries(METRICS)
             .filter(([, entry]) => entry.family === 'scenes-ecology')
             .map(([name]) => name);
-        expect(names).toHaveLength(84);
+        expect(names).toHaveLength(87);
         expect(names).toEqual(registryNames);
         expect(Object.fromEntries(names.map((name) => [name, actual[name]]))).toEqual(expected);
         expect(run.observer.deathCount).toBe(2);
