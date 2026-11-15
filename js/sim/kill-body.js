@@ -1,0 +1,51 @@
+// The kill is the body (honest-budgets.md Phase 2). A bite that leaves its victim at or under `killShare` x its
+// maximum energy is fatal. The killer then takes the victim's remaining energy up to `killGorgeCap` (and its own
+// headroom), and what it does not take leaves the victim as a bite loss and is held in `carcassHeld` for the carcass
+// `leaveCarcass` leaves, so a killed body's store is 0. With `killShare` 0 nothing remains to take or hold and the kill
+// is today's. A blob carcass priced by the body (`carcassBody`) fades linearly over `carcassFadeTicks`.
+//
+// `carcassHeld` is derived state: zeroed by `freeAgent`, outside `worldHash`, no RNG, no allocation per tick.
+
+import { LOSS_CAUSE, removeEnergy, transferEnergy } from './energy.js';
+
+/**
+ * @returns {[Float64ArrayConstructor, string, number][]} the allocation specs for `allocateWorld`, one element per slot:
+ *   `carcassHeld`
+ */
+export function bodySpecs() {
+    return [[Float64Array, 'carcassHeld', 1]];
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} config the world's config
+ * @param {number} victimMax the victim's maximum energy
+ * @returns {number} the energy at or under which a bite kills (0: only an empty store)
+ */
+export function killLine(config, victimMax) {
+    return config.killShare * victimMax;
+}
+
+/**
+ * Settles a killed victim that still holds energy: the killer takes up to `killGorgeCap` of it (and what fits its
+ * store, so none is lost to overflow), the rest is removed from the victim as `LOSS_CAUSE.BITE` and held for its carcass. Leaves the victim at 0.
+ * @param {Record<string, any>} world the world
+ * @param {number} biter the killing slot
+ * @param {number} victim the killed slot, still holding energy
+ * @returns {number} the energy the killer stored
+ */
+export function takeBody(world, biter, victim) {
+    const headroom = world.maxEnergyBySpec[world.spec[biter]] - world.energy[biter];
+    transferEnergy(world, victim, biter, Math.min(world.energy[victim], world.config.killGorgeCap, headroom));
+    const stored = world.transferGained;
+    world.biteEnergy[biter] += stored;
+    world.carcassHeld[victim] += removeEnergy(world, victim, world.energy[victim], LOSS_CAUSE.BITE);
+    return stored;
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} config the world's config
+ * @returns {number} the ticks a blob carcass lasts: `carcassFadeTicks` when the body prices it, else `carcassTicks`
+ */
+export function blobCarcassLife(config) {
+    return config.carcassBody ? config.carcassFadeTicks : config.carcassTicks;
+}

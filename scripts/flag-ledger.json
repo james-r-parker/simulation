@@ -22,5 +22,11 @@
     "plan": null,
     "task": null,
     "reason": "Kept for the 'offspring' fallback arm: its follow-up screen (offspring against rank, 16 seeds) was never run before natural-selection.md closed (Decisions, 2026-11-07); delete the key with the offspring path if a later screen shows eval.mate_hunter_lean is not negative with 'rank'."
+  },
+  {
+    "key": "carcassBody",
+    "plan": "docs/designs/honest-budgets.md",
+    "task": "T13",
+    "reason": "The switch between today's lifetime-intake carcass of carcassTicks and the body-priced carcass that fades over carcassFadeTicks (Phase 2); T13 makes the body default and deletes the flag with carcassTicks, or the branch is parked."
   }
 ]

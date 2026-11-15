@@ -10,6 +10,7 @@ import { detCos, detSin } from './det-math.js';
 import { allocDiseaseState, diseaseSpecs } from './disease-state.js';
 import { allocCoverState } from './cover.js';
 import { killSpecs } from './kills.js';
+import { bodySpecs } from './kill-body.js';
 import { allocLedgerState, ledgerSpecs } from './hunter-ledger.js';
 import { mateRankSpecs } from './mate-rank.js';
 import { rewardSpecs } from './reward.js';
@@ -125,6 +126,7 @@ function allocAgentArrays(world, layout) {
             ...splitGateSpecs(),
             ...proofSpecs(),
             ...killSpecs(),
+            ...bodySpecs(),
             ...ledgerSpecs(),
             ...diseaseSpecs(),
             ...mateRankSpecs(),

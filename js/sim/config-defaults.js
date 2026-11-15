@@ -219,6 +219,10 @@ export const DEFAULTS = deepFreeze({
     fatSlowShare: 0.5, // eat-choice G2: a full store slows thrust and turn by this share; 0 is off
     strikeMissCost: 1, // eat-choice G4: energy a hunter loses on a tick it holds BITE with no body in its jaws; 0 is off
     carcassTicks: 300, // new: ticks a carcass lasts before it expires (T54)
+    carcassBody: false, // honest-budgets Phase 2: a blob carcass holds carcassShare of the body's energy at death and fades over carcassFadeTicks; off is the lifetime-intake carcass of carcassTicks
+    carcassFadeTicks: 1500, // honest-budgets Phase 2: ticks a body-priced carcass takes to fade linearly to 0 (read only with carcassBody)
+    killShare: 0, // honest-budgets Phase 2: a bite is fatal at or under this share of the victim's maximum energy; 0 is a kill at an empty store
+    killGorgeCap: 2000, // honest-budgets Phase 2: the most energy a killer takes from the body it just killed (read only above killShare 0)
     carcassShare: 0.8, // new: share of an agent's energy at death that its carcass holds (T54)
     wallGaps: 3, // new: gaps in the wall, basins only (T52)
     wallGapWidth: 200, // new: width of each wall gap in px (T52; 200 since the big bang, from 300)
