@@ -4452,6 +4452,22 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "effect": "no-difference"
+    },
+    {
+      "id": "E178",
+      "hypothesis": "honest-budgets Phase 5: a call that is seen (a threat on the caller's rays at call time) changes the bite, so a bite on a seen caller moves only alarmBiteShare of the energy and a call is worth its cost only when a hunter is in view.",
+      "prediction": "On the 16-seed screen (honest-alarm.grid.json, 400000 ticks), the finalist reads eval.alarm_rate above 0 on most seeds with eval.alarm_calls_with_threat_per_1k rising with it, and the 64-seed keep rule reads no guard WORSE. Falsified when calls with no threat rise faster than calls with one.",
+      "targets": ["eval.alarm_rate", "eval.alarm_lift", "eval.alarm_calls_with_threat_per_1k"],
+      "before": "control arm of evals/screens/honest-alarm.grid.json (alarmBiteShare 1), seeds 1 to 16, 400000 ticks, floor on, policy live",
+      "after": "the alarm arms of the same screen (a75, a50)",
+      "verdicts": {},
+      "note": "Prediction recorded before the run (T29); the screen and the 64-seed keep-rule pass with the liar check (T30) are not run yet.",
+      "reports": ["evals/decisions/E178/results.md"],
+      "date": "2026-11-15",
+      "branch": "season/next",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
     }
   ]
 }
