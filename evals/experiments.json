@@ -4546,6 +4546,22 @@
       "date": "2026-11-15",
       "branch": "feat/senses-motor-phase3",
       "effect": "no-difference"
+    },
+    {
+      "id": "E186",
+      "hypothesis": "senses-and-motor Phase 5 (plan id E-SM-4): giving the hunter the longest forward reach (predator visionRange 400, equal only to the scout; defender down to 300) with a short rear reach (rearVisionShare 0.3 to 0.6) lets predators start chases from further ahead and raises their catch rate, without costing hunters alive or held seeds.",
+      "prediction": "On the 16-seed screen (evals/screens/hunter-vision.grid.json, 400000 ticks, floor on, policy live) the range-plus-rear arms raise eval.hunter_catches_per_1k by at least a tenth over control with the keep rule's seed guards (hunters alive, held) not worse; range alone moves catches less than range with s 0.4; eval.chase_catch_share rises with them; eval.collision_death_share does not rise. Falsified when no arm raises eval.hunter_catches_per_1k beyond the screen's margin.",
+      "targets": ["eval.hunter_catches_per_1k", "eval.chase_catch_share"],
+      "before": "control arm of evals/screens/hunter-vision.grid.json (predator 350 s 1, defender 350 s 1), seeds 1 to 16, 400000 ticks, floor on, policy live",
+      "after": "the range and rear-reach arms of the same screen (range, range-s06, range-s04, range-s04-d, far-s03)",
+      "verdicts": {},
+      "note": "Prediction recorded before the run (T17). npm run audit:chase on the range arms (its oracles see all, so rearVisionShare does not touch it) still finds no fair band beyond 0.2 of view: the longer view only starts the oracle chase further out. The 16-seed screen (T18) and the 64-seed keep rule (T19) are not run yet.",
+      "reports": ["evals/decisions/E186/results.md"],
+      "date": "2026-11-15",
+      "branch": "feat/hunter-vision",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
     }
   ]
 }
