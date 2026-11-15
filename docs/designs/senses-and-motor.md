@@ -1,6 +1,6 @@
 # Senses and motor
 
-**Status:** In progress - Phase 1 built (interface checks; no sign or class bug, three findings recorded for T13); Phase 2 has its tool (T4, `npm run audit:chase`) but `E-SM-1` has not run (T5). Phases 3 and 4 are not built. An audit of what a brain is told and what its outputs do: interface checks for bugs, the envelope of a chase, a census of every input and output, and probes that say whether each lesson is reachable and whether the senses suffice for it.
+**Status:** In progress - Phase 1 built (interface checks; no sign or class bug, three findings recorded for T13); Phase 2 built (`npm run audit:chase`; `E-SM-1`, record E185, falsified: no fair band beyond 0.2 of view). Phases 3 and 4 are not built. An audit of what a brain is told and what its outputs do: interface checks for bugs, the envelope of a chase, a census of every input and output, and probes that say whether each lesson is reachable and whether the senses suffice for it.
 **Validated:** f5ebac76 (2026-11-15)
 **Priority:** 10 - a sign error, a dead input or a chase that cannot be won voids every training run and scene verdict built on it, and Phases 1 to 3 change no behaviour, so they come before the stage ladder
 **Depends on:** [training.md](training.md)
@@ -128,11 +128,13 @@ changes what a brain reads or does and so moves the golden hashes:
 | ----- | -------- | -------------------------------------- |
 | A     | T1 to T3 | The interface and motor tests (Sonnet) |
 
-### Phase 2 - Chase envelope
+### Phase 2 - Chase envelope (built)
 
 **Targets:** none - a scripted tool; no sim behaviour change
 
-`npm run audit:chase` and its table for the defaults. T4 built the tool: the oracle pursuer aims at where the evader will be, the oracle evader runs from it and breaks across its path inside `JINK_RANGE` (120), both play the sim's own `step` from rest at half a store in an arena with no food, herds or refuges, and a catch is the evader's death within 250 ticks. They are heuristics, so a catch share is what the bodies allow against this evader and not a bound; `--straight` (an evader that never breaks) is the upper bound for the pursuer. Prediction, written before the run (`E-SM-1`): a predator at a sprint catches a forager from inside 0.6 of its view at every bearing, a fair band exists between 0.6 and 1.0 of view, and a kill returns more energy than the chase costs only inside the fair band's near half.
+`npm run audit:chase` and its table for the defaults. T4 built the tool: the oracle pursuer aims at where the evader will be, the oracle evader runs from it and breaks across its path inside `JINK_RANGE` (120), both play the sim's own `step` from rest at half a store in an arena with no food, herds or refuges, and a catch is the evader's death within 250 ticks. They are heuristics, so a catch share is what the bodies allow against this evader and not a bound; `--straight` (an evader that never breaks) is the upper bound for the pursuer. Prediction, written before the run (`E-SM-1`, ledger record E185): a predator at a sprint catches a forager from inside 0.6 of its view at every bearing, a fair band exists between 0.6 and 1.0 of view, and a kill returns more energy than the chase costs only inside the fair band's near half.
+
+Result (2026-11-15; `evals/decisions/E185/`, [sim-notes.md](sim-notes.md)): the prediction is falsified. A predator catches a forager that breaks only from inside 0.2 of its view (0.31 there, 0 at 0.4 to 1.0), against 0.75 to 0.88 for a straight runner, so no fair band exists between 0.6 and 1.0. The 1.2x sprint edge is spent by the 75 px sprint turning circle against the forager's 32 (lead L7). Handed to the world work and to T13, not tuned here.
 
 #### Chunks
 
@@ -215,7 +217,7 @@ Done when each confirmed finding has a verdict: adopted with its switch deleted,
 | T2  | Add `test/sim/interface-motor.test.js`: terminal speed, the velocity inputs, the turn rate, reverse thrust and each action's firing and cost                                                                      | [judgement] | -          |
 | T3  | Table every multiplier on thrust and turn (`thrustOf`, `actAll`) against the input that tells the brain of it, in [sim-notes.md](sim-notes.md); conformance review of Phase 1 in parallel with `scripts/check.sh` | [judgement] | T1, T2     |
 
-### Phase 2 - Chase envelope
+### Phase 2 - Chase envelope (built)
 
 | #   | Task                                                                                                                                                                       | Nature       | Depends on |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
