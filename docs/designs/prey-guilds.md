@@ -2,7 +2,7 @@
 
 **Status:** Proposed - differentiate the four non-hunter specialisations (`forager`, `reproducer`, `scout`, `defender`) into complementary anti-predator and life-history guilds so "everything else" keeps hunters in check without scripted modes or extra brain inputs; Phase 1 (guild detectors and baseline) is first.
 **Validated:** 5abe7bfb (2026-11-15)
-**Priority:** 29 - depends on a standing prey population and working alarm/kill budgets ([honest-budgets.md](honest-budgets.md)), and on verified interface/chase physics ([senses-and-motor.md](senses-and-motor.md))
+**Priority:** 30 - depends on a standing prey population and working alarm/kill budgets ([honest-budgets.md](honest-budgets.md)), and on verified interface/chase physics ([senses-and-motor.md](senses-and-motor.md))
 **Depends on:** [honest-budgets.md](honest-budgets.md), [senses-and-motor.md](senses-and-motor.md)
 
 Today's five specialisations (`forager`, `predator`, `reproducer`, `scout`, `defender` in `js/sim/config-defaults.js`) behave like **one hunter guild and four mildly reskinned foragers**:

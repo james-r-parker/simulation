@@ -2,7 +2,7 @@
 
 **Status:** Proposed - add decaying movement/track scents behind fast-moving blobs and far-carrying carcass scents around kills (reusing the existing `attack`/`danger` pheromone antennae) so hunters can track prey off-ray and scavengers find kills beyond `visionRange`; Phase 1 (off-ray tracking detectors and baseline) is first.
 **Validated:** 5abe7bfb (2026-11-15)
-**Priority:** 32 - builds on [honest-budgets.md](honest-budgets.md) (body-priced carcasses) and [stillness.md](stillness.md) (motionless concealment)
+**Priority:** 33 - builds on [honest-budgets.md](honest-budgets.md) (body-priced carcasses) and [stillness.md](stillness.md) (motionless concealment)
 **Depends on:** [honest-budgets.md](honest-budgets.md), [stillness.md](stillness.md)
 
 Today, when a fleeing prey breaks line of sight behind a rock ring or slips between the 16 rays at `300`–`400` px, it ceases to exist for the pursuer. Likewise, a fresh carcass is invisible outside `visionRange`, so scavengers and juvenile predators only find kills by stumbling within sight. Meanwhile, the brain already has left/right scent antennae (`BODY_INPUT.SCENT` and `BODY_INPUT.HUNT_SCENT` in `js/sim/brain-layout.js`) reading `world.danger` and `world.attack` pheromone grids.

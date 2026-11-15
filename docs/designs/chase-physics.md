@@ -2,7 +2,7 @@
 
 **Status:** Proposed - add turning inertia, speed-coupled turn radius, asymmetric reverse thrust, and terrain drag/cover zones so chases are about momentum, banking and landscape rather than instant 180-degree reversals; Phase 1 (chase-kinematics detectors and baseline) is first.
 **Validated:** 5abe7bfb (2026-11-15)
-**Priority:** 31 - builds on the chase envelope audit of [senses-and-motor.md](senses-and-motor.md) and the sprint store of [sprint-burst.md](sprint-burst.md)
+**Priority:** 32 - builds on the chase envelope audit of [senses-and-motor.md](senses-and-motor.md) and the sprint store of [sprint-burst.md](sprint-burst.md)
 **Depends on:** [senses-and-motor.md](senses-and-motor.md), [sprint-burst.md](sprint-burst.md)
 
 Today `actAll` in `js/sim/physics.js` sets heading change straight from `TURN` each tick with zero angular inertia, and `THRUST < 0` pushes backward at full `maxThrust`. Every patch of open ground also has identical drag. As a result, fleeing prey can snap-reverse inside a hunter's turning circle on a single tick, high-speed hunters never overshoot, and open flats play identically to rocky/vegetated ground.
