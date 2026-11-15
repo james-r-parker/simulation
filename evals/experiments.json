@@ -4392,6 +4392,26 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "effect": "no-difference"
+    },
+    {
+      "id": "E175",
+      "hypothesis": "honest-budgets Phase 2: a kill that takes the victim's body (killShare, killGorgeCap, no kill payment) and a carcass that holds what the body held and fades make hunter income come from the bodies they eat, so zero-kill lives stop living on carcasses.",
+      "prediction": "On the 16-seed screen (honest-kill.grid.json, 400000 ticks), the finalist reads eval.hunter_zero_kill_carcass_share lower than control, and the 64-seed keep rule reads no guard WORSE, eval.hunter_catches_per_1k included. Falsified when every arm reads hunter catches WORSE.",
+      "targets": [
+        "eval.hunter_zero_kill_carcass_share",
+        "eval.hunter_catches_per_1k",
+        "eval.hunter_income_share.carcass"
+      ],
+      "before": "control arm of evals/screens/honest-kill.grid.json (season 10 defaults), seeds 1 to 16, 400000 ticks, floor on, policy live",
+      "after": "the carcassBody arms of the same screen",
+      "verdicts": {},
+      "note": "Prediction recorded before the run (T10); the screen (T11) and the 64-seed keep-rule pass (T12) are not run yet.",
+      "reports": ["evals/decisions/E175/results.md"],
+      "date": "2026-11-15",
+      "branch": "season/next",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
     }
   ]
 }
