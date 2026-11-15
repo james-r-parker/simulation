@@ -4,15 +4,14 @@ import { runSeed } from '../scripts/food-ratio-worker.mjs';
 import { foodRatio, offeredPerTick } from '../scripts/lib/food-ratio.mjs';
 
 const CONFIG = {
-    foodRegrowPerArea: 0.1,
+    foodRegrowPerArea: 0.075,
     worldWidth: 1000,
     worldHeight: 2000,
-    seasons: [{ foodScarcity: 1.0 }, { foodScarcity: 0.5 }],
 };
 
 describe('offeredPerTick', () => {
-    it('is the rate per 1,000,000 px2 over the area at the mean scarcity', () => {
-        expect(offeredPerTick(CONFIG)).toBeCloseTo(0.1 * 2 * 0.75, 12);
+    it('is the rate per 1,000,000 px2 over the area', () => {
+        expect(offeredPerTick(CONFIG)).toBeCloseTo(0.075 * 2, 12);
     });
 });
 
@@ -36,10 +35,10 @@ describe('foodRatio', () => {
     it('gives the regrow rate whose offered supply equals the eaten rate', () => {
         const r = foodRatio(seeds, CONFIG);
         expect(r.ratio).toBeCloseTo(0.15 / 0.15, 12);
-        expect(r.regrowAtEaten).toBeCloseTo(0.1, 12);
-        const half = foodRatio(seeds, { ...CONFIG, foodRegrowPerArea: 0.2 });
+        expect(r.regrowAtEaten).toBeCloseTo(0.075, 12);
+        const half = foodRatio(seeds, { ...CONFIG, foodRegrowPerArea: 0.15 });
         expect(half.ratio).toBeCloseTo(0.5, 12);
-        expect(half.regrowAtEaten).toBeCloseTo(0.1, 12);
+        expect(half.regrowAtEaten).toBeCloseTo(0.075, 12);
     });
 
     it('refuses an empty pool', () => {

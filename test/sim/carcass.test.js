@@ -188,7 +188,7 @@ describe('eating meat', () => {
 });
 
 describe('meat and food patches', () => {
-    const PATCHED = { ...ON, foodPatchCount: 1, foodPatchRadius: 200, foodPatchCapacity: 2, foodPatchDepletion: 0.5 };
+    const PATCHED = { ...ON, foodPatchCount: 1, foodPatchRadius: 200, foodPatchCapacity: 1000 };
 
     /**
      * @param {number} kind FOOD_KIND of the item the eater stands on, inside the only patch
@@ -198,8 +198,10 @@ describe('meat and food patches', () => {
         const w = lifeWorld(PATCHED);
         w.patchX[0] = 300;
         w.patchY[0] = 400;
-        w.patchStock[0] = 2;
+        w.patchStock[0] = 1000;
         w.foodAlive[0] = 1;
+        w.foodPatch[0] = 0;
+        w.foodPatchSerial[0] = w.patchSerial[0];
         w.foodX[0] = 300;
         w.foodY[0] = 400;
         w.foodRadius[0] = 5;
@@ -217,13 +219,13 @@ describe('meat and food patches', () => {
     it('lets meat eaten inside a patch leave the patch stock alone', () => {
         const w = eatInPatch(FOOD_KIND.MEAT);
         expect(w.foodCount).toBe(0);
-        expect(w.patchStock[0]).toBe(2);
+        expect(w.patchStock[0]).toBe(1000);
     });
 
-    it('still depletes the patch when plant food is eaten there', () => {
+    it('still spends the patch stock when plant food is eaten there', () => {
         const w = eatInPatch(FOOD_KIND.PLANT);
         expect(w.foodCount).toBe(0);
-        expect(w.patchStock[0]).toBe(1.5);
+        expect(w.patchStock[0]).toBe(950);
     });
 });
 

@@ -69,7 +69,6 @@ export const FEATURE_RULES = {
     foodPatchCount: int(0, 256),
     foodPatchRadius: positive(),
     foodPatchCapacity: positive(),
-    foodPatchDepletion: num(0),
     foodPatchRegrow: UNIT,
     foodBackgroundShare: UNIT,
     foodRegrowPerArea: num(0),

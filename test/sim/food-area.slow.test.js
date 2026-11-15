@@ -16,9 +16,10 @@ const TIMEOUT_MS = scaleTimeout(240_000);
 /**
  * Runs a small patchy world on area food and samples the population once it has settled.
  * @param {number} foodRegrowPerArea items per tick per 1,000,000 px2
+ * @param {number} [foodPatchCapacity] the energy a full patch holds
  * @returns {{ samples: number[], mean: number, patchStock: number[] }} the settled populations and the end stocks
  */
-function run(foodRegrowPerArea) {
+function run(foodRegrowPerArea, foodPatchCapacity = createConfig().foodPatchCapacity) {
     const policy = cloneWithNoisePolicy();
     const world = createWorld(
         createConfig({
@@ -33,7 +34,7 @@ function run(foodRegrowPerArea) {
             foodRegrowPerArea,
             foodPatchCount: 6,
             foodPatchRadius: 300,
-            foodPatchDepletion: 0.05,
+            foodPatchCapacity,
             seed: 3,
         }),
         policy,
@@ -53,10 +54,12 @@ describe('area food over a run', () => {
     it(
         'lets a population eat its patches down and level off below maxAgents',
         () => {
-            const { samples, patchStock } = run(0.08);
-            for (const stock of patchStock) {
-                expect(stock).toBeLessThan(PATCH_FLOOR_SHARE * 4);
-            }
+            const capacity = 40_000;
+            const { samples, patchStock } = run(0.08, capacity);
+            // Patches that never fruit stay full (the energy stock is only spent by items they source), so the ones
+            // the population feeds on are the ones that must be eaten down.
+            const eaten = patchStock.filter((stock) => stock > 0 && stock < capacity * PATCH_FLOOR_SHARE * 4);
+            expect(eaten.length).toBeGreaterThanOrEqual(2);
             expect(Math.min(...samples)).toBeGreaterThan(0);
             expect(Math.max(...samples)).toBeLessThan(MAX_AGENTS * 0.7);
         },
@@ -66,8 +69,8 @@ describe('area food over a run', () => {
     it(
         'carries more agents when the area regrows more food',
         () => {
-            const poor = run(0.08);
-            const rich = run(0.5);
+            const poor = run(0.02);
+            const rich = run(0.08);
             expect(rich.mean).toBeGreaterThan(poor.mean * 1.3);
         },
         TIMEOUT_MS,

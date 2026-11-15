@@ -1,7 +1,7 @@
 // Lets calm herd animals remove nearby plant items and assimilate a share into their world-held stores.
 
 import { FOOD_KIND } from './carcass.js';
-import { depletePatchAt } from './food-patches.js';
+import { eatFromPatch } from './food-patches.js';
 import { FOOD_GONE, removeFood } from './world.js';
 import { loadHerdSeed } from './herd-dung.js';
 
@@ -62,13 +62,11 @@ function nearestPlant(world, animal, count) {
 
 /** @param {World} world @param {number} animal @param {number} food @returns {void} */
 function eatPlant(world, animal, food) {
-    const { foodX, foodY, foodValue } = world;
-    const x = foodX[food];
-    const y = foodY[food];
+    const { foodValue } = world;
     const value = foodValue[food];
     loadHerdSeed(world, animal, food);
+    eatFromPatch(world, food);
     removeFood(world, food, FOOD_GONE.EATEN, value);
-    depletePatchAt(world, x, y);
     world.herdStore[animal] = Math.min(
         world.config.herdStoreMax,
         world.herdStore[animal] + world.config.herdAssimilation * value,

@@ -1,0 +1,16 @@
+{
+  "seeds": 16,
+  "seedOffset": 0,
+  "ticks": 400000,
+  "policy": "live",
+  "reference": "control",
+  "arms": {
+    "control": {},
+    "y1-b5": { "patchStockEnergy": true, "foodPatchCapacity": 83000, "foodBackgroundShare": 0.05 },
+    "y15-b5": { "patchStockEnergy": true, "foodPatchCapacity": 125000, "foodBackgroundShare": 0.05 },
+    "y25-b5": { "patchStockEnergy": true, "foodPatchCapacity": 208000, "foodBackgroundShare": 0.05 },
+    "y1-b2": { "patchStockEnergy": true, "foodPatchCapacity": 83000, "foodBackgroundShare": 0.02 },
+    "y15-b2": { "patchStockEnergy": true, "foodPatchCapacity": 125000, "foodBackgroundShare": 0.02 },
+    "y25-b2": { "patchStockEnergy": true, "foodPatchCapacity": 208000, "foodBackgroundShare": 0.02 }
+  }
+}

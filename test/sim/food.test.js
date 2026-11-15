@@ -4,15 +4,15 @@ import { nextFloat } from '../../js/sim/rng.js';
 import { spawnFoodItem } from '../../js/sim/spawn.js';
 import { smallWorld } from './helpers/small-world.js';
 
-// expected = foodRegrowPerArea * area / 1,000,000 * scarcity; the 1000 x 1000 world is 1 unit, so 4 per tick here.
+// expected = foodRegrowPerArea * area / 1,000,000; the 1000 x 1000 world is 1 unit, so 4 per tick here.
 const BASE = {
     maxFood: 40,
     foodRegrowPerArea: 4,
     seasons: [
-        { foodScarcity: 1, energyDrain: 1, temperatureModifier: 0 },
-        { foodScarcity: 0.5, energyDrain: 1, temperatureModifier: 0 },
-        { foodScarcity: 1, energyDrain: 1, temperatureModifier: 0 },
-        { foodScarcity: 1, energyDrain: 1, temperatureModifier: 0 },
+        { energyDrain: 1, temperatureModifier: 0 },
+        { energyDrain: 1, temperatureModifier: 0 },
+        { energyDrain: 1, temperatureModifier: 0 },
+        { energyDrain: 1, temperatureModifier: 0 },
     ],
 };
 
@@ -69,16 +69,6 @@ describe('spawnFood', () => {
             spawnFood(w);
         }
         expect(w.foodCount).toBe(5);
-    });
-
-    it('spawns fewer items in a scarce season', () => {
-        const spring = smallWorld(BASE);
-        const winter = smallWorld(BASE);
-        winter.season[0] = 1;
-        spawnFood(spring);
-        spawnFood(winter);
-        expect(winter.foodCount).toBe(2);
-        expect(winter.foodCount).toBeLessThan(spring.foodCount);
     });
 
     it('is deterministic for a seed', () => {

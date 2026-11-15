@@ -6,7 +6,7 @@ import { ingestToxin, isSick } from './toxin.js';
 import { canBite, couldBite, inJaws } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
 import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, removeEnergy, transferEnergy } from './energy.js';
-import { depletePatchAt } from './food-patches.js';
+import { eatFromPatch } from './food-patches.js';
 import { INCOME, noteBiteLedger, noteIncome } from './hunter-ledger.js';
 import { depositPheromone } from './pheromones.js';
 import { FOOD_GONE, removeFood } from './world.js';
@@ -77,7 +77,7 @@ function consumeFood(world, slot, food) {
     world.ateTimer[slot] = 0;
     if (!isMeat) {
         carryPollen(world, slot, food);
-        depletePatchAt(world, world.foodX[food], world.foodY[food]);
+        eatFromPatch(world, food);
         world.floraIntake[world.season[0] * 6 + world.foodSpecies[food]] += stored;
         if (world.foodOrigin[food] === FOOD_ORIGIN.DUNG_ZONE) {
             world.dungFoodIntake += stored;
@@ -220,12 +220,16 @@ function applyBite(world, biter, victim) {
     noteReward(world, biter, fatal ? REWARD_SOURCE.KILL : REWARD_SOURCE.BITE, gained);
     world.lastLoss[victim] = LOSS_CAUSE.BITE;
     const biterId = world.genomeId[biter];
-    if (world.lastBiter[victim] !== biterId) {
-        world.prevBiter[victim] = world.lastBiter[victim];
-        world.prevBiteTick[victim] = world.lastBiteTick[victim];
+    if (wasAlive) {
+        // A victim already at zero energy keeps the biter that killed it: a second biter in the same tick must not take
+        // the kill from the one that was paid its kill energy.
+        if (world.lastBiter[victim] !== biterId) {
+            world.prevBiter[victim] = world.lastBiter[victim];
+            world.prevBiteTick[victim] = world.lastBiteTick[victim];
+        }
+        world.lastBiter[victim] = biterId;
+        world.lastBiteTick[victim] = world.tick;
     }
-    world.lastBiter[victim] = biterId;
-    world.lastBiteTick[victim] = world.tick;
     noteBiteLedger(world, biter, { gained, fatal, kick: paid, victim });
     world.bittenTimer[victim] = 0;
     depositPheromone(world, world.attack, x[biter], y[biter]);

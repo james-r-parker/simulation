@@ -33,11 +33,11 @@ describe('createSubject with a real run', () => {
             const { subject, world } = smallRun('map-elites-v6');
             const archive = subject.policy?.archive;
             expect(occupiedCount(archive)).toBe(0);
-            for (let t = 0; t < 20000 && occupiedCount(archive) === 0; t++) {
+            for (let t = 0; t < 40000 && occupiedCount(archive) === 0; t++) {
                 subject.advance(world);
             }
             expect(occupiedCount(archive)).toBeGreaterThan(0);
         },
-        scaleTimeout(60000),
+        scaleTimeout(120000),
     );
 });

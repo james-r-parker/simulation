@@ -93,12 +93,13 @@ describe('species spawning', () => {
     it('multiplies regrowth by the stored patch trait', () => {
         const a = berries();
         const b = berries();
-        a.patchStock[0] = b.patchStock[0] = 0.5;
+        const half = 0.5 * a.config.foodPatchCapacity;
+        a.patchStock[0] = b.patchStock[0] = half;
         a.patchRegrow[0] = 1;
         b.patchRegrow[0] = 2;
         regrowPatches(a);
         regrowPatches(b);
-        expect(b.patchStock[0] - 0.5).toBeCloseTo(2 * (a.patchStock[0] - 0.5), 12);
+        expect((b.patchStock[0] - half) / half).toBeCloseTo((2 * (a.patchStock[0] - half)) / half, 12);
     });
     it('falls back to clear background placement when an entire patch disc is blocked', () => {
         const w = smallWorld({ foodPatchCount: 1, foodPatchRadius: 1, foodBackgroundShare: 0, placementTries: 5 });

@@ -24,7 +24,7 @@ describe('DEFAULTS', () => {
     });
 
     it('has four seasons in spring, summer, autumn, winter order', () => {
-        expect(DEFAULTS.seasons.map((/** @type {any} */ s) => s.foodScarcity)).toEqual([1.2, 1.0, 0.8, 0.4]);
+        expect(DEFAULTS.seasons.map((/** @type {any} */ s) => s.energyDrain)).toEqual([1.0, 1.3, 1.1, 1.8]);
     });
 
     it('numbers the specialisations 0 to 4 in key order', () => {

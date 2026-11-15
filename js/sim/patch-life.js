@@ -44,6 +44,7 @@ export function stepPatchLife(world, patch) {
     }
     world.patchAlive[patch] = 0;
     world.patchStock[patch] = 0;
+    world.patchReserved[patch] = 0;
     world.patchWeight[patch] = 0;
     world.patchLowTicks[patch] = 0;
     world.patchBank[patch] = c.seedBankTicks;

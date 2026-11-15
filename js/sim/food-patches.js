@@ -7,6 +7,7 @@ import { EVENT_TYPE, pushEvent } from './events.js';
 import { patchRegrowFactor } from './eras.js';
 import { basinPatchX } from './terrain.js';
 import { nextFloat } from './rng.js';
+import { spendItem } from './patch-reserve.js';
 
 export { PATCH_FLOOR_SHARE } from './patch-life.js';
 
@@ -68,34 +69,14 @@ export function pickPatch(world, rng) {
 }
 
 /**
- * Takes `foodPatchDepletion` from the nearest patch whose disc contains the point (lowest index on ties), never
- * below the floor.
+ * A plant meal's draw on its patch: the item's energy comes out of the patch that sourced it (`spendItem`). Call before
+ * the item is removed.
  * @param {World} world the world
- * @param {number} x the eaten food's x
- * @param {number} y the eaten food's y
+ * @param {number} food the eaten plant item
  * @returns {void}
  */
-export function depletePatchAt(world, x, y) {
-    const { patchX, patchY, patchStock } = world;
-    const { foodPatchRadius, foodPatchDepletion, foodPatchCapacity } = world.config;
-    let best = -1;
-    let bestSq = foodPatchRadius * foodPatchRadius;
-    for (let i = 0; i < patchStock.length; i++) {
-        if (world.patchAlive[i] !== 1) {
-            continue;
-        }
-        const dx = x - patchX[i];
-        const dy = y - patchY[i];
-        const sq = dx * dx + dy * dy;
-        if (sq < bestSq) {
-            bestSq = sq;
-            best = i;
-        }
-    }
-    if (best >= 0) {
-        const floor = PATCH_FLOOR_SHARE * foodPatchCapacity;
-        patchStock[best] = Math.max(floor, patchStock[best] - foodPatchDepletion);
-    }
+export function eatFromPatch(world, food) {
+    spendItem(world, food);
 }
 
 /**

@@ -65,7 +65,7 @@ describe('pollen carriage and seeding', () => {
         visit(w, 1);
         expect(w.patchAlive[2]).toBe(1);
         expect(w.patchSerial[2]).toBe(1);
-        expect(w.patchStock[2]).toBe(0.3);
+        expect(w.patchStock[2]).toBe(w.config.seedStock * w.config.foodPatchCapacity);
         expect(w.patchHue[2]).toBeCloseTo(0.8);
         expect(w.patchX[2]).toBeLessThan(1000);
         expect(w.pollenPatch[0]).toBe(0);
