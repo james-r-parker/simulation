@@ -1,6 +1,6 @@
 // The signal phase: call timers, alarm and hunt calls, smoke releases, then who hears what.
 
-import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
+import { OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from './brain-layout.js';
 import { EVENT_TYPE, pushEvent } from './events.js';
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
 import { depositPheromone } from './pheromones.js';
@@ -15,6 +15,8 @@ import { HEARD_STRIDE } from './world.js';
 /** Offsets of the alarm and hunt halves of a `heard` row. */
 const ALARM_HEARD = 0;
 const HUNT_HEARD = 3;
+/** Offset of the threat value (an agent that can bite the caster) in a ray's `RAY_CHANNELS` values. */
+const CH_THREAT = 2;
 
 /**
  * Takes 1 from each of the three timers of every alive slot that is above 0.
@@ -62,7 +64,23 @@ function outputAbove(world, slot, output, threshold) {
 }
 
 /**
- * Fires an alarm call for a slot that is not a hunter and whose alarm output is above `alarmThreshold`: pays, starts the timer, deposits danger and pushes the event.
+ * @param {World} world the world
+ * @param {number} slot the caller
+ * @returns {boolean} whether any of the caller's rays holds a threat (an agent that can bite it) this tick
+ */
+function threatInView(world, slot) {
+    const { inputs, config } = world;
+    const origin = slot * world.layout.rawInputCount;
+    for (let k = 0; k < config.rayCount; k++) {
+        if (inputs[origin + k * RAY_CHANNELS + CH_THREAT] > 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Fires an alarm call for a slot that is not a hunter and whose alarm output is above `alarmThreshold`: pays, starts the timer, notes in `alarmSeen` whether a threat was on its rays, deposits danger and pushes the event.
  * @param {World} world the world
  * @param {number} slot an alive slot
  * @returns {void}
@@ -75,6 +93,7 @@ function alarm(world, slot) {
     }
     removeEnergy(world, slot, alarmCost, LOSS_CAUSE.COST);
     world.alarmTimer[slot] = callTicks;
+    world.alarmSeen[slot] = threatInView(world, slot) ? 1 : 0;
     depositPheromone(world, world.danger, world.x[slot], world.y[slot]);
     pushCall(world, EVENT_TYPE.ALARM_CALLED, slot);
 }
