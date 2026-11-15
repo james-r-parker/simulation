@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { noteApproachKill, trackApproaches } from '../../js/evo/scene-approach.js';
 import { INTENT_WINDOW } from '../../js/evo/observer-intent-state.js';
-import { CHASE_OUTCOME } from '../../js/evo/scene-competence.js';
+import { CHASE_OUTCOME } from '../../js/evo/chase-outcome.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
 import { loose } from './helpers/metric-registry.js';
@@ -86,7 +86,7 @@ describe('hunt approaches and chases', () => {
         a.world.alive[v2] = 0;
         play(a, T0 + 1 + INTENT_WINDOW);
         const s = a.observer.scenes.approach;
-        expect([s.committed, s.aborted, s.caught, s.escaped]).toEqual([2, 1, 1, 1]);
+        expect([s.committed, ...s.tally.byClass]).toEqual([2, 1, 1, 1]);
         expect(read(a, 'hunt_abort_rate').value).toBeCloseTo(1 / 3, 12);
         expect(read(a, 'chase_catch_share').value).toBeCloseTo(1 / 3, 12);
         expect(read(a, 'chase_escape_share').value).toBeCloseTo(1 / 3, 12);
@@ -110,9 +110,9 @@ describe('hunt approaches and chases', () => {
         play(a, T0, { closing: a.hunters });
         play(a, T0 + 20, { closing: a.hunters });
         play(a, T0 + 20 + INTENT_WINDOW);
-        expect(a.observer.scenes.approach.aborted).toBe(0);
+        expect(a.observer.scenes.approach.tally.byClass[CHASE_OUTCOME.GAVE_UP]).toBe(0);
         play(a, T0 + 21 + INTENT_WINDOW);
-        expect(a.observer.scenes.approach.aborted).toBe(1);
+        expect(a.observer.scenes.approach.tally.byClass[CHASE_OUTCOME.GAVE_UP]).toBe(1);
     });
 
     it('drop a chase whose victim dies of something else inside the window', () => {
@@ -132,7 +132,7 @@ describe('hunt approaches and chases', () => {
         play(a, T0 - 100, { closing: a.hunters });
         play(a, T0 - 99 + INTENT_WINDOW);
         play(a, T0 + 5);
-        expect(a.observer.scenes.approach.aborted).toBe(0);
+        expect(a.observer.scenes.approach.tally.byClass[CHASE_OUTCOME.GAVE_UP]).toBe(0);
         expect(a.observer.scenes.approach.phase[a.prey[0]]).toBe(0);
         expect(read(a, 'hunt_abort_rate').reason).toContain('no hunter approach');
     });
@@ -148,17 +148,17 @@ describe('a resolved chase with no hook', () => {
             killerId: a.world.genomeId[a.hunters[0]],
             victimId: a.world.genomeId[a.prey[0]],
         });
-        expect(a.observer.scenes.approach.caught).toBe(1);
+        expect(a.observer.scenes.approach.tally.byClass[CHASE_OUTCOME.CAUGHT]).toBe(1);
     });
 });
 
 describe('the noteChase hook', () => {
     /**
      * @param {any} a the arena
-     * @returns {{slot: number, outcome: number, openedTick: number, hungry: boolean, energy: number}[]} the calls the approach scene's hook will record
+     * @returns {{slot: number, outcome: number, flags: number, openedTick: number, hungry: boolean, energy: number}[]} the calls the approach scene's hook will record
      */
     function record(a) {
-        /** @type {{slot: number, outcome: number, openedTick: number, hungry: boolean, energy: number}[]} */
+        /** @type {{slot: number, outcome: number, flags: number, openedTick: number, hungry: boolean, energy: number}[]} */
         const calls = [];
         a.observer.scenes.approach.onChase = (/** @type {any} */ _world, /** @type {any} */ chase) => calls.push(chase);
         return calls;
@@ -191,6 +191,7 @@ describe('the noteChase hook', () => {
                 openedTick: T0,
                 hungry: expect.any(Boolean),
                 energy: expect.any(Number),
+                flags: 0,
             },
             {
                 slot: h1,
@@ -198,6 +199,7 @@ describe('the noteChase hook', () => {
                 openedTick: T0,
                 hungry: expect.any(Boolean),
                 energy: expect.any(Number),
+                flags: 0,
             },
             {
                 slot: h3,
@@ -205,6 +207,7 @@ describe('the noteChase hook', () => {
                 openedTick: T0,
                 hungry: expect.any(Boolean),
                 energy: expect.any(Number),
+                flags: 0,
             },
         ]);
     });
@@ -244,6 +247,7 @@ describe('the noteChase hook', () => {
                 openedTick: T0,
                 hungry: expect.any(Boolean),
                 energy: expect.any(Number),
+                flags: 0,
             },
         ]);
     });

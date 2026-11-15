@@ -9,7 +9,7 @@ import {
     matchedMetrics,
     noteMatchedChase,
 } from '../../js/evo/scene-matched.js';
-import { CHASE_OUTCOME } from '../../js/evo/scene-competence.js';
+import { CHASE_OUTCOME } from '../../js/evo/chase-outcome.js';
 import { observed } from './helpers/observer-world.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { loose } from './helpers/metric-registry.js';

@@ -1,6 +1,6 @@
 # Chase physics and terrain
 
-**Status:** Proposed - add turning inertia, speed-coupled turn radius, asymmetric reverse thrust, and terrain drag/cover zones so chases are about momentum, banking and landscape rather than instant 180-degree reversals; Phase 1 (chase-kinematics detectors and baseline) is first.
+**Status:** In progress - add turning inertia, speed-coupled turn radius, asymmetric reverse thrust, and terrain drag/cover zones so chases are about momentum, banking and landscape rather than instant 180-degree reversals; only Phase 1 T1 (the `scene-kinematics.js` detectors, #449) is built, on the shared chase record of [detector-baseline.md](detector-baseline.md); T2 (the `E-CP-1` baseline), T1a (the premise read) and T3 (conformance review) are not done, so Phase 1 is not `(built)` and no lever is open.
 **Validated:** a8013e98 (2026-11-15)
 **Priority:** 32 - builds on the chase envelope audit of [senses-and-motor.md](senses-and-motor.md) and the sprint store of [sprint-burst.md](sprint-burst.md)
 **Depends on:** [senses-and-motor.md](senses-and-motor.md), [sprint-burst.md](sprint-burst.md)
@@ -167,12 +167,12 @@ Every staged tool was tuned on the snap heading. With the switch on, T4a re-runs
 
 ### Phase 1 - Chase-kinematics detectors and baseline
 
-| #   | Task                                                                                                                                                                                              | Nature       | Depends on  |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| T1  | Add `js/evo/scene-kinematics.js` (`eval.chase_overshoot_share`, `eval.chase_cover_use_share`, `eval.chase_turn_jitter`), registry + `liveness.js` entries and `test/evo/scene-kinematics.test.js` | [judgement]  | -           |
-| T2  | Run `E-CP-1` (16 seeds x 400,000 ticks) and `npm run audit:chase` baseline; record in [sim-notes.md](sim-notes.md)                                                                                | [mechanical] | T1          |
-| T1a | Read the premise: the body table and catch grid of `audit:chase`, the baseline detectors and the share of escapes on reverse thrust; write which Phase 2 levers open, or close the doc            | [judgement]  | T2          |
-| T3  | Conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                               | [judgement]  | T1, T2, T1a |
+| #   | Task                                                                                                                                                                                                                                                                                                          | Nature       | Depends on  |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| T1  | Built (#449). Add `js/evo/scene-kinematics.js` (`eval.chase_overshoot_share`, `eval.chase_cover_use_share`, `eval.chase_turn_jitter`) on the shared chase record (`js/evo/chase-outcome.js`: overshoot and cover use are its flags), registry + `liveness.js` entries and `test/evo/scene-kinematics.test.js` | [judgement]  | -           |
+| T2  | Run `E-CP-1` (16 seeds x 400,000 ticks) and `npm run audit:chase` baseline; record in [sim-notes.md](sim-notes.md)                                                                                                                                                                                            | [mechanical] | T1          |
+| T1a | Read the premise: the body table and catch grid of `audit:chase`, the baseline detectors and the share of escapes on reverse thrust; write which Phase 2 levers open, or close the doc                                                                                                                        | [judgement]  | T2          |
+| T3  | Conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                                                                           | [judgement]  | T1, T2, T1a |
 
 ### Phase 2 - Turning inertia, speed-coupled turns and asymmetric reverse
 

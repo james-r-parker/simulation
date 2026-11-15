@@ -18,9 +18,9 @@ import { popcount16 } from '../sim/merit-state.js';
 import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { CLOSING_BITS, CLOSING_MIN, INTENT_WINDOW } from './observer-intent-state.js';
+import { CHASE_OUTCOME, chasesEnded, createChaseTally, tallyChase } from './chase-outcome.js';
 import { BITTEN_THIS_TICK } from './observer-intent-episode.js';
 import { findAlive } from './observer-intent.js';
-import { CHASE_OUTCOME } from './scene-competence.js';
 
 const IDLE = 0;
 const OPEN = 1;
@@ -28,8 +28,8 @@ const BITTEN = 2;
 const CLOSING_MASK = (1 << CLOSING_BITS) - 1;
 
 /**
- * @typedef {(world: Record<string, any>, chase: {slot: number, outcome: number, openedTick: number, hungry: boolean, energy: number}) => void} ChaseHook
- *   called once for each counted chase with the hunter's slot, its `CHASE_OUTCOME`, the tick the chase opened, whether the
+ * @typedef {(world: Record<string, any>, chase: {slot: number, outcome: number, flags: number, openedTick: number, hungry: boolean, energy: number}) => void} ChaseHook
+ *   called once for each counted chase with the hunter's slot, its `CHASE_OUTCOME`, its `CHASE_FLAG` bits (a hook may add its own), the tick the chase opened, whether the
  *   hunter could eat (`canEatNow`) at that tick and its energy then
  */
 
@@ -37,7 +37,7 @@ const CLOSING_MASK = (1 << CLOSING_BITS) - 1;
  * @param {Readonly<Record<string, any>>} config the world's config
  * @param {ChaseHook | null} [onChase] the hook told of each counted chase
  * @returns {Record<string, any>} an empty scene: per slot the phase, last closing tick, tick the chase opened, victim and
- *   bite tick, and the counts of committed, aborted, caught and escaped approaches
+ *   bite tick, the count of committed approaches and the tally of resolved chases (`chase-outcome.js`)
  */
 export function createApproachScene(config, onChase = null) {
     const n = config.maxAgents;
@@ -52,9 +52,7 @@ export function createApproachScene(config, onChase = null) {
         biteTick: new Float64Array(n),
         resolvedTick: new Float64Array(n).fill(-1),
         committed: 0,
-        aborted: 0,
-        caught: 0,
-        escaped: 0,
+        tally: createChaseTally(),
     };
 }
 
@@ -94,10 +92,9 @@ function opensNow(scene, prey, slot, tick) {
     return prey.seen[slot] > scene.resolvedTick[slot] && closingNow(prey, slot, tick);
 }
 
-const OUTCOME_COUNTER = ['caught', 'escaped', 'aborted'];
-
 /**
- * Counts a resolved chase when it resolves at or after burn-in, and hands it to the hook, if the scene has one.
+ * Records a resolved chase when it resolves at or after burn-in: the hook, if the scene has one, may add flags to it, then it
+ * joins the tally.
  * @param {Record<string, any>} scene the approach scene
  * @param {Record<string, any>} world the world
  * @param {{slot: number, outcome: number}} chase the hunter's slot and the chase's `CHASE_OUTCOME`
@@ -108,16 +105,18 @@ function resolved(scene, world, { slot, outcome }) {
     if (world.tick < BURN_IN_TICKS) {
         return;
     }
-    scene[OUTCOME_COUNTER[outcome]] += 1;
+    const chase = {
+        slot,
+        outcome,
+        flags: 0,
+        openedTick: scene.openedTick[slot],
+        hungry: scene.openedHungry[slot] === 1,
+        energy: scene.openedEnergy[slot],
+    };
     if (scene.onChase !== null) {
-        scene.onChase(world, {
-            slot,
-            outcome,
-            openedTick: scene.openedTick[slot],
-            hungry: scene.openedHungry[slot] === 1,
-            energy: scene.openedEnergy[slot],
-        });
+        scene.onChase(world, chase);
     }
+    tallyChase(scene.tally, chase);
 }
 
 /**
@@ -226,14 +225,16 @@ export function trackApproaches(scene, observer, world) {
  * @returns {import('./metrics-stats.js').MetricRecord} the abort rate and the three chase shares
  */
 export function approachMetrics(scene) {
-    const ended = scene.committed + scene.aborted;
-    const chases = scene.caught + scene.escaped + scene.aborted;
+    const { tally } = scene;
+    const aborted = chasesEnded(tally, CHASE_OUTCOME.GAVE_UP);
+    const ended = scene.committed + aborted;
+    const chases = tally.total;
     const noApproach = none('no hunter approach ended after burn-in');
     const noChase = none('no chase resolved after burn-in');
     return {
-        'eval.hunt_abort_rate': ended > 0 ? ok(scene.aborted / ended) : noApproach,
-        'eval.chase_catch_share': chases > 0 ? ok(scene.caught / chases) : noChase,
-        'eval.chase_escape_share': chases > 0 ? ok(scene.escaped / chases) : noChase,
-        'eval.chase_giveup_share': chases > 0 ? ok(scene.aborted / chases) : noChase,
+        'eval.hunt_abort_rate': ended > 0 ? ok(aborted / ended) : noApproach,
+        'eval.chase_catch_share': chases > 0 ? ok(chasesEnded(tally, CHASE_OUTCOME.CAUGHT) / chases) : noChase,
+        'eval.chase_escape_share': chases > 0 ? ok(chasesEnded(tally, CHASE_OUTCOME.ESCAPED) / chases) : noChase,
+        'eval.chase_giveup_share': chases > 0 ? ok(aborted / chases) : noChase,
     };
 }

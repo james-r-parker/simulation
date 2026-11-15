@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
-import { CHASE_OUTCOME } from '../../js/evo/scene-competence.js';
+import { CHASE_FLAG, CHASE_OUTCOME, createChaseTally, tallyChase } from '../../js/evo/chase-outcome.js';
 import {
     createKinematicsScene,
     kinematicsMetrics,
@@ -38,7 +38,7 @@ function makeWorld(n = 4) {
 describe('scene-kinematics', () => {
     it('registers every emitted chase-kinematics metric with its expected direction', () => {
         const scene = createKinematicsScene({ maxAgents: 4 });
-        const emitted = Object.keys(kinematicsMetrics(scene));
+        const emitted = Object.keys(kinematicsMetrics(scene, createChaseTally()));
         expect(emitted).toEqual(KINEMATICS_NAMES);
         expect(namesOf('js/evo/scene-kinematics.js')).toEqual([...KINEMATICS_NAMES].sort());
         expect(directionOf('eval.chase_overshoot_share')).toBe('watch');
@@ -83,9 +83,13 @@ describe('scene-kinematics', () => {
         w.outputs[OUTPUT_INDEX.TURN] = 0.5;
         tickKinematics(scene, observer, w);
 
-        noteKinematicsChase(scene, w, { slot: 0, outcome: CHASE_OUTCOME.ESCAPED });
+        const chase = { slot: 0, outcome: CHASE_OUTCOME.ESCAPED, flags: 0 };
+        noteKinematicsChase(scene, w, chase);
+        expect(chase.flags).toBe(CHASE_FLAG.OVERSHOT | CHASE_FLAG.CROSSED_COVER);
+        const tally = createChaseTally();
+        tallyChase(tally, chase);
 
-        const m = kinematicsMetrics(scene);
+        const m = kinematicsMetrics(scene, tally);
         expect(m['eval.chase_overshoot_share']?.value).toBe(1);
         expect(m['eval.chase_cover_use_share']?.value).toBe(1);
         expect(m['eval.chase_turn_jitter']?.value).toBe(1);

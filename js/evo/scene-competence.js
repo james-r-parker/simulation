@@ -24,14 +24,12 @@ import { EVENT_TYPE } from '../sim/events.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { kaplanMeier } from './kaplan-meier.js';
+import { CHASE_OUTCOME } from './chase-outcome.js';
 import { bySuffix, none, ok, share } from './metrics-stats.js';
 
 /** The kill-conversion age bands, in order, and the ages at which the second and third begin. */
 export const CONVERSION_BANDS = Object.freeze(['under1k', '1k-2k', 'over2k']);
 const BAND_EDGES = Object.freeze([1000, 2000]);
-
-/** The outcome of a resolved chase, as `noteChase` takes it. */
-export const CHASE_OUTCOME = Object.freeze({ CAUGHT: 0, ESCAPED: 1, GAVE_UP: 2 });
 
 const EARLY_BAND = Object.freeze([1000, 2000]);
 const LATE_BAND = Object.freeze([3000, 4000]);
