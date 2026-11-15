@@ -101,7 +101,7 @@ describe('eval.hunter_recoil_per_life', () => {
 
     it('counts a kin lunge through the real feed phase and not a lunge at prey', () => {
         const run = (/** @type {boolean} */ kin) => {
-            const w = lifeWorld({ biteArc: Math.PI, biteCost: 0, recoilEnergy: 20, predatorKillEnergy: 0 });
+            const w = lifeWorld({ biteArc: Math.PI, biteCost: 0, recoilEnergy: 20 });
             const hunter = addBlob(w, { spec: 1, energy: 500, x: 100, y: 100, angle: 0 });
             const other = addBlob(w, { spec: 0, energy: 500, x: 110, y: 100, angle: 0 });
             [hunter, other].forEach((slot) => updateSize(w, slot));

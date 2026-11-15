@@ -1,0 +1,39 @@
+{
+  "seeds": 16,
+  "seedOffset": 0,
+  "ticks": 400000,
+  "policy": "live",
+  "reference": "control",
+  "arms": {
+    "control": {},
+    "body": {
+      "carcassBody": true,
+      "killShare": 0,
+      "killGorgeCap": 2000,
+      "carcassFadeTicks": 1500,
+      "predatorKillEnergy": 0
+    },
+    "body-k25": {
+      "carcassBody": true,
+      "killShare": 0.25,
+      "killGorgeCap": 2000,
+      "carcassFadeTicks": 1500,
+      "predatorKillEnergy": 0
+    },
+    "body-k25r": {
+      "carcassBody": true,
+      "killShare": 0.25,
+      "killGorgeCap": 2000,
+      "carcassFadeTicks": 1500,
+      "predatorKillEnergy": 0,
+      "specialisations": { "predator": { "passiveLossMultiplier": 0.2 } }
+    },
+    "body-k25g": {
+      "carcassBody": true,
+      "killShare": 0.25,
+      "killGorgeCap": 4000,
+      "carcassFadeTicks": 2500,
+      "predatorKillEnergy": 0
+    }
+  }
+}

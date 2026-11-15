@@ -24,6 +24,8 @@ const ARENA = {
     huntSizeRatio: 1.01,
     // the arena scenes are not about the juvenile burn: a newborn hunter here pays the plain cost
     juvenileBurn: 1,
+    // a kill leaves the body, which the scenes eat as a carcass (the default rule)
+    killShare: 0.25,
     worldWidth: 8000,
     worldHeight: 4000,
     maxAgents: 8,

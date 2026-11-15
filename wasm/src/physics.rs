@@ -1,6 +1,7 @@
 //! The physics phase's numeric loops (formerly in `js/sim/physics.js`): the damping, speed cap and move of every agent
 //! (`moveAgent`), the geometry of one agent's rock bounces (`bounceObstacles`, resumable after each damaging impact so
-//! JS applies the damage rule), and the contact pass over the spatial hash with the final clamp (`resolveContacts`).
+//! JS applies the damage rule, with the impact's speed along the rock's normal written for it), and the contact pass
+//! over the spatial hash with the final clamp (`resolveContacts`).
 //!
 //! Bit-identity rules (docs/designs/wasm-kernels.md): every value is computed in `f64` with the JS operations in the JS
 //! order, each `f32` world value widens before use and is rounded once where JS stores it (`Math.fround`), `Math.sqrt`
@@ -34,6 +35,7 @@ pub struct PhysicsParams {
     box_y: u32,
     contacts: u32,
     doubles: u32,
+    impact: u32,
     max_agents: u32,
     obs_count: u32,
     output_count: u32,
@@ -187,7 +189,8 @@ impl Bodies {
         }
     }
 
-    /// `obstacleBounce` after the caller's box test: true when the agent struck rock `k` moving into it.
+    /// `obstacleBounce` after the caller's box test: true when the agent struck rock `k` moving into it, with the speed
+    /// along the normal into the rock written to the agent's impact entry.
     unsafe fn rock(&self, slot: usize, k: usize) -> bool {
         let p = self.p;
         // SAFETY: `slot` is an agent and `k` a rock.
@@ -209,6 +212,7 @@ impl Bodies {
             Self::put(self.y, slot, oy + ny * reach);
             let vn = Self::get(self.vx, slot) * nx + Self::get(self.vy, slot) * ny;
             if vn < 0.0 {
+                *at::<f64>(p.impact).add(slot) = -vn;
                 Self::put(self.vx, slot, Self::get(self.vx, slot) - 2.0 * vn * nx);
                 Self::put(self.vy, slot, Self::get(self.vy, slot) - 2.0 * vn * ny);
                 return true;
@@ -339,7 +343,8 @@ pub unsafe fn move_all(params: u32) {
 
 /// Bounces one agent off the rocks from index `from` (`bounceObstacles`), testing each box with `own`, the agent's size
 /// when the scan began: the index of the first rock it strikes moving into it (JS applies the damage, then resumes
-/// from the next index), or -1 when the scan is done.
+/// from the next index), or -1 when the scan is done. The agent's entry of the impact output holds the speed along that
+/// rock's normal into it, or 0 when the scan is done; nothing in the step reads it back into the world.
 ///
 /// # Safety
 /// `params` addresses the block `js/sim/wasm-physics.js` wrote, and `slot` is below `maxAgents`.
@@ -347,6 +352,7 @@ pub unsafe fn bounce_rocks(params: u32, slot: usize, own: f64, from: u32) -> i32
     // SAFETY: the caller passes the arena's physics parameter block and an agent slot; `k` stays below the rock count.
     unsafe {
         let g = Bodies::new(params);
+        *at::<f64>(g.p.impact).add(slot) = 0.0;
         let (ox, oy, or) = (at::<f32>(g.p.obs_x), at::<f32>(g.p.obs_y), at::<f32>(g.p.obs_radius));
         let near = |k: usize| {
             let reach = *or.add(k) as f64 + own;
@@ -399,5 +405,140 @@ pub unsafe fn resolve_contacts(params: u32) -> i32 {
         }
         g.clamp();
         count as i32
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    extern crate std;
+    use super::{PhysicsParams, bounce_rocks};
+    use std::{boxed::Box, vec, vec::Vec};
+
+    /// One agent in slot 0 and the rocks given, laid out as `writePhysicsParams` would; only the fields `bounce_rocks`
+    /// reads are set.
+    struct Scene {
+        x: Vec<f32>,
+        y: Vec<f32>,
+        vx: Vec<f32>,
+        vy: Vec<f32>,
+        size: Vec<f32>,
+        obs_x: Vec<f32>,
+        obs_y: Vec<f32>,
+        obs_r: Vec<f32>,
+        impact: Vec<f64>,
+        params: Box<PhysicsParams>,
+    }
+
+    fn addr<T>(v: &mut [T]) -> u32 {
+        v.as_mut_ptr() as usize as u32
+    }
+
+    fn scene(agent: [f32; 5], rocks: &[[f32; 3]]) -> Scene {
+        let col = |i: usize| rocks.iter().map(|r| r[i]).chain([0.0, 0.0]).collect::<Vec<f32>>();
+        let mut s = Scene {
+            x: vec![agent[0]],
+            y: vec![agent[1]],
+            vx: vec![agent[2]],
+            vy: vec![agent[3]],
+            size: vec![agent[4]],
+            obs_x: col(0),
+            obs_y: col(1),
+            obs_r: col(2),
+            impact: vec![-1.0],
+            params: Box::new(PhysicsParams {
+                alive: 0,
+                x: 0,
+                y: 0,
+                vx: 0,
+                vy: 0,
+                size: 0,
+                spec: 0,
+                outputs: 0,
+                sprint_by_spec: 0,
+                obs_x: 0,
+                obs_y: 0,
+                obs_radius: 0,
+                cell_start: 0,
+                entries: 0,
+                box_x: 0,
+                box_y: 0,
+                contacts: 0,
+                doubles: 0,
+                impact: 0,
+                max_agents: 1,
+                obs_count: rocks.len() as u32,
+                output_count: 0,
+                sprint_output: 0,
+                cols: 0,
+                rows: 0,
+                max_contacts: 0,
+            }),
+        };
+        let p = &mut *s.params;
+        (p.x, p.y, p.vx, p.vy, p.size) = (
+            addr(&mut s.x),
+            addr(&mut s.y),
+            addr(&mut s.vx),
+            addr(&mut s.vy),
+            addr(&mut s.size),
+        );
+        (p.obs_x, p.obs_y, p.obs_radius) = (addr(&mut s.obs_x), addr(&mut s.obs_y), addr(&mut s.obs_r));
+        p.impact = addr(&mut s.impact);
+        s
+    }
+
+    /// The first rock struck from 0 and the impact entry after that call.
+    fn bounce(s: &mut Scene) -> (i32, f64) {
+        let params = &*s.params as *const PhysicsParams as usize as u32;
+        // SAFETY: the block addresses the scene's vectors, which outlive the call.
+        let k = unsafe { bounce_rocks(params, 0, s.size[0] as f64, 0) };
+        (k, s.impact[0])
+    }
+
+    #[test]
+    fn a_head_on_hit_writes_the_speed_along_the_normal() {
+        // Moving +x at 3 into a rock centred 12 to the right: the normal is -x, so the speed into it is 3.
+        let mut s = scene([100.0, 100.0, 3.0, 0.0, 5.0], &[[112.0, 100.0, 10.0]]);
+        assert_eq!(bounce(&mut s), (0, 3.0));
+        assert_eq!(s.vx[0], -3.0);
+    }
+
+    #[test]
+    fn an_oblique_hit_writes_only_the_normal_component() {
+        let mut s = scene([100.0, 100.0, 3.0, 4.0, 5.0], &[[112.0, 100.0, 10.0]]);
+        assert_eq!(bounce(&mut s), (0, 3.0));
+        assert_eq!(s.vy[0], 4.0);
+    }
+
+    #[test]
+    fn a_tangent_slide_writes_about_zero() {
+        // Sliding along the rock's face with a hair of speed into it.
+        let mut s = scene([100.0, 100.0, 1e-6, 6.0, 5.0], &[[112.0, 100.0, 10.0]]);
+        let (k, speed) = bounce(&mut s);
+        assert_eq!(k, 0);
+        assert!(speed > 0.0 && speed < 1e-5, "speed {speed}");
+    }
+
+    #[test]
+    fn no_hit_writes_zero() {
+        // Overlapping but moving away from the rock: pushed out, no impact.
+        let mut s = scene([100.0, 100.0, -3.0, 0.0, 5.0], &[[112.0, 100.0, 10.0]]);
+        assert_eq!(bounce(&mut s), (-1, 0.0));
+        // Far from every rock.
+        let mut s = scene(
+            [100.0, 100.0, 3.0, 0.0, 5.0],
+            &[[500.0, 500.0, 10.0], [900.0, 100.0, 10.0]],
+        );
+        assert_eq!(bounce(&mut s), (-1, 0.0));
+    }
+
+    #[test]
+    fn a_finished_scan_resets_the_entry_to_zero() {
+        let mut s = scene([100.0, 100.0, 3.0, 0.0, 5.0], &[[112.0, 100.0, 10.0]]);
+        assert_eq!(bounce(&mut s).1, 3.0);
+        let params = &*s.params as *const PhysicsParams as usize as u32;
+        // SAFETY: as in `bounce`.
+        let k = unsafe { bounce_rocks(params, 0, s.size[0] as f64, 1) };
+        assert_eq!((k, s.impact[0]), (-1, 0.0));
     }
 }

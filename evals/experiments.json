@@ -2111,7 +2111,7 @@
       "after": "Stage 1 and 2 reports in evals/screens/results/herds/ and herds-stage2/; candidate confirmation in herds/candidate-count6-startle200.report.json; matched carcass-duration extension reports/table in evals/screens/results/herds-carcass-duration/",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "Completed for Megafauna Phase 1 T14 after the user released the CPU. Stage 1 (16 seeds) and Stage 2 (8 seeds) results, including per-arm Phase 1 gate counts, are recorded in evals/screens/results/herds/phase1-gate.md; Stage 2 grid is evals/screens/herds-stage2.grid.json. The best tested candidate was herdStartleRadius 200 plus herdCount 6. A separate 16-seed confirmation produced positive herd_animals and herd_grazed_share on 16/16 seeds, but herd_carcass_meal_share on only 10/16, so it misses the plan\u2019s 12/16 gate. Candidate config: evals/experiments/E76-best-config.json. Power analysis of the 64-seed candidate report is recorded in evals/experiments/E76-power.json (source report evals/screens/results/herds/E76-power-64.report.json): carcass meal share, role carcass shares, gap crossings, stampede rate and trampled share are weak or sparse detectors at n=16/32; herd presence and grazing share are better powered. The screen\u2019s original generic scorecard did not include the phase-specific carcass-meal gate; that omission is corrected in the targets and transparent gate table. Exploratory follow-up (not registered in the original E76 grid): carcassTicks 12000 at radius 200/count 6 yielded carcass meals 6/8 (mean 0.004615) versus the registered count-6 stage-2 arm at 5/8 (mean 0.002305); see /tmp/mega-e76-carcass12000-8.report.json and /tmp/mega-e76-best-8.report.json. These 8-seed reports generated the extension hypothesis only and are not confirmatory. The matched 16-seed confirmation is preregistered in evals/screens/herds-carcass-duration.grid.json. Registered extension result (16 seeds x 200000 ticks, policy live, exact E76 seed set) is recorded in evals/screens/results/herds-carcass-duration/. With carcass lifetime 12000, herd animals and grazing were positive on 16/16, carcass meals on 11/16 (mean 0.005702); the matched 6000-tick reference had carcass meals on 10/16 (mean 0.002719). The extension improves meal share but still misses the 12/16 gate by one seed; predators at end fell from 2/16 to 0/16. This does not pass the original 12/16 carcass target or a survival gate. By explicit user direction, T15 adopts the measured improvement (mean carcass meal share about 110% higher; positive seeds 11/16 vs 10/16) and carries the one-seed shortfall and predator-presence decline (2/16 to 0/16) into balancing. These remain diagnostics/follow-ups, not claimed passes."
+      "note": "Completed for Megafauna Phase 1 T14 after the user released the CPU. Stage 1 (16 seeds) and Stage 2 (8 seeds) results, including per-arm Phase 1 gate counts, are recorded in evals/screens/results/herds/phase1-gate.md; Stage 2 grid is evals/screens/herds-stage2.grid.json. The best tested candidate was herdStartleRadius 200 plus herdCount 6. A separate 16-seed confirmation produced positive herd_animals and herd_grazed_share on 16/16 seeds, but herd_carcass_meal_share on only 10/16, so it misses the plan’s 12/16 gate. Candidate config: evals/experiments/E76-best-config.json. Power analysis of the 64-seed candidate report is recorded in evals/experiments/E76-power.json (source report evals/screens/results/herds/E76-power-64.report.json): carcass meal share, role carcass shares, gap crossings, stampede rate and trampled share are weak or sparse detectors at n=16/32; herd presence and grazing share are better powered. The screen’s original generic scorecard did not include the phase-specific carcass-meal gate; that omission is corrected in the targets and transparent gate table. Exploratory follow-up (not registered in the original E76 grid): carcassTicks 12000 at radius 200/count 6 yielded carcass meals 6/8 (mean 0.004615) versus the registered count-6 stage-2 arm at 5/8 (mean 0.002305); see /tmp/mega-e76-carcass12000-8.report.json and /tmp/mega-e76-best-8.report.json. These 8-seed reports generated the extension hypothesis only and are not confirmatory. The matched 16-seed confirmation is preregistered in evals/screens/herds-carcass-duration.grid.json. Registered extension result (16 seeds x 200000 ticks, policy live, exact E76 seed set) is recorded in evals/screens/results/herds-carcass-duration/. With carcass lifetime 12000, herd animals and grazing were positive on 16/16, carcass meals on 11/16 (mean 0.005702); the matched 6000-tick reference had carcass meals on 10/16 (mean 0.002719). The extension improves meal share but still misses the 12/16 gate by one seed; predators at end fell from 2/16 to 0/16. This does not pass the original 12/16 carcass target or a survival gate. By explicit user direction, T15 adopts the measured improvement (mean carcass meal share about 110% higher; positive seeds 11/16 vs 10/16) and carries the one-seed shortfall and predator-presence decline (2/16 to 0/16) into balancing. These remain diagnostics/follow-ups, not claimed passes."
     },
     {
       "id": "E77",
@@ -2165,7 +2165,7 @@
       "date": "2026-11-02",
       "branch": "feat/megafauna-p4-rendering",
       "hypothesis": "The complete Megafauna defaults preserve the behavioral and local ecology signals against the herd-free flora baseline while making trample avoidable and supporting scavenging.",
-      "prediction": "Preregistered before running: compare E75's 16-seed reference with the current final defaults on the same seeds at 200000 ticks using live policy. Expect herd presence and grazing to remain positive on at least 14/16, dodge_skill at least 0.5, trampled_share within 0.005\u20130.10, and at least some herd carcass meals. Compare local economy and ecology, and attach per-seed survival and family checks. Population, predator, prey, and basin-family misses are recorded as balancing diagnostics under the user's partial-acceptance direction; they are not hidden or treated as passes.",
+      "prediction": "Preregistered before running: compare E75's 16-seed reference with the current final defaults on the same seeds at 200000 ticks using live policy. Expect herd presence and grazing to remain positive on at least 14/16, dodge_skill at least 0.5, trampled_share within 0.005–0.10, and at least some herd carcass meals. Compare local economy and ecology, and attach per-seed survival and family checks. Population, predator, prey, and basin-family misses are recorded as balancing diagnostics under the user's partial-acceptance direction; they are not hidden or treated as passes.",
       "targets": [
         "eval.predators_at_end",
         "eval.prey_types_at_end",
@@ -4388,6 +4388,82 @@
         "evals/decisions/E174/y1-b2.report.json"
       ],
       "date": "2026-11-14",
+      "branch": "season/next",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
+    },
+    {
+      "id": "E175",
+      "hypothesis": "honest-budgets Phase 2: a kill that takes the victim's body (killShare, killGorgeCap, no kill payment) and a carcass that holds what the body held and fades make hunter income come from the bodies they eat, so zero-kill lives stop living on carcasses.",
+      "prediction": "On the 16-seed screen (honest-kill.grid.json, 400000 ticks), the finalist reads eval.hunter_zero_kill_carcass_share lower than control, and the 64-seed keep rule reads no guard WORSE, eval.hunter_catches_per_1k included. Falsified when every arm reads hunter catches WORSE.",
+      "targets": [
+        "eval.hunter_zero_kill_carcass_share",
+        "eval.hunter_catches_per_1k",
+        "eval.hunter_income_share.carcass"
+      ],
+      "before": "control arm of evals/screens/honest-kill.grid.json (season 10 defaults), seeds 1 to 16, 400000 ticks, floor on, policy live",
+      "after": "the carcassBody arms of the same screen",
+      "verdicts": {
+        "eval.hunter_zero_kill_carcass_share": "-",
+        "eval.hunter_catches_per_1k": "better",
+        "eval.hunter_income_share.carcass": "-"
+      },
+      "note": "Screen: every body arm moves hunter income onto kills; finalist body-k25r. Keep rule on 64 seeds against E174 y1-b2: no harm (alive 12 harmed vs 5 recovered, p 0.143), catches 0.39 to 1.35 better, carcass income share 0.48 to 0.008, zero-kill carcass share 0.108 to 0.084 (interval includes 0). Hunters alive 46/64 against 53, adoption bar not met; juvenile hunter deaths worse. Adopted at the switch (T13).",
+      "reports": [
+        "evals/decisions/E175/results.md",
+        "evals/decisions/E175/screen-table.md",
+        "evals/decisions/E175/body-k25r.report.json"
+      ],
+      "date": "2026-11-15",
+      "branch": "season/next",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "better"
+    },
+    {
+      "id": "E176",
+      "hypothesis": "honest-budgets Phase 3: a wall or rock impact that costs by the speed into the surface above a deadband (impactDamage, impactDeadband), with the flat contact damages (obstacleDamage, wallDamage) at 0, stops charging blobs that brush, slide along or rest against a surface, so collision deaths come only from hard hits.",
+      "prediction": "On the 16-seed screen (honest-impact.grid.json, 400000 ticks), the finalist reads eval.collision_death_share better than control, and the 64-seed keep rule reads no guard WORSE. Falsified when eval.collision_death_share stays above 0.15 on every arm.",
+      "targets": ["eval.collision_death_share", "eval.refuge_episode_entry"],
+      "before": "control arm of evals/screens/honest-impact.grid.json (season 10 defaults), seeds 1 to 16, 400000 ticks, floor on, policy live",
+      "after": "the impact arms of the same screen (d2-x8, d4-x12, d4-x25)",
+      "verdicts": {},
+      "note": "Screen: every impact arm cuts eval.collision_death_share from 0.225 to 0.008-0.018 with no harm at 16 seeds; finalist d4-x25 (full-speed hit costs 100). The 64-seed keep-rule pass (T19) runs on top of the Phase 2 switch.",
+      "reports": ["evals/decisions/E176/results.md", "evals/decisions/E176/screen-table.md"],
+      "date": "2026-11-15",
+      "branch": "season/next",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
+    },
+    {
+      "id": "E177",
+      "hypothesis": "honest-budgets Phase 4: with no clonal cap (splitClonalMax out of reach), a split that gives the childShare gene's share (splitGiftGene) and a birthReserve that blocks a birth under the reserve, the edge breeds: a line splits while no mate is in reach, and the tick a mate is in reach the next birth is a mating.",
+      "prediction": "On the 16-seed screen (honest-edge.grid.json, 400000 ticks), the finalist reads eval.edge_starve_per_prey not worse than control, and the 64-seed keep rule reads held not worse with no guard WORSE and eval.childshare_by_condition above 0. Falsified when eval.edge_starve_per_prey reads WORSE on every arm.",
+      "targets": ["eval.edge_starve_per_prey", "eval.childshare_by_condition"],
+      "before": "control arm of evals/screens/honest-edge.grid.json (season 10 defaults), seeds 1 to 16, 400000 ticks, floor on, policy live",
+      "after": "the edge arms of the same screen (nocap, nocap-g, nocap-g-r)",
+      "verdicts": {},
+      "note": "Prediction recorded before the run (T23); the screen (T24) and the 64-seed keep-rule pass (T25) are not run yet.",
+      "reports": ["evals/decisions/E177/results.md"],
+      "date": "2026-11-15",
+      "branch": "season/next",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "no-difference"
+    },
+    {
+      "id": "E178",
+      "hypothesis": "honest-budgets Phase 5: a call that is seen (a threat on the caller's rays at call time) changes the bite, so a bite on a seen caller moves only alarmBiteShare of the energy and a call is worth its cost only when a hunter is in view.",
+      "prediction": "On the 16-seed screen (honest-alarm.grid.json, 400000 ticks), the finalist reads eval.alarm_rate above 0 on most seeds with eval.alarm_calls_with_threat_per_1k rising with it, and the 64-seed keep rule reads no guard WORSE. Falsified when calls with no threat rise faster than calls with one.",
+      "targets": ["eval.alarm_rate", "eval.alarm_lift", "eval.alarm_calls_with_threat_per_1k"],
+      "before": "control arm of evals/screens/honest-alarm.grid.json (alarmBiteShare 1), seeds 1 to 16, 400000 ticks, floor on, policy live",
+      "after": "the alarm arms of the same screen (a75, a50)",
+      "verdicts": {},
+      "note": "Prediction recorded before the run (T29); the screen and the 64-seed keep-rule pass with the liar check (T30) are not run yet.",
+      "reports": ["evals/decisions/E178/results.md"],
+      "date": "2026-11-15",
       "branch": "season/next",
       "beforePolicy": "live",
       "afterPolicy": "live",

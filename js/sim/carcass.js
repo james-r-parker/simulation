@@ -9,9 +9,18 @@ export const FOOD_ORIGIN = Object.freeze({ NONE: 0, HERD_CARCASS: 1, DUNG_ZONE: 
 /** @typedef {import('./world.js').World} World */
 
 /**
+ * @param {World} world the world
+ * @param {number} slot the dying agent
+ * @returns {number} the carcass's value: `carcassShare` x the energy the body holds at death (its store, plus what a
+ *   kill left unclaimed in `carcassHeld`)
+ */
+function bodyValue(world, slot) {
+    return world.config.carcassShare * (world.energy[slot] + world.carcassHeld[slot]);
+}
+
+/**
  * Leaves a carcass at a dying agent's place: a meat item of `carcassShare` x the energy the
- * agent took in over its life (`foodEnergy` plus `biteEnergy`, both zeroed when the slot is freed), as large as the
- * agent. A body is worth what it built itself from; an agent that took in nothing leaves none. Like spawned plant
+ * body holds at death (see `bodyValue`), as large as the agent. An empty body leaves none. Like spawned plant
  * food it enters the ledger only when eaten, so the death still books out just the agent's remaining energy. It
  * takes the lowest free food slot, so it counts toward `maxFood`; with none free, no carcass appears. Draws nothing
  * from any RNG stream.
@@ -20,7 +29,7 @@ export const FOOD_ORIGIN = Object.freeze({ NONE: 0, HERD_CARCASS: 1, DUNG_ZONE: 
  * @returns {void}
  */
 export function leaveCarcass(world, slot) {
-    const value = world.config.carcassShare * (world.foodEnergy[slot] + world.biteEnergy[slot]);
+    const value = bodyValue(world, slot);
     if (!(value > 0)) {
         return;
     }
@@ -37,7 +46,7 @@ export function leaveCarcass(world, slot) {
             world.foodAge[food] = 0;
             world.foodHue[food] = 0;
             world.foodTox[food] = 0;
-            world.foodLife[food] = world.config.carcassTicks;
+            world.foodLife[food] = world.config.carcassFadeTicks;
             world.foodPatch[food] = -1;
             world.foodCount += 1;
             return;

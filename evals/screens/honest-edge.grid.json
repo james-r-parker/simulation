@@ -1,0 +1,22 @@
+{
+  "seeds": 16,
+  "seedOffset": 0,
+  "ticks": 400000,
+  "policy": "live",
+  "reference": "control",
+  "arms": {
+    "control": {},
+    "nocap": {
+      "splitClonalMax": 1000000
+    },
+    "nocap-g": {
+      "splitClonalMax": 1000000,
+      "splitGiftGene": true
+    },
+    "nocap-g-r": {
+      "splitClonalMax": 1000000,
+      "splitGiftGene": true,
+      "birthReserve": 300
+    }
+  }
+}

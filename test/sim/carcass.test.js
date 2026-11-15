@@ -15,7 +15,7 @@ import { validateConfig } from '../../js/sim/config-validate.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const PREDATOR = 1;
-const ON = { carcassTicks: 5, carcassShare: 0.5, maxAgeTicks: 10, maxEnergy: 1000 };
+const ON = { carcassFadeTicks: 5, carcassShare: 0.5, maxAgeTicks: 10, maxEnergy: 1000 };
 const FED = { foodEnergy: 400, biteEnergy: 200 };
 
 /**
@@ -31,15 +31,15 @@ function killOld(w, energy) {
 }
 
 describe('carcass config', () => {
-    it('defaults to 300 ticks, a 0.5 share and meat values per specialisation', () => {
+    it('defaults to a 1500 tick fade, a 0.8 share and meat values per specialisation', () => {
         const c = createConfig({ ...SIMPLE_WORLD });
-        expect([c.carcassTicks, c.carcassShare]).toEqual([300, 0.8]);
+        expect([c.carcassFadeTicks, c.carcassShare]).toEqual([1500, 0.8]);
         expect(Object.values(c.specialisations).map((s) => s.meatFoodValue)).toEqual([0.3, 1, 0.3, 0.3, 0.3]);
     });
 
     it.each([
-        ['carcassTicks', 0],
-        ['carcassTicks', 1.5],
+        ['carcassFadeTicks', 0],
+        ['carcassFadeTicks', 1.5],
         ['carcassShare', -0.1],
         ['carcassShare', 1.1],
     ])('rejects %s = %s', (key, value) => {
@@ -56,40 +56,41 @@ describe('carcass config', () => {
 });
 
 describe('leaveCarcass', () => {
-    it('leaves a meat item at the body holding carcassShare of the energy it took in (ate 400, bit 200)', () => {
+    it('leaves a meat item at the body, where it died, as large as the body', () => {
         const w = lifeWorld(ON);
         const food = killOld(w, 80);
         expect(food).toBeGreaterThanOrEqual(0);
         expect(w.foodKind[food]).toBe(FOOD_KIND.MEAT);
         expect([w.foodX[food], w.foodY[food]]).toEqual([300, 400]);
-        expect(w.foodValue[food]).toBe(300);
+        expect(w.foodValue[food]).toBe(40);
         expect(w.foodAge[food]).toBe(0);
         expect(w.foodCount).toBe(1);
     });
 
-    it('leaves none for a newborn that ate and bit nothing', () => {
+    it('leaves none for a body that holds nothing', () => {
         const w = lifeWorld(ON);
-        const slot = addBlob(w, { energy: 50 });
+        const slot = addBlob(w, { energy: 0, ...FED });
         leaveCarcass(w, slot);
         expect(w.foodCount).toBe(0);
     });
 
-    it('resets the intake total when the slot is reused', () => {
+    it('resets the held remainder when the slot is reused', () => {
         const w = lifeWorld(ON);
         const slot = addBlob(w, { energy: 50, ...FED });
+        w.carcassHeld[slot] = 70;
         freeAgent(w, slot);
-        const again = addBlob(w, { energy: 50 });
+        const again = addBlob(w, { energy: 0 });
         expect(again).toBe(slot);
         leaveCarcass(w, again);
         expect(w.foodCount).toBe(0);
     });
 
-    it('leaves a carcass for a starved agent with no energy', () => {
+    it('leaves none for a starved agent, whose body held nothing', () => {
         const w = lifeWorld(ON);
         const slot = addBlob(w, { energy: 0, lastLoss: 1, x: 300, y: 400, ...FED });
         reap(w, recordingPolicy([]));
         expect(w.alive[slot]).toBe(0);
-        expect(w.foodValue[w.foodAlive.indexOf(1)]).toBe(300);
+        expect(w.foodCount).toBe(0);
         expect(() => assertInvariants(w)).not.toThrow();
     });
 
@@ -110,9 +111,10 @@ describe('leaveCarcass', () => {
         expect(Object.values(w.rng).map((r) => Array.from(r.s))).toEqual(before);
     });
 
-    it('leaves a carcass for an agent that was eaten', () => {
+    it('leaves a carcass for an agent that was killed, of what the killer did not take', () => {
         const w = lifeWorld(ON);
         const slot = addBlob(w, { energy: 0, ...FED });
+        w.carcassHeld[slot] = 600;
         w.lastBiter[slot] = 9;
         leaveCarcass(w, slot);
         expect(w.foodValue[w.foodAlive.indexOf(1)]).toBe(300);
@@ -120,14 +122,14 @@ describe('leaveCarcass', () => {
 });
 
 describe('carcass expiry', () => {
-    it('lasts carcassTicks ticks while plant food keeps lasting the species lifetime', () => {
+    it('lasts carcassFadeTicks ticks while plant food keeps lasting the species lifetime', () => {
         const w = lifeWorld({ ...ON, flora: { grass: { life: 100 } } });
         const meat = killOld(w, 80);
         const plant = w.foodAlive.indexOf(0);
         w.foodAlive[plant] = 1;
         w.foodLife[plant] = 100;
         w.foodCount += 1;
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 4; i++) {
             ageFood(w);
         }
         expect(w.foodAlive[meat]).toBe(1);
@@ -142,7 +144,7 @@ describe('carcass expiry', () => {
 describe('eating meat', () => {
     /**
      * @param {number} spec the eater's specialisation
-     * @returns {{w: any, eater: number}} the world after one feed phase over a 300 energy carcass
+     * @returns {{w: any, eater: number}} the world after one feed phase over a 40 energy carcass
      */
     function eatCarcass(spec) {
         const w = lifeWorld(ON);
@@ -158,13 +160,13 @@ describe('eating meat', () => {
 
     it('gives a predator the full value', () => {
         const { w, eater } = eatCarcass(PREDATOR);
-        expect(w.energy[eater]).toBeCloseTo(400, 9);
+        expect(w.energy[eater]).toBeCloseTo(140, 9);
         expect(w.foodCount).toBe(0);
     });
 
     it('gives a forager 0.3 of the value', () => {
         const { w, eater } = eatCarcass(0);
-        expect(w.energy[eater]).toBeCloseTo(190, 9);
+        expect(w.energy[eater]).toBeCloseTo(112, 9);
         expect(w.foodCount).toBe(0);
     });
 
@@ -255,5 +257,64 @@ describe('carcass snapshot and hash', () => {
         const before = hashWorld(w);
         w.foodKind[0] = FOOD_KIND.MEAT;
         expect(hashWorld(w)).not.toBe(before);
+    });
+});
+
+describe('the body carcass', () => {
+    const BODY = { ...ON, carcassFadeTicks: 10 };
+
+    it('holds carcassShare of the energy the body held at death (old age: the store)', () => {
+        const w = lifeWorld(BODY);
+        expect(w.foodValue[killOld(w, 80)]).toBe(40);
+    });
+
+    it('holds carcassShare of the remainder a kill left, which the killer did not take', () => {
+        const w = lifeWorld(BODY);
+        const slot = addBlob(w, { energy: 0, x: 300, y: 400, ...FED });
+        w.carcassHeld[slot] = 120;
+        w.lastBiter[slot] = 9;
+        leaveCarcass(w, slot);
+        expect(w.foodValue[w.foodAlive.indexOf(1)]).toBe(60);
+    });
+
+    it('leaves none for a starved body, which held nothing', () => {
+        const w = lifeWorld(BODY);
+        addBlob(w, { energy: 0, lastLoss: 1, x: 300, y: 400, ...FED });
+        reap(w, recordingPolicy([]));
+        expect(w.foodCount).toBe(0);
+    });
+
+    it('fades the value linearly to 0 over carcassFadeTicks, and a meal takes the value at that tick', () => {
+        const w = lifeWorld(BODY);
+        const food = killOld(w, 80);
+        for (let age = 1; age < 10; age++) {
+            ageFood(w);
+            expect(w.foodValue[food]).toBeCloseTo(40 * (1 - age / 10), 9);
+        }
+        expect(w.foodAlive[food]).toBe(1);
+        ageFood(w);
+        expect(w.foodAlive[food]).toBe(0);
+    });
+
+    it('leaves a herd carcass its own life and value', () => {
+        const w = lifeWorld({ ...BODY, herdCarcassTicks: 100 });
+        const food = killOld(w, 80);
+        w.foodOrigin[food] = 1;
+        w.foodLife[food] = 100;
+        for (let i = 0; i < 20; i++) {
+            ageFood(w);
+        }
+        expect(w.foodValue[food]).toBe(40);
+        expect(w.foodAlive[food]).toBe(1);
+    });
+
+    it('keeps the energy ledger balanced: the death books the store out, the meal books the carcass in', () => {
+        const w = lifeWorld(BODY);
+        const slot = addBlob(w, { energy: 80, ageTicks: 10, x: 300, y: 400, ...FED });
+        const booked = w.ledger[0] - w.ledger[1];
+        reap(w, recordingPolicy([]));
+        expect(w.alive[slot]).toBe(0);
+        expect(w.ledger[0] - w.ledger[1]).toBeCloseTo(booked - 80, 9);
+        expect(() => assertInvariants(w)).not.toThrow();
     });
 });

@@ -87,7 +87,7 @@ function singles(Type, names) {
  */
 function agentSpecs(layout) {
     return [
-        ...singles(Uint8Array, ['alive', 'spec', 'sex', 'ateTimer', 'bittenTimer', 'lastLoss']),
+        ...singles(Uint8Array, ['alive', 'spec', 'sex', 'ateTimer', 'bittenTimer', 'lastLoss', 'alarmSeen']),
         ...singles(Float32Array, ['x', 'y', 'vx', 'vy', 'angle', 'turnRate', 'size', 'temperature', 'dose']),
         ...singles(Float64Array, ['energy', 'foodEnergy', 'biteEnergy', 'pollenRefusalTick']),
         ...singles(Uint32Array, ['pollenSerial']),
@@ -125,6 +125,8 @@ function allocAgentArrays(world, layout) {
             ...splitGateSpecs(),
             ...proofSpecs(),
             ...killSpecs(),
+            // `carcassHeld`: what a kill left for the carcass (js/sim/kill-body.js)
+            [Float64Array, 'carcassHeld', 1],
             ...ledgerSpecs(),
             ...diseaseSpecs(),
             ...mateRankSpecs(),

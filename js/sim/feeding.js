@@ -11,6 +11,7 @@ import { INCOME, noteBiteLedger, noteIncome } from './hunter-ledger.js';
 import { depositPheromone } from './pheromones.js';
 import { FOOD_GONE, removeFood } from './world.js';
 import { FOOD_KIND, FOOD_ORIGIN } from './carcass.js';
+import { killLine, takeBody } from './kill-body.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { specParams } from './spec-params.js';
 import { gainTemperature } from './temperature.js';
@@ -192,6 +193,26 @@ function kickOf(world, biter, victim) {
 }
 
 /**
+ * @param {Record<string, any>} world the world
+ * @param {number} biter the biting slot
+ * @param {number} victim the bitten slot
+ * @param {boolean} fatal whether the bite killed
+ * @returns {number} the energy the killer takes from the body a fatal bite left holding energy (0 at `killShare` 0)
+ */
+function settleKill(world, biter, victim, fatal) {
+    return fatal && world.energy[victim] > 0 ? takeBody(world, biter, victim) : 0;
+}
+
+/**
+ * @param {Record<string, any>} world the world
+ * @param {number} victim the bitten slot
+ * @returns {number} `alarmBiteShare` while the victim's seen alarm runs (a threat was on its rays at the call), else 1
+ */
+function alarmShare(world, victim) {
+    return world.alarmTimer[victim] > 0 && world.alarmSeen[victim] === 1 ? world.config.alarmBiteShare : 1;
+}
+
+/**
  * Resolves one bite: moves energy, records the loss, charges the biter's kick and deposits pheromones.
  * @param {Record<string, any>} world the world
  * @param {number} biter the biting slot
@@ -201,23 +222,20 @@ function kickOf(world, biter, victim) {
 function applyBite(world, biter, victim) {
     const { config, x, y } = world;
     const taken = specParams(config, world.spec[victim]).biteTakenMultiplier;
-    const bite = config.biteEnergy * world.biteBySpec[world.spec[biter]];
+    const bite = config.biteEnergy * world.biteBySpec[world.spec[biter]] * alarmShare(world, victim);
     const wasAlive = world.energy[victim] > 0;
     const kick = kickOf(world, biter, victim);
     transferEnergy(world, victim, biter, bite * taken);
     world.biteEnergy[biter] += world.transferGained;
-    const fatal = wasAlive && world.energy[victim] <= 0;
+    const fatal = wasAlive && world.energy[victim] <= killLine(config, world.maxEnergyBySpec[world.spec[victim]]);
     noteFatalBiteObservation(world, biter, victim, fatal);
-    let gained = world.transferGained;
-    if (fatal && config.predatorKillEnergy > 0) {
-        gained += addEnergy(world, biter, config.predatorKillEnergy, ENERGY_SOURCE.KILL);
-    }
+    const moved = world.transferGained + settleKill(world, biter, victim, fatal);
     if (fatal && config.predatorRestTicks > 0 && specParams(config, world.spec[biter]).canHunt) {
         world.restTimer[biter] = config.predatorRestTicks;
     }
-    gainTemperature(world, biter, (config.temperatureGainEat * world.transferGained) / config.foodEnergy);
+    gainTemperature(world, biter, (config.temperatureGainEat * moved) / config.foodEnergy);
     const paid = removeEnergy(world, biter, kick, LOSS_CAUSE.COST);
-    noteReward(world, biter, fatal ? REWARD_SOURCE.KILL : REWARD_SOURCE.BITE, gained);
+    noteReward(world, biter, fatal ? REWARD_SOURCE.KILL : REWARD_SOURCE.BITE, moved);
     world.lastLoss[victim] = LOSS_CAUSE.BITE;
     const biterId = world.genomeId[biter];
     if (wasAlive) {
@@ -230,7 +248,7 @@ function applyBite(world, biter, victim) {
         world.lastBiter[victim] = biterId;
         world.lastBiteTick[victim] = world.tick;
     }
-    noteBiteLedger(world, biter, { gained, fatal, kick: paid, victim });
+    noteBiteLedger(world, biter, { gained: moved, fatal, kick: paid, victim });
     world.bittenTimer[victim] = 0;
     depositPheromone(world, world.attack, x[biter], y[biter]);
     depositPheromone(world, world.danger, x[victim], y[victim]);

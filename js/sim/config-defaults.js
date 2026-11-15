@@ -142,7 +142,7 @@ export const DEFAULTS = deepFreeze({
             plantFoodValue: 0, // new: share of a food item's energy this specialisation gains; 0 for predators (world-balance.md T45, from T41)
             meatFoodValue: 1, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
             sprintBoost: 1.6,
-            passiveLossMultiplier: 0.3, // survival screen (instinct, inst1-gorge-bite20): gorge and fast, a predator rests cheaply between meals like a python (was 0.6, T15d; scales the standing energy loss, T15f)
+            passiveLossMultiplier: 0.2, // honest-budgets E175 (was 0.3): gorge and fast, a predator rests cheaply between meals like a python, now that a kill no longer mints 600 (was 0.6, T15d; scales the standing energy loss, T15f)
             splitMinEnergyMultiplier: 0.6, // tuned, fitness-and-selection T15d (scales splitMinEnergy for this specialisation, T15f)
             kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
             maxEnergyMultiplier: 5, // survival screen (instinct, inst1-gorge-bite20): a 3x fat store (5x from E103), so a big meal carries a predator across the fast between kills like a lion's // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
@@ -218,7 +218,11 @@ export const DEFAULTS = deepFreeze({
     grazeThrust: 0.6, // eat-choice G1b (E171, E172): thrust multiplier while a non-hunter holds BITE above 0; 1 is off
     fatSlowShare: 0.5, // eat-choice G2: a full store slows thrust and turn by this share; 0 is off
     strikeMissCost: 1, // eat-choice G4: energy a hunter loses on a tick it holds BITE with no body in its jaws; 0 is off
-    carcassTicks: 300, // new: ticks a carcass lasts before it expires (T54)
+    carcassFadeTicks: 1500, // honest-budgets E175: ticks a blob carcass takes to fade linearly to 0; a herd carcass keeps its own life
+    killShare: 0.25, // honest-budgets E175 (was 0): a bite is fatal at or under this share of the victim's maximum energy; 0 is a kill at an empty store
+    killGorgeCap: 2000, // honest-budgets E175: the most energy a killer takes from the body it just killed (read only above killShare 0)
+    impactDamage: 0, // honest-budgets Phase 3: energy per unit of speed above impactDeadband that a wall or rock impact costs; 0 is off
+    impactDeadband: 2, // honest-budgets Phase 3: the speed into a wall or rock an impact is free up to (read only above impactDamage 0)
     carcassShare: 0.8, // new: share of an agent's energy at death that its carcass holds (T54)
     wallGaps: 3, // new: gaps in the wall, basins only (T52)
     wallGapWidth: 200, // new: width of each wall gap in px (T52; 200 since the big bang, from 300)
@@ -254,7 +258,6 @@ export const DEFAULTS = deepFreeze({
     smokeThreshold: 0.8, // new: the smoke output must exceed it
     packWindow: 120, // new: ticks between two biters for a shared kill
     maxClouds: 32, // new
-    predatorKillEnergy: 600, // survival screen (instinct, inst1-gorge-bite20): a 600-energy meal per kill, the gorge in gorge-and-fast (was 150, T15d; energy the biter gains on a fatal bite, T15f)
     alarmThreshold: 0.65, // tuned, fitness-and-selection T15d (the alarm output must exceed it, T15m)
     huntCallThreshold: 0.65, // tuned, fitness-and-selection T15d (the hunt output must exceed it, T15m)
     foodPatchCount: 16, // new: permanent food patches; 0 is off (world-balance T34, 16 from T41)
@@ -284,6 +287,9 @@ export const DEFAULTS = deepFreeze({
     splitDeliberateShareMin: 0.2, // new: fitness-and-selection T48d; own deliberate meals over meals needed to split, 0 is off; 0.2 from T48g
     splitMaxPerLife: 0, // new: fitness-and-selection T48d; splits per lifetime, 0 is unlimited
     splitClonalMax: 3, // natural-selection Phase 4: split generations in a row before the line must mate (aphids), at least 1; 3, the mildest arm of E85 (user, 2026-10-31)
+    splitGiftGene: false, // honest-budgets Phase 4: a split gives the childShare gene's share of the splitter's energy, as a mating does; false gives half
+    alarmBiteShare: 1, // honest-budgets Phase 5: the share of a bite's energy that moves while the victim's alarm is seen (a threat was on its rays at the call); 1 is the full bite
+    birthReserve: 0, // honest-budgets Phase 4: a birth that would leave the mother under this energy is blocked; 0 is off
     juvenileBurn: 0.6, // realistic-keepers T4: multiplier on the standing, movement and turn cost of a juvenile hunter, in [0, 1]
     kinPullWeight: 0.5, // realistic-keepers T4: the kin thrust and turn cells of a hunter are raised to at least this x instinctWeight, in [0, 4]
     juvenileTicks: 3000, // hunter-learning: a canHunt young is juvenile while ageTicks is below this; the detectors' age bands use it too

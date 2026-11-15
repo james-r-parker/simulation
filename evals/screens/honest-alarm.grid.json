@@ -1,0 +1,18 @@
+{
+  "seeds": 16,
+  "seedOffset": 0,
+  "ticks": 400000,
+  "policy": "live",
+  "reference": "control",
+  "arms": {
+    "control": {
+      "alarmBiteShare": 1
+    },
+    "a75": {
+      "alarmBiteShare": 0.75
+    },
+    "a50": {
+      "alarmBiteShare": 0.5
+    }
+  }
+}

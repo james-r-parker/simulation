@@ -275,3 +275,43 @@ describe('splitAll', () => {
         expect(event(w, 0).slice(0, 4)).toEqual([EVENT_TYPE.BIRTH_BLOCKED, 0, a, BLOCKED_CAUSE.CAPACITY]);
     });
 });
+
+describe('the split gift and birthReserve', () => {
+    const SPLIT = { splitDeliberateMin: 0, splitDeliberateShareMin: 0 };
+
+    /**
+     * Splits one blob of 1700 energy once.
+     * @param {Record<string, any>} over config overrides
+     * @param {number} share the blob's childShare gene
+     * @returns {{w: any, mother: number, born: boolean}} the world after one split pass
+     */
+    function splitOnce(over, share) {
+        const w = lifeWorld({ ...SPLIT, ...over });
+        const mother = addBlob(w, { energy: 1700, spec: 2, childShare: share });
+        splitAll(w, recordingPolicy([]));
+        return { w, mother, born: w.population === 2 };
+    }
+
+    it('gives a split half the mother energy by default, whatever the gene', () => {
+        const { w, mother } = splitOnce({}, 0.2);
+        expect(w.energy[mother]).toBe(850);
+    });
+
+    it("gives a split the childShare gene's share with splitGiftGene", () => {
+        const { w, mother } = splitOnce({ splitGiftGene: true }, 0.2);
+        expect(w.energy[mother]).toBeCloseTo(1360, 2);
+        expect(w.energy[1]).toBeCloseTo(340, 2);
+    });
+
+    it('blocks a birth that would leave the mother under birthReserve, and allows one that leaves exactly it', () => {
+        const blocked = splitOnce({ birthReserve: 1000 }, 0.5);
+        expect(blocked.born).toBe(false);
+        expect(blocked.w.energy[blocked.mother]).toBe(1700);
+        const allowed = splitOnce({ birthReserve: 850 }, 0.5);
+        expect(allowed.born).toBe(true);
+    });
+
+    it('leaves a split alone at birthReserve 0', () => {
+        expect(splitOnce({ birthReserve: 0 }, 0.5).born).toBe(true);
+    });
+});
