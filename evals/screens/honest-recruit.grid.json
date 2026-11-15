@@ -1,0 +1,50 @@
+{
+  "seeds": 16,
+  "seedOffset": 0,
+  "ticks": 400000,
+  "policy": "live",
+  "reference": "control",
+  "arms": {
+    "control": {
+      "killGorgeShare": 1
+    },
+    "gorge": {
+      "killGorgeShare": 0.4
+    },
+    "recruit": {
+      "killGorgeShare": 0.4,
+      "territoryMax": 4,
+      "territoryRadius": 250,
+      "specFlipNoHunt": true,
+      "specialisations": {
+        "predator": {
+          "splitMinEnergyMultiplier": 0.85
+        }
+      }
+    },
+    "cub-plant": {
+      "killGorgeShare": 0.4,
+      "territoryMax": 4,
+      "territoryRadius": 250,
+      "specFlipNoHunt": true,
+      "juvenilePlantShare": 0.25,
+      "specialisations": {
+        "predator": {
+          "splitMinEnergyMultiplier": 0.85
+        }
+      }
+    },
+    "cub-size": {
+      "killGorgeShare": 0.4,
+      "territoryMax": 4,
+      "territoryRadius": 250,
+      "specFlipNoHunt": true,
+      "huntSizeRatio": 0.9,
+      "specialisations": {
+        "predator": {
+          "splitMinEnergyMultiplier": 0.85
+        }
+      }
+    }
+  }
+}
