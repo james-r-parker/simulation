@@ -35,5 +35,26 @@ every arm reads no harm on the 16-seed keep rule (hunters alive 15/16 against 13
   while a brush is free; it has the most seeds under the specialisation cap of the impact arms and the longest median
   life. `d4-x12` reads the lowest collision share, by 0.01.
 
-**Next.** `d4-x25` (`evals/decisions/E176/d4-x25.config.json`) on seeds 1 to 64 against a 64-seed run of the defaults
-after the Phase 2 switch, `--keep-rule` (T19).
+## Keep rule (64 seeds, 400000 ticks, on the Phase 2 defaults)
+
+`npm run eval:compare -- evals/decisions/E176/defaults-s10b.report.json evals/decisions/E176/d4-x25.report.json --keep-rule
+--allow-config-diff impactDamage,impactDeadband,obstacleDamage,wallDamage`
+
+**Verdict: `WORSE` on the hunter catches guard; the switch (T20) is not made and Phase 3 is parked.**
+
+| Guard                        | Result                                                                  |
+| ---------------------------- | ----------------------------------------------------------------------- |
+| alive                        | no harm: 7 seeds harmed, 16 recovered, exact p 0.093 (55/64 against 46) |
+| held                         | better: 3 harmed, 22 recovered, exact p 0.00016                         |
+| under80                      | no harm: 0 harmed, 3 recovered                                          |
+| `eval.hunter_catches_per_1k` | worse: 1.347 to 1.199, interval [-0.234, -0.061]                        |
+
+- The mechanism does what it was built for: `eval.collision_death_share` falls from 0.218 to 0.013 (better), and the
+  adoption bar is met (hunters alive 55/64, no seed under 80 against 3).
+- Also better: `eval.lineages_alive` (2.30 to 2.50), `eval.median_lifespan`, `eval.fed_median_lifespan`,
+  `eval.hunter_juvenile_death_share` (0.76 to 0.72), `eval.qd_score`. The population mean rises from 255 to 324.
+- Also worse: `eval.births_per_1k` (-14%), `eval.food_energy_per_1k` (-13%), `eval.cold_stress_share` (0.13 to 0.19),
+  `eval.strike_miss_energy_ratio`, `eval.pursuit_kill_share`.
+- `eval.hunter_catches_per_1k` is a speed (catches per 1000 hunter ticks): longer-lived hunters among more prey catch
+  less often per tick while more of them stay alive. Whether that loss is real harm or the denominator growing is the
+  open question for the next pass; an arm with a lower `impactDamage` (`d4-x12`) is the other candidate.
