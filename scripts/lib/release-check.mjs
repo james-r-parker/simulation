@@ -16,19 +16,20 @@ export function isBreaking(message) {
  */
 
 /**
- * @param {{baseHash: string, headHash: string, messages: readonly string[], base: string, addsSeason: boolean}} input
- *   `rulesHash` at the merge base and at HEAD, the pull request's commit messages and title, its base branch, and
- *   whether it adds a `library/seasons.json` entry
+ * @param {{baseHash: string, headHash: string, messages: readonly string[], base: string, addsSeason: boolean,
+ *   movesUnreleased?: boolean}} input `rulesHash` at the merge base and at HEAD, the pull request's commit messages and
+ *   title, its base branch, whether it adds a `library/seasons.json` entry, and whether it moves the `rulesHash` of the
+ *   newest season while that season has no release
  * @returns {Verdict} the verdict; a PR that leaves `rulesHash` alone always passes
  */
-export function releaseCheck({ baseHash, headHash, messages, base, addsSeason }) {
+export function releaseCheck({ baseHash, headHash, messages, base, addsSeason, movesUnreleased = false }) {
     if (baseHash === headHash) {
         return { ok: true };
     }
     if (!messages.some(isBreaking)) {
         return { ok: false, reason: 'rules-change-not-breaking' };
     }
-    if (base === 'main' && !addsSeason) {
+    if (base === 'main' && !addsSeason && !movesUnreleased) {
         return { ok: false, reason: 'rules-change-on-main' };
     }
     return { ok: true };
@@ -41,6 +42,28 @@ export function releaseCheck({ baseHash, headHash, messages, base, addsSeason })
  */
 export function seasonAdded(before, after) {
     return JSON.parse(after).length > JSON.parse(before).length;
+}
+
+/**
+ * A season opened on `main` stays open until its first release: a rules change before then moves its `rulesHash` in
+ * place, because a second season would need a major the release does not have.
+ * @param {string} before `library/seasons.json` at the merge base
+ * @param {string} after `library/seasons.json` at HEAD
+ * @param {readonly string[]} tags the repository's tags
+ * @returns {boolean} true when both list the same seasons, the newest one's `rulesHash` differs, and no `v<major>.`
+ *   tag exists for it
+ */
+export function movesUnreleasedSeason(before, after, tags) {
+    const was = JSON.parse(before);
+    const now = JSON.parse(after);
+    if (was.length === 0 || was.length !== now.length) {
+        return false;
+    }
+    const old = was[was.length - 1];
+    const next = now[now.length - 1];
+    const sameSeason = old.season === next.season && old.major === next.major;
+    const released = tags.some((tag) => tag.startsWith(`v${next.major}.`));
+    return sameSeason && old.rulesHash !== next.rulesHash && !released;
 }
 
 /**
