@@ -117,4 +117,7 @@ export const FEATURE_RULES = {
     rewardBase: UNIT,
     rewardDecay: UNIT,
     predatorRestTicks: int(0, 65535),
+    defenderRepelEnergy: num(0),
+    defenderRepelCost: num(0),
+    defenderRepelImpulse: num(0),
 };

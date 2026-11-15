@@ -303,4 +303,7 @@ export const DEFAULTS = deepFreeze({
     rewardBase: 0.25, // realistic-keepers T5: share of the plain rate that applies with no reward
     rewardDecay: 0.02, // realistic-keepers T5: per-tick decay of the trace
     splitMateScarceTicks: 600, // natural-selection Phase 4: ticks without a possible mate in view before an agent may split (sharks, Komodo dragons); 0 is no wait
+    defenderRepelEnergy: 0, // prey-guilds Phase 2: energy a defender's active repel drains from a canHunt target in jaws; 0 is off
+    defenderRepelCost: 0, // prey-guilds Phase 2: energy a defender pays when landing an active repel
+    defenderRepelImpulse: 0, // prey-guilds Phase 2: knockback velocity added to the repelled hunter along the defender-to-hunter vector
 });
