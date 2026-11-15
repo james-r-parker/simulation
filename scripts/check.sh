@@ -76,7 +76,12 @@ if [[ $DOCS -eq 1 ]]; then
   [[ -z "$ONLY" ]] || { echo "--docs and --only cannot be combined" >&2; exit 2; }
   ONLY="conventions,designs-index,format,docs-tests"
 fi
+# Whether the caller picked the gates (--only, --docs or --tier) rather than taking the default selection.
+GATES_CHOSEN=0
+[[ -z "$ONLY" ]] || GATES_CHOSEN=1
 [[ -n "$ONLY" ]] || ONLY="$TIER2_GATES"
+# In CI the browser-smoke job runs the smoke (with --only), so the `check` job leaves it out of the default selection.
+[[ $CI -eq 1 && $GATES_CHOSEN -eq 0 ]] && SKIP="${SKIP:+$SKIP,}browser-smoke"
 [[ -z "${TEST_SEED:-}" || "$TEST_SEED" =~ ^[0-9]+$ ]] || { echo "TEST_SEED must be a non-negative integer, got: $TEST_SEED" >&2; exit 2; }
 if [[ -n "$ONLY" ]]; then
   IFS=',' read -ra requested <<<"$ONLY"
@@ -325,12 +330,10 @@ gate_bench_check() {
   fi
 }
 # gate_browser_smoke: the built app loads in a browser (scripts/browser-smoke.sh). It needs the Playwright image: skipped
-# without Docker (a failure under --ci). In CI the `check` job leaves it to the browser-smoke job, which passes --only.
+# without Docker (a failure under --ci). In CI the default selection leaves it out (the browser-smoke job passes --only).
 gate_browser_smoke() {
   wanted browser-smoke || return 0
-  if [[ $CI -eq 1 && -z "$ONLY" ]]; then
-    skip_gate browser-smoke "runs in the browser-smoke job"
-  elif [[ $CI -eq 0 && "${PLAYWRIGHT_BROWSERS_PATH:-}" != /ms-playwright && "${SMOKE_LOCAL:-}" != 1 ]] \
+  if [[ $CI -eq 0 && "${PLAYWRIGHT_BROWSERS_PATH:-}" != /ms-playwright && "${SMOKE_LOCAL:-}" != 1 ]] \
     && ! docker info >/dev/null 2>&1; then
     skip_gate browser-smoke "no Docker (SMOKE_LOCAL=1 uses the local Chromium)"
   else
