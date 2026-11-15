@@ -114,4 +114,63 @@ describe('scene-guilds', () => {
         expect(m['eval.scout_alarm_lead_share']?.value).toBeCloseTo(0.5, 6);
         expect(m['eval.reproducer_recovery_rate']?.value).toBeCloseTo(0.5, 6);
     });
+
+    it('starts recovery counting from an empty population when initialAgents is omitted', () => {
+        const scene = createGuildScene({ maxAgeTicks: 1000, callRadius: 200 });
+        noteGuildBirth(scene, { tick: BURN_IN_TICKS, spec: 2, cause: BORN_CAUSE.MATE });
+        expect(guildMetrics(scene)['eval.reproducer_recovery_rate']?.value).toBe(1);
+    });
+
+    it('skips a checkpoint with nobody alive', () => {
+        const scene = createGuildScene({ maxAgeTicks: 1000, callRadius: 200, initialAgents: 5 });
+        sampleGuilds(scene, makeWorld(4));
+        expect(guildMetrics(scene)['eval.guild_share.forager']?.value).toBeNull();
+    });
+
+    it('ignores deaths before burn-in and hunter deaths', () => {
+        const scene = createGuildScene({ maxAgeTicks: 1000, callRadius: 200, initialAgents: 5 });
+        noteGuildDeath(scene, { tick: BURN_IN_TICKS - 1, spec: 0, age: 500 });
+        noteGuildDeath(scene, { tick: BURN_IN_TICKS, spec: 1, age: 500 });
+        const m = guildMetrics(scene);
+        expect(m['eval.guild_survival.forager']?.value).toBeNull();
+        expect(m['eval.guild_survival.reproducer']?.value).toBeNull();
+    });
+
+    it('counts only mate and split births during a low population after burn-in', () => {
+        const low = createGuildScene({ maxAgeTicks: 1000, callRadius: 200, initialAgents: 50 });
+        noteGuildBirth(low, { tick: BURN_IN_TICKS - 1, spec: 2, cause: BORN_CAUSE.MATE });
+        noteGuildBirth(low, { tick: BURN_IN_TICKS, spec: 2, cause: BORN_CAUSE.INITIAL });
+        expect(guildMetrics(low)['eval.reproducer_recovery_rate']?.value).toBeNull();
+
+        const high = createGuildScene({ maxAgeTicks: 1000, callRadius: 200, initialAgents: 500 });
+        noteGuildBirth(high, { tick: BURN_IN_TICKS, spec: 2, cause: BORN_CAUSE.MATE });
+        expect(guildMetrics(high)['eval.reproducer_recovery_rate']?.value).toBeNull();
+    });
+
+    it('ignores alarms before burn-in, from non-scouts and without a threat seen', () => {
+        const scene = createGuildScene({ maxAgeTicks: 1000, callRadius: 200, initialAgents: 5 });
+        const w = makeWorld(4);
+        w.alive[0] = 1;
+        w.spec[0] = 3;
+        w.alarmSeen[0] = 1;
+        w.tick = BURN_IN_TICKS - 1;
+        noteGuildAlarm(scene, w, 0);
+        w.tick = BURN_IN_TICKS;
+        w.spec[0] = 0;
+        noteGuildAlarm(scene, w, 0);
+        w.spec[0] = 3;
+        w.alarmSeen[0] = 0;
+        noteGuildAlarm(scene, w, 0);
+        expect(guildMetrics(scene)['eval.scout_alarm_lead_share']?.value).toBeNull();
+    });
+
+    it('does not count a dead hunter or a non-hunter as a close threat', () => {
+        const scene = createGuildScene({ maxAgeTicks: 1000, callRadius: 200, initialAgents: 5 });
+        const w = makeWorld(4);
+        w.alive.set([1, 0, 1, 0]);
+        w.spec.set([3, 1, 0, 0]);
+        w.alarmSeen[0] = 1;
+        noteGuildAlarm(scene, w, 0);
+        expect(guildMetrics(scene)['eval.scout_alarm_lead_share']?.value).toBe(1);
+    });
 });
