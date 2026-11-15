@@ -4,6 +4,7 @@
 
 import { BODY_INPUT, OUTPUT_INDEX } from '../sim/brain-layout.js';
 import { bodyInput, turnAway } from './scripted-combat.js';
+import { INPUT_READER, readerSubject } from './lesson-reference.js';
 import { nearestClassRay } from './observer-tick.js';
 import {
     CH_FOOD,
@@ -105,11 +106,15 @@ function act(world, slot, remembers) {
 }
 
 /**
- * @param {string} kind one of `REFERENCES`
+ * @param {string} kind one of `REFERENCES`, or `input-reader` (the lesson probes' reference, `lesson-reference.js`; it is
+ *   not in `REFERENCES`, which the memory probe prints in full)
  * @returns {import('./memory-probe-run.js').Subject} the reference as a probe subject
  * @throws {Error} on an unknown kind
  */
 export function referenceSubject(kind) {
+    if (kind === INPUT_READER) {
+        return readerSubject();
+    }
     if (!REFERENCES.includes(kind)) {
         throw new Error(`reference: expected one of ${REFERENCES.join(', ')}, got "${kind}"`);
     }

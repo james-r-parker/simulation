@@ -69,4 +69,13 @@ describe('evaderBrain', () => {
         evaderBrain({ pursuer: 0, evader: 1, sprint: true })(w);
         expect(out(w, 1, OUTPUT_INDEX.TURN)).toBe(1);
     });
+
+    it('bends along a wall when given a wall margin, and runs into it without one', () => {
+        const edge = arenaConfig().worldWidth - 10;
+        const w = pair({ x: edge, y: 4400, angle: 0 });
+        evaderBrain({ pursuer: 0, evader: 1, sprint: true })(w);
+        const without = out(w, 1, OUTPUT_INDEX.TURN);
+        evaderBrain({ pursuer: 0, evader: 1, sprint: true, wallMargin: 600 })(w);
+        expect(out(w, 1, OUTPUT_INDEX.TURN)).toBeGreaterThan(without + 0.5);
+    });
 });
