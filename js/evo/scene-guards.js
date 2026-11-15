@@ -191,6 +191,59 @@ export function boomBustCount(hunters, prey) {
 }
 
 /**
+ * Advances the total-population boom-bust scan by one checkpoint.
+ * @param {{trough: number, troughVal: number, peak: number, booming: boolean, episodes: number}} state scan state
+ * @param {number} total total alive agents at checkpoint `t`
+ * @param {number} t checkpoint index
+ * @returns {void}
+ */
+function stepTotalScan(state, total, t) {
+    if (state.booming && t - state.trough > BOOM_BUST_WINDOW) {
+        state.booming = false;
+        state.trough = -1;
+    }
+    if (total < 1) {
+        state.episodes += state.booming ? 1 : 0;
+        state.booming = false;
+        state.trough = -1;
+        return;
+    }
+    if (!state.booming) {
+        if (state.trough < 0 || total <= state.troughVal) {
+            state.trough = t;
+            state.troughVal = total;
+        } else if (total >= BOOM_FACTOR * state.troughVal) {
+            state.booming = true;
+            state.peak = total;
+        }
+        return;
+    }
+    state.peak = Math.max(state.peak, total);
+    if (total <= PREY_CRASH * state.peak) {
+        state.episodes += 1;
+        state.booming = false;
+        state.trough = t;
+        state.troughVal = total;
+    }
+}
+
+/**
+ * Counts boom-bust episodes in the total population (`hunters[t] + prey[t]`): a trough of at least 1, a boom to at
+ * least `BOOM_FACTOR` times the trough, and a crash to at most `PREY_CRASH` of the peak within `BOOM_BUST_WINDOW`
+ * checkpoints. Catches prey/total-population crashes even when hunters are absent or flat (honest-budgets T33).
+ * @param {ArrayLike<number>} hunters the hunters alive at each checkpoint
+ * @param {ArrayLike<number>} prey the prey alive at each checkpoint
+ * @returns {number} the total-population episodes found
+ */
+export function totalBoomBustCount(hunters, prey) {
+    const state = { trough: -1, troughVal: 0, peak: 0, booming: false, episodes: 0 };
+    for (let t = 0; t < hunters.length; t++) {
+        stepTotalScan(state, hunters[t] + prey[t], t);
+    }
+    return state.episodes;
+}
+
+/**
  * @param {Record<string, any>} scene the guard scene
  * @returns {import('./metrics-stats.js').MetricRecord} the extinction and boom-bust counts
  */
@@ -199,11 +252,11 @@ export function guardMetrics(scene) {
         const reason = none('no 1000-tick checkpoint after burn-in');
         return { 'eval.prey_extinctions': reason, 'eval.boom_bust_count': reason };
     }
+    const hunters = scene.log.hunters.subarray(0, scene.rows);
+    const prey = scene.log.prey.subarray(0, scene.rows);
     return {
         'eval.prey_extinctions': ok(scene.extinctions),
-        'eval.boom_bust_count': ok(
-            boomBustCount(scene.log.hunters.subarray(0, scene.rows), scene.log.prey.subarray(0, scene.rows)),
-        ),
+        'eval.boom_bust_count': ok(Math.max(boomBustCount(hunters, prey), totalBoomBustCount(hunters, prey))),
     };
 }
 
