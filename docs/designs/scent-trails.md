@@ -146,12 +146,12 @@ T2a stages a trail in the probe arena with a hand-written deposit (no sim change
 
 ### Phase 1 - Off-ray tracking detectors and baseline
 
-| #   | Task                                                                                                                                                                                                                                    | Nature       | Depends on  |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| T1  | Add `js/evo/scene-scent.js` (`eval.chase_reacquire_share`, `eval.scavenge_approach_share`), registry + `liveness.js` entries and `test/evo/scene-scent.test.js`                                                                         | [judgement]  | -           |
-| T2  | Run `E-ST2-1` (16 seeds x 400,000 ticks) baseline and record in [sim-notes.md](sim-notes.md)                                                                                                                                            | [mechanical] | T1          |
-| T2a | Stage a hand-laid trail in the probe arena and read the oracle, the antenna-only reference and `probe:learn` on it, at two decays; run the `scent-after-sight-loss` probe on today's champions; write whether Phase 2 opens (`E-ST2-0`) | [judgement]  | T2          |
-| T3  | Conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                     | [judgement]  | T1, T2, T2a |
+| #   | Task                                                                                                                                                                                                                                                                                | Nature       | Depends on  |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| T1  | Add `js/evo/scene-scent.js` (`eval.chase_reacquire_share`, `eval.scavenge_approach_share`; a re-acquired chase is the `REACQUIRED` flag of the shared record in `js/evo/chase-outcome.js`, not a second chase), registry + `liveness.js` entries and `test/evo/scene-scent.test.js` | [judgement]  | -           |
+| T2  | Run `E-ST2-1` (16 seeds x 400,000 ticks) baseline and record in [sim-notes.md](sim-notes.md)                                                                                                                                                                                        | [mechanical] | T1          |
+| T2a | Stage a hand-laid trail in the probe arena and read the oracle, the antenna-only reference and `probe:learn` on it, at two decays; run the `scent-after-sight-loss` probe on today's champions; write whether Phase 2 opens (`E-ST2-0`)                                             | [judgement]  | T2          |
+| T3  | Conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                                                 | [judgement]  | T1, T2, T2a |
 
 ### Phase 2 - Track scent and carrion scent
 

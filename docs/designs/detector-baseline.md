@@ -1,6 +1,6 @@
 # Detector baseline
 
-**Status:** Proposed - the measure-first plans share one chase-outcome taxonomy, one detector wave and one 128-seed baseline of the defaults, in place of seven separate 16-seed runs; Phase 1 (the taxonomy and the wave) is first.
+**Status:** In progress - Phase 1 chunk A (T1, T2: the chase record and the existing metrics on it) is built; the measure-first plans share one chase-outcome taxonomy, one detector wave and one 128-seed baseline of the defaults, in place of seven separate 16-seed runs; Phase 1 (the taxonomy and the wave) is first.
 **Validated:** ed662529 (2026-11-15)
 **Priority:** 34 - it schedules no work of its own ahead of the queue: its tasks run when the Phase 1 detector tasks of the plans it serves are built, and those change no behaviour
 **Depends on:** [metric-trust.md](metric-trust.md)
@@ -108,12 +108,12 @@ The run, the power and liveness read, and each plan's Baseline table.
 
 ### Phase 1 - The taxonomy and the wave
 
-| #   | Task                                                                                                                                                                                                            | Nature       | Depends on |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | Add `js/evo/chase-outcome.js` and its tests; move the four existing chase metrics onto it with their values unchanged on a committed report's seeds                                                             | [judgement]  | -          |
-| T2  | Point the chase tasks of [training-stages.md](training-stages.md) T1, [chase-physics.md](chase-physics.md) T1 and [scent-trails.md](scent-trails.md) T1 at the record: one line in each task row, no new module | [mechanical] | T1         |
-| T3  | When the seven plans' detector tasks are merged, check each new metric has its registry entry, tests and a written baseline prediction; list any plan left out of the read                                      | [mechanical] | T2         |
-| T4  | Price the wave (`bench.observe_ms@500`, base ref against head); conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`                                                             | [judgement]  | T3         |
+| #   | Task                                                                                                                                                                                                                                                                                               | Nature       | Depends on |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T1  | Add `js/evo/chase-outcome.js` and its tests; move the four existing chase metrics onto it with their values unchanged on a committed report's seeds. Built: `scene-approach.js` tallies each chase on the record; the four metrics read the same on a 4-seed replay                                | [judgement]  | -          |
+| T2  | Point the chase tasks of [training-stages.md](training-stages.md) T1, [chase-physics.md](chase-physics.md) T1 and [scent-trails.md](scent-trails.md) T1 at the record: one line in each task row, no new module. Built, with `scene-kinematics.js` (built ahead of this doc) moved onto the record | [mechanical] | T1         |
+| T3  | When the seven plans' detector tasks are merged, check each new metric has its registry entry, tests and a written baseline prediction; list any plan left out of the read                                                                                                                         | [mechanical] | T2         |
+| T4  | Price the wave (`bench.observe_ms@500`, base ref against head); conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                | [judgement]  | T3         |
 
 ### Phase 2 - The shared run
 
