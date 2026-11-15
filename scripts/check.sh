@@ -12,6 +12,7 @@
 #                              # the design-doc tests; combines with --fix and --ci
 #   scripts/check.sh --quiet   # print only failed gates and the summary line
 #   scripts/check.sh --tier 1  # tier 1 (pre-commit), 2 (default, the PR gate) or 3 (nightly); not with --only/--docs
+#   scripts/check.sh --skip=browser-smoke,eval-smoke   # the selected gates minus these (CI runs them on a clean runner)
 #   scripts/check.sh --list    # print the gates the other flags select, one per line, and run nothing
 #
 # A failed gate prints a digest under its line (failed tests with their assertion, type errors, lint problems,
@@ -30,6 +31,7 @@ FULL=0
 DOCS=0
 QUIET=0
 ONLY=""
+SKIP=""
 TIER=""
 LIST=0
 args=("$@")
@@ -49,7 +51,8 @@ while [[ $i -lt ${#args[@]} ]]; do
     --docs) DOCS=1 ;;
     --quiet) QUIET=1 ;;
     --only=*) ONLY="${arg#--only=}" ;;
-    -h|--help) sed -n '2,19p' "$0"; exit 0 ;;
+    --skip=*) SKIP="${arg#--skip=}" ;;
+    -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
     *) echo "unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
@@ -80,6 +83,21 @@ if [[ -n "$ONLY" ]]; then
   for gate in "${requested[@]}"; do
     [[ ",$GATES," == *",$gate,"* ]] || { echo "unknown gate: $gate (expected one of $GATES)" >&2; exit 2; }
   done
+fi
+
+# --skip removes gates from whatever the other flags selected.
+if [[ -n "$SKIP" ]]; then
+  IFS=',' read -ra skipped <<<"$SKIP"
+  for gate in "${skipped[@]}"; do
+    [[ ",$GATES," == *",$gate,"* ]] || { echo "unknown gate: $gate (expected one of $GATES)" >&2; exit 2; }
+  done
+  kept=""
+  IFS=',' read -ra selected <<<"$ONLY"
+  for gate in "${selected[@]}"; do
+    [[ ",$SKIP," == *",$gate,"* ]] || kept="${kept:+$kept,}$gate"
+  done
+  [[ -n "$kept" ]] || { echo "--skip removed every selected gate" >&2; exit 2; }
+  ONLY="$kept"
 fi
 
 # Tier 1 (pre-commit) checks the staged files, as they are in the working tree; deleted files have nothing to check.

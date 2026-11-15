@@ -12,11 +12,13 @@ description: Use when committing, pushing or opening a pull request, or when the
 docs-only; the job is named `check` either way). A green local gate is the price of a commit.
 
 **Core principle:** the gate runs last. Any hand edit after `scripts/check.sh --fix` can reintroduce format or index
-drift, so the final action before `git add` is always another `scripts/check.sh --fix`.
+drift, so the final action before `git add` is always another `scripts/check.sh --fix` (the cheap form in step 7 when no code changed).
 
 ## Pre-PR gate (in order)
 
-1. **Local gate green:** `scripts/check.sh --fix`. A docs-only change (`git diff --name-only origin/main...HEAD |
+1. **Local gate green:** `scripts/check.sh --fix --skip=browser-smoke` (CI's required `browser-smoke` job runs the same
+   Playwright image on a clean runner, so the local run leaves it out; slow tests, `ratchet` and `bench-check` stay,
+   because CI cannot run them). A docs-only change (`git diff --name-only origin/main...HEAD |
 scripts/change-scope.sh` prints `docs`: Markdown under `docs/`, `.claude/` or the root only) may use
    `scripts/check.sh --fix --docs`, which is what CI runs for it. Add `--quiet` to print only failures and the
    summary. A failed gate prints a digest under its `✗` line - failed tests with their assertion and first frame,
@@ -46,7 +48,9 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
     - regenerate the index: `node scripts/designs-index.mjs --write`
     - append learnings to `docs/designs/sim-notes.md` under a dated heading (`### YYYY-MM-DD - <topic>` under
       `## Learned while building`)
-7. **Last step before `git add`:** `scripts/check.sh --fix` again.
+7. **Last step before `git add`:** when no code changed after step 1 (only docs, the plan or the commit message),
+   `scripts/check.sh --fix --only=conventions,designs-index,format` is enough; when code changed, run the step 1
+   command again.
 
 ## Git conventions
 

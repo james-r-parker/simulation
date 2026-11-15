@@ -39,16 +39,20 @@ jobs:
           fetch-depth: 0
 
       # docs: every changed path is Markdown that no build or test reads beyond the design-doc tests
-      # (scripts/change-scope.sh). Pushes to main and anything unclassifiable take the full path.
+      # (scripts/change-scope.sh). A push computes it against the previous tip; anything unclassifiable takes the full path.
       - name: Change scope
         id: scope
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event_name == 'merge_group' && github.event.merge_group.base_sha || format('origin/{0}', github.base_ref) }}
+          BEFORE: ${{ github.event.before }}
         run: |
           scope=full
           if [[ "$EVENT" == pull_request || "$EVENT" == merge_group ]]; then
             scope="$(scripts/change-scope.sh "$BASE" || echo full)"
+          elif [[ "$EVENT" == push && ! "$BEFORE" =~ ^0+$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            # A push re-checks only what changed since the previous tip; its PR already passed the rest.
+            scope="$(scripts/change-scope.sh "$BEFORE" || echo full)"
           fi
           echo "scope=$scope" >>"$GITHUB_OUTPUT"
           echo "Change scope: $scope"
@@ -109,10 +113,14 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event_name == 'merge_group' && github.event.merge_group.base_sha || format('origin/{0}', github.base_ref) }}
+          BEFORE: ${{ github.event.before }}
         run: |
           scope=browser
           if [[ "$EVENT" == pull_request || "$EVENT" == merge_group ]]; then
             scope="$(scripts/change-scope.sh --browser "$BASE" || echo browser)"
+          elif [[ "$EVENT" == push && ! "$BEFORE" =~ ^0+$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            # A push re-checks only what changed since the previous tip; its PR already passed the rest.
+            scope="$(scripts/change-scope.sh --browser "$BEFORE" || echo browser)"
           fi
           echo "scope=$scope" >>"$GITHUB_OUTPUT"
           echo "Browser scope: $scope"

@@ -65,6 +65,25 @@ describe('check.sh --list', { timeout: SPAWN_TIMEOUT_MS }, () => {
     });
 });
 
+describe('check.sh --skip', { timeout: SPAWN_TIMEOUT_MS }, () => {
+    it('removes the named gates from the selection', () => {
+        const lines = check('--list', '--skip=browser-smoke,eval-smoke').lines;
+        expect(lines).not.toContain('browser-smoke');
+        expect(lines).not.toContain('eval-smoke');
+        expect(lines).toContain('test');
+        expect(lines).toContain('bench-check');
+    });
+
+    it('combines with --only', () => {
+        expect(check('--list', '--only=lint,format,test', '--skip=test').lines).toEqual(['format', 'lint']);
+    });
+
+    it('rejects an unknown gate and an empty selection', () => {
+        expect(check('--skip=nope').status).toBe(2);
+        expect(check('--only=lint', '--skip=lint').status).toBe(2);
+    });
+});
+
 describe('check.sh --tier', { timeout: SPAWN_TIMEOUT_MS }, () => {
     it('rejects --tier with --only', () => {
         expect(check('--tier', '1', '--only=lint').status).toBe(2);
