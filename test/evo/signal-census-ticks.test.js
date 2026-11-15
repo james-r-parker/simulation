@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX, POOLED_CHANNELS, POOLED_STRIDE, brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
 import { CENSUS_EVERY, createCensus, inputRows, noteCensusTick, outputRows } from '../../js/evo/signal-census.js';
+import { FLASH_CHANNELS } from '../../js/evo/signal-census-ticks.js';
 
 const config = createConfig();
 const layout = brainLayout(config);
@@ -90,6 +91,16 @@ describe('the swap rate', () => {
         expect(inputRows(census)[FOOD].swapRate).toBe(0);
     });
 
+    it('counts a swap of two hits that differ only in their sine', () => {
+        const world = fakeWorld();
+        const census = createCensus(config);
+        const a = [0.9, 1, 0];
+        const b = [0.5, 1, 1];
+        tickHits(census, world, [a, b]);
+        tickHits(census, world, [b, a]);
+        expect(inputRows(census)[FOOD].swapRate).toBe(1);
+    });
+
     it('does not carry a row across a slot taken by a new genome', () => {
         const world = fakeWorld();
         const census = createCensus(config);
@@ -176,5 +187,49 @@ describe('the flash rate', () => {
         const rows = inputRows(census);
         expect(rows[THREAT].flashRate).toBe(1);
         expect(rows[FOOD].flashRate).toBe(0);
+    });
+
+    /**
+     * @param {(world: Record<string, any>) => void} arrange sets up the second agent next to the first
+     * @param {number} channel the index in `POOLED_CHANNELS` whose flash rate is read
+     * @returns {number | null} that channel's flash rate with the other agent in vision on no ray
+     */
+    function flashOf(arrange, channel) {
+        const world = fakeWorld(2);
+        world.tick = CENSUS_EVERY;
+        world.x[1] = 80;
+        arrange(world);
+        const census = createCensus(config);
+        noteCensusTick(census, world);
+        return inputRows(census)[channel * POOLED_STRIDE].flashRate;
+    }
+
+    it('puts a kin body in the kin channel, a smaller or equal neutral in other and a prey in prey', () => {
+        const kin = POOLED_CHANNELS.indexOf('kin');
+        const other = POOLED_CHANNELS.indexOf('other');
+        const prey = POOLED_CHANNELS.indexOf('prey');
+        const makeKin = (/** @type {Record<string, any>} */ w) => {
+            w.parentA[1] = w.genomeId[0];
+        };
+        expect(flashOf(makeKin, kin)).toBe(1);
+        expect(flashOf(() => {}, other)).toBe(1);
+        expect(flashOf(() => {}, prey)).toBe(0);
+        const smallBody = (/** @type {Record<string, any>} */ w) => {
+            w.spec[0] = 1;
+            w.size[0] = 30;
+        };
+        expect(flashOf(smallBody, prey)).toBe(1);
+    });
+
+    it('does not track a dead slot', () => {
+        const world = fakeWorld(2);
+        world.tick = CENSUS_EVERY;
+        world.alive[1] = 0;
+        world.x[1] = 80;
+        const census = createCensus(config);
+        noteCensusTick(census, world);
+        for (const channel of FLASH_CHANNELS) {
+            expect(inputRows(census)[POOLED_CHANNELS.indexOf(channel) * POOLED_STRIDE].flashRate).toBe(0);
+        }
     });
 });
