@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { currentBranch, isBreaking, releaseCheck, seasonAdded } from '../scripts/lib/release-check.mjs';
+import {
+    currentBranch,
+    isBreaking,
+    movesUnreleasedSeason,
+    releaseCheck,
+    seasonAdded,
+} from '../scripts/lib/release-check.mjs';
 
 describe('isBreaking', () => {
     it('is true for a bang after the type or scope, and for a BREAKING CHANGE footer', () => {
@@ -42,6 +48,15 @@ describe('releaseCheck', () => {
         expect(releaseCheck({ ...input, addsSeason: true })).toEqual({ ok: true });
     });
 
+    it('passes a breaking rules change on main that moves an unreleased season in place', () => {
+        const input = { ...changed, messages: ['feat(sim)!: new rules'], movesUnreleased: true };
+        expect(releaseCheck(input)).toEqual({ ok: true });
+        expect(releaseCheck({ ...input, messages: ['feat(sim): new rules'] })).toEqual({
+            ok: false,
+            reason: 'rules-change-not-breaking',
+        });
+    });
+
     it('reports the missing breaking commit before the wrong base', () => {
         expect(releaseCheck(changed)).toEqual({ ok: false, reason: 'rules-change-not-breaking' });
     });
@@ -51,6 +66,30 @@ describe('seasonAdded', () => {
     it('is true only when HEAD lists more seasons than the merge base', () => {
         expect(seasonAdded('[]', '[{"season":6}]')).toBe(true);
         expect(seasonAdded('[{"season":6}]', '[{"season":6}]')).toBe(false);
+    });
+});
+
+describe('movesUnreleasedSeason', () => {
+    const season = (/** @type {string} */ rulesHash, n = 10) => ({ season: n, major: n, rulesHash });
+    const file = (/** @type {object[]} */ ...entries) => JSON.stringify(entries);
+    const before = file(season('x', 9), season('a'));
+
+    it('is true when the newest season keeps its number, its hash moves and it has no release tag', () => {
+        expect(movesUnreleasedSeason(before, file(season('x', 9), season('b')), ['v9.0.0'])).toBe(true);
+    });
+
+    it('is false once the season is released, when the hash stays, or when the seasons differ', () => {
+        const after = file(season('x', 9), season('b'));
+        expect(movesUnreleasedSeason(before, after, ['v9.0.0', 'v10.0.0'])).toBe(false);
+        expect(movesUnreleasedSeason(before, before, [])).toBe(false);
+        expect(movesUnreleasedSeason(before, file(season('x', 9), season('b', 11)), [])).toBe(false);
+        expect(movesUnreleasedSeason(before, file(season('x', 9), season('a'), season('b', 11)), [])).toBe(false);
+        expect(movesUnreleasedSeason('[]', '[]', [])).toBe(false);
+    });
+
+    it('does not take v1. for v10.', () => {
+        const after = file(season('x', 9), season('b'));
+        expect(movesUnreleasedSeason(before, after, ['v1.0.0', 'v100.0.0'])).toBe(true);
     });
 });
 
