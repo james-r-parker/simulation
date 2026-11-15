@@ -17,6 +17,19 @@ const ALARM_HEARD = 0;
 const HUNT_HEARD = 3;
 /** Offset of the threat value (an agent that can bite the caster) in a ray's `RAY_CHANNELS` values. */
 const CH_THREAT = 2;
+/** Specialisation index of `scout`. */
+const SCOUT_SPEC = 3;
+
+/**
+ * Effective call radius for `caller` (scouts get `scoutCallRadiusMultiplier`).
+ * @param {World} world the world
+ * @param {number} caller the calling slot
+ * @returns {number} radius in world units
+ */
+function callerRadius(world, caller) {
+    const { callRadius, scoutCallRadiusMultiplier } = world.config;
+    return world.spec[caller] === SCOUT_SPEC ? callRadius * scoutCallRadiusMultiplier : callRadius;
+}
 
 /**
  * Takes 1 from each of the three timers of every alive slot that is above 0.
@@ -86,12 +99,13 @@ function threatInView(world, slot) {
  * @returns {void}
  */
 function alarm(world, slot) {
-    const { alarmCost, callTicks, alarmThreshold } = world.config;
+    const { alarmCost, callTicks, alarmThreshold, scoutAlarmCostMultiplier } = world.config;
+    const cost = world.spec[slot] === SCOUT_SPEC ? alarmCost * scoutAlarmCostMultiplier : alarmCost;
     const wanted = outputAbove(world, slot, OUTPUT_INDEX.ALARM, alarmThreshold) && world.alarmTimer[slot] === 0;
-    if (!wanted || world.energy[slot] <= alarmCost || specParams(world.config, world.spec[slot]).canHunt) {
+    if (!wanted || world.energy[slot] <= cost || specParams(world.config, world.spec[slot]).canHunt) {
         return;
     }
-    removeEnergy(world, slot, alarmCost, LOSS_CAUSE.COST);
+    removeEnergy(world, slot, cost, LOSS_CAUSE.COST);
     world.alarmTimer[slot] = callTicks;
     world.alarmSeen[slot] = threatInView(world, slot) ? 1 : 0;
     depositPheromone(world, world.danger, world.x[slot], world.y[slot]);
@@ -168,7 +182,7 @@ function hearOne(world, hearer) {
     const caller = scratch[0];
     const offset = scratch[1];
     const strength = scratch[2];
-    const radius = world.config.callRadius;
+    const radius = callerRadius(world, caller);
     const dx = world.x[caller] - world.x[hearer];
     const dy = world.y[caller] - world.y[hearer];
     const d = Math.sqrt(dx * dx + dy * dy);
@@ -208,7 +222,7 @@ function hearInCell(world, hash, cell) {
  */
 function spread(world, hash) {
     const caller = world.callScratch[0];
-    const range = cellRange(hash, world.x[caller], world.y[caller], world.config.callRadius);
+    const range = cellRange(hash, world.x[caller], world.y[caller], callerRadius(world, caller));
     for (let row = range[1]; row <= range[3]; row++) {
         const rowStart = row * hash.cols;
         for (let cell = rowStart + range[0]; cell <= rowStart + range[2]; cell++) {

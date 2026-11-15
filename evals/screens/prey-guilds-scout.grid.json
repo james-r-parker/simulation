@@ -1,0 +1,45 @@
+{
+  "seeds": 16,
+  "seedOffset": 0,
+  "ticks": 400000,
+  "policy": "live",
+  "reference": "control",
+  "arms": {
+    "control": {
+      "scoutCallRadiusMultiplier": 1,
+      "scoutAlarmCostMultiplier": 1,
+      "specialisations": {
+        "scout": {
+          "sprintBoost": 1
+        }
+      }
+    },
+    "scout-lo": {
+      "scoutCallRadiusMultiplier": 1.25,
+      "scoutAlarmCostMultiplier": 0.5,
+      "specialisations": {
+        "scout": {
+          "sprintBoost": 1.2
+        }
+      }
+    },
+    "scout-med": {
+      "scoutCallRadiusMultiplier": 1.5,
+      "scoutAlarmCostMultiplier": 0.5,
+      "specialisations": {
+        "scout": {
+          "sprintBoost": 1.25
+        }
+      }
+    },
+    "scout-hi": {
+      "scoutCallRadiusMultiplier": 1.75,
+      "scoutAlarmCostMultiplier": 0.5,
+      "specialisations": {
+        "scout": {
+          "sprintBoost": 1.35
+        }
+      }
+    }
+  }
+}
