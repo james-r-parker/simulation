@@ -27,7 +27,9 @@ export function killLine(config, victimMax) {
  */
 export function takeBody(world, biter, victim) {
     const headroom = world.maxEnergyBySpec[world.spec[biter]] - world.energy[biter];
-    transferEnergy(world, victim, biter, Math.min(world.energy[victim], world.config.killGorgeCap, headroom));
+    const victimEnergy = world.energy[victim];
+    const shareCap = world.config.killGorgeShare * victimEnergy;
+    transferEnergy(world, victim, biter, Math.min(victimEnergy, shareCap, world.config.killGorgeCap, headroom));
     const stored = world.transferGained;
     world.biteEnergy[biter] += stored;
     world.carcassHeld[victim] += removeEnergy(world, victim, world.energy[victim], LOSS_CAUSE.BITE);

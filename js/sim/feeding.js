@@ -27,7 +27,15 @@ const HERD_CARCASS_BITE = 400;
  */
 function shareOf(world, slot, food) {
     const table = world.foodKind[food] === FOOD_KIND.MEAT ? world.meatFoodBySpec : world.plantFoodBySpec;
-    return table[world.spec[slot]];
+    const base = table[world.spec[slot]];
+    if (base > 0 || world.foodKind[food] === FOOD_KIND.MEAT) {
+        return base;
+    }
+    const share = world.config.juvenilePlantShare;
+    if (share > 0 && world.huntBySpec[world.spec[slot]] === 1 && world.ageTicks[slot] < world.config.juvenileTicks) {
+        return share;
+    }
+    return 0;
 }
 
 /**
