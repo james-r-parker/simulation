@@ -8,11 +8,11 @@ import { CH_FOOD, CH_PREY, CH_THREAT } from '../../js/evo/scripted-parts.js';
 
 /**
  * Runs the reader once on a staged agent whose rays are set by hand.
- * @param {{ray?: number, channel?: number, hue?: number, body?: Record<number, number>}} senses a hit on one ray (proximity
+ * @param {{ray?: number, channel?: number, hue?: number, body?: Record<number, number>, also?: {ray: number, proximity: number}[]}} senses a hit on one ray (proximity
  *   0.8 in the channel, the food hue on it) and body inputs by offset
  * @returns {Float32Array} the agent's outputs
  */
-function outputsFor({ ray = 0, channel = 0, hue = 0, body = {} }) {
+function outputsFor({ ray = 0, channel = 0, hue = 0, body = {}, also = [] }) {
     const { world } = stageWorld({
         foods: [],
         rocks: [],
@@ -24,6 +24,11 @@ function outputsFor({ ray = 0, channel = 0, hue = 0, body = {} }) {
         world.inputs[ray * RAY_CHANNELS] = 0.8;
         world.inputs[ray * RAY_CHANNELS + channel] = 1;
         world.rayHue[ray] = hue;
+    }
+    for (const { ray: other, proximity } of also) {
+        world.inputs[other * RAY_CHANNELS] = proximity;
+        world.inputs[other * RAY_CHANNELS + channel] = 1;
+        world.rayHue[other] = hue;
     }
     for (const [offset, value] of Object.entries(body)) {
         world.inputs[world.config.rayCount * RAY_CHANNELS + Number(offset)] = value;
@@ -67,6 +72,26 @@ describe('the input reader', () => {
         };
         const out = outputsFor({ ray: 8, channel: CH_THREAT, body });
         expect(out[OUTPUT_INDEX.TURN]).toBeLessThan(0);
+    });
+
+    it('turns full to the side of a refuge behind it, and to the positive side when it is dead behind', () => {
+        const behind = (/** @type {number} */ sin) => ({
+            [BODY_INPUT.REFUGE_NEAR]: 0.5,
+            [BODY_INPUT.REFUGE_BEARING_SIN]: sin,
+            [BODY_INPUT.REFUGE_BEARING_COS]: -0.9,
+        });
+        expect(outputsFor({ ray: 8, channel: CH_THREAT, body: behind(-0.2) })[OUTPUT_INDEX.TURN]).toBe(-1);
+        expect(outputsFor({ ray: 8, channel: CH_THREAT, body: behind(0.2) })[OUTPUT_INDEX.TURN]).toBe(1);
+        expect(outputsFor({ ray: 8, channel: CH_THREAT, body: behind(0) })[OUTPUT_INDEX.TURN]).toBe(1);
+    });
+
+    it('seeks the nearest of several safe foods, whichever ray it is on', () => {
+        const turnAt = (/** @type {number} */ ray) => outputsFor({ ray, channel: CH_FOOD })[OUTPUT_INDEX.TURN];
+        const earlierNearer = outputsFor({ ray: 2, channel: CH_FOOD, also: [{ ray: 14, proximity: 0.5 }] });
+        const laterNearer = outputsFor({ ray: 2, channel: CH_FOOD, also: [{ ray: 14, proximity: 0.95 }] });
+        expect(earlierNearer[OUTPUT_INDEX.TURN]).toBeCloseTo(turnAt(2), 6);
+        expect(laterNearer[OUTPUT_INDEX.TURN]).toBeCloseTo(turnAt(14), 6);
+        expect(turnAt(2)).not.toBeCloseTo(turnAt(14), 3);
     });
 
     it('scans in place when it senses nothing', () => {
