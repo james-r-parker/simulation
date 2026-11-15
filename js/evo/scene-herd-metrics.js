@@ -27,7 +27,7 @@ function carcassTotals(scene, carcassScene, observer) {
 function herdCoreMetrics(scene) {
     return {
         'eval.trampled_share': share(scene.trampled, scene.deaths, 'no deaths after burn-in'),
-        'eval.dodge_skill': share(
+        'eval.herd_dodge_share': share(
             scene.episodesClear,
             scene.episodesClear + scene.episodesHit,
             'no completed herd-approach episodes after burn-in',

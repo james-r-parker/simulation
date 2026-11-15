@@ -170,6 +170,7 @@ const ADDED_AFTER_T8 = [
     'eval.pack_lift',
     'eval.pack_prey_size_ratio',
     'eval.style_lineage_share',
+    'eval.herd_dodge_share',
 ];
 /** Watch metrics registered after the snapshot whose intended direction is lower. */
 const ADDED_INTENDED_LOWER = [

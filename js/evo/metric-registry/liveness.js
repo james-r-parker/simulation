@@ -338,7 +338,7 @@ export const LIVENESS = Object.freeze({
         distinct: 64,
         report: 'evals/decisions/E164/defaults.report.json',
     }),
-    'eval.dodge_skill': Object.freeze({
+    'eval.herd_dodge_share': Object.freeze({
         nullShare: 0,
         distinct: 64,
         report: 'evals/decisions/E164/defaults.report.json',

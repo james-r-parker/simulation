@@ -58,7 +58,7 @@ describe('scene-herd detectors', () => {
     it('registers the three Phase 1 detector directions', () => {
         const names = Object.keys(METRICS);
         expect(names).toContain('eval.trampled_share');
-        expect(names).toContain('eval.dodge_skill');
+        expect(names).toContain('eval.herd_dodge_share');
         expect(names).toContain('eval.herd_grazed_share');
         expect(names).toContain('eval.trample_unavoidable_share');
         expect(names).toContain('eval.herd_carcass_meal_share');
@@ -84,7 +84,7 @@ describe('scene-herd detectors', () => {
         world.y[0] = 200;
         trackHerd(scene, world);
         expect(scene.episodesClear).toBe(1);
-        expect(emptyMetrics(scene)['eval.dodge_skill']?.value).toBe(1);
+        expect(emptyMetrics(scene)['eval.herd_dodge_share']?.value).toBe(1);
     });
 
     it('counts contact as a hit and uses only post-burn-in deaths for trample share', () => {
