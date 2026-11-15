@@ -159,6 +159,19 @@ describe('the bite hook', () => {
     });
 });
 
+describe('a bite by a biter the observer does not track', () => {
+    it('calls no bite hook and opens no chase', () => {
+        const a = arena(1, 1);
+        /** @type {number[]} */
+        const calls = [];
+        a.observer.scenes.approach.onBite = () => calls.push(1);
+        a.world.bittenTimer[a.prey[0]] = 1;
+        a.world.lastBiter[a.prey[0]] = 999999;
+        trackApproaches(a.observer.scenes.approach, a.observer, a.world);
+        expect(calls).toEqual([]);
+    });
+});
+
 describe('a resolved chase with no hook', () => {
     it('still counts the outcome when the scene has no onChase hook', () => {
         const a = arena(1, 1);
