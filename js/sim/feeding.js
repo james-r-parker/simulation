@@ -220,12 +220,16 @@ function applyBite(world, biter, victim) {
     noteReward(world, biter, fatal ? REWARD_SOURCE.KILL : REWARD_SOURCE.BITE, gained);
     world.lastLoss[victim] = LOSS_CAUSE.BITE;
     const biterId = world.genomeId[biter];
-    if (world.lastBiter[victim] !== biterId) {
-        world.prevBiter[victim] = world.lastBiter[victim];
-        world.prevBiteTick[victim] = world.lastBiteTick[victim];
+    if (wasAlive) {
+        // A victim already at zero energy keeps the biter that killed it: a second biter in the same tick must not take
+        // the kill from the one that was paid its kill energy.
+        if (world.lastBiter[victim] !== biterId) {
+            world.prevBiter[victim] = world.lastBiter[victim];
+            world.prevBiteTick[victim] = world.lastBiteTick[victim];
+        }
+        world.lastBiter[victim] = biterId;
+        world.lastBiteTick[victim] = world.tick;
     }
-    world.lastBiter[victim] = biterId;
-    world.lastBiteTick[victim] = world.tick;
     noteBiteLedger(world, biter, { gained, fatal, kick: paid, victim });
     world.bittenTimer[victim] = 0;
     depositPheromone(world, world.attack, x[biter], y[biter]);
