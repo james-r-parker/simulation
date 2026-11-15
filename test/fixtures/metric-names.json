@@ -88,7 +88,6 @@
   "eval.edge_ref_split_births_per_prey",
   "eval.edge_ref_starve_per_prey",
   "eval.edge_split_births_per_prey",
-  "eval.edge_split_blocked_share.clonal",
   "eval.edge_split_blocked_share.energy",
   "eval.edge_split_blocked_share.merit",
   "eval.edge_split_blocked_share.other",

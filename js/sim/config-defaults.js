@@ -201,10 +201,8 @@ export const DEFAULTS = deepFreeze({
     splitDeliberateMin: 300, // new: fitness-and-selection T16; 300 from T48b (the E41 finalist split-300)
     splitDeliberateShareMin: 0.2, // new: fitness-and-selection T48d; own deliberate meals over meals needed to split, 0 is off; 0.2 from T48g
     splitMaxPerLife: 0, // new: fitness-and-selection T48d; splits per lifetime, 0 is unlimited
-    splitClonalMax: 3, // natural-selection Phase 4: split generations in a row before the line must mate (aphids), at least 1; 3, the mildest arm of E85 (user, 2026-10-31)
-    splitGiftGene: false, // honest-budgets Phase 4: a split gives the childShare gene's share of the splitter's energy, as a mating does; false gives half
     alarmBiteShare: 1, // honest-budgets Phase 5: the share of a bite's energy that moves while the victim's alarm is seen (a threat was on its rays at the call); 1 is the full bite
-    birthReserve: 0, // honest-budgets Phase 4: a birth that would leave the mother under this energy is blocked; 0 is off
+    birthReserve: 300, // honest-budgets Phase 4 (E177): a birth that would leave the mother under this energy is blocked; 0 is off
     juvenileBurn: 0.6, // realistic-keepers T4: multiplier on the standing, movement and turn cost of a juvenile hunter, in [0, 1]
     kinPullWeight: 0.5, // realistic-keepers T4: the kin thrust and turn cells of a hunter are raised to at least this x instinctWeight, in [0, 4]
     juvenileTicks: 3000, // hunter-learning: a canHunt young is juvenile while ageTicks is below this; the detectors' age bands use it too

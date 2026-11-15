@@ -403,11 +403,6 @@ export const LIVENESS = Object.freeze({
         distinct: 61,
         report: 'evals/decisions/E164/defaults.report.json',
     }),
-    'eval.edge_split_blocked_share.clonal': Object.freeze({
-        nullShare: 0.046875,
-        distinct: 61,
-        report: 'evals/decisions/E164/defaults.report.json',
-    }),
     'eval.edge_split_blocked_share.energy': Object.freeze({
         nullShare: 0.046875,
         distinct: 61,
