@@ -10,7 +10,12 @@ export const BRAIN_LAYOUT_NAME = 'pooled-v5';
 /** Outputs per brain: thrust, turn, sprint, mate, bite, alarm, smoke, hunt call, split and two memory outputs. */
 export const OUTPUT_COUNT = 11;
 
-/** Index of each output in an agent's output row; an action fires when its output is above 0. */
+/**
+ * Index of each output in an agent's output row. `BITE`, `SPRINT` and `MATE` fire when their output is above 0; the
+ * calls fire above their own thresholds (`ALARM` above `alarmThreshold`, `HUNT` above `huntCallThreshold`, `SMOKE` above
+ * `smokeThreshold`, all in `js/sim/calls.js`); `THRUST` and `TURN` are continuous; `SPLIT` reads 0; the memory
+ * outputs are written back as hidden state.
+ */
 export const OUTPUT_INDEX = Object.freeze({
     THRUST: 0,
     TURN: 1,
