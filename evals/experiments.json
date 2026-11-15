@@ -4428,14 +4428,22 @@
       "targets": ["eval.collision_death_share", "eval.refuge_episode_entry"],
       "before": "control arm of evals/screens/honest-impact.grid.json (season 10 defaults), seeds 1 to 16, 400000 ticks, floor on, policy live",
       "after": "the impact arms of the same screen (d2-x8, d4-x12, d4-x25)",
-      "verdicts": {},
-      "note": "Screen: every impact arm cuts eval.collision_death_share from 0.225 to 0.008-0.018 with no harm at 16 seeds; finalist d4-x25 (full-speed hit costs 100). The 64-seed keep-rule pass (T19) runs on top of the Phase 2 switch.",
-      "reports": ["evals/decisions/E176/results.md", "evals/decisions/E176/screen-table.md"],
+      "verdicts": {
+        "eval.collision_death_share": "better",
+        "eval.refuge_episode_entry": "-"
+      },
+      "note": "Screen: every impact arm cuts collision_death_share from 0.225 to under 0.02; finalist d4-x25. Keep rule on 64 seeds against the Phase 2 defaults: WORSE on the hunter_catches_per_1k guard (1.35 to 1.20); alive no harm (55/64 against 46), held better (p 0.00016), collision_death_share 0.218 to 0.013 better. Switch not made; Phase 3 parked. Open: whether the catches loss is the speed denominator growing; d4-x12 untested at 64 seeds.",
+      "reports": [
+        "evals/decisions/E176/results.md",
+        "evals/decisions/E176/screen-table.md",
+        "evals/decisions/E176/d4-x25.report.json",
+        "evals/decisions/E176/defaults-s10b.report.json"
+      ],
       "date": "2026-11-15",
       "branch": "season/next",
       "beforePolicy": "live",
       "afterPolicy": "live",
-      "effect": "no-difference"
+      "effect": "worse"
     },
     {
       "id": "E177",
@@ -4444,9 +4452,12 @@
       "targets": ["eval.edge_starve_per_prey", "eval.childshare_by_condition"],
       "before": "control arm of evals/screens/honest-edge.grid.json (season 10 defaults), seeds 1 to 16, 400000 ticks, floor on, policy live",
       "after": "the edge arms of the same screen (nocap, nocap-g, nocap-g-r)",
-      "verdicts": {},
-      "note": "Prediction recorded before the run (T23); the screen (T24) and the 64-seed keep-rule pass (T25) are not run yet.",
-      "reports": ["evals/decisions/E177/results.md"],
+      "verdicts": {
+        "eval.edge_starve_per_prey": "-",
+        "eval.childshare_by_condition": "-"
+      },
+      "note": "Screen on the Phase 2 defaults: no arm reads edge_starve_per_prey worse; lifting the clonal cap raises the split share of births from 0.35 to about 0.5 and lowers the mating share. Finalist nocap-g-r (edge starve 0.107 against 0.112, childshare_by_condition 0.0008); costs: spec under 70% on 7/16 seeds against 12/16, mating share 0.40 against 0.66. The 64-seed keep rule (T25) is not run yet.",
+      "reports": ["evals/decisions/E177/results.md", "evals/decisions/E177/screen-table.md"],
       "date": "2026-11-15",
       "branch": "season/next",
       "beforePolicy": "live",
