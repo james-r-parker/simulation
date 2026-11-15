@@ -18,6 +18,7 @@ import { splitGateSpecs } from './split-gate.js';
 import { MERIT_TALLY_SIZE, createMeritViews, meritSpecs, resetMeritSlot } from './merit-state.js';
 import { LOCAL_STRIDE } from './ray-gather.js';
 import { rayTables } from './ray-pool.js';
+import { rayReachTable } from './ray-reach.js';
 import { terrainRockCount } from './terrain.js';
 import { createObserverScratch } from './observer-scratch.js';
 import { attachWasm } from './wasm-arena.js';
@@ -340,6 +341,7 @@ export function allocateWorld(config) {
         meritTally: new Float64Array(MERIT_TALLY_SIZE),
         ...rayTables(config.rayCount),
         ...specTables(config),
+        ...rayReachTable(config),
         biteCos: new Float64Array([detCos(config.biteArc)]),
         antennaCos: new Float64Array([detCos(config.antennaAngle)]),
         antennaSin: new Float64Array([detSin(config.antennaAngle)]),

@@ -45,6 +45,8 @@ pub struct SenseParams {
     entries: u32,
     sense_doubles: u32,
     food_kind: u32,
+    ray_reach_by_spec: u32,
+    ray_reach: u32,
     max_agents: u32,
     stamp_count: u32,
     obs_count: u32,
@@ -57,6 +59,7 @@ pub struct SenseParams {
     concealed: u32,
     see_plant: u32,
     see_meat: u32,
+    spec: u32,
 }
 
 /// Indices into the doubles block.
@@ -122,6 +125,7 @@ struct Sense {
     best_t: *mut f64,
     best_key: *mut f64,
     dirs: *mut f64,
+    reach: *mut f64,
     d: *const f64,
     p: &'static SenseParams,
 }
@@ -137,6 +141,7 @@ impl Sense {
             best_t: at(p.best_t),
             best_key: at(p.best_key),
             dirs: at(p.ray_dirs),
+            reach: at(p.ray_reach),
             d: at(p.sense_doubles),
             p,
         }
@@ -364,9 +369,10 @@ fn circle_hit(b: f64, c: f64) -> f64 {
     if t < 0.0 { 0.0 } else { t }
 }
 
-/// Sets the scratch direction of ray `k` and returns its wall seed (`seedWithWall`): the best distance so far.
+/// Sets the scratch direction of ray `k` and returns its wall seed (`seedWithWall`) within the ray's `reach`: the best
+/// distance so far.
 #[inline(always)]
-unsafe fn seed_ray(g: &Sense, k: usize) -> f64 {
+unsafe fn seed_ray(g: &Sense, k: usize, reach: f64) -> f64 {
     // SAFETY: `rayCos` and `raySin` hold `rayCount` doubles and `k` is below it.
     unsafe {
         let (cos, sin) = (*at::<f64>(g.p.ray_cos).add(k), *at::<f64>(g.p.ray_sin).add(k));
@@ -378,7 +384,7 @@ unsafe fn seed_ray(g: &Sense, k: usize) -> f64 {
             wall_distance(g.sc(OX), dx, g.dbl(D_WIDTH)),
             wall_distance(g.sc(OY), dy, g.dbl(D_HEIGHT)),
         );
-        if t_wall >= 0.0 && t_wall <= g.sc(RANGE) {
+        if t_wall >= 0.0 && t_wall <= reach {
             t_wall
         } else {
             f64::INFINITY
@@ -386,14 +392,20 @@ unsafe fn seed_ray(g: &Sense, k: usize) -> f64 {
     }
 }
 
-/// Seeds every ray: its direction into `dirs` (all x, then all y), its wall hit into the best arrays. Leaves the last
-/// ray's direction in the scratch, as the JS loops do.
+/// Seeds every ray: its reach (the range times the caster's specialisation row of `rayReachBySpec`, senses-and-motor
+/// Phase 5) into `reach`, its direction into `dirs` (all x, then all y), its wall hit into the best arrays. Leaves the
+/// last ray's direction in the scratch, as the JS loops do.
 unsafe fn seed_all(g: &Sense) {
-    // SAFETY: the best arrays hold `rayCount` doubles and `dirs` twice that.
+    // SAFETY: the best arrays and `reach` hold `rayCount` doubles, `dirs` twice that, and `rayReachBySpec` a row of
+    // `rayCount` per specialisation.
     unsafe {
         let rays = g.p.ray_count as usize;
+        let range = g.sc(RANGE);
+        let row = at::<f64>(g.p.ray_reach_by_spec).add(g.p.spec as usize * rays);
         for k in 0..rays {
-            *g.best_t.add(k) = seed_ray(g, k);
+            let reach = range * *row.add(k);
+            *g.reach.add(k) = reach;
+            *g.best_t.add(k) = seed_ray(g, k, reach);
             *g.best_key.add(k) = WALL * KIND_STRIDE;
             *g.dirs.add(k) = g.sc(DX);
             *g.dirs.add(rays + k) = g.sc(DY);
@@ -427,14 +439,13 @@ unsafe fn nearest_all(g: &Sense, count: usize) {
     unsafe {
         seed_all(g);
         let rays = g.p.ray_count as usize;
-        let range = g.sc(RANGE);
         for row in 0..count {
             let r = g.local.add(row * LOCAL_STRIDE);
             let (lx, ly, lc, lk) = (*r, *r.add(1), *r.add(2), *r.add(3));
             for k in 0..rays {
                 let t = circle_hit(*g.dirs.add(k) * lx + *g.dirs.add(rays + k) * ly, lc);
                 let best = *g.best_t.add(k);
-                if t >= 0.0 && t <= range && (t < best || (t == best && lk < *g.best_key.add(k))) {
+                if t >= 0.0 && t <= *g.reach.add(k) && (t < best || (t == best && lk < *g.best_key.add(k))) {
                     *g.best_t.add(k) = t;
                     *g.best_key.add(k) = lk;
                 }
@@ -464,14 +475,13 @@ unsafe fn nearest_covered(g: &Sense, count: usize, slot: usize) -> u32 {
         let ring = at::<u8>(g.p.cover_ring);
         let caster_ring = *ring.add(slot);
         let rays = g.p.ray_count as usize;
-        let range = g.sc(RANGE);
-        let vrange = f64x2_splat(range);
         let zero = f64x2_splat(0.0);
         let mut skipped = 0;
         let mut k = 0;
         while k + 2 <= rays {
             let dx = v128_load(g.dirs.add(k) as *const v128);
             let dy = v128_load(g.dirs.add(rays + k) as *const v128);
+            let vrange = v128_load(g.reach.add(k) as *const v128);
             let mut best = v128_load(g.best_t.add(k) as *const v128);
             let mut key = v128_load(g.best_key.add(k) as *const v128);
             for row in 0..count {
@@ -504,6 +514,7 @@ unsafe fn nearest_covered(g: &Sense, count: usize, slot: usize) -> u32 {
             let (dx, dy) = (*g.dirs.add(k), *g.dirs.add(rays + k));
             let mut best_t = *g.best_t.add(k);
             let mut best_key = *g.best_key.add(k);
+            let range = *g.reach.add(k);
             for row in 0..count {
                 let r = g.local.add(row * LOCAL_STRIDE);
                 let t = circle_hit(dx * *r + dy * *r.add(1), *r.add(2));
@@ -525,7 +536,8 @@ unsafe fn nearest_covered(g: &Sense, count: usize, slot: usize) -> u32 {
     }
 }
 
-/// Gathers the caster's circles and finds every ray's nearest hit. The origin, range and heading are in `rayScratch`.
+/// Gathers the caster's circles within the full range and finds every ray's nearest hit within its own reach. The
+/// origin, range and heading are in `rayScratch`; the caster's specialisation is in `spec`.
 /// Returns the gathered row count; with `conceals` the skipped count goes to `concealed`.
 ///
 /// # Safety

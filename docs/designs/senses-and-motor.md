@@ -1,6 +1,6 @@
 # Senses and motor
 
-**Status:** In progress - Phase 1 built (interface checks; no sign or class bug, three findings recorded for T13); Phase 2 built (`npm run audit:chase`; `E-SM-1`, record E185, falsified: no fair band beyond 0.2 of view). Phase 3 code is built (T6 to T9: `npm run audit:signals`, the lesson oracles and the input reader, `npm run probe:learn`); its runs (T10 to T12) and Phase 4 are not. An audit of what a brain is told and what its outputs do: interface checks for bugs, the envelope of a chase, a census of every input and output, and probes that say whether each lesson is reachable and whether the senses suffice for it.
+**Status:** In progress - Phase 1 built (interface checks; no sign or class bug, three findings recorded for T13); Phase 2 built (`npm run audit:chase`; `E-SM-1`, record E185, falsified: no fair band beyond 0.2 of view). Phase 3 code is built (T6 to T9: `npm run audit:signals`, the lesson oracles and the input reader, `npm run probe:learn`); its runs (T10 to T12) and Phase 4 are not. Phase 5 (hunter's eyes, user request 2026-11-15): T16 and T17 built (`rearVisionShare`, neutral at its default 1; the screen grid and record E186); the screen, keep rule and switch (T18 to T21) are not. An audit of what a brain is told and what its outputs do: interface checks for bugs, the envelope of a chase, a census of every input and output, and probes that say whether each lesson is reachable and whether the senses suffice for it.
 **Validated:** f5ebac76 (2026-11-15)
 **Priority:** 10 - a sign error, a dead input or a chase that cannot be won voids every training run and scene verdict built on it, and Phases 1 to 3 change no behaviour, so they come before the stage ladder
 **Depends on:** [training.md](training.md)
@@ -182,16 +182,57 @@ Done when each confirmed finding has a verdict: adopted with its switch deleted,
 | E     | T13      | The records and the task rows for confirmed findings                 |
 | F     | T14, T15 | The screens and verdicts those rows name, and the conformance review |
 
+### Phase 5 - Hunter's eyes
+
+**Targets:** eval.hunter_catches_per_1k, eval.chase_catch_share
+
+The user's request (2026-11-15): the hunter sees further than any other body, the scout alone equal to it. In nature a predator's eyes face forward, overlap and see far; a prey animal's sit on the sides of its head and see all round, nearer. Today every body casts 16 rays evenly round 360 degrees, all to one `visionRange` (forager 300, predator 350, reproducer 250, scout 400, defender 350), so a predator sees as far behind it as ahead, and E185 found no chase it can win from beyond 0.2 of its view.
+
+The change keeps the ray directions and the brain layout and shapes each ray's reach. A new per-specialisation `rearVisionShare` `s` (0 to 1, default 1, today's world) gives ray `k`, at angle `theta_k = 2 pi k / rayCount` from the heading, a reach of `visionRange x vision trait x reach_k`, with `reach_k = min(1, s + (1 - s) x (1 + cos theta_k) / 2)`: the ray dead ahead keeps the full range and the ray behind gets `s` of it. `allocateWorld` builds the factor table (`rayReachBySpec`, one row of `rayCount` factors per specialisation, from the same `detCos` as `rayCos`) once; the sense kernel (`sense_slot` in `wasm/src/sense.rs`) multiplies the caster's range by its row into a per-ray reach before the march and tests every hit and wall against it, so the tick allocates nothing and the JS and Rust agree by construction (only the kernel computes a reach). The gather keeps the full range, a superset of every ray's reach. At `s` 1 every factor is exactly 1, so `worldHash` and the golden cases do not move.
+
+Proximity stays `1 - t / range` with the full range, not the ray's own reach: a body at a given distance reads the same on every ray, so the pooled channel's two strongest hits still rank bodies by true distance and no input changes meaning (no new layout name; every champion stays valid). A rear ray's proximity therefore never falls under `1 - s`.
+
+Range arms move the predator to 400 (equal to the scout) and the defender to 300, so the hunter's top range is equalled only by the scout. Prediction (`E-SM-4`, recorded in the ledger before the run): on the 16-seed screen (`evals/screens/hunter-vision.grid.json`, 400000 ticks, floor on) the range-plus-rear arms raise `eval.hunter_catches_per_1k` by at least a tenth over control with the keep rule's seed guards (hunters alive, held) not worse; range alone moves catches less than range with `s` 0.4; `eval.chase_catch_share` rises with them; `eval.collision_death_share` does not rise. Falsified when no arm raises catches beyond the screen's margin. `npm run audit:chase` reads only the range arms' start distances (its oracles see all, so `s` does not touch it), and is run for the range and `s` arms so the start-distance grid is on record.
+
+| Arm         | predator   | scout | defender   | forager, reproducer |
+| ----------- | ---------- | ----- | ---------- | ------------------- |
+| control     | 350, s 1   | 400   | 350        | s 1                 |
+| range       | 400, s 1   | 400   | 300        | s 1                 |
+| range-s06   | 400, s 0.6 | 400   | 300        | s 1                 |
+| range-s04   | 400, s 0.4 | 400   | 300        | s 1                 |
+| range-s04-d | 400, s 0.4 | 400   | 300, s 0.8 | s 1                 |
+| far-s03     | 450, s 0.3 | 400   | 300        | s 1                 |
+
+#### Test design
+
+| Test                                     | Pins                                                                                                                                                                            |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `test/sim/ray-reach.test.js` (new)       | The factor table: 1 dead ahead, `s` behind, symmetric left and right, every factor exactly 1 at `s` 1, never above 1                                                            |
+| `test/sim/ray-march-reach.test.js` (new) | A predator with `s` 0.4 does not see a body behind it at 0.5 of its range that a forager (`s` 1) sees; it sees the same body ahead; a wall behind past the rear reach is unseen |
+| Kernel against a naive JS reference      | Random seeded scenes with mixed `s`: every ray's nearest hit and key from the kernel equal a per-ray scalar JS march with the same reach, on the plain and the covered path     |
+| Defaults                                 | `createConfig()` passes with `rearVisionShare` 1 on every specialisation; `test/sim/golden.json` and the sense reference digests are unchanged                                  |
+
+#### Chunks
+
+| Chunk | Tasks    | Holds                                                                       |
+| ----- | -------- | --------------------------------------------------------------------------- |
+| G     | T16, T17 | The key, the reach table and kernel, the tests, the grid and the prediction |
+| H     | T18, T19 | The 16-seed screen, the finalist and the 64-seed keep rule (runs)           |
+| I     | T20, T21 | The default switch or the park record, and the conformance review           |
+
 ## Decisions
 
-| Decision                                                                                  | Why                                                                                                                                                                            | Who                              |
-| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
-| The audit comes before the stage ladder                                                   | A gate that cannot pass because the chase cannot be won, or a sign that is wrong, would read as a training failure                                                             | Delegated (planning, 2026-11-15) |
-| No input is added or removed by this doc's first three phases                             | A new input is a cost that needs a scene metric to move; a deletion belongs to the plan that owns the mechanism                                                                | Planner, from principles.md      |
-| The learn probe may select on a lesson's score because nothing it breeds leaves the probe | It measures whether the interface makes a lesson reachable; a reflex or drill score still never enters fitness, merit, mate rank, archive rank or an offer filter of any world | Delegated (planning, 2026-11-15) |
-| Brain size, mutation and memory are not screened here                                     | [brain-capacity-and-memory.md](brain-capacity-and-memory.md) owns them; a "too hard to train" reading is handed to it with the lesson table                                    | Delegated (planning, 2026-11-15) |
-| A fix that changes an input's meaning takes a new layout name and waits for a season      | `BRAIN_LAYOUT_NAME` is stamped into every genome and champion file; a silent change of meaning would load old brains wrongly                                                   | Planner, from brain-layout.js    |
-| Every Phase 4 switch is deleted at its verdict                                            | Delete what a switch replaces (`AGENTS.md`)                                                                                                                                    | Planner, from AGENTS.md          |
+| Decision                                                                                  | Why                                                                                                                                                                               | Who                                     |
+| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| The audit comes before the stage ladder                                                   | A gate that cannot pass because the chase cannot be won, or a sign that is wrong, would read as a training failure                                                                | Delegated (planning, 2026-11-15)        |
+| No input is added or removed by this doc's first three phases                             | A new input is a cost that needs a scene metric to move; a deletion belongs to the plan that owns the mechanism                                                                   | Planner, from principles.md             |
+| The learn probe may select on a lesson's score because nothing it breeds leaves the probe | It measures whether the interface makes a lesson reachable; a reflex or drill score still never enters fitness, merit, mate rank, archive rank or an offer filter of any world    | Delegated (planning, 2026-11-15)        |
+| Brain size, mutation and memory are not screened here                                     | [brain-capacity-and-memory.md](brain-capacity-and-memory.md) owns them; a "too hard to train" reading is handed to it with the lesson table                                       | Delegated (planning, 2026-11-15)        |
+| A fix that changes an input's meaning takes a new layout name and waits for a season      | `BRAIN_LAYOUT_NAME` is stamped into every genome and champion file; a silent change of meaning would load old brains wrongly                                                      | Planner, from brain-layout.js           |
+| A ray's proximity is normalised by the full vision range, not by its own reach (Phase 5)  | A body at one distance then reads the same on every ray, the pooled hits keep ranking by true distance, and no input changes meaning, so no layout name and no champion is voided | Delegated (overnight build, 2026-11-15) |
+| `rearVisionShare` stays a numeric body trait after its verdict, not a deleted switch      | It is a per-specialisation shape of the eye like `visionRange`, not a flag between two code paths; at 1 it is the all-round eye                                                   | Delegated (overnight build, 2026-11-15) |
+| Ray directions stay evenly spaced (Phase 5)                                               | Moving rays forward would change what each input slot means and void every champion; shaping the reach keeps the layout                                                           | User (2026-11-15)                       |
+| Every Phase 4 switch is deleted at its verdict                                            | Delete what a switch replaces (`AGENTS.md`)                                                                                                                                       | Planner, from AGENTS.md                 |
 
 ## Delivery requirements
 
@@ -246,6 +287,17 @@ Done when each confirmed finding has a verdict: adopted with its switch deleted,
 | T14 | Build, screen and judge each fix T13 names: one switch each, 16 seeds then the keep rule on 64, the switch deleted at the verdict                                                              | [judgement] | T13         |
 | T15 | Conformance review of Phase 4 by a fresh agent, in parallel with `scripts/check.sh`; move the Status line                                                                                      | [judgement] | T13, T14    |
 
+### Phase 5 - Hunter's eyes
+
+| #   | Task                                                                                                                                                                                                                                                 | Nature       | Depends on |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T16 | Add `rearVisionShare` (rule `num(0, 1)`, default 1 on every specialisation), the `rayReachBySpec` table, the per-ray reach in `sense_slot` (plain and covered paths), `scripts/build-wasm.sh`, the tests of the Test design; season 10's `rulesHash` | [judgement]  | -          |
+| T17 | Add `evals/screens/hunter-vision.grid.json` (six arms), the `E-SM-4` record with its prediction before any run, and `npm run audit:chase` for the range and `s` arms under `evals/decisions/`                                                        | [judgement]  | T16        |
+| T18 | Run the 16-seed screen at 400000 ticks (`npm run screen -- --grid evals/screens/hunter-vision.grid.json --workers 16`); the table under `evals/screens/results/`                                                                                     | [mechanical] | T17        |
+| T19 | Name the finalist; run it against control on 64 matched floor-on seeds and `npm run eval:compare -- --keep-rule`; the verdict in the record                                                                                                          | [judgement]  | T18        |
+| T20 | On no harm and a scene gain switch the defaults (season 10 `rulesHash`, goldens re-pinned in their own commit, `npm run browser:hash` where Chromium runs); on `WORSE` park it and record why                                                        | [judgement]  | T19        |
+| T21 | Conformance review of Phase 5 by a fresh agent, in parallel with `scripts/check.sh`; move the Status line                                                                                                                                            | [judgement]  | T20        |
+
 ## Verification
 
 1. `scripts/check.sh --fix --docs` for this doc; `scripts/check.sh` green on each chunk PR.
@@ -253,3 +305,4 @@ Done when each confirmed finding has a verdict: adopted with its switch deleted,
 3. Phase 2: `npm run audit:chase` prints the body table, the catch grid and the fair band for each pair.
 4. Phase 3: `npm run audit:signals -- --seeds 16 --ticks 200000` prints a row per input and output; `npm run probe:learn` prints the reached bar per lesson; the lesson table shows four bars per lesson.
 5. Phase 4: each confirmed finding has a verdict in [sim-notes.md](sim-notes.md) and no switch is left.
+6. Phase 5: `npx vitest run test/sim/ray-reach.test.js test/sim/ray-march-reach.test.js` passes; the screen table and the keep-rule verdict are in the `E-SM-4` record.
