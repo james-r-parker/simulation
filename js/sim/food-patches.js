@@ -69,49 +69,14 @@ export function pickPatch(world, rng) {
 }
 
 /**
- * Takes `foodPatchDepletion` from the nearest patch whose disc contains the point (lowest index on ties), never
- * below the floor.
- * @param {World} world the world
- * @param {number} x the eaten food's x
- * @param {number} y the eaten food's y
- * @returns {void}
- */
-export function depletePatchAt(world, x, y) {
-    const { patchX, patchY, patchStock } = world;
-    const { foodPatchRadius, foodPatchDepletion, foodPatchCapacity } = world.config;
-    let best = -1;
-    let bestSq = foodPatchRadius * foodPatchRadius;
-    for (let i = 0; i < patchStock.length; i++) {
-        if (world.patchAlive[i] !== 1) {
-            continue;
-        }
-        const dx = x - patchX[i];
-        const dy = y - patchY[i];
-        const sq = dx * dx + dy * dy;
-        if (sq < bestSq) {
-            bestSq = sq;
-            best = i;
-        }
-    }
-    if (best >= 0) {
-        const floor = PATCH_FLOOR_SHARE * foodPatchCapacity;
-        patchStock[best] = Math.max(floor, patchStock[best] - foodPatchDepletion);
-    }
-}
-
-/**
- * A plant meal's draw on its patch: the weight model takes `foodPatchDepletion` from the nearest patch, the energy
- * model (`patchStockEnergy`) takes the item's energy from the patch that sourced it. Call before the item is removed.
+ * A plant meal's draw on its patch: the item's energy comes out of the patch that sourced it (`spendItem`). Call before
+ * the item is removed.
  * @param {World} world the world
  * @param {number} food the eaten plant item
  * @returns {void}
  */
 export function eatFromPatch(world, food) {
-    if (world.config.patchStockEnergy) {
-        spendItem(world, food);
-    } else {
-        depletePatchAt(world, world.foodX[food], world.foodY[food]);
-    }
+    spendItem(world, food);
 }
 
 /**

@@ -1,4 +1,4 @@
-// The energy model of a patch (`patchStockEnergy`): a patch's stock is energy, its standing items reserve part of it,
+// The energy model of a patch: a patch's stock is energy, its standing items reserve part of it,
 // a meal spends it and an item that goes unseaten gives its reservation back. Pure bookkeeping on world arrays.
 import { PATCH_FLOOR_SHARE } from './patch-life.js';
 

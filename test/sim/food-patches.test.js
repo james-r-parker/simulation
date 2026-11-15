@@ -1,22 +1,11 @@
-import { allocBody } from './helpers/body.js';
 import { describe, expect, it } from 'vitest';
-import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
-import {
-    PATCH_FLOOR_SHARE,
-    createPatches,
-    depletePatchAt,
-    pickPatch,
-    regrowPatches,
-} from '../../js/sim/food-patches.js';
+import { PATCH_FLOOR_SHARE, createPatches, pickPatch, regrowPatches } from '../../js/sim/food-patches.js';
 import { EVENT_STRIDE, EVENT_TYPE } from '../../js/sim/events.js';
-import { feed } from '../../js/sim/feeding.js';
-import { ENERGY_SOURCE, addEnergy } from '../../js/sim/energy.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { createRng } from '../../js/sim/rng.js';
-import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { smallWorld } from './helpers/small-world.js';
 
-const PATCHES = { floraPatchMax: 3, foodPatchCount: 3, foodPatchRadius: 100 };
+const PATCHES = { floraPatchMax: 3, foodPatchCount: 3, foodPatchRadius: 100, foodPatchCapacity: 1 };
 
 /**
  * @param {Record<string, any>} [over] config overrides
@@ -113,7 +102,6 @@ describe('pickPatch', () => {
         w.patchAlive[4] = 0;
         expect(pickPatch(w, createRng(2))).toBe(-1);
         const before = Array.from(w.patchStock);
-        depletePatchAt(w, 200, 200);
         regrowPatches(w);
         expect(Array.from(w.patchStock)).toEqual(before);
     });
@@ -126,63 +114,6 @@ describe('pickPatch', () => {
         for (let i = 0; i < 500; i++) {
             expect(pickPatch(w, rng)).not.toBe(0);
         }
-    });
-});
-
-describe('depletion', () => {
-    it('takes foodPatchDepletion from the patch containing the point, and from no other', () => {
-        const w = patched({ foodPatchDepletion: 0.1 });
-        depletePatchAt(w, 250, 250);
-        expect(Array.from(w.patchStock)).toEqual([0.4, 0.3, 0.2]);
-        depletePatchAt(w, 400, 450);
-        expect(Array.from(w.patchStock)).toEqual([0.4, 0.3, 0.2]);
-    });
-
-    it('takes from the nearest patch whose disc holds the point, the lowest index on a tie', () => {
-        const w = patched({ foodPatchDepletion: 0.1 });
-        w.patchX.set([200, 260, 200]);
-        w.patchY.set([200, 200, 200]);
-        w.patchStock.set([0.5, 0.5, 0.5]);
-        depletePatchAt(w, 250, 200);
-        expect(Array.from(w.patchStock)).toEqual([0.5, 0.4, 0.5]);
-        depletePatchAt(w, 200, 200);
-        expect(Array.from(w.patchStock)).toEqual([0.4, 0.4, 0.5]);
-    });
-
-    it('never goes below the floor', () => {
-        const w = patched({ foodPatchDepletion: 1 });
-        depletePatchAt(w, 600, 700);
-        expect(w.patchStock[2]).toBe(PATCH_FLOOR_SHARE);
-    });
-
-    it('is applied when an agent eats food inside a patch, and not outside', () => {
-        const w = patched({ foodPatchDepletion: 0.1, maxFood: 4 });
-        const slot = allocBody(w);
-        w.x[slot] = 200;
-        w.y[slot] = 200;
-        addEnergy(w, slot, 20, ENERGY_SOURCE.INITIAL);
-        w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = 1; // a forager eats only while it bites (eat-choice G1)
-        const put = (/** @type {number} */ i, /** @type {number} */ x, /** @type {number} */ y) => {
-            Object.assign(w.foodAlive, { [i]: 1 });
-            w.foodX[i] = x;
-            w.foodY[i] = y;
-            w.foodRadius[i] = 5;
-            w.foodValue[i] = 7;
-            w.foodCount += 1;
-        };
-        put(0, 200, 200);
-        const hash = createSpatialHash(w.config);
-        buildHash(hash, w);
-        feed(w, hash);
-        expect(w.foodAlive[0]).toBe(0);
-        expect(w.patchStock[0]).toBeCloseTo(0.4, 12);
-        w.x[slot] = 400;
-        w.y[slot] = 450;
-        put(1, 400, 450);
-        buildHash(hash, w);
-        feed(w, hash);
-        expect(w.foodAlive[1]).toBe(0);
-        expect(Array.from(w.patchStock).map((s) => Number(s.toFixed(12)))).toEqual([0.4, 0.3, 0.2]);
     });
 });
 

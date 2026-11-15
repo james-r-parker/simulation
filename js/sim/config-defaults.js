@@ -95,10 +95,10 @@ export const DEFAULTS = deepFreeze({
     pregnancyTicks: 480, // PREGNANCY_DURATION_FRAMES
     maturityTicks: 600, // MATURATION_AGE_FRAMES
     seasons: [
-        { foodScarcity: 1.2, energyDrain: 1.0, temperatureModifier: -5 }, // spring, SEASON_*
-        { foodScarcity: 1.0, energyDrain: 1.3, temperatureModifier: 15 }, // summer, SEASON_*
-        { foodScarcity: 0.8, energyDrain: 1.1, temperatureModifier: 5 }, // autumn, SEASON_*
-        { foodScarcity: 0.4, energyDrain: 1.8, temperatureModifier: -15 }, // winter, SEASON_*
+        { energyDrain: 1.0, temperatureModifier: -5 }, // spring, SEASON_*
+        { energyDrain: 1.3, temperatureModifier: 15 }, // summer, SEASON_*
+        { energyDrain: 1.1, temperatureModifier: 5 }, // autumn, SEASON_*
+        { energyDrain: 1.8, temperatureModifier: -15 }, // winter, SEASON_*
     ],
     fertileZoneMax: 100, // FERTILE_ZONE_MAX_COUNT
     fertileZoneSpawnChance: 0.4, // FERTILE_ZONE_SPAWN_CHANCE
@@ -259,11 +259,9 @@ export const DEFAULTS = deepFreeze({
     huntCallThreshold: 0.65, // tuned, fitness-and-selection T15d (the hunt output must exceed it, T15m)
     foodPatchCount: 16, // new: permanent food patches; 0 is off (world-balance T34, 16 from T41)
     foodPatchRadius: 400, // new
-    foodPatchCapacity: 1, // new: the largest stock of a patch
-    foodPatchDepletion: 0.02, // new: stock taken by each food eaten inside a patch
-    patchStockEnergy: false, // new: a patch holds energy, its items reserve it, a meal spends it (honest-budgets Phase 1); false is the weight model
+    foodPatchCapacity: 83000, // honest-budgets E174 (was 1): the largest stock of a patch, in energy; its items reserve it and a meal spends it
     foodPatchRegrow: 0.0005, // new: logistic regrowth rate per tick
-    foodBackgroundShare: 0.2, // new: the share of food spawns that ignore the patches
+    foodBackgroundShare: 0.02, // honest-budgets E174 (was 0.2): the share of food spawns that ignore the patches
     foodRegrowPerArea: 0.09, // E95 (was 0.06): items per tick per 1,000,000 px2 of world, through the patches
     eraSeasonTicks: 36000, // new: ticks per season (a year is 4 x this)
     winterRegrow: 0.2, // new: patch regrowth multiplier in winter (summer is 1.5)

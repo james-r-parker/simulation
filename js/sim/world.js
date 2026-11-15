@@ -431,9 +431,7 @@ export function removeFood(world, slot, gone = FOOD_GONE.ROTTED, taken = 0) {
     if (world.foodAlive[slot] !== 1) {
         throw new Error(`removeFood: food slot ${slot} is not alive`);
     }
-    if (world.config.patchStockEnergy) {
-        releaseItem(world, slot);
-    }
+    releaseItem(world, slot);
     zeroSlot(world.foodRows, slot);
     world.foodGone[slot] = gone;
     world.foodTaken[slot] = taken;

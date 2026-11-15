@@ -52,7 +52,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Refuge](refuge.md) - all three phases are built: the eight detectors, the refuge-access fixture and the diagnosis (`E130`: cover protects and fits, but threatened prey do not reach...
 - [Web presence](web-presence.md) - a designed icon in every size, Open Graph and Twitter cards, a full `<head>`, an installable web app manifest with a splash, `robots.txt` and `sitemap.xml`
 
-## In progress (16)
+## In progress (17)
 
 Partly built - the note says which phases are real.
 
@@ -61,6 +61,7 @@ Partly built - the note says which phases are real.
 - [Crisp renderer](crisp-renderer.md) - Phase 1 code built (T2 to T23 and T25, one pull request): the WebGPU stage, the model catalogue, the clips, every layer, herds blended by slot, the old renderer... _(validated 6a245c9, 2026-11-14)_
 - [Deployment and community](deployment-and-community.md) - Phase 1c is built (no season gap while uploads are closed); Phase 1a (Release Please opens the release PR; production deploys only when it is merged) is built o... _(validated 626f040, 2026-11-13)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Eat choice](eat-choice.md) - Phases 1 to 5 are built: the eat choice is the default on `main` (season 7) (E159 to E162; keep rule no harm on seeds 1 to 64 and 65 to 128); two Done bars miss... _(validated e2455f2, 2026-11-11)_ _(depends on [metric-trust.md](metric-trust.md), [low-density-edge.md](low-density-edge.md))_
+- [Honest budgets](honest-budgets.md) - Phase 1 (patch stock pays for plant food) built in season 10; Phase 2 (the kill is the body) is next _(validated 2fc8f7f, 2026-11-15)_ _(depends on [metric-trust.md](metric-trust.md))_
 - [Hunter learning](hunter-learning.md) - Phases 1 and 2 are built (hunters have time to learn to kill): Phase 1 adopted the flip reflex and the hunter territory (always on) and deleted provisioning, th... _(validated edd4cd4, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md), [training.md](training.md))_
 - [Lean observer](lean-observer.md) - Phase 1 built; the perf:browser comparison is open (no GPU Chrome on the build machine) _(validated 3f8bf12, 2026-11-12)_
 - [Low-density edge](low-density-edge.md) - Phases 1 to 4 are built; Phase 5 (a receptive-mate scent) is falsified (E168: no scent arm holds more seeds, mating does not move), so the scent stays on the un... _(validated 38339cb, 2026-11-11)_ _(depends on [metric-trust.md](metric-trust.md), [carrying-capacity.md](carrying-capacity.md))_
@@ -73,14 +74,13 @@ Partly built - the note says which phases are real.
 - [World balance and biology](world-balance.md) - Phases 1 to 4, Phase 5 round 1 and Phase 6 built. The post-feature queue (T79 to T96) was not run as written: natural-selection.md Phase 4 (T48 to T67, closed 2... _(validated edd4cd4, 2026-11-07)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the screenshots script, the RE... _(validated d6ca3e6, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (8)
+## Proposed (7)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
 - [Alarm calls](alarm-calls.md) - Phase 1 instruments built (T1 to T3, #343) and the T4 baseline run (`E143`, 16 floor-on seeds, in Baseline): no call on any seed, and the audience a call would... _(validated f5c7880, 2026-11-07)_ _(depends on [realistic-keepers.md](realistic-keepers.md), [refuge.md](refuge.md))_
 - [Brain inspection](brain-inspection.md) - Phase 1 (the dossier: labelled weights, drill traces and unit ablation) is built first; Phase 2 adds the `inspect-brain` skill and the first inspection of train... _(validated d6ca3e6, 2026-11-07)_ _(depends on [training.md](training.md))_
 - [Habitat cover](habitat-cover.md) - Phase 1 T1 built (#343) and the T2 baseline run (`E141`, 32 floor-on seeds, in Baseline); T3 (the conformance review) is open. Phase 2 puts rings on the rims of... _(validated f5c7880, 2026-11-07)_ _(depends on [refuge.md](refuge.md), [realistic-keepers.md](realistic-keepers.md))_
-- [Honest budgets](honest-budgets.md) - five phases, each a change to world physics screened alone and landed with its season; Phase 1 (patch stock pays for plant food) is first _(validated 2085709, 2026-11-14)_ _(depends on [metric-trust.md](metric-trust.md))_
 - [Hunter practice](hunter-practice.md) - Phase 1 T1 built (#343) and the T6 baseline run (`E144`, in Baseline): matched conversion falls less with age than the pooled read, and dose is near 0. T2 and T... _(validated edd4cd4, 2026-11-07)_ _(depends on [hunter-learning.md](hunter-learning.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated d6ca3e6, 2026-11-07)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_
 - [Migration](migration.md) - migrants arrive at the map edges at a steady rate from a balanced mainland, whatever the headcount, and replace the floor refill that drops agents into an empti... _(validated e2455f2, 2026-11-11)_ _(depends on [eat-choice.md](eat-choice.md), [low-density-edge.md](low-density-edge.md))_

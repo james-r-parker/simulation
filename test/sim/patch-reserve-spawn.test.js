@@ -14,7 +14,6 @@ const CAPACITY = 1000;
  */
 function berries(over = {}) {
     const w = smallWorld({
-        patchStockEnergy: true,
         foodPatchCount: 1,
         foodPatchRadius: 100,
         foodPatchCapacity: CAPACITY,
@@ -96,14 +95,5 @@ describe('spawnFloraItem in the energy model', () => {
         const slot = spawnFoodItem(w);
         expect(w.foodPatch[slot]).toBe(-1);
         expect(w.patchReserved[0]).toBe(0);
-    });
-
-    it('leaves the weight model unchanged with patchStockEnergy false', () => {
-        const w = berries({ patchStockEnergy: false, foodPatchCapacity: 1 });
-        for (let i = 0; i < 20; i++) {
-            expect(spawnFoodItem(w)).toBeGreaterThanOrEqual(0);
-        }
-        expect(w.patchReserved[0]).toBe(0);
-        expect(w.foodCount).toBe(20);
     });
 });

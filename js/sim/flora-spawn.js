@@ -143,7 +143,7 @@ function writeItem(world, slot, species, patch) {
 }
 
 /**
- * In the energy model (`patchStockEnergy`) a patch item must be paid for: the free stock (stock less what standing
+ * A patch item must be paid for: the free stock (stock less what standing
  * items reserve) has to cover the largest energy the item can hold and stay at or above the floor. Draws nothing.
  * @param {import('./world.js').World} world the world
  * @param {number} patch the picked patch
@@ -152,16 +152,12 @@ function writeItem(world, slot, species, patch) {
  */
 function refused(world, patch, species) {
     const c = world.config;
-    if (!c.patchStockEnergy) {
-        return false;
-    }
     const row = c.flora[FLORA_NAMES[species]];
     return !canPay(world, patch, c.foodEnergy * (world.patchEnergy[patch] + row.energySpread));
 }
 
 /**
- * The patch or background branch of a spawn: picks the source, then places and writes the item, reserving its energy
- * in the energy model.
+ * The patch or background branch of a spawn: picks the source, then places and writes the item, reserving its energy.
  * @param {import('./world.js').World} world the world
  * @param {number} slot the free food slot
  * @param {(world: any, rng: any, radius: number) => void} placeClear uniform placement
@@ -182,9 +178,7 @@ function spawnGrazed(world, slot, placeClear, placeInDisc) {
         placeClear(world, world.rng.food, radius);
     }
     const item = writeItem(world, slot, species, patch);
-    if (world.config.patchStockEnergy) {
-        reserveItem(world, item);
-    }
+    reserveItem(world, item);
     return item;
 }
 
@@ -193,7 +187,7 @@ function spawnGrazed(world, slot, placeClear, placeInDisc) {
  * @param {number} slot the free food slot
  * @param {(world: any, rng: any, radius: number) => void} placeClear uniform placement
  * @param {(world: any, disc: any, radius: number) => boolean} placeInDisc local placement
- * @returns {number} the populated food slot, or -1 when the energy model's patch cannot pay for the item (no slot is
+ * @returns {number} the populated food slot, or -1 when the patch cannot pay for the item (no slot is
  *   taken and no float is drawn after the patch pick)
  */
 export function spawnFloraItem(world, slot, placeClear, placeInDisc) {

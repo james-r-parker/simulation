@@ -16,8 +16,6 @@ than repeating them.
 
 ## Learned while building
 
-Entries are `### YYYY-MM-DD - <topic>`, newest last, one finding each.
-
 ### 2026-10-11 - WebGPU in WSL Chromium is SwiftShader only
 
 Playwright's Chromium under WSL2 (Ubuntu 26.04) gets only the SwiftShader fallback adapter, headless or headed,
@@ -3355,3 +3353,16 @@ nine instance vec4s, ten buffers, so their pipelines failed on WebGPU (phones, d
 vanished, while the WebGL2 fallback (16 attributes) drew them and every local check passed. `createInstances` now
 interleaves a mesh's instance attributes into one `InstancedInterleavedBuffer` (two buffers per mesh), and a test
 asserts the agent meshes stay within 8.
+
+### 2026-11-15 - A patch stock in energy does not make food local on its own (honest-budgets)
+
+- Meals spend a patch's stock by the item's energy and standing items reserve theirs (`js/sim/patch-reserve.js`), so
+  `foodPatchCapacity` became an energy (83000) where the weight model used 1. A spawn the patch cannot pay is refused
+  before placement, so a refused attempt draws no placement numbers.
+- Sizing the stock from the full-map yield (`0.25 x foodPatchRegrow x mean patchRegrow x season factor x capacity x
+patches` against the plant energy eaten a tick) puts 1x near today's intake. A larger stock stops binding and the
+  population rides to `maxAgents` (E174: slope -0.85 at 2.5x against -0.14 at 1x).
+- Chance food stayed above deliberate food on every seed of every arm: with patches paying, blobs still meet most
+  food by wandering. `foodScarcity` is gone, so winter reaches food only through `patchRegrowFactor`.
+
+Entries are `### YYYY-MM-DD - <topic>`, newest last, one finding each.

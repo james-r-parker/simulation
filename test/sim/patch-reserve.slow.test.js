@@ -43,7 +43,6 @@ describe('patchReserved over a running world', () => {
                     foodPatchCount: PATCHES,
                     foodPatchRadius: 300,
                     foodPatchCapacity: 50000,
-                    patchStockEnergy: true,
                     herdCount: 2,
                     herdSize: 3,
                     seed: 5,

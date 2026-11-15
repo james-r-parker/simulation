@@ -20,7 +20,6 @@ const CAPACITY = 100;
  */
 function energyWorld(over = {}) {
     const w = smallWorld({
-        patchStockEnergy: true,
         foodPatchCount: 1,
         floraPatchMax: 1,
         foodPatchRadius: 100,
@@ -132,37 +131,17 @@ describe('patch reservation bookkeeping', () => {
         expect(w.patchStock[0]).toBe(41);
         expect(w.patchReserved[0]).toBe(0);
     });
-
-    it('keeps the weight model with patchStockEnergy false: a meal takes foodPatchDepletion and no reservation moves', () => {
-        const w = energyWorld({ patchStockEnergy: false, foodPatchDepletion: 3 });
-        put(w, 0, 7);
-        w.patchReserved[0] = 4;
-        forage(w);
-        expect(w.patchStock[0]).toBe(47);
-        expect(w.patchReserved[0]).toBe(4);
-    });
 });
 
-describe('areaExpected in the energy model', () => {
-    const seasons = [
-        { foodScarcity: 1, energyDrain: 1, temperatureModifier: 0 },
-        { foodScarcity: 0.5, energyDrain: 1, temperatureModifier: 0 },
-        { foodScarcity: 1, energyDrain: 1, temperatureModifier: 0 },
-        { foodScarcity: 1, energyDrain: 1, temperatureModifier: 0 },
-    ];
-    const base = { maxFood: 40, foodRegrowPerArea: 4, foodPatchCount: 0, seasons };
+describe('areaExpected', () => {
+    const base = { maxFood: 40, foodRegrowPerArea: 4, foodPatchCount: 0 };
 
-    it('ignores foodScarcity', () => {
-        const w = smallWorld({ ...base, patchStockEnergy: true });
-        w.season[0] = 1;
-        spawnFood(w);
-        expect(w.foodCount).toBe(4);
-    });
-
-    it('keeps foodScarcity in the weight model', () => {
-        const w = smallWorld(base);
-        w.season[0] = 1;
-        spawnFood(w);
-        expect(w.foodCount).toBe(2);
+    it('is the same in every season: the patches carry the seasonal cut through their regrowth', () => {
+        for (const season of [0, 1, 3]) {
+            const w = smallWorld(base);
+            w.season[0] = season;
+            spawnFood(w);
+            expect(w.foodCount).toBe(4);
+        }
     });
 });

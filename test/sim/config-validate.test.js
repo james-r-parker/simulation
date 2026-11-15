@@ -314,7 +314,6 @@ describe('validateConfig food patches and the floor', () => {
         ['foodPatchCount', 1.5],
         ['foodPatchRadius', 0],
         ['foodPatchCapacity', 0],
-        ['foodPatchDepletion', -0.1],
         ['foodPatchRegrow', 1.1],
         ['foodBackgroundShare', -0.1],
         ['floorTrigger', 1.5],

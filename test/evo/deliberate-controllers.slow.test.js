@@ -3,6 +3,7 @@ import { computeMetrics } from '../../js/evo/metrics.js';
 import {
     SURVIVABLE_PREDATOR_EVERY,
     playMicroWorld,
+    playPredatorWorld,
     runPredatorWorld,
     survivableWorld,
 } from './helpers/predator-world.js';
@@ -121,14 +122,6 @@ const PAIRS = /** @type {const} */ ([
         skill: FLEE,
         run: SHORT,
     },
-    {
-        id: 'D8',
-        metric: 'eval.undefended_bite_share',
-        chanceName: 'foodSeeker prey',
-        chance: HUNT,
-        skill: FLEE,
-        run: SHORT,
-    },
 ]);
 
 const LOWER = new Set(['eval.undefended_bite_share']);
@@ -180,5 +173,46 @@ describe('chance-or-waste controllers score below skill on the intent metrics', 
                 scaleTimeout(120_000),
             );
         },
+    );
+});
+
+/**
+ * Sums the classified and undefended bite episodes of one prey arm against hunters over seeds.
+ * @param {string} prey the prey arm
+ * @param {number[]} seeds the world seeds
+ * @returns {{classified: number, undefended: number}} the pooled episode counts
+ */
+function pooledEpisodes(prey, seeds) {
+    const total = { classified: 0, undefended: 0 };
+    for (const seed of seeds) {
+        const { run } = playPredatorWorld(seed, SHORT.ticks, { predator: 'hunter', prey }).observer.intent;
+        total.classified += run.episodesClassified;
+        total.undefended += run.undefendedEpisodes;
+    }
+    return total;
+}
+
+// A fleer world classifies only about four bite episodes a seed, so one episode moves its share by a quarter; D8 holds
+// on the episodes pooled over the seeds.
+describe('D8 eval.undefended_bite_share', () => {
+    it(
+        'foodSeeker prey vs skill on the episodes pooled over seeds 1 to 3',
+        () => {
+            const seeds = [1, 2, 3];
+            const chance = pooledEpisodes('foodSeeker', seeds);
+            const skill = pooledEpisodes('fleer', seeds);
+            expect(skill.classified).toBeGreaterThanOrEqual(12);
+            const shares = {
+                chance: chance.undefended / chance.classified,
+                skill: skill.undefended / skill.classified,
+            };
+            expect({
+                ...shares,
+                holds: holds('eval.undefended_bite_share', shares.chance, shares.skill),
+            }).toMatchObject({
+                holds: true,
+            });
+        },
+        scaleTimeout(240_000),
     );
 });

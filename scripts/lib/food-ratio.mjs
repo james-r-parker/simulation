@@ -27,13 +27,12 @@
  */
 
 /**
- * The items per tick the food formula offers over a year, before `maxFood` clips it.
- * @param {{ foodRegrowPerArea: number, worldWidth: number, worldHeight: number, seasons: { foodScarcity: number }[] }} config the world config
- * @returns {number} `foodRegrowPerArea` x area per 1,000,000 px2 x the mean scarcity of the four seasons
+ * The items per tick the food formula offers, before `maxFood` clips it.
+ * @param {{ foodRegrowPerArea: number, worldWidth: number, worldHeight: number }} config the world config
+ * @returns {number} `foodRegrowPerArea` x area per 1,000,000 px2
  */
 export function offeredPerTick(config) {
-    const meanScarcity = config.seasons.reduce((sum, s) => sum + s.foodScarcity, 0) / config.seasons.length;
-    return (config.foodRegrowPerArea * config.worldWidth * config.worldHeight * meanScarcity) / 1_000_000;
+    return (config.foodRegrowPerArea * config.worldWidth * config.worldHeight) / 1_000_000;
 }
 
 /**

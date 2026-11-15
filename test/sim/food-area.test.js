@@ -4,16 +4,15 @@ import { createConfig } from '../../js/sim/config.js';
 import { smallWorld } from './helpers/small-world.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
-const SEASON = { foodScarcity: 1, energyDrain: 1, temperatureModifier: 0 };
 // 1000 x 1000 px is 1 unit of area, so foodRegrowPerArea is the expected spawns per tick.
 const AREA = {
     maxFood: 400,
     foodRegrowPerArea: 3.5,
     foodPatchCount: 2,
     foodPatchRadius: 100,
+    foodPatchCapacity: 10_000_000,
     foodBackgroundShare: 0,
     fertileZoneSpawnChance: 0,
-    seasons: [SEASON, { ...SEASON, foodScarcity: 0.5 }, SEASON, SEASON],
 };
 
 describe('area food', () => {
@@ -30,14 +29,15 @@ describe('area food', () => {
         expect(w.foodCount).toBeLessThanOrEqual(100 * 4);
     });
 
-    it('scales with the world area and the season scarcity', () => {
+    it('scales with the world area and ignores the season', () => {
         const big = smallWorld({ ...AREA, worldWidth: 2000, maxFood: 1000 });
         const winter = smallWorld({ ...AREA, maxFood: 1000 });
-        winter.season[0] = 1;
+        winter.season[0] = 3;
         spawnFood(big);
         spawnFood(winter);
         expect(big.foodCount).toBeGreaterThanOrEqual(7);
-        expect(winter.foodCount).toBeLessThanOrEqual(2);
+        expect(winter.foodCount).toBeGreaterThanOrEqual(3);
+        expect(winter.foodCount).toBeLessThanOrEqual(4);
     });
 
     it('never exceeds maxFood', () => {
@@ -52,7 +52,7 @@ describe('area food', () => {
         const w = smallWorld({ ...AREA, maxFood: 1000 });
         w.patchX.set([200, 800]);
         w.patchY.set([200, 800]);
-        w.patchStock.set([1, 0.05]);
+        w.patchStock.set([10_000_000, 500_000]);
         for (let t = 0; t < 100; t++) {
             spawnFood(w);
         }

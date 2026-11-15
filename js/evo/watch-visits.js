@@ -1,7 +1,7 @@
 // The patch-visit sample behind `eval.migration_index`: a bitset of `ceil(floraPatchMax / 32)` words per slot (at most
 // 8, as `floraPatchMax` is at most 256) plus a distinct-patch counter, both allocated once. `sampleVisits` runs every
 // `MOTION_SAMPLE_TICKS` and costs alive agents x patches distance checks; it allocates nothing. A patch is visited
-// when the agent is strictly inside its disc (as `depletePatchAt` decides); overlapping discs mark every patch that
+// when the agent is strictly inside its disc; overlapping discs mark every patch that
 // contains the agent. Kept apart from `metrics-watch.js` because the event handling imports it.
 
 /**

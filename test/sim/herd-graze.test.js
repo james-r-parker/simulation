@@ -45,13 +45,15 @@ function addFood(world, slot, kind, x, y, value) {
 }
 
 describe('grazeHerds', () => {
-    it('eats the nearest plant by slot tie-break, depletes its patch and assimilates its share', () => {
+    it('eats the nearest plant by slot tie-break, spends its energy from its patch and assimilates its share', () => {
         const world = build();
         world.patchAlive[0] = 1;
         world.patchX[0] = 400;
         world.patchY[0] = 500;
         world.patchStock[0] = world.config.foodPatchCapacity;
         addFood(world, 0, FOOD_KIND.PLANT, 401, 500, 100);
+        world.foodPatch[0] = 0;
+        world.foodPatchSerial[0] = world.patchSerial[0];
         addFood(world, 1, FOOD_KIND.PLANT, 399, 500, 200);
         addFood(world, 2, FOOD_KIND.MEAT, 400, 500, 300);
         const before = world.herdStore[0];
@@ -63,7 +65,7 @@ describe('grazeHerds', () => {
         expect(world.herdStore[0]).toBeCloseTo(before + 30, 10);
         expect(world.herdGraze[0]).toBe(world.config.herdGrazeTicks);
         expect(world.herdTotals[0]).toBe(100);
-        expect(world.patchStock[0]).toBe(world.config.foodPatchCapacity - world.config.foodPatchDepletion);
+        expect(world.patchStock[0]).toBe(world.config.foodPatchCapacity - 100);
     });
 
     it('decrements the graze timer and ignores meat items', () => {

@@ -11,16 +11,14 @@ import { FOOD_KIND, FOOD_ORIGIN } from './carcass.js';
 const AREA_UNIT = 1000000;
 
 /**
- * Area-based food: `foodRegrowPerArea` items per tick per 1,000,000 px2 of world, times the season's scarcity (not in the energy model, where the patches' regrowth carries the season). Where
+ * Area-based food: `foodRegrowPerArea` items per tick per 1,000,000 px2 of world (the season reaches the food through the patches' regrowth). Where
  * the items land (the patches by stock, then the background share) is `spawnFoodItem`'s job.
  * @param {World} world the world
  * @returns {number} the expected spawns this tick
  */
 function areaExpected(world) {
     const c = world.config;
-    const season = c.seasons[world.season[0]];
-    const scarcity = c.patchStockEnergy ? 1 : season.foodScarcity;
-    return (c.foodRegrowPerArea * c.worldWidth * c.worldHeight * scarcity) / AREA_UNIT;
+    return (c.foodRegrowPerArea * c.worldWidth * c.worldHeight) / AREA_UNIT;
 }
 
 /**

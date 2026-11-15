@@ -12,6 +12,7 @@ import { smallWorld } from './helpers/small-world.js';
 function garden(over = {}) {
     return smallWorld({
         foodPatchCount: 1,
+        foodPatchCapacity: 1,
         floraPatchMax: 3,
         foodPatchRadius: 100,
         patchDieTicks: 3,

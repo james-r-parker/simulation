@@ -33,8 +33,7 @@ export function createPatchScene(config) {
 /**
  * @param {Record<string, any>} world the world
  * @param {number} slot an alive slot
- * @returns {number} the patch whose disc strictly contains the agent (the nearest centre, lowest index on ties, as
- *   `depletePatchAt` picks), or -1
+ * @returns {number} the patch whose disc strictly contains the agent (the nearest centre, lowest index on ties), or -1
  */
 export function patchAt(world, slot) {
     const { patchX, patchY } = world;

@@ -119,8 +119,8 @@ number and writes no hashed state where this file says so.
 | `specialisations.<s>.kickMultiplier`                                          | `1` (defender `2`)                  | `> 0`                                                    |
 | `carcassTicks`, `carcassShare`                                                | `300`, `0.8`                        | Integer `>= 1`; `0 .. 1`                                 |
 | `specialisations.<s>.plantFoodValue`, `.meatFoodValue`                        | `1` (meat `0.3`, predator plants 0) | `0 .. 1`                                                 |
-| `foodPatchCount`, `foodPatchRadius`, `foodPatchCapacity`                      | `16`, `400`, `1`                    | Integer `0 .. 256`; `> 0`; `> 0`                         |
-| `foodPatchDepletion`, `foodPatchRegrow`, `foodBackgroundShare`                | `0.02`, `0.0005`, `0.2`             | `>= 0`; `0 .. 1`; `0 .. 1`                               |
+| `foodPatchCount`, `foodPatchRadius`, `foodPatchCapacity`                      | `16`, `400`, `83000`                | Integer `0 .. 256`; `> 0`; `> 0`                         |
+| `foodPatchRegrow`, `foodBackgroundShare`                                      | `0.0005`, `0.02`                    | `0 .. 1`; `0 .. 1`                                       |
 | `foodRegrowPerArea`                                                           | `0.09`                              | `>= 0`                                                   |
 | `wallGaps`, `wallGapWidth`                                                    | `3`, `200`                          | Integer `0 .. 8`; `> 0`                                  |
 | `refugeCount`, `refugeCluster`, `refugeSizeMax`, `coldMarginWidth`            | `8`, `2`, `30`, `600`               | Integer `0 .. 8`; integer `1 .. 4`; `> 0`; `>= 0`        |
@@ -168,7 +168,7 @@ below `hashCellSize`, so a circle spans at most 3 x 3 cells. The base size is `b
 Cross-key rule: with `foodPatchCount` above 0, `2 x foodPatchRadius` is at most the shorter world side. Cross-key rule: `terrainProblem` in `terrain.js` rejects a terrain unless the wall gaps leave wall between them, the refuges (in groups of `refugeCluster`) fit the basins, the cold margins leave room between them and (with patches) a patch disc fits a basin.
 
 - `seasons` is an array of exactly four objects in the order spring, summer, autumn, winter, each with exactly the
-  keys `foodScarcity` and `energyDrain`, each finite and `>= 0`, and `temperatureModifier`, finite
+  key `energyDrain`, finite and `>= 0`, and `temperatureModifier`, finite
   and of either sign. The season index is
   `Math.floor(phase x 4)`.
 - `specialisations` is an object with exactly the keys `forager`, `predator`, `reproducer`, `scout`, `defender`. Each
@@ -413,7 +413,7 @@ offset)`: `t / temperatureMax`; `min(abs(t - middle) / (temperatureMax / 2), 1)`
   `POOLED_VALUES` (56) in the pooled row.
 - The season: `seasonAt(world, tick)` in `environment.js` writes the index and phase into `world.season`
   (`Float64Array(2)`, not hashed); `updateSeason` calls it once per tick. The year is `yearTicks(config)`: `4 x eraSeasonTicks`, so every rule keyed by season index or
-  phase - `foodScarcity`, `energyDrain` and `temperatureModifier` - stretches with it.
+  phase - `patchRegrowFactor`, `energyDrain` and `temperatureModifier` - stretches with it.
 - Eras (`eras.js`): `advanceEra` runs in the `environment` phase after `updateSeason`. On every
   tick above 0 divisible by `eraSeasonTicks` it pushes `SeasonChanged` (`world.season[0]`, the zero-based year
   `floor(tick / (4 x eraSeasonTicks))`) and updates `world.era[0]`: outside summer it becomes -1; at the start of summer
@@ -431,8 +431,8 @@ Plant item expiry uses its copied `foodLife`; meat expiry uses `carcassTicks`. T
   only part of it. `tryEat` skips an item when the eater's share is 0 (`plantFoodBySpec` for plant, `meatFoodBySpec`
   for meat; the item stays) or `canEatNow` is false: energy at or above `satiationShare x maxEnergy` (when `satiationShare`
   is above 0), or `ateTimer < digestTicks`. The stored amount is `foodValue x share`. Eating a plant item calls
-  `depletePatchAt`: the nearest patch whose disc holds the item (lowest index on ties) loses `foodPatchDepletion`
-  stock, floored at 5% of `foodPatchCapacity`; meat depletes nothing.
+  `eatFromPatch`: the item's patch spends the eaten energy from its stock and reservation (`spendItem` in
+  `js/sim/patch-reserve.js`), floored at 5% of `foodPatchCapacity`; meat depletes nothing.
 - Eating raises the eater's temperature by `temperatureGainEat x stored / foodEnergy` (`stored` is what `addEnergy`
   returned), and a bite raises the biter's by `temperatureGainEat x transferGained / foodEnergy`; both through
   `gainTemperature`. The victim's is unchanged.
@@ -570,7 +570,7 @@ detTanh(g)` with `TRAIT_SPAN` 0.3. With `hebbianRate` above 0 it copies the geno
 
 - `spawnFood` draws one `nextFloat` for the fraction every tick, even when the fraction is 0, and spawns
   `min(free food slots, whole + (draw < fraction ? 1 : 0))`. The expected count is the population rule from the Config
-  table, `foodRegrowPerArea x worldWidth x worldHeight x foodScarcity / 1000000`
+  table, `foodRegrowPerArea x worldWidth x worldHeight / 1000000`
   (no population term). Meat counts toward `foodCount` and so toward `maxFood`.
 - `regrowPatches` (first in the `field` phase) sets each patch's stock to
   `min(foodPatchCapacity, s + foodPatchRegrow x factor x s x (1 - s / foodPatchCapacity))`, with `s` the stock clamped to
