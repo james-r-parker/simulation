@@ -161,6 +161,7 @@ describe('observeScenes', () => {
             'families',
             'flora',
             'guards',
+            'guilds',
             'herd',
             'heritage',
             'hunters',

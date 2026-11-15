@@ -79,6 +79,17 @@ const SOURCE_METRICS = [
     'eval.basin_lineage_effective.west',
     'eval.basin_lineages_alive.east',
     'eval.basin_lineages_alive.west',
+    'eval.guild_share.forager',
+    'eval.guild_share.reproducer',
+    'eval.guild_share.scout',
+    'eval.guild_share.defender',
+    'eval.guild_survival.forager',
+    'eval.guild_survival.reproducer',
+    'eval.guild_survival.scout',
+    'eval.guild_survival.defender',
+    'eval.defender_repel_per_1k',
+    'eval.scout_alarm_lead_share',
+    'eval.reproducer_recovery_rate',
 ];
 
 const FLORA = ['grass', 'berry', 'nut', 'flower', 'fungus', 'toxiccap'];
@@ -152,7 +163,7 @@ describe('ecology metrics from a scripted source run', () => {
         const registryNames = Object.entries(METRICS)
             .filter(([, entry]) => entry.family === 'scenes-ecology')
             .map(([name]) => name);
-        expect(names).toHaveLength(73);
+        expect(names).toHaveLength(84);
         expect(names).toEqual(registryNames);
         expect(Object.fromEntries(names.map((name) => [name, actual[name]]))).toEqual(expected);
         expect(run.observer.deathCount).toBe(2);
