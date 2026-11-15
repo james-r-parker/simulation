@@ -1,6 +1,6 @@
 // The one chase record (detector-baseline.md, One chase taxonomy): every resolved chase is a record of its end class
 // (caught, escaped or gave up) and its flags (overshot, crossed cover, re-acquired, sprinted, prey still at first
-// sight). The end classes partition the chases; the flags do not. `scene-approach.js` resolves chases, and the chase
+// sight, and on a lapse whether the prey was lost or outrun; a lapse with neither is a quit). The end classes partition the chases; the flags do not. `scene-approach.js` resolves chases, and the chase
 // metrics of every plan (`scene-kinematics.js` and the planned stage, sprint, scent and guild reads) are counts over
 // the tally of those records. A chase that is lost and re-acquired is one record with the REACQUIRED flag set.
 
@@ -14,6 +14,8 @@ export const CHASE_FLAG = Object.freeze({
     REACQUIRED: 4,
     SPRINTED: 8,
     PREY_AT_FIRST_SIGHT: 16,
+    LAPSE_LOST: 32,
+    LAPSE_OUTRUN: 64,
 });
 
 const CLASS_COUNT = 3;

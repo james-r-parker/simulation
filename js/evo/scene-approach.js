@@ -21,6 +21,7 @@ import { CLOSING_BITS, CLOSING_MIN, INTENT_WINDOW } from './observer-intent-stat
 import { CHASE_OUTCOME, chasesEnded, createChaseTally, tallyChase } from './chase-outcome.js';
 import { BITTEN_THIS_TICK } from './observer-intent-episode.js';
 import { findAlive } from './observer-intent.js';
+import { createLapseScene, lapseFlags, noteChaseLength, noteClosingProximity } from './scene-chase-lapse.js';
 
 const IDLE = 0;
 const OPEN = 1;
@@ -53,6 +54,7 @@ export function createApproachScene(config, onChase = null) {
         resolvedTick: new Float64Array(n).fill(-1),
         committed: 0,
         tally: createChaseTally(),
+        lapse: createLapseScene(config),
     };
 }
 
@@ -97,10 +99,10 @@ function opensNow(scene, prey, slot, tick) {
  * joins the tally.
  * @param {Record<string, any>} scene the approach scene
  * @param {Record<string, any>} world the world
- * @param {{slot: number, outcome: number}} chase the hunter's slot and the chase's `CHASE_OUTCOME`
+ * @param {{slot: number, outcome: number, flags?: number}} chase the hunter's slot, the chase's `CHASE_OUTCOME` and the flags it starts with
  * @returns {void}
  */
-function resolved(scene, world, { slot, outcome }) {
+function resolved(scene, world, { slot, outcome, flags = 0 }) {
     scene.resolvedTick[slot] = world.tick;
     if (world.tick < BURN_IN_TICKS) {
         return;
@@ -108,7 +110,7 @@ function resolved(scene, world, { slot, outcome }) {
     const chase = {
         slot,
         outcome,
-        flags: 0,
+        flags,
         openedTick: scene.openedTick[slot],
         hungry: scene.openedHungry[slot] === 1,
         energy: scene.openedEnergy[slot],
@@ -117,6 +119,7 @@ function resolved(scene, world, { slot, outcome }) {
         scene.onChase(world, chase);
     }
     tallyChase(scene.tally, chase);
+    noteChaseLength(scene.lapse, world.tick - chase.openedTick);
 }
 
 /**
@@ -196,8 +199,10 @@ function advance(scene, observer, world, slot) {
         }
         scene.phase[slot] = OPEN;
         scene.lastClosing[slot] = tick;
+        noteClosingProximity(scene.lapse, observer.intent.prey, slot);
     } else if (scene.phase[slot] === OPEN && tick - scene.lastClosing[slot] > INTENT_WINDOW) {
-        resolved(scene, world, { slot, outcome: CHASE_OUTCOME.GAVE_UP });
+        const flags = lapseFlags(scene.lapse, observer.intent.prey, { slot, tick });
+        resolved(scene, world, { slot, outcome: CHASE_OUTCOME.GAVE_UP, flags });
         scene.phase[slot] = IDLE;
     }
 }

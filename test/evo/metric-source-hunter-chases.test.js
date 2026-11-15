@@ -248,3 +248,27 @@ describe('hunter_conversion_matched.<band> and hunter_conversion_by_dose', () =>
         expect(m['eval.hunter_conversion_by_dose'].value).toBeCloseTo(doseReference(), 12);
     });
 });
+
+describe('chase_quit_share, chase_lost_share, chase_outrun_share, chase_shaken_share and chase_ticks_p50/p90', () => {
+    it('read a give-up that leaves the prey out of sight as lost, and an escape as shaken', () => {
+        const gaveUp = chases(['gaveup']);
+        expect(gaveUp['eval.chase_lost_share']).toEqual({ value: 1 });
+        expect(gaveUp['eval.chase_quit_share']).toEqual({ value: 0 });
+        expect(gaveUp['eval.chase_outrun_share']).toEqual({ value: 0 });
+        expect(gaveUp['eval.chase_shaken_share']).toEqual({ value: 1 });
+        const mix = chases(['caught', 'escaped', 'gaveup', 'caught']);
+        expect(mix['eval.chase_shaken_share']).toEqual({ value: 0.5 });
+        expect(mix['eval.chase_lost_share']).toEqual({ value: 0.25 });
+    });
+
+    it('read the chase length from the opening to the resolution, a catch being shorter than a lapse', () => {
+        const caught = chases(['caught']);
+        const gaveUp = chases(['gaveup']);
+        expect(caught['eval.chase_ticks_p50'].value).toBeLessThan(gaveUp['eval.chase_ticks_p50'].value);
+        expect(gaveUp['eval.chase_ticks_p50'].value).toBeGreaterThan(30);
+        expect(chases([])['eval.chase_ticks_p90']).toEqual({
+            value: null,
+            reason: 'no chase length recorded after burn-in',
+        });
+    });
+});

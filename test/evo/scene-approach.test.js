@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { noteApproachKill, trackApproaches } from '../../js/evo/scene-approach.js';
 import { INTENT_WINDOW } from '../../js/evo/observer-intent-state.js';
-import { CHASE_OUTCOME } from '../../js/evo/chase-outcome.js';
+import { CHASE_FLAG, CHASE_OUTCOME } from '../../js/evo/chase-outcome.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
 import { loose } from './helpers/metric-registry.js';
@@ -207,7 +207,7 @@ describe('the noteChase hook', () => {
                 openedTick: T0,
                 hungry: expect.any(Boolean),
                 energy: expect.any(Number),
-                flags: 0,
+                flags: CHASE_FLAG.LAPSE_LOST,
             },
         ]);
     });
@@ -247,7 +247,7 @@ describe('the noteChase hook', () => {
                 openedTick: T0,
                 hungry: expect.any(Boolean),
                 energy: expect.any(Number),
-                flags: 0,
+                flags: CHASE_FLAG.LAPSE_LOST,
             },
         ]);
     });
