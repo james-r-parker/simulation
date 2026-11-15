@@ -104,6 +104,8 @@ export const FEATURE_RULES = {
     splitDeliberateShareMin: UNIT,
     splitMaxPerLife: int(0),
     splitClonalMax: int(1),
+    splitGiftGene: BOOL,
+    birthReserve: num(0),
     splitMateScarceTicks: int(0),
     juvenileBurn: UNIT,
     kinPullWeight: num(0, 4),

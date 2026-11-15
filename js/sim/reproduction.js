@@ -149,7 +149,8 @@ function placeChild(world, child, mother) {
 const GIFT_CAP = 0.9;
 
 /**
- * The energy a birth moves from `mother` to the child. A mating gives `childEnergyShare` of her energy, a split half.
+ * The energy a birth moves from `mother` to the child. A mating gives her `childShare` gene's share of her energy, a split
+ * half, or the same gene share when `splitGiftGene` is on.
  * With a non-zero `meritBirthBoost` the gift is scaled by `1 + boost x (2m - 1)`
  * (`m = merit / (merit + meritHalf)`, her merit decayed to now without restamping it) and capped at 0.9 of her energy;
  * otherwise it is the unscaled gift, exactly.
@@ -161,13 +162,24 @@ const GIFT_CAP = 0.9;
 export function giftOf(world, mother, isMate) {
     const { meritBirthBoost, meritHalf } = world.config;
     const energy = world.energy[mother];
-    const gift = energy * (isMate ? childShareOf(world, mother) : 0.5);
+    const gift = energy * (isMate || world.config.splitGiftGene ? childShareOf(world, mother) : 0.5);
     if (meritBirthBoost === 0) {
         return gift;
     }
     const merit = meritPeek(world, mother);
     const factor = 1 + meritBirthBoost * ((2 * merit) / (merit + meritHalf) - 1);
     return Math.min(gift * factor, energy * GIFT_CAP);
+}
+
+/**
+ * @param {World} world the world
+ * @param {{mother: number, gift: number, isMate: boolean}} birth the mother, the gift and the cause
+ * @returns {boolean} true when a mating gift is under `childEnergyMin`, or the birth would leave the mother under
+ *   `birthReserve` (0 is off)
+ */
+function giftBlocked(world, { mother, gift, isMate }) {
+    const { childEnergyMin, birthReserve } = world.config;
+    return (isMate && gift < childEnergyMin) || (birthReserve > 0 && world.energy[mother] - gift < birthReserve);
 }
 
 /**
@@ -181,14 +193,14 @@ export function giftOf(world, mother, isMate) {
  * @returns {number} the child slot, or -1 when the birth was blocked
  */
 function giveBirth(world, policy, mother, cause) {
-    const { maxAgents, childEnergyMin } = world.config;
+    const { maxAgents } = world.config;
     const isMate = cause === BORN_CAUSE.MATE;
     if (world.population >= maxAgents) {
         pushBlocked(world, mother, BLOCKED_CAUSE.CAPACITY);
         return -1;
     }
     const gift = giftOf(world, mother, isMate);
-    if (isMate && gift < childEnergyMin) {
+    if (giftBlocked(world, { mother, gift, isMate })) {
         pushBlocked(world, mother, BLOCKED_CAUSE.ENERGY);
         return -1;
     }

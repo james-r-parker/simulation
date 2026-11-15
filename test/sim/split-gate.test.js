@@ -183,7 +183,38 @@ describe('determinism', () => {
     });
 });
 
+describe('no clonal cap (splitClonalMax out of reach)', () => {
+    it('lets a line with four splits behind it split while no mate is in reach, and mateScarce still gates it', () => {
+        const { w, slot } = blobWorld({ splitClonalMax: 1000000 }, { clonalDepth: 4 });
+        expect(splitGateOpen(w, slot)).toBe(true);
+        const closed = blobWorld({ splitClonalMax: 3 }, { clonalDepth: 4 });
+        expect(splitGateOpen(closed.w, closed.slot)).toBe(false);
+        const scarce = blobWorld({ splitClonalMax: 1000000, splitMateScarceTicks: 50 }, { clonalDepth: 4 });
+        scarce.w.tick = 100;
+        scarce.w.mateSeenAt[scarce.slot] = 99;
+        expect(splitGateOpen(scarce.w, scarce.slot)).toBe(false);
+    });
+});
+
 describe('config', () => {
+    it('defaults splitGiftGene to false and birthReserve to 0 (today)', () => {
+        const config = createConfig({});
+        expect([config.splitGiftGene, config.birthReserve]).toEqual([false, 0]);
+    });
+
+    it.each([
+        ['splitGiftGene', true, true],
+        ['splitGiftGene', 1, false],
+        ['birthReserve', 300, true],
+        ['birthReserve', -1, false],
+    ])('%s = %s accepted: %s', (key, value, accepted) => {
+        if (accepted) {
+            expect(createConfig({ [key]: value })[key]).toBe(value);
+        } else {
+            expect(() => createConfig({ [key]: value })).toThrow(new RegExp(key));
+        }
+    });
+
     it('defaults splitDeliberateShareMin to 0.2, splitMaxPerLife to unlimited and splitClonalMax to 3', () => {
         const config = createConfig({});
         expect([config.splitDeliberateShareMin, config.splitMaxPerLife, config.splitClonalMax]).toEqual([0.2, 0, 3]);
