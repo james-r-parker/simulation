@@ -1,7 +1,7 @@
 # Prey guilds
 
 **Status:** Proposed - differentiate the four non-hunter specialisations (`forager`, `reproducer`, `scout`, `defender`) into complementary anti-predator and life-history guilds so "everything else" keeps hunters in check without scripted modes or extra brain inputs; Phase 1 (guild detectors and baseline) is first.
-**Validated:** 5abe7bfb (2026-11-15)
+**Validated:** a8013e98 (2026-11-15)
 **Priority:** 30 - depends on a standing prey population and working alarm/kill budgets ([honest-budgets.md](honest-budgets.md)), and on verified interface/chase physics ([senses-and-motor.md](senses-and-motor.md))
 **Depends on:** [honest-budgets.md](honest-budgets.md), [senses-and-motor.md](senses-and-motor.md)
 
@@ -79,9 +79,9 @@ Today `defender` only hurts a hunter that bites it. Add an active defensive push
 
 #### Chunks
 
-| Chunk | Tasks         | Contents                                                                                                              |
-| ----- | ------------- | --------------------------------------------------------------------------------------------------------------------- |
-| B     | T4 to T8, T6a | Active repel in `feeding.js`/`physics.js`, screen `E-PG-2`, 64-seed keep rule `E-PG-3`, switch and conformance review |
+| Chunk | Tasks              | Contents                                                                                                              |
+| ----- | ------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| B     | T4 to T8, T4a, T6a | Active repel in `feeding.js`/`physics.js`, screen `E-PG-2`, 64-seed keep rule `E-PG-3`, switch and conformance review |
 
 ### Phase 3 - `scout` as vigilance and escape network
 
@@ -95,9 +95,9 @@ Pair with `honest-budgets.md` Phase 5 (`alarmBiteShare`) so alarms actually prot
 
 #### Chunks
 
-| Chunk | Tasks           | Contents                                                                                                                                   |
-| ----- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| C     | T9 to T12, T10a | Scout call/sprint modifiers in `calls.js`/`config-defaults.js`, screen `E-PG-4`, 64-seed keep rule `E-PG-5`, switch and conformance review |
+| Chunk | Tasks                | Contents                                                                                                                                   |
+| ----- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| C     | T9 to T12, T9a, T10a | Scout call/sprint modifiers in `calls.js`/`config-defaults.js`, screen `E-PG-4`, 64-seed keep rule `E-PG-5`, switch and conformance review |
 
 ### Phase 4 - `reproducer` r-strategy vs. `forager` efficiency
 
@@ -145,6 +145,63 @@ T17b runs rare-role and leave-one-role-out experiments on fixed initial mixtures
 
 The combined verdict retains its existing keep rule and adds the interaction matrix, each role's local persistence and the costs and beneficiaries of its proposed service. Predeclare hypotheses and sample sizes before screening, confirm on held-out seeds, and retain failed arms. Clips show a costly defence, a warning ignored, a fast-breeding patch exhausting its food, and recolonisation by surviving neighbours where these occur. Missing scenes are open findings, not successes inferred from labels. Uniform shares and a mandatory five-role equilibrium are not acceptance criteria; dominance thresholds alone cannot establish coexistence.
 
+## Test design
+
+### What the code does today
+
+| Fact                                                                                                  | Where                       | Consequence                                                                                                      |
+| ----------------------------------------------------------------------------------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| A bite lands only for a `canHunt` biter (`couldBite`)                                                 | `js/sim/bite-rule.js`       | A defender's `BITE` output has never done anything, so no defender brain has been selected to use it             |
+| An alarm costs `alarmCost` 5 and no call is made on most seeds                                        | `js/sim/calls.js`, `E143`   | A scout's wider or cheaper call changes nothing until some brain calls at all ([alarm-calls.md](alarm-calls.md)) |
+| A child takes another specialisation with `specMutationRate` 0.02, keeping its mother's brain         | `js/sim/config-defaults.js` | Guild shares are partly set by flips, not by each guild replacing itself                                         |
+| Maturity, pregnancy and cooldown are global keys; per-role values live under `specialisations.<name>` | `js/sim/config-defaults.js` | New role levers are fields of `specialisations.<name>`, not global keys named after a role                       |
+
+### One lever per arm
+
+Phase 2's arms change the repel and the defender's `maxEnergyMultiplier` together, so a verdict cannot say which one made a solo hunter abort. Each screen is laid out so every lever has an arm in which it alone differs from the control.
+
+| Screen   | Arms                                                                                                                                                                                                             |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `E-PG-2` | `control`; `repel` (`defenderRepelEnergy` 40, impulse 4, size as today); `bulk` (`maxEnergyMultiplier` 1.4, no repel); `repel-bulk` (both); `repel-lo` (25, 2.5); `repel-hi` (60, 5)                             |
+| `E-PG-4` | `control`; `reach` (`specialisations.scout.callRadiusMultiplier` 1.5); `cheap` (`alarmCostMultiplier` 0.5); `sprint` (`sprintBoost` 1.25); `reach-sprint`; `all`                                                 |
+| `E-PG-6` | `control`; `fast` (reproducer maturity and pregnancy x 0.65, `splitMinEnergyMultiplier` 0.7); `small` (reproducer `maxEnergyMultiplier` 0.7); `fast-small`; `lean` (forager `passiveLossMultiplier` 0.85); `all` |
+
+`cheap` is the arm the trait "Signals cost, and they can be false" may refuse: a call at half price is closer to a free action. It is adopted only if calls with no threat on the caller's rays do not rise faster than calls with one (`eval.alarm_calls_with_threat_per_1k` against `eval.alarm_rate`).
+
+### The guard must be learnable
+
+A defender has no reason today to raise `BITE`, and a scout none to call. Before the screens, T4a and T9a read the four bars of [senses-and-motor.md](senses-and-motor.md) (oracle, input-only reference, `npm run probe:learn`, champion) on two staged lessons: `repel-hunter` (a hunter in a defender's jaws; won when the hunter leaves and the defender lives) and `warn-kin` (a hunter closing on a scout with kin in call range; won when the kin survive). A lesson the learn probe cannot reach in 200 generations will not appear in a 200000-tick world either; the screen then reads a lever no brain uses, and the finding goes to the instinct prior ([brain-capacity-and-memory.md](brain-capacity-and-memory.md)), not to a larger number.
+
+### What counts as a result
+
+- `eval.hunt_abort_rate` and `eval.alarm_lift` are `watch` metrics and give no verdict. `eval.spec_dominance`, `eval.alarm_rate` and `eval.boom_bust_count` are unverified. A Done row rests on a verified metric with a direction (`eval.spec_effective`, `eval.pack_kills_per_eaten_death`, `eval.hunter_catches_per_1k`) and reports the others.
+- `eval.pack_lift` is built by [training-stages.md](training-stages.md) T2; Phase 2 does not start before it is registered and has a power reading.
+- "`eval.spec_dominance` falls below 0.45" is a raw line. The test is `eval:compare` against the control on matched seeds ([principles.md](../principles.md): "Raw counts against a fixed line are not a test").
+- Which guild a hunter eats is read directly: `eval.prey_selectivity.<spec>` (T1) is each guild's share of eaten deaths over its share of the prey alive, so 1 is no preference. A defence that works lowers its guild's value and raises another's.
+- Runs are 200000 ticks, the length the registry's power was measured at; adoption is the keep rule on 64 matched seeds.
+- Each adopted lever is recorded as a trade-off (what it buys, what it costs, in the same units) in the Phase 5 verdict, so [body-genes.md](body-genes.md) can place it on an axis.
+
+## Decisions
+
+| Decision                                                                   | Why                                                                                                                       | Who                                 |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| Every screen has single-lever arms                                         | An arm that moves two levers gives a verdict that names neither                                                           | Delegated (plan review, 2026-11-15) |
+| A staged lesson is shown reachable before its lever is screened            | No defender brain has used `BITE` and no scout calls; a lever no brain pulls reads as a failed mechanism                  | Delegated (plan review, 2026-11-15) |
+| Role levers are fields of `specialisations.<name>`                         | `config-spec-rules.js` validates per-role fields; a global key named after one role is a second way to say the same thing | Delegated (plan review, 2026-11-15) |
+| A cheaper scout call is its own arm with its own stop rule                 | The trait "Signals cost" makes a discount the lever most likely to be refused                                             | Planner, from principles.md         |
+| Screens run with `specMutationRate` as the defaults have it, and once at 0 | A guild that holds its share only by flips from other guilds is not replacing itself (selection rule 1)                   | Delegated (plan review, 2026-11-15) |
+
+## Experiments
+
+| Id     | Task | Question                                                       | Prediction (written before the run)                                                                                                               |
+| ------ | ---- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| E-PG-1 | T2   | Do the four prey roles differ today?                           | In Phase 1; and `eval.prey_selectivity.<spec>` is within 0.2 of 1 for all four                                                                    |
+| E-PG-0 | T4a  | Can a brain learn to repel, and to warn?                       | The reference wins `repel-hunter` on over half of trials; the learn probe reaches it; `warn-kin` is reached on under half of populations          |
+| E-PG-2 | T5   | Does repel, bulk, or both make a solo hunt on a defender fail? | `bulk` alone lowers `eval.prey_selectivity.defender`; `repel` alone moves nothing because no brain bites; `repel-bulk` equals `bulk`              |
+| E-PG-4 | T10  | Does reach, price or sprint make scouts warn?                  | `sprint` raises scout survival; `reach` and `cheap` move no call metric while `eval.alarm_rate` is 0 on most seeds                                |
+| E-PG-6 | T14  | Do fast breeders and lean foragers each hold a season?         | `fast-small` leads births in recovery and loses winter; `lean` holds winter; `fast` without `small` takes the map (`eval.spec_effective` `worse`) |
+| E-PG-8 | T17  | Do the adopted levers hold together?                           | No keep-rule guard `WORSE`; `eval.spec_effective` not `worse`; selectivity differs by guild                                                       |
+
 ## Delivery requirements
 
 | Concern                 | Names                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -165,55 +222,57 @@ The combined verdict retains its existing keep rule and adds the interaction mat
 
 ### Phase 1 - Guild detectors and baseline
 
-| #   | Task                                                                                                                                                                                                                                                           | Nature       | Depends on       |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------- |
-| T1  | Add `js/evo/scene-guilds.js` (`eval.guild_share.*`, `eval.guild_survival.*`, `eval.defender_repel_per_1k`, `eval.scout_alarm_lead_share`, `eval.reproducer_recovery_rate`), registry + `liveness.js` entries, `metrics.md` and `test/evo/scene-guilds.test.js` | [judgement]  | -                |
-| T2  | Run `E-PG-1` (16 floor-on seeds x 400,000 ticks) on post-`honest-budgets` defaults, record baseline under `evals/decisions/E-PG-1/` and in [sim-notes.md](sim-notes.md)                                                                                        | [mechanical] | T1               |
-| T2a | Add age/condition/habitat vulnerability encounter fixtures and baseline tables, with tests distinguishing unavailable prey from failed pursuit; record in sim-notes                                                                                            | [judgement]  | T2               |
-| T2b | Specify and test the five-role interaction matrix with age/habitat/kin denominators; connect descendant outcomes to honest-budgets recruitment diagnostics                                                                                                     | [judgement]  | T2a              |
-| T3  | Conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                            | [judgement]  | T1, T2, T2a, T2b |
+| #   | Task                                                                                                                                                                                                                                                                                      | Nature       | Depends on       |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------- |
+| T1  | Add `js/evo/scene-guilds.js` (`eval.guild_share.*`, `eval.guild_survival.*`, `eval.defender_repel_per_1k`, `eval.scout_alarm_lead_share`, `eval.reproducer_recovery_rate`, `eval.prey_selectivity.*`), registry + `liveness.js` entries, `metrics.md` and `test/evo/scene-guilds.test.js` | [judgement]  | -                |
+| T2  | Run `E-PG-1` (16 floor-on seeds x 200,000 ticks, and once with `specMutationRate` 0) on post-`honest-budgets` defaults, record baseline under `evals/decisions/E-PG-1/` and in [sim-notes.md](sim-notes.md)                                                                               | [mechanical] | T1               |
+| T2a | Add age/condition/habitat vulnerability encounter fixtures and baseline tables, with tests distinguishing unavailable prey from failed pursuit; record in sim-notes                                                                                                                       | [judgement]  | T2               |
+| T2b | Specify and test the five-role interaction matrix with age/habitat/kin denominators; connect descendant outcomes to honest-budgets recruitment diagnostics                                                                                                                                | [judgement]  | T2a              |
+| T3  | Conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                                                       | [judgement]  | T1, T2, T2a, T2b |
 
 ### Phase 2 - `defender` as active guard
 
-| #   | Task                                                                                                                                                             | Nature       | Depends on |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T4  | Add `defenderRepelEnergy`, `defenderRepelCost`, `defenderRepelImpulse` in `feeding.js`/`physics.js` and `test/sim/defender-repel.test.js`                        | [judgement]  | T3         |
-| T5  | Write `evals/screens/prey-guilds-defender.grid.json` and E-record prediction; run 16-seed screen `E-PG-2`                                                        | [judgement]  | T4         |
-| T6  | Run finalist vs. control on 64 matched seeds with `--keep-rule` (`E-PG-3`)                                                                                       | [mechanical] | T5         |
-| T6a | Run costly-defence and beneficiary controls; pin repeat-contact costs and multi-body collision cases before adopting repel; record kin benefit and defender cost | [judgement]  | T6         |
-| T7  | Switch: adopt winning `defender` defaults, open/update season, re-pin goldens and `browser:hash` (or park on `WORSE`)                                            | [mechanical] | T6, T6a    |
-| T8  | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`                                                                              | [judgement]  | T7         |
+| #   | Task                                                                                                                                                                               | Nature       | Depends on |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T4  | Add `defenderRepelEnergy`, `defenderRepelCost`, `defenderRepelImpulse` in `feeding.js`/`physics.js` and `test/sim/defender-repel.test.js`                                          | [judgement]  | T3         |
+| T4a | Stage `repel-hunter` as a drill with its oracle and input-only reference and run `probe:learn` on it (`E-PG-0`); a lesson not reached goes to the instinct prior before the screen | [judgement]  | T4         |
+| T5  | Write `evals/screens/prey-guilds-defender.grid.json` (the six arms of Test design) and E-record prediction; run 16-seed screen `E-PG-2`                                            | [judgement]  | T4, T4a    |
+| T6  | Run finalist vs. control on 64 matched seeds with `--keep-rule` (`E-PG-3`)                                                                                                         | [mechanical] | T5         |
+| T6a | Run costly-defence and beneficiary controls; pin repeat-contact costs and multi-body collision cases before adopting repel; record kin benefit and defender cost                   | [judgement]  | T6         |
+| T7  | Switch: adopt winning `defender` defaults, open/update season, re-pin goldens and `browser:hash` (or park on `WORSE`)                                                              | [mechanical] | T6, T6a    |
+| T8  | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                | [judgement]  | T7         |
 
 ### Phase 3 - `scout` as vigilance and escape network
 
-| #    | Task                                                                                                                                                             | Nature       | Depends on |
-| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T9   | Add `scoutCallRadiusMultiplier`, `scoutAlarmCostMultiplier` and `scout.sprintBoost` wiring in `calls.js`/`config-defaults.js` and `test/sim/scout-calls.test.js` | [judgement]  | T8         |
-| T10  | Write `evals/screens/prey-guilds-scout.grid.json` and prediction; run 16-seed screen `E-PG-4` and 64-seed keep rule `E-PG-5`                                     | [judgement]  | T9         |
-| T10a | Reconcile alarm protection owners and run caller/listener/cheater controls with matched costs; report descendant benefits and false-flight costs                 | [judgement]  | T10        |
-| T11  | Switch: adopt winning `scout` defaults, open/update season, re-pin goldens and `browser:hash` (or park on `WORSE`)                                               | [mechanical] | T10, T10a  |
-| T12  | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`                                                                              | [judgement]  | T11        |
+| #    | Task                                                                                                                                                                                                                | Nature       | Depends on |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T9   | Add `scoutCallRadiusMultiplier`, `scoutAlarmCostMultiplier` and `scout.sprintBoost` wiring in `calls.js`/`config-defaults.js` and `test/sim/scout-calls.test.js`                                                    | [judgement]  | T8         |
+| T9a  | Stage `warn-kin` as a drill with its oracle and reference and run `probe:learn` on it; confirm some brain calls at all on the defaults before the screen, else park Phase 3 behind [alarm-calls.md](alarm-calls.md) | [judgement]  | T9         |
+| T10  | Write `evals/screens/prey-guilds-scout.grid.json` and prediction; run 16-seed screen `E-PG-4` (the six arms of Test design) and 64-seed keep rule `E-PG-5`                                                          | [judgement]  | T9, T9a    |
+| T10a | Reconcile alarm protection owners and run caller/listener/cheater controls with matched costs; report descendant benefits and false-flight costs                                                                    | [judgement]  | T10        |
+| T11  | Switch: adopt winning `scout` defaults, open/update season, re-pin goldens and `browser:hash` (or park on `WORSE`)                                                                                                  | [mechanical] | T10, T10a  |
+| T12  | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                 | [judgement]  | T11        |
 
 ### Phase 4 - `reproducer` r-strategy vs. `forager` efficiency
 
-| #    | Task                                                                                                                                                          | Nature       | Depends on |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T13  | Add `reproducerMaturityMultiplier` and `reproducerPregnancyMultiplier` in `reproduction.js`/`mate-eligibility.js` and `test/sim/reproducer-lifecycle.test.js` | [judgement]  | T12        |
-| T14  | Write `evals/screens/prey-guilds-r-k.grid.json` and prediction; run 16-seed screen `E-PG-6` and 64-seed keep rule `E-PG-7`                                    | [judgement]  | T13        |
-| T14a | Test finite-patch reproductive efficiency, shared maturity thresholds and seasonal trade-offs; distinguish resident recovery from immigration and role flips  | [judgement]  | T14        |
-| T15  | Switch: adopt winning `reproducer` and `forager` defaults, open/update season, re-pin goldens and `browser:hash` (or park on `WORSE`)                         | [mechanical] | T14, T14a  |
-| T16  | Conformance review of Phase 4 by a fresh agent, in parallel with `scripts/check.sh`                                                                           | [judgement]  | T15        |
+| #    | Task                                                                                                                                                                                                           | Nature       | Depends on |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T13  | Add `maturityMultiplier` and `pregnancyMultiplier` as fields of `specialisations.<name>` (`config-spec-rules.js`), read in `reproduction.js`/`mate-eligibility.js` and `test/sim/reproducer-lifecycle.test.js` | [judgement]  | T12        |
+| T14  | Write `evals/screens/prey-guilds-r-k.grid.json` and prediction; run 16-seed screen `E-PG-6` (the six arms of Test design) and 64-seed keep rule `E-PG-7`                                                       | [judgement]  | T13        |
+| T14a | Test finite-patch reproductive efficiency, shared maturity thresholds and seasonal trade-offs; distinguish resident recovery from immigration and role flips                                                   | [judgement]  | T14        |
+| T15  | Switch: adopt winning `reproducer` and `forager` defaults, open/update season, re-pin goldens and `browser:hash` (or park on `WORSE`)                                                                          | [mechanical] | T14, T14a  |
+| T16  | Conformance review of Phase 4 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                            | [judgement]  | T15        |
 
 ### Phase 5 - Combined guild balance and verification
 
-| #    | Task                                                                                                                                                                             | Nature       | Depends on |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T17  | Run `E-PG-8`: 64 matched seeds comparing the full guild world against the pre-Phase-2 baseline                                                                                   | [mechanical] | T16        |
-| T17a | Run no-rescue seasonal coexistence and defence ablations using honest-budgets Phase 6 cohort diagnostics; report descendant replacement and refuge feeding excursions with clips | [judgement]  | T17        |
-| T17b | Run rare-role and leave-one-role-out mixture experiments, no-rescue and mutation/migration attribution; report habitat-specific descendant replacement and held-out confirmation | [judgement]  | T17a, T2b  |
-| T18  | Record the guild balance verdict and per-guild survival/fitness table in [sim-notes.md](sim-notes.md)                                                                            | [judgement]  | T17a, T17b |
-| T19  | Watch an arena clip of the final season verifying scouts warning, defenders repelling, and reproducers recovering                                                                | [judgement]  | T18        |
-| T20  | Conformance review of Phase 5 by a fresh agent, in parallel with `scripts/check.sh`; move Status line to `Implemented`                                                           | [judgement]  | T19        |
+| #    | Task                                                                                                                                                                                                                                 | Nature       | Depends on |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
+| T17  | Run `E-PG-8`: 64 matched seeds comparing the full guild world against the pre-Phase-2 baseline                                                                                                                                       | [mechanical] | T16        |
+| T17a | Run no-rescue seasonal coexistence and defence ablations using honest-budgets Phase 6 cohort diagnostics; report descendant replacement and refuge feeding excursions with clips                                                     | [judgement]  | T17        |
+| T17b | Run rare-role and leave-one-role-out mixture experiments, no-rescue and mutation/migration attribution; report habitat-specific descendant replacement and held-out confirmation                                                     | [judgement]  | T17a, T2b  |
+| T18  | Record the guild balance verdict, the per-guild survival, fitness and selectivity table, and each adopted lever as a trade-off (gain and cost in the same units) for [body-genes.md](body-genes.md), in [sim-notes.md](sim-notes.md) | [judgement]  | T17a, T17b |
+| T19  | Watch an arena clip of the final season verifying scouts warning, defenders repelling, and reproducers recovering                                                                                                                    | [judgement]  | T18        |
+| T20  | Conformance review of Phase 5 by a fresh agent, in parallel with `scripts/check.sh`; move Status line to `Implemented`                                                                                                               | [judgement]  | T19        |
 
 ## Verification
 
