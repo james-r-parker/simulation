@@ -131,3 +131,63 @@ describe('eval.style_separation', () => {
         expect(read(r, 'style_separation').value).toBeNull();
     });
 });
+
+describe('eval.style_lineage_share', () => {
+    /** Notes one death of lineage `lineage` in specialisation `spec` with ring share `share`. */
+    function die(/** @type {any} */ r, /** @type {number[]} */ [lineage, spec, share]) {
+        r.observer.lineageId[0] = lineage;
+        r.observer.spec[0] = spec;
+        r.observer.intent.aliveTicks[0] = 10;
+        r.observer.scenes.style.ringTicks[0] = share * 10;
+        noteStyleDeath(r.observer, 0);
+    }
+
+    /** The between-lineage share of variance, by direct means over every death of one specialisation. */
+    function naiveShare(/** @type {Map<number, number[]>} */ lineages) {
+        const all = [...lineages.values()].flat();
+        const grand = all.reduce((a, b) => a + b) / all.length;
+        const total = all.reduce((s, v) => s + (v - grand) ** 2, 0);
+        let between = 0;
+        for (const values of lineages.values()) {
+            const mean = values.reduce((a, b) => a + b) / values.length;
+            between += values.length * (mean - grand) ** 2;
+        }
+        return between / total;
+    }
+
+    it('is the between-lineage share of the variance, averaged over specialisations with two lineages', () => {
+        const r = observed();
+        const spec0 = new Map([
+            [1, [...Array(10).fill(0.1), ...Array(10).fill(0.3)]],
+            [2, [...Array(15).fill(0.6), ...Array(10).fill(0.8)]],
+        ]);
+        const spec1 = new Map([
+            [3, Array(MIN_STYLE_DEATHS).fill(0.2)],
+            [4, Array(MIN_STYLE_DEATHS).fill(0.9)],
+        ]);
+        for (const [spec, lineages] of [
+            [0, spec0],
+            [2, spec1],
+        ]) {
+            for (const [lineage, values] of /** @type {Map<number, number[]>} */ (lineages)) {
+                for (const share of values) {
+                    die(r, [lineage, /** @type {number} */ (spec), share]);
+                }
+            }
+        }
+        die(r, [5, 0, 0.5]);
+        const expected = (naiveShare(spec0) + naiveShare(spec1)) / 2;
+        expect(naiveShare(spec1)).toBeCloseTo(1, 12);
+        expect(read(r, 'style_lineage_share').value).toBeCloseTo(expected, 12);
+    });
+
+    it('is null with one lineage, or no spread', () => {
+        const r = observed();
+        for (let i = 0; i < MIN_STYLE_DEATHS; i++) {
+            die(r, [1, 0, 0.2 + i / 100]);
+            die(r, [2, 2, 0.4]);
+            die(r, [3, 2, 0.4]);
+        }
+        expect(read(r, 'style_lineage_share').value).toBeNull();
+    });
+});

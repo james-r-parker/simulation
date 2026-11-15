@@ -12,13 +12,13 @@ import {
     withPower,
 } from '../../../js/evo/metric-registry/index.js';
 
-/** @type {string[]} the 333 names of a live eval report, sorted */
+/** @type {string[]} the 336 names of a live eval report, sorted */
 const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-names.json', import.meta.url), 'utf8'));
 
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(333);
+        expect(REPORT_NAMES).toHaveLength(336);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -167,6 +167,9 @@ const ADDED_AFTER_T8 = [
     'eval.chase_shaken_share',
     'eval.chase_ticks_p50',
     'eval.chase_ticks_p90',
+    'eval.pack_lift',
+    'eval.pack_prey_size_ratio',
+    'eval.style_lineage_share',
 ];
 /** Watch metrics registered after the snapshot whose intended direction is lower. */
 const ADDED_INTENDED_LOWER = [

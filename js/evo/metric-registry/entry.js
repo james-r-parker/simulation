@@ -51,6 +51,7 @@ const SOURCE_BY_MODULE = Object.freeze({
     'js/evo/metrics-combat.js': 'test/evo/metric-source-hunter-bites.test.js',
     'js/evo/scene-approach.js': 'test/evo/metric-source-hunter-chases.test.js',
     'js/evo/scene-chase-lapse.js': 'test/evo/metric-source-hunter-chases.test.js',
+    'js/evo/scene-pack-lift.js': 'test/evo/metric-source-hunter-chases.test.js',
     'js/evo/scene-competence.js': 'test/evo/metric-source-hunter-chases.test.js',
     'js/evo/scene-matched.js': 'test/evo/metric-source-hunter-chases.test.js',
 });

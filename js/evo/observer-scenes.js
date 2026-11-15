@@ -21,6 +21,7 @@ import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
 import { createCompetenceScene, noteChase, noteCompetenceBirth, noteCompetenceRecord } from './scene-competence.js';
 import { createMatchedScene, noteMatchedChase } from './scene-matched.js';
 import { createGuardScene, sampleGuards } from './scene-guards.js';
+import { createPackLiftScene, notePackKill, trackPackBites } from './scene-pack-lift.js';
 import { createKinematicsScene, noteKinematicsChase, resetKinematicsSlot, tickKinematics } from './scene-kinematics.js';
 import {
     createGuildScene,
@@ -54,6 +55,23 @@ import { GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
 import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
 
 /**
+ * The scenes fed by each resolved chase: the approach scene resolves it and hands it to the others' hooks.
+ * @param {Readonly<Record<string, any>>} config the world's config
+ * @returns {Record<string, any>} the approach, competence, matched and kinematics scenes
+ */
+function createChaseScenes(config) {
+    const competence = createCompetenceScene(config);
+    const matched = createMatchedScene(config);
+    const kinematics = createKinematicsScene(config);
+    const approach = createApproachScene(config, (world, chase) => {
+        noteChase(competence, world, chase);
+        noteMatchedChase(matched, world, chase);
+        noteKinematicsChase(kinematics, world, chase);
+    });
+    return { approach, competence, matched, kinematics };
+}
+
+/**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @param {number} [runTicks] the run length in ticks, for the last-quarter hunter ticks
  * @param {boolean} [lean] build only the style and terrain scenes (the policy core, lean-observer.md)
@@ -63,21 +81,12 @@ export function createScenes(config, runTicks = 0, lean = false) {
     if (lean) {
         return { lean: true, terrain: createTerrainScene(config), style: createStyle(config) };
     }
-    const competence = createCompetenceScene(config);
-    const matched = createMatchedScene(config);
-    const kinematics = createKinematicsScene(config);
     return {
         flora: createFloraScene(),
         herd: createHerdScene(config),
         patch: createPatchScene(config),
-        approach: createApproachScene(config, (world, chase) => {
-            noteChase(competence, world, chase);
-            noteMatchedChase(matched, world, chase);
-            noteKinematicsChase(kinematics, world, chase);
-        }),
-        competence,
-        matched,
-        kinematics,
+        ...createChaseScenes(config),
+        packLift: createPackLiftScene(),
         terrain: createTerrainScene(config),
         refuge: createRefugeScene(config),
         reach: createReachScene(),
@@ -188,6 +197,7 @@ function noteFullDeath(scenes, observer, { world, o }) {
     });
     if (d[o + 4] === DEATH_CAUSE.EATEN) {
         noteApproachKill(scenes.approach, observer, world, { killerId: d[o + 5], victimId: d[o + 3] });
+        notePackKill(scenes.packLift, observer, { world, victim: d[o + 2], killer: d[o + 5], previous: d[o + 11] });
     }
     noteCapacityDeath(scenes.capacity, { cause: d[o + 4], foodEnergy: d[o + 9] });
     noteEdgeDeath(scenes.edge, world, { cause: d[o + 4], spec: d[o + 6], foodEnergy: d[o + 9] });
@@ -316,6 +326,7 @@ export function observeScenes(observer, world) {
     trackProof(scenes.proof, world);
     trackApproaches(scenes.approach, observer, world);
     tickKinematics(scenes.kinematics, observer, world);
+    trackPackBites(scenes.packLift, observer, world);
     trackCarcasses(scenes.carcass, observer, world);
     tickStyle(observer, world);
     tickGuilds(scenes.guilds, world);

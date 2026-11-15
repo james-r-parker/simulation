@@ -249,6 +249,15 @@ describe('hunter_conversion_matched.<band> and hunter_conversion_by_dose', () =>
     });
 });
 
+describe('pack_lift, pack_prey_size_ratio and style_lineage_share on the real step', () => {
+    it('are null after one solo kill: too few paired kills, pack kills or lineages', () => {
+        const m = chases(['caught']);
+        expect(m['eval.pack_lift'].value).toBeNull();
+        expect(m['eval.pack_prey_size_ratio'].value).toBeNull();
+        expect(m['eval.style_lineage_share'].value).toBeNull();
+    });
+});
+
 describe('chase_quit_share, chase_lost_share, chase_outrun_share, chase_shaken_share and chase_ticks_p50/p90', () => {
     it('read a give-up that leaves the prey out of sight as lost, and an escape as shaken', () => {
         const gaveUp = chases(['gaveup']);
