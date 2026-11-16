@@ -8,7 +8,7 @@ import { temperatureColor } from './colors.js';
 import { applyClip, restRig } from './clip-sampler.js';
 import { CH, CHANNELS, clipForTween } from './clips.js';
 import { dentAt } from './dents.js';
-import { thrustOf } from './hunt-cues.js';
+import { SPRINT_FROM, sprintAmp, thrustOf } from './hunt-cues.js';
 import { FILL_FLOOR, FILL_SHARE, NEON, toDisplay } from './palette.js';
 
 const N = CHANNELS.length;
@@ -145,6 +145,7 @@ function playLoops(ctx, { bucket, o }) {
     const bits = bucket.body[o];
     const hunting = ctx.hunter && bucket.state[o + 3] >= STALK_JAW && speed01 < STALK_SPEED;
     maybe(ctx, hunting, 'stalk', 1);
+    maybe(ctx, speed01 > SPRINT_FROM, 'sprint', sprintAmp(speed01));
     maybe(ctx, bucket.tween[o + 3] > 0, 'flee', 1);
     const cold = ctx.stress.cold01;
     maybe(ctx, temp < cold, 'shiver', Math.min(((cold - temp) / Math.max(cold, 1e-6)) * 2, 1));

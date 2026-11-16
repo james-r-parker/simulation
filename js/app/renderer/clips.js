@@ -85,6 +85,7 @@ export const CLIPS = Object.freeze({
         rate: 0.5,
         tracks: [pulse('sx', 1.1), pulse('sy', 0.86), pulse('open', 0.3), pulse('eye', 0.6)],
     },
+    sprint: { loop: true, rate: 1, tracks: [track('sx', '0 1.14, 1 1.14'), track('sy', '0 0.9, 1 0.9')] },
     flee: { loop: true, rate: 2.5, tracks: [pulse('sx', 1.15), pulse('sy', 0.86), pulse('eye', 1.35)] },
     shiver: { loop: true, rate: 12, tracks: [swing('tx', 0.03), swing('ty', 0.02)] },
     pant: { loop: true, rate: 3, tracks: [pulse('sx', 1.04), pulse('sy', 1.04)] },
@@ -162,6 +163,20 @@ export const CLIPS = Object.freeze({
         loop: false,
         tracks: [track('rot', '0 0, 0.12 0.25, 0.25 -0.25, 0.38 0.2, 0.5 -0.15, 0.62 0.08, 1 0 sineInOut')],
     },
+    bump: {
+        loop: false,
+        tracks: [
+            track('sx', '0 1, 0.25 0.9 quadOut, 0.6 1.03 sineInOut, 1 1 sineInOut'),
+            track('sy', '0 1, 0.25 1.06 quadOut, 0.6 0.99 sineInOut, 1 1 sineInOut'),
+        ],
+    },
+    bumpHard: {
+        loop: false,
+        tracks: [
+            track('sx', '0 1, 0.22 0.8 quadOut, 0.6 1.06 sineInOut, 1 1 sineInOut'),
+            track('sy', '0 1, 0.22 1.12 quadOut, 0.6 0.97 sineInOut, 1 1 sineInOut'),
+        ],
+    },
     wilt: { loop: false, tracks: [track('ringAlpha', '0 1, 1 0 quadIn'), track('sx', '0 1, 1 0.9 sineInOut')] },
 });
 
@@ -177,6 +192,8 @@ export const TWEEN_CLIPS = Object.freeze([
     'birthPop',
     'shakeOff',
     'kill',
+    'bump',
+    'bumpHard',
 ]);
 
 /**

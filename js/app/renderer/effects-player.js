@@ -10,6 +10,8 @@ import { createBodyTweens } from './body-tweens.js';
 import { playBite, playDeath } from './effects-combat.js';
 import { createEdgeState } from './effects-edges.js';
 import { createFlee } from './effects-flee.js';
+import { createBumps } from './bumps.js';
+export { playBumps } from './effects-bumps.js';
 import { createCrossings } from './effects-terrain.js';
 import { createMomentLog, noteMoment } from '../director/moment-log.js';
 import { bornNamesOf, playBirth, playMate } from './effects-life.js';
@@ -57,6 +59,7 @@ export { BIRTH_SIZE, JAW_REACH } from './effects-combat.js';
  * @property {string[]} bornNames birth cause names by number (`ready.layout.bornCauses`)
  * @property {import('./effects-edges.js').EdgeState} edges the flag-edge state and the food grids
  * @property {Record<string, number>} bits `ready.layout.flags`
+ * @property {import('./bumps.js').Bumps} bumps each slot's last speed and this frame's bumps
  * @property {import('./effects-flee.js').FleeState} flee the pursuit pairs and who flees this frame
  * @property {import('./effects-terrain.js').CrossState} crossings each slot's side of the wall
  * @property {import('../director/moment-log.js').MomentLog} moments the notable moments played, for the pointers and
@@ -76,6 +79,31 @@ function causeNamesOf(causes) {
         names[n] = name;
     }
     return names;
+}
+
+/**
+ * @param {Record<string, any>} info `ready.info`
+ * @returns {EffectsPlayer['info']} the call ranges and the cold-stress temperature share
+ */
+function callInfoOf(info) {
+    return {
+        callRadius: info.callRadius,
+        callTicks: info.callTicks,
+        cold01: info.temperatureMax > 0 ? info.temperatureColdStress / info.temperatureMax : -Infinity,
+    };
+}
+
+/**
+ * @param {Record<string, any>} layout `ready.layout`
+ * @returns {EffectsPlayer['momentCtx']} the moment log's context
+ */
+function momentCtxOf(layout) {
+    return {
+        kinds: layout.effectKinds,
+        eatenCause: layout.deathCauses.EATEN,
+        trampled: layout.deathCauses.TRAMPLED ?? -1,
+        nowMs: 0,
+    };
 }
 
 /**
@@ -104,6 +132,7 @@ export function createEffectsPlayer({
         dents,
         edges: /** @type {any} */ (null),
         flee: /** @type {any} */ (null),
+        bumps: createBumps(info.maxAgents ?? 1024),
         crossings: /** @type {any} */ (null),
         moments: /** @type {any} */ (null),
         momentCtx: /** @type {any} */ (null),
@@ -116,11 +145,7 @@ export function createEffectsPlayer({
         kinds: layout.effectKinds,
         floraEnabled: true,
         eatenCause: layout.deathCauses.EATEN,
-        info: {
-            callRadius: info.callRadius,
-            callTicks: info.callTicks,
-            cold01: info.temperatureMax > 0 ? info.temperatureColdStress / info.temperatureMax : -Infinity,
-        },
+        info: callInfoOf(info),
         slots,
         sink,
         effect: { kind: 0, tick: 0, x: 0, y: 0, a: 0, b: 0, c: 0, d: 0 },
@@ -130,12 +155,7 @@ export function createEffectsPlayer({
     player.flee = createFlee(info);
     player.crossings = createCrossings(info);
     player.moments = createMomentLog();
-    player.momentCtx = {
-        kinds: layout.effectKinds,
-        eatenCause: layout.deathCauses.EATEN,
-        trampled: layout.deathCauses.TRAMPLED ?? -1,
-        nowMs: 0,
-    };
+    player.momentCtx = momentCtxOf(layout);
     return player;
 }
 

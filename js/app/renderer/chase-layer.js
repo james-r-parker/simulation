@@ -4,15 +4,19 @@
 
 import { clearLines, createLineBuffer, pushVertex, setLineColor } from './line-buffer.js';
 import { createLineMesh } from './line-draw.js';
+import { NEON } from './palette.js';
+import { MAX_WAKES, pushWakes } from './wake.js';
 import { createPursuits, findPursuits, MAX_PURSUITS, pursuitRules } from '../pursuit.js';
 
 /** Dashes per tether at level 0 and at level 1. */
 export const CHASE_DASHES = 8;
-/** The tether's colour (linear, above 1 so the bloom lifts it) and its alpha at touching range. */
-export const CHASE_COLOR = Object.freeze([1.4, 0.55, 0.3]);
-export const CHASE_ALPHA = 0.7;
+/** The tether's display colour and its alpha at touching range: a faint thread, fainter than the cells it joins. */
+export const CHASE_COLOR = NEON.huntCall;
+export const CHASE_ALPHA = 0.2;
 
 const SCRATCH = [0, 0, 0];
+/** Segments the layer's buffer holds: the tethers' dashes and two wake lines a body. */
+const CAPACITY = MAX_PURSUITS * CHASE_DASHES + MAX_WAKES * 2;
 
 /**
  * Pushes one dashed tether: the dashes run from the hunter's nose to the prey's near edge, each brighter than the one
@@ -43,12 +47,13 @@ const ENDS = { ax: 0, ay: 0, bx: 0, by: 0 };
 /**
  * Fills `lines` with a tether for every pursuit in `agents`.
  * @param {import('../interpolate.js').Interpolated} agents the frame's agents
- * @param {{pursuits: import('../pursuit.js').Pursuits, rules: ReturnType<typeof pursuitRules>, find?: boolean}} state
- *   the pairs and rules; `find` false when another module (the effects player) has filled the pairs this frame
+ * @param {{pursuits: import('../pursuit.js').Pursuits, rules: ReturnType<typeof pursuitRules>, find?: boolean,
+ *   fleeing?: Uint8Array | null}} state the pairs and rules; `find` false when another module (the effects player) has
+ *   filled the pairs this frame; `fleeing` marks the prey by agent index, for their wakes
  * @param {{lines: import('./line-buffer.js').LineBuffer, dashes: number}} target buffer and dashes per tether
  * @returns {number} tethers drawn
  */
-export function stepChase(agents, { pursuits, rules, find = true }, { lines, dashes }) {
+export function stepChase(agents, { pursuits, rules, find = true, fleeing = null }, { lines, dashes }) {
     clearLines(lines);
     if (find) {
         findPursuits(agents, rules, pursuits);
@@ -70,18 +75,25 @@ export function stepChase(agents, { pursuits, rules, find = true }, { lines, das
         ENDS.by = agents.y[h] + (dy / len) * edge;
         pushTether(lines, ENDS, { closeness: pursuits.closeness[k], dashes });
     }
+    pushWakes(agents, rules, { lines, fleeing });
     return pursuits.count;
 }
 
 /**
- * @param {{info: Record<string, any>, pursuits?: import('../pursuit.js').Pursuits}} options `ready.info`, and the pairs
- *   the effects player finds each frame (then the layer does not search again)
+ * @param {{info: Record<string, any>, pursuits?: import('../pursuit.js').Pursuits, fleeing?: Uint8Array}} options
+ *   `ready.info`, the pairs the effects player finds each frame (then the layer does not search again) and the prey it
+ *   marks
  * @returns {import('./stage.js').Layer} the chase layer
  */
-export function createChaseLayer({ info, pursuits }) {
-    const lines = createLineBuffer(MAX_PURSUITS * CHASE_DASHES);
+export function createChaseLayer({ info, pursuits, fleeing }) {
+    const lines = createLineBuffer(CAPACITY);
     const mesh = createLineMesh(lines);
-    const state = { pursuits: pursuits ?? createPursuits(), rules: pursuitRules(info), find: pursuits === undefined };
+    const state = {
+        pursuits: pursuits ?? createPursuits(),
+        rules: pursuitRules(info),
+        find: pursuits === undefined,
+        fleeing: fleeing ?? null,
+    };
     const dashes = CHASE_DASHES;
     return {
         object: mesh.object,

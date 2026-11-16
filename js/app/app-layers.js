@@ -86,7 +86,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
         agents,
         createVisionLayer({ info }),
         world.motes,
-        createChaseLayer({ info, pursuits: player.flee.pursuits }),
+        createChaseLayer({ info, pursuits: player.flee.pursuits, fleeing: player.flee.fleeing }),
         createMateThreadLayer({ pool: threads }),
         createOverlays({ info }),
         particles,

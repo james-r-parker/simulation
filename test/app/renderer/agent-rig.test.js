@@ -114,6 +114,13 @@ describe('rigBucket', () => {
         expect(flat.call[3]).toBeGreaterThanOrEqual(0.3);
     });
 
+    it('stretches a body running flat out (the sprint loop) and not one under the threshold', () => {
+        const runner = rigOf([{ slot: 0, genomeId: 1, speed: 200 }], { ctx: { hunter: false } });
+        const walker = rigOf([{ slot: 0, genomeId: 1, speed: 80 }], { ctx: { hunter: false } });
+        expect(runner.rig0[3]).toBeGreaterThan(walker.rig0[3] + 0.05);
+        expect(runner.rig1[0]).toBeLessThan(walker.rig1[0] - 0.03);
+    });
+
     it('scales a juvenile eye and shivers a cold body', () => {
         const young = rigOf([{ slot: 0, genomeId: 1, state: STATE.JUVENILE }]);
         expect(young.rig1[2]).toBeCloseTo(JUVENILE_EYE, 1);
