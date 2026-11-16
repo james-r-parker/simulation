@@ -217,6 +217,10 @@ function rowsOf(args, { genomes, tasks, results, log }) {
                 winShare,
                 edge: edgeOf(winShare, baselines),
                 ...winBounds({ wins: results[at].wins, trials: results[at].trials }, randoms),
+                wins: results[at].wins,
+                trials: results[at].trials,
+                randomWins: randoms.reduce((sum, score) => sum + score.wins, 0),
+                randomTrials: randoms.reduce((sum, score) => sum + score.trials, 0),
                 lossReasons,
             };
             rows[row].cells[name] = cell;

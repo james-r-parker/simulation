@@ -4,7 +4,17 @@
 
 import { validateGate } from './stage-gate.js';
 
-export { checkpointDue, currentEntry, initialState, isGated, needsGate, nextStage } from './stage-run.js';
+export {
+    checkpointDue,
+    currentEntry,
+    initialState,
+    isGated,
+    needsGate,
+    nextStage,
+    restoreState,
+    snapshotState,
+    stateAfter,
+} from './stage-run.js';
 
 /**
  * @typedef {object} CurriculumEntry

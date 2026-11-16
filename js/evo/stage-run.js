@@ -32,6 +32,7 @@ import { GATE_HOLD, REVIEW_GENERATIONS, REVIEW_MAX, readGate, streaksOf } from '
  * @property {'running' | 'done' | 'stalled'} status whether the run goes on
  * @property {{stage: string, generation: number, optional: boolean, failing: object[]}[]} stalled each stall
  * @property {object[]} last the failing conditions of the last gate read
+ * @property {string | null} lastStage the stage whose world ran the last generation (null before the first)
  */
 
 /**
@@ -70,7 +71,24 @@ export function initialState(stages, total) {
         status: 'running',
         stalled: [],
         last: [],
+        lastStage: null,
     };
+}
+
+/**
+ * The state of a run of fixed-length stages after `done` generations, replayed with no checkpoints (a resume of a run
+ * saved without a state).
+ * @param {readonly RunStage[]} stages the stages in order, none gated
+ * @param {number} total the run's generations
+ * @param {number} done generations completed
+ * @returns {RunState} the state
+ */
+export function stateAfter(stages, total, done) {
+    let state = initialState(stages, total);
+    for (let i = 0; i < done; i++) {
+        state = nextStage(state).state;
+    }
+    return state;
 }
 
 /**
@@ -251,7 +269,13 @@ function gateCheckpoint(s, entry, readings, events) {
     events.push({
         level: 'info',
         event: 'TrainGate',
-        fields: { generation: s.generation, stage: entry.name, passed: read.passed, conditions: read.conditions },
+        fields: {
+            generation: s.generation,
+            stage: entry.name,
+            passed: read.passed,
+            conditions: read.conditions,
+            retention,
+        },
     });
     if (!held || !ripe) {
         return false;
@@ -308,6 +332,7 @@ export function nextStage(state, checkpoint = null) {
     const events = [];
     const entry = currentEntry(s);
     s.generation += 1;
+    s.lastStage = entry.name;
     s.ran[entry.name] = (s.ran[entry.name] ?? 0) + 1;
     if (s.review !== null) {
         stepReview(s);

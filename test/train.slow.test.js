@@ -164,6 +164,16 @@ describe('npm run train', () => {
         expect(archiveText('rest', 2)).toBe(archiveText('full', 2));
     }, 240000);
 
+    it('writes a fixed-length run in the format it always had: no gate state, three keys per stage', async () => {
+        await runFull();
+        const json = JSON.parse(archiveText('full', 2));
+        expect(json).not.toHaveProperty('trainState');
+        expect(json.stages.map((/** @type {any} */ s) => Object.keys(s))).toEqual(
+            Array(3).fill(['name', 'rulesHash', 'generations']),
+        );
+        expect(Object.keys(json).slice(-2)).toEqual(['generation', 'stages']);
+    }, 240000);
+
     it('refuses to resume an archive whose stage rules differ, naming the field', async () => {
         await runFull();
         const args = parseArgs([
@@ -177,4 +187,56 @@ describe('npm run train', () => {
         ]);
         await expect(runTraining(args)).rejects.toThrow(/archive\.rulesHash/);
     }, 60000);
+
+    describe('a gated ladder with real drills', () => {
+        const GATE_STAGE = { config: fileA, minGenerations: 1, maxGenerations: 3 };
+        const gated = join(root, 'gated.json');
+        const hopeless = join(root, 'hopeless.json');
+        writeFileSync(
+            gated,
+            JSON.stringify([
+                { name: 'one', ...GATE_STAGE, gate: [{ read: 'retention.all', min: 1 }] },
+                { name: 'world', config: null },
+            ]),
+        );
+        writeFileSync(
+            hopeless,
+            JSON.stringify([
+                { name: 'one', ...GATE_STAGE, gate: [{ read: 'retention.all', min: 2 }] },
+                { name: 'world', config: null },
+            ]),
+        );
+
+        it('advances on its gate and writes identical archives with 1 and 2 workers', async () => {
+            const args = (/** @type {string} */ name, /** @type {string} */ workers) =>
+                parseArgs([
+                    ...['--generations', '4', '--curriculum', gated, '--checkpoint-every', '1', '--workers', workers],
+                    ...small(name, []),
+                ]);
+            await runTraining(args('g1', '1'), { drillTrials: 2, gateTrials: 2 });
+            await runTraining(args('g2', '2'), { drillTrials: 2, gateTrials: 2 });
+            expect(archiveText('g1', 3)).toBe(archiveText('g2', 3));
+            const json = JSON.parse(archiveText('g1', 3));
+            expect(json.stages.map((/** @type {any} */ s) => [s.name, s.generations, s.passedAt])).toEqual([
+                ['one', 2, 2],
+                ['world', 2, undefined],
+            ]);
+            const rows = readFileSync(join(root, 'g1', 'curve.jsonl'), 'utf8')
+                .trim()
+                .split('\n')
+                .map((l) => JSON.parse(l));
+            expect(rows[0].gate.conditions[0]).toMatchObject({ read: 'retention.all', value: 1, passed: true });
+            expect(rows[1].gate.stagePassed).toBe(true);
+        }, 300000);
+
+        it('stops with exit code 3 and keeps the archive when the gate cannot pass', async () => {
+            const args = parseArgs([
+                ...['--generations', '6', '--curriculum', hopeless, '--checkpoint-every', '1', '--workers', '2'],
+                ...small('hopeless', []),
+            ]);
+            const stalled = runTraining(args, { drillTrials: 2, gateTrials: 2 });
+            await expect(stalled).rejects.toMatchObject({ exitCode: 3 });
+            expect(JSON.parse(archiveText('hopeless', 2)).stages[0]).toMatchObject({ name: 'one', stalledAt: 3 });
+        }, 300000);
+    });
 });
