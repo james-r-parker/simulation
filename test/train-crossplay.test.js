@@ -160,6 +160,18 @@ describe('npm run train:crossplay', () => {
         expect(lines.join('\n')).toMatch(/hunter progress[\s\S]*prey progress[\s\S]*cycle share/);
     });
 
+    it('plays no pack cells with --no-group', async () => {
+        const dir = runDir('no-group', [0.1, 0.2]);
+        const log = console.log;
+        console.log = () => {};
+        try {
+            expect(await main([dir, '--trials', '2', '--no-group'])).toBe(0);
+        } finally {
+            console.log = log;
+        }
+        expect(JSON.parse(readFileSync(join(dir, 'crossplay.json'), 'utf8')).packKills).toBeNull();
+    });
+
     it('refuses a run with fewer than two checkpoints with champions of both roles', async () => {
         const dir = runDir('thin', [0.1]);
         const error = console.error;

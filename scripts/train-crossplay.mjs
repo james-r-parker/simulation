@@ -42,8 +42,7 @@ function matrixLines(kills, trials, generations) {
     const head = `predator\\forager ${generations.map((g) => `g${g}`.padStart(7)).join('')}`;
     const rows = kills.map(
         (row, i) =>
-            `g${generations[i]}`.padEnd(16) +
-            row.map((k) => (k === null ? '-' : (k / trials).toFixed(2)).padStart(7)).join(''),
+            `g${generations[i]}`.padEnd(16) + row.map((k) => (Number(k) / trials).toFixed(2).padStart(7)).join(''),
     );
     return [head, ...rows];
 }
@@ -83,11 +82,12 @@ export function runCrossplay(args, print = () => {}) {
             print(line);
         }
     }
+    // At least two players are played, so the three numbers exist.
     const fixed = (/** @type {{progress: number, low: number} | null} */ p) =>
-        p === null ? '-' : `${p.progress.toFixed(3)} (low ${p.low.toFixed(3)})`;
+        `${/** @type {any} */ (p).progress.toFixed(3)} (low ${/** @type {any} */ (p).low.toFixed(3)})`;
     print(`hunter progress ${fixed(record.hunterProgress)}`);
     print(`prey progress   ${fixed(record.preyProgress)}`);
-    print(`cycle share     ${record.cycleShare === null ? '-' : record.cycleShare.toFixed(3)}`);
+    print(`cycle share     ${/** @type {number} */ (record.cycleShare).toFixed(3)}`);
     return record;
 }
 
