@@ -1,6 +1,6 @@
 # Detector baseline
 
-**Status:** In progress - Phase 1 chunk A (T1, T2: the chase record and the existing metrics on it) is built; the measure-first plans share one chase-outcome taxonomy, one detector wave and one 128-seed baseline of the defaults, in place of seven separate 16-seed runs; Phase 1 (the taxonomy and the wave) is first.
+**Status:** In progress - Phase 1 chunks A and B are built except the wave's `bench.observe_ms@500` price (T4: deferred while an eval screen holds the CPU lock; command under Wave check); the wave itself is not complete, since four of the seven plans have no detector merged; T7 waits for the hunter-vision defaults to settle; the measure-first plans share one chase-outcome taxonomy, one detector wave and one 128-seed baseline of the defaults, in place of seven separate 16-seed runs.
 **Validated:** ed662529 (2026-11-15)
 **Priority:** 34 - it schedules no work of its own ahead of the queue: its tasks run when the Phase 1 detector tasks of the plans it serves are built, and those change no behaviour
 **Depends on:** [metric-trust.md](metric-trust.md)
@@ -31,7 +31,7 @@ The signal census of [senses-and-motor.md](senses-and-motor.md) (T10) samples th
 | [chase-physics.md](chase-physics.md)     | Overshoot (the range re-opens after its minimum); a chase that crossed cover  |
 | [scent-trails.md](scent-trails.md)       | Re-acquired (sight lost, the same prey found again inside `REACQUIRE_WINDOW`) |
 
-Built apart, a chase that is lost and then re-acquired is counted as two chases by one module and one by another, and the shares stop summing. `js/evo/chase-outcome.js` (new) owns one record per chase: its opening and resolving ticks, its end class (caught, escaped, quit, lost, outrun), and its flags (overshot, crossed cover, re-acquired, sprinted, prey still at first sight). Every chase metric of the three plans, and the sprint and stillness chase reads, is a count over those records. The end classes partition the chases; the flags do not. A re-acquired chase is one chase.
+Built apart, a chase that is lost and then re-acquired is counted as two chases by one module and one by another, and the shares stop summing. `js/evo/chase-outcome.js` (new) owns one record per chase: its opening tick, its end class and its flags. As built (chunk A) there are three end classes (caught, escaped, gave up); a lapse is split by the `LAPSE_LOST` and `LAPSE_OUTRUN` flags, and a gave-up chase with neither is a quit. The other flags are overshot, crossed cover, re-acquired, sprinted and prey still at first sight; `REACQUIRED`, `SPRINTED` and `PREY_AT_FIRST_SIGHT` are defined and tested but set by no code yet, reserved for the unbuilt scent-trails and sprint-burst detectors. The record keeps counts, not a resolving tick (the length of a chase is fed to `noteChaseLength` apart). Every chase metric of the three plans, and the sprint and stillness chase reads, is a count over those records. The end classes partition the chases; the flags do not. A re-acquired chase is one chase.
 
 ## One wave, one run
 
@@ -44,6 +44,41 @@ Built apart, a chase that is lost and then re-acquired is counted as two chases 
 | Power       | `npm run eval:power -- <report> --include-watch` and `npm run metric:liveness` once, for every new metric; the registry's `power.js` and `liveness.js` take the readings, so a metric that passes is `verified` with its seed count |
 | Plan tables | `npm run baseline:table -- --plan <doc>` (`scripts/baseline-table.mjs`) prints a plan's metrics from the shared report as its Baseline table, with mean, range, power and the seeds a verdict needs                                 |
 | Cost        | `bench.observe_ms@500` is read before the wave and after it, on a base-ref run and a head run under the CPU lock. The wave may add at most 0.05 ms (0.13 ms today); a tally over that moves onto an existing pass or is sampled     |
+
+## Wave check
+
+Read on 2026-11-16 against `main` at 0819058e (T3). The wave's first merged detector PR is #445 (prey-guilds T1, 7e1aacaa), so the base ref of the price is `7e1aacaa^`. It added 23 new metrics (`eval.herd_dodge_share` is a rename of the verified `eval.dodge_skill`, so it is not counted).
+
+| Plan                                     | Detector task | Merged        | Metrics in the registry                                                                                                                                                                                   | Missing                                                                                                                                                                                                                          |
+| ---------------------------------------- | ------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [training-stages.md](training-stages.md) | T1, T2, T3    | Yes (#458)    | 11 of 11: `chase_{quit,lost,outrun,shaken}_share`, `chase_ticks_p{50,90}`, `pack_lift`, `pack_prey_size_ratio`, `style_lineage_share`, the renamed `herd_dodge_share`, `hunter_zero_kill_share` (changed) | `E-TS-0` predicts `chase_lost_share`, `chase_quit_share` and `pack_lift` only: no prediction for `chase_outrun_share`, `chase_shaken_share`, `chase_ticks_p50`, `chase_ticks_p90`, `pack_prey_size_ratio`, `style_lineage_share` |
+| [chase-physics.md](chase-physics.md)     | T1            | Yes (#449)    | 3 of 3                                                                                                                                                                                                    | The prediction (premise section) covers `chase_turn_jitter` only: none for `chase_overshoot_share`, `chase_cover_use_share`                                                                                                      |
+| [prey-guilds.md](prey-guilds.md)         | T1            | Partly (#445) | 11 of 15 (the four `prey_selectivity.*` are missing; the plans-served count of 12 is stale)                                                                                                               | `eval.prey_selectivity.<spec>` is not built, though the T1 row says built; `E-PG-1` predicts it. No prediction for `guild_share.*`, `reproducer_recovery_rate`. Row T1b added in that plan                                       |
+| [sprint-burst.md](sprint-burst.md)       | T2            | No            | 0 of 5                                                                                                                                                                                                    | `js/evo/scene-sprint.js` not built. Prediction written (`E-SB-1`)                                                                                                                                                                |
+| [stillness.md](stillness.md)             | T1            | No            | 0 of 3                                                                                                                                                                                                    | `js/evo/scene-stillness.js` not built. Prediction written (`E-ST-1`)                                                                                                                                                             |
+| [scent-trails.md](scent-trails.md)       | T1            | No            | 0 of 2                                                                                                                                                                                                    | `js/evo/scene-scent.js` not built. Prediction written (`E-ST2-1`)                                                                                                                                                                |
+| [body-genes.md](body-genes.md)           | T1, T1a       | No            | 0 of 3                                                                                                                                                                                                    | `js/evo/scene-traits.js` and `js/evo/transplant-probe.js` not built. `E-BG-1` predicts the transplant gap only, not the three `eval.trait_*` metrics                                                                             |
+
+What the table shows:
+
+- Every merged metric has its entry, its arithmetic test and its source test: `test/evo/metric-registry.test.js` fails an entry without them, and it passes. No registry gap needed a fix in this chunk.
+- None of the 23 new metrics has a `liveness` or `power` read yet, as expected: those are T8, after the shared run. Eighteen are `watch`, each with an `intended` direction (`eval:power --include-watch` needs it).
+- Left out of the read: the four plans with no detector merged (sprint-burst, stillness, scent-trails, body-genes), and, per metric, the metrics named above without a written prediction. A prediction-less metric is read for its power and liveness only, and the plan that owns it writes the prediction before T7 starts or accepts that it has none. Writing them is the owning plan's task, not built here.
+- Running the shared run before the four detectors land would leave those plans on their own 16-seed baselines. T7 therefore also waits for them, or for the user to accept that.
+
+### The price of the wave (T4)
+
+Not measured: `/tmp/claude-1000/cpu.lock` was held by an eval screen for the whole of this chunk, and a timing run under load proves nothing. Run it on a quiet machine, base ref `7e1aacaa^` (the parent of the first detector PR) against head, five alternating runs each:
+
+```
+git worktree add ../bench-base 7e1aacaa^ && (cd ../bench-base && npm ci --ignore-scripts)
+for i in 1 2 3 4 5; do
+  flock /tmp/claude-1000/cpu.lock sh -c 'cd ../bench-base && npm run bench -- --policy map-elites-v6 --sizes=500 --json > /tmp/observe-base-'$i'.json'
+  flock /tmp/claude-1000/cpu.lock npm run bench -- --policy map-elites-v6 --sizes=500 --json > /tmp/observe-head-$i.json
+done
+```
+
+Compare the median `bench.observe_ms@500` of the two sets: the budget is a rise of at most 0.05 ms (0.13 ms today). Over it, a tally moves onto an existing pass or is sampled. Phase 1 is `(built)` once that reads inside the budget.
 
 ## Keeping it current
 
@@ -63,6 +98,8 @@ A baseline describes one set of rules. `npm run baseline:status` (`scripts/basel
 | ----- | ------ | -------------------------------------------------------- |
 | A     | T1, T2 | The chase record and the existing metrics on it (Sonnet) |
 | B     | T3, T4 | The wave's check, the observer price and the review      |
+
+Chunk B (2026-11-16): T3 and the conformance review are done; the T4 benchmark is deferred, so Phase 1 is not marked built.
 
 ### Phase 2 - The shared run
 
@@ -112,18 +149,18 @@ The run, the power and liveness read, and each plan's Baseline table.
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
 | T1  | Add `js/evo/chase-outcome.js` and its tests; move the four existing chase metrics onto it with their values unchanged on a committed report's seeds. Built: `scene-approach.js` tallies each chase on the record; the four metrics read the same on a 4-seed replay                                | [judgement]  | -          |
 | T2  | Point the chase tasks of [training-stages.md](training-stages.md) T1, [chase-physics.md](chase-physics.md) T1 and [scent-trails.md](scent-trails.md) T1 at the record: one line in each task row, no new module. Built, with `scene-kinematics.js` (built ahead of this doc) moved onto the record | [mechanical] | T1         |
-| T3  | When the seven plans' detector tasks are merged, check each new metric has its registry entry, tests and a written baseline prediction; list any plan left out of the read                                                                                                                         | [mechanical] | T2         |
-| T4  | Price the wave (`bench.observe_ms@500`, base ref against head); conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                | [judgement]  | T3         |
+| T3  | (built) When the seven plans' detector tasks are merged, check each new metric has its registry entry, tests and a written baseline prediction; list any plan left out of the read. Result under Wave check; it re-runs when the four missing plans' detectors land                                | [mechanical] | T2         |
+| T4  | Price the wave (`bench.observe_ms@500`, base ref against head) - benchmark deferred, see Wave check; the conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`, is done                                                                                              | [judgement]  | T3         |
 
 ### Phase 2 - The shared run
 
-| #   | Task                                                                                                                                                                                         | Nature       | Depends on |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T5  | (built) Add `scripts/baseline-table.mjs` and `npm run baseline:table`, with a test on a fixture report                                                                                       | [mechanical] | -          |
-| T6  | (built) Add `scripts/baseline-status.mjs` and `npm run baseline:status`, with a test of a matching and a differing `rulesHash`                                                               | [mechanical] | -          |
-| T7  | Run the baseline: 128 floor-on and 128 floor-off seeds x 200000 ticks, `--save-champions 2`; commit the reports; record the experiment                                                       | [mechanical] | T4         |
-| T8  | Run `eval:power --include-watch` and `metric:liveness` for every new metric; write the readings to the registry; regenerate [metrics.md](metrics.md); fill each served plan's Baseline table | [mechanical] | T5, T7     |
-| T9  | Read each plan's prediction against the table and write its verdict in that plan; conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`; move the Status line  | [judgement]  | T6, T8     |
+| #   | Task                                                                                                                                                                                                                                                                                     | Nature       | Depends on |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T5  | (built) Add `scripts/baseline-table.mjs` and `npm run baseline:table`, with a test on a fixture report                                                                                                                                                                                   | [mechanical] | -          |
+| T6  | (built) Add `scripts/baseline-status.mjs` and `npm run baseline:status`, with a test of a matching and a differing `rulesHash`                                                                                                                                                           | [mechanical] | -          |
+| T7  | (waits: the hunter-vision defaults are switching, and a baseline of the old defaults is stale on arrival; restart from `npm run baseline:status`) Run the baseline: 128 floor-on and 128 floor-off seeds x 200000 ticks, `--save-champions 2`; commit the reports; record the experiment | [mechanical] | T4         |
+| T8  | Run `eval:power --include-watch` and `metric:liveness` for every new metric; write the readings to the registry; regenerate [metrics.md](metrics.md); fill each served plan's Baseline table                                                                                             | [mechanical] | T5, T7     |
+| T9  | Read each plan's prediction against the table and write its verdict in that plan; conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`; move the Status line                                                                                              | [judgement]  | T6, T8     |
 
 ## Verification
 
