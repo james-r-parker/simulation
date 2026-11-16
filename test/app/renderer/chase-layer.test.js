@@ -79,7 +79,7 @@ describe('stepChase with overlapping bodies', () => {
 
 describe('the faint tether', () => {
     it("is a thread well under half the cells' own brightness", () => {
-        expect(CHASE_ALPHA).toBeLessThanOrEqual(0.25);
+        expect(CHASE_ALPHA).toBeLessThanOrEqual(0.3);
     });
 
     it('adds a wake for the running hunter and, when marked, the fleeing prey', () => {

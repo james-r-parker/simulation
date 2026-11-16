@@ -51,7 +51,17 @@ const sick = (/** @type {FxPart[]} */ parts) => recipe(FAMILY.sickness, RANK.sic
 /** Every recipe by name. */
 export const FX_RECIPES = Object.freeze({
     biteJaw: recipe(FAMILY.combat, RANK.bite, [
-        { curve: C.streak, count: 6, life: 12, size: 0.45, reach: 1.6, spread: 'ring', color: 'biteFlash', stretch: 3 },
+        {
+            curve: C.streak,
+            count: 6,
+            life: 12,
+            size: 0.35,
+            reach: 1.4,
+            spread: 'ring',
+            color: 'biteFlash',
+            stretch: 3,
+            gain: 0.6,
+        },
         { curve: C.flash, count: 1, life: 5, size: 0.8, color: 'biteFlash', minPx: 6 },
     ]),
     biteDrain: recipe(FAMILY.combat, RANK.bite, [

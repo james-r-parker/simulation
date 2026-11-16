@@ -11,7 +11,7 @@ export const WAKE_FROM = 0.55;
 /** The most bodies that leave a wake in one frame. */
 export const MAX_WAKES = 64;
 /** The wake's alpha at the body at top speed. */
-export const WAKE_ALPHA = 0.22;
+export const WAKE_ALPHA = 0.4;
 /** The wake's length in body radii at `WAKE_FROM` and at top speed. */
 export const WAKE_LENGTH = Object.freeze({ min: 1.5, max: 4.5 });
 /** How far from the heading axis each line starts, in body radii, and how far behind the centre. */

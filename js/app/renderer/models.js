@@ -139,7 +139,7 @@ const lip = (name, { start, bind }) => ({
     name,
     shape: 'arc',
     r: 0.42,
-    width: 0.07,
+    width: 0.05,
     start,
     sweep: 1.1,
     at: JAW_PIVOT,

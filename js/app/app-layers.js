@@ -72,6 +72,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
         fx,
         tweens: agents.store.tweens,
         dents: agents.store.dents,
+        dying: agents.store.dying,
     });
     agents.store.fleeing = player.flee.fleeing;
     refs.player = player;

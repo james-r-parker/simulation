@@ -12,7 +12,7 @@ import { createPursuits, findPursuits, MAX_PURSUITS, pursuitRules } from '../pur
 export const CHASE_DASHES = 8;
 /** The tether's display colour and its alpha at touching range: a faint thread, fainter than the cells it joins. */
 export const CHASE_COLOR = NEON.huntCall;
-export const CHASE_ALPHA = 0.2;
+export const CHASE_ALPHA = 0.3;
 
 const SCRATCH = [0, 0, 0];
 /** Segments the layer's buffer holds: the tethers' dashes and two wake lines a body. */

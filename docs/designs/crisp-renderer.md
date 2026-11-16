@@ -1,6 +1,6 @@
 # Crisp renderer
 
-**Status:** In progress - Phase 1 code built (T2 to T23 and T25, one pull request): the WebGPU stage, the model catalogue, the clips, every layer, herds blended by slot, the old renderer deleted; the T1 and T24 timing runs on the dev machine's Windows Chrome are open, so the phase is not yet `(built)`.
+**Status:** In progress - Phase 1 code built (T2 to T23 and T25, one pull request): the WebGPU stage, the model catalogue, the clips, every layer, herds blended by slot, the old renderer deleted; the T1 and T24 timing runs on the dev machine's Windows Chrome are open, so the phase is not yet `(built)`. Phase 2 (the hunt and the death: hunter model, bite, chase, bumps, death animations) is built in one pull request on the WebGL2 fallback; a real-WebGPU look on the dev machine is still to do.
 **Validated:** 6a245c94 (2026-11-14)
 **Priority:** 1 - the user's brief (2026-11-14): the renderer is the part of the app the user is least happy with, and it changes no sim behaviour, so it is built in its own session beside the eval lanes
 
@@ -345,13 +345,13 @@ Budgets on the dev machine: Windows Chrome on the RTX 4090, the PG32UCDP at 240 
 | `browser.main_long_tasks`  | T1 (open)   | 0 after 5 s |
 | `browser.gc_pause_ms`      | T1 (open)   | < 30        |
 
-### Phase 2 - The hunt and the death
+### Phase 2 - The hunt and the death (built)
 
 **Targets:** none - the renderer draws the same world with more of it told; the Phase 1 frame budget must not regress (the same `browser.*` budgets hold, measured in the pull request where Chromium allows)
 
 **Why.** Three things the user (2026-11-16) wants fixed in one pull request, all drawing only: the hunter reads as one more cell with a mouth; a bite and a chase are told by particles and a tether that is brighter than the cells they join; and a death is a ring and some motes at the place where the body was while the body itself vanishes between two frames. No sim behaviour, `worldHash`, effect record or `rulesHash` changes; every new input is derived on the render side from the snapshot, the effect records and the clock. Nothing is added to the worker protocol.
 
-One branch, `feat/renderer-hunt-and-death`, one commit per task, one pull request. Chunks: A (T27), B (T28 to T30), C (T31 to T34), D (T35 and T36).
+One branch, `feat/renderer-hunt-and-death`, one commit per task, one pull request. Chunks: A (T27), B (T28 to T30 and T37), C (T31 to T34), D (T35 and T36). A fourth thing was added by the user the same day: bodies that collide or bump read as bodies (T37).
 
 #### The hunter (T28)
 
@@ -360,7 +360,7 @@ A raptorial cell: Didinium and Dileptus are the nature reference (a streamlined 
 | Part                 | Primitive               | Look                                                                                                                                       |
 | -------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `membrane`           | `membrane` with `taper` | A dart: `rx` 1.0, `ry` 0.5, `taper` 0.4, so the body is widest in front and narrows to the tail; the forward-weighted silhouette           |
-| `lipUp`, `lipDown`   | `arc`                   | The two lips, longer and thicker than Phase 1, bound to `jawUp` and `jawDown`; they open and close with the BITE output (`JAW_OPEN`)       |
+| `lipUp`, `lipDown`   | `arc`                   | The two lips, wider-set and longer than Phase 1, bound to `jawUp` and `jawDown`; they open and close with the BITE output (`JAW_OPEN`)     |
 | `fangUp`, `fangDown` | `poly` (thin triangle)  | A tooth on each lip tip, bound to the same channels, so the closed jaw reads as a pincer                                                   |
 | `tailA`, `tailB`     | `wave`                  | Two trailing flagella; their swing is bound to the `thrust` input and their beat is `wavePhase`, so they lash harder and faster with speed |
 | `nucleus`            | `circle`                | Set back, as before                                                                                                                        |
@@ -382,11 +382,11 @@ The `membrane` part pushes its outline in by `depth * exp(-(angle / width)^2)` a
 
 #### The chase (T30)
 
-| Cue            | How                                                                                                                                                                                                                                                                                          |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Stretched body | A `sprint` loop: `sx` to 1.14 and `sy` to 0.9 scaled by `(speed01 - SPRINT_FROM) / (1 - SPRINT_FROM)` above `SPRINT_FROM` (0.6), for every agent, so a runner is drawn longer                                                                                                                |
-| Wake           | `wake.js` and the chase layer: for a running hunter (`speed01` at least `WAKE_FROM`, 0.55) and each pursued prey, two thin lines from the rear flanks trailing `size * (1.5 + 3 * sprint)`, fading to nothing along their length (per-vertex alpha), at most `MAX_WAKES` (64) bodies a frame |
-| Pursuit tether | The Phase 1 tether stays but is dimmed to `CHASE_ALPHA` 0.2 (from 0.7) in the `huntCall` display colour (it was a linear colour over 1 from the old bloom look), so it is a faint thread, drawn only while the pair is closing (the existing `findPursuits` rule)                            |
+| Cue            | How                                                                                                                                                                                                                                                                                                                           |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stretched body | A `sprint` loop: `sx` to 1.14 and `sy` to 0.9 scaled by `(speed01 - SPRINT_FROM) / (1 - SPRINT_FROM)` above `SPRINT_FROM` (0.6), for every agent, so a runner is drawn longer                                                                                                                                                 |
+| Wake           | `wake.js` and the chase layer: for a running hunter (`speed01` at least `WAKE_FROM`, 0.55) and each pursued prey, two thin lines from the rear flanks trailing `size * (1.5 + 3 * sprint)`, fading to nothing along their length (per-vertex alpha), at most `MAX_WAKES` (64) bodies a frame, at `WAKE_ALPHA` 0.4 at the body |
+| Pursuit tether | The Phase 1 tether stays but is dimmed to `CHASE_ALPHA` 0.3 (from 0.7) in the `huntCall` display colour (it was a linear colour over 1 from the old bloom look), so it is a faint thread, drawn only while the pair is closing (the existing `findPursuits` rule)                                                             |
 
 #### The death (T31 to T34)
 
@@ -410,6 +410,15 @@ Today `playDeath` spawns a ghost ring and motes and the body leaves the snapshot
 - The Phase 1 death recipes keep their motes and drop their `ghost` ring (the body is its own ghost); `EATEN` keeps the double ring of a pack kill. The dispersal particles use the pool, so the budget and its adaptation still bound them.
 - A cause name the layout does not know uses the `STARVED` row.
 
+#### The bump (T37)
+
+What existed before: nothing. The protocol carries no collision or impact record (`COLLISION` is only a death cause, whose recipe played at a death), and a body hitting a rock, the wall or another body drew exactly as it did a frame earlier. The renderer reads it from the blended frame, as the chase cue is read:
+
+- `bumps.js` (pure) keeps each slot's last speed share. A body that was running (at least `BUMP_MIN_SPEED`, 0.3 of top speed) and loses `BUMP_SOFT` (0.3) of top speed in one frame is a soft bump; `BUMP_HARD` (0.6) is a hard one. The impact is the speed lost, so a harder hit squashes more. At most `MAX_BUMPS` (32) a frame. This is an approximation: a hunter braking hard to stalk can read as a soft bump, which costs nothing worse than a faint squash.
+- The squash is along the body's heading, the way it was moving, which is the contact normal for a head-on hit: the `bump` clip (`sx` to 0.9, `sy` to 1.06, back by 1.03 and rest, 10 ticks) and `bumpHard` (`sx` to 0.8, `sy` to 1.12, 14 ticks). No flash, no particles. A faint ripple rides on it: a dent at the nose of depth `BUMP_DENT` 0.05 (soft) or 0.12 (hard) on the same `dents.js` store.
+- Priority: the bump tween has rank 0, the lowest, so any running tween (a bite's flinch or lunge, a kill) keeps the slot; the dent keeps the deeper of two, so a bite dent (0.3) is never replaced by a bump's.
+- No pool of its own: it uses the body tweens and dents, which are preallocated per slot.
+
 #### Budget
 
 - Dying bodies: at most `MAX_DYING` (64), each one extra instance row; a dent is a few typed-array writes per bitten agent.
@@ -420,7 +429,7 @@ Today `playDeath` spawns a ghost ring and motes and the body leaves the snapshot
 
 #### Test design
 
-Unit tests, all pure: `hunt-cues.test.js` (jaw target from `JAW_OPEN`, jaw easing is frame-rate independent, thrust and sprint ramps); `dents.test.js` (start, age, the genome guard, the damped sign change, expiry); `sdf-math.test.js` (taper 0 equals the old membrane; a positive taper widens the front; a dent pulls the outline in at its bearing and not opposite); `models.test.js` (the predator has at most 16 parts, a `taper` membrane stays inside `modelBounds`); `clips.test.js` (every new clip stays inside the body scale bound); `wake.test.js` (only running bodies, the cap, alpha fades along the line, nothing past the buffer); `chase-layer.test.js` (the faint tether); `death-anim.test.js` (every cause in `DEATH_CAUSE` has a clip that exists, a length of at least 600 ms and at most 2000 ms; only `EATEN` links the carcass; an unknown name falls back); `dying.test.js` (a vanished agent becomes pending at its last pose; `DIED` starts it; the pool overwrites the oldest; the mass-loss guard; a reused slot; progress and fade by clock; the live-row skip); `agents-pack.test.js` and `agent-rig.test.js` (dying rows packed after live rows, capped at capacity, the dent lane written); `effects-combat.test.js` (a bite starts a dent and a drain; a death hands the body its cause). The browser smoke boots on the new meshes with no console error, and `scripts/` Playwright screenshots show the looks on true black.
+Unit tests, all pure: `hunt-cues.test.js` (jaw target from `JAW_OPEN`, jaw easing is frame-rate independent, thrust and sprint ramps); `dents.test.js` (start, age, the genome guard, the damped sign change, expiry); `sdf-math.test.js` (taper 0 equals the old membrane; a positive taper widens the front; a dent pulls the outline in at its bearing and not opposite); `models.test.js` (the predator has at most 16 parts, a `taper` membrane stays inside `modelBounds`); `clips.test.js` (every new clip stays inside the body scale bound); `wake.test.js` (only running bodies, the cap, alpha fades along the line, nothing past the buffer); `chase-layer.test.js` (the faint tether); `death-anim.test.js` (every cause in `DEATH_CAUSE` has a clip that exists, a length of at least 600 ms and at most 2000 ms; only `EATEN` links the carcass; an unknown name falls back); `dying.test.js` (a vanished agent becomes pending at its last pose; `DIED` starts it; the pool overwrites the oldest; the mass-loss guard; a reused slot; progress and fade by clock; the live-row skip); `agents-pack.test.js` and `agent-rig.test.js` (dying rows packed after live rows, capped at capacity, the dent lane written); `effects-combat.test.js` (a bite starts a dent and a drain; a death hands the body its cause); `bumps.test.js` and `effects-bumps.test.js` (the kind from the speed lost, no bump for a slow or a new body, the cap, the squash clips, the faint ripple, a running bite tween wins); `wake.test.js`; `app-layers.test.js` (the player holds the agent layer's dents and dying bodies). The browser smoke boots on the new meshes with no console error, and `scripts/` Playwright screenshots show the looks on true black.
 
 #### Chunks
 
@@ -499,18 +508,19 @@ Unit tests, all pure: `hunt-cues.test.js` (jaw target from `JAW_OPEN`, jaw easin
 
 ### Phase 2 - The hunt and the death
 
-| #   | Task                                                                                                                                                                           | Nature       | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
-| T27 | This doc phase: Why, designs, Test design, Chunks, Decisions                                                                                                                   | [mechanical] | -          |
-| T28 | `membrane` `taper` in `sdf-math.js`, `sdf.js` and `modelBounds`; the predator model (dart, lips, fangs, two thrust-driven flagella); the `thrust` input; `hunt-cues.js`; tests | [judgement]  | T27        |
-| T29 | The bite: the `lunge` snap clip, `dents.js`, the `iDent` lane and the membrane dent, `biteDrain`, the contact and kill flashes; tests                                          | [judgement]  | T28        |
-| T30 | The chase: the `sprint` loop, `wake.js` in the chase layer, the faint tether; tests                                                                                            | [judgement]  | T28        |
-| T31 | `death-anim.js` (cause to clip, length, carcass link) and the seven death clips and tween kinds; tests                                                                         | [judgement]  | T28        |
-| T32 | `dying.js`: the pool, the last-seen cache, pending bodies, the mass-loss guard; tests                                                                                          | [judgement]  | T31        |
-| T33 | Pack and draw the dying bodies: rows after the live ones, the `fade` word, the live-row skip, the dent lane; tests                                                             | [judgement]  | T29, T32   |
-| T34 | `playDeath` hands the cause to the pending body; the death recipes lose their ghost ring and gain the dispersal; tests                                                         | [judgement]  | T33        |
-| T35 | Browser smoke, Playwright screenshots on true black, the frame measurement where Chromium allows                                                                               | [judgement]  | T30, T34   |
-| T36 | The status line, the index, the pull request; a conformance review by a fresh agent                                                                                            | [mechanical] | T35        |
+| #   | Task                                                                                                                                                                                   | Nature       | Depends on |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T27 | This doc phase: Why, designs, Test design, Chunks, Decisions (built)                                                                                                                   | [mechanical] | -          |
+| T28 | `membrane` `taper` in `sdf-math.js`, `sdf.js` and `modelBounds`; the predator model (dart, lips, fangs, two thrust-driven flagella); the `thrust` input; `hunt-cues.js`; tests (built) | [judgement]  | T27        |
+| T29 | The bite: the `lunge` snap clip, `dents.js`, the `iDent` lane and the membrane dent, `biteDrain`, the contact and kill flashes; tests (built)                                          | [judgement]  | T28        |
+| T30 | The chase: the `sprint` loop, `wake.js` in the chase layer, the faint tether; tests (built)                                                                                            | [judgement]  | T28        |
+| T31 | `death-anim.js` (cause to clip, length, carcass link) and the seven death clips and tween kinds; tests (built)                                                                         | [judgement]  | T28        |
+| T32 | `dying.js`: the pool, the last-seen cache, pending bodies, the mass-loss guard; tests (built)                                                                                          | [judgement]  | T31        |
+| T33 | Pack and draw the dying bodies: rows after the live ones, the `fade` word, the live-row skip, the dent lane; tests (built)                                                             | [judgement]  | T29, T32   |
+| T34 | `playDeath` hands the cause to the pending body; the death recipes lose their ghost ring and gain the dispersal; tests (built)                                                         | [judgement]  | T33        |
+| T35 | Browser smoke, Playwright screenshots on true black, the frame measurement where Chromium allows (built)                                                                               | [judgement]  | T30, T34   |
+| T36 | The status line, the index, the pull request; a conformance review by a fresh agent (built)                                                                                            | [mechanical] | T35        |
+| T37 | Bumps: `bumps.js` reads an impact from the speed lost in a frame, the `bump` and `bumpHard` clips, a faint ripple on the shared dent store, the lowest tween rank; tests (built)       | [judgement]  | T29        |
 
 ## Verification
 
