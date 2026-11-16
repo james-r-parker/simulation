@@ -46,10 +46,10 @@ describe('DEFAULTS tables', () => {
         ]);
         expect(rows).toEqual([
             ['forager', 0, 300, false, 1, 1, 1],
-            ['predator', 1, 350, true, 1, 1, 1],
+            ['predator', 1, 400, true, 1, 1, 1],
             ['reproducer', 2, 250, false, 1, 1, 0.5],
             ['scout', 3, 400, false, 1, 1.5, 1],
-            ['defender', 4, 350, false, 1.2, 0.5, 1],
+            ['defender', 4, 300, false, 1.2, 0.5, 1],
         ]);
     });
 });

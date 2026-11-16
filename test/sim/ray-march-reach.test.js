@@ -71,11 +71,11 @@ describe('a forward-weighted eye', () => {
 
     it('misses a wall behind past the rear reach and sees it at a share of 1', () => {
         const w = reachWorld({ predator: 0.4 });
-        const me = addAgent(w, 150, 500, 10);
+        const me = addAgent(w, w.visionBySpec[PREDATOR] / 2, 500, 10); // the wall at half the range, beyond 0.4 of it
         w.spec[me] = PREDATOR;
         expect(castRay(w, me, BEHIND)[CH_WALL]).toBe(0);
-        const open = reachWorld({});
-        const them = addAgent(open, 150, 500, 10);
+        const open = reachWorld({ predator: 1 });
+        const them = addAgent(open, open.visionBySpec[PREDATOR] / 2, 500, 10);
         open.spec[them] = PREDATOR;
         expect(castRay(open, them, BEHIND)[CH_WALL]).toBe(1);
     });

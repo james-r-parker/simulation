@@ -41,7 +41,7 @@ describe('viewOf', () => {
         const config = createConfig({});
         const weights = new Float32Array(brainLayout(config).weightCount);
         expect(viewOf({ spec: 0, weights: null }, config)).toBe(300);
-        expect(viewOf({ spec: 1, weights }, config)).toBe(350);
+        expect(viewOf({ spec: 1, weights }, config)).toBe(400);
         weights[brainLayout(config).traitStart + TRAIT_INDEX.VISION] = 10;
         expect(viewOf({ spec: 0, weights }, config)).toBeGreaterThan(300 * 1.29);
     });

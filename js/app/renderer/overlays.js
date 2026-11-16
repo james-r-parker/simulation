@@ -55,7 +55,7 @@ export function trackedIds(agents, pick, out) {
 }
 
 const RAY = { angle: 0, length: 0 };
-const ME = { x: 0, y: 0, angle: 0, vision: 0 };
+const ME = { x: 0, y: 0, angle: 0, vision: 0, reach: /** @type {ArrayLike<number> | null} */ (null) };
 const RAYS = { f32: /** @type {Float32Array} */ (new Float32Array(0)), start: 0, count: 0 };
 const CIRCLE = { x: 0, y: 0, radius: 0, sides: 0 };
 const TRAIL_STYLE = { t: 0, rgb: MARKER_COLOR, alpha: 0 };
@@ -63,9 +63,10 @@ const MARKER = { id: 0, alpha: 0, scale: 0 };
 
 /**
  * Adds the rays at their hit lengths: ray `k` points `2 PI k / rayCount` from the heading and reaches
- * `visionRange x (1 - proximity)`.
+ * `visionRange x (1 - proximity)`, a miss only as far as the ray's reach (`reach[k]`, the specialisation's
+ * `rayReach` factors; all 1 when absent).
  * @param {import('./line-buffer.js').LineBuffer} lines the buffer
- * @param {{x: number, y: number, angle: number, vision: number}} agent the agent
+ * @param {{x: number, y: number, angle: number, vision: number, reach?: ArrayLike<number> | null}} agent the agent
  * @param {{f32: Float32Array, start: number, count: number, alpha?: number}} rays the proximities and where they
  *   start, and a fixed alpha for every ray (else each ray's alpha rises with its proximity)
  * @returns {void}
@@ -75,7 +76,7 @@ export function pushRays(lines, agent, rays) {
         const proximity = rays.f32[rays.start + k];
         setLineColor(lines, RAY_COLOR, rays.alpha ?? 0.12 + 0.5 * proximity);
         RAY.angle = agent.angle + (2 * Math.PI * k) / rays.count;
-        RAY.length = agent.vision * (1 - proximity);
+        RAY.length = agent.vision * Math.min(1 - proximity, agent.reach?.[k] ?? 1);
         pushRay(lines, agent.x, agent.y, RAY);
     }
 }
@@ -116,6 +117,7 @@ function pushSelected(frame, info, lines) {
     me.y = agents.y[i];
     me.angle = agents.angle[i];
     me.vision = info.specs[agents.spec[i]]?.visionRange ?? 0;
+    me.reach = info.specs[agents.spec[i]]?.rayReach ?? null;
     if (frame.snapshot !== null) {
         const s = readSections(frame.snapshot.u32, SECTIONS);
         if (s.rayCount > 0) {
