@@ -52,7 +52,7 @@ and every arm reads no harm on the 16-seed keep rule. Lifting the cap trades mat
 - The guards cannot see a loss under a quarter of the seeds on `alive` (25 of 64 is 39%): a small hunter loss is
   not excluded. `held` and `under80` see losses of 10 and 12 seeds.
 - The adoption bar is not met (hunters alive 40/64 against 0.75; seeds under 80 4/64 against 3/64), as it is not met by
-  the control (about 34/64). It is not the keep rule's test: nothing realistic is deleted here, and the plan's done
+  the control (about 46/64): the finalist has a net 6 seeds fewer with hunters alive, and the alive guard reads no harm only because it cannot see a loss under 25 seeds. Hunter survival is the open cost of this switch. It is not the keep rule's test: nothing realistic is deleted here, and the plan's done
   condition is the keep rule reading no guard `WORSE`.
 - Targets: `eval.childshare_by_condition` -0.0003 to 0.0005 (difference 0.00084, interval [0.00033, 0.00138]), above 0.
   `eval.edge_starve_per_prey` is null on some seeds (no edge checkpoint), so it has no verdict; its reference form
@@ -73,3 +73,6 @@ bag) is weakened by more splits, but `mateScarce` still forces a mating the tick
 `splitClonalMax`, `clonalDepth` and the clonal gate share. Open, for the next balance pass and not a Phase 4 task: the
 juvenile hunter deaths and the slower first kill (hunters split more, mate less); a hunter-side mating push would be
 planned in the hunter docs, with `eval.hunter_juvenile_death_share` as its detector.
+
+The grids `evals/screens/honest-edge.grid.json`, `clonal.grid.json` and `mate-range.grid.json` name `splitClonalMax` or
+`splitGiftGene`, deleted at T26: they are the record of their runs and no longer load on this tree.

@@ -207,7 +207,7 @@ against 0.112, `eval.childshare_by_condition` above 0, fewer seeds under the spe
 the keep rule reads no harm: no guard `WORSE` (alive 18 harmed against 12 recovered, under80 4 against 3, held 7 against
 2, `eval.hunter_catches_per_1k` -0.028 [-0.102, 0.045]; smallest losses detected 25, 12 and 10 seeds and 0.073), and
 `eval.childshare_by_condition` rises to 0.0005. The Done-when row is met, so T26 made the switch: `birthReserve` 300 is the default, a split always gives the `childShare` gene's share, and `splitClonalMax`, `splitGiftGene`, `clonalDepth` and `eval.edge_split_blocked_share.clonal` are deleted (season 10's `rulesHash` moved in place to `e280f7fe28ab36fa`; `docs/designs/metrics.md` regenerated). Open, for the next
-balance pass: hunter births are 92% splits and juvenile hunter deaths rise (0.76 to 0.86).
+balance pass: hunters alive at the last tick fall from about 46 to 40 of 64 seeds (a net loss the alive guard cannot see under 25 seeds), hunter births are 92% splits and juvenile hunter deaths rise (0.76 to 0.86).
 
 ### Phase 5 - A call changes the bite
 
