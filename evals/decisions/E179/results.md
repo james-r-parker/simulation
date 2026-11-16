@@ -113,7 +113,7 @@ with no verdict. The matured share does not move; the lineage share and the spec
 with intervals that exclude 0, and the hunters' world empties 12% more often (22.6 to 25.2 `LastHunterDied` per seed, interval
 excludes 0). Those are small costs the guards do not cover.
 
-## Recommendation (awaiting the user's review; nothing is switched here)
+## Recommendation (adopted by the user on 2026-11-16, see Decision)
 
 **Adopt `killGorgeShare` 0.4 as a narrow change (a T37 for this lever only), and keep Phase 6 open.** This is the
 sub-agent's recommendation, not a decision.
@@ -132,3 +132,12 @@ sub-agent's recommendation, not a decision.
   held-out confirmation) were not run here.
 - A default change moves `rulesHash`: a breaking commit on the open season with re-pinned goldens, which is the T37 work
   and was not started.
+
+## Decision (user, 2026-11-16)
+
+The user adopted `killGorgeShare` 0.4 as a narrow T37 for this lever only, with Phase 6 kept open, despite the unmet
+Done-when row (juvenile death share 0.855 against below 0.55; hunters alive on 41 of 64 against 48). The switch is in
+branch `feat/honest-budgets-gorge`: the default moves 1 to 0.4, season 10 (unreleased) takes `rulesHash`
+`38be2908ad820c86` in place, and the goldens are re-pinned in their own commit. T36a is not run: it confirms a recruitment
+finalist, and this lever does not claim to fix recruitment. The next step is a new recruitment screen without
+`specFlipNoHunt` on the new defaults (honest-budgets T39).

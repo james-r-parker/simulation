@@ -1,6 +1,6 @@
 # Honest budgets
 
-**Status:** In progress - Phase 1 (patch stock pays for plant food) and Phase 2 (the kill is the body) and Phase 4 (the edge breeds) built in season 10; Phase 3 (impacts, not contact) is parked on E176; Phase 5 (a call changes the bite) is parked on E178; Phase 6 is in progress: its diagnostics (T33 to T33b) are built, the screen (T35) and the 64-seed keep rule (T36) are recorded (E179), and the switch awaits the user's review.
+**Status:** In progress - Phase 1 (patch stock pays for plant food) and Phase 2 (the kill is the body) and Phase 4 (the edge breeds) built in season 10; Phase 3 (impacts, not contact) is parked on E176; Phase 5 (a call changes the bite) is parked on E178; Phase 6 is in progress: its diagnostics (T33 to T33b) are built, the screen (T35) and the 64-seed keep rule (T36) are recorded (E179), and on 2026-11-16 the user adopted `killGorgeShare` 0.4 as a narrow T37 (season 10, unreleased) despite the unmet Done-when row; Phase 6 stays open for the juvenile, territory and split-energy levers (T39), and T36a is not run.
 **Validated:** 2fc8f7f5 (2026-11-15)
 **Priority:** 2 - the 128-seed read of [review-2026-11-11.md](../review-2026-11-11.md): most seeds boom to the cap and fall under 40 while food never runs short, so every scene that needs a standing prey population is tuned on top of the crash; food, the kill and the rocks come before any skill, refuge or call work
 **Depends on:** [metric-trust.md](metric-trust.md)
@@ -298,7 +298,18 @@ alone (`gorge`) is the finalist, and on 64 matched seeds (65 to 128) the keep ru
 recovered, smallest loss detected 28 seeds). It makes carcasses real food (`eval.hunter_income_share.carcass` 0.005 to
 0.152, carcass energy eaten 0.16 to 0.57) but leaves `eval.hunter_juvenile_death_share` at 0.86 and hunters alive on
 41 of 64, so the Done-when row is not met. The recommendation (adopt the one lever, keep Phase 6 open for the juvenile and
-territory levers, or park) awaits the user's review; T36a and the switch are not run.
+territory levers, or park) went to the user, who adopted the narrow switch on 2026-11-16 (below); T36a is not run.
+
+**Adopted (user, 2026-11-16): `killGorgeShare` 0.4 only.** The user read the recommendation in the E179 results and adopted
+the one lever as a narrow T37, with Phase 6 kept open. The Done-when row (`eval.hunter_juvenile_death_share` below 0.55,
+hunters alive on 48 of 64) is not met and stays the Phase 6 bar; the adoption rests on the keep rule ("A realistic mechanism
+stays", [principles.md](../principles.md)) and on the scavenge scene (`eval.hunter_income_share.carcass` 0.005 to 0.152).
+`killGorgeShare` stays a config key (no flag to delete; it is a share, not a switch). Season 10 is unreleased, so its
+`rulesHash` moves in place to `38be2908ad820c86`; the goldens, the busy effect stream and the five WASM fixtures were
+re-pinned in their own commit. T36a (no-rescue, held-out confirmation with lever ablations) is **not run** for this
+adoption: it exists to confirm a recruitment finalist, and this lever does not claim to fix recruitment (the juvenile death
+share does not move), so there is nothing for it to confirm; it is owed by whatever finalist T39 names. T39 is the next step:
+a new recruitment screen without `specFlipNoHunt`, on the new defaults.
 
 T36a confirms recruitment with floor/reseeding disabled and initial founders labelled separately, on held-out seeds for at least two full seasons and two descendant generations where present. An extinct run remains a failure, not a censored success. Compare the finalist, control and single-lever ablations; preserve the existing 64-seed keep rule. A hunter that lives longer without replacing itself does not establish a sustainable lineage. Record clips of a first kill, a surviving family and an unsuccessful chase abandoned; absent scenes remain open findings.
 
@@ -386,17 +397,18 @@ T36a confirms recruitment with floor/reseeding disabled and initial founders lab
 
 ### Phase 6 - Predator recruitment and juvenile survival
 
-| #    | Task                                                                                                                                                                                        | Nature       | Depends on      |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------- |
-| T33  | Fix `eval.boom_bust_count` to scan total-population troughs alongside hunter troughs; tests                                                                                                 | [judgement]  | T32             |
-| T33a | Add cohort recruitment and failed-chase budget diagnostics with seeded observer tests (censoring, slot reuse and birth-source attribution); record baseline and detector power in sim-notes | [judgement]  | T33             |
-| T33b | Audit food-pool carcass loss with full-pool fixtures and an energy-loss report; specify a bounded capacity arm only if the loss is material                                                 | [judgement]  | T33a            |
-| T34  | Add `killGorgeShare` (leaving a real carcass), `territoryMax`/`territoryRadius`/`splitMinEnergyMultiplier` arms and the juvenile diet / `huntSizeRatio` / `childSpec` arms; tests           | [judgement]  | T33             |
-| T35  | Write `evals/screens/honest-recruit.grid.json`, the E-record prediction and run the 16-seed screen; name the finalist                                                                       | [judgement]  | T34, T33a, T33b |
-| T36  | Run the finalist against the control on 64 matched seeds with `--keep-rule`; record the verdict                                                                                             | [mechanical] | T35             |
-| T36a | Run held-out, no-rescue recruitment confirmation and lever ablations; report descendant replacement, seasonal failure and replayable scene clips before adoption                            | [judgement]  | T36             |
-| T37  | The switch: adopt the winning defaults, delete replaced keys/switches, open a new season, re-pin goldens; or park the branch                                                                | [mechanical] | T36a            |
-| T38  | Conformance review of Phase 6, in parallel with `scripts/check.sh`; move the Status line                                                                                                    | [judgement]  | T37             |
+| #    | Task                                                                                                                                                                                               | Nature       | Depends on      |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------- |
+| T33  | Fix `eval.boom_bust_count` to scan total-population troughs alongside hunter troughs; tests                                                                                                        | [judgement]  | T32             |
+| T33a | Add cohort recruitment and failed-chase budget diagnostics with seeded observer tests (censoring, slot reuse and birth-source attribution); record baseline and detector power in sim-notes        | [judgement]  | T33             |
+| T33b | Audit food-pool carcass loss with full-pool fixtures and an energy-loss report; specify a bounded capacity arm only if the loss is material                                                        | [judgement]  | T33a            |
+| T34  | Add `killGorgeShare` (leaving a real carcass), `territoryMax`/`territoryRadius`/`splitMinEnergyMultiplier` arms and the juvenile diet / `huntSizeRatio` / `childSpec` arms; tests                  | [judgement]  | T33             |
+| T35  | Write `evals/screens/honest-recruit.grid.json`, the E-record prediction and run the 16-seed screen; name the finalist                                                                              | [judgement]  | T34, T33a, T33b |
+| T36  | Run the finalist against the control on 64 matched seeds with `--keep-rule`; record the verdict                                                                                                    | [mechanical] | T35             |
+| T36a | Run held-out, no-rescue recruitment confirmation and lever ablations; report descendant replacement, seasonal failure and replayable scene clips before adoption                                   | [judgement]  | T36             |
+| T37  | The switch: adopt the winning defaults, delete replaced keys/switches, open a new season, re-pin goldens; or park the branch (built for `killGorgeShare` 0.4 only, 2026-11-16, season 10 in place) | [mechanical] | T36a            |
+| T38  | Conformance review of Phase 6, in parallel with `scripts/check.sh`; move the Status line                                                                                                           | [judgement]  | T37             |
+| T39  | Screen the juvenile, territory and split-energy levers again on the `killGorgeShare` 0.4 defaults, without `specFlipNoHunt` (it empties the hunters' world); then T36a on a finalist               | [judgement]  | T37             |
 
 ## Verification
 
