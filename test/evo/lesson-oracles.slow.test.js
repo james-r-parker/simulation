@@ -15,6 +15,7 @@ const AT_LEAST = {
     'prey-crossing': 0.3,
     'hunter-flank': 0.5,
     'kin-spared': 0.2,
+    'pack-converge': 0.2,
     'prey-ahead': 0.1,
     'rock-refuge': 0,
 };

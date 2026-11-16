@@ -3,6 +3,7 @@
 // mate rank or archive rank. Pure.
 
 import { wilsonInterval } from './binomial.js';
+import { pooledArmReading } from './drill-arms.js';
 
 /**
  * @typedef {object} ReadingCell
@@ -12,6 +13,7 @@ import { wilsonInterval } from './binomial.js';
  * @property {number} randomWins wins of the random brains, pooled
  * @property {number} randomTrials trials of the random brains, pooled
  * @property {Record<string, number>} [lossReasons] counts by first-match lost-trial reason
+ * @property {Record<string, {wins: number, trials: number}>} [arms] the control arms' scores (`pack-converge`)
  */
 
 /**
@@ -20,6 +22,9 @@ import { wilsonInterval } from './binomial.js';
  * @property {number | null} edgeLow `winShareLow` minus the Wilson high bound of the random brains' pooled share
  * @property {number | null} winShareOverReference `winShareLow` over the reference's win share (null: no reference or 0)
  * @property {Record<string, number>} lossShare each lost-trial reason's share of the lost trials
+ * @property {number | null} [gainLow] `pack-converge` only: the trio's win share low bound minus the solo arm's high bound
+ *   (`js/evo/drill-arms.js`), pooled over the champions
+ * @property {number | null} [blindGapLow] `pack-converge` only: the same against the kin-blind arm
  */
 
 /** The first-match lost-trial reasons of a drill (`LostReason` in `js/evo/drill-trace.js`, and `bit-kin`, the `kin-spared` loss of a subject that wished to bite its sibling); a reason that did not occur reads 0. */
@@ -31,6 +36,21 @@ export const LOST_REASONS = Object.freeze([
     'prey-died-unkilled',
     'bit-kin',
 ]);
+
+/**
+ * @param {readonly ReadingCell[]} cells the cells of the champions a drill applied to
+ * @returns {{gainLow: number | null, blindGapLow: number | null} | {}} the pooled arm readings of a drill with control arms
+ *   (null where an arm was not played), nothing for a drill without
+ */
+function armReadings(cells) {
+    if (!cells.some((cell) => cell.arms !== undefined)) {
+        return {};
+    }
+    const pooled = pooledArmReading(
+        cells.map((cell) => ({ trio: { wins: cell.wins, trials: cell.trials }, arms: cell.arms ?? {} })),
+    );
+    return { gainLow: pooled?.gainLow ?? null, blindGapLow: pooled?.blindGapLow ?? null };
+}
 
 /**
  * @param {readonly ReadingCell[]} cells the cells of the champions a drill applied to
@@ -54,7 +74,13 @@ function drillReading(cells, reference) {
         }
     }
     const over = reference !== null && reference.winShare > 0 ? winShareLow / reference.winShare : null;
-    return { winShareLow, edgeLow: winShareLow - random.high, winShareOverReference: over, lossShare };
+    return {
+        winShareLow,
+        edgeLow: winShareLow - random.high,
+        winShareOverReference: over,
+        lossShare,
+        ...armReadings(cells),
+    };
 }
 
 /**

@@ -11,9 +11,12 @@ import {
     skipReason,
     winBounds,
 } from '../../js/evo/drill.js';
+import { oracleSubject } from '../../js/evo/lesson-oracles.js';
 import { referenceSubject } from '../../js/evo/memory-probe-references.js';
+import { createRng, fork } from '../../js/sim/rng.js';
 
 const drill = (/** @type {string} */ name) => /** @type {any} */ (DRILLS.find((d) => d.name === name));
+const stream = (/** @type {string} */ name) => fork(createRng(1), `drill:${name}`);
 const zero = (/** @type {number} */ spec) => ({
     name: 'zero',
     id: 7,
@@ -134,5 +137,38 @@ describe('drillSubject and drillEdge', () => {
             ['debug', 'DrillTrial', 1, false],
             ['debug', 'DrillTrial', 2, false],
         ]);
+    });
+});
+
+describe('control arms', () => {
+    const pack = drill('pack-converge');
+
+    it('plays the arms only when asked, on the same bearings, and replays from the seed', () => {
+        const options = { seed: 2, trials: 3 };
+        const subject = oracleSubject('pack-converge');
+        const plain = drillSubject(pack, subject, options);
+        expect(plain.arms).toBeUndefined();
+        const withArms = drillSubject(pack, subject, { ...options, arms: true });
+        expect(withArms).toEqual({ ...plain, arms: withArms.arms });
+        expect(Object.keys(/** @type {object} */ (withArms.arms))).toEqual(['solo', 'kin-blind']);
+        expect(withArms.arms?.solo.trials).toBe(3);
+        expect(drillSubject(pack, subject, { ...options, arms: true })).toEqual(withArms);
+    });
+
+    it('has no arms for a drill without them, whatever is asked', () => {
+        expect(drillSubject(drill('food-ahead'), zero(0), { trials: 1, arms: true }).arms).toBeUndefined();
+    });
+
+    it('runs the drill under its arena rules over the caller config: a wall costs nothing in pack-converge', () => {
+        const plan = pack.plan(stream(pack.name), 400);
+        expect(pack.arena).toEqual({ wallDamage: 0 });
+        expect(plan.maxTicks).toBe(600);
+        expect(drillSubject(pack, zero(1), { trials: 2, config: { wallDamage: 5 } }).wins).toBe(0);
+    });
+
+    it('passes the subject arms through drillEdge, and skips a subject that cannot hunt', () => {
+        const edge = drillEdge(pack, oracleSubject('pack-converge'), { trials: 2, arms: true });
+        expect(Object.keys(edge.arms ?? {})).toEqual(['solo', 'kin-blind']);
+        expect(drillEdge(pack, oracleSubject('pack-converge'), { trials: 2 }).arms).toBeUndefined();
     });
 });

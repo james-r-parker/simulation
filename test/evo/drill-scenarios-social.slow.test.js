@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
+import { armReading } from '../../js/evo/drill-arms.js';
 import { SOCIAL_DRILLS } from '../../js/evo/drill-scenarios-social.js';
 import { drillSubject, randomBrains } from '../../js/evo/drill.js';
 import { oracleSubject } from '../../js/evo/lesson-oracles.js';
@@ -22,6 +23,8 @@ describe('the social drills are valid: the scripted subject wins, random and sti
         ['prey-crossing', () => referenceSubject('input-reader'), 0.6],
         ['prey-crossing', () => oracleSubject('prey-crossing'), 0.3],
         ['hunter-flank', () => oracleSubject('hunter-flank'), 0.5],
+        ['pack-converge', () => referenceSubject('memoryless'), 0.6],
+        ['pack-converge', () => oracleSubject('pack-converge'), 0.2],
     ])) {
         it(
             `${name}: ${subject().name} wins at least ${floor} of ${TRIALS} trials`,
@@ -34,7 +37,7 @@ describe('the social drills are valid: the scripted subject wins, random and sti
         );
     }
 
-    for (const name of ['prey-crossing', 'hunter-flank']) {
+    for (const name of ['prey-crossing', 'hunter-flank', 'pack-converge']) {
         it(
             `${name}: no random brain and no still brain wins a trial`,
             () => {
@@ -102,6 +105,31 @@ describe('kin-spared on brains that bite everything, nothing and only prey', () 
             expect(wins).toBeGreaterThan(0);
             expect(records.every((r) => r.kinBiteTicks === 0)).toBe(true);
             expect(records.some((r) => r.kinJawTicks > 0)).toBe(true);
+        },
+        scaleTimeout(60_000),
+    );
+});
+
+describe('pack-converge arms', () => {
+    const drill = byName('pack-converge');
+
+    it(
+        'reads no pack in a scripted hunter: the kin-blind trio does as well as the trio, so the gap low bound is not above 0',
+        () => {
+            const score = drillSubject(drill, referenceSubject('memoryless'), { trials: TRIALS, arms: true });
+            const reading = armReading(score, /** @type {any} */ (score.arms));
+            expect(reading?.blindShare).toBe(score.winShare);
+            expect(reading?.blindGapLow).toBeLessThanOrEqual(0);
+            expect(reading?.gainLow).toBeLessThanOrEqual(0);
+        },
+        scaleTimeout(60_000),
+    );
+
+    it(
+        'plays a still trio, solo and kin-blind alike, to no win: an idle hunter cannot win where a wall costs nothing',
+        () => {
+            const score = drillSubject(drill, { ...zeroBrain(), spec: 1 }, { trials: 4, arms: true });
+            expect([score.wins, score.arms?.solo.wins, score.arms?.['kin-blind'].wins]).toEqual([0, 0, 0]);
         },
         scaleTimeout(60_000),
     );

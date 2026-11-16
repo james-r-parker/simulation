@@ -108,6 +108,22 @@ describe('oracleSubject', () => {
         expect(act('kin-spared', scene({ agents: [at(1540)] }))[OUTPUT_INDEX.BITE]).toBe(1);
     });
 
+    it('sends every hunter of a pack at the first forager in pack-converge, and nobody when it is gone', () => {
+        const hunter = { role: 'subject', x: 1500, y: 1920, angle: 0, spec: 1, energy: 1500 };
+        const prey = { role: 'prey', x: 1800, y: 2000, angle: 0, spec: 0, energy: 2000 };
+        const world = scene({ agents: [hunter, prey] });
+        world.spec[0] = 1;
+        const first = act('pack-converge', world);
+        expect([first[OUTPUT_INDEX.SPRINT], first[OUTPUT_INDEX.BITE]]).toEqual([1, 1]);
+        expect(world.outputs[OUTPUT_COUNT + OUTPUT_INDEX.SPRINT]).toBe(1);
+        expect(world.outputs[OUTPUT_COUNT + OUTPUT_INDEX.TURN]).toBeGreaterThan(0);
+        expect(world.outputs[2 * OUTPUT_COUNT + OUTPUT_INDEX.BITE]).toBe(0);
+        world.alive[2] = 0;
+        world.outputs.fill(0);
+        oracleSubject('pack-converge').act?.(world);
+        expect(world.outputs.every((/** @type {number} */ v) => v === 0)).toBe(true);
+    });
+
     it('does not act for a dead subject', () => {
         const world = scene({ foods: [{ x: 1700, y: 2100 }] });
         world.alive[0] = 0;

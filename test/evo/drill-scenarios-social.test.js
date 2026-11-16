@@ -124,3 +124,43 @@ describe('kin-spared', () => {
         expect(plan.trace(false)).toMatchObject({ kinJawTicks: 0, kinBiteTicks: 0 });
     });
 });
+
+describe('pack-converge', () => {
+    it('stages three sibling hunters abreast and one prey ahead that one bite cannot kill, with the probe arena rules', () => {
+        const drill = byName('pack-converge');
+        const { agents } = drill.plan(stream('pack-converge'), 400).stage;
+        expect(agents.map((/** @type {any} */ a) => a.role)).toEqual(['subject', 'subject', 'subject', 'prey']);
+        expect(new Set(agents.slice(0, 3).map((/** @type {any} */ a) => a.parents[0])).size).toBe(1);
+        expect(agents[0].parents[0]).not.toBe(0);
+        expect(agents[3].energy).toBe(2000);
+        expect(Math.hypot(agents[3].x - CENTRE_X, agents[3].y - CENTRE_Y)).toBeCloseTo(PREY_VIEW_SHARE * 400, 6);
+        expect(drill.arena).toEqual({ wallDamage: 0 });
+        expect(drill.needsHunter).toBe(true);
+    });
+
+    it('has a solo arm of one hunter and a kin-blind arm of three on the same bearings as the trio', () => {
+        const drill = byName('pack-converge');
+        expect(drill.arms.map((/** @type {any} */ a) => [a.name, a.controlSpec])).toEqual([
+            ['solo', { name: 'solo' }],
+            ['kin-blind', { name: 'kin-blind', kinBlind: true }],
+        ]);
+        const trio = drill.plan(stream('pack-converge'), 400).stage.agents;
+        const [solo, blind] = drill.arms.map(
+            (/** @type {any} */ arm) => arm.plan(stream('pack-converge'), 400).stage.agents,
+        );
+        expect(solo).toHaveLength(2);
+        expect(blind).toEqual(trio);
+        expect(solo[1]).toEqual(trio[3]);
+        expect(solo[0].angle).toBe(trio[0].angle);
+    });
+
+    it('is won when the prey (the slot after the hunters) is dead', () => {
+        const plan = byName('pack-converge').plan(stream('pack-converge'), 400);
+        const world = (/** @type {number} */ prey) => /** @type {any} */ ({ alive: Uint8Array.of(1, 1, 1, prey) });
+        expect([plan.won(world(0)), plan.won(world(1)), plan.done(world(0), /** @type {any} */ ({}))]).toEqual([
+            true,
+            false,
+            true,
+        ]);
+    });
+});

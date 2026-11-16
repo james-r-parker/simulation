@@ -163,7 +163,7 @@ function buildTasks(args, { genomes, config }) {
                     label: entry.label,
                     drill: drill.name,
                     index: -1,
-                    task: { drill: drill.name, subject: entry.subject, ...common },
+                    task: { drill: drill.name, subject: entry.subject, ...common, arms: true },
                 });
             }
         }
@@ -219,6 +219,7 @@ function rowsOf(args, { genomes, tasks, results, log }) {
                 ...winBounds({ wins: results[at].wins, trials: results[at].trials }, randoms),
                 wins: results[at].wins,
                 trials: results[at].trials,
+                ...(results[at].arms === undefined ? {} : { arms: results[at].arms }),
                 randomWins: randoms.reduce((sum, score) => sum + score.wins, 0),
                 randomTrials: randoms.reduce((sum, score) => sum + score.trials, 0),
                 lossReasons,

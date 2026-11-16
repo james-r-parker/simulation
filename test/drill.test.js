@@ -94,6 +94,26 @@ describe('the report', () => {
         expect(first.split(/\s{2,}/)[1]).toBe('0.75 [0.58] (+0.50, +0.31)');
     });
 
+    it('prints the control arms of a pack cell: both shares, the gain and the two low bounds', () => {
+        const cell = {
+            winShare: 0.75,
+            edge: 0.5,
+            wins: 48,
+            trials: 64,
+            arms: { solo: { wins: 8, trials: 64 }, 'kin-blind': { wins: 24, trials: 64 } },
+        };
+        const [, first] = formatTable(['pack-converge'], [{ label: 'g', cells: { 'pack-converge': cell } }]);
+        expect(first).toMatch(/solo 0\.13, blind 0\.38, gain \+0\.63 \[\+0\.\d\d\], gap \[\+0\.\d\d\]/);
+        const bare = { ...cell, arms: undefined };
+        expect(formatTable(['pack-converge'], [{ label: 'g', cells: { 'pack-converge': bare } }])[1]).not.toContain(
+            'solo',
+        );
+        const half = { ...cell, arms: { solo: { wins: 1, trials: 64 } } };
+        expect(formatTable(['pack-converge'], [{ label: 'g', cells: { 'pack-converge': half } }])[1]).not.toContain(
+            'gain',
+        );
+    });
+
     it('prints first-match lost-trial reasons in the cell', () => {
         const [, first] = formatTable(
             ['prey-ahead'],

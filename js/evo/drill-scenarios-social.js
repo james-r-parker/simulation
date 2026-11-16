@@ -5,8 +5,10 @@
 
 import { detCos, detSin } from '../sim/det-math.js';
 import { createKinTrace, noteKin } from './drill-kin-trace.js';
+import { ARM_NAMES } from './drill-arms.js';
 import { offset, killed, preyDrill, stage, subjectAt } from './drill-staging.js';
 import { createPreyTrace, lostReason, noteTick, traceFields } from './drill-trace.js';
+import { GROUP_ARENA_RULES, GROUP_CONTROL, TRIO, huntPlan } from './memory-probe-group.js';
 import {
     CENTRE_X,
     CENTRE_Y,
@@ -127,5 +129,27 @@ const KIN_SPARED = {
     },
 };
 
+/** @type {import('./drill-staging.js').Drill} three sibling clones of the subject on a prey one bite cannot kill; the arms are the group-hunt probe's controls */
+const PACK_CONVERGE = {
+    name: 'pack-converge',
+    scene: 'Pack, or loner',
+    spec: PREDATOR_SPEC,
+    needsHunter: true,
+    arena: GROUP_ARENA_RULES,
+    plan: (rng, view) => huntPlan(rng, view, TRIO),
+    arms: Object.freeze([
+        {
+            name: ARM_NAMES.SOLO,
+            plan: (rng, view) => huntPlan(rng, view, 1),
+            controlSpec: { name: GROUP_CONTROL.SOLO },
+        },
+        {
+            name: ARM_NAMES.BLIND,
+            plan: (rng, view) => huntPlan(rng, view, TRIO),
+            controlSpec: { name: GROUP_CONTROL.BLIND, kinBlind: true },
+        },
+    ]),
+};
+
 /** The social drills, in the doc's order. */
-export const SOCIAL_DRILLS = Object.freeze([PREY_CROSSING, HUNTER_FLANK, KIN_SPARED]);
+export const SOCIAL_DRILLS = Object.freeze([PREY_CROSSING, HUNTER_FLANK, KIN_SPARED, PACK_CONVERGE]);

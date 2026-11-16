@@ -68,3 +68,40 @@ describe('a cell without lost-trial reasons', () => {
         expect(drillReadings([{ cells: { a: bare } }], 1, ['a']).a.lossShare['never-bit']).toBe(0);
     });
 });
+
+describe('drillReadings of a drill with control arms', () => {
+    const armed = (/** @type {number} */ wins, /** @type {number} */ solo, /** @type {number} */ blind) => ({
+        ...cell(wins),
+        arms: { solo: { wins: solo, trials: 64 }, 'kin-blind': { wins: blind, trials: 64 } },
+    });
+
+    it('reads the gain and the kin-blind gap low bounds over the trials pooled across champions', () => {
+        const rows = [{ cells: { pack: armed(48, 8, 24) } }, { cells: { pack: armed(40, 4, 20) } }];
+        const { pack } = drillReadings(rows, 2, ['pack']);
+        const low = wilsonInterval(88, 128).low;
+        expect(pack.gainLow).toBeCloseTo(low - wilsonInterval(12, 128).high, 12);
+        expect(pack.blindGapLow).toBeCloseTo(low - wilsonInterval(44, 128).high, 12);
+        expect(pack.gainLow).toBeGreaterThan(0);
+    });
+
+    it('reads a trio no better than its kin-blind control as a gap low bound under 0', () => {
+        const { pack } = drillReadings([{ cells: { pack: armed(40, 4, 38) } }], 1, ['pack']);
+        expect(/** @type {number} */ (pack.gainLow)).toBeGreaterThan(0);
+        expect(/** @type {number} */ (pack.blindGapLow)).toBeLessThan(0);
+    });
+
+    it('reads null when a champion has no arms, and leaves the fields out of a drill that has none', () => {
+        const rows = [
+            { cells: { pack: armed(48, 8, 24), plain: cell(30) } },
+            { cells: { pack: cell(30), plain: null } },
+        ];
+        const { pack, plain } = drillReadings(rows, 2, ['pack', 'plain']);
+        expect(pack.gainLow).toBeTypeOf('number');
+        expect('gainLow' in plain).toBe(false);
+        const noArms = drillReadings([{ cells: { pack: armed(10, 0, 0) } }, { cells: { pack: cell(30) } }], 1, [
+            'pack',
+        ]);
+        expect(noArms.pack.gainLow).toBeTypeOf('number');
+        expect(drillReadings([], 0, ['pack']).pack.gainLow).toBeUndefined();
+    });
+});
