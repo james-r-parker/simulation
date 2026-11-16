@@ -11,6 +11,7 @@ import { bodyInput, turnAway } from './scripted-combat.js';
 import { nearestClassRay } from './observer-tick.js';
 import {
     CH_FOOD,
+    CH_KIN,
     CH_PREY,
     CH_THREAT,
     SEEK_THRUST,
@@ -100,5 +101,53 @@ export function readerSubject() {
         spec: null,
         weights: null,
         act: eachAlive((world, slot) => read(world, slot)),
+    };
+}
+
+/** The name of the reference that spares kin (`kin-spared`). */
+export const KIN_SPARING = 'kin-sparing';
+
+/**
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the agent
+ * @param {number} ray a ray index
+ * @returns {number} how near the ray's hit is (1 at contact)
+ */
+function nearness(world, slot, ray) {
+    return world.inputs[slot * world.layout.rawInputCount + ray * RAY_CHANNELS];
+}
+
+/**
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the agent
+ * @returns {void} withdraws the bite while a clone is nearer than the prey on the rays: the sim refuses a bite on kin, but
+ *   the lesson is not to want one (`kin-spared`)
+ */
+function spareKin(world, slot) {
+    const kin = nearestClassRay(world, slot, CH_KIN, CH_KIN);
+    const prey = nearestClassRay(world, slot, CH_PREY, CH_PREY);
+    if (kin >= 0 && (prey < 0 || nearness(world, slot, kin) > nearness(world, slot, prey))) {
+        setOutput(world, slot, OUTPUT_INDEX.BITE, 0);
+    }
+}
+
+/**
+ * @returns {import('./memory-probe-run.js').Subject} the input reader that holds its bite while a clone is nearer than the
+ *   prey: the senses-only reference of `kin-spared`, where `memoryless` and `input-reader` bite whenever prey is in view
+ */
+export function kinSparingSubject() {
+    const reader = readerSubject();
+    const act = /** @type {(world: Record<string, any>) => void} */ (reader.act);
+    return {
+        ...reader,
+        name: KIN_SPARING,
+        act: (world) => {
+            act(world);
+            for (let slot = 0; slot < world.alive.length; slot++) {
+                if (world.alive[slot] === 1) {
+                    spareKin(world, slot);
+                }
+            }
+        },
     };
 }

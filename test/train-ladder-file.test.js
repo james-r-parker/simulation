@@ -11,7 +11,7 @@ import { loadStages } from '../scripts/lib/train-state.mjs';
 const readJson = (path) => JSON.parse(readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'));
 
 const LADDER = readJson('evals/train-ladder.json');
-const ORDER = ['nursery', 'hunt-contact', 'hunt', 'evade', 'arms-race', 'pack', 'habitat', 'world'];
+const ORDER = ['nursery', 'hunt-contact', 'hunt', 'evade', 'arms-race', 'habitat', 'world'];
 
 describe('evals/train-ladder.json', () => {
     it('lists the stages of the design doc in order, the world last', () => {
@@ -30,12 +30,10 @@ describe('evals/train-ladder.json', () => {
         ).not.toThrow();
     });
 
-    it('makes `pack` the only optional stage, and every gated stage has its limits', () => {
+    it('leaves `pack` out (its gate has no valid reference) and gives every gated stage its limits', () => {
         const gated = LADDER.filter((/** @type {any} */ e) => e.gate !== undefined);
-        expect(gated.map((/** @type {any} */ e) => e.name)).toEqual(ORDER.slice(0, 7));
-        expect(LADDER.filter((/** @type {any} */ e) => e.optional).map((/** @type {any} */ e) => e.name)).toEqual([
-            'pack',
-        ]);
+        expect(gated.map((/** @type {any} */ e) => e.name)).toEqual(ORDER.slice(0, -1));
+        expect(LADDER.some((/** @type {any} */ e) => e.name === 'pack' || e.optional)).toBe(false);
         for (const entry of gated) {
             expect(entry.minGenerations).toBeLessThanOrEqual(entry.maxGenerations);
         }

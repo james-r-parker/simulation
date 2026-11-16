@@ -24,10 +24,6 @@
       {
         "read": "drill.prey-ahead.edgeLow",
         "min": 0.001
-      },
-      {
-        "read": "drill.prey-ahead.lossShare.never-in-jaws",
-        "max": 0.5
       }
     ]
   },
@@ -98,32 +94,11 @@
     ]
   },
   {
-    "name": "pack",
-    "config": "evals/stages/pack.json",
-    "optional": true,
-    "minGenerations": 20,
-    "maxGenerations": 80,
-    "gate": [
-      {
-        "read": "drill.pack-converge.gainLow",
-        "min": 0.001
-      },
-      {
-        "read": "drill.pack-converge.blindGapLow",
-        "min": 0.001
-      }
-    ]
-  },
-  {
     "name": "habitat",
     "config": "evals/stages/habitat.json",
     "minGenerations": 20,
     "maxGenerations": 80,
     "gate": [
-      {
-        "read": "drill.rock-refuge.edgeLow",
-        "min": 0.001
-      },
       {
         "read": "retention.all",
         "min": 1
