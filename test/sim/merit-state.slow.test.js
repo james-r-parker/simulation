@@ -8,6 +8,7 @@ import { createObserver, observe, observerPhases } from '../../js/evo/observer.j
 import { createRandomBrain } from '../../js/evo/policies/random-brain.js';
 import { SURVIVABLE_PREDATOR_EVERY, playPredatorWorld, survivableWorld } from '../evo/helpers/predator-world.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const TICKS = 3000;
 const MAX_SLOTS = 4096;
@@ -92,23 +93,27 @@ function agreementHarness() {
 }
 
 describe('the sim tracker agrees with observer.intent', () => {
-    it('on every tick and every slot of the default world, seed 1, 3000 ticks, random brains', () => {
-        const config = createConfig({ ...SIMPLE_WORLD, seed: 1 });
-        const policy = createRandomBrain(config).brain;
-        const world = createWorld(config, policy);
-        const observer = createObserver(config, fork(createRng(1), 'eval'));
-        observe(observer, world);
-        const { onTick, stats } = agreementHarness();
-        const overrides = observerPhases(observer);
-        for (let t = 0; t < TICKS; t++) {
-            step(world, policy, overrides);
+    it(
+        'on every tick and every slot of the default world, seed 1, 3000 ticks, random brains',
+        () => {
+            const config = createConfig({ ...SIMPLE_WORLD, seed: 1 });
+            const policy = createRandomBrain(config).brain;
+            const world = createWorld(config, policy);
+            const observer = createObserver(config, fork(createRng(1), 'eval'));
             observe(observer, world);
-            onTick(world, observer);
-        }
-        expect(stats.checks).toBeGreaterThan(100000);
-        expect(stats.mismatches).toBe(0);
-        expect(stats.meals).toBeGreaterThan(0);
-    }, 120_000);
+            const { onTick, stats } = agreementHarness();
+            const overrides = observerPhases(observer);
+            for (let t = 0; t < TICKS; t++) {
+                step(world, policy, overrides);
+                observe(observer, world);
+                onTick(world, observer);
+            }
+            expect(stats.checks).toBeGreaterThan(100000);
+            expect(stats.mismatches).toBe(0);
+            expect(stats.meals).toBeGreaterThan(0);
+        },
+        scaleTimeout(120_000),
+    );
 
     it.each([1, 2])(
         'on every tick and slot of the hunter and fleer duel, seed %i, 3000 ticks, with deliberate meals and bites',
@@ -125,6 +130,6 @@ describe('the sim tracker agrees with observer.intent', () => {
             expect(stats.deliberateBites).toBeGreaterThan(0);
             expect(stats.bites).toBeGreaterThan(stats.deliberateBites);
         },
-        120_000,
+        scaleTimeout(120_000),
     );
 });

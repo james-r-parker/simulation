@@ -292,13 +292,8 @@ describe('the split gift and birthReserve', () => {
         return { w, mother, born: w.population === 2 };
     }
 
-    it('gives a split half the mother energy by default, whatever the gene', () => {
+    it("gives a split the childShare gene's share of the mother's energy, as a mating does", () => {
         const { w, mother } = splitOnce({}, 0.2);
-        expect(w.energy[mother]).toBe(850);
-    });
-
-    it("gives a split the childShare gene's share with splitGiftGene", () => {
-        const { w, mother } = splitOnce({ splitGiftGene: true }, 0.2);
         expect(w.energy[mother]).toBeCloseTo(1360, 2);
         expect(w.energy[1]).toBeCloseTo(340, 2);
     });

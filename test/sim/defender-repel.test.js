@@ -78,4 +78,36 @@ describe('tryDefenderRepel', () => {
         expect(passive.energy[1]).toBe(500);
         expect(passive.vx[1]).toBe(0);
     });
+
+    it('knocks back without draining energy when defenderRepelEnergy is 0', () => {
+        const w = setupPair({ defenderRepelEnergy: 0 });
+        expect(w.energy[1]).toBe(500);
+        expect(w.vx[1]).toBeCloseTo(4, 6);
+    });
+
+    it('drains energy without knockback when defenderRepelImpulse is 0', () => {
+        const w = setupPair({ defenderRepelImpulse: 0 });
+        expect(w.energy[1]).toBe(460);
+        expect(w.vx[1]).toBe(0);
+        expect(w.vy[1]).toBe(0);
+    });
+
+    it('charges the defender nothing when defenderRepelCost is 0', () => {
+        const w = setupPair({ defenderRepelCost: 0 });
+        expect(w.energy[0]).toBe(500);
+        expect(w.energy[1]).toBe(460);
+    });
+
+    it('does nothing when both the drain and the knockback are off', () => {
+        const w = setupPair({ defenderRepelEnergy: 0, defenderRepelImpulse: 0 });
+        expect(w.energy[0]).toBe(500);
+        expect(w.energy[1]).toBe(500);
+        expect(w.vx[1]).toBe(0);
+    });
+
+    it('pushes a coincident hunter along the defender facing', () => {
+        const w = setupPair({}, { defenderAngle: Math.PI / 2, targetX: 100 });
+        expect(w.vx[1]).toBeCloseTo(0, 6);
+        expect(w.vy[1]).toBeCloseTo(4, 6);
+    });
 });

@@ -8,6 +8,7 @@ import {
     survivableWorld,
 } from './helpers/predator-world.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
+import { PRE_T15D } from './helpers/pre-t15d.js';
 
 const SHORT = { ticks: 5000, seeds: [1, 2] };
 const LONG = { ticks: 20000, seeds: [1, 2, 3] };
@@ -185,12 +186,22 @@ describe('chance-or-waste controllers score below skill on the intent metrics', 
 function pooledEpisodes(prey, seeds) {
     const total = { classified: 0, undefended: 0 };
     for (const seed of seeds) {
-        const { run } = playPredatorWorld(seed, SHORT.ticks, { predator: 'hunter', prey }).observer.intent;
+        const { run } = playPredatorWorld(seed, SHORT.ticks, { predator: 'hunter', prey, config: PRE_E186_EYE })
+            .observer.intent;
         total.classified += run.episodesClassified;
         total.undefended += run.undefendedEpisodes;
     }
     return total;
 }
+
+/**
+ * The hunter's all-round 350 eye from before senses-and-motor E186, which D8's half-of-chance bar was set on. With the
+ * forward 400 eye the fleer is bitten undefended on about half its episodes against 0.95 for the food seeker (seeds 1 to
+ * 6 pooled), so the metric still separates the arms but by less than half (sim-notes, 2026-11-16).
+ */
+const PRE_E186_EYE = {
+    specialisations: { predator: { ...PRE_T15D.specialisations.predator, visionRange: 350, rearVisionShare: 1 } },
+};
 
 // A fleer world classifies only about four bite episodes a seed, so one episode moves its share by a quarter; D8 holds
 // on the episodes pooled over the seeds.

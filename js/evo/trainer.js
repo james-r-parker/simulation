@@ -37,6 +37,9 @@ const CHECKPOINT_TICKS = 1000;
  * @property {import('./archive-snapshot.js').ArchiveSnapshot} snapshot the frozen archive the episode starts from
  * @property {number} [ticks] ticks to run (default `EPISODE_TICKS`)
  * @property {number} [offerFromTick] the first death tick offered (default `OFFER_FROM_TICK`)
+ * @property {{snapshots: import('./archive-snapshot.js').ArchiveSnapshot[], share: number}} [pool] the opponent pool: frozen
+ *   snapshots and the share of founders and floor entrants drawn from them (none: no draw, the episode a run without the
+ *   option plays)
  * @property {string} [policy] a registered policy that keeps an archive (default `LIVE_POLICY`)
  * @property {readonly import('./metric-registry/index.js').MetricName[]} [metrics] eval metric names to return (a checkpoint's eval episode); default none
  */
@@ -96,6 +99,28 @@ function copyOffer(item, tick) {
 }
 
 /**
+ * Collects an episode's offers: deaths from `offerFromTick` on, except those of the founders drawn from the opponent pool
+ * (a pool founder is an opponent, not a candidate; its children's deaths are offered like any other).
+ * @param {number} offerFromTick the first death tick offered
+ * @returns {{offers: TrainOffer[], founders: ReadonlySet<number>, onOffer: (item: Record<string, any>, tick: number) => void}}
+ *   the offers so far, the genome ids of the pool founders (set once the policy exists) and the policy's `onOffer` hook
+ */
+export function createOfferSink(offerFromTick) {
+    /** @type {TrainOffer[]} */
+    const offers = [];
+    const sink = {
+        offers,
+        founders: /** @type {ReadonlySet<number>} */ (new Set()),
+        onOffer(/** @type {Record<string, any>} */ item, /** @type {number} */ tick) {
+            if (tick >= offerFromTick && !sink.founders.has(item.id)) {
+                offers.push(copyOffer(item, tick));
+            }
+        },
+    };
+    return sink;
+}
+
+/**
  * @param {ArrayLike<number>} values numbers
  * @returns {number} their sum
  */
@@ -141,15 +166,17 @@ export function runEpisode(task) {
         checkpointTicks: CHECKPOINT_TICKS,
     });
     const archive = restoreArchive(snapshot, config, { descriptor: TRAINER_DESCRIPTOR, nCap: TRAINER_N_CAP });
-    /** @type {TrainOffer[]} */
-    const offers = [];
-    const onOffer = (/** @type {Record<string, any>} */ item, /** @type {number} */ tick) => {
-        if (tick >= offerFromTick) {
-            offers.push(copyOffer(item, tick));
-        }
-    };
+    const sink = createOfferSink(offerFromTick);
     const log = createSimLog(() => {}, { level: 'error' });
-    const policy = getPolicy(task.policy ?? LIVE_POLICY).create({ config, log, observer, archive, onOffer });
+    const policy = getPolicy(task.policy ?? LIVE_POLICY).create({
+        config,
+        log,
+        observer,
+        archive,
+        onOffer: sink.onOffer,
+        opponents: task.pool,
+    });
+    sink.founders = policy.poolFounders;
     const world = createWorld(config, policy.brain);
     try {
         feedPolicy({ policy, observer }, world);
@@ -166,7 +193,7 @@ export function runEpisode(task) {
         throw new Error(`seed ${seed} failed at tick ${world.tick}: ${message}`, { cause: error });
     }
     return {
-        offers,
+        offers: sink.offers,
         cursors: archive.cursors,
         ticks: world.tick,
         population: world.population,

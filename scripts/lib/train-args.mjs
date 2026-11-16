@@ -1,4 +1,5 @@
 // Command-line parsing for `npm run train`.
+import { resolve } from 'node:path';
 import { intValue, parseFlags } from './cli-args.mjs';
 
 /** Episodes per generation. */
@@ -6,7 +7,7 @@ export const DEFAULT_EPISODES = 32;
 /** Generations between checkpoints. */
 export const DEFAULT_CHECKPOINT_EVERY = 10;
 export const USAGE =
-    'usage: train --generations <g> --out <dir> [--episodes <e>] [--workers <n>] [--curriculum <file>] [--config <file.json>] [--resume <archive.json>] [--checkpoint-every <n>] [--ticks <n>] [--offer-from <tick>] [--seed-offset <k>]';
+    'usage: train --generations <g> --out <dir> [--episodes <e>] [--workers <n>] [--curriculum <file>] [--config <file.json>] [--resume <archive.json>] [--checkpoint-every <n>] [--ticks <n>] [--offer-from <tick>] [--seed-offset <k>] [--until <stage>] [--scratch]';
 
 /**
  * @typedef {object} TrainArgs
@@ -20,6 +21,8 @@ export const USAGE =
  * @property {number | undefined} ticks ticks per episode (default `EPISODE_TICKS`; a test and smoke-run knob)
  * @property {number | undefined} offerFrom the first death tick offered (default `OFFER_FROM_TICK`; a test and smoke-run knob)
  * @property {number} seedOffset shifts the episode seed index: episode `i` of generation `g` takes seed `(g x episodes + i + k) mod 256` (default 0)
+ * @property {string | null} until the stage a run stops after (a curriculum's later stages are not run)
+ * @property {boolean} scratch whether an `--out` under `/tmp` is allowed
  * @property {string} out the output directory
  */
 
@@ -43,8 +46,10 @@ export function parseArgs(argv) {
                 '--ticks': (v, f) => ['ticks', intValue(f, v, 1, USAGE)],
                 '--offer-from': (v, f) => ['offerFrom', intValue(f, v, 0, USAGE)],
                 '--seed-offset': (v, f) => ['seedOffset', intValue(f, v, 0, USAGE)],
+                '--until': (v) => ['until', String(v)],
                 '--out': (v) => ['out', String(v)],
             },
+            booleanFlags: { '--scratch': 'scratch' },
             defaults: {
                 generations: null,
                 episodes: DEFAULT_EPISODES,
@@ -56,6 +61,8 @@ export function parseArgs(argv) {
                 ticks: undefined,
                 offerFrom: undefined,
                 seedOffset: 0,
+                until: null,
+                scratch: false,
                 out: null,
             },
             usage: USAGE,
@@ -68,4 +75,18 @@ export function parseArgs(argv) {
         throw new Error(`give --curriculum or --config, not both\n${USAGE}`);
     }
     return /** @type {TrainArgs} */ (args);
+}
+
+/**
+ * A run a decision rests on is kept under `.sim/train/`; a run under `/tmp` is lost at the next cleanup.
+ * @param {TrainArgs} args the options
+ * @returns {void}
+ * @throws {Error} when `--out` is under `/tmp` and `--scratch` is not given
+ */
+export function checkOut(args) {
+    if (!args.scratch && /^\/tmp(\/|$)/.test(resolve(args.out))) {
+        throw new Error(
+            `--out ${args.out} is under /tmp; use .sim/train/<name>, or give --scratch for a throwaway run`,
+        );
+    }
 }

@@ -53,11 +53,11 @@ describe('combatMetrics', () => {
         expect(combatMetrics(o)['eval.alarm_response']?.reason).toMatch(/matched control/);
     });
 
-    it('is merged into computeMetrics and ranked higher-is-better by eval:compare', () => {
+    it('is merged into computeMetrics and ranked higher-is-better by eval:compare (escape_share is watch: a bite that is survived is not progress)', () => {
         const m = computeMetrics(bareObserver(), EMPTY_WORLD);
         for (const name of NAMES) {
             expect(loose(m)[name], name).toBeDefined();
-            expect(metricDirection(name)).toBe('higher');
+            expect(metricDirection(name)).toBe(name === 'eval.escape_share' ? 'watch' : 'higher');
         }
     });
 

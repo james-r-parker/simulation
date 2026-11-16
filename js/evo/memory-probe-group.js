@@ -24,7 +24,7 @@ const HUNTER_SPACING = 60;
 /** The prey's energy: the world's cap, so one bite (a few hundred) cannot kill it. */
 const PREY_ENERGY = 2000;
 /** The arena's wall costs nothing, so the prey dies only to the hunters and an idle hunter cannot win. */
-const ARENA_RULES = Object.freeze({ wallDamage: 0 });
+export const GROUP_ARENA_RULES = Object.freeze({ wallDamage: 0 });
 
 /** The group probe's controls: the senses intact, the allies hidden, and a lone hunter. */
 export const GROUP_CONTROL = Object.freeze({ SENSES: 'senses', BLIND: 'kin-blind', SOLO: 'solo' });
@@ -35,7 +35,7 @@ export const GROUP_CONTROL = Object.freeze({ SENSES: 'senses', BLIND: 'kin-blind
  * @param {number} hunters how many hunters (3, or 1 for the solo control)
  * @returns {import('./memory-probe-run.js').Plan} a hunt: the hunters side by side, the prey ahead of them
  */
-function huntPlan(rng, view, hunters) {
+export function huntPlan(rng, view, hunters) {
     const theta = heading(rng);
     const prey = around(theta, PREY_VIEW_SHARE * view);
     const agents = Array.from({ length: hunters }, (_, i) => ({
@@ -77,7 +77,7 @@ export function huntScore(control, subject, { config, view, seed, trials, onTria
             subject,
             controlSpec: { name: control, kinBlind: control === GROUP_CONTROL.BLIND },
             seed: seed + trial,
-            config: { ...config, ...ARENA_RULES },
+            config: { ...config, ...GROUP_ARENA_RULES },
         });
         kills += won ? 1 : 0;
         onTrial?.(trial, won);

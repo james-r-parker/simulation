@@ -1,13 +1,13 @@
-// Exports a trained archive's champions (`npm run train:export`): one champion file per specialisation, the elite with
-// the highest lower bound, plus an `index.json`. The files are what `npm run drill -- --champions`, `npm run league`
+// Exports a trained archive's champions (`npm run train:export`): per specialisation, one champion file for each style
+// band, the elite with the highest lower bound in it (up to two), plus an `index.json`. The files are what `npm run drill -- --champions`, `npm run league`
 // and `npm run probe:memory` read; they are stamped for `--config` (default: the default world), the world they will be
 // played in, not for the curriculum stage that trained them.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { decodeArchive } from '../js/evo/archive-codec.js';
-import { exportBestPerSpec } from '../js/evo/champion-export.js';
-import { endsInTargetWorld } from '../js/evo/curriculum.js';
+import { exportBestPerStyle } from '../js/evo/champion-export.js';
+import { exportEligibility } from '../js/evo/export-eligibility.js';
 import { GENOME_SPECS } from '../js/evo/genome.js';
 import { TRAINER_DESCRIPTOR } from '../js/evo/trainer.js';
 import { createConfig, rulesHash } from '../js/sim/config.js';
@@ -55,7 +55,7 @@ export function parseArgs(argv) {
  * @param {ExportArgs} args the options
  * @param {(line: string) => void} [print] where the skip-cells table goes (default nowhere; `skip-cells.json` is written
  *   either way)
- * @returns {Record<string, any>[]} the champion files written, in specialisation order
+ * @returns {Record<string, any>[]} the champion files written, in specialisation then style order
  * @throws {Error} naming the field when the archive does not fit the layout, or when it holds no tested elite
  */
 export function runExport(args, print = () => {}) {
@@ -63,16 +63,14 @@ export function runExport(args, print = () => {}) {
     const json = readJson(args.archive);
     // The archive's `rulesHash` is the curriculum stage's; the layout, version and descriptor are what must fit.
     const archive = decodeArchive({ ...json, rulesHash: rulesHash(config) }, config, undefined, TRAINER_DESCRIPTOR);
-    if (
-        `${resolve(args.out)}/`.startsWith(`${PUBLIC_CHAMPIONS}/`) &&
-        !endsInTargetWorld(json.stages, rulesHash(config))
-    ) {
+    const eligibility = exportEligibility(json, rulesHash(config));
+    if (`${resolve(args.out)}/`.startsWith(`${PUBLIC_CHAMPIONS}/`) && !eligibility.eligible) {
         throw new Error(
-            `${args.archive}: its last stage is not the target world, so its champions may not go into public/champions (export to another directory for local drills, tables and probes)`,
+            `${args.archive}: ${eligibility.reason}, so its champions may not go into public/champions (export to another directory for local drills, tables and probes)`,
         );
     }
     const label = args.label ?? basename(args.archive).replace(/\.json$/, '');
-    const files = exportBestPerSpec(archive, config, { label });
+    const files = exportBestPerStyle(archive, config, { label });
     if (files.length === 0) {
         throw new Error(`${args.archive} holds no elite to export`);
     }
@@ -83,6 +81,7 @@ export function runExport(args, print = () => {}) {
     const index = files.map((f) => ({
         file: `${f.name}.json`,
         specialisation: GENOME_SPECS[f.specialisation],
+        style: f.style,
         cell: f.cell,
         genomeId: f.genomeId,
         fitness: f.fitness,

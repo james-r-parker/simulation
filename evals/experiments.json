@@ -4456,8 +4456,16 @@
         "eval.edge_starve_per_prey": "-",
         "eval.childshare_by_condition": "-"
       },
-      "note": "Screen on the Phase 2 defaults: no arm reads edge_starve_per_prey worse; lifting the clonal cap raises the split share of births from 0.35 to about 0.5 and lowers the mating share. Finalist nocap-g-r (edge starve 0.107 against 0.112, childshare_by_condition 0.0008); costs: spec under 70% on 7/16 seeds against 12/16, mating share 0.40 against 0.66. The 64-seed keep rule (T25) is not run yet.",
-      "reports": ["evals/decisions/E177/results.md", "evals/decisions/E177/screen-table.md"],
+      "note": "Screen on the Phase 2 defaults: no arm reads edge_starve_per_prey worse; lifting the clonal cap raises the split share of births from 0.35 to about 0.5 and lowers the mating share. Finalist nocap-g-r (edge starve 0.107 against 0.112, childshare_by_condition 0.0008); costs: spec under 70% on 7/16 seeds against 12/16, mating share 0.40 against 0.66. Keep rule on 64 matched seeds (finalist nocap-g-r against the season 10 defaults): no harm detected. Guards: alive 18 seeds harmed, 12 recovered (exact p 0.362; smallest loss detected 25 seeds), under80 4 against 3 (p 1; 12 seeds), held 7 against 2 (p 0.18; 10 seeds), hunter_catches_per_1k -0.028 [-0.102, 0.045] (0.073). Adoption bar not met (hunters alive 40/64 against the 0.75 bar; the control 46/64, so a net 6 seeds fewer). eval.edge_ref_starve_per_prey 0.118 to 0.089 (better), births_per_1k +12%, coverage and qd_score better; hunter first-kill age, juvenile hunter deaths and predator fitness worse (open). The switch is made (T26).",
+      "reports": [
+        "evals/decisions/E177/results.md",
+        "evals/decisions/E177/screen-table.md",
+        "evals/decisions/E177/defaults-s10c.report.json",
+        "evals/decisions/E177/nocap-g-r.report.json",
+        "evals/decisions/E177/nocap-g-r.config.json",
+        "evals/decisions/E177/compare.txt",
+        "evals/decisions/E177/compare.json"
+      ],
       "date": "2026-11-15",
       "branch": "season/next",
       "beforePolicy": "live",
@@ -4471,9 +4479,17 @@
       "targets": ["eval.alarm_rate", "eval.alarm_lift", "eval.alarm_calls_with_threat_per_1k"],
       "before": "control arm of evals/screens/honest-alarm.grid.json (alarmBiteShare 1), seeds 1 to 16, 400000 ticks, floor on, policy live",
       "after": "the alarm arms of the same screen (a75, a50)",
-      "verdicts": {},
-      "note": "Prediction recorded before the run (T29); the screen and the 64-seed keep-rule pass with the liar check (T30) are not run yet.",
-      "reports": ["evals/decisions/E178/results.md"],
+      "verdicts": {
+        "eval.alarm_rate": "-",
+        "eval.alarm_lift": "-",
+        "eval.alarm_calls_with_threat_per_1k": "-"
+      },
+      "note": "Screen on main 0819058e (season 10, before the hunter-vision switch; arms paired with control on the same code): no finalist. eval.alarm_rate is above 0 on 4 of 16 seeds (mean 0.00004), eval.alarm_calls_with_threat_per_1k on 3 (mean 0.0000035); a75 and a50 are bit-identical to control on every metric because no bite lands on a seen caller while its timer runs. The liar clause is not triggered (calls with a threat rise with calls). The 64-seed keep rule (T30) is not run and the switch (T31) is parked: alarmBiteShare stays 1. Open: calls are too rare for any bite rule to act; selection must first produce calls on sight.",
+      "reports": [
+        "evals/decisions/E178/results.md",
+        "evals/decisions/E178/screen-table.md",
+        "evals/decisions/E178/screen-verdicts.json"
+      ],
       "date": "2026-11-15",
       "branch": "season/next",
       "beforePolicy": "live",
@@ -4483,18 +4499,36 @@
     {
       "id": "E179",
       "hypothesis": "honest-budgets Phase 6: leaving real carcasses (killGorgeShare), relaxing territory clustering, raising predator splitMinEnergyMultiplier, blocking canHunt-crossing spec flips (specFlipNoHunt), and giving cubs a juvenile plant share or size parity raises predator recruitment and juvenile survival.",
-      "prediction": "On the 16-seed screen (honest-recruit.grid.json, 400000 ticks), the finalist (cub-plant, cub-size, or recruit) lowers eval.hunter_juvenile_death_share below 0.55 while keeping eval.hunter_catches_per_1k and eval.hunter_income_share.carcass alive, and the 64-seed keep rule reads no guard WORSE. Falsified when every arm reads eval.hunter_catches_per_1k or held WORSE.",
+      "prediction": "On the 16-seed screen (honest-recruit.grid.json, 400000 ticks), the finalist (cub-plant, cub-size, or recruit) lowers eval.hunter_juvenile_death_share below 0.55 while keeping eval.hunter_catches_per_1k and eval.hunter_income_share.carcass alive, and the 64-seed keep rule reads no guard WORSE. Falsified when every arm reads eval.hunter_catches_per_1k or held WORSE. Addition made before the run (2026-11-16, after the T33a and T33b detectors merged, PR 467): the finalist also raises eval.recruit_matured_share and the replaced share of its hunter births (eval.recruit_replaced_share.<source>), and eval.recruit_lineage_share. Screen verdicts (power at 16 seeds, sim-notes 2026-11-16): eval.recruit_matured_share (detectable 0.10) and eval.recruit_lineage_share (0.10) only. Context only, no verdict at 16 seeds: eval.recruit_replaced_share.* (no verdict, or above 0.20), eval.carcass_loss_share.* (a full pool loses 4 percent of carcass energy on the defaults, not material, so it should not move).",
       "targets": [
         "eval.hunter_juvenile_death_share",
         "eval.hunter_catches_per_1k",
         "eval.hunter_income_share.carcass",
-        "eval.boom_bust_count"
+        "eval.boom_bust_count",
+        "eval.recruit_matured_share",
+        "eval.recruit_replaced_share.split-hunter-parent",
+        "eval.recruit_replaced_share.spec-flip",
+        "eval.recruit_replaced_share.mate-hunter-parent",
+        "eval.recruit_replaced_share.floor",
+        "eval.recruit_lineage_share",
+        "eval.carcass_loss_share.lost",
+        "eval.carcass_loss_share.eaten",
+        "eval.carcass_loss_share.faded"
       ],
       "before": "control arm of evals/screens/honest-recruit.grid.json (killGorgeShare 1), seeds 1 to 16, 400000 ticks, floor on, policy live",
       "after": "the recruit arms of the same screen (gorge, recruit, cub-plant, cub-size)",
-      "verdicts": {},
-      "note": "Prediction recorded before the run (T35); the 16-seed screen and 64-seed keep-rule pass (T36) are not run yet.",
-      "reports": ["evals/decisions/E179/results.md"],
+      "verdicts": {
+        "eval.hunter_juvenile_death_share": "no-difference",
+        "eval.hunter_catches_per_1k": "no-difference",
+        "eval.hunter_income_share.carcass": "-",
+        "eval.boom_bust_count": "-"
+      },
+      "note": "T36: gorge (killGorgeShare 0.4) against the defaults on seeds 65 to 128, 400000 ticks, keep rule reads no harm (alive 13 harmed and 14 recovered, smallest loss 28 seeds; under80 2 and 4; held 0 and 3; catches +5.4 percent, no difference). Targets: juvenile death share 0.863 to 0.855 (no difference), carcass income share 0.005 to 0.152, carcass energy eaten 0.16 to 0.57; the Done-when row is missed (hunters alive 41 of 64 against 48). The screen falsified recruit, cub-plant and cub-size (specFlipNoHunt empties the hunters world). Recommendation awaiting review in evals/decisions/E179/results.md; T36a and the switch are not run.",
+      "reports": [
+        "evals/decisions/E179/results.md",
+        "evals/decisions/E179/compare.txt",
+        "evals/decisions/E179/compare.json"
+      ],
       "date": "2026-11-15",
       "branch": "feat/honest-budgets-t34-recruit",
       "beforePolicy": "live",
@@ -4545,6 +4579,51 @@
       "reports": ["evals/decisions/E185/results.md"],
       "date": "2026-11-15",
       "branch": "feat/senses-motor-phase3",
+      "effect": "no-difference"
+    },
+    {
+      "id": "E186",
+      "hypothesis": "senses-and-motor Phase 5 (plan id E-SM-4): giving the hunter the longest forward reach (predator visionRange 400, equal only to the scout; defender down to 300) with a short rear reach (rearVisionShare 0.3 to 0.6) lets predators start chases from further ahead and raises their catch rate, without costing hunters alive or held seeds.",
+      "prediction": "On the 16-seed screen (evals/screens/hunter-vision.grid.json, 400000 ticks, floor on, policy live) the range-plus-rear arms raise eval.hunter_catches_per_1k by at least a tenth over control with the keep rule's seed guards (hunters alive, held) not worse; range alone moves catches less than range with s 0.4; eval.chase_catch_share rises with them; eval.collision_death_share does not rise. Falsified when no arm raises eval.hunter_catches_per_1k beyond the screen's margin.",
+      "targets": ["eval.hunter_catches_per_1k", "eval.chase_catch_share"],
+      "before": "control arm of evals/screens/hunter-vision.grid.json (predator 350 s 1, defender 350 s 1), seeds 1 to 16, 400000 ticks, floor on, policy live",
+      "after": "finalist range-s04-d (evals/decisions/E186/finalist.config.json): 16-seed screen, then seeds 65 to 128 (seed offset 64), 400000 ticks, floor on, policy live",
+      "verdicts": {
+        "keepRule": "no-difference",
+        "eval.hunter_catches_per_1k": "better",
+        "eval.chase_catch_share": "-",
+        "eval.collision_death_share": "no-difference"
+      },
+      "note": "Screen (T18, 16 seeds): every arm PASS and no harm; finalist range-s04-d. Keep rule (T19, 64 fresh seeds, 400000 ticks): no harm (alive 11 harmed vs 15 recovered, smallest loss 29 seeds; held 8 vs 6, 17 seeds; under80 1 vs 1, 8 seeds); eval.hunter_catches_per_1k better 1.327 -> 1.457 (+9.7%, [0.043, 0.208]); chase catch share +3.7% no verdict; collision deaths no-difference; basin_family_effective and mean_fitness.forager worse. Adoption bar not met (45/64 hunters alive vs 0.75; control about 41/64). Qualifies for the T20 switch.",
+      "reports": ["evals/decisions/E186/results.md", "evals/decisions/E186/keep-rule.txt"],
+      "date": "2026-11-15",
+      "branch": "feat/hunter-vision",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "effect": "better"
+    },
+    {
+      "id": "E187",
+      "hypothesis": "detector-baseline T7: one 128-seed floor-on and floor-off run of the season 10 defaults (hunter-vision switch, PR 464) gives the shared baseline that the planned detectors read against, in place of seven 16-seed runs. Training-stages T5 (E-TS-0) is read from its first 16 floor-on seeds, not run again.",
+      "prediction": "Carried from training-stages E-TS-0 on the first 16 floor-on seeds (seeds 1 to 16 of evals/seeds.json): eval.chase_lost_share is the largest part of the give-up share; eval.chase_quit_share is under 0.15; eval.pack_lift is within 0.2 of 1. On all 128 floor-on seeds the same three hold in direction (lost above quit, quit under 0.15, pack_lift near 1). The floor-off run is extinction-dominated on most seeds (E110: floor-off kills every world between 41k and 149k ticks), so its hunter and chase reads are characterization, not a baseline for verdicts. Falsified when the 16-seed subset contradicts a written E-TS-0 statement on the same seeds, or when the 128-seed floor-on mean of eval.pack_lift is outside 0.8 to 1.2.",
+      "targets": ["eval.chase_lost_share", "eval.chase_quit_share", "eval.pack_lift"],
+      "before": "not applicable: a baseline of the defaults, no arm compared; training-stages E-TS-0 is the same 16 floor-on seeds x 200000 ticks on the same defaults",
+      "after": "npm run eval -- --seeds 128 --ticks 200000 --policy live --workers 12 --save-champions 2 (floor on), and the same with --config evals/floor-off-config.json (floor off); reports to the scratchpad, then evals/power/defaults-floor-on-E187.json and defaults-floor-off-E187.json and evals/decisions/E187/",
+      "verdicts": {
+        "eval.chase_lost_share": "-",
+        "eval.chase_quit_share": "-",
+        "eval.pack_lift": "-"
+      },
+      "note": "Run started 2026-11-16 on the frozen HEAD of eval/shared-baseline (after 6ee46a46). T5 reuse: E-TS-0 asks for 16 floor-on seeds x 200000 ticks on the defaults; the first 16 seeds of this floor-on run are the same settings (default config, policy live, seed offset 0), so the reads are taken from them and E-TS-0 is not run again. Check on resume that the report seeds begin with evals/seeds.json entries 1 to 16. Four detector plans (sprint-burst, stillness, scent-trails, body-genes) have no detector merged, so their metrics are not in this read; they get a top-up run on the same defaults later (coordinator decision, 2026-11-16). Effect is no-difference because the schema has no pending value and this is characterization only (as E150 and E151); the coordinator sets the record on completion. Result (2026-11-16, run done 13:23): floor-on and floor-off reports committed; E-TS-0 read on seeds 1-16 of the floor-on run. chase_lost_share is the largest give-up part (0.173 vs outrun 0.141, quit 0.099; give-up 0.412 on 16 seeds, not the 0.60 the prediction cited); chase_quit_share held; pack_lift falsified (1.72 on 16 seeds, 1.78 on 128: a lift of the pack, not co-location). Power: the power.js write from this report is held out of the PR: it breaks four unit tests that pin main's readings, so those expectations need a decision first. Liveness: main readings kept; 12 misses split out as T8a.",
+      "reports": [
+        "evals/decisions/E187/defaults-floor-on.json",
+        "evals/decisions/E187/defaults-floor-off.json",
+        "evals/decisions/E187/prediction.json"
+      ],
+      "date": "2026-11-16",
+      "branch": "eval/shared-baseline",
+      "beforePolicy": "live",
+      "afterPolicy": "live",
       "effect": "no-difference"
     }
   ]

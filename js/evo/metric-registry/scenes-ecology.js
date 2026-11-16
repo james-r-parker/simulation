@@ -166,7 +166,7 @@ export const SCENES_ECOLOGY = {
         nullWhen: ['no deaths after burn-in'],
         arithmetic: 'test/evo/scene-herd.test.js',
     }),
-    'eval.dodge_skill': entry('scenes-ecology', {
+    'eval.herd_dodge_share': entry('scenes-ecology', {
         module: 'js/evo/scene-herd.js',
         meaning: "How often a blob in an approaching herd's path clears it.",
         counts: 'Completed herd-approach episodes after burn-in that ended clear over clear plus hit.',
@@ -174,6 +174,7 @@ export const SCENES_ECOLOGY = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no completed herd-approach episodes after burn-in'],
+        renamedFrom: ['eval.dodge_skill'],
         arithmetic: 'test/evo/scene-herd.test.js',
     }),
     'eval.herd_grazed_share': entry('scenes-ecology', {

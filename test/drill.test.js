@@ -2,11 +2,12 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { createArchive } from '../js/evo/archive.js';
+import { createArchive, offer } from '../js/evo/archive.js';
 import { brainLayout } from '../js/sim/brain-layout.js';
 import { createConfig } from '../js/sim/config.js';
 import { main, parseArgs, runDrills } from '../scripts/drill.mjs';
 import { formatTable, meanEdge, reportJson } from '../scripts/lib/drill-report.mjs';
+import { DRILLS } from '../js/evo/drill-scenarios.js';
 import { eliteSubjects } from '../scripts/lib/drill-subjects.mjs';
 import { makeChampionFile } from './evo/helpers/champion-file.js';
 
@@ -26,7 +27,7 @@ describe('parseArgs', () => {
     it('defaults to every drill, 32 trials, seed 1 and 8 elites', () => {
         const args = parseArgs(['--champions', 'd']);
         expect(args).toMatchObject({ champions: 'd', seed: 1, trials: 32, count: 8, json: false, out: null });
-        expect(args.drills).toHaveLength(7);
+        expect(args.drills).toEqual(DRILLS.map((d) => d.name));
     });
 
     it('reads every flag', () => {
@@ -85,6 +86,34 @@ describe('the report', () => {
         expect(reportJson(['a'], rows).rows[0].meanEdge).toBe(0);
     });
 
+    it('prints the Wilson low bounds in the cell when the row has them, and leaves them out when it does not', () => {
+        const [, first] = formatTable(
+            ['a'],
+            [{ label: 'g', cells: { a: { winShare: 0.75, edge: 0.5, winShareLow: 0.58, edgeLow: 0.31 } } }],
+        );
+        expect(first.split(/\s{2,}/)[1]).toBe('0.75 [0.58] (+0.50, +0.31)');
+    });
+
+    it('prints the control arms of a pack cell: both shares, the gain and the two low bounds', () => {
+        const cell = {
+            winShare: 0.75,
+            edge: 0.5,
+            wins: 48,
+            trials: 64,
+            arms: { solo: { wins: 8, trials: 64 }, 'kin-blind': { wins: 24, trials: 64 } },
+        };
+        const [, first] = formatTable(['pack-converge'], [{ label: 'g', cells: { 'pack-converge': cell } }]);
+        expect(first).toMatch(/solo 0\.13, blind 0\.38, gain \+0\.63 \[\+0\.\d\d\], gap \[\+0\.\d\d\]/);
+        const bare = { ...cell, arms: undefined };
+        expect(formatTable(['pack-converge'], [{ label: 'g', cells: { 'pack-converge': bare } }])[1]).not.toContain(
+            'solo',
+        );
+        const half = { ...cell, arms: { solo: { wins: 1, trials: 64 } } };
+        expect(formatTable(['pack-converge'], [{ label: 'g', cells: { 'pack-converge': half } }])[1]).not.toContain(
+            'gain',
+        );
+    });
+
     it('prints first-match lost-trial reasons in the cell', () => {
         const [, first] = formatTable(
             ['prey-ahead'],
@@ -97,6 +126,22 @@ describe('the report', () => {
 describe('eliteSubjects', () => {
     it('is empty for an empty archive', () => {
         expect(eliteSubjects(createArchive(brainLayout(createConfig({}))))).toEqual([]);
+    });
+
+    it('takes the champions the archive would export: one per specialisation and style band, with the style and bound', () => {
+        const archive = createArchive(brainLayout(createConfig({})));
+        const row = new Float32Array(archive.layout.weightCount).fill(0.05);
+        offer(archive, { spec: 1, cell: 4, row, sigma: 0.1, id: 5, fitness: 1 });
+        offer(archive, { spec: 1, cell: 64, row, sigma: 0.1, id: 6, fitness: 2 });
+        offer(archive, { spec: 0, cell: 2, row, sigma: 0.1, id: 7, fitness: 1 });
+        const subjects = eliteSubjects(archive);
+        expect(subjects.map((s) => [s.name, s.spec, s.style])).toEqual([
+            ['elite-forager-cell2', 0, 'low'],
+            ['elite-predator-cell4', 1, 'low'],
+            ['elite-predator-cell64', 1, 'high'],
+        ]);
+        expect(subjects.every((s) => typeof s.lowerBound === 'number')).toBe(true);
+        expect(subjects[1].weights).not.toBe(archive.rows);
     });
 });
 

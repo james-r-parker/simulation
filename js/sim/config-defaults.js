@@ -3,6 +3,7 @@
 import { DISEASE_DEFAULTS } from './config-disease.js';
 import { FLORA_DEFAULTS } from './config-flora.js';
 import { HERD_DEFAULTS } from './config-herds.js';
+import { SPECIALISATION_DEFAULTS } from './config-spec-rules.js';
 
 /**
  * Freezes an object tree in place.
@@ -111,94 +112,7 @@ export const DEFAULTS = deepFreeze({
     hashCellSize: 140, // new
     maxContacts: 2000, // new
     eventCapacity: 8192, // megafauna: includes five events per herd animal and two per herd
-    specialisations: {
-        // AGENT_CONFIGS maxRayDist; modifiers: SCOUT_ENERGY_COST_MULTIPLIER, DEFENDER_DAMAGE_REDUCTION, new
-        forager: {
-            index: 0,
-            visionRange: 300,
-            canHunt: false,
-            moveCostMultiplier: 1,
-            biteTakenMultiplier: 1,
-            cooldownMultiplier: 1,
-            biteMultiplier: 1,
-            turnMultiplier: 1,
-            plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
-            meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
-            sprintBoost: 1,
-            passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
-            splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
-            kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
-            maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
-        },
-        predator: {
-            index: 1,
-            visionRange: 350,
-            canHunt: true,
-            moveCostMultiplier: 1,
-            biteTakenMultiplier: 1,
-            cooldownMultiplier: 1,
-            biteMultiplier: 20, // survival screen (instinct, inst1-gorge-bite20): decisive bites, a predator lands a kill in few bites like a big cat's neck bite (was 8, tuned T15o E47)
-            turnMultiplier: 0.7,
-            plantFoodValue: 0, // new: share of a food item's energy this specialisation gains; 0 for predators (world-balance.md T45, from T41)
-            meatFoodValue: 1, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
-            sprintBoost: 1.6,
-            passiveLossMultiplier: 0.2, // honest-budgets E175 (was 0.3): gorge and fast, a predator rests cheaply between meals like a python, now that a kill no longer mints 600 (was 0.6, T15d; scales the standing energy loss, T15f)
-            splitMinEnergyMultiplier: 0.6, // tuned, fitness-and-selection T15d (scales splitMinEnergy for this specialisation, T15f)
-            kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
-            maxEnergyMultiplier: 5, // survival screen (instinct, inst1-gorge-bite20): a 3x fat store (5x from E103), so a big meal carries a predator across the fast between kills like a lion's // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
-        },
-        reproducer: {
-            index: 2,
-            visionRange: 250,
-            canHunt: false,
-            moveCostMultiplier: 1,
-            biteTakenMultiplier: 1,
-            cooldownMultiplier: 0.5,
-            biteMultiplier: 1,
-            turnMultiplier: 1,
-            plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
-            meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
-            sprintBoost: 1,
-            passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
-            splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
-            kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
-            maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
-        },
-        scout: {
-            index: 3,
-            visionRange: 400,
-            canHunt: false,
-            moveCostMultiplier: 1, // natural-selection: no longer cheaper to move (was 0.7)
-            biteTakenMultiplier: 1.5, // natural-selection: the scout pays for far sight, every bite on it lands 1.5 times harder (was 1)
-            cooldownMultiplier: 1,
-            biteMultiplier: 1,
-            turnMultiplier: 1,
-            plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
-            meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
-            sprintBoost: 1,
-            passiveLossMultiplier: 1.3, // natural-selection: the scout pays 30% more to stand (was 1); new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
-            splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
-            kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
-            maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
-        },
-        defender: {
-            index: 4,
-            visionRange: 350,
-            canHunt: false,
-            moveCostMultiplier: 1.2, // natural-selection: the defender is costly to be, a fifth more to move (was 1)
-            biteTakenMultiplier: 0.5,
-            cooldownMultiplier: 1,
-            biteMultiplier: 1,
-            turnMultiplier: 1,
-            plantFoodValue: 1, // new: share of a food item's energy this specialisation gains (world-balance.md T45)
-            meatFoodValue: 0.3, // new: share of a carcass's energy this specialisation gains (world-balance.md T54)
-            sprintBoost: 1,
-            passiveLossMultiplier: 1, // new: scales the standing (passive, size and vision) energy loss (fitness-and-selection T15f)
-            splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
-            kickMultiplier: 2, // natural-selection T5a: a bite on a defender costs the biter twice the kick
-            maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
-        },
-    },
+    specialisations: SPECIALISATION_DEFAULTS,
     checkInvariants: false, // new
     restitution: 0.5, // new
     splitCooldownMultiplier: 1.5, // new
@@ -287,10 +201,8 @@ export const DEFAULTS = deepFreeze({
     splitDeliberateMin: 300, // new: fitness-and-selection T16; 300 from T48b (the E41 finalist split-300)
     splitDeliberateShareMin: 0.2, // new: fitness-and-selection T48d; own deliberate meals over meals needed to split, 0 is off; 0.2 from T48g
     splitMaxPerLife: 0, // new: fitness-and-selection T48d; splits per lifetime, 0 is unlimited
-    splitClonalMax: 3, // natural-selection Phase 4: split generations in a row before the line must mate (aphids), at least 1; 3, the mildest arm of E85 (user, 2026-10-31)
-    splitGiftGene: false, // honest-budgets Phase 4: a split gives the childShare gene's share of the splitter's energy, as a mating does; false gives half
     alarmBiteShare: 1, // honest-budgets Phase 5: the share of a bite's energy that moves while the victim's alarm is seen (a threat was on its rays at the call); 1 is the full bite
-    birthReserve: 0, // honest-budgets Phase 4: a birth that would leave the mother under this energy is blocked; 0 is off
+    birthReserve: 300, // honest-budgets Phase 4 (E177): a birth that would leave the mother under this energy is blocked; 0 is off
     juvenileBurn: 0.6, // realistic-keepers T4: multiplier on the standing, movement and turn cost of a juvenile hunter, in [0, 1]
     kinPullWeight: 0.5, // realistic-keepers T4: the kin thrust and turn cells of a hunter are raised to at least this x instinctWeight, in [0, 4]
     juvenileTicks: 3000, // hunter-learning: a canHunt young is juvenile while ageTicks is below this; the detectors' age bands use it too

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { noteApproachKill, trackApproaches } from '../../js/evo/scene-approach.js';
 import { INTENT_WINDOW } from '../../js/evo/observer-intent-state.js';
-import { CHASE_OUTCOME } from '../../js/evo/chase-outcome.js';
+import { CHASE_FLAG, CHASE_OUTCOME } from '../../js/evo/chase-outcome.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
 import { loose } from './helpers/metric-registry.js';
@@ -136,6 +136,85 @@ describe('hunt approaches and chases', () => {
         expect(a.observer.scenes.approach.phase[a.prey[0]]).toBe(0);
         expect(read(a, 'hunt_abort_rate').reason).toContain('no hunter approach');
     });
+
+    it('ignores a kill by a hunter with no approach, and a kill of someone other than the one it bit', () => {
+        const a = arena(1, 2);
+        const scene = a.observer.scenes.approach;
+        const kill = (/** @type {number} */ victim) =>
+            noteApproachKill(scene, a.observer, a.world, {
+                killerId: a.world.genomeId[a.hunters[0]],
+                victimId: a.world.genomeId[victim],
+            });
+        a.world.tick = T0;
+        kill(a.prey[0]);
+        expect(scene.tally.byClass[CHASE_OUTCOME.CAUGHT]).toBe(0);
+        play(a, T0, { closing: a.hunters });
+        play(a, T0 + 1, { closing: a.hunters, bites: [[a.hunters[0], a.prey[0]]] });
+        kill(a.prey[1]);
+        expect(scene.tally.byClass[CHASE_OUTCOME.CAUGHT]).toBe(0);
+        kill(a.prey[0]);
+        expect(scene.tally.byClass[CHASE_OUTCOME.CAUGHT]).toBe(1);
+    });
+
+    it('does not count a kill or a first bite before burn-in as a committed approach', () => {
+        const kill = arena(1, 1);
+        play(kill, T0 - 100, { closing: kill.hunters });
+        noteApproachKill(kill.observer.scenes.approach, kill.observer, kill.world, {
+            killerId: kill.world.genomeId[kill.hunters[0]],
+            victimId: kill.world.genomeId[kill.prey[0]],
+        });
+        expect(kill.observer.scenes.approach.committed).toBe(0);
+        const bite = arena(1, 1);
+        play(bite, T0 - 100, { closing: bite.hunters });
+        play(bite, T0 - 99, { closing: bite.hunters, bites: [[bite.hunters[0], bite.prey[0]]] });
+        expect(bite.observer.scenes.approach.committed).toBe(0);
+    });
+
+    it('keeps the first bite of an approach when it bites again, with no bite hook', () => {
+        const a = arena(1, 1);
+        a.observer.scenes.approach.onBite = null;
+        play(a, T0, { closing: a.hunters });
+        play(a, T0 + 1, { closing: a.hunters, bites: [[a.hunters[0], a.prey[0]]] });
+        const scene = a.observer.scenes.approach;
+        expect([scene.committed, scene.biteTick[a.hunters[0]]]).toEqual([1, T0 + 1]);
+        a.world.bittenTimer[a.prey[0]] = 100;
+        play(a, T0 + 2, { closing: a.hunters, bites: [[a.hunters[0], a.prey[0]]] });
+        expect([scene.committed, scene.biteTick[a.hunters[0]]]).toEqual([1, T0 + 1]);
+    });
+});
+
+describe('the bite hook', () => {
+    it('is called with the slot of each alive biter of a bite on a live victim, with or without an open approach', () => {
+        const a = arena(2, 2);
+        /** @type {number[]} */
+        const biters = [];
+        a.observer.scenes.approach.onBite = (/** @type {any} */ _world, /** @type {number} */ biter) =>
+            biters.push(biter);
+        const [h1, h2] = a.hunters;
+        const [v1, v2] = a.prey;
+        play(a, T0, { closing: [h1] });
+        play(a, T0 + 1, {
+            closing: [h1],
+            bites: [
+                [h1, v1],
+                [h2, v2],
+            ],
+        });
+        expect(biters).toEqual([h1, h2]);
+    });
+});
+
+describe('a bite by a biter the observer does not track', () => {
+    it('calls no bite hook and opens no chase', () => {
+        const a = arena(1, 1);
+        /** @type {number[]} */
+        const calls = [];
+        a.observer.scenes.approach.onBite = () => calls.push(1);
+        a.world.bittenTimer[a.prey[0]] = 1;
+        a.world.lastBiter[a.prey[0]] = 999999;
+        trackApproaches(a.observer.scenes.approach, a.observer, a.world);
+        expect(calls).toEqual([]);
+    });
 });
 
 describe('a resolved chase with no hook', () => {
@@ -207,7 +286,7 @@ describe('the noteChase hook', () => {
                 openedTick: T0,
                 hungry: expect.any(Boolean),
                 energy: expect.any(Number),
-                flags: 0,
+                flags: CHASE_FLAG.LAPSE_LOST,
             },
         ]);
     });
@@ -247,7 +326,7 @@ describe('the noteChase hook', () => {
                 openedTick: T0,
                 hungry: expect.any(Boolean),
                 energy: expect.any(Number),
-                flags: 0,
+                flags: CHASE_FLAG.LAPSE_LOST,
             },
         ]);
     });

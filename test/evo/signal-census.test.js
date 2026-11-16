@@ -124,3 +124,17 @@ describe('the output rows', () => {
         expect(census.outputTicks).toBe(31);
     });
 });
+
+describe('a census that has sampled nothing', () => {
+    it('reads every input and output row as zero, without dividing by nothing', () => {
+        const census = createCensus(config);
+        for (const row of inputRows(census)) {
+            expect(row).toMatchObject({ nonzeroShare: 0, mean: 0, sd: 0, min: 0, max: 0, use: 0, narrow: false });
+        }
+        for (const row of outputRows(census)) {
+            expect(row).toMatchObject({ nonzeroShare: 0, mean: 0, sd: 0 });
+            expect(row.fireShare === null || row.fireShare === 0).toBe(true);
+        }
+        expect(outputRows(census).some((row) => row.fireShare === 0)).toBe(true);
+    });
+});

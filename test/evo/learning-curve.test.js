@@ -130,6 +130,7 @@ describe('curvePoint', () => {
             'eval.hunter_kill_rate_by_source.mate-hunter-parent',
             'eval.hunter_kill_rate_by_source.split-hunter-parent',
             'eval.escape_share',
+            'eval.chase_catch_share',
             'eval.food_energy_per_1k',
             'eval.births_per_1k',
             'eval.bite_wish_with_prey_in_jaws',

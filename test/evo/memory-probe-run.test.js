@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { BODY_INPUT, EXTRA_INPUTS, brainLayout, OUTPUT_INDEX, TRAIT_INDEX } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
+import { DRILLS } from '../../js/evo/drill-scenarios.js';
+import { createRng, fork } from '../../js/sim/rng.js';
 import { arenaConfig, playTrial, viewOf } from '../../js/evo/memory-probe-run.js';
 
 /**
@@ -41,7 +43,7 @@ describe('viewOf', () => {
         const config = createConfig({});
         const weights = new Float32Array(brainLayout(config).weightCount);
         expect(viewOf({ spec: 0, weights: null }, config)).toBe(300);
-        expect(viewOf({ spec: 1, weights }, config)).toBe(350);
+        expect(viewOf({ spec: 1, weights }, config)).toBe(400);
         weights[brainLayout(config).traitStart + TRAIT_INDEX.VISION] = 10;
         expect(viewOf({ spec: 0, weights }, config)).toBeGreaterThan(300 * 1.29);
     });
@@ -114,5 +116,59 @@ describe('playTrial', () => {
         const p = plan({ maxTicks: 2 });
         playTrial({ plan: p, subject, controlSpec: { name, ...extra }, seed: 1, config: {} });
         expect(seen).toEqual([0, expected]);
+    });
+});
+
+describe('playTrial with an opponent', () => {
+    const drill = /** @type {any} */ (DRILLS.find((d) => d.name === 'prey-ahead'));
+    const hunter = { name: 'h', id: 1, spec: 1, weights: null, act: () => {} };
+
+    /**
+     * @param {Record<string, any>} [extra] fields of the trial (the opponent)
+     * @returns {any} the world after 30 ticks of the `prey-ahead` plan of seed 3
+     */
+    function after30(extra = {}) {
+        const staged = drill.plan(fork(createRng(3), 'drill:prey-ahead'), 300);
+        /** @type {any} */
+        let seen = null;
+        const done = (/** @type {any} */ w, /** @type {any} */ c) => {
+            seen = w;
+            return staged.done(w, c);
+        };
+        const staged30 = { ...staged, maxTicks: 30, done };
+        playTrial({ plan: staged30, subject: hunter, controlSpec: { name: 'intact' }, seed: 3, config: {}, ...extra });
+        return seen;
+    }
+
+    it('leaves a trial without an opponent unchanged: the scripted fleer drives the prey', () => {
+        const world = after30();
+        expect(world.tick).toBe(30);
+        // The prey position the scripted fleer reached on this plan before the opponent option existed.
+        expect(world.x[1]).toBeCloseTo(1742.38916015625, 3);
+        expect(world.y[1]).toBeCloseTo(2298.2890625, 3);
+        const same = after30({ opponent: undefined });
+        expect(same.x[1]).toBe(world.x[1]);
+    });
+
+    it('gives the prey role the opponent genome as its brain and specialisation, in place of the fleer', () => {
+        const config = createConfig({});
+        const weights = new Float32Array(brainLayout(config).weightCount).fill(0.02);
+        const opponent = { role: 'prey', subject: { name: 'o', id: 9, spec: 0, weights, act: null } };
+        const world = after30({ opponent });
+        expect(world.spec[1]).toBe(0);
+        expect(Array.from(world.weights.subarray(world.layout.weightCount, world.layout.weightCount + 3))).toEqual(
+            [0.02, 0.02, 0.02].map(Math.fround),
+        );
+        expect(world.x[1]).not.toBeCloseTo(1742.38916015625, 1);
+    });
+
+    it('lets an opponent reference controller drive the role', () => {
+        let driven = 0;
+        const opponent = {
+            role: 'prey',
+            subject: { name: 'r', id: 0, spec: null, weights: null, act: () => driven++ },
+        };
+        after30({ opponent });
+        expect(driven).toBe(30);
     });
 });

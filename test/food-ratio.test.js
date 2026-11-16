@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseArgs, runFoodRatio } from '../scripts/food-ratio.mjs';
 import { runSeed } from '../scripts/food-ratio-worker.mjs';
 import { foodRatio, offeredPerTick } from '../scripts/lib/food-ratio.mjs';
+import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 const CONFIG = {
     foodRegrowPerArea: 0.075,
@@ -56,14 +57,20 @@ describe('food-ratio script', () => {
         expect(() => parseArgs(['--nope'])).toThrow('unknown argument');
     });
 
-    it('counts exact meals on a short run and prints the pooled ratio', async () => {
-        const one = runSeed({ seed: 313056, ticks: 300, policy: 'map-elites-v6', overrides: {} });
-        expect(one.agentTicks).toBeGreaterThan(0);
-        expect(one.plantEnergy).toBeLessThanOrEqual(one.allEnergy);
-        /** @type {string[]} */
-        const lines = [];
-        const ratio = await runFoodRatio(['--seeds', '1', '--ticks', '300', '--workers', '1'], (l) => lines.push(l));
-        expect(ratio.mealsPerTick).toBeCloseTo(one.plantMeals / 300, 12);
-        expect(lines.join('\n')).toContain('regrowAtEaten');
-    }, 60000);
+    it(
+        'counts exact meals on a short run and prints the pooled ratio',
+        async () => {
+            const one = runSeed({ seed: 313056, ticks: 300, policy: 'map-elites-v6', overrides: {} });
+            expect(one.agentTicks).toBeGreaterThan(0);
+            expect(one.plantEnergy).toBeLessThanOrEqual(one.allEnergy);
+            /** @type {string[]} */
+            const lines = [];
+            const ratio = await runFoodRatio(['--seeds', '1', '--ticks', '300', '--workers', '1'], (l) =>
+                lines.push(l),
+            );
+            expect(ratio.mealsPerTick).toBeCloseTo(one.plantMeals / 300, 12);
+            expect(lines.join('\n')).toContain('regrowAtEaten');
+        },
+        scaleTimeout(60000),
+    );
 });

@@ -12,6 +12,10 @@ const AT_LEAST = {
     'two-foods': 0.9,
     'prey-too-big': 0.9,
     'hunter-closing': 0.4,
+    'prey-crossing': 0.3,
+    'hunter-flank': 0.5,
+    'kin-spared': 0.2,
+    'pack-converge': 0.2,
     'prey-ahead': 0.1,
     'rock-refuge': 0,
 };

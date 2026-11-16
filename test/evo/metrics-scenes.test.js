@@ -31,7 +31,13 @@ describe('the scene metrics', () => {
     it('are null with a reason on a fresh observer, except the counts read off the world', () => {
         const { observer, world } = observed({ worldWidth: 4000, worldHeight: 2000, refugeCount: 2 });
         const metrics = sceneMetrics(observer, world);
-        const counts = ['eval.basin_recolonisations', 'eval.predators_at_end', 'eval.prey_types_at_end'];
+        const counts = [
+            'eval.basin_recolonisations',
+            'eval.hunter_global_extinctions',
+            'eval.hunter_lineage_extinctions',
+            'eval.predators_at_end',
+            'eval.prey_types_at_end',
+        ];
         for (const [name, result] of Object.entries(metrics)) {
             if (counts.includes(name)) {
                 expect(result).toEqual({ value: 0 });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DRILLS } from '../js/evo/drill-scenarios.js';
 import { parseArgs } from '../scripts/learn-probe.mjs';
 import { formatLearn, summarise } from '../scripts/lib/learn-report.mjs';
 
@@ -6,7 +7,7 @@ describe('parseArgs', () => {
     it('defaults to every drill, 8 populations of 64 brains for 200 generations', () => {
         const args = parseArgs([]);
         expect(args).toMatchObject({ generations: 200, seeds: 8, population: 64, trials: 4, config: null, out: null });
-        expect(args.lessons).toHaveLength(7);
+        expect(args.lessons).toEqual(DRILLS.map((d) => d.name));
     });
 
     it('reads every flag and refuses an unknown lesson or flag', () => {

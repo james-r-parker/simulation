@@ -3444,3 +3444,138 @@ not caught from beyond 0.2 of view. Against a straight runner a kill pays at eve
 returned). Both oracles are heuristics, so these are what the bodies allow against this evader, not bounds. The finding is
 handed to [honest-budgets.md](honest-budgets.md) and [sprint-burst.md](sprint-burst.md); the lesson probes (T9 to T11) say
 whether a real forager's senses let it do the same.
+
+### 2026-11-16 - Detectors that stage by view share move with the hunter's eye (senses-and-motor E186)
+
+The hunting drills and the memory probes stage the prey at a share of the subject's view (`PREY_VIEW_SHARE` 0.6 times
+`viewOf`). When the predator's `visionRange` went from 350 to 400 (E186), `prey-ahead` started 30 px further out. The
+`memoryless` reference's win there fell from 11 to 7 of 32 trials (seed 1), and the `input-reader` reference's from 0.81
+to 0.69. The rear share (`rearVisionShare` 0.4) changed nothing on that drill, because the prey starts within 45 degrees of
+the heading, where the reach is above 0.9. Drill, reflex and probe numbers from before and after the switch are not
+comparable. In the D8 duel world (`eval.undefended_bite_share`, scripted hunter against a fleer), the forward eye raised
+the fleer's undefended share from about 0.31 to 0.5 against 0.95 for the food seeker (seeds 1 to 6 pooled). The metric
+still separates the arms, but by less than the half-of-chance bar its validity test uses, so that test keeps the 350
+all-round eye it was set on.
+
+### 2026-11-16 - Recruitment baseline: most hunters mature, few breed, and the hunters' world empties several times a run (honest-budgets T33a, T33b)
+
+The new diagnostics (`scene-recruit.js`, `scene-recruit-budget.js`, `scene-carcass-loss.js`) on the season 10 defaults plus
+the hunter's eyes of senses-and-motor T20, `npm run eval -- --seeds 16 --ticks 100000 --policy live` (seeds from
+`evals/seeds.json`, floor on). Per-seed mean, median and range:
+
+| Metric                                               | Mean  | Median | Range        |
+| ---------------------------------------------------- | ----- | ------ | ------------ |
+| `eval.recruit_cohort` (hunters born after burn-in)   | 505   | 454    | 15 to 1216   |
+| `eval.recruit_censored_share`                        | 0.001 | 0      | 0 to 0.01    |
+| `eval.recruit_matured_share`                         | 0.74  | 0.73   | 0.67 to 0.88 |
+| `eval.recruit_first_kill_share` (of the matured)     | 0.63  | 0.64   | 0.40 to 0.77 |
+| `eval.recruit_lineage_share` (a child that bred)     | 0.30  | 0.30   | 0.20 to 0.39 |
+| `eval.recruit_replaced_share.split-hunter-parent`    | 0.57  | 0.57   | 0.45 to 0.67 |
+| `eval.recruit_replaced_share.spec-flip`              | 0.76  | 0.83   | 0 to 1       |
+| `eval.recruit_replaced_share.mate-hunter-parent`     | 0.15  | 0      | 0 to 0.5     |
+| `eval.hunter_starve_age_median`                      | 1574  | 1262   | 849 to 3447  |
+| `eval.hunter_lineage_extinctions`                    | 5.3   | 4      | 0 to 23      |
+| `eval.hunter_global_extinctions`                     | 3.7   | 4      | 0 to 7       |
+| `eval.hunter_territory_blocked_share`                | 0.34  | 0.35   | 0 to 0.73    |
+| `eval.chase_net_energy` (per chase)                  | 121   | 124    | 47 to 175    |
+| `eval.chase_failed_energy` (per escaped or given up) | -75   | -75    | -117 to -44  |
+| `eval.carcass_loss_share.lost`                       | 0.040 | 0.001  | 0 to 0.38    |
+| `eval.carcass_loss_share.eaten`                      | 0.23  | 0.15   | 0 to 0.62    |
+| `eval.carcass_loss_share.faded`                      | 0.71  | 0.80   | 0.24 to 0.92 |
+| `eval.hunter_juvenile_death_share` (for reference)   | 0.80  | 0.82   | 0.55 to 0.90 |
+
+- **A hunter dies young, but most live past `maturityTicks`.** 74% of the cohort matured while 80% of hunter deaths are
+  under `juvenileTicks`: the windows differ, so the juvenile death share is not a maturity failure. Of the matured, 63%
+  made a deliberate kill, 57% of those born by a split bred, and only 30% have a child that itself bred.
+- **Mating-born hunters rarely breed (0.15); spec-flip and split-born do (0.76, 0.57).** The cause is not measured here:
+  0.34 of the breeding-ready hunters are refused by `territoryAllows` at a checkpoint, which T35's `recruit` arm tests.
+- **The hunters' world empties 3.7 times a run (`LastHunterDied`) and 5.3 lineages end while others live.** The floor and
+  spec flips restart them, so the existing headcount reads hide it. A failed chase costs 75 energy against a net 121 per
+  chase overall, so the chase is a loss only where it fails often.
+- **A full food pool is not where the carcass energy goes.** 4% is lost to it (2 of 16 seeds above 10%), 23% is eaten and
+  71% fades; `carcassFadeTicks` and eater reach, not pool capacity, are the leak (T33b decision in honest-budgets.md).
+- **Detector power** (`npm run eval:power` on 32 seeds, seeds 1 to 32, 100000 ticks, 16 against 16, 200 splits; the
+  false-positive rate of an arm pair drawn from the same report, and the smallest change detected at 80%, absolute for a
+  share and a fraction of the mean otherwise):
+
+    | Metric                                  | False positive | Detectable at 80% |
+    | --------------------------------------- | -------------- | ----------------- |
+    | `eval.recruit_matured_share`            | 8.0%           | 0.10              |
+    | `eval.recruit_first_kill_share`         | 9.5%           | 0.15              |
+    | `eval.recruit_lineage_share`            | 13.0%          | 0.10              |
+    | `eval.recruit_censored_share`           | 0.0%           | 0.03              |
+    | `eval.recruit_replaced_share.spec-flip` | 14.0%          | above 0.20        |
+    | `eval.chase_net_energy`                 | 8.5%           | 50%               |
+    | `eval.chase_failed_energy`              | 15.5%          | 75%               |
+    | `eval.hunter_global_extinctions`        | 6.5%           | 75%               |
+    | `eval.hunter_lineage_extinctions`       | 9.0%           | 100%              |
+    | `eval.recruit_cohort`                   | 6.0%           | 100%              |
+    | `eval.carcass_lost_per_1k`              | 13.0%          | above 100%        |
+
+    `eval.recruit_replaced_share.split-hunter-parent`, `eval.hunter_starve_age_median`, `eval.hunter_territory_blocked_share`,
+    `eval.carcass_loss_share.lost` and `.eaten` get no verdict at 16 seeds (the tool prints none). So at 16 seeds the screen
+    can read only the matured, first-kill and lineage shares for a change of 0.10 to 0.15; the chase energy, extinction counts
+    and the carcass loss need a larger effect than the arms are likely to make, and are context for the 64-seed keep-rule pass,
+    not screen verdicts. The registry entries carry no `power` read yet; `evals/power` is another lane's file.
+
+### 2026-11-16 - A fixed test timeout skips the coverage and load scale
+
+`vitest.config.js` stretches the default timeout under coverage (`COVERAGE_TIMEOUT_FACTOR`) and on a busy machine
+(`busyScale`), but an explicit number passed to `it` gets neither unless it goes through `scaleTimeout`
+(`scripts/lib/test-timeout.mjs`). `test/edge-probe.slow.test.js` passed `120000` raw: its one world takes 37 s quiet and
+144 s to 174 s in the coverage pass at load 33 to 64 (V8 coverage costs about 3.7x even though half the step is the
+uninstrumented WASM kernels), so it failed every loaded `scripts/check.sh`. Shrinking the world does not help: the edge
+rows start at burn-in (10000 ticks), and a third-size world still took 20 s against 42 s for the default (fixed flora,
+herd and kernel costs) and lost its hunters. Twenty more raw timeouts in eight files had the same gap; a
+`no-restricted-syntax` rule for `test/**/*.test.js` in `eslint.config.js` now fails a bare number as the timeout of
+`it`, `test` or `describe` (`test/timeout-lint.test.js`).
+
+### 2026-11-16 - The shared run of the season 10 defaults: the chase split holds, the pack lift is 1.8 (detector-baseline T7-T8, E-TS-0)
+
+- **What ran.** The 128-seed floor-on and floor-off runs of the defaults after the hunter-vision switch (PR 464), 200000 ticks, policy live, `--save-champions 2`: `evals/power/defaults-floor-on-E187.json` and `defaults-floor-off-E187.json`. The floor-on run's first 16 seeds are training-stages E-TS-0's settings, so E-TS-0 is read from them (`evals/decisions/E187/prediction.json`).
+- **Chase split.** On seeds 1 to 16 the give-up share is 0.41 (lost 0.17, outrun 0.14, quit 0.10); on 128 seeds 0.40. The E-TS-0 prediction cited 0.60 for the give-up share, so its size is wrong, but the order holds: lost is the largest part. Quit is under 0.15 on both sets.
+- **Pack lift.** `eval.pack_lift` is 1.72 on seeds 1 to 16 and 1.78 on 128 (range 1 to 3.7), so the pack prediction (within 0.2 of 1) is falsified: hunter kills after another hunter's bite beat the lineage mix by about 80%. Twenty of 128 seeds have no pack lift (under 30 paired kills).
+- **Power.** The power readings are not written in this change. `metric-power-write` on this report breaks four unit tests that pin main's readings (`eval.hunter_catches_per_1k` has no 64-seed power on this report; `minSeedsFor` and the compare verdicts shift), so the write waits for those expectations to be decided. The liveness readings are main's; the 12 liveness misses are split out as T8a in [detector-baseline.md](detector-baseline.md).
+- **Not done.** The four unbuilt plans (sprint-burst, stillness, scent-trails, body-genes) have no registry entries yet, so their top-up run is later.
+
+### 2026-11-16 - The memoryless reference on the eleven drills (training-stages Phase 4, T21)
+
+`node scripts/drill.mjs --archive <empty archive> --trials 64 --seed 1 --workers 8` (an archive with no elite, so the table
+is the `memoryless` reference's row alone; seed 1, 64 trials per drill, the default config; 3.4 s on 8 workers). Win share
+with its Wilson low bound, then the edge over four random brains and its low bound (`edgeLow`), then the first-match
+lost-trial reasons. The gate seed is the validation partition's, so a gate reads other trials of the same drills; this is the
+shape, not a gate reading.
+
+| Drill            | Win share [low] | Edge (edge low) | Lost-trial reasons                             |
+| ---------------- | --------------- | --------------- | ---------------------------------------------- |
+| `food-ahead`     | 0.94 [0.85]     | +0.78 (+0.64)   |                                                |
+| `food-behind`    | 1.00 [0.94]     | +0.88 (+0.77)   |                                                |
+| `two-foods`      | 0.00 [0.00]     | -0.04 (-0.07)   |                                                |
+| `prey-ahead`     | 0.22 [0.14]     | +0.22 (+0.12)   | `never-in-jaws` 41, `never-bit` 9              |
+| `prey-too-big`   | 0.45 [0.34]     | -0.55 (-0.66)   |                                                |
+| `hunter-closing` | 0.02 [0.00]     | +0.02 (-0.01)   |                                                |
+| `rock-refuge`    | 0.00 [0.00]     | +0.00 (-0.01)   |                                                |
+| `prey-crossing`  | 0.16 [0.09]     | +0.16 (+0.07)   | `never-in-jaws` 48, `never-bit` 6              |
+| `hunter-flank`   | 0.00 [0.00]     | +0.00 (-0.01)   |                                                |
+| `kin-spared`     | 0.00 [0.00]     | +0.00 (-0.01)   | `bit-kin` 51, `never-in-jaws` 8, `never-bit` 5 |
+| `pack-converge`  | 0.98 [0.92]     | +0.98 (+0.90)   | solo 0.98, kin-blind 0.98, gain 0 (low -0.1)   |
+
+Reading it:
+
+- The seven original drills read as they did on 2026-11-07 (the sample differs: 64 trials, other worlds since). The four new
+  ones: the reference wins `prey-crossing` at about `prey-ahead`'s rate (0.16 against 0.22; the loss is the chase, never in
+  the jaws), loses `hunter-flank` as it loses `hunter-closing` (a forager that runs straight is caught), loses `kin-spared`
+  by biting whenever prey is in view (51 of 64 lost trials are `bit-kin`: the sim refuses the bite, the drill reads the
+  wish), and wins `pack-converge`.
+- `pack-converge` is not a pack test for a scripted hunter. A lone hunter wins as often as the trio (63 of 64 against
+  63 of 64) and the kin-blind trio the same, so the gain and the gap to kin-blind are 0 with a low bound under 0. The 2000
+  energy prey takes more than one bite but a sprinting hunter that keeps biting kills it inside the 600 ticks. The `pack`
+  gate of the ladder reads `drill.pack-converge.gainLow` and `.blindGapLow`: the Validity rule (the reference passes each
+  condition) fails both, so T25 must rewrite or drop them, or stage a prey a lone hunter cannot kill (a larger body, not
+  more energy), with a Decisions row. The scripted oracle that sends all three hunters at the prey wins 0.5 as a trio
+  and 1.0 alone: three bodies crowd one prey.
+- The same reference has no `winShareOverReference` on `two-foods`, `hunter-flank`, `rock-refuge` and `kin-spared` (it wins
+  none, so that reading is null): a gate cannot use it on those four.
+- Random brains win none of the four new drills at 8 trials of the validity tests (`test/evo/drill-scenarios-social.slow.test.js`);
+  a chaser that bites everything wins `kin-spared` on none (every loss `bit-kin`), and the oracle that bites only a touching
+  prey wins 0.375 of 32.

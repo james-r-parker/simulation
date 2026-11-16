@@ -313,8 +313,8 @@ function edible(w, me, f) {
 }
 
 /**
- * Reference caster: tests every circle, obstacle and wall with the ray-circle formula; food the caster cannot eat is
- * not there for it.
+ * Reference caster: tests every circle, obstacle and wall with the ray-circle formula, out to the ray's reach; food
+ * the caster cannot eat is not there for it.
  * @param {ReturnType<typeof senseWorld>} w
  * @param {number} me
  * @param {number} k
@@ -326,6 +326,10 @@ function brute(w, me, k) {
     const dx = cH * w.rayCos[k] - sH * w.raySin[k];
     const dy = sH * w.rayCos[k] + cH * w.raySin[k];
     const range = w.visionBySpec[w.spec[me]];
+    // senses-and-motor Phase 5: a ray reaches the range ahead and `rearVisionShare` of it behind, written from the plan
+    const share = Object.values(w.config.specialisations).find((e) => e.index === w.spec[me]).rearVisionShare;
+    const reach =
+        range * Math.min(1, share + ((1 - share) * (1 + Math.cos((2 * Math.PI * k) / w.config.rayCount))) / 2);
     let best = { t: Infinity, kind: 3, idx: 0 };
     /** @param {number} cx @param {number} cy @param {number} r @param {number} kind @param {number} idx */
     const test = (cx, cy, r, kind, idx) => {
@@ -341,7 +345,7 @@ function brute(w, me, k) {
             t = c <= 0 ? 0 : -1;
         }
         const better = t < best.t || (t === best.t && (kind < best.kind || (kind === best.kind && idx < best.idx)));
-        if (t >= 0 && t <= range && better) {
+        if (t >= 0 && t <= reach && better) {
             best = { t, kind, idx };
         }
     };
@@ -351,7 +355,7 @@ function brute(w, me, k) {
     const W = w.config.worldWidth;
     const tx = dx < 0 ? -w.x[me] / dx : dx > 0 ? (W - w.x[me]) / dx : Infinity;
     const ty = dy < 0 ? -w.y[me] / dy : dy > 0 ? (W - w.y[me]) / dy : Infinity;
-    if (Math.min(tx, ty) <= range && Math.min(tx, ty) < best.t) {
+    if (Math.min(tx, ty) <= reach && Math.min(tx, ty) < best.t) {
         best = { t: Math.min(tx, ty), kind: 3, idx: 0 };
     }
     for (let f = 0; f < w.foodAlive.length; f++) {

@@ -22,7 +22,7 @@ const SOURCE_METRICS = [
     'eval.food_species_share.fungus',
     'eval.food_species_share.toxiccap',
     'eval.trampled_share',
-    'eval.dodge_skill',
+    'eval.herd_dodge_share',
     'eval.herd_grazed_share',
     'eval.trample_unavoidable_share',
     'eval.herd_stampede_rate',
