@@ -90,6 +90,11 @@ describe('founderMixture', () => {
 
     it('refuses age shares that do not sum to 1, a non-positive energy and an arena that is too small', () => {
         expect(() => founderMixture(spec({ ages: [{ ticks: 0, share: 0.5 }] }))).toThrow(/age shares/);
+        const negative = [
+            { ticks: 0, share: -0.5 },
+            { ticks: 9, share: 1.5 },
+        ];
+        expect(() => founderMixture(spec({ ages: negative }))).toThrow(/age shares/);
         expect(() => founderMixture(spec({ energyEach: 0 }))).toThrow(/energyEach/);
         expect(() => founderMixture(spec({ arena: { columns: 2, rows: 2 } }))).toThrow(/fewer cells/);
     });

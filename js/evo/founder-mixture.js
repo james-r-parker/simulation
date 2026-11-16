@@ -48,8 +48,8 @@ function shuffled(count, rng) {
  */
 function apportionAges(ages, total) {
     const sum = ages.reduce((s, a) => s + a.share, 0);
-    if (Math.abs(sum - 1) > 1e-9) {
-        throw new Error(`founderMixture: age shares sum to ${sum}, not 1`);
+    if (Math.abs(sum - 1) > 1e-9 || ages.some((a) => !(a.share >= 0))) {
+        throw new Error(`founderMixture: age shares sum to ${sum}, not 1, or one is negative`);
     }
     const exact = ages.map((a) => a.share * total);
     const counts = exact.map(Math.floor);
