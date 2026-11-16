@@ -25,11 +25,11 @@ describe('chance energy moves nothing that breeds', () => {
     it('leaves the birth gift as it was', () => {
         const w = lifeWorld({ meritBirthBoost: 0.4, meritHalfLife: 0 });
         const mother = addBlob(w, { energy: 1000 });
-        const before = giftOf(w, mother, false);
+        const before = giftOf(w, mother);
         creditIntake(w, mother, 5000, false);
-        expect(giftOf(w, mother, false)).toBe(before);
+        expect(giftOf(w, mother)).toBe(before);
         creditIntake(w, mother, 300, true);
-        expect(giftOf(w, mother, false)).toBeGreaterThan(before);
+        expect(giftOf(w, mother)).toBeGreaterThan(before);
     });
 
     it('gives a male fed by chance no mate rank over one fed deliberately, whatever his energy', () => {

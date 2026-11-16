@@ -19,7 +19,7 @@ import { applyGenes, childShareOf } from './traits.js';
 import { slotOfGenome } from './merit-state.js';
 import { noteProofBirth, splitBraked } from './proof.js';
 import { noteMateScarcityBirth } from './mate-scarcity.js';
-import { noteClonalBirth, noteSplit, splitKeysAllow } from './split-gate.js';
+import { noteSplit, splitKeysAllow } from './split-gate.js';
 import { TIMER_CAP, allocAgent } from './world.js';
 
 /** @typedef {import('./world.js').World} World */
@@ -149,20 +149,19 @@ function placeChild(world, child, mother) {
 const GIFT_CAP = 0.9;
 
 /**
- * The energy a birth moves from `mother` to the child. A mating gives her `childShare` gene's share of her energy, a split
- * half, or the same gene share when `splitGiftGene` is on.
+ * The energy a birth moves from `mother` to the child: her `childShare` gene's share of her energy, for a mating and a
+ * split alike.
  * With a non-zero `meritBirthBoost` the gift is scaled by `1 + boost x (2m - 1)`
  * (`m = merit / (merit + meritHalf)`, her merit decayed to now without restamping it) and capped at 0.9 of her energy;
  * otherwise it is the unscaled gift, exactly.
  * @param {World} world the world
  * @param {number} mother the mother or splitter
- * @param {boolean} isMate true for a mating birth
  * @returns {number}
  */
-export function giftOf(world, mother, isMate) {
+export function giftOf(world, mother) {
     const { meritBirthBoost, meritHalf } = world.config;
     const energy = world.energy[mother];
-    const gift = energy * (isMate || world.config.splitGiftGene ? childShareOf(world, mother) : 0.5);
+    const gift = energy * childShareOf(world, mother);
     if (meritBirthBoost === 0) {
         return gift;
     }
@@ -184,8 +183,8 @@ function giftBlocked(world, { mother, gift, isMate }) {
 
 /**
  * Allocates a child of `mother`, runs the brain hook, moves its energy in, places it and pushes `AgentBorn`.
- * A mating birth gives `childEnergyShare` of the mother's energy, and is blocked when that (scaled by merit, see
- * `giftOf`) is below `childEnergyMin`; a split gives half, scaled the same way. Either needs a free slot.
+ * A birth gives the mother's `childShare` gene's share of her energy (scaled by merit, see `giftOf`); a mating is blocked
+ * when that is below `childEnergyMin`, and either when it would leave the mother under `birthReserve`. Either needs a free slot.
  * @param {World} world the world
  * @param {BirthPolicy} policy the policy
  * @param {number} mother the mother or splitter
@@ -199,7 +198,7 @@ function giveBirth(world, policy, mother, cause) {
         pushBlocked(world, mother, BLOCKED_CAUSE.CAPACITY);
         return -1;
     }
-    const gift = giftOf(world, mother, isMate);
+    const gift = giftOf(world, mother);
     if (giftBlocked(world, { mother, gift, isMate })) {
         pushBlocked(world, mother, BLOCKED_CAUSE.ENERGY);
         return -1;
@@ -219,7 +218,6 @@ function giveBirth(world, policy, mother, cause) {
     if (!isMate) {
         noteSplit(world, mother);
     }
-    noteClonalBirth(world, { child, mother, isMate });
     noteMateScarcityBirth(world, child);
     world.birthOptions.cause = cause;
     world.birthOptions.rng = world.rng.mutation;

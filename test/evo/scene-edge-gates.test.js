@@ -18,7 +18,6 @@ const OVER = {
     maxAgents: 40,
     maxFood: 4,
     splitMateScarceTicks: 100,
-    splitClonalMax: 3,
     splitMinEnergy: 900,
     splitDeliberateMin: 50,
     splitDeliberateShareMin: 0.5,
@@ -59,7 +58,6 @@ function open(world, slot) {
     world.pregnancy[slot] = 0;
     world.energy[slot] = 1500;
     world.mateSeenAt[slot] = 0;
-    world.clonalDepth[slot] = 0;
     world.deliberateIntake[slot] = 100;
     world.mealsTotal[slot] = 4;
     world.mealsDeliberate[slot] = 4;
@@ -72,7 +70,6 @@ function open(world, slot) {
 /** The plants that close one gate each. */
 const CLOSE = {
     seen: (/** @type {any} */ w, /** @type {number} */ s) => (w.mateSeenAt[s] = TICK - 10),
-    clonal: (/** @type {any} */ w, /** @type {number} */ s) => (w.clonalDepth[s] = 3),
     energy: (/** @type {any} */ w, /** @type {number} */ s) => (w.energy[s] = 100),
     merit: (/** @type {any} */ w, /** @type {number} */ s) => (w.deliberateIntake[s] = 10),
     meritShare: (/** @type {any} */ w, /** @type {number} */ s) => (w.mealsDeliberate[s] = 1),
@@ -94,11 +91,10 @@ describe('firstClosedGate', () => {
         expect(firstClosedGate(world, spawn())).toBeNull();
     });
 
-    it('names the gate that holds a prey, for each of the six', () => {
+    it('names the gate that holds a prey, for each of the five', () => {
         const { world, spawn } = setup();
         const cases = /** @type {const} */ ([
             ['seen', 'seen'],
-            ['clonal', 'clonal'],
             ['energy', 'energy'],
             ['merit', 'merit'],
             ['meritShare', 'merit'],
@@ -117,15 +113,15 @@ describe('firstClosedGate', () => {
     it('names the first closed gate in the doc order when several hold a prey', () => {
         const { world, spawn } = setup();
         const slot = spawn();
-        const order = /** @type {const} */ (['proof', 'merit', 'energy', 'clonal', 'seen']);
-        const expected = ['proof', 'merit', 'energy', 'clonal', 'seen'];
+        const order = /** @type {const} */ (['proof', 'merit', 'energy', 'seen']);
+        const expected = ['proof', 'merit', 'energy', 'seen'];
         order.forEach((plant, i) => {
             CLOSE[plant](world, slot);
             expect(firstClosedGate(world, slot), `after ${plant}`).toBe(expected[i]);
         });
         CLOSE.cap(world, slot);
         expect(firstClosedGate(world, slot)).toBe('seen');
-        expect(GATES).toEqual(['seen', 'clonal', 'energy', 'merit', 'proof', 'other']);
+        expect(GATES).toEqual(['seen', 'energy', 'merit', 'proof', 'other']);
     });
 
     it('agrees with the sim: open exactly when readyBeforeGate and splitGateOpen both let a mature prey split', () => {
@@ -144,8 +140,8 @@ describe('firstClosedGate', () => {
 describe('the split-gate shares', () => {
     it('are shares of the mature, rested, not-pregnant prey, sum to the blocked share, and leave the open prey out', () => {
         const { world, spawn } = setup();
-        // Ten eligible prey: 1 seen, 2 clonal, 1 energy, 1 merit, 1 proof, 1 other, 3 open.
-        const gated = /** @type {const} */ (['seen', 'clonal', 'clonal', 'energy', 'merit', 'proof', 'cap']);
+        // Ten eligible prey: 1 seen, 3 proof, 1 energy, 1 merit, 1 other, 3 open.
+        const gated = /** @type {const} */ (['seen', 'proof', 'proof', 'energy', 'merit', 'proof', 'cap']);
         for (const plant of gated) {
             CLOSE[plant](world, spawn());
         }
@@ -166,7 +162,6 @@ describe('the split-gate shares', () => {
         const m = edgeGateMetrics(gates);
         const names = /** @type {Record<string, string>} */ ({
             seen: 'eval.edge_split_blocked_share.seen',
-            clonal: 'eval.edge_split_blocked_share.clonal',
             energy: 'eval.edge_split_blocked_share.energy',
             merit: 'eval.edge_split_blocked_share.merit',
             proof: 'eval.edge_split_blocked_share.proof',
@@ -174,10 +169,9 @@ describe('the split-gate shares', () => {
         });
         const share = (/** @type {string} */ g) => /** @type {any} */ (m)[names[g]].value;
         expect(share('seen')).toBeCloseTo(1 / 11, 12);
-        expect(share('clonal')).toBeCloseTo(2 / 11, 12);
         expect(share('energy')).toBeCloseTo(2 / 11, 12);
         expect(share('merit')).toBeCloseTo(1 / 11, 12);
-        expect(share('proof')).toBeCloseTo(1 / 11, 12);
+        expect(share('proof')).toBeCloseTo(3 / 11, 12);
         expect(share('other')).toBeCloseTo(1 / 11, 12);
         const blocked = GATES.reduce((sum, g) => sum + share(g), 0);
         expect(blocked).toBeCloseTo(8 / 11, 12);
@@ -198,11 +192,11 @@ describe('the split-gate shares', () => {
     it('read only as many prey as the list holds', () => {
         const { world, spawn } = setup();
         for (let i = 0; i < 5; i++) {
-            CLOSE.clonal(world, spawn());
+            CLOSE.energy(world, spawn());
         }
         const gates = createEdgeGates(3);
         sampleEdgeGates(gates, world);
-        expect(edgeGateMetrics(gates)['eval.edge_split_blocked_share.clonal']).toEqual({ value: 1 });
+        expect(edgeGateMetrics(gates)['eval.edge_split_blocked_share.energy']).toEqual({ value: 1 });
         expect(gates.eligible).toBe(3);
     });
 });
@@ -212,7 +206,7 @@ describe('the share detectors with nothing to read', () => {
 
     it('read null with a reason when no edge checkpoint was sampled', () => {
         const m = edgeGateMetrics(createEdgeGates(40));
-        expect(Object.keys(m)).toHaveLength(6);
+        expect(Object.keys(m)).toHaveLength(5);
         for (const result of Object.values(m)) {
             expect(result).toEqual({ value: null, reason: NO_CHECKPOINT });
         }

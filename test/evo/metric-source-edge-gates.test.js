@@ -4,8 +4,8 @@
 // Five mature prey stand still at the checkpoint (T) with 5 alive, so it is an edge checkpoint. Female F at (200, 200) looks
 // east at male M1, 200 away: in view (visionRange 300) but out of reach (about size + size + mateRange 100), so the sense
 // does not note M1 and F is mate-scarce. Female G at (700, 700) has male M2 60 away. Female H at (100, 800) has nobody in
-// view and a line that has split 3 times in a row. F and M1 split at once (the shark rule, no mate in reach), so they are on
-// cooldown and leave the eligible prey. G and M2 see a mate in reach and H is held by `clonal`.
+// view and too little energy to split. F and M1 split at once (the shark rule, no mate in reach), so they are on
+// cooldown and leave the eligible prey. G and M2 see a mate in reach and H is held by `energy`.
 
 import { describe, expect, it } from 'vitest';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
@@ -36,7 +36,7 @@ function stand(world, slot, { x, y, sex }) {
 function scriptedRun() {
     const { run, world, spawn } = huntRun({
         runTicks: T + 1000,
-        over: { maxAgents: 40, splitMateScarceTicks: 100, splitClonalMax: 3, mateRange: 100, maxFood: 4 },
+        over: { maxAgents: 40, splitMateScarceTicks: 100, mateRange: 100, maxFood: 4 },
     });
     const [f, m1, g, m2, h] = Array.from({ length: 5 }, () => spawn(FORAGER));
     run.jump(T - 1);
@@ -45,7 +45,7 @@ function scriptedRun() {
     stand(world, g, { x: 700, y: 700, sex: SEX.FEMALE });
     stand(world, m2, { x: 760, y: 700, sex: SEX.MALE });
     stand(world, h, { x: 100, y: 800, sex: SEX.FEMALE });
-    world.clonalDepth[h] = 3;
+    world.energy[h] = 100;
     run.tick();
     return { run, world, females: [f, g, h] };
 }
@@ -64,11 +64,10 @@ describe('the share detectors in a scripted world', () => {
         expect(run.observer.scenes.edge.gates.checkpoints).toBe(1);
     });
 
-    it('eval.edge_split_blocked_share.* hold the prey that saw a mate by seen and H by clonal', () => {
+    it('eval.edge_split_blocked_share.* hold the prey that saw a mate by seen and H by energy', () => {
         // F and M1 are on cooldown after their split, so the eligible prey are G, M2 and H.
         expect(m['eval.edge_split_blocked_share.seen']).toEqual({ value: 2 / 3 });
-        expect(m['eval.edge_split_blocked_share.clonal']).toEqual({ value: 1 / 3 });
-        expect(m['eval.edge_split_blocked_share.energy']).toEqual({ value: 0 });
+        expect(m['eval.edge_split_blocked_share.energy']).toEqual({ value: 1 / 3 });
         expect(m['eval.edge_split_blocked_share.merit']).toEqual({ value: 0 });
         expect(m['eval.edge_split_blocked_share.proof']).toEqual({ value: 0 });
         expect(m['eval.edge_split_blocked_share.other']).toEqual({ value: 0 });

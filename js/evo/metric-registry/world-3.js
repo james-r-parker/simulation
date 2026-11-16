@@ -160,23 +160,7 @@ export const WORLD_3 = {
     'eval.edge_split_blocked_share.seen': entry('world', {
         module: 'js/evo/scene-edge-gates.js',
         meaning: 'Lower means fewer thin-population prey are kept from splitting by the seen gate.',
-        counts: 'At the 1000-tick checkpoints after burn-in with 1 to 99 prey alive (edge checkpoints), pooled: mature, rested, not-pregnant prey whose first closed split gate, in the order seen, clonal, energy, merit, proof, other, is seen (a possible mate in view within splitMateScarceTicks (mateScarce is false)), over all such prey. The six shares sum to the blocked share.',
-        unit: 'share',
-        direction: 'watch',
-        intended: 'lower',
-        nullWhen: [
-            'no edge checkpoint (a 1000-tick checkpoint after burn-in with 1 to 99 prey)',
-            'no mature, rested, not-pregnant prey at an edge checkpoint',
-        ],
-        expectedFlat:
-            'Null on the seeds with no edge span: 21 of 128 seeds floor on never start a span under 100 prey after burn-in (E155), so it reads only where the population falls thin.',
-        arithmetic: 'test/evo/scene-edge-gates.test.js',
-        source: 'test/evo/metric-source-edge-gates.test.js',
-    }),
-    'eval.edge_split_blocked_share.clonal': entry('world', {
-        module: 'js/evo/scene-edge-gates.js',
-        meaning: 'Lower means fewer thin-population prey are kept from splitting by the clonal gate.',
-        counts: 'At the 1000-tick checkpoints after burn-in with 1 to 99 prey alive (edge checkpoints), pooled: mature, rested, not-pregnant prey whose first closed split gate, in the order seen, clonal, energy, merit, proof, other, is clonal (splitClonalMax (its line has split that many times in a row)), over all such prey. The six shares sum to the blocked share.',
+        counts: 'At the 1000-tick checkpoints after burn-in with 1 to 99 prey alive (edge checkpoints), pooled: mature, rested, not-pregnant prey whose first closed split gate, in the order seen, energy, merit, proof, other, is seen (a possible mate in view within splitMateScarceTicks (mateScarce is false)), over all such prey. The five shares sum to the blocked share.',
         unit: 'share',
         direction: 'watch',
         intended: 'lower',
@@ -192,7 +176,7 @@ export const WORLD_3 = {
     'eval.edge_split_blocked_share.energy': entry('world', {
         module: 'js/evo/scene-edge-gates.js',
         meaning: 'Lower means fewer thin-population prey are kept from splitting by the energy gate.',
-        counts: 'At the 1000-tick checkpoints after burn-in with 1 to 99 prey alive (edge checkpoints), pooled: mature, rested, not-pregnant prey whose first closed split gate, in the order seen, clonal, energy, merit, proof, other, is energy (energy at or under splitMinBySpec), over all such prey. The six shares sum to the blocked share.',
+        counts: 'At the 1000-tick checkpoints after burn-in with 1 to 99 prey alive (edge checkpoints), pooled: mature, rested, not-pregnant prey whose first closed split gate, in the order seen, energy, merit, proof, other, is energy (energy at or under splitMinBySpec), over all such prey. The five shares sum to the blocked share.',
         unit: 'share',
         direction: 'watch',
         intended: 'lower',
@@ -208,7 +192,7 @@ export const WORLD_3 = {
     'eval.edge_split_blocked_share.merit': entry('world', {
         module: 'js/evo/scene-edge-gates.js',
         meaning: 'Lower means fewer thin-population prey are kept from splitting by the merit gate.',
-        counts: 'At the 1000-tick checkpoints after burn-in with 1 to 99 prey alive (edge checkpoints), pooled: mature, rested, not-pregnant prey whose first closed split gate, in the order seen, clonal, energy, merit, proof, other, is merit (splitDeliberateMin or splitDeliberateShareMin (too little deliberate intake or share)), over all such prey. The six shares sum to the blocked share.',
+        counts: 'At the 1000-tick checkpoints after burn-in with 1 to 99 prey alive (edge checkpoints), pooled: mature, rested, not-pregnant prey whose first closed split gate, in the order seen, energy, merit, proof, other, is merit (splitDeliberateMin or splitDeliberateShareMin (too little deliberate intake or share)), over all such prey. The five shares sum to the blocked share.',
         unit: 'share',
         direction: 'watch',
         intended: 'lower',
@@ -224,7 +208,7 @@ export const WORLD_3 = {
     'eval.edge_split_blocked_share.proof': entry('world', {
         module: 'js/evo/scene-edge-gates.js',
         meaning: 'Lower means fewer thin-population prey are kept from splitting by the proof gate.',
-        counts: 'At the 1000-tick checkpoints after burn-in with 1 to 99 prey alive (edge checkpoints), pooled: mature, rested, not-pregnant prey whose first closed split gate, in the order seen, clonal, energy, merit, proof, other, is proof (the split brake of the proof rule (splitBraked)), over all such prey. The six shares sum to the blocked share.',
+        counts: 'At the 1000-tick checkpoints after burn-in with 1 to 99 prey alive (edge checkpoints), pooled: mature, rested, not-pregnant prey whose first closed split gate, in the order seen, energy, merit, proof, other, is proof (the split brake of the proof rule (splitBraked)), over all such prey. The five shares sum to the blocked share.',
         unit: 'share',
         direction: 'watch',
         intended: 'lower',
@@ -240,7 +224,7 @@ export const WORLD_3 = {
     'eval.edge_split_blocked_share.other': entry('world', {
         module: 'js/evo/scene-edge-gates.js',
         meaning: 'Lower means fewer thin-population prey are kept from splitting by the other gate.',
-        counts: 'At the 1000-tick checkpoints after burn-in with 1 to 99 prey alive (edge checkpoints), pooled: mature, rested, not-pregnant prey whose first closed split gate, in the order seen, clonal, energy, merit, proof, other, is other (splitMaxPerLife, the birth budget or the territory rule), over all such prey. The six shares sum to the blocked share.',
+        counts: 'At the 1000-tick checkpoints after burn-in with 1 to 99 prey alive (edge checkpoints), pooled: mature, rested, not-pregnant prey whose first closed split gate, in the order seen, energy, merit, proof, other, is other (splitMaxPerLife, the birth budget or the territory rule), over all such prey. The five shares sum to the blocked share.',
         unit: 'share',
         direction: 'watch',
         intended: 'lower',
