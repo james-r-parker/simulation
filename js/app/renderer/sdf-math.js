@@ -159,16 +159,34 @@ export function sdBlob(x, y, shape) {
 }
 
 /**
+ * @param {number} a an angle in radians
+ * @param {number} b an angle in radians
+ * @returns {number} the shortest signed arc from `b` to `a`, in [-PI, PI]
+ */
+export function arcBetween(a, b) {
+    return Math.atan2(Math.sin(a - b), Math.cos(a - b));
+}
+
+/**
  * @param {number} x
  * @param {number} y
- * @param {{rx: number, ry: number, amp: number, lobes: number, phase: number}} cell a cell membrane: an ellipse of half
- *   axes `rx`, `ry` whose outline ripples by `amp` (a share of the radius) in `lobes` waves, turned by `phase`
+ * @param {{rx: number, ry: number, amp: number, lobes: number, phase: number, taper?: number,
+ *   dent?: {angle: number, depth: number, width: number}}} cell a cell membrane: an ellipse of half axes `rx`, `ry`
+ *   whose outline ripples by `amp` (a share of the radius) in `lobes` waves, turned by `phase`. `taper` scales the
+ *   half height by `1 + taper * x / rx` (positive: widest in front, narrowing to the tail). A `dent` pushes the outline
+ *   in by `depth` (a share of the radius, negative bulges out) about the bearing `angle`, over an arc of about `width`
+ *   radians
  * @returns {number} the approximate distance to the membrane (exact on a still circle, scaled by 0.9 elsewhere)
  */
-export function sdMembrane(x, y, { rx, ry, amp, lobes, phase }) {
+export function sdMembrane(x, y, { rx, ry, amp, lobes, phase, taper = 0, dent }) {
     const qx = x / rx;
-    const qy = y / ry;
-    const ripple = amp * Math.sin(lobes * Math.atan2(qy, qx) + phase);
+    const qy = y / (ry * (1 + taper * Math.min(Math.max(qx, -1), 1)));
+    const bearing = Math.atan2(qy, qx);
+    let ripple = amp * Math.sin(lobes * bearing + phase);
+    if (dent !== undefined) {
+        const da = arcBetween(bearing, dent.angle) / dent.width;
+        ripple -= dent.depth * Math.exp(-da * da);
+    }
     return (Math.hypot(qx, qy) - 1 - ripple) * Math.min(rx, ry) * 0.9;
 }
 

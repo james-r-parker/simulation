@@ -36,6 +36,8 @@ import {
  * @property {{amp: any, phase: any}} [blob] vec3 harmonics for a `blob` part
  * @property {any} [dim] float the final colour is multiplied by (a lens dims the layer)
  * @property {any} [ringFloor] float the least opacity of a `ring`-bound part (the calls lens raises it)
+ * @property {{angle: any, depth: any, width: any}} [dent] floats: a membrane part's dent (bearing, signed depth, width)
+ * @property {any} [fade] float 0 to 1: how far the whole model has faded out (a dying body)
  */
 
 /**
@@ -109,15 +111,17 @@ function param(value, inputs) {
     return value;
 }
 
-/** Each primitive's distance: `(point, part, param)`, where `param` resolves a number, node or `{in, mul}`. */
+/** Each primitive's distance: `(point, part, param, dent)`, where `param` resolves a number, node or `{in, mul}`. */
 const DISTANCES = Object.freeze({
-    membrane: (/** @type {any} */ p, /** @type {any} */ part, /** @type {any} */ v) =>
+    membrane: (/** @type {any} */ p, /** @type {any} */ part, /** @type {any} */ v, /** @type {any} */ dent) =>
         sdMembrane(p, {
             rx: v(part.rx),
             ry: v(part.ry),
             amp: v(part.amp),
             lobes: part.lobes,
             phase: v(part.phase ?? 0),
+            taper: part.taper ?? 0,
+            dent,
         }),
     wave: (/** @type {any} */ p, /** @type {any} */ part, /** @type {any} */ v) =>
         sdWave(p, {
@@ -150,10 +154,10 @@ function partDistance(p, part, inputs) {
         }
         return sdBlob(p, inputs.blob);
     }
-    const distance = /** @type {Record<string, (p: any, part: any, v: (x: any) => any) => any>} */ (DISTANCES)[
-        part.shape
-    ];
-    return distance(p, part, (x) => param(x, inputs));
+    const distance = /** @type {Record<string, (p: any, part: any, v: (x: any) => any, dent?: any) => any>} */ (
+        DISTANCES
+    )[part.shape];
+    return distance(p, part, (x) => param(x, inputs), inputs.dent);
 }
 
 /** Each bind's move of the point `q` about the part's `pivot`, as `{p, scale}`. */
@@ -272,7 +276,7 @@ export function modelMaterial(model, { inputs, look, flash = 0.6 }) {
     }
     const lit = mix(acc.rgb, vec3(1, 1, 1), min(rig.flash.mul(flash), 1));
     material.colorNode = inputs.dim === undefined ? lit : lit.mul(inputs.dim);
-    material.opacityNode = acc.a;
+    material.opacityNode = inputs.fade === undefined ? acc.a : acc.a.mul(float(1).sub(inputs.fade));
     material.alphaTest = 0.002;
     material.premultipliedAlpha = true;
     return material;

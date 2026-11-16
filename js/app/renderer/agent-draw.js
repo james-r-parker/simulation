@@ -43,6 +43,7 @@ export function meshTable(info) {
 function agentInputs({ dim, ringFloor }) {
     const gate = attribute('iGate', 'vec4');
     const gate2 = attribute('iGate2', 'vec4');
+    const call = attribute('iCall', 'vec4');
     return {
         ...standardInputs(),
         values: {
@@ -54,8 +55,9 @@ function agentInputs({ dim, ringFloor }) {
             inCover: gate2.y,
             gestation: gate2.z,
             wave: gate2.w,
+            thrust: call.w,
         },
-        colors: { pollenColor: attribute('iAccent', 'vec4').xyz, callColor: attribute('iCall', 'vec4').xyz },
+        colors: { pollenColor: attribute('iAccent', 'vec4').xyz, callColor: call.xyz },
         dim,
         ringFloor,
     };

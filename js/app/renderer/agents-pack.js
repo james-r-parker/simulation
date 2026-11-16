@@ -5,6 +5,9 @@ import { drawnRadius } from '../display-size.js';
 import { slotOf } from '../family-slots.js';
 import { createBodyTweens, tweenAge } from './body-tweens.js';
 import { ENERGY_FLOOR, familyColor, lineageColor } from './colors.js';
+import { easeJaw, jawTarget, JAW_RATE } from './hunt-cues.js';
+
+export { JAW_RATE };
 
 /** The state word's layout (`SNAPSHOT_STATE` in js/sim/snapshot-state.js; a test keeps the two in step). */
 export const STATE_BITS = 0xf;
@@ -17,8 +20,6 @@ const BYTE = 0xff;
 export const ITEM = 4;
 /** Ticks an ate or bitten flash lasts after the event. */
 export const FLASH_TICKS = 12;
-/** How fast the jaw eases open and shut, per second. */
-export const JAW_RATE = 28;
 /** Full turn rate in radians per tick for clamping. */
 export const TURN_FULL = 0.2;
 /** Smoothing factor per frame for turn cues. */
@@ -47,6 +48,7 @@ function colorUnslotted(rgb, { mesh, lineageId, neutral, energy01 }) {
     rgb[2] *= k;
 }
 
+const JAW = { target: 0, dtMs: 0 };
 const COLOR_AGENT = { mesh: 0, lineageId: 0, neutral: false, energy01: 0 };
 const MOTION = { speed01: 0, turn01: 0, phase: 0 };
 
@@ -202,7 +204,6 @@ export function packAgents(agents, store, bits, { dtMs, zoom, slots, maxVelocity
     for (const bucket of store.buckets) {
         bucket.count = 0;
     }
-    const ease = 1 - Math.exp((-JAW_RATE * dtMs) / 1000);
     for (let i = 0; i < agents.count; i++) {
         const mesh = store.meshOfSpec[agents.spec[i]];
         const bucket = store.buckets[mesh];
@@ -211,8 +212,9 @@ export function packAgents(agents, store, bits, { dtMs, zoom, slots, maxVelocity
         }
         const flags = agents.flags[i];
         const slot = agents.slot[i];
-        const target = (flags & bits.JAW_OPEN) !== 0 ? 1 : 0;
-        store.jaw[slot] += (target - store.jaw[slot]) * ease;
+        JAW.target = jawTarget(flags, bits);
+        JAW.dtMs = dtMs;
+        store.jaw[slot] = easeJaw(store.jaw[slot], JAW);
         const o = claimRow(bucket, i);
         const rgb = familyColor(slots, agents.lineageId[i], agents.energy[i], store.rgb);
         COLOR_AGENT.mesh = mesh;

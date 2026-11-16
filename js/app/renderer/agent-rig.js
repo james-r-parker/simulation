@@ -7,6 +7,7 @@ import { floraColor } from './flora-colors.js';
 import { temperatureColor } from './colors.js';
 import { applyClip, restRig } from './clip-sampler.js';
 import { CH, CHANNELS, clipForTween } from './clips.js';
+import { thrustOf } from './hunt-cues.js';
 import { FILL_FLOOR, FILL_SHARE, NEON, toDisplay } from './palette.js';
 
 const N = CHANNELS.length;
@@ -42,7 +43,7 @@ export const STALK_SPEED = 0.35;
  * @property {Float32Array} gate pregnant, sick, infected, pollen
  * @property {Float32Array} gate2 calling, in cover, gestation01, the membrane and flagellum wave phase
  * @property {Float32Array} accent pollen colour r, g, b and the call kind (1 alarm, 2 pack call)
- * @property {Float32Array} call call colour r, g, b, 0
+ * @property {Float32Array} call call colour r, g, b and the flagella's thrust
  */
 
 /**
@@ -244,7 +245,7 @@ function gateRow(ctx, { bucket, o, flags }, out, rgb) {
     const hue = ((flags >>> ctx.flags.POLLEN_HUE_SHIFT) & ctx.flags.POLLEN_HUE_MASK) / ctx.flags.POLLEN_HUE_MASK;
     toDisplay(floraColor(hue * 2 - 1, rgb), rgb);
     putRgb(out.accent, o, pollen ? rgb : NEON.pollen, callKind);
-    putRgb(out.call, o, callKind === 2 ? NEON.huntCall : NEON.alarm, 0);
+    putRgb(out.call, o, callKind === 2 ? NEON.huntCall : NEON.alarm, thrustOf(bucket.motion[o]));
 }
 
 const ROW = { bucket: /** @type {any} */ (null), o: 0, flags: 0 };

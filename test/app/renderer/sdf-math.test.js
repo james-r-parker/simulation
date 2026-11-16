@@ -123,6 +123,35 @@ describe('cell primitives', () => {
         expect(sdMembrane(0, 0.5, { rx: 1, ry: 0.5, amp: 0, lobes: 3, phase: 0 })).toBeCloseTo(0);
     });
 
+    it('membrane taper: 0 is the plain ellipse, positive widens the front and narrows the tail', async () => {
+        const { sdMembrane } = await import('../../../js/app/renderer/sdf-math.js');
+        const still = { rx: 1, ry: 0.5, amp: 0, lobes: 3, phase: 0 };
+        expect(sdMembrane(0.3, 0.2, { ...still, taper: 0 })).toBeCloseTo(sdMembrane(0.3, 0.2, still));
+        const dart = { ...still, taper: 0.4 };
+        expect(sdMembrane(0.5, 0.65 * 0.5 + 0.1, dart)).toBeLessThan(0);
+        expect(sdMembrane(0, 0.5, dart)).toBeCloseTo(0);
+        expect(sdMembrane(0.5, 0.866025 * 0.6, dart)).toBeCloseTo(0);
+        expect(sdMembrane(-0.5, 0.866025 * 0.4, dart)).toBeCloseTo(0);
+        expect(sdMembrane(0.5, 0.55, dart)).toBeLessThan(sdMembrane(-0.5, 0.55, dart));
+    });
+
+    it('membrane dent: pulls the outline in at its bearing and leaves the far side alone', async () => {
+        const { sdMembrane } = await import('../../../js/app/renderer/sdf-math.js');
+        const still = { rx: 1, ry: 1, amp: 0, lobes: 3, phase: 0 };
+        const dent = { angle: 0, depth: 0.3, width: 0.5 };
+        expect(sdMembrane(0.7, 0, { ...still, dent })).toBeCloseTo(0, 5);
+        expect(sdMembrane(0.8, 0, { ...still, dent })).toBeGreaterThan(0);
+        expect(sdMembrane(-1, 0, { ...still, dent })).toBeCloseTo(0, 5);
+        const bulge = { angle: 0, depth: -0.3, width: 0.5 };
+        expect(sdMembrane(1.3, 0, { ...still, dent: bulge })).toBeCloseTo(0, 5);
+    });
+
+    it('arcBetween: the shortest signed arc, across the wrap', async () => {
+        const { arcBetween } = await import('../../../js/app/renderer/sdf-math.js');
+        expect(arcBetween(0.2, 0.1)).toBeCloseTo(0.1);
+        expect(arcBetween(-3, 3)).toBeCloseTo(2 * Math.PI - 6);
+    });
+
     it('wave: on the stroke at the root, swinging at the tip with phase', async () => {
         const { sdWave } = await import('../../../js/app/renderer/sdf-math.js');
         const whip = { from: 0, to: -1, amp: 0.2, freq: 6, phase: 0, width: 0.1 };
