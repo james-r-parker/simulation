@@ -1,6 +1,6 @@
 # Honest budgets
 
-**Status:** In progress - Phase 1 (patch stock pays for plant food) and Phase 2 (the kill is the body) and Phase 4 (the edge breeds) built in season 10; Phase 3 (impacts, not contact) is parked on E176; Phase 5 (a call changes the bite) is next.
+**Status:** In progress - Phase 1 (patch stock pays for plant food) and Phase 2 (the kill is the body) and Phase 4 (the edge breeds) built in season 10; Phase 3 (impacts, not contact) is parked on E176; Phase 5 (a call changes the bite) is parked on E178; Phase 6 is next.
 **Validated:** 2fc8f7f5 (2026-11-15)
 **Priority:** 2 - the 128-seed read of [review-2026-11-11.md](../review-2026-11-11.md): most seeds boom to the cap and fall under 40 while food never runs short, so every scene that needs a standing prey population is tuned on top of the crash; food, the kill and the rocks come before any skill, refuge or call work
 **Depends on:** [metric-trust.md](metric-trust.md)
@@ -209,7 +209,7 @@ the keep rule reads no harm: no guard `WORSE` (alive 18 harmed against 12 recove
 `eval.childshare_by_condition` rises to 0.0005. The Done-when row is met, so T26 made the switch: `birthReserve` 300 is the default, a split always gives the `childShare` gene's share, and `splitClonalMax`, `splitGiftGene`, `clonalDepth` and `eval.edge_split_blocked_share.clonal` are deleted (season 10's `rulesHash` moved in place to `e280f7fe28ab36fa`; `docs/designs/metrics.md` regenerated). Open, for the next
 balance pass: hunters alive at the last tick fall from about 46 to 40 of 64 seeds (a net loss the alive guard cannot see under 25 seeds), hunter births are 92% splits and juvenile hunter deaths rise (0.76 to 0.86).
 
-### Phase 5 - A call changes the bite
+### Phase 5 - A call changes the bite (parked)
 
 **Targets:** eval.alarm_rate, eval.alarm_lift, eval.alarm_calls_with_threat_per_1k
 
@@ -228,6 +228,8 @@ balance pass: hunters alive at the last tick fall from about 46 to 40 of 64 seed
 | Done when                                                                                                                                                    | Stop when                                            |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
 | `eval.alarm_rate` above 0 on most seeds with `eval.alarm_calls_with_threat_per_1k` rising with it, and `keepRule` on 64 matched seeds reads no guard `WORSE` | Calls with no threat rise faster than calls with one |
+
+E178 ([results](../../evals/decisions/E178/results.md)): the 16-seed screen names no finalist. `eval.alarm_rate` is above 0 on 4 of 16 seeds and `a75` and `a50` are bit-identical to `control` on every metric: no bite lands on a seen caller while its timer runs, so the bite share never acts. The liar clause is not triggered. T30 is not run and T31 is parked: `alarmBiteShare` stays 1 and the code and tests stay. Open: calls are too rare for a bite rule to matter; selection must first produce calls on sight.
 
 #### Chunks
 
