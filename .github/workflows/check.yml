@@ -82,7 +82,7 @@ jobs:
       # Prettier's content-keyed cache (scripts/check.sh PRETTIER_CACHE): a file that passed before is not formatted
       # again; a new or edited file has a new hash and is always checked. After `npm ci`, which empties node_modules.
       - name: Prettier cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: node_modules/.cache/prettier
           key: prettier-${{ hashFiles('package-lock.json', '.prettierrc.json', '.prettierignore', '.editorconfig') }}-${{ github.sha }}
