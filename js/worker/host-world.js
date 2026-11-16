@@ -177,6 +177,22 @@ function herdInfo(config) {
 }
 
 /**
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {Record<string, any>} world the world, for its per-ray reach table
+ * @returns {Record<string, any>[]} what the app draws each specialisation with: its index, name, whether it hunts, its
+ *   vision range and the reach factor of each ray (`rayReachBySpec`, senses-and-motor Phase 5)
+ */
+function specInfo(config, world) {
+    return Object.entries(config.specialisations).map(([name, s]) => ({
+        index: s.index,
+        name,
+        canHunt: s.canHunt,
+        visionRange: s.visionRange,
+        rayReach: Array.from(world.rayReachBySpec.subarray(s.index * config.rayCount, (s.index + 1) * config.rayCount)),
+    }));
+}
+
+/**
  * The world and rule constants the app draws with.
  * @param {Run} run the run
  * @returns {Record<string, any>} `ready.info`
@@ -223,12 +239,7 @@ export function worldInfo({ config, world }) {
             radius: config.foodPatchRadius,
         })),
         terrain: terrainInfo(config, world),
-        specs: Object.entries(config.specialisations).map(([name, s]) => ({
-            index: s.index,
-            name,
-            canHunt: s.canHunt,
-            visionRange: s.visionRange,
-        })),
+        specs: specInfo(config, world),
     };
 }
 

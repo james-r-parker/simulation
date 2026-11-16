@@ -204,6 +204,10 @@ describe('worldInfo and readyLayout', () => {
             'defender',
         ]);
         expect(info.specs[1]).toMatchObject({ index: 1, canHunt: true, visionRange: 400 });
+        const rear = info.specs[1].rayReach.length / 2;
+        expect(info.specs[1].rayReach[0]).toBe(1);
+        expect(info.specs[1].rayReach[rear]).toBeCloseTo(0.4, 6);
+        expect(info.specs[0].rayReach.every((/** @type {number} */ f) => f === 1)).toBe(true);
     });
 
     it('passes the alarm and hunt call thresholds to the app, as it does smokeThreshold (T15d)', () => {

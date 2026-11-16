@@ -43,6 +43,20 @@ describe('pushFans', () => {
         expect(reach(8)).toBeCloseTo(150);
     });
 
+    it("draws each agent's rays to its specialisation's reach", () => {
+        const lines = createLineBuffer(8);
+        const specs = [{ visionRange: 100, rayReach: [1, 0.7, 0.4, 0.7] }, { visionRange: 200 }];
+        pushFans(lines, source(4), { ...INFO, specs });
+        const reach = (/** @type {number} */ v) =>
+            Math.hypot(
+                lines.position[v * 3 + 3] - lines.position[v * 3],
+                lines.position[v * 3 + 4] - lines.position[v * 3 + 1],
+            );
+        expect(reach(0)).toBeCloseTo(100);
+        expect(reach(4)).toBeCloseTo(40);
+        expect(reach(8)).toBeCloseTo(150);
+    });
+
     it('draws nothing when the snapshot has no ray part', () => {
         const lines = createLineBuffer(8);
         pushFans(lines, source(0), INFO);
