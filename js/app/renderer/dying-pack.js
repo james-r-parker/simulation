@@ -15,7 +15,7 @@ const COLOR_AGENT = { mesh: 0, lineageId: 0, neutral: false, energy01: 0 };
  * @param {import('../family-slots.js').FamilySlots} slots the colour slots
  * @param {import('./dying.js').Dying} d the dying bodies
  * @param {{k: number, mesh: number}} body the pool index and the mesh
- * @returns {number[]} the body's family colour (the store's scratch)
+ * @returns {ArrayLike<number>} the body family colour (the store scratch)
  */
 function colorOf(store, slots, d, { k, mesh }) {
     const lineageId = d.lineage[k];

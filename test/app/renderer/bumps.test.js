@@ -70,10 +70,11 @@ describe('findBumps', () => {
 
 describe('the bump clips', () => {
     it('squash along the heading and rebound, a hard one more, with no flash', () => {
-        for (const [name, least] of [
+        const cases = /** @type {[string, number][]} */ ([
             ['bump', 0.85],
             ['bumpHard', 0.7],
-        ]) {
+        ]);
+        for (const [name, least] of cases) {
             let low = 1;
             for (let t = 0; t <= 1; t += 0.02) {
                 const rig = sampleClip(/** @type {any} */ (CLIPS)[name], t);
