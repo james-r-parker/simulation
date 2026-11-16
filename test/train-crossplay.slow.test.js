@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { parseArgs, runTraining } from '../scripts/train.mjs';
+import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 const root = mkdtempSync(join(tmpdir(), 'train-crossplay-slow-'));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -41,28 +42,34 @@ writeFileSync(
 );
 
 describe('a gated stage that reads cross-play', () => {
-    it('computes the crossplay readings at its gate checkpoints and puts them on the curve', async () => {
-        const out = join(root, 'run');
-        const args = parseArgs([
-            ...['--generations', '3', '--curriculum', ladder, '--checkpoint-every', '1', '--workers', '2'],
-            ...['--episodes', '3', '--ticks', '2500', '--offer-from', '500', '--out', out],
-        ]);
-        await runTraining(args, { drillTrials: 2, gateTrials: 2, crossTrials: 2 }).catch((/** @type {any} */ error) => {
-            expect(error.exitCode).toBe(3);
-        });
-        const rows = readFileSync(join(out, 'curve.jsonl'), 'utf8')
-            .trim()
-            .split('\n')
-            .map((line) => JSON.parse(line));
-        expect(rows.length).toBeGreaterThanOrEqual(2);
-        for (const row of rows) {
-            expect(row.gate.conditions[0].read).toBe('crossplay.cycleShare');
-        }
-        // A reading exists only once two checkpoints have a predator and a forager champion; null before fails the gate.
-        const values = rows.map((row) => row.gate.conditions[0].value);
-        expect(values[0]).toBeNull();
-        for (const value of values.slice(1)) {
-            expect(value === null || (value >= 0 && value <= 1)).toBe(true);
-        }
-    }, 300000);
+    it(
+        'computes the crossplay readings at its gate checkpoints and puts them on the curve',
+        async () => {
+            const out = join(root, 'run');
+            const args = parseArgs([
+                ...['--generations', '3', '--curriculum', ladder, '--checkpoint-every', '1', '--workers', '2'],
+                ...['--episodes', '3', '--ticks', '2500', '--offer-from', '500', '--out', out],
+            ]);
+            await runTraining(args, { drillTrials: 2, gateTrials: 2, crossTrials: 2 }).catch(
+                (/** @type {any} */ error) => {
+                    expect(error.exitCode).toBe(3);
+                },
+            );
+            const rows = readFileSync(join(out, 'curve.jsonl'), 'utf8')
+                .trim()
+                .split('\n')
+                .map((line) => JSON.parse(line));
+            expect(rows.length).toBeGreaterThanOrEqual(2);
+            for (const row of rows) {
+                expect(row.gate.conditions[0].read).toBe('crossplay.cycleShare');
+            }
+            // A reading exists only once two checkpoints have a predator and a forager champion; null before fails the gate.
+            const values = rows.map((row) => row.gate.conditions[0].value);
+            expect(values[0]).toBeNull();
+            for (const value of values.slice(1)) {
+                expect(value === null || (value >= 0 && value <= 1)).toBe(true);
+            }
+        },
+        scaleTimeout(300000),
+    );
 });
