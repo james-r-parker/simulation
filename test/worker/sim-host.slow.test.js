@@ -9,9 +9,9 @@ const { cases } = JSON.parse(readFileSync(new URL('../sim/golden.json', import.m
 const byName = Object.fromEntries(cases.map((/** @type {any} */ c) => [c.name, c]));
 const TIMEOUT_MS = scaleTimeout(300_000);
 
-/** The FNV hash of the busy golden world's effect stream (every effect record, in order). A self-pin; re-pinned by the one kill rule (metric-trust T14), which drops one HunterKill record, again by the eat choice becoming the default (eat-choice T13), by the graze hold (eat-choice T18), by grazeThrust 0.6 (eat-choice T28), and by the hunter's eyes (senses-and-motor T20). */
-const BUSY_EFFECT_HASH = '2119d4f186401141';
-const BUSY_EFFECT_RECORDS = 908;
+/** The FNV hash of the busy golden world's effect stream (every effect record, in order). A self-pin; re-pinned by the one kill rule (metric-trust T14), which drops one HunterKill record, again by the eat choice becoming the default (eat-choice T13), by the graze hold (eat-choice T18), by grazeThrust 0.6 (eat-choice T28), by the hunter's eyes (senses-and-motor T20), and by killGorgeShare 0.4 (honest-budgets T37). */
+const BUSY_EFFECT_HASH = '6bcc03750f6e21e4';
+const BUSY_EFFECT_RECORDS = 766;
 
 describe('the golden world through the host', () => {
     it(
