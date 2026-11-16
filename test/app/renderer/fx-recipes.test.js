@@ -66,7 +66,7 @@ describe('playRecipe', () => {
         expect(playRecipe(fx, FX_RECIPES.eaten, at())).toBe(8);
         const { pool } = fx;
         expect(pool.time[2]).toBe(CURVE.flash);
-        expect(pool.pose[3]).toBeCloseTo(14);
+        expect(pool.pose[3]).toBeCloseTo(22);
         expect(Array.from(pool.color.subarray(0, 3))).toEqual(PALETTE.eatenFlash.map((v) => Math.fround(v)));
         expect(Array.from(pool.color.subarray(7 * 4, 7 * 4 + 3))).toEqual([0.2, 0.4, 0.6].map((v) => Math.fround(v)));
         expect(live(pool, 101)).toBe(8);

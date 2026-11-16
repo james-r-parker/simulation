@@ -58,7 +58,16 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
     const threads = createMateThreadPool();
     const fx = createFxPlayer(createFxPool(), createFxBudget(), seed);
     refs.haze = scent;
-    const player = createEffectsPlayer({ threads, layout, info, slots, sink, fx, tweens: agents.store.tweens });
+    const player = createEffectsPlayer({
+        threads,
+        layout,
+        info,
+        slots,
+        sink,
+        fx,
+        tweens: agents.store.tweens,
+        dents: agents.store.dents,
+    });
     agents.store.fleeing = player.flee.fleeing;
     refs.player = player;
     const world = createWorldLayers({ info, layout, seed });

@@ -3,10 +3,13 @@
 
 import { familyColor, PALETTE } from './colors.js';
 import { startTween, TWEEN } from './body-tweens.js';
+import { startDent } from './dents.js';
 import { DEATH_RECIPES, FX_RECIPES, playRecipe } from './fx-recipes.js';
 
 /** Where on the biter a bite spray starts, in biter radii ahead of its centre. */
 export const JAW_REACH = 0.9;
+/** How deep a bite presses the victim's membrane, as a share of its radius. */
+export const BITE_DENT = 0.3;
 /** A newborn's or a corpse's burst scale when its body is gone, in world units. */
 export const BIRTH_SIZE = 24;
 const CAUSE_MASK = 255;
@@ -95,6 +98,39 @@ export function atBody(player, agents, i, tick) {
     return at;
 }
 
+const DENT_WHO = { slot: 0, genome: 0 };
+
+/**
+ * Presses the victim's membrane in at the contact.
+ * @param {import('./effects-player.js').EffectsPlayer} player the player
+ * @param {{agents: import('../interpolate.js').Interpolated, victim: number, toward: number}} bite the blended agents,
+ *   the victim's index and the bearing from the victim to the biter
+ * @returns {void}
+ */
+function dentVictim(player, { agents, victim, toward }) {
+    if (player.dents === undefined || player.dents === null) {
+        return;
+    }
+    DENT_WHO.slot = agents.slot[victim];
+    DENT_WHO.genome = agents.genomeId[victim];
+    startDent(player.dents, DENT_WHO, { angle: toward, depth: BITE_DENT, tick: player.effect.tick });
+}
+
+/**
+ * The energy-transfer cue: a few motes leave the victim's rim and run to the biter's mouth.
+ * @param {import('./effects-player.js').EffectsPlayer} player the player
+ * @param {{toward: number, gap: number}} drain the bearing from the victim to the biter and the gap in world units
+ * @returns {void}
+ */
+function playDrain(player, { toward, gap }) {
+    SPOT.angle = toward;
+    const at = atOf(player, SPOT);
+    at.reach = gap;
+    at.rgb = PALETTE.meat;
+    playRecipe(player.fx, FX_RECIPES.biteDrain, at);
+    at.reach = 0;
+}
+
 /**
  * A bite: a spray at the biter's jaw (at the effect when the biter is gone), a bite mark on the victim's rim facing
  * the biter, a lunge on the biter and a flinch on the victim.
@@ -116,6 +152,8 @@ export function playBite(player, agents) {
         SPOT.x = agents.x[biter] + Math.cos(SPOT.angle) * SPOT.size * JAW_REACH;
         SPOT.y = agents.y[biter] + Math.sin(SPOT.angle) * SPOT.size * JAW_REACH;
     }
+    const jawX = SPOT.x;
+    const jawY = SPOT.y;
     player.at.rgb = PALETTE.biteFlash;
     playRecipe(player.fx, FX_RECIPES.biteJaw, atOf(player, SPOT));
     if (victim >= 0) {
@@ -125,6 +163,8 @@ export function playBite(player, agents) {
         SPOT.x = agents.x[victim] + Math.cos(toward) * SPOT.size * 0.75;
         SPOT.y = agents.y[victim] + Math.sin(toward) * SPOT.size * 0.75;
         playRecipe(player.fx, FX_RECIPES.biteMark, atOf(player, SPOT));
+        dentVictim(player, { agents, victim, toward });
+        playDrain(player, { toward, gap: Math.hypot(jawX - SPOT.x, jawY - SPOT.y) });
     }
     tweenAt(player, agents, biter, TWEEN.LUNGE);
     tweenAt(player, agents, victim, TWEEN.FLINCH);

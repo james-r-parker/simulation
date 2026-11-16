@@ -53,12 +53,16 @@ const ghost = (/** @type {number} */ curve, /** @type {number} */ life) => ({ cu
 export const FX_RECIPES = Object.freeze({
     biteJaw: recipe(FAMILY.combat, RANK.bite, [
         { curve: C.streak, count: 6, life: 12, size: 0.45, reach: 1.6, spread: 'ring', color: 'biteFlash', stretch: 3 },
+        { curve: C.flash, count: 1, life: 5, size: 0.8, color: 'biteFlash', minPx: 6 },
+    ]),
+    biteDrain: recipe(FAMILY.combat, RANK.bite, [
+        { curve: C.drain, count: 4, life: 14, size: 0.16, reach: -1, spread: 'heading', color: 'meat', gain: 1.4 },
     ]),
     biteMark: recipe(FAMILY.combat, RANK.bite, [
         { curve: C.crescent, count: 1, life: 24, size: 0.7, color: 'eatenFlash', gain: 1.2, minPx: 6 },
     ]),
     eaten: combat([
-        { curve: C.flash, count: 1, life: 6, size: 1.4, color: 'eatenFlash', minPx: 8 },
+        { curve: C.flash, count: 1, life: 8, size: 2.2, color: 'eatenFlash', minPx: 10 },
         { curve: C.shard, count: 6, life: 30, size: 0.35, reach: 2.4, spread: 'ring', color: 'eatenFlash' },
         ghost(C.ghost, 20),
     ]),

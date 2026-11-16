@@ -92,6 +92,7 @@ export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
  * @property {Float32Array} minPx the least each mesh's agents are drawn across, in device px
  * @property {number[]} rgb scratch for the colour
  * @property {import('./body-tweens.js').BodyTweens} tweens each slot's one-shot body tween
+ * @property {import('./dents.js').Dents | null} dents each slot's membrane dent, set by the agent layer
  * @property {Uint8Array | null} fleeing 1 for each agent index under pursuit this frame (the effects player's), null
  *   when none is attached
  */
@@ -126,6 +127,7 @@ export function createAgentStore(capacity, meshCount, meshOfSpec, minPx) {
         minPx: Float32Array.from(minPx),
         rgb: [0, 0, 0],
         tweens: createBodyTweens(capacity),
+        dents: null,
         fleeing: null,
     };
 }

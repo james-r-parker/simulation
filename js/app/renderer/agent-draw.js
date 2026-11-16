@@ -8,6 +8,7 @@ import { minPxTable } from '../display-size.js';
 import { appLog } from '../app-log.js';
 import { createAgentStore, packAgents } from './agents-pack.js';
 import { createAgentRig, rigBucket } from './agent-rig.js';
+import { createDents } from './dents.js';
 import { bakeClips } from './clip-sampler.js';
 import { CLIPS } from './clips.js';
 import { temperatureBands } from './colors.js';
@@ -21,7 +22,7 @@ import { FILL_SHARE, RIM_PX } from './palette.js';
 export const SCENT_DIM = 0.55;
 /** The least opacity of a calling agent's ring while the calls lens is on. */
 export const CALL_RING_FLOOR = 0.5;
-const RIG_NAMES = /** @type {const} */ (['neon', 'rig0', 'rig1', 'rig2', 'gate', 'gate2', 'accent', 'call']);
+const RIG_NAMES = /** @type {const} */ (['neon', 'rig0', 'rig1', 'rig2', 'gate', 'gate2', 'accent', 'call', 'dent']);
 
 /**
  * @param {Record<string, any>} info `ready.info`
@@ -44,6 +45,7 @@ function agentInputs({ dim, ringFloor }) {
     const gate = attribute('iGate', 'vec4');
     const gate2 = attribute('iGate2', 'vec4');
     const call = attribute('iCall', 'vec4');
+    const dent = attribute('iDent', 'vec4');
     return {
         ...standardInputs(),
         values: {
@@ -58,6 +60,8 @@ function agentInputs({ dim, ringFloor }) {
             thrust: call.w,
         },
         colors: { pollenColor: attribute('iAccent', 'vec4').xyz, callColor: call.xyz },
+        dent: { angle: dent.x, depth: dent.y, width: dent.z },
+        fade: dent.w,
         dim,
         ringFloor,
     };
@@ -105,6 +109,8 @@ function rigContext(info, flags, stateBits) {
             heat01: info.temperatureHeatStress / info.temperatureMax,
         },
         temperatureLens: null,
+        dents: null,
+        tick: 0,
     };
 }
 
@@ -122,6 +128,8 @@ export function createAgentDraw({ info, flagBits, stateBits }) {
     const group = new Group();
     meshes.forEach((m) => group.add(m.mesh));
     const ctx = rigContext(info, flagBits, stateBits);
+    store.dents = createDents(info.maxAgents);
+    ctx.dents = store.dents;
     const bands = temperatureBands(info);
     const view = { dtMs: 0, zoom: 1, slots: /** @type {any} */ (null), maxVelocity: info.maxVelocity, tick: 0 };
     const into = { rig, out: rig.arrays[0], ctx };
@@ -135,6 +143,7 @@ export function createAgentDraw({ info, flagBits, stateBits }) {
             view.tick = frame.tick;
             packAgents(frame.agents, store, flagBits, view);
             ctx.timeSec = frame.nowMs / 1000;
+            ctx.tick = frame.tick;
             ctx.palette = frame.family.palette;
             ctx.temperatureLens = frame.lenses.temperature ? bands : null;
             uniforms.rimPx.value = RIM_PX[/** @type {keyof typeof RIM_PX} */ (frame.family.palette)];

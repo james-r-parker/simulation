@@ -50,6 +50,7 @@ export { BIRTH_SIZE, JAW_REACH } from './effects-combat.js';
  * @property {number[]} rgb scratch colour
  * @property {import('./fx-recipes.js').FxPlayer} fx the effect pool's recipe player
  * @property {import('./body-tweens.js').BodyTweens} tweens the agents' body tweens
+ * @property {import('./dents.js').Dents | null} dents the agents' membrane dents (null when none are drawn)
  * @property {import('./fx-recipes.js').FxAt} at scratch for a recipe's position
  * @property {{slot: number, genome: number}} who scratch for a tween's agent
  * @property {string[]} causeNames death cause names by number (`ready.layout.deathCauses`)
@@ -81,7 +82,7 @@ function causeNamesOf(causes) {
  * @param {{threads?: import('./mate-threads.js').MateThreadPool, layout: Record<string, any>,
  *   info: Record<string, any>, slots?: import('../family-slots.js').FamilySlots,
  *   sink?: ((effect: Effect) => void) | null, fx?: import('./fx-recipes.js').FxPlayer,
- *   tweens?: import('./body-tweens.js').BodyTweens}} options the pools to play into, `ready.layout` and
+ *   tweens?: import('./body-tweens.js').BodyTweens, dents?: import('./dents.js').Dents | null}} options the pools to play into, `ready.layout` and
  *   `ready.info`, the family colour slots (all neutral when absent), the effect pool's player and the body tweens
  *   (fresh ones when absent)
  * @returns {EffectsPlayer} a player
@@ -94,11 +95,13 @@ export function createEffectsPlayer({
     sink = null,
     fx = createFxPlayer(createFxPool()),
     tweens = createBodyTweens(info.maxAgents ?? 1024),
+    dents = null,
 }) {
     /** @type {EffectsPlayer} */
     const player = {
         fx,
         tweens,
+        dents,
         edges: /** @type {any} */ (null),
         flee: /** @type {any} */ (null),
         crossings: /** @type {any} */ (null),

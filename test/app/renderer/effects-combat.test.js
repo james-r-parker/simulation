@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
 import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
-import { indexOfGenome, tweenAt } from '../../../js/app/renderer/effects-combat.js';
+import { BITE_DENT, indexOfGenome, playBite, tweenAt } from '../../../js/app/renderer/effects-combat.js';
+import { createDents, dentAt } from '../../../js/app/renderer/dents.js';
+import { CURVE } from '../../../js/app/renderer/fx-curves.js';
 import { createEffectsPlayer } from '../../../js/app/renderer/effects-player.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
@@ -53,5 +55,30 @@ describe('tweenAt', () => {
             info: { callRadius: 1, callTicks: 1 },
         });
         expect(player.causeNames).toEqual(['STARVED', 'EATEN']);
+    });
+});
+
+describe('playBite', () => {
+    it('dents the victim towards the biter and sends drain motes from the victim to the biter', () => {
+        const dents = createDents(8);
+        const player = createEffectsPlayer({ layout, info: { callRadius: 1, callTicks: 1, maxAgents: 8 }, dents });
+        Object.assign(player.effect, { tick: 40, x: 50, y: 0, a: 30, b: 50 });
+        const agents = alive([
+            { slot: 1, genomeId: 30, x: 0, y: 0, angle: 0, size: 10 },
+            { slot: 2, genomeId: 50, x: 20, y: 0, angle: 0, size: 10 },
+        ]);
+        playBite(player, agents);
+        const out = { angle: 0, depth: 0, width: 0 };
+        expect(dentAt(dents, { slot: 2, genome: 50, tick: 40 }, out)).toBe(true);
+        expect(out.depth).toBeCloseTo(BITE_DENT);
+        expect(Math.cos(out.angle)).toBeLessThan(-0.99);
+        const { pool } = player.fx;
+        let drains = 0;
+        for (let k = 0; k < pool.limit; k++) {
+            if (pool.time[k * 4 + 2] === CURVE.drain) {
+                drains += 1;
+            }
+        }
+        expect(drains).toBeGreaterThan(0);
     });
 });
