@@ -3,8 +3,21 @@
 // `drill-scenarios.js`, which lists them after its own seven. A drill's score is a detector; it never enters fitness,
 // merit, mate rank or archive rank.
 
-import { around, FORAGER_SPEC, HUNTER_ENERGY, PREDATOR_SPEC, heading } from './memory-probe-scenarios.js';
-import { offset, preyDrill, stage, subjectAt } from './drill-staging.js';
+import { detCos, detSin } from '../sim/det-math.js';
+import { createKinTrace, noteKin } from './drill-kin-trace.js';
+import { offset, killed, preyDrill, stage, subjectAt } from './drill-staging.js';
+import { createPreyTrace, lostReason, noteTick, traceFields } from './drill-trace.js';
+import {
+    CENTRE_X,
+    CENTRE_Y,
+    FORAGER_SPEC,
+    HUNTER_ENERGY,
+    PREDATOR_SPEC,
+    PREY_VIEW_SHARE,
+    SUBJECT_ENERGY,
+    around,
+    heading,
+} from './memory-probe-scenarios.js';
 
 const TWO_PI = 6.283185307179586;
 const HUNTER_DISTANCE = 500;
@@ -49,5 +62,70 @@ const HUNTER_FLANK = {
     },
 };
 
+/** The parent id the subject and its sibling share (any nonzero id makes two agents kin). */
+const SHARED_PARENT = 7777;
+/** The sibling stands this far from the subject: inside the sum of their radii, so the first tick pushes the pair to touch. */
+const SIBLING_GAP = 40;
+/** The prey of `kin-spared` starts at this many degrees (least, most) off the subject's heading, as in `prey-ahead`. */
+const KIN_PREY_DEG = Object.freeze([0, 45]);
+/** The sibling stands this many degrees off the subject's heading, on the side away from the prey: inside the jaws (a half-angle of 90). */
+const SIBLING_DEG = 45;
+/** The lost-trial reason of a trial in which the subject wished to bite the sibling. */
+export const BIT_KIN = 'bit-kin';
+
+/**
+ * @param {import('./drill-trace.js').PreyTrace} preyTrace the chase's trace
+ * @param {import('./drill-kin-trace.js').KinTrace} kin the sibling's trace
+ * @returns {string} why a trial was lost: `bit-kin` when the subject wished to bite its sibling, else the chase's reason
+ */
+function lostReasonOf(preyTrace, kin) {
+    return kin.biteTicks > 0 ? BIT_KIN : lostReason(preyTrace);
+}
+
+/** @type {import('./drill-staging.js').Drill} a sibling stands in the jaws and a fleeing forager runs: eat the forager only */
+const KIN_SPARED = {
+    name: 'kin-spared',
+    scene: 'Kin is not a stranger',
+    spec: PREDATOR_SPEC,
+    needsHunter: true,
+    plan(rng, view) {
+        const angle = heading(rng);
+        const side = offset(rng, KIN_PREY_DEG[0], KIN_PREY_DEG[1]);
+        const spot = around(angle + side, PREY_VIEW_SHARE * view);
+        const bearing = angle - Math.sign(side) * SIBLING_DEG * (TWO_PI / 360);
+        const prey = { role: 'prey', ...spot, angle: heading(rng), spec: FORAGER_SPEC, energy: SUBJECT_ENERGY };
+        const sibling = {
+            role: 'sibling',
+            x: CENTRE_X + SIBLING_GAP * detCos(bearing),
+            y: CENTRE_Y + SIBLING_GAP * detSin(bearing),
+            angle,
+            spec: PREDATOR_SPEC,
+            energy: HUNTER_ENERGY,
+            parents: [SHARED_PARENT, 0],
+        };
+        const subject = { ...subjectAt(PREDATOR_SPEC, angle), parents: [SHARED_PARENT, 0] };
+        const preyTrace = createPreyTrace();
+        const kin = createKinTrace();
+        return {
+            stage: stage([subject, prey, sibling], []),
+            timing: null,
+            scent: false,
+            maxTicks: 900,
+            trace: (won) => ({
+                ...traceFields(preyTrace, won),
+                kinJawTicks: kin.jawTicks,
+                kinBiteTicks: kin.biteTicks,
+                reason: won ? null : lostReasonOf(preyTrace, kin),
+            }),
+            done: (world) => {
+                noteTick(preyTrace, world);
+                noteKin(kin, world);
+                return world.alive[0] === 0 || world.alive[1] === 0;
+            },
+            won: (world) => killed(world) && kin.biteTicks === 0,
+        };
+    },
+};
+
 /** The social drills, in the doc's order. */
-export const SOCIAL_DRILLS = Object.freeze([PREY_CROSSING, HUNTER_FLANK]);
+export const SOCIAL_DRILLS = Object.freeze([PREY_CROSSING, HUNTER_FLANK, KIN_SPARED]);

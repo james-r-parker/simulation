@@ -143,6 +143,22 @@ function striker(world) {
     setOutput(world, SUBJECT, OUTPUT_INDEX.BITE, 1);
 }
 
+/** A bite is wished only within this many summed radii of the prey, so an oracle never bites a sibling beside the prey's path. */
+const BITE_RANGE = 1.2;
+
+/**
+ * @param {Record<string, any>} world the world
+ * @returns {void} runs for the oracle of `kin-spared`: the striker, but it bites only when the prey (slot 1) is touching,
+ *   so the sibling in its jaws is spared
+ */
+function selectiveStriker(world) {
+    striker(world);
+    const dx = world.x[OTHER] - world.x[SUBJECT];
+    const dy = world.y[OTHER] - world.y[SUBJECT];
+    const near = Math.sqrt(dx * dx + dy * dy) <= BITE_RANGE * (world.size[SUBJECT] + world.size[OTHER]);
+    setOutput(world, SUBJECT, OUTPUT_INDEX.BITE, near ? 1 : 0);
+}
+
 /**
  * @param {Record<string, any>} world the world
  * @returns {void} runs for the oracle of `hunter-closing`: away from the hunter, sprinting only when it is near
@@ -169,6 +185,7 @@ const ORACLES = Object.freeze({
     'rock-refuge': () => refugeRunner,
     'prey-crossing': () => striker,
     'hunter-flank': () => runner,
+    'kin-spared': () => selectiveStriker,
 });
 
 /** The drills that have an oracle. */

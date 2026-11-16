@@ -98,3 +98,29 @@ describe('hunter-flank', () => {
         ]);
     });
 });
+
+describe('kin-spared', () => {
+    it('stages a sibling that shares a parent with the subject inside its jaws, and a forager ahead on the other side', () => {
+        const drill = byName('kin-spared');
+        const rng = stream('kin-spared');
+        for (let t = 0; t < 30; t++) {
+            const { agents } = drill.plan(rng, 400).stage;
+            expect(agents.map((/** @type {any} */ a) => a.role)).toEqual(['subject', 'prey', 'sibling']);
+            expect(agents[2].parents[0]).not.toBe(0);
+            expect(agents[2].parents).toEqual(agents[0].parents);
+            expect(agents[1].parents).toBeUndefined();
+            expect(Math.hypot(agents[2].x - CENTRE_X, agents[2].y - CENTRE_Y)).toBeCloseTo(40, 6);
+            expect(bearingOff(agents[2], agents[0].angle)).toBeCloseTo(45, 6);
+            expect(Math.hypot(agents[1].x - CENTRE_X, agents[1].y - CENTRE_Y)).toBeCloseTo(PREY_VIEW_SHARE * 400, 6);
+            expect(bearingOff(agents[1], agents[0].angle)).toBeLessThanOrEqual(45 + 1e-6);
+            const side = (/** @type {any} */ p) =>
+                Math.sign(wrap(Math.atan2(p.y - CENTRE_Y, p.x - CENTRE_X) - agents[0].angle));
+            expect(side(agents[1])).toBe(-side(agents[2]));
+        }
+    });
+
+    it('is staged with a trace that reports the sibling in the jaws', () => {
+        const plan = byName('kin-spared').plan(stream('kin-spared'), 400);
+        expect(plan.trace(false)).toMatchObject({ kinJawTicks: 0, kinBiteTicks: 0 });
+    });
+});

@@ -90,6 +90,24 @@ describe('oracleSubject', () => {
         expect(out[OUTPUT_INDEX.SPRINT]).toBe(1);
     });
 
+    it('plays prey-crossing as prey-ahead and hunter-flank as hunter-closing', () => {
+        const prey = { role: 'prey', x: 1700, y: 2100, angle: 2, spec: 0, energy: 800 };
+        const strike = act('prey-crossing', scene({ agents: [prey] }));
+        expect(strike[OUTPUT_INDEX.SPRINT]).toBeGreaterThan(0);
+        expect(strike[OUTPUT_INDEX.BITE]).toBeGreaterThan(0);
+        const hunter = { role: 'hunter', x: 1700, y: 2050, angle: Math.PI, spec: 1, energy: 1500 };
+        const run = act('hunter-flank', scene({ agents: [hunter] }));
+        expect([run[OUTPUT_INDEX.THRUST], run[OUTPUT_INDEX.SPRINT]]).toEqual([1, 1]);
+    });
+
+    it('chases the prey in kin-spared but bites only when it is touching, so a sibling in the jaws is spared', () => {
+        const at = (/** @type {number} */ x) => ({ role: 'prey', x, y: 2000, angle: 0, spec: 0, energy: 800 });
+        const far = act('kin-spared', scene({ agents: [at(1700)] }));
+        expect(far[OUTPUT_INDEX.SPRINT]).toBeGreaterThan(0);
+        expect(far[OUTPUT_INDEX.BITE]).toBe(0);
+        expect(act('kin-spared', scene({ agents: [at(1540)] }))[OUTPUT_INDEX.BITE]).toBe(1);
+    });
+
     it('does not act for a dead subject', () => {
         const world = scene({ foods: [{ x: 1700, y: 2100 }] });
         world.alive[0] = 0;

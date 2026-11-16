@@ -18,6 +18,7 @@ const AT_LEAST = {
     'hunter-closing': 0,
     'prey-crossing': 0.6,
     'hunter-flank': 0,
+    'kin-spared': 0,
     'rock-refuge': 0,
 };
 

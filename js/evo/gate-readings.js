@@ -22,13 +22,14 @@ import { wilsonInterval } from './binomial.js';
  * @property {Record<string, number>} lossShare each lost-trial reason's share of the lost trials
  */
 
-/** The first-match lost-trial reasons of a drill (`LostReason` in `js/evo/drill-trace.js`); a reason that did not occur reads 0. */
+/** The first-match lost-trial reasons of a drill (`LostReason` in `js/evo/drill-trace.js`, and `bit-kin`, the `kin-spared` loss of a subject that wished to bite its sibling); a reason that did not occur reads 0. */
 export const LOST_REASONS = Object.freeze([
     'never-bit',
     'never-in-jaws',
     'bit-prey-lived',
     'subject-starved-or-recoiled-first',
     'prey-died-unkilled',
+    'bit-kin',
 ]);
 
 /**

@@ -53,6 +53,13 @@ describe('drillReadings loss shares', () => {
         expect(share['never-bit']).toBe(0);
         expect(share['bit-prey-lived']).toBe(1);
     });
+
+    it('reads the kin-spared loss, a subject that wished to bite its sibling, as its own reason', () => {
+        const kin = { cells: { a: cell(40, { 'bit-kin': 18, 'never-bit': 6 }) } };
+        const share = drillReadings([kin], 1, ['a']).a.lossShare;
+        expect(share['bit-kin']).toBeCloseTo(18 / 24, 12);
+        expect(drillReadings([{ cells: { a: cell(64) } }], 1, ['a']).a.lossShare['bit-kin']).toBe(0);
+    });
 });
 
 describe('a cell without lost-trial reasons', () => {
