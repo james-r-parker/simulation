@@ -32,6 +32,13 @@ const RULE_KEYS = Object.freeze([
  */
 
 /**
+ * @typedef {object} Opponent a second genome (or reference) that drives a scripted role in place of its controller
+ * @property {'prey' | 'hunter'} role the role it drives: every staged agent with that role takes its specialisation and
+ *   brain row
+ * @property {Subject} subject the opponent; a genome runs its own brain, a reference its `act`
+ */
+
+/**
  * @typedef {object} Plan one staged trial
  * @property {{foods: {x: number, y: number}[], rocks: {x: number, y: number, r: number}[], agents: Record<string, any>[]}} stage
  *   the food, rocks and agents; each agent has a `role` (`subject`, `hunter` or `prey`)
@@ -85,16 +92,20 @@ function driveSlots(world, slots, act, saved) {
 /**
  * @param {Record<string, any>} world the world
  * @param {import('../sim/rng.js').Rng} rng the `scripted` stream
- * @param {{subject: Subject, control: import('./memory-probe-controls.js').Control, slots: Record<string, number[]>}} run
- *   the subject, its control and the slots by role
+ * @param {{subject: Subject, control: import('./memory-probe-controls.js').Control, slots: Record<string, number[]>,
+ *   opponent?: Opponent}} run the subject, its control, the slots by role and the opponent that replaces a role's
+ *   controller
  * @returns {(world: Record<string, any>) => void} the `brain` phase body
  */
-function createBrain(world, rng, { subject, control, slots }) {
+function createBrain(world, rng, { subject, control, slots, opponent }) {
     const saved = new Float32Array(world.outputs.length);
     const scripted = [
-        { slots: slots.hunter ?? [], act: COMBAT_CONTROLLERS.hunter({ world, rng }) },
-        { slots: slots.prey ?? [], act: COMBAT_CONTROLLERS.fleer({ world, rng }) },
-    ].filter((group) => group.slots.length > 0);
+        { role: 'hunter', act: COMBAT_CONTROLLERS.hunter({ world, rng }) },
+        { role: 'prey', act: COMBAT_CONTROLLERS.fleer({ world, rng }) },
+    ].flatMap(({ role, act }) => {
+        const driver = opponent?.role === role ? opponent.subject.act : act;
+        return (slots[role] ?? []).length > 0 && driver !== null ? [{ slots: slots[role], act: driver }] : [];
+    });
     return (w) => {
         for (const slot of slots.subject) {
             if (w.alive[slot] === 1) {
@@ -114,9 +125,10 @@ function createBrain(world, rng, { subject, control, slots }) {
 /**
  * @param {Plan['stage']} stage the staged agents
  * @param {Subject} subject the subject
+ * @param {Opponent} [opponent] the opponent, which gives its role's agents its specialisation and brain row
  * @returns {Record<string, number[]>} the slots of each role
  */
-function slotsByRole(stage, subject) {
+function slotsByRole(stage, subject, opponent) {
     /** @type {Record<string, number[]>} */
     const slots = { subject: [] };
     stage.agents.forEach((/** @type {any} */ agent, /** @type {number} */ slot) => {
@@ -124,6 +136,9 @@ function slotsByRole(stage, subject) {
         if (agent.role === 'subject') {
             agent.spec = subject.spec ?? agent.spec;
             agent.weights = subject.weights ?? undefined;
+        } else if (opponent !== undefined && agent.role === opponent.role) {
+            agent.spec = opponent.subject.spec ?? agent.spec;
+            agent.weights = opponent.subject.weights ?? undefined;
         }
     });
     return slots;
@@ -132,12 +147,13 @@ function slotsByRole(stage, subject) {
 /**
  * Runs one trial of a plan.
  * @param {{plan: Plan, subject: Subject, controlSpec: {name: string, blind?: boolean, amnesia?: boolean, kinBlind?: boolean}, seed: number,
- *   config: Record<string, any>}} trial the plan, the subject, the control (`createControl`'s spec, its timing taken
- *   from the plan), the world seed and the probe's config overrides
+ *   config: Record<string, any>, opponent?: Opponent}} trial the plan, the subject, the control (`createControl`'s
+ *   spec, its timing taken from the plan), the world seed, the probe's config overrides and an optional opponent
+ *   that drives the `prey` or `hunter` role in place of its scripted controller (none: the controller, as before)
  * @returns {boolean} whether the trial scored
  */
-export function playTrial({ plan, subject, controlSpec, seed, config }) {
-    const slots = slotsByRole(plan.stage, subject);
+export function playTrial({ plan, subject, controlSpec, seed, config, opponent }) {
+    const slots = slotsByRole(plan.stage, subject, opponent);
     const arena = arenaConfig(config);
     const { world, policy } = stageWorld({
         ...plan.stage,
@@ -146,7 +162,7 @@ export function playTrial({ plan, subject, controlSpec, seed, config }) {
         config: arena,
     });
     const control = createControl(world.config, { timing: plan.timing, scent: plan.scent, ...controlSpec });
-    const brain = createBrain(world, fork(createRng(seed), 'scripted'), { subject, control, slots });
+    const brain = createBrain(world, fork(createRng(seed), 'scripted'), { subject, control, slots, opponent });
     for (let t = 0; t < plan.maxTicks; t++) {
         step(world, policy, { brain });
         if (plan.done(world, control)) {

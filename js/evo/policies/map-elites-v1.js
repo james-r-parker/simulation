@@ -13,6 +13,7 @@ import { descriptorV1 } from '../../evo/descriptors.js';
 import { createFitnessV1 } from '../../evo/fitness.js';
 import { createLifeCounters, updateLifeCounters } from '../../evo/life-counters.js';
 import { createOffers } from './map-elites-offer.js';
+import { restoreOpponents } from './map-elites-pool.js';
 import { createSeeder } from './map-elites-seed.js';
 import { createBirth, shareBirth } from './natural-birth.js';
 import { brainLayout } from '../../sim/brain-layout.js';
@@ -78,8 +79,11 @@ const V1_SCORING = Object.freeze({
  *   scoreFields }` and `scoreFields(row)` adds fields to the `FitnessScored` log event of the death-log row; and, for
  *   the trainer, `archive` (a prebuilt archive the policy seeds from, instead of an empty one) and `onOffer(item, tick)`
  *   (called with each offer in place of `offer(archive, item)`, so the archive stays as given; `item` is reused, copy it)
+ *   and `opponents` (`{ snapshots, share }`: frozen archive snapshots the stage's opponent pool holds and the share of
+ *   founders drawn from them; none: no pool)
  * @returns {Record<string, any>} `{ name, brain, fitnessName, fitness, afterStep, onEvent, archive, sigma,
- *   fatherSigma, archiveRef, refId, isClone, counters }`
+ *   fatherSigma, archiveRef, refId, isClone, counters, poolFounders }`; `poolFounders` is the set of genome ids of the
+ *   founders drawn from the pool (a trainer drops their offers)
  */
 export function createMapElitesV1(options) {
     const { config, log, observer } = options;
@@ -90,7 +94,7 @@ export function createMapElitesV1(options) {
     const clones = createClones(config.maxAgents);
     wireObserver(observer, { birth, clones });
     const { cellDraws, archiveShare, cloneShareEnd } = options;
-    const { initSpec, initBrain } = createSeeder({
+    const { initSpec, initBrain, poolFounders } = createSeeder({
         archive,
         birth,
         clones,
@@ -98,6 +102,7 @@ export function createMapElitesV1(options) {
         cellDraws,
         archiveShare,
         cloneShareEnd,
+        opponents: restoreOpponents(options.opponents, config, archive.descriptor),
     });
     const { fitness, scoreFields } = scoring.createScoring({ counters, observer, log });
     const { onDeath, onEvent } = createOffers({
@@ -130,5 +135,6 @@ export function createMapElitesV1(options) {
         fatherSigma: birth.fatherSigma,
         ...clones,
         counters,
+        poolFounders,
     };
 }

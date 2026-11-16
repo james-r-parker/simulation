@@ -230,7 +230,7 @@ function inRing(world, ring) {
  * @param {{x: number, y: number}} centre the ring's centre
  * @returns {{x: number, y: number, r: number}[]} the ring's rocks on the circle `ringRadius` gives
  */
-function ringRocks(centre) {
+export function ringRocks(centre) {
     return Array.from({ length: REFUGE_ROCKS }, (_, k) => {
         const theta = (TWO_PI * k) / REFUGE_ROCKS;
         return {
