@@ -232,7 +232,7 @@ jobs:
         run: |
           status=0
           [[ "$TESTS_RESULT" == success ]] || echo "::warning::a test shard did not succeed ($TESTS_RESULT); the merged coverage may lack its files"
-          npx vitest run --merge-reports --coverage --coverage.reportOnFailure || status=$?
+          npx vitest run --merge-reports=.vitest-reports --coverage --coverage.reportOnFailure || status=$?
           node scripts/quality-ratchet.mjs --check || status=$?
           exit $status
 
