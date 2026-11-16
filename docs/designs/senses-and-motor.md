@@ -1,6 +1,6 @@
 # Senses and motor
 
-**Status:** In progress - Phase 1 built (interface checks; no sign or class bug, three findings recorded for T13); Phase 2 built (`npm run audit:chase`; `E-SM-1`, record E185, falsified: no fair band beyond 0.2 of view). Phase 3 code is built (T6 to T9: `npm run audit:signals`, the lesson oracles and the input reader, `npm run probe:learn`); its runs (T10 to T12) and Phase 4 are not. Phase 5 (hunter's eyes, user request 2026-11-15): T16 to T19 built (`rearVisionShare`, neutral at its default 1; E186: the screen named `range-s04-d` the finalist, and on 64 seeds the keep rule reads no harm with `eval.hunter_catches_per_1k` better by 9.7%); the default switch and review (T20, T21) are not. An audit of what a brain is told and what its outputs do: interface checks for bugs, the envelope of a chase, a census of every input and output, and probes that say whether each lesson is reachable and whether the senses suffice for it.
+**Status:** In progress - Phase 1 built (interface checks; no sign or class bug, three findings recorded for T13); Phase 2 built (`npm run audit:chase`; `E-SM-1`, record E185, falsified: no fair band beyond 0.2 of view). Phase 3 code is built (T6 to T9: `npm run audit:signals`, the lesson oracles and the input reader, `npm run probe:learn`); its runs (T10 to T12) and Phase 4 are not. Phase 5 built (hunter's eyes, user request 2026-11-15; E186): the predator sees 400 ahead with `rearVisionShare` 0.4 and the defender 300 with 0.8, adopted on a 64-seed keep rule of no harm with `eval.hunter_catches_per_1k` better by 9.7%. An audit of what a brain is told and what its outputs do: interface checks for bugs, the envelope of a chase, a census of every input and output, and probes that say whether each lesson is reachable and whether the senses suffice for it.
 **Validated:** f5ebac76 (2026-11-15)
 **Priority:** 10 - a sign error, a dead input or a chase that cannot be won voids every training run and scene verdict built on it, and Phases 1 to 3 change no behaviour, so they come before the stage ladder
 **Depends on:** [training.md](training.md)
@@ -182,7 +182,7 @@ Done when each confirmed finding has a verdict: adopted with its switch deleted,
 | E     | T13      | The records and the task rows for confirmed findings                 |
 | F     | T14, T15 | The screens and verdicts those rows name, and the conformance review |
 
-### Phase 5 - Hunter's eyes
+### Phase 5 - Hunter's eyes (built)
 
 **Targets:** eval.hunter_catches_per_1k, eval.chase_catch_share
 
@@ -193,6 +193,8 @@ The change keeps the ray directions and the brain layout and shapes each ray's r
 Proximity stays `1 - t / range` with the full range, not the ray's own reach: a body at a given distance reads the same on every ray, so the pooled channel's two strongest hits still rank bodies by true distance and no input changes meaning (no new layout name; every champion stays valid). A rear ray's proximity therefore never falls under `1 - s`.
 
 Result (E186, `evals/decisions/E186/`): every screen arm read no harm on 16 seeds and none got a target verdict there. The finalist `range-s04-d` (predator 400 with `s` 0.4, defender 300 with `s` 0.8) went to 64 fresh seeds. There the keep rule reads no harm (hunters alive 11 harmed and 15 recovered, smallest loss detected 29 seeds; held 8 and 6, 17 seeds; under 80 1 and 1, 8 seeds), and `eval.hunter_catches_per_1k` reads better (1.327 to 1.457, +9.7%). `eval.chase_catch_share` rises 3.7% with no verdict, and `eval.collision_death_share` does not move. The finalist qualifies for T20.
+
+Adopted (T20): the `range-s04-d` values are the defaults (season 10 `rulesHash` moved in place, goldens and kernel fixtures re-pinned). The vision lens and the selected agent's rays draw a miss only to the ray's own reach (`rayReach` per specialisation in `worldInfo`). Side effect on a detector: the hunting drills stage the prey at a share of the subject's view, so the predator's longer view stages `prey-ahead` 30 px further out, and the `memoryless` reference's win there falls from 11 to 7 of 32 trials (seed 1). The rear share has no effect on that drill. Drill and reflex numbers from before this switch are not comparable with later ones.
 
 Range arms move the predator to 400 (equal to the scout) and the defender to 300, so the hunter's top range is equalled only by the scout. Prediction (`E-SM-4`, recorded in the ledger before the run): on the 16-seed screen (`evals/screens/hunter-vision.grid.json`, 400000 ticks, floor on) the range-plus-rear arms raise `eval.hunter_catches_per_1k` by at least a tenth over control with the keep rule's seed guards (hunters alive, held) not worse; range alone moves catches less than range with `s` 0.4; `eval.chase_catch_share` rises with them; `eval.collision_death_share` does not rise. Falsified when no arm raises catches beyond the screen's margin. `npm run audit:chase` reads only the range arms' start distances (its oracles see all, so `s` does not touch it), and is run for the range and `s` arms so the start-distance grid is on record.
 
@@ -289,7 +291,7 @@ Range arms move the predator to 400 (equal to the scout) and the defender to 300
 | T14 | Build, screen and judge each fix T13 names: one switch each, 16 seeds then the keep rule on 64, the switch deleted at the verdict                                                              | [judgement] | T13         |
 | T15 | Conformance review of Phase 4 by a fresh agent, in parallel with `scripts/check.sh`; move the Status line                                                                                      | [judgement] | T13, T14    |
 
-### Phase 5 - Hunter's eyes
+### Phase 5 - Hunter's eyes (built)
 
 | #   | Task                                                                                                                                                                                                                                                 | Nature       | Depends on |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
