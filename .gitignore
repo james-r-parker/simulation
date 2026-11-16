@@ -171,3 +171,6 @@ wasm/target/
 
 # Wrangler's local state (wrangler d1 --local, wrangler pages dev)
 .wrangler/
+
+# Detached runs (scripts/run-detached.sh)
+.runs/
