@@ -37,8 +37,36 @@ more chases that end in a kill when the hunter sees further ahead.
 
 ## Screen (T18)
 
-Not run yet.
+`npm run screen -- --grid evals/screens/hunter-vision.grid.json --workers 16 --no-lock` (seeds 1 to 16, 400000 ticks,
+floor on, policy live; `evals/screens/results/hunter-vision/`). Every arm reads `PASS` and the screen's keep rule reads
+no harm for every arm against `control`. Targets from `npm run eval:compare -- control <arm> --allow-config-diff
+specialisations`:
+
+| Arm         | catches/1k (control 1.340) | chase catch share (0.228)      | collision death share (0.208) | predator presence (0.643) | pop > min | hunters alive share |
+| ----------- | -------------------------- | ------------------------------ | ----------------------------- | ------------------------- | --------- | ------------------- |
+| control     | 1.340                      | 0.228                          | 0.208                         | 0.643                     | 15/16     | 0.7                 |
+| range       | 1.415 (+5.6%)              | 0.224 (-1.9%)                  | 0.210                         | 0.585                     | 14/16     | 0.6                 |
+| range-s06   | 1.414 (+5.5%)              | 0.234 (+2.5%)                  | 0.208                         | 0.644                     | 13/16     | 0.6                 |
+| range-s04   | 1.397 (+4.3%)              | 0.231 (+1.2%)                  | 0.194                         | 0.697                     | 14/16     | 0.8                 |
+| range-s04-d | 1.449 (+8.1%)              | 0.239 (+4.6%, [-0.002, 0.019]) | 0.196                         | 0.712                     | 16/16     | 0.8                 |
+| far-s03     | 1.343 (+0.2%)              | 0.243 (+6.4%, [-0.004, 0.031]) | 0.211                         | 0.690                     | 14/16     | 0.6                 |
+
+Verdict on 16 seeds: **not supported, not falsified.** No arm moves `eval.hunter_catches_per_1k` beyond the screen's
+margin, but that metric needs 64 seeds for a verdict (`eval:compare` prints "needs 64 seeds"), and
+`eval.collision_death_share` needs 32; `eval.chase_catch_share` has no verdict on any arm (every interval touches 0).
+No arm reads harm. Range alone did not move catches less than range with `s` 0.4 (+5.6% against +4.3%), so that clause
+is not supported on these seeds.
+
+**Finalist: `range-s04-d`** (predator 400 with `s` 0.4, defender 300 with `s` 0.8). It has the largest point gain on
+both targets (catches +8.1%, chase catch share +4.6% with its interval just touching 0), the most hunters alive (0.8
+share, predator presence 0.712), held its population on 16 of 16 seeds and lowered collision deaths. `far-s03` has a
+higher chase catch share but no catch gain and fewer hunters alive.
 
 ## Keep rule (T19)
 
-Not run yet.
+The finalist against the defaults on 64 fresh floor-on seeds (seed offset 64, so none overlap the screen), 400000
+ticks, policy live, then `npm run eval:compare -- control.report.json finalist.report.json --keep-rule
+--allow-config-diff specialisations` with the targets. Under the keep rule ("A realistic mechanism stays",
+`docs/principles.md`) a forward-weighted predator eye is adopted when it reads no harm, even if its scene does not move.
+
+Running.

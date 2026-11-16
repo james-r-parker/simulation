@@ -4555,7 +4555,7 @@
       "before": "control arm of evals/screens/hunter-vision.grid.json (predator 350 s 1, defender 350 s 1), seeds 1 to 16, 400000 ticks, floor on, policy live",
       "after": "the range and rear-reach arms of the same screen (range, range-s06, range-s04, range-s04-d, far-s03)",
       "verdicts": {},
-      "note": "Prediction recorded before the run (T17). npm run audit:chase on the range arms (its oracles see all, so rearVisionShare does not touch it) still finds no fair band beyond 0.2 of view: the longer view only starts the oracle chase further out. The 16-seed screen (T18) and the 64-seed keep rule (T19) are not run yet.",
+      "note": "Prediction recorded before the run (T17). audit:chase on the range arms still finds no fair band beyond 0.2 of view. Screen (T18, 16 seeds): every arm PASS with no harm; no arm moves eval.hunter_catches_per_1k beyond the margin (needs 64 seeds); finalist range-s04-d (catches 1.449 vs 1.340, +8.1%; chase catch share +4.6%, interval touches 0; hunters alive 0.8 vs 0.7; held 16/16). The 64-seed keep rule (T19) is running.",
       "reports": ["evals/decisions/E186/results.md"],
       "date": "2026-11-15",
       "branch": "feat/hunter-vision",
