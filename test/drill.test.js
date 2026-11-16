@@ -7,6 +7,7 @@ import { brainLayout } from '../js/sim/brain-layout.js';
 import { createConfig } from '../js/sim/config.js';
 import { main, parseArgs, runDrills } from '../scripts/drill.mjs';
 import { formatTable, meanEdge, reportJson } from '../scripts/lib/drill-report.mjs';
+import { DRILLS } from '../js/evo/drill-scenarios.js';
 import { eliteSubjects } from '../scripts/lib/drill-subjects.mjs';
 import { makeChampionFile } from './evo/helpers/champion-file.js';
 
@@ -26,7 +27,7 @@ describe('parseArgs', () => {
     it('defaults to every drill, 32 trials, seed 1 and 8 elites', () => {
         const args = parseArgs(['--champions', 'd']);
         expect(args).toMatchObject({ champions: 'd', seed: 1, trials: 32, count: 8, json: false, out: null });
-        expect(args.drills).toHaveLength(7);
+        expect(args.drills).toEqual(DRILLS.map((d) => d.name));
     });
 
     it('reads every flag', () => {

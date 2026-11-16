@@ -167,6 +167,8 @@ const ORACLES = Object.freeze({
     'prey-too-big': () => (world) => write(world, SUBJECT, 0, 0),
     'hunter-closing': () => runner,
     'rock-refuge': () => refugeRunner,
+    'prey-crossing': () => striker,
+    'hunter-flank': () => runner,
 });
 
 /** The drills that have an oracle. */

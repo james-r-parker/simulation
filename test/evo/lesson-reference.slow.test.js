@@ -16,6 +16,8 @@ const AT_LEAST = {
     'prey-ahead': 0.4,
     'prey-too-big': 0.9,
     'hunter-closing': 0,
+    'prey-crossing': 0.6,
+    'hunter-flank': 0,
     'rock-refuge': 0,
 };
 

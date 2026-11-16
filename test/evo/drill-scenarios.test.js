@@ -50,7 +50,7 @@ const zeroBrain = () => ({
 });
 
 describe('DRILLS', () => {
-    it('lists the seven drills with a scene each', () => {
+    it('lists the seven drills of training.md, then the social four, with a scene each', () => {
         expect(DRILLS.map((d) => d.name)).toEqual([
             'food-ahead',
             'food-behind',
@@ -59,9 +59,15 @@ describe('DRILLS', () => {
             'prey-too-big',
             'hunter-closing',
             'rock-refuge',
+            'prey-crossing',
+            'hunter-flank',
         ]);
         expect(DRILLS.every((d) => d.scene.length > 0)).toBe(true);
-        expect(DRILLS.filter((d) => d.needsHunter).map((d) => d.name)).toEqual(['prey-ahead', 'prey-too-big']);
+        expect(DRILLS.filter((d) => d.needsHunter).map((d) => d.name)).toEqual([
+            'prey-ahead',
+            'prey-too-big',
+            'prey-crossing',
+        ]);
     });
 
     it('stages the same trial from the same stream and another from another seed', () => {
