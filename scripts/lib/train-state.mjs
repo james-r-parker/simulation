@@ -77,7 +77,7 @@ export function loadStages(args) {
 
 /**
  * @param {StageInfo[]} stages the run's stages
- * @param {import('../../js/evo/curriculum.js').RunState} state the run's state
+ * @param {import('../../js/evo/stage-run.js').RunState} state the run's state
  * @returns {Record<string, any>[]} each stage whose world has run, with its generations, and for a gated stage when it
  *   passed (with the gate readings at the pass), its reviews and where it stalled
  */
@@ -86,7 +86,7 @@ export function stageRecord(stages, state) {
         .filter((s) => (state.ran[s.name] ?? 0) > 0)
         .map((s) => {
             const passed = state.passed[s.name];
-            const stalled = state.stalled.find((x) => x.stage === s.name);
+            const stalled = state.stalled.find((/** @type {any} */ x) => x.stage === s.name);
             return {
                 name: s.name,
                 rulesHash: s.rulesHash,
@@ -102,7 +102,7 @@ export function stageRecord(stages, state) {
  * Writes `archive-<g>.json`: the archive JSON plus `generation` (generations completed), `stages` and, for a gated run,
  * `trainState` (what `--resume` continues from).
  * @param {string} dir the output directory
- * @param {{archive: import('../../js/evo/archive.js').Archive, stages: StageInfo[], generation: number, state?: import('../../js/evo/curriculum.js').RunState}} run
+ * @param {{archive: import('../../js/evo/archive.js').Archive, stages: StageInfo[], generation: number, state?: import('../../js/evo/stage-run.js').RunState}} run
  *   the archive, the run's stages, the 0-based index of the generation just completed and the run's state after it (a
  *   fixed-length run's is replayed when omitted)
  * @returns {string} the file's path
@@ -125,7 +125,7 @@ export function saveArchive(dir, { archive, stages, generation, state }) {
  * @param {string} path an `archive-<g>.json`
  * @param {{stages: StageInfo[], total: number, log: import('../../js/sim/log.js').SimLog}} run the run's stages and
  *   generations, and the log that receives `GenomeRejected` before a throw
- * @returns {{archive: import('../../js/evo/archive.js').Archive, done: number, state: import('../../js/evo/curriculum.js').RunState}}
+ * @returns {{archive: import('../../js/evo/archive.js').Archive, done: number, state: import('../../js/evo/stage-run.js').RunState}}
  *   the archive (with the trainer's `nCap`), the generations it has completed and the run's state at that point
  * @throws {Error} when the file has no `generation`, its layout or the `rulesHash` of the stage that wrote it does not
  *   fit this run, it has already completed every generation asked for, or this run is gated and the file has no state

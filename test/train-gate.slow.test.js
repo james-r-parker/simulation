@@ -178,6 +178,11 @@ describe('a gated ladder', () => {
         ]);
         expect(log.filter((r) => r.event === 'TrainReview').map((r) => [r.stage, r.review])).toEqual([['one', 1]]);
         expect(log.filter((r) => r.event === 'TrainStage').map((r) => r.stage)).toEqual(['one', 'two', 'one', 'two']);
+        const curve = readFileSync(join(root, 'review', 'curve.jsonl'), 'utf8')
+            .trim()
+            .split('\n')
+            .map((l) => JSON.parse(l));
+        expect(curve[3].gate).toMatchObject({ stage: 'two', passed: false, regressed: 'one' });
         const last = JSON.parse(readFileSync(join(root, 'review', 'archive-9.json'), 'utf8'));
         expect(last.stages.find((/** @type {any} */ s) => s.name === 'one')).toMatchObject({
             generations: 7,

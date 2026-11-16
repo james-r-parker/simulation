@@ -58,6 +58,9 @@ function gateCell(gate) {
     if (gate === undefined) {
         return '-';
     }
+    if (gate.regressed !== undefined) {
+        return `REGRESSED ${gate.regressed}`;
+    }
     return gate.stagePassed ? 'PASSED' : gate.passed ? 'pass' : 'fail';
 }
 

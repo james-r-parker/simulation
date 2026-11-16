@@ -103,7 +103,7 @@ async function drillPart({ archive, options, log }) {
     return {
         edges: drillEdges(rows, genomes.length),
         reasons: drillLossReasons(rows, genomes.length),
-        readings: gate === null ? null : { drill: drillReadings(rows, genomes.length, names) },
+        readings: gate === null ? null : { drill: drillReadings(/** @type {any} */ (rows), genomes.length, names) },
     };
 }
 

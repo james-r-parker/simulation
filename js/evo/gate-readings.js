@@ -22,6 +22,15 @@ import { wilsonInterval } from './binomial.js';
  * @property {Record<string, number>} lossShare each lost-trial reason's share of the lost trials
  */
 
+/** The first-match lost-trial reasons of a drill (`LostReason` in `js/evo/drill-trace.js`); a reason that did not occur reads 0. */
+export const LOST_REASONS = Object.freeze([
+    'never-bit',
+    'never-in-jaws',
+    'bit-prey-lived',
+    'subject-starved-or-recoiled-first',
+    'prey-died-unkilled',
+]);
+
 /**
  * @param {readonly ReadingCell[]} cells the cells of the champions a drill applied to
  * @param {ReadingCell | null} reference the reference's cell
@@ -37,7 +46,7 @@ function drillReading(cells, reference) {
     const random = wilsonInterval(cells[0].randomWins, cells[0].randomTrials);
     const lost = trials - wins;
     /** @type {Record<string, number>} */
-    const lossShare = {};
+    const lossShare = Object.fromEntries(LOST_REASONS.map((reason) => [reason, 0]));
     for (const cell of cells) {
         for (const [reason, n] of Object.entries(cell.lossReasons ?? {})) {
             lossShare[reason] = (lossShare[reason] ?? 0) + n / lost;

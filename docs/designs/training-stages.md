@@ -64,7 +64,8 @@ As built (Phase 2):
 - Retention is read only while a gated stage runs and only after its `minGenerations`; `retention.all` is 1 when no stage has passed. A regression starts a review, and a regression of a stage already reviewed `REVIEW_MAX` times stops the run as a stall. A review runs the regressed stage's world for `REVIEW_GENERATIONS` generations, takes no gate read, and returns to the current stage with its gate history cleared. The generations a review runs count in the reviewed stage's `generations` and not in the current stage's `minGenerations` or `maxGenerations`.
 - A run that reaches `--generations` with its stage still open ends normally: `--generations` is the budget, `maxGenerations` the stall. `--until <stage>` cuts the curriculum after that stage; a gated last stage ends the run on its pass.
 - Gate drills run on the validation seed (`GATE_SEED`, see "Seed partitions" below) with `GATE_TRIALS` trials per champion and drill, on every drill at once, so one drill table gives every stage's readings, and the curve's drill columns on a gate checkpoint come from the same table. A reading no Phase 3 or 4 code produces yet (`crossplay.*`, `drill.pack-converge.*`) is null and fails.
-- `--resume` of a gated run continues from the archive's `trainState`; an archive without it resumes a fixed-length curriculum (the state is replayed) and is refused by a gated one.
+- A review that ends leaves a gated stage room for a hold before its stall (its generation count is cut to `maxGenerations` less `GATE_HOLD`). `retention.all` reads null before a stage's `minGenerations`, since retention is not read then; a drill's `lossShare` reads 0 for a reason that did not occur. A regression's checkpoint writes the failing conditions of the regressed stage to the curve row's gate column, marked `regressed`.
+- `--resume` of a gated run continues from the archive's `trainState`; it is refused when the stage names or their `rulesHash` differ from the run's; an archive without it resumes a fixed-length curriculum (the state is replayed) and is refused by a gated one.
 - Seed partitions, `manifest.json` and the export check are under "Runs are kept" below.
 
 > Note: an elite keeps its samples when the stage world changes. Clone founders re-test it in the new world (`nextClone` in `js/evo/archive.js`) and `TRAINER_N_CAP` (8) bounds how long old samples weigh, so a lower bound drifts to the new world over a few generations. A gate read in the first checkpoint of a stage reads the old stage's elites.
@@ -232,7 +233,7 @@ T5 and T6 are not run yet (2026-11-16): they measure the defaults, and the hunte
 | A     | T1 to T4 | The detectors and the intervals; no sim behaviour change (code, Sonnet)   |
 | B     | T5, T6   | The baseline run, the power read and the conformance review (run, review) |
 
-### Phase 2 - The gated ladder
+### Phase 2 - The gated ladder (built)
 
 **Targets:** none - trainer tooling; no sim-core code and no `eval.*` change
 
@@ -377,7 +378,7 @@ After the world gate of [training.md](training.md). `npm run train:season`, the 
 | T11  | (built) `npm run train:curve` prints each checkpoint's gate readings, the stage passes and the retention columns; `AGENTS.md` rows                                                                                                                  | [mechanical] | T9                              |
 | T9a  | (built) Stage provenance and target-rule export eligibility (`exportEligibility`, tests); the comparison of retained and stage-local estimates moved to T9b                                                                                         | [judgement]  | T9                              |
 | T10a | (built) Implement disjoint training/validation/release manifests, candidate freeze and access records; test overlap rejection, resume and worker determinism                                                                                        | [judgement]  | T10                             |
-| T12  | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                 | [judgement]  | T7, T8, T9, T10, T11, T9a, T10a |
+| T12  | (built) Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                         | [judgement]  | T7, T8, T9, T10, T11, T9a, T10a |
 
 ### Phase 3 - Cross-play and the opponent pool
 

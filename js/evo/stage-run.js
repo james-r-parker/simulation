@@ -108,7 +108,8 @@ export function currentEntry(state) {
 export function checkpointDue(state, every) {
     const done = state.generation + 1;
     const entry = currentEntry(state);
-    const last = isGated(entry) && state.review === null && state.count + 1 >= (entry.maxGenerations ?? Infinity);
+    const last =
+        isGated(entry) && state.review === null && state.count + 1 >= /** @type {number} */ (entry.maxGenerations);
     return every > 0 && (done % every === 0 || done === state.total || last);
 }
 
@@ -122,11 +123,12 @@ export function needsGate(state) {
 
 /**
  * @param {RunState} state a state
- * @returns {Omit<RunState, 'stages'> & {names: string[]}} the state as saved: the stage names stand for the stages
+ * @returns {Omit<RunState, 'stages'> & {names: string[], hashes: (string | null)[]}} the state as saved: the stage names stand for the stages
  */
 export function snapshotState(state) {
     const { stages, ...rest } = state;
-    return { ...JSON.parse(JSON.stringify(rest)), names: stages.map((s) => s.name) };
+    const hashes = stages.map((s) => /** @type {any} */ (s).rulesHash ?? null);
+    return { ...JSON.parse(JSON.stringify(rest)), names: stages.map((s) => s.name), hashes };
 }
 
 /**
@@ -141,8 +143,13 @@ export function restoreState(stages, total, saved) {
     if (!Array.isArray(saved.names) || saved.names.join(',') !== names) {
         throw new Error(`resume: the archive was written by stages [${saved.names}], this run has [${names}]`);
     }
-    const state = { ...initialState(stages, total), ...saved, status: 'running', total };
+    const hashes = stages.map((s) => /** @type {any} */ (s).rulesHash ?? null).join(',');
+    if (saved.hashes !== undefined && saved.hashes.join(',') !== hashes) {
+        throw new Error("resume: the stages' rules differ from the ones the archive was written under");
+    }
+    const state = /** @type {RunState} */ ({ ...initialState(stages, total), ...saved, status: 'running', total });
     delete (/** @type {any} */ (state).names);
+    delete (/** @type {any} */ (state).hashes);
     return state;
 }
 
@@ -205,18 +212,17 @@ function readRetention(s, readings) {
     const retention = {};
     /** @type {Record<string, object[]>} */
     const failing = {};
-    let all = 1;
+    retention.all = 1;
     for (const entry of s.stages.slice(0, s.index)) {
         if (!Object.hasOwn(s.passed, entry.name)) {
             continue;
         }
         const read = readGate(/** @type {any} */ (entry.gate), { ...readings, retention });
         retention[entry.name] = read.passed ? 1 : 0;
-        all = Math.min(all, retention[entry.name]);
+        retention.all = Math.min(retention.all, retention[entry.name]);
         s.failStreaks[entry.name] = read.passed ? 0 : (s.failStreaks[entry.name] ?? 0) + 1;
         failing[entry.name] = read.conditions.filter((c) => !c.passed);
     }
-    retention.all = all;
     return { retention, failing };
 }
 
@@ -257,7 +263,7 @@ function regress(s, { stage, failing }, events) {
 function gateCheckpoint(s, entry, readings, events) {
     const ripe = s.count >= (entry.minGenerations ?? 1);
     const { retention, failing } = ripe ? readRetention(s, readings) : { retention: {}, failing: {} };
-    const regressed = Object.keys(failing).find((name) => (s.failStreaks[name] ?? 0) >= GATE_HOLD);
+    const regressed = Object.keys(failing).find((name) => s.failStreaks[name] >= GATE_HOLD);
     if (regressed !== undefined) {
         regress(s, { stage: regressed, failing: failing[regressed] }, events);
         return true;
@@ -302,6 +308,9 @@ function stepReview(s) {
         s.review = null;
         s.history = [];
         s.failStreaks = {};
+        // a review only starts inside a gated stage; leave room for a hold before its stall
+        const max = /** @type {number} */ (s.stages[s.index].maxGenerations);
+        s.count = Math.max(0, Math.min(s.count, max - GATE_HOLD));
     }
 }
 
@@ -314,7 +323,7 @@ function stepReview(s) {
  */
 function stepGated(s, entry, readings, events) {
     const moved = readings !== null && gateCheckpoint(s, entry, readings, events);
-    if (!moved && s.count >= (entry.maxGenerations ?? Infinity)) {
+    if (!moved && s.count >= /** @type {number} */ (entry.maxGenerations)) {
         stall(s, entry, events);
     }
 }
@@ -341,7 +350,7 @@ export function nextStage(state, checkpoint = null) {
         stepGated(s, entry, checkpoint?.readings ?? null, events);
     } else {
         s.count += 1;
-        if (s.index < s.stages.length - 1 && s.count >= (entry.generations ?? Infinity)) {
+        if (s.index < s.stages.length - 1 && s.count >= /** @type {number} */ (entry.generations)) {
             moveOn(s);
         }
     }

@@ -87,7 +87,7 @@ function usage(results, { wallSeconds, workers }) {
  * @typedef {object} Run
  * @property {import('./lib/train-args.mjs').TrainArgs} args the options
  * @property {import('./lib/train-state.mjs').StageInfo[]} stages the run's stages
- * @property {import('../js/evo/curriculum.js').RunState} state the stage state machine
+ * @property {import('../js/evo/stage-run.js').RunState} state the stage state machine
  * @property {number[]} seeds the train seeds
  * @property {import('../js/evo/archive.js').Archive} archive the archive, merged into as generations finish
  * @property {import('../js/sim/log.js').SimLog} log the log
@@ -144,10 +144,10 @@ async function maybeCheckpoint(run, { drillTrials, gateTrials }) {
 }
 
 /**
- * @param {import('../js/evo/curriculum.js').RunState} state the state before the generation
+ * @param {import('../js/evo/stage-run.js').RunState} state the state before the generation
  * @param {{point: Record<string, any>, readings: Record<string, any> | null} | null} checkpoint the checkpoint, if any
  * @param {import('../js/sim/log.js').SimLog} log receives the stage events
- * @returns {{state: import('../js/evo/curriculum.js').RunState, columns: Record<string, any>}} the state after the generation
+ * @returns {{state: import('../js/evo/stage-run.js').RunState, columns: Record<string, any>}} the state after the generation
  *   and the gate columns of its curve row (none unless a gate was read)
  */
 function advance(state, checkpoint, log) {
@@ -156,6 +156,18 @@ function advance(state, checkpoint, log) {
         log.log(level, event, fields);
     }
     const gate = step.events.find((e) => e.event === 'TrainGate');
+    const regressed = step.events.find((e) => e.event === 'TrainStageRegressed');
+    if (gate === undefined && regressed !== undefined) {
+        const stage = currentEntry(state).name;
+        const columns = {
+            stage,
+            passed: false,
+            conditions: regressed.fields.failing,
+            retention: {},
+            regressed: regressed.fields.stage,
+        };
+        return { state: step.state, columns: { gate: columns } };
+    }
     if (gate === undefined) {
         return { state: step.state, columns: {} };
     }
@@ -273,7 +285,7 @@ function stallMessage(run) {
  * Trains.
  * @param {import('./lib/train-args.mjs').TrainArgs} args the options
  * @param {TrainIo} [io] the summary output and the checkpoint drill sizes
- * @returns {Promise<{archive: import('../js/evo/archive.js').Archive, generations: number, state: import('../js/evo/curriculum.js').RunState}>}
+ * @returns {Promise<{archive: import('../js/evo/archive.js').Archive, generations: number, state: import('../js/evo/stage-run.js').RunState}>}
  *   the final archive, the generations done and the stage state
  * @throws {TrainStalled} (exit code 3) when a required stage stalls, after the archive and curve are written
  */

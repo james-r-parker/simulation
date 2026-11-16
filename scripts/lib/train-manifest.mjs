@@ -98,7 +98,7 @@ export function startLedger(resume) {
 /**
  * @param {ManifestBase} base the fixed part
  * @param {import('./train-state.mjs').StageInfo[]} stages the run's stages
- * @param {import('../../js/evo/curriculum.js').RunState} state the run's state
+ * @param {import('../../js/evo/stage-run.js').RunState} state the run's state
  * @param {{manifests: object[], uses: object[]}} partitions the seed partitions the run reads and every use of them
  * @returns {Record<string, any>} the manifest: the base, the run's status and generations done, the partitions, and every
  *   stage with its `rulesHash` and, once run, its generations, `passedAt`, gate readings at the pass, reviews and stall

@@ -125,6 +125,10 @@ describe('train:curve with gates', () => {
         ]);
         expect(lines.at(-1)).toMatch(/^plateau:/);
         expect(formatCurve([rows[0]])[0]).not.toContain('retention');
+        const regressed = row(4, {
+            gate: { stage: 'hunt', passed: false, regressed: 'nursery', conditions: [], retention: {} },
+        });
+        expect(formatCurve([regressed])[1]).toContain('REGRESSED nursery');
         const max = formatCurve([
             row(1, {
                 gate: { stage: 's', passed: true, conditions: [{ read: 'x', value: null, max: 2, passed: false }] },
@@ -242,6 +246,15 @@ describe('saveArchive', () => {
 });
 
 describe('--until, --scratch and the /tmp refusal', () => {
+    it('refuses a gated curriculum with no checkpoints', () => {
+        const file = join(root, 'gated-no-checkpoints.json');
+        const gate = [{ read: 'retention.all', min: 1 }];
+        writeFileSync(file, JSON.stringify([{ name: 'one', config: null, gate, maxGenerations: 3 }]));
+        const args = parseArgs(['--generations', '3', '--out', 'x', '--curriculum', file, '--checkpoint-every', '0']);
+        expect(() => loadStages(args)).toThrow(/is gated, so it needs checkpoints/);
+        expect(loadStages({ ...args, checkpointEvery: 1 })).toHaveLength(1);
+    });
+
     it('reads --until and --scratch, defaulting to none', () => {
         const base = ['--generations', '1', '--out', 'x'];
         expect(parseArgs(base)).toMatchObject({ until: null, scratch: false });

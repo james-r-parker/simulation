@@ -43,3 +43,21 @@ describe('drillReadings', () => {
         expect(drillReadings([], 0, ['x']).x.edgeLow).toBeNull();
     });
 });
+
+describe('drillReadings loss shares', () => {
+    it('reads a reason that did not occur as 0, also when every trial won', () => {
+        const won = { cells: { a: cell(64) } };
+        expect(drillReadings([won], 1, ['a']).a.lossShare['never-bit']).toBe(0);
+        const lost = { cells: { a: cell(32, { 'bit-prey-lived': 32 }) } };
+        const share = drillReadings([lost], 1, ['a']).a.lossShare;
+        expect(share['never-bit']).toBe(0);
+        expect(share['bit-prey-lived']).toBe(1);
+    });
+});
+
+describe('a cell without lost-trial reasons', () => {
+    it('reads as no reasons', () => {
+        const bare = { winShare: 0.5, wins: 32, trials: 64, randomWins: 4, randomTrials: 256 };
+        expect(drillReadings([{ cells: { a: bare } }], 1, ['a']).a.lossShare['never-bit']).toBe(0);
+    });
+});

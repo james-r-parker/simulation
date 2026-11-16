@@ -163,3 +163,52 @@ describe('snapshotState and restoreState', () => {
         expect(() => restoreState(stages, 40, {})).toThrow(/written by stages/);
     });
 });
+
+describe('review findings', () => {
+    const ONE = { ...NURSERY, maxGenerations: 50 };
+    const MID = { ...HUNT, maxGenerations: 50 };
+    const LAST = { name: 'third', gate: EDGE('prey-ahead'), minGenerations: 1, maxGenerations: 50 };
+    const good = reading(0.9, 0.9);
+
+    it('does not call a passed stage whose own gate reads retention.all regressed', () => {
+        let state = initialState([ONE, MID, LAST, WORLD], 100);
+        state = drive(state, Array(5).fill(good)).state;
+        expect(state.index).toBe(2);
+        const later = drive(state, [good, good, good, good]);
+        expect(later.events).not.toContain('TrainStageRegressed');
+        expect(later.state.review).toBeNull();
+    });
+
+    it('gives a stage a window for a hold after a review that ended at its stall generation', () => {
+        const stages = [NURSERY, { ...HUNT, maxGenerations: 4 }, WORLD];
+        const base = initialState(stages, 60);
+        const state = { ...base, index: 1, count: 4, review: { index: 0, left: 1 }, passed: { nursery: {} } };
+        const after = nextStage(/** @type {any} */ (state)).state;
+        expect(after.review).toBeNull();
+        expect(after.count).toBe(2);
+        expect(after.status).toBe('running');
+    });
+
+    it('refuses a resume under other rules', () => {
+        const stages = [
+            { ...NURSERY, rulesHash: 'a' },
+            { ...WORLD, rulesHash: 'b' },
+        ];
+        const saved = JSON.parse(JSON.stringify(snapshotState(initialState(stages, 9))));
+        expect(() => restoreState(stages, 9, saved)).not.toThrow();
+        const other = [stages[0], { ...WORLD, rulesHash: 'c' }];
+        expect(() => restoreState(other, 9, saved)).toThrow(/rules differ/);
+    });
+});
+
+describe('a stage that stalled as optional, and defaults', () => {
+    it('is not read for retention, and a gated stage without minGenerations may pass on its first two checkpoints', () => {
+        const skipped = { name: 'skipped', gate: EDGE('food-ahead'), maxGenerations: 1, optional: true };
+        const next = { name: 'next', gate: [{ read: 'retention.all', min: 1 }], maxGenerations: 9 };
+        let state = drive(initialState([skipped, next, WORLD], 30), [reading(0.1)]).state;
+        expect(state.index).toBe(1);
+        state = drive(state, [reading(0.1), reading(0.1)]).state;
+        expect(state.passed.next).toMatchObject({ checkpoints: 2 });
+        expect(state.failStreaks).toEqual({});
+    });
+});
