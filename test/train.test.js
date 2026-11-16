@@ -215,6 +215,29 @@ describe('train:export', () => {
             /no elite/,
         );
     });
+
+    it('reads the layout from --config, and writes a null generation for an archive without one', () => {
+        const config = createConfig({});
+        const archive = createArchive(brainLayout(config), { descriptor: TRAINER_DESCRIPTOR });
+        offer(archive, {
+            spec: 0,
+            cell: 2,
+            row: new Float32Array(archive.layout.weightCount),
+            sigma: 0.1,
+            id: 1,
+            fitness: 1,
+        });
+        const file = join(root, 'no-generation.json');
+        writeFileSync(file, JSON.stringify(encodeArchive(archive, config)));
+        const same = join(root, 'same-layout.json');
+        writeFileSync(same, JSON.stringify({}));
+        const out = join(root, 'no-generation');
+        runExport({ archive: file, out, config: same, label: 'g' });
+        expect(JSON.parse(readFileSync(join(out, 'index.json'), 'utf8')).generation).toBeNull();
+        const wider = join(root, 'wider-layout.json');
+        writeFileSync(wider, JSON.stringify({ brainHidden: 8 }));
+        expect(() => runExport({ archive: file, out: join(root, 'wider'), config: wider, label: 'g' })).toThrow();
+    });
 });
 
 describe('evals/train-seeds.json', () => {
@@ -253,6 +276,14 @@ describe('--until, --scratch and the /tmp refusal', () => {
         const args = parseArgs(['--generations', '3', '--out', 'x', '--curriculum', file, '--checkpoint-every', '0']);
         expect(() => loadStages(args)).toThrow(/is gated, so it needs checkpoints/);
         expect(loadStages({ ...args, checkpointEvery: 1 })).toHaveLength(1);
+    });
+
+    it('cuts the default curriculum at --until, and names its one stage for an unknown one', () => {
+        const base = ['--generations', '1', '--out', 'x'];
+        expect(loadStages(parseArgs([...base, '--until', 'default'])).map((s) => s.name)).toEqual(['default']);
+        expect(() => loadStages(parseArgs([...base, '--until', 'habitat']))).toThrow(
+            /--until: no stage "habitat"; the stages are default/,
+        );
     });
 
     it('reads --until and --scratch, defaulting to none', () => {
