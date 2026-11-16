@@ -13,7 +13,7 @@ import {
 
 describe('event codes', () => {
     it('exports the record stride and the frozen code sets', () => {
-        expect(EVENT_STRIDE).toBe(12);
+        expect(EVENT_STRIDE).toBe(13);
         expect(EVENT_TYPE).toEqual({
             AGENT_BORN: 1,
             AGENT_DIED: 2,

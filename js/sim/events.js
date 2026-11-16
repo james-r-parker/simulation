@@ -1,7 +1,7 @@
 // Fixed-stride per-tick event ring: codes for births, deaths, blocked births, floor spawns, calls and smoke, and the push/read/clear helpers.
 
 /** Number of Float64 fields per event record. */
-export const EVENT_STRIDE = 12;
+export const EVENT_STRIDE = 13;
 
 /** Worst-case number of events an agent can emit in one tick. */
 export const MAX_EVENTS_PER_SLOT = 8;
