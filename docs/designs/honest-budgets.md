@@ -1,6 +1,6 @@
 # Honest budgets
 
-**Status:** In progress - Phase 1 (patch stock pays for plant food) and Phase 2 (the kill is the body) and Phase 4 (the edge breeds) built in season 10; Phase 3 (impacts, not contact) is parked on E176; Phase 5 (a call changes the bite) is parked on E178; Phase 6 is next.
+**Status:** In progress - Phase 1 (patch stock pays for plant food) and Phase 2 (the kill is the body) and Phase 4 (the edge breeds) built in season 10; Phase 3 (impacts, not contact) is parked on E176; Phase 5 (a call changes the bite) is parked on E178; Phase 6 is in progress: its diagnostics (T33 to T33b) are built, and the screen (T35) is next.
 **Validated:** 2fc8f7f5 (2026-11-15)
 **Priority:** 2 - the 128-seed read of [review-2026-11-11.md](../review-2026-11-11.md): most seeds boom to the cap and fall under 40 while food never runs short, so every scene that needs a standing prey population is tuned on top of the crash; food, the kill and the rocks come before any skill, refuge or call work
 **Depends on:** [metric-trust.md](metric-trust.md)
@@ -267,6 +267,30 @@ In E175 (`carcassBody`, `killGorgeCap` 2000), predators moved onto kills, but `e
 T33a follows newborn cohorts through maturity, first deliberate kill, first birth and a reproducing child. Reports separate split, mating and specialisation-flip births, and separate local extinction from global extinction. Living juveniles at the run boundary are censored, not counted as survivors or deaths. Report denominators, time to starvation, territory-blocked eligible births and net chase energy, including failed chases. These are observer diagnostics, never fitness rewards.
 
 T33b audits `leaveCarcass` in [carcass.js](../../js/sim/carcass.js): a full food pool currently leaves no carcass. Fixtures cover a full pool, simultaneous deaths, zero-value bodies and the last free slot; report lost carcass energy separately from decay and consumption. Only measured material loss opens a bounded carcass-capacity experiment, with explicit energy accounting and no free replacement food.
+
+#### As built: the recruitment diagnostics (T33a, T33b)
+
+Observer state only, outside `worldHash`; no fitness term and no sim behaviour changed. `js/evo/scene-recruit.js` follows the
+hunters born after burn-in by genome id (never by slot, which the sim reuses) and reports `eval.recruit_cohort`,
+`eval.recruit_matured_hunters`, `eval.recruit_censored_share`, `eval.recruit_matured_share`,
+`eval.recruit_first_kill_share`, `eval.recruit_lineage_share` (a hunter child that itself bred),
+`eval.recruit_replaced_share.<source>` (mate-hunter-parent, split-hunter-parent, spec-flip, floor; an immigrant counts with
+the floor), `eval.hunter_starve_age_median`, `eval.hunter_lineage_extinctions` (a lineage loses its last hunter while hunters
+of another lineage live) and `eval.hunter_global_extinctions` (`LastHunterDied`). A hunter alive and under `maturityTicks`
+at the last tick is censored and counted in neither the survivors nor the deaths. `js/evo/scene-recruit-budget.js` reports
+`eval.chase_net_energy` and `eval.chase_failed_energy` (the hunter's energy change from the tick a chase opened to the tick it
+resolved, failed chases included) and `eval.hunter_territory_blocked_share` (of the mature, rested, not-pregnant hunters
+above their split energy at a 1000-tick checkpoint, the share `territoryAllows` refuses). Founders are not in the cohort;
+labelling them apart from descendants under a no-floor run is T36a. Baseline and detector power are in
+[sim-notes.md](sim-notes.md) (2026-11-16, the recruitment diagnostics).
+
+T33b: `leaveCarcass` now books `world.carcassLoss` (energy placed, energy lost, bodies lost), outside `worldHash` and the
+snapshot, and `js/evo/scene-carcass-loss.js` reports `eval.carcass_loss_share.<lost|eaten|faded>` and
+`eval.carcass_lost_per_1k` from burn-in. The loss is **not material** on the defaults: on seeds 1 to 16 at 100000 ticks the
+lost share of the carcass energy offered is 0.040 on average and 0.001 at the median, above 0.10 on 2 of 16 seeds (0.377 and
+0.107). The rule written before the read: material means a lost share of at least 0.10 on at least 4 of 16 seeds. So no
+bounded carcass-capacity arm is specified; most carcass energy (0.71 on average) fades before anyone eats it, which is a
+different lever (`carcassFadeTicks`, scavenger reach), left to the carcass work in [world-balance.md](world-balance.md).
 
 T36a confirms recruitment with floor/reseeding disabled and initial founders labelled separately, on held-out seeds for at least two full seasons and two descendant generations where present. An extinct run remains a failure, not a censored success. Compare the finalist, control and single-lever ablations; preserve the existing 64-seed keep rule. A hunter that lives longer without replacing itself does not establish a sustainable lineage. Record clips of a first kill, a surviving family and an unsuccessful chase abandoned; absent scenes remain open findings.
 
