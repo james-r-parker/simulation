@@ -162,8 +162,16 @@ T9a built the provenance and eligibility half: the archive's `stages` record and
 ## Runs are kept
 
 - A run writes to `.sim/train/<name>/` (git-ignored): `archive-<g>.json`, `curve.jsonl`, `train.jsonl`, `crossplay.json`, `exam.json` and `manifest.json` (the git sha, the command line, the curriculum file's hash, the seed offset, each stage's `rulesHash`, `passedAt` and gate readings).
-- `scripts/train.mjs` refuses an `--out` under `/tmp` unless `--scratch` is given.
+- `main` in `scripts/train.mjs` (the command line, not a call to `runTraining`) refuses an `--out` under `/tmp` unless `--scratch` is given.
 - A run a decision rests on is committed under `evals/decisions/<id>/`: the last archive, the curve, the cross-play matrix, the exam and the manifest.
+
+### Seed partitions
+
+`js/evo/partitions.js` (T10a) gives training, validation and each release its own range of one million seeds: training `[0, 1e6)` (`evals/train-seeds.json`, `evals/seeds.json` and the curve drills' seed 1), validation `[1e6, 2e6)`, `release-<n>` after it. `partitionManifest` records a partition's first seed, how many it uses and a hash of the scenarios they run; `assertDisjoint` refuses overlap. A gate checkpoint runs its drills on the first validation seed (`GATE_SEED`) and nothing in the training namespace picks a checkpoint or a gate.
+
+- `recordAccess` is the ledger: a purpose reads only its own kind (`train` and `resume` read training, `gate`, `review` and `tune` read validation, `exam` reads release), and an `exam` opens a release partition only with a `freezeCandidate` hash (the champion set, the code sha, the rules hash, the curriculum hash and the founder mixture). A release partition opened for one candidate refuses another: a failed exam stays in the record and a revised candidate uses a new, precommitted `release-<n>`.
+- `manifest.json` carries the partition manifests and every use: the training use, each gate checkpoint, and a resume (the earlier uses are read from the resumed archive's directory), each also logged as `PartitionUse`. The exam (Phase 5) is the one caller of `exam` and of `freezeCandidate`; the validation and release scenario envelopes (headings, spacing, food, density, seasonal phase) are Phase 5 work and use `partitionManifest`.
+- A run's result does not depend on the worker count: the gate seed and its trials are fixed, so `--workers 1` and `--workers 2` write identical archives and manifests (tested).
 
 ## Season retraining
 
@@ -193,16 +201,17 @@ As built: a lapse is the `GAVE_UP` end class of the chase record, split by the f
 
 ## Log events
 
-| Event                 | Level | Fields                                                           |
-| --------------------- | ----- | ---------------------------------------------------------------- |
-| `TrainGate`           | info  | generation, stage, each condition's key, value and bound, passed |
-| `TrainStagePassed`    | info  | generation, stage, checkpoints held                              |
-| `TrainStageStalled`   | error | generation, stage, the failing conditions                        |
-| `TrainStageRegressed` | warn  | generation, stage (the regressed one), the failing conditions    |
-| `TrainReview`         | info  | generation, stage, review number                                 |
-| `TrainPool`           | info  | generation, snapshots held, the generation of each               |
-| `CrossplayCell`       | debug | predator checkpoint, forager checkpoint, trials, kills           |
-| `ExamRow`             | info  | row, verdict, the numbers read                                   |
+| Event                 | Level | Fields                                                                      |
+| --------------------- | ----- | --------------------------------------------------------------------------- |
+| `TrainGate`           | info  | generation, stage, each condition's key, value and bound, passed, retention |
+| `TrainStagePassed`    | info  | generation, stage, checkpoints held                                         |
+| `TrainStageStalled`   | error | generation, stage, the failing conditions                                   |
+| `TrainStageRegressed` | warn  | generation, stage (the regressed one), the failing conditions               |
+| `TrainReview`         | info  | generation, stage, review number                                            |
+| `TrainPool`           | info  | generation, snapshots held, the generation of each                          |
+| `CrossplayCell`       | debug | predator checkpoint, forager checkpoint, trials, kills                      |
+| `ExamRow`             | info  | row, verdict, the numbers read                                              |
+| `PartitionUse`        | info  | purpose, partition, generation (a training run), freeze hash (an exam)      |
 
 ## Phases
 
@@ -367,7 +376,7 @@ After the world gate of [training.md](training.md). `npm run train:season`, the 
 | T10  | (built) Add `scripts/lib/train-manifest.mjs`, the `stages` fields in the archive, `--resume` of a gated run, the `/tmp` refusal and `--scratch`                                                                                                     | [mechanical] | T9                              |
 | T11  | (built) `npm run train:curve` prints each checkpoint's gate readings, the stage passes and the retention columns; `AGENTS.md` rows                                                                                                                  | [mechanical] | T9                              |
 | T9a  | (built) Stage provenance and target-rule export eligibility (`exportEligibility`, tests); the comparison of retained and stage-local estimates moved to T9b                                                                                         | [judgement]  | T9                              |
-| T10a | Implement disjoint training/validation/release manifests, candidate freeze and access records; test overlap rejection, resume and worker determinism                                                                                                | [judgement]  | T10                             |
+| T10a | (built) Implement disjoint training/validation/release manifests, candidate freeze and access records; test overlap rejection, resume and worker determinism                                                                                        | [judgement]  | T10                             |
 | T12  | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                 | [judgement]  | T7, T8, T9, T10, T11, T9a, T10a |
 
 ### Phase 3 - Cross-play and the opponent pool

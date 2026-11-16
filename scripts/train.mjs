@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { snapshotArchive } from '../js/evo/archive-snapshot.js';
 import { coverage, qdScore } from '../js/evo/archive.js';
 import { checkpointDue, currentEntry, initialState, needsGate, nextStage } from '../js/evo/curriculum.js';
+import { recordAccess } from '../js/evo/partitions.js';
 import { GATE_TRIALS } from '../js/evo/stage-gate.js';
 import { seedlessConfig } from '../js/evo/report.js';
 import { EPISODE_TICKS, OFFER_FROM_TICK, createTrainerArchive, episodeSeed, mergeEpisode } from '../js/evo/trainer.js';
@@ -18,7 +19,7 @@ import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { logRunConfig } from './lib/run-config.mjs';
 import { checkOut, parseArgs } from './lib/train-args.mjs';
 import { EVAL_TICKS, GATE_SEED, appendCurveRow, runCheckpoint } from './lib/train-checkpoint.mjs';
-import { buildManifest, manifestBase, writeManifest } from './lib/train-manifest.mjs';
+import { buildManifest, manifestBase, partitionManifests, startLedger, writeManifest } from './lib/train-manifest.mjs';
 import { loadResume, loadStages, readJson, saveArchive } from './lib/train-state.mjs';
 import { resolvePoolSize, runPool } from './lib/worker-pool.mjs';
 
@@ -95,7 +96,29 @@ function usage(results, { wallSeconds, workers }) {
  * @property {number} trainTicks ticks trained so far
  * @property {Record<string, any> | null} lastPoint the last curve row
  * @property {import('./lib/train-manifest.mjs').ManifestBase} manifest the fixed part of `manifest.json`
+ * @property {{manifests: object[], uses: import('../js/evo/partitions.js').Access[]}} partitions the seed partitions the run reads
+ *   and every use of them
  */
+
+/**
+ * Records a use of a seed partition in the ledger and the log.
+ * @param {Run} run the run (its partition ledger grows)
+ * @param {import('../js/evo/partitions.js').Access} access the use
+ * @returns {void}
+ * @throws {Error} when the use is not allowed (`recordAccess`)
+ */
+function usePartition(run, access) {
+    run.partitions.uses = recordAccess(run.partitions.uses, access);
+    run.log.log('info', 'PartitionUse', { ...access });
+}
+
+/**
+ * @param {Run} run the run
+ * @returns {void} writes `manifest.json`
+ */
+function saveManifest(run) {
+    writeManifest(run.args.out, buildManifest(run.manifest, run.stages, run.state, run.partitions));
+}
 
 /**
  * Runs the checkpoint when this generation ends a checkpoint interval, the run, or a gated stage's last generation.
@@ -113,6 +136,9 @@ async function maybeCheckpoint(run, { drillTrials, gateTrials }) {
     const wallSeconds = (performance.now() - run.started) / 1000;
     const progress = { generation: state.generation + 1, trainTicks: run.trainTicks, wallSeconds };
     const gate = needsGate(state) ? { seed: GATE_SEED, trials: gateTrials } : null;
+    if (gate !== null) {
+        usePartition(run, { purpose: 'gate', partition: 'validation', generation: state.generation + 1 });
+    }
     const options = { workers: args.workers, evalTicks: args.ticks ?? EVAL_TICKS, drillTrials, gate };
     return runCheckpoint({ archive, stage, progress, options, log });
 }
@@ -160,7 +186,7 @@ async function runGeneration(run, { drillTrials, gateTrials, print }) {
     const { state, columns } = advance(run.state, checkpoint, log);
     run.state = state;
     saveArchive(args.out, { archive, stages, generation, state });
-    writeManifest(args.out, buildManifest(run.manifest, stages, state));
+    saveManifest(run);
     if (checkpoint !== null) {
         run.lastPoint = { ...checkpoint.point, ...columns };
         appendCurveRow(args.out, run.lastPoint);
@@ -200,7 +226,23 @@ function startRun(args, log, commandLine) {
     const seeds = readJson(fileURLToPath(SEEDS_URL));
     const started = performance.now();
     const manifest = manifestBase(args, commandLine);
-    return { args, stages, state, seeds, archive, log, workers, started, trainTicks: 0, lastPoint: null, manifest };
+    const partitions = { manifests: partitionManifests(seeds), uses: startLedger(args.resume) };
+    const run = {
+        args,
+        stages,
+        state,
+        seeds,
+        archive,
+        log,
+        workers,
+        started,
+        trainTicks: 0,
+        lastPoint: null,
+        manifest,
+        partitions,
+    };
+    log.log('info', 'PartitionUse', { ...partitions.uses[partitions.uses.length - 1] });
+    return run;
 }
 
 /** The error of a run that a required stage stopped (`TrainStageStalled`): exit code 3, the archive and curve kept. */
@@ -241,7 +283,7 @@ export async function runTraining(args, io = {}) {
     const sinkFile = createJsonlSink(join(args.out, 'train.jsonl'));
     try {
         const run = startRun(args, createSimLog(sinkFile.sink, { level: 'info' }), commandLine);
-        writeManifest(args.out, buildManifest(run.manifest, run.stages, run.state));
+        saveManifest(run);
         let logged = null;
         while (run.state.status === 'running' && run.state.generation < args.generations) {
             const stage = /** @type {import('./lib/train-state.mjs').StageInfo} */ (currentEntry(run.state));

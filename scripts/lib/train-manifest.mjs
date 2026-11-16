@@ -3,9 +3,12 @@
 // offset, and per stage its `rulesHash`, when it passed and the gate readings at the pass.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DRILLS } from '../../js/evo/drill-scenarios.js';
+import { PARTITION_SPAN, assertDisjoint, partitionManifest, recordAccess } from '../../js/evo/partitions.js';
+import { GATE_TRIALS } from '../../js/evo/stage-gate.js';
 import { stageRecord } from './train-state.mjs';
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
@@ -61,16 +64,50 @@ export function manifestBase(args, commandLine) {
 }
 
 /**
+ * The seed partitions a run reads: training (the episodes' seeds, `trainSeeds`) and validation (the gate drills). Checks
+ * they do not overlap.
+ * @param {readonly number[]} trainSeeds the training episode seeds
+ * @returns {import('../../js/evo/partitions.js').PartitionManifest[]} the manifests
+ * @throws {Error} when two partitions share seeds
+ */
+export function partitionManifests(trainSeeds) {
+    const manifests = [
+        partitionManifest('training', { count: PARTITION_SPAN, scenarios: trainSeeds }),
+        partitionManifest('validation', {
+            count: GATE_TRIALS,
+            scenarios: { drills: DRILLS.map((d) => d.name), trials: GATE_TRIALS },
+        }),
+    ];
+    assertDisjoint(manifests);
+    return manifests;
+}
+
+/**
+ * The partition uses a run starts with: its training use, after the uses a resumed run's manifest already holds (a resume
+ * is a use too).
+ * @param {string | null} resume the `--resume` archive, whose directory's `manifest.json` carries the earlier uses
+ * @returns {import('../../js/evo/partitions.js').Access[]} the ledger
+ */
+export function startLedger(resume) {
+    const file = resume === null ? null : join(dirname(resume), 'manifest.json');
+    const prior =
+        file !== null && existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')).partitions?.uses ?? []) : [];
+    return recordAccess(prior, { purpose: resume === null ? 'train' : 'resume', partition: 'training' });
+}
+
+/**
  * @param {ManifestBase} base the fixed part
  * @param {import('./train-state.mjs').StageInfo[]} stages the run's stages
  * @param {import('../../js/evo/curriculum.js').RunState} state the run's state
- * @returns {Record<string, any>} the manifest: the base, the run's status and generations done, and every stage with its
- *   `rulesHash` and, once run, its generations, `passedAt`, gate readings at the pass, reviews and stall
+ * @param {{manifests: object[], uses: object[]}} partitions the seed partitions the run reads and every use of them
+ * @returns {Record<string, any>} the manifest: the base, the run's status and generations done, the partitions, and every
+ *   stage with its `rulesHash` and, once run, its generations, `passedAt`, gate readings at the pass, reviews and stall
  */
-export function buildManifest(base, stages, state) {
+export function buildManifest(base, stages, state, partitions) {
     const record = stageRecord(stages, state);
     return {
         ...base,
+        partitions,
         status: state.status === 'running' && state.generation >= state.total ? 'done' : state.status,
         generationsDone: state.generation,
         stages: stages.map((s) => record.find((r) => r.name === s.name) ?? { name: s.name, rulesHash: s.rulesHash }),

@@ -198,6 +198,14 @@ describe('a gated ladder', () => {
         expect(readFileSync(join(root, 'rest', 'archive-7.json'), 'utf8')).toBe(
             readFileSync(join(root, 'w1', 'archive-7.json'), 'utf8'),
         );
+        const uses = (/** @type {string} */ name) =>
+            JSON.parse(readFileSync(join(root, name, 'manifest.json'), 'utf8')).partitions.uses.map(
+                (/** @type {any} */ u) => `${u.purpose}:${u.partition}`,
+            );
+        const gates = (/** @type {number} */ n) => Array(n).fill('gate:validation');
+        expect(uses('w1')).toEqual(['train:training', ...gates(4)]);
+        expect(uses('rest')).toEqual(['train:training', ...gates(3), 'resume:training', ...gates(1)]);
+        expect(uses('w1')).toEqual(uses('w2'));
         const until = await runTraining(parseArgs(['--generations', '20', '--until', 'one', ...tiny('until')]), {
             gateTrials: 2,
         });

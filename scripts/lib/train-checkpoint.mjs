@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DRILLS } from '../../js/evo/drill-scenarios.js';
 import { drillReadings } from '../../js/evo/gate-readings.js';
+import { partitionSeed } from '../../js/evo/partitions.js';
 import { CURVE_METRICS, curvePoint } from '../../js/evo/learning-curve.js';
 import { snapshotArchive } from '../../js/evo/archive-snapshot.js';
 import { drillGenomes } from '../drill.mjs';
@@ -20,8 +21,8 @@ export const EVAL_SEED_INDICES = Object.freeze([32, 33, 34, 35]);
 export const EVAL_TICKS = 50000;
 /** The drill seed of a checkpoint's curve edges. */
 export const DRILL_SEED = 1;
-/** The drill seed of a gate checkpoint (the validation namespace, `js/evo/partitions.js`). */
-export const GATE_SEED = 1_000_000;
+/** The drill seed of a gate checkpoint: the first seed of the validation partition (`js/evo/partitions.js`). */
+export const GATE_SEED = partitionSeed('validation', 0);
 
 /**
  * @param {readonly Record<string, any>[]} rows the drill table's rows (genomes then the reference)
