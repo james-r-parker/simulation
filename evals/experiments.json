@@ -4479,9 +4479,17 @@
       "targets": ["eval.alarm_rate", "eval.alarm_lift", "eval.alarm_calls_with_threat_per_1k"],
       "before": "control arm of evals/screens/honest-alarm.grid.json (alarmBiteShare 1), seeds 1 to 16, 400000 ticks, floor on, policy live",
       "after": "the alarm arms of the same screen (a75, a50)",
-      "verdicts": {},
-      "note": "Prediction recorded before the run (T29); the screen and the 64-seed keep-rule pass with the liar check (T30) are not run yet.",
-      "reports": ["evals/decisions/E178/results.md"],
+      "verdicts": {
+        "eval.alarm_rate": "-",
+        "eval.alarm_lift": "-",
+        "eval.alarm_calls_with_threat_per_1k": "-"
+      },
+      "note": "Screen on main 0819058e (season 10, before the hunter-vision switch; arms paired with control on the same code): no finalist. eval.alarm_rate is above 0 on 4 of 16 seeds (mean 0.00004), eval.alarm_calls_with_threat_per_1k on 3 (mean 0.0000035); a75 and a50 are bit-identical to control on every metric because no bite lands on a seen caller while its timer runs. The liar clause is not triggered (calls with a threat rise with calls). The 64-seed keep rule (T30) is not run and the switch (T31) is parked: alarmBiteShare stays 1. Open: calls are too rare for any bite rule to act; selection must first produce calls on sight.",
+      "reports": [
+        "evals/decisions/E178/results.md",
+        "evals/decisions/E178/screen-table.md",
+        "evals/decisions/E178/screen-verdicts.json"
+      ],
       "date": "2026-11-15",
       "branch": "season/next",
       "beforePolicy": "live",
