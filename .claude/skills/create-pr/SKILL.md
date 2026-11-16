@@ -112,15 +112,15 @@ origin/main` (e.g. `feat/headless-sim-core-phase-1`). Design docs in the plannin
     Omit the Design doc, Delivery requirements and Measurements sections only for changes with no design doc (fixes,
     chores), and end the body with the attribution line the environment specifies.
 
-3. Watch CI: `gh pr checks <n> --watch --fail-fast`. The jobs are `scope`, `static`, `test coverage <i>/<n>` and
-   `test statistical <i>/<n>` (the shards), `coverage` (the merged coverage and the ratchet), `browser-smoke`, `perf` (advisory)
+3. Watch CI: `gh pr checks <n> --watch --fail-fast`. The jobs are `scope`, `static`, `test shard-<i>`, `test heavy-<name>` and
+   `test statistical-<name>` (the test jobs), `coverage` (the merged coverage and the ratchet), `browser-smoke`, `perf` (advisory)
    and the required `check`, which fails when any of them failed.
 4. On failure: `gh run view <run-id> --log-failed`.
     - `static`: the "Local gate" step shows the digest under each `✗` line; for more, `gh run download <run-id> -n
 check-logs` (`.checklogs/` and `TestResults/`). A `format` or `designs-index` failure is fixed by `scripts/check.sh
 --fix`.
     - `test <pass> <i>/<n>`: the log names the failed test and its assertion; the shard's seed is `github.run_id`, so
-      `TEST_SCOPE=<pass> npx vitest run --sequence.shuffle --sequence.seed=<run id> <file>` replays the order for one file.
+      `TEST_SCOPE=<shard, heavy or statistical> npx vitest run --sequence.shuffle --sequence.seed=<run id> <file>` replays the order for one file.
       A test that times out on a quiet runner is a real slow test: speed it up or move it to a `.slow.test.js` file's
       own limit, never skip it.
     - `coverage`: the ratchet line names the scope and metric below its baseline; add tests for the uncovered code (never
