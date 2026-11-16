@@ -4517,9 +4517,18 @@
       ],
       "before": "control arm of evals/screens/honest-recruit.grid.json (killGorgeShare 1), seeds 1 to 16, 400000 ticks, floor on, policy live",
       "after": "the recruit arms of the same screen (gorge, recruit, cub-plant, cub-size)",
-      "verdicts": {},
-      "note": "T35 screen done (16 seeds, 400000 ticks): the named finalists (recruit, cub-plant, cub-size) are falsified - specFlipNoHunt leaves no hunter alive on any seed and the alive guard reads WORSE; killGorgeShare 0.4 alone (gorge) is the finalist (no guard WORSE, catches +27%). Results in evals/decisions/E179/results.md; the 64-seed keep rule (T36) is next.",
-      "reports": ["evals/decisions/E179/results.md"],
+      "verdicts": {
+        "eval.hunter_juvenile_death_share": "no-difference",
+        "eval.hunter_catches_per_1k": "no-difference",
+        "eval.hunter_income_share.carcass": "-",
+        "eval.boom_bust_count": "-"
+      },
+      "note": "T36: gorge (killGorgeShare 0.4) against the defaults on seeds 65 to 128, 400000 ticks, keep rule reads no harm (alive 13 harmed and 14 recovered, smallest loss 28 seeds; under80 2 and 4; held 0 and 3; catches +5.4 percent, no difference). Targets: juvenile death share 0.863 to 0.855 (no difference), carcass income share 0.005 to 0.152, carcass energy eaten 0.16 to 0.57; the Done-when row is missed (hunters alive 41 of 64 against 48). The screen falsified recruit, cub-plant and cub-size (specFlipNoHunt empties the hunters world). Recommendation awaiting review in evals/decisions/E179/results.md; T36a and the switch are not run.",
+      "reports": [
+        "evals/decisions/E179/results.md",
+        "evals/decisions/E179/compare.txt",
+        "evals/decisions/E179/compare.json"
+      ],
       "date": "2026-11-15",
       "branch": "feat/honest-budgets-t34-recruit",
       "beforePolicy": "live",
