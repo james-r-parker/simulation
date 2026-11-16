@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { HEAVY_TESTS } from '../scripts/lib/test-scope.mjs';
 
 const DIR = '.github/workflows';
 const workflows = readdirSync(DIR)
@@ -126,23 +127,39 @@ describe('workflows', () => {
             const text = job('test');
             expect(text).toContain("if: github.event_name != 'push' && needs.scope.outputs.scope != 'docs'");
             expect(text).toContain('fail-fast: false');
-            // Slow tests are not left out (no TEST_SCOPE=fast), and every shard shares one seed.
+            // Slow tests are not left out (no TEST_SCOPE=fast), and every job shares one seed.
             expect(text).not.toContain('TEST_SCOPE: fast');
             expect(text).toContain('TEST_SCOPE: ${{ matrix.pass }}');
             expect(text).toContain('--sequence.seed="$SEED"');
-            const shards = [...text.matchAll(/\{ pass: (\w+), shard: (\d+), total: (\d+) \}/g)];
-            for (const pass of ['coverage', 'statistical']) {
-                const mine = shards.filter((m) => m[1] === pass);
-                expect(mine.length, pass).toBeGreaterThan(0);
-                // Each pass has every shard from 1 to its total, once.
-                const total = Number(mine[0][3]);
-                expect(mine.map((m) => Number(m[2]))).toEqual(Array.from({ length: total }, (_, i) => i + 1));
-                expect(mine.every((m) => Number(m[3]) === total)).toBe(true);
-            }
-            // Only the coverage pass carries coverage and a blob report; the statistical pass has none.
-            expect(text).toMatch(
-                /PASS" == coverage \]\]; then\n\s+args\+=\(--coverage --coverage.reportOnFailure --reporter=blob/,
+            const entries = [...text.matchAll(/^ {10}- \{ (.*) \}$/gm)].map((m) =>
+                Object.fromEntries(m[1].split(', ').map((pair) => pair.split(': '))),
             );
+            const ids = entries.map((entry) => entry.id);
+            expect(new Set(ids).size, 'ids are unique, so blob reports and artifacts do not collide').toBe(ids.length);
+            expect(new Set(entries.map((entry) => entry.pass))).toEqual(new Set(['shard', 'heavy', 'statistical']));
+            // The sharded passes have every shard from 1 to their total, once.
+            for (const pass of ['shard', 'statistical']) {
+                const mine = entries
+                    .filter((entry) => entry.pass === pass)
+                    .map((entry) => entry.shard.split('/').map(Number));
+                const total = mine[0][1];
+                expect(
+                    mine.map(([i]) => i),
+                    pass,
+                ).toEqual(Array.from({ length: total }, (_, i) => i + 1));
+                expect(
+                    mine.every(([, n]) => n === total),
+                    pass,
+                ).toBe(true);
+            }
+            // One job per heavy file, and no other: the list in the matrix is the list the config uses.
+            const heavy = entries.filter((entry) => entry.pass === 'heavy').map((entry) => entry.files);
+            expect([...heavy].sort()).toEqual([...HEAVY_TESTS].sort());
+            // Only the jobs with coverage carry coverage and a blob report.
+            expect(text).toMatch(
+                /!= statistical \]\]; then\n\s+args\+=\(--coverage --coverage.reportOnFailure --reporter=blob/,
+            );
+            expect(text).toContain("matrix.pass != 'statistical'");
         });
 
         it('merges the shards coverage and runs the ratchet on it, even after a failed shard', () => {
