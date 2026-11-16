@@ -121,6 +121,14 @@ describe('a gated ladder', () => {
         ]);
         expect(last.stages[0].gate[0]).toMatchObject({ read: 'drill.food-ahead.edgeLow', value: 0.9, passed: true });
         expect(last.trainState.passed.one.checkpoints).toBe(2);
+        const manifest = JSON.parse(readFileSync(join(root, 'advance', 'manifest.json'), 'utf8'));
+        expect(manifest).toMatchObject({ status: 'done', generationsDone: 6, commandLine: null });
+        expect(manifest.curriculum.file).toBe(ladder);
+        expect(manifest.stages.map((/** @type {any} */ s) => [s.name, s.passedAt])).toEqual([
+            ['one', 2],
+            ['two', 4],
+            ['world', undefined],
+        ]);
         const rows = readFileSync(join(root, 'advance', 'curve.jsonl'), 'utf8')
             .trim()
             .split('\n')

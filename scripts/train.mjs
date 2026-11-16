@@ -18,6 +18,7 @@ import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { logRunConfig } from './lib/run-config.mjs';
 import { checkOut, parseArgs } from './lib/train-args.mjs';
 import { EVAL_TICKS, GATE_SEED, appendCurveRow, runCheckpoint } from './lib/train-checkpoint.mjs';
+import { buildManifest, manifestBase, writeManifest } from './lib/train-manifest.mjs';
 import { loadResume, loadStages, readJson, saveArchive } from './lib/train-state.mjs';
 import { resolvePoolSize, runPool } from './lib/worker-pool.mjs';
 
@@ -31,6 +32,7 @@ const SEEDS_URL = new URL('../evals/train-seeds.json', import.meta.url);
  * @property {(line: string) => void} [print] where the one-line-per-generation summary goes
  * @property {number} [drillTrials] trials per drill at a checkpoint (default 32)
  * @property {number} [gateTrials] trials per champion and drill at a gate checkpoint (default `GATE_TRIALS`)
+ * @property {string[] | null} [commandLine] the command-line arguments, recorded in the manifest
  */
 
 /**
@@ -92,6 +94,7 @@ function usage(results, { wallSeconds, workers }) {
  * @property {number} started `performance.now()` when the run began
  * @property {number} trainTicks ticks trained so far
  * @property {Record<string, any> | null} lastPoint the last curve row
+ * @property {import('./lib/train-manifest.mjs').ManifestBase} manifest the fixed part of `manifest.json`
  */
 
 /**
@@ -157,6 +160,7 @@ async function runGeneration(run, { drillTrials, gateTrials, print }) {
     const { state, columns } = advance(run.state, checkpoint, log);
     run.state = state;
     saveArchive(args.out, { archive, stages, generation, state });
+    writeManifest(args.out, buildManifest(run.manifest, stages, state));
     if (checkpoint !== null) {
         run.lastPoint = { ...checkpoint.point, ...columns };
         appendCurveRow(args.out, run.lastPoint);
@@ -169,9 +173,10 @@ async function runGeneration(run, { drillTrials, gateTrials, print }) {
 /**
  * @param {import('./lib/train-args.mjs').TrainArgs} args the options
  * @param {import('../js/sim/log.js').SimLog} log the log
+ * @param {string[] | null} commandLine the command-line arguments
  * @returns {Run} the run, its state at the first generation to run (after the ones a `--resume` archive holds)
  */
-function startRun(args, log) {
+function startRun(args, log, commandLine) {
     const stages = loadStages(args);
     logRunConfig(log, {
         tool: 'train',
@@ -194,7 +199,8 @@ function startRun(args, log) {
     const workers = resolvePoolSize(args.workers, args.episodes);
     const seeds = readJson(fileURLToPath(SEEDS_URL));
     const started = performance.now();
-    return { args, stages, state, seeds, archive, log, workers, started, trainTicks: 0, lastPoint: null };
+    const manifest = manifestBase(args, commandLine);
+    return { args, stages, state, seeds, archive, log, workers, started, trainTicks: 0, lastPoint: null, manifest };
 }
 
 /** The error of a run that a required stage stopped (`TrainStageStalled`): exit code 3, the archive and curve kept. */
@@ -229,11 +235,13 @@ function stallMessage(run) {
  *   the final archive, the generations done and the stage state
  * @throws {TrainStalled} (exit code 3) when a required stage stalls, after the archive and curve are written
  */
-export async function runTraining(args, { print = () => {}, drillTrials = 32, gateTrials = GATE_TRIALS } = {}) {
+export async function runTraining(args, io = {}) {
+    const { print = () => {}, drillTrials = 32, gateTrials = GATE_TRIALS, commandLine = null } = io;
     mkdirSync(args.out, { recursive: true });
     const sinkFile = createJsonlSink(join(args.out, 'train.jsonl'));
     try {
-        const run = startRun(args, createSimLog(sinkFile.sink, { level: 'info' }));
+        const run = startRun(args, createSimLog(sinkFile.sink, { level: 'info' }), commandLine);
+        writeManifest(args.out, buildManifest(run.manifest, run.stages, run.state));
         let logged = null;
         while (run.state.status === 'running' && run.state.generation < args.generations) {
             const stage = /** @type {import('./lib/train-state.mjs').StageInfo} */ (currentEntry(run.state));
@@ -261,7 +269,7 @@ export async function main(argv) {
     return exitCodeOf(() => {
         const args = parseArgs(argv);
         checkOut(args);
-        return runTraining(args, { print: console.log });
+        return runTraining(args, { print: console.log, commandLine: argv });
     });
 }
 

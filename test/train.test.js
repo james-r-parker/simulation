@@ -13,6 +13,7 @@ import { loadStages, saveArchive } from '../scripts/lib/train-state.mjs';
 import { formatCurve, readCurve } from '../scripts/train-curve.mjs';
 import { runExport } from '../scripts/train-export.mjs';
 import { loadChampions } from '../scripts/memory-probe.mjs';
+import { checkOut } from '../scripts/lib/train-args.mjs';
 import { parseArgs } from '../scripts/train.mjs';
 
 const root = mkdtempSync(join(tmpdir(), 'train-'));
@@ -191,5 +192,26 @@ describe('saveArchive', () => {
             ['hunt', 5],
         ]);
         expect(json.rulesHash).toBe(stages[1].rulesHash);
+    });
+});
+
+describe('--until, --scratch and the /tmp refusal', () => {
+    it('reads --until and --scratch, defaulting to none', () => {
+        const base = ['--generations', '1', '--out', 'x'];
+        expect(parseArgs(base)).toMatchObject({ until: null, scratch: false });
+        expect(parseArgs([...base, '--until', 'habitat', '--scratch'])).toMatchObject({
+            until: 'habitat',
+            scratch: true,
+        });
+    });
+
+    it('refuses an --out under /tmp unless --scratch is given, and accepts any other path', () => {
+        const run = (/** @type {string[]} */ argv) => () => checkOut(parseArgs(['--generations', '1', ...argv]));
+        expect(run(['--out', '/tmp/x'])).toThrow(/under \/tmp; use \.sim\/train\/<name>/);
+        expect(run(['--out', '/tmp'])).toThrow(/under \/tmp/);
+        expect(run(['--out', '/tmp/../tmp/y'])).toThrow(/under \/tmp/);
+        expect(run(['--out', '/tmp/x', '--scratch'])).not.toThrow();
+        expect(run(['--out', '.sim/train/x'])).not.toThrow();
+        expect(run(['--out', '/tmpx/y'])).not.toThrow();
     });
 });
