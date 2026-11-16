@@ -84,6 +84,13 @@ As built (Phase 2):
 | Group cell      | `packKill[i][j]`: as `kill`, with three sibling clones of the predator and a prey one bite cannot kill (the staging of `js/evo/memory-probe-group.js`)                                                                                                                                                        |
 | Output          | `npm run train:crossplay -- <dir>` (`scripts/train-crossplay.mjs`) writes `<dir>/crossplay.json` and prints the matrix and the three numbers. The trainer computes the latest row and column at each checkpoint of a stage whose gate reads `crossplay.*`                                                     |
 
+As built (Phase 3, T13 and T14):
+
+- `playTrial` takes `opponent: { role: 'prey' | 'hunter', subject }`. Every staged agent with that role takes the opponent's specialisation and brain row, and the role's scripted controller is dropped (a reference subject's `act` drives it instead). A trial without an opponent is unchanged: a test pins the prey's position after 30 ticks to the value the fleer reached before the option existed.
+- `js/evo/crossplay.js` holds `playCell`, `createMatrix`, `extendMatrix`, `hunterProgress`, `preyProgress`, `preyVsStageLow`, `cycleShare` and `crossplayNumbers`. Every cell runs the plans of `fork(createRng(1 + t), 'crossplay')` drawn for the nominal predator view, so a cell differs from another only in its two genomes. A pair of adjacent checkpoints counts toward the cycle share when either role's newer side is worse by more than 0.1. `huntPlan` and its arena rules are exported from `js/evo/memory-probe-group.js` for the group cell (T19 reuses them).
+- `scripts/lib/train-crossplay.mjs` keeps the matrix over every checkpoint of the run. At the first gate checkpoint whose gate, or a passed stage's gate, reads `crossplay.*`, it reads the earlier checkpoints' champions from `curve.jsonl` and the `archive-<g>.json` files of the run directory, plays their cells, and from then on plays only the new row and column. A checkpoint whose archive holds no tested predator elite or forager elite adds no player, and the three numbers read null under two players, so the gate fails. `train:crossplay` reads the same files, plays the group cells too (`--no-group` skips them) and writes `crossplay.json`.
+- `crossplay.preyVsStage.<stage>` is the low bound of the stage foragers' kill share suffered from the stage-pass snapshot's predators minus the same predators' share against the latest foragers (Phase 3's pool holds the snapshot; null when none is held).
+
 ## Opponent pool
 
 `js/evo/opponent-pool.js` (new) keeps frozen archive snapshots (`snapshotArchive` in `js/evo/archive-snapshot.js`): one at each stage pass and one every `POOL_EVERY` (2) checkpoints, at most `POOL_MAX` (8), the stage-pass snapshots kept longest.
@@ -91,6 +98,12 @@ As built (Phase 2):
 - In a stage with `pool` share `p`, each founder and floor entrant is drawn with probability `p` from a pool snapshot (uniform over snapshots) as an unmutated clone of an elite of the seeder's chosen specialisation, and otherwise from the frozen current archive as today. `createMapElitesV1` takes `opponents: { snapshots, share }`; `createSeeder` in `js/evo/policies/map-elites-seed.js` draws from `fork(rng, 'opponent-pool')`, so a share of 0 draws nothing and writes the archive it writes today.
 - A pool founder is an opponent, not a candidate: the trainer drops an offer whose genome id is a pool founder's of that episode, so a genome the archive has replaced does not return through the pool (selection rule 1). Its children are new genomes born in this world, and their deaths are offered like any other.
 - The pool is trainer state: it never reaches a champion file or the live world.
+
+As built (Phase 3, T15):
+
+- `js/evo/opponent-pool.js` is the pure bookkeeping: `addSnapshot` (over `POOL_MAX` the oldest periodic snapshot goes first, the oldest stage-pass one only when all are), `noteCheckpoint` (a stage pass takes a `stage-pass` snapshot, otherwise every `POOL_EVERY`-th checkpoint a `periodic` one), `stagePassSnapshot`, `describePool`. `scripts/lib/train-pool.mjs` takes the snapshots in the trainer, builds the `pool` an episode task carries and rebuilds a pool on `--resume`.
+- A run keeps a pool only when a stage has a `pool` share above 0; its archive files then record `pool` (`checkpoints` and each snapshot's generation, stage and kind), and a resume rebuilds the snapshots from the `archive-<g>.json` files beside the resumed one and refuses a missing file. A task carries `pool` only for a stage with a share above 0 and a non-empty pool, so a share of 0 or none writes the archives and files a run without the option writes (tested byte for byte).
+- The draw is `createPoolDraw` in `js/evo/policies/map-elites-pool.js`. It runs in `initBrain` after `initSpec` has chosen the specialisation: a draw from `fork(rng, 'opponent-pool')` below the share picks a uniform snapshot and its `nextClone` of that specialisation; a snapshot with no elite of it falls back to the ordinary draw. A pool founder carries no clone marks, logs `ImmigrantSeeded` with source `pool` and has its genome id in `policy.poolFounders`; `createOfferSink` in `js/evo/trainer.js` drops the offers of those ids, and a founder's children are offered as usual.
 
 ## Scene drills
 
@@ -202,17 +215,17 @@ As built: a lapse is the `GAVE_UP` end class of the chase record, split by the f
 
 ## Log events
 
-| Event                 | Level | Fields                                                                      |
-| --------------------- | ----- | --------------------------------------------------------------------------- |
-| `TrainGate`           | info  | generation, stage, each condition's key, value and bound, passed, retention |
-| `TrainStagePassed`    | info  | generation, stage, checkpoints held                                         |
-| `TrainStageStalled`   | error | generation, stage, the failing conditions                                   |
-| `TrainStageRegressed` | warn  | generation, stage (the regressed one), the failing conditions               |
-| `TrainReview`         | info  | generation, stage, review number                                            |
-| `TrainPool`           | info  | generation, snapshots held, the generation of each                          |
-| `CrossplayCell`       | debug | predator checkpoint, forager checkpoint, trials, kills                      |
-| `ExamRow`             | info  | row, verdict, the numbers read                                              |
-| `PartitionUse`        | info  | purpose, partition, generation (a training run), freeze hash (an exam)      |
+| Event                 | Level | Fields                                                                                |
+| --------------------- | ----- | ------------------------------------------------------------------------------------- |
+| `TrainGate`           | info  | generation, stage, each condition's key, value and bound, passed, retention           |
+| `TrainStagePassed`    | info  | generation, stage, checkpoints held                                                   |
+| `TrainStageStalled`   | error | generation, stage, the failing conditions                                             |
+| `TrainStageRegressed` | warn  | generation, stage (the regressed one), the failing conditions                         |
+| `TrainReview`         | info  | generation, stage, review number                                                      |
+| `TrainPool`           | info  | generation, kind (`stage-pass` or `periodic`), snapshots held, the generation of each |
+| `CrossplayCell`       | debug | predator checkpoint, forager checkpoint, trials, kills                                |
+| `ExamRow`             | info  | row, verdict, the numbers read                                                        |
+| `PartitionUse`        | info  | purpose, partition, generation (a training run), freeze hash (an exam)                |
 
 ## Phases
 
@@ -386,7 +399,7 @@ After the world gate of [training.md](training.md). `npm run train:season`, the 
 | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------- |
 | T13  | (built) Add the optional `opponent` subject to `playTrial` (`js/evo/memory-probe-run.js`), with a test that an opponent genome drives the `prey` role and that a trial without one is unchanged                                    | [judgement] | -                   |
 | T14  | (built) Add `js/evo/crossplay.js` (cells, hunter progress, prey progress, cycle share, the group cell), `scripts/train-crossplay.mjs`, `npm run train:crossplay`, the `crossplay.*` gate readings in the checkpoint, and the tests | [judgement] | T13, T9             |
-| T15  | Add `js/evo/opponent-pool.js` and the `opponents` option of `createMapElitesV1` and `createSeeder`; `TrainPool`; the byte-identical test at share 0                                                                                | [judgement] | T9                  |
+| T15  | (built) Add `js/evo/opponent-pool.js` and the `opponents` option of `createMapElitesV1` and `createSeeder`; `TrainPool`; the byte-identical test at share 0                                                                        | [judgement] | T9                  |
 | T14a | Add guild/age/habitat release cross-play and independent opponent provenance; test sparse, defended and depleted-world fixtures and per-condition reporting                                                                        | [judgement] | T14, T10a           |
 | T16  | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                | [judgement] | T13, T14, T15, T14a |
 

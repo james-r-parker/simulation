@@ -20,7 +20,8 @@ import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { logRunConfig } from './lib/run-config.mjs';
 import { checkOut, parseArgs } from './lib/train-args.mjs';
 import { EVAL_TICKS, GATE_SEED, appendCurveRow, runCheckpoint } from './lib/train-checkpoint.mjs';
-import { checkpointCrossplay, readsCrossplay } from './lib/train-crossplay.mjs';
+import { checkpointCrossplay, preyVsStageNames, readsCrossplay } from './lib/train-crossplay.mjs';
+import { loadPool, poolAfterCheckpoint, poolIndex, taskPool } from './lib/train-pool.mjs';
 import { buildManifest, manifestBase, partitionManifests, startLedger, writeManifest } from './lib/train-manifest.mjs';
 import { loadResume, loadStages, readJson, saveArchive } from './lib/train-state.mjs';
 import { resolvePoolSize, runPool } from './lib/worker-pool.mjs';
@@ -41,22 +42,25 @@ const SEEDS_URL = new URL('../evals/train-seeds.json', import.meta.url);
 
 /**
  * Runs the generation's episodes on the pool, in index order.
- * @param {{seeds: number[], stage: import('./lib/train-state.mjs').StageInfo, archive: import('../js/evo/archive.js').Archive}} run
- *   the train seeds, the generation's stage and the archive to freeze
+ * @param {{seeds: number[], stage: import('./lib/train-state.mjs').StageInfo, archive: import('../js/evo/archive.js').Archive,
+ *   pool: import('../js/evo/opponent-pool.js').Pool}} run
+ *   the train seeds, the generation's stage, the archive to freeze and the opponent pool
  * @param {{args: import('./lib/train-args.mjs').TrainArgs, generation: number, log: import('../js/sim/log.js').SimLog}} at
  *   the options, the generation and the log
  * @returns {Promise<any[]>} the episode results in index order
  * @throws {Error} after logging `TrainEpisodeFailed` when an episode fails
  */
-async function runEpisodes({ seeds, stage, archive }, { args, generation, log }) {
+async function runEpisodes({ seeds, stage, archive, pool }, { args, generation, log }) {
     const snapshot = snapshotArchive(archive);
     const ticks = args.ticks ?? EPISODE_TICKS;
+    const opponents = taskPool(pool, stage.pool);
     const tasks = Array.from({ length: args.episodes }, (_, episode) => ({
         seed: episodeSeed(seeds, { generation, episodes: args.episodes, episode, offset: args.seedOffset }),
         overrides: stage.overrides,
         snapshot,
         ticks,
         offerFromTick: args.offerFrom ?? OFFER_FROM_TICK,
+        ...(opponents === undefined ? {} : { pool: opponents }),
     }));
     try {
         return await runPool(tasks, { workerUrl: WORKER_URL, workers: args.workers });
@@ -99,6 +103,8 @@ function usage(results, { wallSeconds, workers }) {
  * @property {number} trainTicks ticks trained so far
  * @property {Record<string, any> | null} lastPoint the last curve row
  * @property {import('./lib/train-manifest.mjs').ManifestBase} manifest the fixed part of `manifest.json`
+ * @property {import('../js/evo/opponent-pool.js').Pool} pool the opponent pool: snapshots of the archive, kept only when
+ *   a stage has a `pool` share
  * @property {import('./lib/train-crossplay.mjs').CrossplayState | null} crossplay the cross-play matrix over the run's
  *   checkpoints, built at the first checkpoint whose gate reads `crossplay.*`
  * @property {{manifests: object[], uses: import('../js/evo/partitions.js').Access[]}} partitions the seed partitions the run reads
@@ -148,7 +154,8 @@ async function maybeCheckpoint(run, { drillTrials, gateTrials, crossTrials }) {
     const options = { workers: args.workers, evalTicks: args.ticks ?? EVAL_TICKS, drillTrials, gate };
     const result = await runCheckpoint({ archive, stage, progress, options, log });
     if (gate !== null && readsCrossplay(run.stages, state)) {
-        const at = { dir: args.out, archive, generation: progress.generation, trials: crossTrials, log };
+        const preyStages = preyVsStageNames(run.stages, state);
+        const at = { dir: args.out, archive, generation: progress.generation, trials: crossTrials, preyStages, log };
         const crossplay = checkpointCrossplay(run, at);
         result.readings = { ...result.readings, crossplay };
     }
@@ -189,6 +196,36 @@ function advance(state, checkpoint, log) {
 }
 
 /**
+ * @param {import('./lib/train-state.mjs').StageInfo[]} stages the run's stages
+ * @returns {boolean} whether any stage draws founders from the opponent pool, so the run keeps one
+ */
+function poolOn(stages) {
+    return stages.some((s) => (s.pool ?? 0) > 0);
+}
+
+/**
+ * Counts a checkpoint in the opponent pool and takes the snapshot it is due: one at a stage pass, one every
+ * `POOL_EVERY` checkpoints. A run with no `pool` stage keeps no pool.
+ * @param {Run} run the run (`pool` is replaced)
+ * @param {{checkpoint: object | null, columns: Record<string, any>, stage: string}} at the checkpoint the generation took
+ *   (none: nothing counted), the gate columns the step wrote and the running stage
+ * @returns {void}
+ */
+function keepPool(run, { checkpoint, columns, stage }) {
+    if (checkpoint === null || !poolOn(run.stages)) {
+        return;
+    }
+    const stagePassed = columns.gate?.stagePassed ? columns.gate.stage : null;
+    const generation = run.state.generation;
+    const { pool, taken } = poolAfterCheckpoint(run.pool, { archive: run.archive, generation, stage, stagePassed });
+    run.pool = pool;
+    if (taken !== null) {
+        const generations = pool.entries.map((e) => e.generation);
+        run.log.log('info', 'TrainPool', { generation, kind: taken, snapshots: generations.length, generations });
+    }
+}
+
+/**
  * Runs one generation: its episodes, the merge, the log line, the checkpoint, the stage step and the archive file.
  * @param {Run} run the run (`state`, `trainTicks` and `lastPoint` are updated)
  * @param {{drillTrials: number, gateTrials: number, crossTrials: number, print: (line: string) => void}} io the checkpoint
@@ -200,7 +237,7 @@ async function runGeneration(run, { drillTrials, gateTrials, crossTrials, print 
     const generation = run.state.generation;
     const stage = /** @type {import('./lib/train-state.mjs').StageInfo} */ (currentEntry(run.state));
     const t0 = performance.now();
-    const results = await runEpisodes({ seeds: run.seeds, stage, archive }, { args, generation, log });
+    const results = await runEpisodes({ seeds: run.seeds, stage, archive, pool: run.pool }, { args, generation, log });
     const outcomes = results.map((r) => mergeEpisode(archive, r, log));
     const wallSeconds = (performance.now() - t0) / 1000;
     const { ticks, cpuShare } = usage(results, { wallSeconds, workers: run.workers });
@@ -210,7 +247,9 @@ async function runGeneration(run, { drillTrials, gateTrials, crossTrials, print 
     const checkpoint = await maybeCheckpoint(run, { drillTrials, gateTrials, crossTrials });
     const { state, columns } = advance(run.state, checkpoint, log);
     run.state = state;
-    saveArchive(args.out, { archive, stages, generation, state });
+    keepPool(run, { checkpoint, columns, stage: stage.name });
+    const pool = poolOn(stages) ? { pool: poolIndex(run.pool) } : {};
+    saveArchive(args.out, { archive, stages, generation, state, ...pool });
     saveManifest(run);
     if (checkpoint !== null) {
         run.lastPoint = { ...checkpoint.point, ...columns };
@@ -264,6 +303,7 @@ function startRun(args, log, commandLine) {
         trainTicks: 0,
         lastPoint: null,
         crossplay: null,
+        pool: loadPool(args.resume ?? '', resumed?.pool),
         manifest,
         partitions,
     };

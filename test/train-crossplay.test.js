@@ -4,7 +4,9 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { ELITE, placeOf, seedArchive } from '../js/evo/archive.js';
 import { encodeArchive } from '../js/evo/archive-codec.js';
+import { snapshotArchive } from '../js/evo/archive-snapshot.js';
 import { initialState } from '../js/evo/curriculum.js';
+import { addSnapshot, createPool } from '../js/evo/opponent-pool.js';
 import { createTrainerArchive } from '../js/evo/trainer.js';
 import { WELFORD_STRIDE, welfordAdd } from '../js/evo/welford.js';
 import { brainLayout } from '../js/sim/brain-layout.js';
@@ -15,6 +17,7 @@ import {
     checkpointGenerations,
     loadPlayers,
     playerOf,
+    preyVsStageNames,
     readsCrossplay,
 } from '../scripts/lib/train-crossplay.mjs';
 
@@ -81,12 +84,40 @@ describe('checkpointCrossplay', () => {
         /** @type {any} */
         const run = { crossplay: null };
         const first = checkpointCrossplay(run, { dir, archive: archiveOf(0.1), generation: 1, trials: 2 });
-        expect(first).toEqual({ hunterProgressLow: null, preyProgressLow: null, cycleShare: null });
+        expect(first).toEqual({ hunterProgressLow: null, preyProgressLow: null, cycleShare: null, preyVsStage: {} });
         const next = checkpointCrossplay(run, { dir, archive: archiveOf(0.2), generation: 2, trials: 2 });
         expect(run.crossplay.generations).toEqual([1, 2]);
         expect(run.crossplay.matrix.kills.flat().every((/** @type {any} */ k) => Number.isInteger(k))).toBe(true);
         expect(next.hunterProgressLow).toEqual(expect.any(Number));
         expect(next.cycleShare).toEqual(expect.any(Number));
+    });
+});
+
+describe('preyVsStage readings', () => {
+    it('reads the stage-pass snapshot of a stage against the latest forager, and null for a stage with none', () => {
+        const dir = runDir('prey-vs', [0.1]);
+        const entry = { snapshot: snapshotArchive(archiveOf(0.3)), generation: 1, stage: 'hunt', kind: 'stage-pass' };
+        /** @type {any} */
+        const run = { crossplay: null, pool: addSnapshot(createPool(), /** @type {any} */ (entry)) };
+        const read = checkpointCrossplay(run, {
+            dir,
+            archive: archiveOf(0.2),
+            generation: 2,
+            trials: 2,
+            preyStages: ['hunt', 'pack'],
+        });
+        expect(read.preyVsStage.pack).toBeNull();
+        expect(read.preyVsStage.hunt).toBeGreaterThan(-1);
+        expect(read.preyVsStage.hunt).toBeLessThan(1);
+        expect(Object.keys(run.crossplay.stageKills)).toEqual(['hunt']);
+    });
+
+    it('names the stages a gate of the current or a passed stage reads', () => {
+        const gate = [{ read: 'crossplay.preyVsStage.hunt', min: 0.01 }];
+        const stages = /** @type {any} */ ([{ name: 'evade', minGenerations: 1, maxGenerations: 2, gate }]);
+        const state = initialState(stages, 4);
+        expect(preyVsStageNames(stages, state)).toEqual(['hunt']);
+        expect(preyVsStageNames([{ ...stages[0], gate: [{ read: 'retention.all', min: 1 }] }], state)).toEqual([]);
     });
 });
 
@@ -113,6 +144,7 @@ describe('npm run train:crossplay', () => {
 
     it('writes crossplay.json and prints the matrix and the three numbers', async () => {
         const dir = runDir('script', [0.1, 0.2]);
+        /** @type {string[]} */
         const lines = [];
         const log = console.log;
         console.log = (/** @type {string} */ l) => lines.push(l);

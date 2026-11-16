@@ -102,12 +102,10 @@ function createBrain(world, rng, { subject, control, slots, opponent }) {
     const scripted = [
         { role: 'hunter', act: COMBAT_CONTROLLERS.hunter({ world, rng }) },
         { role: 'prey', act: COMBAT_CONTROLLERS.fleer({ world, rng }) },
-    ]
-        .map(({ role, act }) => ({
-            slots: slots[role] ?? [],
-            act: opponent?.role === role ? opponent.subject.act : act,
-        }))
-        .filter((group) => group.slots.length > 0 && group.act !== null);
+    ].flatMap(({ role, act }) => {
+        const driver = opponent?.role === role ? opponent.subject.act : act;
+        return (slots[role] ?? []).length > 0 && driver !== null ? [{ slots: slots[role], act: driver }] : [];
+    });
     return (w) => {
         for (const slot of slots.subject) {
             if (w.alive[slot] === 1) {
