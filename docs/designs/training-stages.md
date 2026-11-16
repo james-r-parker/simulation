@@ -1,6 +1,6 @@
 # Training stages
 
-**Status:** In progress - Phase 1 code built (T1 to T4, chunk A; T5 and T6 wait for the hunter-vision default switch, since they measure the defaults) and Phase 2 built (T7 to T12 and T9a, T10a; the stage-local estimate arm is T9b); a gated ladder of stage worlds, cross-play between hunters and prey, an opponent pool, scene drills and one exam that says whether a champion set is good; Phase 3 (cross-play and the pool) is next.
+**Status:** In progress - Phase 1 code built (T1 to T4, chunk A; T5 and T6 wait for the hunter-vision default switch, since they measure the defaults) and Phase 2 built (T7 to T12 and T9a, T10a; the stage-local estimate arm is T9b); a gated ladder of stage worlds, cross-play between hunters and prey, an opponent pool, scene drills and one exam that says whether a champion set is good; Phase 3 built (T13 to T15, T14a: cross-play, the pool and release cross-play by condition); Phase 4 (scene drills and export by style) is next.
 **Validated:** 46743a8f (2026-11-16)
 **Priority:** 11 - the tools change no sim behaviour and no rule, so they build beside the world work; the runs that claim a skill wait for the held world, as [training.md](training.md) does
 **Depends on:** [training.md](training.md), [senses-and-motor.md](senses-and-motor.md)
@@ -261,7 +261,7 @@ Gates, hold, stall, retention and review in the trainer, the curriculum fields, 
 | C     | T7 to T11, T9a, T10a | Gate arithmetic, the curriculum, the trainer (Sonnet) |
 | D     | T12                  | The conformance review                                |
 
-### Phase 3 - Cross-play and the opponent pool
+### Phase 3 - Cross-play and the opponent pool (built)
 
 **Targets:** none - trainer tooling; no sim-core code
 
@@ -403,7 +403,7 @@ After the world gate of [training.md](training.md). `npm run train:season`, the 
 | T14  | (built) Add `js/evo/crossplay.js` (cells, hunter progress, prey progress, cycle share, the group cell), `scripts/train-crossplay.mjs`, `npm run train:crossplay`, the `crossplay.*` gate readings in the checkpoint, and the tests | [judgement] | T13, T9             |
 | T15  | (built) Add `js/evo/opponent-pool.js` and the `opponents` option of `createMapElitesV1` and `createSeeder`; `TrainPool`; the byte-identical test at share 0                                                                        | [judgement] | T9                  |
 | T14a | (built) Add guild/age/habitat release cross-play and independent opponent provenance; test sparse, defended and depleted-world fixtures and per-condition reporting                                                                | [judgement] | T14, T10a           |
-| T16  | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                | [judgement] | T13, T14, T15, T14a |
+| T16  | (built) Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                        | [judgement] | T13, T14, T15, T14a |
 
 ### Phase 4 - Scene drills and export by style
 
