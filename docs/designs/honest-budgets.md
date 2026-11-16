@@ -309,7 +309,7 @@ stays", [principles.md](../principles.md)) and on the scavenge scene (`eval.hunt
 re-pinned in their own commit. T36a (no-rescue, held-out confirmation with lever ablations) is **not run** for this
 adoption: it exists to confirm a recruitment finalist, and this lever does not claim to fix recruitment (the juvenile death
 share does not move), so there is nothing for it to confirm; it is owed by whatever finalist T39 names. T39 is the next step:
-a new recruitment screen without `specFlipNoHunt`, on the new defaults.
+a new recruitment screen without `specFlipNoHunt`, on the new defaults. The shared baseline (`evals/power/defaults-floor-on-E187.json`) carries the old `rulesHash`, so `npm run baseline:status` reads STALE: T39 re-records it on the 0.4 defaults before writing its prediction. The T38 review of this narrow adoption was run on the PR.
 
 T36a confirms recruitment with floor/reseeding disabled and initial founders labelled separately, on held-out seeds for at least two full seasons and two descendant generations where present. An extinct run remains a failure, not a censored success. Compare the finalist, control and single-lever ablations; preserve the existing 64-seed keep rule. A hunter that lives longer without replacing itself does not establish a sustainable lineage. Record clips of a first kill, a surviving family and an unsuccessful chase abandoned; absent scenes remain open findings.
 
