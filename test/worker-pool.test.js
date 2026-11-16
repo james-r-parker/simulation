@@ -68,28 +68,34 @@ describe('resolvePoolSize', () => {
 
 describe('defaultWorkers', () => {
     it('leaves 8 cores free on a big machine', () => {
-        expect(defaultWorkers(32)).toBe(24);
-        expect(defaultWorkers(24)).toBe(16);
-        expect(defaultWorkers(20)).toBe(12);
+        expect(defaultWorkers(32, {})).toBe(24);
+        expect(defaultWorkers(24, {})).toBe(16);
+        expect(defaultWorkers(20, {})).toBe(12);
     });
 
     it('never takes fewer than half the cores, and at least one', () => {
-        expect(defaultWorkers(16)).toBe(8);
-        expect(defaultWorkers(12)).toBe(6);
-        expect(defaultWorkers(8)).toBe(4);
-        expect(defaultWorkers(4)).toBe(2);
-        expect(defaultWorkers(2)).toBe(1);
-        expect(defaultWorkers(1)).toBe(1);
+        expect(defaultWorkers(16, {})).toBe(8);
+        expect(defaultWorkers(12, {})).toBe(6);
+        expect(defaultWorkers(8, {})).toBe(4);
+        expect(defaultWorkers(4, {})).toBe(2);
+        expect(defaultWorkers(2, {})).toBe(1);
+        expect(defaultWorkers(1, {})).toBe(1);
     });
 
     it('is at most cores - 8 above 16 cores', () => {
         for (let cores = 17; cores <= 128; cores++) {
-            expect(defaultWorkers(cores)).toBeLessThanOrEqual(cores - 8);
+            expect(defaultWorkers(cores, {})).toBeLessThanOrEqual(cores - 8);
         }
     });
 
+    it('uses every core on a CI runner, which nothing else shares', () => {
+        expect(defaultWorkers(4, { CI: 'true' })).toBe(4);
+        expect(defaultWorkers(32, { CI: 'true' })).toBe(32);
+        expect(defaultWorkers(4, { CI: '' })).toBe(2);
+    });
+
     it('reads the machine when given no count, and sizes a pool from it', () => {
-        expect(defaultWorkers()).toBe(defaultWorkers(availableParallelism()));
+        expect(defaultWorkers()).toBe(defaultWorkers(availableParallelism(), process.env));
         expect(resolvePoolSize(undefined, 1000)).toBe(defaultWorkers());
         expect(resolvePoolSize(undefined, 2)).toBe(Math.min(2, defaultWorkers()));
     });
