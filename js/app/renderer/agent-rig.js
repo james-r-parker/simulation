@@ -272,7 +272,7 @@ function dentRow(ctx, { bucket, o, r }, { out, agents }) {
     out.dent[o] = 0;
     out.dent[o + 1] = 0;
     out.dent[o + 2] = DENT_REST_WIDTH;
-    out.dent[o + 3] = 0;
+    out.dent[o + 3] = bucket.fade[r];
     if (!ctx.dents || i < 0) {
         return;
     }
@@ -302,7 +302,7 @@ export function rigBucket(bucket, agents, { rig, out, ctx }) {
     row.bucket = bucket;
     for (let r = 0; r < bucket.count; r++) {
         row.o = r * ITEM;
-        row.flags = agents.flags[bucket.index[r]];
+        row.flags = bucket.index[r] < 0 ? 0 : agents.flags[bucket.index[r]];
         colorRow(ctx, row, out, rig.rgb);
         playRig(ctx, row, rig.rig);
         copyRig(out.rig0, row.o, rig.rig, 0);

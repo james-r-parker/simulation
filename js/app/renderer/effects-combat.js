@@ -4,6 +4,7 @@
 import { familyColor, PALETTE } from './colors.js';
 import { startTween, TWEEN } from './body-tweens.js';
 import { startDent } from './dents.js';
+import { beginDeath } from './dying.js';
 import { DEATH_RECIPES, FX_RECIPES, playRecipe } from './fx-recipes.js';
 
 /** Where on the biter a bite spray starts, in biter radii ahead of its centre. */
@@ -190,6 +191,9 @@ export function playDeath(player, agents) {
     playRecipe(player.fx, r, atOf(player, SPOT));
     if ((e.c & PACK_BIT) !== 0) {
         playRecipe(player.fx, FX_RECIPES.packKill, atOf(player, SPOT));
+    }
+    if (player.dying !== null && player.dying !== undefined) {
+        beginDeath(player.dying, { genome: e.a, cause, nowMs: player.momentCtx.nowMs });
     }
     if (name === 'EATEN') {
         tweenAt(player, agents, indexOfGenome(agents, e.b), TWEEN.KILL);

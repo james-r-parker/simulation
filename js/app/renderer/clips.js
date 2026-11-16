@@ -177,6 +177,38 @@ export const CLIPS = Object.freeze({
             track('sy', '0 1, 0.22 1.12 quadOut, 0.6 0.97 sineInOut, 1 1 sineInOut'),
         ],
     },
+    rupture: {
+        loop: false,
+        tracks: [
+            track('sx', '0 1, 0.12 1.35 quadOut, 0.45 0.7 sineInOut, 1 0.7'),
+            track('sy', '0 1, 0.12 0.6 quadOut, 0.45 0.7 sineInOut, 1 0.7'),
+            track('flash', '0 1, 0.25 0 quadOut, 1 0'),
+        ],
+    },
+    deflate: {
+        loop: false,
+        tracks: [track('sx', '0 1, 1 1.1 sineInOut'), track('sy', '0 1, 1 0.25 sineInOut')],
+    },
+    wither: {
+        loop: false,
+        tracks: [track('sx', '0 1, 1 0.8 sineInOut'), track('sy', '0 1, 1 0.8 sineInOut')],
+    },
+    convulse: {
+        loop: false,
+        tracks: [
+            track('rot', '0 0, 0.1 0.2, 0.2 -0.2, 0.3 0.18, 0.4 -0.15, 0.5 0.1, 1 0 sineInOut'),
+            track('sx', '0 1, 0.5 1, 0.62 1.3 quadOut, 1 0.75 sineInOut'),
+            track('sy', '0 1, 0.5 1, 0.62 0.7 quadOut, 1 0.75 sineInOut'),
+        ],
+    },
+    crumple: {
+        loop: false,
+        tracks: [track('sx', '0 1, 0.2 0.55 quadOut, 1 0.5 sineInOut'), track('sy', '0 1, 0.2 1.25 quadOut, 1 1.2')],
+    },
+    flatten: {
+        loop: false,
+        tracks: [track('sy', '0 1, 0.25 0.15 quadOut, 1 0.15'), track('sx', '0 1, 0.25 1.3 quadOut, 1 1.3')],
+    },
     wilt: { loop: false, tracks: [track('ringAlpha', '0 1, 1 0 quadIn'), track('sx', '0 1, 1 0.9 sineInOut')] },
 });
 
@@ -194,6 +226,12 @@ export const TWEEN_CLIPS = Object.freeze([
     'kill',
     'bump',
     'bumpHard',
+    'rupture',
+    'deflate',
+    'wither',
+    'convulse',
+    'crumple',
+    'flatten',
 ]);
 
 /**

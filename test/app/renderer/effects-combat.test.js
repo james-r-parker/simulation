@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
 import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
-import { BITE_DENT, indexOfGenome, playBite, tweenAt } from '../../../js/app/renderer/effects-combat.js';
+import { createDying, isPlaying, trackBodies } from '../../../js/app/renderer/dying.js';
+import { BITE_DENT, indexOfGenome, playBite, playDeath, tweenAt } from '../../../js/app/renderer/effects-combat.js';
 import { createDents, dentAt } from '../../../js/app/renderer/dents.js';
 import { CURVE } from '../../../js/app/renderer/fx-curves.js';
 import { createEffectsPlayer } from '../../../js/app/renderer/effects-player.js';
@@ -80,5 +81,24 @@ describe('playBite', () => {
             }
         }
         expect(drains).toBeGreaterThan(0);
+    });
+});
+
+describe('playDeath', () => {
+    it('hands the vanished body its cause, so it plays its death instead of popping out', () => {
+        const dying = createDying(8);
+        const player = createEffectsPlayer({
+            layout: { effectKinds: {}, deathCauses: { STARVED: 0, EATEN: 1 } },
+            info: { callRadius: 1, callTicks: 1, maxAgents: 8 },
+            dying,
+        });
+        trackBodies(dying, alive([{ slot: 2, genomeId: 30, x: 5, y: 6 }]), 0);
+        trackBodies(dying, alive([]), 16);
+        Object.assign(player.effect, { tick: 9, x: 5, y: 6, a: 30, b: 0, c: 1 << 8, d: 1 });
+        player.momentCtx.nowMs = 500;
+        playDeath(player, alive([]));
+        expect(isPlaying(dying, 0)).toBe(true);
+        expect(dying.cause[0]).toBe(1);
+        expect(dying.start[0]).toBe(500);
     });
 });

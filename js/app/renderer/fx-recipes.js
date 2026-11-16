@@ -47,7 +47,6 @@ const combat = (/** @type {FxPart[]} */ parts) => recipe(FAMILY.combat, RANK.kil
 const feed = (/** @type {FxPart[]} */ parts) => recipe(FAMILY.feeding, RANK.eat, parts);
 const court = (/** @type {number} */ rank, /** @type {FxPart[]} */ parts) => recipe(FAMILY.courtship, rank, parts);
 const sick = (/** @type {FxPart[]} */ parts) => recipe(FAMILY.sickness, RANK.sickness, parts);
-const ghost = (/** @type {number} */ curve, /** @type {number} */ life) => ({ curve, count: 1, life, size: 1.1 });
 
 /** Every recipe by name. */
 export const FX_RECIPES = Object.freeze({
@@ -64,18 +63,17 @@ export const FX_RECIPES = Object.freeze({
     eaten: combat([
         { curve: C.flash, count: 1, life: 8, size: 2.2, color: 'eatenFlash', minPx: 10 },
         { curve: C.shard, count: 6, life: 30, size: 0.35, reach: 2.4, spread: 'ring', color: 'eatenFlash' },
-        ghost(C.ghost, 20),
+        { curve: C.moteOut, count: 6, life: 60, size: 0.2, reach: 3, spread: 'random' },
     ]),
     packKill: combat([
         { curve: C.ring, count: 1, life: 36, size: 4.5, color: 'huntRing', minPx: 12 },
         { curve: C.ring, count: 1, life: 36, size: 3.2, color: 'huntRing', delay: 6, minPx: 10 },
     ]),
     starved: combat([
-        { curve: C.ghostSink, count: 1, life: 60, size: 1.1, reach: 1.2, color: 'coolWhite', gain: 0.55 },
         {
             curve: C.moteFall,
-            count: 8,
-            life: 60,
+            count: 10,
+            life: 90,
             size: 0.25,
             reach: 2,
             spread: 'random',
@@ -84,20 +82,23 @@ export const FX_RECIPES = Object.freeze({
         },
     ]),
     oldAge: combat([
-        { curve: C.ghostRise, count: 1, life: 90, size: 1.1, reach: 1.5, color: 'coolWhite', gain: 0.7 },
-        { curve: C.moteRise, count: 6, life: 90, size: 0.2, reach: 3, spread: 'random', color: 'coolWhite', gain: 0.8 },
+        {
+            curve: C.moteRise,
+            count: 8,
+            life: 120,
+            size: 0.2,
+            reach: 3,
+            spread: 'random',
+            color: 'coolWhite',
+            gain: 0.8,
+        },
     ]),
-    poisoned: combat([
-        { curve: C.ghost, count: 1, life: 40, size: 1.1, color: 'toxin', gain: 0.6 },
-        { curve: C.drop, count: 8, life: 45, size: 0.3, reach: 2.5, spread: 'random', color: 'toxin' },
-    ]),
+    poisoned: combat([{ curve: C.drop, count: 8, life: 60, size: 0.3, reach: 2.5, spread: 'random', color: 'toxin' }]),
     trampled: combat([
         { curve: C.puffRing, count: 1, life: 30, size: 2.4, color: 'stampedeDust', gain: 40, minPx: 10 },
-        { curve: C.ghostFlat, count: 1, life: 16, size: 1.1, stretch: 3, spread: 'random' },
     ]),
     disease: combat([
-        { curve: C.spore, count: 10, life: 70, size: 0.3, reach: 2.6, spread: 'ring', color: 'infected' },
-        ghost(C.ghost, 30),
+        { curve: C.spore, count: 10, life: 90, size: 0.3, reach: 2.6, spread: 'ring', color: 'infected' },
     ]),
     collision: combat([
         { curve: C.streak, count: 3, life: 12, size: 0.3, reach: 1.2, spread: 'ring', color: 'coolWhite', gain: 0.5 },

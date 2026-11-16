@@ -231,11 +231,11 @@ describe('playEffects', () => {
             playEffects(player, queueOf([[2, 5, 1, 2, 7, 0, cause << 8, 3]]), alive([]), 5);
             counts[cause] = liveFx(player.fx.pool, 6);
         }
-        expect(counts).toEqual({ 0: 9, 1: 8, 2: 3, 3: 7 });
+        expect(counts).toEqual({ 0: 10, 1: 13, 2: 3, 3: 8 });
         const pack = build();
         playEffects(pack.player, queueOf([[2, 5, 1, 2, 7, 0, (1 << 8) | 65536, 3]]), alive([]), 5);
-        expect(liveFx(pack.player.fx.pool, 6)).toBe(9);
-        expect(liveFx(pack.player.fx.pool, 12)).toBe(10);
+        expect(liveFx(pack.player.fx.pool, 6)).toBe(14);
+        expect(liveFx(pack.player.fx.pool, 12)).toBe(15);
     });
 
     it('an eaten death plays the kill clamp on the killer', () => {

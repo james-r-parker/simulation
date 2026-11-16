@@ -9,6 +9,8 @@ import { appLog } from '../app-log.js';
 import { createAgentStore, packAgents } from './agents-pack.js';
 import { createAgentRig, rigBucket } from './agent-rig.js';
 import { createDents } from './dents.js';
+import { createDying } from './dying.js';
+import { packDying } from './dying-pack.js';
 import { bakeClips } from './clip-sampler.js';
 import { CLIPS } from './clips.js';
 import { temperatureBands } from './colors.js';
@@ -115,12 +117,48 @@ function rigContext(info, flags, stateBits) {
 }
 
 /**
- * @param {{info: Record<string, any>, flagBits: Record<string, number>, stateBits: Record<string, number>}} context
- *   `ready.info`, `ready.layout.flags` and `ready.layout.stateBits`
+ * Sets the frame's values on the rig context and the shared uniforms.
+ * @param {import('./stage.js').Frame} frame the frame
+ * @param {{ctx: import('./agent-rig.js').RigContext, uniforms: {rimPx: any, dim: any, ringFloor: any},
+ *   bands: ReturnType<typeof temperatureBands>}} to the context, the uniforms and the temperature bands
+ * @returns {void}
+ */
+function applyFrame(frame, { ctx, uniforms, bands }) {
+    ctx.timeSec = frame.nowMs / 1000;
+    ctx.tick = frame.tick;
+    ctx.palette = frame.family.palette;
+    ctx.temperatureLens = frame.lenses.temperature ? bands : null;
+    uniforms.rimPx.value = RIM_PX[/** @type {keyof typeof RIM_PX} */ (frame.family.palette)];
+    uniforms.dim.value = frame.lenses.scent ? SCENT_DIM : 1;
+    uniforms.ringFloor.value = frame.lenses.calls ? CALL_RING_FLOOR : 0;
+}
+
+/**
+ * Rigs every bucket's rows and uploads them.
+ * @param {import('./stage.js').Frame} frame the frame
+ * @param {{store: import('./agents-pack.js').AgentStore, rig: ReturnType<typeof createAgentRig>,
+ *   ctx: import('./agent-rig.js').RigContext, meshes: {instances: any, hunter: boolean}[]}} from the packed store, the
+ *   rig arrays, the context and the meshes
+ * @returns {void}
+ */
+function rigAndUpload(frame, { store, rig, ctx, meshes }) {
+    const into = { rig, out: rig.arrays[0], ctx };
+    for (let b = 0; b < meshes.length; b++) {
+        ctx.hunter = meshes[b].hunter;
+        into.out = rig.arrays[b];
+        rigBucket(/** @type {any} */ (store.buckets[b]), frame.agents, into);
+        uploadInstances(meshes[b].instances, store.buckets[b].count);
+    }
+}
+
+/**
+ * @param {{info: Record<string, any>, flagBits: Record<string, number>, stateBits: Record<string, number>,
+ *   causeNames?: readonly string[]}} context `ready.info`, `ready.layout.flags`, `ready.layout.stateBits` and the death
+ *   cause names by number
  * @returns {import('./stage.js').Layer & {store: import('./agents-pack.js').AgentStore}} the layer: one mesh per spec in
  *   a group, in `info.specs` order
  */
-export function createAgentDraw({ info, flagBits, stateBits }) {
+export function createAgentDraw({ info, flagBits, stateBits, causeNames = [] }) {
     const store = createAgentStore(info.maxAgents, info.specs.length, meshTable(info), minPxTable(info));
     const rig = createAgentRig(info.maxAgents, info.specs.length);
     const uniforms = { rimPx: uniform(RIM_PX.default), dim: uniform(1), ringFloor: uniform(0) };
@@ -130,9 +168,15 @@ export function createAgentDraw({ info, flagBits, stateBits }) {
     const ctx = rigContext(info, flagBits, stateBits);
     store.dents = createDents(info.maxAgents);
     ctx.dents = store.dents;
+    store.dying = createDying(info.maxAgents);
+    const dyingView = {
+        slots: /** @type {any} */ (null),
+        zoom: 1,
+        causeNames: /** @type {readonly string[]} */ ([]),
+        nowMs: 0,
+    };
     const bands = temperatureBands(info);
     const view = { dtMs: 0, zoom: 1, slots: /** @type {any} */ (null), maxVelocity: info.maxVelocity, tick: 0 };
-    const into = { rig, out: rig.arrays[0], ctx };
     return {
         object: group,
         store,
@@ -142,19 +186,13 @@ export function createAgentDraw({ info, flagBits, stateBits }) {
             view.slots = frame.family;
             view.tick = frame.tick;
             packAgents(frame.agents, store, flagBits, view);
-            ctx.timeSec = frame.nowMs / 1000;
-            ctx.tick = frame.tick;
-            ctx.palette = frame.family.palette;
-            ctx.temperatureLens = frame.lenses.temperature ? bands : null;
-            uniforms.rimPx.value = RIM_PX[/** @type {keyof typeof RIM_PX} */ (frame.family.palette)];
-            uniforms.dim.value = frame.lenses.scent ? SCENT_DIM : 1;
-            uniforms.ringFloor.value = frame.lenses.calls ? CALL_RING_FLOOR : 0;
-            for (let b = 0; b < meshes.length; b++) {
-                ctx.hunter = meshes[b].hunter;
-                into.out = rig.arrays[b];
-                rigBucket(/** @type {any} */ (store.buckets[b]), frame.agents, into);
-                uploadInstances(meshes[b].instances, store.buckets[b].count);
-            }
+            dyingView.slots = frame.family;
+            dyingView.zoom = frame.camera.zoom;
+            dyingView.nowMs = frame.nowMs;
+            dyingView.causeNames = causeNames;
+            packDying(/** @type {any} */ (store.dying), store, dyingView);
+            applyFrame(frame, { ctx, uniforms, bands });
+            rigAndUpload(frame, { store, rig, ctx, meshes });
         },
         dispose() {
             for (const m of meshes) {

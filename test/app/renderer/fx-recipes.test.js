@@ -63,14 +63,14 @@ describe('playRecipe', () => {
 
     it('spawns each part at its count, scaled by the agent size, coloured by its role or the effect', () => {
         const fx = createFxPlayer(createFxPool());
-        expect(playRecipe(fx, FX_RECIPES.eaten, at())).toBe(8);
+        expect(playRecipe(fx, FX_RECIPES.eaten, at())).toBe(13);
         const { pool } = fx;
         expect(pool.time[2]).toBe(CURVE.flash);
         expect(pool.pose[3]).toBeCloseTo(22);
         expect(Array.from(pool.color.subarray(0, 3))).toEqual(PALETTE.eatenFlash.map((v) => Math.fround(v)));
         expect(Array.from(pool.color.subarray(7 * 4, 7 * 4 + 3))).toEqual([0.2, 0.4, 0.6].map((v) => Math.fround(v)));
-        expect(live(pool, 101)).toBe(8);
-        expect(live(pool, 100 + 21)).toBe(6);
+        expect(live(pool, 101)).toBe(13);
+        expect(live(pool, 100 + 21)).toBe(12);
     });
 
     it('spreads a ring part evenly and delays a part by its delay', () => {

@@ -5,6 +5,7 @@ import { drawnRadius } from '../display-size.js';
 import { slotOf } from '../family-slots.js';
 import { createBodyTweens, tweenAge } from './body-tweens.js';
 import { ENERGY_FLOOR, familyColor, lineageColor } from './colors.js';
+import { isHidden } from './dying.js';
 import { easeJaw, jawTarget, JAW_RATE } from './hunt-cues.js';
 
 export { JAW_RATE };
@@ -37,7 +38,7 @@ export const MESH_GAIN = Object.freeze([1.6, 1, 1, 1, 1]);
  * @param {{mesh: number, lineageId: number, neutral: boolean, energy01: number}} agent the agent
  * @returns {void}
  */
-function colorUnslotted(rgb, { mesh, lineageId, neutral, energy01 }) {
+export function colorUnslotted(rgb, { mesh, lineageId, neutral, energy01 }) {
     if (!neutral) {
         return;
     }
@@ -79,7 +80,8 @@ export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
  * @property {Float32Array} motion speed01, turn01, phase, 0
  * @property {Float32Array} tween one-shot tween kind and age, call (1 alarming, 2 hunt calling, 0 none), fleeing
  * @property {Float32Array} body the state word's bits (0 to 15), gestation01, dose01 and strain / 255
- * @property {Int32Array} index each row's index in the blended agents
+ * @property {Float32Array} fade each row's fade-out, 0 to 1 (a dying body's; 0 for a live one)
+ * @property {Int32Array} index each row's index in the blended agents, -1 for a dying body
  * @property {number} count agents packed this frame
  */
 
@@ -92,6 +94,7 @@ export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
  * @property {Float32Array} minPx the least each mesh's agents are drawn across, in device px
  * @property {number[]} rgb scratch for the colour
  * @property {import('./body-tweens.js').BodyTweens} tweens each slot's one-shot body tween
+ * @property {import('./dying.js').Dying | null} dying the dying bodies (their live rows are skipped), null when none
  * @property {import('./dents.js').Dents | null} dents each slot's membrane dent, set by the agent layer
  * @property {Uint8Array | null} fleeing 1 for each agent index under pursuit this frame (the effects player's), null
  *   when none is attached
@@ -115,6 +118,7 @@ export function createAgentStore(capacity, meshCount, meshOfSpec, minPx) {
             motion: new Float32Array(capacity * ITEM),
             tween: new Float32Array(capacity * ITEM),
             body: new Float32Array(capacity * ITEM),
+            fade: new Float32Array(capacity),
             index: new Int32Array(capacity),
             count: 0,
         });
@@ -128,6 +132,7 @@ export function createAgentStore(capacity, meshCount, meshOfSpec, minPx) {
         rgb: [0, 0, 0],
         tweens: createBodyTweens(capacity),
         dents: null,
+        dying: null,
         fleeing: null,
     };
 }
@@ -185,10 +190,35 @@ function packTween(store, { bucket, o, i, tick }, agents, bits) {
  * @param {number} i the agent's index in the blended agents
  * @returns {number} the offset of the bucket's next row, now claimed
  */
-function claimRow(bucket, i) {
+export function claimRow(bucket, i) {
     bucket.index[bucket.count] = i;
     bucket.count += 1;
     return (bucket.count - 1) * ITEM;
+}
+
+/**
+ * Writes a live agent's pose and colour into its row.
+ * @param {AgentStore} store the store
+ * @param {{bucket: Bucket, o: number, mesh: number}} row the bucket, the row offset and the mesh
+ * @param {{agents: import('../interpolate.js').Interpolated, i: number, slots: import('../family-slots.js').FamilySlots,
+ *   zoom: number}} from the blended agents, the agent's index, the colour slots and the zoom
+ * @returns {void}
+ */
+function packLook(store, { bucket, o, mesh }, { agents, i, slots, zoom }) {
+    const rgb = familyColor(slots, agents.lineageId[i], agents.energy[i], store.rgb);
+    COLOR_AGENT.mesh = mesh;
+    COLOR_AGENT.lineageId = agents.lineageId[i];
+    COLOR_AGENT.neutral = slots.palette === 'default' && slotOf(slots, agents.lineageId[i]) < 0;
+    COLOR_AGENT.energy01 = agents.energy[i];
+    colorUnslotted(rgb, COLOR_AGENT);
+    bucket.pose[o] = agents.x[i];
+    bucket.pose[o + 1] = agents.y[i];
+    bucket.pose[o + 2] = agents.angle[i];
+    bucket.pose[o + 3] = drawnRadius(agents.size[i], store.minPx[mesh], zoom);
+    bucket.color[o] = rgb[0];
+    bucket.color[o + 1] = rgb[1];
+    bucket.color[o + 2] = rgb[2];
+    bucket.color[o + 3] = agents.energy[i];
 }
 
 const TWEEN_AT = { bucket: /** @type {Bucket} */ (/** @type {unknown} */ (null)), o: 0, i: 0, tick: 0 };
@@ -214,24 +244,15 @@ export function packAgents(agents, store, bits, { dtMs, zoom, slots, maxVelocity
         }
         const flags = agents.flags[i];
         const slot = agents.slot[i];
+        if (store.dying !== null && isHidden(store.dying, slot, agents.genomeId[i])) {
+            continue;
+        }
         JAW.target = jawTarget(flags, bits);
         JAW.dtMs = dtMs;
         store.jaw[slot] = easeJaw(store.jaw[slot], JAW);
         const o = claimRow(bucket, i);
-        const rgb = familyColor(slots, agents.lineageId[i], agents.energy[i], store.rgb);
-        COLOR_AGENT.mesh = mesh;
-        COLOR_AGENT.lineageId = agents.lineageId[i];
-        COLOR_AGENT.neutral = slots.palette === 'default' && slotOf(slots, agents.lineageId[i]) < 0;
-        COLOR_AGENT.energy01 = agents.energy[i];
-        colorUnslotted(rgb, COLOR_AGENT);
-        bucket.pose[o] = agents.x[i];
-        bucket.pose[o + 1] = agents.y[i];
-        bucket.pose[o + 2] = agents.angle[i];
-        bucket.pose[o + 3] = drawnRadius(agents.size[i], store.minPx[mesh], zoom);
-        bucket.color[o] = rgb[0];
-        bucket.color[o + 1] = rgb[1];
-        bucket.color[o + 2] = rgb[2];
-        bucket.color[o + 3] = agents.energy[i];
+        bucket.fade[o / ITEM] = 0;
+        packLook(store, { bucket, o, mesh }, { agents, i, slots, zoom });
         bucket.state[o] = agents.temperature[i];
         bucket.state[o + 1] = flashOf((flags >> bits.ATE_SHIFT) & bits.TIMER_MASK);
         bucket.state[o + 2] = flashOf((flags >> bits.BITTEN_SHIFT) & bits.TIMER_MASK);
