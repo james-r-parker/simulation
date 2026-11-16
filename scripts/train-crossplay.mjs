@@ -96,7 +96,9 @@ export function runCrossplay(args, print = () => {}) {
  * @returns {Promise<number>} the process exit code
  */
 export async function main(argv) {
-    return exitCodeOf(async () => runCrossplay(parseArgs(argv), console.log));
+    return exitCodeOf(async () => {
+        runCrossplay(parseArgs(argv), console.log);
+    });
 }
 
 if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
