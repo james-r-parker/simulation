@@ -231,11 +231,11 @@ describe('playEffects', () => {
             playEffects(player, queueOf([[2, 5, 1, 2, 7, 0, cause << 8, 3]]), alive([]), 5);
             counts[cause] = liveFx(player.fx.pool, 6);
         }
-        expect(counts).toEqual({ 0: 9, 1: 8, 2: 3, 3: 7 });
+        expect(counts).toEqual({ 0: 10, 1: 13, 2: 3, 3: 8 });
         const pack = build();
         playEffects(pack.player, queueOf([[2, 5, 1, 2, 7, 0, (1 << 8) | 65536, 3]]), alive([]), 5);
-        expect(liveFx(pack.player.fx.pool, 6)).toBe(9);
-        expect(liveFx(pack.player.fx.pool, 12)).toBe(9);
+        expect(liveFx(pack.player.fx.pool, 6)).toBe(14);
+        expect(liveFx(pack.player.fx.pool, 12)).toBe(15);
     });
 
     it('an eaten death plays the kill clamp on the killer', () => {
@@ -255,15 +255,15 @@ describe('playEffects', () => {
         const pool = player.fx.pool;
         expect(pool.pose[0]).toBeCloseTo(100 + 20 * JAW_REACH);
         expect(pool.pose[1]).toBeCloseTo(100);
-        expect(liveFx(pool, 6)).toBe(7);
-        expect(pool.pose[6 * 4]).toBeCloseTo(160 - 20 * 0.75);
+        expect(liveFx(pool, 6)).toBe(12);
+        expect(pool.pose[7 * 4]).toBeCloseTo(160 - 20 * 0.75);
         expect(player.tweens.kind[0]).toBe(TWEEN.LUNGE);
         expect(player.tweens.kind[1]).toBe(TWEEN.FLINCH);
         const b = build();
         playEffects(b.player, queueOf([[3, 5, 400, 300, 77, 4, 0, 0]]), alive([]), 5);
         expect(b.player.fx.pool.pose[0]).toBe(400);
         expect(b.player.fx.pool.pose[1]).toBe(300);
-        expect(liveFx(b.player.fx.pool, 6)).toBe(6);
+        expect(liveFx(b.player.fx.pool, 6)).toBe(7);
     });
 
     it('tells the sink of every effect it plays', () => {

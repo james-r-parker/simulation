@@ -127,35 +127,85 @@ function agent(name, own) {
     return Object.freeze({ name, parts: Object.freeze([...own, ...SHARED_PARTS]) });
 }
 
+/** Where the predator's jaws hinge, on the heading axis in front of the body's middle. */
+const JAW_PIVOT = [0.72, 0];
+
+/**
+ * @param {string} name the part name
+ * @param {{start: number, bind: string}} lip where the arc starts, radians, and the jaw channel it follows
+ * @returns {object} one lip of the predator's mouth: a thick arc about the jaw hinge
+ */
+const lip = (name, { start, bind }) => ({
+    name,
+    shape: 'arc',
+    r: 0.42,
+    width: 0.05,
+    start,
+    sweep: 1.1,
+    at: JAW_PIVOT,
+    pivot: JAW_PIVOT,
+    bind,
+    style: 'solid',
+});
+
+/**
+ * @param {string} name the part name
+ * @param {{y: number, bind: string}} tooth which side (1 up, -1 down) and the jaw channel it follows
+ * @returns {object} a tooth on a lip's tip, pointing across the mouth, so a closed jaw reads as a pincer
+ */
+const fang = (name, { y, bind }) => ({
+    name,
+    shape: 'poly',
+    points: [
+        [0.8, 0.43 * y],
+        [0.93, 0.4 * y],
+        [0.9, 0.2 * y],
+    ],
+    pivot: JAW_PIVOT,
+    bind,
+    style: 'solid',
+});
+
+/**
+ * @returns {object[]} the predator's two trailing flagella, which lash harder as the thrust input rises
+ */
+const tails = () => [
+    {
+        name: 'tailA',
+        shape: 'wave',
+        from: -0.8,
+        to: -1.7,
+        amp: { in: 'thrust', mul: 0.24 },
+        freq: 7,
+        phase: WAVE,
+        width: 0.045,
+        at: [0, 0.16],
+        style: 'solid',
+    },
+    {
+        name: 'tailB',
+        shape: 'wave',
+        from: -0.8,
+        to: -1.6,
+        amp: { in: 'thrust', mul: 0.2 },
+        freq: 6,
+        phase: { in: 'wave', mul: -1 },
+        width: 0.045,
+        at: [0, -0.16],
+        style: 'solid',
+    },
+];
+
 /** The five agent models by specialisation name: cells told apart by their organelles and how they swim. */
 export const AGENT_MODELS = Object.freeze({
     predator: agent('predator', [
-        membrane({ rx: 0.95, ry: 0.58, amp: 0.035, lobes: 7 }),
-        {
-            name: 'lipUp',
-            shape: 'arc',
-            r: 0.38,
-            width: 0.06,
-            start: 0.15,
-            sweep: 1.1,
-            at: [0.62, 0],
-            pivot: [0.62, 0],
-            bind: 'jawUp',
-            style: 'solid',
-        },
-        {
-            name: 'lipDown',
-            shape: 'arc',
-            r: 0.38,
-            width: 0.06,
-            start: -1.25,
-            sweep: 1.1,
-            at: [0.62, 0],
-            pivot: [0.62, 0],
-            bind: 'jawDown',
-            style: 'solid',
-        },
-        nucleus(-0.25, 0.14),
+        ...tails(),
+        membrane({ rx: 1, ry: 0.5, amp: 0.03, lobes: 7, taper: 0.4 }),
+        lip('lipUp', { start: 0.15, bind: 'jawUp' }),
+        lip('lipDown', { start: -1.25, bind: 'jawDown' }),
+        fang('fangUp', { y: 1, bind: 'jawUp' }),
+        fang('fangDown', { y: -1, bind: 'jawDown' }),
+        nucleus(-0.3, 0.13),
     ]),
     forager: agent('forager', [membrane({ rx: 0.9, ry: 0.78, amp: 0.045, lobes: 5 }), nucleus(0.28, 0.2)]),
     reproducer: agent('reproducer', [
@@ -248,8 +298,8 @@ function most(value) {
 
 /** Each primitive's reach from its own origin, in model units, from the part's (largest) dimensions. */
 const EXTENTS = Object.freeze({
-    membrane: (/** @type {any} */ p) => Math.max(p.rx, p.ry) * (1 + p.amp),
-    wave: (/** @type {any} */ p) => Math.max(Math.abs(p.from), Math.abs(p.to)) + p.amp + p.width / 2,
+    membrane: (/** @type {any} */ p) => Math.max(p.rx, p.ry * (1 + Math.abs(p.taper ?? 0))) * (1 + p.amp),
+    wave: (/** @type {any} */ p) => Math.max(Math.abs(p.from), Math.abs(p.to)) + most(p.amp) + most(p.width) / 2,
     circle: (/** @type {any} */ p) => most(p.r),
     ring: (/** @type {any} */ p) => most(p.r) + most(p.width) / 2,
     arc: (/** @type {any} */ p) => most(p.r) + most(p.width) / 2,

@@ -1,6 +1,6 @@
 # Crisp renderer
 
-**Status:** In progress - Phase 1 code built (T2 to T23 and T25, one pull request): the WebGPU stage, the model catalogue, the clips, every layer, herds blended by slot, the old renderer deleted; the T1 and T24 timing runs on the dev machine's Windows Chrome are open, so the phase is not yet `(built)`.
+**Status:** In progress - Phase 1 code built (T2 to T23 and T25, one pull request): the WebGPU stage, the model catalogue, the clips, every layer, herds blended by slot, the old renderer deleted; the T1 and T24 timing runs on the dev machine's Windows Chrome are open, so the phase is not yet `(built)`. Phase 2 (the hunt and the death: hunter model, bite, chase, bumps, death animations) is built in one pull request on the WebGL2 fallback; a real-WebGPU look on the dev machine is still to do.
 **Validated:** 6a245c94 (2026-11-14)
 **Priority:** 1 - the user's brief (2026-11-14): the renderer is the part of the app the user is least happy with, and it changes no sim behaviour, so it is built in its own session beside the eval lanes
 
@@ -345,15 +345,117 @@ Budgets on the dev machine: Windows Chrome on the RTX 4090, the PG32UCDP at 240 
 | `browser.main_long_tasks`  | T1 (open)   | 0 after 5 s |
 | `browser.gc_pause_ms`      | T1 (open)   | < 30        |
 
+### Phase 2 - The hunt and the death (built)
+
+**Targets:** none - the renderer draws the same world with more of it told; the Phase 1 frame budget must not regress (the same `browser.*` budgets hold, measured in the pull request where Chromium allows)
+
+**Why.** Three things the user (2026-11-16) wants fixed in one pull request, all drawing only: the hunter reads as one more cell with a mouth; a bite and a chase are told by particles and a tether that is brighter than the cells they join; and a death is a ring and some motes at the place where the body was while the body itself vanishes between two frames. No sim behaviour, `worldHash`, effect record or `rulesHash` changes; every new input is derived on the render side from the snapshot, the effect records and the clock. Nothing is added to the worker protocol.
+
+One branch, `feat/renderer-hunt-and-death`, one commit per task, one pull request. Chunks: A (T27), B (T28 to T30 and T37), C (T31 to T34), D (T35 and T36). A fourth thing was added by the user the same day: bodies that collide or bump read as bodies (T37).
+
+#### The hunter (T28)
+
+A raptorial cell: Didinium and Dileptus are the nature reference (a streamlined body, a feeding structure at the front, cilia behind).
+
+| Part                 | Primitive               | Look                                                                                                                                       |
+| -------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `membrane`           | `membrane` with `taper` | A dart: `rx` 1.0, `ry` 0.5, `taper` 0.4, so the body is widest in front and narrows to the tail; the forward-weighted silhouette           |
+| `lipUp`, `lipDown`   | `arc`                   | The two lips, wider-set and longer than Phase 1, bound to `jawUp` and `jawDown`; they open and close with the BITE output (`JAW_OPEN`)     |
+| `fangUp`, `fangDown` | `poly` (thin triangle)  | A tooth on each lip tip, bound to the same channels, so the closed jaw reads as a pincer                                                   |
+| `tailA`, `tailB`     | `wave`                  | Two trailing flagella; their swing is bound to the `thrust` input and their beat is `wavePhase`, so they lash harder and faster with speed |
+| `nucleus`            | `circle`                | Set back, as before                                                                                                                        |
+
+`taper` (new, optional, default 0) on the `membrane` primitive scales the half height by `1 + taper * x / rx` along the heading, in `sdf-math.js` and `sdf.js`; `modelBounds` widens by it. The scout keeps its single flagellum and slim round body and the defender its spines, so no specialisation is told apart by colour alone. A new instance input `thrust` (0.3 at rest to 1 at top speed) rides in the free fourth word of the `iCall` lane. `hunt-cues.js` (pure) holds the jaw target from the flags, the jaw easing, the thrust and the sprint amplitude, each unit tested.
+
+#### The bite (T29)
+
+One bite is read in four places, all brief:
+
+| Where       | Cue                                                                                                                                                                                                                                                                                                                                            |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The biter   | The `lunge` clip: the jaws are already open from `JAW_OPEN`, the body surges forward and the jaws snap shut by 0.18 of the clip with a `flash` pulse on the snap (the contact)                                                                                                                                                                 |
+| The contact | `biteJaw` gains one small `flash` glow (5 ticks) beside its streaks; a kill's `eaten` flash grows to 2.2 radii and 8 ticks, the strongest glow in the world and still brief                                                                                                                                                                    |
+| The victim  | A membrane dent: `dents.js` holds one dent per slot (the world bearing of the contact, the start tick, the genome); `dentAt` gives a signed depth that starts as an inward bite and rings out as a damped ripple over `DENT_TICKS` (20), its width widening. `packAgents` writes it, relative to the body's heading, into the new `iDent` lane |
+| Energy      | `biteDrain`: four small `CRUMB` motes leave the contact on the victim's rim and run to the biter's mouth (motion `out` along the bearing, `reach` the gap), accelerating and fading in 14 ticks                                                                                                                                                |
+
+The `membrane` part pushes its outline in by `depth * exp(-(angle / width)^2)` about the dent's bearing. The existing `flinch` clip stays on the victim; the dent is what says where.
+
+#### The chase (T30)
+
+| Cue            | How                                                                                                                                                                                                                                                                                                                           |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stretched body | A `sprint` loop: `sx` to 1.14 and `sy` to 0.9 scaled by `(speed01 - SPRINT_FROM) / (1 - SPRINT_FROM)` above `SPRINT_FROM` (0.6), for every agent, so a runner is drawn longer                                                                                                                                                 |
+| Wake           | `wake.js` and the chase layer: for a running hunter (`speed01` at least `WAKE_FROM`, 0.55) and each pursued prey, two thin lines from the rear flanks trailing `size * (1.5 + 3 * sprint)`, fading to nothing along their length (per-vertex alpha), at most `MAX_WAKES` (64) bodies a frame, at `WAKE_ALPHA` 0.4 at the body |
+| Pursuit tether | The Phase 1 tether stays but is dimmed to `CHASE_ALPHA` 0.3 (from 0.7) in the `huntCall` display colour (it was a linear colour over 1 from the old bloom look), so it is a faint thread, drawn only while the pair is closing (the existing `findPursuits` rule)                                                             |
+
+#### The death (T31 to T34)
+
+Today `playDeath` spawns a ghost ring and motes and the body leaves the snapshot. Now the body stays:
+
+- `dying.js` (pure) holds `MAX_DYING` (64) bodies in a preallocated pool and a last-seen cache by slot (genome, specialisation, lineage, position, heading, size, speed, energy). `trackBodies` runs each frame after the blend: an agent in the cache whose genome is no longer in its slot (gone from the frame, or the slot reused) becomes a **pending** dying body that keeps its last pose and drifts on its last velocity at full strength; `playDeath` finds it by genome (`DIED` carries the dead genome in `a`) and gives it its cause and a start time. When the effect finds the agent still live, the body starts from the live row, which `packAgents` then skips. A pending body with no `DIED` after `PENDING_MAX_MS` (3000) starts as a deflate. More than `MASS_LOSS` (32) bodies gone in one frame (a reset or a hidden tab) spawn none. The pool overwrites the oldest.
+- The dying clock is wall time (`DEATH_MS` by cause, 0.8 to 2 s), so a death takes the same time at speed x8 and while paused.
+- `death-anim.js` (pure) maps each `ready.layout.deathCauses` name to its clip, length and whether it leaves a carcass:
+
+| Cause       | Clip       | Length  | Body                                                                                           | Particles                           | Carcass link                                                                                                                   |
+| ----------- | ---------- | ------- | ---------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `EATEN`     | `rupture`  | 1000 ms | The membrane bursts: widens to 1.35, flattens to 0.6, flash, then collapses to 0.7 as it fades | A ring of shards and drifting motes | Yes: the body shrinks to the carcass's 70% and the carcass (already in the food layer; `killGorgeShare` leaves one) takes over |
+| `STARVED`   | `deflate`  | 1600 ms | The cell sags: `sy` to 0.25, `sx` to 1.1, fading                                               | Motes falling                       | No                                                                                                                             |
+| `OLD_AGE`   | `wither`   | 2000 ms | A slow even shrink to 0.8 and fade                                                             | Motes rising and dispersing         | No                                                                                                                             |
+| `POISONED`  | `convulse` | 1200 ms | A shake, then a rupture                                                                        | `toxic` drops                       | No                                                                                                                             |
+| `COLLISION` | `crumple`  | 800 ms  | `sx` to 0.55 and `sy` to 1.25 at once, then fade                                               | Streaks                             | No                                                                                                                             |
+| `TRAMPLED`  | `flatten`  | 1000 ms | `sy` to 0.15 and `sx` to 1.3                                                                   | Dust puff                           | No                                                                                                                             |
+| `DISEASE`   | `deflate`  | 1600 ms | As starved                                                                                     | `infected` spores                   | No                                                                                                                             |
+
+- The dying rows are appended to the specialisation's bucket after the live rows and drawn by the same model material, so the body keeps its own organelles and rim; a `fade` (the `iDent` lane's fourth word, rest 0) multiplies the part opacity. The rim colour is the body's family colour at its last energy.
+- The Phase 1 death recipes keep their motes and drop their `ghost` ring (the body is its own ghost); `EATEN` keeps the double ring of a pack kill. The dispersal particles use the pool, so the budget and its adaptation still bound them.
+- A cause name the layout does not know uses the `STARVED` row.
+
+#### The bump (T37)
+
+What existed before: nothing. The protocol carries no collision or impact record (`COLLISION` is only a death cause, whose recipe played at a death), and a body hitting a rock, the wall or another body drew exactly as it did a frame earlier. The renderer reads it from the blended frame, as the chase cue is read:
+
+- `bumps.js` (pure) keeps each slot's last speed share. A body that was running (at least `BUMP_MIN_SPEED`, 0.3 of top speed) and loses `BUMP_SOFT` (0.3) of top speed in one frame is a soft bump; `BUMP_HARD` (0.6) is a hard one. The impact is the speed lost, so a harder hit squashes more. At most `MAX_BUMPS` (32) a frame. This is an approximation: a hunter braking hard to stalk can read as a soft bump, which costs nothing worse than a faint squash.
+- The squash is along the body's heading, the way it was moving, which is the contact normal for a head-on hit: the `bump` clip (`sx` to 0.9, `sy` to 1.06, back by 1.03 and rest, 10 ticks) and `bumpHard` (`sx` to 0.8, `sy` to 1.12, 14 ticks). No flash, no particles. A faint ripple rides on it: a dent at the nose of depth `BUMP_DENT` 0.05 (soft) or 0.12 (hard) on the same `dents.js` store.
+- Priority: the bump tween has rank 0, the lowest, so any running tween (a bite's flinch or lunge, a kill) keeps the slot; the dent keeps the deeper of two, so a bite dent (0.3) is never replaced by a bump's.
+- No pool of its own: it uses the body tweens and dents, which are preallocated per slot.
+
+#### Budget
+
+- Dying bodies: at most `MAX_DYING` (64), each one extra instance row; a dent is a few typed-array writes per bitten agent.
+- Wakes: at most `MAX_WAKES` (64) bodies, two lines each; the tether keeps `MAX_PURSUITS` (48).
+- Particles: a bite adds about 11 and a death 8 to 12 instances through `playRecipe`, which the family token buckets (combat 80 per second) and the frame cap already bound; `adaptFxBudget` sheds them first under load. Every model, clip and dying body still draws at all times.
+- The vertex attribute count of an agent mesh rises from 9 to 10, still two vertex buffers (the interleaved instance buffer and the quad), under WebGPU's 8 buffers and 16 attributes.
+- Nothing allocates per frame: the pools, caches and line buffers are created once per world.
+
+#### Test design
+
+Unit tests, all pure: `hunt-cues.test.js` (jaw target from `JAW_OPEN`, jaw easing is frame-rate independent, thrust and sprint ramps); `dents.test.js` (start, age, the genome guard, the damped sign change, expiry); `sdf-math.test.js` (taper 0 equals the old membrane; a positive taper widens the front; a dent pulls the outline in at its bearing and not opposite); `models.test.js` (the predator has at most 16 parts, a `taper` membrane stays inside `modelBounds`); `clips.test.js` (every new clip stays inside the body scale bound); `wake.test.js` (only running bodies, the cap, alpha fades along the line, nothing past the buffer); `chase-layer.test.js` (the faint tether); `death-anim.test.js` (every cause in `DEATH_CAUSE` has a clip that exists, a length of at least 600 ms and at most 2000 ms; only `EATEN` links the carcass; an unknown name falls back); `dying.test.js` (a vanished agent becomes pending at its last pose; `DIED` starts it; the pool overwrites the oldest; the mass-loss guard; a reused slot; progress and fade by clock; the live-row skip); `agents-pack.test.js` and `agent-rig.test.js` (dying rows packed after live rows, capped at capacity, the dent lane written); `effects-combat.test.js` (a bite starts a dent and a drain; a death hands the body its cause); `bumps.test.js` and `effects-bumps.test.js` (the kind from the speed lost, no bump for a slow or a new body, the cap, the squash clips, the faint ripple, a running bite tween wins); `wake.test.js`; `app-layers.test.js` (the player holds the agent layer's dents and dying bodies). The browser smoke boots on the new meshes with no console error, and `scripts/` Playwright screenshots show the looks on true black.
+
+#### Chunks
+
+| Chunk | Tasks         | Built by | One commit each; the chunk is the one pull request                       |
+| ----- | ------------- | -------- | ------------------------------------------------------------------------ |
+| A     | T27           | Sonnet   | The doc                                                                  |
+| B     | T28, T29, T30 | Sonnet   | The hunter model, the bite and the chase                                 |
+| C     | T31 to T34    | Sonnet   | The death: mapping, pool, packing and drawing, the hand-off from effects |
+| D     | T35, T36      | Sonnet   | The browser checks, screenshots, measurements and the status line        |
+
 ## Decisions
 
-| Decision                                                           | Reason                                                                                                                                                              |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Particles in closed form on the CPU while packing, no compute pass | The same look on WebGPU and the WebGL2 fallback and no per-frame dispatch, which holds the rule that load never changes the look; a few hundred evaluations a frame |
-| The herd slot replaces the radius word in the snapshot             | Herds need an id to interpolate; the radius is a config constant; the record keeps its size                                                                         |
-| A distance rule detects a reused herd slot                         | The sim keeps no herd generation, and adding one changes `js/sim` state; a calf never moves a herd run in one interval                                              |
-| No `?renderer=` switch                                             | The user (2026-11-14): one all-out replacement pull request                                                                                                         |
-| The before numbers live in this doc and the pull request body      | `bench/browser-baseline.json` holds one record per viewport, which the after run replaces                                                                           |
+| Decision                                                                  | Reason                                                                                                                                                                                                                     |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Particles in closed form on the CPU while packing, no compute pass        | The same look on WebGPU and the WebGL2 fallback and no per-frame dispatch, which holds the rule that load never changes the look; a few hundred evaluations a frame                                                        |
+| The herd slot replaces the radius word in the snapshot                    | Herds need an id to interpolate; the radius is a config constant; the record keeps its size                                                                                                                                |
+| A distance rule detects a reused herd slot                                | The sim keeps no herd generation, and adding one changes `js/sim` state; a calf never moves a herd run in one interval                                                                                                     |
+| No `?renderer=` switch                                                    | The user (2026-11-14): one all-out replacement pull request                                                                                                                                                                |
+| The dying body is drawn from a last-seen cache, not from the snapshot     | The worker's `DIED` record carries only the genome, lineage, cause and killer, and the body is absent from the snapshot before the record plays; a cache keeps the specialisation, pose and size without a protocol change |
+| Dying bodies run on wall time, particles on ticks                         | A death must read for 1 to 2 s whatever the sim speed; the particles keep the Phase 1 tick clock and its wall floor                                                                                                        |
+| The dent is one instance lane and one membrane parameter, not a new model | The membrane already ripples; a local radial offset needs no new primitive and costs one attribute (10 of 16)                                                                                                              |
+| The wake is lines, not a particle recipe                                  | A wake lasts as long as the body sprints; lines with a fading alpha are one buffer a frame and need no spawn budget                                                                                                        |
+| The tether stays, faint                                                   | The user asked for an optional, very faint tether; the pursuit pairs already exist                                                                                                                                         |
+| The `ghost` ring leaves the death recipes                                 | The dying body replaces it; two outlines of one body would read as a double image                                                                                                                                          |
+| No sim, worker or `worldHash` change                                      | Everything new is derived on the render side from the snapshot, the effect records and the clock                                                                                                                           |
+| The before numbers live in this doc and the pull request body             | `bench/browser-baseline.json` holds one record per viewport, which the after run replaces                                                                                                                                  |
 
 ## Delivery requirements
 
@@ -403,6 +505,22 @@ Budgets on the dev machine: Windows Chrome on the RTX 4090, the PG32UCDP at 240 
 | T24 | Measure the after on the dev machine, tune effect counts until the Phase 1 table holds, record `bench/browser-baseline.json`                                                                                                                                     | [judgement]  | T1, T23                                     |
 | T25 | Docs: this doc `Implemented` with the before numbers, worker-and-renderer.md and renderer-event-effects.md statuses, AGENTS.md, README.md, sim-notes.md, the index                                                                                               | [mechanical] | T24                                         |
 | T26 | Conformance review by a fresh agent in parallel with `scripts/check.sh`                                                                                                                                                                                          | [judgement]  | T25                                         |
+
+### Phase 2 - The hunt and the death
+
+| #   | Task                                                                                                                                                                                   | Nature       | Depends on |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T27 | This doc phase: Why, designs, Test design, Chunks, Decisions (built)                                                                                                                   | [mechanical] | -          |
+| T28 | `membrane` `taper` in `sdf-math.js`, `sdf.js` and `modelBounds`; the predator model (dart, lips, fangs, two thrust-driven flagella); the `thrust` input; `hunt-cues.js`; tests (built) | [judgement]  | T27        |
+| T29 | The bite: the `lunge` snap clip, `dents.js`, the `iDent` lane and the membrane dent, `biteDrain`, the contact and kill flashes; tests (built)                                          | [judgement]  | T28        |
+| T30 | The chase: the `sprint` loop, `wake.js` in the chase layer, the faint tether; tests (built)                                                                                            | [judgement]  | T28        |
+| T31 | `death-anim.js` (cause to clip, length, carcass link) and the seven death clips and tween kinds; tests (built)                                                                         | [judgement]  | T28        |
+| T32 | `dying.js`: the pool, the last-seen cache, pending bodies, the mass-loss guard; tests (built)                                                                                          | [judgement]  | T31        |
+| T33 | Pack and draw the dying bodies: rows after the live ones, the `fade` word, the live-row skip, the dent lane; tests (built)                                                             | [judgement]  | T29, T32   |
+| T34 | `playDeath` hands the cause to the pending body; the death recipes lose their ghost ring and gain the dispersal; tests (built)                                                         | [judgement]  | T33        |
+| T35 | Browser smoke, Playwright screenshots on true black, the frame measurement where Chromium allows (built)                                                                               | [judgement]  | T30, T34   |
+| T36 | The status line, the index, the pull request; a conformance review by a fresh agent (built)                                                                                            | [mechanical] | T35        |
+| T37 | Bumps: `bumps.js` reads an impact from the speed lost in a frame, the `bump` and `bumpHard` clips, a faint ripple on the shared dent store, the lowest tween rank; tests (built)       | [judgement]  | T29        |
 
 ## Verification
 

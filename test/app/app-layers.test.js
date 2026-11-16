@@ -38,6 +38,14 @@ describe('createLayerBuilder', () => {
         expect(refs.player).not.toBeNull();
     });
 
+    it('gives the effects player the agent layer dents and dying bodies, so a bite dents and a death plays', () => {
+        const { info, layout } = smallReady();
+        const refs = createLayerRefs();
+        createLayerBuilder({ refs, getReady: () => ({ info, layout, seed: 3 }), slots: createFamilySlots() })();
+        expect(refs.player?.dents).not.toBeNull();
+        expect(refs.player?.dying).not.toBeNull();
+    });
+
     it('throws before any world is ready', () => {
         const build = createLayerBuilder({ refs: createLayerRefs(), getReady: () => null, slots: createFamilySlots() });
         expect(() => build()).toThrow(/no ready message/);

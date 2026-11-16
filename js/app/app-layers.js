@@ -5,7 +5,7 @@
 import { createAgentDraw } from './renderer/agent-draw.js';
 import { createChaseLayer } from './renderer/chase-layer.js';
 import { createScentContours, createTerritoryContours } from './renderer/contour-draw.js';
-import { createEffectsPlayer } from './renderer/effects-player.js';
+import { causeNamesOf, createEffectsPlayer } from './renderer/effects-player.js';
 import { createFoodDraw } from './renderer/food-draw.js';
 import { createFxBudget } from './renderer/fx-budget.js';
 import { createFxLayers } from './renderer/fx-draw.js';
@@ -53,12 +53,27 @@ function worldOf(ready, slots, sink) {
  * @returns {import('./renderer/stage.js').Layer[]} the layers, back to front
  */
 function buildFor(refs, { info, layout, seed, slots, sink }) {
-    const agents = createAgentDraw({ info, flagBits: layout.flags, stateBits: layout.stateBits });
+    const agents = createAgentDraw({
+        info,
+        flagBits: layout.flags,
+        stateBits: layout.stateBits,
+        causeNames: causeNamesOf(layout.deathCauses),
+    });
     const scent = createScentContours({ info });
     const threads = createMateThreadPool();
     const fx = createFxPlayer(createFxPool(), createFxBudget(), seed);
     refs.haze = scent;
-    const player = createEffectsPlayer({ threads, layout, info, slots, sink, fx, tweens: agents.store.tweens });
+    const player = createEffectsPlayer({
+        threads,
+        layout,
+        info,
+        slots,
+        sink,
+        fx,
+        tweens: agents.store.tweens,
+        dents: agents.store.dents,
+        dying: agents.store.dying,
+    });
     agents.store.fleeing = player.flee.fleeing;
     refs.player = player;
     const world = createWorldLayers({ info, layout, seed });
@@ -77,7 +92,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
         agents,
         createVisionLayer({ info }),
         world.motes,
-        createChaseLayer({ info, pursuits: player.flee.pursuits }),
+        createChaseLayer({ info, pursuits: player.flee.pursuits, fleeing: player.flee.fleeing }),
         createMateThreadLayer({ pool: threads }),
         createOverlays({ info }),
         particles,

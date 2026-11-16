@@ -73,7 +73,22 @@ describe('stepChase with overlapping bodies', () => {
         const a = chaseFrame();
         a.x[1] = 12;
         expect(stepChase(a, state, { lines, dashes: CHASE_DASHES })).toBe(1);
-        expect(lines.vertices).toBe(0);
+        expect(lines.vertices).toBe(4);
+    });
+});
+
+describe('the faint tether', () => {
+    it("is a thread well under half the cells' own brightness", () => {
+        expect(CHASE_ALPHA).toBeLessThanOrEqual(0.3);
+    });
+
+    it('adds a wake for the running hunter and, when marked, the fleeing prey', () => {
+        const lines = createLineBuffer(CHASE_DASHES * 4 + 8);
+        const fleeing = new Uint8Array(4);
+        fleeing[1] = 1;
+        const state = { pursuits: createPursuits(), rules: pursuitRules(info), fleeing };
+        stepChase(chaseFrame(), state, { lines, dashes: CHASE_DASHES });
+        expect(lines.vertices).toBe(CHASE_DASHES * 2 + 4 + 4);
     });
 });
 

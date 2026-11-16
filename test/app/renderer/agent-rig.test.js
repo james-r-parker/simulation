@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
 import { createAgentRig, JUVENILE_EYE, rigBucket } from '../../../js/app/renderer/agent-rig.js';
 import { createAgentStore, ITEM, packAgents } from '../../../js/app/renderer/agents-pack.js';
+import { createDents, startDent } from '../../../js/app/renderer/dents.js';
 import { startTween, TWEEN } from '../../../js/app/renderer/body-tweens.js';
 import { bakeClips } from '../../../js/app/renderer/clip-sampler.js';
 import { CH, CLIPS } from '../../../js/app/renderer/clips.js';
@@ -99,6 +100,25 @@ describe('rigBucket', () => {
         expect(out.gate2[2]).toBeCloseTo(128 / 255);
         expect(Array.from(out.call.slice(0, 3))).toEqual(NEON.alarm.map((v) => Math.fround(v)));
         expect(out.accent[3]).toBe(1);
+    });
+
+    it('writes the running dent into the body frame, a flat lane otherwise, and the flagella thrust', () => {
+        const dents = createDents(8);
+        startDent(dents, { slot: 0, genome: 1 }, { angle: 1, depth: 0.3, tick: 0 });
+        const out = rigOf([{ slot: 0, genomeId: 1, angle: 0.25 }], { ctx: { dents, tick: 0 } });
+        expect(out.dent[0]).toBeCloseTo(0.75);
+        expect(out.dent[1]).toBeCloseTo(0.3);
+        const flat = rigOf([{ slot: 0, genomeId: 1 }], { ctx: { dents, tick: 99 } });
+        expect([flat.dent[1], flat.dent[3]]).toEqual([0, 0]);
+        expect(flat.dent[2]).toBeGreaterThan(0);
+        expect(flat.call[3]).toBeGreaterThanOrEqual(0.3);
+    });
+
+    it('stretches a body running flat out (the sprint loop) and not one under the threshold', () => {
+        const runner = rigOf([{ slot: 0, genomeId: 1, speed: 200 }], { ctx: { hunter: false } });
+        const walker = rigOf([{ slot: 0, genomeId: 1, speed: 80 }], { ctx: { hunter: false } });
+        expect(runner.rig0[3]).toBeGreaterThan(walker.rig0[3] + 0.05);
+        expect(runner.rig1[0]).toBeLessThan(walker.rig1[0] - 0.03);
     });
 
     it('scales a juvenile eye and shivers a cold body', () => {

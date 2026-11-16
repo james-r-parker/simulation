@@ -54,6 +54,42 @@ describe('the model catalogue', () => {
         expect(missing).toEqual(['nope']);
     });
 
+    it('the predator is a streamlined hunter: a tapered membrane, two lips with fangs and two thrust-driven flagella', () => {
+        const names = AGENT_MODELS.predator.parts.map((part) => /** @type {any} */ (part).name);
+        expect(names).toEqual(
+            expect.arrayContaining(['membrane', 'lipUp', 'lipDown', 'fangUp', 'fangDown', 'tailA', 'tailB']),
+        );
+        expect(AGENT_MODELS.predator.parts.length).toBeLessThanOrEqual(MAX_PARTS);
+        const body = /** @type {any} */ (
+            AGENT_MODELS.predator.parts.find((part) => /** @type {any} */ (part).shape === 'membrane')
+        );
+        expect(body.taper).toBeGreaterThan(0);
+        for (const tail of ['tailA', 'tailB']) {
+            const part = /** @type {any} */ (
+                AGENT_MODELS.predator.parts.find((x) => /** @type {any} */ (x).name === tail)
+            );
+            expect(part.amp.in).toBe('thrust');
+        }
+        const jaws = AGENT_MODELS.predator.parts.filter((part) => /jaw/.test(/** @type {any} */ (part).bind ?? ''));
+        expect(jaws).toHaveLength(4);
+        expect(validateModel(AGENT_MODELS.predator)).toEqual([]);
+    });
+
+    it('a tapered membrane and an input-bound flagella both stay inside the model bounds', () => {
+        const wide = { name: 'm', shape: 'membrane', rx: 0.5, ry: 0.5, amp: 0, lobes: 3, taper: 0.4 };
+        expect(partExtent(wide)).toBeCloseTo(0.7);
+        const whip = {
+            name: 'w',
+            shape: 'wave',
+            from: -0.8,
+            to: -1.7,
+            amp: { in: 'thrust', mul: 0.24 },
+            freq: 7,
+            width: 0.045,
+        };
+        expect(partExtent(whip)).toBeCloseTo(1.7 + 0.24 + 0.0225);
+    });
+
     it('reports a malformed part', () => {
         const bad = { name: 'bad', parts: [{ name: 'x', shape: 'star', bind: 'tail', color: 'mauve' }] };
         expect(validateModel(bad)).toHaveLength(3);

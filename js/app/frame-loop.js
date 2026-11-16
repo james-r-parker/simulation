@@ -5,7 +5,7 @@
 import { followStep, updateCamera } from './camera.js';
 import { recordFrame } from './frame-stats.js';
 import { createInterpolated, createPlayhead, interpolateInto, simTickAt, stepPlayhead } from './interpolate.js';
-import { beginEffects, playEdges, playEffects } from './renderer/effects-player.js';
+import { beginEffects, playBumps, playEdges, playEffects, trackDying } from './renderer/effects-player.js';
 import { findAgent } from './renderer/overlays.js';
 import { lensUniforms } from './ui/lenses.js';
 
@@ -91,10 +91,12 @@ function advanceWorld(client, { refs, camera }, loop, nowMs) {
         at.nowMs = nowMs;
         at.camera = camera;
         beginEffects(refs.player, at);
+        trackDying(refs.player, loop.agents, nowMs);
         if (client.effects !== null) {
             playEffects(refs.player, client.effects, loop.agents, at.tick);
         }
         playEdges(refs.player, loop.agents, client.latest, at.tick);
+        playBumps(refs.player, loop.agents, at.tick);
     }
     if (client.field !== null && refs.haze !== null) {
         refs.haze.pushField(client.field.f32, nowMs);
