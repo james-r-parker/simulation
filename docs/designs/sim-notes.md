@@ -3529,8 +3529,6 @@ rows start at burn-in (10000 ticks), and a third-size world still took 20 s agai
 herd and kernel costs) and lost its hunters. Twenty more raw timeouts in eight files had the same gap; a
 `no-restricted-syntax` rule for `test/**/*.test.js` in `eslint.config.js` now fails a bare number as the timeout of
 `it`, `test` or `describe` (`test/timeout-lint.test.js`).
-||||||| parent of 8710106d (docs(designs): detector-baseline T7-T8 record: Baseline tables, E187 verdicts, T5 sim-notes; power write held out)
-
 
 ### 2026-11-16 - The shared run of the season 10 defaults: the chase split holds, the pack lift is 1.8 (detector-baseline T7-T8, E-TS-0)
 
