@@ -11,11 +11,14 @@ import { createTrainerArchive } from '../js/evo/trainer.js';
 import { WELFORD_STRIDE, welfordAdd } from '../js/evo/welford.js';
 import { brainLayout } from '../js/sim/brain-layout.js';
 import { createConfig } from '../js/sim/config.js';
+import { createSimLog } from '../js/sim/log.js';
 import { main, parseArgs } from '../scripts/train-crossplay.mjs';
 import {
     checkpointCrossplay,
+    createCrossplayState,
     checkpointGenerations,
     loadPlayers,
+    playMatrix,
     playerOf,
     preyVsStageNames,
     readsCrossplay,
@@ -90,6 +93,42 @@ describe('checkpointCrossplay', () => {
         expect(run.crossplay.matrix.kills.flat().every((/** @type {any} */ k) => Number.isInteger(k))).toBe(true);
         expect(next.hunterProgressLow).toEqual(expect.any(Number));
         expect(next.cycleShare).toEqual(expect.any(Number));
+    });
+
+    it('adds no player for a checkpoint without both roles, and reads its stages against no forager', () => {
+        const dir = runDir('no-player', [0.1]);
+        /** @type {any} */
+        const run = { crossplay: null, pool: createPool() };
+        const read = checkpointCrossplay(run, {
+            dir,
+            archive: archiveOf(0.2, false),
+            generation: 2,
+            trials: 2,
+            preyStages: ['hunt'],
+        });
+        expect(run.crossplay.generations).toEqual([1]);
+        expect(read).toEqual({
+            hunterProgressLow: null,
+            preyProgressLow: null,
+            cycleShare: null,
+            preyVsStage: { hunt: null },
+        });
+    });
+});
+
+describe('playMatrix', () => {
+    it('logs a CrossplayCell per cell, marking the pack cells when the group cells are played', () => {
+        const found = {
+            generations: [1, 2],
+            players: [archiveOf(0.1), archiveOf(0.2)].map((a) => /** @type {any} */ (playerOf(a))),
+        };
+        /** @type {Record<string, any>[]} */
+        const records = [];
+        const log = createSimLog((r) => records.push(r), { level: 'debug' });
+        playMatrix(createCrossplayState(found, 2), { group: true, log });
+        const cells = records.filter((r) => r.event === 'CrossplayCell');
+        expect(cells.some((r) => r.group === true)).toBe(true);
+        expect(cells.some((r) => !('group' in r))).toBe(true);
     });
 });
 

@@ -91,5 +91,9 @@ describe('seed partitions in the manifest', () => {
         const ledger = startLedger(join(dir, 'archive-1.json'));
         expect(ledger.map((u) => u.purpose)).toEqual(['train', 'gate', 'resume']);
         expect(startLedger(join(root, 'no-manifest', 'archive-1.json')).map((u) => u.purpose)).toEqual(['resume']);
+        const older = join(root, 'before-partitions');
+        mkdirSync(older);
+        writeFileSync(join(older, 'manifest.json'), JSON.stringify({ stages: [] }));
+        expect(startLedger(join(older, 'archive-1.json')).map((u) => u.purpose)).toEqual(['resume']);
     });
 });

@@ -13,6 +13,7 @@ import { loadResume, loadStages } from '../scripts/lib/train-state.mjs';
 import { main as curveMain, readCurve } from '../scripts/train-curve.mjs';
 import { main as exportMain, parseArgs as exportArgs } from '../scripts/train-export.mjs';
 import { parseArgs } from '../scripts/train.mjs';
+import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 const root = mkdtempSync(join(tmpdir(), 'train-cli-'));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -129,21 +130,25 @@ describe('stage and resume checks', () => {
 });
 
 describe('runCheckpoint', () => {
-    it('on an empty archive has no drill edges and still writes a curve row', async () => {
-        const stages = loadStages(parseArgs(['--generations', '1', '--out', 'x']));
-        const dir = join(root, 'checkpoint');
-        mkdirSync(dir);
-        const log = createSimLog(() => {}, { level: 'error' });
-        const { point, readings } = await runCheckpoint({
-            archive: createTrainerArchive(stages[0].built),
-            stage: stages[0],
-            progress: { generation: 1, trainTicks: 0, wallSeconds: 0 },
-            options: { workers: 1, evalTicks: 5, drillTrials: 1 },
-            log,
-        });
-        appendCurveRow(dir, point);
-        expect(readings).toBeNull();
-        expect(point.generation).toBe(1);
-        expect(readCurve(dir)).toHaveLength(1);
-    }, 60000);
+    it(
+        'on an empty archive has no drill edges and still writes a curve row',
+        async () => {
+            const stages = loadStages(parseArgs(['--generations', '1', '--out', 'x']));
+            const dir = join(root, 'checkpoint');
+            mkdirSync(dir);
+            const log = createSimLog(() => {}, { level: 'error' });
+            const { point, readings } = await runCheckpoint({
+                archive: createTrainerArchive(stages[0].built),
+                stage: stages[0],
+                progress: { generation: 1, trainTicks: 0, wallSeconds: 0 },
+                options: { workers: 1, evalTicks: 5, drillTrials: 1 },
+                log,
+            });
+            appendCurveRow(dir, point);
+            expect(readings).toBeNull();
+            expect(point.generation).toBe(1);
+            expect(readCurve(dir)).toHaveLength(1);
+        },
+        scaleTimeout(60000),
+    );
 });
