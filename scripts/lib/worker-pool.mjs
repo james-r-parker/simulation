@@ -14,11 +14,16 @@ export const RESERVED_CORES = 8;
 
 /**
  * The pool size when `--workers` is not given: all but 8 cores, and never fewer than half the cores (a small machine has
- * nothing to spare). 32 cores give 24, 16 give 8, 8 give 4, 4 give 2.
+ * nothing to spare). 32 cores give 24, 16 give 8, 8 give 4, 4 give 2. On a CI runner (`CI` set) nothing else shares the
+ * machine, so every core is used.
  * @param {number} [cores] The core count (default `os.availableParallelism()`).
+ * @param {Record<string, string | undefined>} [env] The environment to read `CI` from.
  * @returns {number} Workers to start by default (at least 1).
  */
-export function defaultWorkers(cores = availableParallelism()) {
+export function defaultWorkers(cores = availableParallelism(), env = process.env) {
+    if (env.CI) {
+        return Math.max(1, cores);
+    }
     return Math.max(1, Math.ceil(cores / 2), cores - RESERVED_CORES);
 }
 

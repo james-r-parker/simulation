@@ -15,6 +15,9 @@ export const STATISTICAL_TESTS = [
     'test/evo/survivable-world.slow.test.js',
     'test/evo/anti-exploit.slow.test.js',
     'test/sim/practice.slow.test.js',
+    // 8 live runs of 20000 ticks (4 seeds through a pool, then in process): under coverage on a 4-core runner they ran past
+    // 12 minutes, the long pole of the sharded CI test job; no coverage-only code path hides in them.
+    'test/evo/metric-invariants.slow.test.js',
 ];
 
 /** @returns {string[]} the test files left out for this scope */

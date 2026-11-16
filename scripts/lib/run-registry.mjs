@@ -61,7 +61,7 @@ export function main(argv) {
         addRun(file, { name, cmd, pid: Number(pid), dir, cwd, frozen: frozen === '-' ? null : frozen, started });
         return 0;
     } catch (error) {
-        console.error(error instanceof Error ? error.message : String(error));
+        console.error(`${error}`);
         return 1;
     }
 }
