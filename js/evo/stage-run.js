@@ -1,0 +1,324 @@
+// The stage state machine of a training run (docs/designs/training-stages.md, Gates): `nextStage` advances a run by one
+// generation and, at a checkpoint, reads the current stage's gate, the retention of every passed stage, the hold, the
+// stall and the review. A fixed-length stage is the same machine with no gate. Pure: no files, no clock; the state is
+// plain data (apart from the stage list) so a run resumes from it.
+
+import { GATE_HOLD, REVIEW_GENERATIONS, REVIEW_MAX, readGate, streaksOf } from './stage-gate.js';
+
+/**
+ * @typedef {object} RunStage
+ * @property {string} name the stage's name
+ * @property {number} [generations] a fixed-length stage's generations
+ * @property {import('./stage-gate.js').Condition[]} [gate] a gated stage's conditions
+ * @property {number} [minGenerations] a gated stage's least generations before it can pass
+ * @property {number} [maxGenerations] a gated stage's generations before it stalls
+ * @property {boolean} [optional] a stalled optional stage lets the ladder move on
+ * @property {number} [checkpointEvery] this stage's generations between checkpoints
+ */
+
+/**
+ * @typedef {object} RunState
+ * @property {readonly RunStage[]} stages the stages in order (static; not part of a saved state)
+ * @property {number} total the run's generations
+ * @property {number} index the stage being run
+ * @property {number} generation generations completed
+ * @property {number} count generations run in the current stage since it began (reviews not counted)
+ * @property {Record<string, number>} ran generations run in each stage's world, reviews included
+ * @property {Record<string, {passedAt: number, checkpoints: number, gate: object[]}>} passed each passed stage
+ * @property {Record<string, number>} reviews reviews begun per stage
+ * @property {boolean[]} history the current stage's gate results since it began or last returned from a review
+ * @property {Record<string, number>} failStreaks each passed stage's retention failures in a row
+ * @property {{index: number, left: number} | null} review the review being run
+ * @property {'running' | 'done' | 'stalled'} status whether the run goes on
+ * @property {{stage: string, generation: number, optional: boolean, failing: object[]}[]} stalled each stall
+ * @property {object[]} last the failing conditions of the last gate read
+ */
+
+/**
+ * @typedef {object} StageEvent
+ * @property {'info' | 'warn' | 'error'} level the log level
+ * @property {string} event the log event name
+ * @property {Record<string, any>} fields its fields
+ */
+
+/**
+ * @param {RunStage} entry a stage
+ * @returns {boolean} whether it ends on a gate
+ */
+export function isGated(entry) {
+    return Array.isArray(entry.gate);
+}
+
+/**
+ * @param {readonly RunStage[]} stages the stages in order
+ * @param {number} total the run's generations
+ * @returns {RunState} the state before generation 0
+ */
+export function initialState(stages, total) {
+    return {
+        stages,
+        total,
+        index: 0,
+        generation: 0,
+        count: 0,
+        ran: {},
+        passed: {},
+        reviews: {},
+        history: [],
+        failStreaks: {},
+        review: null,
+        status: 'running',
+        stalled: [],
+        last: [],
+    };
+}
+
+/**
+ * @param {RunState} state the state
+ * @returns {RunStage} the stage whose world the next generation runs: the reviewed one during a review
+ */
+export function currentEntry(state) {
+    return state.stages[state.review === null ? state.index : state.review.index];
+}
+
+/**
+ * @param {RunState} state the state before a generation
+ * @param {number} every the checkpoint interval in force (0: none)
+ * @returns {boolean} whether the generation about to run is followed by a checkpoint: on the interval, at the end of the
+ *   run, or at the generation where a gated stage would stall
+ */
+export function checkpointDue(state, every) {
+    const done = state.generation + 1;
+    const entry = currentEntry(state);
+    const last = isGated(entry) && state.review === null && state.count + 1 >= (entry.maxGenerations ?? Infinity);
+    return every > 0 && (done % every === 0 || done === state.total || last);
+}
+
+/**
+ * @param {RunState} state the state
+ * @returns {boolean} whether the next checkpoint must read gate drills: a gated stage is being run, not a review
+ */
+export function needsGate(state) {
+    return state.review === null && isGated(currentEntry(state));
+}
+
+/**
+ * @param {RunState} state a state
+ * @returns {Omit<RunState, 'stages'> & {names: string[]}} the state as saved: the stage names stand for the stages
+ */
+export function snapshotState(state) {
+    const { stages, ...rest } = state;
+    return { ...JSON.parse(JSON.stringify(rest)), names: stages.map((s) => s.name) };
+}
+
+/**
+ * @param {readonly RunStage[]} stages the run's stages
+ * @param {number} total the run's generations
+ * @param {Record<string, any>} saved a `snapshotState` result
+ * @returns {RunState} the saved state on these stages
+ * @throws {Error} when the saved stage names are not these stages'
+ */
+export function restoreState(stages, total, saved) {
+    const names = stages.map((s) => s.name).join(',');
+    if (!Array.isArray(saved.names) || saved.names.join(',') !== names) {
+        throw new Error(`resume: the archive was written by stages [${saved.names}], this run has [${names}]`);
+    }
+    const state = { ...initialState(stages, total), ...saved, status: 'running', total };
+    delete (/** @type {any} */ (state).names);
+    return state;
+}
+
+/**
+ * @param {RunState} state a state
+ * @returns {RunState} a copy whose mutable parts are not shared
+ */
+function copy(state) {
+    return {
+        ...state,
+        ran: { ...state.ran },
+        passed: { ...state.passed },
+        reviews: { ...state.reviews },
+        history: [...state.history],
+        failStreaks: { ...state.failStreaks },
+        review: state.review === null ? null : { ...state.review },
+        stalled: [...state.stalled],
+    };
+}
+
+/** @param {RunState} s the state (changed) @returns {void} */
+function moveOn(s) {
+    if (s.index + 1 >= s.stages.length) {
+        s.status = 'done';
+        return;
+    }
+    s.index += 1;
+    s.count = 0;
+    s.history = [];
+}
+
+/**
+ * Records a stall: a required stage stops the run, an optional one lets the ladder move on.
+ * @param {RunState} s the state (changed)
+ * @param {RunStage} entry the stalled stage
+ * @param {StageEvent[]} events receives `TrainStageStalled`
+ * @returns {void}
+ */
+function stall(s, entry, events) {
+    const optional = entry.optional === true;
+    const stalled = { stage: entry.name, generation: s.generation, optional, failing: s.last };
+    s.stalled.push(stalled);
+    events.push({ level: 'error', event: 'TrainStageStalled', fields: stalled });
+    if (optional) {
+        moveOn(s);
+    } else {
+        s.status = 'stalled';
+    }
+}
+
+/**
+ * Reads the gate of every passed stage and keeps each one's failure streak.
+ * @param {RunState} s the state (failure streaks changed)
+ * @param {Record<string, any>} readings the checkpoint's readings
+ * @returns {{retention: Record<string, number>, failing: Record<string, object[]>}} `retention.<stage>` (1 or 0),
+ *   `retention.all`, and the failing conditions of each failed stage
+ */
+function readRetention(s, readings) {
+    /** @type {Record<string, number>} */
+    const retention = {};
+    /** @type {Record<string, object[]>} */
+    const failing = {};
+    let all = 1;
+    for (const entry of s.stages.slice(0, s.index)) {
+        if (!Object.hasOwn(s.passed, entry.name)) {
+            continue;
+        }
+        const read = readGate(/** @type {any} */ (entry.gate), { ...readings, retention });
+        retention[entry.name] = read.passed ? 1 : 0;
+        all = Math.min(all, retention[entry.name]);
+        s.failStreaks[entry.name] = read.passed ? 0 : (s.failStreaks[entry.name] ?? 0) + 1;
+        failing[entry.name] = read.conditions.filter((c) => !c.passed);
+    }
+    retention.all = all;
+    return { retention, failing };
+}
+
+/**
+ * A passed stage that failed on `GATE_HOLD` checkpoints in a row: review it, or stop the run when it was reviewed
+ * `REVIEW_MAX` times already.
+ * @param {RunState} s the state (changed)
+ * @param {{stage: string, failing: object[]}} regressed the regressed stage and its failing conditions
+ * @param {StageEvent[]} events receives `TrainStageRegressed`, `TrainReview` and a stall
+ * @returns {void}
+ */
+function regress(s, { stage, failing }, events) {
+    events.push({ level: 'warn', event: 'TrainStageRegressed', fields: { generation: s.generation, stage, failing } });
+    s.history = [];
+    s.failStreaks = {};
+    if ((s.reviews[stage] ?? 0) >= REVIEW_MAX) {
+        s.last = failing;
+        stall(s, { name: stage }, events);
+        return;
+    }
+    s.reviews[stage] = (s.reviews[stage] ?? 0) + 1;
+    s.review = { index: s.stages.findIndex((e) => e.name === stage), left: REVIEW_GENERATIONS };
+    events.push({
+        level: 'info',
+        event: 'TrainReview',
+        fields: { generation: s.generation, stage, review: s.reviews[stage] },
+    });
+}
+
+/**
+ * Reads a checkpoint for a gated stage: retention, regression, the gate and the hold.
+ * @param {RunState} s the state (changed)
+ * @param {RunStage} entry the current stage
+ * @param {Record<string, any>} readings the checkpoint's gate readings
+ * @param {StageEvent[]} events receives the events
+ * @returns {boolean} whether the run moved on, started a review or stopped
+ */
+function gateCheckpoint(s, entry, readings, events) {
+    const ripe = s.count >= (entry.minGenerations ?? 1);
+    const { retention, failing } = ripe ? readRetention(s, readings) : { retention: {}, failing: {} };
+    const regressed = Object.keys(failing).find((name) => (s.failStreaks[name] ?? 0) >= GATE_HOLD);
+    if (regressed !== undefined) {
+        regress(s, { stage: regressed, failing: failing[regressed] }, events);
+        return true;
+    }
+    const read = readGate(/** @type {any} */ (entry.gate), { ...readings, retention });
+    s.last = read.conditions.filter((c) => !c.passed);
+    s.history.push(read.passed);
+    const { streak, held } = streaksOf(s.history);
+    events.push({
+        level: 'info',
+        event: 'TrainGate',
+        fields: { generation: s.generation, stage: entry.name, passed: read.passed, conditions: read.conditions },
+    });
+    if (!held || !ripe) {
+        return false;
+    }
+    s.passed[entry.name] = { passedAt: s.generation, checkpoints: streak, gate: read.conditions };
+    events.push({
+        level: 'info',
+        event: 'TrainStagePassed',
+        fields: { generation: s.generation, stage: entry.name, checkpoints: streak },
+    });
+    moveOn(s);
+    return true;
+}
+
+/**
+ * Ends a generation of a review: after `REVIEW_GENERATIONS` the run returns to its stage with a clean gate history.
+ * @param {RunState} s the state (changed)
+ * @returns {void}
+ */
+function stepReview(s) {
+    const review = /** @type {{index: number, left: number}} */ (s.review);
+    review.left -= 1;
+    if (review.left === 0) {
+        s.review = null;
+        s.history = [];
+        s.failStreaks = {};
+    }
+}
+
+/**
+ * @param {RunState} s the state (changed)
+ * @param {RunStage} entry the gated stage just run
+ * @param {Record<string, any> | null} readings the checkpoint's gate readings, or null when none was taken
+ * @param {StageEvent[]} events receives the events
+ * @returns {void}
+ */
+function stepGated(s, entry, readings, events) {
+    const moved = readings !== null && gateCheckpoint(s, entry, readings, events);
+    if (!moved && s.count >= (entry.maxGenerations ?? Infinity)) {
+        stall(s, entry, events);
+    }
+}
+
+/**
+ * Advances the run past the generation `state.generation` just run in `currentEntry(state)`'s world.
+ * @param {RunState} state the state before the generation
+ * @param {{readings: Record<string, any>} | null} [checkpoint] the checkpoint taken after it, with its gate readings
+ *   (null: none; ignored during a review)
+ * @returns {{state: RunState, events: StageEvent[]}} the state after it, and the events to log
+ */
+export function nextStage(state, checkpoint = null) {
+    const s = copy(state);
+    /** @type {StageEvent[]} */
+    const events = [];
+    const entry = currentEntry(s);
+    s.generation += 1;
+    s.ran[entry.name] = (s.ran[entry.name] ?? 0) + 1;
+    if (s.review !== null) {
+        stepReview(s);
+    } else if (isGated(entry)) {
+        s.count += 1;
+        stepGated(s, entry, checkpoint?.readings ?? null, events);
+    } else {
+        s.count += 1;
+        if (s.index < s.stages.length - 1 && s.count >= (entry.generations ?? Infinity)) {
+            moveOn(s);
+        }
+    }
+    return { state: s, events };
+}
