@@ -41,10 +41,23 @@ describe('reachFactor', () => {
 });
 
 describe('rayReachTable', () => {
-    it('is all ones for the default config', () => {
-        const { rayReachBySpec } = rayReachTable(createConfig());
-        expect(rayReachBySpec.length).toBe(SPECS.length * createConfig().rayCount);
+    it('is all ones when every share is 1', () => {
+        const all = Object.fromEntries(SPECS.map((name) => [name, 1]));
+        const { rayReachBySpec } = rayReachTable(configWith(all));
+        expect(rayReachBySpec.length).toBe(SPECS.length * 16);
         expect(Array.from(rayReachBySpec).every((f) => f === 1)).toBe(true);
+    });
+
+    it('gives the default predator and defender a forward eye and the rest an all-round one (E186)', () => {
+        const config = createConfig();
+        const rays = config.rayCount;
+        const { rayReachBySpec } = rayReachTable(config);
+        const behind = (/** @type {number} */ index) => rayReachBySpec[index * rays + rays / 2];
+        expect(behind(1)).toBeCloseTo(0.4, 12);
+        expect(behind(4)).toBeCloseTo(0.8, 12);
+        for (const index of [0, 2, 3]) {
+            expect(behind(index)).toBe(1);
+        }
     });
 
     it("holds each specialisation's row at its index, symmetric left and right", () => {

@@ -61,7 +61,7 @@ export const SPECIALISATION_DEFAULTS = {
     },
     predator: {
         index: 1,
-        visionRange: 350,
+        visionRange: 400, // senses-and-motor E186: the hunter sees furthest, the scout alone equal (was 350)
         canHunt: true,
         moveCostMultiplier: 1,
         biteTakenMultiplier: 1,
@@ -75,7 +75,7 @@ export const SPECIALISATION_DEFAULTS = {
         splitMinEnergyMultiplier: 0.6, // tuned, fitness-and-selection T15d (scales splitMinEnergy for this specialisation, T15f)
         kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
         maxEnergyMultiplier: 5, // survival screen (instinct, inst1-gorge-bite20): a 3x fat store (5x from E103), so a big meal carries a predator across the fast between kills like a lion's // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
-        rearVisionShare: 1,
+        rearVisionShare: 0.4, // senses-and-motor E186: forward, long-range eyes; the ray behind keeps 0.4 of the range
     },
     reproducer: {
         index: 2,
@@ -115,7 +115,7 @@ export const SPECIALISATION_DEFAULTS = {
     },
     defender: {
         index: 4,
-        visionRange: 350,
+        visionRange: 300, // senses-and-motor E186: below the hunter (was 350)
         canHunt: false,
         moveCostMultiplier: 1.2, // natural-selection: the defender is costly to be, a fifth more to move (was 1)
         biteTakenMultiplier: 0.5,
@@ -129,6 +129,6 @@ export const SPECIALISATION_DEFAULTS = {
         splitMinEnergyMultiplier: 1, // new: scales splitMinEnergy for this specialisation (fitness-and-selection T15f)
         kickMultiplier: 2, // natural-selection T5a: a bite on a defender costs the biter twice the kick
         maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
-        rearVisionShare: 1,
+        rearVisionShare: 0.8, // senses-and-motor E186
     },
 };

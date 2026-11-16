@@ -97,16 +97,17 @@ describe('prey-ahead trace in the drill log', () => {
     /**
      * @param {import('../../js/evo/memory-probe-run.js').Subject} subject a subject
      * @param {number} count trials
+     * @param {Record<string, any>} [config] config overrides for the drill's world
      * @returns {Record<string, any>[]} the DrillTrial records
      */
-    function trialsOf(subject, count) {
+    function trialsOf(subject, count, config = {}) {
         /** @type {Record<string, any>[]} */
         const records = [];
         const log = {
             level: /** @type {const} */ ('debug'),
             log: (/** @type {any} */ _l, /** @type {any} */ _e, /** @type {any} */ f) => records.push(f),
         };
-        drillSubject(preyAhead, subject, { trials: count, log: /** @type {any} */ (log) });
+        drillSubject(preyAhead, subject, { trials: count, config, log: /** @type {any} */ (log) });
         return records;
     }
 
@@ -131,7 +132,10 @@ describe('prey-ahead trace in the drill log', () => {
     });
 
     it('gives the chasing reference a reason only on the trials it lost, and counts its bites', () => {
-        for (const record of trials(referenceSubject('memoryless'))) {
+        // The prey is staged at a share of the predator's view, so these three trials are pinned to the 350 view they
+        // were written for: at the E186 default of 400 the first trial's prey breaks away before the first bite.
+        const view350 = { specialisations: { predator: { visionRange: 350 } } };
+        for (const record of trialsOf(referenceSubject('memoryless'), 3, view350)) {
             expect(record.reason === null).toBe(record.won);
             expect(record.biteTicks).toBeGreaterThan(0);
         }
