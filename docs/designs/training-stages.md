@@ -1,7 +1,7 @@
 # Training stages
 
-**Status:** In progress - Phase 1 code built (T1 to T4, chunk A), T5 and T6 open; a gated ladder of stage worlds, cross-play between hunters and prey, an opponent pool, scene drills and one exam that says whether a champion set is good; Phase 1 (the detectors the ladder reads) is first.
-**Validated:** f5ebac76 (2026-11-15)
+**Status:** In progress - Phase 1 code built (T1 to T4, chunk A; T5 and T6 wait for the hunter-vision default switch, since they measure the defaults) and Phase 2 built (T7 to T12 and T9a, T10a; the stage-local estimate arm is T9b); a gated ladder of stage worlds, cross-play between hunters and prey, an opponent pool, scene drills and one exam that says whether a champion set is good; Phase 3 (cross-play and the pool) is next.
+**Validated:** 46743a8f (2026-11-16)
 **Priority:** 11 - the tools change no sim behaviour and no rule, so they build beside the world work; the runs that claim a skill wait for the held world, as [training.md](training.md) does
 **Depends on:** [training.md](training.md), [senses-and-motor.md](senses-and-motor.md)
 
@@ -55,6 +55,17 @@ A genome is trained by natural selection in whole worlds, as in [training.md](tr
 | Determinism   | Gate readings come from seeded drills and cross-play, so the stage plan of a run is a function of its seeds, curriculum and offset. `--workers 1` and `--workers 32` write identical archives                                                                                                                                                                                                                                                                                                                                                                |
 
 A curriculum entry gains `minGenerations`, `maxGenerations`, `gate`, `pool` and `checkpointEvery`. An entry with `generations` and no `gate` is a fixed-length stage, as today, so `evals/train-curriculum*.json` load unchanged. `planStages` lays out fixed stages; `nextStage(state, checkpoint)` in `js/evo/curriculum.js` (new) advances a gated run. The archive's `stages` record gains `passedAt`, `reviews` and the gate readings at the pass.
+
+As built (Phase 2):
+
+- `js/evo/stage-gate.js` holds `readGate`, `gateState`, `streaksOf`, `validateGate` and the constants `GATE_TRIALS`, `GATE_HOLD`, `REVIEW_GENERATIONS`, `REVIEW_MAX`. A bound (`min`, `max`) is inclusive, so "above 0" is a small positive `min`. `validateGate` runs when a curriculum loads and refuses an `eval.*` key or an unknown key.
+- `js/evo/stage-run.js` holds the state machine; `js/evo/curriculum.js` re-exports `nextStage`, `initialState`, `checkpointDue`, `needsGate` and `stateAfter`. `nextStage(state, checkpoint)` is called after every generation and its checkpoint; the checkpoint is `{ readings }` or null. Every run uses it, a fixed-length curriculum being the machine with no gate, so fixed runs write archives and curve rows byte for byte as before (checked against `origin/main` on a `--config` run, a curriculum with checkpoints and a resume).
+- A gated entry sets `gate`, `minGenerations` (default 1) and `maxGenerations` in place of `generations`; `optional`, `pool` and `checkpointEvery` apply to any entry. `pool` is validated and carried, and read by Phase 3. A gated stage needs checkpoints, so `--checkpoint-every 0` with no per-stage `checkpointEvery` is refused. The trainer forces a checkpoint at the generation where a gated stage would stall, so the stall reads the last gate.
+- Retention is read only while a gated stage runs and only after its `minGenerations`; `retention.all` is 1 when no stage has passed. A regression starts a review, and a regression of a stage already reviewed `REVIEW_MAX` times stops the run as a stall. A review runs the regressed stage's world for `REVIEW_GENERATIONS` generations, takes no gate read, and returns to the current stage with its gate history cleared. The generations a review runs count in the reviewed stage's `generations` and not in the current stage's `minGenerations` or `maxGenerations`.
+- A run that reaches `--generations` with its stage still open ends normally: `--generations` is the budget, `maxGenerations` the stall. `--until <stage>` cuts the curriculum after that stage; a gated last stage ends the run on its pass.
+- Gate drills run on the validation seed (`GATE_SEED`, see "Seed partitions" below) with `GATE_TRIALS` trials per champion and drill, on every drill at once, so one drill table gives every stage's readings, and the curve's drill columns on a gate checkpoint come from the same table. A reading no Phase 3 or 4 code produces yet (`crossplay.*`, `drill.pack-converge.*`) is null and fails.
+- `--resume` of a gated run continues from the archive's `trainState`; an archive without it resumes a fixed-length curriculum (the state is replayed) and is refused by a gated one.
+- Seed partitions, `manifest.json` and the export check are under "Runs are kept" below.
 
 > Note: an elite keeps its samples when the stage world changes. Clone founders re-test it in the new world (`nextClone` in `js/evo/archive.js`) and `TRAINER_N_CAP` (8) bounds how long old samples weigh, so a lower bound drifts to the new world over a few generations. A gate read in the first checkpoint of a stage reads the old stage's elites.
 
@@ -202,6 +213,8 @@ As built: a lapse is the `GAVE_UP` end class of the chase record, split by the f
 The baseline is the shared run of [detector-baseline.md](detector-baseline.md), read once for every plan that has its prediction written.
 
 The detectors of the table above, the Wilson bounds in the drill and reflex reports, and one baseline run with `npm run eval:power`. A metric with no measured power is not cited by a later phase.
+
+T5 and T6 are not run yet (2026-11-16): they measure the defaults, and the hunter-vision default switch of [senses-and-motor.md](senses-and-motor.md) is about to change them. The baseline run waits for that switch; Phases 2 onward do not need it, since their tests read drills and hand-built fixtures.
 
 #### Chunks
 
@@ -352,7 +365,7 @@ After the world gate of [training.md](training.md). `npm run train:season`, the 
 | T8   | (built) Extend `js/evo/curriculum.js`: the entry fields `minGenerations`, `maxGenerations`, `gate`, `pool`, `checkpointEvery`, `nextStage`, and `validateStageFloors` for every hunter-stage name; every `evals/train-curriculum*.json` still loads | [judgement]  | T7                              |
 | T9   | (built) Drive `scripts/train.mjs` by `nextStage`: gate checkpoints with `GATE_TRIALS`, retention readings, review blocks, `--until <stage>`, exit code 3 on a stall, the events `TrainGate` to `TrainReview`; `test/train.slow.test.js` cases       | [judgement]  | T8                              |
 | T10  | (built) Add `scripts/lib/train-manifest.mjs`, the `stages` fields in the archive, `--resume` of a gated run, the `/tmp` refusal and `--scratch`                                                                                                     | [mechanical] | T9                              |
-| T11  | `npm run train:curve` prints each checkpoint's gate readings, the stage passes and the retention columns; `AGENTS.md` rows                                                                                                                          | [mechanical] | T9                              |
+| T11  | (built) `npm run train:curve` prints each checkpoint's gate readings, the stage passes and the retention columns; `AGENTS.md` rows                                                                                                                  | [mechanical] | T9                              |
 | T9a  | Compare retained and stage-local archive estimates with paired runs; add stage provenance and target-rule export eligibility tests                                                                                                                  | [judgement]  | T9                              |
 | T10a | Implement disjoint training/validation/release manifests, candidate freeze and access records; test overlap rejection, resume and worker determinism                                                                                                | [judgement]  | T10                             |
 | T12  | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                 | [judgement]  | T7, T8, T9, T10, T11, T9a, T10a |

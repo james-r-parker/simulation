@@ -88,6 +88,52 @@ describe('checkpoint helpers', () => {
     });
 });
 
+describe('train:curve with gates', () => {
+    it('adds a gate and a retention column and a reading line per gate checkpoint, only for a gated run', () => {
+        const row = (/** @type {number} */ g, /** @type {Record<string, any>} */ extra) => ({
+            generation: g,
+            stage: 'hunt',
+            trainTicks: g * 1000,
+            wallSeconds: 5,
+            coverage: 0.1,
+            qdScore: 1,
+            drillEdge: 0.2,
+            ...extra,
+        });
+        const cond = { read: 'drill.food-ahead.edgeLow', value: 0.45, min: 0.3, passed: true };
+        const rows = [
+            row(1, {}),
+            row(2, { gate: { stage: 'hunt', passed: false, conditions: [{ ...cond, value: 0.1, passed: false }] } }),
+            row(3, {
+                gate: {
+                    stage: 'hunt',
+                    passed: true,
+                    stagePassed: true,
+                    conditions: [cond],
+                    retention: { nursery: 1, all: 1 },
+                },
+            }),
+        ];
+        const lines = formatCurve(rows);
+        expect(lines[0]).toMatch(/drill edge\s+gate\s+retention\s+food_energy_per_1k/);
+        expect(lines[1]).toMatch(/^1\s+hunt.*\s-\s+-\s/);
+        expect(lines[2]).toMatch(/\sfail\s+-\s/);
+        expect(lines[3]).toMatch(/\sPASSED\s+nursery:1 all:1\s/);
+        expect(lines.slice(4, 6)).toEqual([
+            '  gen 2 hunt fail: drill.food-ahead.edgeLow 0.100 >= 0.3 FAIL',
+            '  gen 3 hunt PASSED: drill.food-ahead.edgeLow 0.450 >= 0.3 ok',
+        ]);
+        expect(lines.at(-1)).toMatch(/^plateau:/);
+        expect(formatCurve([rows[0]])[0]).not.toContain('retention');
+        const max = formatCurve([
+            row(1, {
+                gate: { stage: 's', passed: true, conditions: [{ read: 'x', value: null, max: 2, passed: false }] },
+            }),
+        ]);
+        expect(max[2]).toBe('  gen 1 s pass: x - <= 2 FAIL');
+    });
+});
+
 describe('train:curve', () => {
     it('prints the rows and the plateau line', () => {
         const dir = join(root, 'curve');
