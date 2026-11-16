@@ -4553,15 +4553,20 @@
       "prediction": "On the 16-seed screen (evals/screens/hunter-vision.grid.json, 400000 ticks, floor on, policy live) the range-plus-rear arms raise eval.hunter_catches_per_1k by at least a tenth over control with the keep rule's seed guards (hunters alive, held) not worse; range alone moves catches less than range with s 0.4; eval.chase_catch_share rises with them; eval.collision_death_share does not rise. Falsified when no arm raises eval.hunter_catches_per_1k beyond the screen's margin.",
       "targets": ["eval.hunter_catches_per_1k", "eval.chase_catch_share"],
       "before": "control arm of evals/screens/hunter-vision.grid.json (predator 350 s 1, defender 350 s 1), seeds 1 to 16, 400000 ticks, floor on, policy live",
-      "after": "the range and rear-reach arms of the same screen (range, range-s06, range-s04, range-s04-d, far-s03)",
-      "verdicts": {},
-      "note": "Prediction recorded before the run (T17). audit:chase on the range arms still finds no fair band beyond 0.2 of view. Screen (T18, 16 seeds): every arm PASS with no harm; no arm moves eval.hunter_catches_per_1k beyond the margin (needs 64 seeds); finalist range-s04-d (catches 1.449 vs 1.340, +8.1%; chase catch share +4.6%, interval touches 0; hunters alive 0.8 vs 0.7; held 16/16). The 64-seed keep rule (T19) is running.",
-      "reports": ["evals/decisions/E186/results.md"],
+      "after": "finalist range-s04-d (evals/decisions/E186/finalist.config.json): 16-seed screen, then seeds 65 to 128 (seed offset 64), 400000 ticks, floor on, policy live",
+      "verdicts": {
+        "keepRule": "no-difference",
+        "eval.hunter_catches_per_1k": "better",
+        "eval.chase_catch_share": "-",
+        "eval.collision_death_share": "no-difference"
+      },
+      "note": "Screen (T18, 16 seeds): every arm PASS and no harm; finalist range-s04-d. Keep rule (T19, 64 fresh seeds, 400000 ticks): no harm (alive 11 harmed vs 15 recovered, smallest loss 29 seeds; held 8 vs 6, 17 seeds; under80 1 vs 1, 8 seeds); eval.hunter_catches_per_1k better 1.327 -> 1.457 (+9.7%, [0.043, 0.208]); chase catch share +3.7% no verdict; collision deaths no-difference; basin_family_effective and mean_fitness.forager worse. Adoption bar not met (45/64 hunters alive vs 0.75; control about 41/64). Qualifies for the T20 switch.",
+      "reports": ["evals/decisions/E186/results.md", "evals/decisions/E186/keep-rule.txt"],
       "date": "2026-11-15",
       "branch": "feat/hunter-vision",
       "beforePolicy": "live",
       "afterPolicy": "live",
-      "effect": "no-difference"
+      "effect": "better"
     }
   ]
 }

@@ -65,8 +65,47 @@ higher chase catch share but no catch gain and fewer hunters alive.
 ## Keep rule (T19)
 
 The finalist against the defaults on 64 fresh floor-on seeds (seed offset 64, so none overlap the screen), 400000
-ticks, policy live, then `npm run eval:compare -- control.report.json finalist.report.json --keep-rule
---allow-config-diff specialisations` with the targets. Under the keep rule ("A realistic mechanism stays",
-`docs/principles.md`) a forward-weighted predator eye is adopted when it reads no harm, even if its scene does not move.
+ticks, policy live:
 
-Running.
+```
+npm run eval -- --seeds 64 --seed-offset 64 --ticks 400000 --policy live --workers 12 --out control.report.json
+npm run eval -- --seeds 64 --seed-offset 64 --ticks 400000 --policy live --workers 12 \
+  --config evals/decisions/E186/finalist.config.json --out finalist.report.json
+npm run eval:compare -- control.report.json finalist.report.json --keep-rule --allow-config-diff specialisations \
+  --targets eval.hunter_catches_per_1k,eval.chase_catch_share,eval.collision_death_share
+```
+
+Output in `keep-rule.txt` and `keep-rule.json` beside this file.
+
+**Keep rule: no harm detected.**
+
+| Guard                        | Verdict | Read                                          | Smallest loss it detects |
+| ---------------------------- | ------- | --------------------------------------------- | ------------------------ |
+| hunters alive                | no harm | 11 seeds harmed, 15 recovered (exact p 0.557) | 29 seeds                 |
+| under 80                     | no harm | 1 harmed, 1 recovered (exact p 1)             | 8 seeds                  |
+| held                         | no harm | 8 harmed, 6 recovered (exact p 0.791)         | 17 seeds                 |
+| `eval.hunter_catches_per_1k` | no harm | +0.129, interval [0.043, 0.208]               | 0.0825                   |
+
+The hunters-alive guard sees only a loss of 29 seeds, more than a quarter of 64, so on its own it has not shown no
+harm. But that guard moved the other way (15 recovered against 11 harmed), and the held and under-80 guards see losses of
+17 and 8 seeds. The adoption bar reads "not met" (hunters alive on 45 of 64 seeds against a bar of 0.75). Control reads
+about 41 of 64, so the finalist raises the count and does not cause the miss.
+
+Targets at 64 seeds:
+
+| Metric                       | Control | Finalist | Change | Interval        | Verdict        |
+| ---------------------------- | ------- | -------- | ------ | --------------- | -------------- |
+| `eval.hunter_catches_per_1k` | 1.327   | 1.457    | +9.7%  | [0.043, 0.208]  | **better**     |
+| `eval.chase_catch_share`     | 0.2296  | 0.2382   | +3.7%  | [-0.005, 0.021] | - (no verdict) |
+| `eval.collision_death_share` | 0.2207  | 0.2194   | -0.6%  | [-0.022, 0.023] | no-difference  |
+
+Other verdicts: `eval.hunter_first_kill_rmst` better (-7.9%: first kills come sooner). Two metrics read worse:
+`eval.basin_family_effective` (-11.0%, [-0.207, -0.030]) and `eval.mean_fitness.forager` (-5.3%). Foragers pay for a
+hunter that catches more, which is the scene working. Neither is a keep-rule guard. `eval.population_mean` -8.7%
+([-49.8, 4.5], no verdict).
+
+**Reading.** The prediction's main clause holds at 64 seeds: catches rise by 9.7%, close to the predicted tenth, and the
+interval excludes 0, with no guard harmed. Chase catch share rises without a verdict, and collision deaths do not rise.
+The hunter now kills more because it sees further ahead, not because its chases end differently once they start. Under
+the keep rule the finalist qualifies for the T20 switch. It waits on the honest-budgets switch (lane A, PR 461) so that
+it can rebase and re-pin once.
