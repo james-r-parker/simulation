@@ -12,6 +12,8 @@ import { duel, foodPatch, foodRow, forage } from './helpers/credit-scenes.js';
 const FOOD = 300;
 /** The slow predator: it cannot sprint, so a fleer that sprints outruns it. */
 const SLOW_HUNTER = { specialisations: { predator: { sprintBoost: 0.01 } } };
+/** The kill pays the whole body (killGorgeShare 1): these cases credit the bite energy of one kill, not the 0.4 default share. */
+const WHOLE_BODY = { killGorgeShare: 1 };
 const ROW_AHEAD = foodRow(5, 150, { x: 1300 });
 
 /**
@@ -141,7 +143,7 @@ describe('food credit: circling inside a dense patch', () => {
 
 describe('combat credit', () => {
     it('a hunter that kills a still prey is paid the bite energy, the kill and the terms the intake opens', () => {
-        const { hunter, prey } = duel({ canHunt: 'hunter', rest: 'sitter' }, { gap: 200 });
+        const { hunter, prey } = duel({ canHunt: 'hunter', rest: 'sitter' }, { gap: 200, config: WHOLE_BODY });
         expect(hunter.kills).toBe(1);
         expect(hunter.deliberateKills).toBe(1);
         expect(hunter.deliberateBite).toBeGreaterThan(FITNESS_V6.GATE);
@@ -152,7 +154,7 @@ describe('combat credit', () => {
     });
 
     it('a hunter that kills a fleeing prey is paid as well, and the fleer that dies earns nothing', () => {
-        const { hunter, prey } = duel({ canHunt: 'hunter', rest: 'fleer' }, { gap: 200 });
+        const { hunter, prey } = duel({ canHunt: 'hunter', rest: 'fleer' }, { gap: 200, config: WHOLE_BODY });
         expect(hunter.kills).toBe(1);
         expect(hunter.deliberateBite).toBeGreaterThan(FITNESS_V6.GATE);
         expect([prey.escapes, prey.fitness]).toEqual([0, 0]);

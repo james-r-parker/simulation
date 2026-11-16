@@ -110,7 +110,7 @@ number and writes no hashed state where this file says so.
 | `satiationShare`, `digestTicks`, `handlingTicks`, `handlingThrust`            | `0.95`, `10`, `20`, `0.2`           | `0 .. 1`; integer `0 .. 30`; integer `0 .. 30`; `0 .. 1` |
 | `specMutationRate`, `huntUpkeep`                                              | `0.02`, `0.002`                     | `0 .. 1`; `>= 0`                                         |
 | `alarmThreshold`, `huntCallThreshold`                                         | `0.65`, `0.65`                      | `0 .. 0.95` each; 0 fires on any output above 0          |
-| `killShare`, `killGorgeCap`                                                   | `0.25`, `2000`                      | `0 .. 1`; above 0 (honest-budgets Phase 2)               |
+| `killShare`, `killGorgeCap`, `killGorgeShare`                                 | `0.25`, `2000`, `0.4`               | `0 .. 1`; above 0; `0 .. 1` (honest-budgets Phase 2, 6)  |
 | `floorTrigger`, `entrantEnergy`                                               | `8`, `200`                          | Integer `>= 0`; `>= 0` (0 means `initialEnergy`)         |
 | `diseaseSeedRate`, `diseaseMinHosts`, `diseaseRadius`                         | `0`, `30`, `60`                     | `0 .. 1` (0 is off); integer `>= 0`; `> 0`               |
 | `diseaseTransmission`, `diseaseSpecificity`, `diseaseDrain`, `diseaseTicks`   | `0.05`, `0.8`, `0.3`, `600`         | `0 .. 1`; `> 0`; `>= 0`; integer `>= 1`                  |
@@ -375,7 +375,7 @@ minAgents)`. Below it, it spawns `FLOOR` agents until `population === minAgents`
   `cost`; a per-slot tick stamp (derived, not hashed) keeps it to once.
 - Predator economy keys (fitness-and-selection T15f). `applyBite` (`feeding.js`) mints nothing on a kill (honest-budgets Phase 2 deleted
   `predatorKillEnergy`): a bite that leaves the victim at or under `killShare` x its maximum energy kills it, and the killer
-  takes what remains up to `killGorgeCap` (`takeBody` in `kill-body.js`). `tickCost` (`energy.js`) multiplies the standing
+  takes up to `killGorgeShare` (0.4, E179) of what remains, no more than `killGorgeCap` (`takeBody` in `kill-body.js`). `tickCost` (`energy.js`) multiplies the standing
   term (`passiveLoss`, the size term and the vision term, before the temperature factor) by the specialisation's
   `passiveLossMultiplier`, read from the `specParams` entry it already holds. `readyToSplit` (`reproduction.js`) compares
   energy with `world.splitMinBySpec[spec]`, the table `splitMinEnergy x splitMinEnergyMultiplier` built once in

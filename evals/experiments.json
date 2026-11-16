@@ -4523,7 +4523,7 @@
         "eval.hunter_income_share.carcass": "-",
         "eval.boom_bust_count": "-"
       },
-      "note": "T36: gorge (killGorgeShare 0.4) against the defaults on seeds 65 to 128, 400000 ticks, keep rule reads no harm (alive 13 harmed and 14 recovered, smallest loss 28 seeds; under80 2 and 4; held 0 and 3; catches +5.4 percent, no difference). Targets: juvenile death share 0.863 to 0.855 (no difference), carcass income share 0.005 to 0.152, carcass energy eaten 0.16 to 0.57; the Done-when row is missed (hunters alive 41 of 64 against 48). The screen falsified recruit, cub-plant and cub-size (specFlipNoHunt empties the hunters world). Recommendation awaiting review in evals/decisions/E179/results.md; T36a and the switch are not run.",
+      "note": "T36: gorge (killGorgeShare 0.4) against the defaults on seeds 65 to 128, 400000 ticks, keep rule reads no harm (alive 13 harmed and 14 recovered, smallest loss 28 seeds; under80 2 and 4; held 0 and 3; catches +5.4 percent, no difference). Targets: juvenile death share 0.863 to 0.855 (no difference), carcass income share 0.005 to 0.152, carcass energy eaten 0.16 to 0.57; the Done-when row is missed (hunters alive 41 of 64 against 48). The screen falsified recruit, cub-plant and cub-size (specFlipNoHunt empties the hunters world). The user adopted killGorgeShare 0.4 as a narrow T37 on 2026-11-16 (season 10 in place); T36a is not run and Phase 6 stays open (T39: a screen without specFlipNoHunt).",
       "reports": [
         "evals/decisions/E179/results.md",
         "evals/decisions/E179/compare.txt",
