@@ -382,13 +382,13 @@ After the world gate of [training.md](training.md). `npm run train:season`, the 
 
 ### Phase 3 - Cross-play and the opponent pool
 
-| #    | Task                                                                                                                                                                                                                       | Nature      | Depends on          |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------- |
-| T13  | (built) Add the optional `opponent` subject to `playTrial` (`js/evo/memory-probe-run.js`), with a test that an opponent genome drives the `prey` role and that a trial without one is unchanged                            | [judgement] | -                   |
-| T14  | Add `js/evo/crossplay.js` (cells, hunter progress, prey progress, cycle share, the group cell), `scripts/train-crossplay.mjs`, `npm run train:crossplay`, the `crossplay.*` gate readings in the checkpoint, and the tests | [judgement] | T13, T9             |
-| T15  | Add `js/evo/opponent-pool.js` and the `opponents` option of `createMapElitesV1` and `createSeeder`; `TrainPool`; the byte-identical test at share 0                                                                        | [judgement] | T9                  |
-| T14a | Add guild/age/habitat release cross-play and independent opponent provenance; test sparse, defended and depleted-world fixtures and per-condition reporting                                                                | [judgement] | T14, T10a           |
-| T16  | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                        | [judgement] | T13, T14, T15, T14a |
+| #    | Task                                                                                                                                                                                                                               | Nature      | Depends on          |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------- |
+| T13  | (built) Add the optional `opponent` subject to `playTrial` (`js/evo/memory-probe-run.js`), with a test that an opponent genome drives the `prey` role and that a trial without one is unchanged                                    | [judgement] | -                   |
+| T14  | (built) Add `js/evo/crossplay.js` (cells, hunter progress, prey progress, cycle share, the group cell), `scripts/train-crossplay.mjs`, `npm run train:crossplay`, the `crossplay.*` gate readings in the checkpoint, and the tests | [judgement] | T13, T9             |
+| T15  | Add `js/evo/opponent-pool.js` and the `opponents` option of `createMapElitesV1` and `createSeeder`; `TrainPool`; the byte-identical test at share 0                                                                                | [judgement] | T9                  |
+| T14a | Add guild/age/habitat release cross-play and independent opponent provenance; test sparse, defended and depleted-world fixtures and per-condition reporting                                                                        | [judgement] | T14, T10a           |
+| T16  | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                | [judgement] | T13, T14, T15, T14a |
 
 ### Phase 4 - Scene drills and export by style
 

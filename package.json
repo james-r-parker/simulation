@@ -35,6 +35,7 @@
     "reflex": "node scripts/reflex.mjs",
     "bench:reflex": "node scripts/bench-reflex.mjs",
     "train": "node scripts/train.mjs",
+    "train:crossplay": "node scripts/train-crossplay.mjs",
     "train:curve": "node scripts/train-curve.mjs",
     "train:export": "node scripts/train-export.mjs",
     "eval:compare": "node scripts/eval-compare.mjs",
