@@ -4,8 +4,9 @@
 # Usage:
 #   scripts/check.sh           # check everything
 #   scripts/check.sh --fix     # apply Prettier and regenerate the design index first
-#   scripts/check.sh --ci      # what CI runs (JUnit test results in TestResults/); the test gate runs only the fast tests
-#                              # (TEST_SCOPE=fast: no *.slow.test.js files) and the coverage ratchet is skipped
+#   scripts/check.sh --ci      # the static half of CI (JUnit test results in TestResults/); the test gate runs only the fast
+#                              # tests (TEST_SCOPE=fast: no *.slow.test.js files) and the coverage ratchet is skipped. On a
+#                              # pull request CI runs `--ci --skip=test`; the full suite is sharded in check.yml
 #   scripts/check.sh --ci --full   # CI with every test and the ratchet (what the nightly runs)
 #   scripts/check.sh --only=conventions,format     # a subset of gates
 #   scripts/check.sh --docs    # a docs-only change (scripts/change-scope.sh): conventions, designs-index, format and
@@ -13,6 +14,11 @@
 #   scripts/check.sh --quiet   # print only failed gates and the summary line
 #   scripts/check.sh --tier 1  # tier 1 (pre-commit), 2 (default, the PR gate) or 3 (nightly); not with --only/--docs
 #   scripts/check.sh --skip=browser-smoke,eval-smoke   # the selected gates minus these (CI runs them on a clean runner)
+#   scripts/check.sh --quick   # the pre-push check for an agent: the static gates and the build (conventions, designs-index,
+#                              # format, lint, typecheck, deps, dupes, build); no tests, ratchet, bench-check or smokes -
+#                              # CI runs the full gate on a quiet runner. Not with --tier, --only, --docs or --rerun-failed
+#   scripts/check.sh --rerun-failed   # only the gates the previous run left failed (.checklogs/failed-gates; ratchet pulls
+#                              # test in); combines with --fix, --ci and --quiet, not with --tier, --only, --docs or --quick
 #   scripts/check.sh --list    # print the gates the other flags select, one per line, and run nothing
 #
 # A failed gate prints a digest under its line (failed tests with their assertion, type errors, lint problems,
@@ -28,6 +34,8 @@ source "$ROOT/scripts/lib/cpu-lock.sh"
 FIX=0
 CI=0
 FULL=0
+QUICK=0
+RERUN=0
 DOCS=0
 QUIET=0
 ONLY=""
@@ -45,6 +53,8 @@ while [[ $i -lt ${#args[@]} ]]; do
       TIER="${args[$i]}"; i=$((i + 1)) ;;
     --tier=*) TIER="${arg#--tier=}" ;;
     --list) LIST=1 ;;
+    --quick) QUICK=1 ;;
+    --rerun-failed) RERUN=1 ;;
     --fix) FIX=1 ;;
     --ci) CI=1 ;;
     --full) FULL=1 ;;
@@ -52,7 +62,7 @@ while [[ $i -lt ${#args[@]} ]]; do
     --quiet) QUIET=1 ;;
     --only=*) ONLY="${arg#--only=}" ;;
     --skip=*) SKIP="${arg#--skip=}" ;;
-    -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,26p' "$0"; exit 0 ;;
     *) echo "unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
@@ -63,6 +73,25 @@ TIER1_GATES="conventions,format,lint,test-related"
 TIER2_GATES="conventions,designs-index,format,lint,test-related,typecheck,deps,dupes,test,ratchet,bench-check,build,browser-smoke,eval-smoke"
 TIER3_GATES="$TIER2_GATES,mutation,bench-compare"
 GATES="$TIER3_GATES,docs-tests"
+QUICK_GATES="conventions,designs-index,format,lint,typecheck,deps,dupes,build"
+# Failed gate logs stay here (ignored by version control) for the agent or human to read; each run starts it afresh.
+LOG_DIR="${CHECK_LOG_DIR:-$ROOT/.checklogs}"
+FAILED_FILE="$LOG_DIR/failed-gates"
+if [[ $QUICK -eq 1 || $RERUN -eq 1 ]]; then
+  [[ -z "$TIER" && -z "$ONLY" && $DOCS -eq 0 && $((QUICK + RERUN)) -eq 1 ]] \
+    || { echo "--quick and --rerun-failed combine with neither each other nor --tier, --only or --docs" >&2; exit 2; }
+fi
+[[ $QUICK -eq 0 ]] || ONLY="$QUICK_GATES"
+if [[ $RERUN -eq 1 ]]; then
+  ONLY=""
+  [[ -f "$FAILED_FILE" ]] && ONLY="$(tr -d '[:space:]' <"$FAILED_FILE")"
+  if [[ -z "$ONLY" ]]; then
+    echo "no failed gates recorded in ${FAILED_FILE#"$ROOT"/}: nothing to rerun"
+    exit 0
+  fi
+  # ratchet reads the coverage of a test gate in the same run, so a failed ratchet reruns the tests too.
+  [[ ",$ONLY," == *",ratchet,"* && ",$ONLY," != *",test,"* ]] && ONLY="test,$ONLY"
+fi
 if [[ -n "$TIER" ]]; then
   [[ -z "$ONLY" && $DOCS -eq 0 ]] || { echo "--tier cannot be combined with --only or --docs" >&2; exit 2; }
   case "$TIER" in
@@ -150,15 +179,22 @@ fi
 [[ -d node_modules ]] || { echo "node_modules is missing - run: npm ci" >&2; exit 1; }
 BIN="$ROOT/node_modules/.bin"
 
-# Failed gate logs stay here (gitignored) for the agent or human to read; each run starts it afresh.
-LOG_DIR="${CHECK_LOG_DIR:-$ROOT/.checklogs}"
 mkdir -p "$LOG_DIR"
 rm -f "$LOG_DIR"/*.log
 DIGEST_LINES=40
 
+# Each run writes its coverage to its own directory, so two runs (or one and the workers an earlier run orphaned) never
+# share one. It is removed at exit; stale ones from killed runs are swept after a day.
+COV_DIR="${CHECK_COVERAGE_DIR:-$ROOT/coverage/run-$$}"
+if [[ -z "${CHECK_COVERAGE_DIR:-}" ]]; then
+  trap 'rm -rf "$COV_DIR"' EXIT
+  [[ -d "$ROOT/coverage" ]] && find "$ROOT/coverage" -maxdepth 1 -name 'run-*' -mmin +1440 -exec rm -rf {} + 2>/dev/null
+fi
+
 PASSED=0
 FAILED=0
 SKIPPED=0
+FAILED_NAMES=()
 
 LOCKED_GATES="test,bench-check,eval-smoke,bench-compare,browser-smoke"
 
@@ -225,6 +261,7 @@ run_gate() {
     ms=$((($(date +%s%N) - start) / 1000000))
     printf '\033[31m✗\033[0m %-15s %d.%ds\n' "$label" $((ms / 1000)) $((ms % 1000 / 100))
     FAILED=$((FAILED + 1))
+    FAILED_NAMES+=("$name")
     digest "$name" "$log"
   fi
 }
@@ -303,10 +340,14 @@ gate_dupes() {
 gate_ratchet() {
   if [[ $FAST_TESTS -eq 1 ]]; then
     skip_gate ratchet "coverage is measured on the full suite locally and in the nightly run"
-  elif [[ $TEST_RAN -eq 1 && $TEST_OK -eq 1 ]]; then
-    run_gate ratchet node scripts/quality-ratchet.mjs --check
+  elif [[ $TEST_RAN -eq 1 && -f "$COV_DIR/coverage-summary.json" ]]; then
+    # Coverage is written even when a test failed (--coverage.reportOnFailure), so the ratchet still reports; the failed
+    # test gate fails the run either way.
+    [[ $TEST_OK -eq 1 ]] || GATE_LABEL="ratchet (a test failed)"
+    run_gate ratchet node scripts/quality-ratchet.mjs --check --coverage-dir "$COV_DIR"
+    GATE_LABEL=""
   else
-    skip_gate ratchet "needs a passing test gate in the same run"
+    skip_gate ratchet "needs the coverage of a test gate in the same run"
   fi
 }
 # gate_bench_check: the step time at 500 agents stays within 15% of bench/baseline.json (scripts/bench-check.mjs). The
@@ -434,8 +475,8 @@ seeded_tests() {
     TEST_SCOPE=fast run_tests junit.xml --sequence.shuffle --sequence.seed="$1"
   else
     # Two passes: everything with coverage except the long statistical tests, then those without coverage (their
-    # billions of ray casts wrap V8's block counters; vitest.config.js STATISTICAL_TESTS).
-    TEST_SCOPE=coverage run_tests junit.xml --coverage --sequence.shuffle --sequence.seed="$1" &&
+    # billions of ray casts wrap V8's block counters; scripts/lib/test-scope.mjs STATISTICAL_TESTS).
+    TEST_SCOPE=coverage run_tests junit.xml --coverage --coverage.reportsDirectory="$COV_DIR" --coverage.reportOnFailure --sequence.shuffle --sequence.seed="$1" &&
       TEST_SCOPE=statistical run_tests junit-statistical.xml --sequence.shuffle --sequence.seed="$1"
   fi
 }
@@ -468,7 +509,7 @@ fi
 
 # Under --fix, a passing test gate raises the coverage baselines (never lowers them).
 if [[ $FIX -eq 1 && $FAST_TESTS -eq 0 && $TEST_RAN -eq 1 && $TEST_OK -eq 1 ]]; then
-  node scripts/quality-ratchet.mjs --write
+  node scripts/quality-ratchet.mjs --write --coverage-dir "$COV_DIR"
 fi
 
 gate_ratchet
@@ -503,6 +544,23 @@ gate_eval_smoke
 gate_mutation
 
 gate_bench_compare
+
+# The failed list is what --rerun-failed runs: the gates that failed before and were not selected this run, plus those that
+# failed now. A passing rerun removes its gates from it.
+record_failed() {
+  local previous=() gate keep=()
+  [[ -f "$FAILED_FILE" ]] && IFS=',' read -ra previous <<<"$(tr -d '[:space:]' <"$FAILED_FILE")"
+  for gate in ${previous[@]+"${previous[@]}"}; do
+    [[ -z "$gate" || ",$ONLY," == *",$gate,"* ]] || keep+=("$gate")
+  done
+  keep+=(${FAILED_NAMES[@]+"${FAILED_NAMES[@]}"})
+  if [[ ${#keep[@]} -gt 0 ]]; then
+    (IFS=','; echo "${keep[*]}") >"$FAILED_FILE"
+  else
+    rm -f "$FAILED_FILE"
+  fi
+}
+record_failed
 
 [[ $FAILED -eq 0 ]] && rmdir "$LOG_DIR" 2>/dev/null
 

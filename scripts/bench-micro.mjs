@@ -29,7 +29,11 @@ const ENV = Object.fromEntries(Object.entries(process.env).filter(([key]) => !ke
 const INSTALL_ARGS = ['ci', '--ignore-scripts', '--no-audit', '--no-fund', '--loglevel=error'];
 
 /** The local modules `vitest.config.js` imports; copied with it, since a ref older than them lacks them. */
-export const CONFIG_MODULES = ['scripts/lib/test-timeout.mjs', 'scripts/lib/load-state.mjs'];
+export const CONFIG_MODULES = [
+    'scripts/lib/test-scope.mjs',
+    'scripts/lib/test-timeout.mjs',
+    'scripts/lib/load-state.mjs',
+];
 
 /**
  * @param {string[]} argv command-line arguments after the script name
