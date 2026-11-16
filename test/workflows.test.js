@@ -150,7 +150,7 @@ describe('workflows', () => {
             expect(text).toContain('needs: [scope, test]');
             expect(text).toContain("if: ${{ !cancelled() && needs.test.result != 'skipped' }}");
             expect(text).toContain('pattern: blob-*');
-            expect(text).toContain('npx vitest run --merge-reports --coverage');
+            expect(text).toContain('npx vitest run --merge-reports=.vitest-reports --coverage');
             expect(text).toContain('node scripts/quality-ratchet.mjs --check');
         });
 
