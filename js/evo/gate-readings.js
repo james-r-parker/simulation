@@ -49,7 +49,9 @@ function armReadings(cells) {
     const pooled = pooledArmReading(
         cells.map((cell) => ({ trio: { wins: cell.wins, trials: cell.trials }, arms: cell.arms ?? {} })),
     );
-    return { gainLow: pooled?.gainLow ?? null, blindGapLow: pooled?.blindGapLow ?? null };
+    return pooled === null
+        ? { gainLow: null, blindGapLow: null }
+        : { gainLow: pooled.gainLow, blindGapLow: pooled.blindGapLow };
 }
 
 /**

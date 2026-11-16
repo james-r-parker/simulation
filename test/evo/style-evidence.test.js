@@ -46,6 +46,10 @@ describe('pairedSeparation', () => {
         expect(pairedSeparation(bare, bare).pairs).toBe(0);
     });
 
+    it('reads nothing when the high band is the empty one', () => {
+        expect(pairedSeparation(trials([1, 2]), null)).toMatchObject({ pairs: 0, separated: false });
+    });
+
     it('reads another measure when asked', () => {
         const a = { wins: 0, trials: 20, records: range(20, () => ({ jawTicks: 1, biteTicks: 5 })) };
         const b = { wins: 0, trials: 20, records: range(20, (i) => ({ jawTicks: 6 + (i % 2), biteTicks: 5 })) };
@@ -94,6 +98,16 @@ describe('styleVerdict', () => {
             expect(verdict.viable).toBe(false);
             expect(verdict.bands.low).toBe('failed');
         }
+    });
+
+    it('cannot claim it with a band whose win share low bound was not read', () => {
+        const unread = { edgeLow: 0.3, winShareLow: null };
+        const verdict = styleVerdict({
+            bands: { low: unread, high: good },
+            separation: separated,
+            recruitment: recruits,
+        });
+        expect([verdict.viable, verdict.bands.low]).toEqual([false, 'failed']);
     });
 
     it('cannot claim it without separation on matched trials', () => {

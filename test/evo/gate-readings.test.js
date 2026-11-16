@@ -90,6 +90,12 @@ describe('drillReadings of a drill with control arms', () => {
         expect(/** @type {number} */ (pack.blindGapLow)).toBeLessThan(0);
     });
 
+    it('reads null for both bounds when the arms were played on no trials', () => {
+        const empty = { ...cell(10), arms: { solo: { wins: 0, trials: 0 }, 'kin-blind': { wins: 0, trials: 0 } } };
+        const { pack } = drillReadings([{ cells: { pack: empty } }], 1, ['pack']);
+        expect([pack.gainLow, pack.blindGapLow]).toEqual([null, null]);
+    });
+
     it('reads null when a champion has no arms, and leaves the fields out of a drill that has none', () => {
         const rows = [
             { cells: { pack: armed(48, 8, 24), plain: cell(30) } },

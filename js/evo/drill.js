@@ -53,7 +53,7 @@ export function skipReason(drill, subject, base) {
 
 /**
  * Plays a drill's control arms on the same bearings as its own trials: each arm draws its stream from the same seed and
- * the drill's name, so trial `i` stages the same bearings in every arm.
+ * the drill's name, so trial `i` stages the same bearings in every arm. The drill must have arms.
  * @param {import('./drill-staging.js').Drill} drill the drill
  * @param {import('./memory-probe-run.js').Subject} subject the staged subject
  * @param {{seed: number, trials: number, config: Record<string, any>, view: number}} run the base seed, the trial count,
@@ -62,7 +62,7 @@ export function skipReason(drill, subject, base) {
  */
 function playArms(drill, subject, { seed, trials, config, view }) {
     return Object.fromEntries(
-        (drill.arms ?? []).map((arm) => {
+        /** @type {readonly import('./drill-staging.js').DrillArm[]} */ (drill.arms).map((arm) => {
             const rng = fork(createRng(seed), `drill:${drill.name}`);
             let wins = 0;
             for (let trial = 0; trial < trials; trial++) {
