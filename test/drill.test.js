@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { createArchive } from '../js/evo/archive.js';
+import { createArchive, offer } from '../js/evo/archive.js';
 import { brainLayout } from '../js/sim/brain-layout.js';
 import { createConfig } from '../js/sim/config.js';
 import { main, parseArgs, runDrills } from '../scripts/drill.mjs';
@@ -126,6 +126,22 @@ describe('the report', () => {
 describe('eliteSubjects', () => {
     it('is empty for an empty archive', () => {
         expect(eliteSubjects(createArchive(brainLayout(createConfig({}))))).toEqual([]);
+    });
+
+    it('takes the champions the archive would export: one per specialisation and style band, with the style and bound', () => {
+        const archive = createArchive(brainLayout(createConfig({})));
+        const row = new Float32Array(archive.layout.weightCount).fill(0.05);
+        offer(archive, { spec: 1, cell: 4, row, sigma: 0.1, id: 5, fitness: 1 });
+        offer(archive, { spec: 1, cell: 64, row, sigma: 0.1, id: 6, fitness: 2 });
+        offer(archive, { spec: 0, cell: 2, row, sigma: 0.1, id: 7, fitness: 1 });
+        const subjects = eliteSubjects(archive);
+        expect(subjects.map((s) => [s.name, s.spec, s.style])).toEqual([
+            ['elite-forager-cell2', 0, 'low'],
+            ['elite-predator-cell4', 1, 'low'],
+            ['elite-predator-cell64', 1, 'high'],
+        ]);
+        expect(subjects.every((s) => typeof s.lowerBound === 'number')).toBe(true);
+        expect(subjects[1].weights).not.toBe(archive.rows);
     });
 });
 

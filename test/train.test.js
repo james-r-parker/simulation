@@ -174,7 +174,7 @@ describe('train:curve', () => {
 });
 
 describe('train:export', () => {
-    it('writes one champion per specialisation that the league validator accepts, stamped for the default world', () => {
+    it('writes the champion of each specialisation that the league validator accepts, stamped for the default world', () => {
         const config = createConfig(JSON.parse(readFileSync('evals/micro-world.json', 'utf8')));
         const archive = createArchive(brainLayout(config), { descriptor: TRAINER_DESCRIPTOR });
         const row = new Float32Array(archive.layout.weightCount).fill(0.1);
@@ -200,6 +200,28 @@ describe('train:export', () => {
         const log = { log: () => {} };
         const subjects = loadChampions(out, { config: {}, log: /** @type {any} */ (log) });
         expect(subjects.map((s) => s.spec)).toEqual([0, 1]);
+    });
+
+    it('writes both style bands of a specialisation, each with its style in the file and the index', () => {
+        const config = createConfig(JSON.parse(readFileSync('evals/micro-world.json', 'utf8')));
+        const archive = createArchive(brainLayout(config), { descriptor: TRAINER_DESCRIPTOR });
+        const row = new Float32Array(archive.layout.weightCount).fill(0.1);
+        offer(archive, { spec: 1, cell: 9, row, sigma: 0.1, id: 8, fitness: 2 });
+        offer(archive, { spec: 1, cell: 73, row, sigma: 0.1, id: 9, fitness: 2 });
+        const file = join(root, 'archive-bands.json');
+        writeFileSync(file, JSON.stringify({ ...encodeArchive(archive, config), generation: 1, stages: [] }));
+        const out = join(root, 'champion-bands');
+        const files = runExport({ archive: file, out, config: null, label: 'bands' });
+        expect(files.map((f) => [f.name, f.style])).toEqual([
+            ['bands-predator-cell9', 'low'],
+            ['bands-predator-cell73', 'high'],
+        ]);
+        const index = JSON.parse(readFileSync(join(out, 'index.json'), 'utf8'));
+        expect(index.champions.map((/** @type {any} */ c) => c.style)).toEqual(['low', 'high']);
+        const skip = JSON.parse(readFileSync(join(out, 'skip-cells.json'), 'utf8'));
+        expect(skip.champions.count).toBe(2);
+        const subjects = loadChampions(out, { config: {}, log: /** @type {any} */ ({ log: () => {} }) });
+        expect(subjects).toHaveLength(2);
     });
 
     it('refuses an archive with no elite', () => {
