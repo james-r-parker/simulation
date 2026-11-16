@@ -37,11 +37,15 @@ describe('workflows', () => {
         it('runs on merge_group, so the required checks report in the merge queue', () => {
             expect(/^on:[\s\S]*?^ {2}merge_group:/m.test(check)).toBe(true);
             // The required checks (the main ruleset) have no job-level `if` that can skip them on a pull request or in the
-            // queue: a skipped job reports no check. The only one allowed leaves out the manual noise dispatch (T17).
-            for (const id of ['check', 'browser-smoke']) {
+            // queue: a skipped job reports no check. The only one allowed leaves out the manual noise dispatch (T17); the
+            // aggregate `check` also says `always()`, so it reports when a job it needs failed.
+            for (const [id, allowed] of [
+                ['check', "github.event_name != 'workflow_dispatch' && always()"],
+                ['browser-smoke', "github.event_name != 'workflow_dispatch'"],
+            ]) {
                 const conditions = [...job(id).matchAll(/^ {4}if: (.*)$/gm)].map((m) => m[1]);
                 expect(
-                    conditions.every((c) => c === "github.event_name != 'workflow_dispatch'"),
+                    conditions.every((c) => c === allowed),
                     `${id}: ${conditions}`,
                 ).toBe(true);
             }
@@ -49,7 +53,7 @@ describe('workflows', () => {
 
         it('scopes a push against the previous tip, falling back to the full scope when it is unknown', () => {
             for (const [id, fallback] of [
-                ['check', 'full'],
+                ['scope', 'full'],
                 ['browser-smoke', 'browser'],
             ]) {
                 const text = job(id);
@@ -72,7 +76,7 @@ describe('workflows', () => {
         });
 
         it('diffs a merge group against its base_sha and a pull request against its base branch', () => {
-            for (const id of ['check', 'browser-smoke']) {
+            for (const id of ['scope', 'browser-smoke']) {
                 expect(job(id), id).toContain('github.event.merge_group.base_sha');
                 expect(job(id), id).toContain("format('origin/{0}', github.base_ref)");
                 expect(job(id), id).toMatch(/EVENT" == pull_request \|\| "\$EVENT" == merge_group/);
@@ -80,15 +84,17 @@ describe('workflows', () => {
         });
 
         it('falls back to the full scope when the base cannot be resolved', () => {
-            expect(job('check')).toContain('|| echo full)');
+            expect(job('scope')).toContain('|| echo full)');
             expect(job('browser-smoke')).toContain('|| echo browser)');
         });
 
         it('runs the docs gate for the docs scope and the whole gate otherwise', () => {
-            const steps = job('check').split('\n      - ');
+            const steps = job('static').split('\n      - ');
             expect(steps.find((s) => s.includes('scripts/check.sh --ci --docs'))).toContain("scope == 'docs'");
-            const full = steps.find((s) => /run: scripts\/check\.sh --ci$/m.test(s));
+            const full = steps.find((s) => s.includes('scripts/check.sh --ci ${skip'));
             expect(full).toContain("scope != 'docs'");
+            // The pull request and queue legs leave the tests to the `test` and `coverage` jobs; a push keeps the fast ones.
+            expect(full).toContain('[[ "$EVENT" == push ]] || skip=(--skip=test)');
         });
 
         it('skips the browser smoke steps, not the job, when no app path changed', () => {
@@ -114,6 +120,50 @@ describe('workflows', () => {
 
         it('still checks every push to main, and to season/next, which preview.yml waits on', () => {
             expect(check).toMatch(/push:\s*\n\s*branches: \[main, season\/next\]/);
+        });
+
+        it('shards the whole suite, slow tests included, on a pull request and in the queue, never on a push', () => {
+            const text = job('test');
+            expect(text).toContain("if: github.event_name != 'push' && needs.scope.outputs.scope != 'docs'");
+            expect(text).toContain('fail-fast: false');
+            // Slow tests are not left out (no TEST_SCOPE=fast), and every shard shares one seed.
+            expect(text).not.toContain('TEST_SCOPE: fast');
+            expect(text).toContain('TEST_SCOPE: ${{ matrix.pass }}');
+            expect(text).toContain('--sequence.seed="$SEED"');
+            const shards = [...text.matchAll(/\{ pass: (\w+), shard: (\d+), total: (\d+) \}/g)];
+            for (const pass of ['coverage', 'statistical']) {
+                const mine = shards.filter((m) => m[1] === pass);
+                expect(mine.length, pass).toBeGreaterThan(0);
+                // Each pass has every shard from 1 to its total, once.
+                const total = Number(mine[0][3]);
+                expect(mine.map((m) => Number(m[2]))).toEqual(Array.from({ length: total }, (_, i) => i + 1));
+                expect(mine.every((m) => Number(m[3]) === total)).toBe(true);
+            }
+            // Only the coverage pass carries coverage and a blob report; the statistical pass has none.
+            expect(text).toMatch(
+                /PASS" == coverage \]\]; then\n\s+args\+=\(--coverage --coverage.reportOnFailure --reporter=blob/,
+            );
+        });
+
+        it('merges the shards coverage and runs the ratchet on it, even after a failed shard', () => {
+            const text = job('coverage');
+            expect(text).toContain('needs: [scope, test]');
+            expect(text).toContain("if: ${{ !cancelled() && needs.test.result != 'skipped' }}");
+            expect(text).toContain('pattern: blob-*');
+            expect(text).toContain('npx vitest run --merge-reports --coverage');
+            expect(text).toContain('node scripts/quality-ratchet.mjs --check');
+        });
+
+        it('has one required check that needs every job and fails when one failed or was cancelled', () => {
+            const text = job('check');
+            expect(text).toContain('needs: [scope, static, test, coverage]');
+            expect(text).toContain('*" failure "*');
+            expect(text).toContain('*" cancelled "*');
+        });
+
+        it('runs the static gates without the tests on a pull request, and the fast tests on a push', () => {
+            expect(job('static')).toContain('needs: scope');
+            expect(job('static')).toContain('--skip=test');
         });
 
         it('runs the release check on pull requests, with the title passed through the environment', () => {
