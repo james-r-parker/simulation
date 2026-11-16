@@ -12,13 +12,13 @@ import {
     withPower,
 } from '../../../js/evo/metric-registry/index.js';
 
-/** @type {string[]} the 335 names of a live eval report, sorted */
+/** @type {string[]} the 351 names of a live eval report, sorted */
 const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-names.json', import.meta.url), 'utf8'));
 
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(335);
+        expect(REPORT_NAMES).toHaveLength(351);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -99,6 +99,22 @@ describe('withPower', () => {
  */
 /** Metrics registered after the snapshot was taken (T25 added the mean beside the renamed median). */
 const ADDED_AFTER_T8 = [
+    'eval.recruit_cohort',
+    'eval.recruit_matured_hunters',
+    'eval.recruit_censored_share',
+    'eval.recruit_matured_share',
+    'eval.recruit_first_kill_share',
+    'eval.recruit_lineage_share',
+    'eval.recruit_replaced_share.mate-hunter-parent',
+    'eval.recruit_replaced_share.split-hunter-parent',
+    'eval.recruit_replaced_share.spec-flip',
+    'eval.recruit_replaced_share.floor',
+    'eval.hunter_starve_age_median',
+    'eval.hunter_lineage_extinctions',
+    'eval.hunter_global_extinctions',
+    'eval.chase_net_energy',
+    'eval.chase_failed_energy',
+    'eval.hunter_territory_blocked_share',
     'eval.hunter_kills_per_life_mean',
     'eval.basin_families.east',
     'eval.basin_families.west',
@@ -173,6 +189,10 @@ const ADDED_AFTER_T8 = [
 ];
 /** Watch metrics registered after the snapshot whose intended direction is lower. */
 const ADDED_INTENDED_LOWER = [
+    'eval.recruit_censored_share',
+    'eval.hunter_lineage_extinctions',
+    'eval.hunter_global_extinctions',
+    'eval.hunter_territory_blocked_share',
     'eval.food_standing_share',
     'eval.edge_deaths_per_prey',
     'eval.edge_ref_starve_per_prey',
