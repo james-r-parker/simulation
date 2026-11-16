@@ -34,6 +34,8 @@ import {
 import { createKinProximityScene, sampleKinProximity } from './scene-kin-proximity.js';
 import { createBiteScene, tickBite } from './scene-bite.js';
 import { createBiteLifeScene, noteBiteLifeRecord, tickRecoil } from './scene-bite-life.js';
+import { createRecruitScene, noteRecruitBirth, noteRecruitRecord, tickRecruit } from './scene-recruit.js';
+import { createBudgetScene, noteBudgetChase, sampleBudget } from './scene-recruit-budget.js';
 import { createHunterScene, noteHunterBirth, noteHunterRecord, tickHunters } from './scene-hunters.js';
 import { createConditionScene, flushCondition, resetConditionSlot, sampleCondition } from './scene-condition.js';
 import { createPatchScene, resetPatchSlot, samplePatches } from './scene-patch.js';
@@ -57,22 +59,24 @@ import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
 /**
  * The scenes fed by each resolved chase: the approach scene resolves it and hands it to the others' hooks.
  * @param {Readonly<Record<string, any>>} config the world's config
- * @returns {Record<string, any>} the approach, competence, matched, kinematics and pack-lift scenes
+ * @returns {Record<string, any>} the approach, competence, matched, kinematics, pack-lift and budget scenes
  */
 function createChaseScenes(config) {
     const competence = createCompetenceScene(config);
     const matched = createMatchedScene(config);
     const kinematics = createKinematicsScene(config);
+    const budget = createBudgetScene();
     const packLift = createPackLiftScene();
     const approach = createApproachScene(config, {
         onChase: (world, chase) => {
             noteChase(competence, world, chase);
             noteMatchedChase(matched, world, chase);
             noteKinematicsChase(kinematics, world, chase);
+            noteBudgetChase(budget, world, chase);
         },
         onBite: (world, biter) => notePackBite(packLift, world, biter),
     });
-    return { approach, competence, matched, kinematics, packLift };
+    return { approach, competence, matched, kinematics, packLift, budget };
 }
 
 /**
@@ -110,6 +114,7 @@ export function createScenes(config, runTicks = 0, lean = false) {
         proof: createProofScene(config),
         disease: createDiseaseScene(config),
         hunters: createHunterScene(runTicks, config),
+        recruit: createRecruitScene(config),
         guards: createGuardScene(config),
         guilds: createGuildScene(config),
         capacity: createCapacityScene(config),
@@ -224,6 +229,7 @@ function noteFullRecord(scenes, world, o) {
     noteHunterRecord(scenes.hunters, d, o);
     noteBiteLifeRecord(scenes.biteLife, d, o, world);
     noteCompetenceRecord(scenes.competence, d, o);
+    noteRecruitRecord(scenes.recruit, d, o);
     if (d[o] === EVENT_TYPE.ALARM_CALLED) {
         noteGuildAlarm(scenes.guilds, world, d[o + 2]);
     }
@@ -232,6 +238,7 @@ function noteFullRecord(scenes, world, o) {
     }
     noteGuildBirth(scenes.guilds, { tick: d[o + 1], spec: d[o + 5], cause: d[o + 8] });
     noteHunterBirth(scenes.hunters, world, d[o + 2]);
+    noteRecruitBirth(scenes.recruit, world, d, o);
     noteEdgeBirth(scenes.edge, world, { cause: d[o + 8], spec: d[o + 5] });
     noteCompetenceBirth(scenes.competence, world, d[o + 2]);
     resetSceneSlot(scenes, d[o + 2]);
@@ -301,6 +308,7 @@ function sampleCheckpoints(scenes, world) {
     sampleCapacity(scenes.capacity, world);
     sampleEdge(scenes.edge, world);
     sampleKinProximity(scenes.kin, world);
+    sampleBudget(scenes.budget, world);
 }
 
 /**
@@ -318,6 +326,7 @@ export function observeScenes(observer, world) {
     noteEvents(scenes, observer, world);
     noteDiseaseEvents(scenes.disease, world);
     tickHunters(scenes.hunters, world.tick);
+    tickRecruit(scenes.recruit);
     trackFlora(scenes.flora, world);
     trackHerd(scenes.herd, world, observer);
     if (world.tick === 0) {

@@ -24,6 +24,9 @@ import { packLiftMetrics } from './scene-pack-lift.js';
 import { kinematicsMetrics } from './scene-kinematics.js';
 import { kinProximityMetrics } from './scene-kin-proximity.js';
 import { hunterMetrics } from './scene-hunters.js';
+import { carcassLossMetrics } from './scene-carcass-loss.js';
+import { budgetMetrics } from './scene-recruit-budget.js';
+import { recruitMetrics } from './scene-recruit.js';
 import { matchedMetrics } from './scene-matched.js';
 import { patchMetrics } from './scene-patch.js';
 import { rewardMetrics } from './metrics-reward.js';
@@ -66,6 +69,9 @@ export function sceneMetrics(observer, world) {
         ...herdMetrics(s.herd, s.carcass, observer),
         ...diseaseMetrics(s.disease),
         ...hunterMetrics(s.hunters, world),
+        ...recruitMetrics(s.recruit, world),
+        ...budgetMetrics(s.budget),
+        ...carcassLossMetrics(s.carcass.loss, world, s.carcass.eaten),
         ...competenceMetrics(s.competence, world),
         ...matchedMetrics(s.matched),
         ...kinematicsMetrics(s.kinematics, s.approach.tally),

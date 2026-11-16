@@ -10,6 +10,7 @@ import { detCos, detSin } from './det-math.js';
 import { allocDiseaseState, diseaseSpecs } from './disease-state.js';
 import { allocCoverState } from './cover.js';
 import { killSpecs } from './kills.js';
+import { allocCarcassLoss } from './carcass.js';
 import { allocLedgerState, ledgerSpecs } from './hunter-ledger.js';
 import { mateRankSpecs } from './mate-rank.js';
 import { rewardSpecs } from './reward.js';
@@ -138,6 +139,7 @@ function allocAgentArrays(world, layout) {
     );
     createMeritViews(world);
     allocLedgerState(world);
+    allocCarcassLoss(world);
     allocDiseaseState(world);
     world.inputActivity = createInputActivity(layout);
     allocRows(world, [[Float32Array, 'hidden', layout.hidden]], n + 1);
