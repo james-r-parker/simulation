@@ -124,13 +124,14 @@ jobs:
           include-hidden-files: true
 
   # The whole test suite, `*.slow.test.js` included, on every pull request and merge-queue run
-  # (docs/designs/quality-gates-and-test-tiers.md, Phase 4). The shards run side by side on their own runners: coverage
-  # shards of the suite with coverage (vitest.config.js TEST_SCOPE=coverage), and the long statistical tests
-  # (TEST_SCOPE=statistical) in their own shards without coverage, because their ray casts wrap V8's block counters.
-  # Every shard uses one shuffle seed, the run id, so a rerun replays the order. A coverage shard's blob report is
-  # uploaded for the `coverage` job. A push does not run this job.
+  # (docs/designs/quality-gates-and-test-tiers.md, Phase 4). The jobs run side by side on their own runners, one TEST_SCOPE
+  # each (scripts/lib/test-scope.mjs): `shard` (everything with coverage except the two lists below, split by path hash),
+  # `heavy` (HEAVY_TESTS, each file in a job of its own with coverage, so no shard waits on one) and `statistical`
+  # (STATISTICAL_TESTS, no coverage because their ray casts wrap V8's block counters). Every job uses one shuffle seed,
+  # the run id, so a rerun replays the order. A job with coverage uploads its blob report for the `coverage` job. A push
+  # does not run this job.
   test:
-    name: test ${{ matrix.pass }} ${{ matrix.shard }}/${{ matrix.total }}
+    name: test ${{ matrix.id }}
     needs: scope
     if: github.event_name != 'push' && needs.scope.outputs.scope != 'docs'
     runs-on: ubuntu-latest
@@ -139,21 +140,20 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { pass: coverage, shard: 1, total: 12 }
-          - { pass: coverage, shard: 2, total: 12 }
-          - { pass: coverage, shard: 3, total: 12 }
-          - { pass: coverage, shard: 4, total: 12 }
-          - { pass: coverage, shard: 5, total: 12 }
-          - { pass: coverage, shard: 6, total: 12 }
-          - { pass: coverage, shard: 7, total: 12 }
-          - { pass: coverage, shard: 8, total: 12 }
-          - { pass: coverage, shard: 9, total: 12 }
-          - { pass: coverage, shard: 10, total: 12 }
-          - { pass: coverage, shard: 11, total: 12 }
-          - { pass: coverage, shard: 12, total: 12 }
-          - { pass: statistical, shard: 1, total: 3 }
-          - { pass: statistical, shard: 2, total: 3 }
-          - { pass: statistical, shard: 3, total: 3 }
+          - { pass: shard, id: shard-1, shard: 1/8 }
+          - { pass: shard, id: shard-2, shard: 2/8 }
+          - { pass: shard, id: shard-3, shard: 3/8 }
+          - { pass: shard, id: shard-4, shard: 4/8 }
+          - { pass: shard, id: shard-5, shard: 5/8 }
+          - { pass: shard, id: shard-6, shard: 6/8 }
+          - { pass: shard, id: shard-7, shard: 7/8 }
+          - { pass: shard, id: shard-8, shard: 8/8 }
+          - { pass: heavy, id: heavy-train-pool, files: test/train-pool.slow.test.js }
+          - { pass: heavy, id: heavy-scripted-temperature, files: test/evo/scripted-temperature.slow.test.js }
+          - { pass: heavy, id: heavy-train, files: test/train.slow.test.js }
+          - { pass: statistical, id: statistical-1, shard: 1/3 }
+          - { pass: statistical, id: statistical-2, shard: 2/3 }
+          - { pass: statistical, id: statistical-3, shard: 3/3 }
     steps:
       - uses: actions/checkout@v7
         with:
@@ -168,26 +168,30 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Test shard
+      - name: Test job
         env:
           TEST_SCOPE: ${{ matrix.pass }}
-          SHARD: ${{ matrix.shard }}/${{ matrix.total }}
+          ID: ${{ matrix.id }}
+          SHARD: ${{ matrix.shard }}
+          FILES: ${{ matrix.files }}
           SEED: ${{ github.run_id }}
-          PASS: ${{ matrix.pass }}
         run: |
-          echo "test order seed: $SEED, shard $SHARD of the $PASS pass"
-          args=(--shard="$SHARD" --sequence.shuffle --sequence.seed="$SEED" --passWithNoTests
-            --reporter=default --reporter=junit --outputFile.junit="TestResults/junit-$PASS-${SHARD/\//-}.xml")
-          if [[ "$PASS" == coverage ]]; then
-            args+=(--coverage --coverage.reportOnFailure --reporter=blob --outputFile.blob=".vitest-reports/blob-${SHARD/\//-}.json")
+          echo "test order seed: $SEED, job $ID (scope $TEST_SCOPE)"
+          args=(--sequence.shuffle --sequence.seed="$SEED" --passWithNoTests
+            --reporter=default --reporter=junit --outputFile.junit="TestResults/junit-$ID.xml")
+          [[ -z "$SHARD" ]] || args+=(--shard="$SHARD")
+          if [[ "$TEST_SCOPE" != statistical ]]; then
+            args+=(--coverage --coverage.reportOnFailure --reporter=blob --outputFile.blob=".vitest-reports/blob-$ID.json")
           fi
-          npx vitest run "${args[@]}"
+          # FILES is a path filter: unquoted on purpose, it is one file or none.
+          # shellcheck disable=SC2086
+          npx vitest run "${args[@]}" $FILES
 
       - name: Upload the blob report
-        if: ${{ !cancelled() && matrix.pass == 'coverage' }}
+        if: ${{ !cancelled() && matrix.pass != 'statistical' }}
         uses: actions/upload-artifact@v7
         with:
-          name: blob-${{ matrix.shard }}
+          name: blob-${{ matrix.id }}
           path: .vitest-reports/
           if-no-files-found: ignore
           include-hidden-files: true
@@ -196,11 +200,11 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: test-results-${{ matrix.pass }}-${{ matrix.shard }}
+          name: test-results-${{ matrix.id }}
           path: TestResults/
           if-no-files-found: ignore
 
-  # Merges the coverage shards' blob reports into one coverage summary and runs the coverage ratchet on it
+  # Merges the blob reports of the jobs with coverage into one coverage summary and runs the coverage ratchet on it
   # (scripts/quality-ratchet.mjs --check). It runs when a shard failed too, so a failing test never hides a coverage drop;
   # then the summary may lack the failed shard's files and the ratchet's numbers are informational.
   coverage:
