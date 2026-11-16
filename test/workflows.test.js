@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { HEAVY_TESTS } from '../scripts/lib/test-scope.mjs';
+import { HEAVY_TESTS, STATISTICAL_TESTS } from '../scripts/lib/test-scope.mjs';
 
 const DIR = '.github/workflows';
 const workflows = readdirSync(DIR)
@@ -137,21 +137,15 @@ describe('workflows', () => {
             const ids = entries.map((entry) => entry.id);
             expect(new Set(ids).size, 'ids are unique, so blob reports and artifacts do not collide').toBe(ids.length);
             expect(new Set(entries.map((entry) => entry.pass))).toEqual(new Set(['shard', 'heavy', 'statistical']));
-            // The sharded passes have every shard from 1 to their total, once.
-            for (const pass of ['shard', 'statistical']) {
-                const mine = entries
-                    .filter((entry) => entry.pass === pass)
-                    .map((entry) => entry.shard.split('/').map(Number));
-                const total = mine[0][1];
-                expect(
-                    mine.map(([i]) => i),
-                    pass,
-                ).toEqual(Array.from({ length: total }, (_, i) => i + 1));
-                expect(
-                    mine.every(([, n]) => n === total),
-                    pass,
-                ).toBe(true);
-            }
+            // The shard pass has every shard from 1 to its total, once.
+            const mine = entries
+                .filter((entry) => entry.pass === 'shard')
+                .map((entry) => entry.shard.split('/').map(Number));
+            const total = mine[0][1];
+            expect(mine.map(([i]) => i)).toEqual(Array.from({ length: total }, (_, i) => i + 1));
+            expect(mine.every(([, n]) => n === total)).toBe(true);
+            const statistical = entries.filter((entry) => entry.pass === 'statistical').map((entry) => entry.files);
+            expect([...statistical].sort()).toEqual([...STATISTICAL_TESTS].sort());
             // One job per heavy file, and no other: the list in the matrix is the list the config uses.
             const heavy = entries.filter((entry) => entry.pass === 'heavy').map((entry) => entry.files);
             expect([...heavy].sort()).toEqual([...HEAVY_TESTS].sort());

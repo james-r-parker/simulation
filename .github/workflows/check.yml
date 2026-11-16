@@ -127,7 +127,7 @@ jobs:
   # (docs/designs/quality-gates-and-test-tiers.md, Phase 4). The jobs run side by side on their own runners, one TEST_SCOPE
   # each (scripts/lib/test-scope.mjs): `shard` (everything with coverage except the two lists below, split by path hash),
   # `heavy` (HEAVY_TESTS, each file in a job of its own with coverage, so no shard waits on one) and `statistical`
-  # (STATISTICAL_TESTS, no coverage because their ray casts wrap V8's block counters). Every job uses one shuffle seed,
+  # (STATISTICAL_TESTS, one job per file, no coverage because their ray casts wrap V8's block counters). Every job uses one shuffle seed,
   # the run id, so a rerun replays the order. A job with coverage uploads its blob report for the `coverage` job. A push
   # does not run this job.
   test:
@@ -151,9 +151,11 @@ jobs:
           - { pass: heavy, id: heavy-train-pool, files: test/train-pool.slow.test.js }
           - { pass: heavy, id: heavy-scripted-temperature, files: test/evo/scripted-temperature.slow.test.js }
           - { pass: heavy, id: heavy-train, files: test/train.slow.test.js }
-          - { pass: statistical, id: statistical-1, shard: 1/3 }
-          - { pass: statistical, id: statistical-2, shard: 2/3 }
-          - { pass: statistical, id: statistical-3, shard: 3/3 }
+          - { pass: statistical, id: statistical-deliberate, files: test/evo/deliberate-controllers.slow.test.js }
+          - { pass: statistical, id: statistical-survivable-world, files: test/evo/survivable-world.slow.test.js }
+          - { pass: statistical, id: statistical-anti-exploit, files: test/evo/anti-exploit.slow.test.js }
+          - { pass: statistical, id: statistical-practice, files: test/sim/practice.slow.test.js }
+          - { pass: statistical, id: statistical-metric-invariants, files: test/evo/metric-invariants.slow.test.js }
     steps:
       - uses: actions/checkout@v7
         with:
