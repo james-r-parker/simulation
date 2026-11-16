@@ -1,6 +1,6 @@
 # Honest budgets
 
-**Status:** In progress - Phase 1 (patch stock pays for plant food) and Phase 2 (the kill is the body) and Phase 4 (the edge breeds) built in season 10; Phase 3 (impacts, not contact) is parked on E176; Phase 5 (a call changes the bite) is parked on E178; Phase 6 is in progress: its diagnostics (T33 to T33b) are built, and the screen (T35) is next.
+**Status:** In progress - Phase 1 (patch stock pays for plant food) and Phase 2 (the kill is the body) and Phase 4 (the edge breeds) built in season 10; Phase 3 (impacts, not contact) is parked on E176; Phase 5 (a call changes the bite) is parked on E178; Phase 6 is in progress: its diagnostics (T33 to T33b) are built, the screen (T35) and the 64-seed keep rule (T36) are recorded (E179), and the switch awaits the user's review.
 **Validated:** 2fc8f7f5 (2026-11-15)
 **Priority:** 2 - the 128-seed read of [review-2026-11-11.md](../review-2026-11-11.md): most seeds boom to the cap and fall under 40 while food never runs short, so every scene that needs a standing prey population is tuned on top of the crash; food, the kill and the rocks come before any skill, refuge or call work
 **Depends on:** [metric-trust.md](metric-trust.md)
@@ -291,6 +291,14 @@ lost share of the carcass energy offered is 0.040 on average and 0.001 at the me
 0.107). The rule written before the read: material means a lost share of at least 0.10 on at least 4 of 16 seeds. So no
 bounded carcass-capacity arm is specified; most carcass energy (0.71 on average) fades before anyone eats it, which is a
 different lever (`carcassFadeTicks`, scavenger reach), left to the carcass work in [world-balance.md](world-balance.md).
+
+**Result (E179, [results](../../evals/decisions/E179/results.md)).** The 16-seed screen falsified the three named finalists
+(`recruit`, `cub-plant`, `cub-size`): their shared `specFlipNoHunt` leaves no hunter alive on any seed. `killGorgeShare` 0.4
+alone (`gorge`) is the finalist, and on 64 matched seeds (65 to 128) the keep rule reads no harm (alive 13 harmed and 14
+recovered, smallest loss detected 28 seeds). It makes carcasses real food (`eval.hunter_income_share.carcass` 0.005 to
+0.152, carcass energy eaten 0.16 to 0.57) but leaves `eval.hunter_juvenile_death_share` at 0.86 and hunters alive on
+41 of 64, so the Done-when row is not met. The recommendation (adopt the one lever, keep Phase 6 open for the juvenile and
+territory levers, or park) awaits the user's review; T36a and the switch are not run.
 
 T36a confirms recruitment with floor/reseeding disabled and initial founders labelled separately, on held-out seeds for at least two full seasons and two descendant generations where present. An extinct run remains a failure, not a censored success. Compare the finalist, control and single-lever ablations; preserve the existing 64-seed keep rule. A hunter that lives longer without replacing itself does not establish a sustainable lineage. Record clips of a first kill, a surviving family and an unsuccessful chase abandoned; absent scenes remain open findings.
 
