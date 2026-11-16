@@ -2,7 +2,6 @@
 // writes per-arm reports, `verdicts.json` and `table.md` (`npm run screen -- --grid <grid.json>`).
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { availableParallelism } from 'node:os';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
@@ -13,10 +12,10 @@ import { runConfigRecord } from './lib/run-config.mjs';
 import { resolveArm, runScreen } from './lib/screen-run.mjs';
 import { renderTable } from './lib/screen-table.mjs';
 import { screenVerdicts } from './lib/screen-verdict.mjs';
+import { defaultWorkers } from './lib/worker-pool.mjs';
 
 const USAGE =
     'usage: screen --grid <grid.json> [--out <dir>] [--workers <total>] [--seeds <n>] [--seed-offset <k>] [--ticks <t>] [--trace-interval <ticks>] [--force] [--no-lock] [--lock <file>]';
-const RESERVED_CORES = 2;
 
 /**
  * @param {string[]} argv command-line arguments after the script name
@@ -107,7 +106,7 @@ export async function screen(args, print, { logDir = '.sim/logs' } = {}) {
     const stem = basename(args.grid).replace(/(\.grid)?\.json$/, '');
     await logArms(plan, join(logDir, `screen-${stem}.jsonl`));
     const outDir = args.out ?? join('evals', 'screens', 'results', stem);
-    const workers = args.workers ?? Math.max(1, availableParallelism() - RESERVED_CORES);
+    const workers = args.workers ?? defaultWorkers();
     const { reports } = await runScreen({
         plan,
         outDir,

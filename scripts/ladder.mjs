@@ -1,6 +1,5 @@
 // Skill ladder runner: runs every rung of `LADDER_RUNGS` on seeds 1..n across a worker pool (`npm run ladder`).
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { availableParallelism } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { RUNG_METRICS } from '../js/evo/controller-run.js';
@@ -9,7 +8,7 @@ import { createConfig } from '../js/sim/config.js';
 import { gitSha } from './eval.mjs';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
-import { runPool } from './lib/worker-pool.mjs';
+import { defaultWorkers, runPool } from './lib/worker-pool.mjs';
 
 const WORKER_URL = new URL('./ladder-worker.mjs', import.meta.url);
 const USAGE = 'usage: ladder [--ticks <t>] [--seeds <n>] [--config <file.json>] [--out <path>] [--workers <n>]';
@@ -67,7 +66,7 @@ function meanMetrics(runs) {
  * @property {Record<string, any>} [configOverrides] default `{}`
  * @property {readonly string[]} [rungs] rung names to run, default every rung
  * @property {string | null} [out] default `evals/ladder/<id>.json`
- * @property {number | null} [workers] default `os.availableParallelism()`, capped at the task count
+ * @property {number | null} [workers] default `defaultWorkers()`, capped at the task count
  * @property {string} [logDir] default `.sim/logs`
  * @property {string} [sha] default `git rev-parse --short HEAD`
  * @property {(line: string) => void} [print] receives the summary lines
@@ -113,7 +112,7 @@ function planRun(options, id) {
         seeds,
         config: createConfig({ ...configOverrides, minAgents: 0 }),
         out: options.out ?? join('evals', 'ladder', `${id}.json`),
-        workers: options.workers ?? Math.min(availableParallelism(), tasks.length),
+        workers: options.workers ?? Math.min(defaultWorkers(), tasks.length),
         tasks,
     };
 }

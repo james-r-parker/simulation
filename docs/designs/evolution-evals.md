@@ -59,8 +59,8 @@ Megafauna Phase 3 adds `eval.herd_follow_share`, `eval.dung_food_share` and `eva
 - Seeds run on `scripts/lib/worker-pool.mjs`: a pull queue of tasks over `worker_threads` workers, each running
   `scripts/eval-worker.mjs`. A free worker takes the next task, so no core waits for a slow seed. Results are
   returned in task order, so a report never depends on the worker count or on which worker finished first.
-- `--workers <n>` sets the pool size; the default is `os.availableParallelism()` (32 on the dev machine's 7950X3D),
-  capped at the task count. `npm run bench:parallel` measured the default (below).
+- `--workers <n>` sets the pool size; the default is `defaultWorkers()` in `scripts/lib/worker-pool.mjs` (all but 8 cores, at
+  least half: 24 on the dev machine's 32), capped at the task count. `npm run bench:parallel` measured the default (below).
 - `eval:compare` and the league run all their tasks - both arms, every pairing - through one pool, so a default
   8-seed comparison keeps 16 threads busy rather than 8 twice.
 - A worker builds the world with `createWorld`, steps it with the policy's `brain` and the observer's `observerPhases` overrides, then each tick feeds `js/evo/observer.js`, calls the policy's `onEvent` for each
@@ -264,7 +264,7 @@ Headless runs are the only place the simulation is CPU-bound for hours, so they 
 - `eval.mjs` prints the machine's CPU use every 10 s and for the whole run (`scripts/lib/cpu-use.mjs`, from
   `os.cpus()` time deltas), so an idle core shows up; `train.mjs` will print it per generation.
 - Measured on the dev machine ([sim-notes.md](sim-notes.md), 2026-10-16): 32 workers give 14.7 - 15.2 times one
-  worker and beat 16 by over 20%, so the default stays `os.availableParallelism()`.
+  worker and beat 16 by over 20%, so the pool favours all cores; the default now leaves 8 free (`defaultWorkers`) so evals do not starve the gates beside them.
 
 ## Planned additions
 
