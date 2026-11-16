@@ -4,6 +4,8 @@ import { appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DRILLS } from '../../js/evo/drill-scenarios.js';
+import { drillReadings } from '../../js/evo/gate-readings.js';
+import { partitionSeed } from '../../js/evo/partitions.js';
 import { CURVE_METRICS, curvePoint } from '../../js/evo/learning-curve.js';
 import { snapshotArchive } from '../../js/evo/archive-snapshot.js';
 import { drillGenomes } from '../drill.mjs';
@@ -17,8 +19,10 @@ const SEEDS_URL = new URL('../../evals/seeds.json', import.meta.url);
 export const EVAL_SEED_INDICES = Object.freeze([32, 33, 34, 35]);
 /** Ticks of each checkpoint eval world. */
 export const EVAL_TICKS = 50000;
-/** The drill seed and trial count of a checkpoint. */
+/** The drill seed of a checkpoint's curve edges. */
 export const DRILL_SEED = 1;
+/** The drill seed of a gate checkpoint: the first seed of the validation partition (`js/evo/partitions.js`). */
+export const GATE_SEED = partitionSeed('validation', 0);
 
 /**
  * @param {readonly Record<string, any>[]} rows the drill table's rows (genomes then the reference)
@@ -70,28 +74,37 @@ export function averageMetrics(results) {
  * @property {import('./train-state.mjs').StageInfo} stage the stage of the last generation
  * @property {{generation: number, trainTicks: number, wallSeconds: number}} progress generations completed, ticks trained
  *   and wall seconds so far
- * @property {{workers: number | undefined, evalTicks: number, drillTrials: number}} options the pool size and the sizes
+ * @property {{workers: number | undefined, evalTicks: number, drillTrials: number, gate?: {seed: number, trials: number} | null}} options
+ *   the pool size and the sizes; `gate` reads the drills on the gate's seed and trial count and returns gate readings
  * @property {import('../../js/sim/log.js').SimLog} log the run's log
  */
 
 /**
  * Runs the drills on the archive's champions.
  * @param {CheckpointRun} run the checkpoint
- * @returns {Promise<{edges: Record<string, number | null>, reasons: Record<string, Record<string, number> | null>}>} each drill's mean edge and summed loss reasons
+ * @returns {Promise<{edges: Record<string, number | null>, reasons: Record<string, Record<string, number> | null>, readings: Record<string, any> | null}>}
+ *   each drill's mean edge and summed loss reasons, and the gate's drill readings when the checkpoint is a gate's
  */
 async function drillPart({ archive, options, log }) {
     const genomes = eliteSubjects(archive);
+    const names = DRILLS.map((d) => d.name);
+    const gate = options.gate ?? null;
     if (genomes.length === 0) {
-        return { edges: drillEdges([], 0), reasons: drillLossReasons([], 0) };
+        const readings = gate === null ? null : { drill: drillReadings([], 0, names) };
+        return { edges: drillEdges([], 0), reasons: drillLossReasons([], 0), readings };
     }
     const args = /** @type {any} */ ({
-        drills: DRILLS.map((d) => d.name),
-        seed: DRILL_SEED,
-        trials: options.drillTrials,
+        drills: names,
+        seed: gate?.seed ?? DRILL_SEED,
+        trials: gate?.trials ?? options.drillTrials,
         workers: options.workers,
     });
     const rows = await drillGenomes(args, { genomes, config: {}, log });
-    return { edges: drillEdges(rows, genomes.length), reasons: drillLossReasons(rows, genomes.length) };
+    return {
+        edges: drillEdges(rows, genomes.length),
+        reasons: drillLossReasons(rows, genomes.length),
+        readings: gate === null ? null : { drill: drillReadings(/** @type {any} */ (rows), genomes.length, names) },
+    };
 }
 
 /**
@@ -116,11 +129,11 @@ async function evalPart({ archive, stage, options }) {
 
 /**
  * @param {CheckpointRun} run the checkpoint
- * @param {string} dir the output directory; the row is appended to `<dir>/curve.jsonl`
- * @returns {Promise<Record<string, any>>} the curve row
+ * @returns {Promise<{point: Record<string, any>, readings: Record<string, any> | null}>} the curve row (not yet written)
+ *   and, for a gate checkpoint, the gate readings (`drill.<name>.<reading>`)
  */
-export async function runCheckpoint(run, dir) {
-    const { edges, reasons } = await drillPart(run);
+export async function runCheckpoint(run) {
+    const { edges, reasons, readings } = await drillPart(run);
     const metrics = await evalPart(run);
     const point = curvePoint({
         ...run.progress,
@@ -130,6 +143,14 @@ export async function runCheckpoint(run, dir) {
         drillLossReasons: reasons,
         metrics,
     });
+    return { point, readings };
+}
+
+/**
+ * @param {string} dir the output directory
+ * @param {Record<string, any>} point a curve row
+ * @returns {void} appends the row to `<dir>/curve.jsonl`
+ */
+export function appendCurveRow(dir, point) {
     appendFileSync(join(dir, 'curve.jsonl'), `${JSON.stringify(point)}\n`);
-    return point;
 }

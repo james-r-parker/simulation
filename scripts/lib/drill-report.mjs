@@ -6,6 +6,10 @@
  * @property {number} edge the win share minus the random brains' mean
  * @property {number} [winShareLow] the 95% Wilson low bound of the win share
  * @property {number} [edgeLow] `winShareLow` minus the Wilson high bound of the random brains' pooled win share
+ * @property {number} [wins] trials won (the counts a gate pools over champions)
+ * @property {number} [trials] trials played
+ * @property {number} [randomWins] wins of the random brains, pooled over their trials
+ * @property {number} [randomTrials] trials of the random brains, pooled
  * @property {Record<string, number>} [lossReasons] counts by first-match lost-trial reason
  */
 

@@ -1,7 +1,7 @@
 # Training stages
 
-**Status:** In progress - Phase 1 code built (T1 to T4, chunk A), T5 and T6 open; a gated ladder of stage worlds, cross-play between hunters and prey, an opponent pool, scene drills and one exam that says whether a champion set is good; Phase 1 (the detectors the ladder reads) is first.
-**Validated:** f5ebac76 (2026-11-15)
+**Status:** In progress - Phase 1 code built (T1 to T4, chunk A; T5 and T6 wait for the hunter-vision default switch, since they measure the defaults) and Phase 2 built (T7 to T12 and T9a, T10a; the stage-local estimate arm is T9b); a gated ladder of stage worlds, cross-play between hunters and prey, an opponent pool, scene drills and one exam that says whether a champion set is good; Phase 3 (cross-play and the pool) is next.
+**Validated:** 46743a8f (2026-11-16)
 **Priority:** 11 - the tools change no sim behaviour and no rule, so they build beside the world work; the runs that claim a skill wait for the held world, as [training.md](training.md) does
 **Depends on:** [training.md](training.md), [senses-and-motor.md](senses-and-motor.md)
 
@@ -55,6 +55,18 @@ A genome is trained by natural selection in whole worlds, as in [training.md](tr
 | Determinism   | Gate readings come from seeded drills and cross-play, so the stage plan of a run is a function of its seeds, curriculum and offset. `--workers 1` and `--workers 32` write identical archives                                                                                                                                                                                                                                                                                                                                                                |
 
 A curriculum entry gains `minGenerations`, `maxGenerations`, `gate`, `pool` and `checkpointEvery`. An entry with `generations` and no `gate` is a fixed-length stage, as today, so `evals/train-curriculum*.json` load unchanged. `planStages` lays out fixed stages; `nextStage(state, checkpoint)` in `js/evo/curriculum.js` (new) advances a gated run. The archive's `stages` record gains `passedAt`, `reviews` and the gate readings at the pass.
+
+As built (Phase 2):
+
+- `js/evo/stage-gate.js` holds `readGate`, `gateState`, `streaksOf`, `validateGate` and the constants `GATE_TRIALS`, `GATE_HOLD`, `REVIEW_GENERATIONS`, `REVIEW_MAX`. A bound (`min`, `max`) is inclusive, so "above 0" is a small positive `min`. `validateGate` runs when a curriculum loads and refuses an `eval.*` key or an unknown key.
+- `js/evo/stage-run.js` holds the state machine; `js/evo/curriculum.js` re-exports `nextStage`, `initialState`, `checkpointDue`, `needsGate` and `stateAfter`. `nextStage(state, checkpoint)` is called after every generation and its checkpoint; the checkpoint is `{ readings }` or null. Every run uses it, a fixed-length curriculum being the machine with no gate, so fixed runs write archives and curve rows byte for byte as before (checked against `origin/main` on a `--config` run, a curriculum with checkpoints and a resume).
+- A gated entry sets `gate`, `minGenerations` (default 1) and `maxGenerations` in place of `generations`; `optional`, `pool` and `checkpointEvery` apply to any entry. `pool` is validated and carried, and read by Phase 3. A gated stage needs checkpoints, so `--checkpoint-every 0` with no per-stage `checkpointEvery` is refused. The trainer forces a checkpoint at the generation where a gated stage would stall, so the stall reads the last gate.
+- Retention is read only while a gated stage runs and only after its `minGenerations`; `retention.all` is 1 when no stage has passed. A regression starts a review, and a regression of a stage already reviewed `REVIEW_MAX` times stops the run as a stall. A review runs the regressed stage's world for `REVIEW_GENERATIONS` generations, takes no gate read, and returns to the current stage with its gate history cleared. The generations a review runs count in the reviewed stage's `generations` and not in the current stage's `minGenerations` or `maxGenerations`.
+- A run that reaches `--generations` with its stage still open ends normally: `--generations` is the budget, `maxGenerations` the stall. `--until <stage>` cuts the curriculum after that stage; a gated last stage ends the run on its pass.
+- Gate drills run on the validation seed (`GATE_SEED`, see "Seed partitions" below) with `GATE_TRIALS` trials per champion and drill, on every drill at once, so one drill table gives every stage's readings, and the curve's drill columns on a gate checkpoint come from the same table. A reading no Phase 3 or 4 code produces yet (`crossplay.*`, `drill.pack-converge.*`) is null and fails.
+- A review that ends leaves a gated stage room for a hold before its stall (its generation count is cut to `maxGenerations` less `GATE_HOLD`). `retention.all` reads null before a stage's `minGenerations`, since retention is not read then; a drill's `lossShare` reads 0 for a reason that did not occur. A regression's checkpoint writes the failing conditions of the regressed stage to the curve row's gate column, marked `regressed`.
+- `--resume` of a gated run continues from the archive's `trainState`; it is refused when the stage names or their `rulesHash` differ from the run's; an archive without it resumes a fixed-length curriculum (the state is replayed) and is refused by a gated one.
+- Seed partitions, `manifest.json` and the export check are under "Runs are kept" below.
 
 > Note: an elite keeps its samples when the stage world changes. Clone founders re-test it in the new world (`nextClone` in `js/evo/archive.js`) and `TRAINER_N_CAP` (8) bounds how long old samples weigh, so a lower bound drifts to the new world over a few generations. A gate read in the first checkpoint of a stage reads the old stage's elites.
 
@@ -146,13 +158,21 @@ The two style bands generate export candidates, not proof of two strategies. Exa
 
 ### Stage-local archive evidence
 
-T9a compares retained bounded samples with stage-local estimates on matched training seeds. Both arms carry the same genomes; the fresh-estimate arm preserves old observations for diagnostics but excludes their scores from current-stage ranking until re-evaluated. Record candidate turnover, retention, sample cost and later gate outcomes. Choose the scoring rule on validation data before release evaluation. Irrespective of that choice, an export candidate needs recorded evaluation under the target rules; an easy-stage score alone cannot qualify it. Stage and rules identifiers survive snapshots and resume, and worker counts produce identical results.
+T9a built the provenance and eligibility half: the archive's `stages` record and `rulesHash` survive snapshots and resume (tested through a resume to a byte-identical archive), and `exportEligibility` (`js/evo/export-eligibility.js`) says an archive's champions may be published only when its last generation, a review's included, ran under the target rules. The comparison below is T9b, which needs ladder runs, so it sits in Phase 6. T9b compares retained bounded samples with stage-local estimates on matched training seeds. Both arms carry the same genomes; the fresh-estimate arm preserves old observations for diagnostics but excludes their scores from current-stage ranking until re-evaluated. Record candidate turnover, retention, sample cost and later gate outcomes. Choose the scoring rule on validation data before release evaluation. Irrespective of that choice, an export candidate needs recorded evaluation under the target rules; an easy-stage score alone cannot qualify it. Stage and rules identifiers survive snapshots and resume, and worker counts produce identical results.
 
 ## Runs are kept
 
 - A run writes to `.sim/train/<name>/` (git-ignored): `archive-<g>.json`, `curve.jsonl`, `train.jsonl`, `crossplay.json`, `exam.json` and `manifest.json` (the git sha, the command line, the curriculum file's hash, the seed offset, each stage's `rulesHash`, `passedAt` and gate readings).
-- `scripts/train.mjs` refuses an `--out` under `/tmp` unless `--scratch` is given.
+- `main` in `scripts/train.mjs` (the command line, not a call to `runTraining`) refuses an `--out` under `/tmp` unless `--scratch` is given.
 - A run a decision rests on is committed under `evals/decisions/<id>/`: the last archive, the curve, the cross-play matrix, the exam and the manifest.
+
+### Seed partitions
+
+`js/evo/partitions.js` (T10a) gives training, validation and each release its own range of one million seeds: training `[0, 1e6)` (`evals/train-seeds.json`, `evals/seeds.json` and the curve drills' seed 1), validation `[1e6, 2e6)`, `release-<n>` after it. `partitionManifest` records a partition's first seed, how many it uses and a hash of the scenarios they run; `assertDisjoint` refuses overlap. A gate checkpoint runs its drills on the first validation seed (`GATE_SEED`) and nothing in the training namespace picks a checkpoint or a gate.
+
+- `recordAccess` is the ledger: a purpose reads only its own kind (`train` and `resume` read training, `gate`, `review` and `tune` read validation, `exam` reads release), and an `exam` opens a release partition only with a `freezeCandidate` hash (the champion set, the code sha, the rules hash, the curriculum hash and the founder mixture). A release partition opened for one candidate refuses another: a failed exam stays in the record and a revised candidate uses a new, precommitted `release-<n>`.
+- `manifest.json` carries the partition manifests and every use: the training use, each gate checkpoint, and a resume (the earlier uses are read from the resumed archive's directory), each also logged as `PartitionUse`. The exam (Phase 5) is the one caller of `exam` and of `freezeCandidate`; the validation and release scenario envelopes (headings, spacing, food, density, seasonal phase) are Phase 5 work and use `partitionManifest`.
+- A run's result does not depend on the worker count: the gate seed and its trials are fixed, so `--workers 1` and `--workers 2` write identical archives and manifests (tested).
 
 ## Season retraining
 
@@ -182,16 +202,17 @@ As built: a lapse is the `GAVE_UP` end class of the chase record, split by the f
 
 ## Log events
 
-| Event                 | Level | Fields                                                           |
-| --------------------- | ----- | ---------------------------------------------------------------- |
-| `TrainGate`           | info  | generation, stage, each condition's key, value and bound, passed |
-| `TrainStagePassed`    | info  | generation, stage, checkpoints held                              |
-| `TrainStageStalled`   | error | generation, stage, the failing conditions                        |
-| `TrainStageRegressed` | warn  | generation, stage (the regressed one), the failing conditions    |
-| `TrainReview`         | info  | generation, stage, review number                                 |
-| `TrainPool`           | info  | generation, snapshots held, the generation of each               |
-| `CrossplayCell`       | debug | predator checkpoint, forager checkpoint, trials, kills           |
-| `ExamRow`             | info  | row, verdict, the numbers read                                   |
+| Event                 | Level | Fields                                                                      |
+| --------------------- | ----- | --------------------------------------------------------------------------- |
+| `TrainGate`           | info  | generation, stage, each condition's key, value and bound, passed, retention |
+| `TrainStagePassed`    | info  | generation, stage, checkpoints held                                         |
+| `TrainStageStalled`   | error | generation, stage, the failing conditions                                   |
+| `TrainStageRegressed` | warn  | generation, stage (the regressed one), the failing conditions               |
+| `TrainReview`         | info  | generation, stage, review number                                            |
+| `TrainPool`           | info  | generation, snapshots held, the generation of each                          |
+| `CrossplayCell`       | debug | predator checkpoint, forager checkpoint, trials, kills                      |
+| `ExamRow`             | info  | row, verdict, the numbers read                                              |
+| `PartitionUse`        | info  | purpose, partition, generation (a training run), freeze hash (an exam)      |
 
 ## Phases
 
@@ -203,6 +224,8 @@ The baseline is the shared run of [detector-baseline.md](detector-baseline.md), 
 
 The detectors of the table above, the Wilson bounds in the drill and reflex reports, and one baseline run with `npm run eval:power`. A metric with no measured power is not cited by a later phase.
 
+T5 and T6 are not run yet (2026-11-16): they measure the defaults, and the hunter-vision default switch of [senses-and-motor.md](senses-and-motor.md) is about to change them. The baseline run waits for that switch; Phases 2 onward do not need it, since their tests read drills and hand-built fixtures.
+
 #### Chunks
 
 | Chunk | Tasks    | Holds                                                                     |
@@ -210,7 +233,7 @@ The detectors of the table above, the Wilson bounds in the drill and reflex repo
 | A     | T1 to T4 | The detectors and the intervals; no sim behaviour change (code, Sonnet)   |
 | B     | T5, T6   | The baseline run, the power read and the conformance review (run, review) |
 
-### Phase 2 - The gated ladder
+### Phase 2 - The gated ladder (built)
 
 **Targets:** none - trainer tooling; no sim-core code and no `eval.*` change
 
@@ -270,11 +293,11 @@ The stage configs, `evals/train-ladder.json`, the gate validity check and a ladd
 
 #### Chunks
 
-| Chunk | Tasks     | Holds                                                               |
-| ----- | --------- | ------------------------------------------------------------------- |
-| K     | T25, T25a | The stage configs, the ladder file and gate validity (JSON, Sonnet) |
-| L     | T26       | The three ladder runs (runs; the machine may be shared)             |
-| M     | T27, T28  | The record, the committed decision files and the conformance review |
+| Chunk | Tasks     | Holds                                                                                           |
+| ----- | --------- | ----------------------------------------------------------------------------------------------- |
+| K     | T25, T25a | The stage configs, the ladder file and gate validity (JSON, Sonnet)                             |
+| L     | T9b, T26  | The stage-local estimate comparison and the three ladder runs (runs; the machine may be shared) |
+| M     | T27, T28  | The record, the committed decision files and the conformance review                             |
 
 ### Phase 7 - Graduation in the target world
 
@@ -346,16 +369,16 @@ After the world gate of [training.md](training.md). `npm run train:season`, the 
 
 ### Phase 2 - The gated ladder
 
-| #    | Task                                                                                                                                                                                                                                        | Nature       | Depends on                      |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------- |
-| T7   | Add `js/evo/stage-gate.js` (`readGate`, `gateState`: pass, hold, stall, regression) with `test/evo/stage-gate.test.js`                                                                                                                      | [judgement]  | T4                              |
-| T8   | Extend `js/evo/curriculum.js`: the entry fields `minGenerations`, `maxGenerations`, `gate`, `pool`, `checkpointEvery`, `nextStage`, and `validateStageFloors` for every hunter-stage name; every `evals/train-curriculum*.json` still loads | [judgement]  | T7                              |
-| T9   | Drive `scripts/train.mjs` by `nextStage`: gate checkpoints with `GATE_TRIALS`, retention readings, review blocks, `--until <stage>`, exit code 3 on a stall, the events `TrainGate` to `TrainReview`; `test/train.slow.test.js` cases       | [judgement]  | T8                              |
-| T10  | Add `scripts/lib/train-manifest.mjs`, the `stages` fields in the archive, `--resume` of a gated run, the `/tmp` refusal and `--scratch`                                                                                                     | [mechanical] | T9                              |
-| T11  | `npm run train:curve` prints each checkpoint's gate readings, the stage passes and the retention columns; `AGENTS.md` rows                                                                                                                  | [mechanical] | T9                              |
-| T9a  | Compare retained and stage-local archive estimates with paired runs; add stage provenance and target-rule export eligibility tests                                                                                                          | [judgement]  | T9                              |
-| T10a | Implement disjoint training/validation/release manifests, candidate freeze and access records; test overlap rejection, resume and worker determinism                                                                                        | [judgement]  | T10                             |
-| T12  | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                         | [judgement]  | T7, T8, T9, T10, T11, T9a, T10a |
+| #    | Task                                                                                                                                                                                                                                                | Nature       | Depends on                      |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------- |
+| T7   | (built) Add `js/evo/stage-gate.js` (`readGate`, `gateState`: pass, hold, stall, regression) with `test/evo/stage-gate.test.js`                                                                                                                      | [judgement]  | T4                              |
+| T8   | (built) Extend `js/evo/curriculum.js`: the entry fields `minGenerations`, `maxGenerations`, `gate`, `pool`, `checkpointEvery`, `nextStage`, and `validateStageFloors` for every hunter-stage name; every `evals/train-curriculum*.json` still loads | [judgement]  | T7                              |
+| T9   | (built) Drive `scripts/train.mjs` by `nextStage`: gate checkpoints with `GATE_TRIALS`, retention readings, review blocks, `--until <stage>`, exit code 3 on a stall, the events `TrainGate` to `TrainReview`; `test/train.slow.test.js` cases       | [judgement]  | T8                              |
+| T10  | (built) Add `scripts/lib/train-manifest.mjs`, the `stages` fields in the archive, `--resume` of a gated run, the `/tmp` refusal and `--scratch`                                                                                                     | [mechanical] | T9                              |
+| T11  | (built) `npm run train:curve` prints each checkpoint's gate readings, the stage passes and the retention columns; `AGENTS.md` rows                                                                                                                  | [mechanical] | T9                              |
+| T9a  | (built) Stage provenance and target-rule export eligibility (`exportEligibility`, tests); the comparison of retained and stage-local estimates moved to T9b                                                                                         | [judgement]  | T9                              |
+| T10a | (built) Implement disjoint training/validation/release manifests, candidate freeze and access records; test overlap rejection, resume and worker determinism                                                                                        | [judgement]  | T10                             |
+| T12  | (built) Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                         | [judgement]  | T7, T8, T9, T10, T11, T9a, T10a |
 
 ### Phase 3 - Cross-play and the opponent pool
 
@@ -390,13 +413,14 @@ After the world gate of [training.md](training.md). `npm run train:season`, the 
 
 ### Phase 6 - Stage worlds and the first ladder run
 
-| #    | Task                                                                                                                                                                                                                                            | Nature       | Depends on     |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | -------------- |
-| T25  | Write `evals/stages/*.json` and `evals/train-ladder.json` from the Stage ladder table; check each gate's validity (the reference passes, the random brains fail) and each config with `createConfig`; a 2-generation smoke of every stage       | [judgement]  | T12, T16, T21  |
-| T25a | Build and calibrate hunt-life after honest-budgets Phase 6; preregister horizon, family threshold and episode count; test no-rescue budgets and required-stage stalls                                                                           | [judgement]  | T25, T23a      |
-| T26  | Run `E-TS-1`: the prediction is in Phase 6; `npm run train -- --curriculum evals/train-ladder.json --until habitat --seed-offset <k> --out .sim/train/ladder-1-o<k>` for offsets 0, 64 and 128, then `train:crossplay` and `train:exam` on each | [mechanical] | T24, T25, T25a |
-| T27  | Close the record: per stage and offset pass, stall or regression; each stall's outcome record with the biology; the three runs' decision files under `evals/decisions/`; one sim-notes entry; ladder changes as new task rows                   | [judgement]  | T26            |
-| T28  | Conformance review of Phase 6 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                             | [judgement]  | T25, T26, T27  |
+| #    | Task                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Nature       | Depends on     |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | -------------- |
+| T25  | Write `evals/stages/*.json` and `evals/train-ladder.json` from the Stage ladder table; check each gate's validity (the reference passes, the random brains fail) and each config with `createConfig`; a 2-generation smoke of every stage                                                                                                                                                                                                                                                                                                  | [judgement]  | T12, T16, T21  |
+| T25a | Build and calibrate hunt-life after honest-budgets Phase 6; preregister horizon, family threshold and episode count; test no-rescue budgets and required-stage stalls                                                                                                                                                                                                                                                                                                                                                                      | [judgement]  | T25, T23a      |
+| T9b  | Add stage tags to the archive samples and the fresh-estimate scoring arm (old observations kept for diagnostics, left out of current-stage ranking until re-evaluated, the same genomes in both arms); compare it with the retained estimates in paired runs on matched training seeds; record candidate turnover, retention, sample cost and later gate outcomes; choose the rule on validation data; a champion file or export candidate needs a recorded evaluation under the target rules (`exportEligibility` is the first half, T9a) | [judgement]  | T9a, T10a, T25 |
+| T26  | Run `E-TS-1`: the prediction is in Phase 6; `npm run train -- --curriculum evals/train-ladder.json --until habitat --seed-offset <k> --out .sim/train/ladder-1-o<k>` for offsets 0, 64 and 128, then `train:crossplay` and `train:exam` on each                                                                                                                                                                                                                                                                                            | [mechanical] | T24, T25, T25a |
+| T27  | Close the record: per stage and offset pass, stall or regression; each stall's outcome record with the biology; the three runs' decision files under `evals/decisions/`; one sim-notes entry; ladder changes as new task rows                                                                                                                                                                                                                                                                                                              | [judgement]  | T26            |
+| T28  | Conformance review of Phase 6 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                                                                                                                                                                                                                                                                                                        | [judgement]  | T25, T26, T27  |
 
 ### Phase 7 - Graduation in the target world
 

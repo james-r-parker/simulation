@@ -13,6 +13,7 @@ import { loadStages, saveArchive } from '../scripts/lib/train-state.mjs';
 import { formatCurve, readCurve } from '../scripts/train-curve.mjs';
 import { runExport } from '../scripts/train-export.mjs';
 import { loadChampions } from '../scripts/memory-probe.mjs';
+import { checkOut } from '../scripts/lib/train-args.mjs';
 import { parseArgs } from '../scripts/train.mjs';
 
 const root = mkdtempSync(join(tmpdir(), 'train-'));
@@ -84,6 +85,56 @@ describe('checkpoint helpers', () => {
         ]);
         expect(m['eval.hunter_zero_kill_share']).toBe(2);
         expect(m['eval.escape_share']).toBeNull();
+    });
+});
+
+describe('train:curve with gates', () => {
+    it('adds a gate and a retention column and a reading line per gate checkpoint, only for a gated run', () => {
+        const row = (/** @type {number} */ g, /** @type {Record<string, any>} */ extra) => ({
+            generation: g,
+            stage: 'hunt',
+            trainTicks: g * 1000,
+            wallSeconds: 5,
+            coverage: 0.1,
+            qdScore: 1,
+            drillEdge: 0.2,
+            ...extra,
+        });
+        const cond = { read: 'drill.food-ahead.edgeLow', value: 0.45, min: 0.3, passed: true };
+        const rows = [
+            row(1, {}),
+            row(2, { gate: { stage: 'hunt', passed: false, conditions: [{ ...cond, value: 0.1, passed: false }] } }),
+            row(3, {
+                gate: {
+                    stage: 'hunt',
+                    passed: true,
+                    stagePassed: true,
+                    conditions: [cond],
+                    retention: { nursery: 1, all: 1 },
+                },
+            }),
+        ];
+        const lines = formatCurve(rows);
+        expect(lines[0]).toMatch(/drill edge\s+gate\s+retention\s+food_energy_per_1k/);
+        expect(lines[1]).toMatch(/^1\s+hunt.*\s-\s+-\s/);
+        expect(lines[2]).toMatch(/\sfail\s+-\s/);
+        expect(lines[3]).toMatch(/\sPASSED\s+nursery:1 all:1\s/);
+        expect(lines.slice(4, 6)).toEqual([
+            '  gen 2 hunt fail: drill.food-ahead.edgeLow 0.100 >= 0.3 FAIL',
+            '  gen 3 hunt PASSED: drill.food-ahead.edgeLow 0.450 >= 0.3 ok',
+        ]);
+        expect(lines.at(-1)).toMatch(/^plateau:/);
+        expect(formatCurve([rows[0]])[0]).not.toContain('retention');
+        const regressed = row(4, {
+            gate: { stage: 'hunt', passed: false, regressed: 'nursery', conditions: [], retention: {} },
+        });
+        expect(formatCurve([regressed])[1]).toContain('REGRESSED nursery');
+        const max = formatCurve([
+            row(1, {
+                gate: { stage: 's', passed: true, conditions: [{ read: 'x', value: null, max: 2, passed: false }] },
+            }),
+        ]);
+        expect(max[2]).toBe('  gen 1 s pass: x - <= 2 FAIL');
     });
 });
 
@@ -191,5 +242,35 @@ describe('saveArchive', () => {
             ['hunt', 5],
         ]);
         expect(json.rulesHash).toBe(stages[1].rulesHash);
+    });
+});
+
+describe('--until, --scratch and the /tmp refusal', () => {
+    it('refuses a gated curriculum with no checkpoints', () => {
+        const file = join(root, 'gated-no-checkpoints.json');
+        const gate = [{ read: 'retention.all', min: 1 }];
+        writeFileSync(file, JSON.stringify([{ name: 'one', config: null, gate, maxGenerations: 3 }]));
+        const args = parseArgs(['--generations', '3', '--out', 'x', '--curriculum', file, '--checkpoint-every', '0']);
+        expect(() => loadStages(args)).toThrow(/is gated, so it needs checkpoints/);
+        expect(loadStages({ ...args, checkpointEvery: 1 })).toHaveLength(1);
+    });
+
+    it('reads --until and --scratch, defaulting to none', () => {
+        const base = ['--generations', '1', '--out', 'x'];
+        expect(parseArgs(base)).toMatchObject({ until: null, scratch: false });
+        expect(parseArgs([...base, '--until', 'habitat', '--scratch'])).toMatchObject({
+            until: 'habitat',
+            scratch: true,
+        });
+    });
+
+    it('refuses an --out under /tmp unless --scratch is given, and accepts any other path', () => {
+        const run = (/** @type {string[]} */ argv) => () => checkOut(parseArgs(['--generations', '1', ...argv]));
+        expect(run(['--out', '/tmp/x'])).toThrow(/under \/tmp; use \.sim\/train\/<name>/);
+        expect(run(['--out', '/tmp'])).toThrow(/under \/tmp/);
+        expect(run(['--out', '/tmp/../tmp/y'])).toThrow(/under \/tmp/);
+        expect(run(['--out', '/tmp/x', '--scratch'])).not.toThrow();
+        expect(run(['--out', '.sim/train/x'])).not.toThrow();
+        expect(run(['--out', '/tmpx/y'])).not.toThrow();
     });
 });

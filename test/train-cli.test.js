@@ -8,7 +8,7 @@ import { TRAINER_DESCRIPTOR, createTrainerArchive } from '../js/evo/trainer.js';
 import { brainLayout } from '../js/sim/brain-layout.js';
 import { createConfig } from '../js/sim/config.js';
 import { createSimLog } from '../js/sim/log.js';
-import { runCheckpoint } from '../scripts/lib/train-checkpoint.mjs';
+import { appendCurveRow, runCheckpoint } from '../scripts/lib/train-checkpoint.mjs';
 import { loadResume, loadStages } from '../scripts/lib/train-state.mjs';
 import { main as curveMain, readCurve } from '../scripts/train-curve.mjs';
 import { main as exportMain, parseArgs as exportArgs } from '../scripts/train-export.mjs';
@@ -119,10 +119,12 @@ describe('stage and resume checks', () => {
         const encoded = encodeArchive(createTrainerArchive(config), config);
         const bare = join(root, 'bare.json');
         writeFileSync(bare, JSON.stringify(encoded));
-        expect(() => loadResume(bare, stages, log)).toThrow(/not a trainer archive/);
+        expect(() => loadResume(bare, { stages, total: 2, log })).toThrow(/not a trainer archive/);
         const full = join(root, 'full.json');
         writeFileSync(full, JSON.stringify({ ...encoded, generation: 2 }));
-        expect(() => loadResume(full, stages, log)).toThrow(/2 generations are already done; raise --generations/);
+        expect(() => loadResume(full, { stages, total: 2, log })).toThrow(
+            /2 generations are already done; raise --generations/,
+        );
     });
 });
 
@@ -132,16 +134,15 @@ describe('runCheckpoint', () => {
         const dir = join(root, 'checkpoint');
         mkdirSync(dir);
         const log = createSimLog(() => {}, { level: 'error' });
-        const point = await runCheckpoint(
-            {
-                archive: createTrainerArchive(stages[0].built),
-                stage: stages[0],
-                progress: { generation: 1, trainTicks: 0, wallSeconds: 0 },
-                options: { workers: 1, evalTicks: 5, drillTrials: 1 },
-                log,
-            },
-            dir,
-        );
+        const { point, readings } = await runCheckpoint({
+            archive: createTrainerArchive(stages[0].built),
+            stage: stages[0],
+            progress: { generation: 1, trainTicks: 0, wallSeconds: 0 },
+            options: { workers: 1, evalTicks: 5, drillTrials: 1 },
+            log,
+        });
+        appendCurveRow(dir, point);
+        expect(readings).toBeNull();
         expect(point.generation).toBe(1);
         expect(readCurve(dir)).toHaveLength(1);
     }, 60000);

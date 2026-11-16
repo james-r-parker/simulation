@@ -58,8 +58,8 @@ export function parseFlags(argv, { valueFlags, booleanFlags = {}, defaults, usag
 }
 
 /**
- * Runs a command's body and turns its outcome into a process exit code: 0 when it resolves, 1 after printing the
- * error's message when it throws.
+ * Runs a command's body and turns its outcome into a process exit code: 0 when it resolves, and after printing the
+ * error's message when it throws, the error's `exitCode` (an integer) or 1.
  * @param {() => Promise<unknown>} run the command body
  * @returns {Promise<number>} the exit code
  */
@@ -69,6 +69,7 @@ export async function exitCodeOf(run) {
         return 0;
     } catch (error) {
         console.error(error instanceof Error ? error.message : String(error));
-        return 1;
+        const code = /** @type {any} */ (error)?.exitCode;
+        return Number.isInteger(code) ? code : 1;
     }
 }

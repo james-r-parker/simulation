@@ -51,12 +51,55 @@ export function shortName(name) {
 }
 
 /**
+ * @param {Record<string, any> | undefined} gate a row's gate columns
+ * @returns {string} `-` for a row with no gate read, else `pass` or `fail`, and `PASSED` when the stage passed there
+ */
+function gateCell(gate) {
+    if (gate === undefined) {
+        return '-';
+    }
+    if (gate.regressed !== undefined) {
+        return `REGRESSED ${gate.regressed}`;
+    }
+    return gate.stagePassed ? 'PASSED' : gate.passed ? 'pass' : 'fail';
+}
+
+/**
+ * @param {Record<string, any> | undefined} gate a row's gate columns
+ * @returns {string} each passed stage's retention (1 holds, 0 lost) and `all`, or `-`
+ */
+function retentionCell(gate) {
+    const entries = Object.entries(gate?.retention ?? {});
+    return entries.length === 0 ? '-' : entries.map(([name, v]) => `${name}:${v}`).join(' ');
+}
+
+/**
  * @param {Record<string, any>[]} rows the curve rows
- * @returns {string[]} the table and the plateau line
+ * @returns {string[]} one line per gate checkpoint: each condition's reading against its bound
+ */
+function gateLines(rows) {
+    return rows.flatMap((r) => {
+        if (r.gate === undefined) {
+            return [];
+        }
+        const reads = r.gate.conditions.map((/** @type {any} */ c) => {
+            const bound = c.min !== undefined ? `>= ${c.min}` : `<= ${c.max}`;
+            return `${c.read} ${cell(c.value)} ${bound} ${c.passed ? 'ok' : 'FAIL'}`;
+        });
+        return [`  gen ${r.generation} ${r.gate.stage} ${gateCell(r.gate)}: ${reads.join('; ')}`];
+    });
+}
+
+/**
+ * @param {Record<string, any>[]} rows the curve rows
+ * @returns {string[]} the table, the gate readings of a gated run (a `gate` and a `retention` column, and a line per gate
+ *   checkpoint) and the plateau line
  */
 export function formatCurve(rows) {
+    const gated = rows.some((r) => r.gate !== undefined);
     const short = CURVE_METRICS.map(shortName);
-    const header = ['gen', 'stage', 'ticks', 'wall s', 'coverage', 'qd', 'drill edge', ...short];
+    const gateHeader = gated ? ['gate', 'retention'] : [];
+    const header = ['gen', 'stage', 'ticks', 'wall s', 'coverage', 'qd', 'drill edge', ...gateHeader, ...short];
     const body = rows.map((r) => [
         String(r.generation),
         r.stage,
@@ -65,6 +108,7 @@ export function formatCurve(rows) {
         cell(r.coverage),
         cell(r.qdScore),
         cell(r.drillEdge),
+        ...(gated ? [gateCell(r.gate), retentionCell(r.gate)] : []),
         ...CURVE_METRICS.map((name) => cell(r[name])),
     ]);
     const table = [header, ...body];
@@ -75,6 +119,7 @@ export function formatCurve(rows) {
             .join('  ')
             .trimEnd(),
     );
+    lines.push(...gateLines(rows));
     const plateau = findPlateau(rows);
     lines.push(plateau === null ? 'plateau: no plateau yet' : `plateau: generation ${plateau.generation}`);
     return lines;
