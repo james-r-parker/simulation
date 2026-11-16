@@ -3494,4 +3494,26 @@ the hunter's eyes of senses-and-motor T20, `npm run eval -- --seeds 16 --ticks 1
   chase overall, so the chase is a loss only where it fails often.
 - **A full food pool is not where the carcass energy goes.** 4% is lost to it (2 of 16 seeds above 10%), 23% is eaten and
   71% fades; `carcassFadeTicks` and eater reach, not pool capacity, are the leak (T33b decision in honest-budgets.md).
-- **Detector power** is in the next entry once measured on 32 seeds (`npm run eval:power` needs a 16-v-16 split).
+- **Detector power** (`npm run eval:power` on 32 seeds, seeds 1 to 32, 100000 ticks, 16 against 16, 200 splits; the
+  false-positive rate of an arm pair drawn from the same report, and the smallest change detected at 80%, absolute for a
+  share and a fraction of the mean otherwise):
+
+    | Metric                                  | False positive | Detectable at 80% |
+    | --------------------------------------- | -------------- | ----------------- |
+    | `eval.recruit_matured_share`            | 8.0%           | 0.10              |
+    | `eval.recruit_first_kill_share`         | 9.5%           | 0.15              |
+    | `eval.recruit_lineage_share`            | 13.0%          | 0.10              |
+    | `eval.recruit_censored_share`           | 0.0%           | 0.03              |
+    | `eval.recruit_replaced_share.spec-flip` | 14.0%          | above 0.20        |
+    | `eval.chase_net_energy`                 | 8.5%           | 50%               |
+    | `eval.chase_failed_energy`              | 15.5%          | 75%               |
+    | `eval.hunter_global_extinctions`        | 6.5%           | 75%               |
+    | `eval.hunter_lineage_extinctions`       | 9.0%           | 100%              |
+    | `eval.recruit_cohort`                   | 6.0%           | 100%              |
+    | `eval.carcass_lost_per_1k`              | 13.0%          | above 100%        |
+
+    `eval.recruit_replaced_share.split-hunter-parent`, `eval.hunter_starve_age_median`, `eval.hunter_territory_blocked_share`,
+    `eval.carcass_loss_share.lost` and `.eaten` get no verdict at 16 seeds (the tool prints none). So at 16 seeds the screen
+    can read only the matured, first-kill and lineage shares for a change of 0.10 to 0.15; the chase energy, extinction counts
+    and the carcass loss need a larger effect than the arms are likely to make, and are context for the 64-seed keep-rule pass,
+    not screen verdicts. The registry entries carry no `power` read yet; `evals/power` is another lane's file.
