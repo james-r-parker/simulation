@@ -1,12 +1,25 @@
 // Turns the best genomes of an archive into champion files (the format `validateChampion` reads), so a probe or the
 // league can run what an eval run evolved. Pure: no files.
 
-import { CELLS, ELITE, archiveCv, lowerBound, placeOf, refOf } from './archive.js';
+import { CELLS, CELLS_PER_AXIS, ELITE, archiveCv, lowerBound, placeOf, refOf } from './archive.js';
 import { encodeWeights } from './base64.js';
 import { GENOME_SPECS } from './genome.js';
 import { CHAMPION_VERSION } from './league.js';
 import { layoutStamp } from '../sim/brain-layout.js';
 import { rulesHash } from '../sim/config.js';
+
+/** Halves of the style axis an export takes a champion from (`descriptorV7`'s y axis: short chases and long ones). */
+export const STYLE_BANDS = 2;
+/** The band names, in band order. */
+export const STYLE_NAMES = /** @type {readonly ('low' | 'high')[]} */ (Object.freeze(['low', 'high']));
+
+/**
+ * @param {number} cell a cell index (`bin(style) * CELLS_PER_AXIS + bin(roleSkill)`)
+ * @returns {number} its style band: 0 for the lower half of the style axis, 1 for the upper
+ */
+export function styleBandOf(cell) {
+    return Math.floor((Math.floor(cell / CELLS_PER_AXIS) * STYLE_BANDS) / CELLS_PER_AXIS);
+}
 
 /**
  * @param {import('./archive.js').Archive} archive the archive
@@ -58,21 +71,31 @@ export function exportChampions(archive, config, { count, label }) {
 }
 
 /**
- * @param {import('./archive.js').Archive} archive the archive
- * @returns {ReturnType<typeof refOf>[]} each specialisation's elite with the highest lower bound, in specialisation
- *   order (a specialisation with no elite has none); a row is a view into the archive
+ * @typedef {object} StylePick
+ * @property {ReturnType<typeof refOf>} elite the elite (a row is a view into the archive)
+ * @property {number} band its style band, 0 or 1 (`STYLE_NAMES` names it)
+ * @property {number} bound the elite's fitness lower bound (the pick's rank within its band)
  */
-export function bestElitePerSpec(archive) {
+
+/**
+ * @param {import('./archive.js').Archive} archive the archive
+ * @returns {StylePick[]} for each specialisation and each style band, the elite with the highest lower bound (the
+ *   elites an archive holds are tested; a band with none gives no pick), in specialisation then band order
+ */
+export function bestElitePerStyle(archive) {
     const cv = archiveCv(archive);
     /** @type {Map<number, {elite: ReturnType<typeof refOf>, bound: number}>} */
     const best = new Map();
     for (const elite of allElites(archive)) {
+        const key = elite.spec * STYLE_BANDS + styleBandOf(elite.cell);
         const bound = lowerBound(archive, elite.place, cv);
-        if (bound > (best.get(elite.spec)?.bound ?? -Infinity)) {
-            best.set(elite.spec, { elite, bound });
+        if (bound > (best.get(key)?.bound ?? -Infinity)) {
+            best.set(key, { elite, bound });
         }
     }
-    return [...best.keys()].sort((a, b) => a - b).map((spec) => /** @type {any} */ (best.get(spec)).elite);
+    return [...best.keys()]
+        .sort((a, b) => a - b)
+        .map((key) => ({ .../** @type {any} */ (best.get(key)), band: key % STYLE_BANDS }));
 }
 
 /**
@@ -95,8 +118,12 @@ export function bestElites(archive, { spec, count }) {
  * @param {import('./archive.js').Archive} archive the archive
  * @param {Readonly<Record<string, any>>} config the config the files are stamped for (the world they will be played in)
  * @param {{label: string}} options the name prefix
- * @returns {Record<string, any>[]} one champion file per specialisation that has an elite: `bestElitePerSpec`'s picks
+ * @returns {Record<string, any>[]} up to `STYLE_BANDS` champion files per specialisation, `bestElitePerStyle`'s picks,
+ *   each with its `style` (`low` or `high`); a band with no tested elite gives none, so a specialisation may export one
  */
-export function exportBestPerSpec(archive, config, { label }) {
-    return bestElitePerSpec(archive).map((elite) => championFile(archive, elite, { config, label }));
+export function exportBestPerStyle(archive, config, { label }) {
+    return bestElitePerStyle(archive).map(({ elite, band }) => ({
+        ...championFile(archive, elite, { config, label }),
+        style: STYLE_NAMES[band],
+    }));
 }

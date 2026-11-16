@@ -14,15 +14,16 @@ import { serveTasks } from './lib/worker-pool.mjs';
  * @property {number} seed the base seed
  * @property {number} trials trials to play
  * @property {Record<string, any>} config config overrides
+ * @property {boolean} [arms] whether to play the drill's control arms too (a genome or reference, not a random brain)
  */
 
 /**
  * @param {DrillTask} task the task
- * @returns {{wins: number, trials: number, winShare: number, records: Record<string, any>[]}} the score and one record
- *   per trial (the `DrillTrial` fields)
+ * @returns {{wins: number, trials: number, winShare: number, arms?: Record<string, {wins: number, trials: number}>,
+ *   records: Record<string, any>[]}} the score (and the arms' when asked) and one record per trial (the `DrillTrial` fields)
  * @throws {Error} naming the drill when it is unknown
  */
-export function runDrillTask({ drill: name, subject, seed, trials, config }) {
+export function runDrillTask({ drill: name, subject, seed, trials, config, arms = false }) {
     const drill = DRILLS.find((d) => d.name === name);
     if (drill === undefined) {
         throw new Error(`drill: unknown drill "${name}"`);
@@ -36,7 +37,7 @@ export function runDrillTask({ drill: name, subject, seed, trials, config }) {
         subject.reference === null
             ? { name: subject.name, id: subject.id, spec: subject.spec, weights: subject.weights, act: null }
             : referenceSubject(subject.reference);
-    const score = drillSubject(drill, who, { config, seed, trials, log: /** @type {any} */ (log) });
+    const score = drillSubject(drill, who, { config, seed, trials, arms, log: /** @type {any} */ (log) });
     return { ...score, records };
 }
 

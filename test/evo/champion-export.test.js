@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createArchive, seedArchive, refOf, placeOf, ELITE } from '../../js/evo/archive.js';
 import { WELFORD_STRIDE, welfordAdd } from '../../js/evo/welford.js';
-import { bestElitePerSpec, exportBestPerSpec, exportChampions } from '../../js/evo/champion-export.js';
+import {
+    STYLE_BANDS,
+    STYLE_NAMES,
+    bestElitePerStyle,
+    exportBestPerStyle,
+    exportChampions,
+    styleBandOf,
+} from '../../js/evo/champion-export.js';
 import { validateChampion } from '../../js/evo/league.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
@@ -57,25 +64,57 @@ describe('exportChampions', () => {
     });
 });
 
-describe('exportBestPerSpec', () => {
+describe('styleBandOf', () => {
+    it('splits the style axis (the cell row) into a low and a high half', () => {
+        expect([0, 9, 10, 49, 50, 59, 99].map(styleBandOf)).toEqual([0, 0, 0, 0, 1, 1, 1]);
+        expect(STYLE_BANDS).toBe(2);
+        expect(STYLE_NAMES).toEqual(['low', 'high']);
+    });
+});
+
+describe('exportBestPerStyle', () => {
     const archive = createArchive(layout);
     seed(archive, { spec: 0, cell: 5, id: 11, fill: 0.25, fitness: 3 });
     seed(archive, { spec: 0, cell: 2, id: 13, fill: 0.125, fitness: 9 });
     seed(archive, { spec: 1, cell: 7, id: 12, fill: -0.5, fitness: 9 });
+    seed(archive, { spec: 1, cell: 71, id: 14, fill: 0.5, fitness: 4 });
+    seed(archive, { spec: 1, cell: 55, id: 15, fill: 0.75, fitness: 8 });
 
-    it('picks each specialisation elite with the highest lower bound, in specialisation order', () => {
-        expect(bestElitePerSpec(archive).map((e) => [e.spec, e.id])).toEqual([
-            [0, 13],
-            [1, 12],
+    it('picks, per specialisation and style band, the elite with the highest lower bound', () => {
+        expect(bestElitePerStyle(archive).map((p) => [p.elite.spec, p.band, p.elite.id])).toEqual([
+            [0, 0, 13],
+            [1, 0, 12],
+            [1, 1, 15],
         ]);
+        expect(bestElitePerStyle(archive).every((p) => Number.isFinite(p.bound))).toBe(true);
     });
 
-    it('writes one file per specialisation that validateChampion accepts', () => {
-        const files = exportBestPerSpec(archive, config, { label: 'run' });
-        expect(files.map((f) => f.name)).toEqual(['run-forager-cell2', 'run-predator-cell7']);
+    it('writes up to two champions per specialisation, each with its style, that validateChampion accepts', () => {
+        const files = exportBestPerStyle(archive, config, { label: 'run' });
+        expect(files.map((f) => [f.name, f.style])).toEqual([
+            ['run-forager-cell2', 'low'],
+            ['run-predator-cell7', 'low'],
+            ['run-predator-cell55', 'high'],
+        ]);
         for (const file of files) {
-            expect(() => validateChampion(JSON.parse(JSON.stringify(file)), config)).not.toThrow();
+            const champion = validateChampion(JSON.parse(JSON.stringify(file)), config);
+            expect(champion.specialisation).toBe(file.specialisation);
         }
-        expect(exportBestPerSpec(createArchive(layout), config, { label: 'run' })).toEqual([]);
+    });
+
+    it('gives no champion for a band with no tested elite, and none at all for an empty archive', () => {
+        const forager = exportBestPerStyle(archive, config, { label: 'run' }).filter((f) => f.specialisation === 0);
+        expect(forager.map((f) => f.style)).toEqual(['low']);
+        expect(exportBestPerStyle(createArchive(layout), config, { label: 'run' })).toEqual([]);
+    });
+
+    it('keeps an elite of the high band out of the low band even when it is the best of its specialisation', () => {
+        const only = createArchive(layout);
+        seed(only, { spec: 1, cell: 90, id: 21, fill: 0.5, fitness: 50 });
+        seed(only, { spec: 1, cell: 3, id: 22, fill: 0.25, fitness: 1 });
+        expect(bestElitePerStyle(only).map((p) => [p.band, p.elite.id])).toEqual([
+            [0, 22],
+            [1, 21],
+        ]);
     });
 });

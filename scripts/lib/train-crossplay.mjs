@@ -29,14 +29,34 @@ import { eliteSubjects } from './drill-subjects.mjs';
  */
 
 /**
+ * @param {readonly import('../../js/evo/memory-probe-run.js').Subject[]} subjects an archive's champions
+ * @param {number} spec a specialisation
+ * @returns {import('../../js/evo/memory-probe-run.js').Subject | undefined} its champion of the highest lower bound
+ *   (the first on a tie, the low style band), whichever style band it came from
+ */
+function bestOf(subjects, spec) {
+    /** @type {import('../../js/evo/memory-probe-run.js').Subject | undefined} */
+    let best;
+    for (const subject of subjects) {
+        if (
+            subject.spec === spec &&
+            (best === undefined || (subject.lowerBound ?? -Infinity) > (best.lowerBound ?? -Infinity))
+        ) {
+            best = subject;
+        }
+    }
+    return best;
+}
+
+/**
  * @param {import('../../js/evo/archive.js').Archive} archive a checkpoint's archive
  * @returns {import('../../js/evo/crossplay.js').Player | null} its best predator and best forager (the elites with the
  *   highest lower bound); null when it holds no tested elite of either
  */
 export function playerOf(archive) {
     const subjects = eliteSubjects(archive);
-    const predator = subjects.find((s) => s.spec === PREDATOR_SPEC);
-    const forager = subjects.find((s) => s.spec === FORAGER_SPEC);
+    const predator = bestOf(subjects, PREDATOR_SPEC);
+    const forager = bestOf(subjects, FORAGER_SPEC);
     return predator === undefined || forager === undefined ? null : { predator, forager };
 }
 

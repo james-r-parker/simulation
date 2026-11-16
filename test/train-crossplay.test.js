@@ -71,6 +71,22 @@ describe('playerOf', () => {
     });
 });
 
+describe('playerOf with two style bands', () => {
+    it('takes the predator of the highest lower bound, whichever band it came from', () => {
+        const archive = archiveOf(0.1);
+        for (const [cell, id, fitness] of [
+            [63, 777, 9],
+            [5, 778, 1],
+        ]) {
+            const weights = new Float32Array(layout.weightCount).fill(0.3);
+            seedArchive(archive, { spec: 1, cell, id, sigma: 0.1, weights });
+            welfordAdd(archive.stats, placeOf(1, cell, ELITE) * WELFORD_STRIDE, fitness);
+        }
+        expect(playerOf(archive)?.predator.id).toBe(777);
+        expect(playerOf(archive)?.predator.style).toBe('high');
+    });
+});
+
 describe('loadPlayers', () => {
     const dir = runDir('load', [0.1, 0.5, 0.2]);
 

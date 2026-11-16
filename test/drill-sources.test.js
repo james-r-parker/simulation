@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -39,6 +39,23 @@ describe('drill --archive', () => {
     });
 });
 
+describe('drill pack-converge', () => {
+    it('gives a champion and the reference their control arms and prints them, and gives random brains none', async () => {
+        /** @type {string[]} */
+        const lines = [];
+        const dir = join(root, 'pack-champions');
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(join(dir, 'p.json'), JSON.stringify(makeChampionFile('predator', 2, { specialisation: 1 })));
+        const args = parseArgs(['--champions', dir, '--trials', '2', '--drills', 'pack-converge', '--workers', '1']);
+        const rows = await runDrills(args, { logDir: join(root, 'pack-logs'), print: (l) => lines.push(l) });
+        expect(rows.map((r) => r.label)).toEqual(['predator', 'reference memoryless']);
+        for (const row of rows) {
+            expect(Object.keys(row.cells['pack-converge']?.arms ?? {})).toEqual(['solo', 'kin-blind']);
+        }
+        expect(lines.join('\n')).toMatch(/solo [01]\.\d\d, blind [01]\.\d\d, gain [+-]\d\.\d\d/);
+    });
+});
+
 describe('fileSubject', () => {
     it('turns a champion file into a subject with its genome id, or 0 when the file has none', () => {
         const config = createConfig({});
@@ -64,6 +81,15 @@ describe('the drill worker task', () => {
         const genome = { ...subject, reference: null, weights: new Float32Array(layout.weightCount) };
         const result = runDrillTask({ drill: 'food-ahead', subject: genome, seed: 1, trials: 1, config: {} });
         expect(result.records).toHaveLength(1);
+    });
+
+    it('plays the control arms of a drill only when the task asks for them', () => {
+        const predator = { ...subject, spec: 1 };
+        const task = { drill: 'pack-converge', subject: predator, seed: 1, trials: 2, config: {} };
+        expect(runDrillTask(task).arms).toBeUndefined();
+        const result = runDrillTask({ ...task, arms: true });
+        expect(Object.keys(result.arms ?? {})).toEqual(['solo', 'kin-blind']);
+        expect(result.records).toHaveLength(2);
     });
 
     it('names an unknown drill', () => {

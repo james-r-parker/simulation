@@ -20,6 +20,8 @@ export const RANDOM_BRAINS = 4;
  * @property {number} [seed] the base seed (default 1)
  * @property {number} [trials] trials per drill (default `DRILL_TRIALS`)
  * @property {import('../sim/log.js').SimLog} [log] receives `DrillTrial` at debug level
+ * @property {boolean} [arms] whether to also play the drill's control arms (`pack-converge`'s solo and kin-blind; default
+ *   no: random brains and reference-free callers skip them)
  */
 
 /**
@@ -27,6 +29,8 @@ export const RANDOM_BRAINS = 4;
  * @property {number} wins trials won
  * @property {number} trials trials played
  * @property {number} winShare `wins / trials`
+ * @property {Record<string, {wins: number, trials: number}>} [arms] the control arms' scores by name, when asked for and the
+ *   drill has them
  */
 
 /**
@@ -48,6 +52,40 @@ export function skipReason(drill, subject, base) {
 }
 
 /**
+ * Plays a drill's control arms on the same bearings as its own trials: each arm draws its stream from the same seed and
+ * the drill's name, so trial `i` stages the same bearings in every arm. The drill must have arms.
+ * @param {import('./drill-staging.js').Drill} drill the drill
+ * @param {import('./memory-probe-run.js').Subject} subject the staged subject
+ * @param {{seed: number, trials: number, config: Record<string, any>, view: number}} run the base seed, the trial count,
+ *   the config the trials run under and the subject's ray length
+ * @returns {Record<string, {wins: number, trials: number}>} each arm's wins
+ */
+function playArms(drill, subject, { seed, trials, config, view }) {
+    return Object.fromEntries(
+        /** @type {readonly import('./drill-staging.js').DrillArm[]} */ (drill.arms).map((arm) => {
+            const rng = fork(createRng(seed), `drill:${drill.name}`);
+            let wins = 0;
+            for (let trial = 0; trial < trials; trial++) {
+                const plan = arm.plan(rng, view);
+                wins += playTrial({ plan, subject, controlSpec: arm.controlSpec, seed: seed + trial, config }) ? 1 : 0;
+            }
+            return [arm.name, { wins, trials }];
+        }),
+    );
+}
+
+/**
+ * @param {DrillScore} score the main trials' score
+ * @param {{drill: import('./drill-staging.js').Drill, subject: import('./memory-probe-run.js').Subject, wanted: boolean,
+ *   run: {seed: number, trials: number, config: Record<string, any>, view: number}}} arms the drill, the staged subject,
+ *   whether the caller asked for the arms and the run they play on
+ * @returns {DrillScore} the score, with the arms' when asked for and the drill has them
+ */
+function withArms(score, { drill, subject, wanted, run }) {
+    return wanted && drill.arms !== undefined ? { ...score, arms: playArms(drill, subject, run) } : score;
+}
+
+/**
  * Plays the drill's trials with the subject.
  * @param {import('./drill-scenarios.js').Drill} drill the drill
  * @param {import('./memory-probe-run.js').Subject} subject the subject (a reference's null `spec` takes the drill's)
@@ -55,21 +93,17 @@ export function skipReason(drill, subject, base) {
  * @returns {DrillScore} the wins and the win share
  */
 export function drillSubject(drill, subject, options = {}) {
-    const { config = {}, seed = 1, trials = DRILL_TRIALS, log } = options;
+    const { seed = 1, trials = DRILL_TRIALS, log, arms = false } = options;
+    const config = { ...options.config, ...drill.arena };
     const staged = { ...subject, spec: subject.spec ?? drill.spec };
     const view = viewOf(staged, createConfig(config));
     const rng = fork(createRng(seed), `drill:${drill.name}`);
     let wins = 0;
     for (let trial = 0; trial < trials; trial++) {
         const plan = drill.plan(rng, view);
-        const won = playTrial({
-            plan,
-            subject: staged,
-            controlSpec: { name: 'intact' },
-            seed: seed + trial,
-            config,
-        });
-        wins += won ? 1 : 0;
+        const controlSpec = { name: 'intact' };
+        const won = playTrial({ plan, subject: staged, controlSpec, seed: seed + trial, config });
+        wins += Number(won);
         log?.log('debug', 'DrillTrial', {
             drill: drill.name,
             trial,
@@ -79,7 +113,8 @@ export function drillSubject(drill, subject, options = {}) {
             ...plan.trace?.(won),
         });
     }
-    return { wins, trials, winShare: wins / trials };
+    const run = { seed, trials, config, view };
+    return withArms({ wins, trials, winShare: wins / trials }, { drill, subject: staged, wanted: arms, run });
 }
 
 /**
@@ -128,6 +163,7 @@ export function winBounds(subject, baselines) {
  * @property {number | null} edge `winShare - baseline`; null when skipped
  * @property {number | null} winShareLow the Wilson low bound of the win share; null when skipped
  * @property {number | null} edgeLow `winShareLow` minus the Wilson high bound of the random brains' pooled share; null when skipped
+ * @property {Record<string, {wins: number, trials: number}>} [arms] the control arms' scores, when the options asked for them
  * @property {string | null} skipped why the subject was not drilled, or null
  */
 
@@ -154,6 +190,7 @@ export function drillEdge(drill, subject, options = {}) {
         baseline,
         edge: edgeOf(score.winShare, shares),
         ...winBounds(score, scores),
+        ...(score.arms === undefined ? {} : { arms: score.arms }),
         skipped: null,
     };
 }

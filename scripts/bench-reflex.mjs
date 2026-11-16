@@ -4,6 +4,7 @@
 // under `flock /tmp/claude-1000/cpu.lock` on a quiet machine (AGENTS.md, Commands).
 import { performance } from 'node:perf_hooks';
 import { DRILLS } from '../js/evo/drill-scenarios.js';
+import { SOCIAL_DRILLS } from '../js/evo/drill-scenarios-social.js';
 import { drillSubject } from '../js/evo/drill.js';
 import { casesFor } from '../js/evo/reflex-cases.js';
 import { evalReflex } from '../js/evo/reflex-eval.js';
@@ -90,7 +91,8 @@ export function timeReflex({ genomes, reps }) {
  * @returns {{genomesPerS: number, drills: number}} the throughput and how many drills a genome ran
  */
 export function timeDrills({ drillGenomes, drillTrials }) {
-    const drills = DRILLS.filter((d) => d.spec === FORAGER);
+    // The five forager drills of the original seven: the social drills would change what `bench.reflex_vs_drill` ratios.
+    const drills = DRILLS.filter((d) => d.spec === FORAGER && !SOCIAL_DRILLS.includes(d));
     const subjects = genomesOf(drillGenomes).map((s) => ({ ...s, spec: FORAGER }));
     const start = performance.now();
     for (const subject of subjects) {

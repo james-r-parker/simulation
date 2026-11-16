@@ -10,7 +10,7 @@ import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
  * The most the pair's distance may exceed the summed radii at the end of a tick and still count as touching: contact
  * resolution pushes an overlapping pair just apart, so the touching pair of a bite tick ends at 1.0005 radii, not below 1.
  */
-const TOUCH_GAP = 1.01;
+export const TOUCH_GAP = 1.01;
 
 /**
  * The ordered reasons a hunting trial is lost. The first that holds is the one reported.

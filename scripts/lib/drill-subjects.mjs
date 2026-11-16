@@ -1,19 +1,22 @@
 // Turns an archive or champion files into drill subjects.
-import { bestElitePerSpec } from '../../js/evo/champion-export.js';
+import { STYLE_NAMES, bestElitePerStyle } from '../../js/evo/champion-export.js';
 import { GENOME_SPECS } from '../../js/evo/genome.js';
 import { validateChampion } from '../../js/evo/league.js';
 
 /**
  * @param {import('../../js/evo/archive.js').Archive} archive the archive
- * @returns {import('../../js/evo/memory-probe-run.js').Subject[]} each specialisation's elite with the highest lower
- *   bound, in specialisation order (a specialisation with no elite has none); the rows are copies
+ * @returns {import('../../js/evo/memory-probe-run.js').Subject[]} the champions the archive would export: for each
+ *   specialisation, the elite with the highest lower bound in each style band (`bestElitePerStyle`), in specialisation
+ *   then band order, each with its `style` and `lowerBound`; the rows are copies
  */
 export function eliteSubjects(archive) {
-    return bestElitePerSpec(archive).map((best) => ({
-        name: `elite-${GENOME_SPECS[best.spec]}-cell${best.cell}`,
-        id: best.id,
-        spec: best.spec,
-        weights: Float32Array.from(best.row),
+    return bestElitePerStyle(archive).map(({ elite, band, bound }) => ({
+        name: `elite-${GENOME_SPECS[elite.spec]}-cell${elite.cell}`,
+        id: elite.id,
+        spec: elite.spec,
+        style: STYLE_NAMES[band],
+        lowerBound: bound,
+        weights: Float32Array.from(elite.row),
         act: null,
     }));
 }

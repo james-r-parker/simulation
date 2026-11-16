@@ -1,6 +1,6 @@
 // Skip-cell reports for `npm run train:export` and `npm run drill --champions` (training.md T34): which weights the
 // predator genomes carry from prey, kin and other strength into `BITE`, `THRUST` and `TURN`.
-import { bestElitePerSpec, bestElites } from '../../js/evo/champion-export.js';
+import { bestElitePerStyle, bestElites } from '../../js/evo/champion-export.js';
 import { SKIP_CELLS, skipCells } from '../../js/evo/champion-skip-cells.js';
 import { GENOME_SPECS } from '../../js/evo/genome.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
@@ -60,9 +60,9 @@ export function archiveSkipCells(archive, config) {
     const layout = brainLayout(config);
     const specs = predatorSpecs(config);
     const champions = skipCells(
-        bestElitePerSpec(archive)
-            .filter((e) => specs.includes(e.spec))
-            .map((e) => e.row),
+        bestElitePerStyle(archive)
+            .filter(({ elite }) => specs.includes(elite.spec))
+            .map(({ elite }) => elite.row),
         layout,
     );
     /** @type {Record<string, import('../../js/evo/champion-skip-cells.js').SkipCells>} */

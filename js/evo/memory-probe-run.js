@@ -26,6 +26,8 @@ const RULE_KEYS = Object.freeze([
  * @property {string} name a label for the log and the report
  * @property {number} id the genome id the log names (0 for a reference)
  * @property {number | null} spec the specialisation index; null for a reference, which takes the scenario's
+ * @property {'low' | 'high'} [style] the style band an exported champion came from (a genome only)
+ * @property {number} [lowerBound] the fitness lower bound of the elite it was picked as (a genome from an archive only)
  * @property {Float32Array | null} weights the genome's brain row; null for a reference controller
  * @property {((world: Record<string, any>) => void) | null} act a reference controller's `brain` phase body, writing
  *   the outputs of every alive agent; null for a genome, which runs its own brain
