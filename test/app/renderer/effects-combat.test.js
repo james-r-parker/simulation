@@ -5,7 +5,7 @@ import { createDying, isPlaying, trackBodies } from '../../../js/app/renderer/dy
 import { BITE_DENT, indexOfGenome, playBite, playDeath, tweenAt } from '../../../js/app/renderer/effects-combat.js';
 import { createDents, dentAt } from '../../../js/app/renderer/dents.js';
 import { CURVE } from '../../../js/app/renderer/fx-curves.js';
-import { createEffectsPlayer } from '../../../js/app/renderer/effects-player.js';
+import { createEffectsPlayer, trackDying } from '../../../js/app/renderer/effects-player.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 const layout = { effectKinds: {}, deathCauses: { STARVED: 0, EATEN: 1 } };
@@ -100,5 +100,22 @@ describe('playDeath', () => {
         expect(isPlaying(dying, 0)).toBe(true);
         expect(dying.cause[0]).toBe(1);
         expect(dying.start[0]).toBe(500);
+    });
+});
+
+describe('trackDying', () => {
+    const layout2 = { effectKinds: {}, deathCauses: { STARVED: 0 } };
+    const info2 = { callRadius: 1, callTicks: 1, maxAgents: 8 };
+
+    it('does nothing for a player without dying bodies', () => {
+        const player = createEffectsPlayer({ layout: layout2, info: info2 });
+        expect(trackDying(player, alive([{ slot: 1, genomeId: 4 }]), 0)).toBe(0);
+    });
+
+    it('counts the bodies still dying', () => {
+        const dying = createDying(8);
+        const player = createEffectsPlayer({ layout: layout2, info: info2, dying });
+        trackDying(player, alive([{ slot: 1, genomeId: 4 }]), 0);
+        expect(trackDying(player, alive([]), 16)).toBe(1);
     });
 });

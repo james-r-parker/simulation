@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createInterpolated } from '../../../js/app/interpolate.js';
-import { startTween, TWEEN } from '../../../js/app/renderer/body-tweens.js';
+import { createBodyTweens, startTween, TWEEN } from '../../../js/app/renderer/body-tweens.js';
 import { MAX_BUMPS } from '../../../js/app/renderer/bumps.js';
 import { createDents, dentAt } from '../../../js/app/renderer/dents.js';
 import { BUMP_DENT, playBumps } from '../../../js/app/renderer/effects-bumps.js';
@@ -47,5 +47,13 @@ describe('playBumps', () => {
         startTween(player.tweens, { slot: 0, genome: 10 }, TWEEN.FLINCH, 5);
         playBumps(player, frame([0.1]), 6);
         expect(player.tweens.kind[0]).toBe(TWEEN.FLINCH);
+    });
+
+    it('still squashes without a dent store, and skips a slot the tween store does not hold', () => {
+        const player = createEffectsPlayer({ layout, info, tweens: createBodyTweens(1) });
+        playBumps(player, frame([0.9, 0.9]), 5);
+        expect(playBumps(player, frame([0.1, 0.1]), 6)).toBe(2);
+        expect(player.tweens.kind[0]).toBe(TWEEN.BUMP_HARD);
+        expect(player.tweens.kind.length).toBe(1);
     });
 });

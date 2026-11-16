@@ -73,6 +73,18 @@ describe('packDying', () => {
         expect(store.buckets[0].fade[0]).toBe(0);
     });
 
+    it('marks a body neutral only under the default palette without a colour slot', () => {
+        const d = createDying(8);
+        trackBodies(d, frame([30]), 0);
+        trackBodies(d, frame([]), 16);
+        const plain = storeOf();
+        packDying(d, plain, VIEW);
+        expect(plain.buckets[0].extra[1]).toBe(1);
+        const other = storeOf();
+        packDying(d, other, { ...VIEW, slots: createFamilySlots('high-contrast') });
+        expect(other.buckets[0].extra[1]).toBe(0);
+    });
+
     it('stops at the bucket capacity', () => {
         const d = createDying(8);
         trackBodies(d, frame([1, 2, 3]), 0);

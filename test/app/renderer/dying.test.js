@@ -67,6 +67,12 @@ describe('trackBodies', () => {
         expect(d.genome[0]).toBe(30);
     });
 
+    it('ignores an agent in a slot past the cache', () => {
+        const d = createDying(4);
+        trackBodies(d, frame([{ slot: 9, genome: 90 }]), 0);
+        expect(trackBodies(d, frame([]), 16)).toBe(0);
+    });
+
     it('spawns none for a mass loss (a reset or a hidden tab)', () => {
         const d = createDying(256);
         const many = Array.from({ length: MASS_LOSS + 1 }, (_, i) => ({ slot: i, genome: i + 1 }));

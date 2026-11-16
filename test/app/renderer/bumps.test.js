@@ -60,6 +60,12 @@ describe('findBumps', () => {
         expect(findBumps(next, 10, state)).toBe(0);
     });
 
+    it('ignores a slot past the state capacity', () => {
+        const state = createBumps(1);
+        findBumps(frame([0.9, 0.9]), 10, state);
+        expect(findBumps(frame([0.1, 0.1]), 10, state)).toBe(1);
+    });
+
     it('reports at most MAX_BUMPS in a frame', () => {
         const state = createBumps(MAX_BUMPS + 8);
         const many = Array.from({ length: MAX_BUMPS + 5 }, () => 0.9);
