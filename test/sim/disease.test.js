@@ -7,7 +7,7 @@ import {
     stepDisease,
     transmit,
 } from '../../js/sim/disease.js';
-import { DEATH_CAUSE, EVENT_TYPE, pushEvent, readEvents } from '../../js/sim/events.js';
+import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE, pushEvent, readEvents } from '../../js/sim/events.js';
 import { SIMILARITY_DIMS } from '../../js/sim/genetics.js';
 import { createSimLog, drainEvents } from '../../js/sim/log.js';
 import { reap } from '../../js/sim/population.js';
@@ -44,8 +44,8 @@ function eventsOf(w, type) {
     const out = [];
     const count = readEvents(w.events);
     for (let i = 0; i < count; i++) {
-        if (w.events.data[i * 12] === type) {
-            out.push(i * 12);
+        if (w.events.data[i * EVENT_STRIDE] === type) {
+            out.push(i * EVENT_STRIDE);
         }
     }
     return out;

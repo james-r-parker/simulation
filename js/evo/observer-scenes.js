@@ -205,7 +205,7 @@ function noteFullDeath(scenes, observer, { world, o }) {
     });
     if (d[o + 4] === DEATH_CAUSE.EATEN) {
         noteApproachKill(scenes.approach, observer, world, { killerId: d[o + 5], victimId: d[o + 3] });
-        notePackKill(scenes.packLift, observer, { world, victim: d[o + 2], killer: d[o + 5], previous: d[o + 11] });
+        notePackKill(scenes.packLift, observer, { world, size: d[o + 12], killer: d[o + 5], previous: d[o + 11] });
     }
     noteCapacityDeath(scenes.capacity, { cause: d[o + 4], foodEnergy: d[o + 9] });
     noteEdgeDeath(scenes.edge, world, { cause: d[o + 4], spec: d[o + 6], foodEnergy: d[o + 9] });

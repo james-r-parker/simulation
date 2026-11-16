@@ -161,6 +161,7 @@ describe('advancePregnancies', () => {
             1, // the child's sex: the first lifecycle draw, no longer preceded by the mating draw
             0,
             0,
+            0,
         ]);
         expect(imbalance(w)).toBeCloseTo(0, 9);
     });

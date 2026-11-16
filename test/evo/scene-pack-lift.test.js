@@ -30,11 +30,12 @@ function observer() {
 }
 
 /**
- * @param {number} size the size of every victim
- * @returns {Record<string, any>} a world past burn-in with one victim slot
+ * The world has no `size` array: the slot of a victim is zeroed before the observer reads its death, so a scene that
+ * read the size from the world would read 0 (E187: the ratio was null on 128 of 128 seeds).
+ * @returns {Record<string, any>} a world past burn-in
  */
-function world(size = 1) {
-    return { tick: BURN_IN_TICKS + 1, size: Float32Array.of(size) };
+function world() {
+    return { tick: BURN_IN_TICKS + 1, size: Float32Array.of(0) };
 }
 
 /**
@@ -46,7 +47,7 @@ function world(size = 1) {
 function kill(scene, kills, size = 1) {
     const o = observer();
     for (const [killer, previous] of kills) {
-        notePackKill(scene, o, { world: world(size), victim: 0, killer, previous });
+        notePackKill(scene, o, { world: world(), size, killer, previous });
     }
 }
 
@@ -123,8 +124,8 @@ describe('eval.pack_lift', () => {
         expect(packLiftMetrics(scene)['eval.pack_lift']?.value).toBeNull();
         const early = createPackLiftScene();
         notePackKill(early, observer(), {
-            world: { tick: 5, size: Float32Array.of(1) },
-            victim: 0,
+            world: { tick: 5 },
+            size: 1,
             killer: 11,
             previous: 12,
         });

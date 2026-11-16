@@ -66,13 +66,15 @@ describe('reap', () => {
             w.lastHerdId[s] = 77;
         }
         const id = w.genomeId[s];
+        const size = w.size[s];
         /** @type {string[]} */
         const log = [];
         w.tick = 8;
         reap(w, recordingPolicy(log));
         expect(w.population).toBe(0);
         expect(w.alive[s]).toBe(0);
-        expect(event(w, 0)).toEqual([EVENT_TYPE.AGENT_DIED, 8, s, id, cause, by, 3, id, 42, 5, 6, 0]);
+        expect(size).toBeGreaterThan(0);
+        expect(event(w, 0)).toEqual([EVENT_TYPE.AGENT_DIED, 8, s, id, cause, by, 3, id, 42, 5, 6, 0, size]);
         expect(log).toEqual([`death ${s} ${cause} 1 0`]);
     });
 

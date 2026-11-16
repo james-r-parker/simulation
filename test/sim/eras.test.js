@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { advanceEra, basinOf, patchRegrowFactor, yearTicks } from '../../js/sim/eras.js';
 import { seasonAt } from '../../js/sim/environment.js';
-import { EVENT_TYPE, readEvents } from '../../js/sim/events.js';
+import { EVENT_STRIDE, EVENT_TYPE, readEvents } from '../../js/sim/events.js';
 import { regrowPatches } from '../../js/sim/food-patches.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { smallWorld } from './helpers/small-world.js';
@@ -46,7 +46,7 @@ function at(w, tick) {
  */
 function events(w) {
     return Array.from({ length: readEvents(w.events) }, (_, i) =>
-        Array.from(w.events.data.subarray(i * 12, i * 12 + 4)),
+        Array.from(w.events.data.subarray(i * EVENT_STRIDE, i * EVENT_STRIDE + 4)),
     );
 }
 

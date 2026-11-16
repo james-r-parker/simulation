@@ -69,14 +69,14 @@ export function notePackBite(scene, world, biter) {
 
 /**
  * Notes an eaten death: a hunter kill is a bite (the fatal one no tick sees on a live victim), and a pack or a solo kill
- * with the victim's size. Call before the victim's slot is reset.
+ * with the victim's size (field 12 of the `AgentDied` record: the slot is zeroed before the observer reads the record).
  * @param {Record<string, any>} scene the pack-lift scene
  * @param {Record<string, any>} observer the observer
- * @param {{world: Record<string, any>, victim: number, killer: number, previous: number}} death the world, the victim's
+ * @param {{world: Record<string, any>, size: number, killer: number, previous: number}} death the world, the victim's
  *   slot, and the genome ids of the killer and of the previous biter (0 for none)
  * @returns {void}
  */
-export function notePackKill(scene, observer, { world, victim, killer, previous }) {
+export function notePackKill(scene, observer, { world, size, killer, previous }) {
     if (world.tick < BURN_IN_TICKS) {
         return;
     }
@@ -97,10 +97,10 @@ export function notePackKill(scene, observer, { world, victim, killer, previous 
     }
     if (kind === KILL.PACK) {
         scene.packKills += 1;
-        scene.packSize += world.size[victim];
+        scene.packSize += size;
     } else {
         scene.soloKills += 1;
-        scene.soloSize += world.size[victim];
+        scene.soloSize += size;
     }
 }
 

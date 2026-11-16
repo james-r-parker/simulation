@@ -99,6 +99,7 @@ function pushDied(world, slot, cause) {
     d[o + 8] = world.ageTicks[slot];
     d[o + 9] = world.foodEnergy[slot];
     d[o + 10] = world.biteEnergy[slot];
+    d[o + 12] = world.size[slot];
     d[o + 11] =
         cause === DEATH_CAUSE.EATEN
             ? packPartner(world, slot)
