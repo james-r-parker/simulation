@@ -1,0 +1,17 @@
+{
+  "id": "E187",
+  "written": "2026-11-16, before the run",
+  "defaults": "season 10 defaults after 6ee46a46 (hunter-vision switch, PR 464); config is the default config, policy live",
+  "runs": [
+    "npm run eval -- --seeds 128 --ticks 200000 --policy live --workers 12 --save-champions 2 (floor on)",
+    "npm run eval -- --seeds 128 --ticks 200000 --policy live --workers 12 --save-champions 2 --config evals/floor-off-config.json (floor off)"
+  ],
+  "t5Reuse": "training-stages E-TS-0 (T5) asks for 16 floor-on seeds x 200000 ticks on the defaults. The first 16 seeds of the floor-on run are the same settings (seeds 1 to 16 of evals/seeds.json, seed offset 0), so E-TS-0 is read from them and not run again. Check on resume that the report's seeds begin with evals/seeds.json entries 1 to 16.",
+  "prediction": [
+    "E-TS-0 on seeds 1 to 16: eval.chase_lost_share is the largest part of the give-up share; eval.chase_quit_share is under 0.15; eval.pack_lift is within 0.2 of 1.",
+    "The same three hold in direction on all 128 floor-on seeds (lost above quit; quit under 0.15; pack_lift near 1).",
+    "The floor-off run is extinction-dominated on most seeds (E110: floor-off kills every world between 41k and 149k ticks), so its hunter and chase reads are characterization, not a baseline for verdicts."
+  ],
+  "falsified": "the 16-seed subset contradicts a written E-TS-0 statement on the same seeds, or the 128-seed floor-on mean of eval.pack_lift is outside 0.8 to 1.2",
+  "notRead": "sprint-burst, stillness, scent-trails and body-genes: no detector merged yet. Their metrics get a top-up run on the same defaults later"
+}
