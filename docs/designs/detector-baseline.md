@@ -80,6 +80,116 @@ done
 
 Compare the median `bench.observe_ms@500` of the two sets: the budget is a rise of at most 0.05 ms (0.13 ms today). Over it, a tally moves onto an existing pass or is sampled. Phase 1 is `(built)` once that reads inside the budget.
 
+## Baseline tables (E187)
+
+The shared run (`evals/power/defaults-floor-on-E187.json`, 128 seeds x 200000 ticks, the season 10 defaults) read as each served plan's Baseline table by `npm run baseline:table -- --plan <doc>`. The tables sit here rather than in the plan docs, so this PR does not edit the plans. A metric marked "not registered" is named in its plan but has no registry entry yet: its detector is not merged, and its top-up run is later.
+
+### [training-stages.md](training-stages.md)
+
+| Metric                             | Mean     | Range                 | Null    | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
+| ---------------------------------- | -------- | --------------------- | ------- | ------ | ------ | ------ | --------------------- |
+| `eval.bite_on_prey_view`           | 0.9878   | 0.8949 to 0.9995      | 0       | 0.03   | 0.03   | -      | 16                    |
+| `eval.patch_leave_depleted`        | 0.4069   | 0.2624 to 0.6618      | 0       | 0.1    | 0.075  | -      | more than 64          |
+| `eval.pack_kills_per_eaten_death`  | 0.1104   | 0 to 0.175            | 0       | 0.03   | 0.03   | -      | 16                    |
+| `eval.pack_lift`                   | 1.779    | 1 to 3.689            | 0.1563  | 0.05   | -      | -      | 16                    |
+| `eval.chase_catch_share`           | 0.2647   | 0 to 0.3941           | 0       | 0.075  | 0.05   | -      | 32                    |
+| `eval.chase_shaken_share`          | 0.6381   | 0.5 to 1              | 0       | 0.075  | 0.05   | -      | 32                    |
+| `eval.chase_ticks_p50`             | 45.95    | 39 to 55              | 0       | 0.1    | 0.1    | -      | 16                    |
+| `eval.hunter_juvenile_death_share` | 0.8587   | 0.5203 to 0.956       | 0       | 0.075  | 0.05   | -      | 32                    |
+| `eval.predator_presence`           | 0.5191   | 0.02618 to 1          | 0       | -      | 0.2    | -      | more than 64          |
+| `eval.predators_at_end`            | 10.75    | 0 to 69               | 0       | -      | -      | -      | more than 64          |
+| `eval.chase_quit_share`            | 0.09722  | 0 to 0.1722           | 0       | 0.03   | 0.03   | -      | 16                    |
+| `eval.chase_lost_share`            | 0.1558   | 0.08155 to 0.6667     | 0       | 0.05   | 0.1    | -      | more than 64          |
+| `eval.chase_outrun_share`          | 0.1441   | 0 to 0.25             | 0       | 0.03   | 0.03   | -      | 16                    |
+| `eval.chase_escape_share`          | 0.3381   | 0.125 to 0.455        | 0       | 0.05   | 0.05   | -      | 16                    |
+| `eval.pack_prey_size_ratio`        | -        | -                     | 1       | -      | -      | -      | more than 64          |
+| `eval.style_lineage_share`         | 0.007872 | 0.000004284 to 0.1084 | 0.09375 | 0.03   | -      | -      | 16                    |
+| `eval.hunter_zero_kill_share`      | 0.519    | 0.4322 to 1           | 0       | 0.075  | 0.075  | -      | more than 64          |
+| `eval.escape_share`                | 0.3184   | 0.08333 to 0.6064     | 0       | 0.1    | 0.075  | -      | more than 64          |
+| `eval.herd_dodge_share`            | 0.9827   | 0.8842 to 1           | 0       | 0.03   | 0.03   | -      | 16                    |
+| `eval.chase_giveup_share`          | 0.3971   | 0.3164 to 0.6667      | 0       | 0.05   | 0.05   | -      | 16                    |
+| `eval.hunt_abort_rate`             | 0.3912   | 0.309 to 0.6667       | 0       | 0.05   | 0.05   | -      | 16                    |
+| `eval.champion_elo`                | -        | -                     | 1       | -      | -      | -      | more than 64          |
+
+Not registered (detector not merged): `eval.dodge_skill`, `bench.step_ms`, `bench.observe_ms@500`.
+
+### [sprint-burst.md](sprint-burst.md)
+
+| Metric | Mean | Range | Null | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
+| ------ | ---- | ----- | ---- | ------ | ------ | ------ | --------------------- |
+
+Not registered (detector not merged): `eval.sprint_share.hunter`, `eval.sprint_share.prey`, `eval.chase_sprint_lift`, `eval.flee_sprint_lift`, `eval.sprint_cost_share`, `eval.chase_spent_share`.
+
+### [stillness.md](stillness.md)
+
+| Metric | Mean | Range | Null | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
+| ------ | ---- | ----- | ---- | ------ | ------ | ------ | --------------------- |
+
+Not registered (detector not merged): `eval.freeze_under_threat`, `eval.freeze_survival_gain`, `eval.ambush_kill_share`, `eval.first_sight_range.still`, `eval.first_sight_range.moving`, `eval.first_sight_range`.
+
+### [chase-physics.md](chase-physics.md)
+
+| Metric                              | Mean      | Range               | Null | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
+| ----------------------------------- | --------- | ------------------- | ---- | ------ | ------ | ------ | --------------------- |
+| `eval.chase_overshoot_share`        | 0.3083    | 0.1832 to 0.6667    | 0    | 0.075  | 0.05   | -      | 32                    |
+| `eval.chase_cover_use_share`        | 0.002006  | 0 to 0.01547        | 0    | 0.03   | 0.03   | -      | 16                    |
+| `eval.chase_turn_jitter`            | 0.2133    | 0.1479 to 0.5026    | 0    | 0.05   | 0.05   | -      | 16                    |
+| `eval.chase_catch_share`            | 0.2647    | 0 to 0.3941         | 0    | 0.075  | 0.05   | -      | 32                    |
+| `eval.chase_escape_share`           | 0.3381    | 0.125 to 0.455      | 0    | 0.05   | 0.05   | -      | 16                    |
+| `eval.hunt_abort_rate`              | 0.3912    | 0.309 to 0.6667     | 0    | 0.05   | 0.05   | -      | 16                    |
+| `eval.chase_ticks_p50`              | 45.95     | 39 to 55            | 0    | 0.1    | 0.1    | -      | 16                    |
+| `eval.hunter_catches_per_1k`        | 1.198     | 0.242 to 2.132      | 0    | 0.3    | 0.3    | -      | more than 64          |
+| `eval.refuge_prey_use_under_threat` | -0.002595 | -0.0289 to 0.006288 | 0    | 0.03   | 0.03   | -      | 16                    |
+
+Not registered (detector not merged): `bench.step_ms@500`.
+
+### [scent-trails.md](scent-trails.md)
+
+| Metric                             | Mean     | Range           | Null | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
+| ---------------------------------- | -------- | --------------- | ---- | ------ | ------ | ------ | --------------------- |
+| `eval.chase_catch_share`           | 0.2647   | 0 to 0.3941     | 0    | 0.075  | 0.05   | -      | 32                    |
+| `eval.hunter_income_share.carcass` | 0.004049 | 0 to 0.06184    | 0    | 0.03   | 0.03   | -      | 16                    |
+| `eval.hunter_juvenile_death_share` | 0.8587   | 0.5203 to 0.956 | 0    | 0.075  | 0.05   | -      | 32                    |
+
+Not registered (detector not merged): `eval.chase_reacquire_share`, `eval.scavenge_approach_share`, `bench.step_ms@500`.
+
+### [prey-guilds.md](prey-guilds.md)
+
+| Metric                                | Mean        | Range              | Null     | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
+| ------------------------------------- | ----------- | ------------------ | -------- | ------ | ------ | ------ | --------------------- |
+| `eval.spec_effective`                 | 3.507       | 1.875 to 4.829     | 0        | 0.2    | 0.15   | -      | 16                    |
+| `eval.spec_dominance`                 | 0.4778      | 0.2672 to 0.8256   | 0        | 0.15   | 0.1    | -      | more than 64          |
+| `eval.alarm_rate`                     | 0.00001636  | 0 to 0.001674      | 0        | -      | -      | -      | more than 64          |
+| `eval.defender_repel_per_1k`          | 0           | 0 to 0             | 0        | -      | -      | -      | more than 64          |
+| `eval.scout_alarm_lead_share`         | 0.1111      | 0 to 0.2222        | 0.9844   | -      | -      | -      | more than 64          |
+| `eval.reproducer_recovery_rate`       | 0.1882      | 0 to 0.7782        | 0.007813 | 0.2    | 0.15   | -      | more than 64          |
+| `eval.hunt_abort_rate`                | 0.3912      | 0.309 to 0.6667    | 0        | 0.05   | 0.05   | -      | 16                    |
+| `eval.pack_lift`                      | 1.779       | 1 to 3.689         | 0.1563   | 0.05   | -      | -      | 16                    |
+| `eval.hunter_catches_per_1k`          | 1.198       | 0.242 to 2.132     | 0        | 0.3    | 0.3    | -      | more than 64          |
+| `eval.alarm_lift`                     | 0.07447     | -0.04427 to 0.8373 | 0.9141   | -      | -      | -      | more than 64          |
+| `eval.guild_survival.scout`           | 0.06444     | 0.03563 to 0.152   | 0        | 0.03   | 0.03   | -      | 16                    |
+| `eval.alarm_calls_with_threat_per_1k` | 0.000002492 | 0 to 0.0002743     | 0        | 1      | -      | -      | 16                    |
+| `eval.boom_bust_count`                | 2.195       | 0 to 8             | 0        | 0.75   | 0.75   | -      | more than 64          |
+| `eval.pack_kills_per_eaten_death`     | 0.1104      | 0 to 0.175         | 0        | 0.03   | 0.03   | -      | 16                    |
+
+Not registered (detector not merged): `eval.prey_selectivity.defender`, `bench.step_ms@500`.
+
+### [body-genes.md](body-genes.md)
+
+| Metric                             | Mean     | Range               | Null | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
+| ---------------------------------- | -------- | ------------------- | ---- | ------ | ------ | ------ | --------------------- |
+| `eval.trait_spread`                | 0.009952 | 0.003226 to 0.02302 | 0    | 0.5    | 0.3    | -      | 16                    |
+| `eval.chase_catch_share`           | 0.2647   | 0 to 0.3941         | 0    | 0.075  | 0.05   | -      | 32                    |
+| `eval.chase_escape_share`          | 0.3381   | 0.125 to 0.455      | 0    | 0.05   | 0.05   | -      | 16                    |
+| `eval.predator_presence`           | 0.5191   | 0.02618 to 1        | 0    | -      | 0.2    | -      | more than 64          |
+| `eval.predators_at_end`            | 10.75    | 0 to 69             | 0    | -      | -      | -      | more than 64          |
+| `eval.hunter_catches_per_1k`       | 1.198    | 0.242 to 2.132      | 0    | 0.3    | 0.3    | -      | more than 64          |
+| `eval.hunter_juvenile_death_share` | 0.8587   | 0.5203 to 0.956     | 0    | 0.075  | 0.05   | -      | 32                    |
+| `eval.bite_on_prey_view`           | 0.9878   | 0.8949 to 0.9995    | 0    | 0.03   | 0.03   | -      | 16                    |
+| `eval.spec_effective`              | 3.507    | 1.875 to 4.829      | 0    | 0.2    | 0.15   | -      | 16                    |
+
+Not registered (detector not merged): `eval.trait_spread.carnivory`, `eval.trait_spread.bulk`, `eval.trait_bimodality.carnivory`, `eval.trait_brain_alignment`, `bench.step_ms@500`.
+
 ## Keeping it current
 
 A baseline describes one set of rules. `npm run baseline:status` (`scripts/baseline-status.mjs`) prints the newest shared report's `rulesHash` beside the default config's. A plan cites the shared baseline only while the two match. A screen's own control arm is always run fresh on matched seeds, so a stale baseline never decides a verdict; it only dates a prediction. The run is repeated when a season that changes `rulesHash` is released, not on every change.
@@ -159,7 +269,7 @@ The run, the power and liveness read, and each plan's Baseline table.
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
 | T5  | (built) Add `scripts/baseline-table.mjs` and `npm run baseline:table`, with a test on a fixture report                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | [mechanical] | -          |
 | T6  | (built) Add `scripts/baseline-status.mjs` and `npm run baseline:status`, with a test of a matching and a differing `rulesHash`                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | [mechanical] | -          |
-| T7  | (running 2026-11-16 on the season 10 defaults, `E187`; the four plans with no detector merged get a top-up run later; `npm run baseline:status` names the hash) Run the baseline: 128 floor-on and 128 floor-off seeds x 200000 ticks, `--save-champions 2`; commit the reports; record the experiment                                                                                                                                                                                                                                                                                             | [mechanical] | T4         |
+| T7  | (done 2026-11-16 on the season 10 defaults, `E187`, reports in evals/power/ and evals/decisions/E187/; the four plans with no detector merged get a top-up run later; `npm run baseline:status` names the hash) Run the baseline: 128 floor-on and 128 floor-off seeds x 200000 ticks, `--save-champions 2`; commit the reports; record the experiment                                                                                                                                                                                                                                             | [mechanical] | T4         |
 | T8  | Run `eval:power --include-watch` and `metric:liveness` for every new metric; write the readings to the registry; regenerate [metrics.md](metrics.md); fill each served plan's Baseline table. Liveness from E187 (`evals/power/defaults-floor-on-E187.json`) is read, but not written in this PR: the 12 misses are split out as T8a                                                                                                                                                                                                                                                               | [mechanical] | T5, T7     |
 | T8a | Triage the 12 liveness misses of E187 (`npm run metric:liveness` on the floor-on report): 2 flora metrics expected flat (`eval.flora_patch_death_rate` and `eval.flora_seed_bank_occupancy_share`, 0 on every seed, the intended value); 10 rare-event metrics or suspected detector bugs (`eval.pack_prey_size_ratio` null on 128 of 128 seeds while `eval.pack_lift` is live on 108; `eval.scout_alarm_lead_share` null on 126). Each gets an event count against its null share: `expectedFlat` where the event is rare, a detector fix routed where the event happens while the metric is null | [judgement]  | T8         |
 | T9  | Read each plan's prediction against the table and write its verdict in that plan; conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`; move the Status line                                                                                                                                                                                                                                                                                                                                                                                                        | [judgement]  | T6, T8     |
