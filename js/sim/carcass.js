@@ -8,6 +8,18 @@ export const FOOD_ORIGIN = Object.freeze({ NONE: 0, HERD_CARCASS: 1, DUNG_ZONE: 
 
 /** @typedef {import('./world.js').World} World */
 
+/** The slots of `world.carcassLoss`: the energy of carcasses placed, the energy of bodies that found the food pool full, and their count. */
+export const CARCASS_LOSS = Object.freeze({ PLACED: 0, LOST: 1, BODIES: 2 });
+
+/**
+ * Allocates the carcass loss counters (honest-budgets T33b). They are outside `worldHash` and the snapshot, so no golden moves.
+ * @param {World} world the world being built
+ * @returns {void}
+ */
+export function allocCarcassLoss(world) {
+    world.carcassLoss = new Float64Array(3);
+}
+
 /**
  * @param {World} world the world
  * @param {number} slot the dying agent
@@ -22,8 +34,8 @@ function bodyValue(world, slot) {
  * Leaves a carcass at a dying agent's place: a meat item of `carcassShare` x the energy the
  * body holds at death (see `bodyValue`), as large as the agent. An empty body leaves none. Like spawned plant
  * food it enters the ledger only when eaten, so the death still books out just the agent's remaining energy. It
- * takes the lowest free food slot, so it counts toward `maxFood`; with none free, no carcass appears. Draws nothing
- * from any RNG stream.
+ * takes the lowest free food slot, so it counts toward `maxFood`; with none free, no carcass appears and its value is booked as
+ * lost in `world.carcassLoss` (a body that holds nothing books nothing). Draws nothing from any RNG stream.
  * @param {World} world the world
  * @param {number} slot the agent that is about to be freed
  * @returns {void}
@@ -49,7 +61,10 @@ export function leaveCarcass(world, slot) {
             world.foodLife[food] = world.config.carcassFadeTicks;
             world.foodPatch[food] = -1;
             world.foodCount += 1;
+            world.carcassLoss[CARCASS_LOSS.PLACED] += value;
             return;
         }
     }
+    world.carcassLoss[CARCASS_LOSS.LOST] += value;
+    world.carcassLoss[CARCASS_LOSS.BODIES] += 1;
 }

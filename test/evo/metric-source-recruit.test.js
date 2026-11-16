@@ -108,3 +108,26 @@ describe('chase_net_energy and chase_failed_energy', () => {
         expect(M['eval.chase_failed_energy'].value).toBeNull();
     });
 });
+
+describe('carcass_loss_share.<lost|eaten|faded> and carcass_lost_per_1k', () => {
+    it('read an old agent that dies with the only food slot taken as the whole offer lost, over the ticks since burn-in', () => {
+        const { run, world, spawn } = huntRun({ runTicks: RUN_TICKS, over: { maxFood: 1, carcassShare: 0.5 } });
+        run.jump(BURN_IN_TICKS - 1);
+        run.tick();
+        world.foodAlive[0] = 1;
+        world.foodLife[0] = 1e9;
+        world.foodCount = 1;
+        const slot = spawn(FORAGER);
+        park(world, slot, 100);
+        world.energy[slot] = 800;
+        run.tick((w) => {
+            w.ageTicks[slot] = w.config.maxAgeTicks;
+        });
+        const m = run.metrics();
+        expect(world.alive[slot]).toBe(0);
+        expect(m['eval.carcass_loss_share.lost']).toEqual({ value: 1 });
+        expect(m['eval.carcass_loss_share.eaten']).toEqual({ value: 0 });
+        expect(m['eval.carcass_loss_share.faded']).toEqual({ value: 0 });
+        expect(m['eval.carcass_lost_per_1k'].value).toBeGreaterThan(0);
+    });
+});

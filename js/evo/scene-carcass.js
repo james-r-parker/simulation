@@ -15,6 +15,7 @@
 import { FOOD_GONE } from '../sim/world.js';
 import { FOOD_KIND, FOOD_ORIGIN } from '../sim/carcass.js';
 import { BURN_IN_TICKS } from './burn-in.js';
+import { createLossScene, noteLossBase } from './scene-carcass-loss.js';
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
@@ -30,6 +31,7 @@ export function createCarcassScene(config) {
         mark: new Float64Array(config.maxAgents),
         eaten: 0,
         eatenByHunters: 0,
+        loss: createLossScene(),
     };
 }
 
@@ -97,6 +99,7 @@ function eatenSinceLastTick(scene, world, food) {
  * @returns {void}
  */
 export function trackCarcasses(scene, observer, world) {
+    noteLossBase(scene.loss, world);
     const { foodValue, foodX, foodY } = world;
     for (let food = 0; food < world.foodAlive.length; food++) {
         const meat = trackableMeat(world, food);

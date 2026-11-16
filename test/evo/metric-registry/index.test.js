@@ -12,13 +12,13 @@ import {
     withPower,
 } from '../../../js/evo/metric-registry/index.js';
 
-/** @type {string[]} the 351 names of a live eval report, sorted */
+/** @type {string[]} the 355 names of a live eval report, sorted */
 const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-names.json', import.meta.url), 'utf8'));
 
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(351);
+        expect(REPORT_NAMES).toHaveLength(355);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -99,6 +99,10 @@ describe('withPower', () => {
  */
 /** Metrics registered after the snapshot was taken (T25 added the mean beside the renamed median). */
 const ADDED_AFTER_T8 = [
+    'eval.carcass_loss_share.lost',
+    'eval.carcass_loss_share.eaten',
+    'eval.carcass_loss_share.faded',
+    'eval.carcass_lost_per_1k',
     'eval.recruit_cohort',
     'eval.recruit_matured_hunters',
     'eval.recruit_censored_share',
@@ -189,6 +193,9 @@ const ADDED_AFTER_T8 = [
 ];
 /** Watch metrics registered after the snapshot whose intended direction is lower. */
 const ADDED_INTENDED_LOWER = [
+    'eval.carcass_loss_share.lost',
+    'eval.carcass_loss_share.faded',
+    'eval.carcass_lost_per_1k',
     'eval.recruit_censored_share',
     'eval.hunter_lineage_extinctions',
     'eval.hunter_global_extinctions',
