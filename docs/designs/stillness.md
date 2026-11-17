@@ -67,15 +67,16 @@ The keep rule decides ([principles.md](../principles.md), "A realistic mechanism
 
 ## Decisions
 
-| Decision                                                                  | Why                                                                                                                                      | Who                              |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| Measure before building                                                   | If blobs already gain by freezing, the rule is not needed                                                                                | Delegated (planning, 2026-11-15) |
-| The existing proximity value is scaled; no input is added                 | A new input is a cost that needs a scene metric to move ([principles.md](../principles.md), "More sensors as a substitute for a scene")  | Delegated (planning, 2026-11-15) |
-| It queues behind cover and the sprint store                               | Cover ([habitat-cover.md](habitat-cover.md)) and stillness both hide a body; reading them together would not say which one moved a scene | Delegated (planning, 2026-11-15) |
-| The Rust kernel change is built by Opus, and the JS reference is the test | The ray march runs in `wasm/src/sense.rs`; a kernel is tested against its JS reference (`AGENTS.md`, wasm-kernels.md)                    | Planner, from the user's rule    |
-| The switch `stillSight` is deleted at Phase 3 on either verdict           | Delete what a switch replaces (`AGENTS.md`)                                                                                              | Planner, from AGENTS.md          |
-| A threat episode is a contiguous current ray hit                          | `lastThreat[slot] === world.tick` marks a current hit; `INTENT_WINDOW` carries stale sightings and blurs the episode boundary            | Delegated (planning, 2026-11-17) |
-| Survival ends at ray loss or death; open episodes at run end are omitted  | This resolves outcomes without extending the run or counting unfinished episodes as survivors                                            | Delegated (planning, 2026-11-17) |
+| Decision                                                                  | Why                                                                                                                                      | Who                                    |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Measure before building                                                   | If blobs already gain by freezing, the rule is not needed                                                                                | Delegated (planning, 2026-11-15)       |
+| The existing proximity value is scaled; no input is added                 | A new input is a cost that needs a scene metric to move ([principles.md](../principles.md), "More sensors as a substitute for a scene")  | Delegated (planning, 2026-11-15)       |
+| It queues behind cover and the sprint store                               | Cover ([habitat-cover.md](habitat-cover.md)) and stillness both hide a body; reading them together would not say which one moved a scene | Delegated (planning, 2026-11-15)       |
+| The Rust kernel change is built by Opus, and the JS reference is the test | The ray march runs in `wasm/src/sense.rs`; a kernel is tested against its JS reference (`AGENTS.md`, wasm-kernels.md)                    | Planner, from the user's rule          |
+| The switch `stillSight` is deleted at Phase 3 on either verdict           | Delete what a switch replaces (`AGENTS.md`)                                                                                              | Planner, from AGENTS.md                |
+| A threat episode is a contiguous current ray hit                          | `lastThreat[slot] === world.tick` marks a current hit; `INTENT_WINDOW` carries stale sightings and blurs the episode boundary            | Delegated (planning, 2026-11-17)       |
+| Survival ends at ray loss or death; open episodes at run end are omitted  | This resolves outcomes without extending the run or counting unfinished episodes as survivors                                            | Delegated (planning, 2026-11-17)       |
+| Register detector names before committing their literal uses              | The tier-1 convention hook rejects unregistered `eval.*` names, so T2b registry coverage must commit before the T2a detector code        | Delegated (implementation, 2026-11-17) |
 
 ## Delivery requirements
 

@@ -1,5 +1,9 @@
 // Expected outputs from a sourceRun with two after-burn-in starvation deaths and no scene activity.
 export default {
+    'eval.ambush_kill_share': {
+        value: null,
+        reason: 'no caught approaches after burn-in',
+    },
     'eval.seasonal_diet_shift': {
         value: null,
         reason: 'fewer than two seasons with plant meals after burn-in',
@@ -55,6 +59,14 @@ export default {
     'eval.food_species_share.toxiccap': {
         value: null,
         reason: 'no plant meals after burn-in',
+    },
+    'eval.freeze_survival_gain': {
+        value: null,
+        reason: 'no completed episodes in both still and moving groups after burn-in',
+    },
+    'eval.freeze_under_threat': {
+        value: null,
+        reason: 'no prey sampled both current-threat and calm ticks after burn-in',
     },
     'eval.trampled_share': {
         value: 0,
