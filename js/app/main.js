@@ -357,7 +357,7 @@ function start() {
     }
     const app = createApp(container);
     window.__blob = createAppLiveness({
-        readFrames: () => app.stats.intervals.size(),
+        readFrames: () => app.stats.drawCalls,
         readTick: () => app.supervisor.tick(),
         resetFrames: () => clearFrameStats(app.stats, PERF_FRAMES),
     });

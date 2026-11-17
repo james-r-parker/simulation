@@ -1,6 +1,57 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createFrameStats } from '../../js/app/frame-stats.js';
-import { createAppLiveness, startReporting } from '../../js/app/liveness.js';
+import { createAppLiveness, readAppPerf, startReporting } from '../../js/app/liveness.js';
+
+afterEach(() => vi.unstubAllGlobals());
+
+describe('readAppPerf', () => {
+    it('reports empty counters before the world and renderer are ready', () => {
+        const app = {
+            stats: createFrameStats(),
+            supervisor: { client: () => null },
+            deps: { refs: { player: null } },
+        };
+        expect(readAppPerf(app)).toMatchObject({
+            worker: null,
+            gpu: { geometries: 0, textures: 0, programs: 0 },
+            gpuSamples: null,
+            fx: null,
+            drawCalls: null,
+        });
+    });
+
+    it('reads worker, renderer, timer, heap and app draw counters when available', () => {
+        vi.stubGlobal('performance', { memory: { usedJSHeapSize: 1234 } });
+        const worker = { tick: 7 };
+        const gpuSamples = new Float64Array([1, 2]);
+        const app = {
+            stats: createFrameStats(),
+            supervisor: { client: () => ({ stats: worker }) },
+            deps: {
+                refs: { player: null },
+                scene: {
+                    renderer: {
+                        info: {
+                            memory: { geometries: 3, textures: 4 },
+                            programs: [{}],
+                            render: { calls: 5 },
+                        },
+                    },
+                },
+                gpuTimer: { samples: () => gpuSamples },
+            },
+        };
+
+        expect(readAppPerf(app)).toMatchObject({
+            worker,
+            gpu: { geometries: 3, textures: 4, programs: 1 },
+            gpuSamples,
+            heapBytes: 1234,
+            fx: null,
+            drawCalls: 5,
+        });
+    });
+});
 
 describe('createAppLiveness', () => {
     it('reads the current app frame count and worker tick without exposing mutable values', () => {

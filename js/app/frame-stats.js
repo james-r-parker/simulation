@@ -55,6 +55,7 @@ const REFRESH_PERCENTILE = 25;
  * @typedef {object} FrameStats
  * @property {{push: (ms: number) => void, size: () => number, values: () => Float64Array}} intervals frame intervals in ms
  * @property {{push: (ms: number) => void, size: () => number, values: () => Float64Array}} draws time spent in the frame callback in ms
+ * @property {number} drawCalls completed draw callbacks, including callbacks with ignored intervals
  * @property {{hidden: number, zero: number, long: number}} ignored frames not recorded, by reason: a hidden tab, no
  *   interval (the first frame, or two callbacks with one timestamp), or an interval over `MAX_INTERVAL_MS`
  */
@@ -67,6 +68,7 @@ export function createFrameStats(capacity) {
     return {
         intervals: createFrameRing(capacity),
         draws: createFrameRing(capacity),
+        drawCalls: 0,
         ignored: { hidden: 0, zero: 0, long: 0 },
     };
 }
@@ -80,6 +82,7 @@ export function createFrameStats(capacity) {
 export function clearFrameStats(stats, capacity) {
     stats.intervals = createFrameRing(capacity);
     stats.draws = createFrameRing(capacity);
+    stats.drawCalls = 0;
     stats.ignored = { hidden: 0, zero: 0, long: 0 };
 }
 
@@ -92,6 +95,7 @@ export function clearFrameStats(stats, capacity) {
  * @returns {boolean} whether the frame was recorded
  */
 export function recordFrame(stats, intervalMs, drawMs, hidden = false) {
+    stats.drawCalls += 1;
     const reason = hidden ? 'hidden' : !(intervalMs > 0) ? 'zero' : intervalMs > MAX_INTERVAL_MS ? 'long' : null;
     if (reason !== null) {
         stats.ignored[reason] += 1;
