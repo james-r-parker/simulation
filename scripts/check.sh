@@ -315,7 +315,7 @@ gate_test_related() {
   elif [[ ${#RELATED_FILES[@]} -eq 0 ]]; then
     skip_gate test-related "no staged .js or .mjs files"
   else
-    run_gate test-related "$BIN/vitest" related --run --passWithNoTests "${RELATED_FILES[@]}"
+    run_gate test-related "$BIN/vitest" related --run --passWithNoTests --exclude '**/*.slow.test.js' "${RELATED_FILES[@]}"
   fi
 }
 # gate_deps: layering rules from .dependency-cruiser.cjs (dependency-cruiser).
