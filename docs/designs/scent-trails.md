@@ -147,12 +147,13 @@ T5 stages a trail in the probe arena with a hand-written deposit (no sim change)
 
 ### Phase 1 - Off-ray tracking detectors and baseline
 
-| #   | Task                                                                                                                                         | Nature       | Depends on |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | Implement `js/evo/scene-scent.js`, wire chase and carcass observers, and test detector arithmetic and boundaries (built)                     | [judgement]  | -          |
-| T2  | Register both metrics and add registry and real-source tests (built)                                                                         | [mechanical] | T1         |
-| T3  | Regenerate [metrics.md](metrics.md) and `test/fixtures/metric-names.json`; add both metric rows to [principles.md](../principles.md) (built) | [mechanical] | T2         |
-| T4  | Conformance review of the detector chunk by a fresh agent, in parallel with `scripts/check.sh` (built)                                       | [judgement]  | T1, T2, T3 |
+| #   | Task                                                                                                                                         | Nature       | Depends on  |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| T1  | Implement `js/evo/scene-scent.js` and wire chase and carcass observers (built)                                                               | [judgement]  | -           |
+| T1a | Pin the dead-slot, burn-in, no-scent and carcass-credit branches in observer tests (built)                                                   | [mechanical] | T1          |
+| T2  | Register both metrics and add registry and real-source tests (built)                                                                         | [mechanical] | T1a         |
+| T3  | Regenerate [metrics.md](metrics.md) and `test/fixtures/metric-names.json`; add both metric rows to [principles.md](../principles.md) (built) | [mechanical] | T2          |
+| T4  | Conformance review of the detector chunk by a fresh agent, in parallel with `scripts/check.sh` (built)                                       | [judgement]  | T1a, T2, T3 |
 
 ### Phase 2 - Track scent and carrion scent
 
