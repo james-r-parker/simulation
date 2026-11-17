@@ -1,7 +1,7 @@
 # Detector baseline
 
 **Status:** In progress - Phase 1 chunks A and B are built except the wave's `bench.observe_ms@500` price (T4: deferred while an eval screen holds the CPU lock; command under Wave check); the wave itself is not complete, since four of the seven plans have no detector merged; T7 ran on the season 10 defaults (`E187`, re-recorded as `E188` on the gorge defaults, 2026-11-17; the four unbuilt detector plans get a top-up run later, on the same defaults), and T8 and T8a are built on `E188`; the measure-first plans share one chase-outcome taxonomy, one detector wave and one 128-seed baseline of the defaults, in place of seven separate 16-seed runs.
-**Validated:** ed662529 (2026-11-15)
+**Validated:** 04e3b340 (2026-11-17)
 **Priority:** 34 - it schedules no work of its own ahead of the queue: its tasks run when the Phase 1 detector tasks of the plans it serves are built, and those change no behaviour
 **Depends on:** [metric-trust.md](metric-trust.md)
 
@@ -47,23 +47,23 @@ Built apart, a chase that is lost and then re-acquired is counted as two chases 
 
 ## Wave check
 
-Read on 2026-11-16 against `main` at 0819058e (T3). The wave's first merged detector PR is #445 (prey-guilds T1, 7e1aacaa), so the base ref of the price is `7e1aacaa^`. It added 23 new metrics (`eval.herd_dodge_share` is a rename of the verified `eval.dodge_skill`, so it is not counted).
+Read on 2026-11-17 against `main` at `04e3b340` (T3). The wave's first merged detector PR is #445 (prey-guilds T1, 7e1aacaa), so the base ref of the price is `7e1aacaa^`. PRs #445, #449 and #458 added 23 new metrics; #485 added four prey-selectivity metrics. The renamed `eval.herd_dodge_share` and changed `eval.hunter_zero_kill_share` are not counted as new metrics.
 
-| Plan                                     | Detector task | Merged           | Metrics in the registry                                                                                                                                                                                   | Missing                                                                                                                                                                  |
-| ---------------------------------------- | ------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [training-stages.md](training-stages.md) | T1, T2, T3    | Yes (#458)       | 11 of 11: `chase_{quit,lost,outrun,shaken}_share`, `chase_ticks_p{50,90}`, `pack_lift`, `pack_prey_size_ratio`, `style_lineage_share`, the renamed `herd_dodge_share`, `hunter_zero_kill_share` (changed) | `E-TS-0` predicts `chase_lost_share`, `chase_quit_share` and `pack_lift`; the plan accepts no prediction for the other descriptive metrics and reads power/liveness only |
-| [chase-physics.md](chase-physics.md)     | T1            | Yes (#449)       | 3 of 3                                                                                                                                                                                                    | The premise predicts `chase_turn_jitter`; the plan accepts no prediction for `chase_overshoot_share` or `chase_cover_use_share` and reads power/liveness only            |
-| [prey-guilds.md](prey-guilds.md)         | T1, T1b       | Yes (#445, #485) | 15 of 15                                                                                                                                                                                                  | `E-PG-1` predicts `prey_selectivity.*`; the plan accepts no prediction for `guild_share.*` or `reproducer_recovery_rate` and reads power/liveness only                   |
-| [sprint-burst.md](sprint-burst.md)       | T2            | No               | 0 of 5                                                                                                                                                                                                    | `js/evo/scene-sprint.js` not built. Prediction written (`E-SB-1`)                                                                                                        |
-| [stillness.md](stillness.md)             | T1            | No               | 0 of 3                                                                                                                                                                                                    | `js/evo/scene-stillness.js` not built. Prediction written (`E-ST-1`)                                                                                                     |
-| [scent-trails.md](scent-trails.md)       | T1            | No               | 0 of 2                                                                                                                                                                                                    | `js/evo/scene-scent.js` not built. Prediction written (`E-ST2-1`)                                                                                                        |
-| [body-genes.md](body-genes.md)           | T1, T1a       | No               | 0 of 3                                                                                                                                                                                                    | `js/evo/scene-traits.js` and `js/evo/transplant-probe.js` not built. `E-BG-1` predicts the transplant gap only, not the three `eval.trait_*` metrics                     |
+| Plan                                     | Detector task | Merged           | Metrics in the registry                                                                                                                                                                                   | Missing                                                                                                                                                                                                                                                                  |
+| ---------------------------------------- | ------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [training-stages.md](training-stages.md) | T1, T2, T3    | Yes (#458)       | 11 of 11: `chase_{quit,lost,outrun,shaken}_share`, `chase_ticks_p{50,90}`, `pack_lift`, `pack_prey_size_ratio`, `style_lineage_share`, the renamed `herd_dodge_share`, `hunter_zero_kill_share` (changed) | `E-TS-0` predicts `chase_lost_share`, `chase_quit_share` and `pack_lift`; no prediction is claimed for `chase_outrun_share`, `chase_shaken_share`, `chase_ticks_p{50,90}`, `pack_prey_size_ratio`, `style_lineage_share`, `herd_dodge_share` or `hunter_zero_kill_share` |
+| [chase-physics.md](chase-physics.md)     | T1            | Yes (#449)       | 3 of 3                                                                                                                                                                                                    | The premise predicts `chase_turn_jitter`; no prediction is claimed for `chase_overshoot_share` or `chase_cover_use_share`                                                                                                                                                |
+| [prey-guilds.md](prey-guilds.md)         | T1, T1b       | Yes (#445, #485) | 15 of 15                                                                                                                                                                                                  | `E-PG-1` predicts all four `prey_selectivity.<spec>` and `guild_survival.<spec>` values; no prediction is claimed for the four `guild_share.<spec>` values or `reproducer_recovery_rate`                                                                                 |
+| [sprint-burst.md](sprint-burst.md)       | T2            | No               | 0 of 5                                                                                                                                                                                                    | `js/evo/scene-sprint.js` not built. Prediction written (`E-SB-1`)                                                                                                                                                                                                        |
+| [stillness.md](stillness.md)             | T1            | No               | 0 of 3                                                                                                                                                                                                    | `js/evo/scene-stillness.js` not built. Prediction written (`E-ST-1`)                                                                                                                                                                                                     |
+| [scent-trails.md](scent-trails.md)       | T1            | No               | 0 of 2                                                                                                                                                                                                    | `js/evo/scene-scent.js` not built. Prediction written (`E-ST2-1`)                                                                                                                                                                                                        |
+| [body-genes.md](body-genes.md)           | T1, T1a       | No               | 0 of 4                                                                                                                                                                                                    | `js/evo/scene-traits.js` and `js/evo/transplant-probe.js` not built. `E-BG-1` predicts the template mapping and transplant gap; the plan accepts no prediction for `eval.trait_spread.*`, `eval.trait_bimodality.carnivory` or `eval.trait_brain_alignment`              |
 
 What the table shows:
 
 - Every merged metric has its entry, its arithmetic test and its source test: `test/evo/metric-registry.test.js` fails an entry without them, and it passes. No registry gap needed a fix in this chunk.
-- None of the 23 new metrics has a `liveness` or `power` read yet, as expected: those are T8, after the shared run. Eighteen are `watch`, each with an `intended` direction (`eval:power --include-watch` needs it).
-- Left out of the read: the four plans with no detector merged (sprint-burst, stillness, scent-trails, body-genes), and, per metric, the metrics named above without a written prediction. A prediction-less metric is read for its power and liveness only, and the plan that owns it writes the prediction before T7 starts or accepts that it has none. Writing them is the owning plan's task, not built here.
+- At T3, none of the 23 metrics from #445 had a `liveness` or `power` read; T8/T8a later wrote those reads from E188. The four #485 prey-selectivity metrics were added after E188 and remain absent until the detector top-up. Of the 27 new metrics, 22 are `watch`, each with an `intended` direction (`eval:power --include-watch` needs it).
+- Left out of the read: the four plans with no detector merged (sprint-burst, stillness, scent-trails, body-genes), and, per metric, the metrics named above without a written prediction. Those existing descriptive metrics read power and liveness only; their owner plans either record the lack of a prediction or list the metric as unpredicted before a later baseline. The body-gene detectors wait for their own T1/T1a and E-BG-1.
 - Running the shared run before the four detectors land would leave those plans on their own 16-seed baselines. The coordinator accepted that on 2026-11-16 (Decisions): T7 runs now, and the four plans get a top-up run.
 
 ### The price of the wave (T4)
@@ -82,7 +82,7 @@ Compare the median `bench.observe_ms@500` of the two sets: the budget is a rise 
 
 ## Baseline tables (E188)
 
-The shared run (`evals/power/defaults-floor-on-E188.json`, 128 seeds x 200000 ticks, the gorge defaults, rulesHash `38be2908ad820c86`) read as each served plan's Baseline table by `npm run baseline:table -- --plan <doc>`. The tables sit here rather than in the plan docs, so this PR does not edit the plans. A metric marked "not registered" is named in its plan but has no registry entry yet: its detector is not merged, and its top-up run is later.
+The shared run (`evals/power/defaults-floor-on-E188.json`, 128 seeds x 200000 ticks, the gorge defaults, rulesHash `38be2908ad820c86`) reads as each served plan's Baseline table through `npm run baseline:table -- --plan <doc>`. A metric marked "not registered" has no registry entry yet; a registered metric marked "not in the report" was added after E188 and waits for the detector top-up run.
 
 ### [training-stages.md](training-stages.md)
 
@@ -155,24 +155,36 @@ Not registered (detector not merged): `eval.chase_reacquire_share`, `eval.scaven
 
 ### [prey-guilds.md](prey-guilds.md)
 
-| Metric                                | Mean        | Range            | Null     | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
-| ------------------------------------- | ----------- | ---------------- | -------- | ------ | ------ | ------ | --------------------- |
-| `eval.spec_effective`                 | 3.536       | 1.929 to 4.752   | 0        | 0.2    | 0.15   | 0.1    | 16                    |
-| `eval.spec_dominance`                 | 0.4752      | 0.2624 to 0.8346 | 0        | 0.15   | 0.1    | 0.075  | more than 64          |
-| `eval.alarm_rate`                     | 0.00002176  | 0 to 0.001621    | 0        | -      | -      | -      | more than 64          |
-| `eval.defender_repel_per_1k`          | 0           | 0 to 0           | 0        | -      | -      | -      | more than 64          |
-| `eval.scout_alarm_lead_share`         | 0           | 0 to 0           | 0.9922   | -      | -      | -      | more than 64          |
-| `eval.reproducer_recovery_rate`       | 0.2031      | 0 to 0.8239      | 0.01563  | 0.2    | 0.15   | -      | more than 64          |
-| `eval.hunt_abort_rate`                | 0.3921      | 0.309 to 0.5954  | 0.007813 | 0.05   | 0.05   | -      | 16                    |
-| `eval.pack_lift`                      | 1.628       | 1 to 4.062       | 0.125    | 0.15   | -      | -      | more than 64          |
-| `eval.hunter_catches_per_1k`          | 1.29        | 0.2009 to 2.363  | 0        | 0.5    | 0.3    | 0.2    | 64                    |
-| `eval.alarm_lift`                     | 0.1075      | -0.175 to 0.9584 | 0.9063   | -      | -      | -      | more than 64          |
-| `eval.guild_survival.scout`           | 0.06988     | 0.03522 to 0.514 | 0        | 0.03   | 0.075  | 0.05   | 16                    |
-| `eval.alarm_calls_with_threat_per_1k` | 0.000001416 | 0 to 0.0001075   | 0        | -      | -      | -      | more than 64          |
-| `eval.boom_bust_count`                | 2.016       | 0 to 6           | 0        | 0.75   | 0.5    | 0.5    | more than 64          |
-| `eval.pack_kills_per_eaten_death`     | 0.1076      | 0 to 0.1875      | 0        | 0.05   | 0.03   | 0.03   | 16                    |
+| Metric                                | Mean        | Range              | Null     | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
+| ------------------------------------- | ----------- | ------------------ | -------- | ------ | ------ | ------ | --------------------- |
+| `eval.spec_effective`                 | 3.536       | 1.929 to 4.752     | 0        | 0.2    | 0.15   | 0.1    | 16                    |
+| `eval.spec_dominance`                 | 0.4752      | 0.2624 to 0.8346   | 0        | 0.15   | 0.1    | 0.075  | more than 64          |
+| `eval.alarm_rate`                     | 0.00002176  | 0 to 0.001621      | 0        | -      | -      | -      | more than 64          |
+| `eval.defender_repel_per_1k`          | 0           | 0 to 0             | 0        | -      | -      | -      | more than 64          |
+| `eval.scout_alarm_lead_share`         | 0           | 0 to 0             | 0.9922   | -      | -      | -      | more than 64          |
+| `eval.reproducer_recovery_rate`       | 0.2031      | 0 to 0.8239        | 0.01563  | 0.2    | 0.15   | -      | more than 64          |
+| `eval.hunt_abort_rate`                | 0.3921      | 0.309 to 0.5954    | 0.007813 | 0.05   | 0.05   | -      | 16                    |
+| `eval.pack_lift`                      | 1.628       | 1 to 4.062         | 0.125    | 0.15   | -      | -      | more than 64          |
+| `eval.hunter_catches_per_1k`          | 1.29        | 0.2009 to 2.363    | 0        | 0.5    | 0.3    | 0.2    | 64                    |
+| `eval.alarm_lift`                     | 0.1075      | -0.175 to 0.9584   | 0.9063   | -      | -      | -      | more than 64          |
+| `eval.guild_survival.scout`           | 0.06988     | 0.03522 to 0.514   | 0        | 0.03   | 0.075  | 0.05   | 16                    |
+| `eval.alarm_calls_with_threat_per_1k` | 0.000001416 | 0 to 0.0001075     | 0        | -      | -      | -      | more than 64          |
+| `eval.boom_bust_count`                | 2.016       | 0 to 6             | 0        | 0.75   | 0.5    | 0.5    | more than 64          |
+| `eval.pack_kills_per_eaten_death`     | 0.1076      | 0 to 0.1875        | 0        | 0.05   | 0.03   | 0.03   | 16                    |
+| `eval.guild_share.forager`            | 0.23        | 0.001513 to 0.6532 | 0        | 0.2    | 0.15   | 0.1    | more than 64          |
+| `eval.guild_share.reproducer`         | 0.2214      | 0.009463 to 0.8024 | 0        | 0.2    | 0.15   | 0.1    | more than 64          |
+| `eval.guild_share.scout`              | 0.2732      | 0.007769 to 0.8161 | 0        | 0.2    | 0.15   | 0.1    | more than 64          |
+| `eval.guild_share.defender`           | 0.2382      | 0.01898 to 0.7223  | 0        | 0.2    | 0.15   | 0.075  | more than 64          |
+| `eval.guild_survival.forager`         | 0.06933     | 0.02862 to 0.1274  | 0        | 0.03   | 0.03   | 0.03   | 16                    |
+| `eval.guild_survival.reproducer`      | 0.06756     | 0.0286 to 0.1294   | 0        | 0.03   | 0.03   | 0.03   | 16                    |
+| `eval.guild_survival.defender`        | 0.06846     | 0.03588 to 0.1125  | 0        | 0.03   | 0.03   | 0.03   | 16                    |
+| `eval.prey_selectivity.forager`       | -           | -                  | -        | -      | -      | -      | more than 64          |
+| `eval.prey_selectivity.reproducer`    | -           | -                  | -        | -      | -      | -      | more than 64          |
+| `eval.prey_selectivity.scout`         | -           | -                  | -        | -      | -      | -      | more than 64          |
+| `eval.prey_selectivity.defender`      | -           | -                  | -        | -      | -      | -      | more than 64          |
 
-Not registered (detector not merged): `eval.prey_selectivity.defender`, `bench.step_ms@500`.
+Not registered: `bench.step_ms@500`.
+Not in E188: `eval.prey_selectivity.forager`, `eval.prey_selectivity.reproducer`, `eval.prey_selectivity.scout`, `eval.prey_selectivity.defender`.
 
 ### [body-genes.md](body-genes.md)
 
@@ -235,6 +247,7 @@ The run, the power and liveness read, and each plan's Baseline table.
 | A stale baseline dates a prediction and never decides a verdict | Every screen runs its own control on matched seeds                                                                                                                                                                                                                                       | Delegated (planning, 2026-11-15)             |
 | The wave has an observer budget                                 | About 40 new metrics arrive together; `bench.observe_ms` is paid by every eval, screen and training episode                                                                                                                                                                              | Delegated (planning, 2026-11-15)             |
 | T7 runs on the season 10 defaults before the four unbuilt plans | The hunter-vision defaults are final (PR 464), so the baseline reads the defaults that season 10 ships. Waiting for four detector plans would leave the 128-seed reference unmade; the four plans take a top-up run on the same defaults, and their metrics read `unverified` until then | Coordinator (2026-11-16), recorded by lane C |
+| Do not invent predictions after E188 for descriptive metrics    | E188 is complete; each owning plan records which metrics have no baseline prediction, and reads their power and liveness without treating a post-hoc guess as evidence                                                                                                                   | Coordinator (2026-11-17)                     |
 
 ## Delivery requirements
 

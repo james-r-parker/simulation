@@ -1,7 +1,7 @@
 # Body genes
 
 **Status:** Proposed - replace the five discrete `specialisations` templates with continuous, heritable body genes (jaw-vs-gut diet, bulk-vs-agility, sprint-vs-endurance, sight) so body and brain co-evolve together; Phase 1 (continuous-trait detectors and baseline) is first.
-**Validated:** a8013e98 (2026-11-15)
+**Validated:** 04e3b340 (2026-11-17)
 **Priority:** 31 - builds on [prey-guilds.md](prey-guilds.md) (which proves which trade-offs hold niches) and [honest-budgets.md](honest-budgets.md) (which fixes energy conservation and juvenile survival)
 **Depends on:** [honest-budgets.md](honest-budgets.md), [prey-guilds.md](prey-guilds.md)
 
@@ -139,6 +139,7 @@ The claim is that body and brain co-evolve when the body is continuous. `eval.tr
 | Removing flips has its own arm                                                | `specFlipNoHunt` exists; without the arm a gain from no flips is credited to continuous traits                        | Delegated (plan review, 2026-11-15) |
 | The curve's shape is screened, not assumed                                    | The shape decides whether specialists or one generalist evolve                                                        | Delegated (plan review, 2026-11-15) |
 | This doc waits for [prey-guilds.md](prey-guilds.md) Phase 5's trade-off table | Each axis endpoint is a guild lever that passed its own screen; an axis with an untested end is a guess               | Delegated (plan review, 2026-11-15) |
+| E-BG-1 makes no baseline prediction for the trait metric families             | They describe the template priors and a population correlation; the transplant probe is the direct co-adaptation test | Coordinator, 2026-11-17             |
 
 ## Experiments
 
