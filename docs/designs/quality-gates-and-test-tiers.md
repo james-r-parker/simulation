@@ -400,7 +400,7 @@ The repo is public, so a GitHub-hosted runner costs nothing. The PR gate moves t
 **Targets:** none - this phase changes which checkout is linted, not lint rules or simulation behavior
 
 **Why:** On 2026-11-17, `scripts/check.sh --fix --quick` in the root checkout asked ESLint to scan separate Git worktrees
-nested under `.claude/worktrees/`. It reported 841 unrelated errors in unfinished branches and blocked a clean root
+nested under `.claude/worktrees/`. It reported unrelated lint failures in unfinished branches and blocked a clean root
 branch. A root checkout's lint gate should cover that checkout's files; nested checkouts are responsible for their own
 checks.
 
