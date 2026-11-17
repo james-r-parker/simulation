@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import { CHASE_FLAG, createChaseTally, tallyChase } from '../../js/evo/chase-outcome.js';
 import {
     createScentScene,
@@ -38,6 +39,17 @@ describe('scene-scent', () => {
         current.tick += 121;
         notePreySight(scene, current, 0);
         expect(scentChaseFlags(scene, 0)).toBe(0);
+    });
+
+    it('skips history writes for dead slots', () => {
+        const scene = createScentScene({ maxAgents: 2 });
+        const current = world();
+        current.alive = new Uint8Array([1, 0]);
+        current.x = new Float32Array([5, 9]);
+        current.y = new Float32Array([3, 9]);
+        tickScent(scene, current);
+        expect(scene.historyTick[0]).toBe(current.tick);
+        expect(scene.historyTick[120]).toBe(-1);
     });
 
     it('accepts a renewed prey sighting exactly at the reacquisition window', () => {
@@ -94,6 +106,12 @@ describe('scene-scent', () => {
         scene.mealSince = current.tick;
         noteScavengeMeal(scene, current, 0);
         expect(scentMetrics(scene, createChaseTally())['eval.scavenge_approach_share']).toEqual({ value: 0 });
+    });
+
+    it('ignores scavenge meals during burn-in', () => {
+        const scene = createScentScene({ maxAgents: 1 });
+        noteScavengeMeal(scene, world(BURN_IN_TICKS - 1), 0);
+        expect(scene.carcassMeals).toBe(0);
     });
 
     it('keeps the metric null without chases or carcass meals', () => {

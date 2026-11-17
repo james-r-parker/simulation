@@ -341,6 +341,27 @@ describe('the noteChase hook', () => {
         expect(calls.map((c) => c.openedTick)).toEqual([T0, T0 + 500]);
     });
 
+    it('opens from a retained closing cue without treating stale sight as reacquisition', () => {
+        const a = arena(1, 0);
+        const hunter = a.hunters[0];
+        a.world.tick = T0 + 1;
+        a.observer.intent.prey.seen[hunter] = T0;
+        a.observer.intent.prey.bits[hunter] = CLOSING;
+        trackApproaches(a.observer.scenes.approach, a.observer, a.world);
+        expect(a.observer.scenes.approach.phase[hunter]).toBe(1);
+        expect(a.observer.scenes.scent.lastSight[hunter]).toBe(-1);
+    });
+
+    it('keeps approach tracking safe when a lean observer has no scent scene', () => {
+        const a = arena(1, 0);
+        const hunter = a.hunters[0];
+        a.observer.scenes.scent = undefined;
+        a.world.tick = T0;
+        a.observer.intent.prey.seen[hunter] = T0;
+        a.observer.intent.prey.bits[hunter] = CLOSING;
+        expect(() => trackApproaches(a.observer.scenes.approach, a.observer, a.world)).not.toThrow();
+    });
+
     it('does not fire for a dropped chase or for one that ends before burn-in', () => {
         const a = arena(2, 1);
         const calls = record(a);

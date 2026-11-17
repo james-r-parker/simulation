@@ -5,6 +5,7 @@ import { FOOD_KIND, FOOD_ORIGIN } from '../../js/sim/carcass.js';
 import { computeMetrics } from '../../js/evo/metrics.js';
 import { FOOD_GONE, removeFood } from '../../js/sim/world.js';
 import { trackCarcasses } from '../../js/evo/scene-carcass.js';
+import { createScentScene } from '../../js/evo/scene-scent.js';
 import { herdMetrics } from '../../js/evo/scene-herd-metrics.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import { trackHerd } from '../../js/evo/scene-herd.js';
@@ -32,6 +33,21 @@ function meat(
 }
 
 describe('the carcass metrics', () => {
+    it('passes credited blob-carcass meals to the scent detector', () => {
+        const r = observed();
+        const { world, observer } = r;
+        const hunter = addBlob(world, { x: 500, spec: world.config.specialisations.predator.index });
+        const scent = createScentScene(world.config);
+        meat(world, 0, 500, 0);
+        world.tick = BURN_IN_TICKS + 1;
+        trackCarcasses(observer.scenes.carcass, observer, world, scent);
+        removeFood(world, 0, FOOD_GONE.EATEN, 100);
+        world.foodEnergy[hunter] = 100;
+        world.tick += 1;
+        trackCarcasses(observer.scenes.carcass, observer, world, scent);
+        expect(scent.carcassMeals).toBe(1);
+    });
+
     it('keeps a carcass lifetime across ticks and starts a new lifetime when its food slot is reused', () => {
         const r = observed();
         const { world, observer } = r;
