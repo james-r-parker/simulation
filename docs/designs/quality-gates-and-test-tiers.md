@@ -1,6 +1,6 @@
 # Quality gates and test tiers
 
-**Status:** In progress - the full gate runs in CI, sharded, with the coverage ratchet, per-run `check.sh` coverage, `--rerun-failed`, `--quick`, detached-run scripts and a worker budget (Phase 4, built, which also closes T26); tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test, benchmark comparison and the nightly workflow (Phase 2) are built; Phase 3 is part built: the busy-aware `bench-check` with load-scaled test timeouts (T20, T22), the built-in CPU lock (T19) and the advisory CI `perf` job with `--self` and the `noise` dispatch (T17), the `bench-compare` digest and the `nightly-failure` issue job (T21, all but its `resume-plan` line) are in, as are the merge queue trigger, PR-only cancellation, app-path scope for the browser smoke and the no-container smoke job (T28 to T32; enabling the queue in the ruleset is a user step); Phase 5 root lint scope is built, with conformance review open; T18 (needs two weeks of `perf` runs), T23 (the smoke still counts frames only: `js/app/main.js` now exists, so it can read the tick), T24 and T25 are open.
+**Status:** In progress - the full gate runs in CI, sharded, with the coverage ratchet, per-run `check.sh` coverage, `--rerun-failed`, `--quick`, detached-run scripts and a worker budget (Phase 4, built, which also closes T26); tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test, benchmark comparison and the nightly workflow (Phase 2) are built; Phase 3 is part built: the busy-aware `bench-check` with load-scaled test timeouts (T20, T22), the built-in CPU lock (T19) and the advisory CI `perf` job with `--self` and the `noise` dispatch (T17), the `bench-compare` digest and the `nightly-failure` issue job (T21, all but its `resume-plan` line) are in, as are the merge queue trigger, PR-only cancellation, app-path scope for the browser smoke and the no-container smoke job (T28 to T32; enabling the queue in the ruleset is a user step); Phase 5 root lint scope is built; T18 (needs two weeks of `perf` runs), T23 (the smoke still counts frames only: `js/app/main.js` now exists, so it can read the tick), T24 and T25 are open.
 **Validated:** c11202bd (2026-11-17)
 **Priority:** 18 - Phase 3 (PR perf job, CPU lock in check.sh, busy-aware bench-check) protects every other lane while several agents share the machine (manager, 2026-10-17)
 **Depends on:** [dev-workflow-and-gate.md](dev-workflow-and-gate.md)
@@ -395,7 +395,7 @@ The repo is public, so a GitHub-hosted runner costs nothing. The PR gate moves t
 | ----- | ---------- | ------------------------------------------------------------------------------------------------------------------------ |
 | A     | T33 to T38 | Sharded CI gate and ratchet, `check.sh` run isolation, detached-run scripts, CPU budget, docs and the conformance review |
 
-### Phase 5 - Root lint scope
+### Phase 5 - Root lint scope (built)
 
 **Targets:** none - this phase changes which checkout is linted, not lint rules or simulation behavior
 
@@ -499,7 +499,7 @@ parts of `scripts/check.sh`.
 | T39 | Ignore nested `.claude/worktrees/**` in ESLint and test that nested paths are ignored while root source remains linted (built) | [judgement]  | -             |
 | T40 | Record the measured nested-worktree lint failure and the verified scope in `sim-notes.md` (built)                              | [mechanical] | T39           |
 | T41 | Run the root quick gate and record the verification result (built)                                                             | [mechanical] | T39, T40      |
-| T42 | Review the root lint boundary, regression test and quick-gate result against the design                                        | [judgement]  | T39, T40, T41 |
+| T42 | Review the root lint boundary, regression test and quick-gate result against the design (built)                                | [judgement]  | T39, T40, T41 |
 
 ## Verification
 
