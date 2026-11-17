@@ -202,6 +202,7 @@ On 2026-11-15, T1, T4, T5, T9 and T10 (the screens' grids and predictions only) 
 | A cheaper scout call is its own arm with its own stop rule                                                  | The trait "Signals cost" makes a discount the lever most likely to be refused                                                                                        | Planner, from principles.md         |
 | Screens run with `specMutationRate` as the defaults have it, and once at 0                                  | A guild that holds its share only by flips from other guilds is not replacing itself (selection rule 1)                                                              | Delegated (plan review, 2026-11-15) |
 | Prey selectivity compares each guild's eaten-death share with its mean living-prey share, excluding hunters | Hunter headcount is not an available prey choice; E188 predates the metric, so liveness waits for the detector-baseline top-up rather than using fabricated readings | Coordinator, 2026-11-17             |
+| No baseline prediction is claimed for `eval.guild_share.*` or `eval.reproducer_recovery_rate`               | These descriptive detectors have no predeclared mechanism; the shared baseline reads their power and liveness only                                                   | Coordinator, 2026-11-17             |
 
 ## Experiments
 
