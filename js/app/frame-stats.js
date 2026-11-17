@@ -21,7 +21,7 @@ export function percentile(sortedValues, p) {
 /**
  * Fixed-capacity ring buffer of frame times that keeps the newest samples.
  * @param {number} [capacity] Maximum samples retained.
- * @returns {{ push: (ms: number) => void, values: () => Float64Array }} The ring.
+ * @returns {{ push: (ms: number) => void, size: () => number, values: () => Float64Array }} The ring.
  */
 export function createFrameRing(capacity = FRAME_RING_CAPACITY) {
     const buffer = new Float64Array(capacity);
@@ -33,6 +33,7 @@ export function createFrameRing(capacity = FRAME_RING_CAPACITY) {
             next = (next + 1) % capacity;
             count = Math.min(count + 1, capacity);
         },
+        size: () => count,
         values() {
             const out = new Float64Array(count);
             const start = count < capacity ? 0 : next;
@@ -52,8 +53,8 @@ const REFRESH_PERCENTILE = 25;
 
 /**
  * @typedef {object} FrameStats
- * @property {{push: (ms: number) => void, values: () => Float64Array}} intervals frame intervals in ms
- * @property {{push: (ms: number) => void, values: () => Float64Array}} draws time spent in the frame callback in ms
+ * @property {{push: (ms: number) => void, size: () => number, values: () => Float64Array}} intervals frame intervals in ms
+ * @property {{push: (ms: number) => void, size: () => number, values: () => Float64Array}} draws time spent in the frame callback in ms
  * @property {{hidden: number, zero: number, long: number}} ignored frames not recorded, by reason: a hidden tab, no
  *   interval (the first frame, or two callbacks with one timestamp), or an interval over `MAX_INTERVAL_MS`
  */

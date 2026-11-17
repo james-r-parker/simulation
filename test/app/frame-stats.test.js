@@ -85,12 +85,15 @@ describe('createFrameRing', () => {
     it('keeps the newest samples once capacity is exceeded', () => {
         const ring = createFrameRing(3);
         [1, 2, 3, 4, 5].forEach((v) => ring.push(v));
+        expect(ring.size()).toBe(3);
         expect(Array.from(ring.values())).toEqual([3, 4, 5]);
     });
 
     it('returns only pushed samples before it is full', () => {
         const ring = createFrameRing(4);
+        expect(ring.size()).toBe(0);
         ring.push(7);
+        expect(ring.size()).toBe(1);
         expect(Array.from(ring.values())).toEqual([7]);
     });
 });

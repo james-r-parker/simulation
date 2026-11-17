@@ -1,0 +1,43 @@
+import { describe, expect, it, vi } from 'vitest';
+import { createFrameStats } from '../../js/app/frame-stats.js';
+import { createAppLiveness, startReporting } from '../../js/app/liveness.js';
+
+describe('createAppLiveness', () => {
+    it('reads the current app frame count and worker tick without exposing mutable values', () => {
+        let frames = 12;
+        let tick = 34;
+        const resetFrames = vi.fn();
+        const liveness = createAppLiveness({
+            readFrames: () => frames,
+            readTick: () => tick,
+            resetFrames,
+        });
+
+        expect(liveness.frames).toBe(12);
+        expect(liveness.tick).toBe(34);
+        frames = 20;
+        tick = 50;
+        expect(liveness.frames).toBe(20);
+        expect(liveness.tick).toBe(50);
+        liveness.resetFrames();
+        expect(resetFrames).toHaveBeenCalledOnce();
+        expect(Object.isFrozen(liveness)).toBe(true);
+    });
+
+    it('only installs performance reporting in non-production builds', () => {
+        const dev = /** @type {Record<string, any>} */ ({});
+        const production = /** @type {Record<string, any>} */ ({});
+        const read = () => ({
+            stats: createFrameStats(),
+            worker: null,
+            gpu: { geometries: 0, textures: 0, programs: 0 },
+            gpuSamples: null,
+            heapBytes: null,
+        });
+        startReporting({ target: dev, production: false, read, reset: () => {} });
+        startReporting({ target: production, production: true, read, reset: () => {} });
+
+        expect(dev.__perf()).toHaveProperty('app', 'v6');
+        expect(production).not.toHaveProperty('__perf');
+    });
+});
