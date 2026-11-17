@@ -18,7 +18,7 @@ const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-name
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(367);
+        expect(REPORT_NAMES).toHaveLength(369);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -209,6 +209,8 @@ const ADDED_AFTER_T8 = [
     'eval.freeze_under_threat',
     'eval.freeze_survival_gain',
     'eval.ambush_kill_share',
+    'eval.chase_reacquire_share',
+    'eval.scavenge_approach_share',
 ];
 /** Watch metrics registered after the snapshot whose intended direction is lower. */
 const ADDED_INTENDED_LOWER = [

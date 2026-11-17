@@ -1,5 +1,13 @@
 // Expected outputs from a sourceRun with two after-burn-in starvation deaths and no scene activity.
 export default {
+    'eval.chase_reacquire_share': {
+        value: null,
+        reason: 'no resolved chases after burn-in',
+    },
+    'eval.scavenge_approach_share': {
+        value: null,
+        reason: 'no carcass meals after burn-in',
+    },
     'eval.ambush_kill_share': {
         value: null,
         reason: 'no caught approaches after burn-in',
