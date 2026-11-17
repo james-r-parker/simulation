@@ -18,7 +18,14 @@ const VITEST_CALL = [
 
 export default [
     {
-        ignores: ['dist/**', 'node_modules/**', 'public/**', 'vite.config.js', 'test/fixtures/**'],
+        ignores: [
+            'dist/**',
+            'node_modules/**',
+            'public/**',
+            'vite.config.js',
+            'test/fixtures/**',
+            '.claude/worktrees/**',
+        ],
     },
     js.configs.recommended,
     // Coding standards (docs/coding-standards.md and the AGENTS.md size limits): small single-purpose modules and functions.
