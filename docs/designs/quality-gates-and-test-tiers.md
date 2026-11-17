@@ -1,6 +1,6 @@
 # Quality gates and test tiers
 
-**Status:** In progress - the full gate runs in CI, sharded, with the coverage ratchet, per-run `check.sh` coverage, `--rerun-failed`, `--quick`, detached-run scripts and a worker budget (Phase 4, built, which also closes T26); tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test, benchmark comparison and the nightly workflow (Phase 2) are built; Phase 3 is part built: the busy-aware `bench-check` with load-scaled test timeouts (T20, T22), the built-in CPU lock (T19) and the advisory CI `perf` job with `--self` and the `noise` dispatch (T17), the `bench-compare` digest and the `nightly-failure` issue job (T21, all but its `resume-plan` line) are in, as are the merge queue trigger, PR-only cancellation, app-path scope for the browser smoke and the no-container smoke job (T28 to T32; enabling the queue in the ruleset is a user step); Phase 5 root lint and slow-test timeout reliability is in progress; T18 (needs two weeks of `perf` runs), T23 (the smoke still counts frames only: `js/app/main.js` now exists, so it can read the tick), T24 and T25 are open.
+**Status:** In progress - the full gate runs in CI, sharded, with the coverage ratchet, per-run `check.sh` coverage, `--rerun-failed`, `--quick`, detached-run scripts and a worker budget (Phase 4, built, which also closes T26); tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test, benchmark comparison and the nightly workflow (Phase 2) are built; Phase 3 is part built: the busy-aware `bench-check` with load-scaled test timeouts (T20, T22), the built-in CPU lock (T19) and the advisory CI `perf` job with `--self` and the `noise` dispatch (T17), the `bench-compare` digest and the `nightly-failure` issue job (T21, all but its `resume-plan` line) are in, as are the merge queue trigger, PR-only cancellation, app-path scope for the browser smoke and the no-container smoke job (T28 to T32; enabling the queue in the ruleset is a user step); Phase 5 root lint and slow-test timeout reliability is built; T18 (needs two weeks of `perf` runs), T23 (the smoke still counts frames only: `js/app/main.js` now exists, so it can read the tick), T24 and T25 are open.
 **Validated:** c11202bd (2026-11-17)
 **Priority:** 18 - Phase 3 (PR perf job, CPU lock in check.sh, busy-aware bench-check) protects every other lane while several agents share the machine (manager, 2026-10-17)
 **Depends on:** [dev-workflow-and-gate.md](dev-workflow-and-gate.md)
@@ -396,7 +396,7 @@ The repo is public, so a GitHub-hosted runner costs nothing. The PR gate moves t
 | ----- | ---------- | ------------------------------------------------------------------------------------------------------------------------ |
 | A     | T33 to T38 | Sharded CI gate and ratchet, `check.sh` run isolation, detached-run scripts, CPU budget, docs and the conformance review |
 
-### Phase 5 - Root and slow-test gate reliability (in progress)
+### Phase 5 - Root and slow-test gate reliability (built)
 
 **Targets:** none - this phase changes which checkout is linted, not lint rules or simulation behavior
 
@@ -497,7 +497,7 @@ parts of `scripts/check.sh`.
 | T37 | Update `AGENTS.md` (commands, delegating), the `create-pr` skill and this doc as built (built)                                                                                                                                                               | [mechanical] | T33, T34, T35, T36      |
 | T38 | Conformance review of Phase 4 (built)                                                                                                                                                                                                                        | [judgement]  | T33, T34, T35, T36, T37 |
 
-### Phase 5 - Root lint scope
+### Phase 5 - Root and slow-test gate reliability
 
 | #   | Task                                                                                                                           | Nature       | Depends on                        |
 | --- | ------------------------------------------------------------------------------------------------------------------------------ | ------------ | --------------------------------- |
@@ -508,7 +508,7 @@ parts of `scripts/check.sh`.
 | T43 | Give each `trainer.slow.test.js` CPU-bound test an explicit `scaleTimeout` limit without changing its assertions (built)       | [mechanical] | -                                 |
 | T44 | Raise both anti-exploit slow-suite setup limits with `scaleTimeout`; retain every controller and assertion (built)             | [mechanical] | -                                 |
 | T45 | Run both affected slow test files and the root quick gate; record the CI and local evidence (built)                            | [mechanical] | T43, T44                          |
-| T46 | Review Phase 5 scope, timeout ceilings, tests and gate results against the design                                              | [judgement]  | T39, T40, T41, T42, T43, T44, T45 |
+| T46 | Review Phase 5 scope, timeout ceilings, tests and gate results against the design (built)                                      | [judgement]  | T39, T40, T41, T42, T43, T44, T45 |
 
 ## Verification
 
@@ -530,4 +530,4 @@ parts of `scripts/check.sh`.
 10. Phase 3: a nightly that fails opens one `nightly-failure` issue; its `bench-compare` digest shows the `base ... head ...` line and no `npm warn` lines.
 11. Phase 3: `browser-smoke` passes under software GL and fails when the frame loop or the tick is stopped; a failure leaves `.checklogs/playwright` with a trace.
 12. Phase 5: `test/eslint-scope.test.js` proves a nested Git worktree is ignored and a root `js/sim` file retains the complexity rule; `scripts/check.sh --fix --quick` passes without environment overrides.
-13. Phase 5: `npx vitest run test/evo/trainer.slow.test.js` passes (5 tests, 6.82 s), `npx vitest run test/evo/anti-exploit.slow.test.js` passes (56 tests, 76.90 s), and `scripts/check.sh --fix --quick` passes all 8 gates; CI run 44110284394 exposed both timeout ceilings before these fixes.
+13. Phase 5: `npx vitest run test/evo/trainer.slow.test.js` passes (5 tests, 6.82 s), `npx vitest run test/evo/anti-exploit.slow.test.js` passes (56 tests, 76.90 s), and `scripts/check.sh --fix --quick` passes all 8 gates. CI run 44114918218 passes all shards, statistical and heavy suites, merged coverage and ratchet, static gates, browser smoke and required check; run 44110284394 exposed both timeout ceilings before these fixes.
