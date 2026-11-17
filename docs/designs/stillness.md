@@ -67,16 +67,17 @@ The keep rule decides ([principles.md](../principles.md), "A realistic mechanism
 
 ## Decisions
 
-| Decision                                                                  | Why                                                                                                                                      | Who                                    |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| Measure before building                                                   | If blobs already gain by freezing, the rule is not needed                                                                                | Delegated (planning, 2026-11-15)       |
-| The existing proximity value is scaled; no input is added                 | A new input is a cost that needs a scene metric to move ([principles.md](../principles.md), "More sensors as a substitute for a scene")  | Delegated (planning, 2026-11-15)       |
-| It queues behind cover and the sprint store                               | Cover ([habitat-cover.md](habitat-cover.md)) and stillness both hide a body; reading them together would not say which one moved a scene | Delegated (planning, 2026-11-15)       |
-| The Rust kernel change is built by Opus, and the JS reference is the test | The ray march runs in `wasm/src/sense.rs`; a kernel is tested against its JS reference (`AGENTS.md`, wasm-kernels.md)                    | Planner, from the user's rule          |
-| The switch `stillSight` is deleted at Phase 3 on either verdict           | Delete what a switch replaces (`AGENTS.md`)                                                                                              | Planner, from AGENTS.md                |
-| A threat episode is a contiguous current ray hit                          | `lastThreat[slot] === world.tick` marks a current hit; `INTENT_WINDOW` carries stale sightings and blurs the episode boundary            | Delegated (planning, 2026-11-17)       |
-| Survival ends at ray loss or death; open episodes at run end are omitted  | This resolves outcomes without extending the run or counting unfinished episodes as survivors                                            | Delegated (planning, 2026-11-17)       |
-| Register detector names before committing their literal uses              | The tier-1 convention hook rejects unregistered `eval.*` names, so T2b registry coverage must commit before the T2a detector code        | Delegated (implementation, 2026-11-17) |
+| Decision                                                                  | Why                                                                                                                                      | Who                                        |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Measure before building                                                   | If blobs already gain by freezing, the rule is not needed                                                                                | Delegated (planning, 2026-11-15)           |
+| The existing proximity value is scaled; no input is added                 | A new input is a cost that needs a scene metric to move ([principles.md](../principles.md), "More sensors as a substitute for a scene")  | Delegated (planning, 2026-11-15)           |
+| It queues behind cover and the sprint store                               | Cover ([habitat-cover.md](habitat-cover.md)) and stillness both hide a body; reading them together would not say which one moved a scene | Delegated (planning, 2026-11-15)           |
+| The Rust kernel change is built by Opus, and the JS reference is the test | The ray march runs in `wasm/src/sense.rs`; a kernel is tested against its JS reference (`AGENTS.md`, wasm-kernels.md)                    | Planner, from the user's rule              |
+| The switch `stillSight` is deleted at Phase 3 on either verdict           | Delete what a switch replaces (`AGENTS.md`)                                                                                              | Planner, from AGENTS.md                    |
+| A threat episode is a contiguous current ray hit                          | `lastThreat[slot] === world.tick` marks a current hit; `INTENT_WINDOW` carries stale sightings and blurs the episode boundary            | Delegated (planning, 2026-11-17)           |
+| Survival ends at ray loss or death; open episodes at run end are omitted  | This resolves outcomes without extending the run or counting unfinished episodes as survivors                                            | Delegated (planning, 2026-11-17)           |
+| Register detector names before committing their literal uses              | The tier-1 convention hook rejects unregistered `eval.*` names, so T2b registry coverage must commit before the T2a detector code        | Delegated (implementation, 2026-11-17)     |
+| Ambush stillness is latched before the approach-opening tick              | The rule requires 60 consecutive still ticks before opening; the opening tick's speed cannot complete or break that prior run            | Delegated (conformance review, 2026-11-17) |
 
 ## Delivery requirements
 
@@ -98,13 +99,13 @@ The keep rule decides ([principles.md](../principles.md), "A realistic mechanism
 
 ### Phase 1 - Detectors and baseline
 
-| #   | Task                                                                                                                                                         | Nature       | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
-| T1  | Audit the stillness bar, current threat signal and approach-opening path; record detector definitions and observer-only cost in [sim-notes.md](sim-notes.md) | [judgement]  | -          |
-| T2a | Add `js/evo/scene-stillness.js` and observer wiring for the three Phase 1 detectors, with focused arithmetic tests                                           | [judgement]  | T1         |
-| T2b | Add registry/source coverage, update the principles detector table and regenerate [metrics.md](metrics.md)                                                   | [mechanical] | T2a        |
-| T3  | Read the metrics in the shared detector-baseline top-up; record the prediction first in `evals/experiments.json`, then the Phase 2 verdict                   | [mechanical] | T2b        |
-| T4  | Conformance review of the Phase 1 implementation by a fresh agent; confirm episode and survival definitions (built)                                          | [judgement]  | T1, T2b    |
+| #   | Task                                                                                                                                                                 | Nature       | Depends on |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T1  | Audit the stillness bar, current threat signal and approach-opening path; record detector definitions and observer-only cost in [sim-notes.md](sim-notes.md) (built) | [judgement]  | -          |
+| T2a | Add `js/evo/scene-stillness.js` and observer wiring for the three Phase 1 detectors, with focused arithmetic tests (built)                                           | [judgement]  | T1         |
+| T2b | Add registry/source coverage, update the principles detector table and regenerate [metrics.md](metrics.md) (built)                                                   | [mechanical] | T2a        |
+| T3  | Read the metrics in the shared detector-baseline top-up; record the prediction first in `evals/experiments.json`, then the Phase 2 verdict                           | [mechanical] | T2b        |
+| T4  | Conformance review of the Phase 1 implementation by a fresh agent; confirm episode and survival definitions (built)                                                  | [judgement]  | T1, T2b    |
 
 ### Phase 2 - A still body is fainter
 
