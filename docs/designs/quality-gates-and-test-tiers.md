@@ -1,6 +1,6 @@
 # Quality gates and test tiers
 
-**Status:** In progress - the full gate runs in CI, sharded, with the coverage ratchet, per-run `check.sh` coverage, `--rerun-failed`, `--quick`, detached-run scripts and a worker budget (Phase 4, built, which also closes T26); tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test, benchmark comparison and the nightly workflow (Phase 2) are built; Phase 3 is part built: the busy-aware `bench-check` with load-scaled test timeouts (T20, T22), the built-in CPU lock (T19) and the advisory CI `perf` job with `--self` and the `noise` dispatch (T17), the `bench-compare` digest and the `nightly-failure` issue job (T21, all but its `resume-plan` line) are in, as are the merge queue trigger, PR-only cancellation, app-path scope for the browser smoke and the no-container smoke job (T28 to T32; enabling the queue in the ruleset is a user step); Phase 5 root lint scope is built; T18 (needs two weeks of `perf` runs), T23 (the smoke still counts frames only: `js/app/main.js` now exists, so it can read the tick), T24 and T25 are open.
+**Status:** In progress - the full gate runs in CI, sharded, with the coverage ratchet, per-run `check.sh` coverage, `--rerun-failed`, `--quick`, detached-run scripts and a worker budget (Phase 4, built, which also closes T26); tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test, benchmark comparison and the nightly workflow (Phase 2) are built; Phase 3 is part built: the busy-aware `bench-check` with load-scaled test timeouts (T20, T22), the built-in CPU lock (T19) and the advisory CI `perf` job with `--self` and the `noise` dispatch (T17), the `bench-compare` digest and the `nightly-failure` issue job (T21, all but its `resume-plan` line) are in, as are the merge queue trigger, PR-only cancellation, app-path scope for the browser smoke and the no-container smoke job (T28 to T32; enabling the queue in the ruleset is a user step); Phase 5 root lint and slow-test timeout reliability is in progress; T18 (needs two weeks of `perf` runs), T23 (the smoke still counts frames only: `js/app/main.js` now exists, so it can read the tick), T24 and T25 are open.
 **Validated:** c11202bd (2026-11-17)
 **Priority:** 18 - Phase 3 (PR perf job, CPU lock in check.sh, busy-aware bench-check) protects every other lane while several agents share the machine (manager, 2026-10-17)
 **Depends on:** [dev-workflow-and-gate.md](dev-workflow-and-gate.md)
@@ -152,6 +152,7 @@ order.
 | A PR `perf` job runs `bench-compare` on `js/sim`, `js/evo`, `js/worker` and `bench` changes; advisory for two weeks, then required at `max(5%, 3 x noise)`                                                                                                                                                                                 | The absolute `bench-check` baseline is machine-specific, local only and fails on `main` under load; alternating base and head on one runner cancels runner speed                                                                                                                                         | Specialist review          |
 | `scripts/check.sh` takes the CPU lock itself for the heavy gates                                                                                                                                                                                                                                                                           | The lock lives only in agent rules in `/tmp`; `check.sh`, `bench.mjs` and `eval.mjs` take none, so a forgotten wrapper skews timings                                                                                                                                                                     | Specialist review          |
 | Root lint ignores `.claude/worktrees/**` while continuing to lint the active checkout                                                                                                                                                                                                                                                      | Nested Git worktrees are separate checkouts and may contain unfinished branches; the root gate must not depend on their files                                                                                                                                                                            | Codex, 2026-11-17          |
+| CPU-bound slow tests set explicit limits through `scaleTimeout` when hosted CI exceeds Vitest's default                                                                                                                                                                                                                                    | CI run 44110284394 showed `trainer.slow` exceeding 40 s per test and `anti-exploit.slow` exceeding 360 s in setup; retain every assertion and scale limits for coverage and machine load                                                                                                                 | Codex, 2026-11-17          |
 | Local `bench-check` reports `skipped` on a busy machine                                                                                                                                                                                                                                                                                    | A measurement under load fails the gate with no code change (`bench.step_ms@500` 4.50 ms at 04:00 against 4.67 to 4.80 ms later the same day)                                                                                                                                                            | Specialist review          |
 | An in-limit `bench-check` step passes at any load; only an over-limit one is skipped on a busy machine, and the same limit fails on a quiet one                                                                                                                                                                                            | Delegated (gate autonomy). The first plan skipped before measuring at `nproc / 8`, which on a shared 32-thread machine skips every run and spends none of its evidence; a pass under load is real because load only slows a run                                                                          |
 | Test timeouts scale by 2 to 4 above the busy limit and by 1 below it                                                                                                                                                                                                                                                                       | Delegated (gate autonomy). 2026-11-06 lost hours to slow-test timeouts under other streams' evals; a factor read at start leaves a quiet run exactly as strict, and the 4 cap sits above the 2.9 times measured                                                                                          |
@@ -395,23 +396,27 @@ The repo is public, so a GitHub-hosted runner costs nothing. The PR gate moves t
 | ----- | ---------- | ------------------------------------------------------------------------------------------------------------------------ |
 | A     | T33 to T38 | Sharded CI gate and ratchet, `check.sh` run isolation, detached-run scripts, CPU budget, docs and the conformance review |
 
-### Phase 5 - Root lint scope (built)
+### Phase 5 - Root and slow-test gate reliability (in progress)
 
 **Targets:** none - this phase changes which checkout is linted, not lint rules or simulation behavior
 
 **Why:** On 2026-11-17, `scripts/check.sh --fix --quick` in the root checkout asked ESLint to scan separate Git worktrees
 nested under `.claude/worktrees/`. It reported unrelated lint failures in unfinished branches and blocked a clean root
 branch. A root checkout's lint gate should cover that checkout's files; nested checkouts are responsible for their own
-checks.
+checks. CI run 44110284394 also showed the trainer slow tests exceeding Vitest's 40-second coverage default and the
+anti-exploit setup exceeding its 360-second load-scaled timeout. Give these CPU-bound tests explicit scaled limits so
+the full suite remains required and the assertions stay unchanged.
 
 **Test design:** Use ESLint's `isPathIgnored` to assert a path under `.claude/worktrees/` is ignored and a supported root
-source path is not ignored. Then run the unchanged root quick gate without environment overrides.
+source path is not ignored. Add `scaleTimeout` limits to each CPU-bound trainer episode and raise the anti-exploit
+setup limit; rerun both slow test files, then the unchanged root quick gate without environment overrides. No assertion,
+test selection, coverage threshold or default rule changes.
 
 #### Chunks
 
-| Chunk | Tasks      | Contents                                                                             |
-| ----- | ---------- | ------------------------------------------------------------------------------------ |
-| B     | T39 to T42 | Root checkout lint scope, its regression test, verified note, and conformance review |
+| Chunk | Tasks      | Contents                                                                                    |
+| ----- | ---------- | ------------------------------------------------------------------------------------------- |
+| B     | T39 to T46 | Root checkout lint scope, scaled slow-test limits, gate verification and conformance review |
 
 ## Delivery requirements
 
@@ -494,12 +499,16 @@ parts of `scripts/check.sh`.
 
 ### Phase 5 - Root lint scope
 
-| #   | Task                                                                                                                           | Nature       | Depends on    |
-| --- | ------------------------------------------------------------------------------------------------------------------------------ | ------------ | ------------- |
-| T39 | Ignore nested `.claude/worktrees/**` in ESLint and test that nested paths are ignored while root source remains linted (built) | [judgement]  | -             |
-| T40 | Record the measured nested-worktree lint failure and the verified scope in `sim-notes.md` (built)                              | [mechanical] | T39           |
-| T41 | Run the root quick gate and record the verification result (built)                                                             | [mechanical] | T39, T40      |
-| T42 | Review the root lint boundary, regression test and quick-gate result against the design (built)                                | [judgement]  | T39, T40, T41 |
+| #   | Task                                                                                                                           | Nature       | Depends on                        |
+| --- | ------------------------------------------------------------------------------------------------------------------------------ | ------------ | --------------------------------- |
+| T39 | Ignore nested `.claude/worktrees/**` in ESLint and test that nested paths are ignored while root source remains linted (built) | [judgement]  | -                                 |
+| T40 | Record the measured nested-worktree lint failure and the verified scope in `sim-notes.md` (built)                              | [mechanical] | T39                               |
+| T41 | Run the root quick gate and record the verification result (built)                                                             | [mechanical] | T39, T40                          |
+| T42 | Review the root lint boundary, regression test and quick-gate result against the design (built)                                | [judgement]  | T39, T40, T41                     |
+| T43 | Give each `trainer.slow.test.js` CPU-bound test an explicit `scaleTimeout` limit without changing its assertions               | [mechanical] | -                                 |
+| T44 | Raise both anti-exploit slow-suite setup limits with `scaleTimeout`; retain every controller and assertion                     | [mechanical] | -                                 |
+| T45 | Run both affected slow test files and the root quick gate; record the CI and local evidence                                    | [mechanical] | T43, T44                          |
+| T46 | Review Phase 5 scope, timeout ceilings, tests and gate results against the design                                              | [judgement]  | T39, T40, T41, T42, T43, T44, T45 |
 
 ## Verification
 
