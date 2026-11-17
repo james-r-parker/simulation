@@ -81,10 +81,6 @@ function recordPrey(scene, slot, still, threatened) {
 
 /** @param {Record<string, any>} scene @param {number} slot @param {boolean} still @param {number} tick */
 function recordHunter(scene, slot, still, tick) {
-    if (tick < BURN_IN_TICKS) {
-        scene.stillRun[slot] = 0;
-        return;
-    }
     if (scene.approachOpenedTick[slot] === tick) {
         scene.ambushAtOpen[slot] = scene.stillRun[slot] >= AMBUSH_STILL_TICKS ? 1 : 0;
     }
