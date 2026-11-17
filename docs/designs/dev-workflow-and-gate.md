@@ -49,24 +49,24 @@ log in `.checklogs/<gate>.log` until the next run. The gates run in tiers - the 
 the nightly - set out in [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), which also adds the
 `browser-smoke`, `mutation` and `bench-compare` gates; a gate not built yet reports `skipped`.
 
-| Gate            | Runs                                                                                                                                                 |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `conventions`   | `scripts/check-conventions.sh`                                                                                                                       |
-| `designs-index` | `node scripts/designs-index.mjs --check`                                                                                                             |
-| `format`        | `prettier --check .` (scope set by `.prettierignore`)                                                                                                |
-| `lint`          | `eslint --max-warnings 0 .` (scope set by `eslint.config.js`)                                                                                        |
-| `typecheck`     | `tsc -p tsconfig.json` (`checkJs`, `strict`; scope set by its `include`)                                                                             |
-| `test-related`  | Tier 1: `vitest related --run` over the staged `.js` and `.mjs` files                                                                                |
-| `deps`          | `depcruise` with `.dependency-cruiser.cjs` (layering rules)                                                                                          |
-| `dupes`         | `jscpd` with `.jscpd.json` over `js/sim`, `js/evo` and `scripts`                                                                                     |
-| `test`          | `vitest run --coverage`, shuffled from `TEST_SEED` (printed as `test (seed <n>)`); fails when `js/sim` or `js/evo` has code and `test/` has no tests |
-| `ratchet`       | `node scripts/quality-ratchet.mjs --check` against `scripts/quality-baseline.json`, after a passing `test`                                           |
-| `bench-check`   | `node scripts/bench-check.mjs` on `bench.step_ms@500` against `bench/baseline.json`; local only, skipped under `--ci`                                |
-| `browser-smoke` | `scripts/browser-smoke.sh`: the built app in Chromium (Playwright image, or `SMOKE_LOCAL=1`)                                                         |
-| `mutation`      | Tier 3: `stryker run`, then the ratchet on the mutation score; skipped under Vitest 5                                                                |
-| `bench-compare` | Tier 3: `node scripts/bench-compare.mjs`, branch against base, fails a median rise over 10%                                                          |
-| `build`         | `vite build` into a temporary directory                                                                                                              |
-| `docs-tests`    | `vitest run test/designs-index.test.js`; only when named by `--docs` or `--only`                                                                     |
+| Gate            | Runs                                                                                                                                                                   |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `conventions`   | `scripts/check-conventions.sh`                                                                                                                                         |
+| `designs-index` | `node scripts/designs-index.mjs --check`                                                                                                                               |
+| `format`        | `prettier --check .` (scope set by `.prettierignore`)                                                                                                                  |
+| `lint`          | `eslint --max-warnings 0 .` (scope set by `eslint.config.js`)                                                                                                          |
+| `typecheck`     | `tsc -p tsconfig.json` (`checkJs`, `strict`; scope set by its `include`)                                                                                               |
+| `test-related`  | Tier 1: `vitest related --run` over the staged `.js` and `.mjs` files                                                                                                  |
+| `deps`          | `depcruise` with `.dependency-cruiser.cjs` (layering rules)                                                                                                            |
+| `dupes`         | `jscpd` with `.jscpd.json` over `js/sim`, `js/evo` and `scripts`                                                                                                       |
+| `test`          | `vitest run --coverage`, shuffled from `TEST_SEED` (printed as `test (seed <n>)`); fails when `js/sim` or `js/evo` has code and `test/` has no tests                   |
+| `ratchet`       | `node scripts/quality-ratchet.mjs --check` against `scripts/quality-baseline.json`, after a passing `test`                                                             |
+| `bench-check`   | `node scripts/bench-check.mjs` on `bench.step_ms@500` against `bench/baseline.json`; local only, skipped under `--ci`                                                  |
+| `browser-smoke` | `scripts/browser-smoke.sh`: built app in Chromium; after first draw, 30 recorded app frames in 5 s and an advancing worker tick (Playwright image, or `SMOKE_LOCAL=1`) |
+| `mutation`      | Tier 3: `stryker run`, then the ratchet on the mutation score; skipped under Vitest 5                                                                                  |
+| `bench-compare` | Tier 3: `node scripts/bench-compare.mjs`, branch against base, fails a median rise over 10%                                                                            |
+| `build`         | `vite build` into a temporary directory                                                                                                                                |
+| `docs-tests`    | `vitest run test/designs-index.test.js`; only when named by `--docs` or `--only`                                                                                       |
 
 | Flag         | Effect                                                                                                         |
 | ------------ | -------------------------------------------------------------------------------------------------------------- |

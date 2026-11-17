@@ -11,13 +11,13 @@ import { buildDebugBundle } from './debug-bundle.js';
 import { createFamilySlots } from './family-slots.js';
 import { createFrameLoop } from './frame-loop.js';
 import { clearFrameStats, createFrameStats } from './frame-stats.js';
+import { createAppLiveness, readAppPerf, startReporting } from './liveness.js';
 import { MIN_CSS_PX_TOUCH, minPxTable } from './display-size.js';
 import { clientToDevice, deviceToClient, devicePerCss } from './canvas-geometry.js';
 import { agentAt } from './hover-pick.js';
 import { largestOfLineage } from './picking.js';
 import { gpuTimeFor } from './gpu-time.js';
 import { createInterface } from './interface.js';
-import { gpuCounts, installPerf } from './perf.js';
 import { listenPointers } from './pointer-events.js';
 import { createPointerInput } from './pointer-input.js';
 import { canvasPixelSize } from './renderer/canvas-size.js';
@@ -28,7 +28,7 @@ import { createDownloader } from './ui/download.js';
 import { actionForKey } from './ui/keymap.js';
 import { unsupportedReason } from './support.js';
 import { configOverrides, readParams } from './url-params.js';
-import { createFxDev, fxAfterDraw, fxPerf, fxSink, readFxParams } from './fx-dev.js';
+import { createFxDev, fxAfterDraw, fxSink, readFxParams } from './fx-dev.js';
 import { createWakeLock } from './wake-lock.js';
 
 const PERF_FRAMES = 32768;
@@ -344,38 +344,6 @@ function createApp(container) {
 }
 
 /**
- * @param {App} app the page
- * @returns {import('./perf.js').PerfInputs} the live values `__perf` reports
- */
-function readPerf(app) {
-    return {
-        stats: app.stats,
-        worker: app.supervisor.client()?.stats ?? null,
-        gpu: gpuCounts(app.deps.scene?.renderer.info),
-        gpuSamples: app.deps.gpuTimer?.samples() ?? null,
-        heapBytes: /** @type {any} */ (performance).memory?.usedJSHeapSize ?? null,
-        ...fxPerf(app),
-    };
-}
-
-/**
- * Exposes `window.__perf` in dev builds.
- * @param {App} app the page
- * @returns {void}
- */
-function startReporting(app) {
-    if (typeof __PRODUCTION__ === 'undefined' || !__PRODUCTION__) {
-        installPerf(/** @type {any} */ (window), {
-            read: () => readPerf(app),
-            reset() {
-                clearFrameStats(app.stats, PERF_FRAMES);
-                app.deps.gpuTimer?.reset();
-            },
-        });
-    }
-}
-
-/**
  * @returns {void}
  */
 function start() {
@@ -388,13 +356,26 @@ function start() {
         return showMessage(container, reason);
     }
     const app = createApp(container);
+    window.__blob = createAppLiveness({
+        readFrames: () => app.stats.drawCalls,
+        readTick: () => app.supervisor.tick(),
+        resetFrames: () => clearFrameStats(app.stats, PERF_FRAMES),
+    });
     observeSize(container, (next) => {
         Object.assign(app.size, next);
         app.deps.scene?.resize(next.width, next.height);
         app.iface.resize();
         resizeCamera(app.camera, next);
     });
-    startReporting(app);
+    startReporting({
+        target: /** @type {any} */ (window),
+        production: typeof __PRODUCTION__ !== 'undefined' && __PRODUCTION__,
+        read: () => readAppPerf(app),
+        reset: () => {
+            clearFrameStats(app.stats, PERF_FRAMES);
+            app.deps.gpuTimer?.reset();
+        },
+    });
     const tick = (/** @type {number} */ now) => (app.loop.frame(now), app.iface.tick(now), requestAnimationFrame(tick));
     requestAnimationFrame(tick);
     app.supervisor.start(chooseSeed(app.params.seed));

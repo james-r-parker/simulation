@@ -152,6 +152,15 @@ describe('the heartbeat', () => {
         expect(s.supervisor.restarts()).toBe(0);
     });
 
+    it('reports the latest worker tick for app liveness diagnostics', () => {
+        const s = setup();
+        s.supervisor.start(7);
+        const [worker] = s.workers;
+        expect(s.supervisor.tick()).toBe(0);
+        worker.onmessage({ data: statsMessage(25) });
+        expect(s.supervisor.tick()).toBe(25);
+    });
+
     it('restarts with a new seed after a missed heartbeat, shows the toast and logs both events', () => {
         const s = setup();
         s.supervisor.start(7);
