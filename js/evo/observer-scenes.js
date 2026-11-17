@@ -53,6 +53,13 @@ import { createReachScene, sampleReach } from './scene-reach.js';
 import { createRefugeScene, sampleRefuge } from './scene-refuge.js';
 import { createRefugeOutcomeScene, sampleRefugeOutcome, tickRefugeBites } from './scene-refuge-outcome.js';
 import { createSprintScene, tickSprint } from './scene-sprint.js';
+import {
+    createStillnessScene,
+    noteStillnessChase,
+    noteStillnessDeath,
+    resetStillnessSlot,
+    tickStillness,
+} from './scene-stillness.js';
 import { createTerrainScene, sampleTerrain } from './scene-terrain.js';
 import { GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
 import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
@@ -60,9 +67,10 @@ import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
 /**
  * The scenes fed by each resolved chase: the approach scene resolves it and hands it to the others' hooks.
  * @param {Readonly<Record<string, any>>} config the world's config
+ * @param {Record<string, any>} stillness the stillness detector state, which reads the approach opening tick
  * @returns {Record<string, any>} the approach, competence, matched, kinematics, pack-lift and budget scenes
  */
-function createChaseScenes(config) {
+function createChaseScenes(config, stillness) {
     const competence = createCompetenceScene(config);
     const matched = createMatchedScene(config);
     const kinematics = createKinematicsScene(config);
@@ -74,9 +82,11 @@ function createChaseScenes(config) {
             noteMatchedChase(matched, world, chase);
             noteKinematicsChase(kinematics, world, chase);
             noteBudgetChase(budget, world, chase);
+            noteStillnessChase(stillness, chase);
         },
         onBite: (world, biter) => notePackBite(packLift, world, biter),
     });
+    stillness.approachOpenedTick = approach.openedTick;
     return { approach, competence, matched, kinematics, packLift, budget };
 }
 
@@ -90,11 +100,12 @@ export function createScenes(config, runTicks = 0, lean = false) {
     if (lean) {
         return { lean: true, terrain: createTerrainScene(config), style: createStyle(config) };
     }
+    const stillness = createStillnessScene(config);
     return {
         flora: createFloraScene(),
         herd: createHerdScene(config),
         patch: createPatchScene(config),
-        ...createChaseScenes(config),
+        ...createChaseScenes(config, stillness),
         terrain: createTerrainScene(config),
         refuge: createRefugeScene(config),
         reach: createReachScene(),
@@ -126,6 +137,7 @@ export function createScenes(config, runTicks = 0, lean = false) {
         bite: createBiteScene(config),
         biteLife: createBiteLifeScene(),
         sprint: createSprintScene(config),
+        stillness,
     };
 }
 
@@ -142,6 +154,7 @@ export function resetSceneSlot(scenes, slot) {
     }
     resetPatchSlot(scenes.patch, slot);
     resetApproachSlot(scenes.approach, slot);
+    resetStillnessSlot(scenes.stillness, slot);
     resetKinematicsSlot(scenes.kinematics, slot);
     resetStyleSlot(scenes.style, slot);
     resetConditionSlot(scenes.condition, slot);
@@ -208,6 +221,9 @@ function noteFullDeath(scenes, observer, { world, o }) {
     if (d[o + 4] === DEATH_CAUSE.EATEN) {
         noteApproachKill(scenes.approach, observer, world, { killerId: d[o + 5], victimId: d[o + 3] });
         notePackKill(scenes.packLift, observer, { world, size: d[o + 12], killer: d[o + 5], previous: d[o + 11] });
+    }
+    if (observer.genomeId[d[o + 2]] === d[o + 3]) {
+        noteStillnessDeath(scenes.stillness, d[o + 2], d[o + 1]);
     }
     noteCapacityDeath(scenes.capacity, { cause: d[o + 4], foodEnergy: d[o + 9] });
     noteEdgeDeath(scenes.edge, world, { cause: d[o + 4], spec: d[o + 6], foodEnergy: d[o + 9] });
@@ -339,6 +355,7 @@ export function observeScenes(observer, world) {
     tickRecoil(scenes.biteLife, world);
     trackProof(scenes.proof, world);
     trackApproaches(scenes.approach, observer, world);
+    tickStillness(scenes.stillness, observer, world);
     tickSprint(scenes.sprint, observer, world);
     tickKinematics(scenes.kinematics, observer, world);
     trackCarcasses(scenes.carcass, observer, world);
