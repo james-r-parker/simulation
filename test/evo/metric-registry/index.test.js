@@ -66,6 +66,13 @@ describe('withLiveness', () => {
         expect(Object.isFrozen(merged)).toBe(true);
         expect(family['eval.food_energy_per_1k']).toBe(original);
     });
+
+    it('leaves an entry with no reading as it was', () => {
+        const bare = METRICS['eval.food_energy_per_1k'];
+        const merged = withLiveness({ 'eval.food_energy_per_1k': bare }, {});
+
+        expect(merged['eval.food_energy_per_1k']).toBe(bare);
+    });
 });
 
 describe('withPower', () => {
