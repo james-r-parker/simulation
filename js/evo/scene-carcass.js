@@ -104,6 +104,7 @@ function eatenSinceLastTick(scene, world, food) {
  * @param {Record<string, any>} scene the carcass scene
  * @param {Record<string, any>} observer the observer
  * @param {Record<string, any>} world the world
+ * @param {Record<string, any> | undefined} scent observer-only scent detector state
  * @returns {void}
  */
 export function trackCarcasses(scene, observer, world, scent = undefined) {
