@@ -23,6 +23,14 @@ independent Git worktrees with their own branches and in-progress edits. A root 
 outside the active checkout. Git's `worktree list` confirms those paths are separate checkouts; excluding that one
 nested-worktree directory leaves the root `js/`, `test/`, `scripts/` and config paths under the existing lint rules.
 
+### 2026-11-17 - Browser smoke waits for the first app draw
+
+The smoke's old `requestAnimationFrame` counter started as soon as the canvas element attached, before the renderer's
+first completed draw, and counted browser callbacks rather than frames recorded by the app. `js/app/main.js` now exposes
+`globalThis.__blob.frames` and `.tick`; the smoke waits for a recorded frame, clears startup samples, then keeps the
+30-frame minimum over the same 5-second window while checking that the worker tick advances. On local Chromium with
+SwiftShader, the full browser suite passed in about 105 seconds.
+
 ### 2026-10-11 - WebGPU in WSL Chromium is SwiftShader only
 
 Playwright's Chromium under WSL2 (Ubuntu 26.04) gets only the SwiftShader fallback adapter, headless or headed,
