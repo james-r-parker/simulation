@@ -42,6 +42,7 @@ import { styleMetrics } from './style.js';
 import { herdMetrics } from './scene-herd-metrics.js';
 import { sprintMetrics } from './scene-sprint.js';
 import { stillnessMetrics } from './scene-stillness.js';
+import { scentMetrics } from './scene-scent.js';
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick
@@ -92,5 +93,6 @@ export function sceneMetrics(observer, world) {
         ...biteLifeMetrics(s.biteLife, world),
         ...sprintMetrics(s.sprint),
         ...stillnessMetrics(s.stillness),
+        ...scentMetrics(s.scent, s.approach.tally),
     };
 }

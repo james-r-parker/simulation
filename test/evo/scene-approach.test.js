@@ -326,7 +326,7 @@ describe('the noteChase hook', () => {
                 openedTick: T0,
                 hungry: expect.any(Boolean),
                 energy: expect.any(Number),
-                flags: CHASE_FLAG.LAPSE_LOST,
+                flags: CHASE_FLAG.LAPSE_LOST | CHASE_FLAG.REACQUIRED,
             },
         ]);
     });

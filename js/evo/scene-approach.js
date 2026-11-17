@@ -19,6 +19,7 @@ import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { CLOSING_BITS, CLOSING_MIN, INTENT_WINDOW } from './observer-intent-state.js';
 import { CHASE_OUTCOME, chasesEnded, createChaseTally, tallyChase } from './chase-outcome.js';
+import { notePreySight, scentChaseFlags } from './scene-scent.js';
 import { BITTEN_THIS_TICK } from './observer-intent-episode.js';
 import { findAlive } from './observer-intent.js';
 import { createLapseScene, lapseFlags, noteChaseLength, noteClosingProximity } from './scene-chase-lapse.js';
@@ -148,7 +149,11 @@ export function noteApproachKill(scene, observer, world, { killerId, victimId })
     } else if (scene.victim[killer] !== victimId) {
         return;
     }
-    resolved(scene, world, { slot: killer, outcome: CHASE_OUTCOME.CAUGHT });
+    resolved(scene, world, {
+        slot: killer,
+        outcome: CHASE_OUTCOME.CAUGHT,
+        flags: scentChaseFlags(observer.scenes?.scent, killer),
+    });
     scene.phase[killer] = IDLE;
 }
 
@@ -189,34 +194,85 @@ function noteBites(scene, observer, world) {
  * @param {number} slot an alive hunter slot
  * @returns {void}
  */
-function advance(scene, observer, world, slot) {
+/** @param {Record<string, any>} observer @param {Record<string, any>} scene @param {Record<string, any>} world @param {number} slot */
+function noteVisiblePrey(observer, scene, world, slot) {
+    const scent = observer.scenes?.scent;
+    const sighted = observer.intent.prey.seen[slot] === world.tick;
+    if (scent !== undefined && sighted && scene.phase[slot] !== IDLE) {
+        notePreySight(scent, world, slot);
+    }
+}
+
+/** @param {Record<string, any>} scene @param {Record<string, any>} observer @param {Record<string, any>} world @param {number} slot */
+function advanceBitten(scene, observer, world, slot) {
+    const scent = observer.scenes?.scent;
+    if (scene.phase[slot] !== BITTEN || world.tick - scene.biteTick[slot] < INTENT_WINDOW) {
+        return scene.phase[slot] === BITTEN;
+    }
+    const lives = findAlive(world, observer.slotOf, scene.victim[slot]) >= 0;
+    scene.resolvedTick[slot] = world.tick;
+    if (lives) {
+        resolved(scene, world, {
+            slot,
+            outcome: CHASE_OUTCOME.ESCAPED,
+            flags: scentChaseFlags(scent, slot),
+        });
+    }
+    scene.phase[slot] = IDLE;
+    return true;
+}
+
+/** @param {Record<string, any>} scene @param {Record<string, any>} observer @param {Record<string, any>} world @param {number} slot */
+function advanceClosing(scene, observer, world, slot) {
     const { tick } = world;
-    if (scene.phase[slot] === BITTEN) {
-        if (tick - scene.biteTick[slot] >= INTENT_WINDOW) {
-            const lives = findAlive(world, observer.slotOf, scene.victim[slot]) >= 0;
-            scene.resolvedTick[slot] = tick;
-            if (lives) {
-                resolved(scene, world, { slot, outcome: CHASE_OUTCOME.ESCAPED });
+    const scent = observer.scenes?.scent;
+    const sighted = observer.intent.prey.seen[slot] === tick;
+    const prey = observer.intent.prey;
+    const closing = scene.phase[slot] === OPEN ? closingNow(prey, slot, tick) : opensNow(scene, prey, slot, tick);
+    if (!closing) {
+        return false;
+    }
+    if (scene.phase[slot] !== OPEN) {
+        if (scent !== undefined) {
+            scent.reacquired[slot] = 0;
+            scent.lastSight[slot] = -1;
+            if (sighted) {
+                notePreySight(scent, world, slot);
             }
-            scene.phase[slot] = IDLE;
         }
-    } else if (
-        scene.phase[slot] === OPEN
-            ? closingNow(observer.intent.prey, slot, tick)
-            : opensNow(scene, observer.intent.prey, slot, tick)
-    ) {
-        if (scene.phase[slot] !== OPEN) {
-            scene.openedTick[slot] = tick;
-            scene.openedHungry[slot] = canEatNow(world, slot) ? 1 : 0;
-            scene.openedEnergy[slot] = world.energy[slot];
-        }
-        scene.phase[slot] = OPEN;
-        scene.lastClosing[slot] = tick;
-        noteClosingProximity(scene.lapse, observer.intent.prey, slot);
-    } else if (scene.phase[slot] === OPEN && tick - scene.lastClosing[slot] > INTENT_WINDOW) {
-        const flags = lapseFlags(scene.lapse, observer.intent.prey, { slot, tick });
-        resolved(scene, world, { slot, outcome: CHASE_OUTCOME.GAVE_UP, flags });
-        scene.phase[slot] = IDLE;
+        scene.openedTick[slot] = tick;
+        scene.openedHungry[slot] = canEatNow(world, slot) ? 1 : 0;
+        scene.openedEnergy[slot] = world.energy[slot];
+    }
+    scene.phase[slot] = OPEN;
+    scene.lastClosing[slot] = tick;
+    noteClosingProximity(scene.lapse, prey, slot);
+    return true;
+}
+
+/** @param {Record<string, any>} scene @param {Record<string, any>} observer @param {Record<string, any>} world @param {number} slot */
+function advanceLapse(scene, observer, world, slot) {
+    const scent = observer.scenes?.scent;
+    if (scene.phase[slot] !== OPEN || world.tick - scene.lastClosing[slot] <= INTENT_WINDOW) {
+        return;
+    }
+    const flags = lapseFlags(scene.lapse, observer.intent.prey, { slot, tick: world.tick });
+    resolved(scene, world, {
+        slot,
+        outcome: CHASE_OUTCOME.GAVE_UP,
+        flags: flags | scentChaseFlags(scent, slot),
+    });
+    scene.phase[slot] = IDLE;
+}
+
+/** @param {Record<string, any>} scene @param {Record<string, any>} observer @param {Record<string, any>} world @param {number} slot */
+function advance(scene, observer, world, slot) {
+    noteVisiblePrey(observer, scene, world, slot);
+    if (advanceBitten(scene, observer, world, slot)) {
+        return;
+    }
+    if (!advanceClosing(scene, observer, world, slot)) {
+        advanceLapse(scene, observer, world, slot);
     }
 }
 

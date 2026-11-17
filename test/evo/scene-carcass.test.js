@@ -32,6 +32,27 @@ function meat(
 }
 
 describe('the carcass metrics', () => {
+    it('keeps a carcass lifetime across ticks and starts a new lifetime when its food slot is reused', () => {
+        const r = observed();
+        const { world, observer } = r;
+        meat(world, 0, 500, 10);
+        world.tick = BURN_IN_TICKS + 1;
+        trackCarcasses(observer.scenes.carcass, observer, world);
+        const firstSince = observer.scenes.carcass.liveSince[0];
+
+        world.foodAge[0] = 11;
+        world.foodValue[0] = 99;
+        world.tick += 1;
+        trackCarcasses(observer.scenes.carcass, observer, world);
+        expect(observer.scenes.carcass.liveSince[0]).toBe(firstSince);
+
+        world.foodAge[0] = 0;
+        world.foodValue[0] = 50;
+        world.tick += 1;
+        trackCarcasses(observer.scenes.carcass, observer, world);
+        expect(observer.scenes.carcass.liveSince[0]).toBe(world.tick);
+    });
+
     it('credit each vanished carcass to the agent that overlapped it and gained food, at its meat share', () => {
         const r = observed();
         const { world, observer } = r;

@@ -53,6 +53,7 @@ import { createReachScene, sampleReach } from './scene-reach.js';
 import { createRefugeScene, sampleRefuge } from './scene-refuge.js';
 import { createRefugeOutcomeScene, sampleRefugeOutcome, tickRefugeBites } from './scene-refuge-outcome.js';
 import { createSprintScene, tickSprint } from './scene-sprint.js';
+import { createScentScene, resetScentSlot } from './scene-scent.js';
 import {
     createStillnessScene,
     noteStillnessChase,
@@ -137,6 +138,7 @@ export function createScenes(config, runTicks = 0, lean = false) {
         bite: createBiteScene(config),
         biteLife: createBiteLifeScene(),
         sprint: createSprintScene(config),
+        scent: createScentScene(config),
         stillness,
     };
 }
@@ -155,6 +157,7 @@ export function resetSceneSlot(scenes, slot) {
     resetPatchSlot(scenes.patch, slot);
     resetApproachSlot(scenes.approach, slot);
     resetStillnessSlot(scenes.stillness, slot);
+    resetScentSlot(scenes.scent, slot);
     resetKinematicsSlot(scenes.kinematics, slot);
     resetStyleSlot(scenes.style, slot);
     resetConditionSlot(scenes.condition, slot);
@@ -358,7 +361,7 @@ export function observeScenes(observer, world) {
     tickStillness(scenes.stillness, observer, world);
     tickSprint(scenes.sprint, observer, world);
     tickKinematics(scenes.kinematics, observer, world);
-    trackCarcasses(scenes.carcass, observer, world);
+    trackCarcasses(scenes.carcass, observer, world, scenes.scent);
     tickStyle(observer, world);
     tickGuilds(scenes.guilds, world);
     tickRefugeBites(scenes.refugeOutcome, observer, world);
