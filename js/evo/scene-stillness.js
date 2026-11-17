@@ -85,10 +85,10 @@ function recordHunter(scene, slot, still, tick) {
         scene.stillRun[slot] = 0;
         return;
     }
-    scene.stillRun[slot] = still ? Math.min(scene.stillRun[slot] + 1, AMBUSH_STILL_TICKS) : 0;
     if (scene.approachOpenedTick[slot] === tick) {
         scene.ambushAtOpen[slot] = scene.stillRun[slot] >= AMBUSH_STILL_TICKS ? 1 : 0;
     }
+    scene.stillRun[slot] = still ? Math.min(scene.stillRun[slot] + 1, AMBUSH_STILL_TICKS) : 0;
 }
 
 /** @param {Record<string, any>} scene @param {Record<string, any>} observer @param {Record<string, any>} world */

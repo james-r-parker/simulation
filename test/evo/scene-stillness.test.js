@@ -66,15 +66,31 @@ describe('scene-stillness', () => {
     it('counts a caught approach as an ambush only after 60 consecutive still ticks', () => {
         const { observer, scene, world } = fixture();
         world.spec[0] = 1;
-        for (let i = 0; i < AMBUSH_STILL_TICKS; i++) {
+        for (let i = 0; i < AMBUSH_STILL_TICKS - 1; i++) {
             world.tick = BURN_IN_TICKS + i;
-            observer.scenes.approach.openedTick[0] = i === AMBUSH_STILL_TICKS - 1 ? world.tick : -1;
+            observer.scenes.approach.openedTick[0] = -1;
             tickStillness(scene, observer, world);
         }
+        world.tick += 1;
+        observer.scenes.approach.openedTick[0] = world.tick;
+        tickStillness(scene, observer, world);
+        noteStillnessChase(scene, { slot: 0, outcome: 0 });
+
+        for (let i = 0; i < AMBUSH_STILL_TICKS; i++) {
+            world.tick += 1;
+            observer.scenes.approach.openedTick[0] = -1;
+            tickStillness(scene, observer, world);
+        }
+        world.tick += 1;
+        world.vx[0] = 2;
+        observer.scenes.approach.openedTick[0] = world.tick;
+        tickStillness(scene, observer, world);
         noteStillnessChase(scene, { slot: 0, outcome: 0 });
         scene.ambushAtOpen[0] = 0;
         noteStillnessChase(scene, { slot: 0, outcome: 0 });
         noteStillnessChase(scene, { slot: 0, outcome: 1 });
-        expect(stillnessMetrics(scene)['eval.ambush_kill_share']?.value).toBe(0.5);
+        expect(scene.ambushCatches).toBe(1);
+        expect(scene.caughtApproaches).toBe(3);
+        expect(stillnessMetrics(scene)['eval.ambush_kill_share']?.value).toBeCloseTo(1 / 3);
     });
 });
