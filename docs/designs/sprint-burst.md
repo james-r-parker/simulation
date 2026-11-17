@@ -98,19 +98,19 @@ The keep rule decides ([principles.md](../principles.md), "A realistic mechanism
 
 ### Phase 1 - Detectors and baseline
 
-| #   | Task                                                                                                                                                              | Nature       | Depends on  |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| T1  | Read what a sprint costs today (`tickCost`, the thrust step, `thrustEfficiency` in `js/sim/temperature.js`) and record it in [sim-notes.md](sim-notes.md) (built) | [judgement]  | -           |
-| T2a | Add `js/evo/scene-sprint.js` and observer wiring for the five Phase 1 detectors, with focused arithmetic tests (built)                                            | [judgement]  | T1          |
-| T2b | Add registry entries, registry coverage and regenerate [metrics.md](metrics.md) (built)                                                                           | [mechanical] | T2a         |
-| T3  | Read sprint metrics in the shared detector top-up from [detector-baseline.md](detector-baseline.md); prediction first, then record the Phase 2 verdict            | [mechanical] | T2b         |
-| T4  | Conformance review of Phase 1 by a fresh agent, in parallel with the project gate; close the doc with detectors kept or plan Phase 2 from the recorded verdict    | [judgement]  | T1, T2b, T3 |
+| #   | Task                                                                                                                                                              | Nature       | Depends on |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T1  | Read what a sprint costs today (`tickCost`, the thrust step, `thrustEfficiency` in `js/sim/temperature.js`) and record it in [sim-notes.md](sim-notes.md) (built) | [judgement]  | -          |
+| T2a | Add `js/evo/scene-sprint.js` and observer wiring for the five Phase 1 detectors, with focused arithmetic tests (built)                                            | [judgement]  | T1         |
+| T2b | Add registry entries, registry coverage and regenerate [metrics.md](metrics.md) (built)                                                                           | [mechanical] | T2a        |
+| T3  | Read sprint metrics in the shared detector top-up from [detector-baseline.md](detector-baseline.md); prediction first, then record the Phase 2 verdict            | [mechanical] | T2b        |
+| T4  | Conformance review of the Phase 1 implementation by a fresh agent; confirm the nominal cost ratio and shared-baseline gate (built)                                | [judgement]  | T1, T2b    |
 
 ### Phase 2 - The store
 
 | #   | Task                                                                                                                                                 | Nature       | Depends on |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T5  | Add `js/sim/sprint-store.js`, the keys, the ledger entry, the thrust and speed-cap read in JS and the Rust kernel, the tests and the off-path checks | [judgement]  | T4         |
+| T5  | Add `js/sim/sprint-store.js`, the keys, the ledger entry, the thrust and speed-cap read in JS and the Rust kernel, the tests and the off-path checks | [judgement]  | T3, T4     |
 | T6  | Add `eval.chase_spent_share`; write `evals/screens/sprint-burst.grid.json`                                                                           | [judgement]  | T5         |
 | T7  | Run the screen (`E-SB-2`, 16 seeds) and the keep-rule pass of the best arm (`E-SB-3`, 64 matched seeds)                                              | [mechanical] | T6         |
 | T8  | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`                                                                  | [judgement]  | T5, T6, T7 |
