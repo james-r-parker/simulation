@@ -15,7 +15,7 @@ export const SCENES_SPRINT = {
     'eval.flee_sprint_lift': entry('scenes-ecology', {
         module: 'js/evo/scene-sprint.js',
         meaning: 'Prey sprint share while a threat sighting is current relative to calm prey.',
-        counts: 'Prey-ticks with positive SPRINT while the last threat sighting is within INTENT_WINDOW divided by threatened prey-ticks, over the equivalent calm sprint share, after burn-in.',
+        counts: 'Prey-ticks with positive SPRINT while a threat is on the ray scan divided by threatened prey-ticks, over the equivalent calm sprint share, after burn-in.',
         unit: 'ratio',
         direction: 'higher',
         nullWhen: ['no threat and calm prey-ticks after burn-in', 'no sprint while calm after burn-in'],

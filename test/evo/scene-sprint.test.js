@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
+import { SCAN, SCAN_SIZE } from '../../js/evo/ray-summary.js';
 import { createSprintScene, sprintMetrics, tickSprint } from '../../js/evo/scene-sprint.js';
 
 const SPRINT_NAMES = [
@@ -13,8 +14,11 @@ const SPRINT_NAMES = [
 
 function fixture() {
     const outputs = new Float32Array(2 * OUTPUT_COUNT);
+    const scan = new Float64Array(2 * SCAN_SIZE).fill(-1);
     outputs[OUTPUT_INDEX.SPRINT] = 1;
     outputs[OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] = 1;
+    scan[SCAN.THREAT] = 40;
+    scan[SCAN_SIZE + SCAN.THREAT] = 40;
     const world = {
         tick: BURN_IN_TICKS,
         alive: new Uint8Array([1, 1]),
@@ -25,7 +29,7 @@ function fixture() {
         ledger: new Float64Array([0, 2]),
     };
     const observer = {
-        intent: { lastThreat: new Float64Array([BURN_IN_TICKS, BURN_IN_TICKS]) },
+        intent: { scan },
         scenes: { approach: { phase: new Uint8Array([1, 0]) } },
     };
     const scene = createSprintScene({ juvenileTicks: 100, juvenileBurn: 0.5, sprintCost: 0.1 });
@@ -51,7 +55,7 @@ describe('scene-sprint', () => {
         world.tick += 1;
         world.ledger[1] += 2;
         observer.scenes.approach.phase[0] = 0;
-        observer.intent.lastThreat[1] = world.tick - 1000;
+        observer.intent.scan[SCAN_SIZE + SCAN.THREAT] = -1;
         tickSprint(scene, observer, world);
         expect(sprintMetrics(scene)['eval.chase_sprint_lift']?.value).toBe(1);
         expect(sprintMetrics(scene)['eval.flee_sprint_lift']?.value).toBe(1);

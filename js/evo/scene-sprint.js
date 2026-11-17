@@ -2,7 +2,7 @@
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
 import { BURN_IN_TICKS } from './burn-in.js';
-import { INTENT_WINDOW } from './observer-intent-state.js';
+import { SCAN, SCAN_SIZE } from './ray-summary.js';
 import { none, ok } from './metrics-stats.js';
 
 const NO_ROLE_TICKS = 'no agent-ticks for this role after burn-in';
@@ -98,7 +98,7 @@ export function tickSprint(scene, observer, world) {
         }
         const sprinting = outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0;
         const hunter = huntBySpec[spec[slot]] === 1;
-        const threatened = world.tick - intent.lastThreat[slot] <= INTENT_WINDOW;
+        const threatened = intent.scan[slot * SCAN_SIZE + SCAN.THREAT] >= 0;
         if (hunter) {
             tickHunter(scene, scenes.approach, slot, sprinting);
         } else {
