@@ -25,6 +25,7 @@ export async function sampleFramesAfterStartup({
     }
 
     await resetFrames();
+    frames = 0;
     const started = now();
     let elapsedMs = 0;
     while (elapsedMs < windowMs && frames < minFrames) {

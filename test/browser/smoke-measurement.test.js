@@ -64,4 +64,29 @@ describe('sampleFramesAfterStartup', () => {
 
         expect(result).toEqual({ frames: 25, elapsedMs: 5000, ready: true });
     });
+
+    it('does not let 30 or more startup samples satisfy the post-reset minimum', async () => {
+        let frames = 0;
+        let elapsed = 0;
+        let reads = 0;
+        const result = await sampleFramesAfterStartup({
+            readFrames: async () => {
+                reads += 1;
+                frames = reads === 1 ? 40 : frames + 10;
+                return frames;
+            },
+            resetFrames: async () => {
+                frames = 0;
+            },
+            now: () => elapsed,
+            wait: async () => {
+                elapsed += 100;
+            },
+            minFrames: 30,
+            windowMs: 5000,
+            startupTimeoutMs: 3000,
+        });
+
+        expect(result).toEqual({ frames: 30, elapsedMs: 300, ready: true });
+    });
 });
