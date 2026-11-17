@@ -32,6 +32,21 @@ function guildSurvivalEntry(spec) {
     });
 }
 
+/** @param {string} spec */
+function preySelectivityEntry(spec) {
+    return entry('scenes-ecology', {
+        module: 'js/evo/scene-guilds.js',
+        meaning: `How often hunters eat the ${spec} guild relative to its share of prey alive; 1 is no preference.`,
+        counts: `The ${spec} share of eaten prey deaths divided by its mean share of living prey at 100-tick checkpoints after burn-in.`,
+        unit: 'ratio',
+        direction: 'watch',
+        intended: 'lower',
+        nullWhen: ['no eaten prey death or prey checkpoint after burn-in'],
+        arithmetic: 'test/evo/scene-guilds.test.js',
+        source: 'test/evo/metric-source-ecology.test.js',
+    });
+}
+
 export const SCENES_ECOLOGY_3 = {
     'eval.cold_margin_use_under_threat': entry('scenes-ecology', {
         module: 'js/evo/scene-refuge-outcome.js',
@@ -208,6 +223,10 @@ export const SCENES_ECOLOGY_3 = {
     'eval.guild_survival.reproducer': guildSurvivalEntry('reproducer'),
     'eval.guild_survival.scout': guildSurvivalEntry('scout'),
     'eval.guild_survival.defender': guildSurvivalEntry('defender'),
+    'eval.prey_selectivity.forager': preySelectivityEntry('forager'),
+    'eval.prey_selectivity.reproducer': preySelectivityEntry('reproducer'),
+    'eval.prey_selectivity.scout': preySelectivityEntry('scout'),
+    'eval.prey_selectivity.defender': preySelectivityEntry('defender'),
     'eval.defender_repel_per_1k': entry('scenes-ecology', {
         module: 'js/evo/scene-guilds.js',
         meaning: 'Active defensive repels landed by defender agents on hunters per 1,000 defender-ticks.',

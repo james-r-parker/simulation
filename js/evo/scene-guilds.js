@@ -3,13 +3,14 @@
 // before a hunter closes within `callRadius * 0.5`), and reproducer share of births during post-bust recovery ticks
 // (`population < 120`). Observer state only; zero per-tick allocations.
 
-import { BORN_CAUSE } from '../sim/events.js';
+import { BORN_CAUSE, DEATH_CAUSE } from '../sim/events.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { metricName } from './metric-registry/index.js';
 import { none, ok, per1k } from './metrics-stats.js';
 
 const NO_SHARE_SAMPLE = 'no 100-tick checkpoint after burn-in';
 const NO_GUILD_DEATH = 'no death of this guild after burn-in';
+const NO_PREY_SELECTIVITY = 'no eaten prey death or prey checkpoint after burn-in';
 const NO_DEFENDER_TICKS = 'no defender tick after burn-in';
 const NO_SCOUT_ALARM = 'no scout alarm with a threat after burn-in';
 const NO_RECOVERY_BIRTH = 'no birth during post-bust recovery after burn-in';
@@ -26,6 +27,14 @@ const SCOUT_SPEC = 3;
 const REPRODUCER_SPEC = 2;
 const DEFENDER_SPEC = 4;
 
+/** @param {Record<string, any>} scene the guild scene @param {number} idx the prey guild index */
+function preySelectivity(scene, idx) {
+    const preyShare = scene.preyShareSamples === 0 ? 0 : scene.preyShareSum[idx] / scene.preyShareSamples;
+    return scene.totalEatenDeaths === 0 || preyShare === 0
+        ? none(NO_PREY_SELECTIVITY)
+        : ok(scene.eatenDeaths[idx] / scene.totalEatenDeaths / preyShare);
+}
+
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @returns {Record<string, any>} empty guild scene state
@@ -36,6 +45,10 @@ export function createGuildScene(config) {
         callRadius: config.callRadius,
         shareSum: new Float64Array(5),
         shareSamples: 0,
+        preyShareSum: new Float64Array(5),
+        preyShareSamples: 0,
+        eatenDeaths: new Uint32Array(5),
+        totalEatenDeaths: 0,
         deathAgeSum: new Float64Array(5),
         deathCount: new Uint32Array(5),
         defenderTicks: 0,
@@ -74,20 +87,31 @@ export function sampleGuilds(scene, world) {
         scene.shareSum[idx] += counts[idx] / total;
     }
     scene.shareSamples += 1;
+    const preyCount = total - counts[1];
+    if (preyCount > 0) {
+        for (const [, idx] of GUILDS) {
+            scene.preyShareSum[idx] += counts[idx] / preyCount;
+        }
+        scene.preyShareSamples += 1;
+    }
 }
 
 /**
  * Records one death's normalised lifespan for non-hunter guilds after burn-in.
  * @param {Record<string, any>} scene the guild scene
- * @param {{tick: number, spec: number, age: number}} death the death record
+ * @param {{tick: number, spec: number, age: number, cause?: number}} death the death record
  * @returns {void}
  */
-export function noteGuildDeath(scene, { tick, spec, age }) {
+export function noteGuildDeath(scene, { tick, spec, age, cause }) {
     if (tick < BURN_IN_TICKS || spec === 1) {
         return;
     }
     scene.deathAgeSum[spec] += age / scene.maxAgeTicks;
     scene.deathCount[spec] += 1;
+    if (cause === DEATH_CAUSE.EATEN) {
+        scene.eatenDeaths[spec] += 1;
+        scene.totalEatenDeaths += 1;
+    }
 }
 
 /**
@@ -175,6 +199,9 @@ export function guildMetrics(scene) {
     for (const [name, idx] of GUILDS) {
         out[metricName('eval.guild_survival', name)] =
             scene.deathCount[idx] === 0 ? none(NO_GUILD_DEATH) : ok(scene.deathAgeSum[idx] / scene.deathCount[idx]);
+    }
+    for (const [name, idx] of GUILDS) {
+        out[metricName('eval.prey_selectivity', name)] = preySelectivity(scene, idx);
     }
     out['eval.defender_repel_per_1k'] =
         scene.defenderTicks === 0 ? none(NO_DEFENDER_TICKS) : per1k(scene.repelCount, scene.defenderTicks);

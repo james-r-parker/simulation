@@ -209,7 +209,7 @@ function noteFullDeath(scenes, observer, { world, o }) {
     }
     noteCapacityDeath(scenes.capacity, { cause: d[o + 4], foodEnergy: d[o + 9] });
     noteEdgeDeath(scenes.edge, world, { cause: d[o + 4], spec: d[o + 6], foodEnergy: d[o + 9] });
-    noteGuildDeath(scenes.guilds, { tick: d[o + 1], spec: d[o + 6], age: d[o + 8] });
+    noteGuildDeath(scenes.guilds, { tick: d[o + 1], spec: d[o + 6], age: d[o + 8], cause: d[o + 4] });
     noteStyleAtDeath(observer, o / EVENT_STRIDE, { slot: d[o + 2], genomeId: d[o + 3] });
     noteDeath(scenes, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1], age: d[o + 8] });
     noteProofDeath(scenes.proof, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1] });

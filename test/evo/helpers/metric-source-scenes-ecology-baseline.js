@@ -298,6 +298,22 @@ export default {
         value: null,
         reason: 'no death of this guild after burn-in',
     },
+    'eval.prey_selectivity.forager': {
+        value: null,
+        reason: 'no eaten prey death or prey checkpoint after burn-in',
+    },
+    'eval.prey_selectivity.reproducer': {
+        value: null,
+        reason: 'no eaten prey death or prey checkpoint after burn-in',
+    },
+    'eval.prey_selectivity.scout': {
+        value: null,
+        reason: 'no eaten prey death or prey checkpoint after burn-in',
+    },
+    'eval.prey_selectivity.defender': {
+        value: null,
+        reason: 'no eaten prey death or prey checkpoint after burn-in',
+    },
     'eval.defender_repel_per_1k': {
         value: null,
         reason: 'no defender tick after burn-in',
