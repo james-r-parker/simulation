@@ -62,7 +62,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Refuge](refuge.md) - all three phases are built: the eight detectors, the refuge-access fixture and the diagnosis (`E130`: cover protects and fits, but threatened prey do not reach...
 - [Web presence](web-presence.md) - a designed icon in every size, Open Graph and Twitter cards, a full `<head>`, an installable web app manifest with a splash, `robots.txt` and `sitemap.xml`
 
-## In progress (23)
+## In progress (24)
 
 Partly built - the note says which phases are real.
 
@@ -83,6 +83,7 @@ Partly built - the note says which phases are real.
 - [Realistic keepers](realistic-keepers.md) - Phases 1 and 2 are built: `E137` and the combined run `E138` kept every mechanism but provisioning, which is deleted; the six kept switches are on by default an... _(validated edd4cd4, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md), [refuge.md](refuge.md))_
 - [Senses and motor](senses-and-motor.md) - Phase 1 built (interface checks; no sign or class bug, three findings recorded for T13); Phase 2 built (`npm run audit:chase`; `E-SM-1`, record E185, falsified:... _(validated f5ebac7, 2026-11-15)_ _(depends on [training.md](training.md))_
 - [Sprint burst](sprint-burst.md) - Phase 1 detectors; shared detector baseline pending _(validated 1eccabf, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [training-stages.md](training-stages.md))_
+- [Stillness](stillness.md) - Phase 1 detectors; shared detector baseline pending _(validated 3ca2b1f, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [habitat-cover.md](habitat-cover.md), [training-stages.md](training-stages.md))_
 - [Training](training.md) - Phase 1 (drills) is built (T1 to T4). Phase 2 code is built (T6 to T11: the archive fixes, `runEpisode` and `mergeEpisode`, `npm run train`, the curriculum, che... _(validated edd4cd4, 2026-11-07)_ _(depends on [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md))_
 - [Training stages](training-stages.md) - Phase 1 code built (T1 to T4, chunk A; T5 and T6 wait for the hunter-vision default switch, since they measure the defaults) and Phase 2 built (T7 to T12 and T9... _(validated 04e3b34, 2026-11-17)_ _(depends on [training.md](training.md), [senses-and-motor.md](senses-and-motor.md))_
 - [WASM kernels](wasm-kernels.md) - Phases 1, 2 and 4 are built and adopted (T1 to T12, T13 to T19): every world runs the brain phase, the ray march, the spatial hash build, the pheromone update a... _(validated f5c7880, 2026-11-07)_ _(depends on [headless-sim-core.md](headless-sim-core.md))_
@@ -90,7 +91,7 @@ Partly built - the note says which phases are real.
 - [World balance and biology](world-balance.md) - Phases 1 to 4, Phase 5 round 1 and Phase 6 built. The post-feature queue (T79 to T96) was not run as written: natural-selection.md Phase 4 (T48 to T67, closed 2... _(validated edd4cd4, 2026-11-07)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the screenshots script, the RE... _(validated d6ca3e6, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (11)
+## Proposed (10)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
@@ -103,7 +104,6 @@ Plans. Nothing built; do not read these as descriptions of the code.
 - [Migration](migration.md) - migrants arrive at the map edges at a steady rate from a balanced mainland, whatever the headcount, and replace the floor refill that drops agents into an empti... _(validated e2455f2, 2026-11-11)_ _(depends on [eat-choice.md](eat-choice.md), [low-density-edge.md](low-density-edge.md))_
 - [Scent trails and carrion scent](scent-trails.md) - add decaying movement/track scents behind fast-moving blobs and far-carrying carcass scents around kills (reusing the existing `attack`/`danger` pheromone anten... _(validated a8013e9, 2026-11-15)_ _(depends on [honest-budgets.md](honest-budgets.md), [senses-and-motor.md](senses-and-motor.md))_
 - [Seasonal movement](seasonal-movement.md) - Phase 1 T1 and T2 built (#343) and the T5 baseline run (`E142`, 32 floor-on seeds, in Baseline). T3 (`scripts/season-map.mjs`) and T6 (the sim-notes diagnosis a... _(validated f5c7880, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md))_
-- [Stillness](stillness.md) - stub: measure whether blobs freeze or lie in wait today, then, if they cannot gain from it, make a still body fainter on another blob's rays; Phase 1 (detectors... _(validated f5ebac7, 2026-11-15)_ _(depends on [honest-budgets.md](honest-budgets.md), [habitat-cover.md](habitat-cover.md), [training-stages.md](training-stages.md))_
 - [Throughput](throughput.md) - find and take the speed the kernel squeezes left: why 16 worlds on 16 cores run at 63% of one world's speed, loops over empty slots, set-up cost in small worlds... _(validated a1813ff, 2026-11-15)_ _(depends on [wasm-kernels.md](wasm-kernels.md))_
 
 ## Reference (5)
