@@ -11,6 +11,7 @@ import { SCENES_ECOLOGY } from './scenes-ecology.js';
 import { SCENES_ECOLOGY_2 } from './scenes-ecology-2.js';
 import { SCENES_ECOLOGY_3 } from './scenes-ecology-3.js';
 import { SCENES_SPRINT } from './scenes-sprint.js';
+import { SCENES_STILLNESS } from './scenes-stillness.js';
 import { SCENES_SOCIAL } from './scenes-social.js';
 import { BRAIN } from './brain.js';
 import { WORLD } from './world.js';
@@ -73,6 +74,7 @@ export const METRICS = Object.freeze({
     ...withPower(withLiveness(SCENES_ECOLOGY_2)),
     ...withPower(withLiveness(SCENES_ECOLOGY_3)),
     ...withPower(withLiveness(SCENES_SPRINT)),
+    ...withPower(withLiveness(SCENES_STILLNESS)),
     ...withPower(withLiveness(SCENES_SOCIAL)),
     ...withPower(withLiveness(BRAIN)),
     ...withPower(withLiveness(WORLD)),
