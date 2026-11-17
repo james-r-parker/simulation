@@ -1,6 +1,6 @@
 # Scent trails and carrion scent
 
-**Status:** In progress - Phase 1 detector chunk; the baseline is shared after the detector wave, and the trail probe remains before Phase 2.
+**Status:** In progress - Phase 1 detectors are built; the shared baseline is pending, and the trail probe remains before Phase 2.
 **Validated:** 3a150d75 (2026-11-17)
 **Priority:** 33 - builds on [honest-budgets.md](honest-budgets.md) (body-priced carcasses) and [stillness.md](stillness.md) (motionless concealment)
 **Depends on:** [honest-budgets.md](honest-budgets.md), [senses-and-motor.md](senses-and-motor.md)
@@ -29,10 +29,10 @@ Scenes served: **A real chase** ("losing sight is not the same as the prey ceasi
 
 All computed by the eval observer; none is a reward.
 
-| Metric                         | Direction | Reads                                                                                                          |
-| ------------------------------ | --------- | -------------------------------------------------------------------------------------------------------------- |
-| `eval.chase_reacquire_share`   | higher    | Share of chases that lose ray sight of prey and re-acquire the same prey within `REACQUIRE_WINDOW` (120) ticks |
-| `eval.scavenge_approach_share` | higher    | Share of carcass meals preceded by closing along the carcass direction from outside `visionRange`              |
+| Metric                         | Direction | Reads                                                                                                                                                                     |
+| ------------------------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `eval.chase_reacquire_share`   | higher    | Share of resolved chases where the prey sighting returns after at least one unseen tick, within `REACQUIRE_WINDOW` (120) ticks; ray summaries do not expose prey identity |
+| `eval.scavenge_approach_share` | higher    | Share of blob-carcass meals preceded by closing along the carcass direction from outside `visionRange`; herd carcasses are tallied separately by `scene-herd.js`          |
 
 ## Phases
 
@@ -46,9 +46,9 @@ Add `js/evo/scene-scent.js` with `eval.chase_reacquire_share` and `eval.scavenge
 
 #### Chunks
 
-| Chunk | Tasks    | Contents                                                         |
-| ----- | -------- | ---------------------------------------------------------------- |
-| A     | T1 to T4 | `scene-scent.js`, registry entries, tests and conformance review |
+| Chunk     | Tasks    | Contents                                                         |
+| --------- | -------- | ---------------------------------------------------------------- |
+| A (built) | T1 to T4 | `scene-scent.js`, registry entries, tests and conformance review |
 
 ### Phase 2 - Track scent and carrion scent
 
@@ -58,9 +58,9 @@ Add `trackDeposit`, `trackSpeedMin` and `carrionDeposit` behind `scentTrailsEnab
 
 #### Chunks
 
-| Chunk | Tasks              | Contents                                             |
-| ----- | ------------------ | ---------------------------------------------------- |
-| B     | T3a, T4 to T8, T4a | Channel checks, deposits, screens, switch and review |
+| Chunk | Tasks               | Contents                                                          |
+| ----- | ------------------- | ----------------------------------------------------------------- |
+| B     | T5 to T10, T5a, T6a | Trail probe, channel checks, deposits, screens, switch and review |
 
 ### Scent must carry usable local evidence
 
@@ -82,16 +82,16 @@ A cell is `pheromoneCellSize` 100 px. Antennae sit `antennaReach` 150 px out at 
 
 | #   | Lead                                                                                                                                                                                                                       | Settled by |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| S1  | A track in `attack` makes prey smell "a hunter bit here" along their own path and their herd's. A track in `hunt` reads as a hunt call. Either reuse changes what an existing input means for every brain that learned it  | T3a        |
-| S2  | A trail has two ends. At a decay of 0.17% a tick the scent along a trail differs by under 2% between antennae 200 px apart, so the fresh end may not be readable; a blob may follow a trail backwards as often as forwards | T2a        |
-| S3  | A receptive-mate scent was built as a new input and mate-ready males did not learn to follow it (`E168`, [low-density-edge.md](low-density-edge.md) Phase 5). The same may hold here                                       | T2a        |
-| S4  | The memory probe already stages this: `scent-after-sight-loss` in `js/evo/memory-probe-scenarios.js`. Its score on today's champions is the baseline a trail has to beat                                                   | T2a        |
-| S5  | Every moving prey writes a cell each tick. The pheromone kernel skips rows that are all zero ([wasm-kernels.md](wasm-kernels.md) T22) and the brain skips zero inputs; a map covered in track scent loses both             | T4a        |
-| S6  | A carcass that glows beyond sight pulls every meat-eater to one place. With the kill as the body ([honest-budgets.md](honest-budgets.md) Phase 2) that may starve juveniles at a crowd, not feed them                      | T5         |
+| S1  | A track in `attack` makes prey smell "a hunter bit here" along their own path and their herd's. A track in `hunt` reads as a hunt call. Either reuse changes what an existing input means for every brain that learned it  | T5a        |
+| S2  | A trail has two ends. At a decay of 0.17% a tick the scent along a trail differs by under 2% between antennae 200 px apart, so the fresh end may not be readable; a blob may follow a trail backwards as often as forwards | T5         |
+| S3  | A receptive-mate scent was built as a new input and mate-ready males did not learn to follow it (`E168`, [low-density-edge.md](low-density-edge.md) Phase 5). The same may hold here                                       | T5         |
+| S4  | The memory probe already stages this: `scent-after-sight-loss` in `js/evo/memory-probe-scenarios.js`. Its score on today's champions is the baseline a trail has to beat                                                   | T5         |
+| S5  | Every moving prey writes a cell each tick. The pheromone kernel skips rows that are all zero ([wasm-kernels.md](wasm-kernels.md) T22) and the brain skips zero inputs; a map covered in track scent loses both             | T6a        |
+| S6  | A carcass that glows beyond sight pulls every meat-eater to one place. With the kill as the body ([honest-budgets.md](honest-budgets.md) Phase 2) that may starve juveniles at a crowd, not feed them                      | T7         |
 
 ### The trail must be followable before it is built
 
-T2a stages a trail in the probe arena with a hand-written deposit (no sim change): a prey walked along a path, then removed from sight. It reads three bars for "reach the prey's last position along the trail": the oracle, a scripted reference that reads only the antenna inputs, and `npm run probe:learn` from random brains ([senses-and-motor.md](senses-and-motor.md), Lesson probes). Phase 2 is built only when the reference re-acquires on at least half of trials and the learn probe reaches half of the reference. If the reference fails, the gradient is too weak to carry direction: the fix is in the scent (a faster decay for the track grid, so the fresh end is stronger), and it is screened as its own arm, not by adding an input.
+T5 stages a trail in the probe arena with a hand-written deposit (no sim change): a prey walked along a path, then removed from sight. It reads three bars for "reach the prey's last position along the trail": the oracle, a scripted reference that reads only the antenna inputs, and `npm run probe:learn` from random brains ([senses-and-motor.md](senses-and-motor.md), Lesson probes). Phase 2 is built only when the reference re-acquires on at least half of trials and the learn probe reaches half of the reference. If the reference fails, the gradient is too weak to carry direction: the fix is in the scent (a faster decay for the track grid, so the fresh end is stronger), and it is screened as its own arm, not by adding an input.
 
 ### Arms and what counts
 
@@ -120,51 +120,52 @@ T2a stages a trail in the probe arena with a hand-written deposit (no sim change
 
 ## Experiments
 
-| Id      | Task | Question                                                 | Prediction (written before the run)                                                                                                                          |
-| ------- | ---- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| E-ST2-1 | T3   | How often is a lost prey found again today?              | `eval.chase_reacquire_share` under 0.1; `eval.scavenge_approach_share` under 0.05; the probe's `scent-after-sight-loss` gain inside its noise                |
-| E-ST2-0 | T2a  | Can a trail be followed with two antennae?               | At `pheromoneDecay` the reference re-acquires on under half of trials and follows the trail backwards on a third; at 5 x decay it passes half                |
-| E-ST2-2 | T5   | Which arm lets hunters re-acquire and scavengers arrive? | `track-f` lifts re-acquisition and `track` does not; `carrion` lifts scavenge approaches and raises the hunters at one carcass; no arm reads hunters `WORSE` |
-| E-ST2-3 | T6   | Does the finalist harm on 64 matched seeds?              | No guard `WORSE`; `eval.hunter_juvenile_death_share` not higher                                                                                              |
+| Id      | Task                                            | Question                                                 | Prediction (written before the run)                                                                                                                          |
+| ------- | ----------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| E-ST2-1 | [detector-baseline.md](detector-baseline.md) T3 | How often is a lost prey found again today?              | `eval.chase_reacquire_share` under 0.1; `eval.scavenge_approach_share` under 0.05; the probe's `scent-after-sight-loss` gain inside its noise                |
+| E-ST2-0 | T5                                              | Can a trail be followed with two antennae?               | At `pheromoneDecay` the reference re-acquires on under half of trials and follows the trail backwards on a third; at 5 x decay it passes half                |
+| E-ST2-2 | T7                                              | Which arm lets hunters re-acquire and scavengers arrive? | `track-f` lifts re-acquisition and `track` does not; `carrion` lifts scavenge approaches and raises the hunters at one carcass; no arm reads hunters `WORSE` |
+| E-ST2-3 | T8                                              | Does the finalist harm on 64 matched seeds?              | No guard `WORSE`; `eval.hunter_juvenile_death_share` not higher                                                                                              |
 
 ## Delivery requirements
 
-| Concern                 | Names                                                                                                                                                                                                                                     |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Architecture            | `js/sim/pheromones.js`, `js/sim/carcass.js`, `js/sim/scent-inputs.js`, `js/sim/config-defaults.js` / `config-rules.js`, and `js/evo/scene-scent.js` + `js/evo/metric-registry/`. Zero change to `brain-layout.js`, worker, renderer or UI |
-| Unit tests              | `test/sim/scent-trails.test.js` (still agent below `trackSpeedMin` deposits 0; sprinting agent deposits `trackDeposit`; fading carcass deposits `carrionDeposit`; expired carcass deposits 0); `test/evo/scene-scent.test.js`             |
-| Headless e2e            | `test/sim/golden.json` and `BUSY_EFFECT_HASH` unchanged in Phase 1 and re-pinned at Phase 2 switch with `npm run browser:hash`; `eval-smoke` passes                                                                                       |
-| Performance budget      | `bench.step_ms@500` within `bench-check` margin; deposits reuse the existing pheromone grid with one array write per fast agent / active carcass and zero allocations                                                                     |
-| Evolution metrics       | Phase 1: shared detector-baseline run (128 floor-on and 128 floor-off seeds, 200000 ticks). Phase 2: 16-seed screen (`E-ST2-2`) and 64-seed `eval:compare --keep-rule` (`E-ST2-3`)                                                        |
-| Determinism             | No new RNG stream; deposits are deterministic functions of speed, carcass state and grid coordinates                                                                                                                                      |
-| Config and persistence  | New keys: `scentTrailsEnabled` (boolean switch with `scripts/flag-ledger.json` entry, deleted at Phase 2 switch), `trackSpeedMin`, `trackDeposit`, `carrionDeposit`. Saved genomes and `BRAIN_LAYOUT_NAME` unchanged                      |
-| Logging and diagnostics | No per-tick log event; `npm run replay -- --seed <n> --ticks 400000 --level debug` reproduces trails and carcass approaches                                                                                                               |
-| Browser compatibility   | Verified with `npm run browser:hash` after Phase 2 switch                                                                                                                                                                                 |
-| Docs                    | [metrics.md](metrics.md) regenerated; [sim-notes.md](sim-notes.md) entry for baseline and verdict                                                                                                                                         |
-| Verification            | `scripts/check.sh` green per chunk PR; `eval:compare --keep-rule` report under `evals/decisions/E-ST2-*/`; arena clip of tracking and scavenging                                                                                          |
+| Concern                 | Names                                                                                                                                                                                                                                                                                                                         |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Architecture            | `js/sim/pheromones.js`, `js/sim/carcass.js`, `js/sim/scent-inputs.js`, `js/sim/config-defaults.js` / `config-rules.js`, and `js/evo/scene-scent.js` + `js/evo/metric-registry/`. Zero change to `brain-layout.js`, worker, renderer or UI                                                                                     |
+| Unit tests              | `test/evo/scene-scent.test.js` (gap and window boundaries, recent carcass approach from beyond sight, within-sight and retreating paths, null metrics); `test/evo/scene-carcass.test.js` (food slot reuse resets carcass lifetime); `test/evo/metric-registry/scenes-scent.test.js`; `test/evo/metric-source-ecology.test.js` |
+| Headless e2e            | `test/sim/golden.json` and `BUSY_EFFECT_HASH` unchanged in Phase 1 and re-pinned at Phase 2 switch with `npm run browser:hash`; `eval-smoke` passes                                                                                                                                                                           |
+| Performance budget      | `bench.step_ms@500` within `bench-check` margin; deposits reuse the existing pheromone grid with one array write per fast agent / active carcass and zero allocations                                                                                                                                                         |
+| Evolution metrics       | Phase 1: shared detector-baseline run (128 floor-on and 128 floor-off seeds, 200000 ticks). Phase 2: 16-seed screen (`E-ST2-2`) and 64-seed `eval:compare --keep-rule` (`E-ST2-3`)                                                                                                                                            |
+| Determinism             | No new RNG stream; deposits are deterministic functions of speed, carcass state and grid coordinates                                                                                                                                                                                                                          |
+| Config and persistence  | New keys: `scentTrailsEnabled` (boolean switch with `scripts/flag-ledger.json` entry, deleted at Phase 2 switch), `trackSpeedMin`, `trackDeposit`, `carrionDeposit`. Saved genomes and `BRAIN_LAYOUT_NAME` unchanged                                                                                                          |
+| Logging and diagnostics | No per-tick log event; `npm run replay -- --seed <n> --ticks 400000 --level debug` reproduces trails and carcass approaches                                                                                                                                                                                                   |
+| Browser compatibility   | Verified with `npm run browser:hash` after Phase 2 switch                                                                                                                                                                                                                                                                     |
+| Docs                    | [metrics.md](metrics.md) regenerated; [sim-notes.md](sim-notes.md) entry for baseline and verdict                                                                                                                                                                                                                             |
+| Verification            | `scripts/check.sh` green per chunk PR; `eval:compare --keep-rule` report under `evals/decisions/E-ST2-*/`; arena clip of tracking and scavenging                                                                                                                                                                              |
 
 ## Task breakdown
 
 ### Phase 1 - Off-ray tracking detectors and baseline
 
-| #   | Task                                                                                                                                                       | Nature       | Depends on |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | Add `js/evo/scene-scent.js` for `eval.chase_reacquire_share` and `eval.scavenge_approach_share`; register both metrics and add arithmetic and source tests | [judgement]  | -          |
-| T2  | Regenerate [metrics.md](metrics.md) and `test/fixtures/metric-names.json`; add both metric rows to [principles.md](../principles.md)                       | [mechanical] | T1         |
-| T3  | Conformance review of the detector chunk by a fresh agent, in parallel with `scripts/check.sh`                                                             | [judgement]  | T1, T2     |
+| #   | Task                                                                                                                                         | Nature       | Depends on |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T1  | Implement `js/evo/scene-scent.js`, wire chase and carcass observers, and test detector arithmetic and boundaries (built)                     | [judgement]  | -          |
+| T2  | Register both metrics and add registry and real-source tests (built)                                                                         | [mechanical] | T1         |
+| T3  | Regenerate [metrics.md](metrics.md) and `test/fixtures/metric-names.json`; add both metric rows to [principles.md](../principles.md) (built) | [mechanical] | T2         |
+| T4  | Conformance review of the detector chunk by a fresh agent, in parallel with `scripts/check.sh` (built)                                       | [judgement]  | T1, T2, T3 |
 
 ### Phase 2 - Track scent and carrion scent
 
 | #   | Task                                                                                                                                                                                                                                    | Nature       | Depends on |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T3a | Stage the hand-laid trail, read the oracle, antenna-only reference and `probe:learn` at two decays, and run `scent-after-sight-loss` on champions; record whether Phase 2 opens (`E-ST2-0`)                                             | [judgement]  | -          |
-| T3b | Add channel-interference and stale-source fixtures with observer tests; specify scent ablations and wrong-source approach costs                                                                                                         | [judgement]  | T3a        |
-| T4  | Add `trackSpeedMin`, `trackDeposit` and `carrionDeposit` in `pheromones.js` and `carcass.js` behind `scentTrailsEnabled`; add `test/sim/scent-trails.test.js`                                                                           | [judgement]  | T3b        |
-| T4a | Price the deposits: `npm run bench:parts -- --area field --compare <base>` and `--area brain` under the CPU lock with the switch on, and the nonzero inputs per agent; a step outside its margin goes into the keep-rule read as a cost | [mechanical] | T4         |
-| T5  | Write `evals/screens/scent-trails.grid.json` (the five arms of Test design) and prediction; run the 16-seed screen `E-ST2-2` at 200000 ticks, with hunters per carcass in the report                                                    | [judgement]  | T4, T4a    |
-| T6  | Run finalist vs. control on 64 matched seeds with `--keep-rule` (`E-ST2-3`)                                                                                                                                                             | [mechanical] | T5         |
-| T7  | Switch: adopt winning scent defaults, delete `scentTrailsEnabled`, open new season, re-pin goldens and `browser:hash`; watch arena clip                                                                                                 | [judgement]  | T6         |
-| T8  | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`; move Status line to `Implemented`                                                                                                                  | [judgement]  | T7         |
+| T5  | Stage the hand-laid trail, read the oracle, antenna-only reference and `probe:learn` at two decays, and run `scent-after-sight-loss` on champions; record whether Phase 2 opens (`E-ST2-0`)                                             | [judgement]  | -          |
+| T5a | Add channel-interference and stale-source fixtures with observer tests; specify scent ablations and wrong-source approach costs                                                                                                         | [judgement]  | T5         |
+| T6  | Add `trackSpeedMin`, `trackDeposit` and `carrionDeposit` in `pheromones.js` and `carcass.js` behind `scentTrailsEnabled`; add `test/sim/scent-trails.test.js`                                                                           | [judgement]  | T5a        |
+| T6a | Price the deposits: `npm run bench:parts -- --area field --compare <base>` and `--area brain` under the CPU lock with the switch on, and the nonzero inputs per agent; a step outside its margin goes into the keep-rule read as a cost | [mechanical] | T6         |
+| T7  | Write `evals/screens/scent-trails.grid.json` (the five arms of Test design) and prediction; run the 16-seed screen `E-ST2-2` at 200000 ticks, with hunters per carcass in the report                                                    | [judgement]  | T6, T6a    |
+| T8  | Run finalist vs. control on 64 matched seeds with `--keep-rule` (`E-ST2-3`)                                                                                                                                                             | [mechanical] | T7         |
+| T9  | Switch: adopt winning scent defaults, delete `scentTrailsEnabled`, open new season, re-pin goldens and `browser:hash`; watch arena clip                                                                                                 | [judgement]  | T8         |
+| T10 | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`; move Status line to `Implemented`                                                                                                                  | [judgement]  | T9         |
 
 ## Verification
 

@@ -81,7 +81,7 @@ Partly built - the note says which phases are real.
 - [Prey guilds](prey-guilds.md) - differentiate the four non-hunter specialisations (`forager`, `reproducer`, `scout`, `defender`) into complementary anti-predator and life-history guilds so "ev... _(validated 04e3b34, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [senses-and-motor.md](senses-and-motor.md))_
 - [Quality gates and test tiers](quality-gates-and-test-tiers.md) - the full gate runs in CI, sharded, with the coverage ratchet, per-run `check.sh` coverage, `--rerun-failed`, `--quick`, detached-run scripts and a worker budget... _(validated c11202b, 2026-11-17)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
 - [Realistic keepers](realistic-keepers.md) - Phases 1 and 2 are built: `E137` and the combined run `E138` kept every mechanism but provisioning, which is deleted; the six kept switches are on by default an... _(validated edd4cd4, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md), [refuge.md](refuge.md))_
-- [Scent trails and carrion scent](scent-trails.md) - Phase 1 detector chunk; the baseline is shared after the detector wave, and the trail probe remains before Phase 2 _(validated 3a150d7, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [senses-and-motor.md](senses-and-motor.md))_
+- [Scent trails and carrion scent](scent-trails.md) - Phase 1 detectors are built; the shared baseline is pending, and the trail probe remains before Phase 2 _(validated 3a150d7, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [senses-and-motor.md](senses-and-motor.md))_
 - [Senses and motor](senses-and-motor.md) - Phase 1 built (interface checks; no sign or class bug, three findings recorded for T13); Phase 2 built (`npm run audit:chase`; `E-SM-1`, record E185, falsified:... _(validated f5ebac7, 2026-11-15)_ _(depends on [training.md](training.md))_
 - [Sprint burst](sprint-burst.md) - Phase 1 detectors; shared detector baseline pending _(validated 1eccabf, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [training-stages.md](training-stages.md))_
 - [Stillness](stillness.md) - Phase 1 detectors; shared detector baseline pending _(validated 3ca2b1f, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [habitat-cover.md](habitat-cover.md), [training-stages.md](training-stages.md))_
@@ -112,7 +112,7 @@ Not designs of the simulation - audits, research, learnings and guides.
 
 - [Headless sim core - implementation contracts](headless-sim-core-contracts.md) - exact rules for building [headless-sim-core.md](headless-sim-core.md); that doc carries the status, phases and tasks
 - [Legacy audit](legacy-audit.md) - defects and inefficiencies in the legacy app (`js/*.js`), by file and symbol, each with the doc that removes it
-- [Metrics](metrics.md) - the 367 eval metrics of a live report, generated from `js/evo/metric-registry/`: 199 verified, 165 unverified, 3 deprecated
+- [Metrics](metrics.md) - the 369 eval metrics of a live report, generated from `js/evo/metric-registry/`: 199 verified, 167 unverified, 3 deprecated
 - [Simulation notes](sim-notes.md) - verified platform and library facts, and learnings from each phase
 - [Training research](training-research.md) - a survey for [training-stages.md](training-stages.md): what the training tools are today, what their runs showed, how staged multi-agent training is done and ju...
 
