@@ -5,7 +5,7 @@
 **Priority:** 28 - a chase needs an end that is not luck, but the world must hold a standing prey population first ([honest-budgets.md](honest-budgets.md)), and Phase 1 reads the chase detectors of [training-stages.md](training-stages.md)
 **Depends on:** [honest-budgets.md](honest-budgets.md), [training-stages.md](training-stages.md)
 
-A positive `SPRINT` output multiplies thrust by `1 + sprintMultiplier x sprintBoost` (`thrustOf` in `js/sim/physics.js`), raises the speed cap in the Rust kernel (`move_agent` in `wasm/src/physics.rs`), and adds a fixed `sprintCost` (0.05) times juvenile burn to that tick's energy cost (`tickCost` in `js/sim/energy.js`). The fixed cost does not scale with output magnitude; speed-dependent movement cost also rises as speed squared. Temperature efficiency scales the sprint thrust with ordinary thrust. The hunter ledger records the realized sprint cost only for hunters, so Phase 1 will calculate this term in observer state for both roles and divide by total energy removed from agents. No metric currently reads `SPRINT`. This phase measures its use before any rule change.
+A positive `SPRINT` output multiplies thrust by `1 + sprintMultiplier x sprintBoost` (`thrustOf` in `js/sim/physics.js`), raises the speed cap in the Rust kernel (`move_agent` in `wasm/src/physics.rs`), and adds a fixed `sprintCost` (0.05) times juvenile burn to that tick's energy cost (`tickCost` in `js/sim/energy.js`). The fixed cost does not scale with output magnitude; speed-dependent movement cost also rises as speed squared. Temperature efficiency scales the sprint thrust with ordinary thrust. The hunter ledger records the realized sprint cost only for hunters. Phase 1 instead tallies the configured nominal charge for both roles and divides it by total energy removed from agents. This cost ratio can exceed 1 on energy-limited ticks because the nominal charge is not clipped to realized energy removal; only a very low ratio is evidence that the configured sprint price is negligible. No metric currently reads `SPRINT`. This phase measures its use before any rule change.
 
 Scenes served: **A real chase** (a chase ends because one side is spent), **Abort** (a hunter that is spent peels off), **Same spec, different custom** (a short burst against a long run), and the trait "A body is a budget".
 
@@ -30,7 +30,7 @@ All computed by the eval observer; none is a reward.
 | `eval.sprint_share.prey`   | watch (lower)  | The same for non-hunters                                                                                                   |
 | `eval.chase_sprint_lift`   | higher         | A hunter's sprint share inside its chases over its sprint share outside them; 1 means the sprint does not follow the chase |
 | `eval.flee_sprint_lift`    | higher         | A non-hunter's sprint share while a threat is on its rays over its share while calm                                        |
-| `eval.sprint_cost_share`   | watch (higher) | Sprint energy over all energy spent, from the hunter ledger's `sprintEnergy` and the same tally for non-hunters            |
+| `eval.sprint_cost_share`   | watch (higher) | Nominal configured sprint charge over total energy removed; may exceed 1 when energy limits clip realized costs            |
 | `eval.chase_spent_share`   | watch (higher) | Phase 2 only: of resolved chases, those in which the hunter's or the prey's store reached 0 before the chase resolved      |
 
 ## Phases
@@ -41,7 +41,7 @@ All computed by the eval observer; none is a reward.
 
 The baseline is the shared run of [detector-baseline.md](detector-baseline.md), read once for every plan that has its prediction written. Sprint metrics are included in that top-up; there is no separate 16-seed E-SB-1 run.
 
-The first five detectors. Prediction for the shared top-up, written before that run: `eval.sprint_share.hunter` is above 0.5 and `eval.chase_sprint_lift` is under 1.2, so the sprint is held, not chosen. Phase 2 is built only if the sprint share is above 0.5 for either role or `eval.sprint_cost_share` is under 0.02; otherwise this doc closes with the detectors kept.
+The first five detectors. Prediction for the shared top-up, written before that run: `eval.sprint_share.hunter` is above 0.5 and `eval.chase_sprint_lift` is under 1.2, so the sprint is held, not chosen. Phase 2 is built only if the sprint share is above 0.5 for either role or the nominal `eval.sprint_cost_share` is under 0.02, evidence that its configured price is negligible relative to energy outflow; otherwise this doc closes with the detectors kept.
 
 ### Phase 2 - The store
 
@@ -76,6 +76,7 @@ The keep rule decides ([principles.md](../principles.md), "A realistic mechanism
 | The Rust kernel change is built by Opus, and the JS reference is the test | The sprint's speed cap lives in `wasm/src/physics.rs` (user, 2026-11-07)                                                                                     | Planner, from the user's rule    |
 | The switch `sprintStoreEnabled` is deleted at Phase 3 on either verdict   | Delete what a switch replaces (`AGENTS.md`)                                                                                                                  | Planner, from AGENTS.md          |
 | Keep Phase 1 observer-only and use the shared detector top-up             | The hunter ledger omits prey sprint cost; recomputing the configured sprint charge in the observer covers both roles without changing sim state or rules     | Delegated (planning, 2026-11-17) |
+| Call the sprint cost detector a nominal ratio                             | Energy-limited ticks may remove less than the configured sprint charge, so this ratio can exceed 1 and only a very low read signals a negligible price       | Delegated (review, 2026-11-17)   |
 
 ## Delivery requirements
 

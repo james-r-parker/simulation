@@ -23,9 +23,10 @@ export const SCENES_SPRINT = {
     }),
     'eval.sprint_cost_share': entry('scenes-ecology', {
         module: 'js/evo/scene-sprint.js',
-        meaning: 'Configured sprint energy charge relative to total energy removed from agents.',
-        counts: 'For each alive agent-tick with positive SPRINT, sprintCost times juvenile burn for hunters, summed over all energy removed from agents after burn-in.',
-        unit: 'share',
+        meaning:
+            'Nominal configured sprint energy charge relative to total energy removed from agents; can exceed 1 when energy limits clip realized costs.',
+        counts: 'For each alive agent-tick with positive SPRINT, sprintCost times juvenile burn for hunters, summed over actual energy removed from agents after burn-in. The numerator is nominal, not clipped, so this ratio can exceed 1.',
+        unit: 'ratio',
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no energy removed from agents after burn-in'],

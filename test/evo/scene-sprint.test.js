@@ -71,4 +71,11 @@ describe('scene-sprint', () => {
         tickSprint(scene, observer, world);
         expect(sprintMetrics(scene)['eval.sprint_share.prey']?.value).toBeNull();
     });
+
+    it('keeps the sprint cost numerator nominal when actual energy removal is clipped', () => {
+        const { observer, scene, world } = fixture();
+        world.ledger[1] = 0.01;
+        tickSprint(scene, observer, world);
+        expect(sprintMetrics(scene)['eval.sprint_cost_share']?.value).toBeCloseTo(15, 8);
+    });
 });

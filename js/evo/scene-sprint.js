@@ -29,7 +29,7 @@ export function createSprintScene(config) {
         threatPreySprints: 0,
         calmPreyTicks: 0,
         calmPreySprints: 0,
-        sprintEnergy: 0,
+        nominalSprintCharge: 0,
         energyRemoved: 0,
     };
 }
@@ -78,7 +78,7 @@ function noteSprintEnergy(scene, world, slot, { hunter, sprinting }) {
         return;
     }
     const burn = hunter && world.ageTicks[slot] < scene.juvenileTicks ? scene.juvenileBurn : 1;
-    scene.sprintEnergy += scene.sprintCost * burn;
+    scene.nominalSprintCharge += scene.sprintCost * burn;
 }
 
 /** @param {Record<string, any>} scene @param {Record<string, any>} observer @param {Record<string, any>} world */
@@ -137,6 +137,6 @@ export function sprintMetrics(scene) {
             NO_THREAT_TICKS,
         ),
         'eval.sprint_cost_share':
-            scene.energyRemoved === 0 ? none(NO_ENERGY_SPENT) : ok(scene.sprintEnergy / scene.energyRemoved),
+            scene.energyRemoved === 0 ? none(NO_ENERGY_SPENT) : ok(scene.nominalSprintCharge / scene.energyRemoved),
     };
 }
