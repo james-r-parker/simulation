@@ -505,9 +505,9 @@ parts of `scripts/check.sh`.
 | T40 | Record the measured nested-worktree lint failure and the verified scope in `sim-notes.md` (built)                              | [mechanical] | T39                               |
 | T41 | Run the root quick gate and record the verification result (built)                                                             | [mechanical] | T39, T40                          |
 | T42 | Review the root lint boundary, regression test and quick-gate result against the design (built)                                | [judgement]  | T39, T40, T41                     |
-| T43 | Give each `trainer.slow.test.js` CPU-bound test an explicit `scaleTimeout` limit without changing its assertions               | [mechanical] | -                                 |
-| T44 | Raise both anti-exploit slow-suite setup limits with `scaleTimeout`; retain every controller and assertion                     | [mechanical] | -                                 |
-| T45 | Run both affected slow test files and the root quick gate; record the CI and local evidence                                    | [mechanical] | T43, T44                          |
+| T43 | Give each `trainer.slow.test.js` CPU-bound test an explicit `scaleTimeout` limit without changing its assertions (built)       | [mechanical] | -                                 |
+| T44 | Raise both anti-exploit slow-suite setup limits with `scaleTimeout`; retain every controller and assertion (built)             | [mechanical] | -                                 |
+| T45 | Run both affected slow test files and the root quick gate; record the CI and local evidence (built)                            | [mechanical] | T43, T44                          |
 | T46 | Review Phase 5 scope, timeout ceilings, tests and gate results against the design                                              | [judgement]  | T39, T40, T41, T42, T43, T44, T45 |
 
 ## Verification
@@ -530,3 +530,4 @@ parts of `scripts/check.sh`.
 10. Phase 3: a nightly that fails opens one `nightly-failure` issue; its `bench-compare` digest shows the `base ... head ...` line and no `npm warn` lines.
 11. Phase 3: `browser-smoke` passes under software GL and fails when the frame loop or the tick is stopped; a failure leaves `.checklogs/playwright` with a trace.
 12. Phase 5: `test/eslint-scope.test.js` proves a nested Git worktree is ignored and a root `js/sim` file retains the complexity rule; `scripts/check.sh --fix --quick` passes without environment overrides.
+13. Phase 5: `npx vitest run test/evo/trainer.slow.test.js` passes (5 tests, 6.82 s), `npx vitest run test/evo/anti-exploit.slow.test.js` passes (56 tests, 76.90 s), and `scripts/check.sh --fix --quick` passes all 8 gates; CI run 44110284394 exposed both timeout ceilings before these fixes.
