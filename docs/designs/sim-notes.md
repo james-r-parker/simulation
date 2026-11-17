@@ -28,7 +28,7 @@ nested-worktree directory leaves the root `js/`, `test/`, `scripts/` and config 
 The smoke's old `requestAnimationFrame` counter started as soon as the canvas element attached, before the renderer's
 first completed draw, and counted browser callbacks rather than frames recorded by the app. `js/app/main.js` now exposes
 `globalThis.__blob.frames` and `.tick`; the smoke waits for a recorded frame, clears startup samples, then keeps the
-30-frame minimum over the same 5-second window while checking that the worker tick advances. On local Chromium with
+30-frame minimum over the same 5-second window while checking that the worker tick advances. A deterministic test also ensures startup counts of 30 or more cannot pass without new samples. On local Chromium with
 SwiftShader, the full browser suite passed in about 105 seconds.
 
 ### 2026-10-11 - WebGPU in WSL Chromium is SwiftShader only
