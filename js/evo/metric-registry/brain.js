@@ -207,6 +207,8 @@ export const BRAIN = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['fewer than 100 lives with a flee skill', 'no variance in leak or in the skill'],
+        expectedFlat:
+            'Null unless 100 lives with a flee skill have varied leak rates, which happened on 109 of 128 floor-on seeds (E188); it moves with leak variation among escaped bites.',
         arithmetic: 'test/evo/metrics-leak-skill.test.js',
         source: 'test/evo/metric-source-brain-leak.test.js',
     }),

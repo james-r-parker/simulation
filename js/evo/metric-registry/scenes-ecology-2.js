@@ -279,6 +279,8 @@ export const SCENES_ECOLOGY_2 = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no ring held a threatened prey'],
+        expectedFlat:
+            'Null unless a refuge ring holds a threatened prey, which happened on 107 of 128 floor-on seeds (E188); it moves with prey sheltering under threat.',
         arithmetic: 'test/evo/scene-refuge-outcome.test.js',
     }),
     'eval.refuge_eligible_share': entry('scenes-ecology', {

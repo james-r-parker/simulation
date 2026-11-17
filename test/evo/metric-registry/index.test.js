@@ -66,6 +66,13 @@ describe('withLiveness', () => {
         expect(Object.isFrozen(merged)).toBe(true);
         expect(family['eval.food_energy_per_1k']).toBe(original);
     });
+
+    it('leaves an entry with no reading as it was', () => {
+        const bare = METRICS['eval.food_energy_per_1k'];
+        const merged = withLiveness({ 'eval.food_energy_per_1k': bare }, {});
+
+        expect(merged['eval.food_energy_per_1k']).toBe(bare);
+    });
 });
 
 describe('withPower', () => {
@@ -275,7 +282,8 @@ describe('minSeedsFor', () => {
     it('uses measured minima for registered metrics and defaults to 16 for unknown and inherited names', () => {
         expect(DEFAULT_MIN_SEEDS).toBe(16);
         expect(MIN_SEEDS).toBe(DEFAULT_MIN_SEEDS);
-        expect(minSeedsFor('eval.diversity')).toBe(16);
+        expect(minSeedsFor('eval.food_energy_per_1k')).toBe(16);
+        expect(minSeedsFor('eval.diversity')).toBe(32);
         expect(minSeedsFor('eval.qd_score')).toBe(32);
         for (const metric of ['mystery', 'toString', 'constructor']) {
             expect(minSeedsFor(metric)).toBe(16);

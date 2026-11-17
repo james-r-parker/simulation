@@ -68,8 +68,8 @@ describe('compareReports on a share metric (a watch metric, so a direction is na
     it('leaves a metric that is not a share on the relative floor', () => {
         const diffs = (/** @type {number} */ d) =>
             compareReports(
-                report({ 'eval.births_per_1k': BASE }),
-                report({ 'eval.births_per_1k': BASE.map((v) => v + d) }),
+                report({ 'eval.food_energy_per_1k': BASE }),
+                report({ 'eval.food_energy_per_1k': BASE.map((v) => v + d) }),
             ).rows[0].verdict;
         expect(diffs(0.5)).toBe('no-difference');
         expect(diffs(0.6)).toBe('better');

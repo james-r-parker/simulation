@@ -204,6 +204,8 @@ export const HUNTERS = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no agent-ticks'],
+        expectedFlat:
+            'Null unless a hunter lives past 4 x juvenileTicks, which happened on 100 of 128 floor-on seeds (E188); hunters turn over quickly on the defaults (median lifespan near 1000 ticks); it moves with hunter longevity.',
         arithmetic: '',
     }),
     'eval.hunter_kill_rate_by_source.mate-hunter-parent': entry('hunters', {
@@ -214,6 +216,8 @@ export const HUNTERS = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no agent-ticks'],
+        expectedFlat:
+            'Null unless a hunter is born by mating to a hunter mother, which happened on 100 of 128 floor-on seeds (E188); it moves with hunter-to-hunter mating.',
         arithmetic: 'test/evo/scene-hunter-age.test.js',
     }),
     'eval.hunter_kill_rate_by_source.split-hunter-parent': entry('hunters', {
