@@ -129,14 +129,15 @@ Every staged tool was tuned on the snap heading. With the switch on, T4a re-runs
 
 ## Decisions
 
-| Decision                                                             | Why                                                                                                                      | Who                                 |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
-| The premise is measured before Phase 2                               | Velocity already carries momentum; only the heading is free, and no run shows that closes the fair band                  | Delegated (plan review, 2026-11-15) |
-| Each mechanism has its own arm                                       | One switch over three levers gives a verdict that names none of them                                                     | Delegated (plan review, 2026-11-15) |
-| Jitter is a mechanism check, not a target                            | It falls by construction; a number that only moves a number does not belong ([principles.md](../principles.md))          | Delegated (plan review, 2026-11-15) |
-| Phase 3 waits for patch-rim cover, or uses refuge rings only         | The zone it drags in is built by [habitat-cover.md](habitat-cover.md) Phase 2; a second cover geometry is not added here | Delegated (plan review, 2026-11-15) |
-| No brain input is added for cover drag                               | A body feels drag through its own velocity inputs; a new input needs a scene metric to move                              | Planner, from principles.md         |
-| The kernel change is built by Opus, and the JS reference is the test | `move_agent` is in `wasm/src/physics.rs` (user, 2026-11-07)                                                              | Planner, from the user's rule       |
+| Decision                                                                                           | Why                                                                                                                      | Who                                 |
+| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| The premise is measured before Phase 2                                                             | Velocity already carries momentum; only the heading is free, and no run shows that closes the fair band                  | Delegated (plan review, 2026-11-15) |
+| No baseline prediction is claimed for `eval.chase_overshoot_share` or `eval.chase_cover_use_share` | These descriptive detectors have no predeclared mechanism; the shared baseline reads their power and liveness only       | Coordinator, 2026-11-17             |
+| Each mechanism has its own arm                                                                     | One switch over three levers gives a verdict that names none of them                                                     | Delegated (plan review, 2026-11-15) |
+| Jitter is a mechanism check, not a target                                                          | It falls by construction; a number that only moves a number does not belong ([principles.md](../principles.md))          | Delegated (plan review, 2026-11-15) |
+| Phase 3 waits for patch-rim cover, or uses refuge rings only                                       | The zone it drags in is built by [habitat-cover.md](habitat-cover.md) Phase 2; a second cover geometry is not added here | Delegated (plan review, 2026-11-15) |
+| No brain input is added for cover drag                                                             | A body feels drag through its own velocity inputs; a new input needs a scene metric to move                              | Planner, from principles.md         |
+| The kernel change is built by Opus, and the JS reference is the test                               | `move_agent` is in `wasm/src/physics.rs` (user, 2026-11-07)                                                              | Planner, from the user's rule       |
 
 ## Experiments
 

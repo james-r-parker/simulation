@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BORN_CAUSE } from '../../js/sim/events.js';
+import { BORN_CAUSE, DEATH_CAUSE } from '../../js/sim/events.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import {
     createGuildScene,
@@ -21,6 +21,10 @@ const GUILD_NAMES = [
     'eval.guild_survival.reproducer',
     'eval.guild_survival.scout',
     'eval.guild_survival.defender',
+    'eval.prey_selectivity.forager',
+    'eval.prey_selectivity.reproducer',
+    'eval.prey_selectivity.scout',
+    'eval.prey_selectivity.defender',
     'eval.defender_repel_per_1k',
     'eval.scout_alarm_lead_share',
     'eval.reproducer_recovery_rate',
@@ -113,6 +117,27 @@ describe('scene-guilds', () => {
         expect(m['eval.guild_survival.defender']?.value).toBeCloseTo(1.0, 6);
         expect(m['eval.scout_alarm_lead_share']?.value).toBeCloseTo(0.5, 6);
         expect(m['eval.reproducer_recovery_rate']?.value).toBeCloseTo(0.5, 6);
+    });
+
+    it('measures each guild share of eaten deaths against its share of living prey', () => {
+        const scene = createGuildScene({ maxAgeTicks: 1000, callRadius: 200, initialAgents: 5 });
+        const world = makeWorld(6);
+        world.alive.set([1, 1, 1, 1, 1, 1]);
+        world.spec.set([0, 0, 2, 3, 4, 1]);
+        sampleGuilds(scene, world);
+
+        noteGuildDeath(scene, { tick: BURN_IN_TICKS, spec: 0, age: 10, cause: DEATH_CAUSE.EATEN });
+        noteGuildDeath(scene, { tick: BURN_IN_TICKS, spec: 0, age: 10, cause: DEATH_CAUSE.EATEN });
+        noteGuildDeath(scene, { tick: BURN_IN_TICKS, spec: 0, age: 10, cause: DEATH_CAUSE.EATEN });
+        noteGuildDeath(scene, { tick: BURN_IN_TICKS, spec: 2, age: 10, cause: DEATH_CAUSE.EATEN });
+        noteGuildDeath(scene, { tick: BURN_IN_TICKS, spec: 3, age: 10, cause: DEATH_CAUSE.EATEN });
+        noteGuildDeath(scene, { tick: BURN_IN_TICKS, spec: 4, age: 10, cause: DEATH_CAUSE.OLD_AGE });
+
+        const metrics = guildMetrics(scene);
+        expect(metrics['eval.prey_selectivity.forager']?.value).toBeCloseTo(1.5, 6);
+        expect(metrics['eval.prey_selectivity.reproducer']?.value).toBe(1);
+        expect(metrics['eval.prey_selectivity.scout']?.value).toBe(1);
+        expect(metrics['eval.prey_selectivity.defender']?.value).toBe(0);
     });
 
     it('starts recovery counting from an empty population when initialAgents is omitted', () => {

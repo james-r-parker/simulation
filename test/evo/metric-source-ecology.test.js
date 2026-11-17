@@ -87,6 +87,10 @@ const SOURCE_METRICS = [
     'eval.guild_survival.reproducer',
     'eval.guild_survival.scout',
     'eval.guild_survival.defender',
+    'eval.prey_selectivity.forager',
+    'eval.prey_selectivity.reproducer',
+    'eval.prey_selectivity.scout',
+    'eval.prey_selectivity.defender',
     'eval.defender_repel_per_1k',
     'eval.scout_alarm_lead_share',
     'eval.reproducer_recovery_rate',
@@ -166,7 +170,7 @@ describe('ecology metrics from a scripted source run', () => {
         const registryNames = Object.entries(METRICS)
             .filter(([, entry]) => entry.family === 'scenes-ecology')
             .map(([name]) => name);
-        expect(names).toHaveLength(87);
+        expect(names).toHaveLength(91);
         expect(names).toEqual(registryNames);
         expect(Object.fromEntries(names.map((name) => [name, actual[name]]))).toEqual(expected);
         expect(run.observer.deathCount).toBe(2);
