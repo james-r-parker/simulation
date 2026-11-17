@@ -52,6 +52,7 @@ import { createStyle, noteStyleAtDeath, noteStyleDeath, resetStyleSlot, tickStyl
 import { createReachScene, sampleReach } from './scene-reach.js';
 import { createRefugeScene, sampleRefuge } from './scene-refuge.js';
 import { createRefugeOutcomeScene, sampleRefugeOutcome, tickRefugeBites } from './scene-refuge-outcome.js';
+import { createSprintScene, tickSprint } from './scene-sprint.js';
 import { createTerrainScene, sampleTerrain } from './scene-terrain.js';
 import { GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
 import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
@@ -124,6 +125,7 @@ export function createScenes(config, runTicks = 0, lean = false) {
         kin: createKinProximityScene(config),
         bite: createBiteScene(config),
         biteLife: createBiteLifeScene(),
+        sprint: createSprintScene(config),
     };
 }
 
@@ -337,6 +339,7 @@ export function observeScenes(observer, world) {
     tickRecoil(scenes.biteLife, world);
     trackProof(scenes.proof, world);
     trackApproaches(scenes.approach, observer, world);
+    tickSprint(scenes.sprint, observer, world);
     tickKinematics(scenes.kinematics, observer, world);
     trackCarcasses(scenes.carcass, observer, world);
     tickStyle(observer, world);

@@ -330,6 +330,10 @@ export default {
         value: null,
         reason: 'no resolved chase after burn-in',
     },
+    'eval.chase_sprint_lift': {
+        value: null,
+        reason: 'no chase and non-chase hunter-ticks after burn-in',
+    },
     'eval.chase_cover_use_share': {
         value: null,
         reason: 'no evaded chase after burn-in',
@@ -337,5 +341,19 @@ export default {
     'eval.chase_turn_jitter': {
         value: null,
         reason: 'no active chase turn samples after burn-in',
+    },
+    'eval.flee_sprint_lift': {
+        value: null,
+        reason: 'no threat and calm prey-ticks after burn-in',
+    },
+    'eval.sprint_cost_share': {
+        value: 0,
+    },
+    'eval.sprint_share.hunter': {
+        value: null,
+        reason: 'no agent-ticks for this role after burn-in',
+    },
+    'eval.sprint_share.prey': {
+        value: 0,
     },
 };
