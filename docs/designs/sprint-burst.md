@@ -85,7 +85,7 @@ The keep rule decides ([principles.md](../principles.md), "A realistic mechanism
 | Unit tests              | `test/evo/scene-sprint.test.js` (a brain that always sprints reads share 1 and lift 1; one that sprints only in a chase reads a lift above 1). Phase 2: `test/sim/sprint-store.test.js` against a naive reference, the off path bit-identical                              |
 | Headless e2e            | Phase 1: golden hashes unchanged. Phase 2: unchanged with the switch off; a 6000-tick replay with it on runs clean under `--check-invariants`                                                                                                                              |
 | Performance budget      | Phase 1 adds one observer scan over living agents per tick; measured by the existing eval runtime. Phase 2's cost is measured with `npm run bench:parts -- --area physics --compare <base>` once the rule is written                                                       |
-| Evolution metrics       | The Phase 2 Done row; experiments `E-SB-1` to `E-SB-3` in `evals/experiments.json`                                                                                                                                                                                         |
+| Evolution metrics       | The Phase 2 Done row; Phase 1 uses the shared detector-baseline top-up, with its prediction recorded before the run; Phase 2 experiments remain in `evals/experiments.json`                                                                                                |
 | Determinism             | No RNG stream. The store is per-agent state, zeroed in `freeAgent`, in `worldHash` only with the switch on                                                                                                                                                                 |
 | Config and persistence  | Phase 2: `sprintStoreEnabled` (false), `sprintDrain` (0.01), `sprintRefill` (0.002), `sprintRestThrust` (0.2), `sprintFloor` (0.3); a `scripts/flag-ledger.json` entry for the boolean pointing at T9. A new key changes `rulesHash`, so the switch lands on `season/next` |
 | Logging and diagnostics | `SprintConfig` (info, tick 0, with the switch on). Replay: `npm run replay -- --seed <n> --ticks 20000 --config <on.json> --level debug --check-invariants`                                                                                                                |
@@ -97,13 +97,13 @@ The keep rule decides ([principles.md](../principles.md), "A realistic mechanism
 
 ### Phase 1 - Detectors and baseline
 
-| #   | Task                                                                                                                                                           | Nature       | Depends on  |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| T1  | Read what a sprint costs today (`tickCost`, the thrust step, `thrustEfficiency` in `js/sim/temperature.js`) and record it in [sim-notes.md](sim-notes.md)      | [judgement]  | -           |
-| T2a | Add `js/evo/scene-sprint.js` and observer wiring for the five Phase 1 detectors, with focused arithmetic tests                                                 | [judgement]  | T1          |
-| T2b | Add registry entries, registry coverage and regenerate [metrics.md](metrics.md)                                                                                | [mechanical] | T2a         |
-| T3  | Read sprint metrics in the shared detector top-up from [detector-baseline.md](detector-baseline.md); prediction first, then record the Phase 2 verdict         | [mechanical] | T2b         |
-| T4  | Conformance review of Phase 1 by a fresh agent, in parallel with the project gate; close the doc with detectors kept or plan Phase 2 from the recorded verdict | [judgement]  | T1, T2b, T3 |
+| #   | Task                                                                                                                                                              | Nature       | Depends on  |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| T1  | Read what a sprint costs today (`tickCost`, the thrust step, `thrustEfficiency` in `js/sim/temperature.js`) and record it in [sim-notes.md](sim-notes.md) (built) | [judgement]  | -           |
+| T2a | Add `js/evo/scene-sprint.js` and observer wiring for the five Phase 1 detectors, with focused arithmetic tests (built)                                            | [judgement]  | T1          |
+| T2b | Add registry entries, registry coverage and regenerate [metrics.md](metrics.md) (built)                                                                           | [mechanical] | T2a         |
+| T3  | Read sprint metrics in the shared detector top-up from [detector-baseline.md](detector-baseline.md); prediction first, then record the Phase 2 verdict            | [mechanical] | T2b         |
+| T4  | Conformance review of Phase 1 by a fresh agent, in parallel with the project gate; close the doc with detectors kept or plan Phase 2 from the recorded verdict    | [judgement]  | T1, T2b, T3 |
 
 ### Phase 2 - The store
 
