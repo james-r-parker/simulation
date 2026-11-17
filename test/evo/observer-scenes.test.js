@@ -181,6 +181,7 @@ describe('observeScenes', () => {
             'season',
             'seasonMap',
             'spend',
+            'sprint',
             'strikeMiss',
             'style',
             'terrain',

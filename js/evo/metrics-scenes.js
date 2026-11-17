@@ -40,6 +40,7 @@ import { refugeOutcomeMetrics } from './scene-refuge-outcome.js';
 import { terrainMetrics } from './scene-terrain.js';
 import { styleMetrics } from './style.js';
 import { herdMetrics } from './scene-herd-metrics.js';
+import { sprintMetrics } from './scene-sprint.js';
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick
@@ -88,5 +89,6 @@ export function sceneMetrics(observer, world) {
         ...rewardMetrics(observer, world),
         ...biteMetrics(s.bite),
         ...biteLifeMetrics(s.biteLife, world),
+        ...sprintMetrics(s.sprint),
     };
 }
