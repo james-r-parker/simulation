@@ -227,6 +227,8 @@ export const SCENES_ECOLOGY_3 = {
         unit: 'share',
         direction: 'higher',
         nullWhen: ['no scout alarm with a threat after burn-in'],
+        expectedFlat:
+            'Null unless a scout calls an alarm with a threat seen, which happened on 1 of 128 floor-on seeds (E188; calls with a threat by any caller on 3); it moves with alarm calling.',
         arithmetic: 'test/evo/scene-guilds.test.js',
         source: 'test/evo/metric-source-ecology.test.js',
     }),

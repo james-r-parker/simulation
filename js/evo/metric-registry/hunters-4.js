@@ -80,6 +80,8 @@ export const HUNTERS_4 = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no cohort hunter reached maturity'],
+        expectedFlat:
+            'Null unless a hunter born by mating to a hunter mother matures in the cohort, which happened on 84 of 128 floor-on seeds (E188); it moves with hunter-to-hunter mating.',
         arithmetic: 'test/evo/scene-recruit.test.js',
         source: 'test/evo/metric-source-recruit.test.js',
     }),
@@ -113,6 +115,8 @@ export const HUNTERS_4 = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no cohort hunter reached maturity'],
+        expectedFlat:
+            'Null unless a floor-born hunter matures in the cohort, which happened on 25 of 128 floor-on seeds (E188); it moves with floor births, which the hunter population seldom needs.',
         arithmetic: 'test/evo/scene-recruit.test.js',
         source: 'test/evo/metric-source-recruit.test.js',
     }),

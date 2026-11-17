@@ -51,6 +51,8 @@ export const SCENES_ECOLOGY = {
         direction: 'watch',
         intended: 'lower',
         nullWhen: ['no observed ticks after burn-in'],
+        expectedFlat:
+            'Constant 0, the intended value: no patch stays below its floor for patchDieTicks (36000) on the defaults, so no PatchDied is emitted on any of 128 floor-on seeds x 200000 ticks (E188).',
         arithmetic: 'test/evo/scene-flora.test.js',
     }),
     'eval.flora_seed_bank_occupancy_share': entry('scenes-ecology', {
@@ -61,6 +63,8 @@ export const SCENES_ECOLOGY = {
         direction: 'watch',
         intended: 'lower',
         nullWhen: ['no seed-bank checkpoints after burn-in'],
+        expectedFlat:
+            'Constant 0, the intended value: a seed bank fills only when a patch dies, and none dies on the defaults (see eval.flora_patch_death_rate; E188).',
         arithmetic: 'test/evo/scene-flora.test.js',
     }),
     'eval.toxic_avoidance': entry('scenes-ecology', {

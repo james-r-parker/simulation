@@ -53,6 +53,8 @@ export const HUNTERS_3 = {
         direction: 'lower',
         renamedFrom: ['eval.bite_off_other'],
         nullWhen: ['<n> non-biteable body opportunities (a share needs 30)'],
+        expectedFlat:
+            'Null unless a hunter has 30 non-kin bodies in its jaws that it cannot bite, which happened on 106 of 128 floor-on seeds (E188); it moves with hunters meeting such bodies.',
         arithmetic: 'test/evo/scene-bite.test.js',
         source: 'test/evo/metric-source-hunter-bites.test.js',
     }),
@@ -195,6 +197,8 @@ export const HUNTERS_3 = {
         unit: 'ratio',
         direction: 'higher',
         nullWhen: ['under 30 hunter kills with a hunter as the previous biter'],
+        expectedFlat:
+            'Null unless hunters make 30 kills with a hunter as the previous biter, which happened on 112 of 128 floor-on seeds (E188); it moves with pack hunting.',
         arithmetic: 'test/evo/scene-pack-lift.test.js',
         source: 'test/evo/metric-source-hunter-chases.test.js',
     }),
@@ -216,6 +220,8 @@ export const HUNTERS_3 = {
         unit: 'share',
         direction: 'higher',
         nullWhen: ['no specialisation with two lineages of 20 deaths and a spread of style'],
+        expectedFlat:
+            'Null unless a specialisation has two lineages with 20 deaths each and a spread of style, which happened on 113 of 128 floor-on seeds (E188); it moves with lineage coexistence.',
         arithmetic: 'test/evo/style.test.js',
         source: 'test/evo/metric-source-hunter-chases.test.js',
     }),
