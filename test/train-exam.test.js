@@ -4,7 +4,7 @@ import { formatRows, parseArgs } from '../scripts/train-exam.mjs';
 
 describe('parseArgs', () => {
     it('reads the run, the replicates, the trials and the workers', () => {
-        expect(parseArgs(['--run', 'a', '--replicates', 'b,c', '--trials', '8', '--workers', '2'])).toEqual({
+        expect(parseArgs(['--run', 'a', '--replicates', 'b,c', '--trials', '8', '--workers', '2'])).toMatchObject({
             run: 'a',
             replicates: ['b', 'c'],
             trials: 8,
@@ -13,7 +13,37 @@ describe('parseArgs', () => {
     });
 
     it('defaults to no replicates and the gate trials', () => {
-        expect(parseArgs(['--run', 'a'])).toEqual({ run: 'a', replicates: [], trials: 64, workers: undefined });
+        expect(parseArgs(['--run', 'a'])).toEqual({
+            run: 'a',
+            replicates: [],
+            worldBefore: null,
+            worldAfter: null,
+            keepRuleReport: null,
+            descendants: null,
+            trials: 64,
+            workers: undefined,
+        });
+    });
+
+    it('reads the world reports for row 6 and the descendants directory for row 7', () => {
+        const args = parseArgs([
+            '--run',
+            'a',
+            '--world-before',
+            'live.json',
+            '--world-after',
+            'champions.json',
+            '--keep-rule-report',
+            'keep.json',
+            '--descendants',
+            'saved',
+        ]);
+        expect(args).toMatchObject({
+            worldBefore: 'live.json',
+            worldAfter: 'champions.json',
+            keepRuleReport: 'keep.json',
+            descendants: 'saved',
+        });
     });
 
     it('needs --run and refuses an unknown flag or a bad count', () => {

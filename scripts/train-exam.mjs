@@ -1,6 +1,6 @@
 // The exam of a training run's champion set (`npm run train:exam -- --run <dir> [--replicates <dir,dir>]`;
 // docs/designs/training-stages.md, The exam): prints ten rows and writes `<dir>/exam.json`. Rows 1 to 5, 8 and 9 need no
-// target world; rows 6, 7 and 10 need the target world (row 10 is the user's watch) and print `not run` with the command that feeds them. Logs
+// target world; rows 6 and 7 read the world reports and the saved champions given by flags (`not run`, with the command that feeds them, until given) and row 10 is the user's watch. Logs
 // `ExamRow` per row to `.sim/logs/exam-<run>.jsonl`. A detector: nothing here reaches fitness or selection.
 import { rmSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
@@ -19,6 +19,7 @@ import {
 } from '../js/evo/exam.js';
 import { seedlessConfig } from '../js/evo/report.js';
 import { configHash, createConfig } from '../js/sim/config.js';
+import { inheritedExamRow, scenesExamRow } from '../js/evo/exam-target.js';
 import { createSimLog } from '../js/sim/log.js';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
 import {
@@ -31,15 +32,21 @@ import {
     reflexScores,
     styleReadings,
 } from './lib/exam-readings.mjs';
+import { descendantShares, drillShares, readKeepReport, readWorldReport } from './lib/exam-world.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { logRunConfig } from './lib/run-config.mjs';
 
-const USAGE = 'usage: train:exam --run <dir> [--replicates <dir,dir>] [--trials <n>] [--workers <n>]';
+const USAGE =
+    'usage: train:exam --run <dir> [--replicates <dir,dir>] [--world-before <report.json> --world-after <report.json> --keep-rule-report <compare.json>] [--descendants <dir>] [--trials <n>] [--workers <n>]';
 
 /**
  * @typedef {object} ExamArgs
  * @property {string} run the run directory
  * @property {string[]} replicates the run directories of the other training-seed offsets
+ * @property {string | null} worldBefore row 6: the live policy's eval report (32 seeds x 200000 ticks)
+ * @property {string | null} worldAfter row 6: the `champions-v1` eval report on the same seeds
+ * @property {string | null} keepRuleReport row 6: `eval:compare --keep-rule --json` output on 64 seeds
+ * @property {string | null} descendants row 7: a `--save-champions` directory of the `champions-v1` world run
  * @property {number} trials trials per champion and drill, and per reflex case (default `EXAM_TRIALS`, the gate's 64)
  * @property {number | undefined} workers pool size, default `defaultWorkers()`
  */
@@ -55,10 +62,23 @@ export function parseArgs(argv) {
             valueFlags: {
                 '--run': (v) => ['run', String(v)],
                 '--replicates': (v) => ['replicates', String(v).split(',').filter(Boolean)],
+                '--world-before': (v) => ['worldBefore', String(v)],
+                '--world-after': (v) => ['worldAfter', String(v)],
+                '--keep-rule-report': (v) => ['keepRuleReport', String(v)],
+                '--descendants': (v) => ['descendants', String(v)],
                 '--trials': (v, f) => ['trials', intValue(f, v, 1, USAGE)],
                 '--workers': (v, f) => ['workers', intValue(f, v, 1, USAGE)],
             },
-            defaults: { run: null, replicates: [], trials: EXAM_TRIALS, workers: undefined },
+            defaults: {
+                run: null,
+                replicates: [],
+                worldBefore: null,
+                worldAfter: null,
+                keepRuleReport: null,
+                descendants: null,
+                trials: EXAM_TRIALS,
+                workers: undefined,
+            },
             usage: USAGE,
         })
     );
@@ -129,6 +149,34 @@ export async function runExam(args, { logDir = '.sim/logs', print = () => {}, le
 }
 
 /**
+ * Rows 6 and 7, fed by the world reports and the descendants directory; `not run` for what is not given.
+ * @param {ExamArgs} args the options
+ * @param {{named: string[], founders: import('./lib/exam-readings.mjs').DrillTable, log: import('../js/sim/log.js').SimLog}} run
+ *   the named drills, the founders' drill table and the log
+ * @returns {Promise<import('../js/evo/exam.js').ExamRow[]>} rows 6 and 7
+ */
+async function worldRows(args, { named, founders, log }) {
+    const row6 = scenesExamRow({
+        before: readWorldReport(args.worldBefore),
+        after: readWorldReport(args.worldAfter),
+        keep: readKeepReport(args.keepRuleReport),
+    });
+    const groups =
+        args.descendants === null
+            ? null
+            : {
+                  unlabelled: await descendantShares(args.descendants, {
+                      named,
+                      trials: args.trials,
+                      workers: args.workers,
+                      log,
+                  }),
+              };
+    const shares = drillShares(founders.rows, founders.subjects.length, named);
+    return [row6, inheritedExamRow({ named, founders: shares, groups, replacement: null })];
+}
+
+/**
  * @param {ExamArgs} args the options
  * @param {{log: import('../js/sim/log.js').SimLog, logDir: string, league?: {path: string, root: string, ticks: number}}} io
  *   the log, its directory and the league
@@ -160,12 +208,7 @@ async function examine(args, { log, logDir, league }) {
         row3,
         row4,
         leagueExamRow(await leagueStandings(run, { workers, logDir, league })),
-        notRun(
-            6,
-            'needs the target world: champions-v1 against the live policy',
-            'npm run eval -- --policy champions-v1 --policy-options <file.json>',
-        ),
-        notRun(7, 'needs the traced descendants of row 6', 'npm run train:exam -- --run <dir>'),
+        ...(await worldRows(args, { named, founders: first, log })),
         diverseExamRow({ ...style, recruitment: { low: null, high: null } }),
         replicatedExamRow(
             [{ row3, row4 }, ...replicateRuns].map((r) => ({ row3: r.row3.verdict, row4: r.row4.verdict })),

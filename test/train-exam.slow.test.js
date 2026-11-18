@@ -7,6 +7,7 @@ import { encodeArchive } from '../js/evo/archive-codec.js';
 import { createTrainerArchive } from '../js/evo/trainer.js';
 import { WELFORD_STRIDE, welfordAdd } from '../js/evo/welford.js';
 import { brainLayout } from '../js/sim/brain-layout.js';
+import { buildReport } from '../js/evo/report.js';
 import { createConfig } from '../js/sim/config.js';
 import { loadRun } from '../scripts/lib/exam-readings.mjs';
 import { runExam } from '../scripts/train-exam.mjs';
@@ -15,6 +16,7 @@ import { makeChampionFile } from './evo/helpers/champion-file.js';
 const root = mkdtempSync(join(tmpdir(), 'train-exam-'));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
+const NO_WORLD = { worldBefore: null, worldAfter: null, keepRuleReport: null, descendants: null };
 const config = createConfig({});
 const layout = brainLayout(config);
 
@@ -68,7 +70,7 @@ describe('runExam', () => {
         const lines = /** @type {string[]} */ ([]);
         const logDir = join(root, 'logs');
         const result = await runExam(
-            { run: dir, replicates: [], trials: 2, workers: 1 },
+            { ...NO_WORLD, run: dir, replicates: [], trials: 2, workers: 1 },
             { logDir, print: (line) => lines.push(line), league: { path: leaguePath, root, ticks: 20 } },
         );
         expect(result.rows.map((r) => r.row)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
@@ -96,7 +98,7 @@ describe('runExam', () => {
         const champions = [{ file: 'champion.json', name: 'admitted', elo: 1000 }];
         writeFileSync(leaguePath, JSON.stringify({ version: 1, champions }));
         const result = await runExam(
-            { run: dir, replicates: [replicate], trials: 2, workers: 1 },
+            { ...NO_WORLD, run: dir, replicates: [replicate], trials: 2, workers: 1 },
             { logDir: join(root, 'logs'), league: { path: leaguePath, root, ticks: 20 } },
         );
         const league = result.rows[4];
@@ -104,5 +106,43 @@ describe('runExam', () => {
         expect(league.numbers.champions.length).toBeGreaterThan(0);
         expect(league.numbers.champions[0]).toHaveProperty('elo');
         expect(result.rows[8].numbers.runs).toBe(2);
+    });
+
+    it('feeds rows 6 and 7 from the world reports and a directory of saved champions', async () => {
+        const dir = runDir('world');
+        const report = buildReport({
+            policy: 'map-elites-v6',
+            fitnessName: 'v6',
+            config,
+            ticks: 10,
+            seeds: [1, 2],
+            sha: 'x',
+            perSeed: [{}, {}],
+        });
+        writeFileSync(join(root, 'live.json'), JSON.stringify(report));
+        writeFileSync(join(root, 'cp.json'), JSON.stringify({ ...report, policy: 'champions-v1' }));
+        writeFileSync(join(root, 'keep.json'), JSON.stringify({ seedCount: 64, keepRule: { worse: false } }));
+        const saved = join(root, 'saved');
+        mkdirSync(saved);
+        writeFileSync(join(saved, 'd.json'), JSON.stringify(makeChampionFile('d', 1, { specialisation: 0 })));
+        const result = await runExam(
+            {
+                ...NO_WORLD,
+                run: dir,
+                replicates: [],
+                trials: 2,
+                workers: 1,
+                worldBefore: join(root, 'live.json'),
+                worldAfter: join(root, 'cp.json'),
+                keepRuleReport: join(root, 'keep.json'),
+                descendants: saved,
+            },
+            { logDir: join(root, 'logs'), league: { path: join(root, 'league.json'), root, ticks: 20 } },
+        );
+        expect(result.rows[5].verdict).toBe('not run');
+        expect(result.rows[5].reason).toMatch(/32 seeds/);
+        expect(result.rows[6].verdict).toBe('not run');
+        expect(result.rows[6].numbers.groups.unlabelled.drills['food-ahead']).toHaveProperty('winShare');
+        expect(result.rows[6].reason).toMatch(/not read: children, grandchildren, replacement/);
     });
 });
