@@ -4732,6 +4732,22 @@
         "evals/decisions/E192/report.txt",
         "evals/decisions/E192/readings.json"
       ]
+    },
+    {
+      "id": "E193",
+      "date": "2026-11-18",
+      "branch": "feat/honest-budgets-t41",
+      "hypothesis": "After E192 (blind biting never leaves because the birth reflex leaves the BITE bias at 0 and clones copy it): a hunter born with its BITE bias closed (hunterBiteBias x instinctWeight, an innate releasing mechanism, released by prey through the +2 prey-to-BITE skip weight) strikes at air less, so fewer juveniles starve of the strike-miss drain.",
+      "prediction": "Written before the run: at least one of hunterBiteBias -0.5, -1, -2 lowers eval.strike_miss_energy_ratio and eval.bite_idle and eval.hunter_juvenile_death_share below 0.70, with hunters alive on at least 11 of 16 seeds, eval.hunter_catches_per_1k not WORSE and the keep rule reading no guard WORSE. Falsified when every arm reads eval.hunter_catches_per_1k or held WORSE.",
+      "targets": ["eval.strike_miss_energy_ratio", "eval.bite_idle", "eval.hunter_juvenile_death_share"],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "control (defaults, hunterBiteBias 0), seeds 1 to 16, 400000 ticks",
+      "after": "hunterBiteBias -0.5, -1 and -2, same seeds and length (evals/screens/honest-bite-bias.grid.json)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Pending: the T41 screen is running (run T41-screen); no verdict yet.",
+      "reports": ["evals/decisions/E193/results.md"]
     }
   ]
 }

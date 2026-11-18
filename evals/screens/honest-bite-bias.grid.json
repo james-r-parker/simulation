@@ -1,0 +1,19 @@
+{
+  "seeds": 16,
+  "seedOffset": 0,
+  "ticks": 400000,
+  "policy": "live",
+  "reference": "control",
+  "arms": {
+    "control": {},
+    "bias-0.5": {
+      "hunterBiteBias": -0.5
+    },
+    "bias-1": {
+      "hunterBiteBias": -1
+    },
+    "bias-2": {
+      "hunterBiteBias": -2
+    }
+  }
+}
