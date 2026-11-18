@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sampleFramesAfterStartup } from '../../scripts/browser-frame-measurement.mjs';
+import { SMOKE_FRAME_BAR, sampleFramesAfterStartup } from '../../scripts/browser-frame-measurement.mjs';
 
 describe('sampleFramesAfterStartup', () => {
     it('clears startup samples and measures new app frames inside the frame window', async () => {
@@ -88,5 +88,40 @@ describe('sampleFramesAfterStartup', () => {
         });
 
         expect(result).toEqual({ frames: 30, elapsedMs: 300, ready: true });
+    });
+
+    /**
+     * Simulates an app that draws one frame every `drawMs` once its first draw has landed.
+     * @param {number} drawMs ms per draw
+     * @returns {Promise<{frames: number, elapsedMs: number, ready: boolean}>} the smoke's sample
+     */
+    function sampleAt(drawMs) {
+        let elapsed = 0;
+        let epoch = 0;
+        return sampleFramesAfterStartup({
+            readFrames: async () => (elapsed < 100 ? 0 : Math.floor((elapsed - epoch) / drawMs) + 1),
+            resetFrames: async () => {
+                epoch = elapsed;
+            },
+            now: () => elapsed,
+            wait: async () => {
+                elapsed += 50;
+            },
+            ...SMOKE_FRAME_BAR,
+        });
+    }
+
+    it('keeps the 30-frame bar', () => {
+        expect(SMOKE_FRAME_BAR.minFrames).toBe(30);
+    });
+
+    it('passes a software renderer at 4 fps (CI SwiftShader draws 4 to 9 fps)', async () => {
+        for (const drawMs of [250, 200, 111]) {
+            expect((await sampleAt(drawMs)).frames).toBeGreaterThanOrEqual(SMOKE_FRAME_BAR.minFrames);
+        }
+    });
+
+    it('still fails a stalled loop (1 fps)', async () => {
+        expect((await sampleAt(1000)).frames).toBeLessThan(SMOKE_FRAME_BAR.minFrames);
     });
 });
