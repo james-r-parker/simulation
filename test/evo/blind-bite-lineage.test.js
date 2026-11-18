@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
     biasDrift,
     blindShare,
+    byBiasSign,
     byDepth,
     bySource,
     countedLives,
     depths,
+    outcomeByQuintile,
     parentChild,
     reproducers,
     unseenShare,
@@ -50,7 +52,16 @@ describe('bySource', () => {
             life(2, { source: 'split-hunter-parent', blind: 200, ticks: 4000, preyBite: -0.1 }),
         ]);
         const rows = bySource(lives, 3000);
-        expect(rows.floor).toMatchObject({ born: 1, birthShare: 0.5, meanBlind: 0.8, blindMass: 0.8, reach: 0 });
+        expect(rows.floor).toMatchObject({
+            meanBias: 0.2,
+            zeroBias: 0,
+            meanHold: 0.6,
+            born: 1,
+            birthShare: 0.5,
+            meanBlind: 0.8,
+            blindMass: 0.8,
+            reach: 0,
+        });
         expect(rows['split-hunter-parent']).toMatchObject({ pooledBlind: 0.05, reach: 1, positivePreyBite: 0 });
         expect(rows.floor.earlyBlind).toBe(0.5);
     });
@@ -179,6 +190,40 @@ describe('pick', () => {
         expect(byDepth(all, all, unseenShare)['0'].blind).toBeCloseTo((0.1 + 0.9) / 2);
         expect(reproducers(all, all, 100, unseenShare).parents.meanBlind).toBeCloseTo(0.1);
         expect(bySource(all, 3000).floor.pooledUnseen).toBeCloseTo(240 / 2100);
+    });
+});
+
+describe('outcomeByQuintile', () => {
+    it('cuts the lives of enough ticks into fifths by share and reads what became of each', () => {
+        const all = /** @type {any[]} */ (
+            Array.from({ length: 10 }, (_, i) =>
+                life(i + 1, { blind: i * 100, ticks: i < 5 ? 5000 : 1000, parentA: i === 0 ? 0 : 1 }),
+            ).concat([life(99, { ticks: 50 })])
+        );
+        const rows = outcomeByQuintile(all, all, { minTicks: 600, juvenileTicks: 3000 });
+        expect(Object.keys(rows)).toEqual(['q1', 'q2', 'q3', 'q4', 'q5']);
+        expect(rows.q1.n).toBe(2);
+        expect(rows.q1.reach).toBe(1);
+        expect(rows.q5.reach).toBe(0);
+        expect(rows.q1.share).toBeLessThan(rows.q5.share);
+        expect(rows.q1.parentShare).toBe(0.5);
+        expect(outcomeByQuintile(all, all, { minTicks: 600, juvenileTicks: 3000, pick: unseenShare }).q3.n).toBe(2);
+    });
+});
+
+describe('byBiasSign', () => {
+    it('splits the lives by the sign of the birth bias and skips an empty sign', () => {
+        const all = /** @type {any[]} */ ([
+            life(1, { bias: -0.5, hold: 100, blindUnseen: 0 }),
+            life(2, { bias: 0, ticks: 4000 }),
+            life(3, { bias: 0 }),
+        ]);
+        const rows = byBiasSign(all, 3000);
+        expect(Object.keys(rows)).toEqual(['negative', 'zero']);
+        expect(rows.negative).toMatchObject({ n: 1, meanHold: 0.1, pooledUnseen: 0, reach: 0 });
+        expect(rows.zero.share).toBeCloseTo(2 / 3);
+        expect(rows.zero.reach).toBe(0.5);
+        expect(byBiasSign([{ ...all[0], bias: 1 }], 3000).positive.n).toBe(1);
     });
 });
 

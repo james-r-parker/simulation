@@ -10,9 +10,11 @@ import { fileURLToPath } from 'node:url';
 import {
     biasDrift,
     blindShare,
+    byBiasSign,
     byDepth,
     bySource,
     countedLives,
+    outcomeByQuintile,
     parentChild,
     reproducers,
     unseenShare,
@@ -168,10 +170,12 @@ export function reportBlindBiters(argv, print) {
         parentChild: parentChild(lives, counted, MIN_PARENT_TICKS, pick),
         byDepth: byDepth(lives, counted, pick),
         reproducers: reproducers(lives, counted, MATURITY_TICKS, pick),
+        quintiles: outcomeByQuintile(lives, counted, { minTicks: MATURITY_TICKS, juvenileTicks, pick }),
     });
     const out = {
         counted: counted.length,
         bySource: bySource(counted, juvenileTicks),
+        byBiasSign: byBiasSign(counted, juvenileTicks),
         blind: readings(blindShare),
         unseen: readings(unseenShare),
         biasDrift: { bias: biasDrift(lives, counted, 'bias'), preyBite: biasDrift(lives, counted, 'preyBite') },
@@ -181,6 +185,8 @@ export function reportBlindBiters(argv, print) {
     );
     print('-- by birth source');
     table(out.bySource, print);
+    print('-- by the sign of the BITE output bias a hunter was born with');
+    table(out.byBiasSign, print);
     for (const [name, r] of [
         ['blind (BITE held, empty jaws)', out.blind],
         ['unseen (blind and no prey in view)', out.unseen],
@@ -192,6 +198,8 @@ export function reportBlindBiters(argv, print) {
         table(r.byDepth, print);
         print(`-- mature hunters (${MATURITY_TICKS}+ ticks) that were a parent and those that were not`);
         table(r.reproducers, print);
+        print(`-- lives of ${MATURITY_TICKS}+ ticks in fifths by that share, lowest first`);
+        table(r.quintiles, print);
     }
     print('-- birth weights, child against hunter parent: the BITE output bias and the prey-to-BITE skip weight');
     table(out.biasDrift, print);
