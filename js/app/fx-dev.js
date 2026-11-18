@@ -154,6 +154,6 @@ export function fxPerf(app) {
     const player = app.deps.refs.player;
     return {
         fx: player === null ? null : { ...fxStats(player.fx.budget), occupancy: occupancy(player.fx.pool) },
-        drawCalls: app.deps.scene?.renderer.info.render?.calls ?? null,
+        drawCalls: app.deps.scene?.renderer.info.render?.drawCalls ?? null,
     };
 }
