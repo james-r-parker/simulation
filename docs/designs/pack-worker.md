@@ -108,6 +108,19 @@ The effects player on the main thread runs on the drawn slot, one pack behind th
 
 The headers, the startup check and the snapshot ring replace the snapshot pool. The main thread still packs and rigs the agents.
 
+Measured on 2026-11-18 (T6) with `npm run perf:browser -- --cdp=http://127.0.0.1:9222 --agents 1000 --viewport 3840x2160` on the dev machine (Windows Chrome 157, RTX 4090, 1000 agents held), `main` at `c8ce3858` against the ring; reports in `bench/pack-worker/`. Isolation gives `performance.now` its fine resolution, so the frame times read 4.17 to 4.2 ms where the coarse clock rounded them to 4.3.
+
+| Metric                     | Before | After |
+| -------------------------- | ------ | ----- |
+| `browser.frame_p50_ms`     | 4.2    | 4.17  |
+| `browser.frame_p95_ms`     | 4.3    | 4.18  |
+| `browser.frame_p99_ms`     | 4.3    | 4.2   |
+| `browser.draw_cpu_p95_ms`  | 2.8    | 2.79  |
+| `browser.gpu_frame_p95_ms` | 0.66   | 0.72  |
+| `browser.main_long_tasks`  | 1      | 0     |
+| `browser.gc_pause_max_ms`  | 4.66   | 0.64  |
+| `browser.gc_pause_ms`      | 111.61 | 78.31 |
+
 | Chunk | Tasks    | Model  |
 | ----- | -------- | ------ |
 | A     | T1 to T7 | Sonnet |
