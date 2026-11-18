@@ -167,4 +167,14 @@ describe('emitStats', () => {
         expect(sent.some((m) => m.record?.event === 'FieldSkipped')).toBe(true);
         markSnapshot(host.pacer, 0);
     });
+
+    it('posts the pending ticker items with the stats and empties them', () => {
+        const { host, sent } = setup();
+        host.run.live.pending.push({ kind: 'note', tick: 3 });
+        emitStats(host);
+        expect(sent.filter((m) => m.type === 'ticker')).toEqual([
+            { type: 'ticker', items: [{ kind: 'note', tick: 3 }] },
+        ]);
+        expect(host.run.live.pending).toHaveLength(0);
+    });
 });

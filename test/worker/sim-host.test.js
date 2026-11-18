@@ -375,6 +375,16 @@ describe('reset', () => {
         expect(h.of('error')).toHaveLength(0);
     });
 
+    it('sends the new world at once when it is reset while paused', () => {
+        const h = started({ keep: 1 });
+        runTo(h, 5);
+        h.send({ type: 'pause' });
+        const before = h.of('snapshot').length;
+        h.send({ type: 'reset', seed: 6, config: SMALL_CONFIG });
+        expect(h.of('snapshot')).toHaveLength(before + 1);
+        expect(h.of('snapshot').at(-1)).toMatchObject({ epoch: 2, tick: 0 });
+    });
+
     it('makes a larger ring for a larger maxAgents, whatever the old ring held', () => {
         const h = started({ keep: Infinity });
         runTo(h, 10);
