@@ -10,6 +10,8 @@ import { clipSupported } from './capture.js';
 import { buildDebugBundle } from './debug-bundle.js';
 import { createFamilySlots } from './family-slots.js';
 import { createFrameLoop } from './frame-loop.js';
+import { requireIsolation } from './isolation.js';
+import { showRenderFailure } from './ui/render-failure.js';
 import { clearFrameStats, createFrameStats } from './frame-stats.js';
 import { createAppLiveness, readAppPerf, startReporting } from './liveness.js';
 import { MIN_CSS_PX_TOUCH, minPxTable } from './display-size.js';
@@ -354,6 +356,10 @@ function start() {
     });
     if (reason !== null) {
         return showMessage(container, reason);
+    }
+    // No isolation, no shared memory, no snapshots: show the card and start no worker (docs/designs/pack-worker.md).
+    if (!requireIsolation({ scope: globalThis, container, log: appLog, show: showRenderFailure })) {
+        return;
     }
     const app = createApp(container);
     window.__blob = createAppLiveness({

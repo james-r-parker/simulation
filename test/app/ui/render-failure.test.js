@@ -32,4 +32,9 @@ describe('showRenderFailure', () => {
         expect(container.children).toHaveLength(1);
         expect(RENDER_FAILURE_TEXT).toMatch(/WebGPU or WebGL2/);
     });
+
+    it('shows the message it is given instead of the renderer failure text', () => {
+        const box = /** @type {any} */ (showRenderFailure(fakeContainer(), 'not isolated'));
+        expect(box.textContent).toBe('not isolated');
+    });
 });
