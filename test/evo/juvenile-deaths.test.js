@@ -36,6 +36,27 @@ const ledger = (genomeId, tick, ageTicks, extra = {}) => ({
 const OPTIONS = { ticks: 20000, burnIn: 10000, juvenileTicks: 3000 };
 
 describe('juvenile-deaths', () => {
+    it('reads a bite from gain or kill energy alone, a ledger with no death record as unfed, and an alive killer as one kill', () => {
+        const records = [
+            born(20, 18000),
+            ledger(20, 18400, 400, { biteCostEnergy: 0, biteGainEnergy: 5 }),
+            born(21, 12000),
+            ledger(21, 12400, 400, { biteCostEnergy: 0, killEnergy: 30 }),
+            died(21, 12400),
+            born(22, 12000),
+            ledger(22, 12400, 400, { biteCostEnergy: 0 }),
+            died(22, 12400),
+            born(23, 10000),
+            { event: 'HunterKill', genomeId: 23, ageTicks: 900 },
+        ];
+        const lives = huntersLives(records, OPTIONS);
+        expect(lives.map((l) => l.bit)).toEqual([true, true, false, true]);
+        expect(lives[0].plant).toBe(0);
+        expect(lives[0].recoil).toBe(0);
+        const alive = lives.find((l) => l.cause === 'alive');
+        expect(alive).toMatchObject({ kills: 1, bit: true, firstKillAge: 900, age: 10000, birth: 'split' });
+    });
+
     it('keeps only records of the four events and the run start from a log text', () => {
         const text = [
             '{"event":"AgentBorn","genomeId":1}',

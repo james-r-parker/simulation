@@ -131,9 +131,8 @@ function lifeOf({ id, record, birth, died, firstKill, recoil, juvenileTicks }) {
  * @returns {Life} the life (its energy accounts are not logged until it dies, so they read 0)
  */
 function aliveLife(birth, age, firstKill) {
-    const kind = birth.cause === 'initial' ? 'initial' : birth.cause;
     return {
-        birth: kind,
+        birth: birth.cause,
         born: birth.tick,
         age,
         cause: 'alive',
