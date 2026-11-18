@@ -95,6 +95,12 @@ describe('requests', () => {
         expect(readRequest(slots, out)).toBe(2);
     });
 
+    it('wraps the sequence number before it can go negative', () => {
+        const slots = make();
+        Atomics.store(slots.req, REQ.SEQ, 0x7ffffffe);
+        expect(writeRequest(slots, createRequest())).toBe(1);
+    });
+
     it('reads nothing before the first request', () => {
         expect(readRequest(make(), createRequest())).toBe(0);
     });
