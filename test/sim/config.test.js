@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createConfig, configHash, rulesHash } from '../../js/sim/config.js';
+import { createConfig, configHash, fitEventCapacity, rulesHash } from '../../js/sim/config.js';
 import { DEFAULTS } from '../../js/sim/config-defaults.js';
 
 /** @param {any} value */
@@ -83,5 +83,24 @@ describe('rulesHash', () => {
 
     it('differs when a physics key changes', () => {
         expect(rulesHash(createConfig({ maxVelocity: 9 }))).not.toBe(rulesHash(createConfig()));
+    });
+});
+
+describe('fitEventCapacity', () => {
+    it('leaves the default world alone', () => {
+        const overrides = { maxAgents: 500 };
+        expect(fitEventCapacity(overrides)).toBe(overrides);
+    });
+
+    it('raises the capacity a bigger cap needs, so the config validates', () => {
+        expect(() => createConfig({ maxAgents: 1000 })).toThrow(/eventCapacity/);
+        const fitted = fitEventCapacity({ maxAgents: 1000 });
+        expect(fitted.eventCapacity).toBeGreaterThan(DEFAULTS.eventCapacity);
+        expect(createConfig(fitted).maxAgents).toBe(1000);
+        expect(() => createConfig({ ...fitted, eventCapacity: fitted.eventCapacity - 1 })).toThrow(/eventCapacity/);
+    });
+
+    it('keeps a capacity the caller set, even one too small', () => {
+        expect(fitEventCapacity({ maxAgents: 1000, eventCapacity: 64 }).eventCapacity).toBe(64);
     });
 });

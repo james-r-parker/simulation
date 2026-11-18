@@ -1,5 +1,6 @@
 // Builds a validated, deeply frozen config from overrides, and hashes it (whole or rules-only).
 import { DEFAULTS } from './config-defaults.js';
+import { eventDemand } from './config-herds.js';
 import { validateConfig } from './config-validate.js';
 import { fnv64Hex, fnv64Init, fnv64String } from './fnv.js';
 
@@ -68,6 +69,21 @@ export function createConfig(overrides = {}) {
     const config = merge(DEFAULTS, overrides);
     validateConfig(config);
     return deepFreeze(config);
+}
+
+/**
+ * Raises `eventCapacity` to what the merged config needs when the overrides leave it unset, so a cap raised past the
+ * default (the page's `?agents=`) still validates. The capacity is the event ring's size and changes no behaviour;
+ * a world that already fits keeps the default.
+ * @param {Record<string, any>} overrides config keys to change
+ * @returns {Record<string, any>} `overrides`, or a copy with `eventCapacity` set to the demand
+ */
+export function fitEventCapacity(overrides) {
+    if ('eventCapacity' in overrides) {
+        return overrides;
+    }
+    const demand = eventDemand(merge(DEFAULTS, overrides));
+    return demand > DEFAULTS.eventCapacity ? { ...overrides, eventCapacity: demand } : overrides;
 }
 
 /**
