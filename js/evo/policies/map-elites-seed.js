@@ -191,6 +191,7 @@ function seedBrain({ archive, birth, clones, log, mix, own, pool, championSource
     }
     const { source, ref } = draw(archive, world.spec[slot], rng, mix);
     markSeeded(clones, slot, source === 'clone' ? ref : null, ref !== null);
+    /** @type {string} */
     let where = source;
     if (ref === null) {
         where = seedUnarchived({ birth, championSource }, { world, slot, row, rng });
