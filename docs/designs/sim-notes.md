@@ -3627,3 +3627,7 @@ Reading it:
 - `drill.hunter-flank.edgeLow` is seed-fragile for the senses: `input-reader` wins 3 of 64 on the gate seed and the oracle 48 of 64; on seed 77 only the oracle passes.
 - A bite wish on kin is the whole `kin-spared` lesson: `kin-sparing` (the input reader with its bite held while a clone is nearer than the prey on the rays) wins 43 of 64 with no `bit-kin` loss.
 - Training a whole ladder for 2 generations of 4 episodes of 3000 ticks takes 19 s without checkpoints and 80 s with a checkpoint every generation (drills at 64 trials, the 4-seed eval and cross-play), 16 workers.
+
+### 2026-11-18 - Windows Chrome over CDP, and what `perf:browser` reports there
+
+WSL reaches Windows Chrome on `127.0.0.1:9222` once `C:\Users\<user>\.wslconfig` sets `networkingMode=mirrored` and WSL is restarted (`wsl --shutdown`); Chrome must be started with `--remote-debugging-port=9222` and a non-default `--user-data-dir`. Over CDP the app gets a WebGPU adapter on the RTX 4090 (`vendor: nvidia`, `architecture: lovelace`) and logs `RendererReady` with `backend: webgpu`; the `gpuAdapter` string in a `perf:browser` report is the unmasked renderer of a separate WebGL context the harness opens (`webglRenderer`), so it reads ANGLE D3D11 whatever backend the app uses. `__perf().drawCalls` grows by one each frame, so it is a running count, not draws per frame. A world started with `?agents=1000` at seed 1 falls to about 80 agents within 60 s, so a 60 s `perf:browser` window at 1000 agents times a much smaller world.

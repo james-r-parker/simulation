@@ -335,15 +335,17 @@ One branch, `feat/crisp-renderer`, one commit per task, one pull request. Every 
 
 Budgets on the dev machine: Windows Chrome on the RTX 4090, the PG32UCDP at 240 Hz, canvas 3840x2160, 1000 agents, speed 1, all lenses off, 60 s, `npm run perf:browser -- --cdp=http://127.0.0.1:9222 --agents 1000 --viewport 3840x2160`. `scripts/lib/perf-v6.mjs` holds these budgets.
 
-| Metric                     | Before (T1) | Done at     |
-| -------------------------- | ----------- | ----------- |
-| `browser.frame_p50_ms`     | T1 (open)   | <= 4.2      |
-| `browser.frame_p95_ms`     | T1 (open)   | <= 4.2      |
-| `browser.frame_p99_ms`     | T1 (open)   | <= 6.0      |
-| `browser.draw_cpu_p95_ms`  | T1 (open)   | <= 1.5      |
-| `browser.gpu_frame_p95_ms` | T1 (open)   | <= 3.0      |
-| `browser.main_long_tasks`  | T1 (open)   | 0 after 5 s |
-| `browser.gc_pause_ms`      | T1 (open)   | < 30        |
+| Metric                     | Before (T1) | After (T24, first read) | Done at     |
+| -------------------------- | ----------- | ----------------------- | ----------- |
+| `browser.frame_p50_ms`     | 4.2         | 4.2                     | <= 4.2      |
+| `browser.frame_p95_ms`     | 4.3         | 4.3                     | <= 4.2      |
+| `browser.frame_p99_ms`     | 4.3         | 4.3                     | <= 6.0      |
+| `browser.draw_cpu_p95_ms`  | 1.1         | 3.4                     | <= 1.5      |
+| `browser.gpu_frame_p95_ms` | 2.22        | 0.1                     | <= 3.0      |
+| `browser.main_long_tasks`  | 0           | 0                       | 0 after 5 s |
+| `browser.gc_pause_ms`      | 108.1       | 54.91                   | < 30        |
+
+Read on 2026-11-18 (Chrome 157 over CDP, RTX 4090, 243.9 Hz, seed 1). T1 ran on a worktree of `6a245c94` (the base of the Phase 1 pull request) with the `fitEventCapacity` fix applied: before it, neither tree starts a world at 1000 agents (`eventCapacity` 8192 is below the 9332 that 1000 agents need, so the page logs a `WorkerError` and never draws). The app draws on WebGPU (`RendererReady backend: webgpu`); the harness's `gpuAdapter` string comes from a separate WebGL probe, not from the app's renderer. Two readings are not yet trustworthy: the seed 1 world started at 1000 falls to 684 agents after 5 s, 238 after 20 s and about 80 after 60 s in both trees, so the 60 s window times a world of 80 to 300 agents, not 1000; and `browser.gpu_frame_p95_ms` reads 0.07 to 0.1 ms on WebGPU at 3840x2160, too small to be the whole frame. The draw CPU p95 (3.4 ms against 1.1 before) is over budget on far fewer than 1000 agents.
 
 ### Phase 2 - The hunt and the death (built)
 
@@ -479,7 +481,7 @@ Unit tests, all pure: `hunt-cues.test.js` (jaw target from `JAW_OPEN`, jaw easin
 
 | #   | Task                                                                                                                                                                                                                                                             | Nature       | Depends on                                  |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------- |
-| T1  | Record the before: `perf:browser` on a worktree of the base commit at 3840x2160 and 1000 agents; keep the report for T25                                                                                                                                         | [mechanical] | -                                           |
+| T1  | (built 2026-11-18, `bench/crisp-renderer/t1-before.json`; the first T24 read is beside it) Record the before: `perf:browser` on a worktree of the base commit at 3840x2160 and 1000 agents; keep the report for T25                                              | [mechanical] | -                                           |
 | T2  | Herd slot in snapshot word 2, `herdRadius` and `herdRunSpeed` in `ready.info`, `HERD_FIELD`; `herd-layer.js` reads the radius from `ready.info`; tests                                                                                                           | [mechanical] | -                                           |
 | T3  | `herd-track.js`: blend herds by slot with the reuse rule; tests                                                                                                                                                                                                  | [judgement]  | T2                                          |
 | T4  | `palette.js`: neon roles, `toDisplay`, the three family palettes; tests                                                                                                                                                                                          | [judgement]  | -                                           |
