@@ -248,8 +248,10 @@ function gateRow(ctx, { bucket, o, flags }, out, rgb) {
     out.gate2[o + 1] = (bucket.body[o] & ctx.stateBits.IN_COVER) !== 0 ? 1 : 0;
     out.gate2[o + 2] = bucket.body[o + 1];
     out.gate2[o + 3] = wavePhase(ctx.timeSec, bucket.motion[o], bucket.motion[o + 2]);
-    const hue = ((flags >>> ctx.flags.POLLEN_HUE_SHIFT) & ctx.flags.POLLEN_HUE_MASK) / ctx.flags.POLLEN_HUE_MASK;
-    toDisplay(floraColor(hue * 2 - 1, rgb), rgb);
+    if (pollen) {
+        const hue = ((flags >>> ctx.flags.POLLEN_HUE_SHIFT) & ctx.flags.POLLEN_HUE_MASK) / ctx.flags.POLLEN_HUE_MASK;
+        toDisplay(floraColor(hue * 2 - 1, rgb), rgb);
+    }
     putRgb(out.accent, o, pollen ? rgb : NEON.pollen, callKind);
     putRgb(out.call, o, callKind === 2 ? NEON.huntCall : NEON.alarm, thrustOf(bucket.motion[o]));
 }
