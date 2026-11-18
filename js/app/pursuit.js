@@ -21,6 +21,7 @@ export const MAX_PURSUITS = 48;
  * @property {Int32Array} hunter the hunter's index in the frame's agents
  * @property {Int32Array} prey the prey's index in the frame's agents
  * @property {Float32Array} closeness 1 at touching range, 0 at `PURSUIT_RANGE`
+ * @property {Int32Array} candidates scratch: this frame's possible prey, grown to the frame's capacity once
  */
 
 /**
@@ -32,6 +33,7 @@ export function createPursuits() {
         hunter: new Int32Array(MAX_PURSUITS),
         prey: new Int32Array(MAX_PURSUITS),
         closeness: new Float32Array(MAX_PURSUITS),
+        candidates: new Int32Array(0),
     };
 }
 
@@ -97,6 +99,28 @@ function targetDistance(a, i, j, rules) {
 }
 
 /**
+ * Collects the agents that can be prey this frame (non-hunters running at `PREY_RUN_SHARE`), in index order, so each
+ * hunter scans those rather than every agent.
+ * @param {import('./interpolate.js').Interpolated} agents the frame's agents
+ * @param {{canHunt: Uint8Array, maxVelocity: number}} rules from `pursuitRules`
+ * @param {Pursuits} out the table whose `candidates` scratch is filled
+ * @returns {number} the candidates found
+ */
+function collectCandidates(agents, rules, out) {
+    if (out.candidates.length < agents.x.length) {
+        out.candidates = new Int32Array(agents.x.length);
+    }
+    const run = PREY_RUN_SHARE * rules.maxVelocity;
+    let n = 0;
+    for (let j = 0; j < agents.count; j++) {
+        if (rules.canHunt[agents.spec[j]] !== 1 && agents.speed[j] >= run) {
+            out.candidates[n++] = j;
+        }
+    }
+    return n;
+}
+
+/**
  * Fills `out` with the pursuits in a frame: each running hunter paired with its nearest fleeing smaller non-hunter.
  * @param {import('./interpolate.js').Interpolated} agents the frame's agents
  * @param {{canHunt: Uint8Array, maxVelocity: number}} rules from `pursuitRules`
@@ -105,13 +129,15 @@ function targetDistance(a, i, j, rules) {
  */
 export function findPursuits(agents, rules, out) {
     out.count = 0;
+    const n = collectCandidates(agents, rules, out);
     for (let i = 0; i < agents.count && out.count < MAX_PURSUITS; i++) {
         if (rules.canHunt[agents.spec[i]] !== 1 || agents.speed[i] < HUNTER_RUN_SHARE * rules.maxVelocity) {
             continue;
         }
         let best = -1;
         let bestD = Infinity;
-        for (let j = 0; j < agents.count; j++) {
+        for (let c = 0; c < n; c++) {
+            const j = out.candidates[c];
             const d = targetDistance(agents, i, j, rules);
             if (d >= 0 && d < bestD) {
                 best = j;
