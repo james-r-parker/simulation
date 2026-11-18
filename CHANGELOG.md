@@ -1,5 +1,33 @@
 # Changelog
 
+## [10.1.0](https://github.com/james-r-parker/simulation/compare/v10.0.0...v10.1.0) (2026-11-18)
+
+
+### Features
+
+* **app:** pack the agents in a worker (pack-worker Phase 2, T8-T13 and the deletion of T14) ([#499](https://github.com/james-r-parker/simulation/issues/499)) ([0429117](https://github.com/james-r-parker/simulation/commit/042911741d198533d366806f99701fc7aadaeee4))
+* **evo:** add scent-trails detectors ([#491](https://github.com/james-r-parker/simulation/issues/491)) ([f163c13](https://github.com/james-r-parker/simulation/commit/f163c13393b432cdffcd017882dd52db7e19f823))
+* **evo:** add sprint-use detectors ([#489](https://github.com/james-r-parker/simulation/issues/489)) ([3ca2b1f](https://github.com/james-r-parker/simulation/commit/3ca2b1fd558f83b3618c90868583034d421f5314))
+* **evo:** add stillness scene detectors ([#490](https://github.com/james-r-parker/simulation/issues/490)) ([3a150d7](https://github.com/james-r-parker/simulation/commit/3a150d754594970adb7523c90902bb06ba97f061))
+* **metrics:** measure prey guild selectivity ([#485](https://github.com/james-r-parker/simulation/issues/485)) ([c11202b](https://github.com/james-r-parker/simulation/commit/c11202bd104a15e89b5907b7e64429a3a63e35e3))
+* **renderer:** cap line parts at the rim's weight; crisp renderer checked on real WebGPU ([#500](https://github.com/james-r-parker/simulation/issues/500)) ([390acd9](https://github.com/james-r-parker/simulation/commit/390acd9aa57da71dc4cfc7e92ab59a8d0c5be0cf))
+* **worker:** cross-origin isolation and the shared snapshot ring (pack-worker Phase 1) ([#498](https://github.com/james-r-parker/simulation/issues/498)) ([0b8bdbc](https://github.com/james-r-parker/simulation/commit/0b8bdbc520bc2831b425ebc5af95d85f0a1d58cb))
+
+
+### Bug Fixes
+
+* **check:** keep slow suites out of tier 1 ([#483](https://github.com/james-r-parker/simulation/issues/483)) ([5068ef0](https://github.com/james-r-parker/simulation/commit/5068ef00d6d6a3b165310d082b5c609880bf005f))
+* **gates:** scope lint to the active checkout ([#486](https://github.com/james-r-parker/simulation/issues/486)) ([36074aa](https://github.com/james-r-parker/simulation/commit/36074aab8774bc2f2287363975454b02bbd5d4dd))
+* **smoke:** make the 5 s frame window a stall ceiling ([#495](https://github.com/james-r-parker/simulation/issues/495)) ([370eaae](https://github.com/james-r-parker/simulation/commit/370eaae54e9aa772a5d9b47cd6a30fa31847c53e))
+* **smoke:** measure rendered app frames after startup ([#487](https://github.com/james-r-parker/simulation/issues/487)) ([04e3b34](https://github.com/james-r-parker/simulation/commit/04e3b3402844b2639e55662b22e475f9cf880a55))
+* **worker:** fit the event capacity to a raised agent cap; record crisp-renderer T1 ([#493](https://github.com/james-r-parker/simulation/issues/493)) ([1a819b3](https://github.com/james-r-parker/simulation/commit/1a819b3902705b6d5cc1d5be090f85cac371a19c))
+
+
+### Performance Improvements
+
+* **renderer:** cut per-frame draw CPU from 3.5 to 2.8 ms at 1000 agents (crisp-renderer T24) ([#496](https://github.com/james-r-parker/simulation/issues/496)) ([ae0ae46](https://github.com/james-r-parker/simulation/commit/ae0ae46b35ba91bb7ec2617e05522c66669f9b48))
+* **renderer:** stop re-sending idle buffers, fix the perf harness, revise the T24 budgets ([#494](https://github.com/james-r-parker/simulation/issues/494)) ([7116b7b](https://github.com/james-r-parker/simulation/commit/7116b7b1b1c0456d6e97ffa8bc5641b3df3eac72))
+
 ## [10.0.0](https://github.com/james-r-parker/simulation/compare/v9.0.0...v10.0.0) (2026-11-17)
 
 
