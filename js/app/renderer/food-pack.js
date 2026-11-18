@@ -140,3 +140,20 @@ export function packFood(snapshot, pack, { zoom, timeSec }) {
     }
     return s.foodCount;
 }
+
+/**
+ * Moves the packed plants' sway to `timeSec` without repacking: the only part of a food row that changes between
+ * snapshots. A plant's spot seed is its turn, `pose[2] / 2 pi`; carcasses do not sway.
+ * @param {ReturnType<typeof createFoodPack>} pack the buckets `packFood` filled
+ * @param {number} timeSec wall time
+ * @returns {void}
+ */
+export function swayFood(pack, timeSec) {
+    const base = timeSec * SWAY_HZ * Math.PI * 2;
+    for (let k = 0; k < CARCASS; k++) {
+        const bucket = pack.buckets[k];
+        for (let o = 0; o < bucket.count * ITEM; o += ITEM) {
+            bucket.rig0[o + 2] = SWAY * Math.sin(base + bucket.pose[o + 2]);
+        }
+    }
+}

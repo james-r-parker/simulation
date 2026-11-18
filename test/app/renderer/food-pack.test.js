@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { CARCASS, createFoodPack, FOOD_MIN_PX, packFood, spotHash } from '../../../js/app/renderer/food-pack.js';
+import {
+    CARCASS,
+    createFoodPack,
+    FOOD_MIN_PX,
+    packFood,
+    spotHash,
+    swayFood,
+} from '../../../js/app/renderer/food-pack.js';
 import { NEON, toDisplay } from '../../../js/app/renderer/palette.js';
 import { floraColor } from '../../../js/app/renderer/flora-colors.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
@@ -56,5 +63,24 @@ describe('packFood', () => {
             }
         });
         expect(pack.hueTable).toBeInstanceOf(Float32Array);
+    });
+
+    it('sways the packed plants to a later time as a full pack would, and leaves carcasses still', () => {
+        const foods = [
+            [10, 10, 5, 0, 0, 0.1],
+            [20, 30, 4, 0, 3, -0.4],
+            [30, 30, -8, 0.5, 0, 0],
+        ];
+        const swayed = createFoodPack(4);
+        packFood(makeSnapshot(1, [], { foods }), swayed, { zoom: 1, timeSec: 0.2 });
+        swayFood(swayed, 3.7);
+        const fresh = createFoodPack(4);
+        packFood(makeSnapshot(1, [], { foods }), fresh, { zoom: 1, timeSec: 3.7 });
+        for (const k of [0, 3, CARCASS]) {
+            const n = fresh.buckets[k].count * 4;
+            expect(Array.from(swayed.buckets[k].rig0.slice(0, n)).map((v) => v.toFixed(4))).toEqual(
+                Array.from(fresh.buckets[k].rig0.slice(0, n)).map((v) => v.toFixed(4)),
+            );
+        }
     });
 });
