@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DynamicDrawUsage } from 'three/webgpu';
 import {
     createInstances,
     instancedMesh,
@@ -42,6 +43,18 @@ describe('uploadInstances', () => {
         expect(inst.geometry.instanceCount).toBe(4);
         uploadInstances(inst, 0);
         expect(inst.geometry.instanceCount).toBe(0);
+    });
+
+    it('uploads only on a frame that writes: the buffer is not dynamic, so three goes by its version', () => {
+        // three re-sends a DynamicDrawUsage buffer on every render, whole once its ranges are spent, so an idle or
+        // empty layer cost a full upload each frame (crisp-renderer T24: about 4 MB a frame at 1000 agents)
+        const inst = createInstances(4, ['iPose']);
+        expect(inst.buffer.usage).not.toBe(DynamicDrawUsage);
+        const before = inst.buffer.version;
+        uploadInstances(inst, 0);
+        expect(inst.buffer.version).toBe(before);
+        uploadInstances(inst, 1);
+        expect(inst.buffer.version).toBe(before + 1);
     });
 
     it('builds a mesh that is never culled', () => {

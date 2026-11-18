@@ -6,7 +6,6 @@
 
 import {
     BufferAttribute,
-    DynamicDrawUsage,
     InstancedBufferGeometry,
     InstancedInterleavedBuffer,
     InterleavedBufferAttribute,
@@ -41,8 +40,9 @@ export function createInstances(capacity, names, shared = {}) {
     geometry.setIndex(new BufferAttribute(INDEX, 1));
     const stride = names.length * VEC4;
     const data = new Float32Array(Math.max(capacity, 1) * stride);
+    // Not DynamicDrawUsage: three re-sends a dynamic buffer on every render, whole once `uploadInstances`' ranges are
+    // spent, so every idle or empty layer cost a full upload a frame. `needsUpdate` bumps the version instead.
     const buffer = new InstancedInterleavedBuffer(data, stride, 1);
-    buffer.setUsage(DynamicDrawUsage);
     /** @type {Record<string, Float32Array>} */
     const arrays = {};
     names.forEach((name, k) => {
