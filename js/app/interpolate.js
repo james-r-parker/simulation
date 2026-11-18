@@ -1,6 +1,8 @@
 // Blends the two newest snapshots into the agents to draw, and keeps the playhead: the render tick that gives the blend
 // factor. Nothing here allocates per frame.
 
+import { plainLane } from './lanes.js';
+
 /** Words in a snapshot's header and per agent (`js/sim/snapshot.js`; a test keeps the two in step). */
 export const HEADER_WORDS = 10;
 export const AGENT_STRIDE = 13;
@@ -53,25 +55,27 @@ const MAX_FRAME_MS = 100;
 
 /**
  * @param {number} capacity the most agents (`ready.info.maxAgents`)
+ * @param {import('./lanes.js').LaneAllocator} [alloc] makes each lane (shared memory for a pack slot); `previous` is
+ *   the blending thread's scratch and always a plain array
  * @returns {Interpolated} the arrays `interpolateInto` fills
  */
-export function createInterpolated(capacity) {
+export function createInterpolated(capacity, alloc = plainLane) {
     return {
         count: 0,
-        x: new Float32Array(capacity),
-        y: new Float32Array(capacity),
-        angle: new Float32Array(capacity),
-        size: new Float32Array(capacity),
-        energy: new Float32Array(capacity),
-        temperature: new Float32Array(capacity),
-        speed: new Float32Array(capacity),
-        turn: new Float32Array(capacity),
-        spec: new Uint32Array(capacity),
-        lineageId: new Uint32Array(capacity),
-        genomeId: new Uint32Array(capacity),
-        slot: new Uint32Array(capacity),
-        flags: new Uint32Array(capacity),
-        state: new Uint32Array(capacity),
+        x: alloc(Float32Array, capacity),
+        y: alloc(Float32Array, capacity),
+        angle: alloc(Float32Array, capacity),
+        size: alloc(Float32Array, capacity),
+        energy: alloc(Float32Array, capacity),
+        temperature: alloc(Float32Array, capacity),
+        speed: alloc(Float32Array, capacity),
+        turn: alloc(Float32Array, capacity),
+        spec: alloc(Uint32Array, capacity),
+        lineageId: alloc(Uint32Array, capacity),
+        genomeId: alloc(Uint32Array, capacity),
+        slot: alloc(Uint32Array, capacity),
+        flags: alloc(Uint32Array, capacity),
+        state: alloc(Uint32Array, capacity),
         previous: new Int32Array(capacity),
     };
 }

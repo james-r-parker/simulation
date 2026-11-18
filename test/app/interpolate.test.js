@@ -14,6 +14,7 @@ import {
     simTickAt,
     stepPlayhead,
 } from '../../js/app/interpolate.js';
+import { LANE_KINDS } from './helpers/lane-kinds.js';
 import { makeSnapshot } from './helpers/snapshots.js';
 
 describe('snapshot layout constants', () => {
@@ -41,7 +42,7 @@ describe('shortestArc', () => {
     });
 });
 
-describe('interpolateInto', () => {
+describe.each(LANE_KINDS)('interpolateInto (%s lanes)', (_kind, lanes) => {
     const prev = makeSnapshot(10, [
         { slot: 0, genomeId: 1, x: 0, y: 0, angle: 3.0, size: 10, energy: 0, temperature: 0 },
         { slot: 2, genomeId: 5, x: 50, y: 50 },
@@ -53,7 +54,7 @@ describe('interpolateInto', () => {
     ]);
 
     it('blends matched agents and returns exactly the endpoints at alpha 0 and 1', () => {
-        const out = createInterpolated(8);
+        const out = createInterpolated(8, lanes());
         expect(interpolateInto(prev, next, 0, out)).toBe(3);
         expect([out.x[0], out.y[0], out.size[0], out.energy[0]]).toEqual([0, 0, 10, 0]);
         interpolateInto(prev, next, 1, out);
@@ -67,14 +68,14 @@ describe('interpolateInto', () => {
     });
 
     it('places an agent with no match at its newest position (new slot, or slot reused by another genome)', () => {
-        const out = createInterpolated(8);
+        const out = createInterpolated(8, lanes());
         interpolateInto(prev, next, 0, out);
         expect([out.x[1], out.y[1], out.lineageId[1], out.spec[1], out.genomeId[1]]).toEqual([70, 80, 4, 3, 9]);
         expect([out.x[2], out.y[2], out.genomeId[2]]).toEqual([90, 90, 6]);
     });
 
     it('drops agents that vanished and uses the newest alone when there is no previous snapshot', () => {
-        const out = createInterpolated(8);
+        const out = createInterpolated(8, lanes());
         expect(interpolateInto(null, next, 0.3, out)).toBe(3);
         expect([out.x[0], out.y[0]]).toEqual([10, 20]);
         const gone = makeSnapshot(12, [{ slot: 2, genomeId: 6, x: 91 }]);
@@ -83,7 +84,7 @@ describe('interpolateInto', () => {
     });
 
     it('leaves the scratch map clean and caps at the capacity', () => {
-        const out = createInterpolated(2);
+        const out = createInterpolated(2, lanes());
         expect(interpolateInto(prev, next, 0.5, out)).toBe(2);
         expect(out.previous.every((v) => v === 0)).toBe(true);
     });
@@ -96,7 +97,7 @@ describe('interpolateInto', () => {
         // The alphas are literals: a computed double passed to a call is boxed by the caller, 16 bytes a call.
         v8.setFlagsFromString('--expose-gc');
         const gc = vm.runInNewContext('gc');
-        const out = createInterpolated(8);
+        const out = createInterpolated(8, lanes());
         const calls = 5000;
         const run = () => {
             for (let i = 0; i < calls; i += 2) {

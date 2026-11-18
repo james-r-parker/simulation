@@ -33,9 +33,10 @@ const INDEX = new Uint16Array([0, 1, 2, 0, 2, 3]);
  * @param {number} capacity the most instances
  * @param {readonly string[]} names the vec4 attributes
  * @param {Record<string, Float32Array>} [shared] lanes to use instead of fresh ones (a packer's own buckets)
+ * @param {{lanes?: boolean}} [options] `lanes: false` makes no lanes: the rows arrive interleaved through `takeRows`
  * @returns {Instances} the geometry and its lanes
  */
-export function createInstances(capacity, names, shared = {}) {
+export function createInstances(capacity, names, shared = {}, { lanes = true } = {}) {
     const geometry = new InstancedBufferGeometry();
     geometry.setAttribute('position', new BufferAttribute(CORNERS, 3));
     geometry.setIndex(new BufferAttribute(INDEX, 1));
@@ -47,15 +48,68 @@ export function createInstances(capacity, names, shared = {}) {
     /** @type {Record<string, Float32Array>} */
     const arrays = {};
     names.forEach((name, k) => {
-        const lane = shared[name] ?? new Float32Array(capacity * VEC4);
-        if (lane.length < capacity * VEC4) {
+        const lane = lanes ? (shared[name] ?? new Float32Array(capacity * VEC4)) : new Float32Array(0);
+        if (lanes && lane.length < capacity * VEC4) {
             throw new Error(`createInstances: ${name} holds ${lane.length} floats, under ${capacity} x 4`);
         }
         arrays[name] = lane;
         geometry.setAttribute(name, new InterleavedBufferAttribute(buffer, VEC4, k * VEC4));
     });
     geometry.instanceCount = 0;
-    return { geometry, arrays, lanes: names.map((n) => arrays[n]), data, buffer, stride, capacity, mesh: null };
+    return {
+        geometry,
+        arrays,
+        lanes: lanes ? names.map((n) => arrays[n]) : [],
+        data,
+        buffer,
+        stride,
+        capacity,
+        mesh: null,
+    };
+}
+
+/**
+ * Interleaves the first `count` rows of every lane into `data`: row `r` of lane `k` lands at `r * stride + k * VEC4`.
+ * The copy `uploadInstances` made, split out so the pack worker runs it into a frame slot.
+ * @param {Float32Array[]} lanes the lanes in attribute order, each `count x 4` or more
+ * @param {Float32Array} data receives `count x lanes.length x 4` floats
+ * @param {number} count the rows to copy
+ * @returns {void}
+ */
+export function interleaveRows(lanes, data, count) {
+    const stride = lanes.length * VEC4;
+    for (let k = 0; k < lanes.length; k++) {
+        const lane = lanes[k];
+        const at = k * VEC4;
+        for (let row = 0; row < count; row++) {
+            const o = row * stride + at;
+            const i = row * VEC4;
+            data[o] = lane[i];
+            data[o + 1] = lane[i + 1];
+            data[o + 2] = lane[i + 2];
+            data[o + 3] = lane[i + 3];
+        }
+    }
+}
+
+/**
+ * Sets the instance count of the mesh and marks the first `n` rows for upload.
+ * @param {Instances} instances the instances
+ * @param {number} n the rows now in `data`, within capacity
+ * @returns {void}
+ */
+function markRows(instances, n) {
+    instances.geometry.instanceCount = n;
+    if (instances.mesh !== null) {
+        // an empty mesh still costs three its per-object update before the draw is skipped
+        instances.mesh.visible = n > 0;
+    }
+    if (n === 0) {
+        return;
+    }
+    instances.buffer.clearUpdateRanges();
+    instances.buffer.addUpdateRange(0, n * instances.stride);
+    instances.buffer.needsUpdate = true;
 }
 
 /**
@@ -66,30 +120,26 @@ export function createInstances(capacity, names, shared = {}) {
  */
 export function uploadInstances(instances, count) {
     const n = Math.min(count, instances.capacity);
-    instances.geometry.instanceCount = n;
-    if (instances.mesh !== null) {
-        // an empty mesh still costs three its per-object update before the draw is skipped
-        instances.mesh.visible = n > 0;
+    if (n > 0) {
+        interleaveRows(instances.lanes, instances.data, n);
     }
-    if (n === 0) {
-        return;
+    markRows(instances, n);
+}
+
+/**
+ * Takes rows that are already interleaved (a pack worker's frame slot): copies the first `count` of them into the
+ * buffer and marks only those rows for upload.
+ * @param {Instances} instances the instances
+ * @param {Float32Array} rows interleaved rows of `instances.stride` floats, `count` or more
+ * @param {number} count the rows to take
+ * @returns {void}
+ */
+export function takeRows(instances, rows, count) {
+    const n = Math.min(count, instances.capacity);
+    if (n > 0) {
+        instances.data.set(rows.subarray(0, n * instances.stride));
     }
-    const { lanes, data, stride } = instances;
-    for (let k = 0; k < lanes.length; k++) {
-        const lane = lanes[k];
-        const at = k * VEC4;
-        for (let row = 0; row < n; row++) {
-            const o = row * stride + at;
-            const i = row * VEC4;
-            data[o] = lane[i];
-            data[o + 1] = lane[i + 1];
-            data[o + 2] = lane[i + 2];
-            data[o + 3] = lane[i + 3];
-        }
-    }
-    instances.buffer.clearUpdateRanges();
-    instances.buffer.addUpdateRange(0, n * stride);
-    instances.buffer.needsUpdate = true;
+    markRows(instances, n);
 }
 
 /**

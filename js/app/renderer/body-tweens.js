@@ -3,6 +3,8 @@
 // replaces it only when it ranks at least as high. The agent shader keys the curve from the kind and the age that
 // `packAgents` writes; a slot whose genome changed drops its tween. Preallocated per slot.
 
+import { plainLane } from '../lanes.js';
+
 /** Tween kinds; the shader branches on the same numbers. */
 export const TWEEN = Object.freeze({
     NONE: 0,
@@ -38,10 +40,15 @@ export const TWEEN_RANK = Object.freeze([0, 3, 4, 1, 2, 2, 1, 5, 2, 5, 0, 0, 5, 
 
 /**
  * @param {number} capacity the most slots (`maxAgents`)
+ * @param {import('../lanes.js').LaneAllocator} [alloc] makes each lane (shared memory for the pack worker)
  * @returns {BodyTweens} no tweens
  */
-export function createBodyTweens(capacity) {
-    return { kind: new Uint8Array(capacity), start: new Float64Array(capacity), genome: new Uint32Array(capacity) };
+export function createBodyTweens(capacity, alloc = plainLane) {
+    return {
+        kind: alloc(Uint8Array, capacity),
+        start: alloc(Float64Array, capacity),
+        genome: alloc(Uint32Array, capacity),
+    };
 }
 
 /**

@@ -3,6 +3,8 @@
 // strong. The agent packer asks `dentAt` for the depth and width and writes them, relative to the body's heading, into
 // the instance's `iDent` lane. Pure.
 
+import { plainLane } from '../lanes.js';
+
 /** A dent's length in ticks. */
 export const DENT_TICKS = 20;
 /** The widest and the narrowest arc of the dent, radians: it spreads as the ripple travels. */
@@ -23,15 +25,16 @@ const DAMPING = 3.2;
 
 /**
  * @param {number} capacity the most slots (`maxAgents`)
+ * @param {import('../lanes.js').LaneAllocator} [alloc] makes each lane (shared memory for the pack worker)
  * @returns {Dents} no dents
  */
-export function createDents(capacity) {
+export function createDents(capacity, alloc = plainLane) {
     return {
-        angle: new Float32Array(capacity),
-        depth: new Float32Array(capacity),
-        start: new Float64Array(capacity),
-        genome: new Uint32Array(capacity),
-        active: new Uint8Array(capacity),
+        angle: alloc(Float32Array, capacity),
+        depth: alloc(Float32Array, capacity),
+        start: alloc(Float64Array, capacity),
+        genome: alloc(Uint32Array, capacity),
+        active: alloc(Uint8Array, capacity),
     };
 }
 

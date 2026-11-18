@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { LANE_KINDS } from '../helpers/lane-kinds.js';
 import { createInterpolated } from '../../../js/app/interpolate.js';
 import { DEATH_ANIMS } from '../../../js/app/renderer/death-anim.js';
 import {
@@ -46,9 +47,9 @@ function used(d) {
     return n;
 }
 
-describe('trackBodies', () => {
+describe.each(LANE_KINDS)('trackBodies (%s lanes)', (_kind, lanes) => {
     it('makes nothing of agents that stay, and a pending body of one that vanishes, at its last pose', () => {
-        const d = createDying(256);
+        const d = createDying(256, lanes());
         trackBodies(d, frame([{ slot: 3, genome: 30, x: 120 }]), 0);
         expect(used(d)).toBe(0);
         expect(trackBodies(d, frame([]), 16)).toBe(1);
@@ -61,20 +62,20 @@ describe('trackBodies', () => {
     });
 
     it('counts a slot taken by a new genome as the old body vanishing', () => {
-        const d = createDying(256);
+        const d = createDying(256, lanes());
         trackBodies(d, frame([{ slot: 3, genome: 30 }]), 0);
         expect(trackBodies(d, frame([{ slot: 3, genome: 31 }]), 16)).toBe(1);
         expect(d.genome[0]).toBe(30);
     });
 
     it('ignores an agent in a slot past the cache', () => {
-        const d = createDying(4);
+        const d = createDying(4, lanes());
         trackBodies(d, frame([{ slot: 9, genome: 90 }]), 0);
         expect(trackBodies(d, frame([]), 16)).toBe(0);
     });
 
     it('spawns none for a mass loss (a reset or a hidden tab)', () => {
-        const d = createDying(256);
+        const d = createDying(256, lanes());
         const many = Array.from({ length: MASS_LOSS + 1 }, (_, i) => ({ slot: i, genome: i + 1 }));
         trackBodies(d, frame(many), 0);
         expect(trackBodies(d, frame([]), 16)).toBe(0);
@@ -84,7 +85,7 @@ describe('trackBodies', () => {
     });
 
     it('overwrites the oldest body when the pool is full', () => {
-        const d = createDying(256);
+        const d = createDying(256, lanes());
         for (let g = 1; g <= MAX_DYING + 1; g++) {
             trackBodies(d, frame([{ slot: 0, genome: g }]), g);
             trackBodies(d, frame([]), g);
@@ -94,9 +95,9 @@ describe('trackBodies', () => {
     });
 });
 
-describe('beginDeath', () => {
+describe.each(LANE_KINDS)('beginDeath (%s lanes)', (_kind, lanes) => {
     it('gives a pending body its cause and starts its clock', () => {
-        const d = createDying(256);
+        const d = createDying(256, lanes());
         trackBodies(d, frame([{ slot: 3, genome: 30 }]), 0);
         trackBodies(d, frame([]), 16);
         expect(beginDeath(d, { genome: 30, cause: 1, nowMs: 40 })).toBe(true);
@@ -106,7 +107,7 @@ describe('beginDeath', () => {
     });
 
     it('starts from the cache and hides the live row when the agent is still in the frame', () => {
-        const d = createDying(256);
+        const d = createDying(256, lanes());
         trackBodies(d, frame([{ slot: 3, genome: 30 }]), 0);
         expect(isHidden(d, 3, 30)).toBe(false);
         expect(beginDeath(d, { genome: 30, cause: 0, nowMs: 5 })).toBe(true);
@@ -119,13 +120,13 @@ describe('beginDeath', () => {
     });
 
     it('finds nothing for a genome never seen', () => {
-        expect(beginDeath(createDying(8), { genome: 5, cause: 0, nowMs: 0 })).toBe(false);
+        expect(beginDeath(createDying(8, lanes()), { genome: 5, cause: 0, nowMs: 0 })).toBe(false);
     });
 });
 
-describe('stepDying', () => {
+describe.each(LANE_KINDS)('stepDying (%s lanes)', (_kind, lanes) => {
     it('frees a body when its death has run its length', () => {
-        const d = createDying(256);
+        const d = createDying(256, lanes());
         trackBodies(d, frame([{ slot: 3, genome: 30 }]), 0);
         trackBodies(d, frame([]), 16);
         beginDeath(d, { genome: 30, cause: 1, nowMs: 100 });
@@ -134,7 +135,7 @@ describe('stepDying', () => {
     });
 
     it('starts a pending body whose death never arrived, as a starvation', () => {
-        const d = createDying(256);
+        const d = createDying(256, lanes());
         trackBodies(d, frame([{ slot: 3, genome: 30 }]), 0);
         trackBodies(d, frame([]), 0);
         stepDying(d, { nowMs: PENDING_MAX_MS + 1, causeNames: NAMES });
@@ -143,9 +144,9 @@ describe('stepDying', () => {
     });
 });
 
-describe('positionOf', () => {
+describe.each(LANE_KINDS)('positionOf (%s lanes)', (_kind, lanes) => {
     it('carries a body on at its last velocity while pending and slows it to rest once it dies', () => {
-        const d = createDying(256);
+        const d = createDying(256, lanes());
         trackBodies(d, frame([{ slot: 3, genome: 30, x: 100, speed: 5 }]), 0);
         trackBodies(d, frame([]), 0);
         const early = positionOf(d, 0, 50).x;
