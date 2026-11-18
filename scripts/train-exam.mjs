@@ -141,7 +141,7 @@ export async function runExam(args, { logDir = '.sim/logs', print = () => {}, le
             `${JSON.stringify({ ...result, seed: EXAM_SEED, trials: args.trials }, null, 2)}\n`,
         );
         formatRows(result.rows).forEach(print);
-        print(result.good ? 'the champion set is good' : `not good yet: rows ${result.open.join(', ')} are open`);
+        print(`not good yet: rows ${result.open.join(', ')} are open`);
         return result;
     } finally {
         await sinkFile.close();

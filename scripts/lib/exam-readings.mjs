@@ -133,7 +133,11 @@ export async function reflexScores(table, { workers, trials, log }) {
         workers,
     });
     const { rows } = await scoreGenomes(args, { genomes: table.subjects, config: {}, log });
-    const genomes = rows.map(({ label, row }) => ({ name: label, score: row?.score ?? null, edge: row?.edge ?? null }));
+    const genomes = rows.map(({ label, row }) => ({
+        name: label,
+        score: /** @type {any} */ (row).score,
+        edge: /** @type {any} */ (row).edge,
+    }));
     return { genomes, trials };
 }
 
@@ -157,7 +161,7 @@ export async function leagueStandings(run, { workers, logDir, league: own }) {
         const candidate = join(out, `${file.name}.json`);
         writeFileSync(candidate, `${JSON.stringify(file)}\n`);
         const { elo, games, wins, draws, losses } = await playLeague(
-            /** @type {any} */ ({ candidate, admit: false, workers: workers ?? null, ticks: where.ticks }),
+            /** @type {any} */ ({ candidate, admit: false, workers, ticks: where.ticks }),
             { logDir, leaguePath: where.path, root: where.root },
         );
         standings.push({ name: file.name, elo, games, wins, draws, losses });
@@ -179,12 +183,10 @@ function bandReading(subject, table, named) {
     const at = table.subjects.indexOf(subject);
     const names = [...new Set([...named, STYLE_DRILL])];
     const readings = drillReadings(/** @type {any} */ ([table.rows[at], table.rows[table.subjects.length]]), 1, names);
-    const edges = named.flatMap((name) =>
-        readings[name]?.edgeLow === null || readings[name]?.edgeLow === undefined ? [] : [readings[name].edgeLow],
-    );
+    const edges = named.map((name) => readings[name].edgeLow).filter((edge) => typeof edge === 'number');
     return {
         edgeLow: edges.length === 0 ? null : Math.min(...edges),
-        winShareLow: readings[STYLE_DRILL]?.winShareLow ?? null,
+        winShareLow: readings[STYLE_DRILL].winShareLow,
     };
 }
 
@@ -201,7 +203,7 @@ export function styleReadings(table, named, trials) {
     const filled = {};
     for (const subject of table.subjects) {
         const spec = GENOME_SPECS[/** @type {number} */ (subject.spec)];
-        filled[spec] = [...(filled[spec] ?? []), subject.style ?? '?'];
+        filled[spec] = [...(filled[spec] ?? []), /** @type {string} */ (subject.style)];
     }
     const predators = table.subjects.filter((s) => s.spec === PREDATOR_SPEC);
     const low = predators.find((s) => s.style === 'low');

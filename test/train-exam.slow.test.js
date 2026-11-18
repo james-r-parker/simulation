@@ -10,7 +10,7 @@ import { brainLayout } from '../js/sim/brain-layout.js';
 import { buildReport } from '../js/evo/report.js';
 import { createConfig } from '../js/sim/config.js';
 import { loadRun } from '../scripts/lib/exam-readings.mjs';
-import { runExam } from '../scripts/train-exam.mjs';
+import { main, runExam } from '../scripts/train-exam.mjs';
 import { makeChampionFile } from './evo/helpers/champion-file.js';
 
 const root = mkdtempSync(join(tmpdir(), 'train-exam-'));
@@ -22,28 +22,30 @@ const layout = brainLayout(config);
 
 /**
  * @param {string} name the run directory name
- * @param {{crossplay?: Record<string, any>}} [extra] a `crossplay.json` to write
+ * @param {{crossplay?: Record<string, any>, bare?: boolean}} [extra] a `crossplay.json` to write, and whether the run is bare (no manifest, generation or second predator band)
  * @returns {string} a run directory: a tested forager and two style bands of predators, and a manifest whose passed
  *   stage's gate reads `food-ahead`
  */
-function runDir(name, { crossplay } = {}) {
+function runDir(name, { crossplay, bare = false } = {}) {
     const dir = join(root, name);
     mkdirSync(dir, { recursive: true });
     const archive = createTrainerArchive(config);
     const elites = [
         { spec: 0, cell: 3, id: 10 },
         { spec: 1, cell: 3, id: 20 },
-        { spec: 1, cell: 60, id: 21 },
+        ...(bare ? [] : [{ spec: 1, cell: 60, id: 21 }]),
     ];
     for (const { spec, cell, id } of elites) {
         const weights = new Float32Array(layout.weightCount).fill(0.05 * (id % 7));
         seedArchive(archive, { spec, cell, id, sigma: 0.1, weights });
         welfordAdd(archive.stats, placeOf(spec, cell, ELITE) * WELFORD_STRIDE, 5);
     }
-    const json = { ...encodeArchive(archive, config), generation: 4 };
+    const json = { ...encodeArchive(archive, config), ...(bare ? {} : { generation: 4 }) };
     writeFileSync(join(dir, 'archive-3.json'), `${JSON.stringify(json)}\n`);
     const stages = [{ name: 's', passedAt: 4, gate: [{ read: 'drill.food-ahead.edgeLow' }] }];
-    writeFileSync(join(dir, 'manifest.json'), JSON.stringify({ stages }));
+    if (!bare) {
+        writeFileSync(join(dir, 'manifest.json'), JSON.stringify({ stages }));
+    }
     if (crossplay !== undefined) {
         writeFileSync(join(dir, 'crossplay.json'), JSON.stringify(crossplay));
     }
@@ -144,5 +146,20 @@ describe('runExam', () => {
         expect(result.rows[6].verdict).toBe('not run');
         expect(result.rows[6].numbers.groups.unlabelled.drills['food-ahead']).toHaveProperty('winShare');
         expect(result.rows[6].reason).toMatch(/not read: children, grandchildren, replacement/);
+    });
+
+    it('runs a bare run (no manifest, one predator band, no generation) through main', async () => {
+        const dir = runDir('bare', { bare: true });
+        const leaguePath = join(root, 'league.json');
+        writeFileSync(leaguePath, JSON.stringify({ version: 1, champions: [] }));
+        const result = await runExam(
+            { ...NO_WORLD, run: dir, replicates: [], trials: 2, workers: undefined },
+            { logDir: join(root, 'logs'), league: { path: leaguePath, root, ticks: 20 } },
+        );
+        expect(result.rows[2].verdict).toBe('not run');
+        expect(result.rows[7].verdict).toBe('fail');
+        expect(loadRun(dir).generation).toBe(0);
+        const code = await main(['--run', dir, '--trials', '1', '--workers', '1'], { logDir: join(root, 'logs') });
+        expect(code).toBe(0);
     });
 });
