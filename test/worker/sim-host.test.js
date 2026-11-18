@@ -2,7 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { ARCHIVE_VERSION } from '../../js/evo/archive-codec.js';
 import { getPolicy, LIVE_POLICY } from '../../js/evo/policies/index.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
-import { createRingViews, holdFrom, READER, RING_SLOTS, ringBytes } from '../../js/worker/snapshot-ring.js';
+import {
+    createRingViews,
+    HELD,
+    holdFrom,
+    READER,
+    RELEASED,
+    RING_SLOTS,
+    ringBytes,
+} from '../../js/worker/snapshot-ring.js';
 import { createHarness, noisePolicy, SMALL_CONFIG } from './helpers/host-harness.js';
 
 /**
@@ -169,6 +177,15 @@ describe('slices', () => {
         holdFrom(ring, READER.MAIN, 3);
         h.advance(30);
         expect(h.of('snapshot')).toHaveLength(RING_SLOTS + 1);
+    });
+
+    it('starts a new ring held for the main thread from seq 1, so nothing is overwritten before the client attaches', () => {
+        const h = createHarness();
+        h.send({ type: 'init', seed: 1, config: SMALL_CONFIG });
+        const ready = h.of('ready')[0];
+        const ring = createRingViews(ready.ring, ready.slotBytes);
+        expect(Atomics.load(ring.header, HELD + READER.MAIN)).toBe(1);
+        expect(Atomics.load(ring.header, HELD + READER.PACK)).toBe(RELEASED);
     });
 
     it('refuses a returnBuffer for the snapshot pool, which no longer exists', () => {

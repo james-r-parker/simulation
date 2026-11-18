@@ -11,7 +11,7 @@ import { inspectLabels } from './inspect.js';
 import { nextDelay, createPacer, restartClock, ticksDue } from './pacing.js';
 import { noteLogRecord } from './live-stats.js';
 import { DIRECTION, MESSAGE_TYPES, SELECTION_STATES, validateMessage } from './protocol.js';
-import { createRingViews, releaseAll, ringBytes } from './snapshot-ring.js';
+import { createRingViews, holdFrom, READER, releaseAll, ringBytes } from './snapshot-ring.js';
 
 /**
  * @typedef {object} SimHostOptions
@@ -144,6 +144,8 @@ function poolFor(pool, want) {
 function newRing(slotBytes) {
     const ring = createRingViews(new SharedArrayBuffer(ringBytes(slotBytes)), slotBytes);
     releaseAll(ring);
+    // the main thread reads every snapshot from the first, so hold it from seq 1 before it has attached
+    holdFrom(ring, READER.MAIN, 1);
     return ring;
 }
 
