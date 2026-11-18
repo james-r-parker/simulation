@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 code built (T1 to T4, chunk A; T5 and T6 wait for the hunter-vision default switch, since they measure the defaults) and Phase 2 built (T7 to T12 and T9a, T10a; the stage-local estimate arm is T9b); a gated ladder of stage worlds, cross-play between hunters and prey, an opponent pool, scene drills and one exam that says whether a champion set is good; Phase 3 built (T13 to T15, T14a: cross-play, the pool and release cross-play by condition); Phase 4 built (T17 to T21, T20a: four more drills, export by style band, style evidence and founder manifests); Phase 5 (the exam) is next; Phase 6 chunk K built (T25: the ladder file and seven stage worlds, the gate validity check; `pack` left out of the ladder; T25a waits for honest-budgets Phase 6).
 **Validated:** 04e3b340 (2026-11-17)
-**Priority:** 11 - the tools change no sim behaviour and no rule, so they build beside the world work; the runs that claim a skill wait for the held world, as [training.md](training.md) does
+**Priority:** 12 - the tools change no sim behaviour and no rule, so they build beside the world work; the runs that claim a skill wait for the held world, as [training.md](training.md) does
 **Depends on:** [training.md](training.md), [senses-and-motor.md](senses-and-motor.md)
 
 > Companion to [training.md](training.md), which holds the drills, the trainer, the curve and the export this doc extends. The survey behind it is [training-research.md](training-research.md).

@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 chunks A and B are built except the wave's `bench.observe_ms@500` price (T4: deferred while an eval screen holds the CPU lock; command under Wave check); the wave itself is not complete, since body-genes has no detector merged; T7 ran on the season 10 defaults (`E187`, re-recorded as `E188` on the gorge defaults, 2026-11-17; the plans whose detectors landed after `E188` get a top-up run later, on the same defaults), and T8 and T8a are built on `E188`; the measure-first plans share one chase-outcome taxonomy, one detector wave and one 128-seed baseline of the defaults, in place of seven separate 16-seed runs.
 **Validated:** 04e3b340 (2026-11-17)
-**Priority:** 34 - it schedules no work of its own ahead of the queue: its tasks run when the Phase 1 detector tasks of the plans it serves are built, and those change no behaviour
+**Priority:** 35 - it schedules no work of its own ahead of the queue: its tasks run when the Phase 1 detector tasks of the plans it serves are built, and those change no behaviour
 **Depends on:** [metric-trust.md](metric-trust.md)
 
 Seven plans open with the same step: add detectors, then run 16 seeds of the defaults and read `npm run eval:power`. Run apart, that is seven baselines of one world on different days and seasons, each too small to give a new metric its power (the registry's power comes from 128 seeds, `evals/power/defaults-floor-on-E150.json`). Three of the plans also classify how a chase ends, each in its own module. This doc makes the baseline one run and the chase outcome one taxonomy. It changes no sim behaviour and adds no reward.
