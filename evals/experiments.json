@@ -4663,9 +4663,20 @@
       ],
       "before": "control arm of evals/screens/honest-recruit-2.grid.json (today defaults, killGorgeShare 0.4), seeds 1 to 16, 400000 ticks, floor on, policy live; shared baseline evals/power/defaults-floor-on-E188.json",
       "after": "the territory, split, cub-plant, cub-size and recruit-all arms of the same screen",
-      "verdicts": {},
-      "note": "Prediction recorded before the run; the screen result is added when it finishes.",
-      "reports": ["evals/decisions/E189/results.md"],
+      "verdicts": {
+        "eval.hunter_juvenile_death_share": "no-difference",
+        "eval.hunter_catches_per_1k": "no-difference",
+        "eval.hunter_income_share.carcass": "-",
+        "eval.boom_bust_count": "-",
+        "eval.recruit_matured_share": "no-difference",
+        "eval.recruit_lineage_share": "no-difference"
+      },
+      "note": "T39 screen (16 seeds, 400000 ticks, main 390acd9a), all six arms pass the collapse criteria; no finalist. Juvenile death share 0.864 control against 0.847 territory, 0.820 split, 0.776 cub-plant, 0.862 cub-size, 0.821 recruit-all (bar 0.55 missed by all). Hunters alive of 16: control 11, territory 10, split 12, cub-plant 9, cub-size 7, recruit-all 6. Keep rule reads no harm on every arm (alive guard sees only 8 to 10 seeds). Catches 1.19 to 1.38 against 1.41, no verdict. cub-plant is a lead only (extinctions 21.5 to 15, 3 seeds under 80). Recommendation: park the Phase 6 recruitment levers and diagnose how juveniles die before any further lever; T36a has no finalist.",
+      "reports": [
+        "evals/decisions/E189/results.md",
+        "evals/decisions/E189/screen-table.md",
+        "evals/decisions/E189/screen-verdicts.json"
+      ],
       "beforePolicy": "live",
       "afterPolicy": "live",
       "effect": "no-difference"
