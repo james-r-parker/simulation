@@ -3,6 +3,8 @@
 // source, death cause, age at death, income and whether the life ever bit. Pure: no files, no sim. A life that is alive
 // and under `juvenileTicks` ticks old at the end of the run is censored and counted nowhere, as `eval.recruit_scene` counts it.
 
+import { quantile } from './metrics-stats.js';
+
 /**
  * @typedef {object} Life one hunter life with a known outcome
  * @property {string} birth the birth source of the `HunterLedger` record
@@ -102,7 +104,7 @@ function lifeOf({ id, record, birth, died, firstKill, recoil, juvenileTicks }) {
     const death = died.get(id);
     const food = death?.foodEnergy ?? 0;
     const parentAlive = [birth.parentA, birth.parentB].some(
-        (parent) => parent > 0 && (died.get(parent) === undefined || died.get(parent).tick > record.tick),
+        (parent) => parent > 0 && (died.get(parent)?.tick ?? Infinity) > record.tick,
     );
     return {
         birth: record.birth,
@@ -153,12 +155,7 @@ function aliveLife(birth, age, firstKill) {
  * @returns {number} their median, 0 for none
  */
 function median(values) {
-    if (values.length === 0) {
-        return 0;
-    }
-    const sorted = [...values].sort((a, b) => a - b);
-    const mid = sorted.length >> 1;
-    return sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    return values.length === 0 ? 0 : quantile(values, 0.5);
 }
 
 /**
@@ -185,7 +182,6 @@ const share = (part, whole) => (whole > 0 ? part / whole : 0);
  * @property {number} parentShare the share with a parent alive at death
  * @property {number} medianFirstKill median age at the first deliberate kill, of the group that killed (0 for none)
  * @property {number} incomePer1k energy eaten or bitten per 1,000 ticks lived, over the group
- * @property {number} recoil energy charged for lunging at kin or something too big (`HunterRecoilLife`), part of the bite cost
  * @property {number} recoilShare recoil energy over all energy spent (the rest is kicks, standing, moving and sprinting)
  * @property {number} spendPer1k energy spent per 1,000 ticks lived, over the group
  */
@@ -228,11 +224,12 @@ function summarise(group) {
 /**
  * @param {readonly Life[]} lives the lives with a known outcome (use `huntersLives`)
  * @param {number} juvenileTicks the juvenileTicks age
- * @returns {{lives: number, juvenileDeaths: number, juvenileDeathShare: number, deathShare: number, all: Row, byBirth: Record<string, Row & {born: number, share: number}>, byCause: Record<string, Row>, byOutcome: Record<string, Row>, ageBuckets: number[]}}
- *   the counts and the juvenile deaths split by birth source, by cause and by age in tenths of `juvenileTicks` (the buckets run 0 to 9)
+ * @returns {Record<string, any>}
+ *   `lives`, `juvenileDeaths`, `juvenileDeathShare`, `deathShare` and `all` (a Row), `byBirth`, `byCause` and `byOutcome` (Rows by name), `ageBuckets`: the counts and the juvenile deaths split by birth source, by cause and by age in tenths of `juvenileTicks` (the buckets run 0 to 9)
  */
 export function splitJuvenileDeaths(lives, juvenileTicks) {
     const dead = lives.filter((l) => l.juvenile);
+    /** @type {Record<string, any>} */
     const out = {
         lives: lives.length,
         juvenileDeaths: dead.length,

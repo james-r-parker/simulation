@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { huntersLives, lifeRecords, splitJuvenileDeaths } from '../../js/evo/juvenile-deaths.js';
 
+/** @param {number} genomeId @param {number} tick @param {Record<string, any>} [extra] @returns {Record<string, any>} a record */
 const born = (genomeId, tick, extra = {}) => ({
     event: 'AgentBorn',
     tick,
@@ -11,7 +12,9 @@ const born = (genomeId, tick, extra = {}) => ({
     cause: 'split',
     ...extra,
 });
+/** @param {number} genomeId @param {number} tick @param {Record<string, any>} [extra] @returns {Record<string, any>} a record */
 const died = (genomeId, tick, extra = {}) => ({ event: 'AgentDied', tick, genomeId, slot: 3, foodEnergy: 0, ...extra });
+/** @param {number} genomeId @param {number} tick @param {number} ageTicks @param {Record<string, any>} [extra] @returns {Record<string, any>} a record */
 const ledger = (genomeId, tick, ageTicks, extra = {}) => ({
     event: 'HunterLedger',
     tick,

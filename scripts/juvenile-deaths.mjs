@@ -118,13 +118,8 @@ export function runJuvenileDeaths(argv, print) {
     return split;
 }
 
-/**
- * @param {string[]} argv command-line arguments after the script name
- * @returns {Promise<number>} the process exit code
- */
-export function main(argv) {
-    return exitCodeOf(async () => runJuvenileDeaths(argv, console.log));
-}
+/** @type {(argv: string[]) => Promise<number>} runs the script on `argv` and returns the process exit code */
+export const main = (argv) => exitCodeOf(async () => runJuvenileDeaths(argv, console.log));
 
 if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
     process.exitCode = await main(process.argv.slice(2));
