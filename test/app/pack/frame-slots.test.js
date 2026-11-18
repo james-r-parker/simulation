@@ -50,12 +50,12 @@ describe('frame slot layout', () => {
         const memory = slots.slots[0].agents.x.buffer;
         const ends = [];
         for (const slot of slots.slots) {
-            const lanes = [
+            const lanes = /** @type {any[]} */ ([
                 slot.head,
                 slot.meta,
                 ...Object.values(slot.agents).filter((v) => ArrayBuffer.isView(v) && v.buffer === memory),
                 ...slot.rows,
-            ];
+            ]);
             for (const lane of lanes) {
                 expect(lane.byteOffset % 8).toBe(0);
                 expect(lane.buffer).toBe(memory);

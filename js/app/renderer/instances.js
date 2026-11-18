@@ -11,9 +11,9 @@ import {
     InterleavedBufferAttribute,
     Mesh,
 } from 'three/webgpu';
+import { interleaveRows, VEC4 } from './interleave.js';
 
-/** Floats per instance attribute. */
-export const VEC4 = 4;
+export { VEC4 };
 const CORNERS = new Float32Array([-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0]);
 const INDEX = new Uint16Array([0, 1, 2, 0, 2, 3]);
 
@@ -66,30 +66,6 @@ export function createInstances(capacity, names, shared = {}, { lanes = true } =
         capacity,
         mesh: null,
     };
-}
-
-/**
- * Interleaves the first `count` rows of every lane into `data`: row `r` of lane `k` lands at `r * stride + k * VEC4`.
- * The copy `uploadInstances` made, split out so the pack worker runs it into a frame slot.
- * @param {Float32Array[]} lanes the lanes in attribute order, each `count x 4` or more
- * @param {Float32Array} data receives `count x lanes.length x 4` floats
- * @param {number} count the rows to copy
- * @returns {void}
- */
-export function interleaveRows(lanes, data, count) {
-    const stride = lanes.length * VEC4;
-    for (let k = 0; k < lanes.length; k++) {
-        const lane = lanes[k];
-        const at = k * VEC4;
-        for (let row = 0; row < count; row++) {
-            const o = row * stride + at;
-            const i = row * VEC4;
-            data[o] = lane[i];
-            data[o + 1] = lane[i + 1];
-            data[o + 2] = lane[i + 2];
-            data[o + 3] = lane[i + 3];
-        }
-    }
 }
 
 /**

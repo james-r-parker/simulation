@@ -117,7 +117,7 @@ export function createRequest() {
 /**
  * Builds one slot's lanes from an allocator, so the same code sizes the buffer and makes the views.
  * @param {import('../lanes.js').LaneAllocator} alloc the lane allocator
- * @param {{maxAgents: number, specs: unknown[]}} info `ready.info`
+ * @param {Record<string, any>} info `ready.info`
  * @returns {FrameSlot} the slot
  */
 function buildSlot(alloc, info) {
@@ -130,7 +130,7 @@ function buildSlot(alloc, info) {
 }
 
 /**
- * @param {{maxAgents: number, specs: unknown[]}} info `ready.info`: the agent cap and the spec buckets
+ * @param {Record<string, any>} info `ready.info`: the agent cap and the spec buckets
  * @returns {number} the buffer size for the request block and `FRAME_SLOTS` slots, every lane 8-byte aligned
  */
 export function frameSlotBytes(info) {
@@ -143,7 +143,7 @@ export function frameSlotBytes(info) {
 
 /**
  * @param {SharedArrayBuffer | ArrayBuffer} memory a buffer of `frameSlotBytes(info)` bytes (zero on creation)
- * @param {{maxAgents: number, specs: unknown[]}} info `ready.info`
+ * @param {Record<string, any>} info `ready.info`
  * @returns {FrameSlots} the request view and every slot's views
  * @throws {Error} when the buffer is not `frameSlotBytes(info)` bytes
  */
@@ -258,6 +258,15 @@ export function readRequest(slots, out) {
 export function requestStop(slots) {
     Atomics.store(slots.req, REQ.STOP, 1);
     Atomics.notify(slots.req, REQ.SEQ);
+}
+
+/**
+ * Lets a worker started after a stop run: clears `STOP`.
+ * @param {FrameSlots} slots the frame slots
+ * @returns {void}
+ */
+export function clearStop(slots) {
+    Atomics.store(slots.req, REQ.STOP, 0);
 }
 
 /**

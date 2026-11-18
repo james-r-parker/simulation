@@ -13,7 +13,7 @@ import { createAgentRig, rigBucket } from '../renderer/agent-rig.js';
 import { createAgentStore, packAgents } from '../renderer/agents-pack.js';
 import { temperatureBands } from '../renderer/colors.js';
 import { packDying } from '../renderer/dying-pack.js';
-import { interleaveRows } from '../renderer/instances.js';
+import { interleaveRows } from '../renderer/interleave.js';
 import { holdFrom, READER, RELEASED, slotOfSeq } from '../../worker/snapshot-ring.js';
 import { FAMILY_SLOTS } from '../family-slots.js';
 import { claimFrameSlot, LENS, noteSkipped, publishFrame, SLOT, writeSlotMeta } from './frame-slots.js';
@@ -24,8 +24,7 @@ export const MAX_GAP_MS = 100;
 /**
  * @typedef {object} PackInit what `packInit` carries, as the worker and the tests build it
  * @property {Record<string, any>} info `ready.info`
- * @property {{flags: Record<string, number>, stateBits: Record<string, number>}} layout `ready.layout` parts the pack
- *   reads
+ * @property {Record<string, any>} layout `ready.layout` (the pack reads its `flags` and `stateBits`)
  * @property {import('../../worker/snapshot-ring.js').Ring} ring the snapshot ring
  * @property {import('./frame-slots.js').FrameSlots} slots the frame slots
  * @property {{dents: import('../renderer/dents.js').Dents, tweens: import('../renderer/body-tweens.js').BodyTweens,

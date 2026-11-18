@@ -35,6 +35,21 @@ module.exports = {
             to: { path: 'node_modules/three/build/three\\.(module|cjs|core)\\.js$' },
         },
         {
+            name: 'pack-no-three',
+            comment:
+                'js/app/pack/ never imports three (docs/designs/pack-worker.md): the pack worker has no DOM and no WebGPU, and the worker entry reaches no module that imports it either.',
+            severity: 'error',
+            from: { path: '^js/app/pack/' },
+            to: { path: 'node_modules/three/' },
+        },
+        {
+            name: 'pack-worker-reaches-no-three',
+            comment: 'Nothing the pack worker entry imports, however deep, imports three or uplot.',
+            severity: 'error',
+            from: { path: '^js/app/pack/pack-worker\\.js$' },
+            to: { path: 'node_modules/(three|uplot)/', reachable: true },
+        },
+        {
             name: 'worker-no-dom',
             comment: 'js/worker/ imports js/sim/, js/evo/ and js/worker/ only: not the app, and not three or uplot.',
             severity: 'error',
