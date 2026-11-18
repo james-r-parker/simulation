@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 detectors; shared detector baseline pending.
 **Validated:** 1eccabf5 (2026-11-17)
-**Priority:** 28 - a chase needs an end that is not luck, but the world must hold a standing prey population first ([honest-budgets.md](honest-budgets.md)), and Phase 1 reads the chase detectors of [training-stages.md](training-stages.md)
+**Priority:** 29 - a chase needs an end that is not luck, but the world must hold a standing prey population first ([honest-budgets.md](honest-budgets.md)), and Phase 1 reads the chase detectors of [training-stages.md](training-stages.md)
 **Depends on:** [honest-budgets.md](honest-budgets.md), [training-stages.md](training-stages.md)
 
 A positive `SPRINT` output multiplies thrust by `1 + sprintMultiplier x sprintBoost` (`thrustOf` in `js/sim/physics.js`), raises the speed cap in the Rust kernel (`move_agent` in `wasm/src/physics.rs`), and adds a fixed `sprintCost` (0.05) times juvenile burn to that tick's energy cost (`tickCost` in `js/sim/energy.js`). The fixed cost does not scale with output magnitude; speed-dependent movement cost also rises as speed squared. Temperature efficiency scales the sprint thrust with ordinary thrust. The hunter ledger records the realized sprint cost only for hunters. Phase 1 instead tallies the configured nominal charge for both roles and divides it by total energy removed from agents. This cost ratio can exceed 1 on energy-limited ticks because the nominal charge is not clipped to realized energy removal; only a very low ratio is evidence that the configured sprint price is negligible. No metric currently reads `SPRINT`. This phase measures its use before any rule change.
