@@ -155,3 +155,39 @@ It shows the gate of `hunt-contact` and the stage it gates do not measure the sa
 offsets, and that a gate passed once can be lost at the next checkpoint. It does not show that contact is unlearnable, that
 `hunt` is hard, or anything about the target world (the ladder's first run claims none). Three offsets and one archive each
 are leads. No eval ran, so there is no `eval:compare` verdict.
+
+## T34 - the contact diagnostic (theories 1 and 2 told apart)
+
+Run on the final archives of `.sim/train/ladder-1-o0`, `o64` (generation 39, its last) and `o128` (generation 79) at `origin/main`
+after T33 (`drill --archive` now reads them; the diagnostic uses the same decode). Files here: `contact-diagnostic.mjs`
+(64 `prey-ahead` trials, seeds 1000000 to 1000063, default world, per predator elite of each style band and `memoryless`; the
+prey is the drill's scripted `fleer` or an inert prey whose outputs are zero), `contact-diagnostic.json` (its output) and
+`stage-kills.mjs` (a stage-world episode seeded from the archive at debug level, then `scripts/hunter-income.mjs`).
+
+| Subject (cell)           | wins vs fleer | wins vs inert | median closest approach (fleer / inert, summed radii) | SPRINT share with prey in view (fleer / inert) | THRUST above 0.5 (fleer / inert) |
+| ------------------------ | ------------- | ------------- | ----------------------------------------------------- | ---------------------------------------------- | -------------------------------- |
+| offset 0, cell 57        | 1             | 32            | 3.87 / 1.00                                           | 0.25 / 0.40                                    | 0.24 / 0.94                      |
+| offset 0, cell 6         | 0             | 5             | 4.06 / 1.00                                           | 1.00 / 0.97                                    | 0.03 / 0.52                      |
+| offset 64, cell 3        | 0             | 37            | 4.05 / 1.00                                           | 0.27 / 0.14                                    | 0.00 / 0.23                      |
+| offset 64, cell 59       | 0             | 45            | 4.05 / 1.00                                           | 0.00 / 0.04                                    | 0.20 / 0.88                      |
+| offset 128, cell 5       | 0             | 49            | 4.02 / 1.00                                           | 0.45 / 0.59                                    | 0.24 / 0.67                      |
+| offset 128, cell 56      | 0             | 54            | 4.06 / 1.00                                           | 0.31 / 0.07                                    | 0.02 / 0.75                      |
+| `memoryless` (reference) | 5             | 8             | 4.01 / 4.01                                           | 0.29 / 0.09                                    | 0.29 / 0.09                      |
+
+Against an inert prey five of the six elites reach it (median closest approach 1.00, touching) and win 32 to 54 of 64; they thrust
+on 0.23 to 0.94 of the in-view ticks and keep their distance from the fleer (median 3.9 to 4.1), where they thrust on 0.00 to 0.24 of
+the in-view ticks. The reference shows neither (it wins 8 of 64 inert, closest 4.01). SPRINT is not the lever: the elites sprint
+on 0.00 to 1.00 of the in-view ticks whichever the prey (the offset 0, cell 6 elite always sprints and wins 5 inert, 0 fleer).
+
+Stage kills (`stage-kills.mjs`, 20000 ticks, `hunt-contact.json`, 100-agent founders from the archive, `HunterKill` ticks): offset 128
+seed 1 has 39 kills, 23 within 400 ticks, 27 within 1000 and 1 after 5000; seed 2 has 38, 29 and 29 (none after 5000); offset 0 seed 1
+has 27, 20 and 23 (none after 5000). `hunter-income.mjs` on offset 128 seed 1: 41 lives, 26 with no kill; kill share of income 0.35,
+bite 0.27, carcass 0.39 (offset 0: 34 lives, 19 with no kill, kill share 0.32). Kills are an opening event: a hunter next to a prey
+that has not moved off, not a sustained chase, and the stage world never asks a hunter to catch a prey that runs.
+
+**Theory named: theory 1.** The stage selects for closing on prey that does not run and the gate asks for catching one that does;
+five of six elites (offsets 0, 64 and 128) win 0.50 to 0.84 against an inert prey and 0 or 1 of 64 against the fleer. Theory 2
+(contact is not found) holds for one elite only (offset 0, cell 6: 5 of 64 inert), and offset 0 also has the strong one (cell 57:
+32 of 64), so contact is found on all three offsets by its best elite, which the E-TS-1 cross-play (1 of 64 against moving
+foragers on offset 0) did not show. Prediction for T35 and T36 stands: with the gate on the inert-prey drill `hunt-contact`
+passes on at least 4 of 5 offsets. The detector is still `drill.<name>.edgeLow`; no bar moves, no stage world changes.
