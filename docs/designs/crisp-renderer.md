@@ -323,7 +323,7 @@ The data side stays: `effects-player.js`, `effects-combat.js`, `effects-life.js`
 
 ### GPU time
 
-`gpu-time.js` (new, replaces `gpu-timer.js`) calls `renderer.resolveTimestampsAsync('render')` with one call in flight, divides the summed milliseconds it returns by the frames drawn since the previous resolve, and keeps the ring `__perf` reports as `gpuMs`. An `undefined` result (no `trackTimestamp`, or no `timestamp-query` feature) records nothing, and `browser.gpu_frame_p95_ms` is `null`. `scripts/lib/perf-v6-run.mjs` loads the page with `&gputime=1`.
+`gpu-time.js` (new, replaces `gpu-timer.js`) calls `renderer.resolveTimestampsAsync('render')` with one call in flight, records each result as one frame (three returns the newest frame of the batch), and keeps the ring `__perf` reports as `gpuMs`. An `undefined` result (no `trackTimestamp`, or no `timestamp-query` feature) records nothing, and `browser.gpu_frame_p95_ms` is `null`. `scripts/lib/perf-v6-run.mjs` loads the page with `&gputime=1`.
 
 ## Phases
 
@@ -335,17 +335,19 @@ One branch, `feat/crisp-renderer`, one commit per task, one pull request. Every 
 
 Budgets on the dev machine: Windows Chrome on the RTX 4090, the PG32UCDP at 240 Hz, canvas 3840x2160, 1000 agents, speed 1, all lenses off, 60 s, `npm run perf:browser -- --cdp=http://127.0.0.1:9222 --agents 1000 --viewport 3840x2160`. `scripts/lib/perf-v6.mjs` holds these budgets.
 
-| Metric                     | Before (T1) | After (T24, first read) | Done at     |
-| -------------------------- | ----------- | ----------------------- | ----------- |
-| `browser.frame_p50_ms`     | 4.2         | 4.2                     | <= 4.2      |
-| `browser.frame_p95_ms`     | 4.3         | 4.3                     | <= 4.2      |
-| `browser.frame_p99_ms`     | 4.3         | 4.3                     | <= 6.0      |
-| `browser.draw_cpu_p95_ms`  | 1.1         | 3.4                     | <= 1.5      |
-| `browser.gpu_frame_p95_ms` | 2.22        | 0.1                     | <= 3.0      |
-| `browser.main_long_tasks`  | 0           | 0                       | 0 after 5 s |
-| `browser.gc_pause_ms`      | 108.1       | 54.91                   | < 30        |
+| Metric                     | Before (T1) | After (T24, first read) | After (T24, second read) | Done at     |
+| -------------------------- | ----------- | ----------------------- | ------------------------ | ----------- |
+| `browser.frame_p50_ms`     | 4.2         | 4.2                     | 4.2                      | <= 4.2      |
+| `browser.frame_p95_ms`     | 4.3         | 4.3                     | 4.3                      | <= 4.2      |
+| `browser.frame_p99_ms`     | 4.3         | 4.3                     | 4.3                      | <= 6.0      |
+| `browser.draw_cpu_p95_ms`  | 1.1         | 3.4                     | 3.5                      | <= 1.5      |
+| `browser.gpu_frame_p95_ms` | 2.22        | 0.1                     | 1.05                     | <= 3.0      |
+| `browser.main_long_tasks`  | 0           | 0                       | 0                        | 0 after 5 s |
+| `browser.gc_pause_ms`      | 108.1       | 54.91                   | 179.36                   | < 30        |
 
 Read on 2026-11-18 (Chrome 157 over CDP, RTX 4090, 243.9 Hz, seed 1). T1 ran on a worktree of `6a245c94` (the base of the Phase 1 pull request) with the `fitEventCapacity` fix applied: before it, neither tree starts a world at 1000 agents (`eventCapacity` 8192 is below the 9332 that 1000 agents need, so the page logs a `WorkerError` and never draws). The app draws on WebGPU (`RendererReady backend: webgpu`); the harness's `gpuAdapter` string comes from a separate WebGL probe, not from the app's renderer. Two readings are not yet trustworthy: the seed 1 world started at 1000 falls to 684 agents after 5 s, 238 after 20 s and about 80 after 60 s in both trees, so the 60 s window times a world of 80 to 300 agents, not 1000; and `browser.gpu_frame_p95_ms` reads 0.07 to 0.1 ms on WebGPU at 3840x2160, too small to be the whole frame. The draw CPU p95 (3.4 ms against 1.1 before) is over budget on far fewer than 1000 agents.
+
+Second read on 2026-11-18, the same machine and command, after four fixes: `perf:browser` loads the page with `hold=1` (the floor tops the world back up to the agents asked for, so the whole window holds 1000), `gpu-time.js` records each timestamp resolve as one frame (three resolves the newest frame of the batch, not a sum), `createInstances` no longer marks its buffers `DynamicDrawUsage` (three re-sent every idle or empty layer whole each frame: 48 `writeBuffer` calls and 4.1 MB a frame, now 24 and 0.44 MB), and the pursuit search and plant colours do less work per frame. An A/B of the upload fix alone at 1000 agents, alternated three times, moved the draw CPU p50 from 5.2 to 3.1 ms and p95 from 5.7 to 4.1 ms, and the frame p95 from 8.4 ms (dropped frames) to 4.3 ms. Frames now hold 240 Hz at 1000 agents and the GPU is at a third of its budget; the draw CPU (3.5 ms) and the GC pauses (179 ms over the window, with `hold=1`'s steady births and deaths) are still over budget. The frame p95 of 4.3 ms is one display interval at 243.9 Hz (4.1 ms) rounded up, as before the change, so a 4.2 ms p95 budget cannot be met at this refresh rate. The rest of the draw CPU, by a CPU profile: the agent rig (`rigBucket`, `playRig`, `playLoops`, about 0.6 ms), the edge effects (`playEdges`, 0.35 ms), the food pack (0.33 ms), the pursuit search (0.29 ms) and the agent pack and interpolation (0.3 ms). T1 ran without `hold=1`, so its world also fell to about 80 agents: the Before column is not a 1000-agent reading and is not comparable with the second read; the A/B above is the like-for-like comparison.
 
 ### Phase 2 - The hunt and the death (built)
 

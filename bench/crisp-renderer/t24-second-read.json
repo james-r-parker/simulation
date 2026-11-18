@@ -1,0 +1,22 @@
+{
+  "3840x2160": {
+    "metrics": {
+      "browser.frame_p50_ms": 4.2,
+      "browser.frame_p95_ms": 4.3,
+      "browser.frame_p99_ms": 4.3,
+      "browser.draw_cpu_p95_ms": 3.5,
+      "browser.gpu_frame_p95_ms": 1.05,
+      "browser.main_long_tasks": 0,
+      "browser.gc_pause_ms": 179.36
+    },
+    "refreshHz": 243.9,
+    "frames": 14704,
+    "agents": 1000,
+    "browser": "157.0.8103.79",
+    "gpuAdapter": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4090 (0x00002684) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "viewport": "3840x2160",
+    "seconds": 60,
+    "commit": "5b9c817657a3045adcd66d91edf705993d1dc84f",
+    "recordedAt": "2026-11-18T07:24:46.696Z"
+  }
+}
