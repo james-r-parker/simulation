@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-    FIELD_POOL_SIZE,
-    SNAPSHOT_POOL_SIZE,
-    createBufferPool,
-    giveBuffer,
-    takeBuffer,
-} from '../../js/worker/buffer-pool.js';
+import { FIELD_POOL_SIZE, createBufferPool, giveBuffer, takeBuffer } from '../../js/worker/buffer-pool.js';
 
 /**
  * Plays the main thread: it keeps the two newest snapshot buffers and returns the older one at once.
@@ -28,8 +22,7 @@ function mainThread(pool) {
 
 describe('createBufferPool', () => {
     it('holds the requested number of equal buffers', () => {
-        const pool = createBufferPool({ count: SNAPSHOT_POOL_SIZE, bytes: 64 });
-        expect(SNAPSHOT_POOL_SIZE).toBe(3);
+        const pool = createBufferPool({ count: 3, bytes: 64 });
         expect(pool.freeCount).toBe(3);
         const sizes = [takeBuffer(pool), takeBuffer(pool), takeBuffer(pool)].map((b) => b?.byteLength);
         expect(sizes).toEqual([64, 64, 64]);
@@ -76,7 +69,7 @@ describe('takeBuffer and giveBuffer', () => {
 
 describe('a worker with three buffers and a main thread that keeps two', () => {
     it('always holds at least one buffer once the main thread is steady', () => {
-        const pool = createBufferPool({ count: SNAPSHOT_POOL_SIZE, bytes: 8 });
+        const pool = createBufferPool({ count: 3, bytes: 8 });
         const main = mainThread(pool);
         for (let i = 0; i < 100; i++) {
             const buffer = takeBuffer(pool);

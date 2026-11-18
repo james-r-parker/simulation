@@ -6,11 +6,12 @@ import { encodeArchive } from '../evo/archive-codec.js';
 import { createSimLog } from '../sim/log.js';
 import { fieldBytes, buildRun, readyLayout, tickOnce, worldInfo, BASE_TICKS_PER_SECOND } from './host-world.js';
 import { emitSnapshot, emitStats, STATS_INTERVAL_MS, warnLimited } from './host-output.js';
-import { createBufferPool, FIELD_POOL_SIZE, giveBuffer, SNAPSHOT_POOL_SIZE } from './buffer-pool.js';
+import { createBufferPool, FIELD_POOL_SIZE, giveBuffer } from './buffer-pool.js';
 import { inspectLabels } from './inspect.js';
 import { nextDelay, createPacer, restartClock, ticksDue } from './pacing.js';
 import { noteLogRecord } from './live-stats.js';
-import { DIRECTION, MESSAGE_TYPES, POOLS, SELECTION_STATES, validateMessage } from './protocol.js';
+import { DIRECTION, MESSAGE_TYPES, SELECTION_STATES, validateMessage } from './protocol.js';
+import { createRingViews, releaseAll, ringBytes } from './snapshot-ring.js';
 
 /**
  * @typedef {object} SimHostOptions
@@ -137,7 +138,17 @@ function poolFor(pool, want) {
 }
 
 /**
- * Builds the world for `init` or `reset`, sizes the pools and announces it with `ready`.
+ * @param {number} slotBytes the bytes of one snapshot
+ * @returns {import('./snapshot-ring.js').Ring} a new ring for a world, no reader holding anything
+ */
+function newRing(slotBytes) {
+    const ring = createRingViews(new SharedArrayBuffer(ringBytes(slotBytes)), slotBytes);
+    releaseAll(ring);
+    return ring;
+}
+
+/**
+ * Builds the world for `init` or `reset`, sizes the pools, makes the world's snapshot ring and announces it with `ready`.
  * @param {import('./host-output.js').HostState} host the host
  * @param {{seed: number, config: Record<string, any>, policy?: string}} message the `init` or `reset` message
  * @returns {void}
@@ -157,7 +168,7 @@ function startWorld(host, message) {
     host.run = run;
     host.selection = null;
     host.epoch += 1;
-    host.snapshotPool = poolFor(host.snapshotPool, { count: SNAPSHOT_POOL_SIZE, bytes: run.layout.bytes });
+    host.ring = newRing(run.layout.bytes);
     host.fieldPool = poolFor(host.fieldPool, { count: FIELD_POOL_SIZE, bytes: fieldBytes(run) });
     host.pacer = createPacer();
     restartClock(host.pacer, host.now());
@@ -168,6 +179,8 @@ function startWorld(host, message) {
         epoch: host.epoch,
         configHash: run.configHash,
         rulesHash: run.rulesHash,
+        ring: host.ring.header.buffer,
+        slotBytes: run.layout.bytes,
         layout: readyLayout(run),
         info: worldInfo(run),
         labels: inspectLabels(),
@@ -241,7 +254,7 @@ function control(host, message) {
             emitSnapshot(host, true);
             break;
         case MESSAGE_TYPES.RETURN_BUFFER: {
-            const pool = message.pool === POOLS.SNAPSHOT ? host.snapshotPool : host.fieldPool;
+            const pool = host.fieldPool;
             if (pool !== null && message.buffer.byteLength === pool.bytes) {
                 giveBuffer(pool, message.buffer);
             }
@@ -311,7 +324,7 @@ export function createSimHost({ post, now, schedule, createPolicy }) {
         rays: false,
         selection: null,
         pacer: createPacer(),
-        snapshotPool: null,
+        ring: null,
         fieldPool: null,
         timerPending: false,
         window: { startAt: 0, ticks: 0, workMs: 0 },

@@ -32,8 +32,9 @@ import { backendOf, chooseBackend, configureRenderer, lossVerdict, stageOptions 
  * @property {number} nowMs wall time
  * @property {number} dtMs the frame time
  * @property {import('../interpolate.js').Interpolated} agents the blended agents
- * @property {{tick: number, u32: Uint32Array, f32: Float32Array} | null} snapshot the newest snapshot
- * @property {{tick: number, u32: Uint32Array, f32: Float32Array} | null} prevSnapshot the older held snapshot
+ * @property {{seq: number, tick: number, u32: Uint32Array, f32: Float32Array} | null} snapshot the newest snapshot (a reused view
+ *   of a ring slot: compare `seq`, never the object, and keep nothing of it past the frame)
+ * @property {{seq: number, tick: number, u32: Uint32Array, f32: Float32Array} | null} prevSnapshot the older held snapshot
  * @property {import('../camera.js').CameraController} camera the view
  * @property {{temperature: boolean, scent: boolean, territory: boolean, vision: boolean, calls: boolean}} lenses
  * @property {number} selectedId the selected agent's genome id, 0 for none

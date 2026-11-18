@@ -1,14 +1,33 @@
 import { describe, expect, it } from 'vitest';
 import { createSimLog } from '../../js/sim/log.js';
 import { createBufferPool } from '../../js/worker/buffer-pool.js';
+import {
+    createRingViews,
+    holdFrom,
+    PUBLISHED,
+    READER,
+    releaseAll,
+    ringBytes,
+    SLOT_TICK,
+} from '../../js/worker/snapshot-ring.js';
 import { emitSnapshot, emitStats, warnLimited, WARN_INTERVAL_MS } from '../../js/worker/host-output.js';
 import { buildRun, tickOnce } from '../../js/worker/host-world.js';
 import { createPacer, markSnapshot } from '../../js/worker/pacing.js';
 import { noisePolicy, SMALL_CONFIG } from './helpers/host-harness.js';
 
 /**
+ * @param {number} slotBytes the bytes of one snapshot
+ * @returns {import('../../js/worker/snapshot-ring.js').Ring} a ring nobody holds
+ */
+function freshRing(slotBytes) {
+    const ring = createRingViews(new SharedArrayBuffer(ringBytes(slotBytes)), slotBytes);
+    releaseAll(ring);
+    return ring;
+}
+
+/**
  * @returns {{host: Record<string, any>, sent: Record<string, any>[]}} a host state over a run at tick 0, a snapshot
- *   pool of 2 and a field pool of 1, with a clock the test sets through `host.clock`
+ *   ring of the run's slot size and a field pool of 1, with a clock the test sets through `host.clock`
  */
 function setup() {
     /** @type {Record<string, any>[]} */
@@ -27,7 +46,7 @@ function setup() {
         selection: null,
         ticksPerSecond: 60,
         pacer: createPacer(),
-        snapshotPool: createBufferPool({ count: 2, bytes: run.layout.bytes }),
+        ring: freshRing(run.layout.bytes),
         fieldPool: createBufferPool({ count: 1, bytes: run.layout.fieldBytes ?? 16 * 10 * 3 * 4 }),
         window: { startAt: 0, ticks: 0, workMs: 0 },
         lastWarn: new Map(),
@@ -49,21 +68,54 @@ describe('warnLimited', () => {
 });
 
 describe('emitSnapshot', () => {
-    it('sends the epoch, tick and a transferred buffer, then holds the next until the gap has passed', () => {
+    it('writes a ring slot and sends the epoch, sequence, slot and tick, then holds the next until the gap has passed', () => {
         const { host, sent } = setup();
         expect(emitSnapshot(host, false)).toBe(true);
-        expect(sent[0]).toMatchObject({ type: 'snapshot', epoch: 4, tick: 0 });
+        expect(sent[0]).toEqual({ type: 'snapshot', epoch: 4, seq: 1, slot: expect.any(Number), tick: 0 });
+        expect(sent[0]).not.toHaveProperty('buffer');
+        expect(host.ring.header[PUBLISHED]).toBe(1);
+        expect(host.ring.header[SLOT_TICK + sent[0].slot]).toBe(0);
         expect(emitSnapshot(host, false)).toBe(false);
+        expect(emitSnapshot(host, true)).toBe(true);
+        expect(sent.filter((m) => m.type === 'snapshot').map((m) => m.seq)).toEqual([1, 2]);
+    });
+
+    it('writes the world into the slot it names', () => {
+        const { host, sent } = setup();
+        for (let t = 0; t < 3; t++) {
+            tickOnce(host.run);
+        }
+        emitSnapshot(host, true);
+        expect(host.ring.slots[sent[0].slot].u32[0]).toBe(3);
+    });
+
+    it('sends nothing when every slot is held, and warns', () => {
+        const { host, sent } = setup();
+        holdFrom(host.ring, READER.MAIN, 1);
+        for (let i = 0; i < 6; i++) {
+            expect(emitSnapshot(host, true)).toBe(true);
+        }
+        expect(emitSnapshot(host, true)).toBe(false);
+        expect(sent.filter((m) => m.type === 'snapshot')).toHaveLength(6);
+        expect(sent.filter((m) => m.record?.event === 'SnapshotSkipped')).toHaveLength(1);
+        holdFrom(host.ring, READER.MAIN, 4);
         expect(emitSnapshot(host, true)).toBe(true);
     });
 
-    it('sends nothing when no buffer is held, and warns', () => {
+    it('keeps the effects in the log for the next snapshot when a snapshot is skipped', () => {
         const { host, sent } = setup();
-        emitSnapshot(host, true);
-        emitSnapshot(host, true);
+        holdFrom(host.ring, READER.MAIN, 1);
+        for (let i = 0; i < 6; i++) {
+            emitSnapshot(host, true);
+        }
+        host.run.effects.count = 2;
         expect(emitSnapshot(host, true)).toBe(false);
-        expect(sent.filter((m) => m.type === 'snapshot')).toHaveLength(2);
-        expect(sent.some((m) => m.record?.event === 'SnapshotSkipped')).toBe(true);
+        expect(host.run.effects.count).toBe(2);
+        holdFrom(host.ring, READER.MAIN, 5);
+        expect(emitSnapshot(host, true)).toBe(true);
+        const last = /** @type {any} */ (sent.filter((m) => m.type === 'snapshot').at(-1));
+        expect(host.ring.slots[last.slot].u32[host.run.layout.effectsOffset]).toBe(2);
+        expect(host.run.effects.count).toBe(0);
     });
 
     it('writes the ray part only when the lens is on', () => {
@@ -71,7 +123,7 @@ describe('emitSnapshot', () => {
         emitSnapshot(host, true);
         host.rays = true;
         emitSnapshot(host, true);
-        const words = sent.filter((m) => m.type === 'snapshot').map((m) => new Uint32Array(m.buffer)[5]);
+        const words = sent.filter((m) => m.type === 'snapshot').map((m) => host.ring.slots[m.slot].u32[5]);
         expect(words).toEqual([0, 8]);
     });
 
@@ -80,7 +132,7 @@ describe('emitSnapshot', () => {
         host.run.effects.dropped = 7;
         emitSnapshot(host, true);
         expect(sent.filter((m) => m.record?.event === 'EffectsDropped')).toHaveLength(1);
-        const u32 = new Uint32Array(/** @type {any} */ (sent.find((m) => m.type === 'snapshot')).buffer);
+        const { u32 } = host.ring.slots[/** @type {any} */ (sent.find((m) => m.type === 'snapshot')).slot];
         expect(u32[host.run.layout.effectsOffset + 1]).toBe(7);
     });
 });

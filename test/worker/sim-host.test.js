@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ARCHIVE_VERSION } from '../../js/evo/archive-codec.js';
 import { getPolicy, LIVE_POLICY } from '../../js/evo/policies/index.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
+import { createRingViews, holdFrom, READER, RING_SLOTS, ringBytes } from '../../js/worker/snapshot-ring.js';
 import { createHarness, noisePolicy, SMALL_CONFIG } from './helpers/host-harness.js';
 
 /**
@@ -130,35 +131,50 @@ describe('slices', () => {
         expect(h.of('snapshot').length).toBe(count + 1);
     });
 
-    it('uses different buffers for consecutive snapshots when the main thread keeps two', () => {
+    it('uses different ring slots for consecutive snapshots when the main thread holds two', () => {
         const h = started({ keep: 2 });
         h.advance(0);
         for (let i = 0; i < 5; i++) {
             h.advance(30);
         }
-        const buffers = h.of('snapshot').map((m) => m.buffer);
-        expect(buffers.length).toBeGreaterThanOrEqual(3);
-        expect(buffers[1]).not.toBe(buffers[0]);
-        expect(buffers[2]).not.toBe(buffers[1]);
+        const snapshots = h.of('snapshot');
+        expect(snapshots.length).toBeGreaterThanOrEqual(3);
+        expect(snapshots.map((m) => m.seq)).toEqual(snapshots.map((_, i) => i + 1));
+        expect(snapshots[1].slot).not.toBe(snapshots[0].slot);
+        expect(snapshots[2].slot).not.toBe(snapshots[1].slot);
     });
 
-    it('skips snapshots once the pool is dry, logs it once, and resumes after a return', () => {
+    it('announces a ring in ready, sized for the world, and posts no buffer with a snapshot', () => {
+        const h = started();
+        h.advance(0);
+        h.advance(30);
+        const ready = h.of('ready')[0];
+        expect(ready.ring).toBeInstanceOf(SharedArrayBuffer);
+        expect(ready.slotBytes).toBe(h.run().layout.bytes);
+        expect(ready.ring.byteLength).toBe(ringBytes(ready.slotBytes));
+        expect(h.sent.find((m) => m.type === 'snapshot')).toBeDefined();
+    });
+
+    it('skips snapshots once every ring slot is held, logs it once, and resumes after the hold moves', () => {
         const h = started({ keep: Infinity });
         h.advance(0);
         for (let i = 0; i < 12; i++) {
             h.advance(30);
         }
-        expect(h.of('snapshot')).toHaveLength(3);
+        expect(h.of('snapshot')).toHaveLength(RING_SLOTS);
         expect(h.of('log').filter((m) => m.record.event === 'SnapshotSkipped')).toHaveLength(1);
         const tick = h.run().world.tick;
         expect(tick).toBeGreaterThan(8);
-        h.send({
-            type: 'returnBuffer',
-            pool: 'snapshot',
-            buffer: new ArrayBuffer(h.of('snapshot')[0].buffer.byteLength),
-        });
+        const ring = createRingViews(h.of('ready')[0].ring, h.of('ready')[0].slotBytes);
+        holdFrom(ring, READER.MAIN, 3);
         h.advance(30);
-        expect(h.of('snapshot')).toHaveLength(4);
+        expect(h.of('snapshot')).toHaveLength(RING_SLOTS + 1);
+    });
+
+    it('refuses a returnBuffer for the snapshot pool, which no longer exists', () => {
+        const h = started();
+        h.send({ type: 'returnBuffer', pool: 'snapshot', buffer: new ArrayBuffer(8) });
+        expect(h.of('error').at(-1).message).toMatch(/returnBuffer\.pool/);
     });
 
     it('schedules the next slice by what is owed: at once while ticks are owed, later when not', () => {
@@ -326,30 +342,32 @@ describe('select and setLenses', () => {
 });
 
 describe('reset', () => {
-    it('bumps the epoch, replaces the world and reuses the buffers when the sizes are unchanged', () => {
+    it('bumps the epoch, replaces the world and makes a new ring of the same size when the sizes are unchanged', () => {
         const h = started({ keep: 1 });
         runTo(h, 10);
         const firstBuffer = h.of('snapshot')[0].buffer;
         h.send({ type: 'reset', seed: 6, config: SMALL_CONFIG });
         expect(h.of('ready')).toHaveLength(2);
         expect(h.of('ready')[1]).toMatchObject({ epoch: 2, seed: 6 });
+        expect(h.of('ready')[1].ring).not.toBe(h.of('ready')[0].ring);
         expect(h.run().world.tick).toBe(0);
         runTo(h, 5);
         expect(h.of('snapshot').at(-1).epoch).toBe(2);
+        expect(h.of('snapshot').at(-1).seq).toBeGreaterThanOrEqual(1);
         expect(h.of('snapshot').at(-1).buffer.byteLength).toBe(firstBuffer.byteLength);
         expect(h.of('error')).toHaveLength(0);
     });
 
-    it('reallocates the buffers for a larger maxAgents and ignores a buffer of the old size coming back', () => {
+    it('makes a larger ring for a larger maxAgents, whatever the old ring held', () => {
         const h = started({ keep: Infinity });
         runTo(h, 10);
         const oldBytes = h.of('snapshot')[0].buffer.byteLength;
         h.send({ type: 'reset', seed: 6, config: { ...SMALL_CONFIG, maxAgents: 80 } });
-        h.send({ type: 'returnBuffer', pool: 'snapshot', buffer: new ArrayBuffer(oldBytes) });
         runTo(h, 5);
         const newest = h.of('snapshot').at(-1);
         expect(newest.epoch).toBe(2);
         expect(newest.buffer.byteLength).toBeGreaterThan(oldBytes);
+        expect(h.of('ready')[1].slotBytes).toBeGreaterThan(h.of('ready')[0].slotBytes);
         expect(h.of('error')).toHaveLength(0);
     });
 

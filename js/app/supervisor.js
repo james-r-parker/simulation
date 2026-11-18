@@ -124,6 +124,8 @@ function launch(sup, seed) {
     const client = createWorkerClient({
         post: (message, transfer) => worker.postMessage(message, transfer),
         policy: options.policy,
+        log: options.log,
+        now: options.now,
         listeners: {
             ...through,
             onStats(stats) {

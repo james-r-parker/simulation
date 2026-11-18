@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ringBytes } from '../../js/worker/snapshot-ring.js';
 import {
     BACKOFF_MS,
     FAILURE_WINDOW_MS,
@@ -13,6 +14,8 @@ const READY = {
     epoch: 1,
     configHash: 'c',
     rulesHash: 'r',
+    ring: new SharedArrayBuffer(ringBytes(64)),
+    slotBytes: 64,
     layout: { effectsOffset: 10, effectWords: 8 },
     info: {},
     labels: {},
