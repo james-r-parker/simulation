@@ -356,6 +356,9 @@ Jobs, in order:
       empty segment or a backslash answers 404. The upstream host is always `aliasHost(version, PAGES_SUBDOMAIN)`, never
       built from the request, so the Function cannot be pointed elsewhere.
     - Responses keep the upstream content type and add `X-Content-Type-Options: nosniff`.
+    - Every response of the site, static or from a Function, carries `Cross-Origin-Opener-Policy: same-origin` and
+      `Cross-Origin-Embedder-Policy: require-corp` (`public/_headers` and `functions/_middleware.js`), so the page is
+      cross-origin isolated ([pack-worker.md](pack-worker.md)).
     - `/v/<version>/` files use `Cache-Control: public, max-age=31536000, immutable`; `/v/index.json` and `/s/` use
       `public, max-age=60`. The handlers store and read them with the Cache API (`caches.default`).
     - An unknown version or season answers 404 `not_found` and logs `ReleaseNotFound` (kind, key).

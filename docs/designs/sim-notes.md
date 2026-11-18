@@ -3638,3 +3638,7 @@ WSL reaches Windows Chrome on `127.0.0.1:9222` once `C:\Users\<user>\.wslconfig`
 ### 2026-11-18 - three re-sends a `DynamicDrawUsage` buffer on every render, whole once its ranges are spent
 
 In three 0.187 `Attributes.update` uploads an attribute when its version moved **or** its usage is `DynamicDrawUsage`, on every render, and `WebGPUAttributeUtils.updateAttribute` clears the buffer's update ranges after each upload. A dynamic buffer that was not written this frame is therefore re-sent whole: with every instance buffer marked dynamic, the crisp renderer sent 48 `writeBuffer` calls and 4.1 MB a frame at 1000 agents, mostly idle line and effect layers at their full 256 KB. Leave instance buffers at the default usage and let `needsUpdate` (a version bump) with `addUpdateRange` drive the upload. Measured by wrapping `GPUQueue.prototype.writeBuffer` in an init script over CDP.
+
+### 2026-11-18 - Cross-origin isolation on Pages, and the clock it buys
+
+Cloudflare Pages applies `public/_headers` only to static files; a Functions response (`/v/`, `/s/`, `/next/`, `/api/`) needs the headers set in code, which `functions/_middleware.js` does for every route. With `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` the page is `crossOriginIsolated`, `SharedArrayBuffer` exists, and `performance.now` drops its coarse rounding: on Windows Chrome 157 the `perf:browser` frame times read 4.17 to 4.2 ms where they had read 4.3, and the refresh rate 240.4 Hz where it had read 243.9.
