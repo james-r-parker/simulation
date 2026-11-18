@@ -1,20 +1,14 @@
-// The crisp agents: one instanced mesh per specialisation, each drawn by its catalogue model's material. `packAgents`
-// fills the buckets and `rigBucket` adds the display colours, gates and rig channels; this module owns only the GPU
-// objects and the uniforms (rim width, the scent lens dim).
+// The crisp agents: one instanced mesh per specialisation, each drawn by its catalogue model's material. The pack worker
+// (docs/designs/pack-worker.md) blends, packs and rigs the agents into a frame slot as interleaved instance rows; this
+// module owns only the GPU objects and the uniforms (rim width, the scent lens dim), and copies each bucket's rows from
+// the slot the frame drew into its mesh's own buffer.
 
 import { Group } from 'three/webgpu';
 import { attribute, uniform } from 'three/tsl';
-import { minPxTable } from '../display-size.js';
 import { appLog } from '../app-log.js';
-import { createAgentStore, packAgents } from './agents-pack.js';
-import { createAgentRig, rigBucket } from './agent-rig.js';
-import { createDents } from './dents.js';
-import { createDying } from './dying.js';
-import { packDying } from './dying-pack.js';
-import { bakeClips } from './clip-sampler.js';
-import { CLIPS } from './clips.js';
-import { temperatureBands } from './colors.js';
-import { createInstances, instancedMesh, uploadInstances } from './instances.js';
+import { SLOT } from '../pack/frame-slots.js';
+import { AGENT_LANES } from './agent-lanes.js';
+import { createInstances, instancedMesh, takeRows } from './instances.js';
 import { modelMaterial } from './model-material.js';
 import { standardInputs } from './model-meshes.js';
 import { modelFor } from './models.js';
@@ -24,20 +18,6 @@ import { FILL_SHARE, RIM_PX } from './palette.js';
 export const SCENT_DIM = 0.55;
 /** The least opacity of a calling agent's ring while the calls lens is on. */
 export const CALL_RING_FLOOR = 0.5;
-const RIG_NAMES = /** @type {const} */ (['neon', 'rig0', 'rig1', 'rig2', 'gate', 'gate2', 'accent', 'call', 'dent']);
-
-/**
- * @param {Record<string, any>} info `ready.info`
- * @returns {number[]} the bucket index (position in `info.specs`) for each specialisation index, -1 where none
- */
-export function meshTable(info) {
-    const specs = /** @type {{index: number}[]} */ (info.specs);
-    const table = new Array(Math.max(...specs.map((s) => s.index)) + 1).fill(-1);
-    specs.forEach((s, i) => {
-        table[s.index] = i;
-    });
-    return table;
-}
 
 /**
  * @param {{dim: any, ringFloor: any}} uniforms the scent-lens dim and the calls-lens ring floor
@@ -71,128 +51,75 @@ function agentInputs({ dim, ringFloor }) {
 
 /**
  * @param {Record<string, any>} info `ready.info`
- * @param {{store: import('./agents-pack.js').AgentStore, rig: ReturnType<typeof createAgentRig>,
- *   uniforms: {rimPx: any, dim: any, ringFloor: any}}} from the packed buckets, their rig arrays and the shared uniforms
- * @returns {{instances: import('./instances.js').Instances, material: any, mesh: any, hunter: boolean}[]} one mesh per
- *   spec over its bucket's arrays
+ * @param {{rimPx: any, dim: any, ringFloor: any}} uniforms the shared uniforms
+ * @returns {{instances: import('./instances.js').Instances, material: any, mesh: any}[]} one mesh per spec, over its
+ *   own buffer (the rows arrive interleaved from the pack worker, so it has no lanes)
  */
-function buildMeshes(info, { store, rig, uniforms }) {
-    const specs = /** @type {{name: string, canHunt: boolean}[]} */ (info.specs);
-    return specs.map((spec, b) => {
+function buildMeshes(info, uniforms) {
+    const specs = /** @type {{name: string}[]} */ (info.specs);
+    return specs.map((spec) => {
         const model = modelFor(spec.name, (name) => appLog('warn', 'ModelMissing', { spec: name }));
-        /** @type {Record<string, Float32Array>} */
-        const shared = { iPose: store.buckets[b].pose };
-        for (const name of RIG_NAMES) {
-            shared[`i${name[0].toUpperCase()}${name.slice(1)}`] = rig.arrays[b][name];
-        }
-        const instances = createInstances(info.maxAgents, Object.keys(shared), shared);
+        const instances = createInstances(info.maxAgents, AGENT_LANES, {}, { lanes: false });
         const look = { rimPx: uniforms.rimPx, fillShare: FILL_SHARE.default };
         const material = modelMaterial(model, { inputs: agentInputs(uniforms), look });
-        return { instances, material, mesh: instancedMesh(instances, material), hunter: spec.canHunt };
+        return { instances, material, mesh: instancedMesh(instances, material) };
     });
 }
 
 /**
- * @param {Record<string, any>} info `ready.info`
- * @param {Record<string, number>} flags `ready.layout.flags`
- * @param {Record<string, number>} stateBits `ready.layout.stateBits`
- * @returns {import('./agent-rig.js').RigContext} the rig context, rewritten each frame
- */
-function rigContext(info, flags, stateBits) {
-    return {
-        table: bakeClips(CLIPS),
-        flags,
-        stateBits,
-        timeSec: 0,
-        palette: 'default',
-        hunter: false,
-        stress: {
-            cold01: info.temperatureColdStress / info.temperatureMax,
-            heat01: info.temperatureHeatStress / info.temperatureMax,
-        },
-        temperatureLens: null,
-        dents: null,
-        tick: 0,
-    };
-}
-
-/**
- * Sets the frame's values on the rig context and the shared uniforms.
+ * Sets the frame's values on the shared uniforms.
  * @param {import('./stage.js').Frame} frame the frame
- * @param {{ctx: import('./agent-rig.js').RigContext, uniforms: {rimPx: any, dim: any, ringFloor: any},
- *   bands: ReturnType<typeof temperatureBands>}} to the context, the uniforms and the temperature bands
+ * @param {{rimPx: any, dim: any, ringFloor: any}} uniforms the shared uniforms
  * @returns {void}
  */
-function applyFrame(frame, { ctx, uniforms, bands }) {
-    ctx.timeSec = frame.nowMs / 1000;
-    ctx.tick = frame.tick;
-    ctx.palette = frame.family.palette;
-    ctx.temperatureLens = frame.lenses.temperature ? bands : null;
+function applyFrame(frame, uniforms) {
     uniforms.rimPx.value = RIM_PX[/** @type {keyof typeof RIM_PX} */ (frame.family.palette)];
     uniforms.dim.value = frame.lenses.scent ? SCENT_DIM : 1;
     uniforms.ringFloor.value = frame.lenses.calls ? CALL_RING_FLOOR : 0;
 }
 
+/** No rows: a mesh with nothing to draw before the worker's first frame. */
+const NO_ROWS = new Float32Array(0);
+
 /**
- * Rigs every bucket's rows and uploads them.
+ * Copies each bucket's rows from the frame slot into its mesh and marks them for upload, once per new slot.
  * @param {import('./stage.js').Frame} frame the frame
- * @param {{store: import('./agents-pack.js').AgentStore, rig: ReturnType<typeof createAgentRig>,
- *   ctx: import('./agent-rig.js').RigContext, meshes: {instances: any, hunter: boolean}[]}} from the packed store, the
- *   rig arrays, the context and the meshes
+ * @param {{meshes: {instances: any}[], seen: {seq: number}}} layer the meshes and the request last copied
  * @returns {void}
  */
-function rigAndUpload(frame, { store, rig, ctx, meshes }) {
-    const into = { rig, out: rig.arrays[0], ctx };
+function takeSlotRows(frame, { meshes, seen }) {
+    const slot = frame.packed;
+    if (slot === null) {
+        if (seen.seq !== 0) {
+            seen.seq = 0;
+            meshes.forEach((m) => takeRows(m.instances, NO_ROWS, 0));
+        }
+        return;
+    }
+    if (frame.packedSeq === seen.seq) {
+        return;
+    }
+    seen.seq = frame.packedSeq;
     for (let b = 0; b < meshes.length; b++) {
-        ctx.hunter = meshes[b].hunter;
-        into.out = rig.arrays[b];
-        rigBucket(/** @type {any} */ (store.buckets[b]), frame.agents, into);
-        uploadInstances(meshes[b].instances, store.buckets[b].count);
+        takeRows(meshes[b].instances, slot.rows[b], slot.head[SLOT.BUCKETS + b]);
     }
 }
 
 /**
- * @param {{info: Record<string, any>, flagBits: Record<string, number>, stateBits: Record<string, number>,
- *   causeNames?: readonly string[]}} context `ready.info`, `ready.layout.flags`, `ready.layout.stateBits` and the death
- *   cause names by number
- * @returns {import('./stage.js').Layer & {store: import('./agents-pack.js').AgentStore}} the layer: one mesh per spec in
- *   a group, in `info.specs` order
+ * @param {{info: Record<string, any>}} context `ready.info`
+ * @returns {import('./stage.js').Layer} the layer: one mesh per spec in a group, in `info.specs` order
  */
-export function createAgentDraw({ info, flagBits, stateBits, causeNames = [] }) {
-    const store = createAgentStore(info.maxAgents, info.specs.length, meshTable(info), minPxTable(info));
-    const rig = createAgentRig(info.maxAgents, info.specs.length);
+export function createAgentDraw({ info }) {
     const uniforms = { rimPx: uniform(RIM_PX.default), dim: uniform(1), ringFloor: uniform(0) };
-    const meshes = buildMeshes(info, { store, rig, uniforms });
+    const meshes = buildMeshes(info, uniforms);
     const group = new Group();
     meshes.forEach((m) => group.add(m.mesh));
-    const ctx = rigContext(info, flagBits, stateBits);
-    store.dents = createDents(info.maxAgents);
-    ctx.dents = store.dents;
-    store.dying = createDying(info.maxAgents);
-    const dyingView = {
-        slots: /** @type {any} */ (null),
-        zoom: 1,
-        causeNames: /** @type {readonly string[]} */ ([]),
-        nowMs: 0,
-    };
-    const bands = temperatureBands(info);
-    const view = { dtMs: 0, zoom: 1, slots: /** @type {any} */ (null), maxVelocity: info.maxVelocity, tick: 0 };
+    const layer = { meshes, seen: { seq: 0 } };
     return {
         object: group,
-        store,
         update(frame) {
-            view.dtMs = frame.dtMs;
-            view.zoom = frame.camera.zoom;
-            view.slots = frame.family;
-            view.tick = frame.tick;
-            packAgents(frame.agents, store, flagBits, view);
-            dyingView.slots = frame.family;
-            dyingView.zoom = frame.camera.zoom;
-            dyingView.nowMs = frame.nowMs;
-            dyingView.causeNames = causeNames;
-            packDying(/** @type {any} */ (store.dying), store, dyingView);
-            applyFrame(frame, { ctx, uniforms, bands });
-            rigAndUpload(frame, { store, rig, ctx, meshes });
+            applyFrame(frame, uniforms);
+            takeSlotRows(frame, layer);
         },
         dispose() {
             for (const m of meshes) {

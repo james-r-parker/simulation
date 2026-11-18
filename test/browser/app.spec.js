@@ -104,6 +104,7 @@ test('draws frames: the animation loop runs and the canvas is not blank', async 
     expect(box?.width).toBeGreaterThan(100);
     const shot = await canvas.screenshot();
     expect(shot.length, 'a drawn world compresses to more than a flat black PNG').toBeGreaterThan(8000);
+    expect(consoleLines.filter((line) => line.includes('PackWorkerFailed'))).toEqual([]);
 });
 
 for (const backend of ['webgl2', 'webgpu']) {

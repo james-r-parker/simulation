@@ -5,6 +5,7 @@
 // clock is wall time, so a death lasts as long at speed x8 and while paused. A body whose `DIED` plays while the agent is
 // still in the frame is started from the cache and hidden from the live rows (`isHidden`). Pure and allocation-free.
 
+import { plainLane } from '../lanes.js';
 import { animFor } from './death-anim.js';
 
 /** The most bodies dying at once; a new one overwrites the oldest. */
@@ -27,8 +28,8 @@ const PLAYING = 2;
  * @property {Uint32Array} seenLineage its lineage
  * @property {Uint32Array} seenFrame the frame it was last seen in
  * @property {Uint8Array} hidden 1 while the slot's live row is replaced by a dying body
- * @property {number} frame the frame counter
- * @property {number} next the pool slot the next body takes (the oldest is overwritten)
+ * @property {Int32Array} head `[frame, next]`: the frame counter and the pool slot the next body takes (the oldest is
+ *   overwritten); an array, so the pool can sit in shared memory
  * @property {Uint8Array} state each pool body's state: 0 free, pending or playing
  * @property {Uint32Array} genome the body's genome
  * @property {Uint32Array} spec its specialisation
@@ -39,31 +40,33 @@ const PLAYING = 2;
  * @property {Uint8Array} cause its death cause number (`ready.layout.deathCauses`)
  */
 
+/** Words of `head`. */
+const HEAD = Object.freeze({ FRAME: 0, NEXT: 1 });
 const SEEN_FIELDS = 6;
 const POSE_FIELDS = 7;
 
 /**
  * @param {number} capacity the most slots (`maxAgents`)
+ * @param {import('../lanes.js').LaneAllocator} [alloc] makes each lane (shared memory for the pack worker)
  * @returns {Dying} an empty state
  */
-export function createDying(capacity) {
+export function createDying(capacity, alloc = plainLane) {
     return {
-        seen: Array.from({ length: SEEN_FIELDS }, () => new Float32Array(capacity)),
-        seenGenome: new Uint32Array(capacity),
-        seenSpec: new Uint32Array(capacity),
-        seenLineage: new Uint32Array(capacity),
-        seenFrame: new Uint32Array(capacity),
-        hidden: new Uint8Array(capacity),
-        frame: 0,
-        next: 0,
-        state: new Uint8Array(MAX_DYING),
-        genome: new Uint32Array(MAX_DYING),
-        spec: new Uint32Array(MAX_DYING),
-        lineage: new Uint32Array(MAX_DYING),
-        pose: Array.from({ length: POSE_FIELDS }, () => new Float32Array(MAX_DYING)),
-        since: new Float64Array(MAX_DYING),
-        start: new Float64Array(MAX_DYING),
-        cause: new Uint8Array(MAX_DYING),
+        seen: Array.from({ length: SEEN_FIELDS }, () => alloc(Float32Array, capacity)),
+        seenGenome: alloc(Uint32Array, capacity),
+        seenSpec: alloc(Uint32Array, capacity),
+        seenLineage: alloc(Uint32Array, capacity),
+        seenFrame: alloc(Uint32Array, capacity),
+        hidden: alloc(Uint8Array, capacity),
+        head: alloc(Int32Array, 2),
+        state: alloc(Uint8Array, MAX_DYING),
+        genome: alloc(Uint32Array, MAX_DYING),
+        spec: alloc(Uint32Array, MAX_DYING),
+        lineage: alloc(Uint32Array, MAX_DYING),
+        pose: Array.from({ length: POSE_FIELDS }, () => alloc(Float32Array, MAX_DYING)),
+        since: alloc(Float64Array, MAX_DYING),
+        start: alloc(Float64Array, MAX_DYING),
+        cause: alloc(Uint8Array, MAX_DYING),
     };
 }
 
@@ -75,8 +78,8 @@ export function createDying(capacity) {
  * @returns {number} the pool index
  */
 function spawnPending(d, slot, nowMs) {
-    const k = d.next;
-    d.next = (d.next + 1) % MAX_DYING;
+    const k = d.head[HEAD.NEXT];
+    d.head[HEAD.NEXT] = (k + 1) % MAX_DYING;
     d.state[k] = PENDING;
     d.genome[k] = d.seenGenome[slot];
     d.spec[k] = d.seenSpec[slot];
@@ -105,7 +108,7 @@ function remember(d, agents, i) {
     d.seenGenome[slot] = agents.genomeId[i];
     d.seenSpec[slot] = agents.spec[i];
     d.seenLineage[slot] = agents.lineageId[i];
-    d.seenFrame[slot] = d.frame;
+    d.seenFrame[slot] = d.head[HEAD.FRAME];
     d.seen[0][slot] = agents.x[i];
     d.seen[1][slot] = agents.y[i];
     d.seen[2][slot] = agents.angle[i];
@@ -122,7 +125,7 @@ function remember(d, agents, i) {
 function countGone(d) {
     let gone = 0;
     for (let slot = 0; slot < d.seenGenome.length; slot++) {
-        if (d.seenGenome[slot] !== 0 && d.seenFrame[slot] !== d.frame) {
+        if (d.seenGenome[slot] !== 0 && d.seenFrame[slot] !== d.head[HEAD.FRAME]) {
             gone += 1;
         }
     }
@@ -154,7 +157,7 @@ function release(d, slot, nowMs) {
  * @returns {number} bodies that became pending
  */
 export function trackBodies(d, agents, nowMs) {
-    d.frame += 1;
+    d.head[HEAD.FRAME] += 1;
     let spawned = 0;
     const capacity = d.seenGenome.length;
     for (let i = 0; i < agents.count; i++) {
@@ -167,7 +170,7 @@ export function trackBodies(d, agents, nowMs) {
     }
     const mass = countGone(d) > MASS_LOSS;
     for (let slot = 0; slot < capacity; slot++) {
-        if (d.seenGenome[slot] !== 0 && d.seenFrame[slot] !== d.frame) {
+        if (d.seenGenome[slot] !== 0 && d.seenFrame[slot] !== d.head[HEAD.FRAME]) {
             spawned += mass ? 0 : release(d, slot, nowMs);
             d.hidden[slot] = 0;
             d.seenGenome[slot] = 0;
@@ -209,7 +212,7 @@ function findPending(d, genome) {
  */
 function fromLive(d, genome, nowMs) {
     for (let slot = 0; slot < d.seenGenome.length; slot++) {
-        if (d.seenGenome[slot] === genome && d.seenFrame[slot] === d.frame && d.hidden[slot] === 0) {
+        if (d.seenGenome[slot] === genome && d.seenFrame[slot] === d.head[HEAD.FRAME] && d.hidden[slot] === 0) {
             d.hidden[slot] = 1;
             return spawnPending(d, slot, nowMs);
         }

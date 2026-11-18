@@ -3,6 +3,7 @@ import { DynamicDrawUsage } from 'three/webgpu';
 import {
     createInstances,
     instancedMesh,
+    takeRows,
     uploadInstances,
     vertexBufferCount,
     VEC4,
@@ -70,6 +71,26 @@ describe('uploadInstances', () => {
         uploadInstances(inst, 1);
         expect(mesh.visible).toBe(true);
         uploadInstances(inst, 0);
+        expect(mesh.visible).toBe(false);
+    });
+});
+
+describe('takeRows', () => {
+    it('copies interleaved rows, marks only them and shows the mesh, as uploadInstances does', () => {
+        const inst = createInstances(4, ['iPose', 'iColor'], {}, { lanes: false });
+        expect(inst.lanes).toEqual([]);
+        const mesh = instancedMesh(inst, null);
+        const rows = Float32Array.from({ length: 32 }, (_, i) => i + 1);
+        takeRows(inst, rows, 2);
+        expect(Array.from(inst.data.slice(0, 16))).toEqual(Array.from(rows.slice(0, 16)));
+        expect(inst.data[16]).toBe(0);
+        expect(inst.geometry.instanceCount).toBe(2);
+        expect(inst.buffer.updateRanges).toEqual([{ start: 0, count: 16 }]);
+        expect(mesh.visible).toBe(true);
+        takeRows(inst, rows, 9);
+        expect(inst.geometry.instanceCount).toBe(4);
+        takeRows(inst, rows, 0);
+        expect(inst.geometry.instanceCount).toBe(0);
         expect(mesh.visible).toBe(false);
     });
 });

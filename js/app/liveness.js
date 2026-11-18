@@ -2,6 +2,7 @@
 
 import { gpuCounts, installPerf } from './perf.js';
 import { fxPerf } from './fx-dev.js';
+import { skippedPacks } from './pack/frame-slots.js';
 
 /**
  * @param {{readFrames: () => number, readTick: () => number, resetFrames: () => void}} readers live app readers
@@ -19,6 +20,14 @@ export function createAppLiveness({ readFrames, readTick, resetFrames }) {
     });
 }
 
+/**
+ * @param {import('./pack/frame-slots.js').FrameSlots | null} slots the pack worker's frame slots
+ * @returns {number} the requests the worker skipped, 0 before a world
+ */
+function packSkipped(slots) {
+    return slots === null ? 0 : skippedPacks(slots);
+}
+
 /** @param {any} app the live app @returns {import('./perf.js').PerfInputs} the current perf inputs */
 export function readAppPerf(app) {
     return {
@@ -27,6 +36,8 @@ export function readAppPerf(app) {
         gpu: gpuCounts(app.deps.scene?.renderer.info),
         gpuSamples: app.deps.gpuTimer?.samples() ?? null,
         heapBytes: /** @type {any} */ (performance).memory?.usedJSHeapSize ?? null,
+        lateFrames: app.loop.lateFrames(),
+        skippedPacks: packSkipped(app.pack.slots()),
         ...fxPerf(app),
     };
 }

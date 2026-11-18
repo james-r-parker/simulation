@@ -10,6 +10,7 @@ import { clipSupported } from './capture.js';
 import { buildDebugBundle } from './debug-bundle.js';
 import { createFamilySlots } from './family-slots.js';
 import { createFrameLoop } from './frame-loop.js';
+import { bootPack, startPack } from './pack/pack-boot.js';
 import { requireIsolation } from './isolation.js';
 import { showRenderFailure } from './ui/render-failure.js';
 import { clearFrameStats, createFrameStats } from './frame-stats.js';
@@ -103,6 +104,7 @@ function observeSize(container, onSize) {
  * @property {any} deps the frame loop's dependencies; `scene` and `gpuTimer` are filled once the first world is ready
  * @property {ReturnType<typeof createFrameLoop>} loop the frame loop
  * @property {ReturnType<typeof createSupervisor>} supervisor the supervised worker
+ * @property {ReturnType<typeof bootPack>} pack the pack worker's client
  * @property {(action: string) => void} perform runs a shortcut action
  * @property {ReturnType<typeof createInterface>} iface the top bar, ticker, drawers and controls
  * @property {ReturnType<typeof createFxDev>} fxDev the effect developer tools, null unless the URL asks
@@ -162,7 +164,8 @@ function onReady(app, message) {
 /** Restarts the loop on the current world and applies a requested speed. @param {App} app the page @returns {void} */
 function startWorld(app) {
     app.deps.gpuTimer = gpuTimeFor(app.deps.scene);
-    app.loop.reset(/** @type {Record<string, any>} */ (app.ready).info.maxAgents);
+    app.loop.reset();
+    startPack(app.pack, { ready: app.ready, client: app.supervisor.client(), refs: app.deps.refs });
     if (app.state.requestedTicksPerSecond !== DEFAULT_TICKS_PER_SECOND) {
         app.supervisor.client()?.setSpeed(app.state.requestedTicksPerSecond);
     }
@@ -314,6 +317,7 @@ function createApp(container) {
         target: window,
     });
     app.slots = createFamilySlots();
+    app.pack = bootPack(document);
     app.deps = {
         getClient: () => app.supervisor.client(),
         scene: null,
@@ -326,6 +330,7 @@ function createApp(container) {
         clock: () => performance.now(),
         hidden: () => document.hidden,
         afterDraw: (/** @type {any} */ frame) => fxAfterDraw(app, frame),
+        getPack: () => app.pack.slots(),
     };
     app.loop = createFrameLoop(app.deps);
     app.iface = makeInterface(app);
