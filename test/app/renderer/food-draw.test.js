@@ -33,4 +33,30 @@ describe('createFoodDraw', () => {
         expect(plant.geometry.instanceCount).toBe(0);
         layer.dispose();
     });
+
+    it('repacks when a reused snapshot object carries a new seq, and sways when the seq is unchanged', () => {
+        const layer = createFoodDraw({ info: { maxFood: 8 } });
+        const plant = layer.object.children[2];
+        // One object, as a ring slot's view is: its contents and seq change under the same identity.
+        const reused = makeSnapshot(1, [], { foods: [[0, 0, 0.5, 0, 2, 0]] });
+        const frame = /** @type {any} */ ({
+            snapshot: reused,
+            camera: { zoom: 1 },
+            nowMs: 0,
+            family: { palette: 'default' },
+        });
+        const radius = () => plant.geometry.attributes.iPose.getW(0);
+        layer.update?.(frame);
+        expect(plant.geometry.instanceCount).toBe(1);
+        const radius0 = radius();
+        // The slot is published again with no food, same object and seq: nothing repacks.
+        reused.u32[2] = 0;
+        layer.update?.({ ...frame, nowMs: 900 });
+        expect(plant.geometry.instanceCount).toBe(1);
+        expect(radius()).toBe(radius0);
+        reused.seq = 2;
+        layer.update?.({ ...frame, nowMs: 900 });
+        expect(plant.geometry.instanceCount).toBe(0);
+        layer.dispose();
+    });
 });

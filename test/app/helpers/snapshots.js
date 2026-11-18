@@ -24,7 +24,7 @@ import { HERD_STRIDE, ZONE_STRIDE } from '../../../js/app/snapshot-view.js';
  * @param {number} tick the tick
  * @param {AgentSpec[]} agents the agents, ascending by slot
  * @param {{foods?: number[][], clouds?: number[][], obstacles?: number[][], herds?: number[][], zones?: number[][]}} [extra] snapshot records
- * @returns {{tick: number, buffer: ArrayBuffer, u32: Uint32Array, f32: Float32Array}} a snapshot
+ * @returns {{tick: number, seq: number, buffer: ArrayBuffer, u32: Uint32Array, f32: Float32Array}} a snapshot; its `seq` is its tick
  */
 export function makeSnapshot(tick, agents, extra = {}) {
     const { foods = [], clouds = [], obstacles = [], herds = [], zones = [] } = extra;
@@ -81,5 +81,5 @@ export function makeSnapshot(tick, agents, extra = {}) {
         u32[w + 3] = row[3] ?? 0;
         w += ZONE_STRIDE;
     }
-    return { tick, buffer, u32, f32 };
+    return { tick, seq: tick, buffer, u32, f32 };
 }

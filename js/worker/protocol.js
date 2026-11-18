@@ -32,8 +32,8 @@ export const DIRECTION = Object.freeze({ TO_WORKER: 'toWorker', TO_MAIN: 'toMain
 /** The speeds `setSpeed` accepts: 0.25, 0.5, 1, 2, 4, 8 and 16 times 60 ticks a second. */
 export const TICKS_PER_SECOND_CHOICES = Object.freeze([15, 30, 60, 120, 240, 480, 960]);
 
-/** The buffer pools a `returnBuffer` names. */
-export const POOLS = Object.freeze({ SNAPSHOT: 'snapshot', FIELD: 'field' });
+/** The buffer pools a `returnBuffer` names: the field buffers only, snapshots live in the shared ring. */
+export const POOLS = Object.freeze({ FIELD: 'field' });
 
 /** The selection states a `selection` message carries. */
 export const SELECTION_STATES = Object.freeze({ TRACKING: 'tracking', GONE: 'gone' });
@@ -55,9 +55,11 @@ const isObject = (value) => value !== null && typeof value === 'object' && !Arra
 /** @type {Check} */
 const isBuffer = (value) => value instanceof ArrayBuffer;
 /** @type {Check} */
+const isSharedBuffer = (value) => value instanceof SharedArrayBuffer;
+/** @type {Check} */
 const isSpeed = (value) => TICKS_PER_SECOND_CHOICES.includes(value);
 /** @type {Check} */
-const isPool = (value) => value === POOLS.SNAPSHOT || value === POOLS.FIELD;
+const isPool = (value) => value === POOLS.FIELD;
 /** @type {Check} */
 const isSelectionState = (value) => value === SELECTION_STATES.TRACKING || value === SELECTION_STATES.GONE;
 /** @type {Check} */
@@ -100,7 +102,7 @@ const SHAPES = Object.freeze({
     step: { direction: DIRECTION.TO_WORKER, fields: [['ticks', isPositiveInt, 'a positive integer']] },
     returnBuffer: {
         direction: DIRECTION.TO_WORKER,
-        fields: [['pool', isPool, '"snapshot" or "field"'], BUFFER],
+        fields: [['pool', isPool, '"field"'], BUFFER],
     },
     select: { direction: DIRECTION.TO_WORKER, fields: [['genomeId', isUint, 'an unsigned integer']] },
     setLenses: { direction: DIRECTION.TO_WORKER, fields: [['rays', isBoolean, 'a boolean']] },
@@ -112,6 +114,8 @@ const SHAPES = Object.freeze({
             EPOCH,
             CONFIG_HASH,
             ['rulesHash', isString, 'a string'],
+            ['ring', isSharedBuffer, 'a SharedArrayBuffer'],
+            ['slotBytes', isPositiveInt, 'a positive integer'],
             ['layout', isObject, 'an object'],
             ['info', isObject, 'an object'],
             ['labels', isObject, 'an object'],
@@ -120,7 +124,10 @@ const SHAPES = Object.freeze({
         ],
     },
     paused: { direction: DIRECTION.TO_MAIN, fields: [EPOCH, TICK] },
-    snapshot: { direction: DIRECTION.TO_MAIN, fields: [EPOCH, BUFFER, TICK] },
+    snapshot: {
+        direction: DIRECTION.TO_MAIN,
+        fields: [EPOCH, ['seq', isPositiveInt, 'a positive integer'], ['slot', isUint, 'an unsigned integer'], TICK],
+    },
     stats: {
         direction: DIRECTION.TO_MAIN,
         fields: [EPOCH, ['stats', isStats, 'an object with tick and ticksPerSecond']],

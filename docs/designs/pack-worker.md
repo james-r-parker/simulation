@@ -1,6 +1,6 @@
 # Pack worker
 
-**Status:** Proposed - Phase 1 (cross-origin isolation and the shared snapshot ring) first, then Phase 2 (the agents packed and rigged in a worker).
+**Status:** In progress - Phase 1 built (cross-origin isolation and the shared snapshot ring); Phase 2 (the agents packed and rigged in a worker) is next.
 **Validated:** 370eaae5 (2026-11-18)
 **Priority:** 2 - it closes the crisp renderer's last unmet budget (`browser.draw_cpu_p95_ms`, crisp-renderer.md T24) and changes no sim behaviour, so it builds beside the eval lanes
 **Depends on:** [crisp-renderer.md](crisp-renderer.md)
@@ -31,14 +31,15 @@ The page is cross-origin isolated, the sim worker writes snapshots into a shared
 | `SLOT_TICK[k]` | The tick slot `k` holds                                                                                                                                     |
 | `HELD[r]`      | The oldest sequence number reader `r` may still read (0 the main thread, 1 the pack worker); `RELEASED` (the largest `Int32`) when the reader reads nothing |
 
-| Function                             | Does                                                                                                                            |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| `ringBytes(slotBytes)`               | The buffer size for the header and `RING_SLOTS` slots                                                                           |
-| `createRingViews(memory, slotBytes)` | The header view and, per slot, `u32` and `f32` views, made once                                                                 |
-| `claimSlot(ring)`                    | A slot whose sequence is below every `HELD[r]`; -1 when none is, so every slot at or after a reader's hold is never overwritten |
-| `publishSlot(ring, slot, tick)`      | Stores the next sequence number into `SLOT_SEQ[slot]`, `SLOT_TICK[slot]` and `PUBLISHED` with `Atomics.store`                   |
-| `holdFrom(ring, reader, seq)`        | Stores `HELD[reader]`; `seq` `RELEASED` releases the reader                                                                     |
-| `slotOfSeq(ring, seq)`               | The slot holding `seq`, -1 when it is gone                                                                                      |
+| Function                             | Does                                                                                                                                    |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `ringBytes(slotBytes)`               | The buffer size for the header and `RING_SLOTS` slots                                                                                   |
+| `createRingViews(memory, slotBytes)` | The header view and, per slot, `u32` and `f32` views, made once                                                                         |
+| `claimSlot(ring)`                    | A slot whose sequence is below every `HELD[r]`; -1 when none is, so every slot at or after a reader's hold is never overwritten         |
+| `publishSlot(ring, slot, tick)`      | Stores the next sequence number into `SLOT_SEQ[slot]`, `SLOT_TICK[slot]` and `PUBLISHED` with `Atomics.store`                           |
+| `holdFrom(ring, reader, seq)`        | Stores `HELD[reader]`; `seq` `RELEASED` releases the reader                                                                             |
+| `slotOfSeq(ring, seq)`               | The slot holding `seq`, -1 when it is gone                                                                                              |
+| `releaseAll(ring)`                   | Stores `RELEASED` for every reader (`READER.MAIN` 0, `READER.PACK` 1); a new ring is released, then held for the main thread from seq 1 |
 
 - The sim host (`emitSnapshot` in `js/worker/host-output.js`) claims a slot, writes it and publishes it. With every slot held it logs `SnapshotSkipped` and keeps the effects in its log for the next snapshot, as it does with an empty pool today.
 - The `snapshot` message carries `{epoch, seq, slot, tick}` and no buffer. The `ready` message carries a new ring (`SharedArrayBuffer`) and its slot size for every world.
@@ -102,11 +103,24 @@ The effects player on the main thread runs on the drawn slot, one pack behind th
 
 ## Phases
 
-### Phase 1 - Cross-origin isolation and the shared snapshot ring
+### Phase 1 - Cross-origin isolation and the shared snapshot ring (built)
 
 **Targets:** none - the phase changes how snapshots reach the main thread, not what a frame draws; Phase 2 carries the budget
 
 The headers, the startup check and the snapshot ring replace the snapshot pool. The main thread still packs and rigs the agents.
+
+Measured on 2026-11-18 (T6) with `npm run perf:browser -- --cdp=http://127.0.0.1:9222 --agents 1000 --viewport 3840x2160` on the dev machine (Windows Chrome 157, RTX 4090, 1000 agents held), `main` at `c8ce3858` against the ring; reports in `bench/pack-worker/`. Isolation gives `performance.now` its fine resolution, so the frame times read 4.17 to 4.2 ms where the coarse clock rounded them to 4.3.
+
+| Metric                     | Before | After |
+| -------------------------- | ------ | ----- |
+| `browser.frame_p50_ms`     | 4.2    | 4.17  |
+| `browser.frame_p95_ms`     | 4.3    | 4.18  |
+| `browser.frame_p99_ms`     | 4.3    | 4.2   |
+| `browser.draw_cpu_p95_ms`  | 2.8    | 2.79  |
+| `browser.gpu_frame_p95_ms` | 0.66   | 0.72  |
+| `browser.main_long_tasks`  | 1      | 0     |
+| `browser.gc_pause_max_ms`  | 4.66   | 0.64  |
+| `browser.gc_pause_ms`      | 111.61 | 78.31 |
 
 | Chunk | Tasks    | Model  |
 | ----- | -------- | ------ |

@@ -14,22 +14,23 @@ export function createFoodDraw({ info }) {
     const pack = createFoodPack(capacity);
     const meshes = createModelMeshes(FOOD_MODELS, { capacity, buckets: pack.buckets });
     const view = { zoom: 1, timeSec: 0 };
-    // what the last full pack read: food only moves when a snapshot lands or the zoom changes the smallest size
-    const packed = { snapshot: /** @type {any} */ (null), zoom: 0 };
+    // what the last full pack read: food only moves when a snapshot lands or the zoom changes the smallest size. Snapshot
+    // objects are reused views of ring slots, so a landed snapshot is told by its `seq`, never by identity.
+    const packed = { seq: -1, zoom: 0 };
     return {
         object: meshes.object,
         update(frame) {
             if (frame.snapshot === null) {
                 meshes.clear();
-                packed.snapshot = null;
+                packed.seq = -1;
                 return;
             }
             view.zoom = frame.camera.zoom;
             view.timeSec = frame.nowMs / 1000;
             meshes.setPalette(frame.family?.palette);
-            if (frame.snapshot !== packed.snapshot || view.zoom !== packed.zoom) {
+            if (frame.snapshot.seq !== packed.seq || view.zoom !== packed.zoom) {
                 packFood(frame.snapshot, pack, view);
-                packed.snapshot = frame.snapshot;
+                packed.seq = frame.snapshot.seq;
                 packed.zoom = view.zoom;
             } else {
                 swayFood(pack, view.timeSec);

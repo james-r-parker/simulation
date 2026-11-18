@@ -9,7 +9,7 @@ const GOOD = {
     pause: { type: 'pause' },
     resume: { type: 'resume' },
     step: { type: 'step', ticks: 10 },
-    returnBuffer: { type: 'returnBuffer', pool: 'snapshot', buffer: new ArrayBuffer(8) },
+    returnBuffer: { type: 'returnBuffer', pool: 'field', buffer: new ArrayBuffer(8) },
     select: { type: 'select', genomeId: 0 },
     setLenses: { type: 'setLenses', rays: true },
     exportArchive: { type: 'exportArchive' },
@@ -19,13 +19,15 @@ const GOOD = {
         epoch: 1,
         configHash: 'a',
         rulesHash: 'b',
+        ring: new SharedArrayBuffer(16),
+        slotBytes: 8,
         layout: {},
         info: {},
         labels: {},
         policy: 'p',
         seed: 3,
     },
-    snapshot: { type: 'snapshot', epoch: 1, buffer: new ArrayBuffer(8), tick: 5 },
+    snapshot: { type: 'snapshot', epoch: 1, seq: 3, slot: 2, tick: 5 },
     stats: { type: 'stats', epoch: 1, stats: { tick: 5, ticksPerSecond: 60 } },
     field: { type: 'field', epoch: 1, tick: 5, buffer: new ArrayBuffer(8) },
     ticker: { type: 'ticker', items: [{ tick: 1, kind: 'elite', text: 'x' }] },
@@ -68,9 +70,15 @@ describe('validateMessage', () => {
         expect(() => validateMessage({ ...GOOD.select, genomeId: '4' })).toThrow(
             'select.genomeId must be an unsigned integer, got string 4',
         );
-        expect(() => validateMessage({ ...GOOD.snapshot, buffer: new Uint8Array(4) })).toThrow(
-            'snapshot.buffer must be an ArrayBuffer',
+        expect(() => validateMessage({ ...GOOD.field, buffer: new Uint8Array(4) })).toThrow(
+            'field.buffer must be an ArrayBuffer',
         );
+        expect(() => validateMessage({ ...GOOD.snapshot, seq: 0 })).toThrow('snapshot.seq must be a positive integer');
+        expect(() => validateMessage({ ...GOOD.snapshot, slot: -1 })).toThrow('snapshot.slot');
+        expect(() => validateMessage({ ...GOOD.ready, ring: new ArrayBuffer(16) })).toThrow(
+            'ready.ring must be a SharedArrayBuffer',
+        );
+        expect(() => validateMessage({ ...GOOD.ready, slotBytes: 0 })).toThrow('ready.slotBytes');
         expect(() => validateMessage({ ...GOOD.setLenses, rays: 1 })).toThrow('setLenses.rays must be a boolean');
         expect(() => validateMessage({ ...GOOD.init, config: null })).toThrow(
             'init.config must be an object, got null',
@@ -91,6 +99,8 @@ describe('validateMessage', () => {
 
     it('rejects a pool, a selection state and ticker items outside their shapes', () => {
         expect(() => validateMessage({ ...GOOD.returnBuffer, pool: 'other' })).toThrow('returnBuffer.pool');
+        // Snapshots live in the shared ring: there is no snapshot pool to return a buffer to.
+        expect(() => validateMessage({ ...GOOD.returnBuffer, pool: 'snapshot' })).toThrow('returnBuffer.pool');
         expect(() => validateMessage({ ...GOOD.selection, state: 'lost' })).toThrow('selection.state');
         expect(() => validateMessage({ type: 'ticker', items: [{ tick: 1, kind: 'x' }] })).toThrow('ticker.items');
         expect(() => validateMessage({ type: 'ticker', items: 'x' })).toThrow('ticker.items');

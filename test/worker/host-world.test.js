@@ -290,6 +290,8 @@ describe('worldInfo terrain', () => {
             epoch: 1,
             configHash: 'a',
             rulesHash: 'b',
+            ring: new SharedArrayBuffer(16),
+            slotBytes: 8,
             layout: {},
             info,
             labels: {},

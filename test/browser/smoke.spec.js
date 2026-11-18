@@ -28,6 +28,8 @@ test('the app loads, animates and logs no unexpected errors', async ({ page }) =
 
     try {
         await page.goto(url);
+        // The server sends COOP and COEP, so the page is cross-origin isolated and has SharedArrayBuffer.
+        expect(await page.evaluate(() => globalThis.crossOriginIsolated), 'page is cross-origin isolated').toBe(true);
         await expect(page.locator('#canvas-container canvas').first()).toBeAttached();
         const startingTick = await page.evaluate(() => globalThis.__blob?.tick ?? 0);
         const sample = await sampleFramesAfterStartup({
