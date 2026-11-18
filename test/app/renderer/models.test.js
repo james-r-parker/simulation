@@ -75,6 +75,25 @@ describe('the model catalogue', () => {
         expect(validateModel(AGENT_MODELS.predator)).toEqual([]);
     });
 
+    it('marks the thin strokes as lines (lips, flagella, cilia) and leaves filled or decorative parts alone', () => {
+        const lines = Object.values(AGENT_MODELS).flatMap((m) =>
+            m.parts
+                .filter((p) => /** @type {any} */ (p).line === true)
+                .map((p) => `${m.name}.${/** @type {any} */ (p).name}`),
+        );
+        expect(lines.sort()).toEqual(
+            [
+                'predator.lipDown',
+                'predator.lipUp',
+                'predator.tailA',
+                'predator.tailB',
+                'scout.ciliumDown',
+                'scout.ciliumUp',
+                'scout.flagellum',
+            ].sort(),
+        );
+    });
+
     it('a tapered membrane and an input-bound flagella both stay inside the model bounds', () => {
         const wide = { name: 'm', shape: 'membrane', rx: 0.5, ry: 0.5, amp: 0, lobes: 3, taper: 0.4 };
         expect(partExtent(wide)).toBeCloseTo(0.7);

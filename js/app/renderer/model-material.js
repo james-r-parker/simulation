@@ -211,6 +211,48 @@ function partColor(part, inputs) {
     return vec3(c[0], c[1], c[2]);
 }
 
+/** A line part (`line: true`: lips, flagella, cilia) draws at most this many rim widths wide in device px. */
+export const LINE_RIM_SCALE = 1.35;
+
+/**
+ * The half width a line part draws at: its own model width while that is thin on screen, capped at `LINE_RIM_SCALE`
+ * rims once the zoom would draw it heavier than the body's outline. The shader applies the same rule to nodes.
+ * @param {number} half the part's half width, model units
+ * @param {number} px one device pixel, model units
+ * @param {number} rimPx the rim width, device px
+ * @returns {number} the half width drawn, model units
+ */
+export function lineHalfWidth(half, px, rimPx) {
+    return Math.min(half, (LINE_RIM_SCALE * rimPx * px) / 2);
+}
+
+/**
+ * Moves a line part's stroke edge in to the capped half width (`lineHalfWidth`): every stroke primitive subtracts its
+ * half width from the centreline distance, so adding it back and taking the capped one gives the capped stroke.
+ * @param {any} d the part's distance, already at the bound scale
+ * @param {{half: any, px: any, rimPx: any}} line the half width at the bound scale, the pixel size and the rim width
+ *   (a number or a uniform node)
+ * @returns {any} the distance to the capped stroke
+ */
+function lineDistance(d, { half, px, rimPx }) {
+    // `rimPx` is a number or a uniform node (the agent layer's palette-driven rim), so it multiplies in the graph
+    return d.add(half).sub(min(half, px.mul(LINE_RIM_SCALE / 2).mul(rimPx)));
+}
+
+/**
+ * @param {{p: any, scale: any}} bound the bound point and its scale
+ * @param {Record<string, any>} part the part
+ * @param {{inputs: ModelInputs, px: any, rimPx: any}} at the inputs, the pixel size and the rim width (number or node)
+ * @returns {any} the part's distance at the bound scale, a line part's stroke capped (`lineDistance`)
+ */
+function scaledDistance(bound, part, { inputs, px, rimPx }) {
+    const d = partDistance(bound.p, part, inputs).mul(bound.scale);
+    if (part.line !== true) {
+        return d;
+    }
+    return lineDistance(d, { half: float(param(part.width, inputs)).mul(0.5).mul(bound.scale), px, rimPx });
+}
+
 /**
  * Paints one layer over the accumulated colour: `rgb` mixes towards the layer's colour by its alpha, `a` gathers.
  * @param {{rgb: any, a: any}} acc the accumulated colour
@@ -230,7 +272,7 @@ function over(acc, color, alpha) {
  */
 function paintPart(acc, part, { p, px, rig, inputs, look }) {
     const bound = bindPoint(p, part, rig);
-    const d = partDistance(bound.p, part, inputs).mul(bound.scale);
+    const d = scaledDistance(bound, part, { inputs, px, rimPx: look.rimPx });
     let gate = part.gate === undefined ? float(1) : inputs.values?.[part.gate];
     if (gate === undefined) {
         throw new Error(`modelMaterial: no gate input named ${part.gate}`);
