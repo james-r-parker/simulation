@@ -28,7 +28,7 @@ export function rowOf(cache, array, { slot, count }) {
 
 /**
  * Writes the hunter reflexes into a child's row before mutation (hunter-learning.md T6): the prey terms when
- * the child's specialisation `canHunt` while its mother's does not, and the kin pull floor for every `canHunt` child. Draws nothing.
+ * the child's specialisation `canHunt` while its mother's does not, the kin pull floor and the `hunterBiteBias` ceiling on the BITE bias for every `canHunt` child. Draws nothing.
  * @param {Record<string, any>} world the world
  * @param {{child: number, mother: number, row: Float32Array}} birth the child, its mother and the child's weight row
  * @returns {void}
@@ -40,8 +40,9 @@ export function applyBirthReflex(world, { child, mother, row }) {
     }
     const flip = world.huntBySpec[world.spec[mother]] !== 1;
     const kinPull = config.kinPullWeight;
-    if (flip || kinPull > 0) {
-        applyHunterReflex(row, world.layout, { weight: config.instinctWeight, prey: flip, kinPull });
+    const biteBias = config.hunterBiteBias;
+    if (flip || kinPull > 0 || biteBias < 0) {
+        applyHunterReflex(row, world.layout, { weight: config.instinctWeight, prey: flip, kinPull, biteBias });
     }
 }
 

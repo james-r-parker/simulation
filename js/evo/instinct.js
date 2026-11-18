@@ -46,14 +46,16 @@ function floorSkip(row, layout, { channel, part, output, floor }) {
 /**
  * The hunter's reflexes on a row, in place (hunter-learning.md T6). The prey terms (thrust and turn towards prey, and bite it,
  * each added and clamped) are the hunter branch of `applyInstinct`; the kin pull raises the `kin` strength-to-thrust and
- * sine-to-turn cells to at least `kinPull` x `weight` (a floor, so repeated calls do not accumulate). Draws nothing.
+ * sine-to-turn cells to at least `kinPull` x `weight` (a floor, so repeated calls do not accumulate). A negative `biteBias`
+ * closes the BITE output bias to at most `biteBias` x `weight` (a ceiling, so repeated calls change nothing): the innate
+ * releasing mechanism, a stalker does not strike at air and the prey-to-BITE skip weight releases the jaws. Draws nothing.
  * @param {Float32Array} row the weight row
  * @param {Readonly<Record<string, any>>} layout a `brainLayout(config)` result
- * @param {{weight: number, prey: boolean, kinPull: number}} options `weight` is `config.instinctWeight`; `prey` adds the prey
- *   terms; `kinPull` is `kinPullWeight` for the floor, 0 for none
+ * @param {{weight: number, prey: boolean, kinPull: number, biteBias?: number}} options `weight` is `config.instinctWeight`; `prey` adds the prey
+ *   terms; `kinPull` is `kinPullWeight` for the floor, 0 for none; `biteBias` is `hunterBiteBias`, 0 for none
  * @returns {void}
  */
-export function applyHunterReflex(row, layout, { weight, prey, kinPull }) {
+export function applyHunterReflex(row, layout, { weight, prey, kinPull, biteBias = 0 }) {
     const { THRUST, TURN, BITE } = OUTPUT_INDEX;
     if (prey) {
         addSkip(row, layout, { channel: 'prey', part: STRENGTH, output: THRUST, amount: weight });
@@ -64,6 +66,10 @@ export function applyHunterReflex(row, layout, { weight, prey, kinPull }) {
         floorSkip(row, layout, { channel: 'kin', part: STRENGTH, output: THRUST, floor: kinPull * weight });
         floorSkip(row, layout, { channel: 'kin', part: SINE, output: TURN, floor: kinPull * weight });
     }
+    if (biteBias < 0 && weight > 0) {
+        const i = layout.bOut + GENE_OUTPUTS.indexOf(BITE);
+        row[i] = Math.min(row[i], Math.max(-WEIGHT_CLAMP, biteBias * weight));
+    }
 }
 
 /**
@@ -72,12 +78,12 @@ export function applyHunterReflex(row, layout, { weight, prey, kinPull }) {
  * weight. A hunter: thrust, turn towards and bite prey (`applyHunterReflex`), and under `kinPull` a floor on the kin cells. Every body: the alarm, hunt-call and smoke biases start at -2 x weight.
  * @param {Float32Array} row the weight row (a random genome)
  * @param {Readonly<Record<string, any>>} layout a `brainLayout(config)` result
- * @param {{weight: number, canHunt: boolean, herdWary: number, kinPull?: number}} options `weight` is
+ * @param {{weight: number, canHunt: boolean, herdWary: number, kinPull?: number, biteBias?: number}} options `weight` is
  *   `config.instinctWeight`; 0 or `herdWary` 0 leaves its corresponding terms unchanged; `kinPull` (default 0) is the kin pull
- *   floor of a hunter, `kinPullWeight`
+ *   floor of a hunter, `kinPullWeight`; `biteBias` (default 0) is the hunter's BITE bias ceiling, `hunterBiteBias`
  * @returns {void}
  */
-export function applyInstinct(row, layout, { weight, canHunt, herdWary, kinPull = 0 }) {
+export function applyInstinct(row, layout, { weight, canHunt, herdWary, kinPull = 0, biteBias = 0 }) {
     if (weight === 0) {
         return;
     }
@@ -86,7 +92,7 @@ export function applyInstinct(row, layout, { weight, canHunt, herdWary, kinPull 
     addSkip(row, layout, { channel: 'food', part: STRENGTH, output: THRUST, amount: w });
     addSkip(row, layout, { channel: 'food', part: SINE, output: TURN, amount: w });
     if (canHunt) {
-        applyHunterReflex(row, layout, { weight: w, prey: true, kinPull });
+        applyHunterReflex(row, layout, { weight: w, prey: true, kinPull, biteBias });
     } else {
         addSkip(row, layout, { channel: 'threat', part: STRENGTH, output: THRUST, amount: w });
         addSkip(row, layout, { channel: 'threat', part: SINE, output: TURN, amount: -w });
@@ -114,5 +120,6 @@ export function randomGenome(world, slot, { row, rng }) {
         herdWary: config.herdWary,
         canHunt: specParams(config, world.spec[slot]).canHunt,
         kinPull: config.kinPullWeight,
+        biteBias: config.hunterBiteBias,
     });
 }
