@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createCameraController } from '../../../js/app/camera.js';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
-import { createAgentDraw, meshTable, SCENT_DIM } from '../../../js/app/renderer/agent-draw.js';
+import { createAgentDraw, SCENT_DIM } from '../../../js/app/renderer/agent-draw.js';
 import { createFamilySlots } from '../../../js/app/family-slots.js';
 import { smallReady } from '../helpers/ready.js';
 
@@ -54,10 +54,6 @@ describe('createAgentDraw', () => {
         const material = layer.object.children[0].material;
         expect(material.colorNode.isNode).toBe(true);
         expect(SCENT_DIM).toBeLessThan(1);
-    });
-
-    it('maps spec indices to meshes', () => {
-        expect(meshTable({ specs: [{ index: 2 }, { index: 0 }] })).toEqual([1, -1, 0]);
     });
 });
 

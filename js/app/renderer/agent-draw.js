@@ -8,11 +8,10 @@ import { minPxTable } from '../display-size.js';
 import { appLog } from '../app-log.js';
 import { createAgentStore, packAgents } from './agents-pack.js';
 import { createAgentRig, rigBucket } from './agent-rig.js';
+import { meshTable, RIG_NAMES, rigContext } from './agent-lanes.js';
 import { createDents } from './dents.js';
 import { createDying } from './dying.js';
 import { packDying } from './dying-pack.js';
-import { bakeClips } from './clip-sampler.js';
-import { CLIPS } from './clips.js';
 import { temperatureBands } from './colors.js';
 import { createInstances, instancedMesh, uploadInstances } from './instances.js';
 import { modelMaterial } from './model-material.js';
@@ -24,20 +23,6 @@ import { FILL_SHARE, RIM_PX } from './palette.js';
 export const SCENT_DIM = 0.55;
 /** The least opacity of a calling agent's ring while the calls lens is on. */
 export const CALL_RING_FLOOR = 0.5;
-const RIG_NAMES = /** @type {const} */ (['neon', 'rig0', 'rig1', 'rig2', 'gate', 'gate2', 'accent', 'call', 'dent']);
-
-/**
- * @param {Record<string, any>} info `ready.info`
- * @returns {number[]} the bucket index (position in `info.specs`) for each specialisation index, -1 where none
- */
-export function meshTable(info) {
-    const specs = /** @type {{index: number}[]} */ (info.specs);
-    const table = new Array(Math.max(...specs.map((s) => s.index)) + 1).fill(-1);
-    specs.forEach((s, i) => {
-        table[s.index] = i;
-    });
-    return table;
-}
 
 /**
  * @param {{dim: any, ringFloor: any}} uniforms the scent-lens dim and the calls-lens ring floor
@@ -90,30 +75,6 @@ function buildMeshes(info, { store, rig, uniforms }) {
         const material = modelMaterial(model, { inputs: agentInputs(uniforms), look });
         return { instances, material, mesh: instancedMesh(instances, material), hunter: spec.canHunt };
     });
-}
-
-/**
- * @param {Record<string, any>} info `ready.info`
- * @param {Record<string, number>} flags `ready.layout.flags`
- * @param {Record<string, number>} stateBits `ready.layout.stateBits`
- * @returns {import('./agent-rig.js').RigContext} the rig context, rewritten each frame
- */
-function rigContext(info, flags, stateBits) {
-    return {
-        table: bakeClips(CLIPS),
-        flags,
-        stateBits,
-        timeSec: 0,
-        palette: 'default',
-        hunter: false,
-        stress: {
-            cold01: info.temperatureColdStress / info.temperatureMax,
-            heat01: info.temperatureHeatStress / info.temperatureMax,
-        },
-        temperatureLens: null,
-        dents: null,
-        tick: 0,
-    };
 }
 
 /**
