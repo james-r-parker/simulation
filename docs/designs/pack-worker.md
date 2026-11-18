@@ -142,6 +142,24 @@ The pack worker blends, packs and rigs the agents into shared frame slots; the m
 | `browser.main_long_tasks`  | 0                                        | 0 after 5 s |
 | `browser.gc_pause_max_ms`  | 0.71                                     | <= 2        |
 
+Measured on 2026-11-18 (T14) on the dev machine (Windows Chrome 157, RTX 4090, 240.4 Hz, 3840x2160, 1000 agents held): the 60 s `perf:browser` run (`bench/pack-worker/t14-after.json`) meets every budget, and an alternated A/B against `main` at `0b8bdbc5` (15 s per arm after warm-up, three rounds) gives the draw CPU spread. The pack worker missed 0 to 1 of about 3600 frames per run (`lateFrames`) and skipped no pack (`skippedPacks`).
+
+| Metric                     | After (60 s run) |
+| -------------------------- | ---------------- |
+| `browser.frame_p50_ms`     | 4.17             |
+| `browser.frame_p95_ms`     | 4.19             |
+| `browser.frame_p99_ms`     | 4.21             |
+| `browser.draw_cpu_p95_ms`  | 1.41             |
+| `browser.gpu_frame_p95_ms` | 0.72             |
+| `browser.main_long_tasks`  | 0                |
+| `browser.gc_pause_max_ms`  | 0.69             |
+| `browser.gc_pause_ms`      | 27.42            |
+
+| A/B, three rounds | Draw p50     | Draw p95     | Draw p99     |
+| ----------------- | ------------ | ------------ | ------------ |
+| `main`            | 1.84-2.19 ms | 2.79-2.83 ms | 3.09-3.11 ms |
+| Pack worker       | 0.95-1.14 ms | 1.44-1.45 ms | 1.62-1.65 ms |
+
 | Chunk | Tasks     | Model  |
 | ----- | --------- | ------ |
 | B     | T8 to T15 | Sonnet |
