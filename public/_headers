@@ -1,0 +1,4 @@
+# Cross-origin isolation (SharedArrayBuffer for the snapshot ring and the pack worker); docs/designs/pack-worker.md.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
