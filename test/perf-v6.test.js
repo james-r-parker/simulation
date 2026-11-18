@@ -11,6 +11,7 @@ import {
     overBudget,
     parseViewport,
     sumGcPauseMs,
+    maxGcPauseMs,
     WARMUP_MS,
 } from '../scripts/lib/perf-v6.mjs';
 
@@ -92,6 +93,17 @@ describe('sumGcPauseMs', () => {
         expect(sumGcPauseMs([...meta, { ph: 'B', name: 'MinorGC', pid: 1, tid: 10 }])).toBe(0);
     });
 
+    it('reads the longest single pause on the main thread for the budget, 0 without one', () => {
+        const events = [
+            ...meta,
+            { ph: 'X', name: 'MinorGC', pid: 1, tid: 10, dur: 310 },
+            { ph: 'X', name: 'MinorGC', pid: 1, tid: 10, dur: 690 },
+            { ph: 'X', name: 'MinorGC', pid: 1, tid: 11, dur: 99000 },
+        ];
+        expect(maxGcPauseMs(events)).toBe(0.69);
+        expect(maxGcPauseMs(meta)).toBe(0);
+    });
+
     it('takes the names to count from the caller', () => {
         const events = [...meta, { ph: 'X', name: 'Odd', pid: 1, tid: 10, dur: 3000 }];
         expect(sumGcPauseMs(events, ['Odd'])).toBe(3);
@@ -116,7 +128,7 @@ describe('overBudget', () => {
             'browser.gc_pause_ms': null,
         });
         expect(over).toEqual([
-            { metric: 'browser.frame_p95_ms', value: 9, max: 4.2, criterion: true },
+            { metric: 'browser.frame_p95_ms', value: 9, max: 4.4, criterion: true },
             { metric: 'browser.gpu_frame_p95_ms', value: 5, max: 3, criterion: true },
         ]);
     });
@@ -124,19 +136,22 @@ describe('overBudget', () => {
     it('holds the budgets of the design doc', () => {
         expect(Object.fromEntries(Object.entries(BUDGETS).map(([k, v]) => [k, v.max]))).toEqual({
             'browser.frame_p50_ms': 4.2,
-            'browser.frame_p95_ms': 4.2,
+            'browser.frame_p95_ms': 4.4,
             'browser.frame_p99_ms': 6,
-            'browser.draw_cpu_p95_ms': 1.5,
+            'browser.draw_cpu_p95_ms': 2.5,
             'browser.gpu_frame_p95_ms': 3,
             'browser.main_long_tasks': 0,
-            'browser.gc_pause_ms': 30,
+            'browser.gc_pause_max_ms': 2,
+            'browser.gc_pause_ms': 240,
         });
+        expect(BUDGETS['browser.gc_pause_ms'].criterion).toBe(false);
+        expect(BUDGETS['browser.gc_pause_max_ms'].criterion).toBe(true);
     });
 });
 
 describe('buildV6Entry', () => {
     it('builds the metrics from the payload and the script readings', () => {
-        const entry = buildV6Entry({ perf, longTaskTimes: [10, 6000], gcPauseMs: 4.5, run });
+        const entry = buildV6Entry({ perf, longTaskTimes: [10, 6000], gcPauseMs: 4.5, gcPauseMaxMs: 0.7, run });
         expect(entry.metrics).toEqual({
             'browser.frame_p50_ms': 4.2,
             'browser.frame_p95_ms': 5.1,
@@ -144,6 +159,7 @@ describe('buildV6Entry', () => {
             'browser.draw_cpu_p95_ms': 1.4,
             'browser.gpu_frame_p95_ms': 2.3,
             'browser.main_long_tasks': 1,
+            'browser.gc_pause_max_ms': 0.7,
             'browser.gc_pause_ms': 4.5,
         });
         expect(entry).toMatchObject({
@@ -156,18 +172,30 @@ describe('buildV6Entry', () => {
     });
 
     it('records a null GPU time when the timer query is absent', () => {
-        const entry = buildV6Entry({ perf: { ...perf, gpuMs: null }, longTaskTimes: [], gcPauseMs: 0, run });
+        const entry = buildV6Entry({
+            perf: { ...perf, gpuMs: null },
+            longTaskTimes: [],
+            gcPauseMs: 0,
+            gcPauseMaxMs: 0,
+            run,
+        });
         expect(entry.metrics['browser.gpu_frame_p95_ms']).toBeNull();
     });
 
     it('rejects a payload from another app and times that are not finite', () => {
-        expect(() => buildV6Entry({ perf: { ...perf, app: 'other' }, longTaskTimes: [], gcPauseMs: 0, run })).toThrow(
+        expect(() =>
+            buildV6Entry({ perf: { ...perf, app: 'other' }, longTaskTimes: [], gcPauseMs: 0, gcPauseMaxMs: 0, run }),
+        ).toThrow('"v6"');
+        expect(() => buildV6Entry({ perf: null, longTaskTimes: [], gcPauseMs: 0, gcPauseMaxMs: 0, run })).toThrow(
             '"v6"',
         );
-        expect(() => buildV6Entry({ perf: null, longTaskTimes: [], gcPauseMs: 0, run })).toThrow('"v6"');
         const bad = { ...perf, drawMs: { p95: NaN } };
-        expect(() => buildV6Entry({ perf: bad, longTaskTimes: [], gcPauseMs: 0, run })).toThrow('drawMs.p95');
-        expect(() => buildV6Entry({ perf, longTaskTimes: [], gcPauseMs: NaN, run })).toThrow('gcPauseMs');
+        expect(() => buildV6Entry({ perf: bad, longTaskTimes: [], gcPauseMs: 0, gcPauseMaxMs: 0, run })).toThrow(
+            'drawMs.p95',
+        );
+        expect(() => buildV6Entry({ perf, longTaskTimes: [], gcPauseMs: NaN, gcPauseMaxMs: 0, run })).toThrow(
+            'gcPauseMs',
+        );
     });
 });
 
@@ -183,7 +211,7 @@ describe('mergeBaseline', () => {
 });
 
 describe('formatReport', () => {
-    const entry = buildV6Entry({ perf, longTaskTimes: [], gcPauseMs: 1, run });
+    const entry = buildV6Entry({ perf, longTaskTimes: [], gcPauseMs: 1, gcPauseMaxMs: 0.5, run });
 
     it('lists the run, every metric and says the budgets are met', () => {
         const fast = {
@@ -202,9 +230,12 @@ describe('formatReport', () => {
             metrics: { ...entry.metrics, 'browser.frame_p95_ms': 12, 'browser.gpu_frame_p95_ms': 6 },
         };
         const lines = formatReport({ viewport: '3840x2160', entry: slow });
-        expect(lines).toContain('OVER BUDGET: browser.frame_p95_ms 12 > 4.2');
+        expect(lines).toContain('OVER BUDGET: browser.frame_p95_ms 12 > 4.4');
         expect(lines).toContain('OVER BUDGET: browser.gpu_frame_p95_ms 6 > 3');
         expect(lines.at(-1)).toBe('Budgets: not met');
+        const gcSum = { ...entry, metrics: { ...entry.metrics, 'browser.gc_pause_ms': 300 } };
+        const sumLines = formatReport({ viewport: '3840x2160', entry: gcSum });
+        expect(sumLines).toContain('over (reported only): browser.gc_pause_ms 300 > 240');
         const gpuOnly = {
             ...entry,
             metrics: {

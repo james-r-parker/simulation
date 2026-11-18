@@ -3378,9 +3378,12 @@ it.
 
 ### 2026-11-14 - `resolveTimestampsAsync` sums every pass since the last resolve (crisp-renderer)
 
-`renderer.resolveTimestampsAsync('render')` returns the summed GPU milliseconds of every render pass since the previous
-resolve, the last value while a resolve is pending, and `undefined` without `trackTimestamp` or the `timestamp-query`
-feature. `gpu-time.js` keeps one resolve in flight and divides by the frames drawn since the previous one.
+`renderer.resolveTimestampsAsync('render')` returns the summed GPU milliseconds of the render passes of the newest frame
+since the previous resolve (three 0.187, `framesDuration[frames[frames.length - 1]]` in both the WebGPU and the WebGL
+pool), the last value while a resolve is pending, and `undefined` without `trackTimestamp` or the `timestamp-query`
+feature. `gpu-time.js` keeps one resolve in flight and records each result as one frame. (Corrected 2026-11-18: it
+first divided that one frame by every frame drawn since the previous resolve, so `browser.gpu_frame_p95_ms` read about
+0.1 ms on WebGPU at 3840x2160.)
 
 ### 2026-11-14 - WebGPU binds one vertex buffer per attribute, and allows 8 (crisp-renderer)
 
@@ -3630,4 +3633,8 @@ Reading it:
 
 ### 2026-11-18 - Windows Chrome over CDP, and what `perf:browser` reports there
 
-WSL reaches Windows Chrome on `127.0.0.1:9222` once `C:\Users\<user>\.wslconfig` sets `networkingMode=mirrored` and WSL is restarted (`wsl --shutdown`); Chrome must be started with `--remote-debugging-port=9222` and a non-default `--user-data-dir`. Over CDP the app gets a WebGPU adapter on the RTX 4090 (`vendor: nvidia`, `architecture: lovelace`) and logs `RendererReady` with `backend: webgpu`; the `gpuAdapter` string in a `perf:browser` report is the unmasked renderer of a separate WebGL context the harness opens (`webglRenderer`), so it reads ANGLE D3D11 whatever backend the app uses. `__perf().drawCalls` grows by one each frame, so it is a running count, not draws per frame. A world started with `?agents=1000` at seed 1 falls to about 80 agents within 60 s, so a 60 s `perf:browser` window at 1000 agents times a much smaller world.
+WSL reaches Windows Chrome on `127.0.0.1:9222` once `C:\Users\<user>\.wslconfig` sets `networkingMode=mirrored` and WSL is restarted (`wsl --shutdown`); Chrome must be started with `--remote-debugging-port=9222` and a non-default `--user-data-dir`. Over CDP the app gets a WebGPU adapter on the RTX 4090 (`vendor: nvidia`, `architecture: lovelace`) and logs `RendererReady` with `backend: webgpu`; the `gpuAdapter` string in a `perf:browser` report is the unmasked renderer of a separate WebGL context the harness opens (`webglRenderer`), so it reads ANGLE D3D11 whatever backend the app uses. `__perf().drawCalls` read `renderer.info.render.calls`, which three counts from the app's start (it grew by one each frame); it now reads `info.render.drawCalls`, the last frame's draws (25 to 28 at 1000 agents). A world started with `?agents=1000` at seed 1 falls to about 80 agents within 60 s, so `perf:browser` loads the page with `hold=1`, which sets the floor (`minAgents` and `floorTrigger`) to the agents asked for.
+
+### 2026-11-18 - three re-sends a `DynamicDrawUsage` buffer on every render, whole once its ranges are spent
+
+In three 0.187 `Attributes.update` uploads an attribute when its version moved **or** its usage is `DynamicDrawUsage`, on every render, and `WebGPUAttributeUtils.updateAttribute` clears the buffer's update ranges after each upload. A dynamic buffer that was not written this frame is therefore re-sent whole: with every instance buffer marked dynamic, the crisp renderer sent 48 `writeBuffer` calls and 4.1 MB a frame at 1000 agents, mostly idle line and effect layers at their full 256 KB. Leave instance buffers at the default usage and let `needsUpdate` (a version bump) with `addUpdateRange` drive the upload. Measured by wrapping `GPUQueue.prototype.writeBuffer` in an init script over CDP.

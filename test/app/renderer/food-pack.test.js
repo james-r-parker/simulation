@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CARCASS, createFoodPack, FOOD_MIN_PX, packFood, spotHash } from '../../../js/app/renderer/food-pack.js';
-import { NEON } from '../../../js/app/renderer/palette.js';
+import { NEON, toDisplay } from '../../../js/app/renderer/palette.js';
+import { floraColor } from '../../../js/app/renderer/flora-colors.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 describe('packFood', () => {
@@ -40,5 +41,20 @@ describe('packFood', () => {
     it('turns neighbours differently but each spot the same every frame', () => {
         expect(spotHash(1, 2)).toBe(spotHash(1, 2));
         expect(spotHash(1, 2)).not.toBe(spotHash(2, 1));
+    });
+
+    it('colours a plant from a hue table within 0.002 of the exact display colour', () => {
+        const pack = createFoodPack(64);
+        const hues = Array.from({ length: 64 }, (_, k) => -1.2 + (2.4 * k) / 63 + 0.0007);
+        const foods = hues.map((h, k) => [k, 0, 5, 0, 0, h]);
+        packFood(makeSnapshot(1, [], { foods }), pack, { zoom: 1, timeSec: 0 });
+        const b = pack.buckets[0];
+        hues.forEach((h, k) => {
+            const exact = toDisplay(floraColor(h, [0, 0, 0]));
+            for (let c = 0; c < 3; c++) {
+                expect(Math.abs(b.neon[k * 4 + c] - exact[c]), `hue ${h} channel ${c}`).toBeLessThan(0.002);
+            }
+        });
+        expect(pack.hueTable).toBeInstanceOf(Float32Array);
     });
 });

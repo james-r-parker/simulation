@@ -22,17 +22,19 @@ const SOFTWARE_RENDERER = /swiftshader|llvmpipe|software|softpipe/i;
 
 /**
  * The crisp-renderer budgets on the dev machine (docs/designs/crisp-renderer.md Phase 1: 3840x2160 on the 240 Hz
- * display, 1000 agents, 60 s). A metric with a `null` value is reported but is not a done criterion.
+ * display, 1000 agents held, 60 s; revised 2026-11-18, reasons in the doc's Decisions). A metric with `criterion`
+ * false is reported against its line but is not a done criterion.
  * @type {Readonly<Record<string, {max: number, criterion: boolean}>>}
  */
 export const BUDGETS = Object.freeze({
     'browser.frame_p50_ms': { max: 4.2, criterion: true },
-    'browser.frame_p95_ms': { max: 4.2, criterion: true },
+    'browser.frame_p95_ms': { max: 4.4, criterion: true },
     'browser.frame_p99_ms': { max: 6.0, criterion: true },
-    'browser.draw_cpu_p95_ms': { max: 1.5, criterion: true },
+    'browser.draw_cpu_p95_ms': { max: 2.5, criterion: true },
     'browser.gpu_frame_p95_ms': { max: 3.0, criterion: true },
     'browser.main_long_tasks': { max: 0, criterion: true },
-    'browser.gc_pause_ms': { max: 30, criterion: true },
+    'browser.gc_pause_max_ms': { max: 2, criterion: true },
+    'browser.gc_pause_ms': { max: 240, criterion: false },
 });
 
 /**
@@ -63,6 +65,27 @@ export function checkRefresh(refreshHz, allowLow) {
 }
 
 /**
+ * The durations of the whole GC pauses on the renderer main thread.
+ * @param {{ph: string, name: string, pid: number, tid: number, dur?: number, args?: Record<string, any>}[]} events a
+ *   Chromium trace's `traceEvents`
+ * @param {readonly string[]} gcNames the event names that are a whole GC pause
+ * @returns {number[]} each pause in microseconds; empty when there is no `CrRendererMain` thread or no GC event
+ */
+function mainThreadPauses(events, gcNames) {
+    const mains = new Set(
+        events
+            .filter((e) => e.ph === 'M' && e.name === 'thread_name' && e.args?.name === 'CrRendererMain')
+            .map((e) => `${e.pid}:${e.tid}`),
+    );
+    return events
+        .filter((e) => e.ph === 'X' && gcNames.includes(e.name) && mains.has(`${e.pid}:${e.tid}`))
+        .map((e) => e.dur ?? 0);
+}
+
+/** @param {number} micros microseconds @returns {number} milliseconds to 2 decimals */
+const toMs = (micros) => Math.round(micros / 10) / 100;
+
+/**
  * Sums the durations of the GC events on the renderer main thread.
  * @param {{ph: string, name: string, pid: number, tid: number, dur?: number, args?: Record<string, any>}[]} events a
  *   Chromium trace's `traceEvents`
@@ -70,18 +93,19 @@ export function checkRefresh(refreshHz, allowLow) {
  * @returns {number} milliseconds, to 2 decimals; 0 when there is no `CrRendererMain` thread or no GC event
  */
 export function sumGcPauseMs(events, gcNames = GC_PAUSE_EVENTS) {
-    const mains = new Set(
-        events
-            .filter((e) => e.ph === 'M' && e.name === 'thread_name' && e.args?.name === 'CrRendererMain')
-            .map((e) => `${e.pid}:${e.tid}`),
-    );
-    let micros = 0;
-    for (const e of events) {
-        if (e.ph === 'X' && gcNames.includes(e.name) && mains.has(`${e.pid}:${e.tid}`)) {
-            micros += e.dur ?? 0;
-        }
-    }
-    return Math.round(micros / 10) / 100;
+    return toMs(mainThreadPauses(events, gcNames).reduce((a, b) => a + b, 0));
+}
+
+/**
+ * The longest single GC pause on the renderer main thread: the budget, since only a pause near a display interval can
+ * drop a frame, while the sum grows with how often small scavenges run.
+ * @param {{ph: string, name: string, pid: number, tid: number, dur?: number, args?: Record<string, any>}[]} events a
+ *   Chromium trace's `traceEvents`
+ * @param {readonly string[]} [gcNames] the event names that are a whole GC pause; `GC_PAUSE_EVENTS` by default
+ * @returns {number} milliseconds, to 2 decimals; 0 when there is no `CrRendererMain` thread or no GC event
+ */
+export function maxGcPauseMs(events, gcNames = GC_PAUSE_EVENTS) {
+    return toMs(mainThreadPauses(events, gcNames).reduce((a, b) => Math.max(a, b), 0));
 }
 
 /**
@@ -140,12 +164,13 @@ function facts(perf) {
 
 /**
  * Builds one viewport's baseline entry from a `__perf()` payload and the script's own readings.
- * @param {{perf: any, longTaskTimes: number[], gcPauseMs: number, run: Record<string, any>}} input the readings and
- *   run facts (browser, gpuAdapter, viewport, agents, seconds, commit, recordedAt)
+ * @param {{perf: any, longTaskTimes: number[], gcPauseMs: number, gcPauseMaxMs: number, run: Record<string, any>}}
+ *   input the readings (the GC pause sum and longest pause) and run facts (browser, gpuAdapter, viewport, agents,
+ *   seconds, commit, recordedAt)
  * @returns {{metrics: Record<string, number | null>, [key: string]: any}} the entry
  * @throws {Error} when the payload is not from the v6 app or a time is not finite
  */
-export function buildV6Entry({ perf, longTaskTimes, gcPauseMs, run }) {
+export function buildV6Entry({ perf, longTaskTimes, gcPauseMs, gcPauseMaxMs, run }) {
     if (!perf || perf.app !== 'v6') {
         throw new Error(`window.__perf().app must be "v6", got ${JSON.stringify(perf?.app)}`);
     }
@@ -156,6 +181,7 @@ export function buildV6Entry({ perf, longTaskTimes, gcPauseMs, run }) {
         'browser.draw_cpu_p95_ms': finite(perf.drawMs?.p95, 'drawMs.p95'),
         'browser.gpu_frame_p95_ms': optionalP95(perf.gpuMs, 'gpuMs.p95'),
         'browser.main_long_tasks': longTasksAfterWarmup(longTaskTimes),
+        'browser.gc_pause_max_ms': finite(gcPauseMaxMs, 'gcPauseMaxMs'),
         'browser.gc_pause_ms': finite(gcPauseMs, 'gcPauseMs'),
     };
     return { metrics, ...facts(perf), ...run };

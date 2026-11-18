@@ -34,7 +34,7 @@ describe('readAppPerf', () => {
                         info: {
                             memory: { geometries: 3, textures: 4 },
                             programs: [{}],
-                            render: { calls: 5 },
+                            render: { calls: 9000, drawCalls: 5 },
                         },
                     },
                 },

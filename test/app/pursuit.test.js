@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { createInterpolated } from '../../js/app/interpolate.js';
-import { createPursuits, findPursuits, MAX_PURSUITS, PURSUIT_RANGE, pursuitRules } from '../../js/app/pursuit.js';
+import {
+    createPursuits,
+    findPursuits,
+    HUNTER_RUN_SHARE,
+    MAX_PURSUITS,
+    PREY_RUN_SHARE,
+    PURSUIT_AWAY,
+    PURSUIT_CONE,
+    PURSUIT_RANGE,
+    pursuitRules,
+} from '../../js/app/pursuit.js';
 
 const info = {
     maxVelocity: 10,
@@ -85,5 +95,71 @@ describe('findPursuits', () => {
             many.push({ ...prey, y: i * 1000 });
         }
         expect(findPursuits(frameOf(many), rules, out).count).toBe(MAX_PURSUITS);
+    });
+});
+
+/** @param {number} a @param {number} b @returns {number} the unsigned angle between two headings */
+function arcRef(a, b) {
+    const d = Math.abs(((((a - b) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI)) - Math.PI);
+    return d;
+}
+
+/**
+ * The rule as first written: every running hunter against every agent. The reference the filtered search must match.
+ * @param {ReturnType<typeof createInterpolated>} a the frame's agents
+ * @returns {number[][]} [hunter, prey] pairs in order
+ */
+function naivePursuits(a) {
+    const pairs = [];
+    for (let i = 0; i < a.count && pairs.length < MAX_PURSUITS; i++) {
+        if (rules.canHunt[a.spec[i]] !== 1 || a.speed[i] < HUNTER_RUN_SHARE * rules.maxVelocity) {
+            continue;
+        }
+        let best = -1;
+        let bestD = Infinity;
+        for (let j = 0; j < a.count; j++) {
+            const dx = a.x[j] - a.x[i];
+            const dy = a.y[j] - a.y[i];
+            const d = Math.hypot(dx, dy);
+            const bearing = Math.atan2(dy, dx);
+            const ok =
+                j !== i &&
+                a.size[j] < a.size[i] &&
+                rules.canHunt[a.spec[j]] !== 1 &&
+                d > 0 &&
+                d <= PURSUIT_RANGE &&
+                arcRef(bearing, a.angle[i]) <= PURSUIT_CONE &&
+                a.speed[j] >= PREY_RUN_SHARE * rules.maxVelocity &&
+                arcRef(a.angle[j], bearing) <= PURSUIT_AWAY;
+            if (ok && d < bestD) {
+                best = j;
+                bestD = d;
+            }
+        }
+        if (best >= 0) {
+            pairs.push([i, best]);
+        }
+    }
+    return pairs;
+}
+
+describe('findPursuits against the naive search', () => {
+    it('finds the same pairs on crowded random frames', () => {
+        let s = 12345;
+        const rand = () => (s = (s * 1103515245 + 12345) >>> 0) / 4294967296;
+        for (let trial = 0; trial < 20; trial++) {
+            const list = Array.from({ length: 400 }, () => ({
+                x: rand() * 1500,
+                y: rand() * 1500,
+                angle: (rand() * 2 - 1) * Math.PI,
+                size: 3 + rand() * 10,
+                speed: rand() * 10,
+                spec: rand() < 0.25 ? 1 : 0,
+            }));
+            const a = frameOf(list);
+            const out = findPursuits(a, rules, createPursuits());
+            const got = Array.from({ length: out.count }, (_, k) => [out.hunter[k], out.prey[k]]);
+            expect(got).toEqual(naivePursuits(a));
+        }
     });
 });

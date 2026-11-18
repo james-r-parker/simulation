@@ -17,11 +17,14 @@ export const SWAY = 0.08;
 export const SWAY_HZ = 0.3;
 /** A carcass at age 1 is drawn this share of its size. */
 export const CARCASS_SHRINK = 0.7;
+/** Steps of the plant colour table over the hue range [-1, 1]; read with linear interpolation. */
+const HUE_STEPS = 1024;
 
 /**
  * @param {number} capacity the most food items (`maxFood`)
  * @returns {{buckets: {pose: Float32Array, neon: Float32Array, rig0: Float32Array, count: number}[],
- *   sections: import('../snapshot-view.js').Sections, rgb: number[]}} the buckets and scratch
+ *   sections: import('../snapshot-view.js').Sections, rgb: number[], hueTable: Float32Array}} the buckets, scratch and
+ *   the plant colour table
  */
 export function createFoodPack(capacity) {
     const buckets = [];
@@ -33,7 +36,38 @@ export function createFoodPack(capacity) {
             count: 0,
         });
     }
-    return { buckets, sections: createSections(), rgb: [0, 0, 0] };
+    return { buckets, sections: createSections(), rgb: [0, 0, 0], hueTable: buildHueTable() };
+}
+
+/**
+ * The display colour of every plant hue, so a frame of up to `maxFood` plants reads a table instead of running
+ * `floraColor` and `toDisplay` (three sRGB encodes and an HSL round trip) per item.
+ * @returns {Float32Array} `(HUE_STEPS + 1) x 3` display RGB over hue -1 to 1
+ */
+function buildHueTable() {
+    const table = new Float32Array((HUE_STEPS + 1) * 3);
+    const rgb = [0, 0, 0];
+    for (let k = 0; k <= HUE_STEPS; k++) {
+        toDisplay(floraColor(-1 + (2 * k) / HUE_STEPS, rgb), rgb);
+        table.set(rgb, k * 3);
+    }
+    return table;
+}
+
+/**
+ * @param {Float32Array} table from `buildHueTable`
+ * @param {number} hue the plant hue; clamped to -1 to 1, as `floraColor` does
+ * @param {number[]} rgb receives the colour
+ * @returns {number[]} `rgb`
+ */
+function plantColor(table, hue, rgb) {
+    const at = ((Math.min(Math.max(hue, -1), 1) + 1) / 2) * HUE_STEPS;
+    const k = Math.min(Math.floor(at), HUE_STEPS - 1);
+    const t = at - k;
+    for (let c = 0; c < 3; c++) {
+        rgb[c] = table[k * 3 + c] + (table[k * 3 + 3 + c] - table[k * 3 + c]) * t;
+    }
+    return rgb;
 }
 
 /**
@@ -49,11 +83,12 @@ export function spotHash(x, y) {
 /**
  * @param {number[]} rgb receives the colour
  * @param {{kind: number, hue: number, age: number}} food the food's model, hue and age
+ * @param {Float32Array} table the plant colour table (`buildHueTable`)
  * @returns {number[] | Float32Array} `rgb`
  */
-function foodColor(rgb, { kind, hue, age }) {
+function foodColor(rgb, { kind, hue, age }, table) {
     if (kind !== CARCASS) {
-        return toDisplay(floraColor(hue, rgb), rgb);
+        return plantColor(table, hue, rgb);
     }
     const a = Math.min(Math.max(age, 0), 1);
     for (let c = 0; c < 3; c++) {
@@ -93,7 +128,7 @@ export function packFood(snapshot, pack, { zoom, timeSec }) {
         bucket.pose[o + 1] = y;
         bucket.pose[o + 2] = seed * Math.PI * 2;
         bucket.pose[o + 3] = Math.max(Math.abs(radius) * shrink, minRadius);
-        const rgb = foodColor(pack.rgb, FOOD);
+        const rgb = foodColor(pack.rgb, FOOD, pack.hueTable);
         bucket.neon[o] = rgb[0];
         bucket.neon[o + 1] = rgb[1];
         bucket.neon[o + 2] = rgb[2];

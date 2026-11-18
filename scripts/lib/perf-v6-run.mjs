@@ -2,7 +2,15 @@
 // `window.__perf()`, the long-task observer and a Chromium trace, and builds the baseline entry. Runs only inside a real
 // browser (browser-perf covers it by use), so it is excluded from the unit coverage like the other browser helpers.
 
-import { buildV6Entry, checkRefresh, checkRenderer, GC_TRACE_CATEGORIES, sumGcPauseMs, WARMUP_MS } from './perf-v6.mjs';
+import {
+    buildV6Entry,
+    checkRefresh,
+    checkRenderer,
+    GC_TRACE_CATEGORIES,
+    maxGcPauseMs,
+    sumGcPauseMs,
+    WARMUP_MS,
+} from './perf-v6.mjs';
 
 const READY_TIMEOUT_MS = 60_000;
 const SEED = 1;
@@ -73,7 +81,8 @@ async function openApp(browser, { viewport, agents }, url) {
     const page = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     await setMeasurementViewport(page, viewport);
     await page.addInitScript(LONG_TASK_SCRIPT);
-    await page.goto(`${url}?agents=${agents}&seed=${SEED}&gputime=1`);
+    // `hold=1`: the floor refills the world to `agents`, so the window draws that many bodies, not a crashing world
+    await page.goto(`${url}?agents=${agents}&seed=${SEED}&gputime=1&hold=1`);
     await page.waitForFunction(
         () => {
             const w = /** @type {any} */ (globalThis);
@@ -118,6 +127,7 @@ export async function measureV6(browser, options) {
         perf,
         longTaskTimes,
         gcPauseMs: sumGcPauseMs(trace.traceEvents ?? trace),
+        gcPauseMaxMs: maxGcPauseMs(trace.traceEvents ?? trace),
         run: {
             browser: browser.version(),
             gpuAdapter: renderer,
