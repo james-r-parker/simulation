@@ -6,7 +6,7 @@ import { LIVE_POLICY, POLICIES, getPolicy } from '../../../js/evo/policies/index
 describe('policies', () => {
     it('registers map-elites-v6 as the live policy', () => {
         expect(LIVE_POLICY).toBe('map-elites-v6');
-        expect(Object.keys(POLICIES)).toEqual(['map-elites-v6']);
+        expect(Object.keys(POLICIES)).toEqual(['map-elites-v6', 'champions-v1']);
         expect(getPolicy('map-elites-v6')).toBe(POLICIES['map-elites-v6']);
     });
 

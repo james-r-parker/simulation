@@ -76,7 +76,7 @@ export function createMapElitesV6(options) {
     return createMapElitesV1({
         cellDraws: QUALITY_CELL_DRAWS,
         ...rest,
-        name: 'map-elites-v6',
+        name: options.name ?? 'map-elites-v6',
         scoring: {
             fitnessName: 'v6',
             descriptor: DESCRIPTORS[/** @type {keyof typeof DESCRIPTORS} */ (descriptorName)],

@@ -146,16 +146,37 @@ function markSeeded(clones, slot, cloned, fromArchive) {
 }
 
 /**
+ * Fills the row of a seeded agent the archive had no genome for: a mutated champion of its specialisation when the
+ * seeder has a champion source and it holds one, else a random genome.
+ * @param {{birth: Record<string, any>, championSource?: {draw: Function}}} seeder the shared sigma state and the champion source
+ * @param {{world: Record<string, any>, slot: number, row: Float32Array, rng: any}} target the world, the slot, its row
+ *   and the `brain-init` stream
+ * @returns {'champion' | 'random'} where the genome came from
+ */
+function seedUnarchived({ birth, championSource }, { world, slot, row, rng }) {
+    const champion = championSource === undefined ? null : championSource.draw(world.spec[slot], rng);
+    if (champion === null) {
+        randomGenome(world, slot, { row, rng });
+        birth.sigma[slot] = SIGMA_START;
+        return 'random';
+    }
+    row.set(champion);
+    birth.sigma[slot] = mutateSigma(SIGMA_START, world.layout.weightCount, rng);
+    mutateWeights(row, birth.sigma[slot], rng, birth.mutation);
+    return 'champion';
+}
+
+/**
  * Writes the slot's row and sigma; a clone also records what it cloned, a pool founder is recorded by its genome id.
  * @param {{archive: Record<string, any>, birth: Record<string, any>, clones: Record<string, any>, log?: import('../../sim/log.js').SimLog,
- *   mix: {cellDraws: number, archiveShare: number, cloneShareEnd: number}, own: (Float32Array | undefined)[],
+ *   championSource?: {draw: Function}, mix: {cellDraws: number, archiveShare: number, cloneShareEnd: number}, own: (Float32Array | undefined)[],
  *   pool: ReturnType<typeof createPoolDraw>}} seeder the seeder's parts
  * @param {Record<string, any>} world the world
  * @param {number} slot the slot being seeded
  * @param {any} rng the `brain-init` stream
  * @returns {void}
  */
-function seedBrain({ archive, birth, clones, log, mix, own, pool }, world, slot, rng) {
+function seedBrain({ archive, birth, clones, log, mix, own, pool, championSource }, world, slot, rng) {
     const { layout } = world;
     const row = rowOf(own, world.weights, { slot, count: layout.weightCount });
     const pooled = pool.draw(world, slot, rng);
@@ -170,9 +191,9 @@ function seedBrain({ archive, birth, clones, log, mix, own, pool }, world, slot,
     }
     const { source, ref } = draw(archive, world.spec[slot], rng, mix);
     markSeeded(clones, slot, source === 'clone' ? ref : null, ref !== null);
+    let where = source;
     if (ref === null) {
-        randomGenome(world, slot, { row, rng });
-        birth.sigma[slot] = SIGMA_START;
+        where = seedUnarchived({ birth, championSource }, { world, slot, row, rng });
     } else if (source === 'archive') {
         checkRow(ref.row, layout, log);
         row.set(ref.row);
@@ -185,7 +206,7 @@ function seedBrain({ archive, birth, clones, log, mix, own, pool }, world, slot,
     }
     log?.log('debug', 'ImmigrantSeeded', {
         spec: world.spec[slot],
-        source,
+        source: where,
         archiveRef: ref === null ? -1 : ref.archiveRef,
     });
 }
@@ -196,7 +217,8 @@ function seedBrain({ archive, birth, clones, log, mix, own, pool }, world, slot,
  *   `archiveShare` is a mutated archive child, from there to `cloneShareEnd` a clone, above it a random genome
  *   (defaults `ARCHIVE_SHARE` and `CLONE_SHARE_END`); `opponents` is `{ archives, share }`, frozen archives (the opponent pool) and the share of founders
  *   drawn from them as unmutated clones of an elite of the chosen specialisation, from `fork(rng, 'opponent-pool')`
- *   (none, or a share of 0: no draw)
+ *   (none, or a share of 0: no draw); `championSource` is `{ draw(spec, rng) }` (`createChampionSource`), the source of the
+ *   mutated champion a random draw becomes (none: the random brain)
  * @returns {{initSpec: Function, initBrain: Function, poolFounders: Set<number>}} the two seeding hooks and the genome
  *   ids of the founders drawn from the pool
  * @throws {Error} naming the option when the shares are not `0 <= archiveShare <= cloneShareEnd <= 1`, or the
@@ -211,13 +233,23 @@ export function createSeeder({
     archiveShare = ARCHIVE_SHARE,
     cloneShareEnd = CLONE_SHARE_END,
     opponents,
+    championSource,
 }) {
     checkShares(archiveShare, cloneShareEnd);
     checkOpponents(opponents);
     const mix = { cellDraws, archiveShare, cloneShareEnd };
     const counts = new Int32Array(GENOME_SPECS.length);
     const pool = createPoolDraw(opponents);
-    const seeder = { archive, birth, clones, log, mix, own: /** @type {(Float32Array | undefined)[]} */ ([]), pool };
+    const seeder = {
+        archive,
+        birth,
+        clones,
+        log,
+        mix,
+        own: /** @type {(Float32Array | undefined)[]} */ ([]),
+        pool,
+        championSource,
+    };
 
     return {
         initSpec: (/** @type {any} */ world, /** @type {number} */ slot, /** @type {any} */ rng) =>

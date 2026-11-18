@@ -13,6 +13,7 @@ import { createRng, fork } from '../js/sim/rng.js';
 import { createWorld } from '../js/sim/spawn.js';
 import { step } from '../js/sim/step.js';
 import { hashWorld } from '../js/sim/world-hash.js';
+import { readChampionFiles } from './lib/champion-files.mjs';
 import { feedPolicy } from './lib/feed-policy.mjs';
 import { serveTasks } from './lib/worker-pool.mjs';
 
@@ -89,6 +90,16 @@ function championsOf(task, policy, config) {
 }
 
 /**
+ * @param {Record<string, any> | undefined} options the task's policy options
+ * @returns {Record<string, any>} the options the policy takes: a `championsDir` becomes the `champions` it holds
+ * @throws {Error} naming the directory when it is missing or empty
+ */
+function resolveOptions(options = {}) {
+    const { championsDir, ...rest } = options;
+    return championsDir === undefined ? rest : { ...rest, champions: readChampionFiles(championsDir) };
+}
+
+/**
  * Runs one seed.
  * @param {EvalTask} task the task
  * @returns {Record<string, any>} `{ seed, metrics, worldHash, wallMs, fitnessName, checkpoints, inputActivity, champions }`
@@ -103,7 +114,7 @@ export function runSeed(task) {
         checkpointTicks: CHECKPOINT_INTERVAL,
     });
     const log = createSimLog(() => {}, { level: 'error' });
-    const policy = getPolicy(policyName).create({ config, log, observer, ...task.policyOptions });
+    const policy = getPolicy(policyName).create({ config, log, observer, ...resolveOptions(task.policyOptions) });
     /** @type {Record<string, any> | undefined} */
     let world;
     let checkpoints;
