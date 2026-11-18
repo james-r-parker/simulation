@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 (patch stock pays for plant food) and Phase 2 (the kill is the body) and Phase 4 (the edge breeds) built in season 10; Phase 3 (impacts, not contact) is parked on E176; Phase 5 (a call changes the bite) is parked on E178; Phase 6 is in progress: its diagnostics (T33 to T33b) are built, the screen (T35) and the 64-seed keep rule (T36) are recorded (E179), and on 2026-11-16 the user adopted `killGorgeShare` 0.4 as a narrow T37 (season 10, unreleased) despite the unmet Done-when row; Phase 6 stays open for the juvenile, territory and split-energy levers (T39), and T36a is not run.
 **Validated:** 2fc8f7f5 (2026-11-15)
-**Priority:** 2 - the 128-seed read of [review-2026-11-11.md](../review-2026-11-11.md): most seeds boom to the cap and fall under 40 while food never runs short, so every scene that needs a standing prey population is tuned on top of the crash; food, the kill and the rocks come before any skill, refuge or call work
+**Priority:** 3 - the 128-seed read of [review-2026-11-11.md](../review-2026-11-11.md): most seeds boom to the cap and fall under 40 while food never runs short, so every scene that needs a standing prey population is tuned on top of the crash; food, the kill and the rocks come before any skill, refuge or call work
 **Depends on:** [metric-trust.md](metric-trust.md)
 
 The rules this doc enforces ([principles.md](../principles.md)): selection rule 1 (luck is not skill), rule 3 (mating

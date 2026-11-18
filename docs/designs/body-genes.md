@@ -2,7 +2,7 @@
 
 **Status:** Proposed - replace the five discrete `specialisations` templates with continuous, heritable body genes (jaw-vs-gut diet, bulk-vs-agility, sprint-vs-endurance, sight) so body and brain co-evolve together; Phase 1 (continuous-trait detectors and baseline) is first.
 **Validated:** 04e3b340 (2026-11-17)
-**Priority:** 31 - builds on [prey-guilds.md](prey-guilds.md) (which proves which trade-offs hold niches) and [honest-budgets.md](honest-budgets.md) (which fixes energy conservation and juvenile survival)
+**Priority:** 32 - builds on [prey-guilds.md](prey-guilds.md) (which proves which trade-offs hold niches) and [honest-budgets.md](honest-budgets.md) (which fixes energy conservation and juvenile survival)
 **Depends on:** [honest-budgets.md](honest-budgets.md), [prey-guilds.md](prey-guilds.md)
 
 Today an agent's body is locked into one of five static templates (`forager`, `predator`, `reproducer`, `scout`, `defender` in `js/sim/config-defaults.js`). A child inherits its mother's template unless `specMutationRate` (0.02) randomly teleports it into another template while keeping its mother's brain—producing predators with forager hidden weights and preventing smooth evolutionary transitions from omnivore to scavenger, ambush hunter or armoured grazer.
