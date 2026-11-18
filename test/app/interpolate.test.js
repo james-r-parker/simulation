@@ -11,7 +11,6 @@ import {
     interpolateInto,
     lerpAngle,
     shortestArc,
-    simTickAt,
     stepPlayhead,
 } from '../../js/app/interpolate.js';
 import { LANE_KINDS } from './helpers/lane-kinds.js';
@@ -141,10 +140,10 @@ describe('playhead', () => {
                 snaps.latest = makeSnapshot(tick, []);
             }
             alphas.push(stepPlayhead(head, snaps, now));
-            ticks.push(simTickAt(head));
+            ticks.push(head.tick);
             if (snaps.prev !== null) {
-                expect(simTickAt(head)).toBeGreaterThanOrEqual(snaps.prev.tick);
-                expect(simTickAt(head)).toBeLessThanOrEqual(snaps.latest.tick);
+                expect(head.tick).toBeGreaterThanOrEqual(snaps.prev.tick);
+                expect(head.tick).toBeLessThanOrEqual(snaps.latest.tick);
             }
         }
         return { head, alphas, ticks };
@@ -154,13 +153,13 @@ describe('playhead', () => {
         const head = createPlayhead();
         expect(stepPlayhead(head, { prev: null, latest: null }, 0)).toBe(1);
         expect(stepPlayhead(head, { prev: null, latest: a }, 10)).toBe(1);
-        expect(simTickAt(head)).toBe(100);
+        expect(head.tick).toBe(100);
     });
 
     it('sits at alpha 1 when both held snapshots are the same tick', () => {
         const head = createPlayhead();
         expect(stepPlayhead(head, { prev: a, latest: a }, 10)).toBe(1);
-        expect(simTickAt(head)).toBe(100);
+        expect(head.tick).toBe(100);
     });
 
     it('stays between the held snapshots and moves smoothly under regular arrivals', () => {
@@ -188,7 +187,7 @@ describe('playhead', () => {
         stepPlayhead(head, { prev: a, latest: b }, 100);
         stepPlayhead(head, { prev: a, latest: b }, 120);
         expect(stepPlayhead(head, { prev: a, latest: b }, 500)).toBe(1);
-        expect(simTickAt(head)).toBe(108);
+        expect(head.tick).toBe(108);
         const alpha = stepPlayhead(head, { prev: b, latest: c }, 510);
         expect(alpha).toBeGreaterThanOrEqual(0);
         expect(alpha).toBeLessThan(0.5);
@@ -200,7 +199,7 @@ describe('playhead', () => {
         stepPlayhead(head, { prev: a, latest: b }, 100);
         const fresh = makeSnapshot(3, []);
         expect(stepPlayhead(head, { prev: null, latest: fresh }, 110)).toBe(1);
-        expect(simTickAt(head)).toBe(3);
+        expect(head.tick).toBe(3);
     });
 
     it('clamps a stalled frame instead of jumping', () => {
@@ -208,7 +207,7 @@ describe('playhead', () => {
         stepPlayhead(head, { prev: a, latest: b }, 0);
         stepPlayhead(head, { prev: a, latest: b }, 100);
         stepPlayhead(head, { prev: a, latest: b }, 20000);
-        expect(simTickAt(head)).toBeLessThanOrEqual(108);
+        expect(head.tick).toBeLessThanOrEqual(108);
     });
 });
 

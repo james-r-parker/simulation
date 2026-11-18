@@ -291,11 +291,3 @@ export function stepPlayhead(playhead, snapshots, nowMs) {
     playhead.alpha = latest.tick > prev.tick ? (tick - prev.tick) / (latest.tick - prev.tick) : 1;
     return playhead.alpha;
 }
-
-/**
- * @param {Playhead} playhead the playhead
- * @returns {number} the tick that effects are timed by
- */
-export function simTickAt(playhead) {
-    return playhead.tick;
-}

@@ -243,7 +243,7 @@ export function beginEffects(player, { tick, dtMs, nowMs, camera, drawMs = -1, g
  * @param {EffectsPlayer} player the player
  * @param {{u32: Uint32Array, f32: Float32Array, words: number, start: number, count: number}} queue the client's queue
  * @param {import('../interpolate.js').Interpolated} agents the blended agents (a bite starts at the biter's jaw)
- * @param {number} tick the playhead's tick (`simTickAt`)
+ * @param {number} tick the tick of the drawn frame (the playhead's tick when it was asked for)
  * @returns {number} effects played, not counting stale ones
  */
 export function playEffects(player, queue, agents, tick) {

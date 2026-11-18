@@ -374,12 +374,3 @@ export function takeFrame(slots) {
     slot.agents.count = Atomics.load(slot.head, SLOT.COUNT);
     return slot.agents;
 }
-
-/**
- * @param {FrameSlots} slots the frame slots
- * @param {number} bucket a spec bucket
- * @returns {number} the rows the current slot holds for it, 0 before the first take
- */
-export function bucketRows(slots, bucket) {
-    return slots.current === null ? 0 : slots.current.head[SLOT.BUCKETS + bucket];
-}

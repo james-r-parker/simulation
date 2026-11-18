@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-    bucketRows,
     claimFrameSlot,
     createFrameSlots,
     createRequest,
@@ -175,8 +174,7 @@ describe('claimFrameSlot and takeFrame', () => {
         publishFrame(slots, k, 1);
         takeFrame(slots);
         expect(slots.taken).toEqual({ seq: 1, prevSeq: 2, latestSeq: 3, alpha: 0.5, tick: 40.25, nowMs: 1000.5 });
-        expect(bucketRows(slots, 1)).toBe(9);
-        expect(bucketRows(make(), 0)).toBe(0);
+        expect(slots.current?.head[SLOT.BUCKETS + 1]).toBe(9);
     });
 
     it('takes the same slot again when nothing new is published, and says so', () => {
