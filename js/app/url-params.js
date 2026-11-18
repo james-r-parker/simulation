@@ -1,4 +1,4 @@
-// The query-string parameters the page reads: seed, agents, speed, backend, gputime, tv, audio, policy and merit. A value that is missing or
+// The query-string parameters the page reads: seed, agents, speed, backend, gputime, tv, audio, policy, merit and hold. A value that is missing or
 // invalid is ignored (null, or false for a flag), never an error: a bad link still opens the app.
 
 import { TICKS_PER_SECOND_CHOICES } from '../worker/protocol.js';
@@ -17,6 +17,8 @@ export const MAX_AGENTS_PARAM = 4096;
  * @property {boolean} audio start with audio on
  * @property {string | null} policy a registered policy name to preview (dev switch); the worker rejects an unknown one
  * @property {boolean} merit preview in-world merit with the `MERIT_PREVIEW` settings (dev switch)
+ * @property {boolean} hold keep the population at `agents`: the floor refills to it whenever it drops below, so a
+ *   timing run (`perf:browser`) draws that many bodies for its whole window (dev switch)
  */
 
 /**
@@ -95,6 +97,7 @@ export function readParams(search) {
         audio: flagOf(query.get('audio')),
         policy: policyOf(query.get('policy')),
         merit: flagOf(query.get('merit')),
+        hold: flagOf(query.get('hold')),
     };
 }
 
@@ -106,18 +109,21 @@ const DEFAULT_MIN_AGENTS = 100;
 /**
  * @param {Params} params the validated parameters
  * @returns {Record<string, number | boolean>} the config overrides they imply: `agents` sets `initialAgents`, raises
- *   `maxAgents` when it exceeds the default and lowers `minAgents` when it is under the default, and `merit` adds
- *   `MERIT_PREVIEW`; empty when neither is given
+ *   `maxAgents` when it exceeds the default and lowers `minAgents` when it is under the default; `hold` with `agents`
+ *   sets the floor (`minAgents` and `floorTrigger`) to `agents`; `merit` adds `MERIT_PREVIEW`; empty when none is given
  */
-export function configOverrides({ agents, merit }) {
+export function configOverrides({ agents, merit, hold }) {
     const merited = merit ? MERIT_PREVIEW : {};
     if (agents === null) {
         return { ...merited };
     }
+    const floor = hold
+        ? { minAgents: agents, floorTrigger: agents }
+        : { minAgents: Math.min(DEFAULT_MIN_AGENTS, agents) };
     return {
         initialAgents: agents,
         maxAgents: Math.max(DEFAULT_MAX_AGENTS, agents),
-        minAgents: Math.min(DEFAULT_MIN_AGENTS, agents),
+        ...floor,
         ...merited,
     };
 }

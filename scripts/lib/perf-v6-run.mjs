@@ -73,7 +73,8 @@ async function openApp(browser, { viewport, agents }, url) {
     const page = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     await setMeasurementViewport(page, viewport);
     await page.addInitScript(LONG_TASK_SCRIPT);
-    await page.goto(`${url}?agents=${agents}&seed=${SEED}&gputime=1`);
+    // `hold=1`: the floor refills the world to `agents`, so the window draws that many bodies, not a crashing world
+    await page.goto(`${url}?agents=${agents}&seed=${SEED}&gputime=1&hold=1`);
     await page.waitForFunction(
         () => {
             const w = /** @type {any} */ (globalThis);
