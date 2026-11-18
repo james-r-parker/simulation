@@ -1,4 +1,4 @@
-// Where blind biters come from and whether selection removes them (honest-budgets Phase 6, E191). Pure: it reads the lives of
+// Where blind biters come from and whether selection removes them (honest-budgets Phase 6, E192). Pure: it reads the lives of
 // `blind-bite-tracker.js` (ids unique across the pooled runs) and answers four questions: which birth source a hunter comes from
 // and how much of its life it bites at nothing (`bySource`); whether a child bites blindly less than its hunter parent
 // (`parentChild`, `byDepth`); whether the hunters that reproduce bite blindly less than those that do not (`reproducers`); and

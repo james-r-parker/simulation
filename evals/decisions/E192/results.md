@@ -1,4 +1,4 @@
-# E191 - where blind biters come from (honest-budgets Phase 6, T40 as a diagnosis)
+# E192 - where blind biters come from (honest-budgets Phase 6, T40 as a diagnosis)
 
 **Question.** E190 found hunters die of a bite-hold energy drain: they hold `BITE` on most ticks with no body in their jaws,
 and each such tick costs `strikeMissCost`. The first plan for T40 was a screen of a lower strike price. The user withdrew it on
@@ -18,7 +18,7 @@ that matters. A hunter is born with `BITE` weights the tracker reads on its firs
 weight from the strongest prey hit's strength to `BITE`.
 
 **Method.** `node scripts/blind-biters.mjs run --seed <n> --ticks 100000` on the live policy and the defaults
-(`killGorgeShare` 0.4), seeds 1 to 12, one run each (12 parallel processes, detached as `E191-blind2`, about 9 minutes), then
+(`killGorgeShare` 0.4), seeds 1 to 12, one run each (12 parallel processes, detached as `E192-blind2`, about 9 minutes), then
 `node scripts/blind-biters.mjs report <12 files>` (burn-in 10000, juvenile 3000, maturity 600; ids made unique across seeds).
 2254 hunter lives were born after burn-in with a known outcome (a life alive and under 3000 ticks old at the end is censored).
 The tracked lives per seed run from 27 (seed 6) to 583 (seed 11), so the pool is dominated by a few seeds and the lives inside a
