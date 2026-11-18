@@ -8,6 +8,7 @@ import {
     depths,
     parentChild,
     reproducers,
+    unseenShare,
 } from '../../js/evo/blind-bite-lineage.js';
 
 /** @param {number} id @param {Record<string, any>} [over] @returns {Record<string, any>} a life */
@@ -21,6 +22,7 @@ const life = (id, over = {}) => ({
     ticks: 1000,
     hold: 600,
     blind: 500,
+    blindUnseen: 100,
     earlyTicks: 300,
     earlyBlind: 150,
     bias: 0.2,
@@ -163,6 +165,20 @@ describe('biasDrift', () => {
         expect(row.shift).toBeCloseTo(0.5);
         expect(row.step).toBeCloseTo(0);
         expect(biasDrift(all.slice(0, 1), all.slice(0, 1), 'preyBite')).toMatchObject({ pairs: 0, step: 0, shift: 0 });
+    });
+});
+
+describe('pick', () => {
+    it('reads another share through the same functions', () => {
+        const all = /** @type {any[]} */ ([
+            life(1, { blindUnseen: 100 }),
+            life(2, { parentA: 1, blindUnseen: 50 }),
+            life(3, { ticks: 100, blindUnseen: 90 }),
+        ]);
+        expect(parentChild(all, all, 100, unseenShare).childBlind).toBeCloseTo(0.05);
+        expect(byDepth(all, all, unseenShare)['0'].blind).toBeCloseTo((0.1 + 0.9) / 2);
+        expect(reproducers(all, all, 100, unseenShare).parents.meanBlind).toBeCloseTo(0.1);
+        expect(bySource(all, 3000).floor.pooledUnseen).toBeCloseTo(240 / 2100);
     });
 });
 

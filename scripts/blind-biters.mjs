@@ -7,7 +7,16 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { biasDrift, byDepth, bySource, countedLives, parentChild, reproducers } from '../js/evo/blind-bite-lineage.js';
+import {
+    biasDrift,
+    blindShare,
+    byDepth,
+    bySource,
+    countedLives,
+    parentChild,
+    reproducers,
+    unseenShare,
+} from '../js/evo/blind-bite-lineage.js';
 import { createBlindBiteTracker } from '../js/evo/blind-bite-tracker.js';
 import { step } from '../js/sim/step.js';
 import { exitCodeOf, intFlag, parseFlags } from './lib/cli-args.mjs';
@@ -155,12 +164,16 @@ export function reportBlindBiters(argv, print) {
     if (counted.length === 0) {
         throw new Error('no hunter life with a known outcome; run longer than the burn-in');
     }
+    const readings = (/** @type {(l: any) => number} */ pick) => ({
+        parentChild: parentChild(lives, counted, MIN_PARENT_TICKS, pick),
+        byDepth: byDepth(lives, counted, pick),
+        reproducers: reproducers(lives, counted, MATURITY_TICKS, pick),
+    });
     const out = {
         counted: counted.length,
         bySource: bySource(counted, juvenileTicks),
-        parentChild: parentChild(lives, counted, MIN_PARENT_TICKS),
-        byDepth: byDepth(lives, counted),
-        reproducers: reproducers(lives, counted, MATURITY_TICKS),
+        blind: readings(blindShare),
+        unseen: readings(unseenShare),
         biasDrift: { bias: biasDrift(lives, counted, 'bias'), preyBite: biasDrift(lives, counted, 'preyBite') },
     };
     print(
@@ -168,12 +181,18 @@ export function reportBlindBiters(argv, print) {
     );
     print('-- by birth source');
     table(out.bySource, print);
-    print('-- child against its tracked hunter parent');
-    table({ pairs: out.parentChild }, print);
-    print('-- by hunter generation depth');
-    table(out.byDepth, print);
-    print(`-- mature hunters (${MATURITY_TICKS}+ ticks) that were a parent and those that were not`);
-    table(out.reproducers, print);
+    for (const [name, r] of [
+        ['blind (BITE held, empty jaws)', out.blind],
+        ['unseen (blind and no prey in view)', out.unseen],
+    ]) {
+        print(`== ${name}`);
+        print('-- child against its tracked hunter parent');
+        table({ pairs: r.parentChild }, print);
+        print('-- by hunter generation depth');
+        table(r.byDepth, print);
+        print(`-- mature hunters (${MATURITY_TICKS}+ ticks) that were a parent and those that were not`);
+        table(r.reproducers, print);
+    }
     print('-- birth weights, child against hunter parent: the BITE output bias and the prey-to-BITE skip weight');
     table(out.biasDrift, print);
     if (json !== null) {
