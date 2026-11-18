@@ -6,7 +6,7 @@ import { createObserver, observerPhases } from '../evo/observer.js';
 import { SEASONS_PER_YEAR, yearTicks } from '../sim/eras.js';
 import { ZONE_ORIGIN } from '../sim/environment.js';
 import { DEATH_CAUSE, BORN_CAUSE } from '../sim/events.js';
-import { configHash, createConfig, rulesHash } from '../sim/config.js';
+import { configHash, createConfig, fitEventCapacity, rulesHash } from '../sim/config.js';
 import { createRng, fork } from '../sim/rng.js';
 import { createWorld } from '../sim/spawn.js';
 import { SNAPSHOT_FLAG, SNAPSHOT_STATE } from '../sim/snapshot.js';
@@ -56,7 +56,7 @@ export const BASE_TICKS_PER_SECOND = 60;
  * @returns {Run} the run, at tick 0
  */
 export function buildRun({ seed, overrides, createPolicy, log, policyName }) {
-    const config = createConfig({ ...overrides, seed });
+    const config = createConfig(fitEventCapacity({ ...overrides, seed }));
     const observer = createObserver(config, fork(createRng(seed), 'eval'), { lean: true });
     const policy = createPolicy({ config, log, observer, policyName });
     const world = createWorld(config, policy.brain);

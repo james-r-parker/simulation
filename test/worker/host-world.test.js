@@ -32,6 +32,13 @@ function small() {
 }
 
 describe('buildRun', () => {
+    it('fits the event capacity to a cap raised past the default, as `?agents=1000` asks', () => {
+        const overrides = { ...SMALL_CONFIG, maxAgents: 1000 };
+        const run = buildRun({ seed: 3, overrides, createPolicy: noisePolicy, log: LOG });
+        expect(run.config.maxAgents).toBe(1000);
+        expect(run.config.eventCapacity).toBeGreaterThanOrEqual(8 * 1000);
+    });
+
     it('builds a lean observer, which keeps the policy core and the panels counters', () => {
         const run = small();
         expect(run.observer.lean).toBe(true);
