@@ -55,11 +55,15 @@ describe('dependency rules', () => {
         expect(await violations('app-ok')).toEqual([]);
     });
 
+    it('accepts a js/app module importing js/worker/snapshot-ring.js', async () => {
+        expect(await violations('app-ring')).toEqual([]);
+    });
+
     it('rejects a js/app module importing js/sim', async () => {
         expect(await violations('app-sim')).toContain('app-boundary');
     });
 
-    it('rejects a js/app module importing a js/worker module other than the protocol', async () => {
+    it('rejects a js/app module importing a js/worker module other than the protocol and the snapshot ring', async () => {
         expect(await violations('app-worker')).toContain('app-boundary');
     });
 

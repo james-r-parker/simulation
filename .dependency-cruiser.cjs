@@ -21,10 +21,10 @@ module.exports = {
         {
             name: 'app-boundary',
             comment:
-                'js/app/ imports js/app/, npm packages and js/worker/protocol.js only: never the sim, the evolution code or the worker.',
+                'js/app/ imports js/app/, npm packages, js/worker/protocol.js and js/worker/snapshot-ring.js only: never the sim, the evolution code or the rest of the worker.',
             severity: 'error',
             from: { path: '^js/app/' },
-            to: { path: '^js/(sim|evo|worker)/', pathNot: '^js/worker/protocol\\.js$' },
+            to: { path: '^js/(sim|evo|worker)/', pathNot: '^js/worker/(protocol|snapshot-ring)\\.js$' },
         },
         {
             name: 'app-webgpu-only',
