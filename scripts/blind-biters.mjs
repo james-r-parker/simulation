@@ -1,4 +1,4 @@
-// Where blind biters come from (honest-budgets Phase 6, E191; `js/evo/blind-bite-tracker.js`, `js/evo/blind-bite-lineage.js`).
+// Where blind biters come from (honest-budgets Phase 6, E192; `js/evo/blind-bite-tracker.js`, `js/evo/blind-bite-lineage.js`).
 //   node scripts/blind-biters.mjs run --seed <n> [--ticks <t>] [--out <dir>] [--policy <name>] [--config <file.json>]
 //     replays the seed through `runReplay` with a tracker on every step and writes `<out>/blind-<seed>.json` (the hunters'
 //     lives: birth source, parents, blind-bite ticks, the BITE weights they were born with); the sim is unchanged.

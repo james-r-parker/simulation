@@ -1,4 +1,4 @@
-// Per-life blind-bite accounting for the hunters of a running world (honest-budgets Phase 6, E191). Each tick after the step it
+// Per-life blind-bite accounting for the hunters of a running world (honest-budgets Phase 6, E192). Each tick after the step it
 // reads every alive hunter: a tick with `BITE` above 0 is a bite-hold tick, and one with no body in the jaws (`jawsStamp` is not
 // `world.tick`, as `scene-strike-miss.js` reads it) is a blind tick. A life is keyed by genome id and keeps its parents, birth
 // source, the `BITE` output bias it was born with and its blind share over its first `EARLY_TICKS` ticks. Diagnostic only: it
