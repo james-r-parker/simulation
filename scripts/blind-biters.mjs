@@ -187,10 +187,12 @@ export function reportBlindBiters(argv, print) {
     table(out.bySource, print);
     print('-- by the sign of the BITE output bias a hunter was born with');
     table(out.byBiasSign, print);
-    for (const [name, r] of [
+    /** @type {[string, ReturnType<typeof readings>][]} */
+    const sections = [
         ['blind (BITE held, empty jaws)', out.blind],
         ['unseen (blind and no prey in view)', out.unseen],
-    ]) {
+    ];
+    for (const [name, r] of sections) {
         print(`== ${name}`);
         print('-- child against its tracked hunter parent');
         table({ pairs: r.parentChild }, print);
