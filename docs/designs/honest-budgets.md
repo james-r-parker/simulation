@@ -1,7 +1,7 @@
 # Honest budgets
 
 **Status:** In progress - Phase 1 (patch stock pays for plant food) and Phase 2 (the kill is the body) and Phase 4 (the edge breeds) built in season 10; Phase 3 (impacts, not contact) is parked on E176; Phase 5 (a call changes the bite) is parked on E178; Phase 6 is in progress: its diagnostics (T33 to T33b) are built, the screen (T35) and the 64-seed keep rule (T36) are recorded (E179), and on 2026-11-16 the user adopted `killGorgeShare` 0.4 as a narrow T37 (season 10, unreleased) despite the unmet Done-when row; Phase 6 stays open for the juvenile, territory and split-energy levers (T39), and T36a is not run.
-**Validated:** 2fc8f7f5 (2026-11-15)
+**Validated:** 390acd9a (2026-11-18)
 **Priority:** 3 - the 128-seed read of [review-2026-11-11.md](../review-2026-11-11.md): most seeds boom to the cap and fall under 40 while food never runs short, so every scene that needs a standing prey population is tuned on top of the crash; food, the kill and the rocks come before any skill, refuge or call work
 **Depends on:** [metric-trust.md](metric-trust.md)
 
@@ -309,7 +309,7 @@ stays", [principles.md](../principles.md)) and on the scavenge scene (`eval.hunt
 re-pinned in their own commit. T36a (no-rescue, held-out confirmation with lever ablations) is **not run** for this
 adoption: it exists to confirm a recruitment finalist, and this lever does not claim to fix recruitment (the juvenile death
 share does not move), so there is nothing for it to confirm; it is owed by whatever finalist T39 names. T39 is the next step:
-a new recruitment screen without `specFlipNoHunt`, on the new defaults. The shared baseline (`evals/power/defaults-floor-on-E187.json`) carries the old `rulesHash`, so `npm run baseline:status` reads STALE: T39 re-records it on the 0.4 defaults before writing its prediction. The T38 review of this narrow adoption was run on the PR.
+a new recruitment screen without `specFlipNoHunt`, on the new defaults. The shared baseline was re-recorded on the 0.4 defaults as E188 (`evals/power/defaults-floor-on-E188.json`, `npm run baseline:status` current at 390acd9a), so T39 writes its prediction against it without a re-record. The T38 review of this narrow adoption was run on the PR.
 
 T36a confirms recruitment with floor/reseeding disabled and initial founders labelled separately, on held-out seeds for at least two full seasons and two descendant generations where present. An extinct run remains a failure, not a censored success. Compare the finalist, control and single-lever ablations; preserve the existing 64-seed keep rule. A hunter that lives longer without replacing itself does not establish a sustainable lineage. Record clips of a first kill, a surviving family and an unsuccessful chase abandoned; absent scenes remain open findings.
 
