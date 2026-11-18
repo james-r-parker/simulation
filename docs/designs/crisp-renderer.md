@@ -1,8 +1,6 @@
 # Crisp renderer
 
-**Status:** In progress - Phase 1 code built (T2 to T23 and T25, one pull request): the WebGPU stage, the model catalogue, the clips, every layer, herds blended by slot, the old renderer deleted; T1 and T24 are recorded on the dev machine's Windows Chrome, and every Phase 1 budget is met since the agents are packed in a worker ([pack-worker.md](pack-worker.md)), so Phase 1 is built. Phase 2 (the hunt and the death: hunter model, bite, chase, bumps, death animations) is built in one pull request on the WebGL2 fallback; a real-WebGPU look on the dev machine is still to do.
-**Validated:** 6a245c94 (2026-11-14)
-**Priority:** 1 - the user's brief (2026-11-14): the renderer is the part of the app the user is least happy with, and it changes no sim behaviour, so it is built in its own session beside the eval lanes
+**Status:** Implemented - the WebGPU crisp renderer (WebGL2 fallback): the model catalogue, the clips, every layer, the hunt and the death; every Phase 1 budget is met at 1000 agents with the agents packed in a worker ([pack-worker.md](pack-worker.md)), and the hunt and death looks are checked on real WebGPU.
 
 > Supersedes the drawing parts of [worker-and-renderer.md](worker-and-renderer.md) (Renderer, Look, the Phase 2 budgets, Phases 6 and 7 drawing) and [renderer-event-effects.md](renderer-event-effects.md) (the visual signatures, Ambient layers and Toggles). Their data parts stay: the protocol, the snapshot, interpolation, the effect records, flag edges, body tweens, the effect budget, the director and the audio.
 
@@ -358,6 +356,8 @@ Fourth read on 2026-11-18, after the agents moved into the pack worker ([pack-wo
 
 **Targets:** none - the renderer draws the same world with more of it told; the Phase 1 frame budget must not regress (the same `browser.*` budgets hold, measured in the pull request where Chromium allows)
 
+Checked on real WebGPU on 2026-11-18 (Windows Chrome 157, RTX 4090, 3840x2160, `?agents=1000&hold=1`, zoomed in): the dart, lips, fangs and thrust-driven flagella, the bite contact sparks and ring, the drain motes, the sprint wake, the faint tether, the dying bodies and the refuge ring all draw with no shader error. The one change the check asked for: the lips and flagella drew at about twice the rim width at close zoom, so line parts are capped at `LINE_RIM_SCALE` rims.
+
 **Why.** Three things the user (2026-11-16) wants fixed in one pull request, all drawing only: the hunter reads as one more cell with a mouth; a bite and a chase are told by particles and a tether that is brighter than the cells they join; and a death is a ring and some motes at the place where the body was while the body itself vanishes between two frames. No sim behaviour, `worldHash`, effect record or `rulesHash` changes; every new input is derived on the render side from the snapshot, the effect records and the clock. Nothing is added to the worker protocol.
 
 One branch, `feat/renderer-hunt-and-death`, one commit per task, one pull request. Chunks: A (T27), B (T28 to T30 and T37), C (T31 to T34), D (T35 and T36). A fourth thing was added by the user the same day: bodies that collide or bump read as bodies (T37).
@@ -375,6 +375,8 @@ A raptorial cell: Didinium and Dileptus are the nature reference (a streamlined 
 | `nucleus`            | `circle`                | Set back, as before                                                                                                                        |
 
 `taper` (new, optional, default 0) on the `membrane` primitive scales the half height by `1 + taper * x / rx` along the heading, in `sdf-math.js` and `sdf.js`; `modelBounds` widens by it. The scout keeps its single flagellum and slim round body and the defender its spines, so no specialisation is told apart by colour alone. A new instance input `thrust` (0.3 at rest to 1 at top speed) rides in the free fourth word of the `iCall` lane. `hunt-cues.js` (pure) holds the jaw target from the flags, the jaw easing, the thrust and the sprint amplitude, each unit tested.
+
+A part with `line: true` (the predator's lips and flagella, the scout's flagellum and cilia) is a thin stroke: `paintPart` in `model-material.js` draws it at its own width while that is thin on screen and caps it at `LINE_RIM_SCALE` (1.35) rim widths once the zoom would draw it heavier than the body's outline (`lineHalfWidth`), so close up it reads as line art at the rim's weight. Filled or decorative parts (fangs, spines, organelles) keep their model width.
 
 #### The bite (T29)
 
