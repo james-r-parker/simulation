@@ -15,6 +15,7 @@ import {
     lineageColor,
     LINEAGE_HUES,
     LINEAGE_LUMINANCE,
+    sectorColor,
 } from '../../../js/app/renderer/colors.js';
 import { ciede2000, colorDistance, labHue, luminance, MACHADO, toLab } from './helpers/color-metrics.js';
 
@@ -337,6 +338,24 @@ describe('scenery colours', () => {
 });
 
 describe('lineageColor', () => {
+    it('writes each of the six hue sectors as the original table did', () => {
+        const f = 0.4;
+        const [rise, fall] = [0.3 + 0.7 * f, 1 - 0.7 * f];
+        const table = [
+            [1, rise, 0.3],
+            [fall, 1, 0.3],
+            [0.3, 1, rise],
+            [0.3, fall, 1],
+            [rise, 0.3, 1],
+            [1, 0.3, fall],
+        ];
+        table.forEach((want, sector) => {
+            const out = [0, 0, 0];
+            sectorColor(sector, f, out);
+            expect(out, `sector ${sector}`).toEqual(want);
+        });
+    });
+
     it('matches the table it was first written with, for every sector', () => {
         // the reference: the six-row table lineageColor built per call before it stopped allocating
         const ref = (/** @type {number} */ id) => {

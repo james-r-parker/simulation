@@ -182,7 +182,7 @@ const SECTOR_ROLES = Object.freeze([
  * @param {number[] | Float32Array} out receives r, g, b
  * @returns {void}
  */
-function sectorColor(sector, f, out) {
+export function sectorColor(sector, f, out) {
     const roles = SECTOR_ROLES[sector];
     for (let c = 0; c < 3; c++) {
         const role = roles[c];

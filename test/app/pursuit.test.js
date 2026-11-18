@@ -162,4 +162,17 @@ describe('findPursuits against the naive search', () => {
             expect(got).toEqual(naivePursuits(a));
         }
     });
+
+    it('gives an exact tie to the lower index when the nearer cells are scanned out of index order', () => {
+        // the lower index sits in a later grid row; the far third candidate puts a row edge between the two
+        const a = frameOf([
+            hunter,
+            { ...prey, x: 100, y: 60 },
+            { ...prey, x: 100, y: -60 },
+            { ...prey, x: 100, y: -900 },
+        ]);
+        const out = findPursuits(a, rules, createPursuits());
+        expect(out.count).toBe(1);
+        expect(out.prey[0]).toBe(1);
+    });
 });
