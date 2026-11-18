@@ -27,7 +27,7 @@ Out of scope: any fitness term, any sim rule, any change to `worldHash` of a wor
 A pool is the champions one season holds for seeding.
 
 - **Size.** At most `POOL_PER_SPEC` (10) champions per specialisation per season.
-- **Rank.** `poolRank(row)` orders by the number of exam rows passed ([training-stages.md](training-stages.md), The exam), then by league Elo. A training fitness or a lower bound never enters the rank.
+- **Rank.** `poolRank(row)` orders by the number of drills whose `edgeLow` is above 0 (exam row 3, [training-stages.md](training-stages.md), The exam), then by league Elo; the per-file figures are stored in the row's `exam` JSON. The exam's set-level rows (4, 8 and 9) gate `npm run pool:export` as a whole and never rank a file. A training fitness or a lower bound never enters the rank.
 - **Spread.** `selectPool({ rows, bandOf })` takes rows in rank order and skips a row when its cell already holds `CELL_CAP` (2) pool rows or its style band already holds `POOL_PER_SPEC / STYLE_BANDS` (5) rows of the specialisation. `bandOf` is `styleBandOf` from [champion-export.js](../../js/evo/champion-export.js), injected so `js/library/` imports nothing outside itself.
 - **Bar.** `poolBar(rows)` is, per specialisation, the lowest `exam.reflexScore` and the lowest `exam.drillEdgeLow` among its pool rows. A candidate clears the bar when it is at least both.
 - **Retire.** A row displaced from the pool keeps its row and its file: `in_pool` becomes 0 and `retired_at` is stamped. Nothing is deleted. A retired file stays in git, so a replay of a world seeded from it still resolves.
@@ -166,7 +166,8 @@ On top of [deployment-and-community.md](deployment-and-community.md) Phase 3 (si
 - `js/app/ui/candidates.js` (`mountCandidates`) lists "Found in your world" in the Upload tab (`mountGeneUpload`): name, specialisation, tick, lineage depth, the hint (`clears` or not), and Submit per row. The prompt before the first submit states what is sent (the champion file and its provenance) and that the player's GitHub login is attached.
 - The preference `autoSubmitCandidates` (default `false`, in `js/app/prefs.js`, `sanitizePrefs`) submits a candidate whose hint `clears` once signed in, at most one per hour per page, through the same endpoint, rate limits and Turnstile check as a manual submit (an invisible widget).
 - The upload body is the champion file with the optional key `provenance`. `checkProvenance(provenance, { config })` in `js/library/provenance.js` runs inside `checkUpload` as check 3a: at most `MAX_PROVENANCE_BYTES` (4096) serialised; the keys of the Data table exactly; `seed` a non-negative integer; `rulesHash` equal to the `rulesHash` of the upload's season in `library/seasons.json`; `tick` an integer from 1 to `MAX_REPLAY_TICKS` (100000); `config` an object of keys `createConfig` knows, each valid, with `initialAgents` and `maxAgents` at most 500; `genomeIds` at most 64 non-negative integers; `poolIds` at most 50 content ids; `interventions` 0. Failure is `bad_field` naming `provenance` and the key. `canonicalChampion` ignores `provenance`, so a genome has one id however it is found.
-- The `hint` is stored and shown; no check, rate decision, verdict or admission reads it.
+- The `hint` is stored and shown; no check, rate decision, verdict or admission reads it. It is recomputed against the current pool's `poolBar` before each submit, so a hint made against an older pool is never shown.
+- The "Found in your world" provenance badge on a verified row needs `replayable` true and a confirmed replay; a row verified by the exam and league after a `timeout` or `not_replayable` replay can enter the pool but carries no badge.
 
 #### Re-verification
 
