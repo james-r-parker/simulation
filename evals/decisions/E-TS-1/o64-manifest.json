@@ -1,0 +1,102 @@
+{
+  "gitSha": "26ae0c5137a1659e8ee219b3d54f63ffadce6c20",
+  "commandLine": [
+    "--curriculum",
+    "evals/train-ladder.json",
+    "--until",
+    "habitat",
+    "--generations",
+    "380",
+    "--seed-offset",
+    "64",
+    "--workers",
+    "8",
+    "--out",
+    "/home/j1mb0jay/code/simulation/.sim/train/ladder-1-o64"
+  ],
+  "curriculum": {
+    "file": "evals/train-ladder.json",
+    "hash": "9d012ec743f103729cef2a0f001e99067055f9162c830dcddc4b7df7ba9e85a8"
+  },
+  "options": {
+    "generations": 380,
+    "episodes": 32,
+    "seedOffset": 64,
+    "until": "habitat",
+    "resume": null,
+    "ticks": null,
+    "checkpointEvery": 10
+  },
+  "partitions": {
+    "manifests": [
+      {
+        "partition": "training",
+        "start": 0,
+        "count": 1000000,
+        "scenarioHash": "34b102f8448d01ab"
+      },
+      {
+        "partition": "validation",
+        "start": 1000000,
+        "count": 64,
+        "scenarioHash": "60a06ce0a24999d3"
+      }
+    ],
+    "uses": [
+      {
+        "purpose": "train",
+        "partition": "training"
+      },
+      {
+        "purpose": "gate",
+        "partition": "validation",
+        "generation": 10
+      },
+      {
+        "purpose": "gate",
+        "partition": "validation",
+        "generation": 20
+      },
+      {
+        "purpose": "gate",
+        "partition": "validation",
+        "generation": 30
+      },
+      {
+        "purpose": "gate",
+        "partition": "validation",
+        "generation": 40
+      }
+    ]
+  },
+  "status": "stalled",
+  "generationsDone": 40,
+  "stages": [
+    {
+      "name": "nursery",
+      "rulesHash": "2718046e206ee55f",
+      "generations": 40,
+      "stalledAt": 40
+    },
+    {
+      "name": "hunt-contact",
+      "rulesHash": "7ea2ababc7a13e24"
+    },
+    {
+      "name": "hunt",
+      "rulesHash": "47d9398b1c6ad144"
+    },
+    {
+      "name": "evade",
+      "rulesHash": "e0507b899fecf1b7"
+    },
+    {
+      "name": "arms-race",
+      "rulesHash": "8f069ca3bda8bbab"
+    },
+    {
+      "name": "habitat",
+      "rulesHash": "aba6717f7dc4ebc0"
+    }
+  ]
+}

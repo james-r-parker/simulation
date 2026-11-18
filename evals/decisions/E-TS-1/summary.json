@@ -1,0 +1,656 @@
+{
+ "prediction": "nursery 3/3; hunt-contact >= 2/3; hunt stalls >= 1/3",
+ "offsets": {
+  "0": {
+   "checkpoints": [
+    {
+     "generation": 10,
+     "stage": "nursery",
+     "gate": {
+      "drill.food-ahead.edgeLow": 0.6576,
+      "drill.food-behind.edgeLow": 0.6164
+     },
+     "gatePassed": true,
+     "stagePassed": false,
+     "bestPredator": 3492,
+     "bestForager": 6086,
+     "preyAheadWinShare": 0.0234375,
+     "preyAheadLost": {
+      "never-in-jaws": 124,
+      "prey-died-unkilled": 1
+     },
+     "foodBehindWinShare": 0.73046875,
+     "zeroKillShare": null,
+     "killIncomeShare": 0.3205368343159648,
+     "biteWishPreyInJaws": 0.9883868519358633,
+     "biteOnPreyView": 0.9930628273465889
+    },
+    {
+     "generation": 20,
+     "stage": "nursery",
+     "gate": {
+      "drill.food-ahead.edgeLow": 0.6576,
+      "drill.food-behind.edgeLow": 0.6164
+     },
+     "gatePassed": true,
+     "stagePassed": true,
+     "bestPredator": 7522,
+     "bestForager": 17252,
+     "preyAheadWinShare": 0.0234375,
+     "preyAheadLost": {
+      "never-in-jaws": 124,
+      "prey-died-unkilled": 1
+     },
+     "foodBehindWinShare": 0.73046875,
+     "zeroKillShare": null,
+     "killIncomeShare": 0.3250128752724571,
+     "biteWishPreyInJaws": 0.9875,
+     "biteOnPreyView": 0.9883269620259493
+    },
+    {
+     "generation": 30,
+     "stage": "hunt-contact",
+     "gate": {
+      "drill.prey-ahead.edgeLow": -0.0068
+     },
+     "gatePassed": false,
+     "stagePassed": false,
+     "bestPredator": 7160,
+     "bestForager": 17252,
+     "preyAheadWinShare": 0.0234375,
+     "preyAheadLost": {
+      "never-in-jaws": 124,
+      "prey-died-unkilled": 1
+     },
+     "foodBehindWinShare": 0.73046875,
+     "zeroKillShare": 0.8214285714285715,
+     "killIncomeShare": 0.4644888486492028,
+     "biteWishPreyInJaws": 0.9380908248378128,
+     "biteOnPreyView": 0.9937326821939158
+    },
+    {
+     "generation": 40,
+     "stage": "hunt-contact",
+     "gate": {
+      "drill.prey-ahead.edgeLow": -0.0068
+     },
+     "gatePassed": false,
+     "stagePassed": false,
+     "bestPredator": 7675,
+     "bestForager": 17252,
+     "preyAheadWinShare": 0.0234375,
+     "preyAheadLost": {
+      "never-in-jaws": 124,
+      "prey-died-unkilled": 1
+     },
+     "foodBehindWinShare": 0.73046875,
+     "zeroKillShare": 0.5,
+     "killIncomeShare": 0.44482684801488415,
+     "biteWishPreyInJaws": 0.973531100155332,
+     "biteOnPreyView": 0.9934699477014717
+    },
+    {
+     "generation": 50,
+     "stage": "hunt-contact",
+     "gate": {
+      "drill.prey-ahead.edgeLow": -0.0068
+     },
+     "gatePassed": false,
+     "stagePassed": false,
+     "bestPredator": 7675,
+     "bestForager": 17252,
+     "preyAheadWinShare": 0.0234375,
+     "preyAheadLost": {
+      "never-in-jaws": 124,
+      "prey-died-unkilled": 1
+     },
+     "foodBehindWinShare": 0.73046875,
+     "zeroKillShare": 1,
+     "killIncomeShare": 0.41058475022992424,
+     "biteWishPreyInJaws": 0.9525603888452474,
+     "biteOnPreyView": 0.9897971454234178
+    },
+    {
+     "generation": 60,
+     "stage": "hunt-contact",
+     "gate": {
+      "drill.prey-ahead.edgeLow": -0.0068
+     },
+     "gatePassed": false,
+     "stagePassed": false,
+     "bestPredator": 12266,
+     "bestForager": 17252,
+     "preyAheadWinShare": 0.0234375,
+     "preyAheadLost": {
+      "never-in-jaws": 123,
+      "prey-died-unkilled": 2
+     },
+     "foodBehindWinShare": 0.73046875,
+     "zeroKillShare": 1,
+     "killIncomeShare": 0.4211424321768602,
+     "biteWishPreyInJaws": 0.9746242132702235,
+     "biteOnPreyView": 0.9890090918968409
+    },
+    {
+     "generation": 70,
+     "stage": "hunt-contact",
+     "gate": {
+      "drill.prey-ahead.edgeLow": -0.0068
+     },
+     "gatePassed": false,
+     "stagePassed": false,
+     "bestPredator": 12266,
+     "bestForager": 17252,
+     "preyAheadWinShare": 0.0234375,
+     "preyAheadLost": {
+      "never-in-jaws": 123,
+      "prey-died-unkilled": 2
+     },
+     "foodBehindWinShare": 0.73046875,
+     "zeroKillShare": 0.7916666666666666,
+     "killIncomeShare": 0.4308343748722624,
+     "biteWishPreyInJaws": 0.9874270630730759,
+     "biteOnPreyView": 0.9941907997784275
+    },
+    {
+     "generation": 80,
+     "stage": "hunt-contact",
+     "gate": {
+      "drill.prey-ahead.edgeLow": -0.0068
+     },
+     "gatePassed": false,
+     "stagePassed": false,
+     "bestPredator": 12266,
+     "bestForager": 17252,
+     "preyAheadWinShare": 0.0234375,
+     "preyAheadLost": {
+      "never-in-jaws": 123,
+      "prey-died-unkilled": 2
+     },
+     "foodBehindWinShare": 0.73046875,
+     "zeroKillShare": 0.3333333333333333,
+     "killIncomeShare": 0.4226896218781853,
+     "biteWishPreyInJaws": 0.9515678060457607,
+     "biteOnPreyView": 0.9947079134688139
+    }
+   ],
+   "crossplay": {
+    "trials": 64,
+    "hunterProgress": {
+     "progress": -0.037946428571428575,
+     "low": -0.07508206668870371
+    },
+    "preyProgress": {
+     "progress": 0,
+     "low": -0.050636326321494035
+    },
+    "cycleShare": 0.14285714285714285,
+    "lastRowKills": [
+     5,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    "lastRowPackKills": [
+     13,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   }
+  },
+  "64": {
+   "checkpoints": [
+    {
+     "generation": 10,
+     "stage": "nursery",
+     "gate": {
+      "drill.food-ahead.edgeLow": 0.6576,
+      "drill.food-behind.edgeLow": 0.464
+     },
+     "gatePassed": true,
+     "stagePassed": false,
+     "bestPredator": 4866,
+     "bestForager": 4434,
+     "preyAheadWinShare": 0,
+     "preyAheadLost": {
+      "never-in-jaws": 64
+     },
+     "foodBehindWinShare": 0.62109375,
+     "zeroKillShare": null,
+     "killIncomeShare": 0.3422092972697757,
+     "biteWishPreyInJaws": 0.9849595992607285,
+     "biteOnPreyView": 0.9817498506299148
+    },
+    {
+     "generation": 20,
+     "stage": "nursery",
+     "gate": {
+      "drill.food-ahead.edgeLow": 0.6576,
+      "drill.food-behind.edgeLow": 0.2391
+     },
+     "gatePassed": false,
+     "stagePassed": false,
+     "bestPredator": -340,
+     "bestForager": 12402,
+     "preyAheadWinShare": 0,
+     "preyAheadLost": {
+      "never-in-jaws": 61,
+      "never-bit": 3
+     },
+     "foodBehindWinShare": 0.41796875,
+     "zeroKillShare": null,
+     "killIncomeShare": 0.27401534925296417,
+     "biteWishPreyInJaws": 0.988818330362448,
+     "biteOnPreyView": 0.988175984745297
+    },
+    {
+     "generation": 30,
+     "stage": "nursery",
+     "gate": {
+      "drill.food-ahead.edgeLow": 0.6576,
+      "drill.food-behind.edgeLow": 0.2391
+     },
+     "gatePassed": false,
+     "stagePassed": false,
+     "bestPredator": -392,
+     "bestForager": 12402,
+     "preyAheadWinShare": 0,
+     "preyAheadLost": {
+      "never-in-jaws": 125,
+      "never-bit": 3
+     },
+     "foodBehindWinShare": 0.41796875,
+     "zeroKillShare": null,
+     "killIncomeShare": 0.3516113724190184,
+     "biteWishPreyInJaws": 0.9774473378086551,
+     "biteOnPreyView": 0.9869695437173994
+    },
+    {
+     "generation": 40,
+     "stage": "nursery",
+     "gate": {
+      "drill.food-ahead.edgeLow": 0.6576,
+      "drill.food-behind.edgeLow": 0.2391
+     },
+     "gatePassed": false,
+     "stagePassed": false,
+     "bestPredator": -232,
+     "bestForager": 12402,
+     "preyAheadWinShare": 0,
+     "preyAheadLost": {
+      "never-in-jaws": 125,
+      "never-bit": 3
+     },
+     "foodBehindWinShare": 0.41796875,
+     "zeroKillShare": 1,
+     "killIncomeShare": 0.2966818544232383,
+     "biteWishPreyInJaws": 0.9854651162790697,
+     "biteOnPreyView": 0.9918727964290079
+    }
+   ],
+   "crossplay": {
+    "trials": 64,
+    "hunterProgress": {
+     "progress": -0.03645833333333333,
+     "low": -0.11748703357514442
+    },
+    "preyProgress": {
+     "progress": 0.02083333333333333,
+     "low": -0.058534052121895955
+    },
+    "cycleShare": 0,
+    "lastRowKills": [
+     6,
+     4,
+     4,
+     4
+    ],
+    "lastRowPackKills": [
+     4,
+     23,
+     23,
+     23
+    ]
+   }
+  },
+  "128": {
+   "checkpoints": [
+    {
+     "generation": 10,
+     "stage": "nursery",
+     "gate": {
+      "drill.food-ahead.edgeLow": 0.6576,
+      "drill.food-behind.edgeLow": 0.544
+     },
+     "gatePassed": true,
+     "stagePassed": false,
+     "bestPredator": 8406,
+     "bestForager": 11624,
+     "preyAheadWinShare": 0,
+     "preyAheadLost": {
+      "never-in-jaws": 128
+     },
+     "foodBehindWinShare": 0.68359375,
+     "zeroKillShare": null,
+     "killIncomeShare": 0.3166836411879097,
+     "biteWishPreyInJaws": 0.9499330035044321,
+     "biteOnPreyView": 0.9648205859729013
+    },
+    {
+     "generation": 20,
+     "stage": "nursery",
+     "gate": {
+      "drill.food-ahead.edgeLow": 0.6576,
+      "drill.food-behind.edgeLow": 0.523
+     },
+     "gatePassed": true,
+     "stagePassed": true,
+     "bestPredator": 8821,
+     "bestForager": 16044,
+     "preyAheadWinShare": 0,
+     "preyAheadLost": {
+      "never-in-jaws": 128
+     },
+     "foodBehindWinShare": 0.66796875,
+     "zeroKillShare": null,
+     "killIncomeShare": 0.3081202460073627,
+     "biteWishPreyInJaws": 0.927727301258513,
+     "biteOnPreyView": 0.9704995211604545
+    },
+    {
+     "generation": 30,
+     "stage": "hunt-contact",
+     "gate": {
+      "drill.prey-ahead.edgeLow": -0.0148
+     },
+     "gatePassed": false,
+     "stagePassed": false,
+     "bestPredator": 18403,
+     "bestForager": 16044,
+     "preyAheadWinShare": 0,
+     "preyAheadLost": {
+      "never-in-jaws": 127,
+      "prey-died-unkilled": 1
+     },
+     "foodBehindWinShare": 0.66796875,
+     "zeroKillShare": 0.8333333333333333,
+     "killIncomeShare": 0.42217464889196377,
+     "biteWishPreyInJaws": 0.9745272601794341,
+     "biteOnPreyView": 0.9308403616535651
+    },
+    {
+     "generation": 40,
+     "stage": "hunt-contact",
+     "gate": {
+      "drill.prey-ahead.edgeLow": -0.0148
+     },
+     "gatePassed": false,
+     "stagePassed": false,
+     "bestPredator": 26360,
+     "bestForager": 16044,
+     "preyAheadWinShare": 0,
+     "preyAheadLost": {
+      "never-in-jaws": 126,
+      "prey-died-unkilled": 2
+     },
+     "foodBehindWinShare": 0.66796875,
+     "zeroKillShare": 0.3,
+     "killIncomeShare": 0.3960052272056673,
+     "biteWishPreyInJaws": 0.9459083430120016,
+     "biteOnPreyView": 0.9356008063928434
+    },
+    {
+     "generation": 50,
+     "stage": "hunt-contact",
+     "gate": {
+      "drill.prey-ahead.edgeLow": -0.0148
+     },
+     "gatePassed": false,
+     "stagePassed": false,
+     "bestPredator": 26360,
+     "bestForager": 16044,
+     "preyAheadWinShare": 0,
+     "preyAheadLost": {
+      "never-in-jaws": 126,
+      "prey-died-unkilled": 2
+     },
+     "foodBehindWinShare": 0.66796875,
+     "zeroKillShare": 0.6666666666666666,
+     "killIncomeShare": 0.4146078410300018,
+     "biteWishPreyInJaws": 0.8863116197183099,
+     "biteOnPreyView": 0.9594410325273883
+    },
+    {
+     "generation": 60,
+     "stage": "hunt-contact",
+     "gate": {
+      "drill.prey-ahead.edgeLow": -0.0148
+     },
+     "gatePassed": false,
+     "stagePassed": false,
+     "bestPredator": 26360,
+     "bestForager": 16044,
+     "preyAheadWinShare": 0,
+     "preyAheadLost": {
+      "never-in-jaws": 126,
+      "prey-died-unkilled": 2
+     },
+     "foodBehindWinShare": 0.66796875,
+     "zeroKillShare": 0.7892857142857143,
+     "killIncomeShare": 0.4094304675375978,
+     "biteWishPreyInJaws": 0.9305896644436434,
+     "biteOnPreyView": 0.9526205351591024
+    },
+    {
+     "generation": 70,
+     "stage": "hunt-contact",
+     "gate": {
+      "drill.prey-ahead.edgeLow": -0.0148
+     },
+     "gatePassed": false,
+     "stagePassed": false,
+     "bestPredator": 26360,
+     "bestForager": 16044,
+     "preyAheadWinShare": 0,
+     "preyAheadLost": {
+      "never-in-jaws": 126,
+      "prey-died-unkilled": 2
+     },
+     "foodBehindWinShare": 0.66796875,
+     "zeroKillShare": 0.8888888888888888,
+     "killIncomeShare": 0.4204094929069651,
+     "biteWishPreyInJaws": 0.9558207056946977,
+     "biteOnPreyView": 0.9754751386305155
+    },
+    {
+     "generation": 80,
+     "stage": "hunt-contact",
+     "gate": {
+      "drill.prey-ahead.edgeLow": -0.0148
+     },
+     "gatePassed": false,
+     "stagePassed": false,
+     "bestPredator": 26360,
+     "bestForager": 16044,
+     "preyAheadWinShare": 0,
+     "preyAheadLost": {
+      "never-in-jaws": 126,
+      "prey-died-unkilled": 2
+     },
+     "foodBehindWinShare": 0.66796875,
+     "zeroKillShare": 1,
+     "killIncomeShare": 0.40034796698023895,
+     "biteWishPreyInJaws": 0.8243822855016457,
+     "biteOnPreyView": 0.9621022262115492
+    }
+   ],
+   "crossplay": {
+    "trials": 64,
+    "hunterProgress": {
+     "progress": 0.31473214285714285,
+     "low": 0.22450918861291108
+    },
+    "preyProgress": {
+     "progress": 0.0267857142857143,
+     "low": -0.06538056951163629
+    },
+    "cycleShare": 0,
+    "lastRowKills": [
+     46,
+     42,
+     42,
+     42,
+     42,
+     42,
+     42,
+     42
+    ],
+    "lastRowPackKills": [
+     64,
+     64,
+     64,
+     64,
+     64,
+     64,
+     64,
+     64
+    ]
+   }
+  }
+ },
+ "diagnostics": {
+  "note": "archive-79 predator elites and the memoryless reference on prey-ahead and prey-crossing, 64 trials, seed 1000000. none: default config; slow: the hunt-contact stage turnMultiplier 0.5 on the prey specialisations only; sb0.6 and sb0.2: prey sprintBoost 0.6 and 0.2. Not the gate (the gate pools the champions of a drill, 64 trials, seed GATE_SEED, default config).",
+  "drillWins": {
+   "o0.none": {
+    "elite-predator-cell6": {
+     "prey-ahead": "0/64",
+     "prey-crossing": "0/64"
+    },
+    "elite-predator-cell57": {
+     "prey-ahead": "3/64",
+     "prey-crossing": "3/64"
+    },
+    "reference memoryless": {
+     "prey-ahead": "9/64",
+     "prey-crossing": "6/64"
+    }
+   },
+   "o0.slow": {
+    "elite-predator-cell6": {
+     "prey-ahead": "0/64",
+     "prey-crossing": "0/64"
+    },
+    "elite-predator-cell57": {
+     "prey-ahead": "2/64",
+     "prey-crossing": "2/64"
+    },
+    "reference memoryless": {
+     "prey-ahead": "6/64",
+     "prey-crossing": "6/64"
+    }
+   },
+   "o0.sb0.6": {
+    "elite-predator-cell6": {
+     "prey-ahead": "0/64",
+     "prey-crossing": "0/64"
+    },
+    "elite-predator-cell57": {
+     "prey-ahead": "4/64",
+     "prey-crossing": "5/64"
+    },
+    "reference memoryless": {
+     "prey-ahead": "13/64",
+     "prey-crossing": "12/64"
+    }
+   },
+   "o0.sb0.2": {
+    "elite-predator-cell6": {
+     "prey-ahead": "0/64",
+     "prey-crossing": "0/64"
+    },
+    "elite-predator-cell57": {
+     "prey-ahead": "5/64",
+     "prey-crossing": "5/64"
+    },
+    "reference memoryless": {
+     "prey-ahead": "14/64",
+     "prey-crossing": "19/64"
+    }
+   },
+   "o128.none": {
+    "elite-predator-cell5": {
+     "prey-ahead": "0/64",
+     "prey-crossing": "0/64"
+    },
+    "elite-predator-cell56": {
+     "prey-ahead": "0/64",
+     "prey-crossing": "0/64"
+    },
+    "reference memoryless": {
+     "prey-ahead": "9/64",
+     "prey-crossing": "6/64"
+    }
+   },
+   "o128.slow": {
+    "elite-predator-cell5": {
+     "prey-ahead": "0/64",
+     "prey-crossing": "0/64"
+    },
+    "elite-predator-cell56": {
+     "prey-ahead": "0/64",
+     "prey-crossing": "0/64"
+    },
+    "reference memoryless": {
+     "prey-ahead": "6/64",
+     "prey-crossing": "6/64"
+    }
+   },
+   "o128.sb0.6": {
+    "elite-predator-cell5": {
+     "prey-ahead": "0/64",
+     "prey-crossing": "0/64"
+    },
+    "elite-predator-cell56": {
+     "prey-ahead": "0/64",
+     "prey-crossing": "0/64"
+    },
+    "reference memoryless": {
+     "prey-ahead": "13/64",
+     "prey-crossing": "12/64"
+    }
+   },
+   "o128.sb0.2": {
+    "elite-predator-cell5": {
+     "prey-ahead": "2/64",
+     "prey-crossing": "1/64"
+    },
+    "elite-predator-cell56": {
+     "prey-ahead": "0/64",
+     "prey-crossing": "0/64"
+    },
+    "reference memoryless": {
+     "prey-ahead": "14/64",
+     "prey-crossing": "19/64"
+    }
+   }
+  },
+  "probeLearnPreyAhead": "npm run probe:learn -- --lessons prey-ahead --generations 60 --seeds 4 --population 48 --trials 4: best final win share 0.00, 0 of 4 populations at 0.9",
+  "auditChasePredatorForager": {
+   "note": "--trials 4, oracle pursuit, evader breaks; catch share at view share 0.6 over eight bearings",
+   "default": 0,
+   "sprintBoost_0_6": 0.56,
+   "sprintBoost_0_2": 0.75,
+   "straightEvader": 0.88
+  },
+  "closestApproachPreyAhead": "o0 elites vs prey sprintBoost 0.2, median closest approach in summed radii: cell57 3.54, cell6 3.84, memoryless 3.98, random brains 4.06 (touching is 1)"
+ }
+}
