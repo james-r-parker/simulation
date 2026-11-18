@@ -4696,6 +4696,26 @@
       "effect": "no-difference",
       "note": "No eval ran, so no verdict. Control: share of deaths 0.85, 15% of hunters reach 3000 ticks, deaths spread evenly over the window, 45% of juvenile deaths have zero income and starve at about 390 ticks from about 720 birth energy; juveniles hold BITE on 70% of ticks, 61% with nothing in the jaws; misses are 48% and recoil 42% of the bite cost. cub-plant 0.74, strikeMissCost 0 0.63 (reach 3000: 0.27 and 0.40; one run per seed, a lead). Outcome to task: T40 screens strikeMissCost and recoilEnergy as lower-price arms.",
       "reports": ["evals/decisions/E190/results.md"]
+    },
+    {
+      "id": "E191",
+      "date": "2026-11-18",
+      "branch": "feat/honest-budgets-t40",
+      "hypothesis": "Diagnosis after E190 (honest-budgets Phase 6, T40): under Selection rules 1, 4 and 6 a hunter that bites at nothing should starve and its genes die out, so blind biting must be refilled from somewhere: the floor, the archive or a spec-flip putting losing genomes back, split clones carrying hitchhiker weights, mutation noise on the BITE output, or a birth reflex that seeds a BITE bias. The strike-price screen first planned for T40 was withdrawn by the user as a rescue.",
+      "prediction": "Diagnostic, written before the runs: if an outside source refills the map, floor, archive or spec-flip hunters show a higher blind share than split clones and make up a large share of births; if selection is working, the blind share falls from parent to child and across generations, and reproducing hunters bite blindly less than the childless; if a birth reflex seeds it, newborn hunters hold BITE on most ticks from their first ticks whatever their source.",
+      "targets": ["eval.strike_miss_energy_ratio", "eval.hunter_juvenile_death_share"],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "control (defaults, killGorgeShare 0.4), seeds 1 to 12, 100000 ticks, a tracker on every hunter every tick (scripts/blind-biters.mjs), hunters born after tick 10000",
+      "after": "no arm: a diagnosis of the control",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "No eval ran, so no verdict. 2254 hunter lives. Birth sources: split clones 94.5%, spec-flip 5.0%, mate 0.4%, no floor or immigrant hunter; 95% of blind ticks are split clones'. Selection is weak: child below parent in 62% of pairs on the blind share but the unseen blind share (no prey in view) rises 0.26 to 0.35 (child lower in 37.5%), and rises with generation depth 0.25 to 0.37 (confounded by birth tick); only the worst fifth by unseen share is removed (parent share 0.33 against 0.68, reach 3000 ticks 0.11 against 0.28). Refill: applyInstinct silences ALARM, HUNT and SMOKE biases but not BITE; 75% of hunters are born with a BITE bias of exactly 0 and hold BITE on 72% of ticks (33% unseen), against 61% and 21% for the 11% born with a negative bias; mutation moves the bias and the prey-to-BITE skip weight by 0.006 a birth, so clones carry their mother's wiring. Outcome to task: T40 is the diagnosis, T41 proposes hunterBiteBias (a silent BITE at birth, released by prey), not a cheaper strike miss.",
+      "reports": [
+        "evals/decisions/E191/results.md",
+        "evals/decisions/E191/report.txt",
+        "evals/decisions/E191/readings.json"
+      ]
     }
   ]
 }

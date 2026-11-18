@@ -124,7 +124,9 @@ function hunterParents(life, byId, minTicks) {
  */
 export function parentChild(lives, counted, minTicks, pick = blindShare) {
     const byId = indexById(lives);
+    /** @type {number[]} */
     const parent = [];
+    /** @type {number[]} */
     const child = [];
     for (const life of counted) {
         const parents = hunterParents(life, byId, minTicks);
@@ -224,7 +226,9 @@ export function reproducers(lives, counted, maturityTicks, pick = blindShare) {
  */
 export function biasDrift(lives, counted, key) {
     const byId = indexById(lives);
+    /** @type {number[]} */
     const parent = [];
+    /** @type {number[]} */
     const child = [];
     for (const life of counted) {
         const parents = hunterParents(life, byId, 1);
