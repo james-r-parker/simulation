@@ -21,17 +21,17 @@ function fake() {
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
 describe('createGpuTime', () => {
-    it('divides the summed time by the frames drawn since the previous resolve', async () => {
+    it('records each resolve as one frame: three resolves the newest frame of the batch, not a sum', async () => {
         const f = fake();
         const timer = createGpuTime(f.renderer);
         timer.end();
         timer.end();
         timer.end();
         timer.poll();
-        f.settle(6);
+        f.settle(2.2);
         await tick();
-        expect(timer.latest()).toBe(2);
-        expect(Array.from(timer.samples())).toEqual([2]);
+        expect(timer.latest()).toBe(2.2);
+        expect(Array.from(timer.samples())).toEqual([2.2]);
     });
 
     it('keeps one resolve in flight and skips a poll with no frame drawn', async () => {
