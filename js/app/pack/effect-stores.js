@@ -42,3 +42,13 @@ export function createEffectStores(memory, capacity) {
     }
     return build(createLanes(memory).alloc, capacity);
 }
+
+/**
+ * Builds a world's effect stores over a new shared buffer.
+ * @param {number} capacity the most slots (`maxAgents`)
+ * @returns {ReturnType<typeof build> & {memory: SharedArrayBuffer}} the stores and the buffer to send the pack worker
+ */
+export function createWorldStores(capacity) {
+    const memory = new SharedArrayBuffer(effectStoreBytes(capacity));
+    return { memory, ...createEffectStores(memory, capacity) };
+}

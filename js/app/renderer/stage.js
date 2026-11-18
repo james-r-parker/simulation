@@ -28,10 +28,13 @@ import { backendOf, chooseBackend, configureRenderer, lossVerdict, stageOptions 
  * What a layer reads each frame. The caller owns one object and rewrites it; nothing here is allocated per frame.
  * @typedef {object} Frame
  * @property {number} alpha blend factor between the two held snapshots
- * @property {number} tick the playhead's tick (`simTickAt`)
+ * @property {number} tick the render tick of the drawn frame (the playhead's tick when it was asked for)
  * @property {number} nowMs wall time
  * @property {number} dtMs the frame time
- * @property {import('../interpolate.js').Interpolated} agents the blended agents
+ * @property {import('../interpolate.js').Interpolated} agents the blended agents (the pack worker's newest slot)
+ * @property {import('../pack/frame-slots.js').FrameSlot | null} packed that slot, whose bucket rows the agent layer
+ *   copies; null before the worker published one
+ * @property {number} packedSeq the request the slot answers, a new value for each new slot
  * @property {{seq: number, tick: number, u32: Uint32Array, f32: Float32Array} | null} snapshot the newest snapshot (a reused view
  *   of a ring slot: compare `seq`, never the object, and keep nothing of it past the frame)
  * @property {{seq: number, tick: number, u32: Uint32Array, f32: Float32Array} | null} prevSnapshot the older held snapshot

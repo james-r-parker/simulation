@@ -169,18 +169,16 @@ export function createFrameSlots(memory, info) {
 }
 
 /**
- * @param {readonly boolean[] | {temperature: boolean, scent: boolean, territory: boolean, vision: boolean, calls: boolean}} lenses
- *   the frame's lens flags
+ * @param {Record<string, boolean>} lenses the frame's lens flags (`temperature`, `scent`, `territory`, `vision`, `calls`)
  * @returns {number} the lens bits
  */
 export function lensBits(lenses) {
-    const l = /** @type {any} */ (lenses);
     return (
-        (l.temperature ? LENS.TEMPERATURE : 0) |
-        (l.scent ? LENS.SCENT : 0) |
-        (l.territory ? LENS.TERRITORY : 0) |
-        (l.vision ? LENS.VISION : 0) |
-        (l.calls ? LENS.CALLS : 0)
+        (lenses.temperature ? LENS.TEMPERATURE : 0) |
+        (lenses.scent ? LENS.SCENT : 0) |
+        (lenses.territory ? LENS.TERRITORY : 0) |
+        (lenses.vision ? LENS.VISION : 0) |
+        (lenses.calls ? LENS.CALLS : 0)
     );
 }
 

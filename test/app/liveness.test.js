@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createFrameStats } from '../../js/app/frame-stats.js';
+import { createFrameSlots, frameSlotBytes, noteSkipped } from '../../js/app/pack/frame-slots.js';
 import { createAppLiveness, readAppPerf, startReporting } from '../../js/app/liveness.js';
+
+const info = { maxAgents: 4, specs: [{}] };
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -10,8 +13,12 @@ describe('readAppPerf', () => {
             stats: createFrameStats(),
             supervisor: { client: () => null },
             deps: { refs: { player: null } },
+            loop: { lateFrames: () => 0 },
+            pack: { slots: () => null },
         };
         expect(readAppPerf(app)).toMatchObject({
+            lateFrames: 0,
+            skippedPacks: 0,
             worker: null,
             gpu: { geometries: 0, textures: 0, programs: 0 },
             gpuSamples: null,
@@ -24,9 +31,15 @@ describe('readAppPerf', () => {
         vi.stubGlobal('performance', { memory: { usedJSHeapSize: 1234 } });
         const worker = { tick: 7 };
         const gpuSamples = new Float64Array([1, 2]);
+        const frameSlots = createFrameSlots(new SharedArrayBuffer(frameSlotBytes(info)), info);
+        noteSkipped(frameSlots);
+        noteSkipped(frameSlots);
+        const slots = () => frameSlots;
         const app = {
             stats: createFrameStats(),
             supervisor: { client: () => ({ stats: worker }) },
+            loop: { lateFrames: () => 3 },
+            pack: { slots },
             deps: {
                 refs: { player: null },
                 scene: {
@@ -47,6 +60,8 @@ describe('readAppPerf', () => {
             gpu: { geometries: 3, textures: 4, programs: 1 },
             gpuSamples,
             heapBytes: 1234,
+            lateFrames: 3,
+            skippedPacks: 2,
             fx: null,
             drawCalls: 5,
         });

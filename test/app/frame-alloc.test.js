@@ -105,37 +105,16 @@ describe('per-frame scratch reuse', () => {
 });
 
 describe('per-frame scratch reuse in the crisp layers', () => {
-    it('the agent rig and the herd pack hand applyClip one scratch per module, frame after frame', async () => {
-        const { createAgentDraw } = await import('../../js/app/renderer/agent-draw.js');
+    it('the pack host agent rig and the herd pack hand applyClip one scratch per module, request after request', async () => {
+        const { packRig } = await import('./helpers/pack-rig.js');
         const { createHerdDraw } = await import('../../js/app/renderer/herd-draw.js');
-        const { createFamilySlots } = await import('../../js/app/family-slots.js');
         const ready = smallReady(20);
-        const agents = createInterpolated(ready.info.maxAgents);
-        interpolateInto(null, ready.snapshot, 1, agents);
-        const camera = createCameraController({
-            canvas: { width: 800, height: 600 },
-            world: { width: ready.info.worldWidth, height: ready.info.worldHeight },
-        });
-        const frame = /** @type {any} */ ({
-            agents,
-            camera,
-            family: createFamilySlots(),
-            lenses: {},
-            nowMs: 0,
-            dtMs: 16,
-            tick: 1,
-            alpha: 1,
-        });
-        const layer = createAgentDraw({
-            info: ready.info,
-            flagBits: ready.layout.flags,
-            stateBits: ready.layout.stateBits,
-        });
+        const rig = packRig(ready);
         seen.clips.length = 0;
-        layer.update?.(frame);
-        frame.nowMs = 16;
-        layer.update?.(frame);
-        expect(seen.clips.length).toBeGreaterThan(agents.count);
+        // the rig runs in the pack host now: two requests rig every row twice
+        rig.produce();
+        rig.produce({ nowMs: 16 });
+        expect(seen.clips.length).toBeGreaterThan(ready.snapshot.u32[1]);
         expect(new Set(seen.clips).size).toBe(1);
         const herds = createHerdDraw({ info: { herdMax: 4, herdRadius: 80, herdRunSpeed: 6 } });
         seen.clips.length = 0;

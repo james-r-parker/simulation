@@ -104,7 +104,7 @@ export function uploadInstances(instances, count) {
 
 /**
  * Takes rows that are already interleaved (a pack worker's frame slot): copies the first `count` of them into the
- * buffer and marks only those rows for upload.
+ * buffer and marks only those rows for upload. Allocates nothing.
  * @param {Instances} instances the instances
  * @param {Float32Array} rows interleaved rows of `instances.stride` floats, `count` or more
  * @param {number} count the rows to take
@@ -112,8 +112,11 @@ export function uploadInstances(instances, count) {
  */
 export function takeRows(instances, rows, count) {
     const n = Math.min(count, instances.capacity);
-    if (n > 0) {
-        instances.data.set(rows.subarray(0, n * instances.stride));
+    // a loop, not `data.set(rows.subarray(...))`: the view would be an allocation per mesh per frame
+    const floats = n * instances.stride;
+    const { data } = instances;
+    for (let i = 0; i < floats; i++) {
+        data[i] = rows[i];
     }
     markRows(instances, n);
 }

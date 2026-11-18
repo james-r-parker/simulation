@@ -29,19 +29,21 @@ export const SECOND = [
 ];
 
 /**
+ * @param {{ready?: ReturnType<typeof smallReady>, slotBytes?: number}} [options] the world's `ready` fields and the
+ *   bytes of one ring slot (it must hold the snapshots published)
  * @returns {{ringWorld: ReturnType<typeof createRingWorld>, ring: import('../../../js/worker/snapshot-ring.js').Ring,
  *   slots: import('../../../js/app/pack/frame-slots.js').FrameSlots, slotsMemory: SharedArrayBuffer,
  *   storesMemory: SharedArrayBuffer, stores: ReturnType<typeof createEffectStores>,
  *   init: import('../../../js/app/pack/pack-host.js').PackInit,
  *   host: import('../../../js/app/pack/pack-host.js').PackHost}} a ring, frame slots, effect stores and a host
  */
-export function world() {
-    const ringWorld = createRingWorld({ effectsAt: 0, words: 8, slotBytes: SLOT_BYTES });
-    const slotsMemory = new SharedArrayBuffer(frameSlotBytes(info));
-    const slots = createFrameSlots(slotsMemory, info);
-    const storesMemory = new SharedArrayBuffer(effectStoreBytes(info.maxAgents));
-    const stores = createEffectStores(storesMemory, info.maxAgents);
-    const init = { info, layout: READY.layout, ring: ringWorld.ring, slots, stores, causeNames: CAUSES };
+export function world({ ready = READY, slotBytes = SLOT_BYTES } = {}) {
+    const ringWorld = createRingWorld({ effectsAt: 0, words: 8, slotBytes });
+    const slotsMemory = new SharedArrayBuffer(frameSlotBytes(ready.info));
+    const slots = createFrameSlots(slotsMemory, ready.info);
+    const storesMemory = new SharedArrayBuffer(effectStoreBytes(ready.info.maxAgents));
+    const stores = createEffectStores(storesMemory, ready.info.maxAgents);
+    const init = { info: ready.info, layout: ready.layout, ring: ringWorld.ring, slots, stores, causeNames: CAUSES };
     return {
         ringWorld,
         ring: ringWorld.ring,
