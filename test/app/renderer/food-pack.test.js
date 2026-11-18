@@ -48,6 +48,13 @@ describe('packFood', () => {
     it('turns neighbours differently but each spot the same every frame', () => {
         expect(spotHash(1, 2)).toBe(spotHash(1, 2));
         expect(spotHash(1, 2)).not.toBe(spotHash(2, 1));
+        const values = Array.from({ length: 4000 }, (_, k) => spotHash((k % 80) * 37.5, Math.floor(k / 80) * 41.25));
+        expect(Math.min(...values)).toBeGreaterThanOrEqual(0);
+        expect(Math.max(...values)).toBeLessThan(1);
+        const mean = values.reduce((a, b) => a + b, 0) / values.length;
+        expect(mean).toBeGreaterThan(0.45);
+        expect(mean).toBeLessThan(0.55);
+        expect(new Set(values.map((v) => Math.floor(v * 10))).size).toBe(10);
     });
 
     it('colours a plant from a hue table within 0.002 of the exact display colour', () => {

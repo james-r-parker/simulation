@@ -76,8 +76,12 @@ function plantColor(table, hue, rgb) {
  * @returns {number} a stable pseudo-random value in 0 to 1 for the spot
  */
 export function spotHash(x, y) {
-    const h = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-    return h - Math.floor(h);
+    // integer mixing of the spot quantised to 1/16 unit: no trigonometry, which for large arguments cost a third of
+    // packFood at 3600 items
+    let h = Math.imul(Math.round(x * 16), 0x27d4eb2d) ^ Math.imul(Math.round(y * 16), 0x165667b1);
+    h = Math.imul(h ^ (h >>> 15), 0x85ebca6b);
+    h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
 /**
