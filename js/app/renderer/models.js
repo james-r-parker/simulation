@@ -146,6 +146,7 @@ const lip = (name, { start, bind }) => ({
     pivot: JAW_PIVOT,
     bind,
     style: 'solid',
+    line: true,
 });
 
 /**
@@ -181,6 +182,7 @@ const tails = () => [
         width: 0.045,
         at: [0, 0.16],
         style: 'solid',
+        line: true,
     },
     {
         name: 'tailB',
@@ -193,6 +195,7 @@ const tails = () => [
         width: 0.045,
         at: [0, -0.16],
         style: 'solid',
+        line: true,
     },
 ];
 
@@ -223,6 +226,7 @@ export const AGENT_MODELS = Object.freeze({
             phase: WAVE,
             width: 0.05,
             style: 'solid',
+            line: true,
         },
         {
             name: 'ciliumUp',
@@ -233,6 +237,7 @@ export const AGENT_MODELS = Object.freeze({
             pivot: [0.65, 0.08],
             bind: 'limbA',
             style: 'solid',
+            line: true,
         },
         {
             name: 'ciliumDown',
@@ -243,6 +248,7 @@ export const AGENT_MODELS = Object.freeze({
             pivot: [0.65, -0.08],
             bind: 'limbB',
             style: 'solid',
+            line: true,
         },
         membrane({ rx: 0.75, ry: 0.42, amp: 0.03, lobes: 6 }),
         nucleus(0.15, 0.1),
