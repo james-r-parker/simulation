@@ -98,6 +98,8 @@ const SERIES_FIELDS = [
     'diversity',
     'specMask',
     'archiveAgents',
+    'foodEnergyTotal',
+    'agentTicksTotal',
 ];
 
 const BORN_CAUSES = Object.keys(BORN_CAUSE).length;
