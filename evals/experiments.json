@@ -4696,6 +4696,22 @@
       "effect": "no-difference",
       "note": "No eval ran, so no verdict. Control: share of deaths 0.85, 15% of hunters reach 3000 ticks, deaths spread evenly over the window, 45% of juvenile deaths have zero income and starve at about 390 ticks from about 720 birth energy; juveniles hold BITE on 70% of ticks, 61% with nothing in the jaws; misses are 48% and recoil 42% of the bite cost. cub-plant 0.74, strikeMissCost 0 0.63 (reach 3000: 0.27 and 0.40; one run per seed, a lead). Outcome to task: T40 screens strikeMissCost and recoilEnergy as lower-price arms.",
       "reports": ["evals/decisions/E190/results.md"]
+    },
+    {
+      "id": "E191",
+      "date": "2026-11-18",
+      "branch": "feat/training-stages-ets1",
+      "hypothesis": "E-TS-1 (training-stages Phase 6): the stage ladder of evals/train-ladder.json trains its first stages on three offsets; nursery passes and hunt-contact passes because prey with turnMultiplier 0.5 give the contact the T20 trace found missing.",
+      "prediction": "Written before the run: nursery passes on 3 of 3 offsets; hunt-contact passes on at least 2 of 3; hunt stalls on at least 1 of 3. Falsified for hunt-contact when it stalls on 2 of 3.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "none (the run judges the ladder, not a skill)",
+      "after": "npm run train -- --curriculum evals/train-ladder.json --until habitat --generations 380 --seed-offset <k> --workers 8, k = 0, 64, 128, from main 26ae0c51; gates read 64 trials on the validation partition every 10 generations",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "No eval ran, so no verdict. All three runs exited 3 (TrainStageStalled). nursery passed on offsets 0 and 128 (generation 20) and regressed on offset 64 (food-behind edgeLow 0.464 at generation 10, 0.239 from 20 to 40, bar 0.3): falsified. hunt-contact stalled on offsets 0 and 128 at 80 generations (prey-ahead edgeLow -0.0068 and -0.0148, bar 0.001; lost trials never-in-jaws 123 and 126): falsified. hunt not reached: undecided. Diagnosis: the gate drill runs on the default world against a scripted sprinting fleer while the stage trains on brain-driven prey that do not flee; offset 128's hunter kills the stage's foragers 42 of 64 and wins 0 of 64 against the fleer, and a slowed prey turn does not help (the oracle's catch share at 0.6 of the view is 0.00 on the defaults and 0.56 only when the prey's sprint is cut). Offset 0 never found contact (cross-play 1 of 64). train:exam does not exist on main: not run. Outcome to task: T33 to T38 in training-stages.md Phase 6.",
+      "reports": ["evals/decisions/E-TS-1/results.md", "evals/decisions/E-TS-1/summary.json"]
     }
   ]
 }
