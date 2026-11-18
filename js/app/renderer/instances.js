@@ -26,6 +26,7 @@ const INDEX = new Uint16Array([0, 1, 2, 0, 2, 3]);
  * @property {any} buffer the `InstancedInterleavedBuffer` over `data`
  * @property {number} stride floats per interleaved row
  * @property {number} capacity the most instances
+ * @property {any} mesh the mesh `instancedMesh` built over these instances, null before; hidden while it has no rows
  */
 
 /**
@@ -54,7 +55,7 @@ export function createInstances(capacity, names, shared = {}) {
         geometry.setAttribute(name, new InterleavedBufferAttribute(buffer, VEC4, k * VEC4));
     });
     geometry.instanceCount = 0;
-    return { geometry, arrays, lanes: names.map((n) => arrays[n]), data, buffer, stride, capacity };
+    return { geometry, arrays, lanes: names.map((n) => arrays[n]), data, buffer, stride, capacity, mesh: null };
 }
 
 /**
@@ -66,6 +67,10 @@ export function createInstances(capacity, names, shared = {}) {
 export function uploadInstances(instances, count) {
     const n = Math.min(count, instances.capacity);
     instances.geometry.instanceCount = n;
+    if (instances.mesh !== null) {
+        // an empty mesh still costs three its per-object update before the draw is skipped
+        instances.mesh.visible = n > 0;
+    }
     if (n === 0) {
         return;
     }
@@ -90,11 +95,13 @@ export function uploadInstances(instances, count) {
 /**
  * @param {Instances} instances the instances
  * @param {any} material the material
- * @returns {any} a mesh that is never culled
+ * @returns {any} a mesh that is never culled, hidden until `uploadInstances` gives it rows
  */
 export function instancedMesh(instances, material) {
     const mesh = new Mesh(instances.geometry, material);
     mesh.frustumCulled = false;
+    mesh.visible = instances.geometry.instanceCount > 0;
+    instances.mesh = mesh;
     return mesh;
 }
 

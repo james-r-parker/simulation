@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { CARCASS, createFoodPack, FOOD_MIN_PX, packFood, spotHash } from '../../../js/app/renderer/food-pack.js';
+import {
+    CARCASS,
+    createFoodPack,
+    FOOD_MIN_PX,
+    packFood,
+    spotHash,
+    swayFood,
+} from '../../../js/app/renderer/food-pack.js';
 import { NEON, toDisplay } from '../../../js/app/renderer/palette.js';
 import { floraColor } from '../../../js/app/renderer/flora-colors.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
@@ -41,6 +48,13 @@ describe('packFood', () => {
     it('turns neighbours differently but each spot the same every frame', () => {
         expect(spotHash(1, 2)).toBe(spotHash(1, 2));
         expect(spotHash(1, 2)).not.toBe(spotHash(2, 1));
+        const values = Array.from({ length: 4000 }, (_, k) => spotHash((k % 80) * 37.5, Math.floor(k / 80) * 41.25));
+        expect(Math.min(...values)).toBeGreaterThanOrEqual(0);
+        expect(Math.max(...values)).toBeLessThan(1);
+        const mean = values.reduce((a, b) => a + b, 0) / values.length;
+        expect(mean).toBeGreaterThan(0.45);
+        expect(mean).toBeLessThan(0.55);
+        expect(new Set(values.map((v) => Math.floor(v * 10))).size).toBe(10);
     });
 
     it('colours a plant from a hue table within 0.002 of the exact display colour', () => {
@@ -56,5 +70,24 @@ describe('packFood', () => {
             }
         });
         expect(pack.hueTable).toBeInstanceOf(Float32Array);
+    });
+
+    it('sways the packed plants to a later time as a full pack would, and leaves carcasses still', () => {
+        const foods = [
+            [10, 10, 5, 0, 0, 0.1],
+            [20, 30, 4, 0, 3, -0.4],
+            [30, 30, -8, 0.5, 0, 0],
+        ];
+        const swayed = createFoodPack(4);
+        packFood(makeSnapshot(1, [], { foods }), swayed, { zoom: 1, timeSec: 0.2 });
+        swayFood(swayed, 3.7);
+        const fresh = createFoodPack(4);
+        packFood(makeSnapshot(1, [], { foods }), fresh, { zoom: 1, timeSec: 3.7 });
+        for (const k of [0, 3, CARCASS]) {
+            const n = fresh.buckets[k].count * 4;
+            expect(Array.from(swayed.buckets[k].rig0.slice(0, n)).map((v) => v.toFixed(4))).toEqual(
+                Array.from(fresh.buckets[k].rig0.slice(0, n)).map((v) => v.toFixed(4)),
+            );
+        }
     });
 });

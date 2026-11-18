@@ -61,4 +61,15 @@ describe('uploadInstances', () => {
         const inst = createInstances(1, ['iPose']);
         expect(instancedMesh(inst, null).frustumCulled).toBe(false);
     });
+
+    it('hides its mesh while it holds no rows, so three skips the object entirely', () => {
+        const inst = createInstances(2, ['iPose']);
+        const mesh = instancedMesh(inst, null);
+        uploadInstances(inst, 0);
+        expect(mesh.visible).toBe(false);
+        uploadInstances(inst, 1);
+        expect(mesh.visible).toBe(true);
+        uploadInstances(inst, 0);
+        expect(mesh.visible).toBe(false);
+    });
 });

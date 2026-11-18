@@ -76,8 +76,12 @@ function plantColor(table, hue, rgb) {
  * @returns {number} a stable pseudo-random value in 0 to 1 for the spot
  */
 export function spotHash(x, y) {
-    const h = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-    return h - Math.floor(h);
+    // integer mixing of the spot quantised to 1/16 unit: no trigonometry, which for large arguments cost a third of
+    // packFood at 3600 items
+    let h = Math.imul(Math.round(x * 16), 0x27d4eb2d) ^ Math.imul(Math.round(y * 16), 0x165667b1);
+    h = Math.imul(h ^ (h >>> 15), 0x85ebca6b);
+    h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
 /**
@@ -139,4 +143,21 @@ export function packFood(snapshot, pack, { zoom, timeSec }) {
         bucket.rig0[o + 3] = 1;
     }
     return s.foodCount;
+}
+
+/**
+ * Moves the packed plants' sway to `timeSec` without repacking: the only part of a food row that changes between
+ * snapshots. A plant's spot seed is its turn, `pose[2] / 2 pi`; carcasses do not sway.
+ * @param {ReturnType<typeof createFoodPack>} pack the buckets `packFood` filled
+ * @param {number} timeSec wall time
+ * @returns {void}
+ */
+export function swayFood(pack, timeSec) {
+    const base = timeSec * SWAY_HZ * Math.PI * 2;
+    for (let k = 0; k < CARCASS; k++) {
+        const bucket = pack.buckets[k];
+        for (let o = 0; o < bucket.count * ITEM; o += ITEM) {
+            bucket.rig0[o + 2] = SWAY * Math.sin(base + bucket.pose[o + 2]);
+        }
+    }
 }
