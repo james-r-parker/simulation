@@ -2,7 +2,15 @@
 // `window.__perf()`, the long-task observer and a Chromium trace, and builds the baseline entry. Runs only inside a real
 // browser (browser-perf covers it by use), so it is excluded from the unit coverage like the other browser helpers.
 
-import { buildV6Entry, checkRefresh, checkRenderer, GC_TRACE_CATEGORIES, sumGcPauseMs, WARMUP_MS } from './perf-v6.mjs';
+import {
+    buildV6Entry,
+    checkRefresh,
+    checkRenderer,
+    GC_TRACE_CATEGORIES,
+    maxGcPauseMs,
+    sumGcPauseMs,
+    WARMUP_MS,
+} from './perf-v6.mjs';
 
 const READY_TIMEOUT_MS = 60_000;
 const SEED = 1;
@@ -119,6 +127,7 @@ export async function measureV6(browser, options) {
         perf,
         longTaskTimes,
         gcPauseMs: sumGcPauseMs(trace.traceEvents ?? trace),
+        gcPauseMaxMs: maxGcPauseMs(trace.traceEvents ?? trace),
         run: {
             browser: browser.version(),
             gpuAdapter: renderer,
