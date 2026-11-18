@@ -3650,3 +3650,13 @@ Cloudflare Pages applies `public/_headers` only to static files; a Functions res
 - `worker.terminate()` returns before the worker's last writes to shared memory are done: a worker caught mid-pack can store its ring hold after the main thread released it. Release after `terminate()`, and again before the next worker starts.
 - `typed.set(other.subarray(a, b))` creates a view object per call; a per-frame copy of rows in a loop allocates nothing.
 - Three output slots with a published index and a reading index are enough for one writer and one reader: the writer claims the slot that is neither, and the reader re-checks the published index after marking its slot read.
+
+### 2026-11-18 - `eval.hunter_juvenile_death_share` is a share of deaths, and `HunterLedger` bite cost is three costs
+
+The metric (`js/evo/scene-hunter-age.js`) is the share of hunter deaths with age under `juvenileTicks` (3000), over the whole run
+with no burn-in cut. It is a lifespan statistic: 0.86 means a hunter that dies is under 3000 ticks old 86% of the time, not
+that 86% of newborns die before `maturityTicks` (600). `biteCostEnergy` on a `HunterLedger` record adds the landed-bite kick, the
+`recoilEnergy` charged at kin or a too-large target and `strikeMissCost` on every tick `BITE` is held with no body in the jaws,
+so it is 98% of a juvenile hunter's logged spend (the ledger leaves out passive loss) and the log alone cannot split it; the
+`HunterRecoilLife` record gives the recoil part. Hunters hold `BITE` on 60% to 70% of their ticks, adults too. A hunter is born
+with about 900 energy, not the 270 the Phase 6 text assumed. `node scripts/juvenile-deaths.mjs <log>...` prints the split (E190).
