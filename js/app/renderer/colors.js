@@ -154,24 +154,40 @@ export function lineageColor(lineageId, out = [0, 0, 0]) {
             ? blueFrom + (blueSpan * u) / blueShare
             : pinkFrom + (pinkSpan * (u - blueShare)) / (1 - blueShare)) / 60;
     const sector = Math.floor(hue);
-    const f = hue - sector;
-    const lo = 0.3;
-    const rise = 0.3 + 0.7 * f;
-    const fall = 1 - 0.7 * f;
-    const table = [
-        [1, rise, lo],
-        [fall, 1, lo],
-        [lo, 1, rise],
-        [lo, fall, 1],
-        [rise, lo, 1],
-        [1, lo, fall],
-    ][sector % 6];
-    const y = 0.2126729 * table[0] + 0.7151522 * table[1] + 0.072175 * table[2];
+    sectorColor(sector % 6, hue - sector, out);
+    const y = 0.2126729 * out[0] + 0.7151522 * out[1] + 0.072175 * out[2];
     const scale = Math.min(LINEAGE_LUMINANCE / y, 0.95);
-    out[0] = table[0] * scale;
-    out[1] = table[1] * scale;
-    out[2] = table[2] * scale;
+    out[0] *= scale;
+    out[1] *= scale;
+    out[2] *= scale;
     return out;
+}
+
+/** The floor channel of a lineage colour. */
+const LINEAGE_LO = 0.3;
+/** Each hue sector's channel roles: 0 full, 1 rising, 2 falling, 3 the floor. */
+const SECTOR_ROLES = Object.freeze([
+    [0, 1, 3],
+    [2, 0, 3],
+    [3, 0, 1],
+    [3, 2, 0],
+    [1, 3, 0],
+    [0, 3, 2],
+]);
+
+/**
+ * Writes the unscaled colour of one hue sector without building a table per call (it ran per agent per frame).
+ * @param {number} sector 0 to 5
+ * @param {number} f the position within the sector, 0 to 1
+ * @param {number[] | Float32Array} out receives r, g, b
+ * @returns {void}
+ */
+function sectorColor(sector, f, out) {
+    const roles = SECTOR_ROLES[sector];
+    for (let c = 0; c < 3; c++) {
+        const role = roles[c];
+        out[c] = role === 0 ? 1 : role === 1 ? 0.3 + 0.7 * f : role === 2 ? 1 - 0.7 * f : LINEAGE_LO;
+    }
 }
 
 /**
