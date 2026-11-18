@@ -18,6 +18,7 @@ const life = (id, over = {}) => ({
     ticks: 60,
     hold: 40,
     blind: 30,
+    blindUnseen: 10,
     earlyTicks: 60,
     earlyBlind: 30,
     bias: 0,
@@ -44,7 +45,8 @@ describe('reportBlindBiters', () => {
         const lines = [];
         const out = reportBlindBiters([a, b, '--burn-in', '10', '--juvenile-ticks', '50'], (l) => lines.push(l));
         expect(out.counted).toBe(4);
-        expect(out.parentChild.pairs).toBe(1);
+        expect(out.blind.parentChild.pairs).toBe(1);
+        expect(out.unseen.byDepth['0'].blind).toBeGreaterThan(0);
         expect(out.bySource['spec-flip'].born).toBe(1);
         expect(lines.some((l) => l.startsWith('-- by birth source'))).toBe(true);
     });

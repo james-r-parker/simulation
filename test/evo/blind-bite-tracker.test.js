@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { createBlindBiteTracker, EARLY_TICKS } from '../../js/evo/blind-bite-tracker.js';
-import { GENE_OUTPUTS, OUTPUT_COUNT, OUTPUT_INDEX, POOLED_CHANNELS, POOLED_STRIDE } from '../../js/sim/brain-layout.js';
+import {
+    GENE_OUTPUTS,
+    OUTPUT_COUNT,
+    OUTPUT_INDEX,
+    POOLED_CHANNELS,
+    POOLED_STRIDE,
+    RAY_CHANNELS,
+} from '../../js/sim/brain-layout.js';
 
-const layout = { weightCount: 20000, bOut: 5, wSkip: 8, geneOutputs: 10 };
+const layout = { rawInputCount: 20, weightCount: 20000, bOut: 5, wSkip: 8, geneOutputs: 10 };
 const preyStrength = POOLED_CHANNELS.indexOf('prey') * POOLED_STRIDE;
 const biteAt = GENE_OUTPUTS.indexOf(OUTPUT_INDEX.BITE);
 
@@ -24,10 +31,24 @@ function makeWorld() {
         weights,
         outputs: new Float32Array(2 * OUTPUT_COUNT),
         jawsStamp: new Uint32Array(2),
+        config: { rayCount: 2 },
+        inputs: new Float32Array(2 * layout.rawInputCount),
     };
 }
 
 describe('createBlindBiteTracker', () => {
+    it('counts a blind tick as unseen only when no ray shows prey', () => {
+        const tracker = createBlindBiteTracker();
+        const world = makeWorld();
+        world.outputs[OUTPUT_INDEX.BITE] = 1;
+        tracker.observe(world);
+        world.tick = 11;
+        world.inputs[RAY_CHANNELS + 3] = 0.4;
+        tracker.observe(world);
+        const [life] = tracker.lives();
+        expect(life).toMatchObject({ blind: 2, blindUnseen: 1 });
+    });
+
     it('opens a life with its parents, source and BITE bias, and skips non-hunters', () => {
         const tracker = createBlindBiteTracker();
         tracker.observe(makeWorld());

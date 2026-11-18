@@ -32,6 +32,12 @@ const medianOf = (values) => (values.length === 0 ? 0 : quantile(values, 0.5));
 export const blindShare = (life) => share(life.blind, life.ticks);
 
 /**
+ * @param {import('./blind-bite-tracker.js').BiteLife} life a life
+ * @returns {number} the share of its ticks it held `BITE` with no body in its jaws and no prey in view
+ */
+export const unseenShare = (life) => share(life.blindUnseen, life.ticks);
+
+/**
  * @param {readonly import('./blind-bite-tracker.js').BiteLife[]} lives every life of the pooled runs
  * @param {{burnIn: number, endTick: number, juvenileTicks: number}} options the first counted birth tick, the last tick of
  *   the runs and the juvenile age
@@ -46,7 +52,7 @@ export function countedLives(lives, { burnIn, endTick, juvenileTicks }) {
  * @param {readonly import('./blind-bite-tracker.js').BiteLife[]} counted counted lives
  * @param {number} juvenileTicks the juvenile age
  * @returns {Record<string, Record<string, number>>} per birth source: `born`, `birthShare`, `meanBlind` (mean over lives),
- *   `pooledBlind` (blind ticks over ticks), `blindMass` (the source's share of all blind ticks), `earlyBlind`, `meanPreyBite`,
+ *   `pooledBlind` (blind ticks over ticks), `pooledUnseen` (the blind ticks with no prey in view over ticks), `blindMass` (the source's share of all blind ticks), `earlyBlind`, `meanPreyBite`,
  *   `positivePreyBite` (share born with a positive prey-to-BITE skip weight) and `reach` (share that reach `juvenileTicks` ticks)
  */
 export function bySource(counted, juvenileTicks) {
@@ -62,6 +68,10 @@ export function bySource(counted, juvenileTicks) {
             meanBlind: meanOf(group.map(blindShare)),
             pooledBlind: share(
                 group.reduce((s, l) => s + l.blind, 0),
+                group.reduce((s, l) => s + l.ticks, 0),
+            ),
+            pooledUnseen: share(
+                group.reduce((s, l) => s + l.blindUnseen, 0),
                 group.reduce((s, l) => s + l.ticks, 0),
             ),
             blindMass: share(
@@ -105,18 +115,19 @@ function hunterParents(life, byId, minTicks) {
  * @param {readonly import('./blind-bite-tracker.js').BiteLife[]} lives every life
  * @param {readonly import('./blind-bite-tracker.js').BiteLife[]} counted counted lives
  * @param {number} minTicks the fewest ticks a parent must have been seen
+ * @param {(life: import('./blind-bite-tracker.js').BiteLife) => number} [pick] the share to compare (default `blindShare`)
  * @returns {Record<string, number>} `pairs`, `parentBlind`, `childBlind`, `change` (child minus parent), `childLower` (share of
  *   pairs with the child below its parent), `correlation` and `slope` (NaN when a sample is constant)
  */
-export function parentChild(lives, counted, minTicks) {
+export function parentChild(lives, counted, minTicks, pick = blindShare) {
     const byId = indexById(lives);
     const parent = [];
     const child = [];
     for (const life of counted) {
         const parents = hunterParents(life, byId, minTicks);
         if (parents.length > 0) {
-            parent.push(meanOf(parents.map(blindShare)));
-            child.push(blindShare(life));
+            parent.push(meanOf(parents.map(pick)));
+            child.push(pick(life));
         }
     }
     const r = parent.length > 1 ? pearson(parent, child) : NaN;
@@ -150,11 +161,12 @@ export function depths(lives) {
 /**
  * @param {readonly import('./blind-bite-tracker.js').BiteLife[]} lives every life
  * @param {readonly import('./blind-bite-tracker.js').BiteLife[]} counted counted lives
+ * @param {(life: import('./blind-bite-tracker.js').BiteLife) => number} [pick] the share to average (default `blindShare`)
  * @returns {Record<string, {n: number, blind: number, early: number, reach: number}>} per depth bucket (`0`, `1`, `2`, `3-4`,
  *   `5+`): lives, mean blind share, mean early blind share and the share that lived 3000 ticks is left to `bySource`, so
  *   `reach` here is the share that lived at least 600 ticks (maturity)
  */
-export function byDepth(lives, counted) {
+export function byDepth(lives, counted, pick = blindShare) {
     const depth = depths(lives);
     const bucket = (/** @type {number} */ d) => (d <= 2 ? String(d) : d <= 4 ? '3-4' : '5+');
     /** @type {Record<string, import('./blind-bite-tracker.js').BiteLife[]>} */
@@ -167,7 +179,7 @@ export function byDepth(lives, counted) {
             name,
             {
                 n: group.length,
-                blind: meanOf(group.map(blindShare)),
+                blind: meanOf(group.map(pick)),
                 early: meanOf(group.map((l) => share(l.earlyBlind, l.earlyTicks))),
                 reach: share(group.filter((l) => l.ticks >= 600).length, group.length),
             },
@@ -180,14 +192,15 @@ export function byDepth(lives, counted) {
  * @param {readonly import('./blind-bite-tracker.js').BiteLife[]} lives every life
  * @param {readonly import('./blind-bite-tracker.js').BiteLife[]} counted counted lives
  * @param {number} maturityTicks the age a hunter must reach to be compared
+ * @param {(life: import('./blind-bite-tracker.js').BiteLife) => number} [pick] the share to average (default `blindShare`)
  * @returns {Record<string, Record<string, number>>} for `parents` and `childless`: `n`, `meanBlind`, `medianAge` and `meanPreyBite`
  */
-export function reproducers(lives, counted, maturityTicks) {
+export function reproducers(lives, counted, maturityTicks, pick = blindShare) {
     const parentIds = new Set(lives.flatMap((l) => [l.parentA, l.parentB]));
     const mature = counted.filter((l) => l.ticks >= maturityTicks);
     const row = (/** @type {typeof mature} */ group) => ({
         n: group.length,
-        meanBlind: meanOf(group.map(blindShare)),
+        meanBlind: meanOf(group.map(pick)),
         medianAge: medianOf(group.map((l) => l.ticks)),
         meanPreyBite: meanOf(group.map((l) => l.preyBite)),
     });
