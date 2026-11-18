@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 detectors; shared detector baseline pending.
 **Validated:** 3ca2b1fd (2026-11-17)
-**Priority:** 30 - it gives the ambusher and the freezing prey a reason to exist, but it changes the ray march every scene reads, so it follows the world work ([honest-budgets.md](honest-budgets.md)), cover ([habitat-cover.md](habitat-cover.md)) and [sprint-burst.md](sprint-burst.md)
+**Priority:** 31 - it gives the ambusher and the freezing prey a reason to exist, but it changes the ray march every scene reads, so it follows the world work ([honest-budgets.md](honest-budgets.md)), cover ([habitat-cover.md](habitat-cover.md)) and [sprint-burst.md](sprint-burst.md)
 **Depends on:** [honest-budgets.md](honest-budgets.md), [habitat-cover.md](habitat-cover.md), [training-stages.md](training-stages.md)
 
 A ray reports a body by its class and its proximity, `1 - distance / range` (`js/sim/ray-march.js`, and the Rust kernel `wasm/src/sense.rs`). A body that stands still reads exactly as one that runs. So holding still hides nothing: an ambusher at the rocks is seen as early as a courser, and a prey that freezes gains nothing over one that flees. The scene table asks for both ([principles.md](../principles.md): "Same spec, different custom: one courser and one ambusher at the rocks"; "A real chase: losing sight is not the same as the prey ceasing to exist").
