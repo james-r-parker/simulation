@@ -117,6 +117,7 @@ export function configOverrides({ agents, merit, hold }) {
     if (agents === null) {
         return { ...merited };
     }
+    /** @type {Record<string, number>} */
     const floor = hold
         ? { minAgents: agents, floorTrigger: agents }
         : { minAgents: Math.min(DEFAULT_MIN_AGENTS, agents) };

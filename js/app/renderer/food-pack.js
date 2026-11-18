@@ -23,7 +23,8 @@ const HUE_STEPS = 1024;
 /**
  * @param {number} capacity the most food items (`maxFood`)
  * @returns {{buckets: {pose: Float32Array, neon: Float32Array, rig0: Float32Array, count: number}[],
- *   sections: import('../snapshot-view.js').Sections, rgb: number[]}} the buckets and scratch
+ *   sections: import('../snapshot-view.js').Sections, rgb: number[], hueTable: Float32Array}} the buckets, scratch and
+ *   the plant colour table
  */
 export function createFoodPack(capacity) {
     const buckets = [];
