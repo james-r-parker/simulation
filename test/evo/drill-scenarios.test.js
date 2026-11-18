@@ -63,6 +63,7 @@ describe('DRILLS', () => {
             'hunter-flank',
             'kin-spared',
             'pack-converge',
+            'prey-adrift',
         ]);
         expect(DRILLS.every((d) => d.scene.length > 0)).toBe(true);
         expect(DRILLS.filter((d) => d.needsHunter).map((d) => d.name)).toEqual([
@@ -71,6 +72,7 @@ describe('DRILLS', () => {
             'prey-crossing',
             'kin-spared',
             'pack-converge',
+            'prey-adrift',
         ]);
     });
 

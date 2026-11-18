@@ -203,4 +203,7 @@ export const DRILLS = Object.freeze([
     hunterDrill(false),
     hunterDrill(true),
     ...SOCIAL_DRILLS,
+    // After the social four so `DRILLS.slice(7, 11)` stays them. The contact lesson of `hunt-contact` (T35): the `prey-ahead`
+    // staging with a prey that does not run; `prey-ahead` stays the lesson of `hunt`.
+    preyDrill('prey-adrift', { energy: SUBJECT_ENERGY, maxTicks: 900, abort: false, role: 'adrift' }),
 ]);

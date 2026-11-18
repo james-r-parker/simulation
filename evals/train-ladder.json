@@ -22,7 +22,7 @@
     "maxGenerations": 60,
     "gate": [
       {
-        "read": "drill.prey-ahead.edgeLow",
+        "read": "drill.prey-adrift.edgeLow",
         "min": 0.001
       }
     ]
