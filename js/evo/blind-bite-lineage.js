@@ -52,7 +52,7 @@ export function countedLives(lives, { burnIn, endTick, juvenileTicks }) {
  * @param {readonly import('./blind-bite-tracker.js').BiteLife[]} counted counted lives
  * @param {number} juvenileTicks the juvenile age
  * @returns {Record<string, Record<string, number>>} per birth source: `born`, `birthShare`, `meanBlind` (mean over lives),
- *   `pooledBlind` (blind ticks over ticks), `pooledUnseen` (the blind ticks with no prey in view over ticks), `blindMass` (the source's share of all blind ticks), `earlyBlind`, `meanPreyBite`,
+ *   `pooledBlind` (blind ticks over ticks), `pooledUnseen` (the blind ticks with no prey in view over ticks), `blindMass` (the source's share of all blind ticks), `earlyBlind`, `meanBias` (the BITE output bias at birth), `zeroBias` (the share of it exactly 0), `meanHold` (the share of ticks holding BITE), `meanPreyBite`,
  *   `positivePreyBite` (share born with a positive prey-to-BITE skip weight) and `reach` (share that reach `juvenileTicks` ticks)
  */
 export function bySource(counted, juvenileTicks) {
@@ -82,6 +82,9 @@ export function bySource(counted, juvenileTicks) {
                 group.reduce((s, l) => s + l.earlyBlind, 0),
                 early,
             ),
+            meanBias: meanOf(group.map((l) => l.bias)),
+            zeroBias: share(group.filter((l) => Math.abs(l.bias) < 1e-6).length, group.length),
+            meanHold: meanOf(group.map((l) => share(l.hold, l.ticks))),
             meanPreyBite: meanOf(group.map((l) => l.preyBite)),
             positivePreyBite: share(group.filter((l) => l.preyBite > 0).length, group.length),
             reach: share(group.filter((l) => l.ticks >= juvenileTicks).length, group.length),
@@ -163,7 +166,7 @@ export function depths(lives) {
  * @param {readonly import('./blind-bite-tracker.js').BiteLife[]} counted counted lives
  * @param {(life: import('./blind-bite-tracker.js').BiteLife) => number} [pick] the share to average (default `blindShare`)
  * @returns {Record<string, {n: number, blind: number, early: number, reach: number}>} per depth bucket (`0`, `1`, `2`, `3-4`,
- *   `5+`): lives, mean blind share, mean early blind share and the share that lived 3000 ticks is left to `bySource`, so
+ *   `5+`): lives, mean blind share, mean early blind share (always `earlyBlind`, whatever `pick` is) and the share that lived 3000 ticks is left to `bySource`, so
  *   `reach` here is the share that lived at least 600 ticks (maturity)
  */
 export function byDepth(lives, counted, pick = blindShare) {
@@ -237,4 +240,64 @@ export function biasDrift(lives, counted, key) {
         shift: meanOf(diff),
         correlation: parent.length > 1 ? pearson(parent, child) : NaN,
     };
+}
+
+/**
+ * Does a lower blind share pay? Lives seen for at least `minTicks` ticks, cut into quintiles by `pick` (lowest first), with what
+ * became of each fifth. A life that is young at the end of a run counts as it stands, so every column is read between quintiles of
+ * the same pool, not as a rate.
+ * @param {readonly import('./blind-bite-tracker.js').BiteLife[]} lives every life
+ * @param {readonly import('./blind-bite-tracker.js').BiteLife[]} counted counted lives
+ * @param {{minTicks: number, juvenileTicks: number, pick?: (life: import('./blind-bite-tracker.js').BiteLife) => number}} options
+ *   the fewest ticks a life must have lived, the juvenile age and the share to cut by (default `blindShare`)
+ * @returns {Record<string, Record<string, number>>} per quintile `q1` to `q5`: `n`, the mean of `pick`, `medianAge`, `parentShare`
+ *   (named as a parent by a tracked hunter) and `reach` (lived `juvenileTicks` ticks)
+ */
+export function outcomeByQuintile(lives, counted, { minTicks, juvenileTicks, pick = blindShare }) {
+    const parentIds = new Set(lives.flatMap((l) => [l.parentA, l.parentB]));
+    const pool = counted.filter((l) => l.ticks >= minTicks).sort((a, b) => pick(a) - pick(b));
+    /** @type {Record<string, Record<string, number>>} */
+    const out = {};
+    for (let q = 0; q < 5; q++) {
+        const group = pool.slice(Math.floor((q * pool.length) / 5), Math.floor(((q + 1) * pool.length) / 5));
+        out[`q${q + 1}`] = {
+            n: group.length,
+            share: meanOf(group.map(pick)),
+            medianAge: medianOf(group.map((l) => l.ticks)),
+            parentShare: share(group.filter((l) => parentIds.has(l.id)).length, group.length),
+            reach: share(group.filter((l) => l.ticks >= juvenileTicks).length, group.length),
+        };
+    }
+    return out;
+}
+
+/**
+ * Whether a negative `BITE` output bias (an inhibition: the output starts below the bite threshold) is rare and what it buys.
+ * @param {readonly import('./blind-bite-tracker.js').BiteLife[]} counted counted lives
+ * @param {number} juvenileTicks the juvenile age
+ * @returns {Record<string, Record<string, number>>} per sign of the birth bias (`negative`, `zero`, `positive`, those present):
+ *   `n`, `share` of the lives, `meanHold` (ticks holding BITE), `pooledUnseen` (blind ticks with no prey in view over ticks),
+ *   `medianAge` and `reach` (lived `juvenileTicks` ticks)
+ */
+export function byBiasSign(counted, juvenileTicks) {
+    const sign = (/** @type {number} */ b) => (Math.abs(b) < 1e-6 ? 'zero' : b < 0 ? 'negative' : 'positive');
+    /** @type {Record<string, Record<string, number>>} */
+    const out = {};
+    for (const name of ['negative', 'zero', 'positive']) {
+        const group = counted.filter((l) => sign(l.bias) === name);
+        if (group.length > 0) {
+            out[name] = {
+                n: group.length,
+                share: share(group.length, counted.length),
+                meanHold: meanOf(group.map((l) => share(l.hold, l.ticks))),
+                pooledUnseen: share(
+                    group.reduce((s, l) => s + l.blindUnseen, 0),
+                    group.reduce((s, l) => s + l.ticks, 0),
+                ),
+                medianAge: medianOf(group.map((l) => l.ticks)),
+                reach: share(group.filter((l) => l.ticks >= juvenileTicks).length, group.length),
+            };
+        }
+    }
+    return out;
 }
