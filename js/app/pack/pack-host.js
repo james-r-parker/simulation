@@ -201,8 +201,8 @@ export function packRequest(host, request) {
     holdFrom(ring, READER.PACK, RELEASED);
     if (!published) {
         // a snapshot slot read mid-overwrite may have left stray entries in the blend's scratch map
-        for (const slot of slots.slots) {
-            slot.agents.previous.fill(0);
+        for (let k = 0; k < slots.slots.length; k++) {
+            slots.slots[k].agents.previous.fill(0);
         }
         noteSkipped(slots);
     }

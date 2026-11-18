@@ -76,7 +76,6 @@ function halt(state) {
     state.timer = null;
     if (state.world !== null) {
         requestStop(state.world.slots);
-        holdFrom(state.world.ring, READER.PACK, RELEASED);
     }
     if (state.worker !== null) {
         state.worker.onmessage = null;
@@ -84,6 +83,10 @@ function halt(state) {
         state.worker.onmessageerror = null;
         state.worker.terminate();
         state.worker = null;
+    }
+    // after terminate: a worker mid-pack can still set its hold before it dies (`launch` clears it again)
+    if (state.world !== null) {
+        holdFrom(state.world.ring, READER.PACK, RELEASED);
     }
 }
 
@@ -123,6 +126,8 @@ function describeEvent(reason) {
  */
 function launch(state) {
     const world = /** @type {PackWorld} */ (state.world);
+    // a terminated worker's last hold may have landed after `halt` released it
+    holdFrom(world.ring, READER.PACK, RELEASED);
     const worker = state.options.createWorker();
     state.worker = worker;
     clearStop(world.slots);

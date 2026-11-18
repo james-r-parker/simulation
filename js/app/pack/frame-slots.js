@@ -58,7 +58,7 @@ export const SLOT = Object.freeze({
 /** Float64 words of a slot's meta: what the request that made it asked for. */
 export const SLOT_F64 = Object.freeze({ ALPHA: 0, TICK: 1, NOW_MS: 2 });
 
-/** The lens bits of a request. */
+/** The lens bits of a request: the main thread writes every lens; the pack reads only `TEMPERATURE` (the rim colour), the other lenses act on the main thread's uniforms and layers. */
 export const LENS = Object.freeze({ TEMPERATURE: 1, SCENT: 2, TERRITORY: 4, VISION: 8, CALLS: 16 });
 
 /**

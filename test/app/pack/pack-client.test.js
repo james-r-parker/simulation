@@ -127,6 +127,24 @@ describe('createPackClient', () => {
         expect(h.client.failures()).toBe(2);
     });
 
+    it('clears a hold the dying worker set after STOP before the next worker starts', () => {
+        const h = harness();
+        const pw = packWorld();
+        h.client.start(pw);
+        // a worker mid-pack when it is stopped can still set its hold before it dies
+        const terminate = h.workers[0].terminate;
+        h.workers[0].terminate = function () {
+            holdFrom(pw.ring, READER.PACK, 7);
+            terminate.call(this);
+        };
+        h.workers[0].onmessage({ data: { type: PACK_MESSAGES.ERROR, epoch: 4, message: 'boom', stack: '' } });
+        expect(pw.ring.header[HELD + READER.PACK]).toBe(RELEASED);
+        holdFrom(pw.ring, READER.PACK, 9);
+        h.timers.at(-1)?.run();
+        expect(h.workers).toHaveLength(2);
+        expect(pw.ring.header[HELD + READER.PACK]).toBe(RELEASED);
+    });
+
     it('treats a worker error event, a message error and an invalid message as failures', () => {
         const h = harness();
         h.client.start(packWorld());
