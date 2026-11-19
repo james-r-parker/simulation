@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EVENT_STRIDE, EVENT_TYPE } from '../js/sim/events.js';
 import { SIMPLE_WORLD } from './helpers/simple-world.js';
@@ -59,6 +62,41 @@ describe('runSeed', () => {
         await runSeed({ seed: 3, ticks: 2, policy: 'map-elites-v6', overrides, policyOptions: { archiveShare: 0.2 } });
         expect(created[0]).toMatchObject({ archiveShare: 0.2 });
         expect(created[0]).toHaveProperty('observer');
+    });
+
+    it('reads a championsDir policy option into the champions the policy is given', async () => {
+        const { runSeed } = await import('../scripts/eval-worker.mjs');
+        const overrides = { ...SIMPLE_WORLD, maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500 };
+        const dir = mkdtempSync(join(tmpdir(), 'eval-champions-'));
+        writeFileSync(join(dir, 'a.json'), '{"name":"a"}');
+        created.length = 0;
+        try {
+            await runSeed({
+                seed: 3,
+                ticks: 1,
+                policy: 'map-elites-v6',
+                overrides,
+                policyOptions: { championsDir: dir, archiveShare: 0.2 },
+            });
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
+        expect(created[0].champions).toEqual([{ name: 'a' }]);
+        expect(created[0]).not.toHaveProperty('championsDir');
+        expect(created[0].archiveShare).toBe(0.2);
+    });
+
+    it('fails the seed when the championsDir does not exist', async () => {
+        const { runSeed } = await import('../scripts/eval-worker.mjs');
+        const overrides = { ...SIMPLE_WORLD, maxAgents: 40, initialAgents: 12, minAgents: 4, worldWidth: 1500 };
+        const task = {
+            seed: 3,
+            ticks: 1,
+            policy: 'map-elites-v6',
+            overrides,
+            policyOptions: { championsDir: '/nonexistent/champions' },
+        };
+        await expect(async () => runSeed(task)).rejects.toThrow(/does not exist/);
     });
 
     it('reports no archive metrics for a policy without an archive', async () => {

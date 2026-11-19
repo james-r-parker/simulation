@@ -42,6 +42,8 @@ export function addCheckpoint(observer, f) {
         'diversity',
         'specMask',
         'archiveAgents',
+        'foodEnergyTotal',
+        'agentTicksTotal',
     ]) {
         observer.series[name][i] = f[name] ?? (name === 'diversity' ? NaN : 0);
     }

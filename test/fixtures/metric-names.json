@@ -119,6 +119,7 @@
   "eval.flora_seed_bank_occupancy_share",
   "eval.food_contact_bite_share",
   "eval.food_energy_per_1k",
+  "eval.food_energy_per_1k@20k",
   "eval.food_species_share.berry",
   "eval.food_species_share.flower",
   "eval.food_species_share.fungus",

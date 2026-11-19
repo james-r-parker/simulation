@@ -3,6 +3,7 @@
 // Everything with logic is in sim-host.js; this file only connects it, so it is covered by the browser spec.
 
 import { getPolicy, LIVE_POLICY } from '../evo/policies/index.js';
+import { CHAMPIONS_POLICY, CHAMPIONS_V1_PATH, createChampionGate, fetchChampionFiles } from './champion-fetch.js';
 import { createSimHost } from './sim-host.js';
 
 const scope = /** @type {DedicatedWorkerGlobalScope} */ (/** @type {unknown} */ (self));
@@ -29,7 +30,17 @@ const host = createSimHost({
             setTimeout(run, delayMs);
         }
     },
-    createPolicy: (options) => getPolicy(options.policyName ?? LIVE_POLICY).create(options),
+    createPolicy(options) {
+        const name = options.policyName ?? LIVE_POLICY;
+        return getPolicy(name).create(name === CHAMPIONS_POLICY ? { ...options, champions: gate.files() } : options);
+    },
 });
 
-scope.onmessage = (event) => host.receive(event.data);
+// `?policy=champions-v1` seeds from the published champions: the gate fetches them before the host sees `init`.
+const championsBase = new URL(CHAMPIONS_V1_PATH, scope.location.href).href;
+const gate = createChampionGate({
+    receive: (message) => host.receive(message),
+    load: () => fetchChampionFiles((url) => fetch(url), championsBase),
+});
+
+scope.onmessage = (event) => gate.receive(event.data);
