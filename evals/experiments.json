@@ -4866,6 +4866,22 @@
       "effect": "no-difference",
       "note": "No run, no verdict. prey-ahead winShareOverReference has not read above 0.12 in any run; elites never reach the jaws (never-in-jaws 121 to 128 of 128); the rungs help only offsets already past them; the retention review drags runs back to nursery or hunt-weak; nursery stalls on 4 of 8 offsets. Ranked levers: config or curriculum (keep the best passing elite through a review, more offsets, pool opponents in hunt) and sim rule or keep-rule read (prey stamina, hunter stamina, T44 kin inhibition). Tasks T59 to T63.",
       "reports": ["evals/decisions/E201/results.md"]
+    },
+    {
+      "id": "E202",
+      "date": "2026-11-19",
+      "branch": "feat/training-stages-hunt",
+      "hypothesis": "E-TS-1k (training-stages Phase 6, T59, T60): with the kept passer, a passed rung is not sent back by the retention review, and more fresh offsets reach hunt-mid and hunt.",
+      "prediction": "Written before the run: 0 TrainReview events on every run; at least 2 of 8 fresh offsets pass hunt-mid; prey-ahead winShareOverReference above 0.12 on at least 1 run that reaches hunt. Falsified when a run has a review, fewer than 2 offsets pass hunt-mid, or no hunt reading exceeds 0.12.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "E-TS-1j (reviews sent runs back; best prey-ahead 0.12)",
+      "after": "npm run train --curriculum evals/train-ladder.json (keepPasser) --until habitat --generations 380 --ticks 4000 --offer-from 100 --workers 3, offsets 8, 24, 40, 56, 72, 88, 104, 120",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Run pending; no verdict.",
+      "reports": ["evals/decisions/E-TS-1k/results.md"]
     }
   ]
 }
