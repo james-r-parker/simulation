@@ -1,0 +1,126 @@
+[
+  {
+    "name": "nursery",
+    "config": "evals/stages/nursery.json",
+    "minGenerations": 10,
+    "maxGenerations": 40,
+    "gate": [
+      {
+        "read": "drill.food-ahead.edgeLow",
+        "min": 0.3
+      },
+      {
+        "read": "drill.food-behind.edgeLow",
+        "min": 0.3
+      }
+    ]
+  },
+  {
+    "name": "hunt-contact",
+    "config": "evals/stages/hunt-contact.json",
+    "minGenerations": 10,
+    "maxGenerations": 60,
+    "gate": [
+      {
+        "read": "drill.prey-adrift.edgeLow",
+        "min": 0.001
+      }
+    ]
+  },
+  {
+    "name": "hunt-weak",
+    "preyShare": 0.9,
+    "config": "evals/stages/hunt-weak.json",
+    "minGenerations": 10,
+    "maxGenerations": 60,
+    "gate": [
+      {
+        "read": "drill.prey-weak.edgeLow",
+        "min": 0.001
+      }
+    ]
+  },
+  {
+    "name": "hunt",
+    "preyShare": 0.9,
+    "config": "evals/stages/hunt.json",
+    "minGenerations": 10,
+    "maxGenerations": 200,
+    "gate": [
+      {
+        "read": "drill.prey-ahead.winShareOverReference",
+        "min": 0.5
+      },
+      {
+        "read": "drill.prey-ahead.winShareLow",
+        "min": 0.001
+      },
+      {
+        "read": "drill.prey-crossing.edgeLow",
+        "min": 0.001
+      },
+      {
+        "read": "drill.kin-spared.edgeLow",
+        "min": 0.001
+      }
+    ]
+  },
+  {
+    "name": "evade",
+    "config": "evals/stages/evade.json",
+    "pool": 0.5,
+    "minGenerations": 10,
+    "maxGenerations": 60,
+    "gate": [
+      {
+        "read": "drill.hunter-closing.edgeLow",
+        "min": 0.001
+      },
+      {
+        "read": "drill.hunter-flank.edgeLow",
+        "min": 0.001
+      },
+      {
+        "read": "crossplay.preyVsStage.hunt",
+        "min": 0.001
+      }
+    ]
+  },
+  {
+    "name": "arms-race",
+    "config": "evals/stages/arms-race.json",
+    "pool": 0.2,
+    "minGenerations": 20,
+    "maxGenerations": 80,
+    "gate": [
+      {
+        "read": "crossplay.hunterProgressLow",
+        "min": 0.001
+      },
+      {
+        "read": "crossplay.preyProgressLow",
+        "min": 0.001
+      },
+      {
+        "read": "crossplay.cycleShare",
+        "max": 0.25
+      }
+    ]
+  },
+  {
+    "name": "habitat",
+    "config": "evals/stages/habitat.json",
+    "minGenerations": 20,
+    "maxGenerations": 80,
+    "gate": [
+      {
+        "read": "retention.all",
+        "min": 1
+      }
+    ]
+  },
+  {
+    "name": "world",
+    "config": null
+  }
+]

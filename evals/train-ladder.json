@@ -58,7 +58,7 @@
     "preyShare": 0.9,
     "config": "evals/stages/hunt.json",
     "minGenerations": 10,
-    "maxGenerations": 60,
+    "maxGenerations": 200,
     "gate": [
       {
         "read": "drill.prey-ahead.winShareOverReference",
