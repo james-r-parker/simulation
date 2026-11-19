@@ -128,7 +128,10 @@ At each gate checkpoint, `nextDifficulty` in `js/evo/adaptive-difficulty.js` rai
 
 - The steering read is one extra drill run per gate checkpoint: the champions on `adapt.drill` with its fleer at the current value, at the gate seed and `GATE_TRIALS` (about the cost of one gate drill). The arena of a sprint drill is a function of the fleer's `sprintBoost` (`sprintArena` in `js/evo/drill-scenarios.js`), so `prey-weak` and `prey-mid` keep `WEAK_SPRINT_BOOST` and `MID_SPRINT_BOOST`.
 - The gate's drills, and the kept passers' retention reads (`keepPasser`), run at full difficulty.
-- The value is a `RunState` field (`difficulty`), carried by `snapshotState` and `restoreState`, and a column of every curve row. `TrainDifficulty` logs each change.
+- The steering read drills the champions, the random brains and the reference rows, as a gate drill does.
+- The value is a `RunState` field (`difficulty`), carried by `snapshotState` and `restoreState`. A review leaves it unchanged.
+- The curve's `difficulty` column is the value the generation ran at (`adapt.to` during a review). `TrainDifficulty` carries the step: stage, generation, `param`, `from`, `to` and `winShare`.
+- An adaptive stage does not stall on a plateau while `difficulty` is below `adapt.to`. Its plateau window (`plateauStop`) counts only the gate checkpoints taken at `adapt.to`: `progressHistory` is cleared at the first one (`RunState.atTop`). `RunState.stageBest` holds the best progress of the whole stage, and `TrainGate` and `TrainStageStalled` report it as `bestProgress`. `maxGenerations` ends the stage in any case.
 - Episodes lay the value over the stage's overrides when `runEpisodes` builds each task. The stage's hash (`rulesHash` of `StageInfo.overrides`) is taken without it, so a resume of an adaptive stage is accepted.
 
 ## Tuning lane
