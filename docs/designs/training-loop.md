@@ -175,7 +175,7 @@ T8 is a long run, not a code chunk: detached, recorded in its own PR.
 **Targets:** none - it checks a ladder before training; its reading is `learnable` per stage
 
 - `train:feasible`, and `train:screen` marking `unlearnable` arms.
-- The check on the current ladder (`E-TL-2`). Prediction: every rung through `hunt-mid` is learnable; `hunt` (`prey-ahead` at 0.5 of the reference) is not, which says the next lever is a sim rule ([training-stages.md](training-stages.md) T62), not a ladder change.
+- The check on the current ladder (`E-TL-2`, recorded as E206). Prediction (written before the run; hunt-mid turned out unlearnable too, and kin-spared): every rung through `hunt-mid` is learnable; `hunt` (`prey-ahead` at 0.5 of the reference) is not, which says the next lever is a sim rule ([training-stages.md](training-stages.md) T62), not a ladder change.
 
 #### Chunks
 
@@ -251,7 +251,7 @@ T22 is a long run, not a code chunk; T23 follows its record in one PR (Sonnet).
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
 | T9  | (built) `npm run train:feasible`: the per-drill bar from each gate condition, `learnLesson` per gate drill in the stage config, the fair band for bite drills (`playPair`, `fairBand`), `feasible.json`, `FeasibleStage`; its AGENTS.md row; tests | [judgement]  | T7         |
 | T10 | (built) `train:screen` runs the check per arm ladder and marks `unlearnable`; `skipUnlearnable`; tests                                                                                                                                             | [mechanical] | T6, T9     |
-| T11 | (run `E-TL-2`) the check on `train-ladder.json`; record E-TL-2                                                                                                                                                                                     | [judgement]  | T9         |
+| T11 | (built) (run `E-TL-2`) the check on `train-ladder.json`; record E-TL-2                                                                                                                                                                             | [judgement]  | T9         |
 | T12 | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; mark Phase 2 built                                                                                                                              | [judgement]  | T10, T11   |
 
 ### Phase 3 - Adaptive difficulty
