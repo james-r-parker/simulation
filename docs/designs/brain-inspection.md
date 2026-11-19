@@ -1,8 +1,6 @@
 # Brain inspection
 
-**Status:** In progress - Phase 1 is built; Phase 2 records the skill and `prey-ahead` findings; `prey-mid` and `prey-weak` await defined staging and sprint values.
-**Validated:** 495482df (2026-11-19)
-**Priority:** 26 - last in the queue (user, 2026-11-04): a diagnostic for champions that fail a drill, useful only once the drills and the trainer exist
+**Status:** Implemented - Phase 1 dossier and Phase 2 inspection of both trained predators across `prey-ahead`, `prey-mid` and `prey-weak`.
 **Depends on:** [training.md](training.md)
 
 A champion that fails a drill gets a **dossier**: its weights labelled unit by unit, the hidden state and outputs of its brain tick by tick through the drill's trials, and the win share with each hidden unit silenced. An agent reads the dossier, names the unit or input path that blocks the skill, and tests that claim with an in-memory edit replayed on the same trials. The dossier is a detector: nothing in it enters fitness, merit, mate rank or archive rank ([principles.md](../principles.md), Measure scenes, reward them almost never), and an edited brain never leaves the process that tests it.
@@ -90,7 +88,7 @@ The output trace has 11 positions in `OUTPUT_INDEX` order. `split` is always zer
 
 ## Phases
 
-### Phase 1 - Dossier
+### Phase 1 - Dossier (built)
 
 **Targets:** none - a diagnostic tool; it changes no genome, rule or default
 
@@ -102,11 +100,11 @@ Labels, weight tables, the trace recorder with the `onTick` hook, edits, ablatio
 | ---------------------- | -------------------------- | ---------------------------------------------------------- |
 | Dossier (Code, Sonnet) | T1, T2, T3, T4, T5, T6, T7 | One PR; `js/evo/brain-*.js`, the `onTick` hook, the script |
 
-### Phase 2 - Skill and first inspection
+### Phase 2 - Skill and first inspection (built)
 
 **Targets:** none - its output is a finding in sim-notes.md, not a metric
 
-The `inspect-brain` skill and its first use on both predator champions in `.sim/champions/keep/ets-1h-o144/`: inspect `prey-ahead`, `prey-mid` and `prey-weak`, identify the units and skip weights that drive `THRUST`, `TURN` and `BITE` with prey ahead, and compare the traces when prey sprint away. Test every causal claim with a matched edit or ablation and record its `compareTrials` row in [sim-notes.md](sim-notes.md). The initial `DRILLS` registry contains `prey-ahead` but not `prey-mid` or `prey-weak`; add those two diagnostic scenarios only when their sprint settings and staging are specified by the training work. Do not edit training files as part of this diagnostic.
+The `inspect-brain` skill and its use on both predator champions in `.sim/champions/keep/ets-1h-o144/`: inspect `prey-ahead`, `prey-mid` and `prey-weak`, identify the units and skip weights that drive `THRUST`, `TURN` and `BITE` with prey ahead, and compare the traces when prey sprint away. The registered sprint settings are `MID_SPRINT_BOOST` 0.3 and `WEAK_SPRINT_BOOST` 0.2. Test each causal claim with a matched edit or ablation and record its `compareTrials` row in [sim-notes.md](sim-notes.md). The diagnostics leave training files and sim rules unchanged.
 
 #### Chunks
 
@@ -164,4 +162,4 @@ The `inspect-brain` skill and its first use on both predator champions in `.sim/
 
 1. `scripts/check.sh` is green at the end of each phase.
 2. Phase 1: `npm run inspect -- --champions <dir> --drill prey-ahead --out .sim/inspect/check` writes `weights.md`, `trace-0.jsonl` to `trace-3.jsonl`, `summary.md` and `ablation.md`; `ablation.md` has one row per hidden unit; a `silence` edit writes `edit.md` with a `compareTrials` row.
-3. Phase 2: each sim-notes.md entry names the champion, the drill, the claim, the edit or ablation, the win share before and after, and `mcnemarP`. Record absent drill variants as a boundary until their staging and sprint values exist.
+3. Phase 2: the sim-notes entry names both champions, all three registered prey drills, the output firing changes, the tested skip paths and hidden units, and their complete paired `compareTrials` rows.

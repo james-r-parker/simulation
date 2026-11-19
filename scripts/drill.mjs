@@ -1,11 +1,12 @@
 // Drills: plays genomes and the scripted reference through the fixed drills and prints each one's win share and edge over
 // random brains (`npm run drill`). Logs every trial at debug level to `.sim/logs/drill-<seed>x<trials>.jsonl`.
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { decodeArchive } from '../js/evo/archive-codec.js';
+import { readArchiveFile, readDrillConfig } from './lib/archive-source.mjs';
 import { DRILLS } from '../js/evo/drill-scenarios.js';
 import { DRILL_TRIALS, edgeOf, randomBrains, skipReason, winBounds } from '../js/evo/drill.js';
+import { traceAggregates } from '../js/evo/drill-trace.js';
 import { referenceSubject } from '../js/evo/memory-probe-references.js';
 import { seedlessConfig } from '../js/evo/report.js';
 import { configHash, createConfig } from '../js/sim/config.js';
@@ -110,8 +111,7 @@ async function genomesOf(args, { config, log }) {
         return loadChampions(args.champions, { config, log });
     }
     if (args.archive !== null) {
-        const json = JSON.parse(readFileSync(args.archive, 'utf8'));
-        return eliteSubjects(decodeArchive(json, createConfig(config), log));
+        return eliteSubjects(readArchiveFile(args.archive, config, log));
     }
     const tasks = [
         {
@@ -181,6 +181,21 @@ function buildTasks(args, { genomes, config }) {
 }
 
 /**
+ * @param {readonly Record<string, any>[]} records a cell's trial records
+ * @returns {Record<string, number>} the lost trials by first-match reason
+ */
+function lostCounts(records) {
+    const counts = /** @type {Record<string, number>} */ ({});
+    for (const record of records) {
+        if (record.won || record.reason === null || record.reason === undefined) {
+            continue;
+        }
+        counts[record.reason] = (counts[record.reason] ?? 0) + 1;
+    }
+    return counts;
+}
+
+/**
  * Turns the pool's results into one row per genome and the reference.
  * @param {DrillArgs} args the options
  * @param {{genomes: import('../js/evo/memory-probe-run.js').Subject[], tasks: ReturnType<typeof buildTasks>, results: Record<string, any>[], log: import('../js/sim/log.js').SimLog}} run
@@ -205,13 +220,7 @@ function rowsOf(args, { genomes, tasks, results, log }) {
                 return;
             }
             const records = results[at].records ?? [];
-            const lossReasons = /** @type {Record<string, number>} */ ({});
-            for (const record of records) {
-                if (record.won || record.reason === null || record.reason === undefined) {
-                    continue;
-                }
-                lossReasons[record.reason] = (lossReasons[record.reason] ?? 0) + 1;
-            }
+            const lossReasons = lostCounts(records);
             const { winShare } = results[at];
             const cell = {
                 winShare,
@@ -223,6 +232,7 @@ function rowsOf(args, { genomes, tasks, results, log }) {
                 randomWins: randoms.reduce((sum, score) => sum + score.wins, 0),
                 randomTrials: randoms.reduce((sum, score) => sum + score.trials, 0),
                 lossReasons,
+                ...traceAggregates(records),
             };
             rows[row].cells[name] = cell;
             log.log('info', 'DrillResult', {
@@ -275,7 +285,7 @@ function sourceOf(args) {
  *   the rows (a genome per row, then the reference) and, for `--champions`, the predators' skip cells (T34)
  */
 async function drillRows(args, log) {
-    const config = args.config === null ? {} : JSON.parse(readFileSync(args.config, 'utf8'));
+    const config = readDrillConfig(args.config);
     logRunConfig(log, {
         tool: 'drill',
         policy: args.policy,

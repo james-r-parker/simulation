@@ -1,10 +1,10 @@
 // Reflex cases: scores genomes on the brain-only input sequences and prints each one's pass share and edge per case, its
 // score, and the bars of every case (`npm run reflex`). Logs `ReflexResult` at info level, and with `--level debug` each
 // failed trial (`ReflexCase`), to `.sim/logs/reflex-<seed>x<trials>.jsonl`. See docs/designs/brain-reflex-tests.md.
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { decodeArchive } from '../js/evo/archive-codec.js';
+import { readArchiveFile, readDrillConfig } from './lib/archive-source.mjs';
 import { REFLEX_CASES } from '../js/evo/reflex-cases.js';
 import { reflexRow } from '../js/evo/reflex-score.js';
 import { REFLEX_TRIALS } from '../js/evo/reflex-stage.js';
@@ -141,7 +141,7 @@ async function genomesOf(args, run) {
         return loadChampions(args.champions, run);
     }
     if (args.archive !== null) {
-        return eliteSubjects(decodeArchive(JSON.parse(readFileSync(args.archive, 'utf8')), base, log));
+        return eliteSubjects(readArchiveFile(args.archive, config, log));
     }
     const eval1 = { seed: args.seed, ticks: POLICY_TICKS, policy: String(args.policy), overrides: config };
     const [{ champions }] = await runPool([{ ...eval1, saveChampions: args.count }], {
@@ -202,7 +202,7 @@ export async function runReflex(args, { logDir = '.sim/logs', print = () => {} }
     const sinkFile = createJsonlSink(path);
     try {
         const log = createSimLog(sinkFile.sink, { level: /** @type {any} */ (args.level) });
-        const config = args.config === null ? {} : JSON.parse(readFileSync(args.config, 'utf8'));
+        const config = readDrillConfig(args.config);
         const genomes = await genomesOf(args, { config, log });
         const result = await scoreGenomes(args, { genomes, config, log });
         const text = args.json

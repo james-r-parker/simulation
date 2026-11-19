@@ -26,7 +26,11 @@ export {
  * @property {number} [minGenerations] a gated stage's least generations before it can pass (default 1)
  * @property {number} [maxGenerations] a gated stage's generations before it stalls
  * @property {boolean} [optional] a gated stage whose stall lets the ladder move on
+ * @property {number} [plateauStop] a gated stage's gate checkpoints over which its best progress must rise (`js/evo/stage-progress.js`)
+ *   or it stalls on a plateau; 0 or absent: it runs to `maxGenerations`
+ * @property {boolean} [keepPasser] a gated stage whose best passing elites are kept for its retention reads (`js/evo/stage-run.js`)
  * @property {number} [pool] the share of founders drawn from the opponent pool, 0 to 1 (read from Phase 3 on)
+ * @property {number} [preyShare] a stage world's quota of prey specialisations among its seeded agents, 0 to 1 (`quotaSpec`)
  * @property {number} [checkpointEvery] generations between checkpoints in this stage (default: the run's)
  */
 
@@ -69,15 +73,31 @@ function checkEntry(entry, index, last) {
  * @param {Record<string, any>} e an entry
  * @param {string} where the entry's position, for errors
  * @returns {void}
- * @throws {Error} when `pool` or `checkpointEvery` is bad
+ * @throws {Error} when `keepPasser` is not a boolean
+ */
+function checkKeepPasser(e, where) {
+    if (e.keepPasser !== undefined && typeof e.keepPasser !== 'boolean') {
+        throw new Error(`${where} (${e.name}): "keepPasser" must be true or false`);
+    }
+}
+
+/**
+ * @param {Record<string, any>} e an entry
+ * @param {string} where the entry's position, for errors
+ * @returns {void}
+ * @throws {Error} when `pool`, `preyShare` or `checkpointEvery` is bad
  */
 function checkShared(e, where) {
-    if (e.pool !== undefined && !(typeof e.pool === 'number' && e.pool >= 0 && e.pool <= 1)) {
-        throw new Error(`${where} (${e.name}): "pool" must be a share from 0 to 1`);
+    for (const key of ['pool', 'preyShare']) {
+        const v = e[key];
+        if (v !== undefined && !(typeof v === 'number' && v >= 0 && v <= 1)) {
+            throw new Error(`${where} (${e.name}): "${key}" must be a share from 0 to 1`);
+        }
     }
     if (e.checkpointEvery !== undefined && !(Number.isInteger(e.checkpointEvery) && e.checkpointEvery >= 1)) {
         throw new Error(`${where} (${e.name}): "checkpointEvery" must be an integer >= 1`);
     }
+    checkKeepPasser(e, where);
 }
 
 /**
@@ -94,10 +114,22 @@ function checkFixed(e, where, isLast) {
             `${where} (${e.name}): "generations" must be an integer >= 1 (only the last stage may omit it)`,
         );
     }
-    for (const key of ['minGenerations', 'maxGenerations', 'optional']) {
+    for (const key of ['minGenerations', 'maxGenerations', 'optional', 'plateauStop']) {
         if (e[key] !== undefined) {
             throw new Error(`${where} (${e.name}): "${key}" belongs to a gated stage (one with a "gate")`);
         }
+    }
+}
+
+/**
+ * @param {Record<string, any>} e a gated entry
+ * @param {string} where the entry's position, for errors
+ * @returns {void}
+ * @throws {Error} when `plateauStop` is not a whole number of checkpoints (0: none)
+ */
+function checkPlateauStop(e, where) {
+    if (e.plateauStop !== undefined && !(Number.isInteger(e.plateauStop) && e.plateauStop >= 0)) {
+        throw new Error(`${where} (${e.name}): "plateauStop" must be an integer >= 0`);
     }
 }
 
@@ -124,6 +156,7 @@ function checkGated(e, where) {
     if (e.optional !== undefined && typeof e.optional !== 'boolean') {
         throw new Error(`${where} (${e.name}): "optional" must be true or false`);
     }
+    checkPlateauStop(e, where);
 }
 
 /**

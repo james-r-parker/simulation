@@ -4,6 +4,7 @@
 // plain data (apart from the stage list) so a run resumes from it.
 
 import { GATE_HOLD, REVIEW_GENERATIONS, REVIEW_MAX, readGate, streaksOf } from './stage-gate.js';
+import { bestOf, plateaued, stageProgress } from './stage-progress.js';
 
 /**
  * @typedef {object} RunStage
@@ -13,7 +14,11 @@ import { GATE_HOLD, REVIEW_GENERATIONS, REVIEW_MAX, readGate, streaksOf } from '
  * @property {number} [minGenerations] a gated stage's least generations before it can pass
  * @property {number} [maxGenerations] a gated stage's generations before it stalls
  * @property {boolean} [optional] a stalled optional stage lets the ladder move on
+ * @property {number} [plateauStop] gate checkpoints over which the stage's best progress must rise by `PROGRESS_RISE` once
+ *   `minGenerations` have run, or the stage stalls with reason `plateau` (0 or absent: it runs to `maxGenerations`)
  * @property {number} [checkpointEvery] this stage's generations between checkpoints
+ * @property {boolean} [keepPasser] a gated stage's best passing elites are kept (`readings.keepers.<stage>`, the drill
+ *   readings of the kept passers on the stage's own drills) and count for its retention when the current champions fail
  */
 
 /**
@@ -27,13 +32,18 @@ import { GATE_HOLD, REVIEW_GENERATIONS, REVIEW_MAX, readGate, streaksOf } from '
  * @property {Record<string, {passedAt: number, checkpoints: number, gate: object[]}>} passed each passed stage
  * @property {Record<string, number>} reviews reviews begun per stage
  * @property {boolean[]} history the current stage's gate results since it began or last returned from a review
+ * @property {number[]} progressHistory the current stage's progress (`stageProgress`) at each gate checkpoint since it began or
+ *   last returned from a review
  * @property {Record<string, number>} failStreaks each passed stage's retention failures in a row
  * @property {{index: number, left: number} | null} review the review being run
  * @property {'running' | 'done' | 'stalled'} status whether the run goes on
- * @property {{stage: string, generation: number, optional: boolean, failing: object[]}[]} stalled each stall
+ * @property {{stage: string, generation: number, optional: boolean, failing: object[], reason: StallReason, bestProgress: number}[]} stalled
+ *   each stall
  * @property {object[]} last the failing conditions of the last gate read
  * @property {string | null} lastStage the stage whose world ran the last generation (null before the first)
  */
+
+/** @typedef {'max' | 'plateau' | 'review'} StallReason why a stage stalled: its maximum generations, a plateau of its progress, or a regression past `REVIEW_MAX` */
 
 /**
  * @typedef {object} StageEvent
@@ -66,6 +76,7 @@ export function initialState(stages, total) {
         passed: {},
         reviews: {},
         history: [],
+        progressHistory: [],
         failStreaks: {},
         review: null,
         status: 'running',
@@ -164,6 +175,7 @@ function copy(state) {
         passed: { ...state.passed },
         reviews: { ...state.reviews },
         history: [...state.history],
+        progressHistory: [...state.progressHistory],
         failStreaks: { ...state.failStreaks },
         review: state.review === null ? null : { ...state.review },
         stalled: [...state.stalled],
@@ -179,18 +191,21 @@ function moveOn(s) {
     s.index += 1;
     s.count = 0;
     s.history = [];
+    s.progressHistory = [];
 }
 
 /**
  * Records a stall: a required stage stops the run, an optional one lets the ladder move on.
  * @param {RunState} s the state (changed)
  * @param {RunStage} entry the stalled stage
+ * @param {StallReason} reason why it stalled
  * @param {StageEvent[]} events receives `TrainStageStalled`
  * @returns {void}
  */
-function stall(s, entry, events) {
+function stall(s, entry, reason, events) {
     const optional = entry.optional === true;
-    const stalled = { stage: entry.name, generation: s.generation, optional, failing: s.last };
+    const bestProgress = bestOf(s.progressHistory);
+    const stalled = { stage: entry.name, generation: s.generation, optional, failing: s.last, reason, bestProgress };
     s.stalled.push(stalled);
     events.push({ level: 'error', event: 'TrainStageStalled', fields: stalled });
     if (optional) {
@@ -201,29 +216,53 @@ function stall(s, entry, events) {
 }
 
 /**
+ * Reads one passed stage's gate on the current champions, then (for a `keepPasser` stage) on the kept passers.
+ * @param {RunStage} entry the passed stage
+ * @param {Record<string, any>} readings the checkpoint's readings
+ * @param {Record<string, number>} retention the retention read so far
+ * @returns {{read: {passed: boolean, conditions: any[]}, kept: boolean}} the read that counts, and whether a kept
+ *   passer carried it
+ */
+function readPassed(entry, readings, retention) {
+    const gate = /** @type {any} */ (entry.gate);
+    const read = readGate(gate, { ...readings, retention });
+    const keeper = entry.keepPasser === true ? readings.keepers?.[entry.name] : undefined;
+    if (read.passed || keeper === undefined) {
+        return { read, kept: false };
+    }
+    const alt = readGate(gate, { ...readings, drill: { ...readings.drill, ...keeper }, retention });
+    return alt.passed ? { read: alt, kept: true } : { read, kept: false };
+}
+
+/**
  * Reads the gate of every passed stage and keeps each one's failure streak.
  * @param {RunState} s the state (failure streaks changed)
  * @param {Record<string, any>} readings the checkpoint's readings
- * @returns {{retention: Record<string, number>, failing: Record<string, object[]>}} `retention.<stage>` (1 or 0),
- *   `retention.all`, and the failing conditions of each failed stage
+ * @returns {{retention: Record<string, number>, failing: Record<string, object[]>, kept: string[]}} `retention.<stage>`
+ *   (1 or 0), `retention.all`, the failing conditions of each failed stage and the stages a kept passer carried
  */
 function readRetention(s, readings) {
     /** @type {Record<string, number>} */
     const retention = {};
     /** @type {Record<string, object[]>} */
     const failing = {};
+    /** @type {string[]} */
+    const kept = [];
     retention.all = 1;
     for (const entry of s.stages.slice(0, s.index)) {
         if (!Object.hasOwn(s.passed, entry.name)) {
             continue;
         }
-        const read = readGate(/** @type {any} */ (entry.gate), { ...readings, retention });
+        const { read, kept: carried } = readPassed(entry, readings, retention);
+        if (carried) {
+            kept.push(entry.name);
+        }
         retention[entry.name] = read.passed ? 1 : 0;
         retention.all = Math.min(retention.all, retention[entry.name]);
         s.failStreaks[entry.name] = read.passed ? 0 : (s.failStreaks[entry.name] ?? 0) + 1;
         failing[entry.name] = read.conditions.filter((c) => !c.passed);
     }
-    return { retention, failing };
+    return { retention, failing, kept };
 }
 
 /**
@@ -240,7 +279,7 @@ function regress(s, { stage, failing }, events) {
     s.failStreaks = {};
     if ((s.reviews[stage] ?? 0) >= REVIEW_MAX) {
         s.last = failing;
-        stall(s, { name: stage }, events);
+        stall(s, { name: stage }, 'review', events);
         return;
     }
     s.reviews[stage] = (s.reviews[stage] ?? 0) + 1;
@@ -253,6 +292,22 @@ function regress(s, { stage, failing }, events) {
 }
 
 /**
+ * Stalls a stage whose best progress stopped rising (`plateauStop`), unless this checkpoint also reaches its maximum
+ * generations, which stalls it with reason `max` instead.
+ * @param {RunState} s the state (changed on a stall)
+ * @param {RunStage} entry the current stage
+ * @param {StageEvent[]} events receives `TrainStageStalled`
+ * @returns {boolean} whether the stage stalled on a plateau
+ */
+function plateauStall(s, entry, events) {
+    if (s.count >= /** @type {number} */ (entry.maxGenerations) || !plateaued(s.progressHistory, entry)) {
+        return false;
+    }
+    stall(s, entry, 'plateau', events);
+    return true;
+}
+
+/**
  * Reads a checkpoint for a gated stage: retention, regression, the gate and the hold.
  * @param {RunState} s the state (changed)
  * @param {RunStage} entry the current stage
@@ -262,7 +317,7 @@ function regress(s, { stage, failing }, events) {
  */
 function gateCheckpoint(s, entry, readings, events) {
     const ripe = s.count >= (entry.minGenerations ?? 1);
-    const { retention, failing } = ripe ? readRetention(s, readings) : { retention: {}, failing: {} };
+    const { retention, failing, kept } = ripe ? readRetention(s, readings) : { retention: {}, failing: {}, kept: [] };
     const regressed = Object.keys(failing).find((name) => s.failStreaks[name] >= GATE_HOLD);
     if (regressed !== undefined) {
         regress(s, { stage: regressed, failing: failing[regressed] }, events);
@@ -271,6 +326,7 @@ function gateCheckpoint(s, entry, readings, events) {
     const read = readGate(/** @type {any} */ (entry.gate), { ...readings, retention });
     s.last = read.conditions.filter((c) => !c.passed);
     s.history.push(read.passed);
+    s.progressHistory.push(stageProgress(/** @type {any} */ (entry.gate), readings));
     const { streak, held } = streaksOf(s.history);
     events.push({
         level: 'info',
@@ -281,10 +337,13 @@ function gateCheckpoint(s, entry, readings, events) {
             passed: read.passed,
             conditions: read.conditions,
             retention,
+            progress: s.progressHistory[s.progressHistory.length - 1],
+            bestProgress: bestOf(s.progressHistory),
+            ...(kept.length === 0 ? {} : { kept }),
         },
     });
     if (!held || !ripe) {
-        return false;
+        return !read.passed && ripe && plateauStall(s, entry, events);
     }
     s.passed[entry.name] = { passedAt: s.generation, checkpoints: streak, gate: read.conditions };
     events.push({
@@ -307,6 +366,7 @@ function stepReview(s) {
     if (review.left === 0) {
         s.review = null;
         s.history = [];
+        s.progressHistory = [];
         s.failStreaks = {};
         // a review only starts inside a gated stage; leave room for a hold before its stall
         const max = /** @type {number} */ (s.stages[s.index].maxGenerations);
@@ -324,7 +384,7 @@ function stepReview(s) {
 function stepGated(s, entry, readings, events) {
     const moved = readings !== null && gateCheckpoint(s, entry, readings, events);
     if (!moved && s.count >= /** @type {number} */ (entry.maxGenerations)) {
-        stall(s, entry, events);
+        stall(s, entry, 'max', events);
     }
 }
 

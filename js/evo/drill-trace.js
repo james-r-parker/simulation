@@ -127,3 +127,20 @@ export function traceFields(trace, won) {
         reason: won ? null : lostReason(trace),
     };
 }
+
+/**
+ * The aggregates a drill cell keeps of its trials' trace fields (docs/designs/training-loop.md, Graded readings).
+ * @param {readonly Record<string, any>[]} records the cell's trial records (`traceFields` for a hunting drill)
+ * @returns {{jawTrials: number, closestList: number[]} | {}} the trials with `jawTicks` above 0 and each trial's `closest`
+ *   (a null left out); nothing when no record carries a trace
+ */
+export function traceAggregates(records) {
+    const traced = records.filter((record) => typeof record.jawTicks === 'number');
+    if (traced.length === 0) {
+        return {};
+    }
+    return {
+        jawTrials: traced.filter((record) => record.jawTicks > 0).length,
+        closestList: traced.flatMap((record) => (typeof record.closest === 'number' ? [record.closest] : [])),
+    };
+}

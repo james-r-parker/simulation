@@ -1,0 +1,18 @@
+{
+  "hunterTicks": 23474,
+  "kinNear": 10431,
+  "kinClose": 7964,
+  "wantsBiteBesideKin": 6403,
+  "recoil": 40760,
+  "recoilBesideKin": 40680,
+  "bitingElsewhere": 10217,
+  "hunterTicksNoKin": 15510,
+  "births": 83,
+  "kinPairsMax": 26,
+  "kinNearShare": 0.4444,
+  "kinCloseShare": 0.3393,
+  "wantsBiteBesideKinShare": 0.2728,
+  "bitingElsewhereShare": 0.6587,
+  "wantsBiteBesideKinOfClose": 0.804,
+  "recoilPerHunterTick": 1.736
+}
