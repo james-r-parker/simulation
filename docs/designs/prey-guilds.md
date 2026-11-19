@@ -56,6 +56,23 @@ The baseline is the shared run of [detector-baseline.md](detector-baseline.md), 
 
 Add the four new guild detectors in `js/evo/scene-guilds.js` and run a 16-seed baseline (`E-PG-1`, 400,000 ticks, floor on) on the post-`honest-budgets` defaults. Prediction, written before the run: `eval.defender_repel_per_1k` is `0` (not yet implemented), `eval.scout_alarm_lead_share` is null or under `0.1`, and `eval.guild_survival.*` differs by less than `0.05` across `forager`, `reproducer`, `scout` and `defender`.
 
+Baseline (`evals/power/defaults-floor-on-E210.json`, 128 seeds, 200000 ticks, `rulesHash` `38be2908ad820c86`):
+
+| Metric                             | Mean    | Range             | Null     | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
+| ---------------------------------- | ------- | ----------------- | -------- | ------ | ------ | ------ | --------------------- |
+| `eval.prey_selectivity.forager`    | 1.289   | 0 to 5.066        | 0.007813 | 1      | 0.75   | -      | more than 64          |
+| `eval.prey_selectivity.reproducer` | 1.476   | 0 to 11.92        | 0.007813 | -      | 1      | -      | more than 64          |
+| `eval.prey_selectivity.scout`      | 1.601   | 0 to 45.14        | 0.007813 | 1      | -      | -      | more than 64          |
+| `eval.prey_selectivity.defender`   | 1.291   | 0 to 6.912        | 0.007813 | 1      | 0.75   | -      | more than 64          |
+| `eval.defender_repel_per_1k`       | 0       | 0 to 0            | 0        | -      | -      | -      | more than 64          |
+| `eval.scout_alarm_lead_share`      | 0       | 0 to 0            | 0.9922   | -      | -      | -      | more than 64          |
+| `eval.guild_survival.forager`      | 0.06933 | 0.02862 to 0.1274 | 0        | 0.03   | 0.03   | 0.03   | 16                    |
+| `eval.guild_survival.reproducer`   | 0.06756 | 0.0286 to 0.1294  | 0        | 0.03   | 0.03   | 0.03   | 16                    |
+| `eval.guild_survival.scout`        | 0.06988 | 0.03522 to 0.514  | 0        | 0.03   | 0.075  | 0.05   | 16                    |
+| `eval.guild_survival.defender`     | 0.06846 | 0.03588 to 0.1125 | 0        | 0.03   | 0.03   | 0.03   | 16                    |
+
+Verdict (E-PG-1, E210): Partially falsified on selectivity. `eval.defender_repel_per_1k` is 0, `eval.scout_alarm_lead_share` is 0 (null on 99.22% of seeds), and `eval.guild_survival.*` spans 0.06756 to 0.06988 (spread 0.00232, under 0.05). All four `eval.prey_selectivity.*` means (1.289 to 1.601) sit above 1.2 (outside the predicted 0.8 to 1.2 band, driven by high seed-level ratio variance), and all four remain `unverified` (more than 64 seeds needed).
+
 #### Chunks
 
 | Chunk | Tasks              | Contents                                                                                     |
