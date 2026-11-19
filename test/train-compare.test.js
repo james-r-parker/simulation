@@ -114,6 +114,7 @@ describe('formatCompare', () => {
         expect(text).toMatch(/weak\s+0% -> -/);
         expect(text).toMatch(/hunt\s+- -> 0%/);
         expect(text).toContain('verdict: incomparable (');
+        expect(text).not.toContain('offset  before');
         expect(text).not.toContain('mean score difference');
         expect(text).toMatch(/passed last stage 0 -> 0/);
     });

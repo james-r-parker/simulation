@@ -50,7 +50,7 @@ export function formatStages(before, after) {
  * @returns {string[]} the pairs, the stages side by side, the CPU hours, the unmatched offsets and the verdict
  */
 export function formatCompare(compare, { before, after }) {
-    const lines = [...formatPairs(compare), '', ...formatStages(before, after), ''];
+    const lines = [...(compare.matched === 0 ? [] : [...formatPairs(compare), '']), ...formatStages(before, after), ''];
     lines.push(`passed last stage ${before.passedLast} -> ${after.passedLast}`);
     const cpu = `cpu hours ${before.cpuHours.toFixed(1)} -> ${after.cpuHours.toFixed(1)}`;
     lines.push(`${cpu} (${((after.cpuHours / (before.cpuHours || 1) - 1) * 100).toFixed(0)}%)`);
