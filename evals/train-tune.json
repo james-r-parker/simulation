@@ -12,13 +12,9 @@
   },
   "tunables": [
     {
-      "key": "maxGenerations",
+      "key": "plateauStop",
       "stage": "nursery",
-      "values": [80]
-    },
-    {
-      "key": "episodes",
-      "values": [48]
+      "values": [10, 0]
     },
     {
       "key": "preyShare",
@@ -26,13 +22,13 @@
       "values": [0.7, 1.0]
     },
     {
-      "key": "plateauStop",
-      "values": [3, 10]
-    },
-    {
       "key": "minGenerations",
       "stage": "hunt-contact",
       "values": [5, 20]
+    },
+    {
+      "key": "plateauStop",
+      "values": [3, 10]
     }
   ]
 }
