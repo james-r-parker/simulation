@@ -58,6 +58,7 @@ export function manifestBase(args, commandLine) {
             until: args.until,
             resume: args.resume,
             ticks: args.ticks ?? null,
+            offerFrom: args.offerFrom ?? null,
             checkpointEvery: args.checkpointEvery,
         },
     };

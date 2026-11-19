@@ -41,6 +41,7 @@
     "train:export": "node scripts/train-export.mjs",
     "train:yield": "node scripts/train-yield.mjs",
     "train:compare": "node scripts/train-compare.mjs",
+    "train:screen": "node scripts/train-screen.mjs",
     "eval:compare": "node scripts/eval-compare.mjs",
     "eval:power": "node scripts/eval-power.mjs",
     "metric:liveness": "node scripts/metric-liveness.mjs",
