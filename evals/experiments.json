@@ -5017,6 +5017,22 @@
       "reports": ["evals/decisions/E208/results.md"]
     },
     {
+      "id": "E209",
+      "date": "2026-11-19",
+      "branch": "feat/training-loop-e209",
+      "hypothesis": "E-TL-5 (training-loop T22a): E208 showed episodes 48 raising hunt-mid passes from 19% to 38% on the 16 tune offsets with no verdict (11 up, 4 down, sign p 0.118); the 16 held-out offsets 128 to 248 test whether that holds.",
+      "prediction": "Written before the run: episodes 48 reads better on the held-out offsets (sign test p < 0.05, interval excludes 0) and doubles hunt-mid passes again; falsified on no verdict or worse.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "base: the current ladder, episodes at its default, on offsets 128 to 248",
+      "after": "scripts/run-detached.sh E-TL-5 --frozen -- npm run train:screen -- --grid evals/train-screens/episodes48-holdout.grid.json",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Prediction only; the run is in flight.",
+      "reports": ["evals/decisions/E209/results.md"]
+    },
+    {
       "id": "E210",
       "date": "2026-11-19",
       "branch": "chore/detector-topup",
