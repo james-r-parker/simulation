@@ -40,6 +40,7 @@ const CHECKPOINT_TICKS = 1000;
  * @property {{snapshots: import('./archive-snapshot.js').ArchiveSnapshot[], share: number}} [pool] the opponent pool: frozen
  *   snapshots and the share of founders and floor entrants drawn from them (none: no draw, the episode a run without the
  *   option plays)
+ * @property {number} [preyShare] the stage's quota of prey specialisations among the seeded agents, 0 to 1 (`quotaSpec`; none: the archive's elite mix)
  * @property {string} [policy] a registered policy that keeps an archive (default `LIVE_POLICY`)
  * @property {readonly import('./metric-registry/index.js').MetricName[]} [metrics] eval metric names to return (a checkpoint's eval episode); default none
  */
@@ -175,6 +176,7 @@ export function runEpisode(task) {
         archive,
         onOffer: sink.onOffer,
         opponents: task.pool,
+        ...(task.preyShare === undefined ? {} : { preyShare: task.preyShare }),
     });
     sink.founders = policy.poolFounders;
     const world = createWorld(config, policy.brain);

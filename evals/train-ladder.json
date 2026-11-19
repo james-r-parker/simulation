@@ -29,6 +29,7 @@
   },
   {
     "name": "hunt-weak",
+    "preyShare": 0.9,
     "config": "evals/stages/hunt-weak.json",
     "minGenerations": 10,
     "maxGenerations": 60,
@@ -41,6 +42,7 @@
   },
   {
     "name": "hunt",
+    "preyShare": 0.9,
     "config": "evals/stages/hunt.json",
     "minGenerations": 10,
     "maxGenerations": 60,

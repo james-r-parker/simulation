@@ -61,6 +61,7 @@ async function runEpisodes({ seeds, stage, archive, pool }, { args, generation, 
         ticks,
         offerFromTick: args.offerFrom ?? OFFER_FROM_TICK,
         ...(opponents === undefined ? {} : { pool: opponents }),
+        ...(stage.preyShare === undefined ? {} : { preyShare: stage.preyShare }),
     }));
     try {
         return await runPool(tasks, { workerUrl: WORKER_URL, workers: args.workers });
