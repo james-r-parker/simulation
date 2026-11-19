@@ -8,7 +8,14 @@ import { fileURLToPath } from 'node:url';
 import { snapshotArchive } from '../js/evo/archive-snapshot.js';
 import { coverage, qdScore } from '../js/evo/archive.js';
 import { CROSS_TRIALS } from '../js/evo/crossplay.js';
-import { checkpointDue, currentEntry, initialState, needsGate, nextStage } from '../js/evo/curriculum.js';
+import {
+    checkpointDue,
+    currentEntry,
+    episodeDifficulty,
+    initialState,
+    needsGate,
+    nextStage,
+} from '../js/evo/curriculum.js';
 import { recordAccess } from '../js/evo/partitions.js';
 import { GATE_TRIALS } from '../js/evo/stage-gate.js';
 import { seedlessConfig } from '../js/evo/report.js';
@@ -22,6 +29,7 @@ import { checkOut, parseArgs } from './lib/train-args.mjs';
 import { EVAL_TICKS, GATE_SEED, appendCurveRow, runCheckpoint } from './lib/train-checkpoint.mjs';
 import { checkpointCrossplay, preyVsStageNames, readsCrossplay } from './lib/train-crossplay.mjs';
 import { loadKeepers, toKept } from './lib/train-keepers.mjs';
+import { applySteer, episodeOverrides, steerOptions } from './lib/train-difficulty.mjs';
 import { loadPool, poolAfterCheckpoint, poolIndex, taskPool } from './lib/train-pool.mjs';
 import { buildManifest, manifestBase, partitionManifests, startLedger, writeManifest } from './lib/train-manifest.mjs';
 import { loadResume, loadStages, readJson, saveArchive } from './lib/train-state.mjs';
@@ -44,20 +52,21 @@ const SEEDS_URL = new URL('../evals/train-seeds.json', import.meta.url);
 /**
  * Runs the generation's episodes on the pool, in index order.
  * @param {{seeds: number[], stage: import('./lib/train-state.mjs').StageInfo, archive: import('../js/evo/archive.js').Archive,
- *   pool: import('../js/evo/opponent-pool.js').Pool}} run
- *   the train seeds, the generation's stage, the archive to freeze and the opponent pool
+ *   pool: import('../js/evo/opponent-pool.js').Pool, difficulty: number | null}} run
+ *   the train seeds, the generation's stage, the archive to freeze, the opponent pool and the adapted value laid over the
+ *   stage's overrides (`episodeDifficulty`; null: none)
  * @param {{args: import('./lib/train-args.mjs').TrainArgs, generation: number, log: import('../js/sim/log.js').SimLog}} at
  *   the options, the generation and the log
  * @returns {Promise<any[]>} the episode results in index order
  * @throws {Error} after logging `TrainEpisodeFailed` when an episode fails
  */
-async function runEpisodes({ seeds, stage, archive, pool }, { args, generation, log }) {
+async function runEpisodes({ seeds, stage, archive, pool, difficulty }, { args, generation, log }) {
     const snapshot = snapshotArchive(archive);
     const ticks = args.ticks ?? EPISODE_TICKS;
     const opponents = taskPool(pool, stage.pool);
     const tasks = Array.from({ length: args.episodes }, (_, episode) => ({
         seed: episodeSeed(seeds, { generation, episodes: args.episodes, episode, offset: args.seedOffset }),
-        overrides: stage.overrides,
+        overrides: episodeOverrides(stage.overrides, difficulty),
         snapshot,
         ticks,
         offerFromTick: args.offerFrom ?? OFFER_FROM_TICK,
@@ -142,8 +151,8 @@ function saveManifest(run) {
  * @param {Run} run the run
  * @param {{drillTrials: number, gateTrials: number, crossTrials: number}} sizes trials per drill at a curve checkpoint and
  *   at a gate checkpoint, and per cross-play cell
- * @returns {Promise<{point: Record<string, any>, readings: Record<string, any> | null} | null>} the curve row (not yet
- *   written) and the gate readings, or null when no checkpoint is due
+ * @returns {Promise<{point: Record<string, any>, readings: Record<string, any> | null, steer?: any} | null>} the curve row (not yet
+ *   written), the gate readings and the steering read of an adaptive stage, or null when no checkpoint is due
  */
 async function maybeCheckpoint(run, { drillTrials, gateTrials, crossTrials }) {
     const { args, archive, log, state } = run;
@@ -158,7 +167,8 @@ async function maybeCheckpoint(run, { drillTrials, gateTrials, crossTrials }) {
         usePartition(run, { purpose: 'gate', partition: 'validation', generation: state.generation + 1 });
     }
     const keepers = run.stages.some((s) => s.keepPasser) ? { kept: run.keepers, stages: run.stages } : undefined;
-    const options = { workers: args.workers, evalTicks: args.ticks ?? EVAL_TICKS, drillTrials, gate, keepers };
+    const steer = steerOptions(stage, state);
+    const options = { workers: args.workers, evalTicks: args.ticks ?? EVAL_TICKS, drillTrials, gate, keepers, steer };
     const result = await runCheckpoint({ archive, stage, progress, options, log });
     if (gate !== null && readsCrossplay(run.stages, state)) {
         const preyStages = preyVsStageNames(run.stages, state);
@@ -264,7 +274,9 @@ async function runGeneration(run, { drillTrials, gateTrials, crossTrials, print 
     const generation = run.state.generation;
     const stage = /** @type {import('./lib/train-state.mjs').StageInfo} */ (currentEntry(run.state));
     const t0 = performance.now();
-    const results = await runEpisodes({ seeds: run.seeds, stage, archive, pool: run.pool }, { args, generation, log });
+    const difficulty = episodeDifficulty(run.state);
+    const episodes = { seeds: run.seeds, stage, archive, pool: run.pool, difficulty };
+    const results = await runEpisodes(episodes, { args, generation, log });
     const outcomes = results.map((r) => mergeEpisode(archive, r, log));
     const wallSeconds = (performance.now() - t0) / 1000;
     const { ticks, cpuShare, busy } = usage(results, { wallSeconds, workers: run.workers });
@@ -273,7 +285,9 @@ async function runGeneration(run, { drillTrials, gateTrials, crossTrials, print 
     const fields = { generation, stage: stage.name, coverage: coverage(archive), qdScore: qdScore(archive) };
     log.log('info', 'TrainGeneration', { ...fields, wallSeconds, cpuShare, offers: outcomes });
     const checkpoint = await maybeCheckpoint(run, { drillTrials, gateTrials, crossTrials });
-    const { state, columns } = advance(run.state, checkpoint, log);
+    const stepped = advance(run.state, checkpoint, log);
+    const { columns } = stepped;
+    const state = applySteer({ before: run.state, after: stepped.state, steer: checkpoint?.steer }, log);
     run.state = state;
     keepPassers(run, { checkpoint, columns, stage });
     keepPool(run, { checkpoint, columns, stage: stage.name });
@@ -282,7 +296,7 @@ async function runGeneration(run, { drillTrials, gateTrials, crossTrials, print 
     saveManifest(run);
     if (checkpoint !== null) {
         const cpu = { workers: run.workers, cpuShare, cpuSeconds: run.cpuSeconds };
-        run.lastPoint = { ...checkpoint.point, ...columns, ...cpu };
+        run.lastPoint = { ...checkpoint.point, ...columns, ...cpu, difficulty };
         appendCurveRow(args.out, run.lastPoint);
     }
     print(

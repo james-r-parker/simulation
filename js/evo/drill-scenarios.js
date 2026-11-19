@@ -33,10 +33,11 @@ export const WEAK_SPRINT_BOOST = 0.2;
 /** The forager's `sprintBoost` in `prey-mid` and the `hunt-mid` stage, between `WEAK_SPRINT_BOOST` and the default 1. */
 export const MID_SPRINT_BOOST = 0.3;
 /**
- * @param {number} sprintBoost the forager's sprint
- * @returns {Readonly<{specialisations: {forager: {sprintBoost: number}}}>} an arena that cuts it
+ * @param {number} sprintBoost the forager's sprint (the scripted fleer of a hunting drill is one)
+ * @returns {Readonly<{specialisations: {forager: {sprintBoost: number}}}>} an arena that sets it: the `arena` of `prey-weak`
+ *   and `prey-mid`, and the config the adaptive-difficulty steering read runs `prey-ahead` under (`js/evo/adaptive-difficulty.js`)
  */
-const sprintArena = (sprintBoost) => Object.freeze({ specialisations: { forager: { sprintBoost } } });
+export const sprintArena = (sprintBoost) => Object.freeze({ specialisations: { forager: { sprintBoost } } });
 const WEAK_PREY_ARENA = sprintArena(WEAK_SPRINT_BOOST);
 /** The prey of `prey-too-big` holds this multiple of the subject's energy. */
 const BIG_FACTOR = 2;

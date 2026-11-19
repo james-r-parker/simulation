@@ -8,6 +8,7 @@ import { validateGate } from './stage-gate.js';
 export {
     checkpointDue,
     currentEntry,
+    episodeDifficulty,
     initialState,
     isGated,
     needsGate,

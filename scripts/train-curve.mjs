@@ -93,12 +93,13 @@ function gateLines(rows) {
 /**
  * @param {Record<string, any>[]} rows the curve rows
  * @returns {string[]} the table, the gate readings of a gated run (`gate`, `retention`, `progress` and `best` (best progress)
- *   columns, and a line per gate checkpoint) and the plateau line
+ *   columns, a `difficulty` column when a stage is adaptive, and a line per gate checkpoint) and the plateau line
  */
 export function formatCurve(rows) {
     const gated = rows.some((r) => r.gate !== undefined);
     const short = CURVE_METRICS.map(shortName);
-    const gateHeader = gated ? ['gate', 'retention', 'progress', 'best'] : [];
+    const adaptive = rows.some((r) => typeof r.difficulty === 'number');
+    const gateHeader = gated ? ['gate', 'retention', 'progress', 'best', ...(adaptive ? ['difficulty'] : [])] : [];
     const header = ['gen', 'stage', 'ticks', 'wall s', 'coverage', 'qd', 'drill edge', ...gateHeader, ...short];
     const body = rows.map((r) => [
         String(r.generation),
@@ -108,7 +109,15 @@ export function formatCurve(rows) {
         cell(r.coverage),
         cell(r.qdScore),
         cell(r.drillEdge),
-        ...(gated ? [gateCell(r.gate), retentionCell(r.gate), cell(r.progress), cell(r.bestProgress)] : []),
+        ...(gated
+            ? [
+                  gateCell(r.gate),
+                  retentionCell(r.gate),
+                  cell(r.progress),
+                  cell(r.bestProgress),
+                  ...(adaptive ? [cell(r.difficulty)] : []),
+              ]
+            : []),
         ...CURVE_METRICS.map((name) => cell(r[name])),
     ]);
     const table = [header, ...body];

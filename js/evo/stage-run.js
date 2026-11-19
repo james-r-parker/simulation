@@ -17,6 +17,8 @@ import { bestOf, plateaued, stageProgress } from './stage-progress.js';
  * @property {number} [plateauStop] gate checkpoints over which the stage's best progress must rise by `PROGRESS_RISE` once
  *   `minGenerations` have run, or the stage stalls with reason `plateau` (0 or absent: it runs to `maxGenerations`)
  * @property {number} [checkpointEvery] this stage's generations between checkpoints
+ * @property {import('./adaptive-difficulty.js').Adapt} [adapt] a gated stage's adaptive difficulty: the value of `param` the
+ *   episodes run at moves at each gate checkpoint (`RunState.difficulty`)
  * @property {boolean} [keepPasser] a gated stage's best passing elites are kept (`readings.keepers.<stage>`, the drill
  *   readings of the kept passers on the stage's own drills) and count for its retention when the current champions fail
  */
@@ -41,6 +43,8 @@ import { bestOf, plateaued, stageProgress } from './stage-progress.js';
  *   each stall
  * @property {object[]} last the failing conditions of the last gate read
  * @property {string | null} lastStage the stage whose world ran the last generation (null before the first)
+ * @property {number | null} difficulty the current stage's adapted value (`adapt.param`), set to `adapt.from` when the stage begins;
+ *   null when the stage has no `adapt`. Laid over the episodes' world outside the stage's `rulesHash`
  */
 
 /** @typedef {'max' | 'plateau' | 'review'} StallReason why a stage stalled: its maximum generations, a plateau of its progress, or a regression past `REVIEW_MAX` */
@@ -83,6 +87,7 @@ export function initialState(stages, total) {
         stalled: [],
         last: [],
         lastStage: null,
+        difficulty: stages[0]?.adapt?.from ?? null,
     };
 }
 
@@ -126,6 +131,19 @@ export function checkpointDue(state, every) {
 
 /**
  * @param {RunState} state the state
+ * @returns {number | null} the value of `adapt.param` the next generation's episodes run at: the stage's `difficulty`, the
+ *   full value (`adapt.to`) in a review of a passed stage, null when the stage world has no `adapt`
+ */
+export function episodeDifficulty(state) {
+    const adapt = currentEntry(state).adapt;
+    if (adapt === undefined) {
+        return null;
+    }
+    return state.review === null ? state.difficulty : adapt.to;
+}
+
+/**
+ * @param {RunState} state the state
  * @returns {boolean} whether the next checkpoint must read gate drills: a gated stage is being run, not a review
  */
 export function needsGate(state) {
@@ -159,6 +177,9 @@ export function restoreState(stages, total, saved) {
         throw new Error("resume: the stages' rules differ from the ones the archive was written under");
     }
     const state = /** @type {RunState} */ ({ ...initialState(stages, total), ...saved, status: 'running', total });
+    if (saved.difficulty === undefined) {
+        state.difficulty = currentEntry(state).adapt?.from ?? null;
+    }
     delete (/** @type {any} */ (state).names);
     delete (/** @type {any} */ (state).hashes);
     return state;
@@ -192,6 +213,7 @@ function moveOn(s) {
     s.count = 0;
     s.history = [];
     s.progressHistory = [];
+    s.difficulty = s.stages[s.index].adapt?.from ?? null;
 }
 
 /**
