@@ -6,8 +6,12 @@ import { createConfig } from '../js/sim/config.js';
 import { makeChampionFileFor } from './evo/helpers/champion-file.js';
 import { parseArgs, runInspect } from '../scripts/inspect-brain.mjs';
 
+/** @type {string[]} */
 const roots = [];
 
+/**
+ * @returns {{root: string, champions: string, configPath: string}} an isolated champion fixture
+ */
 function fixture() {
     const root = mkdtempSync(join(tmpdir(), 'inspect-brain-'));
     roots.push(root);
@@ -21,6 +25,10 @@ function fixture() {
     return { root, champions, configPath };
 }
 
+/**
+ * @param {{champions: string, configPath: string, out: string, name?: string, workers?: number, edit?: string | null}} options
+ * @returns {Record<string, any>} parsed CLI arguments
+ */
 function args({ champions, configPath, out, name = 'forager-a', workers = 1, edit = null }) {
     const argv = [
         '--champions',
@@ -114,12 +122,12 @@ describe('runInspect', () => {
         ).rejects.toThrow(/forager-a, forager-b/);
         const event = readFileSync(join(logDir, 'inspect-9x2.jsonl'), 'utf8')
             .split('\n')
-            .map((line) => line && JSON.parse(line))
-            .find((row) => row.event === 'InspectNameUnknown');
+            .map((/** @type {string} */ line) => line && JSON.parse(line))
+            .find((/** @type {any} */ row) => row.event === 'InspectNameUnknown');
         expect(event.names).toEqual(['forager-a', 'forager-b']);
     });
 });
 
-function mkdir(path) {
+function mkdir(/** @type {string} */ path) {
     mkdirSync(path, { recursive: true });
 }

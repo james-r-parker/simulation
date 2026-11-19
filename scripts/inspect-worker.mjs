@@ -2,8 +2,7 @@
 
 import { isMainThread } from 'node:worker_threads';
 import { DRILLS } from '../js/evo/drill-scenarios.js';
-import { ablateUnit } from '../js/evo/brain-ablation.js';
-import { applyEdits, silenceHook } from '../js/evo/brain-edit.js';
+import { ablateUnit, editTrials } from '../js/evo/brain-ablation.js';
 import { createTraceRecorder } from '../js/evo/brain-trace.js';
 import { brainLayout } from '../js/sim/brain-layout.js';
 import { createConfig } from '../js/sim/config.js';
@@ -22,13 +21,32 @@ export function runInspectTask(task) {
         throw new Error(`inspect: unknown drill "${task.drill}"`);
     }
     if (task.kind === 'ablation') {
-        return { unit: task.unit, trials: ablateUnit({ ...task, drill }) };
+        return {
+            unit: task.unit,
+            trials: ablateUnit({
+                subject: task.subject,
+                drill,
+                unit: task.unit,
+                seed: task.seed,
+                trials: task.trials,
+                config: task.config,
+            }),
+        };
     }
     if (task.kind === 'trace') {
         return traceTrial({ ...task, drill });
     }
     if (task.kind === 'edit') {
-        return editTrials({ ...task, drill });
+        return {
+            trials: editTrials({
+                subject: task.subject,
+                drill,
+                edits: task.edits,
+                seed: task.seed,
+                trials: task.trials,
+                config: task.config,
+            }),
+        };
     }
     throw new Error(`inspect: unknown task kind "${task.kind}"`);
 }
@@ -55,36 +73,6 @@ function traceTrial({ subject, drill, seed, trial, config }) {
         onTick: recorder.onTick,
     });
     return { trial, won, trace: recorder.finish(won), drillTrace: plan.trace?.(won) ?? null };
-}
-
-/**
- * Replays arbitrary edits over the same plans and world seeds as the intact run.
- * @param {Record<string, any>} task the subject, edits and replay settings
- * @returns {{trials: Array<{trial: number, won: boolean, trace: Record<string, any> | null}>}} edited results
- */
-function editTrials({ subject, drill, seed, trials, config, edits }) {
-    const { arena, staged, base, view, rng } = replayContext({ subject, drill, seed, config });
-    const edited = { ...staged, weights: applyEdits(staged.weights, brainLayout(base), edits) };
-    const silenced = edits.filter((edit) => edit.op === 'silence').map((edit) => edit.unit);
-    const hook = silenced.length === 0 ? undefined : silenceHook(silenced);
-    const results = [];
-    for (let trial = 0; trial < trials; trial++) {
-        const plan = drill.plan(rng, view);
-        let ticks = 0;
-        const won = playTrial({
-            plan,
-            subject: edited,
-            controlSpec: { name: 'intact' },
-            seed: seed + trial,
-            config: arena,
-            onTick(world, slots, tick) {
-                ticks += 1;
-                hook?.(world, slots, tick);
-            },
-        });
-        results.push({ trial, ticks, won, trace: plan.trace?.(won) ?? null });
-    }
-    return { trials: results };
 }
 
 /**

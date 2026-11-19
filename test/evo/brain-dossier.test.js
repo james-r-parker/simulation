@@ -61,7 +61,9 @@ describe('skipTable', () => {
             { label: labels.inputs[4], row: 4, value: Math.fround(-0.8) },
             { label: labels.inputs[2], row: 2, value: Math.fround(0.6) },
         ]);
-        expect(rows[bite].weights.every(({ row }) => row < POOLED_VALUES)).toBe(true);
+        expect(rows[bite].weights.every((/** @type {{row: number}} */ weight) => weight.row < POOLED_VALUES)).toBe(
+            true,
+        );
     });
 });
 

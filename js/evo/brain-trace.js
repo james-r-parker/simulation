@@ -20,7 +20,11 @@ export function createTraceRecorder({ maxTicks, inputCount, hidden }) {
     const rows = { inputCount, hidden, pooled, hiddenRows, outputs, x, y, heading, energy, alive };
     let ticks = 0;
 
-    function onTick(world, slots, tick) {
+    function onTick(
+        /** @type {Record<string, any>} */ world,
+        /** @type {Record<string, number[]>} */ slots,
+        /** @type {number} */ tick,
+    ) {
         if (ticks >= maxTicks) {
             throw new RangeError(`brain trace tick ${tick} exceeds maxTicks ${maxTicks}`);
         }
@@ -28,7 +32,7 @@ export function createTraceRecorder({ maxTicks, inputCount, hidden }) {
         ticks += 1;
     }
 
-    function finish(won) {
+    function finish(/** @type {boolean} */ won) {
         return { pooled, hidden: hiddenRows, outputs, x, y, heading, energy, alive, ticks, won };
     }
 

@@ -27,7 +27,9 @@ const USAGE =
  * @returns {Record<string, any>} the parsed options
  */
 export function parseArgs(argv) {
+    /** @param {string} key @returns {(value: string | undefined) => [string, string]} */
     const text = (key) => (value) => [key, String(value)];
+    /** @param {string} key @param {number} min @returns {(value: string | undefined, flag: string) => [string, number]} */
     const integer = (key, min) => (value, flag) => [key, intValue(flag, value, min, USAGE)];
     return parseFlags(argv, {
         valueFlags: {
@@ -108,11 +110,11 @@ export async function runInspect(args, { logDir = '.sim/logs' } = {}) {
  */
 async function buildReport({ args, subject, drill, config, edits, log }) {
     const layout = brainLayout(createConfig(config));
-    const labels = {
+    const labels = /** @type {{inputs: string[], outputs: string[], units: string[]}} */ ({
         inputs: inputLabels(createConfig(config)),
         outputs: outputLabels(),
         units: Array.from({ length: layout.hidden }, (_, unit) => unitLabel(unit)),
-    };
+    });
     const shared = { drill: drill.name, subject, seed: args.seed, trials: args.trials, config };
     const tasks = inspectionTasks(shared, layout.hidden, args.traceTrials, edits);
     const [base, ...rest] = await runPool(tasks, { workerUrl: WORKER_URL, workers: args.workers });
@@ -154,6 +156,7 @@ async function buildReport({ args, subject, drill, config, edits, log }) {
  * @returns {Array<Record<string, any>>} task messages
  */
 function inspectionTasks(shared, hidden, traceTrials, edits) {
+    /** @type {Array<Record<string, any>>} */
     const tasks = [{ kind: 'ablation', ...shared, unit: null }];
     for (let unit = 0; unit < hidden; unit++) {
         tasks.push({ kind: 'ablation', ...shared, unit });
@@ -169,7 +172,8 @@ function inspectionTasks(shared, hidden, traceTrials, edits) {
 
 /**
  * Pairs worker results and summarizes traces.
- * @param {Record<string, any>} data worker result groups and labels
+ * @param {{base: Record<string, any>, rest: Array<Record<string, any>>, hidden: number, traceTrials: number,
+ *   edits: Array<Record<string, any>> | null, labels: {inputs: string[], outputs: string[], units: string[]}}} data worker result groups and labels
  * @returns {Record<string, any>} ablation rows, traces and optional edit result
  */
 function assembleResults({ base, rest, hidden, traceTrials, edits, labels }) {
@@ -182,7 +186,7 @@ function assembleResults({ base, rest, hidden, traceTrials, edits, labels }) {
         ...result,
         summary: traceSummary(result.trace, labels),
     }));
-    const rawEdit = edits === null ? null : rest.at(-1);
+    const rawEdit = edits === null ? null : rest[hidden + traceTrials];
     const edit =
         rawEdit === null
             ? null
@@ -328,7 +332,5 @@ export function main(argv) {
 }
 
 if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
-    main(process.argv.slice(2)).then((code) => {
-        process.exitCode = code;
-    });
+    process.exitCode = await main(process.argv.slice(2));
 }

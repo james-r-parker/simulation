@@ -65,11 +65,12 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Refuge](refuge.md) - all three phases are built: the eight detectors, the refuge-access fixture and the diagnosis (`E130`: cover protects and fits, but threatened prey do not reach...
 - [Web presence](web-presence.md) - a designed icon in every size, Open Graph and Twitter cards, a full `<head>`, an installable web app manifest with a splash, `robots.txt` and `sitemap.xml`
 
-## In progress (24)
+## In progress (25)
 
 Partly built - the note says which phases are real.
 
 - [Brain capacity and memory](brain-capacity-and-memory.md) - the big bang (user, 2026-10-30): the instruments, the probes and a chosen brain (sparse mutation, silent-row decay, early memory, a lower leak floor, the skip b... _(validated d6ca3e6, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md), [fitness-and-selection.md](fitness-and-selection.md), [evolution-evals.md](evolution-evals.md), [world-balance.md](world-balance.md))_
+- [Brain inspection](brain-inspection.md) - Phase 1 is built; Phase 2 adds the `inspect-brain` skill and the first inspection of trained champions _(validated 495482d, 2026-11-19)_ _(depends on [training.md](training.md))_
 - [Brain reflex tests](brain-reflex-tests.md) - Phase 1 built: the six cases, the table builder, the batched evaluator, the bars, `npm run reflex` and `npm run bench:reflex` (522 genomes per second, 776 times... _(validated edd4cd4, 2026-11-07)_ _(depends on [training.md](training.md))_
 - [Chase physics and terrain](chase-physics.md) - add turning inertia, speed-coupled turn radius, asymmetric reverse thrust, and terrain drag/cover zones so chases are about momentum, banking and landscape rath... _(validated a8013e9, 2026-11-15)_ _(depends on [senses-and-motor.md](senses-and-motor.md), [sprint-burst.md](sprint-burst.md))_
 - [Deployment and community](deployment-and-community.md) - Phase 1c is built (no season gap while uploads are closed); Phase 1a (Release Please opens the release PR; production deploys only when it is merged) is built o... _(validated 626f040, 2026-11-13)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
@@ -94,13 +95,12 @@ Partly built - the note says which phases are real.
 - [World balance and biology](world-balance.md) - Phases 1 to 4, Phase 5 round 1 and Phase 6 built. The post-feature queue (T79 to T96) was not run as written: natural-selection.md Phase 4 (T48 to T67, closed 2... _(validated edd4cd4, 2026-11-07)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the screenshots script, the RE... _(validated d6ca3e6, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (11)
+## Proposed (10)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
 - [Alarm calls](alarm-calls.md) - Phase 1 instruments built (T1 to T3, #343) and the T4 baseline run (`E143`, 16 floor-on seeds, in Baseline): no call on any seed, and the audience a call would... _(validated f5c7880, 2026-11-07)_ _(depends on [realistic-keepers.md](realistic-keepers.md), [refuge.md](refuge.md))_
 - [Body genes](body-genes.md) - replace the five discrete `specialisations` templates with continuous, heritable body genes (jaw-vs-gut diet, bulk-vs-agility, sprint-vs-endurance, sight) so bo... _(validated 04e3b34, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [prey-guilds.md](prey-guilds.md))_
-- [Brain inspection](brain-inspection.md) - Phase 1 (the dossier: labelled weights, drill traces and unit ablation) is built first; Phase 2 adds the `inspect-brain` skill and the first inspection of train... _(validated 495482d, 2026-11-19)_ _(depends on [training.md](training.md))_
 - [Champion pool](champion-pool.md) - a per-season pool of trained champions in D1 seeds new worlds, and browsers capture, test and submit the lineages worth keeping; Phase 1 (pool export, PR, relea... _(validated 26ae0c5, 2026-11-18)_ _(depends on [training.md](training.md), [training-stages.md](training-stages.md), [deployment-and-community.md](deployment-and-community.md), [worker-and-renderer.md](worker-and-renderer.md), [brain-reflex-tests.md](brain-reflex-tests.md))_
 - [Habitat cover](habitat-cover.md) - Phase 1 T1 built (#343) and the T2 baseline run (`E141`, 32 floor-on seeds, in Baseline); T3 (the conformance review) is open. Phase 2 puts rings on the rims of... _(validated f5c7880, 2026-11-07)_ _(depends on [refuge.md](refuge.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Hunter practice](hunter-practice.md) - Phase 1 T1 built (#343) and the T6 baseline run (`E144`, in Baseline): matched conversion falls less with age than the pooled read, and dose is near 0. T2 and T... _(validated edd4cd4, 2026-11-07)_ _(depends on [hunter-learning.md](hunter-learning.md), [realistic-keepers.md](realistic-keepers.md))_

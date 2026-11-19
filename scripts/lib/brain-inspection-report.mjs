@@ -104,9 +104,17 @@ function summaryReport(report) {
  * @returns {string} Markdown ablation table
  */
 function ablationReport(report) {
-    const rows = report.ablations
-        .map(({ unit, comparison }) => ({ unit, ...comparison }))
-        .sort((a, b) => a.change - b.change || a.unit - b.unit);
+    const rows = /** @type {Array<Record<string, any>>} */ (
+        report.ablations
+            .map((/** @type {{unit: number, comparison: Record<string, any>}} */ row) => ({
+                unit: row.unit,
+                ...row.comparison,
+            }))
+            .sort(
+                (/** @type {Record<string, any>} */ a, /** @type {Record<string, any>} */ b) =>
+                    a.change - b.change || a.unit - b.unit,
+            )
+    );
     const lines = [
         `# Unit ablation: ${report.subject.name}`,
         '',

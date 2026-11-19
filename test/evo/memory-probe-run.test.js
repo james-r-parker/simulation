@@ -98,6 +98,7 @@ describe('playTrial', () => {
     });
 
     it('keeps a trial unchanged when no hook is passed and calls the hook after each step', () => {
+        /** @param {((world: any, slots: any, tick: number) => void) | undefined} onTick */
         function run(onTick) {
             /** @type {any} */
             let final = null;
@@ -128,7 +129,7 @@ describe('playTrial', () => {
         }
         let calls = 0;
         const plain = run(undefined);
-        const hooked = run((world, slots, tick) => {
+        const hooked = run((/** @type {any} */ world, /** @type {any} */ slots, tick) => {
             calls += 1;
             expect(world.tick).toBe(tick + 1);
             expect(slots.subject).toEqual([0]);

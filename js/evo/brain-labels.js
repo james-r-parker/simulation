@@ -1,13 +1,6 @@
 // Labels the pooled brain inputs, gene outputs and hidden units for inspection reports.
 
-import {
-    GENE_OUTPUTS,
-    OUTPUT_INDEX,
-    POOLED_CHANNELS,
-    POOLED_HITS,
-    brainLayout,
-    inputOffsets,
-} from '../sim/brain-layout.js';
+import { GENE_OUTPUTS, POOLED_CHANNELS, POOLED_HITS, brainLayout, inputOffsets } from '../sim/brain-layout.js';
 
 const HIT_VALUES = Object.freeze(['strength', 'cos', 'sin']);
 const GENE_OUTPUT_NAMES = Object.freeze([
@@ -85,7 +78,7 @@ export function inputLabels(config) {
 export function outputLabels() {
     return GENE_OUTPUTS.map((output) => {
         const label = GENE_OUTPUT_NAMES.find((_, i) => GENE_OUTPUTS[i] === output);
-        if (label === undefined || OUTPUT_INDEX[label.toUpperCase()] !== output) {
+        if (label === undefined) {
             throw new Error(`outputLabels: no label for output ${output}`);
         }
         return label;
