@@ -52,6 +52,16 @@ function runDir(name, { crossplay, bare = false } = {}) {
     return dir;
 }
 
+/**
+ * @param {string} name the test's own league file name
+ * @returns {string} the path of a league file that admits no champion
+ */
+function emptyLeague(name) {
+    const path = join(root, `league-${name}.json`);
+    writeFileSync(path, JSON.stringify({ version: 1, champions: [] }));
+    return path;
+}
+
 describe('loadRun', () => {
     it('reads the last archive, and refuses a directory without one', () => {
         const dir = runDir('load');
@@ -67,8 +77,7 @@ describe('runExam', () => {
     it('prints ten rows, writes exam.json and logs an ExamRow per row', async () => {
         const crossplay = { hunterProgress: { low: 0.2 }, preyProgress: { low: 0.1 }, cycleShare: 0.05 };
         const dir = runDir('exam', { crossplay });
-        const leaguePath = join(root, 'league.json');
-        writeFileSync(leaguePath, JSON.stringify({ version: 1, champions: [] }));
+        const leaguePath = emptyLeague('exam');
         const lines = /** @type {string[]} */ ([]);
         const logDir = join(root, 'logs');
         const result = await runExam(
@@ -139,7 +148,7 @@ describe('runExam', () => {
                 keepRuleReport: join(root, 'keep.json'),
                 descendants: saved,
             },
-            { logDir: join(root, 'logs'), league: { path: join(root, 'league.json'), root, ticks: 20 } },
+            { logDir: join(root, 'logs'), league: { path: emptyLeague('world'), root, ticks: 20 } },
         );
         expect(result.rows[5].verdict).toBe('not run');
         expect(result.rows[5].reason).toMatch(/32 seeds/);
@@ -150,8 +159,7 @@ describe('runExam', () => {
 
     it('runs a bare run (no manifest, one predator band, no generation) through main', async () => {
         const dir = runDir('bare', { bare: true });
-        const leaguePath = join(root, 'league.json');
-        writeFileSync(leaguePath, JSON.stringify({ version: 1, champions: [] }));
+        const leaguePath = emptyLeague('bare');
         const result = await runExam(
             { ...NO_WORLD, run: dir, replicates: [], trials: 2, workers: undefined },
             { logDir: join(root, 'logs'), league: { path: leaguePath, root, ticks: 20 } },
