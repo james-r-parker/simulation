@@ -4,6 +4,7 @@
   "until": "hunt-mid",
   "generations": 380,
   "workersPerRun": 8,
+  "feasible": false,
   "train": {
     "checkpointEvery": 5
   },

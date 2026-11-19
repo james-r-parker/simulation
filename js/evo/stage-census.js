@@ -2,7 +2,6 @@
 // long enough for the hunters to meet them? One training-style episode, seeded as `runEpisode` seeds it, run for `ticks`.
 
 import { createConfig } from '../sim/config.js';
-import { createSimLog } from '../sim/log.js';
 import { createRng, fork } from '../sim/rng.js';
 import { createWorld } from '../sim/spawn.js';
 import { step } from '../sim/step.js';
@@ -55,7 +54,6 @@ export function stageCensus({ overrides, seed, ticks, at, preyShare, archive }) 
     const observer = createObserver(config, fork(createRng(seed), 'eval'), { runTicks: ticks, checkpointTicks: 1000 });
     const policy = getPolicy(LIVE_POLICY).create({
         config,
-        log: createSimLog(() => {}, { level: 'error' }),
         observer,
         ...(archive === undefined ? {} : { archive }),
         onOffer: () => {},

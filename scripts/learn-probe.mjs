@@ -7,7 +7,8 @@ import { DRILLS } from '../js/evo/drill-scenarios.js';
 import { LEARN_GENERATIONS, LEARN_POPULATION, LEARN_SEEDS, LEARN_TRIALS } from '../js/evo/learn-probe.js';
 import { configHash, createConfig } from '../js/sim/config.js';
 import { emitReport, runAsMain, sharedFlags, withLogFile } from './lib/audit-io.mjs';
-import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
+import { exitCodeOf, parseFlags } from './lib/cli-args.mjs';
+import { learnSizeFlags } from './lib/learn-flags.mjs';
 import { formatLearn, summarise } from './lib/learn-report.mjs';
 import { logRunConfig } from './lib/run-config.mjs';
 import { runPool } from './lib/worker-pool.mjs';
@@ -52,10 +53,7 @@ export function parseArgs(argv) {
         parseFlags(argv, {
             valueFlags: {
                 '--lessons': (v) => ['lessons', parseLessons(v)],
-                '--generations': (v, f) => ['generations', intValue(f, v, 1, USAGE)],
-                '--seeds': (v, f) => ['seeds', intValue(f, v, 1, USAGE)],
-                '--population': (v, f) => ['population', intValue(f, v, 2, USAGE)],
-                '--trials': (v, f) => ['trials', intValue(f, v, 1, USAGE)],
+                ...learnSizeFlags(USAGE),
                 ...sharedFlags(USAGE),
             },
             defaults: {

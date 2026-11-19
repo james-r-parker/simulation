@@ -25,6 +25,9 @@ export const TRAIN_FLAGS = Object.freeze({
  *   named overlays: a whole ladder file, `train` keys, and `stages` laid over the ladder's entries
  * @property {string} [reference] the arm the others are compared with (default an added arm `base`)
  * @property {number} [workersPerRun] workers per run (default 8)
+ * @property {false | {generations?: number, seeds?: number}} [feasible] the learnability check run once per arm ladder before
+ *   training: its sizes (default the probe's), or `false` to turn it off
+ * @property {boolean} [skipUnlearnable] leave out an arm whose ladder holds an unlearnable stage (never the reference)
  */
 
 /**
@@ -42,6 +45,8 @@ export const TRAIN_FLAGS = Object.freeze({
  * @property {number} generations the generations of each run
  * @property {number} workersPerRun workers per run
  * @property {string} reference the reference arm's name
+ * @property {{generations?: number, seeds?: number} | null} feasible the check's sizes, or null when it is off
+ * @property {boolean} skipUnlearnable whether an arm with an unlearnable stage is left out
  * @property {ScreenArm[]} arms the arms, the reference first when it was added
  */
 
@@ -122,6 +127,29 @@ function checkGrid(grid) {
     if (grid.workersPerRun !== undefined && !(Number.isInteger(grid.workersPerRun) && grid.workersPerRun >= 1)) {
         throw new Error('grid: "workersPerRun" must be a positive integer');
     }
+    checkFeasible(grid);
+}
+
+/**
+ * @param {GridFile} grid the grid file
+ * @returns {void}
+ * @throws {Error} on a malformed `feasible` or `skipUnlearnable`
+ */
+function checkFeasible(grid) {
+    const { feasible, skipUnlearnable } = grid;
+    if (feasible !== undefined && feasible !== false) {
+        if (!isObject(feasible)) {
+            throw new Error('grid: "feasible" must be false or an object with "generations" and "seeds"');
+        }
+        for (const [key, value] of Object.entries(feasible)) {
+            if (!['generations', 'seeds'].includes(key) || !Number.isInteger(value) || value < 1) {
+                throw new Error(`grid: feasible.${key} must be "generations" or "seeds", a positive integer`);
+            }
+        }
+    }
+    if (skipUnlearnable !== undefined && typeof skipUnlearnable !== 'boolean') {
+        throw new Error('grid: "skipUnlearnable" must be true or false');
+    }
 }
 
 /**
@@ -159,6 +187,8 @@ export function planScreen(grid, readLadder) {
         generations: grid.generations,
         workersPerRun: grid.workersPerRun ?? DEFAULT_WORKERS_PER_RUN,
         reference,
+        feasible: grid.feasible === false ? null : { ...grid.feasible },
+        skipUnlearnable: grid.skipUnlearnable ?? false,
         arms,
     };
 }

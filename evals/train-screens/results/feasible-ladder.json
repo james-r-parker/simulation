@@ -1,0 +1,173 @@
+{
+  "curriculum": "evals/train-ladder.json",
+  "generations": 200,
+  "seeds": 8,
+  "population": 64,
+  "trials": 4,
+  "stages": [
+    {
+      "stage": "nursery",
+      "drills": [
+        {
+          "drill": "food-ahead",
+          "bar": 0.45625,
+          "populations": 8,
+          "finals": [1, 1, 1, 1, 1, 1, 1, 1],
+          "fairBand": null,
+          "reached": 8,
+          "best": 1,
+          "learnable": true
+        },
+        {
+          "drill": "food-behind",
+          "bar": 0.425,
+          "populations": 8,
+          "finals": [1, 1, 1, 1, 1, 1, 1, 1],
+          "fairBand": null,
+          "reached": 8,
+          "best": 1,
+          "learnable": true
+        }
+      ],
+      "unchecked": [],
+      "learnable": true
+    },
+    {
+      "stage": "hunt-contact",
+      "drills": [
+        {
+          "drill": "prey-adrift",
+          "bar": 0.001,
+          "populations": 8,
+          "finals": [1, 1, 1, 1, 1, 1, 1, 0.96875],
+          "fairBand": {
+            "predator": [0.2]
+          },
+          "reached": 8,
+          "best": 1,
+          "learnable": true
+        }
+      ],
+      "unchecked": [],
+      "learnable": true
+    },
+    {
+      "stage": "hunt-weak",
+      "drills": [
+        {
+          "drill": "prey-weak",
+          "bar": 0.001,
+          "populations": 8,
+          "finals": [0, 0.875, 0, 0, 0.375, 0, 0.28125, 0],
+          "fairBand": {
+            "predator": [0.2, 0.4, 0.6, 0.8]
+          },
+          "reached": 3,
+          "best": 0.875,
+          "learnable": true
+        }
+      ],
+      "unchecked": [],
+      "learnable": true
+    },
+    {
+      "stage": "hunt-mid",
+      "drills": [
+        {
+          "drill": "prey-mid",
+          "bar": 0.001,
+          "populations": 8,
+          "finals": [0, 0, 0, 0, 0, 0, 0.5625, 0],
+          "fairBand": {
+            "predator": [0.2, 0.4, 0.6]
+          },
+          "reached": 1,
+          "best": 0.5625,
+          "learnable": false
+        }
+      ],
+      "unchecked": [],
+      "learnable": false
+    },
+    {
+      "stage": "hunt",
+      "drills": [
+        {
+          "drill": "prey-ahead",
+          "bar": 0.109375,
+          "populations": 8,
+          "finals": [0.03125, 0, 0, 0, 0, 0, 0, 0],
+          "fairBand": {
+            "predator": [0.2]
+          },
+          "reached": 0,
+          "best": 0.03125,
+          "learnable": false
+        },
+        {
+          "drill": "prey-crossing",
+          "bar": 0.001,
+          "populations": 8,
+          "finals": [0.8125, 0, 0, 0, 0.0625, 0, 0, 0],
+          "fairBand": {
+            "predator": [0.2]
+          },
+          "reached": 2,
+          "best": 0.8125,
+          "learnable": true
+        },
+        {
+          "drill": "kin-spared",
+          "bar": 0.001,
+          "populations": 8,
+          "finals": [0, 0, 0, 0, 0, 0, 0, 0],
+          "fairBand": null,
+          "reached": 0,
+          "best": 0,
+          "learnable": false
+        }
+      ],
+      "unchecked": [],
+      "learnable": false
+    },
+    {
+      "stage": "evade",
+      "drills": [
+        {
+          "drill": "hunter-closing",
+          "bar": 0.001,
+          "populations": 8,
+          "finals": [0.96875, 0.96875, 0.96875, 0.71875, 0.875, 0.96875, 0.90625, 0.96875],
+          "fairBand": null,
+          "reached": 8,
+          "best": 0.96875,
+          "learnable": true
+        },
+        {
+          "drill": "hunter-flank",
+          "bar": 0.001,
+          "populations": 8,
+          "finals": [1, 1, 1, 1, 1, 1, 1, 1],
+          "fairBand": null,
+          "reached": 8,
+          "best": 1,
+          "learnable": true
+        }
+      ],
+      "unchecked": ["crossplay.preyVsStage.hunt"],
+      "learnable": true
+    },
+    {
+      "stage": "arms-race",
+      "drills": [],
+      "unchecked": ["crossplay.hunterProgressLow", "crossplay.preyProgressLow", "crossplay.cycleShare"],
+      "learnable": null
+    },
+    {
+      "stage": "habitat",
+      "drills": [],
+      "unchecked": ["retention.all"],
+      "learnable": null
+    }
+  ]
+}
