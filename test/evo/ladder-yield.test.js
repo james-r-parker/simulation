@@ -105,6 +105,23 @@ describe('ladderYield', () => {
         expect(ladderYield([], ['a'])).toMatchObject({ runs: 0, meanScore: 0, cpuHours: 0 });
         expect(ladderYield([], ['a']).stages[0].passShare).toBe(0);
     });
+
+    it('counts the runs that passed the last stage', () => {
+        const runs = [
+            run(
+                [
+                    { name: 'a', passedAt: 10 },
+                    { name: 'b', passedAt: 25 },
+                ],
+                [],
+            ),
+            run([{ name: 'a', passedAt: 10 }, { name: 'b' }], []),
+            run([{ name: 'a' }, { name: 'b' }], []),
+        ];
+        expect(ladderYield(runs, ['a', 'b']).passedLast).toBe(1);
+        expect(ladderYield(runs, ['a']).passedLast).toBe(2);
+        expect(ladderYield([], ['a']).passedLast).toBe(0);
+    });
 });
 
 describe('runYield on a manifest from buildManifest', () => {

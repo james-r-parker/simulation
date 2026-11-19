@@ -22,8 +22,9 @@ export const SIGN_LEVEL = 0.05;
  * @property {number} meanDiff the mean of the per-offset score differences (after - before)
  * @property {{low: number, high: number}} interval the bootstrap interval of that mean
  * @property {number} p the exact two-sided sign test p-value over the untied pairs (1 when none)
- * @property {'better' | 'worse' | 'no verdict'} verdict `better` or `worse` when the sign test is under 0.05 and the
- *   interval excludes 0, else `no verdict`
+ * @property {'better' | 'worse' | 'no verdict' | 'incomparable'} verdict `better` or `worse` when the sign test is under
+ *   0.05 and the interval excludes 0, else `no verdict`; `incomparable` when the arms' ladders name different stages
+ * @property {string} [reason] why the verdict is `incomparable`
  */
 
 /**
@@ -56,13 +57,39 @@ function signed(interval, rose) {
 }
 
 /**
+ * @param {{before: string[], after: string[]}} stages the two arms' stage names
+ * @returns {YieldCompare} a comparison with no pairs, the verdict `incomparable` and its reason
+ */
+function incomparable(stages) {
+    return {
+        pairs: [],
+        matched: 0,
+        tied: 0,
+        up: 0,
+        down: 0,
+        onlyBefore: [],
+        onlyAfter: [],
+        meanDiff: 0,
+        interval: { low: 0, high: 0 },
+        p: 1,
+        verdict: 'incomparable',
+        reason: `the arms' ladders have different stages: before ${stages.before.join(', ')}; after ${stages.after.join(', ')}; a score counts stages, so it is not comparable`,
+    };
+}
+
+/**
  * @param {readonly {offset: number, score: number}[]} before the before arm's runs (`runYield`)
  * @param {readonly {offset: number, score: number}[]} after the after arm's runs
- * @param {{minPairs?: number}} [options] the least matched offsets (default `MIN_PAIRS`)
+ * @param {{minPairs?: number, stages?: {before: string[], after: string[]}}} [options] the least matched
+ *   offsets (default `MIN_PAIRS`) and each arm's stage names: `score` (`reached + bestProgress`) counts stages, so two arms
+ *   whose lists differ are `incomparable` and no pair is read
  * @returns {YieldCompare} the comparison
  * @throws {Error} (`exitCode` 2) on fewer matched offsets than `minPairs`, tied pairs counted, or a repeated offset
  */
-export function compareYield(before, after, { minPairs = MIN_PAIRS } = {}) {
+export function compareYield(before, after, { minPairs = MIN_PAIRS, stages } = {}) {
+    if (stages !== undefined && stages.before.join('\0') !== stages.after.join('\0')) {
+        return incomparable(stages);
+    }
     const first = byOffset(before, 'before');
     const second = byOffset(after, 'after');
     const offsets = [...first.keys()].filter((offset) => second.has(offset)).sort((a, b) => a - b);

@@ -92,4 +92,15 @@ describe('compareYield', () => {
         expect(() => compareYield(twice, arm(Array(16).fill(1)))).toThrow(/two runs at offset 0/);
         expect(() => compareYield(arm(Array(16).fill(1)), twice)).toThrow(/the after arm/);
     });
+
+    it('reads incomparable when the two ladders name different stages, whatever the scores', () => {
+        const before = arm(Array(20).fill(1));
+        const after = arm(Array(20).fill(3));
+        const stages = { before: ['a', 'b', 'c'], after: ['a', 'd'] };
+        const result = compareYield(before, after, { stages });
+        expect(result.verdict).toBe('incomparable');
+        expect(result.reason).toMatch(/different stages: before a, b, c; after a, d/);
+        expect(result.pairs).toEqual([]);
+        expect(compareYield(before, after, { stages: { before: ['a'], after: ['a'] } }).verdict).toBe('better');
+    });
 });

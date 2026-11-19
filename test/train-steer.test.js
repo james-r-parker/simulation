@@ -29,7 +29,7 @@ vi.mock('../scripts/lib/drill-subjects.mjs', () => ({ eliteSubjects: () => [{ na
 
 const { runCheckpoint } = await import('../scripts/lib/train-checkpoint.mjs');
 const { loadStages } = await import('../scripts/lib/train-state.mjs');
-const { applySteer, episodeOverrides, steerOptions } = await import('../scripts/lib/train-difficulty.mjs');
+const { applySteer, curveFields, episodeOverrides, steerOptions } = await import('../scripts/lib/train-difficulty.mjs');
 
 const stages = loadStages(/** @type {any} */ ({ config: null, until: null, generations: 1, checkpointEvery: 1 }));
 const log = createSimLog(() => {}, { level: 'error' });
@@ -150,5 +150,15 @@ describe('steerOptions, episodeOverrides and applySteer', () => {
         ).toBe(0.3);
         const plain = { ...state, index: 1 };
         expect(applySteer({ before: plain, after: { ...plain, generation: 5 }, steer }, sink).difficulty).toBe(0.3);
+    });
+});
+
+describe('curveFields', () => {
+    it('records the steering read`s win share on the row, null when none was taken', () => {
+        const steer = { drill: 'prey-ahead', value: 0.3, winShare: 0.08 };
+        expect(curveFields(0.3, steer)).toEqual({ difficulty: 0.3, steerShare: 0.08 });
+        expect(curveFields(0.3, { ...steer, winShare: null })).toEqual({ difficulty: 0.3, steerShare: null });
+        expect(curveFields(0.3, undefined)).toEqual({ difficulty: 0.3, steerShare: null });
+        expect(curveFields(null, null)).toEqual({ difficulty: null, steerShare: null });
     });
 });

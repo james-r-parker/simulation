@@ -93,4 +93,29 @@ describe('formatCompare', () => {
         expect(text).toContain('cpu hours 0.0 -> 0.0 (-100%)');
         expect(loadRuns([]).runs).toEqual([]);
     });
+
+    it('prints the union of the two arms` stages, `-` where an arm lacks one, and the incomparable verdict', () => {
+        const run = (/** @type {number} */ i, /** @type {number} */ score) => ({
+            dir: '',
+            offset: i * 8,
+            reached: 0,
+            passed: [],
+            bestProgress: 0,
+            score,
+            cpuSeconds: 0,
+            stageCpuSeconds: {},
+        });
+        const before = Array.from({ length: 16 }, (_, i) => run(i, 1));
+        const after = Array.from({ length: 16 }, (_, i) => run(i, 2));
+        const stages = { before: ['a', 'weak'], after: ['a', 'hunt'] };
+        const compare = compareYield(before, after, { stages });
+        const yields = { before: ladderYield(before, stages.before), after: ladderYield(after, stages.after) };
+        const text = formatCompare(compare, yields).join('\n');
+        expect(text).toMatch(/weak\s+0% -> -/);
+        expect(text).toMatch(/hunt\s+- -> 0%/);
+        expect(text).toContain('verdict: incomparable (');
+        expect(text).not.toContain('offset  before');
+        expect(text).not.toContain('mean score difference');
+        expect(text).toMatch(/passed last stage 0 -> 0/);
+    });
 });

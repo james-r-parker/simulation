@@ -29,7 +29,7 @@ import { checkOut, parseArgs } from './lib/train-args.mjs';
 import { EVAL_TICKS, GATE_SEED, appendCurveRow, runCheckpoint } from './lib/train-checkpoint.mjs';
 import { checkpointCrossplay, preyVsStageNames, readsCrossplay } from './lib/train-crossplay.mjs';
 import { loadKeepers, toKept } from './lib/train-keepers.mjs';
-import { applySteer, episodeOverrides, steerOptions } from './lib/train-difficulty.mjs';
+import { applySteer, curveFields, episodeOverrides, steerOptions } from './lib/train-difficulty.mjs';
 import { loadPool, poolAfterCheckpoint, poolIndex, taskPool } from './lib/train-pool.mjs';
 import { buildManifest, manifestBase, partitionManifests, startLedger, writeManifest } from './lib/train-manifest.mjs';
 import { loadResume, loadStages, readJson, saveArchive } from './lib/train-state.mjs';
@@ -296,7 +296,7 @@ async function runGeneration(run, { drillTrials, gateTrials, crossTrials, print 
     saveManifest(run);
     if (checkpoint !== null) {
         const cpu = { workers: run.workers, cpuShare, cpuSeconds: run.cpuSeconds };
-        run.lastPoint = { ...checkpoint.point, ...columns, ...cpu, difficulty };
+        run.lastPoint = { ...checkpoint.point, ...columns, ...cpu, ...curveFields(difficulty, checkpoint.steer) };
         appendCurveRow(args.out, run.lastPoint);
     }
     print(
