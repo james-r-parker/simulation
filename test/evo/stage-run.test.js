@@ -7,6 +7,7 @@ import {
     nextStage,
     restoreState,
     snapshotState,
+    stateAfter,
 } from '../../js/evo/stage-run.js';
 
 const EDGE = (/** @type {string} */ drill) => [{ read: `drill.${drill}.edgeLow`, min: 0.3 }];
@@ -210,5 +211,17 @@ describe('a stage that stalled as optional, and defaults', () => {
         state = drive(state, [reading(0.1), reading(0.1)]).state;
         expect(state.passed.next).toMatchObject({ checkpoints: 2 });
         expect(state.failStreaks).toEqual({});
+    });
+});
+
+describe('stateAfter', () => {
+    it('replays fixed-length stages with no checkpoints', () => {
+        const stages = [
+            { name: 'a', generations: 2 },
+            { name: 'b', generations: 3 },
+        ];
+        expect(stateAfter(stages, 5, 0)).toEqual(initialState(stages, 5));
+        expect(stateAfter(stages, 5, 2)).toMatchObject({ index: 1, count: 0, generation: 2 });
+        expect(stateAfter(stages, 5, 4)).toMatchObject({ index: 1, count: 2, generation: 4 });
     });
 });
