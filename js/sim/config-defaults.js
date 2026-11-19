@@ -205,7 +205,6 @@ export const DEFAULTS = deepFreeze({
     birthReserve: 300, // honest-budgets Phase 4 (E177): a birth that would leave the mother under this energy is blocked; 0 is off
     juvenileBurn: 0.6, // realistic-keepers T4: multiplier on the standing, movement and turn cost of a juvenile hunter, in [0, 1]
     kinPullWeight: 0.5, // realistic-keepers T4: the kin thrust and turn cells of a hunter are raised to at least this x instinctWeight, in [0, 4]
-    hunterBiteBias: 0, // honest-budgets T41: a hunter's BITE output bias is closed to at most this x instinctWeight at birth (innate releasing mechanism: prey in view opens the jaws through the prey-to-BITE skip weight), in [-4, 0]; 0 is off
     juvenileTicks: 3000, // hunter-learning: a canHunt young is juvenile while ageTicks is below this; the detectors' age bands use it too
     juvenilePlantShare: 0, // honest-budgets Phase 6: plant food share a canHunt agent takes while ageTicks is below juvenileTicks; 0 is off
     specFlipNoHunt: false, // honest-budgets Phase 6: when true, specMutationRate flips never cross canHunt (forager hidden weights never seed a hunter)

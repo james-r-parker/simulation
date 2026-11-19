@@ -12,7 +12,7 @@ import { none, ok } from './metrics-stats.js';
 
 /**
  * @param {Readonly<Record<string, any>>} layout a `brainLayout(config)` result
- * @param {{weight: number, canHunt: boolean, herdWary: number, kinPull?: number, biteBias?: number}} options the instinct weight, whether the
+ * @param {{weight: number, canHunt: boolean, herdWary: number, kinPull?: number}} options the instinct weight, whether the
  *   body hunts and the kin pull floor of a hunter
  * @returns {{cells: Int32Array, prior: Float32Array}} the cells `applyInstinct` writes and their value on a zero row
  */
@@ -45,7 +45,6 @@ export function createInstinctPools(config) {
             canHunt: true,
             herdWary,
             kinPull: config.kinPullWeight,
-            biteBias: config.hunterBiteBias,
         }),
         other: instinctCells(layout, { weight, canHunt: false, herdWary }),
         founders: NaN,

@@ -106,7 +106,6 @@ export const FEATURE_RULES = {
     splitMateScarceTicks: int(0),
     juvenileBurn: UNIT,
     kinPullWeight: num(0, 4),
-    hunterBiteBias: num(-4, 0),
     juvenileTicks: int(1),
     juvenilePlantShare: UNIT,
     specFlipNoHunt: BOOL,

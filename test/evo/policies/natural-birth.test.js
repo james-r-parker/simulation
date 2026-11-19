@@ -217,30 +217,6 @@ describe('the hunter reflexes at birth', () => {
         );
     });
 
-    it('closes the BITE bias of every hunter child by hunterBiteBias x instinctWeight, and no other', () => {
-        const over = { hunterBiteBias: -1, instinctWeight: 0.5 };
-        const bite = (/** @type {any} */ world) => world.layout.bOut + GENE_OUTPUTS.indexOf(BITE);
-        for (const mother of [FORAGER, PREDATOR]) {
-            const off = born({ over: { instinctWeight: 0.5 }, mother, child: PREDATOR });
-            const on = born({ over, mother, child: PREDATOR });
-            const i = bite(on.world);
-            expect(on.row[i]).toBeCloseTo(-0.5, 5);
-            expect(differing(on.row, off.row)).toContain(i);
-            expect(on.rng.s).toEqual(off.rng.s);
-        }
-        expect(born({ over, mother: PREDATOR, child: FORAGER }).row).toEqual(
-            born({ over: { instinctWeight: 0.5 }, mother: PREDATOR, child: FORAGER }).row,
-        );
-    });
-
-    it('leaves the rows byte-identical at hunterBiteBias 0', () => {
-        for (const mother of [FORAGER, PREDATOR]) {
-            expect(born({ over: { hunterBiteBias: 0 }, mother, child: PREDATOR }).row).toEqual(
-                born({ mother, child: PREDATOR }).row,
-            );
-        }
-    });
-
     it('changes nothing at instinctWeight 0', () => {
         const over = { kinPullWeight: 0.5, instinctWeight: 0 };
         expect(born({ over, mother: FORAGER, child: PREDATOR }).row).toEqual(
