@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { nextDifficulty, pooledWinShare, validateAdapt, withPreySprint } from '../../js/evo/adaptive-difficulty.js';
 import { planRun } from '../../js/evo/curriculum.js';
 
-const ADAPT = { param: 'preySprint', drill: 'prey-ahead', from: 0.1, to: 1, step: 0.05 };
+const ADAPT = /** @type {import('../../js/evo/adaptive-difficulty.js').Adapt} */ ({
+    param: 'preySprint',
+    drill: 'prey-ahead',
+    from: 0.1,
+    to: 1,
+    step: 0.05,
+});
 
 describe('nextDifficulty', () => {
     it('raises by a step above the target, lowers under half of it, holds between', () => {

@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { episodeDifficulty, initialState, nextStage, restoreState, snapshotState } from '../../js/evo/stage-run.js';
 
-const ADAPT = { param: 'preySprint', drill: 'prey-ahead', from: 0.1, to: 1, step: 0.05 };
+const ADAPT = /** @type {import('../../js/evo/adaptive-difficulty.js').Adapt} */ ({
+    param: 'preySprint',
+    drill: 'prey-ahead',
+    from: 0.1,
+    to: 1,
+    step: 0.05,
+});
 const FIRST = {
     name: 'first',
     gate: [{ read: 'drill.food-ahead.edgeLow', min: 0.3 }],

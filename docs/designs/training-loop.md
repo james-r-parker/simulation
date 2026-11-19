@@ -1,6 +1,6 @@
 # Training loop
 
-**Status:** In progress - Phase 1 code built (T1 to T7); T8 (E-TL-1) is the next run
+**Status:** In progress - Phase 1 code built (T1 to T7), Phase 2 code built (T9 to T11), Phase 3 code built (T13 to T15); T8 (E-TL-1) and T16 (E-TL-3) are the next runs
 **Validated:** 0254883d (2026-11-19)
 **Priority:** 1 - pinned by the user (2026-11-19): every training run waits on how fast a ladder change can be judged, and nothing here changes a sim rule
 **Depends on:** [training-stages.md](training-stages.md), [training.md](training.md)
@@ -256,14 +256,14 @@ T22 is a long run, not a code chunk; T23 follows its record in one PR (Sonnet).
 
 ### Phase 3 - Adaptive difficulty
 
-| #   | Task                                                                                                                                                                                                                                                                                       | Nature       | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
-| T13 | `nextDifficulty` in `js/evo/adaptive-difficulty.js`; the `adapt` curriculum key and its validation; tests                                                                                                                                                                                  | [judgement]  | T7         |
-| T14 | `difficulty` in `RunState` (`snapshotState`, `restoreState`); `runEpisodes` lays it over the stage overrides outside the stage hash; `sprintArena` takes the value and the steering drill runs at it each gate checkpoint; curve `difficulty`; `TrainDifficulty`; tests including a resume | [judgement]  | T13        |
-| T15 | `evals/train-ladder-adaptive.json`; `evals/train-screens/adaptive.grid.json` (adaptive against fixed, offsets 0 to 120 by 8, `until` `hunt`)                                                                                                                                               | [mechanical] | T14, T6    |
-| T16 | (screen `E-TL-3`, detached) run the adaptive grid; record E-TL-3                                                                                                                                                                                                                           | [judgement]  | T15        |
-| T17 | Delete the losing path: on `better`, the `hunt-weak` and `hunt-mid` entries of `train-ladder.json` go and `hunt` takes `adapt`; otherwise `adapt`, `adaptive-difficulty.js` and the adaptive ladder go                                                                                     | [judgement]  | T16        |
-| T18 | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; mark Phase 3 built                                                                                                                                                                      | [judgement]  | T17        |
+| #   | Task                                                                                                                                                                                                                                                                                               | Nature       | Depends on |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T13 | (built) `nextDifficulty` in `js/evo/adaptive-difficulty.js`; the `adapt` curriculum key and its validation; tests                                                                                                                                                                                  | [judgement]  | T7         |
+| T14 | (built) `difficulty` in `RunState` (`snapshotState`, `restoreState`); `runEpisodes` lays it over the stage overrides outside the stage hash; `sprintArena` takes the value and the steering drill runs at it each gate checkpoint; curve `difficulty`; `TrainDifficulty`; tests including a resume | [judgement]  | T13        |
+| T15 | (built) `evals/train-ladder-adaptive.json`; `evals/train-screens/adaptive.grid.json` (adaptive against fixed, offsets 0 to 120 by 8, `until` `hunt`)                                                                                                                                               | [mechanical] | T14, T6    |
+| T16 | (screen `E-TL-3`, detached) run the adaptive grid; record E-TL-3                                                                                                                                                                                                                                   | [judgement]  | T15        |
+| T17 | Delete the losing path: on `better`, the `hunt-weak` and `hunt-mid` entries of `train-ladder.json` go and `hunt` takes `adapt`; otherwise `adapt`, `adaptive-difficulty.js` and the adaptive ladder go                                                                                             | [judgement]  | T16        |
+| T18 | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; mark Phase 3 built                                                                                                                                                                              | [judgement]  | T17        |
 
 ### Phase 4 - The tuning lane
 
