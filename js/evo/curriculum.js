@@ -2,11 +2,13 @@
 // or a gate (training-stages.md), run on one archive. A stage changes the world, never the reward. Pure: no files (the
 // script loads the configs).
 
+import { validateAdapt } from './adaptive-difficulty.js';
 import { validateGate } from './stage-gate.js';
 
 export {
     checkpointDue,
     currentEntry,
+    episodeDifficulty,
     initialState,
     isGated,
     needsGate,
@@ -28,6 +30,7 @@ export {
  * @property {boolean} [optional] a gated stage whose stall lets the ladder move on
  * @property {number} [plateauStop] a gated stage's gate checkpoints over which its best progress must rise (`js/evo/stage-progress.js`)
  *   or it stalls on a plateau; 0 or absent: it runs to `maxGenerations`
+ * @property {import('./adaptive-difficulty.js').Adapt} [adapt] a gated stage's adaptive difficulty (`js/evo/adaptive-difficulty.js`)
  * @property {boolean} [keepPasser] a gated stage whose best passing elites are kept for its retention reads (`js/evo/stage-run.js`)
  * @property {number} [pool] the share of founders drawn from the opponent pool, 0 to 1 (read from Phase 3 on)
  * @property {number} [preyShare] a stage world's quota of prey specialisations among its seeded agents, 0 to 1 (`quotaSpec`)
@@ -114,7 +117,7 @@ function checkFixed(e, where, isLast) {
             `${where} (${e.name}): "generations" must be an integer >= 1 (only the last stage may omit it)`,
         );
     }
-    for (const key of ['minGenerations', 'maxGenerations', 'optional', 'plateauStop']) {
+    for (const key of ['minGenerations', 'maxGenerations', 'optional', 'plateauStop', 'adapt']) {
         if (e[key] !== undefined) {
             throw new Error(`${where} (${e.name}): "${key}" belongs to a gated stage (one with a "gate")`);
         }
@@ -157,6 +160,9 @@ function checkGated(e, where) {
         throw new Error(`${where} (${e.name}): "optional" must be true or false`);
     }
     checkPlateauStop(e, where);
+    if (e.adapt !== undefined) {
+        validateAdapt(e.adapt, `${where} (${e.name})`);
+    }
 }
 
 /**

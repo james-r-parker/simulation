@@ -3,7 +3,8 @@
 import { appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DRILLS } from '../../js/evo/drill-scenarios.js';
+import { pooledWinShare } from '../../js/evo/adaptive-difficulty.js';
+import { DRILLS, sprintArena } from '../../js/evo/drill-scenarios.js';
 import { drillReadings } from '../../js/evo/gate-readings.js';
 import { partitionSeed } from '../../js/evo/partitions.js';
 import { CURVE_METRICS, curvePoint } from '../../js/evo/learning-curve.js';
@@ -76,9 +77,10 @@ export function averageMetrics(results) {
  * @property {{generation: number, trainTicks: number, wallSeconds: number}} progress generations completed, ticks trained
  *   and wall seconds so far
  * @property {{workers: number | undefined, evalTicks: number, drillTrials: number, gate?: {seed: number, trials: number} | null,
- *   keepers?: {kept: Record<string, any[]>, stages: readonly any[]}}} options
+ *   keepers?: {kept: Record<string, any[]>, stages: readonly any[]}, steer?: {drill: string, value: number}}} options
  *   the pool size and the sizes; `gate` reads the drills on the gate's seed and trial count and returns gate readings;
- *   `keepers` (with a gate) also drills each stage's kept passers (`readings.keepers`, scripts/lib/train-keepers.mjs)
+ *   `keepers` (with a gate) also drills each stage's kept passers (`readings.keepers`, scripts/lib/train-keepers.mjs); `steer`
+ *   (with a gate) also drills the champions on the adaptive stage's steering drill with its fleer at `value` (`steer` in the result)
  * @property {import('../../js/sim/log.js').SimLog} log the run's log
  */
 
@@ -112,6 +114,33 @@ async function drillPart({ archive, options, log }) {
 }
 
 /**
+ * The adaptive-difficulty steering read: the champions on `drill` with the scripted fleer's sprint at `value`, on the gate's
+ * seed and trials. The gate's own drills are not touched.
+ * @param {CheckpointRun} run the checkpoint
+ * @param {any[]} subjects the champions the checkpoint drilled
+ * @returns {Promise<{drill: string, value: number, winShare: number | null} | null>} the pooled win share, or null when the
+ *   checkpoint is not steered
+ */
+async function steerPart({ options, log }, subjects) {
+    const { steer, gate } = options;
+    if (!steer || !gate) {
+        return null;
+    }
+    const { drill, value } = steer;
+    if (subjects.length === 0) {
+        return { drill, value, winShare: null };
+    }
+    const args = /** @type {any} */ ({
+        drills: [drill],
+        seed: gate.seed,
+        trials: gate.trials,
+        workers: options.workers,
+    });
+    const rows = await drillGenomes(args, { genomes: subjects, config: sprintArena(value), log });
+    return { drill, value, winShare: pooledWinShare(/** @type {any} */ (rows), subjects.length, drill) };
+}
+
+/**
  * Plays the eval worlds, each started from the archive, and averages the curve metrics.
  * @param {CheckpointRun} run the checkpoint
  * @returns {Promise<Record<string, number | null>>} the mean of each curve metric
@@ -133,8 +162,9 @@ async function evalPart({ archive, stage, options }) {
 
 /**
  * @param {CheckpointRun} run the checkpoint
- * @returns {Promise<{point: Record<string, any>, readings: Record<string, any> | null, subjects: any[]}>} the curve row (not
- *   yet written), for a gate checkpoint the gate readings (`drill.<name>.<reading>`) and the champions drilled
+ * @returns {Promise<{point: Record<string, any>, readings: Record<string, any> | null, subjects: any[], steer: Awaited<ReturnType<typeof steerPart>>}>}
+ *   the curve row (not yet written), for a gate checkpoint the gate readings (`drill.<name>.<reading>`), the champions
+ *   drilled and the steering read of an adaptive stage (null otherwise)
  */
 export async function runCheckpoint(run) {
     const { edges, reasons, readings: drilled, subjects } = await drillPart(run);
@@ -151,6 +181,7 @@ export async function runCheckpoint(run) {
                       log: run.log,
                   }),
               };
+    const steer = await steerPart(run, subjects);
     const metrics = await evalPart(run);
     const point = curvePoint({
         ...run.progress,
@@ -160,7 +191,7 @@ export async function runCheckpoint(run) {
         drillLossReasons: reasons,
         metrics,
     });
-    return { point, readings, subjects };
+    return { point, readings, subjects, steer };
 }
 
 /**
