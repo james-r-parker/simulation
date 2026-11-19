@@ -125,6 +125,8 @@ Baseline: `evals/power/defaults-floor-on-E210.json` (128 seeds, 200000 ticks)
 | `eval.flee_sprint_lift`    | 1.105   | 0 to 2.65         | 0.02344  | 0.5    | 0.3    | -      | more than 64          |
 | `eval.sprint_cost_share`   | 0.05363 | 0.0116 to 0.128   | 0        | 0.5    | 0.3    | 0.2    | 64                    |
 
+E210 verdict: the Phase 1 prediction was falsified (`eval.sprint_share.hunter` 0.41 is not above 0.5, though `eval.chase_sprint_lift` 1.12 is under 1.2); the Phase 2 gate is not met and Phase 2 is not built.
+
 Not registered (detector not merged): `eval.chase_spent_share`.
 
 ### [stillness.md](stillness.md)
