@@ -1,4 +1,5 @@
 // Prints a ladder yield (`train:yield`, `train:compare`, `train:screen`): a table per arm.
+import { padTable } from './drill-report.mjs';
 
 /**
  * @param {number | null} value a number
@@ -6,20 +7,6 @@
  * @returns {string} the number, or `-` for none
  */
 const num = (value, digits) => (value === null ? '-' : value.toFixed(digits));
-
-/**
- * @param {string[][]} table the header row then the body rows
- * @returns {string[]} the rows with padded columns
- */
-export function alignTable(table) {
-    const widths = table[0].map((_, col) => Math.max(...table.map((line) => line[col].length)));
-    return table.map((line) =>
-        line
-            .map((text, col) => text.padEnd(widths[col]))
-            .join('  ')
-            .trimEnd(),
-    );
-}
 
 /**
  * @param {ReturnType<typeof import('../../js/evo/ladder-yield.js').ladderYield>} yielded one arm's yield
@@ -33,7 +20,7 @@ export function formatYield(yielded) {
         num(s.medianGenerations, 0),
         num(s.cpuHoursPerPass, 2),
     ]);
-    const lines = alignTable([header, ...body]);
+    const lines = padTable([header, ...body]);
     lines.push(
         `runs ${yielded.runs}, mean score ${yielded.meanScore.toFixed(2)}, cpu ${yielded.cpuHours.toFixed(1)} h`,
     );
@@ -53,5 +40,5 @@ export function formatRuns(runs) {
         r.score.toFixed(3),
         (r.cpuSeconds / 3600).toFixed(2),
     ]);
-    return alignTable([header, ...body]);
+    return padTable([header, ...body]);
 }

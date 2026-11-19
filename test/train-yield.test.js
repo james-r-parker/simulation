@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -89,5 +90,13 @@ describe('train:yield', () => {
 
     it('exits 1 with a message when no run matches', async () => {
         expect(await main([join(root, 'nothing*')], () => {})).toBe(1);
+    });
+    it('runs as a script, printing the table and exiting with the code of main', () => {
+        const dir = writeRun(join(root, 'script', 'o0'), stalled(0));
+        const script = new URL('../scripts/train-yield.mjs', import.meta.url).pathname;
+        const run = spawnSync(process.execPath, [script, dir], { encoding: 'utf8' });
+        expect(run.status).toBe(0);
+        expect(run.stdout).toContain('runs 1, mean score 1.25');
+        expect(spawnSync(process.execPath, [script], { encoding: 'utf8' }).status).toBe(1);
     });
 });

@@ -1,6 +1,6 @@
 // Prints a ladder yield comparison (`train:compare`, `train:screen`): the matched pairs, the per-stage pass shares of the
 // two arms side by side, the CPU hours and the verdict.
-import { alignTable } from './yield-report.mjs';
+import { padTable } from './drill-report.mjs';
 
 /**
  * @param {import('../../js/evo/yield-compare.js').YieldCompare} compare a `compareYield` result
@@ -14,7 +14,7 @@ export function formatPairs(compare) {
         p.after.toFixed(3),
         (p.diff > 0 ? '+' : '') + p.diff.toFixed(3),
     ]);
-    return alignTable([header, ...body]);
+    return padTable([header, ...body]);
 }
 
 /**
@@ -35,7 +35,7 @@ export function formatStages(before, after) {
             `${num(b.cpuHoursPerPass, 2)} -> ${num(a.cpuHoursPerPass, 2)}`,
         ];
     });
-    return alignTable([header, ...body]);
+    return padTable([header, ...body]);
 }
 
 /**

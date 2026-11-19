@@ -25,10 +25,11 @@ function rowSeconds(rows) {
     let previous = { cpuSeconds: 0, wallSeconds: 0 };
     return rows.map((row) => {
         const exact = typeof row.cpuSeconds === 'number';
+        const wallSeconds = row.wallSeconds ?? previous.wallSeconds;
         const seconds = exact
             ? row.cpuSeconds - previous.cpuSeconds
-            : (row.cpuShare ?? 0) * (row.workers ?? 0) * (row.wallSeconds - previous.wallSeconds);
-        previous = { cpuSeconds: exact ? row.cpuSeconds : previous.cpuSeconds, wallSeconds: row.wallSeconds ?? 0 };
+            : (row.cpuShare ?? 0) * (row.workers ?? 0) * (wallSeconds - previous.wallSeconds);
+        previous = { cpuSeconds: exact ? row.cpuSeconds : previous.cpuSeconds, wallSeconds };
         return { stage: row.stage, seconds: Math.max(0, seconds) };
     });
 }

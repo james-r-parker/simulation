@@ -68,6 +68,17 @@ describe('compareYield', () => {
         expect(result.pairs.map((p) => p.offset)).toEqual(arm(Array(16).fill(0)).map((r) => r.offset));
     });
 
+    it('sorts several unmatched offsets on each side', () => {
+        const extra = (/** @type {number[]} */ offsets) => offsets.map((offset) => ({ offset, score: 1 }));
+        const before = [...arm(Array(16).fill(1)), ...extra([3000, 1000, 2000])];
+        const after = [...arm(Array(16).fill(2)), ...extra([6000, 5000, 4000])];
+        const result = compareYield(before, after);
+        expect([result.onlyBefore, result.onlyAfter]).toEqual([
+            [1000, 2000, 3000],
+            [4000, 5000, 6000],
+        ]);
+    });
+
     it(`refuses under ${MIN_PAIRS} matched offsets, tied pairs counted, with exit code 2`, () => {
         const few = () => compareYield(arm(Array(15).fill(1)), arm(Array(15).fill(2)));
         expect(few).toThrow(/at least 16 matched offsets, got 15/);

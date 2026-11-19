@@ -37,7 +37,7 @@ function gridFile(name, count) {
     return file;
 }
 
-/** @param {string} name the grid's name @param {number} count offsets @returns {import('../scripts/train-screen.mjs').parseArgs extends (...a: any) => infer R ? R : never} args */
+/** @param {string} name the grid's name @param {number} count offsets @returns {ReturnType<typeof parseArgs>} args */
 const args = (name, count) =>
     parseArgs([
         '--grid',

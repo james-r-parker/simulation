@@ -42,6 +42,10 @@ describe('runYield', () => {
         expect(runYield(manifest([{ name: 'a' }]), rows).cpuSeconds).toBe(20 + 20);
     });
 
+    it('reads a row with none of the timing columns as no CPU time', () => {
+        expect(runYield(manifest([{ name: 'a' }]), [{ stage: 'a', bestProgress: 0.1 }]).cpuSeconds).toBe(0);
+    });
+
     it('takes the best progress over the stage`s rows, so a review that reset it does not lower the score', () => {
         const rows = [
             { stage: 'a', bestProgress: 0.6, cpuSeconds: 1 },

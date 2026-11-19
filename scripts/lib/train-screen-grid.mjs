@@ -135,6 +135,7 @@ export function planScreen(grid, readLadder) {
     const named = grid.arms ?? {};
     const reference = grid.reference ?? BASE_ARM;
     const added = grid.reference === undefined && !Object.hasOwn(named, BASE_ARM);
+    /** @type {Record<string, Record<string, any>>} */
     const overlays = { ...(added ? { [BASE_ARM]: {} } : {}), ...named };
     if (!Object.hasOwn(overlays, reference)) {
         throw new Error(`grid: "reference" names "${reference}", which is not an arm`);
