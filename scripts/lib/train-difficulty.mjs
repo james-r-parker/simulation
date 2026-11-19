@@ -18,6 +18,16 @@ export function steerOptions(stage, state) {
 }
 
 /**
+ * @param {number | null} difficulty the value the generation ran at
+ * @param {{winShare: number | null} | null | undefined} steer the checkpoint's steering read
+ * @returns {{difficulty: number | null, steerShare: number | null}} the curve row's adaptive columns: the value, and the
+ *   steering read's win share (null when no read was taken, so a flat value is still visible)
+ */
+export function curveFields(difficulty, steer) {
+    return { difficulty, steerShare: steer?.winShare ?? null };
+}
+
+/**
  * @param {Record<string, any>} overrides a stage's config overrides
  * @param {number | null} difficulty the value of `adapt.param` the episodes run at (`episodeDifficulty`; null: none)
  * @returns {Record<string, any>} the overrides the episodes run under: the stage's own when there is no value, else the
