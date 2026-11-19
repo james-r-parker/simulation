@@ -12,6 +12,7 @@ import { brainLayout } from '../js/sim/brain-layout.js';
 import { createConfig } from '../js/sim/config.js';
 import { createSimLog } from '../js/sim/log.js';
 import { exitCodeOf } from './lib/cli-args.mjs';
+import { runIfEntrypoint } from './lib/cli-entrypoint.mjs';
 import { writeDossier } from './lib/brain-inspection-report.mjs';
 import { parseArgs, USAGE } from './lib/inspect-brain-args.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
@@ -289,6 +290,4 @@ export function main(argv) {
     });
 }
 
-if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
-    process.exitCode = await main(process.argv.slice(2));
-}
+await runIfEntrypoint(resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url), process.argv.slice(2), main);

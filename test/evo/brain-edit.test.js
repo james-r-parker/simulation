@@ -74,9 +74,19 @@ describe('applyEdits', () => {
         const { layout, weights } = layoutFixture();
         expect(() => applyEdits(weights, layout, [edit])).toThrow(message);
     });
+
+    it('rejects an unsupported edit operation', () => {
+        const { layout, weights } = layoutFixture();
+
+        expect(() => applyEdits(weights, layout, [{ op: 'replace' }])).toThrow(/expected op silence, set or scale/);
+    });
 });
 
 describe('silenceHook', () => {
+    it('does nothing when the subject slot is missing', () => {
+        expect(() => silenceHook([0])({ fastOut: new Float32Array(2), layout: {} }, { subject: [] })).not.toThrow();
+    });
+
     it('keeps selected fastOut rows at zero after a Hebbian brain step', () => {
         const config = createConfig({ brainHidden: 2, hebbianRate: 1 });
         const layout = brainLayout(config);

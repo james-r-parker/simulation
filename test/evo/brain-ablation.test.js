@@ -25,7 +25,9 @@ describe('compareTrials', () => {
         const same = [{ won: true }, { won: false }];
         expect(compareTrials(same, same).mcnemarP).toBe(1);
         expect(mcnemarP(0, 0)).toBe(1);
+        expect(mcnemarP(2, 1)).toBe(1);
         expect(() => compareTrials(same, [{ won: true }])).toThrow(/lengths differ/);
+        expect(compareTrials([], [])).toMatchObject({ beforeWinShare: 0, afterWinShare: 0, change: 0 });
     });
 });
 
@@ -64,6 +66,7 @@ describe('ablateUnit', () => {
             { trial: 2, ticks: 1, won: true, trace: null },
         ]);
         expect(plans).toBe(3);
+        expect(() => ablateUnit({ subject, drill, unit: null, seed: 5, trials: 0 })).toThrow(/positive integer/);
     });
 
     it('uses the configured brain shape when creating a hidden-unit ablation', () => {
@@ -149,5 +152,14 @@ describe('editTrials', () => {
         ]);
         expect(plans).toBe(2);
         expect(subject.weights.every((value) => value === 0)).toBe(true);
+        expect(() =>
+            editTrials({
+                subject: { ...subject, weights: null },
+                drill,
+                edits: [{ op: 'set', block: 'trait', col: 0, value: 0.75 }],
+                seed: 8,
+                trials: 1,
+            }),
+        ).toThrow(/weight row is required/);
     });
 });

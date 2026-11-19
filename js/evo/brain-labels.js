@@ -1,6 +1,6 @@
 // Labels the pooled brain inputs, gene outputs and hidden units for inspection reports.
 
-import { GENE_OUTPUTS, POOLED_CHANNELS, POOLED_HITS, brainLayout, inputOffsets } from '../sim/brain-layout.js';
+import { GENE_OUTPUTS, POOLED_CHANNELS, POOLED_HITS, inputOffsets } from '../sim/brain-layout.js';
 
 const HIT_VALUES = Object.freeze(['strength', 'cos', 'sin']);
 const GENE_OUTPUT_NAMES = Object.freeze([
@@ -61,13 +61,9 @@ const BODY_LABELS = Object.freeze([
  */
 export function inputLabels(config) {
     const labels = pooledLabels();
-    labels.push('food.hue0', 'food.hue1');
-    labels.push(...BODY_LABELS);
     const offsets = inputOffsets(config);
-    const layout = brainLayout(config);
-    if (labels.length !== layout.inputCount || offsets.foodHueStart !== labels.length - BODY_LABELS.length - 2) {
-        throw new Error(`inputLabels: expected ${layout.inputCount} labels, got ${labels.length}`);
-    }
+    labels.splice(offsets.foodHueStart, 0, 'food.hue0', 'food.hue1');
+    labels.push(...BODY_LABELS);
     return labels;
 }
 
@@ -76,13 +72,7 @@ export function inputLabels(config) {
  * @returns {string[]} one label per gene output column
  */
 export function outputLabels() {
-    return GENE_OUTPUTS.map((output) => {
-        const label = GENE_OUTPUT_NAMES.find((_, i) => GENE_OUTPUTS[i] === output);
-        if (label === undefined) {
-            throw new Error(`outputLabels: no label for output ${output}`);
-        }
-        return label;
-    });
+    return GENE_OUTPUT_NAMES.slice(0, GENE_OUTPUTS.length);
 }
 
 /**

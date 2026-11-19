@@ -103,6 +103,16 @@ function replayContext({ subject, drill, seed, config }) {
     return { arena, staged, base, view, rng };
 }
 
-if (!isMainThread) {
-    serveTasks(runInspectTask);
+/**
+ * Starts the task server only inside the worker thread.
+ * @param {boolean} mainThread whether the current thread is the parent
+ * @param {(handler: (task: Record<string, any>) => Record<string, any>) => void} [serve] the worker server
+ * @returns {void}
+ */
+export function startInspectWorker(mainThread, serve = serveTasks) {
+    if (!mainThread) {
+        serve(runInspectTask);
+    }
 }
+
+startInspectWorker(isMainThread);

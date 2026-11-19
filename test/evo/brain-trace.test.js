@@ -43,6 +43,10 @@ describe('createTraceRecorder', () => {
 });
 
 describe('traceSummary', () => {
+    it('rejects an incomplete output label table', () => {
+        expect(() => traceSummary({ ticks: 0 }, { inputs: [], outputs: [], units: [] })).toThrow(/missing label/);
+    });
+
     it('summarizes hidden changes, output firing and active pooled inputs', () => {
         const outputs = new Float32Array(3 * OUTPUT_COUNT);
         outputs[0] = 0.2;
@@ -68,5 +72,22 @@ describe('traceSummary', () => {
         expect(summary.outputs[0]).toMatchObject({ output: 'gene0', firingTicks: 1, aliveTicks: 2, firingShare: 0.5 });
         expect(summary.outputs[8].output).toBe('split');
         expect(summary.inputs).toEqual(['food.hit0.strength']);
+    });
+
+    it('reports zero summaries when no subject tick is alive', () => {
+        const trace = {
+            ticks: 1,
+            alive: new Uint8Array([0]),
+            hidden: new Float32Array([0]),
+            outputs: new Float32Array(OUTPUT_COUNT),
+            pooled: new Float32Array(0),
+        };
+        const labels = { inputs: [], outputs: GENE_OUTPUTS.map((_, i) => `gene${i}`), units: ['h0'] };
+
+        const summary = traceSummary(trace, labels);
+
+        expect(summary.hidden[0]).toMatchObject({ mean: 0, min: 0, max: 0, largestChangeTick: null });
+        expect(summary.outputs[0]).toMatchObject({ aliveTicks: 0, firingTicks: 0, firingShare: 0 });
+        expect(summary.inputs).toEqual([]);
     });
 });
