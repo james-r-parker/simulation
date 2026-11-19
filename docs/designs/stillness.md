@@ -40,7 +40,7 @@ All computed by the eval observer; none is a reward.
 
 The baseline is the shared run of [detector-baseline.md](detector-baseline.md), read once for every plan that has its prediction written.
 
-The first three detectors. Prediction for the shared detector-baseline top-up, recorded in `evals/experiments.json` before that run: `eval.freeze_under_threat` is at or under 0 (threatened prey move more, not less), `eval.freeze_survival_gain` has an interval that includes 0, and `eval.ambush_kill_share` is under 0.1. Phase 2 is built only if the prediction holds: if blobs already freeze or ambush with a gain, the world gives the reason and this doc closes with the detectors kept.
+The first three detectors. Prediction for the shared detector-baseline top-up, recorded in `evals/experiments.json` before that run: `eval.freeze_under_threat` is at or under 0 (threatened prey move more, not less), `eval.freeze_survival_gain` has a per-seed range that includes 0, and `eval.ambush_kill_share` is under 0.1. Phase 2 is built only if the prediction holds: if blobs already freeze or ambush with a gain, the world gives the reason and this doc closes with the detectors kept.
 
 Baseline (`evals/power/defaults-floor-on-E210.json`, 128 seeds, 200000 ticks, `rulesHash` `38be2908ad820c86`):
 
@@ -50,7 +50,7 @@ Baseline (`evals/power/defaults-floor-on-E210.json`, 128 seeds, 200000 ticks, `r
 | `eval.freeze_survival_gain` | 0.0008938 | -0.008615 to 0.01076 | 0        | -      | -      | -      | more than 64          |
 | `eval.ambush_kill_share`    | 0.0005704 | 0 to 0.00533         | 0.007813 | 0.03   | 0.03   | -      | 16                    |
 
-Verdict (E210): Prediction holds (`eval.freeze_under_threat` -0.1121 is at or under 0, `eval.freeze_survival_gain` 0.0008938 with range -0.008615 to 0.01076 straddles 0, `eval.ambush_kill_share` 0.0005704 is under 0.1). Phase 2 is opened.
+Verdict (E210): Prediction holds (`eval.freeze_under_threat` -0.1121 is at or under 0, `eval.freeze_survival_gain` 0.0008938 with a per-seed range of -0.008615 to 0.01076 (not a confidence interval) straddles 0, `eval.ambush_kill_share` 0.0005704 is under 0.1). Phase 2 is opened.
 
 ### Phase 2 - A still body is fainter
 
