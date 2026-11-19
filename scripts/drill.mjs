@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { readArchiveFile, readDrillConfig } from './lib/archive-source.mjs';
 import { DRILLS } from '../js/evo/drill-scenarios.js';
 import { DRILL_TRIALS, edgeOf, randomBrains, skipReason, winBounds } from '../js/evo/drill.js';
+import { traceAggregates } from '../js/evo/drill-trace.js';
 import { referenceSubject } from '../js/evo/memory-probe-references.js';
 import { seedlessConfig } from '../js/evo/report.js';
 import { configHash, createConfig } from '../js/sim/config.js';
@@ -180,6 +181,21 @@ function buildTasks(args, { genomes, config }) {
 }
 
 /**
+ * @param {readonly Record<string, any>[]} records a cell's trial records
+ * @returns {Record<string, number>} the lost trials by first-match reason
+ */
+function lostCounts(records) {
+    const counts = /** @type {Record<string, number>} */ ({});
+    for (const record of records) {
+        if (record.won || record.reason === null || record.reason === undefined) {
+            continue;
+        }
+        counts[record.reason] = (counts[record.reason] ?? 0) + 1;
+    }
+    return counts;
+}
+
+/**
  * Turns the pool's results into one row per genome and the reference.
  * @param {DrillArgs} args the options
  * @param {{genomes: import('../js/evo/memory-probe-run.js').Subject[], tasks: ReturnType<typeof buildTasks>, results: Record<string, any>[], log: import('../js/sim/log.js').SimLog}} run
@@ -204,13 +220,7 @@ function rowsOf(args, { genomes, tasks, results, log }) {
                 return;
             }
             const records = results[at].records ?? [];
-            const lossReasons = /** @type {Record<string, number>} */ ({});
-            for (const record of records) {
-                if (record.won || record.reason === null || record.reason === undefined) {
-                    continue;
-                }
-                lossReasons[record.reason] = (lossReasons[record.reason] ?? 0) + 1;
-            }
+            const lossReasons = lostCounts(records);
             const { winShare } = results[at];
             const cell = {
                 winShare,
@@ -222,6 +232,7 @@ function rowsOf(args, { genomes, tasks, results, log }) {
                 randomWins: randoms.reduce((sum, score) => sum + score.wins, 0),
                 randomTrials: randoms.reduce((sum, score) => sum + score.trials, 0),
                 lossReasons,
+                ...traceAggregates(records),
             };
             rows[row].cells[name] = cell;
             log.log('info', 'DrillResult', {

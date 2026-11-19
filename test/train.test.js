@@ -115,7 +115,7 @@ describe('train:curve with gates', () => {
             }),
         ];
         const lines = formatCurve(rows);
-        expect(lines[0]).toMatch(/drill edge\s+gate\s+retention\s+food_energy_per_1k/);
+        expect(lines[0]).toMatch(/drill edge\s+gate\s+retention\s+progress\s+best\s+food_energy_per_1k/);
         expect(lines[1]).toMatch(/^1\s+hunt.*\s-\s+-\s/);
         expect(lines[2]).toMatch(/\sfail\s+-\s/);
         expect(lines[3]).toMatch(/\sPASSED\s+nursery:1 all:1\s/);

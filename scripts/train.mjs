@@ -82,13 +82,15 @@ async function runEpisodes({ seeds, stage, archive, pool }, { args, generation, 
 /**
  * @param {Record<string, any>[]} results the generation's episode results
  * @param {{wallSeconds: number, workers: number}} timing the generation's wall time and the pool size
- * @returns {{ticks: number, cpuShare: number}} ticks run and the share of the pool's time spent in episodes
+ * @returns {{ticks: number, cpuShare: number, busy: number}} ticks run, the share of the pool's time spent in episodes and
+ *   the seconds the pool spent in them
  */
 function usage(results, { wallSeconds, workers }) {
     const busy = results.reduce((sum, r) => sum + r.wallMs, 0) / 1000;
     return {
         ticks: results.reduce((sum, r) => sum + r.ticks, 0),
         cpuShare: wallSeconds === 0 ? 0 : busy / (wallSeconds * workers),
+        busy,
     };
 }
 
@@ -103,6 +105,7 @@ function usage(results, { wallSeconds, workers }) {
  * @property {number} workers the pool size
  * @property {number} started `performance.now()` when the run began
  * @property {number} trainTicks ticks trained so far
+ * @property {number} cpuSeconds seconds the pool has spent in episodes so far (this process: a resume starts at 0)
  * @property {Record<string, any> | null} lastPoint the last curve row
  * @property {import('./lib/train-manifest.mjs').ManifestBase} manifest the fixed part of `manifest.json`
  * @property {Record<string, any[]>} keepers the kept passers by stage (`keepPasser` stages, scripts/lib/train-keepers.mjs)
@@ -194,9 +197,11 @@ function advance(state, checkpoint, log) {
     if (gate === undefined) {
         return { state: step.state, columns: {} };
     }
-    const { stage, passed, conditions, retention } = gate.fields;
+    const { stage, passed, conditions, retention, progress, bestProgress } = gate.fields;
+    log.log('info', 'TrainProgress', { generation: gate.fields.generation, stage, progress, bestProgress });
     const stagePassed = step.events.some((e) => e.event === 'TrainStagePassed');
-    return { state: step.state, columns: { gate: { stage, passed, conditions, retention, stagePassed } } };
+    const columns = { progress, bestProgress, gate: { stage, passed, conditions, retention, stagePassed } };
+    return { state: step.state, columns };
 }
 
 /**
@@ -262,8 +267,9 @@ async function runGeneration(run, { drillTrials, gateTrials, crossTrials, print 
     const results = await runEpisodes({ seeds: run.seeds, stage, archive, pool: run.pool }, { args, generation, log });
     const outcomes = results.map((r) => mergeEpisode(archive, r, log));
     const wallSeconds = (performance.now() - t0) / 1000;
-    const { ticks, cpuShare } = usage(results, { wallSeconds, workers: run.workers });
+    const { ticks, cpuShare, busy } = usage(results, { wallSeconds, workers: run.workers });
     run.trainTicks += ticks;
+    run.cpuSeconds += busy;
     const fields = { generation, stage: stage.name, coverage: coverage(archive), qdScore: qdScore(archive) };
     log.log('info', 'TrainGeneration', { ...fields, wallSeconds, cpuShare, offers: outcomes });
     const checkpoint = await maybeCheckpoint(run, { drillTrials, gateTrials, crossTrials });
@@ -275,7 +281,8 @@ async function runGeneration(run, { drillTrials, gateTrials, crossTrials, print 
     saveArchive(args.out, { archive, stages, generation, state, keepers: run.keepers, ...pool });
     saveManifest(run);
     if (checkpoint !== null) {
-        run.lastPoint = { ...checkpoint.point, ...columns };
+        const cpu = { workers: run.workers, cpuShare, cpuSeconds: run.cpuSeconds };
+        run.lastPoint = { ...checkpoint.point, ...columns, ...cpu };
         appendCurveRow(args.out, run.lastPoint);
     }
     print(
@@ -324,6 +331,7 @@ function startRun(args, log, commandLine) {
         workers,
         started,
         trainTicks: 0,
+        cpuSeconds: 0,
         lastPoint: null,
         crossplay: null,
         pool: loadPool(args.resume ?? '', resumed?.pool),
@@ -349,14 +357,15 @@ export class TrainStalled extends Error {
  * @returns {string} the stall's message: the stage, its failing conditions and its drills' lost-trial reasons
  */
 function stallMessage(run) {
-    const { stage, failing } = run.state.stalled[run.state.stalled.length - 1];
+    const { stage, failing, reason, bestProgress } = run.state.stalled[run.state.stalled.length - 1];
     const bound = (/** @type {any} */ c) => (c.min !== undefined ? `>= ${c.min}` : `<= ${c.max}`);
     const lines = failing.map((/** @type {any} */ c) => `  ${c.read}: ${c.value} (needs ${bound(c)})`);
     const drills = new Set(failing.flatMap((/** @type {any} */ c) => /^drill\.([^.]+)\./.exec(c.read)?.[1] ?? []));
     const reasons = [...drills].map(
         (d) => `  ${d} lost trials: ${JSON.stringify(run.lastPoint?.drillLossReasons?.[d] ?? null)}`,
     );
-    return [`TrainStageStalled: stage "${stage}" did not pass its gate`, ...lines, ...reasons].join('\n');
+    const why = `(${reason}, best progress ${bestProgress.toFixed(3)})`;
+    return [`TrainStageStalled: stage "${stage}" did not pass its gate ${why}`, ...lines, ...reasons].join('\n');
 }
 
 /**

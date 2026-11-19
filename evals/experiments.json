@@ -4948,6 +4948,22 @@
       "effect": "no-difference",
       "note": "Falsified. Maxima 0.1195 (o144, generations 140 to 290, equal to the E-TS-1j best) and 0.0569 (o8, 110 to 120, then 0.0098), against above 0.2. Both stalled at hunt (exit 3); kin-spared -0.015 on both, prey-crossing negative on o8; o144 was sent to nursery twice by reviews. The pool does not give the chase new material: the cause is the chase itself (T62).",
       "reports": ["evals/decisions/E-TS-1l/results.md"]
+    },
+    {
+      "id": "E206",
+      "date": "2026-11-19",
+      "branch": "feat/training-loop-p2",
+      "hypothesis": "E-TL-2 (training-loop T11): the learnability check says which rungs of the current ladder a random-brain population can learn, so a stage that no brain can reach is found before a ladder spends runs on it.",
+      "prediction": "Written before the run (npm run train:feasible on evals/train-ladder.json at the default sizes: 8 populations, 200 generations, 64 brains, 4 trials): every gate drill of every rung through hunt-mid (food-ahead, food-behind, prey-adrift, prey-weak, prey-mid) is learnable; hunt is not, because prey-ahead at 0.5 of the reference win share is out of reach of every population, which would say the next lever is a sim rule (training-stages.md T62), not a ladder change.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "no check: the ladder is trained and a stalled stage is found hours later",
+      "after": "evals/train-screens/results/feasible-ladder.json (learnability check, default sizes)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Prediction half right. Learnable (at least 2 of 8 populations at the bar): food-ahead 8/8, food-behind 8/8, prey-adrift 8/8, prey-weak 3/8 (best 0.88), prey-crossing 2/8, hunter-closing 8/8, hunter-flank 8/8. Not learnable: prey-ahead 0/8 (best 0.03 against a bar of 0.109, as predicted), prey-mid 1/8 (best 0.56; predicted learnable), kin-spared 0/8 (best 0.00; not named in the prediction): its win needs a kill and zero BITE with the sibling in the jaws, so it is capped by prey-ahead's share; random and memoryless brains score 0, real runs read edgeLow -0.0148 with bit-kin 128 of 128, and a hand-built kin-sparing reference wins 0.672 over 64 trials, so it is winnable but nothing trains toward it while prey-ahead is unsolved. The bars are point-estimate bars, not the gate's Wilson bars (a gate bar of 0.001 needs about 6 wins in 128 trials), so learnable is necessary, not sufficient. Outcome to task: training-stages T64 moves kin-spared into its own hunt-kin stage. Every fair band is non-empty. The check starts from random weights, so it is stricter than the ladder, which keeps each stage's passers. Run: scripts/run-detached.sh E-TL-2 --frozen -- npm run train:feasible -- --curriculum evals/train-ladder.json --workers 4 --out evals/train-screens/results/feasible-ladder.json (about 2h20m at 4 workers).",
+      "reports": ["evals/decisions/E206/results.md"]
     }
   ]
 }

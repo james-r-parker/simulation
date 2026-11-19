@@ -12,7 +12,7 @@ export const REVIEW_MAX = 3;
 
 const NAME = '[a-z][a-z0-9-]*';
 const KNOWN_KEYS = [
-    new RegExp(`^drill\\.${NAME}\\.(edgeLow|winShareLow|winShareOverReference)$`),
+    new RegExp(`^drill\\.${NAME}\\.(edgeLow|winShareLow|winShareOverReference|jawShareLow|closestMedian)$`),
     new RegExp(`^drill\\.${NAME}\\.lossShare\\.${NAME}$`),
     /^drill\.pack-converge\.(gainLow|blindGapLow)$/,
     /^crossplay\.(hunterProgressLow|preyProgressLow|cycleShare)$/,

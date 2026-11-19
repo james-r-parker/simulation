@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { DEATH_CAUSE, EVENT_TYPE, createEventRing, pushEvent } from '../../js/sim/events.js';
 import { DRILLS } from '../../js/evo/drill-scenarios.js';
-import { createPreyTrace, lostReason, noteTick, traceFields } from '../../js/evo/drill-trace.js';
+import { createPreyTrace, lostReason, noteTick, traceAggregates, traceFields } from '../../js/evo/drill-trace.js';
 import { drillSubject } from '../../js/evo/drill.js';
 import { referenceSubject } from '../../js/evo/memory-probe-references.js';
 
@@ -139,5 +139,21 @@ describe('prey-ahead trace in the drill log', () => {
             expect(record.reason === null).toBe(record.won);
             expect(record.biteTicks).toBeGreaterThan(0);
         }
+    });
+});
+
+describe('traceAggregates', () => {
+    it('counts the trials with jaw ticks and lists the closest approaches, leaving out a null', () => {
+        const records = [
+            { jawTicks: 3, closest: 1.5 },
+            { jawTicks: 0, closest: 4 },
+            { jawTicks: 0, closest: null },
+        ];
+        expect(traceAggregates(records)).toEqual({ jawTrials: 1, closestList: [1.5, 4] });
+    });
+
+    it('returns nothing for trials without a trace', () => {
+        expect(traceAggregates([{ won: true }])).toEqual({});
+        expect(traceAggregates([])).toEqual({});
     });
 });
