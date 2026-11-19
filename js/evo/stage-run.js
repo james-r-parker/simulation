@@ -4,6 +4,7 @@
 // plain data (apart from the stage list) so a run resumes from it.
 
 import { GATE_HOLD, REVIEW_GENERATIONS, REVIEW_MAX, readGate, streaksOf } from './stage-gate.js';
+import { bestOf, stageProgress } from './stage-progress.js';
 
 /**
  * @typedef {object} RunStage
@@ -29,6 +30,8 @@ import { GATE_HOLD, REVIEW_GENERATIONS, REVIEW_MAX, readGate, streaksOf } from '
  * @property {Record<string, {passedAt: number, checkpoints: number, gate: object[]}>} passed each passed stage
  * @property {Record<string, number>} reviews reviews begun per stage
  * @property {boolean[]} history the current stage's gate results since it began or last returned from a review
+ * @property {number[]} progressHistory the current stage's progress (`stageProgress`) at each gate checkpoint since it began or
+ *   last returned from a review
  * @property {Record<string, number>} failStreaks each passed stage's retention failures in a row
  * @property {{index: number, left: number} | null} review the review being run
  * @property {'running' | 'done' | 'stalled'} status whether the run goes on
@@ -68,6 +71,7 @@ export function initialState(stages, total) {
         passed: {},
         reviews: {},
         history: [],
+        progressHistory: [],
         failStreaks: {},
         review: null,
         status: 'running',
@@ -166,6 +170,7 @@ function copy(state) {
         passed: { ...state.passed },
         reviews: { ...state.reviews },
         history: [...state.history],
+        progressHistory: [...state.progressHistory],
         failStreaks: { ...state.failStreaks },
         review: state.review === null ? null : { ...state.review },
         stalled: [...state.stalled],
@@ -181,6 +186,7 @@ function moveOn(s) {
     s.index += 1;
     s.count = 0;
     s.history = [];
+    s.progressHistory = [];
 }
 
 /**
@@ -297,6 +303,7 @@ function gateCheckpoint(s, entry, readings, events) {
     const read = readGate(/** @type {any} */ (entry.gate), { ...readings, retention });
     s.last = read.conditions.filter((c) => !c.passed);
     s.history.push(read.passed);
+    s.progressHistory.push(stageProgress(/** @type {any} */ (entry.gate), readings));
     const { streak, held } = streaksOf(s.history);
     events.push({
         level: 'info',
@@ -307,6 +314,8 @@ function gateCheckpoint(s, entry, readings, events) {
             passed: read.passed,
             conditions: read.conditions,
             retention,
+            progress: s.progressHistory[s.progressHistory.length - 1],
+            bestProgress: bestOf(s.progressHistory),
             ...(kept.length === 0 ? {} : { kept }),
         },
     });
@@ -334,6 +343,7 @@ function stepReview(s) {
     if (review.left === 0) {
         s.review = null;
         s.history = [];
+        s.progressHistory = [];
         s.failStreaks = {};
         // a review only starts inside a gated stage; leave room for a hold before its stall
         const max = /** @type {number} */ (s.stages[s.index].maxGenerations);

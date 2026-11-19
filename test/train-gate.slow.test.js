@@ -146,6 +146,16 @@ describe('a gated ladder', () => {
             expect(rows[2].gate.retention).toEqual({ one: 1, all: 1 });
             expect(rows[3].gate).toMatchObject({ stage: 'two', stagePassed: true, retention: { one: 1, all: 1 } });
             expect(rows[4].gate).toBeUndefined();
+            expect(rows[0]).toMatchObject({ progress: expect.any(Number), workers: expect.any(Number) });
+            expect(rows[1].bestProgress).toBeGreaterThanOrEqual(rows[1].progress);
+            expect(rows[1].cpuSeconds).toBeGreaterThanOrEqual(rows[0].cpuSeconds);
+            expect(rows[4].progress).toBeUndefined();
+            expect(log.filter((r) => r.event === 'TrainProgress').map((r) => r.stage)).toEqual([
+                'one',
+                'one',
+                'two',
+                'two',
+            ]);
         },
         scaleTimeout(120000),
     );
