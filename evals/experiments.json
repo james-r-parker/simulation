@@ -4834,6 +4834,38 @@
       "effect": "no-difference",
       "note": "No eval ran, so no verdict. Falsified: nursery passes on 1 of the 3 stalled offsets (80 at 30, then hunt-contact, hunt-weak and hunt-mid and a hunt stall at prey-ahead 0.000, prey-crossing -0.007, kin-spared -0.015). Offsets 48 and 16 are worse (food-behind -0.115 and -0.046). The control offset 144 passes nursery but regresses to it at 70 and stalls at hunt-weak (-0.013) where it passed every rung through hunt-mid in E-TS-1h. T55 reverted; the nursery stays at 2400 x 1600. Outcome to task: T54 (the turn read) stays open.",
       "reports": ["evals/decisions/E-TS-1i/results.md"]
+    },
+    {
+      "id": "E200",
+      "date": "2026-11-19",
+      "branch": "feat/training-stages-hunt",
+      "hypothesis": "E-TS-1j (training-stages Phase 6, T57, T58): hunt simply needs longer than 60 generations; with maxGenerations 200 and the bar unchanged, prey-ahead winShareOverReference keeps rising.",
+      "prediction": "Written before the run (commit f92623e1): winShareOverReference rises above 0.2 on at least 1 of the 2 resumed runs by generation 200; falsified when neither does.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "E-TS-1f offset 0 and E-TS-1h offset 144 at the start of hunt (60-generation hunt: 0.119 and 0.087)",
+      "after": "npm run train --resume <archive-99.json> --until habitat --generations 380 --ticks 4000 --offer-from 100 --workers 12, offsets 144 (train-ladder.json) and 0 (train-ladder-no-mid.json)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "No eval ran, so no verdict. Falsified: the maxima over every hunt checkpoint are 0.0869 (o144, generations 110 to 150) and 0.1195 (o0, 150 to 230), the same values as the 60-generation runs, then lost when the champion pick changed (0.0098, 0.0569). The retention review sent o144 to nursery twice (food-behind 0.207, stalled there at 280) and o0 to hunt-weak three times (stalled at hunt, 315). kin-spared -0.0148 throughout. Outcome: E201.",
+      "reports": ["evals/decisions/E-TS-1j/results.md"]
+    },
+    {
+      "id": "E201",
+      "date": "2026-11-19",
+      "branch": "feat/training-stages-hunt",
+      "hypothesis": "Consolidated outcome record of the hunt rung after nine ladder iterations (E191, E194, E196 to E200 and the b and c records): why longer, graded sprint and prey share do not climb to full-sprint prey-ahead, and what the retention review costs.",
+      "prediction": "Not applicable: an outcome record, no run; its levers carry their own predictions when built.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "none (no arm compared)",
+      "after": "none",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "No run, no verdict. prey-ahead winShareOverReference has not read above 0.12 in any run; elites never reach the jaws (never-in-jaws 121 to 128 of 128); the rungs help only offsets already past them; the retention review drags runs back to nursery or hunt-weak; nursery stalls on 4 of 8 offsets. Ranked levers: config or curriculum (keep the best passing elite through a review, more offsets, pool opponents in hunt) and sim rule or keep-rule read (prey stamina, hunter stamina, T44 kin inhibition). Tasks T59 to T63.",
+      "reports": ["evals/decisions/E201/results.md"]
     }
   ]
 }
