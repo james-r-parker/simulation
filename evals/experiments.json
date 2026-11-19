@@ -4962,7 +4962,7 @@
       "after": "stop arm: evals/train-ladder.json as committed (plateauStop on)",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "Running (effect is a placeholder until the verdict): scripts/run-detached.sh E-TL-1 --frozen -- npm run train:screen -- --grid evals/train-screens/plateau.grid.json",
+      "note": "Prediction half met. No verdict on score (15 of 16 offsets tied, 1 down, mean difference -0.063 [-0.378, 0], sign test p 1.0). Pass shares equal except hunt-weak 31% to 25% (offset 104 lost it to the stop). CPU hours 26.7 to 21.9 (-18%), against at least 30% predicted: falsified. Median generations to pass is 10 at every stage (minGenerations). Nursery stalls on 7 of 16 offsets at best progress 0.67 to 0.83. Plateau stop 6 stays the default. Outcome to task: training-loop T8a, plateauStop 10 against 6 as a train:tune arm and the nursery stall as the next ladder lever. Run: scripts/run-detached.sh E-TL-1 --frozen -- npm run train:screen -- --grid evals/train-screens/plateau.grid.json",
       "reports": ["evals/decisions/E205/results.md"]
     },
     {
