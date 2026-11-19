@@ -59,6 +59,13 @@ describe('planScreen', () => {
         expect(plan.arms.find((a) => a.name === 'solo')?.ladder).toEqual(files['other.json']);
     });
 
+    it('reads the learnability check: on at the probe sizes by default, sized by `feasible`, off with false', () => {
+        expect(planScreen(grid(), read)).toMatchObject({ feasible: {}, skipUnlearnable: false });
+        const sized = planScreen(grid({ feasible: { generations: 20, seeds: 4 }, skipUnlearnable: true }), read);
+        expect(sized).toMatchObject({ feasible: { generations: 20, seeds: 4 }, skipUnlearnable: true });
+        expect(planScreen(grid({ feasible: false }), read).feasible).toBeNull();
+    });
+
     it('refuses a malformed grid, naming the key', () => {
         const bad = (/** @type {any} */ g, /** @type {RegExp} */ message) =>
             expect(() => planScreen(g, read)).toThrow(message);
@@ -76,6 +83,10 @@ describe('planScreen', () => {
         bad(grid({ train: { speed: 1 } }), /not a trainer option/);
         bad(grid({ train: { ticks: 1.5 } }), /non-negative integer/);
         bad(grid({ train: 3 }), /train must be an object/);
+        bad(grid({ feasible: true }), /"feasible" must be false or an object/);
+        bad(grid({ feasible: { population: 8 } }), /feasible.population/);
+        bad(grid({ feasible: { seeds: 0 } }), /feasible.seeds/);
+        bad(grid({ skipUnlearnable: 'yes' }), /"skipUnlearnable"/);
     });
 });
 
@@ -116,6 +127,7 @@ describe('evals/train-screens/plateau.grid.json', () => {
         const plan = planScreen(readFile('evals/train-screens/plateau.grid.json'), readFile);
         expect(plan.offsets).toEqual(Array.from({ length: 16 }, (_, i) => i * 8));
         expect(plan).toMatchObject({ until: 'hunt-mid', generations: 380, workersPerRun: 8, reference: 'nostop' });
+        expect(plan.feasible).toBeNull();
         expect(plan.arms.map((a) => a.train)).toEqual([{ checkpointEvery: 5 }, { checkpointEvery: 5 }]);
         const stops = (/** @type {string} */ name) =>
             plan.arms.find((a) => a.name === name)?.ladder.map((e) => [e.name, e.plateauStop]);

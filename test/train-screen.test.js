@@ -18,9 +18,10 @@ writeFileSync(ladderFile, JSON.stringify(LADDER));
 /**
  * @param {string} name the grid's name
  * @param {number} count offsets, 0, 8, ...
+ * @param {Record<string, any>} [extra] more grid keys
  * @returns {string} the grid file
  */
-function gridFile(name, count) {
+function gridFile(name, count, extra = {}) {
     const file = join(root, `${name}.grid.json`);
     const offsets = Array.from({ length: count }, (_, i) => i * 8);
     writeFileSync(
@@ -32,16 +33,17 @@ function gridFile(name, count) {
             workersPerRun: 4,
             reference: 'plain',
             arms: { plain: {}, better: { train: { episodes: 3 } } },
+            ...extra,
         }),
     );
     return file;
 }
 
-/** @param {string} name the grid's name @param {number} count offsets @returns {ReturnType<typeof parseArgs>} args */
-const args = (name, count) =>
+/** @param {string} name the grid's name @param {number} count offsets @param {Record<string, any>} [extra] more grid keys @returns {ReturnType<typeof parseArgs>} args */
+const args = (name, count, extra = {}) =>
     parseArgs([
         '--grid',
-        gridFile(name, count),
+        gridFile(name, count, extra),
         '--out',
         join(root, name),
         '--workers',
@@ -117,6 +119,76 @@ describe('runTrainScreen', () => {
         await runTrainScreen(args('again', 2), { exec: second.exec });
         expect(first.calls).toHaveLength(4);
         expect(second.calls).toEqual([]);
+    });
+});
+
+/** @param {Record<string, string[]>} bad the unlearnable stages by arm ladder (`better` has the 3 episodes) */
+const stubCheck = (bad) => {
+    /** @type {{ladder: any, options: any}[]} */
+    const calls = [];
+    const check = async (/** @type {any} */ ladder, /** @type {any} */ options) => {
+        calls.push({ ladder, options });
+        const arm = bad.better !== undefined && calls.length === 2 ? 'better' : 'plain';
+        return ladder.map((/** @type {any} */ e) => ({
+            stage: e.name,
+            drills: [],
+            unchecked: [],
+            learnable: bad[arm]?.includes(e.name) ? false : true,
+        }));
+    };
+    return { check, calls };
+};
+
+describe('runTrainScreen learnability check', () => {
+    it('checks the ladder once per distinct arm ladder, marks the unlearnable arm and still trains it', async () => {
+        const train = fakeTrain(() => ({ passed: 1 }));
+        const { check, calls } = stubCheck({ better: ['two'] });
+        const grid = args('feas', 2, {
+            arms: { plain: {}, better: { stages: { one: { generations: 3 } } } },
+            feasible: { generations: 5, seeds: 2 },
+            until: 'two',
+        });
+        const { report, out } = await runTrainScreen(grid, { exec: train.exec, check });
+        expect(calls).toHaveLength(2);
+        expect(calls[0].options).toMatchObject({ generations: 5, seeds: 2, until: 'two' });
+        expect(train.calls).toHaveLength(4);
+        expect(report.verdicts.unlearnable).toEqual({ plain: [], better: ['two'] });
+        expect(report.verdicts.arms.better.unlearnable).toEqual(['two']);
+        expect(report.table).toContain('- better: unlearnable: two');
+        expect(report.table).toContain('- plain: every checked stage learnable');
+        const files = JSON.parse(readFileSync(join(out, 'feasible.json'), 'utf8'));
+        expect(files.better[1]).toMatchObject({ stage: 'two', learnable: false });
+        expect(JSON.parse(readFileSync(join(out, 'verdicts.json'), 'utf8')).unlearnable.better).toEqual(['two']);
+    });
+
+    it('shares one check between arms with the same ladder', async () => {
+        const { check, calls } = stubCheck({});
+        await runTrainScreen(args('shared', 2), { exec: fakeTrain(() => ({ passed: 1 })).exec, check });
+        expect(calls).toHaveLength(1);
+    });
+
+    it('leaves an unlearnable arm out when the grid says skipUnlearnable, and never the reference', async () => {
+        const train = fakeTrain(() => ({ passed: 1 }));
+        const { check } = stubCheck({ better: ['one'] });
+        const grid = args('skip', 2, {
+            arms: { plain: {}, better: { stages: { one: { generations: 3 } } } },
+            skipUnlearnable: true,
+        });
+        const { report } = await runTrainScreen(grid, { exec: train.exec, check });
+        expect(train.calls.map((c) => c.dir.split('/').at(-2))).toEqual(['plain', 'plain']);
+        expect(report.verdicts.arms.better).toEqual({ verdict: 'skipped', unlearnable: ['one'], failed: 0 });
+        expect(report.table).toContain('- better: unlearnable: one (arm left out)');
+    });
+
+    it('does not check when the grid says feasible: false', async () => {
+        const { check, calls } = stubCheck({});
+        const { report, out } = await runTrainScreen(args('off', 2, { feasible: false }), {
+            exec: fakeTrain(() => ({ passed: 1 })).exec,
+            check,
+        });
+        expect(calls).toEqual([]);
+        expect(report.verdicts.unlearnable).toBeUndefined();
+        expect(() => readFileSync(join(out, 'feasible.json'), 'utf8')).toThrow();
     });
 });
 

@@ -8,6 +8,7 @@ import { createSimLog } from '../js/sim/log.js';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { planScreen } from './lib/train-screen-grid.mjs';
+import { checkArms, markUnlearnable, withoutUnlearnable } from './lib/train-screen-feasible.mjs';
 import { screenReport } from './lib/train-screen-report.mjs';
 import { runScreen } from './lib/train-screen-run.mjs';
 import { defaultWorkers } from './lib/worker-pool.mjs';
@@ -48,13 +49,20 @@ export function parseArgs(argv) {
 const readLadder = (file) => JSON.parse(readFileSync(resolve(ROOT, file), 'utf8'));
 
 /**
+ * @param {string} file a stage config file, relative to the repository root
+ * @returns {Record<string, any>} its overrides
+ */
+const readConfig = (file) => JSON.parse(readFileSync(resolve(ROOT, file), 'utf8'));
+
+/**
  * @param {ReturnType<typeof parseArgs>} args the options
- * @param {{exec?: import('./lib/train-screen-run.mjs').ScreenRunOptions['exec']}} [io] a stand-in trainer (tests)
+ * @param {{exec?: import('./lib/train-screen-run.mjs').ScreenRunOptions['exec'], check?: import('./lib/train-screen-feasible.mjs').Check}} [io]
+ *   a stand-in trainer and learnability check (tests)
  * @returns {Promise<{plan: import('./lib/train-screen-grid.mjs').ScreenPlan, report: ReturnType<typeof screenReport>, out: string}>}
  *   the plan, the report and the directory written
  */
-export async function runTrainScreen(args, { exec } = {}) {
-    const plan = planScreen(JSON.parse(readFileSync(args.grid, 'utf8')), readLadder);
+export async function runTrainScreen(args, { exec, check } = {}) {
+    const full = planScreen(JSON.parse(readFileSync(args.grid, 'utf8')), readLadder);
     const name = basename(args.grid).replace(/\.grid\.json$|\.json$/, '');
     const out = args.out ?? join(ROOT, 'evals', 'train-screens', 'results', name);
     const runs = args.runs ?? out;
@@ -62,9 +70,13 @@ export async function runTrainScreen(args, { exec } = {}) {
     const sink = createJsonlSink(join(args.logDir, `train-screen-${name}.jsonl`));
     try {
         const log = createSimLog(sink.sink, { level: 'info' });
-        const slots = Math.max(1, Math.floor((args.workers ?? defaultWorkers()) / plan.workersPerRun));
+        const workers = args.workers ?? defaultWorkers();
+        const checked = await checkArms(full, { workers, readConfig, log, check });
+        const { plan, skipped } = withoutUnlearnable(full, checked);
+        const slots = Math.max(1, Math.floor(workers / plan.workersPerRun));
         const outcomes = await runScreen(plan, { runs, slots, force: args.force, log, exec });
         const report = screenReport(plan, outcomes);
+        markUnlearnable(report, { checked, skipped });
         for (const [arm, verdict] of Object.entries(report.verdicts.arms)) {
             const { compare, ...rest } = /** @type {any} */ (verdict);
             log.log('info', 'TrainScreenVerdict', {
@@ -79,6 +91,9 @@ export async function runTrainScreen(args, { exec } = {}) {
         writeFileSync(join(out, 'yield.json'), `${JSON.stringify(report.yield, null, 2)}\n`);
         writeFileSync(join(out, 'verdicts.json'), `${JSON.stringify(report.verdicts, null, 2)}\n`);
         writeFileSync(join(out, 'table.md'), report.table);
+        if (Object.keys(checked).length > 0) {
+            writeFileSync(join(out, 'feasible.json'), `${JSON.stringify(checked, null, 2)}\n`);
+        }
         return { plan, report, out };
     } finally {
         await sink.close();
