@@ -52,7 +52,7 @@ Counts on the 16 seeds: 7 rows `better`, 1 `worse` (`bite_on_prey_view`, a 2% ch
   after, so a worse direction on a number that this run cannot read.
 
 So the plan's done line is not met by this champion set at 16 seeds. The 64-seed run (offset 64, `--keep-rule`) is
-`CHAMP-v1-ets1c-64`; its slot below is pending.
+`CHAMP-v1-ets1c-64`; its result is below (keep rule WORSE on catches).
 
 ## What the other rows say (a lead, not a verdict)
 
@@ -63,14 +63,59 @@ that bite less often and are bitten more: the champions are the stalled ladder's
 in E-TS-1c), not skilled ones. The `better` rows are fitness shares of the reproducers and defenders and behaviour coverage:
 the live world's non-hunters gain from founders that start with a brain, not the hunt (a reading, not tested).
 
-## Pending
+## 64 seeds with the keep rule (`CHAMP-v1-ets1c-64`)
 
-| Slot                                           | Run                 | Result  |
-| ---------------------------------------------- | ------------------- | ------- |
-| 64 seeds (offset 64), `--keep-rule`, same arms | `CHAMP-v1-ets1c-64` | pending |
+Seeds 65 to 128 of `evals/seeds.json` (offset 64), 200000 ticks, the same two arms, `eval:compare --keep-rule`; the full table is
+`compare-64.txt`.
+
+| Metric                                                                                                                                                                 | live   | champions-v1 | Change          | Interval         | Script                      |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------------ | --------------- | ---------------- | --------------------------- |
+| `eval.food_energy_per_1k` (target)                                                                                                                                     | 411.5  | 462.9        | +51.4 (+12.5%)  | [26.0, 77.2]     | **better**                  |
+| `eval.food_energy_per_1k@20k`                                                                                                                                          | 378.8  | 353.5        | -25.4 (-6.7%)   | [-50.0, -1.1]    | unverified, wrong direction |
+| `eval.floor_episodes` (guard)                                                                                                                                          | 0.344  | 0.4375       | +0.094          | [-0.20, 0.33]    | unverified                  |
+| `eval.hunter_catches_per_1k` (guard)                                                                                                                                   | 1.265  | 0.6965       | -0.569 (-44.9%) | [-0.682, -0.440] | **worse**                   |
+| `eval.median_lifespan`                                                                                                                                                 | 3783   | 3249         | -534 (-14.1%)   | [-756, -339]     | worse                       |
+| `eval.fed_median_lifespan`                                                                                                                                             | 4339   | 3612         | -728 (-16.8%)   | [-1015, -476]    | worse                       |
+| `eval.diversity`                                                                                                                                                       | 0.0740 | 0.0628       | -15.1%          | [-0.017, -0.005] | worse                       |
+| `eval.full_contact_bite_share`                                                                                                                                         | 0.0736 | 0.350        | +376%           | [0.220, 0.338]   | worse                       |
+| `eval.hunter_first_kill_rmst`                                                                                                                                          | 1927   | 2362         | +22.6%          | [225, 636]       | worse                       |
+| `eval.merit_mate_gain`                                                                                                                                                 | 0.2755 | 0.1732       | -37.1%          | [-0.130, -0.070] | worse                       |
+| `eval.deliberate_food_share`                                                                                                                                           | 0.375  | 0.482        | +28.6%          | [0.085, 0.127]   | better                      |
+| `eval.hunter_juvenile_death_share`                                                                                                                                     | 0.854  | 0.704        | -17.6%          | [-0.189, -0.111] | better                      |
+| `eval.births_per_1k`, `lineages_alive`, `patch_leave_depleted`, `pursuit_kill_share`, `collision_death_share`, `qd_score`, every specialisation's mean and p90 fitness |        |              |                 |                  | better                      |
+| `eval.bite_idle` (directional)                                                                                                                                         | 0.598  | 0.279        | -53.3%          | [-0.369, -0.263] | unverified                  |
+
+Keep rule: guards `alive` (14 harmed, 17 recovered, p 0.72), `under80` (11 against 12, p 1) and `held` (4 against 3, p 1) read
+no harm; the guard `eval.hunter_catches_per_1k` reads `worse` (-0.568, smallest loss detected 0.121); **keep rule: WORSE**.
+
+**Verdict on the plan's done line (training.md Phase 3).** `food_energy_per_1k` better: **yes** (+12.5%, interval excludes 0).
+`food_energy_per_1k@20k` better: **no** (-6.7%, the wrong way). `floor_episodes` not worse: unread (unverified). With the keep rule WORSE
+on catches, `champions-v1` with these champions is **not adoptable** and `LIVE_POLICY` stays. This confirms the 16-seed read
+(+13.4%, no-difference; the verdicts that were already clear keep their sign).
+
+**What the catches fall means.** `eval.hunter_catches_per_1k` is kills per 1000 hunter agent-ticks (`js/evo/metrics-combat.js`), a rate
+whose denominator is every tick a hunter lives, and the champions' hunters live longer: `hunter_median_lifespan` 1140 to 1764
+(+55%), `hunter_death_share.starved` 0.74 to 0.63. The per-life readings do not fall: `hunter_kills_per_life_mean` 1.381 to 1.455
+(+5.4%, interval [-0.011, 0.168]) and `_p50` 0.4375 to 0.4688. The kills per hunter-tick fall with age in both arms
+(`hunter_kill_rate_by_age` juvenile 0.997 to 0.844, young 0.355 to 0.159, adult 0.190 to 0.021), so the same count of kills spread over
+longer lives reads as a lower rate. **Do the live world's catches come mostly from bites with no prey in view? No.** A kill needs
+prey in the jaws, so a blind bite cannot kill by itself; the sit-and-wait route is `eval.ambush_kill_share`, 0.0006 of caught approaches
+in both arms, and the chased kills are `pursuit_kill_share` 0.69 (live) and 0.73 (champions-v1). The live world's catches come from
+pursuits. So blind biting being cut does not remove catches directly. What it does: it removes the idle bites that
+`bite_idle` counts (0.60 to 0.28), the hunters then live longer and their kill rate per tick falls. **Implication for the metric:**
+`hunter_catches_per_1k` is confounded by hunter lifespan; a policy that makes hunters live longer on the same kills reads `worse`
+on it. The E193 fall (-49%) may be the same effect (a closed bite at birth also cuts strikes at air, so hunters starve less); that
+is a hypothesis, not checked here (E193's lifespans were not read). The guard stays as the keep rule defines it: not changed here.
+A paired reading (`hunter_kills_per_life_mean`, which does not fall here) is the check to add beside it; proposed, not built.
+
+## Pending (closed)
+
+| Slot                                           | Run                 | Result                                              |
+| ---------------------------------------------- | ------------------- | --------------------------------------------------- |
+| 64 seeds (offset 64), `--keep-rule`, same arms | `CHAMP-v1-ets1c-64` | keep rule WORSE (catches); not adoptable, see above |
 
 ## What this run does and does not show
 
 It shows `champions-v1` with these six champions is not a clear win on the plan's targets at 16 seeds and moves several hunter
 reads (idle bite down, catches down) in the directions the keep rule would read. It does not show anything about a better champion
-set (offset 0's `hunt` never passed; the exam row 8 fails), nor about the 64-seed verdicts, which are pending.
+set (offset 0's `hunt` never passed; the exam row 8 fails), nor about a set trained to the target world. The 64-seed read says the same for this set: not adoptable.
