@@ -50,3 +50,18 @@ export function stageProgress(gate, readings) {
 export function bestOf(history) {
     return history.reduce((best, value) => Math.max(best, value), 0);
 }
+
+/**
+ * @param {readonly number[]} history a stage's progress at each gate checkpoint
+ * @param {{plateauStop?: number, gate?: readonly {read: string}[]}} stage the stage's `plateauStop` and gate
+ * @returns {boolean} whether the stage's best progress rose by less than `PROGRESS_RISE` over its last `plateauStop`
+ *   checkpoints; false for a stage with no `plateauStop`, with fewer checkpoints than that, or whose gate names no drill
+ *   (it has no progress to watch)
+ */
+export function plateaued(history, { plateauStop = 0, gate = [] }) {
+    if (plateauStop < 1 || history.length < plateauStop || gateDrills(gate).length === 0) {
+        return false;
+    }
+    const before = history.slice(0, history.length - plateauStop);
+    return bestOf(history) - bestOf(before) < PROGRESS_RISE;
+}

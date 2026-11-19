@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { BITE_DRILLS, PROGRESS_RISE, bestOf, gateDrills, stageProgress } from '../../js/evo/stage-progress.js';
+import {
+    BITE_DRILLS,
+    PROGRESS_RISE,
+    bestOf,
+    gateDrills,
+    plateaued,
+    stageProgress,
+} from '../../js/evo/stage-progress.js';
 
 const win = (/** @type {number | null} */ winShareLow, /** @type {number | null} */ jawShareLow = null) => ({
     winShareLow,
@@ -57,5 +64,28 @@ describe('bestOf', () => {
         expect(bestOf([0.1, 0.4, 0.3])).toBe(0.4);
         expect(bestOf([])).toBe(0);
         expect(PROGRESS_RISE).toBe(0.02);
+    });
+});
+
+describe('plateaued', () => {
+    const gate = [{ read: 'drill.prey-ahead.winShareLow' }];
+
+    it('is true when the best rose by less than PROGRESS_RISE over the last plateauStop checkpoints', () => {
+        expect(plateaued([0.1, 0.3, 0.3, 0.3, 0.31], { plateauStop: 3, gate })).toBe(true);
+        expect(plateaued([0.1, 0.3, 0.3, 0.3, 0.33], { plateauStop: 3, gate })).toBe(false);
+        expect(plateaued([0.3, 0.2, 0.1], { plateauStop: 2, gate })).toBe(true);
+    });
+
+    it('reads the whole history when it is as short as the window, so a stage stuck at 0 plateaus', () => {
+        expect(plateaued([0, 0, 0], { plateauStop: 3, gate })).toBe(true);
+        expect(plateaued([0.2, 0.2, 0.2], { plateauStop: 3, gate })).toBe(false);
+    });
+
+    it('is false with no window, too few checkpoints, or no drill to watch', () => {
+        expect(plateaued([0, 0, 0], { gate })).toBe(false);
+        expect(plateaued([0, 0, 0], { plateauStop: 0, gate })).toBe(false);
+        expect(plateaued([0, 0], { plateauStop: 3, gate })).toBe(false);
+        expect(plateaued([0, 0, 0], { plateauStop: 3, gate: [{ read: 'retention.all' }] })).toBe(false);
+        expect(plateaued([0, 0, 0], { plateauStop: 3 })).toBe(false);
     });
 });

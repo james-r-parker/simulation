@@ -39,6 +39,22 @@ describe('evals/train-ladder.json', () => {
         }
     });
 
+    it('gives every gated stage plateauStop 6 (docs/designs/training-loop.md)', () => {
+        const gated = LADDER.filter((/** @type {any} */ e) => e.gate !== undefined);
+        expect(gated.map((/** @type {any} */ e) => e.plateauStop)).toEqual(gated.map(() => 6));
+        expect(
+            loadStages(
+                /** @type {any} */ ({
+                    curriculum: 'evals/train-ladder.json',
+                    config: null,
+                    until: null,
+                    generations: 2,
+                    checkpointEvery: 1,
+                }),
+            )[4].plateauStop,
+        ).toBe(6);
+    });
+
     it('gives the arms-race and evade stages the pool shares of the doc', () => {
         const pool = Object.fromEntries(LADDER.map((/** @type {any} */ e) => [e.name, e.pool]));
         expect(pool['evade']).toBe(0.5);

@@ -168,6 +168,7 @@ describe('a gated ladder', () => {
             await expect(run).rejects.toThrow(TrainStalled);
             await expect(run).rejects.toMatchObject({ exitCode: 3 });
             await expect(run).rejects.toThrow(/stage "one".*drill\.food-ahead\.edgeLow: 0\.1.*never-bit/s);
+            await expect(run).rejects.toThrow(/did not pass its gate \(max, best progress 0\.\d{3}\)/);
             expect(readFileSync(join(root, 'stall', 'archive-3.json'), 'utf8')).toContain('"stalledAt":4');
             expect(
                 readFileSync(join(root, 'stall', 'curve.jsonl'), 'utf8')

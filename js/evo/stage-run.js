@@ -4,7 +4,7 @@
 // plain data (apart from the stage list) so a run resumes from it.
 
 import { GATE_HOLD, REVIEW_GENERATIONS, REVIEW_MAX, readGate, streaksOf } from './stage-gate.js';
-import { bestOf, stageProgress } from './stage-progress.js';
+import { bestOf, plateaued, stageProgress } from './stage-progress.js';
 
 /**
  * @typedef {object} RunStage
@@ -14,6 +14,8 @@ import { bestOf, stageProgress } from './stage-progress.js';
  * @property {number} [minGenerations] a gated stage's least generations before it can pass
  * @property {number} [maxGenerations] a gated stage's generations before it stalls
  * @property {boolean} [optional] a stalled optional stage lets the ladder move on
+ * @property {number} [plateauStop] gate checkpoints over which the stage's best progress must rise by `PROGRESS_RISE` once
+ *   `minGenerations` have run, or the stage stalls with reason `plateau` (0 or absent: it runs to `maxGenerations`)
  * @property {number} [checkpointEvery] this stage's generations between checkpoints
  * @property {boolean} [keepPasser] a gated stage's best passing elites are kept (`readings.keepers.<stage>`, the drill
  *   readings of the kept passers on the stage's own drills) and count for its retention when the current champions fail
@@ -35,10 +37,13 @@ import { bestOf, stageProgress } from './stage-progress.js';
  * @property {Record<string, number>} failStreaks each passed stage's retention failures in a row
  * @property {{index: number, left: number} | null} review the review being run
  * @property {'running' | 'done' | 'stalled'} status whether the run goes on
- * @property {{stage: string, generation: number, optional: boolean, failing: object[]}[]} stalled each stall
+ * @property {{stage: string, generation: number, optional: boolean, failing: object[], reason: StallReason, bestProgress: number}[]} stalled
+ *   each stall
  * @property {object[]} last the failing conditions of the last gate read
  * @property {string | null} lastStage the stage whose world ran the last generation (null before the first)
  */
+
+/** @typedef {'max' | 'plateau' | 'review'} StallReason why a stage stalled: its maximum generations, a plateau of its progress, or a regression past `REVIEW_MAX` */
 
 /**
  * @typedef {object} StageEvent
@@ -193,12 +198,14 @@ function moveOn(s) {
  * Records a stall: a required stage stops the run, an optional one lets the ladder move on.
  * @param {RunState} s the state (changed)
  * @param {RunStage} entry the stalled stage
+ * @param {StallReason} reason why it stalled
  * @param {StageEvent[]} events receives `TrainStageStalled`
  * @returns {void}
  */
-function stall(s, entry, events) {
+function stall(s, entry, reason, events) {
     const optional = entry.optional === true;
-    const stalled = { stage: entry.name, generation: s.generation, optional, failing: s.last };
+    const bestProgress = bestOf(s.progressHistory);
+    const stalled = { stage: entry.name, generation: s.generation, optional, failing: s.last, reason, bestProgress };
     s.stalled.push(stalled);
     events.push({ level: 'error', event: 'TrainStageStalled', fields: stalled });
     if (optional) {
@@ -272,7 +279,7 @@ function regress(s, { stage, failing }, events) {
     s.failStreaks = {};
     if ((s.reviews[stage] ?? 0) >= REVIEW_MAX) {
         s.last = failing;
-        stall(s, { name: stage }, events);
+        stall(s, { name: stage }, 'review', events);
         return;
     }
     s.reviews[stage] = (s.reviews[stage] ?? 0) + 1;
@@ -282,6 +289,22 @@ function regress(s, { stage, failing }, events) {
         event: 'TrainReview',
         fields: { generation: s.generation, stage, review: s.reviews[stage] },
     });
+}
+
+/**
+ * Stalls a stage whose best progress stopped rising (`plateauStop`), unless this checkpoint also reaches its maximum
+ * generations, which stalls it with reason `max` instead.
+ * @param {RunState} s the state (changed on a stall)
+ * @param {RunStage} entry the current stage
+ * @param {StageEvent[]} events receives `TrainStageStalled`
+ * @returns {boolean} whether the stage stalled on a plateau
+ */
+function plateauStall(s, entry, events) {
+    if (s.count >= /** @type {number} */ (entry.maxGenerations) || !plateaued(s.progressHistory, entry)) {
+        return false;
+    }
+    stall(s, entry, 'plateau', events);
+    return true;
 }
 
 /**
@@ -320,7 +343,7 @@ function gateCheckpoint(s, entry, readings, events) {
         },
     });
     if (!held || !ripe) {
-        return false;
+        return !read.passed && ripe && plateauStall(s, entry, events);
     }
     s.passed[entry.name] = { passedAt: s.generation, checkpoints: streak, gate: read.conditions };
     events.push({
@@ -361,7 +384,7 @@ function stepReview(s) {
 function stepGated(s, entry, readings, events) {
     const moved = readings !== null && gateCheckpoint(s, entry, readings, events);
     if (!moved && s.count >= /** @type {number} */ (entry.maxGenerations)) {
-        stall(s, entry, events);
+        stall(s, entry, 'max', events);
     }
 }
 

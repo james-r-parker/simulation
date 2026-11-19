@@ -357,14 +357,15 @@ export class TrainStalled extends Error {
  * @returns {string} the stall's message: the stage, its failing conditions and its drills' lost-trial reasons
  */
 function stallMessage(run) {
-    const { stage, failing } = run.state.stalled[run.state.stalled.length - 1];
+    const { stage, failing, reason, bestProgress } = run.state.stalled[run.state.stalled.length - 1];
     const bound = (/** @type {any} */ c) => (c.min !== undefined ? `>= ${c.min}` : `<= ${c.max}`);
     const lines = failing.map((/** @type {any} */ c) => `  ${c.read}: ${c.value} (needs ${bound(c)})`);
     const drills = new Set(failing.flatMap((/** @type {any} */ c) => /^drill\.([^.]+)\./.exec(c.read)?.[1] ?? []));
     const reasons = [...drills].map(
         (d) => `  ${d} lost trials: ${JSON.stringify(run.lastPoint?.drillLossReasons?.[d] ?? null)}`,
     );
-    return [`TrainStageStalled: stage "${stage}" did not pass its gate`, ...lines, ...reasons].join('\n');
+    const why = `(${reason}, best progress ${bestProgress.toFixed(3)})`;
+    return [`TrainStageStalled: stage "${stage}" did not pass its gate ${why}`, ...lines, ...reasons].join('\n');
 }
 
 /**

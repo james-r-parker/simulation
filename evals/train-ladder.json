@@ -4,6 +4,7 @@
     "config": "evals/stages/nursery.json",
     "minGenerations": 10,
     "maxGenerations": 40,
+    "plateauStop": 6,
     "gate": [
       {
         "read": "drill.food-ahead.edgeLow",
@@ -21,6 +22,7 @@
     "config": "evals/stages/hunt-contact.json",
     "minGenerations": 10,
     "maxGenerations": 60,
+    "plateauStop": 6,
     "gate": [
       {
         "read": "drill.prey-adrift.edgeLow",
@@ -35,6 +37,7 @@
     "config": "evals/stages/hunt-weak.json",
     "minGenerations": 10,
     "maxGenerations": 60,
+    "plateauStop": 6,
     "gate": [
       {
         "read": "drill.prey-weak.edgeLow",
@@ -49,6 +52,7 @@
     "preyShare": 0.9,
     "minGenerations": 10,
     "maxGenerations": 60,
+    "plateauStop": 6,
     "gate": [
       {
         "read": "drill.prey-mid.edgeLow",
@@ -63,6 +67,7 @@
     "config": "evals/stages/hunt.json",
     "minGenerations": 10,
     "maxGenerations": 200,
+    "plateauStop": 6,
     "gate": [
       {
         "read": "drill.prey-ahead.winShareOverReference",
@@ -89,6 +94,7 @@
     "pool": 0.5,
     "minGenerations": 10,
     "maxGenerations": 60,
+    "plateauStop": 6,
     "gate": [
       {
         "read": "drill.hunter-closing.edgeLow",
@@ -111,6 +117,7 @@
     "pool": 0.2,
     "minGenerations": 20,
     "maxGenerations": 80,
+    "plateauStop": 6,
     "gate": [
       {
         "read": "crossplay.hunterProgressLow",
@@ -132,6 +139,7 @@
     "config": "evals/stages/habitat.json",
     "minGenerations": 20,
     "maxGenerations": 80,
+    "plateauStop": 6,
     "gate": [
       {
         "read": "retention.all",
