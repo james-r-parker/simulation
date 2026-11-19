@@ -13,6 +13,8 @@ one structured JSON event per line to `.sim/logs/<run-id>.jsonl`; in the browser
 **Core principle:** evidence before edits. Find the event, replay it from seed and config, turn the replay into a
 failing test, then fix. A fix without a reproducing test is a guess.
 
+For a champion that fails a drill and needs neural-path evidence, follow the [inspect-brain skill](../inspect-brain/SKILL.md).
+
 ## Steps
 
 1. **Find the run.** Every headless run (`eval`, `train`, `replay`, a test that opts in) logs its `seed`,
