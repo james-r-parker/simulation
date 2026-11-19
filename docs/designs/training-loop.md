@@ -215,7 +215,7 @@ T16 is a long run, not a code chunk. T17 and T18 follow its record in one PR (So
 **Targets:** none - it runs screens and world trials; its world readings feed a PR, which carries its own targets
 
 - `proposeArms`, `train:tune`, `evals/train-tune.json` and the results layout.
-- The first night (`E-TL-4`) and its record.
+- The first night (`E-TL-4`, recorded as E208) and its record. Prediction, written before the run: nursery `maxGenerations` 80 reads `better` on the 16 tune offsets (nursery passes on at least 12 of 16 against 9) and confirms `better` on the 16 held-out offsets; `episodes` 48 reads `no verdict`. Falsified when the nursery arm reads `no verdict` or `worse` on the tune offsets.
 
 #### Chunks
 

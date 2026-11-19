@@ -4964,6 +4964,22 @@
       "effect": "no-difference",
       "note": "Prediction half right. Learnable (at least 2 of 8 populations at the bar): food-ahead 8/8, food-behind 8/8, prey-adrift 8/8, prey-weak 3/8 (best 0.88), prey-crossing 2/8, hunter-closing 8/8, hunter-flank 8/8. Not learnable: prey-ahead 0/8 (best 0.03 against a bar of 0.109, as predicted), prey-mid 1/8 (best 0.56; predicted learnable), kin-spared 0/8 (best 0.00; not named in the prediction). Every fair band is non-empty. The check starts from random weights, so it is stricter than the ladder, which keeps each stage's passers. Run: scripts/run-detached.sh E-TL-2 --frozen -- npm run train:feasible -- --curriculum evals/train-ladder.json --workers 4 --out evals/train-screens/results/feasible-ladder.json (about 2h20m at 4 workers).",
       "reports": ["evals/decisions/E206/results.md"]
+    },
+    {
+      "id": "E208",
+      "date": "2026-11-19",
+      "branch": "feat/training-loop-etl4",
+      "hypothesis": "E-TL-4 (training-loop T22, the first tuning night): the nursery stage stalls on 7 of 16 tune offsets at best progress 0.67 to 0.83 around generations 35 to 40 (E-TL-1, E-TL-3); raising its maxGenerations from 40 to 80 lets more runs pass it.",
+      "prediction": "Written before the run (npm run train:tune with evals/train-tune.json, two arms: nursery maxGenerations 80, then episodes 48): the nursery maxGenerations 80 arm reads better on the 16 tune offsets, with nursery passing on at least 12 of 16 against 9, and confirms better on the 16 held-out offsets. The episodes 48 arm reads no verdict. Falsified when the nursery arm reads no verdict or worse on the tune offsets.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "nursery maxGenerations 40: nursery passes on 9 of 16 tune offsets",
+      "after": "scripts/run-detached.sh E-TL-4 --frozen -- npm run train:tune -- --spec evals/train-tune.json",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Prediction only; the run is in flight.",
+      "reports": ["evals/decisions/E208/results.md"]
     }
   ]
 }

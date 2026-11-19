@@ -7,11 +7,32 @@
   "tuneOffsets": [0, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120],
   "holdoutOffsets": [128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248],
   "worldSeeds": 16,
-  "train": { "checkpointEvery": 5 },
+  "train": {
+    "checkpointEvery": 5
+  },
   "tunables": [
-    { "key": "preyShare", "stage": "hunt-weak", "values": [0.7, 1.0] },
-    { "key": "plateauStop", "values": [3, 10] },
-    { "key": "episodes", "values": [16, 48] },
-    { "key": "minGenerations", "stage": "hunt-contact", "values": [5, 20] }
+    {
+      "key": "maxGenerations",
+      "stage": "nursery",
+      "values": [80]
+    },
+    {
+      "key": "episodes",
+      "values": [48]
+    },
+    {
+      "key": "preyShare",
+      "stage": "hunt-weak",
+      "values": [0.7, 1.0]
+    },
+    {
+      "key": "plateauStop",
+      "values": [3, 10]
+    },
+    {
+      "key": "minGenerations",
+      "stage": "hunt-contact",
+      "values": [5, 20]
+    }
   ]
 }
