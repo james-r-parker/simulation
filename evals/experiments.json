@@ -4732,6 +4732,44 @@
         "evals/decisions/E192/report.txt",
         "evals/decisions/E192/readings.json"
       ]
+    },
+    {
+      "id": "E194",
+      "date": "2026-11-19",
+      "branch": "feat/training-stages-hunt",
+      "hypothesis": "E-TS-1d (training-stages Phase 6, T43): offering the first ticks of short episodes (--ticks 4000 --offer-from 100) lets the hunt family select on its lesson, because the hunt worlds run out of prey by tick 500 while only deaths from tick 10000 were offered.",
+      "prediction": "Written before the run (E-TS-1c record 4): nursery passes on at least 3 of 4 offsets (0, 128, 192, 16); hunt-weak passes on at least 3 of 4 (a stall on 2 of 4 falsifies the offer-window theory); kin-spared reads under 0.001 on at least 3 of the runs that reach hunt.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "E-TS-1c: the same ladder with 60000-tick episodes and the default offer window (hunt-weak passes on 1 of 4)",
+      "after": "npm run train -- --curriculum evals/train-ladder.json --until habitat --generations 380 --ticks 4000 --offer-from 100 --seed-offset <k> --workers 6, k = 0, 128, 192, 16, from the scratch branch scratch/ets-1c (feat/training-stages-hunt with hunterBiteBias -0.5 on hunt-weak and hunt, which E193 did not adopt)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "No eval ran, so no verdict. All four runs exited 3 (TrainStageStalled). nursery passes on 3 of 4 (offset 16 stalls: food-behind edgeLow 0.523 at 10, 0.099 to 0.207 after, bar 0.3): holds. hunt-weak passes on 2 of 4 (128 at 80, 192 at 130; offset 0 stalls at -0.0026 on every checkpoint, offset 16 never gets there): falsified; the offer-window theory is neither confirmed nor killed (1 stall and 1 not reached). Offset 128 cycled hunt/hunt-weak four times and ended stalled at hunt-weak (-0.013). hunt never passed (prey-ahead winShareOverReference at most 0.031). kin-spared -0.015 on both runs that reach hunt. Outcome record 5 (nursery food-behind stall on offsets 64 and 16): the champion swapped to a worse turner (win share 0.89 to 0.91 down to 0.72 to 0.78 on four seeds) and the gate seed is the hardest read (random brains win about 0.27 there). Outcome to task: T37, T38 and T45 to T47 in training-stages.md Phase 6.",
+      "reports": ["evals/decisions/E-TS-1d/results.md"]
+    },
+    {
+      "id": "E195",
+      "date": "2026-11-19",
+      "branch": "feat/training-stages-hunt",
+      "hypothesis": "training.md Phase 3 style trial: champions-v1 seeded with the six champions of E-TS-1c offset 0 (hunt-weak passed, hunt stalled; exam rows 1 and 3 pass, row 8 fails) is better than the live policy on food income. An experiment only: LIVE_POLICY unchanged.",
+      "prediction": "The plan's done line (training.md Phase 3): better on eval.food_energy_per_1k and eval.food_energy_per_1k@20k, not worse on eval.floor_episodes. Not committed before the run: written afterwards from the plan's line.",
+      "targets": ["eval.food_energy_per_1k", "eval.food_energy_per_1k@20k", "eval.floor_episodes"],
+      "beforePolicy": "live",
+      "afterPolicy": "champions-v1",
+      "before": "npm run eval -- --seeds 16 --ticks 200000 --policy live, from origin/main 60b8a0d9",
+      "after": "same with --policy champions-v1 --policy-options {championsDir: .sim/champions/ets-1c-o0}",
+      "verdicts": {
+        "eval.food_energy_per_1k": "no-difference",
+        "eval.behaviour_coverage": "better",
+        "eval.deliberate_food_share": "better",
+        "eval.chase_turn_jitter": "better",
+        "eval.bite_on_prey_view": "worse"
+      },
+      "effect": "no-difference",
+      "note": "food_energy_per_1k 426.5 to 483.6 (+13.4%, interval [-11.3, 101.7]), no-difference; @20k 399.8 to 372.8 (-6.7%), unverified; floor_episodes 0.25 to 0.4375, needs 32 seeds: the plan's done line is not met at 16 seeds. Directional (unverified or needs more seeds): bite_idle 0.65 to 0.34, predators_at_end 9.9 to 22.5, hunter_juvenile_death_share 0.87 to 0.74, hunter_catches_per_1k 1.385 to 0.843; bite_on_prey_view is the one worse (0.990 to 0.970). 64-seed run with --keep-rule (offset 64): CHAMP-v1-ets1c-64, pending.",
+      "reports": ["evals/decisions/E195/results.md", "evals/decisions/E195/compare.txt"]
     }
   ]
 }
