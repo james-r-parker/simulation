@@ -32,6 +32,7 @@
     "audit:signals": "node scripts/audit-signals.mjs",
     "probe:learn": "node scripts/learn-probe.mjs",
     "drill": "node scripts/drill.mjs",
+    "inspect": "node scripts/inspect-brain.mjs",
     "reflex": "node scripts/reflex.mjs",
     "bench:reflex": "node scripts/bench-reflex.mjs",
     "train": "node scripts/train.mjs",

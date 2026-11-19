@@ -28,15 +28,19 @@ export function ablateUnit({ subject, drill, unit, seed, trials, config = {} }) 
     const hook = unit === null ? undefined : silenceHook([unit]);
     return Array.from({ length: trials }, (_, trial) => {
         const plan = drill.plan(rng, view);
+        let ticks = 0;
         const won = playTrial({
             plan,
             subject: edited,
             controlSpec: { name: 'intact' },
             seed: seed + trial,
             config: arena,
-            onTick: hook,
+            onTick(world, slots, tick) {
+                ticks += 1;
+                hook?.(world, slots, tick);
+            },
         });
-        return { trial, won, trace: plan.trace?.(won) ?? null };
+        return { trial, ticks, won, trace: plan.trace?.(won) ?? null };
     });
 }
 

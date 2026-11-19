@@ -57,9 +57,9 @@ describe('ablateUnit', () => {
         const result = ablateUnit({ subject, drill, unit: null, seed: 5, trials: 3 });
 
         expect(result).toEqual([
-            { trial: 0, won: true, trace: null },
-            { trial: 1, won: true, trace: null },
-            { trial: 2, won: true, trace: null },
+            { trial: 0, ticks: 1, won: true, trace: null },
+            { trial: 1, ticks: 1, won: true, trace: null },
+            { trial: 2, ticks: 1, won: true, trace: null },
         ]);
         expect(plans).toBe(3);
     });
@@ -92,7 +92,7 @@ describe('ablateUnit', () => {
         };
 
         expect(ablateUnit({ subject, drill, unit: 1, seed: 5, trials: 1 })).toEqual([
-            { trial: 0, won: false, trace: null },
+            { trial: 0, ticks: 1, won: false, trace: null },
         ]);
     });
 });
