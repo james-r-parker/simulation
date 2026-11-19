@@ -97,6 +97,47 @@ describe('playTrial', () => {
         expect(ticks).toBe(2);
     });
 
+    it('keeps a trial unchanged when no hook is passed and calls the hook after each step', () => {
+        function run(onTick) {
+            /** @type {any} */
+            let final = null;
+            const subject = { name: 'r', id: 0, spec: null, weights: null, act: () => {} };
+            const staged = plan({
+                done: (/** @type {any} */ world) => {
+                    if (world.tick === 3) {
+                        final = {
+                            x: world.x[0],
+                            y: world.y[0],
+                            energy: world.energy[0],
+                            outputs: Array.from(world.outputs),
+                        };
+                        return true;
+                    }
+                    return false;
+                },
+            });
+            const won = playTrial({
+                plan: staged,
+                subject,
+                controlSpec: { name: 'intact' },
+                seed: 2,
+                config: {},
+                onTick,
+            });
+            return { won, final };
+        }
+        let calls = 0;
+        const plain = run(undefined);
+        const hooked = run((world, slots, tick) => {
+            calls += 1;
+            expect(world.tick).toBe(tick + 1);
+            expect(slots.subject).toEqual([0]);
+        });
+
+        expect(hooked).toEqual(plain);
+        expect(calls).toBe(3);
+    });
+
     it.each([
         ['intact', {}, 1],
         ['amnesia', { amnesia: true }, 0],
