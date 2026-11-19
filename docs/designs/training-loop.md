@@ -104,7 +104,7 @@ A gated curriculum entry may set `plateauStop`, a count of gate checkpoints. Aft
 
 `npm run train:feasible -- --curriculum <ladder.json>` checks each gated stage before a ladder spends runs on it:
 
-- for each drill a stage's gate names, `learnLesson` ([learn-probe.js](../../js/evo/learn-probe.js)) evolves random brains on that drill in the stage's config (defaults: 8 populations, 200 generations) and reads the best final win share;
+- for each drill a stage's gate names, `learnLesson` ([learn-probe.js](../../js/evo/learn-probe.js)) evolves random brains on that drill under the drill config the trainer's gate uses (the default config and the drill's own arena: a stage's world size and agent counts would break the staged scenes; defaults: 8 populations, 200 generations) and reads the best final win share;
 - a drill is learnable when at least 2 of the 8 populations reach a final win share at or above the share the gate condition implies (`winShareLow` bound, or the reference win share times a `winShareOverReference` bound; `edgeLow` uses the random brains' share plus the bound);
 - for a stage whose gate names a bite drill, `playPair` and `fairBand` ([chase-envelope.js](../../js/evo/chase-envelope.js)) play each hunter specialisation against the forager at the stage's prey `sprintBoost` and report whether the fair band is non-empty.
 
@@ -247,12 +247,12 @@ T22 is a long run, not a code chunk; T23 follows its record in one PR (Sonnet).
 
 ### Phase 2 - The learnability check
 
-| #   | Task                                                                                                                                                                                                                                       | Nature       | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
-| T9  | `npm run train:feasible`: the per-drill bar from each gate condition, `learnLesson` per gate drill in the stage config, the fair band for bite drills (`playPair`, `fairBand`), `feasible.json`, `FeasibleStage`; its AGENTS.md row; tests | [judgement]  | T7         |
-| T10 | `train:screen` runs the check per arm ladder and marks `unlearnable`; `skipUnlearnable`; tests                                                                                                                                             | [mechanical] | T6, T9     |
-| T11 | (run `E-TL-2`) the check on `train-ladder.json`; record E-TL-2                                                                                                                                                                             | [judgement]  | T9         |
-| T12 | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; mark Phase 2 built                                                                                                                      | [judgement]  | T10, T11   |
+| #   | Task                                                                                                                                                                                                                                               | Nature       | Depends on |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T9  | (built) `npm run train:feasible`: the per-drill bar from each gate condition, `learnLesson` per gate drill in the stage config, the fair band for bite drills (`playPair`, `fairBand`), `feasible.json`, `FeasibleStage`; its AGENTS.md row; tests | [judgement]  | T7         |
+| T10 | (built) `train:screen` runs the check per arm ladder and marks `unlearnable`; `skipUnlearnable`; tests                                                                                                                                             | [mechanical] | T6, T9     |
+| T11 | (run `E-TL-2`) the check on `train-ladder.json`; record E-TL-2                                                                                                                                                                                     | [judgement]  | T9         |
+| T12 | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; mark Phase 2 built                                                                                                                              | [judgement]  | T10, T11   |
 
 ### Phase 3 - Adaptive difficulty
 
