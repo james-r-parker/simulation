@@ -22,7 +22,7 @@ export function formatYield(yielded) {
     ]);
     const lines = padTable([header, ...body]);
     lines.push(
-        `runs ${yielded.runs}, mean score ${yielded.meanScore.toFixed(2)}, cpu ${yielded.cpuHours.toFixed(1)} h`,
+        `runs ${yielded.runs}, mean score ${yielded.meanScore.toFixed(2)}, passed last ${yielded.passedLast}, cpu ${yielded.cpuHours.toFixed(1)} h`,
     );
     return lines;
 }

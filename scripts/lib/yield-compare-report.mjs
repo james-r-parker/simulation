@@ -2,6 +2,8 @@
 // two arms side by side, the CPU hours and the verdict.
 import { padTable } from './drill-report.mjs';
 
+/** @typedef {import('../../js/evo/ladder-yield.js').StageYield} StageRow */
+
 /**
  * @param {import('../../js/evo/yield-compare.js').YieldCompare} compare a `compareYield` result
  * @returns {string[]} one line per matched offset: the two scores and the difference
@@ -26,13 +28,16 @@ export function formatStages(before, after) {
     const share = (/** @type {number} */ v) => `${(v * 100).toFixed(0)}%`;
     const num = (/** @type {number | null} */ v, /** @type {number} */ d) => (v === null ? '-' : v.toFixed(d));
     const header = ['stage', 'passed', 'median gens', 'cpu h / pass'];
-    const body = before.stages.map((b, i) => {
-        const a = after.stages[i];
+    const names = [...new Set([...before.stages, ...after.stages].map((s) => s.stage))];
+    const body = names.map((name) => {
+        const b = before.stages.find((s) => s.stage === name);
+        const a = after.stages.find((s) => s.stage === name);
+        const cell = (/** @type {(s: StageRow) => string} */ read) => `${b ? read(b) : '-'} -> ${a ? read(a) : '-'}`;
         return [
-            b.stage,
-            `${share(b.passShare)} -> ${share(a.passShare)}`,
-            `${num(b.medianGenerations, 0)} -> ${num(a.medianGenerations, 0)}`,
-            `${num(b.cpuHoursPerPass, 2)} -> ${num(a.cpuHoursPerPass, 2)}`,
+            name,
+            cell((s) => share(s.passShare)),
+            cell((s) => num(s.medianGenerations, 0)),
+            cell((s) => num(s.cpuHoursPerPass, 2)),
         ];
     });
     return padTable([header, ...body]);
@@ -45,9 +50,14 @@ export function formatStages(before, after) {
  * @returns {string[]} the pairs, the stages side by side, the CPU hours, the unmatched offsets and the verdict
  */
 export function formatCompare(compare, { before, after }) {
-    const lines = [...formatPairs(compare), '', ...formatStages(before, after), ''];
+    const lines = [...(compare.matched === 0 ? [] : [...formatPairs(compare), '']), ...formatStages(before, after), ''];
+    lines.push(`passed last stage ${before.passedLast} -> ${after.passedLast}`);
     const cpu = `cpu hours ${before.cpuHours.toFixed(1)} -> ${after.cpuHours.toFixed(1)}`;
     lines.push(`${cpu} (${((after.cpuHours / (before.cpuHours || 1) - 1) * 100).toFixed(0)}%)`);
+    if (compare.verdict === 'incomparable') {
+        lines.push(`verdict: incomparable (${compare.reason})`);
+        return lines;
+    }
     lines.push(`matched ${compare.matched}: ${compare.up} up, ${compare.down} down, ${compare.tied} tied`);
     if (compare.onlyBefore.length > 0 || compare.onlyAfter.length > 0) {
         lines.push(`unmatched offsets: before only [${compare.onlyBefore}], after only [${compare.onlyAfter}]`);
