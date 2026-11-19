@@ -1,8 +1,6 @@
 # Sprint burst
 
-**Status:** In progress - Phase 1 detectors; shared detector baseline pending.
-**Validated:** 1eccabf5 (2026-11-17)
-**Priority:** 30 - a chase needs an end that is not luck, but the world must hold a standing prey population first ([honest-budgets.md](honest-budgets.md)), and Phase 1 reads the chase detectors of [training-stages.md](training-stages.md)
+**Status:** Implemented - Phase 1 detectors kept; Phase 2 gate not met on E210 (T3).
 **Depends on:** [honest-budgets.md](honest-budgets.md), [training-stages.md](training-stages.md)
 
 A positive `SPRINT` output multiplies thrust by `1 + sprintMultiplier x sprintBoost` (`thrustOf` in `js/sim/physics.js`), raises the speed cap in the Rust kernel (`move_agent` in `wasm/src/physics.rs`), and adds a fixed `sprintCost` (0.05) times juvenile burn to that tick's energy cost (`tickCost` in `js/sim/energy.js`). The fixed cost does not scale with output magnitude; speed-dependent movement cost also rises as speed squared. Temperature efficiency scales the sprint thrust with ordinary thrust. The hunter ledger records the realized sprint cost only for hunters. Phase 1 instead tallies the configured nominal charge for both roles and divides it by total energy removed from agents. This cost ratio can exceed 1 on energy-limited ticks because the nominal charge is not clipped to realized energy removal; only a very low ratio is evidence that the configured sprint price is negligible. No metric currently reads `SPRINT`. This phase measures its use before any rule change.
@@ -42,6 +40,18 @@ All computed by the eval observer; none is a reward.
 The baseline is the shared run of [detector-baseline.md](detector-baseline.md), read once for every plan that has its prediction written. Sprint metrics are included in that top-up; there is no separate 16-seed E-SB-1 run.
 
 The first five detectors. Prediction for the shared top-up, written before that run: `eval.sprint_share.hunter` is above 0.5 and `eval.chase_sprint_lift` is under 1.2, so the sprint is held, not chosen. Phase 2 is built only if the sprint share is above 0.5 for either role or the nominal `eval.sprint_cost_share` is under 0.02, evidence that its configured price is negligible relative to energy outflow; otherwise this doc closes with the detectors kept.
+
+Baseline (`evals/power/defaults-floor-on-E210.json`, 128 seeds, 200000 ticks, `rulesHash` `38be2908ad820c86`):
+
+| Metric                     | Mean    | Range             | Null     | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
+| -------------------------- | ------- | ----------------- | -------- | ------ | ------ | ------ | --------------------- |
+| `eval.sprint_share.hunter` | 0.4086  | 0.06814 to 0.8781 | 0        | 0.2    | 0.15   | 0.1    | more than 64          |
+| `eval.sprint_share.prey`   | 0.4463  | 0.08054 to 0.8235 | 0        | 0.15   | 0.15   | 0.075  | more than 64          |
+| `eval.chase_sprint_lift`   | 1.117   | 0.2275 to 5.024   | 0.007813 | 0.75   | 0.75   | -      | more than 64          |
+| `eval.flee_sprint_lift`    | 1.105   | 0 to 2.65         | 0.02344  | 0.5    | 0.3    | -      | more than 64          |
+| `eval.sprint_cost_share`   | 0.05363 | 0.0116 to 0.128   | 0        | 0.5    | 0.3    | 0.2    | 64                    |
+
+Verdict (E210): `eval.sprint_share.hunter` (0.4086) and `eval.sprint_share.prey` (0.4463) are both at or under 0.5, and `eval.sprint_cost_share` (0.05363) is above 0.02 (`eval.chase_sprint_lift` is 1.117, under 1.2). The Phase 2 gate is not met; Phase 2 is not built and this doc closes with the Phase 1 detectors kept.
 
 ### Phase 2 - The store
 
@@ -98,13 +108,13 @@ The keep rule decides ([principles.md](../principles.md), "A realistic mechanism
 
 ### Phase 1 - Detectors and baseline
 
-| #   | Task                                                                                                                                                              | Nature       | Depends on |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | Read what a sprint costs today (`tickCost`, the thrust step, `thrustEfficiency` in `js/sim/temperature.js`) and record it in [sim-notes.md](sim-notes.md) (built) | [judgement]  | -          |
-| T2a | Add `js/evo/scene-sprint.js` and observer wiring for the five Phase 1 detectors, with focused arithmetic tests (built)                                            | [judgement]  | T1         |
-| T2b | Add registry entries, registry coverage and regenerate [metrics.md](metrics.md) (built)                                                                           | [mechanical] | T2a        |
-| T3  | Read sprint metrics in the shared detector top-up from [detector-baseline.md](detector-baseline.md); prediction first, then record the Phase 2 verdict            | [mechanical] | T2b        |
-| T4  | Conformance review of the Phase 1 implementation by a fresh agent; confirm the nominal cost ratio and shared-baseline gate (built)                                | [judgement]  | T1, T2b    |
+| #   | Task                                                                                                                                                                                        | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T1  | Read what a sprint costs today (`tickCost`, the thrust step, `thrustEfficiency` in `js/sim/temperature.js`) and record it in [sim-notes.md](sim-notes.md) (built)                           | [judgement]  | -          |
+| T2a | Add `js/evo/scene-sprint.js` and observer wiring for the five Phase 1 detectors, with focused arithmetic tests (built)                                                                      | [judgement]  | T1         |
+| T2b | Add registry entries, registry coverage and regenerate [metrics.md](metrics.md) (built)                                                                                                     | [mechanical] | T2a        |
+| T3  | Read sprint metrics in the shared detector top-up from [detector-baseline.md](detector-baseline.md); prediction first, then record the Phase 2 verdict (built - E210, Phase 2 gate not met) | [mechanical] | T2b        |
+| T4  | Conformance review of the Phase 1 implementation by a fresh agent; confirm the nominal cost ratio and shared-baseline gate (built)                                                          | [judgement]  | T1, T2b    |
 
 ### Phase 2 - The store
 
