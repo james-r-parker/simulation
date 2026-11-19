@@ -17,6 +17,9 @@ const AT_LEAST = {
     'kin-spared': 0.2,
     'pack-converge': 0.2,
     'prey-ahead': 0.1,
+    'prey-adrift': 0.9,
+    'prey-weak': 0.7,
+    'prey-mid': 0.2,
     'rock-refuge': 0,
 };
 

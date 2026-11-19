@@ -1,0 +1,54 @@
+{
+  "archive": "archive-119.json",
+  "generation": 120,
+  "champions": [
+    {
+      "file": "archive-119-forager-cell6.json",
+      "specialisation": "forager",
+      "style": "low",
+      "cell": 6,
+      "genomeId": 151,
+      "fitness": 22800.512002423406
+    },
+    {
+      "file": "archive-119-predator-cell8.json",
+      "specialisation": "predator",
+      "style": "low",
+      "cell": 8,
+      "genomeId": 63,
+      "fitness": 22245.816903478655
+    },
+    {
+      "file": "archive-119-predator-cell95.json",
+      "specialisation": "predator",
+      "style": "high",
+      "cell": 95,
+      "genomeId": 5,
+      "fitness": 22027.986796430363
+    },
+    {
+      "file": "archive-119-reproducer-cell2.json",
+      "specialisation": "reproducer",
+      "style": "low",
+      "cell": 2,
+      "genomeId": 74,
+      "fitness": 8260.214485905599
+    },
+    {
+      "file": "archive-119-scout-cell7.json",
+      "specialisation": "scout",
+      "style": "low",
+      "cell": 7,
+      "genomeId": 121,
+      "fitness": 14659.014446968213
+    },
+    {
+      "file": "archive-119-defender-cell4.json",
+      "specialisation": "defender",
+      "style": "low",
+      "cell": 4,
+      "genomeId": 62,
+      "fitness": 15253.703824291006
+    }
+  ]
+}

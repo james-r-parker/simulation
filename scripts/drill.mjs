@@ -1,9 +1,9 @@
 // Drills: plays genomes and the scripted reference through the fixed drills and prints each one's win share and edge over
 // random brains (`npm run drill`). Logs every trial at debug level to `.sim/logs/drill-<seed>x<trials>.jsonl`.
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { decodeArchive } from '../js/evo/archive-codec.js';
+import { readArchiveFile, readDrillConfig } from './lib/archive-source.mjs';
 import { DRILLS } from '../js/evo/drill-scenarios.js';
 import { DRILL_TRIALS, edgeOf, randomBrains, skipReason, winBounds } from '../js/evo/drill.js';
 import { referenceSubject } from '../js/evo/memory-probe-references.js';
@@ -110,8 +110,7 @@ async function genomesOf(args, { config, log }) {
         return loadChampions(args.champions, { config, log });
     }
     if (args.archive !== null) {
-        const json = JSON.parse(readFileSync(args.archive, 'utf8'));
-        return eliteSubjects(decodeArchive(json, createConfig(config), log));
+        return eliteSubjects(readArchiveFile(args.archive, config, log));
     }
     const tasks = [
         {
@@ -275,7 +274,7 @@ function sourceOf(args) {
  *   the rows (a genome per row, then the reference) and, for `--champions`, the predators' skip cells (T34)
  */
 async function drillRows(args, log) {
-    const config = args.config === null ? {} : JSON.parse(readFileSync(args.config, 'utf8'));
+    const config = readDrillConfig(args.config);
     logRunConfig(log, {
         tool: 'drill',
         policy: args.policy,

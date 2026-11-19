@@ -13,7 +13,8 @@
         "read": "drill.food-behind.edgeLow",
         "min": 0.3
       }
-    ]
+    ],
+    "keepPasser": true
   },
   {
     "name": "hunt-contact",
@@ -22,16 +23,46 @@
     "maxGenerations": 60,
     "gate": [
       {
-        "read": "drill.prey-ahead.edgeLow",
+        "read": "drill.prey-adrift.edgeLow",
         "min": 0.001
       }
-    ]
+    ],
+    "keepPasser": true
+  },
+  {
+    "name": "hunt-weak",
+    "preyShare": 0.9,
+    "config": "evals/stages/hunt-weak.json",
+    "minGenerations": 10,
+    "maxGenerations": 60,
+    "gate": [
+      {
+        "read": "drill.prey-weak.edgeLow",
+        "min": 0.001
+      }
+    ],
+    "keepPasser": true
+  },
+  {
+    "name": "hunt-mid",
+    "config": "evals/stages/hunt-mid.json",
+    "preyShare": 0.9,
+    "minGenerations": 10,
+    "maxGenerations": 60,
+    "gate": [
+      {
+        "read": "drill.prey-mid.edgeLow",
+        "min": 0.001
+      }
+    ],
+    "keepPasser": true
   },
   {
     "name": "hunt",
+    "preyShare": 0.9,
     "config": "evals/stages/hunt.json",
     "minGenerations": 10,
-    "maxGenerations": 60,
+    "maxGenerations": 200,
     "gate": [
       {
         "read": "drill.prey-ahead.winShareOverReference",
@@ -49,7 +80,8 @@
         "read": "drill.kin-spared.edgeLow",
         "min": 0.001
       }
-    ]
+    ],
+    "keepPasser": true
   },
   {
     "name": "evade",
@@ -70,7 +102,8 @@
         "read": "crossplay.preyVsStage.hunt",
         "min": 0.001
       }
-    ]
+    ],
+    "keepPasser": true
   },
   {
     "name": "arms-race",
@@ -91,7 +124,8 @@
         "read": "crossplay.cycleShare",
         "max": 0.25
       }
-    ]
+    ],
+    "keepPasser": true
   },
   {
     "name": "habitat",

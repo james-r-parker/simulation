@@ -63,6 +63,9 @@ describe('DRILLS', () => {
             'hunter-flank',
             'kin-spared',
             'pack-converge',
+            'prey-adrift',
+            'prey-weak',
+            'prey-mid',
         ]);
         expect(DRILLS.every((d) => d.scene.length > 0)).toBe(true);
         expect(DRILLS.filter((d) => d.needsHunter).map((d) => d.name)).toEqual([
@@ -71,6 +74,9 @@ describe('DRILLS', () => {
             'prey-crossing',
             'kin-spared',
             'pack-converge',
+            'prey-adrift',
+            'prey-weak',
+            'prey-mid',
         ]);
     });
 
@@ -135,6 +141,7 @@ describe('DRILLS', () => {
         expect(plan.won(/** @type {any} */ (world([1, 0], [1, 0])))).toBe(true);
         expect(plan.won(/** @type {any} */ (world([0, 1], [1, 0])))).toBe(false);
         expect(plan.won(/** @type {any} */ (world([0, 0], [1, 0])))).toBe(false);
+        expect(plan.won(/** @type {any} */ (world([1, 1], [1, 0])))).toBe(false);
     });
 
     it('wins the hunter drills on a living subject, and the ring drill only after the subject entered the ring', () => {

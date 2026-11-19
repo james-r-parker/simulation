@@ -3676,3 +3676,32 @@ reads it with `TRAINER_DESCRIPTOR` and the stage-neutral `rulesHash`), and a sta
 (`initialAgents` 60 replaces the drill's own staging); pass the `specialisations` block alone. `train:crossplay` and
 `train:curve` on a finished run take 20 to 60 s. Numbers and the tasks: `evals/decisions/E-TS-1/results.md`, training-stages
 T33 to T38.
+
+### 2026-11-18 - The `hunt-contact` stage trains contact on prey that does not run: theory 1 (training-stages T34)
+
+E-TS-1's predator elites win a `prey-ahead` whose prey is inert (zero outputs) on 32 to 54 of 64 trials (the best elite of each
+offset 0, 64 and 128; the second elite of offset 0 wins 5) and win 0 or 1 of 64 against the scripted fleer on the same bearings;
+the `memoryless` reference wins 8 of 64 against the inert prey and 5 against the fleer. The gate reads `hunt`, not contact
+(theory 1); contact is learned, and the one weak elite (offset 0, cell 6) is the only support for theory 2. In the stage world
+20 to 29 of the 27 to 39 kills of a 20000-tick episode fall in the first 400 ticks, on prey that has not yet moved away, and almost
+none after tick 5000. Method and numbers: `evals/decisions/E-TS-1/results.md` (T34), `contact-diagnostic.mjs`, `stage-kills.mjs`.
+
+### 2026-11-19 - Trainer seed offsets repeat every 256, and a drill stages adult weights (training-stages E-TS-1b)
+
+`episodeSeed` indexes `evals/seeds.json` (256 seeds) by `(g x episodes + e + offset) mod 256`, so `--seed-offset 256` is offset 0
+(E-TS-1b's two curves are identical) and offsets 64, 128 and 192 are the same stream shifted by 2, 4 and 6 generations: five
+"offsets" give at most four distinct runs, and none is a fresh set of worlds. A drill stages the elite's trained weights, so a
+birth-time key (`hunterBiteBias`, the newborn's BITE bias) changes nothing in a drill's `--config`; it acts only in a training
+world. A fleer whose `sprintBoost` is cut still turns away: the hunt elites win 0 to 15 of 64 against it at 0.05 where an inert
+prey is won on 32 to 54 (`evals/decisions/E-TS-1b/`).
+
+### 2026-11-19 - A hunt stage world is a 500-tick feast, and the trainer offers deaths from tick 10000 (training-stages E-TS-1c)
+
+In the `hunt` and `hunt-weak` worlds the prey are gone by tick 500 (census from an offset 128 archive: forager 8, 4, 0 at ticks
+0, 100, 500; predators 26, 20, 13, and 6 at tick 2000), and the trainer offers only deaths from `OFFER_FROM_TICK` (10000) of a
+60000-tick episode, so a hunt stage selects on hunters that survived 9500 ticks without prey; the champions stop changing after
+the first checkpoint. `--ticks` and `--offer-from` move the window. A trained hunter's BITE bias sits at the `hunterBiteBias`
+ceiling (-0.5) yet bites siblings on 110 to 128 of 128 trials: the bite is released by the prey-strength skip weight
+(+1.9 to +4.0) and nothing learns a kin-strength inhibition (-0.27 to +0.31), so `kin-spared` is a recognition problem, not the
+open-jaw reflex. `reflexScores` (the exam) crashed on a champion of a specialisation with no reflex case until
+`row?.score ?? null` (`evals/decisions/E-TS-1c/`).

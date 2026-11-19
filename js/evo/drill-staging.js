@@ -80,13 +80,16 @@ export function killed(world) {
 
 /**
  * @param {string} name the drill's name
- * @param {{energy: number, maxTicks: number, abort: boolean, baseSize?: number,
+ * @param {{energy: number, maxTicks: number, abort: boolean, baseSize?: number, role?: 'prey' | 'adrift',
  *   preyAngle?: (rng: import('../sim/rng.js').Rng, subjectAngle: number) => number}} prey the prey's energy, the length,
- *   whether the drill is won by not biting, the prey's base size (default: the config's) and its starting heading
- *   (default: any, drawn after its place)
- * @returns {Drill} a predator drill with one scripted fleeing forager
+ *   whether the drill is won by not biting, the prey's base size (default: the config's), its role (`prey`, the scripted
+ *   fleer, by default; `adrift` is inert and does not run) and its starting heading (default: any, drawn after its place)
+ * @returns {Drill} a predator drill with one scripted forager, fleeing or adrift
  */
-export function preyDrill(name, { energy, maxTicks, abort, baseSize, preyAngle = (rng) => heading(rng) }) {
+export function preyDrill(
+    name,
+    { energy, maxTicks, abort, baseSize, role = 'prey', preyAngle = (rng) => heading(rng) },
+) {
     return {
         name,
         scene: abort ? 'Abort' : 'A real chase',
@@ -95,7 +98,7 @@ export function preyDrill(name, { energy, maxTicks, abort, baseSize, preyAngle =
         plan(rng, view) {
             const angle = heading(rng);
             const spot = around(angle + offset(rng, 0, 45), PREY_VIEW_SHARE * view);
-            const prey = { role: 'prey', ...spot, angle: preyAngle(rng, angle), spec: FORAGER_SPEC, energy, baseSize };
+            const prey = { role, ...spot, angle: preyAngle(rng, angle), spec: FORAGER_SPEC, energy, baseSize };
             let bitten = false;
             const trace = createPreyTrace();
             return {

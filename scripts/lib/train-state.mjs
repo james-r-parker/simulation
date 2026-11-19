@@ -103,13 +103,13 @@ export function stageRecord(stages, state) {
  * `trainState` (what `--resume` continues from).
  * @param {string} dir the output directory
  * @param {{archive: import('../../js/evo/archive.js').Archive, stages: StageInfo[], generation: number, state?: import('../../js/evo/stage-run.js').RunState,
- *   pool?: ReturnType<typeof import('./train-pool.mjs').poolIndex>}} run
+ *   pool?: ReturnType<typeof import('./train-pool.mjs').poolIndex>, keepers?: Record<string, any[]>}} run
  *   the archive, the run's stages, the 0-based index of the generation just completed, the run's state after it (a
  *   fixed-length run's is replayed when omitted) and, for a run with an opponent pool, the pool's index (recorded as
- *   `pool` so a resume can rebuild it)
+ *   `pool` so a resume can rebuild it) and the kept passers by stage (`keepers`, scripts/lib/train-keepers.mjs)
  * @returns {string} the file's path
  */
-export function saveArchive(dir, { archive, stages, generation, state, pool }) {
+export function saveArchive(dir, { archive, stages, generation, state, pool, keepers }) {
     const after = state ?? stateAfter(stages, stages[stages.length - 1].to, generation + 1);
     const writer = /** @type {StageInfo} */ (stages.find((s) => s.name === after.lastStage));
     const json = {
@@ -118,6 +118,7 @@ export function saveArchive(dir, { archive, stages, generation, state, pool }) {
         stages: stageRecord(stages, after),
         ...(stages.some(isGated) ? { trainState: snapshotState(after) } : {}),
         ...(pool === undefined ? {} : { pool }),
+        ...(keepers === undefined || Object.keys(keepers).length === 0 ? {} : { keepers }),
     };
     const path = join(dir, `archive-${generation}.json`);
     writeFileSync(path, `${JSON.stringify(json)}\n`);
@@ -128,9 +129,9 @@ export function saveArchive(dir, { archive, stages, generation, state, pool }) {
  * @param {string} path an `archive-<g>.json`
  * @param {{stages: StageInfo[], total: number, log: import('../../js/sim/log.js').SimLog}} run the run's stages and
  *   generations, and the log that receives `GenomeRejected` before a throw
- * @returns {{archive: import('../../js/evo/archive.js').Archive, done: number, state: import('../../js/evo/stage-run.js').RunState, pool: any}}
+ * @returns {{archive: import('../../js/evo/archive.js').Archive, done: number, state: import('../../js/evo/stage-run.js').RunState, pool: any, keepers: Record<string, any[]>}}
  *   the archive (with the trainer's `nCap`), the generations it has completed, the run's state at that point and the
- *   pool index the file records (null: none)
+ *   pool index the file records (null: none) and the kept passers it records
  * @throws {Error} when the file has no `generation`, its layout or the `rulesHash` of the stage that wrote it does not
  *   fit this run, it has already completed every generation asked for, or this run is gated and the file has no state
  */
@@ -152,5 +153,5 @@ export function loadResume(path, { stages, total, log }) {
     const writer = /** @type {StageInfo} */ (stages.find((s) => s.name === state.lastStage));
     const archive = decodeArchive(json, writer.built, log, TRAINER_DESCRIPTOR);
     archive.nCap = TRAINER_N_CAP;
-    return { archive, done: json.generation, state, pool: json.pool ?? null };
+    return { archive, done: json.generation, state, pool: json.pool ?? null, keepers: json.keepers ?? {} };
 }
