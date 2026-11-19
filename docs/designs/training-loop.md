@@ -194,7 +194,7 @@ T8 is a long run, not a code chunk: detached, recorded in its own PR.
 
 - The `adapt` curriculum key, `nextDifficulty`, the saved value and `TrainDifficulty`.
 - `evals/train-ladder-adaptive.json`: `hunt-weak`, `hunt-mid` and `hunt` replaced by one `hunt` stage with `adapt` (`preySprint` from 0.1 to the live default, step 0.05, steered by `prey-ahead`).
-- The screen `E-TL-3`, adaptive against fixed, 16 offsets, `until` `hunt`. Prediction: `better` on `compareYield`. On `better`, the fixed rungs `hunt-weak` and `hunt-mid` and their drills' ladder entries are deleted from `train-ladder.json` (the drills stay for the exam); on `worse` or `no verdict`, `adapt` and its module are deleted.
+- The screen `E-TL-3`, adaptive against fixed, 16 offsets, `until` `hunt`. Recorded as E207. Prediction (written before the run): `better` on `train:compare` score, adaptive against fixed, with the adaptive arm passing `hunt` on at least 1 of 16 offsets; falsified on `no verdict` or `worse`. On `better`, the fixed rungs `hunt-weak` and `hunt-mid` and their drills' ladder entries are deleted from `train-ladder.json` (the drills stay for the exam); on `worse` or `no verdict`, `adapt` and its module are deleted.
 
 #### Chunks
 

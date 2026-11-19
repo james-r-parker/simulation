@@ -4964,6 +4964,22 @@
       "effect": "no-difference",
       "note": "Prediction half right. Learnable (at least 2 of 8 populations at the bar): food-ahead 8/8, food-behind 8/8, prey-adrift 8/8, prey-weak 3/8 (best 0.88), prey-crossing 2/8, hunter-closing 8/8, hunter-flank 8/8. Not learnable: prey-ahead 0/8 (best 0.03 against a bar of 0.109, as predicted), prey-mid 1/8 (best 0.56; predicted learnable), kin-spared 0/8 (best 0.00; not named in the prediction). Every fair band is non-empty. The check starts from random weights, so it is stricter than the ladder, which keeps each stage's passers. Run: scripts/run-detached.sh E-TL-2 --frozen -- npm run train:feasible -- --curriculum evals/train-ladder.json --workers 4 --out evals/train-screens/results/feasible-ladder.json (about 2h20m at 4 workers).",
       "reports": ["evals/decisions/E206/results.md"]
+    },
+    {
+      "id": "E207",
+      "date": "2026-11-19",
+      "branch": "feat/training-loop-etl3",
+      "hypothesis": "E-TL-3 (training-loop T16): one hunt stage whose prey sprint is steered by the prey-ahead drill (adaptive difficulty) yields more ladder progress than the fixed hunt-weak, hunt-mid and hunt rungs.",
+      "prediction": "Written before the run (16 offsets, 0 to 120 by 8, until hunt, 2 arms = 32 runs): better on train:compare score, adaptive against fixed, with the adaptive arm passing hunt on at least 1 of 16 offsets. Falsified on no verdict or worse.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "fixed arm: evals/train-ladder.json (hunt-weak, hunt-mid, hunt)",
+      "after": "adaptive arm: evals/train-ladder-adaptive.json (one hunt stage with adapt)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Running (effect is a placeholder until the verdict): scripts/run-detached.sh E-TL-3 --frozen -- npm run train:screen -- --grid evals/train-screens/adaptive.grid.json --runs /home/j1mb0jay/code/simulation/.sim/train-screens/adaptive",
+      "reports": ["evals/decisions/E207/results.md"]
     }
   ]
 }
