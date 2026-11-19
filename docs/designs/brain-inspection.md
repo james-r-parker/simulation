@@ -1,7 +1,7 @@
 # Brain inspection
 
 **Status:** Proposed - Phase 1 (the dossier: labelled weights, drill traces and unit ablation) is built first; Phase 2 adds the `inspect-brain` skill and the first inspection of trained champions.
-**Validated:** d6ca3e6c (2026-11-07)
+**Validated:** 495482df (2026-11-19)
 **Priority:** 26 - last in the queue (user, 2026-11-04): a diagnostic for champions that fail a drill, useful only once the drills and the trainer exist
 **Depends on:** [training.md](training.md)
 
@@ -13,9 +13,11 @@ A champion that fails a drill gets a **dossier**: its weights labelled unit by u
 
 | Function              | Returns                                                                                                                                                |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `inputLabels(config)` | One name per pooled-row input (`inputCount`, 89): the 56 pooled values, then the 33 body inputs of the table below                                     |
+| `inputLabels(config)` | One name per pooled-row input (`inputCount`, 92): the 56 pooled values, then the 36 body inputs of the table below                                     |
 | `outputLabels()`      | One name per gene output column, in `GENE_OUTPUTS` order: `thrust`, `turn`, `sprint`, `mate`, `bite`, `alarm`, `smoke`, `hunt`, `memory_a`, `memory_b` |
 | `unitLabel(j)`        | `h<j>`                                                                                                                                                 |
+
+The output trace has 11 positions in `OUTPUT_INDEX` order. `split` is always zero and has no gene column; the 10 gene outputs map through `GENE_OUTPUTS`.
 
 | Inputs         | Names                                                                                                                                                                                                                    |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -27,6 +29,7 @@ A champion that fails a drill gets a **dossier**: its weights labelled unit by u
 | Body 21 to 23  | `hunt_scent.here`, `hunt_scent.left`, `hunt_scent.right`                                                                                                                                                                 |
 | Body 24 to 29  | `heard_alarm.<loudness\|ahead\|side>`, `heard_hunt.<loudness\|ahead\|side>`                                                                                                                                              |
 | Body 30 to 32  | `sex`, `memory_a`, `memory_b`                                                                                                                                                                                            |
+| Body 33 to 35  | `refuge.bearing_sin`, `refuge.bearing_cos`, `refuge.near` (`writeRefugeInputs` in [refuge-sense.js](../../js/sim/refuge-sense.js))                                                                                       |
 
 ## Dossier
 
@@ -38,7 +41,7 @@ A champion that fails a drill gets a **dossier**: its weights labelled unit by u
 
 `js/evo/brain-trace.js` (new) records one subject through one trial.
 
-- `playTrial` in [memory-probe-run.js](../../js/evo/memory-probe-run.js) gains an optional `onTick(world, slots, tick)` called after each `step`; its return value stays a boolean, and existing callers pass none and behave as today.
+- `playTrial` in [memory-probe-run.js](../../js/evo/memory-probe-run.js) gains an optional `onTick(world, slots, tick)` called after each `step`; `slots.subject[0]` is the inspected subject, its `world.pooled`, `world.hidden`, and `world.outputs` rows hold the brain tick, and existing callers pass none and behave as today. `playTrial` runs the `forwardAll` WASM kernel from [brain.js](../../js/sim/brain.js); inspection reads its resulting arrays without changing the sim core.
 - **`createTraceRecorder({ maxTicks })`** preallocates typed arrays for the subject slot's pooled row, hidden row and output row per tick, plus its position, heading, energy and `alive` flag, and returns `onTick` and `finish(won)`. Ticks after the subject dies record `alive` 0 and zeros. `finish(won)` returns the filled ticks, `won`, and the tick count, which is the tick `plan.done` ended the trial or `plan.maxTicks`.
 - **`traceSummary(trace, labels)`** returns, per hidden unit, its mean, its range and the tick of its largest change; per output, the share of alive ticks it fires (above 0); and the inputs that are ever nonzero.
 
@@ -68,7 +71,7 @@ A champion that fails a drill gets a **dossier**: its weights labelled unit by u
 
 `js/evo/brain-ablation.js` (new):
 
-- **`ablateUnit({ subject, drill, unit, seed, trials, config })`** runs the drill's trials with one unit silenced (unit `null` runs them intact) through `drillSubject` in `js/evo/drill.js` ([training.md](training.md) Phase 1), and returns each trial's result.
+- **`ablateUnit({ subject, drill, unit, seed, trials, config })`** rebuilds the same `drill:<name>` plans and `seed + trial` worlds as `drillSubject` in [drill.js](../../js/evo/drill.js), and runs each through `playTrial`; it returns each trial's result. Unit `null` runs intact.
 - **`compareTrials(before, after)`** returns both win shares, the change, the paired trials that flip each way, and the exact two-sided McNemar p value on those flips (`mcnemarP`).
 
 ## Command
@@ -76,7 +79,7 @@ A champion that fails a drill gets a **dossier**: its weights labelled unit by u
 `npm run inspect -- --champions <dir> --name <champion> --drill <name> --out <dir>` (`scripts/inspect-brain.mjs` and `scripts/inspect-worker.mjs`, new; `--seed <n>` (1), `--trials <n>` (32), `--trace-trials <n>` (4), `--top <n>` (8), `--edit <edits.json>`, `--config <file.json>`, `--workers <n>`):
 
 - Champions load through `loadChampions` in [memory-probe.mjs](../../scripts/memory-probe.mjs); a layout mismatch exits 1 with its `probe.layout` log. `--name` picks one champion by its `name`; it is optional when the directory holds one champion, and an unknown name exits 1 listing the names.
-- The drill comes from `DRILLS` in `js/evo/drill-scenarios.js` ([training.md](training.md) Phase 1). Its trials draw from the `drill:<name>` stream, so they equal the trials `npm run drill` plays for the same seed and trial count.
+- The drill comes from `DRILLS` in [drill-scenarios.js](../../js/evo/drill-scenarios.js), including the social drills appended from [drill-scenarios-social.js](../../js/evo/drill-scenarios-social.js). Staging helpers and the prey trace live in [drill-staging.js](../../js/evo/drill-staging.js) and [drill-trace.js](../../js/evo/drill-trace.js); the latter stays read-only. Each plan uses the `drill:<name>` stream and each world uses `seed + trial`, matching `npm run drill` for the same seed and trial count.
 - `<dir>` receives `weights.md` (the unit, skip and trait tables), `trace-<trial>.jsonl` for the first `--trace-trials` trials (one line per tick: labelled nonzero inputs, hidden row, outputs, position, heading, energy, alive), `summary.md` (the `traceSummary` tables, each traced trial's result) and `ablation.md` (one row per hidden unit, `brainHidden` (32 by default): win share intact and silenced, the change, the flips and `mcnemarP`, sorted by change).
 - `--edit <edits.json>` takes a list of edits, applies them with `applyEdits`, reruns the same trials and adds `edit.md`: the edits and the `compareTrials` row against intact. The edited row is never written to a file.
 - The intact run and each unit's ablation are one task each on `runPool` in [worker-pool.mjs](../../scripts/lib/worker-pool.mjs); `scripts/inspect-worker.mjs` serves them with `serveTasks`. Results are merged in task order, so `--workers 1` and `--workers 8` write the same files.
@@ -103,7 +106,7 @@ Labels, the weight tables, the trace recorder with the `onTick` hook, edits, abl
 
 **Targets:** none - its output is a finding in sim-notes.md, not a metric
 
-The `inspect-brain` skill and its first use on the champions of training.md Phase 2's done run: one inspection per drill with an edge at or below 0, each claim recorded with its edit and `compareTrials` row.
+The `inspect-brain` skill and its first use on both predator champions in `.sim/champions/keep/ets-1h-o144/`: inspect `prey-ahead`, `prey-mid` and `prey-weak`, identify the units and skip weights that drive `THRUST`, `TURN` and `BITE` with prey ahead, and compare the traces when prey sprint away. Test every causal claim with a matched edit or ablation and record its `compareTrials` row in [sim-notes.md](sim-notes.md). The initial `DRILLS` registry contains `prey-ahead` but not `prey-mid` or `prey-weak`; add those two diagnostic scenarios only when their sprint settings and staging are specified by the training work. Do not edit training files as part of this diagnostic.
 
 #### Chunks
 
@@ -152,11 +155,11 @@ The `inspect-brain` skill and its first use on the champions of training.md Phas
 
 ### Phase 2 - Skill and first inspection
 
-| #   | Task                                                                                                                                                                        | Nature      | Depends on |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
-| T8  | Add `.claude/skills/inspect-brain/SKILL.md` and the `debug-sim` skill's pointer to it                                                                                       | [judgement] | T7         |
-| T9  | Inspect the training.md Phase 2 champions on each drill with an edge at or below 0; record each claim, its edit and its `compareTrials` row in [sim-notes.md](sim-notes.md) | [judgement] | T8         |
-| T10 | Conformance review of Phase 2, in parallel with `scripts/check.sh`                                                                                                          | [judgement] | T8, T9     |
+| #   | Task                                                                                                                                                                                                      | Nature      | Depends on |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T8  | Add `.claude/skills/inspect-brain/SKILL.md` and the `debug-sim` skill's pointer to it                                                                                                                     | [judgement] | T7         |
+| T9  | Inspect the two `ets-1h-o144` predator champions on `prey-ahead`, `prey-mid` and `prey-weak`; test each claim with an edit or ablation and record its `compareTrials` row in [sim-notes.md](sim-notes.md) | [judgement] | T8         |
+| T10 | Conformance review of Phase 2, in parallel with `scripts/check.sh`                                                                                                                                        | [judgement] | T8, T9     |
 
 ## Verification
 
