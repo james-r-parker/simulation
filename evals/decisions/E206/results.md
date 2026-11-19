@@ -6,6 +6,8 @@ Prediction (written before the run): every gate drill of every rung through `hun
 
 Run: `scripts/run-detached.sh E-TL-2 --frozen -- npm run train:feasible -- --curriculum evals/train-ladder.json --workers 4 --out evals/train-screens/results/feasible-ladder.json` at the default sizes (8 populations, 200 generations, 64 brains, 4 trials). About 2 hours 20 minutes at 4 workers on a machine already loaded by the E-TL-1 screen. The report is `evals/train-screens/results/feasible-ladder.json`.
 
+The bars are point-estimate bars, not the gate's Wilson bars: a gate bar of 0.001 needs about 6 wins in 128 trials (the Wilson low must beat 0.0148 when random brains win 0). Learnable is a necessary condition of the gate, not a sufficient one.
+
 A drill is learnable when at least 2 of 8 populations of random brains, evolved directly on the drill, end at or above the bar the gate condition implies. The drills run under the trainer's gate drill config (the default config and the drill's own arena).
 
 | Stage        | Drill          | Bar   | Populations at the bar | Best final share | Fair band (predator vs forager) | Learnable |
@@ -27,7 +29,9 @@ A drill is learnable when at least 2 of 8 populations of random brains, evolved 
 
 - `hunt` is unlearnable from random brains: `prey-ahead` reaches 0.03 at best against a bar of 0.109 (0.5 of the memoryless reference's win share). This is the prediction, and it points at a sim rule (training-stages.md T62), not a ladder change.
 - `hunt-mid` is unlearnable too, at 1 of 8: not predicted. The ladder reaches it in practice (E-TS-1 runs passed `hunt-mid`), so the check is stricter than the trainer: the trainer's stages keep the previous stage's passers (`keepPasser`), and this check starts every population from random weights. Read a failure on a later rung as "not learnable from scratch", not "not learnable".
-- `kin-spared` is at 0.00 in every population: the staged world never gives a win to a random brain, so the evolution has no gradient. It is a gate condition of `hunt` (`drill.kin-spared.edgeLow`), so the stage needs a scored win to start from.
+- `kin-spared` is at 0.00 in every population. A win needs a kill and zero BITE while the sibling is in the jaws, so its win share is capped by `prey-ahead`'s. Random and memoryless brains score 0, and every real run's `hunt` gate rows read `edgeLow` -0.0148 with lost reason `bit-kin` 128 of 128. A hand-built `kin-sparing` reference wins 0.672 over 64 trials, so the drill is winnable, but nothing trains toward it while `prey-ahead` is unsolved. It is a gate condition of `hunt` (`drill.kin-spared.edgeLow`).
 - `prey-weak` (3 of 8) and `prey-crossing` (2 of 8) pass narrowly. The rungs between `prey-adrift` and `prey-ahead` are a steep ramp for a random brain.
 
 Outcome to task: the next work is on `hunt`'s two unlearnable drills (`prey-ahead`, `kin-spared`), and on whether `hunt-mid` needs a nearer rung (`MID_SPRINT_BOOST` 0.3 against `WEAK_SPRINT_BOOST` 0.2), before the next ladder run.
+
+Outcome to task: T64 in [training-stages.md](../../../docs/designs/training-stages.md) moves `kin-spared` out of the `hunt` gate into its own `hunt-kin` stage after `hunt`, judged by `train:compare` on 16 offsets.

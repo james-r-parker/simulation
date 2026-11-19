@@ -108,6 +108,8 @@ A gated curriculum entry may set `plateauStop`, a count of gate checkpoints. Aft
 - a drill is learnable when at least 2 of the 8 populations reach a final win share at or above the share the gate condition implies (`winShareLow` bound, or the reference win share times a `winShareOverReference` bound; `edgeLow` uses the random brains' share plus the bound);
 - for a stage whose gate names a bite drill, `playPair` and `fairBand` ([chase-envelope.js](../../js/evo/chase-envelope.js)) play each hunter specialisation against the forager at the stage's prey `sprintBoost` and report whether the fair band is non-empty.
 
+The bars are point-estimate bars, not the gate's Wilson bars (`winShareLow`, `edgeLow`), so a learnable drill meets a necessary condition of its gate, not a sufficient one.
+
 It writes `feasible.json` (per stage: each drill's populations reaching the bar, the best share, the fair band, and `learnable`) and prints one line per stage. `train:screen` runs it once per arm ladder before training and marks an arm whose ladder holds an unlearnable stage within `until` (`unlearnable` in `verdicts.json`); the arm still runs unless the grid sets `skipUnlearnable`.
 
 ## Adaptive difficulty
