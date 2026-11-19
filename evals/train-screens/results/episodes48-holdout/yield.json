@@ -1,0 +1,874 @@
+{
+  "base": {
+    "runs": 16,
+    "meanScore": 2.5923869679825806,
+    "passedLast": 5,
+    "cpuHours": 20.075653234967778,
+    "stages": [
+      {
+        "stage": "nursery",
+        "passShare": 0.8125,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.8732294484846369
+      },
+      {
+        "stage": "hunt-contact",
+        "passShare": 0.8125,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.13620440570970094
+      },
+      {
+        "stage": "hunt-weak",
+        "passShare": 0.5625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.47757002733194426
+      },
+      {
+        "stage": "hunt-mid",
+        "passShare": 0.3125,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.530976576890778
+      }
+    ],
+    "perRun": [
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/base/o128",
+        "offset": 128,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 45
+          }
+        ],
+        "bestProgress": 0,
+        "score": 3,
+        "cpuSeconds": 5610.222860257002,
+        "stageCpuSeconds": {
+          "nursery": 1931.74982574,
+          "hunt-contact": 449.85584264199974,
+          "hunt-weak": 1469.099973122,
+          "hunt-mid": 1759.5172187530025
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/base/o136",
+        "offset": 136,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 15
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 25
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 35
+          }
+        ],
+        "bestProgress": 0.0013804318928742412,
+        "score": 3.001380431892874,
+        "cpuSeconds": 5749.053393877002,
+        "stageCpuSeconds": {
+          "nursery": 2983.1408879930004,
+          "hunt-contact": 462.5550943910007,
+          "hunt-weak": 559.843011382,
+          "hunt-mid": 1743.5144001110011
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/base/o144",
+        "offset": 144,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.2591042530488955,
+        "score": 0.2591042530488955,
+        "cpuSeconds": 4677.661728033,
+        "stageCpuSeconds": {
+          "nursery": 4677.661728033
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/base/o152",
+        "offset": 152,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          }
+        ],
+        "bestProgress": 0,
+        "score": 3,
+        "cpuSeconds": 4932.037517154,
+        "stageCpuSeconds": {
+          "nursery": 2158.2955217940003,
+          "hunt-contact": 460.3046783800005,
+          "hunt-weak": 558.4773519510004,
+          "hunt-mid": 1754.9599650289988
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/base/o160",
+        "offset": 160,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4118.968729685999,
+        "stageCpuSeconds": {
+          "nursery": 2393.112577133,
+          "hunt-contact": 511.8118034129993,
+          "hunt-weak": 563.1955086090002,
+          "hunt-mid": 650.848840531
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/base/o168",
+        "offset": 168,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 40
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 50
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 60
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 70
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4492.53379968,
+        "stageCpuSeconds": {
+          "nursery": 2801.3296030979977,
+          "hunt-contact": 495.92378770200094,
+          "hunt-weak": 584.1656685310004,
+          "hunt-mid": 611.1147403490008
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/base/o176",
+        "offset": 176,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 15
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 25
+          }
+        ],
+        "bestProgress": 0.016798610797803704,
+        "score": 2.0167986107978035,
+        "cpuSeconds": 4232.161700810002,
+        "stageCpuSeconds": {
+          "nursery": 2088.8117360849997,
+          "hunt-contact": 477.50636544799954,
+          "hunt-weak": 1665.8435992770028
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/base/o184",
+        "offset": 184,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.6312328340085419,
+        "score": 0.6312328340085419,
+        "cpuSeconds": 3169.041891615997,
+        "stageCpuSeconds": {
+          "nursery": 3169.041891615997
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/base/o192",
+        "offset": 192,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.04630235085757968,
+        "score": 2.0463023508575797,
+        "cpuSeconds": 4238.0919632649975,
+        "stageCpuSeconds": {
+          "nursery": 1157.741193509,
+          "hunt-contact": 485.53797386899987,
+          "hunt-weak": 2594.8127958869977
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/base/o200",
+        "offset": 200,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 40
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 50
+          }
+        ],
+        "bestProgress": 0.00825685747759873,
+        "score": 2.0082568574775985,
+        "cpuSeconds": 5316.139267101995,
+        "stageCpuSeconds": {
+          "nursery": 2763.3616188690003,
+          "hunt-contact": 593.6835160860014,
+          "hunt-weak": 1959.0941321469932
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/base/o208",
+        "offset": 208,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 2379.961800805,
+        "stageCpuSeconds": {
+          "nursery": 780.9787835989998,
+          "hunt-contact": 463.02013685800057,
+          "hunt-weak": 554.3121825290002,
+          "hunt-mid": 581.6506978189996
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/base/o216",
+        "offset": 216,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          }
+        ],
+        "bestProgress": 0.00825685747759873,
+        "score": 2.0082568574775985,
+        "cpuSeconds": 4108.8437403200005,
+        "stageCpuSeconds": {
+          "nursery": 1873.5526375200006,
+          "hunt-contact": 478.89442662899955,
+          "hunt-weak": 1756.3966761710003
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/base/o224",
+        "offset": 224,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 2983.3808584070002,
+        "stageCpuSeconds": {
+          "nursery": 1130.614675256,
+          "hunt-contact": 551.9797710060004,
+          "hunt-weak": 665.5111145840001,
+          "hunt-mid": 635.2752975609997
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/base/o232",
+        "offset": 232,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.5025638424502579,
+        "score": 0.5025638424502579,
+        "cpuSeconds": 5232.783805826998,
+        "stageCpuSeconds": {
+          "nursery": 5232.783805826998
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/base/o240",
+        "offset": 240,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 50
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 5324.041983591003,
+        "stageCpuSeconds": {
+          "nursery": 3675.1648647020015,
+          "hunt-contact": 469.19064824300085,
+          "hunt-weak": 586.9842926359997,
+          "hunt-mid": 592.7021780100013
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/base/o248",
+        "offset": 248,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 55
+          }
+        ],
+        "bestProgress": 0.004295449710144082,
+        "score": 3.004295449710144,
+        "cpuSeconds": 5707.426605454001,
+        "stageCpuSeconds": {
+          "nursery": 2049.7968383070006,
+          "hunt-contact": 474.1021425469994,
+          "hunt-weak": 1955.5325787290003,
+          "hunt-mid": 1227.995045871001
+        }
+      }
+    ],
+    "failed": 0
+  },
+  "episodes-48": {
+    "runs": 16,
+    "meanScore": 2.728055840588968,
+    "passedLast": 7,
+    "cpuHours": 25.941544741491107,
+    "stages": [
+      {
+        "stage": "nursery",
+        "passShare": 0.75,
+        "medianGenerations": 12.5,
+        "cpuHoursPerPass": 1.2365264679744212
+      },
+      {
+        "stage": "hunt-contact",
+        "passShare": 0.75,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.19614107070546294
+      },
+      {
+        "stage": "hunt-weak",
+        "passShare": 0.625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.4000938310251388
+      },
+      {
+        "stage": "hunt-mid",
+        "passShare": 0.4375,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.6783708524401584
+      }
+    ],
+    "perRun": [
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/episodes-48/o128",
+        "offset": 128,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.01221826524505338,
+        "score": 2.0122182652450533,
+        "cpuSeconds": 6446.557135418996,
+        "stageCpuSeconds": {
+          "nursery": 3237.1444126839992,
+          "hunt-contact": 683.116788635999,
+          "hunt-weak": 2526.295934098998
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/episodes-48/o136",
+        "offset": 136,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.6403352090066556,
+        "score": 0.6403352090066556,
+        "cpuSeconds": 8318.612934454,
+        "stageCpuSeconds": {
+          "nursery": 8318.612934454
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/episodes-48/o144",
+        "offset": 144,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 0.0040012081983777405,
+        "score": 3.004001208198378,
+        "cpuSeconds": 9347.603943011005,
+        "stageCpuSeconds": {
+          "nursery": 5418.616748774002,
+          "hunt-contact": 587.8120349690034,
+          "hunt-weak": 797.069412048997,
+          "hunt-mid": 2544.1057472190023
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/episodes-48/o152",
+        "offset": 152,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 15
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 25
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 35
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 45
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4861.906856930999,
+        "stageCpuSeconds": {
+          "nursery": 2478.9025053839996,
+          "hunt-contact": 671.905481326,
+          "hunt-weak": 854.2107448689994,
+          "hunt-mid": 856.8881253520003
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/episodes-48/o160",
+        "offset": 160,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.010547030253973893,
+        "score": 2.010547030253974,
+        "cpuSeconds": 5011.767403772998,
+        "stageCpuSeconds": {
+          "nursery": 1747.344148881,
+          "hunt-contact": 756.488166745,
+          "hunt-weak": 2507.9350881469977
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/episodes-48/o168",
+        "offset": 168,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 15
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 25
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 35
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 45
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4013.6315257029974,
+        "stageCpuSeconds": {
+          "nursery": 1627.7648694919997,
+          "hunt-contact": 729.4378958649997,
+          "hunt-weak": 811.7903786569991,
+          "hunt-mid": 844.6383816889988
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/episodes-48/o176",
+        "offset": 176,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 40
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 55
+          }
+        ],
+        "bestProgress": 0.026832384933492482,
+        "score": 3.0268323849334924,
+        "cpuSeconds": 8653.089651611996,
+        "stageCpuSeconds": {
+          "nursery": 3812.387567748998,
+          "hunt-contact": 671.9770427950002,
+          "hunt-weak": 1235.7170650120024,
+          "hunt-mid": 2933.0079760559947
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/episodes-48/o184",
+        "offset": 184,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 3501.9637403140005,
+        "stageCpuSeconds": {
+          "nursery": 1209.8328983540002,
+          "hunt-contact": 650.8402141880001,
+          "hunt-weak": 827.6584406299996,
+          "hunt-mid": 813.6321871420005
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/episodes-48/o192",
+        "offset": 192,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 35
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 50
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4416.961208838,
+        "stageCpuSeconds": {
+          "nursery": 1213.2309954329996,
+          "hunt-contact": 733.3609895469997,
+          "hunt-weak": 1239.5110625250009,
+          "hunt-mid": 1230.8581613329998
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/episodes-48/o200",
+        "offset": 200,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 70
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 6132.195086587997,
+        "stageCpuSeconds": {
+          "nursery": 1925.332158546,
+          "hunt-contact": 807.5802037029991,
+          "hunt-weak": 892.3081773969998,
+          "hunt-mid": 2506.974546941998
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/episodes-48/o208",
+        "offset": 208,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7229398635236198,
+        "score": 0.7229398635236198,
+        "cpuSeconds": 3602.877145514998,
+        "stageCpuSeconds": {
+          "nursery": 3602.877145514998
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/episodes-48/o216",
+        "offset": 216,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7151475595049597,
+        "score": 0.7151475595049597,
+        "cpuSeconds": 3437.428478976,
+        "stageCpuSeconds": {
+          "nursery": 3437.428478976
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/episodes-48/o224",
+        "offset": 224,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4132.474464518002,
+        "stageCpuSeconds": {
+          "nursery": 1837.6861560050002,
+          "hunt-contact": 674.5111890820003,
+          "hunt-weak": 819.6690410140009,
+          "hunt-mid": 800.6080784170003
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/episodes-48/o232",
+        "offset": 232,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 0.04541984747131127,
+        "score": 3.0454198474713112,
+        "cpuSeconds": 8954.439110505997,
+        "stageCpuSeconds": {
+          "nursery": 3424.155715670999,
+          "hunt-contact": 809.4045946559986,
+          "hunt-weak": 1019.5443364240009,
+          "hunt-mid": 3701.334463754998
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/episodes-48/o240",
+        "offset": 240,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.4714520812860451,
+        "score": 0.4714520812860451,
+        "cpuSeconds": 8063.089314502996,
+        "stageCpuSeconds": {
+          "nursery": 8063.089314502996
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/episodes48-holdout/episodes-48/o248",
+        "offset": 248,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4494.963068707001,
+        "stageCpuSeconds": {
+          "nursery": 2063.5373660740006,
+          "hunt-contact": 696.8596529640004,
+          "hunt-weak": 871.6682360820005,
+          "hunt-mid": 862.8978135869997
+        }
+      }
+    ],
+    "failed": 0
+  }
+}

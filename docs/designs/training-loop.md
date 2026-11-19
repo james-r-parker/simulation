@@ -1,6 +1,6 @@
 # Training loop
 
-**Status:** In progress - Phases 1 and 2 built (T1 to T12); Phase 3 code built (T13 to T15); Phase 4 code built (T19 to T21); E207 (T16) falsified adaptive difficulty as configured (it never left its floor); T16a retests it, and T17 waits for that; E208 (T22, the first tuning night) read no verdict; E209 (T22a) confirms episodes 48 on the held-out offsets
+**Status:** In progress - Phases 1 and 2 built (T1 to T12); Phase 3 code built (T13 to T15); Phase 4 code built (T19 to T21); E207 (T16) falsified adaptive difficulty as configured (it never left its floor); T16a retests it, and T17 waits for that; E208 (T22, the first tuning night) read no verdict; E209 (T22a) did not confirm episodes 48 on the held-out offsets
 **Validated:** 0254883d (2026-11-19)
 **Priority:** 1 - pinned by the user (2026-11-19): every training run waits on how fast a ladder change can be judged, and nothing here changes a sim rule
 **Depends on:** [training-stages.md](training-stages.md), [training.md](training.md)
@@ -286,7 +286,7 @@ T22 is a long run, not a code chunk; T23 follows its record in one PR (Sonnet).
 | T20  | (built) `npm run train:tune`: feasibility, the tuning screen, the held-out confirmation, the champion export and the 16-seed world trial for finalists, `summary.md`, `result.json`, `draft-experiment.json`, `TuneArm`, `TuneResult`; tests on a tiny spec | [judgement]  | T19, T10   |
 | T21  | (built) AGENTS.md `train:tune` row; the `run-evolution-loop` skill names `train:compare` and the tuning lane; [training-stages.md](training-stages.md) links this doc                                                                                       | [mechanical] | T20        |
 | T22  | (built) (run `E-TL-4`, detached) the first night; record E-TL-4 (E208: nursery `maxGenerations` 80 tied on 16 of 16, `episodes` 48 no verdict)                                                                                                              | [judgement]  | T21, T18   |
-| T22a | confirm `episodes` 48 on the 16 held-out offsets 128-248 (E209; run `E-TL-5`, detached)                                                                                                                                                                     | [judgement]  | T22        |
+| T22a | (built) confirm `episodes` 48 on the 16 held-out offsets 128-248 (E209; run `E-TL-5`, detached): no verdict, 8 up 6 down, p 0.79; not adopted                                                                                                               | [judgement]  | T22        |
 | T22b | nursery `plateauStop` 10 or 0 as the next nursery arm; `maxGenerations` does not bind while the plateau stop ends nursery first                                                                                                                             | [judgement]  | T22        |
 | T23  | Conformance review of Phase 4 by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; move the Status line to `Implemented`                                                                                                                    | [judgement]  | T22        |
 
