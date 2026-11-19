@@ -5026,10 +5026,10 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "before": "base: the current ladder, episodes at its default, on offsets 128 to 248",
-      "after": "scripts/run-detached.sh E-TL-5 --frozen -- npm run train:screen -- --grid evals/train-screens/episodes48-holdout.grid.json",
+      "after": "scripts/run-detached.sh E-TL-5 --frozen -- npm run train:screen -- --grid evals/train-screens/episodes48-holdout.grid.json; evals/train-screens/results/episodes48-holdout/",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "Prediction only; the run is in flight.",
+      "note": "Prediction falsified. Held-out offsets 128 to 248: 8 up, 6 down, 2 tied, mean score difference +0.136 [-0.967, 1.107], sign test p 0.79, no verdict. Pass shares base -> episodes 48: nursery 81 -> 75%, hunt-contact 81 -> 75%, hunt-weak 56 -> 63%, hunt-mid 31 -> 44%; passed the last stage 5 -> 7 of 16; cpu 20.1 -> 25.9 h (+29%). Across E208 and E209 hunt-mid passes rose both times (19 -> 38, 31 -> 44) but the score reads no verdict on either set. Not adopted: the cost is +30% CPU and the gain is not separable from noise. The held-out base passes nursery on 81% against 56% on the tune offsets, so offset luck is large.",
       "reports": ["evals/decisions/E209/results.md"]
     },
     {
