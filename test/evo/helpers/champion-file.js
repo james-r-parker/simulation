@@ -12,7 +12,17 @@ import { createRng, nextGaussian } from '../../../js/sim/rng.js';
  * @returns {Record<string, any>} a valid champion file for the default config
  */
 export function makeChampionFile(name, seed, { specialisation = 0, sigma = 0.3 } = {}) {
-    const config = createConfig({});
+    return makeChampionFileFor(createConfig({}), name, seed, { specialisation, sigma });
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} config the config the file is stamped for
+ * @param {string} name the champion name
+ * @param {number} seed the seed of the weights
+ * @param {{ specialisation?: number, sigma?: number }} [options] the specialisation index (default 0) and the weight spread (default 0.3)
+ * @returns {Record<string, any>} a valid champion file for `config`
+ */
+export function makeChampionFileFor(config, name, seed, { specialisation = 0, sigma = 0.3 } = {}) {
     const layout = brainLayout(config);
     const rng = createRng(seed);
     const weights = new Float32Array(layout.weightCount);

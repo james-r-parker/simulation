@@ -11,6 +11,7 @@ const MIX_KEYS = ['archiveShare', 'cloneShareEnd'];
 /** The option keys each policy takes; a policy not listed takes none. */
 const ACCEPTED = Object.freeze({
     'map-elites-v6': [...MIX_KEYS, 'fitnessOverrides', 'descriptor'],
+    'champions-v1': [...MIX_KEYS, 'fitnessOverrides', 'descriptor', 'championsDir'],
 });
 
 /**
@@ -74,6 +75,27 @@ function checkMix(options) {
 }
 
 /**
+ * @param {Record<string, any>} options the options
+ * @returns {void}
+ * @throws {Error} naming the option when the descriptor is not registered or `championsDir` is not a non-empty path
+ */
+function checkNames(options) {
+    if (Object.hasOwn(options, 'descriptor') && !Object.hasOwn(DESCRIPTORS, options.descriptor)) {
+        throw new Error(
+            `policyOptions: descriptor "${options.descriptor}" is not registered; known: ${Object.keys(DESCRIPTORS).join(', ')}`,
+        );
+    }
+    if (
+        Object.hasOwn(options, 'championsDir') &&
+        (typeof options.championsDir !== 'string' || options.championsDir === '')
+    ) {
+        throw new Error(
+            `policyOptions: championsDir must be a non-empty directory path, got ${JSON.stringify(options.championsDir)}`,
+        );
+    }
+}
+
+/**
  * Checks a run's policy options against the policy that will receive them.
  * @param {string} policyName a registered policy name (not `live`)
  * @param {unknown} options the `policyOptions` object (`undefined` for none)
@@ -99,11 +121,7 @@ export function validatePolicyOptions(policyName, options) {
     if (Object.hasOwn(given, 'fitnessOverrides')) {
         checkWeights(given.fitnessOverrides);
     }
-    if (Object.hasOwn(given, 'descriptor') && !Object.hasOwn(DESCRIPTORS, given.descriptor)) {
-        throw new Error(
-            `policyOptions: descriptor "${given.descriptor}" is not registered; known: ${Object.keys(DESCRIPTORS).join(', ')}`,
-        );
-    }
+    checkNames(given);
     checkMix(given);
     return given;
 }

@@ -8,7 +8,7 @@ import { buildReport, seedFields, seedlessConfig, validateReport } from '../js/e
 import { getPolicy, LIVE_POLICY } from '../js/evo/policies/index.js';
 import { validatePolicyOptions } from '../js/evo/policy-options.js';
 import { configHash, createConfig } from '../js/sim/config.js';
-import { championsDirFor, writeChampionFiles } from './lib/champion-files.mjs';
+import { championsDirFor, readChampionFiles, writeChampionFiles } from './lib/champion-files.mjs';
 import { intValue, parseFlags } from './lib/cli-args.mjs';
 import { cpuUse } from './lib/cpu-use.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
@@ -351,6 +351,9 @@ export async function main(argv, { logDir } = {}) {
     const policyOptions = args.policyOptions === null ? {} : JSON.parse(readFileSync(args.policyOptions, 'utf8'));
     validatePolicyOptions(args.policy, policyOptions);
     try {
+        if (policyOptions.championsDir !== undefined) {
+            readChampionFiles(policyOptions.championsDir);
+        }
         await runEval({ ...args, configOverrides, policyOptions, logDir, print: (line) => console.log(line) });
         return 0;
     } catch (error) {
