@@ -30,7 +30,14 @@ describe('drillReadings', () => {
         expect(a.winShareOverReference).toBeCloseTo(low / 0.5, 12);
         expect(a.lossShare['never-bit']).toBeCloseTo(38 / 58, 12);
         expect(a.lossShare['bit-lived']).toBeCloseTo(20 / 58, 12);
-        expect(b).toEqual({ winShareLow: null, edgeLow: null, winShareOverReference: null, lossShare: {} });
+        expect(b).toEqual({
+            winShareLow: null,
+            edgeLow: null,
+            winShareOverReference: null,
+            lossShare: {},
+            jawShareLow: null,
+            closestMedian: null,
+        });
     });
 
     it('has no reference reading when the reference won nothing or is absent', () => {
@@ -109,5 +116,28 @@ describe('drillReadings of a drill with control arms', () => {
         ]);
         expect(noArms.pack.gainLow).toBeTypeOf('number');
         expect(drillReadings([], 0, ['pack']).pack.gainLow).toBeUndefined();
+    });
+});
+
+describe('drillReadings graded readings', () => {
+    const traced = (/** @type {number} */ wins, /** @type {number} */ jaws, /** @type {number[]} */ closest) => ({
+        ...cell(wins),
+        jawTrials: jaws,
+        closestList: closest,
+    });
+
+    it('pools the jaw trials into a Wilson low bound and the closest approaches into a median', () => {
+        const rows = [{ cells: { a: traced(10, 20, [3, 1, 2]) } }, { cells: { a: traced(10, 44, [10]) } }];
+        const { a } = drillReadings(rows, 2, ['a']);
+        expect(a.jawShareLow).toBeCloseTo(wilsonInterval(64, 128).low, 12);
+        expect(a.closestMedian).toBe(2.5);
+    });
+
+    it('reads null for a drill without a prey trace, and a null median for a trace with no closest approach', () => {
+        const plain = drillReadings([{ cells: { a: cell(10) } }], 1, ['a']).a;
+        expect([plain.jawShareLow, plain.closestMedian]).toEqual([null, null]);
+        const never = drillReadings([{ cells: { a: traced(0, 0, []) } }], 1, ['a']).a;
+        expect(never.jawShareLow).toBe(wilsonInterval(0, 64).low);
+        expect(never.closestMedian).toBeNull();
     });
 });

@@ -4,6 +4,7 @@
     "config": "evals/stages/nursery.json",
     "minGenerations": 10,
     "maxGenerations": 40,
+    "plateauStop": 6,
     "gate": [
       {
         "read": "drill.food-ahead.edgeLow",
@@ -13,25 +14,60 @@
         "read": "drill.food-behind.edgeLow",
         "min": 0.3
       }
-    ]
+    ],
+    "keepPasser": true
   },
   {
     "name": "hunt-contact",
     "config": "evals/stages/hunt-contact.json",
     "minGenerations": 10,
     "maxGenerations": 60,
+    "plateauStop": 6,
     "gate": [
       {
-        "read": "drill.prey-ahead.edgeLow",
+        "read": "drill.prey-adrift.edgeLow",
         "min": 0.001
       }
-    ]
+    ],
+    "keepPasser": true
+  },
+  {
+    "name": "hunt-weak",
+    "preyShare": 0.9,
+    "config": "evals/stages/hunt-weak.json",
+    "minGenerations": 10,
+    "maxGenerations": 60,
+    "plateauStop": 6,
+    "gate": [
+      {
+        "read": "drill.prey-weak.edgeLow",
+        "min": 0.001
+      }
+    ],
+    "keepPasser": true
+  },
+  {
+    "name": "hunt-mid",
+    "config": "evals/stages/hunt-mid.json",
+    "preyShare": 0.9,
+    "minGenerations": 10,
+    "maxGenerations": 60,
+    "plateauStop": 6,
+    "gate": [
+      {
+        "read": "drill.prey-mid.edgeLow",
+        "min": 0.001
+      }
+    ],
+    "keepPasser": true
   },
   {
     "name": "hunt",
+    "preyShare": 0.9,
     "config": "evals/stages/hunt.json",
     "minGenerations": 10,
-    "maxGenerations": 60,
+    "maxGenerations": 200,
+    "plateauStop": 6,
     "gate": [
       {
         "read": "drill.prey-ahead.winShareOverReference",
@@ -49,7 +85,8 @@
         "read": "drill.kin-spared.edgeLow",
         "min": 0.001
       }
-    ]
+    ],
+    "keepPasser": true
   },
   {
     "name": "evade",
@@ -57,6 +94,7 @@
     "pool": 0.5,
     "minGenerations": 10,
     "maxGenerations": 60,
+    "plateauStop": 6,
     "gate": [
       {
         "read": "drill.hunter-closing.edgeLow",
@@ -70,7 +108,8 @@
         "read": "crossplay.preyVsStage.hunt",
         "min": 0.001
       }
-    ]
+    ],
+    "keepPasser": true
   },
   {
     "name": "arms-race",
@@ -78,6 +117,7 @@
     "pool": 0.2,
     "minGenerations": 20,
     "maxGenerations": 80,
+    "plateauStop": 6,
     "gate": [
       {
         "read": "crossplay.hunterProgressLow",
@@ -91,13 +131,15 @@
         "read": "crossplay.cycleShare",
         "max": 0.25
       }
-    ]
+    ],
+    "keepPasser": true
   },
   {
     "name": "habitat",
     "config": "evals/stages/habitat.json",
     "minGenerations": 20,
     "maxGenerations": 80,
+    "plateauStop": 6,
     "gate": [
       {
         "read": "retention.all",

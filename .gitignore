@@ -174,3 +174,6 @@ wasm/target/
 
 # Detached runs (scripts/run-detached.sh)
 .runs/
+
+# Ladder screen training runs and per-arm ladders (docs/designs/training-loop.md); the screen's yield.json, verdicts.json and table.md are kept
+evals/train-screens/results/*/*/

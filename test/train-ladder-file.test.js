@@ -11,7 +11,7 @@ import { loadStages } from '../scripts/lib/train-state.mjs';
 const readJson = (path) => JSON.parse(readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'));
 
 const LADDER = readJson('evals/train-ladder.json');
-const ORDER = ['nursery', 'hunt-contact', 'hunt', 'evade', 'arms-race', 'habitat', 'world'];
+const ORDER = ['nursery', 'hunt-contact', 'hunt-weak', 'hunt-mid', 'hunt', 'evade', 'arms-race', 'habitat', 'world'];
 
 describe('evals/train-ladder.json', () => {
     it('lists the stages of the design doc in order, the world last', () => {
@@ -37,6 +37,22 @@ describe('evals/train-ladder.json', () => {
         for (const entry of gated) {
             expect(entry.minGenerations).toBeLessThanOrEqual(entry.maxGenerations);
         }
+    });
+
+    it('gives every gated stage plateauStop 6 (docs/designs/training-loop.md)', () => {
+        const gated = LADDER.filter((/** @type {any} */ e) => e.gate !== undefined);
+        expect(gated.map((/** @type {any} */ e) => e.plateauStop)).toEqual(gated.map(() => 6));
+        expect(
+            loadStages(
+                /** @type {any} */ ({
+                    curriculum: 'evals/train-ladder.json',
+                    config: null,
+                    until: null,
+                    generations: 2,
+                    checkpointEvery: 1,
+                }),
+            )[4].plateauStop,
+        ).toBe(6);
     });
 
     it('gives the arms-race and evade stages the pool shares of the doc', () => {
@@ -93,5 +109,22 @@ describe('evals/stages', () => {
         expect(habitat.worldWidth * habitat.worldHeight).toBe((target.worldWidth * target.worldHeight) / 4);
         expect(habitat.herdCount).toBeGreaterThan(0);
         expect(habitat.coldMarginWidth).toBeGreaterThan(0);
+    });
+});
+
+describe('evals/train-ladder-no-mid.json', () => {
+    const NO_MID = readJson('evals/train-ladder-no-mid.json');
+
+    it('is the ladder without hunt-mid, so a run that began before the rung resumes under it', () => {
+        expect(NO_MID).toEqual(LADDER.filter((/** @type {any} */ e) => e.name !== 'hunt-mid'));
+    });
+
+    it('gives the hunt stage 200 generations, the bar unchanged, in both ladders', () => {
+        for (const ladder of [LADDER, NO_MID]) {
+            const hunt = ladder.find((/** @type {any} */ e) => e.name === 'hunt');
+            expect(hunt.maxGenerations).toBe(200);
+            const bar = hunt.gate.find((/** @type {any} */ c) => c.read === 'drill.prey-ahead.winShareOverReference');
+            expect(bar.min).toBe(0.5);
+        }
     });
 });

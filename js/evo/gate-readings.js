@@ -4,6 +4,7 @@
 
 import { wilsonInterval } from './binomial.js';
 import { pooledArmReading } from './drill-arms.js';
+import { quantile } from './metrics-stats.js';
 
 /**
  * @typedef {object} ReadingCell
@@ -14,6 +15,8 @@ import { pooledArmReading } from './drill-arms.js';
  * @property {number} randomTrials trials of the random brains, pooled
  * @property {Record<string, number>} [lossReasons] counts by first-match lost-trial reason
  * @property {Record<string, {wins: number, trials: number}>} [arms] the control arms' scores (`pack-converge`)
+ * @property {number} [jawTrials] trials with the prey in the jaws at some tick (a drill with a prey trace)
+ * @property {number[]} [closestList] each trial's closest approach, in summed radii (null approaches left out)
  */
 
 /**
@@ -22,6 +25,8 @@ import { pooledArmReading } from './drill-arms.js';
  * @property {number | null} edgeLow `winShareLow` minus the Wilson high bound of the random brains' pooled share
  * @property {number | null} winShareOverReference `winShareLow` over the reference's win share (null: no reference or 0)
  * @property {Record<string, number>} lossShare each lost-trial reason's share of the lost trials
+ * @property {number | null} jawShareLow the Wilson low bound of the share of trials with the prey in the jaws (null: no prey trace)
+ * @property {number | null} closestMedian the median closest approach (null: none recorded)
  * @property {number | null} [gainLow] `pack-converge` only: the trio's win share low bound minus the solo arm's high bound
  *   (`js/evo/drill-arms.js`), pooled over the champions
  * @property {number | null} [blindGapLow] `pack-converge` only: the same against the kin-blind arm
@@ -56,12 +61,35 @@ function armReadings(cells) {
 
 /**
  * @param {readonly ReadingCell[]} cells the cells of the champions a drill applied to
+ * @returns {{jawShareLow: number | null, closestMedian: number | null}} the graded readings of a drill with a prey trace,
+ *   null where its cells carry none
+ */
+function traceReadings(cells) {
+    const traced = cells.filter((cell) => cell.jawTrials !== undefined);
+    const closest = cells.flatMap((cell) => cell.closestList ?? []);
+    const trials = traced.reduce((sum, cell) => sum + cell.trials, 0);
+    const jaws = traced.reduce((sum, cell) => sum + /** @type {number} */ (cell.jawTrials), 0);
+    return {
+        jawShareLow: trials === 0 ? null : wilsonInterval(jaws, trials).low,
+        closestMedian: closest.length === 0 ? null : quantile(closest, 0.5),
+    };
+}
+
+/**
+ * @param {readonly ReadingCell[]} cells the cells of the champions a drill applied to
  * @param {ReadingCell | null} reference the reference's cell
  * @returns {DrillReading} the drill's readings, null where no champion was drilled
  */
 function drillReading(cells, reference) {
     if (cells.length === 0) {
-        return { winShareLow: null, edgeLow: null, winShareOverReference: null, lossShare: {} };
+        return {
+            winShareLow: null,
+            edgeLow: null,
+            winShareOverReference: null,
+            lossShare: {},
+            jawShareLow: null,
+            closestMedian: null,
+        };
     }
     const wins = cells.reduce((sum, c) => sum + c.wins, 0);
     const trials = cells.reduce((sum, c) => sum + c.trials, 0);
@@ -81,6 +109,7 @@ function drillReading(cells, reference) {
         edgeLow: winShareLow - random.high,
         winShareOverReference: over,
         lossShare,
+        ...traceReadings(cells),
         ...armReadings(cells),
     };
 }

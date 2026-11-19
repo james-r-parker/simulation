@@ -5,13 +5,12 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { decodeArchive } from '../js/evo/archive-codec.js';
 import { exportBestPerStyle } from '../js/evo/champion-export.js';
 import { exportEligibility } from '../js/evo/export-eligibility.js';
 import { GENOME_SPECS } from '../js/evo/genome.js';
-import { TRAINER_DESCRIPTOR } from '../js/evo/trainer.js';
 import { createConfig, rulesHash } from '../js/sim/config.js';
 import { exitCodeOf, parseFlags } from './lib/cli-args.mjs';
+import { decodeTrainerArchive } from './lib/archive-source.mjs';
 import { archiveSkipCells } from './lib/skip-cells-report.mjs';
 import { readJson } from './lib/train-state.mjs';
 
@@ -62,7 +61,7 @@ export function runExport(args, print = () => {}) {
     const config = createConfig(args.config === null ? {} : readJson(args.config));
     const json = readJson(args.archive);
     // The archive's `rulesHash` is the curriculum stage's; the layout, version and descriptor are what must fit.
-    const archive = decodeArchive({ ...json, rulesHash: rulesHash(config) }, config, undefined, TRAINER_DESCRIPTOR);
+    const archive = decodeTrainerArchive(json, config);
     const eligibility = exportEligibility(json, rulesHash(config));
     if (`${resolve(args.out)}/`.startsWith(`${PUBLIC_CHAMPIONS}/`) && !eligibility.eligible) {
         throw new Error(

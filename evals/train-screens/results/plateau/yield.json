@@ -1,0 +1,721 @@
+{
+  "nostop": {
+    "runs": 16,
+    "meanScore": 1.9126482949388293,
+    "cpuHours": 26.67632442276861,
+    "stages": [
+      {
+        "stage": "nursery",
+        "passShare": 0.5625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 1.7798587376818213
+      },
+      {
+        "stage": "hunt-contact",
+        "passShare": 0.5625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.1467712308878395
+      },
+      {
+        "stage": "hunt-weak",
+        "passShare": 0.3125,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 1.1629043172418894
+      },
+      {
+        "stage": "hunt-mid",
+        "passShare": 0.1875,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 1.1740443731440746
+      }
+    ],
+    "perRun": [
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/nostop/o0",
+        "offset": 0,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 60
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 6464.135154859998,
+        "stageCpuSeconds": {
+          "nursery": 2410.9507170000006,
+          "hunt-contact": 637.4457668149998,
+          "hunt-weak": 869.9458624500003,
+          "hunt-mid": 2545.792808594997
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/nostop/o8",
+        "offset": 8,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.6695959774964979,
+        "score": 0.6695959774964979,
+        "cpuSeconds": 5712.482687499002,
+        "stageCpuSeconds": {
+          "nursery": 5712.482687499002
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/nostop/o16",
+        "offset": 16,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 0,
+        "score": 3,
+        "cpuSeconds": 10726.873968950007,
+        "stageCpuSeconds": {
+          "nursery": 3463.759617253,
+          "hunt-contact": 664.9241024349994,
+          "hunt-weak": 1567.003357415996,
+          "hunt-mid": 5031.186891846011
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/nostop/o24",
+        "offset": 24,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.09296686166863918,
+        "score": 0.09296686166863918,
+        "cpuSeconds": 6276.703834410001,
+        "stageCpuSeconds": {
+          "nursery": 6276.703834410001
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/nostop/o32",
+        "offset": 32,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7229398635236198,
+        "score": 0.7229398635236198,
+        "cpuSeconds": 4535.349462361997,
+        "stageCpuSeconds": {
+          "nursery": 4535.349462361997
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/nostop/o40",
+        "offset": 40,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7229398635236198,
+        "score": 0.7229398635236198,
+        "cpuSeconds": 6305.257859853,
+        "stageCpuSeconds": {
+          "nursery": 6305.257859853
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/nostop/o48",
+        "offset": 48,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 35
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 45
+          }
+        ],
+        "bestProgress": 0.008002416396755481,
+        "score": 2.0080024163967556,
+        "cpuSeconds": 9490.99814640099,
+        "stageCpuSeconds": {
+          "nursery": 4382.238493342997,
+          "hunt-contact": 663.3386397120003,
+          "hunt-weak": 4445.421013345994
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/nostop/o56",
+        "offset": 56,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7628369645858827,
+        "score": 0.7628369645858827,
+        "cpuSeconds": 3497.5899425179978,
+        "stageCpuSeconds": {
+          "nursery": 3497.5899425179978
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/nostop/o64",
+        "offset": 64,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 3449.833782397,
+        "stageCpuSeconds": {
+          "nursery": 1788.822560695,
+          "hunt-contact": 499.43824021800083,
+          "hunt-weak": 594.8793481620005,
+          "hunt-mid": 566.6936333219987
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/nostop/o72",
+        "offset": 72,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.8306219119903062,
+        "score": 0.8306219119903062,
+        "cpuSeconds": 3863.311256690001,
+        "stageCpuSeconds": {
+          "nursery": 3863.311256690001
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/nostop/o80",
+        "offset": 80,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.00679934856896381,
+        "score": 2.006799348568964,
+        "cpuSeconds": 5026.934684792002,
+        "stageCpuSeconds": {
+          "nursery": 1144.664293927,
+          "hunt-contact": 469.7824169209998,
+          "hunt-weak": 3412.4879739440025
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/nostop/o88",
+        "offset": 88,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4305.189340094003,
+        "stageCpuSeconds": {
+          "nursery": 2590.0797348810006,
+          "hunt-contact": 523.1807280839998,
+          "hunt-weak": 620.7811183860013,
+          "hunt-mid": 571.1477587430008
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/nostop/o96",
+        "offset": 96,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7628369645858827,
+        "score": 0.7628369645858827,
+        "cpuSeconds": 5324.419696020002,
+        "stageCpuSeconds": {
+          "nursery": 5324.419696020002
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/nostop/o104",
+        "offset": 104,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 60
+          }
+        ],
+        "bestProgress": 0.008002416396755481,
+        "score": 3.0080024163967556,
+        "cpuSeconds": 9101.079515983998,
+        "stageCpuSeconds": {
+          "nursery": 2332.676764904,
+          "hunt-contact": 428.7870428279998,
+          "hunt-weak": 2374.7575708020013,
+          "hunt-mid": 3964.8581374499972
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/nostop/o112",
+        "offset": 112,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0,
+        "score": 2,
+        "cpuSeconds": 6846.041655356008,
+        "stageCpuSeconds": {
+          "nursery": 2123.340606913,
+          "hunt-contact": 483.97439800600023,
+          "hunt-weak": 4238.726650437007
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/nostop/o120",
+        "offset": 120,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.014830130284339629,
+        "score": 2.0148301302843397,
+        "cpuSeconds": 5108.566933781,
+        "stageCpuSeconds": {
+          "nursery": 1915.7755726229998,
+          "hunt-contact": 384.5165457469993,
+          "hunt-weak": 2808.2748154110013
+        }
+      }
+    ],
+    "failed": 0
+  },
+  "stop": {
+    "runs": 16,
+    "meanScore": 1.849648143914032,
+    "cpuHours": 21.903194407998612,
+    "stages": [
+      {
+        "stage": "nursery",
+        "passShare": 0.5625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 1.7042375059826544
+      },
+      {
+        "stage": "hunt-contact",
+        "passShare": 0.5625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.148869902787284
+      },
+      {
+        "stage": "hunt-weak",
+        "passShare": 0.25,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.8814475980231944
+      },
+      {
+        "stage": "hunt-mid",
+        "passShare": 0.1875,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.5664791123254634
+      }
+    ],
+    "perRun": [
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/stop/o0",
+        "offset": 0,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 60
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 6453.1991015640015,
+        "stageCpuSeconds": {
+          "nursery": 2398.834545613,
+          "hunt-contact": 642.8261927460003,
+          "hunt-weak": 877.1905862139993,
+          "hunt-mid": 2534.347776991002
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/stop/o8",
+        "offset": 8,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.6695959774964979,
+        "score": 0.6695959774964979,
+        "cpuSeconds": 5731.467718056997,
+        "stageCpuSeconds": {
+          "nursery": 5731.467718056997
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/stop/o16",
+        "offset": 16,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 0,
+        "score": 3,
+        "cpuSeconds": 8166.283013229004,
+        "stageCpuSeconds": {
+          "nursery": 3503.0228602479992,
+          "hunt-contact": 672.9328706110009,
+          "hunt-weak": 1581.123458332001,
+          "hunt-mid": 2409.2038240380025
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/stop/o24",
+        "offset": 24,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.09296686166863918,
+        "score": 0.09296686166863918,
+        "cpuSeconds": 5607.98254537,
+        "stageCpuSeconds": {
+          "nursery": 5607.98254537
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/stop/o32",
+        "offset": 32,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7229398635236198,
+        "score": 0.7229398635236198,
+        "cpuSeconds": 3957.904225198,
+        "stageCpuSeconds": {
+          "nursery": 3957.904225198
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/stop/o40",
+        "offset": 40,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7229398635236198,
+        "score": 0.7229398635236198,
+        "cpuSeconds": 6244.539406775999,
+        "stageCpuSeconds": {
+          "nursery": 6244.539406775999
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/stop/o48",
+        "offset": 48,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 35
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 45
+          }
+        ],
+        "bestProgress": 0.008002416396755481,
+        "score": 2.0080024163967556,
+        "cpuSeconds": 7023.100369547003,
+        "stageCpuSeconds": {
+          "nursery": 4312.8813082000015,
+          "hunt-contact": 599.3598191630008,
+          "hunt-weak": 2110.8592421840003
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/stop/o56",
+        "offset": 56,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7628369645858827,
+        "score": 0.7628369645858827,
+        "cpuSeconds": 2925.629282805,
+        "stageCpuSeconds": {
+          "nursery": 2925.629282805
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/stop/o64",
+        "offset": 64,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 3428.741545140002,
+        "stageCpuSeconds": {
+          "nursery": 1778.2099890180002,
+          "hunt-contact": 498.01069766699993,
+          "hunt-weak": 579.4903385540001,
+          "hunt-mid": 573.0305199010018
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/stop/o72",
+        "offset": 72,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.8306219119903062,
+        "score": 0.8306219119903062,
+        "cpuSeconds": 3740.55065065,
+        "stageCpuSeconds": {
+          "nursery": 3740.55065065
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/stop/o80",
+        "offset": 80,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.00679934856896381,
+        "score": 2.006799348568964,
+        "cpuSeconds": 3380.296666331001,
+        "stageCpuSeconds": {
+          "nursery": 1165.303944584,
+          "hunt-contact": 488.41680160300007,
+          "hunt-weak": 1726.5759201440007
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/stop/o88",
+        "offset": 88,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4352.974721003998,
+        "stageCpuSeconds": {
+          "nursery": 2649.591090107,
+          "hunt-contact": 484.8548721979987,
+          "hunt-weak": 617.1364665139995,
+          "hunt-mid": 601.3922921849994
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/stop/o96",
+        "offset": 96,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7628369645858827,
+        "score": 0.7628369645858827,
+        "cpuSeconds": 4814.094422462,
+        "stageCpuSeconds": {
+          "nursery": 4814.094422462
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/stop/o104",
+        "offset": 104,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0,
+        "score": 2,
+        "cpuSeconds": 4705.573321720002,
+        "stageCpuSeconds": {
+          "nursery": 2376.491893457999,
+          "hunt-contact": 468.81229408200034,
+          "hunt-weak": 1860.2691341800028
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/stop/o112",
+        "offset": 112,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0,
+        "score": 2,
+        "cpuSeconds": 4650.377836565998,
+        "stageCpuSeconds": {
+          "nursery": 2248.6353170410007,
+          "hunt-contact": 547.9570476989993,
+          "hunt-weak": 1853.7854718259982
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/plateau/stop/o120",
+        "offset": 120,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.014830130284339629,
+        "score": 2.0148301302843397,
+        "cpuSeconds": 3668.785042376,
+        "stageCpuSeconds": {
+          "nursery": 1762.1559942510005,
+          "hunt-contact": 420.2142545390004,
+          "hunt-weak": 1486.4147935859992
+        }
+      }
+    ],
+    "failed": 0
+  }
+}

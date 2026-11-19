@@ -1,4 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { createSimLog } from '../js/sim/log.js';
+import { brainLayout } from '../js/sim/brain-layout.js';
+import { createConfig } from '../js/sim/config.js';
+import { reflexScores } from '../scripts/lib/exam-readings.mjs';
 import { examRow, notRun } from '../js/evo/exam.js';
 import { formatRows, parseArgs } from '../scripts/train-exam.mjs';
 
@@ -65,5 +69,16 @@ describe('formatRows', () => {
         expect(lines[2]).toMatch(
             /^ 4 {2}Cross-play\s+not run\s+ - no crossplay.json \(npm run train:crossplay -- d\)$/,
         );
+    });
+});
+
+describe('reflexScores', () => {
+    it('gives a champion of a specialisation with no reflex case a null score and edge, not a crash', async () => {
+        const weights = new Float32Array(brainLayout(createConfig({})).weightCount);
+        const reproducer = { name: 'reproducer', id: 3, spec: 2, weights, act: null };
+        const table = /** @type {any} */ ({ subjects: [reproducer] });
+        const log = createSimLog(() => {}, { level: 'error' });
+        const { genomes } = await reflexScores(table, { workers: 1, trials: 1, log });
+        expect(genomes).toEqual([{ name: 'reproducer', score: null, edge: null }]);
     });
 });

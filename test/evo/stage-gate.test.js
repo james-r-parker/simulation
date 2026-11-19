@@ -51,6 +51,8 @@ describe('validateGate', () => {
         const keys = [
             'drill.prey-ahead.winShareOverReference',
             'drill.pack-converge.blindGapLow',
+            'drill.prey-ahead.jawShareLow',
+            'drill.prey-ahead.closestMedian',
             'crossplay.preyVsStage.hunt',
             'crossplay.cycleShare',
             'retention.all',

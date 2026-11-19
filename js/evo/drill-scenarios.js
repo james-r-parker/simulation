@@ -28,6 +28,16 @@ const SAFE = FLORA_DEFAULTS.grass;
 /** Share of the subject's view at which the two foods of `two-foods` sit. */
 const TOXIC_SHARE = 0.4;
 const SAFE_SHARE = 0.7;
+/** The forager's `sprintBoost` in `prey-weak` and the `hunt-weak` stage (1 on the defaults; the fleer's sprint is 12 at 1). */
+export const WEAK_SPRINT_BOOST = 0.2;
+/** The forager's `sprintBoost` in `prey-mid` and the `hunt-mid` stage, between `WEAK_SPRINT_BOOST` and the default 1. */
+export const MID_SPRINT_BOOST = 0.3;
+/**
+ * @param {number} sprintBoost the forager's sprint
+ * @returns {Readonly<{specialisations: {forager: {sprintBoost: number}}}>} an arena that cuts it
+ */
+const sprintArena = (sprintBoost) => Object.freeze({ specialisations: { forager: { sprintBoost } } });
+const WEAK_PREY_ARENA = sprintArena(WEAK_SPRINT_BOOST);
 /** The prey of `prey-too-big` holds this multiple of the subject's energy. */
 const BIG_FACTOR = 2;
 
@@ -203,4 +213,15 @@ export const DRILLS = Object.freeze([
     hunterDrill(false),
     hunterDrill(true),
     ...SOCIAL_DRILLS,
+    // After the social four so `DRILLS.slice(7, 11)` stays them. The contact lesson of `hunt-contact` (T35): the `prey-ahead`
+    // staging with a prey that does not run; `prey-ahead` stays the lesson of `hunt`.
+    preyDrill('prey-adrift', { energy: SUBJECT_ENERGY, maxTicks: 900, abort: false, role: 'adrift' }),
+    // The rung between that and `prey-ahead` (T40): the scripted fleer with its sprint cut to `WEAK_SPRINT_BOOST`, a weakened
+    // prey a young hunter can run down; the same staging, in the arena that cuts the forager's sprint.
+    { ...preyDrill('prey-weak', { energy: SUBJECT_ENERGY, maxTicks: 900, abort: false }), arena: WEAK_PREY_ARENA },
+    // The rung between that and `prey-ahead` (E-TS-1f): the same fleer at `MID_SPRINT_BOOST`.
+    {
+        ...preyDrill('prey-mid', { energy: SUBJECT_ENERGY, maxTicks: 900, abort: false }),
+        arena: sprintArena(MID_SPRINT_BOOST),
+    },
 ]);

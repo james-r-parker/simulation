@@ -164,6 +164,12 @@ describe('runDrills', () => {
         expect(rows[0].cells['prey-ahead']).toBeNull();
         expect(rows[1].cells['food-ahead']).toBeNull();
         expect(rows[2].cells['food-ahead']?.winShare).toBe(1);
+        // a hunting drill's cell carries the prey-trace aggregates, a food drill's does not
+        const hunt = /** @type {any} */ (rows[1].cells['prey-ahead']);
+        expect(hunt.jawTrials).toBeGreaterThanOrEqual(0);
+        expect(hunt.jawTrials).toBeLessThanOrEqual(hunt.trials);
+        expect(hunt.closestList.length).toBeLessThanOrEqual(hunt.trials);
+        expect('jawTrials' in /** @type {any} */ (rows[2].cells['food-ahead'])).toBe(false);
         expect(lines.join('\n')).toContain('mean edge');
         expect(lines.join('\n')).toMatch(/skip cells[^\n]*prey>BITE[^\n]*\n[^\n]*champions/);
         const log = readFileSync(join(root, 'logs', 'drill-1x2.jsonl'), 'utf8')

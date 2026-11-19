@@ -11,6 +11,7 @@ import { snapshotArchive } from '../../js/evo/archive-snapshot.js';
 import { drillGenomes } from '../drill.mjs';
 import { eliteSubjects } from './drill-subjects.mjs';
 import { readJson } from './train-state.mjs';
+import { keeperReadings } from './train-keepers.mjs';
 import { runPool } from './worker-pool.mjs';
 
 const WORKER_URL = new URL('../train-worker.mjs', import.meta.url);
@@ -74,15 +75,17 @@ export function averageMetrics(results) {
  * @property {import('./train-state.mjs').StageInfo} stage the stage of the last generation
  * @property {{generation: number, trainTicks: number, wallSeconds: number}} progress generations completed, ticks trained
  *   and wall seconds so far
- * @property {{workers: number | undefined, evalTicks: number, drillTrials: number, gate?: {seed: number, trials: number} | null}} options
- *   the pool size and the sizes; `gate` reads the drills on the gate's seed and trial count and returns gate readings
+ * @property {{workers: number | undefined, evalTicks: number, drillTrials: number, gate?: {seed: number, trials: number} | null,
+ *   keepers?: {kept: Record<string, any[]>, stages: readonly any[]}}} options
+ *   the pool size and the sizes; `gate` reads the drills on the gate's seed and trial count and returns gate readings;
+ *   `keepers` (with a gate) also drills each stage's kept passers (`readings.keepers`, scripts/lib/train-keepers.mjs)
  * @property {import('../../js/sim/log.js').SimLog} log the run's log
  */
 
 /**
  * Runs the drills on the archive's champions.
  * @param {CheckpointRun} run the checkpoint
- * @returns {Promise<{edges: Record<string, number | null>, reasons: Record<string, Record<string, number> | null>, readings: Record<string, any> | null}>}
+ * @returns {Promise<{edges: Record<string, number | null>, reasons: Record<string, Record<string, number> | null>, readings: Record<string, any> | null, subjects: any[]}>}
  *   each drill's mean edge and summed loss reasons, and the gate's drill readings when the checkpoint is a gate's
  */
 async function drillPart({ archive, options, log }) {
@@ -91,7 +94,7 @@ async function drillPart({ archive, options, log }) {
     const gate = options.gate ?? null;
     if (genomes.length === 0) {
         const readings = gate === null ? null : { drill: drillReadings([], 0, names) };
-        return { edges: drillEdges([], 0), reasons: drillLossReasons([], 0), readings };
+        return { edges: drillEdges([], 0), reasons: drillLossReasons([], 0), readings, subjects: [] };
     }
     const args = /** @type {any} */ ({
         drills: names,
@@ -104,6 +107,7 @@ async function drillPart({ archive, options, log }) {
         edges: drillEdges(rows, genomes.length),
         reasons: drillLossReasons(rows, genomes.length),
         readings: gate === null ? null : { drill: drillReadings(/** @type {any} */ (rows), genomes.length, names) },
+        subjects: genomes,
     };
 }
 
@@ -129,11 +133,24 @@ async function evalPart({ archive, stage, options }) {
 
 /**
  * @param {CheckpointRun} run the checkpoint
- * @returns {Promise<{point: Record<string, any>, readings: Record<string, any> | null}>} the curve row (not yet written)
- *   and, for a gate checkpoint, the gate readings (`drill.<name>.<reading>`)
+ * @returns {Promise<{point: Record<string, any>, readings: Record<string, any> | null, subjects: any[]}>} the curve row (not
+ *   yet written), for a gate checkpoint the gate readings (`drill.<name>.<reading>`) and the champions drilled
  */
 export async function runCheckpoint(run) {
-    const { edges, reasons, readings } = await drillPart(run);
+    const { edges, reasons, readings: drilled, subjects } = await drillPart(run);
+    const { gate, keepers } = run.options;
+    const readings =
+        drilled === null || !gate || !keepers
+            ? drilled
+            : {
+                  ...drilled,
+                  keepers: await keeperReadings(keepers.kept, {
+                      stages: keepers.stages,
+                      ...gate,
+                      workers: run.options.workers,
+                      log: run.log,
+                  }),
+              };
     const metrics = await evalPart(run);
     const point = curvePoint({
         ...run.progress,
@@ -143,7 +160,7 @@ export async function runCheckpoint(run) {
         drillLossReasons: reasons,
         metrics,
     });
-    return { point, readings };
+    return { point, readings, subjects };
 }
 
 /**
