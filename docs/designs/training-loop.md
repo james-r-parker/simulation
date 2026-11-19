@@ -1,6 +1,6 @@
 # Training loop
 
-**Status:** In progress - Phases 1 and 2 built (T1 to T12); Phase 3 code built (T13 to T15); E207 (T16) falsified adaptive difficulty as configured (it never left its floor); T16a retests it, and T17 waits for that
+**Status:** In progress - Phases 1 and 2 built (T1 to T12); Phase 3 code built (T13 to T15); Phase 4 code built (T19 to T21); E207 (T16) falsified adaptive difficulty as configured (it never left its floor); T16a retests it, and T17 waits for that; T22 (E-TL-4) is running
 **Validated:** 0254883d (2026-11-19)
 **Priority:** 1 - pinned by the user (2026-11-19): every training run waits on how fast a ladder change can be judged, and nothing here changes a sim rule
 **Depends on:** [training-stages.md](training-stages.md), [training.md](training.md)
@@ -138,7 +138,7 @@ At each gate checkpoint, `nextDifficulty` in `js/evo/adaptive-difficulty.js` rai
 
 `npm run train:tune -- --spec evals/train-tune.json` runs one night of trainer tuning, detached through `scripts/run-detached.sh`:
 
-1. `proposeArms` in `js/evo/train-tune.js` reads the spec (each tunable: a ladder entry key or trainer option, its current value, its allowed values) and the past results under `evals/train-tune/results/`, and returns up to `maxArms` (default 3) one-change arms around the current ladder, skipping any arm already screened at the same ladder hash.
+1. `proposeArms` in `js/evo/train-tune.js` reads the spec (each tunable: a ladder entry key or trainer option, its current value, its allowed values) and the past results under `evals/train-tune/results/`, and returns up to `maxArms` (default 2) one-change arms around the current ladder, skipping any arm already screened at the same ladder hash.
 2. It runs `train:feasible` on each arm ladder, then `train:screen` on the tuning offsets (`tuneOffsets`, default 16 offsets from 0 to 120 by 8).
 3. An arm with a `better` verdict is rerun on the held-out offsets (`holdoutOffsets`, default 16 offsets from 128 to 248 by 8). It is a finalist only when the held-out verdict is also `better`.
 4. For each finalist and for the reference, `train:export` writes the best run's champions and a 16-seed `npm run eval` with `champions-v1` against the matching live report reads `eval.hunter_catches_per_1k`, `eval.hunter_kills_per_life_mean` and `eval.food_energy_per_1k`.
@@ -151,10 +151,16 @@ A finalist's ladder change is adopted by a PR that commits the ladder edit, the 
 | `curriculum`     | the ladder file tuned                                             |
 | `until`          | the last stage the screen trains                                  |
 | `tunables`       | `[{key, stage?, values}]`: a trainer option, or a stage entry key |
-| `maxArms`        | arms per night                                                    |
+| `maxArms`        | arms per night (2: a night is over 8 hours)                       |
 | `tuneOffsets`    | offsets of the screen                                             |
 | `holdoutOffsets` | offsets of the confirmation                                       |
 | `worldSeeds`     | seeds of the champion world trial (16)                            |
+| `generations`    | generations of each screen run (380)                              |
+| `workersPerRun`  | workers per training run (8)                                      |
+| `train`          | trainer options every arm starts from (`checkpointEvery` 5)       |
+| `feasible`       | the learnability check's sizes (default 60 generations, 4 seeds)  |
+| `worldTicks`     | ticks of the world trial (200000)                                 |
+| `worldTrial`     | `false` skips the world trial (tests)                             |
 
 ## Phases
 
@@ -274,13 +280,13 @@ T22 is a long run, not a code chunk; T23 follows its record in one PR (Sonnet).
 
 ### Phase 4 - The tuning lane
 
-| #   | Task                                                                                                                                                                                                                                                | Nature       | Depends on |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T19 | `proposeArms` in `js/evo/train-tune.js` and `evals/train-tune.json`; tests                                                                                                                                                                          | [judgement]  | T7         |
-| T20 | `npm run train:tune`: feasibility, the tuning screen, the held-out confirmation, the champion export and the 16-seed world trial for finalists, `summary.md`, `result.json`, `draft-experiment.json`, `TuneArm`, `TuneResult`; tests on a tiny spec | [judgement]  | T19, T10   |
-| T21 | AGENTS.md `train:tune` row; the `run-evolution-loop` skill names `train:compare` and the tuning lane; [training-stages.md](training-stages.md) links this doc                                                                                       | [mechanical] | T20        |
-| T22 | (run `E-TL-4`, detached) the first night; record E-TL-4                                                                                                                                                                                             | [judgement]  | T21, T18   |
-| T23 | Conformance review of Phase 4 by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; move the Status line to `Implemented`                                                                                                            | [judgement]  | T22        |
+| #   | Task                                                                                                                                                                                                                                                        | Nature       | Depends on |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T19 | (built) `proposeArms` in `js/evo/train-tune.js` and `evals/train-tune.json`; tests                                                                                                                                                                          | [judgement]  | T7         |
+| T20 | (built) `npm run train:tune`: feasibility, the tuning screen, the held-out confirmation, the champion export and the 16-seed world trial for finalists, `summary.md`, `result.json`, `draft-experiment.json`, `TuneArm`, `TuneResult`; tests on a tiny spec | [judgement]  | T19, T10   |
+| T21 | (built) AGENTS.md `train:tune` row; the `run-evolution-loop` skill names `train:compare` and the tuning lane; [training-stages.md](training-stages.md) links this doc                                                                                       | [mechanical] | T20        |
+| T22 | (run `E-TL-4`, detached) the first night; record E-TL-4                                                                                                                                                                                                     | [judgement]  | T21, T18   |
+| T23 | Conformance review of Phase 4 by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; move the Status line to `Implemented`                                                                                                                    | [judgement]  | T22        |
 
 ## Verification
 

@@ -20,6 +20,8 @@ A genome is trained by natural selection in whole worlds, as in [training.md](tr
 
 ## Stage ladder
 
+How the ladder is measured, shortened and tuned (yield, plateau stop, learnability check, adaptive difficulty and the tuning lane) is in [training-loop.md](training-loop.md).
+
 `evals/train-ladder.json` lists the stages. Each stage config is a file under `evals/stages/`. The values below are the starting values T25 writes and calibrates; a stage's lesson and gate are fixed here.
 
 | Stage          | Lesson (scene)                                                                    | World                                                                                                                                                              | Gate (all hold on 2 checkpoints in a row)                                                                                                                                                                             | Generations (min to max) |
