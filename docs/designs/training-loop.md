@@ -1,6 +1,6 @@
 # Training loop
 
-**Status:** In progress - Phase 1 code built (T1 to T7); T8 (E-TL-1) is the next run
+**Status:** In progress - Phases 1 and 2 built (T1 to T12); Phase 3 is next, T16 (E-TL-3) is the next run
 **Validated:** 0254883d (2026-11-19)
 **Priority:** 1 - pinned by the user (2026-11-19): every training run waits on how fast a ladder change can be judged, and nothing here changes a sim rule
 **Depends on:** [training-stages.md](training-stages.md), [training.md](training.md)
@@ -162,7 +162,7 @@ A finalist's ladder change is adopted by a PR that commits the ladder edit, the 
 - Drill cells carry `jawTrials` and `closestList`; `drillReading` adds `jawShareLow` and `closestMedian`.
 - `stageProgress`, the curve's `progress` and `bestProgress` columns, and `plateauStop` with `TrainStageStalled.reason`.
 - `runYield`, `ladderYield`, `compareYield`, `train:yield`, `train:compare` and `train:screen`.
-- The first screen (`E-TL-1`, `evals/train-screens/plateau.grid.json`): the current ladder with and without `plateauStop`, 16 offsets, `until` `hunt-mid`. Prediction: equal pass shares, `no verdict` on score (a `worse` would mean the stop cuts runs that were still closing), and at least 30% fewer CPU hours with the stop.
+- The first screen (`E-TL-1`, `evals/train-screens/plateau.grid.json`): the current ladder with and without `plateauStop`, 16 offsets, `until` `hunt-mid`. Recorded as E205: `no verdict` on score (15 of 16 offsets tied, 1 down), CPU hours 26.7 to 21.9 (-18%, short of the predicted 30%), so `plateauStop` 6 stays the default. Prediction (written before the run): equal pass shares, `no verdict` on score (a `worse` would mean the stop cuts runs that were still closing), and at least 30% fewer CPU hours with the stop.
 
 #### Chunks
 
@@ -245,7 +245,8 @@ T22 is a long run, not a code chunk; T23 follows its record in one PR (Sonnet).
 | T5  | (built) `compareYield` and `npm run train:compare`; its AGENTS.md row; tests                                                                                                                                                                                                                                                                    | [judgement]  | T4         |
 | T6  | (built) `npm run train:screen` with `scripts/lib/train-screen-grid.mjs`: grid merge, per-arm ladders, run reuse, the worker budget, `yield.json`, `verdicts.json`, `table.md`, `TrainScreenRun`, `TrainScreenVerdict`, `TrainScreenRunFailed`; `evals/train-screens/plateau.grid.json`; its AGENTS.md row; tests including the tiny slow screen | [judgement]  | T3, T5     |
 | T7  | Conformance review of Phase 1 code by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; mark T1 to T6 built and move the Status line                                                                                                                                                                                            | [judgement]  | T6         |
-| T8  | (screen `E-TL-1`, detached) the current ladder with and without `plateauStop`, offsets 0 to 120 by 8, `until` `hunt-mid`; record E-TL-1 in `evals/experiments.json` with the yield table and CPU hours; mark Phase 1 built                                                                                                                      | [judgement]  | T7         |
+| T8  | (built) (screen `E-TL-1`, detached) the current ladder with and without `plateauStop`, offsets 0 to 120 by 8, `until` `hunt-mid`; record E-TL-1 in `evals/experiments.json` with the yield table and CPU hours; mark Phase 1 built                                                                                                              | [judgement]  | T7         |
+| T8a | `plateauStop` 10 against 6 as a `train:tune` arm; the nursery stall on 7 of 16 offsets (best progress 0.67 to 0.83) is the next ladder lever (episodes or `minGenerations` at nursery). E-TL-1 kept `plateauStop` 6: 18% fewer CPU hours for 1 of 16 runs lost                                                                                  | [judgement]  | T8         |
 
 ### Phase 2 - The learnability check
 
