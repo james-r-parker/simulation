@@ -4770,6 +4770,22 @@
       "effect": "no-difference",
       "note": "food_energy_per_1k 426.5 to 483.6 (+13.4%, interval [-11.3, 101.7]), no-difference; @20k 399.8 to 372.8 (-6.7%), unverified; floor_episodes 0.25 to 0.4375, needs 32 seeds: the plan's done line is not met at 16 seeds. Directional (unverified or needs more seeds): bite_idle 0.65 to 0.34, predators_at_end 9.9 to 22.5, hunter_juvenile_death_share 0.87 to 0.74, hunter_catches_per_1k 1.385 to 0.843; bite_on_prey_view is the one worse (0.990 to 0.970). 64-seed run with --keep-rule (offset 64): CHAMP-v1-ets1c-64, pending.",
       "reports": ["evals/decisions/E195/results.md", "evals/decisions/E195/compare.txt"]
+    },
+    {
+      "id": "E196",
+      "date": "2026-11-19",
+      "branch": "feat/training-stages-hunt",
+      "hypothesis": "E-TS-1f (training-stages Phase 6, T45 to T47): a prey share of 0.9 in the seeding of the hunt-weak and hunt stage worlds (T46) keeps the prey alive to tick 500 and lets hunt-weak select on its lesson and stay passed.",
+      "prediction": "Written before the run (commit ab521c07): at least 8 prey alive at tick 500 of hunt-weak; hunt-weak passes on at least 3 of the 3 offsets that reach it and none returns to it from hunt; nursery stalls on offset 16 again (determinism). Falsified when the census reads under 2 prey at tick 500 or hunt-weak passes on 2 or fewer of 3.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "E-TS-1d: the same ladder without preyShare (hunt-weak passes on 2 of 4)",
+      "after": "npm run train -- --curriculum evals/train-ladder.json --until habitat --generations 380 --ticks 4000 --offer-from 100 --seed-offset <k> --workers 8, k = 0, 128, 192, 16, from feat/training-stages-hunt at ab521c07, no hunterBiteBias",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "No eval ran, so no verdict. Census holds (22 prey at tick 500 at 0.9). hunt-weak passes on 2 of the 3 offsets that reach it (0 at 100, 192 at 90; 128 stalls at -0.010): falsified. No pass returns from hunt (2 of 2 hold). nursery offset 16 stalls with the same digits as E-TS-1d: determinism holds. hunt: prey-ahead winShareOverReference 0.119 on offset 0 (best yet, bar 0.5), prey-crossing -0.015, kin-spared -0.015. Middle-rung check: elites win 0 to 1 of 64 at the full sprint, 3 to 7 at sprintBoost 0.5 and 6 to 11 at 0.2 (no cliff): hunt-mid at 0.5 built with a prey-mid drill (validity: memoryless 19, oracle 33, random 0 of 64). Kin check: kin touch the hunter on 0.34 of hunter-ticks in hunt and 0.10 in hunt-weak and recoil is paid almost only beside kin (1.74 energy per hunter-tick in hunt), but the elite wants BITE on 0.80 of kin-close ticks against 0.66 elsewhere: kin are not rare, the signal is the 14 points. Outcome to task: T48 to T51 in training-stages.md Phase 6.",
+      "reports": ["evals/decisions/E-TS-1f/results.md"]
     }
   ]
 }
