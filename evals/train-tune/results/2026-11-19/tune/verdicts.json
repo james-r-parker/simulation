@@ -1,0 +1,246 @@
+{
+  "reference": "base",
+  "arms": {
+    "maxGenerations-nursery-80": {
+      "verdict": "no verdict",
+      "compare": {
+        "pairs": [
+          {
+            "offset": 0,
+            "before": 4,
+            "after": 4,
+            "diff": 0
+          },
+          {
+            "offset": 8,
+            "before": 0.6695959774964979,
+            "after": 0.6695959774964979,
+            "diff": 0
+          },
+          {
+            "offset": 16,
+            "before": 3,
+            "after": 3,
+            "diff": 0
+          },
+          {
+            "offset": 24,
+            "before": 0.09296686166863918,
+            "after": 0.09296686166863918,
+            "diff": 0
+          },
+          {
+            "offset": 32,
+            "before": 0.7229398635236198,
+            "after": 0.7229398635236198,
+            "diff": 0
+          },
+          {
+            "offset": 40,
+            "before": 0.7229398635236198,
+            "after": 0.7229398635236198,
+            "diff": 0
+          },
+          {
+            "offset": 48,
+            "before": 2.0080024163967556,
+            "after": 2.0080024163967556,
+            "diff": 0
+          },
+          {
+            "offset": 56,
+            "before": 0.7628369645858827,
+            "after": 0.7628369645858827,
+            "diff": 0
+          },
+          {
+            "offset": 64,
+            "before": 4,
+            "after": 4,
+            "diff": 0
+          },
+          {
+            "offset": 72,
+            "before": 0.8306219119903062,
+            "after": 0.8306219119903062,
+            "diff": 0
+          },
+          {
+            "offset": 80,
+            "before": 2.006799348568964,
+            "after": 2.006799348568964,
+            "diff": 0
+          },
+          {
+            "offset": 88,
+            "before": 4,
+            "after": 4,
+            "diff": 0
+          },
+          {
+            "offset": 96,
+            "before": 0.7628369645858827,
+            "after": 0.7628369645858827,
+            "diff": 0
+          },
+          {
+            "offset": 104,
+            "before": 2,
+            "after": 2,
+            "diff": 0
+          },
+          {
+            "offset": 112,
+            "before": 2,
+            "after": 2,
+            "diff": 0
+          },
+          {
+            "offset": 120,
+            "before": 2.0148301302843397,
+            "after": 2.0148301302843397,
+            "diff": 0
+          }
+        ],
+        "matched": 16,
+        "tied": 16,
+        "up": 0,
+        "down": 0,
+        "onlyBefore": [],
+        "onlyAfter": [],
+        "meanDiff": 0,
+        "interval": {
+          "low": 0,
+          "high": 0
+        },
+        "p": 1,
+        "verdict": "no verdict"
+      },
+      "failed": 0,
+      "unlearnable": ["hunt-weak", "hunt-mid"]
+    },
+    "episodes-48": {
+      "verdict": "no verdict",
+      "compare": {
+        "pairs": [
+          {
+            "offset": 0,
+            "before": 4,
+            "after": 4,
+            "diff": 0
+          },
+          {
+            "offset": 8,
+            "before": 0.6695959774964979,
+            "after": 0.7792736014607716,
+            "diff": 0.10967762396427372
+          },
+          {
+            "offset": 16,
+            "before": 3,
+            "after": 0.6119658160447977,
+            "diff": -2.3880341839552024
+          },
+          {
+            "offset": 24,
+            "before": 0.09296686166863918,
+            "after": 0.5621868594777835,
+            "diff": 0.46921999780914425
+          },
+          {
+            "offset": 32,
+            "before": 0.7229398635236198,
+            "after": 2.0006902159464373,
+            "diff": 1.2777503524228173
+          },
+          {
+            "offset": 40,
+            "before": 0.7229398635236198,
+            "after": 4,
+            "diff": 3.27706013647638
+          },
+          {
+            "offset": 48,
+            "before": 2.0080024163967556,
+            "after": 4,
+            "diff": 1.9919975836032444
+          },
+          {
+            "offset": 56,
+            "before": 0.7628369645858827,
+            "after": 3.002837940801509,
+            "diff": 2.2400009762156263
+          },
+          {
+            "offset": 64,
+            "before": 4,
+            "after": 0.7628369645858827,
+            "diff": -3.237163035414117
+          },
+          {
+            "offset": 72,
+            "before": 0.8306219119903062,
+            "after": 4,
+            "diff": 3.169378088009694
+          },
+          {
+            "offset": 80,
+            "before": 2.006799348568964,
+            "after": 4,
+            "diff": 1.993200651431036
+          },
+          {
+            "offset": 88,
+            "before": 4,
+            "after": 2.006799348568964,
+            "diff": -1.993200651431036
+          },
+          {
+            "offset": 96,
+            "before": 0.7628369645858827,
+            "after": 4,
+            "diff": 3.237163035414117
+          },
+          {
+            "offset": 104,
+            "before": 2,
+            "after": 2.0145084380214286,
+            "diff": 0.014508438021428649
+          },
+          {
+            "offset": 112,
+            "before": 2,
+            "after": 2.0061489330534497,
+            "diff": 0.006148933053449657
+          },
+          {
+            "offset": 120,
+            "before": 2.0148301302843397,
+            "after": 0.9433759402071946,
+            "diff": -1.071454190077145
+          }
+        ],
+        "matched": 16,
+        "tied": 1,
+        "up": 11,
+        "down": 4,
+        "onlyBefore": [],
+        "onlyAfter": [],
+        "meanDiff": 0.568515859721482,
+        "interval": {
+          "low": -0.4717115290787659,
+          "high": 1.4862094234803132
+        },
+        "p": 0.11846923828125,
+        "verdict": "no verdict"
+      },
+      "failed": 0,
+      "unlearnable": ["hunt-weak", "hunt-mid"]
+    }
+  },
+  "unlearnable": {
+    "base": ["hunt-weak", "hunt-mid"],
+    "maxGenerations-nursery-80": ["hunt-weak", "hunt-mid"],
+    "episodes-48": ["hunt-weak", "hunt-mid"]
+  }
+}

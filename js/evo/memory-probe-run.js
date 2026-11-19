@@ -160,12 +160,12 @@ function slotsByRole(stage, subject, opponent) {
 /**
  * Runs one trial of a plan.
  * @param {{plan: Plan, subject: Subject, controlSpec: {name: string, blind?: boolean, amnesia?: boolean, kinBlind?: boolean}, seed: number,
- *   config: Record<string, any>, opponent?: Opponent}} trial the plan, the subject, the control (`createControl`'s
+ *   config: Record<string, any>, opponent?: Opponent, onTick?: (world: Record<string, any>, slots: Record<string, number[]>, tick: number) => void}} trial the plan, the subject, the control (`createControl`'s
  *   spec, its timing taken from the plan), the world seed, the probe's config overrides and an optional opponent
  *   that drives the `prey` or `hunter` role in place of its scripted controller (none: the controller, as before)
  * @returns {boolean} whether the trial scored
  */
-export function playTrial({ plan, subject, controlSpec, seed, config, opponent }) {
+export function playTrial({ plan, subject, controlSpec, seed, config, opponent, onTick }) {
     const slots = slotsByRole(plan.stage, subject, opponent);
     const arena = arenaConfig(config);
     const { world, policy } = stageWorld({
@@ -178,6 +178,7 @@ export function playTrial({ plan, subject, controlSpec, seed, config, opponent }
     const brain = createBrain(world, fork(createRng(seed), 'scripted'), { subject, control, slots, opponent });
     for (let t = 0; t < plan.maxTicks; t++) {
         step(world, policy, { brain });
+        onTick?.(world, slots, t);
         if (plan.done(world, control)) {
             break;
         }

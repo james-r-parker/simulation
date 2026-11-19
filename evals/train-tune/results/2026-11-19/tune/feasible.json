@@ -1,0 +1,260 @@
+{
+  "base": [
+    {
+      "stage": "nursery",
+      "drills": [
+        {
+          "drill": "food-ahead",
+          "bar": 0.45625,
+          "populations": 4,
+          "finals": [1, 1, 1, 1],
+          "fairBand": null,
+          "reached": 4,
+          "best": 1,
+          "learnable": true
+        },
+        {
+          "drill": "food-behind",
+          "bar": 0.425,
+          "populations": 4,
+          "finals": [1, 1, 1, 1],
+          "fairBand": null,
+          "reached": 4,
+          "best": 1,
+          "learnable": true
+        }
+      ],
+      "unchecked": [],
+      "learnable": true
+    },
+    {
+      "stage": "hunt-contact",
+      "drills": [
+        {
+          "drill": "prey-adrift",
+          "bar": 0.001,
+          "populations": 4,
+          "finals": [0.9375, 1, 1, 1],
+          "fairBand": {
+            "predator": [0.2]
+          },
+          "reached": 4,
+          "best": 1,
+          "learnable": true
+        }
+      ],
+      "unchecked": [],
+      "learnable": true
+    },
+    {
+      "stage": "hunt-weak",
+      "drills": [
+        {
+          "drill": "prey-weak",
+          "bar": 0.001,
+          "populations": 4,
+          "finals": [0, 0.09375, 0, 0],
+          "fairBand": {
+            "predator": [0.2, 0.4, 0.6, 0.8]
+          },
+          "reached": 1,
+          "best": 0.09375,
+          "learnable": false
+        }
+      ],
+      "unchecked": [],
+      "learnable": false
+    },
+    {
+      "stage": "hunt-mid",
+      "drills": [
+        {
+          "drill": "prey-mid",
+          "bar": 0.001,
+          "populations": 4,
+          "finals": [0, 0, 0, 0],
+          "fairBand": {
+            "predator": [0.2, 0.4, 0.6]
+          },
+          "reached": 0,
+          "best": 0,
+          "learnable": false
+        }
+      ],
+      "unchecked": [],
+      "learnable": false
+    }
+  ],
+  "maxGenerations-nursery-80": [
+    {
+      "stage": "nursery",
+      "drills": [
+        {
+          "drill": "food-ahead",
+          "bar": 0.45625,
+          "populations": 4,
+          "finals": [1, 1, 1, 1],
+          "fairBand": null,
+          "reached": 4,
+          "best": 1,
+          "learnable": true
+        },
+        {
+          "drill": "food-behind",
+          "bar": 0.425,
+          "populations": 4,
+          "finals": [1, 1, 1, 1],
+          "fairBand": null,
+          "reached": 4,
+          "best": 1,
+          "learnable": true
+        }
+      ],
+      "unchecked": [],
+      "learnable": true
+    },
+    {
+      "stage": "hunt-contact",
+      "drills": [
+        {
+          "drill": "prey-adrift",
+          "bar": 0.001,
+          "populations": 4,
+          "finals": [0.9375, 1, 1, 1],
+          "fairBand": {
+            "predator": [0.2]
+          },
+          "reached": 4,
+          "best": 1,
+          "learnable": true
+        }
+      ],
+      "unchecked": [],
+      "learnable": true
+    },
+    {
+      "stage": "hunt-weak",
+      "drills": [
+        {
+          "drill": "prey-weak",
+          "bar": 0.001,
+          "populations": 4,
+          "finals": [0, 0.09375, 0, 0],
+          "fairBand": {
+            "predator": [0.2, 0.4, 0.6, 0.8]
+          },
+          "reached": 1,
+          "best": 0.09375,
+          "learnable": false
+        }
+      ],
+      "unchecked": [],
+      "learnable": false
+    },
+    {
+      "stage": "hunt-mid",
+      "drills": [
+        {
+          "drill": "prey-mid",
+          "bar": 0.001,
+          "populations": 4,
+          "finals": [0, 0, 0, 0],
+          "fairBand": {
+            "predator": [0.2, 0.4, 0.6]
+          },
+          "reached": 0,
+          "best": 0,
+          "learnable": false
+        }
+      ],
+      "unchecked": [],
+      "learnable": false
+    }
+  ],
+  "episodes-48": [
+    {
+      "stage": "nursery",
+      "drills": [
+        {
+          "drill": "food-ahead",
+          "bar": 0.45625,
+          "populations": 4,
+          "finals": [1, 1, 1, 1],
+          "fairBand": null,
+          "reached": 4,
+          "best": 1,
+          "learnable": true
+        },
+        {
+          "drill": "food-behind",
+          "bar": 0.425,
+          "populations": 4,
+          "finals": [1, 1, 1, 1],
+          "fairBand": null,
+          "reached": 4,
+          "best": 1,
+          "learnable": true
+        }
+      ],
+      "unchecked": [],
+      "learnable": true
+    },
+    {
+      "stage": "hunt-contact",
+      "drills": [
+        {
+          "drill": "prey-adrift",
+          "bar": 0.001,
+          "populations": 4,
+          "finals": [0.9375, 1, 1, 1],
+          "fairBand": {
+            "predator": [0.2]
+          },
+          "reached": 4,
+          "best": 1,
+          "learnable": true
+        }
+      ],
+      "unchecked": [],
+      "learnable": true
+    },
+    {
+      "stage": "hunt-weak",
+      "drills": [
+        {
+          "drill": "prey-weak",
+          "bar": 0.001,
+          "populations": 4,
+          "finals": [0, 0.09375, 0, 0],
+          "fairBand": {
+            "predator": [0.2, 0.4, 0.6, 0.8]
+          },
+          "reached": 1,
+          "best": 0.09375,
+          "learnable": false
+        }
+      ],
+      "unchecked": [],
+      "learnable": false
+    },
+    {
+      "stage": "hunt-mid",
+      "drills": [
+        {
+          "drill": "prey-mid",
+          "bar": 0.001,
+          "populations": 4,
+          "finals": [0, 0, 0, 0],
+          "fairBand": {
+            "predator": [0.2, 0.4, 0.6]
+          },
+          "reached": 0,
+          "best": 0,
+          "learnable": false
+        }
+      ],
+      "unchecked": [],
+      "learnable": false
+    }
+  ]
+}

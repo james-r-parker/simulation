@@ -112,6 +112,28 @@ describe('runTrainScreen', () => {
         expect(report.table).toContain('1 run(s) failed and are left out');
     });
 
+    it('reports an arm whose ladder has other stages as incomparable, with every stage in the table', async () => {
+        const other = join(root, 'other-ladder.json');
+        writeFileSync(
+            other,
+            JSON.stringify([
+                { name: 'one', config: null, generations: 2 },
+                { name: 'three', config: null },
+            ]),
+        );
+        const extra = { arms: { plain: {}, shaped: { curriculum: other } } };
+        const train = fakeTrain(() => ({ passed: 1 }));
+        const { report } = await runTrainScreen(args('other', 16, { ...extra, reference: 'plain' }), {
+            exec: train.exec,
+        });
+        expect(report.verdicts.arms.shaped).toMatchObject({ verdict: 'incomparable', failed: 0 });
+        expect(report.verdicts.arms.shaped.reason).toMatch(/different stages/);
+        expect(report.table).toMatch(/two\s+\d+% -> -/);
+        expect(report.table).toMatch(/three\s+- -> \d+%/);
+        expect(report.table).toContain('verdict: incomparable');
+        expect(report.yield.plain.passedLast).toBe(0);
+    });
+
     it('reuses the runs of an earlier invocation', async () => {
         const first = fakeTrain(() => ({ passed: 1 }));
         await runTrainScreen(args('again', 2), { exec: first.exec });

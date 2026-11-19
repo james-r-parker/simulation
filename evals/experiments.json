@@ -4950,6 +4950,22 @@
       "reports": ["evals/decisions/E-TS-1l/results.md"]
     },
     {
+      "id": "E205",
+      "date": "2026-11-19",
+      "branch": "feat/training-loop-etl1",
+      "hypothesis": "E-TL-1 (training-loop T8): the ladder's plateauStop ends runs that have stopped closing without changing how many runs pass each stage, and saves CPU.",
+      "prediction": "Written before the run (16 offsets, 0 to 120 by 8, until hunt-mid, 2 arms = 32 runs): equal pass shares per stage in the stop and nostop arms; no verdict on train:compare score (a worse would mean the stop cuts runs that were still closing); at least 30% fewer CPU hours in the stop arm.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "nostop arm: evals/train-ladder.json with plateauStop 0 on nursery, hunt-contact, hunt-weak and hunt-mid",
+      "after": "stop arm: evals/train-ladder.json as committed (plateauStop on)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Prediction half met. No verdict on score (15 of 16 offsets tied, 1 down, mean difference -0.063 [-0.378, 0], sign test p 1.0). Pass shares equal except hunt-weak 31% to 25% (offset 104 lost it to the stop). CPU hours 26.7 to 21.9 (-18%), against at least 30% predicted: falsified. Median generations to pass is 10 at every stage (minGenerations). Nursery stalls on 7 of 16 offsets at best progress 0.67 to 0.83. Plateau stop 6 stays the default. Outcome to task: training-loop T8a, plateauStop 10 against 6 as a train:tune arm and the nursery stall as the next ladder lever. Run: scripts/run-detached.sh E-TL-1 --frozen -- npm run train:screen -- --grid evals/train-screens/plateau.grid.json",
+      "reports": ["evals/decisions/E205/results.md"]
+    },
+    {
       "id": "E206",
       "date": "2026-11-19",
       "branch": "feat/training-loop-p2",
@@ -4966,6 +4982,22 @@
       "reports": ["evals/decisions/E206/results.md"]
     },
     {
+      "id": "E207",
+      "date": "2026-11-19",
+      "branch": "feat/training-loop-etl3",
+      "hypothesis": "E-TL-3 (training-loop T16): one hunt stage whose prey sprint is steered by the prey-ahead drill (adaptive difficulty) yields more ladder progress than the fixed hunt-weak, hunt-mid and hunt rungs.",
+      "prediction": "Written before the run (16 offsets, 0 to 120 by 8, until hunt, 2 arms = 32 runs): better on train:compare score, adaptive against fixed, with the adaptive arm passing hunt on at least 1 of 16 offsets. Falsified on no verdict or worse.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "fixed arm: evals/train-ladder.json (hunt-weak, hunt-mid, hunt)",
+      "after": "adaptive arm: evals/train-ladder-adaptive.json (one hunt stage with adapt); tables in evals/train-screens/results/adaptive/",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Falsified as configured (effect is the closest enum value; the verdict is incomparable). All 32 runs trained; the report crashed on the two ladders' different stages and was fixed. The adaptive difficulty never rose above its 0.10 floor on any run over 200 generations (the steering win share stayed under the 0.5 target); hunt was passed on 0 of 16 runs in both arms; fixed reached hunt on 3 of 16, adaptive entered it on 9 of 16 by its shape; the nursery stalls on the same 7 of 16 offsets in both arms; hunt gate losses at full sprint were about 120 of 128 never-in-jaws. CPU hours 19.9 against 42.6. T16a retests with from 0, target 0.15 and the steering share logged.",
+      "reports": ["evals/decisions/E207/results.md"]
+    },
+    {
       "id": "E208",
       "date": "2026-11-19",
       "branch": "feat/training-loop-etl4",
@@ -4975,11 +5007,64 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "before": "nursery maxGenerations 40: nursery passes on 9 of 16 tune offsets",
-      "after": "scripts/run-detached.sh E-TL-4 --frozen -- npm run train:tune -- --spec evals/train-tune.json",
-      "verdicts": {},
+      "after": "scripts/run-detached.sh E-TL-4 --frozen -- npm run train:tune -- --spec evals/train-tune.json; evals/train-tune/results/2026-11-19/",
+      "verdicts": {
+        "maxGenerations-nursery-80": "no-difference",
+        "episodes-48": "no-difference"
+      },
       "effect": "no-difference",
-      "note": "Prediction only; the run is in flight.",
+      "note": "Prediction half met. Nursery maxGenerations 80: 16 of 16 offsets tied, no verdict, pass shares identical to base (nursery 56%, hunt-contact 56%, hunt-weak 25%, hunt-mid 19%), cpu 18.2 -> 18.9 h; the plateau stop ends nursery before generation 40, so maxGenerations never binds; prediction falsified. Episodes 48: 11 up, 4 down, 1 tied, mean score difference +0.57 [-0.47, 1.49], sign test p 0.118, no verdict (predicted: met). Pass shares nursery 56 -> 69%, hunt-contact 56 -> 69%, hunt-weak 25 -> 44%, hunt-mid 19 -> 38%; cpu 18.2 -> 24.9 h (+37%), cpu per hunt-mid pass 0.43 -> 0.37 h. The learnability check flagged hunt-weak and hunt-mid as unlearnable from scratch on all three arms (as E206). Follow-ups: T22a (confirm episodes 48 on held-out offsets, E209), T22b (nursery plateauStop). Full results: evals/train-tune/results/2026-11-19/.",
       "reports": ["evals/decisions/E208/results.md"]
+    },
+    {
+      "id": "E210",
+      "date": "2026-11-19",
+      "branch": "chore/detector-topup",
+      "hypothesis": "detector-baseline shared detector top-up: E188 (rulesHash 38be2908ad820c86) predates the sprint, stillness, scent-trail and prey-selectivity metrics. A 128-seed floor-on run on the same unchanged defaults measures liveness and power for all registered metrics and tests the Phase 1 predictions of sprint-burst, stillness, scent-trails and prey-guilds.",
+      "prediction": "Written before the run: sprint-burst (T3): eval.sprint_share.hunter > 0.5 and eval.chase_sprint_lift < 1.2 (Phase 2 gate: any sprint share > 0.5 or eval.sprint_cost_share < 0.02); stillness (T3): eval.freeze_under_threat <= 0, eval.freeze_survival_gain interval includes 0, eval.ambush_kill_share < 0.1; scent-trails (E-ST2-1): eval.chase_reacquire_share < 0.1, eval.scavenge_approach_share < 0.05; prey-guilds (E-PG-1): eval.prey_selectivity.{forager,reproducer,scout,defender} each within 0.2 of 1.",
+      "targets": [
+        "eval.sprint_share.hunter",
+        "eval.sprint_share.prey",
+        "eval.chase_sprint_lift",
+        "eval.flee_sprint_lift",
+        "eval.sprint_cost_share",
+        "eval.freeze_under_threat",
+        "eval.freeze_survival_gain",
+        "eval.ambush_kill_share",
+        "eval.chase_reacquire_share",
+        "eval.scavenge_approach_share",
+        "eval.prey_selectivity.forager",
+        "eval.prey_selectivity.reproducer",
+        "eval.prey_selectivity.scout",
+        "eval.prey_selectivity.defender"
+      ],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "not applicable: shared detector top-up on the same gorge defaults as E188 (rulesHash 38be2908ad820c86)",
+      "after": "npm run eval -- --seeds 128 --ticks 200000 --policy live --workers 8 --out evals/power/defaults-floor-on-E210.json",
+      "verdicts": {
+        "eval.sprint_share.hunter": "-",
+        "eval.sprint_share.prey": "-",
+        "eval.chase_sprint_lift": "-",
+        "eval.flee_sprint_lift": "-",
+        "eval.sprint_cost_share": "-",
+        "eval.freeze_under_threat": "-",
+        "eval.freeze_survival_gain": "-",
+        "eval.ambush_kill_share": "-",
+        "eval.chase_reacquire_share": "-",
+        "eval.scavenge_approach_share": "-",
+        "eval.prey_selectivity.forager": "-",
+        "eval.prey_selectivity.reproducer": "-",
+        "eval.prey_selectivity.scout": "-",
+        "eval.prey_selectivity.defender": "-"
+      },
+      "effect": "no-difference",
+      "note": "Plan verdicts (the per-metric verdicts field cannot hold them): sprint-burst: Phase 1 prediction falsified (eval.sprint_share.hunter 0.41 is not above 0.5, though eval.chase_sprint_lift 1.12 is under 1.2), Phase 2 gate not met, Phase 2 is not built; stillness: prediction holds, gate met; scent-trails: partially falsified; prey-guilds: partially falsified. 128 seeds x 200000 ticks, floor on only (no floor-off run), defaults, rulesHash 38be2908ad820c86 (matches E188). Registry status counts: 199 verified, 168 unverified, 3 deprecated -> 204 verified, 163 unverified, 3 deprecated (370 total). Verdicts: (1) sprint-burst (T3): sprint_share.hunter 0.4086, sprint_share.prey 0.4463, chase_sprint_lift 1.117, flee_sprint_lift 1.105, sprint_cost_share 0.05363 (verified@64) -> Phase 1 prediction falsified (sprint_share.hunter 0.4086 is not above 0.5, though chase_sprint_lift 1.117 is under 1.2); Phase 2 gate NOT met (neither sprint share > 0.5 nor sprint_cost_share < 0.02), Phase 2 is not built; closes with Phase 1 detectors kept. (2) stillness (T3): freeze_under_threat -0.1121, freeze_survival_gain 0.000894 (per-seed range -0.008615 to 0.01076, not a confidence interval), ambush_kill_share 0.0005704 (verified@16) -> prediction holds, Phase 2 gate met. (3) scent-trails (E-ST2-1): chase_reacquire_share 0.394 (verified@32), scavenge_approach_share 0.0234 (verified@16) -> partially falsified (scavenge < 0.05 holds, chase_reacquire > 0.1). (4) prey-guilds (E-PG-1): prey_selectivity.{forager,reproducer,scout,defender} 1.289, 1.476, 1.601, 1.291 (all >64 seeds / unverified) -> partially falsified (above 0.8-1.2 band due to per-seed ratio variance); defender_repel_per_1k 0, scout_alarm_lead_share 0, guild_survival.* spread 0.0023 < 0.05 hold. Unverified triage (163): 26 null share > 0.1, 3 distinct < 2, 19 FPR > 0.1, 115 MDE > bar.",
+      "reports": [
+        "evals/decisions/E210/defaults-floor-on.json",
+        "evals/decisions/E210/power.json",
+        "evals/decisions/E210/unverified-2026-11-19.md"
+      ]
     }
   ]
 }

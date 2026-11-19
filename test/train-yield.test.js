@@ -63,7 +63,7 @@ describe('the report', () => {
         expect(lines[0]).toMatch(/^stage\s+passed\s+median gens\s+cpu h \/ pass$/);
         expect(lines[1]).toMatch(/^nursery\s+100%\s+10\s+1\.00$/);
         expect(lines[2]).toMatch(/^hunt\s+0%\s+-\s+-$/);
-        expect(lines[3]).toBe('runs 1, mean score 1.25, cpu 2.0 h');
+        expect(lines[3]).toBe('runs 1, mean score 1.25, passed last 0, cpu 2.0 h');
         expect(formatRuns(runs)[1]).toMatch(/^0\s+1\s+0\.250\s+1\.250\s+2\.00$/);
     });
 });

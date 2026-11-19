@@ -1,0 +1,16 @@
+{
+  "id": "E0",
+  "date": "2026-11-19",
+  "branch": "tune/2026-11-19",
+  "hypothesis": "Tuning night 2026-11-19: stages.nursery.maxGenerations=80; train.episodes=48 against the current ladder.",
+  "prediction": "Write before adopting: the finalist raises the ladder yield score without costing the champion world trial.",
+  "targets": [],
+  "beforePolicy": "live",
+  "afterPolicy": "champions-v1",
+  "before": "the current ladder (reference arm base)",
+  "after": "no finalist",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Screened: maxGenerations-nursery-80 (no verdict); episodes-48 (no verdict).",
+  "reports": ["evals/train-tune/results/2026-11-19/summary.md", "evals/train-tune/results/2026-11-19/result.json"]
+}

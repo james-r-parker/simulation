@@ -1,0 +1,43 @@
+{
+  "date": "2026-11-19",
+  "ladderHash": "32041bc8",
+  "curriculum": "evals/train-ladder.json",
+  "until": "hunt-mid",
+  "arms": [
+    {
+      "name": "maxGenerations-nursery-80",
+      "signature": "stages.nursery.maxGenerations=80",
+      "overlay": {
+        "stages": {
+          "nursery": {
+            "maxGenerations": 80
+          }
+        }
+      },
+      "tune": {
+        "verdict": "no verdict",
+        "meanDiff": 0,
+        "p": 1
+      },
+      "holdout": null,
+      "finalist": false
+    },
+    {
+      "name": "episodes-48",
+      "signature": "train.episodes=48",
+      "overlay": {
+        "train": {
+          "episodes": 48
+        }
+      },
+      "tune": {
+        "verdict": "no verdict",
+        "meanDiff": 0.568515859721482,
+        "p": 0.11846923828125
+      },
+      "holdout": null,
+      "finalist": false
+    }
+  ],
+  "world": null
+}

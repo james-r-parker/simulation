@@ -1,6 +1,6 @@
 # Training loop
 
-**Status:** In progress - Phase 1 code built (T1 to T7), Phase 2 code built (T9 to T11), Phase 3 code built (T13 to T15), Phase 4 code built (T19 to T21); T8 (E-TL-1) and T16 (E-TL-3) are the next runs
+**Status:** In progress - Phases 1 and 2 built (T1 to T12); Phase 3 code built (T13 to T15); E207 (T16) falsified adaptive difficulty as configured (it never left its floor); T16a retests it, and T17 waits for that; Phase 4 code built (T19 to T21)
 **Validated:** 0254883d (2026-11-19)
 **Priority:** 1 - pinned by the user (2026-11-19): every training run waits on how fast a ladder change can be judged, and nothing here changes a sim rule
 **Depends on:** [training-stages.md](training-stages.md), [training.md](training.md)
@@ -171,7 +171,7 @@ A finalist's ladder change is adopted by a PR that commits the ladder edit, the 
 - Drill cells carry `jawTrials` and `closestList`; `drillReading` adds `jawShareLow` and `closestMedian`.
 - `stageProgress`, the curve's `progress` and `bestProgress` columns, and `plateauStop` with `TrainStageStalled.reason`.
 - `runYield`, `ladderYield`, `compareYield`, `train:yield`, `train:compare` and `train:screen`.
-- The first screen (`E-TL-1`, `evals/train-screens/plateau.grid.json`): the current ladder with and without `plateauStop`, 16 offsets, `until` `hunt-mid`. Prediction: equal pass shares, `no verdict` on score (a `worse` would mean the stop cuts runs that were still closing), and at least 30% fewer CPU hours with the stop.
+- The first screen (`E-TL-1`, `evals/train-screens/plateau.grid.json`): the current ladder with and without `plateauStop`, 16 offsets, `until` `hunt-mid`. Recorded as E205: `no verdict` on score (15 of 16 offsets tied, 1 down), CPU hours 26.7 to 21.9 (-18%, short of the predicted 30%), so `plateauStop` 6 stays the default. Prediction (written before the run): equal pass shares, `no verdict` on score (a `worse` would mean the stop cuts runs that were still closing), and at least 30% fewer CPU hours with the stop.
 
 #### Chunks
 
@@ -200,7 +200,7 @@ T8 is a long run, not a code chunk: detached, recorded in its own PR.
 
 - The `adapt` curriculum key, `nextDifficulty`, the saved value and `TrainDifficulty`.
 - `evals/train-ladder-adaptive.json`: `hunt-weak`, `hunt-mid` and `hunt` replaced by one `hunt` stage with `adapt` (`preySprint` from 0.1 to the live default, step 0.05, steered by `prey-ahead`).
-- The screen `E-TL-3`, adaptive against fixed, 16 offsets, `until` `hunt`. Prediction: `better` on `compareYield`. On `better`, the fixed rungs `hunt-weak` and `hunt-mid` and their drills' ladder entries are deleted from `train-ladder.json` (the drills stay for the exam); on `worse` or `no verdict`, `adapt` and its module are deleted.
+- The screen `E-TL-3`, adaptive against fixed, 16 offsets, `until` `hunt`. Recorded as E207. Prediction (written before the run): `better` on `train:compare` score, adaptive against fixed, with the adaptive arm passing `hunt` on at least 1 of 16 offsets; falsified on `no verdict` or `worse`. On `better`, the fixed rungs `hunt-weak` and `hunt-mid` and their drills' ladder entries are deleted from `train-ladder.json` (the drills stay for the exam); on `worse` or `no verdict`, `adapt` and its module are deleted.
 
 #### Chunks
 
@@ -208,7 +208,7 @@ T8 is a long run, not a code chunk: detached, recorded in its own PR.
 | ----- | ---------- | -------------------------------------------------------- |
 | 3A    | T13 to T15 | The key, the controller and the adaptive ladder (Sonnet) |
 
-T16 is a long run, not a code chunk. T17 and T18 follow its record in one PR (Sonnet).
+T16 is a long run, not a code chunk. T16a retests it; T17 and T18 follow T16a in one PR (Sonnet).
 
 ### Phase 4 - The tuning lane
 
@@ -254,7 +254,8 @@ T22 is a long run, not a code chunk; T23 follows its record in one PR (Sonnet).
 | T5  | (built) `compareYield` and `npm run train:compare`; its AGENTS.md row; tests                                                                                                                                                                                                                                                                    | [judgement]  | T4         |
 | T6  | (built) `npm run train:screen` with `scripts/lib/train-screen-grid.mjs`: grid merge, per-arm ladders, run reuse, the worker budget, `yield.json`, `verdicts.json`, `table.md`, `TrainScreenRun`, `TrainScreenVerdict`, `TrainScreenRunFailed`; `evals/train-screens/plateau.grid.json`; its AGENTS.md row; tests including the tiny slow screen | [judgement]  | T3, T5     |
 | T7  | Conformance review of Phase 1 code by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; mark T1 to T6 built and move the Status line                                                                                                                                                                                            | [judgement]  | T6         |
-| T8  | (screen `E-TL-1`, detached) the current ladder with and without `plateauStop`, offsets 0 to 120 by 8, `until` `hunt-mid`; record E-TL-1 in `evals/experiments.json` with the yield table and CPU hours; mark Phase 1 built                                                                                                                      | [judgement]  | T7         |
+| T8  | (built) (screen `E-TL-1`, detached) the current ladder with and without `plateauStop`, offsets 0 to 120 by 8, `until` `hunt-mid`; record E-TL-1 in `evals/experiments.json` with the yield table and CPU hours; mark Phase 1 built                                                                                                              | [judgement]  | T7         |
+| T8a | `plateauStop` 10 against 6 as a `train:tune` arm; the nursery stall on 7 of 16 offsets (best progress 0.67 to 0.83) is the next ladder lever (episodes or `minGenerations` at nursery). E-TL-1 kept `plateauStop` 6: 18% fewer CPU hours for 1 of 16 runs lost                                                                                  | [judgement]  | T8         |
 
 ### Phase 2 - The learnability check
 
@@ -267,24 +268,27 @@ T22 is a long run, not a code chunk; T23 follows its record in one PR (Sonnet).
 
 ### Phase 3 - Adaptive difficulty
 
-| #   | Task                                                                                                                                                                                                                                                                                               | Nature       | Depends on |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T13 | (built) `nextDifficulty` in `js/evo/adaptive-difficulty.js`; the `adapt` curriculum key and its validation; tests                                                                                                                                                                                  | [judgement]  | T7         |
-| T14 | (built) `difficulty` in `RunState` (`snapshotState`, `restoreState`); `runEpisodes` lays it over the stage overrides outside the stage hash; `sprintArena` takes the value and the steering drill runs at it each gate checkpoint; curve `difficulty`; `TrainDifficulty`; tests including a resume | [judgement]  | T13        |
-| T15 | (built) `evals/train-ladder-adaptive.json`; `evals/train-screens/adaptive.grid.json` (adaptive against fixed, offsets 0 to 120 by 8, `until` `hunt`)                                                                                                                                               | [mechanical] | T14, T6    |
-| T16 | (screen `E-TL-3`, detached) run the adaptive grid; record E-TL-3                                                                                                                                                                                                                                   | [judgement]  | T15        |
-| T17 | Delete the losing path: on `better`, the `hunt-weak` and `hunt-mid` entries of `train-ladder.json` go and `hunt` takes `adapt`; otherwise `adapt`, `adaptive-difficulty.js` and the adaptive ladder go                                                                                             | [judgement]  | T16        |
-| T18 | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; mark Phase 3 built                                                                                                                                                                              | [judgement]  | T17        |
+| #    | Task                                                                                                                                                                                                                                                                                               | Nature       | Depends on |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T13  | (built) `nextDifficulty` in `js/evo/adaptive-difficulty.js`; the `adapt` curriculum key and its validation; tests                                                                                                                                                                                  | [judgement]  | T7         |
+| T14  | (built) `difficulty` in `RunState` (`snapshotState`, `restoreState`); `runEpisodes` lays it over the stage overrides outside the stage hash; `sprintArena` takes the value and the steering drill runs at it each gate checkpoint; curve `difficulty`; `TrainDifficulty`; tests including a resume | [judgement]  | T13        |
+| T15  | (built) `evals/train-ladder-adaptive.json`; `evals/train-screens/adaptive.grid.json` (adaptive against fixed, offsets 0 to 120 by 8, `until` `hunt`)                                                                                                                                               | [mechanical] | T14, T6    |
+| T16  | (screen `E-TL-3`, detached) run the adaptive grid; record E-TL-3 (built: E207, falsified as configured: the difficulty never left 0.10, hunt passed on 0 of 16 in both arms)                                                                                                                       | [judgement]  | T15        |
+| T16a | (screen, detached) retest adaptive with `from` 0, `target` 0.15 (the hunt-weak passers win a few percent; 0.5 is out of reach), `steerShare` logged; T17's deletion waits for this retest                                                                                                          | [judgement]  | T16        |
+| T17  | Delete the losing path (after T16a): on `better`, the `hunt-weak` and `hunt-mid` entries of `train-ladder.json` go and `hunt` takes `adapt`; otherwise `adapt`, `adaptive-difficulty.js` and the adaptive ladder go                                                                                | [judgement]  | T16, T16a  |
+| T18  | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; mark Phase 3 built                                                                                                                                                                              | [judgement]  | T17        |
 
 ### Phase 4 - The tuning lane
 
-| #   | Task                                                                                                                                                                                                                                                        | Nature       | Depends on |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T19 | (built) `proposeArms` in `js/evo/train-tune.js` and `evals/train-tune.json`; tests                                                                                                                                                                          | [judgement]  | T7         |
-| T20 | (built) `npm run train:tune`: feasibility, the tuning screen, the held-out confirmation, the champion export and the 16-seed world trial for finalists, `summary.md`, `result.json`, `draft-experiment.json`, `TuneArm`, `TuneResult`; tests on a tiny spec | [judgement]  | T19, T10   |
-| T21 | (built) AGENTS.md `train:tune` row; the `run-evolution-loop` skill names `train:compare` and the tuning lane; [training-stages.md](training-stages.md) links this doc                                                                                       | [mechanical] | T20        |
-| T22 | (run `E-TL-4`, detached) the first night; record E-TL-4                                                                                                                                                                                                     | [judgement]  | T21, T18   |
-| T23 | Conformance review of Phase 4 by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; move the Status line to `Implemented`                                                                                                                    | [judgement]  | T22        |
+| #    | Task                                                                                                                                                                                                                                                        | Nature       | Depends on |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T19  | (built) `proposeArms` in `js/evo/train-tune.js` and `evals/train-tune.json`; tests                                                                                                                                                                          | [judgement]  | T7         |
+| T20  | (built) `npm run train:tune`: feasibility, the tuning screen, the held-out confirmation, the champion export and the 16-seed world trial for finalists, `summary.md`, `result.json`, `draft-experiment.json`, `TuneArm`, `TuneResult`; tests on a tiny spec | [judgement]  | T19, T10   |
+| T21  | (built) AGENTS.md `train:tune` row; the `run-evolution-loop` skill names `train:compare` and the tuning lane; [training-stages.md](training-stages.md) links this doc                                                                                       | [mechanical] | T20        |
+| T22  | (built) (run `E-TL-4`, detached) the first night; record E-TL-4 (E208: nursery `maxGenerations` 80 tied on 16 of 16, `episodes` 48 no verdict)                                                                                                              | [judgement]  | T21, T18   |
+| T22a | confirm `episodes` 48 on the 16 held-out offsets 128-248 (E209; run `E-TL-5`, detached)                                                                                                                                                                     | [judgement]  | T22        |
+| T22b | nursery `plateauStop` 10 or 0 as the next nursery arm; `maxGenerations` does not bind while the plateau stop ends nursery first                                                                                                                             | [judgement]  | T22        |
+| T23  | Conformance review of Phase 4 by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; move the Status line to `Implemented`                                                                                                                    | [judgement]  | T22        |
 
 ## Verification
 
