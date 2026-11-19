@@ -6,7 +6,7 @@
 const TRAIN_KEYS = Object.freeze(['episodes', 'ticks', 'offerFrom', 'checkpointEvery']);
 /** The value of a trainer option `train.mjs` uses when no grid sets it (an option with no entry has no default). */
 const TRAIN_DEFAULTS = /** @type {Record<string, number>} */ (Object.freeze({ episodes: 32, checkpointEvery: 10 }));
-const DEFAULT_MAX_ARMS = 3;
+const DEFAULT_MAX_ARMS = 2;
 const DEFAULT_WORLD_SEEDS = 16;
 const OFFSET_COUNT = 16;
 const OFFSET_STEP = 8;

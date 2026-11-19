@@ -19,7 +19,7 @@ const spec = (/** @type {object} */ extra = {}) => ({
 describe('withDefaults', () => {
     it('lays in the defaults: 3 arms, offsets 0..120 and 128..248 by 8, 16 world seeds', () => {
         const out = withDefaults(spec());
-        expect(out).toMatchObject({ maxArms: 3, worldSeeds: 16 });
+        expect(out).toMatchObject({ maxArms: 2, worldSeeds: 16 });
         expect(out.tuneOffsets).toEqual([0, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120]);
         expect(out.holdoutOffsets.slice(0, 2)).toEqual([128, 136]);
         expect(out.holdoutOffsets.at(-1)).toBe(248);
@@ -117,7 +117,7 @@ describe('proposeArms', () => {
             'train.episodes=48',
             'stages.hunt-contact.minGenerations=20',
         ]);
-        expect(proposeArms(spec({ tunables }), ladder, []).map((a) => a.signature)).toEqual(all.slice(0, 3));
+        expect(proposeArms(spec({ tunables }), ladder, []).map((a) => a.signature)).toEqual(all.slice(0, 2));
     });
 
     it('is deterministic', () => {
@@ -148,7 +148,7 @@ describe('proposeArms', () => {
         const shipped = JSON.parse(readFileSync('evals/train-tune.json', 'utf8'));
         const real = JSON.parse(readFileSync('evals/train-ladder.json', 'utf8'));
         const arms = proposeArms(shipped, real, []);
-        expect(arms).toHaveLength(3);
+        expect(arms).toHaveLength(2);
         expect(arms[0].signature).toBe('stages.hunt-weak.preyShare=1');
     });
 });

@@ -2,7 +2,8 @@
 // `champions-v1` on an arm's exported champions against the matching live eval on the same seeds, read through
 // `eval:compare`. The live report is cached by seeds, ticks and the default config's hash. A detector, never fitness.
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { configHash, createConfig } from '../../js/sim/config.js';
@@ -37,10 +38,36 @@ export function runNode(script, argv) {
 }
 
 /**
- * @param {{seeds: number, ticks: number}} trial the trial's size
- * @returns {string} the live report's cache file name: seeds, ticks and the default config's hash
+ * @param {string} [root] the repository root
+ * @returns {string} 16 hex characters of the contents of `js/sim`, `js/evo` and the kernels' hash file: any change to the
+ *   sim's code, not only its config, changes it
  */
-export const liveName = ({ seeds, ticks }) => `live-${seeds}x${ticks}-${configHash(createConfig({}))}.json`;
+export function codeHash(root = ROOT) {
+    const hash = createHash('sha256');
+    /** @param {string} dir */
+    const walk = (dir) => {
+        for (const entry of readdirSync(join(root, dir), { withFileTypes: true }).sort((a, b) =>
+            a.name.localeCompare(b.name),
+        )) {
+            const rel = join(dir, entry.name);
+            if (entry.isDirectory()) {
+                walk(rel);
+            } else {
+                hash.update(rel).update(readFileSync(join(root, rel)));
+            }
+        }
+    };
+    ['js/sim', 'js/evo'].forEach(walk);
+    hash.update(readFileSync(join(root, 'wasm', 'blob-kernels.wasm.sha256')));
+    return hash.digest('hex').slice(0, 16);
+}
+
+/**
+ * @param {{seeds: number, ticks: number, code?: string}} trial the trial's size and the sim code's hash (default `codeHash()`)
+ * @returns {string} the live report's cache file name: seeds, ticks, the default config's hash and the code hash
+ */
+export const liveName = ({ seeds, ticks, code = codeHash() }) =>
+    `live-${seeds}x${ticks}-${configHash(createConfig({}))}-${code}.json`;
 
 /**
  * @param {Record<string, any>} comparison `eval:compare --json` output

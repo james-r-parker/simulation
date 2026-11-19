@@ -1,8 +1,8 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { liveName, readings, runNode, worldTrial, WORLD_METRICS } from '../scripts/lib/train-tune-world.mjs';
+import { codeHash, liveName, readings, runNode, worldTrial, WORLD_METRICS } from '../scripts/lib/train-tune-world.mjs';
 
 const root = mkdtempSync(join(tmpdir(), 'train-tune-world-'));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -27,8 +27,35 @@ describe('readings', () => {
 
 describe('liveName', () => {
     it('is keyed by seeds, ticks and the default config hash', () => {
-        expect(liveName({ seeds: 16, ticks: 1000 })).toMatch(/^live-16x1000-[0-9a-f]{16}\.json$/);
+        expect(liveName({ seeds: 16, ticks: 1000 })).toMatch(/^live-16x1000-[0-9a-f]{16}-[0-9a-f]{16}\.json$/);
         expect(liveName({ seeds: 16, ticks: 1000 })).not.toBe(liveName({ seeds: 8, ticks: 1000 }));
+    });
+});
+
+describe('codeHash', () => {
+    const tree = (/** @type {string} */ name, /** @type {string} */ simText) => {
+        const dir = join(root, name);
+        for (const d of ['js/sim', 'js/evo', 'wasm']) {
+            mkdirSync(join(dir, d), { recursive: true });
+        }
+        writeFileSync(join(dir, 'js/sim/a.js'), simText);
+        writeFileSync(join(dir, 'js/evo/b.js'), 'b');
+        writeFileSync(join(dir, 'wasm/blob-kernels.wasm.sha256'), 'k');
+        return dir;
+    };
+
+    it('changes with the sim code and the kernels, and keys the live report so old code does not reuse it', () => {
+        const a = codeHash(tree('c1', 'one'));
+        expect(a).toMatch(/^[0-9a-f]{16}$/);
+        expect(codeHash(tree('c2', 'one'))).toBe(a);
+        expect(codeHash(tree('c3', 'two'))).not.toBe(a);
+        writeFileSync(join(root, 'c2', 'wasm/blob-kernels.wasm.sha256'), 'k2');
+        expect(codeHash(join(root, 'c2'))).not.toBe(a);
+        expect(liveName({ seeds: 1, ticks: 1, code: a })).not.toBe(liveName({ seeds: 1, ticks: 1, code: 'x' }));
+    });
+
+    it('hashes the repository by default', () => {
+        expect(codeHash()).toMatch(/^[0-9a-f]{16}$/);
     });
 });
 

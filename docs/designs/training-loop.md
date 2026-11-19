@@ -138,7 +138,7 @@ At each gate checkpoint, `nextDifficulty` in `js/evo/adaptive-difficulty.js` rai
 
 `npm run train:tune -- --spec evals/train-tune.json` runs one night of trainer tuning, detached through `scripts/run-detached.sh`:
 
-1. `proposeArms` in `js/evo/train-tune.js` reads the spec (each tunable: a ladder entry key or trainer option, its current value, its allowed values) and the past results under `evals/train-tune/results/`, and returns up to `maxArms` (default 3) one-change arms around the current ladder, skipping any arm already screened at the same ladder hash.
+1. `proposeArms` in `js/evo/train-tune.js` reads the spec (each tunable: a ladder entry key or trainer option, its current value, its allowed values) and the past results under `evals/train-tune/results/`, and returns up to `maxArms` (default 2) one-change arms around the current ladder, skipping any arm already screened at the same ladder hash.
 2. It runs `train:feasible` on each arm ladder, then `train:screen` on the tuning offsets (`tuneOffsets`, default 16 offsets from 0 to 120 by 8).
 3. An arm with a `better` verdict is rerun on the held-out offsets (`holdoutOffsets`, default 16 offsets from 128 to 248 by 8). It is a finalist only when the held-out verdict is also `better`.
 4. For each finalist and for the reference, `train:export` writes the best run's champions and a 16-seed `npm run eval` with `champions-v1` against the matching live report reads `eval.hunter_catches_per_1k`, `eval.hunter_kills_per_life_mean` and `eval.food_energy_per_1k`.
@@ -151,7 +151,7 @@ A finalist's ladder change is adopted by a PR that commits the ladder edit, the 
 | `curriculum`     | the ladder file tuned                                             |
 | `until`          | the last stage the screen trains                                  |
 | `tunables`       | `[{key, stage?, values}]`: a trainer option, or a stage entry key |
-| `maxArms`        | arms per night                                                    |
+| `maxArms`        | arms per night (2: a night is over 8 hours)                       |
 | `tuneOffsets`    | offsets of the screen                                             |
 | `holdoutOffsets` | offsets of the confirmation                                       |
 | `worldSeeds`     | seeds of the champion world trial (16)                            |
