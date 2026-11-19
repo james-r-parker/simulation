@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ladderYield, runYield } from '../../js/evo/ladder-yield.js';
+import { initialState, nextStage } from '../../js/evo/stage-run.js';
+import { buildManifest } from '../../scripts/lib/train-manifest.mjs';
 
 const manifest = (/** @type {object[]} */ stages, offset = 8) => ({ options: { seedOffset: offset }, stages });
 
@@ -102,5 +104,40 @@ describe('ladderYield', () => {
         expect(ladderYield(runs, ['a', 'b']).stages[1].medianGenerations).toBe(15);
         expect(ladderYield([], ['a'])).toMatchObject({ runs: 0, meanScore: 0, cpuHours: 0 });
         expect(ladderYield([], ['a']).stages[0].passShare).toBe(0);
+    });
+});
+
+describe('runYield on a manifest from buildManifest', () => {
+    const GATE = [{ read: 'drill.food-ahead.winShareLow', min: 0.5 }];
+    const ladder = /** @type {any[]} */ ([
+        { name: 'one', rulesHash: 'a', gate: GATE, minGenerations: 1, maxGenerations: 9 },
+        { name: 'two', rulesHash: 'b', gate: GATE, minGenerations: 1, maxGenerations: 9 },
+        { name: 'world', rulesHash: 'c', generations: 3 },
+    ]);
+    const pass = { readings: { drill: { 'food-ahead': { winShareLow: 0.9 } } } };
+    const base = /** @type {any} */ ({ options: { seedOffset: 4 } });
+    const parts = { manifests: [], uses: [] };
+
+    it('scores a run by the last stage that ran, not the last stage listed', () => {
+        let state = initialState(ladder, 40);
+        for (let i = 0; i < 2; i++) {
+            state = nextStage(state, pass).state;
+        }
+        const built = buildManifest(base, ladder, state, parts);
+        expect(built.stages.map((/** @type {any} */ s) => s.generations)).toEqual([2, undefined, undefined]);
+        const rows = [{ stage: 'one', bestProgress: 1, cpuSeconds: 5 }];
+        expect(runYield(built, rows)).toMatchObject({ reached: 0, bestProgress: 1, score: 1 });
+        const later = buildManifest(base, ladder, nextStage(state, pass).state, parts);
+        const second = [...rows, { stage: 'two', bestProgress: 0.25, cpuSeconds: 9 }];
+        expect(runYield(later, second)).toMatchObject({ reached: 1, bestProgress: 0.25, score: 1.25 });
+    });
+
+    it('scores a done run as finished even when its last stage is fixed and has no passedAt', () => {
+        const stages = [
+            { name: 'one', generations: 4, passedAt: 4 },
+            { name: 'world', generations: 3 },
+        ];
+        const done = { status: 'done', options: { seedOffset: 0 }, stages };
+        expect(runYield(done, [])).toMatchObject({ reached: 1, bestProgress: 1, score: 2 });
     });
 });

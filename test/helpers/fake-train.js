@@ -23,7 +23,7 @@ export function fakeTrain(outcome) {
         const { passed, exitCode = 0 } = outcome(args.seedOffset, arm);
         const ran = ladder.slice(0, Math.min(ladder.length, passed + 1));
         const manifest = {
-            status: exitCode === 3 ? 'stalled' : 'done',
+            status: exitCode === 3 || passed < ran.length ? 'stalled' : 'done',
             curriculum: { file, hash: createHash('sha256').update(readFileSync(file)).digest('hex') },
             options: {
                 generations: args.generations,

@@ -58,14 +58,16 @@ export function runYield(manifest, rows) {
     if (stages.length === 0) {
         throw new Error('runYield: the manifest has no stage that ran');
     }
-    const last = stages[stages.length - 1];
-    const finished = last.passedAt !== undefined;
+    const ran = (/** @type {Record<string, any>} */ s) =>
+        s.generations > 0 || s.passedAt !== undefined || rows.some((row) => row.stage === s.name);
+    const reached = Math.max(0, stages.findLastIndex(ran));
+    const last = stages[reached];
+    const finished = manifest.status === 'done' || (reached === stages.length - 1 && last.passedAt !== undefined);
     const stageCpuSeconds = /** @type {Record<string, number>} */ ({});
     for (const { stage, seconds } of rowSeconds(rows)) {
         stageCpuSeconds[stage] = (stageCpuSeconds[stage] ?? 0) + seconds;
     }
     const bestProgress = finished ? 1 : stageBest(rows, last.name);
-    const reached = stages.length - 1;
     return {
         offset: manifest.options?.seedOffset ?? 0,
         reached,
