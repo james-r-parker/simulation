@@ -4932,6 +4932,22 @@
       "effect": "better",
       "note": "Keep rule: all guards no harm. food_energy_per_1k 411.5 to 447.1 (+8.7%, better), hunter_catches_per_1k +20.4% better; @20k 378.8 to 436.3 (+15.2%) unverified; floor_episodes 0.34 to 0.25 unverified (interval [-0.36, 0.11]). Worse: median_lifespan -10%, diversity -16.8%, collision_death_share +19%, defender and reproducer fitness -5 to -6%. The done line is not met as written (@20k and floor_episodes are unverified). LIVE_POLICY unchanged pending the user's watch.",
       "reports": ["evals/decisions/E203/results.md", "evals/decisions/E203/compare.txt"]
+    },
+    {
+      "id": "E204",
+      "date": "2026-11-19",
+      "branch": "feat/training-stages-hunt",
+      "hypothesis": "E-TS-1l (training-stages Phase 6, T61): an opponent pool share of 0.2 on hunt-mid and hunt (founders from earlier champions) lifts prey-ahead winShareOverReference at hunt.",
+      "prediction": "Written before the run: prey-ahead winShareOverReference above 0.2 on at least 1 of 2 resumed runs (E-TS-1h o144 and E-TS-1k o8, from archive-99). Falsified when neither gets above 0.2.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "E-TS-1j and E-TS-1k (best prey-ahead 0.1195, no pool)",
+      "after": "npm run train --resume archive-99.json --until habitat --generations 380 --ticks 4000 --offer-from 100 --workers 12 --curriculum evals/train-ladder-pool.json, offsets 144 and 8",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Falsified. Maxima 0.1195 (o144, generations 140 to 290, equal to the E-TS-1j best) and 0.0569 (o8, 110 to 120, then 0.0098), against above 0.2. Both stalled at hunt (exit 3); kin-spared -0.015 on both, prey-crossing negative on o8; o144 was sent to nursery twice by reviews. The pool does not give the chase new material: the cause is the chase itself (T62).",
+      "reports": ["evals/decisions/E-TS-1l/results.md"]
     }
   ]
 }
