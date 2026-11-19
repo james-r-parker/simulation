@@ -1,0 +1,16 @@
+
+> blob-evolution-simulation@10.1.0 train:exam
+> node scripts/train-exam.mjs --run /home/j1mb0jay/code/simulation/.sim/train/ladder-1c-o0 --workers 6
+
+ 1  Valid       pass      0 [
+  ' 1  Valid       pass     ',
+  ' 2  Reflex      reported ',
+  ' 3  Drill       pass     ',
+  ' 4  Cross-play  not run   - the run has no crossplay.json (npm run train:crossplay -- /home/j1mb0jay/code/simulation/.sim/train/ladder-1c-o0)',
+  ' 5  League      not run   - evals/league.json admits no champion to play against (npm run league -- <champion.json> --admit)',
+  ' 6  Scenes      not run   - the world reports are not given (npm run eval -- --policy champions-v1 --policy-options <opts.json> --seeds 32 --ticks 200000 (and the live policy), then npm run eval:compare -- <live64.json> <champions64.json> --keep-rule --json)',
+  ' 7  Inherited   not run   - no descendants are given (npm run eval -- --policy champions-v1 --policy-options <opts.json> --save-champions 8 --out <report.json>, then npm run train:exam -- --run <dir> --descendants <report>-champions)',
+  ' 8  Diverse     fail      - high band has no edge over the random brains; the bands do not separate on matched trials',
+  ' 9  Replicated  not run   - give the other offsets with --replicates <dir,dir> (npm run train:exam -- --run <dir> --replicates <dir,dir>)',
+  "10  Watched     not run   - needs the user's watch of /?policy=champions-v1"
+not good yet: rows 4, 6, 7, 8, 9, 10 are open

@@ -1,0 +1,212 @@
+{
+  "/home/j1mb0jay/code/simulation/.sim/train/ladder-1c-o0/archive-119.json": [
+    {
+      "elite": "elite-predator-cell8",
+      "style": "low",
+      "biteBias": -0.5,
+      "skipToBite": {
+        "prey": 4,
+        "kin": 0.31,
+        "other": 0.14
+      },
+      "wins": {
+        "prey-weak": 13,
+        "prey-adrift": 64,
+        "kin-spared": 0
+      },
+      "preyWeakInView": {
+        "sprint": 0.974,
+        "thrust": 0.357,
+        "medianClosest": 3.96
+      }
+    },
+    {
+      "elite": "elite-predator-cell95",
+      "style": "high",
+      "biteBias": -0.5,
+      "skipToBite": {
+        "prey": 2.35,
+        "kin": 0.13,
+        "other": -0.07
+      },
+      "wins": {
+        "prey-weak": 5,
+        "prey-adrift": 25,
+        "kin-spared": 0
+      },
+      "preyWeakInView": {
+        "sprint": 0.279,
+        "thrust": 0.252,
+        "medianClosest": 3.94
+      }
+    }
+  ],
+  "/home/j1mb0jay/code/simulation/.sim/train/ladder-1c-o0/archive-39.json": [
+    {
+      "elite": "elite-predator-cell16",
+      "style": "low",
+      "biteBias": 0,
+      "skipToBite": {
+        "prey": 2.14,
+        "kin": 0.03,
+        "other": -0.12
+      },
+      "wins": {
+        "prey-weak": 0,
+        "prey-adrift": 30,
+        "kin-spared": 0
+      },
+      "preyWeakInView": {
+        "sprint": 0.479,
+        "thrust": 0.3,
+        "medianClosest": 3.71
+      }
+    },
+    {
+      "elite": "elite-predator-cell57",
+      "style": "high",
+      "biteBias": 0,
+      "skipToBite": {
+        "prey": 1.97,
+        "kin": -0.2,
+        "other": 0.11
+      },
+      "wins": {
+        "prey-weak": 13,
+        "prey-adrift": 39,
+        "kin-spared": 0
+      },
+      "preyWeakInView": {
+        "sprint": 0.259,
+        "thrust": 0.539,
+        "medianClosest": 3.02
+      }
+    }
+  ],
+  "/home/j1mb0jay/code/simulation/.sim/train/ladder-1c-o128/archive-99.json": [
+    {
+      "elite": "elite-predator-cell5",
+      "style": "low",
+      "biteBias": 0,
+      "skipToBite": {
+        "prey": 3.85,
+        "kin": -0.05,
+        "other": -0.01
+      },
+      "wins": {
+        "prey-weak": 1,
+        "prey-adrift": 47,
+        "kin-spared": 0
+      },
+      "preyWeakInView": {
+        "sprint": 0.507,
+        "thrust": 0.26,
+        "medianClosest": 4.04
+      }
+    },
+    {
+      "elite": "elite-predator-cell56",
+      "style": "high",
+      "biteBias": 0.04,
+      "skipToBite": {
+        "prey": 1.94,
+        "kin": -0.27,
+        "other": -0.05
+      },
+      "wins": {
+        "prey-weak": 0,
+        "prey-adrift": 55,
+        "kin-spared": 0
+      },
+      "preyWeakInView": {
+        "sprint": 0.19,
+        "thrust": 0.02,
+        "medianClosest": 4.05
+      }
+    }
+  ],
+  "/home/j1mb0jay/code/simulation/.sim/train/ladder-1c-o192/archive-99.json": [
+    {
+      "elite": "elite-predator-cell8",
+      "style": "low",
+      "biteBias": 0,
+      "skipToBite": {
+        "prey": 1.87,
+        "kin": -0.17,
+        "other": 0.19
+      },
+      "wins": {
+        "prey-weak": 0,
+        "prey-adrift": 6,
+        "kin-spared": 0
+      },
+      "preyWeakInView": {
+        "sprint": 0.034,
+        "thrust": 0.18,
+        "medianClosest": 4.03
+      }
+    },
+    {
+      "elite": "elite-predator-cell88",
+      "style": "high",
+      "biteBias": 0,
+      "skipToBite": {
+        "prey": 1.87,
+        "kin": -0.17,
+        "other": 0.19
+      },
+      "wins": {
+        "prey-weak": 0,
+        "prey-adrift": 0,
+        "kin-spared": 0
+      },
+      "preyWeakInView": {
+        "sprint": 0.002,
+        "thrust": 0.217,
+        "medianClosest": 4.05
+      }
+    }
+  ],
+  "/home/j1mb0jay/code/simulation/.sim/train/ladder-1c-o16/archive-99.json": [
+    {
+      "elite": "elite-predator-cell5",
+      "style": "low",
+      "biteBias": -0.5,
+      "skipToBite": {
+        "prey": 2.01,
+        "kin": -0.1,
+        "other": -0.06
+      },
+      "wins": {
+        "prey-weak": 1,
+        "prey-adrift": 53,
+        "kin-spared": 0
+      },
+      "preyWeakInView": {
+        "sprint": 0.441,
+        "thrust": 0.25,
+        "medianClosest": 4.04
+      }
+    },
+    {
+      "elite": "elite-predator-cell64",
+      "style": "high",
+      "biteBias": 0,
+      "skipToBite": {
+        "prey": 1.99,
+        "kin": 0.04,
+        "other": -0.06
+      },
+      "wins": {
+        "prey-weak": 2,
+        "prey-adrift": 25,
+        "kin-spared": 0
+      },
+      "preyWeakInView": {
+        "sprint": 0.735,
+        "thrust": 0.012,
+        "medianClosest": 4.04
+      }
+    }
+  ]
+}

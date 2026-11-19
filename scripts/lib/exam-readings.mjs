@@ -135,8 +135,8 @@ export async function reflexScores(table, { workers, trials, log }) {
     const { rows } = await scoreGenomes(args, { genomes: table.subjects, config: {}, log });
     const genomes = rows.map(({ label, row }) => ({
         name: label,
-        score: /** @type {any} */ (row).score,
-        edge: /** @type {any} */ (row).edge,
+        score: row?.score ?? null,
+        edge: row?.edge ?? null,
     }));
     return { genomes, trials };
 }
