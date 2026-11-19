@@ -129,6 +129,7 @@ describe('runTune', () => {
             { 'plateauStop-3': 'no verdict', 'episodes-16': 'better' },
             { 'episodes-16': 'better' },
         );
+        /** @type {any[]} */
         const exported = [];
         const exportChampions = (/** @type {Record<string, any>} */ a) => {
             exported.push(a);
@@ -137,6 +138,7 @@ describe('runTune', () => {
         for (const g of [20, 7]) {
             writeFileSync(join(root, 'run-o0', `archive-${g}.json`), '{}', { flag: 'w' });
         }
+        /** @type {any[]} */
         const trials = [];
         const trial = async (/** @type {Record<string, any>} */ t) => {
             trials.push(t);
@@ -205,6 +207,7 @@ describe('runTune', () => {
 describe('screenNight and worldNight', () => {
     it('leaves a finalist with no archive out of the trial', async () => {
         const arms = [{ name: 'a', finalist: true }];
+        /** @type {any[]} */
         /** @type {any[]} */
         const trials = [];
         const out = await worldNight(

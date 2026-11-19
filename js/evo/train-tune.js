@@ -105,13 +105,13 @@ function checkCounts(spec) {
  */
 export function withDefaults(spec) {
     checkTunables(spec);
-    const out = {
+    const out = /** @type {TuneSpec & Record<string, any>} */ ({
         ...spec,
         maxArms: spec.maxArms ?? DEFAULT_MAX_ARMS,
         tuneOffsets: spec.tuneOffsets ?? offsets(0),
         holdoutOffsets: spec.holdoutOffsets ?? offsets(HOLDOUT_FROM),
         worldSeeds: spec.worldSeeds ?? DEFAULT_WORLD_SEEDS,
-    };
+    });
     checkCounts(out);
     return out;
 }
@@ -176,7 +176,7 @@ function currentValue({ key, stage }, { ladder, train }) {
 }
 
 /**
- * @param {TuneSpec} spec the spec
+ * @param {Record<string, any>} spec the spec (`TuneSpec`; the defaults are laid in)
  * @param {readonly Record<string, any>[]} ladder the current ladder's entries
  * @param {readonly {ladderHash: string, signature: string}[]} history the arms screened before, each with the hash of the
  *   ladder it was a change to

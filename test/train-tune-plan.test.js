@@ -19,7 +19,7 @@ describe('screenGrid', () => {
             reference: 'base',
             arms: { base: {}, 'episodes-16': { train: { episodes: 16 } } },
         });
-        const plan = planScreen(grid, () => [{ name: 'a' }, { name: 'b' }]);
+        const plan = planScreen(/** @type {any} */ (grid), () => [{ name: 'a' }, { name: 'b' }]);
         expect(plan.arms.map((a) => a.name)).toEqual(['base', 'episodes-16']);
         expect(plan.arms[1].train).toEqual({ checkpointEvery: 5, episodes: 16 });
     });
