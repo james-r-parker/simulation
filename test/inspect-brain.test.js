@@ -4,7 +4,8 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createConfig } from '../js/sim/config.js';
 import { makeChampionFileFor } from './evo/helpers/champion-file.js';
-import { parseArgs, runInspect } from '../scripts/inspect-brain.mjs';
+import { parseArgs } from '../scripts/lib/inspect-brain-args.mjs';
+import { runInspect } from '../scripts/inspect-brain.mjs';
 
 /** @type {string[]} */
 const roots = [];
