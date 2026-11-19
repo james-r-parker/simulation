@@ -1,0 +1,30 @@
+{
+  "curriculum": "evals/train-ladder.json",
+  "offsets": [0, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120],
+  "until": "hunt-mid",
+  "generations": 380,
+  "workersPerRun": 8,
+  "feasible": {
+    "generations": 60,
+    "seeds": 4
+  },
+  "train": {
+    "checkpointEvery": 5
+  },
+  "reference": "base",
+  "arms": {
+    "base": {},
+    "maxGenerations-nursery-80": {
+      "stages": {
+        "nursery": {
+          "maxGenerations": 80
+        }
+      }
+    },
+    "episodes-48": {
+      "train": {
+        "episodes": 48
+      }
+    }
+  }
+}

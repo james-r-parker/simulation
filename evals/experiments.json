@@ -4998,6 +4998,25 @@
       "reports": ["evals/decisions/E207/results.md"]
     },
     {
+      "id": "E208",
+      "date": "2026-11-19",
+      "branch": "feat/training-loop-etl4",
+      "hypothesis": "E-TL-4 (training-loop T22, the first tuning night): the nursery stage stalls on 7 of 16 tune offsets at best progress 0.67 to 0.83 around generations 35 to 40 (E-TL-1, E-TL-3); raising its maxGenerations from 40 to 80 lets more runs pass it.",
+      "prediction": "Written before the run (npm run train:tune with evals/train-tune.json, two arms: nursery maxGenerations 80, then episodes 48): the nursery maxGenerations 80 arm reads better on the 16 tune offsets, with nursery passing on at least 12 of 16 against 9, and confirms better on the 16 held-out offsets. The episodes 48 arm reads no verdict. Falsified when the nursery arm reads no verdict or worse on the tune offsets.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "nursery maxGenerations 40: nursery passes on 9 of 16 tune offsets",
+      "after": "scripts/run-detached.sh E-TL-4 --frozen -- npm run train:tune -- --spec evals/train-tune.json; evals/train-tune/results/2026-11-19/",
+      "verdicts": {
+        "maxGenerations-nursery-80": "no-difference",
+        "episodes-48": "no-difference"
+      },
+      "effect": "no-difference",
+      "note": "Prediction half met. Nursery maxGenerations 80: 16 of 16 offsets tied, no verdict, pass shares identical to base (nursery 56%, hunt-contact 56%, hunt-weak 25%, hunt-mid 19%), cpu 18.2 -> 18.9 h; the plateau stop ends nursery before generation 40, so maxGenerations never binds; prediction falsified. Episodes 48: 11 up, 4 down, 1 tied, mean score difference +0.57 [-0.47, 1.49], sign test p 0.118, no verdict (predicted: met). Pass shares nursery 56 -> 69%, hunt-contact 56 -> 69%, hunt-weak 25 -> 44%, hunt-mid 19 -> 38%; cpu 18.2 -> 24.9 h (+37%), cpu per hunt-mid pass 0.43 -> 0.37 h. The learnability check flagged hunt-weak and hunt-mid as unlearnable from scratch on all three arms (as E206). Follow-ups: T22a (confirm episodes 48 on held-out offsets, E209), T22b (nursery plateauStop). Full results: evals/train-tune/results/2026-11-19/.",
+      "reports": ["evals/decisions/E208/results.md"]
+    },
+    {
       "id": "E210",
       "date": "2026-11-19",
       "branch": "chore/detector-topup",

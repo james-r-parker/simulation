@@ -1,6 +1,6 @@
 # Training loop
 
-**Status:** In progress - Phases 1 and 2 built (T1 to T12); Phase 3 code built (T13 to T15); Phase 4 code built (T19 to T21); E207 (T16) falsified adaptive difficulty as configured (it never left its floor); T16a retests it, and T17 waits for that; T22 (E-TL-4) is running
+**Status:** In progress - Phases 1 and 2 built (T1 to T12); Phase 3 code built (T13 to T15); Phase 4 code built (T19 to T21); E207 (T16) falsified adaptive difficulty as configured (it never left its floor); T16a retests it, and T17 waits for that; E208 (T22, the first tuning night) read no verdict; E209 (T22a) confirms episodes 48 on the held-out offsets
 **Validated:** 0254883d (2026-11-19)
 **Priority:** 1 - pinned by the user (2026-11-19): every training run waits on how fast a ladder change can be judged, and nothing here changes a sim rule
 **Depends on:** [training-stages.md](training-stages.md), [training.md](training.md)
@@ -215,7 +215,7 @@ T16 is a long run, not a code chunk. T16a retests it; T17 and T18 follow T16a in
 **Targets:** none - it runs screens and world trials; its world readings feed a PR, which carries its own targets
 
 - `proposeArms`, `train:tune`, `evals/train-tune.json` and the results layout.
-- The first night (`E-TL-4`) and its record.
+- The first night (`E-TL-4`, recorded as E208) and its record. Prediction, written before the run: nursery `maxGenerations` 80 reads `better` on the 16 tune offsets (nursery passes on at least 12 of 16 against 9) and confirms `better` on the 16 held-out offsets; `episodes` 48 reads `no verdict`. Falsified when the nursery arm reads `no verdict` or `worse` on the tune offsets.
 
 #### Chunks
 
@@ -280,13 +280,15 @@ T22 is a long run, not a code chunk; T23 follows its record in one PR (Sonnet).
 
 ### Phase 4 - The tuning lane
 
-| #   | Task                                                                                                                                                                                                                                                        | Nature       | Depends on |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T19 | (built) `proposeArms` in `js/evo/train-tune.js` and `evals/train-tune.json`; tests                                                                                                                                                                          | [judgement]  | T7         |
-| T20 | (built) `npm run train:tune`: feasibility, the tuning screen, the held-out confirmation, the champion export and the 16-seed world trial for finalists, `summary.md`, `result.json`, `draft-experiment.json`, `TuneArm`, `TuneResult`; tests on a tiny spec | [judgement]  | T19, T10   |
-| T21 | (built) AGENTS.md `train:tune` row; the `run-evolution-loop` skill names `train:compare` and the tuning lane; [training-stages.md](training-stages.md) links this doc                                                                                       | [mechanical] | T20        |
-| T22 | (run `E-TL-4`, detached) the first night; record E-TL-4                                                                                                                                                                                                     | [judgement]  | T21, T18   |
-| T23 | Conformance review of Phase 4 by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; move the Status line to `Implemented`                                                                                                                    | [judgement]  | T22        |
+| #    | Task                                                                                                                                                                                                                                                        | Nature       | Depends on |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T19  | (built) `proposeArms` in `js/evo/train-tune.js` and `evals/train-tune.json`; tests                                                                                                                                                                          | [judgement]  | T7         |
+| T20  | (built) `npm run train:tune`: feasibility, the tuning screen, the held-out confirmation, the champion export and the 16-seed world trial for finalists, `summary.md`, `result.json`, `draft-experiment.json`, `TuneArm`, `TuneResult`; tests on a tiny spec | [judgement]  | T19, T10   |
+| T21  | (built) AGENTS.md `train:tune` row; the `run-evolution-loop` skill names `train:compare` and the tuning lane; [training-stages.md](training-stages.md) links this doc                                                                                       | [mechanical] | T20        |
+| T22  | (built) (run `E-TL-4`, detached) the first night; record E-TL-4 (E208: nursery `maxGenerations` 80 tied on 16 of 16, `episodes` 48 no verdict)                                                                                                              | [judgement]  | T21, T18   |
+| T22a | confirm `episodes` 48 on the 16 held-out offsets 128-248 (E209; run `E-TL-5`, detached)                                                                                                                                                                     | [judgement]  | T22        |
+| T22b | nursery `plateauStop` 10 or 0 as the next nursery arm; `maxGenerations` does not bind while the plateau stop ends nursery first                                                                                                                             | [judgement]  | T22        |
+| T23  | Conformance review of Phase 4 by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; move the Status line to `Implemented`                                                                                                                    | [judgement]  | T22        |
 
 ## Verification
 
