@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { createSimLog } from '../js/sim/log.js';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
 import { checkLadder, formatFeasible, PROBE_DEFAULTS } from './lib/feasible-run.mjs';
+import { learnSizeFlags } from './lib/learn-flags.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -24,10 +25,7 @@ export function parseArgs(argv) {
         valueFlags: {
             '--curriculum': (v) => ['curriculum', String(v)],
             '--until': (v) => ['until', String(v)],
-            '--generations': (v, f) => ['generations', intValue(f, v, 1, USAGE)],
-            '--seeds': (v, f) => ['seeds', intValue(f, v, 1, USAGE)],
-            '--population': (v, f) => ['population', intValue(f, v, 2, USAGE)],
-            '--trials': (v, f) => ['trials', intValue(f, v, 1, USAGE)],
+            ...learnSizeFlags(USAGE),
             '--workers': (v, f) => ['workers', intValue(f, v, 1, USAGE)],
             '--out': (v) => ['out', String(v)],
             '--log-dir': (v) => ['logDir', String(v)],
