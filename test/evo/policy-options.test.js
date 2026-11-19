@@ -56,6 +56,21 @@ describe('validatePolicyOptions', () => {
     });
 });
 
+describe('validatePolicyOptions for champions-v1', () => {
+    it('takes the live options and a championsDir', () => {
+        const options = { championsDir: 'public/champions/v1', archiveShare: 0.2 };
+        expect(validatePolicyOptions('champions-v1', options)).toEqual(options);
+    });
+
+    it('refuses an empty or non-string championsDir, and the option on a policy without it', () => {
+        expect(() => validatePolicyOptions('champions-v1', { championsDir: '' })).toThrow(/championsDir must be/);
+        expect(() => validatePolicyOptions('champions-v1', { championsDir: 3 })).toThrow(/championsDir must be/);
+        expect(() => validatePolicyOptions('map-elites-v6', { championsDir: 'x' })).toThrow(
+            /does not take "championsDir"/,
+        );
+    });
+});
+
 describe('canonicalOptions and mergeOptions', () => {
     it('writes equal options as equal text whatever the key order', () => {
         expect(canonicalOptions({ b: { y: 1, x: 2 }, a: 1 })).toBe(canonicalOptions({ a: 1, b: { x: 2, y: 1 } }));

@@ -13,6 +13,17 @@ export const CORE = {
         arithmetic: 'test/evo/metrics.test.js',
         source: 'test/evo/metric-source-core.test.js',
     }),
+    'eval.food_energy_per_1k@20k': entry('core', {
+        module: 'js/evo/metrics-food-early.js',
+        meaning:
+            'Higher means agents take in more food energy per tick alive in the first 20000 ticks, before the world has drifted from its founders.',
+        counts: 'Food energy eaten by the dead and the living, over agent-ticks, both read from the last checkpoint at or before tick 20000 (the series columns foodEnergyTotal and agentTicksTotal), times 1000.',
+        unit: 'energy per 1k agent-ticks',
+        direction: 'higher',
+        nullWhen: ['no checkpoint by tick 20000', 'no agent-ticks'],
+        arithmetic: 'test/evo/metrics-food-early.test.js',
+        source: 'test/evo/metrics-food-early.test.js',
+    }),
     'eval.median_lifespan': entry('core', {
         module: 'js/evo/metrics.js',
         meaning: 'Higher means agents that reach maturity live longer.',

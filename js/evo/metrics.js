@@ -22,6 +22,7 @@ import { watchabilityMetrics } from './metrics-watchability.js';
 import { trendMetrics } from './metrics-trend.js';
 import * as series from './metrics-series.js';
 import { none, ok, per1k, quantile } from './metrics-stats.js';
+import { foodEnergyEarly, foodEnergyTotal } from './metrics-food-early.js';
 
 /** @typedef {import('./metric-registry/index.js').MetricName} MetricName */
 
@@ -30,11 +31,7 @@ import { none, ok, per1k, quantile } from './metrics-stats.js';
  * @returns {import('./metrics-stats.js').MetricResult} food energy eaten, dead plus living, per 1000 agent-ticks
  */
 function foodEnergyPer1k(observer) {
-    let total = observer.foodEnergyDead;
-    for (const slot of observer.slotOf.values()) {
-        total += observer.foodEnergy[slot];
-    }
-    return per1k(total, observer.agentTicks);
+    return per1k(foodEnergyTotal(observer), observer.agentTicks);
 }
 
 /**
@@ -128,6 +125,7 @@ export function computeMetrics(observer, world, options = {}) {
     /** @type {import('./metrics-stats.js').MetricRecord} */
     const all = {
         'eval.food_energy_per_1k': foodEnergyPer1k(observer),
+        'eval.food_energy_per_1k@20k': foodEnergyEarly(observer),
         'eval.median_lifespan': medianLifespan(observer),
         'eval.fed_median_lifespan': fedMedianLifespan(observer),
         'eval.births_per_1k': per1k(births[BORN_CAUSE.MATE] + births[BORN_CAUSE.SPLIT], agentTicks),
