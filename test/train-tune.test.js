@@ -187,8 +187,12 @@ describe('runTune', () => {
             { 'plateauStop-3': 'worse', 'episodes-16': 'better' },
             { 'episodes-16': 'no verdict' },
         );
-        const args = argsFor('notrial');
-        writeFileSync(specFile, JSON.stringify({ ...JSON.parse(readFileSync(specFile, 'utf8')), worldTrial: false }));
+        const noTrialSpec = join(root, 'spec-notrial.json');
+        writeFileSync(
+            noTrialSpec,
+            JSON.stringify({ ...JSON.parse(readFileSync(specFile, 'utf8')), worldTrial: false }),
+        );
+        const args = { ...argsFor('notrial'), spec: noTrialSpec };
         const result = await runTune(
             args,
             { screen, trial: async () => Promise.reject(new Error('no trial')) },
