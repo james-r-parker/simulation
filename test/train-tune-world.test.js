@@ -60,14 +60,18 @@ describe('codeHash', () => {
 });
 
 describe('worldTrial', () => {
-    /** @type {{script: string, argv: string[]}[]} */
-    const calls = [];
-    const run = async (/** @type {string} */ script, /** @type {string[]} */ argv) => {
-        calls.push({ script, argv });
-        if (script === 'eval') {
-            writeFileSync(argv[argv.indexOf('--out') + 1], '{}');
-        }
-        return { code: 0, stdout: JSON.stringify({ rows: WORLD_METRICS.map((m) => row(m)) }) };
+    /** @returns {{calls: {script: string, argv: string[]}[], run: (script: string, argv: string[]) => Promise<{code: number, stdout: string}>}} a fresh call log and the stub that fills it */
+    const recorder = () => {
+        /** @type {{script: string, argv: string[]}[]} */
+        const calls = [];
+        const run = async (/** @type {string} */ script, /** @type {string[]} */ argv) => {
+            calls.push({ script, argv });
+            if (script === 'eval') {
+                writeFileSync(argv[argv.indexOf('--out') + 1], '{}');
+            }
+            return { code: 0, stdout: JSON.stringify({ rows: WORLD_METRICS.map((m) => row(m)) }) };
+        };
+        return { calls, run };
     };
     const arms = [
         { name: 'base', championsDir: join(root, 'c', 'base') },
@@ -75,13 +79,14 @@ describe('worldTrial', () => {
     ];
 
     it('evals live once and champions-v1 per arm, and compares each arm with live and each finalist with base', async () => {
+        const { calls, run } = recorder();
         const options = {
             arms,
             seeds: 4,
             ticks: 100,
             workers: 2,
             dir: join(root, 'n1'),
-            liveDir: join(root, 'live'),
+            liveDir: join(root, 'live1'),
             run,
         };
         const out = await worldTrial(options);
@@ -97,28 +102,31 @@ describe('worldTrial', () => {
     });
 
     it('reuses the cached live report and omits --workers when none is set; without base there is no vsBase', async () => {
-        calls.length = 0;
+        const { calls, run } = recorder();
+        mkdirSync(join(root, 'live2'), { recursive: true });
+        writeFileSync(join(root, 'live2', liveName({ seeds: 4, ticks: 100 })), '{}');
         const out = await worldTrial({
             arms: [arms[1]],
             seeds: 4,
             ticks: 100,
             dir: join(root, 'n2'),
-            liveDir: join(root, 'live'),
+            liveDir: join(root, 'live2'),
             run,
         });
         expect(calls.filter((c) => c.script === 'eval').map((c) => c.argv[1])).toEqual(['champions-v1']);
         expect(calls[0].argv).not.toContain('--workers');
         expect(out.a.vsBase).toBeNull();
-        expect(existsSync(join(root, 'live', liveName({ seeds: 4, ticks: 100 })))).toBe(true);
+        expect(existsSync(join(root, 'live2', liveName({ seeds: 4, ticks: 100 })))).toBe(true);
     });
 
     it('uses 200000 ticks by default', async () => {
-        calls.length = 0;
+        const { calls, run } = recorder();
         await worldTrial({ arms: [], seeds: 2, dir: join(root, 'n3'), liveDir: join(root, 'live3'), run });
         expect(calls[0].argv).toEqual(expect.arrayContaining(['--ticks', '200000']));
     });
 
     it('fails loudly when an eval or a compare exits non-zero', async () => {
+        const { run } = recorder();
         const failEval = async () => ({ code: 3, stdout: '' });
         await expect(
             worldTrial({ arms, seeds: 2, dir: join(root, 'n4'), liveDir: join(root, 'live4'), run: failEval }),
