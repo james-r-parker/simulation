@@ -29,7 +29,7 @@ every arm reads `eval.hunter_catches_per_1k` or `held` `WORSE`** (a silenced bit
 
 **Run.** `scripts/run-detached.sh T41-screen --frozen -- npm run screen -- --grid evals/screens/honest-bite-bias.grid.json` on
 branch `feat/honest-budgets-t41`. A finalist then runs 64 matched seeds (65 to 128) with `--keep-rule` (T42), then T36a on it.
-A new key moves `rulesHash` (season 10 re-pinned in `library/seasons.json`), so it opens on the season branch if adopted.
+A new key moves `rulesHash` (it opens season 11 in `library/seasons.json`, since season 10 shipped as 10.0.0).
 
 ## Screen result (T41, 16 seeds, 400000 ticks, on main e96d4eec)
 
