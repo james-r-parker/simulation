@@ -4991,10 +4991,10 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "before": "fixed arm: evals/train-ladder.json (hunt-weak, hunt-mid, hunt)",
-      "after": "adaptive arm: evals/train-ladder-adaptive.json (one hunt stage with adapt)",
+      "after": "adaptive arm: evals/train-ladder-adaptive.json (one hunt stage with adapt); tables in evals/train-screens/results/adaptive/",
       "verdicts": {},
       "effect": "no-difference",
-      "note": "Running (effect is a placeholder until the verdict): scripts/run-detached.sh E-TL-3 --frozen -- npm run train:screen -- --grid evals/train-screens/adaptive.grid.json --runs /home/j1mb0jay/code/simulation/.sim/train-screens/adaptive",
+      "note": "Falsified as configured (effect is the closest enum value; the verdict is incomparable). All 32 runs trained; the report crashed on the two ladders' different stages and was fixed. The adaptive difficulty never rose above its 0.10 floor on any run over 200 generations (the steering win share stayed under the 0.5 target); hunt was passed on 0 of 16 runs in both arms; fixed reached hunt on 3 of 16, adaptive entered it on 9 of 16 by its shape; the nursery stalls on the same 7 of 16 offsets in both arms; hunt gate losses at full sprint were about 120 of 128 never-in-jaws. CPU hours 19.9 against 42.6. T16a retests with from 0, target 0.15 and the steering share logged.",
       "reports": ["evals/decisions/E207/results.md"]
     },
     {
