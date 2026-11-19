@@ -4932,6 +4932,22 @@
       "effect": "better",
       "note": "Keep rule: all guards no harm. food_energy_per_1k 411.5 to 447.1 (+8.7%, better), hunter_catches_per_1k +20.4% better; @20k 378.8 to 436.3 (+15.2%) unverified; floor_episodes 0.34 to 0.25 unverified (interval [-0.36, 0.11]). Worse: median_lifespan -10%, diversity -16.8%, collision_death_share +19%, defender and reproducer fitness -5 to -6%. The done line is not met as written (@20k and floor_episodes are unverified). LIVE_POLICY unchanged pending the user's watch.",
       "reports": ["evals/decisions/E203/results.md", "evals/decisions/E203/compare.txt"]
+    },
+    {
+      "id": "E206",
+      "date": "2026-11-19",
+      "branch": "feat/training-loop-p2",
+      "hypothesis": "E-TL-2 (training-loop T11): the learnability check says which rungs of the current ladder a random-brain population can learn, so a stage that no brain can reach is found before a ladder spends runs on it.",
+      "prediction": "Written before the run (npm run train:feasible on evals/train-ladder.json at the default sizes: 8 populations, 200 generations, 64 brains, 4 trials): every gate drill of every rung through hunt-mid (food-ahead, food-behind, prey-adrift, prey-weak, prey-mid) is learnable; hunt is not, because prey-ahead at 0.5 of the reference win share is out of reach of every population, which would say the next lever is a sim rule (training-stages.md T62), not a ladder change.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "no check: the ladder is trained and a stalled stage is found hours later",
+      "after": "evals/train-screens/results/feasible-ladder.json",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Running (effect is a placeholder until the verdict): scripts/run-detached.sh E-TL-2 --frozen -- npm run train:feasible -- --curriculum evals/train-ladder.json --workers 4 --out evals/train-screens/results/feasible-ladder.json",
+      "reports": ["evals/decisions/E206/results.md"]
     }
   ]
 }
