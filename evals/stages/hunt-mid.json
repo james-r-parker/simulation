@@ -16,16 +16,16 @@
   "coldMarginWidth": 0,
   "specialisations": {
     "forager": {
-      "sprintBoost": 0.5
+      "sprintBoost": 0.3
     },
     "reproducer": {
-      "sprintBoost": 0.5
+      "sprintBoost": 0.3
     },
     "scout": {
-      "sprintBoost": 0.5
+      "sprintBoost": 0.3
     },
     "defender": {
-      "sprintBoost": 0.5
+      "sprintBoost": 0.3
     }
   }
 }

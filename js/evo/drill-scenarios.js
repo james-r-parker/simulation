@@ -31,7 +31,7 @@ const SAFE_SHARE = 0.7;
 /** The forager's `sprintBoost` in `prey-weak` and the `hunt-weak` stage (1 on the defaults; the fleer's sprint is 12 at 1). */
 export const WEAK_SPRINT_BOOST = 0.2;
 /** The forager's `sprintBoost` in `prey-mid` and the `hunt-mid` stage, between `WEAK_SPRINT_BOOST` and the default 1. */
-export const MID_SPRINT_BOOST = 0.5;
+export const MID_SPRINT_BOOST = 0.3;
 /**
  * @param {number} sprintBoost the forager's sprint
  * @returns {Readonly<{specialisations: {forager: {sprintBoost: number}}}>} an arena that cuts it
