@@ -1,6 +1,6 @@
 # Scent trails and carrion scent
 
-**Status:** In progress - Phase 1 detectors are built; the shared baseline is pending, and the trail probe remains before Phase 2.
+**Status:** In progress - Phase 1 detectors and E-ST2-1 baseline complete (E210); the trail probe remains before Phase 2.
 **Validated:** 3a150d75 (2026-11-17)
 **Priority:** 35 - builds on [honest-budgets.md](honest-budgets.md) (body-priced carcasses) and [stillness.md](stillness.md) (motionless concealment)
 **Depends on:** [honest-budgets.md](honest-budgets.md), [senses-and-motor.md](senses-and-motor.md)
@@ -43,6 +43,18 @@ All computed by the eval observer; none is a reward.
 The baseline is the shared run of [detector-baseline.md](detector-baseline.md), read once for every plan that has its prediction written. The trail-following probe remains a Phase 2 entry gate.
 
 Add `js/evo/scene-scent.js` with `eval.chase_reacquire_share` and `eval.scavenge_approach_share`. The detector-baseline top-up measures them after all detector plans land. Before Phase 2, run the hand-laid trail probe and the `scent-after-sight-loss` champion probe.
+
+Baseline (`evals/power/defaults-floor-on-E210.json`, 128 seeds, 200000 ticks, `rulesHash` `38be2908ad820c86`):
+
+| Metric                             | Mean   | Range            | Null     | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
+| ---------------------------------- | ------ | ---------------- | -------- | ------ | ------ | ------ | --------------------- |
+| `eval.chase_reacquire_share`       | 0.394  | 0.245 to 0.5501  | 0.007813 | 0.075  | 0.05   | -      | 32                    |
+| `eval.scavenge_approach_share`     | 0.0234 | 0 to 0.09917     | 0        | 0.03   | 0.03   | 0.03   | 16                    |
+| `eval.chase_catch_share`           | 0.2657 | 0.155 to 0.3871  | 0.007813 | 0.05   | 0.05   | -      | 16                    |
+| `eval.hunter_income_share.carcass` | 0.1503 | 0.0872 to 0.1926 | 0        | 0.03   | 0.03   | 0.03   | 16                    |
+| `eval.hunter_juvenile_death_share` | 0.8565 | 0.4689 to 0.9888 | 0        | 0.1    | 0.05   | 0.05   | 32                    |
+
+Verdict (E-ST2-1, E210): Partially falsified. `eval.scavenge_approach_share` (0.0234) is under 0.05 as predicted, while `eval.chase_reacquire_share` (0.394) is above the predicted 0.1 ceiling (hunters already re-acquire lost prey in 39.4% of chases without track scent). Both metrics are `verified` (32 and 16 seeds). The trail probe (T5) remains before Phase 2.
 
 #### Chunks
 

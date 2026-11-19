@@ -1,7 +1,7 @@
 # Detector baseline
 
-**Status:** In progress - Phase 1 chunks A and B are built except the wave's `bench.observe_ms@500` price (T4: deferred while an eval screen holds the CPU lock; command under Wave check); the wave itself is not complete, since body-genes has no detector merged; T7 ran on the season 10 defaults (`E187`, re-recorded as `E188` on the gorge defaults, 2026-11-17; the plans whose detectors landed after `E188` get a top-up run later, on the same defaults), and T8 and T8a are built on `E188`; the measure-first plans share one chase-outcome taxonomy, one detector wave and one 128-seed baseline of the defaults, in place of seven separate 16-seed runs.
-**Validated:** 04e3b340 (2026-11-17)
+**Status:** In progress - Phase 1 chunks A and B are built except the wave's `bench.observe_ms@500` price (T4: deferred while an eval screen holds the CPU lock; command under Wave check); the wave itself is not complete, since body-genes has no detector merged; T7 ran on the season 10 defaults (`E187`, re-recorded as `E188` on the gorge defaults, 2026-11-17), and the shared top-up (`E210`, 2026-11-19, same `rulesHash` `38be2908ad820c86`) measured the sprint, stillness, scent-trail and prey-selectivity metrics, updated liveness and power, and recorded their verdicts; the measure-first plans share one chase-outcome taxonomy, one detector wave and one 128-seed baseline of the defaults, in place of seven separate 16-seed runs.
+**Validated:** 495482df (2026-11-19)
 **Priority:** 36 - it schedules no work of its own ahead of the queue: its tasks run when the Phase 1 detector tasks of the plans it serves are built, and those change no behaviour
 **Depends on:** [metric-trust.md](metric-trust.md)
 
@@ -115,24 +115,29 @@ Not registered (detector not merged): `bench.reflex_vs_drill`, `eval.dodge_skill
 
 ### [sprint-burst.md](sprint-burst.md)
 
-Baseline: `evals/power/defaults-floor-on-E188.json` (128 seeds, 200000 ticks)
+Baseline: `evals/power/defaults-floor-on-E210.json` (128 seeds, 200000 ticks)
 
-| Metric                     | Mean | Range | Null | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
-| -------------------------- | ---- | ----- | ---- | ------ | ------ | ------ | --------------------- |
-| `eval.sprint_share.hunter` | -    | -     | -    | -      | -      | -      | more than 64          |
-| `eval.sprint_share.prey`   | -    | -     | -    | -      | -      | -      | more than 64          |
-| `eval.chase_sprint_lift`   | -    | -     | -    | -      | -      | -      | more than 64          |
-| `eval.flee_sprint_lift`    | -    | -     | -    | -      | -      | -      | more than 64          |
-| `eval.sprint_cost_share`   | -    | -     | -    | -      | -      | -      | more than 64          |
+| Metric                     | Mean    | Range             | Null     | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
+| -------------------------- | ------- | ----------------- | -------- | ------ | ------ | ------ | --------------------- |
+| `eval.sprint_share.hunter` | 0.4086  | 0.06814 to 0.8781 | 0        | 0.2    | 0.15   | 0.1    | more than 64          |
+| `eval.sprint_share.prey`   | 0.4463  | 0.08054 to 0.8235 | 0        | 0.15   | 0.15   | 0.075  | more than 64          |
+| `eval.chase_sprint_lift`   | 1.117   | 0.2275 to 5.024   | 0.007813 | 0.75   | 0.75   | -      | more than 64          |
+| `eval.flee_sprint_lift`    | 1.105   | 0 to 2.65         | 0.02344  | 0.5    | 0.3    | -      | more than 64          |
+| `eval.sprint_cost_share`   | 0.05363 | 0.0116 to 0.128   | 0        | 0.5    | 0.3    | 0.2    | 64                    |
 
-Not registered (detector not merged): `eval.chase_spent_share`. Registered after E188, not in the report: `eval.sprint_share.hunter`, `eval.sprint_share.prey`, `eval.chase_sprint_lift`, `eval.flee_sprint_lift`, `eval.sprint_cost_share`.
+Not registered (detector not merged): `eval.chase_spent_share`.
 
 ### [stillness.md](stillness.md)
 
-| Metric | Mean | Range | Null | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
-| ------ | ---- | ----- | ---- | ------ | ------ | ------ | --------------------- |
+Baseline: `evals/power/defaults-floor-on-E210.json` (128 seeds, 200000 ticks)
 
-Not registered (detector not merged): `eval.freeze_under_threat`, `eval.freeze_survival_gain`, `eval.ambush_kill_share`, `eval.first_sight_range.still`, `eval.first_sight_range.moving`, `eval.first_sight_range`.
+| Metric                      | Mean      | Range                | Null     | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
+| --------------------------- | --------- | -------------------- | -------- | ------ | ------ | ------ | --------------------- |
+| `eval.freeze_under_threat`  | -0.1121   | -0.2152 to 0.1729    | 0        | 0.5    | 0.5    | 0.3    | more than 64          |
+| `eval.freeze_survival_gain` | 0.0008938 | -0.008615 to 0.01076 | 0        | -      | -      | -      | more than 64          |
+| `eval.ambush_kill_share`    | 0.0005704 | 0 to 0.00533         | 0.007813 | 0.03   | 0.03   | -      | 16                    |
+
+Not registered (detector not merged): `eval.first_sight_range.still`, `eval.first_sight_range.moving`, `eval.first_sight_range`.
 
 ### [chase-physics.md](chase-physics.md)
 
@@ -152,15 +157,17 @@ Not registered (detector not merged): `bench.step_ms@500`.
 
 ### [scent-trails.md](scent-trails.md)
 
+Baseline: `evals/power/defaults-floor-on-E210.json` (128 seeds, 200000 ticks)
+
 | Metric                             | Mean   | Range            | Null     | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
 | ---------------------------------- | ------ | ---------------- | -------- | ------ | ------ | ------ | --------------------- |
+| `eval.chase_reacquire_share`       | 0.394  | 0.245 to 0.5501  | 0.007813 | 0.075  | 0.05   | -      | 32                    |
+| `eval.scavenge_approach_share`     | 0.0234 | 0 to 0.09917     | 0        | 0.03   | 0.03   | 0.03   | 16                    |
 | `eval.chase_catch_share`           | 0.2657 | 0.155 to 0.3871  | 0.007813 | 0.05   | 0.05   | -      | 16                    |
 | `eval.hunter_income_share.carcass` | 0.1503 | 0.0872 to 0.1926 | 0        | 0.03   | 0.03   | 0.03   | 16                    |
 | `eval.hunter_juvenile_death_share` | 0.8565 | 0.4689 to 0.9888 | 0        | 0.1    | 0.05   | 0.05   | 32                    |
-| `eval.chase_reacquire_share`       | -      | -                | -        | -      | -      | -      | more than 64          |
-| `eval.scavenge_approach_share`     | -      | -                | -        | -      | -      | -      | more than 64          |
 
-Registered after E188, not in the report: `eval.chase_reacquire_share`, `eval.scavenge_approach_share`. Not registered: `bench.step_ms@500`.
+Not registered: `bench.step_ms@500`.
 
 ### [prey-guilds.md](prey-guilds.md)
 
@@ -187,13 +194,13 @@ Registered after E188, not in the report: `eval.chase_reacquire_share`, `eval.sc
 | `eval.guild_survival.forager`         | 0.06933     | 0.02862 to 0.1274  | 0        | 0.03   | 0.03   | 0.03   | 16                    |
 | `eval.guild_survival.reproducer`      | 0.06756     | 0.0286 to 0.1294   | 0        | 0.03   | 0.03   | 0.03   | 16                    |
 | `eval.guild_survival.defender`        | 0.06846     | 0.03588 to 0.1125  | 0        | 0.03   | 0.03   | 0.03   | 16                    |
-| `eval.prey_selectivity.forager`       | -           | -                  | -        | -      | -      | -      | more than 64          |
-| `eval.prey_selectivity.reproducer`    | -           | -                  | -        | -      | -      | -      | more than 64          |
-| `eval.prey_selectivity.scout`         | -           | -                  | -        | -      | -      | -      | more than 64          |
-| `eval.prey_selectivity.defender`      | -           | -                  | -        | -      | -      | -      | more than 64          |
+| `eval.prey_selectivity.forager`       | 1.289       | 0 to 5.066         | 0.007813 | 1      | 0.75   | -      | more than 64          |
+| `eval.prey_selectivity.reproducer`    | 1.476       | 0 to 11.92         | 0.007813 | -      | 1      | -      | more than 64          |
+| `eval.prey_selectivity.scout`         | 1.601       | 0 to 45.14         | 0.007813 | 1      | -      | -      | more than 64          |
+| `eval.prey_selectivity.defender`      | 1.291       | 0 to 6.912         | 0.007813 | 1      | 0.75   | -      | more than 64          |
 
 Not registered: `bench.step_ms@500`.
-Not in E188: `eval.prey_selectivity.forager`, `eval.prey_selectivity.reproducer`, `eval.prey_selectivity.scout`, `eval.prey_selectivity.defender`.
+Selectivity rows read `evals/power/defaults-floor-on-E210.json` (same `rulesHash` as `E188`).
 
 ### [body-genes.md](body-genes.md)
 
