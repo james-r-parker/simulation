@@ -160,7 +160,7 @@ A finalist's ladder change is adopted by a PR that commits the ladder edit, the 
 - Drill cells carry `jawTrials` and `closestList`; `drillReading` adds `jawShareLow` and `closestMedian`.
 - `stageProgress`, the curve's `progress` and `bestProgress` columns, and `plateauStop` with `TrainStageStalled.reason`.
 - `runYield`, `ladderYield`, `compareYield`, `train:yield`, `train:compare` and `train:screen`.
-- The first screen (`E-TL-1`, `evals/train-screens/plateau.grid.json`): the current ladder with and without `plateauStop`, 16 offsets, `until` `hunt-mid`. Prediction: equal pass shares, `no verdict` on score (a `worse` would mean the stop cuts runs that were still closing), and at least 30% fewer CPU hours with the stop.
+- The first screen (`E-TL-1`, `evals/train-screens/plateau.grid.json`): the current ladder with and without `plateauStop`, 16 offsets, `until` `hunt-mid`. Recorded as E205. Prediction (written before the run): equal pass shares, `no verdict` on score (a `worse` would mean the stop cuts runs that were still closing), and at least 30% fewer CPU hours with the stop.
 
 #### Chunks
 

@@ -4932,6 +4932,22 @@
       "effect": "better",
       "note": "Keep rule: all guards no harm. food_energy_per_1k 411.5 to 447.1 (+8.7%, better), hunter_catches_per_1k +20.4% better; @20k 378.8 to 436.3 (+15.2%) unverified; floor_episodes 0.34 to 0.25 unverified (interval [-0.36, 0.11]). Worse: median_lifespan -10%, diversity -16.8%, collision_death_share +19%, defender and reproducer fitness -5 to -6%. The done line is not met as written (@20k and floor_episodes are unverified). LIVE_POLICY unchanged pending the user's watch.",
       "reports": ["evals/decisions/E203/results.md", "evals/decisions/E203/compare.txt"]
+    },
+    {
+      "id": "E205",
+      "date": "2026-11-19",
+      "branch": "feat/training-loop-etl1",
+      "hypothesis": "E-TL-1 (training-loop T8): the ladder's plateauStop ends runs that have stopped closing without changing how many runs pass each stage, and saves CPU.",
+      "prediction": "Written before the run (16 offsets, 0 to 120 by 8, until hunt-mid, 2 arms = 32 runs): equal pass shares per stage in the stop and nostop arms; no verdict on train:compare score (a worse would mean the stop cuts runs that were still closing); at least 30% fewer CPU hours in the stop arm.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "nostop arm: evals/train-ladder.json with plateauStop 0 on nursery, hunt-contact, hunt-weak and hunt-mid",
+      "after": "stop arm: evals/train-ladder.json as committed (plateauStop on)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Running (effect is a placeholder until the verdict): scripts/run-detached.sh E-TL-1 --frozen -- npm run train:screen -- --grid evals/train-screens/plateau.grid.json",
+      "reports": ["evals/decisions/E205/results.md"]
     }
   ]
 }
