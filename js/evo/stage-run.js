@@ -43,6 +43,10 @@ import { bestOf, plateaued, stageProgress } from './stage-progress.js';
  *   each stall
  * @property {object[]} last the failing conditions of the last gate read
  * @property {string | null} lastStage the stage whose world ran the last generation (null before the first)
+ * @property {number} stageBest the best progress at any gate checkpoint of the current stage, `progressHistory`'s resets aside
+ *   (what `TrainGate` and `TrainStageStalled` report as `bestProgress`)
+ * @property {boolean} atTop whether an adaptive stage has taken a gate checkpoint at `adapt.to`: its `progressHistory` then
+ *   holds only checkpoints taken there, the ones its plateau stop reads
  * @property {number | null} difficulty the current stage's adapted value (`adapt.param`), set to `adapt.from` when the stage begins;
  *   null when the stage has no `adapt`. Laid over the episodes' world outside the stage's `rulesHash`
  */
@@ -88,6 +92,8 @@ export function initialState(stages, total) {
         last: [],
         lastStage: null,
         difficulty: stages[0]?.adapt?.from ?? null,
+        stageBest: 0,
+        atTop: false,
     };
 }
 
@@ -161,6 +167,25 @@ export function snapshotState(state) {
 }
 
 /**
+ * Gives a restored state the fields an older save lacks: `difficulty`, `stageBest` and `atTop`.
+ * @param {RunState} state the restored state (changed)
+ * @param {Record<string, any>} saved the saved state
+ * @returns {void}
+ */
+function fillMissing(state, saved) {
+    if (saved.difficulty === undefined) {
+        state.difficulty = currentEntry(state).adapt?.from ?? null;
+    }
+    if (saved.stageBest === undefined) {
+        state.stageBest = bestOf(state.progressHistory);
+    }
+    if (saved.atTop === undefined) {
+        const adapt = currentEntry(state).adapt;
+        state.atTop = adapt !== undefined && state.difficulty !== null && state.difficulty >= adapt.to;
+    }
+}
+
+/**
  * @param {readonly RunStage[]} stages the run's stages
  * @param {number} total the run's generations
  * @param {Record<string, any>} saved a `snapshotState` result
@@ -177,9 +202,7 @@ export function restoreState(stages, total, saved) {
         throw new Error("resume: the stages' rules differ from the ones the archive was written under");
     }
     const state = /** @type {RunState} */ ({ ...initialState(stages, total), ...saved, status: 'running', total });
-    if (saved.difficulty === undefined) {
-        state.difficulty = currentEntry(state).adapt?.from ?? null;
-    }
+    fillMissing(state, saved);
     delete (/** @type {any} */ (state).names);
     delete (/** @type {any} */ (state).hashes);
     return state;
@@ -214,6 +237,8 @@ function moveOn(s) {
     s.history = [];
     s.progressHistory = [];
     s.difficulty = s.stages[s.index].adapt?.from ?? null;
+    s.stageBest = 0;
+    s.atTop = false;
 }
 
 /**
@@ -226,7 +251,7 @@ function moveOn(s) {
  */
 function stall(s, entry, reason, events) {
     const optional = entry.optional === true;
-    const bestProgress = bestOf(s.progressHistory);
+    const bestProgress = s.stageBest;
     const stalled = { stage: entry.name, generation: s.generation, optional, failing: s.last, reason, bestProgress };
     s.stalled.push(stalled);
     events.push({ level: 'error', event: 'TrainStageStalled', fields: stalled });
@@ -322,11 +347,26 @@ function regress(s, { stage, failing }, events) {
  * @returns {boolean} whether the stage stalled on a plateau
  */
 function plateauStall(s, entry, events) {
-    if (s.count >= /** @type {number} */ (entry.maxGenerations) || !plateaued(s.progressHistory, entry)) {
+    const climbing = entry.adapt !== undefined && !s.atTop;
+    if (climbing || s.count >= /** @type {number} */ (entry.maxGenerations) || !plateaued(s.progressHistory, entry)) {
         return false;
     }
     stall(s, entry, 'plateau', events);
     return true;
+}
+
+/**
+ * The first gate checkpoint of an adaptive stage taken at `adapt.to` starts its plateau window: the earlier checkpoints ran
+ * an easier world, so they are not counted.
+ * @param {RunState} s the state (changed)
+ * @param {RunStage} entry the current stage
+ * @returns {void}
+ */
+function noteTop(s, entry) {
+    if (entry.adapt !== undefined && !s.atTop && s.difficulty !== null && s.difficulty >= entry.adapt.to) {
+        s.atTop = true;
+        s.progressHistory = [];
+    }
 }
 
 /**
@@ -348,7 +388,9 @@ function gateCheckpoint(s, entry, readings, events) {
     const read = readGate(/** @type {any} */ (entry.gate), { ...readings, retention });
     s.last = read.conditions.filter((c) => !c.passed);
     s.history.push(read.passed);
+    noteTop(s, entry);
     s.progressHistory.push(stageProgress(/** @type {any} */ (entry.gate), readings));
+    s.stageBest = Math.max(s.stageBest, s.progressHistory[s.progressHistory.length - 1]);
     const { streak, held } = streaksOf(s.history);
     events.push({
         level: 'info',
@@ -360,7 +402,7 @@ function gateCheckpoint(s, entry, readings, events) {
             conditions: read.conditions,
             retention,
             progress: s.progressHistory[s.progressHistory.length - 1],
-            bestProgress: bestOf(s.progressHistory),
+            bestProgress: s.stageBest,
             ...(kept.length === 0 ? {} : { kept }),
         },
     });
@@ -389,6 +431,7 @@ function stepReview(s) {
         s.review = null;
         s.history = [];
         s.progressHistory = [];
+        s.stageBest = 0;
         s.failStreaks = {};
         // a review only starts inside a gated stage; leave room for a hold before its stall
         const max = /** @type {number} */ (s.stages[s.index].maxGenerations);
