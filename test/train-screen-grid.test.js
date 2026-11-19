@@ -116,6 +116,7 @@ describe('evals/train-screens/plateau.grid.json', () => {
         const plan = planScreen(readFile('evals/train-screens/plateau.grid.json'), readFile);
         expect(plan.offsets).toEqual(Array.from({ length: 16 }, (_, i) => i * 8));
         expect(plan).toMatchObject({ until: 'hunt-mid', generations: 380, workersPerRun: 8, reference: 'nostop' });
+        expect(plan.arms.map((a) => a.train)).toEqual([{ checkpointEvery: 5 }, { checkpointEvery: 5 }]);
         const stops = (/** @type {string} */ name) =>
             plan.arms.find((a) => a.name === name)?.ladder.map((e) => [e.name, e.plateauStop]);
         const ladder = readFile('evals/train-ladder.json');

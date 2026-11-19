@@ -4,14 +4,25 @@
   "until": "hunt-mid",
   "generations": 380,
   "workersPerRun": 8,
+  "train": {
+    "checkpointEvery": 5
+  },
   "reference": "nostop",
   "arms": {
     "nostop": {
       "stages": {
-        "nursery": { "plateauStop": 0 },
-        "hunt-contact": { "plateauStop": 0 },
-        "hunt-weak": { "plateauStop": 0 },
-        "hunt-mid": { "plateauStop": 0 }
+        "nursery": {
+          "plateauStop": 0
+        },
+        "hunt-contact": {
+          "plateauStop": 0
+        },
+        "hunt-weak": {
+          "plateauStop": 0
+        },
+        "hunt-mid": {
+          "plateauStop": 0
+        }
       }
     },
     "stop": {}

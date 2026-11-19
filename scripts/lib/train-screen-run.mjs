@@ -54,15 +54,23 @@ function expectedOptions(argv) {
 /**
  * @param {string} dir a run directory
  * @param {{hash: string, argv: readonly string[]}} expected the arm's ladder hash and the run's `train.mjs` arguments
+ * @param {() => void} [onUnreadable] called when the manifest is not valid JSON (the run is then not reusable)
  * @returns {boolean} whether the directory holds a finished run (a manifest that is not `running`) of this ladder, with
  *   these trainer options and offset
  */
-export function reusable(dir, { hash, argv }) {
+export function reusable(dir, { hash, argv }, onUnreadable = () => {}) {
     const path = join(dir, 'manifest.json');
     if (!existsSync(path)) {
         return false;
     }
-    const manifest = JSON.parse(readFileSync(path, 'utf8'));
+    /** @type {Record<string, any>} */
+    let manifest;
+    try {
+        manifest = JSON.parse(readFileSync(path, 'utf8'));
+    } catch {
+        onUnreadable();
+        return false;
+    }
     const options = expectedOptions(argv);
     return (
         manifest.status !== 'running' &&
@@ -145,18 +153,26 @@ export async function runScreen(plan, { runs, slots, force = false, log, exec = 
  * @returns {Promise<RunOutcome>} what became of the run
  */
 async function runOne({ arm, offset, dir, argv, hash }, { force, log, exec }) {
-    if (!force && reusable(dir, { hash, argv })) {
+    const unreadable = () => log.log('warn', 'TrainScreenManifestUnreadable', { arm, offset, dir });
+    if (!force && reusable(dir, { hash, argv }, unreadable)) {
         log.log('info', 'TrainScreenRun', { arm, offset, dir, reused: true, exitCode: null, seconds: 0 });
         return { arm, offset, dir, status: 'reused', seconds: 0 };
     }
     rmSync(dir, { recursive: true, force: true });
     mkdirSync(dir, { recursive: true });
     const started = performance.now();
-    const exitCode = await exec(argv, dir);
+    /** @type {number | null} */
+    let exitCode = null;
+    let error = '';
+    try {
+        exitCode = await exec(argv, dir);
+    } catch (caught) {
+        error = /** @type {Error} */ (caught).message;
+    }
     const seconds = (performance.now() - started) / 1000;
-    if (exitCode !== 0 && exitCode !== STALLED) {
-        log.log('error', 'TrainScreenRunFailed', { arm, offset, dir, exitCode, seconds });
-        return { arm, offset, dir, status: 'failed', exitCode, seconds };
+    if (exitCode === null || (exitCode !== 0 && exitCode !== STALLED)) {
+        log.log('error', 'TrainScreenRunFailed', { arm, offset, dir, exitCode, seconds, error });
+        return { arm, offset, dir, status: 'failed', ...(exitCode === null ? {} : { exitCode }), seconds };
     }
     log.log('info', 'TrainScreenRun', { arm, offset, dir, reused: false, exitCode, seconds });
     return { arm, offset, dir, status: 'ran', exitCode, seconds };

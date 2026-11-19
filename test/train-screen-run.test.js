@@ -102,6 +102,44 @@ describe('runScreen', () => {
         });
     });
 
+    it('records a trainer that throws (a failed spawn) as a failed run and carries on', async () => {
+        const good = fakeTrain(() => ({ passed: 1 }));
+        const exec = async (/** @type {string[]} */ argv, /** @type {string} */ dir) => {
+            if (dir.endsWith('o8')) {
+                throw new Error('spawn ENOENT');
+            }
+            return good.exec(argv, dir);
+        };
+        const { log, records } = keptLog();
+        const outcomes = await runScreen(plan({ arms: { a: {} } }), {
+            runs: join(root, 'throws'),
+            slots: 1,
+            log,
+            exec,
+        });
+        expect(outcomes.map((o) => o.status)).toEqual(['ran', 'failed', 'ran']);
+        expect(records.find((r) => r.event === 'TrainScreenRunFailed')).toMatchObject({
+            offset: 8,
+            error: 'spawn ENOENT',
+        });
+    });
+
+    it('retrains a run whose manifest is not valid JSON, logging it', async () => {
+        const runs = join(root, 'corrupt');
+        await runScreen(plan({ arms: { a: {} } }), {
+            runs,
+            slots: 1,
+            log: keptLog().log,
+            exec: fakeTrain(() => ({ passed: 1 })).exec,
+        });
+        writeFileSync(join(runDir(runs, 'a', 8), 'manifest.json'), '{"status": "do');
+        const again = fakeTrain(() => ({ passed: 1 }));
+        const { log, records } = keptLog();
+        const outcomes = await runScreen(plan({ arms: { a: {} } }), { runs, slots: 1, log, exec: again.exec });
+        expect(outcomes.map((o) => o.status)).toEqual(['reused', 'ran', 'reused']);
+        expect(records.find((r) => r.event === 'TrainScreenManifestUnreadable')).toMatchObject({ offset: 8 });
+    });
+
     it('never runs more trainings at once than there are slots', async () => {
         let live = 0;
         let peak = 0;
