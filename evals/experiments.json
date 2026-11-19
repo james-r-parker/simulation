@@ -5081,6 +5081,22 @@
         "evals/decisions/E210/power.json",
         "evals/decisions/E210/unverified-2026-11-19.md"
       ]
+    },
+    {
+      "id": "E230",
+      "date": "2026-11-20",
+      "branch": "feat/training-loop-night2",
+      "hypothesis": "E-TL-6 (training-loop T22b, tuning night 2): the nursery stage stalls on 7 of 16 tune offsets at best progress 0.67 to 0.83; the plateau stop (plateauStop 10 at the base) ends it before more checkpoints can lift progress. A longer patience should let those runs pass.",
+      "prediction": "Written before the run (npm run train:tune with evals/train-tune.json, date 2026-11-20, two arms: stages.nursery.plateauStop=10 and stages.hunt-weak.preyShare=1): nursery plateauStop 10 reads better on the tune offsets (nursery passes on at least 11 of 16 against 9; the 7 offsets that stall at nursery with best progress 0.67-0.83 get more checkpoints) and confirms on the held-out offsets; hunt-weak preyShare 1.0 reads no verdict.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "base ladder: nursery passes on 9 of 16 tune offsets",
+      "after": "scripts/run-detached.sh E-TL-6 --frozen -- npm run train:tune -- --spec evals/train-tune.json --date 2026-11-20",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Prediction only; the run is in flight.",
+      "reports": ["evals/decisions/E230/results.md"]
     }
   ]
 }
