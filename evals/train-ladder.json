@@ -41,6 +41,19 @@
     ]
   },
   {
+    "name": "hunt-mid",
+    "config": "evals/stages/hunt-mid.json",
+    "preyShare": 0.9,
+    "minGenerations": 10,
+    "maxGenerations": 60,
+    "gate": [
+      {
+        "read": "drill.prey-mid.edgeLow",
+        "min": 0.001
+      }
+    ]
+  },
+  {
     "name": "hunt",
     "preyShare": 0.9,
     "config": "evals/stages/hunt.json",

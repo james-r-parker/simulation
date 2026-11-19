@@ -222,6 +222,7 @@ const ORACLES = Object.freeze({
     'pack-converge': () => packStriker,
     'prey-adrift': () => striker,
     'prey-weak': () => striker,
+    'prey-mid': () => striker,
 });
 
 /** The drills that have an oracle. */

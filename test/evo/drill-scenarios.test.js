@@ -65,6 +65,7 @@ describe('DRILLS', () => {
             'pack-converge',
             'prey-adrift',
             'prey-weak',
+            'prey-mid',
         ]);
         expect(DRILLS.every((d) => d.scene.length > 0)).toBe(true);
         expect(DRILLS.filter((d) => d.needsHunter).map((d) => d.name)).toEqual([
@@ -75,6 +76,7 @@ describe('DRILLS', () => {
             'pack-converge',
             'prey-adrift',
             'prey-weak',
+            'prey-mid',
         ]);
     });
 
