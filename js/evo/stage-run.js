@@ -14,6 +14,8 @@ import { GATE_HOLD, REVIEW_GENERATIONS, REVIEW_MAX, readGate, streaksOf } from '
  * @property {number} [maxGenerations] a gated stage's generations before it stalls
  * @property {boolean} [optional] a stalled optional stage lets the ladder move on
  * @property {number} [checkpointEvery] this stage's generations between checkpoints
+ * @property {boolean} [keepPasser] a gated stage's best passing elites are kept (`readings.keepers.<stage>`, the drill
+ *   readings of the kept passers on the stage's own drills) and count for its retention when the current champions fail
  */
 
 /**
@@ -201,29 +203,53 @@ function stall(s, entry, events) {
 }
 
 /**
+ * Reads one passed stage's gate on the current champions, then (for a `keepPasser` stage) on the kept passers.
+ * @param {RunStage} entry the passed stage
+ * @param {Record<string, any>} readings the checkpoint's readings
+ * @param {Record<string, number>} retention the retention read so far
+ * @returns {{read: {passed: boolean, conditions: any[]}, kept: boolean}} the read that counts, and whether a kept
+ *   passer carried it
+ */
+function readPassed(entry, readings, retention) {
+    const gate = /** @type {any} */ (entry.gate);
+    const read = readGate(gate, { ...readings, retention });
+    const keeper = entry.keepPasser === true ? readings.keepers?.[entry.name] : undefined;
+    if (read.passed || keeper === undefined) {
+        return { read, kept: false };
+    }
+    const alt = readGate(gate, { ...readings, drill: { ...readings.drill, ...keeper }, retention });
+    return alt.passed ? { read: alt, kept: true } : { read, kept: false };
+}
+
+/**
  * Reads the gate of every passed stage and keeps each one's failure streak.
  * @param {RunState} s the state (failure streaks changed)
  * @param {Record<string, any>} readings the checkpoint's readings
- * @returns {{retention: Record<string, number>, failing: Record<string, object[]>}} `retention.<stage>` (1 or 0),
- *   `retention.all`, and the failing conditions of each failed stage
+ * @returns {{retention: Record<string, number>, failing: Record<string, object[]>, kept: string[]}} `retention.<stage>`
+ *   (1 or 0), `retention.all`, the failing conditions of each failed stage and the stages a kept passer carried
  */
 function readRetention(s, readings) {
     /** @type {Record<string, number>} */
     const retention = {};
     /** @type {Record<string, object[]>} */
     const failing = {};
+    /** @type {string[]} */
+    const kept = [];
     retention.all = 1;
     for (const entry of s.stages.slice(0, s.index)) {
         if (!Object.hasOwn(s.passed, entry.name)) {
             continue;
         }
-        const read = readGate(/** @type {any} */ (entry.gate), { ...readings, retention });
+        const { read, kept: carried } = readPassed(entry, readings, retention);
+        if (carried) {
+            kept.push(entry.name);
+        }
         retention[entry.name] = read.passed ? 1 : 0;
         retention.all = Math.min(retention.all, retention[entry.name]);
         s.failStreaks[entry.name] = read.passed ? 0 : (s.failStreaks[entry.name] ?? 0) + 1;
         failing[entry.name] = read.conditions.filter((c) => !c.passed);
     }
-    return { retention, failing };
+    return { retention, failing, kept };
 }
 
 /**
@@ -262,7 +288,7 @@ function regress(s, { stage, failing }, events) {
  */
 function gateCheckpoint(s, entry, readings, events) {
     const ripe = s.count >= (entry.minGenerations ?? 1);
-    const { retention, failing } = ripe ? readRetention(s, readings) : { retention: {}, failing: {} };
+    const { retention, failing, kept } = ripe ? readRetention(s, readings) : { retention: {}, failing: {}, kept: [] };
     const regressed = Object.keys(failing).find((name) => s.failStreaks[name] >= GATE_HOLD);
     if (regressed !== undefined) {
         regress(s, { stage: regressed, failing: failing[regressed] }, events);
@@ -281,6 +307,7 @@ function gateCheckpoint(s, entry, readings, events) {
             passed: read.passed,
             conditions: read.conditions,
             retention,
+            ...(kept.length === 0 ? {} : { kept }),
         },
     });
     if (!held || !ripe) {

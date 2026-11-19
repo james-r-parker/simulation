@@ -21,6 +21,7 @@ import { logRunConfig } from './lib/run-config.mjs';
 import { checkOut, parseArgs } from './lib/train-args.mjs';
 import { EVAL_TICKS, GATE_SEED, appendCurveRow, runCheckpoint } from './lib/train-checkpoint.mjs';
 import { checkpointCrossplay, preyVsStageNames, readsCrossplay } from './lib/train-crossplay.mjs';
+import { loadKeepers, toKept } from './lib/train-keepers.mjs';
 import { loadPool, poolAfterCheckpoint, poolIndex, taskPool } from './lib/train-pool.mjs';
 import { buildManifest, manifestBase, partitionManifests, startLedger, writeManifest } from './lib/train-manifest.mjs';
 import { loadResume, loadStages, readJson, saveArchive } from './lib/train-state.mjs';
@@ -104,6 +105,7 @@ function usage(results, { wallSeconds, workers }) {
  * @property {number} trainTicks ticks trained so far
  * @property {Record<string, any> | null} lastPoint the last curve row
  * @property {import('./lib/train-manifest.mjs').ManifestBase} manifest the fixed part of `manifest.json`
+ * @property {Record<string, any[]>} keepers the kept passers by stage (`keepPasser` stages, scripts/lib/train-keepers.mjs)
  * @property {import('../js/evo/opponent-pool.js').Pool} pool the opponent pool: snapshots of the archive, kept only when
  *   a stage has a `pool` share
  * @property {import('./lib/train-crossplay.mjs').CrossplayState | null} crossplay the cross-play matrix over the run's
@@ -152,7 +154,8 @@ async function maybeCheckpoint(run, { drillTrials, gateTrials, crossTrials }) {
     if (gate !== null) {
         usePartition(run, { purpose: 'gate', partition: 'validation', generation: state.generation + 1 });
     }
-    const options = { workers: args.workers, evalTicks: args.ticks ?? EVAL_TICKS, drillTrials, gate };
+    const keepers = run.stages.some((s) => s.keepPasser) ? { kept: run.keepers, stages: run.stages } : undefined;
+    const options = { workers: args.workers, evalTicks: args.ticks ?? EVAL_TICKS, drillTrials, gate, keepers };
     const result = await runCheckpoint({ archive, stage, progress, options, log });
     if (gate !== null && readsCrossplay(run.stages, state)) {
         const preyStages = preyVsStageNames(run.stages, state);
@@ -205,6 +208,24 @@ function poolOn(stages) {
 }
 
 /**
+ * Keeps the champions that passed a `keepPasser` stage (`scripts/lib/train-keepers.mjs`).
+ * @param {Run} run the run (`keepers` is changed)
+ * @param {{checkpoint: {subjects?: any[]} | object | null, columns: Record<string, any>, stage: import('./lib/train-state.mjs').StageInfo}} at
+ *   the checkpoint the generation took, the gate columns the step wrote and the stage that ran
+ * @returns {void}
+ */
+function keepPassers(run, { checkpoint, columns, stage }) {
+    if (stage.keepPasser && columns.gate?.stagePassed && /** @type {any} */ (checkpoint)?.subjects?.length) {
+        run.keepers = { ...run.keepers, [stage.name]: toKept(/** @type {any} */ (checkpoint).subjects) };
+        run.log.log('info', 'TrainKeep', {
+            generation: run.state.generation,
+            stage: stage.name,
+            kept: run.keepers[stage.name].length,
+        });
+    }
+}
+
+/**
  * Counts a checkpoint in the opponent pool and takes the snapshot it is due: one at a stage pass, one every
  * `POOL_EVERY` checkpoints. A run with no `pool` stage keeps no pool.
  * @param {Run} run the run (`pool` is replaced)
@@ -248,9 +269,10 @@ async function runGeneration(run, { drillTrials, gateTrials, crossTrials, print 
     const checkpoint = await maybeCheckpoint(run, { drillTrials, gateTrials, crossTrials });
     const { state, columns } = advance(run.state, checkpoint, log);
     run.state = state;
+    keepPassers(run, { checkpoint, columns, stage });
     keepPool(run, { checkpoint, columns, stage: stage.name });
     const pool = poolOn(stages) ? { pool: poolIndex(run.pool) } : {};
-    saveArchive(args.out, { archive, stages, generation, state, ...pool });
+    saveArchive(args.out, { archive, stages, generation, state, keepers: run.keepers, ...pool });
     saveManifest(run);
     if (checkpoint !== null) {
         run.lastPoint = { ...checkpoint.point, ...columns };
@@ -305,6 +327,7 @@ function startRun(args, log, commandLine) {
         lastPoint: null,
         crossplay: null,
         pool: loadPool(args.resume ?? '', resumed?.pool),
+        keepers: loadKeepers(resumed?.keepers),
         manifest,
         partitions,
     };
