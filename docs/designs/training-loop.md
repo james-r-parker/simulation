@@ -1,6 +1,6 @@
 # Training loop
 
-**Status:** Proposed - the training process measured, cut short when it stops improving, checked for learnability, adapted to the population and tuned nightly; Phase 1 (graded readings, plateau stop, ladder yield and the ladder screen) first.
+**Status:** In progress - Phase 1 code built (T1 to T7); T8 (E-TL-1) is the next run
 **Validated:** 0254883d (2026-11-19)
 **Priority:** 1 - pinned by the user (2026-11-19): every training run waits on how fast a ladder change can be judged, and nothing here changes a sim rule
 **Depends on:** [training-stages.md](training-stages.md), [training.md](training.md)
@@ -41,11 +41,11 @@ A drill without a prey trace reads `jawShareLow` and `closestMedian` as null. Th
 
 Progress is a series within one stage. It is not scaled to the gate bar, so two stages' progress values are not compared.
 
-Every gate checkpoint's curve row carries `progress`, `bestProgress` (the stage's highest so far since it began or last returned from a review), `workers` and `cpuShare` (the generation's share of the pool's time spent in episodes, as `TrainGeneration` logs it). `npm run train:curve` prints `progress` and `bestProgress`.
+Every gate checkpoint's curve row carries `progress`, `bestProgress` (the stage's highest so far since it began or last returned from a review), `workers` and `cpuShare` (the generation's share of the pool's time spent in episodes, as `TrainGeneration` logs it) and `cpuSeconds` (the seconds the pool has spent in episodes since the process started, which `runYield` reads; a resumed run counts from 0). `TrainProgress` logs `progress` and `bestProgress` at each gate checkpoint. `npm run train:curve` prints `progress` and `bestProgress`.
 
 ## Plateau stop
 
-A gated curriculum entry may set `plateauStop`, a count of gate checkpoints. After `minGenerations`, a stage whose `bestProgress` has not risen by `PROGRESS_RISE` (0.02, absolute) over the last `plateauStop` gate checkpoints stalls with reason `plateau`, exactly as a stage that reaches `maxGenerations` stalls (reason `max`). An optional stage's plateau stall lets the ladder move on. `plateauStop` 0 or absent keeps the stage to `maxGenerations`.
+A gated curriculum entry may set `plateauStop`, a count of gate checkpoints. After `minGenerations`, a stage whose `bestProgress` has not risen by `PROGRESS_RISE` (0.02, absolute) over the last `plateauStop` gate checkpoints stalls with reason `plateau`, exactly as a stage that reaches `maxGenerations` stalls (reason `max`). An optional stage's plateau stall lets the ladder move on. `plateauStop` 0 or absent keeps the stage to `maxGenerations`. A stage whose gate names no drill (`arms-race`, `habitat`) has no progress to watch and never stalls on a plateau.
 
 - The check runs in `gateCheckpoint` (`js/evo/stage-run.js`) after the hold check, and only when the stage has not passed there: a stage passing its gate never stalls on a plateau.
 - The progress history is a `RunState` field (`progressHistory`), carried by `snapshotState` and `restoreState`, and cleared when the stage begins (`moveOn`) and when a review returns, as `history` is.
@@ -61,16 +61,16 @@ A gated curriculum entry may set `plateauStop`, a count of gate checkpoints. Aft
 
 ## Ladder yield
 
-`runYield` in `js/evo/ladder-yield.js` reads one run directory's `manifest.json` and `curve.jsonl` and returns:
+`runYield` in `js/evo/ladder-yield.js` reads one run's parsed `manifest.json` and `curve.jsonl` rows (`scripts/lib/yield-files.mjs` reads the directory) and returns:
 
-| Field          | Meaning                                                                                              |
-| -------------- | ---------------------------------------------------------------------------------------------------- |
-| `offset`       | the run's `--seed-offset`                                                                            |
-| `reached`      | the index of the last stage the run trained in (0 is the first)                                      |
-| `passed`       | each passed stage and its generation                                                                 |
-| `bestProgress` | the `bestProgress` of the stage it stopped in (1 when the ladder finished)                           |
-| `score`        | `reached + bestProgress`: one ordinal number per run                                                 |
-| `cpuSeconds`   | the summed episode time: `cpuShare` x `workers` x the generation's wall seconds, over the curve rows |
+| Field          | Meaning                                                                                                                             |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `offset`       | the run's `--seed-offset`                                                                                                           |
+| `reached`      | the index of the last stage the run trained in (0 is the first)                                                                     |
+| `passed`       | each passed stage and its generation                                                                                                |
+| `bestProgress` | the `bestProgress` of the stage it stopped in (1 when the ladder finished)                                                          |
+| `score`        | `reached + bestProgress`: one ordinal number per run                                                                                |
+| `cpuSeconds`   | the summed episode time: the curve's `cpuSeconds`, or for a curve without it `cpuShare` x `workers` x the wall seconds between rows |
 
 `ladderYield(runs, stages)` returns, per stage, the share of runs that passed it, the median generations to pass, and the CPU hours spent per pass of the stage. `npm run train:yield -- <dir> [<dir> ...]` prints the table and writes `--out <path>` JSON.
 
@@ -98,7 +98,7 @@ A gated curriculum entry may set `plateauStop`, a count of gate checkpoints. Aft
 | `reference`     | the arm the others are compared with (default an added arm `base`)                                                                                                 |
 | `workersPerRun` | workers per run (default 8); runs in flight is the worker budget (`defaultWorkers()`) over it                                                                      |
 
-Each arm's merged ladder is written to `<out>/<arm>/ladder.json`; each run trains into `<out>/<arm>/o<offset>/`. A run whose `manifest.json` matches the arm's ladder hash, trainer options and offset is reused (resume after a kill). The screen writes `yield.json` (each arm's `ladderYield`), `verdicts.json` (each arm's `compareYield` against the reference) and `table.md` to `evals/train-screens/results/<grid>/`. It does not take the CPU lock: training runs are deterministic under load.
+`--runs <dir>` moves the run directories (default `<out>`). Each arm's merged ladder is written to `<out>/<arm>/ladder.json`; each run trains into `<out>/<arm>/o<offset>/`. A run whose `manifest.json` matches the arm's ladder hash, trainer options and offset is reused (resume after a kill). The screen writes `yield.json` (each arm's `ladderYield`), `verdicts.json` (each arm's `compareYield` against the reference) and `table.md` to `evals/train-screens/results/<grid>/`. It does not take the CPU lock: training runs are deterministic under load.
 
 ## Learnability check
 
@@ -234,16 +234,16 @@ T22 is a long run, not a code chunk; T23 follows its record in one PR (Sonnet).
 
 ### Phase 1 - Graded readings, plateau stop, yield and the ladder screen
 
-| #   | Task                                                                                                                                                                                                                                                                                                                                    | Nature       | Depends on |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | Drill cells carry `jawTrials` and `closestList` (`scripts/drill.mjs`); `drillReadings` adds `jawShareLow` and `closestMedian`; tests                                                                                                                                                                                                    | [judgement]  | -          |
-| T2  | `stageProgress` and `PROGRESS_RISE` in `js/evo/stage-progress.js`; curve rows carry `progress`, `bestProgress`, `workers` and `cpuShare`; `TrainProgress`; `train:curve` columns; tests                                                                                                                                                 | [judgement]  | T1         |
-| T3  | `plateauStop` curriculum key and validation; the plateau stall in `gateCheckpoint` with `progressHistory` in `RunState`, `TrainStageStalled.reason` (`max`, `plateau`, `review`) and `bestProgress`; `plateauStop` 6 on the gated stages of `train-ladder.json`; tests                                                                  | [judgement]  | T2         |
-| T4  | `runYield` and `ladderYield` in `js/evo/ladder-yield.js` and `npm run train:yield`; its AGENTS.md row; tests on fixture run directories                                                                                                                                                                                                 | [mechanical] | T2         |
-| T5  | `compareYield` and `npm run train:compare`; its AGENTS.md row; tests                                                                                                                                                                                                                                                                    | [judgement]  | T4         |
-| T6  | `npm run train:screen` with `scripts/lib/train-screen-grid.mjs`: grid merge, per-arm ladders, run reuse, the worker budget, `yield.json`, `verdicts.json`, `table.md`, `TrainScreenRun`, `TrainScreenVerdict`, `TrainScreenRunFailed`; `evals/train-screens/plateau.grid.json`; its AGENTS.md row; tests including the tiny slow screen | [judgement]  | T3, T5     |
-| T7  | Conformance review of Phase 1 code by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; mark T1 to T6 built and move the Status line                                                                                                                                                                                    | [judgement]  | T6         |
-| T8  | (screen `E-TL-1`, detached) the current ladder with and without `plateauStop`, offsets 0 to 120 by 8, `until` `hunt-mid`; record E-TL-1 in `evals/experiments.json` with the yield table and CPU hours; mark Phase 1 built                                                                                                              | [judgement]  | T7         |
+| #   | Task                                                                                                                                                                                                                                                                                                                                            | Nature       | Depends on |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T1  | (built) Drill cells carry `jawTrials` and `closestList` (`scripts/drill.mjs`); `drillReadings` adds `jawShareLow` and `closestMedian`; tests                                                                                                                                                                                                    | [judgement]  | -          |
+| T2  | (built) `stageProgress` and `PROGRESS_RISE` in `js/evo/stage-progress.js`; curve rows carry `progress`, `bestProgress`, `workers` and `cpuShare`; `TrainProgress`; `train:curve` columns; tests                                                                                                                                                 | [judgement]  | T1         |
+| T3  | (built) `plateauStop` curriculum key and validation; the plateau stall in `gateCheckpoint` with `progressHistory` in `RunState`, `TrainStageStalled.reason` (`max`, `plateau`, `review`) and `bestProgress`; `plateauStop` 6 on the gated stages of `train-ladder.json`; tests                                                                  | [judgement]  | T2         |
+| T4  | (built) `runYield` and `ladderYield` in `js/evo/ladder-yield.js` and `npm run train:yield`; its AGENTS.md row; tests on fixture run directories                                                                                                                                                                                                 | [mechanical] | T2         |
+| T5  | (built) `compareYield` and `npm run train:compare`; its AGENTS.md row; tests                                                                                                                                                                                                                                                                    | [judgement]  | T4         |
+| T6  | (built) `npm run train:screen` with `scripts/lib/train-screen-grid.mjs`: grid merge, per-arm ladders, run reuse, the worker budget, `yield.json`, `verdicts.json`, `table.md`, `TrainScreenRun`, `TrainScreenVerdict`, `TrainScreenRunFailed`; `evals/train-screens/plateau.grid.json`; its AGENTS.md row; tests including the tiny slow screen | [judgement]  | T3, T5     |
+| T7  | Conformance review of Phase 1 code by a fresh agent, in parallel with `scripts/check.sh --fix --quick`; mark T1 to T6 built and move the Status line                                                                                                                                                                                            | [judgement]  | T6         |
+| T8  | (screen `E-TL-1`, detached) the current ladder with and without `plateauStop`, offsets 0 to 120 by 8, `until` `hunt-mid`; record E-TL-1 in `evals/experiments.json` with the yield table and CPU hours; mark Phase 1 built                                                                                                                      | [judgement]  | T7         |
 
 ### Phase 2 - The learnability check
 
