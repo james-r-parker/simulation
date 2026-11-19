@@ -39,4 +39,8 @@ describe('stageCensus', () => {
         expect(run(1)).toBe(20);
         expect(run(0)).toBe(0);
     });
+
+    it('runs with the default seeding when no prey share is given', () => {
+        expect(stageCensus({ overrides, seed: 3, ticks: 0, at: [0] })).toHaveLength(1);
+    });
 });
