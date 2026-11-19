@@ -11,7 +11,7 @@ import { loadStages } from '../scripts/lib/train-state.mjs';
 const readJson = (path) => JSON.parse(readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'));
 
 const LADDER = readJson('evals/train-ladder.json');
-const ORDER = ['nursery', 'hunt-contact', 'hunt', 'evade', 'arms-race', 'habitat', 'world'];
+const ORDER = ['nursery', 'hunt-contact', 'hunt-weak', 'hunt', 'evade', 'arms-race', 'habitat', 'world'];
 
 describe('evals/train-ladder.json', () => {
     it('lists the stages of the design doc in order, the world last', () => {

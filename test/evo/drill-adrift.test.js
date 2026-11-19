@@ -1,7 +1,8 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createRng, fork } from '../../js/sim/rng.js';
 import { drillSubject } from '../../js/evo/drill.js';
-import { DRILLS } from '../../js/evo/drill-scenarios.js';
+import { DRILLS, WEAK_SPRINT_BOOST } from '../../js/evo/drill-scenarios.js';
 import { oracleSubject } from '../../js/evo/lesson-oracles.js';
 import { playTrial, viewOf } from '../../js/evo/memory-probe-run.js';
 import { PREDATOR_SPEC } from '../../js/evo/memory-probe-scenarios.js';
@@ -45,5 +46,25 @@ describe('prey-adrift', () => {
         const drill = byName('prey-adrift');
         expect(drillSubject(drill, oracleSubject('prey-adrift'), { seed: 1, trials: 8 }).wins).toBe(8);
         expect(drillSubject(drill, idle, { seed: 1, trials: 4 }).wins).toBe(0);
+    });
+});
+
+describe('prey-weak', () => {
+    it('is the prey-ahead staging with a forager whose sprint is cut, and the oracle wins it', () => {
+        const weak = byName('prey-weak');
+        expect(weak.plan(stream(), view).stage).toEqual(byName('prey-ahead').plan(stream(), view).stage);
+        expect(createConfig(weak.arena).specialisations.forager.sprintBoost).toBe(WEAK_SPRINT_BOOST);
+        expect(createConfig({}).specialisations.forager.sprintBoost).toBeGreaterThan(WEAK_SPRINT_BOOST);
+        expect(drillSubject(weak, oracleSubject('prey-weak'), { seed: 1, trials: 16 }).wins).toBeGreaterThan(4);
+        expect(drillSubject(weak, idle, { seed: 1, trials: 4 }).wins).toBe(0);
+    });
+
+    it('cuts the sprint of the four prey specialisations in the hunt-weak stage and not the hunter', () => {
+        const stage = JSON.parse(readFileSync(new URL('../../evals/stages/hunt-weak.json', import.meta.url), 'utf8'));
+        const config = createConfig(stage);
+        for (const prey of ['forager', 'reproducer', 'scout', 'defender']) {
+            expect(config.specialisations[prey].sprintBoost).toBe(WEAK_SPRINT_BOOST);
+        }
+        expect(config.specialisations.predator.sprintBoost).toBe(createConfig({}).specialisations.predator.sprintBoost);
     });
 });

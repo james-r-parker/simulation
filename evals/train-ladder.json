@@ -28,6 +28,18 @@
     ]
   },
   {
+    "name": "hunt-weak",
+    "config": "evals/stages/hunt-weak.json",
+    "minGenerations": 10,
+    "maxGenerations": 60,
+    "gate": [
+      {
+        "read": "drill.prey-weak.edgeLow",
+        "min": 0.001
+      }
+    ]
+  },
+  {
     "name": "hunt",
     "config": "evals/stages/hunt.json",
     "minGenerations": 10,
