@@ -4743,14 +4743,22 @@
       "beforePolicy": "live",
       "afterPolicy": "live",
       "before": "control (defaults, hunterBiteBias 0), seeds 1 to 16, 400000 ticks",
-      "after": "hunterBiteBias -0.5, -1 and -2, same seeds and length (evals/screens/honest-bite-bias.grid.json)",
-      "verdicts": {},
-      "effect": "no-difference",
-      "note": "Screen, 16 seeds, 400000 ticks, control vs hunterBiteBias -0.5, -1, -2. Strikes at air (eval.bite_idle) 0.672 to 0.197, 0.115, 0.033; strike_miss_energy_ratio 0.393 to 0.264, 0.196, 0.058; juvenile death share 0.864 to 0.640, 0.553, 0.577; matured share 0.690 to 0.81-0.85; hunters alive 11 to 12, 10, 8. But catches per 1k 1.410 to 0.634, 0.502, 0.452 and seeds with pop above min 14 to 9 (p 0.063), 8 (p 0.070), 11; keep rule reads no harm on every arm (alive guard sees a loss of 8 to 10 seeds). Falsifier (every arm catches or held WORSE) not met. Finalist -0.5 goes to the 64-seed keep rule (T42). Outcome to task: T42.",
+      "after": "hunterBiteBias -0.5, -1 and -2 (screen, seeds 1 to 16); then -0.5 on 64 matched seeds 65 to 128 with --keep-rule (T42)",
+      "verdicts": {
+        "eval.hunter_catches_per_1k": "worse",
+        "eval.hunter_juvenile_death_share": "better",
+        "eval.bite_idle": "better"
+      },
+      "effect": "worse",
+      "note": "Screen, 16 seeds, 400000 ticks, control vs hunterBiteBias -0.5, -1, -2. Strikes at air (eval.bite_idle) 0.672 to 0.197, 0.115, 0.033; strike_miss_energy_ratio 0.393 to 0.264, 0.196, 0.058; juvenile death share 0.864 to 0.640, 0.553, 0.577; matured share 0.690 to 0.81-0.85; hunters alive 11 to 12, 10, 8. But catches per 1k 1.410 to 0.634, 0.502, 0.452 and seeds with pop above min 14 to 9 (p 0.063), 8 (p 0.070), 11; keep rule reads no harm on every arm (alive guard sees a loss of 8 to 10 seeds). Falsifier (every arm catches or held WORSE) not met. Finalist -0.5 goes to the 64-seed keep rule (T42). Outcome to task: T42. T42 (64 seeds 65-128, 400000 ticks): keep rule WORSE. eval.hunter_catches_per_1k 1.391 to 0.710 (-49%, [-0.771, -0.592]); alive, under80 and held guards no harm; juvenile death share 0.855 to 0.670, bite_idle 0.666 to 0.218; population_mean -27%, median_lifespan -11%, first kill +38% later, bite_on_prey_view 0.99 to 0.91. Lever falsified and not adopted; code reverted.",
       "reports": [
         "evals/decisions/E193/results.md",
         "evals/decisions/E193/screen-table.md",
-        "evals/decisions/E193/screen-verdicts.json"
+        "evals/decisions/E193/screen-verdicts.json",
+        "evals/decisions/E193/compare.txt",
+        "evals/decisions/E193/compare.json",
+        "evals/decisions/E193/control.report.json",
+        "evals/decisions/E193/bias-0.5.report.json"
       ]
     }
   ]

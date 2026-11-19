@@ -78,3 +78,39 @@ hunters alive (12 of 16, at or above the control), the juvenile death share (0.6
 closing and so the smallest cost to the chase. `bias-1` has the lowest juvenile death share (0.553) but fewer hunters alive and
 a lower population; `bias-2` is the most silent and the worst on hunters alive. If the 64-seed run reads catches or `popAboveMin`
 `WORSE` on `bias-0.5`, the lever is falsified as a whole (the milder arm is the safest).
+
+## Keep rule (T42, 64 matched seeds)
+
+`npm run eval:compare -- evals/decisions/E193/control.report.json evals/decisions/E193/bias-0.5.report.json --keep-rule
+--allow-config-diff hunterBiteBias` (the table is `compare.txt`, the full result `compare.json`; the reports are kept as E179's
+were). Both arms ran on seeds 65 to 128 (`--seed-offset 64`), 400000 ticks, floor on, policy live; the control is the defaults and
+the finalist is `hunterBiteBias` -0.5 (`bias-0.5.config.json`).
+
+**Verdict: `WORSE`. The lever is falsified and not adopted.**
+
+| Guard / metric                     | Result                                                                      |
+| ---------------------------------- | --------------------------------------------------------------------------- |
+| `alive` guard                      | no harm: 11 seeds harmed, 16 recovered (p 0.442); sees a loss of 31 seeds   |
+| `under80` guard                    | no harm: 9 harmed, 2 recovered (p 0.065); sees a loss of 10 seeds           |
+| `held` guard                       | no harm: 3 harmed, 0 recovered (p 0.25); sees a loss of 6 seeds             |
+| `eval.hunter_catches_per_1k` guard | **worse: 1.391 to 0.710 (-49%, interval [-0.771, -0.592])**                 |
+| `eval.bite_idle` (strikes at air)  | 0.666 to 0.218 (-67%)                                                       |
+| `eval.strike_miss_energy_ratio`    | 0.397 to 0.260 (-34%)                                                       |
+| `eval.hunter_juvenile_death_share` | 0.855 to 0.670 (better, [-0.207, -0.164])                                   |
+| `eval.recruit_matured_share`       | 0.679 to 0.785 (+15%)                                                       |
+| `eval.population_mean`             | 200.8 to 146.4 (-27%)                                                       |
+| `eval.median_lifespan`             | 3822 to 3398 (-11%, worse)                                                  |
+| `eval.hunter_first_kill_rmst`      | 1862 to 2571 (+38%, worse)                                                  |
+| `eval.bite_on_prey_view`           | 0.990 to 0.906 (worse)                                                      |
+| adoption bar                       | not met: hunters alive 46/64 (needs 0.75), seeds under 80 9/64 against 2/64 |
+
+**Reading.** The 16-seed signal held: the closed bias cuts strikes at air by two thirds and the juvenile death share by a fifth,
+and more cubs mature. But the jaws also stay shut when prey is in view (`eval.bite_on_prey_view` falls from 0.99 to 0.91 and the
+first kill comes 38% later), so the chain loses its strike and catches halve, which is the falsifier the T41 row wrote: a bite
+that opens too rarely. The population falls 27% and the median life 11%; the keep rule's `under80` guard (9 harmed against 2
+recovered) leans the same way. Mildest arm, shortest-lived benefit: the cost scales with the closing and no arm is free.
+
+**Outcome to task.** `hunterBiteBias` is **not adopted** and the code is reverted in this PR (the key, its tests and the season
+change are removed; the main `rulesHash` and `library/seasons.json` are unchanged). The screen, the keep rule and the records stay.
+The open jaw at birth is kept: a hunter that bites at nothing still pays for it, and selection, not a birth reflex, has to close
+it. T36a is not run.
