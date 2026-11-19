@@ -31,7 +31,7 @@ export async function main(argv, print = console.log) {
         const first = loadRuns(expandDirs([before]));
         const second = loadRuns(expandDirs([after]));
         const stages = second.stages.length > first.stages.length ? second.stages : first.stages;
-        const compare = compareYield(first.runs, second.runs);
+        const compare = compareYield(first.runs, second.runs, { stages: { before: stages, after: stages } });
         const arms = { before: ladderYield(first.runs, stages), after: ladderYield(second.runs, stages) };
         emit(formatCompare(compare, arms), { print, out, json: { compare, ...arms } });
     });

@@ -91,8 +91,8 @@ export function runYield(manifest, rows) {
 /**
  * @param {readonly RunYield[]} runs the runs of one arm
  * @param {readonly string[]} stages the ladder's stage names in order
- * @returns {{runs: number, meanScore: number, cpuHours: number, stages: StageYield[]}} the arm's yield: the run count, the
- *   mean score, the CPU hours of every run and, per stage, the share of runs that passed it, the median generations to
+ * @returns {{runs: number, meanScore: number, passedLast: number, cpuHours: number, stages: StageYield[]}} the arm's yield:
+ *   the run count, the mean score, the runs that passed the last stage, the CPU hours of every run and, per stage, the share of runs that passed it, the median generations to
  *   pass and the CPU hours spent per pass
  */
 export function ladderYield(runs, stages) {
@@ -110,9 +110,11 @@ export function ladderYield(runs, stages) {
         };
     });
     const meanScore = runs.length === 0 ? 0 : runs.reduce((sum, run) => sum + run.score, 0) / runs.length;
+    const last = stages[stages.length - 1];
     return {
         runs: runs.length,
         meanScore,
+        passedLast: runs.filter((run) => run.passed.some((p) => p.stage === last)).length,
         cpuHours: runs.reduce((sum, run) => sum + run.cpuSeconds, 0) / 3600,
         stages: rows,
     };

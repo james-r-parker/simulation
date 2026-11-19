@@ -51,8 +51,16 @@ function armResults(plan, outcomes) {
  */
 function verdictOf(reference, arm) {
     try {
-        const compare = compareYield(reference.runs, arm.runs);
-        return { verdict: compare.verdict, compare };
+        const stages = {
+            before: reference.yielded.stages.map((s) => s.stage),
+            after: arm.yielded.stages.map((s) => s.stage),
+        };
+        const compare = compareYield(reference.runs, arm.runs, { stages });
+        return {
+            verdict: compare.verdict,
+            ...(compare.reason === undefined ? {} : { reason: compare.reason }),
+            compare,
+        };
     } catch (error) {
         return { verdict: 'refused', reason: /** @type {Error} */ (error).message };
     }
