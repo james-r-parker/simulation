@@ -3676,3 +3676,26 @@ reads it with `TRAINER_DESCRIPTOR` and the stage-neutral `rulesHash`), and a sta
 (`initialAgents` 60 replaces the drill's own staging); pass the `specialisations` block alone. `train:crossplay` and
 `train:curve` on a finished run take 20 to 60 s. Numbers and the tasks: `evals/decisions/E-TS-1/results.md`, training-stages
 T33 to T38.
+
+### 2026-11-19 - Trained predator brains keep thrust and bite high, but their chase paths differ (brain-inspection T9)
+
+On `prey-ahead`, seed 1, 128 matched trials, `archive-159-predator-cell27` wins 1/128 and `archive-159-predator-cell94` wins 6/128. In the first four traced trials, cell27's `THRUST` output is positive on every tick and `BITE` on 93 to 100%; its positive `TURN` output is 0.8 to 15.9% and `SPRINT` is 1.4 to 19.3%. Cell94 also keeps `THRUST` positive on every tick and `BITE` on 87.6 to 100%, but `TURN` is 0 to 33.6% and `SPRINT` is 68.2 to 99.7%. Positive `SPRINT` activates sprint in `physics.js`; these are four traces per genome, not population estimates. The failure is consistent with chase and steering more than a lack of bite intent.
+
+Both genomes put their largest prey-ahead skip weights on direct ray-to-output paths: cell27 has `prey.hit0.strength` -> `THRUST` 1.133 and -> `BITE` 2.027, plus `prey.hit0.sin` -> `TURN` 1.255; cell94 has 1.028, 2.014 and 1.011 on those paths. Zeroing each path tests the effect on the same 128 trials:
+
+| Champion | Edit                                             | Intact | Edited |    Change | Before only         | After only | McNemar p |
+| -------- | ------------------------------------------------ | -----: | -----: | --------: | ------------------- | ---------- | --------: |
+| cell27   | `wSkip[12,0]` (`prey.hit0.strength` -> `THRUST`) |  1/128 |  0/128 | -0.007813 | 41                  | -          |  1.000000 |
+| cell27   | `wSkip[14,1]` (`prey.hit0.sin` -> `TURN`)        |  1/128 |  0/128 | -0.007813 | 41                  | -          |  1.000000 |
+| cell27   | `wSkip[12,4]` (`prey.hit0.strength` -> `BITE`)   |  1/128 |  1/128 |  0.000000 | -                   | -          |  1.000000 |
+| cell94   | `wSkip[12,0]` (`prey.hit0.strength` -> `THRUST`) |  6/128 |  1/128 | -0.039063 | 11,63,86,90,113,116 | 80         |  0.125000 |
+| cell94   | `wSkip[14,1]` (`prey.hit0.sin` -> `TURN`)        |  6/128 |  0/128 | -0.046875 | 11,63,86,90,113,116 | -          |  0.031250 |
+| cell94   | `wSkip[12,4]` (`prey.hit0.strength` -> `BITE`)   |  6/128 |  5/128 | -0.007813 | 86                  | -          |  1.000000 |
+
+The turn skip path is the clearest direct-path result: removing it erases all six cell94 catches (`p=0.031250`). The thrust edit loses five catches but also gains trial 80 (`p=0.125000`); the bite edit loses only trial 86 (`p=1`). Cell27's single baseline catch makes its direct skip rows too sparse to support those individual claims. Its h30 ablation raises wins from 1/128 to 11/128 (`beforeOnly=[41]`, `afterOnly=[2,22,28,38,39,47,65,76,89,90,111]`, `p=0.006348`). h30's `wOut` coefficient to `SPRINT` is +0.361876 while its hidden activation is negative in the first four traces; setting only `wOut[30,2]` to zero raises wins from 1/128 to 10/128 (`beforeOnly=[41]`, `afterOnly=[39,61,65,69,76,78,89,90,107,111]`, `p=0.011719`). Setting h30's `TURN` weight to zero leaves the win share at 1/128 (`beforeOnly=[]`, `afterOnly=[]`, `p=1`). This identifies a suppressive hidden-to-sprint path in cell27's failed chase.
+
+Cell94's h1 ablation drops 6/128 to 0/128 (`beforeOnly=[11,63,86,90,113,116]`, `afterOnly=[]`, `p=0.031250`); h1 has positive outgoing weights to `THRUST` (0.198), `TURN` (0.186) and `BITE` (0.390) and ranks among the largest active hidden contributions to all three. Other units also remove all six catches, so this is a distributed path, not a unique unit.
+
+Cell94 has several consequential units. Silencing h13 raises wins from 6/128 to 24/128 (`beforeOnly=[113]`, `afterOnly=[1,2,21,22,39,47,48,61,69,76,78,79,88,89,100,111,117,119,123]`, `p=0.000040`). Silencing h14 raises them to 25/128 (`beforeOnly=[11,86,113]`, `afterOnly=[4,7,9,12,15,18,22,27,32,39,46,67,68,79,80,85,92,102,104,107,114,125]`, `p=0.000157`). A narrower edit setting h14's outgoing `mate` weight to zero leaves the result at 6/128 (`beforeOnly=[]`, `afterOnly=[]`, `p=1`), so that ablation's benefit does not identify a single output edge. h14 has a large `mate` weight and negative `TURN` weight, but the responsible recurrent path remains unknown. Silencing h31 raises cell94 from 6/128 to 18/128 (`beforeOnly=[90,113]`, `afterOnly=[4,6,12,25,46,54,67,74,79,92,97,107,115]`, `p=0.004181`); setting only its `TURN` weight to zero gives 6/128 to 10/128 (`beforeOnly=[11,90,113,116]`, `afterOnly=[4,6,79,92,93,97,107,115]`, `p=0.387695`). The unit-level effect is real on these paired trials, but the turn edge alone does not explain it.
+
+This `prey-ahead` staging uses the default sprinting fleer. `DRILLS` contains no `prey-mid` or `prey-weak`, and the repository has no `WEAK_SPRINT_BOOST` or `MID_SPRINT_BOOST` definitions to set their prey speed. The two predator dossiers therefore cannot establish how either brain changes between slow and fast prey; that comparison awaits registered staging and sprint values. The current evidence describes the full-speed chase only and does not alter training or sim rules.

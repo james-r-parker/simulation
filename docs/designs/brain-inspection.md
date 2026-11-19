@@ -1,6 +1,6 @@
 # Brain inspection
 
-**Status:** In progress - Phase 1 is built; Phase 2 adds the `inspect-brain` skill and the first inspection of trained champions.
+**Status:** In progress - Phase 1 is built; Phase 2 records the skill and `prey-ahead` findings; `prey-mid` and `prey-weak` await defined staging and sprint values.
 **Validated:** 495482df (2026-11-19)
 **Priority:** 26 - last in the queue (user, 2026-11-04): a diagnostic for champions that fail a drill, useful only once the drills and the trainer exist
 **Depends on:** [training.md](training.md)
@@ -86,7 +86,7 @@ The output trace has 11 positions in `OUTPUT_INDEX` order. `split` is always zer
 
 ## Skill
 
-`.claude/skills/inspect-brain/SKILL.md` (new, Phase 2) is the procedure an agent follows: run `npm run drill` to pick a failing champion and drill, run `npm run inspect`, read `ablation.md` before `weights.md`, state one claim naming units, inputs or outputs, test it with `--edit`, and report the claim with the edit's `compareTrials` row. A claim is confirmed when its edit moves the win share in the claimed direction with `mcnemarP` below 0.05; otherwise it is reported as unconfirmed. Findings go into [sim-notes.md](sim-notes.md) under `## Learned while building`; an edit never goes into a genome, a champion file or the archive.
+`.claude/skills/inspect-brain/SKILL.md` is the procedure an agent follows: check the registered drills, run `npm run inspect`, read `ablation.md` before `weights.md`, state one claim naming units, inputs or outputs, test it with `--edit`, and report the claim with its `compareTrials` row. A finding is supported when the paired change moves in the predicted direction; report the exact `mcnemarP` as evidence strength, not proof. Findings go into [sim-notes.md](sim-notes.md) under `## Learned while building`; an edit never goes into a genome, a champion file or the archive.
 
 ## Phases
 
