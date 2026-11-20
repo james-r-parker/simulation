@@ -5113,6 +5113,22 @@
       "effect": "no-difference",
       "note": "Prediction falsified: the stalled offsets still stall, so nursery is a skill limit, not a budget limit. Run E-TL-7 (arm nursery-80-nostop: maxGenerations 80, plateauStop 0, against base, offsets 0-120). 1 up, 0 down, 15 tied, mean diff +0.08 [0, 0.239], sign test p 1.0, no verdict. Nursery passes 56 to 63% (one of 7 stalled offsets, 32, rescued), hunt-contact 56 to 63, hunt-weak 25 to 25, hunt-mid 19 to 19, passed last stage 3 to 3; cpu 17.6 to 23.3 h (+32%). Failing drill on the 7 stalled base offsets: drill.food-behind.edgeLow (min 0.3) fails on all 7 at the last gate (best 0.07 to 0.52); food-ahead passes at some gate on 6 (best 0.658) and fails on offset 24 (best -0.29, food-behind -0.14). The 80-generation arm reads the same on the 6 remaining stalled offsets.",
       "reports": ["evals/decisions/E231/results.md"]
+    },
+    {
+      "id": "E232",
+      "date": "2026-11-20",
+      "branch": "docs/e-ts-1m-record",
+      "hypothesis": "E-TS-1m (training-stages T67, T68): a nursery of scattered food (90 items, foodBackgroundShare 1), or a forage-turn rung on it before the nursery, passes the 7 offsets whose nursery stalls on drill.food-behind.edgeLow.",
+      "prediction": "Written before the run: nursery-scatter passes nursery on at least 4 of the 7 stalled offsets and on every one of the 9 base passers, hunt-contact on at least 9, the median within-archive rho of lower bound against food-behind wins above 0 (base -0.26), and train:compare reads better or no verdict; turn-rung passes forage-turn on at least 12 of 16 and nursery still stalls on at least 4 of the 7.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "base ladder: nursery passes on 9 of 16 tune offsets, passed last stage 3, cpu 17.6 h",
+      "after": "scripts/run-detached.sh E-TS-1m-2 --frozen -- npm run train:screen -- --grid evals/train-screens/food-behind.grid.json --runs .sim/train-screens/food-behind",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "nursery-scatter: nursery 56 to 88% (7 of 7 stalled offsets pass, but base passers 80 and 88 stall, so the 'every one of the 9' clause is falsified), hunt-contact 56 to 88, hunt-weak 25 to 63, hunt-mid 19 to 31, passed last stage 3 to 5, cpu 17.6 to 20.7 h; train:compare 12 up, 4 down, mean +0.919 [-0.135, 1.792], p 0.077, no verdict. T65 read of the last nursery archive (seed 1000000, 64 trials): elites clearing food-behind 103 of 159 to 121 of 155, median within-archive rho -0.18 to +0.08 (held), top-lower-bound elite clears on 9 to 14 of 16. turn-rung: forage-turn 94%, nursery 81%, hunt-contact 81%, hunt-weak 50%, hunt-mid 31%, passed last stage 5, cpu 23.5 h, incomparable; nursery stalls on 1 of 7 (offset 72), so the 'still stalls on at least 4' clause is falsified: acquiring the turn also matters. Held-out run E-TS-1n (offsets 128 to 248) follows (T69).",
+      "reports": ["evals/decisions/E-TS-1m/results.md", "evals/decisions/E-TS-1m-invalid/results.md"]
     }
   ]
 }
