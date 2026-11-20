@@ -5,6 +5,9 @@ import { DEATH_ANIMS } from '../../../js/app/renderer/death-anim.js';
 import {
     beginDeath,
     createDying,
+    deathBody,
+    DRIFT,
+    driftOf,
     isHidden,
     isPlaying,
     isUsed,
@@ -12,6 +15,7 @@ import {
     MAX_DYING,
     PENDING_MAX_MS,
     positionOf,
+    speedShare,
     stepDying,
     trackBodies,
 } from '../../../js/app/renderer/dying.js';
@@ -32,6 +36,7 @@ function frame(list) {
         a.y[i] = 50;
         a.size[i] = 10;
         a.speed[i] = s.speed ?? 0;
+        a.angle[i] = 0;
         a.spec[i] = 1;
         a.lineageId[i] = 7;
     });
@@ -138,24 +143,95 @@ describe.each(LANE_KINDS)('stepDying (%s lanes)', (_kind, lanes) => {
         const d = createDying(256, lanes());
         trackBodies(d, frame([{ slot: 3, genome: 30 }]), 0);
         trackBodies(d, frame([]), 0);
+        stepDying(d, { nowMs: PENDING_MAX_MS, causeNames: NAMES });
+        expect(isPlaying(d, 0)).toBe(false);
         stepDying(d, { nowMs: PENDING_MAX_MS + 1, causeNames: NAMES });
+        expect(PENDING_MAX_MS).toBe(400);
         expect(isPlaying(d, 0)).toBe(true);
         expect(d.cause[0]).toBe(0);
     });
 });
 
 describe.each(LANE_KINDS)('positionOf (%s lanes)', (_kind, lanes) => {
-    it('carries a body on at its last velocity while pending and slows it to rest once it dies', () => {
+    it('carries a body on at its last velocity and slows it to rest from the moment it vanished, dead or not', () => {
         const d = createDying(256, lanes());
         trackBodies(d, frame([{ slot: 3, genome: 30, x: 100, speed: 5 }]), 0);
         trackBodies(d, frame([]), 0);
+        expect(positionOf(d, 0, 0).x).toBe(100);
         const early = positionOf(d, 0, 50).x;
         expect(early).toBeGreaterThan(100);
-        expect(positionOf(d, 0, 100).x).toBeGreaterThan(early);
+        const mid = positionOf(d, 0, 400).x;
+        const rest = positionOf(d, 0, 4000).x;
+        expect(mid).toBeGreaterThan(early);
+        expect(rest - mid).toBeLessThan(mid - early);
+        expect(positionOf(d, 0, 8000).x).toBeCloseTo(rest, 2);
         beginDeath(d, { genome: 30, cause: 0, nowMs: 100 });
-        const a = positionOf(d, 0, 400).x;
-        const b = positionOf(d, 0, 2000).x;
-        expect(b).toBeGreaterThan(a);
-        expect(b - a).toBeLessThan(a - positionOf(d, 0, 100).x);
+        expect(positionOf(d, 0, 400).x).toBe(mid);
+    });
+
+    it('never moves a body backwards before it vanished', () => {
+        const d = createDying(256, lanes());
+        trackBodies(d, frame([{ slot: 3, genome: 30, x: 100, speed: 5 }]), 100);
+        trackBodies(d, frame([]), 100);
+        expect(positionOf(d, 0, 50).x).toBe(100);
+    });
+});
+
+describe('speedShare and driftOf', () => {
+    it('start at full speed and no travel, and decay to rest', () => {
+        expect(speedShare(0)).toBe(1);
+        expect(speedShare(-5)).toBe(1);
+        expect(speedShare(DRIFT.decayMs)).toBeCloseTo(Math.exp(-1));
+        expect(speedShare(PENDING_MAX_MS)).toBeLessThan(0.1);
+        expect(driftOf(0)).toBe(0);
+        expect(driftOf(1e6)).toBeCloseTo(DRIFT.decayMs);
+    });
+});
+
+describe.each(LANE_KINDS)('what a body carries (%s lanes)', (_kind, lanes) => {
+    it('keeps the live lanes of its last frame: temperature, state word, flags and heading', () => {
+        const d = createDying(256, lanes());
+        const a = frame([{ slot: 3, genome: 30 }]);
+        a.temperature[0] = 0.4;
+        a.state[0] = 0x05000203;
+        a.flags[0] = 0x21;
+        a.angle[0] = 1.25;
+        trackBodies(d, a, 0);
+        trackBodies(d, frame([]), 16);
+        expect(d.pose[7][0]).toBeCloseTo(0.4);
+        expect(d.word[0]).toBe(0x05000203);
+        expect(d.flags[0]).toBe(0x21);
+        expect(d.bearing[0]).toBeCloseTo(1.25);
+    });
+
+    it('takes the bearing a death names and keeps the heading when it names none', () => {
+        const d = createDying(256, lanes());
+        trackBodies(
+            d,
+            frame([
+                { slot: 3, genome: 30 },
+                { slot: 4, genome: 31 },
+            ]),
+            0,
+        );
+        trackBodies(d, frame([]), 16);
+        beginDeath(d, { genome: 30, cause: 1, nowMs: 40, bearing: -2.5 });
+        beginDeath(d, { genome: 31, cause: 1, nowMs: 40 });
+        expect(d.bearing[0]).toBeCloseTo(-2.5);
+        expect(d.bearing[1]).toBe(0);
+    });
+
+    it('finds the playing body of a genome, the newest when it died twice, and none while pending', () => {
+        const d = createDying(256, lanes());
+        trackBodies(d, frame([{ slot: 3, genome: 30 }]), 0);
+        trackBodies(d, frame([]), 16);
+        expect(deathBody(d, 30)).toBe(-1);
+        beginDeath(d, { genome: 30, cause: 0, nowMs: 40 });
+        expect(deathBody(d, 30)).toBe(0);
+        trackBodies(d, frame([{ slot: 3, genome: 30 }]), 50);
+        trackBodies(d, frame([]), 60);
+        beginDeath(d, { genome: 30, cause: 0, nowMs: 90 });
+        expect(deathBody(d, 30)).toBe(1);
+        expect(deathBody(d, 31)).toBe(-1);
     });
 });

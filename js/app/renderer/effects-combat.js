@@ -4,7 +4,7 @@
 import { familyColor, PALETTE } from './colors.js';
 import { startTween, TWEEN } from './body-tweens.js';
 import { startDent } from './dents.js';
-import { beginDeath } from './dying.js';
+import { beginDeath, deathBody, positionOf } from './dying.js';
 import { DEATH_RECIPES, FX_RECIPES, playRecipe } from './fx-recipes.js';
 
 /** Where on the biter a bite spray starts, in biter radii ahead of its centre. */
@@ -51,10 +51,12 @@ export function tweenAt(player, agents, i, kind) {
 /**
  * @param {import('./effects-player.js').EffectsPlayer} player the player
  * @param {{x: number, y: number, angle: number, size: number}} where the scratch position fields
+ * @param {boolean} [wall] whether the effect keeps wall time (`FxAt.wall`)
  * @returns {import('./fx-recipes.js').FxAt} the player's scratch `at`, filled with the effect's tick
  */
-function atOf(player, { x, y, angle, size }) {
+function atOf(player, { x, y, angle, size }, wall = false) {
     const at = player.at;
+    at.wall = wall;
     at.x = x;
     at.y = y;
     at.angle = angle;
@@ -172,7 +174,50 @@ export function playBite(player, agents) {
 }
 
 /**
- * A death: the recipe for its cause in the family colour, the pack kill's double ring, and the kill clamp on the
+ * Starts the dying body of a death record: the pool body of the dead genome, its membrane tearing from the killer's
+ * bearing when it was eaten.
+ * @param {import('./effects-player.js').EffectsPlayer} player the player, `player.effect` holding the record
+ * @param {import('../interpolate.js').Interpolated} agents the blended agents
+ * @param {{cause: number, name: string}} death the cause number and name
+ * @returns {number} the body's pool index, -1 when there is none
+ */
+function startBody(player, agents, { cause, name }) {
+    const d = player.dying;
+    if (d === null || d === undefined) {
+        return -1;
+    }
+    const e = player.effect;
+    const killer = name === 'EATEN' ? indexOfGenome(agents, e.b) : -1;
+    const bearing = killer >= 0 ? Math.atan2(agents.y[killer] - e.y, agents.x[killer] - e.x) : undefined;
+    beginDeath(d, { genome: e.a, cause, nowMs: player.momentCtx.nowMs, bearing });
+    return deathBody(d, e.a);
+}
+
+/**
+ * Puts the scratch spot where a death's effects play: on the dying body as drawn, at its size; at the record's position
+ * and the birth size when no body is drawn.
+ * @param {import('./effects-player.js').EffectsPlayer} player the player, `player.effect` holding the record
+ * @param {number} k the dying body's pool index, -1 when none
+ * @returns {void}
+ */
+function placeOnBody(player, k) {
+    const e = player.effect;
+    SPOT.x = e.x;
+    SPOT.y = e.y;
+    SPOT.angle = 0;
+    SPOT.size = BIRTH_SIZE;
+    const d = player.dying;
+    if (k >= 0 && d !== null && d !== undefined) {
+        const at = positionOf(d, k, player.momentCtx.nowMs);
+        SPOT.x = at.x;
+        SPOT.y = at.y;
+        SPOT.size = d.pose[3][k];
+    }
+}
+
+/**
+ * A death: the recipe for its cause in the family colour at the body's drawn position and size, on the wall clock so
+ * its particles end with the body's clip at any sim speed, the pack kill's double ring, and the kill clamp on the
  * killer of a body eaten.
  * @param {import('./effects-player.js').EffectsPlayer} player the player, `player.effect` holding the record
  * @param {import('../interpolate.js').Interpolated} agents the blended agents
@@ -183,17 +228,11 @@ export function playDeath(player, agents) {
     const cause = (e.c >>> CAUSE_SHIFT) & CAUSE_MASK;
     const name = player.causeNames[cause];
     player.at.rgb = familyColor(player.slots, e.d, 0.6, player.rgb);
-    SPOT.x = e.x;
-    SPOT.y = e.y;
-    SPOT.angle = 0;
-    SPOT.size = BIRTH_SIZE;
+    placeOnBody(player, startBody(player, agents, { cause, name }));
     const r = DEATH_RECIPES[/** @type {keyof typeof DEATH_RECIPES} */ (name)] ?? FX_RECIPES.died;
-    playRecipe(player.fx, r, atOf(player, SPOT));
+    playRecipe(player.fx, r, atOf(player, SPOT, true));
     if ((e.c & PACK_BIT) !== 0) {
-        playRecipe(player.fx, FX_RECIPES.packKill, atOf(player, SPOT));
-    }
-    if (player.dying !== null && player.dying !== undefined) {
-        beginDeath(player.dying, { genome: e.a, cause, nowMs: player.momentCtx.nowMs });
+        playRecipe(player.fx, FX_RECIPES.packKill, atOf(player, SPOT, true));
     }
     if (name === 'EATEN') {
         tweenAt(player, agents, indexOfGenome(agents, e.b), TWEEN.KILL);

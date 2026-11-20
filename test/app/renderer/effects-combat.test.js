@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
 import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
-import { createDying, isPlaying, trackBodies } from '../../../js/app/renderer/dying.js';
+import { createDying, isPlaying, positionOf, trackBodies } from '../../../js/app/renderer/dying.js';
 import { BITE_DENT, indexOfGenome, playBite, playDeath, tweenAt } from '../../../js/app/renderer/effects-combat.js';
 import { createDents, dentAt } from '../../../js/app/renderer/dents.js';
 import { CURVE } from '../../../js/app/renderer/fx-curves.js';
@@ -100,6 +100,62 @@ describe('playDeath', () => {
         expect(isPlaying(dying, 0)).toBe(true);
         expect(dying.cause[0]).toBe(1);
         expect(dying.start[0]).toBe(500);
+    });
+});
+
+describe('playDeath particles', () => {
+    const layout3 = { effectKinds: {}, deathCauses: { STARVED: 0, EATEN: 1 } };
+    const info3 = { callRadius: 1, callTicks: 1, maxAgents: 8 };
+
+    /** @param {ReturnType<typeof createEffectsPlayer>} player a player @returns {import('../../../js/app/renderer/dying.js').Dying} its dying bodies */
+    const bodies = (player) => /** @type {any} */ (player.dying);
+
+    /**
+     * @param {{size: number, ticksPerMs: number, cause?: number, killer?: boolean}} body the dying body and the rate
+     * @returns {ReturnType<typeof createEffectsPlayer>} the player after the death played
+     */
+    function died({ size, ticksPerMs, cause = 0, killer = false }) {
+        const dying = createDying(8);
+        const player = createEffectsPlayer({ layout: layout3, info: info3, dying });
+        player.fx.budget.ticksPerMs = ticksPerMs;
+        trackBodies(dying, alive([{ slot: 2, genomeId: 30, x: 100, y: 50, size, speed: 5 }]), 0);
+        const rest = killer ? [{ slot: 3, genomeId: 9, x: 100, y: 150, size: 10 }] : [];
+        trackBodies(dying, alive(rest), 16);
+        Object.assign(player.effect, { tick: 9, x: 100, y: 50, a: 30, b: killer ? 9 : 0, c: cause << 8, d: 1 });
+        player.momentCtx.nowMs = 300;
+        playDeath(player, alive(rest));
+        return player;
+    }
+
+    it('spawn at the body drawn position, not where the record says, and scale with its size', () => {
+        const small = died({ size: 10, ticksPerMs: 0.06 });
+        const big = died({ size: 30, ticksPerMs: 0.06 });
+        const at = positionOf(bodies(small), 0, 300);
+        expect(at.x).toBeGreaterThan(100);
+        expect(small.fx.pool.pose[0]).toBeCloseTo(at.x);
+        expect(small.fx.pool.pose[1]).toBeCloseTo(at.y);
+        expect(big.fx.pool.pose[3]).toBeCloseTo(3 * small.fx.pool.pose[3]);
+    });
+
+    it('keep wall time: the life in ticks follows the sim speed, so they end with the clip at x8 as at x1', () => {
+        const x1 = died({ size: 10, ticksPerMs: 0.06 });
+        const x8 = died({ size: 10, ticksPerMs: 0.48 });
+        expect(x8.fx.pool.time[1]).toBeCloseTo(8 * x1.fx.pool.time[1]);
+    });
+
+    it('starts the eaten body tearing from its killer', () => {
+        const player = died({ size: 10, ticksPerMs: 0.06, cause: 1, killer: true });
+        expect(bodies(player).bearing[0]).toBeCloseTo(Math.PI / 2);
+        const none = died({ size: 10, ticksPerMs: 0.06, cause: 1 });
+        expect(bodies(none).bearing[0]).toBe(0);
+    });
+
+    it('plays at the record when no body is drawn', () => {
+        const player = createEffectsPlayer({ layout: layout3, info: info3 });
+        Object.assign(player.effect, { tick: 9, x: 7, y: 8, a: 30, b: 0, c: 0, d: 1 });
+        playDeath(player, alive([]));
+        expect(player.fx.pool.pose[0]).toBe(7);
+        expect(player.fx.pool.pose[1]).toBe(8);
     });
 });
 

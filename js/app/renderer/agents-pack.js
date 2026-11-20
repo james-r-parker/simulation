@@ -154,10 +154,24 @@ export function flashOf(timer) {
  * @param {Record<string, number>} bits `ready.layout.flags`
  * @returns {void}
  */
-function packStatus(extra, o, flags, bits) {
+export function packStatus(extra, o, flags, bits) {
     extra[o] = (flags & bits.PREGNANT) !== 0 ? 1 : 0;
     extra[o + 2] = (flags & bits.SICK) !== 0 ? 1 : 0;
     extra[o + 3] = (flags & bits.INFECTED) !== 0 ? 1 : 0;
+}
+
+/**
+ * Writes a row's body lane: the state word unpacked.
+ * @param {Float32Array} body the bucket's body attribute
+ * @param {number} o the row's offset
+ * @param {number} s the state word
+ * @returns {void}
+ */
+export function packBodyWord(body, o, s) {
+    body[o] = s & STATE_BITS;
+    body[o + 1] = ((s >>> GESTATION_SHIFT) & BYTE) / BYTE;
+    body[o + 2] = ((s >>> DOSE_SHIFT) & BYTE) / BYTE;
+    body[o + 3] = ((s >>> STRAIN_SHIFT) & BYTE) / BYTE;
 }
 
 /**
@@ -171,11 +185,7 @@ function packStatus(extra, o, flags, bits) {
  * @returns {void}
  */
 function packTween(store, { bucket, o, i, tick }, agents, bits) {
-    const s = agents.state[i];
-    bucket.body[o] = s & STATE_BITS;
-    bucket.body[o + 1] = ((s >>> GESTATION_SHIFT) & BYTE) / BYTE;
-    bucket.body[o + 2] = ((s >>> DOSE_SHIFT) & BYTE) / BYTE;
-    bucket.body[o + 3] = ((s >>> STRAIN_SHIFT) & BYTE) / BYTE;
+    packBodyWord(bucket.body, o, agents.state[i]);
     const slot = agents.slot[i];
     const age = tweenAge(store.tweens, slot, agents.genomeId[i], tick);
     const flags = agents.flags[i];

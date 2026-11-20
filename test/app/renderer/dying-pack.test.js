@@ -7,7 +7,7 @@ import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
 import { bakeClips } from '../../../js/app/renderer/clip-sampler.js';
 import { CH, CLIPS } from '../../../js/app/renderer/clips.js';
 import { DEATH_ANIMS } from '../../../js/app/renderer/death-anim.js';
-import { beginDeath, createDying, trackBodies } from '../../../js/app/renderer/dying.js';
+import { beginDeath, createDying, PENDING_MAX_MS, trackBodies } from '../../../js/app/renderer/dying.js';
 import { packDying } from '../../../js/app/renderer/dying-pack.js';
 
 const FLAGS = { ATE_SHIFT: 0, BITTEN_SHIFT: 5, TIMER_MASK: 31, JAW_OPEN: 1 << 10 };
@@ -28,6 +28,7 @@ function frame(genomes) {
         a.size[i] = 10;
         a.lineageId[i] = 1;
         a.energy[i] = 0.5;
+        a.angle[i] = 0;
     });
     return a;
 }
@@ -71,6 +72,45 @@ describe('packDying', () => {
         packDying(d, store, VIEW);
         expect(store.buckets[0].tween[0]).toBe(0);
         expect(store.buckets[0].fade[0]).toBe(0);
+    });
+
+    it('keeps the live lanes on a pending body, its speed slowing to rest over the failing beat', () => {
+        const d = createDying(8);
+        const agents = frame([30]);
+        agents.speed[0] = 100;
+        agents.temperature[0] = 0.4;
+        agents.state[0] = 0x0000ff03;
+        agents.flags[0] = 4;
+        trackBodies(d, agents, 0);
+        trackBodies(d, frame([]), 0);
+        const view = { ...VIEW, flagBits: { PREGNANT: 4, SICK: 2, INFECTED: 1 }, maxVelocity: 200 };
+        const store = storeOf();
+        packDying(d, store, { ...view, nowMs: 0 });
+        const b = store.buckets[0];
+        expect(b.motion[0]).toBeCloseTo(0.5);
+        expect(b.state[0]).toBeCloseTo(0.4);
+        expect(b.extra[0]).toBe(1);
+        expect(b.extra[2]).toBe(0);
+        expect(b.body[0]).toBe(3);
+        expect(b.body[1]).toBeCloseTo(1);
+        expect(b.tween[0]).toBe(0);
+        const later = storeOf();
+        packDying(d, later, { ...view, nowMs: PENDING_MAX_MS });
+        expect(later.buckets[0].motion[0]).toBeLessThan(0.1 * b.motion[0]);
+        expect(later.buckets[0].motion[2]).toBe(b.motion[2]);
+    });
+
+    it('packs without flag bits or a speed scale: no status, the default top speed', () => {
+        const d = createDying(8);
+        const agents = frame([30]);
+        agents.speed[0] = 100;
+        agents.flags[0] = 7;
+        trackBodies(d, agents, 0);
+        trackBodies(d, frame([]), 0);
+        const store = storeOf();
+        packDying(d, store, VIEW);
+        expect(store.buckets[0].extra[0]).toBe(0);
+        expect(store.buckets[0].motion[0]).toBeCloseTo(0.5);
     });
 
     it('marks a body neutral only under the default palette without a colour slot', () => {
