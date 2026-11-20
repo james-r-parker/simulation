@@ -33,13 +33,17 @@ export function defaultWorkers(cores = availableParallelism(), env = process.env
  * Resolves and validates the pool size.
  * @param {number | undefined} requested The caller's `workers` option.
  * @param {number} taskCount How many tasks there are.
+ * @param {{even?: boolean}} [options] `even`: for tasks of equal length, take the fewest workers that finish in as many
+ *   waves as `requested` workers would (32 tasks on 12 workers run in 3 waves, and 11 workers run them in 3 too), so no
+ *   worker idles through a wave a smaller pool would have run.
  * @returns {number} The number of workers to start (at least 1).
  */
-export function resolvePoolSize(requested, taskCount) {
+export function resolvePoolSize(requested, taskCount, { even = false } = {}) {
     if (requested !== undefined && (!Number.isInteger(requested) || requested < 1)) {
         throw new RangeError(`workers must be a positive integer, got ${String(requested)}`);
     }
-    return Math.max(1, Math.min(requested ?? defaultWorkers(), taskCount));
+    const size = Math.max(1, Math.min(requested ?? defaultWorkers(), taskCount));
+    return even && taskCount > 0 ? Math.ceil(taskCount / Math.ceil(taskCount / size)) : size;
 }
 
 /**

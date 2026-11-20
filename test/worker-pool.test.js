@@ -129,6 +129,31 @@ describe('resolvePoolSize', () => {
     });
 });
 
+describe('resolvePoolSize even', () => {
+    it('takes the fewest workers that finish in the waves the requested pool would', () => {
+        const even = { even: true };
+        expect(resolvePoolSize(12, 32, even)).toBe(11);
+        expect(resolvePoolSize(24, 32, even)).toBe(16);
+        expect(resolvePoolSize(8, 10, even)).toBe(5);
+        expect(resolvePoolSize(3, 10, even)).toBe(3);
+    });
+
+    it('never adds a wave or exceeds the request, and leaves a divisor and an exact fit alone', () => {
+        for (let tasks = 1; tasks <= 40; tasks++) {
+            for (let requested = 1; requested <= 40; requested++) {
+                const plain = resolvePoolSize(requested, tasks);
+                const size = resolvePoolSize(requested, tasks, { even: true });
+                expect(size).toBeLessThanOrEqual(plain);
+                expect(Math.ceil(tasks / size)).toBe(Math.ceil(tasks / plain));
+            }
+        }
+        expect(resolvePoolSize(8, 32, { even: true })).toBe(8);
+        expect(resolvePoolSize(32, 32, { even: true })).toBe(32);
+        expect(resolvePoolSize(undefined, 0, { even: true })).toBe(1);
+        expect(() => resolvePoolSize(0, 4, { even: true })).toThrow(/positive integer/);
+    });
+});
+
 describe('defaultWorkers', () => {
     it('leaves 8 cores free on a big machine', () => {
         expect(defaultWorkers(32, {})).toBe(24);

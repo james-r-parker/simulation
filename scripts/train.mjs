@@ -32,7 +32,7 @@ import { loadKeepers, toKept } from './lib/train-keepers.mjs';
 import { applySteer, curveFields, episodeOverrides, steerOptions } from './lib/train-difficulty.mjs';
 import { loadPool, poolAfterCheckpoint, poolIndex, taskPool } from './lib/train-pool.mjs';
 import { buildManifest, manifestBase, partitionManifests, startLedger, writeManifest } from './lib/train-manifest.mjs';
-import { loadResume, loadStages, readJson, saveArchive } from './lib/train-state.mjs';
+import { archiveDue, loadResume, loadStages, readJson, saveArchive } from './lib/train-state.mjs';
 import { createDrillCache } from './lib/drill-cache.mjs';
 import { createPool, resolvePoolSize, runPool } from './lib/worker-pool.mjs';
 
@@ -297,8 +297,10 @@ async function runGeneration(run, { drillTrials, gateTrials, crossTrials, print 
     run.state = state;
     keepPassers(run, { checkpoint, columns, stage });
     keepPool(run, { checkpoint, columns, stage: stage.name });
-    const pool = poolOn(stages) ? { pool: poolIndex(run.pool) } : {};
-    saveArchive(args.out, { archive, stages, generation, state, keepers: run.keepers, ...pool });
+    if (archiveDue({ args, stages, state, generation, checkpointed: checkpoint !== null })) {
+        const pool = poolOn(stages) ? { pool: poolIndex(run.pool) } : {};
+        saveArchive(args.out, { archive, stages, generation, state, keepers: run.keepers, ...pool });
+    }
     saveManifest(run);
     if (checkpoint !== null) {
         const cpu = { workers: run.workers, cpuShare, cpuSeconds: run.cpuSeconds };
@@ -336,7 +338,7 @@ function startRun(args, log, commandLine) {
     const resumed = args.resume === null ? null : loadResume(args.resume, { stages, total: args.generations, log });
     const archive = resumed?.archive ?? createTrainerArchive(stages[0].built);
     const state = resumed?.state ?? initialState(stages, args.generations);
-    const workers = resolvePoolSize(args.workers, args.episodes);
+    const workers = resolvePoolSize(args.workers, args.episodes, { even: true });
     const seeds = readJson(fileURLToPath(SEEDS_URL));
     const started = performance.now();
     const manifest = manifestBase(args, commandLine);

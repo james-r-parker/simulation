@@ -82,6 +82,39 @@ const PINNED = {
     curve: '4194dd56a0d86f091b58f17cb88271845bde4ba41aafd7d19a51daf39af95b5b',
 };
 
+describe('archive files at checkpoints only', () => {
+    /**
+     * @param {string} name the output directory name
+     * @param {number} every the checkpoint interval
+     * @returns {Promise<string[]>} the archive file names the 5-generation run wrote
+     */
+    async function files(name, every) {
+        const out = join(root, name);
+        const argv = ['--generations', '5', '--config', world, '--checkpoint-every', String(every), '--workers', '2'];
+        const small = ['--episodes', '3', '--ticks', '2500', '--offer-from', '500', '--out', out];
+        await runTraining(parseArgs([...argv, ...small]), { drillTrials: 2 });
+        return readdirSync(out)
+            .filter((f) => /^archive-\d+\.json$/.test(f))
+            .sort();
+    }
+
+    it(
+        'writes the checkpoint generations and the last, byte-identical to the files a checkpoint every generation writes',
+        async () => {
+            const sparse = await files('every2', 2);
+            const dense = await files('every1', 1);
+            expect(sparse).toEqual(['archive-1.json', 'archive-3.json', 'archive-4.json']);
+            expect(dense).toHaveLength(5);
+            for (const f of sparse) {
+                expect(readFileSync(join(root, 'every2', f), 'utf8')).toBe(
+                    readFileSync(join(root, 'every1', f), 'utf8'),
+                );
+            }
+        },
+        scaleTimeout(180000),
+    );
+});
+
 describe('trainer throughput changes', () => {
     it(
         'write the archives and curve they always wrote, with 1 and 2 workers',
