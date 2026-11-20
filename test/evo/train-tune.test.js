@@ -144,12 +144,12 @@ describe('proposeArms', () => {
         expect(Object.keys(arms[0].overlay.stages ?? {})).toContain('hunt');
     });
 
-    it('reads the shipped spec and ladder: two arms, the first on the nursery plateau stop', () => {
+    it('reads the shipped spec and ladder: two arms, the first on the hunt-weak prey share', () => {
         const shipped = JSON.parse(readFileSync('evals/train-tune.json', 'utf8'));
         const real = JSON.parse(readFileSync('evals/train-ladder.json', 'utf8'));
         const arms = proposeArms(shipped, real, []);
         expect(arms).toHaveLength(2);
-        expect(arms[0].signature).toBe('stages.nursery.plateauStop=10');
-        expect(arms[1].signature).toBe('stages.hunt-weak.preyShare=1');
+        expect(arms[0].signature).toBe('stages.hunt-weak.preyShare=1');
+        expect(arms[1].signature).toBe('stages.hunt-contact.minGenerations=5');
     });
 });
