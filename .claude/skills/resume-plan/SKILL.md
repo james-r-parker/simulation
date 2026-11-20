@@ -24,7 +24,7 @@ before starting any task, and restamp it when it checks out.
    different order, say so and ask before re-ranking.
 3. **Read it fully.** Status line, Validated stamp, Depends on, every phase, the Delivery requirements and Task
    breakdown tables. Also read any doc it depends on, and confirm those are `Implemented` or far enough along.
-4. **Measure drift.**
+4. **Measure drift.** `scripts/task-start.sh <branch> --plan <doc>` prints the status line and next chunk first; then:
 
     ```bash
     git fetch origin
@@ -62,8 +62,10 @@ before starting any task, and restamp it when it checks out.
       parallel
     - its Targets and the baselines they will be compared against
     - conflicts or open questions
-10. **Ask before starting.** Do not begin implementation until the user confirms the next step. When work starts,
-    branch off fresh `origin/main` (see `create-pr`).
+10. **Ask before starting.** Do not begin implementation until the user confirms the next step. When work starts, run
+    `scripts/task-start.sh <type>/<short-desc> --plan docs/designs/<doc>.md`: it fetches, makes a worktree branched from
+    `origin/main` with `node_modules` ready, and prints the doc's status, the next unbuilt chunk and its task rows (the
+    worktree path is its last line). Work in that worktree. At the end of the chunk, `scripts/ship.sh` (see `create-pr`).
 
 ## Red flags
 
