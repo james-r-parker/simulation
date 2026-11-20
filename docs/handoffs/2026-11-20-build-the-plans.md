@@ -127,14 +127,14 @@ Merged:
 
 In flight:
 
-| Lane | Work                                                                  | Where                                                                                                                                                           |
-| ---- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| B    | E252: 128-seed 200000-tick baseline with the settled metrics, for T12 | run `settled-baseline-E252`, frozen, in worktree `agent-a049f978c889fc87d` (keep it)                                                                            |
-| B    | fair-chase.md Phase 1 (T1 to T5, E253 = E-FC-1), on `season/next`     | branch `feat/sprint-store` (Opus)                                                                                                                               |
-| A    | agent-workflow.md Phase 1 chunk B (T5 to T8)                          | branch `docs/scene-scorecard`                                                                                                                                   |
-| C    | ambient-display.md T4b (the `director:dry` bars)                      | branch `feat/director-bars`                                                                                                                                     |
-| -    | throughput.md T7a, T6, T7b                                            | draft [PR 550](https://github.com/james-r-parker/simulation/pull/550): needs `bench:parts --area field --compare origin/main` under the CPU lock once E252 ends |
+| Lane | Work                                                                                                | Where                                                                                                                                                           |
+| ---- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B    | E254 (run `settled-baseline-E252`): 128-seed 200000-tick baseline with the settled metrics, for T12 | run `settled-baseline-E252`, frozen, in worktree `agent-a049f978c889fc87d` (keep it)                                                                            |
+| B    | fair-chase.md Phase 1 (T1 to T5, E253 = E-FC-1), on `season/next`                                   | branch `feat/sprint-store` (Opus)                                                                                                                               |
+| A    | agent-workflow.md Phase 1 chunk B (T5 to T8)                                                        | branch `docs/scene-scorecard`                                                                                                                                   |
+| C    | ambient-display.md T4b (the `director:dry` bars)                                                    | branch `feat/director-bars`                                                                                                                                     |
+| -    | throughput.md T7a, T6, T7b                                                                          | draft [PR 550](https://github.com/james-r-parker/simulation/pull/550): needs `bench:parts --area field --compare origin/main` under the CPU lock once E252 ends |
 
-Next per lane: A - Phase 1 review T9, then Phases 3 and 6. B - T12 and T15 on E252, then training-loop.md Phase 5. C - T5 (perf:browser on the real GPU and the walk), then Phase 2.
+Next per lane: A - Phase 1 review T9, then Phases 3 and 6. B - T12 and T15 on E254, then training-loop.md Phase 5. C - T5 (perf:browser on the real GPU and the walk), then Phase 2.
 
 Waiting on the user, updated: subagents may push and open PRs (user, 2026-11-20), but the auto-mode classifier still refuses a subagent's `git push`; the coordinator pushes.
