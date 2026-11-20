@@ -370,7 +370,7 @@ function start() {
     });
     const tick = (/** @type {number} */ now) => {
         app.loop.frame(now);
-        app.iface.setCaption(app.driver.caption());
+        app.iface.setCaption(app.driver.caption() || app.loop.followCaption());
         app.tv.tick();
         const era = app.driver.takeEra();
         if (era !== null) {

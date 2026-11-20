@@ -1,11 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { createAppState } from '../../js/app/actions.js';
 import { createCameraController } from '../../js/app/camera.js';
-import { createFollowController, frameFollow, FOLLOW_HOLD_MS } from '../../js/app/follow.js';
+import { createFollowController, frameFollow } from '../../js/app/follow.js';
+import { createStory, holdMsFor, noteStory } from '../../js/app/follow-handoff.js';
+import { createFollowInterest } from '../../js/app/follow-target.js';
 import { createInterpolated } from '../../js/app/interpolate.js';
 
-/** @returns {{camera: any, state: any, agents: any, logs: any[], follow: ReturnType<typeof createFollowController>}} a view */
-function setup() {
+/** @returns {any} a player stub holding the story, the interest ring and no pursuits */
+function stubPlayer() {
+    return {
+        story: createStory(),
+        followInterest: createFollowInterest(),
+        flee: { pursuits: { count: 0 } },
+        bits: { PREGNANT: 1 },
+    };
+}
+
+/** @param {any} [player] the effects player @returns {{camera: any, state: any, agents: any, logs: any[], follow: ReturnType<typeof createFollowController>}} a view */
+function setup(player = null) {
     const camera = createCameraController({
         canvas: { width: 1920, height: 1080 },
         world: { width: 14400, height: 8100 },
@@ -20,7 +32,7 @@ function setup() {
         camera,
         state,
         getAgents: () => agents,
-        getPlayer: () => null,
+        getPlayer: () => player,
         log: (level, event, fields) => logs.push({ level, event, ...fields }),
     });
     return { camera, state, agents, logs, follow };
@@ -30,6 +42,9 @@ function setup() {
 function step(s, dtMs, paused = false) {
     s.follow.step({ dtMs, nowMs: 1000, available: true, paused });
 }
+
+/** The hold with no remembered death: a starvation's clip plus 600 ms. */
+const HOLD_MS = holdMsFor(null, 99);
 
 describe('continuous follow', () => {
     it('chooses a live selection, falls back from stale selections, and handles empty worlds', () => {
@@ -47,7 +62,7 @@ describe('continuous follow', () => {
         expect(s.camera.targetX).toBe(100);
         s.camera.targetZoom = 0.8;
         s.agents.genomeId[0] = 999;
-        step(s, FOLLOW_HOLD_MS - 1);
+        step(s, HOLD_MS - 1);
         expect(s.state.followId).toBe(7);
         expect(s.camera.targetX).toBe(100);
         step(s, 1);
@@ -57,6 +72,7 @@ describe('continuous follow', () => {
         expect(s.logs).toEqual([
             { level: 'info', event: 'FollowStarted', fromId: 0, toId: 7, reason: 'entry' },
             { level: 'info', event: 'FollowChanged', fromId: 7, toId: 999, reason: 'death' },
+            { level: 'info', event: 'FollowHandoff', from: 7, to: 999, relation: 'pick' },
         ]);
     });
 
@@ -77,7 +93,7 @@ describe('continuous follow', () => {
         step(s, 10000, true);
         s.follow.step({ dtMs: 10000, nowMs: 2000, available: false, paused: false });
         expect(s.state.followId).toBe(99);
-        step(s, 350);
+        step(s, HOLD_MS - 300);
         expect(s.state.followId).toBe(8);
     });
 
@@ -85,7 +101,7 @@ describe('continuous follow', () => {
         const s = setup();
         s.state.followId = 7;
         s.agents.count = 0;
-        step(s, FOLLOW_HOLD_MS);
+        step(s, HOLD_MS);
         expect(s.state.followId).toBe(0);
         expect(s.camera.following).toBe(false);
         expect(s.logs.at(-1)).toMatchObject({ event: 'FollowEnded', reason: 'empty' });
@@ -145,5 +161,54 @@ describe('follow framing', () => {
         camera.minZoom = camera.maxZoom = 4;
         frameFollow(camera);
         expect(camera.targetZoom).toBe(4);
+    });
+});
+
+describe('follow as a story', () => {
+    const CTX = { kinds: { DIED: 2, BORN: 1 }, eatenCause: 1, causeNames: ['STARVED', 'EATEN'] };
+
+    it('holds for the death clip plus 600 ms, then hands the camera to the killer with a 3 s caption', () => {
+        const player = stubPlayer();
+        const s = setup(player);
+        noteStory(player.story, { kind: 2, x: 100, y: 0, a: 7, b: 8, c: 256, d: 5 }, CTX);
+        s.state.followId = 7;
+        step(s, 16);
+        s.agents.genomeId[0] = 999;
+        const hold = holdMsFor(player.story, 7);
+        step(s, hold - 1);
+        expect(s.state.followId).toBe(7);
+        expect(s.follow.caption()).toBe('');
+        step(s, 1);
+        expect(s.state.followId).toBe(8);
+        expect(s.logs.at(-1)).toEqual({ level: 'info', event: 'FollowHandoff', from: 7, to: 8, relation: 'killer' });
+        expect(s.follow.caption()).toBe('its killer');
+        s.follow.step({ dtMs: 16, nowMs: 1000 + 2999, available: true, paused: false });
+        expect(s.follow.caption()).toBe('its killer');
+        s.follow.step({ dtMs: 16, nowMs: 1000 + 3000, available: true, paused: false });
+        expect(s.follow.caption()).toBe('');
+    });
+
+    it('names a child, and says nothing for a plain pick; cancelling and reset clear the caption', () => {
+        const player = stubPlayer();
+        const s = setup(player);
+        noteStory(player.story, { kind: 1, x: 0, y: 0, a: 8, b: 5, c: 7, d: 1 }, CTX);
+        noteStory(player.story, { kind: 2, x: 0, y: 0, a: 7, b: 0, c: 0, d: 0 }, CTX);
+        s.state.followId = 7;
+        step(s, 16);
+        s.agents.genomeId[0] = 999;
+        step(s, holdMsFor(player.story, 7));
+        expect(s.state.followId).toBe(8);
+        expect(s.follow.caption()).toBe('its daughter');
+        s.state.followId = 0;
+        step(s, 16);
+        expect(s.follow.caption()).toBe('');
+        s.state.followId = 999;
+        step(s, 16);
+        s.agents.genomeId[0] = 998;
+        step(s, holdMsFor(player.story, 999));
+        expect(s.logs.at(-1)).toMatchObject({ event: 'FollowHandoff', relation: 'pick' });
+        expect(s.follow.caption()).toBe('');
+        s.follow.reset();
+        expect(s.follow.caption()).toBe('');
     });
 });

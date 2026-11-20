@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createAppState } from '../../js/app/actions.js';
 import { createCameraController } from '../../js/app/camera.js';
 import { createFrameLoop } from '../../js/app/frame-loop.js';
+import { holdMsFor } from '../../js/app/follow-handoff.js';
 import { createFrameStats, frameReport } from '../../js/app/frame-stats.js';
 import { AGENT_FIELD, HEADER_WORDS } from '../../js/app/interpolate.js';
 import { createRequest, readRequest, SLOT } from '../../js/app/pack/frame-slots.js';
@@ -59,6 +60,9 @@ function fakeWorld() {
     const pack = fakePack();
     return { client: pack.client, pack };
 }
+
+/** The hold of a subject with no death remembered. */
+const HOLD_MS = holdMsFor(null, 0);
 
 describe('createFrameLoop', () => {
     it('draws the snapshot with the selection and the leading lineage', () => {
@@ -205,12 +209,13 @@ describe('createFrameLoop', () => {
         deps.state.followId = 999999;
         loop.frame(1033);
         expect(deps.state.followId).toBe(999999);
-        for (let t = 1133; t <= 1833; t += 100) {
+        for (let t = 1133; t <= 1133 + HOLD_MS; t += 100) {
             pack.step(loop, t);
         }
         expect(deps.state.followId).not.toBe(999999);
         expect(deps.state.followId).not.toBe(0);
         expect(loop.followAgent(deps.state.followId)).toBe(deps.state.followId);
+        expect(loop.followCaption()).toBe('');
     });
 
     it('does not count a suspended hidden-tab interval toward a pending death handoff', () => {
@@ -229,6 +234,10 @@ describe('createFrameLoop', () => {
         pack.step(loop, 10000);
         expect(deps.state.followId).toBe(999999);
         pack.step(loop, 10050);
+        expect(deps.state.followId).toBe(999999);
+        for (let t = 10150; t <= 10150 + HOLD_MS; t += 100) {
+            pack.step(loop, t);
+        }
         expect(deps.state.followId).not.toBe(999999);
         expect(deps.state.followId).not.toBe(0);
     });

@@ -1,12 +1,12 @@
-// Keeps a follow subject through its life, frames entry, and hands off after a brief death hold.
+// Keeps a follow subject through its life, frames entry, holds through the death clip and hands off with a reason
+// (docs/designs/ambient-display.md, "Follow as a story").
 
 import { appLog } from './app-log.js';
 import { followStep, updateCamera } from './camera.js';
+import { chooseHandoff, holdMsFor, RELATION, RELATION_CAPTIONS, RELATION_CAPTION_MS } from './follow-handoff.js';
 import { pickFollowAgent } from './follow-target.js';
 import { findAgent } from './renderer/overlays.js';
 
-/** Visible, unpaused milliseconds left at a departed subject before a handoff. */
-export const FOLLOW_HOLD_MS = 650;
 /** World units visible across the shorter canvas dimension on follow entry. */
 export const FOLLOW_VIEW_SPAN = 900;
 
@@ -34,7 +34,12 @@ export function frameFollow(camera) {
  * @property {number} observedId
  * @property {number} heldMs
  * @property {number} nowMs
- * @property {{player: import('./renderer/effects-player.js').EffectsPlayer | null, nowMs: number, x: number, y: number}} context
+ * @property {{player: import('./renderer/effects-player.js').EffectsPlayer | null, nowMs: number, x: number, y: number,
+ *   skip: number}} context
+ * @property {{id: number, relation: string}} choice scratch for `chooseHandoff`
+ * @property {{from: number, pick: FollowState['context']}} handoff scratch: the subject that left and the pick's context
+ * @property {string} captionText the relation caption on screen
+ * @property {number} captionUntilMs the wall time it goes
  */
 
 /** @param {FollowState} f @param {string} reason @param {number} toId @returns {void} logs a transition */
@@ -43,20 +48,70 @@ function report(f, reason, toId) {
     (f.deps.log ?? appLog)('info', event, { fromId: f.observedId, toId, reason });
     f.observedId = toId;
     f.heldMs = 0;
+    if (toId === 0) {
+        f.captionUntilMs = 0;
+    }
+}
+
+/** @param {FollowState} f @returns {void} points the pick's context at the camera and the displayed effects */
+function pickContext(f) {
+    f.context.player = f.deps.getPlayer();
+    f.context.nowMs = f.nowMs;
+    f.context.x = f.deps.camera.targetX;
+    f.context.y = f.deps.camera.targetY;
 }
 
 /** @param {FollowState} f @param {number} preferred @returns {number} a living subject */
 function choose(f, preferred) {
-    const { camera, getAgents, getPlayer } = f.deps;
-    const agents = getAgents();
+    const agents = f.deps.getAgents();
     if (findAgent(agents, preferred) >= 0) {
         return preferred;
     }
-    f.context.player = getPlayer();
-    f.context.nowMs = f.nowMs;
-    f.context.x = camera.targetX;
-    f.context.y = camera.targetY;
+    pickContext(f);
+    f.context.skip = 0;
     return pickFollowAgent(agents, f.context);
+}
+
+/**
+ * Hands the follow from a subject that is gone to the killer, a child, kin or the pick, and captions the relation.
+ * @param {FollowState} f the controller
+ * @param {import('./interpolate.js').Interpolated} agents the living agents
+ * @returns {void}
+ */
+function handOff(f, agents) {
+    const { state, getPlayer } = f.deps;
+    pickContext(f);
+    f.context.skip = 0;
+    f.handoff.from = state.followId;
+    const { id, relation } = chooseHandoff(getPlayer()?.story ?? null, agents, f.handoff, f.choice);
+    const from = f.handoff.from;
+    state.followId = id;
+    report(f, id === 0 ? 'empty' : 'death', id);
+    if (id !== 0) {
+        (f.deps.log ?? appLog)('info', 'FollowHandoff', { from, to: id, relation });
+        f.captionText = RELATION_CAPTIONS[/** @type {keyof typeof RELATION_CAPTIONS} */ (relation)] ?? '';
+        f.captionUntilMs = f.nowMs + RELATION_CAPTION_MS;
+    }
+}
+
+/**
+ * Finds the subject, counting the hold while it is gone and handing off when the hold is over.
+ * @param {FollowState} f the controller
+ * @param {import('./interpolate.js').Interpolated} agents the living agents
+ * @param {{dtMs: number, paused: boolean}} at frame time
+ * @returns {number} the subject's index in `agents`, -1 while it is gone
+ */
+function subjectIndex(f, agents, at) {
+    const { state, getPlayer } = f.deps;
+    let i = findAgent(agents, state.followId);
+    if (i < 0 && !at.paused) {
+        f.heldMs += at.dtMs;
+        if (f.heldMs >= holdMsFor(getPlayer()?.story ?? null, state.followId)) {
+            handOff(f, agents);
+            i = findAgent(agents, state.followId);
+        }
+    }
+    return i;
 }
 
 /**
@@ -76,15 +131,7 @@ function stepFollow(f, at) {
         return;
     }
     const agents = getAgents();
-    let i = findAgent(agents, state.followId);
-    if (i < 0 && !at.paused) {
-        f.heldMs += at.dtMs;
-        if (f.heldMs >= FOLLOW_HOLD_MS) {
-            state.followId = choose(f, 0);
-            report(f, state.followId === 0 ? 'empty' : 'death', state.followId);
-            i = findAgent(agents, state.followId);
-        }
-    }
+    const i = subjectIndex(f, agents, at);
     if (i >= 0) {
         f.heldMs = 0;
         followStep(camera, agents.x[i], agents.y[i], at.dtMs);
@@ -97,11 +144,25 @@ function stepFollow(f, at) {
 /**
  * @param {FollowDeps} deps injected current view, living subjects, effects and log
  * @returns {{choose: (preferred?: number) => number, step: (at: {dtMs: number, nowMs: number, available: boolean,
- *   paused: boolean}) => void, reset: () => void}} controller with no per-frame allocation
+ *   paused: boolean}) => void, reset: () => void, caption: () => string}} controller with no per-frame allocation;
+ *   `caption` is the relation caption while it is on screen, else an empty string
  */
 export function createFollowController(deps) {
-    const f = { deps, observedId: 0, heldMs: 0, nowMs: 0, context: { player: deps.getPlayer(), nowMs: 0, x: 0, y: 0 } };
+    const context = { player: deps.getPlayer(), nowMs: 0, x: 0, y: 0, skip: 0 };
+    /** @type {FollowState} */
+    const f = {
+        deps,
+        observedId: 0,
+        heldMs: 0,
+        nowMs: 0,
+        context,
+        choice: { id: 0, relation: RELATION.PICK },
+        handoff: { from: 0, pick: context },
+        captionText: '',
+        captionUntilMs: 0,
+    };
     return {
+        caption: () => (f.nowMs < f.captionUntilMs ? f.captionText : ''),
         choose: (preferred = 0) => choose(f, preferred),
         step: (at) => stepFollow(f, at),
         reset() {
@@ -109,6 +170,7 @@ export function createFollowController(deps) {
                 report(f, 'cancel', 0);
             }
             f.heldMs = 0;
+            f.captionUntilMs = 0;
             deps.state.followId = 0;
             deps.camera.following = false;
         },
