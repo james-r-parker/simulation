@@ -77,7 +77,7 @@ export function resetSprintSlot(store, factor, slot) {
 
 /**
  * Pushes `SPRINT_SPENT` for a store that has just fallen under the floor in a sprint: once per crossing, not per tick.
- * @param {{events: import('./events.js').EventRing, tick: number, genomeId: Uint32Array, spec: Uint8Array}} world the world
+ * @param {Record<string, any>} world the world (its `events`, `tick`, `genomeId` and `spec`)
  * @param {number} slot the sprinting slot
  * @returns {void}
  */
