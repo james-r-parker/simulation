@@ -18,7 +18,7 @@ const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-name
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(370);
+        expect(REPORT_NAMES).toHaveLength(372);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 

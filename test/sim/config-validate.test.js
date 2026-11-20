@@ -49,6 +49,13 @@ describe('validateConfig types and ranges', () => {
         );
     });
 
+    it('accepts unitKnockoutRate in [0, 1] and rejects out-of-range values', () => {
+        expect(createConfig({ ...SIMPLE_WORLD, unitKnockoutRate: 0 }).unitKnockoutRate).toBe(0);
+        expect(createConfig({ ...SIMPLE_WORLD, unitKnockoutRate: 1 }).unitKnockoutRate).toBe(1);
+        expect(() => createConfig({ ...SIMPLE_WORLD, unitKnockoutRate: -0.1 })).toThrow(/unitKnockoutRate/);
+        expect(() => createConfig({ ...SIMPLE_WORLD, unitKnockoutRate: 1.1 })).toThrow(/unitKnockoutRate/);
+    });
+
     it('rejects NaN', () => {
         expect(() => createConfig({ ...SIMPLE_WORLD, foodSpawnRate: NaN })).toThrow(/foodSpawnRate/);
     });

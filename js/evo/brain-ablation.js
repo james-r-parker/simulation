@@ -10,7 +10,7 @@ import { playTrial, viewOf } from './memory-probe-run.js';
  * Runs a drill's exact seeded trials intact or with one hidden unit silenced.
  * @param {{subject: import('./memory-probe-run.js').Subject, drill: import('./drill-staging.js').Drill,
  *   unit: number | null, seed: number, trials: number, config?: Record<string, any>}} options the subject, drill and replay settings
- * @returns {Array<{trial: number, won: boolean, trace: Record<string, any> | null}>} the paired trial results
+ * @returns {Array<{trial: number, ticks: number, won: boolean, trace: Record<string, any> | null}>} the paired trial results
  */
 export function ablateUnit({ subject, drill, unit, seed, trials, config = {} }) {
     return replayTrials({ subject, drill, unit, edits: null, seed, trials, config });

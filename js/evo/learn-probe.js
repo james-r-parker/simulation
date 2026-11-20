@@ -10,6 +10,7 @@ import { resolveMutationRate } from '../sim/mutation-rate.js';
 import { createRng, fork } from '../sim/rng.js';
 import { drillSubject } from './drill.js';
 import { SIGMA_START, mutateSigma, mutateWeights, randomWeights } from './mutation.js';
+import { knockOutUnit } from './unit-knockout.js';
 
 /** Populations the probe evolves per lesson. */
 export const LEARN_SEEDS = 8;
@@ -66,7 +67,7 @@ function subjectOf(brain, drill) {
  *   children, the config and the mutation stream
  * @returns {Brain[]} the next generation: the best parent unchanged, then mutated copies of the parents in turn
  */
-function breed(parents, { count, config, rng }) {
+export function breed(parents, { count, config, rng }) {
     const layout = brainLayout(config);
     const rate = resolveMutationRate(config.mutationRate, layout.weightCount);
     const children = [parents[0]];
@@ -75,6 +76,7 @@ function breed(parents, { count, config, rng }) {
         const sigma = mutateSigma(parent.sigma, layout.weightCount, rng);
         const row = Float32Array.from(parent.row);
         mutateWeights(row, sigma, rng, { traitStart: layout.traitStart, rate });
+        knockOutUnit(row, layout, rng, config.unitKnockoutRate);
         children.push({ row, sigma });
     }
     return children;

@@ -28,5 +28,11 @@
     "plan": null,
     "task": null,
     "reason": "Kept for the 'offspring' fallback arm: its follow-up screen (offspring against rank, 16 seeds) was never run before natural-selection.md closed (Decisions, 2026-11-07); delete the key with the offspring path if a later screen shows eval.mate_hunter_lean is not negative with 'rank'."
+  },
+  {
+    "key": "unitKnockoutRate",
+    "plan": "docs/designs/unit-knockout.md",
+    "task": "T15",
+    "reason": "Off by default (0) in Phase 1 while Phase 2 measures the rate screen, keep rule and ladder screen; T15 adopts the finalist or deletes the operator."
   }
 ]
