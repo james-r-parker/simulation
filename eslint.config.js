@@ -4,10 +4,28 @@ import globals from 'globals';
 
 const MATH_MSG = 'Not bit-exact across engines: use js/sim/det-math.js, or + - * / and Math.sqrt.';
 const POW_MSG = 'The ** operator is not bit-exact across engines: multiply out or use det-math.js.';
+const TIMEOUT_MSG =
+    'Wrap a test timeout in scaleTimeout (scripts/lib/test-timeout.mjs) so coverage and load stretch it.';
+// it, test and describe, called directly, through a modifier (it.skip, describe.sequential) or a factory (it.each(rows),
+// it.runIf(cond)), with the body as the second argument or the third after an options object (so a helper that happens
+// to be called test is not one).
+const VITEST_NAME = '/^(it|test|describe)$/';
+const VITEST_CALL = [
+    'CallExpression',
+    `:matches([callee.name=${VITEST_NAME}], [callee.object.name=${VITEST_NAME}], [callee.callee.object.name=${VITEST_NAME}])`,
+    ':matches([arguments.1.type=/Function/], [arguments.2.type=/Function/])',
+].join('');
 
 export default [
     {
-        ignores: ['dist/**', 'node_modules/**', 'public/**', 'vite.config.js', 'test/fixtures/**'],
+        ignores: [
+            'dist/**',
+            'node_modules/**',
+            'public/**',
+            'vite.config.js',
+            'test/fixtures/**',
+            '.claude/worktrees/**',
+        ],
     },
     js.configs.recommended,
     // Coding standards (docs/coding-standards.md and the AGENTS.md size limits): small single-purpose modules and functions.
@@ -61,6 +79,25 @@ export default [
         files: ['test/**/*.js'],
         rules: {
             'max-lines': ['error', { max: 400, skipBlankLines: true, skipComments: true }],
+        },
+    },
+    // A Vitest timeout written as a bare number skips the coverage and busy-machine scale of vitest.config.js, so a long
+    // test times out in a loaded local gate (sim-notes.md, 2026-11-16): wrap it in scaleTimeout. Playwright specs are not
+    // Vitest tests.
+    {
+        files: ['test/**/*.test.js'],
+        rules: {
+            'no-restricted-syntax': [
+                'error',
+                {
+                    selector: `${VITEST_CALL} > Literal.arguments[raw=/^\\d/]`,
+                    message: TIMEOUT_MSG,
+                },
+                {
+                    selector: `${VITEST_CALL} > ObjectExpression.arguments > Property[key.name='timeout'] > Literal.value`,
+                    message: TIMEOUT_MSG,
+                },
+            ],
         },
     },
     {

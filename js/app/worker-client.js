@@ -1,17 +1,23 @@
 // The main thread's end of the worker protocol: sends commands, validates and routes what comes back, holds the two
-// newest snapshots and the newest field, queues every snapshot's effects by tick, drops anything from an older world
-// and gives each buffer back as soon as it is no longer needed. Imports only the protocol.
+// newest snapshots (views over slots of the shared snapshot ring) and the newest field, queues every snapshot's effects
+// by tick, drops anything from an older world and gives each field buffer back as soon as it is no longer needed.
+// Imports only the protocol and the snapshot ring.
 
 import { DIRECTION, MESSAGE_TYPES, POOLS, validateMessage } from '../worker/protocol.js';
+import { createRingViews, holdFrom, READER, RELEASED, slotOfSeq } from '../worker/snapshot-ring.js';
+
+/** The least wall time between two `SnapshotLost` warnings. */
+export const LOST_LOG_INTERVAL_MS = 5000;
 
 /** Effects the queue holds; when full the oldest are dropped. */
 export const EFFECT_QUEUE_CAPACITY = 2048;
 
 /**
- * @typedef {object} Snapshot
+ * @typedef {object} Snapshot a view of one ring slot, made once per ring and reused: its fields change when its slot is
+ *   published again, so keep nothing of it past the frame, and compare `seq`, never the object
  * @property {number} epoch the world it belongs to
+ * @property {number} seq the ring sequence number it shows
  * @property {number} tick the tick it shows
- * @property {ArrayBuffer} buffer the transferred buffer
  * @property {Uint32Array} u32 the word view
  * @property {Float32Array} f32 the float view
  */
@@ -80,6 +86,11 @@ function queueEffects(queue, u32, offset) {
  * @property {ClientListeners} listeners the callbacks
  * @property {number} epoch the world whose messages are current
  * @property {any} ready the last `ready` message, null before one
+ * @property {import('../worker/snapshot-ring.js').Ring | null} ring the world's snapshot ring, null before `ready`
+ * @property {Snapshot[]} slotSnapshots one `Snapshot` per ring slot
+ * @property {((level: 'warn', event: string, fields: Record<string, any>) => void) | undefined} log the app log
+ * @property {() => number} now the clock, in ms
+ * @property {number} lostLoggedAt when `SnapshotLost` was last logged
  * @property {Snapshot | null} prev the older of the two held snapshots
  * @property {Snapshot | null} latest the newest snapshot
  * @property {{epoch: number, tick: number, buffer: ArrayBuffer, f32: Float32Array} | null} field the newest field,
@@ -95,7 +106,7 @@ function queueEffects(queue, u32, offset) {
 
 /**
  * @param {Client} client the client
- * @param {string} pool `snapshot` or `field`
+ * @param {string} pool `field`
  * @param {ArrayBuffer} buffer the buffer to give back
  * @returns {void}
  */
@@ -116,15 +127,13 @@ function releaseField(client) {
 }
 
 /**
- * Returns every held snapshot and the held field, so nothing of an old world is drawn.
+ * Releases the ring hold and the held field, so nothing of an old world is drawn or kept alive.
  * @param {Client} client the client
  * @returns {void}
  */
 function releaseWorld(client) {
-    for (const snapshot of [client.prev, client.latest]) {
-        if (snapshot !== null) {
-            giveBack(client, POOLS.SNAPSHOT, snapshot.buffer);
-        }
+    if (client.ring !== null) {
+        holdFrom(client.ring, READER.MAIN, RELEASED);
     }
     client.prev = null;
     client.latest = null;
@@ -140,35 +149,55 @@ function onReady(client, message) {
     releaseWorld(client);
     client.epoch = message.epoch;
     client.ready = message;
+    client.ring = createRingViews(message.ring, message.slotBytes);
+    // Sequences start at 1: hold everything until the first snapshot is read, so none is overwritten unseen.
+    holdFrom(client.ring, READER.MAIN, 1);
+    client.slotSnapshots = client.ring.slots.map((views) => ({ epoch: 0, seq: 0, tick: 0, ...views }));
     client.stats = null;
     client.effects = createEffectQueue(message.layout.effectWords);
     client.listeners.onReady?.(message);
 }
 
 /**
+ * Logs `SnapshotLost` at most once per `LOST_LOG_INTERVAL_MS`.
+ * @param {Client} client the client
+ * @param {Record<string, any>} message the `snapshot` whose slot was overwritten before it was read
+ * @returns {void}
+ */
+function noteLost(client, message) {
+    const at = client.now();
+    if (client.log !== undefined && at - client.lostLoggedAt >= LOST_LOG_INTERVAL_MS) {
+        client.lostLoggedAt = at;
+        client.log('warn', 'SnapshotLost', { seq: message.seq, tick: message.tick });
+    }
+}
+
+/**
+ * Points `latest` at the published slot (and `prev` at the one before), queues its effects and holds the ring from
+ * `prev`. A slot that is already gone is logged and the message dropped.
  * @param {Client} client the client
  * @param {Record<string, any>} message a validated `snapshot`
  * @returns {void}
  */
 function onSnapshot(client, message) {
-    if (message.epoch !== client.epoch || client.ready === null || client.effects === null) {
+    const { ring, effects, ready } = client;
+    if (message.epoch !== client.epoch || ready === null || effects === null || ring === null) {
         client.droppedMessages += 1;
-        giveBack(client, POOLS.SNAPSHOT, message.buffer);
         return;
     }
-    const u32 = new Uint32Array(message.buffer);
-    queueEffects(client.effects, u32, client.ready.layout.effectsOffset);
-    if (client.prev !== null) {
-        giveBack(client, POOLS.SNAPSHOT, client.prev.buffer);
+    const slot = slotOfSeq(ring, message.seq);
+    if (slot < 0) {
+        noteLost(client, message);
+        return;
     }
+    const snapshot = client.slotSnapshots[slot];
+    snapshot.epoch = message.epoch;
+    snapshot.seq = message.seq;
+    snapshot.tick = message.tick;
+    queueEffects(effects, snapshot.u32, ready.layout.effectsOffset);
     client.prev = client.latest;
-    client.latest = {
-        epoch: message.epoch,
-        tick: message.tick,
-        buffer: message.buffer,
-        u32,
-        f32: new Float32Array(message.buffer),
-    };
+    client.latest = snapshot;
+    holdFrom(ring, READER.MAIN, (client.prev ?? snapshot).seq);
 }
 
 /**
@@ -271,21 +300,20 @@ function handle(client, data) {
 }
 
 /**
- * Creates the client.
- * @param {{post: (message: Record<string, any>, transfer?: ArrayBuffer[]) => void, listeners?: ClientListeners,
- *   policy?: string}} options `post` sends a message to the worker; `policy`, when given, names the registered policy
- *   every `init` and `reset` asks for (absent: the worker's live policy)
- * @returns {Client & Record<string, any>} the client: the state in `Client`; `handle(data)` for each message from the
- *   worker; `releaseField()`; and the commands `init`, `reset`, `setSpeed`, `pause`, `resume`, `step`, `select`,
- *   `setLenses`, `exportArchive` and `flush`
+ * @param {Pick<Client, 'post' | 'listeners' | 'log' | 'now'>} wiring the port, the listeners, the log and the clock
+ * @returns {Client} a client that has seen no message
  */
-export function createWorkerClient({ post, listeners = {}, policy }) {
-    /** @type {Client} */
-    const client = {
+function initialClient({ post, listeners, log, now }) {
+    return {
         post,
         listeners,
         epoch: 0,
         ready: null,
+        ring: null,
+        slotSnapshots: [],
+        log,
+        now,
+        lostLoggedAt: -Infinity,
         prev: null,
         latest: null,
         field: null,
@@ -294,6 +322,21 @@ export function createWorkerClient({ post, listeners = {}, policy }) {
         ...NOT_PAUSED,
         droppedMessages: 0,
     };
+}
+
+/**
+ * Creates the client.
+ * @param {{post: (message: Record<string, any>, transfer?: ArrayBuffer[]) => void, listeners?: ClientListeners,
+ *   policy?: string, log?: (level: 'warn', event: string, fields: Record<string, any>) => void,
+ *   now?: () => number}} options `post` sends a message to the worker; `policy`, when given, names the registered
+ *   policy every `init` and `reset` asks for (absent: the worker's live policy); `log` and `now` (ms) rate-limit and
+ *   write `SnapshotLost`
+ * @returns {Client & Record<string, any>} the client: the state in `Client`; `handle(data)` for each message from the
+ *   worker; `releaseField()`; and the commands `init`, `reset`, `setSpeed`, `pause`, `resume`, `step`, `select`,
+ *   `setLenses`, `exportArchive` and `flush`
+ */
+export function createWorkerClient({ post, listeners = {}, policy, log, now = () => 0 }) {
+    const client = initialClient({ post, listeners, log, now });
     const send = (/** @type {string} */ type, /** @type {Record<string, any>} */ fields = {}) =>
         post({ type, ...fields });
     const policyField = policy === undefined ? {} : { policy };

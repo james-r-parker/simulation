@@ -62,7 +62,7 @@ All bindings are the `KEYMAP` in `js/app/ui/keymap.js`; `?` or `F1` lists them i
 | `[` and `]`                            | Slower and faster                                                                               |
 | `N` twice, `Shift+N`                   | New world with a new seed; focus the seed field (type a number and press Enter)                 |
 | Arrows or drag, wheel or `+` `-`, `Home` | Pan, zoom, reset the camera                                                                   |
-| Click, `F`, `Esc`                      | Select a blob, follow it, clear the selection (or close a drawer)                               |
+| Click, `F`, `Esc`                      | Select a blob, follow it with entry zoom and automatic handoff after death, clear selection (or close a drawer)                               |
 | `1` to `4`                             | Lenses: temperature, scent trails, family territories, vision and calls                         |
 | `C`, `I`, `?`                          | Charts drawer, inspector (the selected blob's senses, hidden layer and actions), help           |
 | `H`, `Shift+F`                         | Hide the HUD, fullscreen                                                                        |
@@ -257,7 +257,7 @@ bite that lands costs the biter a kick (`biteCost`, scaled by the victim's size,
 
 ### Fighting, signalling and scent
 
-- **Bites.** A hunter bites a target that is kin-free, smaller than 0.8x its size and inside its `biteArc` (a 90-degree half-angle forward cone). A bite that leaves its victim at or under `killShare` (0.25) of its maximum energy is a kill: the killer takes the rest of the victim's energy up to `killGorgeCap` (2000) and what it leaves becomes the carcass. A kill mints no energy.
+- **Bites.** A hunter bites a target that is kin-free, smaller than 0.8x its size and inside its `biteArc` (a 90-degree half-angle forward cone). A bite that leaves its victim at or under `killShare` (0.25) of its maximum energy is a kill: the killer takes up to `killGorgeShare` (0.4) of the victim's remaining energy, no more than `killGorgeCap` (2000), and what it leaves becomes the carcass, real food for scavengers and cubs (E179). A kill mints no energy.
 - **Calls.** Alarm and hunt calls are heard within `callRadius` (300) for 60 ticks and feed the "heard" inputs; each also drops scent.
 - **Smoke** blocks rays for `smokeTicks` (180) and costs 20 energy.
 - **Scent** (`js/sim/pheromones.js`): three decaying, diffusing grids. `danger` (dropped by alarms and where a blob is bitten), `attack` (where a blob bites) and `hunt` (hunt calls).

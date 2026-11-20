@@ -30,8 +30,12 @@ describe('buildPerf', () => {
             gpu: GPU,
             gpuSamples: Float64Array.from([2, 3]),
             heapBytes: 50 * 1048576,
+            lateFrames: 4,
+            skippedPacks: 1,
         });
         expect(perf).toMatchObject({
+            lateFrames: 4,
+            skippedPacks: 1,
             app: 'v6',
             refreshHz: 238.1,
             frameMs: { p50: 4.2, p95: 4.2, p99: 4.2 },
@@ -54,7 +58,15 @@ describe('buildPerf', () => {
             gpuSamples: null,
             heapBytes: null,
         });
-        expect(perf).toMatchObject({ gpuMs: null, heapMb: null, ticksPerSecond: 0, droppedTicks: 0, frames: 0 });
+        expect(perf).toMatchObject({
+            gpuMs: null,
+            heapMb: null,
+            ticksPerSecond: 0,
+            droppedTicks: 0,
+            frames: 0,
+            lateFrames: 0,
+            skippedPacks: 0,
+        });
     });
 });
 

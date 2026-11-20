@@ -1,9 +1,9 @@
 // Browser smoke: the built app loads, draws frames and logs nothing unexpected. SMOKE_URL is set by scripts/browser-smoke.sh.
 import { mkdirSync, readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
+import { SMOKE_FRAME_BAR, sampleFramesAfterStartup } from '../../scripts/browser-frame-measurement.mjs';
 
-const FRAME_WINDOW_MS = 5000;
-const MIN_FRAMES = 30;
+const { minFrames: MIN_FRAMES, windowMs: FRAME_WINDOW_MS, startupTimeoutMs: STARTUP_TIMEOUT_MS } = SMOKE_FRAME_BAR;
 const SCREENSHOT = '.checklogs/browser-smoke.png';
 
 const allowlist = JSON.parse(readFileSync(new URL('./known-console-errors.json', import.meta.url), 'utf8'));
@@ -28,25 +28,20 @@ test('the app loads, animates and logs no unexpected errors', async ({ page }) =
 
     try {
         await page.goto(url);
+        // The server sends COOP and COEP, so the page is cross-origin isolated and has SharedArrayBuffer.
+        expect(await page.evaluate(() => globalThis.crossOriginIsolated), 'page is cross-origin isolated').toBe(true);
         await expect(page.locator('#canvas-container canvas').first()).toBeAttached();
-        const frames = await page.evaluate(
-            (windowMs) =>
-                new Promise((resolve) => {
-                    let count = 0;
-                    const start = performance.now();
-                    const step = () => {
-                        count += 1;
-                        if (performance.now() - start >= windowMs) {
-                            resolve(count);
-                        } else {
-                            globalThis.requestAnimationFrame(step);
-                        }
-                    };
-                    globalThis.requestAnimationFrame(step);
-                }),
-            FRAME_WINDOW_MS,
-        );
-        expect(frames, `frames advanced in ${FRAME_WINDOW_MS} ms`).toBeGreaterThanOrEqual(MIN_FRAMES);
+        const startingTick = await page.evaluate(() => globalThis.__blob?.tick ?? 0);
+        const sample = await sampleFramesAfterStartup({
+            readFrames: () => page.evaluate(() => globalThis.__blob?.frames ?? 0),
+            resetFrames: () => page.evaluate(() => globalThis.__blob?.resetFrames()),
+            now: () => performance.now(),
+            wait: () => new Promise((resolve) => setTimeout(resolve, 50)),
+            ...SMOKE_FRAME_BAR,
+        });
+        expect(sample.ready, `the app recorded a frame within ${STARTUP_TIMEOUT_MS} ms`).toBe(true);
+        expect(sample.frames, `app frames recorded in ${FRAME_WINDOW_MS} ms`).toBeGreaterThanOrEqual(MIN_FRAMES);
+        await expect.poll(() => page.evaluate(() => globalThis.__blob?.tick ?? 0)).toBeGreaterThan(startingTick);
         expect(pageErrors, 'uncaught page errors').toEqual([]);
         expect(unexpected, 'console.error messages not in known-console-errors.json').toEqual([]);
     } catch (error) {

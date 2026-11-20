@@ -68,16 +68,26 @@ function checkHerdEnergy(config) {
     }
 }
 
-/** @param {Record<string, any>} config the merged simulation config @returns {void} */
-function checkEventCapacity(config) {
+/**
+ * The most events one tick can push: a ring of this size never fills.
+ * @param {Record<string, any>} config the merged simulation config
+ * @returns {number} the events per tick at most
+ */
+export function eventDemand(config) {
     const herdMax = config.herdCount * config.herdSize;
-    const disease = diseaseEventDemand(config);
-    const events =
+    return (
         MAX_EVENTS_PER_SLOT * config.maxAgents +
         2 * config.floraPatchMax +
         5 * herdMax +
         2 * config.herdCount +
-        disease;
+        diseaseEventDemand(config)
+    );
+}
+
+/** @param {Record<string, any>} config the merged simulation config @returns {void} */
+function checkEventCapacity(config) {
+    const disease = diseaseEventDemand(config);
+    const events = eventDemand(config);
     if (config.eventCapacity < events) {
         const contagion = disease > 0 ? ' + maxAgents + 2 x DISEASE_MAX_STRAINS' : '';
         throw new Error(

@@ -11,7 +11,9 @@
 //
 // `eval.style_separation`: within one specialisation, the largest difference between the lineage means of the style at
 // death, over lineages with `MIN_STYLE_DEATHS` deaths or more after burn-in. The style is already over the cap.
-// Per-slot arrays only; a Map entry the first time a lineage and specialisation pair dies.
+// `eval.style_lineage_share`: within one specialisation, the share of the variance of style at death that lies between
+// those lineages (the between-lineage sum of squares over the total), averaged over the specialisations with two lineages
+// and some spread. Per-slot arrays only; a Map entry the first time a lineage and specialisation pair dies.
 
 import { SPEC_RADIX } from './hunter-table.js';
 import { none, ok } from './metrics-stats.js';
@@ -40,7 +42,7 @@ export function createStyle(config) {
         current: new Float64Array(n),
         ringTicks: new Uint32Array(n),
         atDeath: new Float64Array(config.eventCapacity),
-        deaths: createKeyed(['sum', 'n']),
+        deaths: createKeyed(['sum', 'n', 'sq']),
     };
 }
 
@@ -134,13 +136,48 @@ export function noteStyleAtDeath(observer, index, { slot, genomeId }) {
 export function noteStyleDeath(observer, slot) {
     const table = observer.scenes.style.deaths;
     const row = rowOf(table, observer.lineageId[slot] * SPEC_RADIX + observer.spec[slot]);
-    table.log.sum[row] += styleOf(observer, slot);
+    const style = styleOf(observer, slot);
+    table.log.sum[row] += style;
+    table.log.sq[row] += style * style;
     table.log.n[row] += 1;
 }
 
 /**
+ * @param {Record<string, any>} deaths the style state's table of deaths by lineage and specialisation
+ * @returns {number} the mean over specialisations of the share of the variance of style at death that is between
+ *   lineages (lineages with `MIN_STYLE_DEATHS` deaths), or -1 when no specialisation has two such lineages and a spread
+ */
+function lineageShare({ rows, index, log }) {
+    const n = new Float64Array(SPEC_RADIX);
+    const sum = new Float64Array(SPEC_RADIX);
+    const squares = new Float64Array(SPEC_RADIX);
+    const between = new Float64Array(SPEC_RADIX);
+    const lineages = new Float64Array(SPEC_RADIX);
+    for (const [key, row] of index) {
+        if (row < rows && log.n[row] >= MIN_STYLE_DEATHS) {
+            const spec = key % SPEC_RADIX;
+            n[spec] += log.n[row];
+            sum[spec] += log.sum[row];
+            squares[spec] += log.sq[row];
+            between[spec] += (log.sum[row] * log.sum[row]) / log.n[row];
+            lineages[spec] += 1;
+        }
+    }
+    let total = 0;
+    let specs = 0;
+    for (let spec = 0; spec < SPEC_RADIX; spec++) {
+        const spread = squares[spec] - (sum[spec] * sum[spec]) / n[spec];
+        if (lineages[spec] >= 2 && spread > 1e-12) {
+            total += Math.min(1, Math.max(0, (between[spec] - (sum[spec] * sum[spec]) / n[spec]) / spread));
+            specs += 1;
+        }
+    }
+    return specs > 0 ? total / specs : -1;
+}
+
+/**
  * @param {Record<string, any>} style the style state
- * @returns {import('./metrics-stats.js').MetricRecord} `eval.style_separation`
+ * @returns {import('./metrics-stats.js').MetricRecord} `eval.style_separation` and `eval.style_lineage_share`
  */
 export function styleMetrics(style) {
     const { rows, index, log } = style.deaths;
@@ -159,5 +196,12 @@ export function styleMetrics(style) {
         best = Math.max(best, high[spec] - low[spec]);
     }
     const reason = `no lineage with ${MIN_STYLE_DEATHS} deaths after burn-in`;
-    return { 'eval.style_separation': best >= 0 && Number.isFinite(best) ? ok(best) : none(reason) };
+    const share = lineageShare(style.deaths);
+    return {
+        'eval.style_separation': best >= 0 && Number.isFinite(best) ? ok(best) : none(reason),
+        'eval.style_lineage_share':
+            share >= 0
+                ? ok(share)
+                : none(`no specialisation with two lineages of ${MIN_STYLE_DEATHS} deaths and a spread of style`),
+    };
 }

@@ -9,6 +9,7 @@ import {
     noteHunterLedger,
     tickHunters,
 } from '../../js/evo/scene-hunters.js';
+import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import { loose } from './helpers/metric-registry.js';
 
 const HUNT = new Float64Array([0, 1]);
@@ -32,12 +33,12 @@ function world(over = {}) {
 
 /**
  * @param {Record<string, any>} scene the scene
- * @param {{cause: number, kills: number, age: number}} death a hunter death
+ * @param {{cause: number, kills: number, age: number, tick?: number}} death a hunter death, by default just after burn-in
  * @returns {void}
  */
-function die(scene, { cause, kills, age }) {
+function die(scene, { cause, kills, age, tick = BURN_IN_TICKS }) {
     const ring = createEventRing(1);
-    const o = pushEvent(ring, EVENT_TYPE.HUNTER_LEDGER, 1);
+    const o = pushEvent(ring, EVENT_TYPE.HUNTER_LEDGER, tick);
     ring.data[o + 3] = age;
     ring.data[o + 4] = (kills * 8 + cause) * 8;
     noteHunterLedger(scene, ring.data, 0);
@@ -63,7 +64,6 @@ describe('the hunter death metrics', () => {
         for (const name of [
             'eval.hunter_kills_per_life_p50',
             'eval.hunter_kills_per_life_mean',
-            'eval.hunter_zero_kill_share',
             'eval.hunter_median_lifespan',
         ]) {
             expect(loose(m)[name].value).toBeNull();
@@ -87,6 +87,31 @@ describe('the hunter death metrics', () => {
         expect(m['eval.hunter_death_share.eaten']).toEqual({ value: 0.25 });
         expect(m['eval.hunter_death_share.other']).toEqual({ value: 0.25 });
         expect(m['eval.hunter_death_share.collision']).toEqual({ value: 0 });
+    });
+});
+
+describe('eval.hunter_zero_kill_share after burn-in', () => {
+    it('leaves out a life that ended before burn-in', () => {
+        const scene = createHunterScene(1000);
+        die(scene, { cause: DEATH_CAUSE.STARVED, kills: 0, age: 100, tick: BURN_IN_TICKS - 1 });
+        die(scene, { cause: DEATH_CAUSE.STARVED, kills: 2, age: 100 });
+        expect(hunterMetrics(scene, world())['eval.hunter_zero_kill_share']).toEqual({ value: 0 });
+        expect(hunterMetrics(scene, world())['eval.hunter_kills_per_life_mean']).toEqual({ value: 1 });
+    });
+
+    it('counts the hunters alive at the last tick at their end age: with their kills so far', () => {
+        const scene = createHunterScene(1000);
+        die(scene, { cause: DEATH_CAUSE.STARVED, kills: 1, age: 100 });
+        const w = world({ alive: Uint8Array.of(1, 1, 1, 0), spec: Uint8Array.of(1, 1, 0, 1) });
+        w.ledgerKills[0] = 0;
+        w.ledgerKills[1] = 3;
+        // slot 2 is a forager and slot 3 is dead: neither is a hunter life
+        expect(hunterMetrics(scene, w)['eval.hunter_zero_kill_share']).toEqual({ value: 1 / 3 });
+    });
+
+    it('is null with no hunter life after burn-in, dead or alive', () => {
+        const m = hunterMetrics(createHunterScene(1000), world());
+        expect(m['eval.hunter_zero_kill_share']).toEqual({ value: null, reason: 'no hunter life after burn-in' });
     });
 });
 

@@ -25,12 +25,15 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # One job, always named check, whichever path it takes - so `gh pr checks` (and a required check, should the repo
-  # ever get one) sees a result on every PR.
-  check:
+  # Classifies the change once, for the jobs below: `docs` when every changed path is Markdown that no build or test reads
+  # beyond the design-doc tests (scripts/change-scope.sh), `full` otherwise. A push computes it against the previous tip;
+  # anything unclassifiable takes the full path.
+  scope:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
+    outputs:
+      scope: ${{ steps.scope.outputs.scope }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -38,20 +41,35 @@ jobs:
           # `cond && 0 || 1` always yields 1: 0 is falsy in GitHub expressions.)
           fetch-depth: 0
 
-      # docs: every changed path is Markdown that no build or test reads beyond the design-doc tests
-      # (scripts/change-scope.sh). Pushes to main and anything unclassifiable take the full path.
       - name: Change scope
         id: scope
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event_name == 'merge_group' && github.event.merge_group.base_sha || format('origin/{0}', github.base_ref) }}
+          BEFORE: ${{ github.event.before }}
         run: |
           scope=full
           if [[ "$EVENT" == pull_request || "$EVENT" == merge_group ]]; then
             scope="$(scripts/change-scope.sh "$BASE" || echo full)"
+          elif [[ "$EVENT" == push && ! "$BEFORE" =~ ^0+$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            # A push re-checks only what changed since the previous tip; its PR already passed the rest.
+            scope="$(scripts/change-scope.sh "$BEFORE" || echo full)"
           fi
           echo "scope=$scope" >>"$GITHUB_OUTPUT"
           echo "Change scope: $scope"
+
+  # The static gates and the build (scripts/check.sh --ci): conventions, designs-index, format, lint, typecheck, deps,
+  # dupes, build and eval-smoke. On a pull request and in the merge queue the tests are the `test` and `coverage` jobs
+  # below (`--skip=test`); a push to main or season/next runs the fast tests here instead, because the queue already ran the
+  # whole suite on the same commit.
+  static:
+    needs: scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v7
         with:
@@ -60,6 +78,16 @@ jobs:
 
       - name: Install
         run: npm ci
+
+      # Prettier's content-keyed cache (scripts/check.sh PRETTIER_CACHE): a file that passed before is not formatted
+      # again; a new or edited file has a new hash and is always checked. After `npm ci`, which empties node_modules.
+      - name: Prettier cache
+        uses: actions/cache@v6
+        with:
+          path: node_modules/.cache/prettier
+          key: prettier-${{ hashFiles('package-lock.json', '.prettierrc.json', '.prettierignore', '.editorconfig') }}-${{ github.sha }}
+          restore-keys: |
+            prettier-${{ hashFiles('package-lock.json', '.prettierrc.json', '.prettierignore', '.editorconfig') }}-
 
       # A change to rulesHash is a breaking commit that targets season/next (scripts/lib/release-check.mjs). The title is
       # passed through the environment, never interpolated into the script.
@@ -71,12 +99,17 @@ jobs:
         run: node scripts/release-check.mjs
 
       - name: Local gate
-        if: steps.scope.outputs.scope != 'docs'
-        run: scripts/check.sh --ci
+        if: needs.scope.outputs.scope != 'docs'
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          skip=()
+          [[ "$EVENT" == push ]] || skip=(--skip=test)
+          scripts/check.sh --ci ${skip[@]+"${skip[@]}"}
 
       # conventions, designs-index, format and the tests that read this repo's Markdown.
       - name: Local gate (docs only)
-        if: steps.scope.outputs.scope == 'docs'
+        if: needs.scope.outputs.scope == 'docs'
         run: scripts/check.sh --ci --docs
 
       - name: Upload check logs
@@ -89,6 +122,140 @@ jobs:
             .checklogs/
           if-no-files-found: ignore
           include-hidden-files: true
+
+  # The whole test suite, `*.slow.test.js` included, on every pull request and merge-queue run
+  # (docs/designs/quality-gates-and-test-tiers.md, Phase 4). The jobs run side by side on their own runners, one TEST_SCOPE
+  # each (scripts/lib/test-scope.mjs): `shard` (everything with coverage except the two lists below, split by path hash),
+  # `heavy` (HEAVY_TESTS, each file in a job of its own with coverage, so no shard waits on one) and `statistical`
+  # (STATISTICAL_TESTS, one job per file, no coverage because their ray casts wrap V8's block counters). Every job uses one shuffle seed,
+  # the run id, so a rerun replays the order. A job with coverage uploads its blob report for the `coverage` job. A push
+  # does not run this job.
+  test:
+    name: test ${{ matrix.id }}
+    needs: scope
+    if: github.event_name != 'push' && needs.scope.outputs.scope != 'docs'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { pass: shard, id: shard-1, shard: 1/8 }
+          - { pass: shard, id: shard-2, shard: 2/8 }
+          - { pass: shard, id: shard-3, shard: 3/8 }
+          - { pass: shard, id: shard-4, shard: 4/8 }
+          - { pass: shard, id: shard-5, shard: 5/8 }
+          - { pass: shard, id: shard-6, shard: 6/8 }
+          - { pass: shard, id: shard-7, shard: 7/8 }
+          - { pass: shard, id: shard-8, shard: 8/8 }
+          - { pass: heavy, id: heavy-train-pool, files: test/train-pool.slow.test.js }
+          - { pass: heavy, id: heavy-scripted-temperature, files: test/evo/scripted-temperature.slow.test.js }
+          - { pass: heavy, id: heavy-train, files: test/train.slow.test.js }
+          - { pass: statistical, id: statistical-deliberate, files: test/evo/deliberate-controllers.slow.test.js }
+          - { pass: statistical, id: statistical-survivable-world, files: test/evo/survivable-world.slow.test.js }
+          - { pass: statistical, id: statistical-anti-exploit, files: test/evo/anti-exploit.slow.test.js }
+          - { pass: statistical, id: statistical-practice, files: test/sim/practice.slow.test.js }
+          - { pass: statistical, id: statistical-metric-invariants, files: test/evo/metric-invariants.slow.test.js }
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The whole history: test/release-check.slow.test.js merge-bases HEAD with origin/main.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Test job
+        env:
+          TEST_SCOPE: ${{ matrix.pass }}
+          ID: ${{ matrix.id }}
+          SHARD: ${{ matrix.shard }}
+          FILES: ${{ matrix.files }}
+          SEED: ${{ github.run_id }}
+        run: |
+          echo "test order seed: $SEED, job $ID (scope $TEST_SCOPE)"
+          args=(--sequence.shuffle --sequence.seed="$SEED" --passWithNoTests
+            --reporter=default --reporter=junit --outputFile.junit="TestResults/junit-$ID.xml")
+          [[ -z "$SHARD" ]] || args+=(--shard="$SHARD")
+          if [[ "$TEST_SCOPE" != statistical ]]; then
+            args+=(--coverage --coverage.reportOnFailure --reporter=blob --outputFile.blob=".vitest-reports/blob-$ID.json")
+          fi
+          # FILES is a path filter: unquoted on purpose, it is one file or none.
+          # shellcheck disable=SC2086
+          npx vitest run "${args[@]}" $FILES
+
+      - name: Upload the blob report
+        if: ${{ !cancelled() && matrix.pass != 'statistical' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: blob-${{ matrix.id }}
+          path: .vitest-reports/
+          if-no-files-found: ignore
+          include-hidden-files: true
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-${{ matrix.id }}
+          path: TestResults/
+          if-no-files-found: ignore
+
+  # Merges the blob reports of the jobs with coverage into one coverage summary and runs the coverage ratchet on it
+  # (scripts/quality-ratchet.mjs --check). It runs when a shard failed too, so a failing test never hides a coverage drop;
+  # then the summary may lack the failed shard's files and the ratchet's numbers are informational.
+  coverage:
+    needs: [scope, test]
+    if: ${{ !cancelled() && needs.test.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Download the blob reports
+        uses: actions/download-artifact@v8
+        with:
+          pattern: blob-*
+          merge-multiple: true
+          path: .vitest-reports
+
+      - name: Merge the shards' coverage and run the ratchet
+        env:
+          TESTS_RESULT: ${{ needs.test.result }}
+        run: |
+          status=0
+          [[ "$TESTS_RESULT" == success ]] || echo "::warning::a test shard did not succeed ($TESTS_RESULT); the merged coverage may lack its files"
+          npx vitest run --merge-reports=.vitest-reports --coverage --coverage.reportOnFailure || status=$?
+          node scripts/quality-ratchet.mjs --check || status=$?
+          exit $status
+
+  # The required check: it reports on every pull request and merge-queue run, whichever jobs ran, and fails when any job
+  # failed or was cancelled. A job skipped by scope (docs) or event (the push) counts as passed.
+  check:
+    if: github.event_name != 'workflow_dispatch' && always()
+    needs: [scope, static, test, coverage]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every job passed or was skipped
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "job results: $RESULTS"
+          [[ " $RESULTS " != *" failure "* && " $RESULTS " != *" cancelled "* ]]
 
   # The browser smoke runs in the official Playwright image (about 2 GB), whose version is the exact @playwright/test
   # pin in package.json: scripts/browser-smoke.sh derives the tag from that pin and `docker run`s the image. The job has
@@ -109,10 +276,14 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event_name == 'merge_group' && github.event.merge_group.base_sha || format('origin/{0}', github.base_ref) }}
+          BEFORE: ${{ github.event.before }}
         run: |
           scope=browser
           if [[ "$EVENT" == pull_request || "$EVENT" == merge_group ]]; then
             scope="$(scripts/change-scope.sh --browser "$BASE" || echo browser)"
+          elif [[ "$EVENT" == push && ! "$BEFORE" =~ ^0+$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            # A push re-checks only what changed since the previous tip; its PR already passed the rest.
+            scope="$(scripts/change-scope.sh --browser "$BEFORE" || echo browser)"
           fi
           echo "scope=$scope" >>"$GITHUB_OUTPUT"
           echo "Browser scope: $scope"

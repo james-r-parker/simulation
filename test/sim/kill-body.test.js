@@ -85,12 +85,26 @@ describe('killShare', () => {
 
     it('stops the take at killGorgeCap and holds the rest for the carcass', () => {
         const b = w0();
-        const w = duel({ killShare: 0.25, killGorgeCap: 100 }, { hunter: 600, prey: line + b / 2 });
+        const w = duel({ killShare: 0.25, killGorgeCap: 100, killGorgeShare: 1 }, { hunter: 600, prey: line + b / 2 });
         bite(w);
         const remaining = line + b / 2 - b;
         expect(w.energy[0]).toBeCloseTo(600 + b + 100, 6);
         expect(w.carcassHeld[1]).toBeCloseTo(remaining - 100, 6);
         expect(w.biteEnergy[0]).toBeCloseTo(b + 100, 6);
+    });
+
+    it('stops the take at killGorgeShare x victimEnergy and holds the rest for the carcass', () => {
+        const b = w0();
+        const w = duel(
+            { killShare: 0.25, killGorgeCap: 2000, killGorgeShare: 0.25 },
+            { hunter: 600, prey: line + b / 2 },
+        );
+        bite(w);
+        const remaining = line + b / 2 - b;
+        const shareTaken = 0.25 * remaining;
+        expect(w.energy[0]).toBeCloseTo(600 + b + shareTaken, 6);
+        expect(w.carcassHeld[1]).toBeCloseTo(remaining - shareTaken, 6);
+        expect(w.biteEnergy[0]).toBeCloseTo(b + shareTaken, 6);
     });
 
     it('stops the take at the killer headroom, not at overflow', () => {
@@ -103,7 +117,7 @@ describe('killShare', () => {
 
     it('keeps the energy ledger balanced across a kill', () => {
         const b = w0();
-        const w = duel({ killShare: 0.25, killGorgeCap: 100 }, { hunter: 600, prey: line + b / 2 });
+        const w = duel({ killShare: 0.25, killGorgeCap: 100, killGorgeShare: 1 }, { hunter: 600, prey: line + b / 2 });
         bite(w);
         expect(w.carcassHeld[1]).toBeGreaterThan(0);
         expect(w.ledger[0] - w.ledger[1]).toBeCloseTo(w.energy[0] + w.energy[1], 9);

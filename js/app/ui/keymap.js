@@ -19,7 +19,7 @@ export const KEYMAP = Object.freeze([
     { action: 'speedUp', codes: ['BracketRight'], title: 'Faster' },
     { action: 'newWorld', codes: ['KeyN'], shift: false, title: 'New world with a new seed (press twice)' },
     { action: 'focusSeed', codes: ['KeyN'], shift: true, title: 'Focus the seed field' },
-    { action: 'follow', codes: ['KeyF'], shift: false, title: 'Follow the selected agent' },
+    { action: 'follow', codes: ['KeyF'], shift: false, title: 'Follow a blob; continue after death' },
     { action: 'fullscreen', codes: ['KeyF'], shift: true, title: 'Fullscreen' },
     { action: 'lens1', codes: ['Digit1'], title: 'Temperature lens' },
     { action: 'lens2', codes: ['Digit2'], title: 'Scent trails lens' },

@@ -21,9 +21,21 @@ import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
 import { createCompetenceScene, noteChase, noteCompetenceBirth, noteCompetenceRecord } from './scene-competence.js';
 import { createMatchedScene, noteMatchedChase } from './scene-matched.js';
 import { createGuardScene, sampleGuards } from './scene-guards.js';
+import { createPackLiftScene, notePackBite, notePackKill } from './scene-pack-lift.js';
+import { createKinematicsScene, noteKinematicsChase, resetKinematicsSlot, tickKinematics } from './scene-kinematics.js';
+import {
+    createGuildScene,
+    noteGuildAlarm,
+    noteGuildBirth,
+    noteGuildDeath,
+    sampleGuilds,
+    tickGuilds,
+} from './scene-guilds.js';
 import { createKinProximityScene, sampleKinProximity } from './scene-kin-proximity.js';
 import { createBiteScene, tickBite } from './scene-bite.js';
 import { createBiteLifeScene, noteBiteLifeRecord, tickRecoil } from './scene-bite-life.js';
+import { createRecruitScene, noteRecruitBirth, noteRecruitRecord, tickRecruit } from './scene-recruit.js';
+import { createBudgetScene, noteBudgetChase, sampleBudget } from './scene-recruit-budget.js';
 import { createHunterScene, noteHunterBirth, noteHunterRecord, tickHunters } from './scene-hunters.js';
 import { createConditionScene, flushCondition, resetConditionSlot, sampleCondition } from './scene-condition.js';
 import { createPatchScene, resetPatchSlot, samplePatches } from './scene-patch.js';
@@ -40,9 +52,44 @@ import { createStyle, noteStyleAtDeath, noteStyleDeath, resetStyleSlot, tickStyl
 import { createReachScene, sampleReach } from './scene-reach.js';
 import { createRefugeScene, sampleRefuge } from './scene-refuge.js';
 import { createRefugeOutcomeScene, sampleRefugeOutcome, tickRefugeBites } from './scene-refuge-outcome.js';
+import { createSprintScene, tickSprint } from './scene-sprint.js';
+import { createScentScene, resetScentSlot } from './scene-scent.js';
+import {
+    createStillnessScene,
+    noteStillnessChase,
+    noteStillnessDeath,
+    resetStillnessSlot,
+    tickStillness,
+} from './scene-stillness.js';
 import { createTerrainScene, sampleTerrain } from './scene-terrain.js';
 import { GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
 import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
+
+/**
+ * The scenes fed by each resolved chase: the approach scene resolves it and hands it to the others' hooks.
+ * @param {Readonly<Record<string, any>>} config the world's config
+ * @param {Record<string, any>} stillness the stillness detector state, which reads the approach opening tick
+ * @returns {Record<string, any>} the approach, competence, matched, kinematics, pack-lift and budget scenes
+ */
+function createChaseScenes(config, stillness) {
+    const competence = createCompetenceScene(config);
+    const matched = createMatchedScene(config);
+    const kinematics = createKinematicsScene(config);
+    const budget = createBudgetScene();
+    const packLift = createPackLiftScene();
+    const approach = createApproachScene(config, {
+        onChase: (world, chase) => {
+            noteChase(competence, world, chase);
+            noteMatchedChase(matched, world, chase);
+            noteKinematicsChase(kinematics, world, chase);
+            noteBudgetChase(budget, world, chase);
+            noteStillnessChase(stillness, chase);
+        },
+        onBite: (world, biter) => notePackBite(packLift, world, biter),
+    });
+    stillness.approachOpenedTick = approach.openedTick;
+    return { approach, competence, matched, kinematics, packLift, budget };
+}
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
@@ -54,18 +101,12 @@ export function createScenes(config, runTicks = 0, lean = false) {
     if (lean) {
         return { lean: true, terrain: createTerrainScene(config), style: createStyle(config) };
     }
-    const competence = createCompetenceScene(config);
-    const matched = createMatchedScene(config);
+    const stillness = createStillnessScene(config);
     return {
         flora: createFloraScene(),
         herd: createHerdScene(config),
         patch: createPatchScene(config),
-        approach: createApproachScene(config, (world, chase) => {
-            noteChase(competence, world, chase);
-            noteMatchedChase(matched, world, chase);
-        }),
-        competence,
-        matched,
+        ...createChaseScenes(config, stillness),
         terrain: createTerrainScene(config),
         refuge: createRefugeScene(config),
         reach: createReachScene(),
@@ -86,7 +127,9 @@ export function createScenes(config, runTicks = 0, lean = false) {
         proof: createProofScene(config),
         disease: createDiseaseScene(config),
         hunters: createHunterScene(runTicks, config),
+        recruit: createRecruitScene(config),
         guards: createGuardScene(config),
+        guilds: createGuildScene(config),
         capacity: createCapacityScene(config),
         edge: createEdgeScene(),
         eat: createEatScene(config),
@@ -94,6 +137,9 @@ export function createScenes(config, runTicks = 0, lean = false) {
         kin: createKinProximityScene(config),
         bite: createBiteScene(config),
         biteLife: createBiteLifeScene(),
+        sprint: createSprintScene(config),
+        scent: createScentScene(config),
+        stillness,
     };
 }
 
@@ -110,6 +156,9 @@ export function resetSceneSlot(scenes, slot) {
     }
     resetPatchSlot(scenes.patch, slot);
     resetApproachSlot(scenes.approach, slot);
+    resetStillnessSlot(scenes.stillness, slot);
+    resetScentSlot(scenes.scent, slot);
+    resetKinematicsSlot(scenes.kinematics, slot);
     resetStyleSlot(scenes.style, slot);
     resetConditionSlot(scenes.condition, slot);
     resetSpendSlot(scenes.spend, slot);
@@ -174,9 +223,14 @@ function noteFullDeath(scenes, observer, { world, o }) {
     });
     if (d[o + 4] === DEATH_CAUSE.EATEN) {
         noteApproachKill(scenes.approach, observer, world, { killerId: d[o + 5], victimId: d[o + 3] });
+        notePackKill(scenes.packLift, observer, { world, size: d[o + 12], killer: d[o + 5], previous: d[o + 11] });
+    }
+    if (observer.genomeId[d[o + 2]] === d[o + 3]) {
+        noteStillnessDeath(scenes.stillness, d[o + 2], d[o + 1]);
     }
     noteCapacityDeath(scenes.capacity, { cause: d[o + 4], foodEnergy: d[o + 9] });
     noteEdgeDeath(scenes.edge, world, { cause: d[o + 4], spec: d[o + 6], foodEnergy: d[o + 9] });
+    noteGuildDeath(scenes.guilds, { tick: d[o + 1], spec: d[o + 6], age: d[o + 8], cause: d[o + 4] });
     noteStyleAtDeath(observer, o / EVENT_STRIDE, { slot: d[o + 2], genomeId: d[o + 3] });
     noteDeath(scenes, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1], age: d[o + 8] });
     noteProofDeath(scenes.proof, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1] });
@@ -196,10 +250,16 @@ function noteFullRecord(scenes, world, o) {
     noteHunterRecord(scenes.hunters, d, o);
     noteBiteLifeRecord(scenes.biteLife, d, o, world);
     noteCompetenceRecord(scenes.competence, d, o);
+    noteRecruitRecord(scenes.recruit, d, o);
+    if (d[o] === EVENT_TYPE.ALARM_CALLED) {
+        noteGuildAlarm(scenes.guilds, world, d[o + 2]);
+    }
     if (d[o] !== EVENT_TYPE.AGENT_BORN) {
         return;
     }
+    noteGuildBirth(scenes.guilds, { tick: d[o + 1], spec: d[o + 5], cause: d[o + 8] });
     noteHunterBirth(scenes.hunters, world, d[o + 2]);
+    noteRecruitBirth(scenes.recruit, world, d, o);
     noteEdgeBirth(scenes.edge, world, { cause: d[o + 8], spec: d[o + 5] });
     noteCompetenceBirth(scenes.competence, world, d[o + 2]);
     resetSceneSlot(scenes, d[o + 2]);
@@ -256,6 +316,22 @@ function observeLean(observer, world) {
     }
 }
 
+/** @param {Record<string, any>} scenes @param {Record<string, any>} world */
+function sampleCheckpoints(scenes, world) {
+    sampleSeason(scenes.season, scenes.terrain, world);
+    sampleSeasonMap(scenes.seasonMap, world);
+    sampleBalance(scenes.balance, world);
+    sampleFamilies(scenes.families, world);
+    sampleDivergence(scenes.divergence, world);
+    sampleDiseaseFamilies(scenes.disease, world);
+    sampleGuards(scenes.guards, world);
+    sampleGuilds(scenes.guilds, world);
+    sampleCapacity(scenes.capacity, world);
+    sampleEdge(scenes.edge, world);
+    sampleKinProximity(scenes.kin, world);
+    sampleBudget(scenes.budget, world);
+}
+
 /**
  * Feeds the scenes one tick. Call it once right after `createWorld` and once after every `step`.
  * @param {Record<string, any>} observer the observer, whose intent state is current for this tick
@@ -271,6 +347,7 @@ export function observeScenes(observer, world) {
     noteEvents(scenes, observer, world);
     noteDiseaseEvents(scenes.disease, world);
     tickHunters(scenes.hunters, world.tick);
+    tickRecruit(scenes.recruit);
     trackFlora(scenes.flora, world);
     trackHerd(scenes.herd, world, observer);
     if (world.tick === 0) {
@@ -281,8 +358,12 @@ export function observeScenes(observer, world) {
     tickRecoil(scenes.biteLife, world);
     trackProof(scenes.proof, world);
     trackApproaches(scenes.approach, observer, world);
-    trackCarcasses(scenes.carcass, observer, world);
+    tickStillness(scenes.stillness, observer, world);
+    tickSprint(scenes.sprint, observer, world);
+    tickKinematics(scenes.kinematics, observer, world);
+    trackCarcasses(scenes.carcass, observer, world, scenes.scent);
     tickStyle(observer, world);
+    tickGuilds(scenes.guilds, world);
     tickRefugeBites(scenes.refugeOutcome, observer, world);
     trackSlots(scenes, observer, world);
     if (world.tick % GROUP_SAMPLE_TICKS === 0) {
@@ -299,15 +380,6 @@ export function observeScenes(observer, world) {
         sampleEat(scenes.eat, world);
     }
     if (world.tick % BASIN_CHECKPOINT_TICKS === 0) {
-        sampleSeason(scenes.season, scenes.terrain, world);
-        sampleSeasonMap(scenes.seasonMap, world);
-        sampleBalance(scenes.balance, world);
-        sampleFamilies(scenes.families, world);
-        sampleDivergence(scenes.divergence, world);
-        sampleDiseaseFamilies(scenes.disease, world);
-        sampleGuards(scenes.guards, world);
-        sampleCapacity(scenes.capacity, world);
-        sampleEdge(scenes.edge, world);
-        sampleKinProximity(scenes.kin, world);
+        sampleCheckpoints(scenes, world);
     }
 }

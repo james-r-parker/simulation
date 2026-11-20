@@ -2,7 +2,23 @@
 // `vec2` node and its parameters as numbers or float nodes, so a part can bind a parameter to an instance value. The
 // polygon is unrolled at build time because its vertices are constant per part.
 
-import { abs, atan, clamp, cos, dot, float, fract, length, max, min, select, sin, smoothstep, vec2 } from 'three/tsl';
+import {
+    abs,
+    atan,
+    clamp,
+    cos,
+    dot,
+    exp,
+    float,
+    fract,
+    length,
+    max,
+    min,
+    select,
+    sin,
+    smoothstep,
+    vec2,
+} from 'three/tsl';
 
 const TAU = Math.PI * 2;
 
@@ -118,13 +134,21 @@ export function sdBlob(p, { amp, phase }) {
 
 /**
  * @param {any} p point
- * @param {{rx: any, ry: any, amp: any, lobes: number, phase: any}} cell the membrane (`sdMembrane` in sdf-math.js)
+ * @param {{rx: any, ry: any, amp: any, lobes: number, phase: any, taper?: number,
+ *   dent?: {angle: any, depth: any, width: any}}} cell the membrane (`sdMembrane` in sdf-math.js)
  * @returns {any} the approximate distance to the rippling membrane
  */
-export function sdMembrane(p, { rx, ry, amp, lobes, phase }) {
-    const q = p.div(vec2(rx, ry));
-    const ripple = float(amp).mul(sin(atan(q.y, q.x).mul(lobes).add(phase)));
-    return length(q)
+export function sdMembrane(p, { rx, ry, amp, lobes, phase, taper = 0, dent }) {
+    const qx = p.x.div(rx);
+    const qy = p.y.div(float(ry).mul(clamp(qx, -1, 1).mul(taper).add(1)));
+    const bearing = atan(qy, qx);
+    let ripple = float(amp).mul(sin(bearing.mul(lobes).add(phase)));
+    if (dent !== undefined) {
+        const delta = bearing.sub(dent.angle);
+        const da = atan(sin(delta), cos(delta)).div(dent.width);
+        ripple = ripple.sub(float(dent.depth).mul(exp(da.mul(da).negate())));
+    }
+    return length(vec2(qx, qy))
         .sub(1)
         .sub(ripple)
         .mul(min(float(rx), float(ry)))

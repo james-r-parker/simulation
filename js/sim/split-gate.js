@@ -1,6 +1,6 @@
-// The extra split gates (fitness-and-selection T48d): a diet-share minimum and a splits-per-life cap; and the clonal
-// cap (natural-selection Phase 4): a line may split `splitClonalMax` generations in a row, then it must mate. The counters are per-slot typed arrays that `freeAgent` zeroes, so a
-// birth starts at 0; they are derived state and are not in `worldHash`. No RNG, no clock, no allocation.
+// The extra split gates (fitness-and-selection T48d): a diet-share minimum and a splits-per-life cap. There is no cap on
+// a line's split generations (honest-budgets Phase 4): `mateScarce` alone makes a line mate once a mate is in reach. The
+// counters are per-slot typed arrays that `freeAgent` zeroes, so a birth starts at 0; they are derived state and are not in `worldHash`. No RNG, no clock, no allocation.
 
 import { mateScarce } from './mate-scarcity.js';
 
@@ -8,16 +8,14 @@ import { mateScarce } from './mate-scarcity.js';
 
 /**
  * @returns {[Uint32ArrayConstructor, string, number][]} the allocation specs for `allocateWorld`, one element per slot:
- *   `mealsTotal` and `mealsDeliberate` (meal and bite credits), `splitsDone` (splits this life) and `clonalDepth`
- *   (split births since the line last mated: 0 for a founder or a mated child), and `mateSeenAt` (the last tick a
- *   possible mate was in view, `mate-scarcity.js`)
+ *   `mealsTotal` and `mealsDeliberate` (meal and bite credits), `splitsDone` (splits this life) and `mateSeenAt` (the
+ *   last tick a possible mate was in view, `mate-scarcity.js`)
  */
 export function splitGateSpecs() {
     return [
         [Uint32Array, 'mealsTotal', 1],
         [Uint32Array, 'mealsDeliberate', 1],
         [Uint32Array, 'splitsDone', 1],
-        [Uint32Array, 'clonalDepth', 1],
         [Uint32Array, 'mateSeenAt', 1],
     ];
 }
@@ -47,26 +45,13 @@ export function noteSplit(world, slot) {
 }
 
 /**
- * Sets a newborn's clonal depth: its mother's plus one for a split, 0 for a mating birth.
- * @param {Record<string, any>} world the world
- * @param {{child: number, mother: number, isMate: boolean}} birth the child, its mother or splitter, and the cause
- * @returns {void}
- */
-export function noteClonalBirth(world, { child, mother, isMate }) {
-    world.clonalDepth[child] = isMate ? 0 : world.clonalDepth[mother] + 1;
-}
-
-/**
  * @param {World} world the world
  * @param {number} slot an alive agent
- * @returns {boolean} true when `splitDeliberateShareMin`, `splitMaxPerLife` and `splitClonalMax` all let the agent split
+ * @returns {boolean} true when `splitDeliberateShareMin`, `splitMaxPerLife` and `mateScarce` all let the agent split
  */
 export function splitKeysAllow(world, slot) {
-    const { splitDeliberateShareMin, splitMaxPerLife, splitClonalMax } = world.config;
+    const { splitDeliberateShareMin, splitMaxPerLife } = world.config;
     if (splitMaxPerLife > 0 && world.splitsDone[slot] >= splitMaxPerLife) {
-        return false;
-    }
-    if (world.clonalDepth[slot] >= splitClonalMax) {
         return false;
     }
     if (!mateScarce(world, slot)) {

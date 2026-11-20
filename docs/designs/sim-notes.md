@@ -16,6 +16,61 @@ than repeating them.
 
 ## Learned while building
 
+### 2026-11-20 - The nursery gate reads the top-lower-bound forager, and a scattered nursery makes the turn pay
+
+The `nursery` gate drills one forager, the elite of the highest lower bound, and a champion that fails is never
+displaced. In the patch nursery the within-archive rank of lower bound against `food-behind` wins is negative (median
+-0.18 on 16 reused base runs, below 0 on 12), so the elites that clear `food-behind` (65%) sit under a champion that
+does not. With the food scattered uniformly (90 items, `foodBackgroundShare` 1, about 6.6 in a forager's view) the
+median is +0.08 and the champion clears on 14 of 16 runs (E232, `E-TS-1m`). A scattered world with 20 to 60 items
+starved the founders before the offer window and measured nothing (`E-TS-1m-invalid`).
+
+### 2026-11-20 - Follow uses displayed bodies and survives inspector death
+
+The pack worker can temporarily leave `createFrameLoop` with its empty placeholder before the first published frame.
+A follow controller must distinguish that placeholder from an actual packed frame containing zero agents.
+The worker's selection `gone` message describes the inspector subject; clearing `followId` there also cancels a
+follow before the displayed death and can interrupt an unrelated automatically followed subject.
+Follow interest reads the renderer's existing pursuit pairs and reuses `scoreEffect` on played events. Its bounded
+subject ring stays separate from the notable-moment log so individual births do not crowd the off-view pointers.
+
+### 2026-11-17 - Stillness detectors use existing observer signals
+
+`js/evo/style.js` exports `RING_SPEED` (0.1), and `tickStyle` compares squared speed with the squared product of that
+bar and `maxVelocity`; the stillness detectors reuse the same threshold without requiring a refuge ring.
+`intent.lastThreat[slot] === world.tick` means the current ray scan saw a threat. `INTENT_WINDOW` deliberately carries
+older sightings and would mislabel calm ticks if used for this detector. A chase's `openedTick` is recorded when its
+approach opens, and the resolved callback receives its outcome, so an ambush can be counted from the existing chase
+record without changing sim state or the RNG stream. Detector state remains observer-only.
+
+### 2026-11-17 - Sprint cost is fixed per positive output
+
+`tickCost` charges `sprintCost * juvenileBurnOf(world, slot)` whenever the SPRINT output is strictly positive; the charge
+does not scale with output strength. Sprint adds thrust before the ordinary temperature, rest, handling, sickness and fat
+factors, while `thrustEfficiency` scales it together with ordinary thrust. Movement energy cost then rises with speed
+squared. `ledgerSprint` receives the realized charge only for `canHunt` agents; prey do not have that ledger. The sprint
+detector therefore tallies the configured nominal charge in observer state for both roles, without adding sim arrays or
+changing the world hash. This is not the realized charge on an energy-limited tick and can exceed total energy removed;
+the metric is a nominal cost ratio, and only a low value indicates a negligible configured price.
+
+### 2026-11-17 - ESLint and nested worktrees
+
+The root lint command (`eslint --max-warnings 0 .`) recursively sees JavaScript files in `.claude/worktrees/`, which are
+independent Git worktrees with their own branches and in-progress edits. A root lint run can therefore fail on files
+outside the active checkout. Git's `worktree list` confirms those paths are separate checkouts; excluding that one
+nested-worktree directory leaves the root `js/`, `test/`, `scripts/` and config paths under the existing lint rules.
+
+### 2026-11-17 - Browser smoke waits for the first app draw
+
+The smoke's old `requestAnimationFrame` counter started as soon as the canvas element attached, before the renderer's
+first completed draw, and counted browser callbacks rather than frames recorded by the app. `js/app/main.js` now exposes
+`globalThis.__blob.frames` and `.tick`; the smoke waits for a completed draw, clears startup samples, then keeps the
+30-draw minimum over the same 5-second window while checking that the worker tick advances. Hosted CI recorded only
+25 frame intervals in that window: the performance interval ring intentionally omits intervals over 250 ms and can
+therefore undercount completed draw callbacks. The smoke reads a separate post-reset draw count; deterministic tests
+ensure ignored intervals still count completed draws and startup counts cannot pass without new draws. On local
+Chromium with SwiftShader, the full browser suite passed in about 105 seconds.
+
 ### 2026-10-11 - WebGPU in WSL Chromium is SwiftShader only
 
 Playwright's Chromium under WSL2 (Ubuntu 26.04) gets only the SwiftShader fallback adapter, headless or headed,
@@ -3341,9 +3396,12 @@ it.
 
 ### 2026-11-14 - `resolveTimestampsAsync` sums every pass since the last resolve (crisp-renderer)
 
-`renderer.resolveTimestampsAsync('render')` returns the summed GPU milliseconds of every render pass since the previous
-resolve, the last value while a resolve is pending, and `undefined` without `trackTimestamp` or the `timestamp-query`
-feature. `gpu-time.js` keeps one resolve in flight and divides by the frames drawn since the previous one.
+`renderer.resolveTimestampsAsync('render')` returns the summed GPU milliseconds of the render passes of the newest frame
+since the previous resolve (three 0.187, `framesDuration[frames[frames.length - 1]]` in both the WebGPU and the WebGL
+pool), the last value while a resolve is pending, and `undefined` without `trackTimestamp` or the `timestamp-query`
+feature. `gpu-time.js` keeps one resolve in flight and records each result as one frame. (Corrected 2026-11-18: it
+first divided that one frame by every frame drawn since the previous resolve, so `browser.gpu_frame_p95_ms` read about
+0.1 ms on WebGPU at 3840x2160.)
 
 ### 2026-11-14 - WebGPU binds one vertex buffer per attribute, and allows 8 (crisp-renderer)
 
@@ -3376,3 +3434,361 @@ no test name and no output, since the target has no stdout. `scripts/test-wasm.s
 does not have, so no gate runs it; run it after any change under `wasm/src`.
 
 Entries are `### YYYY-MM-DD - <topic>`, newest last, one finding each.
+
+### 2026-11-15 - The interface checks of senses-and-motor Phase 1 found no sign or class bug
+
+`test/sim/interface.test.js`, `interface.slow.test.js` and `interface-motor.test.js` stage one subject and one item per
+channel in an empty arena. Every check passed on the first run: a body dead ahead reads cosine 1 and sine 0 on its
+channel (food, threat, prey, other, kin, obstacle, smoke; the wall separately), the sign of the pooled sine is the side
+`TURN` above 0 turns towards (so the hunt, flee and food reflexes of `applyInstinct` turn the right way, lead L9),
+mirroring flips every sine and the two lateral body inputs and nothing else, rotating or shifting the scene with the
+subject leaves the row equal, strength rises with nearness (a ray ends on an item's edge), a body that is kin and a
+threat lands on `kin`, and one that is a threat and prey lands on `threat`. There is no JS path to compare: the ray
+march and the pooling were deleted when the kernels were adopted. The herd (`megafauna`) channel is not staged.
+
+Findings, each recorded and none fixed here (a fix changes what a brain reads or does, so it moves the golden hashes and
+waits for the honest-budgets switch; candidates for T13):
+
+- **F1: the velocity inputs leave [-1, 1].** `writeBodyInputs` divides the forward and lateral velocity by
+  `maxVelocity`, but a sprint raises the speed cap to `maxVelocity x (1 + sprintMultiplier x sprintBoost)` (1.5 for a
+  forager, 1.8 for a predator), so inputs 1 and 2 of the body block reach 1.8 (the 2000-tick default world showed -1.5 to
+  1.28). `poolRays` documents "every value lies in [-1, 1]". The size input also reaches 1.004 (the size trait). Failing
+  case: sprint a predator for 200 ticks and read `bodyInput(row, 1)`, which is 1.8. Proposed fix: divide by the sprint
+  cap of the agent's own spec, or clamp; it changes an input's meaning, so a new layout name.
+- **F2: three of the actions fire above a threshold, not above 0.** `OUTPUT_INDEX` and lead L1 say an action fires when its
+  output is above 0. That holds for `BITE`, `SPRINT` and `MATE`. The alarm, hunt call and smoke fire above
+  `alarmThreshold` (0.65), `huntCallThreshold` (0.65) and `smokeThreshold` (0.8) and only off cooldown, so they do not
+  chatter at 0. The thresholds are compared as doubles against a `Float32Array` output, so an output written as exactly
+  0.8 reads 0.800000011920929 and fires. Proposed fix: correct the `OUTPUT_INDEX` comment and lead L1 (no behaviour).
+- **F3: `THRUST` saturates at 0.6.** At temperature efficiency 1 the uncapped terminal speed is
+  `damping x maxThrust x THRUST / (1 - damping)` = 13.3 x `THRUST`, above `maxVelocity` (8) from `THRUST` 0.6, so every
+  thrust from 0.6 to 1 gives the same speed after about 20 ticks, and a sprint's cap (12, 14.4) is reached only by a
+  sprint. Reverse thrust is as strong as forward (`THRUST` -1 gives the mirror velocity), and turning has no inertia
+  (`TURN` sets the heading change outright): both pinned, as lead L4 asks the chase envelope to weigh.
+
+Every multiplier on thrust and turn against the input that tells the brain of it (lead L8). The state is sensed when an
+input is a function of it, and the brain's own outputs reach it only through its hidden state and the two memory
+outputs:
+
+| Multiplier (`thrustOf`, `actAll`, `moveAgentsKernel`)                | Default                 | Brain input that tells it                                         | Sensed |
+| -------------------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------- | ------ |
+| Temperature efficiency (`thrustEfficiency`)                          | 1 at start              | Temperature inputs 13 to 16 (level, distance from band, stress)   | yes    |
+| Graze (`BITE` above 0, a non-hunter): `grazeThrust`                  | 0.6                     | None; the brain's own last output is not an input                 | no     |
+| Sprint (`SPRINT` above 0): `1 + sprintMultiplier x sprintBoost`      | 1.5 forager, 1.8 hunter | None for the output; the speed it gives is read (input 1)         | effect |
+| Rest after a kill (`restTimer`, `predatorRestTicks`)                 | 60 ticks at 0 thrust    | None                                                              | no     |
+| Handling a meal (`ateTimer` under `handlingTicks`): `handlingThrust` | 0.2 for 20 ticks        | Input 9, `1 - ateTimer / 30` (falls from 1 to 0.33 over 20 ticks) | yes    |
+| Sickness (`dose` at `sickDose`): `sickThrust`                        | 0.4                     | None (the dose is not an input)                                   | no     |
+| Fat (`fatSlowShare x energy / maxEnergy`), thrust and turn           | 0.5                     | Energy input 0                                                    | yes    |
+| Turn multiplier (`turnBySpec`)                                       | 1, predator 0.7         | Spec input 11 (`spec / 4`); turn-rate input 3 reads the result    | yes    |
+| Speed cap while sprinting (`move_agent`)                             | 8 x 1.5 or 8 x 1.8      | Input 1 (above 1, finding F1)                                     | effect |
+
+The rest timer and sickness change the body with no input of their own; the plan holds them until a lesson's
+oracle-to-reference gap names the missing state (Phase 4, "The body moves for reasons unsensed").
+
+### 2026-11-15 - The chase envelope: a predator cannot catch a breaking forager beyond 0.2 of its view (senses-and-motor E-SM-1)
+
+`npm run audit:chase` on the defaults (seed 1, 4 trials per cell; record `E185`, tables under `evals/decisions/E185/`).
+The prediction (a fair band between 0.6 and 1.0 of view) is falsified. Bodies: terminal speed 8 for all; sprint 12, and 14.4
+for the predator; sprint turning circle 32 px (others) and 75 px (predator); stopping distance 152.
+
+| Pursuer on evader (evader breaks across the path inside 120 px) | Catch share by view share 0.2 / 0.4 / 0.6 / 0.8 / 1.0 | Fair band |
+| --------------------------------------------------------------- | ----------------------------------------------------- | --------- |
+| predator on forager (also reproducer, scout, defender)          | 0.31 / 0 / 0 / 0 / 0                                  | 0.2 only  |
+| predator on predator                                            | 0 at every distance                                   | none      |
+| predator on forager, evader never breaks (`--straight`)         | 0.78 / 0.75 / 0.88 / 0.88 / 0.84                      | 0.2, 0.4  |
+
+The predator's sprint edge (1.2x) is cancelled by its turning circle (75 px against 32): a forager that turns inside it is
+not caught from beyond 0.2 of view. Against a straight runner a kill pays at every distance (297 to 478 spent, 638 to 781
+returned). Both oracles are heuristics, so these are what the bodies allow against this evader, not bounds. The finding is
+handed to [honest-budgets.md](honest-budgets.md) and [sprint-burst.md](sprint-burst.md); the lesson probes (T9 to T11) say
+whether a real forager's senses let it do the same.
+
+### 2026-11-16 - Detectors that stage by view share move with the hunter's eye (senses-and-motor E186)
+
+The hunting drills and the memory probes stage the prey at a share of the subject's view (`PREY_VIEW_SHARE` 0.6 times
+`viewOf`). When the predator's `visionRange` went from 350 to 400 (E186), `prey-ahead` started 30 px further out. The
+`memoryless` reference's win there fell from 11 to 7 of 32 trials (seed 1), and the `input-reader` reference's from 0.81
+to 0.69. The rear share (`rearVisionShare` 0.4) changed nothing on that drill, because the prey starts within 45 degrees of
+the heading, where the reach is above 0.9. Drill, reflex and probe numbers from before and after the switch are not
+comparable. In the D8 duel world (`eval.undefended_bite_share`, scripted hunter against a fleer), the forward eye raised
+the fleer's undefended share from about 0.31 to 0.5 against 0.95 for the food seeker (seeds 1 to 6 pooled). The metric
+still separates the arms, but by less than the half-of-chance bar its validity test uses, so that test keeps the 350
+all-round eye it was set on.
+
+### 2026-11-16 - Recruitment baseline: most hunters mature, few breed, and the hunters' world empties several times a run (honest-budgets T33a, T33b)
+
+The new diagnostics (`scene-recruit.js`, `scene-recruit-budget.js`, `scene-carcass-loss.js`) on the season 10 defaults plus
+the hunter's eyes of senses-and-motor T20, `npm run eval -- --seeds 16 --ticks 100000 --policy live` (seeds from
+`evals/seeds.json`, floor on). Per-seed mean, median and range:
+
+| Metric                                               | Mean  | Median | Range        |
+| ---------------------------------------------------- | ----- | ------ | ------------ |
+| `eval.recruit_cohort` (hunters born after burn-in)   | 505   | 454    | 15 to 1216   |
+| `eval.recruit_censored_share`                        | 0.001 | 0      | 0 to 0.01    |
+| `eval.recruit_matured_share`                         | 0.74  | 0.73   | 0.67 to 0.88 |
+| `eval.recruit_first_kill_share` (of the matured)     | 0.63  | 0.64   | 0.40 to 0.77 |
+| `eval.recruit_lineage_share` (a child that bred)     | 0.30  | 0.30   | 0.20 to 0.39 |
+| `eval.recruit_replaced_share.split-hunter-parent`    | 0.57  | 0.57   | 0.45 to 0.67 |
+| `eval.recruit_replaced_share.spec-flip`              | 0.76  | 0.83   | 0 to 1       |
+| `eval.recruit_replaced_share.mate-hunter-parent`     | 0.15  | 0      | 0 to 0.5     |
+| `eval.hunter_starve_age_median`                      | 1574  | 1262   | 849 to 3447  |
+| `eval.hunter_lineage_extinctions`                    | 5.3   | 4      | 0 to 23      |
+| `eval.hunter_global_extinctions`                     | 3.7   | 4      | 0 to 7       |
+| `eval.hunter_territory_blocked_share`                | 0.34  | 0.35   | 0 to 0.73    |
+| `eval.chase_net_energy` (per chase)                  | 121   | 124    | 47 to 175    |
+| `eval.chase_failed_energy` (per escaped or given up) | -75   | -75    | -117 to -44  |
+| `eval.carcass_loss_share.lost`                       | 0.040 | 0.001  | 0 to 0.38    |
+| `eval.carcass_loss_share.eaten`                      | 0.23  | 0.15   | 0 to 0.62    |
+| `eval.carcass_loss_share.faded`                      | 0.71  | 0.80   | 0.24 to 0.92 |
+| `eval.hunter_juvenile_death_share` (for reference)   | 0.80  | 0.82   | 0.55 to 0.90 |
+
+- **A hunter dies young, but most live past `maturityTicks`.** 74% of the cohort matured while 80% of hunter deaths are
+  under `juvenileTicks`: the windows differ, so the juvenile death share is not a maturity failure. Of the matured, 63%
+  made a deliberate kill, 57% of those born by a split bred, and only 30% have a child that itself bred.
+- **Mating-born hunters rarely breed (0.15); spec-flip and split-born do (0.76, 0.57).** The cause is not measured here:
+  0.34 of the breeding-ready hunters are refused by `territoryAllows` at a checkpoint, which T35's `recruit` arm tests.
+- **The hunters' world empties 3.7 times a run (`LastHunterDied`) and 5.3 lineages end while others live.** The floor and
+  spec flips restart them, so the existing headcount reads hide it. A failed chase costs 75 energy against a net 121 per
+  chase overall, so the chase is a loss only where it fails often.
+- **A full food pool is not where the carcass energy goes.** 4% is lost to it (2 of 16 seeds above 10%), 23% is eaten and
+  71% fades; `carcassFadeTicks` and eater reach, not pool capacity, are the leak (T33b decision in honest-budgets.md).
+- **Detector power** (`npm run eval:power` on 32 seeds, seeds 1 to 32, 100000 ticks, 16 against 16, 200 splits; the
+  false-positive rate of an arm pair drawn from the same report, and the smallest change detected at 80%, absolute for a
+  share and a fraction of the mean otherwise):
+
+    | Metric                                  | False positive | Detectable at 80% |
+    | --------------------------------------- | -------------- | ----------------- |
+    | `eval.recruit_matured_share`            | 8.0%           | 0.10              |
+    | `eval.recruit_first_kill_share`         | 9.5%           | 0.15              |
+    | `eval.recruit_lineage_share`            | 13.0%          | 0.10              |
+    | `eval.recruit_censored_share`           | 0.0%           | 0.03              |
+    | `eval.recruit_replaced_share.spec-flip` | 14.0%          | above 0.20        |
+    | `eval.chase_net_energy`                 | 8.5%           | 50%               |
+    | `eval.chase_failed_energy`              | 15.5%          | 75%               |
+    | `eval.hunter_global_extinctions`        | 6.5%           | 75%               |
+    | `eval.hunter_lineage_extinctions`       | 9.0%           | 100%              |
+    | `eval.recruit_cohort`                   | 6.0%           | 100%              |
+    | `eval.carcass_lost_per_1k`              | 13.0%          | above 100%        |
+
+    `eval.recruit_replaced_share.split-hunter-parent`, `eval.hunter_starve_age_median`, `eval.hunter_territory_blocked_share`,
+    `eval.carcass_loss_share.lost` and `.eaten` get no verdict at 16 seeds (the tool prints none). So at 16 seeds the screen
+    can read only the matured, first-kill and lineage shares for a change of 0.10 to 0.15; the chase energy, extinction counts
+    and the carcass loss need a larger effect than the arms are likely to make, and are context for the 64-seed keep-rule pass,
+    not screen verdicts. The registry entries carry no `power` read yet; `evals/power` is another lane's file.
+
+### 2026-11-16 - A fixed test timeout skips the coverage and load scale
+
+`vitest.config.js` stretches the default timeout under coverage (`COVERAGE_TIMEOUT_FACTOR`) and on a busy machine
+(`busyScale`), but an explicit number passed to `it` gets neither unless it goes through `scaleTimeout`
+(`scripts/lib/test-timeout.mjs`). `test/edge-probe.slow.test.js` passed `120000` raw: its one world takes 37 s quiet and
+144 s to 174 s in the coverage pass at load 33 to 64 (V8 coverage costs about 3.7x even though half the step is the
+uninstrumented WASM kernels), so it failed every loaded `scripts/check.sh`. Shrinking the world does not help: the edge
+rows start at burn-in (10000 ticks), and a third-size world still took 20 s against 42 s for the default (fixed flora,
+herd and kernel costs) and lost its hunters. Twenty more raw timeouts in eight files had the same gap; a
+`no-restricted-syntax` rule for `test/**/*.test.js` in `eslint.config.js` now fails a bare number as the timeout of
+`it`, `test` or `describe` (`test/timeout-lint.test.js`).
+
+### 2026-11-16 - The shared run of the season 10 defaults: the chase split holds, the pack lift is 1.8 (detector-baseline T7-T8, E-TS-0)
+
+- **What ran.** The 128-seed floor-on and floor-off runs of the defaults after the hunter-vision switch (PR 464), 200000 ticks, policy live, `--save-champions 2`: `evals/power/defaults-floor-on-E187.json` and `defaults-floor-off-E187.json`. The floor-on run's first 16 seeds are training-stages E-TS-0's settings, so E-TS-0 is read from them (`evals/decisions/E187/prediction.json`).
+- **Chase split.** On seeds 1 to 16 the give-up share is 0.41 (lost 0.17, outrun 0.14, quit 0.10); on 128 seeds 0.40. The E-TS-0 prediction cited 0.60 for the give-up share, so its size is wrong, but the order holds: lost is the largest part. Quit is under 0.15 on both sets.
+- **Pack lift.** `eval.pack_lift` is 1.72 on seeds 1 to 16 and 1.78 on 128 (range 1 to 3.7), so the pack prediction (within 0.2 of 1) is falsified: hunter kills after another hunter's bite beat the lineage mix by about 80%. Twenty of 128 seeds have no pack lift (under 30 paired kills).
+- **Power.** The power readings are not written in this change. `metric-power-write` on this report breaks four unit tests that pin main's readings (`eval.hunter_catches_per_1k` has no 64-seed power on this report; `minSeedsFor` and the compare verdicts shift), so the write waits for those expectations to be decided. The liveness readings are main's; the 12 liveness misses are split out as T8a in [detector-baseline.md](detector-baseline.md).
+- **Not done.** The four unbuilt plans (sprint-burst, stillness, scent-trails, body-genes) have no registry entries yet, so their top-up run is later.
+
+### 2026-11-16 - The memoryless reference on the eleven drills (training-stages Phase 4, T21)
+
+`node scripts/drill.mjs --archive <empty archive> --trials 64 --seed 1 --workers 8` (an archive with no elite, so the table
+is the `memoryless` reference's row alone; seed 1, 64 trials per drill, the default config; 3.4 s on 8 workers). Win share
+with its Wilson low bound, then the edge over four random brains and its low bound (`edgeLow`), then the first-match
+lost-trial reasons. The gate seed is the validation partition's, so a gate reads other trials of the same drills; this is the
+shape, not a gate reading.
+
+| Drill            | Win share [low] | Edge (edge low) | Lost-trial reasons                             |
+| ---------------- | --------------- | --------------- | ---------------------------------------------- |
+| `food-ahead`     | 0.94 [0.85]     | +0.78 (+0.64)   |                                                |
+| `food-behind`    | 1.00 [0.94]     | +0.88 (+0.77)   |                                                |
+| `two-foods`      | 0.00 [0.00]     | -0.04 (-0.07)   |                                                |
+| `prey-ahead`     | 0.22 [0.14]     | +0.22 (+0.12)   | `never-in-jaws` 41, `never-bit` 9              |
+| `prey-too-big`   | 0.45 [0.34]     | -0.55 (-0.66)   |                                                |
+| `hunter-closing` | 0.02 [0.00]     | +0.02 (-0.01)   |                                                |
+| `rock-refuge`    | 0.00 [0.00]     | +0.00 (-0.01)   |                                                |
+| `prey-crossing`  | 0.16 [0.09]     | +0.16 (+0.07)   | `never-in-jaws` 48, `never-bit` 6              |
+| `hunter-flank`   | 0.00 [0.00]     | +0.00 (-0.01)   |                                                |
+| `kin-spared`     | 0.00 [0.00]     | +0.00 (-0.01)   | `bit-kin` 51, `never-in-jaws` 8, `never-bit` 5 |
+| `pack-converge`  | 0.98 [0.92]     | +0.98 (+0.90)   | solo 0.98, kin-blind 0.98, gain 0 (low -0.1)   |
+
+Reading it:
+
+- The seven original drills read as they did on 2026-11-07 (the sample differs: 64 trials, other worlds since). The four new
+  ones: the reference wins `prey-crossing` at about `prey-ahead`'s rate (0.16 against 0.22; the loss is the chase, never in
+  the jaws), loses `hunter-flank` as it loses `hunter-closing` (a forager that runs straight is caught), loses `kin-spared`
+  by biting whenever prey is in view (51 of 64 lost trials are `bit-kin`: the sim refuses the bite, the drill reads the
+  wish), and wins `pack-converge`.
+- `pack-converge` is not a pack test for a scripted hunter. A lone hunter wins as often as the trio (63 of 64 against
+  63 of 64) and the kin-blind trio the same, so the gain and the gap to kin-blind are 0 with a low bound under 0. The 2000
+  energy prey takes more than one bite but a sprinting hunter that keeps biting kills it inside the 600 ticks. The `pack`
+  gate of the ladder reads `drill.pack-converge.gainLow` and `.blindGapLow`: the Validity rule (the reference passes each
+  condition) fails both, so T25 must rewrite or drop them, or stage a prey a lone hunter cannot kill (a larger body, not
+  more energy), with a Decisions row. The scripted oracle that sends all three hunters at the prey wins 0.5 as a trio
+  and 1.0 alone: three bodies crowd one prey.
+- The same reference has no `winShareOverReference` on `two-foods`, `hunter-flank`, `rock-refuge` and `kin-spared` (it wins
+  none, so that reading is null): a gate cannot use it on those four.
+- Random brains win none of the four new drills at 8 trials of the validity tests (`test/evo/drill-scenarios-social.slow.test.js`);
+  a chaser that bites everything wins `kin-spared` on none (every loss `bit-kin`), and the oracle that bites only a touching
+  prey wins 0.375 of 32.
+
+### 2026-11-16 - The ladder's gates against the scripted references (training-stages Phase 6, T25)
+
+`node scripts/ladder-validity.mjs --seed 1000000` (the gate seed, 64 trials, about 30 s): each drill condition of `evals/train-ladder.json` against `memoryless`, `input-reader`, `kin-sparing` and the oracle, and the random brains.
+
+- `drill.pack-converge.gainLow` and `.blindGapLow`: nothing passes. A lone scripted hunter kills the 2000-energy prey in 600 ticks as often as the trio, so a gain of 0 is the ceiling, and a prey made harder for one hunter (forager `sprintBoost` 1.3 to 3) leaves the scripted trio at or below its solo and `kin-blind` arms. A scripted pack that steps away from a clone it sees did worse than solo, not better: separation costs the hunters the pursuit.
+- `drill.rock-refuge.edgeLow`: nothing passes, the oracle included (it wins 0; the scripted hunter reaches an agent inside the ring).
+- `drill.prey-ahead.lossShare.never-in-jaws` at most 0.5: only the oracle passes. A hunter that wins most trials has few losses and most of them are misses (0.82 for `memoryless`, 0.94 for `input-reader`), so the share of lost trials rises with skill.
+- `drill.hunter-flank.edgeLow` is seed-fragile for the senses: `input-reader` wins 3 of 64 on the gate seed and the oracle 48 of 64; on seed 77 only the oracle passes.
+- A bite wish on kin is the whole `kin-spared` lesson: `kin-sparing` (the input reader with its bite held while a clone is nearer than the prey on the rays) wins 43 of 64 with no `bit-kin` loss.
+- Training a whole ladder for 2 generations of 4 episodes of 3000 ticks takes 19 s without checkpoints and 80 s with a checkpoint every generation (drills at 64 trials, the 4-seed eval and cross-play), 16 workers.
+
+### 2026-11-18 - Windows Chrome over CDP, and what `perf:browser` reports there
+
+WSL reaches Windows Chrome on `127.0.0.1:9222` once `C:\Users\<user>\.wslconfig` sets `networkingMode=mirrored` and WSL is restarted (`wsl --shutdown`); Chrome must be started with `--remote-debugging-port=9222` and a non-default `--user-data-dir`. Over CDP the app gets a WebGPU adapter on the RTX 4090 (`vendor: nvidia`, `architecture: lovelace`) and logs `RendererReady` with `backend: webgpu`; the `gpuAdapter` string in a `perf:browser` report is the unmasked renderer of a separate WebGL context the harness opens (`webglRenderer`), so it reads ANGLE D3D11 whatever backend the app uses. `__perf().drawCalls` read `renderer.info.render.calls`, which three counts from the app's start (it grew by one each frame); it now reads `info.render.drawCalls`, the last frame's draws (25 to 28 at 1000 agents). A world started with `?agents=1000` at seed 1 falls to about 80 agents within 60 s, so `perf:browser` loads the page with `hold=1`, which sets the floor (`minAgents` and `floorTrigger`) to the agents asked for.
+
+### 2026-11-18 - three re-sends a `DynamicDrawUsage` buffer on every render, whole once its ranges are spent
+
+In three 0.187 `Attributes.update` uploads an attribute when its version moved **or** its usage is `DynamicDrawUsage`, on every render, and `WebGPUAttributeUtils.updateAttribute` clears the buffer's update ranges after each upload. A dynamic buffer that was not written this frame is therefore re-sent whole: with every instance buffer marked dynamic, the crisp renderer sent 48 `writeBuffer` calls and 4.1 MB a frame at 1000 agents, mostly idle line and effect layers at their full 256 KB. Leave instance buffers at the default usage and let `needsUpdate` (a version bump) with `addUpdateRange` drive the upload. Measured by wrapping `GPUQueue.prototype.writeBuffer` in an init script over CDP.
+
+### 2026-11-18 - Cross-origin isolation on Pages, and the clock it buys
+
+Cloudflare Pages applies `public/_headers` only to static files; a Functions response (`/v/`, `/s/`, `/next/`, `/api/`) needs the headers set in code, which `functions/_middleware.js` does for every route. With `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` the page is `crossOriginIsolated`, `SharedArrayBuffer` exists, and `performance.now` drops its coarse rounding: on Windows Chrome 157 the `perf:browser` frame times read 4.17 to 4.2 ms where they had read 4.3, and the refresh rate 240.4 Hz where it had read 243.9.
+
+### 2026-11-18 - Shared-memory hand-offs between the main thread and a worker
+
+- A request block that mixes `Int32` words and `Float64` fields cannot be written atomically as a whole: the pack worker could read a request half old and half new. A sequence lock fixes it: the writer stores `BEGIN`, writes the fields, then stores the sequence and notifies; the reader copies the fields and keeps them only when `BEGIN` still equals the sequence it started from (`readRequest` in `js/app/pack/frame-slots.js`).
+- A worker blocked in `Atomics.wait` takes no messages, and a stop flag set between the worker's check and its wait is missed until the next notify; a finite timeout (250 ms) bounds that.
+- `worker.terminate()` returns before the worker's last writes to shared memory are done: a worker caught mid-pack can store its ring hold after the main thread released it. Release after `terminate()`, and again before the next worker starts.
+- `typed.set(other.subarray(a, b))` creates a view object per call; a per-frame copy of rows in a loop allocates nothing.
+- Three output slots with a published index and a reading index are enough for one writer and one reader: the writer claims the slot that is neither, and the reader re-checks the published index after marking its slot read.
+
+### 2026-11-18 - `eval.hunter_juvenile_death_share` is a share of deaths, and `HunterLedger` bite cost is three costs
+
+The metric (`js/evo/scene-hunter-age.js`) is the share of hunter deaths with age under `juvenileTicks` (3000), over the whole run
+with no burn-in cut. It is a lifespan statistic: 0.86 means a hunter that dies is under 3000 ticks old 86% of the time, not
+that 86% of newborns die before `maturityTicks` (600). `biteCostEnergy` on a `HunterLedger` record adds the landed-bite kick, the
+`recoilEnergy` charged at kin or a too-large target and `strikeMissCost` on every tick `BITE` is held with no body in the jaws,
+so it is 98% of a juvenile hunter's logged spend (the ledger leaves out passive loss) and the log alone cannot split it; the
+`HunterRecoilLife` record gives the recoil part. Hunters hold `BITE` on 60% to 70% of their ticks, adults too. A hunter is born
+with about 900 energy, not the 270 the Phase 6 text assumed. `node scripts/juvenile-deaths.mjs <log>...` prints the split (E190).
+
+### 2026-11-18 - A ladder gate reads the default world, and a trainer archive does not open in `drill` (training-stages E-TS-1)
+
+The gate drills of a training run run on `config: {}` (`drillPart` in `scripts/lib/train-checkpoint.mjs`), not on the stage's
+world, and the drills' prey is the scripted `fleer`, not the stage's brain-driven prey. So `hunt-contact`'s slowed prey
+(`turnMultiplier` 0.5) shape the training worlds and never the gate: on offset 128 the stage's last predator kills the stage's
+foragers 42 of 64 in the `prey-ahead` staging and wins 0 of 64 against the fleer. Against a prey that sprints straight a slowed
+turn moves nothing (the `memoryless` reference wins 9 of 64 on the defaults and 6 of 64 with the turn halved); the scripted
+pursuer of `audit:chase` catches at 0.6 of the view 0.00 on the defaults and 0.56 only when the prey's `sprintBoost` is cut to
+0.6 (`sprintBoost` 1 is the default, a forager's sprint 12.0 against a predator's 14.4 and both cruising at 8.0). A gate is
+read two checkpoints in a row (`hold` 2), so a champion swap between checkpoints can fail a stage that passed once (offset 64,
+`nursery`). `npm run drill -- --archive` rejects a trainer archive (`archive.descriptor: expected v1, got v7`; `train:export`
+reads it with `TRAINER_DESCRIPTOR` and the stage-neutral `rulesHash`), and a stage file passed as `--config` crashes `stageWorld`
+(`initialAgents` 60 replaces the drill's own staging); pass the `specialisations` block alone. `train:crossplay` and
+`train:curve` on a finished run take 20 to 60 s. Numbers and the tasks: `evals/decisions/E-TS-1/results.md`, training-stages
+T33 to T38.
+
+### 2026-11-18 - The `hunt-contact` stage trains contact on prey that does not run: theory 1 (training-stages T34)
+
+E-TS-1's predator elites win a `prey-ahead` whose prey is inert (zero outputs) on 32 to 54 of 64 trials (the best elite of each
+offset 0, 64 and 128; the second elite of offset 0 wins 5) and win 0 or 1 of 64 against the scripted fleer on the same bearings;
+the `memoryless` reference wins 8 of 64 against the inert prey and 5 against the fleer. The gate reads `hunt`, not contact
+(theory 1); contact is learned, and the one weak elite (offset 0, cell 6) is the only support for theory 2. In the stage world
+20 to 29 of the 27 to 39 kills of a 20000-tick episode fall in the first 400 ticks, on prey that has not yet moved away, and almost
+none after tick 5000. Method and numbers: `evals/decisions/E-TS-1/results.md` (T34), `contact-diagnostic.mjs`, `stage-kills.mjs`.
+
+### 2026-11-19 - Trainer seed offsets repeat every 256, and a drill stages adult weights (training-stages E-TS-1b)
+
+`episodeSeed` indexes `evals/seeds.json` (256 seeds) by `(g x episodes + e + offset) mod 256`, so `--seed-offset 256` is offset 0
+(E-TS-1b's two curves are identical) and offsets 64, 128 and 192 are the same stream shifted by 2, 4 and 6 generations: five
+"offsets" give at most four distinct runs, and none is a fresh set of worlds. A drill stages the elite's trained weights, so a
+birth-time key (`hunterBiteBias`, the newborn's BITE bias) changes nothing in a drill's `--config`; it acts only in a training
+world. A fleer whose `sprintBoost` is cut still turns away: the hunt elites win 0 to 15 of 64 against it at 0.05 where an inert
+prey is won on 32 to 54 (`evals/decisions/E-TS-1b/`).
+
+### 2026-11-19 - A hunt stage world is a 500-tick feast, and the trainer offers deaths from tick 10000 (training-stages E-TS-1c)
+
+In the `hunt` and `hunt-weak` worlds the prey are gone by tick 500 (census from an offset 128 archive: forager 8, 4, 0 at ticks
+0, 100, 500; predators 26, 20, 13, and 6 at tick 2000), and the trainer offers only deaths from `OFFER_FROM_TICK` (10000) of a
+60000-tick episode, so a hunt stage selects on hunters that survived 9500 ticks without prey; the champions stop changing after
+the first checkpoint. `--ticks` and `--offer-from` move the window. A trained hunter's BITE bias sits at the `hunterBiteBias`
+ceiling (-0.5) yet bites siblings on 110 to 128 of 128 trials: the bite is released by the prey-strength skip weight
+(+1.9 to +4.0) and nothing learns a kin-strength inhibition (-0.27 to +0.31), so `kin-spared` is a recognition problem, not the
+open-jaw reflex. `reflexScores` (the exam) crashed on a champion of a specialisation with no reflex case until
+`row?.score ?? null` (`evals/decisions/E-TS-1c/`).
+
+### 2026-11-19 - Trained predator brains keep thrust and bite high, but their chase paths differ (brain-inspection T9)
+
+On `prey-ahead`, seed 1, 128 matched trials, `archive-159-predator-cell27` wins 1/128 and `archive-159-predator-cell94` wins 6/128. In the first four traced trials, cell27's `THRUST` output is positive on every tick and `BITE` on 93 to 100%; its positive `TURN` output is 0.8 to 15.9% and `SPRINT` is 1.4 to 19.3%. Cell94 also keeps `THRUST` positive on every tick and `BITE` on 87.6 to 100%, but `TURN` is 0 to 33.6% and `SPRINT` is 68.2 to 99.7%. Positive `SPRINT` activates sprint in `physics.js`; these are four traces per genome, not population estimates. The failure is consistent with chase and steering more than a lack of bite intent.
+
+Both genomes put their largest prey-ahead skip weights on direct ray-to-output paths: cell27 has `prey.hit0.strength` -> `THRUST` 1.133 and -> `BITE` 2.027, plus `prey.hit0.sin` -> `TURN` 1.255; cell94 has 1.028, 2.014 and 1.011 on those paths. Zeroing each path tests the effect on the same 128 trials:
+
+| Champion | Edit                                             | Intact | Edited |    Change | Before only         | After only | McNemar p |
+| -------- | ------------------------------------------------ | -----: | -----: | --------: | ------------------- | ---------- | --------: |
+| cell27   | `wSkip[12,0]` (`prey.hit0.strength` -> `THRUST`) |  1/128 |  0/128 | -0.007813 | 41                  | -          |  1.000000 |
+| cell27   | `wSkip[14,1]` (`prey.hit0.sin` -> `TURN`)        |  1/128 |  0/128 | -0.007813 | 41                  | -          |  1.000000 |
+| cell27   | `wSkip[12,4]` (`prey.hit0.strength` -> `BITE`)   |  1/128 |  1/128 |  0.000000 | -                   | -          |  1.000000 |
+| cell94   | `wSkip[12,0]` (`prey.hit0.strength` -> `THRUST`) |  6/128 |  1/128 | -0.039063 | 11,63,86,90,113,116 | 80         |  0.125000 |
+| cell94   | `wSkip[14,1]` (`prey.hit0.sin` -> `TURN`)        |  6/128 |  0/128 | -0.046875 | 11,63,86,90,113,116 | -          |  0.031250 |
+| cell94   | `wSkip[12,4]` (`prey.hit0.strength` -> `BITE`)   |  6/128 |  5/128 | -0.007813 | 86                  | -          |  1.000000 |
+
+The turn skip path is the clearest direct-path result on this drill: removing it erases all six cell94 catches (`p=0.031250`, suggestive). The thrust edit loses five catches but also gains trial 80 (`p=0.125000`); the bite edit loses only trial 86 (`p=1`). Cell27's single baseline catch makes its direct skip rows too sparse to support those individual claims. Its h30 ablation raises wins from 1/128 to 11/128 (`beforeOnly=[41]`, `afterOnly=[2,22,28,38,39,47,65,76,89,90,111]`, `p=0.006348`). h30's `wOut` coefficient to `SPRINT` is +0.361876 while its hidden activation is negative in the first four traces; setting only `wOut[30,2]` to zero raises wins from 1/128 to 10/128 (`beforeOnly=[41]`, `afterOnly=[39,61,65,69,76,78,89,90,107,111]`, `p=0.011719`). Setting h30's `TURN` weight to zero leaves the win share at 1/128 (`beforeOnly=[]`, `afterOnly=[]`, `p=1`). This suggests a suppressive hidden-to-sprint path in cell27's failed chase (suggestive: `p=0.006348` and `p=0.011719` are above the Bonferroni line of 0.0016).
+
+Cell94's h1 ablation drops 6/128 to 0/128 (`beforeOnly=[11,63,86,90,113,116]`, `afterOnly=[]`, `p=0.031250`); h1 has positive outgoing weights to `THRUST` (0.198), `TURN` (0.186) and `BITE` (0.390) and ranks among the largest active hidden contributions to all three (suggestive: `p=0.031250`). Other units also remove all six catches, so this is a distributed path, not a unique unit.
+
+Multiple-comparison caveat: about 32 hidden units were screened on each of 3 drills and the p values in these entries are uncorrected. Over 32 units the Bonferroni line is p < 0.05/32 = 0.0016; findings under it are marked firm and the rest suggestive. Cell94 has several consequential units. Silencing h13 raises wins from 6/128 to 24/128 (`beforeOnly=[113]`, `afterOnly=[1,2,21,22,39,47,48,61,69,76,78,79,88,89,100,111,117,119,123]`, `p=0.000040`; firm). Silencing h14 raises them to 25/128 (`beforeOnly=[11,86,113]`, `afterOnly=[4,7,9,12,15,18,22,27,32,39,46,67,68,79,80,85,92,102,104,107,114,125]`, `p=0.000157`; firm). A narrower edit setting h14's outgoing `mate` weight to zero leaves the result at 6/128 (`beforeOnly=[]`, `afterOnly=[]`, `p=1`), so that ablation's benefit does not identify a single output edge. h14 has a large `mate` weight and negative `TURN` weight, but the responsible recurrent path remains unknown. Silencing h31 raises cell94 from 6/128 to 18/128 (`beforeOnly=[90,113]`, `afterOnly=[4,6,12,25,46,54,67,74,79,92,97,107,115,125]`, `p=0.004181`; suggestive); setting only its `TURN` weight to zero gives 6/128 to 10/128 (`beforeOnly=[11,90,113,116]`, `afterOnly=[4,6,79,92,93,97,107,115]`, `p=0.387695`). The h31 effect suggests a unit-level contribution on these paired trials, but the turn edge alone does not explain it.
+
+#### Across registered prey speeds
+
+After the training ladder registered `prey-weak` (`sprintBoost=0.2`) and `prey-mid` (`sprintBoost=0.3`), both predators were inspected on all three prey drills at seed 1, 128 trials and four traced trials. Intact wins were cell27: 1/128 on `prey-ahead`, 16/128 on `prey-mid`, 12/128 on `prey-weak`; cell94: 6/128, 14/128 and 17/128 respectively. The slower variants improve catches, but both remain below the 0.5 bar.
+
+Across the four traced trials, `THRUST` fired on every alive tick for both genomes at every speed. Mean positive-output firing shares (`TURN`, `SPRINT`, `BITE`) were:
+
+| Champion | `prey-ahead`        | `prey-mid` (0.3)    | `prey-weak` (0.2)   |
+| -------- | ------------------- | ------------------- | ------------------- |
+| cell27   | 0.058, 0.069, 0.960 | 0.215, 0.162, 0.883 | 0.258, 0.191, 0.848 |
+| cell94   | 0.093, 0.898, 0.965 | 0.407, 0.716, 0.808 | 0.282, 0.824, 0.876 |
+
+The easier prey produce more `TURN` output in both brains, while `BITE` fires less often in these four traces. Cell94 also fires `SPRINT` less often on both reduced-speed variants. These are trace summaries, not population estimates; the matched win outcomes show the same direction overall but still leave most trials lost to `never-in-jaws`.
+
+Each direct prey-ray skip path was zeroed separately against the same 128-trial intact run on each drill. Rows report the full paired comparison; `wSkip[12,0]` is `prey.hit0.strength` to `THRUST`, `wSkip[14,1]` is `prey.hit0.sin` to `TURN`, and `wSkip[12,4]` is `prey.hit0.strength` to `BITE`.
+
+| Champion | Drill        | Edit          | Intact | Edited |    Change | Before only                                          | After only | McNemar p |
+| -------- | ------------ | ------------- | -----: | -----: | --------: | ---------------------------------------------------- | ---------- | --------: |
+| cell27   | `prey-ahead` | `wSkip[12,0]` |  1/128 |  0/128 | -0.007813 | 41                                                   | -          |  1.000000 |
+| cell27   | `prey-ahead` | `wSkip[14,1]` |  1/128 |  0/128 | -0.007813 | 41                                                   | -          |  1.000000 |
+| cell27   | `prey-ahead` | `wSkip[12,4]` |  1/128 |  1/128 |  0.000000 | -                                                    | -          |  1.000000 |
+| cell27   | `prey-mid`   | `wSkip[12,0]` | 16/128 |  0/128 | -0.125000 | 9,13,18,21,23,33,38,44,55,59,68,69,82,101,103,116    | -          |  0.000031 |
+| cell27   | `prey-mid`   | `wSkip[14,1]` | 16/128 |  0/128 | -0.125000 | 9,13,18,21,23,33,38,44,55,59,68,69,82,101,103,116    | -          |  0.000031 |
+| cell27   | `prey-mid`   | `wSkip[12,4]` | 16/128 | 11/128 | -0.039063 | 18,23,55,68,69                                       | -          |  0.062500 |
+| cell27   | `prey-weak`  | `wSkip[12,0]` | 12/128 |  0/128 | -0.093750 | 2,28,40,42,44,51,95,101,105,107,120,123              | -          |  0.000488 |
+| cell27   | `prey-weak`  | `wSkip[14,1]` | 12/128 |  0/128 | -0.093750 | 2,28,40,42,44,51,95,101,105,107,120,123              | -          |  0.000488 |
+| cell27   | `prey-weak`  | `wSkip[12,4]` | 12/128 | 11/128 | -0.007813 | 40,42,44,101                                         | 85,99,103  |  1.000000 |
+| cell94   | `prey-ahead` | `wSkip[12,0]` |  6/128 |  1/128 | -0.039063 | 11,63,86,90,113,116                                  | 80         |  0.125000 |
+| cell94   | `prey-ahead` | `wSkip[14,1]` |  6/128 |  0/128 | -0.046875 | 11,63,86,90,113,116                                  | -          |  0.031250 |
+| cell94   | `prey-ahead` | `wSkip[12,4]` |  6/128 |  5/128 | -0.007813 | 86                                                   | -          |  1.000000 |
+| cell94   | `prey-mid`   | `wSkip[12,0]` | 14/128 |  0/128 | -0.109375 | 13,26,29,31,33,36,46,54,73,75,103,109,120,124        | -          |  0.000122 |
+| cell94   | `prey-mid`   | `wSkip[14,1]` | 14/128 |  0/128 | -0.109375 | 13,26,29,31,33,36,46,54,73,75,103,109,120,124        | -          |  0.000122 |
+| cell94   | `prey-mid`   | `wSkip[12,4]` | 14/128 | 13/128 | -0.007813 | 75                                                   | -          |  1.000000 |
+| cell94   | `prey-weak`  | `wSkip[12,0]` | 17/128 |  2/128 | -0.117188 | 5,9,17,19,21,30,39,46,49,55,85,92,98,110,113,116,127 | 1,74       |  0.000729 |
+| cell94   | `prey-weak`  | `wSkip[14,1]` | 17/128 |  0/128 | -0.132813 | 5,9,17,19,21,30,39,46,49,55,85,92,98,110,113,116,127 | -          |  0.000015 |
+| cell94   | `prey-weak`  | `wSkip[12,4]` | 17/128 | 16/128 | -0.007813 | 19                                                   | -          |  1.000000 |
+
+The skip ablations suggest that `THRUST` and `TURN` are both essential to the catches in the slower drills (the slower-drill p values of 0.000015 to 0.000729 are under 0.0016, so firm; the `prey-ahead` rows are suggestive), while directly zeroing `BITE` costs at most five catches for cell27 and one for cell94. This is consistent with a pursuit and steering bottleneck more than a lack of bite intent. `wSkip[12,0]` and `wSkip[14,1]` lose exactly the same trials on every drill (identical before-only sets for both champions; only cell94's `wSkip[12,0]` also gains trials 80, 1 and 74): either the two edges are redundant, or the brain stops chasing once either is cut; this is unresolved. It does not prove the entire failure mechanism: the `THRUST`/`TURN` ray paths are shared across all speeds and ablation changes can interact with recurrent activity.
+
+Hidden-unit ablations add a speed-dependent result for cell27. Silencing h16 changes `prey-ahead` 1/128 to 0/128 (`beforeOnly=[41]`, `afterOnly=[]`, `p=1`), `prey-mid` 16/128 to 6/128 (`beforeOnly=[9,13,21,23,33,38,44,55,59,69,82,101,103,116]`, `afterOnly=[8,16,40,56]`, `p=0.030884`), and `prey-weak` 12/128 to 7/128 (`beforeOnly=[2,28,40,44,51,101,107,120,123]`, `afterOnly=[8,60,102,117]`, `p=0.266846`). Its mean activation in the first `prey-mid` trace is -0.450, and its outgoing weights are +0.144 to `TURN` and -0.053 to `SPRINT`; this suggests a matched-trial contribution on `prey-mid` (suggestive: `p=0.030884`), not a single isolated output mechanism.
+
+Cell94 has no single speed-specific unit. Silencing h3 drops `prey-ahead` 6/128 to 0/128 (`beforeOnly=[11,63,86,90,113,116]`, `afterOnly=[]`, `p=0.031250`), `prey-mid` 14/128 to 0/128 (`beforeOnly=[13,26,29,31,33,36,46,54,73,75,103,109,120,124]`, `afterOnly=[]`, `p=0.000122`) and `prey-weak` 17/128 to 0/128 (`beforeOnly=[5,9,17,19,21,30,39,46,49,55,85,92,98,110,113,116,127]`, `afterOnly=[]`, `p=0.000015`). Other units produce the same all-catch loss on some drills, so this is a distributed pathway, not a unique-cell result.
+
+All trial files live only in `.sim/inspect/ets-1h-o144/`; no champion, training code, sim rule or score was changed by these diagnostics. Training evidence added the two sprint settings after the first `prey-ahead` analysis; those settings are now explicit in `js/evo/drill-scenarios.js` and the training-stage docs.
+
+### 2026-11-19 - Detector top-up (E210) and unverified triage
+
+The 128-seed floor-on detector top-up (`evals/power/defaults-floor-on-E210.json`, 200000 ticks, `rulesHash` `38be2908ad820c86`, matching `E188`) added liveness and power readings for the sprint, stillness, scent-trail and prey-selectivity metrics. Registry status counts moved from 199 verified / 168 unverified / 3 deprecated to 204 verified / 163 unverified / 3 deprecated (370 total); `eval.food_energy_per_1k@20k` moved to `verified` (16 seeds), while `eval.floor_episodes` (mean 0.328, MDE > 1.0) and `eval.predators_at_end` (MDE 64 = 0.75 > 0.20) remain `unverified`. Verdicts: `sprint-burst` Phase 2 gate not met (`sprint_share.hunter` 0.4086, `sprint_share.prey` 0.4463, `sprint_cost_share` 0.05363); `stillness` Phase 2 gate met (`freeze_under_threat` -0.1121, `freeze_survival_gain` 0.000894, `ambush_kill_share` 0.0005704); `scent-trails` `E-ST2-1` partially falsified (`scavenge_approach_share` 0.0234 < 0.05 holds, `chase_reacquire_share` 0.394 > 0.1); `prey-guilds` `E-PG-1` partially falsified on selectivity (`eval.prey_selectivity.*` means 1.289 to 1.601, >64 seeds). Triage of the 163 remaining `unverified` metrics is in `evals/power/unverified-2026-11-19.md` (26 null share > 0.1, 3 distinct < 2, 19 FPR > 0.1, 115 MDE > bar; 29 deprecation candidates listed).

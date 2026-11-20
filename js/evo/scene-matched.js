@@ -17,7 +17,8 @@
 
 import { createLog, ensureRoom } from './growable-log.js';
 import { bySuffix, none, ok } from './metrics-stats.js';
-import { CHASE_OUTCOME, CONVERSION_BANDS } from './scene-competence.js';
+import { CHASE_OUTCOME } from './chase-outcome.js';
+import { CONVERSION_BANDS } from './scene-competence.js';
 
 /** Chases a stratum needs to count. */
 export const MIN_STRATUM_CHASES = 5;

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { LANE_KINDS } from '../helpers/lane-kinds.js';
 import {
     createBodyTweens,
     startTween,
@@ -10,7 +11,7 @@ import {
 
 const WHO = { slot: 3, genome: 40 };
 
-describe('body tweens', () => {
+describe.each(LANE_KINDS)('body tweens (%s lanes)', (_kind, lanes) => {
     it('gives every kind a length and a rank', () => {
         const kinds = Object.values(TWEEN);
         expect(TWEEN_TICKS).toHaveLength(kinds.length);
@@ -21,7 +22,7 @@ describe('body tweens', () => {
     });
 
     it('runs a tween from 0 to below 1 over its length, then clears it', () => {
-        const t = createBodyTweens(8);
+        const t = createBodyTweens(8, lanes());
         expect(startTween(t, WHO, TWEEN.GULP, 100)).toBe(true);
         expect(tweenAge(t, 3, 40, 100)).toBe(0);
         expect(tweenAge(t, 3, 40, 106)).toBeCloseTo(0.5);
@@ -30,7 +31,7 @@ describe('body tweens', () => {
     });
 
     it('a higher-ranked running tween keeps the slot; an equal or higher one replaces it', () => {
-        const t = createBodyTweens(8);
+        const t = createBodyTweens(8, lanes());
         startTween(t, WHO, TWEEN.FLINCH, 100);
         expect(startTween(t, WHO, TWEEN.GULP, 101)).toBe(false);
         expect(t.kind[3]).toBe(TWEEN.FLINCH);
@@ -40,7 +41,7 @@ describe('body tweens', () => {
     });
 
     it('drops a tween left by an earlier body in the slot', () => {
-        const t = createBodyTweens(8);
+        const t = createBodyTweens(8, lanes());
         startTween(t, WHO, TWEEN.LUNGE, 100);
         expect(tweenAge(t, 3, 41, 101)).toBe(-1);
         expect(t.kind[3]).toBe(TWEEN.NONE);

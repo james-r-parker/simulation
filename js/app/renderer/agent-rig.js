@@ -7,6 +7,8 @@ import { floraColor } from './flora-colors.js';
 import { temperatureColor } from './colors.js';
 import { applyClip, restRig } from './clip-sampler.js';
 import { CH, CHANNELS, clipForTween } from './clips.js';
+import { dentAt } from './dents.js';
+import { SPRINT_FROM, sprintAmp, thrustOf } from './hunt-cues.js';
 import { FILL_FLOOR, FILL_SHARE, NEON, toDisplay } from './palette.js';
 
 const N = CHANNELS.length;
@@ -42,7 +44,8 @@ export const STALK_SPEED = 0.35;
  * @property {Float32Array} gate pregnant, sick, infected, pollen
  * @property {Float32Array} gate2 calling, in cover, gestation01, the membrane and flagellum wave phase
  * @property {Float32Array} accent pollen colour r, g, b and the call kind (1 alarm, 2 pack call)
- * @property {Float32Array} call call colour r, g, b, 0
+ * @property {Float32Array} dent the membrane dent: bearing in the body frame, signed depth, width and the fade
+ * @property {Float32Array} call call colour r, g, b and the flagella's thrust
  */
 
 /**
@@ -63,6 +66,7 @@ export function createAgentRig(capacity, buckets) {
             gate2: one(),
             accent: one(),
             call: one(),
+            dent: one(),
         });
     }
     return { arrays, rig: new Float32Array(N), rgb: [0, 0, 0] };
@@ -78,6 +82,8 @@ export function createAgentRig(capacity, buckets) {
  * @property {boolean} hunter whether this bucket's spec hunts
  * @property {{cold01: number, heat01: number}} stress cold and heat stress as shares of `temperatureMax`
  * @property {import('./colors.js').TemperatureBands | null} temperatureLens the bands when the temperature lens is on
+ * @property {import('./dents.js').Dents | null} dents the running membrane dents
+ * @property {number} tick the playhead tick
  */
 
 const AMP = { amp: 1, rig: /** @type {Float32Array} */ (/** @type {unknown} */ (null)), at: 0 };
@@ -139,6 +145,7 @@ function playLoops(ctx, { bucket, o }) {
     const bits = bucket.body[o];
     const hunting = ctx.hunter && bucket.state[o + 3] >= STALK_JAW && speed01 < STALK_SPEED;
     maybe(ctx, hunting, 'stalk', 1);
+    maybe(ctx, speed01 > SPRINT_FROM, 'sprint', sprintAmp(speed01));
     maybe(ctx, bucket.tween[o + 3] > 0, 'flee', 1);
     const cold = ctx.stress.cold01;
     maybe(ctx, temp < cold, 'shiver', Math.min(((cold - temp) / Math.max(cold, 1e-6)) * 2, 1));
@@ -241,10 +248,44 @@ function gateRow(ctx, { bucket, o, flags }, out, rgb) {
     out.gate2[o + 1] = (bucket.body[o] & ctx.stateBits.IN_COVER) !== 0 ? 1 : 0;
     out.gate2[o + 2] = bucket.body[o + 1];
     out.gate2[o + 3] = wavePhase(ctx.timeSec, bucket.motion[o], bucket.motion[o + 2]);
-    const hue = ((flags >>> ctx.flags.POLLEN_HUE_SHIFT) & ctx.flags.POLLEN_HUE_MASK) / ctx.flags.POLLEN_HUE_MASK;
-    toDisplay(floraColor(hue * 2 - 1, rgb), rgb);
+    if (pollen) {
+        const hue = ((flags >>> ctx.flags.POLLEN_HUE_SHIFT) & ctx.flags.POLLEN_HUE_MASK) / ctx.flags.POLLEN_HUE_MASK;
+        toDisplay(floraColor(hue * 2 - 1, rgb), rgb);
+    }
     putRgb(out.accent, o, pollen ? rgb : NEON.pollen, callKind);
-    putRgb(out.call, o, callKind === 2 ? NEON.huntCall : NEON.alarm, 0);
+    putRgb(out.call, o, callKind === 2 ? NEON.huntCall : NEON.alarm, thrustOf(bucket.motion[o]));
+}
+
+const DENT = { angle: 0, depth: 0, width: 0 };
+const DENT_WHO = { slot: 0, genome: 0, tick: 0 };
+/** The dent's width when none runs: the shader divides by it. */
+const DENT_REST_WIDTH = 0.6;
+
+/**
+ * Writes one row's dent lane: the running dent turned into the body's frame, or a flat one.
+ * @param {RigContext} ctx the context
+ * @param {{bucket: import('./agents-pack.js').Bucket & {index: Int32Array}, o: number, r: number}} row the bucket, the
+ *   row offset and the row number
+ * @param {{out: RigArrays, agents: import('../interpolate.js').Interpolated}} into the bucket's arrays and the agents
+ * @returns {void}
+ */
+function dentRow(ctx, { bucket, o, r }, { out, agents }) {
+    const i = bucket.index[r];
+    out.dent[o] = 0;
+    out.dent[o + 1] = 0;
+    out.dent[o + 2] = DENT_REST_WIDTH;
+    out.dent[o + 3] = bucket.fade[r];
+    if (!ctx.dents || i < 0) {
+        return;
+    }
+    DENT_WHO.slot = agents.slot[i];
+    DENT_WHO.genome = agents.genomeId[i];
+    DENT_WHO.tick = ctx.tick;
+    if (dentAt(ctx.dents, DENT_WHO, DENT)) {
+        out.dent[o] = DENT.angle - agents.angle[i];
+        out.dent[o + 1] = DENT.depth;
+        out.dent[o + 2] = DENT.width;
+    }
 }
 
 const ROW = { bucket: /** @type {any} */ (null), o: 0, flags: 0 };
@@ -263,11 +304,12 @@ export function rigBucket(bucket, agents, { rig, out, ctx }) {
     row.bucket = bucket;
     for (let r = 0; r < bucket.count; r++) {
         row.o = r * ITEM;
-        row.flags = agents.flags[bucket.index[r]];
+        row.flags = bucket.index[r] < 0 ? 0 : agents.flags[bucket.index[r]];
         colorRow(ctx, row, out, rig.rgb);
         playRig(ctx, row, rig.rig);
         copyRig(out.rig0, row.o, rig.rig, 0);
         copyRig(out.rig1, row.o, rig.rig, 4);
         copyRig(out.rig2, row.o, rig.rig, 8);
+        dentRow(ctx, { bucket, o: row.o, r }, { out, agents });
     }
 }

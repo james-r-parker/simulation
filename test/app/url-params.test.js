@@ -5,7 +5,7 @@ describe('readParams', () => {
     it('reads every parameter', () => {
         expect(
             readParams(
-                '?seed=42&agents=300&speed=4&backend=webgl2&gputime=1&tv=1&audio=true&policy=map-elites-v6&merit=1',
+                '?seed=42&agents=300&speed=4&backend=webgl2&gputime=1&tv=1&audio=true&policy=map-elites-v6&merit=1&hold=1',
             ),
         ).toEqual({
             seed: 42,
@@ -17,6 +17,7 @@ describe('readParams', () => {
             audio: true,
             policy: 'map-elites-v6',
             merit: true,
+            hold: true,
         });
     });
 
@@ -31,6 +32,7 @@ describe('readParams', () => {
             audio: false,
             policy: null,
             merit: false,
+            hold: false,
         });
     });
 
@@ -46,6 +48,7 @@ describe('readParams', () => {
             audio: false,
             policy: null,
             merit: false,
+            hold: false,
         });
         expect(readParams('?seed=4294967296').seed).toBeNull();
         expect(readParams('?seed=4294967295').seed).toBe(4294967295);
@@ -78,6 +81,16 @@ describe('configOverrides', () => {
             maxAgents: 800,
             minAgents: 100,
         });
+    });
+
+    it('holds the population at the start with `hold`: the floor refills to it whenever it drops below', () => {
+        expect(configOverrides(readParams('?agents=1000&hold=1'))).toEqual({
+            initialAgents: 1000,
+            maxAgents: 1000,
+            minAgents: 1000,
+            floorTrigger: 1000,
+        });
+        expect(configOverrides(readParams('?hold=1'))).toEqual({});
     });
 
     it('keeps the default cap and lowers the floor for a small start', () => {

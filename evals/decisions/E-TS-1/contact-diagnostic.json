@@ -1,0 +1,179 @@
+{
+  "/home/j1mb0jay/code/simulation/.sim/train/ladder-1-o0/archive-79.json": [
+    {
+      "subject": "elite-predator-cell6",
+      "fleer": {
+        "wins": 0,
+        "inViewTicks": 2855,
+        "sprintShare": 1,
+        "thrustAbove05Share": 0.03,
+        "meanThrust": 0.044,
+        "medianClosest": 4.06
+      },
+      "inert": {
+        "wins": 5,
+        "inViewTicks": 51613,
+        "sprintShare": 0.973,
+        "thrustAbove05Share": 0.517,
+        "meanThrust": 0.367,
+        "medianClosest": 1
+      }
+    },
+    {
+      "subject": "elite-predator-cell57",
+      "fleer": {
+        "wins": 1,
+        "inViewTicks": 6895,
+        "sprintShare": 0.253,
+        "thrustAbove05Share": 0.242,
+        "meanThrust": 0.39,
+        "medianClosest": 3.87
+      },
+      "inert": {
+        "wins": 32,
+        "inViewTicks": 20935,
+        "sprintShare": 0.397,
+        "thrustAbove05Share": 0.94,
+        "meanThrust": 0.658,
+        "medianClosest": 1
+      }
+    },
+    {
+      "subject": "memoryless",
+      "fleer": {
+        "wins": 5,
+        "inViewTicks": 2997,
+        "sprintShare": 0.291,
+        "thrustAbove05Share": 0.291,
+        "meanThrust": 0.007,
+        "medianClosest": 4.01
+      },
+      "inert": {
+        "wins": 8,
+        "inViewTicks": 3373,
+        "sprintShare": 0.092,
+        "thrustAbove05Share": 0.092,
+        "meanThrust": -0.272,
+        "medianClosest": 4.01
+      }
+    }
+  ],
+  "/home/j1mb0jay/code/simulation/.sim/train/ladder-1-o64/archive-39.json": [
+    {
+      "subject": "elite-predator-cell3",
+      "fleer": {
+        "wins": 0,
+        "inViewTicks": 2732,
+        "sprintShare": 0.268,
+        "thrustAbove05Share": 0.002,
+        "meanThrust": -0.009,
+        "medianClosest": 4.05
+      },
+      "inert": {
+        "wins": 37,
+        "inViewTicks": 16570,
+        "sprintShare": 0.135,
+        "thrustAbove05Share": 0.229,
+        "meanThrust": 0.148,
+        "medianClosest": 1
+      }
+    },
+    {
+      "subject": "elite-predator-cell59",
+      "fleer": {
+        "wins": 0,
+        "inViewTicks": 3735,
+        "sprintShare": 0.003,
+        "thrustAbove05Share": 0.198,
+        "meanThrust": 0.277,
+        "medianClosest": 4.05
+      },
+      "inert": {
+        "wins": 45,
+        "inViewTicks": 17835,
+        "sprintShare": 0.041,
+        "thrustAbove05Share": 0.876,
+        "meanThrust": 0.76,
+        "medianClosest": 1
+      }
+    },
+    {
+      "subject": "memoryless",
+      "fleer": {
+        "wins": 5,
+        "inViewTicks": 2997,
+        "sprintShare": 0.291,
+        "thrustAbove05Share": 0.291,
+        "meanThrust": 0.007,
+        "medianClosest": 4.01
+      },
+      "inert": {
+        "wins": 8,
+        "inViewTicks": 3373,
+        "sprintShare": 0.092,
+        "thrustAbove05Share": 0.092,
+        "meanThrust": -0.272,
+        "medianClosest": 4.01
+      }
+    }
+  ],
+  "/home/j1mb0jay/code/simulation/.sim/train/ladder-1-o128/archive-79.json": [
+    {
+      "subject": "elite-predator-cell5",
+      "fleer": {
+        "wins": 0,
+        "inViewTicks": 3694,
+        "sprintShare": 0.454,
+        "thrustAbove05Share": 0.24,
+        "meanThrust": 0.245,
+        "medianClosest": 4.02
+      },
+      "inert": {
+        "wins": 49,
+        "inViewTicks": 5989,
+        "sprintShare": 0.588,
+        "thrustAbove05Share": 0.67,
+        "meanThrust": 0.65,
+        "medianClosest": 1
+      }
+    },
+    {
+      "subject": "elite-predator-cell56",
+      "fleer": {
+        "wins": 0,
+        "inViewTicks": 3415,
+        "sprintShare": 0.309,
+        "thrustAbove05Share": 0.017,
+        "meanThrust": 0.194,
+        "medianClosest": 4.06
+      },
+      "inert": {
+        "wins": 54,
+        "inViewTicks": 12848,
+        "sprintShare": 0.073,
+        "thrustAbove05Share": 0.746,
+        "meanThrust": 0.639,
+        "medianClosest": 1
+      }
+    },
+    {
+      "subject": "memoryless",
+      "fleer": {
+        "wins": 5,
+        "inViewTicks": 2997,
+        "sprintShare": 0.291,
+        "thrustAbove05Share": 0.291,
+        "meanThrust": 0.007,
+        "medianClosest": 4.01
+      },
+      "inert": {
+        "wins": 8,
+        "inViewTicks": 3373,
+        "sprintShare": 0.092,
+        "thrustAbove05Share": 0.092,
+        "meanThrust": -0.272,
+        "medianClosest": 4.01
+      }
+    }
+  ]
+}

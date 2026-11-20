@@ -124,6 +124,8 @@ function launch(sup, seed) {
     const client = createWorkerClient({
         post: (message, transfer) => worker.postMessage(message, transfer),
         policy: options.policy,
+        log: options.log,
+        now: options.now,
         listeners: {
             ...through,
             onStats(stats) {
@@ -180,7 +182,7 @@ function restart(sup, { reason, delayMs }) {
  * Creates the supervisor. Nothing runs until `start`.
  * @param {SupervisorOptions} options the injected functions and the config
  * @returns {{start: (seed: number) => void, stop: () => void, client: () => (Record<string, any> | null),
- *   restarts: () => number, lastBundle: () => (Record<string, any> | null), seed: () => number}} the supervisor
+ *   restarts: () => number, lastBundle: () => (Record<string, any> | null), seed: () => number, tick: () => number}} the supervisor
  */
 export function createSupervisor(options) {
     /** @type {Supervision} */
@@ -215,5 +217,6 @@ export function createSupervisor(options) {
         restarts: () => sup.restarts,
         lastBundle: () => sup.bundle,
         seed: () => sup.seed,
+        tick: () => sup.lastTick,
     };
 }

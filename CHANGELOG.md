@@ -1,5 +1,100 @@
 # Changelog
 
+## [10.1.0](https://github.com/james-r-parker/simulation/compare/v10.0.0...v10.1.0) (2026-11-18)
+
+
+### Features
+
+* **app:** pack the agents in a worker (pack-worker Phase 2, T8-T13 and the deletion of T14) ([#499](https://github.com/james-r-parker/simulation/issues/499)) ([0429117](https://github.com/james-r-parker/simulation/commit/042911741d198533d366806f99701fc7aadaeee4))
+* **evo:** add scent-trails detectors ([#491](https://github.com/james-r-parker/simulation/issues/491)) ([f163c13](https://github.com/james-r-parker/simulation/commit/f163c13393b432cdffcd017882dd52db7e19f823))
+* **evo:** add sprint-use detectors ([#489](https://github.com/james-r-parker/simulation/issues/489)) ([3ca2b1f](https://github.com/james-r-parker/simulation/commit/3ca2b1fd558f83b3618c90868583034d421f5314))
+* **evo:** add stillness scene detectors ([#490](https://github.com/james-r-parker/simulation/issues/490)) ([3a150d7](https://github.com/james-r-parker/simulation/commit/3a150d754594970adb7523c90902bb06ba97f061))
+* **metrics:** measure prey guild selectivity ([#485](https://github.com/james-r-parker/simulation/issues/485)) ([c11202b](https://github.com/james-r-parker/simulation/commit/c11202bd104a15e89b5907b7e64429a3a63e35e3))
+* **renderer:** cap line parts at the rim's weight; crisp renderer checked on real WebGPU ([#500](https://github.com/james-r-parker/simulation/issues/500)) ([390acd9](https://github.com/james-r-parker/simulation/commit/390acd9aa57da71dc4cfc7e92ab59a8d0c5be0cf))
+* **worker:** cross-origin isolation and the shared snapshot ring (pack-worker Phase 1) ([#498](https://github.com/james-r-parker/simulation/issues/498)) ([0b8bdbc](https://github.com/james-r-parker/simulation/commit/0b8bdbc520bc2831b425ebc5af95d85f0a1d58cb))
+
+
+### Bug Fixes
+
+* **check:** keep slow suites out of tier 1 ([#483](https://github.com/james-r-parker/simulation/issues/483)) ([5068ef0](https://github.com/james-r-parker/simulation/commit/5068ef00d6d6a3b165310d082b5c609880bf005f))
+* **gates:** scope lint to the active checkout ([#486](https://github.com/james-r-parker/simulation/issues/486)) ([36074aa](https://github.com/james-r-parker/simulation/commit/36074aab8774bc2f2287363975454b02bbd5d4dd))
+* **smoke:** make the 5 s frame window a stall ceiling ([#495](https://github.com/james-r-parker/simulation/issues/495)) ([370eaae](https://github.com/james-r-parker/simulation/commit/370eaae54e9aa772a5d9b47cd6a30fa31847c53e))
+* **smoke:** measure rendered app frames after startup ([#487](https://github.com/james-r-parker/simulation/issues/487)) ([04e3b34](https://github.com/james-r-parker/simulation/commit/04e3b3402844b2639e55662b22e475f9cf880a55))
+* **worker:** fit the event capacity to a raised agent cap; record crisp-renderer T1 ([#493](https://github.com/james-r-parker/simulation/issues/493)) ([1a819b3](https://github.com/james-r-parker/simulation/commit/1a819b3902705b6d5cc1d5be090f85cac371a19c))
+
+
+### Performance Improvements
+
+* **renderer:** cut per-frame draw CPU from 3.5 to 2.8 ms at 1000 agents (crisp-renderer T24) ([#496](https://github.com/james-r-parker/simulation/issues/496)) ([ae0ae46](https://github.com/james-r-parker/simulation/commit/ae0ae46b35ba91bb7ec2617e05522c66669f9b48))
+* **renderer:** stop re-sending idle buffers, fix the perf harness, revise the T24 budgets ([#494](https://github.com/james-r-parker/simulation/issues/494)) ([7116b7b](https://github.com/james-r-parker/simulation/commit/7116b7b1b1c0456d6e97ffa8bc5641b3df3eac72))
+
+## [10.0.0](https://github.com/james-r-parker/simulation/compare/v9.0.0...v10.0.0) (2026-11-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sim:** killGorgeShare 0.4 becomes the default (honest-budgets T37) ([#477](https://github.com/james-r-parker/simulation/issues/477))
+* **sim:** hunter's eyes become the defaults (senses-and-motor T20-T21) ([#464](https://github.com/james-r-parker/simulation/issues/464))
+* **sim,evo:** rulesHash 95ef99879cc94205 to e280f7fe28ab36fa; season 10 is unreleased, so its rulesHash moves in place.
+* **sim:** hunter's eyes - rearVisionShare and the hunter-vision screen (senses-and-motor T16-T17) ([#459](https://github.com/james-r-parker/simulation/issues/459))
+* **sim,eval:** add scout call multipliers and E181 screen (prey-guilds T9-T10) ([#450](https://github.com/james-r-parker/simulation/issues/450))
+* **sim,eval:** add active defender repel and E180 screen (prey-guilds T4-T5) ([#448](https://github.com/james-r-parker/simulation/issues/448))
+* **sim,eval:** predator recruitment arms & honest-recruit screen (honest-budgets T34-T35) ([#440](https://github.com/james-r-parker/simulation/issues/440))
+* **sim:** rulesHash 50694cf3326302b6 to 2bcd2fe8b3b35097; season 10 is unreleased, so its rulesHash moves in place.
+* **sim:** rulesHash 98ee549b9ecb959c to 50694cf3326302b6; season 10 is unreleased, so its rulesHash moves in place.
+* the rules changed (rulesHash ca640c7579b94d0d to 98ee549b9ecb959c); genes of seasons 8 and 9 do not carry over.
+* the rules changed (rulesHash ca640c7579b94d0d to 98ee549b9ecb959c); genes of season 8 do not carry over.
+* **sim:** the rules change (rulesHash ca640c7579b94d0d to 98ee549b9ecb959c).
+
+### Features
+
+* **eval:** hunter-vision screen and 64-seed keep rule, no harm and catches +9.7% (senses-and-motor T18-T19) ([#462](https://github.com/james-r-parker/simulation/issues/462)) ([ce74da3](https://github.com/james-r-parker/simulation/commit/ce74da36446d9dc2a60dc652809c9e59e8bad0ed))
+* **eval:** record the honest-alarm screen, no finalist, Phase 5 parked (honest-budgets T29-T31) ([#465](https://github.com/james-r-parker/simulation/issues/465)) ([08153e7](https://github.com/james-r-parker/simulation/commit/08153e74dc38f78382662d08bc67dc4a9bdae919))
+* **evals:** the stage ladder, stage worlds and gate validity (training-stages T25) ([#479](https://github.com/james-r-parker/simulation/issues/479)) ([16cff69](https://github.com/james-r-parker/simulation/commit/16cff6978dc7e78d39ce47999361f03fcc51aafd))
+* **evo,sim:** recruitment cohort, chase budget and carcass-loss diagnostics (honest-budgets T33a, T33b) ([#467](https://github.com/james-r-parker/simulation/issues/467)) ([cbfd523](https://github.com/james-r-parker/simulation/commit/cbfd523818ffcaecb52aca2a9907cd59958e1607))
+* **evo:** add chase-kinematics detectors and registry entries (chase-physics P1) ([#449](https://github.com/james-r-parker/simulation/issues/449)) ([8a9f537](https://github.com/james-r-parker/simulation/commit/8a9f537fc14dbabe4e7a483e976c4c4de0ab60fd))
+* **evo:** add prey-guild detectors and registry entries (prey-guilds T1) ([#445](https://github.com/james-r-parker/simulation/issues/445)) ([7e1aaca](https://github.com/james-r-parker/simulation/commit/7e1aacaa10f9e40964a46d7c53efb04679777121))
+* **evo:** detector-baseline T8a - E188 power and liveness, baseline tables ([#482](https://github.com/james-r-parker/simulation/issues/482)) ([56a2a76](https://github.com/james-r-parker/simulation/commit/56a2a76a7c2482029c0891641e2a1d3e45fdbdff))
+* **evo:** scene drills and export by style (training-stages Phase 4) ([#474](https://github.com/james-r-parker/simulation/issues/474)) ([a24834f](https://github.com/james-r-parker/simulation/commit/a24834f5dc1703185b25c01159074348bf014d5c))
+* **evo:** shared chase record, chase metrics moved onto it, honest plan status (detector-baseline T1-T2) ([#453](https://github.com/james-r-parker/simulation/issues/453)) ([513c80b](https://github.com/james-r-parker/simulation/commit/513c80b7d880799ed2a512287abe888409d78bae))
+* **evo:** training-stages Phase 1 detectors (T1-T4) ([#458](https://github.com/james-r-parker/simulation/issues/458)) ([e6621dd](https://github.com/james-r-parker/simulation/commit/e6621dd269832545424abfae35657f9d6e2be292))
+* open season 9, grazeThrust 0.6 ([33ae748](https://github.com/james-r-parker/simulation/commit/33ae748db42648158eb1342563f27ad807b21e2b))
+* **renderer:** the hunt and the death - hunter model, bite, chase, bump and death animations ([#480](https://github.com/james-r-parker/simulation/issues/480)) ([24eaf06](https://github.com/james-r-parker/simulation/commit/24eaf0615154c1b8f841e81ad7d9208c6c3dc732))
+* season 9 records 9.0.0, season 10 opens with grazeThrust 0.6 ([2548143](https://github.com/james-r-parker/simulation/commit/2548143d7ee2e85278e4155592fb99d92ff48b1e))
+* **sim,eval:** add active defender repel and E180 screen (prey-guilds T4-T5) ([#448](https://github.com/james-r-parker/simulation/issues/448)) ([5e0da78](https://github.com/james-r-parker/simulation/commit/5e0da78aea73caabed5b244e417c026c90497a62))
+* **sim,eval:** add scout call multipliers and E181 screen (prey-guilds T9-T10) ([#450](https://github.com/james-r-parker/simulation/issues/450)) ([48197c8](https://github.com/james-r-parker/simulation/commit/48197c8fccf764b2c9e98ab43c68edd692323125))
+* **sim,eval:** predator recruitment arms & honest-recruit screen (honest-budgets T34-T35) ([#440](https://github.com/james-r-parker/simulation/issues/440)) ([7feb76d](https://github.com/james-r-parker/simulation/commit/7feb76d9ada41117e42c957c7c38842001e29095))
+* **sim,evo:** senses-and-motor Phase 1 interface checks and chase envelope tool (T1-T4) ([#454](https://github.com/james-r-parker/simulation/issues/454)) ([599c15c](https://github.com/james-r-parker/simulation/commit/599c15ce8959e07fb14ddb260ad097bbc905cdcb))
+* **sim,evo:** senses-and-motor Phase 2 run and Phase 3 census and lesson probes (T5-T9) ([#455](https://github.com/james-r-parker/simulation/issues/455)) ([7233344](https://github.com/james-r-parker/simulation/commit/72333443103da772ff4ac89a9fc531839f1d10c2))
+* **sim,evo:** the edge breeds - no clonal cap, gene gift on splits, birthReserve 300 (honest-budgets Phase 4) ([#461](https://github.com/james-r-parker/simulation/issues/461)) ([0819058](https://github.com/james-r-parker/simulation/commit/0819058e869a3e0182447a52fb1b0dd1266610f6))
+* **sim:** a seen call changes the bite, alarmBiteShare (honest-budgets T28) ([b511f9d](https://github.com/james-r-parker/simulation/commit/b511f9d5cb874185ecfb53b40ffc0131422a4d5a))
+* **sim:** grazeThrust 0.6 by default (eat-choice T28) ([6301867](https://github.com/james-r-parker/simulation/commit/630186720b206a48648375652a078c99bf409951))
+* **sim:** hunter's eyes - rearVisionShare and the hunter-vision screen (senses-and-motor T16-T17) ([#459](https://github.com/james-r-parker/simulation/issues/459)) ([89ca5ee](https://github.com/james-r-parker/simulation/commit/89ca5ee5460a6695600f54d780a90f970c8cbe26))
+* **sim:** hunter's eyes become the defaults (senses-and-motor T20-T21) ([#464](https://github.com/james-r-parker/simulation/issues/464)) ([6ee46a4](https://github.com/james-r-parker/simulation/commit/6ee46a46868e3f2ae6c8e7792146f2ec3c6446ce))
+* **sim:** killGorgeShare 0.4 becomes the default (honest-budgets T37) ([#477](https://github.com/james-r-parker/simulation/issues/477)) ([664fd1e](https://github.com/james-r-parker/simulation/commit/664fd1e6694434b8ee1b1cdeadc7b1639b55ad2f))
+* **sim:** killShare and killGorgeCap, a kill takes the body (honest-budgets T8) ([ad3246e](https://github.com/james-r-parker/simulation/commit/ad3246e6cc55920b7f5eb0fc46a17ffef650f0db))
+* **sim:** patch stock as energy, reserved by standing items (honest-budgets T1) ([408be6c](https://github.com/james-r-parker/simulation/commit/408be6c95b75099ba3ccc6b93d0a87827389e33d))
+* **sim:** patch stock pays for plant food (honest-budgets Phase 1) ([ed78c19](https://github.com/james-r-parker/simulation/commit/ed78c197f05ee6138dc1a18654071c43017132f9))
+* **sim:** spawnFloraItem refuses a spawn the patch cannot pay (honest-budgets T2) ([05311f8](https://github.com/james-r-parker/simulation/commit/05311f89e51587ea491738a2897e791dc3d81654))
+* **sim:** the carcass is the body and fades (honest-budgets T9) ([eba1f24](https://github.com/james-r-parker/simulation/commit/eba1f24f7e7572a887573902359f9c05bc207a56))
+* **sim:** the honest-alarm grid and the E178 prediction (honest-budgets T29) ([b6b0856](https://github.com/james-r-parker/simulation/commit/b6b0856c0a60b1d7ba576991383c2d37e9fd417b))
+* **sim:** the kill is the body (honest-budgets Phase 2) ([5ad5e5d](https://github.com/james-r-parker/simulation/commit/5ad5e5db532c9b877481391f9c4767a029c66b7d))
+* **sim:** the split gift from the gene and a birth reserve (honest-budgets T22) ([b486539](https://github.com/james-r-parker/simulation/commit/b4865397c0360cc544c3edbe34c81ab9471799dd))
+* **sim:** wall and rock impacts cost by the speed into the surface ([b35ff23](https://github.com/james-r-parker/simulation/commit/b35ff23ff8adfbe94631cb570d09ad529bc41f32))
+* **train:** cross-play and the opponent pool (training-stages Phase 3) ([#468](https://github.com/james-r-parker/simulation/issues/468)) ([bfda56c](https://github.com/james-r-parker/simulation/commit/bfda56c8615cf2a858b86a8b5acabd2550999f28))
+* **train:** gated ladder - gates, holds, stalls, reviews, manifest, seed partitions (training-stages Phase 2) ([#466](https://github.com/james-r-parker/simulation/issues/466)) ([16a37db](https://github.com/james-r-parker/simulation/commit/16a37db8aac394ae7806a0371eae3af0f0a10668))
+* **wasm:** bounce_rocks writes the speed into each rock it strikes ([b883226](https://github.com/james-r-parker/simulation/commit/b883226af6fc0416557f8efb112522b896ddd03a))
+
+
+### Bug Fixes
+
+* **ci:** release-check lets a rules change move an unreleased season in place ([955a960](https://github.com/james-r-parker/simulation/commit/955a9600eef04ca1138e1cd44c5b43ab70130510))
+* **ci:** release-check lets a rules change move an unreleased season in place ([6e2282f](https://github.com/james-r-parker/simulation/commit/6e2282fb65286d624aa48beff97405ffd3edb59b))
+* **evo:** detect total-population boom-bust cycles in eval.boom_bust_count (honest-budgets T33) ([#439](https://github.com/james-r-parker/simulation/issues/439)) ([532d548](https://github.com/james-r-parker/simulation/commit/532d5486e9ce49d03d03fef5e73494107c6ca257))
+* **evo:** eval.pack_prey_size_ratio reads the victim's size from the death record ([#478](https://github.com/james-r-parker/simulation/issues/478)) ([835f98c](https://github.com/james-r-parker/simulation/commit/835f98cbedcd4692fb35c3837a026fce1be66e1d))
+* **sim:** a dead victim keeps the biter that killed it ([06a4f3e](https://github.com/james-r-parker/simulation/commit/06a4f3e69d6da15911d564877615d92eb470c395))
+* **sim:** break the energy-world-kill-body import cycle; name the tests honest-budgets ships ([cb7ac1b](https://github.com/james-r-parker/simulation/commit/cb7ac1b060fed6773a0bf2bf115c58dfb7c5f7f9))
+
 ## [9.0.0](https://github.com/james-r-parker/simulation/compare/v8.0.0...v9.0.0) (2026-11-14)
 
 

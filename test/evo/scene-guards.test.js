@@ -9,6 +9,7 @@ import {
     createGuardScene,
     guardMetrics,
     sampleGuards,
+    totalBoomBustCount,
 } from '../../js/evo/scene-guards.js';
 import { directionOf, namesOf } from './helpers/metric-registry.js';
 
@@ -192,6 +193,38 @@ describe('the guard metrics', () => {
             );
         });
         expect(guardMetrics(scene)['eval.boom_bust_count']).toEqual({ value: 1 });
+    });
+
+    it('reads the total-population boom-bust count when hunters are absent or flat', () => {
+        const scene = createGuardScene(CONFIG);
+        const prey = [100, 150, 220, 260, 110, 90];
+        prey.forEach((p, i) => {
+            sampleGuards(scene, world(T + i * 1000, new Array(Math.ceil(p / 20)).fill(0)));
+        });
+        expect(guardMetrics(scene)['eval.boom_bust_count']).toEqual({ value: 1 });
+        expect(totalBoomBustCount([0, 0, 0, 0, 0], [100, 220, 100, 210, 90])).toBe(2);
+        expect(totalBoomBustCount([0, 0, 0, 0], [200, 100, 50, 25])).toBe(0);
+    });
+
+    it('counts a total-population boom that ends in extinction, and none that never boomed', () => {
+        expect(totalBoomBustCount([0, 0, 0, 0], [10, 20, 0, 0])).toBe(1);
+        expect(totalBoomBustCount([0, 0, 0, 0], [10, 0, 10, 0])).toBe(0);
+    });
+
+    it('drops a total-population boom whose crash comes after the window', () => {
+        const prey = [10, 20, ...Array(BOOM_BUST_WINDOW + 8).fill(20), 5];
+        expect(
+            totalBoomBustCount(
+                prey.map(() => 0),
+                prey,
+            ),
+        ).toBe(0);
+        expect(
+            totalBoomBustCount(
+                prey.slice(0, 5).map(() => 0),
+                [10, 20, 20, 20, 5],
+            ),
+        ).toBe(1);
     });
 
     it('are lower metrics', () => {

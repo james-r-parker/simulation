@@ -19,6 +19,13 @@ export function appVersion(fromEnv) {
   return { version, season: Number(version.split('.')[0]) };
 }
 
+// Cross-origin isolation (docs/designs/pack-worker.md): `npm run dev` and `vite preview` (the browser smoke, perf:browser)
+// send the headers that `public/_headers` and `functions/_middleware.js` send in production.
+const ISOLATION_HEADERS = {
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Cross-Origin-Embedder-Policy': 'require-corp'
+};
+
 export default defineConfig(({ command, mode }) => {
   const { version, season } = appVersion(process.env.APP_VERSION);
   // Determine if we're in production build
@@ -30,12 +37,14 @@ export default defineConfig(({ command, mode }) => {
     server: {
       port: 5173,
       open: true, // Automatically open browser for `npm run dev` (BROWSER=none turns it off)
-      cors: true
+      cors: true,
+      headers: ISOLATION_HEADERS
     },
     // `vite preview` would otherwise inherit server.open: the browser smoke and agents' runs must never open a window
     // on the user's desktop.
     preview: {
-      open: false
+      open: false,
+      headers: ISOLATION_HEADERS
     },
     // The sim worker (js/worker/sim-worker.js) is an ES module worker.
     worker: {

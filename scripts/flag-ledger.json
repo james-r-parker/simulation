@@ -1,9 +1,9 @@
 [
   {
-    "key": "splitGiftGene",
+    "key": "specFlipNoHunt",
     "plan": "docs/designs/honest-budgets.md",
-    "task": "T26",
-    "reason": "The switch between today's half-energy split gift and the childShare gene's share (Phase 4); T26 makes the gene default and deletes the flag with splitClonalMax, or the branch is parked."
+    "task": "T37",
+    "reason": "The switch blocking specMutationRate flips across canHunt (Phase 6); T37 adopts or deletes it based on the honest-recruit screen."
   },
   {
     "key": "capBirthsEnabled",

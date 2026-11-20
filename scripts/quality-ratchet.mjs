@@ -1,6 +1,6 @@
 // Coverage ratchet: compares measured coverage with scripts/quality-baseline.json; --write raises the baseline.
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compareMutation, listSurvivors, raiseMutation, scoreScopes } from './lib/mutation-score.mjs';
 
@@ -148,24 +148,46 @@ function mutationMain(mode, root) {
 }
 
 /**
+ * Splits the options after the mode.
+ * @param {string[]} rest arguments after `--check` or `--write`
+ * @returns {{mutation: boolean, coverageDir: string} | null} the options, or null when an argument is not understood
+ */
+function parseOptions(rest) {
+    const options = { mutation: false, coverageDir: 'coverage' };
+    for (let i = 0; i < rest.length; i++) {
+        if (rest[i] === '--mutation') {
+            options.mutation = true;
+        } else if (rest[i] === '--coverage-dir' && rest[i + 1]) {
+            options.coverageDir = rest[++i];
+        } else if (rest[i].startsWith('--coverage-dir=') && rest[i].length > '--coverage-dir='.length) {
+            options.coverageDir = rest[i].slice('--coverage-dir='.length);
+        } else {
+            return null;
+        }
+    }
+    return options;
+}
+
+/**
  * Runs the CLI.
- * @param {string[]} argv arguments after the script name
+ * @param {string[]} argv arguments after the script name: `--check | --write`, then `--mutation` or
+ *   `--coverage-dir <dir>` (default `coverage`; relative to `root`; `scripts/check.sh` gives each run its own)
  * @param {string} root repo root
  * @returns {number} exit status
  */
 export function main(argv, root) {
     const [mode, ...rest] = argv;
-    const mutation = rest.length === 1 && rest[0] === '--mutation';
-    if ((mode !== '--check' && mode !== '--write') || (rest.length > 0 && !mutation)) {
-        console.error('usage: quality-ratchet.mjs --check | --write [--mutation]');
+    const options = parseOptions(rest);
+    if ((mode !== '--check' && mode !== '--write') || options === null || (options.mutation && rest.length > 1)) {
+        console.error('usage: quality-ratchet.mjs --check | --write [--mutation | --coverage-dir <dir>]');
         return 2;
     }
     const baselinePath = join(root, 'scripts/quality-baseline.json');
     try {
-        if (mutation) {
+        if (options.mutation) {
             return mutationMain(mode, root);
         }
-        const summary = readJson(join(root, 'coverage/coverage-summary.json'), 'coverage summary');
+        const summary = readJson(resolve(root, options.coverageDir, 'coverage-summary.json'), 'coverage summary');
         const baseline = readJson(baselinePath, 'quality baseline');
         const measured = measureScopes(summary, root);
         if (mode === '--write') {

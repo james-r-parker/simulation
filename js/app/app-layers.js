@@ -5,6 +5,7 @@
 import { createAgentDraw } from './renderer/agent-draw.js';
 import { createChaseLayer } from './renderer/chase-layer.js';
 import { createScentContours, createTerritoryContours } from './renderer/contour-draw.js';
+import { createWorldStores } from './pack/effect-stores.js';
 import { createEffectsPlayer } from './renderer/effects-player.js';
 import { createFoodDraw } from './renderer/food-draw.js';
 import { createFxBudget } from './renderer/fx-budget.js';
@@ -24,13 +25,15 @@ import { createWorldLayers } from './renderer/world-draw.js';
  * @typedef {object} LayerRefs
  * @property {ReturnType<typeof createScentContours> | null} haze the scent lens, which takes each new field
  * @property {ReturnType<typeof createEffectsPlayer> | null} player the effects player
+ * @property {ReturnType<typeof createWorldStores> | null} stores the world's effect stores and their shared buffer,
+ *   which the pack worker reads; kept across layer rebuilds (a device loss) of the same world
  */
 
 /**
  * @returns {LayerRefs} empty references, filled by the first build
  */
 export function createLayerRefs() {
-    return { haze: null, player: null };
+    return { haze: null, player: null, stores: null };
 }
 
 /**
@@ -53,13 +56,23 @@ function worldOf(ready, slots, sink) {
  * @returns {import('./renderer/stage.js').Layer[]} the layers, back to front
  */
 function buildFor(refs, { info, layout, seed, slots, sink }) {
-    const agents = createAgentDraw({ info, flagBits: layout.flags, stateBits: layout.stateBits });
+    const stores = /** @type {NonNullable<LayerRefs['stores']>} */ (refs.stores);
+    const agents = createAgentDraw({ info });
     const scent = createScentContours({ info });
     const threads = createMateThreadPool();
     const fx = createFxPlayer(createFxPool(), createFxBudget(), seed);
     refs.haze = scent;
-    const player = createEffectsPlayer({ threads, layout, info, slots, sink, fx, tweens: agents.store.tweens });
-    agents.store.fleeing = player.flee.fleeing;
+    const player = createEffectsPlayer({
+        threads,
+        layout,
+        info,
+        slots,
+        sink,
+        fx,
+        tweens: stores.tweens,
+        dents: stores.dents,
+        dying: stores.dying,
+    });
     refs.player = player;
     const world = createWorldLayers({ info, layout, seed });
     const [particles, flashes] = createFxLayers({ pool: fx.pool });
@@ -77,7 +90,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
         agents,
         createVisionLayer({ info }),
         world.motes,
-        createChaseLayer({ info, pursuits: player.flee.pursuits }),
+        createChaseLayer({ info, pursuits: player.flee.pursuits, fleeing: player.flee.fleeing }),
         createMateThreadLayer({ pool: threads }),
         createOverlays({ info }),
         particles,
@@ -95,10 +108,16 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
  * @throws {Error} when called before a `ready` message arrived
  */
 export function createLayerBuilder({ refs, getReady, slots, sink }) {
+    /** @type {{ready: Record<string, any> | null}} */
+    const built = { ready: null };
     return () => {
         const ready = getReady();
         if (ready === null) {
             throw new Error('buildLayers: no ready message yet, so there is no world to draw');
+        }
+        if (built.ready !== ready) {
+            built.ready = ready;
+            refs.stores = createWorldStores(ready.info.maxAgents);
         }
         return buildFor(refs, worldOf(ready, slots, sink));
     };

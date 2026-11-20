@@ -12,13 +12,13 @@ import {
     withPower,
 } from '../../../js/evo/metric-registry/index.js';
 
-/** @type {string[]} the 313 names of a live eval report, sorted */
+/** @type {string[]} the names of a live eval report, sorted */
 const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-names.json', import.meta.url), 'utf8'));
 
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(313);
+        expect(REPORT_NAMES).toHaveLength(370);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -66,6 +66,13 @@ describe('withLiveness', () => {
         expect(Object.isFrozen(merged)).toBe(true);
         expect(family['eval.food_energy_per_1k']).toBe(original);
     });
+
+    it('leaves an entry with no reading as it was', () => {
+        const bare = METRICS['eval.food_energy_per_1k'];
+        const merged = withLiveness({ 'eval.food_energy_per_1k': bare }, {});
+
+        expect(merged['eval.food_energy_per_1k']).toBe(bare);
+    });
 });
 
 describe('withPower', () => {
@@ -99,6 +106,27 @@ describe('withPower', () => {
  */
 /** Metrics registered after the snapshot was taken (T25 added the mean beside the renamed median). */
 const ADDED_AFTER_T8 = [
+    'eval.food_energy_per_1k@20k',
+    'eval.carcass_loss_share.lost',
+    'eval.carcass_loss_share.eaten',
+    'eval.carcass_loss_share.faded',
+    'eval.carcass_lost_per_1k',
+    'eval.recruit_cohort',
+    'eval.recruit_matured_hunters',
+    'eval.recruit_censored_share',
+    'eval.recruit_matured_share',
+    'eval.recruit_first_kill_share',
+    'eval.recruit_lineage_share',
+    'eval.recruit_replaced_share.mate-hunter-parent',
+    'eval.recruit_replaced_share.split-hunter-parent',
+    'eval.recruit_replaced_share.spec-flip',
+    'eval.recruit_replaced_share.floor',
+    'eval.hunter_starve_age_median',
+    'eval.hunter_lineage_extinctions',
+    'eval.hunter_global_extinctions',
+    'eval.chase_net_energy',
+    'eval.chase_failed_energy',
+    'eval.hunter_territory_blocked_share',
     'eval.hunter_kills_per_life_mean',
     'eval.basin_families.east',
     'eval.basin_families.west',
@@ -135,8 +163,11 @@ const ADDED_AFTER_T8 = [
     'eval.edge_split_births_per_prey',
     'eval.edge_starve_per_prey',
     'eval.edge_split_blocked_share.seen',
-    'eval.edge_split_blocked_share.clonal',
     'eval.edge_split_blocked_share.energy',
+    'eval.prey_selectivity.forager',
+    'eval.prey_selectivity.reproducer',
+    'eval.prey_selectivity.scout',
+    'eval.prey_selectivity.defender',
     'eval.edge_split_blocked_share.merit',
     'eval.edge_split_blocked_share.proof',
     'eval.edge_split_blocked_share.other',
@@ -147,15 +178,55 @@ const ADDED_AFTER_T8 = [
     'eval.graze_speed_ratio',
     'eval.hunter_plant_linger_share',
     'eval.strike_miss_energy_ratio',
+    'eval.guild_share.forager',
+    'eval.guild_share.reproducer',
+    'eval.guild_share.scout',
+    'eval.guild_share.defender',
+    'eval.guild_survival.forager',
+    'eval.guild_survival.reproducer',
+    'eval.guild_survival.scout',
+    'eval.guild_survival.defender',
+    'eval.defender_repel_per_1k',
+    'eval.scout_alarm_lead_share',
+    'eval.reproducer_recovery_rate',
+    'eval.chase_overshoot_share',
+    'eval.chase_cover_use_share',
+    'eval.chase_turn_jitter',
+    'eval.chase_quit_share',
+    'eval.chase_lost_share',
+    'eval.chase_outrun_share',
+    'eval.chase_shaken_share',
+    'eval.chase_ticks_p50',
+    'eval.chase_ticks_p90',
+    'eval.pack_lift',
+    'eval.pack_prey_size_ratio',
+    'eval.style_lineage_share',
+    'eval.herd_dodge_share',
+    'eval.chase_sprint_lift',
+    'eval.flee_sprint_lift',
+    'eval.sprint_cost_share',
+    'eval.sprint_share.hunter',
+    'eval.sprint_share.prey',
+    'eval.freeze_under_threat',
+    'eval.freeze_survival_gain',
+    'eval.ambush_kill_share',
+    'eval.chase_reacquire_share',
+    'eval.scavenge_approach_share',
 ];
 /** Watch metrics registered after the snapshot whose intended direction is lower. */
 const ADDED_INTENDED_LOWER = [
+    'eval.carcass_loss_share.lost',
+    'eval.carcass_loss_share.faded',
+    'eval.carcass_lost_per_1k',
+    'eval.recruit_censored_share',
+    'eval.hunter_lineage_extinctions',
+    'eval.hunter_global_extinctions',
+    'eval.hunter_territory_blocked_share',
     'eval.food_standing_share',
     'eval.edge_deaths_per_prey',
     'eval.edge_ref_starve_per_prey',
     'eval.edge_ref_eaten_per_prey',
     'eval.edge_split_blocked_share.seen',
-    'eval.edge_split_blocked_share.clonal',
     'eval.edge_split_blocked_share.energy',
     'eval.edge_split_blocked_share.merit',
     'eval.edge_split_blocked_share.proof',
@@ -163,6 +234,12 @@ const ADDED_INTENDED_LOWER = [
     'eval.fat_speed_ratio',
     'eval.graze_speed_ratio',
     'eval.hunter_plant_linger_share',
+    'eval.prey_selectivity.forager',
+    'eval.prey_selectivity.reproducer',
+    'eval.prey_selectivity.scout',
+    'eval.prey_selectivity.defender',
+    'eval.sprint_share.hunter',
+    'eval.sprint_share.prey',
 ];
 const SNAPSHOT = JSON.parse(readFileSync(new URL('../../fixtures/metric-directions.json', import.meta.url), 'utf8'));
 
@@ -226,7 +303,8 @@ describe('minSeedsFor', () => {
     it('uses measured minima for registered metrics and defaults to 16 for unknown and inherited names', () => {
         expect(DEFAULT_MIN_SEEDS).toBe(16);
         expect(MIN_SEEDS).toBe(DEFAULT_MIN_SEEDS);
-        expect(minSeedsFor('eval.diversity')).toBe(16);
+        expect(minSeedsFor('eval.food_energy_per_1k')).toBe(16);
+        expect(minSeedsFor('eval.diversity')).toBe(32);
         expect(minSeedsFor('eval.qd_score')).toBe(32);
         for (const metric of ['mystery', 'toString', 'constructor']) {
             expect(minSeedsFor(metric)).toBe(16);

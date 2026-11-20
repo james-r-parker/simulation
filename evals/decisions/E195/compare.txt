@@ -1,0 +1,374 @@
+wrote /home/j1mb0jay/code/simulation/.sim/evals/live-16.json (16 seeds x 200000 ticks, 8 workers, 1489.4s)
+wrote /home/j1mb0jay/code/simulation/.sim/evals/champions-ets1c-16.json (16 seeds x 200000 ticks, 8 workers, 804.5s)
+metric                                               before       after       diff          effect     95% interval               verdict
+eval.alarm_calls_with_threat_per_1k                  0            0           0             -          [0, 0]                     -
+eval.alarm_hearers_per_call                          6.2          -           -             -          -                          -              null in a seed
+eval.alarm_hunter_hearers_per_call                   0            -           -             -          -                          -              null in a seed
+eval.alarm_lift                                      -0.02004     -           -             -          -                          -              null in a seed
+eval.alarm_rate                                      0.00002872   0           -0.00002872   -100.0%    [-0.0001723, 0]            unverified
+eval.alarm_response                                  0.01811      -           -             -          -                          -              null in a seed
+eval.ambush_kill_share                               0.0005039    0.0005634   0.00005943    +11.8%     [-0.0006328, 0.0004892]    unverified
+eval.archive_lineage_share                           0.04294      0.08614     0.0432        +100.6%    [-0.03026, 0.2468]         -
+eval.basin_cluster_divergence                        0.2379       0.3317      -             -          -                          -              null in a seed
+eval.basin_divergence                                0.3418       0.4527      -             -          -                          -              null in a seed
+eval.basin_families                                  1.165        1.421       0.2555        +21.9%     [-0.1458, 0.6085]          unverified
+eval.basin_families.east                             1.083        1.232       0.1483        +13.7%     [-0.3922, 0.7365]          unverified
+eval.basin_families.west                             1.248        1.61        0.3627        +29.1%     [-0.06618, 0.7904]         unverified
+eval.basin_family_effective                          0.9814       1.164       0.1821        +18.6%     [-0.05355, 0.4087]         unverified
+eval.basin_family_effective.east                     0.9241       1.034       0.1098        +11.9%     [-0.225, 0.5256]           unverified
+eval.basin_family_effective.west                     1.039        1.293       0.2544        +24.5%     [0.008842, 0.5402]         unverified
+eval.basin_lineage_effective                         0.9998       1.193       0.1932        +19.3%     [-0.0003972, 0.421]        unverified
+eval.basin_lineage_effective.east                    0.9199       1.041       0.1207        +13.1%     [-0.2104, 0.5285]          unverified
+eval.basin_lineage_effective.west                    1.08         1.346       0.2657        +24.6%     [-0.1149, 0.5502]          unverified
+eval.basin_lineages_alive                            1.119        1.412       0.2935        +26.2%     [-0.02819, 0.5993]         unverified
+eval.basin_lineages_alive.east                       1.045        1.194       0.1483        +14.2%     [-0.3603, 0.6422]          unverified
+eval.basin_lineages_alive.west                       1.192        1.631       0.4387        +36.8%     [-0.02941, 0.8591]         unverified
+eval.basin_pop_cv                                    0.8728       0.7946      -0.07823      -9.0%      [-0.5757, 0.1473]          -
+eval.basin_recolonisations                           0.375        0.3125      -0.0625       -16.7%     [-0.4375, 0.1875]          -
+eval.basin_spec_divergence                           0.4457       0.5737      -             -          -                          -              null in a seed
+eval.behaviour_coverage                              0.1788       0.2119      0.03313       +18.5%     [0.0075, 0.05563]          better
+eval.birth_source_share.floor                        0.001846     0.003165    0.001319      +71.4%     [-0.0009927, 0.006088]     -
+eval.birth_source_share.immigrant                    0            0           0             -          [0, 0]                     -
+eval.birth_source_share.mate                         0.3849       0.3395      -0.04534      -11.8%     [-0.1107, 0.03959]         -
+eval.birth_source_share.split                        0.6133       0.6573      0.04402       +7.2%      [-0.04211, 0.1105]         -
+eval.births_per_1k                                   0.2125       0.251       -             -          -                          -              needs 32 seeds
+eval.bite_idle                                       0.6547       0.34        -0.3146       -48.1%     [-0.3991, -0.2406]         unverified
+eval.bite_off_kin_view                               0.6992       0.3973      -0.3019       -43.2%     [-0.4104, -0.2146]         unverified
+eval.bite_off_other_view                             0.7422       0.5899      -0.1523       -20.5%     [-0.2669, -0.05334]        unverified
+eval.bite_on_prey_view                               0.9904       0.9696      -0.02083      -2.1%      [-0.03943, -0.006974]      worse
+eval.bite_wish_with_kin_in_jaws                      0.5937       0.3942      -0.1995       -33.6%     [-0.3569, -0.07347]        unverified
+eval.bite_wish_with_other_in_jaws                    0.8102       0.7195      -             -          -                          -              null in a seed
+eval.bite_wish_with_prey_in_jaws                     0.9984       0.9846      -0.01388      -1.4%      [-0.02442, -0.006455]      no-difference
+eval.body_plan_coverage                              0.185        0.1725      -0.0125       -6.8%      [-0.0375, 0.005]           no-difference
+eval.boom_bust_count                                 2.313        1.75        -0.5625       -24.3%     [-1.625, 0.25]             unverified
+eval.born_share                                      0.9982       0.9968      -0.001319     -0.1%      [-0.00609, 0.0009555]      -
+eval.call_opportunity_kin                            3.392        3.738       0.3459        +10.2%     [-0.4407, 1.483]           -
+eval.call_opportunity_neighbours                     3.793        4.242       0.4495        +11.9%     [-0.5471, 1.654]           -
+eval.cap_share                                       0.08704      0.04548     -0.04156      -47.7%     [-0.08475, -0.003927]      unverified
+eval.carcass_hunter_share                            0.8869       0.8693      -0.01762      -2.0%      [-0.1346, 0.05211]         -
+eval.carcass_loss_share.eaten                        0.6546       0.6825      0.02793       +4.3%      [-0.06164, 0.1094]         -
+eval.carcass_loss_share.faded                        0.2855       0.2419      -0.04362      -15.3%     [-0.1232, 0.04606]         -
+eval.carcass_loss_share.lost                         0.05979      0.07512     -             -          -                          -              needs 32 seeds
+eval.carcass_lost_per_1k                             130.5        249.8       119.2         +91.3%     [12.46, 290]               -
+eval.carcass_meal_share                              0.1733       0.1814      0.008012      +4.6%      [-0.01148, 0.04662]        -
+eval.champion_elo                                    -            -           -             -          -                          -              null in a seed
+eval.champion_win_rate                               -            -           -             -          -                          -              null in a seed
+eval.chance_food_energy_per_1k                       261.4        253         -8.405        -3.2%      [-48.89, 12.94]            -
+eval.chase_catch_share                               0.2742       0.2592      -0.015        -5.5%      [-0.03669, 0.01726]        -
+eval.chase_cover_use_share                           0.002087     0.002836    0.0007488     +35.9%     [-0.001134, 0.004927]      -
+eval.chase_escape_share                              0.3279       0.3557      0.02783       +8.5%      [-0.011, 0.06238]          -
+eval.chase_failed_energy                             -65.43       -70.56      -5.129        -7.8%      [-21.48, 10.02]            -
+eval.chase_giveup_share                              0.3979       0.3851      -0.01283      -3.2%      [-0.03273, 0.008193]       -
+eval.chase_lost_share                                0.1565       0.1457      -0.01076      -6.9%      [-0.0243, 0.006075]        -
+eval.chase_net_energy                                65.29        56.95       -8.347        -12.8%     [-22.34, 7.553]            -
+eval.chase_outrun_share                              0.1463       0.1511      0.004805      +3.3%      [-0.006565, 0.0189]        -
+eval.chase_overshoot_share                           0.3005       0.3255      -             -          -                          -              needs 32 seeds
+eval.chase_quit_share                                0.09507      0.0882      -0.006869     -7.2%      [-0.01978, 0.006621]       -
+eval.chase_reacquire_share                           0.4137       0.4081      -0.005625     -1.4%      [-0.02514, 0.01787]        unverified
+eval.chase_shaken_share                              0.6307       0.6526      0.02187       +3.5%      [-0.00767, 0.04676]        -
+eval.chase_sprint_lift                               1.12         2.053       0.9331        +83.3%     [0.461, 1.484]             unverified
+eval.chase_ticks_p50                                 46.25        47.38       1.125         +2.4%      [-0.3125, 2.5]             -
+eval.chase_ticks_p90                                 104.7        107.8       3.125         +3.0%      [-4.938, 12.5]             -
+eval.chase_turn_jitter                               0.2201       0.1993      -0.02077      -9.4%      [-0.03868, -0.006084]      better
+eval.child_survival                                  0.8784       0.8733      -0.005035     -0.6%      [-0.03905, 0.02704]        -
+eval.childshare_by_condition                         0.0004926    0.0009564   0.0004638     +94.2%     [-0.0006162, 0.001641]     -
+eval.circling_share                                  0.007812     0.027       0.01919       +245.7%    [0.01279, 0.02598]         no-difference
+eval.cold_margin_use_under_threat                    -0.02823     -0.01715    0.01108       +39.3%     [-0.01646, 0.03963]        -
+eval.cold_stress_share                               0.1173       0.0851      -             -          -                          -              needs 32 seeds
+eval.collision_death_share                           0.2249       0.1625      -             -          -                          -              needs 64 seeds
+eval.condition_gait_shift                            0.1268       0.1385      0.01175       +9.3%      [0.003491, 0.01943]        -
+eval.coverage                                        0.1603       0.1655      0.00525       +3.3%      [-0.019, 0.02562]          no-difference
+eval.defender_repel_per_1k                           0            0           0             -          [0, 0]                     unverified
+eval.deliberate_food_energy_per_1k                   165          230.6       -             -          -                          -              needs 32 seeds
+eval.deliberate_food_share                           0.3843       0.4769      0.09264       +24.1%     [0.06082, 0.1254]          better
+eval.deliberate_food_trend                           0.01571      0.007819    -0.007893     -50.2%     [-0.05135, 0.03076]        unverified
+eval.density_intake_slope                            -0.1661      -0.04783    0.1182        +71.2%     [-0.007212, 0.2768]        unverified
+eval.density_starve_slope                            -0.315       -0.2091     0.1058        +33.6%     [-0.03328, 0.2979]         unverified
+eval.disease_deaths_share                            0.01488      0.02501     0.01013       +68.1%     [-0.0008526, 0.02125]      -
+eval.disease_frequency_slope                         0.01603      0.02427     0.008232      +51.3%     [-0.004289, 0.01825]       -
+eval.diversity                                       0.07182      0.07122     -             -          -                          -              needs 32 seeds
+eval.dung_food_share                                 0.2407       0.2436      -             -          -                          -              needs 32 seeds
+eval.edge_birth_death_ratio                          1.179        1.122       -             -          -                          -              needs 32 seeds
+eval.edge_deaths_per_prey                            0.2183       0.2468      -             -          -                          -              needs 32 seeds
+eval.edge_eaten_per_prey                             0.06494      0.071       0.006062      +9.3%      [-0.04974, 0.05846]        unverified
+eval.edge_hunters_per_prey                           0.1085       0.2176      -             -          -                          -              needs 32 seeds
+eval.edge_intake_ratio                               1.14         1.042       -             -          -                          -              needs 32 seeds
+eval.edge_mate_births_per_prey                       0.0699       0.0792      0.009305      +13.3%     [-0.003004, 0.02466]       unverified
+eval.edge_ref_eaten_per_prey                         0.06129      0.08972     0.02843       +46.4%     [-0.01098, 0.06851]        -
+eval.edge_ref_mate_births_per_prey                   0.08612      0.0949      -             -          -                          -              needs 32 seeds
+eval.edge_ref_split_births_per_prey                  0.1337       0.1525      -             -          -                          -              needs 64 seeds
+eval.edge_ref_starve_per_prey                        0.08855      0.1004      -             -          -                          -              needs 32 seeds
+eval.edge_split_births_per_prey                      0.1841       0.1963      0.01218       +6.6%      [-0.03969, 0.05871]        unverified
+eval.edge_split_blocked_share.energy                 0.3139       0.3369      -             -          -                          -              needs 32 seeds
+eval.edge_split_blocked_share.merit                  0.06006      0.03144     -0.02862      -47.7%     [-0.0452, -0.01776]        -
+eval.edge_split_blocked_share.other                  0.001256     0.001655    0.0003989     +31.8%     [-0.0008267, 0.001462]     -
+eval.edge_split_blocked_share.proof                  0.01464      0.01154     -0.003101     -21.2%     [-0.009193, 0.0002919]     -
+eval.edge_split_blocked_share.seen                   0.6101       0.6183      0.008222      +1.3%      [-0.05387, 0.06089]        -
+eval.edge_starve_per_prey                            0.09586      0.1153      -             -          -                          -              needs 32 seeds
+eval.energy_over_split                               1.171        1.296       0.1241        +10.6%     [-0.03985, 0.2558]         -
+eval.escape_share                                    0.3069       0.3522      -             -          -                          -              needs 64 seeds
+eval.established_share                               0.2964       0.3323      0.03595       +12.1%     [0.01961, 0.05652]         -
+eval.evasion_response_share                          0.08848      0.08163     -0.006858     -7.8%      [-0.02392, 0.01211]        -
+eval.evasion_trend                                   -0.05312     -0.001447   -             -          -                          -              null in a seed
+eval.fat_speed_ratio                                 1.027        1.008       -0.0188       -1.8%      [-0.1105, 0.0415]          -
+eval.fed_median_lifespan                             3868         3467        -             -          -                          -              needs 32 seeds
+eval.fitness_lrs_corr                                0.8368       0.8408      0.003995      +0.5%      [-0.003952, 0.01545]       -
+eval.flee_sprint_lift                                1.075        1.071       -             -          -                          -              null in a seed
+eval.floor_episodes                                  0.25         0.4375      -             -          -                          -              needs 32 seeds
+eval.flora_hue_spread                                0.009266     0.008774    -0.0004915    -5.3%      [-0.004352, 0.003485]      -
+eval.flora_patch_death_rate                          0            0.0003289   0.0003289     +100.0%    [0, 0.0009868]             -
+eval.flora_patch_pool_full_share                     0.5211       0.4842      -0.03684      -7.1%      [-0.2816, 0.223]           -
+eval.flora_seed_bank_occupancy_share                 0            0.0004317   0.0004317     +100.0%    [0, 0.001295]              -
+eval.food_contact_bite_share                         0.09467      0.375       0.2803        +296.1%    [0.1711, 0.3977]           -
+eval.food_energy_per_1k                              426.5        483.6       57.18         +13.4%     [-11.27, 101.7]            no-difference
+eval.food_energy_per_1k@20k                          399.8        372.8       -26.94        -6.7%      [-80.24, 39.29]            unverified
+eval.food_species_share.berry                        0.04396      0.09772     -             -          -                          -              needs 64 seeds
+eval.food_species_share.flower                       0.1521       0.1547      0.002522      +1.7%      [-0.04816, 0.07052]        -
+eval.food_species_share.fungus                       0.2489       0.2129      -             -          -                          -              needs 32 seeds
+eval.food_species_share.grass                        0.5397       0.5216      -             -          -                          -              needs 64 seeds
+eval.food_species_share.nut                          0.01516      0.01303     -0.002124     -14.0%     [-0.006388, 0.0004627]     -
+eval.food_species_share.toxiccap                     0.0001128    0.0001082   -0.000004598  -4.1%      [-0.00004755, 0.00004136]  -
+eval.food_standing_share                             0.9712       0.9738      0.002636      +0.3%      [-0.01205, 0.01516]        -
+eval.freeze_survival_gain                            0.0006621    -0.0006492  -0.001311     -198.0%    [-0.006673, 0.002327]      unverified
+eval.freeze_under_threat                             -0.1125      -0.07803    0.03445       +30.6%     [0.01896, 0.05215]         -
+eval.full_contact_bite_share                         0.0748       0.3507      -             -          -                          -              needs 64 seeds
+eval.gap_crossers                                    38.48        14.28       -24.2         -62.9%     [-36.84, -11.02]           -
+eval.gap_never_share                                 0.6252       0.8751      0.2498        +40.0%     [0.1663, 0.3221]           -
+eval.generation_depth_p90                            58.07        62.94       -             -          -                          -              needs 32 seeds
+eval.graze_speed_ratio                               0.8059       0.8904      0.08445       +10.5%     [0.01465, 0.1418]          -
+eval.graze_time_share                                0.721        0.8537      0.1327        +18.4%     [0.06742, 0.2055]          -
+eval.guild_share.defender                            0.1863       0.3514      0.1651        +88.6%     [0.03831, 0.2915]          -
+eval.guild_share.forager                             0.2681       0.1345      -0.1336       -49.8%     [-0.2522, -0.04389]        -
+eval.guild_share.reproducer                          0.1668       0.1561      -0.01068      -6.4%      [-0.08491, 0.06908]        -
+eval.guild_share.scout                               0.3331       0.2395      -0.0936       -28.1%     [-0.2387, 0.03011]         -
+eval.guild_survival.defender                         0.06388      0.05795     -0.005927     -9.3%      [-0.01436, 0.004084]       -
+eval.guild_survival.forager                          0.06714      0.05273     -0.01441      -21.5%     [-0.02376, -0.004776]      -
+eval.guild_survival.reproducer                       0.06421      0.05458     -0.009624     -15.0%     [-0.01852, 0.000425]       -
+eval.guild_survival.scout                            0.065        0.05862     -0.006386     -9.8%      [-0.01539, 0.005063]       -
+eval.heat_stress_share                               0.1983       0.2289      -             -          -                          -              needs 32 seeds
+eval.hebb_drift                                      0.06783      0.06289     -             -          -                          -              needs 32 seeds
+eval.hebb_drift_clamped_share                        0            0           0             -          [0, 0]                     -
+eval.herd_animals                                    43.73        44.01       0.2822        +0.6%      [-1.009, 1.205]            -
+eval.herd_carcass_meal_share                         0.01705      0.0211      0.004053      +23.8%     [-0.01025, 0.02821]        -
+eval.herd_carcass_share.defender                     0.001061     0.0009858   -0.0000748    -7.1%      [-0.0002981, 0.0001351]    -
+eval.herd_carcass_share.forager                      0.001236     0.0008173   -0.000419     -33.9%     [-0.001121, 0.00009901]    -
+eval.herd_carcass_share.predator                     0.02906      0.01326     -0.01579      -54.4%     [-0.02553, -0.00641]       -
+eval.herd_carcass_share.reproducer                   0.0008936    0.001008    0.0001149     +12.9%     [-0.0003107, 0.0006231]    -
+eval.herd_carcass_share.scout                        0.001116     0.01243     0.01132       +1013.5%   [-0.0003393, 0.0575]       -
+eval.herd_dodge_share                                0.9829       0.9793      -0.003576     -0.4%      [-0.01272, 0.004567]       -
+eval.herd_follow_share                               4.729        2.232       -             -          -                          -              null in a seed
+eval.herd_gap_crossings                              4.934        9.079       4.145         +84.0%     [0.1974, 13.06]            -
+eval.herd_grazed_share                               0.4325       0.4271      -             -          -                          -              needs 64 seeds
+eval.herd_recolonisations                            0            0           0             -          [0, 0]                     -
+eval.herd_season_shift                               0.4835       0.413       -0.07042      -14.6%     [-0.1778, 0.03003]         -
+eval.herd_seeded_patches                             0.006579     0.005263    -             -          -                          -              needs 32 seeds
+eval.herd_stampede_rate                              47.13        80.37       33.24         +70.5%     [1.914, 78.03]             -
+eval.hidden_persistence                              0.8749       0.8601      -0.0148       -1.7%      [-0.02451, -0.003736]      -
+eval.hunt_abort_rate                                 0.3921       0.3791      -0.01294      -3.3%      [-0.03315, 0.008304]       -
+eval.hunt_call_answer                                -            -           -             -          -                          -              null in a seed
+eval.hunt_call_lift                                  -            -           -             -          -                          -              null in a seed
+eval.hunter_birth_source_share.floor                 0.007791     0.01179     0.004003      +51.4%     [-0.006371, 0.0206]        -
+eval.hunter_birth_source_share.initial               0.03983      0.03128     -             -          -                          -              needs 64 seeds
+eval.hunter_birth_source_share.mate-hunter-parent    0.004118     0.01667     0.01255       +304.8%    [0.008575, 0.01752]        -
+eval.hunter_birth_source_share.spec-flip             0.05119      0.03549     -             -          -                          -              needs 64 seeds
+eval.hunter_birth_source_share.split-hunter-parent   0.8971       0.9048      0.007691      +0.9%      [-0.03788, 0.06666]        -
+eval.hunter_carrion_idle_share                       0.008097     0.009165    0.001068      +13.2%     [-0.00161, 0.003461]       no-difference
+eval.hunter_catches_per_1k                           1.385        0.8429      -             -          -                          -              needs 64 seeds
+eval.hunter_chases_by_age.1k-2k                      1191         2009        818.5         +68.7%     [41.06, 1739]              -
+eval.hunter_chases_by_age.over2k                     1053         2461        1408          +133.8%    [515.7, 2541]              -
+eval.hunter_chases_by_age.under1k                    3160         5016        1856          +58.7%     [-25.19, 4049]             -
+eval.hunter_conversion_by_dose                       -0.000642    -0.004581   -0.003939     -613.6%    [-0.01219, -0.001111]      unverified
+eval.hunter_conversion_gain                          -0.02329     -0.03728    -             -          -                          -              null in a seed
+eval.hunter_conversion_gain_hunters                  33.8         78.57       -             -          -                          -              null in a seed
+eval.hunter_conversion_matched.1k-2k                 0.2788       0.294       -             -          -                          -              null in a seed
+eval.hunter_conversion_matched.over2k                0.2612       0.2725      -             -          -                          -              needs 32 seeds
+eval.hunter_conversion_matched.under1k               0.296        0.2897      -0.00622      -2.1%      [-0.02896, 0.0239]         no-difference
+eval.hunter_death_share.collision                    0.1199       0.09605     -             -          -                          -              needs 32 seeds
+eval.hunter_death_share.disease                      0.00719      0.007713    0.0005229     +7.3%      [-0.002497, 0.004699]      -
+eval.hunter_death_share.eaten                        0.1315       0.3208      -             -          -                          -              needs 32 seeds
+eval.hunter_death_share.other                        0            0.001178    0.001178      +100.0%    [0.0002234, 0.003194]      -
+eval.hunter_death_share.starved                      0.7317       0.5621      -             -          -                          -              needs 64 seeds
+eval.hunter_death_share.trampled                     0.009691     0.01213     0.00244       +25.2%     [-0.0009626, 0.006603]     -
+eval.hunter_first_kill_age                           215.9        235.1       19.19         +8.9%      [-11.94, 45.72]            -
+eval.hunter_first_kill_km_median                     648          813.4       -             -          -                          -              null in a seed
+eval.hunter_first_kill_rmst                          1911         2244        -             -          -                          -              needs 64 seeds
+eval.hunter_global_extinctions                       12.19        6.063       -6.125        -50.3%     [-9.688, -2.688]           -
+eval.hunter_income_share.bite                        0.672        0.6706      -             -          -                          -              needs 64 seeds
+eval.hunter_income_share.carcass                     0.1572       0.1626      0.005402      +3.4%      [-0.005978, 0.02193]       -
+eval.hunter_income_share.herd                        0.00588      0.002455    -0.003426     -58.3%     [-0.007674, -0.001599]     -
+eval.hunter_income_share.kill                        0.1648       0.1643      -0.0004953    -0.3%      [-0.01572, 0.02165]        -
+eval.hunter_independent_kill_share                   0.9411       0.9432      0.002009      +0.2%      [-0.006228, 0.01111]       no-difference
+eval.hunter_juvenile_death_share                     0.8673       0.7428      -             -          -                          -              needs 32 seeds
+eval.hunter_kill_conversion_by_age.1k-2k             0.2648       0.2412      -0.02361      -8.9%      [-0.04122, 0.01036]        no-difference
+eval.hunter_kill_conversion_by_age.over2k            0.2373       0.2266      -0.01066      -4.5%      [-0.0456, 0.04379]         -
+eval.hunter_kill_conversion_by_age.under1k           0.2908       0.2834      -0.00738      -2.5%      [-0.0285, 0.02005]         -
+eval.hunter_kill_conversion_hungry.1k-2k             0.3017       0.285       -0.01668      -5.5%      [-0.03709, 0.0229]         -
+eval.hunter_kill_rate_by_age.adult                   0.09296      0.03151     -             -          -                          -              null in a seed
+eval.hunter_kill_rate_by_age.juvenile                1.073        0.8942      -             -          -                          -              needs 32 seeds
+eval.hunter_kill_rate_by_age.young                   0.481        0.2311      -0.25         -52.0%     [-0.4551, -0.09373]        -
+eval.hunter_kill_rate_by_source.floor                0.2881       0.01965     -             -          -                          -              null in a seed
+eval.hunter_kill_rate_by_source.initial              0.1654       0.1043      -0.06104      -36.9%     [-0.1084, -0.01645]        -
+eval.hunter_kill_rate_by_source.mate-hunter-parent   0.1883       0.1724      -             -          -                          -              null in a seed
+eval.hunter_kill_rate_by_source.spec-flip            1.634        1.782       0.1478        +9.0%      [-0.3359, 0.5325]          -
+eval.hunter_kill_rate_by_source.split-hunter-parent  0.9793       0.6344      -             -          -                          -              needs 64 seeds
+eval.hunter_kills_per_life_mean                      1.473        1.534       -             -          -                          -              needs 32 seeds
+eval.hunter_kills_per_life_p50                       0.625        0.625       0             +0.0%      [-0.375, 0.3125]           -
+eval.hunter_lineage_extinctions                      10.38        33.25       22.88         +220.5%    [16, 31.81]                -
+eval.hunter_median_lifespan                          1131         1489        358.3         +31.7%     [220.5, 601.6]             -
+eval.hunter_plant_linger_share                       0.07392      0.05097     -             -          -                          -              needs 32 seeds
+eval.hunter_recoil_per_life                          228.8        193.3       -35.45        -15.5%     [-102.3, 15.11]            -
+eval.hunter_reflex_column_same_kill_rate             1.557        0.6468      -0.91         -58.5%     [-1.46, -0.3685]           -
+eval.hunter_reflex_column_split_kill_rate            1.597        0.6997      -0.8972       -56.2%     [-1.365, -0.4647]          -
+eval.hunter_reflex_column_split_share                0.4835       0.4794      -0.004082     -0.8%      [-0.08417, 0.06045]        -
+eval.hunter_starve_age_median                        1232         1460        227.5         +18.5%     [-68.88, 558.8]            -
+eval.hunter_territory_blocked_share                  0.284        0.3249      0.0409        +14.4%     [-0.01764, 0.09178]        -
+eval.hunter_ticks_last_quarter                       272500       549700      277300        +101.7%    [-42390, 815700]           -
+eval.hunter_zero_kill_carcass_share                  0.05097      0.05376     -             -          -                          -              needs 64 seeds
+eval.hunter_zero_kill_share                          0.4763       0.4917      -             -          -                          -              needs 64 seeds
+eval.idle_signals_per_1k                             0.00002872   0           -0.00002872   -100.0%    [-0.0001723, 0]            unverified
+eval.input_active_share                              0.3268       0.3229      -0.003938     -1.2%      [-0.009973, 0.000707]      -
+eval.input_active_share.prey                         0.009418     0.01676     0.007338      +77.9%     [0.0007508, 0.01397]       -
+eval.input_active_share.threat                       0.01397      0.02916     0.0152        +108.8%    [0.004378, 0.02636]        -
+eval.instinct_drift                                  1.183        0.6312      -0.5522       -46.7%     [-0.6612, -0.4082]         -
+eval.juvenile_parent_distance                        929.8        932.9       3.101         +0.3%      [-107.9, 102.9]            -
+eval.juvenile_parent_pull                            1.255        1.188       -             -          -                          -              needs 32 seeds
+eval.juvenile_sibling_distance                       1156         1108        -48.21        -4.2%      [-175, 41.75]              -
+eval.kin_nearby_threat_gain                          -0.6534      -0.504      0.1494        +22.9%     [-0.4966, 0.6758]          unverified
+eval.kin_within_call_radius                          5.7          -           -             -          -                          -              null in a seed
+eval.leak_at_floor_share                             0            0           0             -          [0, 0]                     -
+eval.leak_flee_corr                                  0.0128       -0.002349   -             -          -                          -              null in a seed
+eval.leak_forage_corr                                0.01629      0.02565     0.009356      +57.4%     [-0.02897, 0.04963]        -
+eval.leak_hunt_corr                                  -0.008078    -0.026      -             -          -                          -              null in a seed
+eval.leak_lineage_spread                             0.0009137    0.001635    0.0007209     +78.9%     [0.0003771, 0.001006]      -
+eval.leak_rate_mean                                  0.5102       0.51        -0.0001745    -0.0%      [-0.00119, 0.0009365]      -
+eval.leak_slow_share                                 0            0           0             -          [0, 0]                     -
+eval.lineage_dominance                               0.6518       0.6217      -0.03017      -4.6%      [-0.1331, 0.05891]         unverified
+eval.lineage_effective                               2.657        2.928       0.2711        +10.2%     [-0.2669, 0.8345]          -
+eval.lineage_lifespan_p50                            806.7        1435        -             -          -                          -              null in a seed
+eval.lineage_persistence                             0.6833       0.7589      0.0756        +11.1%     [-0.02597, 0.1526]         -
+eval.lineage_turnover                                1.941        3.059       -             -          -                          -              needs 32 seeds
+eval.lineages_alive                                  2.831        3.616       -             -          -                          -              needs 32 seeds
+eval.mate_hunter_lean                                -0.00717     -0.01821    -0.01104      -154.0%    [-0.02416, -0.002866]      -
+eval.mate_parent_delib_share                         0.4046       0.5057      -             -          -                          -              needs 32 seeds
+eval.mate_rank_gap                                   0.02174      0.03389     0.01215       +55.9%     [0.002615, 0.0221]         -
+eval.mating_share                                    0.3885       0.3411      -0.04741      -12.2%     [-0.1118, 0.03201]         -
+eval.mean_energy_share                               0.4783       0.4434      -             -          -                          -              needs 32 seeds
+eval.mean_fitness.defender                           1547         2036        489.3         +31.6%     [280.7, 636.1]             better
+eval.mean_fitness.forager                            1692         1903        -             -          -                          -              needs 32 seeds
+eval.mean_fitness.predator                           2141         2457        -             -          -                          -              needs 32 seeds
+eval.mean_fitness.reproducer                         1605         1887        281.6         +17.5%     [109.4, 426.4]             better
+eval.mean_fitness.scout                              1785         1847        62.09         +3.5%      [-284.3, 281.5]            no-difference
+eval.median_lifespan                                 3441         3102        -338.7        -9.8%      [-649.5, 60.81]            no-difference
+eval.memory_out_flat_share                           0.0001518    0.0001154   -0.00003637   -24.0%     [-0.0001676, 0.0001816]    -
+eval.memory_out_noisy_share                          0.000007263  0.00003938  0.00003211    +442.1%    [0.000008284, 0.00007814]  -
+eval.memory_out_signal_share                         0.9998       0.9998      0.00000426    +0.0%      [-0.0002697, 0.0001135]    -
+eval.merit_fitness_corr                              0.96         0.9719      0.01182       +1.2%      [0.003881, 0.02012]        no-difference
+eval.merit_mate_gain                                 0.2822       0.1685      -             -          -                          -              needs 64 seeds
+eval.merit_mean                                      1489         1672        182.7         +12.3%     [92.72, 281.6]             -
+eval.merit_p90                                       3441         3832        391.4         +11.4%     [226.8, 560.2]             -
+eval.migration_index                                 0.05488      0.06457     0.009692      +17.7%     [-0.002961, 0.03036]       no-difference
+eval.mother_wait_by_condition                        207.8        333.7       125.9         +60.6%     [-43, 310.3]               -
+eval.motion_coverage                                 0.2569       0.2944      0.0375        +14.6%     [0.01625, 0.05375]         -
+eval.niche_replacement                               0.8804       0.8205      -             -          -                          -              needs 64 seeds
+eval.offspring_per_life                              1.357        1.319       -0.03773      -2.8%      [-0.09996, 0.04009]        -
+eval.opportunity_for_selection                       2.209        2.021       -0.1882       -8.5%      [-0.3069, -0.1071]         -
+eval.output_saturation                               0.2094       0.1946      -0.01483      -7.1%      [-0.02492, -0.004089]      no-difference
+eval.p90_fitness.defender                            4139         5328        1189          +28.7%     [738.8, 1583]              better
+eval.p90_fitness.forager                             4573         5012        439.3         +9.6%      [-29.99, 996.3]            no-difference
+eval.p90_fitness.predator                            6390         7323        -             -          -                          -              needs 32 seeds
+eval.p90_fitness.reproducer                          4458         5059        601.3         +13.5%     [231.1, 1018]              better
+eval.p90_fitness.scout                               4684         4742        57.15         +1.2%      [-836.9, 625.5]            no-difference
+eval.pack_convergence                                0.4108       0.466       0.05518       +13.4%     [0.01587, 0.1003]          unverified
+eval.pack_kills_per_eaten_death                      0.1122       0.1116      -0.0005229    -0.5%      [-0.01293, 0.01276]        no-difference
+eval.pack_lift                                       1.509        1.647       -             -          -                          -              null in a seed
+eval.pack_prey_size_ratio                            0.9998       0.9998      -             -          -                          -              null in a seed
+eval.patch_leave_depleted                            0.4004       0.4498      -             -          -                          -              needs 32 seeds
+eval.patch_stay_depleted                             0.5996       0.5502      -             -          -                          -              needs 64 seeds
+eval.pollination_rate                                0.06414      0.06414     -2.602e-18    -0.0%      [-0.01908, 0.01875]        -
+eval.population_mean                                 190.2        166.6       -23.55        -12.4%     [-61.29, 10.49]            -
+eval.pred_prey_lag_corr                              0.2728       0.04602     -             -          -                          -              null in a seed
+eval.predation_per_1k                                0.05002      0.08923     0.03921       +78.4%     [0.005499, 0.07882]        -
+eval.predator_births                                 781.1        1279        497.9         +63.7%     [-24.13, 1124]             unverified
+eval.predator_end_local_share                        1            1           -             -          -                          -              null in a seed
+eval.predator_presence                               0.5812       0.7428      0.1616        +27.8%     [0.01047, 0.3148]          unverified
+eval.predator_share_cv                               1.705        1.235       -             -          -                          -              needs 32 seeds
+eval.predators_at_end                                9.938        22.5        12.56         +126.4%    [-2.625, 34.38]            unverified
+eval.prey_cover_distance                             1850         1867        -             -          -                          -              needs 32 seeds
+eval.prey_extinctions                                9.125        12.5        3.375         +37.0%     [0, 7.188]                 unverified
+eval.prey_in_patch_share                             0.3902       0.4064      -             -          -                          -              needs 32 seeds
+eval.prey_selectivity.defender                       1.403        0.9756      -0.427        -30.4%     [-0.9333, 0.02413]         -
+eval.prey_selectivity.forager                        1.278        1.344       0.06653       +5.2%      [-0.4713, 0.701]           -
+eval.prey_selectivity.reproducer                     1.294        1.726       0.4318        +33.4%     [-0.2065, 2.308]           -
+eval.prey_selectivity.scout                          0.885        1.176       0.2908        +32.9%     [-0.01591, 1.101]          -
+eval.prey_summer_min                                 68.63        55.75       -12.88        -18.8%     [-59.56, 15.69]            unverified
+eval.prey_types_at_end                               3.5          3.625       -             -          -                          -              needs 32 seeds
+eval.prey_within_dash_share                          0.125        0.1152      -             -          -                          -              needs 64 seeds
+eval.proven_share                                    0.5688       0.6247      0.05592       +9.8%      [0.03197, 0.08192]         -
+eval.pursuit_bite_share                              0.6439       0.6774      -             -          -                          -              needs 32 seeds
+eval.pursuit_kill_share                              0.6954       0.7075      -             -          -                          -              needs 64 seeds
+eval.pursuit_trend                                   0.01531      0.01183     -             -          -                          -              null in a seed
+eval.qd_score                                        659.1        728.9       -             -          -                          -              needs 32 seeds
+eval.rare_input_saturation_jump                      -4.967e-7    0.00005144  0.00005194    +10456.6%  [0.00001205, 0.0001048]    -
+eval.recruit_censored_share                          0.004566     0.005248    0.000682      +14.9%     [-0.003871, 0.009545]      -
+eval.recruit_cohort                                  784.6        1286        501.8         +64.0%     [-16.81, 1129]             -
+eval.recruit_first_kill_share                        0.6975       0.6633      -0.03419      -4.9%      [-0.08684, 0.01865]        -
+eval.recruit_lineage_share                           0.328        0.3052      -             -          -                          -              needs 64 seeds
+eval.recruit_matured_hunters                         552.1        918.6       366.5         +66.4%     [-16.25, 803.6]            -
+eval.recruit_matured_share                           0.7017       0.7048      -             -          -                          -              needs 64 seeds
+eval.recruit_replaced_share.floor                    0            0.02094     -             -          -                          -              null in a seed
+eval.recruit_replaced_share.mate-hunter-parent       0.2383       0.2172      -             -          -                          -              null in a seed
+eval.recruit_replaced_share.spec-flip                0.6996       0.7027      0.00313       +0.4%      [-0.1408, 0.08327]         -
+eval.recruit_replaced_share.split-hunter-parent      0.59         0.5709      -0.01908      -3.2%      [-0.05963, 0.02199]        -
+eval.refuge_bite_deficit                             0.05062      0.1609      0.1103        +217.9%    [-0.03789, 0.6488]         -
+eval.refuge_crowding                                 1.343        1.387       -             -          -                          -              null in a seed
+eval.refuge_dwell_ticks                              88.13        68.67       -             -          -                          -              needs 32 seeds
+eval.refuge_eligible_share                           0.6468       0.6746      -             -          -                          -              needs 64 seeds
+eval.refuge_episode_entry                            -0.001213    -0.0006821  0.0005309     +43.8%     [-0.00009625, 0.001529]    -
+eval.refuge_exit_fed                                 0.5384       0.5317      -             -          -                          -              null in a seed
+eval.refuge_prey_use_under_threat                    -0.002257    -0.002924   -0.0006665    -29.5%     [-0.002354, 0.0006591]     -
+eval.refuge_use_under_threat                         -0.00233     -0.002951   -0.0006208    -26.6%     [-0.002169, 0.0006239]     -
+eval.reproducer_recovery_rate                        0.1547       0.1448      -0.009918     -6.4%      [-0.07696, 0.07412]        -
+eval.reward_events_per_1k.bite                       10.2         7.668       -2.528        -24.8%     [-4.578, -0.5701]          -
+eval.reward_events_per_1k.kill                       1.39         0.8477      -             -          -                          -              needs 64 seeds
+eval.reward_events_per_1k.scavenge                   1.491        0.8564      -             -          -                          -              needs 64 seeds
+eval.scavenge_approach_share                         0.02067      0.02734     0.006676      +32.3%     [0.0002157, 0.01629]       unverified
+eval.scout_alarm_lead_share                          -            -           -             -          -                          -              null in a seed
+eval.season_map_distance                             0.4046       0.3971      -             -          -                          -              needs 64 seeds
+eval.seasonal_diet_shift                             0.5124       0.5255      -             -          -                          -              needs 32 seeds
+eval.sex_balance                                     0.06313      0.06498     0.001847      +2.9%      [-0.00967, 0.01721]        -
+eval.sick_share                                      0.004792     0.00508     0.0002877     +6.0%      [-0.002042, 0.002951]      -
+eval.sigma_mean                                      0.05018      0.05089     0.0007158     +1.4%      [-0.0002525, 0.001766]     -
+eval.skill_heritability                              0.2511       0.2206      -0.03054      -12.2%     [-0.06239, 0.006974]       -
+eval.skill_trend                                     0.01056      0.007604    -0.002951     -28.0%     [-0.04276, 0.04453]        -
+eval.smoke_escapes                                   -            -           -             -          -                          -              null in a seed
+eval.smoke_precision                                 -            -           -             -          -                          -              null in a seed
+eval.social_return                                   0.4279       0.03813     -0.3898       -91.1%     [-0.5768, -0.246]          -
+eval.spec_dominance                                  0.4902       0.4762      -0.01395      -2.8%      [-0.09394, 0.07389]        unverified
+eval.spec_effective                                  3.555        3.731       0.176         +5.0%      [-0.3256, 0.5405]          no-difference
+eval.spec_turnover                                   17.89        17.27       -             -          -                          -              needs 64 seeds
+eval.split_bumper_share                              0            0.0000101   0.0000101     +100.0%    [0, 0.0000303]             -
+eval.split_gated_share                               0.9992       0.9992      -0.0000493    -0.0%      [-0.0002391, 0.0001685]    -
+eval.split_parent_delib_share                        0.5023       0.5736      0.07127       +14.2%     [0.04625, 0.1018]          -
+eval.sprint_cost_share                               0.0519       0.05653     0.004631      +8.9%      [-0.00483, 0.01657]        -
+eval.sprint_share.hunter                             0.428        0.4138      -0.01419      -3.3%      [-0.1337, 0.1236]          -
+eval.sprint_share.prey                               0.4388       0.5644      0.1255        +28.6%     [0.05283, 0.2143]          -
+eval.strain_family_focus                             0.9999       0.9932      -0.006767     -0.7%      [-0.02516, -0.0008362]     -
+eval.strains_per_100k                                97.13        95.34       -1.781        -1.8%      [-7.344, 3.062]            -
+eval.strike_miss_energy_ratio                        0.4142       0.3047      -0.1094       -26.4%     [-0.1667, -0.04491]        unverified
+eval.style_lineage_share                             0.007575     0.004669    -             -          -                          -              null in a seed
+eval.style_separation                                0.05127      0.06074     0.00947       +18.5%     [-0.01241, 0.03498]        -
+eval.toxic_avoidance                                 0.8679       0.8455      -             -          -                          -              needs 32 seeds
+eval.toxic_death_share                               0.01881      0.01574     -0.003068     -16.3%     [-0.01192, 0.003931]       -
+eval.trait_spread                                    0.01081      0.01141     -             -          -                          -              needs 64 seeds
+eval.trample_unavoidable_share                       0.9763       0.953       -0.02334      -2.4%      [-0.04084, -0.002565]      -
+eval.trampled_share                                  0.04241      0.02453     -0.01788      -42.2%     [-0.02761, -0.008137]      -
+eval.undefended_bite_share                           0.8256       0.8178      -             -          -                          -              needs 32 seeds
+eval.unseen_bite_share                               0.08831      0.09663     -             -          -                          -              needs 32 seeds
+eval.weight_clamp_share                              0            0           0             -          [0, 0]                     -
+eval.weight_drift_silent                             0.9057       0.9007      -0.004951     -0.5%      [-0.02197, 0.009524]       -
+eval.winter_band_shift                               0.04269      0.03783     -             -          -                          -              needs 32 seeds
+eval.winter_basin_density                            1.083        0.8686      -0.2143       -19.8%     [-0.5659, -0.0004389]      -
+eval.winter_patch_proximity                          -0.2705      -0.2686     -             -          -                          -              needs 64 seeds
+eval.winter_pop_ratio                                1.09         0.9433      -0.147        -13.5%     [-0.3992, 0.02458]         -
+eval.winter_shelter_distance                         -31.39       -146.8      -115.4        -367.6%    [-198.5, -48.36]           -
+policyOptions differ: before {}, after {"championsDir":"/home/j1mb0jay/code/simulation/.sim/champions/ets-1c-o0"}

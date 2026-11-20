@@ -10,14 +10,16 @@ import { clipSupported } from './capture.js';
 import { buildDebugBundle } from './debug-bundle.js';
 import { createFamilySlots } from './family-slots.js';
 import { createFrameLoop } from './frame-loop.js';
+import { bootPack, startPack } from './pack/pack-boot.js';
+import { requireIsolation } from './isolation.js';
+import { showRenderFailure } from './ui/render-failure.js';
 import { clearFrameStats, createFrameStats } from './frame-stats.js';
+import { createAppLiveness, readAppPerf, startReporting } from './liveness.js';
 import { MIN_CSS_PX_TOUCH, minPxTable } from './display-size.js';
 import { clientToDevice, deviceToClient, devicePerCss } from './canvas-geometry.js';
 import { agentAt } from './hover-pick.js';
-import { largestOfLineage } from './picking.js';
 import { gpuTimeFor } from './gpu-time.js';
 import { createInterface } from './interface.js';
-import { gpuCounts, installPerf } from './perf.js';
 import { listenPointers } from './pointer-events.js';
 import { createPointerInput } from './pointer-input.js';
 import { canvasPixelSize } from './renderer/canvas-size.js';
@@ -28,7 +30,7 @@ import { createDownloader } from './ui/download.js';
 import { actionForKey } from './ui/keymap.js';
 import { unsupportedReason } from './support.js';
 import { configOverrides, readParams } from './url-params.js';
-import { createFxDev, fxAfterDraw, fxPerf, fxSink, readFxParams } from './fx-dev.js';
+import { createFxDev, fxAfterDraw, fxSink, readFxParams } from './fx-dev.js';
 import { createWakeLock } from './wake-lock.js';
 
 const PERF_FRAMES = 32768;
@@ -101,6 +103,7 @@ function observeSize(container, onSize) {
  * @property {any} deps the frame loop's dependencies; `scene` and `gpuTimer` are filled once the first world is ready
  * @property {ReturnType<typeof createFrameLoop>} loop the frame loop
  * @property {ReturnType<typeof createSupervisor>} supervisor the supervised worker
+ * @property {ReturnType<typeof bootPack>} pack the pack worker's client
  * @property {(action: string) => void} perform runs a shortcut action
  * @property {ReturnType<typeof createInterface>} iface the top bar, ticker, drawers and controls
  * @property {ReturnType<typeof createFxDev>} fxDev the effect developer tools, null unless the URL asks
@@ -160,7 +163,8 @@ function onReady(app, message) {
 /** Restarts the loop on the current world and applies a requested speed. @param {App} app the page @returns {void} */
 function startWorld(app) {
     app.deps.gpuTimer = gpuTimeFor(app.deps.scene);
-    app.loop.reset(/** @type {Record<string, any>} */ (app.ready).info.maxAgents);
+    app.loop.reset();
+    startPack(app.pack, { ready: app.ready, client: app.supervisor.client(), refs: app.deps.refs });
     if (app.state.requestedTicksPerSecond !== DEFAULT_TICKS_PER_SECOND) {
         app.supervisor.client()?.setSpeed(app.state.requestedTicksPerSecond);
     }
@@ -173,6 +177,9 @@ function startWorld(app) {
 function pointerOptions(app) {
     return {
         camera: app.camera,
+        onNavigate: () => {
+            app.state.followId = 0;
+        },
         getAgents: app.loop.agents,
         getMinPx: () => app.minPx,
         getTouchMinPx: () => MIN_CSS_PX_TOUCH * devicePerCss(app),
@@ -213,7 +220,6 @@ function makeSupervisor(app) {
             onSelection(message) {
                 if (message.state === 'gone') {
                     state.selectedId = 0;
-                    state.followId = 0;
                 }
             },
             onLog: (record) => appLog(record.level ?? 'info', record.event ?? 'WorkerLog', record),
@@ -312,6 +318,7 @@ function createApp(container) {
         target: window,
     });
     app.slots = createFamilySlots();
+    app.pack = bootPack(document);
     app.deps = {
         getClient: () => app.supervisor.client(),
         scene: null,
@@ -324,6 +331,7 @@ function createApp(container) {
         clock: () => performance.now(),
         hidden: () => document.hidden,
         afterDraw: (/** @type {any} */ frame) => fxAfterDraw(app, frame),
+        getPack: () => app.pack.slots(),
     };
     app.loop = createFrameLoop(app.deps);
     app.iface = makeInterface(app);
@@ -336,43 +344,10 @@ function createApp(container) {
         chooseSeed: () => chooseSeed(null),
         config: overrides,
         lastMoments: () => app.deps.refs.player?.moments ?? null,
-        leaderAgent: () =>
-            largestOfLineage(app.loop.agents(), app.supervisor.client()?.stats?.lineages?.top?.[0]?.id ?? -1),
+        followAgent: app.loop.followAgent,
         ui: app.iface.hooks,
     });
     return app;
-}
-
-/**
- * @param {App} app the page
- * @returns {import('./perf.js').PerfInputs} the live values `__perf` reports
- */
-function readPerf(app) {
-    return {
-        stats: app.stats,
-        worker: app.supervisor.client()?.stats ?? null,
-        gpu: gpuCounts(app.deps.scene?.renderer.info),
-        gpuSamples: app.deps.gpuTimer?.samples() ?? null,
-        heapBytes: /** @type {any} */ (performance).memory?.usedJSHeapSize ?? null,
-        ...fxPerf(app),
-    };
-}
-
-/**
- * Exposes `window.__perf` in dev builds.
- * @param {App} app the page
- * @returns {void}
- */
-function startReporting(app) {
-    if (typeof __PRODUCTION__ === 'undefined' || !__PRODUCTION__) {
-        installPerf(/** @type {any} */ (window), {
-            read: () => readPerf(app),
-            reset() {
-                clearFrameStats(app.stats, PERF_FRAMES);
-                app.deps.gpuTimer?.reset();
-            },
-        });
-    }
 }
 
 /**
@@ -387,14 +362,31 @@ function start() {
     if (reason !== null) {
         return showMessage(container, reason);
     }
+    // No isolation, no shared memory, no snapshots: show the card and start no worker (docs/designs/pack-worker.md).
+    if (!requireIsolation({ scope: globalThis, container, log: appLog, show: showRenderFailure })) {
+        return;
+    }
     const app = createApp(container);
+    window.__blob = createAppLiveness({
+        readFrames: () => app.stats.drawCalls,
+        readTick: () => app.supervisor.tick(),
+        resetFrames: () => clearFrameStats(app.stats, PERF_FRAMES),
+    });
     observeSize(container, (next) => {
         Object.assign(app.size, next);
         app.deps.scene?.resize(next.width, next.height);
         app.iface.resize();
         resizeCamera(app.camera, next);
     });
-    startReporting(app);
+    startReporting({
+        target: /** @type {any} */ (window),
+        production: typeof __PRODUCTION__ !== 'undefined' && __PRODUCTION__,
+        read: () => readAppPerf(app),
+        reset: () => {
+            clearFrameStats(app.stats, PERF_FRAMES);
+            app.deps.gpuTimer?.reset();
+        },
+    });
     const tick = (/** @type {number} */ now) => (app.loop.frame(now), app.iface.tick(now), requestAnimationFrame(tick));
     requestAnimationFrame(tick);
     app.supervisor.start(chooseSeed(app.params.seed));

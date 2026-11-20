@@ -3,23 +3,24 @@ import { describe, expect, it } from 'vitest';
 import { getPolicy, LIVE_POLICY } from '../../js/evo/policies/index.js';
 import { createHarness, SMALL_CONFIG } from './helpers/host-harness.js';
 import { driveGolden, effectStreamHash } from './helpers/golden-drive.js';
+import { RING_SLOTS } from '../../js/worker/snapshot-ring.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const { cases } = JSON.parse(readFileSync(new URL('../sim/golden.json', import.meta.url), 'utf8'));
 const byName = Object.fromEntries(cases.map((/** @type {any} */ c) => [c.name, c]));
 const TIMEOUT_MS = scaleTimeout(300_000);
 
-/** The FNV hash of the busy golden world's effect stream (every effect record, in order). A self-pin; re-pinned by the one kill rule (metric-trust T14), which drops one HunterKill record, again by the eat choice becoming the default (eat-choice T13), by the graze hold (eat-choice T18), and by grazeThrust 0.6 (eat-choice T28). */
-const BUSY_EFFECT_HASH = 'e0f297e65c63f3b7';
-const BUSY_EFFECT_RECORDS = 1036;
+/** The FNV hash of the busy golden world's effect stream (every effect record, in order). A self-pin; re-pinned by the one kill rule (metric-trust T14), which drops one HunterKill record, again by the eat choice becoming the default (eat-choice T13), by the graze hold (eat-choice T18), by grazeThrust 0.6 (eat-choice T28), by the hunter's eyes (senses-and-motor T20), and by killGorgeShare 0.4 (honest-budgets T37). */
+const BUSY_EFFECT_HASH = '6bcc03750f6e21e4';
+const BUSY_EFFECT_RECORDS = 766;
 
 describe('the golden world through the host', () => {
     it(
-        'reaches the golden world hash for the default case with uneven slices, select, setLenses and a dry snapshot pool',
+        'reaches the golden world hash for the default case with uneven slices, select, setLenses and a full snapshot ring',
         () => {
             const { hash, harness } = driveGolden(byName.default, { keep: Infinity, slices: 11 });
             expect(hash).toBe(byName.default.worldHash);
-            expect(harness.of('snapshot')).toHaveLength(3);
+            expect(harness.of('snapshot')).toHaveLength(RING_SLOTS);
             expect(harness.of('log').some((m) => m.record.event === 'SnapshotSkipped')).toBe(true);
             expect(harness.of('error')).toHaveLength(0);
         },

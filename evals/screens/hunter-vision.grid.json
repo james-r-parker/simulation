@@ -1,0 +1,45 @@
+{
+  "seeds": 16,
+  "seedOffset": 0,
+  "ticks": 400000,
+  "policy": "live",
+  "reference": "control",
+  "arms": {
+    "control": {
+      "specialisations": {
+        "predator": { "visionRange": 350, "rearVisionShare": 1 },
+        "defender": { "visionRange": 350, "rearVisionShare": 1 }
+      }
+    },
+    "range": {
+      "specialisations": {
+        "predator": { "visionRange": 400, "rearVisionShare": 1 },
+        "defender": { "visionRange": 300, "rearVisionShare": 1 }
+      }
+    },
+    "range-s06": {
+      "specialisations": {
+        "predator": { "visionRange": 400, "rearVisionShare": 0.6 },
+        "defender": { "visionRange": 300, "rearVisionShare": 1 }
+      }
+    },
+    "range-s04": {
+      "specialisations": {
+        "predator": { "visionRange": 400, "rearVisionShare": 0.4 },
+        "defender": { "visionRange": 300, "rearVisionShare": 1 }
+      }
+    },
+    "range-s04-d": {
+      "specialisations": {
+        "predator": { "visionRange": 400, "rearVisionShare": 0.4 },
+        "defender": { "visionRange": 300, "rearVisionShare": 0.8 }
+      }
+    },
+    "far-s03": {
+      "specialisations": {
+        "predator": { "visionRange": 450, "rearVisionShare": 0.3 },
+        "defender": { "visionRange": 300, "rearVisionShare": 1 }
+      }
+    }
+  }
+}

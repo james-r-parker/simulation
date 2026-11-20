@@ -26,6 +26,7 @@ export const SENSE_FIELDS = Object.freeze([
     'rayStamp',
     'rayScratch',
     'foodKind',
+    'rayReachBySpec',
 ]);
 
 /** The arena arrays whose byte offsets head the sense parameter block, in `SenseParams` order (wasm/src/sense.rs). */
@@ -57,6 +58,8 @@ export const SENSE_ARRAYS = Object.freeze([
     'entries',
     'senseDoubles',
     'foodKind',
+    'rayReachBySpec',
+    'rayReach',
 ]);
 
 /** Words of the sense parameter block after the offsets, by name, in `SenseParams` order. */
@@ -73,6 +76,7 @@ const WORDS = Object.freeze([
     'concealed',
     'seePlant',
     'seeMeat',
+    'spec',
 ]);
 
 /** Index of each named word in the sense parameter block. */
@@ -97,6 +101,7 @@ export function senseSpecs(world) {
         ['rayBestT', Float64Array, config.rayCount],
         ['rayBestKey', Float64Array, config.rayCount],
         ['rayDirs', Float64Array, 2 * config.rayCount],
+        ['rayReach', Float64Array, config.rayCount],
         ['senseParams', Int32Array, SENSE_ARRAYS.length + WORDS.length],
         ['senseDoubles', Float64Array, 5],
     ];
@@ -144,8 +149,8 @@ export function beginSense(world, hash) {
 }
 
 /**
- * Gathers one caster's circles (the food among them only of a kind it can eat) and finds every ray's nearest hit into `rayBestT` and `rayBestKey`. The caster's origin,
- * range and heading must already be in `world.rayScratch`.
+ * Gathers one caster's circles (the food among them only of a kind it can eat) and finds every ray's nearest hit into `rayBestT` and `rayBestKey`, each ray
+ * reaching its specialisation's share of the range (`rayReachBySpec`). The caster's origin, range and heading must already be in `world.rayScratch`.
  * @param {Record<string, any>} world a world on the WASM kernels, begun by `beginSense` this tick
  * @param {number} slot the casting agent
  * @returns {number} the gathered row count in `world.rayLocal`
@@ -157,5 +162,7 @@ export function senseSlot(world, slot) {
     // eat-choice G3: the caster's rays see only the food it can eat.
     p[SENSE_WORD.seePlant] = world.plantFoodBySpec[spec] > 0 ? 1 : 0;
     p[SENSE_WORD.seeMeat] = world.meatFoodBySpec[spec] > 0 ? 1 : 0;
+    // senses-and-motor Phase 5: the caster's row of `rayReachBySpec` shapes each ray's reach.
+    p[SENSE_WORD.spec] = spec;
     return arena.exports.sense_slot(arena.offsets.senseParams, slot);
 }

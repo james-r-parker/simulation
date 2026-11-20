@@ -110,7 +110,7 @@ number and writes no hashed state where this file says so.
 | `satiationShare`, `digestTicks`, `handlingTicks`, `handlingThrust`            | `0.95`, `10`, `20`, `0.2`           | `0 .. 1`; integer `0 .. 30`; integer `0 .. 30`; `0 .. 1` |
 | `specMutationRate`, `huntUpkeep`                                              | `0.02`, `0.002`                     | `0 .. 1`; `>= 0`                                         |
 | `alarmThreshold`, `huntCallThreshold`                                         | `0.65`, `0.65`                      | `0 .. 0.95` each; 0 fires on any output above 0          |
-| `killShare`, `killGorgeCap`                                                   | `0.25`, `2000`                      | `0 .. 1`; above 0 (honest-budgets Phase 2)               |
+| `killShare`, `killGorgeCap`, `killGorgeShare`                                 | `0.25`, `2000`, `0.4`               | `0 .. 1`; above 0; `0 .. 1` (honest-budgets Phase 2, 6)  |
 | `floorTrigger`, `entrantEnergy`                                               | `8`, `200`                          | Integer `>= 0`; `>= 0` (0 means `initialEnergy`)         |
 | `diseaseSeedRate`, `diseaseMinHosts`, `diseaseRadius`                         | `0`, `30`, `60`                     | `0 .. 1` (0 is off); integer `>= 0`; `> 0`               |
 | `diseaseTransmission`, `diseaseSpecificity`, `diseaseDrain`, `diseaseTicks`   | `0.05`, `0.8`, `0.3`, `600`         | `0 .. 1`; `> 0`; `>= 0`; integer `>= 1`                  |
@@ -260,7 +260,7 @@ types and causes, `energy.js` for `lastLoss`).
 
 ## Events - `events.js`
 
-The ring is a per-tick buffer: `{ data: Float64Array(eventCapacity x EVENT_STRIDE), count }` with `EVENT_STRIDE` 12.
+The ring is a per-tick buffer: `{ data: Float64Array(eventCapacity x EVENT_STRIDE), count }` with `EVENT_STRIDE` 13.
 
 - `pushEvent(ring, type, tick)` throws naming the tick and `eventCapacity` when `count === eventCapacity`; otherwise
   it writes `type` and `tick` into fields 0 and 1 of record `count`, increments `count`, and returns the record's
@@ -268,27 +268,27 @@ The ring is a per-tick buffer: `{ data: Float64Array(eventCapacity x EVENT_STRID
 - `step` sets `count = 0` before its first phase. Events from `createWorld` stay until the first `step`.
 - `readEvents(ring)` returns `count`; callers read `ring.data` directly. Nothing is allocated.
 
-| Type                 | Fields 2 .. 11                                                                                                         |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `AgentBorn`          | `slot`, `genomeId`, `lineageId`, `spec`, `parentA`, `parentB`, `cause`, `sex` (field 9)                                |
-| `AgentDied`          | `slot`, `genomeId`, `cause`, `by`, `spec`, `lineageId`, `ageTicks`, `foodEnergy`, `biteEnergy`, `prevBiter` (field 11) |
-| `BirthBlocked`       | `slot` (the mother or splitter), `cause`                                                                               |
-| `PopulationFloor`    | `added`                                                                                                                |
-| `AlarmCalled`        | `slot`, `genomeId`, `spec`, `x`, `y`                                                                                   |
-| `SmokeReleased`      | `slot`, `genomeId`, `spec`, `x`, `y`, `cloud`                                                                          |
-| `PackCalled`         | `slot`, `genomeId`, `spec`, `x`, `y`                                                                                   |
-| `SmokeRefused`       | `slot`, `genomeId`                                                                                                     |
-| `FoodPatchesCreated` | `count`, `radius` (pushed once by `createPatches`, only when `foodPatchCount` is above 0)                              |
-| `SeasonChanged`      | `season` (the index now starting), `year` (zero-based)                                                                 |
-| `DroughtStarted`     | `basin` (0 west, 1 east), `year`                                                                                       |
-| `LineProven`         | `slot` (the child), `genomeId`, `parentA`, `parentB`, `lineageId`; debug level in `drainEvents` (`proof.js`)           |
-| `PatchSeeded`        | `species`, `patch`, `parentA`, `parentB`, `hue`, `x`, `y`; debug level                                                 |
-| `PatchDied`          | `patch`, `species`; debug level                                                                                        |
-| `SeedingRefused`     | `species`, `reason` (`pool`, `cooldown`, `placement`); first refusal per carrier/tick, debug level                     |
-| `AgentSickened`      | `slot`, `genomeId`, `dose`; debug level, once on crossing `sickDose`                                                   |
-| `StrainEmerged`      | `strain`, `hostSlot`, `hostGenomeId`, `hostLineageId`; info level ([disease.md](disease.md))                           |
-| `AgentInfected`      | `slot`, `genomeId`, `strain`, `distance` (to the strain's genotype); debug level                                       |
-| `StrainExtinct`      | `strain`, `infectedTotal`, `ticksAlive`; info level                                                                    |
+| Type                 | Fields 2 .. 11                                                                                                                                                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `AgentBorn`          | `slot`, `genomeId`, `lineageId`, `spec`, `parentA`, `parentB`, `cause`, `sex` (field 9)                                                                                                                                        |
+| `AgentDied`          | `slot`, `genomeId`, `cause`, `by`, `spec`, `lineageId`, `ageTicks`, `foodEnergy`, `biteEnergy`, `prevBiter` (field 11), `size` (field 12, the victim's size at death: the slot is zeroed before the observer reads the record) |
+| `BirthBlocked`       | `slot` (the mother or splitter), `cause`                                                                                                                                                                                       |
+| `PopulationFloor`    | `added`                                                                                                                                                                                                                        |
+| `AlarmCalled`        | `slot`, `genomeId`, `spec`, `x`, `y`                                                                                                                                                                                           |
+| `SmokeReleased`      | `slot`, `genomeId`, `spec`, `x`, `y`, `cloud`                                                                                                                                                                                  |
+| `PackCalled`         | `slot`, `genomeId`, `spec`, `x`, `y`                                                                                                                                                                                           |
+| `SmokeRefused`       | `slot`, `genomeId`                                                                                                                                                                                                             |
+| `FoodPatchesCreated` | `count`, `radius` (pushed once by `createPatches`, only when `foodPatchCount` is above 0)                                                                                                                                      |
+| `SeasonChanged`      | `season` (the index now starting), `year` (zero-based)                                                                                                                                                                         |
+| `DroughtStarted`     | `basin` (0 west, 1 east), `year`                                                                                                                                                                                               |
+| `LineProven`         | `slot` (the child), `genomeId`, `parentA`, `parentB`, `lineageId`; debug level in `drainEvents` (`proof.js`)                                                                                                                   |
+| `PatchSeeded`        | `species`, `patch`, `parentA`, `parentB`, `hue`, `x`, `y`; debug level                                                                                                                                                         |
+| `PatchDied`          | `patch`, `species`; debug level                                                                                                                                                                                                |
+| `SeedingRefused`     | `species`, `reason` (`pool`, `cooldown`, `placement`); first refusal per carrier/tick, debug level                                                                                                                             |
+| `AgentSickened`      | `slot`, `genomeId`, `dose`; debug level, once on crossing `sickDose`                                                                                                                                                           |
+| `StrainEmerged`      | `strain`, `hostSlot`, `hostGenomeId`, `hostLineageId`; info level ([disease.md](disease.md))                                                                                                                                   |
+| `AgentInfected`      | `slot`, `genomeId`, `strain`, `distance` (to the strain's genotype); debug level                                                                                                                                               |
+| `StrainExtinct`      | `strain`, `infectedTotal`, `ticksAlive`; info level                                                                                                                                                                            |
 
 Unused fields are 0. `prevBiter` is the second-last biter when the death is `eaten` and that bite was at most `packWindow`
 ticks before the death, else 0. The four call events are debug level; `FoodPatchesCreated`, `SeasonChanged`, and `DroughtStarted` are info level in `drainEvents`. `createConfig` requires `eventCapacity >= 8 x maxAgents + 2 x floraPatchMax`
@@ -375,7 +375,7 @@ minAgents)`. Below it, it spawns `FLOOR` agents until `population === minAgents`
   `cost`; a per-slot tick stamp (derived, not hashed) keeps it to once.
 - Predator economy keys (fitness-and-selection T15f). `applyBite` (`feeding.js`) mints nothing on a kill (honest-budgets Phase 2 deleted
   `predatorKillEnergy`): a bite that leaves the victim at or under `killShare` x its maximum energy kills it, and the killer
-  takes what remains up to `killGorgeCap` (`takeBody` in `kill-body.js`). `tickCost` (`energy.js`) multiplies the standing
+  takes up to `killGorgeShare` (0.4, E179) of what remains, no more than `killGorgeCap` (`takeBody` in `kill-body.js`). `tickCost` (`energy.js`) multiplies the standing
   term (`passiveLoss`, the size term and the vision term, before the temperature factor) by the specialisation's
   `passiveLossMultiplier`, read from the `specParams` entry it already holds. `readyToSplit` (`reproduction.js`) compares
   energy with `world.splitMinBySpec[spec]`, the table `splitMinEnergy x splitMinEnergyMultiplier` built once in

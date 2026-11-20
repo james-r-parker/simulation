@@ -1,5 +1,5 @@
 // What the host sends: snapshots, fields, and the stats and ticker messages with their upkeep. Each takes the host
-// state; a skipped send (no free buffer) is logged at most once per 10 s.
+// state; a skipped send (no free snapshot slot or field buffer) is logged at most once per 10 s.
 
 import { drainObserverLogs } from './observer-drain.js';
 import { takeBuffer } from './buffer-pool.js';
@@ -7,6 +7,7 @@ import { writeEffects } from './effects.js';
 import { writeInspect } from './inspect.js';
 import { collectStats, tickerEvents } from './live-stats.js';
 import { markSnapshot, snapshotDue } from './pacing.js';
+import { claimSlot, publishSlot } from './snapshot-ring.js';
 import { writeSnapshot } from '../sim/snapshot.js';
 
 /** Wall time between stats messages (and field messages). */
@@ -18,7 +19,7 @@ export const WARN_INTERVAL_MS = 10000;
 /**
  * @typedef {Record<string, any>} HostState the host's mutable state: `post`, `now`, `schedule`, `createPolicy`, `log`,
  *   `run` (null before `init`), `epoch`, `paused`, `stopped`, `ticksPerSecond`, `rays`, `selection`, `pacer`,
- *   `snapshotPool`, `fieldPool`, `timerPending`, `window` and `lastWarn`
+ *   `ring` (the snapshot ring, `js/worker/snapshot-ring.js`), `fieldPool`, `timerPending`, `window` and `lastWarn`
  */
 
 /**
@@ -40,8 +41,8 @@ export function warnLimited(host, event, fields) {
 }
 
 /**
- * Writes the world, the pending effects and the selected agent into a free snapshot buffer and transfers it. Sends
- * nothing, and says so in the log, when the worker holds no buffer; the effects then stay in the log for the next one.
+ * Writes the world, the pending effects and the selected agent into a free ring slot and publishes it. Sends nothing,
+ * and says so in the log, when every slot is held; the effects then stay in the log for the next one.
  * @param {HostState} host the host
  * @param {boolean} force send even if the last snapshot was under `snapshotGapMs` ago
  * @returns {boolean} whether a snapshot was sent
@@ -51,19 +52,20 @@ export function emitSnapshot(host, force) {
     if (!force && !snapshotDue(host.pacer, host.now())) {
         return false;
     }
-    const buffer = takeBuffer(host.snapshotPool);
-    if (buffer === undefined) {
+    const slot = claimSlot(host.ring);
+    if (slot < 0) {
         warnLimited(host, 'SnapshotSkipped', { tick: run.world.tick });
         return false;
     }
-    const views = { u32: new Uint32Array(buffer), f32: new Float32Array(buffer) };
+    const views = host.ring.slots[slot];
     writeSnapshot(run.world, views, host.rays);
     if (run.effects.dropped > 0) {
         warnLimited(host, 'EffectsDropped', { count: run.effects.dropped, tick: run.world.tick });
     }
     writeEffects(run.effects, views.u32, run.layout.effectsOffset);
     writeInspect(views, run.layout, run.source, host.selection);
-    host.post({ type: 'snapshot', epoch: host.epoch, buffer, tick: run.world.tick }, [buffer]);
+    const seq = publishSlot(host.ring, slot, run.world.tick);
+    host.post({ type: 'snapshot', epoch: host.epoch, seq, slot, tick: run.world.tick });
     markSnapshot(host.pacer, host.now());
     return true;
 }

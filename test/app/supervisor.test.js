@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ringBytes } from '../../js/worker/snapshot-ring.js';
 import {
     BACKOFF_MS,
     FAILURE_WINDOW_MS,
@@ -13,6 +14,8 @@ const READY = {
     epoch: 1,
     configHash: 'c',
     rulesHash: 'r',
+    ring: new SharedArrayBuffer(ringBytes(64)),
+    slotBytes: 64,
     layout: { effectsOffset: 10, effectWords: 8 },
     info: {},
     labels: {},
@@ -150,6 +153,15 @@ describe('the heartbeat', () => {
         }
         expect(worker.terminated).toBe(false);
         expect(s.supervisor.restarts()).toBe(0);
+    });
+
+    it('reports the latest worker tick for app liveness diagnostics', () => {
+        const s = setup();
+        s.supervisor.start(7);
+        const [worker] = s.workers;
+        expect(s.supervisor.tick()).toBe(0);
+        worker.onmessage({ data: statsMessage(25) });
+        expect(s.supervisor.tick()).toBe(25);
     });
 
     it('restarts with a new seed after a missed heartbeat, shows the toast and logs both events', () => {

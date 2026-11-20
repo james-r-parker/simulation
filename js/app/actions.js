@@ -1,6 +1,8 @@
 // What each shortcut and button does: pause, step, speed, new world, selection, follow and the camera moves. Pure over
 // the injected worker client, camera and clock, so every action tests without a browser.
 
+import { frameFollow } from './follow.js';
+import { appLog } from './app-log.js';
 import { focusLast } from './director/moment-log.js';
 import { moveCameraTo, panByPixels, zoomAt } from './camera.js';
 import { TICKS_PER_SECOND_CHOICES } from '../worker/protocol.js';
@@ -88,7 +90,7 @@ const NO_UI = Object.freeze({
  * @property {() => number} now the clock, in ms
  * @property {() => number} chooseSeed a fresh seed for a new world
  * @property {Record<string, any>} config the config overrides sent with a new world
- * @property {() => number} [leaderAgent] the genome id of the leading family's largest agent, 0 for none
+ * @property {(preferred: number) => number} [followAgent] a living selected or interesting genome id, 0 for none
  * @property {() => import('./director/moment-log.js').MomentLog | null} [lastMoments] the live moment log, null before a
  *   world
  * @property {UiHooks} [ui] the page's hooks; absent means none of the page actions do anything
@@ -132,7 +134,8 @@ function newWorld(deps) {
  * @param {number} dy pan direction in y, -1 to 1 (up is -1, as on the screen)
  * @returns {void}
  */
-function pan({ camera }, dx, dy) {
+function pan({ camera, state }, dx, dy) {
+    state.followId = 0;
     panByPixels(camera, -dx * PAN_STEP_PX, -dy * PAN_STEP_PX);
 }
 
@@ -209,10 +212,23 @@ const ACTIONS = Object.freeze({
     speedUp: (deps) => changeSpeed(deps, 1),
     speedDown: (deps) => changeSpeed(deps, -1),
     newWorld,
-    follow: ({ state, leaderAgent }) => {
-        state.followId = state.followId === 0 ? state.selectedId || (leaderAgent?.() ?? 0) : 0;
+    follow: ({ state, camera, followAgent }) => {
+        if (state.followId !== 0) {
+            state.followId = 0;
+            camera.following = false;
+            return;
+        }
+        state.followId = followAgent?.(state.selectedId) ?? state.selectedId;
+        if (state.followId !== 0) {
+            frameFollow(camera);
+        } else {
+            appLog('info', 'FollowEnded', { fromId: 0, toId: 0, reason: 'empty' });
+        }
     },
-    home: ({ camera }) => moveCameraTo(camera, { x: camera.world.width / 2, y: camera.world.height / 2, zoom: 0 }),
+    home: ({ camera, state }) => {
+        state.followId = 0;
+        moveCameraTo(camera, { x: camera.world.width / 2, y: camera.world.height / 2, zoom: 0 });
+    },
     clearSelection,
     escape,
     lens1: lensAction(0),

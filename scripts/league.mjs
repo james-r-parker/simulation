@@ -1,13 +1,12 @@
 // Champion league: plays a candidate against every admitted champion and reports its Elo (`npm run league`).
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { availableParallelism } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MATCH_TICKS, runLeague, validateChampion } from '../js/evo/league.js';
 import { createConfig } from '../js/sim/config.js';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
-import { runPool } from './lib/worker-pool.mjs';
+import { defaultWorkers, runPool } from './lib/worker-pool.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SEEDS_URL = new URL('../evals/seeds.json', import.meta.url);
@@ -21,7 +20,7 @@ const USAGE = 'usage: league <candidate.json> [--admit] [--workers <n>] [--ticks
  * @typedef {object} LeagueArgs
  * @property {string} candidate the candidate champion file
  * @property {boolean} admit append the candidate to `evals/league.json`
- * @property {number | null} workers pool size, default `os.availableParallelism()`
+ * @property {number | null} workers pool size, default `defaultWorkers()`
  * @property {number} ticks ticks per game
  */
 
@@ -110,7 +109,7 @@ export async function playLeague(
     const tasks = seeds.flatMap((/** @type {number} */ seed) =>
         files.map((b) => ({ seed, ticks: args.ticks, a: candidate, b })),
     );
-    const workers = args.workers ?? Math.min(availableParallelism(), Math.max(1, tasks.length));
+    const workers = args.workers ?? Math.min(defaultWorkers(), Math.max(1, tasks.length));
     const results = await runPool(tasks, { workerUrl: WORKER_URL, workers });
     const games = results.map((/** @type {{ seed: number, result: any }} */ r, /** @type {number} */ i) => ({
         seed: r.seed,

@@ -1,18 +1,20 @@
 // Drills: plays genomes and the scripted reference through the fixed drills and prints each one's win share and edge over
 // random brains (`npm run drill`). Logs every trial at debug level to `.sim/logs/drill-<seed>x<trials>.jsonl`.
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { decodeArchive } from '../js/evo/archive-codec.js';
+import { readArchiveFile, readDrillConfig } from './lib/archive-source.mjs';
 import { DRILLS } from '../js/evo/drill-scenarios.js';
-import { DRILL_TRIALS, edgeOf, randomBrains, skipReason } from '../js/evo/drill.js';
+import { eliteSkill } from '../js/evo/elite-skill.js';
+import { DRILL_TRIALS, edgeOf, randomBrains, skipReason, winBounds } from '../js/evo/drill.js';
+import { traceAggregates } from '../js/evo/drill-trace.js';
 import { referenceSubject } from '../js/evo/memory-probe-references.js';
 import { seedlessConfig } from '../js/evo/report.js';
 import { configHash, createConfig } from '../js/sim/config.js';
 import { createSimLog } from '../js/sim/log.js';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
-import { formatTable, reportJson } from './lib/drill-report.mjs';
-import { eliteSubjects, fileSubject } from './lib/drill-subjects.mjs';
+import { eliteSkillLines, formatTable, reportJson } from './lib/drill-report.mjs';
+import { allEliteSubjects, eliteSubjects, fileSubject } from './lib/drill-subjects.mjs';
 import { genomeSkipCells } from './lib/skip-cells-report.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { logRunConfig } from './lib/run-config.mjs';
@@ -25,7 +27,7 @@ const EVAL_WORKER_URL = new URL('./eval-worker.mjs', import.meta.url);
 export const POLICY_TICKS = 20000;
 const NAMES = DRILLS.map((d) => d.name);
 const USAGE =
-    'usage: drill (--champions <dir> | --archive <file> | --policy <name>) [--count <n>] [--drills <a,b>] [--seed <n>] [--trials <n>] [--config <file.json>] [--json] [--out <path>] [--workers <n>]';
+    'usage: drill (--champions <dir> | --archive <file> | --policy <name>) [--count <n>] [--elites all [--bar <n>]] [--drills <a,b>] [--seed <n>] [--trials <n>] [--config <file.json>] [--json] [--out <path>] [--workers <n>]';
 
 /**
  * @typedef {object} DrillArgs
@@ -33,6 +35,8 @@ const USAGE =
  * @property {string | null} archive an archive file (`archive-<g>.json`)
  * @property {string | null} policy a registered policy to run for `POLICY_TICKS` and drill the best archive elites of
  * @property {number} count elites drilled with `--policy`
+ * @property {'all' | null} elites `all` drills every occupied elite of `--archive`, not the exported champions
+ * @property {number | null} bar the `edgeLow` an elite clears to count as skilled, with `--elites all` (null: 0.3)
  * @property {string[]} drills the drills to run (default all)
  * @property {number} seed the base seed
  * @property {number} trials trials per drill
@@ -57,6 +61,26 @@ function parseDrills(value) {
 }
 
 /**
+ * @param {DrillArgs} args the parsed options
+ * @throws {Error} when `--elites` is not `all` or comes without `--archive`, or `--bar` is not in 0 to 1 or comes
+ *   without `--elites all`
+ */
+function checkElites(args) {
+    if (args.elites !== null && args.elites !== 'all') {
+        throw new Error(`--elites: only "all" is known, got "${args.elites}"\n${USAGE}`);
+    }
+    if (args.elites !== null && args.archive === null) {
+        throw new Error(`--elites all needs --archive\n${USAGE}`);
+    }
+    if (args.bar !== null && args.elites === null) {
+        throw new Error(`--bar needs --elites all\n${USAGE}`);
+    }
+    if (args.bar !== null && !(args.bar >= 0 && args.bar <= 1)) {
+        throw new Error(`--bar: expected a number from 0 to 1\n${USAGE}`);
+    }
+}
+
+/**
  * @param {string[]} argv command-line arguments after the script name
  * @returns {DrillArgs} parsed options
  * @throws {Error} unless exactly one of `--champions`, `--archive` and `--policy` is given
@@ -69,6 +93,8 @@ export function parseArgs(argv) {
                 '--archive': (v) => ['archive', String(v)],
                 '--policy': (v) => ['policy', String(v)],
                 '--count': (v, f) => ['count', intValue(f, v, 1, USAGE)],
+                '--elites': (v) => ['elites', String(v)],
+                '--bar': (v) => ['bar', Number(v)],
                 '--drills': (v) => ['drills', parseDrills(v)],
                 '--seed': (v, f) => ['seed', intValue(f, v, 0, USAGE)],
                 '--trials': (v, f) => ['trials', intValue(f, v, 1, USAGE)],
@@ -82,6 +108,8 @@ export function parseArgs(argv) {
                 archive: null,
                 policy: null,
                 count: 8,
+                elites: null,
+                bar: null,
                 drills: NAMES,
                 seed: 1,
                 trials: DRILL_TRIALS,
@@ -97,6 +125,7 @@ export function parseArgs(argv) {
     if (sources.length !== 1) {
         throw new Error(`give exactly one of --champions, --archive and --policy\n${USAGE}`);
     }
+    checkElites(args);
     return args;
 }
 
@@ -110,8 +139,8 @@ async function genomesOf(args, { config, log }) {
         return loadChampions(args.champions, { config, log });
     }
     if (args.archive !== null) {
-        const json = JSON.parse(readFileSync(args.archive, 'utf8'));
-        return eliteSubjects(decodeArchive(json, createConfig(config), log));
+        const archive = readArchiveFile(args.archive, config, log);
+        return args.elites === 'all' ? allEliteSubjects(archive) : eliteSubjects(archive);
     }
     const tasks = [
         {
@@ -163,7 +192,7 @@ function buildTasks(args, { genomes, config }) {
                     label: entry.label,
                     drill: drill.name,
                     index: -1,
-                    task: { drill: drill.name, subject: entry.subject, ...common },
+                    task: { drill: drill.name, subject: entry.subject, ...common, arms: true },
                 });
             }
         }
@@ -181,6 +210,21 @@ function buildTasks(args, { genomes, config }) {
 }
 
 /**
+ * @param {readonly Record<string, any>[]} records a cell's trial records
+ * @returns {Record<string, number>} the lost trials by first-match reason
+ */
+function lostCounts(records) {
+    const counts = /** @type {Record<string, number>} */ ({});
+    for (const record of records) {
+        if (record.won || record.reason === null || record.reason === undefined) {
+            continue;
+        }
+        counts[record.reason] = (counts[record.reason] ?? 0) + 1;
+    }
+    return counts;
+}
+
+/**
  * Turns the pool's results into one row per genome and the reference.
  * @param {DrillArgs} args the options
  * @param {{genomes: import('../js/evo/memory-probe-run.js').Subject[], tasks: ReturnType<typeof buildTasks>, results: Record<string, any>[], log: import('../js/sim/log.js').SimLog}} run
@@ -194,9 +238,10 @@ function rowsOf(args, { genomes, tasks, results, log }) {
         cells: /** @type {Record<string, any>} */ ({}),
     }));
     for (const name of args.drills) {
-        const baselines = tasks.flatMap((t, i) =>
-            t.drill === name && t.kind === 'random' ? [results[i].winShare] : [],
+        const randoms = /** @type {{wins: number, trials: number, winShare: number}[]} */ (
+            tasks.flatMap((t, i) => (t.drill === name && t.kind === 'random' ? [results[i]] : []))
         );
+        const baselines = randoms.map((score) => score.winShare);
         labels.forEach((label, row) => {
             const at = tasks.findIndex((t) => t.drill === name && t.label === label && t.kind !== 'random');
             if (at < 0) {
@@ -204,16 +249,29 @@ function rowsOf(args, { genomes, tasks, results, log }) {
                 return;
             }
             const records = results[at].records ?? [];
-            const lossReasons = /** @type {Record<string, number>} */ ({});
-            for (const record of records) {
-                if (record.won || record.reason === null || record.reason === undefined) {
-                    continue;
-                }
-                lossReasons[record.reason] = (lossReasons[record.reason] ?? 0) + 1;
-            }
-            const cell = { winShare: results[at].winShare, edge: edgeOf(results[at].winShare, baselines), lossReasons };
+            const lossReasons = lostCounts(records);
+            const { winShare } = results[at];
+            const cell = {
+                winShare,
+                edge: edgeOf(winShare, baselines),
+                ...winBounds({ wins: results[at].wins, trials: results[at].trials }, randoms),
+                wins: results[at].wins,
+                trials: results[at].trials,
+                ...(results[at].arms === undefined ? {} : { arms: results[at].arms }),
+                randomWins: randoms.reduce((sum, score) => sum + score.wins, 0),
+                randomTrials: randoms.reduce((sum, score) => sum + score.trials, 0),
+                lossReasons,
+                ...traceAggregates(records),
+            };
             rows[row].cells[name] = cell;
-            log.log('info', 'DrillResult', { drill: name, subject: label, winShare: cell.winShare, edge: cell.edge });
+            log.log('info', 'DrillResult', {
+                drill: name,
+                subject: label,
+                winShare: cell.winShare,
+                edge: cell.edge,
+                winShareLow: cell.winShareLow,
+                edgeLow: cell.edgeLow,
+            });
         });
     }
     return rows;
@@ -252,11 +310,12 @@ function sourceOf(args) {
 /**
  * @param {DrillArgs} args the options
  * @param {import('../js/sim/log.js').SimLog} log the log
- * @returns {Promise<{rows: import('./lib/drill-report.mjs').DrillRow[], skip: import('./lib/skip-cells-report.mjs').SkipCellsReport | null}>}
- *   the rows (a genome per row, then the reference) and, for `--champions`, the predators' skip cells (T34)
+ * @returns {Promise<{rows: import('./lib/drill-report.mjs').DrillRow[], skip: import('./lib/skip-cells-report.mjs').SkipCellsReport | null, skill: Record<string, import('../js/evo/elite-skill.js').EliteSkillDrill> | null}>}
+ *   the rows (a genome per row, then the reference), for `--champions` the predators' skip cells (T34), and for
+ *   `--elites all` the elite-skill read
  */
 async function drillRows(args, log) {
-    const config = args.config === null ? {} : JSON.parse(readFileSync(args.config, 'utf8'));
+    const config = readDrillConfig(args.config);
     logRunConfig(log, {
         tool: 'drill',
         policy: args.policy,
@@ -267,7 +326,9 @@ async function drillRows(args, log) {
     });
     const genomes = await genomesOf(args, { config, log });
     const rows = await drillGenomes(args, { genomes, config, log });
-    return { rows, skip: args.champions === null ? null : genomeSkipCells(genomes, createConfig(config)) };
+    const skill =
+        args.elites === 'all' ? eliteSkill(rows, genomes, { bar: args.bar ?? undefined, drills: args.drills }) : null;
+    return { rows, skip: args.champions === null ? null : genomeSkipCells(genomes, createConfig(config)), skill };
 }
 
 /**
@@ -280,10 +341,18 @@ export async function runDrills(args, { logDir = '.sim/logs', print = () => {} }
     rmSync(path, { force: true });
     const sinkFile = createJsonlSink(path);
     try {
-        const { rows, skip } = await drillRows(args, createSimLog(sinkFile.sink, { level: 'debug' }));
+        const { rows, skip, skill } = await drillRows(args, createSimLog(sinkFile.sink, { level: 'debug' }));
         const table = args.json
-            ? JSON.stringify({ ...reportJson(args.drills, rows), skipCells: skip?.json ?? null }, null, 2)
-            : [...formatTable(args.drills, rows), ...(skip === null ? [] : ['', ...skip.lines])].join('\n');
+            ? JSON.stringify(
+                  { ...reportJson(args.drills, rows), skipCells: skip?.json ?? null, eliteSkill: skill },
+                  null,
+                  2,
+              )
+            : [
+                  ...formatTable(args.drills, rows),
+                  ...(skip === null ? [] : ['', ...skip.lines]),
+                  ...(skill === null ? [] : ['', ...eliteSkillLines(skill, args.bar)]),
+              ].join('\n');
         print(table);
         if (args.out !== null) {
             writeFileSync(args.out, `${table}\n`);

@@ -9,6 +9,23 @@ describe('vite config', () => {
         expect(config.preview?.open).toBe(false);
     });
 
+    it('sends the cross-origin isolation headers from the dev server and the preview', () => {
+        const config =
+            typeof viteConfig === 'function' ? viteConfig({ command: 'serve', mode: 'development' }) : viteConfig;
+        const expected = {
+            'Cross-Origin-Opener-Policy': 'same-origin',
+            'Cross-Origin-Embedder-Policy': 'require-corp',
+        };
+        expect(config.server?.headers).toEqual(expected);
+        expect(config.preview?.headers).toEqual(expected);
+    });
+
+    it('ships the same two headers for static files in public/_headers', () => {
+        const headers = readFileSync('public/_headers', 'utf8');
+        expect(headers).toMatch(/^\/\*\n\s+Cross-Origin-Opener-Policy: same-origin$/m);
+        expect(headers).toMatch(/^\s+Cross-Origin-Embedder-Policy: require-corp$/m);
+    });
+
     it('starts the browser smoke preview with the browser closed', () => {
         const script = readFileSync('scripts/browser-smoke.sh', 'utf8');
         const preview = script.split('\n').find((line) => line.includes('bin/vite preview'));

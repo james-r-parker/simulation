@@ -18,8 +18,15 @@ import { familyMetrics } from './scene-families.js';
 import { diseaseMetrics } from './scene-disease.js';
 import { competenceMetrics } from './scene-competence.js';
 import { guardMetrics, summerMetrics } from './scene-guards.js';
+import { guildMetrics } from './scene-guilds.js';
+import { lapseMetrics } from './scene-chase-lapse.js';
+import { packLiftMetrics } from './scene-pack-lift.js';
+import { kinematicsMetrics } from './scene-kinematics.js';
 import { kinProximityMetrics } from './scene-kin-proximity.js';
 import { hunterMetrics } from './scene-hunters.js';
+import { carcassLossMetrics } from './scene-carcass-loss.js';
+import { budgetMetrics } from './scene-recruit-budget.js';
+import { recruitMetrics } from './scene-recruit.js';
 import { matchedMetrics } from './scene-matched.js';
 import { patchMetrics } from './scene-patch.js';
 import { rewardMetrics } from './metrics-reward.js';
@@ -33,6 +40,9 @@ import { refugeOutcomeMetrics } from './scene-refuge-outcome.js';
 import { terrainMetrics } from './scene-terrain.js';
 import { styleMetrics } from './style.js';
 import { herdMetrics } from './scene-herd-metrics.js';
+import { sprintMetrics } from './scene-sprint.js';
+import { stillnessMetrics } from './scene-stillness.js';
+import { scentMetrics } from './scene-scent.js';
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick
@@ -45,6 +55,7 @@ export function sceneMetrics(observer, world) {
         ...floraMetrics(s.flora),
         ...patchMetrics(s.patch),
         ...approachMetrics(s.approach),
+        ...lapseMetrics(s.approach.lapse, s.approach.tally),
         ...terrainMetrics(s.terrain),
         ...refugeMetrics(s.refuge),
         ...reachMetrics(s.reach),
@@ -61,10 +72,16 @@ export function sceneMetrics(observer, world) {
         ...herdMetrics(s.herd, s.carcass, observer),
         ...diseaseMetrics(s.disease),
         ...hunterMetrics(s.hunters, world),
+        ...recruitMetrics(s.recruit, world),
+        ...budgetMetrics(s.budget),
+        ...carcassLossMetrics(s.carcass.loss, world, s.carcass.eaten),
         ...competenceMetrics(s.competence, world),
         ...matchedMetrics(s.matched),
+        ...kinematicsMetrics(s.kinematics, s.approach.tally),
+        ...packLiftMetrics(s.packLift),
         ...guardMetrics(s.guards),
         ...summerMetrics(s.guards),
+        ...guildMetrics(s.guilds),
         ...capacityMetrics(s.capacity),
         ...edgeMetrics(s.edge),
         ...eatMetrics(s.eat),
@@ -74,5 +91,8 @@ export function sceneMetrics(observer, world) {
         ...rewardMetrics(observer, world),
         ...biteMetrics(s.bite),
         ...biteLifeMetrics(s.biteLife, world),
+        ...sprintMetrics(s.sprint),
+        ...stillnessMetrics(s.stillness),
+        ...scentMetrics(s.scent, s.approach.tally),
     };
 }

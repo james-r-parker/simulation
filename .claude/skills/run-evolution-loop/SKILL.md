@@ -83,6 +83,7 @@ Write the prediction first. A prediction written after the result is not a predi
   policy options yet.
 - `bench.*` metrics: `npm run bench` on an otherwise idle machine; compare with `bench/baseline.json`.
 - Do not run long evals while the user is using the machine for something else - ask first.
+- A change to the training ladder or the trainer is judged by `npm run train:compare` (or `npm run train:screen`) on 16 matched seed offsets, not by an eval of one archive. The nightly `npm run train:tune` lane proposes and screens trainer changes (docs/designs/training-loop.md, Tuning lane); its finalists still need the 64-seed keep rule before adoption.
 
 ## 3. Check the eval
 

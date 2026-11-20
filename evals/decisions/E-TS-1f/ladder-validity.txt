@@ -1,0 +1,5 @@
+stage         condition                                     memoryless   input-reader kin-sparing  oracle       random-fails  level
+hunt-weak     drill.prey-weak.edgeLow                       pass         pass         pass         pass         true          memoryless
+hunt-mid      drill.prey-mid.edgeLow                        pass         pass         pass         pass         true          memoryless
+hunt          drill.prey-ahead.winShareOverReference        pass         pass         pass         pass         true          memoryless
+hunt          drill.prey-ahead.winShareLow                  pass         pass         pass         pass         true          memoryless

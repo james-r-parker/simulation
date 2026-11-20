@@ -3,9 +3,9 @@
 // alive prey:
 //
 // - `eval.edge_split_blocked_share.*` (watch, lower): of the mature, rested, not-pregnant prey, the share whose first
-//   closed split gate is `seen` (`mateScarce` is false), `clonal` (`splitClonalMax`), `energy` (`splitMinBySpec`), `merit`
+//   closed split gate is `seen` (`mateScarce` is false), `energy` (`splitMinBySpec`), `merit`
 //   (`splitDeliberateMin`, `splitDeliberateShareMin`), `proof` (`splitBraked`) or `other` (`splitMaxPerLife`,
-//   `birthBudgetSpent`, `territoryAllows`), tested in that order. The six shares sum to the blocked share; the rest could split.
+//   `birthBudgetSpent`, `territoryAllows`), tested in that order. The five shares sum to the blocked share; the rest could split.
 //
 // Each share pools the prey over the edge checkpoints. The read-only predicates run once per prey; the scratch list of
 // prey is allocated with the scene. The scene writes only itself, so no hash can move.
@@ -17,7 +17,7 @@ import { territoryAllows } from '../sim/territory.js';
 import { none, ok } from './metrics-stats.js';
 
 /** The split gates in the order a prey is attributed to the first that holds it. */
-export const GATES = Object.freeze(['seen', 'clonal', 'energy', 'merit', 'proof', 'other']);
+export const GATES = Object.freeze(['seen', 'energy', 'merit', 'proof', 'other']);
 
 const NO_CHECKPOINT = 'no edge checkpoint (a 1000-tick checkpoint after burn-in with 1 to 99 prey)';
 
@@ -30,7 +30,7 @@ export function createEdgeGates(limit) {
         prey: new Int32Array(limit),
         checkpoints: 0,
         eligible: 0,
-        held: { seen: 0, clonal: 0, energy: 0, merit: 0, proof: 0, other: 0 },
+        held: { seen: 0, energy: 0, merit: 0, proof: 0, other: 0 },
     };
 }
 
@@ -64,14 +64,11 @@ function otherHolds(world, slot) {
  * The first gate that holds a mature, rested, not-pregnant prey from splitting.
  * @param {Record<string, any>} world the world
  * @param {number} slot the prey
- * @returns {'seen' | 'clonal' | 'energy' | 'merit' | 'proof' | 'other' | null} the gate, or null when none holds it
+ * @returns {'seen' | 'energy' | 'merit' | 'proof' | 'other' | null} the gate, or null when none holds it
  */
 export function firstClosedGate(world, slot) {
     if (!mateScarce(world, slot)) {
         return 'seen';
-    }
-    if (world.clonalDepth[slot] >= world.config.splitClonalMax) {
-        return 'clonal';
     }
     if (world.energy[slot] <= world.splitMinBySpec[world.spec[slot]]) {
         return 'energy';
@@ -139,7 +136,7 @@ export function sampleEdgeGates(gates, world) {
 
 /**
  * @param {Record<string, any>} gates the gate scene
- * @returns {import('./metrics-stats.js').MetricRecord} the six blocked shares, null with a reason when no edge
+ * @returns {import('./metrics-stats.js').MetricRecord} the five blocked shares, null with a reason when no edge
  *   checkpoint was sampled (or no eligible prey stood in one)
  */
 export function edgeGateMetrics(gates) {
@@ -149,7 +146,6 @@ export function edgeGateMetrics(gates) {
         !sampled ? none(NO_CHECKPOINT) : whole === 0 ? none(reason) : ok(count / whole);
     return {
         'eval.edge_split_blocked_share.seen': share(gates.held.seen, gates.eligible, noPrey),
-        'eval.edge_split_blocked_share.clonal': share(gates.held.clonal, gates.eligible, noPrey),
         'eval.edge_split_blocked_share.energy': share(gates.held.energy, gates.eligible, noPrey),
         'eval.edge_split_blocked_share.merit': share(gates.held.merit, gates.eligible, noPrey),
         'eval.edge_split_blocked_share.proof': share(gates.held.proof, gates.eligible, noPrey),

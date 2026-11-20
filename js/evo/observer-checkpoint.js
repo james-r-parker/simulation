@@ -10,6 +10,7 @@ import { sampleWatchability } from './metrics-watchability.js';
 import { sampleBrainCheckpoint } from './metrics-brain.js';
 import { sampleInstinct } from './metrics-instinct.js';
 import { BURN_IN_TICKS } from './observer-events.js';
+import { foodEnergyTotal } from './metrics-food-early.js';
 
 /** Alive agents are counted per lineage; the dominant lineage must lead by at least this many agents. */
 export const DOMINANCE_MARGIN = 2;
@@ -166,5 +167,7 @@ export function checkpoint(observer, world) {
     sampleInstinct(observer.instinct, observer, world);
     log.specMask[row] = specMask;
     log.archiveAgents[row] = archiveAgents;
+    log.foodEnergyTotal[row] = foodEnergyTotal(observer);
+    log.agentTicksTotal[row] = observer.agentTicks;
     observer.checkpointCount = row + 1;
 }

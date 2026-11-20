@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { DynamicDrawUsage } from 'three/webgpu';
 import {
     createInstances,
     instancedMesh,
+    takeRows,
     uploadInstances,
     vertexBufferCount,
     VEC4,
@@ -44,8 +46,51 @@ describe('uploadInstances', () => {
         expect(inst.geometry.instanceCount).toBe(0);
     });
 
+    it('uploads only on a frame that writes: the buffer is not dynamic, so three goes by its version', () => {
+        // three re-sends a DynamicDrawUsage buffer on every render, whole once its ranges are spent, so an idle or
+        // empty layer cost a full upload each frame (crisp-renderer T24: about 4 MB a frame at 1000 agents)
+        const inst = createInstances(4, ['iPose']);
+        expect(inst.buffer.usage).not.toBe(DynamicDrawUsage);
+        const before = inst.buffer.version;
+        uploadInstances(inst, 0);
+        expect(inst.buffer.version).toBe(before);
+        uploadInstances(inst, 1);
+        expect(inst.buffer.version).toBe(before + 1);
+    });
+
     it('builds a mesh that is never culled', () => {
         const inst = createInstances(1, ['iPose']);
         expect(instancedMesh(inst, null).frustumCulled).toBe(false);
+    });
+
+    it('hides its mesh while it holds no rows, so three skips the object entirely', () => {
+        const inst = createInstances(2, ['iPose']);
+        const mesh = instancedMesh(inst, null);
+        uploadInstances(inst, 0);
+        expect(mesh.visible).toBe(false);
+        uploadInstances(inst, 1);
+        expect(mesh.visible).toBe(true);
+        uploadInstances(inst, 0);
+        expect(mesh.visible).toBe(false);
+    });
+});
+
+describe('takeRows', () => {
+    it('copies interleaved rows, marks only them and shows the mesh, as uploadInstances does', () => {
+        const inst = createInstances(4, ['iPose', 'iColor'], {}, { lanes: false });
+        expect(inst.lanes).toEqual([]);
+        const mesh = instancedMesh(inst, null);
+        const rows = Float32Array.from({ length: 32 }, (_, i) => i + 1);
+        takeRows(inst, rows, 2);
+        expect(Array.from(inst.data.slice(0, 16))).toEqual(Array.from(rows.slice(0, 16)));
+        expect(inst.data[16]).toBe(0);
+        expect(inst.geometry.instanceCount).toBe(2);
+        expect(inst.buffer.updateRanges).toEqual([{ start: 0, count: 16 }]);
+        expect(mesh.visible).toBe(true);
+        takeRows(inst, rows, 9);
+        expect(inst.geometry.instanceCount).toBe(4);
+        takeRows(inst, rows, 0);
+        expect(inst.geometry.instanceCount).toBe(0);
+        expect(mesh.visible).toBe(false);
     });
 });

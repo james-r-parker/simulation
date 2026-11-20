@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { DEATH_CAUSE, EVENT_TYPE, createEventRing, pushEvent } from '../../js/sim/events.js';
 import { DRILLS } from '../../js/evo/drill-scenarios.js';
-import { createPreyTrace, lostReason, noteTick, traceFields } from '../../js/evo/drill-trace.js';
+import { createPreyTrace, lostReason, noteTick, traceAggregates, traceFields } from '../../js/evo/drill-trace.js';
 import { drillSubject } from '../../js/evo/drill.js';
 import { referenceSubject } from '../../js/evo/memory-probe-references.js';
 
@@ -97,16 +97,17 @@ describe('prey-ahead trace in the drill log', () => {
     /**
      * @param {import('../../js/evo/memory-probe-run.js').Subject} subject a subject
      * @param {number} count trials
+     * @param {Record<string, any>} [config] config overrides for the drill's world
      * @returns {Record<string, any>[]} the DrillTrial records
      */
-    function trialsOf(subject, count) {
+    function trialsOf(subject, count, config = {}) {
         /** @type {Record<string, any>[]} */
         const records = [];
         const log = {
             level: /** @type {const} */ ('debug'),
             log: (/** @type {any} */ _l, /** @type {any} */ _e, /** @type {any} */ f) => records.push(f),
         };
-        drillSubject(preyAhead, subject, { trials: count, log: /** @type {any} */ (log) });
+        drillSubject(preyAhead, subject, { trials: count, config, log: /** @type {any} */ (log) });
         return records;
     }
 
@@ -131,9 +132,28 @@ describe('prey-ahead trace in the drill log', () => {
     });
 
     it('gives the chasing reference a reason only on the trials it lost, and counts its bites', () => {
-        for (const record of trials(referenceSubject('memoryless'))) {
+        // The prey is staged at a share of the predator's view, so these three trials are pinned to the 350 view they
+        // were written for: at the E186 default of 400 the first trial's prey breaks away before the first bite.
+        const view350 = { specialisations: { predator: { visionRange: 350 } } };
+        for (const record of trialsOf(referenceSubject('memoryless'), 3, view350)) {
             expect(record.reason === null).toBe(record.won);
             expect(record.biteTicks).toBeGreaterThan(0);
         }
+    });
+});
+
+describe('traceAggregates', () => {
+    it('counts the trials with jaw ticks and lists the closest approaches, leaving out a null', () => {
+        const records = [
+            { jawTicks: 3, closest: 1.5 },
+            { jawTicks: 0, closest: 4 },
+            { jawTicks: 0, closest: null },
+        ];
+        expect(traceAggregates(records)).toEqual({ jawTrials: 1, closestList: [1.5, 4] });
+    });
+
+    it('returns nothing for trials without a trace', () => {
+        expect(traceAggregates([{ won: true }])).toEqual({});
+        expect(traceAggregates([])).toEqual({});
     });
 });

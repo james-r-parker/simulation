@@ -36,6 +36,8 @@ import {
  * @property {{amp: any, phase: any}} [blob] vec3 harmonics for a `blob` part
  * @property {any} [dim] float the final colour is multiplied by (a lens dims the layer)
  * @property {any} [ringFloor] float the least opacity of a `ring`-bound part (the calls lens raises it)
+ * @property {{angle: any, depth: any, width: any}} [dent] floats: a membrane part's dent (bearing, signed depth, width)
+ * @property {any} [fade] float 0 to 1: how far the whole model has faded out (a dying body)
  */
 
 /**
@@ -109,15 +111,17 @@ function param(value, inputs) {
     return value;
 }
 
-/** Each primitive's distance: `(point, part, param)`, where `param` resolves a number, node or `{in, mul}`. */
+/** Each primitive's distance: `(point, part, param, dent)`, where `param` resolves a number, node or `{in, mul}`. */
 const DISTANCES = Object.freeze({
-    membrane: (/** @type {any} */ p, /** @type {any} */ part, /** @type {any} */ v) =>
+    membrane: (/** @type {any} */ p, /** @type {any} */ part, /** @type {any} */ v, /** @type {any} */ dent) =>
         sdMembrane(p, {
             rx: v(part.rx),
             ry: v(part.ry),
             amp: v(part.amp),
             lobes: part.lobes,
             phase: v(part.phase ?? 0),
+            taper: part.taper ?? 0,
+            dent,
         }),
     wave: (/** @type {any} */ p, /** @type {any} */ part, /** @type {any} */ v) =>
         sdWave(p, {
@@ -150,10 +154,10 @@ function partDistance(p, part, inputs) {
         }
         return sdBlob(p, inputs.blob);
     }
-    const distance = /** @type {Record<string, (p: any, part: any, v: (x: any) => any) => any>} */ (DISTANCES)[
-        part.shape
-    ];
-    return distance(p, part, (x) => param(x, inputs));
+    const distance = /** @type {Record<string, (p: any, part: any, v: (x: any) => any, dent?: any) => any>} */ (
+        DISTANCES
+    )[part.shape];
+    return distance(p, part, (x) => param(x, inputs), inputs.dent);
 }
 
 /** Each bind's move of the point `q` about the part's `pivot`, as `{p, scale}`. */
@@ -207,6 +211,48 @@ function partColor(part, inputs) {
     return vec3(c[0], c[1], c[2]);
 }
 
+/** A line part (`line: true`: lips, flagella, cilia) draws at most this many rim widths wide in device px. */
+export const LINE_RIM_SCALE = 1.35;
+
+/**
+ * The half width a line part draws at: its own model width while that is thin on screen, capped at `LINE_RIM_SCALE`
+ * rims once the zoom would draw it heavier than the body's outline. The shader applies the same rule to nodes.
+ * @param {number} half the part's half width, model units
+ * @param {number} px one device pixel, model units
+ * @param {number} rimPx the rim width, device px
+ * @returns {number} the half width drawn, model units
+ */
+export function lineHalfWidth(half, px, rimPx) {
+    return Math.min(half, (LINE_RIM_SCALE * rimPx * px) / 2);
+}
+
+/**
+ * Moves a line part's stroke edge in to the capped half width (`lineHalfWidth`): every stroke primitive subtracts its
+ * half width from the centreline distance, so adding it back and taking the capped one gives the capped stroke.
+ * @param {any} d the part's distance, already at the bound scale
+ * @param {{half: any, px: any, rimPx: any}} line the half width at the bound scale, the pixel size and the rim width
+ *   (a number or a uniform node)
+ * @returns {any} the distance to the capped stroke
+ */
+function lineDistance(d, { half, px, rimPx }) {
+    // `rimPx` is a number or a uniform node (the agent layer's palette-driven rim), so it multiplies in the graph
+    return d.add(half).sub(min(half, px.mul(LINE_RIM_SCALE / 2).mul(rimPx)));
+}
+
+/**
+ * @param {{p: any, scale: any}} bound the bound point and its scale
+ * @param {Record<string, any>} part the part
+ * @param {{inputs: ModelInputs, px: any, rimPx: any}} at the inputs, the pixel size and the rim width (number or node)
+ * @returns {any} the part's distance at the bound scale, a line part's stroke capped (`lineDistance`)
+ */
+function scaledDistance(bound, part, { inputs, px, rimPx }) {
+    const d = partDistance(bound.p, part, inputs).mul(bound.scale);
+    if (part.line !== true) {
+        return d;
+    }
+    return lineDistance(d, { half: float(param(part.width, inputs)).mul(0.5).mul(bound.scale), px, rimPx });
+}
+
 /**
  * Paints one layer over the accumulated colour: `rgb` mixes towards the layer's colour by its alpha, `a` gathers.
  * @param {{rgb: any, a: any}} acc the accumulated colour
@@ -226,7 +272,7 @@ function over(acc, color, alpha) {
  */
 function paintPart(acc, part, { p, px, rig, inputs, look }) {
     const bound = bindPoint(p, part, rig);
-    const d = partDistance(bound.p, part, inputs).mul(bound.scale);
+    const d = scaledDistance(bound, part, { inputs, px, rimPx: look.rimPx });
     let gate = part.gate === undefined ? float(1) : inputs.values?.[part.gate];
     if (gate === undefined) {
         throw new Error(`modelMaterial: no gate input named ${part.gate}`);
@@ -272,7 +318,7 @@ export function modelMaterial(model, { inputs, look, flash = 0.6 }) {
     }
     const lit = mix(acc.rgb, vec3(1, 1, 1), min(rig.flash.mul(flash), 1));
     material.colorNode = inputs.dim === undefined ? lit : lit.mul(inputs.dim);
-    material.opacityNode = acc.a;
+    material.opacityNode = inputs.fade === undefined ? acc.a : acc.a.mul(float(1).sub(inputs.fade));
     material.alphaTest = 0.002;
     material.premultipliedAlpha = true;
     return material;

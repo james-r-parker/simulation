@@ -18,9 +18,11 @@ import { popcount16 } from '../sim/merit-state.js';
 import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { CLOSING_BITS, CLOSING_MIN, INTENT_WINDOW } from './observer-intent-state.js';
+import { CHASE_OUTCOME, chasesEnded, createChaseTally, tallyChase } from './chase-outcome.js';
+import { notePreySight, scentChaseFlags } from './scene-scent.js';
 import { BITTEN_THIS_TICK } from './observer-intent-episode.js';
 import { findAlive } from './observer-intent.js';
-import { CHASE_OUTCOME } from './scene-competence.js';
+import { createLapseScene, lapseFlags, noteChaseLength, noteClosingProximity } from './scene-chase-lapse.js';
 
 const IDLE = 0;
 const OPEN = 1;
@@ -28,21 +30,28 @@ const BITTEN = 2;
 const CLOSING_MASK = (1 << CLOSING_BITS) - 1;
 
 /**
- * @typedef {(world: Record<string, any>, chase: {slot: number, outcome: number, openedTick: number, hungry: boolean, energy: number}) => void} ChaseHook
- *   called once for each counted chase with the hunter's slot, its `CHASE_OUTCOME`, the tick the chase opened, whether the
+ * @typedef {(world: Record<string, any>, chase: {slot: number, outcome: number, flags: number, openedTick: number, hungry: boolean, energy: number}) => void} ChaseHook
+ *   called once for each counted chase with the hunter's slot, its `CHASE_OUTCOME`, its `CHASE_FLAG` bits (a hook may add its own), the tick the chase opened, whether the
  *   hunter could eat (`canEatNow`) at that tick and its energy then
  */
 
 /**
- * @param {Readonly<Record<string, any>>} config the world's config
- * @param {ChaseHook | null} [onChase] the hook told of each counted chase
- * @returns {Record<string, any>} an empty scene: per slot the phase, last closing tick, tick the chase opened, victim and
- *   bite tick, and the counts of committed, aborted, caught and escaped approaches
+ * @typedef {(world: Record<string, any>, biter: number) => void} BiteHook called with the slot of the alive biter of each
+ *   bite landed on a live victim this tick, whatever the biter's approach
  */
-export function createApproachScene(config, onChase = null) {
+
+/**
+ * @param {Readonly<Record<string, any>>} config the world's config
+ * @param {{onChase?: ChaseHook | null, onBite?: BiteHook | null}} [hooks] the hook told of each counted chase, and the hook told
+ *   of each bite by an alive biter
+ * @returns {Record<string, any>} an empty scene: per slot the phase, last closing tick, tick the chase opened, victim and
+ *   bite tick, the count of committed approaches and the tally of resolved chases (`chase-outcome.js`)
+ */
+export function createApproachScene(config, { onChase = null, onBite = null } = {}) {
     const n = config.maxAgents;
     return {
         onChase,
+        onBite,
         phase: new Uint8Array(n),
         lastClosing: new Float64Array(n),
         openedTick: new Float64Array(n),
@@ -52,9 +61,8 @@ export function createApproachScene(config, onChase = null) {
         biteTick: new Float64Array(n),
         resolvedTick: new Float64Array(n).fill(-1),
         committed: 0,
-        aborted: 0,
-        caught: 0,
-        escaped: 0,
+        tally: createChaseTally(),
+        lapse: createLapseScene(config),
     };
 }
 
@@ -94,30 +102,32 @@ function opensNow(scene, prey, slot, tick) {
     return prey.seen[slot] > scene.resolvedTick[slot] && closingNow(prey, slot, tick);
 }
 
-const OUTCOME_COUNTER = ['caught', 'escaped', 'aborted'];
-
 /**
- * Counts a resolved chase when it resolves at or after burn-in, and hands it to the hook, if the scene has one.
+ * Records a resolved chase when it resolves at or after burn-in: the hook, if the scene has one, may add flags to it, then it
+ * joins the tally.
  * @param {Record<string, any>} scene the approach scene
  * @param {Record<string, any>} world the world
- * @param {{slot: number, outcome: number}} chase the hunter's slot and the chase's `CHASE_OUTCOME`
+ * @param {{slot: number, outcome: number, flags?: number}} chase the hunter's slot, the chase's `CHASE_OUTCOME` and the flags it starts with
  * @returns {void}
  */
-function resolved(scene, world, { slot, outcome }) {
+function resolved(scene, world, { slot, outcome, flags = 0 }) {
     scene.resolvedTick[slot] = world.tick;
     if (world.tick < BURN_IN_TICKS) {
         return;
     }
-    scene[OUTCOME_COUNTER[outcome]] += 1;
+    const chase = {
+        slot,
+        outcome,
+        flags,
+        openedTick: scene.openedTick[slot],
+        hungry: scene.openedHungry[slot] === 1,
+        energy: scene.openedEnergy[slot],
+    };
     if (scene.onChase !== null) {
-        scene.onChase(world, {
-            slot,
-            outcome,
-            openedTick: scene.openedTick[slot],
-            hungry: scene.openedHungry[slot] === 1,
-            energy: scene.openedEnergy[slot],
-        });
+        scene.onChase(world, chase);
     }
+    tallyChase(scene.tally, chase);
+    noteChaseLength(scene.lapse, world.tick - chase.openedTick);
 }
 
 /**
@@ -139,7 +149,11 @@ export function noteApproachKill(scene, observer, world, { killerId, victimId })
     } else if (scene.victim[killer] !== victimId) {
         return;
     }
-    resolved(scene, world, { slot: killer, outcome: CHASE_OUTCOME.CAUGHT });
+    resolved(scene, world, {
+        slot: killer,
+        outcome: CHASE_OUTCOME.CAUGHT,
+        flags: scentChaseFlags(observer.scenes?.scent, killer),
+    });
     scene.phase[killer] = IDLE;
 }
 
@@ -157,7 +171,13 @@ function noteBites(scene, observer, world) {
             continue;
         }
         const biter = findAlive(world, observer.slotOf, world.lastBiter[victim]);
-        if (biter >= 0 && scene.phase[biter] === OPEN) {
+        if (biter < 0) {
+            continue;
+        }
+        if (scene.onBite !== null) {
+            scene.onBite(world, biter);
+        }
+        if (scene.phase[biter] === OPEN) {
             scene.phase[biter] = BITTEN;
             scene.victim[biter] = world.genomeId[victim];
             scene.biteTick[biter] = world.tick;
@@ -174,32 +194,85 @@ function noteBites(scene, observer, world) {
  * @param {number} slot an alive hunter slot
  * @returns {void}
  */
-function advance(scene, observer, world, slot) {
+/** @param {Record<string, any>} observer @param {Record<string, any>} scene @param {Record<string, any>} world @param {number} slot */
+function noteVisiblePrey(observer, scene, world, slot) {
+    const scent = observer.scenes?.scent;
+    const sighted = observer.intent.prey.seen[slot] === world.tick;
+    if (scent !== undefined && sighted && scene.phase[slot] !== IDLE) {
+        notePreySight(scent, world, slot);
+    }
+}
+
+/** @param {Record<string, any>} scene @param {Record<string, any>} observer @param {Record<string, any>} world @param {number} slot */
+function advanceBitten(scene, observer, world, slot) {
+    const scent = observer.scenes?.scent;
+    if (scene.phase[slot] !== BITTEN || world.tick - scene.biteTick[slot] < INTENT_WINDOW) {
+        return scene.phase[slot] === BITTEN;
+    }
+    const lives = findAlive(world, observer.slotOf, scene.victim[slot]) >= 0;
+    scene.resolvedTick[slot] = world.tick;
+    if (lives) {
+        resolved(scene, world, {
+            slot,
+            outcome: CHASE_OUTCOME.ESCAPED,
+            flags: scentChaseFlags(scent, slot),
+        });
+    }
+    scene.phase[slot] = IDLE;
+    return true;
+}
+
+/** @param {Record<string, any>} scene @param {Record<string, any>} observer @param {Record<string, any>} world @param {number} slot */
+function advanceClosing(scene, observer, world, slot) {
     const { tick } = world;
-    if (scene.phase[slot] === BITTEN) {
-        if (tick - scene.biteTick[slot] >= INTENT_WINDOW) {
-            const lives = findAlive(world, observer.slotOf, scene.victim[slot]) >= 0;
-            scene.resolvedTick[slot] = tick;
-            if (lives) {
-                resolved(scene, world, { slot, outcome: CHASE_OUTCOME.ESCAPED });
+    const scent = observer.scenes?.scent;
+    const sighted = observer.intent.prey.seen[slot] === tick;
+    const prey = observer.intent.prey;
+    const closing = scene.phase[slot] === OPEN ? closingNow(prey, slot, tick) : opensNow(scene, prey, slot, tick);
+    if (!closing) {
+        return false;
+    }
+    if (scene.phase[slot] !== OPEN) {
+        if (scent !== undefined) {
+            scent.reacquired[slot] = 0;
+            scent.lastSight[slot] = -1;
+            if (sighted) {
+                notePreySight(scent, world, slot);
             }
-            scene.phase[slot] = IDLE;
         }
-    } else if (
-        scene.phase[slot] === OPEN
-            ? closingNow(observer.intent.prey, slot, tick)
-            : opensNow(scene, observer.intent.prey, slot, tick)
-    ) {
-        if (scene.phase[slot] !== OPEN) {
-            scene.openedTick[slot] = tick;
-            scene.openedHungry[slot] = canEatNow(world, slot) ? 1 : 0;
-            scene.openedEnergy[slot] = world.energy[slot];
-        }
-        scene.phase[slot] = OPEN;
-        scene.lastClosing[slot] = tick;
-    } else if (scene.phase[slot] === OPEN && tick - scene.lastClosing[slot] > INTENT_WINDOW) {
-        resolved(scene, world, { slot, outcome: CHASE_OUTCOME.GAVE_UP });
-        scene.phase[slot] = IDLE;
+        scene.openedTick[slot] = tick;
+        scene.openedHungry[slot] = canEatNow(world, slot) ? 1 : 0;
+        scene.openedEnergy[slot] = world.energy[slot];
+    }
+    scene.phase[slot] = OPEN;
+    scene.lastClosing[slot] = tick;
+    noteClosingProximity(scene.lapse, prey, slot);
+    return true;
+}
+
+/** @param {Record<string, any>} scene @param {Record<string, any>} observer @param {Record<string, any>} world @param {number} slot */
+function advanceLapse(scene, observer, world, slot) {
+    const scent = observer.scenes?.scent;
+    if (scene.phase[slot] !== OPEN || world.tick - scene.lastClosing[slot] <= INTENT_WINDOW) {
+        return;
+    }
+    const flags = lapseFlags(scene.lapse, observer.intent.prey, { slot, tick: world.tick });
+    resolved(scene, world, {
+        slot,
+        outcome: CHASE_OUTCOME.GAVE_UP,
+        flags: flags | scentChaseFlags(scent, slot),
+    });
+    scene.phase[slot] = IDLE;
+}
+
+/** @param {Record<string, any>} scene @param {Record<string, any>} observer @param {Record<string, any>} world @param {number} slot */
+function advance(scene, observer, world, slot) {
+    noteVisiblePrey(observer, scene, world, slot);
+    if (advanceBitten(scene, observer, world, slot)) {
+        return;
+    }
+    if (!advanceClosing(scene, observer, world, slot)) {
+        advanceLapse(scene, observer, world, slot);
     }
 }
 
@@ -226,14 +299,16 @@ export function trackApproaches(scene, observer, world) {
  * @returns {import('./metrics-stats.js').MetricRecord} the abort rate and the three chase shares
  */
 export function approachMetrics(scene) {
-    const ended = scene.committed + scene.aborted;
-    const chases = scene.caught + scene.escaped + scene.aborted;
+    const { tally } = scene;
+    const aborted = chasesEnded(tally, CHASE_OUTCOME.GAVE_UP);
+    const ended = scene.committed + aborted;
+    const chases = tally.total;
     const noApproach = none('no hunter approach ended after burn-in');
     const noChase = none('no chase resolved after burn-in');
     return {
-        'eval.hunt_abort_rate': ended > 0 ? ok(scene.aborted / ended) : noApproach,
-        'eval.chase_catch_share': chases > 0 ? ok(scene.caught / chases) : noChase,
-        'eval.chase_escape_share': chases > 0 ? ok(scene.escaped / chases) : noChase,
-        'eval.chase_giveup_share': chases > 0 ? ok(scene.aborted / chases) : noChase,
+        'eval.hunt_abort_rate': ended > 0 ? ok(aborted / ended) : noApproach,
+        'eval.chase_catch_share': chases > 0 ? ok(chasesEnded(tally, CHASE_OUTCOME.CAUGHT) / chases) : noChase,
+        'eval.chase_escape_share': chases > 0 ? ok(chasesEnded(tally, CHASE_OUTCOME.ESCAPED) / chases) : noChase,
+        'eval.chase_giveup_share': chases > 0 ? ok(aborted / chases) : noChase,
     };
 }

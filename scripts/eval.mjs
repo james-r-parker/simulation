@@ -1,20 +1,20 @@
 // Eval runner: runs a policy on fixed seeds across a worker pool and writes a report (`npm run eval`).
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { availableParallelism, cpus } from 'node:os';
+import { cpus } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildReport, seedFields, seedlessConfig, validateReport } from '../js/evo/report.js';
 import { getPolicy, LIVE_POLICY } from '../js/evo/policies/index.js';
 import { validatePolicyOptions } from '../js/evo/policy-options.js';
 import { configHash, createConfig } from '../js/sim/config.js';
-import { championsDirFor, writeChampionFiles } from './lib/champion-files.mjs';
+import { championsDirFor, readChampionFiles, writeChampionFiles } from './lib/champion-files.mjs';
 import { intValue, parseFlags } from './lib/cli-args.mjs';
 import { cpuUse } from './lib/cpu-use.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
 import { createMetrics } from './lib/otel.mjs';
 import { resolvePolicyFlag, runConfigRecord } from './lib/run-config.mjs';
-import { runPool } from './lib/worker-pool.mjs';
+import { defaultWorkers, runPool } from './lib/worker-pool.mjs';
 
 const SEEDS_URL = new URL('../evals/seeds.json', import.meta.url);
 const WORKER_URL = new URL('./eval-worker.mjs', import.meta.url);
@@ -179,7 +179,7 @@ function failureRecord(error) {
  * @property {Record<string, any>} [configOverrides] default `{}`
  * @property {Record<string, any>} [policyOptions] options for the policy (`validatePolicyOptions`), default `{}`
  * @property {string | null} [out] default `evals/results/<policy>-<sha>-<n>x<t>.json`
- * @property {number | null} [workers] default `os.availableParallelism()`, capped at the seed count
+ * @property {number | null} [workers] default `defaultWorkers()` (`scripts/lib/worker-pool.mjs`), capped at the seed count
  * @property {number | null} [traceInterval] ticks between the trace's population samples, default 1000
  * @property {number} [saveChampions] how many of each seed's best genomes to write as champion files, default 0 (none)
  * @property {string} [logDir] default `.sim/logs`
@@ -309,7 +309,7 @@ export async function runEval(options) {
     const jsonl = createJsonlSink(logPath);
     const metrics = options.metrics ?? (await createMetrics());
     const print = options.print ?? (() => {});
-    const workers = options.workers ?? Math.min(availableParallelism(), seeds.length);
+    const workers = options.workers ?? Math.min(defaultWorkers(), seeds.length);
     logStart(jsonl, { policyName, policyOptions, seeds, ticks, workers, hash: configHash(seedlessConfig(config)) });
     const cpu = startCpuReport(print);
     const started = performance.now();
@@ -351,6 +351,9 @@ export async function main(argv, { logDir } = {}) {
     const policyOptions = args.policyOptions === null ? {} : JSON.parse(readFileSync(args.policyOptions, 'utf8'));
     validatePolicyOptions(args.policy, policyOptions);
     try {
+        if (policyOptions.championsDir !== undefined) {
+            readChampionFiles(policyOptions.championsDir);
+        }
         await runEval({ ...args, configOverrides, policyOptions, logDir, print: (line) => console.log(line) });
         return 0;
     } catch (error) {

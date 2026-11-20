@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BORN_CAUSE, DEATH_CAUSE, EVENT_TYPE, pushEvent } from '../../js/sim/events.js';
 import { BURN_IN_TICKS } from '../../js/evo/observer-events.js';
 import { observe } from '../../js/evo/observer.js';
+import { addBlob } from '../sim/helpers/life-world.js';
 import { addBorn, nextTick, observed, pushBorn, pushDied } from './helpers/observer-world.js';
 
 describe('observer events', () => {
@@ -207,5 +208,68 @@ describe('observer events', () => {
         nextTick(world, 1);
         pushEvent(world.events, EVENT_TYPE.BIRTH_BLOCKED, 0);
         expect(() => observe(observer, world)).not.toThrow();
+    });
+
+    it('feeds post-burn-in mate and split children to the pools, and logs a mature child death', () => {
+        const T0 = BURN_IN_TICKS + 10;
+        const { world, observer } = observed({}, { runTicks: 10 * BURN_IN_TICKS });
+        const mother = addBlob(world, { genomeId: 1 });
+        const father = addBlob(world, { genomeId: 2 });
+        world.tick = T0;
+        pushBorn(world, { slot: mother, genomeId: 1 });
+        pushBorn(world, { slot: father, genomeId: 2 });
+        observe(observer, world);
+        nextTick(world, T0 + 1);
+        const mated = addBlob(world, { genomeId: 3 });
+        const split = addBlob(world, { genomeId: 4 });
+        pushBorn(world, { slot: mated, genomeId: 3, parentA: 1, parentB: 2, cause: BORN_CAUSE.MATE });
+        pushBorn(world, { slot: split, genomeId: 4, parentA: 1, parentB: 1, cause: BORN_CAUSE.SPLIT });
+        observe(observer, world);
+        expect(observer.eligibleChild[mated]).toBe(1);
+        expect(observer.eligibleChild[split]).toBe(1);
+        expect(observer.generation[mated]).toBe(1);
+        nextTick(world, T0 + 2);
+        pushDied(world, { slot: mated, genomeId: 3, ageTicks: world.config.maturityTicks + 5 });
+        observe(observer, world);
+        expect(observer.deathCount).toBe(1);
+        expect(observer.slotOf.has(3)).toBe(false);
+        nextTick(world, T0 + 3);
+        pushDied(world, { slot: split, genomeId: 4, ageTicks: 5 });
+        observe(observer, world);
+        expect(observer.deathCount).toBe(2);
+    });
+
+    it('keeps a newborn that died in its own tick out of the merit pool after burn-in', () => {
+        const { world, observer } = observed();
+        world.tick = BURN_IN_TICKS + 2;
+        pushBorn(world, { slot: 3, genomeId: 9, tick: BURN_IN_TICKS + 1 });
+        pushDied(world, { slot: 3, genomeId: 9, ageTicks: world.config.maturityTicks + 1 });
+        observe(observer, world);
+        expect(observer.deathCount).toBe(1);
+        expect(observer.slotOf.has(9)).toBe(false);
+    });
+
+    it('marks a newborn drawn from the archive as archive lineage', () => {
+        const { world, observer } = observed();
+        observer.archiveDraw = (/** @type {number} */ slot) => slot === 1;
+        pushBorn(world, { slot: 1, genomeId: 5 });
+        pushBorn(world, { slot: 2, genomeId: 6 });
+        observe(observer, world);
+        expect([observer.archiveLineage[1], observer.archiveLineage[2]]).toEqual([1, 0]);
+    });
+
+    it('tracks births and deaths in a lean observer, including a newborn that died in its tick', () => {
+        const { world, observer } = observed({}, /** @type {any} */ ({ lean: true }));
+        pushBorn(world, { slot: 0, genomeId: 1, cause: BORN_CAUSE.MATE });
+        observe(observer, world);
+        nextTick(world, 1);
+        pushBorn(world, { slot: 0, genomeId: 2 });
+        pushDied(world, { slot: 0, genomeId: 1, ageTicks: 7 });
+        pushBorn(world, { slot: 1, genomeId: 3 });
+        pushDied(world, { slot: 1, genomeId: 3 });
+        observe(observer, world);
+        expect(observer.deathCount).toBe(2);
+        expect(observer.genomeId[0]).toBe(2);
+        expect(observer.slotOf.has(3)).toBe(false);
     });
 });

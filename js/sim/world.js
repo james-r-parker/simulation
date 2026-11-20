@@ -10,6 +10,7 @@ import { detCos, detSin } from './det-math.js';
 import { allocDiseaseState, diseaseSpecs } from './disease-state.js';
 import { allocCoverState } from './cover.js';
 import { killSpecs } from './kills.js';
+import { allocCarcassLoss } from './carcass.js';
 import { allocLedgerState, ledgerSpecs } from './hunter-ledger.js';
 import { mateRankSpecs } from './mate-rank.js';
 import { rewardSpecs } from './reward.js';
@@ -18,6 +19,7 @@ import { splitGateSpecs } from './split-gate.js';
 import { MERIT_TALLY_SIZE, createMeritViews, meritSpecs, resetMeritSlot } from './merit-state.js';
 import { LOCAL_STRIDE } from './ray-gather.js';
 import { rayTables } from './ray-pool.js';
+import { rayReachTable } from './ray-reach.js';
 import { terrainRockCount } from './terrain.js';
 import { createObserverScratch } from './observer-scratch.js';
 import { attachWasm } from './wasm-arena.js';
@@ -137,6 +139,7 @@ function allocAgentArrays(world, layout) {
     );
     createMeritViews(world);
     allocLedgerState(world);
+    allocCarcassLoss(world);
     allocDiseaseState(world);
     world.inputActivity = createInputActivity(layout);
     allocRows(world, [[Float32Array, 'hidden', layout.hidden]], n + 1);
@@ -340,6 +343,7 @@ export function allocateWorld(config) {
         meritTally: new Float64Array(MERIT_TALLY_SIZE),
         ...rayTables(config.rayCount),
         ...specTables(config),
+        ...rayReachTable(config),
         biteCos: new Float64Array([detCos(config.biteArc)]),
         antennaCos: new Float64Array([detCos(config.antennaAngle)]),
         antennaSin: new Float64Array([detSin(config.antennaAngle)]),

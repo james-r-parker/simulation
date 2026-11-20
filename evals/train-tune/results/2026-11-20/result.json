@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-20",
+  "ladderHash": "32041bc8",
+  "curriculum": "evals/train-ladder.json",
+  "until": "hunt-mid",
+  "arms": [
+    {
+      "name": "plateauStop-nursery-10",
+      "signature": "stages.nursery.plateauStop=10",
+      "overlay": {
+        "stages": {
+          "nursery": {
+            "plateauStop": 10
+          }
+        }
+      },
+      "tune": {
+        "verdict": "no verdict",
+        "meanDiff": 0,
+        "p": 1
+      },
+      "holdout": null,
+      "finalist": false
+    },
+    {
+      "name": "preyShare-hunt-weak-1",
+      "signature": "stages.hunt-weak.preyShare=1",
+      "overlay": {
+        "stages": {
+          "hunt-weak": {
+            "preyShare": 1
+          }
+        }
+      },
+      "tune": {
+        "verdict": "no verdict",
+        "meanDiff": -0.12443769131116994,
+        "p": 0.375
+      },
+      "holdout": null,
+      "finalist": false
+    }
+  ],
+  "world": null
+}

@@ -10,7 +10,7 @@ import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
  * The most the pair's distance may exceed the summed radii at the end of a tick and still count as touching: contact
  * resolution pushes an overlapping pair just apart, so the touching pair of a bite tick ends at 1.0005 radii, not below 1.
  */
-const TOUCH_GAP = 1.01;
+export const TOUCH_GAP = 1.01;
 
 /**
  * The ordered reasons a hunting trial is lost. The first that holds is the one reported.
@@ -125,5 +125,22 @@ export function traceFields(trace, won) {
         biteJawTicks: trace.biteJawTicks,
         preyDied: trace.preyDied,
         reason: won ? null : lostReason(trace),
+    };
+}
+
+/**
+ * The aggregates a drill cell keeps of its trials' trace fields (docs/designs/training-loop.md, Graded readings).
+ * @param {readonly Record<string, any>[]} records the cell's trial records (`traceFields` for a hunting drill)
+ * @returns {{jawTrials: number, closestList: number[]} | {}} the trials with `jawTicks` above 0 and each trial's `closest`
+ *   (a null left out); nothing when no record carries a trace
+ */
+export function traceAggregates(records) {
+    const traced = records.filter((record) => typeof record.jawTicks === 'number');
+    if (traced.length === 0) {
+        return {};
+    }
+    return {
+        jawTrials: traced.filter((record) => record.jawTicks > 0).length,
+        closestList: traced.flatMap((record) => (typeof record.closest === 'number' ? [record.closest] : [])),
     };
 }

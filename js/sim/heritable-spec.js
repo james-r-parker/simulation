@@ -18,5 +18,9 @@ export function childSpec(world, mother) {
         return spec;
     }
     const other = nextInt(world.rng.mutation, SPEC_COUNT - 1);
-    return other >= spec ? other + 1 : other;
+    const next = other >= spec ? other + 1 : other;
+    if (world.config.specFlipNoHunt && (world.huntBySpec[spec] === 1) !== (world.huntBySpec[next] === 1)) {
+        return spec;
+    }
+    return next;
 }

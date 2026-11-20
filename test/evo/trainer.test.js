@@ -5,6 +5,7 @@ import { snapshotArchive } from '../../js/evo/archive-snapshot.js';
 import {
     TRAINER_DESCRIPTOR,
     TRAINER_N_CAP,
+    createOfferSink,
     createTrainerArchive,
     episodeSeed,
     runEpisode,
@@ -51,5 +52,28 @@ describe('runEpisode metrics', () => {
         const { metrics } = runEpisode(task({ metrics: ['eval.food_energy_per_1k', 'eval.not_a_metric'] }));
         expect(Object.keys(metrics)).toEqual(['eval.food_energy_per_1k', 'eval.not_a_metric']);
         expect(metrics['eval.not_a_metric']).toBeNull();
+    });
+});
+
+describe('createOfferSink', () => {
+    /** @param {number} id the genome id @returns {Record<string, any>} an offer */
+    const item = (id) => ({ spec: 0, cell: 1, row: new Float32Array(2), sigma: 0.1, id, fitness: 3, isClone: false });
+
+    it('keeps deaths from offerFromTick on and copies each offer', () => {
+        const sink = createOfferSink(100);
+        const reused = item(1);
+        sink.onOffer(reused, 99);
+        sink.onOffer(reused, 100);
+        reused.id = 2;
+        expect(sink.offers.map((o) => [o.id, o.tick])).toEqual([[1, 100]]);
+    });
+
+    it('drops the offers of pool founders and keeps their children and every other genome', () => {
+        const sink = createOfferSink(0);
+        sink.founders = new Set([7]);
+        for (const id of [6, 7, 8]) {
+            sink.onOffer(item(id), 10);
+        }
+        expect(sink.offers.map((o) => o.id)).toEqual([6, 8]);
     });
 });

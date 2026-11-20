@@ -69,6 +69,21 @@ describe('childSpec', () => {
         splitAll(w, recordingPolicy([]));
         expect(w.spec[1]).toBe(2);
     });
+
+    it('blocks flips across canHunt when specFlipNoHunt is true while keeping same-guild flips', () => {
+        const w = lifeWorld({ specMutationRate: 1, specFlipNoHunt: true });
+        const forager = addBlob(w, { spec: 0 });
+        const predator = addBlob(w, { spec: 1 });
+        for (let i = 0; i < 200; i++) {
+            expect(w.huntBySpec[childSpec(w, forager)]).toBe(0);
+            expect(childSpec(w, predator)).toBe(1);
+        }
+        const seen = new Set();
+        for (let i = 0; i < 200; i++) {
+            seen.add(childSpec(w, forager));
+        }
+        expect([...seen].sort()).toEqual([0, 2, 3, 4]);
+    });
 });
 
 describe('huntUpkeep', () => {

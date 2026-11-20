@@ -6,7 +6,7 @@ import { createObserver, observerPhases } from '../evo/observer.js';
 import { SEASONS_PER_YEAR, yearTicks } from '../sim/eras.js';
 import { ZONE_ORIGIN } from '../sim/environment.js';
 import { DEATH_CAUSE, BORN_CAUSE } from '../sim/events.js';
-import { configHash, createConfig, rulesHash } from '../sim/config.js';
+import { configHash, createConfig, fitEventCapacity, rulesHash } from '../sim/config.js';
 import { createRng, fork } from '../sim/rng.js';
 import { createWorld } from '../sim/spawn.js';
 import { SNAPSHOT_FLAG, SNAPSHOT_STATE } from '../sim/snapshot.js';
@@ -56,7 +56,7 @@ export const BASE_TICKS_PER_SECOND = 60;
  * @returns {Run} the run, at tick 0
  */
 export function buildRun({ seed, overrides, createPolicy, log, policyName }) {
-    const config = createConfig({ ...overrides, seed });
+    const config = createConfig(fitEventCapacity({ ...overrides, seed }));
     const observer = createObserver(config, fork(createRng(seed), 'eval'), { lean: true });
     const policy = createPolicy({ config, log, observer, policyName });
     const world = createWorld(config, policy.brain);
@@ -177,6 +177,22 @@ function herdInfo(config) {
 }
 
 /**
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {Record<string, any>} world the world, for its per-ray reach table
+ * @returns {Record<string, any>[]} what the app draws each specialisation with: its index, name, whether it hunts, its
+ *   vision range and the reach factor of each ray (`rayReachBySpec`, senses-and-motor Phase 5)
+ */
+function specInfo(config, world) {
+    return Object.entries(config.specialisations).map(([name, s]) => ({
+        index: s.index,
+        name,
+        canHunt: s.canHunt,
+        visionRange: s.visionRange,
+        rayReach: Array.from(world.rayReachBySpec.subarray(s.index * config.rayCount, (s.index + 1) * config.rayCount)),
+    }));
+}
+
+/**
  * The world and rule constants the app draws with.
  * @param {Run} run the run
  * @returns {Record<string, any>} `ready.info`
@@ -223,12 +239,7 @@ export function worldInfo({ config, world }) {
             radius: config.foodPatchRadius,
         })),
         terrain: terrainInfo(config, world),
-        specs: Object.entries(config.specialisations).map(([name, s]) => ({
-            index: s.index,
-            name,
-            canHunt: s.canHunt,
-            visionRange: s.visionRange,
-        })),
+        specs: specInfo(config, world),
     };
 }
 

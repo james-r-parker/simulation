@@ -19,6 +19,7 @@ export const DRAG_THRESHOLD_PX = 4;
  *   picks with each specialisation's `getMinPx` raised to it. Absent means a touch picks like a mouse
  * @property {(genomeId: number, x: number, y: number) => void} [onLongPress] called when a touch is held still over an
  *   agent, with its genome id and the press point in device px; the release then picks nothing
+ * @property {() => void} [onNavigate] releases follow on drag or two-finger Home, including a pending handoff
  * @property {() => number} [now] the clock in ms, `performance.now` by default
  * @property {import('./touch-gestures.js').Timers} [timers] the timers, the browser's by default
  */
@@ -152,13 +153,14 @@ function begin(g, { x, y, id, touch }, nowMs) {
 }
 
 /**
- * @param {import('./camera.js').CameraController} camera the view
+ * @param {PointerInputOptions} options the camera and navigation callback
  * @param {Gesture} g the gesture
  * @param {{x: number, y: number}} to where pointer `id` moved, in device px
  * @param {number} id the pointer
  * @returns {boolean} whether the move panned or pinched
  */
-function moveBy(camera, g, to, id) {
+function moveBy(options, g, to, id) {
+    const { camera } = options;
     const point = g.points.get(id);
     if (point === undefined) {
         return false;
@@ -169,6 +171,9 @@ function moveBy(camera, g, to, id) {
         return true;
     }
     drag(camera, g, point, to);
+    if (g.dragged) {
+        options.onNavigate?.();
+    }
     return g.dragged;
 }
 
@@ -202,6 +207,7 @@ function createEndings(options, g) {
     });
     const finish = (/** @type {number} */ x, /** @type {number} */ y) => {
         if (g.peak === 2 && !g.spread && now() - g.pairAt <= TWO_FINGER_TAP_MS) {
+            options.onNavigate?.();
             moveCameraTo(camera, { x: camera.world.width / 2, y: camera.world.height / 2, zoom: 0 });
         } else if (g.peak === 1 && !g.dragged) {
             if (g.touch && doubleTap.tap(x, y)) {
@@ -245,7 +251,7 @@ export function createPointerInput(options) {
         move(x, y, id = 0) {
             TO.x = x;
             TO.y = y;
-            if (moveBy(camera, g, TO, id)) {
+            if (moveBy(options, g, TO, id)) {
                 press.stop();
             }
         },

@@ -2,6 +2,51 @@
 
 import { entry } from './entry.js';
 
+/** @param {string} spec */
+function guildShareEntry(spec) {
+    return entry('scenes-ecology', {
+        module: 'js/evo/scene-guilds.js',
+        meaning: `Mean share of alive agents in the ${spec} guild after burn-in.`,
+        counts: `${spec} alive count over total alive agents across 100-tick checkpoints after burn-in.`,
+        unit: 'share',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['no 100-tick checkpoint after burn-in'],
+        arithmetic: 'test/evo/scene-guilds.test.js',
+        source: 'test/evo/metric-source-ecology.test.js',
+    });
+}
+
+/** @param {string} spec */
+function guildSurvivalEntry(spec) {
+    return entry('scenes-ecology', {
+        module: 'js/evo/scene-guilds.js',
+        meaning: `Mean lifespan relative to maxAgeTicks for the ${spec} guild.`,
+        counts: `Mean age / maxAgeTicks across ${spec} deaths after burn-in.`,
+        unit: 'share',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['no death of this guild after burn-in'],
+        arithmetic: 'test/evo/scene-guilds.test.js',
+        source: 'test/evo/metric-source-ecology.test.js',
+    });
+}
+
+/** @param {string} spec */
+function preySelectivityEntry(spec) {
+    return entry('scenes-ecology', {
+        module: 'js/evo/scene-guilds.js',
+        meaning: `How often hunters eat the ${spec} guild relative to its share of prey alive; 1 is no preference.`,
+        counts: `The ${spec} share of eaten prey deaths divided by its mean share of living prey at 100-tick checkpoints after burn-in.`,
+        unit: 'ratio',
+        direction: 'watch',
+        intended: 'lower',
+        nullWhen: ['no eaten prey death or prey checkpoint after burn-in'],
+        arithmetic: 'test/evo/scene-guilds.test.js',
+        source: 'test/evo/metric-source-ecology.test.js',
+    });
+}
+
 export const SCENES_ECOLOGY_3 = {
     'eval.cold_margin_use_under_threat': entry('scenes-ecology', {
         module: 'js/evo/scene-refuge-outcome.js',
@@ -83,8 +128,9 @@ export const SCENES_ECOLOGY_3 = {
     }),
     'eval.boom_bust_count': entry('scenes-ecology', {
         module: 'js/evo/scene-guards.js',
-        meaning: 'Lower means fewer hunter booms followed by a prey crash and a hunter crash.',
-        counts: 'Boom-bust episodes found by a scan over 1000-tick checkpoints: hunters reach BOOM_FACTOR times their trough, prey fall to PREY_CRASH of their trough level, then hunters fall to HUNTER_CRASH of their peak, within BOOM_BUST_WINDOW checkpoints.',
+        meaning:
+            'Lower means fewer boom-bust episodes (hunter-prey cycles or total-population booms followed by crashes).',
+        counts: 'Maximum of hunter-prey boom-bust episodes and total-population boom-bust episodes (total reaches BOOM_FACTOR times its trough then falls to PREY_CRASH of its peak within BOOM_BUST_WINDOW checkpoints).',
         unit: 'count',
         direction: 'lower',
         nullWhen: ['no 1000-tick checkpoint after burn-in'],
@@ -167,6 +213,85 @@ export const SCENES_ECOLOGY_3 = {
         direction: 'higher',
         nullWhen: ['no checkpoint in the last quarter'],
         arithmetic: 'test/evo/scene-balance.test.js',
+        source: 'test/evo/metric-source-ecology.test.js',
+    }),
+    'eval.guild_share.forager': guildShareEntry('forager'),
+    'eval.guild_share.reproducer': guildShareEntry('reproducer'),
+    'eval.guild_share.scout': guildShareEntry('scout'),
+    'eval.guild_share.defender': guildShareEntry('defender'),
+    'eval.guild_survival.forager': guildSurvivalEntry('forager'),
+    'eval.guild_survival.reproducer': guildSurvivalEntry('reproducer'),
+    'eval.guild_survival.scout': guildSurvivalEntry('scout'),
+    'eval.guild_survival.defender': guildSurvivalEntry('defender'),
+    'eval.prey_selectivity.forager': preySelectivityEntry('forager'),
+    'eval.prey_selectivity.reproducer': preySelectivityEntry('reproducer'),
+    'eval.prey_selectivity.scout': preySelectivityEntry('scout'),
+    'eval.prey_selectivity.defender': preySelectivityEntry('defender'),
+    'eval.defender_repel_per_1k': entry('scenes-ecology', {
+        module: 'js/evo/scene-guilds.js',
+        meaning: 'Active defensive repels landed by defender agents on hunters per 1,000 defender-ticks.',
+        counts: 'Defender repel events times 1000 over alive defender agent-ticks after burn-in.',
+        unit: 'per 1k ticks',
+        direction: 'higher',
+        nullWhen: ['no defender tick after burn-in'],
+        expectedFlat: 'zero on defaults until prey-guilds Phase 2 adds active defender repel',
+        arithmetic: 'test/evo/scene-guilds.test.js',
+        source: 'test/evo/metric-source-ecology.test.js',
+    }),
+    'eval.scout_alarm_lead_share': entry('scenes-ecology', {
+        module: 'js/evo/scene-guilds.js',
+        meaning:
+            'Share of threat-seen scout alarm calls fired before the nearest hunter closed within half callRadius.',
+        counts: 'Scout AlarmCalled events with alarmSeen = 1 and nearest hunter >= 0.5 * callRadius over all threat-seen scout alarms after burn-in.',
+        unit: 'share',
+        direction: 'higher',
+        nullWhen: ['no scout alarm with a threat after burn-in'],
+        expectedFlat:
+            'Null unless a scout calls an alarm with a threat seen, which happened on 1 of 128 floor-on seeds (E188; calls with a threat by any caller on 3); it moves with alarm calling.',
+        arithmetic: 'test/evo/scene-guilds.test.js',
+        source: 'test/evo/metric-source-ecology.test.js',
+    }),
+    'eval.reproducer_recovery_rate': entry('scenes-ecology', {
+        module: 'js/evo/scene-guilds.js',
+        meaning: 'Reproducer share of births during post-bust recovery ticks (population below 120).',
+        counts: 'Reproducer mate/split births over all mate/split births on ticks starting below 120 alive agents after burn-in.',
+        unit: 'share',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['no birth during post-bust recovery after burn-in'],
+        arithmetic: 'test/evo/scene-guilds.test.js',
+        source: 'test/evo/metric-source-ecology.test.js',
+    }),
+    'eval.chase_overshoot_share': entry('scenes-ecology', {
+        module: 'js/evo/scene-kinematics.js',
+        meaning: 'Share of resolved chases where minimum range occurred before range re-opened on a non-catch.',
+        counts: 'Non-catch resolved chases with overshoot flagged over all resolved chases after burn-in.',
+        unit: 'share',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['no resolved chase after burn-in'],
+        arithmetic: 'test/evo/scene-kinematics.test.js',
+        source: 'test/evo/metric-source-ecology.test.js',
+    }),
+    'eval.chase_cover_use_share': entry('scenes-ecology', {
+        module: 'js/evo/scene-kinematics.js',
+        meaning: 'Share of prey-evaded chases that crossed a terrain cover zone.',
+        counts: 'Non-catch resolved chases where prey entered a refuge ring over all non-catch resolved chases after burn-in.',
+        unit: 'share',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['no evaded chase after burn-in'],
+        arithmetic: 'test/evo/scene-kinematics.test.js',
+        source: 'test/evo/metric-source-ecology.test.js',
+    }),
+    'eval.chase_turn_jitter': entry('scenes-ecology', {
+        module: 'js/evo/scene-kinematics.js',
+        meaning: 'Mean tick-to-tick sign reversals of turnRate inside active chases.',
+        counts: 'Turn sign reversals over consecutive active-chase tick pairs across resolved chases after burn-in.',
+        unit: 'share',
+        direction: 'lower',
+        nullWhen: ['no active chase turn samples after burn-in'],
+        arithmetic: 'test/evo/scene-kinematics.test.js',
         source: 'test/evo/metric-source-ecology.test.js',
     }),
 };

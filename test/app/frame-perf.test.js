@@ -9,16 +9,19 @@ import { createFrameLoop } from '../../js/app/frame-loop.js';
 import { createFrameStats } from '../../js/app/frame-stats.js';
 import { buildPerf } from '../../js/app/perf.js';
 import { createEffectsPlayer } from '../../js/app/renderer/effects-player.js';
+import { packRig } from './helpers/pack-rig.js';
 import { smallReady } from './helpers/ready.js';
 
 /**
  * @param {{hidden?: boolean}} [options] whether the tab is hidden
- * @returns {{loop: any, deps: any, player: any}} a real loop over a small world's snapshot, a scene that takes 0.5 ms
+ * @returns {{loop: any, deps: any, player: any, pack: ReturnType<typeof packRig>}} a real loop over a small world's snapshot, a scene that takes 0.5 ms
  *   of clock to draw and a GPU timer reading 1 ms
  */
 function rig({ hidden = false } = {}) {
-    const { info, layout, snapshot } = smallReady(40);
-    const client = { info, prev: null, latest: snapshot, effects: null, field: null, stats: null, releaseField() {} };
+    const ready = smallReady(40);
+    const { info, layout } = ready;
+    const pack = packRig(ready);
+    const { client } = pack;
     let clockMs = 0;
     const deps = {
         getClient: () => client,
@@ -29,24 +32,25 @@ function rig({ hidden = false } = {}) {
         }),
         state: createAppState(),
         slots: createFamilySlots(),
-        refs: { haze: null, player: /** @type {any} */ (null) },
+        refs: { haze: null, player: /** @type {any} */ (null), stores: null },
         stats: createFrameStats(1024),
         gpuTimer: { begin() {}, end() {}, poll() {}, latest: () => 1 },
         clock: () => clockMs,
         hidden: () => hidden,
+        getPack: pack.getPack,
     };
     const player = createEffectsPlayer({ layout, info });
     deps.refs.player = player;
     const loop = createFrameLoop(deps);
-    loop.reset(info.maxAgents);
-    return { loop, deps, player };
+    loop.reset();
+    return { loop, deps, player, pack };
 }
 
 describe('frame timing through the real loop', () => {
     it('reports frames, the refresh rate and the draw time after N frames at 244 Hz, and the budget scales up', () => {
-        const { loop, deps, player } = rig();
+        const { loop, deps, player, pack } = rig();
         for (let i = 0; i < 600; i++) {
-            loop.frame(1000 + i * (1000 / 244));
+            pack.step(loop, 1000 + i * (1000 / 244));
         }
         const perf = buildPerf({
             stats: deps.stats,

@@ -49,6 +49,18 @@ describe('pushRays', () => {
         expect(lines.position[10]).toBeCloseTo(50);
         expect(lines.color[3]).toBeCloseTo(0.12);
     });
+
+    it("draws a miss only to the ray's reach and a hit at its distance (senses-and-motor Phase 5)", () => {
+        const lines = createLineBuffer(8);
+        const f32 = Float32Array.from([0, 0, 0, 0.8]);
+        const reach = [1, 0.7, 0.4, 0.7];
+        pushRays(lines, { x: 0, y: 0, angle: 0, vision: 100, reach }, { f32, start: 0, count: 4 });
+        const length = (/** @type {number} */ k) => Math.hypot(lines.position[k * 6 + 3], lines.position[k * 6 + 4]);
+        expect(length(0)).toBeCloseTo(100);
+        expect(length(1)).toBeCloseTo(70);
+        expect(length(2)).toBeCloseTo(40);
+        expect(length(3)).toBeCloseTo(20);
+    });
 });
 
 describe('createOverlays', () => {

@@ -7,6 +7,7 @@ import { randomGenome } from '../../evo/instinct.js';
 import { SIGMA_START, mutateSigma, mutateWeights } from '../../evo/mutation.js';
 import { nextFloat, nextInt } from '../../sim/rng.js';
 import { countSpecs } from '../../sim/spec-rescue.js';
+import { checkOpponents, createPoolDraw } from './map-elites-pool.js';
 import { rowOf } from './natural-birth.js';
 
 /** Random seeding until the archive has this many occupied cells (all specialisations). */
@@ -96,14 +97,46 @@ function checkRow(row, layout, log) {
     }
 }
 
+/** The hunting specialisation: the one a `preyShare` quota keeps out of the prey. */
+const HUNTER_SPEC = GENOME_SPECS.indexOf('predator');
+/** The specialisations a `preyShare` quota fills, in index order. */
+const PREY_SPECS = GENOME_SPECS.flatMap((_, spec) => (spec === HUNTER_SPEC ? [] : [spec]));
+
 /**
- * The specialisation for a new lineage, in order: a random elite's
- * (`specMutationRate` above 0), the least populated.
- * @param {{world: Record<string, any>, slot: number, rng: any, archive: Record<string, any>, counts: Int32Array}} what
- *   the world, the slot being seeded, the `spawn` stream, the archive and scratch counts
+ * The specialisation under a `preyShare` quota: a prey specialisation (the least populated, ties to the lowest index)
+ * while the alive prey are fewer than `round(preyShare x (alive + 1))`, else the predator. A stage world's seeding only,
+ * so the training's hunt worlds start with prey for the hunters to meet; the draw takes no random number.
+ * @param {Record<string, any>} world the world; `slot` is already allocated, so it is not counted
+ * @param {number} slot the slot being seeded
+ * @param {{counts: Int32Array, preyShare: number}} quota scratch counts and the share of prey among the seeded agents
  * @returns {number} the specialisation index
  */
-function chooseSpec({ world, slot, rng, archive, counts }) {
+export function quotaSpec(world, slot, { counts, preyShare }) {
+    countSpecs(world, slot, counts);
+    let alive = 0;
+    let prey = 0;
+    for (let spec = 0; spec < counts.length; spec++) {
+        alive += counts[spec];
+        prey += spec === HUNTER_SPEC ? 0 : counts[spec];
+    }
+    if (prey >= Math.round(preyShare * (alive + 1))) {
+        return HUNTER_SPEC;
+    }
+    return PREY_SPECS.reduce((best, spec) => (counts[spec] < counts[best] ? spec : best), PREY_SPECS[0]);
+}
+
+/**
+ * The specialisation for a new lineage, in order: the `preyShare` quota (a stage world), a random elite's
+ * (`specMutationRate` above 0), the least populated.
+ * @param {{world: Record<string, any>, slot: number, rng: any, archive: Record<string, any>, counts: Int32Array,
+ *   preyShare?: number}} what the world, the slot being seeded, the `spawn` stream, the archive, scratch counts and the
+ *   `preyShare` option (none: no quota)
+ * @returns {number} the specialisation index
+ */
+function chooseSpec({ world, slot, rng, archive, counts, preyShare }) {
+    if (preyShare !== undefined) {
+        return quotaSpec(world, slot, { counts, preyShare });
+    }
     if (world.config.specMutationRate > 0) {
         return randomEliteSpec(archive, rng);
     }
@@ -128,6 +161,17 @@ function checkShares(archiveShare, cloneShareEnd) {
 }
 
 /**
+ * @param {number | undefined} preyShare the `preyShare` option
+ * @returns {void}
+ * @throws {Error} naming the option when it is set and is not a number from 0 to 1
+ */
+function checkPreyShare(preyShare) {
+    if (preyShare !== undefined && !(typeof preyShare === 'number' && preyShare >= 0 && preyShare <= 1)) {
+        throw new Error(`createSeeder: preyShare ${preyShare} must be a share from 0 to 1`);
+    }
+}
+
+/**
  * Records where a seeded slot's genome came from: a clone marks what it cloned, anything else clears the marks.
  * @param {Record<string, any>} clones the per-slot clone state (`fromArchive` is optional)
  * @param {number} slot the slot
@@ -145,12 +189,85 @@ function markSeeded(clones, slot, cloned, fromArchive) {
 }
 
 /**
- * @param {Record<string, any>} options `{ archive, birth, clones, log, cellDraws, archiveShare, cloneShareEnd }`: the
+ * Fills the row of a seeded agent the archive had no genome for: a mutated champion of its specialisation when the
+ * seeder has a champion source and it holds one, else a random genome.
+ * @param {{birth: Record<string, any>, championSource?: {draw: Function}}} seeder the shared sigma state and the champion source
+ * @param {{world: Record<string, any>, slot: number, row: Float32Array, rng: any}} target the world, the slot, its row
+ *   and the `brain-init` stream
+ * @returns {'champion' | 'random'} where the genome came from
+ */
+function seedUnarchived({ birth, championSource }, { world, slot, row, rng }) {
+    const champion = championSource === undefined ? null : championSource.draw(world.spec[slot], rng);
+    if (champion === null) {
+        randomGenome(world, slot, { row, rng });
+        birth.sigma[slot] = SIGMA_START;
+        return 'random';
+    }
+    row.set(champion);
+    birth.sigma[slot] = mutateSigma(SIGMA_START, world.layout.weightCount, rng);
+    mutateWeights(row, birth.sigma[slot], rng, birth.mutation);
+    return 'champion';
+}
+
+/**
+ * Writes the slot's row and sigma; a clone also records what it cloned, a pool founder is recorded by its genome id.
+ * @param {{archive: Record<string, any>, birth: Record<string, any>, clones: Record<string, any>, log?: import('../../sim/log.js').SimLog,
+ *   championSource?: {draw: Function}, mix: {cellDraws: number, archiveShare: number, cloneShareEnd: number}, own: (Float32Array | undefined)[],
+ *   pool: ReturnType<typeof createPoolDraw>}} seeder the seeder's parts
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the slot being seeded
+ * @param {any} rng the `brain-init` stream
+ * @returns {void}
+ */
+function seedBrain({ archive, birth, clones, log, mix, own, pool, championSource }, world, slot, rng) {
+    const { layout } = world;
+    const row = rowOf(own, world.weights, { slot, count: layout.weightCount });
+    const pooled = pool.draw(world, slot, rng);
+    if (pooled !== null) {
+        checkRow(pooled.row, layout, log);
+        row.set(pooled.row);
+        birth.sigma[slot] = pooled.sigma;
+        markSeeded(clones, slot, null, false);
+        pool.founders.add(world.genomeId[slot]);
+        log?.log('debug', 'ImmigrantSeeded', { spec: world.spec[slot], source: 'pool', archiveRef: -1 });
+        return;
+    }
+    const { source, ref } = draw(archive, world.spec[slot], rng, mix);
+    markSeeded(clones, slot, source === 'clone' ? ref : null, ref !== null);
+    /** @type {string} */
+    let where = source;
+    if (ref === null) {
+        where = seedUnarchived({ birth, championSource }, { world, slot, row, rng });
+    } else if (source === 'archive') {
+        checkRow(ref.row, layout, log);
+        row.set(ref.row);
+        birth.sigma[slot] = mutateSigma(ref.sigma, layout.weightCount, rng);
+        mutateWeights(row, birth.sigma[slot], rng, birth.mutation);
+    } else {
+        checkRow(ref.row, layout, log);
+        row.set(ref.row);
+        birth.sigma[slot] = ref.sigma;
+    }
+    log?.log('debug', 'ImmigrantSeeded', {
+        spec: world.spec[slot],
+        source: where,
+        archiveRef: ref === null ? -1 : ref.archiveRef,
+    });
+}
+
+/**
+ * @param {Record<string, any>} options `{ archive, birth, clones, log, cellDraws, archiveShare, cloneShareEnd, opponents }`: the
  *   shared per-slot state in `birth.sigma` and `clones.isClone`, `clones.archiveRef`, `clones.refId`; the draw below
  *   `archiveShare` is a mutated archive child, from there to `cloneShareEnd` a clone, above it a random genome
- *   (defaults `ARCHIVE_SHARE` and `CLONE_SHARE_END`)
- * @returns {{initSpec: Function, initBrain: Function}} the two seeding hooks
- * @throws {Error} naming the option when the shares are not `0 <= archiveShare <= cloneShareEnd <= 1`
+ *   (defaults `ARCHIVE_SHARE` and `CLONE_SHARE_END`); `opponents` is `{ archives, share }`, frozen archives (the opponent pool) and the share of founders
+ *   drawn from them as unmutated clones of an elite of the chosen specialisation, from `fork(rng, 'opponent-pool')`
+ *   (none, or a share of 0: no draw); `championSource` is `{ draw(spec, rng) }` (`createChampionSource`), the source of the
+ *   mutated champion a random draw becomes (none: the random brain); `preyShare` (0 to 1) is a stage world's quota of
+ *   prey specialisations among its seeded agents (`quotaSpec`; none: the archive's elite mix)
+ * @returns {{initSpec: Function, initBrain: Function, poolFounders: Set<number>}} the two seeding hooks and the genome
+ *   ids of the founders drawn from the pool
+ * @throws {Error} naming the option when the shares are not `0 <= archiveShare <= cloneShareEnd <= 1`, or the
+ *   opponents share is not from 0 to 1
  */
 export function createSeeder({
     archive,
@@ -160,42 +277,32 @@ export function createSeeder({
     cellDraws = 1,
     archiveShare = ARCHIVE_SHARE,
     cloneShareEnd = CLONE_SHARE_END,
+    opponents,
+    championSource,
+    preyShare,
 }) {
     checkShares(archiveShare, cloneShareEnd);
+    checkPreyShare(preyShare);
+    checkOpponents(opponents);
     const mix = { cellDraws, archiveShare, cloneShareEnd };
     const counts = new Int32Array(GENOME_SPECS.length);
-    /** @type {(Float32Array | undefined)[]} */
-    const own = [];
+    const pool = createPoolDraw(opponents);
+    const seeder = {
+        archive,
+        birth,
+        clones,
+        log,
+        mix,
+        own: /** @type {(Float32Array | undefined)[]} */ ([]),
+        pool,
+        championSource,
+    };
 
-    function initSpec(/** @type {any} */ world, /** @type {number} */ slot, /** @type {any} */ rng) {
-        return chooseSpec({ world, slot, rng, archive, counts });
-    }
-
-    /** Writes the slot's row and sigma; a clone also records what it cloned. */
-    function initBrain(/** @type {any} */ world, /** @type {number} */ slot, /** @type {any} */ rng) {
-        const { layout } = world;
-        const row = rowOf(own, world.weights, { slot, count: layout.weightCount });
-        const { source, ref } = draw(archive, world.spec[slot], rng, mix);
-        markSeeded(clones, slot, source === 'clone' ? ref : null, ref !== null);
-        if (ref === null) {
-            randomGenome(world, slot, { row, rng });
-            birth.sigma[slot] = SIGMA_START;
-        } else if (source === 'archive') {
-            checkRow(ref.row, layout, log);
-            row.set(ref.row);
-            birth.sigma[slot] = mutateSigma(ref.sigma, layout.weightCount, rng);
-            mutateWeights(row, birth.sigma[slot], rng, birth.mutation);
-        } else {
-            checkRow(ref.row, layout, log);
-            row.set(ref.row);
-            birth.sigma[slot] = ref.sigma;
-        }
-        log?.log('debug', 'ImmigrantSeeded', {
-            spec: world.spec[slot],
-            source,
-            archiveRef: ref === null ? -1 : ref.archiveRef,
-        });
-    }
-
-    return { initSpec, initBrain };
+    return {
+        initSpec: (/** @type {any} */ world, /** @type {number} */ slot, /** @type {any} */ rng) =>
+            chooseSpec({ world, slot, rng, archive, counts, preyShare }),
+        initBrain: (/** @type {any} */ world, /** @type {number} */ slot, /** @type {any} */ rng) =>
+            seedBrain(seeder, world, slot, rng),
+        poolFounders: pool.founders,
+    };
 }

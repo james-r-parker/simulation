@@ -42,6 +42,16 @@ describe('frame stats', () => {
         expect(recordFrame(stats, NaN, 1)).toBe(false);
         expect(recordFrame(stats, MAX_INTERVAL_MS, 1)).toBe(true);
         expect(frameReport(stats).frames).toBe(1);
+        expect(stats.drawCalls).toBe(5);
+    });
+
+    it('counts completed draw callbacks even when the performance ring ignores their intervals', () => {
+        const stats = createFrameStats();
+        for (let i = 0; i < 30; i++) {
+            recordFrame(stats, MAX_INTERVAL_MS + 1, 1);
+        }
+        expect(stats.drawCalls).toBe(30);
+        expect(frameReport(stats).frames).toBe(0);
     });
 
     it('reports zeros before any frame', () => {
@@ -63,8 +73,10 @@ describe('frame stats', () => {
         recordFrame(stats, 5, 1);
         clearFrameStats(stats, 16);
         expect(frameReport(stats).frames).toBe(0);
+        expect(stats.drawCalls).toBe(0);
         recordFrame(stats, 6, 1);
         expect(frameReport(stats).frames).toBe(1);
+        expect(stats.drawCalls).toBe(1);
     });
 });
 
@@ -85,12 +97,15 @@ describe('createFrameRing', () => {
     it('keeps the newest samples once capacity is exceeded', () => {
         const ring = createFrameRing(3);
         [1, 2, 3, 4, 5].forEach((v) => ring.push(v));
+        expect(ring.size()).toBe(3);
         expect(Array.from(ring.values())).toEqual([3, 4, 5]);
     });
 
     it('returns only pushed samples before it is full', () => {
         const ring = createFrameRing(4);
+        expect(ring.size()).toBe(0);
         ring.push(7);
+        expect(ring.size()).toBe(1);
         expect(Array.from(ring.values())).toEqual([7]);
     });
 });

@@ -10,7 +10,7 @@ import { pushRays } from './overlays.js';
 export const FAN_ALPHA = 0.06;
 
 const SECTIONS = createSections();
-const ME = { x: 0, y: 0, angle: 0, vision: 0 };
+const ME = { x: 0, y: 0, angle: 0, vision: 0, reach: /** @type {ArrayLike<number> | null} */ (null) };
 const RAYS = { f32: /** @type {Float32Array} */ (new Float32Array(0)), start: 0, count: 0, alpha: FAN_ALPHA };
 
 /**
@@ -30,6 +30,7 @@ export function pushFans(lines, { agents, snapshot }, info) {
         ME.y = agents.y[i];
         ME.angle = agents.angle[i];
         ME.vision = info.specs[agents.spec[i]]?.visionRange ?? 0;
+        ME.reach = info.specs[agents.spec[i]]?.rayReach ?? null;
         RAYS.start = s.rayStart + i * s.rayCount;
         pushRays(lines, ME, RAYS);
     }

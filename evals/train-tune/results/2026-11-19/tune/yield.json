@@ -1,0 +1,1122 @@
+{
+  "base": {
+    "runs": 16,
+    "meanScore": 1.849648143914032,
+    "cpuHours": 18.195402085327775,
+    "stages": [
+      {
+        "stage": "nursery",
+        "passShare": 0.5625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 1.387020483940185
+      },
+      {
+        "stage": "hunt-contact",
+        "passShare": 0.5625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.13255098286796285
+      },
+      {
+        "stage": "hunt-weak",
+        "passShare": 0.25,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.8105482068340276
+      },
+      {
+        "stage": "hunt-mid",
+        "passShare": 0.1875,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.4256886855727778
+      }
+    ],
+    "perRun": [
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/base/o0",
+        "offset": 0,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 60
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4866.260593003002,
+        "stageCpuSeconds": {
+          "nursery": 2049.403774934,
+          "hunt-contact": 483.674728597,
+          "hunt-weak": 570.174315873001,
+          "hunt-mid": 1763.0077735990012
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/base/o8",
+        "offset": 8,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.6695959774964979,
+        "score": 0.6695959774964979,
+        "cpuSeconds": 3911.281495058998,
+        "stageCpuSeconds": {
+          "nursery": 3911.281495058998
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/base/o16",
+        "offset": 16,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 0,
+        "score": 3,
+        "cpuSeconds": 5573.743182775001,
+        "stageCpuSeconds": {
+          "nursery": 2338.961914324,
+          "hunt-contact": 462.19418069899893,
+          "hunt-weak": 1093.5622021510003,
+          "hunt-mid": 1679.0248856010012
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/base/o24",
+        "offset": 24,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.09296686166863918,
+        "score": 0.09296686166863918,
+        "cpuSeconds": 3876.7251933610005,
+        "stageCpuSeconds": {
+          "nursery": 3876.7251933610005
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/base/o32",
+        "offset": 32,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7229398635236198,
+        "score": 0.7229398635236198,
+        "cpuSeconds": 2796.257485711003,
+        "stageCpuSeconds": {
+          "nursery": 2796.257485711003
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/base/o40",
+        "offset": 40,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7229398635236198,
+        "score": 0.7229398635236198,
+        "cpuSeconds": 4689.387189239999,
+        "stageCpuSeconds": {
+          "nursery": 4689.387189239999
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/base/o48",
+        "offset": 48,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 35
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 45
+          }
+        ],
+        "bestProgress": 0.008002416396755481,
+        "score": 2.0080024163967556,
+        "cpuSeconds": 5708.642315245994,
+        "stageCpuSeconds": {
+          "nursery": 3302.9066433920007,
+          "hunt-contact": 493.004226878998,
+          "hunt-weak": 1912.7314449749952
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/base/o56",
+        "offset": 56,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7628369645858827,
+        "score": 0.7628369645858827,
+        "cpuSeconds": 2576.4741966460006,
+        "stageCpuSeconds": {
+          "nursery": 2576.4741966460006
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/base/o64",
+        "offset": 64,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 3169.3873152639985,
+        "stageCpuSeconds": {
+          "nursery": 1599.2902404519998,
+          "hunt-contact": 445.5841851529997,
+          "hunt-weak": 550.7616565949997,
+          "hunt-mid": 573.7512330639993
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/base/o72",
+        "offset": 72,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.8306219119903062,
+        "score": 0.8306219119903062,
+        "cpuSeconds": 3392.123072199999,
+        "stageCpuSeconds": {
+          "nursery": 3392.123072199999
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/base/o80",
+        "offset": 80,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.00679934856896381,
+        "score": 2.006799348568964,
+        "cpuSeconds": 3305.795491269,
+        "stageCpuSeconds": {
+          "nursery": 1091.885162284,
+          "hunt-contact": 494.7305542450001,
+          "hunt-weak": 1719.17977474
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/base/o88",
+        "offset": 88,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4133.115615555,
+        "stageCpuSeconds": {
+          "nursery": 2484.0826298210004,
+          "hunt-contact": 503.1384680660003,
+          "hunt-weak": 564.2406057460003,
+          "hunt-mid": 581.6539119219988
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/base/o96",
+        "offset": 96,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7628369645858827,
+        "score": 0.7628369645858827,
+        "cpuSeconds": 4652.539038154001,
+        "stageCpuSeconds": {
+          "nursery": 4652.539038154001
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/base/o104",
+        "offset": 104,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0,
+        "score": 2,
+        "cpuSeconds": 4256.199210242002,
+        "stageCpuSeconds": {
+          "nursery": 2206.161202428,
+          "hunt-contact": 432.61947870799986,
+          "hunt-weak": 1617.418529106002
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/base/o112",
+        "offset": 112,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0,
+        "score": 2,
+        "cpuSeconds": 4284.443768732999,
+        "stageCpuSeconds": {
+          "nursery": 2007.8755040209999,
+          "hunt-contact": 479.42859561600017,
+          "hunt-weak": 1797.1396690959991
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/base/o120",
+        "offset": 120,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.014830130284339629,
+        "score": 2.0148301302843397,
+        "cpuSeconds": 4311.072344721999,
+        "stageCpuSeconds": {
+          "nursery": 1964.1089376349998,
+          "hunt-contact": 500.27742695899974,
+          "hunt-weak": 1846.6859801279993
+        }
+      }
+    ],
+    "failed": 0
+  },
+  "maxGenerations-nursery-80": {
+    "runs": 16,
+    "meanScore": 1.849648143914032,
+    "cpuHours": 18.910520639743606,
+    "stages": [
+      {
+        "stage": "nursery",
+        "passShare": 0.5625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 1.4597276648369752
+      },
+      {
+        "stage": "hunt-contact",
+        "passShare": 0.5625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.1387315785793518
+      },
+      {
+        "stage": "hunt-weak",
+        "passShare": 0.25,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.820544830432916
+      },
+      {
+        "stage": "hunt-mid",
+        "passShare": 0.1875,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.4140693757550001
+      }
+    ],
+    "perRun": [
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/maxGenerations-nursery-80/o0",
+        "offset": 0,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 60
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4889.105371869,
+        "stageCpuSeconds": {
+          "nursery": 2043.990235003,
+          "hunt-contact": 490.3683517140005,
+          "hunt-weak": 575.7170101829993,
+          "hunt-mid": 1779.0297749690003
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/maxGenerations-nursery-80/o8",
+        "offset": 8,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.6695959774964979,
+        "score": 0.6695959774964979,
+        "cpuSeconds": 5013.007921521001,
+        "stageCpuSeconds": {
+          "nursery": 5013.007921521001
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/maxGenerations-nursery-80/o16",
+        "offset": 16,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 0,
+        "score": 3,
+        "cpuSeconds": 5708.654865272002,
+        "stageCpuSeconds": {
+          "nursery": 2506.721263256,
+          "hunt-contact": 488.84751858599975,
+          "hunt-weak": 1123.9436316160013,
+          "hunt-mid": 1589.142451814001
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/maxGenerations-nursery-80/o24",
+        "offset": 24,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.09296686166863918,
+        "score": 0.09296686166863918,
+        "cpuSeconds": 3880.144223581001,
+        "stageCpuSeconds": {
+          "nursery": 3880.144223581001
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/maxGenerations-nursery-80/o32",
+        "offset": 32,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7229398635236198,
+        "score": 0.7229398635236198,
+        "cpuSeconds": 2822.175166124,
+        "stageCpuSeconds": {
+          "nursery": 2822.175166124
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/maxGenerations-nursery-80/o40",
+        "offset": 40,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7229398635236198,
+        "score": 0.7229398635236198,
+        "cpuSeconds": 5143.557440871997,
+        "stageCpuSeconds": {
+          "nursery": 5143.557440871997
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/maxGenerations-nursery-80/o48",
+        "offset": 48,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 35
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 45
+          }
+        ],
+        "bestProgress": 0.008002416396755481,
+        "score": 2.0080024163967556,
+        "cpuSeconds": 5846.275474856997,
+        "stageCpuSeconds": {
+          "nursery": 3441.2996774010003,
+          "hunt-contact": 527.519597215,
+          "hunt-weak": 1877.4562002409966
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/maxGenerations-nursery-80/o56",
+        "offset": 56,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7628369645858827,
+        "score": 0.7628369645858827,
+        "cpuSeconds": 2519.1882484359994,
+        "stageCpuSeconds": {
+          "nursery": 2519.1882484359994
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/maxGenerations-nursery-80/o64",
+        "offset": 64,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 3269.3498049439995,
+        "stageCpuSeconds": {
+          "nursery": 1619.432950685,
+          "hunt-contact": 486.84280707399967,
+          "hunt-weak": 605.2943503499996,
+          "hunt-mid": 557.7796968350003
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/maxGenerations-nursery-80/o72",
+        "offset": 72,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.8306219119903062,
+        "score": 0.8306219119903062,
+        "cpuSeconds": 3954.538120887002,
+        "stageCpuSeconds": {
+          "nursery": 3954.538120887002
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/maxGenerations-nursery-80/o80",
+        "offset": 80,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.00679934856896381,
+        "score": 2.006799348568964,
+        "cpuSeconds": 3408.8646279409973,
+        "stageCpuSeconds": {
+          "nursery": 1249.073782302,
+          "hunt-contact": 495.78903438899965,
+          "hunt-weak": 1664.0018112499977
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/maxGenerations-nursery-80/o88",
+        "offset": 88,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4170.429602452999,
+        "stageCpuSeconds": {
+          "nursery": 2517.790497641,
+          "hunt-contact": 505.8790223459996,
+          "hunt-weak": 600.7627479299999,
+          "hunt-mid": 545.997334535999
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/maxGenerations-nursery-80/o96",
+        "offset": 96,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7628369645858827,
+        "score": 0.7628369645858827,
+        "cpuSeconds": 4493.076254725001,
+        "stageCpuSeconds": {
+          "nursery": 4493.076254725001
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/maxGenerations-nursery-80/o104",
+        "offset": 104,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0,
+        "score": 2,
+        "cpuSeconds": 4258.2649017819995,
+        "stageCpuSeconds": {
+          "nursery": 2157.198305427,
+          "hunt-contact": 441.6847046990001,
+          "hunt-weak": 1659.3818916559994
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/maxGenerations-nursery-80/o112",
+        "offset": 112,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0,
+        "score": 2,
+        "cpuSeconds": 4411.538684040998,
+        "stageCpuSeconds": {
+          "nursery": 2005.9572002029997,
+          "hunt-contact": 519.0444826530004,
+          "hunt-weak": 1886.5370011849982
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/maxGenerations-nursery-80/o120",
+        "offset": 120,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.014830130284339629,
+        "score": 2.0148301302843397,
+        "cpuSeconds": 4289.703593771999,
+        "stageCpuSeconds": {
+          "nursery": 1928.0250526540003,
+          "hunt-contact": 538.9276272949996,
+          "hunt-weak": 1822.7509138229993
+        }
+      }
+    ],
+    "failed": 0
+  },
+  "episodes-48": {
+    "runs": 16,
+    "meanScore": 2.418164003635514,
+    "cpuHours": 24.900132319137224,
+    "stages": [
+      {
+        "stage": "nursery",
+        "passShare": 0.6875,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 1.4040340000055052
+      },
+      {
+        "stage": "hunt-contact",
+        "passShare": 0.6875,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.1920012840247474
+      },
+      {
+        "stage": "hunt-weak",
+        "passShare": 0.4375,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.7296410421358728
+      },
+      {
+        "stage": "hunt-mid",
+        "passShare": 0.375,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.3727094833088891
+      }
+    ],
+    "perRun": [
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/episodes-48/o0",
+        "offset": 0,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 50
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 6524.365969239001,
+        "stageCpuSeconds": {
+          "nursery": 4119.777577851,
+          "hunt-contact": 706.8701914729972,
+          "hunt-weak": 898.1259739389998,
+          "hunt-mid": 799.5922259760036
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/episodes-48/o8",
+        "offset": 8,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7792736014607716,
+        "score": 0.7792736014607716,
+        "cpuSeconds": 5466.420583550001,
+        "stageCpuSeconds": {
+          "nursery": 5466.420583550001
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/episodes-48/o16",
+        "offset": 16,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.6119658160447977,
+        "score": 0.6119658160447977,
+        "cpuSeconds": 7166.704691598002,
+        "stageCpuSeconds": {
+          "nursery": 7166.704691598002
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/episodes-48/o24",
+        "offset": 24,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.5621868594777835,
+        "score": 0.5621868594777835,
+        "cpuSeconds": 4416.4820179009985,
+        "stageCpuSeconds": {
+          "nursery": 4416.4820179009985
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/episodes-48/o32",
+        "offset": 32,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 15
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 25
+          }
+        ],
+        "bestProgress": 0.0006902159464371206,
+        "score": 2.0006902159464373,
+        "cpuSeconds": 5428.200479694002,
+        "stageCpuSeconds": {
+          "nursery": 2385.6671154939995,
+          "hunt-contact": 616.9843896050002,
+          "hunt-weak": 2425.548974595002
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/episodes-48/o40",
+        "offset": 40,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4231.589443206001,
+        "stageCpuSeconds": {
+          "nursery": 1851.198983664999,
+          "hunt-contact": 675.208436585001,
+          "hunt-weak": 847.9017047160005,
+          "hunt-mid": 857.2803182400007
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/episodes-48/o48",
+        "offset": 48,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 50
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 60
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 5986.323626323,
+        "stageCpuSeconds": {
+          "nursery": 1391.7068498510002,
+          "hunt-contact": 812.0664562999996,
+          "hunt-weak": 2881.7638807779977,
+          "hunt-mid": 900.7864393940026
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/episodes-48/o56",
+        "offset": 56,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          }
+        ],
+        "bestProgress": 0.0028379408015091617,
+        "score": 3.002837940801509,
+        "cpuSeconds": 6878.719444719001,
+        "stageCpuSeconds": {
+          "nursery": 1950.487132415,
+          "hunt-contact": 816.804199316,
+          "hunt-weak": 1032.5007350220017,
+          "hunt-mid": 3078.9273779659998
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/episodes-48/o64",
+        "offset": 64,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7628369645858827,
+        "score": 0.7628369645858827,
+        "cpuSeconds": 3846.6383674970025,
+        "stageCpuSeconds": {
+          "nursery": 3846.6383674970025
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/episodes-48/o72",
+        "offset": 72,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 35
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 45
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4556.826982020997,
+        "stageCpuSeconds": {
+          "nursery": 1948.4002624419998,
+          "hunt-contact": 630.3932576750005,
+          "hunt-weak": 1201.330311680998,
+          "hunt-mid": 776.7031502229988
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/episodes-48/o80",
+        "offset": 80,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 15
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 25
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 35
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 45
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 5060.5357119969985,
+        "stageCpuSeconds": {
+          "nursery": 2769.9883102050003,
+          "hunt-contact": 685.7414526110001,
+          "hunt-weak": 766.7357572739993,
+          "hunt-mid": 838.0701919069988
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/episodes-48/o88",
+        "offset": 88,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.00679934856896381,
+        "score": 2.006799348568964,
+        "cpuSeconds": 5479.4315679309975,
+        "stageCpuSeconds": {
+          "nursery": 2440.42217332,
+          "hunt-contact": 652.4291235629998,
+          "hunt-weak": 2386.5802710479975
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/episodes-48/o96",
+        "offset": 96,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 35
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 45
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 55
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 65
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 7153.062167653003,
+        "stageCpuSeconds": {
+          "nursery": 4926.329138288002,
+          "hunt-contact": 673.5349898880004,
+          "hunt-weak": 754.0329037110005,
+          "hunt-mid": 799.1651357660003
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/episodes-48/o104",
+        "offset": 104,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 0.014508438021428541,
+        "score": 2.0145084380214286,
+        "cpuSeconds": 7598.89998514,
+        "stageCpuSeconds": {
+          "nursery": 4317.860244592001,
+          "hunt-contact": 697.4373216029999,
+          "hunt-weak": 2583.602418944999
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/episodes-48/o112",
+        "offset": 112,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.006148933053449782,
+        "score": 2.0061489330534497,
+        "cpuSeconds": 6190.441376637998,
+        "stageCpuSeconds": {
+          "nursery": 2945.8290177619997,
+          "hunt-contact": 635.7810287609987,
+          "hunt-weak": 2608.831330114999
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.claude/worktrees/etl4/.runs/frozen-E-TL-4-20261119-155834/.sim/train-tune/tune/episodes-48/o120",
+        "offset": 120,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.9433759402071946,
+        "score": 0.9433759402071946,
+        "cpuSeconds": 3655.833933787002,
+        "stageCpuSeconds": {
+          "nursery": 3655.833933787002
+        }
+      }
+    ],
+    "failed": 0
+  }
+}

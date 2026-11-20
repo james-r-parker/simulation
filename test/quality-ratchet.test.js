@@ -234,10 +234,44 @@ describe('main end to end', () => {
         expect(written.coverage['js/sim']).toMatchObject({ lines: 70, branches: 99 });
     });
 
+    it('reads the coverage of the directory --coverage-dir names, in either spelling', () => {
+        const root = repo({ baseline: { coverage: { 'js/sim': { lines: 90 } } } });
+        mkdirSync(join(root, 'coverage/run-1'), { recursive: true });
+        mkdirSync(join(root, 'coverage/run-2'), { recursive: true });
+        writeFileSync(join(root, 'coverage/run-1/coverage-summary.json'), JSON.stringify(summaryAt(root, 9)));
+        writeFileSync(join(root, 'coverage/run-2/coverage-summary.json'), JSON.stringify(summaryAt(root, 5)));
+        expect(quietly(() => main(['--check', '--coverage-dir', 'coverage/run-1'], root))).toEqual({
+            status: 0,
+            errors: [],
+        });
+        expect(quietly(() => main(['--check', '--coverage-dir=coverage/run-2'], root)).status).toBe(1);
+        // The default directory does not exist, so a run's own directory is never confused with a shared one.
+        expect(quietly(() => main(['--check'], root)).errors[0]).toContain('cannot read coverage summary');
+    });
+
+    it('--write raises the baseline from the directory --coverage-dir names', () => {
+        const root = repo({ baseline: { coverage: { 'js/sim': { lines: 40 } } } });
+        mkdirSync(join(root, 'cov'));
+        writeFileSync(join(root, 'cov/coverage-summary.json'), JSON.stringify(summaryAt(root, 7)));
+        expect(quietly(() => main(['--write', '--coverage-dir', 'cov'], root)).status).toBe(0);
+        const written = JSON.parse(readFileSync(join(root, 'scripts/quality-baseline.json'), 'utf8'));
+        expect(written.coverage['js/sim'].lines).toBe(70);
+    });
+
+    it('rejects --coverage-dir without a value, an unknown option and --mutation beside --coverage-dir', () => {
+        const root = repo({ baseline: {} });
+        expect(quietly(() => main(['--check', '--coverage-dir'], root)).status).toBe(2);
+        expect(quietly(() => main(['--check', '--coverage-dir='], root)).status).toBe(2);
+        expect(quietly(() => main(['--check', '--mutation', '--coverage-dir', 'x'], root)).status).toBe(2);
+    });
+
     it('rejects a missing mode with the usage line', () => {
         const root = repo({ baseline: {} });
         const { status, errors } = quietly(() => main([], root));
-        expect([status, errors]).toEqual([2, ['usage: quality-ratchet.mjs --check | --write [--mutation]']]);
+        expect([status, errors]).toEqual([
+            2,
+            ['usage: quality-ratchet.mjs --check | --write [--mutation | --coverage-dir <dir>]'],
+        ]);
     });
 
     const survivor = { status: 'Survived', mutatorName: 'ConditionalExpression', location: { start: { line: 4 } } };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { attribute, float, vec2, vec3 } from 'three/tsl';
-import { modelMaterial } from '../../../js/app/renderer/model-material.js';
+import { attribute, float, uniform, vec2, vec3 } from 'three/tsl';
+import { LINE_RIM_SCALE, lineHalfWidth, modelMaterial } from '../../../js/app/renderer/model-material.js';
 import { MODELS } from '../../../js/app/renderer/models.js';
 
 const LOOK = { rimPx: 1.5, fillShare: 0.28 };
@@ -113,5 +113,41 @@ describe('modelMaterial cell primitives', () => {
         };
         const inputs = { center: vec2(0, 0), angle: float(0), radius: float(1), color: vec3(1, 1, 1) };
         expect(modelMaterial(cell, { inputs, look: LOOK }).opacityNode.isNode).toBe(true);
+    });
+
+    it('builds a line part, whose stroke is capped in device pixels', () => {
+        const cell = {
+            name: 'whip',
+            parts: [
+                {
+                    name: 'w',
+                    shape: 'wave',
+                    from: -0.8,
+                    to: -1.6,
+                    amp: 0.2,
+                    freq: 6,
+                    width: 0.05,
+                    style: 'solid',
+                    line: true,
+                },
+            ],
+        };
+        const inputs = { center: vec2(0, 0), angle: float(0), radius: float(1), color: vec3(1, 1, 1) };
+        expect(modelMaterial(cell, { inputs, look: LOOK }).opacityNode.isNode).toBe(true);
+        // the agent layer passes the rim as a uniform node: the cap must multiply it in the graph, not in JS (NaN)
+        const material = modelMaterial(cell, { inputs, look: { rimPx: uniform(1.5), fillShare: 0.2 } });
+        expect(
+            JSON.stringify(material.opacityNode, (_k, v) => (typeof v === 'number' && Number.isNaN(v) ? 'NaN!' : v)),
+        ).not.toContain('NaN!');
+    });
+});
+
+describe('lineHalfWidth', () => {
+    it('keeps a thin line at its model width and caps a thick one at LINE_RIM_SCALE rims', () => {
+        // a pixel is 0.01 model units: a 0.05 line would be 5 px, capped at 1.35 x 1.5 = 2.025 px
+        expect(lineHalfWidth(0.025, 0.01, 1.5)).toBeCloseTo((LINE_RIM_SCALE * 1.5 * 0.01) / 2, 9);
+        // a pixel is 0.1 model units: the same line is 0.5 px and keeps its own width
+        expect(lineHalfWidth(0.025, 0.1, 1.5)).toBe(0.025);
+        expect(LINE_RIM_SCALE).toBeGreaterThan(1);
     });
 });

@@ -146,7 +146,8 @@ describe('fxSink, fxAfterDraw and fxPerf', () => {
             layout: { effectKinds: {}, deathCauses: {} },
             info: { callRadius: 1, callTicks: 1 },
         });
-        app.deps.scene = { renderer: { info: { render: { calls: 7 } } } };
+        // three's `calls` counts render calls since start; `drawCalls` is the last frame's draws
+        app.deps.scene = { renderer: { info: { render: { calls: 9000, drawCalls: 7 } } } };
         const perf = fxPerf(app);
         expect(perf.drawCalls).toBe(7);
         expect(perf.fx?.occupancy).toBe(0);

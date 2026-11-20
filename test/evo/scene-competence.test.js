@@ -4,8 +4,8 @@
 import { describe, expect, it } from 'vitest';
 import { EVENT_TYPE, createEventRing, pushEvent } from '../../js/sim/events.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
+import { CHASE_OUTCOME } from '../../js/evo/chase-outcome.js';
 import {
-    CHASE_OUTCOME,
     competenceMetrics,
     createCompetenceScene,
     noteChase,

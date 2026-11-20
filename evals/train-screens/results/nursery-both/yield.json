@@ -1,0 +1,729 @@
+{
+  "base": {
+    "runs": 16,
+    "meanScore": 1.849648143914032,
+    "passedLast": 3,
+    "cpuHours": 17.63882535221722,
+    "stages": [
+      {
+        "stage": "nursery",
+        "passShare": 0.5625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 1.3486905794623458
+      },
+      {
+        "stage": "hunt-contact",
+        "passShare": 0.5625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.12504412793879624
+      },
+      {
+        "stage": "hunt-weak",
+        "passShare": 0.25,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.7859103597298608
+      },
+      {
+        "stage": "hunt-mid",
+        "passShare": 0.1875,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.4105238488958336
+      }
+    ],
+    "perRun": [
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/base/o0",
+        "offset": 0,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 60
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4464.569186559002,
+        "stageCpuSeconds": {
+          "nursery": 1732.4524427129995,
+          "hunt-contact": 443.23419426099963,
+          "hunt-weak": 564.0851570659993,
+          "hunt-mid": 1724.797392519004
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/base/o8",
+        "offset": 8,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.6695959774964979,
+        "score": 0.6695959774964979,
+        "cpuSeconds": 4005.0450548720005,
+        "stageCpuSeconds": {
+          "nursery": 4005.0450548720005
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/base/o16",
+        "offset": 16,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 0,
+        "score": 3,
+        "cpuSeconds": 5528.517400383,
+        "stageCpuSeconds": {
+          "nursery": 2375.263346515,
+          "hunt-contact": 438.9225420529988,
+          "hunt-weak": 1064.9244410650017,
+          "hunt-mid": 1649.407070749999
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/base/o24",
+        "offset": 24,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.09296686166863918,
+        "score": 0.09296686166863918,
+        "cpuSeconds": 3829.674967138999,
+        "stageCpuSeconds": {
+          "nursery": 3829.674967138999
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/base/o32",
+        "offset": 32,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7229398635236198,
+        "score": 0.7229398635236198,
+        "cpuSeconds": 2792.0856485889985,
+        "stageCpuSeconds": {
+          "nursery": 2792.0856485889985
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/base/o40",
+        "offset": 40,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7229398635236198,
+        "score": 0.7229398635236198,
+        "cpuSeconds": 4567.148702592,
+        "stageCpuSeconds": {
+          "nursery": 4567.148702592
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/base/o48",
+        "offset": 48,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 35
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 45
+          }
+        ],
+        "bestProgress": 0.008002416396755481,
+        "score": 2.0080024163967556,
+        "cpuSeconds": 5430.406473655999,
+        "stageCpuSeconds": {
+          "nursery": 3100.900727739002,
+          "hunt-contact": 477.96967189899897,
+          "hunt-weak": 1851.5360740179985
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/base/o56",
+        "offset": 56,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7628369645858827,
+        "score": 0.7628369645858827,
+        "cpuSeconds": 2417.1844281529993,
+        "stageCpuSeconds": {
+          "nursery": 2417.1844281529993
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/base/o64",
+        "offset": 64,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 3091.2811631840013,
+        "stageCpuSeconds": {
+          "nursery": 1558.504389526,
+          "hunt-contact": 440.3861282170001,
+          "hunt-weak": 559.6128492830007,
+          "hunt-mid": 532.7777961580005
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/base/o72",
+        "offset": 72,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.8306219119903062,
+        "score": 0.8306219119903062,
+        "cpuSeconds": 3479.7827601850017,
+        "stageCpuSeconds": {
+          "nursery": 3479.7827601850017
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/base/o80",
+        "offset": 80,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.00679934856896381,
+        "score": 2.006799348568964,
+        "cpuSeconds": 3111.6605287300004,
+        "stageCpuSeconds": {
+          "nursery": 1133.76703092,
+          "hunt-contact": 453.42977967799993,
+          "hunt-weak": 1524.4637181320004
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/base/o88",
+        "offset": 88,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 3930.856637397,
+        "stageCpuSeconds": {
+          "nursery": 2383.4357083239997,
+          "hunt-contact": 452.04316600599986,
+          "hunt-weak": 568.7024544190008,
+          "hunt-mid": 526.6753086479998
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/base/o96",
+        "offset": 96,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7628369645858827,
+        "score": 0.7628369645858827,
+        "cpuSeconds": 4485.4168967840005,
+        "stageCpuSeconds": {
+          "nursery": 4485.4168967840005
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/base/o104",
+        "offset": 104,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0,
+        "score": 2,
+        "cpuSeconds": 4108.192512446998,
+        "stageCpuSeconds": {
+          "nursery": 2118.8668268450006,
+          "hunt-contact": 404.6547104739998,
+          "hunt-weak": 1584.6709751279977
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/base/o112",
+        "offset": 112,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0,
+        "score": 2,
+        "cpuSeconds": 4062.867550942999,
+        "stageCpuSeconds": {
+          "nursery": 1850.6622374399997,
+          "hunt-contact": 443.59045598300077,
+          "hunt-weak": 1768.6148575199986
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/base/o120",
+        "offset": 120,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.014830130284339629,
+        "score": 2.0148301302843397,
+        "cpuSeconds": 4195.081356368999,
+        "stageCpuSeconds": {
+          "nursery": 1867.383606244,
+          "hunt-contact": 497.19909664600027,
+          "hunt-weak": 1830.4986534789987
+        }
+      }
+    ],
+    "failed": 0
+  },
+  "nursery-80-nostop": {
+    "runs": 16,
+    "meanScore": 1.9294644024438057,
+    "passedLast": 3,
+    "cpuHours": 23.257310455641672,
+    "stages": [
+      {
+        "stage": "nursery",
+        "passShare": 0.625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 1.725857211424889
+      },
+      {
+        "stage": "hunt-contact",
+        "passShare": 0.625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.12799634026697224
+      },
+      {
+        "stage": "hunt-weak",
+        "passShare": 0.25,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.8726573753989588
+      },
+      {
+        "stage": "hunt-mid",
+        "passShare": 0.1875,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.40938181237574045
+      }
+    ],
+    "perRun": [
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/nursery-80-nostop/o0",
+        "offset": 0,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 60
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4487.507075565999,
+        "stageCpuSeconds": {
+          "nursery": 1737.721918916,
+          "hunt-contact": 451.607945062,
+          "hunt-weak": 572.0476891009998,
+          "hunt-mid": 1726.1295224869991
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/nursery-80-nostop/o8",
+        "offset": 8,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.6695959774964979,
+        "score": 0.6695959774964979,
+        "cpuSeconds": 6157.077540777999,
+        "stageCpuSeconds": {
+          "nursery": 6157.077540777999
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/nursery-80-nostop/o16",
+        "offset": 16,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 0,
+        "score": 3,
+        "cpuSeconds": 5494.426733336999,
+        "stageCpuSeconds": {
+          "nursery": 2373.8136541060003,
+          "hunt-contact": 455.6543935129994,
+          "hunt-weak": 1048.8101412210017,
+          "hunt-mid": 1616.1485444969976
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/nursery-80-nostop/o24",
+        "offset": 24,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.09296686166863918,
+        "score": 0.09296686166863918,
+        "cpuSeconds": 7798.756817059998,
+        "stageCpuSeconds": {
+          "nursery": 7798.756817059998
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/nursery-80-nostop/o32",
+        "offset": 32,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 55
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 65
+          }
+        ],
+        "bestProgress": 0,
+        "score": 2,
+        "cpuSeconds": 5944.274053973002,
+        "stageCpuSeconds": {
+          "nursery": 3980.1577954920017,
+          "hunt-contact": 419.9512823879991,
+          "hunt-weak": 1544.1649760930013
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/nursery-80-nostop/o40",
+        "offset": 40,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7229398635236198,
+        "score": 0.7229398635236198,
+        "cpuSeconds": 7985.362329549999,
+        "stageCpuSeconds": {
+          "nursery": 7985.362329549999
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/nursery-80-nostop/o48",
+        "offset": 48,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 35
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 45
+          }
+        ],
+        "bestProgress": 0.008002416396755481,
+        "score": 2.0080024163967556,
+        "cpuSeconds": 5418.104481476,
+        "stageCpuSeconds": {
+          "nursery": 3096.4819497089984,
+          "hunt-contact": 494.37876751100066,
+          "hunt-weak": 1827.2437642560008
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/nursery-80-nostop/o56",
+        "offset": 56,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7628369645858827,
+        "score": 0.7628369645858827,
+        "cpuSeconds": 4669.274226544,
+        "stageCpuSeconds": {
+          "nursery": 4669.274226544
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/nursery-80-nostop/o64",
+        "offset": 64,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 3098.682286259999,
+        "stageCpuSeconds": {
+          "nursery": 1526.541224927,
+          "hunt-contact": 463.8703036029997,
+          "hunt-weak": 562.5212294349997,
+          "hunt-mid": 545.7495282949994
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/nursery-80-nostop/o72",
+        "offset": 72,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.8306219119903062,
+        "score": 0.8306219119903062,
+        "cpuSeconds": 5976.580401328005,
+        "stageCpuSeconds": {
+          "nursery": 5976.580401328005
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/nursery-80-nostop/o80",
+        "offset": 80,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.00679934856896381,
+        "score": 2.006799348568964,
+        "cpuSeconds": 3094.826555783,
+        "stageCpuSeconds": {
+          "nursery": 1078.5436140949998,
+          "hunt-contact": 445.1703382330004,
+          "hunt-weak": 1571.1126034549998
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/nursery-80-nostop/o88",
+        "offset": 88,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 3988.2662440730014,
+        "stageCpuSeconds": {
+          "nursery": 2402.0739683019997,
+          "hunt-contact": 482.33833953299927,
+          "hunt-weak": 570.5579578590009,
+          "hunt-mid": 533.2959783790016
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/nursery-80-nostop/o96",
+        "offset": 96,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7628369645858827,
+        "score": 0.7628369645858827,
+        "cpuSeconds": 7305.141094134996,
+        "stageCpuSeconds": {
+          "nursery": 7305.141094134996
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/nursery-80-nostop/o104",
+        "offset": 104,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0,
+        "score": 2,
+        "cpuSeconds": 4221.8346412180035,
+        "stageCpuSeconds": {
+          "nursery": 2219.209623881,
+          "hunt-contact": 404.615643000001,
+          "hunt-weak": 1598.0093743370026
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/nursery-80-nostop/o112",
+        "offset": 112,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0,
+        "score": 2,
+        "cpuSeconds": 4285.146849740999,
+        "stageCpuSeconds": {
+          "nursery": 1969.0515141950002,
+          "hunt-contact": 468.0342033260001,
+          "hunt-weak": 1848.0611322199984
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/nursery-both/nursery-80-nostop/o120",
+        "offset": 120,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.014830130284339629,
+        "score": 2.0148301302843397,
+        "cpuSeconds": 3801.056309488003,
+        "stageCpuSeconds": {
+          "nursery": 1855.0719382780003,
+          "hunt-contact": 522.2470334420004,
+          "hunt-weak": 1423.7373377680024
+        }
+      }
+    ],
+    "failed": 0
+  }
+}

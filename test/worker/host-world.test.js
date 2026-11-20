@@ -32,6 +32,13 @@ function small() {
 }
 
 describe('buildRun', () => {
+    it('fits the event capacity to a cap raised past the default, as `?agents=1000` asks', () => {
+        const overrides = { ...SMALL_CONFIG, maxAgents: 1000 };
+        const run = buildRun({ seed: 3, overrides, createPolicy: noisePolicy, log: LOG });
+        expect(run.config.maxAgents).toBe(1000);
+        expect(run.config.eventCapacity).toBeGreaterThanOrEqual(8 * 1000);
+    });
+
     it('builds a lean observer, which keeps the policy core and the panels counters', () => {
         const run = small();
         expect(run.observer.lean).toBe(true);
@@ -203,7 +210,11 @@ describe('worldInfo and readyLayout', () => {
             'scout',
             'defender',
         ]);
-        expect(info.specs[1]).toMatchObject({ index: 1, canHunt: true, visionRange: 350 });
+        expect(info.specs[1]).toMatchObject({ index: 1, canHunt: true, visionRange: 400 });
+        const rear = info.specs[1].rayReach.length / 2;
+        expect(info.specs[1].rayReach[0]).toBe(1);
+        expect(info.specs[1].rayReach[rear]).toBeCloseTo(0.4, 6);
+        expect(info.specs[0].rayReach.every((/** @type {number} */ f) => f === 1)).toBe(true);
     });
 
     it('passes the alarm and hunt call thresholds to the app, as it does smokeThreshold (T15d)', () => {
@@ -279,6 +290,8 @@ describe('worldInfo terrain', () => {
             epoch: 1,
             configHash: 'a',
             rulesHash: 'b',
+            ring: new SharedArrayBuffer(16),
+            slotBytes: 8,
             layout: {},
             info,
             labels: {},

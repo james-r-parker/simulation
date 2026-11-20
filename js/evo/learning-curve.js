@@ -9,6 +9,7 @@ export const CURVE_METRICS = Object.freeze([
     'eval.food_energy_per_1k',
     'eval.births_per_1k',
     'eval.escape_share',
+    'eval.chase_catch_share',
     'eval.hunter_kills_per_life_p50',
     'eval.hunter_zero_kill_share',
     'eval.hunter_income_share.kill',

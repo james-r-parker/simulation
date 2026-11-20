@@ -22,6 +22,8 @@ export function spreadOf(samples) {
  * @property {Record<string, any> | null} [fx] the effect budget's counts by family and the pool's live instances, null
  *   before a world
  * @property {number | null} [drawCalls] draw calls in the last rendered frame
+ * @property {number | null} [lateFrames] frames drawn on an old pack slot since the world began
+ * @property {number | null} [skippedPacks] requests the pack worker skipped (a snapshot slot overwritten under it)
  */
 
 /**
@@ -30,7 +32,7 @@ export function spreadOf(samples) {
  *   p95: number, p99: number}, gpuMs: {p50: number, p95: number, p99: number} | null, frames: number,
  *   ignoredFrames: {hidden: number, zero: number, long: number},
  *   agents: number, ticksPerSecond: number, droppedTicks: number, heapMb: number | null, gpu: {geometries: number, textures: number,
- *   programs: number}, fx: Record<string, any> | null,
+ *   programs: number}, fx: Record<string, any> | null, lateFrames: number, skippedPacks: number,
  *   drawCalls: number | null}} the payload
  */
 export function buildPerf(inputs) {
@@ -55,11 +57,16 @@ export function buildPerf(inputs) {
 
 /**
  * @param {PerfInputs} inputs the live values
- * @returns {{fx: Record<string, any> | null, drawCalls: number | null}}
- *   the effect counts and draw calls, null when absent
+ * @returns {{fx: Record<string, any> | null, drawCalls: number | null, lateFrames: number, skippedPacks: number}}
+ *   the effect counts and draw calls (null when absent) and the pack worker's late and skipped counts (0 when absent)
  */
-function fxOf({ fx, drawCalls }) {
-    return { fx: fx ?? null, drawCalls: drawCalls ?? null };
+function fxOf({ fx, drawCalls, lateFrames, skippedPacks }) {
+    return {
+        fx: fx ?? null,
+        drawCalls: drawCalls ?? null,
+        lateFrames: lateFrames ?? 0,
+        skippedPacks: skippedPacks ?? 0,
+    };
 }
 
 /**

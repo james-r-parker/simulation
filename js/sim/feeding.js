@@ -12,6 +12,7 @@ import { depositPheromone } from './pheromones.js';
 import { FOOD_GONE, removeFood } from './world.js';
 import { FOOD_KIND, FOOD_ORIGIN } from './carcass.js';
 import { killLine, takeBody } from './kill-body.js';
+import { tryDefenderRepel } from './defender-repel.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { specParams } from './spec-params.js';
 import { gainTemperature } from './temperature.js';
@@ -27,7 +28,15 @@ const HERD_CARCASS_BITE = 400;
  */
 function shareOf(world, slot, food) {
     const table = world.foodKind[food] === FOOD_KIND.MEAT ? world.meatFoodBySpec : world.plantFoodBySpec;
-    return table[world.spec[slot]];
+    const base = table[world.spec[slot]];
+    if (base > 0 || world.foodKind[food] === FOOD_KIND.MEAT) {
+        return base;
+    }
+    const share = world.config.juvenilePlantShare;
+    if (share > 0 && world.huntBySpec[world.spec[slot]] === 1 && world.ageTicks[slot] < world.config.juvenileTicks) {
+        return share;
+    }
+    return 0;
 }
 
 /**
@@ -303,7 +312,7 @@ function lunge(world, biter, other) {
     }
     if (bites(world, biter, other)) {
         applyBite(world, biter, other);
-    } else if (world.config.recoilEnergy > 0) {
+    } else if (!tryDefenderRepel(world, biter, other) && world.config.recoilEnergy > 0) {
         recoil(world, biter, other);
     }
 }

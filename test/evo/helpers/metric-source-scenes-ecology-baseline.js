@@ -1,5 +1,17 @@
 // Expected outputs from a sourceRun with two after-burn-in starvation deaths and no scene activity.
 export default {
+    'eval.chase_reacquire_share': {
+        value: null,
+        reason: 'no resolved chases after burn-in',
+    },
+    'eval.scavenge_approach_share': {
+        value: null,
+        reason: 'no carcass meals after burn-in',
+    },
+    'eval.ambush_kill_share': {
+        value: null,
+        reason: 'no caught approaches after burn-in',
+    },
     'eval.seasonal_diet_shift': {
         value: null,
         reason: 'fewer than two seasons with plant meals after burn-in',
@@ -56,10 +68,18 @@ export default {
         value: null,
         reason: 'no plant meals after burn-in',
     },
+    'eval.freeze_survival_gain': {
+        value: null,
+        reason: 'no completed episodes in both still and moving groups after burn-in',
+    },
+    'eval.freeze_under_threat': {
+        value: null,
+        reason: 'no prey sampled both current-threat and calm ticks after burn-in',
+    },
     'eval.trampled_share': {
         value: 0,
     },
-    'eval.dodge_skill': {
+    'eval.herd_dodge_share': {
         value: null,
         reason: 'no completed herd-approach episodes after burn-in',
     },
@@ -266,5 +286,94 @@ export default {
     'eval.prey_in_patch_share': {
         value: null,
         reason: 'fewer than 100 prey samples after burn-in',
+    },
+    'eval.guild_share.forager': {
+        value: null,
+        reason: 'no 100-tick checkpoint after burn-in',
+    },
+    'eval.guild_share.reproducer': {
+        value: null,
+        reason: 'no 100-tick checkpoint after burn-in',
+    },
+    'eval.guild_share.scout': {
+        value: null,
+        reason: 'no 100-tick checkpoint after burn-in',
+    },
+    'eval.guild_share.defender': {
+        value: null,
+        reason: 'no 100-tick checkpoint after burn-in',
+    },
+    'eval.guild_survival.forager': {
+        value: 1 / 3600,
+    },
+    'eval.guild_survival.reproducer': {
+        value: null,
+        reason: 'no death of this guild after burn-in',
+    },
+    'eval.guild_survival.scout': {
+        value: null,
+        reason: 'no death of this guild after burn-in',
+    },
+    'eval.guild_survival.defender': {
+        value: null,
+        reason: 'no death of this guild after burn-in',
+    },
+    'eval.prey_selectivity.forager': {
+        value: null,
+        reason: 'no eaten prey death or prey checkpoint after burn-in',
+    },
+    'eval.prey_selectivity.reproducer': {
+        value: null,
+        reason: 'no eaten prey death or prey checkpoint after burn-in',
+    },
+    'eval.prey_selectivity.scout': {
+        value: null,
+        reason: 'no eaten prey death or prey checkpoint after burn-in',
+    },
+    'eval.prey_selectivity.defender': {
+        value: null,
+        reason: 'no eaten prey death or prey checkpoint after burn-in',
+    },
+    'eval.defender_repel_per_1k': {
+        value: null,
+        reason: 'no defender tick after burn-in',
+    },
+    'eval.scout_alarm_lead_share': {
+        value: null,
+        reason: 'no scout alarm with a threat after burn-in',
+    },
+    'eval.reproducer_recovery_rate': {
+        value: null,
+        reason: 'no birth during post-bust recovery after burn-in',
+    },
+    'eval.chase_overshoot_share': {
+        value: null,
+        reason: 'no resolved chase after burn-in',
+    },
+    'eval.chase_sprint_lift': {
+        value: null,
+        reason: 'no chase and non-chase hunter-ticks after burn-in',
+    },
+    'eval.chase_cover_use_share': {
+        value: null,
+        reason: 'no evaded chase after burn-in',
+    },
+    'eval.chase_turn_jitter': {
+        value: null,
+        reason: 'no active chase turn samples after burn-in',
+    },
+    'eval.flee_sprint_lift': {
+        value: null,
+        reason: 'no threat and calm prey-ticks after burn-in',
+    },
+    'eval.sprint_cost_share': {
+        value: 0,
+    },
+    'eval.sprint_share.hunter': {
+        value: null,
+        reason: 'no agent-ticks for this role after burn-in',
+    },
+    'eval.sprint_share.prey': {
+        value: 0,
     },
 };

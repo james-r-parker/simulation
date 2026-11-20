@@ -3,6 +3,8 @@
 // blended agents of one frame (position, heading and speed), not a sim fact, so it needs no worker flag.
 
 /** The farthest a hunter and its prey can be apart and still count as a pursuit, in world units. */
+import { createPointGrid, fillPointGrid, nearCells } from './pursuit-grid.js';
+
 export const PURSUIT_RANGE = 450;
 /** The half-angle of the cone ahead of the hunter that its prey must be in, in radians (narrower than `biteArc`). */
 export const PURSUIT_CONE = 0.6;
@@ -21,6 +23,8 @@ export const MAX_PURSUITS = 48;
  * @property {Int32Array} hunter the hunter's index in the frame's agents
  * @property {Int32Array} prey the prey's index in the frame's agents
  * @property {Float32Array} closeness 1 at touching range, 0 at `PURSUIT_RANGE`
+ * @property {Int32Array} candidates scratch: this frame's possible prey, grown to the frame's capacity once
+ * @property {import('./pursuit-grid.js').PointGrid} grid scratch: the candidates by cell of `PURSUIT_RANGE`
  */
 
 /**
@@ -32,6 +36,8 @@ export function createPursuits() {
         hunter: new Int32Array(MAX_PURSUITS),
         prey: new Int32Array(MAX_PURSUITS),
         closeness: new Float32Array(MAX_PURSUITS),
+        candidates: new Int32Array(0),
+        grid: createPointGrid(),
     };
 }
 
@@ -97,6 +103,77 @@ function targetDistance(a, i, j, rules) {
 }
 
 /**
+ * Collects the agents that can be prey this frame (non-hunters running at `PREY_RUN_SHARE`), in index order, so each
+ * hunter scans those rather than every agent.
+ * @param {import('./interpolate.js').Interpolated} agents the frame's agents
+ * @param {{canHunt: Uint8Array, maxVelocity: number}} rules from `pursuitRules`
+ * @param {Pursuits} out the table whose `candidates` scratch is filled
+ * @returns {number} the candidates found
+ */
+function collectCandidates(agents, rules, out) {
+    if (out.candidates.length < agents.x.length) {
+        out.candidates = new Int32Array(agents.x.length);
+    }
+    const run = PREY_RUN_SHARE * rules.maxVelocity;
+    let n = 0;
+    for (let j = 0; j < agents.count; j++) {
+        if (rules.canHunt[agents.spec[j]] !== 1 && agents.speed[j] >= run) {
+            out.candidates[n++] = j;
+        }
+    }
+    return n;
+}
+
+const NEAR = { x0: 0, x1: 0, y0: 0, y1: 0 };
+const BEST = { j: -1, d: Infinity };
+const HUNTER = {
+    i: 0,
+    rules: /** @type {{canHunt: Uint8Array, maxVelocity: number}} */ ({ canHunt: new Uint8Array(0), maxVelocity: 1 }),
+};
+
+/**
+ * The nearest target of hunter `i` among the gridded candidates within `PURSUIT_RANGE`; ties go to the lower index,
+ * so the pair is the one a scan of every agent in index order finds.
+ * @param {import('./interpolate.js').Interpolated} agents the frame's agents
+ * @param {number} i the hunter
+ * @param {{canHunt: Uint8Array, maxVelocity: number}} rules from `pursuitRules`
+ * @param {import('./pursuit-grid.js').PointGrid} grid the candidates by cell
+ * @returns {{j: number, d: number}} the target (-1 for none) and its distance
+ */
+function nearestTarget(agents, i, rules, grid) {
+    BEST.j = -1;
+    BEST.d = Infinity;
+    HUNTER.i = i;
+    HUNTER.rules = rules;
+    const r = nearCells(grid, agents.x[i], agents.y[i], NEAR);
+    for (let cy = r.y0; cy <= r.y1; cy++) {
+        for (let c = cy * grid.cols + r.x0; c <= cy * grid.cols + r.x1; c++) {
+            scanCell(agents, HUNTER, grid, c);
+        }
+    }
+    return BEST;
+}
+
+/**
+ * Offers hunter `i` every candidate in cell `c`, keeping the nearest in `BEST`.
+ * @param {import('./interpolate.js').Interpolated} agents the frame's agents
+ * @param {{i: number, rules: {canHunt: Uint8Array, maxVelocity: number}}} hunter the hunter and the rules
+ * @param {import('./pursuit-grid.js').PointGrid} grid the candidates by cell
+ * @param {number} c the cell
+ * @returns {void}
+ */
+function scanCell(agents, { i, rules }, grid, c) {
+    for (let s = grid.start[c]; s < grid.start[c + 1]; s++) {
+        const j = grid.items[s];
+        const d = targetDistance(agents, i, j, rules);
+        if (d >= 0 && (d < BEST.d || (d === BEST.d && j < BEST.j))) {
+            BEST.j = j;
+            BEST.d = d;
+        }
+    }
+}
+
+/**
  * Fills `out` with the pursuits in a frame: each running hunter paired with its nearest fleeing smaller non-hunter.
  * @param {import('./interpolate.js').Interpolated} agents the frame's agents
  * @param {{canHunt: Uint8Array, maxVelocity: number}} rules from `pursuitRules`
@@ -105,24 +182,18 @@ function targetDistance(a, i, j, rules) {
  */
 export function findPursuits(agents, rules, out) {
     out.count = 0;
-    for (let i = 0; i < agents.count && out.count < MAX_PURSUITS; i++) {
+    const n = collectCandidates(agents, rules, out);
+    fillPointGrid(out.grid, agents, { ids: out.candidates, n }, PURSUIT_RANGE);
+    for (let i = 0; i < agents.count && out.count < MAX_PURSUITS && n > 0; i++) {
         if (rules.canHunt[agents.spec[i]] !== 1 || agents.speed[i] < HUNTER_RUN_SHARE * rules.maxVelocity) {
             continue;
         }
-        let best = -1;
-        let bestD = Infinity;
-        for (let j = 0; j < agents.count; j++) {
-            const d = targetDistance(agents, i, j, rules);
-            if (d >= 0 && d < bestD) {
-                best = j;
-                bestD = d;
-            }
-        }
-        if (best >= 0) {
+        const best = nearestTarget(agents, i, rules, out.grid);
+        if (best.j >= 0) {
             const k = out.count++;
             out.hunter[k] = i;
-            out.prey[k] = best;
-            out.closeness[k] = 1 - bestD / PURSUIT_RANGE;
+            out.prey[k] = best.j;
+            out.closeness[k] = 1 - best.d / PURSUIT_RANGE;
         }
     }
     return out;

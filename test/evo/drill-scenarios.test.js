@@ -50,7 +50,7 @@ const zeroBrain = () => ({
 });
 
 describe('DRILLS', () => {
-    it('lists the seven drills with a scene each', () => {
+    it('lists the seven drills of training.md, then the social ones, with a scene each', () => {
         expect(DRILLS.map((d) => d.name)).toEqual([
             'food-ahead',
             'food-behind',
@@ -59,9 +59,25 @@ describe('DRILLS', () => {
             'prey-too-big',
             'hunter-closing',
             'rock-refuge',
+            'prey-crossing',
+            'hunter-flank',
+            'kin-spared',
+            'pack-converge',
+            'prey-adrift',
+            'prey-weak',
+            'prey-mid',
         ]);
         expect(DRILLS.every((d) => d.scene.length > 0)).toBe(true);
-        expect(DRILLS.filter((d) => d.needsHunter).map((d) => d.name)).toEqual(['prey-ahead', 'prey-too-big']);
+        expect(DRILLS.filter((d) => d.needsHunter).map((d) => d.name)).toEqual([
+            'prey-ahead',
+            'prey-too-big',
+            'prey-crossing',
+            'kin-spared',
+            'pack-converge',
+            'prey-adrift',
+            'prey-weak',
+            'prey-mid',
+        ]);
     });
 
     it('stages the same trial from the same stream and another from another seed', () => {
@@ -125,6 +141,7 @@ describe('DRILLS', () => {
         expect(plan.won(/** @type {any} */ (world([1, 0], [1, 0])))).toBe(true);
         expect(plan.won(/** @type {any} */ (world([0, 1], [1, 0])))).toBe(false);
         expect(plan.won(/** @type {any} */ (world([0, 0], [1, 0])))).toBe(false);
+        expect(plan.won(/** @type {any} */ (world([1, 1], [1, 0])))).toBe(false);
     });
 
     it('wins the hunter drills on a living subject, and the ring drill only after the subject entered the ring', () => {

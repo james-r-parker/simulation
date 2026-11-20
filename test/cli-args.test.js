@@ -66,6 +66,17 @@ describe('exitCodeOf', () => {
         expect(spy).toHaveBeenCalledWith('boom');
         spy.mockRestore();
     });
+
+    it('prints a thrown value that is not an Error as text', async () => {
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        expect(
+            await exitCodeOf(async () => {
+                throw 'plain';
+            }),
+        ).toBe(1);
+        expect(spy).toHaveBeenCalledWith('plain');
+        spy.mockRestore();
+    });
 });
 
 describe('intFlag', () => {

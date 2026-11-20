@@ -1,6 +1,6 @@
 {
   "name": "blob-evolution-simulation",
-  "version": "9.0.0",
+  "version": "10.1.0",
   "description": "Artificial life simulation using neuroevolution with WebGL rendering",
   "type": "module",
   "scripts": {
@@ -28,12 +28,23 @@
     "replay": "node scripts/replay.mjs",
     "eval": "node scripts/eval.mjs",
     "food:ratio": "node scripts/food-ratio.mjs",
+    "audit:chase": "node scripts/audit-chase.mjs",
+    "audit:signals": "node scripts/audit-signals.mjs",
+    "probe:learn": "node scripts/learn-probe.mjs",
     "drill": "node scripts/drill.mjs",
+    "inspect": "node scripts/inspect-brain.mjs",
     "reflex": "node scripts/reflex.mjs",
     "bench:reflex": "node scripts/bench-reflex.mjs",
     "train": "node scripts/train.mjs",
+    "train:crossplay": "node scripts/train-crossplay.mjs",
     "train:curve": "node scripts/train-curve.mjs",
+    "train:exam": "node scripts/train-exam.mjs",
     "train:export": "node scripts/train-export.mjs",
+    "train:yield": "node scripts/train-yield.mjs",
+    "train:compare": "node scripts/train-compare.mjs",
+    "train:screen": "node scripts/train-screen.mjs",
+    "train:tune": "node scripts/train-tune.mjs",
+    "train:feasible": "node scripts/train-feasible.mjs",
     "eval:compare": "node scripts/eval-compare.mjs",
     "eval:power": "node scripts/eval-power.mjs",
     "metric:liveness": "node scripts/metric-liveness.mjs",
@@ -41,7 +52,9 @@
     "probe:memory": "node scripts/memory-probe.mjs",
     "ladder": "node scripts/ladder.mjs",
     "screen": "node scripts/screen.mjs",
-    "aspire:dashboard": "aspire dashboard run --frontend-url http://127.0.0.1:18888 --otlp-grpc-url http://127.0.0.1:4317 --otlp-http-url http://127.0.0.1:4318 --allow-anonymous"
+    "aspire:dashboard": "aspire dashboard run --frontend-url http://127.0.0.1:18888 --otlp-grpc-url http://127.0.0.1:4317 --otlp-http-url http://127.0.0.1:4318 --allow-anonymous",
+    "baseline:table": "node scripts/baseline-table.mjs",
+    "baseline:status": "node scripts/baseline-status.mjs"
   },
   "keywords": [
     "simulation",
@@ -55,9 +68,9 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@opentelemetry/api": "1.10.0",
-    "@opentelemetry/exporter-metrics-otlp-http": "0.301.0",
-    "@opentelemetry/resources": "3.1.0",
-    "@opentelemetry/sdk-metrics": "3.1.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "0.301.2",
+    "@opentelemetry/resources": "3.1.1",
+    "@opentelemetry/sdk-metrics": "3.1.1",
     "@playwright/test": "1.65.0",
     "@stryker-mutator/core": "10.1.1",
     "@stryker-mutator/vitest-runner": "10.1.1",
@@ -65,15 +78,15 @@
     "@vitest/coverage-v8": "5.1.0",
     "dependency-cruiser": "18.7.2",
     "eslint": "10.14.0",
-    "eslint-plugin-jsdoc": "65.4.4",
+    "eslint-plugin-jsdoc": "65.4.5",
     "globals": "17.14.0",
-    "jscpd": "5.4.2",
-    "prettier": "3.9.10",
+    "jscpd": "5.4.3",
+    "prettier": "3.10.1",
     "three": "0.187.0",
     "typescript": "7.0.2",
-    "vite": "8.3.6",
+    "vite": "8.3.8",
     "vitest": "5.1.0",
-    "wrangler": "4.158.0"
+    "wrangler": "4.161.0"
   },
   "engines": {
     "node": ">=24"

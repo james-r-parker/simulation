@@ -76,7 +76,7 @@ describe('check.sh under a git hook environment', { timeout: scaleTimeout(30_000
             expect(result.status, result.stdout + result.stderr).toBe(0);
 
             const vitest = callOf(out, 'vitest');
-            expect(vitest).toContain('args=related --run --passWithNoTests staged.js');
+            expect(vitest).toContain('args=related --run --passWithNoTests --exclude **/*.slow.test.js staged.js');
             for (const name of HOOK_VARS) {
                 expect(vitest).toContain(`${name}=unset`);
             }

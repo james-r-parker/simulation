@@ -1,8 +1,8 @@
 # Stillness
 
-**Status:** Proposed - stub: measure whether blobs freeze or lie in wait today, then, if they cannot gain from it, make a still body fainter on another blob's rays; Phase 1 (detectors and baseline) is first.
-**Validated:** f5ebac76 (2026-11-15)
-**Priority:** 28 - it gives the ambusher and the freezing prey a reason to exist, but it changes the ray march every scene reads, so it follows the world work ([honest-budgets.md](honest-budgets.md)), cover ([habitat-cover.md](habitat-cover.md)) and [sprint-burst.md](sprint-burst.md)
+**Status:** In progress - Phase 1 detectors and E210 baseline complete; Phase 2 gate met.
+**Validated:** 3ca2b1fd (2026-11-17)
+**Priority:** 31 - it gives the ambusher and the freezing prey a reason to exist, but it changes the ray march every scene reads, so it follows the world work ([honest-budgets.md](honest-budgets.md)), cover ([habitat-cover.md](habitat-cover.md)) and [sprint-burst.md](sprint-burst.md)
 **Depends on:** [honest-budgets.md](honest-budgets.md), [habitat-cover.md](habitat-cover.md), [training-stages.md](training-stages.md)
 
 A ray reports a body by its class and its proximity, `1 - distance / range` (`js/sim/ray-march.js`, and the Rust kernel `wasm/src/sense.rs`). A body that stands still reads exactly as one that runs. So holding still hides nothing: an ambusher at the rocks is seen as early as a courser, and a prey that freezes gains nothing over one that flees. The scene table asks for both ([principles.md](../principles.md): "Same spec, different custom: one courser and one ambusher at the rocks"; "A real chase: losing sight is not the same as the prey ceasing to exist").
@@ -24,13 +24,13 @@ Sources are cited from memory and are to be checked before a number from them is
 
 All computed by the eval observer; none is a reward.
 
-| Metric                          | Direction      | Reads                                                                                                                                                 |
-| ------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `eval.freeze_under_threat`      | watch (higher) | The share of non-hunter ticks spent still (the speed bar of `js/evo/style.js`) with a threat on the rays, minus the same blobs' still share when calm |
-| `eval.freeze_survival_gain`     | higher         | Of threat episodes, the survival share of those in which the prey was still when the threat was first seen, minus that of the rest                    |
-| `eval.ambush_kill_share`        | higher         | Of deliberate hunter kills, those whose chase opened with the hunter still for at least `AMBUSH_STILL_TICKS` (60) before it                           |
-| `eval.first_sight_range.still`  | watch (lower)  | Phase 2: the mean range, as a share of view, at which a body that was still is first on another blob's rays                                           |
-| `eval.first_sight_range.moving` | watch          | Phase 2: the same for a moving body                                                                                                                   |
+| Metric                          | Direction      | Reads                                                                                                                                                                                                                  |
+| ------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `eval.freeze_under_threat`      | watch (higher) | Mean per-prey difference in still-tick share with a current threat ray and without one, for prey with samples in both conditions; still uses `RING_SPEED` from `js/evo/style.js`                                       |
+| `eval.freeze_survival_gain`     | higher         | Of completed contiguous current-threat-ray episodes, survival share when still at first sight minus survival share when moving; a ray loss ends an episode as survived, death while it remains ends it as not survived |
+| `eval.ambush_kill_share`        | higher         | Of counted caught approaches, those whose hunter had been still for at least `AMBUSH_STILL_TICKS` (60) consecutive ticks before the approach opened                                                                    |
+| `eval.first_sight_range.still`  | watch (lower)  | Phase 2: the mean range, as a share of view, at which a body that was still is first on another blob's rays                                                                                                            |
+| `eval.first_sight_range.moving` | watch          | Phase 2: the same for a moving body                                                                                                                                                                                    |
 
 ## Phases
 
@@ -38,7 +38,19 @@ All computed by the eval observer; none is a reward.
 
 **Targets:** none - detectors only; `worldHash` and the golden cases are unchanged
 
-The first three detectors and a 16-seed baseline on the defaults (`E-ST-1`). Prediction, written before the run: `eval.freeze_under_threat` is at or under 0 (threatened prey move more, not less), `eval.freeze_survival_gain` has an interval that includes 0, and `eval.ambush_kill_share` is under 0.1. Phase 2 is built only if the prediction holds: if blobs already freeze or ambush with a gain, the world gives the reason and this doc closes with the detectors kept.
+The baseline is the shared run of [detector-baseline.md](detector-baseline.md), read once for every plan that has its prediction written.
+
+The first three detectors. Prediction for the shared detector-baseline top-up, recorded in `evals/experiments.json` before that run: `eval.freeze_under_threat` is at or under 0 (threatened prey move more, not less), `eval.freeze_survival_gain` has a per-seed range that includes 0, and `eval.ambush_kill_share` is under 0.1. Phase 2 is built only if the prediction holds: if blobs already freeze or ambush with a gain, the world gives the reason and this doc closes with the detectors kept.
+
+Baseline (`evals/power/defaults-floor-on-E210.json`, 128 seeds, 200000 ticks, `rulesHash` `38be2908ad820c86`):
+
+| Metric                      | Mean      | Range                | Null     | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
+| --------------------------- | --------- | -------------------- | -------- | ------ | ------ | ------ | --------------------- |
+| `eval.freeze_under_threat`  | -0.1121   | -0.2152 to 0.1729    | 0        | 0.5    | 0.5    | 0.3    | more than 64          |
+| `eval.freeze_survival_gain` | 0.0008938 | -0.008615 to 0.01076 | 0        | -      | -      | -      | more than 64          |
+| `eval.ambush_kill_share`    | 0.0005704 | 0 to 0.00533         | 0.007813 | 0.03   | 0.03   | -      | 16                    |
+
+Verdict (E210): Prediction holds (`eval.freeze_under_threat` -0.1121 is at or under 0, `eval.freeze_survival_gain` 0.0008938 with a per-seed range of -0.008615 to 0.01076 (not a confidence interval) straddles 0, `eval.ambush_kill_share` 0.0005704 is under 0.1). Phase 2 is opened.
 
 ### Phase 2 - A still body is fainter
 
@@ -65,13 +77,17 @@ The keep rule decides ([principles.md](../principles.md), "A realistic mechanism
 
 ## Decisions
 
-| Decision                                                                  | Why                                                                                                                                      | Who                              |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| Measure before building                                                   | If blobs already gain by freezing, the rule is not needed                                                                                | Delegated (planning, 2026-11-15) |
-| The existing proximity value is scaled; no input is added                 | A new input is a cost that needs a scene metric to move ([principles.md](../principles.md), "More sensors as a substitute for a scene")  | Delegated (planning, 2026-11-15) |
-| It queues behind cover and the sprint store                               | Cover ([habitat-cover.md](habitat-cover.md)) and stillness both hide a body; reading them together would not say which one moved a scene | Delegated (planning, 2026-11-15) |
-| The Rust kernel change is built by Opus, and the JS reference is the test | The ray march runs in `wasm/src/sense.rs`; a kernel is tested against its JS reference (`AGENTS.md`, wasm-kernels.md)                    | Planner, from the user's rule    |
-| The switch `stillSight` is deleted at Phase 3 on either verdict           | Delete what a switch replaces (`AGENTS.md`)                                                                                              | Planner, from AGENTS.md          |
+| Decision                                                                  | Why                                                                                                                                      | Who                                        |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Measure before building                                                   | If blobs already gain by freezing, the rule is not needed                                                                                | Delegated (planning, 2026-11-15)           |
+| The existing proximity value is scaled; no input is added                 | A new input is a cost that needs a scene metric to move ([principles.md](../principles.md), "More sensors as a substitute for a scene")  | Delegated (planning, 2026-11-15)           |
+| It queues behind cover and the sprint store                               | Cover ([habitat-cover.md](habitat-cover.md)) and stillness both hide a body; reading them together would not say which one moved a scene | Delegated (planning, 2026-11-15)           |
+| The Rust kernel change is built by Opus, and the JS reference is the test | The ray march runs in `wasm/src/sense.rs`; a kernel is tested against its JS reference (`AGENTS.md`, wasm-kernels.md)                    | Planner, from the user's rule              |
+| The switch `stillSight` is deleted at Phase 3 on either verdict           | Delete what a switch replaces (`AGENTS.md`)                                                                                              | Planner, from AGENTS.md                    |
+| A threat episode is a contiguous current ray hit                          | `lastThreat[slot] === world.tick` marks a current hit; `INTENT_WINDOW` carries stale sightings and blurs the episode boundary            | Delegated (planning, 2026-11-17)           |
+| Survival ends at ray loss or death; open episodes at run end are omitted  | This resolves outcomes without extending the run or counting unfinished episodes as survivors                                            | Delegated (planning, 2026-11-17)           |
+| Register detector names before committing their literal uses              | The tier-1 convention hook rejects unregistered `eval.*` names, so T2b registry coverage must commit before the T2a detector code        | Delegated (implementation, 2026-11-17)     |
+| Ambush stillness is latched before the approach-opening tick              | The rule requires 60 consecutive still ticks before opening; the opening tick's speed cannot complete or break that prior run            | Delegated (conformance review, 2026-11-17) |
 
 ## Delivery requirements
 
@@ -80,41 +96,43 @@ The keep rule decides ([principles.md](../principles.md), "A realistic mechanism
 | Architecture            | Phase 1: `js/evo/scene-stillness.js` and its registry entries. Phase 2: the factor in `js/sim/ray-march.js` and `wasm/src/sense.rs` (`scripts/build-wasm.sh`), a pure `stillFactor` in `js/sim/still-sight.js`                                                                                 |
 | Unit tests              | `test/evo/scene-stillness.test.js` (a prey that stops under threat reads a positive freeze share; a hunter that waits then strikes reads an ambush kill). Phase 2: `test/sim/still-sight.test.js` (the factor's four corners), the kernel against its JS reference, the off path bit-identical |
 | Headless e2e            | Phase 1: golden hashes unchanged. Phase 2: unchanged with the switch off; a 6000-tick replay with it on runs clean under `--check-invariants`                                                                                                                                                  |
-| Performance budget      | TBD - Phase 2 is priced with `flock /tmp/claude-1000/cpu.lock npm run bench:micro -- --area wasm --compare HEAD` once the kernel change exists                                                                                                                                                 |
-| Evolution metrics       | The Phase 2 Done row; experiments `E-ST-1` to `E-ST-3` in `evals/experiments.json`                                                                                                                                                                                                             |
+| Performance budget      | Phase 1 is observer-only, with no per-tick allocation or sim-step cost; its scan is included in detector-baseline T4's wave price. Phase 2 is priced with `flock /tmp/claude-1000/cpu.lock npm run bench:micro -- --area sense --compare <base>` against the ray-march change                  |
+| Evolution metrics       | Phase 2 Done row; Phase 1 reads the shared detector-baseline top-up after its prediction is recorded; Phase 2 screen and keep-rule records go in `evals/experiments.json`                                                                                                                      |
 | Determinism             | No RNG stream; the factor is a pure function of speed and proximity                                                                                                                                                                                                                            |
-| Config and persistence  | Phase 2: `stillSight` (false), `stillSpeed` (0.1), `stillFaint` (0.5), `stillNear` (0.6); a `scripts/flag-ledger.json` entry for the boolean pointing at T9. A new key changes `rulesHash`, so the switch lands on `season/next`; no layout change                                             |
+| Config and persistence  | Phase 2: `stillSight` (false), `stillSpeed` (0.1), `stillFaint` (0.5), `stillNear` (0.6); a `scripts/flag-ledger.json` entry for the boolean pointing at T10. A new key changes `rulesHash`, so the switch lands on `season/next`; no layout change                                            |
 | Logging and diagnostics | `StillSightConfig` (info, tick 0, with the switch on). Replay: `npm run replay -- --seed <n> --ticks 20000 --config <on.json> --level debug --check-invariants`                                                                                                                                |
-| Browser compatibility   | TBD - whether a still, faint blob is drawn differently is decided with [crisp-renderer.md](crisp-renderer.md) when Phase 2 is planned in full                                                                                                                                                  |
-| Docs                    | [metrics.md](metrics.md) regenerated; the [principles.md](../principles.md) scene table gains the detectors under **Same spec, different custom** and **Refuge**; one [sim-notes.md](sim-notes.md) entry per run                                                                               |
+| Browser compatibility   | Phase 1 has no browser path. Phase 2 changes the existing ray march in JS and Rust; rendering keeps the existing body draw and needs no new asset or renderer path                                                                                                                             |
+| Docs                    | [metrics.md](metrics.md) regenerated; the [principles.md](../principles.md) scene table gains the detectors under **Same spec, different custom**, **A real chase**, **Refuge** and **Call, or don't**; one [sim-notes.md](sim-notes.md) entry per run                                         |
 | Verification            | `scripts/check.sh` green per chunk PR; the baseline and the keep-rule reports committed under `evals/decisions/`                                                                                                                                                                               |
 
 ## Task breakdown
 
 ### Phase 1 - Detectors and baseline
 
-| #   | Task                                                                                                                                                                                      | Nature       | Depends on |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | Add `js/evo/scene-stillness.js` with `eval.freeze_under_threat`, `eval.freeze_survival_gain` and `eval.ambush_kill_share`, registry entries and `test/evo/scene-stillness.test.js`        | [judgement]  | -          |
-| T2  | Run `E-ST-1`: prediction first, 16 floor-on seeds x 200000 ticks on the defaults, `npm run eval:power` on the new metrics, the report under `evals/decisions/`; write the Phase 2 verdict | [mechanical] | T1         |
-| T3  | Conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`; replace every `TBD` if Phase 2 is to be built, or close the doc                                      | [judgement]  | T1, T2     |
+| #   | Task                                                                                                                                                                        | Nature       | Depends on |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T1  | Audit the stillness bar, current threat signal and approach-opening path; record detector definitions and observer-only cost in [sim-notes.md](sim-notes.md) (built)        | [judgement]  | -          |
+| T2a | Add `js/evo/scene-stillness.js` and observer wiring for the three Phase 1 detectors, with focused arithmetic tests (built)                                                  | [judgement]  | T1         |
+| T2b | Add registry/source coverage, update the principles detector table and regenerate [metrics.md](metrics.md) (built)                                                          | [mechanical] | T2a        |
+| T3  | Read the metrics in the shared detector-baseline top-up; record the prediction first in `evals/experiments.json`, then the Phase 2 verdict (built - E210, Phase 2 gate met) | [mechanical] | T2b        |
+| T4  | Conformance review of the Phase 1 implementation by a fresh agent; confirm episode and survival definitions (built)                                                         | [judgement]  | T1, T2b    |
 
 ### Phase 2 - A still body is fainter
 
 | #   | Task                                                                                                                                                                                                                                                                              | Nature       | Depends on     |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | -------------- |
-| T4  | Add `js/sim/still-sight.js`, the keys, the ledger entry and the factor in `js/sim/ray-march.js`, with the tests and the off-path checks                                                                                                                                           | [judgement]  | T3             |
-| T5  | Port the factor to `wasm/src/sense.rs`, rebuild with `scripts/build-wasm.sh`, test the kernel against the JS reference, price it                                                                                                                                                  | [judgement]  | T4             |
-| T6  | Add the two `eval.first_sight_range` metrics; write `evals/screens/stillness.grid.json`                                                                                                                                                                                           | [judgement]  | T4             |
-| T7  | Run the screen (`E-ST-2`, 16 seeds) and the keep-rule pass of the best arm (`E-ST-3`, 64 matched seeds); with the switch on, re-run the gate validity check and the reference drill tables of [training-stages.md](training-stages.md), whose stagings hold still bodies at range | [mechanical] | T5, T6         |
-| T8  | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                                               | [judgement]  | T4, T5, T6, T7 |
+| T5  | Add `js/sim/still-sight.js`, the keys, the ledger entry and the factor in `js/sim/ray-march.js`, with the tests and the off-path checks                                                                                                                                           | [judgement]  | T3, T4         |
+| T6  | Port the factor to `wasm/src/sense.rs`, rebuild with `scripts/build-wasm.sh`, test the kernel against the JS reference, price it                                                                                                                                                  | [judgement]  | T5             |
+| T7  | Add the two `eval.first_sight_range` metrics; write `evals/screens/stillness.grid.json`                                                                                                                                                                                           | [judgement]  | T5             |
+| T8  | Run the screen (`E-ST-2`, 16 seeds) and the keep-rule pass of the best arm (`E-ST-3`, 64 matched seeds); with the switch on, re-run the gate validity check and the reference drill tables of [training-stages.md](training-stages.md), whose stagings hold still bodies at range | [mechanical] | T6, T7         |
+| T9  | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                                               | [judgement]  | T5, T6, T7, T8 |
 
 ### Phase 3 - Adopt or delete
 
 | #   | Task                                                                                                                                                                                                                           | Nature      | Depends on |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- | ---------- |
-| T9  | Verdict by the keep rule: adopt the best harmless arm and delete the switch and its off path in JS and Rust with the golden re-pin; delete the rule, its keys and its ledger entry only on `WORSE` or an unpaid ray-march cost | [judgement] | T8         |
-| T10 | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`; the clip of an ambush for the user; move the Status line                                                                                  | [judgement] | T9         |
+| T10 | Verdict by the keep rule: adopt the best harmless arm and delete the switch and its off path in JS and Rust with the golden re-pin; delete the rule, its keys and its ledger entry only on `WORSE` or an unpaid ray-march cost | [judgement] | T9         |
+| T11 | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`; the clip of an ambush for the user; move the Status line                                                                                  | [judgement] | T10        |
 
 ## Verification
 

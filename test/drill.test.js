@@ -2,12 +2,13 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { createArchive } from '../js/evo/archive.js';
+import { createArchive, offer } from '../js/evo/archive.js';
 import { brainLayout } from '../js/sim/brain-layout.js';
 import { createConfig } from '../js/sim/config.js';
 import { main, parseArgs, runDrills } from '../scripts/drill.mjs';
-import { formatTable, meanEdge, reportJson } from '../scripts/lib/drill-report.mjs';
-import { eliteSubjects } from '../scripts/lib/drill-subjects.mjs';
+import { eliteSkillLines, formatTable, meanEdge, reportJson } from '../scripts/lib/drill-report.mjs';
+import { DRILLS } from '../js/evo/drill-scenarios.js';
+import { allEliteSubjects, eliteSubjects } from '../scripts/lib/drill-subjects.mjs';
 import { makeChampionFile } from './evo/helpers/champion-file.js';
 
 const root = mkdtempSync(join(tmpdir(), 'drill-'));
@@ -26,7 +27,7 @@ describe('parseArgs', () => {
     it('defaults to every drill, 32 trials, seed 1 and 8 elites', () => {
         const args = parseArgs(['--champions', 'd']);
         expect(args).toMatchObject({ champions: 'd', seed: 1, trials: 32, count: 8, json: false, out: null });
-        expect(args.drills).toHaveLength(7);
+        expect(args.drills).toEqual(DRILLS.map((d) => d.name));
     });
 
     it('reads every flag', () => {
@@ -65,6 +66,49 @@ describe('parseArgs', () => {
     });
 });
 
+describe('--elites all', () => {
+    it('reads --elites and --bar, and refuses them without --archive, with another value or out of range', () => {
+        expect(parseArgs(['--archive', 'a', '--elites', 'all', '--bar', '0.4'])).toMatchObject({
+            elites: 'all',
+            bar: 0.4,
+        });
+        expect(parseArgs(['--archive', 'a'])).toMatchObject({ elites: null, bar: null });
+        expect(() => parseArgs(['--champions', 'd', '--elites', 'all'])).toThrow(/needs --archive/);
+        expect(() => parseArgs(['--archive', 'a', '--elites', 'best'])).toThrow(/only "all"/);
+        expect(() => parseArgs(['--archive', 'a', '--bar', '0.4'])).toThrow(/--bar needs --elites all/);
+        expect(() => parseArgs(['--archive', 'a', '--elites', 'all', '--bar', '2'])).toThrow(/from 0 to 1/);
+        expect(() => parseArgs(['--archive', 'a', '--elites', 'all', '--bar', 'x'])).toThrow(/from 0 to 1/);
+    });
+
+    it('prints a line per drill, with dashes for a drill nobody ran', () => {
+        const read = { drilled: 0, clearing: 0, clearShare: null, topClears: null, spearman: null };
+        const full = { drilled: 4, clearing: 1, clearShare: 0.25, topClears: false, spearman: -0.5 };
+        expect(eliteSkillLines({ a: read, b: full }, null)).toEqual([
+            'elite skill (edgeLow >= 0.3)',
+            '  a: 0/0 clear (-), top elite clears -, rho -',
+            '  b: 1/4 clear (0.25), top elite clears no, rho -0.50',
+        ]);
+        expect(eliteSkillLines({ a: { ...full, topClears: true } }, 0.5)[1]).toContain('top elite clears yes');
+        expect(eliteSkillLines({}, 0.5)[0]).toBe('elite skill (edgeLow >= 0.5)');
+    });
+
+    it('lists every occupied elite with its lower bound, in specialisation then cell order', () => {
+        const archive = createArchive(brainLayout(createConfig({})));
+        const row = new Float32Array(archive.layout.weightCount).fill(0.05);
+        offer(archive, { spec: 1, cell: 4, row, sigma: 0.1, id: 5, fitness: 1 });
+        offer(archive, { spec: 0, cell: 64, row, sigma: 0.1, id: 6, fitness: 2 });
+        offer(archive, { spec: 0, cell: 2, row, sigma: 0.1, id: 7, fitness: 1 });
+        const subjects = allEliteSubjects(archive);
+        expect(subjects.map((s) => [s.name, s.style])).toEqual([
+            ['elite-forager-cell2', 'low'],
+            ['elite-forager-cell64', 'high'],
+            ['elite-predator-cell4', 'low'],
+        ]);
+        expect(subjects.every((s) => typeof s.lowerBound === 'number')).toBe(true);
+        expect(allEliteSubjects(createArchive(brainLayout(createConfig({}))))).toEqual([]);
+    });
+});
+
 describe('the report', () => {
     /** @type {import('../scripts/lib/drill-report.mjs').DrillRow[]} */
     const rows = [
@@ -85,6 +129,34 @@ describe('the report', () => {
         expect(reportJson(['a'], rows).rows[0].meanEdge).toBe(0);
     });
 
+    it('prints the Wilson low bounds in the cell when the row has them, and leaves them out when it does not', () => {
+        const [, first] = formatTable(
+            ['a'],
+            [{ label: 'g', cells: { a: { winShare: 0.75, edge: 0.5, winShareLow: 0.58, edgeLow: 0.31 } } }],
+        );
+        expect(first.split(/\s{2,}/)[1]).toBe('0.75 [0.58] (+0.50, +0.31)');
+    });
+
+    it('prints the control arms of a pack cell: both shares, the gain and the two low bounds', () => {
+        const cell = {
+            winShare: 0.75,
+            edge: 0.5,
+            wins: 48,
+            trials: 64,
+            arms: { solo: { wins: 8, trials: 64 }, 'kin-blind': { wins: 24, trials: 64 } },
+        };
+        const [, first] = formatTable(['pack-converge'], [{ label: 'g', cells: { 'pack-converge': cell } }]);
+        expect(first).toMatch(/solo 0\.13, blind 0\.38, gain \+0\.63 \[\+0\.\d\d\], gap \[\+0\.\d\d\]/);
+        const bare = { ...cell, arms: undefined };
+        expect(formatTable(['pack-converge'], [{ label: 'g', cells: { 'pack-converge': bare } }])[1]).not.toContain(
+            'solo',
+        );
+        const half = { ...cell, arms: { solo: { wins: 1, trials: 64 } } };
+        expect(formatTable(['pack-converge'], [{ label: 'g', cells: { 'pack-converge': half } }])[1]).not.toContain(
+            'gain',
+        );
+    });
+
     it('prints first-match lost-trial reasons in the cell', () => {
         const [, first] = formatTable(
             ['prey-ahead'],
@@ -97,6 +169,22 @@ describe('the report', () => {
 describe('eliteSubjects', () => {
     it('is empty for an empty archive', () => {
         expect(eliteSubjects(createArchive(brainLayout(createConfig({}))))).toEqual([]);
+    });
+
+    it('takes the champions the archive would export: one per specialisation and style band, with the style and bound', () => {
+        const archive = createArchive(brainLayout(createConfig({})));
+        const row = new Float32Array(archive.layout.weightCount).fill(0.05);
+        offer(archive, { spec: 1, cell: 4, row, sigma: 0.1, id: 5, fitness: 1 });
+        offer(archive, { spec: 1, cell: 64, row, sigma: 0.1, id: 6, fitness: 2 });
+        offer(archive, { spec: 0, cell: 2, row, sigma: 0.1, id: 7, fitness: 1 });
+        const subjects = eliteSubjects(archive);
+        expect(subjects.map((s) => [s.name, s.spec, s.style])).toEqual([
+            ['elite-forager-cell2', 0, 'low'],
+            ['elite-predator-cell4', 1, 'low'],
+            ['elite-predator-cell64', 1, 'high'],
+        ]);
+        expect(subjects.every((s) => typeof s.lowerBound === 'number')).toBe(true);
+        expect(subjects[1].weights).not.toBe(archive.rows);
     });
 });
 
@@ -119,6 +207,12 @@ describe('runDrills', () => {
         expect(rows[0].cells['prey-ahead']).toBeNull();
         expect(rows[1].cells['food-ahead']).toBeNull();
         expect(rows[2].cells['food-ahead']?.winShare).toBe(1);
+        // a hunting drill's cell carries the prey-trace aggregates, a food drill's does not
+        const hunt = /** @type {any} */ (rows[1].cells['prey-ahead']);
+        expect(hunt.jawTrials).toBeGreaterThanOrEqual(0);
+        expect(hunt.jawTrials).toBeLessThanOrEqual(hunt.trials);
+        expect(hunt.closestList.length).toBeLessThanOrEqual(hunt.trials);
+        expect('jawTrials' in /** @type {any} */ (rows[2].cells['food-ahead'])).toBe(false);
         expect(lines.join('\n')).toContain('mean edge');
         expect(lines.join('\n')).toMatch(/skip cells[^\n]*prey>BITE[^\n]*\n[^\n]*champions/);
         const log = readFileSync(join(root, 'logs', 'drill-1x2.jsonl'), 'utf8')

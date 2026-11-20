@@ -60,8 +60,32 @@ describe('observeScenes', () => {
         });
         r.world.alive[prey] = 0;
         observe(r.observer, r.world);
-        expect(r.observer.scenes.approach.caught).toBe(1);
+        expect(r.observer.scenes.approach.tally.byClass[0]).toBe(1);
         expect(r.observer.scenes.approach.phase[hunter]).toBe(0);
+    });
+
+    it('flushes stillness only for the genome currently tracked in a death slot', () => {
+        const r = observed();
+        const tracked = addBlob(r.world);
+        const stale = addBlob(r.world);
+        const trackedGenome = r.world.genomeId[tracked];
+        const staleGenome = r.world.genomeId[stale];
+        r.observer.genomeId[tracked] = trackedGenome;
+        r.observer.genomeId[stale] = staleGenome + 1;
+        r.observer.scenes.stillness.threatTicks[tracked] = 2;
+        r.observer.scenes.stillness.calmTicks[tracked] = 2;
+        r.observer.scenes.stillness.threatStill[tracked] = 2;
+        r.observer.scenes.stillness.threatTicks[stale] = 4;
+        r.observer.scenes.stillness.calmTicks[stale] = 4;
+        r.observer.scenes.stillness.threatStill[stale] = 4;
+        nextTick(r.world, T0 + 1);
+        pushDied(r.world, { slot: tracked, genomeId: trackedGenome, cause: DEATH_CAUSE.STARVED });
+        pushDied(r.world, { slot: stale, genomeId: staleGenome, cause: DEATH_CAUSE.STARVED });
+        r.world.alive[tracked] = 0;
+        r.world.alive[stale] = 0;
+        observe(r.observer, r.world);
+        expect(r.observer.scenes.stillness.freezeSamples).toBe(1);
+        expect(r.observer.scenes.stillness.freezeDifference).toBe(1);
     });
 
     it('feeds a HunterKill record to the hunter age detectors', () => {
@@ -150,6 +174,7 @@ describe('observeScenes', () => {
             'basin',
             'bite',
             'biteLife',
+            'budget',
             'capacity',
             'carcass',
             'competence',
@@ -161,21 +186,28 @@ describe('observeScenes', () => {
             'families',
             'flora',
             'guards',
+            'guilds',
             'herd',
             'heritage',
             'hunters',
             'kin',
+            'kinematics',
             'matched',
             'mate',
             'niche',
+            'packLift',
             'patch',
             'proof',
             'reach',
+            'recruit',
             'refuge',
             'refugeOutcome',
+            'scent',
             'season',
             'seasonMap',
             'spend',
+            'sprint',
+            'stillness',
             'strikeMiss',
             'style',
             'terrain',

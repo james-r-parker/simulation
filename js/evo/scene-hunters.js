@@ -2,8 +2,8 @@
 // (one per `canHunt` death; js/sim/hunter-ledger.js) and from `AgentBorn`. The ledger is outside `worldHash`.
 //
 // - `eval.hunter_kills_per_life_p50`, `eval.hunter_kills_per_life_mean`, `eval.hunter_zero_kill_share`: the median and
-//   mean kills of a hunter life, and the share of
-//   hunter deaths with no kill.
+//   mean kills of a hunter life (all deaths), and `eval.hunter_zero_kill_share`: the share of the hunter lives after
+//   burn-in (deaths at or after `BURN_IN_TICKS`, and the hunters alive at the last tick, at their end age) with no kill.
 // - `eval.hunter_death_share.<cause>`: the share of hunter deaths by cause (starved, collision, eaten, trampled, disease,
 //   other: old age and poison).
 // - `eval.hunter_birth_source_share.<source>`: the share of hunter births by source (mate-hunter-parent,
@@ -21,6 +21,7 @@
 import { BIRTH_SOURCE } from '../sim/hunter-ledger.js';
 import { DEFAULTS } from '../sim/config-defaults.js';
 import { DEATH_CAUSE, EVENT_TYPE } from '../sim/events.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { bySuffix, none, ok, quantile, share } from './metrics-stats.js';
 import {
@@ -59,6 +60,8 @@ export function createHunterScene(runTicks, config = DEFAULTS) {
         age: createAgeScene(config.juvenileTicks),
         log: createLog(['age', 'kills']),
         rows: 0,
+        lives: 0,
+        zeroKill: 0,
         deaths: new Float64Array(HUNTER_DEATH_NAMES.length),
         births: new Float64Array(HUNTER_BIRTH_NAMES.length),
         alive: 0,
@@ -99,6 +102,10 @@ export function noteHunterLedger(scene, d, o) {
     ensureRoom(scene.log, row);
     scene.log.age[row] = d[o + 3];
     scene.log.kills[row] = Math.floor(packed / 64);
+    if (d[o + 1] >= BURN_IN_TICKS) {
+        scene.lives += 1;
+        scene.zeroKill += scene.log.kills[row] === 0 ? 1 : 0;
+    }
     scene.deaths[DEATH_INDEX[Math.floor(packed / 8) % 8]] += 1;
     scene.alive -= 1;
     noteAgeDeath(scene.age, d, o);
@@ -166,19 +173,36 @@ function deathMetrics(scene) {
     const n = scene.rows;
     const kills = scene.log.kills.subarray(0, n);
     const ages = scene.log.age.subarray(0, n);
-    let zero = 0;
     let total = 0;
     for (let i = 0; i < n; i++) {
-        zero += kills[i] === 0 ? 1 : 0;
         total += kills[i];
     }
     return {
         'eval.hunter_kills_per_life_p50': n > 0 ? ok(quantile(kills, 0.5)) : none(reason),
         'eval.hunter_kills_per_life_mean': n > 0 ? ok(total / n) : none(reason),
-        'eval.hunter_zero_kill_share': share(zero, n, reason),
         'eval.hunter_median_lifespan': n > 0 ? ok(quantile(ages, 0.5)) : none(reason),
         ...shares('eval.hunter_death_share', HUNTER_DEATH_NAMES, scene.deaths, reason),
     };
+}
+
+/**
+ * @param {Record<string, any>} scene the hunter scene
+ * @param {Record<string, any>} world the world at the last tick
+ * @returns {import('./metrics-stats.js').MetricResult} the share of hunter lives after burn-in with no kill: the deaths,
+ *   and each hunter alive at the last tick with its kills so far
+ */
+function zeroKillShare(scene, world) {
+    let lives = scene.lives;
+    let zero = scene.zeroKill;
+    if (world.alive !== undefined && world.ledgerKills !== undefined) {
+        for (let slot = 0; slot < world.alive.length; slot++) {
+            if (world.alive[slot] === 1 && world.huntBySpec[world.spec[slot]] === 1) {
+                lives += 1;
+                zero += world.ledgerKills[slot] === 0 ? 1 : 0;
+            }
+        }
+    }
+    return share(zero, lives, 'no hunter life after burn-in');
 }
 
 /**
@@ -231,6 +255,7 @@ function endLocalShare(world) {
 export function hunterMetrics(scene, world) {
     return {
         ...deathMetrics(scene),
+        'eval.hunter_zero_kill_share': zeroKillShare(scene, world),
         ...shares('eval.hunter_birth_source_share', HUNTER_BIRTH_NAMES, scene.births, 'no hunter births'),
         ...incomeMetrics(world),
         ...ageMetrics(scene.age, world),

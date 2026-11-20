@@ -1,8 +1,5 @@
-// A fixed set of equal buffers handed out to be transferred and given back. The worker's snapshot pool holds 3 and
-// its field pool 2; the main thread keeps at most two snapshots, so the worker always holds at least one.
-
-/** Buffers in the snapshot pool. */
-export const SNAPSHOT_POOL_SIZE = 3;
+// A fixed set of equal buffers handed out to be transferred and given back. The worker's field pool holds 2.
+// (Snapshots no longer use a pool: they live in the shared ring, js/worker/snapshot-ring.js.)
 
 /** Buffers in the field pool. */
 export const FIELD_POOL_SIZE = 2;

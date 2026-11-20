@@ -11,7 +11,7 @@ const SEEDS = Array.from({ length: 16 }, (_, i) => i + 1);
 let dir;
 
 /**
- * @param {number[]} diversity values of eval.births_per_1k
+ * @param {number[]} diversity values of eval.food_energy_per_1k
  * @param {Record<string, any>} [over] field overrides
  * @returns {Record<string, any>} a report
  */
@@ -28,7 +28,7 @@ function report(diversity, over = {}) {
         ticks: 1000,
         seeds: SEEDS,
         sha: 'abc',
-        metrics: { 'eval.births_per_1k': { values: diversity, reasons, mean, sd: 0 } },
+        metrics: { 'eval.food_energy_per_1k': { values: diversity, reasons, mean, sd: 0 } },
         ...over,
     };
 }
@@ -122,10 +122,10 @@ describe('parseArgs', () => {
 
 describe('main exit codes', () => {
     it('exits 0 and prints a table with the targets marked', () => {
-        const { code, out } = run([same, better, '--targets', 'eval.births_per_1k']);
+        const { code, out } = run([same, better, '--targets', 'eval.food_energy_per_1k']);
         expect(code).toBe(0);
         expect(out[0]).toMatch(/metric\s+before\s+after\s+diff\s+effect\s+95% interval\s+verdict/);
-        expect(out[0]).toMatch(/eval\.births_per_1k.*better\s+\*/);
+        expect(out[0]).toMatch(/eval\.food_energy_per_1k.*better\s+\*/);
     });
 
     it('prints JSON with --json', () => {
@@ -140,7 +140,7 @@ describe('main exit codes', () => {
     it('prints the `needs 32 seeds` note in the table and `minSeeds` in --json rows', () => {
         const floor = (/** @type {number[]} */ values) => {
             const r = report(values);
-            r.metrics['eval.floor_episodes'] = { ...r.metrics['eval.births_per_1k'] };
+            r.metrics['eval.floor_episodes'] = { ...r.metrics['eval.food_energy_per_1k'] };
             return r;
         };
         const a = write('floor-a.json', floor(BASE));
@@ -149,11 +149,11 @@ describe('main exit codes', () => {
         const rows = JSON.parse(run([a, b, '--json']).out[0]).rows;
         const byName = Object.fromEntries(rows.map((/** @type {any} */ r) => [r.metric, r]));
         expect(byName['eval.floor_episodes']).toMatchObject({ minSeeds: 32, verdict: '-', note: 'needs 32 seeds' });
-        expect(byName['eval.births_per_1k'].minSeeds).toBe(16);
+        expect(byName['eval.food_energy_per_1k'].minSeeds).toBe(16);
     });
 
     it('shows the relative effect and honours --min-effect', () => {
-        expect(run([same, better]).out[0]).toMatch(/eval\.births_per_1k.*\+27\.\d%.*better/);
+        expect(run([same, better]).out[0]).toMatch(/eval\.food_energy_per_1k.*\+27\.\d%.*better/);
         const tiny = write('tiny.json', report(BASE.map((v, i) => v + 0.3 + (i % 2) * 0.1)));
         expect(run([same, tiny]).out[0]).toMatch(/\+3\.\d%.*no-difference/);
         expect(run([same, tiny, '--min-effect', '0.01']).out[0]).toMatch(/\+3\.\d%.*better/);
@@ -162,7 +162,7 @@ describe('main exit codes', () => {
     it('prints `unverified` for a metric that is not verified, logs it and does not fail on it', () => {
         const raw = (/** @type {number[]} */ values) => {
             const r = report(values);
-            r.metrics['eval.floor_episodes'] = { ...r.metrics['eval.births_per_1k'] };
+            r.metrics['eval.floor_episodes'] = { ...r.metrics['eval.food_energy_per_1k'] };
             return r;
         };
         const seeds = Array.from({ length: 32 }, (_, i) => i + 1);
@@ -171,7 +171,7 @@ describe('main exit codes', () => {
         const b = write('un-b.json', { ...wide(5), seeds });
         const res = run([a, b, '--fail-on-worse']);
         expect(res.out[0]).toMatch(/eval\.floor_episodes.*unverified/);
-        expect(res.out[0]).toMatch(/eval\.births_per_1k.*worse/);
+        expect(res.out[0]).toMatch(/eval\.food_energy_per_1k.*worse/);
         expect(res.err.map((l) => JSON.parse(l))).toEqual([
             { level: 'info', event: 'CompareUnverified', metric: 'eval.floor_episodes', status: 'unverified' },
         ]);
@@ -243,7 +243,7 @@ describe('main exit codes', () => {
     });
 
     it('exits 2 on unknown targets, invalid reports and bad arguments', () => {
-        const unknown = run([same, better, '--targets', 'eval.births_per_1k,eval.nope']);
+        const unknown = run([same, better, '--targets', 'eval.food_energy_per_1k,eval.nope']);
         expect(unknown.code).toBe(2);
         expect(unknown.err[0]).toMatch(/eval\.nope/);
         expect(run([same, write('bad.json', { version: 1 })]).code).toBe(2);

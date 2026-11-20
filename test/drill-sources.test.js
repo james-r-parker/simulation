@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -39,6 +39,67 @@ describe('drill --archive', () => {
     });
 });
 
+describe('drill --archive --elites all', () => {
+    it('drills every elite and writes the elite-skill read beside the rows', async () => {
+        const config = createConfig({});
+        const archive = createArchive(brainLayout(config));
+        const row = new Float32Array(archive.layout.weightCount).fill(0.05);
+        offer(archive, { spec: 0, cell: 2, row, sigma: 0.1, id: 5, fitness: 1 });
+        offer(archive, { spec: 0, cell: 70, row, sigma: 0.1, id: 6, fitness: 2 });
+        const file = join(root, 'archive-all.json');
+        writeFileSync(file, JSON.stringify(encodeArchive(archive, config)));
+        const base = [
+            '--archive',
+            file,
+            '--elites',
+            'all',
+            '--trials',
+            '1',
+            '--drills',
+            'food-ahead',
+            '--workers',
+            '1',
+        ];
+        /** @type {string[]} */
+        const lines = [];
+        await runDrills(parseArgs([...base, '--json']), {
+            logDir: join(root, 'logs-all'),
+            print: (l) => lines.push(l),
+        });
+        const report = JSON.parse(lines.join('\n'));
+        expect(report.rows.map((/** @type {any} */ r) => r.label)).toEqual([
+            'elite-forager-cell2',
+            'elite-forager-cell70',
+            'reference memoryless',
+        ]);
+        expect(report.eliteSkill['food-ahead'].drilled).toBe(2);
+        /** @type {string[]} */
+        const text = [];
+        await runDrills(parseArgs([...base, '--bar', '0.5']), {
+            logDir: join(root, 'logs-all'),
+            print: (l) => text.push(l),
+        });
+        expect(text.join('\n')).toMatch(/elite skill \(edgeLow >= 0\.5\)\n {2}food-ahead: \d\/2 clear/);
+    });
+});
+
+describe('drill pack-converge', () => {
+    it('gives a champion and the reference their control arms and prints them, and gives random brains none', async () => {
+        /** @type {string[]} */
+        const lines = [];
+        const dir = join(root, 'pack-champions');
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(join(dir, 'p.json'), JSON.stringify(makeChampionFile('predator', 2, { specialisation: 1 })));
+        const args = parseArgs(['--champions', dir, '--trials', '2', '--drills', 'pack-converge', '--workers', '1']);
+        const rows = await runDrills(args, { logDir: join(root, 'pack-logs'), print: (l) => lines.push(l) });
+        expect(rows.map((r) => r.label)).toEqual(['predator', 'reference memoryless']);
+        for (const row of rows) {
+            expect(Object.keys(row.cells['pack-converge']?.arms ?? {})).toEqual(['solo', 'kin-blind']);
+        }
+        expect(lines.join('\n')).toMatch(/solo [01]\.\d\d, blind [01]\.\d\d, gain [+-]\d\.\d\d/);
+    });
+});
+
 describe('fileSubject', () => {
     it('turns a champion file into a subject with its genome id, or 0 when the file has none', () => {
         const config = createConfig({});
@@ -64,6 +125,15 @@ describe('the drill worker task', () => {
         const genome = { ...subject, reference: null, weights: new Float32Array(layout.weightCount) };
         const result = runDrillTask({ drill: 'food-ahead', subject: genome, seed: 1, trials: 1, config: {} });
         expect(result.records).toHaveLength(1);
+    });
+
+    it('plays the control arms of a drill only when the task asks for them', () => {
+        const predator = { ...subject, spec: 1 };
+        const task = { drill: 'pack-converge', subject: predator, seed: 1, trials: 2, config: {} };
+        expect(runDrillTask(task).arms).toBeUndefined();
+        const result = runDrillTask({ ...task, arms: true });
+        expect(Object.keys(result.arms ?? {})).toEqual(['solo', 'kin-blind']);
+        expect(result.records).toHaveLength(2);
     });
 
     it('names an unknown drill', () => {

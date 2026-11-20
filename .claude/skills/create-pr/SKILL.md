@@ -7,16 +7,25 @@ description: Use when committing, pushing or opening a pull request, or when the
 
 ## Overview
 
-`scripts/check.sh` is the local gate and CI runs the same script (`scripts/check.sh --ci` in
-`.github/workflows/check.yml`, or `scripts/check.sh --ci --docs` when `scripts/change-scope.sh` classes the PR as
-docs-only; the job is named `check` either way). A green local gate is the price of a commit.
+**The PR gate is CI** (`.github/workflows/check.yml`, whose final job is the required `check`). On a quiet runner it
+runs the whole test suite, `*.slow.test.js` included, sharded over parallel jobs with coverage, then the coverage ratchet
+on the merged coverage, the static gates (`scripts/check.sh --ci --skip=test`) and the browser smoke, in about 6 minutes;
+a docs-only PR (`scripts/change-scope.sh`) runs `scripts/check.sh --ci --docs`. The local machine is shared with evals,
+so a full local gate times out on load rather than on code. Locally an agent runs the quick pre-push check; the full
+local gate is only for performance PRs.
 
-**Core principle:** the gate runs last. Any hand edit after `scripts/check.sh --fix` can reintroduce format or index
-drift, so the final action before `git add` is always another `scripts/check.sh --fix`.
+**Core principle:** the quick check runs last. Any hand edit after `scripts/check.sh --fix` can reintroduce format or
+index drift, so the final action before `git add` is always another `scripts/check.sh --fix --quick` (the cheaper form in
+step 7 when no code changed).
 
 ## Pre-PR gate (in order)
 
-1. **Local gate green:** `scripts/check.sh --fix`. A docs-only change (`git diff --name-only origin/main...HEAD |
+1. **Quick check green:** `scripts/check.sh --fix --quick` (conventions, designs-index, format, lint, typecheck, deps,
+   dupes and the build; no tests, ratchet, bench-check or smokes). The pre-commit hook already ran the tests of each
+   commit's staged files (`scripts/check.sh --tier 1`), and CI runs the rest on a quiet runner. The full local gate
+   (`scripts/check.sh --fix --skip=browser-smoke`, under `flock /tmp/claude-1000/cpu.lock` on a quiet machine) is needed
+   only for a PR that moves step time (`bench-check`); a red gate there is read the same way and rerun with
+   `scripts/check.sh --rerun-failed`, which runs only the gates the last run left failed. A docs-only change (`git diff --name-only origin/main...HEAD |
 scripts/change-scope.sh` prints `docs`: Markdown under `docs/`, `.claude/` or the root only) may use
    `scripts/check.sh --fix --docs`, which is what CI runs for it. Add `--quiet` to print only failures and the
    summary. A failed gate prints a digest under its `✗` line - failed tests with their assertion and first frame,
@@ -46,7 +55,10 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
     - regenerate the index: `node scripts/designs-index.mjs --write`
     - append learnings to `docs/designs/sim-notes.md` under a dated heading (`### YYYY-MM-DD - <topic>` under
       `## Learned while building`)
-7. **Last step before `git add`:** `scripts/check.sh --fix` again.
+7. **Last step before `git add`:** when no code changed after step 1 (only docs, the plan or the commit message),
+   `scripts/check.sh --fix --only=designs-index,format` is enough (it only applies the fixes; the pre-commit hook runs
+   the conventions, format and lint check at commit time, so it is not repeated here); when code changed, run the step 1
+   command again. (`--quick` is enough for code too: CI runs the tests.)
 
 ## Git conventions
 
@@ -54,7 +66,7 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
 origin/main` (e.g. `feat/headless-sim-core-phase-1`). Design docs in the planning stage go on `docs/<doc-name>`.
 - Stage explicit paths: `git add js/sim/rng.js test/sim/rng.test.js`. Never `git add -A` or `git add .`. Review
   first with `git diff --staged`.
-- One self-contained commit per task; each commit passes the pre-commit hook and its own test files. The full gate and CI run once per chunk PR (4 to 8 tasks, AGENTS.md "Build in chunks").
+- One self-contained commit per task; each commit passes the pre-commit hook, whose `test-related` gate runs the tests of the staged files, so the task's own tests run at commit time (`npx vitest run <files>` is for iterating before the commit, not a second run). The full gate and CI run once per chunk PR (4 to 8 tasks, AGENTS.md "Build in chunks").
 - Conventional subject: `<type>(<optional scope>): <subject>`.
     - types: `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `revert`, `style`, `test`
     - lower-case subject, no trailing period, <= 100 characters
@@ -100,11 +112,20 @@ origin/main` (e.g. `feat/headless-sim-core-phase-1`). Design docs in the plannin
     Omit the Design doc, Delivery requirements and Measurements sections only for changes with no design doc (fixes,
     chores), and end the body with the attribution line the environment specifies.
 
-3. Watch CI: `gh pr checks <n> --watch`.
-4. On failure: `gh run view <run-id> --log-failed` - the "Local gate" step shows the same digest under each `✗`
-   line; for more, `gh run download <run-id> -n check-logs` (`.checklogs/` and `TestResults/`). A `format` or
-   `designs-index` failure is fixed by `scripts/check.sh --fix`. Reproduce locally with `scripts/check.sh --ci`, fix
-   the root cause, commit the fix. Do not just re-run the job.
+3. Watch CI: `gh pr checks <n> --watch --fail-fast`. The jobs are `scope`, `static`, `test shard-<i>`, `test heavy-<name>` and
+   `test statistical-<name>` (the test jobs), `coverage` (the merged coverage and the ratchet), `browser-smoke`, `perf` (advisory)
+   and the required `check`, which fails when any of them failed.
+4. On failure: `gh run view <run-id> --log-failed`.
+    - `static`: the "Local gate" step shows the digest under each `✗` line; for more, `gh run download <run-id> -n
+check-logs` (`.checklogs/` and `TestResults/`). A `format` or `designs-index` failure is fixed by `scripts/check.sh
+--fix`.
+    - `test <pass> <i>/<n>`: the log names the failed test and its assertion; the shard's seed is `github.run_id`, so
+      `TEST_SCOPE=<shard, heavy or statistical> npx vitest run --sequence.shuffle --sequence.seed=<run id> <file>` replays the order for one file.
+      A test that times out on a quiet runner is a real slow test: speed it up or move it to a `.slow.test.js` file's
+      own limit, never skip it.
+    - `coverage`: the ratchet line names the scope and metric below its baseline; add tests for the uncovered code (never
+      lower `scripts/quality-baseline.json`). After a failed shard its numbers are partial, so fix the shard first.
+    - Reproduce, fix the root cause, commit the fix. Do not just re-run the job.
 5. Never merge while `check` is red or pending.
 
 **One concern per PR.** An unrelated fix found on the way gets its own branch and PR.
@@ -114,6 +135,9 @@ origin/main` (e.g. `feat/headless-sim-core-phase-1`). Design docs in the plannin
 - Committing on `main`, or branching from a stale local `main`.
 - `git add -A` sweeping in `.sim/`, `evals/results/`, `.checklogs/` or scratch files.
 - Editing after the last `scripts/check.sh --fix` and committing format drift.
+- Running the full local gate beside evals "to be safe": it times out on load, and CI runs it on a quiet runner.
+- Starting a long run with a hand-written `nohup` or `pgrep` loop instead of `scripts/run-detached.sh` and
+  `scripts/wait-run.sh`.
 - Hand-editing `docs/designs/README.md` instead of running the generator.
 - Leaving the design doc Status line behind the code, or forgetting `(built)`.
 - Claiming a Target moved without the measurement in the PR body.

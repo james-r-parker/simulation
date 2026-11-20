@@ -1,0 +1,38 @@
+{
+  "seeds": 16,
+  "seedOffset": 0,
+  "ticks": 400000,
+  "policy": "live",
+  "reference": "control",
+  "arms": {
+    "control": {},
+    "territory": {
+      "territoryMax": 4,
+      "territoryRadius": 250
+    },
+    "split": {
+      "specialisations": {
+        "predator": {
+          "splitMinEnergyMultiplier": 0.85
+        }
+      }
+    },
+    "cub-plant": {
+      "juvenilePlantShare": 0.25
+    },
+    "cub-size": {
+      "huntSizeRatio": 0.9
+    },
+    "recruit-all": {
+      "territoryMax": 4,
+      "territoryRadius": 250,
+      "juvenilePlantShare": 0.25,
+      "huntSizeRatio": 0.9,
+      "specialisations": {
+        "predator": {
+          "splitMinEnergyMultiplier": 0.85
+        }
+      }
+    }
+  }
+}

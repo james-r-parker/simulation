@@ -1,0 +1,16 @@
+{
+  "id": "E0",
+  "date": "2026-11-20",
+  "branch": "tune/2026-11-20",
+  "hypothesis": "Tuning night 2026-11-20: stages.nursery.plateauStop=10; stages.hunt-weak.preyShare=1 against the current ladder.",
+  "prediction": "Write before adopting: the finalist raises the ladder yield score without costing the champion world trial.",
+  "targets": [],
+  "beforePolicy": "live",
+  "afterPolicy": "champions-v1",
+  "before": "the current ladder (reference arm base)",
+  "after": "no finalist",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Screened: plateauStop-nursery-10 (no verdict); preyShare-hunt-weak-1 (no verdict).",
+  "reports": ["evals/train-tune/results/2026-11-20/summary.md", "evals/train-tune/results/2026-11-20/result.json"]
+}

@@ -1,33 +1,44 @@
 import { describe, expect, it } from 'vitest';
-import { createWorkerClient, EFFECT_QUEUE_CAPACITY } from '../../js/app/worker-client.js';
+import { createWorkerClient, EFFECT_QUEUE_CAPACITY, LOST_LOG_INTERVAL_MS } from '../../js/app/worker-client.js';
+import { HELD, READER, RELEASED, RING_SLOTS } from '../../js/worker/snapshot-ring.js';
+import { createRingWorld } from './helpers/ring-world.js';
 
 const EFFECTS_AT = 10;
 const WORDS = 8;
 const BUFFER_BYTES = (EFFECTS_AT + 2 + 4 * WORDS) * 4;
 
-const READY = {
-    type: 'ready',
-    epoch: 1,
-    configHash: 'c',
-    rulesHash: 'r',
-    layout: { effectsOffset: EFFECTS_AT, effectWords: WORDS },
-    info: {},
-    labels: {},
-    policy: 'p',
-    seed: 1,
-};
+/** The fake sim worker the tests' client talks to; `setup` makes a new one for each test. */
+let world = createRingWorld({ effectsAt: EFFECTS_AT, words: WORDS, slotBytes: BUFFER_BYTES });
+/** The `ready` message of the current fake world. */
+let READY = world.ready();
 
 /**
- * @returns {{client: ReturnType<typeof createWorkerClient>, posted: Record<string, any>[], events: Record<string, any[]>}}
+ * @returns {{client: ReturnType<typeof createWorkerClient>, posted: Record<string, any>[], events: Record<string, any[]>,
+ *   clock: {t: number}}}
  *   a client over a fake port, every listener recording what it got
  */
 function setup() {
+    world = createRingWorld({ effectsAt: EFFECTS_AT, words: WORDS, slotBytes: BUFFER_BYTES });
+    READY = world.ready();
     /** @type {Record<string, any>[]} */
     const posted = [];
     /** @type {Record<string, any[]>} */
-    const events = { ready: [], stats: [], ticker: [], selection: [], archive: [], log: [], error: [], failure: [] };
+    const events = {
+        ready: [],
+        stats: [],
+        ticker: [],
+        selection: [],
+        archive: [],
+        log: [],
+        error: [],
+        failure: [],
+        logged: [],
+    };
+    const clock = { t: 0 };
     const client = createWorkerClient({
         post: (message) => posted.push(message),
+        log: (level, event, fields) => events.logged.push({ level, event, fields }),
+        now: () => clock.t,
         listeners: {
             onReady: (m) => events.ready.push(m),
             onStats: (s) => events.stats.push(s),
@@ -39,24 +50,20 @@ function setup() {
             onFailure: (e) => events.failure.push(e),
         },
     });
-    return { client, posted, events };
+    return { client, posted, events, clock };
 }
 
 /**
  * @param {number} tick the snapshot's tick
  * @param {{epoch?: number, effectTicks?: number[]}} [options] the epoch and the tick of each effect to carry
- * @returns {Record<string, any>} a `snapshot` message
+ * @returns {Record<string, any>} a `snapshot` message for a slot the fake worker just published
  */
-function snapshot(tick, { epoch = 1, effectTicks = [] } = {}) {
-    const buffer = new ArrayBuffer(BUFFER_BYTES);
-    const u32 = new Uint32Array(buffer);
-    u32[0] = tick;
-    u32[EFFECTS_AT] = effectTicks.length;
-    effectTicks.forEach((effectTick, i) => {
-        u32[EFFECTS_AT + 2 + i * WORDS] = 1;
-        u32[EFFECTS_AT + 2 + i * WORDS + 1] = effectTick;
-    });
-    return { type: 'snapshot', epoch, buffer, tick };
+function snapshot(tick, options = {}) {
+    const message = world.publish(tick, options);
+    if (message === null) {
+        throw new Error('the fake ring is full');
+    }
+    return message;
 }
 
 describe('the policy', () => {
@@ -156,7 +163,7 @@ describe('ready and the epoch', () => {
         expect(events.ready).toHaveLength(1);
     });
 
-    it('drops a snapshot, field and stats of an older epoch and gives the buffers back', () => {
+    it('drops a snapshot, field and stats of an older epoch and gives the field buffer back', () => {
         const { client, posted, events } = setup();
         client.init(1, {});
         client.handle(READY);
@@ -170,55 +177,129 @@ describe('ready and the epoch', () => {
         expect(client.field).toBeNull();
         expect(events.stats).toEqual([]);
         expect(client.droppedMessages).toBe(3);
-        expect(posted.map((m) => m.pool)).toEqual(['snapshot', 'field']);
+        expect(posted.map((m) => m.pool)).toEqual(['field']);
     });
 
-    it('accepts the new world after reset and gives back the old held buffers at the reset', () => {
+    it('accepts the new world after reset, releasing its hold on the old ring', () => {
         const { client, posted } = setup();
         client.init(1, {});
         client.handle(READY);
         client.handle(snapshot(1));
         client.handle(snapshot(2));
+        const oldRing = world.ring;
+        expect(Atomics.load(oldRing.header, HELD + READER.MAIN)).toBe(1);
         posted.length = 0;
         client.reset(2, {});
-        expect(posted.map((m) => m.type)).toEqual(['returnBuffer', 'returnBuffer', 'reset']);
-        client.handle({ ...READY, epoch: 2 });
-        client.handle(snapshot(1, { epoch: 2 }));
+        expect(posted.map((m) => m.type)).toEqual(['reset']);
+        expect(Atomics.load(oldRing.header, HELD + READER.MAIN)).toBe(RELEASED);
+        expect(client.latest).toBeNull();
+        const next = createRingWorld({ effectsAt: EFFECTS_AT, words: WORDS, slotBytes: BUFFER_BYTES });
+        client.handle(next.ready(2));
+        client.handle(/** @type {any} */ (next.publish(1, { epoch: 2 })));
         expect(client.latest?.epoch).toBe(2);
+        expect(client.latest?.u32.buffer).toBe(next.memory);
     });
 
     it('drops a snapshot that arrives before ready', () => {
         const { client, posted } = setup();
         client.handle(snapshot(1));
         expect(client.latest).toBeNull();
-        expect(posted).toHaveLength(1);
+        expect(client.droppedMessages).toBe(1);
+        expect(posted).toHaveLength(0);
     });
 });
 
 describe('snapshots', () => {
-    it('holds the two newest and returns the older buffer at once on each new one', () => {
+    it('holds the two newest, follows the published sequence and holds the ring from prev', () => {
         const { client, posted } = setup();
         client.init(1, {});
         client.handle(READY);
-        const [a, b, c, d] = [snapshot(1), snapshot(2), snapshot(3), snapshot(4)];
-        client.handle(a);
-        client.handle(b);
+        expect(Atomics.load(world.ring.header, HELD + READER.MAIN)).toBe(1);
+        const held = () => Atomics.load(world.ring.header, HELD + READER.MAIN);
+        client.handle(snapshot(1));
+        expect(client.prev).toBeNull();
+        expect(held()).toBe(1);
+        client.handle(snapshot(2));
+        expect([client.prev?.seq, client.latest?.seq, held()]).toEqual([1, 2, 1]);
+        client.handle(snapshot(3));
+        expect([client.prev?.tick, client.latest?.tick, held()]).toEqual([2, 3, 2]);
+        client.handle(snapshot(4));
+        expect([client.prev?.tick, client.latest?.tick, held()]).toEqual([3, 4, 3]);
         expect(posted.filter((m) => m.type === 'returnBuffer')).toHaveLength(0);
-        client.handle(c);
-        expect(posted.at(-1)).toMatchObject({ type: 'returnBuffer', pool: 'snapshot', buffer: a.buffer });
-        client.handle(d);
-        expect(posted.at(-1)).toMatchObject({ pool: 'snapshot', buffer: b.buffer });
-        expect(client.prev?.tick).toBe(3);
-        expect(client.latest?.tick).toBe(4);
     });
 
-    it('reads the tick and gives views over the held buffer', () => {
+    it('never lets the writer overwrite the held pair, however many snapshots it publishes', () => {
+        const { client } = setup();
+        client.init(1, {});
+        client.handle(READY);
+        for (let tick = 1; tick <= 40; tick++) {
+            const message = world.publish(tick);
+            if (message !== null) {
+                client.handle(message);
+            }
+            expect(client.latest?.u32[0]).toBe(client.latest?.tick);
+            if (client.prev !== null) {
+                expect(client.prev.u32[0]).toBe(client.prev.tick);
+            }
+        }
+        expect(client.latest?.tick).toBeGreaterThan(30);
+    });
+
+    it('reuses one Snapshot object per slot and sets seq, epoch and tick on each publish', () => {
+        const { client } = setup();
+        client.init(1, {});
+        client.handle(READY);
+        /** @type {any[]} */
+        const seen = [];
+        for (let tick = 1; tick <= RING_SLOTS + 2; tick++) {
+            client.handle(snapshot(tick));
+            seen.push(client.latest);
+        }
+        expect(client.latest?.seq).toBe(RING_SLOTS + 2);
+        expect(seen[0]).toBe(seen[RING_SLOTS]);
+        expect(seen[0].seq).toBe(RING_SLOTS + 1);
+        expect(client.latest).not.toBe(client.prev);
+    });
+
+    it('reads the tick and gives views over the shared ring', () => {
         const { client } = setup();
         client.init(1, {});
         client.handle(READY);
         client.handle(snapshot(9));
         expect(client.latest?.u32[0]).toBe(9);
-        expect(client.latest?.f32.buffer).toBe(client.latest?.buffer);
+        expect(client.latest?.f32.buffer).toBe(world.memory);
+        expect(client.latest?.seq).toBe(1);
+    });
+
+    it('logs SnapshotLost once per 5 s and drops a snapshot whose slot is gone', () => {
+        const { client, events, clock } = setup();
+        client.init(1, {});
+        client.handle(READY);
+        const stale = snapshot(1);
+        for (let tick = 2; tick <= RING_SLOTS + 4; tick++) {
+            // The writer reuses slots at will: it sees no hold once the client has released it.
+            Atomics.store(world.ring.header, HELD + READER.MAIN, RELEASED);
+            snapshot(tick);
+        }
+        client.handle(stale);
+        expect(client.latest).toBeNull();
+        expect(events.logged).toEqual([{ level: 'warn', event: 'SnapshotLost', fields: { seq: 1, tick: 1 } }]);
+        clock.t += LOST_LOG_INTERVAL_MS - 1;
+        client.handle(stale);
+        expect(events.logged).toHaveLength(1);
+        clock.t += 1;
+        client.handle(stale);
+        expect(events.logged).toHaveLength(2);
+        expect(events.failure).toEqual([]);
+    });
+
+    it('drops a lost snapshot quietly when no log is wired', () => {
+        const client = createWorkerClient({ post: () => {} });
+        world = createRingWorld({ effectsAt: EFFECTS_AT, words: WORDS, slotBytes: BUFFER_BYTES });
+        client.init(1, {});
+        client.handle(world.ready());
+        client.handle({ type: 'snapshot', epoch: 1, seq: 9, slot: 0, tick: 9 });
+        expect(client.latest).toBeNull();
     });
 
     it('queues the effects of three snapshots that arrive between frames once each, in tick order', () => {
@@ -240,17 +321,11 @@ describe('snapshots', () => {
     it('drops the oldest effects when the queue is full and counts them', () => {
         const { client } = setup();
         client.init(1, {});
-        client.handle(READY);
-        const big = { ...READY, layout: { effectsOffset: 4, effectWords: 2 } };
-        client.handle(big);
         const records = EFFECT_QUEUE_CAPACITY + 3;
-        const buffer = new ArrayBuffer((4 + 2 + records * 2) * 4);
-        const u32 = new Uint32Array(buffer);
-        u32[4] = records;
-        for (let i = 0; i < records; i++) {
-            u32[6 + i * 2 + 1] = i;
-        }
-        client.handle({ type: 'snapshot', epoch: 1, buffer, tick: 1 });
+        const big = createRingWorld({ effectsAt: 4, words: 2, slotBytes: (4 + 2 + records * 2) * 4 });
+        client.handle(big.ready());
+        const effectTicks = Array.from({ length: records }, (_, i) => i);
+        client.handle(/** @type {any} */ (big.publish(1, { effectTicks })));
         const queue = /** @type {any} */ (client.effects);
         expect(queue.count).toBe(EFFECT_QUEUE_CAPACITY);
         expect(queue.dropped).toBe(3);
@@ -314,7 +389,7 @@ describe('the other messages', () => {
         expect(() => client.handle({ type: 'snapshot', epoch: 1, tick: 1 })).not.toThrow();
         expect(() => client.handle({ type: 'pause' })).not.toThrow();
         expect(events.failure.map((e) => e.message)).toEqual([
-            expect.stringContaining('snapshot.buffer'),
+            expect.stringContaining('snapshot.seq'),
             expect.stringContaining('toWorker message'),
         ]);
     });

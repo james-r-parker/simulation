@@ -22,7 +22,7 @@ const SOURCE_METRICS = [
     'eval.food_species_share.fungus',
     'eval.food_species_share.toxiccap',
     'eval.trampled_share',
-    'eval.dodge_skill',
+    'eval.herd_dodge_share',
     'eval.herd_grazed_share',
     'eval.trample_unavoidable_share',
     'eval.herd_stampede_rate',
@@ -79,6 +79,34 @@ const SOURCE_METRICS = [
     'eval.basin_lineage_effective.west',
     'eval.basin_lineages_alive.east',
     'eval.basin_lineages_alive.west',
+    'eval.guild_share.forager',
+    'eval.guild_share.reproducer',
+    'eval.guild_share.scout',
+    'eval.guild_share.defender',
+    'eval.guild_survival.forager',
+    'eval.guild_survival.reproducer',
+    'eval.guild_survival.scout',
+    'eval.guild_survival.defender',
+    'eval.prey_selectivity.forager',
+    'eval.prey_selectivity.reproducer',
+    'eval.prey_selectivity.scout',
+    'eval.prey_selectivity.defender',
+    'eval.defender_repel_per_1k',
+    'eval.scout_alarm_lead_share',
+    'eval.reproducer_recovery_rate',
+    'eval.chase_overshoot_share',
+    'eval.chase_cover_use_share',
+    'eval.chase_turn_jitter',
+    'eval.chase_sprint_lift',
+    'eval.flee_sprint_lift',
+    'eval.sprint_cost_share',
+    'eval.sprint_share.hunter',
+    'eval.sprint_share.prey',
+    'eval.ambush_kill_share',
+    'eval.freeze_survival_gain',
+    'eval.freeze_under_threat',
+    'eval.chase_reacquire_share',
+    'eval.scavenge_approach_share',
 ];
 
 const FLORA = ['grass', 'berry', 'nut', 'flower', 'fungus', 'toxiccap'];
@@ -152,7 +180,7 @@ describe('ecology metrics from a scripted source run', () => {
         const registryNames = Object.entries(METRICS)
             .filter(([, entry]) => entry.family === 'scenes-ecology')
             .map(([name]) => name);
-        expect(names).toHaveLength(73);
+        expect(names).toHaveLength(101);
         expect(names).toEqual(registryNames);
         expect(Object.fromEntries(names.map((name) => [name, actual[name]]))).toEqual(expected);
         expect(run.observer.deathCount).toBe(2);

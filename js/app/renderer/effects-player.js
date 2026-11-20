@@ -2,6 +2,7 @@
 // spark pools and an optional sink (audio). Effects further behind the playhead than `STALE_TICKS` (a hidden tab) are
 // dropped unplayed.
 
+import { createFollowInterest, noteFollowInterest } from '../follow-target.js';
 import { createFamilySlots } from '../family-slots.js';
 import { PALETTE } from './colors.js';
 import { spawnMateThread } from './mate-threads.js';
@@ -10,6 +11,9 @@ import { createBodyTweens } from './body-tweens.js';
 import { playBite, playDeath } from './effects-combat.js';
 import { createEdgeState } from './effects-edges.js';
 import { createFlee } from './effects-flee.js';
+import { createBumps } from './bumps.js';
+export { playBumps } from './effects-bumps.js';
+import { stepDying, trackBodies } from './dying.js';
 import { createCrossings } from './effects-terrain.js';
 import { createMomentLog, noteMoment } from '../director/moment-log.js';
 import { bornNamesOf, playBirth, playMate } from './effects-life.js';
@@ -50,14 +54,18 @@ export { BIRTH_SIZE, JAW_REACH } from './effects-combat.js';
  * @property {number[]} rgb scratch colour
  * @property {import('./fx-recipes.js').FxPlayer} fx the effect pool's recipe player
  * @property {import('./body-tweens.js').BodyTweens} tweens the agents' body tweens
+ * @property {import('./dents.js').Dents | null} dents the agents' membrane dents (null when none are drawn)
  * @property {import('./fx-recipes.js').FxAt} at scratch for a recipe's position
  * @property {{slot: number, genome: number}} who scratch for a tween's agent
  * @property {string[]} causeNames death cause names by number (`ready.layout.deathCauses`)
  * @property {string[]} bornNames birth cause names by number (`ready.layout.bornCauses`)
  * @property {import('./effects-edges.js').EdgeState} edges the flag-edge state and the food grids
  * @property {Record<string, number>} bits `ready.layout.flags`
+ * @property {import('./dying.js').Dying | null} dying the dying bodies (null when none are drawn)
+ * @property {import('./bumps.js').Bumps} bumps each slot's last speed and this frame's bumps
  * @property {import('./effects-flee.js').FleeState} flee the pursuit pairs and who flees this frame
  * @property {import('./effects-terrain.js').CrossState} crossings each slot's side of the wall
+ * @property {import('../follow-target.js').FollowInterest} followInterest recent subject events
  * @property {import('../director/moment-log.js').MomentLog} moments the notable moments played, for the pointers and
  *   `focusLast`
  * @property {{kinds: Record<string, number>, eatenCause: number, trampled: number, nowMs: number}} momentCtx scratch for
@@ -68,7 +76,7 @@ export { BIRTH_SIZE, JAW_REACH } from './effects-combat.js';
  * @param {Record<string, number>} causes `ready.layout.deathCauses`
  * @returns {string[]} the names by number
  */
-function causeNamesOf(causes) {
+export function causeNamesOf(causes) {
     /** @type {string[]} */
     const names = [];
     for (const [name, n] of Object.entries(causes)) {
@@ -78,10 +86,36 @@ function causeNamesOf(causes) {
 }
 
 /**
+ * @param {Record<string, any>} info `ready.info`
+ * @returns {EffectsPlayer['info']} the call ranges and the cold-stress temperature share
+ */
+function callInfoOf(info) {
+    return {
+        callRadius: info.callRadius,
+        callTicks: info.callTicks,
+        cold01: info.temperatureMax > 0 ? info.temperatureColdStress / info.temperatureMax : -Infinity,
+    };
+}
+
+/**
+ * @param {Record<string, any>} layout `ready.layout`
+ * @returns {EffectsPlayer['momentCtx']} the moment log's context
+ */
+function momentCtxOf(layout) {
+    return {
+        kinds: layout.effectKinds,
+        eatenCause: layout.deathCauses.EATEN,
+        trampled: layout.deathCauses.TRAMPLED ?? -1,
+        nowMs: 0,
+    };
+}
+
+/**
  * @param {{threads?: import('./mate-threads.js').MateThreadPool, layout: Record<string, any>,
  *   info: Record<string, any>, slots?: import('../family-slots.js').FamilySlots,
  *   sink?: ((effect: Effect) => void) | null, fx?: import('./fx-recipes.js').FxPlayer,
- *   tweens?: import('./body-tweens.js').BodyTweens}} options the pools to play into, `ready.layout` and
+ *   tweens?: import('./body-tweens.js').BodyTweens, dents?: import('./dents.js').Dents | null,
+ *   dying?: import('./dying.js').Dying | null}} options the pools to play into, `ready.layout` and
  *   `ready.info`, the family colour slots (all neutral when absent), the effect pool's player and the body tweens
  *   (fresh ones when absent)
  * @returns {EffectsPlayer} a player
@@ -94,14 +128,20 @@ export function createEffectsPlayer({
     sink = null,
     fx = createFxPlayer(createFxPool()),
     tweens = createBodyTweens(info.maxAgents ?? 1024),
+    dents = null,
+    dying = null,
 }) {
     /** @type {EffectsPlayer} */
     const player = {
         fx,
         tweens,
+        dents,
+        dying,
         edges: /** @type {any} */ (null),
         flee: /** @type {any} */ (null),
+        bumps: createBumps(info.maxAgents ?? 1024),
         crossings: /** @type {any} */ (null),
+        followInterest: createFollowInterest(),
         moments: /** @type {any} */ (null),
         momentCtx: /** @type {any} */ (null),
         bits: layout.flags ?? {},
@@ -113,11 +153,7 @@ export function createEffectsPlayer({
         kinds: layout.effectKinds,
         floraEnabled: true,
         eatenCause: layout.deathCauses.EATEN,
-        info: {
-            callRadius: info.callRadius,
-            callTicks: info.callTicks,
-            cold01: info.temperatureMax > 0 ? info.temperatureColdStress / info.temperatureMax : -Infinity,
-        },
+        info: callInfoOf(info),
         slots,
         sink,
         effect: { kind: 0, tick: 0, x: 0, y: 0, a: 0, b: 0, c: 0, d: 0 },
@@ -127,12 +163,7 @@ export function createEffectsPlayer({
     player.flee = createFlee(info);
     player.crossings = createCrossings(info);
     player.moments = createMomentLog();
-    player.momentCtx = {
-        kinds: layout.effectKinds,
-        eatenCause: layout.deathCauses.EATEN,
-        trampled: layout.deathCauses.TRAMPLED ?? -1,
-        nowMs: 0,
-    };
+    player.momentCtx = momentCtxOf(layout);
     return player;
 }
 
@@ -215,7 +246,7 @@ export function beginEffects(player, { tick, dtMs, nowMs, camera, drawMs = -1, g
  * @param {EffectsPlayer} player the player
  * @param {{u32: Uint32Array, f32: Float32Array, words: number, start: number, count: number}} queue the client's queue
  * @param {import('../interpolate.js').Interpolated} agents the blended agents (a bite starts at the biter's jaw)
- * @param {number} tick the playhead's tick (`simTickAt`)
+ * @param {number} tick the tick of the drawn frame (the playhead's tick when it was asked for)
  * @returns {number} effects played, not counting stale ones
  */
 export function playEffects(player, queue, agents, tick) {
@@ -243,7 +274,24 @@ export function playEffects(player, queue, agents, tick) {
         played += 1;
         dispatch(player, agents);
         noteMoment(player.moments, e, player.momentCtx);
+        noteFollowInterest(player.followInterest, e, player.momentCtx);
         player.sink?.(e);
     }
     return played;
+}
+
+/**
+ * Notes the frame's agents for the dying bodies: a body that vanished becomes pending until its death plays. Call it
+ * after the blend and before `playEffects`.
+ * @param {EffectsPlayer} player the player
+ * @param {import('../interpolate.js').Interpolated} agents the blended agents
+ * @param {number} nowMs wall time
+ * @returns {number} bodies still dying
+ */
+export function trackDying(player, agents, nowMs) {
+    if (player.dying === null) {
+        return 0;
+    }
+    trackBodies(player.dying, agents, nowMs);
+    return stepDying(player.dying, { nowMs, causeNames: player.causeNames });
 }
