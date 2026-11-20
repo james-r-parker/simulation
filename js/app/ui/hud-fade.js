@@ -26,11 +26,11 @@ export function createHudFade({ apply, idleAfterMs = HUD_IDLE_MS }) {
 }
 
 /**
- * @param {Record<string, any>} nodes the page's nodes by name: `bar`, `ticker`, and any of `caption`, `era` and `title`
+ * @param {Record<string, any>} nodes the page's nodes by name: `bar`, `ticker`, and any of `caption`, `era`, `plate` and `title`
  * @returns {any[]} the nodes that stay on screen and so take the pixel shift: the ones that exist
  */
 export function persistentNodes(nodes) {
-    return ['bar', 'ticker', 'caption', 'era', 'title']
+    return ['bar', 'ticker', 'caption', 'era', 'plate', 'title']
         .map((name) => nodes[name])
         .filter((node) => node !== null && node !== undefined);
 }

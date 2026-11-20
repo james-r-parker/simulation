@@ -39,6 +39,7 @@ export const MAX_DT_MS = 100;
  *   top: readonly {id: number}[]}) => boolean} | null} [director] the director's driver; while it holds the camera the
  *   follow does not step
  * @property {() => Record<string, any> | null} [getReady] the newest `ready` message, for the director
+ * @property {(id: number) => void} [select] selects an agent, so the inspector follows a handoff
  * @property {(frame: import('./renderer/stage.js').Frame) => void} [afterDraw] runs right after `scene.draw` (for `P` screenshots)
  */
 
@@ -270,6 +271,7 @@ function createCameraStep(deps, getLoop) {
         state: deps.state,
         getAgents: () => getLoop().agents,
         getPlayer: () => deps.refs.player,
+        select: deps.select,
     });
     const followAt = { dtMs: 0, nowMs: 0, available: false, paused: false };
     const directorAt = {
@@ -297,7 +299,7 @@ function createCameraStep(deps, getLoop) {
 /**
  * @param {LoopDeps} deps the dependencies; `scene` is read each frame, so it may be assigned after `createFrameLoop`
  * @returns {{frame: (nowMs: number) => void, reset: () => void, agents: () => import('./interpolate.js').Interpolated,
- *   lateFrames: () => number, followAgent: (preferred?: number) => number}} `frame` runs one animation frame at the callback's time; `reset` starts afresh for a new
+ *   lateFrames: () => number, followAgent: (preferred?: number) => number, followCaption: () => string}} `frame` runs one animation frame at the callback's time; `reset` starts afresh for a new
  *   world; `agents` is the agents as last drawn (for picking); `lateFrames` counts the frames drawn on an old slot
  */
 export function createFrameLoop(deps) {
@@ -312,6 +314,7 @@ export function createFrameLoop(deps) {
         },
         agents: () => loop.agents,
         followAgent: camera.follow.choose,
+        followCaption: camera.follow.caption,
         lateFrames: () => loop.feed.lateTotal,
         frame(nowMs) {
             const started = deps.clock();
