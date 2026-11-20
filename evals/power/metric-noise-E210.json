@@ -10,82 +10,89 @@
   "batches": [
     [
       "eval.alarm_calls_with_threat_per_1k",
-      "eval.basin_families",
-      "eval.basin_recolonisations",
-      "eval.chase_sprint_lift",
-      "eval.density_starve_slope",
-      "eval.freeze_survival_gain",
-      "eval.herd_carcass_meal_share",
-      "eval.hunt_call_answer",
-      "eval.hunter_first_kill_km_median",
-      "eval.hunter_kill_rate_by_source.spec-flip",
-      "eval.idle_signals_per_1k",
-      "eval.mating_share",
-      "eval.population_mean",
-      "eval.predator_share_cv",
-      "eval.prey_selectivity.forager",
-      "eval.refuge_bite_deficit",
-      "eval.social_return",
-      "eval.style_separation"
-    ],
-    [
       "eval.alarm_lift",
-      "eval.basin_family_effective",
-      "eval.bite_idle",
-      "eval.childshare_by_condition",
-      "eval.disease_frequency_slope",
-      "eval.freeze_under_threat",
-      "eval.herd_gap_crossings",
-      "eval.hunt_call_lift",
-      "eval.hunter_kill_rate_by_source.floor",
-      "eval.hunter_kills_per_life_p50",
-      "eval.kin_nearby_threat_gain",
-      "eval.mother_wait_by_condition",
-      "eval.pred_prey_lag_corr",
-      "eval.predators_at_end",
-      "eval.prey_selectivity.reproducer",
-      "eval.refuge_exit_fed",
-      "eval.spec_dominance",
-      "eval.winter_basin_density"
-    ],
-    [
       "eval.alarm_rate",
+      "eval.alarm_response",
+      "eval.basin_families",
+      "eval.basin_family_effective",
       "eval.basin_lineage_effective",
+      "eval.basin_pop_cv",
+      "eval.basin_recolonisations",
+      "eval.bite_idle",
       "eval.boom_bust_count",
+      "eval.carcass_hunter_share",
+      "eval.chase_sprint_lift",
+      "eval.childshare_by_condition",
       "eval.defender_repel_per_1k",
+      "eval.deliberate_food_trend",
+      "eval.density_starve_slope",
+      "eval.disease_frequency_slope",
+      "eval.edge_birth_death_ratio",
+      "eval.edge_starve_per_prey",
       "eval.floor_episodes",
-      "eval.gap_crossers",
-      "eval.herd_recolonisations",
-      "eval.hunter_conversion_by_dose",
-      "eval.hunter_kill_rate_by_source.initial",
-      "eval.hunter_recoil_per_life",
-      "eval.kin_within_call_radius",
-      "eval.pack_convergence",
-      "eval.predator_births",
-      "eval.prey_extinctions",
-      "eval.prey_selectivity.scout",
-      "eval.scout_alarm_lead_share",
-      "eval.sprint_share.hunter",
-      "eval.winter_pop_ratio"
+      "eval.food_contact_bite_share"
     ],
     [
-      "eval.alarm_response",
-      "eval.basin_pop_cv",
-      "eval.carcass_hunter_share",
-      "eval.deliberate_food_trend",
-      "eval.food_contact_bite_share",
+      "eval.freeze_survival_gain",
+      "eval.freeze_under_threat",
+      "eval.gap_crossers",
       "eval.gap_never_share",
+      "eval.herd_carcass_meal_share",
+      "eval.herd_gap_crossings",
+      "eval.herd_recolonisations",
       "eval.herd_season_shift",
+      "eval.hunt_call_answer",
+      "eval.hunt_call_lift",
+      "eval.hunter_conversion_by_dose",
+      "eval.hunter_conversion_gain",
       "eval.hunter_first_kill_age",
-      "eval.hunter_kill_rate_by_source.mate-hunter-parent",
+      "eval.hunter_first_kill_km_median",
+      "eval.hunter_kill_conversion_by_age.1k-2k",
+      "eval.hunter_kill_rate_by_source.floor",
+      "eval.hunter_kill_rate_by_source.initial",
+      "eval.hunter_kill_rate_by_source.mate-hunter-parent"
+    ],
+    [
+      "eval.hunter_kill_rate_by_source.spec-flip",
+      "eval.hunter_kills_per_life_p50",
+      "eval.hunter_recoil_per_life",
       "eval.hunter_ticks_last_quarter",
+      "eval.idle_signals_per_1k",
+      "eval.juvenile_parent_pull",
+      "eval.kin_nearby_threat_gain",
+      "eval.kin_within_call_radius",
       "eval.lineage_dominance",
+      "eval.mating_share",
+      "eval.mother_wait_by_condition",
+      "eval.pack_convergence",
       "eval.pack_lift",
+      "eval.pack_prey_size_ratio",
+      "eval.population_mean",
+      "eval.pred_prey_lag_corr",
+      "eval.predator_births",
       "eval.predator_presence",
+      "eval.predator_share_cv"
+    ],
+    [
+      "eval.predators_at_end",
+      "eval.prey_extinctions",
       "eval.prey_selectivity.defender",
+      "eval.prey_selectivity.forager",
+      "eval.prey_selectivity.reproducer",
+      "eval.prey_selectivity.scout",
       "eval.prey_summer_min",
+      "eval.refuge_bite_deficit",
+      "eval.refuge_crowding",
+      "eval.refuge_exit_fed",
+      "eval.scout_alarm_lead_share",
       "eval.skill_trend",
+      "eval.social_return",
+      "eval.spec_dominance",
+      "eval.sprint_share.hunter",
       "eval.strike_miss_energy_ratio",
+      "eval.style_separation",
+      "eval.winter_basin_density",
+      "eval.winter_pop_ratio",
       "eval.winter_shelter_distance"
     ]
   ],
@@ -111,6 +118,8 @@
     "eval.deliberate_food_trend",
     "eval.density_starve_slope",
     "eval.disease_frequency_slope",
+    "eval.edge_birth_death_ratio",
+    "eval.edge_starve_per_prey",
     "eval.floor_episodes",
     "eval.food_contact_bite_share",
     "eval.freeze_survival_gain",
@@ -124,8 +133,10 @@
     "eval.hunt_call_answer",
     "eval.hunt_call_lift",
     "eval.hunter_conversion_by_dose",
+    "eval.hunter_conversion_gain",
     "eval.hunter_first_kill_age",
     "eval.hunter_first_kill_km_median",
+    "eval.hunter_kill_conversion_by_age.1k-2k",
     "eval.hunter_kill_rate_by_source.floor",
     "eval.hunter_kill_rate_by_source.initial",
     "eval.hunter_kill_rate_by_source.mate-hunter-parent",
@@ -134,6 +145,7 @@
     "eval.hunter_recoil_per_life",
     "eval.hunter_ticks_last_quarter",
     "eval.idle_signals_per_1k",
+    "eval.juvenile_parent_pull",
     "eval.kin_nearby_threat_gain",
     "eval.kin_within_call_radius",
     "eval.lineage_dominance",
@@ -141,6 +153,7 @@
     "eval.mother_wait_by_condition",
     "eval.pack_convergence",
     "eval.pack_lift",
+    "eval.pack_prey_size_ratio",
     "eval.population_mean",
     "eval.pred_prey_lag_corr",
     "eval.predator_births",
@@ -154,6 +167,7 @@
     "eval.prey_selectivity.scout",
     "eval.prey_summer_min",
     "eval.refuge_bite_deficit",
+    "eval.refuge_crowding",
     "eval.refuge_exit_fed",
     "eval.scout_alarm_lead_share",
     "eval.skill_trend",
@@ -279,7 +293,7 @@
       "metric": "eval.basin_families",
       "size": 32,
       "falsePositive": 0.0610236220472441,
-      "detectable": 0.5,
+      "detectable": null,
       "detectableKind": "relative",
       "validShare": 0.508
     },
@@ -302,10 +316,11 @@
     {
       "metric": "eval.basin_family_effective",
       "size": 32,
-      "falsePositive": 0.04430379746835443,
-      "detectable": 0.3,
+      "falsePositive": null,
+      "detectable": null,
       "detectableKind": "relative",
-      "validShare": 0.474
+      "validShare": 0.474,
+      "note": "too few verdicts (47% of splits)"
     },
     {
       "metric": "eval.basin_family_effective",
@@ -480,7 +495,7 @@
       "metric": "eval.chase_sprint_lift",
       "size": 32,
       "falsePositive": 0.1272365805168986,
-      "detectable": 0.75,
+      "detectable": 1,
       "detectableKind": "relative",
       "validShare": 0.503
     },
@@ -620,6 +635,58 @@
       "detectableKind": "relative",
       "validShare": 1,
       "direction": "higher"
+    },
+    {
+      "metric": "eval.edge_birth_death_ratio",
+      "size": 16,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 0.12,
+      "note": "too few verdicts (12% of splits)"
+    },
+    {
+      "metric": "eval.edge_birth_death_ratio",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 0.009,
+      "note": "too few verdicts (1% of splits)"
+    },
+    {
+      "metric": "eval.edge_birth_death_ratio",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.edge_starve_per_prey",
+      "size": 16,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 0.127,
+      "note": "too few verdicts (13% of splits)"
+    },
+    {
+      "metric": "eval.edge_starve_per_prey",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 0.009,
+      "note": "too few verdicts (1% of splits)"
+    },
+    {
+      "metric": "eval.edge_starve_per_prey",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
     },
     {
       "metric": "eval.floor_episodes",
@@ -939,18 +1006,20 @@
     {
       "metric": "eval.hunter_conversion_by_dose",
       "size": 16,
-      "falsePositive": 0.21768707482993196,
+      "falsePositive": null,
       "detectable": null,
       "detectableKind": "relative",
-      "validShare": 0.441
+      "validShare": 0.441,
+      "note": "too few verdicts (44% of splits)"
     },
     {
       "metric": "eval.hunter_conversion_by_dose",
       "size": 32,
-      "falsePositive": 0.25,
+      "falsePositive": null,
       "detectable": null,
       "detectableKind": "relative",
-      "validShare": 0.108
+      "validShare": 0.108,
+      "note": "too few verdicts (11% of splits)"
     },
     {
       "metric": "eval.hunter_conversion_by_dose",
@@ -958,6 +1027,31 @@
       "falsePositive": null,
       "detectable": null,
       "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.hunter_conversion_gain",
+      "size": 16,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "absolute",
+      "validShare": 0.06,
+      "note": "too few verdicts (6% of splits)"
+    },
+    {
+      "metric": "eval.hunter_conversion_gain",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "absolute",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.hunter_conversion_gain",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "absolute",
       "note": "no verdict at this size"
     },
     {
@@ -990,18 +1084,20 @@
     {
       "metric": "eval.hunter_first_kill_km_median",
       "size": 16,
-      "falsePositive": 0.11409395973154363,
-      "detectable": 0.75,
+      "falsePositive": null,
+      "detectable": null,
       "detectableKind": "relative",
-      "validShare": 0.298
+      "validShare": 0.298,
+      "note": "too few verdicts (30% of splits)"
     },
     {
       "metric": "eval.hunter_first_kill_km_median",
       "size": 32,
-      "falsePositive": 0.09523809523809523,
-      "detectable": 0.5,
+      "falsePositive": null,
+      "detectable": null,
       "detectableKind": "relative",
-      "validShare": 0.063
+      "validShare": 0.063,
+      "note": "too few verdicts (6% of splits)"
     },
     {
       "metric": "eval.hunter_first_kill_km_median",
@@ -1009,6 +1105,32 @@
       "falsePositive": null,
       "detectable": null,
       "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.hunter_kill_conversion_by_age.1k-2k",
+      "size": 16,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "absolute",
+      "validShare": 0.413,
+      "note": "too few verdicts (41% of splits)"
+    },
+    {
+      "metric": "eval.hunter_kill_conversion_by_age.1k-2k",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "absolute",
+      "validShare": 0.124,
+      "note": "too few verdicts (12% of splits)"
+    },
+    {
+      "metric": "eval.hunter_kill_conversion_by_age.1k-2k",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "absolute",
       "note": "no verdict at this size"
     },
     {
@@ -1218,6 +1340,34 @@
       "validShare": 1
     },
     {
+      "metric": "eval.juvenile_parent_pull",
+      "size": 16,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 0.418,
+      "direction": "higher",
+      "note": "too few verdicts (42% of splits)"
+    },
+    {
+      "metric": "eval.juvenile_parent_pull",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 0.127,
+      "direction": "higher",
+      "note": "too few verdicts (13% of splits)"
+    },
+    {
+      "metric": "eval.juvenile_parent_pull",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
       "metric": "eval.kin_nearby_threat_gain",
       "size": 16,
       "falsePositive": 0.106,
@@ -1346,18 +1496,20 @@
     {
       "metric": "eval.pack_convergence",
       "size": 16,
-      "falsePositive": 0.1103448275862069,
-      "detectable": 0.15,
+      "falsePositive": null,
+      "detectable": null,
       "detectableKind": "absolute",
-      "validShare": 0.435
+      "validShare": 0.435,
+      "note": "too few verdicts (44% of splits)"
     },
     {
       "metric": "eval.pack_convergence",
       "size": 32,
-      "falsePositive": 0.07692307692307693,
-      "detectable": 0.075,
+      "falsePositive": null,
+      "detectable": null,
       "detectableKind": "absolute",
-      "validShare": 0.117
+      "validShare": 0.117,
+      "note": "too few verdicts (12% of splits)"
     },
     {
       "metric": "eval.pack_convergence",
@@ -1370,10 +1522,11 @@
     {
       "metric": "eval.pack_lift",
       "size": 16,
-      "falsePositive": 0.42857142857142855,
-      "detectable": 0.15,
+      "falsePositive": null,
+      "detectable": null,
       "detectableKind": "relative",
-      "validShare": 0.007
+      "validShare": 0.007,
+      "note": "too few verdicts (1% of splits)"
     },
     {
       "metric": "eval.pack_lift",
@@ -1385,6 +1538,34 @@
     },
     {
       "metric": "eval.pack_lift",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.pack_prey_size_ratio",
+      "size": 16,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 0.096,
+      "direction": "higher",
+      "note": "too few verdicts (10% of splits)"
+    },
+    {
+      "metric": "eval.pack_prey_size_ratio",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 0.006,
+      "direction": "higher",
+      "note": "too few verdicts (1% of splits)"
+    },
+    {
+      "metric": "eval.pack_prey_size_ratio",
       "size": 64,
       "falsePositive": null,
       "detectable": null,
@@ -1629,11 +1810,12 @@
     {
       "metric": "eval.prey_selectivity.reproducer",
       "size": 32,
-      "falsePositive": 0.11538461538461539,
-      "detectable": 1,
+      "falsePositive": null,
+      "detectable": null,
       "detectableKind": "relative",
       "validShare": 0.494,
-      "direction": "lower"
+      "direction": "lower",
+      "note": "too few verdicts (49% of splits)"
     },
     {
       "metric": "eval.prey_selectivity.reproducer",
@@ -1705,11 +1887,12 @@
     {
       "metric": "eval.refuge_bite_deficit",
       "size": 32,
-      "falsePositive": 0.13043478260869565,
+      "falsePositive": null,
       "detectable": null,
       "detectableKind": "relative",
       "validShare": 0.483,
-      "direction": "lower"
+      "direction": "lower",
+      "note": "too few verdicts (48% of splits)"
     },
     {
       "metric": "eval.refuge_bite_deficit",
@@ -1720,22 +1903,50 @@
       "note": "no verdict at this size"
     },
     {
+      "metric": "eval.refuge_crowding",
+      "size": 16,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 0.001,
+      "direction": "higher",
+      "note": "too few verdicts (0% of splits)"
+    },
+    {
+      "metric": "eval.refuge_crowding",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.refuge_crowding",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
       "metric": "eval.refuge_exit_fed",
       "size": 16,
-      "falsePositive": 0.06329113924050633,
-      "detectable": 0.15,
+      "falsePositive": null,
+      "detectable": null,
       "detectableKind": "absolute",
       "validShare": 0.158,
-      "direction": "higher"
+      "direction": "higher",
+      "note": "too few verdicts (16% of splits)"
     },
     {
       "metric": "eval.refuge_exit_fed",
       "size": 32,
-      "falsePositive": 0,
-      "detectable": 0.1,
+      "falsePositive": null,
+      "detectable": null,
       "detectableKind": "absolute",
       "validShare": 0.012,
-      "direction": "higher"
+      "direction": "higher",
+      "note": "too few verdicts (1% of splits)"
     },
     {
       "metric": "eval.refuge_exit_fed",
@@ -1799,20 +2010,22 @@
     {
       "metric": "eval.social_return",
       "size": 16,
-      "falsePositive": 0.07264957264957266,
+      "falsePositive": null,
       "detectable": null,
       "detectableKind": "relative",
       "validShare": 0.234,
-      "direction": "higher"
+      "direction": "higher",
+      "note": "too few verdicts (23% of splits)"
     },
     {
       "metric": "eval.social_return",
       "size": 32,
-      "falsePositive": 0.06451612903225806,
+      "falsePositive": null,
       "detectable": null,
       "detectableKind": "relative",
       "validShare": 0.031,
-      "direction": "higher"
+      "direction": "higher",
+      "note": "too few verdicts (3% of splits)"
     },
     {
       "metric": "eval.social_return",
