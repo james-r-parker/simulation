@@ -34,5 +34,11 @@
     "plan": "docs/designs/unit-knockout.md",
     "task": "T15",
     "reason": "Off by default (0) in Phase 1 while Phase 2 measures the rate screen, keep rule and ladder screen; T15 adopts the finalist or deletes the operator."
+  },
+  {
+    "key": "sprintStoreEnabled",
+    "plan": "docs/designs/fair-chase.md",
+    "task": "T8a",
+    "reason": "Off by default while Phase 1 reads the chase envelope and Phase 2 the hunt rung; T15 adopts the store as the default and deletes the switch and the off path, or T8a deletes the store when no arm passes the rung."
   }
 ]

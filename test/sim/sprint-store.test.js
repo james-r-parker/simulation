@@ -1,0 +1,199 @@
+import v8 from 'node:v8';
+import vm from 'node:vm';
+import { describe, expect, it } from 'vitest';
+import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
+import { createConfig } from '../../js/sim/config.js';
+import { createRng, nextFloat } from '../../js/sim/rng.js';
+import { createSprintStore, resetSprintSlot, stepSprintStore, storeFactor } from '../../js/sim/sprint-store.js';
+
+const FORAGER = 0;
+const PREDATOR = 1;
+
+/**
+ * @param {Record<string, any>} [overrides] config overrides
+ * @returns {Readonly<Record<string, any>>} a config with the store on
+ */
+const storeConfig = (overrides = {}) => createConfig({ sprintStoreEnabled: true, ...overrides });
+
+/**
+ * @param {number} n slots
+ * @returns {{alive: Uint8Array, spec: Uint8Array, outputs: Float32Array, sprintFactor: Float64Array}} the arrays the
+ *   step reads and writes, every slot alive and a forager
+ */
+function bodies(n) {
+    return {
+        alive: new Uint8Array(n).fill(1),
+        spec: new Uint8Array(n),
+        outputs: new Float32Array(n * OUTPUT_COUNT),
+        sprintFactor: new Float64Array(n).fill(1),
+    };
+}
+
+/**
+ * @param {ReturnType<typeof bodies>} w the arrays
+ * @param {number} slot the body
+ * @param {{sprint: number, thrust: number}} out its sprint and thrust outputs
+ */
+function drive(w, slot, { sprint, thrust }) {
+    w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] = sprint;
+    w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.THRUST] = thrust;
+}
+
+describe('createSprintStore', () => {
+    it('starts every slot full and prices the drain per specialisation', () => {
+        const config = storeConfig({
+            sprintDrain: 0.01,
+            specialisations: { predator: { sprintDrainMultiplier: 2 } },
+        });
+        const store = createSprintStore(config, 4);
+        expect([...store.level]).toEqual([1, 1, 1, 1]);
+        expect(store.drainBySpec[FORAGER]).toBe(0.01);
+        expect(store.drainBySpec[PREDATOR]).toBe(0.02);
+        expect([store.refill, store.restThrust, store.floor]).toEqual([0.002, 0.2, 0.3]);
+    });
+});
+
+describe('storeFactor', () => {
+    const store = createSprintStore(storeConfig({ sprintFloor: 0.3 }), 4);
+
+    it('is 1 at or above the floor, falls linearly under it and is 0 when empty', () => {
+        store.level.set([1, 0.3, 0.15, 0]);
+        expect([0, 1, 2, 3].map((slot) => storeFactor(store, slot))).toEqual([1, 1, 0.5, 0]);
+    });
+});
+
+describe('stepSprintStore', () => {
+    it('drains while sprinting and writes the factor of the store as the tick began', () => {
+        const store = createSprintStore(storeConfig({ sprintDrain: 0.1, sprintFloor: 0.3 }), 1);
+        const w = bodies(1);
+        drive(w, 0, { sprint: 1, thrust: 1 });
+        store.level[0] = 0.35;
+        stepSprintStore(store, w);
+        expect(w.sprintFactor[0]).toBe(1);
+        expect(store.level[0]).toBeCloseTo(0.25, 12);
+        stepSprintStore(store, w);
+        expect(w.sprintFactor[0]).toBeCloseTo(0.25 / 0.3, 12);
+        for (let t = 0; t < 5; t++) {
+            stepSprintStore(store, w);
+        }
+        expect(store.level[0]).toBe(0);
+        stepSprintStore(store, w);
+        expect(w.sprintFactor[0]).toBe(0);
+    });
+
+    it('refills only while not sprinting and thrust is under sprintRestThrust, never above 1', () => {
+        const store = createSprintStore(storeConfig({ sprintRefill: 0.25, sprintRestThrust: 0.2 }), 3);
+        const w = bodies(3);
+        store.level.set([0.5, 0.5, 0.9]);
+        drive(w, 0, { sprint: 0, thrust: 0.1 });
+        drive(w, 1, { sprint: 0, thrust: 0.2 });
+        drive(w, 2, { sprint: -1, thrust: -1 });
+        stepSprintStore(store, w);
+        expect([...store.level]).toEqual([0.75, 0.5, 1]);
+    });
+
+    it('drains a specialisation by its multiplier', () => {
+        const config = storeConfig({
+            sprintDrain: 0.01,
+            specialisations: { predator: { sprintDrainMultiplier: 0.5 } },
+        });
+        const store = createSprintStore(config, 2);
+        const w = bodies(2);
+        w.spec[1] = PREDATOR;
+        drive(w, 0, { sprint: 1, thrust: 1 });
+        drive(w, 1, { sprint: 1, thrust: 1 });
+        stepSprintStore(store, w);
+        expect(1 - store.level[0]).toBeCloseTo(0.01, 12);
+        expect(1 - store.level[1]).toBeCloseTo(0.005, 12);
+    });
+
+    it('leaves dead slots alone', () => {
+        const store = createSprintStore(storeConfig(), 2);
+        const w = bodies(2);
+        w.alive[1] = 0;
+        w.sprintFactor[1] = 7;
+        drive(w, 1, { sprint: 1, thrust: 1 });
+        stepSprintStore(store, w);
+        expect([store.level[1], w.sprintFactor[1]]).toEqual([1, 7]);
+    });
+
+    it('matches a naive reference over 1000 random ticks', () => {
+        const config = storeConfig({ specialisations: { predator: { sprintDrainMultiplier: 2 } } });
+        const n = 6;
+        const store = createSprintStore(config, n);
+        const w = bodies(n);
+        for (let slot = 0; slot < n; slot++) {
+            w.spec[slot] = slot % 2;
+        }
+        const ref = Array.from({ length: n }, () => 1);
+        const rng = createRng(7);
+        for (let t = 0; t < 1000; t++) {
+            const expected = [];
+            for (let slot = 0; slot < n; slot++) {
+                const sprint = nextFloat(rng) < 0.6 ? 1 : -1;
+                const thrust = nextFloat(rng);
+                drive(w, slot, { sprint, thrust });
+                expected.push(ref[slot] >= config.sprintFloor ? 1 : ref[slot] / config.sprintFloor);
+                const drain = config.sprintDrain * (slot % 2 === 1 ? 2 : 1);
+                if (sprint > 0) {
+                    ref[slot] = Math.max(0, ref[slot] - drain);
+                } else if (Math.fround(thrust) < config.sprintRestThrust) {
+                    ref[slot] = Math.min(1, ref[slot] + config.sprintRefill);
+                }
+            }
+            stepSprintStore(store, w);
+            expect([...w.sprintFactor]).toEqual(expected);
+            expect([...store.level]).toEqual(ref);
+        }
+    });
+
+    it('allocates nothing', () => {
+        v8.setFlagsFromString('--expose-gc');
+        const gc = vm.runInNewContext('gc');
+        const store = createSprintStore(storeConfig(), 500);
+        const w = bodies(500);
+        for (let slot = 0; slot < 500; slot++) {
+            drive(w, slot, { sprint: slot % 2, thrust: 0 });
+        }
+        const passes = 300;
+        const run = () => {
+            for (let i = 0; i < passes; i++) {
+                stepSprintStore(store, w);
+            }
+        };
+        run();
+        let best = Infinity;
+        for (let window = 0; window < 10; window++) {
+            gc();
+            const before = process.memoryUsage().heapUsed;
+            run();
+            best = Math.min(best, process.memoryUsage().heapUsed - before);
+        }
+        expect(best).toBeLessThan(passes * 4);
+    });
+});
+
+describe('resetSprintSlot', () => {
+    it('fills the store and the factor of a slot being born into', () => {
+        const store = createSprintStore(storeConfig(), 2);
+        const factor = new Float64Array([0.2, 0.4]);
+        store.level.set([0, 0.1]);
+        resetSprintSlot(store, factor, 1);
+        expect([...store.level]).toEqual([0, 1]);
+        expect([...factor]).toEqual([0.2, 1]);
+    });
+});
+
+describe('the sprint store keys', () => {
+    it('are off by default and validated', () => {
+        const config = createConfig({});
+        expect(config.sprintStoreEnabled).toBe(false);
+        expect(config.specialisations.predator.sprintDrainMultiplier).toBe(1);
+        expect(() => createConfig({ sprintFloor: 0 })).toThrow(/sprintFloor/);
+        expect(() => createConfig({ sprintDrain: 0 })).toThrow(/sprintDrain/);
+        expect(() => createConfig({ sprintRefill: -0.1 })).toThrow(/sprintRefill/);
+        expect(() => createConfig({ specialisations: { scout: { sprintDrainMultiplier: 0 } } })).toThrow(
+            /sprintDrainMultiplier/,
+        );
+    });
+});
