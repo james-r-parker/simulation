@@ -13,7 +13,7 @@ The repo is built by coding agents: a coordinator, its subagents, and outside st
 
 This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
 
-Own work first: Phase 5 (start to merge), Phase 1 (context diet), then Phases 2, 3 and 4.
+Own work first: Phase 5 (start to merge), Phase 1 (context diet), Phase 3 (before the push), Phase 6 (affected tests in CI), then Phases 2 and 4.
 
 | Step | Doc                                                                | Built when                                                                               |
 | ---- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
@@ -22,7 +22,7 @@ Own work first: Phase 5 (start to merge), Phase 1 (context diet), then Phases 2,
 
 ## Scope
 
-- In: `AGENTS.md` and its size budget, `docs/commands.md`, the notes files, `docs/principles.md` and the scene scorecard, the status-line cap, the experiment ledger, the pre-push `ratchet-related` gate, the test-data rule, the browser smoke retry, `npm run state`, `scripts/worktree-gc.sh`, the handoff template, the stream rules, `scripts/task-start.sh`, `scripts/ship.sh`, the `records` change scope, the test shard balance.
+- In: `AGENTS.md` and its size budget, `docs/commands.md`, the notes files, `docs/principles.md` and the scene scorecard, the status-line cap, the experiment ledger, the pre-push `ratchet-related` gate, the test-data rule, the browser smoke retry, `npm run state`, `scripts/worktree-gc.sh`, the handoff template, the stream rules, `scripts/task-start.sh`, `scripts/ship.sh`, the `records` change scope, the test shard balance, the affected-tests selection in CI.
 - Out: sim, evo and brain behaviour (`rulesHash` does not move), the gates of [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md) other than the three named here, the trainer's verdict tools ([training-loop.md](training-loop.md)), agent permission settings (a user step, listed under Verification).
 
 ## Measured on 2026-11-20
@@ -205,6 +205,42 @@ A rerun of `scripts/ship.sh` after a fix commit resumes at step 2 on the same PR
 - `scripts/change-scope.sh` reports `records` for a diff that touches only `evals/ledger/`, `evals/decisions/` and `docs/` (no test reads those once T18 is built). `check.yml` runs the `docs` gate plus `scripts/check-experiments.mjs` and `scripts/check-metric-names.mjs` for it, with no test matrix.
 - The test files of `test shard-6` that take over 60 s move to a named heavy shard, as `heavy-train` and `heavy-train-pool` are, so no shard runs over 4 minutes on a quiet runner. `test/workflows/` pins the shard list.
 
+## Affected tests in CI
+
+`scripts/change-scope.sh` knows two scopes: `docs` (Markdown only) and `full`. Anything else runs 8 shards, 3 heavy jobs and 5 statistical jobs. PR 545 changed `scripts/design-docs/` and one test file and ran all 16; the tests its change can reach are one file.
+
+A pull request runs the tests its change can reach. The full suite runs once on the merged result, so `main` is still fully tested.
+
+### What a change can reach
+
+`scripts/lib/affected.mjs` exports `affectedTests(changedPaths)`, which returns `{mode, tests, why}`.
+
+| Mode       | When                                                                                                                                                                                                                                                                                              | Runs                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `docs`     | as today                                                                                                                                                                                                                                                                                          | the docs gate                                                  |
+| `records`  | only `evals/ledger/`, `evals/decisions/` and `docs/` (T30)                                                                                                                                                                                                                                        | the docs gate and the ledger checks                            |
+| `full`     | any path on the full list: `package.json`, `package-lock.json`, `vitest.config.js`, the ESLint and TypeScript configs, `.github/workflows/`, `scripts/check.sh`, `scripts/lib/test-scope.mjs`, `wasm/`, `js/sim/wasm-binary.js`, `test/helpers/`, `.node-version`; or an empty or unreadable diff | every shard, heavy and statistical job                         |
+| `affected` | everything else                                                                                                                                                                                                                                                                                   | the reached test files, in as many shards as their count needs |
+
+The reached set is the union of three sources:
+
+- **Imports.** The test files whose module graph holds a changed file (`vitest related`, the selection the pre-commit `test-related` gate uses).
+- **Changed tests.** Every changed file under `test/`.
+- **Data and spawned scripts.** `test/data-deps.json` maps each test file to the non-module paths it reads (fixtures, `evals/` files, `bench/` baselines, docs) and the scripts it spawns. `scripts/data-deps.mjs --write` generates it by scanning the tests for `readFileSync`, `new URL(..., import.meta.url)`, `spawnSync` and `execFileSync` arguments; `--check` fails when it is stale and the `conventions` gate runs it. A test that builds a path the scan cannot resolve declares it in a `// reads: <glob>` comment, and the scan fails a test with an unresolved dynamic path and no declaration.
+
+A heavy or statistical file runs in its own job only when it is in the reached set. A change under `js/sim/` or `js/evo/` reaches most of the suite through imports, so sim and evo work keeps today's coverage; app-only, script-only and worker-only changes do not pay for it.
+
+### The jobs
+
+- The `scope` job runs `scripts/affected.mjs <base>` and writes the mode, the test list (an artifact) and a matrix sized to it: one shard per 60 reached files, at most 8, plus one job per reached heavy or statistical file.
+- `static` runs as today (conventions, format, lint, typecheck, deps, dupes, build, eval-smoke): it is 1.5 minutes and catches what tests do not.
+- `coverage` on a pull request runs the per-file ratchet on the changed source files (`ratchet-related`, T17). The whole-suite ratchet runs with the full suite.
+- The full suite, the whole-suite ratchet and the browser smoke run on every push to `main`. The repository is owned by a user account, where GitHub offers no merge queue, and the `main` ruleset does not require an up-to-date branch, so the push to `main` is the first run of the merged result. A red full run on `main` opens an issue that names the merge commit and the failed test.
+
+### The miss ledger
+
+An affected run that passes where the full run on the merged result fails is a miss: an edge the selection did not see. The full run compares its failed files with the pull request's reached list (the artifact) and, for a file that was not reached, appends `{pr, test, changed}` to the issue and fails the `data-deps` check until the edge is declared. The reading that keeps the selection honest is misses per 100 merged pull requests; above 2 the full list grows.
+
 ## Phases
 
 ### Phase 1 - Context diet
@@ -248,15 +284,25 @@ A rerun of `scripts/ship.sh` after a fix commit resumes at step 2 on the same PR
 | ----- | -------------------- | ------- |
 | F     | T28, T29, T31 to T33 | Sonnet  |
 
+### Phase 6 - Affected tests in CI
+
+**Targets:** none - it moves no sim metric; its readings are the median `check` wall time of pull requests by mode (against 7 to 9 minutes for every non-docs pull request), the jobs run per pull request (against 16 test jobs), and misses per 100 merged pull requests (at most 2)
+
+| Chunk | Tasks      | Builder |
+| ----- | ---------- | ------- |
+| G     | T34 to T40 | Sonnet  |
+
 ## Decisions
 
-| Decision                                           | Holds because                                                                                             |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `npm run state` prints and commits nothing         | [STYLE.md](STYLE.md) keeps no state file; the page is derived from git, the run registries and the ledger |
-| The ledger is a directory, with no reserved ranges | a record per file cannot conflict, and the allocator reads every remote branch                            |
-| The scorecard is generated                         | a hand-kept "Now" column went 22 days without an update                                                   |
-| `ship.sh` merges the base in and never rebases     | a force push is refused in agent sessions, and three PRs were closed and reopened over it (472, 506, 512) |
-| Agent permissions stay a user step                 | a plan does not edit the settings that bound the agents that build it                                     |
+| Decision                                                               | Holds because                                                                                                                                                                                                                                       |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run state` prints and commits nothing                             | [STYLE.md](STYLE.md) keeps no state file; the page is derived from git, the run registries and the ledger                                                                                                                                           |
+| The ledger is a directory, with no reserved ranges                     | a record per file cannot conflict, and the allocator reads every remote branch                                                                                                                                                                      |
+| The scorecard is generated                                             | a hand-kept "Now" column went 22 days without an update                                                                                                                                                                                             |
+| `ship.sh` merges the base in and never rebases                         | a force push is refused in agent sessions, and three PRs were closed and reopened over it (472, 506, 512)                                                                                                                                           |
+| A pull request runs affected tests and the merged result runs them all | a selection by imports can miss an edge; the full run on the merged result catches it before the next change builds on it, and the miss ledger closes the edge                                                                                      |
+| No merge queue                                                         | GitHub offers it only to organisation-owned repositories; this one is owned by a user account. The ruleset's required checks are not strict, so a green PR merges without an up-to-date branch, and the full run on `main` checks the merged result |
+| Agent permissions stay a user step                                     | a plan does not edit the settings that bound the agents that build it                                                                                                                                                                               |
 
 ## Delivery requirements
 
@@ -334,6 +380,18 @@ A rerun of `scripts/ship.sh` after a fix commit resumes at step 2 on the same PR
 | T32 | Rewrite the `create-pr` and `resume-plan` skills and the `AGENTS.md` workflow around `task-start.sh` and `ship.sh`; add both to `docs/commands.md`                    | [judgement]  | T28, T29   |
 | T33 | Conformance review of Phase 5                                                                                                                                         | [judgement]  | T31, T32   |
 
+### Phase 6 - Affected tests in CI
+
+| #   | Task                                                                                                                                                                                                                                                                                        | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T34 | Add `scripts/data-deps.mjs` (`--write`, `--check`), the `// reads:` declaration, the generated `test/data-deps.json` and the `conventions` check, with tests on fixture test files                                                                                                          | [judgement]  | T18        |
+| T35 | Add `scripts/lib/affected.mjs` and `scripts/affected.mjs`: the four modes, the full list, the three sources and the matrix sizing, with tests (a script-only change reaches its test; a `js/sim` change reaches the statistical files; a full-list path is `full`; an empty diff is `full`) | [judgement]  | T34        |
+| T36 | Replay the last 100 merged pull requests through `affectedTests` offline: for each, the reached count against the suite and, where CI history shows a failed test on the PR, whether it was reached; record the table and fix every unreached failure before T37                            | [judgement]  | T35        |
+| T37 | Drive the `test` matrix of `check.yml` from the `scope` job's output, run `ratchet-related` as the pull-request `coverage` job, and keep `check` the one required status; `test/workflows/` pins the wiring                                                                                 | [judgement]  | T17, T36   |
+| T38 | Run the full suite, the whole-suite ratchet and the browser smoke on the push to `main`, with the red-main issue and the miss comparison                                                                                                                                                    | [judgement]  | T37        |
+| T39 | Update `AGENTS.md`, `docs/commands.md`, the `create-pr` skill and [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md) for the modes and the miss ledger                                                                                                                      | [mechanical] | T38        |
+| T40 | Conformance review of Phase 6, with the wall time by mode over the first 30 pull requests                                                                                                                                                                                                   | [judgement]  | T39        |
+
 ## Verification
 
 - `scripts/check.sh --fix --quick` and CI `check` are green for each chunk.
@@ -345,4 +403,4 @@ A rerun of `scripts/ship.sh` after a fix commit resumes at step 2 on the same PR
 - `scripts/worktree-gc.sh --list` prints no `safe` worktree after Phase 4.
 - `scripts/ship.sh` on a one-file docs branch prints a merged PR link without another command, and on a branch with a failing test exits 1 naming the job.
 - A PR that adds one `evals/ledger/` file finishes `check` in under 2 minutes.
-- User steps, outside the repo: enable the merge queue in the `main` ruleset ([quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md) T32), so green PRs merge without an up-to-date branch; allow subagents `gh pr create` in the agent permission settings.
+- User step, outside the repo: allow subagents `gh pr create` in the agent permission settings.

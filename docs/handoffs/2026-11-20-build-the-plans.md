@@ -96,8 +96,8 @@ Adaptive difficulty is untested, not falsified: E251 stopped on a validation err
 
 - Watch the E203 champions (`?policy=champions-v1` with the set in `.sim/champions/keep/ets-1h-o144`): the only set that
   beat live with every keep-rule guard at no harm.
-- Agent permissions: allow subagents `gh pr create` and `git push ` on their own branches.
-- Enable the merge queue in the `main` ruleset ([quality-gates-and-test-tiers.md](../designs/quality-gates-and-test-tiers.md) T32).
+- Agent permissions: allow subagents `gh pr create` on their own branches. (No merge queue: GitHub does not offer it to a
+  user-owned repository, and the ruleset does not require an up-to-date branch, so none is needed.)
 - E240 (the metric-noise stream's two 128-seed, 600000-tick evals) was stopped on the user's word at 27 of 128 seeds.
   Rerun it at 8 workers per arm when [metric-noise.md](../designs/metric-noise.md) T4 is picked up.
 
