@@ -1,6 +1,8 @@
 // Bites, kills and deaths through the effect pool: the jaw spray and the bite mark, a recipe per death cause, the pack
 // kill's double ring, and the lunge, flinch and gulp tweens on the bodies involved.
 
+import { appLog } from '../app-log.js';
+import { animFor } from './death-anim.js';
 import { familyColor, PALETTE } from './colors.js';
 import { startTween, TWEEN } from './body-tweens.js';
 import { startDent } from './dents.js';
@@ -189,8 +191,13 @@ function startBody(player, agents, { cause, name }) {
     const e = player.effect;
     const killer = name === 'EATEN' ? indexOfGenome(agents, e.b) : -1;
     const bearing = killer >= 0 ? Math.atan2(agents.y[killer] - e.y, agents.x[killer] - e.x) : undefined;
-    beginDeath(d, { genome: e.a, cause, nowMs: player.momentCtx.nowMs, bearing });
-    return deathBody(d, e.a);
+    const nowMs = player.momentCtx.nowMs;
+    beginDeath(d, { genome: e.a, cause, nowMs, bearing });
+    const k = deathBody(d, e.a);
+    if (k >= 0) {
+        appLog('debug', 'DeathClip', { cause: name, pendingMs: nowMs - d.since[k], clipMs: animFor(name).ms });
+    }
+    return k;
 }
 
 /**

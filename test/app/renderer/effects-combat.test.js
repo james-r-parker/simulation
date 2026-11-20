@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
 import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
 import { createDying, isPlaying, positionOf, trackBodies } from '../../../js/app/renderer/dying.js';
@@ -148,6 +148,24 @@ describe('playDeath particles', () => {
         expect(bodies(player).bearing[0]).toBeCloseTo(Math.PI / 2);
         const none = died({ size: 10, ticksPerMs: 0.06, cause: 1 });
         expect(bodies(none).bearing[0]).toBe(0);
+    });
+
+    it('logs a DeathClip at debug with the cause, the pending wait and the clip length', () => {
+        const spy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+        died({ size: 10, ticksPerMs: 0.06, cause: 1 });
+        expect(spy).toHaveBeenCalledWith({
+            level: 'debug',
+            event: 'DeathClip',
+            cause: 'EATEN',
+            pendingMs: 284,
+            clipMs: 1600,
+        });
+        spy.mockClear();
+        const none = createEffectsPlayer({ layout: layout3, info: info3, dying: createDying(8) });
+        Object.assign(none.effect, { tick: 9, x: 7, y: 8, a: 99, b: 0, c: 0, d: 1 });
+        playDeath(none, alive([]));
+        expect(spy).not.toHaveBeenCalled();
+        spy.mockRestore();
     });
 
     it('plays at the record when no body is drawn', () => {
