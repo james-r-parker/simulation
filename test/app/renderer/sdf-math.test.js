@@ -146,6 +146,31 @@ describe('cell primitives', () => {
         expect(sdMembrane(1.3, 0, { ...still, dent: bulge })).toBeCloseTo(0, 5);
     });
 
+    it('membrane tear: a deep dent opens a gap to the centre, and a negative width repeats it three times', async () => {
+        const { sdMembrane, TEAR_FOLDS } = await import('../../../js/app/renderer/sdf-math.js');
+        const still = { rx: 1, ry: 1, amp: 0, lobes: 3, phase: 0 };
+        const tear = { angle: 0, depth: 1.1, width: 0.3 };
+        expect(sdMembrane(0.5, 0, { ...still, dent: tear })).toBeGreaterThan(0);
+        expect(sdMembrane(-0.5, 0, { ...still, dent: tear })).toBeLessThan(0);
+        expect(sdMembrane(-1, 0, { ...still, dent: tear })).toBeCloseTo(0, 5);
+        const scatter = { angle: 0, depth: 1.1, width: -0.3 };
+        expect(TEAR_FOLDS).toBe(3);
+        for (let k = 0; k < TEAR_FOLDS; k++) {
+            const a = (k * 2 * Math.PI) / TEAR_FOLDS;
+            expect(sdMembrane(0.5 * Math.cos(a), 0.5 * Math.sin(a), { ...still, dent: scatter })).toBeGreaterThan(0);
+        }
+        const between = Math.PI / TEAR_FOLDS;
+        expect(sdMembrane(0.5 * Math.cos(between), 0.5 * Math.sin(between), { ...still, dent: scatter })).toBeLessThan(
+            0,
+        );
+        const one = { angle: 0, depth: 0.3, width: 0.5 };
+        const same = { angle: 0, depth: 0.3, width: -0.5 };
+        expect(sdMembrane(0.7, 0, { ...still, dent: same })).toBeCloseTo(
+            sdMembrane(0.7, 0, { ...still, dent: one }),
+            5,
+        );
+    });
+
     it('arcBetween: the shortest signed arc, across the wrap', async () => {
         const { arcBetween } = await import('../../../js/app/renderer/sdf-math.js');
         expect(arcBetween(0.2, 0.1)).toBeCloseTo(0.1);

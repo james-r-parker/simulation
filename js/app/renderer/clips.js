@@ -180,14 +180,22 @@ export const CLIPS = Object.freeze({
     rupture: {
         loop: false,
         tracks: [
-            track('sx', '0 1, 0.12 1.35 quadOut, 0.45 0.7 sineInOut, 1 0.7'),
-            track('sy', '0 1, 0.12 0.6 quadOut, 0.45 0.7 sineInOut, 1 0.7'),
-            track('flash', '0 1, 0.25 0 quadOut, 1 0'),
+            track('sx', '0 1, 0.15 1.15 quadOut, 0.6 0.72 sineInOut, 1 0.7'),
+            track('sy', '0 1, 0.15 0.82 quadOut, 0.6 0.72 sineInOut, 1 0.7'),
+            track('flash', '0 0.5, 0.3 0 quadOut, 1 0'),
         ],
     },
     deflate: {
         loop: false,
-        tracks: [track('sx', '0 1, 1 1.1 sineInOut'), track('sy', '0 1, 1 0.25 sineInOut')],
+        tracks: [track('sx', '0 1, 0.7 1.1 sineInOut, 1 1.1'), track('sy', '0 1, 0.7 0.3 sineInOut, 1 0.25')],
+    },
+    pit: {
+        loop: false,
+        tracks: [
+            track('rot', '0 0, 0.2 0.06 sineInOut, 0.5 -0.05 sineInOut, 0.8 0.03 sineInOut, 1 0 sineInOut'),
+            track('sx', '0 1, 0.6 0.92 sineInOut, 1 0.88'),
+            track('sy', '0 1, 0.6 0.92 sineInOut, 1 0.88'),
+        ],
     },
     wither: {
         loop: false,
@@ -232,6 +240,7 @@ export const TWEEN_CLIPS = Object.freeze([
     'convulse',
     'crumple',
     'flatten',
+    'pit',
 ]);
 
 /**

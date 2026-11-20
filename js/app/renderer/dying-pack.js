@@ -7,7 +7,7 @@ import { drawnRadius } from '../display-size.js';
 import { slotOf } from '../family-slots.js';
 import { claimRow, colorUnslotted, ITEM, packBodyWord, packStatus, PHI_FRAC } from './agents-pack.js';
 import { familyColor } from './colors.js';
-import { animFor, fadeOf, progressOf } from './death-anim.js';
+import { animFor, breakOf, laneOf, tearBearing } from './death-anim.js';
 import { DRIFT, isPlaying, isUsed, MAX_DYING, positionOf, speedShare } from './dying.js';
 
 const COLOR_AGENT = { mesh: 0, lineageId: 0, neutral: false, energy01: 0 };
@@ -57,7 +57,37 @@ function packLive(bucket, { d, k, o, nowMs }, view) {
     bucket.motion[o + 2] = (d.genome[k] * PHI_FRAC) % 1;
     bucket.motion[o + 3] = 0;
     bucket.tween.fill(0, o, o + ITEM);
+    bucket.tear[o] = 0;
+    bucket.tear[o + 1] = 0;
+    bucket.tear[o + 2] = REST_WIDTH;
+    bucket.tear[o + 3] = 0;
 }
+
+/**
+ * Writes a playing body's death: the clip over the breaking beat, and the tear of its membrane.
+ * @param {import('./agents-pack.js').Bucket} bucket the bucket
+ * @param {{d: import('./dying.js').Dying, k: number, o: number, nowMs: number}} body the dying bodies, the body, its row
+ *   offset and wall time
+ * @param {readonly string[]} causeNames the cause names by number
+ * @returns {number} the row's dying value (`laneOf`)
+ */
+function packBeats(bucket, { d, k, o, nowMs }, causeNames) {
+    const anim = animFor(causeNames[d.cause[k]]);
+    const elapsed = nowMs - d.start[k];
+    const lane = laneOf(anim, elapsed);
+    bucket.tween[o] = anim.kind;
+    bucket.tween[o + 1] = breakOf(anim, elapsed);
+    BODY.bearing = d.bearing[k];
+    BODY.genome = d.genome[k];
+    bucket.tear[o] = tearBearing(anim.tear, BODY) - d.pose[2][k];
+    bucket.tear[o + 1] = anim.tear.depth * Math.min(lane, 1);
+    bucket.tear[o + 2] = anim.tear.scatter ? -anim.tear.width : anim.tear.width;
+    return lane;
+}
+
+const BODY = { bearing: 0, genome: 0 };
+/** The tear's default width in the lane of a body not tearing: the shader divides by it. */
+const REST_WIDTH = 0.6;
 
 /**
  * Writes one dying body's row.
@@ -83,15 +113,7 @@ function packBody(store, { d, k, mesh, nowMs }, view) {
     bucket.color[o + 2] = rgb[2];
     bucket.color[o + 3] = d.pose[4][k];
     packLive(bucket, { d, k, o, nowMs }, view);
-    let fade = 0;
-    if (isPlaying(d, k)) {
-        const anim = animFor(view.causeNames[d.cause[k]]);
-        const progress = progressOf(anim, nowMs - d.start[k]);
-        bucket.tween[o] = anim.kind;
-        bucket.tween[o + 1] = progress;
-        fade = fadeOf(anim, progress);
-    }
-    bucket.fade[o / ITEM] = fade;
+    bucket.fade[o / ITEM] = isPlaying(d, k) ? packBeats(bucket, { d, k, o, nowMs }, view.causeNames) : 0;
 }
 
 /**

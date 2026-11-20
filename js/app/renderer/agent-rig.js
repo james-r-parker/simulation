@@ -44,7 +44,8 @@ export const STALK_SPEED = 0.35;
  * @property {Float32Array} gate pregnant, sick, infected, pollen
  * @property {Float32Array} gate2 calling, in cover, gestation01, the membrane and flagellum wave phase
  * @property {Float32Array} accent pollen colour r, g, b and the call kind (1 alarm, 2 pack call)
- * @property {Float32Array} dent the membrane dent: bearing in the body frame, signed depth, width and the fade
+ * @property {Float32Array} dent the membrane dent: bearing in the body frame, signed depth, width and the dying value
+ *   (a dying body's tear and fade; its dent is the tear)
  * @property {Float32Array} call call colour r, g, b and the flagella's thrust
  */
 
@@ -275,7 +276,13 @@ function dentRow(ctx, { bucket, o, r }, { out, agents }) {
     out.dent[o + 1] = 0;
     out.dent[o + 2] = DENT_REST_WIDTH;
     out.dent[o + 3] = bucket.fade[r];
-    if (!ctx.dents || i < 0) {
+    if (i < 0) {
+        out.dent[o] = bucket.tear[o];
+        out.dent[o + 1] = bucket.tear[o + 1];
+        out.dent[o + 2] = bucket.tear[o + 2];
+        return;
+    }
+    if (!ctx.dents) {
         return;
     }
     DENT_WHO.slot = agents.slot[i];

@@ -80,7 +80,10 @@ export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
  * @property {Float32Array} motion speed01, turn01, phase, 0
  * @property {Float32Array} tween one-shot tween kind and age, call (1 alarming, 2 hunt calling, 0 none), fleeing
  * @property {Float32Array} body the state word's bits (0 to 15), gestation01, dose01 and strain / 255
- * @property {Float32Array} fade each row's fade-out, 0 to 1 (a dying body's; 0 for a live one)
+ * @property {Float32Array} tear a dying body's tear: the bearing in the body frame, the depth and the signed width of the
+ *   gap (a negative width repeats it); read by the rig for the rows with no agent index
+ * @property {Float32Array} fade each row's dying value, 0 to 2: the tear (0 to 1) plus the fade-out (0 to 1); 0 for a
+ *   live one
  * @property {Int32Array} index each row's index in the blended agents, -1 for a dying body
  * @property {number} count agents packed this frame
  */
@@ -118,6 +121,7 @@ export function createAgentStore(capacity, meshCount, meshOfSpec, minPx) {
             motion: new Float32Array(capacity * ITEM),
             tween: new Float32Array(capacity * ITEM),
             body: new Float32Array(capacity * ITEM),
+            tear: new Float32Array(capacity * ITEM),
             fade: new Float32Array(capacity),
             index: new Int32Array(capacity),
             count: 0,

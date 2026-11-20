@@ -7,14 +7,15 @@
 // from the cache and hidden from the live rows (`isHidden`). Pure and allocation-free.
 
 import { plainLane } from '../lanes.js';
-import { animFor } from './death-anim.js';
+import { animFor, FAIL_MS } from './death-anim.js';
 
 /** The most bodies dying at once; a new one overwrites the oldest. */
 export const MAX_DYING = 64;
 /** More bodies than this vanishing in one frame is a reset or a hidden tab, not deaths: none spawn. */
 export const MASS_LOSS = 32;
-/** A pending body whose `DIED` has not played by now starts as a starvation, ms: the failing beat's length. */
-export const PENDING_MAX_MS = 400;
+/** A pending body whose `DIED` has not played by now starts as a starvation, ms: the failing beat's length, which it
+ * has then run, so its clip starts at the breaking beat. */
+export const PENDING_MAX_MS = FAIL_MS;
 /** The ticks per second the drift scale assumes, the share of its last speed a body keeps drifting at and the time
  * constant its speed decays to rest over, ms (about three of them is the failing beat). */
 export const DRIFT = Object.freeze({ ticksPerSec: 60, share: 0.5, decayMs: 150 });
@@ -291,7 +292,7 @@ export function stepDying(d, { nowMs, causeNames }) {
     for (let k = 0; k < MAX_DYING; k++) {
         if (d.state[k] === PENDING && nowMs - d.since[k] > PENDING_MAX_MS) {
             d.state[k] = PLAYING;
-            d.start[k] = nowMs;
+            d.start[k] = nowMs - FAIL_MS;
         }
         if (d.state[k] === PLAYING && nowMs - d.start[k] >= animFor(causeNames[d.cause[k]]).ms) {
             d.state[k] = 0;

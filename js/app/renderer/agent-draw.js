@@ -4,7 +4,7 @@
 // the slot the frame drew into its mesh's own buffer.
 
 import { Group } from 'three/webgpu';
-import { attribute, uniform } from 'three/tsl';
+import { attribute, max, min, mix, uniform, vec3 } from 'three/tsl';
 import { appLog } from '../app-log.js';
 import { SLOT } from '../pack/frame-slots.js';
 import { AGENT_LANES } from './agent-lanes.js';
@@ -12,7 +12,7 @@ import { createInstances, instancedMesh, takeRows } from './instances.js';
 import { modelMaterial } from './model-material.js';
 import { standardInputs } from './model-meshes.js';
 import { modelFor } from './models.js';
-import { FILL_SHARE, RIM_PX } from './palette.js';
+import { FILL_SHARE, NEON, RIM_PX } from './palette.js';
 
 /** How far the scent lens dims the agents. */
 export const SCENT_DIM = 0.55;
@@ -28,8 +28,13 @@ function agentInputs({ dim, ringFloor }) {
     const gate2 = attribute('iGate2', 'vec4');
     const call = attribute('iCall', 'vec4');
     const dent = attribute('iDent', 'vec4');
+    const standard = standardInputs();
+    // the dent lane's fourth value is a dying body's tear (0 to 1: the colour drains to rot as the membrane opens) plus
+    // its fade (1 to 2: the opacity falls); a live body holds 0
+    const drain = min(dent.w, 1);
     return {
-        ...standardInputs(),
+        ...standard,
+        color: mix(standard.color, vec3(NEON.rot[0], NEON.rot[1], NEON.rot[2]), drain),
         values: {
             pregnant: gate.x,
             sick: gate.y,
@@ -43,7 +48,7 @@ function agentInputs({ dim, ringFloor }) {
         },
         colors: { pollenColor: attribute('iAccent', 'vec4').xyz, callColor: call.xyz },
         dent: { angle: dent.x, depth: dent.y, width: dent.z },
-        fade: dent.w,
+        fade: max(dent.w.sub(1), 0),
         dim,
         ringFloor,
     };

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { LANE_KINDS } from '../helpers/lane-kinds.js';
 import { createInterpolated } from '../../../js/app/interpolate.js';
-import { DEATH_ANIMS } from '../../../js/app/renderer/death-anim.js';
+import { DEATH_ANIMS, FAIL_MS } from '../../../js/app/renderer/death-anim.js';
 import {
     beginDeath,
     createDying,
@@ -146,8 +146,9 @@ describe.each(LANE_KINDS)('stepDying (%s lanes)', (_kind, lanes) => {
         stepDying(d, { nowMs: PENDING_MAX_MS, causeNames: NAMES });
         expect(isPlaying(d, 0)).toBe(false);
         stepDying(d, { nowMs: PENDING_MAX_MS + 1, causeNames: NAMES });
-        expect(PENDING_MAX_MS).toBe(400);
+        expect(PENDING_MAX_MS).toBe(FAIL_MS);
         expect(isPlaying(d, 0)).toBe(true);
+        expect(d.start[0]).toBe(PENDING_MAX_MS + 1 - FAIL_MS);
         expect(d.cause[0]).toBe(0);
     });
 });
