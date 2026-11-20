@@ -247,6 +247,7 @@ function makeInterface(app) {
         onTicker: (items) => app.feed.noteTicker(items),
         onInput: (event) => app.tv.noteInput(event),
         tv: app.params.tv,
+        dim: app.params.dim,
         audioOn: app.params.audio,
         AudioContext: /** @type {any} */ (globalThis).AudioContext ?? null,
         getCamera: () => app.camera,
