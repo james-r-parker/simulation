@@ -99,8 +99,11 @@ describe('check.yml release scope', { timeout: scaleTimeout(30_000) }, () => {
 
     it('skips every other job for release, and no job for another scope', () => {
         expect(job('static')).toContain("if: needs.scope.outputs.scope != 'release'");
-        expect(job('test')).toContain("needs.scope.outputs.scope != 'release'");
-        expect(job('coverage')).toContain("needs.test.result != 'skipped'");
+        // The tests and the coverage follow what the scope job's Affected tests step reports, and it reports none for release.
+        expect(job('test')).toContain("needs.scope.outputs.has_tests == 'true'");
+        expect(job('coverage')).toContain("needs.scope.outputs.coverage == 'whole'");
+        expect(job('ratchet-related')).toContain("needs.scope.outputs.coverage == 'related'");
+        expect(stepScript('scope', 'Affected tests')).toContain('SCOPE" == docs || "$SCOPE" == release');
         for (const id of ['scope', 'check', 'browser-smoke']) {
             expect(job(id), `${id} is never skipped by scope`).not.toMatch(/^ {4}if: .*scope\.outputs\.scope/m);
         }
@@ -111,10 +114,10 @@ describe('check.yml release scope', { timeout: scaleTimeout(30_000) }, () => {
         /** @param {string} results the joined job results @returns {number | null} the exit status */
         const status = (results) =>
             spawnSync('bash', ['-c', aggregate], { env: { PATH: process.env.PATH, RESULTS: results } }).status;
-        expect(status('success skipped skipped skipped')).toBe(0);
+        expect(status('success skipped skipped skipped skipped')).toBe(0);
         expect(status('success failure skipped skipped')).not.toBe(0);
         expect(status('success success success cancelled')).not.toBe(0);
-        expect(job('check')).toContain('needs: [scope, static, test, coverage]');
+        expect(job('check')).toContain('needs: [scope, static, test, coverage, ratchet-related]');
         expect(job('check')).toContain('always()');
     });
 });

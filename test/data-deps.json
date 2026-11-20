@@ -1,0 +1,574 @@
+{
+    "test/affected.test.js": [
+        ".github/workflows/check.yml",
+        ".node-version",
+        "README.md",
+        "eslint.config.js",
+        "js/sim/brain.js",
+        "js/sim/wasm-binary.js",
+        "package-lock.json",
+        "package.json",
+        "scripts/check.sh",
+        "scripts/lib/data-deps.mjs",
+        "scripts/lib/test-scope.mjs",
+        "test/data-deps.json",
+        "test/data-deps.test.js",
+        "test/evo/survivable-world.slow.test.js",
+        "test/sim/brain.test.js",
+        "test/train.slow.test.js",
+        "tsconfig.json",
+        "vitest.config.js",
+        "wasm/blob-kernels.wasm"
+    ],
+    "test/app/hud-css.test.js": [
+        "css/app.css"
+    ],
+    "test/archive-source.test.js": [
+        "test/fixtures/stages/hunt-contact.json"
+    ],
+    "test/bench-areas.test.js": [
+        "bench/micro",
+        "bench/micro/fixture.js",
+        "test"
+    ],
+    "test/bench-check-load.test.js": [
+        "scripts/bench-check.mjs",
+        "test"
+    ],
+    "test/bench-compare.test.js": [
+        "package-lock.json",
+        "package.json"
+    ],
+    "test/bench-micro.test.js": [
+        "bench/micro",
+        "package-lock.json",
+        "test",
+        "vitest.config.js",
+        "wasm",
+        "wasm/blob-kernels.wasm"
+    ],
+    "test/build-base.slow.test.js": [
+        "index.html"
+    ],
+    "test/change-scope.test.js": [
+        ".github/workflows/check.yml",
+        ".github/workflows/nightly.yml",
+        ".release-please-manifest.json",
+        "CHANGELOG.md",
+        "README.md",
+        "bench/baseline.json",
+        "css/app.css",
+        "evals/seeds.json",
+        "index.html",
+        "js/app/main.js",
+        "js/evo/observer.js",
+        "js/sim/step.js",
+        "js/worker/protocol.js",
+        "package-lock.json",
+        "package.json",
+        "scripts",
+        "scripts/browser-smoke.sh",
+        "scripts/change-scope.sh",
+        "scripts/check.sh",
+        "test/browser/smoke.spec.js",
+        "vite.config.js",
+        "wasm/blob-kernels.wasm"
+    ],
+    "test/check-conventions.test.js": [
+        "AGENTS.md",
+        "README.md",
+        "js/app/main.js",
+        "scripts",
+        "scripts/check-conventions.sh",
+        "scripts/check-flag-ledger.mjs",
+        "scripts/check-metric-names.mjs",
+        "scripts/metrics-doc.mjs",
+        "scripts/scene-scorecard.mjs"
+    ],
+    "test/check-digest.test.js": [
+        "scripts/check.sh"
+    ],
+    "test/check-experiments.test.js": [
+        "evals/decisions/.gitkeep",
+        "evals/decisions/E151",
+        "evals/experiments.schema.json",
+        "scripts/check-experiments.mjs",
+        "test/fixtures/bad-ledger.json"
+    ],
+    "test/check-flag-ledger.test.js": [
+        "docs",
+        "scripts/check-flag-ledger.mjs"
+    ],
+    "test/check-hook-env.test.js": [
+        ".git",
+        ".gitignore",
+        "scripts/check-conventions.sh",
+        "scripts/check.sh",
+        "scripts/lib",
+        "scripts/lib/cpu-lock.sh",
+        "test"
+    ],
+    "test/check-metric-names.test.js": [
+        "docs/designs",
+        "evals/experiments.json",
+        "js/evo/metric-registry/core.js"
+    ],
+    "test/check-run.test.js": [
+        "scripts/check.sh"
+    ],
+    "test/check-tiers.test.js": [
+        "scripts",
+        "scripts/check.sh",
+        "scripts/lib",
+        "scripts/lib/cpu-lock.sh",
+        "test"
+    ],
+    "test/check-wasm.test.js": [
+        "js/sim/wasm-binary.js",
+        "wasm/blob-kernels.src.sha256",
+        "wasm/blob-kernels.wasm",
+        "wasm/blob-kernels.wasm.sha256"
+    ],
+    "test/coverage-detail.test.js": [
+        "js/sim",
+        "scripts",
+        "scripts/quality-baseline.json"
+    ],
+    "test/cpu-lock.test.js": [
+        "scripts/lib/cpu-lock.sh"
+    ],
+    "test/data-deps.test.js": [
+        "docs/designs",
+        "evals",
+        "js/sim/brain.js",
+        "package.json",
+        "test",
+        "test/data-deps.json",
+        "test/fixtures"
+    ],
+    "test/dependency-rules.test.js": [
+        ".dependency-cruiser.cjs",
+        "test/fixtures/deps"
+    ],
+    "test/deploy-plan.test.js": [
+        "wrangler.toml"
+    ],
+    "test/deploy-workflows.test.js": [
+        ".release-please-manifest.json",
+        "CHANGELOG.md",
+        "package.json",
+        "release-please-config.json",
+        "test",
+        "test/"
+    ],
+    "test/designs-index.test.js": [
+        "README.md",
+        "docs/designs"
+    ],
+    "test/eslint-scope.test.js": [
+        "js/sim/step.js"
+    ],
+    "test/eval-power.slow.test.js": [
+        "evals/power/defaults-floor-on-E150.json"
+    ],
+    "test/eval-seeds.test.js": [
+        "evals/seeds.json"
+    ],
+    "test/evo/anti-exploit-temperature.slow.test.js": [
+        "evals/micro-world.json"
+    ],
+    "test/evo/anti-exploit.slow.test.js": [
+        "evals/micro-world.json"
+    ],
+    "test/evo/compare.slow.test.js": [
+        "evals/power/defaults-floor-off-E150.json",
+        "evals/power/defaults-floor-on-E150.json"
+    ],
+    "test/evo/curriculum.test.js": [
+        "test/fixtures/train-curriculum.json"
+    ],
+    "test/evo/drill-adrift.test.js": [
+        "test/fixtures/stages/hunt-weak.json"
+    ],
+    "test/evo/drill-mid.test.js": [
+        "test/fixtures/stages/hunt-mid.json"
+    ],
+    "test/evo/gate-validity.slow.test.js": [
+        "test/fixtures/train-ladder.json"
+    ],
+    "test/evo/memory-probe-lint.test.js": [
+        "./"
+    ],
+    "test/evo/metric-invariants.slow.test.js": [
+        "scripts/eval-worker.mjs"
+    ],
+    "test/evo/metric-producer-lint.test.js": [
+        "./"
+    ],
+    "test/evo/metric-registry/entry.test.js": [
+        "js/evo/metrics.js",
+        "test/evo/metric-source-core.test.js",
+        "test/evo/metrics.test.js"
+    ],
+    "test/evo/metric-registry/index.test.js": [
+        "evals/power/defaults-floor-on.json",
+        "test/fixtures/metric-directions.json",
+        "test/fixtures/metric-names.json"
+    ],
+    "test/evo/metric-registry/scenes.test.js": [
+        "js/evo/metrics.js"
+    ],
+    "test/evo/metric-registry/status.test.js": [
+        "js/evo/metrics.js"
+    ],
+    "test/evo/metric-registry.test.js": [
+        "./",
+        "evals/metric-registry-world.json",
+        "js",
+        "test"
+    ],
+    "test/evo/metric-source-eat.test.js": [
+        "js/evo/scene-eat.js",
+        "js/evo/scene-graze.js",
+        "js/evo/scene-linger.js"
+    ],
+    "test/evo/metric-source-edge.test.js": [
+        "js/evo/scene-edge.js"
+    ],
+    "test/evo/metrics-diet.test.js": [
+        "js/evo/metrics-diet.js"
+    ],
+    "test/evo/metrics-hebb.test.js": [
+        "js/evo/metrics-hebb.js"
+    ],
+    "test/evo/metrics-leak-skill.test.js": [
+        "js/evo/metrics-leak-skill.js"
+    ],
+    "test/evo/metrics-memory-out.test.js": [
+        "js/evo/metrics-memory-out.js"
+    ],
+    "test/evo/metrics-memory.test.js": [
+        "js/evo/metrics-memory.js"
+    ],
+    "test/evo/metrics-reward.test.js": [
+        "js/evo/metrics-reward.js"
+    ],
+    "test/evo/metrics-watchability.test.js": [
+        "js/evo/metrics-watchability.js"
+    ],
+    "test/evo/metrics-weights.test.js": [
+        "js/evo/metrics-weights.js"
+    ],
+    "test/evo/partitions.test.js": [
+        "evals/seeds.json",
+        "evals/train-seeds.json"
+    ],
+    "test/evo/pool-discrimination-lint.test.js": [
+        "./"
+    ],
+    "test/evo/predator-world.slow.test.js": [
+        "evals/predator-world.json"
+    ],
+    "test/evo/reflex-isolation.test.js": [
+        "./",
+        "js/app",
+        "js/evo",
+        "js/evo/policies",
+        "js/sim",
+        "js/worker"
+    ],
+    "test/evo/scene-bite.test.js": [
+        "js/evo/scene-bite.js"
+    ],
+    "test/evo/scene-capacity.test.js": [
+        "js/evo/scene-capacity.js"
+    ],
+    "test/evo/scene-competence.test.js": [
+        "js/evo/scene-competence.js"
+    ],
+    "test/evo/scene-eat.test.js": [
+        "js/evo/scene-eat.js"
+    ],
+    "test/evo/scene-edge-gates.test.js": [
+        "js/evo/scene-edge-gates.js"
+    ],
+    "test/evo/scene-edge.test.js": [
+        "js/evo/scene-edge-gates.js",
+        "js/evo/scene-edge.js"
+    ],
+    "test/evo/scene-graze.test.js": [
+        "js/evo/scene-graze.js"
+    ],
+    "test/evo/scene-guards.test.js": [
+        "js/evo/scene-guards.js"
+    ],
+    "test/evo/scene-guilds.test.js": [
+        "js/evo/scene-guilds.js"
+    ],
+    "test/evo/scene-hunter-age.test.js": [
+        "js/evo/scene-hunter-age.js"
+    ],
+    "test/evo/scene-kin-proximity.test.js": [
+        "js/evo/scene-kin-proximity.js"
+    ],
+    "test/evo/scene-kinematics.test.js": [
+        "js/evo/scene-kinematics.js"
+    ],
+    "test/evo/scene-linger.test.js": [
+        "js/evo/scene-linger.js"
+    ],
+    "test/evo/scene-pack-lift.test.js": [
+        "js/evo/scene-pack-lift.js"
+    ],
+    "test/evo/scene-strike-miss.test.js": [
+        "js/evo/scene-strike-miss.js"
+    ],
+    "test/evo/train-seeds.test.js": [
+        "evals/seeds.json",
+        "evals/train-seeds.json"
+    ],
+    "test/evo/train-tune.shipped.test.js": [
+        "evals/train-ladder.json",
+        "evals/train-tune.json"
+    ],
+    "test/evo/train-tune.test.js": [
+        "test/fixtures/train-ladder.json",
+        "test/fixtures/train-tune.json"
+    ],
+    "test/functions/release-serve.test.js": [
+        "index.html",
+        "test"
+    ],
+    "test/functions/releases.test.js": [
+        "test",
+        "test/functions"
+    ],
+    "test/icon-files.test.js": [
+        "public/icons/"
+    ],
+    "test/library/library-db.test.js": [
+        "migrations/0001_library.sql",
+        "migrations/0002_champion_files.sql"
+    ],
+    "test/library/seasons-file.test.js": [
+        "library/seasons.json"
+    ],
+    "test/metrics-doc.test.js": [
+        "docs/designs/metrics.md"
+    ],
+    "test/miss-ledger.test.js": [
+        "package.json"
+    ],
+    "test/nightly-digest.test.js": [
+        "scripts/lib/nightly-digest.mjs"
+    ],
+    "test/notes-index.test.js": [
+        "README.md"
+    ],
+    "test/perf-scope.test.js": [
+        ".github/workflows/check.yml",
+        "bench/baseline.json",
+        "js/app/main.js",
+        "js/evo/observer.js",
+        "js/sim/brain.js",
+        "js/sim/step.js",
+        "js/worker/protocol.js",
+        "scripts/check.sh",
+        "scripts/perf-scope.sh"
+    ],
+    "test/preview-workflow.test.js": [
+        ".github/dependabot.yml",
+        ".github/deploy",
+        ".github/deploy/package-lock.json",
+        ".github/deploy/package.json",
+        "package.json",
+        "scripts/preview-comment.mjs"
+    ],
+    "test/quality-ratchet.test.js": [
+        "js/evo",
+        "js/sim",
+        "scripts",
+        "scripts/quality-baseline.json"
+    ],
+    "test/ratchet-files.test.js": [
+        "js/app",
+        "js/sim"
+    ],
+    "test/ratchet-related.test.js": [
+        "js/sim",
+        "scripts",
+        "scripts/quality-baseline.json"
+    ],
+    "test/reflex-correlate.test.js": [
+        "evals",
+        "evals/baselines",
+        "evals/league.json"
+    ],
+    "test/release-check.slow.test.js": [
+        "**",
+        "scripts/release-check.mjs"
+    ],
+    "test/release-shells.test.js": [
+        "library/seasons.json",
+        "package.json",
+        "wrangler.toml"
+    ],
+    "test/run-detached.test.js": [
+        ".git",
+        "package.json",
+        "scripts/run-detached.sh",
+        "scripts/wait-run.sh"
+    ],
+    "test/scene-scorecard.test.js": [
+        "evals/power/defaults-floor-on-E210.json"
+    ],
+    "test/ship-steps.test.js": [
+        "scripts/change-scope.sh",
+        "scripts/check.sh"
+    ],
+    "test/ship.test.js": [
+        ".gitignore",
+        "js/app/main.js",
+        "js/sim",
+        "js/sim/brain.js",
+        "scripts",
+        "scripts/change-scope.sh",
+        "scripts/check.sh",
+        "scripts/lib",
+        "scripts/lib/ship-steps.mjs",
+        "scripts/ship.sh",
+        "test"
+    ],
+    "test/sim/sensory-schema-doc.test.js": [
+        "docs/designs/brain-capacity-and-memory.md"
+    ],
+    "test/sim/step-alloc.slow.test.js": [
+        "scripts/alloc-check.mjs"
+    ],
+    "test/sim/wasm-binary.test.js": [
+        "wasm/blob-kernels.wasm"
+    ],
+    "test/sim/wasm-det-math.test.js": [
+        "wasm/blob-kernels.wasm"
+    ],
+    "test/sim/wasm-loader.test.js": [
+        "wasm/blob-kernels.wasm"
+    ],
+    "test/sim/world-shape.test.js": [
+        "./"
+    ],
+    "test/smoke-flakes.test.js": [
+        "playwright.config.js"
+    ],
+    "test/task-start.test.js": [
+        ".gitignore",
+        "docs",
+        "package-lock.json",
+        "package.json",
+        "scripts/lib",
+        "scripts/lib/plan-next-chunk.mjs",
+        "scripts/task-start.sh",
+        "test"
+    ],
+    "test/test-scope.test.js": [
+        "test"
+    ],
+    "test/timeout-lint.test.js": [
+        "./"
+    ],
+    "test/train-feasible.slow.test.js": [
+        "test/fixtures/stages/hunt-mid.json"
+    ],
+    "test/train-floor-guard.test.js": [
+        "evals/micro-world.json",
+        "evals/train-hunt-world.json"
+    ],
+    "test/train-ladder-adaptive.shipped.test.js": [
+        "evals/train-ladder-adaptive.json",
+        "evals/train-ladder.json",
+        "evals/train-screens/adaptive.grid.json"
+    ],
+    "test/train-ladder-file.shipped.test.js": [
+        "evals/stages",
+        "evals/stages/evade.json",
+        "evals/stages/habitat.json",
+        "evals/stages/hunt-contact.json",
+        "evals/stages/hunt.json",
+        "evals/stages/nursery.json",
+        "evals/train-ladder-no-mid.json",
+        "evals/train-ladder-turn.json",
+        "evals/train-ladder.json",
+        "evals/train-screens/food-behind-holdout.grid.json",
+        "evals/train-screens/food-behind.grid.json",
+        "evals/train-screens/stages/nursery-scatter.json"
+    ],
+    "test/train-profile.test.js": [
+        "test/fixtures/train-ladder.json"
+    ],
+    "test/train-scatter.slow.test.js": [
+        "test/fixtures/nursery-scatter.json"
+    ],
+    "test/train-screen-grid.shipped.test.js": [
+        "evals/train-ladder.json",
+        "evals/train-screens/plateau.grid.json"
+    ],
+    "test/train-tune-world.test.js": [
+        "js/evo",
+        "js/sim",
+        "wasm/blob-kernels.wasm.sha256"
+    ],
+    "test/train-yield.test.js": [
+        "scripts/train-yield.mjs"
+    ],
+    "test/train.test.js": [
+        "evals/micro-world.json",
+        "test/fixtures/train-curriculum.json"
+    ],
+    "test/vite-config.test.js": [
+        "package.json",
+        "public/_headers",
+        "scripts/browser-smoke.sh",
+        "test"
+    ],
+    "test/web-presence.test.js": [
+        "index.html",
+        "public",
+        "public/manifest.webmanifest",
+        "public/robots.txt",
+        "public/sitemap.xml"
+    ],
+    "test/worker/sim-host.slow.test.js": [
+        "test/sim/golden.json"
+    ],
+    "test/worker-pool.test.js": [
+        "test/fixtures/pool-worker.mjs",
+        "test/fixtures/throwing-worker.mjs"
+    ],
+    "test/workflows/affected-wiring.test.js": [
+        ".github/workflows/check.yml",
+        "scripts",
+        "scripts/affected.mjs",
+        "scripts/change-scope.sh"
+    ],
+    "test/workflows/heavy-shards.test.js": [
+        ".github/workflows/check.yml",
+        "test/bench.slow.test.js",
+        "test/evo/gate-validity.slow.test.js",
+        "test/evo/scripted-temperature.slow.test.js",
+        "test/train-pool.slow.test.js",
+        "test/train.slow.test.js"
+    ],
+    "test/workflows-release.test.js": [
+        ".github/workflows/check.yml",
+        "scripts",
+        "scripts/change-scope.sh"
+    ],
+    "test/workflows.test.js": [
+        ".github/workflows",
+        ".node-version",
+        "package.json",
+        "scripts/browser-smoke.sh",
+        "scripts/lib/nightly-digest.mjs",
+        "test"
+    ]
+}

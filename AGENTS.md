@@ -44,7 +44,7 @@ The ones used in every session:
 - Install: `npm ci`. Run the app: `npm run dev` (Vite, http://localhost:5173).
 - Start a chunk: `scripts/task-start.sh <type>/<desc> [--plan <doc>] [--here]`.
 - Ship a chunk: `scripts/ship.sh --title <subject> --body <file> [--base main] [--no-merge]`.
-- Pre-push check (what an agent runs): `scripts/check.sh --fix --quick`; CI is the PR gate and runs everything.
+- Pre-push check (what an agent runs): `scripts/check.sh --fix --quick`; CI is the PR gate: a pull request runs the tests its change reaches (`scripts/affected.mjs`), the push to `main` all of them.
 - Docs-only change: `scripts/check.sh --fix --docs`.
 - Tests: `npm test`; one file `npx vitest run <file>`; one test `npx vitest run -t '<name>'`; fast only
   `TEST_SCOPE=fast npx vitest run`.
@@ -171,7 +171,7 @@ New code is small modules that each do one job and are tested on their own.
   (`conventions`).
 
 A test that runs a real world for many ticks, a worker pool or a full eval (about 0.5 s or more) goes in
-`<module>.slow.test.js` beside the mirrored test; CI runs only the fast tests, every local run runs all
+`<module>.slow.test.js` beside the mirrored test; a pull request runs the tests its change reaches, every local run runs all
 (`docs/designs/quality-gates-and-test-tiers.md`).
 
 A limit is a signal to split, never a target to pad up to. Do not silence a limit with `eslint-disable`; split the
