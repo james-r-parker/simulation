@@ -218,6 +218,7 @@ Both stay inside budget with the reel's ring running; a clip is encoded off the 
 | Light is added on events only                           | [crisp-renderer.md](crisp-renderer.md) forbids idle glow; a 500 ms falloff on a kill keeps that rule and reads at distance              |
 | The variety penalty ages out after 15 simulated minutes | The repeat penalty is the kind's share of the last 20 shots; without an age cutoff a world with one kind of moment is shut out for good |
 | The insights drawer computes nothing in the sim         | Detectors are read, never rewarded (`docs/principles.md`); the drawer reads posted stats and the app's own logs                         |
+| A fission pinches the newborn, not the parent           | The BORN record carries only the child's genome                                                                                         |
 | Every look change is verified on real WebGPU            | Software GL does not show the rim or MSAA as the OLED does                                                                              |
 
 ## Delivery requirements
