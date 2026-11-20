@@ -71,7 +71,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Sprint burst](sprint-burst.md) - Phase 1 detectors kept; Phase 2 gate not met on E210 (T3)
 - [Web presence](web-presence.md) - a designed icon in every size, Open Graph and Twitter cards, a full `<head>`, an installable web app manifest with a splash, `robots.txt` and `sitemap.xml`
 
-## In progress (27)
+## In progress (28)
 
 Partly built - the note says which phases are real.
 
@@ -82,6 +82,7 @@ Partly built - the note says which phases are real.
 - [Deployment and community](deployment-and-community.md) - Phase 1 (Release Please, `/v/`, `/s/`, `/next/` Functions, `preview.yml`, the D1 release index, `release-check`) and Phase 1c are built, except T5 (live verific... _(validated 626f040, 2026-11-13)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Detector baseline](detector-baseline.md) - Phase 1 chunks A and B are built except the `bench.observe_ms@500` price (T4, behind the CPU lock) and the body-genes detector, so the wave is not complete. T7... _(validated 495482d, 2026-11-19)_ _(depends on [metric-trust.md](metric-trust.md))_
 - [Eat choice](eat-choice.md) - Phases 1 to 5 are built: the eat choice is the default on `main` (E159 to E164, E173) and `grazeThrust` 0.6 is the default from season 10 (E171, E172); the `eva... _(validated e2455f2, 2026-11-11)_ _(depends on [metric-trust.md](metric-trust.md), [low-density-edge.md](low-density-edge.md))_
+- [Fair chase](fair-chase.md) - Phase 1 is built: the sprint store behind `sprintStoreEnabled` (off) and the envelope reading E253, where only the `courser` arm gives a fair band. Phase 2 (the... _(validated 58f3844, 2026-11-20)_ _(depends on [senses-and-motor.md](senses-and-motor.md), [training-loop.md](training-loop.md))_
 - [Honest budgets](honest-budgets.md) - Phases 1, 2 and 4 are built; Phase 3 is parked on E176 and Phase 5 on E178. Phase 6: diagnostics built, `killGorgeShare` 0.4 adopted (E179, T37), and the closed... _(validated 390acd9, 2026-11-18)_ _(depends on [metric-trust.md](metric-trust.md))_
 - [Hunter learning](hunter-learning.md) - Phases 1 and 2 are built: the flip reflex, hunter territory and reward-gated learning are always on; [realistic-keepers.md](realistic-keepers.md) re-judged the... _(validated edd4cd4, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md), [training.md](training.md))_
 - [Lean observer](lean-observer.md) - Phase 1 built; the perf:browser comparison is open (no GPU Chrome on the build machine) _(validated 3f8bf12, 2026-11-12)_
@@ -103,7 +104,7 @@ Partly built - the note says which phases are real.
 - [World balance and biology](world-balance.md) - Phases 1 to 4, Phase 5 round 1 and Phase 6 (the mating-edge screen, E145, E146: roaming range deleted, T103) are built. The post-feature queue was not run as wr... _(validated edd4cd4, 2026-11-07)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the screenshots script, the RE... _(validated d6ca3e6, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (11)
+## Proposed (10)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
@@ -111,7 +112,6 @@ Plans. Nothing built; do not read these as descriptions of the code.
 - [Ambient display](ambient-display.md) - the app as a screen left on all day: the director on air, a death that reads as a cell failing, follow as a story, a look that holds from across a room, every r... _(validated 58f3844, 2026-11-20)_ _(depends on [crisp-renderer.md](crisp-renderer.md), [continuous-follow.md](continuous-follow.md), [worker-and-renderer.md](worker-and-renderer.md), [pack-worker.md](pack-worker.md))_
 - [Body genes](body-genes.md) - replace the five discrete `specialisations` templates with continuous, heritable body genes (jaw-vs-gut diet, bulk-vs-agility, sprint-vs-endurance, sight) so bo... _(validated 04e3b34, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [prey-guilds.md](prey-guilds.md))_
 - [Champion pool](champion-pool.md) - a per-season pool of trained champions in D1 seeds new worlds, and browsers capture, test and submit the lineages worth keeping; Phase 1 (pool export, PR, relea... _(validated 26ae0c5, 2026-11-18)_ _(depends on [training.md](training.md), [training-stages.md](training-stages.md), [deployment-and-community.md](deployment-and-community.md), [worker-and-renderer.md](worker-and-renderer.md), [brain-reflex-tests.md](brain-reflex-tests.md))_
-- [Fair chase](fair-chase.md) - a sprint that spends a store, so prey tire and a hunter's burst is short; judged first on the scripted chase envelope, then on the `hunt` rung, then on the live... _(validated 58f3844, 2026-11-20)_ _(depends on [senses-and-motor.md](senses-and-motor.md), [training-loop.md](training-loop.md))_
 - [Habitat cover](habitat-cover.md) - Phase 1 T1 built (#343) and the T2 baseline run (`E141`, 32 floor-on seeds, in Baseline); T3 (the conformance review) is open. Phase 2 puts rings on the rims of... _(validated f5c7880, 2026-11-07)_ _(depends on [refuge.md](refuge.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Hunter practice](hunter-practice.md) - Phase 1 T1 is built (#343) and the T6 baseline (E144) reads that matched conversion falls less with age than the pooled read, and dose is near 0. T2 and T3 (`pr... _(validated edd4cd4, 2026-11-07)_ _(depends on [hunter-learning.md](hunter-learning.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated d6ca3e6, 2026-11-07)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_

@@ -1,6 +1,6 @@
 # Fair chase
 
-**Status:** Proposed - a sprint that spends a store, so prey tire and a hunter's burst is short; judged first on the scripted chase envelope, then on the `hunt` rung, then on the live world; Phase 1 (the store behind a switch and the envelope screen) is first.
+**Status:** In progress - Phase 1 is built: the sprint store behind `sprintStoreEnabled` (off) and the envelope reading E253, where only the `courser` arm gives a fair band. Phase 2 (the `hunt` rung, on `courser`) is next.
 **Validated:** 58f38443 (2026-11-20)
 **Priority:** 2 - Hunting lead. The `hunt` rung passes on 0 of 16 offsets after twelve falsified trainer levers (E191 to E232), and the live world's hunters fail the same way; no trainer, recruitment or champion work can pass a chase the bodies do not allow
 **Depends on:** [senses-and-motor.md](senses-and-motor.md), [training-loop.md](training-loop.md)
@@ -121,7 +121,7 @@ The keep rule gains a second metric guard before this read: `eval.hunter_kills_p
 
 ## Phases
 
-### Phase 1 - The store behind a switch, and the envelope
+### Phase 1 - The store behind a switch, and the envelope (built)
 
 **Targets:** none - the switch is off by default, so no `eval.*` or `bench.*` metric moves; its reading is the fair band per arm from `npm run audit:chase`, recorded as `E-FC-1`
 
@@ -185,7 +185,7 @@ The keep rule gains a second metric guard before this read: `eval.hunter_kills_p
 | T3  | Add the store to the oracles of `js/evo/chase-oracles.js` and the two `PreyTrace` fields, with tests (built)                                                                                                              | [judgement]  | T2         |
 | T4  | Add the golden case with the switch on and the `SprintSpent` event (built)                                                                                                                                                | [mechanical] | T2         |
 | T5  | Write the five arm configs under `evals/fair-chase/`, run `audit:chase` on each, record `E-FC-1` with the fair band per arm and pair, and name at most two arms for Phase 2 (built)                                       | [judgement]  | T3         |
-| T6  | Conformance review of Phase 1                                                                                                                                                                                             | [judgement]  | T4, T5     |
+| T6  | (built) Conformance review of Phase 1                                                                                                                                                                                     | [judgement]  | T4, T5     |
 
 ### Phase 2 - The rung
 
