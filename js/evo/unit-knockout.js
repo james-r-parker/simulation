@@ -20,3 +20,26 @@ export function knockOutUnit(row, layout, rng, rate) {
     row[layout.leakStart + unit] = KNOCKOUT_LEAK_GENE;
     return unit;
 }
+
+/**
+ * Knocks out one hidden unit at a world birth or seed and logs `UnitKnockedOut` when one fires.
+ * @param {Float32Array} row the genome's weight row
+ * @param {Readonly<Record<string, any>>} world the world
+ * @param {number} slot the agent's slot
+ * @param {{rng: import('../sim/rng.js').Rng, log?: import('../sim/log.js').SimLog, source: 'mate' | 'split' | 'archive' | 'champion'}} opts
+ *   the stream, optional debug log and birth or seed cause
+ * @returns {number} the knocked-out unit index, or -1 when no unit was knocked out
+ */
+export function knockOutAndLog(row, world, slot, { rng, log, source }) {
+    const unit = knockOutUnit(row, world.layout, rng, world.config.unitKnockoutRate);
+    if (unit >= 0) {
+        log?.log('debug', 'UnitKnockedOut', {
+            tick: world.tick,
+            slot,
+            genomeId: world.genomeId[slot],
+            unit,
+            source,
+        });
+    }
+    return unit;
+}

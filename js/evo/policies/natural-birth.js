@@ -3,7 +3,7 @@
 
 import { crossNeurons } from '../../evo/crossover.js';
 import { mutateSigma, mutateWeights } from '../../evo/mutation.js';
-import { knockOutUnit } from '../../evo/unit-knockout.js';
+import { knockOutAndLog } from '../../evo/unit-knockout.js';
 import { decaySilentInputs } from '../../evo/weight-decay.js';
 import { applyHunterReflex } from '../../evo/instinct.js';
 import { brainLayout } from '../../sim/brain-layout.js';
@@ -54,26 +54,6 @@ export function applyBirthReflex(world, { child, mother, row }) {
  */
 export function shareBirth(observer, birth) {
     observer.sigma = birth.sigma;
-}
-
-/**
- * @param {Float32Array} row the child's weight row
- * @param {Record<string, any>} world the world
- * @param {number} child the child's slot
- * @param {{rng: any, log?: import('../../sim/log.js').SimLog, source: 'mate' | 'split'}} opts the stream, log and birth cause
- * @returns {void}
- */
-function applyBirthKnockout(row, world, child, { rng, log, source }) {
-    const unit = knockOutUnit(row, world.layout, rng, world.config.unitKnockoutRate);
-    if (unit >= 0) {
-        log?.log('debug', 'UnitKnockedOut', {
-            tick: world.tick,
-            slot: child,
-            genomeId: world.genomeId[child],
-            unit,
-            source,
-        });
-    }
 }
 
 /**
@@ -130,7 +110,7 @@ export function createBirth(config, log) {
         }
         applyBirthReflex(world, { child, mother, row });
         mutateWeights(row, childSigma, rng, mutation);
-        applyBirthKnockout(row, world, child, { rng, log, source: mate ? 'mate' : 'split' });
+        knockOutAndLog(row, world, child, { rng, log, source: mate ? 'mate' : 'split' });
         if (config.weightDecay > 0) {
             decaySilentInputs(row, { layout, silent: world.inputActivity.rare, decay: config.weightDecay });
         }
