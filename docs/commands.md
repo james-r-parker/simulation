@@ -34,7 +34,7 @@ Every command an agent runs on Blob Evolution, grouped by job. `rg -n '^### ' do
 
 ### What CI runs
 
-`scope`, `static` (`scripts/check.sh --ci --skip=test`: the static gates, build and eval-smoke; a push to main runs the fast tests there instead), `test` (a matrix of coverage shards and statistical shards, `vitest run --shard`), `coverage` (`vitest run --merge-reports --coverage`, then `node scripts/quality-ratchet.mjs --check`), `browser-smoke`, `perf`, and the required `check`, which needs them all. `scripts/check.sh --ci` alone is the static half plus the fast tests
+`scope` (`scripts/change-scope.sh`: `docs`, `release` or `full`; the Release Please pull request, a diff of only `CHANGELOG.md`, `package.json`, `package-lock.json` and `.release-please-manifest.json` on a `release-please--*` branch, runs `scope` alone and `check` still reports success), `static` (`scripts/check.sh --ci --skip=test`: the static gates, build and eval-smoke; a push to main runs the fast tests there instead), `test` (a matrix of coverage shards and statistical shards, `vitest run --shard`), `coverage` (`vitest run --merge-reports --coverage`, then `node scripts/quality-ratchet.mjs --check`), `browser-smoke`, `perf`, and the required `check`, which needs them all. `scripts/check.sh --ci` alone is the static half plus the fast tests
 
 ### Docs-only change
 
