@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { createSimLog } from '../js/sim/log.js';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
-import { planScreen } from './lib/train-screen-grid.mjs';
+import { planScreen, screenWarnings } from './lib/train-screen-grid.mjs';
 import { checkArms, markUnlearnable, withoutUnlearnable } from './lib/train-screen-feasible.mjs';
 import { screenReport } from './lib/train-screen-report.mjs';
 import { runScreen } from './lib/train-screen-run.mjs';
@@ -67,7 +67,7 @@ const readConfig = (file) => JSON.parse(readFileSync(resolve(ROOT, file), 'utf8'
  * @param {Omit<ReturnType<typeof parseArgs>, 'cache'> & {cache?: string | null}} args the options
  * @param {{exec?: import('./lib/train-screen-run.mjs').ScreenRunOptions['exec'], check?: import('./lib/train-screen-feasible.mjs').Check}} [io]
  *   a stand-in trainer and learnability check (tests)
- * @returns {Promise<{plan: import('./lib/train-screen-grid.mjs').ScreenPlan, report: ReturnType<typeof screenReport>, out: string}>}
+ * @returns {Promise<{plan: import('./lib/train-screen-grid.mjs').ScreenPlan, report: ReturnType<typeof screenReport>, out: string, warnings: string[]}>}
  *   the plan, the report and the directory written
  */
 export async function runTrainScreen(args, { exec, check } = {}) {
@@ -110,7 +110,7 @@ export async function runTrainScreen(args, { exec, check } = {}) {
         if (Object.keys(checked).length > 0) {
             writeFileSync(join(out, 'feasible.json'), `${JSON.stringify(checked, null, 2)}\n`);
         }
-        return { plan, report, out };
+        return { plan, report, out, warnings: screenWarnings(plan) };
     } finally {
         await sink.close();
     }
@@ -123,7 +123,8 @@ export async function runTrainScreen(args, { exec, check } = {}) {
  */
 export async function main(argv, print = console.log) {
     return exitCodeOf(async () => {
-        const { report, out } = await runTrainScreen(parseArgs(argv));
+        const { report, out, warnings } = await runTrainScreen(parseArgs(argv));
+        warnings.forEach((line) => print(line));
         print(report.table);
         print(`wrote ${out}`);
         const failed = report.results.reduce((sum, r) => sum + r.failed, 0);
