@@ -20,6 +20,7 @@ export const LENS_COUNT = 4;
  * @property {string} palette the family palette: `default`, `cvd-safe` or `high-contrast`
  * @property {boolean} seen whether the title card has been shown
  * @property {number} tvIdleMinutes minutes without input before TV mode starts by itself; 0 turns it off
+ * @property {boolean} followPlate whether a followed subject shows its plate
  */
 
 /** Minutes without input before TV mode starts, by default. */
@@ -43,6 +44,7 @@ export function defaultPrefs() {
         palette: 'default',
         seen: false,
         tvIdleMinutes: TV_IDLE_MINUTES,
+        followPlate: true,
     };
 }
 
@@ -87,6 +89,7 @@ export function sanitizePrefs(stored) {
         palette: PALETTE_NAMES.includes(/** @type {any} */ (s.palette)) ? /** @type {any} */ (s.palette) : base.palette,
         seen: boolOf(s.seen, base.seen),
         tvIdleMinutes: minutesOf(s.tvIdleMinutes, base.tvIdleMinutes),
+        followPlate: boolOf(s.followPlate, base.followPlate),
     };
 }
 

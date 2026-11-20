@@ -2,6 +2,7 @@
 // title card, the ticker, the inspector and the charts. Works on the interface's shared parts.
 
 import { lookback } from './history.js';
+import { refreshPlate } from './interface-plate.js';
 import { dismissCard } from './interface-visit.js';
 import { peekView } from './ui/hover-peek.js';
 import { persistentNodes } from './ui/hud-fade.js';
@@ -20,6 +21,7 @@ export const REFRESH_MS = Object.freeze({
     shift: 1000,
     card: 250,
     peek: 50,
+    plate: 200,
 });
 
 /**
@@ -74,6 +76,7 @@ const REFRESHERS = Object.freeze([
                     title: ctx.card.element,
                     caption: ctx.tvUi.caption.element,
                     era: ctx.tvUi.era.element,
+                    plate: ctx.plate.element,
                 }),
                 now / 1000,
                 ctx.shifted,
@@ -101,6 +104,11 @@ const REFRESHERS = Object.freeze([
         key: 'peek',
         wanted: () => true,
         run: (/** @type {Record<string, any>} */ ctx, /** @type {number} */ now) => refreshPeek(ctx, now),
+    },
+    {
+        key: 'plate',
+        wanted: () => true,
+        run: (/** @type {Record<string, any>} */ ctx, /** @type {number} */ now) => refreshPlate(ctx, now),
     },
     {
         key: 'card',

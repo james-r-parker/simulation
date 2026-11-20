@@ -269,7 +269,7 @@ Both stay inside budget with the reel's ring running; a clip is encoded off the 
 | T12 | Hold follow for the clip length plus 600 ms; add `js/app/follow-handoff.js` (killer, child, kin, pick) and the relation caption; tests (built)                                        | [judgement]  | T7                 |
 | T13 | Add look-ahead, pair framing and state zoom to the follow camera (`followSubject` in `camera.js`, the state in `follow-frame.js`; `followStep` stays for the director); tests (built) | [judgement]  | -                  |
 | T14 | Add the boredom timeout and the manual exemption; tests (built)                                                                                                                       | [mechanical] | T12                |
-| T15 | Add `ui/subject-plate.js` and the SDF ring; tests                                                                                                                                     | [judgement]  | -                  |
+| T15 | Add `ui/subject-plate.js` and the SDF ring; tests (built)                                                                                                                             | [judgement]  | -                  |
 | T16 | Make the inspector follow a handoff and add the 12-event life line; tests                                                                                                             | [judgement]  | T12                |
 | T17 | Conformance review of Phase 3                                                                                                                                                         | [judgement]  | T13, T14, T15, T16 |
 
