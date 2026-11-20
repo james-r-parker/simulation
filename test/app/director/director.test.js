@@ -35,7 +35,7 @@ const SAMPLE_AGENTS = Object.freeze([
 ]);
 
 /**
- * Builds a gap-closing chase pair at `xOffset`.
+ * Builds a sustained chase pair (hunter 200 units behind its prey, aimed at it, within 2.5 hunter sizes) at `xOffset`.
  * @param {number} [xOffset] horizontal offset for the current snapshot
  * @returns {import('../../../js/app/director/moments.js').AgentRecord[]} hunter-prey pair
  */
@@ -48,7 +48,7 @@ function makeChasePair(xOffset = 0) {
             x: 4100 + xOffset,
             y: 3000,
             angle: 0,
-            size: 18,
+            size: 90,
             speed: 9,
             flags: 1 << 16,
         },
@@ -67,7 +67,7 @@ function makeChasePair(xOffset = 0) {
 }
 
 const EARLIER_CHASE = Object.freeze([
-    { genomeId: 10, lineageId: 1, spec: 1, x: 4000, y: 3000, angle: 0, size: 18, speed: 9, flags: 1 << 16 },
+    { genomeId: 10, lineageId: 1, spec: 1, x: 4000, y: 3000, angle: 0, size: 90, speed: 9, flags: 1 << 16 },
     { genomeId: 11, lineageId: 2, spec: 0, x: 4300, y: 3000, angle: 0, size: 12, speed: 9, flags: 0 },
 ]);
 
