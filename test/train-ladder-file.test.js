@@ -144,7 +144,7 @@ describe('the food-behind screen files (training-stages Phase 8)', () => {
             (key) => JSON.stringify(NURSERY[key]) !== JSON.stringify(SCATTER[key]),
         );
         expect(changed.sort()).toEqual(['foodBackgroundShare', 'initialFood', 'maxFood']);
-        expect(SCATTER).toMatchObject({ maxFood: 20, initialFood: 20, foodBackgroundShare: 1 });
+        expect(SCATTER).toMatchObject({ maxFood: 90, initialFood: 90, foodBackgroundShare: 1 });
     });
 
     it('puts forage-turn first in the turn ladder, which is otherwise the ladder', () => {
