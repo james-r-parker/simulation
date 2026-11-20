@@ -97,6 +97,8 @@ Each step is cheaper than the next and gates it.
 
 An arm passes when, against the breaking evader, the predator-on-forager fair band covers at least 2 of the 5 start distances, and the catch share at the full view distance is under 0.8 on the straight runner. At most two passing arms go to step 2, the widest band first.
 
+Read on 2026-11-20 (`E253`, `E-FC-1`; `evals/decisions/E253/results.md`, 8 trials per cell): only `courser` passes. Its predator-on-forager band covers all five distances (catch share 0.50, 0.42, 0.67, 0.63, 0.25) and its full-view straight share is 0.25. `even` and `long` are identical to `control` against the breaking evader (0.17 at 0.2, 0 beyond: no band), because the jink, not the store, decides those chases; `stalker` catches only close (0.19 at 0.2). Only a hunter that outlasts its prey changes the breaking chase. **Phase 2 reads `courser` alone**; no second arm passes.
+
 ### Step 2 - The rung (hours, trained)
 
 This step needs the 32-offset screens and the per-stage pass test of [training-loop.md](training-loop.md) Phase 5 (T24, T25) built first. For each arm from step 1, with the arm's keys laid over every stage world of `evals/train-ladder.json`:
@@ -176,14 +178,14 @@ The keep rule gains a second metric guard before this read: `eval.hunter_kills_p
 
 ### Phase 1 - The store behind a switch, and the envelope
 
-| #   | Task                                                                                                                                                                                                              | Nature       | Depends on |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | Add `js/sim/sprint-store.js`, the six keys, the flag-ledger entry and `test/sim/sprint-store.test.js`                                                                                                             | [judgement]  | -          |
-| T2  | Read `storeFactor` in `thrustOf`, `tickCost` and the speed cap (the per-agent factor lane in the Rust kernel, `scripts/build-wasm.sh`); save and hash the store when enabled; tests and the off-path golden check | [judgement]  | T1         |
-| T3  | Add the store to the oracles of `js/evo/chase-oracles.js` and the two `PreyTrace` fields, with tests                                                                                                              | [judgement]  | T2         |
-| T4  | Add the golden case with the switch on and the `SprintSpent` event                                                                                                                                                | [mechanical] | T2         |
-| T5  | Write the five arm configs under `evals/fair-chase/`, run `audit:chase` on each, record `E-FC-1` with the fair band per arm and pair, and name at most two arms for Phase 2                                       | [judgement]  | T3         |
-| T6  | Conformance review of Phase 1                                                                                                                                                                                     | [judgement]  | T4, T5     |
+| #   | Task                                                                                                                                                                                                                      | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T1  | Add `js/sim/sprint-store.js`, the six keys, the flag-ledger entry and `test/sim/sprint-store.test.js` (built)                                                                                                             | [judgement]  | -          |
+| T2  | Read `storeFactor` in `thrustOf`, `tickCost` and the speed cap (the per-agent factor lane in the Rust kernel, `scripts/build-wasm.sh`); save and hash the store when enabled; tests and the off-path golden check (built) | [judgement]  | T1         |
+| T3  | Add the store to the oracles of `js/evo/chase-oracles.js` and the two `PreyTrace` fields, with tests (built)                                                                                                              | [judgement]  | T2         |
+| T4  | Add the golden case with the switch on and the `SprintSpent` event (built)                                                                                                                                                | [mechanical] | T2         |
+| T5  | Write the five arm configs under `evals/fair-chase/`, run `audit:chase` on each, record `E-FC-1` with the fair band per arm and pair, and name at most two arms for Phase 2 (built)                                       | [judgement]  | T3         |
+| T6  | Conformance review of Phase 1                                                                                                                                                                                             | [judgement]  | T4, T5     |
 
 ### Phase 2 - The rung
 
