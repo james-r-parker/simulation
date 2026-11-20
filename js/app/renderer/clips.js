@@ -140,12 +140,20 @@ export const CLIPS = Object.freeze({
             track('flash', '0 0, 0.25 0.5, 0.5 0, 0.75 0.5, 1 0'),
         ],
     },
-    birthPop: {
+    bud: {
         loop: false,
         tracks: [
-            track('sx', '0 0.2, 1 1 elasticOut'),
-            track('sy', '0 0.2, 1 1 elasticOut'),
-            track('flash', '0 1, 1 0 quadOut'),
+            track('sx', '0 0.2, 1 1 quadOut'),
+            track('sy', '0 0.2, 1 1 quadOut'),
+            track('flash', '0 0.6, 1 0 quadOut'),
+        ],
+    },
+    fission: {
+        loop: false,
+        tracks: [
+            track('sx', '0 0.5, 0.45 0.8 quadOut, 1 1 quadOut'),
+            track('sy', '0 1.18, 0.45 1.08 quadOut, 1 1 quadOut'),
+            track('flash', '0 0.5, 1 0 quadOut'),
         ],
     },
     callThrob: {
@@ -234,7 +242,7 @@ export const TWEEN_CLIPS = Object.freeze([
     'callThrob',
     'howl',
     'court',
-    'birthPop',
+    'bud',
     'shakeOff',
     'kill',
     'bump',
@@ -246,6 +254,7 @@ export const TWEEN_CLIPS = Object.freeze([
     'crumple',
     'flatten',
     'pit',
+    'fission',
 ]);
 
 /**
