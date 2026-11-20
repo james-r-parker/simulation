@@ -19,9 +19,14 @@ describe('scoreChase', () => {
         expect(scoreChase({ distance: 0, hunterSpeed: 2, preySpeed: 2, maxVelocity: 1 })).toBe(0);
         expect(scoreChase({ distance: 401, hunterSpeed: 2, preySpeed: 2, maxVelocity: 1 })).toBe(0);
         expect(scoreChase({ distance: 200, hunterSpeed: 1.2, preySpeed: 1.2, maxVelocity: 1 })).toBeCloseTo(
-            40 + 30 + 20 + 5,
+            65 + 30 + 20 + 10,
         );
-        expect(scoreChase({ distance: 400, hunterSpeed: 0.5, preySpeed: 0.5, maxVelocity: 1 })).toBeCloseTo(40);
+        expect(scoreChase({ distance: 400, hunterSpeed: 0.5, preySpeed: 0.5, maxVelocity: 1 })).toBeCloseTo(65);
+        // The nearer the pursuit is to its end, within its own reach, the more it scores
+        const at = (/** @type {number} */ distance) =>
+            scoreChase({ distance, reach: 100, hunterSpeed: 0.5, preySpeed: 0.5, maxVelocity: 1 });
+        expect(at(25)).toBeCloseTo(80);
+        expect(at(101)).toBe(0);
     });
 });
 
