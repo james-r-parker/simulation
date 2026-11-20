@@ -18,8 +18,9 @@ Every doc opens with exactly one status line, in this format:
 **Status:** <Keyword> - optional detail.
 ```
 
-The keyword comes from this closed set. Detail after the dash is free text - name the phase, the PR, what is
-left.
+The keyword comes from this closed set. Detail after the dash is free text - name the built phases and the next
+task. The whole line holds at most 400 characters (`readStatus` rejects a longer one); a run's result is in its
+experiment record, not here.
 
 | Keyword       | Means                                                                             |
 | ------------- | --------------------------------------------------------------------------------- |

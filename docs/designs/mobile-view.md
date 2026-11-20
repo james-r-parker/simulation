@@ -1,6 +1,6 @@
 # Mobile view
 
-**Status:** In progress - Phase 1 built: two-finger pinch and pan, `pointercancel`, a fingertip-sized tap, the portrait home zoom that survives a turn, the pixel-ratio cap on every path, and a phone layout for the HUD; Phase 2 chunk C2 built: double-tap zoom, two-finger-tap Home, long-press peek, the overflow menu, the coarse-pointer quality start and portrait director shots; the phone frame-budget row (T11, chunk C3, quiet machine) is next.
+**Status:** In progress - Phase 1 is built (pinch and pan, fingertip tap, portrait home zoom, pixel-ratio cap, phone HUD layout) and Phase 2 chunk C2 is built (double-tap zoom, two-finger-tap Home, long-press peek, overflow menu, coarse-pointer quality start, portrait director shots). Next: the phone frame-budget row (T11, chunk C3, quiet machine).
 **Validated:** d6ca3e6c (2026-11-07)
 **Scheduled by:** [ambient-display.md](ambient-display.md) step 2 - a phone is a second screen; after the TV and desktop experience is right
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md)

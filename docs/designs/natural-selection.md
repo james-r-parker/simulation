@@ -1,6 +1,6 @@
 # Natural selection
 
-**Status:** Implemented - closed by the user on 2026-11-07 with three Done rows missed: the big bang (#217), Phase 4's instruments, checks and speed chunks (#220 to #222), the balance round (T48 to T67) and its spawned plans, the speed passes (T68 to T73), the brain-value screen `E139` (T43) and the long run `E140` are all built. The misses are recorded in the Decisions table and handed to the plans that target them; T35 (the clip) stays open for the user and does not block this status.
+**Status:** Implemented - closed by the user on 2026-11-07 with three Done rows missed (recorded in the Decisions table and handed to the plans that target them). Built: the big bang (#217), the Phase 4 instruments and speed chunks, the balance round (T48 to T67), the speed passes (T68 to T73), the brain-value screen E139 and the long run E140. T35 (the clip) stays open for the user.
 **Depends on:** [fitness-and-selection.md](fitness-and-selection.md) (Phases 1 to 3 built, T48h and T48i built)
 
 **Closed 2026-11-07** against `origin/main` `d6ca3e6c`. The long run `E140` (current defaults, 16 seeds x 600000 ticks, in

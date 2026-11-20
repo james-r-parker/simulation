@@ -1,6 +1,6 @@
 # Hunter practice
 
-**Status:** Proposed - Phase 1 T1 built (#343) and the T6 baseline run (`E144`, in Baseline): matched conversion falls less with age than the pooled read, and dose is near 0. T2 and T3 (the probe, `probe:practice`) are open, so T5 (the noise floor) waits on them. The catch read is re-based per attempt (Phase 1b, `E-G-3`, `E-G-4`) before Phase 2 is judged; Phase 2 and 3 are unbuilt. Phase 1c (proposed, T20 to T25, 2026-11-07) adds the live bite detectors (`eval.bite_on_prey`, `eval.bite_off_kin`, `eval.bite_off_other`, `eval.bite_idle`, `eval.hunter_carrion_idle_share`, `eval.hunter_recoil_per_life`) that training.md Phase 4 and hunter-learning.md Phase 3 read.
+**Status:** Proposed - Phase 1 T1 is built (#343) and the T6 baseline (E144) reads that matched conversion falls less with age than the pooled read, and dose is near 0. T2 and T3 (`probe:practice`) are open, so T5 waits; Phase 1b re-bases the catch read per attempt before Phase 2 is judged. Phase 1c (proposed, T20 to T25) adds the live bite detectors that training.md Phase 4 reads.
 **Validated:** edd4cd4b (2026-11-07)
 **Scheduled by:** [fair-chase.md](fair-chase.md) step 4 - the bite detectors and the within-lifetime gain, read once a hunter can reach its prey
 **Depends on:** [hunter-learning.md](hunter-learning.md), [realistic-keepers.md](realistic-keepers.md)

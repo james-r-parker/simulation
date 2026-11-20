@@ -1,6 +1,6 @@
 # Detector baseline
 
-**Status:** In progress - Phase 1 chunks A and B are built except the wave's `bench.observe_ms@500` price (T4: deferred while an eval screen holds the CPU lock; command under Wave check); the wave itself is not complete, since body-genes has no detector merged; T7 ran on the season 10 defaults (`E187`, re-recorded as `E188` on the gorge defaults, 2026-11-17), and the shared top-up (`E210`, 2026-11-19, same `rulesHash` `38be2908ad820c86`) measured the sprint, stillness, scent-trail and prey-selectivity metrics, updated liveness and power, and recorded their verdicts; the measure-first plans share one chase-outcome taxonomy, one detector wave and one 128-seed baseline of the defaults, in place of seven separate 16-seed runs.
+**Status:** In progress - Phase 1 chunks A and B are built except the `bench.observe_ms@500` price (T4, behind the CPU lock) and the body-genes detector, so the wave is not complete. T7 ran on the season 10 defaults (E187, E188); E210 (2026-11-19) measured the sprint, stillness, scent-trail and prey-selectivity metrics. One taxonomy, detector wave and 128-seed baseline serve the measure-first plans.
 **Validated:** 495482df (2026-11-19)
 **Scheduled by:** [metric-noise.md](metric-noise.md) step 1 - the wave's `bench.observe_ms@500` price (T4) and the detector tasks of the plans it serves, read after Phase 4 corrects the power readings
 **Depends on:** [metric-trust.md](metric-trust.md)
