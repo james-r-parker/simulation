@@ -350,15 +350,15 @@ An affected run that passes where the full run on the merged result fails is a m
 
 ### Phase 3 - Before the push
 
-| #   | Task                                                                                                                                                               | Nature       | Depends on              |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ----------------------- |
-| T16 | Print the per-file detail from `scripts/quality-ratchet.mjs --check` on a miss, with tests                                                                         | [judgement]  | -                       |
-| T17 | Add the `ratchet-related` gate to `scripts/check.sh --quick` with tests; update the `create-pr` skill                                                              | [judgement]  | T16                     |
-| T18 | Move every test that reads a shipped `evals/` data file to `test/fixtures/`, add `*.shipped.test.js` where a shipped file needs a parse check, and add `test-data` | [judgement]  | -                       |
-| T19 | Rerun a failed smoke spec once, write `.checklogs/smoke-flakes.json`, upload it in CI and list flaked specs in the `nightly-failure` issue, with tests             | [judgement]  | -                       |
-| T20 | Report `release` from `scripts/change-scope.sh` for the Release Please diff and run `scope` only for it in `check.yml`, with tests                                 | [mechanical] | -                       |
-| T30 | Report `records` from `scripts/change-scope.sh` and run the docs gate plus the two ledger checks for it in `check.yml`, with tests                                 | [judgement]  | T11, T14, T18           |
-| T21 | Conformance review of Phase 3, with the failure-class count of the 200 `check` runs before                                                                         | [judgement]  | T17, T18, T19, T20, T30 |
+| #   | Task                                                                                                                                                                       | Nature       | Depends on              |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------------------- |
+| T16 | (built) Print the per-file detail from `scripts/quality-ratchet.mjs --check` on a miss, with tests                                                                         | [judgement]  | -                       |
+| T17 | (built) Add the `ratchet-related` gate to `scripts/check.sh --quick` with tests; update the `create-pr` skill                                                              | [judgement]  | T16                     |
+| T18 | (built) Move every test that reads a shipped `evals/` data file to `test/fixtures/`, add `*.shipped.test.js` where a shipped file needs a parse check, and add `test-data` | [judgement]  | -                       |
+| T19 | (built) Rerun a failed smoke spec once, write `.checklogs/smoke-flakes.json`, upload it in CI and list flaked specs in the `nightly-failure` issue, with tests             | [judgement]  | -                       |
+| T20 | (built) Report `release` from `scripts/change-scope.sh` for the Release Please diff and run `scope` only for it in `check.yml`, with tests                                 | [mechanical] | -                       |
+| T30 | Report `records` from `scripts/change-scope.sh` and run the docs gate plus the two ledger checks for it in `check.yml`, with tests                                         | [judgement]  | T11, T14, T18           |
+| T21 | Conformance review of Phase 3, with the failure-class count of the 200 `check` runs before                                                                                 | [judgement]  | T17, T18, T19, T20, T30 |
 
 ### Phase 4 - The state of the machine
 
