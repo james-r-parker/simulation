@@ -5,6 +5,9 @@
 # Exit codes: 0 passed, 1 failed, 3 skipped (no Docker, and SMOKE_LOCAL unset) - scripts/check.sh maps 3 to
 # `skipped`, or to a failure under --ci.
 #
+# A spec that fails reruns once: a pass on the rerun passes the gate and is listed in .checklogs/smoke-flakes.json (CI
+# uploads it as the `smoke-flakes` artifact); a spec that fails twice fails the gate.
+#
 # SMOKE_LOCAL=1 runs Playwright directly with the locally installed Chromium (npx playwright install chromium),
 # for machines without Docker. The browser build can differ from the pinned image, so CI never sets it.
 set -euo pipefail
@@ -38,7 +41,13 @@ run_here() {
     cat "$tmp/preview.log" >&2
     return 1
   fi
+  # A failed test reruns once (playwright.config.js); a pass on the rerun is a flake, written to
+  # .checklogs/smoke-flakes.json and passed. Two failures fail the run.
+  mkdir -p .checklogs
+  rm -f .checklogs/smoke-flakes.json .checklogs/playwright-report.json
   SMOKE_URL="http://127.0.0.1:$port/" node_modules/.bin/playwright test -c playwright.config.js || status=$?
+  node scripts/lib/smoke-flakes.mjs report .checklogs/playwright-report.json .checklogs/smoke-flakes.json || true
+  [[ $status -ne 0 ]] || rm -f .checklogs/playwright-report.json
   return "$status"
 }
 

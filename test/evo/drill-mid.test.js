@@ -26,7 +26,7 @@ describe('prey-mid', () => {
     });
 
     it('cuts the sprint of the four prey specialisations in the hunt-mid stage and not the hunter', () => {
-        const stage = JSON.parse(readFileSync(new URL('../../evals/stages/hunt-mid.json', import.meta.url), 'utf8'));
+        const stage = JSON.parse(readFileSync(new URL('../fixtures/stages/hunt-mid.json', import.meta.url), 'utf8'));
         const config = createConfig(stage);
         for (const prey of ['forager', 'reproducer', 'scout', 'defender']) {
             expect(config.specialisations[prey].sprintBoost).toBe(MID_SPRINT_BOOST);

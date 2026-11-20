@@ -97,3 +97,45 @@ jobs:
           else
             gh issue create --label nightly-failure --title "$title" --body-file body.md
           fi
+
+  # One open `smoke-flakes` issue at a time: the browser smoke specs that failed and passed on their rerun in the last 7
+  # days of `check` runs (each run uploads .checklogs/smoke-flakes.json as the `smoke-flakes` artifact; docs/designs/
+  # agent-workflow.md, Browser smoke). Nothing is opened when none flaked.
+  smoke-flakes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUNS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/check.yml
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.inputs.ref || 'main' }}
+
+      - name: Download the last 7 days of smoke-flakes artifacts
+        run: |
+          since="$(date -u -d '7 days ago' +%Y-%m-%d)"
+          mkdir -p flakes
+          for id in $(gh run list --workflow check.yml --created ">=$since" --limit 300 --json databaseId --jq '.[].databaseId'); do
+            # Most runs flaked nothing and uploaded no artifact.
+            gh run download "$id" --name smoke-flakes --dir "flakes/$id" 2>/dev/null || true
+          done
+
+      - name: Open or update the issue
+        run: |
+          node scripts/lib/smoke-flakes.mjs digest flakes --runs-url "$RUNS_URL" > body.md
+          if grep -q '^None flaked' body.md; then
+            echo "no smoke spec flaked in the last 7 days"
+            exit 0
+          fi
+          gh label create smoke-flakes --color FBCA04 --description "Browser smoke specs that passed only on the rerun" --force
+          open="$(gh issue list --label smoke-flakes --state open --json number --jq '.[0].number // empty')"
+          if [ -n "$open" ]; then
+            gh issue edit "$open" --body-file body.md
+          else
+            gh issue create --label smoke-flakes --title "Browser smoke specs that flaked this week" --body-file body.md
+          fi

@@ -60,7 +60,7 @@ describe('prey-weak', () => {
     });
 
     it('cuts the sprint of the four prey specialisations in the hunt-weak stage and not the hunter', () => {
-        const stage = JSON.parse(readFileSync(new URL('../../evals/stages/hunt-weak.json', import.meta.url), 'utf8'));
+        const stage = JSON.parse(readFileSync(new URL('../fixtures/stages/hunt-weak.json', import.meta.url), 'utf8'));
         const config = createConfig(stage);
         for (const prey of ['forager', 'reproducer', 'scout', 'defender']) {
             expect(config.specialisations[prey].sprintBoost).toBe(WEAK_SPRINT_BOOST);
