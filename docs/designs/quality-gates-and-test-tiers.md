@@ -1,8 +1,8 @@
 # Quality gates and test tiers
 
-**Status:** In progress - the full gate runs in CI, sharded, with the coverage ratchet, per-run `check.sh` coverage, `--rerun-failed`, `--quick`, detached-run scripts and a worker budget (Phase 4, built, which also closes T26); tiered `scripts/check.sh` with the pre-commit hook, `deps`, `dupes`, the coverage ratchet and shuffled tests (Phase 1); mutation testing, the browser smoke test, benchmark comparison and the nightly workflow (Phase 2) are built; Phase 3 is part built: the busy-aware `bench-check` with load-scaled test timeouts (T20, T22), the built-in CPU lock (T19), the advisory CI `perf` job with `--self` and the `noise` dispatch (T17), the `bench-compare` digest and the `nightly-failure` issue job (T21, all but its `resume-plan` line), and merge queue and browser-smoke scoping (T28 to T32; enabling the queue in the ruleset is a user step); T23, T24, T47 and T48 (startup-aware smoke measurement and docs) are built; Phase 5 root lint and slow-test timeout reliability is built; T18, T21's `resume-plan` line and T25 remain open.
+**Status:** In progress - Phases 1, 2, 4 and 5 are built (tiered `check.sh` and the pre-commit hook, the coverage ratchet, mutation testing, browser smoke, bench compare, the nightly workflow, the sharded full gate in CI, root lint, slow-test timeouts); Phase 3 is part built (T17 to T24, T28 to T32, T47, T48). T18, the `resume-plan` line of T21 and T25 remain open; enabling the merge queue is a user step.
 **Validated:** c11202bd (2026-11-17)
-**Priority:** 21 - Phase 3 (PR perf job, CPU lock in check.sh, busy-aware bench-check) protects every other lane while several agents share the machine (manager, 2026-10-17)
+**Scheduled by:** [agent-workflow.md](agent-workflow.md) step 1 - the rest of Phase 3; its merge-queue step is a user step this lead's `ship.sh` relies on
 **Depends on:** [dev-workflow-and-gate.md](dev-workflow-and-gate.md)
 
 `scripts/check.sh` runs in three tiers. Each tier is a fixed set of gates, and a higher tier runs every gate of the

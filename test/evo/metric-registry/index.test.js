@@ -18,7 +18,7 @@ const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-name
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(372);
+        expect(REPORT_NAMES).toHaveLength(377);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -106,6 +106,10 @@ describe('withPower', () => {
  */
 /** Metrics registered after the snapshot was taken (T25 added the mean beside the renamed median). */
 const ADDED_AFTER_T8 = [
+    'eval.hunter_catches_per_1k_settled',
+    'eval.hunter_kills_per_life_mean_settled',
+    'eval.hunter_juvenile_death_share_settled',
+    'eval.pursuit_kill_share_settled',
     'eval.food_energy_per_1k@20k',
     'eval.carcass_loss_share.lost',
     'eval.carcass_loss_share.eaten',
@@ -192,6 +196,7 @@ const ADDED_AFTER_T8 = [
     'eval.chase_overshoot_share',
     'eval.chase_cover_use_share',
     'eval.chase_turn_jitter',
+    'eval.predators_at_end_terminal_window',
     'eval.chase_quit_share',
     'eval.chase_lost_share',
     'eval.chase_outrun_share',
@@ -303,7 +308,7 @@ describe('minSeedsFor', () => {
     it('uses measured minima for registered metrics and defaults to 16 for unknown and inherited names', () => {
         expect(DEFAULT_MIN_SEEDS).toBe(16);
         expect(MIN_SEEDS).toBe(DEFAULT_MIN_SEEDS);
-        expect(minSeedsFor('eval.food_energy_per_1k')).toBe(16);
+        expect(minSeedsFor('eval.food_energy_per_1k@20k')).toBe(16);
         expect(minSeedsFor('eval.diversity')).toBe(32);
         expect(minSeedsFor('eval.qd_score')).toBe(32);
         for (const metric of ['mystery', 'toString', 'constructor']) {

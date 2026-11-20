@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the screenshots script, the README rewrite with screenshots and the final docs audit) is still to build: `scripts/screenshots.mjs` does not exist, and the README is kept current by the periodic audits meanwhile.
 **Validated:** d6ca3e6c (2026-11-07)
-**Priority:** 24 - the last stage of v6: nothing legacy is left and every doc describes the app as built
+**Scheduled by:** [agent-workflow.md](agent-workflow.md) step 2 - the last legacy and docs tasks (T7 to T10), after the context diet has moved the docs
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md)
 
 The final stage of the v6 modernisation. [worker-and-renderer.md](worker-and-renderer.md) Phase 5 deletes the legacy

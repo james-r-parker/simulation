@@ -153,3 +153,37 @@ describe('conventions legacy guard', { timeout: scaleTimeout(30_000) }, () => {
         expect(out).not.toContain('the word "legacy"');
     });
 });
+
+describe('conventions checks that read every file in one pass', { timeout: scaleTimeout(30_000) }, () => {
+    it('flags a browser global in a sim file with its file and line, but not in a comment', () => {
+        const out = conventions({
+            'js/sim/a.js': 'export const a = 1;\nexport const b = Math.random();\n',
+            'js/evo/b.js': '// Date.now is never used here\nexport const c = performance.now();\n',
+            'js/sim/c.js': 'export const d = 2;\n',
+        });
+        expect(out).toContain('js/sim/a.js:2: export const b = Math.random(); - the headless sim never uses');
+        expect(out).toContain('js/evo/b.js:2: export const c = performance.now(); - the headless sim never uses');
+        expect(out).not.toContain('js/evo/b.js:1:');
+        expect(out).not.toMatch(/js\/sim\/c\.js:\d+:/);
+    });
+
+    it('flags a tracked file over 5 MB and no smaller one', () => {
+        const out = conventions({
+            'media/big.bin': Buffer.alloc(6 * 1024 * 1024),
+            'media/small file.bin': Buffer.alloc(1024),
+        });
+        expect(out).toContain('media/big.bin: 6 MB - tracked files stay under 5 MB');
+        expect(out).not.toContain('small file.bin');
+    });
+});
+
+describe('conventions agents-size', { timeout: scaleTimeout(30_000) }, () => {
+    it('flags an AGENTS.md over 16000 bytes with its size', () => {
+        const out = conventions({ 'AGENTS.md': 'x'.repeat(16_001) });
+        expect(out).toContain('AGENTS.md: 16001 bytes - it stays at or under 16000');
+    });
+
+    it('accepts an AGENTS.md at exactly 16000 bytes', () => {
+        expect(conventions({ 'AGENTS.md': 'x'.repeat(16_000) })).not.toContain('AGENTS.md: ');
+    });
+});

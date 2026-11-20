@@ -35,7 +35,7 @@ function writeGrid(file, body) {
  * @property {import('../../js/evo/train-tune.js').TuneArm[]} proposed the arms to screen
  * @property {string} out the results directory
  * @property {string} runs the training runs' directory
- * @property {{workers: number | null, force: boolean, logDir: string}} shared the screen options every screen shares
+ * @property {{workers: number | null, force: boolean, cache?: string | null, logDir: string}} shared the screen options every screen shares
  */
 
 /**

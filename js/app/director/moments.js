@@ -17,8 +17,6 @@ import {
     scoreTickerItem,
 } from './scoring.js';
 
-/** Default `hunting` flag bit (bit 16) when `ready.layout.flags.HUNTING` is not yet populated. */
-const DEFAULT_HUNTING_FLAG = 1 << 16;
 /** Cluster radius for `alarm-chorus` (3 calls in 3 s). */
 export const ALARM_CLUSTER_RADIUS = 800;
 /** Cluster window for `alarm-chorus` in simulated seconds. */
@@ -169,7 +167,8 @@ function matchHunterPreys({ hunter, prevHunter }, agents, earlierByGenome, rules
  * Finds all gap-closing `chase` candidates between hunting predators and smaller non-hunters.
  * @param {readonly AgentRecord[]} agents current snapshot agents
  * @param {Map<number, AgentRecord>} earlierByGenome agents from ~1.5 s earlier keyed by genomeId
- * @param {{info: Record<string, any>, huntingFlag: number}} ctx `ready.info` and the `hunting` flag mask
+ * @param {{info: Record<string, any>, huntingFlag: number}} ctx `ready.info` and the `hunting` flag mask, 0 when the
+ *   snapshot has no such bit (every hunter counts, and the geometry of the pursuit decides)
  * @returns {MomentCandidate[]} chase candidates
  */
 function findChaseMoments(agents, earlierByGenome, { info, huntingFlag }) {
@@ -183,7 +182,11 @@ function findChaseMoments(agents, earlierByGenome, { info, huntingFlag }) {
     const out = /** @type {MomentCandidate[]} */ ([]);
     for (const hunter of agents) {
         const prevHunter = earlierByGenome.get(hunter.genomeId);
-        if (rules.canHuntBySpec.get(hunter.spec) && (hunter.flags & huntingFlag) !== 0 && prevHunter !== undefined) {
+        if (
+            rules.canHuntBySpec.get(hunter.spec) &&
+            (huntingFlag === 0 || (hunter.flags & huntingFlag) !== 0) &&
+            prevHunter !== undefined
+        ) {
             out.push(...matchHunterPreys({ hunter, prevHunter }, agents, earlierByGenome, rules));
         }
     }
@@ -367,7 +370,8 @@ export function findMoments({
     const earlierAgents = readSnapshotAgents(earlierSnapshot);
     const currentByGenome = new Map(agents.map((a) => [a.genomeId, a]));
     const earlierByGenome = new Map(earlierAgents.map((a) => [a.genomeId, a]));
-    const huntingFlag = layout.flags?.HUNTING ?? DEFAULT_HUNTING_FLAG;
+    // The snapshot has no `hunting` bit until worker-and-renderer T48 is built: with none, the geometry decides
+    const huntingFlag = layout.flags?.HUNTING ?? 0;
 
     const candidates = [
         ...findChaseMoments(agents, earlierByGenome, { info, huntingFlag }),

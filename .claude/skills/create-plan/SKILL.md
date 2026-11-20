@@ -49,9 +49,11 @@ If unsure, ask the user in one line before writing a doc.
     ```
 
     Get `<sha>` from `git fetch origin && git rev-parse --short origin/main`; use today's date. Omit
-    `**Depends on:**` when there is nothing to build first. Propose a `**Priority:**` rank against the Build queue in
-    `docs/designs/README.md` (1 is next; ranks are unique), renumber the docs it moves down in the same PR, and ask the
-    user to confirm the rank in the interview.
+    `**Depends on:**` when there is nothing to build first. A new doc is almost always a step of an existing lead: give it a
+    `**Scheduled by:** [lead.md](lead.md) step <n> - <what it waits on>` line in place of `**Priority:**`, add its row
+    to the lead's `## Order` table, and renumber the steps it moves down in the same PR. Only a new body of work that
+    fits no lead takes a `**Priority:**` rank (1 is next; ranks are unique); ask the user to confirm either in the
+    interview.
 
 5. Under every `### Phase N - ...` heading, add one `**Targets:**` line: the metrics the phase should move (the
    Metrics table in `evolution-evals.md` once it exists: `eval.*`, `bench.*`, `browser.*`), or
@@ -96,7 +98,7 @@ End the doc with a **Delivery requirements** table using exactly the rows in STY
 | Config and persistence  | Each new key in `createConfig` with type and default; schema version bumps and their upgrade path                                                                    |
 | Logging and diagnostics | Each new sim log event (`log.log`): name, level, fields; what every failure path logs; the `npm run replay` command that reproduces it                               |
 | Browser compatibility   | Browsers verified; fallbacks when a feature is missing                                                                                                               |
-| Docs                    | Files touched (AGENTS.md, README, skills); what this doc becomes once `Implemented`; learnings for `sim-notes.md`                                                    |
+| Docs                    | Files touched (AGENTS.md, README, skills); what this doc becomes once `Implemented`; learnings for `docs/notes/`                                                     |
 | Verification            | `scripts/check.sh` green plus the manual browser walk, step by step                                                                                                  |
 
 Tests and logging are never deferred to a later phase: each phase's tasks include the tests and log events for the
@@ -148,8 +150,8 @@ The last task of every phase is the conformance review:
 - A `TBD` cell anywhere except a stub (status detail starting `stub`); fleshing out a stub replaces every `TBD`
   and drops `stub` from the status detail.
 - A phase with Targets but no numbers for what "better" means.
-- Learnings written anywhere but `sim-notes.md` (`## Learned while building`, one `### YYYY-MM-DD - <topic>` entry
-  per finding).
+- Learnings written anywhere but `docs/notes/<YYYY-MM>.md` (one `### YYYY-MM-DD - <topic>` entry per finding, indexed by
+  `node scripts/notes-index.mjs --write`).
 - The plan lives anywhere other than `docs/designs/<kebab-feature>.md`.
 - No `**Validated:**` stamp, or a stamp taken from a local branch instead of `origin/main`.
 - Line-number references (`agent.js:42`) or symbols that `rg` / `sg` cannot find.

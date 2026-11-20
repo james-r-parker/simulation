@@ -42,6 +42,7 @@ import { backendOf, chooseBackend, configureRenderer, lossVerdict, stageOptions 
  * @property {{temperature: boolean, scent: boolean, territory: boolean, vision: boolean, calls: boolean}} lenses
  * @property {number} selectedId the selected agent's genome id, 0 for none
  * @property {number} followId the followed agent's genome id, 0 for none
+ * @property {boolean} tv whether TV mode is on (the world border is off)
  * @property {number} leadLineageId the leading lineage's id, 0 for none
  * @property {number} season the current season index (0: spring, 1: summer, 2: autumn, 3: winter)
  * @property {number} seasonProgress the progress through the season [0, 1]

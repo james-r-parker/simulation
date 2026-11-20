@@ -137,16 +137,19 @@ export function topBarInput(client, trend = 'steady') {
 
 /**
  * @param {TopBarInput | null} stats what `topBarInput` read
- * @param {{requestedTicksPerSecond: number}} state the app state
+ * @param {{requestedTicksPerSecond: number, autoSpeed?: number}} state the app state; `autoSpeed` is the speed the
+ *   director set, 0 when the viewer's applies
  * @param {boolean} paused whether the sim is paused
- * @returns {string} `x4`, with the sustained rate beside it when it differs, or `paused`
+ * @returns {string} `x4`, with the sustained rate beside it when it differs and `auto` when the director set it, or
+ *   `paused`
  */
-function speedText(stats, { requestedTicksPerSecond }, paused) {
+function speedText(stats, { requestedTicksPerSecond, autoSpeed = 0 }, paused) {
     if (paused) {
         return 'paused';
     }
-    const requested = speedLabel(requestedTicksPerSecond / BASE_TICKS_PER_SECOND);
-    if (stats === null || Math.abs(stats.ticksPerSecond - requestedTicksPerSecond) < 0.5) {
+    const asked = autoSpeed > 0 ? autoSpeed : requestedTicksPerSecond;
+    const requested = speedLabel(asked / BASE_TICKS_PER_SECOND) + (autoSpeed > 0 ? ' auto' : '');
+    if (stats === null || Math.abs(stats.ticksPerSecond - asked) < 0.5) {
         return requested;
     }
     return `${requested} (${speedLabel(Math.round((stats.ticksPerSecond / BASE_TICKS_PER_SECOND) * 100) / 100)})`;
@@ -206,7 +209,7 @@ const EMPTY_INPUT = Object.freeze({
 
 /**
  * @param {TopBarInput | null} stats what `topBarInput` read, null before one arrives
- * @param {{requestedTicksPerSecond: number, notice: string}} state the app state
+ * @param {{requestedTicksPerSecond: number, autoSpeed?: number, notice: string}} state the app state
  * @param {boolean} paused whether the sim is paused
  * @returns {TopBarView} the strings to show
  */

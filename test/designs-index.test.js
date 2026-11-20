@@ -70,6 +70,18 @@ describe('parseDoc', () => {
         expect(() => parse(proposed({ status: 'Planned - soon' }))).toThrow(/unrecognised status/);
     });
 
+    it('rejects a status line over 400 characters, counting a wrapped line whole', () => {
+        const long = `Proposed - ${'x'.repeat(390)}`;
+        expect(() => parse(proposed({ status: long }))).toThrow(/status line is 401 characters, over the 400 limit/);
+        expect(() => parse(proposed({ status: `Proposed - ${'x'.repeat(200)}\n${'y'.repeat(189)}` }))).toThrow(
+            /status line is 401 characters/,
+        );
+    });
+
+    it('accepts a status line of exactly 400 characters', () => {
+        expect(() => parse(proposed({ status: `Proposed - ${'x'.repeat(389)}` }))).not.toThrow();
+    });
+
     it('requires a priority on an unbuilt doc', () => {
         expect(() => parse(proposed({ priority: '' }))).toThrow(/Priority/);
     });
@@ -189,6 +201,37 @@ describe('buildIndex', () => {
             'a.md': proposed({ body: '```\n[later](later.md)\n```\n[web](https://example.com) [self](a.md#top)' }),
         });
         expect(() => buildIndex(fenced)).not.toThrow();
+    });
+
+    it('lists a scheduled doc under its lead in step order, and not in the ranks', () => {
+        /** @param {number} n @param {string} title */
+        const step = (n, title) =>
+            proposed({ priority: `**Scheduled by:** [a.md](a.md) step ${n} - after the lead` }).replace(
+                'Sample feature',
+                title,
+            );
+        const index = buildIndex(designs({ 'a.md': proposed(), 'c.md': step(2, 'Charlie'), 'b.md': step(1, 'Bravo') }));
+        expect(index).toContain('## Build queue (1)\n');
+        const bravo = index.indexOf('    1. [Bravo](b.md) - after the lead');
+        expect(bravo).toBeGreaterThan(index.indexOf('1. [Sample feature](a.md) - first'));
+        expect(index.indexOf('    2. [Charlie](c.md) - after the lead')).toBeGreaterThan(bravo);
+    });
+
+    it('rejects a scheduled doc whose lead has no rank, a repeated step, and both lines at once', () => {
+        /** @param {string} lead @param {number} n */
+        const sched = (lead, n) => proposed({ priority: `**Scheduled by:** [${lead}](${lead}) step ${n} - later` });
+        expect(() => buildIndex(designs({ 'a.md': sched('b.md', 1), 'b.md': sched('a.md', 1) }))).toThrow(
+            /has no \*\*Priority/,
+        );
+        rmSync(dir, { recursive: true, force: true });
+        const repeated = designs({ 'a.md': proposed(), 'b.md': sched('a.md', 1), 'c.md': sched('a.md', 1) });
+        expect(() => buildIndex(repeated)).toThrow(/Steps must be unique under a.md/);
+        const both = proposed({ priority: '**Priority:** 1 - first\n**Scheduled by:** [a.md](a.md) step 1 - later' });
+        expect(() => parse(both)).toThrow(/not both/);
+        expect(() => parse(proposed({ priority: '**Scheduled by:** a.md' }))).toThrow(/is not "\*\*Scheduled by/);
+        expect(() => parse('# Notes\n\n**Status:** Reference.\n**Scheduled by:** [a.md](a.md) step 1 - no\n')).toThrow(
+            /only Proposed/,
+        );
     });
 
     it('rejects duplicate priority ranks', () => {

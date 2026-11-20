@@ -4,6 +4,7 @@
 // - `eval.hunter_kills_per_life_p50`, `eval.hunter_kills_per_life_mean`, `eval.hunter_zero_kill_share`: the median and
 //   mean kills of a hunter life (all deaths), and `eval.hunter_zero_kill_share`: the share of the hunter lives after
 //   burn-in (deaths at or after `BURN_IN_TICKS`, and the hunters alive at the last tick, at their end age) with no kill.
+// - `eval.hunter_kills_per_life_mean_settled`: the mean kills of the same lives as `eval.hunter_zero_kill_share` (after burn-in).
 // - `eval.hunter_death_share.<cause>`: the share of hunter deaths by cause (starved, collision, eaten, trampled, disease,
 //   other: old age and poison).
 // - `eval.hunter_birth_source_share.<source>`: the share of hunter births by source (mate-hunter-parent,
@@ -62,6 +63,7 @@ export function createHunterScene(runTicks, config = DEFAULTS) {
         rows: 0,
         lives: 0,
         zeroKill: 0,
+        settledKills: 0,
         deaths: new Float64Array(HUNTER_DEATH_NAMES.length),
         births: new Float64Array(HUNTER_BIRTH_NAMES.length),
         alive: 0,
@@ -105,6 +107,7 @@ export function noteHunterLedger(scene, d, o) {
     if (d[o + 1] >= BURN_IN_TICKS) {
         scene.lives += 1;
         scene.zeroKill += scene.log.kills[row] === 0 ? 1 : 0;
+        scene.settledKills += scene.log.kills[row];
     }
     scene.deaths[DEATH_INDEX[Math.floor(packed / 8) % 8]] += 1;
     scene.alive -= 1;
@@ -186,23 +189,46 @@ function deathMetrics(scene) {
 }
 
 /**
+ * @param {Record<string, any>} world the world at the last tick
+ * @returns {{ lives: number, zero: number, kills: number }} the hunters alive at the last tick: how many, how many with no
+ *   kill so far, and their kills so far; all 0 for a world without agents
+ */
+function aliveHunterLives(world) {
+    const alive = { lives: 0, zero: 0, kills: 0 };
+    if (world.alive === undefined || world.ledgerKills === undefined) {
+        return alive;
+    }
+    for (let slot = 0; slot < world.alive.length; slot++) {
+        if (world.alive[slot] === 1 && world.huntBySpec[world.spec[slot]] === 1) {
+            alive.lives += 1;
+            alive.zero += world.ledgerKills[slot] === 0 ? 1 : 0;
+            alive.kills += world.ledgerKills[slot];
+        }
+    }
+    return alive;
+}
+
+/**
  * @param {Record<string, any>} scene the hunter scene
  * @param {Record<string, any>} world the world at the last tick
  * @returns {import('./metrics-stats.js').MetricResult} the share of hunter lives after burn-in with no kill: the deaths,
  *   and each hunter alive at the last tick with its kills so far
  */
 function zeroKillShare(scene, world) {
-    let lives = scene.lives;
-    let zero = scene.zeroKill;
-    if (world.alive !== undefined && world.ledgerKills !== undefined) {
-        for (let slot = 0; slot < world.alive.length; slot++) {
-            if (world.alive[slot] === 1 && world.huntBySpec[world.spec[slot]] === 1) {
-                lives += 1;
-                zero += world.ledgerKills[slot] === 0 ? 1 : 0;
-            }
-        }
-    }
-    return share(zero, lives, 'no hunter life after burn-in');
+    const alive = aliveHunterLives(world);
+    return share(scene.zeroKill + alive.zero, scene.lives + alive.lives, 'no hunter life after burn-in');
+}
+
+/**
+ * @param {Record<string, any>} scene the hunter scene
+ * @param {Record<string, any>} world the world at the last tick
+ * @returns {import('./metrics-stats.js').MetricResult} the mean kills of a hunter life after burn-in: the deaths at or
+ *   after `BURN_IN_TICKS`, and each hunter alive at the last tick with its kills so far (the lives of `zeroKillShare`)
+ */
+function settledKillsPerLife(scene, world) {
+    const alive = aliveHunterLives(world);
+    const lives = scene.lives + alive.lives;
+    return lives > 0 ? ok((scene.settledKills + alive.kills) / lives) : none('no hunter life after burn-in');
 }
 
 /**
@@ -256,6 +282,7 @@ export function hunterMetrics(scene, world) {
     return {
         ...deathMetrics(scene),
         'eval.hunter_zero_kill_share': zeroKillShare(scene, world),
+        'eval.hunter_kills_per_life_mean_settled': settledKillsPerLife(scene, world),
         ...shares('eval.hunter_birth_source_share', HUNTER_BIRTH_NAMES, scene.births, 'no hunter births'),
         ...incomeMetrics(world),
         ...ageMetrics(scene.age, world),

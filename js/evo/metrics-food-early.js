@@ -20,17 +20,16 @@ export function foodEnergyTotal(observer) {
 
 /**
  * @param {Record<string, any>} observer the observer, checkpointed during the run
- * @returns {import('./metrics-stats.js').MetricResult} the food energy per 1000 agent-ticks up to the last checkpoint
- *   at or before `EARLY_TICKS`, or `null` with a reason when there is none
+ * @returns {import('./metrics-stats.js').MetricResult} the food energy per 1000 agent-ticks up to the checkpoint at
+ *   `EARLY_TICKS`, or `null` with a reason when the run has none: a shorter run's last checkpoint reads the whole run, not
+ *   the early window (metric-noise.md D5)
  */
 export function foodEnergyEarly(observer) {
     const { series, checkpointCount } = observer;
-    let last = -1;
     for (let i = 0; i < checkpointCount && series.tick[i] <= EARLY_TICKS; i++) {
-        last = i;
+        if (series.tick[i] === EARLY_TICKS) {
+            return per1k(series.foodEnergyTotal[i], series.agentTicksTotal[i]);
+        }
     }
-    if (last < 0) {
-        return none(`no checkpoint by tick ${EARLY_TICKS}`);
-    }
-    return per1k(series.foodEnergyTotal[last], series.agentTicksTotal[last]);
+    return none(`no checkpoint at tick ${EARLY_TICKS}`);
 }

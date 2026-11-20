@@ -31,6 +31,9 @@ export const HEAVY_TESTS = [
     'test/train-pool.slow.test.js',
     'test/evo/scripted-temperature.slow.test.js',
     'test/train.slow.test.js',
+    // Shard 6 ran these two for 257 s and 117 s (CI run 44808518319), 304 s for the job, the longest shard; each over 60 s.
+    'test/evo/gate-validity.slow.test.js',
+    'test/bench.slow.test.js',
 ];
 
 /**

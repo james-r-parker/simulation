@@ -51,7 +51,18 @@ describe('train:screen', () => {
         'trains every arm on every offset in child processes, writes the yield and verdicts, and reuses the runs',
         async () => {
             const out = join(root, 'out');
-            const argv = ['--grid', grid, '--out', out, '--workers', '2', '--log-dir', join(root, 'logs')];
+            const argv = [
+                '--grid',
+                grid,
+                '--out',
+                out,
+                '--cache',
+                join(root, 'cache'),
+                '--workers',
+                '2',
+                '--log-dir',
+                join(root, 'logs'),
+            ];
             /** @type {string[]} */
             const lines = [];
             expect(await main(argv, (l) => lines.push(l))).toBe(0);

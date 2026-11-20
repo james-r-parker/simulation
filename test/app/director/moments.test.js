@@ -61,6 +61,17 @@ describe('readSnapshotAgents', () => {
 });
 
 describe('findMoments: chases', () => {
+    it('finds a chase from the geometry alone while the snapshot has no hunting bit, and needs the bit once it has one', () => {
+        const at = (/** @type {number} */ x) => [
+            { genomeId: 1, lineageId: 1, spec: 0, x, y: 100, angle: 0, size: 14, speed: 2.2, flags: 0 },
+            { genomeId: 2, lineageId: 2, spec: 1, x: 400, y: 100, angle: 0, size: 10, speed: 2.2, flags: 0 },
+        ];
+        const input = { snapshot: at(200), earlierSnapshot: at(100), info: INFO, tick: 600 };
+        const noBit = findMoments({ ...input, layout: { ...LAYOUT, flags: {} } });
+        expect(noBit.map((m) => m.kind)).toEqual([MOMENT_KIND.CHASE]);
+        expect(findMoments({ ...input, layout: LAYOUT })).toEqual([]);
+    });
+
     it('detects a gap-closing chase inside the jaw arc and rejects pairs that fail any chase rule', () => {
         const earlier = [
             { genomeId: 1, lineageId: 1, spec: 0, x: 100, y: 100, angle: 0, size: 14, speed: 2.2, flags: 1 << 16 },
@@ -92,7 +103,7 @@ describe('findMoments: chases', () => {
             snapshot: current,
             earlierSnapshot: earlierWithExtras,
             info: INFO,
-            layout: { ...LAYOUT, flags: {} },
+            layout: LAYOUT,
             tick: 600,
         });
         expect(moments).toHaveLength(1);

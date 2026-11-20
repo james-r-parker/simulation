@@ -3,6 +3,8 @@
 // browser (browser-perf covers it by use), so it is excluded from the unit coverage like the other browser helpers.
 
 import {
+    appQuery,
+    baselineKey,
     buildV6Entry,
     checkRefresh,
     checkRenderer,
@@ -73,16 +75,17 @@ export async function setMeasurementViewport(page, viewport) {
 
 /**
  * @param {import('@playwright/test').Browser} browser the browser
- * @param {{viewport: {width: number, height: number}, agents: number}} options the canvas size and agent count
+ * @param {{viewport: {width: number, height: number}, agents: number, urlParams?: string}} options the canvas size, the
+ *   agent count and any extra URL parameters
  * @param {string} url the app URL
  * @returns {Promise<import('@playwright/test').Page>} a page that has loaded the app and whose worker is running
  */
-async function openApp(browser, { viewport, agents }, url) {
+async function openApp(browser, { viewport, agents, urlParams }, url) {
     const page = await browser.newPage({ viewport, deviceScaleFactor: 1 });
     await setMeasurementViewport(page, viewport);
     await page.addInitScript(LONG_TASK_SCRIPT);
     // `hold=1`: the floor refills the world to `agents`, so the window draws that many bodies, not a crashing world
-    await page.goto(`${url}?agents=${agents}&seed=${SEED}&gputime=1&hold=1`);
+    await page.goto(`${url}?${appQuery({ agents, seed: SEED, urlParams })}`);
     await page.waitForFunction(
         () => {
             const w = /** @type {any} */ (globalThis);
@@ -97,7 +100,7 @@ async function openApp(browser, { viewport, agents }, url) {
 /**
  * Measures the app for `seconds` after a warm-up and builds its baseline entry.
  * @param {import('@playwright/test').Browser} browser the browser (Playwright's or a Chrome over CDP)
- * @param {{url: string, seconds: number, agents: number, viewport: {width: number, height: number},
+ * @param {{url: string, seconds: number, agents: number, urlParams?: string, viewport: {width: number, height: number},
  *   allowLowRefresh: boolean, allowFallback: boolean, commit: string}} options what to run and how strictly
  * @returns {Promise<{viewport: string, entry: Record<string, any>}>} the viewport key and its entry
  * @throws {Error} when the display is under 120 Hz or the renderer is software, unless the matching flag is given
@@ -131,12 +134,12 @@ export async function measureV6(browser, options) {
         run: {
             browser: browser.version(),
             gpuAdapter: renderer,
-            viewport: `${width}x${height}`,
+            viewport: baselineKey(`${width}x${height}`, options.urlParams),
             seconds: options.seconds,
             commit: options.commit,
             recordedAt: new Date().toISOString(),
         },
     });
     await page.close();
-    return { viewport: `${width}x${height}`, entry };
+    return { viewport: baselineKey(`${width}x${height}`, options.urlParams), entry };
 }

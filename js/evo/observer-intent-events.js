@@ -3,6 +3,7 @@
 
 import { TIMER_CAP } from '../sim/world.js';
 import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 import { KILL, killKind } from './observer-combat.js';
 import { findAlive } from './observer-intent.js';
 import { pruneAlarms, pushAlarm } from './observer-intent-alarms.js';
@@ -88,6 +89,7 @@ export function noteIntentDeath(observer, world, o) {
     const kind = killKind(combat, killerId, previousId);
     if (kind >= KILL.HUNT) {
         intent.run.huntKillsDeliberate += deliberate;
+        intent.run.huntKillsDeliberateSettled += world.tick >= BURN_IN_TICKS ? deliberate : 0;
     }
     if (kind === KILL.PACK) {
         const sameBiter = intent.biterId[slot] === killerId;

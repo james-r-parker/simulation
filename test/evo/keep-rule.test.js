@@ -198,6 +198,18 @@ describe('keepRule metric guards', () => {
     });
 });
 
+describe('keepRule and renamed metrics (D2)', () => {
+    it('reads a before report under the old guard metric name as the current one', () => {
+        const before = report({ catches: SEEDS.map(() => 2) });
+        before.metrics['eval.catch_rate'] = before.metrics['eval.hunter_catches_per_1k'];
+        delete before.metrics['eval.hunter_catches_per_1k'];
+        const after = report({ catches: SEEDS.map((_, i) => 1 + (i % 5) * 0.01) });
+        const result = keepRule(before, after, { status: verified, seedsFor });
+        expect(guardOf(result, 'eval.hunter_catches_per_1k').verdict).toBe('worse');
+        expect(result.worse).toBe(true);
+    });
+});
+
 describe('formatKeepRule lines', () => {
     it('prints a metric guard with its interval, an unchecked guard with its note, and a seed guard with its exact test', () => {
         const metric = (/** @type {number[]} */ values) => ({
@@ -218,7 +230,8 @@ describe('formatKeepRule lines', () => {
         );
         const skipped = formatKeepRule(keepRule(before, after, { status: () => 'unverified', seedsFor })).join('\n');
         expect(skipped).toContain('guard eval.hunter_catches_per_1k: unchecked (unverified)');
-        expect(skipped).toContain('keep rule: no harm detected at this size');
+        expect(skipped).toContain('keep rule: incomplete (unchecked: held, eval.hunter_catches_per_1k');
+        expect(skipped).not.toContain('no harm detected');
     });
 
     it('prints n/a counts without traces or metrics, and the not-met and WORSE outcomes', () => {
@@ -236,7 +249,7 @@ describe('formatKeepRule lines', () => {
             '\n',
         );
         expect(met).toContain(', met');
-        expect(met).toContain('keep rule: no harm detected');
+        expect(met).toContain('keep rule: incomplete');
     });
 });
 
@@ -313,7 +326,7 @@ describe('a seed guard read in the good direction', () => {
         expect(formatKeepRule(result).join('\n')).toMatch(
             /guard alive: better, 0 seeds harmed vs 10 recovered \(exact p 0.00195\)/,
         );
-        expect(formatKeepRule(result).join('\n')).toContain('keep rule: no harm detected at this size');
+        expect(formatKeepRule(result).join('\n')).toContain('keep rule: incomplete');
     });
 
     it('reads better on the held guard too', () => {

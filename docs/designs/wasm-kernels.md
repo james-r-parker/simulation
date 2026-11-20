@@ -1,8 +1,8 @@
 # WASM kernels
 
-**Status:** In progress - Phases 1, 2 and 4 are built and adopted (T1 to T12, T13 to T19): every world runs the brain phase, the ray march, the spatial hash build, the pheromone update and the physics loops in the Rust/WASM kernels from birth, and the JS kernels they replaced are deleted; Phase 5 (profile and squeeze) is built (T20 to T28): the baseline re-recorded, the profile ranked, three kernel squeezes kept (drill throughput +36%) and four tried and reverted; Phase 6 (the brain phase on the eat-choice world) is built (T29 to T32): the brain rise is more agents alive, not dearer agents, and one tanh squeeze kept (brain_forward +3%); Phase 3 (batched drill evaluation) is proposed.
+**Status:** In progress - Phases 1, 2, 4, 5 and 6 are built and adopted (T1 to T32): the brain, ray march, spatial hash, pheromone and physics loops run in the Rust/WASM kernels from birth and the JS kernels are deleted; drill throughput +36% from three squeezes. Phase 3 (batched drill evaluation) is proposed; Phase 7 (a multi-tick brain reference test, stale layout numbers) is planned.
 **Validated:** f5c7880 (2026-11-07)
-**Priority:** 28 - a speed lever that changes no behaviour (the behaviour-changing levers are ruled out), so it queues behind the world-balance work and ahead of nothing that depends on it
+**Scheduled by:** [throughput.md](throughput.md) step 1 - Phase 7 (the independent brain reference test and the stale layout numbers) and the batched drill evaluation of Phase 3
 **Depends on:** [headless-sim-core.md](headless-sim-core.md)
 
 The goal ([principles.md](../principles.md)) is a world that is interesting to watch. Step time at 500 agents sat at about 3.9 to 4.1 ms
@@ -450,6 +450,15 @@ Result (T32). `bench-compare --base origin/main --sizes=500 --runs=3` with T30: 
 re-recorded. The brain phase is now about 1.6 us per alive agent, most of it the hidden sums over 62 or so terms of 32
 units; what is left to try changes either the sum order or the `f32` weight storage, both outside this doc's contract.
 
+### Phase 7 - An independent brain reference
+
+**Targets:** none - tests and docs only; no kernel, `worldHash` or bench change
+
+A review on 2026-11-20 built a naive forward pass from the design, with its own layout and pooling, and compared it with the kernel over 21 cases (hidden sizes 1 to 32, Hebbian off and on, saturating and all-zero inputs, slot reuse every 37 ticks, 300 ticks each): 0 mismatches in `pooled`, `hidden`, `outputs` and `fastOut`, bit for bit. Three deliberately wrong copies (a transposed `wRec`, the pooling tie rule, the new hidden row fed back) each gave over 16000 mismatches. No kernel defect was found.
+
+- `test/sim/wasm-brain.test.js` pins digests recorded from the deleted JS kernel, and `test/sim/brain.test.js` uses the kernel's own layout offsets and pooling, so no test in the suite runs many ticks against a layout derived separately. `test/sim/brain-reference-multitick.test.js` is that test: the reference of `.sim/review-2026-11-20/brain/ref.mjs` in the main checkout (untracked; rewritten from the design if it is gone), trimmed to run in about 0.1 s.
+- The built layout is `pooled-v5`: 92 inputs (54 pooled ray values, 2 food hues, 36 body inputs), a raw row of `rayCount x 10 + 36`, and 4926 weights at 32 hidden. [headless-sim-core.md](headless-sim-core.md), [headless-sim-core-contracts.md](headless-sim-core-contracts.md) and [megafauna.md](megafauna.md) still state 89, 33 and 4830.
+
 ## Decisions
 
 | Decision                                                                                        | Why                                                                                                                                                                                                                                         | Who                     |
@@ -561,6 +570,14 @@ units; what is left to try changes either the sum order or the `f32` weight stor
 | T30 | `tanh_in_place`: handle a slow group in pairs and scalars and resume four-wide (built)                                                                    | [judgement] | T29        |
 | T31 | Further bit-identical squeezes in `pool`, `hidden_step`, `output_step`, `hebbian_step`, `forward_all` (tried, four reverted: inside the margin or slower) | [judgement] | T29        |
 | T32 | Re-record `bench/baseline.json` if the brain moved; record the phase as built; `scripts/check.sh` (built; the step bench did not move, no re-record)      | [judgement] | T30, T31   |
+
+### Phase 7 - An independent brain reference
+
+| #   | Task                                                                                                                                                                               | Nature       | Depends on |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T33 | Add `test/sim/brain-reference-multitick.test.js`: a naive forward pass with its own layout and pooling against `forwardAll` over many ticks with Hebbian learning and slot reuse   | [judgement]  | -          |
+| T34 | Correct the layout numbers in the three docs and the title of the memory read-back test in `test/sim/brain-leak.test.js` (the read-backs are `BODY_INPUT.MEMORY_A` and `MEMORY_B`) | [mechanical] | -          |
+| T35 | Conformance review of Phase 7                                                                                                                                                      | [judgement]  | T33, T34   |
 
 ## Verification
 

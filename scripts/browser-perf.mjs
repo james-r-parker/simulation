@@ -3,7 +3,7 @@
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runV6 } from './lib/perf-run.mjs';
-import { parseViewport } from './lib/perf-v6.mjs';
+import { parseUrlParams, parseViewport } from './lib/perf-v6.mjs';
 
 const DEFAULT_SECONDS = 60;
 
@@ -55,6 +55,7 @@ const PARSERS = {
     '--viewport': (_arg, value) => ({ viewport: parseViewport(value) }),
     '--out': (_arg, value) => ({ out: value }),
     '--cdp': (_arg, value) => ({ cdp: value }),
+    '--url-params': (arg, value) => ({ urlParams: parseUrlParams(arg, value) }),
 };
 
 /**
@@ -82,6 +83,8 @@ function applyValueFlag(options, arg) {
  * @property {string} cdp a Chrome DevTools endpoint to measure instead of launching one
  * @property {'v6'} app which app to measure
  * @property {number} agents v6: the starting agent count
+ * @property {string} urlParams v6: extra URL parameters, such as `tv=1`, added to the page URL; the baseline entry is
+ *   keyed by the viewport and these
  * @property {{width: number, height: number}} viewport v6: the canvas size
  */
 
@@ -101,6 +104,7 @@ export function parseArgs(argv) {
         cdp: '',
         app: 'v6',
         agents: DEFAULT_AGENTS,
+        urlParams: '',
         viewport: parseViewport(DEFAULT_VIEWPORT),
     };
     for (let i = 0; i < argv.length; i++) {
