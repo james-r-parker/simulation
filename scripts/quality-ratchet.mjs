@@ -1,7 +1,8 @@
 // Coverage ratchet: compares measured coverage with scripts/quality-baseline.json; --write raises the baseline.
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { detailForScopes } from './lib/coverage-detail.mjs';
 import { compareMutation, listSurvivors, raiseMutation, scoreScopes } from './lib/mutation-score.mjs';
 
 /** Scopes the ratchet tracks, as repo-relative path prefixes. */
@@ -57,7 +58,7 @@ export function measureScopes(summary, root) {
  * @param {ScopeMetrics} limits limit per scope and metric
  * @param {number} tolerance percentage points a metric may fall below its limit
  * @param {string} kind what the limit is, for the message
- * @returns {string[]} one message per metric below its limit
+ * @returns {{scope: string, metric: string, message: string}[]} one entry per metric below its limit
  */
 function belowLimits(measured, limits, tolerance, kind) {
     const failures = [];
@@ -65,9 +66,8 @@ function belowLimits(measured, limits, tolerance, kind) {
         for (const [metric, limit] of Object.entries(metrics)) {
             const value = measured[scope]?.[metric];
             if (value !== undefined && value < limit - tolerance) {
-                failures.push(
-                    `${scope} ${metric} coverage is below its ${kind}: ${kind} ${limit.toFixed(2)}%, measured ${value.toFixed(2)}%`,
-                );
+                const message = `${scope} ${metric} coverage is below its ${kind}: ${kind} ${limit.toFixed(2)}%, measured ${value.toFixed(2)}%`;
+                failures.push({ scope, metric, message });
             }
         }
     }
@@ -78,13 +78,23 @@ function belowLimits(measured, limits, tolerance, kind) {
  * Compares measured coverage with the baseline and the floors.
  * @param {ScopeMetrics} measured percent per scope and metric (a scope with no code is absent)
  * @param {{coverage?: ScopeMetrics, floors?: ScopeMetrics}} baseline parsed quality-baseline.json
- * @returns {string[]} one message per failure; empty when the ratchet holds
+ * @returns {{scope: string, metric: string, message: string}[]} one entry per failure; empty when the ratchet holds
  */
-export function compareScopes(measured, baseline) {
+export function failedLimits(measured, baseline) {
     return [
         ...belowLimits(measured, baseline.coverage ?? {}, TOLERANCE, 'baseline'),
         ...belowLimits(measured, baseline.floors ?? {}, 0, 'floor'),
     ];
+}
+
+/**
+ * Compares measured coverage with the baseline and the floors.
+ * @param {ScopeMetrics} measured percent per scope and metric (a scope with no code is absent)
+ * @param {{coverage?: ScopeMetrics, floors?: ScopeMetrics}} baseline parsed quality-baseline.json
+ * @returns {string[]} one message per failure; empty when the ratchet holds
+ */
+export function compareScopes(measured, baseline) {
+    return failedLimits(measured, baseline).map((failure) => failure.message);
 }
 
 /**
@@ -148,6 +158,33 @@ function mutationMain(mode, root) {
 }
 
 /**
+ * Checks or raises the coverage baselines from the coverage summary; a miss also prints each file's detail.
+ * @param {string} mode `--check` or `--write`
+ * @param {string} root repo root
+ * @param {string} coverageDir directory holding coverage-summary.json, relative to `root`
+ * @returns {number} exit status
+ */
+function coverageMain(mode, root, coverageDir) {
+    const baselinePath = join(root, 'scripts/quality-baseline.json');
+    const summary = readJson(resolve(root, coverageDir, 'coverage-summary.json'), 'coverage summary');
+    const baseline = readJson(baselinePath, 'quality baseline');
+    const measured = measureScopes(summary, root);
+    if (mode === '--write') {
+        writeFileSync(baselinePath, `${JSON.stringify(raiseBaseline(measured, baseline), null, 2)}\n`);
+        return 0;
+    }
+    const failures = failedLimits(measured, baseline);
+    failures.forEach((failure) => console.error(failure.message));
+    if (failures.length > 0) {
+        const finalPath = resolve(root, coverageDir, 'coverage-final.json');
+        const final = existsSync(finalPath) ? readJson(finalPath, 'coverage detail') : {};
+        const files = Object.fromEntries(Object.entries(summary).filter(([file]) => file !== 'total'));
+        detailForScopes(files, final, root, failures).forEach((line) => console.error(line));
+    }
+    return failures.length === 0 ? 0 : 1;
+}
+
+/**
  * Splits the options after the mode.
  * @param {string[]} rest arguments after `--check` or `--write`
  * @returns {{mutation: boolean, coverageDir: string} | null} the options, or null when an argument is not understood
@@ -182,21 +219,11 @@ export function main(argv, root) {
         console.error('usage: quality-ratchet.mjs --check | --write [--mutation | --coverage-dir <dir>]');
         return 2;
     }
-    const baselinePath = join(root, 'scripts/quality-baseline.json');
     try {
         if (options.mutation) {
             return mutationMain(mode, root);
         }
-        const summary = readJson(resolve(root, options.coverageDir, 'coverage-summary.json'), 'coverage summary');
-        const baseline = readJson(baselinePath, 'quality baseline');
-        const measured = measureScopes(summary, root);
-        if (mode === '--write') {
-            writeFileSync(baselinePath, `${JSON.stringify(raiseBaseline(measured, baseline), null, 2)}\n`);
-            return 0;
-        }
-        const failures = compareScopes(measured, baseline);
-        failures.forEach((message) => console.error(message));
-        return failures.length === 0 ? 0 : 1;
+        return coverageMain(mode, root, options.coverageDir);
     } catch (error) {
         console.error(errorMessage(error));
         return 1;
