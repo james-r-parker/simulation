@@ -1,0 +1,27 @@
+{
+  "reference": "fixed",
+  "arms": {
+    "adaptive": {
+      "verdict": "incomparable",
+      "reason": "the arms' ladders have different stages: before nursery, hunt-contact, hunt-weak, hunt-mid, hunt; after nursery, hunt-contact, hunt; a score counts stages, so it is not comparable",
+      "compare": {
+        "pairs": [],
+        "matched": 0,
+        "tied": 0,
+        "up": 0,
+        "down": 0,
+        "onlyBefore": [],
+        "onlyAfter": [],
+        "meanDiff": 0,
+        "interval": {
+          "low": 0,
+          "high": 0
+        },
+        "p": 1,
+        "verdict": "incomparable",
+        "reason": "the arms' ladders have different stages: before nursery, hunt-contact, hunt-weak, hunt-mid, hunt; after nursery, hunt-contact, hunt; a score counts stages, so it is not comparable"
+      },
+      "failed": 9
+    }
+  }
+}
