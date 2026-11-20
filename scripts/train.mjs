@@ -33,6 +33,7 @@ import { applySteer, curveFields, episodeOverrides, steerOptions } from './lib/t
 import { loadPool, poolAfterCheckpoint, poolIndex, taskPool } from './lib/train-pool.mjs';
 import { buildManifest, manifestBase, partitionManifests, startLedger, writeManifest } from './lib/train-manifest.mjs';
 import { loadResume, loadStages, readJson, saveArchive } from './lib/train-state.mjs';
+import { createDrillCache } from './lib/drill-cache.mjs';
 import { createPool, resolvePoolSize, runPool } from './lib/worker-pool.mjs';
 
 export { parseArgs };
@@ -114,6 +115,7 @@ function usage(results, { wallSeconds, workers }) {
  * @property {import('../js/sim/log.js').SimLog} log the log
  * @property {number} workers the pool size
  * @property {import('./lib/worker-pool.mjs').Pool} workerPool the episode workers, kept alive for the whole run
+ * @property {import('./lib/drill-cache.mjs').DrillCache} drillCache the checkpoint drill results a later checkpoint reuses
  * @property {number} started `performance.now()` when the run began
  * @property {number} trainTicks ticks trained so far
  * @property {number} cpuSeconds seconds the pool has spent in episodes so far (this process: a resume starts at 0)
@@ -170,15 +172,9 @@ async function maybeCheckpoint(run, { drillTrials, gateTrials, crossTrials }) {
     }
     const keepers = run.stages.some((s) => s.keepPasser) ? { kept: run.keepers, stages: run.stages } : undefined;
     const steer = steerOptions(stage, state);
-    const options = {
-        workers: args.workers,
-        workerPool: run.workerPool,
-        evalTicks: args.ticks ?? EVAL_TICKS,
-        drillTrials,
-        gate,
-        keepers,
-        steer,
-    };
+    const { workerPool, drillCache } = run;
+    const evalTicks = args.ticks ?? EVAL_TICKS;
+    const options = { workers: args.workers, workerPool, drillCache, evalTicks, drillTrials, gate, keepers, steer };
     const result = await runCheckpoint({ archive, stage, progress, options, log });
     if (gate !== null && readsCrossplay(run.stages, state)) {
         const preyStages = preyVsStageNames(run.stages, state);
@@ -354,6 +350,7 @@ function startRun(args, log, commandLine) {
         log,
         workers,
         workerPool: createPool({ workerUrl: WORKER_URL, workers }),
+        drillCache: createDrillCache(),
         started,
         trainTicks: 0,
         cpuSeconds: 0,

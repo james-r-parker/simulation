@@ -76,7 +76,7 @@ export function averageMetrics(results) {
  * @property {import('./train-state.mjs').StageInfo} stage the stage of the last generation
  * @property {{generation: number, trainTicks: number, wallSeconds: number}} progress generations completed, ticks trained
  *   and wall seconds so far
- * @property {{workers: number | undefined, workerPool?: import('./worker-pool.mjs').Pool, evalTicks: number, drillTrials: number, gate?: {seed: number, trials: number} | null,
+ * @property {{workers: number | undefined, workerPool?: import('./worker-pool.mjs').Pool, drillCache?: import('./drill-cache.mjs').DrillCache, evalTicks: number, drillTrials: number, gate?: {seed: number, trials: number} | null,
  *   keepers?: {kept: Record<string, any[]>, stages: readonly any[]}, steer?: {drill: string, value: number}}} options
  *   the pool size, the run's kept-alive episode pool (`workerPool`; none: a fresh pool) and the sizes; `gate` reads the drills on the gate's seed and trial count and returns gate readings;
  *   `keepers` (with a gate) also drills each stage's kept passers (`readings.keepers`, scripts/lib/train-keepers.mjs); `steer`
@@ -103,6 +103,7 @@ async function drillPart({ archive, options, log }) {
         seed: gate?.seed ?? DRILL_SEED,
         trials: gate?.trials ?? options.drillTrials,
         workers: options.workers,
+        cache: options.drillCache,
     });
     const rows = await drillGenomes(args, { genomes, config: {}, log });
     return {
@@ -135,6 +136,7 @@ async function steerPart({ options, log }, subjects) {
         seed: gate.seed,
         trials: gate.trials,
         workers: options.workers,
+        cache: options.drillCache,
     });
     const rows = await drillGenomes(args, { genomes: subjects, config: sprintArena(value), log });
     return { drill, value, winShare: pooledWinShare(/** @type {any} */ (rows), subjects.length, drill) };
@@ -178,6 +180,7 @@ export async function runCheckpoint(run) {
                       stages: keepers.stages,
                       ...gate,
                       workers: run.options.workers,
+                      cache: run.options.drillCache,
                       log: run.log,
                   }),
               };
