@@ -12,11 +12,6 @@
   },
   "tunables": [
     {
-      "key": "plateauStop",
-      "stage": "nursery",
-      "values": [10, 0]
-    },
-    {
       "key": "preyShare",
       "stage": "hunt-weak",
       "values": [0.7, 1.0]
