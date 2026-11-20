@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { snapshotArchive } from '../js/evo/archive-snapshot.js';
-import { createTrainerArchive } from '../js/evo/trainer.js';
+import { OFFER_FROM_TICK, createTrainerArchive } from '../js/evo/trainer.js';
 import { createConfig } from '../js/sim/config.js';
 import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 import { runTrainTask } from '../scripts/train-worker.mjs';
@@ -42,5 +42,18 @@ describe('the scatter nursery world', () => {
             expect(result.population).toBeGreaterThan(0);
         },
         scaleTimeout(120000),
+    );
+
+    it(
+        'still has a population and offers a death once the offer window is open',
+        () => {
+            // At 20 items the founders starved before OFFER_FROM_TICK and E-TS-1m measured nothing.
+            const snapshot = snapshotArchive(createTrainerArchive(createConfig(OVERRIDES)));
+            const ticks = OFFER_FROM_TICK + 1000;
+            const result = runTrainTask({ seed: 1, overrides: OVERRIDES, snapshot, ticks });
+            expect(result.population).toBeGreaterThan(0);
+            expect(result.offers.length).toBeGreaterThan(0);
+        },
+        scaleTimeout(180000),
     );
 });
