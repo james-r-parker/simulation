@@ -122,5 +122,11 @@ export function createBorderLines({ info }) {
     }
     const mesh = createLineMesh(lines);
     mesh.upload();
-    return { object: mesh.object, dispose: mesh.dispose };
+    return {
+        object: mesh.object,
+        update(frame) {
+            mesh.object.visible = !frame.tv;
+        },
+        dispose: mesh.dispose,
+    };
 }

@@ -7,6 +7,7 @@ export const MOVE_THRESHOLD_PX = 4;
 /**
  * @typedef {object} InputEvent
  * @property {'pointermove' | 'pointerdown' | 'wheel' | 'keydown'} type what happened
+ * @property {string} [code] the key, for a `keydown`
  * @property {number} [x] the pointer position, for a `pointermove`
  * @property {number} [y] the pointer position, for a `pointermove`
  */

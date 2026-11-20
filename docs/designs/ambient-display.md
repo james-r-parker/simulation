@@ -52,6 +52,17 @@ TV mode is the unattended state. It starts with `?tv=1`, with the `T` key, and a
 | `director.max_kind_share`  | at most 0.4                                           |
 | `director.shots_per_hour`  | 60 to 240                                             |
 
+Read on 2026-11-20 with `npm run director:dry -- --seed <n>` (72000 ticks, the live policy, the default world; the director after Phase 1 chunk A):
+
+| Seed | `director.chase_precision` | `director.max_kind_share` | `director.shots_per_hour` |
+| ---- | -------------------------- | ------------------------- | ------------------------- |
+| 1    | 0.333 (1 of 3 chase shots) | 0.381                     | 63.0                      |
+| 2    | n/a (no chase shot)        | 0.417 (miss)              | 36.0 (miss)               |
+| 3    | 0.500 (2 of 4 chase shots) | 0.235                     | 102.0                     |
+| 4    | 0.250 (1 of 4 chase shots) | 0.323                     | 93.0                      |
+
+The Phase 1 bars are not all met. `director.chase_precision` misses on every seed, on 3 or 4 chase shots a run: the snapshot has no `hunting` bit yet (worker-and-renderer T48), so a chase is found from the geometry alone and few are found. Seed 2 holds `trample` at 0.417 of its shots and takes 36 shots an hour: that world offers one kind of moment most of the time, and the repeat penalty (the kind's share of the last 20 shots, forgotten after 15 simulated minutes) holds the count down. More kinds of moment, not a weaker penalty, is the fix; it is left to a following chunk.
+
 ## A death that reads
 
 A death has three beats, all on the wall clock, all anchored to the body.
@@ -125,7 +136,8 @@ Both stay inside their [crisp-renderer.md](crisp-renderer.md) budgets with the d
 
 | Chunk | Tasks    | Builder |
 | ----- | -------- | ------- |
-| A     | T1 to T5 | Sonnet  |
+| A     | T1 to T4 | Sonnet  |
+| A2    | T4b, T5  | Sonnet  |
 
 ### Phase 2 - A death that reads, and birth
 
@@ -175,12 +187,13 @@ Both stay inside budget with the reel's ring running; a clip is encoded off the 
 
 ## Decisions
 
-| Decision                                        | Holds because                                                                                                              |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| The membrane tears; nothing explodes            | The art direction is restrained; a cell lyses, it does not burst into sparks                                               |
-| Light is added on events only                   | [crisp-renderer.md](crisp-renderer.md) forbids idle glow; a 500 ms falloff on a kill keeps that rule and reads at distance |
-| The insights drawer computes nothing in the sim | Detectors are read, never rewarded (`docs/principles.md`); the drawer reads posted stats and the app's own logs            |
-| Every look change is verified on real WebGPU    | Software GL does not show the rim or MSAA as the OLED does                                                                 |
+| Decision                                                | Holds because                                                                                                                           |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| The membrane tears; nothing explodes                    | The art direction is restrained; a cell lyses, it does not burst into sparks                                                            |
+| Light is added on events only                           | [crisp-renderer.md](crisp-renderer.md) forbids idle glow; a 500 ms falloff on a kill keeps that rule and reads at distance              |
+| The variety penalty ages out after 15 simulated minutes | The repeat penalty is the kind's share of the last 20 shots; without an age cutoff a world with one kind of moment is shut out for good |
+| The insights drawer computes nothing in the sim         | Detectors are read, never rewarded (`docs/principles.md`); the drawer reads posted stats and the app's own logs                         |
+| Every look change is verified on real WebGPU            | Software GL does not show the rim or MSAA as the OLED does                                                                              |
 
 ## Delivery requirements
 
@@ -202,13 +215,14 @@ Both stay inside budget with the reel's ring running; a clip is encoded off the 
 
 ### Phase 1 - The director on air
 
-| #   | Task                                                                                                                                                                               | Nature      | Depends on |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
-| T1  | Build [worker-and-renderer.md](worker-and-renderer.md) T30: `ui/caption.js`, the director wired in `main.js` and the frame loop, the TV border, cursor hiding; mark it built there | [judgement] | -          |
-| T2  | Add `js/app/tv-mode.js`: enter by `?tv=1`, the `T` key and idle; leave on input with camera, speed and HUD restored; the app log events; tests                                     | [judgement] | T1         |
-| T3  | Build T52 (`director/pace.js`), T51 (the era card) and T49 (which T51 depends on) of that doc, with the shot floor, ceiling, wide interval and repeat penalty; tests               | [judgement] | T1         |
-| T4  | Build T50 (`npm run director:dry`) and record the three readings on seeds 1 to 4; add the `?tv=1` smoke spec and `--url-params` to `scripts/browser-perf.mjs` with a test          | [judgement] | T3         |
-| T5  | Conformance review of Phase 1 with `perf:browser` on the real GPU                                                                                                                  | [judgement] | T2, T4     |
+| #   | Task                                                                                                                                                                                                                                                                                              | Nature      | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T1  | Build [worker-and-renderer.md](worker-and-renderer.md) T30: `ui/caption.js`, the director wired in `main.js` and the frame loop, the TV border, cursor hiding; mark it built there                                                                                                                | [judgement] | -          |
+| T2  | Add `js/app/tv-mode.js`: enter by `?tv=1`, the `T` key and idle; leave on input with camera, speed and HUD restored; the app log events; tests                                                                                                                                                    | [judgement] | T1         |
+| T3  | Build T52 (`director/pace.js`), T51 (the era card) and T49 (which T51 depends on) of that doc, with the shot floor, ceiling, wide interval and repeat penalty; tests                                                                                                                              | [judgement] | T1         |
+| T4  | Build T50 (`npm run director:dry`) and record the three readings on seeds 1 to 4; add the `?tv=1` smoke spec and `--url-params` to `scripts/browser-perf.mjs` with a test                                                                                                                         | [judgement] | T3         |
+| T4b | Meet the `director:dry` bars without the `hunting` bit ([worker-and-renderer.md](worker-and-renderer.md) T48 waits on world-balance Phase 1): a chase shot found and held from pursuit geometry, more moment kinds so one kind cannot fill a world (seed 2); re-read seeds 1 to 4, bars unchanged | [judgement] | T4         |
+| T5  | Conformance review of Phase 1 with `perf:browser` on the real GPU                                                                                                                                                                                                                                 | [judgement] | T2, T4b    |
 
 ### Phase 2 - A death that reads, and birth
 

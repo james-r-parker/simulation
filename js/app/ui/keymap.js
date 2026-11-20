@@ -32,6 +32,7 @@ export const KEYMAP = Object.freeze([
     { action: 'toggleAudio', codes: ['KeyA'], title: 'Audio on or off' },
     { action: 'volumeDown', codes: ['Digit9'], title: 'Volume down' },
     { action: 'volumeUp', codes: ['Digit0'], title: 'Volume up' },
+    { action: 'toggleTv', codes: ['KeyT'], title: 'TV mode on or off' },
     { action: 'toggleWakeLock', codes: ['KeyK'], title: 'Wake lock on or off' },
     { action: 'exportArchive', codes: ['KeyE'], title: 'Export the archive' },
     { action: 'exportBundle', codes: ['KeyB'], title: 'Download the debug bundle' },

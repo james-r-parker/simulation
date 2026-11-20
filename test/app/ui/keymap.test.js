@@ -40,6 +40,7 @@ describe('actionForKey', () => {
         expect(actionForKey({ code: 'Digit9' })).toBe('volumeDown');
         expect(actionForKey({ code: 'Digit0' })).toBe('volumeUp');
         expect(actionForKey({ code: 'KeyK' })).toBe('toggleWakeLock');
+        expect(actionForKey({ code: 'KeyT' })).toBe('toggleTv');
         expect(actionForKey({ code: 'KeyE' })).toBe('exportArchive');
         expect(actionForKey({ code: 'KeyB' })).toBe('exportBundle');
         expect(actionForKey({ code: 'KeyP' })).toBe('screenshot');

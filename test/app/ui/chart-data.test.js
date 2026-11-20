@@ -34,11 +34,13 @@ describe('createSampler', () => {
                 deathsByCause: [2, 5],
                 combat: { caught: 3, escaped: 1 },
                 archive: { coverage: 0.25, occupiedCount: [7, 8] },
+                generationMax: 41,
             },
             out,
         );
         const at = (/** @type {string} */ name) => out[sampler.names.indexOf(name)];
         expect(at('pop.forager')).toBe(9);
+        expect(at('generation')).toBe(41);
         expect(at('river.id0')).toBe(17);
         expect(at('river.id1')).toBe(-1);
         expect(at('river.share0')).toBe(0.6);

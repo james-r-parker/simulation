@@ -531,3 +531,61 @@ html.cursor-hidden * {
     text-align: left;
     white-space: nowrap;
 }
+
+.caption {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 3rem;
+    text-align: center;
+    pointer-events: none;
+    color: var(--text);
+    font-size: 1.25rem;
+    text-shadow: 0 0 0.5rem #000;
+    opacity: 0;
+    transition: opacity 1s linear;
+}
+
+.caption.caption-on {
+    opacity: 0.7;
+}
+
+html.tv-mode,
+html.tv-mode * {
+    cursor: none !important;
+}
+
+.era-card {
+    position: fixed;
+    right: 2rem;
+    bottom: 3rem;
+    max-width: 24rem;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.55);
+    color: var(--text);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1s linear;
+}
+
+.era-card.era-on {
+    opacity: 0.7;
+}
+
+.era-title {
+    margin-bottom: 0.25rem;
+    color: var(--text-dim);
+    font-size: 0.875rem;
+}
+
+.era-lines {
+    white-space: pre-line;
+}
+
+.milestones {
+    margin: 0;
+    padding: 0 0 0 1rem;
+    font-size: 0.875rem;
+    color: var(--text-dim);
+}

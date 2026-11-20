@@ -69,7 +69,12 @@ const REFRESHERS = Object.freeze([
         wanted: () => true,
         run(/** @type {Record<string, any>} */ ctx, /** @type {number} */ now) {
             applyPixelShift(
-                persistentNodes({ ...ctx.deps.elements, title: ctx.card.element }),
+                persistentNodes({
+                    ...ctx.deps.elements,
+                    title: ctx.card.element,
+                    caption: ctx.tvUi.caption.element,
+                    era: ctx.tvUi.era.element,
+                }),
                 now / 1000,
                 ctx.shifted,
             );

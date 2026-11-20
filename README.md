@@ -66,12 +66,15 @@ All bindings are the `KEYMAP` in `js/app/ui/keymap.js`; `?` or `F1` lists them i
 | `1` to `4`                             | Lenses: temperature, scent trails, family territories, vision and calls                         |
 | `C`, `I`, `?`                          | Charts drawer, inspector (the selected blob's senses, hidden layer and actions), help           |
 | `H`, `Shift+F`                         | Hide the HUD, fullscreen                                                                        |
+| `T`                                    | TV mode on or off (the director takes the camera; any other input leaves it)                    |
 | `A`, `9`, `0`, `K`                     | Audio on or off, volume down and up, wake lock                                                  |
 | `E`, `B`                               | Export the archive, download the debug bundle (replays the run)                                 |
 | `P`, `Shift+P`                         | Screenshot with a caption plate, record a 15 s clip                                             |
 
-After 30 s without input the HUD fades; after 10 s idle a camera director takes over (`js/app/director/`) and returns
-control on any input. Lenses, HUD size and the colour palette (default, colour-blind safe, high contrast) are remembered.
+After 30 s without input the HUD fades. TV mode (`T`, `?tv=1`, or `tvIdleMinutes` (5) without input) hands the camera to
+a director (`js/app/director/`) that holds each shot between 6 and 90 s, names it in a caption and shows a wide shot at
+least every 10 minutes; any other input leaves it and restores the camera, the speed and the HUD.
+Lenses, HUD size and the colour palette (default, colour-blind safe, high contrast) are remembered.
 
 ### URL parameters
 

@@ -8,6 +8,15 @@ function memory() {
 }
 
 describe('prefs', () => {
+    it('keeps tvIdleMinutes at 5 by default, accepts 0 to a day and rejects the rest', () => {
+        expect(defaultPrefs().tvIdleMinutes).toBe(5);
+        expect(sanitizePrefs({ tvIdleMinutes: 0 }).tvIdleMinutes).toBe(0);
+        expect(sanitizePrefs({ tvIdleMinutes: 30 }).tvIdleMinutes).toBe(30);
+        for (const bad of [-1, 1441, 2.5, '5', null, Number.NaN]) {
+            expect(sanitizePrefs({ tvIdleMinutes: bad }).tvIdleMinutes).toBe(5);
+        }
+    });
+
     it('round trips through a storage', () => {
         const storage = memory();
         const prefs = { ...defaultPrefs(), lenses: [true, false, true, false], hud: false, volume: 0.25 };
