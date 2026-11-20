@@ -101,6 +101,8 @@ A death has three beats, all on the wall clock, all anchored to the body.
 - A starving body shows it before it dies: under 15% energy the swim loop amplitude and the fill fall together (a `failing` condition loop in `js/app/renderer/clips.js`), so a death by starvation is anticipated.
 - Birth: `birthPop` loses its elastic overshoot. A split is a fission (the parent's outline pinches and the child separates along the pinch axis); a mating birth is a bud that swells to size on an ease-out with no bounce.
 
+The organelle drift of the breaking beat is open as T10b: the rig moves the whole model, not parts, so until a per-part channel exists the whole model tears.
+
 The `tear` value rides the existing fade lane of a dying row, so the 16-attribute limit is not approached (10 used).
 
 ## Follow as a story
@@ -249,14 +251,15 @@ Both stay inside budget with the reel's ring running; a clip is encoded off the 
 
 ### Phase 2 - A death that reads, and birth
 
-| #   | Task                                                                                                                                                            | Nature       | Depends on |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T6  | Capture one kill, one starvation and one birth on the real GPU at x1 (`js/app/capture.js`) and attach the clips to the PR as the before                         | [mechanical] | -          |
-| T7  | Keep the live lanes on a pending body, cut the pending wait to 400 ms, and move death particles to the drawn position, body scale and wall clock; tests (built) | [judgement]  | T6         |
-| T8  | Add the `tear` parameter to the membrane SDF and the three beats per cause in `death-anim.js`, with the colour drain; WebGL2 path; tests (built)                | [judgement]  | T7         |
-| T9  | Cross-fade the carcass in over the leaving beat; add the `failing` loop under 15% energy; tests (built)                                                         | [judgement]  | T8         |
-| T10 | Replace `birthPop` with the fission and bud eases; tests (built)                                                                                                | [judgement]  | T6         |
-| T11 | Conformance review of Phase 2 with the after clips and `perf:browser` at 1000 agents                                                                            | [judgement]  | T9, T10    |
+| #    | Task                                                                                                                                                            | Nature       | Depends on |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T6   | Capture one kill, one starvation and one birth on the real GPU at x1 (`js/app/capture.js`) and attach the clips to the PR as the before                         | [mechanical] | -          |
+| T7   | Keep the live lanes on a pending body, cut the pending wait to 400 ms, and move death particles to the drawn position, body scale and wall clock; tests (built) | [judgement]  | T6         |
+| T8   | Add the `tear` parameter to the membrane SDF and the three beats per cause in `death-anim.js`, with the colour drain; WebGL2 path; tests (built)                | [judgement]  | T7         |
+| T9   | Cross-fade the carcass in over the leaving beat; add the `failing` loop under 15% energy; tests (built)                                                         | [judgement]  | T8         |
+| T10  | Replace `birthPop` with the fission and bud eases; tests (built)                                                                                                | [judgement]  | T6         |
+| T10b | Drift organelle parts outward a body radius over the breaking beat: needs a per-part rig channel; until then the whole model tears                              | [judgement]  | T8         |
+| T11  | Conformance review of Phase 2 with the after clips and `perf:browser` at 1000 agents                                                                            | [judgement]  | T9, T10    |
 
 ### Phase 3 - Follow as a story
 
