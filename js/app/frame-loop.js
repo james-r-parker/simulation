@@ -271,7 +271,7 @@ function createCameraStep(deps, getLoop) {
         getAgents: () => getLoop().agents,
         getPlayer: () => deps.refs.player,
     });
-    const followAt = { dtMs: 0, nowMs: 0, available: false, paused: false };
+    const followAt = { dtMs: 0, holdMs: 0, nowMs: 0, available: false, paused: false };
     const directorAt = {
         nowMs: 0,
         dtMs: 0,
@@ -283,11 +283,12 @@ function createCameraStep(deps, getLoop) {
         follow,
         step(client, { nowMs, interval, dtMs }) {
             const loop = getLoop();
-            followAt.dtMs = interval > MAX_DT_MS ? 0 : dtMs;
+            followAt.dtMs = dtMs;
+            followAt.holdMs = interval > MAX_DT_MS ? 0 : dtMs;
             followAt.nowMs = nowMs;
             followAt.available = loop.agents !== loop.empty;
             followAt.paused = Boolean(client.paused) || deps.hidden();
-            if (!directed(deps, directorAt, { client, tick: loop.tick, nowMs, dtMs: followAt.dtMs })) {
+            if (!directed(deps, directorAt, { client, tick: loop.tick, nowMs, dtMs: followAt.holdMs })) {
                 follow.step(followAt);
             }
         },

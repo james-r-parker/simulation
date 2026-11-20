@@ -59,9 +59,16 @@ function choose(f, preferred) {
     return pickFollowAgent(agents, f.context);
 }
 
+/** @param {{dtMs: number, holdMs?: number}} at frame time @returns {number} the ms this frame adds to a death hold */
+function holdOf(at) {
+    return at.holdMs ?? at.dtMs;
+}
+
 /**
  * @param {FollowState} f the controller
- * @param {{dtMs: number, nowMs: number, available: boolean, paused: boolean}} at frame time and availability
+ * @param {{dtMs: number, holdMs?: number, nowMs: number, available: boolean, paused: boolean}} at frame time and
+ *   availability; `dtMs` eases the camera (a slow frame still moves it), `holdMs` is what counts towards the death
+ *   hold and is 0 for a gap over `MAX_DT_MS` (defaults to `dtMs`)
  * @returns {void}
  */
 function stepFollow(f, at) {
@@ -78,7 +85,7 @@ function stepFollow(f, at) {
     const agents = getAgents();
     let i = findAgent(agents, state.followId);
     if (i < 0 && !at.paused) {
-        f.heldMs += at.dtMs;
+        f.heldMs += holdOf(at);
         if (f.heldMs >= FOLLOW_HOLD_MS) {
             state.followId = choose(f, 0);
             report(f, state.followId === 0 ? 'empty' : 'death', state.followId);
@@ -96,7 +103,7 @@ function stepFollow(f, at) {
 
 /**
  * @param {FollowDeps} deps injected current view, living subjects, effects and log
- * @returns {{choose: (preferred?: number) => number, step: (at: {dtMs: number, nowMs: number, available: boolean,
+ * @returns {{choose: (preferred?: number) => number, step: (at: {dtMs: number, holdMs?: number, nowMs: number, available: boolean,
  *   paused: boolean}) => void, reset: () => void}} controller with no per-frame allocation
  */
 export function createFollowController(deps) {

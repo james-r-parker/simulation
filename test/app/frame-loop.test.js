@@ -213,6 +213,21 @@ describe('createFrameLoop', () => {
         expect(loop.followAgent(deps.state.followId)).toBe(deps.state.followId);
     });
 
+    it('keeps easing the camera towards the follow subject when every frame is slower than MAX_DT_MS', () => {
+        const { client, pack } = fakeWorld();
+        const genome = client.latest.u32[HEADER_WORDS + AGENT_FIELD.GENOME];
+        const { deps, loop } = setup(client, pack);
+        deps.state.followId = genome;
+        pack.step(loop, 1000);
+        pack.step(loop, 1150);
+        const before = { x: deps.camera.x, y: deps.camera.y };
+        for (let t = 1300; t <= 2500; t += 150) {
+            pack.step(loop, t);
+        }
+        expect(deps.camera.following).toBe(true);
+        expect(deps.camera.x !== before.x || deps.camera.y !== before.y, 'the camera moved on slow frames').toBe(true);
+    });
+
     it('does not count a suspended hidden-tab interval toward a pending death handoff', () => {
         const { client, pack } = fakeWorld();
         const { deps, loop } = setup(client, pack);
