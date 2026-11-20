@@ -1,6 +1,6 @@
 # Metric noise
 
-**Status:** In progress - Phase 1 is built. Phase 2 has a terminal hunter count candidate with an E210 diagnostic; the longer verification runs are open. Phase 4 (six defects in the power, keep-rule and interval code found on 2026-11-20) is planned and is built first.
+**Status:** In progress - Phase 1 is built. Phase 2 has a terminal hunter count candidate with an E210 diagnostic; the longer verification runs are open. Phase 4 (the statistics layer) is built except T12, the settled hunter metrics' power read on the 128-seed E252 baseline, and its review T15.
 **Validated:** bc55972e (2026-11-20)
 **Priority:** 1 - Measurement lead. Phase 4 is built before any other read: the power readings, the keep rule and the 16-seed interval have defects (review of 2026-11-20), so no verdict is trusted until they are fixed; Phase 5 (the headline metrics) follows
 **Depends on:** [metric-trust.md](metric-trust.md)
@@ -416,16 +416,16 @@ A report holds 370 metrics; 54 of the 110 that carry a verdict can see a 20% cha
 
 ### Phase 4 - The statistics layer
 
-| #   | Task                                                                                                                                                                                              | Nature       | Depends on             |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------- |
-| T8  | D1: a failing test (`powerRow` on a noise metric with 16 of 128 nulls returns `detectable: null`), then the minimum valid share in `detectableChange`, `powerRow` and `setReading`                | [judgement]  | -                      |
-| T9  | Regenerate the power readings and `docs/designs/metrics.md` from the saved E210 report; list every metric that changes status in the PR body and fix any plan Target that named one as `verified` | [mechanical] | T8                     |
-| T10 | D2: a failing test (`keepRule` with an old-name before report returns `worse`), then `withCurrentNames` inside `keepRule` and the `incomplete` line for an `unchecked` guard                      | [judgement]  | -                      |
-| T11 | D3: add the four settled hunter metrics beside the old ones with arithmetic and source tests (a recount of kills and hunter ticks from `BURN_IN_TICKS`) and their registry entries                | [judgement]  | -                      |
-| T12 | Read the settled metrics' liveness and power on the shared baseline; move `GUARD_METRICS` to the settled catch metric if it meets the rule above, else record why not                             | [judgement]  | T9, T11                |
-| T13 | D4: the seeded null calibration test at 16, 32 and 64 seeds (failing at 16), then the studentised interval under 32 seeds in `bootstrapInterval` and `judge`                                      | [judgement]  | -                      |
-| T14 | D5 and D6: null `@20k` without its checkpoint, with a test; unit `share difference` on the ten metrics and its scoring in `js/evo/compare-rules.js`, with tests                                   | [mechanical] | -                      |
-| T15 | Conformance review of Phase 4                                                                                                                                                                     | [judgement]  | T9, T10, T12, T13, T14 |
+| #   | Task                                                                                                                                                                                                      | Nature       | Depends on             |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------- |
+| T8  | (built) D1: a failing test (`powerRow` on a noise metric with 16 of 128 nulls returns `detectable: null`), then the minimum valid share in `detectableChange`, `powerRow` and `setReading`                | [judgement]  | -                      |
+| T9  | (built) Regenerate the power readings and `docs/designs/metrics.md` from the saved E210 report; list every metric that changes status in the PR body and fix any plan Target that named one as `verified` | [mechanical] | T8                     |
+| T10 | (built) D2: a failing test (`keepRule` with an old-name before report returns `worse`), then `withCurrentNames` inside `keepRule` and the `incomplete` line for an `unchecked` guard                      | [judgement]  | -                      |
+| T11 | (built) D3: add the four settled hunter metrics beside the old ones with arithmetic and source tests (a recount of kills and hunter ticks from `BURN_IN_TICKS`) and their registry entries                | [judgement]  | -                      |
+| T12 | Read the settled metrics' liveness and power on the shared baseline; move `GUARD_METRICS` to the settled catch metric if it meets the rule above, else record why not                                     | [judgement]  | T9, T11                |
+| T13 | (built) D4: the seeded null calibration test at 16, 32 and 64 seeds (failing at 16), then the studentised interval under 32 seeds in `bootstrapInterval` and `judge`                                      | [judgement]  | -                      |
+| T14 | (built) D5 and D6: null `@20k` without its checkpoint, with a test; unit `share difference` on the ten metrics and its scoring in `js/evo/compare-rules.js`, with tests                                   | [mechanical] | -                      |
+| T15 | Conformance review of Phase 4                                                                                                                                                                             | [judgement]  | T9, T10, T12, T13, T14 |
 
 ### Phase 5 - Headline metrics
 
