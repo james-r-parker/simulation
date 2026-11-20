@@ -1,0 +1,5 @@
+{
+  "sprintStoreEnabled": true,
+  "sprintDrain": 0.01,
+  "specialisations": { "predator": { "sprintDrainMultiplier": 0.5 } }
+}
