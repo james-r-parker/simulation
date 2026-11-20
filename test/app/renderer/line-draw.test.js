@@ -41,4 +41,13 @@ describe('createBorderLines', () => {
         expect(Array.from(layer.object.geometry.attributes.iSeg.data.array.slice(8, 12))).toEqual([100, 0, 100, 50]);
         layer.dispose();
     });
+
+    it('is hidden in TV mode and back when it ends', () => {
+        const layer = createBorderLines({ info: { worldWidth: 100, worldHeight: 50 } });
+        layer.update?.(/** @type {any} */ ({ tv: true }));
+        expect(layer.object.visible).toBe(false);
+        layer.update?.(/** @type {any} */ ({ tv: false }));
+        expect(layer.object.visible).toBe(true);
+        layer.dispose();
+    });
 });

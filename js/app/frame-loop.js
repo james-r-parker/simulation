@@ -11,6 +11,9 @@ import { createPackFeed, exchangeFrame, isSeq, reportLate } from './pack/pack-fe
 import { beginEffects, playBumps, playEdges, playEffects, trackDying } from './renderer/effects-player.js';
 import { lensUniforms } from './ui/lenses.js';
 
+/** No lineages, for a frame before the first stats. */
+const NO_LINEAGES = /** @type {readonly {id: number}[]} */ (Object.freeze([]));
+
 /** The longest frame time the layers are told about, so a stalled tab does not jump motion. */
 export const MAX_DT_MS = 100;
 
@@ -32,6 +35,10 @@ export const MAX_DT_MS = 100;
  *   extension
  * @property {() => number} clock a high-resolution clock in ms, for the draw time
  * @property {() => boolean} hidden whether the tab is hidden
+ * @property {{step: (at: {nowMs: number, dtMs: number, tick: number, ready: Record<string, any> | null,
+ *   top: readonly {id: number}[]}) => boolean} | null} [director] the director's driver; while it holds the camera the
+ *   follow does not step
+ * @property {() => Record<string, any> | null} [getReady] the newest `ready` message, for the director
  * @property {(frame: import('./renderer/stage.js').Frame) => void} [afterDraw] runs right after `scene.draw` (for `P` screenshots)
  */
 
@@ -165,6 +172,7 @@ function newFrame(deps, lenses) {
         camera: deps.camera,
         selectedId: 0,
         followId: 0,
+        tv: false,
         leadLineageId: 0,
         season: 0,
         seasonProgress: 0,
@@ -194,6 +202,7 @@ function fillFrame(frame, { deps, loop, client }, { nowMs, dtMs }) {
     frame.prevSnapshot = /** @type {any} */ (loop.prevSnapshot);
     frame.selectedId = deps.state.selectedId;
     frame.followId = deps.state.followId;
+    frame.tv = deps.state.tv;
     fillStats(frame, client.stats);
 }
 
@@ -230,6 +239,62 @@ function drawAndRecord(deps, loop, { frame, started, interval }) {
 }
 
 /**
+ * @param {LoopDeps} deps the dependencies
+ * @param {{nowMs: number, dtMs: number, tick: number, ready: Record<string, any> | null, top: readonly {id: number}[]}} at
+ *   the director's input, rewritten
+ * @param {{client: Record<string, any>, tick: number, nowMs: number, dtMs: number}} frame the client and the frame's times
+ * @returns {boolean} whether the director holds the camera this frame
+ */
+function directed(deps, at, { client, tick, nowMs, dtMs }) {
+    if (deps.director === null || deps.director === undefined) {
+        return false;
+    }
+    at.nowMs = nowMs;
+    at.dtMs = dtMs;
+    at.tick = tick;
+    at.ready = deps.getReady?.() ?? null;
+    at.top = client.stats?.lineages?.top ?? NO_LINEAGES;
+    return deps.director.step(at);
+}
+
+/**
+ * The part of a frame that moves the camera: the director when it holds it, else the follow.
+ * @param {LoopDeps} deps the dependencies
+ * @param {() => LoopState} getLoop the loop state of the current world
+ * @returns {{follow: ReturnType<typeof createFollowController>, step: (client: Record<string, any>,
+ *   time: {nowMs: number, interval: number, dtMs: number}) => void}} the follow, and `step` for one frame
+ */
+function createCameraStep(deps, getLoop) {
+    const follow = createFollowController({
+        camera: deps.camera,
+        state: deps.state,
+        getAgents: () => getLoop().agents,
+        getPlayer: () => deps.refs.player,
+    });
+    const followAt = { dtMs: 0, nowMs: 0, available: false, paused: false };
+    const directorAt = {
+        nowMs: 0,
+        dtMs: 0,
+        tick: 0,
+        ready: /** @type {Record<string, any> | null} */ (null),
+        top: NO_LINEAGES,
+    };
+    return {
+        follow,
+        step(client, { nowMs, interval, dtMs }) {
+            const loop = getLoop();
+            followAt.dtMs = interval > MAX_DT_MS ? 0 : dtMs;
+            followAt.nowMs = nowMs;
+            followAt.available = loop.agents !== loop.empty;
+            followAt.paused = Boolean(client.paused) || deps.hidden();
+            if (!directed(deps, directorAt, { client, tick: loop.tick, nowMs, dtMs: followAt.dtMs })) {
+                follow.step(followAt);
+            }
+        },
+    };
+}
+
+/**
  * @param {LoopDeps} deps the dependencies; `scene` is read each frame, so it may be assigned after `createFrameLoop`
  * @returns {{frame: (nowMs: number) => void, reset: () => void, agents: () => import('./interpolate.js').Interpolated,
  *   lateFrames: () => number, followAgent: (preferred?: number) => number}} `frame` runs one animation frame at the callback's time; `reset` starts afresh for a new
@@ -239,20 +304,14 @@ export function createFrameLoop(deps) {
     let loop = freshState();
     const lenses = { temperature: false, scent: false, territory: false, vision: false, calls: false };
     const frame = newFrame(deps, lenses);
-    const follow = createFollowController({
-        camera: deps.camera,
-        state: deps.state,
-        getAgents: () => loop.agents,
-        getPlayer: () => deps.refs.player,
-    });
-    const followAt = { dtMs: 0, nowMs: 0, available: false, paused: false };
+    const camera = createCameraStep(deps, () => loop);
     return {
         reset() {
             loop = freshState();
-            follow.reset();
+            camera.follow.reset();
         },
         agents: () => loop.agents,
-        followAgent: follow.choose,
+        followAgent: camera.follow.choose,
         lateFrames: () => loop.feed.lateTotal,
         frame(nowMs) {
             const started = deps.clock();
@@ -266,11 +325,7 @@ export function createFrameLoop(deps) {
             loop.effectsAt.dtMs = dtMs;
             lensUniforms(deps.state.lenses, /** @type {any} */ (lenses));
             advanceWorld(client, deps, { loop, lenses }, { nowMs, interval });
-            followAt.dtMs = interval > MAX_DT_MS ? 0 : dtMs;
-            followAt.nowMs = nowMs;
-            followAt.available = loop.agents !== loop.empty;
-            followAt.paused = Boolean(client.paused) || deps.hidden();
-            follow.step(followAt);
+            camera.step(client, { nowMs, interval, dtMs });
             fillFrame(frame, { deps, loop, client }, { nowMs, dtMs });
             drawAndRecord(deps, loop, { frame, started, interval });
         },

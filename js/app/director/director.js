@@ -234,7 +234,7 @@ function syncDirectorSpeed(state, shotState) {
     if (!state.onSpeed || !state.speedForState) {
         return;
     }
-    const desired = state.speedForState(shotState, state.viewerSpeed);
+    const desired = state.speedForState(shotState, state.viewerSpeed, state.quiet);
     if (desired !== state.appliedSpeed) {
         state.appliedSpeed = desired;
         state.onSpeed(desired);
@@ -400,7 +400,7 @@ export function stepDirector(director, input) {
  * @param {{seed: number, canvas: {width: number, height: number}, world: {width: number, height: number},
  *   enabled?: boolean, viewerSpeed?: number, log?: typeof appLog,
  *   onSelect?: (genomeId: number) => void, onSpeed?: (speed: number) => void,
- *   speedForState?: (shotState: string, viewerSpeed: number) => number}} opts director configuration
+ *   speedForState?: (shotState: string, viewerSpeed: number, quiet: boolean) => number}} opts director configuration
  * @returns {{step: (input: Parameters<typeof stepDirector>[1]) => ReturnType<typeof stepDirector>,
  *   noteInput: () => void, startNow: () => void, setEnabled: (enabled: boolean) => void,
  *   isEnabled: () => boolean, isActive: () => boolean, setViewerSpeed: (speed: number) => void,
@@ -423,6 +423,7 @@ export function createDirector(opts) {
         appliedSpeed: /** @type {number | null} */ (null),
         shot: /** @type {import('./shots.js').PlannedShot | null} */ (null),
         caption: '',
+        quiet: true,
         lastDecisionS: -Infinity,
         lowScoreSinceS: /** @type {number | null} */ (null),
         lastShownS: /** @type {Record<string, number>} */ ({}),

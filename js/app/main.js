@@ -6,8 +6,9 @@ import { createActions, createAppState, DEFAULT_TICKS_PER_SECOND } from './actio
 import { appLog } from './app-log.js';
 import { createLayerBuilder, createLayerRefs } from './app-layers.js';
 import { createCameraController, resizeCamera } from './camera.js';
-import { clipSupported } from './capture.js';
 import { buildDebugBundle } from './debug-bundle.js';
+import { createDriver } from './director/driver.js';
+import { createDirectorFeed } from './director/feed.js';
 import { createFamilySlots } from './family-slots.js';
 import { createFrameLoop } from './frame-loop.js';
 import { bootPack, startPack } from './pack/pack-boot.js';
@@ -20,14 +21,12 @@ import { clientToDevice, deviceToClient, devicePerCss } from './canvas-geometry.
 import { agentAt } from './hover-pick.js';
 import { gpuTimeFor } from './gpu-time.js';
 import { createInterface } from './interface.js';
-import { listenPointers } from './pointer-events.js';
+import { listen, observeSize } from './page-listen.js';
 import { createPointerInput } from './pointer-input.js';
-import { canvasPixelSize } from './renderer/canvas-size.js';
 import { createStage } from './renderer/stage.js';
 import { chooseSeed } from './seed.js';
 import { createSupervisor } from './supervisor.js';
 import { createDownloader } from './ui/download.js';
-import { actionForKey } from './ui/keymap.js';
 import { unsupportedReason } from './support.js';
 import { configOverrides, readParams } from './url-params.js';
 import { createFxDev, fxAfterDraw, fxSink, readFxParams } from './fx-dev.js';
@@ -43,48 +42,6 @@ const PERF_FRAMES = 32768;
 function showMessage(container, text) {
     const p = Object.assign(document.createElement('p'), { className: 'app-message', textContent: text });
     container.appendChild(p);
-}
-
-/**
- * Wires the keys and the pointer.
- * @param {{canvas: HTMLCanvasElement, perform: (action: string) => void, input: ReturnType<typeof createPointerInput>,
- *   iface: ReturnType<typeof createInterface>, toDevice: (e: {clientX: number, clientY: number}) => {x: number, y: number}}} wiring the canvas,
- *   the action runner, the pointer handlers, the interface that hears every input and the client-to-device mapper
- * @returns {void}
- */
-function listen({ canvas, perform, input, iface, toDevice }) {
-    window.addEventListener('keydown', (e) => {
-        iface.noteInput({ type: 'keydown' });
-        const action = actionForKey(e, { clip: clipSupported(globalThis.MediaRecorder) });
-        if (action !== null) {
-            e.preventDefault();
-            perform(action);
-        }
-    });
-    listenPointers({ canvas, target: window, input, iface, toDevice });
-    canvas.addEventListener(
-        'wheel',
-        (e) => {
-            e.preventDefault();
-            iface.noteInput({ type: 'wheel' });
-            input.wheel(e.deltaY, toDevice(e).x, toDevice(e).y);
-        },
-        { passive: false },
-    );
-}
-
-/**
- * @param {HTMLElement} container the canvas parent
- * @param {(size: {width: number, height: number}) => void} onSize called with the canvas size in device pixels
- * @returns {void}
- */
-function observeSize(container, onSize) {
-    const observer = new ResizeObserver((entries) => onSize(canvasPixelSize(entries[0], container, devicePixelRatio)));
-    try {
-        observer.observe(container, { box: 'device-pixel-content-box' });
-    } catch {
-        observer.observe(container);
-    }
 }
 
 /**
@@ -106,6 +63,8 @@ function observeSize(container, onSize) {
  * @property {ReturnType<typeof bootPack>} pack the pack worker's client
  * @property {(action: string) => void} perform runs a shortcut action
  * @property {ReturnType<typeof createInterface>} iface the top bar, ticker, drawers and controls
+ * @property {ReturnType<typeof createDirectorFeed>} feed the effects and ticker the director reads
+ * @property {ReturnType<typeof createDriver>} driver the director on the page
  * @property {ReturnType<typeof createFxDev>} fxDev the effect developer tools, null unless the URL asks
  * @property {Promise<void> | null} [building] the stage being built for the first world
  */
@@ -121,7 +80,10 @@ async function buildStage(app) {
             refs: app.deps.refs,
             getReady: () => app.ready,
             slots: app.slots,
-            sink: (effect) => fxSink(app, effect),
+            sink(effect) {
+                app.feed.noteEffect(effect);
+                fxSink(app, effect);
+            },
         }),
         onRestored: () => (app.deps.gpuTimer = gpuTimeFor(app.deps.scene)),
     }).catch(() => null);
@@ -215,6 +177,7 @@ function makeSupervisor(app) {
             ...app.iface.listeners,
             onReady(message) {
                 onReady(app, message);
+                app.driver.onReady(message);
                 app.iface.listeners.onReady(message);
             },
             onSelection(message) {
@@ -290,12 +253,28 @@ function makeInterface(app) {
         pickAt: (device) => agentAt({ agents: app.loop.agents(), camera: app.camera, minPx: app.minPx }, device),
         toDevice: (client) => clientToDevice(app, client),
         speedPinned: app.params.speed !== null,
+        onTicker: (items) => app.feed.noteTicker(items),
+        onInput: () => leaveTv(app),
         tv: app.params.tv,
         audioOn: app.params.audio,
         AudioContext: /** @type {any} */ (globalThis).AudioContext ?? null,
         getCamera: () => app.camera,
         setWakeLock: (on) => wakeLock.setEnabled(on),
     });
+}
+
+/** Starts the director and the TV look. @param {App} app the page @returns {void} */
+function enterTv(app) {
+    app.driver.start();
+    app.iface.setTv(true);
+}
+
+/** Hands the camera back and restores the HUD. @param {App} app the page @returns {void} */
+function leaveTv(app) {
+    if (app.driver.running()) {
+        app.driver.stop();
+        app.iface.setTv(false);
+    }
 }
 
 /**
@@ -318,6 +297,8 @@ function createApp(container) {
         target: window,
     });
     app.slots = createFamilySlots();
+    app.feed = createDirectorFeed();
+    app.driver = createDriver({ camera, state, getClient: () => app.supervisor.client(), feed: app.feed });
     app.pack = bootPack(document);
     app.deps = {
         getClient: () => app.supervisor.client(),
@@ -332,6 +313,8 @@ function createApp(container) {
         hidden: () => document.hidden,
         afterDraw: (/** @type {any} */ frame) => fxAfterDraw(app, frame),
         getPack: () => app.pack.slots(),
+        director: app.driver,
+        getReady: () => app.ready,
     };
     app.loop = createFrameLoop(app.deps);
     app.iface = makeInterface(app);
@@ -387,8 +370,16 @@ function start() {
             app.deps.gpuTimer?.reset();
         },
     });
-    const tick = (/** @type {number} */ now) => (app.loop.frame(now), app.iface.tick(now), requestAnimationFrame(tick));
+    const tick = (/** @type {number} */ now) => {
+        app.loop.frame(now);
+        app.iface.setCaption(app.driver.caption());
+        app.iface.tick(now);
+        requestAnimationFrame(tick);
+    };
     requestAnimationFrame(tick);
+    if (app.params.tv) {
+        enterTv(app);
+    }
     app.supervisor.start(chooseSeed(app.params.seed));
 }
 

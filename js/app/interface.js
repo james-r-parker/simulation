@@ -12,6 +12,7 @@ import { assignSlots } from './family-slots.js';
 import { createIdleTracker } from './idle.js';
 import { refreshParts, REFRESH_MS } from './interface-refresh.js';
 import { dismissCard, firstVisit } from './interface-visit.js';
+import { mountTv } from './interface-tv.js';
 
 export { REFRESH_MS };
 
@@ -75,6 +76,8 @@ export function shouldOpenInspector(drawer, id, hudShown) {
  * @property {(new () => any) | null} AudioContext the Web Audio constructor
  * @property {() => {x: number, y: number, zoom: number, canvas: {width: number, height: number}}} getCamera the camera
  * @property {(on: boolean) => void} setWakeLock turns the screen wake lock on or off
+ * @property {(event: import('./idle.js').InputEvent) => void} [onInput] hears each input that counted, for TV mode
+ * @property {(items: any[]) => void} [onTicker] hears each ticker message, for the director's feed
  * @property {() => number} getWidth the canvas width in CSS px, for the automatic HUD size
  */
 
@@ -148,9 +151,10 @@ function mountParts(ctx) {
     });
     ctx.card = mountTitleCard(doc, elements.hud);
     ctx.peek = mountPeek(doc, elements.hud);
+    ctx.tvUi = mountTv(ctx);
     mountServices(ctx);
     applyScale(ctx);
-    elements.hud.classList.toggle('hud-hidden', ctx.hidden);
+    elements.hud.classList.toggle('hud-hidden', ctx.tvUi.hudHidden());
 }
 
 /**
@@ -188,6 +192,7 @@ function build(deps) {
         charts: /** @type {any} */ (null),
         help: /** @type {any} */ (null),
         card: /** @type {any} */ (null),
+        tvUi: /** @type {any} */ (null),
         peek: /** @type {any} */ (null),
         peekTracker: createPeekTracker(),
         shownCard: false,
@@ -242,7 +247,7 @@ function persist({ deps, prefs, hidden }) {
  */
 function setHud(ctx, hidden) {
     ctx.hidden = hidden;
-    ctx.deps.elements.hud.classList.toggle('hud-hidden', hidden);
+    ctx.deps.elements.hud.classList.toggle('hud-hidden', ctx.tvUi.hudHidden());
 }
 
 /**
@@ -315,7 +320,10 @@ function createListeners(ctx) {
             ctx.chartData.stats(stats, deps.now());
             ctx.audio.onStats(stats);
         },
-        onTicker: (/** @type {{text: string, kind: string}[]} */ items) => ctx.queue.push(items, deps.now()),
+        onTicker(/** @type {{text: string, kind: string}[]} */ items) {
+            ctx.queue.push(items, deps.now());
+            deps.onTicker?.(items);
+        },
         onArchive: (/** @type {string} */ json) =>
             deps.download({ name: `blob-archive-${deps.getReady()?.seed ?? 0}.json`, text: json }),
     };
@@ -328,7 +336,8 @@ function createListeners(ctx) {
  *   onEffect: (effect: import('./renderer/effects-player.js').Effect) => void,
  *   afterDraw: (frame: {tick: number}) => void, openInspectorOnPick: (id?: number) => void,
  *   resize: () => void, pointer: (x: number, y: number) => void, peekAt: (x: number, y: number) => void,
- *   peekHide: () => void, noteInput: (event: import('./idle.js').InputEvent) => boolean}} the interface
+ *   peekHide: () => void, noteInput: (event: import('./idle.js').InputEvent) => boolean,
+ *   setTv: (on: boolean) => void, setCaption: (text: string) => void, idleMs: () => number}} the interface
  */
 export function createInterface(deps) {
     const ctx = build(deps);
@@ -351,9 +360,13 @@ export function createInterface(deps) {
             const counted = ctx.idle.input(event);
             if (counted) {
                 dismissCard(ctx);
+                deps.onInput?.(event);
             }
             return counted;
         },
+        setTv: (on) => ctx.tvUi.setTv(on),
+        setCaption: (text) => void ctx.tvUi.caption.set(text),
+        idleMs: () => ctx.idle.idleMs(),
         resize: () => applyScale(ctx),
         tick(nowMs) {
             refreshParts(ctx, nowMs);
