@@ -294,7 +294,7 @@ bite energy taken, kills, children, fitness so far, `lastLoss`, `bittenTimer`, `
 
 | Kind                 | Position                     | `a`               | `b`                            | `c`                                                               | `d`                |
 | -------------------- | ---------------------------- | ----------------- | ------------------------------ | ----------------------------------------------------------------- | ------------------ |
-| `BORN`               | The newborn                  | `genomeId`        | `lineageId`                    | `spec`                                                            | Birth cause        |
+| `BORN`               | The newborn                  | `genomeId`        | `lineageId`                    | Mother `genomeId`, 0 when none (the spec is in the snapshot)      | Birth cause        |
 | `DIED`               | The agent's last known place | `genomeId`        | Killer `genomeId`, 0 when none | `spec`, death cause x 256, pack kill x 65536, deliberate x 131072 | `lineageId`        |
 | `BITE`               | The victim                   | Biter `genomeId`  | Victim `genomeId`              | Biter `spec`, victim `spec` x 256, deliberate x 65536             | Victim `lineageId` |
 | `ALARM`              | The caller                   | `genomeId`        | 0                              | `spec`                                                            | `lineageId`        |

@@ -1,5 +1,5 @@
 // The selected agent's overlays and the trails: its rays at their hit lengths, its two antennae, its call range, the trails
-// of the selected agent and the leading lineage, and the follow marker, all as line segments in one preallocated buffer.
+// of the selected agent and the leading lineage and the selection marker, all as line segments in one preallocated buffer.
 
 import { createSections, readSections } from '../snapshot-view.js';
 import { PALETTE } from './colors.js';
@@ -205,7 +205,6 @@ export function createOverlays({ info }) {
             }
             pushSelected(frame, info, lines);
             pushMarker(frame, lines, setMarker(frame.selectedId, 0.4, 1.7));
-            pushMarker(frame, lines, setMarker(frame.followId, 0.8, 2.2));
             mesh.upload();
         },
         dispose: mesh.dispose,

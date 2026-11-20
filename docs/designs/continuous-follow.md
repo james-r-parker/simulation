@@ -10,7 +10,7 @@ interest living agent. Entry sets `targetZoom` to `max(targetZoom, min(canvas.wi
 the existing camera zoom limits. A closer view stays close. Subsequent wheel, pinch and keyboard zoom changes persist.
 
 The camera follows one genome id until death or explicit cancellation. Missing subjects leave the camera at its last
-target for 650 ms of visible frame time, then hand off to the highest interest living agent. The delay freezes while
+target for the death clip's length plus 600 ms of visible frame time (ambient-display.md, "Follow as a story"), then hand off in order to the killer when the death was `EATEN`, a living child, the nearest living kin of the lineage, then the highest interest living agent. A 3 s caption names the relation ("its killer", "its daughter", "its kin") and an info record `FollowHandoff` (`from`, `to`, `relation`) logs it. The delay freezes while
 paused or hidden; frame gaps above 100 ms contribute no hold time. A stale selected id falls back immediately on entry. Empty populations end follow. Reset clears
 pending handoffs. No packed frame yet is not an empty population and cannot end follow. A second Follow press, Escape with no drawer, Home, drag or keyboard pan cancels follow.
 
@@ -19,7 +19,9 @@ of its pursuit score, a recent event score decaying to zero over 5 seconds, preg
 Both pursuit endpoints score 50 plus 30 times closeness. Movement means positive speed. Kill subjects are surviving biters; escape and smoke subjects are the victim
 or emitter. Birth and mating subjects receive a 45-point event remembered in the follow-interest ring. Dead ids cannot win.
 A proximity bonus of up to 8 points within 600 world units preserves local continuity between comparable subjects.
-Ties use distance, then lower genome id. Selection and the inspector stay independent of automatic handoffs.
+Ties use distance, then lower genome id. A subject with no event above the movement score for 120 s of unpaused time is left for the best other subject (`FollowHandoff` relation `bored`); a subject the viewer selected is exempt. When the selected agent is the followed subject, a handoff moves the selection (and so the inspector) to the new subject.
+
+The camera aims ahead of the body by its displayed velocity times 0.4 s (at most a fifth of the shorter side), frames both bodies of a pursuit at their midpoint inside the middle 60% of the view, and eases the zoom by state (closer on a meal or an event, wider with speed and in a pursuit). A viewer zoom overrides the state zoom until the next handoff. While paused none of these move the camera, so the subject stays at the centre. A plate beside the body (family, specialisation, age, children alive, kills, condition) shows for 6 s after each change; the `followPlate` preference turns it off.
 
 This serves **A real chase**, **Scavenge**, and **Condition changes the walk** in [principles.md](../principles.md).
 It changes the camera only; it adds no fitness reward, sim rule or worker command that affects evolution.

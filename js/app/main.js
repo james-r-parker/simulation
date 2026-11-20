@@ -28,7 +28,7 @@ import { createStage } from './renderer/stage.js';
 import { chooseSeed } from './seed.js';
 import { createSupervisor } from './supervisor.js';
 import { createDownloader } from './ui/download.js';
-import { unsupportedReason } from './support.js';
+import { safeStorage, unsupportedReason } from './support.js';
 import { configOverrides, readParams } from './url-params.js';
 import { createFxDev, fxAfterDraw, fxSink, readFxParams } from './fx-dev.js';
 import { createWakeLock } from './wake-lock.js';
@@ -212,17 +212,6 @@ async function loadUPlot() {
 }
 
 /**
- * @returns {Storage | null} `localStorage`, or null where reading it throws (blocked site data)
- */
-function safeStorage() {
-    try {
-        return localStorage;
-    } catch {
-        return null;
-    }
-}
-
-/**
  * @param {App} app the page, whose supervisor does not exist yet
  * @returns {ReturnType<typeof createInterface>} the interface over the page's elements
  */
@@ -261,6 +250,7 @@ function makeInterface(app) {
         audioOn: app.params.audio,
         AudioContext: /** @type {any} */ (globalThis).AudioContext ?? null,
         getCamera: () => app.camera,
+        getFollowView: () => ({ agents: app.loop.agents(), player: app.deps.refs.player }),
         setWakeLock: (on) => wakeLock.setEnabled(on),
     });
 }
@@ -285,6 +275,11 @@ function createLoopDeps(app) {
         getPack: () => app.pack.slots(),
         director: app.driver,
         getReady: () => app.ready,
+        select(/** @type {number} */ id) {
+            app.state.selectedId = id;
+            app.supervisor.client()?.select(id);
+            app.iface.syncRays();
+        },
     };
 }
 
@@ -370,7 +365,7 @@ function start() {
     });
     const tick = (/** @type {number} */ now) => {
         app.loop.frame(now);
-        app.iface.setCaption(app.driver.caption());
+        app.iface.setCaption(app.driver.caption() || app.loop.followCaption());
         app.tv.tick();
         const era = app.driver.takeEra();
         if (era !== null) {

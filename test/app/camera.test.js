@@ -3,6 +3,9 @@ import {
     createCameraController,
     fitZoom,
     followStep,
+    followSubject,
+    LOOK_AHEAD_CAP,
+    pairZoom,
     moveCameraTo,
     panByPixels,
     resizeCamera,
@@ -189,5 +192,62 @@ describe('viewBounds', () => {
         moveCameraTo(c, { x: 1000, y: 1000, zoom: 1 }, true);
         const b = viewBounds(c, { left: 0, right: 0, top: 0, bottom: 0 });
         expect([b.right - b.left, b.top - b.bottom]).toEqual([3840, 2160]);
+    });
+});
+
+describe('followSubject', () => {
+    const size = { canvas: { width: 3840, height: 2160 }, world: { width: 7680, height: 4320 } };
+    const subject = (/** @type {Record<string, any>} */ over = {}) => ({
+        x: 3000,
+        y: 2000,
+        vx: 0,
+        vy: 0,
+        pair: false,
+        px: 0,
+        py: 0,
+        zoom: 0,
+        ...over,
+    });
+
+    it('aims ahead of the body by its velocity times 0.4 s', () => {
+        const c = createCameraController(size);
+        followSubject(c, subject({ vx: 100, vy: -50 }), 16);
+        expect([c.targetX, c.targetY]).toEqual([3040, 1980]);
+        expect(c.following).toBe(true);
+    });
+
+    it('caps the look-ahead at a fifth of the shorter side at the current zoom', () => {
+        const c = createCameraController(size);
+        moveCameraTo(c, { x: 3000, y: 2000, zoom: 0.5 }, true);
+        followSubject(c, subject({ vx: 90000, vy: 0 }), 16);
+        const cap = (Math.min(c.canvas.width, c.canvas.height) / 0.5) * LOOK_AHEAD_CAP;
+        expect(c.targetX - 3000).toBeCloseTo(cap, 6);
+        expect(c.targetY).toBeCloseTo(2000, 6);
+        followSubject(c, subject({ vx: 0, vy: -90000 }), 16);
+        expect(2000 - c.targetY).toBeCloseTo(cap, 6);
+    });
+
+    it('frames a pair at its midpoint with both bodies inside the middle 60% of the view', () => {
+        const c = createCameraController(size);
+        const s = subject({ pair: true, px: 3800, py: 2300, zoom: 3 });
+        followSubject(c, s, 16);
+        expect([c.targetX, c.targetY]).toEqual([3400, 2150]);
+        expect(c.targetZoom).toBeCloseTo(pairZoom(c, s), 9);
+        expect(c.targetZoom).toBeLessThan(3);
+        const half = { x: (0.3 * c.canvas.width) / c.targetZoom, y: (0.3 * c.canvas.height) / c.targetZoom };
+        expect(Math.abs(s.x - c.targetX)).toBeLessThanOrEqual(half.x + 1e-6);
+        expect(Math.abs(s.y - c.targetY)).toBeLessThanOrEqual(half.y + 1e-6);
+        expect(Math.abs(s.px - c.targetX)).toBeLessThanOrEqual(half.x + 1e-6);
+        expect(Math.abs(s.py - c.targetY)).toBeLessThanOrEqual(half.y + 1e-6);
+    });
+
+    it('keeps a wanted zoom a pair already fits, leaves the zoom alone at 0, and stays inside the world', () => {
+        const c = createCameraController(size);
+        followSubject(c, subject({ pair: true, px: 3010, py: 2010, zoom: 0.4 }), 16);
+        expect(c.targetZoom).toBeCloseTo(0.4, 9);
+        c.targetZoom = 0.9;
+        followSubject(c, subject({ x: -50, y: 99999, vx: -1000 }), 16);
+        expect(c.targetZoom).toBe(0.9);
+        expect([c.targetX, c.targetY]).toEqual([0, c.world.height]);
     });
 });

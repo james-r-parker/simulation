@@ -8,7 +8,8 @@ const CONTINUITY_RANGE = 600;
 const CONTINUITY_BONUS = 8;
 const LIFE_SCORE = 45;
 const PREGNANCY_SCORE = 35;
-const MOVEMENT_SCORE = 5;
+/** The score of a moving agent: an event must beat it to hold a follow (`follow.js`, boredom). */
+export const MOVEMENT_SCORE = 5;
 
 /**
  * @typedef {object} FollowInterest
@@ -62,7 +63,7 @@ export function noteFollowInterest(memory, effect, ctx) {
  * @param {number} nowMs displayed time
  * @returns {number} the strongest unexpired event score
  */
-function eventScore(memory, id, nowMs) {
+export function eventScore(memory, id, nowMs) {
     let score = 0;
     for (let k = 0; k < memory.count; k++) {
         if (memory.subject[k] !== id && memory.partner[k] !== id) {
@@ -92,30 +93,46 @@ function pursuitScore(pairs, index) {
 }
 
 /**
+ * How interesting one agent is right now, before the proximity bonus: the largest of its pursuit score, its recent event
+ * score, pregnancy and movement. `follow.js` reads it to tell a subject that has gone quiet.
+ * @param {import('./interpolate.js').Interpolated} agents the displayed living agents
+ * @param {number} i the agent's frame index
+ * @param {{player: import('./renderer/effects-player.js').EffectsPlayer | null, nowMs: number}} context effects, time
+ * @returns {number} its interest score
+ */
+export function interestOf(agents, i, { player, nowMs }) {
+    let score = agents.speed[i] > 0 ? MOVEMENT_SCORE : 0;
+    if (player !== null) {
+        score = Math.max(
+            score,
+            eventScore(player.followInterest, agents.genomeId[i], nowMs),
+            pursuitScore(player.flee.pursuits, i),
+        );
+        if ((agents.flags[i] & player.bits.PREGNANT) !== 0) {
+            score = Math.max(score, PREGNANCY_SCORE);
+        }
+    }
+    return score;
+}
+
+/**
  * @param {import('./interpolate.js').Interpolated} agents the displayed living agents
  * @param {{player: import('./renderer/effects-player.js').EffectsPlayer | null, nowMs: number,
- *   x: number, y: number}} context effects/pursuits and the last camera target
+ *   x: number, y: number, skip?: number}} context effects/pursuits, the last camera target and a genome id to leave out
  * @returns {number} the best living genome id, 0 for an empty population; ties use distance then genome id
  */
-export function pickFollowAgent(agents, { player, nowMs, x, y }) {
+export function pickFollowAgent(agents, context) {
+    const { x, y, skip = 0 } = context;
     let bestId = 0;
     let bestScore = -Infinity;
     let bestDistance = Infinity;
     for (let i = 0; i < agents.count; i++) {
         const id = agents.genomeId[i];
-        const distance = Math.hypot(agents.x[i] - x, agents.y[i] - y);
-        let score = agents.speed[i] > 0 ? MOVEMENT_SCORE : 0;
-        if (player !== null) {
-            score = Math.max(
-                score,
-                eventScore(player.followInterest, id, nowMs),
-                pursuitScore(player.flee.pursuits, i),
-            );
-            if ((agents.flags[i] & player.bits.PREGNANT) !== 0) {
-                score = Math.max(score, PREGNANCY_SCORE);
-            }
+        if (id === skip) {
+            continue;
         }
-        score += CONTINUITY_BONUS * Math.max(0, 1 - distance / CONTINUITY_RANGE);
+        const distance = Math.hypot(agents.x[i] - x, agents.y[i] - y);
+        const score = interestOf(agents, i, context) + CONTINUITY_BONUS * Math.max(0, 1 - distance / CONTINUITY_RANGE);
         if (
             score > bestScore ||
             (score === bestScore && (distance < bestDistance || (distance === bestDistance && id < bestId)))

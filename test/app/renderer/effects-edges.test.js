@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { LIFE } from '../../../js/app/life-line.js';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
 import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
 import { PALETTE } from '../../../js/app/renderer/colors.js';
@@ -94,6 +95,16 @@ describe('playEdges: sickness', () => {
         run(player, [30, 30 | BITS.INFECTED, 30]);
         expect(player.fx.pool.spawned).toBe(8 + 7);
         expect(player.fx.pool.color[14 * 4]).toBeCloseTo(PALETTE.recover[0] * 0.8);
+    });
+});
+
+describe('playEdges: the life line', () => {
+    it('remembers a meal for the eater even with no sink', () => {
+        const player = createEffectsPlayer({ layout, info });
+        step(player, { tick: 1, ate: 20, foods: [] });
+        step(player, { tick: 3, ate: 1, foods: [] });
+        expect(player.life.count).toBe(1);
+        expect(player.life.code[0]).toBe(LIFE.MEAL);
     });
 });
 

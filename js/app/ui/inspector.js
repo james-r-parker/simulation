@@ -3,6 +3,7 @@
 // canvases are drawn by `drawRadar` and `drawHeatmap`, which take a 2D context so tests can record them.
 
 import { HEATMAP_COLUMNS } from './inspector-data.js';
+import { LIFE_LABELS } from '../life-line.js';
 import { specCss } from './css-color.js';
 import { createIcon } from './silhouette-icons.js';
 
@@ -158,6 +159,7 @@ function buildFrame(doc, root) {
         body,
         header: add(doc, body, 'div', 'inspector-header'),
         now: add(doc, body, 'p', 'inspector-now'),
+        life: add(doc, body, 'div', 'inspector-life'),
     };
     const radar = add(doc, body, 'canvas', 'inspector-radar');
     const groups = add(doc, body, 'div', 'inspector-groups');
@@ -241,10 +243,29 @@ function writeRows(rows, view) {
 }
 
 /**
+ * Rewrites the life line: a chip for each of the subject's last events, oldest first, or a note when there are none.
+ * @param {Doc} doc the document
+ * @param {any} node the life line node
+ * @param {{codes: Uint8Array, count: number}} events the `LIFE` codes
+ * @returns {void}
+ */
+function showLife(doc, node, { codes, count }) {
+    node.replaceChildren();
+    if (count === 0) {
+        add(doc, node, 'span', 'life-none').textContent = 'no events yet';
+    }
+    for (let k = 0; k < count; k++) {
+        const chip = add(doc, node, 'span', `life-chip life-${codes[k]}`);
+        chip.textContent = LIFE_LABELS[codes[k]];
+    }
+}
+
+/**
  * @param {Doc} doc the document
  * @param {any} root the inspector drawer body
- * @returns {{update: (view: import('./inspector-data.js').InspectorView) => void}} `update` draws a view; an invalid
- *   view shows the "click an agent" message and hides the rest
+ * @returns {{update: (view: import('./inspector-data.js').InspectorView) => void,
+ *   setLife: (codes: Uint8Array, count: number) => void}} `update` draws a view; an invalid view shows the "click an
+ *   agent" message and hides the rest; `setLife` shows the subject's last events, writing only when they change
  */
 export function mountInspector(doc, root) {
     const nodes = buildFrame(doc, root);
@@ -253,7 +274,18 @@ export function mountInspector(doc, root) {
     /** @type {Rows | null} */
     let rows = null;
     let who = -1;
+    let lifeKey = -1;
     return {
+        setLife(codes, count) {
+            let key = count;
+            for (let k = 0; k < count; k++) {
+                key = key * 8 + codes[k];
+            }
+            if (key !== lifeKey) {
+                lifeKey = key;
+                showLife(doc, nodes.life, { codes, count });
+            }
+        },
         update(view) {
             nodes.empty.hidden = view.valid;
             nodes.body.hidden = !view.valid;

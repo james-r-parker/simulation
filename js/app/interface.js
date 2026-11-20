@@ -11,6 +11,7 @@ import { mountAudio } from './audio/audio.js';
 import { clipSupported, createCapture } from './capture.js';
 import { assignSlots } from './family-slots.js';
 import { createIdleTracker } from './idle.js';
+import { LIFE_EVENTS } from './life-line.js';
 import { refreshParts, REFRESH_MS } from './interface-refresh.js';
 import { dismissCard, firstVisit } from './interface-visit.js';
 import { mountTv } from './interface-tv.js';
@@ -39,6 +40,7 @@ import { mountHelp } from './ui/help.js';
 import { mountInspector } from './ui/inspector.js';
 import { wantsRays } from './ui/lenses.js';
 import { createTickerQueue, mountTicker } from './ui/ticker.js';
+import { mountSubjectPlate } from './ui/subject-plate.js';
 import { mountTitleCard } from './ui/title-card.js';
 import { createToaster } from './ui/toast.js';
 import { mountTopBar } from './ui/top-bar.js';
@@ -90,6 +92,9 @@ export function shouldOpenInspector(drawer, id, hudShown) {
  * @property {(event: import('./idle.js').InputEvent) => void} [onInput] hears each input that counted, for TV mode
  * @property {(items: any[]) => void} [onTicker] hears each ticker message, for the director's feed
  * @property {() => number} getWidth the canvas width in CSS px, for the automatic HUD size
+ * @property {() => {agents: import('./interpolate.js').Interpolated,
+ *   player: import('./renderer/effects-player.js').EffectsPlayer | null} | null} [getFollowView] the frame's agents and
+ *   effects player, for the subject plate
  */
 
 /**
@@ -163,6 +168,7 @@ function mountParts(ctx) {
     ctx.card = mountTitleCard(doc, elements.hud);
     ctx.peek = mountPeek(doc, elements.hud);
     ctx.tvUi = mountTv(ctx);
+    ctx.plate = mountSubjectPlate(doc, doc.body);
     mountServices(ctx);
     applyScale(ctx);
     elements.hud.classList.toggle('hud-hidden', ctx.tvUi.hudHidden());
@@ -178,7 +184,7 @@ function build(deps) {
     prefs.lenses.forEach((on, i) => (state.lenses[i] = on));
     deps.slots.palette = prefs.palette;
     const toaster = createToaster({ doc, setTimer: deps.setTimer, parent: elements.hud });
-    const lastKeys = ['bar', 'ticker', 'inspector', 'charts', 'idle', 'shift', 'card', 'peek'];
+    const lastKeys = ['bar', 'ticker', 'inspector', 'charts', 'idle', 'shift', 'card', 'peek', 'plate'];
     const ctx = {
         deps,
         prefs,
@@ -204,6 +210,8 @@ function build(deps) {
         help: /** @type {any} */ (null),
         card: /** @type {any} */ (null),
         tvUi: /** @type {any} */ (null),
+        plate: /** @type {any} */ (null),
+        lifeCodes: new Uint8Array(LIFE_EVENTS),
         peek: /** @type {any} */ (null),
         peekTracker: createPeekTracker(),
         shownCard: false,

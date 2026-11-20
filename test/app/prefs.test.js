@@ -8,6 +8,12 @@ function memory() {
 }
 
 describe('prefs', () => {
+    it('shows the follow plate by default and keeps only a boolean choice', () => {
+        expect(defaultPrefs().followPlate).toBe(true);
+        expect(sanitizePrefs({ followPlate: false }).followPlate).toBe(false);
+        expect(sanitizePrefs({ followPlate: 'no' }).followPlate).toBe(true);
+    });
+
     it('keeps tvIdleMinutes at 5 by default, accepts 0 to a day and rejects the rest', () => {
         expect(defaultPrefs().tvIdleMinutes).toBe(5);
         expect(sanitizePrefs({ tvIdleMinutes: 0 }).tvIdleMinutes).toBe(0);

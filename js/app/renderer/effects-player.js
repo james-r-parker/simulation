@@ -3,6 +3,8 @@
 // dropped unplayed.
 
 import { createFollowInterest, noteFollowInterest } from '../follow-target.js';
+import { createStory, noteStory } from '../follow-handoff.js';
+import { createLifeLine, noteLife } from '../life-line.js';
 import { createFamilySlots } from '../family-slots.js';
 import { PALETTE } from './colors.js';
 import { spawnMateThread } from './mate-threads.js';
@@ -66,6 +68,10 @@ export { BIRTH_SIZE, JAW_REACH } from './effects-combat.js';
  * @property {import('./effects-flee.js').FleeState} flee the pursuit pairs and who flees this frame
  * @property {import('./effects-terrain.js').CrossState} crossings each slot's side of the wall
  * @property {import('../follow-target.js').FollowInterest} followInterest recent subject events
+ * @property {import('../follow-handoff.js').Story} story the deaths and births a follow hands off by
+ * @property {import('../life-line.js').LifeLine} life the recent events of every agent, for the inspector's life line
+ * @property {{kinds: Record<string, number>, eatenCause: number, causeNames: readonly string[]}} storyCtx the layout
+ *   codes `noteStory` reads
  * @property {import('../director/moment-log.js').MomentLog} moments the notable moments played, for the pointers and
  *   `focusLast`
  * @property {{kinds: Record<string, number>, eatenCause: number, trampled: number, nowMs: number}} momentCtx scratch for
@@ -142,6 +148,9 @@ export function createEffectsPlayer({
         bumps: createBumps(info.maxAgents ?? 1024),
         crossings: /** @type {any} */ (null),
         followInterest: createFollowInterest(),
+        story: createStory(),
+        life: createLifeLine(),
+        storyCtx: /** @type {any} */ (null),
         moments: /** @type {any} */ (null),
         momentCtx: /** @type {any} */ (null),
         bits: layout.flags ?? {},
@@ -164,6 +173,7 @@ export function createEffectsPlayer({
     player.crossings = createCrossings(info);
     player.moments = createMomentLog();
     player.momentCtx = momentCtxOf(layout);
+    player.storyCtx = { kinds: player.kinds, eatenCause: player.eatenCause, causeNames: player.causeNames };
     return player;
 }
 
@@ -275,6 +285,8 @@ export function playEffects(player, queue, agents, tick) {
         dispatch(player, agents);
         noteMoment(player.moments, e, player.momentCtx);
         noteFollowInterest(player.followInterest, e, player.momentCtx);
+        noteStory(player.story, e, player.storyCtx);
+        noteLife(player.life, e, player.storyCtx);
         player.sink?.(e);
     }
     return played;
