@@ -46,6 +46,16 @@ describe('lifeLeak', () => {
         const want = (leakRateOf(-2, world.config.leakMin) + leakRateOf(3, world.config.leakMin)) / 2;
         expect(lifeLeak(world, slot)).toBeCloseTo(want, 6);
     });
+
+    it('skips knocked units and returns NaN when all units are knocked', () => {
+        const { world } = observed({ brainHidden: 2, maxAgents: 8 });
+        const slot = addBlob(world);
+        const at = slot * world.layout.weightCount + world.layout.leakStart;
+        world.weights.set([-8, 3], at);
+        expect(lifeLeak(world, slot)).toBeCloseTo(leakRateOf(3, world.config.leakMin), 6);
+        world.weights.set([-8, -9], at);
+        expect(Number.isNaN(lifeLeak(world, slot))).toBe(true);
+    });
 });
 
 describe('the leak-skill correlations', () => {

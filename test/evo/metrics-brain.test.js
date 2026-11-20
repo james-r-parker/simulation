@@ -33,6 +33,8 @@ const NAMES = [
     'eval.input_active_share',
     'eval.input_active_share.threat',
     'eval.input_active_share.prey',
+    'eval.knockout_unit_share',
+    'eval.knockout_unit_share.hunter',
     'eval.weight_drift_silent',
     'eval.weight_clamp_share',
     'eval.rare_input_saturation_jump',

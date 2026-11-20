@@ -233,6 +233,8 @@
   "eval.juvenile_sibling_distance",
   "eval.kin_nearby_threat_gain",
   "eval.kin_within_call_radius",
+  "eval.knockout_unit_share",
+  "eval.knockout_unit_share.hunter",
   "eval.leak_at_floor_share",
   "eval.leak_flee_corr",
   "eval.leak_forage_corr",

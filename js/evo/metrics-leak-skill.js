@@ -6,7 +6,7 @@
 // no kill (or a specialisation that cannot hunt), no escaped bite episode. All `watch`.
 
 import { createLog, ensureRoom } from './growable-log.js';
-import { leakRateOf } from '../sim/traits.js';
+import { isKnockedOut, leakRateOf } from '../sim/traits.js';
 import { none, ok, pearson } from './metrics-stats.js';
 
 /** Lives needed for the forage correlation. */
@@ -67,10 +67,16 @@ export function lifeLeak(world, slot) {
     const { layout, weights, config } = world;
     const genes = slot * layout.weightCount + layout.leakStart;
     let sum = 0;
+    let active = 0;
     for (let j = 0; j < layout.hidden; j++) {
-        sum += leakRateOf(weights[genes + j], config.leakMin);
+        const gene = weights[genes + j];
+        if (isKnockedOut(gene)) {
+            continue;
+        }
+        sum += leakRateOf(gene, config.leakMin);
+        active += 1;
     }
-    return sum / layout.hidden;
+    return active > 0 ? sum / active : NaN;
 }
 
 /**
