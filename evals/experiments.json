@@ -5097,6 +5097,22 @@
       "effect": "no-difference",
       "note": "Prediction falsified for nursery, met for preyShare. Run E-TL-6 (ladder hash 32041bc8, until hunt-mid, 16 tune offsets). Nursery plateauStop 10: 16 of 16 tied, pass shares identical to base (nursery 56%, hunt-contact 56%, hunt-weak 25%, hunt-mid 19%), cpu +2%; nursery has maxGenerations 40 and plateauStop 6 at checkpointEvery 5, so with either raised alone the other still ends the stage near 40 generations (E208's maxGenerations 80 arm also tied 16 of 16). hunt-weak preyShare 1.0: 1 up, 4 down, 11 tied, mean score diff -0.124, no verdict; hunt-weak passes 25 to 19%, hunt-mid 19 to 13%, cpu 18.2 to 38.9 h (+113%), cpu per hunt-weak pass 0.81 to 8.03 h. Worse, not adopted. The one-change tuning lane cannot find a fix that needs two settings moved together (T22c, T22d).",
       "reports": ["evals/decisions/E230/results.md"]
+    },
+    {
+      "id": "E231",
+      "date": "2026-11-20",
+      "branch": "feat/training-loop-e231",
+      "hypothesis": "E-TL-7 (training-loop T22c): nursery is capped by both maxGenerations 40 and plateauStop 6 (E208 and E230 each moved one and tied on 16 of 16), so lifting both together should let the 7 stalled offsets pass.",
+      "prediction": "Written before the run: nursery passes on at least 11 of 16 offsets against 9 and the screen reads better; falsified if the stalled offsets still stall (then nursery is a skill limit, not a budget limit).",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "base ladder: nursery passes on 9 of 16 tune offsets",
+      "after": "scripts/run-detached.sh E-TL-7 --frozen -- npm run train:screen -- --grid evals/train-screens/nursery-both.grid.json",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Prediction only; the run is in flight.",
+      "reports": ["evals/decisions/E231/results.md"]
     }
   ]
 }
