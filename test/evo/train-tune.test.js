@@ -34,6 +34,7 @@ describe('withDefaults', () => {
         [{ ...spec(), curriculum: 3 }, 'curriculum'],
         [{ ...spec(), tunables: [] }, 'tunables'],
         [{ ...spec(), tunables: [{ key: 'a', values: [] }] }, 'tunable'],
+        [{ ...spec(), tunables: [{ name: 'a', values: ['x'] }] }, 'tunable'],
         [{ ...spec(), tunables: [{ key: 'a', stage: 4, values: [1] }] }, 'tunable'],
         [{ ...spec(), maxArms: 0 }, 'maxArms'],
         [{ ...spec(), worldSeeds: 1.5 }, 'worldSeeds'],
@@ -144,12 +145,46 @@ describe('proposeArms', () => {
         expect(Object.keys(arms[0].overlay.stages ?? {})).toContain('hunt');
     });
 
-    it('reads the shipped spec and ladder: two arms, the first on the hunt-weak prey share', () => {
+    it('reads the shipped spec and ladder: two arms, the first on the hunt-weak prey share 0.7', () => {
         const shipped = JSON.parse(readFileSync('evals/train-tune.json', 'utf8'));
         const real = JSON.parse(readFileSync('evals/train-ladder.json', 'utf8'));
         const arms = proposeArms(shipped, real, []);
         expect(arms).toHaveLength(2);
-        expect(arms[0].signature).toBe('stages.hunt-weak.preyShare=1');
+        expect(arms[0].signature).toBe('stages.hunt-weak.preyShare=0.7');
         expect(arms[1].signature).toBe('stages.hunt-contact.minGenerations=5');
+    });
+
+    it('proposes bundled tunables setting several stage or train keys at once, and skips unchanged bundles', () => {
+        const tunables = [
+            {
+                name: 'nursery-budget',
+                stage: 'nursery',
+                values: [
+                    { maxGenerations: 80, plateauStop: 0 },
+                    { maxGenerations: 40, plateauStop: 6 },
+                ],
+            },
+            {
+                key: 'train-budget',
+                values: [
+                    { episodes: 32, checkpointEvery: 10 },
+                    { episodes: 48, checkpointEvery: 5 },
+                ],
+            },
+        ];
+        const same = [{ name: 'nursery', maxGenerations: 40, plateauStop: 6, gate: [{ read: 'a', min: 1 }] }];
+        const arms = proposeArms(spec({ tunables, maxArms: 4 }), same, []);
+        expect(arms.map((a) => a.signature)).toEqual([
+            'stages.nursery.maxGenerations=80,plateauStop=0',
+            'train.checkpointEvery=5,episodes=48',
+        ]);
+        expect(arms[0].overlay).toEqual({ stages: { nursery: { maxGenerations: 80, plateauStop: 0 } } });
+        expect(arms[1].overlay).toEqual({ train: { checkpointEvery: 5, episodes: 48 } });
+        const hash = ladderKey(same);
+        expect(
+            proposeArms(spec({ tunables }), same, [{ ladderHash: hash, signature: arms[0].signature }]).map(
+                (a) => a.signature,
+            ),
+        ).toEqual(['train.checkpointEvery=5,episodes=48']);
     });
 });
