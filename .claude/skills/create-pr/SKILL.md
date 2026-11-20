@@ -50,8 +50,8 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
     - move the **Status:** line and mark the phase `(built)`; drop `**Validated:**` and `**Priority:**` (or `**Scheduled by:**`, with its row in the lead's `## Order` table) once
       `Implemented`
     - regenerate the index: `node scripts/designs-index.mjs --write`
-    - append learnings to `docs/designs/sim-notes.md` under a dated heading (`### YYYY-MM-DD - <topic>` under
-      `## Learned while building`)
+    - append learnings to `docs/notes/<YYYY-MM>.md` as a dated `### YYYY-MM-DD - <topic>` entry, then run
+      `node scripts/notes-index.mjs --write` (it updates the index in `docs/designs/sim-notes.md`)
 7. **Write the PR body** to a file (the template under Ship); `ship.sh` checks it (step 4) before it pushes.
 
 ## Git conventions
@@ -102,7 +102,7 @@ environment specifies:
 
 ## Learnings
 
-<entries added to sim-notes.md, or "None">
+<entries added to docs/notes/, or "None">
 ```
 
 Omit Design doc, Delivery requirements and Measurements only for changes with no design doc (fixes, chores). A diff under

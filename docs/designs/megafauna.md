@@ -1,6 +1,6 @@
 # Megafauna
 
-**Status:** Implemented - Phases 1–4 are built and enabled by default. T40's matched RTX 4090 run found no observed frame-time regression from the herd look; its GC-pause budget was exceeded in both arms. E79/E80 missed the trample, grazing, carcass-meal, seed-rate and E80 dodge targets. Those measured gaps remain balancing work under the user's direction; they are not reported as passed criteria. Earlier population, predator, family and benchmark misses are also recorded for balancing.
+**Status:** Implemented - Phases 1 to 4 are built and enabled by default. T40 found no frame-time regression from the herd look on an RTX 4090, but its GC-pause budget was exceeded in both arms. E79 and E80 missed the trample, grazing, carcass-meal, seed-rate and dodge targets, and earlier population, predator, family and benchmark misses are recorded; these gaps are balancing work, not passed criteria.
 **Depends on:** [flora.md](flora.md), [natural-selection.md](natural-selection.md), [worker-and-renderer.md](worker-and-renderer.md)
 
 Large moving bodies return to the world as herds of megafauna: slow animals that move in loose groups between food patches, flee hunters, graze, age, breed and die, and later leave dung and carry seeds. A blob cannot bite them and they have no brains. A blob that does not track where a stampede is heading is trampled, a blob that eats where a herd has been finds the food its dung grows, and a dead animal is a feast.

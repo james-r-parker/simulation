@@ -42,7 +42,7 @@ Use a deterministic brain dossier to explain a failed drill. The dossier is diag
 
 6. **Report the result accurately.** Include the intact and edited win shares, `change`, both flip lists and `mcnemarP`. A claim is supported only when the paired change is in the predicted direction; describe the p-value as evidence strength, not proof. Report an unchanged or opposite result as unconfirmed. Do not infer causation from weight size or a single trace.
 
-7. **Record verified findings.** Add a dated `### YYYY-MM-DD - <topic>` entry under `## Learned while building` in `docs/designs/sim-notes.md`. Include the champion, drill, seed, trial count, claim, edit or ablation, and the complete relevant `compareTrials` row. State unavailable drills or staging settings as unknown instead of substituting another scenario.
+7. **Record verified findings.** Add a dated `### YYYY-MM-DD - <topic>` entry to `docs/notes/<YYYY-MM>.md` and run `node scripts/notes-index.mjs --write`. Include the champion, drill, seed, trial count, claim, edit or ablation, and the complete relevant `compareTrials` row. State unavailable drills or staging settings as unknown instead of substituting another scenario.
 
 ## Constraints
 
