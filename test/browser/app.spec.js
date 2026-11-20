@@ -167,9 +167,7 @@ test('N asks for confirmation and a second press starts a new world', async ({ p
     await worldRunning(page);
 });
 
-test('F follows the lead agent, clicking selects it in the inspector, and Escape clears the selection', async ({
-    page,
-}) => {
+test('F frames an interesting agent, clicking opens its inspector, and Escape clears selection', async ({ page }) => {
     await page.goto(appUrl() + WORLD);
     await worldRunning(page);
     await expect(page.locator(STATUS)).toHaveText(/leads with \d+%/, { timeout: 20_000 });
@@ -180,6 +178,7 @@ test('F follows the lead agent, clicking selects it in the inspector, and Escape
     await page.keyboard.press('Space');
     await expect(page.locator(SPEED)).toHaveText('paused');
     await page.keyboard.press('KeyF');
+    await expect.poll(() => consoleLines.some((line) => line.includes('FollowStarted'))).toBe(true);
     const box = await page.locator('#canvas-container canvas').boundingBox();
     expect(box).not.toBeNull();
     const cx = (box?.x ?? 0) + (box?.width ?? 0) / 2;

@@ -3,7 +3,7 @@ import { createCameraController } from '../../js/app/camera.js';
 import { createPointerInput, DRAG_THRESHOLD_PX } from '../../js/app/pointer-input.js';
 
 /**
- * @returns {{input: ReturnType<typeof createPointerInput>, camera: any, picks: number[]}} an input over one agent at the
+ * @returns {{input: ReturnType<typeof createPointerInput>, camera: any, picks: number[], navigations: number[]}} an input over one agent at the
  *   world centre
  */
 function setup() {
@@ -17,13 +17,15 @@ function setup() {
         genomeId: new Uint32Array([77]),
     };
     const picks = /** @type {number[]} */ ([]);
+    const navigations = /** @type {number[]} */ ([]);
     const input = createPointerInput({
         camera,
+        onNavigate: () => navigations.push(1),
         getAgents: () => /** @type {any} */ (agents),
         getMinPx: () => [12],
         onPick: (id) => picks.push(id),
     });
-    return { input, camera, picks };
+    return { input, camera, picks, navigations };
 }
 
 describe('createPointerInput', () => {
@@ -203,5 +205,28 @@ describe('createPointerInput touch picking', () => {
         input.down(110, 50, 1, true);
         input.up(110, 50, 1);
         expect(picks).toEqual([5]);
+    });
+});
+
+describe('pointer navigation releases follow', () => {
+    it('releases follow for a drag but preserves it through a wheel or pinch', () => {
+        const { input, navigations } = setup();
+        input.wheel(-100, 100, 50);
+        input.down(50, 50, 1, true);
+        input.down(150, 50, 2, true);
+        input.move(170, 50, 2);
+        expect(navigations).toEqual([]);
+        input.up(170, 50, 2);
+        input.move(80, 50, 1);
+        expect(navigations).toEqual([1]);
+    });
+
+    it('releases follow on the two-finger Home gesture', () => {
+        const { input, navigations } = setup();
+        input.down(50, 50, 1, true);
+        input.down(150, 50, 2, true);
+        input.up(50, 50, 1);
+        input.up(150, 50, 2);
+        expect(navigations).toEqual([1]);
     });
 });

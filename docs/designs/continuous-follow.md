@@ -13,7 +13,7 @@ the existing camera zoom limits. A closer view stays close. Subsequent wheel, pi
 
 The camera follows one genome id until death or explicit cancellation. Missing subjects leave the camera at its last
 target for 650 ms of visible frame time, then hand off to the highest interest living agent. The delay freezes while
-paused or hidden. A stale selected id falls back immediately on entry. Empty populations end follow. Reset clears
+paused or hidden; frame gaps above 100 ms contribute no hold time. A stale selected id falls back immediately on entry. Empty populations end follow. Reset clears
 pending handoffs. No packed frame yet is not an empty population and cannot end follow. A second Follow press, Escape with no drawer, Home, drag or keyboard pan cancels follow.
 
 Interest uses existing renderer pursuit pairs and the director's event scorers, with a separate 32-slot follow-interest ring. Each candidate receives the largest

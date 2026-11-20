@@ -62,7 +62,7 @@ All bindings are the `KEYMAP` in `js/app/ui/keymap.js`; `?` or `F1` lists them i
 | `[` and `]`                            | Slower and faster                                                                               |
 | `N` twice, `Shift+N`                   | New world with a new seed; focus the seed field (type a number and press Enter)                 |
 | Arrows or drag, wheel or `+` `-`, `Home` | Pan, zoom, reset the camera                                                                   |
-| Click, `F`, `Esc`                      | Select a blob, follow it, clear the selection (or close a drawer)                               |
+| Click, `F`, `Esc`                      | Select a blob, follow it with entry zoom and automatic handoff after death, clear selection (or close a drawer)                               |
 | `1` to `4`                             | Lenses: temperature, scent trails, family territories, vision and calls                         |
 | `C`, `I`, `?`                          | Charts drawer, inspector (the selected blob's senses, hidden layer and actions), help           |
 | `H`, `Shift+F`                         | Hide the HUD, fullscreen                                                                        |

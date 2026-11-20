@@ -11,7 +11,7 @@ export const CONTROL_BUTTONS = Object.freeze([
     { action: 'speedDown', text: 'Slower', label: 'Slower' },
     { action: 'speedUp', text: 'Faster', label: 'Faster' },
     { action: 'newWorld', text: 'New', label: 'New world with a new seed (press twice)' },
-    { action: 'follow', text: 'Follow', label: 'Follow the selected agent' },
+    { action: 'follow', text: 'Follow', label: 'Follow a blob; continue after death' },
     { action: 'toggleCharts', text: 'Charts', label: 'Charts drawer' },
     { action: 'toggleInspector', text: 'Inspect', label: 'Inspector drawer' },
     { action: 'toggleHelp', text: '?', label: 'Help' },

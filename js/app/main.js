@@ -18,7 +18,6 @@ import { createAppLiveness, readAppPerf, startReporting } from './liveness.js';
 import { MIN_CSS_PX_TOUCH, minPxTable } from './display-size.js';
 import { clientToDevice, deviceToClient, devicePerCss } from './canvas-geometry.js';
 import { agentAt } from './hover-pick.js';
-import { largestOfLineage } from './picking.js';
 import { gpuTimeFor } from './gpu-time.js';
 import { createInterface } from './interface.js';
 import { listenPointers } from './pointer-events.js';
@@ -178,6 +177,9 @@ function startWorld(app) {
 function pointerOptions(app) {
     return {
         camera: app.camera,
+        onNavigate: () => {
+            app.state.followId = 0;
+        },
         getAgents: app.loop.agents,
         getMinPx: () => app.minPx,
         getTouchMinPx: () => MIN_CSS_PX_TOUCH * devicePerCss(app),
@@ -218,7 +220,6 @@ function makeSupervisor(app) {
             onSelection(message) {
                 if (message.state === 'gone') {
                     state.selectedId = 0;
-                    state.followId = 0;
                 }
             },
             onLog: (record) => appLog(record.level ?? 'info', record.event ?? 'WorkerLog', record),
@@ -343,8 +344,7 @@ function createApp(container) {
         chooseSeed: () => chooseSeed(null),
         config: overrides,
         lastMoments: () => app.deps.refs.player?.moments ?? null,
-        leaderAgent: () =>
-            largestOfLineage(app.loop.agents(), app.supervisor.client()?.stats?.lineages?.top?.[0]?.id ?? -1),
+        followAgent: app.loop.followAgent,
         ui: app.iface.hooks,
     });
     return app;
