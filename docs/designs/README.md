@@ -68,7 +68,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Sprint burst](sprint-burst.md) - Phase 1 detectors kept; Phase 2 gate not met on E210 (T3)
 - [Web presence](web-presence.md) - a designed icon in every size, Open Graph and Twitter cards, a full `<head>`, an installable web app manifest with a splash, `robots.txt` and `sitemap.xml`
 
-## In progress (24)
+## In progress (25)
 
 Partly built - the note says which phases are real.
 
@@ -82,6 +82,7 @@ Partly built - the note says which phases are real.
 - [Hunter learning](hunter-learning.md) - Phases 1 and 2 are built (hunters have time to learn to kill): Phase 1 adopted the flip reflex and the hunter territory (always on) and deleted provisioning, th... _(validated edd4cd4, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md), [training.md](training.md))_
 - [Lean observer](lean-observer.md) - Phase 1 built; the perf:browser comparison is open (no GPU Chrome on the build machine) _(validated 3f8bf12, 2026-11-12)_
 - [Low-density edge](low-density-edge.md) - Phases 1 to 4 are built; Phase 5 (a receptive-mate scent) is falsified (E168: no scent arm holds more seeds, mating does not move), so the scent stays on the un... _(validated 38339cb, 2026-11-11)_ _(depends on [metric-trust.md](metric-trust.md), [carrying-capacity.md](carrying-capacity.md))_
+- [Metric noise](metric-noise.md) - Phase 1 is built. Phase 2 has a terminal hunter count candidate with an E210 diagnostic; the longer verification runs are open _(validated bc55972, 2026-11-20)_ _(depends on [metric-trust.md](metric-trust.md))_
 - [Mobile view](mobile-view.md) - Phase 1 built: two-finger pinch and pan, `pointercancel`, a fingertip-sized tap, the portrait home zoom that survives a turn, the pixel-ratio cap on every path,... _(validated d6ca3e6, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md))_
 - [Prey guilds](prey-guilds.md) - differentiate the four non-hunter specialisations (`forager`, `reproducer`, `scout`, `defender`) into complementary anti-predator and life-history guilds so "ev... _(validated 04e3b34, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [senses-and-motor.md](senses-and-motor.md))_
 - [Quality gates and test tiers](quality-gates-and-test-tiers.md) - the full gate runs in CI, sharded, with the coverage ratchet, per-run `check.sh` coverage, `--rerun-failed`, `--quick`, detached-run scripts and a worker budget... _(validated c11202b, 2026-11-17)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
@@ -97,7 +98,7 @@ Partly built - the note says which phases are real.
 - [World balance and biology](world-balance.md) - Phases 1 to 4, Phase 5 round 1 and Phase 6 built. The post-feature queue (T79 to T96) was not run as written: natural-selection.md Phase 4 (T48 to T67, closed 2... _(validated edd4cd4, 2026-11-07)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the screenshots script, the RE... _(validated d6ca3e6, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (11)
+## Proposed (10)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
@@ -107,7 +108,6 @@ Plans. Nothing built; do not read these as descriptions of the code.
 - [Habitat cover](habitat-cover.md) - Phase 1 T1 built (#343) and the T2 baseline run (`E141`, 32 floor-on seeds, in Baseline); T3 (the conformance review) is open. Phase 2 puts rings on the rims of... _(validated f5c7880, 2026-11-07)_ _(depends on [refuge.md](refuge.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Hunter practice](hunter-practice.md) - Phase 1 T1 built (#343) and the T6 baseline run (`E144`, in Baseline): matched conversion falls less with age than the pooled read, and dose is near 0. T2 and T... _(validated edd4cd4, 2026-11-07)_ _(depends on [hunter-learning.md](hunter-learning.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated d6ca3e6, 2026-11-07)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_
-- [Metric noise](metric-noise.md) - Phase 1 inventory built; Phases 2 and 3 remain proposals _(validated e799b18, 2026-11-20)_ _(depends on [metric-trust.md](metric-trust.md))_
 - [Migration](migration.md) - migrants arrive at the map edges at a steady rate from a balanced mainland, whatever the headcount, and replace the floor refill that drops agents into an empti... _(validated e2455f2, 2026-11-11)_ _(depends on [eat-choice.md](eat-choice.md), [low-density-edge.md](low-density-edge.md))_
 - [Seasonal movement](seasonal-movement.md) - Phase 1 T1 and T2 built (#343) and the T5 baseline run (`E142`, 32 floor-on seeds, in Baseline). T3 (`scripts/season-map.mjs`) and T6 (the sim-notes diagnosis a... _(validated f5c7880, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md))_
 - [Throughput](throughput.md) - find and take the speed the kernel squeezes left: why 16 worlds on 16 cores run at 63% of one world's speed, loops over empty slots, set-up cost in small worlds... _(validated a1813ff, 2026-11-15)_ _(depends on [wasm-kernels.md](wasm-kernels.md))_
@@ -119,7 +119,7 @@ Not designs of the simulation - audits, research, learnings and guides.
 
 - [Headless sim core - implementation contracts](headless-sim-core-contracts.md) - exact rules for building [headless-sim-core.md](headless-sim-core.md); that doc carries the status, phases and tasks
 - [Legacy audit](legacy-audit.md) - defects and inefficiencies in the legacy app (`js/*.js`), by file and symbol, each with the doc that removes it
-- [Metrics](metrics.md) - the 370 eval metrics of a live report, generated from `js/evo/metric-registry/`: 204 verified, 163 unverified, 3 deprecated
+- [Metrics](metrics.md) - the 371 eval metrics of a live report, generated from `js/evo/metric-registry/`: 204 verified, 164 unverified, 3 deprecated
 - [Simulation notes](sim-notes.md) - verified platform and library facts, and learnings from each phase
 - [Training research](training-research.md) - a survey for [training-stages.md](training-stages.md): what the training tools are today, what their runs showed, how staged multi-agent training is done and ju...
 

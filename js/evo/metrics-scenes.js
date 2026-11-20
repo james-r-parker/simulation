@@ -17,6 +17,7 @@ import { divergenceMetrics } from './scene-divergence.js';
 import { familyMetrics } from './scene-families.js';
 import { diseaseMetrics } from './scene-disease.js';
 import { competenceMetrics } from './scene-competence.js';
+import { terminalHunterMetrics } from './scene-terminal-hunters.js';
 import { guardMetrics, summerMetrics } from './scene-guards.js';
 import { guildMetrics } from './scene-guilds.js';
 import { lapseMetrics } from './scene-chase-lapse.js';
@@ -80,6 +81,7 @@ export function sceneMetrics(observer, world) {
         ...kinematicsMetrics(s.kinematics, s.approach.tally),
         ...packLiftMetrics(s.packLift),
         ...guardMetrics(s.guards),
+        ...terminalHunterMetrics(s.guards, world),
         ...summerMetrics(s.guards),
         ...guildMetrics(s.guilds),
         ...capacityMetrics(s.capacity),

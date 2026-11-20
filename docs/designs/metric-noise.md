@@ -1,7 +1,7 @@
 # Metric noise
 
-**Status:** Proposed - Phase 1 inventory built; Phases 2 and 3 remain proposals.
-**Validated:** e799b188 (2026-11-20)
+**Status:** In progress - Phase 1 is built. Phase 2 has a terminal hunter count candidate with an E210 diagnostic; the longer verification runs are open.
+**Validated:** bc55972e (2026-11-20)
 **Priority:** 37 - measurement tooling runs beside the queue; metric replacements wait for their own verification
 **Depends on:** [metric-trust.md](metric-trust.md)
 
@@ -247,7 +247,29 @@ from old seed means. Metrics that pass power here still need their missing trust
 
 Done: every replacement actually adopted has all metric-trust checks, a non-null `minSeeds`, its saved power report and
 its directional or watch interpretation recorded. A failed candidate remains unverified, with the next diagnosis
-recorded; no bar is relaxed. No Phase 2 simulation run is part of this PR.
+recorded. The registry keeps a candidate unverified until its trust checks pass.
+
+#### Terminal hunter count
+
+T3 registers `eval.predators_at_end_terminal_window` beside the final-tick count. `terminalHunterCount` in
+[scene-terminal-hunters.js](../../js/evo/scene-terminal-hunters.js) averages the existing guard checkpoints in the last
+complete season after burn-in. It includes the season's starting checkpoint and any zero counts. The ending boundary
+starts the next season. The final-tick alive guard still reads `eval.predators_at_end`. The candidate emits one scalar
+per seed and uses existing report validation and whole-seed resampling.
+
+The E210 diagnostic applies the same reducer to the saved `traces[].hunters` series. At 200000 ticks the window is
+[144000, 180000). All 128 floor-on seeds contribute, with 105 distinct values and a mean of 4.59 hunters.
+`eval:power` uses 1000 A/A splits and 200 splits per planted effect.
+
+| Seeds per arm | False-positive rate | Detectable relative change |
+| ------------- | ------------------- | -------------------------- |
+| 16            | 0.067               | Above the tested grid      |
+| 32            | 0.056               | 0.75                       |
+| 64            | 0.054               | 0.75                       |
+
+The candidate fails the 0.20 change bar through 64. At 64 it matches the original final-tick metric's E210 detectable
+change. T4 still needs the planned 600000-tick floor-on and floor-off reports, each with 128 seeds. The candidate keeps
+an empty registry power reading and seed minimum. T6 waits for a verified replacement before changing plan references.
 
 | Chunk | Tasks      | Ships                                                                             |
 | ----- | ---------- | --------------------------------------------------------------------------------- |
@@ -276,11 +298,11 @@ conditions hold.
 | Decision                     | Contract                                                                                                                                      |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | Interview delegated          | User authorizes planning choices and Phase 1 implementation; no additional interview or approval step precedes this PR                        |
-| Proposed status              | User requests Proposed; Phase 1 tooling is marked built while metric replacements remain proposals                                            |
+| Proposed status              | Phase 1 ships under Proposed by user request; Phase 2 starts with the first additive metric                                                   |
 | Queue rank 37                | Appends to the queue without editing another stream's plans; offline measurement needs no earlier world change                                |
 | Current registry membership  | The 2026-11-19 triage does not override current verification; no registry is rewritten by Phase 1                                             |
 | Conservative dependency scan | Done/prediction contexts include historical and conditional dependencies inside active docs; explicit no-prediction declarations are excluded |
-| Fixed E210 evidence          | No new eval, screen, train or ladder run; at most four power processes                                                                        |
+| Fixed E210 evidence          | Phase 1 and the first Phase 2 diagnostic read the saved E210 report; at most four power processes                                             |
 | Additive replacements        | New names preserve old computations and report interpretation until verification and plan migration                                           |
 | No behaviour changes         | No rules, training, seasons, rewards, sim or WASM edits; rulesHash stays unchanged                                                            |
 
@@ -328,5 +350,6 @@ conditions hold.
 
 Run `node scripts/metric-noise.mjs --write`, Prettier, then `node scripts/metric-noise.mjs --check` to pin the table.
 Run `npx vitest run test/metric-noise.test.js --sequence.shuffle --sequence.seed=N --maxWorkers=4` for N = 1, 2 and 7.
-Run `scripts/check.sh --fix --quick` and the fresh draft/conformance review concurrently. Read power only from the saved
-E210 report in this PR. Verify the diff has no metric computation, sim, training, WASM or seasons changes.
+Run `scripts/check.sh --fix --quick` alongside fresh conformance review. The terminal hunter candidate has arithmetic and
+real-step source tests in [scene-terminal-hunters.test.js](../../test/evo/scene-terminal-hunters.test.js). Its E210 power
+diagnostic reads existing checkpoints. T4 uses longer reports when runs are authorized.

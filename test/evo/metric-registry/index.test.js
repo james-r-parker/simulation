@@ -18,7 +18,7 @@ const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-name
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(370);
+        expect(REPORT_NAMES).toHaveLength(371);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -192,6 +192,7 @@ const ADDED_AFTER_T8 = [
     'eval.chase_overshoot_share',
     'eval.chase_cover_use_share',
     'eval.chase_turn_jitter',
+    'eval.predators_at_end_terminal_window',
     'eval.chase_quit_share',
     'eval.chase_lost_share',
     'eval.chase_outrun_share',
