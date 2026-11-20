@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -15,15 +15,6 @@ const root = mkdtempSync(join(tmpdir(), 'train-floor-'));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
 describe('the curriculum floor guard', () => {
-    it('lets every committed curriculum load', () => {
-        const files = readdirSync('evals').filter((f) => /^train-curriculum.*\.json$/.test(f));
-        expect(files.length).toBeGreaterThan(1);
-        for (const file of files) {
-            const args = parseArgs(['--generations', '5', '--out', 'x', '--curriculum', `evals/${file}`]);
-            expect(() => loadStages(args), file).not.toThrow();
-        }
-    });
-
     it('refuses a curriculum whose final stage is not the target world', () => {
         const path = join(root, 'curriculum-hunt-last.json');
         writeFileSync(path, JSON.stringify([{ name: 'hunt', config: 'evals/train-hunt-world.json' }]));

@@ -15,7 +15,7 @@ import { parseArgs, runTraining } from '../scripts/train.mjs';
 const root = mkdtempSync(join(tmpdir(), 'train-scatter-'));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
-const FILE = new URL('../evals/train-screens/stages/nursery-scatter.json', import.meta.url).pathname;
+const FILE = new URL('./fixtures/nursery-scatter.json', import.meta.url).pathname;
 const OVERRIDES = JSON.parse(readFileSync(FILE, 'utf8'));
 
 describe('the scatter nursery world', () => {
