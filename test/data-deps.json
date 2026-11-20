@@ -570,5 +570,10 @@
         "scripts/browser-smoke.sh",
         "scripts/lib/nightly-digest.mjs",
         "test"
+    ],
+    "test/worktree-gc.test.js": [
+        ".gitignore",
+        "scripts/worktree-gc.sh",
+        "test"
     ]
 }
