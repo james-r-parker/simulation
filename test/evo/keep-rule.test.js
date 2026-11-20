@@ -222,7 +222,7 @@ describe('GUARD_METRICS (metric-noise T12, D3)', () => {
         const settled = METRICS['eval.hunter_catches_per_1k_settled'];
         const whole = METRICS['eval.hunter_catches_per_1k'];
         expect(metricStatus(settled)).toBe('verified');
-        expect(settled.power.mde64).toBeLessThanOrEqual(whole.power.mde64);
+        expect(settled.power?.mde64 ?? Infinity).toBeLessThanOrEqual(whole.power?.mde64 ?? 0);
     });
 });
 
