@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
-import { JINK_RANGE, evaderBrain, pursuerBrain, steer, wrap } from '../../js/evo/chase-oracles.js';
+import {
+    EVADER_SPRINT_JINKS,
+    JINK_RANGE,
+    evaderBrain,
+    pursuerBrain,
+    steer,
+    storeAboveFloor,
+    wrap,
+} from '../../js/evo/chase-oracles.js';
 import { arenaConfig, stageArena } from '../../js/evo/chase-arena.js';
 
 const FORAGER = 0;
@@ -106,5 +114,46 @@ describe('steer', () => {
         expect(steer(w, 0, { x: 0, y: 0 })).toBe(0);
         expect(steer(w, 0, { x: -50, y: 0 })).toBe(1);
         expect(steer(w, 0, { x: -50, y: -1 })).toBe(-1);
+    });
+});
+
+describe('the oracles with the sprint store on', () => {
+    /**
+     * @param {{x: number, y: number}} evader where the evader stands
+     * @returns {Record<string, any>} the pair in an arena with the store on, both stores full
+     */
+    const stored = (evader) =>
+        stageArena(arenaConfig({ sprintStoreEnabled: true }), [
+            { spec: PREDATOR, x: 4000, y: 4000, angle: 0 },
+            { spec: FORAGER, angle: 0, ...evader },
+        ]).world;
+    const sprinting = (/** @type {Record<string, any>} */ w) => {
+        pursuerBrain({ pursuer: 0, evader: 1, sprint: true })(w);
+        evaderBrain({ pursuer: 0, evader: 1, sprint: true })(w);
+        return [out(w, 0, OUTPUT_INDEX.SPRINT), out(w, 1, OUTPUT_INDEX.SPRINT)];
+    };
+
+    it('sprint while their stores are above the floor, and stop under it', () => {
+        const w = stored({ x: 4200, y: 4000 });
+        expect(sprinting(w)).toEqual([1, 1]);
+        const { floor } = w.sprintStore;
+        w.sprintStore.level[0] = floor;
+        w.sprintStore.level[1] = floor / 2;
+        expect([storeAboveFloor(w, 0), storeAboveFloor(w, 1)]).toEqual([false, false]);
+        expect(sprinting(w)).toEqual([0, 0]);
+    });
+
+    it('the pursuer sprints only with the evader in view, the evader only with the pursuer near', () => {
+        const view = stored({ x: 4000, y: 4000 }).visionBySpec[PREDATOR];
+        const far = stored({ x: 4000 + view + 10, y: 4000 });
+        expect(sprinting(far)).toEqual([0, 0]);
+        const mid = stored({ x: 4000 + EVADER_SPRINT_JINKS * JINK_RANGE + 10, y: 4000 });
+        expect(sprinting(mid)).toEqual([1, 0]);
+    });
+
+    it('sprint as asked whatever the distance with the store off', () => {
+        const w = pair({ x: 4000 + 2000, y: 4000 });
+        expect(storeAboveFloor(w, 0)).toBe(true);
+        expect(sprinting(w)).toEqual([1, 1]);
     });
 });

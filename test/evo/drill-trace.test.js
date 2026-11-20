@@ -65,6 +65,26 @@ describe('noteTick', () => {
         expect(trace.closest).toBe(3);
     });
 
+    it('keeps each body lowest sprint store while both live, only with the store on', () => {
+        const world = {
+            alive: [1, 1],
+            x: [0, 30],
+            y: [0, 0],
+            size: [5, 5],
+            outputs: new Float32Array(OUTPUT_COUNT),
+            sprintStore: { level: new Float64Array([0.6, 0.9]) },
+        };
+        const trace = createPreyTrace();
+        noteTick(trace, world);
+        world.sprintStore.level.set([0.8, 0.2]);
+        noteTick(trace, world);
+        expect([trace.pursuerStoreMin, trace.evaderStoreMin]).toEqual([0.6, 0.2]);
+        expect(traceFields(trace, true)).toMatchObject({ pursuerStoreMin: 0.6, evaderStoreMin: 0.2 });
+        const off = createPreyTrace();
+        noteTick(off, { ...world, sprintStore: undefined });
+        expect(traceFields(off, true)).not.toHaveProperty('pursuerStoreMin');
+    });
+
     it('records starvation and recoil on the subject death tick, and handles a missing event ring', () => {
         const deadWorld = { alive: [0, 1], events: undefined };
         const missing = createPreyTrace();
