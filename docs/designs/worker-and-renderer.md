@@ -490,7 +490,7 @@ resolution in constant memory.
 | Slower, faster                                                                    | `[`, `]`                                 |
 | New world with a new seed (press twice within 3 s; the first press shows a toast) | `N`                                      |
 | Focus the seed field                                                              | `Shift+N`                                |
-| Follow the selected agent (else the leading family's largest)                     | `F`                                      |
+| Follow, zoom in and continue after death                                          | `F`                                      |
 | Lenses: temperature, scent, territories, vision and calls                         | `1`, `2`, `3`, `4`                       |
 | Charts drawer, inspector drawer (a click on an agent also opens it), help         | `C`, `I`, `?`                            |
 | Hide or show the HUD                                                              | `H`                                      |
@@ -973,7 +973,7 @@ Not drawn, and why: the season change on the map stays with the aurora tint and 
    predator with its jaw wedge open, a bite flash at the jaw, an alarm ring, a hunt ring and a smoke puff that dims the
    agents inside it. Press `1`: agents tint blue to orange. Press `3`: family territories fade in and out.
 6. Click an agent: the inspector opens with the labelled input bars, the pulsing hidden grid, the eleven output bars and
-   the counters; its rays and antennae draw in the world; `F` follows it; when it dies the selection clears.
+   the counters; its rays and antennae draw in the world; `F` follows it and zooms in; when it dies the selection clears and follow hands off after a short hold ([continuous-follow.md](continuous-follow.md)).
 7. Press `C`: five charts update; close the drawer and the page stays smooth. Press `H`: the HUD hides.
 8. Leave the page untouched for 10 s: the cursor hides and the director glides to a moment with a caption (a
    deliberate chase or kill, an escape, a smoke escape, a family event or a first), lingers at x1, pulls back at x4 or the

@@ -165,8 +165,8 @@ describe('createActions', () => {
 });
 
 describe('follow', () => {
-    /** @param {() => number} [leaderAgent] @returns {{act: (a: string) => void, state: any}} */
-    function withLeader(leaderAgent) {
+    /** @param {() => number} [followAgent] @returns {{act: (a: string) => void, state: any}} */
+    function withFollowAgent(followAgent) {
         const state = createAppState();
         const camera = createCameraController({ canvas: { width: 10, height: 10 }, world: { width: 10, height: 10 } });
         const act = createActions({
@@ -176,13 +176,13 @@ describe('follow', () => {
             now: () => 0,
             chooseSeed: () => 1,
             config: {},
-            leaderAgent,
+            followAgent: followAgent === undefined ? undefined : (preferred) => preferred || followAgent(),
         });
         return { act, state };
     }
 
-    it('follows the selected agent, else the leading family largest, and a second press stops', () => {
-        const { act, state } = withLeader(() => 77);
+    it('follows the selected agent, else an interesting living agent, and a second press stops', () => {
+        const { act, state } = withFollowAgent(() => 77);
         state.selectedId = 5;
         act('follow');
         expect(state.followId).toBe(5);
@@ -196,7 +196,7 @@ describe('follow', () => {
     });
 
     it('follows nothing when there is no selection and no leader', () => {
-        const { act, state } = withLeader();
+        const { act, state } = withFollowAgent();
         act('follow');
         expect(state.followId).toBe(0);
     });
@@ -379,5 +379,46 @@ describe('focusLast', () => {
         act('focusLast');
         expect([camera.targetX, camera.targetY]).toEqual([1234, 567]);
         expect(state.followId).toBe(0);
+    });
+});
+
+describe('follow camera controls', () => {
+    it('frames entry and leaves later zoom adjustments alone until follow is restarted', () => {
+        const { act, state, camera } = setup();
+        state.selectedId = 8;
+        act('follow');
+        expect(camera.targetZoom).toBeCloseTo(1.2);
+        act('zoomOut');
+        const chosen = camera.targetZoom;
+        act('follow');
+        expect(state.followId).toBe(0);
+        expect(camera.targetZoom).toBe(chosen);
+    });
+
+    it.each(['panLeft', 'panRight', 'panUp', 'panDown', 'home'])('%s cancels an active or pending follow', (action) => {
+        const { act, state } = setup();
+        state.followId = 99;
+        act(action);
+        expect(state.followId).toBe(0);
+    });
+
+    it('validates a stale selected id through the living target chooser', () => {
+        const state = createAppState();
+        state.selectedId = 999;
+        const camera = createCameraController({
+            canvas: { width: 100, height: 100 },
+            world: { width: 1000, height: 1000 },
+        });
+        const act = createActions({
+            getClient: () => null,
+            camera,
+            state,
+            now: () => 0,
+            chooseSeed: () => 1,
+            config: {},
+            followAgent: (preferred) => (preferred === 999 ? 7 : 0),
+        });
+        act('follow');
+        expect(state.followId).toBe(7);
     });
 });

@@ -4,12 +4,11 @@
 // the once-a-second report.
 
 import { appLog } from './app-log.js';
-import { followStep, updateCamera } from './camera.js';
+import { createFollowController } from './follow.js';
 import { recordFrame } from './frame-stats.js';
 import { createInterpolated, createPlayhead, stepPlayhead } from './interpolate.js';
 import { createPackFeed, exchangeFrame, isSeq, reportLate } from './pack/pack-feed.js';
 import { beginEffects, playBumps, playEdges, playEffects, trackDying } from './renderer/effects-player.js';
-import { findAgent } from './renderer/overlays.js';
 import { lensUniforms } from './ui/lenses.js';
 
 /** The longest frame time the layers are told about, so a stalled tab does not jump motion. */
@@ -69,25 +68,6 @@ function freshState() {
         lastNowMs: 0,
         effectsAt: { tick: 0, dtMs: 0, nowMs: 0, camera: null, drawMs: -1, gpuMs: -1, intervalMs: 0 },
     };
-}
-
-/**
- * Moves the camera: towards the followed agent while it lives, else on its own spring.
- * @param {LoopDeps} deps the dependencies
- * @param {LoopState} loop the loop state
- * @param {number} dtMs the frame time
- * @returns {void}
- */
-function moveCamera({ camera, state }, { agents }, dtMs) {
-    const i = findAgent(agents, state.followId);
-    if (state.followId !== 0 && i < 0) {
-        state.followId = 0;
-    }
-    if (i >= 0) {
-        followStep(camera, agents.x[i], agents.y[i], dtMs);
-    } else {
-        updateCamera(camera, dtMs);
-    }
 }
 
 /**
@@ -252,18 +232,27 @@ function drawAndRecord(deps, loop, { frame, started, interval }) {
 /**
  * @param {LoopDeps} deps the dependencies; `scene` is read each frame, so it may be assigned after `createFrameLoop`
  * @returns {{frame: (nowMs: number) => void, reset: () => void, agents: () => import('./interpolate.js').Interpolated,
- *   lateFrames: () => number}} `frame` runs one animation frame at the callback's time; `reset` starts afresh for a new
+ *   lateFrames: () => number, followAgent: (preferred?: number) => number}} `frame` runs one animation frame at the callback's time; `reset` starts afresh for a new
  *   world; `agents` is the agents as last drawn (for picking); `lateFrames` counts the frames drawn on an old slot
  */
 export function createFrameLoop(deps) {
     let loop = freshState();
     const lenses = { temperature: false, scent: false, territory: false, vision: false, calls: false };
     const frame = newFrame(deps, lenses);
+    const follow = createFollowController({
+        camera: deps.camera,
+        state: deps.state,
+        getAgents: () => loop.agents,
+        getPlayer: () => deps.refs.player,
+    });
+    const followAt = { dtMs: 0, nowMs: 0, available: false, paused: false };
     return {
         reset() {
             loop = freshState();
+            follow.reset();
         },
         agents: () => loop.agents,
+        followAgent: follow.choose,
         lateFrames: () => loop.feed.lateTotal,
         frame(nowMs) {
             const started = deps.clock();
@@ -277,7 +266,11 @@ export function createFrameLoop(deps) {
             loop.effectsAt.dtMs = dtMs;
             lensUniforms(deps.state.lenses, /** @type {any} */ (lenses));
             advanceWorld(client, deps, { loop, lenses }, { nowMs, interval });
-            moveCamera(deps, loop, dtMs);
+            followAt.dtMs = interval > MAX_DT_MS ? 0 : dtMs;
+            followAt.nowMs = nowMs;
+            followAt.available = loop.agents !== loop.empty;
+            followAt.paused = Boolean(client.paused) || deps.hidden();
+            follow.step(followAt);
             fillFrame(frame, { deps, loop, client }, { nowMs, dtMs });
             drawAndRecord(deps, loop, { frame, started, interval });
         },

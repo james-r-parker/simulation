@@ -2,6 +2,7 @@
 // spark pools and an optional sink (audio). Effects further behind the playhead than `STALE_TICKS` (a hidden tab) are
 // dropped unplayed.
 
+import { createFollowInterest, noteFollowInterest } from '../follow-target.js';
 import { createFamilySlots } from '../family-slots.js';
 import { PALETTE } from './colors.js';
 import { spawnMateThread } from './mate-threads.js';
@@ -64,6 +65,7 @@ export { BIRTH_SIZE, JAW_REACH } from './effects-combat.js';
  * @property {import('./bumps.js').Bumps} bumps each slot's last speed and this frame's bumps
  * @property {import('./effects-flee.js').FleeState} flee the pursuit pairs and who flees this frame
  * @property {import('./effects-terrain.js').CrossState} crossings each slot's side of the wall
+ * @property {import('../follow-target.js').FollowInterest} followInterest recent subject events
  * @property {import('../director/moment-log.js').MomentLog} moments the notable moments played, for the pointers and
  *   `focusLast`
  * @property {{kinds: Record<string, number>, eatenCause: number, trampled: number, nowMs: number}} momentCtx scratch for
@@ -139,6 +141,7 @@ export function createEffectsPlayer({
         flee: /** @type {any} */ (null),
         bumps: createBumps(info.maxAgents ?? 1024),
         crossings: /** @type {any} */ (null),
+        followInterest: createFollowInterest(),
         moments: /** @type {any} */ (null),
         momentCtx: /** @type {any} */ (null),
         bits: layout.flags ?? {},
@@ -271,6 +274,7 @@ export function playEffects(player, queue, agents, tick) {
         played += 1;
         dispatch(player, agents);
         noteMoment(player.moments, e, player.momentCtx);
+        noteFollowInterest(player.followInterest, e, player.momentCtx);
         player.sink?.(e);
     }
     return played;

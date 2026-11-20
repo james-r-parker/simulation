@@ -192,19 +192,45 @@ describe('createFrameLoop', () => {
         expect(frameReport(deps.stats).frames).toBe(2);
     });
 
-    it('follows a live agent with the camera and drops a follow whose agent is gone', () => {
+    it('keeps follow through pack startup and hands off after its subject is gone', () => {
         const { client, pack } = fakeWorld();
         const genome = client.latest.u32[HEADER_WORDS + AGENT_FIELD.GENOME];
         const { deps, loop } = setup(client, pack);
         deps.state.followId = genome;
         pack.step(loop, 1000);
-        deps.state.followId = genome;
+        expect(deps.state.followId).toBe(genome);
         pack.step(loop, 1016);
         expect(deps.camera.following).toBe(true);
         expect(deps.state.followId).toBe(genome);
         deps.state.followId = 999999;
         loop.frame(1033);
-        expect(deps.state.followId).toBe(0);
+        expect(deps.state.followId).toBe(999999);
+        for (let t = 1133; t <= 1833; t += 100) {
+            pack.step(loop, t);
+        }
+        expect(deps.state.followId).not.toBe(999999);
+        expect(deps.state.followId).not.toBe(0);
+        expect(loop.followAgent(deps.state.followId)).toBe(deps.state.followId);
+    });
+
+    it('does not count a suspended hidden-tab interval toward a pending death handoff', () => {
+        const { client, pack } = fakeWorld();
+        const { deps, loop } = setup(client, pack);
+        pack.step(loop, 1000);
+        pack.step(loop, 1016);
+        deps.state.followId = 999999;
+        for (let t = 1116; t <= 1616; t += 100) {
+            pack.step(loop, t);
+        }
+        expect(deps.state.followId).toBe(999999);
+        deps.hidden = () => true;
+        // RAF is suspended while hidden; there is no hidden frame callback.
+        deps.hidden = () => false;
+        pack.step(loop, 10000);
+        expect(deps.state.followId).toBe(999999);
+        pack.step(loop, 10050);
+        expect(deps.state.followId).not.toBe(999999);
+        expect(deps.state.followId).not.toBe(0);
     });
 
     it('starts a new world with fresh agents and an empty playhead', () => {

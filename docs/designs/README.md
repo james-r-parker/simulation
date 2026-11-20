@@ -42,12 +42,13 @@ Unbuilt docs in priority order - 1 is built next. Set in each doc's `**Priority:
 35. [Scent trails and carrion scent](scent-trails.md) - builds on [honest-budgets.md](honest-budgets.md) (body-priced carcasses) and [stillness.md](stillness.md) (motionless concealment)
 36. [Detector baseline](detector-baseline.md) - it schedules no work of its own ahead of the queue: its tasks run when the Phase 1 detector tasks of the plans it serves are built, and those change no behaviour
 
-## Implemented (19)
+## Implemented (20)
 
 Describe shipped code. Trust these, and fix them when the code moves.
 
 - [Body temperature](body-temperature.md) - body temperature is in the sim core with the tuned defaults (T10, experiments `E11` to `E18`). Phase 1 is built and judged: the bench check (T11) and the confor...
 - [Brain inspection](brain-inspection.md) - Phase 1 dossier and Phase 2 inspection of both trained predators across `prey-ahead`, `prey-mid` and `prey-weak`
+- [Continuous follow](continuous-follow.md) - follow frames a living subject and hands off after death
 - [Crisp renderer](crisp-renderer.md) - the WebGPU crisp renderer (WebGL2 fallback): the model catalogue, the clips, every layer, the hunt and the death; every Phase 1 budget is met at 1000 agents wit...
 - [Development workflow and gate](dev-workflow-and-gate.md) - workflow, gate and CI (Phase 1), and the legacy browser baseline in `bench/legacy-baseline.json` (Phase 2)
 - [Disease](disease.md) - Phases 1 and 2 are built and the contagion is on by default at `diseaseSeedRate` 0.001 (user, 2026-11-03), a value taken from the T5 smoke run, not from a scree...
