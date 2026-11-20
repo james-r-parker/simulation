@@ -19,6 +19,8 @@
 #   is built while its key still exists (scripts/check-flag-ledger.mjs).
 # - wasm/blob-kernels.wasm matches its .sha256 and wasm/blob-kernels.src.sha256 its sources, and a fresh build matches
 #   where cargo exists (scripts/check-wasm.mjs).
+# - AGENTS.md stays at or under AGENTS_MAX_BYTES (16000): an agent reads it before its first command, so detail lives in
+#   docs/ (docs/designs/agent-workflow.md, Context diet).
 # - No merge conflict markers (a line starting <<<<<<< , ||||||| or >>>>>>> , or exactly =======) in tracked text files.
 # - No tracked file over 5 MB unless it is listed in LARGE_FILE_ALLOWLIST.
 set -uo pipefail
@@ -33,6 +35,9 @@ BROWSER_SHELLS=("js/worker/sim-worker.js" "js/app/main.js" "js/app/audio/engine.
 
 # Paths of the deleted legacy app (pathspecs); a tracked file under any of them is a violation.
 LEGACY_PATHS=("legacy.html" "js/constants" "js/dev" "css/style.css" "css/toast.css" "public/database-worker.js")
+
+# AGENTS.md is read in full at the start of every session; its budget is in docs/designs/agent-workflow.md.
+AGENTS_MAX_BYTES=16000
 
 violations=0
 fail() { echo "$1"; violations=$((violations + 1)); }
@@ -149,6 +154,13 @@ while IFS= read -r line; do
 done <<<"$wasm_out"
 if ((wasm_status != 0)) && [[ -z "$wasm_out" ]]; then
   fail "wasm: scripts/check-wasm.mjs exited $wasm_status with no output"
+fi
+
+if [[ -f AGENTS.md ]]; then
+  agents_bytes=$(wc -c <AGENTS.md)
+  if ((agents_bytes > AGENTS_MAX_BYTES)); then
+    fail "AGENTS.md: $agents_bytes bytes - it stays at or under $AGENTS_MAX_BYTES (move detail to docs/commands.md or a design doc)"
+  fi
 fi
 
 # One stat for all files (a path deleted from the working tree is skipped), then only the files over the limit reach
