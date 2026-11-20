@@ -279,6 +279,9 @@ describe('playEffects', () => {
         expect(threads.motherGenome[0]).toBe(11);
         expect(threads.fatherGenome[0]).toBe(22);
         expect(seen).toEqual([8]);
+        expect(player.followInterest.subject[0]).toBe(11);
+        expect(player.followInterest.partner[0]).toBe(22);
+        expect(player.followInterest.count).toBe(1);
     });
 
     it('beginEffects takes the view, the zoom band and the playhead rate into the budget', () => {
