@@ -80,6 +80,7 @@ describe('Queue block', () => {
 });
 
 describe('Runs and Machine blocks', () => {
+    /** @type {(name: string, started: string, workers?: number) => any} */
     const run = (name, started, workers) => ({ name, cmd: `cmd ${name}`, started, workers, pid: 1, dir: '/d' });
 
     it('lists runs in flight first, then the newest finished, with seeds from the log', () => {
@@ -117,6 +118,7 @@ describe('Runs and Machine blocks', () => {
 
 describe('Ladder block', () => {
     it('reads the base arm when there is one, else the first, and null for an empty file', () => {
+        /** @type {(n: number) => any} */
         const arm = (n) => ({ runs: n, stages: [{ stage: 'nursery', passShare: 0.5, medianGenerations: 10 }] });
         expect(ladderBlock({ fixed: arm(1), base: arm(2) })).toEqual({
             arm: 'base',
@@ -144,6 +146,7 @@ describe('Experiments block', () => {
 
 describe('Pull requests block', () => {
     it('reads the check rollup as pass, fail, pending or none', () => {
+        /** @type {(n: number, statusCheckRollup: any[]) => any} */
         const pr = (n, statusCheckRollup) => ({ number: n, title: 't', headRefName: `b${n}`, statusCheckRollup });
         const rows = prsBlock([
             pr(1, [{ status: 'COMPLETED', conclusion: 'SUCCESS' }]),
