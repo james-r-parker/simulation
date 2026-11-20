@@ -185,7 +185,7 @@ function armFor(tunable, value, { ladder, train }) {
     const { stage } = tunable;
     const pairs = valuePairs(tunable, value);
     const label = pairs.map(([k, v]) => `${k}=${v}`).join(',');
-    const stem = tunable.name ?? tunable.key ?? 'bundle';
+    const stem = /** @type {string} */ (tunable.name ?? tunable.key);
     const suffix = typeof value === 'number' ? String(value) : pairs.map(([k, v]) => `${k}-${v}`).join('-');
     const name = `${stem}${stage === undefined ? '' : `-${stage}`}-${suffix}`;
     if (stage === undefined && pairs.every(([k]) => TRAIN_KEYS.includes(k))) {

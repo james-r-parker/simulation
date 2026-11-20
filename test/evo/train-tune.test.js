@@ -34,6 +34,7 @@ describe('withDefaults', () => {
         [{ ...spec(), curriculum: 3 }, 'curriculum'],
         [{ ...spec(), tunables: [] }, 'tunables'],
         [{ ...spec(), tunables: [{ key: 'a', values: [] }] }, 'tunable'],
+        [{ ...spec(), tunables: [{ name: 'a', values: ['x'] }] }, 'tunable'],
         [{ ...spec(), tunables: [{ key: 'a', stage: 4, values: [1] }] }, 'tunable'],
         [{ ...spec(), maxArms: 0 }, 'maxArms'],
         [{ ...spec(), worldSeeds: 1.5 }, 'worldSeeds'],
@@ -164,7 +165,7 @@ describe('proposeArms', () => {
                 ],
             },
             {
-                name: 'train-budget',
+                key: 'train-budget',
                 values: [
                     { episodes: 32, checkpointEvery: 10 },
                     { episodes: 48, checkpointEvery: 5 },
