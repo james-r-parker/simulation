@@ -1,6 +1,6 @@
 # Metric noise
 
-**Status:** In progress - Phase 1 is built. Phase 2 has a terminal hunter count candidate with an E210 diagnostic; the longer verification runs are open. Phase 4 (the statistics layer) is built except T12, the settled hunter metrics' power read on the 128-seed E252 baseline, and its review T15.
+**Status:** In progress - Phase 1 is built. Phase 2 has a terminal hunter count candidate with an E210 diagnostic; the longer verification runs are open. Phase 4 (the statistics layer) is built except its review T15; T12 read the settled hunter metrics on the 128-seed E254 baseline and moved the keep-rule guard to the settled catch metric.
 **Validated:** bc55972e (2026-11-20)
 **Priority:** 1 - Measurement lead. Phase 4 is built before any other read: the power readings, the keep rule and the 16-seed interval have defects (review of 2026-11-20), so no verdict is trusted until they are fixed; Phase 5 (the headline metrics) follows
 **Depends on:** [metric-trust.md](metric-trust.md)
@@ -33,15 +33,15 @@ unregistered future metrics are outside this inventory. This doc is excluded fro
 source plan, line and context. `--references` exposes those locations for auditing; committed prose links files,
 not line numbers. `metricStatus` and `meetsPowerBar` remain authoritative.
 
-Power uses [defaults-floor-on-E210.json](../../evals/power/defaults-floor-on-E210.json): 128 seeds, 200000 ticks,
+Power uses [defaults-floor-on-E254.json](../../evals/power/defaults-floor-on-E254.json): 128 seeds, 200000 ticks,
 `rulesHash` `38be2908ad820c86`. The [triage](../../evals/power/unverified-2026-11-19.md) is context, not a frozen
 membership list. Each command is single-process and starts no simulation; at most four disjoint metric batches run concurrently:
 
 ```bash
-npm run eval:power -- evals/power/defaults-floor-on-E210.json --include-watch --sizes 16,32,64 --metrics "$(node scripts/metric-noise.mjs --metrics)" --json
+npm run eval:power -- evals/power/defaults-floor-on-E254.json --include-watch --sizes 16,32,64 --metrics "$(node scripts/metric-noise.mjs --metrics)" --json
 ```
 
-The saved reading is `evals/power/metric-noise-E210.json`, with the source SHA-256 and batch membership. Each metric/size has its own deterministic RNG fork, so disjoint batches reproduce the combined command. It uses the default 1000 A/A
+The saved reading is `evals/power/metric-noise-E254.json`, with the source SHA-256 and batch membership. Each metric/size has its own deterministic RNG fork, so disjoint batches reproduce the combined command. It uses the default 1000 A/A
 splits and 200 splits per planted change. FPR must be at most 0.10; MDE must be at most 0.20 relative, 0.05 absolute
 for `share`, or 0.10 absolute for `correlation`, `trend` and means within 0.01 of zero. Other units retain their registry
 bar, even units named `share difference` or `share change`. Relative MDE is multiplied by the absolute reference mean
@@ -49,7 +49,7 @@ for the near-zero and correlation/trend checks. A missing reading fails; no extr
 
 A power pass alone does not update registry status, fill missing arithmetic/source tests, fix null coverage, or give a
 watch metric a directional verdict. Phase 2 closes the remaining trust checks before a plan uses a replacement.
-E210 measures the defaults at its recorded rules, not every future treatment or longer window.
+E254 measures the defaults at its recorded rules, not every future treatment or longer window.
 
 ## Phases
 
@@ -333,7 +333,7 @@ A review on 2026-11-20 recounted 17 core and hunter metrics from raw events on t
 
 - **D1.** A power reading needs at least half the splits valid; below that `detectable` and the false-positive rate are null with the valid share noted, and `setReading` writes null. The registry is regenerated: the metrics that lose their reading become `unverified`.
 - **D2.** `keepRule` applies `withCurrentNames` to both reports. A keep-rule read with any `unchecked` guard prints `keep rule: incomplete` and never "no harm detected".
-- **D3.** New metrics beside the old (this doc's Phase 2 rule): `eval.hunter_catches_per_1k_settled`, `eval.hunter_kills_per_life_mean_settled`, `eval.hunter_juvenile_death_share_settled` and `eval.pursuit_kill_share_settled`, counted from `BURN_IN_TICKS`. Each is read for power on the shared baseline; the keep-rule guard moves to the settled catch metric only when it is `verified` and its detectable change at 64 seeds is no larger than the old one's.
+- **D3.** New metrics beside the old (this doc's Phase 2 rule): `eval.hunter_catches_per_1k_settled`, `eval.hunter_kills_per_life_mean_settled`, `eval.hunter_juvenile_death_share_settled` and `eval.pursuit_kill_share_settled`, counted from `BURN_IN_TICKS`. Each is read for power on the shared baseline; the keep-rule guard moves to the settled catch metric only when it is `verified` and its detectable change at 64 seeds is no larger than the old one's. **Read (T12, E254):** `eval.hunter_catches_per_1k_settled` is live (0 null seeds, 128 distinct values), `verified`, minimum 64 seeds, detectable change 0.5, 0.3 and 0.2 at 16, 32 and 64 seeds, equal to the whole-run metric's at every size, so `GUARD_METRICS` in `js/evo/keep-rule.js` moved to it. `eval.hunter_kills_per_life_mean_settled` is `verified` (32 seeds, 0.3, 0.2, 0.15; same as the whole-run mean). `eval.hunter_juvenile_death_share_settled` stays `unverified` (A/A false positives 0.157 at 32 and 0.129 at 64, over the 0.10 bar) and `eval.pursuit_kill_share_settled` stays `unverified` (no verdict at 64 seeds, 0.8% null seeds). A before report saved without the settled metric reads that guard `unchecked`; rerun it on the current code to guard it.
 - **D4.** Under 32 seeds per arm a verdict uses a studentised bootstrap interval. A seeded calibration test holds the null false-positive rate at 16 seeds under 6.5%.
 - **D5.** The early metric is null unless a checkpoint exists at `EARLY_TICKS`.
 - **D6.** The ten metrics take unit `share difference`, which `eval:compare` scores with the relative floor.
@@ -422,7 +422,7 @@ A report holds 370 metrics; 54 of the 110 that carry a verdict can see a 20% cha
 | T9  | (built) Regenerate the power readings and `docs/designs/metrics.md` from the saved E210 report; list every metric that changes status in the PR body and fix any plan Target that named one as `verified` | [mechanical] | T8                     |
 | T10 | (built) D2: a failing test (`keepRule` with an old-name before report returns `worse`), then `withCurrentNames` inside `keepRule` and the `incomplete` line for an `unchecked` guard                      | [judgement]  | -                      |
 | T11 | (built) D3: add the four settled hunter metrics beside the old ones with arithmetic and source tests (a recount of kills and hunter ticks from `BURN_IN_TICKS`) and their registry entries                | [judgement]  | -                      |
-| T12 | Read the settled metrics' liveness and power on the shared baseline; move `GUARD_METRICS` to the settled catch metric if it meets the rule above, else record why not                                     | [judgement]  | T9, T11                |
+| T12 | (built) Read the settled metrics' liveness and power on the shared baseline; move `GUARD_METRICS` to the settled catch metric if it meets the rule above, else record why not                             | [judgement]  | T9, T11                |
 | T13 | (built) D4: the seeded null calibration test at 16, 32 and 64 seeds (failing at 16), then the studentised interval under 32 seeds in `bootstrapInterval` and `judge`                                      | [judgement]  | -                      |
 | T14 | (built) D5 and D6: null `@20k` without its checkpoint, with a test; unit `share difference` on the ten metrics and its scoring in `js/evo/compare-rules.js`, with tests                                   | [mechanical] | -                      |
 | T15 | Conformance review of Phase 4                                                                                                                                                                             | [judgement]  | T9, T10, T12, T13, T14 |
