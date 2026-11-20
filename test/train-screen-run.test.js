@@ -140,6 +140,45 @@ describe('runScreen', () => {
         expect(records.find((r) => r.event === 'TrainScreenManifestUnreadable')).toMatchObject({ offset: 8 });
     });
 
+    it('caches the reference arm across different runs directories and never caches other arms', async () => {
+        const cache = join(root, 'cache');
+        const firstRuns = join(root, 'cache-first');
+        const first = fakeTrain(() => ({ passed: 1 }));
+        await runScreen(plan(), { runs: firstRuns, slots: 1, cache, log: keptLog().log, exec: first.exec });
+        expect(first.calls).toHaveLength(6);
+
+        const secondRuns = join(root, 'cache-second');
+        const second = fakeTrain(() => ({ passed: 1 }));
+        const { log, records } = keptLog();
+        const outcomes = await runScreen(plan(), { runs: secondRuns, slots: 1, cache, log, exec: second.exec });
+        expect(second.calls.map((c) => c.dir.split('/').slice(-2).join('/')).sort()).toEqual(['b/o0', 'b/o16', 'b/o8']);
+        expect(outcomes.filter((o) => o.arm === 'a').every((o) => o.status === 'reused')).toBe(true);
+        expect(outcomes.filter((o) => o.arm === 'b').every((o) => o.status === 'ran')).toBe(true);
+        expect(records.filter((r) => r.cached === true)).toHaveLength(3);
+        expect(existsSync(join(runDir(secondRuns, 'a', 0), 'manifest.json'))).toBe(true);
+
+        const forced = fakeTrain(() => ({ passed: 1 }));
+        await runScreen(plan(), {
+            runs: join(root, 'cache-third'),
+            slots: 1,
+            force: true,
+            cache,
+            log: keptLog().log,
+            exec: forced.exec,
+        });
+        expect(forced.calls).toHaveLength(6);
+
+        const changed = fakeTrain(() => ({ passed: 1 }));
+        await runScreen(plan({ generations: 7 }), {
+            runs: join(root, 'cache-fourth'),
+            slots: 1,
+            cache,
+            log: keptLog().log,
+            exec: changed.exec,
+        });
+        expect(changed.calls).toHaveLength(6);
+    });
+
     it('never runs more trainings at once than there are slots', async () => {
         let live = 0;
         let peak = 0;
