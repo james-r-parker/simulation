@@ -1,6 +1,6 @@
 # Metric noise
 
-**Status:** In progress - Phase 1 is built. Phase 2 has a terminal hunter count candidate with an E210 diagnostic; the longer verification runs are open.
+**Status:** In progress - Phase 1 is built. Phase 2 has a terminal hunter count candidate with an E210 diagnostic; the longer verification runs are open. Phase 4 (six defects in the power, keep-rule and interval code found on 2026-11-20) is planned and is built first.
 **Validated:** bc55972e (2026-11-20)
 **Priority:** 37 - measurement tooling runs beside the queue; metric replacements wait for their own verification
 **Depends on:** [metric-trust.md](metric-trust.md)
@@ -293,6 +293,34 @@ conditions hold.
 | ----- | ------ | ------------------------------------------------- |
 | C3    | T6, T7 | Plan migration, conditional retirement and review |
 
+### Phase 4 - The statistics layer
+
+**Targets:** none - it corrects how power, the keep rule and the intervals are computed; its readings are the count of `verified` metrics after the power re-read and the null false-positive rate of the verdict interval at 16 seeds
+
+A review on 2026-11-20 recounted 17 core and hunter metrics from raw events on three runs with no difference: the per-seed arithmetic is correct. The defects are in the layer that turns reports into power readings and verdicts.
+
+| #   | Defect                                                                                                                                                                                                    | Where                                                                                                                | Measured                                                                                                                                                                                                                            |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | A split with a null seed is dropped, and `tally.better >= POWER_TARGET * tally.valid` holds when `valid` is 0, so a metric that is mostly null records the first grid step as its detectable change       | `detectableChange` and `countVerdicts` in `scripts/eval-power.mjs`; `setReading` in `scripts/metric-power-write.mjs` | A pure-noise metric with 16 of 128 seeds null reads detectable 0.1 on 0.6% valid splits. 24 rows of `evals/power/power-E210.json` carry a detectable change on under 5% valid splits; 8 `verified` directional metrics rest on them |
+| D2  | `keepRule` reads the raw reports while `compareReports` reads them through `withCurrentNames`, so a report under a renamed guard metric makes the guard `unchecked` and the line reads "no harm detected" | the `keepRule` call in `scripts/eval-compare.mjs`; `skipReason` in `js/evo/keep-rule.js`                             | 64 seeds with catches halved on every seed: `WORSE` under the current name, "no harm detected" when the before report says `eval.catch_rate`                                                                                        |
+| D3  | The hunter headline metrics count the whole run while the chase shares start at `BURN_IN_TICKS`, so a seed whose hunters die early reads mostly founders                                                  | `observeCombat` in `js/evo/observer-combat.js`; `noteHunterLedger` in `js/evo/scene-hunters.js`                      | Seed 1, 60000 ticks: 82% of hunter kills fall before tick 10000; catches 0.464 whole-run against 0.215 after burn-in. E210: over 25% of hunter ticks in burn-in on 9 of 128 seeds                                                   |
+| D4  | The BCa interval under-covers at small arms                                                                                                                                                               | `bootstrapInterval` in `js/evo/compare.js`; `judge` in `js/evo/keep-rule.js`                                         | Null data, 600 trials: 9.3% of intervals exclude 0 at 16 seeds, 5.7% at 32, 6.3% at 64 (normal); 13.8% at 16 on a skewed difference                                                                                                 |
+| D5  | A run shorter than 20000 ticks reports the whole-run value as `eval.food_energy_per_1k@20k`                                                                                                               | `foodEnergyEarly` in `js/evo/metrics-food-early.js`                                                                  | A 6000-tick run reads 435.0686 under both names                                                                                                                                                                                     |
+| D6  | Ten difference metrics carry unit `share` and go negative, so they take the absolute share floor                                                                                                          | `js/evo/metric-registry/`                                                                                            | `eval.winter_patch_proximity` reads -0.48 to -0.04 on E210                                                                                                                                                                          |
+
+- **D1.** A power reading needs at least half the splits valid; below that `detectable` and the false-positive rate are null with the valid share noted, and `setReading` writes null. The registry is regenerated: the metrics that lose their reading become `unverified`.
+- **D2.** `keepRule` applies `withCurrentNames` to both reports. A keep-rule read with any `unchecked` guard prints `keep rule: incomplete` and never "no harm detected".
+- **D3.** New metrics beside the old (this doc's Phase 2 rule): `eval.hunter_catches_per_1k_settled`, `eval.hunter_kills_per_life_mean_settled`, `eval.hunter_juvenile_death_share_settled` and `eval.pursuit_kill_share_settled`, counted from `BURN_IN_TICKS`. Each is read for power on the shared baseline; the keep-rule guard moves to the settled catch metric only when it is `verified` and its detectable change at 64 seeds is no larger than the old one's.
+- **D4.** Under 32 seeds per arm a verdict uses a studentised bootstrap interval. A seeded calibration test holds the null false-positive rate at 16 seeds under 6.5%.
+- **D5.** The early metric is null unless a checkpoint exists at `EARLY_TICKS`.
+- **D6.** The ten metrics take unit `share difference`, which `eval:compare` scores with the relative floor.
+
+The scripts that proved each defect are kept, untracked, in `.sim/review-2026-11-20/metrics/` of the main checkout (`proof-power.mjs`, `bca-cal.mjs`, `audit.mjs`).
+
+| Chunk | Tasks     | Builder |
+| ----- | --------- | ------- |
+| P     | T8 to T15 | Sonnet  |
+
 ## Decisions
 
 | Decision                     | Contract                                                                                                                                      |
@@ -345,6 +373,19 @@ conditions hold.
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
 | T6  | Migrate plan references and numeric bars only to verified replacements; retire an old computation and registry entry only after a full plan audit finds zero references | [judgement] | T5         |
 | T7  | Fresh conformance review alongside the gate; verify reference absence, compatibility and regenerated metrics documentation                                              | [judgement] | T6         |
+
+### Phase 4 - The statistics layer
+
+| #   | Task                                                                                                                                                                                              | Nature       | Depends on             |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------- |
+| T8  | D1: a failing test (`powerRow` on a noise metric with 16 of 128 nulls returns `detectable: null`), then the minimum valid share in `detectableChange`, `powerRow` and `setReading`                | [judgement]  | -                      |
+| T9  | Regenerate the power readings and `docs/designs/metrics.md` from the saved E210 report; list every metric that changes status in the PR body and fix any plan Target that named one as `verified` | [mechanical] | T8                     |
+| T10 | D2: a failing test (`keepRule` with an old-name before report returns `worse`), then `withCurrentNames` inside `keepRule` and the `incomplete` line for an `unchecked` guard                      | [judgement]  | -                      |
+| T11 | D3: add the four settled hunter metrics beside the old ones with arithmetic and source tests (a recount of kills and hunter ticks from `BURN_IN_TICKS`) and their registry entries                | [judgement]  | -                      |
+| T12 | Read the settled metrics' liveness and power on the shared baseline; move `GUARD_METRICS` to the settled catch metric if it meets the rule above, else record why not                             | [judgement]  | T9, T11                |
+| T13 | D4: the seeded null calibration test at 16, 32 and 64 seeds (failing at 16), then the studentised interval under 32 seeds in `bootstrapInterval` and `judge`                                      | [judgement]  | -                      |
+| T14 | D5 and D6: null `@20k` without its checkpoint, with a test; unit `share difference` on the ten metrics and its scoring in `js/evo/compare-rules.js`, with tests                                   | [mechanical] | -                      |
+| T15 | Conformance review of Phase 4                                                                                                                                                                     | [judgement]  | T9, T10, T12, T13, T14 |
 
 ## Verification
 

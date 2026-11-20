@@ -233,7 +233,21 @@ Every `train:compare` read from E205 to E250 is `no verdict` (8 of 8). The base 
 
 - **32 offsets.** A screen that carries a decision runs 32 offsets (0 to 248 by 8). The base arm comes from the cache of T22f, so the second 16 cost one arm, not two. The trainer's seed list (`js/evo/trainer.js` cycles it by `seeds.length`, 256 today) grows to 512 entries by appending, so every existing offset replays unchanged. `evals/train-tune.json` moves `tuneOffsets` to these 32 and `holdoutOffsets` to 256 to 504 by 8, which share no seed with a tune offset.
 - **A pass test per stage.** `compareYield` adds, per stage, the exact paired test on pass and fail (the exact two-sided test on the discordant offsets, `binomialTwoSidedP` in `js/evo/binomial.js`). `train:compare` prints it beside the score test and reads a stage `better` or `worse` when p is under 0.05; the run-level verdict is unchanged. The smallest loss it could have seen (`leastDetectedLoss`) prints with it.
-- **Where a generation's time goes.** `npm run train:profile -- --curriculum <ladder> --generations 20` prints the share of wall time in world episodes, gate drills, the archive and checkpoint writes, per stage, and the worker idle share. It decides T29.
+- **Where a generation's time goes.** `npm run train:profile -- --curriculum <ladder> --generations 20` prints the share of wall time in world episodes, gate drills, the archive and checkpoint writes, per stage, and the worker busy share.
+
+Measured on 2026-11-20 (ten `ladder-1k` and `ladder-1l` runs and an 11-generation profiled run; 32 episodes of 4000 ticks):
+
+| Reading                                                     | Value                                                                |
+| ----------------------------------------------------------- | -------------------------------------------------------------------- |
+| Wall time in generations; in checkpoints and archive writes | 73%; 27% (15.7 s a checkpoint)                                       |
+| Worker busy share in a hunt-stage generation                | 0.35 to 0.45 at 12 workers; 0.85 to 0.91 at 3                        |
+| One archive or pool snapshot                                | 19.7 MB; a task carrying 8 costs 77 ms of main-thread clone          |
+| A fresh worker's first episode                              | 410 ms against 245 ms warm; workers are respawned every generation   |
+| Checkpoint drill tasks that repeat constant work            | about 70 of 105 (the random brains and the reference)                |
+| One warm episode                                            | step 74 to 79%, the observer feed 13.5 to 16%, `createWorld` 4 to 8% |
+
+The step is under half of a training run's wall time at 12 workers. T27 to T33 take the rest back without changing any archive a run writes: `--workers 1` and `--workers 32` still write identical archives. Until they land, a screen runs more runs at 3 or 4 workers each, 16 workers in total.
+
 - **The adaptive retest.** `validateAdapt` in `js/evo/adaptive-difficulty.js` accepts a `from` of 0 where the config validation accepts a `sprintBoost` of 0, and T16a reruns.
 
 #### Chunks
@@ -242,10 +256,10 @@ Every `train:compare` read from E205 to E250 is `no verdict` (8 of 8). The base 
 | ----- | ---------- | ------------------------------------------------- |
 | I     | T24 to T28 | the 32-offset screens, the pass test, the profile |
 
-| Done when                                                                                                         |
-| ----------------------------------------------------------------------------------------------------------------- |
-| `train:compare` on a fixture pair with 6 planted pass flips in 32 offsets prints a stage verdict, and none with 5 |
-| `train:profile` names the largest share of a generation, and T29 is written as tasks or closed with the reading   |
+| Done when                                                                                                                                            |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `train:compare` on a fixture pair with 6 planted pass flips in 32 offsets prints a stage verdict, and none with 5                                    |
+| the worker busy share in a hunt-stage generation at 12 workers is at least 0.8, and one 16-offset `base` arm costs at most 12 CPU hours against 17.6 |
 
 ## Delivery requirements
 
@@ -320,13 +334,18 @@ Every `train:compare` read from E205 to E250 is `no verdict` (8 of 8). The base 
 
 ### Phase 5 - Verdict power and trainer throughput
 
-| #   | Task                                                                                                                                                                                                                                                                                          | Nature       | Depends on    |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------- |
-| T24 | Append 256 seeds to the trainer's seed list with a test that offsets 0 to 255 replay unchanged; move `evals/train-tune.json` and the example grids to 32 tune and 32 held-out offsets with the base cache; `train:screen` warns when a grid with a verdict clause has under 32 offsets; tests | [mechanical] | -             |
-| T25 | Add the per-stage exact paired pass test to `compareYield` and the `train:compare` and `table.md` output, with the smallest detectable flip count; tests on planted flips                                                                                                                     | [judgement]  | -             |
-| T26 | Add `scripts/train-profile.mjs` and `npm run train:profile` with tests on a two-generation fixture run; record the shares for the current ladder in `sim-notes.md`                                                                                                                            | [judgement]  | -             |
-| T27 | From T26's reading, write the one or two largest savings as tasks T29 onward (or record that none exceeds 10% of a run), without changing any archive a run writes                                                                                                                            | [judgement]  | T26           |
-| T28 | Conformance review of Phase 5; move the Status line to `Implemented` when Phases 3 and 4 are also closed                                                                                                                                                                                      | [judgement]  | T24, T25, T27 |
+| #   | Task                                                                                                                                                                                                                                                                                                                       | Nature       | Depends on              |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------------------- |
+| T24 | Append 256 seeds to the trainer's seed list with a test that offsets 0 to 255 replay unchanged; move `evals/train-tune.json` and the example grids to 32 tune and 32 held-out offsets with the base cache; `train:screen` warns when a grid with a verdict clause has under 32 offsets; tests                              | [mechanical] | -                       |
+| T25 | Add the per-stage exact paired pass test to `compareYield` and the `train:compare` and `table.md` output, with the smallest detectable flip count; tests on planted flips                                                                                                                                                  | [judgement]  | -                       |
+| T26 | Add `scripts/train-profile.mjs` and `npm run train:profile` with tests on a two-generation fixture run; record the shares for the current ladder in `sim-notes.md`                                                                                                                                                         | [judgement]  | -                       |
+| T27 | Keep one worker pool alive for the whole run in `runPool` (`scripts/lib/worker-pool.mjs`) and the trainer, with a test that a run's archives are byte-identical to before and to `--workers 1`                                                                                                                             | [judgement]  | -                       |
+| T29 | Send the archive and opponent-pool snapshots to workers as `SharedArrayBuffer`s, or once per worker and generation, not cloned into every task (`runEpisodes` in `scripts/train.mjs`, `taskPool`); identical-archive test; main-thread `postMessage` share before and after                                                | [judgement]  | T27                     |
+| T30 | Cache checkpoint drill results across checkpoints, keyed by drill, seed, trials, config hash (the steer config included) and genome id: the random brains, the reference and unchanged elites (`buildTasks` in `scripts/drill.mjs`, `drillPart` in `scripts/lib/train-checkpoint.mjs`); identical `curve.jsonl` test       | [judgement]  | -                       |
+| T31 | Run a training episode that returns no metrics with the lean observer, and reuse the world across episodes in `runEpisode` (`js/evo/trainer.js`) through the `resetWorld` that [throughput.md](throughput.md) T9 adds (built here first if that task is not); identical-archive test for each, kept or reverted separately | [judgement]  | T27                     |
+| T32 | Size the pool so the episodes divide evenly across workers (`resolvePoolSize`), and write the archive JSON at checkpoints only (`saveArchive` in `scripts/lib/train-state.mjs`), with tests                                                                                                                                | [mechanical] | T27                     |
+| T33 | Re-run `train:profile` and one 16-offset `base` arm; record the worker busy share, the checkpoint share and the CPU hours against the Measured table                                                                                                                                                                       | [mechanical] | T26, T29, T30, T31, T32 |
+| T28 | Conformance review of Phase 5; move the Status line to `Implemented` when Phases 3 and 4 are also closed                                                                                                                                                                                                                   | [judgement]  | T24, T25, T33           |
 
 ## Verification
 
