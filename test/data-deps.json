@@ -1,4 +1,25 @@
 {
+    "test/affected.test.js": [
+        ".github/workflows/check.yml",
+        ".node-version",
+        "README.md",
+        "eslint.config.js",
+        "js/sim/brain.js",
+        "js/sim/wasm-binary.js",
+        "package-lock.json",
+        "package.json",
+        "scripts/check.sh",
+        "scripts/lib/data-deps.mjs",
+        "scripts/lib/test-scope.mjs",
+        "test/data-deps.json",
+        "test/data-deps.test.js",
+        "test/evo/survivable-world.slow.test.js",
+        "test/sim/brain.test.js",
+        "test/train.slow.test.js",
+        "tsconfig.json",
+        "vitest.config.js",
+        "wasm/blob-kernels.wasm"
+    ],
     "test/app/hud-css.test.js": [
         "css/app.css"
     ],
