@@ -97,6 +97,7 @@ describe('eval.hunter_zero_kill_share after burn-in', () => {
         die(scene, { cause: DEATH_CAUSE.STARVED, kills: 2, age: 100 });
         expect(hunterMetrics(scene, world())['eval.hunter_zero_kill_share']).toEqual({ value: 0 });
         expect(hunterMetrics(scene, world())['eval.hunter_kills_per_life_mean']).toEqual({ value: 1 });
+        expect(hunterMetrics(scene, world())['eval.hunter_kills_per_life_mean_settled']).toEqual({ value: 2 });
     });
 
     it('counts the hunters alive at the last tick at their end age: with their kills so far', () => {
@@ -107,11 +108,16 @@ describe('eval.hunter_zero_kill_share after burn-in', () => {
         w.ledgerKills[1] = 3;
         // slot 2 is a forager and slot 3 is dead: neither is a hunter life
         expect(hunterMetrics(scene, w)['eval.hunter_zero_kill_share']).toEqual({ value: 1 / 3 });
+        expect(hunterMetrics(scene, w)['eval.hunter_kills_per_life_mean_settled']).toEqual({ value: 4 / 3 });
     });
 
     it('is null with no hunter life after burn-in, dead or alive', () => {
         const m = hunterMetrics(createHunterScene(1000), world());
         expect(m['eval.hunter_zero_kill_share']).toEqual({ value: null, reason: 'no hunter life after burn-in' });
+        expect(m['eval.hunter_kills_per_life_mean_settled']).toEqual({
+            value: null,
+            reason: 'no hunter life after burn-in',
+        });
     });
 });
 

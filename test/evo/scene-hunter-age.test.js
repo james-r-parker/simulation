@@ -2,6 +2,7 @@
 // alive sets, with the band ticks checked against a naive tick-by-tick reference.
 
 import { describe, expect, it } from 'vitest';
+import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import { DEATH_CAUSE, EVENT_TYPE, createEventRing, pushEvent } from '../../js/sim/events.js';
 import { BIRTH_SOURCE } from '../../js/sim/hunter-ledger.js';
 import {
@@ -31,12 +32,13 @@ function killRecord(age, count) {
 }
 
 /**
- * @param {{age: number, kills: number, source?: number}} life a dying hunter
+ * @param {{age: number, kills: number, source?: number, tick?: number}} life a dying hunter
  * @returns {Float64Array} a ring holding one `HunterLedger` record at offset 0
  */
-function deathRecord({ age, kills, source = BIRTH_SOURCE.INITIAL }) {
+function deathRecord({ age, kills, source = BIRTH_SOURCE.INITIAL, tick = 1 }) {
     const ring = createEventRing(1);
     const o = pushEvent(ring, EVENT_TYPE.HUNTER_LEDGER, 1);
+    ring.data[o + 1] = tick;
     ring.data[o + 3] = age;
     ring.data[o + 4] = (kills * 8 + DEATH_CAUSE.STARVED) * 8 + source;
     return ring.data;
@@ -132,6 +134,25 @@ describe('the hunter age metrics', () => {
             noteAgeDeath(scene, deathRecord({ age, kills: 0 }), 0);
         }
         expect(ageMetrics(scene, worldWith([]))['eval.hunter_juvenile_death_share']).toEqual({ value: 0.5 });
+    });
+
+    it('shares the juvenile deaths again over the deaths at or after burn-in only', () => {
+        const scene = createAgeScene(J);
+        for (const [age, tick] of [
+            [10, BURN_IN_TICKS - 1],
+            [10, BURN_IN_TICKS],
+            [4000, BURN_IN_TICKS + 5],
+            [4000, BURN_IN_TICKS + 6],
+        ]) {
+            noteAgeDeath(scene, deathRecord({ age, kills: 0, tick }), 0);
+        }
+        const m = ageMetrics(scene, worldWith([]));
+        expect(m['eval.hunter_juvenile_death_share_settled']).toEqual({ value: 1 / 3 });
+        expect(m['eval.hunter_juvenile_death_share']).toEqual({ value: 0.5 });
+        expect(ageMetrics(createAgeScene(J), worldWith([]))['eval.hunter_juvenile_death_share_settled']).toEqual({
+            value: null,
+            reason: 'no hunter deaths after burn-in',
+        });
     });
 
     it('rates kills per life tick by birth source, the dead from the ledger and the alive from their slots', () => {
