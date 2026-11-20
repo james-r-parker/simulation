@@ -1,6 +1,6 @@
 # Agent workflow
 
-**Status:** Proposed - what every agent session reads, how an experiment is recorded and read back, what a branch learns before it pushes, how runs, worktrees and outside streams share the machine, and the two commands that take a chunk from a fresh branch to a merged PR; Phase 1 (the context diet) and Phase 5 (start to merge) are first.
+**Status:** In progress - Phase 5 (start to merge) is built; Phase 1 (the context diet) is next. The plan covers what every agent session reads, how an experiment is recorded and read back, what a branch learns before it pushes, how runs, worktrees and outside streams share the machine, and the two commands that take a chunk from a fresh branch to a merged PR.
 **Validated:** 58f38443 (2026-11-20)
 **Priority:** 3 - Workflow lead. Tooling that changes no sim rule; every session and every subagent pays the Phase 1 cost on its first token and every chunk ships through Phase 5, so both are built before the next training chunk
 **Depends on:** [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
@@ -276,7 +276,7 @@ An affected run that passes where the full run on the merged result fails is a m
 | ----- | ---------- | ------- |
 | E     | T22 to T27 | Sonnet  |
 
-### Phase 5 - Start to merge
+### Phase 5 - Start to merge (built)
 
 **Targets:** none - it moves no sim metric; its readings are the upper quartile of PR create to merge over the 20 chunk PRs after it merges (against 151 minutes), `check` wall time on a green PR (against 7 to 9 minutes), and no test shard over 4 minutes
 
@@ -370,7 +370,7 @@ An affected run that passes where the full run on the merged result fails is a m
 | T25 | Add `docs/handoffs/TEMPLATE.md`; rewrite "Delegating to subagents" in `AGENTS.md` for streams (one coordinator, one model family), the worker budget and `worktree-gc.sh` | [judgement]  | T24        |
 | T27 | Conformance review of Phase 4, with `scripts/worktree-gc.sh` run on the machine and the class counts before and after in the PR body                                      | [judgement]  | T24, T25   |
 
-### Phase 5 - Start to merge
+### Phase 5 - Start to merge (built)
 
 | #   | Task                                                                                                                                                                  | Nature       | Depends on |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |

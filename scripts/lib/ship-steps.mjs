@@ -127,13 +127,7 @@ export function stepGate(ctx) {
     }
     if (git(ctx, ['status', '--porcelain'])) {
         git(ctx, ['add', '-u']);
-        git(ctx, [
-            'commit',
-            '-m',
-            'style: apply check.sh --fix',
-            '-m',
-            'Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>',
-        ]);
+        git(ctx, ['commit', '-m', 'style: apply check.sh --fix']);
     }
 }
 
