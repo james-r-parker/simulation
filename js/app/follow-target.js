@@ -8,7 +8,8 @@ const CONTINUITY_RANGE = 600;
 const CONTINUITY_BONUS = 8;
 const LIFE_SCORE = 45;
 const PREGNANCY_SCORE = 35;
-const MOVEMENT_SCORE = 5;
+/** The score of a moving agent: an event must beat it to hold a follow (`follow.js`, boredom). */
+export const MOVEMENT_SCORE = 5;
 
 /**
  * @typedef {object} FollowInterest
@@ -62,7 +63,7 @@ export function noteFollowInterest(memory, effect, ctx) {
  * @param {number} nowMs displayed time
  * @returns {number} the strongest unexpired event score
  */
-function eventScore(memory, id, nowMs) {
+export function eventScore(memory, id, nowMs) {
     let score = 0;
     for (let k = 0; k < memory.count; k++) {
         if (memory.subject[k] !== id && memory.partner[k] !== id) {

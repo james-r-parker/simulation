@@ -2,7 +2,8 @@
 // (docs/designs/ambient-display.md, "Follow as a story").
 
 import { appLog } from './app-log.js';
-import { followStep, updateCamera } from './camera.js';
+import { followSubject, updateCamera } from './camera.js';
+import { createFrameState, enterFrame, frameSubject, handoffFrame, settleFrame } from './follow-frame.js';
 import { chooseHandoff, holdMsFor, RELATION, RELATION_CAPTIONS, RELATION_CAPTION_MS } from './follow-handoff.js';
 import { pickFollowAgent } from './follow-target.js';
 import { findAgent } from './renderer/overlays.js';
@@ -38,6 +39,9 @@ export function frameFollow(camera) {
  *   skip: number}} context
  * @property {{id: number, relation: string}} choice scratch for `chooseHandoff`
  * @property {{from: number, pick: FollowState['context']}} handoff scratch: the subject that left and the pick's context
+ * @property {import('./follow-frame.js').FrameState} frame the look-ahead, pair and zoom state
+ * @property {{dtMs: number, nowMs: number, paused: boolean,
+ *   player: import('./renderer/effects-player.js').EffectsPlayer | null}} frameAt scratch for `frameSubject`
  * @property {string} captionText the relation caption on screen
  * @property {number} captionUntilMs the wall time it goes
  */
@@ -46,6 +50,9 @@ export function frameFollow(camera) {
 function report(f, reason, toId) {
     const event = toId === 0 ? 'FollowEnded' : f.observedId === 0 ? 'FollowStarted' : 'FollowChanged';
     (f.deps.log ?? appLog)('info', event, { fromId: f.observedId, toId, reason });
+    if (toId !== 0) {
+        (f.observedId === 0 ? enterFrame : handoffFrame)(f.frame);
+    }
     f.observedId = toId;
     f.heldMs = 0;
     if (toId === 0) {
@@ -134,7 +141,13 @@ function stepFollow(f, at) {
     const i = subjectIndex(f, agents, at);
     if (i >= 0) {
         f.heldMs = 0;
-        followStep(camera, agents.x[i], agents.y[i], at.dtMs);
+        const view = f.frameAt;
+        view.dtMs = at.dtMs;
+        view.nowMs = at.nowMs;
+        view.paused = at.paused;
+        view.player = f.deps.getPlayer();
+        followSubject(camera, frameSubject(f.frame, agents, i, view), at.dtMs);
+        settleFrame(f.frame);
     } else {
         camera.following = state.followId !== 0;
         updateCamera(camera, at.dtMs);
@@ -158,6 +171,8 @@ export function createFollowController(deps) {
         context,
         choice: { id: 0, relation: RELATION.PICK },
         handoff: { from: 0, pick: context },
+        frame: createFrameState(deps.camera),
+        frameAt: { dtMs: 0, nowMs: 0, paused: false, player: null },
         captionText: '',
         captionUntilMs: 0,
     };

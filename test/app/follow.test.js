@@ -11,8 +11,8 @@ function stubPlayer() {
     return {
         story: createStory(),
         followInterest: createFollowInterest(),
-        flee: { pursuits: { count: 0 } },
-        bits: { PREGNANT: 1 },
+        flee: { pursuits: { count: 0 }, rules: { maxVelocity: 1 } },
+        bits: { PREGNANT: 1, ATE_SHIFT: 0, TIMER_MASK: 31 },
     };
 }
 
@@ -210,5 +210,32 @@ describe('follow as a story', () => {
         expect(s.follow.caption()).toBe('');
         s.follow.reset();
         expect(s.follow.caption()).toBe('');
+    });
+});
+
+describe('follow framing in the controller', () => {
+    it('leads a moving subject by its displayed velocity, and centres it exactly while paused', () => {
+        const s = setup(stubPlayer());
+        s.state.followId = 7;
+        s.camera.targetZoom = 0.5;
+        for (let k = 0; k < 20; k++) {
+            s.agents.x[0] += 2;
+            step(s, 16);
+        }
+        expect(s.camera.targetX).toBeGreaterThan(s.agents.x[0] + 10);
+        s.follow.step({ dtMs: 16, nowMs: 1000, available: true, paused: true });
+        expect(s.camera.targetX).toBeCloseTo(s.agents.x[0], 4);
+        expect(s.camera.targetZoom).toBe(0.5);
+    });
+
+    it('keeps a viewer zoom made mid-follow', () => {
+        const s = setup(stubPlayer());
+        s.state.followId = 7;
+        step(s, 16);
+        s.camera.targetZoom = 1.5;
+        for (let k = 0; k < 20; k++) {
+            step(s, 16);
+        }
+        expect(s.camera.targetZoom).toBe(1.5);
     });
 });
