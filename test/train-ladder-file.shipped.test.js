@@ -164,7 +164,7 @@ describe('the food-behind screen files (training-stages Phase 8)', () => {
         ).not.toThrow();
     });
 
-    it('plans both grids with the three arms, and the holdout on the other 16 offsets', () => {
+    it('plans both grids with the three arms, and the holdout on the other 32 offsets', () => {
         for (const grid of [GRID, HOLDOUT]) {
             const plan = planScreen(grid, (file) => readJson(file));
             expect(plan.arms.map((a) => a.name)).toEqual(['base', 'nursery-scatter', 'turn-rung']);
@@ -177,8 +177,8 @@ describe('the food-behind screen files (training-stages Phase 8)', () => {
             expect(plan.arms[1].ladder[1]).toEqual(LADDER[1]);
             expect(plan.arms.every((a) => a.train.checkpointEvery === 5)).toBe(true);
         }
-        expect(GRID.offsets).toEqual(Array.from({ length: 16 }, (_, i) => i * 8));
-        expect(HOLDOUT.offsets).toEqual(Array.from({ length: 16 }, (_, i) => 128 + i * 8));
+        expect(GRID.offsets).toEqual(Array.from({ length: 32 }, (_, i) => i * 8));
+        expect(HOLDOUT.offsets).toEqual(Array.from({ length: 32 }, (_, i) => 256 + i * 8));
         expect(GRID.feasible).toBe(false);
     });
 });

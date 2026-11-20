@@ -3,6 +3,7 @@ import {
     DEFAULT_WORKERS_PER_RUN,
     ladderText,
     planScreen,
+    screenWarnings,
     screenRuns,
     textHash,
     trainArgs,
@@ -116,5 +117,20 @@ describe('the run list', () => {
         expect(text.endsWith('}\n]\n')).toBe(true);
         expect(textHash(text)).toMatch(/^[0-9a-f]{64}$/);
         expect(textHash(text)).toBe(textHash(ladderText(LADDER)));
+    });
+});
+
+describe('screenWarnings', () => {
+    const offsets = (/** @type {number} */ n) => Array.from({ length: n }, (_, i) => i * 8);
+    it('warns when a grid that compares arms runs under 32 offsets', () => {
+        const warnings = screenWarnings(planScreen(grid({ offsets: offsets(16), arms: { a: {} } }), read));
+        expect(warnings).toHaveLength(1);
+        expect(warnings[0]).toMatch(/16 offsets is under 32/);
+    });
+
+    it('is quiet at 32 offsets, and for a grid with a single arm', () => {
+        expect(screenWarnings(planScreen(grid({ offsets: offsets(32), arms: { a: {} } }), read))).toEqual([]);
+        const solo = grid({ offsets: offsets(4), reference: 'only', arms: { only: {} } });
+        expect(screenWarnings(planScreen(solo, read))).toEqual([]);
     });
 });

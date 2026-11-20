@@ -8,9 +8,9 @@ const TRAIN_KEYS = Object.freeze(['episodes', 'ticks', 'offerFrom', 'checkpointE
 const TRAIN_DEFAULTS = /** @type {Record<string, number>} */ (Object.freeze({ episodes: 32, checkpointEvery: 10 }));
 const DEFAULT_MAX_ARMS = 2;
 const DEFAULT_WORLD_SEEDS = 16;
-const OFFSET_COUNT = 16;
+const OFFSET_COUNT = 32;
 const OFFSET_STEP = 8;
-const HOLDOUT_FROM = 128;
+const HOLDOUT_FROM = 256;
 
 /**
  * @typedef {object} Tunable

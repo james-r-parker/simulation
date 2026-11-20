@@ -30,6 +30,15 @@ export async function main(argv, print = console.log) {
         const { before, after, out } = parseArgs(argv);
         const first = loadRuns(expandDirs([before]));
         const second = loadRuns(expandDirs([after]));
+        const lists = new Set([...first.runs, ...second.runs].map((run) => run.seedListHash ?? null));
+        if (lists.size > 1) {
+            throw Object.assign(
+                new Error(
+                    `the runs were made with different trainer seed lists (${[...lists].map((h) => h ?? 'none recorded').join(', ')}); episode seeds differ past index 255, so the arms are not paired`,
+                ),
+                { exitCode: 2 },
+            );
+        }
         const stages = second.stages.length > first.stages.length ? second.stages : first.stages;
         const compare = compareYield(first.runs, second.runs, { stages: { before: stages, after: stages } });
         const arms = { before: ladderYield(first.runs, stages), after: ladderYield(second.runs, stages) };

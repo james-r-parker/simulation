@@ -10,6 +10,7 @@ import {
     FRAME_CAP,
     FX_FAMILIES,
     FX_MIN_MS,
+    wallScale,
     fxStats,
     inFxView,
     lifeFor,
@@ -102,6 +103,19 @@ describe('countFor and lifeFor', () => {
         expect(b.ticksPerMs).toBeCloseTo(0.24, 2);
         expect(lifeFor(b, 12)).toBeCloseTo(FX_MIN_MS * b.ticksPerMs);
         expect(lifeFor(b, 120)).toBe(120);
+    });
+});
+
+describe('wallScale', () => {
+    it('is the playhead speed as a multiple of x1, 1 before a rate is measured, never under a floor', () => {
+        const b = createFxBudget();
+        expect(wallScale(b)).toBe(1);
+        b.ticksPerMs = 0.48;
+        expect(wallScale(b)).toBeCloseTo(8);
+        b.ticksPerMs = 0.06;
+        expect(wallScale(b)).toBeCloseTo(1);
+        b.ticksPerMs = 1e-9;
+        expect(wallScale(b)).toBe(0.05);
     });
 });
 

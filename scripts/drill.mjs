@@ -13,6 +13,7 @@ import { seedlessConfig } from '../js/evo/report.js';
 import { configHash, createConfig } from '../js/sim/config.js';
 import { createSimLog } from '../js/sim/log.js';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
+import { runCached } from './lib/drill-cache.mjs';
 import { eliteSkillLines, formatTable, reportJson } from './lib/drill-report.mjs';
 import { allEliteSubjects, eliteSubjects, fileSubject } from './lib/drill-subjects.mjs';
 import { genomeSkipCells } from './lib/skip-cells-report.mjs';
@@ -279,16 +280,20 @@ function rowsOf(args, { genomes, tasks, results, log }) {
 
 /**
  * Drills the genomes and the reference on the pool.
- * @param {DrillArgs} args the options (`drills`, `seed`, `trials`, `workers`; the source flags are not read)
+ * @param {DrillArgs & {cache?: import('./lib/drill-cache.mjs').DrillCache}} args the options (`drills`, `seed`, `trials`,
+ *   `workers`; the source flags are not read; `cache` answers the tasks it holds, a trainer's repeated checkpoints)
  * @param {{genomes: import('../js/evo/memory-probe-run.js').Subject[], config: Record<string, any>, log: import('../js/sim/log.js').SimLog}} run
  *   the genomes, the config overrides and the log
  * @returns {Promise<import('./lib/drill-report.mjs').DrillRow[]>} the rows: a genome per row, then the reference
  */
 export async function drillGenomes(args, { genomes, config, log }) {
     const tasks = buildTasks(args, { genomes, config });
-    const results = await runPool(
+    const results = await runCached(
         tasks.map((t) => t.task),
-        { workerUrl: WORKER_URL, workers: args.workers },
+        {
+            cache: args.cache,
+            run: (missing) => runPool(missing, { workerUrl: WORKER_URL, workers: args.workers }),
+        },
     );
     for (const record of results.flatMap((result) => result.records)) {
         log.log('debug', 'DrillTrial', record);

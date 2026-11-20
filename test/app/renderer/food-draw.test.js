@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createFoodDraw } from '../../../js/app/renderer/food-draw.js';
+import { createInterpolated } from '../../../js/app/interpolate.js';
+import { FAIL_MS } from '../../../js/app/renderer/death-anim.js';
+import { beginDeath, createDying, trackBodies } from '../../../js/app/renderer/dying.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 describe('createFoodDraw', () => {
@@ -57,6 +60,32 @@ describe('createFoodDraw', () => {
         reused.seq = 2;
         layer.update?.({ ...frame, nowMs: 900 });
         expect(plant.geometry.instanceCount).toBe(0);
+        layer.dispose();
+    });
+
+    it('fades the carcass of an eaten body in over the leaving beat when it is given the dying bodies', () => {
+        const dying = createDying(8);
+        const body = createInterpolated(8);
+        body.count = 1;
+        body.slot[0] = 0;
+        body.genomeId[0] = 30;
+        body.size[0] = 10;
+        trackBodies(dying, body, 0);
+        trackBodies(dying, createInterpolated(8), 0);
+        beginDeath(dying, { genome: 30, cause: 0, nowMs: 0 });
+        const layer = createFoodDraw({ info: { maxFood: 8 }, dying, causeNames: ['EATEN'] });
+        const carcass = layer.object.children[6];
+        const snapshot = makeSnapshot(1, [], { foods: [[0, 0, -7, 0, 0, 0]] });
+        const frame = /** @type {any} */ ({
+            snapshot,
+            camera: { zoom: 1 },
+            nowMs: FAIL_MS,
+            family: { palette: 'default' },
+        });
+        layer.update?.(frame);
+        expect(carcass.geometry.attributes.iNeon.getX(0)).toBe(0);
+        layer.update?.({ ...frame, nowMs: 5000 });
+        expect(carcass.geometry.attributes.iNeon.getX(0)).toBeGreaterThan(0);
         layer.dispose();
     });
 });

@@ -40,7 +40,7 @@ export function loadPool(resumePath, index) {
         }
         const json = JSON.parse(readFileSync(path, 'utf8'));
         const archive = decodeArchive({ ...json, rulesHash: rulesHash(config) }, config, undefined, TRAINER_DESCRIPTOR);
-        return { ...entry, snapshot: snapshotArchive(archive) };
+        return { ...entry, snapshot: snapshotArchive(archive, { shared: true }) };
     });
     return { entries, checkpoints: index.checkpoints };
 }
@@ -58,7 +58,12 @@ export function poolAfterCheckpoint(pool, { archive, generation, stage, stagePas
     if (noted.take === null) {
         return { pool: noted.pool, taken: null };
     }
-    const entry = { snapshot: snapshotArchive(archive), generation, kind: noted.take, stage: stagePassed ?? stage };
+    const entry = {
+        snapshot: snapshotArchive(archive, { shared: true }),
+        generation,
+        kind: noted.take,
+        stage: stagePassed ?? stage,
+    };
     return { pool: addSnapshot(noted.pool, entry), taken: noted.take };
 }
 

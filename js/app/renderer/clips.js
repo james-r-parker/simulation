@@ -92,6 +92,11 @@ export const CLIPS = Object.freeze({
     rest: { loop: true, rate: 0.4, tracks: [pulse('sx', 1.04), pulse('sy', 1.04), track('eye', '0 0.15, 1 0.15')] },
     sated: { loop: true, rate: 0.3, tracks: [track('sy', '0 1.08, 1 1.08')] },
     sick: { loop: true, rate: 1.5, tracks: [swing('rot', 0.08)] },
+    failing: {
+        loop: true,
+        rate: 0.5,
+        tracks: [pulse('sy', 0.94), pulse('sx', 0.97), track('eye', '0 0.8, 1 0.8')],
+    },
     graze: { loop: true, rate: 0.5, tracks: [pulse('head', 0.3)] },
     gallop: { loop: true, rate: 1.4, tracks: [swing('limb', 0.5), pulse('ty', 0.05)] },
     stampede: { loop: true, rate: 2.6, tracks: [swing('limb', 0.9), pulse('ty', 0.09)] },
@@ -135,12 +140,20 @@ export const CLIPS = Object.freeze({
             track('flash', '0 0, 0.25 0.5, 0.5 0, 0.75 0.5, 1 0'),
         ],
     },
-    birthPop: {
+    bud: {
         loop: false,
         tracks: [
-            track('sx', '0 0.2, 1 1 elasticOut'),
-            track('sy', '0 0.2, 1 1 elasticOut'),
-            track('flash', '0 1, 1 0 quadOut'),
+            track('sx', '0 0.2, 1 1 quadOut'),
+            track('sy', '0 0.2, 1 1 quadOut'),
+            track('flash', '0 0.6, 1 0 quadOut'),
+        ],
+    },
+    fission: {
+        loop: false,
+        tracks: [
+            track('sx', '0 0.5, 0.45 0.8 quadOut, 1 1 quadOut'),
+            track('sy', '0 1.18, 0.45 1.08 quadOut, 1 1 quadOut'),
+            track('flash', '0 0.5, 1 0 quadOut'),
         ],
     },
     callThrob: {
@@ -180,14 +193,22 @@ export const CLIPS = Object.freeze({
     rupture: {
         loop: false,
         tracks: [
-            track('sx', '0 1, 0.12 1.35 quadOut, 0.45 0.7 sineInOut, 1 0.7'),
-            track('sy', '0 1, 0.12 0.6 quadOut, 0.45 0.7 sineInOut, 1 0.7'),
-            track('flash', '0 1, 0.25 0 quadOut, 1 0'),
+            track('sx', '0 1, 0.15 1.15 quadOut, 0.6 0.72 sineInOut, 1 0.7'),
+            track('sy', '0 1, 0.15 0.82 quadOut, 0.6 0.72 sineInOut, 1 0.7'),
+            track('flash', '0 0.5, 0.3 0 quadOut, 1 0'),
         ],
     },
     deflate: {
         loop: false,
-        tracks: [track('sx', '0 1, 1 1.1 sineInOut'), track('sy', '0 1, 1 0.25 sineInOut')],
+        tracks: [track('sx', '0 1, 0.7 1.1 sineInOut, 1 1.1'), track('sy', '0 1, 0.7 0.3 sineInOut, 1 0.25')],
+    },
+    pit: {
+        loop: false,
+        tracks: [
+            track('rot', '0 0, 0.2 0.06 sineInOut, 0.5 -0.05 sineInOut, 0.8 0.03 sineInOut, 1 0 sineInOut'),
+            track('sx', '0 1, 0.6 0.92 sineInOut, 1 0.88'),
+            track('sy', '0 1, 0.6 0.92 sineInOut, 1 0.88'),
+        ],
     },
     wither: {
         loop: false,
@@ -221,7 +242,7 @@ export const TWEEN_CLIPS = Object.freeze([
     'callThrob',
     'howl',
     'court',
-    'birthPop',
+    'bud',
     'shakeOff',
     'kill',
     'bump',
@@ -232,6 +253,8 @@ export const TWEEN_CLIPS = Object.freeze([
     'convulse',
     'crumple',
     'flatten',
+    'pit',
+    'fission',
 ]);
 
 /**

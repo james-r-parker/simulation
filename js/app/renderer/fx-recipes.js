@@ -5,7 +5,7 @@
 
 import { createPrng } from '../prng.js';
 import { PALETTE } from './colors.js';
-import { admitFx, countFor, createFxBudget, FAMILY, lifeFor, RANK } from './fx-budget.js';
+import { admitFx, countFor, createFxBudget, FAMILY, lifeFor, RANK, wallScale } from './fx-budget.js';
 import { CURVE } from './fx-curves.js';
 import { spawnFx } from './fx-ring.js';
 
@@ -240,6 +240,8 @@ export const DEATH_RECIPES = Object.freeze({
  * @property {ArrayLike<number>} rgb the effect's own colour
  * @property {number} [reach] world units, for a part whose reach is -1
  * @property {number} [life] ticks, for a part whose life is -1
+ * @property {boolean} [wall] whether the effect keeps wall time: its lives and delays are scaled by the playhead's
+ *   speed, so it lasts as long at x8 as at x1 (a death's particles, which end with the body's clip)
  */
 
 /**
@@ -299,8 +301,9 @@ function setPart(fx, part, at) {
     rec.g = rgb[1] * gain;
     rec.b = rgb[2] * gain;
     rec.gain = 1;
-    rec.tick = at.tick + (part.delay ?? 0);
-    rec.life = lifeFor(fx.budget, part.life === -1 ? (at.life ?? 1) : part.life);
+    const scale = at.wall === true ? wallScale(fx.budget) : 1;
+    rec.tick = at.tick + (part.delay ?? 0) * scale;
+    rec.life = lifeFor(fx.budget, (part.life === -1 ? (at.life ?? 1) : part.life) * scale);
     rec.curve = part.curve;
     rec.stretch = part.stretch ?? 1;
     rec.minPx = part.minPx ?? 3;
