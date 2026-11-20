@@ -13,7 +13,7 @@ The step is fast enough for the app: 1.7 ms a tick at 500 slots against a 4.2 ms
 
 This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
 
-Own work first: Phase 3 (the loops over what is alive) first, since its savings are measured; then Phase 1 on a quiet machine, Phases 2 and 4, and Phase 5 for the user.
+Own work first: Phase 3 (the loops over what is alive) first, since its savings are measured; then Phase 1 on a quiet machine, Phases 2 and 4, Phase 6 (more of the step in the kernel), and Phase 5 for the user.
 
 | Step | Doc                                | Built when                                                                                                              |
 | ---- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -167,16 +167,45 @@ The brain is a third of the step and its sums are exact by contract: `f32` weigh
 | ----- | -------- | --------------------------------------------------- |
 | F     | T12, T13 | The spikes (Rust by Opus), the table and the review |
 
+### Phase 6 - More of the step in the kernel
+
+**Targets:** bench.step_ms@500, bench.step_ms@100, bench.phase_ms.field@100, bench.phase_ms.sense@500
+
+The user lifted the limit on moving code to Rust on 2026-11-20, where it speeds the step up by a lot. This phase moves a JS loop into the kernel only when the numbers say so.
+
+- **Rule.** A loop moves when it is at least 2% of a `node --cpu-prof` profile in either regime (the default world, or a world held at 500 agents) after Phase 3, draws nothing from the RNG, and logs no event. It keeps the bit-identical contract of [wasm-kernels.md](wasm-kernels.md): the same operations in the same order, `f64` where JS used a double, every golden `worldHash` unchanged. The JS loop it replaces is deleted in the same PR.
+- **Kept or reverted.** Each move is its own commit, measured with `npm run bench:micro -- --area wasm --compare HEAD` and one eval seed's ms a tick, and kept only outside the printed margin.
+- **Stop.** The phase stops when no remaining JS loop reaches 2% in either regime, or when two moves in a row are reverted.
+
+Candidates, with their share on 2026-11-20 before Phase 3 (each is re-read by T14 before it is built):
+
+| Loop                                              | Where                                                                                               | Default world          | World held at 500 | Note                                                                                                     |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------- | ----------------- | -------------------------------------------------------------------------------------------------------- |
+| Herd grazing collect, herd steering, rock resolve | `collectPlants` in `js/sim/herd-graze.js`; `steerGroup`, `resolveBody` in `js/sim/herd-steering.js` | about 7% after Phase 3 | about 1.5%        | the graze's RNG draws and seed loading stay in JS; the kernel returns the candidate plants in slot order |
+| The sense glue                                    | `castSlot` in `js/sim/ray-march.js`                                                                 | 3.2%                   | 4.2%              | one kernel call per tick for every caster, in place of one per caster                                    |
+| Integration                                       | `integrate` in `js/sim/physics.js`                                                                  | 1.4%                   | 1.9%              | beside `move_all`                                                                                        |
+| Food ageing                                       | `ageFood`, `ageItem` in `js/sim/food.js`                                                            | 1.7%                   | 0.7%              | plants only; meat keeps its JS path and its events                                                       |
+| Body, scent and refuge inputs                     | `writeBodyInputs`, `writeScentInputs`, `writeRefugeInputs`                                          | under 0.7% each        | 0.7 to 1.0% each  | one call that writes an agent's whole input row                                                          |
+
+The candidates sum to about 14% of the default world and 10% of a full one. A kernel loop of this kind recovers half to two thirds of its JS cost, so the expected gain is 5 to 9% of the step. The trainer's idle workers ([training-loop.md](training-loop.md) T27 to T33) are the larger saving and are built first.
+
+#### Chunks
+
+| Chunk | Tasks      | Holds                                             |
+| ----- | ---------- | ------------------------------------------------- |
+| G     | T14 to T18 | the profile, each move (Rust by Opus), the review |
+
 ## Decisions
 
-| Decision                                                                                       | Why                                                                                                                                                                         | Who                              |
-| ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| Measure across workers before touching a kernel                                                | Seven squeezes of the single-thread kernels were tried and four reverted; the unmeasured loss is the 37% a world gives up beside fifteen others                             | Delegated (planning, 2026-11-15) |
-| Nothing more moves to Rust in Phases 1 to 4                                                    | The kernels are 60% of the step and no JS function is above 5%; what is left in JS is rules with RNG draws and events, which [wasm-kernels.md](wasm-kernels.md) keeps in JS | Delegated (planning, 2026-11-15) |
-| Lists of live slots are scratch, rebuilt each tick                                             | Tests, staged worlds and tools write `alive` and `foodAlive` directly; a list kept across ticks goes stale ([wasm-kernels.md](wasm-kernels.md) T27)                         | Planner, from wasm-kernels.md    |
-| A change is kept only outside its printed margin and bit-identical, else reverted and recorded | The rule of [wasm-kernels.md](wasm-kernels.md) Phases 5 and 6                                                                                                               | Planner, from wasm-kernels.md    |
-| Levers that change a rounding or a behaviour are spikes; none merges without the user          | The user ruled the behaviour-changing speed levers out ([wasm-kernels.md](wasm-kernels.md), Decisions); a spike gives the number that decision would rest on                | User, wasm-kernels.md; planner   |
-| The app's frame time is not a target                                                           | The step fits a 240 Hz frame more than twice; drawing is [crisp-renderer.md](crisp-renderer.md)'s                                                                           | Delegated (planning, 2026-11-15) |
+| Decision                                                                                       | Why                                                                                                                                                                                       | Who                              |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| Measure across workers before touching a kernel                                                | Seven squeezes of the single-thread kernels were tried and four reverted; the unmeasured loss is the 37% a world gives up beside fifteen others                                           | Delegated (planning, 2026-11-15) |
+| Nothing more moves to Rust in Phases 1 to 4                                                    | The kernels are 60% of the step and no JS function is above 5%; what is left in JS is rules with RNG draws and events, which [wasm-kernels.md](wasm-kernels.md) keeps in JS               | Delegated (planning, 2026-11-15) |
+| Phase 6 moves measured loops to Rust                                                           | The user lifted the limit on 2026-11-20. A loop moves only at 2% of a profile, with no RNG draw and no event, under the bit-identical contract, and is kept only outside the bench margin |
+| Lists of live slots are scratch, rebuilt each tick                                             | Tests, staged worlds and tools write `alive` and `foodAlive` directly; a list kept across ticks goes stale ([wasm-kernels.md](wasm-kernels.md) T27)                                       | Planner, from wasm-kernels.md    |
+| A change is kept only outside its printed margin and bit-identical, else reverted and recorded | The rule of [wasm-kernels.md](wasm-kernels.md) Phases 5 and 6                                                                                                                             | Planner, from wasm-kernels.md    |
+| Levers that change a rounding or a behaviour are spikes; none merges without the user          | The user ruled the behaviour-changing speed levers out ([wasm-kernels.md](wasm-kernels.md), Decisions); a spike gives the number that decision would rest on                              | User, wasm-kernels.md; planner   |
+| The app's frame time is not a target                                                           | The step fits a 240 Hz frame more than twice; drawing is [crisp-renderer.md](crisp-renderer.md)'s                                                                                         | Delegated (planning, 2026-11-15) |
 
 ## Delivery requirements
 
@@ -237,6 +266,16 @@ The brain is a third of the step and its sums are exact by contract: `f32` weigh
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
 | T12 | Build the five spikes on throwaway branches and measure each (`bench.step_ms@500`, `bench.parallel_ticks_per_s@16`, the reference's drill table); nothing merges        | [judgement] | T5         |
 | T13 | The spike table in [sim-notes.md](sim-notes.md) for the user; conformance review of Phase 5 by a fresh agent, in parallel with `scripts/check.sh`; move the Status line | [judgement] | T12        |
+
+### Phase 6 - More of the step in the kernel
+
+| #   | Task                                                                                                                                                                                      | Nature      | Depends on |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T14 | Re-profile both regimes after Phase 3 and write the table of JS loops at or above 2% with their RNG and event use; name the moves, largest first                                          | [judgement] | T8         |
+| T15 | Move the herd collect, steering and rock resolve to the kernel (Opus), the JS loop deleted, a naive-reference test and every golden `worldHash` unchanged; kept or reverted on the margin | [judgement] | T14        |
+| T16 | Batch the sense glue into one kernel call for all casters (Opus), with the same tests; kept or reverted on the margin                                                                     | [judgement] | T14        |
+| T17 | Each further loop T14 names (integration, plant ageing, the input writers), one commit each (Opus), kept or reverted on the margin; re-record `bench/baseline.json` in its own commit     | [judgement] | T15, T16   |
+| T18 | Conformance review of Phase 6 by a fresh agent, in parallel with `scripts/check.sh` under the CPU lock; `npm run browser:hash`; the table of what was kept and reverted                   | [judgement] | T17        |
 
 ## Verification
 
