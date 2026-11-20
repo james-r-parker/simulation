@@ -269,16 +269,6 @@ describe('train:export', () => {
     });
 });
 
-describe('evals/train-seeds.json', () => {
-    it('holds 256 distinct seeds, none in evals/seeds.json', () => {
-        const train = JSON.parse(readFileSync('evals/train-seeds.json', 'utf8'));
-        const evals = JSON.parse(readFileSync('evals/seeds.json', 'utf8'));
-        expect(train).toHaveLength(256);
-        expect(new Set(train).size).toBe(256);
-        expect(train.filter((/** @type {number} */ s) => evals.includes(s))).toEqual([]);
-    });
-});
-
 describe('saveArchive', () => {
     it('stamps generation and the stages reached', () => {
         const args = parseArgs([

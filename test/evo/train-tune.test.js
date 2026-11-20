@@ -17,12 +17,12 @@ const spec = (/** @type {object} */ extra = {}) => ({
 });
 
 describe('withDefaults', () => {
-    it('lays in the defaults: 3 arms, offsets 0..120 and 128..248 by 8, 16 world seeds', () => {
+    it('lays in the defaults: 2 arms, offsets 0..248 and 256..504 by 8, 16 world seeds', () => {
         const out = withDefaults(spec());
         expect(out).toMatchObject({ maxArms: 2, worldSeeds: 16 });
-        expect(out.tuneOffsets).toEqual([0, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120]);
-        expect(out.holdoutOffsets.slice(0, 2)).toEqual([128, 136]);
-        expect(out.holdoutOffsets.at(-1)).toBe(248);
+        expect(out.tuneOffsets).toEqual(Array.from({ length: 32 }, (_, i) => i * 8));
+        expect(out.holdoutOffsets.slice(0, 2)).toEqual([256, 264]);
+        expect(out.holdoutOffsets.at(-1)).toBe(504);
     });
 
     it('keeps what the spec sets', () => {
