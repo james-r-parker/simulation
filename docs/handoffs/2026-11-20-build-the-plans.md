@@ -115,3 +115,26 @@ Adaptive difficulty is untested, not falsified: E251 stopped on a validation err
 
 Commit, open the PR, and append to this file: what merged (PR links), what is running (run names and their worktree),
 and the next task id per lane.
+
+## Progress - coordinator session 2026-11-20
+
+Merged:
+
+- [PR 551](https://github.com/james-r-parker/simulation/pull/551) agent-workflow.md Phase 5 (built): `scripts/task-start.sh`, `scripts/ship.sh`, shard 6 split (304 s to 61 s; `heavy-gate-validity` 4 min 34 s, over the 4-minute bar).
+- [PR 553](https://github.com/james-r-parker/simulation/pull/553) agent-workflow.md Phase 1 chunk A (T1 to T4): `docs/commands.md`, `AGENTS.md` 135842 to 13837 bytes, `docs/notes/`, the 400-character status cap.
+- [PR 552](https://github.com/james-r-parker/simulation/pull/552) ambient-display.md Phase 1 chunk A (T1 to T4): the director on air behind `?tv=1`, the `T` key and idle. `director:dry` misses its bars (chase precision 0.25 to 0.5; seed 2 at 36 shots an hour); T4b planned.
+- [PR 554](https://github.com/james-r-parker/simulation/pull/554) metric-noise.md Phase 4 T8 to T11, T13, T14: D1 to D6 fixed; 177 of 375 metrics verified (204 before); null false positives at 16 seeds 9.3% to 5.8%.
+
+In flight:
+
+| Lane | Work                                                                  | Where                                                                                                                                                           |
+| ---- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B    | E252: 128-seed 200000-tick baseline with the settled metrics, for T12 | run `settled-baseline-E252`, frozen, in worktree `agent-a049f978c889fc87d` (keep it)                                                                            |
+| B    | fair-chase.md Phase 1 (T1 to T5, E253 = E-FC-1), on `season/next`     | branch `feat/sprint-store` (Opus)                                                                                                                               |
+| A    | agent-workflow.md Phase 1 chunk B (T5 to T8)                          | branch `docs/scene-scorecard`                                                                                                                                   |
+| C    | ambient-display.md T4b (the `director:dry` bars)                      | branch `feat/director-bars`                                                                                                                                     |
+| -    | throughput.md T7a, T6, T7b                                            | draft [PR 550](https://github.com/james-r-parker/simulation/pull/550): needs `bench:parts --area field --compare origin/main` under the CPU lock once E252 ends |
+
+Next per lane: A - Phase 1 review T9, then Phases 3 and 6. B - T12 and T15 on E252, then training-loop.md Phase 5. C - T5 (perf:browser on the real GPU and the walk), then Phase 2.
+
+Waiting on the user, updated: subagents may push and open PRs (user, 2026-11-20), but the auto-mode classifier still refuses a subagent's `git push`; the coordinator pushes.
