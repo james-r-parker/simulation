@@ -138,13 +138,10 @@ describe('the food-behind screen files (training-stages Phase 8)', () => {
     const HOLDOUT = readJson('evals/train-screens/food-behind-holdout.grid.json');
     const SCATTER_FILE = 'evals/train-screens/stages/nursery-scatter.json';
 
-    it('builds the scatter world with no floor, differing from the nursery only in its food', () => {
+    it('adopts the scatter world into evals/stages/nursery.json with no floor', () => {
         expect(createConfig(SCATTER).minAgents).toBe(0);
-        const changed = Object.keys({ ...NURSERY, ...SCATTER }).filter(
-            (key) => JSON.stringify(NURSERY[key]) !== JSON.stringify(SCATTER[key]),
-        );
-        expect(changed.sort()).toEqual(['foodBackgroundShare', 'initialFood', 'maxFood']);
-        expect(SCATTER).toMatchObject({ maxFood: 90, initialFood: 90, foodBackgroundShare: 1 });
+        expect(NURSERY).toEqual(SCATTER);
+        expect(NURSERY).toMatchObject({ maxFood: 90, initialFood: 90, foodBackgroundShare: 1 });
     });
 
     it('puts forage-turn first in the turn ladder, which is otherwise the ladder', () => {
