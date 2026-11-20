@@ -113,6 +113,7 @@ function packBody(store, { d, k, mesh, nowMs }, view) {
     bucket.color[o + 2] = rgb[2];
     bucket.color[o + 3] = d.pose[4][k];
     packLive(bucket, { d, k, o, nowMs }, view);
+    bucket.halo[o / ITEM] = 0;
     bucket.fade[o / ITEM] = isPlaying(d, k) ? packBeats(bucket, { d, k, o, nowMs }, view.causeNames) : 0;
 }
 

@@ -131,9 +131,20 @@ describe('createAgentDraw on WebGPU', () => {
 });
 
 describe('applyFrame', () => {
-    const uniforms = () => ({ rimPx: { value: 0 }, dim: { value: 0 }, ringFloor: { value: 0 } });
+    const uniforms = () => ({
+        rimPx: { value: 0 },
+        dim: { value: 0 },
+        ringFloor: { value: 0 },
+        haloPx: { value: -1 },
+        zoom: { value: 0 },
+    });
     const frameOf = (/** @type {boolean} */ tv) =>
-        /** @type {any} */ ({ family: { palette: 'default' }, lenses: { scent: false, calls: false }, tv });
+        /** @type {any} */ ({
+            family: { palette: 'default' },
+            lenses: { scent: false, calls: false },
+            camera: { zoom: 3 },
+            tv,
+        });
 
     it('draws the rim 2.25 px wide in TV mode and 1.5 px otherwise', () => {
         const u = uniforms();
@@ -141,5 +152,14 @@ describe('applyFrame', () => {
         expect(u.rimPx.value).toBe(1.5);
         applyFrame(frameOf(true), u);
         expect(u.rimPx.value).toBe(2.25);
+    });
+
+    it('lets an event light the rim 6 px out in TV mode only, and passes the zoom', () => {
+        const u = uniforms();
+        applyFrame(frameOf(false), u);
+        expect(u.haloPx.value).toBe(0);
+        applyFrame(frameOf(true), u);
+        expect(u.haloPx.value).toBe(6);
+        expect(u.zoom.value).toBe(3);
     });
 });

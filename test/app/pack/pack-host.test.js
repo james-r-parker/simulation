@@ -84,6 +84,7 @@ function reference(w, request, { dtMs }) {
         slots: family,
         maxVelocity: info.maxVelocity,
         tick: request.tick,
+        nowMs: request.nowMs,
     });
     packDying(w.stores.dying, store, {
         slots: family,

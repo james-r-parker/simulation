@@ -45,7 +45,7 @@ export const MAX_GAP_MS = 100;
  * @property {Float32Array[][]} lanes per bucket, its lanes in instance attribute order
  * @property {import('../family-slots.js').FamilySlots} family the family colour slots, copied from each request
  * @property {{dtMs: number, zoom: number, slots: import('../family-slots.js').FamilySlots, maxVelocity: number,
- *   tick: number}} view the packing view
+ *   tick: number, nowMs: number}} view the packing view
  * @property {{slots: import('../family-slots.js').FamilySlots, zoom: number, causeNames: readonly string[],
  *   nowMs: number, flagBits: Record<string, number>, maxVelocity: number}} dyingView the dying bodies' view
  * @property {{rig: ReturnType<typeof createAgentRig>, out: any, ctx: import('../renderer/agent-rig.js').RigContext}} into
@@ -78,7 +78,7 @@ export function createPackHost(init) {
         rules: pursuitRules(info),
         lanes: store.buckets.map((bucket, b) => bucketLanes(bucket, /** @type {any} */ (rig.arrays[b]))),
         family,
-        view: { dtMs: 0, zoom: 1, slots: family, maxVelocity: info.maxVelocity, tick: 0 },
+        view: { dtMs: 0, zoom: 1, slots: family, maxVelocity: info.maxVelocity, tick: 0, nowMs: 0 },
         dyingView: {
             slots: family,
             zoom: 1,
@@ -119,6 +119,7 @@ function applyRequest(host, request) {
     view.dtMs = Math.min(Math.max(gap, 0), MAX_GAP_MS);
     view.zoom = request.zoom;
     view.tick = request.tick;
+    view.nowMs = request.nowMs;
     family.ids.set(request.family);
     family.palette = PALETTE_NAMES[request.palette] ?? PALETTE_NAMES[0];
     dyingView.zoom = request.zoom;

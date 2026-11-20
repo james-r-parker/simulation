@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { float, vec2, vec3 } from 'three/tsl';
 import {
     coverage,
+    haloCoverage,
     rimCoverage,
     sdArc,
     sdBlob,
@@ -49,6 +50,8 @@ describe('sdf nodes', () => {
             sdWave(P, { from: -0.8, to: -1.8, amp: 0.2, freq: 6, phase: float(1), width: 0.06 }),
             coverage(float(0), 0.01),
             rimCoverage(float(0), 1.5, float(0.01)),
+            haloCoverage(float(0.2), { strength: float(0.5), widthPx: float(6), px: float(0.01), alpha: 0.5 }),
+            haloCoverage(float(0.2), { strength: 1, widthPx: 0, px: 0.01, alpha: 0.5 }),
         ];
         for (const node of built) {
             expect(node.isNode).toBe(true);

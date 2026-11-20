@@ -57,6 +57,7 @@ function packedAt({ cause, elapsed, bearing }) {
     trackBodies(d, frame([]), 0);
     beginDeath(d, { genome: 30, cause, nowMs: 0, bearing });
     const store = storeOf();
+    store.buckets[0].halo.fill(1);
     packDying(d, store, { ...VIEW, nowMs: elapsed });
     return store;
 }
@@ -65,6 +66,7 @@ describe('packDying beats', () => {
     it('fails first: no tear and no fade, and no clip progress, for 400 ms', () => {
         const b = packedAt({ cause: 1, elapsed: FAIL_MS }).buckets[0];
         expect(b.fade[0]).toBe(0);
+        expect(b.halo[0]).toBe(0);
         expect(b.tear[1]).toBe(0);
         expect(b.tween[1]).toBe(0);
     });
