@@ -24,6 +24,7 @@ import { configHash } from '../js/sim/config.js';
 import { createSimLog } from '../js/sim/log.js';
 import { exitCodeOf } from './lib/cli-args.mjs';
 import { createJsonlSink } from './lib/jsonl-sink.mjs';
+import { logTiming, timed, usage } from './lib/train-timing.mjs';
 import { logRunConfig } from './lib/run-config.mjs';
 import { checkOut, parseArgs } from './lib/train-args.mjs';
 import { EVAL_TICKS, GATE_SEED, appendCurveRow, runCheckpoint } from './lib/train-checkpoint.mjs';
@@ -32,8 +33,9 @@ import { loadKeepers, toKept } from './lib/train-keepers.mjs';
 import { applySteer, curveFields, episodeOverrides, steerOptions } from './lib/train-difficulty.mjs';
 import { loadPool, poolAfterCheckpoint, poolIndex, taskPool } from './lib/train-pool.mjs';
 import { buildManifest, manifestBase, partitionManifests, startLedger, writeManifest } from './lib/train-manifest.mjs';
-import { loadResume, loadStages, readJson, saveArchive } from './lib/train-state.mjs';
-import { resolvePoolSize, runPool } from './lib/worker-pool.mjs';
+import { archiveDue, loadResume, loadStages, readJson, saveArchive } from './lib/train-state.mjs';
+import { createDrillCache } from './lib/drill-cache.mjs';
+import { createPool, resolvePoolSize, runPool } from './lib/worker-pool.mjs';
 
 export { parseArgs };
 
@@ -55,15 +57,16 @@ const SEEDS_URL = new URL('../evals/train-seeds.json', import.meta.url);
  *   pool: import('../js/evo/opponent-pool.js').Pool, difficulty: number | null}} run
  *   the train seeds, the generation's stage, the archive to freeze, the opponent pool and the adapted value laid over the
  *   stage's overrides (`episodeDifficulty`; null: none)
- * @param {{args: import('./lib/train-args.mjs').TrainArgs, generation: number, log: import('../js/sim/log.js').SimLog}} at
- *   the options, the generation and the log
+ * @param {{args: import('./lib/train-args.mjs').TrainArgs, generation: number, log: import('../js/sim/log.js').SimLog,
+ *   pool: import('./lib/worker-pool.mjs').Pool}} at
+ *   the options, the generation, the log and the run's worker pool
  * @returns {Promise<any[]>} the episode results in index order
  * @throws {Error} after logging `TrainEpisodeFailed` when an episode fails
  */
-async function runEpisodes({ seeds, stage, archive, pool, difficulty }, { args, generation, log }) {
-    const snapshot = snapshotArchive(archive);
+async function runEpisodes({ seeds, stage, archive, pool: opponentPool, difficulty }, { args, generation, log, pool }) {
+    const snapshot = snapshotArchive(archive, { shared: true });
     const ticks = args.ticks ?? EPISODE_TICKS;
-    const opponents = taskPool(pool, stage.pool);
+    const opponents = taskPool(opponentPool, stage.pool);
     const tasks = Array.from({ length: args.episodes }, (_, episode) => ({
         seed: episodeSeed(seeds, { generation, episodes: args.episodes, episode, offset: args.seedOffset }),
         overrides: episodeOverrides(stage.overrides, difficulty),
@@ -74,7 +77,7 @@ async function runEpisodes({ seeds, stage, archive, pool, difficulty }, { args, 
         ...(stage.preyShare === undefined ? {} : { preyShare: stage.preyShare }),
     }));
     try {
-        return await runPool(tasks, { workerUrl: WORKER_URL, workers: args.workers });
+        return await runPool(tasks, { workerUrl: WORKER_URL, workers: args.workers, pool });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         const index = Number(/^task (\d+) failed/.exec(message)?.[1] ?? -1);
@@ -89,21 +92,6 @@ async function runEpisodes({ seeds, stage, archive, pool, difficulty }, { args, 
 }
 
 /**
- * @param {Record<string, any>[]} results the generation's episode results
- * @param {{wallSeconds: number, workers: number}} timing the generation's wall time and the pool size
- * @returns {{ticks: number, cpuShare: number, busy: number}} ticks run, the share of the pool's time spent in episodes and
- *   the seconds the pool spent in them
- */
-function usage(results, { wallSeconds, workers }) {
-    const busy = results.reduce((sum, r) => sum + r.wallMs, 0) / 1000;
-    return {
-        ticks: results.reduce((sum, r) => sum + r.ticks, 0),
-        cpuShare: wallSeconds === 0 ? 0 : busy / (wallSeconds * workers),
-        busy,
-    };
-}
-
-/**
  * @typedef {object} Run
  * @property {import('./lib/train-args.mjs').TrainArgs} args the options
  * @property {import('./lib/train-state.mjs').StageInfo[]} stages the run's stages
@@ -112,6 +100,8 @@ function usage(results, { wallSeconds, workers }) {
  * @property {import('../js/evo/archive.js').Archive} archive the archive, merged into as generations finish
  * @property {import('../js/sim/log.js').SimLog} log the log
  * @property {number} workers the pool size
+ * @property {import('./lib/worker-pool.mjs').Pool} workerPool the episode workers, kept alive for the whole run
+ * @property {import('./lib/drill-cache.mjs').DrillCache} drillCache the checkpoint drill results a later checkpoint reuses
  * @property {number} started `performance.now()` when the run began
  * @property {number} trainTicks ticks trained so far
  * @property {number} cpuSeconds seconds the pool has spent in episodes so far (this process: a resume starts at 0)
@@ -168,7 +158,9 @@ async function maybeCheckpoint(run, { drillTrials, gateTrials, crossTrials }) {
     }
     const keepers = run.stages.some((s) => s.keepPasser) ? { kept: run.keepers, stages: run.stages } : undefined;
     const steer = steerOptions(stage, state);
-    const options = { workers: args.workers, evalTicks: args.ticks ?? EVAL_TICKS, drillTrials, gate, keepers, steer };
+    const { workerPool, drillCache } = run;
+    const evalTicks = args.ticks ?? EVAL_TICKS;
+    const options = { workers: args.workers, workerPool, drillCache, evalTicks, drillTrials, gate, keepers, steer };
     const result = await runCheckpoint({ archive, stage, progress, options, log });
     if (gate !== null && readsCrossplay(run.stages, state)) {
         const preyStages = preyVsStageNames(run.stages, state);
@@ -276,7 +268,7 @@ async function runGeneration(run, { drillTrials, gateTrials, crossTrials, print 
     const t0 = performance.now();
     const difficulty = episodeDifficulty(run.state);
     const episodes = { seeds: run.seeds, stage, archive, pool: run.pool, difficulty };
-    const results = await runEpisodes(episodes, { args, generation, log });
+    const results = await runEpisodes(episodes, { args, generation, log, pool: run.workerPool });
     const outcomes = results.map((r) => mergeEpisode(archive, r, log));
     const wallSeconds = (performance.now() - t0) / 1000;
     const { ticks, cpuShare, busy } = usage(results, { wallSeconds, workers: run.workers });
@@ -284,21 +276,28 @@ async function runGeneration(run, { drillTrials, gateTrials, crossTrials, print 
     run.cpuSeconds += busy;
     const fields = { generation, stage: stage.name, coverage: coverage(archive), qdScore: qdScore(archive) };
     log.log('info', 'TrainGeneration', { ...fields, wallSeconds, cpuShare, offers: outcomes });
-    const checkpoint = await maybeCheckpoint(run, { drillTrials, gateTrials, crossTrials });
+    const timedCheckpoint = await timed(() => maybeCheckpoint(run, { drillTrials, gateTrials, crossTrials }));
+    const checkpoint = timedCheckpoint.value;
     const stepped = advance(run.state, checkpoint, log);
     const { columns } = stepped;
     const state = applySteer({ before: run.state, after: stepped.state, steer: checkpoint?.steer }, log);
     run.state = state;
     keepPassers(run, { checkpoint, columns, stage });
     keepPool(run, { checkpoint, columns, stage: stage.name });
-    const pool = poolOn(stages) ? { pool: poolIndex(run.pool) } : {};
-    saveArchive(args.out, { archive, stages, generation, state, keepers: run.keepers, ...pool });
+    const tSave = performance.now();
+    if (archiveDue({ args, stages, state, generation, checkpointed: checkpoint !== null })) {
+        const pool = poolOn(stages) ? { pool: poolIndex(run.pool) } : {};
+        saveArchive(args.out, { archive, stages, generation, state, keepers: run.keepers, ...pool });
+    }
     saveManifest(run);
     if (checkpoint !== null) {
         const cpu = { workers: run.workers, cpuShare, cpuSeconds: run.cpuSeconds };
         run.lastPoint = { ...checkpoint.point, ...columns, ...cpu, ...curveFields(difficulty, checkpoint.steer) };
         appendCurveRow(args.out, run.lastPoint);
     }
+    const saveSeconds = (performance.now() - tSave) / 1000;
+    const timing = { workers: run.workers, busySeconds: busy, episodeSeconds: wallSeconds, saveSeconds };
+    logTiming(log, { generation, stage: stage.name, checkpointSeconds: timedCheckpoint.seconds, ...timing });
     print(
         `generation ${generation} ${stage.name} coverage ${fields.coverage.toFixed(3)} qd ${fields.qdScore.toFixed(2)} wall ${wallSeconds.toFixed(1)}s cpu ${(cpuShare * 100).toFixed(0)}%`,
     );
@@ -330,7 +329,7 @@ function startRun(args, log, commandLine) {
     const resumed = args.resume === null ? null : loadResume(args.resume, { stages, total: args.generations, log });
     const archive = resumed?.archive ?? createTrainerArchive(stages[0].built);
     const state = resumed?.state ?? initialState(stages, args.generations);
-    const workers = resolvePoolSize(args.workers, args.episodes);
+    const workers = resolvePoolSize(args.workers, args.episodes, { even: true });
     const seeds = readJson(fileURLToPath(SEEDS_URL));
     const started = performance.now();
     const manifest = manifestBase(args, commandLine);
@@ -343,6 +342,8 @@ function startRun(args, log, commandLine) {
         archive,
         log,
         workers,
+        workerPool: createPool({ workerUrl: WORKER_URL, workers }),
+        drillCache: createDrillCache(),
         started,
         trainTicks: 0,
         cpuSeconds: 0,
@@ -395,8 +396,10 @@ export async function runTraining(args, io = {}) {
     const sizes = { drillTrials: 32, gateTrials: GATE_TRIALS, crossTrials: CROSS_TRIALS, ...given };
     mkdirSync(args.out, { recursive: true });
     const sinkFile = createJsonlSink(join(args.out, 'train.jsonl'));
+    /** @type {Run | undefined} */
+    let run;
     try {
-        const run = startRun(args, createSimLog(sinkFile.sink, { level: 'info' }), commandLine);
+        run = startRun(args, createSimLog(sinkFile.sink, { level: 'info' }), commandLine);
         saveManifest(run);
         let logged = null;
         while (run.state.status === 'running' && run.state.generation < args.generations) {
@@ -413,6 +416,7 @@ export async function runTraining(args, io = {}) {
         }
         return { archive: run.archive, generations: run.state.generation, state: run.state };
     } finally {
+        await run?.workerPool.close();
         await sinkFile.close();
     }
 }

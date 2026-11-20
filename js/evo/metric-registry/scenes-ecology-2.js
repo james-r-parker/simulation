@@ -65,6 +65,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.disease_deaths_share': entry('scenes-ecology', {
         module: 'js/evo/scene-disease.js',
+        scenes: ['Boom and bust'],
         meaning: 'The share of deaths caused by disease (lower is intended).',
         counts: 'Deaths with cause DISEASE over all deaths after burn-in.',
         unit: 'share',
@@ -75,6 +76,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.strains_per_100k': entry('scenes-ecology', {
         module: 'js/evo/scene-disease.js',
+        scenes: ['Boom and bust'],
         meaning: 'How often a new disease strain emerges.',
         counts: 'StrainEmerged events per 100000 observed ticks.',
         unit: 'strains per 100k ticks',

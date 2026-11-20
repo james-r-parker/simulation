@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from '../../scripts/lib/train-args.mjs';
+import { seedListHash } from '../../scripts/lib/train-manifest.mjs';
 
 /**
  * @param {(offset: number, arm: string) => {passed: number, exitCode?: number}} outcome how far the run at an offset got
@@ -34,6 +35,7 @@ export function fakeTrain(outcome) {
                 ticks: args.ticks ?? null,
                 offerFrom: args.offerFrom ?? null,
                 checkpointEvery: args.checkpointEvery,
+                seedListHash: seedListHash(),
             },
             stages: ran.map((/** @type {{name: string}} */ s, /** @type {number} */ i) => ({
                 name: s.name,

@@ -151,6 +151,33 @@ function metricValues(names, { observer, world, policy }) {
 }
 
 /**
+ * @param {EpisodeTask} task the task
+ * @returns {boolean} whether the episode feeds its policy a lean observer (lean-observer.md): the live policy with no
+ *   metrics asked for reads only the policy core, so the eval layer's counters, scenes and checkpoints are not built
+ */
+function isLean(task) {
+    return (task.policy ?? LIVE_POLICY) === LIVE_POLICY && (task.metrics ?? []).length === 0;
+}
+
+/**
+ * Steps the world and feeds the policy each tick; a full observer also takes a checkpoint row every `CHECKPOINT_TICKS`.
+ * @param {{world: Record<string, any>, policy: Record<string, any>, observer: Record<string, any>}} run the started run
+ * @param {{ticks: number, lean: boolean}} options the ticks to play and whether the observer is lean (no checkpoints)
+ * @returns {void}
+ */
+function playTicks({ world, policy, observer }, { ticks, lean }) {
+    feedPolicy({ policy, observer }, world);
+    const phases = observerPhases(observer);
+    for (let t = 0; t < ticks; t++) {
+        step(/** @type {any} */ (world), policy.brain, phases);
+        feedPolicy({ policy, observer }, world);
+        if (!lean && world.tick % CHECKPOINT_TICKS === 0) {
+            checkpoint(observer, world);
+        }
+    }
+}
+
+/**
  * Runs one episode: a world on `seed`, seeded from the frozen archive by the policy, observed like an eval run. The
  * policy's offers are collected, in the order the policy makes them, not applied.
  * @param {EpisodeTask} task the task
@@ -162,9 +189,11 @@ function metricValues(names, { observer, world, policy }) {
 export function runEpisode(task) {
     const { seed, overrides, snapshot, ticks = EPISODE_TICKS, offerFromTick = OFFER_FROM_TICK } = task;
     const config = createConfig({ initialAgents: EPISODE_AGENTS, ...overrides, seed });
+    const lean = isLean(task);
     const observer = createObserver(config, fork(createRng(seed), 'eval'), {
         runTicks: ticks,
         checkpointTicks: CHECKPOINT_TICKS,
+        lean,
     });
     const archive = restoreArchive(snapshot, config, { descriptor: TRAINER_DESCRIPTOR, nCap: TRAINER_N_CAP });
     const sink = createOfferSink(offerFromTick);
@@ -181,15 +210,7 @@ export function runEpisode(task) {
     sink.founders = policy.poolFounders;
     const world = createWorld(config, policy.brain);
     try {
-        feedPolicy({ policy, observer }, world);
-        const phases = observerPhases(observer);
-        for (let t = 0; t < ticks; t++) {
-            step(world, policy.brain, phases);
-            feedPolicy({ policy, observer }, world);
-            if (world.tick % CHECKPOINT_TICKS === 0) {
-                checkpoint(observer, world);
-            }
-        }
+        playTicks({ world, policy, observer }, { ticks, lean });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         throw new Error(`seed ${seed} failed at tick ${world.tick}: ${message}`, { cause: error });

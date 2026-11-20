@@ -10,7 +10,7 @@ afterAll(() => rmSync(root, { recursive: true, force: true }));
 
 const gated = (/** @type {string} */ name, /** @type {string} */ read, /** @type {number} */ min) => ({
     name,
-    config: 'evals/stages/hunt-mid.json',
+    config: 'test/fixtures/stages/hunt-mid.json',
     minGenerations: 1,
     maxGenerations: 2,
     gate: [{ read, min }],

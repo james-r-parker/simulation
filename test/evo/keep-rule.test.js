@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { formatKeepRule, HELD_POPULATION, heldFlags, keepRule } from '../../js/evo/keep-rule.js';
+import { formatKeepRule, GUARD_METRICS, HELD_POPULATION, heldFlags, keepRule } from '../../js/evo/keep-rule.js';
+
+import { METRICS } from '../../js/evo/metric-registry/index.js';
+import { metricStatus } from '../../js/evo/metric-registry/status.js';
 
 const N = 32;
 const SEEDS = Array.from({ length: N }, (_, i) => i + 1);
@@ -21,7 +24,7 @@ function report({
     const metric = (/** @type {number[]} */ values) => ({ values, reasons: values.map(() => null), mean: 0, sd: 0 });
     return {
         seeds: SEEDS,
-        metrics: { 'eval.predators_at_end': metric(alive), 'eval.hunter_catches_per_1k': metric(catches) },
+        metrics: { 'eval.predators_at_end': metric(alive), 'eval.hunter_catches_per_1k_settled': metric(catches) },
         traces: low.map((l, i) => ({ spec: l ? [10, 5] : [100, 50], ...(held ? popTrace(held[i]) : {}) })),
     };
 }
@@ -106,10 +109,10 @@ describe('keepRule', () => {
     it('checks a verified guard metric, and leaves an unverified one unchecked', () => {
         const drop = report({ catches: SEEDS.map((_, i) => 4 + (i % 3)) });
         const checked = keepRule(report(), drop, { status: verified, seedsFor });
-        expect(guardOf(checked, 'eval.hunter_catches_per_1k')).toMatchObject({ verdict: 'worse' });
+        expect(guardOf(checked, 'eval.hunter_catches_per_1k_settled')).toMatchObject({ verdict: 'worse' });
         expect(checked.worse).toBe(true);
         const skipped = keepRule(report(), drop, { status: () => 'unverified', seedsFor });
-        expect(guardOf(skipped, 'eval.hunter_catches_per_1k')).toMatchObject({
+        expect(guardOf(skipped, 'eval.hunter_catches_per_1k_settled')).toMatchObject({
             verdict: 'unchecked',
             note: 'unverified',
         });
@@ -135,7 +138,7 @@ describe('keepRule', () => {
     it('leaves a metric guard unchecked below its seed minimum', () => {
         const drop = report({ catches: SEEDS.map((_, i) => 4 + (i % 3)) });
         const short = keepRule(report(), drop, { status: verified, seedsFor: () => 64 });
-        expect(guardOf(short, 'eval.hunter_catches_per_1k')).toMatchObject({
+        expect(guardOf(short, 'eval.hunter_catches_per_1k_settled')).toMatchObject({
             verdict: 'unchecked',
             note: 'needs 64 seeds',
         });
@@ -174,7 +177,7 @@ describe('keepRule metric guards', () => {
     });
 
     it('leaves a metric guard unchecked with a null seed, a missing metric or no direction', () => {
-        const name = 'eval.hunter_catches_per_1k';
+        const name = 'eval.hunter_catches_per_1k_settled';
         const nulled = metricReport(
             name,
             SEEDS.map((_, i) => (i === 0 ? null : 5)),
@@ -201,12 +204,25 @@ describe('keepRule metric guards', () => {
 describe('keepRule and renamed metrics (D2)', () => {
     it('reads a before report under the old guard metric name as the current one', () => {
         const before = report({ catches: SEEDS.map(() => 2) });
-        before.metrics['eval.catch_rate'] = before.metrics['eval.hunter_catches_per_1k'];
-        delete before.metrics['eval.hunter_catches_per_1k'];
         const after = report({ catches: SEEDS.map((_, i) => 1 + (i % 5) * 0.01) });
-        const result = keepRule(before, after, { status: verified, seedsFor });
-        expect(guardOf(result, 'eval.hunter_catches_per_1k').verdict).toBe('worse');
+        const whole = 'eval.hunter_catches_per_1k';
+        before.metrics[whole] = before.metrics['eval.hunter_catches_per_1k_settled'];
+        after.metrics[whole] = after.metrics['eval.hunter_catches_per_1k_settled'];
+        before.metrics['eval.catch_rate'] = before.metrics[whole];
+        delete before.metrics[whole];
+        const result = keepRule(before, after, { status: verified, seedsFor, guards: [whole] });
+        expect(guardOf(result, whole).verdict).toBe('worse');
         expect(result.worse).toBe(true);
+    });
+});
+
+describe('GUARD_METRICS (metric-noise T12, D3)', () => {
+    it('guards the settled catch metric, verified and no noisier at 64 seeds than the whole-run one', () => {
+        expect(GUARD_METRICS).toEqual(['eval.hunter_catches_per_1k_settled']);
+        const settled = METRICS['eval.hunter_catches_per_1k_settled'];
+        const whole = METRICS['eval.hunter_catches_per_1k'];
+        expect(metricStatus(settled)).toBe('verified');
+        expect(settled.power?.mde64 ?? Infinity).toBeLessThanOrEqual(whole.power?.mde64 ?? 0);
     });
 });
 
@@ -220,17 +236,17 @@ describe('formatKeepRule lines', () => {
         });
         const before = report();
         const after = report({ catches: SEEDS.map((_, i) => 4 + (i % 3)) });
-        before.metrics['eval.hunter_catches_per_1k'] = metric(SEEDS.map((_, i) => 10 + (i % 3)));
+        before.metrics['eval.hunter_catches_per_1k_settled'] = metric(SEEDS.map((_, i) => 10 + (i % 3)));
         const text = formatKeepRule(keepRule(before, after, { status: verified, seedsFor })).join('\n');
         expect(text).toMatch(
-            /guard eval\.hunter_catches_per_1k: worse, diff -?\d.*interval \[.*\], smallest loss detected \d/,
+            /guard eval\.hunter_catches_per_1k_settled: worse, diff -?\d.*interval \[.*\], smallest loss detected \d/,
         );
         expect(text).toMatch(
             /guard alive: no-harm, 0 seeds harmed vs 0 recovered \(exact p 1\), smallest loss detected 6 seeds/,
         );
         const skipped = formatKeepRule(keepRule(before, after, { status: () => 'unverified', seedsFor })).join('\n');
-        expect(skipped).toContain('guard eval.hunter_catches_per_1k: unchecked (unverified)');
-        expect(skipped).toContain('keep rule: incomplete (unchecked: held, eval.hunter_catches_per_1k');
+        expect(skipped).toContain('guard eval.hunter_catches_per_1k_settled: unchecked (unverified)');
+        expect(skipped).toContain('keep rule: incomplete (unchecked: held, eval.hunter_catches_per_1k_settled');
         expect(skipped).not.toContain('no harm detected');
     });
 

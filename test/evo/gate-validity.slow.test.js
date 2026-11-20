@@ -10,10 +10,10 @@ import { kinSparingSubject } from '../../js/evo/lesson-reference.js';
 import { partitionSeed } from '../../js/evo/partitions.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
-const LADDER = JSON.parse(readFileSync(new URL('../../evals/train-ladder.json', import.meta.url), 'utf8'));
+const LADDER = JSON.parse(readFileSync(new URL('../fixtures/train-ladder.json', import.meta.url), 'utf8'));
 const drillOf = (/** @type {string} */ name) => /** @type {any} */ (DRILLS.find((d) => d.name === name));
 
-describe('the committed ladder', () => {
+describe('a frozen copy of the committed ladder', () => {
     it(
         'has a reference that passes each drill condition and random brains that fail it, on the gate seed',
         () => {

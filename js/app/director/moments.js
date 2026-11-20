@@ -3,10 +3,14 @@
 // applies the 30 s repeat penalty and returns candidates sorted by score descending.
 
 import { largestCluster } from './cluster.js';
+import { findSceneMoments } from './moments-scenes.js';
 import { findWorldMoments } from './moments-world.js';
 import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../interpolate.js';
 import {
     applyRepeatPenalty,
+    CHASE_ALIGNMENT,
+    CHASE_CONTACT_SIZES,
+    CHASE_MIN_SPEED_SHARE,
     CHASE_GAP_RATIO,
     CHASE_MAX_DISTANCE,
     MOMENT_KIND,
@@ -99,32 +103,43 @@ export function readSnapshotAgents(source) {
 }
 
 /**
- * Tests whether `(hunter, prey)` forms a gap-closing chase and returns its candidate or null.
+ * Whether the hunter is on a pursuit that is about to end: near (`CHASE_CONTACT_SIZES` body sizes), closing on an
+ * earlier gap, aimed squarely at the prey (`CHASE_ALIGNMENT`), moving now and 1.5 s ago, and no slower than the prey,
+ * which is not running at it.
  * @param {{hunter: AgentRecord, prey: AgentRecord, prevHunter: AgentRecord, prevPrey: AgentRecord}} pair agent pair
- * @param {{biteArc: number, maxVelocity: number, hunterSpec: string, preySpec: string}} meta world rules and spec names
+ * @param {{distance: number, reach: number, maxVelocity: number}} gap their distance, the reach and `maxVelocity`
+ * @returns {boolean} whether the pair is a sustained pursuit
+ */
+function sustainedPursuit({ hunter, prey, prevHunter, prevPrey }, { distance, reach, maxVelocity }) {
+    const earlierDistance = Math.hypot(prevPrey.x - prevHunter.x, prevPrey.y - prevHunter.y);
+    const bearing = Math.atan2(prey.y - hunter.y, prey.x - hunter.x);
+    return (
+        distance > 0 &&
+        distance <= reach &&
+        distance <= earlierDistance * CHASE_GAP_RATIO + 1e-6 &&
+        Math.abs(angleDiff(bearing, hunter.angle)) <= CHASE_ALIGNMENT &&
+        Math.min(hunter.speed, prevHunter.speed) >= CHASE_MIN_SPEED_SHARE * maxVelocity &&
+        hunter.speed >= prey.speed &&
+        Math.abs(angleDiff(prey.angle, bearing)) <= Math.PI / 2
+    );
+}
+
+/**
+ * Tests whether `(hunter, prey)` forms a sustained chase and returns its candidate or null.
+ * @param {{hunter: AgentRecord, prey: AgentRecord, prevHunter: AgentRecord, prevPrey: AgentRecord}} pair agent pair
+ * @param {{maxVelocity: number, hunterSpec: string, preySpec: string}} meta world rules and spec names
  * @returns {MomentCandidate | null} chase moment or null
  */
-function evaluateChasePair({ hunter, prey, prevHunter, prevPrey }, { biteArc, maxVelocity, hunterSpec, preySpec }) {
-    const dx = prey.x - hunter.x;
-    const dy = prey.y - hunter.y;
-    const distance = Math.hypot(dx, dy);
-    if (distance <= 0 || distance > CHASE_MAX_DISTANCE) {
-        return null;
-    }
-    const earlierDistance = Math.hypot(prevPrey.x - prevHunter.x, prevPrey.y - prevHunter.y);
-    if (distance > earlierDistance * CHASE_GAP_RATIO + 1e-6) {
-        return null;
-    }
-    const bearing = Math.atan2(dy, dx);
-    if (
-        Math.abs(angleDiff(bearing, hunter.angle)) > biteArc ||
-        Math.abs(angleDiff(prey.angle, bearing)) > Math.PI / 2
-    ) {
+function evaluateChasePair(pair, { maxVelocity, hunterSpec, preySpec }) {
+    const { hunter, prey } = pair;
+    const distance = Math.hypot(prey.x - hunter.x, prey.y - hunter.y);
+    const reach = Math.min(CHASE_MAX_DISTANCE, CHASE_CONTACT_SIZES * hunter.size);
+    if (!sustainedPursuit(pair, { distance, reach, maxVelocity })) {
         return null;
     }
     return {
         kind: MOMENT_KIND.CHASE,
-        score: scoreChase({ distance, hunterSpeed: hunter.speed, preySpeed: prey.speed, maxVelocity }),
+        score: scoreChase({ distance, hunterSpeed: hunter.speed, preySpeed: prey.speed, maxVelocity, reach }),
         x: (hunter.x + prey.x) / 2,
         y: (hunter.y + prey.y) / 2,
         hunterId: hunter.genomeId,
@@ -140,11 +155,11 @@ function evaluateChasePair({ hunter, prey, prevHunter, prevPrey }, { biteArc, ma
  * @param {readonly AgentRecord[]} agents current snapshot agents
  * @param {Map<number, AgentRecord>} earlierByGenome earlier snapshot agents by genomeId
  * @param {{canHuntBySpec: Map<number, boolean>, nameBySpec: Map<number, string>,
- *   biteArc: number, maxVelocity: number}} rules spec tables and world rules
+ *   maxVelocity: number}} rules spec tables and world rules
  * @returns {MomentCandidate[]} chase candidates for this hunter
  */
 function matchHunterPreys({ hunter, prevHunter }, agents, earlierByGenome, rules) {
-    const { canHuntBySpec, nameBySpec, biteArc, maxVelocity } = rules;
+    const { canHuntBySpec, nameBySpec, maxVelocity } = rules;
     const hunterSpec = String(nameBySpec.get(hunter.spec));
     const out = /** @type {MomentCandidate[]} */ ([]);
     for (const prey of agents) {
@@ -154,7 +169,7 @@ function matchHunterPreys({ hunter, prevHunter }, agents, earlierByGenome, rules
         }
         const candidate = evaluateChasePair(
             { hunter, prey, prevHunter, prevPrey },
-            { biteArc, maxVelocity, hunterSpec, preySpec: String(nameBySpec.get(prey.spec)) },
+            { maxVelocity, hunterSpec, preySpec: String(nameBySpec.get(prey.spec)) },
         );
         if (candidate !== null) {
             out.push(candidate);
@@ -176,7 +191,6 @@ function findChaseMoments(agents, earlierByGenome, { info, huntingFlag }) {
     const rules = {
         canHuntBySpec: new Map(specs.map((s) => [s.index, Boolean(s.canHunt)])),
         nameBySpec: new Map(specs.map((s) => [s.index, s.name])),
-        biteArc: info.biteArc,
         maxVelocity: info.maxVelocity,
     };
     const out = /** @type {MomentCandidate[]} */ ([]);
@@ -378,6 +392,7 @@ export function findMoments({
         ...findEffectMoments(effects, { tick, ticksPerSecond, layout, currentByGenome }),
         ...findTickerMoments(ticker, { tick, ticksPerSecond, agents, info }),
         ...findWorldMoments(effects, { tick, ticksPerSecond, layout, info }),
+        ...findSceneMoments(effects, { tick, ticksPerSecond, layout }),
     ];
 
     for (const candidate of candidates) {

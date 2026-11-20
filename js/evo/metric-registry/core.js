@@ -56,6 +56,7 @@ export const CORE = {
     }),
     'eval.population_mean': entry('core', {
         module: 'js/evo/metrics-series.js',
+        scenes: ['Boom and bust'],
         meaning: 'The average number of agents alive; no better or worse direction.',
         counts: 'Mean of the population column over every checkpoint of the run, burn-in included.',
         unit: 'agents',
@@ -67,6 +68,7 @@ export const CORE = {
     }),
     'eval.floor_episodes': entry('core', {
         module: 'js/evo/metrics.js',
+        scenes: ['Boom and bust'],
         meaning: 'Lower means the population falls to the floor (rescue births) less often.',
         counts: 'Count of runs of consecutive ticks with a floor birth, from BURN_IN_TICKS; a new episode starts when the gap to the last floor tick is more than 1.',
         unit: 'count',
@@ -120,6 +122,7 @@ export const CORE = {
     }),
     'eval.lineages_alive': entry('core', {
         module: 'js/evo/metrics-series.js',
+        scenes: ['G1'],
         meaning: 'Higher means more distinct founding lineages still have living members.',
         counts: 'Mean over checkpoints at or after BURN_IN_TICKS of the number of distinct lineageId values among living agents.',
         unit: 'lineages',
@@ -130,6 +133,7 @@ export const CORE = {
     }),
     'eval.lineage_turnover': entry('core', {
         module: 'js/evo/metrics-series.js',
+        scenes: ['N5', 'G1'],
         meaning: 'Higher means the most numerous lineage changes more often.',
         counts: 'Checkpoints after burn-in where the dominant lineage (most agents, leading the runner-up by at least DOMINANCE_MARGIN, else the previous one) is non-zero and differs from each of the previous TURNOVER_WINDOW (10) checkpoints, times 100000 over ticks after burn-in.',
         unit: 'dominant-lineage changes per 100k ticks',
@@ -151,6 +155,7 @@ export const CORE = {
     }),
     'eval.behaviour_coverage': entry('core', {
         module: 'js/evo/metrics-grids.js',
+        scenes: ['Same spec, different custom'],
         meaning: 'Higher means the mature lives sampled differ more in how they earn energy and how fast they breed.',
         counts: 'Share of the 10 x 10 grid cells (bite share of energy gained by children per 10k ticks, each binned) occupied by up to 300 randomly sampled mature deaths with samples; draws from observer.rng.',
         unit: 'share',
@@ -161,6 +166,7 @@ export const CORE = {
     }),
     'eval.motion_coverage': entry('core', {
         module: 'js/evo/metrics-grids.js',
+        scenes: ['Same spec, different custom'],
         meaning: 'How varied the mature lives are in speed and turning; no better or worse direction.',
         counts: 'Share of the 10 x 10 grid cells (mean speed bin, mean turn bin) occupied by the same sampled mature deaths as behaviour_coverage.',
         unit: 'share',
@@ -172,6 +178,7 @@ export const CORE = {
     }),
     'eval.predator_share_cv': entry('core', {
         module: 'js/evo/metrics-series.js',
+        scenes: ['Boom and bust'],
         meaning: 'How much the predator share of the population swings over the run; no better or worse direction.',
         counts: 'Standard deviation over mean of the predatorShare column (agents of the predator specialisation over population) across every checkpoint.',
         unit: 'ratio',
@@ -258,6 +265,7 @@ export const CORE = {
     }),
     'eval.offspring_per_life': entry('core', {
         module: 'js/evo/metrics-selection.js',
+        scenes: ['Parent spends'],
         meaning: 'The mean number of children a life produced.',
         counts: 'Mean of the children count over deaths that ended at or after BURN_IN_TICKS (immature deaths included).',
         unit: 'children',
@@ -275,28 +283,6 @@ export const CORE = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no completed life after burn-in'],
-        arithmetic: 'test/evo/metrics-selection.test.js',
-        source: 'test/evo/metric-source-core-selection.test.js',
-    }),
-    'eval.opportunity_for_selection': entry('core', {
-        module: 'js/evo/metrics-selection.js',
-        meaning: "Crow's index, how unequal reproduction is.",
-        counts: 'Variance over squared mean of the children count per death, deaths that ended at or after BURN_IN_TICKS.',
-        unit: 'ratio',
-        direction: 'watch',
-        intended: 'higher',
-        nullWhen: ['no completed life after burn-in', 'no children'],
-        arithmetic: 'test/evo/metrics-selection.test.js',
-        source: 'test/evo/metric-source-core-selection.test.js',
-    }),
-    'eval.fitness_lrs_corr': entry('core', {
-        module: 'js/evo/metrics-selection.js',
-        meaning: 'Whether the policy fitness predicts lifetime offspring.',
-        counts: 'Spearman correlation of recorded fitness against children over mature deaths that ended after burn-in with a fitness; needs 30 such deaths.',
-        unit: 'correlation',
-        direction: 'watch',
-        intended: 'higher',
-        nullWhen: ['fewer than 30 mature deaths with a fitness', 'fitness or children is constant'],
         arithmetic: 'test/evo/metrics-selection.test.js',
         source: 'test/evo/metric-source-core-selection.test.js',
     }),

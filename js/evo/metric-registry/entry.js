@@ -36,6 +36,7 @@
  * @property {Liveness | null} liveness from the T22 runs
  * @property {Power | null} power from the T27 read
  * @property {16 | 32 | 64 | null} minSeeds the fewest seeds a verdict needs; `null` when no seed count meets the power bar
+ * @property {readonly string[]} [scenes] the scenes, failures and goals it detects (`SCENES` in `scenes.js`); a tag only, it changes no reading
  */
 
 /**
@@ -59,7 +60,7 @@ const SOURCE_BY_MODULE = Object.freeze({
 /**
  * Builds a frozen entry with the unmeasured fields at their empty values.
  * @param {string} family the family file's name
- * @param {Pick<MetricEntry, 'module' | 'meaning' | 'counts' | 'unit' | 'direction' | 'nullWhen'> & {intended?: 'higher' | 'lower', arithmetic?: string, source?: string, deprecated?: string, expectedFlat?: string, renamedFrom?: readonly string[]}} fields what the author wrote
+ * @param {Pick<MetricEntry, 'module' | 'meaning' | 'counts' | 'unit' | 'direction' | 'nullWhen' | 'scenes'> & {intended?: 'higher' | 'lower', arithmetic?: string, source?: string, deprecated?: string, expectedFlat?: string, renamedFrom?: readonly string[]}} fields what the author wrote
  * @returns {Readonly<MetricEntry>} the entry
  */
 export function entry(family, fields) {
