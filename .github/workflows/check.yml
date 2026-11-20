@@ -29,7 +29,8 @@ jobs:
   # beyond the design-doc tests (scripts/change-scope.sh), `release` for the Release Please pull request (a diff of only
   # CHANGELOG.md, package.json, package-lock.json and .release-please-manifest.json on a `release-please--*` branch: it
   # runs this job and nothing else, and `check` reports success because it counts a skipped job as passed), `full`
-  # otherwise. A push computes it against the previous tip; anything unclassifiable takes the full path.
+  # otherwise. A push is always `full`: the push to main is the first run of the merged result, so it runs the whole suite
+  # (docs/designs/agent-workflow.md, Affected tests in CI); anything unclassifiable takes the full path.
   scope:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -52,15 +53,11 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event_name == 'merge_group' && github.event.merge_group.base_sha || format('origin/{0}', github.base_ref) }}
-          BEFORE: ${{ github.event.before }}
           HEAD_REF: ${{ github.head_ref }}
         run: |
           scope=full
           if [[ "$EVENT" == pull_request || "$EVENT" == merge_group ]]; then
             scope="$(scripts/change-scope.sh "$BASE" || echo full)"
-          elif [[ "$EVENT" == push && ! "$BEFORE" =~ ^0+$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
-            # A push re-checks only what changed since the previous tip; its PR already passed the rest.
-            scope="$(scripts/change-scope.sh "$BEFORE" || echo full)"
           fi
           # The release scope needs the Release Please branch: a dependency bump touches the same package files and
           # must run the whole gate. A push or a queue run has no such branch, so it takes the full path.
@@ -112,14 +109,17 @@ jobs:
           if-no-files-found: ignore
 
   # The static gates and the build (scripts/check.sh --ci): conventions, designs-index, format, lint, typecheck, deps,
-  # dupes, build and eval-smoke. On a pull request and in the merge queue the tests are the `test` and `coverage` jobs
-  # below (`--skip=test`); a push to main or season/next runs the fast tests here instead, because the queue already ran the
-  # whole suite on the same commit.
+  # dupes, build and eval-smoke. The tests are the `test` and `coverage` jobs below on every event (`--skip=test`): the
+  # reached tests on a pull request, the whole suite on a push. A pull request also fails while an open affected-test miss
+  # (a red-main issue labelled `affected-miss`) is still not reached by the selection (scripts/miss-ledger.mjs check).
   static:
     needs: scope
     if: needs.scope.outputs.scope != 'release'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: read
     steps:
       - uses: actions/checkout@v7
         with:
@@ -154,12 +154,16 @@ jobs:
 
       - name: Local gate
         if: needs.scope.outputs.scope != 'docs'
+        run: scripts/check.sh --ci --skip=test
+
+      # An open miss: a test that failed on main after the pull request that changed what it reads ran without it. The
+      # change that declares the edge passes; every other change waits for it. A fork has no token, and the step skips.
+      - name: Open affected-test misses
+        if: github.event_name == 'pull_request' && needs.scope.outputs.scope != 'docs'
         env:
-          EVENT: ${{ github.event_name }}
-        run: |
-          skip=()
-          [[ "$EVENT" == push ]] || skip=(--skip=test)
-          scripts/check.sh --ci ${skip[@]+"${skip[@]}"}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: node scripts/miss-ledger.mjs check
 
       # conventions, designs-index, format and the tests that read this repo's Markdown.
       - name: Local gate (docs only)
@@ -330,11 +334,38 @@ jobs:
           echo "job results: $RESULTS"
           [[ " $RESULTS " != *" failure "* && " $RESULTS " != *" cancelled "* ]]
 
+  # A red full run on main opens an issue (or adds to the open one) that names the merge commit, the failed jobs and test
+  # files, and the misses: failed tests the merged pull request did not reach (scripts/miss-ledger.mjs report). Only main:
+  # season/next batches rule changes and is read by the season, not by this issue.
+  red-main:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && always() && needs.check.result == 'failure'
+    needs: [check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+
+      - name: Open the red-main issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: node scripts/miss-ledger.mjs report
+
   # The browser smoke runs in the official Playwright image (about 2 GB), whose version is the exact @playwright/test
   # pin in package.json: scripts/browser-smoke.sh derives the tag from that pin and `docker run`s the image. The job has
   # no `container:`, because a job container is pulled before the first step even when every step is skipped. The job
   # always runs and reports (a required check must not go missing); only its steps are skipped, so the image is pulled
-  # only when a path the app is built from changed (scripts/change-scope.sh --browser) or the scope is unknown.
+  # only when a path the app is built from changed (scripts/change-scope.sh --browser) or the scope is unknown. A push
+  # always runs it: the push to main is the first run of the merged result.
   browser-smoke:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -349,7 +380,6 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event_name == 'merge_group' && github.event.merge_group.base_sha || format('origin/{0}', github.base_ref) }}
-          BEFORE: ${{ github.event.before }}
           HEAD_REF: ${{ github.head_ref }}
         run: |
           scope=browser
@@ -359,9 +389,6 @@ jobs:
             if [[ "$EVENT" == pull_request && "$HEAD_REF" == release-please--* && "$(scripts/change-scope.sh "$BASE" || echo full)" == release ]]; then
               scope=none
             fi
-          elif [[ "$EVENT" == push && ! "$BEFORE" =~ ^0+$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
-            # A push re-checks only what changed since the previous tip; its PR already passed the rest.
-            scope="$(scripts/change-scope.sh --browser "$BEFORE" || echo browser)"
           fi
           echo "scope=$scope" >>"$GITHUB_OUTPUT"
           echo "Browser scope: $scope"

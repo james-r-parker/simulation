@@ -54,16 +54,15 @@ describe('workflows', () => {
             }
         });
 
-        it('scopes a push against the previous tip, falling back to the full scope when it is unknown', () => {
+        it('takes the full scope and the browser smoke on every push, which is the first run of the merged result', () => {
             for (const [id, fallback] of [
                 ['scope', 'full'],
                 ['browser-smoke', 'browser'],
             ]) {
                 const text = job(id);
-                expect(text).toContain('BEFORE: ${{ github.event.before }}');
-                expect(text).toContain('"$BEFORE"');
-                expect(text).toContain('^0+$');
-                expect(text).toContain('git cat-file -e');
+                // No diff against the previous tip: only a pull request or a queue run is classified.
+                expect(text).not.toContain('BEFORE');
+                expect(text).not.toContain('git cat-file');
                 expect(text).toContain(`|| echo ${fallback})`);
                 expect(text).toContain(`scope=${fallback}\n`);
             }
@@ -94,10 +93,10 @@ describe('workflows', () => {
         it('runs the docs gate for the docs scope and the whole gate otherwise', () => {
             const steps = job('static').split('\n      - ');
             expect(steps.find((s) => s.includes('scripts/check.sh --ci --docs'))).toContain("scope == 'docs'");
-            const full = steps.find((s) => s.includes('scripts/check.sh --ci ${skip'));
+            const full = steps.find((s) => s.includes('scripts/check.sh --ci --skip=test'));
             expect(full).toContain("scope != 'docs'");
-            // The pull request and queue legs leave the tests to the `test` and `coverage` jobs; a push keeps the fast ones.
-            expect(full).toContain('[[ "$EVENT" == push ]] || skip=(--skip=test)');
+            // Every event leaves the tests to the `test` and `coverage` jobs: the reached ones on a pull request, all on a push.
+            expect(full).not.toContain('EVENT');
         });
 
         it('skips the browser smoke steps, not the job, when no app path changed', () => {
@@ -168,7 +167,7 @@ describe('workflows', () => {
             expect(text).toContain('*" cancelled "*');
         });
 
-        it('runs the static gates without the tests on a pull request, and the fast tests on a push', () => {
+        it('runs the static gates without the tests on every event', () => {
             expect(job('static')).toContain('needs: scope');
             expect(job('static')).toContain('--skip=test');
         });

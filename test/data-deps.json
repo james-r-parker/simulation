@@ -352,6 +352,9 @@
     "test/metrics-doc.test.js": [
         "docs/designs/metrics.md"
     ],
+    "test/miss-ledger.test.js": [
+        "package.json"
+    ],
     "test/nightly-digest.test.js": [
         "scripts/lib/nightly-digest.mjs"
     ],
@@ -539,7 +542,8 @@
     "test/workflows/affected-wiring.test.js": [
         ".github/workflows/check.yml",
         "scripts",
-        "scripts/affected.mjs"
+        "scripts/affected.mjs",
+        "scripts/change-scope.sh"
     ],
     "test/workflows/heavy-shards.test.js": [
         ".github/workflows/check.yml",

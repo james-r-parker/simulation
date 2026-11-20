@@ -35,14 +35,14 @@ export function diffPaths(root, base) {
 /**
  * Computes the result for a run.
  * @param {{paths: string[] | null, root: string, reason?: string}} input the changed paths, or null for the full suite
- * @returns {{mode: string, tests: string[], why: Record<string, string>, matrix: {include: object[]}, has_tests: boolean, coverage: string}}
+ * @returns {{mode: string, tests: string[], why: Record<string, string>, changed: string[], matrix: {include: object[]}, has_tests: boolean, coverage: string}}
  *   the mode, reached files, reasons, the matrix, whether any job runs and the coverage the pull request runs
  */
 export function select({ paths, root, reason = 'the whole suite was asked for' }) {
     const found = paths === null ? { mode: 'full', tests: [], why: { '*': reason } } : affectedTests(paths, { root });
     const include = found.mode === 'full' ? fullMatrix() : affectedMatrix(found.tests);
     const coverage = { full: 'whole', affected: 'related' }[found.mode] ?? 'none';
-    return { ...found, matrix: { include }, has_tests: include.length > 0, coverage };
+    return { ...found, changed: paths ?? [], matrix: { include }, has_tests: include.length > 0, coverage };
 }
 
 /**

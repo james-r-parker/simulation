@@ -187,3 +187,61 @@ function scopeStep(stepName) {
             .find((text) => text.startsWith(`name: ${stepName}`)) ?? ''
     );
 }
+
+describe('check.yml on the push to main', () => {
+    /**
+     * Runs a step script of a job with a change-scope.sh stand-in that says docs, as it would for a docs-only diff.
+     * @param {string} jobId job id
+     * @param {string} stepName the step's name
+     * @param {string} event the event name
+     * @returns {string} the `scope=` line the step wrote
+     */
+    function scopeOnPush(jobId, stepName, event) {
+        const dir = mkdtempSync(join(tmpdir(), 'push-scope-'));
+        try {
+            mkdirSync(join(dir, 'scripts'));
+            const stub = join(dir, 'scripts/change-scope.sh');
+            writeFileSync(stub, '#!/usr/bin/env bash\necho docs\n');
+            chmodSync(stub, 0o755);
+            const output = join(dir, 'out.txt');
+            writeFileSync(output, '');
+            spawnSync('bash', ['-c', stepScript(jobId, stepName)], {
+                cwd: dir,
+                env: { PATH: process.env.PATH, GITHUB_OUTPUT: output, EVENT: event, BASE: 'origin/main', HEAD_REF: '' },
+            });
+            return readFileSync(output, 'utf8').trim();
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
+    }
+
+    it('runs the whole suite and the browser smoke for any push, a docs-only one included', () => {
+        expect(scopeOnPush('scope', 'Change scope', 'push')).toBe('scope=full');
+        expect(scopeOnPush('browser-smoke', 'Browser scope', 'push')).toBe('scope=browser');
+        // A pull request is still classified: the same diff reads docs.
+        expect(scopeOnPush('scope', 'Change scope', 'pull_request')).toBe('scope=docs');
+    });
+
+    it('runs the static gates without the tests, which are the matrix, and the open-miss check on a pull request only', () => {
+        const text = job('static');
+        expect(text).toContain('scripts/check.sh --ci --skip=test');
+        expect(text).toContain('issues: read');
+        const step = text.split('\n      - ').find((part) => part.startsWith('name: Open affected-test misses')) ?? '';
+        expect(step).toContain("github.event_name == 'pull_request'");
+        expect(step).toContain('run: node scripts/miss-ledger.mjs check');
+        expect(step).toContain('GH_TOKEN: ${{ github.token }}');
+    });
+
+    it('opens the red-main issue after a red full run on main only, with the rights it needs and no more', () => {
+        const text = job('red-main');
+        expect(text).toContain(
+            "if: github.event_name == 'push' && github.ref == 'refs/heads/main' && always() && needs.check.result == 'failure'",
+        );
+        expect(text).toContain('needs: [check]');
+        expect(text).toContain('issues: write');
+        expect(text).toContain('run: node scripts/miss-ledger.mjs report');
+        expect(text).not.toMatch(/contents: write/);
+        // check does not wait for it: it reports on the run that failed.
+        expect(job('check')).not.toContain('red-main');
+    });
+});
