@@ -196,6 +196,10 @@ Edit `wasm/src`, run `scripts/build-wasm.sh`, then `flock /tmp/claude-1000/cpu.l
 
 `npm run train:yield -- <dir> [<dir> ...]` (each a run directory or a quoted glob) (`--out <path>` writes JSON; each run's score (`reached + bestProgress`, one ordinal number per run: the index of the last stage it trained in plus its best progress there, 1 when the ladder finished) and CPU hours, then per stage the share of runs that passed it, the median generations to pass and the CPU hours per pass; reads each directory's `manifest.json`and`curve.jsonl`; docs/designs/training-loop.md; a detector, never fitness)
 
+### Where a training run's time goes
+
+`npm run train:profile -- --curriculum <ladder.json> --generations <g>` (the `train` options (`--workers`, `--episodes`, `--checkpoint-every`, `--until`, ...); `--out <dir>` (default `.sim/train-profile/<ladder>-g<g>`, refused when it already holds a run); `--from <run-dir>` reads a finished run's `train.jsonl` instead of training; per stage the share of wall time in episodes, checkpoints and archive writes (the `TrainTiming` record `train` logs each generation) and the worker busy share, in episodes and over the whole wall time; docs/designs/training-loop.md, Phase 5; a detector, never fitness)
+
 ### Compare two ladder arms
 
 `npm run train:compare -- <before-dir-glob> <after-dir-glob>` (quote the globs; `--out <path>` writes JSON; pairs the runs by `--seed-offset` and reads the per-offset score differences: an exact sign test (tied pairs left out) and a bootstrap interval of the mean, `better` or `worse` when the sign test is under 0.05 and the interval excludes 0, else `no verdict`; also prints each stage's exact pass test on the discordant offsets (`stageTests`: gained, lost, p, `better` or `worse` under 0.05, and the fewest flips one way that would read a verdict; 6 flips in 32 offsets with none back, 5 reads none); prints the pairs, the per-stage pass shares side by side, the CPU hours and the unmatched offsets; refuses under 16 matched offsets (tied pairs counted) with exit 2; docs/designs/training-loop.md; a detector, never fitness)
