@@ -76,9 +76,9 @@ export function averageMetrics(results) {
  * @property {import('./train-state.mjs').StageInfo} stage the stage of the last generation
  * @property {{generation: number, trainTicks: number, wallSeconds: number}} progress generations completed, ticks trained
  *   and wall seconds so far
- * @property {{workers: number | undefined, evalTicks: number, drillTrials: number, gate?: {seed: number, trials: number} | null,
+ * @property {{workers: number | undefined, workerPool?: import('./worker-pool.mjs').Pool, evalTicks: number, drillTrials: number, gate?: {seed: number, trials: number} | null,
  *   keepers?: {kept: Record<string, any[]>, stages: readonly any[]}, steer?: {drill: string, value: number}}} options
- *   the pool size and the sizes; `gate` reads the drills on the gate's seed and trial count and returns gate readings;
+ *   the pool size, the run's kept-alive episode pool (`workerPool`; none: a fresh pool) and the sizes; `gate` reads the drills on the gate's seed and trial count and returns gate readings;
  *   `keepers` (with a gate) also drills each stage's kept passers (`readings.keepers`, scripts/lib/train-keepers.mjs); `steer`
  *   (with a gate) also drills the champions on the adaptive stage's steering drill with its fleer at `value` (`steer` in the result)
  * @property {import('../../js/sim/log.js').SimLog} log the run's log
@@ -156,7 +156,7 @@ async function evalPart({ archive, stage, options }) {
         offerFromTick: Infinity,
         metrics: CURVE_METRICS,
     }));
-    const results = await runPool(tasks, { workerUrl: WORKER_URL, workers: options.workers });
+    const results = await runPool(tasks, { workerUrl: WORKER_URL, workers: options.workers, pool: options.workerPool });
     return averageMetrics(results.map((r) => r.metrics));
 }
 

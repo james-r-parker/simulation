@@ -33,7 +33,7 @@ import { applySteer, curveFields, episodeOverrides, steerOptions } from './lib/t
 import { loadPool, poolAfterCheckpoint, poolIndex, taskPool } from './lib/train-pool.mjs';
 import { buildManifest, manifestBase, partitionManifests, startLedger, writeManifest } from './lib/train-manifest.mjs';
 import { loadResume, loadStages, readJson, saveArchive } from './lib/train-state.mjs';
-import { resolvePoolSize, runPool } from './lib/worker-pool.mjs';
+import { createPool, resolvePoolSize, runPool } from './lib/worker-pool.mjs';
 
 export { parseArgs };
 
@@ -55,15 +55,16 @@ const SEEDS_URL = new URL('../evals/train-seeds.json', import.meta.url);
  *   pool: import('../js/evo/opponent-pool.js').Pool, difficulty: number | null}} run
  *   the train seeds, the generation's stage, the archive to freeze, the opponent pool and the adapted value laid over the
  *   stage's overrides (`episodeDifficulty`; null: none)
- * @param {{args: import('./lib/train-args.mjs').TrainArgs, generation: number, log: import('../js/sim/log.js').SimLog}} at
- *   the options, the generation and the log
+ * @param {{args: import('./lib/train-args.mjs').TrainArgs, generation: number, log: import('../js/sim/log.js').SimLog,
+ *   pool: import('./lib/worker-pool.mjs').Pool}} at
+ *   the options, the generation, the log and the run's worker pool
  * @returns {Promise<any[]>} the episode results in index order
  * @throws {Error} after logging `TrainEpisodeFailed` when an episode fails
  */
-async function runEpisodes({ seeds, stage, archive, pool, difficulty }, { args, generation, log }) {
+async function runEpisodes({ seeds, stage, archive, pool: opponentPool, difficulty }, { args, generation, log, pool }) {
     const snapshot = snapshotArchive(archive);
     const ticks = args.ticks ?? EPISODE_TICKS;
-    const opponents = taskPool(pool, stage.pool);
+    const opponents = taskPool(opponentPool, stage.pool);
     const tasks = Array.from({ length: args.episodes }, (_, episode) => ({
         seed: episodeSeed(seeds, { generation, episodes: args.episodes, episode, offset: args.seedOffset }),
         overrides: episodeOverrides(stage.overrides, difficulty),
@@ -74,7 +75,7 @@ async function runEpisodes({ seeds, stage, archive, pool, difficulty }, { args, 
         ...(stage.preyShare === undefined ? {} : { preyShare: stage.preyShare }),
     }));
     try {
-        return await runPool(tasks, { workerUrl: WORKER_URL, workers: args.workers });
+        return await runPool(tasks, { workerUrl: WORKER_URL, workers: args.workers, pool });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         const index = Number(/^task (\d+) failed/.exec(message)?.[1] ?? -1);
@@ -112,6 +113,7 @@ function usage(results, { wallSeconds, workers }) {
  * @property {import('../js/evo/archive.js').Archive} archive the archive, merged into as generations finish
  * @property {import('../js/sim/log.js').SimLog} log the log
  * @property {number} workers the pool size
+ * @property {import('./lib/worker-pool.mjs').Pool} workerPool the episode workers, kept alive for the whole run
  * @property {number} started `performance.now()` when the run began
  * @property {number} trainTicks ticks trained so far
  * @property {number} cpuSeconds seconds the pool has spent in episodes so far (this process: a resume starts at 0)
@@ -168,7 +170,15 @@ async function maybeCheckpoint(run, { drillTrials, gateTrials, crossTrials }) {
     }
     const keepers = run.stages.some((s) => s.keepPasser) ? { kept: run.keepers, stages: run.stages } : undefined;
     const steer = steerOptions(stage, state);
-    const options = { workers: args.workers, evalTicks: args.ticks ?? EVAL_TICKS, drillTrials, gate, keepers, steer };
+    const options = {
+        workers: args.workers,
+        workerPool: run.workerPool,
+        evalTicks: args.ticks ?? EVAL_TICKS,
+        drillTrials,
+        gate,
+        keepers,
+        steer,
+    };
     const result = await runCheckpoint({ archive, stage, progress, options, log });
     if (gate !== null && readsCrossplay(run.stages, state)) {
         const preyStages = preyVsStageNames(run.stages, state);
@@ -276,7 +286,7 @@ async function runGeneration(run, { drillTrials, gateTrials, crossTrials, print 
     const t0 = performance.now();
     const difficulty = episodeDifficulty(run.state);
     const episodes = { seeds: run.seeds, stage, archive, pool: run.pool, difficulty };
-    const results = await runEpisodes(episodes, { args, generation, log });
+    const results = await runEpisodes(episodes, { args, generation, log, pool: run.workerPool });
     const outcomes = results.map((r) => mergeEpisode(archive, r, log));
     const wallSeconds = (performance.now() - t0) / 1000;
     const { ticks, cpuShare, busy } = usage(results, { wallSeconds, workers: run.workers });
@@ -343,6 +353,7 @@ function startRun(args, log, commandLine) {
         archive,
         log,
         workers,
+        workerPool: createPool({ workerUrl: WORKER_URL, workers }),
         started,
         trainTicks: 0,
         cpuSeconds: 0,
@@ -395,8 +406,10 @@ export async function runTraining(args, io = {}) {
     const sizes = { drillTrials: 32, gateTrials: GATE_TRIALS, crossTrials: CROSS_TRIALS, ...given };
     mkdirSync(args.out, { recursive: true });
     const sinkFile = createJsonlSink(join(args.out, 'train.jsonl'));
+    /** @type {Run | undefined} */
+    let run;
     try {
-        const run = startRun(args, createSimLog(sinkFile.sink, { level: 'info' }), commandLine);
+        run = startRun(args, createSimLog(sinkFile.sink, { level: 'info' }), commandLine);
         saveManifest(run);
         let logged = null;
         while (run.state.status === 'running' && run.state.generation < args.generations) {
@@ -413,6 +426,7 @@ export async function runTraining(args, io = {}) {
         }
         return { archive: run.archive, generations: run.state.generation, state: run.state };
     } finally {
+        await run?.workerPool.close();
         await sinkFile.close();
     }
 }

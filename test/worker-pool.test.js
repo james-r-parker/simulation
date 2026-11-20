@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { availableParallelism } from 'node:os';
-import { defaultWorkers, resolvePoolSize, runPool } from '../scripts/lib/worker-pool.mjs';
+import { createPool, defaultWorkers, resolvePoolSize, runPool } from '../scripts/lib/worker-pool.mjs';
 
 const workerUrl = new URL('./fixtures/pool-worker.mjs', import.meta.url);
 const uneven = [60, 5, 30, 1, 45, 2, 10, 20].map((delay, value) => ({ delay, value }));
@@ -54,6 +54,69 @@ describe('runPool', () => {
 
     it.each(/** @type {any[]} */ ([0, -1, 1.5, Number.NaN, '2']))('throws for invalid workers %s', (workers) => {
         expect(() => runPool([{ value: 0 }], { workerUrl, workers })).toThrow(/positive integer/);
+    });
+});
+
+describe('createPool', () => {
+    it('keeps its workers between runs and returns each run in task order', async () => {
+        const pool = createPool({ workerUrl, workers: 2 });
+        try {
+            const first = await pool.run(uneven.slice(0, 4));
+            const second = await pool.run(uneven.slice(4));
+            expect(first.map((r) => r.value)).toEqual([0, 1, 2, 3]);
+            expect(second.map((r) => r.value)).toEqual([4, 5, 6, 7]);
+            const threads = new Set([...first, ...second].map((r) => r.threadId));
+            expect(threads.size).toBe(2);
+        } finally {
+            await pool.close();
+        }
+    });
+
+    it('starts only as many workers as a run has tasks, up to its size', async () => {
+        const pool = createPool({ workerUrl, workers: 4 });
+        try {
+            const one = await pool.run([{ value: 0 }]);
+            expect(one).toHaveLength(1);
+            const many = await pool.run(uneven);
+            expect(new Set(many.map((r) => r.threadId)).size).toBeLessThanOrEqual(4);
+        } finally {
+            await pool.close();
+        }
+    });
+
+    it('rejects a failed run, then runs the next on fresh workers', async () => {
+        const pool = createPool({ workerUrl, workers: 2 });
+        try {
+            const error = await pool.run([{ value: 0 }, { fail: 'boom' }]).catch((e) => e);
+            expect(error.message).toMatch(/task 1 failed: boom/);
+            const after = await pool.run([{ value: 5 }, { value: 6 }]);
+            expect(after.map((r) => r.value)).toEqual([5, 6]);
+        } finally {
+            await pool.close();
+        }
+    });
+
+    it('is the pool runPool uses when given one, and leaves its workers alive', async () => {
+        const pool = createPool({ workerUrl, workers: 2 });
+        try {
+            const a = await runPool(uneven.slice(0, 2), { workerUrl, pool });
+            const b = await runPool(uneven.slice(0, 2), { workerUrl, pool });
+            expect(new Set([...a, ...b].map((r) => r.threadId)).size).toBeLessThanOrEqual(2);
+        } finally {
+            await pool.close();
+        }
+    });
+
+    it('refuses a second run while one is in flight, and an invalid size', async () => {
+        const pool = createPool({ workerUrl, workers: 1 });
+        try {
+            const running = pool.run([{ value: 0, delay: 30 }]);
+            await expect(pool.run([{ value: 1 }])).rejects.toThrow(/one batch/);
+            await running;
+        } finally {
+            await pool.close();
+        }
+        expect(() => createPool({ workerUrl, workers: 0 })).toThrow(/positive integer/);
     });
 });
 
