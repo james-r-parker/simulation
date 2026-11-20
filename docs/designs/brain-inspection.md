@@ -64,6 +64,7 @@ The output trace has 11 positions in `OUTPUT_INDEX` order. `split` is always zer
 
 - **`applyEdits(weights, layout, edits)`** returns a new row; the input row is unchanged. An unknown block, a missing `row` on a two-dimensional block or an index outside its block throws `RangeError` naming the edit.
 - **`silenceHook(units)`** returns an `onTick` that zeroes the silenced units' rows of the subject slot's `fastOut` after every step.
+- **`{ op: 'set', block: 'leak', col: unit, value: KNOCKOUT_LEAK_GENE }`** is the genome form of silencing `unit`.
 
 > Note: `resetFastOut` copies the edited `wOut` at birth, but `hebbianStep` moves `fastOut` away from 0 every tick while `hebbianRate` is above 0, so a `silence` edit alone leaks the unit back into the outputs. Every run with a `silence` edit chains `silenceHook` with the trace recorder's `onTick`.
 
