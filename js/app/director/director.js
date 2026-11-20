@@ -68,7 +68,7 @@ function decideWide(state, { timeS, agents, candidates, worldMeta }) {
         enterShot(state, SHOT_STATE.GLIDE, { startTimeS: timeS, agents, fromPose, moment: top });
         state.lastShownS[top.kind] = timeS;
         state.shotStartS = timeS;
-        noteShot(state.history, { kind: top.kind, subject: subjectOf(top) });
+        noteShot(state.history, { kind: top.kind, subject: subjectOf(top), timeS });
         state.caption = captionFor(top, worldMeta);
         state.log('info', 'DirectorShot', {
             kind: top.kind,
@@ -212,7 +212,7 @@ function runDecisionIfDue(state, ctx) {
     };
     if (state.shot.state === SHOT_STATE.WIDE) {
         const candidates = findMoments({ ...baseInput, lastShownS: state.lastShownS });
-        applyVariety(state.history, candidates);
+        applyVariety(state.history, candidates, ctx.timeS);
         state.quiet = candidates[0] === undefined || candidates[0].score < MOMENT_THRESHOLD;
         decideWide(state, { timeS: ctx.timeS, agents: ctx.agents, candidates, worldMeta: ctx.worldMeta });
     } else if (state.shot.state === SHOT_STATE.LINGER) {

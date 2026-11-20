@@ -8,9 +8,13 @@ import { ceilingReached, floorReached, wideDue } from './schedule.js';
 
 /** Score a lingering moment must hold to extend the shot (the glide threshold). */
 const EXTEND_SCORE = 45;
+/** A chase is held while the pair stays within this many world units, even when the gap stops closing. */
+export const CHASE_HOLD_DISTANCE = 600;
 
 /**
- * Finds the matching candidate in a fresh scan to refresh an ongoing `linger` shot's score and focus.
+ * Finds the matching candidate in a fresh scan to refresh an ongoing `linger` shot's score and focus. A chase whose gap
+ * has stopped closing is still held at the extension score while both are alive and near, so the shot stays to the
+ * pursuit's end (a bite, an escape or a death) and is not cut while it is still on.
  * @param {import('./moments.js').MomentCandidate} moment the moment currently being lingered on
  * @param {readonly import('./moments.js').MomentCandidate[]} rawCandidates fresh candidates without repeat penalty
  * @param {readonly import('./moments.js').AgentRecord[]} agents current alive agents
@@ -25,7 +29,8 @@ export function refreshLingerMoment(moment, rawCandidates, agents) {
         const hunter = agents.find((a) => a.genomeId === moment.hunterId);
         const prey = agents.find((a) => a.genomeId === moment.preyId);
         if (hunter && prey) {
-            return { score: 0, x: (hunter.x + prey.x) / 2, y: (hunter.y + prey.y) / 2 };
+            const near = Math.hypot(hunter.x - prey.x, hunter.y - prey.y) <= CHASE_HOLD_DISTANCE;
+            return { score: near ? EXTEND_SCORE : 0, x: (hunter.x + prey.x) / 2, y: (hunter.y + prey.y) / 2 };
         }
     } else if (moment.kind === MOMENT_KIND.ESCAPE || moment.kind === MOMENT_KIND.SMOKE_ESCAPE) {
         const victim = agents.find((a) => a.genomeId === moment.victimId);

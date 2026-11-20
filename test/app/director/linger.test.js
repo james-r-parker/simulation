@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lingerOver, refreshLingerMoment } from '../../../js/app/director/linger.js';
+import { CHASE_HOLD_DISTANCE, lingerOver, refreshLingerMoment } from '../../../js/app/director/linger.js';
 
 const AGENTS = [
     { genomeId: 1, lineageId: 1, spec: 1, x: 100, y: 100, angle: 0, size: 18, speed: 5, flags: 0 },
@@ -13,9 +13,16 @@ describe('refreshLingerMoment', () => {
         expect(refreshLingerMoment(moment, raw, AGENTS)).toEqual({ score: 55, x: 9, y: 8 });
     });
 
-    it('follows a chase pair that is still alive at score 0, between the two', () => {
+    it('holds a chase at the extension score between the two while both are alive and near', () => {
         const moment = { kind: 'chase', score: 70, x: 0, y: 0, hunterId: 1, preyId: 2 };
-        expect(refreshLingerMoment(moment, [], AGENTS)).toEqual({ score: 0, x: 200, y: 100 });
+        expect(refreshLingerMoment(moment, [], AGENTS)).toEqual({ score: 45, x: 200, y: 100 });
+    });
+
+    it('lets a chase go once the pair is further apart than the hold distance, or one of them is gone', () => {
+        const moment = { kind: 'chase', score: 70, x: 0, y: 0, hunterId: 1, preyId: 2 };
+        const far = [AGENTS[0], { ...AGENTS[1], x: 100 + CHASE_HOLD_DISTANCE + 1 }];
+        expect(refreshLingerMoment(moment, [], far).score).toBe(0);
+        expect(refreshLingerMoment(moment, [], [AGENTS[0]])).toEqual({ score: 0, x: 0, y: 0 });
     });
 
     it('follows an escape victim, and otherwise stays where the moment was', () => {
