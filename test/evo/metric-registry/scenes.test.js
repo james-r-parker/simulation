@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { entry } from '../../../js/evo/metric-registry/entry.js';
+import { METRICS } from '../../../js/evo/metric-registry/index.js';
 import { FAILURES, GOALS, PRINCIPLE_SCENES, SCENES } from '../../../js/evo/metric-registry/scenes.js';
 
 describe('SCENES', () => {
@@ -31,5 +32,22 @@ describe('entry scenes field', () => {
 
     it('keeps the scenes the author wrote', () => {
         expect(entry('core', { ...fields, scenes: ['A real chase', 'G3'] }).scenes).toEqual(['A real chase', 'G3']);
+    });
+});
+
+describe('the scenes tags on the registry', () => {
+    it('names only scenes in SCENES, each once per metric', () => {
+        for (const [name, e] of Object.entries(METRICS)) {
+            const scenes = e.scenes ?? [];
+            expect(new Set(scenes).size, name).toBe(scenes.length);
+            for (const scene of scenes) {
+                expect(SCENES, `${name}: ${scene}`).toContain(scene);
+            }
+        }
+    });
+
+    it('leaves exactly the scenes with no detector yet untagged (principles.md says `none` for each)', () => {
+        const tagged = new Set(Object.values(METRICS).flatMap((e) => e.scenes ?? []));
+        expect(SCENES.filter((scene) => !tagged.has(scene))).toEqual(['Abort', 'Refuge', 'Something unnamed']);
     });
 });
