@@ -55,6 +55,8 @@ Verdict (E210): The Phase 1 prediction was falsified: `eval.sprint_share.hunter`
 
 ### Phase 2 - The store
 
+Built and judged by [fair-chase.md](fair-chase.md), which adds a per-specialisation drain and reads the chase envelope and the `hunt` rung before the world. T5 to T10 here, the 16-seed screen and this doc's definition of `eval.chase_spent_share` are superseded by that doc's tasks, its three-step judgement and its definition; the flag's deletion task is that doc's T15 (or T8a).
+
 **Targets:** eval.chase_catch_share, eval.chase_escape_share, eval.hunt_abort_rate
 
 A per-agent store `sprintStore` (0 to 1). It drains by `sprintDrain` a tick while `SPRINT` is above 0 and refills by `sprintRefill` a tick while thrust is under `sprintRestThrust`. The sprint's factor on thrust and its rise of the speed cap are both multiplied by the store's state: full above `sprintFloor`, falling linearly to 0 at an empty store. `sprintCost` stays. No brain input is added in the first screen: a spent blob feels its own forward speed fall (the velocity body inputs). The store joins `worldHash` only with `sprintStoreEnabled` on.
