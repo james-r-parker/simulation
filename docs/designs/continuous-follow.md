@@ -1,8 +1,6 @@
 # Continuous follow
 
-**Status:** Proposed - Phase 1 adds subject handoff and entry zoom.
-**Validated:** 0f967427 (2026-11-20)
-**Priority:** 37 - viewer-requested camera work delivered independently of the simulation queue.
+**Status:** Implemented - follow frames a living subject and hands off after death.
 **Depends on:** [worker-and-renderer.md](worker-and-renderer.md)
 
 ## Behaviour
@@ -39,12 +37,12 @@ It changes the camera only; it adds no fitness reward, sim rule or worker comman
 | Config and persistence  | N/A - no config keys, saved formats, archive or database changes. Camera constants are app-local.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Logging and diagnostics | App console at info level: `FollowStarted`, `FollowChanged`, `FollowEnded` records include `fromId`, `toId` and `reason` (`entry`, `death`, `empty`, `cancel`). Empty entry emits `FollowEnded` with reason `empty`. No sim events: camera decisions cannot be reproduced by headless replay. Reproduce in browser with `?seed=3` and the follow controls.                                                                                                                                                                                                                                                                                                                                                                                                     |
 | Browser compatibility   | Existing typed arrays and camera springs support the current WebGPU/WebGL2 paths; no new browser API. Local Chromium browser smoke; Firefox/Safari manual verification remains outside this environment.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| Docs                    | This doc becomes Implemented with Phase 1 built. README controls and worker-and-renderer follow description describe the new behaviour. sim-notes records renderer/selection integration findings.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Docs                    | This doc describes the implemented Phase 1. README controls and worker-and-renderer follow description describe the new behaviour. sim-notes records renderer/selection integration findings.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Verification            | `scripts/check.sh --fix --quick`, affected unit tests through the pre-commit gate, browser smoke, fresh conformance review, then required CI `check` before merge.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 ## Task breakdown
 
-### Phase 1 - Continuous subjects and entry framing
+### Phase 1 - Continuous subjects and entry framing (built)
 
 **Targets:** none - camera usability changes no simulation or performance metric.
 
@@ -61,3 +59,8 @@ Wait for death: its last position remains briefly, then a living subject receive
 across. Repeat with no selection, a stale selection, an empty population, pause during the delay, reset during the delay,
 and cancellation during the delay. Home and keyboard/drag pan release follow. Unit tests inject these transitions
 without relying on random deaths. Browser smoke checks the real renderer and worker; CI runs the full regression suite.
+
+Local verification: the quick gate passes all eight checks; affected unit suites pass, including the suspended-tab
+regression. Chromium browser smoke passes all 21 specs, including F centring a subject for inspector selection.
+Fresh conformance review reports no blocking findings. Death, pause, empty-population and cancellation transitions
+are verified with injected unit scenarios; natural-death timing is not asserted by the browser suite.
