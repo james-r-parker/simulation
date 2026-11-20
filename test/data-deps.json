@@ -323,6 +323,10 @@
     "test/evo/scene-strike-miss.test.js": [
         "js/evo/scene-strike-miss.js"
     ],
+    "test/evo/train-seeds.test.js": [
+        "evals/seeds.json",
+        "evals/train-seeds.json"
+    ],
     "test/evo/train-tune.shipped.test.js": [
         "evals/train-ladder.json",
         "evals/train-tune.json"
@@ -498,6 +502,9 @@
         "evals/train-screens/food-behind.grid.json",
         "evals/train-screens/stages/nursery-scatter.json"
     ],
+    "test/train-profile.test.js": [
+        "test/fixtures/train-ladder.json"
+    ],
     "test/train-scatter.slow.test.js": [
         "test/fixtures/nursery-scatter.json"
     ],
@@ -515,8 +522,6 @@
     ],
     "test/train.test.js": [
         "evals/micro-world.json",
-        "evals/seeds.json",
-        "evals/train-seeds.json",
         "test/fixtures/train-curriculum.json"
     ],
     "test/vite-config.test.js": [
