@@ -1,0 +1,25 @@
+{
+  "curriculum": "evals/train-ladder.json",
+  "offsets": [128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248],
+  "until": "hunt-mid",
+  "generations": 380,
+  "workersPerRun": 8,
+  "feasible": false,
+  "train": {
+    "checkpointEvery": 5
+  },
+  "reference": "base",
+  "arms": {
+    "base": {},
+    "nursery-scatter": {
+      "stages": {
+        "nursery": {
+          "config": "evals/train-screens/stages/nursery-scatter.json"
+        }
+      }
+    },
+    "turn-rung": {
+      "curriculum": "evals/train-ladder-turn.json"
+    }
+  }
+}
