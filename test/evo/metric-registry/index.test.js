@@ -308,7 +308,7 @@ describe('minSeedsFor', () => {
     it('uses measured minima for registered metrics and defaults to 16 for unknown and inherited names', () => {
         expect(DEFAULT_MIN_SEEDS).toBe(16);
         expect(MIN_SEEDS).toBe(DEFAULT_MIN_SEEDS);
-        expect(minSeedsFor('eval.food_energy_per_1k')).toBe(16);
+        expect(minSeedsFor('eval.food_energy_per_1k@20k')).toBe(16);
         expect(minSeedsFor('eval.diversity')).toBe(32);
         expect(minSeedsFor('eval.qd_score')).toBe(32);
         for (const metric of ['mystery', 'toString', 'constructor']) {
