@@ -83,6 +83,16 @@ describe('displayed velocity', () => {
         expect(frame(fr, a, { dtMs: 0 }).vy).toBe(moved.vy);
     });
 
+    it('leaves the velocity alone on a stalled frame, whose displacement spans more than its clamped dt', () => {
+        const { fr } = rig();
+        const a = agents();
+        frame(fr, a);
+        a.x[0] += 1.6;
+        const moved = frame(fr, a);
+        a.x[0] += 50;
+        expect(frame(fr, a, { dtMs: 100, holdMs: 0 }).vx).toBe(moved.vx);
+    });
+
     it('starts again after a handoff', () => {
         const { fr } = rig();
         const a = agents();

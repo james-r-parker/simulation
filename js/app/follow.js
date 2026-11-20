@@ -43,7 +43,7 @@ export function frameFollow(camera) {
  * @property {{id: number, relation: string}} choice scratch for `chooseHandoff`
  * @property {{from: number, pick: FollowState['context']}} handoff scratch: the subject that left and the pick's context
  * @property {import('./follow-frame.js').FrameState} frame the look-ahead, pair and zoom state
- * @property {{dtMs: number, nowMs: number, paused: boolean,
+ * @property {{dtMs: number, holdMs: number, nowMs: number, paused: boolean,
  *   player: import('./renderer/effects-player.js').EffectsPlayer | null}} frameAt scratch for `frameSubject`
  * @property {number} quietMs unpaused ms the subject has gone with no event above the movement score
  * @property {boolean} manual whether the viewer picked this subject, which exempts it from boredom
@@ -85,6 +85,11 @@ function choose(f, preferred) {
     pickContext(f);
     f.context.skip = 0;
     return pickFollowAgent(agents, f.context);
+}
+
+/** @param {{dtMs: number, holdMs?: number}} at frame time @returns {number} the ms this frame adds to a death hold */
+function holdOf(at) {
+    return at.holdMs ?? at.dtMs;
 }
 
 /**
@@ -168,14 +173,14 @@ function watchSelection(f) {
  * Finds the subject, counting the hold while it is gone and handing off when the hold is over.
  * @param {FollowState} f the controller
  * @param {import('./interpolate.js').Interpolated} agents the living agents
- * @param {{dtMs: number, paused: boolean}} at frame time
+ * @param {{dtMs: number, holdMs?: number, paused: boolean}} at frame time
  * @returns {number} the subject's index in `agents`, -1 while it is gone
  */
 function subjectIndex(f, agents, at) {
     const { state, getPlayer } = f.deps;
     let i = findAgent(agents, state.followId);
     if (i < 0 && !at.paused) {
-        f.heldMs += at.dtMs;
+        f.heldMs += holdOf(at);
         if (f.heldMs >= holdMsFor(getPlayer()?.story ?? null, state.followId)) {
             handOff(f, agents);
             i = findAgent(agents, state.followId);
@@ -186,7 +191,9 @@ function subjectIndex(f, agents, at) {
 
 /**
  * @param {FollowState} f the controller
- * @param {{dtMs: number, nowMs: number, available: boolean, paused: boolean}} at frame time and availability
+ * @param {{dtMs: number, holdMs?: number, nowMs: number, available: boolean, paused: boolean}} at frame time and
+ *   availability; `dtMs` eases the camera (a slow frame still moves it), `holdMs` is what counts towards the death
+ *   hold and is 0 for a gap over `MAX_DT_MS` (defaults to `dtMs`)
  * @returns {void}
  */
 function stepFollow(f, at) {
@@ -208,12 +215,13 @@ function stepFollow(f, at) {
     if (i >= 0) {
         f.heldMs = 0;
         f.wasSelected = state.selectedId === state.followId;
-        bore(f, agents, { i, dtMs: at.dtMs, paused: at.paused });
+        bore(f, agents, { i, dtMs: holdOf(at), paused: at.paused });
         i = findAgent(agents, state.followId);
     }
     if (i >= 0) {
         const view = f.frameAt;
         view.dtMs = at.dtMs;
+        view.holdMs = holdOf(at);
         view.nowMs = at.nowMs;
         view.paused = at.paused;
         view.player = f.deps.getPlayer();
@@ -227,8 +235,8 @@ function stepFollow(f, at) {
 
 /**
  * @param {FollowDeps} deps injected current view, living subjects, effects and log
- * @returns {{choose: (preferred?: number) => number, step: (at: {dtMs: number, nowMs: number, available: boolean,
- *   paused: boolean}) => void, reset: () => void, caption: () => string}} controller with no per-frame allocation;
+ * @returns {{choose: (preferred?: number) => number, step: (at: {dtMs: number, holdMs?: number, nowMs: number,
+ *   available: boolean, paused: boolean}) => void, reset: () => void, caption: () => string}} controller with no per-frame allocation;
  *   `caption` is the relation caption while it is on screen, else an empty string
  */
 export function createFollowController(deps) {
@@ -247,7 +255,7 @@ export function createFollowController(deps) {
         choice: { id: 0, relation: RELATION.PICK },
         handoff: { from: 0, pick: context },
         frame: createFrameState(deps.camera),
-        frameAt: { dtMs: 0, nowMs: 0, paused: false, player: null },
+        frameAt: { dtMs: 0, holdMs: 0, nowMs: 0, paused: false, player: null },
         captionText: '',
         captionUntilMs: 0,
     };

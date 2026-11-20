@@ -85,18 +85,19 @@ export function handoffFrame(fr) {
 /**
  * @param {FrameState} fr the state
  * @param {{x: number, y: number}} at the subject's displayed place
- * @param {{dtMs: number, paused: boolean}} time the frame
+ * @param {{dtMs: number, holdMs?: number, paused: boolean}} time the frame; the velocity uses `holdMs` (0 on a stalled
+ *   frame, whose displacement spans more than `dtMs`), defaulting to `dtMs`
  * @returns {void} smooths the displayed velocity; a paused view has none
  */
-function updateVelocity(fr, at, { dtMs, paused }) {
+function updateVelocity(fr, at, { dtMs, holdMs = dtMs, paused }) {
     const s = fr.subject;
     if (paused || !fr.hasPrev) {
         s.vx = 0;
         s.vy = 0;
-    } else if (dtMs > 0) {
-        const alpha = 1 - Math.exp(-dtMs / VELOCITY_TAU_MS);
-        s.vx += (((at.x - fr.prevX) * 1000) / dtMs - s.vx) * alpha;
-        s.vy += (((at.y - fr.prevY) * 1000) / dtMs - s.vy) * alpha;
+    } else if (holdMs > 0) {
+        const alpha = 1 - Math.exp(-holdMs / VELOCITY_TAU_MS);
+        s.vx += (((at.x - fr.prevX) * 1000) / holdMs - s.vx) * alpha;
+        s.vy += (((at.y - fr.prevY) * 1000) / holdMs - s.vy) * alpha;
     }
     fr.prevX = at.x;
     fr.prevY = at.y;
@@ -148,7 +149,7 @@ function wantedFactor(agents, i, { player, nowMs }) {
  * @param {FrameState} fr the state
  * @param {import('./interpolate.js').Interpolated} agents the living agents
  * @param {number} i the subject's index
- * @param {{dtMs: number, nowMs: number, paused: boolean,
+ * @param {{dtMs: number, holdMs?: number, nowMs: number, paused: boolean,
  *   player: import('./renderer/effects-player.js').EffectsPlayer | null}} at the frame, with the effects player
  * @returns {import('./camera.js').FollowSubject} the subject, reused
  */

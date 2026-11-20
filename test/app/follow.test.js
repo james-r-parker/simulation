@@ -58,6 +58,19 @@ describe('continuous follow', () => {
         expect(s.follow.choose()).toBe(0);
     });
 
+    it('eases the camera on a frame whose gap counts no hold time', () => {
+        const s = setup();
+        s.state.selectedId = s.state.followId = 7;
+        s.camera.x = 0;
+        s.follow.step({ dtMs: 100, holdMs: 0, nowMs: 1000, available: true, paused: false });
+        expect(s.camera.x).toBeGreaterThan(0);
+        s.agents.genomeId[0] = 999;
+        for (let i = 0; i < 20; i++) {
+            s.follow.step({ dtMs: 100, holdMs: 0, nowMs: 1000, available: true, paused: false });
+        }
+        expect(s.state.followId, 'a stalled gap adds no hold time').toBe(7);
+    });
+
     it('holds a death briefly, then follows another living subject moving the selection with it and keeping the zoom', () => {
         const s = setup();
         s.state.selectedId = s.state.followId = 7;
