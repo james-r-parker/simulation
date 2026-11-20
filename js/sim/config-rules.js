@@ -80,6 +80,7 @@ export const FEATURE_RULES = {
     winterRegrow: num(0),
     droughtChance: UNIT,
     hebbianRate: num(0, 1),
+    unitKnockoutRate: num(0, 1),
     mutationRate: { type: 'mutationRate' },
     weightDecay: num(0, 0.1),
     leakGeneStart: num(-4, 4),
