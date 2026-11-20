@@ -1,6 +1,6 @@
 # Metric noise
 
-**Status:** In progress - Phase 1 is built. Phase 2 has a terminal hunter count candidate with an E210 diagnostic; the longer verification runs are open. Phase 4 (the statistics layer) is built except its review T15; T12 read the settled hunter metrics on the 128-seed E254 baseline and moved the keep-rule guard to the settled catch metric.
+**Status:** In progress - Phase 1 is built. Phase 2 has a terminal hunter count candidate with an E210 diagnostic; the longer verification runs are open. Phase 4 (the statistics layer) is built; T12 read the settled hunter metrics on the 128-seed E254 baseline and moved the keep-rule guard to the settled catch metric.
 **Validated:** bc55972e (2026-11-20)
 **Priority:** 1 - Measurement lead. Phase 4 is built before any other read: the power readings, the keep rule and the 16-seed interval have defects (review of 2026-11-20), so no verdict is trusted until they are fixed; Phase 5 (the headline metrics) follows
 **Depends on:** [metric-trust.md](metric-trust.md)
@@ -316,7 +316,7 @@ conditions hold.
 | ----- | ------ | ------------------------------------------------- |
 | C3    | T6, T7 | Plan migration, conditional retirement and review |
 
-### Phase 4 - The statistics layer
+### Phase 4 - The statistics layer (built)
 
 **Targets:** none - it corrects how power, the keep rule and the intervals are computed; its readings are the count of `verified` metrics after the power re-read and the null false-positive rate of the verdict interval at 16 seeds
 
@@ -425,7 +425,7 @@ A report holds 370 metrics; 54 of the 110 that carry a verdict can see a 20% cha
 | T12 | (built) Read the settled metrics' liveness and power on the shared baseline; move `GUARD_METRICS` to the settled catch metric if it meets the rule above, else record why not                             | [judgement]  | T9, T11                |
 | T13 | (built) D4: the seeded null calibration test at 16, 32 and 64 seeds (failing at 16), then the studentised interval under 32 seeds in `bootstrapInterval` and `judge`                                      | [judgement]  | -                      |
 | T14 | (built) D5 and D6: null `@20k` without its checkpoint, with a test; unit `share difference` on the ten metrics and its scoring in `js/evo/compare-rules.js`, with tests                                   | [mechanical] | -                      |
-| T15 | Conformance review of Phase 4                                                                                                                                                                             | [judgement]  | T9, T10, T12, T13, T14 |
+| T15 | (built) Conformance review of Phase 4                                                                                                                                                                     | [judgement]  | T9, T10, T12, T13, T14 |
 
 ### Phase 5 - Headline metrics
 
