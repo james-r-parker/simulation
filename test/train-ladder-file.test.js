@@ -5,6 +5,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { planRun, validateStageFloors } from '../js/evo/curriculum.js';
 import { createConfig } from '../js/sim/config.js';
+import { planScreen } from '../scripts/lib/train-screen-grid.mjs';
 import { loadStages } from '../scripts/lib/train-state.mjs';
 
 /** @param {string} path a repo-relative JSON file @returns {any} its contents */
@@ -126,5 +127,61 @@ describe('evals/train-ladder-no-mid.json', () => {
             const bar = hunt.gate.find((/** @type {any} */ c) => c.read === 'drill.prey-ahead.winShareOverReference');
             expect(bar.min).toBe(0.5);
         }
+    });
+});
+
+describe('the food-behind screen files (training-stages Phase 8)', () => {
+    const NURSERY = readJson('evals/stages/nursery.json');
+    const SCATTER = readJson('evals/train-screens/stages/nursery-scatter.json');
+    const TURN = readJson('evals/train-ladder-turn.json');
+    const GRID = readJson('evals/train-screens/food-behind.grid.json');
+    const HOLDOUT = readJson('evals/train-screens/food-behind-holdout.grid.json');
+    const SCATTER_FILE = 'evals/train-screens/stages/nursery-scatter.json';
+
+    it('builds the scatter world with no floor, differing from the nursery only in its food', () => {
+        expect(createConfig(SCATTER).minAgents).toBe(0);
+        const changed = Object.keys({ ...NURSERY, ...SCATTER }).filter(
+            (key) => JSON.stringify(NURSERY[key]) !== JSON.stringify(SCATTER[key]),
+        );
+        expect(changed.sort()).toEqual(['foodBackgroundShare', 'initialFood', 'maxFood']);
+        expect(SCATTER).toMatchObject({ maxFood: 20, initialFood: 20, foodBackgroundShare: 1 });
+    });
+
+    it('puts forage-turn first in the turn ladder, which is otherwise the ladder', () => {
+        expect(TURN.slice(1)).toEqual(LADDER);
+        expect(TURN[0]).toEqual({
+            name: 'forage-turn',
+            config: SCATTER_FILE,
+            minGenerations: 10,
+            maxGenerations: 40,
+            plateauStop: 6,
+            gate: [{ read: 'drill.food-behind.edgeLow', min: 0.3 }],
+            keepPasser: true,
+        });
+        expect(() => planRun(TURN, 0)).not.toThrow();
+        expect(() =>
+            validateStageFloors(TURN, {
+                overridesOf: (config) => readJson(config),
+                targetMinAgents: createConfig({}).minAgents,
+            }),
+        ).not.toThrow();
+    });
+
+    it('plans both grids with the three arms, and the holdout on the other 16 offsets', () => {
+        for (const grid of [GRID, HOLDOUT]) {
+            const plan = planScreen(grid, (file) => readJson(file));
+            expect(plan.arms.map((a) => a.name)).toEqual(['base', 'nursery-scatter', 'turn-rung']);
+            expect(plan).toMatchObject({ until: 'hunt-mid', generations: 380, workersPerRun: 8, reference: 'base' });
+            const [base, scatter, turn] = plan.arms.map((a) => a.ladder.map((e) => e.name));
+            expect(base).toEqual(ORDER);
+            expect(scatter).toEqual(ORDER);
+            expect(turn).toEqual(['forage-turn', ...ORDER]);
+            expect(plan.arms[1].ladder[0].config).toBe(SCATTER_FILE);
+            expect(plan.arms[1].ladder[1]).toEqual(LADDER[1]);
+            expect(plan.arms.every((a) => a.train.checkpointEvery === 5)).toBe(true);
+        }
+        expect(GRID.offsets).toEqual(Array.from({ length: 16 }, (_, i) => i * 8));
+        expect(HOLDOUT.offsets).toEqual(Array.from({ length: 16 }, (_, i) => 128 + i * 8));
+        expect(GRID.feasible).toBe(false);
     });
 });

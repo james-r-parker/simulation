@@ -1,6 +1,7 @@
 // Formats drill results as a text table and as JSON. Pure: no files.
 
 import { armReading } from '../../js/evo/drill-arms.js';
+import { ELITE_BAR } from '../../js/evo/elite-skill.js';
 
 /**
  * @typedef {object} DrillCell
@@ -114,4 +115,23 @@ export function reportJson(drills, rows) {
         drills: [...drills],
         rows: rows.map((row) => ({ label: row.label, cells: row.cells, meanEdge: meanEdge(row) })),
     };
+}
+
+/**
+ * @param {Record<string, import('../../js/evo/elite-skill.js').EliteSkillDrill>} skill the elite-skill read
+ * @param {number | null} bar the `--bar` given, or null for the default
+ * @returns {string[]} one line per drill: the elites drilled, those clearing the bar, whether the top-lower-bound elite
+ *   clears it, and the rank correlation of lower bound against win share
+ */
+export function eliteSkillLines(skill, bar) {
+    const lines = [`elite skill (edgeLow >= ${bar ?? ELITE_BAR})`];
+    for (const [drill, read] of Object.entries(skill)) {
+        const share = read.clearShare === null ? '-' : read.clearShare.toFixed(2);
+        const top = read.topClears === null ? '-' : read.topClears ? 'yes' : 'no';
+        const rho = read.spearman === null ? '-' : signed(read.spearman);
+        lines.push(
+            `  ${drill}: ${read.clearing}/${read.drilled} clear (${share}), top elite clears ${top}, rho ${rho}`,
+        );
+    }
+    return lines;
 }
