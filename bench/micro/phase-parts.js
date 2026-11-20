@@ -12,6 +12,11 @@ import { stepHerds } from '../../js/sim/herd-motion.js';
 import { feed } from '../../js/sim/feeding.js';
 import { ageFood, spawnFood } from '../../js/sim/food.js';
 import { regrowPatches } from '../../js/sim/food-patches.js';
+import { refreshFruiting } from '../../js/sim/fruiting.js';
+import { grazeHerds } from '../../js/sim/herd-graze.js';
+import { ageAndReproduceHerds } from '../../js/sim/herd-life.js';
+import { ageHerdSeeds, dropHerdDung } from '../../js/sim/herd-dung.js';
+import { ageMycelium } from '../../js/sim/mycelium.js';
 import { assertInvariants } from '../../js/sim/invariants.js';
 import { meritPhase } from '../../js/sim/merit-phase.js';
 import { tallyReady } from '../../js/sim/merit-tally.js';
@@ -49,7 +54,20 @@ export const PHASE_PARTS = Object.freeze({
         reap,
         fillFloor,
     },
-    field: { regrowPatches, spawnFood, ageFood, decayFertileZones, updatePheromones, ageSmoke },
+    field: {
+        ageMycelium,
+        regrowPatches,
+        refreshFruiting,
+        spawnFood,
+        ageHerdSeeds,
+        dropHerdDung,
+        grazeHerds,
+        ageAndReproduceHerds,
+        ageFood,
+        decayFertileZones,
+        updatePheromones,
+        ageSmoke,
+    },
     merit: { meritPhase },
     invariants: { assertInvariants },
 });
