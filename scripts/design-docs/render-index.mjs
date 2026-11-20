@@ -74,25 +74,64 @@ export function renderIndex(docs) {
 }
 
 /**
- * The build queue: every unbuilt doc by its `**Priority:**` rank, 1 first. Ranks are unique so the next item is
- * never ambiguous.
+ * The build queue: every lead doc by its `**Priority:**` rank, 1 first, each followed by the docs it schedules. Ranks
+ * are unique so the next item is never ambiguous.
  * @param {Doc[]} docs
  * @returns {string[]}
  */
 function renderQueue(docs) {
     const queue = docs.filter((d) => d.priority).sort((a, b) => rank(a) - rank(b));
     assertUniqueRanks(queue);
+    const steps = scheduledSteps(docs, queue);
     if (queue.length === 0) {
         return [];
     }
     return [
         `## Build queue (${queue.length})`,
         '',
-        "Unbuilt docs in priority order - 1 is built next. Set in each doc's `**Priority:**` line; the evolution loop proposes re-ranks.",
+        "Lead docs in priority order - 1 is built next. Set in each doc's `**Priority:**` line; the evolution loop proposes re-ranks. Under a lead, the docs it schedules in step order (each doc's `**Scheduled by:**` line); the lead's own next phase comes first unless its Order section says otherwise.",
         '',
-        ...queue.map((doc) => `${rank(doc)}. [${doc.title}](${doc.fileName}) - ${doc.priority?.reason}`),
+        ...queue.flatMap((doc) => [
+            `${rank(doc)}. [${doc.title}](${doc.fileName}) - ${doc.priority?.reason}`,
+            ...(steps.get(doc.fileName) ?? []).map(
+                (d) => `    ${d.scheduledBy?.step}. [${d.title}](${d.fileName}) - ${d.scheduledBy?.reason}`,
+            ),
+        ]),
         '',
     ];
+}
+
+/**
+ * The docs each lead schedules, in step order. A lead is a doc in the queue; steps are unique under one lead.
+ * @param {Doc[]} docs
+ * @param {Doc[]} queue
+ * @returns {Map<string, Doc[]>} lead file name to its scheduled docs
+ */
+function scheduledSteps(docs, queue) {
+    const leads = new Set(queue.map((d) => d.fileName));
+    /** @type {Map<string, Doc[]>} */
+    const byLead = new Map();
+    for (const doc of docs) {
+        const sched = doc.scheduledBy;
+        if (!sched) {
+            continue;
+        }
+        if (!leads.has(sched.lead)) {
+            throw new DesignDocError(`${doc.fileName}: scheduled by ${sched.lead}, which has no **Priority:** line.`);
+        }
+        const group = byLead.get(sched.lead) ?? [];
+        const clash = group.find((d) => d.scheduledBy?.step === sched.step);
+        if (clash) {
+            throw new DesignDocError(
+                `Steps must be unique under ${sched.lead}: ${sched.step} is used by ${clash.fileName} and ${doc.fileName}`,
+            );
+        }
+        byLead.set(sched.lead, [...group, doc]);
+    }
+    for (const group of byLead.values()) {
+        group.sort((a, b) => (a.scheduledBy?.step ?? 0) - (b.scheduledBy?.step ?? 0));
+    }
+    return byLead;
 }
 
 /**

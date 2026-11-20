@@ -2,12 +2,24 @@
 
 **Status:** Proposed - the app as a screen left on all day: the director on air, a death that reads as a cell failing, follow as a story, a look that holds from across a room, every reading one key away, and a reel of each scene for review; Phase 1 (the director on air) is first.
 **Validated:** 58f38443 (2026-11-20)
-**Priority:** 5 - the app is the product and is watched on a side screen all day; an idle screen shows a static camera today, and the scene reel (Phase 6) is how a behaviour change is reviewed; app-only work on its own lane
+**Priority:** 5 - App lead. The app is the product and is watched on a side screen all day; an idle screen shows a static camera today, and the scene reel (Phase 6) is how a behaviour change is reviewed; app-only work on its own lane
 **Depends on:** [crisp-renderer.md](crisp-renderer.md), [continuous-follow.md](continuous-follow.md), [worker-and-renderer.md](worker-and-renderer.md), [pack-worker.md](pack-worker.md)
 
 > Companion to [crisp-renderer.md](crisp-renderer.md), which owns the layers, the models, the clips and the frame budgets, and to [continuous-follow.md](continuous-follow.md), which owns follow as built. This doc owns the unattended experience: what the camera does with nobody at the keyboard, how a life ends on screen, what follow shows, the far-screen look, and the insights drawer.
 
 The art direction is organisms in deep space: restrained, crisp, not cartoonish. The displays are a 32 inch 4K OLED at 240 Hz and a 27 inch 1440p panel. Nothing here changes `js/sim/`, `js/evo/` or `rulesHash`.
+
+## Order
+
+This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
+
+Own work first: Phases 1 to 6 in order.
+
+| Step | Doc                                                        | Built when                                                                                                                               |
+| ---- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [worker-and-renderer.md](worker-and-renderer.md)           | Its director tasks (T30, T49 to T52) are built as this lead's Phase 1; the budget measurements and manual walks of Phases 2 and 3 follow |
+| 2    | [mobile-view.md](mobile-view.md)                           | A phone is a second screen; after the TV and desktop experience is right                                                                 |
+| 3    | [deployment-and-community.md](deployment-and-community.md) | The last stage: the release flow is built, the community phases open once the app is worth sharing                                       |
 
 ## Measured on 2026-11-20
 

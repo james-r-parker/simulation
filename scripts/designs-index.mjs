@@ -2,7 +2,7 @@
 // Design doc index generator and lint.
 //
 // Reads the `**Status:**` line out of every docs/designs/*.md and regenerates docs/designs/README.md: a build queue
-// ordered by each unbuilt doc's `**Priority:**` rank, then every doc grouped by status. The status line is the single
+// of lead docs ordered by `**Priority:**` rank, each with the docs it schedules, then every doc grouped by status. The status line is the single
 // source of truth - see docs/designs/STYLE.md. Docs are also linted (scripts/design-docs/): Task breakdown table, one
 // `**Targets:**` line per unbuilt phase, Delivery requirements cells, links that resolve and no line references.
 //

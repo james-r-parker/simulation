@@ -2,12 +2,23 @@
 
 **Status:** Proposed - what every agent session reads, how an experiment is recorded and read back, what a branch learns before it pushes, how runs, worktrees and outside streams share the machine, and the two commands that take a chunk from a fresh branch to a merged PR; Phase 1 (the context diet) and Phase 5 (start to merge) are first.
 **Validated:** 58f38443 (2026-11-20)
-**Priority:** 4 - tooling that changes no sim rule; every session and every subagent pays the Phase 1 cost on its first token and every chunk ships through Phase 5, so both are built before the next training chunk
+**Priority:** 3 - Workflow lead. Tooling that changes no sim rule; every session and every subagent pays the Phase 1 cost on its first token and every chunk ships through Phase 5, so both are built before the next training chunk
 **Depends on:** [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
 
 > Companion to [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), which owns the gates and CI jobs, and [dev-workflow-and-gate.md](dev-workflow-and-gate.md), which owns the workflow. This doc owns the files an agent reads, the experiment ledger, the pre-push checks that mirror CI's most common failures, and the commands that show what is running.
 
 The repo is built by coding agents: a coordinator, its subagents, and outside streams started from a handoff prompt. Each one starts cold. This doc sets a size budget on what a cold start reads, makes an experiment a file with a typed outcome, runs CI's two most common failure classes before the push, and gives one command for the state of the machine.
+
+## Order
+
+This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
+
+Own work first: Phase 5 (start to merge), Phase 1 (context diet), then Phases 2, 3 and 4.
+
+| Step | Doc                                                                | Built when                                                                               |
+| ---- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| 1    | [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md) | The rest of Phase 3; its merge-queue step is a user step this lead's `ship.sh` relies on |
+| 2    | [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md)                   | The last legacy and docs tasks (T7 to T10), after the context diet has moved the docs    |
 
 ## Scope
 
@@ -73,14 +84,14 @@ The three metric paragraphs under the Scenes table (flora, megafauna, disease) a
 
 A `**Status:**` line holds at most 400 characters. `readStatus` in `scripts/design-docs/header.mjs` rejects a longer one. The detail names the built phases and the next task; a run's result is in its experiment record. Every doc over the cap is shortened in the task that adds the lint.
 
-## The active set
+## Leads and steps
 
-Ranks 1 to 6 of the Build queue are the active set. A session builds only a doc in the active set unless the user names another. A doc joins the set when one leaves it: `Implemented`, or stopped at a recorded falsification.
+The Build queue holds lead docs only, seven on 2026-11-20: measurement, hunting, workflow, training, app, speed and world. Every other unbuilt doc carries a `**Scheduled by:**` line (the lead's link, a step number and a reason; [STYLE.md](STYLE.md)) in place of a `**Priority:**` line and is built as that step of its lead. The lead's `## Order` section says what comes first.
 
-- `scripts/designs-index.mjs` renders the Build queue in two lists, "Active (6)" and "Waiting", split at `ACTIVE_LIMIT` in `scripts/design-docs/render-index.mjs`.
-- A waiting doc's priority reason names what it waits on. The index flags a waiting doc that an active doc lists in `**Depends on:**`, since that doc is the real next work.
-- `npm run state` prints the active set only.
-- On 2026-11-20 the queue holds 39 docs and 24 are `In progress`.
+- `scripts/designs-index.mjs` renders each lead with its steps under it, and fails a step whose lead has no rank or whose step number repeats (`readScheduledBy` in `scripts/design-docs/header.mjs`, `scheduledSteps` in `scripts/design-docs/render-index.mjs`).
+- A session builds the next step of a lead, in order, unless the user names another doc.
+- `npm run state` prints each lead's next unbuilt task and its next step.
+- Before this, the queue held 39 ranked docs and 24 were `In progress`.
 
 ## Experiment ledger
 
@@ -273,7 +284,7 @@ A rerun of `scripts/ship.sh` after a fix commit resumes at step 2 on the same PR
 | T2  | Add the `agents-size` check (16000 bytes) to `scripts/check-conventions.sh` with its tests; trim `AGENTS.md` under it without dropping a hard rule or a boundary                                                              | [judgement]  | T1                  |
 | T3  | Add `scripts/notes-index.mjs`; move every dated entry to `docs/notes/<YYYY-MM>.md` in date order; regenerate `sim-notes.md` as the index; run `--check` in `conventions`; update the notes rule in `AGENTS.md` and `STYLE.md` | [mechanical] | -                   |
 | T4  | Add the 400-character status cap to `readStatus` with its test and shorten every doc over it                                                                                                                                  | [judgement]  | -                   |
-| T4a | Render the Build queue as "Active (6)" and "Waiting" split at `ACTIVE_LIMIT`, with the waiting-dependency flag and tests; state the active-set rule in `STYLE.md` and the `AGENTS.md` Build order                             | [judgement]  | -                   |
+| T4a | (built) The `**Scheduled by:**` line, the lead and step rendering of the Build queue and their tests; `STYLE.md` and the `AGENTS.md` Build order state the rule                                                               | [judgement]  | -                   |
 | T5  | Add `SCENES` in `js/evo/metric-registry/scenes.js` and the optional `scenes` field, with the registry tests                                                                                                                   | [mechanical] | -                   |
 | T6  | Tag every registry metric the three principles tables and the flora, megafauna and disease paragraphs name with its scenes                                                                                                    | [judgement]  | T5                  |
 | T7  | Add `scripts/scene-scorecard.mjs` (`--write`, `--check`), its tests, the generated `docs/scene-scorecard.md`, and the `conventions` check                                                                                     | [judgement]  | T6                  |

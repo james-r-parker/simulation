@@ -2,7 +2,7 @@
 
 **Status:** In progress - add turning inertia, speed-coupled turn radius, asymmetric reverse thrust, and terrain drag/cover zones so chases are about momentum, banking and landscape rather than instant 180-degree reversals; only Phase 1 T1 (the `scene-kinematics.js` detectors, #449) is built, on the shared chase record of [detector-baseline.md](detector-baseline.md); T2 (the `E-CP-1` baseline), T1a (the premise read) and T3 (conformance review) are not done, so Phase 1 is not `(built)` and no lever is open.
 **Validated:** a8013e98 (2026-11-15)
-**Priority:** 35 - builds on the chase envelope audit of [senses-and-motor.md](senses-and-motor.md) and the sprint store of [sprint-burst.md](sprint-burst.md)
+**Scheduled by:** [fair-chase.md](fair-chase.md) step 2 - heading inertia and terrain, screened on those bodies; `speedTurnDrag` widens the predator's sprint circle
 **Depends on:** [senses-and-motor.md](senses-and-motor.md), [sprint-burst.md](sprint-burst.md), [fair-chase.md](fair-chase.md)
 
 Today `actAll` in `js/sim/physics.js` sets heading change straight from `TURN` each tick with zero angular inertia, and `THRUST < 0` pushes backward at full `maxThrust`. Every patch of open ground also has identical drag. Velocity already has inertia: `damping` 0.95 keeps 95% of it each tick and `maxVelocity` caps it at 8. What has none is the heading: at `maxTurn` 0.2 rad a tick a body turns 180 degrees in 16 ticks at any speed, so its turning circle at full speed is about 40 px, inside a bite's reach. A fleeing prey can therefore turn inside a hunter at any speed, a fast hunter can turn as tightly as a slow one, and open flats play identically to rocky or vegetated ground. Whether that closes the chase's fair band is measured before anything is built (T1a).

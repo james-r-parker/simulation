@@ -49,9 +49,11 @@ If unsure, ask the user in one line before writing a doc.
     ```
 
     Get `<sha>` from `git fetch origin && git rev-parse --short origin/main`; use today's date. Omit
-    `**Depends on:**` when there is nothing to build first. Propose a `**Priority:**` rank against the Build queue in
-    `docs/designs/README.md` (1 is next; ranks are unique), renumber the docs it moves down in the same PR, and ask the
-    user to confirm the rank in the interview.
+    `**Depends on:**` when there is nothing to build first. A new doc is almost always a step of an existing lead: give it a
+    `**Scheduled by:** [lead.md](lead.md) step <n> - <what it waits on>` line in place of `**Priority:**`, add its row
+    to the lead's `## Order` table, and renumber the steps it moves down in the same PR. Only a new body of work that
+    fits no lead takes a `**Priority:**` rank (1 is next; ranks are unique); ask the user to confirm either in the
+    interview.
 
 5. Under every `### Phase N - ...` heading, add one `**Targets:**` line: the metrics the phase should move (the
    Metrics table in `evolution-evals.md` once it exists: `eval.*`, `bench.*`, `browser.*`), or

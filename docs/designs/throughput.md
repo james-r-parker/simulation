@@ -2,12 +2,22 @@
 
 **Status:** Proposed - find and take the speed the kernel squeezes left: why 16 worlds on 16 cores run at 63% of one world's speed, loops over empty slots, set-up cost in small worlds, and a bench that reads one window; Phase 1 (measure) is first.
 **Validated:** a1813ff3 (2026-11-15)
-**Priority:** 7 - first of the waiting plans: every eval and screen waits on ticks per second across workers, and Phases 1 to 4 change no behaviour; the trainer's own idle time is [training-loop.md](training-loop.md) T27 to T33
+**Priority:** 6 - Speed lead. Every eval and screen waits on ticks per second; Phases 1 to 4 change no behaviour, and Phase 3 (the loops over what is alive) has measured prototypes
 **Depends on:** [wasm-kernels.md](wasm-kernels.md)
 
 > Companion to [wasm-kernels.md](wasm-kernels.md), which moved the brain, the ray march, the spatial hash, the pheromone update and physics to Rust and squeezed each kernel under a bit-identical contract. This doc does not repeat a squeeze that doc tried and reverted.
 
 The step is fast enough for the app: 1.7 ms a tick at 500 slots against a 4.2 ms frame at 240 Hz. The cost that binds is the eval and training throughput: a 64-seed keep-rule run is 12.8 million ticks. This doc measures where that time goes across workers, then takes the gains that keep every `worldHash` equal. The gains that change a rounding or a behaviour are measured as spikes and left for the user.
+
+## Order
+
+This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
+
+Own work first: Phase 3 (the loops over what is alive) first, since its savings are measured; then Phase 1 on a quiet machine, Phases 2 and 4, and Phase 5 for the user.
+
+| Step | Doc                                | Built when                                                                                                              |
+| ---- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| 1    | [wasm-kernels.md](wasm-kernels.md) | Phase 7 (the independent brain reference test and the stale layout numbers) and the batched drill evaluation of Phase 3 |
 
 ## Measured on 2026-11-15
 

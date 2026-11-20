@@ -2,11 +2,23 @@
 
 **Status:** In progress - Phase 1 is built. Phase 2 has a terminal hunter count candidate with an E210 diagnostic; the longer verification runs are open. Phase 4 (six defects in the power, keep-rule and interval code found on 2026-11-20) is planned and is built first.
 **Validated:** bc55972e (2026-11-20)
-**Priority:** 2 - Phase 4 is built before any other read: the power readings, the keep rule and the 16-seed interval have defects (review of 2026-11-20), so no verdict is trusted until they are fixed; Phase 5 (the headline metrics) follows
+**Priority:** 1 - Measurement lead. Phase 4 is built before any other read: the power readings, the keep rule and the 16-seed interval have defects (review of 2026-11-20), so no verdict is trusted until they are fixed; Phase 5 (the headline metrics) follows
 **Depends on:** [metric-trust.md](metric-trust.md)
 
 Active plans need detectors that can judge their Targets, done criteria and predictions. This work serves every scene
 in [principles.md](../principles.md) through its detector, without paying for a detector score or changing selection.
+
+## Order
+
+This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
+
+Own work first: Phase 4 (the statistics layer), then Phase 5 (headline metrics), then Phases 2 and 3.
+
+| Step | Doc                                          | Built when                                                                                                                                 |
+| ---- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1    | [detector-baseline.md](detector-baseline.md) | The wave's `bench.observe_ms@500` price (T4) and the detector tasks of the plans it serves, read after Phase 4 corrects the power readings |
+| 2    | [lean-observer.md](lean-observer.md)         | One task left (T6); the lean observer is what training episodes run on (training-loop.md T31)                                              |
+| 3    | [improvement-loop.md](improvement-loop.md)   | Automates measuring and proposing once the headlines (Phase 5) say what a result is                                                        |
 
 ## Contract
 

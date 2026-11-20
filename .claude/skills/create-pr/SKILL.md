@@ -50,7 +50,7 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
       checking every Delivery requirements row - **in parallel with** the final check, never instead of it
     - the review also checks that the old path of every flag the PR switched on is deleted, or kept with a reason in
       `scripts/flag-ledger.json`
-    - move the **Status:** line and mark the phase `(built)`; drop `**Validated:**` and `**Priority:**` once
+    - move the **Status:** line and mark the phase `(built)`; drop `**Validated:**` and `**Priority:**` (or `**Scheduled by:**`, with its row in the lead's `## Order` table) once
       `Implemented`
     - regenerate the index: `node scripts/designs-index.mjs --write`
     - append learnings to `docs/designs/sim-notes.md` under a dated heading (`### YYYY-MM-DD - <topic>` under

@@ -101,9 +101,11 @@ records why each part was replaced.
 
 ## Build order
 
-The **Build queue** in [docs/designs/README.md](docs/designs/README.md) is the order: every `Proposed` and
-`In progress` doc carries a unique `**Priority:**` rank (1 is next). Each doc's `**Depends on:**` line is
-authoritative for what must be built first.
+The **Build queue** in [docs/designs/README.md](docs/designs/README.md) is the order. It holds seven **lead** docs,
+each with a unique `**Priority:**` rank (1 is next) and an `## Order` section. Every other `Proposed` or `In progress`
+doc carries a `**Scheduled by:**` line and is built as that step of its lead, in step order
+([docs/designs/STYLE.md](docs/designs/STYLE.md)). Each doc's `**Depends on:**` line is authoritative for what must be
+built first. The newest file in `docs/handoffs/` says what is in flight and what is frozen.
 
 A design doc's **Task breakdown** table is machine-read (`scripts/designs-index.mjs`, and `jmz plan run`): keep the
 four columns (`#`, `Task`, `Nature`, `Depends on`), `T`-numbered ids and `[mechanical]` / `[judgement]` tags exact.
