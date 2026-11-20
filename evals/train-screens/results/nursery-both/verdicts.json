@@ -1,0 +1,122 @@
+{
+  "reference": "base",
+  "arms": {
+    "nursery-80-nostop": {
+      "verdict": "no verdict",
+      "compare": {
+        "pairs": [
+          {
+            "offset": 0,
+            "before": 4,
+            "after": 4,
+            "diff": 0
+          },
+          {
+            "offset": 8,
+            "before": 0.6695959774964979,
+            "after": 0.6695959774964979,
+            "diff": 0
+          },
+          {
+            "offset": 16,
+            "before": 3,
+            "after": 3,
+            "diff": 0
+          },
+          {
+            "offset": 24,
+            "before": 0.09296686166863918,
+            "after": 0.09296686166863918,
+            "diff": 0
+          },
+          {
+            "offset": 32,
+            "before": 0.7229398635236198,
+            "after": 2,
+            "diff": 1.27706013647638
+          },
+          {
+            "offset": 40,
+            "before": 0.7229398635236198,
+            "after": 0.7229398635236198,
+            "diff": 0
+          },
+          {
+            "offset": 48,
+            "before": 2.0080024163967556,
+            "after": 2.0080024163967556,
+            "diff": 0
+          },
+          {
+            "offset": 56,
+            "before": 0.7628369645858827,
+            "after": 0.7628369645858827,
+            "diff": 0
+          },
+          {
+            "offset": 64,
+            "before": 4,
+            "after": 4,
+            "diff": 0
+          },
+          {
+            "offset": 72,
+            "before": 0.8306219119903062,
+            "after": 0.8306219119903062,
+            "diff": 0
+          },
+          {
+            "offset": 80,
+            "before": 2.006799348568964,
+            "after": 2.006799348568964,
+            "diff": 0
+          },
+          {
+            "offset": 88,
+            "before": 4,
+            "after": 4,
+            "diff": 0
+          },
+          {
+            "offset": 96,
+            "before": 0.7628369645858827,
+            "after": 0.7628369645858827,
+            "diff": 0
+          },
+          {
+            "offset": 104,
+            "before": 2,
+            "after": 2,
+            "diff": 0
+          },
+          {
+            "offset": 112,
+            "before": 2,
+            "after": 2,
+            "diff": 0
+          },
+          {
+            "offset": 120,
+            "before": 2.0148301302843397,
+            "after": 2.0148301302843397,
+            "diff": 0
+          }
+        ],
+        "matched": 16,
+        "tied": 15,
+        "up": 1,
+        "down": 0,
+        "onlyBefore": [],
+        "onlyAfter": [],
+        "meanDiff": 0.07981625852977375,
+        "interval": {
+          "low": 0,
+          "high": 0.23944877558932126
+        },
+        "p": 1,
+        "verdict": "no verdict"
+      },
+      "failed": 0
+    }
+  }
+}
