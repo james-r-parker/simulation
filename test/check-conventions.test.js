@@ -121,6 +121,29 @@ describe('conventions metrics doc', { timeout: scaleTimeout(30_000) }, () => {
     });
 });
 
+describe('conventions scene scorecard', { timeout: scaleTimeout(30_000) }, () => {
+    const STUB = 'scripts/scene-scorecard.mjs';
+
+    it('reports a stale scorecard with the command that fixes it', () => {
+        const out = conventions({
+            [STUB]: "console.error('docs/scene-scorecard.md is stale. Run: node scripts/scene-scorecard.mjs --write');\nprocess.exitCode = 1;\n",
+        });
+        expect(out).toContain(
+            'scene-scorecard: docs/scene-scorecard.md is stale. Run: node scripts/scene-scorecard.mjs --write',
+        );
+    });
+
+    it('reports a check that fails without printing anything', () => {
+        expect(conventions({ [STUB]: 'process.exitCode = 3;\n' })).toContain(
+            'scene-scorecard: scripts/scene-scorecard.mjs exited 3 with no output',
+        );
+    });
+
+    it('stays quiet when the scorecard is up to date', () => {
+        expect(conventions({ [STUB]: "console.log('up to date');\n" })).not.toContain('scene-scorecard');
+    });
+});
+
 describe('conventions legacy guard', { timeout: scaleTimeout(30_000) }, () => {
     it('flags a file directly under js/ but not one in a module directory', () => {
         expect(conventions({ 'js/game.js': 'x\n' })).toContain('js/game.js: sits directly under js/');

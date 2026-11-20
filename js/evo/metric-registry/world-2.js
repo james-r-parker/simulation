@@ -29,6 +29,7 @@ export const WORLD_2 = {
     }),
     'eval.circling_share': entry('world', {
         module: 'js/evo/metrics-watchability.js',
+        scenes: ['N1'],
         meaning: 'Lower means fewer agents walk in circles.',
         counts: 'At the end of each 200-tick span every 10000 ticks (after burn-in), tracked agents alive across it with path over CIRCLE_MIN_PATH 100, net displacement under 0.25 of the path and absolute turning over 4 pi, over all tracked agents.',
         unit: 'share',
@@ -39,6 +40,7 @@ export const WORLD_2 = {
     }),
     'eval.output_saturation': entry('world', {
         module: 'js/evo/metrics-watchability.js',
+        scenes: ['N1'],
         meaning: 'Lower means fewer brain outputs sit saturated.',
         counts: 'Mean over alive agents at checkpoints after burn-in of the share of brain outputs with absolute value above SATURATED (0.95).',
         unit: 'share',
@@ -49,6 +51,7 @@ export const WORLD_2 = {
     }),
     'eval.alarm_rate': entry('world', {
         module: 'js/evo/metrics-watchability.js',
+        scenes: ["Call, or don't", 'N5'],
         meaning: 'Lower means fewer alarm calls are made per tick alive.',
         counts: 'AlarmCalled events (any cue) over the whole run per 1000 agent-ticks.',
         unit: 'calls per 1k agent-ticks',
@@ -70,6 +73,7 @@ export const WORLD_2 = {
     }),
     'eval.energy_over_split': entry('world', {
         module: 'js/evo/metrics-watchability.js',
+        scenes: ['N5'],
         meaning: 'How far agents hold energy beyond the split threshold (lower is intended).',
         counts: "Mean over alive agents at checkpoints after burn-in of energy over its specialisation's split minimum energy.",
         unit: 'ratio',
@@ -81,6 +85,7 @@ export const WORLD_2 = {
     }),
     'eval.migration_index': entry('world', {
         module: 'js/evo/metrics-watch.js',
+        scenes: ['Leave a dying patch', 'Season changes the map', 'N3', 'G4'],
         meaning: 'Higher means mature agents visit more of the food patches in a life.',
         counts: 'Mean over mature deaths after burn-in of distinct patches visited (strictly inside the patch disc, sampled every MOTION_SAMPLE_TICKS) over the patch count.',
         unit: 'share',
@@ -91,6 +96,7 @@ export const WORLD_2 = {
     }),
     'eval.predator_presence': entry('world', {
         module: 'js/evo/metrics-watch.js',
+        scenes: ['N4'],
         meaning: 'Higher means hunters are present at more checkpoints.',
         counts: 'Checkpoints after burn-in with at least one alive agent of a hunting specialisation over all checkpoints after burn-in.',
         unit: 'share',
@@ -101,6 +107,7 @@ export const WORLD_2 = {
     }),
     'eval.predator_births': entry('world', {
         module: 'js/evo/metrics-watch.js',
+        scenes: ['N4'],
         meaning: 'Higher means more hunters are born by mating or splitting.',
         counts: 'AgentBorn events with cause MATE or SPLIT at or after burn-in whose specialisation can hunt.',
         unit: 'count',
@@ -161,6 +168,7 @@ export const WORLD_2 = {
     }),
     'eval.winter_pop_ratio': entry('world', {
         module: 'js/evo/metrics-environment.js',
+        scenes: ['Season changes the map'],
         meaning: 'How the population in winter compares with other seasons.',
         counts: 'Mean alive count at winter checkpoints (season WINTER) over the mean at the other checkpoints, after burn-in.',
         unit: 'ratio',
@@ -172,6 +180,7 @@ export const WORLD_2 = {
     }),
     'eval.trait_spread': entry('world', {
         module: 'js/evo/metrics-body.js',
+        scenes: ['Parent spends'],
         meaning: 'Higher means the body traits vary more across the living.',
         counts: 'Mean over checkpoints after burn-in of the mean coefficient of variation of baseSize, vision and childShare over the living (checkpoints with 2 or more agents).',
         unit: 'ratio',
@@ -182,6 +191,7 @@ export const WORLD_2 = {
     }),
     'eval.body_plan_coverage': entry('world', {
         module: 'js/evo/metrics-body.js',
+        scenes: ['Same spec, different custom'],
         meaning: 'Higher means the living have occupied more of the 5 x 5 body-size by vision grid.',
         counts: 'Cells of the 5 x 5 grid (baseSize multiple by vision, each binned over the trait span) that any living agent occupied at any checkpoint after burn-in, over 25.',
         unit: 'share',
