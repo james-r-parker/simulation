@@ -1,8 +1,8 @@
 # Prey guilds
 
-**Status:** In progress - differentiate the four non-hunter specialisations (`forager`, `reproducer`, `scout`, `defender`) into complementary anti-predator and life-history guilds so "everything else" keeps hunters in check without scripted modes or extra brain inputs; built so far, out of plan order: T1/T1b (guild detectors, #445 and this chunk), T4 (defender repel levers, #448), T5 (the `prey-guilds-defender` grid and prediction only), T9 (scout call levers, #450) and T10 (the `prey-guilds-scout` grid and prediction only). Every lever sits behind a neutral default, so `worldHash` is unchanged; no phase is `(built)` (see Built out of order).
+**Status:** In progress - differentiates the four non-hunter specialisations into complementary anti-predator and life-history guilds. Built out of plan order: T1/T1b (guild detectors), T4 (defender repel levers), T5 and T10 (the defender and scout grids and predictions only), T9 (scout call levers). Every lever has a neutral default, so `worldHash` is unchanged; no phase is `(built)`.
 **Validated:** 04e3b340 (2026-11-17)
-**Priority:** 32 - depends on a standing prey population and working alarm/kill budgets ([honest-budgets.md](honest-budgets.md)), and on verified interface/chase physics ([senses-and-motor.md](senses-and-motor.md))
+**Scheduled by:** [world-balance.md](world-balance.md) step 9 - needs a standing prey population and working kill budgets
 **Depends on:** [honest-budgets.md](honest-budgets.md), [senses-and-motor.md](senses-and-motor.md)
 
 Today's five specialisations (`forager`, `predator`, `reproducer`, `scout`, `defender` in `js/sim/config-defaults.js`) behave like **one hunter guild and four mildly reskinned foragers**:

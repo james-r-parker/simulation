@@ -7,13 +7,14 @@ import { POWER } from '../js/evo/metric-registry/power.js';
 import { minSeedsFromPower } from '../js/evo/metric-registry/status.js';
 import { withCurrentNames } from '../js/evo/metric-registry/renames.js';
 import { validateReport } from '../js/evo/report.js';
+import { MIN_VALID_SHARE } from './eval-power.mjs';
 import { createMetricWriterMain, runAsCli } from './lib/metric-writer-cli.mjs';
 
 const OUTPUT = fileURLToPath(new URL('../js/evo/metric-registry/power.js', import.meta.url));
 const USAGE = 'usage: metric-power-write <power.json> --report <eval-report.json> [--merge] [--write]';
 // --merge keeps the readings of metrics the power JSON does not name, so a partial run adds to the registry.
 
-/** @typedef {{metric: string, size: number, falsePositive: number, detectable: number | null}} PowerRow */
+/** @typedef {{metric: string, size: number, falsePositive: number | null, detectable: number | null, validShare?: number}} PowerRow */
 
 /** @param {unknown} rows @param {Readonly<Record<string, any>>} metrics @returns {PowerRow[]} */
 function checkRows(rows, metrics) {
@@ -25,6 +26,15 @@ function checkRows(rows, metrics) {
         throw new Error(`power JSON holds unregistered metrics: ${unknown.slice(0, 5).join(', ')}`);
     }
     return rows;
+}
+
+/**
+ * @param {PowerRow} row a power row
+ * @returns {{ fpr: number | null, mde: number | null }} its numbers, null on under half valid splits (D1: older power JSON carries numbers there)
+ */
+function readingOf(row) {
+    const thin = row.validShare !== undefined && row.validShare < MIN_VALID_SHARE;
+    return { fpr: thin ? null : row.falsePositive, mde: thin ? null : row.detectable };
 }
 
 /** @param {Record<string, import('../js/evo/metric-registry/entry.js').Power>} grouped @param {PowerRow} row @param {any} report @param {string} reportPath */
@@ -47,15 +57,16 @@ function setReading(grouped, row, report, reportPath) {
         referenceMean: current.mean ?? 0,
         report: reportPath,
     });
+    const { fpr, mde } = readingOf(row);
     if (row.size === 16) {
-        value.fpr16 = row.falsePositive;
-        value.mde16 = row.detectable;
+        value.fpr16 = fpr;
+        value.mde16 = mde;
     } else if (row.size === 32) {
-        value.fpr32 = row.falsePositive;
-        value.mde32 = row.detectable;
+        value.fpr32 = fpr;
+        value.mde32 = mde;
     } else {
-        value.fpr64 = row.falsePositive;
-        value.mde64 = row.detectable;
+        value.fpr64 = fpr;
+        value.mde64 = mde;
     }
 }
 

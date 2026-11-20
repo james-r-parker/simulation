@@ -350,4 +350,31 @@ describe('the pack worker exchange', () => {
             .reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
         expect(rows).toBe(drawn.at(-1).agents.count);
     });
+
+    it('lets the director hold the camera instead of the follow, and tells the layers about TV mode', () => {
+        const { client, pack } = fakeWorld();
+        const { deps, drawn, loop } = setup(client, pack);
+        const seen = /** @type {any[]} */ ([]);
+        deps.director = { step: (/** @type {any} */ at) => (seen.push({ ...at }), true) };
+        deps.getReady = () => ({ seed: 3 });
+        deps.state.tv = true;
+        deps.state.followId = 999999;
+        pack.step(loop, 1000);
+        pack.step(loop, 1016);
+        expect(seen).toHaveLength(2);
+        expect(seen[1]).toMatchObject({ nowMs: 1016, ready: { seed: 3 }, top: [] });
+        expect(deps.state.followId).toBe(999999);
+        expect(deps.camera.following).toBe(false);
+        expect(drawn.at(-1).tv).toBe(true);
+    });
+
+    it('runs the follow when the director does not hold the camera', () => {
+        const { client, pack } = fakeWorld();
+        const { deps, loop } = setup(client, pack);
+        deps.director = { step: () => false };
+        deps.state.followId = client.latest.u32[HEADER_WORDS + AGENT_FIELD.GENOME];
+        pack.step(loop, 1000);
+        pack.step(loop, 1016);
+        expect(deps.camera.following).toBe(true);
+    });
 });

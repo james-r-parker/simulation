@@ -48,6 +48,16 @@ describe('metric-power-write', () => {
         expect(() => parseJsonOutput('no JSON here')).toThrow('no JSON object in command output');
     });
 
+    it('writes null for a row on under half valid splits, even when the JSON carries numbers (D1)', () => {
+        const thin = [
+            { metric: 'x.at16', size: 16, falsePositive: 0.04, detectable: 0.1, validShare: 0.006 },
+            { metric: 'x.at16', size: 32, falsePositive: 0.04, detectable: 0.1, validShare: 0.9 },
+        ];
+        const reading = readPower({ rows: thin }, report, 'r.json', metrics)['x.at16'];
+        expect([reading.fpr16, reading.mde16]).toEqual([null, null]);
+        expect([reading.fpr32, reading.mde32]).toEqual([0.04, 0.1]);
+    });
+
     it('assigns 16, 32 or null through the shared power bar, including the share absolute bar', () => {
         const readings = readPower({ rows }, report, 'evals/power/sample.json', metrics);
         const entries = Object.fromEntries(

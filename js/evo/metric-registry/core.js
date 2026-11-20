@@ -17,10 +17,10 @@ export const CORE = {
         module: 'js/evo/metrics-food-early.js',
         meaning:
             'Higher means agents take in more food energy per tick alive in the first 20000 ticks, before the world has drifted from its founders.',
-        counts: 'Food energy eaten by the dead and the living, over agent-ticks, both read from the last checkpoint at or before tick 20000 (the series columns foodEnergyTotal and agentTicksTotal), times 1000.',
+        counts: 'Food energy eaten by the dead and the living, over agent-ticks, both read from the checkpoint at tick 20000 exactly (the series columns foodEnergyTotal and agentTicksTotal), times 1000.',
         unit: 'energy per 1k agent-ticks',
         direction: 'higher',
-        nullWhen: ['no checkpoint by tick 20000', 'no agent-ticks'],
+        nullWhen: ['no checkpoint at tick 20000', 'no agent-ticks'],
         arithmetic: 'test/evo/metrics-food-early.test.js',
         source: 'test/evo/metrics-food-early.test.js',
     }),

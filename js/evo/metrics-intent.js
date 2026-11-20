@@ -73,6 +73,7 @@ export function intentMetrics(observer) {
         'eval.chance_food_energy_per_1k': per1k(run.foodChance, agentTicks),
         'eval.pursuit_bite_share': share(run.huntBiteDeliberate, huntBites, 'no bite energy gained by hunters'),
         'eval.pursuit_kill_share': killShare(run.huntKillsDeliberate, combat.huntKills),
+        'eval.pursuit_kill_share_settled': killShare(run.huntKillsDeliberateSettled, combat.settledHuntKills),
         'eval.pack_convergence': share(run.packKillsConvergent, combat.packKills, 'no pack kill'),
         'eval.hunt_call_answer': share(calls.answeredCalls, calls.resolved, 'no resolved hunt call'),
         'eval.evasion_response_share': evasionShare(run.escapedResponded, combat.escapedEpisodes),

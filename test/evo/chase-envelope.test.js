@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
-import { DISTANCE_SHARES, FAIR_BAND, fairBand, runEnvelope } from '../../js/evo/chase-envelope.js';
+import { arenaConfig, stageArena } from '../../js/evo/chase-arena.js';
+import { evaderBrain, pursuerBrain } from '../../js/evo/chase-oracles.js';
+import { step } from '../../js/sim/step.js';
+import { DISTANCE_SHARES, FAIR_BAND, MAX_TICKS, fairBand, runEnvelope } from '../../js/evo/chase-envelope.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 describe('fairBand', () => {
@@ -48,5 +50,35 @@ describe('runEnvelope', () => {
         expect(() => runEnvelope(arenaConfig(), { pairs: [['dragon', 'forager']], trials: 1 })).toThrow(
             /unknown specialisation "dragon"; known: .*forager/,
         );
+    });
+});
+
+describe('the envelope with the sprint store on', () => {
+    /**
+     * A predator chases a straight-running forager from 300 apart, both scripted, for up to `MAX_TICKS`.
+     * @param {number} evaderStore the forager's store at the start (the predator's is full)
+     * @returns {boolean} whether the predator caught it
+     */
+    function caught(evaderStore) {
+        const { world, policy } = stageArena(arenaConfig({ sprintStoreEnabled: true }), [
+            { spec: 1, x: 4000, y: 4000, angle: 0 },
+            { spec: 0, x: 4300, y: 4000, angle: 0 },
+        ]);
+        world.sprintStore.level[1] = evaderStore;
+        const hunt = pursuerBrain({ pursuer: 0, evader: 1, sprint: true });
+        const flee = evaderBrain({ pursuer: 0, evader: 1, sprint: true, jinkRange: 0 });
+        const brain = (/** @type {Record<string, any>} */ w) => {
+            hunt(w);
+            flee(w);
+        };
+        for (let t = 0; t < MAX_TICKS && world.alive[1] === 1; t++) {
+            step(world, policy, { brain });
+        }
+        return world.alive[1] === 0;
+    }
+
+    it('catches a spent evader from a distance where a fresh one escapes', () => {
+        expect(caught(1)).toBe(false);
+        expect(caught(0)).toBe(true);
     });
 });

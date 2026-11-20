@@ -19,6 +19,9 @@
 #   is built while its key still exists (scripts/check-flag-ledger.mjs).
 # - wasm/blob-kernels.wasm matches its .sha256 and wasm/blob-kernels.src.sha256 its sources, and a fresh build matches
 #   where cargo exists (scripts/check-wasm.mjs).
+# - The index in docs/designs/sim-notes.md matches docs/notes/ (scripts/notes-index.mjs --check).
+# - AGENTS.md stays at or under AGENTS_MAX_BYTES (16000): an agent reads it before its first command, so detail lives in
+#   docs/ (docs/designs/agent-workflow.md, Context diet).
 # - No merge conflict markers (a line starting <<<<<<< , ||||||| or >>>>>>> , or exactly =======) in tracked text files.
 # - No tracked file over 5 MB unless it is listed in LARGE_FILE_ALLOWLIST.
 set -uo pipefail
@@ -33,6 +36,9 @@ BROWSER_SHELLS=("js/worker/sim-worker.js" "js/app/main.js" "js/app/audio/engine.
 
 # Paths of the deleted legacy app (pathspecs); a tracked file under any of them is a violation.
 LEGACY_PATHS=("legacy.html" "js/constants" "js/dev" "css/style.css" "css/toast.css" "public/database-worker.js")
+
+# AGENTS.md is read in full at the start of every session; its budget is in docs/designs/agent-workflow.md.
+AGENTS_MAX_BYTES=16000
 
 violations=0
 fail() { echo "$1"; violations=$((violations + 1)); }
@@ -50,12 +56,15 @@ for (const field of ["dependencies", "devDependencies", "optionalDependencies"])
 }')
 
 mapfile -t sim_files < <(git ls-files --cached --others --exclude-standard -- 'js/sim/*.js' 'js/sim/**/*.js' 'js/evo/*.js' 'js/evo/**/*.js')
-for file in "${sim_files[@]}"; do
+# One grep over every file, not one per file: a process per file made this gate take seconds on every commit.
+if ((${#sim_files[@]} > 0)); then
   while IFS= read -r hit; do
-    fail "$file:${hit%%:*}: ${hit#*:} - the headless sim never uses browser globals, three or wall-clock randomness"
-  done < <(grep -nE "\b(Math\.random|Date\.now|performance\.now|window|document|navigator)\b|(from|import) ['\"]three(/[^'\"]*)?['\"]" "$file" \
-    | grep -vE '^[0-9]+:\s*(//|\*|/\*)')
-done
+    file="${hit%%:*}"
+    rest="${hit#*:}"
+    fail "$file:${rest%%:*}: ${rest#*:} - the headless sim never uses browser globals, three or wall-clock randomness"
+  done < <(grep -HnE "\b(Math\.random|Date\.now|performance\.now|window|document|navigator)\b|(from|import) ['\"]three(/[^'\"]*)?['\"]" "${sim_files[@]}" \
+    | grep -vE '^[^:]+:[0-9]+:\s*(//|\*|/\*)')
+fi
 
 for file in "${sim_files[@]}"; do
   test_file="test/${file#js/}"
@@ -138,6 +147,13 @@ if ((metrics_status != 0)); then
   fail "metrics-doc: ${metrics_out:-scripts/metrics-doc.mjs exited $metrics_status with no output}"
 fi
 
+# The index in docs/designs/sim-notes.md lists every entry in docs/notes/; a stale one fails with the command that fixes it.
+notes_out="$(node scripts/notes-index.mjs --check 2>&1)"
+notes_status=$?
+if ((notes_status != 0)); then
+  fail "notes-index: ${notes_out:-scripts/notes-index.mjs exited $notes_status with no output}"
+fi
+
 # The committed WASM kernels match their hash and their sources; without cargo the rebuild is skipped with a note.
 wasm_out="$(node scripts/check-wasm.mjs 2>&1)"
 wasm_status=$?
@@ -148,13 +164,24 @@ if ((wasm_status != 0)) && [[ -z "$wasm_out" ]]; then
   fail "wasm: scripts/check-wasm.mjs exited $wasm_status with no output"
 fi
 
-while IFS= read -r file; do
+if [[ -f AGENTS.md ]]; then
+  agents_bytes=$(wc -c <AGENTS.md)
+  if ((agents_bytes > AGENTS_MAX_BYTES)); then
+    fail "AGENTS.md: $agents_bytes bytes - it stays at or under $AGENTS_MAX_BYTES (move detail to docs/commands.md or a design doc)"
+  fi
+fi
+
+# One stat for all files (a path deleted from the working tree is skipped), then only the files over the limit reach
+# the loop: a stat per file was most of this gate's time.
+while IFS= read -r line; do
+  size="${line%% *}"
+  file="${line#* }"
   [[ -f "$file" ]] || continue
-  size=$(stat -c %s "$file")
-  if [[ $size -gt $LARGE_FILE_BYTES ]] && [[ ! " ${LARGE_FILE_ALLOWLIST[*]} " == *" $file "* ]]; then
+  if [[ ! " ${LARGE_FILE_ALLOWLIST[*]} " == *" $file "* ]]; then
     fail "$file: $((size / 1024 / 1024)) MB - tracked files stay under 5 MB (host large media elsewhere)"
   fi
-done < <(git ls-files --cached --others --exclude-standard)
+done < <(git ls-files --cached --others --exclude-standard -z | xargs -0 -r stat -c '%s %n' 2>/dev/null \
+  | awk -v max="$LARGE_FILE_BYTES" '$1 > max')
 
 # -I skips binary files; node_modules is untracked, but the pathspec keeps a checked-in copy out too. Run from a hook,
 # git exports GIT_INDEX_FILE, which git grep follows, so this reads the index being committed.

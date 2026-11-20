@@ -19,11 +19,11 @@ import { runTrainScreen } from './train-screen.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const USAGE =
-    'usage: train:tune --spec <train-tune.json> [--date <YYYY-MM-DD>] [--workers <n>] [--dry-run] [--runs <dir>] [--results <dir>] [--log-dir <dir>]';
+    'usage: train:tune --spec <train-tune.json> [--date <YYYY-MM-DD>] [--workers <n>] [--dry-run] [--runs <dir>] [--cache <dir>] [--results <dir>] [--log-dir <dir>]';
 
 /**
  * @param {string[]} argv command-line arguments after the script name
- * @returns {{spec: string, date: string, workers: number | null, dryRun: boolean, runs: string, results: string, logDir: string}}
+ * @returns {{spec: string, date: string, workers: number | null, dryRun: boolean, runs: string, cache: string | null, results: string, logDir: string}}
  *   the options
  * @throws {Error} on an unknown argument or no `--spec`
  */
@@ -34,6 +34,7 @@ export function parseArgs(argv) {
             '--date': (v) => ['date', String(v)],
             '--workers': (v, f) => ['workers', intValue(f, v, 1, USAGE)],
             '--runs': (v) => ['runs', String(v)],
+            '--cache': (v) => ['cache', v === '' || v === 'none' ? null : String(v)],
             '--results': (v) => ['results', String(v)],
             '--log-dir': (v) => ['logDir', String(v)],
         },
@@ -44,6 +45,7 @@ export function parseArgs(argv) {
             workers: null,
             dryRun: false,
             runs: join(ROOT, '.sim', 'train-tune'),
+            cache: join(ROOT, '.sim', 'train-cache'),
             results: join(ROOT, 'evals', 'train-tune', 'results'),
             logDir: join(ROOT, '.sim', 'logs'),
         },
@@ -128,7 +130,7 @@ export async function runTune(
     mkdirSync(out, { recursive: true });
     const sink = createJsonlSink(join(args.logDir, `train-tune-${args.date}.jsonl`));
     try {
-        const shared = { workers: args.workers, force: false, logDir: args.logDir };
+        const shared = { workers: args.workers, force: false, cache: args.cache, logDir: args.logDir };
         const { arms, yielded } =
             proposed.length === 0
                 ? { arms: [], yielded: {} }

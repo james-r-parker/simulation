@@ -1,4 +1,5 @@
-// The head of a design doc: title, `**Status:**`, `**Validated:**`, `**Priority:**` and `**Depends on:**` lines.
+// The head of a design doc: title, `**Status:**`, `**Validated:**`, `**Priority:**` or `**Scheduled by:**`, and
+// `**Depends on:**` lines.
 
 import { DesignDocError, MARKDOWN_LINK } from './markdown.mjs';
 
@@ -17,11 +18,16 @@ export const UNBUILT = new Set(['Proposed', 'In progress']);
 /** Long detail text pushes an index entry onto several wrapped lines and buries the next one. */
 const MAX_DETAIL = 160;
 
+/** A status line holds the keyword and the built phases and the next task; a run's result is in its experiment record. */
+export const MAX_STATUS = 400;
+
 const STARTS_SOMETHING_ELSE = /^(\*\*[A-Z]|#|>|[-*+]\s|\d+\.\s|\||```)/;
 const KEYWORD_END = /^[\s\-–—:.]/;
 const LEADING_SEPARATOR = /^\s*[-–—:]\s*/;
 const TRAILING_FULL_STOP = /\s*\.\s*$/;
 const VALIDATED = /^\*\*Validated:\*\*\s*(?<sha>[0-9a-f]{7,40})\s*\((?<date>\d{4}-\d{2}-\d{2})\)/;
+const SCHEDULED =
+    /^\*\*Scheduled by:\*\*\s*\[[^\]]+\]\((?<lead>[^)\s]+\.md)\)\s+step\s+(?<step>[1-9][0-9]*)\s*[-–—]\s*(?<reason>\S.*)$/;
 const PRIORITY = /^\*\*Priority:\*\*\s*(?<rank>[1-9][0-9]*)\s*[-–—]\s*(?<reason>\S.*)$/;
 
 /**
@@ -56,7 +62,13 @@ export function readStatus(lines, fileName) {
         }
         collected.push(lines[i]);
     }
-    return parseStatus(collected.join(' ').replace(/\s+/g, ' ').trim(), fileName);
+    const text = collected.join(' ').replace(/\s+/g, ' ').trim();
+    if (text.length > MAX_STATUS) {
+        throw new DesignDocError(
+            `${fileName}: the status line is ${text.length} characters, over the ${MAX_STATUS} limit. Keep what is built and what is next; the detail goes in the body (docs/designs/STYLE.md).`,
+        );
+    }
+    return parseStatus(text, fileName);
 }
 
 /**
@@ -122,6 +134,31 @@ export function readPriority(lines, fileName) {
         );
     }
     return { rank: Number.parseInt(groups.rank, 10), reason: groups.reason.replace(TRAILING_FULL_STOP, '').trim() };
+}
+
+/**
+ * The `**Scheduled by:** [lead.md](lead.md) step <n> - <reason>` line: the doc is built as step `<n>` of the lead doc,
+ * which holds the rank.
+ * @param {string[]} lines
+ * @param {string} fileName
+ * @returns {{lead: string, step: number, reason: string} | null}
+ */
+export function readScheduledBy(lines, fileName) {
+    const line = lines.find((l) => l.startsWith('**Scheduled by:**'));
+    if (!line) {
+        return null;
+    }
+    const groups = SCHEDULED.exec(line)?.groups;
+    if (!groups) {
+        throw new DesignDocError(
+            `${fileName}: "${line}" is not "**Scheduled by:** [lead.md](lead.md) step <n> - <reason>" with a step of 1 or more.`,
+        );
+    }
+    return {
+        lead: groups.lead,
+        step: Number.parseInt(groups.step, 10),
+        reason: groups.reason.replace(TRAILING_FULL_STOP, '').trim(),
+    };
 }
 
 /**

@@ -15,11 +15,11 @@ import { defaultWorkers } from './lib/worker-pool.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const USAGE =
-    'usage: train:screen --grid <grid.json> [--out <dir>] [--runs <dir>] [--workers <total>] [--force] [--log-dir <dir>]';
+    'usage: train:screen --grid <grid.json> [--out <dir>] [--runs <dir>] [--cache <dir>] [--workers <total>] [--force] [--log-dir <dir>]';
 
 /**
  * @param {string[]} argv command-line arguments after the script name
- * @returns {{grid: string, out: string | null, runs: string | null, workers: number | null, force: boolean, logDir: string}}
+ * @returns {{grid: string, out: string | null, runs: string | null, cache: string | null, workers: number | null, force: boolean, logDir: string}}
  *   the options
  * @throws {Error} on an unknown argument or no `--grid`
  */
@@ -29,11 +29,20 @@ export function parseArgs(argv) {
             '--grid': (v) => ['grid', String(v)],
             '--out': (v) => ['out', String(v)],
             '--runs': (v) => ['runs', String(v)],
+            '--cache': (v) => ['cache', v === '' || v === 'none' ? null : String(v)],
             '--workers': (v, f) => ['workers', intValue(f, v, 1, USAGE)],
             '--log-dir': (v) => ['logDir', String(v)],
         },
         booleanFlags: { '--force': 'force' },
-        defaults: { grid: null, out: null, runs: null, workers: null, force: false, logDir: '.sim/logs' },
+        defaults: {
+            grid: null,
+            out: null,
+            runs: null,
+            cache: join(ROOT, '.sim', 'train-cache'),
+            workers: null,
+            force: false,
+            logDir: '.sim/logs',
+        },
         usage: USAGE,
     });
     if (opts.grid === null) {
@@ -55,7 +64,7 @@ const readLadder = (file) => JSON.parse(readFileSync(resolve(ROOT, file), 'utf8'
 const readConfig = (file) => JSON.parse(readFileSync(resolve(ROOT, file), 'utf8'));
 
 /**
- * @param {ReturnType<typeof parseArgs>} args the options
+ * @param {Omit<ReturnType<typeof parseArgs>, 'cache'> & {cache?: string | null}} args the options
  * @param {{exec?: import('./lib/train-screen-run.mjs').ScreenRunOptions['exec'], check?: import('./lib/train-screen-feasible.mjs').Check}} [io]
  *   a stand-in trainer and learnability check (tests)
  * @returns {Promise<{plan: import('./lib/train-screen-grid.mjs').ScreenPlan, report: ReturnType<typeof screenReport>, out: string}>}
@@ -74,7 +83,14 @@ export async function runTrainScreen(args, { exec, check } = {}) {
         const checked = await checkArms(full, { workers, readConfig, log, check });
         const { plan, skipped } = withoutUnlearnable(full, checked);
         const slots = Math.max(1, Math.floor(workers / plan.workersPerRun));
-        const outcomes = await runScreen(plan, { runs, slots, force: args.force, log, exec });
+        const outcomes = await runScreen(plan, {
+            runs,
+            slots,
+            force: args.force,
+            cache: args.cache ?? null,
+            log,
+            exec,
+        });
         const report = screenReport(plan, outcomes);
         markUnlearnable(report, { checked, skipped });
         for (const [arm, verdict] of Object.entries(report.verdicts.arms)) {

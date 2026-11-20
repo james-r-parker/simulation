@@ -44,6 +44,8 @@ const argsFor = (name) =>
         ...[
             '--runs',
             join(root, name, 'runs'),
+            '--cache',
+            join(root, name, 'cache'),
             '--results',
             join(root, name, 'results'),
             '--log-dir',

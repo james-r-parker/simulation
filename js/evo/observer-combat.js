@@ -4,6 +4,7 @@
 
 import { ESCAPE_TICKS } from '../sim/merit-state.js';
 import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 import { hunterTable, SPEC_RADIX } from './hunter-table.js';
 import { createAlarmFollow, noteAlarm, resolveAlarms } from './observer-alarm.js';
 import { createAlarmReach, noteAlarmReach } from './observer-alarm-reach.js';
@@ -41,6 +42,8 @@ export function createCombatCounters(config) {
         escapedEpisodes: 0,
         eatenDeaths: 0,
         huntKills: 0,
+        settledHunterAgentTicks: 0,
+        settledHuntKills: 0,
         packKills: 0,
         alarm: createAlarmFollow(config, hunterSpec),
         alarmReach: createAlarmReach(),
@@ -111,12 +114,14 @@ export function killKind(combat, killer, previous) {
  * @param {Record<string, any>} combat the combat counters
  * @param {Float64Array} d the event data
  * @param {number} o the record offset of the `AgentDied`
+ * @param {number} tick the observed tick; a hunter kill from `BURN_IN_TICKS` on also counts as settled
  * @returns {void}
  */
-function countEaten(combat, d, o) {
+function countEaten(combat, d, o, tick) {
     combat.eatenDeaths += 1;
     const kind = killKind(combat, d[o + 5], d[o + 11]);
     combat.huntKills += kind >= KILL.HUNT ? 1 : 0;
+    combat.settledHuntKills += kind >= KILL.HUNT && tick >= BURN_IN_TICKS ? 1 : 0;
     combat.packKills += kind === KILL.PACK ? 1 : 0;
 }
 
@@ -131,7 +136,7 @@ function countEaten(combat, d, o) {
 function onDeath(combat, d, o, tick) {
     const eaten = d[o + 4] === DEATH_CAUSE.EATEN;
     if (eaten) {
-        countEaten(combat, d, o);
+        countEaten(combat, d, o, tick);
     }
     if (combat.hunterSpec[d[o + 6]] === 0) {
         closeEpisode(combat, d[o + 2], d[o + 3], eaten);
@@ -225,6 +230,7 @@ export function observeCombat(combat, world, intent) {
         }
         if (combat.hunterSpec[spec[slot]] === 1) {
             combat.hunterAgentTicks += 1;
+            combat.settledHunterAgentTicks += world.tick >= BURN_IN_TICKS ? 1 : 0;
         } else {
             trackEpisode(combat, world, slot, intent);
         }

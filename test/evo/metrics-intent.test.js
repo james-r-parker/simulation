@@ -11,6 +11,7 @@ const NAMES = [
     'eval.chance_food_energy_per_1k',
     'eval.pursuit_bite_share',
     'eval.pursuit_kill_share',
+    'eval.pursuit_kill_share_settled',
     'eval.pack_convergence',
     'eval.hunt_call_answer',
     'eval.evasion_response_share',
@@ -29,6 +30,7 @@ const REASONS = {
     'eval.chance_food_energy_per_1k': 'no agent-ticks',
     'eval.pursuit_bite_share': 'no bite energy gained by hunters',
     'eval.pursuit_kill_share': 'no hunter kill',
+    'eval.pursuit_kill_share_settled': 'no hunter kill',
     'eval.pack_convergence': 'no pack kill',
     'eval.hunt_call_answer': 'no resolved hunt call',
     'eval.evasion_response_share': 'no escaped bite episode',
@@ -78,9 +80,10 @@ describe('intentMetrics', () => {
             episodesClassified: 10,
             undefendedEpisodes: 3,
             unseenEpisodes: 1,
+            huntKillsDeliberateSettled: 1,
         });
         Object.assign(o.intent.calls, { resolved: 4, answeredCalls: 3 });
-        Object.assign(o.combat, { huntKills: 4, packKills: 2, escapedEpisodes: 8 });
+        Object.assign(o.combat, { huntKills: 4, settledHuntKills: 2, packKills: 2, escapedEpisodes: 8 });
         const v = Object.fromEntries(Object.entries(intentMetrics(o)).map(([name, r]) => [name, r.value]));
         expect(v).toEqual({
             'eval.deliberate_food_share': 0.75,
@@ -88,6 +91,7 @@ describe('intentMetrics', () => {
             'eval.chance_food_energy_per_1k': 2.5,
             'eval.pursuit_bite_share': 0.25,
             'eval.pursuit_kill_share': 0.75,
+            'eval.pursuit_kill_share_settled': 0.5,
             'eval.pack_convergence': 0.5,
             'eval.hunt_call_answer': 0.75,
             'eval.evasion_response_share': 0.25,

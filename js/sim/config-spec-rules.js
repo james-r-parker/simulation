@@ -24,6 +24,7 @@ export const SPECIALISATION_FIELDS = [
     'kickMultiplier',
     'maxEnergyMultiplier',
     'rearVisionShare',
+    'sprintDrainMultiplier',
 ];
 
 /** @type {Record<string, Rule>} the rule of every field after `index` */
@@ -58,6 +59,7 @@ export const SPECIALISATION_DEFAULTS = {
         kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
         maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         rearVisionShare: 1, // senses-and-motor Phase 5: the share of visionRange the ray behind keeps (1 = all-round eye)
+        sprintDrainMultiplier: 1, // fair-chase Phase 1: scales sprintDrain for this specialisation (read only with sprintStoreEnabled)
     },
     predator: {
         index: 1,
@@ -76,6 +78,7 @@ export const SPECIALISATION_DEFAULTS = {
         kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
         maxEnergyMultiplier: 5, // survival screen (instinct, inst1-gorge-bite20): a 3x fat store (5x from E103), so a big meal carries a predator across the fast between kills like a lion's // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         rearVisionShare: 0.4, // senses-and-motor E186: forward, long-range eyes; the ray behind keeps 0.4 of the range
+        sprintDrainMultiplier: 1, // fair-chase Phase 1: scales sprintDrain for this specialisation (read only with sprintStoreEnabled)
     },
     reproducer: {
         index: 2,
@@ -94,6 +97,7 @@ export const SPECIALISATION_DEFAULTS = {
         kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
         maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         rearVisionShare: 1,
+        sprintDrainMultiplier: 1, // fair-chase Phase 1: scales sprintDrain for this specialisation (read only with sprintStoreEnabled)
     },
     scout: {
         index: 3,
@@ -112,6 +116,7 @@ export const SPECIALISATION_DEFAULTS = {
         kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
         maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         rearVisionShare: 1,
+        sprintDrainMultiplier: 1, // fair-chase Phase 1: scales sprintDrain for this specialisation (read only with sprintStoreEnabled)
     },
     defender: {
         index: 4,
@@ -130,5 +135,6 @@ export const SPECIALISATION_DEFAULTS = {
         kickMultiplier: 2, // natural-selection T5a: a bite on a defender costs the biter twice the kick
         maxEnergyMultiplier: 1, // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         rearVisionShare: 0.8, // senses-and-motor E186
+        sprintDrainMultiplier: 1, // fair-chase Phase 1: scales sprintDrain for this specialisation (read only with sprintStoreEnabled)
     },
 };

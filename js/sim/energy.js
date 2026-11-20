@@ -163,7 +163,11 @@ function tickCost(world, slot) {
         drain *
         burn;
     let cost = base;
-    const sprint = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0 ? c.sprintCost * burn : 0;
+    // fair-chase: the cost of the sprint delivered, times the sprint-store factor (1 with the store off).
+    const sprint =
+        world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0
+            ? c.sprintCost * burn * world.sprintFactor[slot]
+            : 0;
     cost += sprint;
     const upkeep = c.specMutationRate > 0 && sp.canHunt ? c.huntUpkeep : 0;
     cost += upkeep;

@@ -1,8 +1,8 @@
 # World balance and biology
 
-**Status:** In progress - Phases 1 to 4, Phase 5 round 1 and Phase 6 built. The post-feature queue (T79 to T96) was not run as written: natural-selection.md Phase 4 (T48 to T67, closed 2026-11-07) ran the predator balance on the merged flora, megafauna and disease and spawned hunter-learning.md, refuge.md and realistic-keepers.md; the instruments of T80 to T83 were never built. What is left is the disease value screen (T94 to T96) and any new balance round, which needs a fresh plan from the `create-plan` skill. Phase 6 (T97 to T104, the mating-edge screen) is built: `E-BC-2` is falsified (E145, 2026-11-08: the roaming arms read 3 to 5 of 16 seeds above 100 prey through summer against the control's 7, and no arm is a finalist), the keep-rule check shows the roaming range harms (E146), so T103 deletes it, and the training.md Phase 3 gate stands; the next lever is a refuge ([habitat-cover.md](habitat-cover.md)).
+**Status:** In progress - Phases 1 to 4, Phase 5 round 1 and Phase 6 (the mating-edge screen, E145, E146: roaming range deleted, T103) are built. The post-feature queue was not run as written; natural-selection.md Phase 4 replaced it. Left: the disease value screen (T94 to T96) and any new balance round, which needs a fresh plan; the next lever is a refuge ([habitat-cover.md](habitat-cover.md)).
 **Validated:** edd4cd4b (2026-11-07)
-**Priority:** 16 - the review of 2026-11-07: the live crash is a mating Allee edge, not a skill problem (food stays full, starvation per prey is flat from 50 to 500 agents, mating births collapse near 100 prey), so the mating-edge screen (Phase 6) comes first among the sim work and gates training.md Phase 3; its evals run alongside the training diagnosis
+**Priority:** 7 - World lead. The world plans wait on the measurement fixes (metric-noise.md Phase 4) and on a fair chase (fair-chase.md Phase 3): every one of them is judged by a keep-rule read and most by a hunter metric
 **Depends on:** [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md)
 
 The world is tuned until it passes the world gate in [evolution-rework.md](evolution-rework.md) Phase 3, then the
@@ -10,6 +10,25 @@ trainer runs. This doc holds the open balance issues found on the tuning night o
 `E20`, sweep files in `.claude/worktrees/tune-night-2026-10-16/`), the measures of deliberate behaviour, the method
 each tuning night follows, and the biology features that change the balance again. Phase 1 needs only predator-prey.md
 Phases 1 and 2; the renderer is needed from Phase 2, whose tuning is judged by watching it.
+
+## Order
+
+This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
+
+Own work first: its own Phase 6 onward, after metric-noise.md Phase 4 and fair-chase.md Phase 3.
+
+| Step | Doc                                          | Built when                                                                                                                                                          |
+| ---- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [honest-budgets.md](honest-budgets.md)       | No task is actionable until a fair chase gives recruitment something to keep: Phases 3 and 5 are parked on the keep rule and Phase 6 names no finalist (E179, E189) |
+| 2    | [low-density-edge.md](low-density-edge.md)   | Three tasks left (T11b, T23, T28); the edge under 100 prey is re-read on the fixed measurement                                                                      |
+| 3    | [eat-choice.md](eat-choice.md)               | Built and the default; two Done bars missed are re-read, then the doc closes                                                                                        |
+| 4    | [habitat-cover.md](habitat-cover.md)         | Cover on the patch rims, screened once behind honest-budgets.md Phase 3                                                                                             |
+| 5    | [seasonal-movement.md](seasonal-movement.md) | The snowline and green wave replace the global `energyDrain` once food is local                                                                                     |
+| 6    | [migration.md](migration.md)                 | After the world stands on its own, since migration would hide a world that cannot                                                                                   |
+| 7    | [realistic-keepers.md](realistic-keepers.md) | The Phase 3 perf check and the Phase 4 freeze with its reward-gating screen                                                                                         |
+| 8    | [alarm-calls.md](alarm-calls.md)             | The Call, or don't scene is absent; a call needs prey near kin and a hunter that can bite                                                                           |
+| 9    | [prey-guilds.md](prey-guilds.md)             | Needs a standing prey population and working kill budgets                                                                                                           |
+| 10   | [body-genes.md](body-genes.md)               | Builds on prey-guilds.md, which shows which trade-offs hold niches                                                                                                  |
 
 ## Open balance issues
 

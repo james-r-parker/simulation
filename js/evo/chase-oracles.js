@@ -14,6 +14,8 @@ export const JINK_RANGE = 120;
 const LEAD_MAX = 30;
 /** A speed under this is "at rest" for choosing a direction. */
 const REST = 0.05;
+/** With the sprint store on (docs/designs/fair-chase.md, Step 1), the evader sprints only inside this many `JINK_RANGE`s. */
+export const EVADER_SPRINT_JINKS = 3;
 
 /**
  * @param {number} a an angle
@@ -80,8 +82,18 @@ function travelOf(world, from) {
 }
 
 /**
+ * @param {Record<string, any>} world the world
+ * @param {number} slot a body
+ * @returns {boolean} whether its sprint store is above `sprintFloor`; true with the store off
+ */
+export function storeAboveFloor(world, slot) {
+    const store = world.sprintStore;
+    return store === undefined || store.level[slot] > store.floor;
+}
+
+/**
  * The pursuer's brain: aims at where the evader will be after the time it needs to cover the gap, thrusts, bites, and
- * sprints when asked.
+ * sprints when asked; with the sprint store on, only while its store is above `sprintFloor` and the evader is in view.
  * @param {{pursuer: number, evader: number, sprint: boolean}} slots the two bodies and whether the pursuer sprints
  * @returns {(world: Record<string, any>) => void} a `brain` phase body
  */
@@ -92,7 +104,9 @@ export function pursuerBrain({ pursuer, evader, sprint }) {
         const speed = Math.max(length(world.vx[pursuer], world.vy[pursuer]), 1);
         const lead = Math.min(length(dx, dy) / speed, LEAD_MAX);
         const aim = { x: dx + lead * world.vx[evader], y: dy + lead * world.vy[evader] };
-        drive(world, pursuer, { turn: steer(world, pursuer, aim), sprint, bite: true });
+        const inView = world.sprintStore === undefined || length(dx, dy) <= world.visionBySpec[world.spec[pursuer]];
+        const burst = sprint && inView && storeAboveFloor(world, pursuer);
+        drive(world, pursuer, { turn: steer(world, pursuer, aim), sprint: burst, bite: true });
     };
 }
 
@@ -118,7 +132,8 @@ function wallPushed(world, { slot, aim, margin }) {
 
 /**
  * The evader's brain: runs straight away from the pursuer; inside `jinkRange` it turns square across the pursuer's
- * line of travel, on the side it already stands, so the pursuer must turn through the most.
+ * line of travel, on the side it already stands, so the pursuer must turn through the most. With the sprint store on it
+ * sprints only while the pursuer is within `EVADER_SPRINT_JINKS x JINK_RANGE` and its store is above `sprintFloor`.
  * @param {{pursuer: number, evader: number, sprint: boolean, jinkRange?: number, wallMargin?: number}} slots the two
  *   bodies, whether the evader sprints, the distance at which it breaks (`JINK_RANGE`; 0 runs straight) and the
  *   distance from a wall at which it starts to bend away (default 0: it does not)
@@ -136,6 +151,8 @@ export function evaderBrain({ pursuer, evader, sprint, jinkRange = JINK_RANGE, w
         } else if (wallMargin > 0) {
             aim = wallPushed(world, { slot: evader, aim, margin: wallMargin });
         }
-        drive(world, evader, { turn: steer(world, evader, aim), sprint, bite: false });
+        const near = world.sprintStore === undefined || length(dx, dy) < EVADER_SPRINT_JINKS * JINK_RANGE;
+        const burst = sprint && near && storeAboveFloor(world, evader);
+        drive(world, evader, { turn: steer(world, evader, aim), sprint: burst, bite: false });
     };
 }

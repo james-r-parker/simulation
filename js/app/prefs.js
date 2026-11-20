@@ -19,7 +19,11 @@ export const LENS_COUNT = 4;
  * @property {string | number} uiScale `auto`, 1, 1.25, 1.5 or 2
  * @property {string} palette the family palette: `default`, `cvd-safe` or `high-contrast`
  * @property {boolean} seen whether the title card has been shown
+ * @property {number} tvIdleMinutes minutes without input before TV mode starts by itself; 0 turns it off
  */
+
+/** Minutes without input before TV mode starts, by default. */
+export const TV_IDLE_MINUTES = 5;
 
 /** The `uiScale` values. */
 const UI_SCALES = ['auto', 1, 1.25, 1.5, 2];
@@ -38,6 +42,7 @@ export function defaultPrefs() {
         uiScale: 'auto',
         palette: 'default',
         seen: false,
+        tvIdleMinutes: TV_IDLE_MINUTES,
     };
 }
 
@@ -48,6 +53,15 @@ export function defaultPrefs() {
  */
 function boolOf(value, fallback) {
     return typeof value === 'boolean' ? value : fallback;
+}
+
+/**
+ * @param {unknown} value a stored value
+ * @param {number} fallback the default
+ * @returns {number} the value when it is a whole number of minutes from 0 to a day, else the default
+ */
+function minutesOf(value, fallback) {
+    return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 1440 ? value : fallback;
 }
 
 /**
@@ -72,6 +86,7 @@ export function sanitizePrefs(stored) {
         uiScale: UI_SCALES.includes(/** @type {any} */ (s.uiScale)) ? /** @type {any} */ (s.uiScale) : base.uiScale,
         palette: PALETTE_NAMES.includes(/** @type {any} */ (s.palette)) ? /** @type {any} */ (s.palette) : base.palette,
         seen: boolOf(s.seen, base.seen),
+        tvIdleMinutes: minutesOf(s.tvIdleMinutes, base.tvIdleMinutes),
     };
 }
 

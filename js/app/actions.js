@@ -24,6 +24,8 @@ export const DEFAULT_TICKS_PER_SECOND = 60;
  * @property {number} followId the followed agent's genome id, 0 for none
  * @property {number} requestedTicksPerSecond the speed last asked of the worker
  * @property {number} newWorldArmedAt when `N` was last pressed, -Infinity when not armed
+ * @property {number} autoSpeed the ticks a second the director set while it holds the speed, 0 when the viewer's applies
+ * @property {boolean} tv whether TV mode is on (the border is off, the HUD hidden)
  * @property {string} notice a short message for the top bar, empty for none
  * @property {boolean[]} lenses which of the four lenses are on
  */
@@ -38,6 +40,8 @@ export function createAppState(ticksPerSecond = DEFAULT_TICKS_PER_SECOND) {
         followId: 0,
         requestedTicksPerSecond: ticksPerSecond,
         newWorldArmedAt: -Infinity,
+        autoSpeed: 0,
+        tv: false,
         notice: '',
         lenses: new Array(LENSES.length).fill(false),
     };
@@ -93,6 +97,7 @@ const NO_UI = Object.freeze({
  * @property {(preferred: number) => number} [followAgent] a living selected or interesting genome id, 0 for none
  * @property {() => import('./director/moment-log.js').MomentLog | null} [lastMoments] the live moment log, null before a
  *   world
+ * @property {() => void} [toggleTv] turns TV mode on or off
  * @property {UiHooks} [ui] the page's hooks; absent means none of the page actions do anything
  */
 
@@ -239,6 +244,7 @@ const ACTIONS = Object.freeze({
     toggleInspector: viaUi('toggleDrawer', 'inspector'),
     toggleHelp: viaUi('toggleDrawer', 'help'),
     toggleHud: viaUi('toggleHud'),
+    toggleTv: ({ toggleTv }) => toggleTv?.(),
     toggleAudio: viaUi('toggleAudio'),
     volumeDown: viaUi('volumeDown'),
     volumeUp: viaUi('volumeUp'),

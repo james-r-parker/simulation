@@ -44,7 +44,7 @@ function fatFactor(world, i) {
 
 /**
  * The thrust an agent adds this tick: its output times `maxThrust` and its temperature's efficiency, then the graze,
- * sprint, rest, handling, sickness and fat multipliers.
+ * sprint (its boost times the sprint-store factor, 1 with the store off), rest, handling, sickness and fat multipliers.
  * @param {import('./world.js').World} world the world
  * @param {number} i the agent slot
  * @param {number} fat the agent's `fatFactor`
@@ -56,7 +56,7 @@ function thrustOf(world, i, fat) {
     let thrust = outputs[o + OUTPUT_INDEX.THRUST] * config.maxThrust * thrustEfficiency(config, world.temperature[i]);
     thrust *= grazeFactor(world, i);
     if (outputs[o + OUTPUT_INDEX.SPRINT] > 0) {
-        thrust *= 1 + config.sprintMultiplier * world.sprintBySpec[world.spec[i]];
+        thrust *= 1 + config.sprintMultiplier * world.sprintBySpec[world.spec[i]] * world.sprintFactor[i];
     }
     if (config.predatorRestTicks > 0 && world.restTimer[i] > 0) {
         world.restTimer[i] -= 1; // realistic-keepers T2: a hunter lies up after a kill

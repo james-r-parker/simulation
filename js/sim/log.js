@@ -450,6 +450,11 @@ function emitStrainExtinct(log, d, o) {
     });
 }
 
+/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
+function emitSprintSpent(log, d, o) {
+    log.log('debug', 'SprintSpent', { tick: d[o + 1], slot: d[o + 2], genomeId: d[o + 3], spec: d[o + 4] });
+}
+
 /** Emitter and level per event type; the level lets a record be skipped before any object is built. */
 /** @type {Readonly<Record<number, { level: number, emit: (log: SimLog, d: Float64Array, o: number) => void }>>} */
 const EMITTERS = Object.freeze({
@@ -485,6 +490,7 @@ const EMITTERS = Object.freeze({
     [EVENT_TYPE.HUNTER_RECOIL_LIFE]: { level: LOG_LEVEL.debug, emit: emitHunterRecoilLife },
     [EVENT_TYPE.COVER_CONFIG]: { level: LOG_LEVEL.info, emit: emitCoverConfig },
     [EVENT_TYPE.COVER_TOTALS]: { level: LOG_LEVEL.debug, emit: emitCoverTotals },
+    [EVENT_TYPE.SPRINT_SPENT]: { level: LOG_LEVEL.debug, emit: emitSprintSpent },
 });
 
 /**

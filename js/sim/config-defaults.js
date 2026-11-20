@@ -65,6 +65,11 @@ export const DEFAULTS = deepFreeze({
     damping: 0.95, // DAMPENING_FACTOR
     sprintMultiplier: 0.5, // SPRINT_BONUS_MULTIPLIER
     sprintCost: 0.05, // SPRINT_COST_PER_FRAME
+    sprintStoreEnabled: false, // fair-chase Phase 1: a sprint spends a per-agent store (js/sim/sprint-store.js); off until Phase 3 adopts or T8a deletes it
+    sprintDrain: 0.01, // fair-chase: store drained a tick while SPRINT is above 0, times the spec's sprintDrainMultiplier (100 ticks from full)
+    sprintRefill: 0.002, // fair-chase: store refilled a tick while SPRINT is at or under 0 and THRUST under sprintRestThrust
+    sprintRestThrust: 0.2, // fair-chase: the THRUST output under which a body rests and its store refills
+    sprintFloor: 0.3, // fair-chase: under this store the sprint's factor falls linearly to 0 at an empty store
     initialEnergy: 800, // INITIAL_AGENT_ENERGY
     entrantEnergy: 200, // natural-selection T4: a floor or immigrant seeder entrant starts poor; 0 means initialEnergy
     maxEnergy: 2000, // natural-selection economy (was MAX_ENERGY 25000): a small store, so a mother has little to lose to a winter before she is dead

@@ -152,7 +152,8 @@ describe('mountCharts', () => {
         root.clientWidth = 300;
         const charts = mountCharts({ doc, root, UPlot: FakeUPlot, history, groups: sampler.groups, colorOf: COLOR_OF });
         expect(FakeUPlot.made).toHaveLength(5);
-        expect(root.children).toHaveLength(5);
+        expect(root.children).toHaveLength(6);
+        expect(root.children[5].className).toBe('chart chart-milestones');
         for (const u of FakeUPlot.made) {
             expect(u.opts.width).toBe(300);
             expect(u.data).toHaveLength(u.opts.series.length);

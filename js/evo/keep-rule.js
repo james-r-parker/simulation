@@ -10,6 +10,7 @@ import { BURN_IN_TICKS } from './burn-in.js';
 import { bootstrapInterval, metricDirection } from './compare.js';
 import { statusOf } from './compare-rules.js';
 import { minSeedsFor } from './metric-registry/index.js';
+import { withCurrentNames } from './metric-registry/renames.js';
 
 /** Seeds ending under this many agents count as collapsed. */
 export const LOW_POPULATION = 80;
@@ -247,8 +248,8 @@ function count(flags) {
 
 /**
  * Judges whether `after` does harm against `before` on the same seeds.
- * @param {Record<string, any>} before the reference report
- * @param {Record<string, any>} after the arm's report
+ * @param {Record<string, any>} rawBefore the reference report (any old metric name is read under its current one)
+ * @param {Record<string, any>} rawAfter the arm's report
  * @param {{ guards?: string[], status?: (metric: string) => string, seedsFor?: (metric: string) => number }} [options] the guard metrics
  *   (`GUARD_METRICS`), the status lookup (`statusOf`) and the seed minimum lookup (`minSeedsFor`)
  * @returns {{ worse: boolean, guards: Guard[], adoption: ReturnType<typeof adoption> }} `worse` when any guard is
@@ -256,10 +257,13 @@ function count(flags) {
  * @throws {Error} when the seed lists differ or are shorter than 2
  */
 export function keepRule(
-    before,
-    after,
+    rawBefore,
+    rawAfter,
     { guards: names = GUARD_METRICS, status = statusOf, seedsFor = minSeedsFor } = {},
 ) {
+    // The same current-name view `compareReports` reads, so a report under a renamed guard metric still guards (D2).
+    const before = withCurrentNames(rawBefore);
+    const after = withCurrentNames(rawAfter);
     const same =
         before.seeds.length === after.seeds.length &&
         before.seeds.every((/** @type {number} */ s, /** @type {number} */ i) => s === after.seeds[i]);
@@ -278,6 +282,20 @@ export function keepRule(
         guards,
         adoption: adoption(aliveFlags(after), under),
     };
+}
+
+/**
+ * @param {ReturnType<typeof keepRule>} result a keep-rule result
+ * @returns {string} the verdict line: `WORSE`, `incomplete` when any guard is unchecked (never "no harm detected"), else no harm
+ */
+function verdictLine(result) {
+    if (result.worse) {
+        return 'keep rule: WORSE';
+    }
+    const open = result.guards.filter((g) => g.verdict === 'unchecked').map((g) => g.name);
+    return open.length > 0
+        ? `keep rule: incomplete (unchecked: ${open.join(', ')}; no harm in the guards that ran)`
+        : 'keep rule: no harm detected at this size';
 }
 
 /**
@@ -301,7 +319,7 @@ export function formatKeepRule(result) {
     const { adoption: a } = result;
     lines.push(
         `adoption bar: hunters alive ${c(a.alive)} (need 0.75), seeds under 80: ${c(a.under80After)} vs reference ${c(a.under80Before)}, ${a.pass ? 'met' : 'not met'}`,
-        `keep rule: ${result.worse ? 'WORSE' : 'no harm detected at this size'}`,
+        verdictLine(result),
     );
     return lines;
 }

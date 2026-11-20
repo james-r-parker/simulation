@@ -51,6 +51,44 @@ export function parseViewport(text) {
 }
 
 /**
+ * @param {string} arg the argument as written, for the message
+ * @param {string} text the query to add to the page URL, with or without a leading `?`
+ * @returns {string} the query without the `?`, such as `tv=1` or `tv=1&dim=on`
+ * @throws {Error} when it has a space, a `#` or an empty parameter, or sets one the run sets itself
+ */
+export function parseUrlParams(arg, text) {
+    const query = text.replace(/^\?/, '');
+    const reserved = ['agents', 'seed', 'gputime', 'hold'];
+    const names = query.split('&').map((pair) => pair.split('=')[0]);
+    if (query === '' || /[\s#]/.test(query) || names.some((n) => n === '')) {
+        throw new Error(`--url-params must be a query such as tv=1 or tv=1&dim=on, got "${arg}"`);
+    }
+    const clash = names.find((n) => reserved.includes(n));
+    if (clash !== undefined) {
+        throw new Error(`--url-params cannot set "${clash}": the run sets ${reserved.join(', ')} itself`);
+    }
+    return query;
+}
+
+/**
+ * @param {{agents: number, seed: number, urlParams?: string}} run the agent count, the seed and extra parameters
+ * @returns {string} the page query: the run's own parameters, then the extra ones
+ */
+export function appQuery({ agents, seed, urlParams = '' }) {
+    return `agents=${agents}&seed=${seed}&gputime=1&hold=1${urlParams === '' ? '' : `&${urlParams}`}`;
+}
+
+/**
+ * @param {string} viewport `WIDTHxHEIGHT`
+ * @param {string} [urlParams] the extra URL parameters of the run
+ * @returns {string} the baseline key: the viewport, then `?` and the parameters when there are any, so a `tv=1` run
+ *   does not overwrite the plain one
+ */
+export function baselineKey(viewport, urlParams = '') {
+    return urlParams === '' ? viewport : `${viewport}?${urlParams}`;
+}
+
+/**
  * @param {number} refreshHz the display's measured refresh rate from `__perf`
  * @param {boolean} allowLow record a slower display anyway
  * @returns {void}

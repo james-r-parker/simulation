@@ -18,8 +18,9 @@ Every doc opens with exactly one status line, in this format:
 **Status:** <Keyword> - optional detail.
 ```
 
-The keyword comes from this closed set. Detail after the dash is free text - name the phase, the PR, what is
-left.
+The keyword comes from this closed set. Detail after the dash is free text - name the built phases and the next
+task. The whole line holds at most 400 characters (`readStatus` rejects a longer one); a run's result is in its
+experiment record, not here.
 
 | Keyword       | Means                                                                             |
 | ------------- | --------------------------------------------------------------------------------- |
@@ -62,6 +63,14 @@ under **Build queue**. The rank applies to the doc's next unbuilt phase, the one
   results. A re-rank is a PR that waits for approval.
 - A reason that starts with `pinned` keeps its rank against the loop's proposals.
 - Drop the line once the doc is `Implemented`.
+
+## Scheduled by (in place of Priority)
+
+```
+**Scheduled by:** [fair-chase.md](fair-chase.md) step 2 - <what it waits on, in one line>
+```
+
+The Build queue holds **lead** docs only: a lead carries the `**Priority:**` line and an `## Order` section. Every other `Proposed` or `In progress` doc carries a `**Scheduled by:**` line in the same place and is built as that step of its lead, after the steps before it. A doc carries one line or the other, never both. Steps are unique under a lead. The index lists each lead with its steps under it.
 
 ## Depends on (optional)
 
@@ -191,12 +200,12 @@ pinned line number silently starts pointing at a closing brace. `scripts/designs
 
 ## Where rationale and learnings live
 
-| Kind                               | Home                                                            |
-| ---------------------------------- | --------------------------------------------------------------- |
-| Why a change was made              | The commit body and the PR description                          |
-| Audits, research, comparisons      | A `Reference` doc (e.g. `legacy-audit.md`)                      |
-| Platform and library surprises     | [sim-notes.md](sim-notes.md), under `## Learned while building` |
-| Results of an evolution experiment | `evals/experiments.json` (the `run-evolution-loop` skill)       |
+| Kind                               | Home                                                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Why a change was made              | The commit body and the PR description                                                                       |
+| Audits, research, comparisons      | A `Reference` doc (e.g. `legacy-audit.md`)                                                                   |
+| Platform and library surprises     | `docs/notes/<YYYY-MM>.md`, indexed in [sim-notes.md](sim-notes.md) by `node scripts/notes-index.mjs --write` |
+| Results of an evolution experiment | `evals/experiments.json` (the `run-evolution-loop` skill)                                                    |
 
 ## Notes (sparse callout)
 

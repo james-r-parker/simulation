@@ -57,7 +57,12 @@ describe('train:tune', () => {
             const results = join(root, 'results');
             const logs = join(root, 'logs');
             const argv = ['--spec', spec, '--date', '2026-02-03', '--workers', '2', '--results', results];
-            expect(await main([...argv, '--runs', join(root, 'runs'), '--log-dir', logs], () => {})).toBe(0);
+            expect(
+                await main(
+                    [...argv, '--runs', join(root, 'runs'), '--cache', join(root, 'cache'), '--log-dir', logs],
+                    () => {},
+                ),
+            ).toBe(0);
             const out = join(results, '2026-02-03');
             expect(readdirSync(out).sort()).toEqual([
                 'draft-experiment.json',
