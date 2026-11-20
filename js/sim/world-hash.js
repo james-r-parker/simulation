@@ -164,7 +164,7 @@ function fieldNames() {
 /**
  * Builds the byte views for the whole-array part of the hash, once per world.
  * @param {Record<string, any>} world the world
- * @returns {{ agents: Uint8Array[], merit: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, inputActive: Uint8Array, vision: Uint8Array, baseSize: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, disease: Uint8Array[], diseaseRngSource: Uint32Array | null, diseaseRng: Uint8Array | null, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
+ * @returns {{ agents: Uint8Array[], merit: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, inputActive: Uint8Array, vision: Uint8Array, baseSize: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, disease: Uint8Array[], diseaseRngSource: Uint32Array | null, diseaseRng: Uint8Array | null, sprintStore: Uint8Array | null, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
  */
 function buildViews(world) {
     const { maxAgents } = world.config;
@@ -183,6 +183,7 @@ function buildViews(world) {
         disease: [...DISEASE_AGENT_ARRAYS, ...DISEASE_STRAIN_ARRAYS].map((name) => bytesOf(world, name)),
         diseaseRngSource: null,
         diseaseRng: null,
+        sprintStore: world.sprintStore === undefined ? null : bytesOf(world.sprintStore, 'level'),
         rngSources: [],
         rngViews: [],
     };
@@ -223,7 +224,7 @@ function rngState(world, name) {
 }
 
 /**
- * Hashes the arrays that exist only with their feature on: `fastOut`, the input-activity counts (`weightDecay`), `vision` and `baseSize`, `birthRing` and `sex`.
+ * Hashes the arrays that exist only with their feature on: `fastOut`, the input-activity counts (`weightDecay`), `vision` and `baseSize`, `birthRing`, `sex`, the disease state and the sprint store (`sprintStoreEnabled`).
  * @param {Record<string, any>} world the world
  * @param {ReturnType<typeof buildViews>} views the cached byte views
  * @returns {void}
@@ -259,6 +260,9 @@ function hashOptionalArrays(world, views) {
             views.diseaseRng = bytes;
         }
         fnv64Bytes(digest, bytes);
+    }
+    if (views.sprintStore !== null) {
+        fnv64Bytes(digest, views.sprintStore);
     }
 }
 

@@ -6,6 +6,7 @@
 // `sprintStoreEnabled` off there is no store and the lane holds 1 for every slot. No RNG, no clock, no allocation per tick.
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
+import { specTable } from './spec-params.js';
 
 /**
  * @typedef {object} SprintStore
@@ -22,10 +23,9 @@ import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
  * @returns {SprintStore} a store with every slot full
  */
 export function createSprintStore(config, slots) {
-    const specs = Object.values(config.specialisations);
-    const drainBySpec = new Float64Array(Math.max(...specs.map((s) => s.index)) + 1);
-    for (const s of specs) {
-        drainBySpec[s.index] = config.sprintDrain * s.sprintDrainMultiplier;
+    const drainBySpec = specTable(config, 'sprintDrainMultiplier');
+    for (let k = 0; k < drainBySpec.length; k++) {
+        drainBySpec[k] *= config.sprintDrain;
     }
     return {
         level: new Float64Array(slots).fill(1),
@@ -34,6 +34,22 @@ export function createSprintStore(config, slots) {
         restThrust: config.sprintRestThrust,
         floor: config.sprintFloor,
     };
+}
+
+/**
+ * Allocates the sprint state of a world being built: the `sprintFactor` lane (1 for every slot, which the physics kernel
+ * takes into its arena), and with `sprintStoreEnabled` the store, whose level row joins `agentRows` so a freed slot
+ * is zeroed.
+ * @param {Record<string, any>} world the world being built, its `agentRows` allocated
+ * @returns {void}
+ */
+export function allocSprintState(world) {
+    const n = world.config.maxAgents;
+    world.sprintFactor = new Float64Array(n).fill(1);
+    if (world.config.sprintStoreEnabled) {
+        world.sprintStore = createSprintStore(world.config, n);
+        world.agentRows.push({ array: world.sprintStore.level, stride: 1 });
+    }
 }
 
 /**
