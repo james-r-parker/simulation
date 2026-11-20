@@ -84,6 +84,14 @@ The digest under its `✗` line, then `.checklogs/<gate>.log` (kept until the ne
 
 `scripts/run-detached.sh <name> [--frozen] -- <cmd...>` (writes `.runs/<name>.log` and `.runs/<name>.done`, the exit code; records the run in `.runs/runs.json`; refuses a name already used; `--frozen` runs from a new `.runs/frozen-<name>-<timestamp>` copy of the tree; `$RUNS_DIR` moves the directory), then `scripts/wait-run.sh <name> [--timeout <s>]` (blocks until `.done` exists, prints the exit code and log tail, exits with the run's code, 124 on timeout, 125 when the run was killed). Never `nohup`, `until` or `pgrep -f` loops
 
+### What is running, queued and shipped
+
+`npm run state` (`-- --json` for the object, `-- --root <dir>`; read-only, writes no file): the first 5 Build queue rows with each doc's next unbuilt task, every run in flight or recently done under any worktree's `.runs/runs.json` (name, workers, start, seeds done from the log), the machine (threads, load, worker budget, workers claimed by runs in flight, workers free), the newest `yield.json`'s pass share per stage, the last 10 experiments and the outcome tally of the last 7 days, the median minutes and first-run green share of the last 20 ships (`.checklogs/ship.jsonl`), open PRs with their check state (skipped when `gh` fails) and the worktree class counts. Read it before choosing `--workers` for a long run. `run-detached.sh` records `workers` in `runs.json` (`--workers <n>`, else the pool default, else null) and prints one warning line when a lone run claims under half the free workers.
+
+### Clear merged worktrees
+
+`scripts/worktree-gc.sh --list [--json]` prints each worktree's class and reason, then the count per class; with no flag it removes the `safe` class with `git worktree remove` (never `--force`) and deletes their local branches. `safe`: a merged PR holds all of HEAD (`gh pr list --state merged`) and the tree is clean. Never `safe`: the main checkout, the calling session's worktree, a locked one, a process running in it, a run in flight or a run log under its `.runs/` (`live`); uncommitted or untracked files (`dirty`); no merged PR, a detached HEAD, `gh` failing, or commits the merged PR does not hold (`unmerged`); a missing directory (`gone`).
+
 ### Worker budget for evals, screens and training
 
 `eval`, `ladder`, `league`, `train`, `drill`, `reflex` and `screen` (in total) default to `defaultWorkers()` in `scripts/lib/worker-pool.mjs`: `max(ceil(cores / 2), cores - 8)`, 24 of 32 cores here, so the gates and the other lanes keep 8; `--workers <n>` overrides it

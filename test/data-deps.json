@@ -460,6 +460,17 @@
     "test/smoke-flakes.test.js": [
         "playwright.config.js"
     ],
+    "test/state.test.js": [
+        ".git",
+        ".gitignore",
+        "README.md",
+        "docs/designs",
+        "docs/designs/README.md",
+        "docs/designs/metric-noise.md",
+        "evals/experiments.json",
+        "scripts/state.mjs",
+        "test"
+    ],
     "test/task-start.test.js": [
         ".gitignore",
         "docs",
