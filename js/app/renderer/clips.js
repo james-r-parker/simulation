@@ -92,6 +92,11 @@ export const CLIPS = Object.freeze({
     rest: { loop: true, rate: 0.4, tracks: [pulse('sx', 1.04), pulse('sy', 1.04), track('eye', '0 0.15, 1 0.15')] },
     sated: { loop: true, rate: 0.3, tracks: [track('sy', '0 1.08, 1 1.08')] },
     sick: { loop: true, rate: 1.5, tracks: [swing('rot', 0.08)] },
+    failing: {
+        loop: true,
+        rate: 0.5,
+        tracks: [pulse('sy', 0.94), pulse('sx', 0.97), track('eye', '0 0.8, 1 0.8')],
+    },
     graze: { loop: true, rate: 0.5, tracks: [pulse('head', 0.3)] },
     gallop: { loop: true, rate: 1.4, tracks: [swing('limb', 0.5), pulse('ty', 0.05)] },
     stampede: { loop: true, rate: 2.6, tracks: [swing('limb', 0.9), pulse('ty', 0.09)] },

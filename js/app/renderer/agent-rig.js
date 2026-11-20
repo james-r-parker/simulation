@@ -27,6 +27,18 @@ export function wavePhase(timeSec, speed01, phase01) {
     return (turns - Math.floor(turns)) * Math.PI * 2;
 }
 
+/** Under this share of full energy a body is failing: its swim loop and its fill fall together, and it sags. */
+export const FAILING_FROM = 0.15;
+
+/**
+ * @param {number} energy01 the agent's energy, 0 to 1
+ * @returns {number} 1 from `FAILING_FROM` up, falling to 0 as the energy does: the share the swim amplitude and the
+ *   fill keep of what the energy alone would give
+ */
+export function failingShare(energy01) {
+    return energy01 >= FAILING_FROM ? 1 : Math.max(energy01, 0) / FAILING_FROM;
+}
+
 /** Eye scale of a juvenile. */
 export const JUVENILE_EYE = 1.4;
 /** How much a bitten flash lifts the body towards white. */
@@ -138,13 +150,15 @@ function playLoops(ctx, { bucket, o }) {
     const speed01 = bucket.motion[o];
     LOOP.phase = bucket.motion[o + 2];
     LOOP.rate = 0.5 + speed01;
-    LOOP.amp = 0.3 + 0.7 * speed01;
+    const failing = failingShare(bucket.color[o + 3]);
+    LOOP.amp = (0.3 + 0.7 * speed01) * failing;
     loop(ctx, 'swim', LOOP);
     LOOP.rate = 1;
     LOOP.amp = 1;
     const temp = bucket.state[o];
     const bits = bucket.body[o];
     const hunting = ctx.hunter && bucket.state[o + 3] >= STALK_JAW && speed01 < STALK_SPEED;
+    maybe(ctx, failing < 1, 'failing', 1 - failing);
     maybe(ctx, hunting, 'stalk', 1);
     maybe(ctx, speed01 > SPRINT_FROM, 'sprint', sprintAmp(speed01));
     maybe(ctx, bucket.tween[o + 3] > 0, 'flee', 1);
@@ -226,7 +240,8 @@ function colorRow(ctx, row, out, rgb) {
     rgb[2] = source[lens === null ? o + 2 : 2];
     toDisplay(rgb, rgb);
     const full = FILL_SHARE[/** @type {keyof typeof FILL_SHARE} */ (ctx.palette)] ?? FILL_SHARE.default;
-    putRgb(out.neon, o, rgb, FILL_FLOOR + (full - FILL_FLOOR) * Math.min(Math.max(bucket.color[o + 3], 0), 1));
+    const energy = Math.min(Math.max(bucket.color[o + 3], 0), 1);
+    putRgb(out.neon, o, rgb, FILL_FLOOR + (full - FILL_FLOOR) * energy * failingShare(energy));
     gateRow(ctx, ROW_REF.row, out, rgb);
 }
 

@@ -7,6 +7,7 @@ import {
     BREAK_MS,
     breakOf,
     CARCASS_SCALE,
+    carcassFadeOf,
     DEATH_ANIMS,
     DEATH_MS,
     DEFAULT_DEATH,
@@ -123,6 +124,18 @@ describe('the beats on the clock', () => {
                     expect(Math.min(laneOf(anim, t), 1)).toBe(1);
                 }
             }
+        }
+    });
+});
+
+describe('carcassFadeOf', () => {
+    it('keeps the carcass dark until the leaving beat and brings it in as the body fades out', () => {
+        const anim = DEATH_ANIMS.EATEN;
+        expect(carcassFadeOf(anim, 0)).toBe(0);
+        expect(carcassFadeOf(anim, FAIL_MS + anim.breakMs)).toBe(0);
+        expect(carcassFadeOf(anim, anim.ms)).toBe(1);
+        for (let t = 0; t <= anim.ms; t += 25) {
+            expect(carcassFadeOf(anim, t)).toBe(fadeOf(anim, t));
         }
     });
 });

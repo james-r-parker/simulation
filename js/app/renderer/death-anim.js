@@ -173,6 +173,16 @@ export function laneOf(anim, elapsedMs) {
     return tearOf(anim, elapsedMs) + fadeOf(anim, elapsedMs);
 }
 
+/**
+ * @param {DeathAnim} anim the animation
+ * @param {number} elapsedMs wall time since the death began
+ * @returns {number} how far the carcass the kill leaves is faded in: 0 until the leaving beat, then a smooth rise to 1
+ *   as the body fades out (the same curve as `fadeOf`, so the two cross-fade)
+ */
+export function carcassFadeOf(anim, elapsedMs) {
+    return fadeOf(anim, elapsedMs);
+}
+
 const QUARTER = Math.PI / 2;
 
 /**
