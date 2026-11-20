@@ -14,9 +14,10 @@ const HOLDOUT_FROM = 128;
 
 /**
  * @typedef {object} Tunable
- * @property {string} key a trainer option, or a ladder entry key
- * @property {string} [stage] the stage the key belongs to (none: a trainer option, or every gated stage)
- * @property {number[]} values the values to try
+ * @property {string} [key] a trainer option, or a ladder entry key (single-key tunable)
+ * @property {string} [name] a bundled tunable's name (required when `key` is absent)
+ * @property {string} [stage] the stage the key(s) belong to (none: a trainer option, or every gated stage)
+ * @property {Array<number | Record<string, number>>} values the values (numbers, or `{key: value}` bundles) to try
  */
 
 /**
@@ -57,11 +58,34 @@ const offsets = (from) => Array.from({ length: OFFSET_COUNT }, (_, i) => from + 
 const numbers = (value) => Array.isArray(value) && value.length > 0 && value.every(Number.isFinite);
 
 /**
- * @param {any} t a tunable as read from the spec
- * @returns {boolean} whether it has a key, a stage that is absent or a name, and numeric values
+ * @param {unknown} value a value
+ * @returns {boolean} whether it is a non-empty `{key: finiteNumber}` bundle
  */
-const validTunable = (t) =>
-    typeof t?.key === 'string' && numbers(t.values) && (t.stage === undefined || typeof t.stage === 'string');
+const bundle = (value) =>
+    value !== null &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    Object.keys(value).length > 0 &&
+    Object.values(value).every(Number.isFinite);
+
+/**
+ * @param {any} t a tunable as read from the spec
+ * @returns {boolean} whether its values match either a single-key or bundled tunable
+ */
+const validValues = (t) =>
+    (typeof t.key === 'string' && numbers(t.values)) ||
+    (typeof (t.name ?? t.key) === 'string' && t.values.every(bundle));
+
+/**
+ * @param {any} t a tunable as read from the spec
+ * @returns {boolean} whether it is a valid single-key or bundled tunable
+ */
+function validTunable(t) {
+    if (!t || (t.stage !== undefined && typeof t.stage !== 'string')) {
+        return false;
+    }
+    return Array.isArray(t.values) && t.values.length > 0 && validValues(t);
+}
 
 /**
  * @param {Record<string, any>} spec a spec as read from its file
@@ -141,27 +165,43 @@ function trained(ladder, until) {
 
 /**
  * @param {Tunable} tunable a tunable
- * @param {number} value one of its values
+ * @param {number | Record<string, number>} value one of its values or bundles
+ * @returns {Array<[string, number]>} sorted `[key, value]` pairs
+ */
+function valuePairs(tunable, value) {
+    if (typeof value === 'number') {
+        return [[/** @type {string} */ (tunable.key), value]];
+    }
+    return Object.entries(value).sort(([a], [b]) => a.localeCompare(b));
+}
+
+/**
+ * @param {Tunable} tunable a tunable
+ * @param {number | Record<string, number>} value one of its values or bundles
  * @param {Now} now the trained ladder and the trainer options
- * @returns {TuneArm | null} the one-change arm, or null when the value is the current one (or no stage is left to change)
+ * @returns {TuneArm | null} the arm, or null when every key already has that value (or no stage is left to change)
  */
 function armFor(tunable, value, { ladder, train }) {
-    const { key, stage } = tunable;
-    const name = `${key}${stage === undefined ? '' : `-${stage}`}-${value}`;
-    if (stage === undefined && TRAIN_KEYS.includes(key)) {
-        return (train[key] ?? TRAIN_DEFAULTS[key]) === value
-            ? null
-            : { name, signature: `train.${key}=${value}`, overlay: { train: { [key]: value } } };
+    const { stage } = tunable;
+    const pairs = valuePairs(tunable, value);
+    const label = pairs.map(([k, v]) => `${k}=${v}`).join(',');
+    const stem = tunable.name ?? tunable.key ?? 'bundle';
+    const suffix = typeof value === 'number' ? String(value) : pairs.map(([k, v]) => `${k}-${v}`).join('-');
+    const name = `${stem}${stage === undefined ? '' : `-${stage}`}-${suffix}`;
+    if (stage === undefined && pairs.every(([k]) => TRAIN_KEYS.includes(k))) {
+        const unchanged = pairs.every(([k, v]) => (train[k] ?? TRAIN_DEFAULTS[k]) === v);
+        return unchanged ? null : { name, signature: `train.${label}`, overlay: { train: Object.fromEntries(pairs) } };
     }
     const entries = ladder.filter((entry) => (stage === undefined ? entry.gate !== undefined : entry.name === stage));
-    const changed = entries.filter((entry) => entry[key] !== value);
+    const changed = entries.filter((entry) => pairs.some(([k, v]) => entry[k] !== v));
     if (changed.length === 0) {
         return null;
     }
+    const patch = Object.fromEntries(pairs);
     return {
         name,
-        signature: `stages.${stage ?? '*'}.${key}=${value}`,
-        overlay: { stages: Object.fromEntries(changed.map((entry) => [entry.name, { [key]: value }])) },
+        signature: `stages.${stage ?? '*'}.${label}`,
+        overlay: { stages: Object.fromEntries(changed.map((entry) => [entry.name, { ...patch }])) },
     };
 }
 
@@ -171,6 +211,9 @@ function armFor(tunable, value, { ladder, train }) {
  * @returns {number} its current value (NaN when it has none; for a key of every gated stage, the first one's)
  */
 function currentValue({ key, stage }, { ladder, train }) {
+    if (key === undefined) {
+        return NaN;
+    }
     const entry = ladder.find((e) => (stage === undefined ? e.gate !== undefined : e.name === stage));
     return Number(entry?.[key] ?? train[key] ?? TRAIN_DEFAULTS[key] ?? NaN);
 }
@@ -180,7 +223,7 @@ function currentValue({ key, stage }, { ladder, train }) {
  * @param {readonly Record<string, any>[]} ladder the current ladder's entries
  * @param {readonly {ladderHash: string, signature: string}[]} history the arms screened before, each with the hash of the
  *   ladder it was a change to
- * @returns {TuneArm[]} up to `spec.maxArms` one-change arms: values equal to the current one and arms already screened at
+ * @returns {TuneArm[]} up to `spec.maxArms` arms: values equal to the current one and arms already screened at
  *   this ladder's hash are left out; the rest go round-robin over the tunables, each tunable's nearest value first
  */
 export function proposeArms(spec, ladder, history) {
@@ -190,8 +233,12 @@ export function proposeArms(spec, ladder, history) {
     const seen = new Set(history.filter((h) => h.ladderHash === hash).map((h) => h.signature));
     const queues = tunables.map((tunable) => {
         const current = currentValue(tunable, now);
-        return [...tunable.values]
-            .sort((a, b) => Math.abs(a - current) - Math.abs(b - current) || a - b)
+        const values = numbers(tunable.values)
+            ? [.../** @type {number[]} */ (tunable.values)].sort(
+                  (a, b) => Math.abs(a - current) - Math.abs(b - current) || a - b,
+              )
+            : tunable.values;
+        return values
             .map((value) => armFor(tunable, value, now))
             .filter((arm) => arm !== null && !seen.has(arm.signature));
     });
