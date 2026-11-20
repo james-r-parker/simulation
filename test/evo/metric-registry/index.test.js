@@ -18,7 +18,7 @@ const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-name
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(371);
+        expect(REPORT_NAMES).toHaveLength(375);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -106,6 +106,10 @@ describe('withPower', () => {
  */
 /** Metrics registered after the snapshot was taken (T25 added the mean beside the renamed median). */
 const ADDED_AFTER_T8 = [
+    'eval.hunter_catches_per_1k_settled',
+    'eval.hunter_kills_per_life_mean_settled',
+    'eval.hunter_juvenile_death_share_settled',
+    'eval.pursuit_kill_share_settled',
     'eval.food_energy_per_1k@20k',
     'eval.carcass_loss_share.lost',
     'eval.carcass_loss_share.eaten',
