@@ -284,7 +284,9 @@ async function runGeneration(run, { drillTrials, gateTrials, crossTrials, print 
     run.cpuSeconds += busy;
     const fields = { generation, stage: stage.name, coverage: coverage(archive), qdScore: qdScore(archive) };
     log.log('info', 'TrainGeneration', { ...fields, wallSeconds, cpuShare, offers: outcomes });
+    const tCheckpoint = performance.now();
     const checkpoint = await maybeCheckpoint(run, { drillTrials, gateTrials, crossTrials });
+    const checkpointSeconds = (performance.now() - tCheckpoint) / 1000;
     const stepped = advance(run.state, checkpoint, log);
     const { columns } = stepped;
     const state = applySteer({ before: run.state, after: stepped.state, steer: checkpoint?.steer }, log);
@@ -292,6 +294,7 @@ async function runGeneration(run, { drillTrials, gateTrials, crossTrials, print 
     keepPassers(run, { checkpoint, columns, stage });
     keepPool(run, { checkpoint, columns, stage: stage.name });
     const pool = poolOn(stages) ? { pool: poolIndex(run.pool) } : {};
+    const tSave = performance.now();
     saveArchive(args.out, { archive, stages, generation, state, keepers: run.keepers, ...pool });
     saveManifest(run);
     if (checkpoint !== null) {
@@ -299,6 +302,16 @@ async function runGeneration(run, { drillTrials, gateTrials, crossTrials, print 
         run.lastPoint = { ...checkpoint.point, ...columns, ...cpu, ...curveFields(difficulty, checkpoint.steer) };
         appendCurveRow(args.out, run.lastPoint);
     }
+    const saveSeconds = (performance.now() - tSave) / 1000;
+    log.log('info', 'TrainTiming', {
+        generation,
+        stage: stage.name,
+        workers: run.workers,
+        busySeconds: busy,
+        episodeSeconds: wallSeconds,
+        checkpointSeconds,
+        saveSeconds,
+    });
     print(
         `generation ${generation} ${stage.name} coverage ${fields.coverage.toFixed(3)} qd ${fields.qdScore.toFixed(2)} wall ${wallSeconds.toFixed(1)}s cpu ${(cpuShare * 100).toFixed(0)}%`,
     );
