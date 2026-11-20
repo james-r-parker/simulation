@@ -189,23 +189,34 @@ function deathMetrics(scene) {
 }
 
 /**
+ * @param {Record<string, any>} world the world at the last tick
+ * @returns {{ lives: number, zero: number, kills: number }} the hunters alive at the last tick: how many, how many with no
+ *   kill so far, and their kills so far; all 0 for a world without agents
+ */
+function aliveHunterLives(world) {
+    const alive = { lives: 0, zero: 0, kills: 0 };
+    if (world.alive === undefined || world.ledgerKills === undefined) {
+        return alive;
+    }
+    for (let slot = 0; slot < world.alive.length; slot++) {
+        if (world.alive[slot] === 1 && world.huntBySpec[world.spec[slot]] === 1) {
+            alive.lives += 1;
+            alive.zero += world.ledgerKills[slot] === 0 ? 1 : 0;
+            alive.kills += world.ledgerKills[slot];
+        }
+    }
+    return alive;
+}
+
+/**
  * @param {Record<string, any>} scene the hunter scene
  * @param {Record<string, any>} world the world at the last tick
  * @returns {import('./metrics-stats.js').MetricResult} the share of hunter lives after burn-in with no kill: the deaths,
  *   and each hunter alive at the last tick with its kills so far
  */
 function zeroKillShare(scene, world) {
-    let lives = scene.lives;
-    let zero = scene.zeroKill;
-    if (world.alive !== undefined && world.ledgerKills !== undefined) {
-        for (let slot = 0; slot < world.alive.length; slot++) {
-            if (world.alive[slot] === 1 && world.huntBySpec[world.spec[slot]] === 1) {
-                lives += 1;
-                zero += world.ledgerKills[slot] === 0 ? 1 : 0;
-            }
-        }
-    }
-    return share(zero, lives, 'no hunter life after burn-in');
+    const alive = aliveHunterLives(world);
+    return share(scene.zeroKill + alive.zero, scene.lives + alive.lives, 'no hunter life after burn-in');
 }
 
 /**
@@ -215,17 +226,9 @@ function zeroKillShare(scene, world) {
  *   after `BURN_IN_TICKS`, and each hunter alive at the last tick with its kills so far (the lives of `zeroKillShare`)
  */
 function settledKillsPerLife(scene, world) {
-    let lives = scene.lives;
-    let kills = scene.settledKills;
-    if (world.alive !== undefined && world.ledgerKills !== undefined) {
-        for (let slot = 0; slot < world.alive.length; slot++) {
-            if (world.alive[slot] === 1 && world.huntBySpec[world.spec[slot]] === 1) {
-                lives += 1;
-                kills += world.ledgerKills[slot];
-            }
-        }
-    }
-    return lives > 0 ? ok(kills / lives) : none('no hunter life after burn-in');
+    const alive = aliveHunterLives(world);
+    const lives = scene.lives + alive.lives;
+    return lives > 0 ? ok((scene.settledKills + alive.kills) / lives) : none('no hunter life after burn-in');
 }
 
 /**

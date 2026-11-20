@@ -32,7 +32,7 @@ function killRecord(age, count) {
 }
 
 /**
- * @param {{age: number, kills: number, source?: number}} life a dying hunter
+ * @param {{age: number, kills: number, source?: number, tick?: number}} life a dying hunter
  * @returns {Float64Array} a ring holding one `HunterLedger` record at offset 0
  */
 function deathRecord({ age, kills, source = BIRTH_SOURCE.INITIAL, tick = 1 }) {

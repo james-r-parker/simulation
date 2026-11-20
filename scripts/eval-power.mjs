@@ -262,7 +262,7 @@ export function powerRow(report, metric, { size, splits, powerSplits, includeWat
     if (skipped !== null) {
         return { ...base, note: skipped };
     }
-    const direction = declared === 'watch' ? intendedDirection(metric) : declared;
+    const direction = /** @type {string} */ (declared === 'watch' ? intendedDirection(metric) : declared);
     const rng = fork(createRng(1), `power-${metric}-${size}`);
     const none = countVerdicts(report, metric, { size, splits, shift: 0, direction, rng });
     if (none.valid === 0) {
