@@ -5,7 +5,7 @@ import { parseArgs } from '../scripts/train-feasible.mjs';
 describe('train:feasible arguments', () => {
     it('needs a curriculum and defaults to the probe sizes', () => {
         expect(() => parseArgs([])).toThrow(/--curriculum is required/);
-        const args = parseArgs(['--curriculum', 'evals/train-ladder.json']);
+        const args = parseArgs(['--curriculum', 'ladder.json']);
         expect(args).toMatchObject({ generations: 200, seeds: 8, population: 64, trials: 4, until: null, out: null });
     });
 

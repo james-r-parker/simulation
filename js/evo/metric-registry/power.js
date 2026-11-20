@@ -11,7 +11,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.000001415681428760264,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.alarm_hearers_per_call': Object.freeze({
         fpr16: null,
@@ -21,7 +21,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 5.389330922242316,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.alarm_hunter_hearers_per_call': Object.freeze({
         fpr16: null,
@@ -31,7 +31,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.3353174603174603,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.alarm_lift': Object.freeze({
         fpr16: null,
@@ -41,7 +41,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.10745176194067703,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.alarm_rate': Object.freeze({
         fpr16: 0,
@@ -51,7 +51,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.000021756969524156585,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.alarm_response': Object.freeze({
         fpr16: null,
@@ -61,7 +61,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: -0.04165172268802524,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.ambush_kill_share': Object.freeze({
         fpr16: 0,
@@ -71,7 +71,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: null,
         referenceMean: 0.0005703867872023742,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.archive_lineage_share': Object.freeze({
         fpr16: 0.011,
@@ -81,7 +81,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.05949436656807045,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_cluster_divergence': Object.freeze({
         fpr16: null,
@@ -91,7 +91,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.3750752810145706,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_divergence': Object.freeze({
         fpr16: null,
@@ -101,7 +101,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.4294920141242467,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_families': Object.freeze({
         fpr16: 0.044386422976501305,
@@ -111,7 +111,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 1.2271113169677315,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_families.east': Object.freeze({
         fpr16: 0.05,
@@ -121,7 +121,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.5,
         referenceMean: 1.1625306372549025,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_families.west': Object.freeze({
         fpr16: 0.044,
@@ -131,7 +131,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: 1.2725183823529418,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_family_effective': Object.freeze({
         fpr16: 0.07275132275132275,
@@ -141,7 +141,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 1.000913226106494,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_family_effective.east': Object.freeze({
         fpr16: 0.048,
@@ -151,7 +151,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: 0.9851239167728489,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_family_effective.west': Object.freeze({
         fpr16: 0.055,
@@ -161,7 +161,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: 1.0010632662822248,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_lineage_effective': Object.freeze({
         fpr16: 0.05827814569536424,
@@ -171,7 +171,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: null,
         referenceMean: 0.9786696043537212,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_lineage_effective.east': Object.freeze({
         fpr16: 0.062,
@@ -181,7 +181,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: 0.9504631761398364,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_lineage_effective.west': Object.freeze({
         fpr16: 0.058,
@@ -191,7 +191,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: 0.9915843199995794,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_lineages_alive': Object.freeze({
         fpr16: 0.054376657824933686,
@@ -201,7 +201,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 1.1136328547166898,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_lineages_alive.east': Object.freeze({
         fpr16: 0.058,
@@ -211,7 +211,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.5,
         referenceMean: 1.0623468137254903,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_lineages_alive.west': Object.freeze({
         fpr16: 0.059,
@@ -221,7 +221,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.5,
         referenceMean: 1.1475183823529411,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_pop_cv': Object.freeze({
         fpr16: 0.083,
@@ -231,7 +231,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.5,
         referenceMean: 0.8960500633889652,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_recolonisations': Object.freeze({
         fpr16: 0.015,
@@ -241,7 +241,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.296875,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.basin_spec_divergence': Object.freeze({
         fpr16: null,
@@ -251,7 +251,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.4839087472339225,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.behaviour_coverage': Object.freeze({
         fpr16: 0.03,
@@ -261,7 +261,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.16960937499999998,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.birth_source_share.floor': Object.freeze({
         fpr16: 0,
@@ -271,7 +271,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.0034425384088904686,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.birth_source_share.immigrant': Object.freeze({
         fpr16: 0,
@@ -281,7 +281,7 @@ export const POWER = Object.freeze({
         mde32: 0.02,
         mde64: 0.02,
         referenceMean: 0,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.birth_source_share.mate': Object.freeze({
         fpr16: 0.053,
@@ -291,7 +291,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.075,
         referenceMean: 0.4161462221360075,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.birth_source_share.split': Object.freeze({
         fpr16: 0.045,
@@ -301,7 +301,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.075,
         referenceMean: 0.5804112394551021,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.births_per_1k': Object.freeze({
         fpr16: 0.036,
@@ -311,7 +311,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.2085761643002149,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.bite_idle': Object.freeze({
         fpr16: 0.045,
@@ -321,7 +321,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.6095781247024662,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.bite_off_kin_view': Object.freeze({
         fpr16: 0.064,
@@ -331,7 +331,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.7164892128450383,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.bite_off_other_view': Object.freeze({
         fpr16: 0.074,
@@ -341,7 +341,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.712531157982922,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.bite_on_prey_view': Object.freeze({
         fpr16: 0,
@@ -351,7 +351,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.989203340638765,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.bite_wish_with_kin_in_jaws': Object.freeze({
         fpr16: 0.05,
@@ -361,7 +361,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 0.669201673648223,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.bite_wish_with_other_in_jaws': Object.freeze({
         fpr16: null,
@@ -371,7 +371,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.7409263684593459,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.bite_wish_with_prey_in_jaws': Object.freeze({
         fpr16: 0,
@@ -381,7 +381,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.03,
         referenceMean: 0.9966938368621066,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.body_plan_coverage': Object.freeze({
         fpr16: 0.045,
@@ -391,7 +391,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.18249999999999966,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.boom_bust_count': Object.freeze({
         fpr16: 0.054,
@@ -401,7 +401,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.5,
         referenceMean: 2.015625,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.born_share': Object.freeze({
         fpr16: 0,
@@ -411,7 +411,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.9965574615911098,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.call_opportunity_kin': Object.freeze({
         fpr16: 0.073,
@@ -421,7 +421,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: 3.87744234213949,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.call_opportunity_neighbours': Object.freeze({
         fpr16: 0.082,
@@ -431,7 +431,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: 4.160700899025189,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.cap_share': Object.freeze({
         fpr16: 0.092,
@@ -441,7 +441,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.075,
         referenceMean: 0.07329842931937172,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.carcass_hunter_share': Object.freeze({
         fpr16: 0.098,
@@ -451,7 +451,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.8291246236231825,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.carcass_loss_share.eaten': Object.freeze({
         fpr16: 0.049,
@@ -461,7 +461,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.6112309131121426,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.carcass_loss_share.faded': Object.freeze({
         fpr16: 0.059,
@@ -471,7 +471,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.31917759107641813,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.carcass_loss_share.lost': Object.freeze({
         fpr16: 0.098,
@@ -481,7 +481,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.05,
         referenceMean: 0.0693158651784275,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.carcass_lost_per_1k': Object.freeze({
         fpr16: 0.045,
@@ -491,7 +491,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.5,
         referenceMean: 107.99590767754852,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.carcass_meal_share': Object.freeze({
         fpr16: 0.086,
@@ -501,7 +501,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.075,
         referenceMean: 0.1887524568693011,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.champion_elo': Object.freeze({
         fpr16: null,
@@ -511,7 +511,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.champion_win_rate': Object.freeze({
         fpr16: null,
@@ -521,7 +521,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chance_food_energy_per_1k': Object.freeze({
         fpr16: 0.058,
@@ -531,7 +531,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 262.90818971483793,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chase_catch_share': Object.freeze({
         fpr16: 0.0451527224435591,
@@ -541,7 +541,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: null,
         referenceMean: 0.26574309286921927,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chase_cover_use_share': Object.freeze({
         fpr16: 0,
@@ -551,7 +551,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: null,
         referenceMean: 0.0024404459908493837,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chase_escape_share': Object.freeze({
         fpr16: 0.05170068027210884,
@@ -561,7 +561,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: null,
         referenceMean: 0.33640146623637174,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chase_failed_energy': Object.freeze({
         fpr16: 0.0453920220082531,
@@ -571,7 +571,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: null,
         referenceMean: -65.38233307022752,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chase_giveup_share': Object.freeze({
         fpr16: 0.044854881266490766,
@@ -581,7 +581,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: null,
         referenceMean: 0.39785544089440894,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chase_lost_share': Object.freeze({
         fpr16: 0.030343007915567283,
@@ -591,7 +591,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: null,
         referenceMean: 0.14808727369056326,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chase_net_energy': Object.freeze({
         fpr16: 0.04954367666232073,
@@ -601,7 +601,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 62.99280385237036,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chase_outrun_share': Object.freeze({
         fpr16: 0.04249667994687915,
@@ -611,7 +611,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.14834847919009636,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chase_overshoot_share': Object.freeze({
         fpr16: 0.05966277561608301,
@@ -621,7 +621,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.30302571999051514,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chase_quit_share': Object.freeze({
         fpr16: 0.019021739130434784,
@@ -631,7 +631,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: null,
         referenceMean: 0.1014196880137493,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chase_reacquire_share': Object.freeze({
         fpr16: 0.036585365853658534,
@@ -641,7 +641,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: null,
         referenceMean: 0.39396979645845914,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chase_shaken_share': Object.freeze({
         fpr16: 0.05053191489361702,
@@ -651,7 +651,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.6328372191170314,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chase_sprint_lift': Object.freeze({
         fpr16: 0.0907911802853437,
@@ -661,7 +661,7 @@ export const POWER = Object.freeze({
         mde32: 1,
         mde64: null,
         referenceMean: 1.116550863388974,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chase_ticks_p50': Object.freeze({
         fpr16: 0.02099737532808399,
@@ -671,7 +671,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: null,
         referenceMean: 46.31496062992126,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chase_ticks_p90': Object.freeze({
         fpr16: 0.05473965287049399,
@@ -681,7 +681,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 104.73228346456693,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.chase_turn_jitter': Object.freeze({
         fpr16: 0.024934383202099737,
@@ -691,7 +691,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: null,
         referenceMean: 0.2151128402377202,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.child_survival': Object.freeze({
         fpr16: 0.036,
@@ -701,7 +701,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.8889444179600119,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.childshare_by_condition': Object.freeze({
         fpr16: 0.079,
@@ -711,7 +711,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.00029149991184167646,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.circling_share': Object.freeze({
         fpr16: 0,
@@ -721,7 +721,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.009322910985377264,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.cold_margin_use_under_threat': Object.freeze({
         fpr16: 0.06630581867388363,
@@ -731,7 +731,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: -0.02278799253168873,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.cold_stress_share': Object.freeze({
         fpr16: 0.055,
@@ -741,7 +741,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.03,
         referenceMean: 0.11971774837655523,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.collision_death_share': Object.freeze({
         fpr16: 0.045,
@@ -751,7 +751,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.05,
         referenceMean: 0.24214799189137692,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.condition_gait_shift': Object.freeze({
         fpr16: 0,
@@ -761,7 +761,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.1235422524361242,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.coverage': Object.freeze({
         fpr16: 0.04,
@@ -771,7 +771,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.15115625000000002,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.defender_repel_per_1k': Object.freeze({
         fpr16: 0,
@@ -781,7 +781,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.deliberate_food_energy_per_1k': Object.freeze({
         fpr16: 0.046,
@@ -791,7 +791,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 159.3058476517012,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.deliberate_food_share': Object.freeze({
         fpr16: 0.048,
@@ -801,7 +801,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.03,
         referenceMean: 0.374308563626411,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.deliberate_food_trend': Object.freeze({
         fpr16: 0.037,
@@ -811,7 +811,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.01554196204102785,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.density_intake_slope': Object.freeze({
         fpr16: 0.044,
@@ -821,7 +821,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: 1,
         referenceMean: -0.11296541063640862,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.density_starve_slope': Object.freeze({
         fpr16: 0.065,
@@ -831,7 +831,7 @@ export const POWER = Object.freeze({
         mde32: 1,
         mde64: 0.75,
         referenceMean: -0.273780079945537,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.disease_deaths_share': Object.freeze({
         fpr16: 0,
@@ -841,7 +841,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.01878239069600608,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.disease_frequency_slope': Object.freeze({
         fpr16: 0.07,
@@ -851,7 +851,7 @@ export const POWER = Object.freeze({
         mde32: 1,
         mde64: 0.75,
         referenceMean: 0.023236325391328735,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.diversity': Object.freeze({
         fpr16: 0.044,
@@ -861,7 +861,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 0.07261705884660972,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.dung_food_share': Object.freeze({
         fpr16: 0.048,
@@ -871,7 +871,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.05,
         referenceMean: 0.22699293805387233,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_birth_death_ratio': Object.freeze({
         fpr16: null,
@@ -881,7 +881,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 1.1194904468389553,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_deaths_per_prey': Object.freeze({
         fpr16: null,
@@ -891,7 +891,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.20791050489598034,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_eaten_per_prey': Object.freeze({
         fpr16: null,
@@ -901,7 +901,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.04049769055068602,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_hunters_per_prey': Object.freeze({
         fpr16: null,
@@ -911,7 +911,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.07207130273872245,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_intake_ratio': Object.freeze({
         fpr16: null,
@@ -921,7 +921,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 1.1384489827209447,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_mate_births_per_prey': Object.freeze({
         fpr16: null,
@@ -931,7 +931,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.07240229012165761,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_ref_eaten_per_prey': Object.freeze({
         fpr16: 0.052,
@@ -941,7 +941,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.5,
         referenceMean: 0.05061056208959084,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_ref_mate_births_per_prey': Object.freeze({
         fpr16: 0.049,
@@ -951,7 +951,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 0.0928020430375904,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_ref_split_births_per_prey': Object.freeze({
         fpr16: 0.063,
@@ -961,7 +961,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: 0.2,
         referenceMean: 0.11770228289523431,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_ref_starve_per_prey': Object.freeze({
         fpr16: 0.06,
@@ -971,7 +971,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.09075583003401567,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_split_births_per_prey': Object.freeze({
         fpr16: null,
@@ -981,7 +981,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.15894966133098884,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_split_blocked_share.energy': Object.freeze({
         fpr16: null,
@@ -991,7 +991,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.31878709439021924,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_split_blocked_share.merit': Object.freeze({
         fpr16: null,
@@ -1001,7 +1001,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.05902827097549479,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_split_blocked_share.other': Object.freeze({
         fpr16: null,
@@ -1011,7 +1011,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.0007893662330205442,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_split_blocked_share.proof': Object.freeze({
         fpr16: null,
@@ -1021,7 +1021,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.011414803433385422,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_split_blocked_share.seen': Object.freeze({
         fpr16: null,
@@ -1031,7 +1031,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.609880216561226,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.edge_starve_per_prey': Object.freeze({
         fpr16: null,
@@ -1041,7 +1041,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.10028079947240442,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.energy_over_split': Object.freeze({
         fpr16: 0.048,
@@ -1051,7 +1051,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.1,
         referenceMean: 1.1522299251930632,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.escape_share': Object.freeze({
         fpr16: 0.088,
@@ -1061,7 +1061,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.05,
         referenceMean: 0.3233349738374197,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.established_share': Object.freeze({
         fpr16: 0.025,
@@ -1071,7 +1071,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.29696660015205967,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.evasion_response_share': Object.freeze({
         fpr16: 0.04,
@@ -1081,7 +1081,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.05,
         referenceMean: 0.08985567801737657,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.evasion_trend': Object.freeze({
         fpr16: null,
@@ -1091,7 +1091,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: -0.011861135675638203,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.fat_speed_ratio': Object.freeze({
         fpr16: 0.047,
@@ -1101,7 +1101,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.1,
         referenceMean: 1.035033503629328,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.fed_median_lifespan': Object.freeze({
         fpr16: 0.052,
@@ -1111,7 +1111,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 4124.24609375,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.fitness_lrs_corr': Object.freeze({
         fpr16: 0,
@@ -1121,7 +1121,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.1,
         referenceMean: 0.8385500986569928,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.flee_sprint_lift': Object.freeze({
         fpr16: null,
@@ -1131,7 +1131,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 1.1052279918490346,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.floor_episodes': Object.freeze({
         fpr16: 0.015,
@@ -1141,7 +1141,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.328125,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.flora_hue_spread': Object.freeze({
         fpr16: 0.043,
@@ -1151,7 +1151,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: 0.008916793659948916,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.flora_patch_death_rate': Object.freeze({
         fpr16: 0,
@@ -1161,7 +1161,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.flora_patch_pool_full_share': Object.freeze({
         fpr16: 0.038,
@@ -1171,7 +1171,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: 0.2,
         referenceMean: 0.4616776315789474,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.flora_seed_bank_occupancy_share': Object.freeze({
         fpr16: 0,
@@ -1181,7 +1181,7 @@ export const POWER = Object.freeze({
         mde32: 0.02,
         mde64: 0.02,
         referenceMean: 0,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.food_contact_bite_share': Object.freeze({
         fpr16: 0.081,
@@ -1191,7 +1191,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.075,
         referenceMean: 0.09715058163432286,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.food_energy_per_1k': Object.freeze({
         fpr16: 0.05,
@@ -1201,7 +1201,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 422.25852928835985,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.food_energy_per_1k@20k': Object.freeze({
         fpr16: 0.041,
@@ -1211,7 +1211,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 381.0716887163261,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.food_species_share.berry': Object.freeze({
         fpr16: 0.118,
@@ -1221,7 +1221,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.05,
         referenceMean: 0.05851886119997255,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.food_species_share.flower': Object.freeze({
         fpr16: 0.044,
@@ -1231,7 +1231,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.075,
         referenceMean: 0.14430634638657125,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.food_species_share.fungus': Object.freeze({
         fpr16: 0.044,
@@ -1241,7 +1241,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.05,
         referenceMean: 0.2330799636238865,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.food_species_share.grass': Object.freeze({
         fpr16: 0.06,
@@ -1251,7 +1251,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.05,
         referenceMean: 0.5471532106129858,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.food_species_share.nut': Object.freeze({
         fpr16: 0,
@@ -1261,7 +1261,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.016815212381513154,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.food_species_share.toxiccap': Object.freeze({
         fpr16: 0,
@@ -1271,7 +1271,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.00012640579507077748,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.food_standing_share': Object.freeze({
         fpr16: 0.016,
@@ -1281,7 +1281,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.973330061082025,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.freeze_survival_gain': Object.freeze({
         fpr16: 0.054,
@@ -1291,7 +1291,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.0008938017808532974,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.freeze_under_threat': Object.freeze({
         fpr16: 0.07,
@@ -1301,7 +1301,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: -0.11208478188239224,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.full_contact_bite_share': Object.freeze({
         fpr16: 0.079,
@@ -1311,7 +1311,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.05,
         referenceMean: 0.07600562243905067,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.gap_crossers': Object.freeze({
         fpr16: 0.075,
@@ -1321,7 +1321,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: 0.75,
         referenceMean: 37.7135818090999,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.gap_never_share': Object.freeze({
         fpr16: 0.053,
@@ -1331,7 +1331,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.7272927878821479,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.generation_depth_p90': Object.freeze({
         fpr16: 0.055,
@@ -1341,7 +1341,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 59.81015625,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.graze_speed_ratio': Object.freeze({
         fpr16: 0.055,
@@ -1351,7 +1351,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.8178351586655285,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.graze_time_share': Object.freeze({
         fpr16: 0.042,
@@ -1361,7 +1361,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.075,
         referenceMean: 0.6832587834839583,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.guild_share.defender': Object.freeze({
         fpr16: 0.051,
@@ -1371,7 +1371,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.075,
         referenceMean: 0.23823867712630914,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.guild_share.forager': Object.freeze({
         fpr16: 0.041,
@@ -1381,7 +1381,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.22995169712554814,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.guild_share.reproducer': Object.freeze({
         fpr16: 0.06,
@@ -1391,7 +1391,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.22139183103744467,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.guild_share.scout': Object.freeze({
         fpr16: 0.049,
@@ -1401,7 +1401,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.273188206539954,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.guild_survival.defender': Object.freeze({
         fpr16: 0.002,
@@ -1411,7 +1411,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.06845956634191973,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.guild_survival.forager': Object.freeze({
         fpr16: 0.003,
@@ -1421,7 +1421,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.06933459130160802,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.guild_survival.reproducer': Object.freeze({
         fpr16: 0.001,
@@ -1431,7 +1431,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.06756188866828276,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.guild_survival.scout': Object.freeze({
         fpr16: 0.014,
@@ -1441,7 +1441,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.05,
         referenceMean: 0.06988419057378184,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.heat_stress_share': Object.freeze({
         fpr16: 0.047,
@@ -1451,7 +1451,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.03,
         referenceMean: 0.19911434734847422,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hebb_drift': Object.freeze({
         fpr16: 0.059,
@@ -1461,7 +1461,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 0.0673336645149276,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hebb_drift_clamped_share': Object.freeze({
         fpr16: 0,
@@ -1471,7 +1471,7 @@ export const POWER = Object.freeze({
         mde32: 0.02,
         mde64: 0.02,
         referenceMean: 0,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.herd_animals': Object.freeze({
         fpr16: 0,
@@ -1481,7 +1481,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.1,
         referenceMean: 43.2400082236842,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.herd_carcass_meal_share': Object.freeze({
         fpr16: 0.071,
@@ -1491,7 +1491,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.075,
         referenceMean: 0.03465576835037401,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.herd_carcass_share.defender': Object.freeze({
         fpr16: 0,
@@ -1501,7 +1501,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.0010863522498354298,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.herd_carcass_share.forager': Object.freeze({
         fpr16: 0,
@@ -1511,7 +1511,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.0010444041523475808,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.herd_carcass_share.predator': Object.freeze({
         fpr16: 0.04087193460490463,
@@ -1521,7 +1521,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: null,
         referenceMean: 0.029587914320954395,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.herd_carcass_share.reproducer': Object.freeze({
         fpr16: 0,
@@ -1531,7 +1531,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.0011392800390829774,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.herd_carcass_share.scout': Object.freeze({
         fpr16: 0,
@@ -1541,7 +1541,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.0010728236409302762,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.herd_dodge_share': Object.freeze({
         fpr16: 0.051181102362204724,
@@ -1551,7 +1551,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.9737242811639353,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.herd_follow_share': Object.freeze({
         fpr16: null,
@@ -1561,7 +1561,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 3.581362097382786,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.herd_gap_crossings': Object.freeze({
         fpr16: 0.102,
@@ -1571,7 +1571,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: 0.75,
         referenceMean: 4.383223684210524,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.herd_grazed_share': Object.freeze({
         fpr16: 0.06,
@@ -1581,7 +1581,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.05,
         referenceMean: 0.44884937855882245,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.herd_recolonisations': Object.freeze({
         fpr16: 0,
@@ -1591,7 +1591,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.herd_season_shift': Object.freeze({
         fpr16: 0.052,
@@ -1601,7 +1601,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: 0.2,
         referenceMean: 0.4479941716269842,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.herd_seeded_patches': Object.freeze({
         fpr16: 0.043,
@@ -1611,7 +1611,7 @@ export const POWER = Object.freeze({
         mde32: 1,
         mde64: 0.75,
         referenceMean: 0.006126644736842109,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.herd_stampede_rate': Object.freeze({
         fpr16: 0.061,
@@ -1621,7 +1621,7 @@ export const POWER = Object.freeze({
         mde32: 0.75,
         mde64: 0.5,
         referenceMean: 38.92310855263158,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hidden_persistence': Object.freeze({
         fpr16: 0,
@@ -1631,7 +1631,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.1,
         referenceMean: 0.8747115179411848,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunt_abort_rate': Object.freeze({
         fpr16: 0.04330708661417323,
@@ -1641,7 +1641,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.39211891550731304,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunt_call_answer': Object.freeze({
         fpr16: null,
@@ -1651,7 +1651,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunt_call_lift': Object.freeze({
         fpr16: null,
@@ -1661,7 +1661,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_birth_source_share.floor': Object.freeze({
         fpr16: 0.014,
@@ -1671,7 +1671,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.012267746126118426,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_birth_source_share.initial': Object.freeze({
         fpr16: 0.126,
@@ -1681,7 +1681,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.05,
         referenceMean: 0.0659087393759992,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_birth_source_share.mate-hunter-parent': Object.freeze({
         fpr16: 0,
@@ -1691,7 +1691,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.005500104765091016,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_birth_source_share.spec-flip': Object.freeze({
         fpr16: 0.1,
@@ -1701,7 +1701,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.05,
         referenceMean: 0.06935958576817228,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_birth_source_share.split-hunter-parent': Object.freeze({
         fpr16: 0.116,
@@ -1711,7 +1711,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.8469638239646192,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_carrion_idle_share': Object.freeze({
         fpr16: 0,
@@ -1721,7 +1721,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.009532417062804287,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_catches_per_1k': Object.freeze({
         fpr16: 0.054,
@@ -1731,7 +1731,17 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: 0.2,
         referenceMean: 1.290266873620893,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
+    }),
+    'eval.hunter_catches_per_1k_settled': Object.freeze({
+        fpr16: 0.04,
+        fpr32: 0.061,
+        fpr64: 0.075,
+        mde16: 0.5,
+        mde32: 0.3,
+        mde64: 0.2,
+        referenceMean: 1.3849100816147042,
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_chases_by_age.1k-2k': Object.freeze({
         fpr16: null,
@@ -1741,7 +1751,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 988.672,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_chases_by_age.over2k': Object.freeze({
         fpr16: null,
@@ -1751,7 +1761,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 1025.1532258064517,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_chases_by_age.under1k': Object.freeze({
         fpr16: 0.03959131545338442,
@@ -1761,7 +1771,7 @@ export const POWER = Object.freeze({
         mde32: 0.75,
         mde64: null,
         referenceMean: 2655.1181102362207,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_conversion_by_dose': Object.freeze({
         fpr16: null,
@@ -1771,7 +1781,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: -0.0009093644077080574,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_conversion_gain': Object.freeze({
         fpr16: null,
@@ -1781,7 +1791,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: -0.013785217284897415,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_conversion_gain_hunters': Object.freeze({
         fpr16: null,
@@ -1791,7 +1801,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 31.161016949152543,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_conversion_matched.1k-2k': Object.freeze({
         fpr16: null,
@@ -1801,7 +1811,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.2741661923862703,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_conversion_matched.over2k': Object.freeze({
         fpr16: null,
@@ -1811,7 +1821,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.25137097984427154,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_conversion_matched.under1k': Object.freeze({
         fpr16: 0.037800687285223365,
@@ -1821,7 +1831,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.2865903608617899,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_death_share.collision': Object.freeze({
         fpr16: 0.055,
@@ -1831,7 +1841,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.03,
         referenceMean: 0.12434866423181391,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_death_share.disease': Object.freeze({
         fpr16: 0,
@@ -1841,7 +1851,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.007817578319370997,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_death_share.eaten': Object.freeze({
         fpr16: 0.057,
@@ -1851,7 +1861,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.05,
         referenceMean: 0.12610846336713777,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_death_share.other': Object.freeze({
         fpr16: 0,
@@ -1861,7 +1871,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.0002016497896958679,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_death_share.starved': Object.freeze({
         fpr16: 0.052,
@@ -1871,7 +1881,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.05,
         referenceMean: 0.731968012845469,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_death_share.trampled': Object.freeze({
         fpr16: 0,
@@ -1881,7 +1891,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.009555631446512709,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_first_kill_age': Object.freeze({
         fpr16: 0.06,
@@ -1891,7 +1901,7 @@ export const POWER = Object.freeze({
         mde32: 0.75,
         mde64: 0.5,
         referenceMean: 220.57421875,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_first_kill_km_median': Object.freeze({
         fpr16: null,
@@ -1901,7 +1911,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 637.5645161290323,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_first_kill_rmst': Object.freeze({
         fpr16: 0.081,
@@ -1911,7 +1921,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: 0.2,
         referenceMean: 1955.597609629715,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_global_extinctions': Object.freeze({
         fpr16: 0.048,
@@ -1921,7 +1931,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: 12.3046875,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_income_share.bite': Object.freeze({
         fpr16: 0.069,
@@ -1931,7 +1941,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.05,
         referenceMean: 0.6820132701543807,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_income_share.carcass': Object.freeze({
         fpr16: 0.003,
@@ -1941,7 +1951,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.1503074803241228,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_income_share.herd': Object.freeze({
         fpr16: 0,
@@ -1951,7 +1961,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.007114775603080344,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_income_share.kill': Object.freeze({
         fpr16: 0.053,
@@ -1961,7 +1971,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.03,
         referenceMean: 0.16056447391841608,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_independent_kill_share': Object.freeze({
         fpr16: 0.006,
@@ -1971,7 +1981,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.9307313156200725,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_juvenile_death_share': Object.freeze({
         fpr16: 0.076,
@@ -1981,7 +1991,17 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.05,
         referenceMean: 0.8564708422465084,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
+    }),
+    'eval.hunter_juvenile_death_share_settled': Object.freeze({
+        fpr16: 0.065,
+        fpr32: 0.157,
+        fpr64: 0.129,
+        mde16: 0.1,
+        mde32: 0.1,
+        mde64: 0.075,
+        referenceMean: 0.8539123300971563,
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_kill_conversion_by_age.1k-2k': Object.freeze({
         fpr16: null,
@@ -1991,7 +2011,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.25036177313553676,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_kill_conversion_by_age.over2k': Object.freeze({
         fpr16: null,
@@ -2001,7 +2021,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.21802963638219336,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_kill_conversion_by_age.under1k': Object.freeze({
         fpr16: 0.04539385847797063,
@@ -2011,7 +2031,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.28473090873324536,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_kill_conversion_hungry.1k-2k': Object.freeze({
         fpr16: null,
@@ -2021,7 +2041,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.2890442211374321,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_kill_rate_by_age.adult': Object.freeze({
         fpr16: null,
@@ -2031,7 +2051,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.15426368302929216,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_kill_rate_by_age.juvenile': Object.freeze({
         fpr16: 0.056,
@@ -2041,7 +2061,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 1.008008006418517,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_kill_rate_by_age.young': Object.freeze({
         fpr16: 0.064,
@@ -2051,7 +2071,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.5,
         referenceMean: 0.393353774278781,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_kill_rate_by_source.floor': Object.freeze({
         fpr16: null,
@@ -2061,7 +2081,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.08491713173269039,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_kill_rate_by_source.initial': Object.freeze({
         fpr16: 0.068,
@@ -2071,7 +2091,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.5,
         referenceMean: 0.15406679877565155,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_kill_rate_by_source.mate-hunter-parent': Object.freeze({
         fpr16: null,
@@ -2081,7 +2101,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.35660015900363184,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_kill_rate_by_source.spec-flip': Object.freeze({
         fpr16: 0.07063711911357341,
@@ -2091,7 +2111,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: null,
         referenceMean: 1.6135647827770252,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_kill_rate_by_source.split-hunter-parent': Object.freeze({
         fpr16: 0.053,
@@ -2101,7 +2121,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: 0.2,
         referenceMean: 0.9199633703417839,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_kills_per_life_mean': Object.freeze({
         fpr16: 0.071,
@@ -2111,7 +2131,17 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 1.3899768539678516,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
+    }),
+    'eval.hunter_kills_per_life_mean_settled': Object.freeze({
+        fpr16: 0.058,
+        fpr32: 0.073,
+        fpr64: 0.069,
+        mde16: 0.3,
+        mde32: 0.2,
+        mde64: 0.15,
+        referenceMean: 1.473817282082473,
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_kills_per_life_p50': Object.freeze({
         fpr16: 0.024,
@@ -2121,7 +2151,7 @@ export const POWER = Object.freeze({
         mde32: 0.75,
         mde64: 0.75,
         referenceMean: 0.484375,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_lineage_extinctions': Object.freeze({
         fpr16: 0.107,
@@ -2131,7 +2161,7 @@ export const POWER = Object.freeze({
         mde32: 1,
         mde64: 0.75,
         referenceMean: 10.3671875,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_median_lifespan': Object.freeze({
         fpr16: 0.076,
@@ -2141,7 +2171,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: 0.2,
         referenceMean: 1119.7265625,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_plant_linger_share': Object.freeze({
         fpr16: 0.072,
@@ -2151,7 +2181,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.03,
         referenceMean: 0.07708770870876794,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_recoil_per_life': Object.freeze({
         fpr16: 0.052,
@@ -2161,7 +2191,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: 272.3019689538129,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_reflex_column_same_kill_rate': Object.freeze({
         fpr16: 0.05850091407678245,
@@ -2171,7 +2201,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 1.5974760579169185,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_reflex_column_split_kill_rate': Object.freeze({
         fpr16: null,
@@ -2181,7 +2211,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 1.4693045257457815,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_reflex_column_split_share': Object.freeze({
         fpr16: 0.06477732793522267,
@@ -2191,7 +2221,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.5050086554061879,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_starve_age_median': Object.freeze({
         fpr16: 0.083,
@@ -2201,7 +2231,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: 1192.1796875,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_territory_blocked_share': Object.freeze({
         fpr16: null,
@@ -2211,7 +2241,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.2801319531819848,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_ticks_last_quarter': Object.freeze({
         fpr16: 0.054,
@@ -2221,7 +2251,7 @@ export const POWER = Object.freeze({
         mde32: 1,
         mde64: 0.75,
         referenceMean: 330082.3828125,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_zero_kill_carcass_share': Object.freeze({
         fpr16: 0.087,
@@ -2231,7 +2261,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.05,
         referenceMean: 0.05766518254796724,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.hunter_zero_kill_share': Object.freeze({
         fpr16: 0.093,
@@ -2241,7 +2271,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.05,
         referenceMean: 0.49525899120266903,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.idle_signals_per_1k': Object.freeze({
         fpr16: 0,
@@ -2251,7 +2281,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.000020396580666225863,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.input_active_share': Object.freeze({
         fpr16: 0,
@@ -2261,7 +2291,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.3256138219008918,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.input_active_share.prey': Object.freeze({
         fpr16: 0,
@@ -2271,7 +2301,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.00837934058768109,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.input_active_share.threat': Object.freeze({
         fpr16: 0,
@@ -2281,7 +2311,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.01282030464704492,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.instinct_drift': Object.freeze({
         fpr16: 0.054,
@@ -2291,7 +2321,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 1.1250232633506307,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.juvenile_parent_distance': Object.freeze({
         fpr16: null,
@@ -2301,7 +2331,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 924.9643093187151,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.juvenile_parent_pull': Object.freeze({
         fpr16: null,
@@ -2311,7 +2341,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 1.2126432461756136,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.juvenile_sibling_distance': Object.freeze({
         fpr16: null,
@@ -2321,7 +2351,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 1114.3505630622833,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.kin_nearby_threat_gain': Object.freeze({
         fpr16: 0.079,
@@ -2331,7 +2361,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: -0.15899098802993838,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.kin_within_call_radius': Object.freeze({
         fpr16: null,
@@ -2341,7 +2371,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 5.490998593530239,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.leak_at_floor_share': Object.freeze({
         fpr16: 0,
@@ -2351,7 +2381,7 @@ export const POWER = Object.freeze({
         mde32: 0.02,
         mde64: 0.02,
         referenceMean: 0,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.leak_flee_corr': Object.freeze({
         fpr16: null,
@@ -2361,7 +2391,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.01208519535949077,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.leak_forage_corr': Object.freeze({
         fpr16: 0.052,
@@ -2371,7 +2401,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.00023172261533414926,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.leak_hunt_corr': Object.freeze({
         fpr16: null,
@@ -2381,7 +2411,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.00385310658175031,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.leak_lineage_spread': Object.freeze({
         fpr16: null,
@@ -2391,7 +2421,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.0008704045012200743,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.leak_rate_mean': Object.freeze({
         fpr16: 0,
@@ -2401,7 +2431,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.1,
         referenceMean: 0.5099104688118234,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.leak_slow_share': Object.freeze({
         fpr16: 0,
@@ -2411,7 +2441,7 @@ export const POWER = Object.freeze({
         mde32: 0.02,
         mde64: 0.02,
         referenceMean: 0,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.lineage_dominance': Object.freeze({
         fpr16: 0.04,
@@ -2421,7 +2451,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.653365001318876,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.lineage_effective': Object.freeze({
         fpr16: 0.061,
@@ -2431,7 +2461,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: 2.7137116478853214,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.lineage_lifespan_p50': Object.freeze({
         fpr16: null,
@@ -2441,7 +2471,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 773.0384615384615,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.lineage_persistence': Object.freeze({
         fpr16: 0.067,
@@ -2451,7 +2481,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.15,
         referenceMean: 0.7145833333333333,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.lineage_turnover': Object.freeze({
         fpr16: 0.053,
@@ -2461,7 +2491,7 @@ export const POWER = Object.freeze({
         mde32: 0.75,
         mde64: 0.5,
         referenceMean: 2.290296052631578,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.lineages_alive': Object.freeze({
         fpr16: 0.048,
@@ -2471,7 +2501,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 2.7485683900523568,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.mate_hunter_lean': Object.freeze({
         fpr16: 0.082,
@@ -2481,7 +2511,7 @@ export const POWER = Object.freeze({
         mde32: 1,
         mde64: 0.75,
         referenceMean: -0.007000961890680926,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.mate_parent_delib_share': Object.freeze({
         fpr16: 0.066,
@@ -2491,7 +2521,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.05,
         referenceMean: 0.3946446957303679,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.mate_rank_gap': Object.freeze({
         fpr16: 0.065,
@@ -2501,7 +2531,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: 0.02162089636515809,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.mating_share': Object.freeze({
         fpr16: 0.048,
@@ -2511,7 +2541,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.075,
         referenceMean: 0.42015665727153373,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.mean_energy_share': Object.freeze({
         fpr16: 0.063,
@@ -2521,7 +2551,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.03,
         referenceMean: 0.47053786161777067,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.mean_fitness.defender': Object.freeze({
         fpr16: 0.051,
@@ -2531,7 +2561,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 1570.3760048788554,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.mean_fitness.forager': Object.freeze({
         fpr16: 0.068,
@@ -2541,7 +2571,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.15,
         referenceMean: 1637.2434690337936,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.mean_fitness.predator': Object.freeze({
         fpr16: 0.063,
@@ -2551,7 +2581,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 2091.2415559279366,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.mean_fitness.reproducer': Object.freeze({
         fpr16: 0.046,
@@ -2561,7 +2591,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 1599.7214851739452,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.mean_fitness.scout': Object.freeze({
         fpr16: 0.055,
@@ -2571,7 +2601,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 1688.559237878201,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.median_lifespan': Object.freeze({
         fpr16: 0.054,
@@ -2581,7 +2611,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 3616.41015625,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.memory_out_flat_share': Object.freeze({
         fpr16: 0,
@@ -2591,7 +2621,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.00026783007827337166,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.memory_out_noisy_share': Object.freeze({
         fpr16: 0,
@@ -2601,7 +2631,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.000026528959902050218,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.memory_out_signal_share': Object.freeze({
         fpr16: 0,
@@ -2611,7 +2641,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.9997056409618243,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.merit_fitness_corr': Object.freeze({
         fpr16: 0,
@@ -2621,7 +2651,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.1,
         referenceMean: 0.9581142004418798,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.merit_mate_gain': Object.freeze({
         fpr16: 0.057,
@@ -2631,7 +2661,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: 0.2,
         referenceMean: 0.2828232759756871,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.merit_mean': Object.freeze({
         fpr16: 0.047,
@@ -2641,7 +2671,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.1,
         referenceMean: 1471.4720890105132,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.merit_p90': Object.freeze({
         fpr16: 0.054,
@@ -2651,7 +2681,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.1,
         referenceMean: 3420.3140500336062,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.migration_index': Object.freeze({
         fpr16: 0.02,
@@ -2661,7 +2691,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.05908753717779282,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.mother_wait_by_condition': Object.freeze({
         fpr16: 0.061,
@@ -2671,7 +2701,7 @@ export const POWER = Object.freeze({
         mde32: 1,
         mde64: 0.75,
         referenceMean: 257.38448372135235,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.motion_coverage': Object.freeze({
         fpr16: 0.05,
@@ -2681,7 +2711,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.253359375,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.niche_replacement': Object.freeze({
         fpr16: 0.065,
@@ -2691,7 +2721,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.05,
         referenceMean: 0.8845827479914886,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.offspring_per_life': Object.freeze({
         fpr16: 0.02,
@@ -2701,7 +2731,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.1,
         referenceMean: 1.3945685011517526,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.opportunity_for_selection': Object.freeze({
         fpr16: 0.037,
@@ -2711,7 +2741,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.1,
         referenceMean: 2.1854387000018365,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.output_saturation': Object.freeze({
         fpr16: 0.001,
@@ -2721,7 +2751,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.212705994895341,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.p90_fitness.defender': Object.freeze({
         fpr16: 0.061,
@@ -2731,7 +2761,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 4244.510889562151,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.p90_fitness.forager': Object.freeze({
         fpr16: 0.064,
@@ -2741,7 +2771,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 4443.838796161155,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.p90_fitness.predator': Object.freeze({
         fpr16: 0.084,
@@ -2751,7 +2781,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 6106.804531333714,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.p90_fitness.reproducer': Object.freeze({
         fpr16: 0.04,
@@ -2761,7 +2791,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.1,
         referenceMean: 4481.92950808695,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.p90_fitness.scout': Object.freeze({
         fpr16: 0.057,
@@ -2771,7 +2801,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 4472.647155926369,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.pack_convergence': Object.freeze({
         fpr16: null,
@@ -2781,7 +2811,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.38090071533305514,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.pack_kills_per_eaten_death': Object.freeze({
         fpr16: 0.042,
@@ -2791,7 +2821,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.1076491937943433,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.pack_lift': Object.freeze({
         fpr16: null,
@@ -2801,7 +2831,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 1.6276840006591873,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.pack_prey_size_ratio': Object.freeze({
         fpr16: null,
@@ -2811,7 +2841,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.9996227381758876,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.patch_leave_depleted': Object.freeze({
         fpr16: 0.056,
@@ -2821,7 +2851,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.05,
         referenceMean: 0.39445716382297674,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.patch_stay_depleted': Object.freeze({
         fpr16: 0.045,
@@ -2831,7 +2861,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.05,
         referenceMean: 0.6055428361770232,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.pollination_rate': Object.freeze({
         fpr16: 0.074,
@@ -2841,7 +2871,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: 0.06114309210526317,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.population_mean': Object.freeze({
         fpr16: 0.04,
@@ -2851,7 +2881,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: 177.7302734375,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.pred_prey_lag_corr': Object.freeze({
         fpr16: null,
@@ -2861,7 +2891,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.07110193929484575,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.predation_per_1k': Object.freeze({
         fpr16: 0.053,
@@ -2871,7 +2901,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.5,
         referenceMean: 0.04230576738434077,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.predator_births': Object.freeze({
         fpr16: 0.048,
@@ -2881,7 +2911,7 @@ export const POWER = Object.freeze({
         mde32: 0.75,
         mde64: 0.5,
         referenceMean: 636.953125,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.predator_end_local_share': Object.freeze({
         fpr16: null,
@@ -2891,7 +2921,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.9733333333333334,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.predator_presence': Object.freeze({
         fpr16: 0.046,
@@ -2901,7 +2931,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 0.5149296465968586,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.predator_share_cv': Object.freeze({
         fpr16: 0.057,
@@ -2911,7 +2941,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: 0.3,
         referenceMean: 1.912059351269873,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.predators_at_end': Object.freeze({
         fpr16: 0.075,
@@ -2921,7 +2951,17 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: 0.75,
         referenceMean: 10.640625,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
+    }),
+    'eval.predators_at_end_terminal_window': Object.freeze({
+        fpr16: 0.037,
+        fpr32: 0.056,
+        fpr64: 0.054,
+        mde16: null,
+        mde32: 0.75,
+        mde64: 0.75,
+        referenceMean: 4.590711805555555,
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.prey_cover_distance': Object.freeze({
         fpr16: 0.051,
@@ -2931,7 +2971,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 1925.1953125,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.prey_extinctions': Object.freeze({
         fpr16: 0.054,
@@ -2941,7 +2981,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.3,
         referenceMean: 9.296875,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.prey_in_patch_share': Object.freeze({
         fpr16: 0.04,
@@ -2951,7 +2991,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.05,
         referenceMean: 0.38211059332093567,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.prey_selectivity.defender': Object.freeze({
         fpr16: 0.07630522088353414,
@@ -2961,7 +3001,7 @@ export const POWER = Object.freeze({
         mde32: 0.75,
         mde64: null,
         referenceMean: 1.2914951673356738,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.prey_selectivity.forager': Object.freeze({
         fpr16: 0.08355437665782493,
@@ -2971,7 +3011,7 @@ export const POWER = Object.freeze({
         mde32: 0.75,
         mde64: null,
         referenceMean: 1.2893376943960737,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.prey_selectivity.reproducer': Object.freeze({
         fpr16: 0.06955380577427822,
@@ -2981,7 +3021,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 1.4760483329898826,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.prey_selectivity.scout': Object.freeze({
         fpr16: 0.05756358768406961,
@@ -2991,7 +3031,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 1.601408752109395,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.prey_summer_min': Object.freeze({
         fpr16: 0.072,
@@ -3001,7 +3041,7 @@ export const POWER = Object.freeze({
         mde32: 0.75,
         mde64: 0.5,
         referenceMean: 67.2265625,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.prey_types_at_end': Object.freeze({
         fpr16: 0.027,
@@ -3011,7 +3051,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 3.4921875,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.prey_within_dash_share': Object.freeze({
         fpr16: 0.071,
@@ -3021,7 +3061,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.05,
         referenceMean: 0.1350692112586101,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.proven_share': Object.freeze({
         fpr16: 0.041,
@@ -3031,7 +3071,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.03,
         referenceMean: 0.55960227115201,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.pursuit_bite_share': Object.freeze({
         fpr16: 0.059,
@@ -3041,7 +3081,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.05,
         referenceMean: 0.6349103750729231,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.pursuit_kill_share': Object.freeze({
         fpr16: 0.063,
@@ -3051,7 +3091,17 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.05,
         referenceMean: 0.6848282845878811,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
+    }),
+    'eval.pursuit_kill_share_settled': Object.freeze({
+        fpr16: 0.06108897742363878,
+        fpr32: 0.09902912621359224,
+        fpr64: null,
+        mde16: 0.1,
+        mde32: null,
+        mde64: null,
+        referenceMean: 0.6857537185301552,
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.pursuit_trend': Object.freeze({
         fpr16: null,
@@ -3061,7 +3111,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: -0.03277006170722889,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.qd_score': Object.freeze({
         fpr16: 0.055,
@@ -3071,7 +3121,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 616.6177903542891,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.rare_input_saturation_jump': Object.freeze({
         fpr16: 0.0888468809073724,
@@ -3081,7 +3131,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.000011109108784025063,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.recruit_censored_share': Object.freeze({
         fpr16: 0,
@@ -3091,7 +3141,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.00471205693655802,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.recruit_cohort': Object.freeze({
         fpr16: 0.045,
@@ -3101,7 +3151,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.5,
         referenceMean: 641.2265625,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.recruit_first_kill_share': Object.freeze({
         fpr16: 0.07,
@@ -3111,7 +3161,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.075,
         referenceMean: 0.6981010391363727,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.recruit_lineage_share': Object.freeze({
         fpr16: 0.086,
@@ -3121,7 +3171,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.05,
         referenceMean: 0.3211937228300518,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.recruit_matured_hunters': Object.freeze({
         fpr16: 0.044,
@@ -3131,7 +3181,7 @@ export const POWER = Object.freeze({
         mde32: 0.5,
         mde64: 0.5,
         referenceMean: 439.609375,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.recruit_matured_share': Object.freeze({
         fpr16: 0.082,
@@ -3141,7 +3191,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.05,
         referenceMean: 0.670720465599532,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.recruit_replaced_share.floor': Object.freeze({
         fpr16: null,
@@ -3151,7 +3201,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.029166666666666664,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.recruit_replaced_share.mate-hunter-parent': Object.freeze({
         fpr16: null,
@@ -3161,7 +3211,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.2889028630100058,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.recruit_replaced_share.spec-flip': Object.freeze({
         fpr16: 0.06283422459893048,
@@ -3171,7 +3221,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.749070815787517,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.recruit_replaced_share.split-hunter-parent': Object.freeze({
         fpr16: 0.06654676258992806,
@@ -3181,7 +3231,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.5987281286693082,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.refuge_bite_deficit': Object.freeze({
         fpr16: 0.07598371777476255,
@@ -3191,7 +3241,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.03345272918030867,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.refuge_crowding': Object.freeze({
         fpr16: null,
@@ -3201,7 +3251,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 1.430862403440837,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.refuge_dwell_ticks': Object.freeze({
         fpr16: null,
@@ -3211,7 +3261,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 83.93442622950819,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.refuge_eligible_share': Object.freeze({
         fpr16: 0.052,
@@ -3221,7 +3271,7 @@ export const POWER = Object.freeze({
         mde32: 0.075,
         mde64: 0.05,
         referenceMean: 0.6566678835465355,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.refuge_episode_entry': Object.freeze({
         fpr16: 0.1057347670250896,
@@ -3231,7 +3281,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: -0.0013039099041215292,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.refuge_exit_fed': Object.freeze({
         fpr16: null,
@@ -3241,7 +3291,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.5159083472823675,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.refuge_prey_use_under_threat': Object.freeze({
         fpr16: 0.10540540540540541,
@@ -3251,7 +3301,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: -0.002745043359534801,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.refuge_use_under_threat': Object.freeze({
         fpr16: 0.10643889618922471,
@@ -3261,7 +3311,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: -0.0023130990168777044,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.reproducer_recovery_rate': Object.freeze({
         fpr16: 0.06017699115044248,
@@ -3271,7 +3321,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.20307760824472135,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.reward_events_per_1k.bite': Object.freeze({
         fpr16: 0.066,
@@ -3281,7 +3331,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: 0.3,
         referenceMean: 10.625476450184495,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.reward_events_per_1k.kill': Object.freeze({
         fpr16: 0.061,
@@ -3291,7 +3341,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: 0.2,
         referenceMean: 1.2943066910912147,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.reward_events_per_1k.scavenge': Object.freeze({
         fpr16: 0.045,
@@ -3301,7 +3351,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: 0.2,
         referenceMean: 1.481681348835841,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.scavenge_approach_share': Object.freeze({
         fpr16: 0,
@@ -3311,7 +3361,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.02340177697766753,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.scout_alarm_lead_share': Object.freeze({
         fpr16: null,
@@ -3321,7 +3371,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.season_map_distance': Object.freeze({
         fpr16: 0.056,
@@ -3331,7 +3381,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.4058519131722122,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.seasonal_diet_shift': Object.freeze({
         fpr16: 0.043,
@@ -3341,7 +3391,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.03,
         referenceMean: 0.5185388099705389,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.sex_balance': Object.freeze({
         fpr16: 0.011,
@@ -3351,7 +3401,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.0652855651478629,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.sick_share': Object.freeze({
         fpr16: 0,
@@ -3361,7 +3411,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.00545140903858323,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.sigma_mean': Object.freeze({
         fpr16: 0,
@@ -3371,7 +3421,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.1,
         referenceMean: 0.05016733140013279,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.skill_heritability': Object.freeze({
         fpr16: 0.05,
@@ -3381,7 +3431,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.15,
         referenceMean: 0.25590751065362616,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.skill_trend': Object.freeze({
         fpr16: 0.054,
@@ -3391,7 +3441,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.0004336208423739135,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.smoke_escapes': Object.freeze({
         fpr16: null,
@@ -3401,7 +3451,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.smoke_precision': Object.freeze({
         fpr16: null,
@@ -3411,7 +3461,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.social_return': Object.freeze({
         fpr16: null,
@@ -3421,7 +3471,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.2292842167685466,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.spec_dominance': Object.freeze({
         fpr16: 0.057,
@@ -3431,7 +3481,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.075,
         referenceMean: 0.4751617733761513,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.spec_effective': Object.freeze({
         fpr16: 0.049,
@@ -3441,7 +3491,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 3.53642293842493,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.spec_turnover': Object.freeze({
         fpr16: 0.045,
@@ -3451,7 +3501,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: 0.2,
         referenceMean: 17.528782894736842,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.split_bumper_share': Object.freeze({
         fpr16: 0,
@@ -3461,7 +3511,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.000021668774723428398,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.split_gated_share': Object.freeze({
         fpr16: 0,
@@ -3471,7 +3521,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.999214515927291,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.split_parent_delib_share': Object.freeze({
         fpr16: 0.049,
@@ -3481,7 +3531,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.03,
         referenceMean: 0.48643755496132274,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.sprint_cost_share': Object.freeze({
         fpr16: 0.045,
@@ -3491,7 +3541,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: 0.2,
         referenceMean: 0.05363085813818017,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.sprint_share.hunter': Object.freeze({
         fpr16: 0.053,
@@ -3501,7 +3551,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.1,
         referenceMean: 0.4085737762462554,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.sprint_share.prey': Object.freeze({
         fpr16: 0.048,
@@ -3511,7 +3561,7 @@ export const POWER = Object.freeze({
         mde32: 0.15,
         mde64: 0.075,
         referenceMean: 0.4463467938764023,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.strain_family_focus': Object.freeze({
         fpr16: 0,
@@ -3521,7 +3571,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.9978886167548395,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.strains_per_100k': Object.freeze({
         fpr16: 0.067,
@@ -3531,7 +3581,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.1,
         referenceMean: 93.40625,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.strike_miss_energy_ratio': Object.freeze({
         fpr16: 0.087,
@@ -3541,7 +3591,7 @@ export const POWER = Object.freeze({
         mde32: 0.75,
         mde64: 0.5,
         referenceMean: 0.4253978475144713,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.style_lineage_share': Object.freeze({
         fpr16: null,
@@ -3551,7 +3601,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 0.009313815169622583,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.style_separation': Object.freeze({
         fpr16: 0.06,
@@ -3561,7 +3611,7 @@ export const POWER = Object.freeze({
         mde32: 0.75,
         mde64: 0.5,
         referenceMean: 0.0427210278492307,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.toxic_avoidance': Object.freeze({
         fpr16: 0.074,
@@ -3571,7 +3621,7 @@ export const POWER = Object.freeze({
         mde32: 0.2,
         mde64: 0.15,
         referenceMean: 0.8143880781056513,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.toxic_death_share': Object.freeze({
         fpr16: 0,
@@ -3581,7 +3631,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.019242160550411717,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.trait_spread': Object.freeze({
         fpr16: 0.058,
@@ -3591,7 +3641,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: 0.2,
         referenceMean: 0.010260273436423982,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.trample_unavoidable_share': Object.freeze({
         fpr16: 0.021,
@@ -3601,7 +3651,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.9711276385264292,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.trampled_share': Object.freeze({
         fpr16: 0.005,
@@ -3611,7 +3661,7 @@ export const POWER = Object.freeze({
         mde32: 0.03,
         mde64: 0.03,
         referenceMean: 0.03813613430980605,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.undefended_bite_share': Object.freeze({
         fpr16: 0.079,
@@ -3621,7 +3671,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.05,
         referenceMean: 0.8113212006417485,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.unseen_bite_share': Object.freeze({
         fpr16: 0.067,
@@ -3631,7 +3681,7 @@ export const POWER = Object.freeze({
         mde32: 0.05,
         mde64: 0.03,
         referenceMean: 0.10040375423225166,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.weight_clamp_share': Object.freeze({
         fpr16: 0,
@@ -3641,7 +3691,7 @@ export const POWER = Object.freeze({
         mde32: 0.02,
         mde64: 0.02,
         referenceMean: 0,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.weight_drift_silent': Object.freeze({
         fpr16: 0,
@@ -3651,7 +3701,7 @@ export const POWER = Object.freeze({
         mde32: 0.1,
         mde64: 0.1,
         referenceMean: 0.9107577851600027,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.winter_band_shift': Object.freeze({
         fpr16: 0.062,
@@ -3661,7 +3711,7 @@ export const POWER = Object.freeze({
         mde32: 1,
         mde64: 0.75,
         referenceMean: 0.04289558665999133,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.winter_basin_density': Object.freeze({
         fpr16: 0.046,
@@ -3671,7 +3721,7 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: 1.547772611543723,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.winter_patch_proximity': Object.freeze({
         fpr16: 0.054,
@@ -3681,7 +3731,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: 0.2,
         referenceMean: -0.25068067135194505,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.winter_pop_ratio': Object.freeze({
         fpr16: 0.059,
@@ -3691,7 +3741,7 @@ export const POWER = Object.freeze({
         mde32: 0.3,
         mde64: 0.3,
         referenceMean: 1.065734555197378,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
     'eval.winter_shelter_distance': Object.freeze({
         fpr16: 0.05,
@@ -3701,6 +3751,6 @@ export const POWER = Object.freeze({
         mde32: null,
         mde64: null,
         referenceMean: -59.5686071858901,
-        report: 'evals/power/defaults-floor-on-E210.json',
+        report: 'evals/power/defaults-floor-on-E254.json',
     }),
 });

@@ -145,9 +145,9 @@ describe('proposeArms', () => {
         expect(Object.keys(arms[0].overlay.stages ?? {})).toContain('hunt');
     });
 
-    it('reads the shipped spec and ladder: two arms, the first on the hunt-weak prey share 0.7', () => {
-        const shipped = JSON.parse(readFileSync('evals/train-tune.json', 'utf8'));
-        const real = JSON.parse(readFileSync('evals/train-ladder.json', 'utf8'));
+    it('reads a frozen copy of the shipped spec and ladder: two arms, the first on the hunt-weak prey share 0.7', () => {
+        const shipped = JSON.parse(readFileSync('test/fixtures/train-tune.json', 'utf8'));
+        const real = JSON.parse(readFileSync('test/fixtures/train-ladder.json', 'utf8'));
         const arms = proposeArms(shipped, real, []);
         expect(arms).toHaveLength(2);
         expect(arms[0].signature).toBe('stages.hunt-weak.preyShare=0.7');

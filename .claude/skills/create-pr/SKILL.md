@@ -22,8 +22,11 @@ auto-merge, wait). The steps below are the judgement half an agent does before i
 
 1. **Know what the gate is.** `scripts/ship.sh` runs it (step 3): `scripts/check.sh --fix --quick` for a code change,
    `scripts/check.sh --fix --docs` when `scripts/change-scope.sh` says `docs` or `records`, and commits what `--fix`
-   wrote. The pre-commit hook already ran the tests of each commit's staged files, and CI runs the rest on a quiet
-   runner. The full local gate (`scripts/check.sh --fix --skip=browser-smoke`, under `flock /tmp/claude-1000/cpu.lock`
+   wrote. The quick gate includes `ratchet-related`: the related tests of the changed files with coverage, failing a
+   changed `js/sim`, `js/evo`, `js/worker` or `js/app` file that is under 100% where its baseline is 100% (the CI
+   `coverage` miss, found before the push; it names the file and its uncovered lines, and a file covered only by a
+   `*.slow.test.js` needs that test run first). The pre-commit hook already ran the tests of each commit's staged
+   files, and CI runs the rest on a quiet runner. The full local gate (`scripts/check.sh --fix --skip=browser-smoke`, under `flock /tmp/claude-1000/cpu.lock`
    on a quiet machine) is only for a PR that moves step time (`bench-check`). A failed gate prints a digest under its
    `✗` line and keeps the output in `.checklogs/<gate>.log`; act on the digest, open the log only when it is not enough,
    and never rerun `vitest`, `tsc` or `eslint` just to see the errors. `scripts/check.sh --rerun-failed` reruns only the
@@ -140,7 +143,8 @@ check-logs` (`.checklogs/` and `TestResults/`). A `format` or `designs-index` fa
   `TEST_SCOPE=<shard, heavy or statistical> npx vitest run --sequence.shuffle --sequence.seed=<run id> <file>` replays the
   order for one file. A test that times out on a quiet runner is a real slow test: speed it up or move it to a
   `.slow.test.js` file's own limit, never skip it.
-- `coverage`: the ratchet line names the scope and metric below its baseline; add tests for the uncovered code (never
+- `coverage`: the ratchet line names the scope and metric below its baseline, and the lines under it name the files
+  with the most uncovered lines, branches or functions; add tests for the uncovered code (never
   lower `scripts/quality-baseline.json`). After a failed shard its numbers are partial, so fix the shard first.
 - Reproduce, fix the root cause, commit the fix, rerun `scripts/ship.sh`. Do not just re-run the job.
 

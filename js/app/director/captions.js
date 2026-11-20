@@ -58,6 +58,11 @@ const CAPTION_BUILDERS = Object.freeze({
     [MOMENT_KIND.SEASON_TURN]: (m) => `${SEASON_NAMES[m.count ?? 0]} comes`,
     [MOMENT_KIND.FLOOR_ARRIVAL]: (m) => `${m.count ?? 4} newcomers arrive`,
     [MOMENT_KIND.TRAMPLE]: () => 'Trampled',
+    [MOMENT_KIND.CARCASS]: () => 'A carcass, and who comes for it',
+    [MOMENT_KIND.PACK_CALL]: () => 'The pack is called',
+    [MOMENT_KIND.PATCH_WILT]: () => 'A patch dies',
+    [MOMENT_KIND.STRAIN]: () => 'A new strain',
+    [MOMENT_KIND.DIE_OFF]: (m) => `Die-off - ${m.count ?? 4} starve`,
 });
 
 /**

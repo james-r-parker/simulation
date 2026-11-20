@@ -67,9 +67,9 @@ describe('formatProfile', () => {
 
 describe('parseArgs', () => {
     it('reads the train options and defaults --out under .sim/train-profile', () => {
-        const { from, train } = parseArgs(['--curriculum', 'evals/train-ladder.json', '--generations', '20']);
+        const { from, train } = parseArgs(['--curriculum', 'test/fixtures/train-ladder.json', '--generations', '20']);
         expect(from).toBeNull();
-        expect(train).toMatchObject({ generations: 20, episodes: 32, curriculum: 'evals/train-ladder.json' });
+        expect(train).toMatchObject({ generations: 20, episodes: 32, curriculum: 'test/fixtures/train-ladder.json' });
         expect(train?.out).toBe('.sim/train-profile/train-ladder-g20');
         expect(parseArgs(['--generations', '2', '--out', 'x']).train?.out).toBe('x');
     });

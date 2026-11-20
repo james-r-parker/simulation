@@ -159,7 +159,7 @@ describe('check.sh --rerun-failed', { timeout: SPAWN_TIMEOUT_MS }, () => {
 });
 
 describe('check.sh --quick', { timeout: SPAWN_TIMEOUT_MS }, () => {
-    it('selects the static gates and the build, and no tests, ratchet or smokes', () => {
+    it('selects the static gates, ratchet-related and the build, and no full tests, ratchet or smokes', () => {
         const gates = check(['--list', '--quick']).stdout.split('\n').filter(Boolean);
         expect(gates).toEqual([
             'conventions',
@@ -169,8 +169,15 @@ describe('check.sh --quick', { timeout: SPAWN_TIMEOUT_MS }, () => {
             'typecheck',
             'deps',
             'dupes',
+            'ratchet-related',
             'build',
         ]);
+    });
+
+    it('leaves ratchet-related out of every tier, so CI and the hook never run it', () => {
+        for (const tier of ['1', '2', '3']) {
+            expect(check(['--list', '--tier', tier]).stdout.split('\n')).not.toContain('ratchet-related');
+        }
     });
 
     it('does not combine with --tier, --only or --docs', () => {

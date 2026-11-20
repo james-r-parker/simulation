@@ -47,7 +47,14 @@ describe('parseArgs', () => {
 
 describe('loadStages', () => {
     it('loads the committed curriculum: three stages with distinct rulesHash and one layout', () => {
-        const args = parseArgs(['--generations', '45', '--out', 'x', '--curriculum', 'evals/train-curriculum.json']);
+        const args = parseArgs([
+            '--generations',
+            '45',
+            '--out',
+            'x',
+            '--curriculum',
+            'test/fixtures/train-curriculum.json',
+        ]);
         const stages = loadStages(args);
         expect(stages.map((s) => [s.name, s.from, s.to])).toEqual([
             ['nursery', 0, 20],
@@ -264,7 +271,14 @@ describe('train:export', () => {
 
 describe('saveArchive', () => {
     it('stamps generation and the stages reached', () => {
-        const args = parseArgs(['--generations', '30', '--out', 'x', '--curriculum', 'evals/train-curriculum.json']);
+        const args = parseArgs([
+            '--generations',
+            '30',
+            '--out',
+            'x',
+            '--curriculum',
+            'test/fixtures/train-curriculum.json',
+        ]);
         const stages = loadStages(args);
         const archive = createArchive(brainLayout(stages[0].built), { descriptor: TRAINER_DESCRIPTOR });
         const dir = join(root, 'save');

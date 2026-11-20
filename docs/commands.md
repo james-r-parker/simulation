@@ -22,7 +22,7 @@ Every command an agent runs on Blob Evolution, grouped by job. `rg -n '^### ' do
 
 ### Pre-push check (what an agent runs)
 
-`scripts/check.sh --fix --quick` (conventions, designs-index, format, lint, typecheck, deps, dupes, build: no tests, ratchet, bench-check or smokes; the pre-commit hook already ran the tests of each commit's staged files). **The PR gate is CI** (`check` in `.github/workflows/check.yml`): the whole suite including `*.slow.test.js` sharded over parallel runners, the coverage ratchet on the merged coverage, the static gates and the browser smoke, in about 6 minutes on a quiet runner. Read a red `check` with `gh pr checks <n>` and `gh run view <run-id> --log-failed`; a failed shard job names its shard and seed, and a `coverage` job failure is the ratchet
+`scripts/check.sh --fix --quick` (conventions, designs-index, format, lint, typecheck, deps, dupes, ratchet-related, build: no full tests, ratchet, bench-check or smokes; the pre-commit hook already ran the tests of each commit's staged files; `ratchet-related` (`scripts/ratchet-related.mjs`) runs the related tests of the files changed against `origin/main` with coverage, minus `*.slow.test.js`, and fails a changed source file under a 100% baseline in `scripts/quality-baseline.json` that is not at 100%, naming its uncovered lines; it skips with a notice when no such file changed and never edits the baseline; a long-importing file such as `js/sim/rng.js` relates to most tests and takes about 40 s). **The PR gate is CI** (`check` in `.github/workflows/check.yml`): the whole suite including `*.slow.test.js` sharded over parallel runners, the coverage ratchet on the merged coverage, the static gates and the browser smoke, in about 6 minutes on a quiet runner. Read a red `check` with `gh pr checks <n>` and `gh run view <run-id> --log-failed`; a failed shard job names its shard and seed, and a `coverage` job failure is the ratchet, whose log lists the files with the most uncovered lines per failing scope and metric
 
 ### Full local gate (optional; perf PRs only)
 
@@ -34,7 +34,7 @@ Every command an agent runs on Blob Evolution, grouped by job. `rg -n '^### ' do
 
 ### What CI runs
 
-`scope`, `static` (`scripts/check.sh --ci --skip=test`: the static gates, build and eval-smoke; a push to main runs the fast tests there instead), `test` (a matrix of coverage shards and statistical shards, `vitest run --shard`), `coverage` (`vitest run --merge-reports --coverage`, then `node scripts/quality-ratchet.mjs --check`), `browser-smoke`, `perf`, and the required `check`, which needs them all. `scripts/check.sh --ci` alone is the static half plus the fast tests
+`scope` (`scripts/change-scope.sh`: `docs`, `release` or `full`; the Release Please pull request, a diff of only `CHANGELOG.md`, `package.json`, `package-lock.json` and `.release-please-manifest.json` on a `release-please--*` branch, runs `scope` alone and `check` still reports success), `static` (`scripts/check.sh --ci --skip=test`: the static gates, build and eval-smoke; a push to main runs the fast tests there instead), `test` (a matrix of coverage shards and statistical shards, `vitest run --shard`), `coverage` (`vitest run --merge-reports --coverage`, then `node scripts/quality-ratchet.mjs --check`), `browser-smoke`, `perf`, and the required `check`, which needs them all. `scripts/check.sh --ci` alone is the static half plus the fast tests
 
 ### Docs-only change
 
@@ -62,7 +62,7 @@ Every command an agent runs on Blob Evolution, grouped by job. `rg -n '^### ' do
 
 ### Browser smoke test without Docker
 
-`SMOKE_LOCAL=1 scripts/check.sh --only=browser-smoke` (30 app frames in 5 s after first draw; worker tick must advance)
+`SMOKE_LOCAL=1 scripts/check.sh --only=browser-smoke` (30 app frames in 5 s after first draw; worker tick must advance; a failed spec reruns once: a pass on the rerun passes and is listed in `.checklogs/smoke-flakes.json`, which CI uploads as the `smoke-flakes` artifact and the nightly `smoke-flakes` job turns into one issue; two failures fail)
 
 ### Replay a shuffled test order
 

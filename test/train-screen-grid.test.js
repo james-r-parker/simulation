@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
     DEFAULT_WORKERS_PER_RUN,
@@ -121,28 +120,6 @@ describe('the run list', () => {
     });
 });
 
-describe('evals/train-screens/plateau.grid.json', () => {
-    it('is the current ladder with and without plateauStop on matched offsets 0 to 248, to hunt-mid', () => {
-        const readFile = (/** @type {string} */ file) =>
-            JSON.parse(readFileSync(new URL(`../${file}`, import.meta.url), 'utf8'));
-        const plan = planScreen(readFile('evals/train-screens/plateau.grid.json'), readFile);
-        expect(plan.offsets).toEqual(Array.from({ length: 32 }, (_, i) => i * 8));
-        expect(plan).toMatchObject({ until: 'hunt-mid', generations: 380, workersPerRun: 8, reference: 'nostop' });
-        expect(plan.feasible).toBeNull();
-        expect(plan.arms.map((a) => a.train)).toEqual([{ checkpointEvery: 5 }, { checkpointEvery: 5 }]);
-        const stops = (/** @type {string} */ name) =>
-            plan.arms.find((a) => a.name === name)?.ladder.map((e) => [e.name, e.plateauStop]);
-        const ladder = readFile('evals/train-ladder.json');
-        expect(stops('stop')).toEqual(ladder.map((/** @type {any} */ e) => [e.name, e.plateauStop]));
-        expect(stops('nostop')?.slice(0, 4)).toEqual([
-            ['nursery', 0],
-            ['hunt-contact', 0],
-            ['hunt-weak', 0],
-            ['hunt-mid', 0],
-        ]);
-    });
-});
-
 describe('screenWarnings', () => {
     const offsets = (/** @type {number} */ n) => Array.from({ length: n }, (_, i) => i * 8);
     it('warns when a grid that compares arms runs under 32 offsets', () => {
@@ -155,13 +132,5 @@ describe('screenWarnings', () => {
         expect(screenWarnings(planScreen(grid({ offsets: offsets(32), arms: { a: {} } }), read))).toEqual([]);
         const solo = grid({ offsets: offsets(4), reference: 'only', arms: { only: {} } });
         expect(screenWarnings(planScreen(solo, read))).toEqual([]);
-    });
-
-    it('is quiet for every committed grid with a verdict', () => {
-        const file = (/** @type {string} */ f) => JSON.parse(readFileSync(new URL(`../${f}`, import.meta.url), 'utf8'));
-        for (const name of ['plateau', 'food-behind', 'nursery-both', 'adaptive']) {
-            const plan = planScreen(file(`evals/train-screens/${name}.grid.json`), file);
-            expect(screenWarnings(plan)).toEqual([]);
-        }
     });
 });

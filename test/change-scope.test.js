@@ -1,4 +1,7 @@
 import { spawnSync } from 'node:child_process';
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
@@ -18,6 +21,52 @@ describe('change-scope.sh', { timeout: scaleTimeout(15_000) }, () => {
         expect(scope([], ['docs/designs/a.md', '.claude/skills/x/SKILL.md', 'README.md'])).toBe('docs');
         expect(scope([], ['docs/designs/a.md', 'scripts/check.sh'])).toBe('full');
         expect(scope([], [])).toBe('full');
+    });
+
+    it('says release for a diff of only the Release Please files, whichever of them it holds', () => {
+        const all = ['CHANGELOG.md', 'package.json', 'package-lock.json', '.release-please-manifest.json'];
+        expect(scope([], all)).toBe('release');
+        for (const path of all) {
+            expect(scope([], [path]), path).toBe('release');
+        }
+        expect(scope([], ['CHANGELOG.md', '', 'package.json'])).toBe('release');
+    });
+
+    it('says release for CHANGELOG.md alone, ahead of docs, and docs for other root Markdown', () => {
+        expect(scope([], ['CHANGELOG.md'])).toBe('release');
+        expect(scope([], ['README.md'])).toBe('docs');
+        expect(scope([], ['CHANGELOG.md', 'README.md'])).toBe('docs');
+    });
+
+    it('runs the full gate when any other file joins the version bump', () => {
+        for (const extra of ['js/sim/a.js', 'scripts/check.sh', 'docs/designs/a.md', 'wasm/blob-kernels.wasm']) {
+            expect(scope([], ['CHANGELOG.md', 'package.json', extra]), extra).toBe('full');
+        }
+        expect(scope([], ['package.json', 'src/package.json'])).toBe('full');
+    });
+
+    it('says release for a base ref whose diff is the version files', () => {
+        const repo = mkdtempSync(join(tmpdir(), 'change-scope-'));
+        try {
+            mkdirSync(join(repo, 'scripts'));
+            copyFileSync('scripts/change-scope.sh', join(repo, 'scripts/change-scope.sh'));
+            writeFileSync(join(repo, 'package.json'), '{"version":"1.0.0"}\n');
+            const env = { PATH: process.env.PATH, HOME: repo };
+            /** @param {...string} args git arguments */
+            const git = (...args) => spawnSync('git', args, { cwd: repo, env });
+            git('init', '-q', '-b', 'main');
+            git('add', '-A');
+            git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'base');
+            git('checkout', '-q', '-b', 'release-please--branches--main');
+            writeFileSync(join(repo, 'package.json'), '{"version":"1.1.0"}\n');
+            writeFileSync(join(repo, 'CHANGELOG.md'), '# 1.1.0\n');
+            git('add', '-A');
+            git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'release');
+            const out = spawnSync('bash', ['scripts/change-scope.sh', 'main'], { cwd: repo, env, encoding: 'utf8' });
+            expect(out.stdout.trim()).toBe('release');
+        } finally {
+            rmSync(repo, { recursive: true, force: true });
+        }
     });
 
     it('rejects two arguments', () => {
