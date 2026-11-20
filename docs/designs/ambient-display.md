@@ -63,6 +63,17 @@ Read on 2026-11-20 with `npm run director:dry -- --seed <n>` (72000 ticks, the l
 
 The Phase 1 bars are not all met. `director.chase_precision` misses on every seed, on 3 or 4 chase shots a run: the snapshot has no `hunting` bit yet (worker-and-renderer T48), so a chase is found from the geometry alone and few are found. Seed 2 holds `trample` at 0.417 of its shots and takes 36 shots an hour: that world offers one kind of moment most of the time, and the repeat penalty (the kind's share of the last 20 shots, forgotten after 15 simulated minutes) holds the count down. More kinds of moment, not a weaker penalty, is the fix; it is left to a following chunk.
 
+Read on 2026-11-20 after T4b (the same command, world and seeds; the director with sustained chases and five scene moments):
+
+| Seed | `director.chase_precision` | `director.max_kind_share` | `director.shots_per_hour` |
+| ---- | -------------------------- | ------------------------- | ------------------------- |
+| 1    | 1.000 (1 of 1 chase shot)  | 0.308                     | 117.0                     |
+| 2    | n/a (no chase shot)        | 0.341                     | 132.0                     |
+| 3    | n/a (no chase shot)        | 0.227                     | 132.0                     |
+| 4    | 1.000 (1 of 1 chase shot)  | 0.261                     | 138.0                     |
+
+`director.max_kind_share` and `director.shots_per_hour` now meet their bars on all four seeds: carcass, pack call, patch wilt, strain and die-off moments (`js/app/director/moments-scenes.js`, from the scenes "Scavenge", "Pack, or loner", "Leave a dying patch" and "Boom and bust" in [principles.md](../principles.md)) give seed 2 something to cut to besides `trample`. The chase rule now needs a pursuit about to end (within 2.5 hunter sizes, closing, aimed within 0.3 rad, moving now and 1.5 s ago, no slower than the prey). On the recorded worlds of seeds 1, 3 and 4 that selects pursuits 4 in 5 of which end in a bite, a death or an escape inside the shot (the rule it replaced: 1 in 2). The measurement in `director:dry` is unchanged. T4b is not marked built: `director.chase_precision` has one chase shot on seeds 1 and 4 and none on seeds 2 and 3, too few to read against its bar. Seed 2 has no sustained pursuit at all; seed 3 has pursuits in minutes 13 to 15 and 18 to 19 that the director passed over for a `first` and two `first-kill` moments that score 85 to 90. A pursuit is short-lived, so a chase that starts while a stronger moment is on air is missed; the `hunting` bit (worker-and-renderer T48) or a longer run (more chase shots per seed) is what reads it.
+
 ## A death that reads
 
 A death has three beats, all on the wall clock, all anchored to the body.
