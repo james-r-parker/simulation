@@ -232,3 +232,16 @@ describe('formatPower and main', () => {
         expect(err).toHaveLength(2);
     });
 });
+
+describe('a metric that is mostly null (D1)', () => {
+    it('reads no detectable change and no false-positive rate on a noise metric with 16 of 128 seeds null', () => {
+        const seeds = Array.from({ length: 128 }, (_, i) => i + 1);
+        const noise = seeds.map((s, i) => (i < 16 ? null : 100 + 40 * Math.sin(s * 12.9898) * Math.cos(s * 78.233)));
+        const r = { ...report({ 'eval.fed_median_lifespan': noise }, 128), seeds };
+        const row = powerRow(r, 'eval.fed_median_lifespan', { size: 16, splits: 200, powerSplits: 40 });
+        expect(row.validShare).toBeLessThan(0.5);
+        expect(row.detectable).toBeNull();
+        expect(row.falsePositive).toBeNull();
+        expect(row.note).toMatch(/too few verdicts/);
+    });
+});

@@ -22,6 +22,8 @@ export const EFFECT_GRID = [0.05, 0.1, 0.15, 0.2, 0.3, 0.5, 0.75, 1];
 /** Planted absolute changes for a metric of unit `share` (metric-trust T29a): a relative step of a share near 1 is the size of the share bar. */
 export const SHARE_GRID = [0.01, 0.02, 0.03, 0.05, 0.075, 0.1, 0.15, 0.2];
 export const POWER_TARGET = 0.8;
+/** A power reading needs at least this share of its splits to give a verdict; below it the reading is null (D1). */
+export const MIN_VALID_SHARE = 0.5;
 const NOMINAL_ALPHA = 0.05;
 
 /**
@@ -176,7 +178,7 @@ function detectableChange(report, metric, { size, powerSplits, direction, rng })
     for (const effect of isShare(metric) ? SHARE_GRID : EFFECT_GRID) {
         const shift = sign * effect * scale;
         const tally = countVerdicts(report, metric, { size, splits: powerSplits, shift, direction, rng });
-        if (tally.better >= POWER_TARGET * tally.valid) {
+        if (tally.valid >= MIN_VALID_SHARE * powerSplits && tally.better >= POWER_TARGET * tally.valid) {
             return effect;
         }
     }
@@ -214,6 +216,39 @@ function isZeroRelative(report, metric) {
 }
 
 /**
+ * @param {string | null} declared the metric's declared direction, null when unknown
+ * @param {boolean} includeWatch whether a `watch` metric is measured
+ * @returns {string | null} why the metric is not measured, or null when it is
+ */
+function skipNote(declared, includeWatch) {
+    if (declared === null) {
+        return 'unknown metric';
+    }
+    return declared === 'watch' && !includeWatch ? 'watch' : null;
+}
+
+/**
+ * @param {PowerRow} base the empty row
+ * @param {{ better: number, worse: number, valid: number }} none the A/A tally
+ * @param {number} splits how many A/A splits were drawn
+ * @param {string | undefined} planted the direction of a measured `watch` metric
+ * @returns {PowerRow} the row with its false-positive rate, or a note and no rate when under `MIN_VALID_SHARE` of splits were valid (D1)
+ */
+function measuredRow(base, none, splits, planted) {
+    const validShare = none.valid / splits;
+    const watched = planted === undefined ? {} : { direction: planted };
+    if (validShare < MIN_VALID_SHARE) {
+        return {
+            ...base,
+            validShare,
+            ...watched,
+            note: `too few verdicts (${Math.round(validShare * 100)}% of splits)`,
+        };
+    }
+    return { ...base, falsePositive: (none.better + none.worse) / none.valid, validShare, ...watched };
+}
+
+/**
  * @param {Record<string, any>} report the 64-seed report
  * @param {string} metric a metric name
  * @param {{ size: number, splits: number, powerSplits: number, includeWatch?: boolean }} options arm size and split
@@ -223,8 +258,9 @@ function isZeroRelative(report, metric) {
 export function powerRow(report, metric, { size, splits, powerSplits, includeWatch = false }) {
     const base = emptyRow(metric, size);
     const declared = metricDirection(metric);
-    if (declared === null || (declared === 'watch' && !includeWatch)) {
-        return { ...base, note: declared === null ? 'unknown metric' : 'watch' };
+    const skipped = skipNote(declared, includeWatch);
+    if (skipped !== null) {
+        return { ...base, note: skipped };
     }
     const direction = declared === 'watch' ? intendedDirection(metric) : declared;
     const rng = fork(createRng(1), `power-${metric}-${size}`);
@@ -232,12 +268,10 @@ export function powerRow(report, metric, { size, splits, powerSplits, includeWat
     if (none.valid === 0) {
         return { ...base, note: 'no verdict at this size' };
     }
-    const row = {
-        ...base,
-        falsePositive: (none.better + none.worse) / none.valid,
-        validShare: none.valid / splits,
-        ...(declared === 'watch' ? { direction } : {}),
-    };
+    const row = measuredRow(base, none, splits, declared === 'watch' ? direction : undefined);
+    if (row.falsePositive === null) {
+        return row;
+    }
     if (isZeroRelative(report, metric)) {
         return { ...row, note: 'mean is 0' };
     }
