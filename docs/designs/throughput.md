@@ -2,7 +2,7 @@
 
 **Status:** Proposed - find and take the speed the kernel squeezes left: why 16 worlds on 16 cores run at 63% of one world's speed, loops over empty slots, set-up cost in small worlds, and a bench that reads one window; Phase 1 (measure) is first.
 **Validated:** a1813ff3 (2026-11-15)
-**Priority:** 5 - every eval, screen and training run waits on ticks per second across workers, and Phases 1 to 4 change no behaviour, so the measuring phase runs beside the world work; the kernel work itself is done ([wasm-kernels.md](wasm-kernels.md) Phases 5 and 6)
+**Priority:** 7 - first of the waiting plans: every eval and screen waits on ticks per second across workers, and Phases 1 to 4 change no behaviour; the trainer's own idle time is [training-loop.md](training-loop.md) T27 to T33
 **Depends on:** [wasm-kernels.md](wasm-kernels.md)
 
 > Companion to [wasm-kernels.md](wasm-kernels.md), which moved the brain, the ray march, the spatial hash, the pheromone update and physics to Rust and squeezed each kernel under a bit-identical contract. This doc does not repeat a squeeze that doc tried and reverted.

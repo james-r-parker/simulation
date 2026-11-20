@@ -2,7 +2,7 @@
 
 **Status:** Proposed - what every agent session reads, how an experiment is recorded and read back, what a branch learns before it pushes, how runs, worktrees and outside streams share the machine, and the two commands that take a chunk from a fresh branch to a merged PR; Phase 1 (the context diet) and Phase 5 (start to merge) are first.
 **Validated:** 58f38443 (2026-11-20)
-**Priority:** 13 - tooling that changes no sim rule and runs beside the queue; every session and every subagent pays the Phase 1 cost on its first token, so Phase 1 is built before the next training chunk
+**Priority:** 4 - tooling that changes no sim rule; every session and every subagent pays the Phase 1 cost on its first token and every chunk ships through Phase 5, so both are built before the next training chunk
 **Depends on:** [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
 
 > Companion to [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), which owns the gates and CI jobs, and [dev-workflow-and-gate.md](dev-workflow-and-gate.md), which owns the workflow. This doc owns the files an agent reads, the experiment ledger, the pre-push checks that mirror CI's most common failures, and the commands that show what is running.
@@ -72,6 +72,15 @@ The three metric paragraphs under the Scenes table (flora, megafauna, disease) a
 ### Status lines
 
 A `**Status:**` line holds at most 400 characters. `readStatus` in `scripts/design-docs/header.mjs` rejects a longer one. The detail names the built phases and the next task; a run's result is in its experiment record. Every doc over the cap is shortened in the task that adds the lint.
+
+## The active set
+
+Ranks 1 to 6 of the Build queue are the active set. A session builds only a doc in the active set unless the user names another. A doc joins the set when one leaves it: `Implemented`, or stopped at a recorded falsification.
+
+- `scripts/designs-index.mjs` renders the Build queue in two lists, "Active (6)" and "Waiting", split at `ACTIVE_LIMIT` in `scripts/design-docs/render-index.mjs`.
+- A waiting doc's priority reason names what it waits on. The index flags a waiting doc that an active doc lists in `**Depends on:**`, since that doc is the real next work.
+- `npm run state` prints the active set only.
+- On 2026-11-20 the queue holds 39 docs and 24 are `In progress`.
 
 ## Experiment ledger
 
@@ -143,7 +152,7 @@ The `check` workflow runs `scope` only on the Release Please branch (`release-pl
 
 ### Streams and handoffs
 
-A stream is a lane given to another session or another model with a prompt. `docs/handoffs/TEMPLATE.md` is the prompt's form, and each handoff is committed as `docs/handoffs/<YYYY-MM-DD>-<stream>.md` before the stream starts.
+A stream is a lane given to another session with a prompt. One coordinator session owns the queue, the ledger and every plan doc's status line; streams are sessions of the coordinator's model family and report to it. A session of another model family takes only work that edits no plan doc and records no experiment (a flaky test, a renderer spike), since it does not load the skills and the memory the workflow rests on. `docs/handoffs/TEMPLATE.md` is the prompt's form, and each handoff is committed as `docs/handoffs/<YYYY-MM-DD>-<stream>.md` before the stream starts.
 
 | Template field  | Content                                                                                     |
 | --------------- | ------------------------------------------------------------------------------------------- |
@@ -191,10 +200,10 @@ A rerun of `scripts/ship.sh` after a fix commit resumes at step 2 on the same PR
 
 **Targets:** none - it moves no sim, bench or browser metric; its readings are `AGENTS.md` at or under 16000 bytes, a generated `docs/scene-scorecard.md`, and no status line over 400 characters
 
-| Chunk | Tasks    | Builder |
-| ----- | -------- | ------- |
-| A     | T1 to T4 | Sonnet  |
-| B     | T5 to T9 | Sonnet  |
+| Chunk | Tasks     | Builder |
+| ----- | --------- | ------- |
+| A     | T1 to T4a | Sonnet  |
+| B     | T5 to T9  | Sonnet  |
 
 ### Phase 2 - Experiment ledger
 
@@ -258,17 +267,18 @@ A rerun of `scripts/ship.sh` after a fix commit resumes at step 2 on the same PR
 
 ### Phase 1 - Context diet
 
-| #   | Task                                                                                                                                                                                                                          | Nature       | Depends on     |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | -------------- |
-| T1  | Move the Commands table to `docs/commands.md` under the eight headings, one `###` per command; leave the 12-row table and the link in `AGENTS.md`; point `audit-docs` and the skills at the new file                          | [judgement]  | -              |
-| T2  | Add the `agents-size` check (16000 bytes) to `scripts/check-conventions.sh` with its tests; trim `AGENTS.md` under it without dropping a hard rule or a boundary                                                              | [judgement]  | T1             |
-| T3  | Add `scripts/notes-index.mjs`; move every dated entry to `docs/notes/<YYYY-MM>.md` in date order; regenerate `sim-notes.md` as the index; run `--check` in `conventions`; update the notes rule in `AGENTS.md` and `STYLE.md` | [mechanical] | -              |
-| T4  | Add the 400-character status cap to `readStatus` with its test and shorten every doc over it                                                                                                                                  | [judgement]  | -              |
-| T5  | Add `SCENES` in `js/evo/metric-registry/scenes.js` and the optional `scenes` field, with the registry tests                                                                                                                   | [mechanical] | -              |
-| T6  | Tag every registry metric the three principles tables and the flora, megafauna and disease paragraphs name with its scenes                                                                                                    | [judgement]  | T5             |
-| T7  | Add `scripts/scene-scorecard.mjs` (`--write`, `--check`), its tests, the generated `docs/scene-scorecard.md`, and the `conventions` check                                                                                     | [judgement]  | T6             |
-| T8  | Cut `docs/principles.md` to the stable sections, link the scorecard, move "Known violations today" to `natural-selection.md`, and fix every link to the moved sections                                                        | [judgement]  | T7             |
-| T9  | Conformance review of Phase 1                                                                                                                                                                                                 | [judgement]  | T2, T3, T4, T8 |
+| #   | Task                                                                                                                                                                                                                          | Nature       | Depends on          |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------- |
+| T1  | Move the Commands table to `docs/commands.md` under the eight headings, one `###` per command; leave the 12-row table and the link in `AGENTS.md`; point `audit-docs` and the skills at the new file                          | [judgement]  | -                   |
+| T2  | Add the `agents-size` check (16000 bytes) to `scripts/check-conventions.sh` with its tests; trim `AGENTS.md` under it without dropping a hard rule or a boundary                                                              | [judgement]  | T1                  |
+| T3  | Add `scripts/notes-index.mjs`; move every dated entry to `docs/notes/<YYYY-MM>.md` in date order; regenerate `sim-notes.md` as the index; run `--check` in `conventions`; update the notes rule in `AGENTS.md` and `STYLE.md` | [mechanical] | -                   |
+| T4  | Add the 400-character status cap to `readStatus` with its test and shorten every doc over it                                                                                                                                  | [judgement]  | -                   |
+| T4a | Render the Build queue as "Active (6)" and "Waiting" split at `ACTIVE_LIMIT`, with the waiting-dependency flag and tests; state the active-set rule in `STYLE.md` and the `AGENTS.md` Build order                             | [judgement]  | -                   |
+| T5  | Add `SCENES` in `js/evo/metric-registry/scenes.js` and the optional `scenes` field, with the registry tests                                                                                                                   | [mechanical] | -                   |
+| T6  | Tag every registry metric the three principles tables and the flora, megafauna and disease paragraphs name with its scenes                                                                                                    | [judgement]  | T5                  |
+| T7  | Add `scripts/scene-scorecard.mjs` (`--write`, `--check`), its tests, the generated `docs/scene-scorecard.md`, and the `conventions` check                                                                                     | [judgement]  | T6                  |
+| T8  | Cut `docs/principles.md` to the stable sections, link the scorecard, move "Known violations today" to `natural-selection.md`, and fix every link to the moved sections                                                        | [judgement]  | T7                  |
+| T9  | Conformance review of Phase 1                                                                                                                                                                                                 | [judgement]  | T2, T3, T4, T4a, T8 |
 
 ### Phase 2 - Experiment ledger
 
@@ -295,13 +305,13 @@ A rerun of `scripts/ship.sh` after a fix commit resumes at step 2 on the same PR
 
 ### Phase 4 - The state of the machine
 
-| #   | Task                                                                                                                                  | Nature       | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T22 | Record `workers` in `runs.json` and print the under-use warning in `scripts/run-detached.sh`, with tests                              | [mechanical] | -          |
-| T23 | Add `scripts/worktree-gc.sh` (`--list`, remove `safe`) with tests on a fixture repo                                                   | [judgement]  | -          |
-| T24 | Add `scripts/state.mjs` and `npm run state` with tests for each block                                                                 | [judgement]  | T22, T23   |
-| T25 | Add `docs/handoffs/TEMPLATE.md`; rewrite "Delegating to subagents" in `AGENTS.md` for streams, the worker budget and `worktree-gc.sh` | [judgement]  | T24        |
-| T27 | Conformance review of Phase 4, with `scripts/worktree-gc.sh` run on the machine and the class counts before and after in the PR body  | [judgement]  | T24, T25   |
+| #   | Task                                                                                                                                                                      | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T22 | Record `workers` in `runs.json` and print the under-use warning in `scripts/run-detached.sh`, with tests                                                                  | [mechanical] | -          |
+| T23 | Add `scripts/worktree-gc.sh` (`--list`, remove `safe`) with tests on a fixture repo                                                                                       | [judgement]  | -          |
+| T24 | Add `scripts/state.mjs` and `npm run state` with tests for each block                                                                                                     | [judgement]  | T22, T23   |
+| T25 | Add `docs/handoffs/TEMPLATE.md`; rewrite "Delegating to subagents" in `AGENTS.md` for streams (one coordinator, one model family), the worker budget and `worktree-gc.sh` | [judgement]  | T24        |
+| T27 | Conformance review of Phase 4, with `scripts/worktree-gc.sh` run on the machine and the class counts before and after in the PR body                                      | [judgement]  | T24, T25   |
 
 ### Phase 5 - Start to merge
 

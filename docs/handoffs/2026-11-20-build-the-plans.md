@@ -19,22 +19,38 @@ recorded falsification.
 | Agents     | 35 of the last 200 `check` runs failed (ratchet 14, smoke 10, shipped-data tests 8); `AGENTS.md` is 132 KB                                   |
 | App        | the director is built and not wired; a death is a frozen glide and a fade; follow leaves a death after 650 ms                                |
 
+## Focus (user, 2026-11-20)
+
+- **The active set is six plans:** training-loop, metric-noise, fair-chase, agent-workflow, ambient-display and
+  training-stages (ranks 1 to 6). Build nothing else unless the user names it. Every mechanism in the world stays on: no
+  feature is turned off to make training easier.
+- **No experiment that feeds a decision runs until two things are built:** metric-noise.md Phase 4 (the power, keep-rule
+  and interval defects) and fair-chase.md Phase 1 (the sprint store and its envelope reading). Runs that only build or
+  test code are fine. The first decision run after the freeze is fair-chase Phase 2.
+- **One coordinator, one model family.** One session owns the queue, the ledger and the status lines. A session of
+  another model family takes only work that edits no plan doc and records no experiment.
+- **Watch before tables.** ambient-display.md Phase 6 (the scene reel) is how a behaviour change is reviewed; the user
+  watches the reel weekly.
+- **Headlines.** A decision reads one headline metric per scene (metric-noise.md Phase 5), not 370 metrics.
+- **After the chase is fair,** the hunt rung co-evolves prey with hunters (training-stages.md Phase 9).
+
 ## Build order
 
 Lanes A, B and C own disjoint paths and run side by side. Inside a lane, build in order, one chunk per branch and PR.
 
-| Order | Lane | Plan and phase                                                                                                | Owns                                          | Why here                                                        |
-| ----- | ---- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | --------------------------------------------------------------- |
-| 1     | A    | [agent-workflow.md](../designs/agent-workflow.md) Phase 5 (start to merge)                                    | `scripts/`, `.github/`, skills                | every later chunk ships through `task-start.sh` and `ship.sh`   |
-| 2     | A    | agent-workflow.md Phase 1 (context diet)                                                                      | `AGENTS.md`, `docs/`                          | every session and subagent reads `AGENTS.md`                    |
-| 3     | B    | [fair-chase.md](../designs/fair-chase.md) Phase 1 (the store, the envelope), on `season/next`                 | `js/sim/`, `wasm/`, `js/evo/chase-*`          | minutes of scripted reading decide whether the rest is worth it |
-| 4     | B    | [training-loop.md](../designs/training-loop.md) Phase 5 (T24, T25, then T16b)                                 | `js/evo/yield-*`, `scripts/train-*`, `evals/` | fair-chase Phase 2 is judged on 32 offsets and the pass test    |
-| 5     | C    | [ambient-display.md](../designs/ambient-display.md) Phases 1 and 2                                            | `js/app/`                                     | the director on air and the death are the largest visible gains |
-| 6     | B    | fair-chase.md Phase 2 (the rung), then Phase 3 (the world, adopt or delete)                                   | `evals/`, then `js/sim/` on `season/next`     | long runs; detach them and build lane A or C meanwhile          |
-| 7     | A    | agent-workflow.md Phases 2, 3 and 4                                                                           | `evals/ledger/`, `scripts/`, `.github/`       | Phase 2 edits every experiment record: no eval record PR open   |
-| 8     | C    | ambient-display.md Phases 3, 4 and 5                                                                          | `js/app/`                                     | follow, the far-screen look, the insights drawer                |
-| 9     | B    | [training-stages.md](../designs/training-stages.md) T64, then [unit-knockout.md](../designs/unit-knockout.md) | `evals/`, `js/evo/`                           | cheap ladder levers that need no sim rule                       |
-| 10    | B    | [throughput.md](../designs/throughput.md) Phase 1                                                             | `bench/`, `scripts/`                          | a quiet machine under the CPU lock; no eval running             |
+| Order | Lane | Plan and phase                                                                                                | Owns                                                                     | Why here                                                        |
+| ----- | ---- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| 0     | B    | [metric-noise.md](../designs/metric-noise.md) Phase 4 (T8 to T15), then Phase 5                               | `scripts/eval-*`, `js/evo/compare*`, `js/evo/keep-rule.js`, the registry | no verdict is trusted until the statistics layer is fixed       |
+| 1     | A    | [agent-workflow.md](../designs/agent-workflow.md) Phase 5 (start to merge)                                    | `scripts/`, `.github/`, skills                                           | every later chunk ships through `task-start.sh` and `ship.sh`   |
+| 2     | A    | agent-workflow.md Phase 1 (context diet)                                                                      | `AGENTS.md`, `docs/`                                                     | every session and subagent reads `AGENTS.md`                    |
+| 3     | B    | [fair-chase.md](../designs/fair-chase.md) Phase 1 (the store, the envelope), on `season/next`                 | `js/sim/`, `wasm/`, `js/evo/chase-*`                                     | minutes of scripted reading decide whether the rest is worth it |
+| 4     | B    | [training-loop.md](../designs/training-loop.md) Phase 5 (T24, T25, then T16b)                                 | `js/evo/yield-*`, `scripts/train-*`, `evals/`                            | fair-chase Phase 2 is judged on 32 offsets and the pass test    |
+| 5     | C    | [ambient-display.md](../designs/ambient-display.md) Phases 1 and 2                                            | `js/app/`                                                                | the director on air and the death are the largest visible gains |
+| 6     | B    | fair-chase.md Phase 2 (the rung), then Phase 3 (the world, adopt or delete)                                   | `evals/`, then `js/sim/` on `season/next`                                | long runs; detach them and build lane A or C meanwhile          |
+| 7     | A    | agent-workflow.md Phases 2, 3 and 4                                                                           | `evals/ledger/`, `scripts/`, `.github/`                                  | Phase 2 edits every experiment record: no eval record PR open   |
+| 8     | C    | ambient-display.md Phases 3, 4 and 5                                                                          | `js/app/`                                                                | follow, the far-screen look, the insights drawer                |
+| 9     | B    | [training-stages.md](../designs/training-stages.md) T64, then [unit-knockout.md](../designs/unit-knockout.md) | `evals/`, `js/evo/`                                                      | cheap ladder levers that need no sim rule                       |
+| 10    | B    | [throughput.md](../designs/throughput.md) Phase 1                                                             | `bench/`, `scripts/`                                                     | a quiet machine under the CPU lock; no eval running             |
 
 ## Review of 2026-11-20 (metrics, the brain kernel, the profile)
 
