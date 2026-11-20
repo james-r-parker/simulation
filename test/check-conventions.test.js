@@ -176,3 +176,14 @@ describe('conventions checks that read every file in one pass', { timeout: scale
         expect(out).not.toContain('small file.bin');
     });
 });
+
+describe('conventions agents-size', { timeout: scaleTimeout(30_000) }, () => {
+    it('flags an AGENTS.md over 16000 bytes with its size', () => {
+        const out = conventions({ 'AGENTS.md': 'x'.repeat(16_001) });
+        expect(out).toContain('AGENTS.md: 16001 bytes - it stays at or under 16000');
+    });
+
+    it('accepts an AGENTS.md at exactly 16000 bytes', () => {
+        expect(conventions({ 'AGENTS.md': 'x'.repeat(16_000) })).not.toContain('AGENTS.md: ');
+    });
+});

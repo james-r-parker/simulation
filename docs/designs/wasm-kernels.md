@@ -1,6 +1,6 @@
 # WASM kernels
 
-**Status:** In progress - Phases 1, 2 and 4 are built and adopted (T1 to T12, T13 to T19): every world runs the brain phase, the ray march, the spatial hash build, the pheromone update and the physics loops in the Rust/WASM kernels from birth, and the JS kernels they replaced are deleted; Phase 5 (profile and squeeze) is built (T20 to T28): the baseline re-recorded, the profile ranked, three kernel squeezes kept (drill throughput +36%) and four tried and reverted; Phase 6 (the brain phase on the eat-choice world) is built (T29 to T32): the brain rise is more agents alive, not dearer agents, and one tanh squeeze kept (brain_forward +3%); Phase 3 (batched drill evaluation) is proposed. Phase 7 (an independent multi-tick brain reference test and the stale layout numbers in three docs) is planned.
+**Status:** In progress - Phases 1, 2, 4, 5 and 6 are built and adopted (T1 to T32): the brain, ray march, spatial hash, pheromone and physics loops run in the Rust/WASM kernels from birth and the JS kernels are deleted; drill throughput +36% from three squeezes. Phase 3 (batched drill evaluation) is proposed; Phase 7 (a multi-tick brain reference test, stale layout numbers) is planned.
 **Validated:** f5c7880 (2026-11-07)
 **Scheduled by:** [throughput.md](throughput.md) step 1 - Phase 7 (the independent brain reference test and the stale layout numbers) and the batched drill evaluation of Phase 3
 **Depends on:** [headless-sim-core.md](headless-sim-core.md)

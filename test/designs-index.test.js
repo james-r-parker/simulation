@@ -70,6 +70,18 @@ describe('parseDoc', () => {
         expect(() => parse(proposed({ status: 'Planned - soon' }))).toThrow(/unrecognised status/);
     });
 
+    it('rejects a status line over 400 characters, counting a wrapped line whole', () => {
+        const long = `Proposed - ${'x'.repeat(390)}`;
+        expect(() => parse(proposed({ status: long }))).toThrow(/status line is 401 characters, over the 400 limit/);
+        expect(() => parse(proposed({ status: `Proposed - ${'x'.repeat(200)}\n${'y'.repeat(189)}` }))).toThrow(
+            /status line is 401 characters/,
+        );
+    });
+
+    it('accepts a status line of exactly 400 characters', () => {
+        expect(() => parse(proposed({ status: `Proposed - ${'x'.repeat(389)}` }))).not.toThrow();
+    });
+
     it('requires a priority on an unbuilt doc', () => {
         expect(() => parse(proposed({ priority: '' }))).toThrow(/Priority/);
     });

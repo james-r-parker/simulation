@@ -1,6 +1,6 @@
 # Senses and motor
 
-**Status:** In progress - Phase 1 built (interface checks; no sign or class bug, three findings recorded for T13); Phase 2 built (`npm run audit:chase`; `E-SM-1`, record E185, falsified: no fair band beyond 0.2 of view). Phase 3 code is built (T6 to T9: `npm run audit:signals`, the lesson oracles and the input reader, `npm run probe:learn`); its runs (T10 to T12) and Phase 4 are not. Phase 5 built (hunter's eyes, user request 2026-11-15; E186): the predator sees 400 ahead with `rearVisionShare` 0.4 and the defender 300 with 0.8, adopted on a 64-seed keep rule of no harm with `eval.hunter_catches_per_1k` better by 9.7%. An audit of what a brain is told and what its outputs do: interface checks for bugs, the envelope of a chase, a census of every input and output, and probes that say whether each lesson is reachable and whether the senses suffice for it.
+**Status:** In progress - Phases 1, 2 and 5 are built (interface checks; `audit:chase` with E-SM-1 falsified, E185; hunter eyes adopted on a 64-seed keep rule, E186). Phase 3 code is built (T6 to T9: `audit:signals`, the lesson oracles, `probe:learn`); its runs (T10 to T12) and Phase 4 are not. An audit of what a brain is told and what its outputs do.
 **Validated:** f5ebac76 (2026-11-15)
 **Scheduled by:** [fair-chase.md](fair-chase.md) step 1 - the chase envelope runs (T10 to T12) and Phase 4 are read on the bodies the sprint store leaves
 **Depends on:** [training.md](training.md)

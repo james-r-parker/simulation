@@ -1,7 +1,7 @@
 // Reflex throughput bench (`npm run bench:reflex`): genomes per second on the four forager cases (one core, tables built
 // beforehand, the Rust brain kernel through forwardAll) as `bench.reflex_genomes_per_s`, and the same genomes through the
 // forager drills (`drillSubject` over `DRILLS`) for the ratio `bench.reflex_vs_drill`. A tool, not a gate: run it
-// under `flock /tmp/claude-1000/cpu.lock` on a quiet machine (AGENTS.md, Commands).
+// under `flock /tmp/claude-1000/cpu.lock` on a quiet machine (docs/commands.md).
 import { performance } from 'node:perf_hooks';
 import { DRILLS } from '../js/evo/drill-scenarios.js';
 import { SOCIAL_DRILLS } from '../js/evo/drill-scenarios-social.js';

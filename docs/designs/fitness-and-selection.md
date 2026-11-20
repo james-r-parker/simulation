@@ -1,6 +1,6 @@
 # Fitness and selection
 
-**Status:** Implemented - Phases 1 to 3 are built (the metric audit and new metrics, the predator fix, in-world merit, `fitnessV6`, `descriptorV6`, `map-elites-v6` and the v6 exploit bounds), and Phase 4 is built or superseded: the screens `E37` to `E41` and `E61` to `E64` and the watchability metrics are built, T42b and T42c (the terrain keys) moved to [refuge.md](refuge.md) and [habitat-cover.md](habitat-cover.md), and the switch-on, the long run and the conformance review were done by [natural-selection.md](natural-selection.md) (its Phase 4 closed this doc's Phase 4 on 2026-11-07).
+**Status:** Implemented - Phases 1 to 3 are built (the metric audit, the predator fix, in-world merit, `fitnessV6`, `descriptorV6`, `map-elites-v6`, the exploit bounds) and Phase 4 is built or superseded: screens E37 to E41 and E61 to E64 done, the terrain keys moved to [refuge.md](refuge.md) and [habitat-cover.md](habitat-cover.md); [natural-selection.md](natural-selection.md) closed it on 2026-11-07.
 **Depends on:** [world-balance.md](world-balance.md) (Phase 1, built), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md)
 
 Blobs reward luck. In the current worlds 88% of food is eaten by chance contact, population sits at the cap, one
