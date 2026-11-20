@@ -1,0 +1,1324 @@
+{
+  "base": {
+    "runs": 16,
+    "meanScore": 1.849648143914032,
+    "passedLast": 3,
+    "cpuHours": 17.63882535221722,
+    "stages": [
+      {
+        "stage": "nursery",
+        "passShare": 0.5625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 1.3486905794623458
+      },
+      {
+        "stage": "hunt-contact",
+        "passShare": 0.5625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.12504412793879624
+      },
+      {
+        "stage": "hunt-weak",
+        "passShare": 0.25,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.7859103597298608
+      },
+      {
+        "stage": "hunt-mid",
+        "passShare": 0.1875,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.4105238488958336
+      }
+    ],
+    "perRun": [
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/base/o0",
+        "offset": 0,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 60
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 4464.569186559002,
+        "stageCpuSeconds": {
+          "nursery": 1732.4524427129995,
+          "hunt-contact": 443.23419426099963,
+          "hunt-weak": 564.0851570659993,
+          "hunt-mid": 1724.797392519004
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/base/o8",
+        "offset": 8,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.6695959774964979,
+        "score": 0.6695959774964979,
+        "cpuSeconds": 4005.0450548720005,
+        "stageCpuSeconds": {
+          "nursery": 4005.0450548720005
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/base/o16",
+        "offset": 16,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 0,
+        "score": 3,
+        "cpuSeconds": 5528.517400383,
+        "stageCpuSeconds": {
+          "nursery": 2375.263346515,
+          "hunt-contact": 438.9225420529988,
+          "hunt-weak": 1064.9244410650017,
+          "hunt-mid": 1649.407070749999
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/base/o24",
+        "offset": 24,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.09296686166863918,
+        "score": 0.09296686166863918,
+        "cpuSeconds": 3829.674967138999,
+        "stageCpuSeconds": {
+          "nursery": 3829.674967138999
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/base/o32",
+        "offset": 32,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7229398635236198,
+        "score": 0.7229398635236198,
+        "cpuSeconds": 2792.0856485889985,
+        "stageCpuSeconds": {
+          "nursery": 2792.0856485889985
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/base/o40",
+        "offset": 40,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7229398635236198,
+        "score": 0.7229398635236198,
+        "cpuSeconds": 4567.148702592,
+        "stageCpuSeconds": {
+          "nursery": 4567.148702592
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/base/o48",
+        "offset": 48,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 35
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 45
+          }
+        ],
+        "bestProgress": 0.008002416396755481,
+        "score": 2.0080024163967556,
+        "cpuSeconds": 5430.406473655999,
+        "stageCpuSeconds": {
+          "nursery": 3100.900727739002,
+          "hunt-contact": 477.96967189899897,
+          "hunt-weak": 1851.5360740179985
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/base/o56",
+        "offset": 56,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7628369645858827,
+        "score": 0.7628369645858827,
+        "cpuSeconds": 2417.1844281529993,
+        "stageCpuSeconds": {
+          "nursery": 2417.1844281529993
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/base/o64",
+        "offset": 64,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 3091.2811631840013,
+        "stageCpuSeconds": {
+          "nursery": 1558.504389526,
+          "hunt-contact": 440.3861282170001,
+          "hunt-weak": 559.6128492830007,
+          "hunt-mid": 532.7777961580005
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/base/o72",
+        "offset": 72,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.8306219119903062,
+        "score": 0.8306219119903062,
+        "cpuSeconds": 3479.7827601850017,
+        "stageCpuSeconds": {
+          "nursery": 3479.7827601850017
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/base/o80",
+        "offset": 80,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.00679934856896381,
+        "score": 2.006799348568964,
+        "cpuSeconds": 3111.6605287300004,
+        "stageCpuSeconds": {
+          "nursery": 1133.76703092,
+          "hunt-contact": 453.42977967799993,
+          "hunt-weak": 1524.4637181320004
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/base/o88",
+        "offset": 88,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 3930.856637397,
+        "stageCpuSeconds": {
+          "nursery": 2383.4357083239997,
+          "hunt-contact": 452.04316600599986,
+          "hunt-weak": 568.7024544190008,
+          "hunt-mid": 526.6753086479998
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/base/o96",
+        "offset": 96,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7628369645858827,
+        "score": 0.7628369645858827,
+        "cpuSeconds": 4485.4168967840005,
+        "stageCpuSeconds": {
+          "nursery": 4485.4168967840005
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/base/o104",
+        "offset": 104,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0,
+        "score": 2,
+        "cpuSeconds": 4108.192512446998,
+        "stageCpuSeconds": {
+          "nursery": 2118.8668268450006,
+          "hunt-contact": 404.6547104739998,
+          "hunt-weak": 1584.6709751279977
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/base/o112",
+        "offset": 112,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0,
+        "score": 2,
+        "cpuSeconds": 4062.867550942999,
+        "stageCpuSeconds": {
+          "nursery": 1850.6622374399997,
+          "hunt-contact": 443.59045598300077,
+          "hunt-weak": 1768.6148575199986
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/base/o120",
+        "offset": 120,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.014830130284339629,
+        "score": 2.0148301302843397,
+        "cpuSeconds": 4195.081356368999,
+        "stageCpuSeconds": {
+          "nursery": 1867.383606244,
+          "hunt-contact": 497.19909664600027,
+          "hunt-weak": 1830.4986534789987
+        }
+      }
+    ],
+    "failed": 0
+  },
+  "nursery-scatter": {
+    "runs": 16,
+    "meanScore": 2.7686629188855703,
+    "passedLast": 5,
+    "cpuHours": 20.729019652589447,
+    "stages": [
+      {
+        "stage": "nursery",
+        "passShare": 0.875,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.8249546499636508
+      },
+      {
+        "stage": "hunt-contact",
+        "passShare": 0.875,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.13259254867674605
+      },
+      {
+        "stage": "hunt-weak",
+        "passShare": 0.625,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.41585164119247225
+      },
+      {
+        "stage": "hunt-mid",
+        "passShare": 0.3125,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.6329684919398331
+      }
+    ],
+    "perRun": [
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/nursery-scatter/o0",
+        "offset": 0,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.00825685747759873,
+        "score": 2.0082568574775985,
+        "cpuSeconds": 5658.420289687,
+        "stageCpuSeconds": {
+          "nursery": 3050.5820681600007,
+          "hunt-contact": 530.0776652380005,
+          "hunt-weak": 2077.760556288999
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/nursery-scatter/o8",
+        "offset": 8,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0,
+        "score": 2,
+        "cpuSeconds": 6295.801928565997,
+        "stageCpuSeconds": {
+          "nursery": 3708.1082665039994,
+          "hunt-contact": 571.4996591859999,
+          "hunt-weak": 2016.1940028759973
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/nursery-scatter/o16",
+        "offset": 16,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 0.008002416396755481,
+        "score": 3.0080024163967556,
+        "cpuSeconds": 9141.450449036,
+        "stageCpuSeconds": {
+          "nursery": 6314.209318828998,
+          "hunt-contact": 543.051868720002,
+          "hunt-weak": 568.0880191319984,
+          "hunt-mid": 1716.101242355001
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/nursery-scatter/o24",
+        "offset": 24,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0,
+        "score": 2,
+        "cpuSeconds": 3993.7156785320026,
+        "stageCpuSeconds": {
+          "nursery": 1669.431551096,
+          "hunt-contact": 478.5516294029999,
+          "hunt-weak": 1845.7324980330027
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/nursery-scatter/o32",
+        "offset": 32,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 2792.5612549889993,
+        "stageCpuSeconds": {
+          "nursery": 1237.0009560909998,
+          "hunt-contact": 406.55273537099947,
+          "hunt-weak": 563.6648854379996,
+          "hunt-mid": 585.3426780890004
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/nursery-scatter/o40",
+        "offset": 40,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 3831.0510284810007,
+        "stageCpuSeconds": {
+          "nursery": 2258.860102484,
+          "hunt-contact": 451.379797993,
+          "hunt-weak": 554.2208106260014,
+          "hunt-mid": 566.5903173779993
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/nursery-scatter/o48",
+        "offset": 48,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 15
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 25
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 50
+          }
+        ],
+        "bestProgress": 0,
+        "score": 3,
+        "cpuSeconds": 5470.715886228,
+        "stageCpuSeconds": {
+          "nursery": 1934.4789396410006,
+          "hunt-contact": 457.8641922320003,
+          "hunt-weak": 1448.7219360850008,
+          "hunt-mid": 1629.6508182699986
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/nursery-scatter/o56",
+        "offset": 56,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          }
+        ],
+        "bestProgress": 0.004295449710144082,
+        "score": 3.004295449710144,
+        "cpuSeconds": 3884.867129381999,
+        "stageCpuSeconds": {
+          "nursery": 1114.1684595820002,
+          "hunt-contact": 478.2370923389997,
+          "hunt-weak": 575.9931220170008,
+          "hunt-mid": 1716.4684554439982
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/nursery-scatter/o64",
+        "offset": 64,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 0.014830130284339629,
+        "score": 3.0148301302843397,
+        "cpuSeconds": 6197.420274270997,
+        "stageCpuSeconds": {
+          "nursery": 3432.563335364,
+          "hunt-contact": 433.5701178340005,
+          "hunt-weak": 505.437303197999,
+          "hunt-mid": 1825.8495178749972
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/nursery-scatter/o72",
+        "offset": 72,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 2924.2173706909994,
+        "stageCpuSeconds": {
+          "nursery": 1259.8345110340001,
+          "hunt-contact": 504.6266179569993,
+          "hunt-weak": 572.1957951239997,
+          "hunt-mid": 587.5604465760002
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/nursery-scatter/o80",
+        "offset": 80,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.46974390757170914,
+        "score": 0.46974390757170914,
+        "cpuSeconds": 4159.906207826,
+        "stageCpuSeconds": {
+          "nursery": 4159.906207826
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/nursery-scatter/o88",
+        "offset": 88,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7710183186925603,
+        "score": 0.7710183186925603,
+        "cpuSeconds": 5544.011801913,
+        "stageCpuSeconds": {
+          "nursery": 5544.011801913
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/nursery-scatter/o96",
+        "offset": 96,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 35
+          }
+        ],
+        "bestProgress": 0.0006902159464371206,
+        "score": 3.0006902159464373,
+        "cpuSeconds": 4365.402653386,
+        "stageCpuSeconds": {
+          "nursery": 1463.953565273,
+          "hunt-contact": 452.6486257390002,
+          "hunt-weak": 814.9015113210003,
+          "hunt-mid": 1633.898951052999
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/nursery-scatter/o104",
+        "offset": 104,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 3032.201543484001,
+        "stageCpuSeconds": {
+          "nursery": 1544.0791874660006,
+          "hunt-contact": 422.16598355300016,
+          "hunt-weak": 520.4255929170004,
+          "hunt-mid": 545.5307795479998
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/nursery-scatter/o112",
+        "offset": 112,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 1,
+        "score": 4,
+        "cpuSeconds": 2958.9953725899995,
+        "stageCpuSeconds": {
+          "nursery": 1341.0094012830002,
+          "hunt-contact": 465.3533745729994,
+          "hunt-weak": 566.1929484050002,
+          "hunt-mid": 586.4396483289997
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/nursery-scatter/o120",
+        "offset": 120,
+        "reached": 2,
+        "passed": [
+          {
+            "stage": "nursery",
+            "generation": 10
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 20
+          }
+        ],
+        "bestProgress": 0.02176940608957503,
+        "score": 2.0217694060895752,
+        "cpuSeconds": 4373.731880260001,
+        "stageCpuSeconds": {
+          "nursery": 1545.516685622,
+          "hunt-contact": 487.08509316999994,
+          "hunt-weak": 2341.130101468001
+        }
+      }
+    ],
+    "failed": 0
+  },
+  "turn-rung": {
+    "runs": 16,
+    "meanScore": 3.5039326503979806,
+    "passedLast": 5,
+    "cpuHours": 23.497707087973893,
+    "stages": [
+      {
+        "stage": "forage-turn",
+        "passShare": 0.9375,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.6996056675937964
+      },
+      {
+        "stage": "nursery",
+        "passShare": 0.8125,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.3418382780730983
+      },
+      {
+        "stage": "hunt-contact",
+        "passShare": 0.8125,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.1353039487114744
+      },
+      {
+        "stage": "hunt-weak",
+        "passShare": 0.5,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.5272307124067017
+      },
+      {
+        "stage": "hunt-mid",
+        "passShare": 0.3125,
+        "medianGenerations": 10,
+        "cpuHoursPerPass": 0.5165854853227777
+      }
+    ],
+    "perRun": [
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/turn-rung/o0",
+        "offset": 0,
+        "reached": 4,
+        "passed": [
+          {
+            "stage": "forage-turn",
+            "generation": 10
+          },
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 50
+          }
+        ],
+        "bestProgress": 1,
+        "score": 5,
+        "cpuSeconds": 6242.778072126006,
+        "stageCpuSeconds": {
+          "forage-turn": 3047.234861937,
+          "nursery": 1370.336642619,
+          "hunt-contact": 607.669086281001,
+          "hunt-weak": 625.5014635590032,
+          "hunt-mid": 592.0360177300017
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/turn-rung/o8",
+        "offset": 8,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "forage-turn",
+            "generation": 10
+          },
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          }
+        ],
+        "bestProgress": 0,
+        "score": 3,
+        "cpuSeconds": 7019.405226599999,
+        "stageCpuSeconds": {
+          "forage-turn": 3324.6687875380007,
+          "nursery": 1396.007625101,
+          "hunt-contact": 496.75190819599993,
+          "hunt-weak": 1801.9769057649983
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/turn-rung/o16",
+        "offset": 16,
+        "reached": 4,
+        "passed": [
+          {
+            "stage": "forage-turn",
+            "generation": 20
+          },
+          {
+            "stage": "nursery",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 40
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 50
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 60
+          }
+        ],
+        "bestProgress": 1,
+        "score": 5,
+        "cpuSeconds": 9630.334895273,
+        "stageCpuSeconds": {
+          "forage-turn": 6344.359490336001,
+          "nursery": 1587.0500921480025,
+          "hunt-contact": 471.35567306699977,
+          "hunt-weak": 603.2241048119977,
+          "hunt-mid": 624.3455349099986
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/turn-rung/o24",
+        "offset": 24,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "forage-turn",
+            "generation": 10
+          },
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          }
+        ],
+        "bestProgress": 0,
+        "score": 3,
+        "cpuSeconds": 4825.282883481998,
+        "stageCpuSeconds": {
+          "forage-turn": 1760.8882973190002,
+          "nursery": 698.5186693270002,
+          "hunt-contact": 439.65632200300115,
+          "hunt-weak": 1926.2195948329968
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/turn-rung/o32",
+        "offset": 32,
+        "reached": 4,
+        "passed": [
+          {
+            "stage": "forage-turn",
+            "generation": 10
+          },
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 50
+          }
+        ],
+        "bestProgress": 1,
+        "score": 5,
+        "cpuSeconds": 3337.2226483450017,
+        "stageCpuSeconds": {
+          "forage-turn": 1196.6651823630002,
+          "nursery": 493.75669119900067,
+          "hunt-contact": 498.82602490500017,
+          "hunt-weak": 584.0107645450007,
+          "hunt-mid": 563.963985333
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/turn-rung/o40",
+        "offset": 40,
+        "reached": 4,
+        "passed": [
+          {
+            "stage": "forage-turn",
+            "generation": 10
+          },
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 50
+          }
+        ],
+        "bestProgress": 1,
+        "score": 5,
+        "cpuSeconds": 4696.856561702,
+        "stageCpuSeconds": {
+          "forage-turn": 2164.01134533,
+          "nursery": 909.3652589779995,
+          "hunt-contact": 470.9993368250002,
+          "hunt-weak": 575.1845388020006,
+          "hunt-mid": 577.296081767
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/turn-rung/o48",
+        "offset": 48,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "forage-turn",
+            "generation": 15
+          },
+          {
+            "stage": "nursery",
+            "generation": 25
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 35
+          }
+        ],
+        "bestProgress": 0.004295449710144082,
+        "score": 3.004295449710144,
+        "cpuSeconds": 5129.205413652003,
+        "stageCpuSeconds": {
+          "forage-turn": 2059.273661268,
+          "nursery": 778.6125983770003,
+          "hunt-contact": 492.5500425910009,
+          "hunt-weak": 1798.7691114160016
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/turn-rung/o56",
+        "offset": 56,
+        "reached": 4,
+        "passed": [
+          {
+            "stage": "forage-turn",
+            "generation": 10
+          },
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 0.03200692569506119,
+        "score": 4.032006925695061,
+        "cpuSeconds": 5764.258133281997,
+        "stageCpuSeconds": {
+          "forage-turn": 1258.1207508319999,
+          "nursery": 585.160704828,
+          "hunt-contact": 487.26487309199933,
+          "hunt-weak": 564.3553799700012,
+          "hunt-mid": 2869.356424559997
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/turn-rung/o64",
+        "offset": 64,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "forage-turn",
+            "generation": 20
+          },
+          {
+            "stage": "nursery",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 0.006148933053449782,
+        "score": 3.0061489330534497,
+        "cpuSeconds": 6442.916916723008,
+        "stageCpuSeconds": {
+          "forage-turn": 3416.0776091360003,
+          "nursery": 830.8674308540021,
+          "hunt-contact": 492.746031237999,
+          "hunt-weak": 1703.225845495007
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/turn-rung/o72",
+        "offset": 72,
+        "reached": 1,
+        "passed": [
+          {
+            "stage": "forage-turn",
+            "generation": 10
+          }
+        ],
+        "bestProgress": 0.7792736014607716,
+        "score": 1.7792736014607717,
+        "cpuSeconds": 3160.7394962949998,
+        "stageCpuSeconds": {
+          "forage-turn": 1297.2660555880002,
+          "nursery": 1863.4734407069996
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/turn-rung/o80",
+        "offset": 80,
+        "reached": 0,
+        "passed": [],
+        "bestProgress": 0.7002563943589847,
+        "score": 0.7002563943589847,
+        "cpuSeconds": 4101.751938447001,
+        "stageCpuSeconds": {
+          "forage-turn": 4101.751938447001
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/turn-rung/o88",
+        "offset": 88,
+        "reached": 1,
+        "passed": [
+          {
+            "stage": "forage-turn",
+            "generation": 10
+          }
+        ],
+        "bestProgress": 0.5334117371429483,
+        "score": 1.5334117371429483,
+        "cpuSeconds": 4705.635117917,
+        "stageCpuSeconds": {
+          "forage-turn": 1866.9979729619997,
+          "nursery": 2838.637144955
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/turn-rung/o96",
+        "offset": 96,
+        "reached": 4,
+        "passed": [
+          {
+            "stage": "forage-turn",
+            "generation": 10
+          },
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 55
+          }
+        ],
+        "bestProgress": 0.006148933053449782,
+        "score": 4.00614893305345,
+        "cpuSeconds": 6085.944695314004,
+        "stageCpuSeconds": {
+          "forage-turn": 1471.618711229,
+          "nursery": 752.2655088039996,
+          "hunt-contact": 459.3859794510008,
+          "hunt-weak": 1479.1713861849998,
+          "hunt-mid": 1923.5031096450039
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/turn-rung/o104",
+        "offset": 104,
+        "reached": 4,
+        "passed": [
+          {
+            "stage": "forage-turn",
+            "generation": 10
+          },
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 50
+          },
+          {
+            "stage": "hunt-mid",
+            "generation": 60
+          }
+        ],
+        "bestProgress": 1,
+        "score": 5,
+        "cpuSeconds": 4523.929688729999,
+        "stageCpuSeconds": {
+          "forage-turn": 1647.842986659,
+          "nursery": 674.2782551009996,
+          "hunt-contact": 432.47092311299957,
+          "hunt-weak": 1194.5089922569996,
+          "hunt-mid": 574.8285316000001
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/turn-rung/o112",
+        "offset": 112,
+        "reached": 3,
+        "passed": [
+          {
+            "stage": "forage-turn",
+            "generation": 10
+          },
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          }
+        ],
+        "bestProgress": 0.0006902159464371206,
+        "score": 3.0006902159464373,
+        "cpuSeconds": 4056.902812657999,
+        "stageCpuSeconds": {
+          "forage-turn": 1300.8483602980002,
+          "nursery": 621.9936397079989,
+          "hunt-contact": 441.12340820899954,
+          "hunt-weak": 1692.9374044430006
+        }
+      },
+      {
+        "dir": "/home/j1mb0jay/code/simulation/.sim/train-screens/food-behind/turn-rung/o120",
+        "offset": 120,
+        "reached": 4,
+        "passed": [
+          {
+            "stage": "forage-turn",
+            "generation": 10
+          },
+          {
+            "stage": "nursery",
+            "generation": 20
+          },
+          {
+            "stage": "hunt-contact",
+            "generation": 30
+          },
+          {
+            "stage": "hunt-weak",
+            "generation": 40
+          }
+        ],
+        "bestProgress": 0.0006902159464371206,
+        "score": 4.000690215946437,
+        "cpuSeconds": 4868.5810161599975,
+        "stageCpuSeconds": {
+          "forage-turn": 1521.0800388230002,
+          "nursery": 597.7077111149995,
+          "hunt-contact": 541.425190726,
+          "hunt-weak": 635.1590252309998,
+          "hunt-mid": 1573.209050264998
+        }
+      }
+    ],
+    "failed": 0
+  }
+}
