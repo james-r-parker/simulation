@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -86,6 +86,18 @@ describe('train:compare', () => {
         expect(text).toContain('stage pass test (exact, discordant offsets):');
         expect(text).toMatch(new RegExp(`hunt\\s+${flips}\\s+0\\s+${32 - flips}\\s+\\S+\\s+${verdict}\\s+6`));
         expect(text).toMatch(/nursery\s+0\s+0\s+32\s+1\.0000\s+no verdict/);
+    });
+
+    it('exits 2 when the arms were made with different trainer seed lists', async () => {
+        writeArm('seeds-a', 16, false);
+        writeArm('seeds-b', 16, false);
+        const manifest = join(root, 'seeds-b', 'o0', 'manifest.json');
+        const json = JSON.parse(readFileSync(manifest, 'utf8'));
+        writeFileSync(manifest, JSON.stringify({ ...json, options: { ...json.options, seedListHash: 'abc' } }));
+        /** @type {string[]} */
+        const lines = [];
+        expect(await main([join(root, 'seeds-a', 'o*'), join(root, 'seeds-b', 'o*')], (l) => lines.push(l))).toBe(2);
+        expect(await main([join(root, 'seeds-a', 'o*'), join(root, 'seeds-a', 'o*')], () => {})).toBe(0);
     });
 
     it('exits 2 on too few matched offsets, and 1 when a pattern matches nothing', async () => {

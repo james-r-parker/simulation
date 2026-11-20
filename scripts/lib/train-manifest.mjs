@@ -33,6 +33,17 @@ export function curriculumFile(file) {
 }
 
 /**
+ * A run's episode seeds depend on the trainer's seed list (`episodeSeed` cycles it), so two runs are comparable only on one
+ * list: runs made on the 256-seed list differ from the 512-seed one past episode index 255.
+ * @param {string} [file] the seed list file (default `evals/train-seeds.json`)
+ * @returns {string} the first 16 hex digits of the SHA-256 of the list as JSON
+ */
+export function seedListHash(file = join(ROOT, 'evals', 'train-seeds.json')) {
+    const seeds = JSON.parse(readFileSync(file, 'utf8'));
+    return createHash('sha256').update(JSON.stringify(seeds)).digest('hex').slice(0, 16);
+}
+
+/**
  * The parts of the manifest that do not change during a run.
  * @typedef {object} ManifestBase
  * @property {string | null} gitSha the repository's HEAD
@@ -60,6 +71,7 @@ export function manifestBase(args, commandLine) {
             ticks: args.ticks ?? null,
             offerFrom: args.offerFrom ?? null,
             checkpointEvery: args.checkpointEvery,
+            seedListHash: seedListHash(),
         },
     };
 }
