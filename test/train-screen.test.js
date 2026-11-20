@@ -46,6 +46,8 @@ const args = (name, count, extra = {}) =>
         gridFile(name, count, extra),
         '--out',
         join(root, name),
+        '--cache',
+        join(root, name, 'cache'),
         '--workers',
         '8',
         '--log-dir',
@@ -141,6 +143,49 @@ describe('runTrainScreen', () => {
         await runTrainScreen(args('again', 2), { exec: second.exec });
         expect(first.calls).toHaveLength(4);
         expect(second.calls).toEqual([]);
+    });
+
+    it('reuses the reference arm across different --runs directories via --cache', async () => {
+        const cache = join(root, 'shared-cache');
+        const grid = gridFile('cross', 2);
+        const first = fakeTrain(() => ({ passed: 1 }));
+        await runTrainScreen(
+            parseArgs([
+                '--grid',
+                grid,
+                '--out',
+                join(root, 'cross-1'),
+                '--runs',
+                join(root, 'runs-1'),
+                '--cache',
+                cache,
+                '--workers',
+                '8',
+                '--log-dir',
+                join(root, 'logs'),
+            ]),
+            { exec: first.exec },
+        );
+        expect(first.calls).toHaveLength(4);
+        const second = fakeTrain(() => ({ passed: 1 }));
+        await runTrainScreen(
+            parseArgs([
+                '--grid',
+                grid,
+                '--out',
+                join(root, 'cross-2'),
+                '--runs',
+                join(root, 'runs-2'),
+                '--cache',
+                cache,
+                '--workers',
+                '8',
+                '--log-dir',
+                join(root, 'logs'),
+            ]),
+            { exec: second.exec },
+        );
+        expect(second.calls.map((c) => c.dir.split('/').at(-2))).toEqual(['better', 'better']);
     });
 });
 

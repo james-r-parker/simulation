@@ -14,7 +14,7 @@
     {
       "key": "preyShare",
       "stage": "hunt-weak",
-      "values": [0.7, 1.0]
+      "values": [0.7]
     },
     {
       "key": "minGenerations",

@@ -8,7 +8,7 @@ Add or change a status in the doc itself, then re-run. Conventions: [STYLE.md](S
 Unbuilt docs in priority order - 1 is built next. Set in each doc's `**Priority:**` line; the evolution loop proposes re-ranks.
 
 1. [Training loop](training-loop.md) - pinned by the user (2026-11-19): every training run waits on how fast a ladder change can be judged, and nothing here changes a sim rule
-2. [Training stages](training-stages.md) - Phase 8 is next: the nursery `food-behind` stall stops 7 of 16 tune offsets before any hunt rung, and its screen changes training files only, judged in one night by the tuning lane of [training-loop.md](training-loop.md) (rank 1); the runs that claim a skill still wait for the held world, as [training.md](training.md) does
+2. [Training stages](training-stages.md) - Phase 8 built; Phase 7 waits for the world gate of [training.md](training.md)
 3. [Unit knockout](unit-knockout.md) - brain inspection's firm result (silencing h13 or h14 lifts `archive-159-predator-cell94` on `prey-ahead` from 6/128 to 24 or 25/128) is a gain no small weight step reaches; it queues behind the pinned training-loop.md and training-stages.md (the food-behind rung)
 4. [Honest budgets](honest-budgets.md) - the 128-seed read of [review-2026-11-11.md](../review-2026-11-11.md): most seeds boom to the cap and fall under 40 while food never runs short, so every scene that needs a standing prey population is tuned on top of the crash; food, the kill and the rocks come before any skill, refuge or call work
 5. [Habitat cover](habitat-cover.md) - cover on the patch rims, screened once behind honest-budgets.md Phase 3 (collision damage by impact speed), so a ring is no longer lethal to lean on; dropped if use stays at zero (brief of 2026-11-14)

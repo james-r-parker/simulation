@@ -67,6 +67,10 @@ The prediction's own falsification rule ("a base passer stalls in `nursery`") fi
 
 Falsified: the stall is not only the nursery's ranking of the turn; acquiring the turn also matters, since a rung that trains it first on the scattered world frees 6 of the 7. Its nursery pass share (81%) is below `nursery-scatter`'s (88%) because offsets 72, 80 and 88 stall.
 
+## T69 prediction (E-TS-1n), written before the run
+
+The held-out grid `evals/train-screens/food-behind-holdout.grid.json` (offsets 128 to 248 by 8, the same options as `food-behind.grid.json`, its own base arm, run `E-TS-1n`): `nursery-scatter` passes `nursery` on more offsets than `base` on 128 to 248, and `train:compare` of `nursery-scatter` against `base` is not `worse`. Falsified when `nursery-scatter` passes `nursery` on no more offsets than `base`, or reads `worse`. The two base passers it lost here (80 and 88) are read per offset in the record, not part of the clause.
+
 ## Outcome to task
 
 - T69 (held-out offsets 128 to 248, `E-TS-1n`): run, prediction in the T69 note below.
