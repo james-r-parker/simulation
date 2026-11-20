@@ -14,23 +14,20 @@ a docs-only PR (`scripts/change-scope.sh`) runs `scripts/check.sh --ci --docs`. 
 so a full local gate times out on load rather than on code. Locally an agent runs the quick pre-push check; the full
 local gate is only for performance PRs.
 
-**Core principle:** the quick check runs last. Any hand edit after `scripts/check.sh --fix` can reintroduce format or
-index drift, so the final action before `git add` is always another `scripts/check.sh --fix --quick` (the cheaper form in
-step 7 when no code changed).
+**Core principle:** `scripts/ship.sh` does the mechanical half (merge the base, the gate, the body check, push, PR,
+auto-merge, wait). The steps below are the judgement half an agent does before it runs it; the gate runs last, inside
+`ship.sh`, so a hand edit after it cannot leave format or index drift behind.
 
-## Pre-PR gate (in order)
+## Before ship.sh (in order)
 
-1. **Quick check green:** `scripts/check.sh --fix --quick` (conventions, designs-index, format, lint, typecheck, deps,
-   dupes and the build; no tests, ratchet, bench-check or smokes). The pre-commit hook already ran the tests of each
-   commit's staged files (`scripts/check.sh --tier 1`), and CI runs the rest on a quiet runner. The full local gate
-   (`scripts/check.sh --fix --skip=browser-smoke`, under `flock /tmp/claude-1000/cpu.lock` on a quiet machine) is needed
-   only for a PR that moves step time (`bench-check`); a red gate there is read the same way and rerun with
-   `scripts/check.sh --rerun-failed`, which runs only the gates the last run left failed. A docs-only change (`git diff --name-only origin/main...HEAD |
-scripts/change-scope.sh` prints `docs`: Markdown under `docs/`, `.claude/` or the root only) may use
-   `scripts/check.sh --fix --docs`, which is what CI runs for it. Add `--quiet` to print only failures and the
-   summary. A failed gate prints a digest under its `✗` line - failed tests with their assertion and first frame,
-   type errors, lint problems, unformatted files - and keeps the full output in `.checklogs/<gate>.log`. Act on the
-   digest; open the log only when it is not enough. Never rerun `vitest`, `tsc` or `eslint` just to see the errors.
+1. **Know what the gate is.** `scripts/ship.sh` runs it (step 3): `scripts/check.sh --fix --quick` for a code change,
+   `scripts/check.sh --fix --docs` when `scripts/change-scope.sh` says `docs` or `records`, and commits what `--fix`
+   wrote. The pre-commit hook already ran the tests of each commit's staged files, and CI runs the rest on a quiet
+   runner. The full local gate (`scripts/check.sh --fix --skip=browser-smoke`, under `flock /tmp/claude-1000/cpu.lock`
+   on a quiet machine) is only for a PR that moves step time (`bench-check`). A failed gate prints a digest under its
+   `✗` line and keeps the output in `.checklogs/<gate>.log`; act on the digest, open the log only when it is not enough,
+   and never rerun `vitest`, `tsc` or `eslint` just to see the errors. `scripts/check.sh --rerun-failed` reruns only the
+   gates the last run left failed.
 2. **Tests and logs present:** every behaviour in the diff has a test that pins it, a bug fix has a test that failed
    before the fix, and every new decision point or failure path emits a sim log event (`log.log` in `js/sim/log.js`, with
    `headless-sim-core.md`). Missing either blocks the PR; add them, do not defer them.
@@ -53,17 +50,13 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
     - move the **Status:** line and mark the phase `(built)`; drop `**Validated:**` and `**Priority:**` (or `**Scheduled by:**`, with its row in the lead's `## Order` table) once
       `Implemented`
     - regenerate the index: `node scripts/designs-index.mjs --write`
-    - append learnings to `docs/designs/sim-notes.md` under a dated heading (`### YYYY-MM-DD - <topic>` under
-      `## Learned while building`)
-7. **Last step before `git add`:** when no code changed after step 1 (only docs, the plan or the commit message),
-   `scripts/check.sh --fix --only=designs-index,format` is enough (it only applies the fixes; the pre-commit hook runs
-   the conventions, format and lint check at commit time, so it is not repeated here); when code changed, run the step 1
-   command again. (`--quick` is enough for code too: CI runs the tests.)
+    - append learnings to `docs/notes/<YYYY-MM>.md` as a dated `### YYYY-MM-DD - <topic>` entry, then run
+      `node scripts/notes-index.mjs --write` (it updates the index in `docs/designs/sim-notes.md`)
+7. **Write the PR body** to a file (the template under Ship); `ship.sh` checks it (step 4) before it pushes.
 
 ## Git conventions
 
-- Never commit to `main`. Branch from fresh `origin/main`: `git fetch origin && git switch -c <type>/<short-desc>
-origin/main` (e.g. `feat/headless-sim-core-phase-1`). Design docs in the planning stage go on `docs/<doc-name>`.
+- Never commit to `main`. Start with `scripts/task-start.sh <type>/<short-desc>` (a worktree branched from fresh `origin/main`; e.g. `feat/headless-sim-core-phase-1`). Design docs in the planning stage go on `docs/<doc-name>`.
 - Stage explicit paths: `git add js/sim/rng.js test/sim/rng.test.js`. Never `git add -A` or `git add .`. Review
   first with `git diff --staged`.
 - One self-contained commit per task; each commit passes the pre-commit hook, whose `test-related` gate runs the tests of the staged files, so the task's own tests run at commit time (`npx vitest run <files>` is for iterating before the commit, not a second run). The full gate and CI run once per chunk PR (4 to 8 tasks, AGENTS.md "Build in chunks").
@@ -74,59 +67,84 @@ origin/main` (e.g. `feat/headless-sim-core-phase-1`). Design docs in the plannin
 - End the message with the `Co-Authored-By:` trailer the running agent's environment specifies. Do not hardcode a
   model name.
 
-## Push and PR (only when the user asks)
+## Ship (only when the user asks to push or open a PR)
 
-1. `git push -u origin <branch>`
-2. Open a draft PR:
+Write the body to a file (not committed; `.pr-body.md` is the usual name), ending with the attribution line the
+environment specifies:
 
-    ```bash
-    gh pr create --draft --base main --title "<conventional title>" --body "$(cat <<'EOF'
-    ## Summary
-    <what changed and why, 1-5 bullets>
+```markdown
+## Summary
 
-    ## Scene served
-    <the scene or selection rule from docs/principles.md and the detector metric; "None - no behaviour change">
+<what changed and why, 1-5 bullets>
 
-    ## Design doc
-    [<doc>.md](docs/designs/<doc>.md) - Status: <old> -> <new>
+## Scene served
 
-    ## Delivery requirements
-    | Concern | Delivered |
-    | ------- | --------- |
-    | Architecture | ... |
-    ... one row per STYLE.md concern, or N/A - reason ...
+<the scene or selection rule from docs/principles.md and the detector metric in backticks; "None - no behaviour change">
 
-    ## Measurements
-    <bench / browser-perf / eval:compare output for each Target, or "No targets">
+## Design doc
 
-    ## Verification
-    - scripts/check.sh --fix: green
-    - Manual browser walk: <steps and result>
+[<doc>.md](docs/designs/<doc>.md) - Status: <old> -> <new>
 
-    ## Learnings
-    <entries added to sim-notes.md, or "None">
-    EOF
-    )"
-    ```
+## Delivery requirements
 
-    Omit the Design doc, Delivery requirements and Measurements sections only for changes with no design doc (fixes,
-    chores), and end the body with the attribution line the environment specifies.
+| Concern      | Delivered |
+| ------------ | --------- |
+| Architecture | ...       |
 
-3. Watch CI: `gh pr checks <n> --watch --fail-fast`. The jobs are `scope`, `static`, `test shard-<i>`, `test heavy-<name>` and
-   `test statistical-<name>` (the test jobs), `coverage` (the merged coverage and the ratchet), `browser-smoke`, `perf` (advisory)
-   and the required `check`, which fails when any of them failed.
-4. On failure: `gh run view <run-id> --log-failed`.
-    - `static`: the "Local gate" step shows the digest under each `✗` line; for more, `gh run download <run-id> -n
-check-logs` (`.checklogs/` and `TestResults/`). A `format` or `designs-index` failure is fixed by `scripts/check.sh
---fix`.
-    - `test <pass> <i>/<n>`: the log names the failed test and its assertion; the shard's seed is `github.run_id`, so
-      `TEST_SCOPE=<shard, heavy or statistical> npx vitest run --sequence.shuffle --sequence.seed=<run id> <file>` replays the order for one file.
-      A test that times out on a quiet runner is a real slow test: speed it up or move it to a `.slow.test.js` file's
-      own limit, never skip it.
-    - `coverage`: the ratchet line names the scope and metric below its baseline; add tests for the uncovered code (never
-      lower `scripts/quality-baseline.json`). After a failed shard its numbers are partial, so fix the shard first.
-    - Reproduce, fix the root cause, commit the fix. Do not just re-run the job.
-5. Never merge while `check` is red or pending.
+## Measurements
+
+<bench / browser-perf / eval:compare output for each Target, or "No targets">
+
+## Verification
+
+- scripts/check.sh --fix --quick: green
+- Manual browser walk: <steps and result>
+
+## Learnings
+
+<entries added to docs/notes/, or "None">
+```
+
+Omit Design doc, Delivery requirements and Measurements only for changes with no design doc (fixes, chores). A diff under
+`js/sim/` or `js/evo/` must have a Scene served section that names a scene or selection rule and a backticked detector
+metric (not "None"); `ship.sh` refuses it otherwise.
+
+Then, from the branch's worktree with everything committed:
+
+```bash
+scripts/ship.sh --title "<conventional title>" --body .pr-body.md
+```
+
+It blocks until the PR is merged or red. Add `--no-merge` to leave auto-merge off (the coordinator reviews first). It
+never rebases or force pushes, and it does not run `gh pr merge` itself beyond turning on auto-merge with a merge
+commit.
+
+| Exit | Meaning                               | Do                                                                     |
+| ---- | ------------------------------------- | ---------------------------------------------------------------------- |
+| 0    | merged (or green with `--no-merge`)   | report the link and the minutes it prints                              |
+| 1    | checks red                            | read the failed job names and log tails below; fix; commit; rerun      |
+| 2    | uncommitted files, or on `main`       | commit or stash the files; branch                                      |
+| 3    | merging `origin/<base>` conflicted    | resolve the listed paths, commit the merge, rerun                      |
+| 4    | the gate failed                       | read the failed gates it names and `.checklogs/<gate>.log`; fix; rerun |
+| 5    | the body fails the template           | add the section it names; rerun                                        |
+| 6    | push, PR or auto-merge failed         | read the `gh` error (auth, branch protection)                          |
+| 7    | green but not merged after 10 minutes | read the `mergeStateStatus` it prints (a required review, a queue)     |
+
+A rerun after a fix commit resumes at step 2 on the same PR. The run is logged to `.checklogs/ship.jsonl`.
+
+On a red `check` (exit 1) the digest names the job; for more, `gh run view <run-id> --log-failed`.
+
+- `static`: the "Local gate" step shows the digest under each `✗` line; for more, `gh run download <run-id> -n
+check-logs` (`.checklogs/` and `TestResults/`). A `format` or `designs-index` failure is fixed by `scripts/check.sh --fix`.
+- `test <pass> <i>/<n>`: the log names the failed test and its assertion; the shard's seed is `github.run_id`, so
+  `TEST_SCOPE=<shard, heavy or statistical> npx vitest run --sequence.shuffle --sequence.seed=<run id> <file>` replays the
+  order for one file. A test that times out on a quiet runner is a real slow test: speed it up or move it to a
+  `.slow.test.js` file's own limit, never skip it.
+- `coverage`: the ratchet line names the scope and metric below its baseline; add tests for the uncovered code (never
+  lower `scripts/quality-baseline.json`). After a failed shard its numbers are partial, so fix the shard first.
+- Reproduce, fix the root cause, commit the fix, rerun `scripts/ship.sh`. Do not just re-run the job.
+
+Never merge while `check` is red or pending.
 
 **One concern per PR.** An unrelated fix found on the way gets its own branch and PR.
 
@@ -146,6 +164,7 @@ check-logs` (`.checklogs/` and `TestResults/`). A `format` or `designs-index` fa
 - A subject with a capital letter, trailing period or non-conventional type.
 - Pushing or opening a PR the user did not ask for.
 - Re-running a red CI job without understanding why it failed.
+- Hand-running the push, `gh pr create` and the watch instead of `scripts/ship.sh`; writing a polling loop for CI.
 
 ## Red flags
 

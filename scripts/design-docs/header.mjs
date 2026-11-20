@@ -18,6 +18,9 @@ export const UNBUILT = new Set(['Proposed', 'In progress']);
 /** Long detail text pushes an index entry onto several wrapped lines and buries the next one. */
 const MAX_DETAIL = 160;
 
+/** A status line holds the keyword and the built phases and the next task; a run's result is in its experiment record. */
+export const MAX_STATUS = 400;
+
 const STARTS_SOMETHING_ELSE = /^(\*\*[A-Z]|#|>|[-*+]\s|\d+\.\s|\||```)/;
 const KEYWORD_END = /^[\s\-–—:.]/;
 const LEADING_SEPARATOR = /^\s*[-–—:]\s*/;
@@ -59,7 +62,13 @@ export function readStatus(lines, fileName) {
         }
         collected.push(lines[i]);
     }
-    return parseStatus(collected.join(' ').replace(/\s+/g, ' ').trim(), fileName);
+    const text = collected.join(' ').replace(/\s+/g, ' ').trim();
+    if (text.length > MAX_STATUS) {
+        throw new DesignDocError(
+            `${fileName}: the status line is ${text.length} characters, over the ${MAX_STATUS} limit. Keep what is built and what is next; the detail goes in the body (docs/designs/STYLE.md).`,
+        );
+    }
+    return parseStatus(text, fileName);
 }
 
 /**

@@ -1,6 +1,6 @@
 # Agent workflow
 
-**Status:** Proposed - what every agent session reads, how an experiment is recorded and read back, what a branch learns before it pushes, how runs, worktrees and outside streams share the machine, and the two commands that take a chunk from a fresh branch to a merged PR; Phase 1 (the context diet) and Phase 5 (start to merge) are first.
+**Status:** In progress - Phase 5 (start to merge) is built; Phase 1 (the context diet) is next. The plan covers what every agent session reads, how an experiment is recorded and read back, what a branch learns before it pushes, how runs, worktrees and outside streams share the machine, and the two commands that take a chunk from a fresh branch to a merged PR.
 **Validated:** 58f38443 (2026-11-20)
 **Priority:** 3 - Workflow lead. Tooling that changes no sim rule; every session and every subagent pays the Phase 1 cost on its first token and every chunk ships through Phase 5, so both are built before the next training chunk
 **Depends on:** [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
@@ -276,7 +276,7 @@ An affected run that passes where the full run on the merged result fails is a m
 | ----- | ---------- | ------- |
 | E     | T22 to T27 | Sonnet  |
 
-### Phase 5 - Start to merge
+### Phase 5 - Start to merge (built)
 
 **Targets:** none - it moves no sim metric; its readings are the upper quartile of PR create to merge over the 20 chunk PRs after it merges (against 151 minutes), `check` wall time on a green PR (against 7 to 9 minutes), and no test shard over 4 minutes
 
@@ -324,18 +324,18 @@ An affected run that passes where the full run on the merged result fails is a m
 
 ### Phase 1 - Context diet
 
-| #   | Task                                                                                                                                                                                                                          | Nature       | Depends on          |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------- |
-| T1  | Move the Commands table to `docs/commands.md` under the eight headings, one `###` per command; leave the 12-row table and the link in `AGENTS.md`; point `audit-docs` and the skills at the new file                          | [judgement]  | -                   |
-| T2  | Add the `agents-size` check (16000 bytes) to `scripts/check-conventions.sh` with its tests; trim `AGENTS.md` under it without dropping a hard rule or a boundary                                                              | [judgement]  | T1                  |
-| T3  | Add `scripts/notes-index.mjs`; move every dated entry to `docs/notes/<YYYY-MM>.md` in date order; regenerate `sim-notes.md` as the index; run `--check` in `conventions`; update the notes rule in `AGENTS.md` and `STYLE.md` | [mechanical] | -                   |
-| T4  | Add the 400-character status cap to `readStatus` with its test and shorten every doc over it                                                                                                                                  | [judgement]  | -                   |
-| T4a | (built) The `**Scheduled by:**` line, the lead and step rendering of the Build queue and their tests; `STYLE.md` and the `AGENTS.md` Build order state the rule                                                               | [judgement]  | -                   |
-| T5  | Add `SCENES` in `js/evo/metric-registry/scenes.js` and the optional `scenes` field, with the registry tests                                                                                                                   | [mechanical] | -                   |
-| T6  | Tag every registry metric the three principles tables and the flora, megafauna and disease paragraphs name with its scenes                                                                                                    | [judgement]  | T5                  |
-| T7  | Add `scripts/scene-scorecard.mjs` (`--write`, `--check`), its tests, the generated `docs/scene-scorecard.md`, and the `conventions` check                                                                                     | [judgement]  | T6                  |
-| T8  | Cut `docs/principles.md` to the stable sections, link the scorecard, move "Known violations today" to `natural-selection.md`, and fix every link to the moved sections                                                        | [judgement]  | T7                  |
-| T9  | Conformance review of Phase 1                                                                                                                                                                                                 | [judgement]  | T2, T3, T4, T4a, T8 |
+| #   | Task                                                                                                                                                                                                                                  | Nature       | Depends on          |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------- |
+| T1  | (built) Move the Commands table to `docs/commands.md` under the eight headings, one `###` per command; leave the 12-row table and the link in `AGENTS.md`; point `audit-docs` and the skills at the new file                          | [judgement]  | -                   |
+| T2  | (built) Add the `agents-size` check (16000 bytes) to `scripts/check-conventions.sh` with its tests; trim `AGENTS.md` under it without dropping a hard rule or a boundary                                                              | [judgement]  | T1                  |
+| T3  | (built) Add `scripts/notes-index.mjs`; move every dated entry to `docs/notes/<YYYY-MM>.md` in date order; regenerate `sim-notes.md` as the index; run `--check` in `conventions`; update the notes rule in `AGENTS.md` and `STYLE.md` | [mechanical] | -                   |
+| T4  | (built) Add the 400-character status cap to `readStatus` with its test and shorten every doc over it                                                                                                                                  | [judgement]  | -                   |
+| T4a | (built) The `**Scheduled by:**` line, the lead and step rendering of the Build queue and their tests; `STYLE.md` and the `AGENTS.md` Build order state the rule                                                                       | [judgement]  | -                   |
+| T5  | Add `SCENES` in `js/evo/metric-registry/scenes.js` and the optional `scenes` field, with the registry tests                                                                                                                           | [mechanical] | -                   |
+| T6  | Tag every registry metric the three principles tables and the flora, megafauna and disease paragraphs name with its scenes                                                                                                            | [judgement]  | T5                  |
+| T7  | Add `scripts/scene-scorecard.mjs` (`--write`, `--check`), its tests, the generated `docs/scene-scorecard.md`, and the `conventions` check                                                                                             | [judgement]  | T6                  |
+| T8  | Cut `docs/principles.md` to the stable sections, link the scorecard, move "Known violations today" to `natural-selection.md`, and fix every link to the moved sections                                                                | [judgement]  | T7                  |
+| T9  | Conformance review of Phase 1                                                                                                                                                                                                         | [judgement]  | T2, T3, T4, T4a, T8 |
 
 ### Phase 2 - Experiment ledger
 
@@ -370,7 +370,7 @@ An affected run that passes where the full run on the merged result fails is a m
 | T25 | Add `docs/handoffs/TEMPLATE.md`; rewrite "Delegating to subagents" in `AGENTS.md` for streams (one coordinator, one model family), the worker budget and `worktree-gc.sh` | [judgement]  | T24        |
 | T27 | Conformance review of Phase 4, with `scripts/worktree-gc.sh` run on the machine and the class counts before and after in the PR body                                      | [judgement]  | T24, T25   |
 
-### Phase 5 - Start to merge
+### Phase 5 - Start to merge (built)
 
 | #   | Task                                                                                                                                                                  | Nature       | Depends on |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |

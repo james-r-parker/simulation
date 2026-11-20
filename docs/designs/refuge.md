@@ -1,6 +1,6 @@
 # Refuge
 
-**Status:** Implemented - all three phases are built: the eight detectors, the refuge-access fixture and the diagnosis (`E130`: cover protects and fits, but threatened prey do not reach it); the cover mechanisms were inert and deleted (`E131`); the long-range refuge sense (`refugeSense`, `pooled-v5`, `ARCHIVE_VERSION` 7) was screened (`E132`, `E133`: no harm, refuge use not moved) and adopted always on at realistic-keepers.md T22 with goldens re-pinned. The Refuge scene is still absent on the default world (tracked in principles.md); [habitat-cover.md](habitat-cover.md) owns the next lever.
+**Status:** Implemented - all three phases are built: the eight detectors, the refuge-access fixture and the diagnosis (E130: threatened prey do not reach cover); the inert cover mechanisms were deleted (E131); the long-range refuge sense was screened (E132, E133: no harm) and adopted always on. The Refuge scene is still absent on the default world; [habitat-cover.md](habitat-cover.md) owns the next lever.
 **Depends on:** [natural-selection.md](natural-selection.md)
 
 The scene this doc serves ([principles.md](../principles.md), Refuge): **under threat, prey stack into a rock ring or a

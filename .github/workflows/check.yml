@@ -151,6 +151,8 @@ jobs:
           - { pass: heavy, id: heavy-train-pool, files: test/train-pool.slow.test.js }
           - { pass: heavy, id: heavy-scripted-temperature, files: test/evo/scripted-temperature.slow.test.js }
           - { pass: heavy, id: heavy-train, files: test/train.slow.test.js }
+          - { pass: heavy, id: heavy-gate-validity, files: test/evo/gate-validity.slow.test.js }
+          - { pass: heavy, id: heavy-bench, files: test/bench.slow.test.js }
           - { pass: statistical, id: statistical-deliberate, files: test/evo/deliberate-controllers.slow.test.js }
           - { pass: statistical, id: statistical-survivable-world, files: test/evo/survivable-world.slow.test.js }
           - { pass: statistical, id: statistical-anti-exploit, files: test/evo/anti-exploit.slow.test.js }
