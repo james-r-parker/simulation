@@ -5209,6 +5209,22 @@
       "effect": "better",
       "note": "Prediction only; results follow in this record.",
       "reports": ["evals/decisions/E255/results.md"]
+    },
+    {
+      "id": "E256",
+      "date": "2026-11-20",
+      "branch": "exp/fair-chase-rung",
+      "hypothesis": "E-FC-3 (fair-chase T8): with the courser sprint store over the stage worlds, more of the 32 tune offsets pass the hunt rung than on the ladder as it is, read with the per-stage exact paired test of training-loop.md T25 (p under 0.05; 6 passes against 0 is the smallest such count).",
+      "prediction": "Written before the screen. base passes hunt on few offsets (0 to 3 of 32: E232 base gave hunt on almost none, and prey-ahead was 0/8 learnable). courser passes hunt on 6 to 12 of 32, a rise the exact paired test reads as better (p under 0.05), provided E255 shows prey-ahead learnable under courser; if E255 reads 0/8 the courser count is 0 to 3 and the verdict is no verdict. Rule from fair-chase.md Step 2: a better verdict on the hunt pass count names courser for Phase 3 (the 64-seed world read, E-FC-4); no verdict or worse, together with E255 not learnable, drops the arm, and since courser is the only arm, the doc stops at Phase 2 and T8a deletes sprintStoreEnabled and its code. A no-verdict screen with E255 learnable is a judgement call for the coordinator (the plan names both readings as required to pass: an arm that fails both is dropped; one reading alone keeps the arm only if the coordinator records why). Falsified if courser passes fewer than 6 of 32 hunt rungs.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "base arm of evals/train-screens/fair-chase.grid.json (evals/train-ladder.json as it is, until hunt, 32 offsets)",
+      "after": "courser arm of the same grid (evals/train-screens/stages/fair-chase-<stage>.json per stage)",
+      "verdicts": {},
+      "effect": "better",
+      "note": "Prediction only. Command (detached, from the repo root on season/next): scripts/run-detached.sh fc3-screen -- npm run train:screen -- --grid evals/train-screens/fair-chase.grid.json --runs .sim/train-screens/fair-chase (feasible is on in the grid: 8 populations x 200 generations, once per distinct arm ladder; train:screen takes no CPU lock, 8 workers per run, 3 runs in flight at the default worker total of 24 of 32 cores). Estimate: E232 base was 17.6 CPU hours per 16-offset arm before the throughput changes, so 35 CPU hours per 32-offset arm and about 70 for two arms plus the feasible pass (under 1); the base arm may be reused from the base cache (--cache, default .sim/train-cache) if an identical base run exists, which would halve it. Wall time about 3 to 4 hours at 24 workers if throughput is double the E232 rate, up to 3 hours per CPU-hour-estimate / 24 otherwise (70 / 24, about 3 hours, before any speed-up). The grid runs the ladder only up to hunt, so no later stage is trained.",
+      "reports": ["evals/decisions/E256/results.md"]
     }
   ]
 }
