@@ -36,6 +36,23 @@ async function worldRunning(page) {
     await expect.poll(() => tickOf(page), { timeout: 30_000 }).toBeGreaterThan(5);
 }
 
+/**
+ * Measures the observed tick rate in ticks/s across two fresh `.help-tick` updates at least 1 s apart, so a
+ * software-GL frame stall cannot make the second read return the first read's stale tick.
+ * @param {import('@playwright/test').Page} page the page
+ * @returns {Promise<number>} ticks per second
+ */
+async function tickRate(page) {
+    const base = await tickOf(page);
+    await expect.poll(() => tickOf(page)).toBeGreaterThan(base);
+    const startTick = await tickOf(page);
+    const startMs = Date.now();
+    await page.waitForTimeout(1000);
+    await expect.poll(() => tickOf(page)).toBeGreaterThan(startTick);
+    const endTick = await tickOf(page);
+    return (endTick - startTick) / ((Date.now() - startMs) / 1000);
+}
+
 test.beforeEach(async ({ page }) => {
     // A returning visitor: no title card, and the speed is x1 as the flows below expect.
     await page.addInitScript(() => {
@@ -138,18 +155,14 @@ test('pause, step and speed keys drive the worker', async ({ page }) => {
     await page.keyboard.press('BracketLeft');
     await page.keyboard.press('BracketLeft');
     await expect(page.locator(SPEED)).toHaveText(/^x0\.25/);
-    const slowStart = await tickOf(page);
-    await page.waitForTimeout(1000);
-    const slowTicks = (await tickOf(page)) - slowStart;
+    const slowRate = await tickRate(page);
 
     for (let i = 0; i < 4; i++) {
         await page.keyboard.press('BracketRight');
     }
     await expect(page.locator(SPEED)).toHaveText(/^x4/);
-    const fastStart = await tickOf(page);
-    await page.waitForTimeout(1000);
-    const fastTicks = (await tickOf(page)) - fastStart;
-    expect(fastTicks, 'raising speed raises the actual tick rate').toBeGreaterThan(slowTicks * 2);
+    const fastRate = await tickRate(page);
+    expect(fastRate, 'raising speed raises the actual tick rate').toBeGreaterThan(slowRate * 2);
 });
 
 test('N asks for confirmation and a second press starts a new world', async ({ page }) => {
