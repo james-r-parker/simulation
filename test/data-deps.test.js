@@ -12,6 +12,7 @@ const PATHS = new Set([
     'test/fixtures/ladder.json',
     'test/fixtures',
     'scripts/tool.mjs',
+    'docs/designs',
     'docs/designs/a.md',
     'js/sim/brain.js',
     'package.json',
@@ -62,6 +63,13 @@ describe('scanTest', () => {
         const seen = new Set(['.checklogs', 'coverage/lcov.info', 'evals/results/x.json']);
         const source = "read('.checklogs'); read('coverage/lcov.info'); read('evals/results/x.json');";
         expect(scanTest(source, 'test/x.test.js', (p) => seen.has(p)).reads).toEqual([]);
+    });
+
+    it('reads a path under a root variable: the directory of a template, the whole of a plain one', () => {
+        const source =
+            'const d = readdirSync(`${ROOT}docs/designs`); const f = readFileSync(`${ROOT}/docs/designs/${name}`);';
+        expect(scanTest(source, 'scripts/x.mjs', exists).reads).toEqual(['docs/designs']);
+        expect(scanTest('read(`${ROOT}package.json`)', 'scripts/x.mjs', exists).reads).toEqual(['package.json']);
     });
 
     it('does not count a bare word that happens to name a directory', () => {

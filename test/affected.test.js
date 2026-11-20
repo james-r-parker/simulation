@@ -6,6 +6,7 @@ import { diffPaths, main, select } from '../scripts/affected.mjs';
 import { affectedTests, entryHolds, isDocsPath, onFullList } from '../scripts/lib/affected.mjs';
 import { affectedMatrix, FILES_PER_SHARD, fullMatrix } from '../scripts/lib/affected-matrix.mjs';
 import { importsOf } from '../scripts/lib/import-graph.mjs';
+import { listModules, readerModules } from '../scripts/lib/module-reads.mjs';
 import { HEAVY_TESTS, STATISTICAL_TESTS } from '../scripts/lib/test-scope.mjs';
 
 /** @type {string[]} */
@@ -48,6 +49,8 @@ const FILES = {
     'test/app/hud.test.js': "import { h } from '../../js/app/hud.js';\n",
     'test/tool.test.js': "spawnSync('node', ['scripts/tool2.mjs']);\n",
     'test/data.test.js': "readFileSync('evals/data.json');\n",
+    'scripts/noise.mjs': "readFileSync('docs/designs/a.md');\n",
+    'test/noise.test.js': "spawnSync('node', ['scripts/noise.mjs']);\n",
     'test/lonely.test.js': 'export {};\n',
     'test/evo/survivable-world.slow.test.js': "import { a } from '../../js/sim/brain.js';\n",
     'test/train.slow.test.js': "import { a } from '../js/sim/brain.js';\n",
@@ -59,7 +62,7 @@ describe('the modes', () => {
         const result = affectedTests(['scripts/lib/helper.mjs'], { root });
         expect(result.mode).toBe('affected');
         expect(result.tests).toEqual(['test/tool.test.js']);
-        expect(result.why['test/tool.test.js']).toBe('reads scripts/tool2.mjs');
+        expect(result.why['test/tool.test.js']).toBe('imports scripts/lib/helper.mjs');
     });
 
     it('follows imports through other modules, and a changed test reaches itself', () => {
@@ -86,6 +89,14 @@ describe('the modes', () => {
         expect(affectedTests(['evals/data.json'], { root, deps: { 'test/lonely.test.js': ['evals'] } }).tests).toEqual([
             'test/lonely.test.js',
         ]);
+    });
+
+    it('reaches a test that spawns a script which reads the changed file, and one that declares it reads everything', () => {
+        const root = repo({ ...FILES, 'test/always.test.js': '// reads: **\nexport {};\n' });
+        const result = affectedTests(['docs/designs/a.md', 'js/app/hud.js'], { root });
+        expect(result.tests).toEqual(['test/always.test.js', 'test/app/hud.test.js', 'test/noise.test.js']);
+        expect(result.why['test/noise.test.js']).toBe('scripts/noise.mjs reads docs/designs/a.md');
+        expect(result.why['test/always.test.js']).toBe('reads **');
     });
 
     it('reaches the tests that name a path the change removed', () => {
@@ -160,6 +171,20 @@ describe('the helpers', () => {
             // import e from './commented.js';
         `;
         expect(importsOf(source, 'js/x/y.js')).toEqual(['js/x/a.js', 'js/x/side.js', 'js/b.js', 'js/x/c.js']);
+    });
+});
+
+describe('module reads', () => {
+    it('lists modules, skips node_modules and a missing directory', () => {
+        const root = repo({ ...FILES, 'js/node_modules/x.js': '', 'js/app/notes.md': '' });
+        expect(listModules(root, 'js')).toEqual(['js/app/hud.js', 'js/sim/brain.js', 'js/sim/util.js']);
+        expect(listModules(root, 'functions')).toEqual([]);
+    });
+
+    it('names the module that reads a changed path, and not the changed module itself', () => {
+        const root = repo(FILES);
+        const readers = readerModules(root, ['docs/designs/a.md', 'scripts/noise.mjs'], entryHolds);
+        expect([...readers]).toEqual([['scripts/noise.mjs', 'docs/designs/a.md']]);
     });
 });
 

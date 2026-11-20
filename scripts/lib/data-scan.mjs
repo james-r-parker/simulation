@@ -62,13 +62,18 @@ function candidates(text, testPath) {
 }
 
 /**
- * The part of a template literal before its first `${`, cut back to a directory.
+ * The path a template literal names: a leading `${ROOT}` is dropped, then the static text before the next `${` is cut back
+ * to a directory (`${ROOT}docs/designs/${name}` reads under docs/designs), or kept whole when no other `${` follows.
  * @param {string} text the template text
- * @returns {string} the static directory prefix, or '' when there is none
+ * @returns {string} the static path or directory, or '' when there is none
  */
 function templateDir(text) {
-    const at = text.indexOf('${');
-    const prefix = at < 0 ? text : text.slice(0, at);
+    const rooted = text.startsWith('${') ? text.slice(text.indexOf('}') + 1).replace(/^\//, '') : text;
+    const at = rooted.indexOf('${');
+    if (at < 0) {
+        return rooted;
+    }
+    const prefix = rooted.slice(0, at);
     return prefix.includes('/') ? prefix.slice(0, prefix.lastIndexOf('/')) : '';
 }
 

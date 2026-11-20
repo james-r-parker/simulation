@@ -138,6 +138,7 @@
         "scripts/lib/cpu-lock.sh"
     ],
     "test/data-deps.test.js": [
+        "docs/designs",
         "evals",
         "js/sim/brain.js",
         "package.json",
@@ -397,6 +398,7 @@
         "evals/league.json"
     ],
     "test/release-check.slow.test.js": [
+        "**",
         "scripts/release-check.mjs"
     ],
     "test/release-shells.test.js": [

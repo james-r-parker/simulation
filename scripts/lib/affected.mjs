@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { buildDataDeps, listTests, readDataDeps } from './data-deps.mjs';
 import { importGraph } from './import-graph.mjs';
+import { readerModules } from './module-reads.mjs';
 
 /** Paths that can change how every test runs or what it measures: the whole suite runs for any of them. */
 const FULL_EXACT = new Set([
@@ -73,21 +74,28 @@ export function entryHolds(entry, path) {
 /**
  * Finds why a test is reached by the changed paths.
  * @param {string} test the test file
- * @param {{changed: string[], missing: string[], reads: string[], closure: Set<string>, text: () => string, graph: ReturnType<typeof importGraph>}} facts what is known about it
+ * @param {{changed: string[], missing: string[], reads: string[], closure: Set<string>, readers: Map<string, string>, text: () => string, graph: ReturnType<typeof importGraph>}} facts what is known about it
  * @returns {string | null} the first reason, or null when the change cannot reach it
  */
-function reasonFor(test, { changed, missing, reads, closure, text, graph }) {
+function reasonFor(test, { changed, missing, reads, closure, readers, text, graph }) {
     if (changed.includes(test)) {
         return 'changed test';
     }
+    // The modules the test imports, and those of the scripts it spawns.
+    const modules = new Set(closure);
+    reads.filter((e) => MODULE_FILE.test(e)).forEach((e) => graph.closure(e).forEach((m) => modules.add(m)));
     for (const path of changed) {
-        if (closure.has(path)) {
+        if (modules.has(path)) {
             return `imports ${path}`;
         }
-        const entry = reads.find((e) => entryHolds(e, path) || (MODULE_FILE.test(e) && graph.closure(e).has(path)));
+        const entry = reads.find((e) => entryHolds(e, path));
         if (entry !== undefined) {
             return `reads ${entry}`;
         }
+    }
+    const reader = [...readers.keys()].find((module) => modules.has(module));
+    if (reader !== undefined) {
+        return `${reader} reads ${readers.get(reader)}`;
     }
     const named = missing.find((path) => text().includes(path));
     return named === undefined ? null : `names removed ${named}`;
@@ -102,6 +110,7 @@ function reasonFor(test, { changed, missing, reads, closure, text, graph }) {
  */
 export function reachedTests(changed, root, deps) {
     const graph = importGraph(root);
+    const readers = readerModules(root, changed, entryHolds);
     const missing = changed.filter((path) => !existsSync(join(root, path)));
     /** @type {Record<string, string>} */
     const why = {};
@@ -112,6 +121,7 @@ export function reachedTests(changed, root, deps) {
             missing,
             reads: deps[test] ?? [],
             closure: graph.closure(test),
+            readers,
             text,
             graph,
         });
