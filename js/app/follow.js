@@ -5,9 +5,11 @@ import { appLog } from './app-log.js';
 import { followSubject, updateCamera } from './camera.js';
 import { createFrameState, enterFrame, frameSubject, handoffFrame, settleFrame } from './follow-frame.js';
 import { chooseHandoff, holdMsFor, RELATION, RELATION_CAPTIONS, RELATION_CAPTION_MS } from './follow-handoff.js';
-import { pickFollowAgent } from './follow-target.js';
+import { interestOf, MOVEMENT_SCORE, pickFollowAgent } from './follow-target.js';
 import { findAgent } from './renderer/overlays.js';
 
+/** Visible, unpaused milliseconds with one subject and no event above the movement score before follow moves on. */
+export const FOLLOW_BORED_MS = 120000;
 /** World units visible across the shorter canvas dimension on follow entry. */
 export const FOLLOW_VIEW_SPAN = 900;
 
@@ -42,6 +44,9 @@ export function frameFollow(camera) {
  * @property {import('./follow-frame.js').FrameState} frame the look-ahead, pair and zoom state
  * @property {{dtMs: number, nowMs: number, paused: boolean,
  *   player: import('./renderer/effects-player.js').EffectsPlayer | null}} frameAt scratch for `frameSubject`
+ * @property {number} quietMs unpaused ms the subject has gone with no event above the movement score
+ * @property {boolean} manual whether the viewer picked this subject, which exempts it from boredom
+ * @property {number} seenSelected the selection last looked at, to tell a viewer's pick from a handoff's
  * @property {string} captionText the relation caption on screen
  * @property {number} captionUntilMs the wall time it goes
  */
@@ -55,6 +60,7 @@ function report(f, reason, toId) {
     }
     f.observedId = toId;
     f.heldMs = 0;
+    f.quietMs = 0;
     if (toId === 0) {
         f.captionUntilMs = 0;
     }
@@ -86,18 +92,68 @@ function choose(f, preferred) {
  * @returns {void}
  */
 function handOff(f, agents) {
-    const { state, getPlayer } = f.deps;
     pickContext(f);
     f.context.skip = 0;
-    f.handoff.from = state.followId;
-    const { id, relation } = chooseHandoff(getPlayer()?.story ?? null, agents, f.handoff, f.choice);
-    const from = f.handoff.from;
-    state.followId = id;
-    report(f, id === 0 ? 'empty' : 'death', id);
-    if (id !== 0) {
-        (f.deps.log ?? appLog)('info', 'FollowHandoff', { from, to: id, relation });
-        f.captionText = RELATION_CAPTIONS[/** @type {keyof typeof RELATION_CAPTIONS} */ (relation)] ?? '';
+    f.handoff.from = f.deps.state.followId;
+    const { id, relation } = chooseHandoff(f.deps.getPlayer()?.story ?? null, agents, f.handoff, f.choice);
+    switchTo(f, id, { reason: 'death', relation });
+}
+
+/**
+ * Moves the follow to a new subject: logs it, captions the relation and starts the new subject's own clocks.
+ * @param {FollowState} f the controller
+ * @param {number} to the new subject, 0 when nobody lives
+ * @param {{reason: string, relation: string}} how why the follow moved and how the new subject relates
+ * @returns {void}
+ */
+function switchTo(f, to, how) {
+    const { state } = f.deps;
+    const from = state.followId;
+    state.followId = to;
+    f.manual = false;
+    report(f, to === 0 ? 'empty' : how.reason, to);
+    if (to !== 0) {
+        (f.deps.log ?? appLog)('info', 'FollowHandoff', { from, to, relation: how.relation });
+        f.captionText = RELATION_CAPTIONS[/** @type {keyof typeof RELATION_CAPTIONS} */ (how.relation)] ?? '';
         f.captionUntilMs = f.nowMs + RELATION_CAPTION_MS;
+    }
+}
+
+/**
+ * Counts the time a living subject has gone quiet and, after `FOLLOW_BORED_MS`, moves to the best other subject. A
+ * subject the viewer picked is never left, and a paused view counts nothing.
+ * @param {FollowState} f the controller
+ * @param {import('./interpolate.js').Interpolated} agents the living agents
+ * @param {{i: number, dtMs: number, paused: boolean}} at the subject's index and the frame
+ * @returns {void}
+ */
+function bore(f, agents, at) {
+    if (f.manual || at.paused) {
+        return;
+    }
+    pickContext(f);
+    f.quietMs = interestOf(agents, at.i, f.context) > MOVEMENT_SCORE ? 0 : f.quietMs + at.dtMs;
+    if (f.quietMs < FOLLOW_BORED_MS) {
+        return;
+    }
+    f.context.skip = f.deps.state.followId;
+    const next = pickFollowAgent(agents, f.context);
+    if (next === 0) {
+        f.quietMs = 0;
+    } else {
+        switchTo(f, next, { reason: 'bored', relation: RELATION.BORED });
+    }
+}
+
+/**
+ * @param {FollowState} f the controller
+ * @returns {void} latches a subject the viewer selected (a selection the follow made itself is not the viewer's)
+ */
+function watchSelection(f) {
+    const { state } = f.deps;
+    if (state.selectedId !== f.seenSelected) {
+        f.seenSelected = state.selectedId;
+        f.manual = f.manual || (state.selectedId !== 0 && state.selectedId === state.followId);
     }
 }
 
@@ -131,16 +187,23 @@ function stepFollow(f, at) {
     f.nowMs = at.nowMs;
     if (state.followId !== f.observedId) {
         report(f, state.followId === 0 ? 'cancel' : 'entry', state.followId);
+        f.seenSelected = state.selectedId;
+        f.manual = state.followId !== 0 && state.selectedId === state.followId;
     }
+    watchSelection(f);
     if (state.followId === 0 || !at.available) {
         camera.following = false;
         updateCamera(camera, at.dtMs);
         return;
     }
     const agents = getAgents();
-    const i = subjectIndex(f, agents, at);
+    let i = subjectIndex(f, agents, at);
     if (i >= 0) {
         f.heldMs = 0;
+        bore(f, agents, { i, dtMs: at.dtMs, paused: at.paused });
+        i = findAgent(agents, state.followId);
+    }
+    if (i >= 0) {
         const view = f.frameAt;
         view.dtMs = at.dtMs;
         view.nowMs = at.nowMs;
@@ -167,6 +230,9 @@ export function createFollowController(deps) {
         deps,
         observedId: 0,
         heldMs: 0,
+        quietMs: 0,
+        manual: false,
+        seenSelected: 0,
         nowMs: 0,
         context,
         choice: { id: 0, relation: RELATION.PICK },

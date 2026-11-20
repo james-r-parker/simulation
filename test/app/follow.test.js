@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createAppState } from '../../js/app/actions.js';
 import { createCameraController } from '../../js/app/camera.js';
-import { createFollowController, frameFollow } from '../../js/app/follow.js';
+import { createFollowController, FOLLOW_BORED_MS, frameFollow } from '../../js/app/follow.js';
 import { createStory, holdMsFor, noteStory } from '../../js/app/follow-handoff.js';
 import { createFollowInterest } from '../../js/app/follow-target.js';
 import { createInterpolated } from '../../js/app/interpolate.js';
@@ -237,5 +237,79 @@ describe('follow framing in the controller', () => {
             step(s, 16);
         }
         expect(s.camera.targetZoom).toBe(1.5);
+    });
+});
+
+describe('boredom', () => {
+    /** @param {ReturnType<typeof setup>} s @param {number} ms @param {boolean} [paused] @returns {void} runs quiet frames */
+    const idle = (s, ms, paused = false) => {
+        for (let t = 0; t < ms; t += 100) {
+            step(s, 100, paused);
+        }
+    };
+
+    it('moves to the best other subject after 120 s of nothing, with no caption', () => {
+        const s = setup(stubPlayer());
+        s.state.followId = 7;
+        idle(s, FOLLOW_BORED_MS - 200);
+        expect(s.state.followId).toBe(7);
+        idle(s, 400);
+        expect(s.state.followId).toBe(8);
+        expect(s.logs.at(-1)).toEqual({ level: 'info', event: 'FollowHandoff', from: 7, to: 8, relation: 'bored' });
+        expect(s.logs.at(-2)).toMatchObject({ event: 'FollowChanged', reason: 'bored' });
+        expect(s.follow.caption()).toBe('');
+    });
+
+    it('restarts its clock on an event above the movement score, and counts nothing while paused', () => {
+        const player = stubPlayer();
+        const s = setup(player);
+        s.state.followId = 7;
+        idle(s, FOLLOW_BORED_MS - 1000);
+        player.followInterest.subject[0] = 7;
+        player.followInterest.score[0] = 45;
+        player.followInterest.atMs[0] = 1000;
+        player.followInterest.count = 1;
+        idle(s, 200);
+        player.followInterest.count = 0;
+        idle(s, FOLLOW_BORED_MS - 1000);
+        expect(s.state.followId).toBe(7);
+        idle(s, 1_000_000, true);
+        expect(s.state.followId).toBe(7);
+    });
+
+    it('never leaves a subject the viewer selected, at entry or during the follow', () => {
+        const entry = setup(stubPlayer());
+        entry.state.selectedId = entry.state.followId = 7;
+        idle(entry, FOLLOW_BORED_MS + 5000);
+        expect(entry.state.followId).toBe(7);
+        const later = setup(stubPlayer());
+        later.state.followId = 7;
+        idle(later, 500);
+        later.state.selectedId = 7;
+        idle(later, FOLLOW_BORED_MS + 5000);
+        expect(later.state.followId).toBe(7);
+        later.state.selectedId = 8;
+        idle(later, 500);
+        expect(later.state.followId).toBe(7);
+    });
+
+    it('gives a handoff a fresh clock and no exemption, and stays with a subject that is alone', () => {
+        const s = setup(stubPlayer());
+        s.state.selectedId = s.state.followId = 7;
+        step(s, 16);
+        s.agents.genomeId[0] = 999;
+        idle(s, holdMsFor(null, 7) + 100);
+        const heir = s.state.followId;
+        expect(heir).not.toBe(7);
+        s.state.selectedId = 0;
+        idle(s, FOLLOW_BORED_MS - 1000);
+        expect(s.state.followId).toBe(heir);
+        idle(s, 1500);
+        expect(s.state.followId).not.toBe(heir);
+        s.agents.count = 1;
+        s.state.followId = 7;
+        s.agents.genomeId[0] = 7;
+        idle(s, FOLLOW_BORED_MS + 1000);
+        expect(s.state.followId).toBe(7);
     });
 });

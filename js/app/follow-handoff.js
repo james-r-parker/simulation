@@ -21,14 +21,15 @@ const CAUSE_SHIFT = 8;
 const CAUSE_MASK = 0xff;
 
 /** How a new subject relates to the one that died. */
-export const RELATION = Object.freeze({ KILLER: 'killer', CHILD: 'child', KIN: 'kin', PICK: 'pick' });
+export const RELATION = Object.freeze({ KILLER: 'killer', CHILD: 'child', KIN: 'kin', PICK: 'pick', BORED: 'bored' });
 
-/** The caption of each relation; the pick has none. */
+/** The caption of each relation; the pick and the boredom move have none. */
 export const RELATION_CAPTIONS = Object.freeze({
     [RELATION.KILLER]: 'its killer',
     [RELATION.CHILD]: 'its daughter',
     [RELATION.KIN]: 'its kin',
     [RELATION.PICK]: '',
+    [RELATION.BORED]: '',
 });
 
 /**
