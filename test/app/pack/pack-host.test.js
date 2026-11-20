@@ -83,7 +83,14 @@ function reference(w, request, { dtMs }) {
         maxVelocity: info.maxVelocity,
         tick: request.tick,
     });
-    packDying(w.stores.dying, store, { slots: family, zoom: request.zoom, causeNames: CAUSES, nowMs: request.nowMs });
+    packDying(w.stores.dying, store, {
+        slots: family,
+        zoom: request.zoom,
+        causeNames: CAUSES,
+        nowMs: request.nowMs,
+        flagBits: FLAGS,
+        maxVelocity: info.maxVelocity,
+    });
     const rig = createAgentRig(info.maxAgents, info.specs.length);
     const ctx = rigContext(info, FLAGS, READY.layout.stateBits);
     Object.assign(ctx, {

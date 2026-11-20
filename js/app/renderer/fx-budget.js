@@ -227,6 +227,23 @@ export function lifeFor(budget, lifeTicks) {
     return Math.max(lifeTicks, FX_MIN_MS * budget.ticksPerMs);
 }
 
+/** The sim ticks in a second at speed x1: what an effect's life in ticks is authored against. */
+export const TICKS_PER_SEC = 60;
+/** The least `wallScale` returns, so an effect played while the playhead is near rest still has a life. */
+const MIN_WALL_SCALE = 0.05;
+
+/**
+ * @param {FxBudget} budget the budget
+ * @returns {number} the playhead's speed as a multiple of x1: an effect's life and delay in ticks times it last as long
+ *   in wall time as at x1, so a wall-clock effect ends with its clip at any sim speed; 1 before a rate is measured
+ */
+export function wallScale(budget) {
+    if (budget.ticksPerMs <= 0) {
+        return 1;
+    }
+    return Math.max((budget.ticksPerMs * 1000) / TICKS_PER_SEC, MIN_WALL_SCALE);
+}
+
 /**
  * @param {FxBudget} budget the budget
  * @returns {number} drops over every family since creation

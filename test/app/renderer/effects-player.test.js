@@ -202,7 +202,7 @@ describe('playEffects', () => {
             playEffects(player, queueOf([[1, 5, 1, 2, 7, 3, 1, cause]]), agents, 5);
             counts[cause] = liveFx(player.fx.pool, 6);
             if (cause > 0) {
-                expect(player.tweens.kind[3], `cause ${cause}`).toBe(TWEEN.BIRTH_POP);
+                expect(player.tweens.kind[3], `cause ${cause}`).toBe(cause === 2 ? TWEEN.FISSION : TWEEN.BUD);
             }
         }
         expect(counts).toEqual({ 0: 0, 1: 11, 2: 5, 3: 8, 4: 8 });

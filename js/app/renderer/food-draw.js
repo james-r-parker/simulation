@@ -1,15 +1,17 @@
 // The food: one instanced mesh per food model (six flora species and the carcass), each drawn by its catalogue model
 // from `packFood`'s bucket. Plants sway; a carcass darkens and shrinks as it rots.
 
-import { createFoodPack, packFood, swayFood } from './food-pack.js';
+import { createFoodPack, fadeCarcassesIn, packFood, swayFood } from './food-pack.js';
 import { createModelMeshes } from './model-meshes.js';
 import { FOOD_MODELS } from './models-world.js';
 
 /**
- * @param {{info: Record<string, any>}} context `ready.info` (`maxFood`)
+ * @param {{info: Record<string, any>, dying?: import('./dying.js').Dying | null, causeNames?: readonly string[]}} context
+ *   `ready.info` (`maxFood`), the dying bodies and the death cause names, with which a carcass fades in as the body
+ *   that left it fades out
  * @returns {import('./stage.js').Layer} the food layer
  */
-export function createFoodDraw({ info }) {
+export function createFoodDraw({ info, dying = null, causeNames = [] }) {
     const capacity = Math.max(info.maxFood, 1);
     const pack = createFoodPack(capacity);
     const meshes = createModelMeshes(FOOD_MODELS, { capacity, buckets: pack.buckets });
@@ -34,6 +36,9 @@ export function createFoodDraw({ info }) {
                 packed.zoom = view.zoom;
             } else {
                 swayFood(pack, view.timeSec);
+            }
+            if (dying !== null) {
+                fadeCarcassesIn(pack, dying, { nowMs: frame.nowMs, causeNames });
             }
             meshes.upload();
         },

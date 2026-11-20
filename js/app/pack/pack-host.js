@@ -46,7 +46,7 @@ export const MAX_GAP_MS = 100;
  * @property {{dtMs: number, zoom: number, slots: import('../family-slots.js').FamilySlots, maxVelocity: number,
  *   tick: number}} view the packing view
  * @property {{slots: import('../family-slots.js').FamilySlots, zoom: number, causeNames: readonly string[],
- *   nowMs: number}} dyingView the dying bodies' view
+ *   nowMs: number, flagBits: Record<string, number>, maxVelocity: number}} dyingView the dying bodies' view
  * @property {{rig: ReturnType<typeof createAgentRig>, out: any, ctx: import('../renderer/agent-rig.js').RigContext}} into
  *   the rig call's argument, reused
  * @property {number} lastNowMs the wall time of the last packed request, 0 before one
@@ -78,7 +78,14 @@ export function createPackHost(init) {
         lanes: store.buckets.map((bucket, b) => bucketLanes(bucket, /** @type {any} */ (rig.arrays[b]))),
         family,
         view: { dtMs: 0, zoom: 1, slots: family, maxVelocity: info.maxVelocity, tick: 0 },
-        dyingView: { slots: family, zoom: 1, causeNames: init.causeNames, nowMs: 0 },
+        dyingView: {
+            slots: family,
+            zoom: 1,
+            causeNames: init.causeNames,
+            nowMs: 0,
+            flagBits: layout.flags,
+            maxVelocity: info.maxVelocity,
+        },
         into: { rig, out: rig.arrays[0], ctx },
         lastNowMs: 0,
     };

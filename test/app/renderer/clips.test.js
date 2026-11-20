@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TWEEN } from '../../../js/app/renderer/body-tweens.js';
-import { CHANNELS, clipForTween, CLIPS, REST, SCALES } from '../../../js/app/renderer/clips.js';
+import { sampleClip } from '../../../js/app/renderer/clip-sampler.js';
+import { CH, CHANNELS, clipForTween, CLIPS, REST, SCALES } from '../../../js/app/renderer/clips.js';
 import { FX_EASE } from '../../../js/app/renderer/fx-curves.js';
 
 describe('clips', () => {
@@ -47,5 +48,28 @@ describe('clips', () => {
 
     it('rests scales at 1 and the rest at 0', () => {
         REST.forEach((rest, c) => expect(rest).toBe(SCALES[c] ? 1 : 0));
+    });
+
+    it('births swell and separate without overshoot: a bud and a fission never pass their full size', () => {
+        for (const name of ['bud', 'fission']) {
+            const clip = /** @type {any} */ (CLIPS)[name];
+            let sx = -1;
+            for (let t = 0; t <= 1; t += 0.02) {
+                const rig = sampleClip(clip, t);
+                expect(rig[CH.sx], `${name} sx at ${t}`).toBeLessThanOrEqual(1 + 1e-6);
+                expect(rig[CH.sx], `${name} sx at ${t}`).toBeGreaterThanOrEqual(sx);
+                sx = rig[CH.sx];
+            }
+            expect(sampleClip(clip, 0)[CH.sx]).toBeLessThan(0.6);
+            expect(sampleClip(clip, 1)[CH.sx]).toBe(1);
+            expect(sampleClip(clip, 1)[CH.sy]).toBe(1);
+        }
+        expect(CLIPS).not.toHaveProperty('birthPop');
+    });
+
+    it('pinches a fission across the axis it separates along: the newborn starts narrow and wide', () => {
+        const start = sampleClip(/** @type {any} */ (CLIPS).fission, 0);
+        expect(start[CH.sx]).toBeLessThan(1);
+        expect(start[CH.sy]).toBeGreaterThan(1);
     });
 });
