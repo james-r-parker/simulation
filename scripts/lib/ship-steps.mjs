@@ -257,9 +257,10 @@ function sleep(seconds) {
  * Step 7: confirms the PR is MERGED, then prints the link and the minutes from push to merge. With --no-merge it only
  * prints the link.
  * @param {Ctx} ctx the context
- * @param {{waitS?: number, pollS?: number}} [wait] the merge wait: total seconds and seconds between looks
+ * @param {{waitS?: number, pollS?: number, pause?: (seconds: number) => void}} [wait] the merge wait: total seconds,
+ *   seconds between looks and the function that waits (tests pass a no-op)
  */
-export function stepConfirm(ctx, { waitS = 600, pollS = 10 } = {}) {
+export function stepConfirm(ctx, { waitS = 600, pollS = 10, pause = sleep } = {}) {
     const { sh, state, opts } = ctx;
     const look = () => {
         const r = sh('gh', ['pr', 'view', String(state.pr), '--json', 'state,mergeStateStatus,url']);
@@ -271,7 +272,7 @@ export function stepConfirm(ctx, { waitS = 600, pollS = 10 } = {}) {
         return;
     }
     for (let waited = 0; view.state !== 'MERGED' && waited < waitS; waited += pollS) {
-        sleep(pollS);
+        pause(pollS);
         view = look();
     }
     if (view.state !== 'MERGED') {

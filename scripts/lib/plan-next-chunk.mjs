@@ -111,12 +111,19 @@ export function describeNext(path) {
     ].join('\n');
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-    const path = process.argv[2];
-    if (!path) {
+/**
+ * @param {string[]} argv arguments after the script name
+ * @returns {number} the exit code; prints the report or the usage line
+ */
+export function cli(argv) {
+    if (!argv[0]) {
         console.error('usage: node scripts/lib/plan-next-chunk.mjs <design-doc>');
-        process.exitCode = 2;
-    } else {
-        console.log(describeNext(path));
+        return 2;
     }
+    console.log(describeNext(argv[0]));
+    return 0;
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+    process.exitCode = cli(process.argv.slice(2));
 }
