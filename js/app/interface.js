@@ -337,7 +337,7 @@ function createListeners(ctx) {
  *   afterDraw: (frame: {tick: number}) => void, openInspectorOnPick: (id?: number) => void,
  *   resize: () => void, pointer: (x: number, y: number) => void, peekAt: (x: number, y: number) => void,
  *   peekHide: () => void, noteInput: (event: import('./idle.js').InputEvent) => boolean,
- *   setTv: (on: boolean) => void, setCaption: (text: string) => void, idleMs: () => number}} the interface
+ *   setTv: (on: boolean) => void, tvIdleMinutes: () => number, resetIdle: () => void, setCaption: (text: string) => void, idleMs: () => number}} the interface
  */
 export function createInterface(deps) {
     const ctx = build(deps);
@@ -365,6 +365,8 @@ export function createInterface(deps) {
             return counted;
         },
         setTv: (on) => ctx.tvUi.setTv(on),
+        tvIdleMinutes: () => ctx.prefs.tvIdleMinutes,
+        resetIdle: () => ctx.idle.reset(),
         setCaption: (text) => void ctx.tvUi.caption.set(text),
         idleMs: () => ctx.idle.idleMs(),
         resize: () => applyScale(ctx),

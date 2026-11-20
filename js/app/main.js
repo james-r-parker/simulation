@@ -8,6 +8,7 @@ import { createLayerBuilder, createLayerRefs } from './app-layers.js';
 import { createCameraController, resizeCamera } from './camera.js';
 import { buildDebugBundle } from './debug-bundle.js';
 import { createDriver } from './director/driver.js';
+import { createTvMode } from './tv-mode.js';
 import { createDirectorFeed } from './director/feed.js';
 import { createFamilySlots } from './family-slots.js';
 import { createFrameLoop } from './frame-loop.js';
@@ -65,6 +66,7 @@ function showMessage(container, text) {
  * @property {ReturnType<typeof createInterface>} iface the top bar, ticker, drawers and controls
  * @property {ReturnType<typeof createDirectorFeed>} feed the effects and ticker the director reads
  * @property {ReturnType<typeof createDriver>} driver the director on the page
+ * @property {ReturnType<typeof createTvMode>} tv TV mode
  * @property {ReturnType<typeof createFxDev>} fxDev the effect developer tools, null unless the URL asks
  * @property {Promise<void> | null} [building] the stage being built for the first world
  */
@@ -254,7 +256,7 @@ function makeInterface(app) {
         toDevice: (client) => clientToDevice(app, client),
         speedPinned: app.params.speed !== null,
         onTicker: (items) => app.feed.noteTicker(items),
-        onInput: () => leaveTv(app),
+        onInput: (event) => app.tv.noteInput(event),
         tv: app.params.tv,
         audioOn: app.params.audio,
         AudioContext: /** @type {any} */ (globalThis).AudioContext ?? null,
@@ -263,18 +265,27 @@ function makeInterface(app) {
     });
 }
 
-/** Starts the director and the TV look. @param {App} app the page @returns {void} */
-function enterTv(app) {
-    app.driver.start();
-    app.iface.setTv(true);
-}
-
-/** Hands the camera back and restores the HUD. @param {App} app the page @returns {void} */
-function leaveTv(app) {
-    if (app.driver.running()) {
-        app.driver.stop();
-        app.iface.setTv(false);
-    }
+/**
+ * @param {App} app the page, whose `slots`, `pack`, `driver` and `stats` exist
+ * @returns {any} the frame loop's dependencies; `scene` and `gpuTimer` are filled once the first world is ready
+ */
+function createLoopDeps(app) {
+    return {
+        getClient: () => app.supervisor.client(),
+        scene: null,
+        camera: app.camera,
+        state: app.state,
+        refs: createLayerRefs(),
+        slots: app.slots,
+        stats: app.stats,
+        gpuTimer: null,
+        clock: () => performance.now(),
+        hidden: () => document.hidden,
+        afterDraw: (/** @type {any} */ frame) => fxAfterDraw(app, frame),
+        getPack: () => app.pack.slots(),
+        director: app.driver,
+        getReady: () => app.ready,
+    };
 }
 
 /**
@@ -300,25 +311,11 @@ function createApp(container) {
     app.feed = createDirectorFeed();
     app.driver = createDriver({ camera, state, getClient: () => app.supervisor.client(), feed: app.feed });
     app.pack = bootPack(document);
-    app.deps = {
-        getClient: () => app.supervisor.client(),
-        scene: null,
-        camera,
-        state,
-        refs: createLayerRefs(),
-        slots: app.slots,
-        stats,
-        gpuTimer: null,
-        clock: () => performance.now(),
-        hidden: () => document.hidden,
-        afterDraw: (/** @type {any} */ frame) => fxAfterDraw(app, frame),
-        getPack: () => app.pack.slots(),
-        director: app.driver,
-        getReady: () => app.ready,
-    };
+    app.deps = createLoopDeps(app);
     app.loop = createFrameLoop(app.deps);
     app.iface = makeInterface(app);
     app.supervisor = makeSupervisor(app);
+    app.tv = createTvMode({ driver: app.driver, state, camera, iface: app.iface });
     app.perform = createActions({
         getClient: () => app.supervisor.client(),
         camera,
@@ -329,6 +326,7 @@ function createApp(container) {
         lastMoments: () => app.deps.refs.player?.moments ?? null,
         followAgent: app.loop.followAgent,
         ui: app.iface.hooks,
+        toggleTv: () => app.tv.toggle(),
     });
     return app;
 }
@@ -373,12 +371,13 @@ function start() {
     const tick = (/** @type {number} */ now) => {
         app.loop.frame(now);
         app.iface.setCaption(app.driver.caption());
+        app.tv.tick();
         app.iface.tick(now);
         requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
     if (app.params.tv) {
-        enterTv(app);
+        app.tv.enter('url');
     }
     app.supervisor.start(chooseSeed(app.params.seed));
 }

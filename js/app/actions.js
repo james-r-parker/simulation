@@ -97,6 +97,7 @@ const NO_UI = Object.freeze({
  * @property {(preferred: number) => number} [followAgent] a living selected or interesting genome id, 0 for none
  * @property {() => import('./director/moment-log.js').MomentLog | null} [lastMoments] the live moment log, null before a
  *   world
+ * @property {() => void} [toggleTv] turns TV mode on or off
  * @property {UiHooks} [ui] the page's hooks; absent means none of the page actions do anything
  */
 
@@ -243,6 +244,7 @@ const ACTIONS = Object.freeze({
     toggleInspector: viaUi('toggleDrawer', 'inspector'),
     toggleHelp: viaUi('toggleDrawer', 'help'),
     toggleHud: viaUi('toggleHud'),
+    toggleTv: ({ toggleTv }) => toggleTv?.(),
     toggleAudio: viaUi('toggleAudio'),
     volumeDown: viaUi('volumeDown'),
     volumeUp: viaUi('volumeUp'),

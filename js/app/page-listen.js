@@ -15,7 +15,7 @@ import { actionForKey } from './ui/keymap.js';
  */
 export function listen({ canvas, perform, input, iface, toDevice }) {
     window.addEventListener('keydown', (e) => {
-        iface.noteInput({ type: 'keydown' });
+        iface.noteInput({ type: 'keydown', code: e.code });
         const action = actionForKey(e, { clip: clipSupported(globalThis.MediaRecorder) });
         if (action !== null) {
             e.preventDefault();
