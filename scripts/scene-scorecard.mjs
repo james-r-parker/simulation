@@ -220,9 +220,9 @@ function finish(args, markdown, path) {
  * @returns {number} the exit code
  */
 export function main(args, { path = DOC_PATH, metrics = METRICS, reportPath = newestBaselineByName() } = {}) {
-    const unknown = args.filter((arg) => arg !== '--write' && arg !== '--check');
-    if (unknown.length > 0) {
-        process.stderr.write(`unknown argument: ${unknown.join(' ')} (expected --write or --check)\n`);
+    const stray = args.find((arg) => !['--write', '--check'].includes(arg));
+    if (stray !== undefined) {
+        process.stderr.write(`unknown argument: ${stray} (expected --write or --check)\n`);
         return 2;
     }
     if (reportPath === null) {
