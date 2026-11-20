@@ -3,6 +3,8 @@ import vm from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
+import { EVENT_TYPE, createEventRing } from '../../js/sim/events.js';
+import { createSimLog, drainEvents } from '../../js/sim/log.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { createSprintStore, resetSprintSlot, stepSprintStore, storeFactor } from '../../js/sim/sprint-store.js';
 
@@ -17,15 +19,18 @@ const storeConfig = (overrides = {}) => createConfig({ sprintStoreEnabled: true,
 
 /**
  * @param {number} n slots
- * @returns {{alive: Uint8Array, spec: Uint8Array, outputs: Float32Array, sprintFactor: Float64Array}} the arrays the
- *   step reads and writes, every slot alive and a forager
+ * @returns {Record<string, any>} the arrays the step reads and writes, every slot alive and a forager, with a tick and an
+ *   event ring
  */
 function bodies(n) {
     return {
         alive: new Uint8Array(n).fill(1),
         spec: new Uint8Array(n),
+        genomeId: new Uint32Array(n).map((_, slot) => 100 + slot),
         outputs: new Float32Array(n * OUTPUT_COUNT),
         sprintFactor: new Float64Array(n).fill(1),
+        tick: 0,
+        events: createEventRing(2 * n + 8),
     };
 }
 
@@ -170,6 +175,31 @@ describe('stepSprintStore', () => {
             best = Math.min(best, process.memoryUsage().heapUsed - before);
         }
         expect(best).toBeLessThan(passes * 4);
+    });
+});
+
+describe('SprintSpent', () => {
+    it('is pushed once, when a store first falls under the floor in a sprint, and logged at debug', () => {
+        const store = createSprintStore(storeConfig({ sprintDrain: 0.1, sprintFloor: 0.3 }), 2);
+        const w = bodies(2);
+        w.spec[1] = PREDATOR;
+        drive(w, 1, { sprint: 1, thrust: 1 });
+        store.level[1] = 0.45;
+        for (let t = 0; t < 4; t++) {
+            w.tick = t;
+            stepSprintStore(store, w);
+        }
+        expect(w.events.count).toBe(1);
+        expect([...w.events.data.slice(0, 5)]).toEqual([EVENT_TYPE.SPRINT_SPENT, 1, 1, 101, PREDATOR]);
+        /** @type {Record<string, any>[]} */
+        const records = [];
+        drainEvents(
+            /** @type {any} */ (w),
+            createSimLog((r) => records.push(r), { level: 'debug' }),
+        );
+        expect(records).toEqual([
+            expect.objectContaining({ level: 'debug', event: 'SprintSpent', tick: 1, slot: 1, genomeId: 101, spec: 1 }),
+        ]);
     });
 });
 

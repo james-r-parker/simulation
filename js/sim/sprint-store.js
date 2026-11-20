@@ -7,6 +7,7 @@
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { specTable } from './spec-params.js';
+import { EVENT_TYPE, pushEvent } from './events.js';
 
 /**
  * @typedef {object} SprintStore
@@ -75,12 +76,26 @@ export function resetSprintSlot(store, factor, slot) {
 }
 
 /**
+ * Pushes `SPRINT_SPENT` for a store that has just fallen under the floor in a sprint: once per crossing, not per tick.
+ * @param {{events: import('./events.js').EventRing, tick: number, genomeId: Uint32Array, spec: Uint8Array}} world the world
+ * @param {number} slot the sprinting slot
+ * @returns {void}
+ */
+function noteSpent(world, slot) {
+    const o = pushEvent(world.events, EVENT_TYPE.SPRINT_SPENT, world.tick);
+    world.events.data[o + 2] = slot;
+    world.events.data[o + 3] = world.genomeId[slot];
+    world.events.data[o + 4] = world.spec[slot];
+}
+
+/**
  * For every live slot: writes the factor of the store as the tick begins into `sprintFactor`, then drains the store by
  * its specialisation's drain while `SPRINT` is above 0, or refills it by `sprintRefill` while `SPRINT` is at or under 0
- * and `THRUST` is under `sprintRestThrust`, clamped to 0 to 1.
+ * and `THRUST` is under `sprintRestThrust`, clamped to 0 to 1. A store that falls under the floor in a sprint pushes
+ * one `SPRINT_SPENT` event.
  * @param {SprintStore} store the store
- * @param {{alive: Uint8Array, spec: Uint8Array, outputs: Float32Array, sprintFactor: Float64Array}} world the world (or
- *   the arrays it reads and the lane it writes)
+ * @param {Record<string, any>} world the world (or the arrays it reads, the lane it writes, `tick`, `genomeId` and
+ *   `events`)
  * @returns {void}
  */
 export function stepSprintStore(store, world) {
@@ -93,7 +108,11 @@ export function stepSprintStore(store, world) {
         sprintFactor[i] = storeFactor(store, i);
         const o = i * OUTPUT_COUNT;
         if (outputs[o + OUTPUT_INDEX.SPRINT] > 0) {
-            level[i] = Math.max(0, level[i] - drainBySpec[spec[i]]);
+            const before = level[i];
+            level[i] = Math.max(0, before - drainBySpec[spec[i]]);
+            if (before >= store.floor && level[i] < store.floor) {
+                noteSpent(world, i);
+            }
         } else if (outputs[o + OUTPUT_INDEX.THRUST] < restThrust) {
             level[i] = Math.min(1, level[i] + refill);
         }
