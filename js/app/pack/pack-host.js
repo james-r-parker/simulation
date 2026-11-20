@@ -14,6 +14,7 @@ import { createAgentStore, packAgents } from '../renderer/agents-pack.js';
 import { temperatureBands } from '../renderer/colors.js';
 import { packDying } from '../renderer/dying-pack.js';
 import { interleaveRows } from '../renderer/interleave.js';
+import { TV_MIN_PX_SCALE } from '../renderer/palette.js';
 import { holdFrom, READER, RELEASED, slotOfSeq } from '../../worker/snapshot-ring.js';
 import { FAMILY_SLOTS } from '../family-slots.js';
 import { claimFrameSlot, LENS, noteSkipped, publishFrame, SLOT, writeSlotMeta } from './frame-slots.js';
@@ -121,6 +122,7 @@ function applyRequest(host, request) {
     family.ids.set(request.family);
     family.palette = PALETTE_NAMES[request.palette] ?? PALETTE_NAMES[0];
     dyingView.zoom = request.zoom;
+    host.store.minScale = (request.lens & LENS.TV) !== 0 ? TV_MIN_PX_SCALE : 1;
     dyingView.nowMs = request.nowMs;
     ctx.timeSec = request.nowMs / 1000;
     ctx.tick = request.tick;

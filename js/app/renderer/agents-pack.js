@@ -95,6 +95,7 @@ export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
  * @property {Float32Array} smoothedTurn each slot's smoothed turn rate
  * @property {Int8Array} meshOfSpec the mesh index for each `spec`, -1 for an unknown one
  * @property {Float32Array} minPx the least each mesh's agents are drawn across, in device px
+ * @property {number} minScale the factor on `minPx` this frame: 1, or `TV_MIN_PX_SCALE` in TV mode (set by the pack host)
  * @property {number[]} rgb scratch for the colour
  * @property {import('./body-tweens.js').BodyTweens} tweens each slot's one-shot body tween
  * @property {import('./dying.js').Dying | null} dying the dying bodies (their live rows are skipped), null when none
@@ -133,6 +134,7 @@ export function createAgentStore(capacity, meshCount, meshOfSpec, minPx) {
         smoothedTurn: new Float32Array(capacity),
         meshOfSpec: Int8Array.from(meshOfSpec),
         minPx: Float32Array.from(minPx),
+        minScale: 1,
         rgb: [0, 0, 0],
         tweens: createBodyTweens(capacity),
         dents: null,
@@ -228,7 +230,7 @@ function packLook(store, { bucket, o, mesh }, { agents, i, slots, zoom }) {
     bucket.pose[o] = agents.x[i];
     bucket.pose[o + 1] = agents.y[i];
     bucket.pose[o + 2] = agents.angle[i];
-    bucket.pose[o + 3] = drawnRadius(agents.size[i], store.minPx[mesh], zoom);
+    bucket.pose[o + 3] = drawnRadius(agents.size[i], store.minPx[mesh] * store.minScale, zoom);
     bucket.color[o] = rgb[0];
     bucket.color[o + 1] = rgb[1];
     bucket.color[o + 2] = rgb[2];

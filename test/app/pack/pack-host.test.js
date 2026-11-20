@@ -20,6 +20,7 @@ import { createAgentStore, packAgents } from '../../../js/app/renderer/agents-pa
 import { startTween, TWEEN } from '../../../js/app/renderer/body-tweens.js';
 import { temperatureBands } from '../../../js/app/renderer/colors.js';
 import { startDent } from '../../../js/app/renderer/dents.js';
+import { TV_MIN_PX_SCALE } from '../../../js/app/renderer/palette.js';
 import { beginDeath, trackBodies } from '../../../js/app/renderer/dying.js';
 import { packDying } from '../../../js/app/renderer/dying-pack.js';
 import { easeJaw } from '../../../js/app/renderer/hunt-cues.js';
@@ -70,6 +71,7 @@ function reference(w, request, { dtMs }) {
     interpolateInto(request.prevSeq > 0 ? at(request.prevSeq) : null, at(request.latestSeq), request.alpha, agents);
     const store = createAgentStore(info.maxAgents, info.specs.length, meshTable(info), minPxTable(info));
     Object.assign(store, { ...w.stores, fleeing: new Uint8Array(info.maxAgents) });
+    store.minScale = (request.lens & LENS.TV) !== 0 ? TV_MIN_PX_SCALE : 1;
     const pursuits = findPursuits(agents, pursuitRules(info), createPursuits());
     for (let k = 0; k < pursuits.count; k++) {
         /** @type {Uint8Array} */ (store.fleeing)[pursuits.prey[k]] = 1;
@@ -158,6 +160,23 @@ describe('packRequest', () => {
         expect(/** @type {Uint8Array} */ (w.host.store.fleeing)[1]).toBe(1);
         expectSlotEquals(w, want);
         expect(w.slots.taken).toMatchObject({ seq: 1, prevSeq, latestSeq, alpha: 0.4, tick: 10.4, nowMs: 1000 });
+    });
+
+    it('scales the least body size in TV mode, so the slot matches the reference and the bodies are larger', () => {
+        const w = world();
+        const latestSeq = publishSnapshot(w, makeSnapshot(10, FIRST));
+        const plain = requestOf({ latestSeq, prevSeq: 0, alpha: 1, zoom: 0.1 });
+        packRequest(w.host, plain);
+        expect(w.host.store.minScale).toBe(1);
+        const filled = w.host.store.buckets.findIndex((b) => b.count > 0);
+        const radius = (/** @type {number} */ b) => w.host.store.buckets[b].pose[3];
+        const before = radius(filled);
+        expect(before).toBeGreaterThan(0);
+        const tv = requestOf({ latestSeq, prevSeq: 0, alpha: 1, zoom: 0.1, lens: LENS.TV });
+        packRequest(w.host, tv);
+        expect(w.host.store.minScale).toBe(TV_MIN_PX_SCALE);
+        expect(radius(filled)).toBeCloseTo(before * TV_MIN_PX_SCALE);
+        expectSlotEquals(w, reference(w, tv, { dtMs: 0 }));
     });
 
     it('packs one snapshot alone and answers a request read back from the request block', () => {

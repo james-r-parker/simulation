@@ -29,12 +29,13 @@ export function createPackFeed() {
  * @param {PackFeed} feed the feed
  * @param {import('./frame-slots.js').FrameSlots} slots the frame slots
  * @param {{client: Record<string, any>, playhead: {alpha: number, tick: number}, nowMs: number,
- *   zoom: number, lenses: Record<string, boolean>, family: import('../family-slots.js').FamilySlots}} frame the held
+ *   zoom: number, lenses: Record<string, boolean>, family: import('../family-slots.js').FamilySlots,
+ *   tv?: boolean}} frame the held
  *   snapshots, the playhead, the clock the playhead ran on, the camera zoom, the lens flags and the colour slots
  * @returns {import('../interpolate.js').Interpolated | null} the agents of the newest published frame, null before the
  *   worker published one
  */
-export function exchangeFrame(feed, slots, { client, playhead, nowMs, zoom, lenses, family }) {
+export function exchangeFrame(feed, slots, { client, playhead, nowMs, zoom, lenses, family, tv = false }) {
     const r = feed.request;
     r.prevSeq = client.prev?.seq ?? 0;
     r.latestSeq = client.latest.seq;
@@ -42,7 +43,7 @@ export function exchangeFrame(feed, slots, { client, playhead, nowMs, zoom, lens
     r.tick = playhead.tick;
     r.nowMs = nowMs;
     r.zoom = zoom;
-    r.lens = lensBits(lenses);
+    r.lens = lensBits(lenses, tv);
     r.palette = paletteIndex(family.palette);
     for (let s = 0; s < FAMILY_SLOTS; s++) {
         r.family[s] = family.ids[s];

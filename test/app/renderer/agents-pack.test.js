@@ -301,6 +301,16 @@ describe('packAgents', () => {
         expect(store.buckets[1].tween).toBe(t);
     });
 
+    it('draws the least body size a third larger when the store is scaled for TV mode', () => {
+        const store = createAgentStore(16, 5, meshOfSpec, [24, 20, 20, 20, 20]);
+        const out = interp([{ slot: 0, genomeId: 10, spec: 0, size: 1 }]);
+        packAgents(out, store, BITS, { dtMs: 16, zoom: 1, slots: SLOTS, tick: 1 });
+        expect(store.buckets[0].pose[3]).toBe(12);
+        store.minScale = 32 / 24;
+        packAgents(out, store, BITS, { dtMs: 16, zoom: 1, slots: SLOTS, tick: 1 });
+        expect(store.buckets[0].pose[3]).toBeCloseTo(16);
+    });
+
     it('unpacks the state word into the body row', () => {
         const store = createAgentStore(16, 5, meshOfSpec, MIN_PX);
         const out = interp([{ slot: 0, genomeId: 10, spec: 1, state: (7 << 24) | (255 << 16) | (51 << 8) | 0b1011 }]);

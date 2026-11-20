@@ -12,7 +12,7 @@ import { createInstances, instancedMesh, takeRows } from './instances.js';
 import { modelMaterial } from './model-material.js';
 import { standardInputs } from './model-meshes.js';
 import { modelFor } from './models.js';
-import { FILL_SHARE, NEON, RIM_PX } from './palette.js';
+import { FILL_SHARE, NEON, RIM_PX, rimPxFor } from './palette.js';
 
 /** How far the scent lens dims the agents. */
 export const SCENT_DIM = 0.55;
@@ -77,8 +77,8 @@ function buildMeshes(info, uniforms) {
  * @param {{rimPx: any, dim: any, ringFloor: any}} uniforms the shared uniforms
  * @returns {void}
  */
-function applyFrame(frame, uniforms) {
-    uniforms.rimPx.value = RIM_PX[/** @type {keyof typeof RIM_PX} */ (frame.family.palette)];
+export function applyFrame(frame, uniforms) {
+    uniforms.rimPx.value = rimPxFor(frame.family.palette, frame.tv);
     uniforms.dim.value = frame.lenses.scent ? SCENT_DIM : 1;
     uniforms.ringFloor.value = frame.lenses.calls ? CALL_RING_FLOOR : 0;
 }

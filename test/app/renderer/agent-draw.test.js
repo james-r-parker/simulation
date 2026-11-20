@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createAgentDraw, SCENT_DIM } from '../../../js/app/renderer/agent-draw.js';
+import { applyFrame, createAgentDraw, SCENT_DIM } from '../../../js/app/renderer/agent-draw.js';
 import { AGENT_LANES, AGENT_ROW_FLOATS } from '../../../js/app/renderer/agent-lanes.js';
 import { createFamilySlots } from '../../../js/app/family-slots.js';
 import { SLOT } from '../../../js/app/pack/frame-slots.js';
@@ -127,5 +127,19 @@ describe('createAgentDraw on WebGPU', () => {
             expect(Object.keys(mesh.geometry.attributes).length).toBeLessThanOrEqual(16);
         }
         layer.dispose();
+    });
+});
+
+describe('applyFrame', () => {
+    const uniforms = () => ({ rimPx: { value: 0 }, dim: { value: 0 }, ringFloor: { value: 0 } });
+    const frameOf = (/** @type {boolean} */ tv) =>
+        /** @type {any} */ ({ family: { palette: 'default' }, lenses: { scent: false, calls: false }, tv });
+
+    it('draws the rim 2.25 px wide in TV mode and 1.5 px otherwise', () => {
+        const u = uniforms();
+        applyFrame(frameOf(false), u);
+        expect(u.rimPx.value).toBe(1.5);
+        applyFrame(frameOf(true), u);
+        expect(u.rimPx.value).toBe(2.25);
     });
 });
