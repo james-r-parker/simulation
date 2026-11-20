@@ -147,7 +147,7 @@ async function steerPart({ options, log }, subjects) {
  */
 async function evalPart({ archive, stage, options }) {
     const seeds = readJson(fileURLToPath(SEEDS_URL));
-    const snapshot = snapshotArchive(archive);
+    const snapshot = snapshotArchive(archive, { shared: true });
     const tasks = EVAL_SEED_INDICES.map((i) => ({
         seed: seeds[i],
         overrides: stage.overrides,

@@ -33,7 +33,7 @@ writeFileSync(
     ladder,
     JSON.stringify([
         { name: 'one', config: world, minGenerations: 1, maxGenerations: 3, gate: [{ read: 'retention.all', min: 1 }] },
-        { name: 'world', config: null },
+        { name: 'world', config: null, pool: 0.5 },
     ]),
 );
 
@@ -78,8 +78,8 @@ async function run(name, workers) {
 
 /** What the run wrote before T27 to T32 (recorded on the unchanged code). */
 const PINNED = {
-    archives: 'a410006a96a23c19828383c38bd823c99e08415f26dd6d0b9a5564519df25a8a',
-    curve: 'ad624e0df7e6314f46f230883cfa73fd23a1c230eaf4f3724686fefe177fa0ea',
+    archives: 'bdd7485fc5df156bc6be86f94c66abc4ef9633ebe96764795785eb8b418c8964',
+    curve: '4194dd56a0d86f091b58f17cb88271845bde4ba41aafd7d19a51daf39af95b5b',
 };
 
 describe('trainer throughput changes', () => {

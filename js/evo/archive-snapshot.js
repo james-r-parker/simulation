@@ -17,17 +17,35 @@ const ARRAYS = /** @type {const} */ (['rows', 'sigmas', 'ids', 'occupied', 'stat
  */
 
 /**
+ * @template {Float32Array | Float64Array | Uint8Array | Int32Array} T
+ * @param {T} source an archive state array
+ * @param {boolean} shared whether the copy lives in a `SharedArrayBuffer`
+ * @returns {T} a copy of the array
+ */
+function copyOf(source, shared) {
+    if (!shared) {
+        return /** @type {T} */ (source.slice());
+    }
+    const Type = /** @type {any} */ (source.constructor);
+    const copy = new Type(new SharedArrayBuffer(source.byteLength));
+    copy.set(source);
+    return /** @type {T} */ (copy);
+}
+
+/**
  * @param {import('./archive.js').Archive} archive the archive
+ * @param {{shared?: boolean}} [options] `shared`: put the copies in `SharedArrayBuffer`s, so posting the snapshot to a
+ *   worker thread shares the memory instead of cloning it (the worker only reads it)
  * @returns {ArchiveSnapshot} copies of the archive's state arrays
  */
-export function snapshotArchive(archive) {
+export function snapshotArchive(archive, { shared = false } = {}) {
     return {
-        rows: archive.rows.slice(),
-        sigmas: archive.sigmas.slice(),
-        ids: archive.ids.slice(),
-        occupied: archive.occupied.slice(),
-        stats: archive.stats.slice(),
-        cursors: archive.cursors.slice(),
+        rows: copyOf(archive.rows, shared),
+        sigmas: copyOf(archive.sigmas, shared),
+        ids: copyOf(archive.ids, shared),
+        occupied: copyOf(archive.occupied, shared),
+        stats: copyOf(archive.stats, shared),
+        cursors: copyOf(archive.cursors, shared),
     };
 }
 

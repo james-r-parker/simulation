@@ -62,7 +62,7 @@ const SEEDS_URL = new URL('../evals/train-seeds.json', import.meta.url);
  * @throws {Error} after logging `TrainEpisodeFailed` when an episode fails
  */
 async function runEpisodes({ seeds, stage, archive, pool: opponentPool, difficulty }, { args, generation, log, pool }) {
-    const snapshot = snapshotArchive(archive);
+    const snapshot = snapshotArchive(archive, { shared: true });
     const ticks = args.ticks ?? EPISODE_TICKS;
     const opponents = taskPool(opponentPool, stage.pool);
     const tasks = Array.from({ length: args.episodes }, (_, episode) => ({
