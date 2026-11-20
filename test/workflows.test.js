@@ -1,6 +1,7 @@
 // reads: .github/workflows
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { fullMatrix } from '../scripts/lib/affected-matrix.mjs';
 import { HEAVY_TESTS, STATISTICAL_TESTS } from '../scripts/lib/test-scope.mjs';
 
 const DIR = '.github/workflows';
@@ -124,43 +125,37 @@ describe('workflows', () => {
             expect(check).toMatch(/push:\s*\n\s*branches: \[main, season\/next\]/);
         });
 
-        it('shards the whole suite, slow tests included, on a pull request and in the queue, never on a push', () => {
+        it('runs the matrix the scope job writes, slow tests included, with one seed and coverage only on a whole run', () => {
             const text = job('test');
-            expect(text).toContain("if: github.event_name != 'push' && needs.scope.outputs.scope != 'docs'");
+            expect(text).toContain("if: needs.scope.outputs.has_tests == 'true'");
+            expect(text).toContain('matrix: ${{ fromJSON(needs.scope.outputs.matrix) }}');
             expect(text).toContain('fail-fast: false');
             // Slow tests are not left out (no TEST_SCOPE=fast), and every job shares one seed.
             expect(text).not.toContain('TEST_SCOPE: fast');
             expect(text).toContain('TEST_SCOPE: ${{ matrix.pass }}');
             expect(text).toContain('--sequence.seed="$SEED"');
-            const entries = [...text.matchAll(/^ {10}- \{ (.*) \}$/gm)].map((m) =>
-                Object.fromEntries(m[1].split(', ').map((pair) => pair.split(': '))),
-            );
-            const ids = entries.map((entry) => entry.id);
-            expect(new Set(ids).size, 'ids are unique, so blob reports and artifacts do not collide').toBe(ids.length);
-            expect(new Set(entries.map((entry) => entry.pass))).toEqual(new Set(['shard', 'heavy', 'statistical']));
-            // The shard pass has every shard from 1 to its total, once.
-            const mine = entries
-                .filter((entry) => entry.pass === 'shard')
-                .map((entry) => entry.shard.split('/').map(Number));
-            const total = mine[0][1];
-            expect(mine.map(([i]) => i)).toEqual(Array.from({ length: total }, (_, i) => i + 1));
-            expect(mine.every(([, n]) => n === total)).toBe(true);
-            const statistical = entries.filter((entry) => entry.pass === 'statistical').map((entry) => entry.files);
+            // The jobs of a whole run are the full matrix (test/workflows/heavy-shards.test.js pins it): every shard once, and
+            // one job per heavy and per statistical file, with unique ids so blob reports and artifacts do not collide.
+            const jobs = fullMatrix();
+            expect(new Set(jobs.map((entry) => entry.id)).size).toBe(jobs.length);
+            expect(new Set(jobs.map((entry) => entry.pass))).toEqual(new Set(['shard', 'heavy', 'statistical']));
+            const statistical = jobs.filter((entry) => entry.pass === 'statistical').map((entry) => entry.files);
             expect([...statistical].sort()).toEqual([...STATISTICAL_TESTS].sort());
-            // One job per heavy file, and no other: the list in the matrix is the list the config uses.
-            const heavy = entries.filter((entry) => entry.pass === 'heavy').map((entry) => entry.files);
+            const heavy = jobs.filter((entry) => entry.pass === 'heavy').map((entry) => entry.files);
             expect([...heavy].sort()).toEqual([...HEAVY_TESTS].sort());
-            // Only the jobs with coverage carry coverage and a blob report.
+            // Only a whole run on a job with coverage carries coverage and a blob report.
             expect(text).toMatch(
-                /!= statistical \]\]; then\n\s+args\+=\(--coverage --coverage.reportOnFailure --reporter=blob/,
+                /"\$COVERAGE" == whole \]\]; then\n\s+args\+=\(--coverage --coverage.reportOnFailure --reporter=blob/,
             );
-            expect(text).toContain("matrix.pass != 'statistical'");
+            expect(text).toContain("matrix.pass != 'statistical' && needs.scope.outputs.coverage == 'whole'");
         });
 
         it('merges the shards coverage and runs the ratchet on it, even after a failed shard', () => {
             const text = job('coverage');
             expect(text).toContain('needs: [scope, test]');
-            expect(text).toContain("if: ${{ !cancelled() && needs.test.result != 'skipped' }}");
+            expect(text).toContain(
+                "if: ${{ !cancelled() && needs.scope.outputs.coverage == 'whole' && needs.test.result != 'skipped' }}",
+            );
             expect(text).toContain('pattern: blob-*');
             expect(text).toContain('npx vitest run --merge-reports=.vitest-reports --coverage');
             expect(text).toContain('node scripts/quality-ratchet.mjs --check');
@@ -168,7 +163,7 @@ describe('workflows', () => {
 
         it('has one required check that needs every job and fails when one failed or was cancelled', () => {
             const text = job('check');
-            expect(text).toContain('needs: [scope, static, test, coverage]');
+            expect(text).toContain('needs: [scope, static, test, coverage, ratchet-related]');
             expect(text).toContain('*" failure "*');
             expect(text).toContain('*" cancelled "*');
         });

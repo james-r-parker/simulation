@@ -536,6 +536,11 @@
         "test/fixtures/pool-worker.mjs",
         "test/fixtures/throwing-worker.mjs"
     ],
+    "test/workflows/affected-wiring.test.js": [
+        ".github/workflows/check.yml",
+        "scripts",
+        "scripts/affected.mjs"
+    ],
     "test/workflows/heavy-shards.test.js": [
         ".github/workflows/check.yml",
         "test/bench.slow.test.js",
