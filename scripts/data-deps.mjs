@@ -9,8 +9,9 @@
 //   node scripts/data-deps.mjs --write   # regenerate test/data-deps.json
 //   node scripts/data-deps.mjs --check   # exit 1 if it is stale or a test has an unresolved path (the `conventions` gate)
 import { writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runIfEntrypoint } from './lib/cli-entrypoint.mjs';
 import { buildDataDeps, DATA_DEPS_FILE, readDataDeps, renderDataDeps } from './lib/data-deps.mjs';
 
 /**
@@ -42,6 +43,9 @@ export function main(args, { root, out = console.log }) {
     return problems.length > 0 ? 1 : 0;
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-    process.exitCode = main(process.argv.slice(2), { root: fileURLToPath(new URL('..', import.meta.url)) });
-}
+const root = fileURLToPath(new URL('..', import.meta.url));
+await runIfEntrypoint(
+    resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url),
+    process.argv.slice(2),
+    async (args) => main(args, { root }),
+);
