@@ -5193,6 +5193,22 @@
       "effect": "no-difference",
       "note": "The run was started as settled-baseline-E252 (.runs/settled-baseline-E252.log) and renumbered E254 after an id collision. Settled catch metric: live, verified, min seeds 64, detectable change 0.5/0.3/0.2 at 16/32/64, equal to the whole-run metric's; GUARD_METRICS moved to it. Prediction half falsified: the settled mean is higher (1.385) than the whole-run one (1.290), not lower. hunter_kills_per_life_mean_settled verified; hunter_juvenile_death_share_settled and pursuit_kill_share_settled unverified.",
       "reports": ["evals/decisions/E254/results.md"]
+    },
+    {
+      "id": "E255",
+      "date": "2026-11-20",
+      "branch": "exp/fair-chase-rung",
+      "hypothesis": "E-FC-2 (fair-chase T7): with the courser sprint store (sprintStoreEnabled, drain 0.01, predator sprintDrainMultiplier 0.5) laid over the rung worlds, the hunt rung's drill prey-ahead is learnable from random brains: at least 2 of 8 populations reach its bar. On the ladder as it is (E-feasible record above) prey-ahead is 0/8, best 0.03 against a bar of 0.109.",
+      "prediction": "Written before running train:feasible (npm run train:feasible -- --curriculum <arm ladder> --until hunt --workers 16, 8 populations, 200 generations, 64 brains, 4 trials): base reproduces the old reading, prey-ahead 0/8 (best about 0.03, not learnable). courser makes prey-ahead learnable on 2 to 4 of 8 populations (best share 0.15 to 0.4), because the store ends the unbounded flee that the prey-ahead evader wins, so a brain that merely closes and bites now wins some trials; moderate confidence (about 55 percent), the risk being that the bar scales with the memoryless reference's win share, which the store also raises, and that the drill's scripted prey may not spend the store. The earlier rungs (food-ahead, food-behind, prey-adrift, prey-weak) stay learnable on both arms; prey-mid stays marginal (1 to 3 of 8). Falsified if courser prey-ahead is under 2 of 8.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "base: npm run train:feasible -- --curriculum evals/train-ladder.json --until hunt --workers 16",
+      "after": "courser: the same, on the ladder with evals/train-screens/stages/fair-chase-<stage>.json as each stage's config (evals/train-screens/fair-chase.grid.json, arm courser)",
+      "verdicts": {},
+      "effect": "better",
+      "note": "Prediction only; results follow in this record.",
+      "reports": ["evals/decisions/E255/results.md"]
     }
   ]
 }
