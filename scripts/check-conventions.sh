@@ -147,6 +147,13 @@ if ((metrics_status != 0)); then
   fail "metrics-doc: ${metrics_out:-scripts/metrics-doc.mjs exited $metrics_status with no output}"
 fi
 
+# docs/scene-scorecard.md is generated from the registry's `scenes` tags and the newest shared baseline; a stale one fails with the command that fixes it.
+scorecard_out="$(node scripts/scene-scorecard.mjs --check 2>&1)"
+scorecard_status=$?
+if ((scorecard_status != 0)); then
+  fail "scene-scorecard: ${scorecard_out:-scripts/scene-scorecard.mjs exited $scorecard_status with no output}"
+fi
+
 # The index in docs/designs/sim-notes.md lists every entry in docs/notes/; a stale one fails with the command that fixes it.
 notes_out="$(node scripts/notes-index.mjs --check 2>&1)"
 notes_status=$?
@@ -188,6 +195,15 @@ done < <(git ls-files --cached --others --exclude-standard -z | xargs -0 -r stat
 while IFS= read -r hit; do
   fail "$hit - merge conflict marker"
 done < <(git grep -InE '^(<{7} |\|{7} |>{7} |={7}$)' -- . ':(exclude)node_modules' ':(exclude)**/node_modules/**' | cut -d: -f1,2)
+
+# test-data: a test reads no shipped data file that a non-code PR edits (docs/designs/agent-workflow.md, Tests read
+# fixtures). Only a `*.shipped.test.js` (or `*.shipped.slow.test.js`) may, to assert that the shipped file parses and
+# validates (test/check-conventions.test.js, which tests this rule, is exempt); every other test reads a frozen copy under test/fixtures/. Comment lines are skipped.
+SHIPPED_DATA='evals/(train-tune\.json|stages|train-screens|ledger)\b|(?<!fixtures/)train-(ladder|curriculum)[^\x27"\x60 ]*\.json'
+while IFS= read -r hit; do
+  fail "$hit - test-data: a test reads a shipped evals/ data file; copy what it needs to test/fixtures/ (only *.shipped.test.js reads the shipped file)"
+done < <(git grep -InP "$SHIPPED_DATA" -- 'test/*.js' 'test/**/*.js' ':(exclude)test/fixtures/**' ':(exclude)test/check-conventions.test.js' ':(exclude)*.shipped.test.js' ':(exclude)*.shipped.slow.test.js' \
+  | grep -vE '^[^:]+:[0-9]+:\s*(//|\*|/\*)' | cut -c1-160)
 
 if [[ $violations -gt 0 ]]; then
   echo "$violations convention violation(s)"

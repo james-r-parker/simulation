@@ -4,7 +4,8 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { createSimLog } from '../js/sim/log.js';
 import { planScreen, textHash, ladderText } from '../scripts/lib/train-screen-grid.mjs';
-import { reusable, runDir, runScreen } from '../scripts/lib/train-screen-run.mjs';
+import { cacheDir, reusable, runDir, runScreen } from '../scripts/lib/train-screen-run.mjs';
+import { seedListHash } from '../scripts/lib/train-manifest.mjs';
 import { fakeTrain } from './helpers/fake-train.js';
 
 const root = mkdtempSync(join(tmpdir(), 'train-screen-run-'));
@@ -217,5 +218,26 @@ describe('reusable', () => {
         const manifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8'));
         writeFileSync(join(dir, 'manifest.json'), JSON.stringify({ ...manifest, status: 'running' }));
         expect(reusable(dir, { hash, argv })).toBe(false);
+    });
+
+    it('retrains a run whose manifest lacks the seed-list hash or holds another, and reuses a matching one', async () => {
+        const dir = join(root, 'reusable-seeds');
+        mkdirSync(dir, { recursive: true });
+        const ladderFile = join(root, 'reusable-seeds-ladder.json');
+        const text = ladderText(LADDER);
+        writeFileSync(ladderFile, text);
+        const hash = textHash(text);
+        await fakeTrain(() => ({ passed: 1 })).exec(['--curriculum', ladderFile, ...argv], dir);
+        const manifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8'));
+        expect(manifest.options.seedListHash).toBe(seedListHash());
+        expect(reusable(dir, { hash, argv })).toBe(true);
+        const write = (/** @type {Record<string, any>} */ options) =>
+            writeFileSync(join(dir, 'manifest.json'), JSON.stringify({ ...manifest, options }));
+        const without = { ...manifest.options, seedListHash: undefined };
+        write(without);
+        expect(reusable(dir, { hash, argv })).toBe(false);
+        write({ ...manifest.options, seedListHash: '0123456789abcdef' });
+        expect(reusable(dir, { hash, argv })).toBe(false);
+        expect(cacheDir('c', hash, argv)).toContain(hash);
     });
 });

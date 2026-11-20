@@ -9,7 +9,7 @@ import { brainLayout } from '../js/sim/brain-layout.js';
 import { createConfig } from '../js/sim/config.js';
 import { TRAINER_DESCRIPTOR } from '../js/evo/trainer.js';
 import { drillEdges, drillLossReasons, averageMetrics } from '../scripts/lib/train-checkpoint.mjs';
-import { loadStages, saveArchive } from '../scripts/lib/train-state.mjs';
+import { archiveDue, loadStages, saveArchive } from '../scripts/lib/train-state.mjs';
 import { formatCurve, readCurve } from '../scripts/train-curve.mjs';
 import { runExport } from '../scripts/train-export.mjs';
 import { loadChampions } from '../scripts/memory-probe.mjs';
@@ -47,7 +47,14 @@ describe('parseArgs', () => {
 
 describe('loadStages', () => {
     it('loads the committed curriculum: three stages with distinct rulesHash and one layout', () => {
-        const args = parseArgs(['--generations', '45', '--out', 'x', '--curriculum', 'evals/train-curriculum.json']);
+        const args = parseArgs([
+            '--generations',
+            '45',
+            '--out',
+            'x',
+            '--curriculum',
+            'test/fixtures/train-curriculum.json',
+        ]);
         const stages = loadStages(args);
         expect(stages.map((s) => [s.name, s.from, s.to])).toEqual([
             ['nursery', 0, 20],
@@ -262,19 +269,16 @@ describe('train:export', () => {
     });
 });
 
-describe('evals/train-seeds.json', () => {
-    it('holds 256 distinct seeds, none in evals/seeds.json', () => {
-        const train = JSON.parse(readFileSync('evals/train-seeds.json', 'utf8'));
-        const evals = JSON.parse(readFileSync('evals/seeds.json', 'utf8'));
-        expect(train).toHaveLength(256);
-        expect(new Set(train).size).toBe(256);
-        expect(train.filter((/** @type {number} */ s) => evals.includes(s))).toEqual([]);
-    });
-});
-
 describe('saveArchive', () => {
     it('stamps generation and the stages reached', () => {
-        const args = parseArgs(['--generations', '30', '--out', 'x', '--curriculum', 'evals/train-curriculum.json']);
+        const args = parseArgs([
+            '--generations',
+            '30',
+            '--out',
+            'x',
+            '--curriculum',
+            'test/fixtures/train-curriculum.json',
+        ]);
         const stages = loadStages(args);
         const archive = createArchive(brainLayout(stages[0].built), { descriptor: TRAINER_DESCRIPTOR });
         const dir = join(root, 'save');
@@ -325,5 +329,33 @@ describe('--until, --scratch and the /tmp refusal', () => {
         expect(run(['--out', '/tmp/x', '--scratch'])).not.toThrow();
         expect(run(['--out', '.sim/train/x'])).not.toThrow();
         expect(run(['--out', '/tmpx/y'])).not.toThrow();
+    });
+});
+
+describe('archiveDue', () => {
+    const running = { status: 'running' };
+    const at = (/** @type {Record<string, any>} */ extra) => ({
+        args: { checkpointEvery: 2, generations: 5 },
+        stages: [{}],
+        state: running,
+        generation: 0,
+        checkpointed: false,
+        ...extra,
+    });
+
+    it('writes at a checkpoint and at the last generation, not between', () => {
+        expect(archiveDue(at({}))).toBe(false);
+        expect(archiveDue(at({ checkpointed: true }))).toBe(true);
+        expect(archiveDue(at({ generation: 4 }))).toBe(true);
+    });
+
+    it('writes when the run stopped, for instance on a stalled stage', () => {
+        expect(archiveDue(at({ state: { status: 'stalled' } }))).toBe(true);
+    });
+
+    it('writes every generation of a run with no checkpoints, but not when a stage sets its own', () => {
+        const none = { checkpointEvery: 0, generations: 5 };
+        expect(archiveDue(at({ args: none }))).toBe(true);
+        expect(archiveDue(at({ args: none, stages: [{}, { checkpointEvery: 3 }] }))).toBe(false);
     });
 });

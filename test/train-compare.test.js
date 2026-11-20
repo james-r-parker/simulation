@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -61,6 +61,43 @@ describe('train:compare', () => {
         const json = JSON.parse(readFileSync(out, 'utf8'));
         expect(json.compare.verdict).toBe('better');
         expect(json.after.stages[1].passShare).toBe(1);
+    });
+
+    it.each([
+        [6, 'better'],
+        [5, 'no verdict'],
+    ])('reads %i planted pass flips in 32 offsets as a stage verdict of `%s`', async (flips, verdict) => {
+        const arms = [`plant${flips}-before`, `plant${flips}-after`];
+        for (let i = 0; i < 32; i++) {
+            const stages = (/** @type {boolean} */ hunt) => [
+                { name: 'nursery', passedAt: 10 },
+                hunt ? { name: 'hunt', passedAt: 40 } : { name: 'hunt' },
+            ];
+            const rows = (/** @type {boolean} */ hunt) => [row('nursery', 3600, 1), row('hunt', 5400, hunt ? 1 : 0.3)];
+            writeRun(join(root, arms[0], `o${i * 8}`), { offset: i * 8, stages: stages(false), rows: rows(false) });
+            const flipped = i < flips;
+            writeRun(join(root, arms[1], `o${i * 8}`), { offset: i * 8, stages: stages(flipped), rows: rows(flipped) });
+        }
+        /** @type {string[]} */
+        const lines = [];
+        const code = await main([join(root, arms[0], 'o*'), join(root, arms[1], 'o*')], (l) => lines.push(l));
+        expect(code).toBe(0);
+        const text = lines.join('\n');
+        expect(text).toContain('stage pass test (exact, discordant offsets):');
+        expect(text).toMatch(new RegExp(`hunt\\s+${flips}\\s+0\\s+${32 - flips}\\s+\\S+\\s+${verdict}\\s+6`));
+        expect(text).toMatch(/nursery\s+0\s+0\s+32\s+1\.0000\s+no verdict/);
+    });
+
+    it('exits 2 when the arms were made with different trainer seed lists', async () => {
+        writeArm('seeds-a', 16, false);
+        writeArm('seeds-b', 16, false);
+        const manifest = join(root, 'seeds-b', 'o0', 'manifest.json');
+        const json = JSON.parse(readFileSync(manifest, 'utf8'));
+        writeFileSync(manifest, JSON.stringify({ ...json, options: { ...json.options, seedListHash: 'abc' } }));
+        /** @type {string[]} */
+        const lines = [];
+        expect(await main([join(root, 'seeds-a', 'o*'), join(root, 'seeds-b', 'o*')], (l) => lines.push(l))).toBe(2);
+        expect(await main([join(root, 'seeds-a', 'o*'), join(root, 'seeds-a', 'o*')], () => {})).toBe(0);
     });
 
     it('exits 2 on too few matched offsets, and 1 when a pattern matches nothing', async () => {

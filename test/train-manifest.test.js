@@ -9,6 +9,7 @@ import {
     gitSha,
     manifestBase,
     partitionManifests,
+    seedListHash,
     startLedger,
     writeManifest,
 } from '../scripts/lib/train-manifest.mjs';
@@ -95,5 +96,24 @@ describe('seed partitions in the manifest', () => {
         mkdirSync(older);
         writeFileSync(join(older, 'manifest.json'), JSON.stringify({ stages: [] }));
         expect(startLedger(join(older, 'archive-1.json')).map((u) => u.purpose)).toEqual(['resume']);
+    });
+});
+
+describe('seedListHash', () => {
+    it('hashes the list as JSON, so a changed list or order is another hash and spacing is not', () => {
+        const file = join(root, 'seeds.json');
+        writeFileSync(file, '[1, 2, 3]');
+        const hash = seedListHash(file);
+        expect(hash).toBe(createHash('sha256').update('[1,2,3]').digest('hex').slice(0, 16));
+        writeFileSync(file, '[1,\n 2,\n 3]');
+        expect(seedListHash(file)).toBe(hash);
+        writeFileSync(file, '[1,2,3,4]');
+        expect(seedListHash(file)).not.toBe(hash);
+    });
+
+    it('is in the manifest options of a run', () => {
+        const args = parseArgs(['--generations', '2', '--out', 'x']);
+        expect(manifestBase(args, null).options.seedListHash).toBe(seedListHash());
+        expect(seedListHash()).toMatch(/^[0-9a-f]{16}$/);
     });
 });

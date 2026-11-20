@@ -91,5 +91,5 @@ export function playBirth(player, agents) {
               ? FX_RECIPES.birthArrival
               : FX_RECIPES.birthMate;
     playRecipe(player.fx, r, at);
-    tweenAt(player, agents, indexOfGenome(agents, e.a), TWEEN.BIRTH_POP);
+    tweenAt(player, agents, indexOfGenome(agents, e.a), cause === 'SPLIT' ? TWEEN.FISSION : TWEEN.BUD);
 }

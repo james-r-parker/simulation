@@ -83,7 +83,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
         world.patches,
         scent,
         createTerritoryContours({ info }),
-        createFoodDraw({ info }),
+        createFoodDraw({ info, dying: stores.dying, causeNames: player.causeNames }),
         world.rocks,
         world.clouds,
         createHerdDraw({ info }),

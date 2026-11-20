@@ -26,8 +26,10 @@ concurrency:
 
 jobs:
   # Classifies the change once, for the jobs below: `docs` when every changed path is Markdown that no build or test reads
-  # beyond the design-doc tests (scripts/change-scope.sh), `full` otherwise. A push computes it against the previous tip;
-  # anything unclassifiable takes the full path.
+  # beyond the design-doc tests (scripts/change-scope.sh), `release` for the Release Please pull request (a diff of only
+  # CHANGELOG.md, package.json, package-lock.json and .release-please-manifest.json on a `release-please--*` branch: it
+  # runs this job and nothing else, and `check` reports success because it counts a skipped job as passed), `full`
+  # otherwise. A push computes it against the previous tip; anything unclassifiable takes the full path.
   scope:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -47,6 +49,7 @@ jobs:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event_name == 'merge_group' && github.event.merge_group.base_sha || format('origin/{0}', github.base_ref) }}
           BEFORE: ${{ github.event.before }}
+          HEAD_REF: ${{ github.head_ref }}
         run: |
           scope=full
           if [[ "$EVENT" == pull_request || "$EVENT" == merge_group ]]; then
@@ -54,6 +57,11 @@ jobs:
           elif [[ "$EVENT" == push && ! "$BEFORE" =~ ^0+$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
             # A push re-checks only what changed since the previous tip; its PR already passed the rest.
             scope="$(scripts/change-scope.sh "$BEFORE" || echo full)"
+          fi
+          # The release scope needs the Release Please branch: a dependency bump touches the same package files and
+          # must run the whole gate. A push or a queue run has no such branch, so it takes the full path.
+          if [[ "$scope" == release && "$HEAD_REF" != release-please--* ]]; then
+            scope=full
           fi
           echo "scope=$scope" >>"$GITHUB_OUTPUT"
           echo "Change scope: $scope"
@@ -64,6 +72,7 @@ jobs:
   # whole suite on the same commit.
   static:
     needs: scope
+    if: needs.scope.outputs.scope != 'release'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -133,7 +142,7 @@ jobs:
   test:
     name: test ${{ matrix.id }}
     needs: scope
-    if: github.event_name != 'push' && needs.scope.outputs.scope != 'docs'
+    if: github.event_name != 'push' && needs.scope.outputs.scope != 'docs' && needs.scope.outputs.scope != 'release'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -245,7 +254,8 @@ jobs:
           exit $status
 
   # The required check: it reports on every pull request and merge-queue run, whichever jobs ran, and fails when any job
-  # failed or was cancelled. A job skipped by scope (docs) or event (the push) counts as passed.
+  # failed or was cancelled. A job skipped by scope (docs, release) or event (the push) counts as passed, so the release
+  # pull request, which runs `scope` alone, still reports `check` as success.
   check:
     if: github.event_name != 'workflow_dispatch' && always()
     needs: [scope, static, test, coverage]
@@ -279,10 +289,15 @@ jobs:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event_name == 'merge_group' && github.event.merge_group.base_sha || format('origin/{0}', github.base_ref) }}
           BEFORE: ${{ github.event.before }}
+          HEAD_REF: ${{ github.head_ref }}
         run: |
           scope=browser
           if [[ "$EVENT" == pull_request || "$EVENT" == merge_group ]]; then
             scope="$(scripts/change-scope.sh --browser "$BASE" || echo browser)"
+            # The Release Please pull request changes version files only: its steps are skipped, the job still reports.
+            if [[ "$EVENT" == pull_request && "$HEAD_REF" == release-please--* && "$(scripts/change-scope.sh "$BASE" || echo full)" == release ]]; then
+              scope=none
+            fi
           elif [[ "$EVENT" == push && ! "$BEFORE" =~ ^0+$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
             # A push re-checks only what changed since the previous tip; its PR already passed the rest.
             scope="$(scripts/change-scope.sh --browser "$BEFORE" || echo browser)"
@@ -303,6 +318,17 @@ jobs:
       - name: Browser smoke
         if: steps.scope.outputs.scope == 'browser'
         run: scripts/check.sh --ci --only=browser-smoke
+
+      # A spec that failed and passed on its rerun is written to .checklogs/smoke-flakes.json (scripts/browser-smoke.sh);
+      # the nightly `smoke-flakes` job lists the last 7 days of them.
+      - name: Upload smoke flakes
+        if: always() && steps.scope.outputs.scope == 'browser'
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-flakes
+          path: .checklogs/smoke-flakes.json
+          if-no-files-found: ignore
+          include-hidden-files: true
 
       - name: Upload check logs
         if: failure()

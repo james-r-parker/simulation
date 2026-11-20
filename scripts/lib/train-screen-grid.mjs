@@ -232,3 +232,20 @@ export function trainArgs(plan, arm, offset) {
     const until = plan.until === null ? [] : ['--until', plan.until];
     return ['--generations', String(plan.generations), '--seed-offset', String(offset), ...until, ...flags];
 }
+
+/** Offsets a screen that carries a verdict should run (training-loop.md, Phase 5: 6 flips in 32 is the exact test's smallest call). */
+export const VERDICT_OFFSETS = 32;
+
+/**
+ * @param {ScreenPlan} plan a plan
+ * @returns {string[]} warnings: a grid that reads a verdict (a reference and at least one other arm) on fewer than
+ *   `VERDICT_OFFSETS` offsets cannot see most effects
+ */
+export function screenWarnings(plan) {
+    if (plan.arms.length < 2 || plan.offsets.length >= VERDICT_OFFSETS) {
+        return [];
+    }
+    return [
+        `warning: ${plan.offsets.length} offsets is under ${VERDICT_OFFSETS}; the pass test needs 6 flips in 32 to read a stage, so most effects will read no verdict`,
+    ];
+}

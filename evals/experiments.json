@@ -5144,7 +5144,6 @@
       "verdicts": {},
       "effect": "no-difference",
       "note": "E-TL-3a exited 1 (9/16 adaptive runs failed on entering hunt): all 9 offsets that passed nursery and hunt-contact crashed with 'config.specialisations.forager.sprintBoost is 0; expected a finite number > 0' because validateAdapt allows from 0 while config-validate rejects sprintBoost 0. The 7 stalled offsets (8, 24, 32, 40, 56, 72, 96) matched fixed identically (0% nursery, mean score 0.65, 8.0 h cpu). Fixed arm (16/16): nursery 56%, hunt-contact 56%, hunt-weak 25%, hunt-mid 19%, hunt 0%, mean score 1.85, 21.5 h cpu. Verdict: incomparable, prediction falsified/blocked by sprintBoost > 0 rule.",
-      "reports": ["evals/decisions/E251/results.md", "evals/train-screens/results/adaptive-t16a/table.md"],
       "reports": ["evals/decisions/E251/results.md"]
     },
     {
@@ -5178,6 +5177,22 @@
       "effect": "better",
       "note": "Predator-on-forager catch share by start distance (0.2 to 1.0 of view), breaking evader, 8 trials x 8 bearings: control 0.17 0 0 0 0 (band none); even and long identical to control trial for trial (band none: the jink, not the store, decides those chases); courser 0.50 0.42 0.67 0.63 0.25 (band all 5 distances; scout 4, defender 4, reproducer 4); stalker 0.19 0.13 0 0 0 (band none; reproducer 0.2 only). Straight runner, full view: control 0.69, even 0, long 0.25, courser 0.25, stalker 0 (all under 0.8; with the store on the pursuer sprints only with the prey in view, and at 1.0 of view about half the trials start just outside it). Pass rule (band of at least 2 on the breaking forager, full-view straight under 0.8): courser passes, every other arm fails. Prediction partly held: courser widest and passing, long failing, stalker weakest; falsified on even (predicted 0.2 and 0.4, got none) and on courser's width (5, not 2 to 3). Only a hunter that outlasts its prey changes the breaking chase. courser is the one arm named for Phase 2 (fair-chase.md T7).",
       "reports": ["evals/decisions/E253/results.md"]
+    },
+    {
+      "id": "E254",
+      "date": "2026-11-20",
+      "branch": "feat/settled-guard",
+      "hypothesis": "metric-noise T12 (D3): the settled hunter catch metric eval.hunter_catches_per_1k_settled, counted from BURN_IN_TICKS, reads lower than the whole-run eval.hunter_catches_per_1k (founders no longer count) and has a detectable change at 64 seeds no larger than the whole-run metric's, so the keep-rule guard can move to it.",
+      "prediction": "Written before reading the settled metrics (plan D3 measurement: seed 1 reads 0.464 whole-run against 0.215 after burn-in): on the 128-seed E254 baseline the settled catch metric has a lower mean than the whole-run one, is live, and its detectable change at 64 seeds is similar or smaller (relative to its mean). Falsified if it is unverified, or its 64-seed detectable change exceeds the whole-run metric's; then GUARD_METRICS stays.",
+      "targets": [],
+      "beforePolicy": "map-elites-v6",
+      "afterPolicy": "map-elites-v6",
+      "before": "evals/power/defaults-floor-on-E210.json",
+      "after": "scripts/run-detached.sh settled-baseline-E254 --frozen -- npm run eval -- --seeds 128 --ticks 200000 --policy map-elites-v6 --out evals/power/defaults-floor-on-E254.json (floor-on defaults, 16 workers, 3689.6 s; same rulesHash 38be2908ad820c86 as E210)",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "The run was started as settled-baseline-E252 (.runs/settled-baseline-E252.log) and renumbered E254 after an id collision. Settled catch metric: live, verified, min seeds 64, detectable change 0.5/0.3/0.2 at 16/32/64, equal to the whole-run metric's; GUARD_METRICS moved to it. Prediction half falsified: the settled mean is higher (1.385) than the whole-run one (1.290), not lower. hunter_kills_per_life_mean_settled verified; hunter_juvenile_death_share_settled and pursuit_kill_share_settled unverified.",
+      "reports": ["evals/decisions/E254/results.md"]
     }
   ]
 }

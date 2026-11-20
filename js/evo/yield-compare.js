@@ -4,6 +4,7 @@
 
 import { binomialTwoSidedP } from './binomial.js';
 import { bootstrapInterval } from './compare.js';
+import { stageTests } from './yield-stage-test.js';
 
 /** Matched offsets below which a comparison is refused (tied pairs count). */
 export const MIN_PAIRS = 16;
@@ -25,6 +26,8 @@ export const SIGN_LEVEL = 0.05;
  * @property {'better' | 'worse' | 'no verdict' | 'incomparable'} verdict `better` or `worse` when the sign test is under
  *   0.05 and the interval excludes 0, else `no verdict`; `incomparable` when the arms' ladders name different stages
  * @property {string} [reason] why the verdict is `incomparable`
+ * @property {import('./yield-stage-test.js').StageTest[]} stageTests each stage's exact pass test on the discordant offsets
+ *   (empty without `stages` or when a run has no `passed` list); the run-level verdict does not read it
  */
 
 /**
@@ -73,13 +76,14 @@ function incomparable(stages) {
         interval: { low: 0, high: 0 },
         p: 1,
         verdict: 'incomparable',
+        stageTests: [],
         reason: `the arms' ladders have different stages: before ${stages.before.join(', ')}; after ${stages.after.join(', ')}; a score counts stages, so it is not comparable`,
     };
 }
 
 /**
- * @param {readonly {offset: number, score: number}[]} before the before arm's runs (`runYield`)
- * @param {readonly {offset: number, score: number}[]} after the after arm's runs
+ * @param {readonly {offset: number, score: number, passed?: readonly {stage: string}[]}[]} before the before arm's runs (`runYield`)
+ * @param {readonly {offset: number, score: number, passed?: readonly {stage: string}[]}[]} after the after arm's runs
  * @param {{minPairs?: number, stages?: {before: string[], after: string[]}}} [options] the least matched
  *   offsets (default `MIN_PAIRS`) and each arm's stage names: `score` (`reached + bestProgress`) counts stages, so two arms
  *   whose lists differ are `incomparable` and no pair is read
@@ -119,6 +123,7 @@ export function compareYield(before, after, { minPairs = MIN_PAIRS, stages } = {
         meanDiff: diffs.reduce((sum, d) => sum + d, 0) / diffs.length,
         interval,
         p,
+        stageTests: stageTests(before, after, stages?.before ?? []),
         verdict,
     };
 }

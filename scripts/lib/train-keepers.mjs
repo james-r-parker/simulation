@@ -62,10 +62,11 @@ export function gateDrills(gate) {
  * Drills each stage's kept passers on that stage's gate drills.
  * @param {Record<string, KeptSubject[]>} keepers the kept passers by stage
  * @param {{stages: readonly {name: string, gate?: any[]}[], seed: number, trials: number, workers: number | undefined,
- *   log: import('../../js/sim/log.js').SimLog}} at the stages, the gate's drill seed and trials, the pool size and the log
+ *   cache?: import('./drill-cache.mjs').DrillCache, log: import('../../js/sim/log.js').SimLog}} at the stages, the gate's
+ *   drill seed and trials, the pool size, the run's drill cache (none: no cache) and the log
  * @returns {Promise<Record<string, Record<string, any>>>} `<stage>` -> the drill readings of its kept passers
  */
-export async function keeperReadings(keepers, { stages, seed, trials, workers, log }) {
+export async function keeperReadings(keepers, { stages, seed, trials, workers, cache, log }) {
     /** @type {Record<string, Record<string, any>>} */
     const out = {};
     for (const stage of stages) {
@@ -75,7 +76,7 @@ export async function keeperReadings(keepers, { stages, seed, trials, workers, l
         }
         const drills = gateDrills(stage.gate);
         const genomes = fromKept(kept);
-        const rows = await drillGenomes(/** @type {any} */ ({ drills, seed, trials, workers }), {
+        const rows = await drillGenomes(/** @type {any} */ ({ drills, seed, trials, workers, cache }), {
             genomes,
             config: {},
             log,

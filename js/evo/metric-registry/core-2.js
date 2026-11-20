@@ -16,6 +16,7 @@ export const CORE_2 = {
     }),
     'eval.kin_within_call_radius': entry('core', {
         module: 'js/evo/metrics-selection.js',
+        scenes: ['G2'],
         meaning: 'How many kin are within hearing of an alarm call.',
         counts: 'Sum of kin near the caller at each alarm call over the number of alarm calls (observer.intent.run).',
         unit: 'agents',
@@ -77,6 +78,7 @@ export const CORE_2 = {
     }),
     'eval.skill_trend': entry('core', {
         module: 'js/evo/metrics-trend.js',
+        scenes: ['N5'],
         meaning: 'The mean of the three skill trends.',
         counts: 'Mean of the non-null deliberate_food_trend, pursuit_trend and evasion_trend.',
         unit: 'share change',
@@ -92,6 +94,7 @@ export const CORE_2 = {
     }),
     'eval.spec_dominance': entry('core', {
         module: 'js/evo/metrics-dominance.js',
+        scenes: ['N2'],
         meaning: 'Lower means no single specialisation takes over.',
         counts: 'Largest specialisation count over the total of living-agent counts pooled over every checkpoint at or after BURN_IN_TICKS.',
         unit: 'share',
@@ -102,6 +105,7 @@ export const CORE_2 = {
     }),
     'eval.spec_effective': entry('core', {
         module: 'js/evo/metrics-dominance.js',
+        scenes: ['Same spec, different custom', 'N2', 'G1'],
         meaning: 'Higher means more specialisations share the population evenly.',
         counts: 'exp(Shannon entropy) of the pooled specialisation counts (1 for a monoculture).',
         unit: 'specialisations',
@@ -112,6 +116,7 @@ export const CORE_2 = {
     }),
     'eval.lineage_dominance': entry('core', {
         module: 'js/evo/metrics-dominance.js',
+        scenes: ['G1'],
         meaning: 'Lower means no single lineage takes over.',
         counts: 'Largest lineage count over the total of living-agent counts per lineage, pooled over every checkpoint at or after BURN_IN_TICKS.',
         unit: 'share',
@@ -130,5 +135,27 @@ export const CORE_2 = {
         nullWhen: ['no checkpoint after burn-in with an alive agent'],
         arithmetic: 'test/evo/compare.test.js',
         source: 'test/evo/metric-source-core-trend.test.js',
+    }),
+    'eval.opportunity_for_selection': entry('core', {
+        module: 'js/evo/metrics-selection.js',
+        meaning: "Crow's index, how unequal reproduction is.",
+        counts: 'Variance over squared mean of the children count per death, deaths that ended at or after BURN_IN_TICKS.',
+        unit: 'ratio',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['no completed life after burn-in', 'no children'],
+        arithmetic: 'test/evo/metrics-selection.test.js',
+        source: 'test/evo/metric-source-core-selection.test.js',
+    }),
+    'eval.fitness_lrs_corr': entry('core', {
+        module: 'js/evo/metrics-selection.js',
+        meaning: 'Whether the policy fitness predicts lifetime offspring.',
+        counts: 'Spearman correlation of recorded fitness against children over mature deaths that ended after burn-in with a fitness; needs 30 such deaths.',
+        unit: 'correlation',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['fewer than 30 mature deaths with a fitness', 'fitness or children is constant'],
+        arithmetic: 'test/evo/metrics-selection.test.js',
+        source: 'test/evo/metric-source-core-selection.test.js',
     }),
 };

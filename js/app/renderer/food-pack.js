@@ -3,6 +3,8 @@
 // or meat ageing to rot) and a gentle sway for plants. Pure; nothing allocates after `createFoodPack`.
 
 import { createSections, FOOD_STRIDE, readSections } from '../snapshot-view.js';
+import { animFor, carcassFadeOf } from './death-anim.js';
+import { isPlaying, MAX_DYING } from './dying.js';
 import { floraColor } from './flora-colors.js';
 import { FILL_SHARE, NEON, toDisplay } from './palette.js';
 
@@ -23,8 +25,9 @@ const HUE_STEPS = 1024;
 /**
  * @param {number} capacity the most food items (`maxFood`)
  * @returns {{buckets: {pose: Float32Array, neon: Float32Array, rig0: Float32Array, count: number}[],
- *   sections: import('../snapshot-view.js').Sections, rgb: number[], hueTable: Float32Array}} the buckets, scratch and
- *   the plant colour table
+ *   sections: import('../snapshot-view.js').Sections, rgb: number[], hueTable: Float32Array,
+ *   carcassBase: Float32Array, carcassFaded: boolean}} the buckets, scratch, the plant colour table, the carcasses'
+ *   own colour (before a cross-fade) and whether the last frame faded any in
  */
 export function createFoodPack(capacity) {
     const buckets = [];
@@ -36,7 +39,14 @@ export function createFoodPack(capacity) {
             count: 0,
         });
     }
-    return { buckets, sections: createSections(), rgb: [0, 0, 0], hueTable: buildHueTable() };
+    return {
+        buckets,
+        sections: createSections(),
+        rgb: [0, 0, 0],
+        hueTable: buildHueTable(),
+        carcassBase: new Float32Array(capacity * 3),
+        carcassFaded: false,
+    };
 }
 
 /**
@@ -137,6 +147,9 @@ export function packFood(snapshot, pack, { zoom, timeSec }) {
         bucket.neon[o + 1] = rgb[1];
         bucket.neon[o + 2] = rgb[2];
         bucket.neon[o + 3] = FILL_SHARE.default;
+        if (FOOD.kind === CARCASS) {
+            pack.carcassBase.set(rgb, (o / ITEM) * 3);
+        }
         bucket.rig0[o] = 0;
         bucket.rig0[o + 1] = 0;
         bucket.rig0[o + 2] = FOOD.kind === CARCASS ? 0 : SWAY * Math.sin((timeSec * SWAY_HZ + seed) * Math.PI * 2);
@@ -160,4 +173,62 @@ export function swayFood(pack, timeSec) {
             bucket.rig0[o + 2] = SWAY * Math.sin(base + bucket.pose[o + 2]);
         }
     }
+}
+
+/**
+ * @param {ReturnType<typeof createFoodPack>} pack the buckets `packFood` filled
+ * @param {number} x a world position
+ * @param {{y: number, radius: number}} near its other coordinate and the farthest a carcass may lie from it
+ * @returns {number} the row of the nearest carcass within the radius, -1 when none
+ */
+function carcassNear(pack, x, { y, radius }) {
+    const bucket = pack.buckets[CARCASS];
+    let best = -1;
+    let bestD = radius * radius;
+    for (let r = 0; r < bucket.count; r++) {
+        const dx = bucket.pose[r * ITEM] - x;
+        const dy = bucket.pose[r * ITEM + 1] - y;
+        if (dx * dx + dy * dy <= bestD) {
+            bestD = dx * dx + dy * dy;
+            best = r;
+        }
+    }
+    return best;
+}
+
+/** How far from where a body was last seen its carcass may lie, in body radii. */
+export const CARCASS_REACH = 2;
+
+/**
+ * Cross-fades the carcass a kill leaves in over the leaving beat of the body that died there: the carcass stays dark
+ * while the body breaks and brightens as the body fades, so two outlines never meet at full strength. Call it every
+ * frame after `packFood` or `swayFood`; it does nothing, and costs nothing, while no eaten body is dying.
+ * @param {ReturnType<typeof createFoodPack>} pack the buckets
+ * @param {import('./dying.js').Dying} dying the dying bodies
+ * @param {{nowMs: number, causeNames: readonly string[]}} view wall time and the cause names by number
+ * @returns {void}
+ */
+export function fadeCarcassesIn(pack, dying, { nowMs, causeNames }) {
+    const bucket = pack.buckets[CARCASS];
+    let any = false;
+    if (pack.carcassFaded) {
+        for (let r = 0; r < bucket.count; r++) {
+            bucket.neon.set(pack.carcassBase.subarray(r * 3, r * 3 + 3), r * ITEM);
+        }
+        pack.carcassFaded = false;
+    }
+    for (let k = 0; k < MAX_DYING; k++) {
+        const anim = isPlaying(dying, k) ? animFor(causeNames[dying.cause[k]]) : null;
+        if (anim === null || !anim.carcass) {
+            continue;
+        }
+        const w = carcassFadeOf(anim, nowMs - dying.start[k]);
+        const radius = dying.pose[3][k] * CARCASS_REACH;
+        const r = w < 1 ? carcassNear(pack, dying.pose[0][k], { y: dying.pose[1][k], radius }) : -1;
+        for (let c = 0; r >= 0 && c < 3; c++) {
+            bucket.neon[r * ITEM + c] = pack.carcassBase[r * 3 + c] * w;
+            any = true;
+        }
+    }
+    pack.carcassFaded = any;
 }

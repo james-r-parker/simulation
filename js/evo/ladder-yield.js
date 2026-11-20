@@ -7,6 +7,7 @@ import { quantile } from './metrics-stats.js';
 /**
  * @typedef {object} RunYield
  * @property {number} offset the run's `--seed-offset`
+ * @property {string | null} [seedListHash] the hash of the trainer's seed list the run used (null: a run from before it was recorded)
  * @property {number} reached the index of the last stage the run trained in (0 is the first)
  * @property {{stage: string, generation: number}[]} passed each passed stage and the generation it passed at, in order
  * @property {number} bestProgress the best progress of the stage the run stopped in (1 when the ladder finished)
@@ -48,6 +49,14 @@ function stageBest(rows, stage) {
 }
 
 /**
+ * @param {Record<string, any> | undefined} options a manifest's `options`
+ * @returns {{offset: number, seedListHash: string | null}} the run's seed offset and trainer seed list hash
+ */
+function identity(options) {
+    return { offset: options?.seedOffset ?? 0, seedListHash: options?.seedListHash ?? null };
+}
+
+/**
  * @param {Record<string, any>} manifest a run's `manifest.json`
  * @param {readonly Record<string, any>[]} rows a run's `curve.jsonl` rows
  * @returns {RunYield} the run's yield
@@ -69,7 +78,7 @@ export function runYield(manifest, rows) {
     }
     const bestProgress = finished ? 1 : stageBest(rows, last.name);
     return {
-        offset: manifest.options?.seedOffset ?? 0,
+        ...identity(manifest.options),
         reached,
         passed: stages.filter((s) => s.passedAt !== undefined).map((s) => ({ stage: s.name, generation: s.passedAt })),
         bestProgress,
