@@ -1,6 +1,6 @@
 # Agent workflow
 
-**Status:** In progress - Phase 5 (start to merge) is built; Phase 1 (the context diet) is next. The plan covers what every agent session reads, how an experiment is recorded and read back, what a branch learns before it pushes, how runs, worktrees and outside streams share the machine, and the two commands that take a chunk from a fresh branch to a merged PR.
+**Status:** In progress - Phases 1 (the context diet) and 5 (start to merge) are built; Phase 3 (before the push) is next. The plan covers what every agent session reads, how an experiment is recorded and read back, what a branch learns before it pushes, how runs, worktrees and outside streams share the machine, and the two commands that take a chunk from a fresh branch to a merged PR.
 **Validated:** 58f38443 (2026-11-20)
 **Priority:** 3 - Workflow lead. Tooling that changes no sim rule; every session and every subagent pays the Phase 1 cost on its first token and every chunk ships through Phase 5, so both are built before the next training chunk
 **Depends on:** [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
@@ -243,7 +243,7 @@ An affected run that passes where the full run on the merged result fails is a m
 
 ## Phases
 
-### Phase 1 - Context diet
+### Phase 1 - Context diet (built)
 
 **Targets:** none - it moves no sim, bench or browser metric; its readings are `AGENTS.md` at or under 16000 bytes, a generated `docs/scene-scorecard.md`, and no status line over 400 characters
 
@@ -331,11 +331,11 @@ An affected run that passes where the full run on the merged result fails is a m
 | T3  | (built) Add `scripts/notes-index.mjs`; move every dated entry to `docs/notes/<YYYY-MM>.md` in date order; regenerate `sim-notes.md` as the index; run `--check` in `conventions`; update the notes rule in `AGENTS.md` and `STYLE.md` | [mechanical] | -                   |
 | T4  | (built) Add the 400-character status cap to `readStatus` with its test and shorten every doc over it                                                                                                                                  | [judgement]  | -                   |
 | T4a | (built) The `**Scheduled by:**` line, the lead and step rendering of the Build queue and their tests; `STYLE.md` and the `AGENTS.md` Build order state the rule                                                                       | [judgement]  | -                   |
-| T5  | Add `SCENES` in `js/evo/metric-registry/scenes.js` and the optional `scenes` field, with the registry tests                                                                                                                           | [mechanical] | -                   |
-| T6  | Tag every registry metric the three principles tables and the flora, megafauna and disease paragraphs name with its scenes                                                                                                            | [judgement]  | T5                  |
-| T7  | Add `scripts/scene-scorecard.mjs` (`--write`, `--check`), its tests, the generated `docs/scene-scorecard.md`, and the `conventions` check                                                                                             | [judgement]  | T6                  |
-| T8  | Cut `docs/principles.md` to the stable sections, link the scorecard, move "Known violations today" to `natural-selection.md`, and fix every link to the moved sections                                                                | [judgement]  | T7                  |
-| T9  | Conformance review of Phase 1                                                                                                                                                                                                         | [judgement]  | T2, T3, T4, T4a, T8 |
+| T5  | (built) Add `SCENES` in `js/evo/metric-registry/scenes.js` and the optional `scenes` field, with the registry tests                                                                                                                   | [mechanical] | -                   |
+| T6  | (built) Tag every registry metric the three principles tables and the flora, megafauna and disease paragraphs name with its scenes                                                                                                    | [judgement]  | T5                  |
+| T7  | (built) Add `scripts/scene-scorecard.mjs` (`--write`, `--check`), its tests, the generated `docs/scene-scorecard.md`, and the `conventions` check                                                                                     | [judgement]  | T6                  |
+| T8  | (built) Cut `docs/principles.md` to the stable sections, link the scorecard, move "Known violations today" to `natural-selection.md`, and fix every link to the moved sections                                                        | [judgement]  | T7                  |
+| T9  | (built) Conformance review of Phase 1                                                                                                                                                                                                 | [judgement]  | T2, T3, T4, T4a, T8 |
 
 ### Phase 2 - Experiment ledger
 
