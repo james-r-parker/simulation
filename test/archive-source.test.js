@@ -14,7 +14,7 @@ import { parseArgs as parseReflex, runReflex } from '../scripts/reflex.mjs';
 const root = mkdtempSync(join(tmpdir(), 'archive-source-'));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
-const STAGE = new URL('../evals/stages/hunt-contact.json', import.meta.url).pathname;
+const STAGE = new URL('./fixtures/stages/hunt-contact.json', import.meta.url).pathname;
 
 /**
  * Writes a trainer archive (descriptor v7) with one predator elite, stamped with a stage's `rulesHash`, not the default's.

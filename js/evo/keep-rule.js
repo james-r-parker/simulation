@@ -19,7 +19,7 @@ export const HELD_POPULATION = 100;
 /** The adoption bar's alive share (12 of 16) and the guard metrics beyond the two seed shares. */
 export const ADOPTION_ALIVE_SHARE = 0.75;
 /** Metrics that guard the world besides the two seed shares; each counts only while `verified` (the hunter-skill guard). */
-export const GUARD_METRICS = ['eval.hunter_catches_per_1k'];
+export const GUARD_METRICS = ['eval.hunter_catches_per_1k_settled'];
 
 /**
  * @typedef {object} Guard

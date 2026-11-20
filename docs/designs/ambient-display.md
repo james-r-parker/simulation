@@ -63,6 +63,29 @@ Read on 2026-11-20 with `npm run director:dry -- --seed <n>` (72000 ticks, the l
 
 The Phase 1 bars are not all met. `director.chase_precision` misses on every seed, on 3 or 4 chase shots a run: the snapshot has no `hunting` bit yet (worker-and-renderer T48), so a chase is found from the geometry alone and few are found. Seed 2 holds `trample` at 0.417 of its shots and takes 36 shots an hour: that world offers one kind of moment most of the time, and the repeat penalty (the kind's share of the last 20 shots, forgotten after 15 simulated minutes) holds the count down. More kinds of moment, not a weaker penalty, is the fix; it is left to a following chunk.
 
+Read on 2026-11-20 after T4b (the same command, world and seeds; the director with sustained chases and five scene moments):
+
+| Seed | `director.chase_precision` | `director.max_kind_share` | `director.shots_per_hour` |
+| ---- | -------------------------- | ------------------------- | ------------------------- |
+| 1    | 1.000 (1 of 1 chase shot)  | 0.308                     | 117.0                     |
+| 2    | n/a (no chase shot)        | 0.341                     | 132.0                     |
+| 3    | n/a (no chase shot)        | 0.227                     | 132.0                     |
+| 4    | 1.000 (1 of 1 chase shot)  | 0.261                     | 138.0                     |
+
+`director.max_kind_share` and `director.shots_per_hour` now meet their bars on all four seeds: carcass, pack call, patch wilt, strain and die-off moments (`js/app/director/moments-scenes.js`, from the scenes "Scavenge", "Pack, or loner", "Leave a dying patch" and "Boom and bust" in [principles.md](../principles.md)) give seed 2 something to cut to besides `trample`. The chase rule now needs a pursuit about to end (within 2.5 hunter sizes, closing, aimed within 0.3 rad, moving now and 1.5 s ago, no slower than the prey). On the recorded worlds of seeds 1, 3 and 4 that selects pursuits 4 in 5 of which end in a bite, a death or an escape inside the shot (the rule it replaced: 1 in 2). The measurement in `director:dry` is unchanged. On 72000 ticks `director.chase_precision` has one chase shot on seeds 1 and 4 and none on seeds 2 and 3, too few to read, so the same seeds were read at four times the length.
+
+Read on 2026-11-20 at `--ticks 288000` (four times the length, the same seeds, the same director; the four seeds run in parallel):
+
+| Seed | `director.chase_precision` | Chase shots  | `director.max_kind_share` | `director.shots_per_hour` | Sustained pursuits seen |
+| ---- | -------------------------- | ------------ | ------------------------- | ------------------------- | ----------------------- |
+| 1    | 1.000                      | 9 (9 held)   | 0.245                     | 122.3                     | 911                     |
+| 2    | 0.800                      | 10 (8 held)  | 0.228                     | 141.8                     | 298                     |
+| 3    | 1.000                      | 17 (17 held) | 0.191                     | 141.0                     | 636                     |
+| 4    | 1.000                      | 3 (3 held)   | 0.266                     | 129.8                     | 57                      |
+| All  | 0.949 pooled               | 39 (37 held) | 0.266 (largest)           | 122.3 to 141.8            | 1902                    |
+
+Both the per-seed bars `director.max_kind_share` and `director.shots_per_hour` are met on every seed, and `director.chase_precision` pooled over the four seeds is 0.949 of 39 chase shots (the rule: at least 0.6 with at least 10 chase shots in total). T4b is built. A "sustained pursuit seen" is a distinct hunter and prey pair that passes the chase rule at a decision, counted again after 10 simulated seconds without one; most last a decision or two and a chase shot is taken only when the pursuit is the highest-scoring moment while the camera is wide, so shots are a small share of pursuits seen (the figures come from a throwaway wrapper over `director:dry` that counts the pairs; the shots, shares and rates are `director:dry`'s own).
+
 ## A death that reads
 
 A death has three beats, all on the wall clock, all anchored to the body.
@@ -215,14 +238,14 @@ Both stay inside budget with the reel's ring running; a clip is encoded off the 
 
 ### Phase 1 - The director on air
 
-| #   | Task                                                                                                                                                                                                                                                                                              | Nature      | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
-| T1  | Build [worker-and-renderer.md](worker-and-renderer.md) T30: `ui/caption.js`, the director wired in `main.js` and the frame loop, the TV border, cursor hiding; mark it built there                                                                                                                | [judgement] | -          |
-| T2  | Add `js/app/tv-mode.js`: enter by `?tv=1`, the `T` key and idle; leave on input with camera, speed and HUD restored; the app log events; tests                                                                                                                                                    | [judgement] | T1         |
-| T3  | Build T52 (`director/pace.js`), T51 (the era card) and T49 (which T51 depends on) of that doc, with the shot floor, ceiling, wide interval and repeat penalty; tests                                                                                                                              | [judgement] | T1         |
-| T4  | Build T50 (`npm run director:dry`) and record the three readings on seeds 1 to 4; add the `?tv=1` smoke spec and `--url-params` to `scripts/browser-perf.mjs` with a test                                                                                                                         | [judgement] | T3         |
-| T4b | Meet the `director:dry` bars without the `hunting` bit ([worker-and-renderer.md](worker-and-renderer.md) T48 waits on world-balance Phase 1): a chase shot found and held from pursuit geometry, more moment kinds so one kind cannot fill a world (seed 2); re-read seeds 1 to 4, bars unchanged | [judgement] | T4         |
-| T5  | Conformance review of Phase 1 with `perf:browser` on the real GPU                                                                                                                                                                                                                                 | [judgement] | T2, T4b    |
+| #   | Task                                                                                                                                                                                                                                                                                                      | Nature      | Depends on |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T1  | Build [worker-and-renderer.md](worker-and-renderer.md) T30: `ui/caption.js`, the director wired in `main.js` and the frame loop, the TV border, cursor hiding; mark it built there                                                                                                                        | [judgement] | -          |
+| T2  | Add `js/app/tv-mode.js`: enter by `?tv=1`, the `T` key and idle; leave on input with camera, speed and HUD restored; the app log events; tests                                                                                                                                                            | [judgement] | T1         |
+| T3  | Build T52 (`director/pace.js`), T51 (the era card) and T49 (which T51 depends on) of that doc, with the shot floor, ceiling, wide interval and repeat penalty; tests                                                                                                                                      | [judgement] | T1         |
+| T4  | Build T50 (`npm run director:dry`) and record the three readings on seeds 1 to 4; add the `?tv=1` smoke spec and `--url-params` to `scripts/browser-perf.mjs` with a test                                                                                                                                 | [judgement] | T3         |
+| T4b | Meet the `director:dry` bars without the `hunting` bit ([worker-and-renderer.md](worker-and-renderer.md) T48 waits on world-balance Phase 1): a chase shot found and held from pursuit geometry, more moment kinds so one kind cannot fill a world (seed 2); re-read seeds 1 to 4, bars unchanged (built) | [judgement] | T4         |
+| T5  | Conformance review of Phase 1 with `perf:browser` on the real GPU                                                                                                                                                                                                                                         | [judgement] | T2, T4b    |
 
 ### Phase 2 - A death that reads, and birth
 

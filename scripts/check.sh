@@ -15,7 +15,8 @@
 #   scripts/check.sh --tier 1  # tier 1 (pre-commit), 2 (default, the PR gate) or 3 (nightly); not with --only/--docs
 #   scripts/check.sh --skip=browser-smoke,eval-smoke   # the selected gates minus these (CI runs them on a clean runner)
 #   scripts/check.sh --quick   # the pre-push check for an agent: the static gates and the build (conventions, designs-index,
-#                              # format, lint, typecheck, deps, dupes, build); no tests, ratchet, bench-check or smokes -
+#                              # format, lint, typecheck, deps, dupes, build) plus ratchet-related (the related tests of the changed
+#                              # files, with coverage); no full tests, ratchet, bench-check or smokes -
 #                              # CI runs the full gate on a quiet runner. Not with --tier, --only, --docs or --rerun-failed
 #   scripts/check.sh --rerun-failed   # only the gates the previous run left failed (.checklogs/failed-gates; ratchet pulls
 #                              # test in); combines with --fix, --ci and --quiet, not with --tier, --only, --docs or --quick
@@ -72,8 +73,9 @@ done
 TIER1_GATES="conventions,format,lint,test-related"
 TIER2_GATES="conventions,designs-index,format,lint,test-related,typecheck,deps,dupes,test,ratchet,bench-check,build,browser-smoke,eval-smoke"
 TIER3_GATES="$TIER2_GATES,mutation,bench-compare"
-GATES="$TIER3_GATES,docs-tests"
-QUICK_GATES="conventions,designs-index,format,lint,typecheck,deps,dupes,build"
+# ratchet-related runs after dupes but belongs to no tier: --quick and --only select it.
+GATES="${TIER3_GATES/dupes,/dupes,ratchet-related,},docs-tests"
+QUICK_GATES="conventions,designs-index,format,lint,typecheck,deps,dupes,ratchet-related,build"
 # Failed gate logs stay here (ignored by version control) for the agent or human to read; each run starts it afresh.
 LOG_DIR="${CHECK_LOG_DIR:-$ROOT/.checklogs}"
 FAILED_FILE="$LOG_DIR/failed-gates"
@@ -247,8 +249,9 @@ run_gate() {
   else
     "$@" >"$log" 2>&1 || rc=$?
   fi
-  if [[ $rc -eq 3 && "$name" == bench-check ]]; then
-    # An over-limit step time on a busy machine is inconclusive, not a failure (scripts/bench-check.mjs).
+  if [[ $rc -eq 3 && ( "$name" == bench-check || "$name" == ratchet-related ) ]]; then
+    # An over-limit step time on a busy machine is inconclusive, not a failure (scripts/bench-check.mjs); a branch with
+    # no changed file under a 100% coverage baseline has nothing to measure (scripts/ratchet-related.mjs).
     SKIPPED=$((SKIPPED + 1))
     [[ $QUIET -eq 1 ]] || printf '\033[33m-\033[0m %-15s skipped (%s)\n' "$label" "$(tail -n 1 "$log")"
     rm -f "$log"
@@ -350,6 +353,11 @@ gate_ratchet() {
     skip_gate ratchet "needs the coverage of a test gate in the same run"
   fi
 }
+# gate_ratchet_related: the changed files of a 100% coverage directory are at 100% under their related tests, the
+# per-file half of the CI ratchet (scripts/ratchet-related.mjs). Only the quick gate and --only select it.
+gate_ratchet_related() {
+  run_gate ratchet-related node scripts/ratchet-related.mjs
+}
 # gate_bench_check: the step time at 500 agents stays within 15% of bench/baseline.json (scripts/bench-check.mjs). The
 # load average is read before and after the run: a step time over the limit on a busy machine (above nproc / 8) is
 # skipped, not failed, because load only slows a run; on a quiet machine the limit is unchanged.
@@ -449,6 +457,8 @@ run_gate typecheck "$BIN/tsc" -p tsconfig.json --pretty false
 gate_deps
 
 gate_dupes
+
+gate_ratchet_related
 
 # run_tests <junit file> <vitest args...>: in CI the results also go to TestResults/<junit file> for the workflow to
 # upload.
