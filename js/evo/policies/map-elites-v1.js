@@ -88,7 +88,7 @@ const V1_SCORING = Object.freeze({
  */
 export function createMapElitesV1(options) {
     const { config, log, observer } = options;
-    const birth = createBirth(config);
+    const birth = createBirth(config, log);
     const counters = createLifeCounters(config);
     const scoring = options.scoring ?? V1_SCORING;
     const archive = options.archive ?? createArchive(brainLayout(config), { descriptor: scoring.descriptor });

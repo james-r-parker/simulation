@@ -3,6 +3,7 @@ import { createMapElitesV1 } from '../../../js/evo/policies/map-elites-v1.js';
 import { createSimLog } from '../../../js/sim/log.js';
 import { createSeeder } from '../../../js/evo/policies/map-elites-seed.js';
 import { SIGMA_MIN } from '../../../js/evo/mutation.js';
+import { isKnockedOut } from '../../../js/sim/traits.js';
 import { createRng } from '../../../js/sim/rng.js';
 import { smallWorld } from '../../sim/helpers/small-world.js';
 import { setup, fill } from '../helpers/map-elites-world.js';
@@ -313,5 +314,50 @@ describe('initSpec with a random elite', () => {
             seen.add(policy.brain.initSpec(world, 7, rng));
         }
         expect([...seen].sort()).toEqual([0, 4]);
+    });
+});
+
+describe('seeding unit knockout', () => {
+    it('knocks a mutated archive seed and a mutated champion seed at rate 1, never a clone or pool founder', () => {
+        const { policy, world, records } = setup({ archiveShare: 1, cloneShareEnd: 1 }, { unitKnockoutRate: 1 });
+        fill(policy, { spec: 0, count: 10 });
+        world.spec[0] = 0;
+        world.genomeId[0] = 51;
+        policy.brain.initBrain(world, 0, createRng(1));
+        const archiveRow = world.weights.subarray(0, world.layout.weightCount);
+        expect(Array.from(archiveRow.subarray(world.layout.leakStart)).some(isKnockedOut)).toBe(true);
+        expect(records.some((r) => r.event === 'UnitKnockedOut' && r.source === 'archive' && r.genomeId === 51)).toBe(
+            true,
+        );
+
+        const champ = setup(
+            {
+                archiveShare: 0,
+                cloneShareEnd: 0,
+                championSource: { draw: () => new Float32Array(world.layout.weightCount) },
+            },
+            { unitKnockoutRate: 1 },
+        );
+        champ.world.spec[0] = 0;
+        champ.world.genomeId[0] = 52;
+        champ.policy.brain.initBrain(champ.world, 0, createRng(2));
+        const champRow = champ.world.weights.subarray(0, champ.world.layout.weightCount);
+        expect(Array.from(champRow.subarray(champ.world.layout.leakStart)).some(isKnockedOut)).toBe(true);
+        expect(
+            champ.records.some((r) => r.event === 'UnitKnockedOut' && r.source === 'champion' && r.genomeId === 52),
+        ).toBe(true);
+
+        const clone = setup({ archiveShare: 0, cloneShareEnd: 1 }, { unitKnockoutRate: 1 });
+        fill(clone.policy, { spec: 0, count: 10 });
+        clone.world.spec[0] = 0;
+        clone.policy.brain.initBrain(clone.world, 0, createRng(3));
+        const cloneRow = clone.world.weights.subarray(0, clone.world.layout.weightCount);
+        expect(Array.from(cloneRow.subarray(clone.world.layout.leakStart)).some(isKnockedOut)).toBe(false);
+
+        const pooled = setup({ opponents: { snapshots: [policy.archive], share: 1 } }, { unitKnockoutRate: 1 });
+        pooled.world.spec[0] = 0;
+        pooled.policy.brain.initBrain(pooled.world, 0, createRng(4));
+        const poolRow = pooled.world.weights.subarray(0, pooled.world.layout.weightCount);
+        expect(Array.from(poolRow.subarray(pooled.world.layout.leakStart)).some(isKnockedOut)).toBe(false);
     });
 });
