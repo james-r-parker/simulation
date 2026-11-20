@@ -191,7 +191,7 @@ export const SCENES_SOCIAL = {
         module: 'js/evo/scene-mate.js',
         meaning: 'Whether hunters are favoured as mates (positive) or grazers (negative).',
         counts: 'The canHunt share of the matings minus the canHunt share of the other adults ready to mate at those matings.',
-        unit: 'share',
+        unit: 'share difference',
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no mating with a ready adult in view after burn-in'],

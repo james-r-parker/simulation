@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { METRICS } from '../../js/evo/metric-registry/index.js';
 import { thresholdReady, effectFloor, isShare, SHARE_MIN_EFFECT, statusOf } from '../../js/evo/compare-rules.js';
 
 describe('statusOf', () => {
@@ -10,6 +11,31 @@ describe('statusOf', () => {
     it('does not gate a name outside the registry', () => {
         for (const name of ['bench.step_ms@500', 'browser.frame_p95_ms', 'eval.p90_fitness.all', 'nope']) {
             expect(statusOf(name), name).toBe('verified');
+        }
+    });
+});
+
+const DIFFERENCES = [
+    'eval.hunter_conversion_gain',
+    'eval.winter_band_shift',
+    'eval.winter_patch_proximity',
+    'eval.season_map_distance',
+    'eval.herd_season_shift',
+    'eval.refuge_prey_use_under_threat',
+    'eval.refuge_episode_entry',
+    'eval.cold_margin_use_under_threat',
+    'eval.refuge_use_under_threat',
+    'eval.mate_hunter_lean',
+];
+
+describe('effectFloor of a share difference (D6)', () => {
+    it('scores the ten difference metrics, which go negative, with the relative floor and not the absolute share floor', () => {
+        const floors = { minEffect: 0.05, shareMinEffect: SHARE_MIN_EFFECT };
+        for (const name of DIFFERENCES) {
+            expect(METRICS[/** @type {keyof typeof METRICS} */ (name)].unit, name).toBe('share difference');
+            expect(isShare(name), name).toBe(false);
+            expect(effectFloor(name, 0.4, floors), name).toBeCloseTo(0.02, 12);
+            expect(effectFloor(name, 0.1, floors), name).toBeCloseTo(0.005, 12);
         }
     });
 });

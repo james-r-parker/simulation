@@ -147,6 +147,13 @@ if ((metrics_status != 0)); then
   fail "metrics-doc: ${metrics_out:-scripts/metrics-doc.mjs exited $metrics_status with no output}"
 fi
 
+# docs/scene-scorecard.md is generated from the registry's `scenes` tags and the newest shared baseline; a stale one fails with the command that fixes it.
+scorecard_out="$(node scripts/scene-scorecard.mjs --check 2>&1)"
+scorecard_status=$?
+if ((scorecard_status != 0)); then
+  fail "scene-scorecard: ${scorecard_out:-scripts/scene-scorecard.mjs exited $scorecard_status with no output}"
+fi
+
 # The index in docs/designs/sim-notes.md lists every entry in docs/notes/; a stale one fails with the command that fixes it.
 notes_out="$(node scripts/notes-index.mjs --check 2>&1)"
 notes_status=$?

@@ -10,6 +10,7 @@ import { loose } from './helpers/metric-registry.js';
 
 const NAMES = [
     'eval.hunter_catches_per_1k',
+    'eval.hunter_catches_per_1k_settled',
     'eval.escape_share',
     'eval.pack_kills_per_eaten_death',
     'eval.alarm_response',
@@ -21,6 +22,7 @@ describe('combatMetrics', () => {
         const m = combatMetrics(bareObserver());
         expect(Object.keys(m)).toEqual(NAMES);
         expect(m['eval.hunter_catches_per_1k']).toEqual({ value: null, reason: 'no hunters' });
+        expect(m['eval.hunter_catches_per_1k_settled']).toEqual({ value: null, reason: 'no hunters' });
         expect(m['eval.escape_share']).toEqual({ value: null, reason: 'no resolved bite episode' });
         expect(m['eval.pack_kills_per_eaten_death']).toEqual({ value: null, reason: 'no eaten death' });
         expect(m['eval.alarm_response']).toEqual({ value: null, reason: 'no alarm call' });
@@ -32,6 +34,8 @@ describe('combatMetrics', () => {
         Object.assign(o.combat, {
             hunterAgentTicks: 4000,
             huntKills: 6,
+            settledHunterAgentTicks: 1000,
+            settledHuntKills: 2,
             caughtEpisodes: 3,
             escapedEpisodes: 1,
             eatenDeaths: 8,
@@ -41,6 +45,7 @@ describe('combatMetrics', () => {
         Object.assign(o.combat.alarm, { calls: 3, matchedCalls: 2, sum: 0.5 });
         const m = combatMetrics(o);
         expect(m['eval.hunter_catches_per_1k']).toEqual({ value: 1.5 });
+        expect(m['eval.hunter_catches_per_1k_settled']).toEqual({ value: 2 });
         expect(m['eval.escape_share']).toEqual({ value: 0.25 });
         expect(m['eval.pack_kills_per_eaten_death']).toEqual({ value: 0.25 });
         expect(m['eval.smoke_escapes']).toEqual({ value: 0.75 });

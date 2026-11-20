@@ -5,6 +5,7 @@ import { entry } from './entry.js';
 export const INTENT = {
     'eval.deliberate_food_share': entry('intent', {
         module: 'js/evo/metrics-intent.js',
+        scenes: ['G4'],
         meaning:
             'Higher means more of the food energy eaten was eaten on purpose (closing on a seen item) rather than by chance.',
         counts: 'Food energy gained by meals judged deliberate by isDeliberate (current sighting, closing history, turned toward it) over deliberate plus chance food energy, whole run, all agents.',
@@ -40,6 +41,7 @@ export const INTENT = {
     }),
     'eval.pursuit_bite_share': entry('intent', {
         module: 'js/evo/metrics-intent.js',
+        scenes: ['A real chase'],
         meaning: "The share of hunters' bite energy that came from deliberate bites.",
         counts: 'Bite energy gained by hunters in deliberate bites (biteDeliberate) over all bite energy gained by hunters, whole run.',
         unit: 'share',
@@ -51,6 +53,7 @@ export const INTENT = {
     }),
     'eval.pursuit_kill_share': entry('intent', {
         module: 'js/evo/metrics-intent.js',
+        scenes: ['A real chase', 'N4'],
         meaning: 'Higher means more hunter kills are deliberate.',
         counts: 'Eaten deaths with a hunter killer whose fatal bite was deliberate (the observer reads the fatal bite itself) over all hunter kills counted by killKind.',
         unit: 'share',
@@ -61,6 +64,7 @@ export const INTENT = {
     }),
     'eval.pack_convergence': entry('intent', {
         module: 'js/evo/metrics-intent.js',
+        scenes: ['Pack, or loner'],
         meaning: 'Higher means more pack kills had both of the last two biters biting deliberately.',
         counts: "Pack kills where the fatal bite and the previous bite were both deliberate over all pack kills (previous biter a hunter of the killer's lineage within packWindow).",
         unit: 'share',
@@ -71,6 +75,7 @@ export const INTENT = {
     }),
     'eval.hunt_call_answer': entry('intent', {
         module: 'js/evo/metrics-intent.js',
+        scenes: ['Pack, or loner', 'G2'],
         meaning:
             "How often a hunt call is followed by a deliberate bite from a hearing hunter of the caller's lineage.",
         counts: 'Resolved PackCalled events (packWindow old) answered by a deliberate bite of a hearer within packWindow, over resolved calls.',
@@ -108,6 +113,7 @@ export const INTENT = {
     }),
     'eval.alarm_lift': entry('intent', {
         module: 'js/evo/metrics-intent.js',
+        scenes: ["Call, or don't"],
         meaning:
             "The extra share of alarm calls made while a threat was in sight over what the callers' own time in sight predicts.",
         counts: '(Alarm calls made with a threat sighted within INTENT_WINDOW minus the sum over callers of calls times their share of alive ticks with a threat cue) over alarm calls.',
@@ -123,6 +129,7 @@ export const INTENT = {
     }),
     'eval.hunt_call_lift': entry('intent', {
         module: 'js/evo/metrics-intent.js',
+        scenes: ["Call, or don't"],
         meaning:
             "Higher means hunt calls are made more often with prey in sight than the callers' own time in sight predicts.",
         counts: '(PackCalled events with prey sighted within INTENT_WINDOW minus the sum over callers of calls times their share of alive ticks with a prey cue) over hunt calls.',
@@ -150,6 +157,7 @@ export const INTENT = {
     }),
     'eval.idle_signals_per_1k': entry('intent', {
         module: 'js/evo/metrics-intent.js',
+        scenes: ["Call, or don't"],
         meaning: 'Lower means fewer calls and smoke releases are made with no cue.',
         counts: 'Alarm calls, hunt calls and smoke releases that did not meet their precise rule, whole run, per 1000 agent-ticks.',
         unit: 'signals per 1k agent-ticks',

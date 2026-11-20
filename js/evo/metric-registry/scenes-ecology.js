@@ -5,6 +5,7 @@ import { entry } from './entry.js';
 export const SCENES_ECOLOGY = {
     'eval.seasonal_diet_shift': entry('scenes-ecology', {
         module: 'js/evo/scene-flora.js',
+        scenes: ['Season changes the map'],
         meaning: 'How far the plant diet differs between seasons.',
         counts: 'Mean over pairs of seasons that both have plant meals of the total variation distance between their species energy shares (floraIntake by season and species), after burn-in.',
         unit: 'share',
@@ -15,6 +16,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.pollination_rate': entry('scenes-ecology', {
         module: 'js/evo/scene-flora.js',
+        scenes: ['Other blobs are the climate'],
         meaning: 'How often a plant patch is seeded by pollination.',
         counts: 'PatchSeeded events after burn-in per 1000 observed ticks.',
         unit: 'pollinations per 1k ticks',
@@ -25,6 +27,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.flora_hue_spread': entry('scenes-ecology', {
         module: 'js/evo/scene-flora.js',
+        scenes: ['Other blobs are the climate'],
         meaning: 'How much the hues of one pollinated species vary across its live patches.',
         counts: 'Mean over 1000-tick checkpoints after burn-in of the mean, over species with pollenChance above 0 and a live patch, of the standard deviation of patch hue.',
         unit: 'hue deviation',
@@ -35,6 +38,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.flora_patch_pool_full_share': entry('scenes-ecology', {
         module: 'js/evo/scene-flora.js',
+        scenes: ['Other blobs are the climate'],
         meaning: 'How often the flora patch pool sits at its cap (lower is intended).',
         counts: '1000-tick checkpoints after burn-in with the live patch count equal to config.floraPatchMax over all such checkpoints.',
         unit: 'share',
@@ -92,6 +96,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.sick_share': entry('scenes-ecology', {
         module: 'js/evo/scene-flora.js',
+        scenes: ['Condition changes the walk'],
         meaning: 'The share of agent-ticks spent sick (lower is intended).',
         counts: 'Agent-ticks after burn-in with dose at or above config.sickDose over all agent-ticks.',
         unit: 'share',
@@ -102,6 +107,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.food_species_share.grass': entry('scenes-ecology', {
         module: 'js/evo/scene-flora.js',
+        scenes: ['Season changes the map'],
         meaning: 'How much of the plant energy eaten is grass.',
         counts: 'Share of plant energy eaten by blobs after burn-in (floraIntake, summed over the four seasons) that came from grass.',
         unit: 'share',
@@ -112,6 +118,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.food_species_share.berry': entry('scenes-ecology', {
         module: 'js/evo/scene-flora.js',
+        scenes: ['Season changes the map'],
         meaning: 'How much of the plant energy eaten is berry.',
         counts: 'Share of plant energy eaten by blobs after burn-in (floraIntake, summed over the four seasons) that came from berry.',
         unit: 'share',
@@ -122,6 +129,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.food_species_share.nut': entry('scenes-ecology', {
         module: 'js/evo/scene-flora.js',
+        scenes: ['Season changes the map'],
         meaning: 'How much of the plant energy eaten is nut.',
         counts: 'Share of plant energy eaten by blobs after burn-in (floraIntake, summed over the four seasons) that came from nut.',
         unit: 'share',
@@ -132,6 +140,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.food_species_share.flower': entry('scenes-ecology', {
         module: 'js/evo/scene-flora.js',
+        scenes: ['Season changes the map'],
         meaning: 'How much of the plant energy eaten is flower.',
         counts: 'Share of plant energy eaten by blobs after burn-in (floraIntake, summed over the four seasons) that came from flower.',
         unit: 'share',
@@ -142,6 +151,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.food_species_share.fungus': entry('scenes-ecology', {
         module: 'js/evo/scene-flora.js',
+        scenes: ['Season changes the map'],
         meaning: 'How much of the plant energy eaten is fungus.',
         counts: 'Share of plant energy eaten by blobs after burn-in (floraIntake, summed over the four seasons) that came from fungus.',
         unit: 'share',
@@ -152,6 +162,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.food_species_share.toxiccap': entry('scenes-ecology', {
         module: 'js/evo/scene-flora.js',
+        scenes: ['Season changes the map'],
         meaning: 'How much of the plant energy eaten is toxic cap.',
         counts: 'Share of plant energy eaten by blobs after burn-in (floraIntake, summed over the four seasons) that came from toxiccap.',
         unit: 'share',
@@ -162,6 +173,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.trampled_share': entry('scenes-ecology', {
         module: 'js/evo/scene-herd.js',
+        scenes: ['A real chase'],
         meaning: 'The share of deaths after burn-in that were trampling by herd animals (lower is intended).',
         counts: 'Deaths after burn-in credited to a herd trample over all deaths after burn-in.',
         unit: 'share',
@@ -172,6 +184,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.herd_dodge_share': entry('scenes-ecology', {
         module: 'js/evo/scene-herd.js',
+        scenes: ['A real chase'],
         meaning: "How often a blob in an approaching herd's path clears it.",
         counts: 'Completed herd-approach episodes after burn-in that ended clear over clear plus hit.',
         unit: 'share',
@@ -183,6 +196,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.herd_grazed_share': entry('scenes-ecology', {
         module: 'js/evo/scene-herd.js',
+        scenes: ['Season changes the map', 'Boom and bust', 'Other blobs are the climate'],
         meaning: 'How much of the plant energy eaten is eaten by herd animals rather than blobs.',
         counts: 'Energy grazed by herd animals over grazed plus plant meal energy eaten by blobs, after burn-in.',
         unit: 'share',
@@ -203,6 +217,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.herd_stampede_rate': entry('scenes-ecology', {
         module: 'js/evo/scene-herd.js',
+        scenes: ['A real chase'],
         meaning: 'How often herds stampede.',
         counts: 'Stampede onsets after burn-in per 10000 elapsed ticks.',
         unit: 'stampedes per 10k ticks',
@@ -213,6 +228,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.herd_animals': entry('scenes-ecology', {
         module: 'js/evo/scene-herd.js',
+        scenes: ['Boom and bust'],
         meaning: 'How many herd animals are alive.',
         counts: 'Mean alive herd animals over the herd checkpoints after burn-in.',
         unit: 'animals',
@@ -223,6 +239,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.herd_gap_crossings': entry('scenes-ecology', {
         module: 'js/evo/scene-herd.js',
+        scenes: ['Cross or stay'],
         meaning: 'How often herd animals cross the basin wall gap.',
         counts: 'Herd animal gap crossings after burn-in per 100000 elapsed ticks.',
         unit: 'crossings per 100k ticks',
@@ -233,6 +250,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.herd_recolonisations': entry('scenes-ecology', {
         module: 'js/evo/scene-herd.js',
+        scenes: ['Cross or stay'],
         meaning: "How many times a basin's herd came back after dying out.",
         counts: 'Count of herd recolonisations seen at the herd checkpoints after burn-in.',
         unit: 'count',
@@ -245,6 +263,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.herd_follow_share': entry('scenes-ecology', {
         module: 'js/evo/scene-herd.js',
+        scenes: ['Other blobs are the climate'],
         meaning: 'How many more blobs stand at a patch when a herd is on it than when it is bare.',
         counts: 'Mean over patches with at least 3 herded and 3 bare checkpoints of mean blobs when herded over mean blobs when bare (patches with a bare mean of 0 skipped).',
         unit: 'ratio',
@@ -255,6 +274,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.dung_food_share': entry('scenes-ecology', {
         module: 'js/evo/scene-herd.js',
+        scenes: ['Other blobs are the climate'],
         meaning: 'How much of the plant energy eaten grew from dung.',
         counts: 'Dung-grown food energy eaten (dungFoodIntake) over all plant food energy eaten, after burn-in.',
         unit: 'share',
@@ -265,6 +285,7 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.herd_seeded_patches': entry('scenes-ecology', {
         module: 'js/evo/scene-herd.js',
+        scenes: ['Cross or stay'],
         meaning: 'How often herd animals seed a new plant patch.',
         counts: 'Patches seeded by herd animals after burn-in per 1000 elapsed ticks.',
         unit: 'patches per 1k ticks',
@@ -272,25 +293,5 @@ export const SCENES_ECOLOGY = {
         intended: 'higher',
         nullWhen: ['no ticks after burn-in'],
         arithmetic: 'test/evo/scene-herd.test.js',
-    }),
-    'eval.herd_carcass_meal_share': entry('scenes-ecology', {
-        module: 'js/evo/scene-herd-metrics.js',
-        meaning: 'How much of the meat eaten is from herd carcasses.',
-        counts: "Herd carcass energy eaten (carcassEatenBySpec) over meat eaten: carcass energy (herd and other) plus hunters' bite energy, after burn-in.",
-        unit: 'share',
-        direction: 'watch',
-        intended: 'higher',
-        nullWhen: ['no meat eaten after burn-in'],
-        arithmetic: 'test/evo/scene-herd-metrics.test.js',
-    }),
-    'eval.carcass_meal_share': entry('scenes-ecology', {
-        module: 'js/evo/scene-herd-metrics.js',
-        meaning: 'How much of the meat eaten is from carcasses rather than bites.',
-        counts: '(Carcass energy eaten, herd carcasses and other carcasses) over that plus the bite energy gained by hunters, after burn-in.',
-        unit: 'share',
-        direction: 'watch',
-        intended: 'higher',
-        nullWhen: ['no meat eaten after burn-in'],
-        arithmetic: 'test/evo/scene-herd-metrics.test.js',
     }),
 };
