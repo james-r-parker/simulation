@@ -21,10 +21,27 @@ export const MOMENT_KIND = Object.freeze({
     SEASON_TURN: 'season-turn',
     FLOOR_ARRIVAL: 'floor-arrival',
     TRAMPLE: 'trample',
+    CARCASS: 'carcass',
+    PACK_CALL: 'pack-call',
+    PATCH_WILT: 'patch-wilt',
+    STRAIN: 'strain',
+    DIE_OFF: 'die-off',
 });
 
 /** Maximum hunter-to-prey distance for a `chase` moment, in world units. */
 export const CHASE_MAX_DISTANCE = 400;
+/**
+ * How near a chase must be, in hunter body sizes: a hunter this close and closing is about to bite or to lose its prey
+ * (a measured 4 in 5 end in a bite, a death or an escape within the shot; at 4 sizes it is 7 in 10, at 6 half).
+ */
+export const CHASE_CONTACT_SIZES = 2.5;
+/**
+ * How squarely the hunter must face its prey, radians (about 17 degrees): inside the jaw arc is not enough, a hunter that
+ * is aimed at its prey is the one that bites (measured: 9 in 10 of these end in a bite, a death or an escape).
+ */
+export const CHASE_ALIGNMENT = 0.3;
+/** The share of `maxVelocity` a hunter must hold, now and 1.5 s ago, to be pursuing rather than drifting. */
+export const CHASE_MIN_SPEED_SHARE = 0.35;
 /** Minimum share of the earlier distance a chase gap must be at or below after 1.5 s (20% shrink). */
 export const CHASE_GAP_RATIO = 0.8;
 /** Speed multiple of `maxVelocity` above which an agent counts as sprinting in a chase. */
@@ -52,18 +69,20 @@ export const EFFECT_BITS = Object.freeze({
 export const DEFAULT_ESCAPED_KIND = 7;
 
 /**
- * Scores a validated chase pair: `40 + 30 x sprinting hunter + 20 x sprinting prey + 10 x (1 - distance / 400)`.
- * @param {{distance: number, hunterSpeed: number, preySpeed: number, maxVelocity: number}} chase pair measurements
- * @returns {number} the chase score, 0 when outside `CHASE_MAX_DISTANCE`
+ * Scores a validated chase pair: `65 + 30 x sprinting hunter + 20 x sprinting prey + 20 x (1 - distance / reach)`, so
+ * the nearer the pursuit is to its end the more it scores.
+ * @param {{distance: number, hunterSpeed: number, preySpeed: number, maxVelocity: number, reach?: number}} chase pair
+ *   measurements and the distance a chase is accepted at (`CHASE_MAX_DISTANCE` by default)
+ * @returns {number} the chase score, 0 when outside `reach`
  */
-export function scoreChase({ distance, hunterSpeed, preySpeed, maxVelocity }) {
-    if (distance <= 0 || distance > CHASE_MAX_DISTANCE) {
+export function scoreChase({ distance, hunterSpeed, preySpeed, maxVelocity, reach = CHASE_MAX_DISTANCE }) {
+    if (distance <= 0 || distance > reach) {
         return 0;
     }
     const sprintSpeed = CHASE_SPRINT_FACTOR * maxVelocity;
     const hunterSprint = hunterSpeed > sprintSpeed ? 1 : 0;
     const preySprint = preySpeed > sprintSpeed ? 1 : 0;
-    return 40 + 30 * hunterSprint + 20 * preySprint + 10 * (1 - distance / CHASE_MAX_DISTANCE);
+    return 65 + 30 * hunterSprint + 20 * preySprint + 20 * (1 - distance / reach);
 }
 
 /**
