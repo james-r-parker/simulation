@@ -19,6 +19,7 @@
 #   is built while its key still exists (scripts/check-flag-ledger.mjs).
 # - wasm/blob-kernels.wasm matches its .sha256 and wasm/blob-kernels.src.sha256 its sources, and a fresh build matches
 #   where cargo exists (scripts/check-wasm.mjs).
+# - The index in docs/designs/sim-notes.md matches docs/notes/ (scripts/notes-index.mjs --check).
 # - AGENTS.md stays at or under AGENTS_MAX_BYTES (16000): an agent reads it before its first command, so detail lives in
 #   docs/ (docs/designs/agent-workflow.md, Context diet).
 # - No merge conflict markers (a line starting <<<<<<< , ||||||| or >>>>>>> , or exactly =======) in tracked text files.
@@ -144,6 +145,13 @@ metrics_out="$(node scripts/metrics-doc.mjs --check 2>&1)"
 metrics_status=$?
 if ((metrics_status != 0)); then
   fail "metrics-doc: ${metrics_out:-scripts/metrics-doc.mjs exited $metrics_status with no output}"
+fi
+
+# The index in docs/designs/sim-notes.md lists every entry in docs/notes/; a stale one fails with the command that fixes it.
+notes_out="$(node scripts/notes-index.mjs --check 2>&1)"
+notes_status=$?
+if ((notes_status != 0)); then
+  fail "notes-index: ${notes_out:-scripts/notes-index.mjs exited $notes_status with no output}"
 fi
 
 # The committed WASM kernels match their hash and their sources; without cargo the rebuild is skipped with a note.
