@@ -17,8 +17,10 @@ before starting any task, and restamp it when it checks out.
 
 1. **Check the nightly first.** An open `nightly-failure` issue (`gh issue list --label nightly-failure`) means the last
    nightly run failed; read it before naming the next phase, and say so if it blocks the work.
-2. **Find the doc.** Read the **Build queue** in `docs/designs/README.md`: the doc ranked 1 by its `**Priority:**`
-   line is next, unless the user names another. If the latest experiments in `evals/experiments.json` argue for a
+2. **Find the doc.** Read the **Build queue** in `docs/designs/README.md` and the newest file in `docs/handoffs/`.
+   The queue holds lead docs by `**Priority:**` rank; under each lead are the docs it schedules, in step order. Read
+   the lead's `## Order` section: its own next phase comes first, then its steps. That is next, unless the user or the
+   handoff names another. If the latest experiments in `evals/experiments.json` argue for a
    different order, say so and ask before re-ranking.
 3. **Read it fully.** Status line, Validated stamp, Depends on, every phase, the Delivery requirements and Task
    breakdown tables. Also read any doc it depends on, and confirm those are `Implemented` or far enough along.

@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 T1 built (#343) and the T2 baseline run (`E141`, 32 floor-on seeds, in Baseline); T3 (the conformance review) is open. Phase 2 puts rings on the rims of the food patches behind `refugeAnchor` and is unbuilt.
 **Validated:** f5c7880 (2026-11-07)
-**Priority:** 16 - cover on the patch rims, screened once behind honest-budgets.md Phase 3 (collision damage by impact speed), so a ring is no longer lethal to lean on; dropped if use stays at zero (brief of 2026-11-14)
+**Scheduled by:** [world-balance.md](world-balance.md) step 4 - cover on the patch rims, screened once behind honest-budgets.md Phase 3
 **Depends on:** [refuge.md](refuge.md), [realistic-keepers.md](realistic-keepers.md)
 
 The scene this doc serves ([principles.md](../principles.md), Refuge): **under threat, prey stack into a rock ring or a

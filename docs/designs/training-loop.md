@@ -2,12 +2,27 @@
 
 **Status:** In progress - Phases 1 and 2 built (T1 to T12); Phase 3 and Phase 4 code built; adaptive difficulty is untested (E207 never left its floor, E251 stopped on a validation error; T16b, T16c); the tuning nights read no verdict (E208, E209, E230, E231); Phase 5 (verdict power and trainer throughput, T24 to T28) is next.
 **Validated:** 0254883d (2026-11-19)
-**Priority:** 1 - pinned by the user (2026-11-19): every training run waits on how fast a ladder change can be judged, and nothing here changes a sim rule
+**Priority:** 4 - Training lead. A ladder change cannot be judged (every `train:compare` read is `no verdict`) and a run's workers are 35 to 45% busy; Phase 5 fixes both before the next ladder screen, which is fair-chase.md Phase 2
 **Depends on:** [training-stages.md](training-stages.md), [training.md](training.md)
 
 > Companion to [training-stages.md](training-stages.md), which holds the stages, gates, reviews and the exam. This doc owns how a ladder run is scored, when it stops, and how the ladder itself is improved.
 
 A ladder run is an experiment on the training process. Each run gets one score, its yield. Two ladders are compared on matched offsets, the way `eval:compare` compares two worlds. A gated stage reads a graded progress series beside its pass bar, so a run shows it is closing on a lesson before it passes. A stage whose progress stops rising ends early. A rung is checked for learnability before a ladder spends hours on it. A stage's prey difficulty follows the population. A nightly lane screens trainer settings on tuning offsets, confirms a winner on held-out offsets, and carries its champions into a world trial. Nothing here enters fitness, merit, mate rank or archive rank, and no gate's pass bar moves.
+
+## Order
+
+This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
+
+Own work first: Phase 5 (T24 to T33), then T16b, T16c, T17 and T18.
+
+| Step | Doc                                                          | Built when                                                                                                                                                                                                                               |
+| ---- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [training-stages.md](training-stages.md)                     | Phase 6 is open: the `hunt` rung passes on 0 of 16 offsets and waits on fair-chase.md (T62); T64 (kin-spared in its own stage) is next; Phase 9 (co-evolved rungs) follows a fair chase; Phase 7 waits for the world gate of training.md |
+| 2    | [unit-knockout.md](unit-knockout.md)                         | Silencing one hidden unit lifts a champion from 6 to 24 of 128 on `prey-ahead`, a gain no small weight step reaches; cheap and needs no sim rule                                                                                         |
+| 3    | [training.md](training.md)                                   | The world gate and the champions' adoption, after a ladder run passes `hunt`                                                                                                                                                             |
+| 4    | [champion-pool.md](champion-pool.md)                         | The closed loop from trained champions to a seeded pool and back; it builds on the trainer and the exam                                                                                                                                  |
+| 5    | [brain-reflex-tests.md](brain-reflex-tests.md)               | The reflex validation study (T10 onward), a filter in front of the drills once champions exist to validate it on                                                                                                                         |
+| 6    | [brain-capacity-and-memory.md](brain-capacity-and-memory.md) | Measurement before redesign: the brain experiments are judged on the fixed measurement and the trained champions                                                                                                                         |
 
 ## Scope
 

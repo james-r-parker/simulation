@@ -63,6 +63,14 @@ under **Build queue**. The rank applies to the doc's next unbuilt phase, the one
 - A reason that starts with `pinned` keeps its rank against the loop's proposals.
 - Drop the line once the doc is `Implemented`.
 
+## Scheduled by (in place of Priority)
+
+```
+**Scheduled by:** [fair-chase.md](fair-chase.md) step 2 - <what it waits on, in one line>
+```
+
+The Build queue holds **lead** docs only: a lead carries the `**Priority:**` line and an `## Order` section. Every other `Proposed` or `In progress` doc carries a `**Scheduled by:**` line in the same place and is built as that step of its lead, after the steps before it. A doc carries one line or the other, never both. Steps are unique under a lead. The index lists each lead with its steps under it.
+
 ## Depends on (optional)
 
 ```

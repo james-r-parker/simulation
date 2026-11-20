@@ -21,9 +21,11 @@ recorded falsification.
 
 ## Focus (user, 2026-11-20)
 
-- **The active set is six plans:** training-loop, metric-noise, fair-chase, agent-workflow, ambient-display and
-  training-stages (ranks 1 to 6). Build nothing else unless the user names it. Every mechanism in the world stays on: no
-  feature is turned off to make training easier.
+- **Seven leads, everything else a step.** The Build queue holds seven lead plans: metric-noise (measurement),
+  fair-chase (hunting), agent-workflow, training-loop (training), ambient-display (app), throughput (speed) and
+  world-balance (world). Every other plan is a numbered step under one of them (`**Scheduled by:**`); each lead's
+  `## Order` section gives the order. Build nothing out of order unless the user names it. Every mechanism in the world
+  stays on: no feature is turned off to make training easier.
 - **No experiment that feeds a decision runs until two things are built:** metric-noise.md Phase 4 (the power, keep-rule
   and interval defects) and fair-chase.md Phase 1 (the sprint store and its envelope reading). Runs that only build or
   test code are fine. The first decision run after the freeze is fair-chase Phase 2.

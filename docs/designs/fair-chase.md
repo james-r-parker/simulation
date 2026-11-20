@@ -2,12 +2,27 @@
 
 **Status:** Proposed - a sprint that spends a store, so prey tire and a hunter's burst is short; judged first on the scripted chase envelope, then on the `hunt` rung, then on the live world; Phase 1 (the store behind a switch and the envelope screen) is first.
 **Validated:** 58f38443 (2026-11-20)
-**Priority:** 3 - the `hunt` rung passes on 0 of 16 offsets after twelve falsified trainer levers (E191 to E232), and the live world's hunters fail the same way; no trainer, recruitment or champion work can pass a chase the bodies do not allow
+**Priority:** 2 - Hunting lead. The `hunt` rung passes on 0 of 16 offsets after twelve falsified trainer levers (E191 to E232), and the live world's hunters fail the same way; no trainer, recruitment or champion work can pass a chase the bodies do not allow
 **Depends on:** [senses-and-motor.md](senses-and-motor.md), [training-loop.md](training-loop.md)
 
 > Companion to [sprint-burst.md](sprint-burst.md), whose Phase 2 specifies the store and whose detectors this doc reads, and to [chase-physics.md](chase-physics.md), which owns heading inertia and terrain. This doc owns the store's build, the per-specialisation drain, and the three-step judgement. [training-stages.md](training-stages.md) T62 is this doc.
 
 Scene: **A real chase** ("Bite arc, vision, and sprint are limited"). Selection rule 6: hunting wins by the chain.
+
+## Order
+
+This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
+
+Own work first: Phase 1 (the store and the envelope), Phase 2 (the rung, after training-loop.md T24 and T25), Phase 3 (the world).
+
+| Step | Doc                                        | Built when                                                                                                           |
+| ---- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| 1    | [senses-and-motor.md](senses-and-motor.md) | The chase envelope runs (T10 to T12) and Phase 4 are read on the bodies the sprint store leaves                      |
+| 2    | [chase-physics.md](chase-physics.md)       | Heading inertia and terrain, screened on those bodies; `speedTurnDrag` widens the predator's sprint circle           |
+| 3    | [stillness.md](stillness.md)               | The ambusher and the freezing prey; it changes the ray march every scene reads, so it follows the store and the turn |
+| 4    | [hunter-practice.md](hunter-practice.md)   | The bite detectors and the within-lifetime gain, read once a hunter can reach its prey                               |
+| 5    | [hunter-learning.md](hunter-learning.md)   | The refusal wires and the too-big body, after hunter-practice.md names what a hunter still gets wrong                |
+| 6    | [scent-trails.md](scent-trails.md)         | Trail and carrion scent; it builds on stillness.md and on body-priced carcasses                                      |
 
 ## Measured on 2026-11-20
 

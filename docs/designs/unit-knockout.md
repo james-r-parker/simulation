@@ -2,7 +2,7 @@
 
 **Status:** Proposed - a loss-of-function mutation that switches one hidden unit off at birth; Phase 1 builds the operator off by default, on `season/next`.
 **Validated:** 33c44fc1 (2026-11-20)
-**Priority:** 8 - brain inspection's firm result (silencing h13 or h14 lifts `archive-159-predator-cell94` on `prey-ahead` from 6/128 to 24 or 25/128) is a gain no small weight step reaches; it queues behind the pinned training-loop.md and training-stages.md (the food-behind rung)
+**Scheduled by:** [training-loop.md](training-loop.md) step 2 - silencing one hidden unit lifts a champion from 6 to 24 of 128 on `prey-ahead`, a gain no small weight step reaches; cheap and needs no sim rule
 **Depends on:** [brain-inspection.md](brain-inspection.md)
 
 A birth can carry a **knockout**: one hidden unit of the child's brain is switched off for life. The unit's state stays at 0, so none of its outgoing weights reach another unit or an output. The knockout is heritable, travels with the unit's gene block through crossover, and reverts when a later mutation hits the same gene. Evolution then reaches, in one step, the kind of edit that brain inspection made by hand.
