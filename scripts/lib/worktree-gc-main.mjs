@@ -122,7 +122,8 @@ function gather(entry, where) {
 
 /**
  * @param {string} cwd where the script runs
- * @returns {{cls: string, reason: string, path: string, branch: string | null}[] | null} every worktree classed, null
+ * @returns {{cls: string, reason: string, path: string, branch: string | null, outside: boolean}[] | null} every worktree classed
+ *   (`outside`: not under `<main checkout>/.claude/worktrees/`), null
  *   outside a repository
  */
 export function listWorktrees(cwd) {
@@ -134,22 +135,26 @@ export function listWorktrees(cwd) {
     git(['fetch', 'origin', '--quiet'], cwd); // best effort: a stale origin/main only makes a worktree look less merged
     const entries = parseWorktreeList(listed.stdout);
     const where = { main: entries[0].path, caller: realpathSync(top.stdout.trim()) };
+    const agentDir = join(realpathSync(where.main), '.claude', 'worktrees') + sep;
     return entries.map((entry) => ({
         ...classify(gather(entry, where)),
         path: entry.path,
         branch: entry.branch,
+        outside: !(existsSync(entry.path) ? realpathSync(entry.path) : entry.path).startsWith(agentDir),
     }));
 }
 
 /**
  * Removes the `safe` worktrees: `git worktree remove` (no --force: git itself refuses a dirty tree), then the branch.
- * @param {{cls: string, path: string, branch: string | null}[]} rows the classified worktrees
+ * Worktrees outside `<main>/.claude/worktrees/` are named stream checkouts: skipped unless `all`.
+ * @param {{cls: string, path: string, branch: string | null, outside: boolean}[]} rows the classified worktrees
  * @param {string} cwd where the script runs
+ * @param {boolean} all also remove the `outside` ones
  * @returns {number} how many were not removed
  */
-function removeSafe(rows, cwd) {
+function removeSafe(rows, cwd, all) {
     let failed = 0;
-    for (const row of rows.filter((r) => r.cls === 'safe')) {
+    for (const row of rows.filter((r) => r.cls === 'safe' && (all || !r.outside))) {
         const removed = git(['worktree', 'remove', row.path], cwd);
         if (removed.status !== 0) {
             console.error(`kept ${row.path}: ${removed.stderr.trim()}`);
@@ -169,9 +174,9 @@ function removeSafe(rows, cwd) {
  */
 export function main(argv) {
     const flags = new Set(argv);
-    const unknown = argv.filter((a) => !['--list', '--json'].includes(a));
+    const unknown = argv.filter((a) => !['--list', '--json', '--all'].includes(a));
     if (unknown.length > 0) {
-        console.error('usage: worktree-gc.sh [--list] [--json]');
+        console.error('usage: worktree-gc.sh [--list] [--json] [--all]');
         return 2;
     }
     const rows = listWorktrees(process.cwd());
@@ -184,7 +189,9 @@ export function main(argv) {
         console.log(JSON.stringify({ counts, worktrees: rows }, null, 2));
     } else {
         for (const row of rows) {
-            console.log(`${row.cls.padEnd(8)} ${row.path}  ${row.branch ?? '(detached)'}  ${row.reason}`);
+            console.log(
+                `${row.cls.padEnd(8)} ${row.path}  ${row.branch ?? '(detached)'}  ${row.reason}${row.outside ? ' [outside .claude/worktrees: kept unless --all]' : ''}`,
+            );
         }
         console.log(
             Object.entries(counts)
@@ -192,7 +199,7 @@ export function main(argv) {
                 .join(' '),
         );
     }
-    return flags.has('--list') ? 0 : removeSafe(rows, process.cwd()) > 0 ? 1 : 0;
+    return flags.has('--list') ? 0 : removeSafe(rows, process.cwd(), flags.has('--all')) > 0 ? 1 : 0;
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {

@@ -583,6 +583,7 @@
         "test"
     ],
     "test/worktree-gc.test.js": [
+        ".claude",
         ".gitignore",
         "scripts/worktree-gc.sh",
         "test"

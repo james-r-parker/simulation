@@ -90,7 +90,7 @@ The digest under its `✗` line, then `.checklogs/<gate>.log` (kept until the ne
 
 ### Clear merged worktrees
 
-`scripts/worktree-gc.sh --list [--json]` prints each worktree's class and reason, then the count per class; with no flag it removes the `safe` class with `git worktree remove` (never `--force`) and deletes their local branches. `safe`: a merged PR holds all of HEAD (`gh pr list --state merged`) and the tree is clean. Never `safe`: the main checkout, the calling session's worktree, a locked one, a process running in it, a run in flight or a run log under its `.runs/` (`live`); uncommitted or untracked files (`dirty`); no merged PR, a detached HEAD, `gh` failing, or commits the merged PR does not hold (`unmerged`); a missing directory (`gone`).
+`scripts/worktree-gc.sh --list [--json] [--all]` prints each worktree's class and reason, then the count per class; with no flag it removes the `safe` class under `<main checkout>/.claude/worktrees/` with `git worktree remove` (never `--force`) and deletes their local branches. `safe`: a merged PR holds all of HEAD (`gh pr list --state merged`) and the tree is clean. Never `safe`: the main checkout, the calling session's worktree, a locked one, a process running in it, a run in flight or a run log under its `.runs/` (`live`); uncommitted or untracked files (`dirty`); no merged PR, a detached HEAD, `gh` failing, or commits the merged PR does not hold (`unmerged`); a missing directory (`gone`). A worktree outside `.claude/worktrees/` is a named stream checkout: it lists with its class and an `outside` mark, and is removed only with `--all`.
 
 ### Worker budget for evals, screens and training
 

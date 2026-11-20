@@ -3,9 +3,10 @@
 #
 # Usage:
 #   scripts/worktree-gc.sh --list [--json]   class, path, branch and reason per worktree, then the count per class
-#   scripts/worktree-gc.sh                   removes the `safe` class with `git worktree remove` (never --force), then
+#   scripts/worktree-gc.sh [--all]           removes the `safe` class under <main checkout>/.claude/worktrees/ with `git worktree remove` (never --force), then
 #                                            deletes each removed worktree's local branch
 #
+# A worktree outside .claude/worktrees is a named stream checkout: listed (marked `outside`) but removed only with --all.
 # Classes (scripts/lib/worktree-gc.mjs; docs/designs/agent-workflow.md, The state of the machine), first match wins:
 #   live      the main checkout, the calling session's worktree, a locked one, a process running in it, a run in flight
 #             from its .runs, or a .runs directory holding a run log - kept

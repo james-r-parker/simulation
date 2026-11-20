@@ -48,7 +48,7 @@ When one agent hands tasks to others (user, 2026-10-22):
   auto-deleted when the turn ends, and a non-frozen run dies with it.
 - **Clean up after each merge (user, 2026-10-23).** Once a subagent's PR merges, run `scripts/worktree-gc.sh`: it
   removes the `safe` worktrees (a merged PR holds all of HEAD and the tree is clean) with `git worktree remove` and
-  deletes their local branches. Never use `--force`. `scripts/worktree-gc.sh --list` classes every worktree and says why
+  deletes their local branches. Only worktrees under `<main checkout>/.claude/worktrees/` are removed; a named stream checkout elsewhere lists as `outside` and needs `--all`. Never use `--force`. `scripts/worktree-gc.sh --list` classes every worktree and says why
   each kept one is kept: `live` (the main checkout, the calling session, a locked one, a process in it, a run in flight
   or a run log under its `.runs/`), `dirty` (uncommitted or untracked files, left for the user to inspect),
   `unmerged` (no merged PR, a detached HEAD, or commits the merged PR does not hold) and `gone` (the directory is

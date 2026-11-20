@@ -120,10 +120,11 @@ function git(cwd, args) {
  * records a merged PR for it (the way a GitHub merge commit leaves it).
  * @param {string} name the branch and directory name
  * @param {boolean} merged whether the branch is merged
+ * @param {boolean} [outside] whether it sits outside `<main>/.claude/worktrees`
  * @returns {string} the worktree path
  */
-function addWorktree(name, merged) {
-    const path = join(dir, 'trees', name);
+function addWorktree(name, merged, outside = false) {
+    const path = outside ? join(dir, 'trees', name) : join(main, '.claude', 'worktrees', name);
     git(main, ['worktree', 'add', '-q', '-b', `feat/${name}`, path, 'origin/main']);
     writeFileSync(join(path, `${name}.txt`), name);
     git(path, ['add', '.']);
@@ -153,9 +154,7 @@ function gc(args, options = {}) {
  */
 function classOf(name) {
     const row = gc(['--list', '--json']).stdout;
-    const found = JSON.parse(row).worktrees.find((/** @type {{path: string}} */ w) =>
-        w.path.endsWith(`/trees/${name}`),
-    );
+    const found = JSON.parse(row).worktrees.find((/** @type {{path: string}} */ w) => w.path.endsWith(`/${name}`));
     return found.cls;
 }
 
@@ -197,7 +196,7 @@ describe('worktree-gc.sh', { timeout: TIMEOUT }, () => {
         addWorktree('done', true);
         const out = gc(['--list']);
         expect(out.status).toBe(0);
-        expect(out.stdout).toMatch(/^safe +.*\/trees\/done +feat\/done/m);
+        expect(out.stdout).toMatch(/^safe +.*\/worktrees\/done +feat\/done/m);
         expect(out.stdout).toMatch(/^live +.*\/main +main .*main checkout/m);
         expect(out.stdout).toContain('safe=1 dirty=0 unmerged=0 live=1 gone=0');
     });
@@ -270,6 +269,28 @@ describe('worktree-gc.sh', { timeout: TIMEOUT }, () => {
         expect(existsSync(dirty)).toBe(true);
         expect(existsSync(open)).toBe(true);
         expect(git(main, ['branch', '--list', 'feat/dirty', 'feat/open']).split('\n')).toHaveLength(2);
+    });
+
+    it('lists a safe worktree outside .claude/worktrees as outside and removes it only with --all', () => {
+        const inside = addWorktree('done', true);
+        const stream = addWorktree('stream', true, true);
+        const listed = gc(['--list']).stdout;
+        expect(listed).toMatch(/^safe +.*\/trees\/stream .*\[outside .claude\/worktrees: kept unless --all\]/m);
+        expect(listed).not.toMatch(/worktrees\/done .*outside/);
+        const out = gc([]);
+        expect(out.stdout).toContain(`removed ${inside}`);
+        expect(existsSync(inside)).toBe(false);
+        expect(existsSync(stream)).toBe(true);
+        expect(git(main, ['branch', '--list', 'feat/stream'])).not.toBe('');
+        const all = gc(['--all']);
+        expect(all.stdout).toContain(`removed ${stream}`);
+        expect(existsSync(stream)).toBe(false);
+    });
+
+    it('--list never removes, even with --all', () => {
+        const stream = addWorktree('stream', true, true);
+        expect(gc(['--list', '--all']).status).toBe(0);
+        expect(existsSync(stream)).toBe(true);
     });
 
     it('rejects an unknown argument and a directory outside a repository', () => {
