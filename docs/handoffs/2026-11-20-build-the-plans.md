@@ -64,6 +64,16 @@ Lanes A, B and C own disjoint paths and run side by side. Inside a lane, build i
 
 Build metric-noise.md Phase 4 before the next keep-rule or `eval:compare` read in lane B, and training-loop.md T27 to T33 before the fair-chase ladder screen (it is the long run they shorten). The proof scripts are in `.sim/review-2026-11-20/` of the main checkout (untracked).
 
+## Speed prototypes (2026-11-20)
+
+Two changes make a default-world eval seed 13.7% faster with every `worldHash` and metric identical: one food pass with a
+cell mask in herd grazing, and a slot skip in carcass tracking ([throughput.md](../designs/throughput.md) T6, T7b; the
+patches are in `.sim/review-2026-11-20/speed/`). The planned live-food list is dropped: the food array is 99% full.
+
+Two findings for the world lead, not planned yet: plant supply is set by the `maxFood` cap, not by regrowth, and a
+carcass is lost when the array is full; and a world asked for 500 agents decays to about 150 unless `floorTrigger` is
+raised, so check what `npm run bench` at 500 really holds (throughput.md T1).
+
 ## Worker budget
 
 `defaultWorkers()` is 24 of 32 threads, and 24 workers give only 10% more than 16. An eval or a screen takes 16. Until training-loop.md T27 and T29 land, a training run takes 3 or 4 workers (0.9 busy share against 0.4 at 12), so run 4 or 5 runs side by side. Never
