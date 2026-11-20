@@ -24,6 +24,31 @@ describe('archive snapshot', () => {
         expect(snapshot.rows[0]).toBe(0);
     });
 
+    it('keeps a shared snapshot in SharedArrayBuffers, equal to the plain one and restorable from it', () => {
+        const archive = createArchive(layout, { descriptor: descriptorV7, nCap: 5 });
+        offer(archive, {
+            spec: 1,
+            cell: 7,
+            row: new Float32Array(layout.weightCount).fill(0.5),
+            sigma: 0.2,
+            id: 9,
+            fitness: 3,
+        });
+        archive.cursors[2] = 4;
+        const plain = snapshotArchive(archive);
+        const shared = snapshotArchive(archive, { shared: true });
+        for (const name of /** @type {const} */ (['rows', 'sigmas', 'ids', 'occupied', 'stats', 'cursors'])) {
+            expect(shared[name].buffer).toBeInstanceOf(SharedArrayBuffer);
+            expect(plain[name].buffer).not.toBeInstanceOf(SharedArrayBuffer);
+            expect(shared[name].constructor).toBe(plain[name].constructor);
+        }
+        expect(shared).toEqual(plain);
+        const back = restoreArchive(shared, config, { descriptor: descriptorV7, nCap: 5 });
+        expect(snapshotArchive(back)).toEqual(plain);
+        archive.ids[placeOf(1, 7, 0)] = 77;
+        expect(shared.ids[placeOf(1, 7, 0)]).toBe(9);
+    });
+
     it('names the array whose length does not fit the layout', () => {
         const snapshot = snapshotArchive(createArchive(layout));
         expect(() => restoreArchive({ ...snapshot, rows: new Float32Array(3) }, config)).toThrow(/rows has length 3/);
