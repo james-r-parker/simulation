@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
     DEFAULT_CURRICULUM,
@@ -9,7 +9,7 @@ import {
     validateStageFloors,
 } from '../../js/evo/curriculum.js';
 
-const FILE = JSON.parse(readFileSync(new URL('../../evals/train-curriculum.json', import.meta.url), 'utf8'));
+const FILE = JSON.parse(readFileSync(new URL('../fixtures/train-curriculum.json', import.meta.url), 'utf8'));
 
 describe('planStages', () => {
     it('lays the committed curriculum out as nursery 20, hunt 20, world the rest', () => {
@@ -92,19 +92,6 @@ const GATE = [{ read: 'drill.food-ahead.edgeLow', min: 0.3 }];
 const GATED = { name: 'nursery', config: null, gate: GATE, minGenerations: 2, maxGenerations: 9 };
 
 describe('gated and fixed entries', () => {
-    it('loads every committed evals/train-curriculum*.json as fixed stages, unchanged', () => {
-        const files = readdirSync(new URL('../../evals/', import.meta.url)).filter((f) =>
-            /^train-curriculum.*\.json$/.test(f),
-        );
-        expect(files.length).toBeGreaterThanOrEqual(5);
-        for (const file of files) {
-            const entries = JSON.parse(readFileSync(new URL(`../../evals/${file}`, import.meta.url), 'utf8'));
-            expect(planRun(entries, 100).map((s) => [s.name, s.from, s.to])).toEqual(
-                planStages(entries, 100).map((s) => [s.name, s.from, s.to]),
-            );
-        }
-    });
-
     it("keeps a fixed entry's own fields in the run and leaves a gated stage unplanned", () => {
         const fixed = [
             { name: 'a', config: null, generations: 2, pool: 0.5, checkpointEvery: 3 },

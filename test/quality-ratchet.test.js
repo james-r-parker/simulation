@@ -221,7 +221,8 @@ describe('main end to end', () => {
         writeFileSync(join(root, 'coverage/coverage-summary.json'), JSON.stringify(summaryAt(root, 5)));
         const { status, errors } = quietly(() => main(['--check'], root));
         expect(status).toBe(1);
-        expect(errors).toHaveLength(2);
+        // The two messages come first; the per-file detail follows (test/coverage-detail.test.js).
+        expect(errors.filter((line) => line.includes('is below its baseline'))).toHaveLength(2);
         expect(errors[0]).toContain('js/sim lines coverage is below its baseline: baseline 90.00%, measured 50.00%');
     });
 

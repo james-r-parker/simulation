@@ -238,4 +238,25 @@ describe('workflows', () => {
         expect(job).toContain('scripts/lib/nightly-digest.mjs');
         expect(nightly).toContain('reports/nightly-summary.txt');
     });
+
+    it('upload the browser smoke flakes as an artifact whatever the smoke result', () => {
+        const check = workflows.find(({ name }) => name === 'check.yml')?.text ?? '';
+        const job = check.slice(check.indexOf('\n  browser-smoke:'), check.indexOf('\n  perf:'));
+        const step = job.slice(job.indexOf('- name: Upload smoke flakes'));
+        expect(step).toContain('if: always()');
+        expect(step).toContain('name: smoke-flakes');
+        expect(step).toContain('path: .checklogs/smoke-flakes.json');
+        expect(step).toContain('if-no-files-found: ignore');
+    });
+
+    it('list the last 7 days of smoke flakes in one nightly issue', () => {
+        const nightly = workflows.find(({ name }) => name === 'nightly.yml')?.text ?? '';
+        const job = nightly.slice(nightly.indexOf('\n  smoke-flakes:'));
+        expect(job).toMatch(/actions:\s*read/);
+        expect(job).toMatch(/issues:\s*write/);
+        expect(job).toContain('7 days ago');
+        expect(job).toContain('gh run download "$id" --name smoke-flakes');
+        expect(job).toContain('scripts/lib/smoke-flakes.mjs digest');
+        expect(job).toContain('gh issue edit "$open"');
+    });
 });

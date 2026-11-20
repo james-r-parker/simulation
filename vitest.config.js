@@ -22,7 +22,8 @@ export default defineConfig({
         benchmark: { include: ['bench/micro/**/*.bench.js'] },
         coverage: {
             provider: 'v8',
-            reporter: ['text-summary', 'json-summary'],
+            // `json` writes coverage-final.json, which the ratchet reads to name a missed file's uncovered lines.
+            reporter: ['text-summary', 'json-summary', 'json'],
             include: [
                 'js/sim/**',
                 'js/evo/**',
