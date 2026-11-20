@@ -5129,6 +5129,22 @@
       "effect": "no-difference",
       "note": "nursery-scatter: nursery 56 to 88% (7 of 7 stalled offsets pass, but base passers 80 and 88 stall, so the 'every one of the 9' clause is falsified), hunt-contact 56 to 88, hunt-weak 25 to 63, hunt-mid 19 to 31, passed last stage 3 to 5, cpu 17.6 to 20.7 h; train:compare 12 up, 4 down, mean +0.919 [-0.135, 1.792], p 0.077, no verdict. T65 read of the last nursery archive (seed 1000000, 64 trials): elites clearing food-behind 103 of 159 to 121 of 155, median within-archive rho -0.18 to +0.08 (held), top-lower-bound elite clears on 9 to 14 of 16. turn-rung: forage-turn 94%, nursery 81%, hunt-contact 81%, hunt-weak 50%, hunt-mid 31%, passed last stage 5, cpu 23.5 h, incomparable; nursery stalls on 1 of 7 (offset 72), so the 'still stalls on at least 4' clause is falsified: acquiring the turn also matters. Held-out run E-TS-1n (offsets 128 to 248) follows (T69).",
       "reports": ["evals/decisions/E-TS-1m/results.md", "evals/decisions/E-TS-1m-invalid/results.md"]
+    },
+    {
+      "id": "E250",
+      "date": "2026-11-20",
+      "branch": "docs/e-ts-1n-holdout",
+      "hypothesis": "E-TS-1n (training-stages T69): held-out confirmation of nursery-scatter and turn-rung on offsets 128 to 248 by 8 against base.",
+      "prediction": "Written before the run (PR 533): nursery-scatter passes nursery on more offsets than base on 128 to 248, and train:compare of nursery-scatter against base is not worse.",
+      "targets": [],
+      "beforePolicy": "live",
+      "afterPolicy": "live",
+      "before": "base ladder: nursery passes on 13 of 16 held-out offsets (81%), passed last stage 5, cpu 20.1 h",
+      "after": "scripts/run-detached.sh E-TS-1n --frozen -- npm run train:screen -- --grid evals/train-screens/food-behind-holdout.grid.json --runs /home/j1mb0jay/code/simulation/.sim/train-screens/food-behind-holdout",
+      "verdicts": {},
+      "effect": "no-difference",
+      "note": "Prediction held: nursery-scatter passes nursery on 14 of 16 (88%) vs base 13 of 16 (81%; rescues 184 and 232, loses base passer 152), hunt-contact 81 to 88%, hunt-weak 56 to 31%, hunt-mid 31 to 25%, passed last stage 5 to 4, cpu 20.1 to 19.5 h (-3%); train:compare 6 up, 9 down, 1 tied, mean -0.175 [-0.954, 0.788], p 0.6072, no verdict. base was reused on all 16 offsets. turn-rung: forage-turn 94%, nursery 88%, hunt-contact 81%, hunt-weak 31%, hunt-mid 25%, passed last stage 4, cpu 23.0 h, incomparable.",
+      "reports": ["evals/decisions/E-TS-1m/results.md"]
     }
   ]
 }

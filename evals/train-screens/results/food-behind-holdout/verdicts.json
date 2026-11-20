@@ -1,0 +1,144 @@
+{
+  "reference": "base",
+  "arms": {
+    "nursery-scatter": {
+      "verdict": "no verdict",
+      "compare": {
+        "pairs": [
+          {
+            "offset": 128,
+            "before": 3,
+            "after": 2.0080024163967556,
+            "diff": -0.9919975836032444
+          },
+          {
+            "offset": 136,
+            "before": 3.001380431892874,
+            "after": 2.0006902159464373,
+            "diff": -1.0006902159464368
+          },
+          {
+            "offset": 144,
+            "before": 0.2591042530488955,
+            "after": 0.930017462103126,
+            "diff": 0.6709132090542305
+          },
+          {
+            "offset": 152,
+            "before": 3,
+            "after": 0.6684721639403189,
+            "diff": -2.331527836059681
+          },
+          {
+            "offset": 160,
+            "before": 4,
+            "after": 2.022112595470057,
+            "diff": -1.9778874045299428
+          },
+          {
+            "offset": 168,
+            "before": 4,
+            "after": 4,
+            "diff": 0
+          },
+          {
+            "offset": 176,
+            "before": 2.0167986107978035,
+            "after": 4,
+            "diff": 1.9832013892021965
+          },
+          {
+            "offset": 184,
+            "before": 0.6312328340085419,
+            "after": 3.0082568574775985,
+            "diff": 2.3770240234690565
+          },
+          {
+            "offset": 192,
+            "before": 2.0463023508575797,
+            "after": 4,
+            "diff": 1.9536976491424203
+          },
+          {
+            "offset": 200,
+            "before": 2.0082568574775985,
+            "after": 2,
+            "diff": -0.008256857477598523
+          },
+          {
+            "offset": 208,
+            "before": 4,
+            "after": 2,
+            "diff": -2
+          },
+          {
+            "offset": 216,
+            "before": 2.0082568574775985,
+            "after": 2.019228227484864,
+            "diff": 0.010971370007265335
+          },
+          {
+            "offset": 224,
+            "before": 4,
+            "after": 2.0194051000984072,
+            "diff": -1.9805948999015928
+          },
+          {
+            "offset": 232,
+            "before": 0.5025638424502579,
+            "after": 4,
+            "diff": 3.497436157549742
+          },
+          {
+            "offset": 240,
+            "before": 4,
+            "after": 2.004295449710144,
+            "diff": -1.9957045502898558
+          },
+          {
+            "offset": 248,
+            "before": 3.004295449710144,
+            "after": 2.002147724855072,
+            "diff": -1.0021477248550723
+          }
+        ],
+        "matched": 16,
+        "tied": 1,
+        "up": 6,
+        "down": 9,
+        "onlyBefore": [],
+        "onlyAfter": [],
+        "meanDiff": -0.17472270463990708,
+        "interval": {
+          "low": -0.9542976905756502,
+          "high": 0.7875321188603676
+        },
+        "p": 0.60723876953125,
+        "verdict": "no verdict"
+      },
+      "failed": 0
+    },
+    "turn-rung": {
+      "verdict": "incomparable",
+      "reason": "the arms' ladders have different stages: before nursery, hunt-contact, hunt-weak, hunt-mid; after forage-turn, nursery, hunt-contact, hunt-weak, hunt-mid; a score counts stages, so it is not comparable",
+      "compare": {
+        "pairs": [],
+        "matched": 0,
+        "tied": 0,
+        "up": 0,
+        "down": 0,
+        "onlyBefore": [],
+        "onlyAfter": [],
+        "meanDiff": 0,
+        "interval": {
+          "low": 0,
+          "high": 0
+        },
+        "p": 1,
+        "verdict": "incomparable",
+        "reason": "the arms' ladders have different stages: before nursery, hunt-contact, hunt-weak, hunt-mid; after forage-turn, nursery, hunt-contact, hunt-weak, hunt-mid; a score counts stages, so it is not comparable"
+      },
+      "failed": 0
+    }
+  }
+}

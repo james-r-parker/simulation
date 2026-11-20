@@ -71,8 +71,26 @@ Falsified: the stall is not only the nursery's ranking of the turn; acquiring th
 
 The held-out grid `evals/train-screens/food-behind-holdout.grid.json` (offsets 128 to 248 by 8, the same options as `food-behind.grid.json`, its own base arm, run `E-TS-1n`): `nursery-scatter` passes `nursery` on more offsets than `base` on 128 to 248, and `train:compare` of `nursery-scatter` against `base` is not `worse`. Falsified when `nursery-scatter` passes `nursery` on no more offsets than `base`, or reads `worse`. The two base passers it lost here (80 and 88) are read per offset in the record, not part of the clause.
 
+## T69 held-out result (E-TS-1n, E250)
+
+Run: `E-TS-1n` (`evals/train-screens/food-behind-holdout.grid.json`, 16 offsets 128 to 248 by 8, until `hunt-mid`). `base` was reused on all 16 offsets (`reused: true, seconds: 0` in `TrainScreenRun`). Results: `evals/train-screens/results/food-behind-holdout/` (`table.md`, `yield.json`, `verdicts.json`).
+
+| stage        | base | nursery-scatter | turn-rung |
+| ------------ | ---- | --------------- | --------- |
+| forage-turn  | -    | -               | 94%       |
+| nursery      | 81%  | 88%             | 88%       |
+| hunt-contact | 81%  | 88%             | 81%       |
+| hunt-weak    | 56%  | 31%             | 31%       |
+| hunt-mid     | 31%  | 25%             | 25%       |
+
+Passed last stage 5 (`base`), 4 (`nursery-scatter`), 4 (`turn-rung`); mean score 2.59, 2.42, 3.26; CPU 20.1, 19.5 (-3%), 23.0 (+15%) h. `train:compare` of `nursery-scatter` against `base`: 6 up, 9 down, 1 tied, mean score difference -0.175 [-0.954, 0.788], sign test p 0.6072, `no verdict`. `turn-rung` is `incomparable` (different stage list).
+
+Per-offset nursery outcome on held-out offsets: `base` stalls on 3 (144, 184, 232); `nursery-scatter` passes 14 of 16, rescuing 184 and 232 while losing base passer 152 (144 and 152 stall). `turn-rung` passes `forage-turn` on 15 of 16 (152 stalls) and `nursery` on 14 of 16 (144 and 152 stall).
+
+T69 prediction verdict: **held** (`nursery-scatter` passed `nursery` on 14 of 16 > `base` 13 of 16, and `train:compare` read `no verdict`, not `worse`). Downstream `hunt-weak` (56% -> 31%) and `hunt-mid` (31% -> 25%) were lower on the held-out offsets, so T70 adopts `nursery-scatter` per the T69/T70 rule while noting the downstream drop.
+
 ## Outcome to task
 
-- T69 (held-out offsets 128 to 248, `E-TS-1n`): run, prediction in the T69 note below.
-- A scattered world is the lever: the base-passer losses at offsets 80 and 88 are the cost to read on the held-out offsets before any adoption (T70). No gate or bar moves.
-- At 90 items about 6.6 items are in a forager's view against 1.5 at the 20-item first draft (the Decisions table gives both), so the working world is much denser than the draft; the nearest item is still as often behind as ahead, but with more items in view the turn pays less than the design's single-item picture, which may explain the offsets 80 and 88 losses (not tested).
+- T69 (held-out offsets 128 to 248, `E-TS-1n`): held (`nursery` 81% -> 88%, `train:compare` `no verdict`).
+- T70: move `nursery-scatter` into `evals/stages/nursery.json`, update the Stage ladder table row and `test/train-ladder-file.test.js`; no gate or bar moves.
+- At 90 items about 6.6 items are in a forager's view against 1.5 at the 20-item first draft (the Decisions table gives both), so the working world is much denser than the draft; the nearest item is still as often behind as ahead, but with more items in view the turn pays less than the design's single-item picture, which may explain the offsets 80, 88 and 152 losses (not tested).
