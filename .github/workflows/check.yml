@@ -304,6 +304,17 @@ jobs:
         if: steps.scope.outputs.scope == 'browser'
         run: scripts/check.sh --ci --only=browser-smoke
 
+      # A spec that failed and passed on its rerun is written to .checklogs/smoke-flakes.json (scripts/browser-smoke.sh);
+      # the nightly `smoke-flakes` job lists the last 7 days of them.
+      - name: Upload smoke flakes
+        if: always() && steps.scope.outputs.scope == 'browser'
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-flakes
+          path: .checklogs/smoke-flakes.json
+          if-no-files-found: ignore
+          include-hidden-files: true
+
       - name: Upload check logs
         if: failure()
         uses: actions/upload-artifact@v7

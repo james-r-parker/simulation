@@ -62,7 +62,7 @@ Every command an agent runs on Blob Evolution, grouped by job. `rg -n '^### ' do
 
 ### Browser smoke test without Docker
 
-`SMOKE_LOCAL=1 scripts/check.sh --only=browser-smoke` (30 app frames in 5 s after first draw; worker tick must advance)
+`SMOKE_LOCAL=1 scripts/check.sh --only=browser-smoke` (30 app frames in 5 s after first draw; worker tick must advance; a failed spec reruns once: a pass on the rerun passes and is listed in `.checklogs/smoke-flakes.json`, which CI uploads as the `smoke-flakes` artifact and the nightly `smoke-flakes` job turns into one issue; two failures fail)
 
 ### Replay a shuffled test order
 
