@@ -198,7 +198,7 @@ Edit `wasm/src`, run `scripts/build-wasm.sh`, then `flock /tmp/claude-1000/cpu.l
 
 ### Compare two ladder arms
 
-`npm run train:compare -- <before-dir-glob> <after-dir-glob>` (quote the globs; `--out <path>` writes JSON; pairs the runs by `--seed-offset` and reads the per-offset score differences: an exact sign test (tied pairs left out) and a bootstrap interval of the mean, `better` or `worse` when the sign test is under 0.05 and the interval excludes 0, else `no verdict`; prints the pairs, the per-stage pass shares side by side, the CPU hours and the unmatched offsets; refuses under 16 matched offsets (tied pairs counted) with exit 2; docs/designs/training-loop.md; a detector, never fitness)
+`npm run train:compare -- <before-dir-glob> <after-dir-glob>` (quote the globs; `--out <path>` writes JSON; pairs the runs by `--seed-offset` and reads the per-offset score differences: an exact sign test (tied pairs left out) and a bootstrap interval of the mean, `better` or `worse` when the sign test is under 0.05 and the interval excludes 0, else `no verdict`; also prints each stage's exact pass test on the discordant offsets (`stageTests`: gained, lost, p, `better` or `worse` under 0.05, and the fewest flips one way that would read a verdict; 6 flips in 32 offsets with none back, 5 reads none); prints the pairs, the per-stage pass shares side by side, the CPU hours and the unmatched offsets; refuses under 16 matched offsets (tied pairs counted) with exit 2; docs/designs/training-loop.md; a detector, never fitness)
 
 ### Check a ladder is learnable
 
