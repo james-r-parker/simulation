@@ -249,14 +249,14 @@ Both stay inside budget with the reel's ring running; a clip is encoded off the 
 
 ### Phase 2 - A death that reads, and birth
 
-| #   | Task                                                                                                                                                    | Nature       | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T6  | Capture one kill, one starvation and one birth on the real GPU at x1 (`js/app/capture.js`) and attach the clips to the PR as the before                 | [mechanical] | -          |
-| T7  | Keep the live lanes on a pending body, cut the pending wait to 400 ms, and move death particles to the drawn position, body scale and wall clock; tests | [judgement]  | T6         |
-| T8  | Add the `tear` parameter to the membrane SDF and the three beats per cause in `death-anim.js`, with the colour drain; WebGL2 path; tests                | [judgement]  | T7         |
-| T9  | Cross-fade the carcass in over the leaving beat; add the `failing` loop under 15% energy; tests                                                         | [judgement]  | T8         |
-| T10 | Replace `birthPop` with the fission and bud eases; tests                                                                                                | [judgement]  | T6         |
-| T11 | Conformance review of Phase 2 with the after clips and `perf:browser` at 1000 agents                                                                    | [judgement]  | T9, T10    |
+| #   | Task                                                                                                                                                            | Nature       | Depends on |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T6  | Capture one kill, one starvation and one birth on the real GPU at x1 (`js/app/capture.js`) and attach the clips to the PR as the before                         | [mechanical] | -          |
+| T7  | Keep the live lanes on a pending body, cut the pending wait to 400 ms, and move death particles to the drawn position, body scale and wall clock; tests (built) | [judgement]  | T6         |
+| T8  | Add the `tear` parameter to the membrane SDF and the three beats per cause in `death-anim.js`, with the colour drain; WebGL2 path; tests (built)                | [judgement]  | T7         |
+| T9  | Cross-fade the carcass in over the leaving beat; add the `failing` loop under 15% energy; tests (built)                                                         | [judgement]  | T8         |
+| T10 | Replace `birthPop` with the fission and bud eases; tests (built)                                                                                                | [judgement]  | T6         |
+| T11 | Conformance review of Phase 2 with the after clips and `perf:browser` at 1000 agents                                                                            | [judgement]  | T9, T10    |
 
 ### Phase 3 - Follow as a story
 
