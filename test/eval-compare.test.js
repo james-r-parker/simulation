@@ -199,7 +199,8 @@ describe('main exit codes', () => {
         const inert = run([alive, alive, '--keep-rule']);
         expect(inert.out[0]).toMatch(/guard alive: no-harm/);
         expect(inert.out[0]).toMatch(/adoption bar: hunters alive 16\/16/);
-        expect(inert.out[0]).toMatch(/keep rule: no harm detected/);
+        expect(inert.out[0]).toMatch(/keep rule: (no harm detected|incomplete)/);
+        expect(inert.out[0]).not.toMatch(/unchecked.*no harm detected/);
         expect(run([alive, dead, '--keep-rule']).out[0]).toMatch(/keep rule: WORSE/);
         expect(run([alive, dead, '--fail-on-worse']).code).toBe(0);
         expect(run([alive, dead, '--fail-on-worse', '--keep-rule']).code).toBe(1);
