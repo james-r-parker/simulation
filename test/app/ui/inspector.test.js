@@ -73,6 +73,24 @@ describe('mountInspector', () => {
     const { ready, snapshot } = selectedWorld();
     const view = inspectorView({ snapshot, ready, slots: createFamilySlots() });
 
+    it('shows the life line as chips oldest first, a note when empty, and rewrites only on a change', () => {
+        const doc = fakeDocument();
+        const root = doc.createElement('div');
+        const inspector = mountInspector(doc, root);
+        const [life] = byClass(root, 'inspector-life');
+        inspector.setLife(new Uint8Array(12), 0);
+        expect(byClass(life, 'life-none')).toHaveLength(1);
+        const codes = Uint8Array.of(0, 2, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        inspector.setLife(codes, 3);
+        expect(byClass(life, 'life-chip').map((n) => n.textContent)).toEqual(['born', 'bite given', 'kill']);
+        expect(byClass(life, 'life-none')).toHaveLength(0);
+        const chips = byClass(life, 'life-chip');
+        inspector.setLife(codes, 3);
+        expect(byClass(life, 'life-chip')[0]).toBe(chips[0]);
+        inspector.setLife(codes, 2);
+        expect(byClass(life, 'life-chip')).toHaveLength(2);
+    });
+
     it('shows the empty message for an invalid view and the body for a valid one', () => {
         const doc = fakeDocument();
         const root = doc.createElement('div');

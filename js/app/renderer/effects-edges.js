@@ -11,6 +11,7 @@ import { buildFoodGrid, createFoodGrid, FOOD_KIND, nearestFood } from './food-gr
 import { FX_RECIPES, playRecipe } from './fx-recipes.js';
 import { playPregnant } from './effects-life.js';
 import { CLIENT_KIND } from './client-kinds.js';
+import { noteLife } from '../life-line.js';
 import { createBreaths, playBreaths } from './effects-weather.js';
 import { playFlee } from './effects-flee.js';
 import { playCrossings } from './effects-terrain.js';
@@ -102,9 +103,6 @@ const SICK_KINDS = Object.freeze([CLIENT_KIND.SICK, CLIENT_KIND.CURED, CLIENT_KI
  * @returns {void}
  */
 function tellSink(player, agents, i, kind) {
-    if (player.sink === null) {
-        return;
-    }
     const e = player.effect;
     e.kind = kind;
     e.tick = player.edges.tick;
@@ -114,7 +112,8 @@ function tellSink(player, agents, i, kind) {
     e.b = 0;
     e.c = agents.spec[i];
     e.d = agents.lineageId[i];
-    player.sink(e);
+    noteLife(player.life, e, player.storyCtx);
+    player.sink?.(e);
 }
 
 /** The recipe for each sickness edge, indexed by `EDGE` (`SICK_ON` 0 to `INFECTED_OFF` 3). */

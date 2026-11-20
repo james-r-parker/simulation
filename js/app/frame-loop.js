@@ -39,6 +39,7 @@ export const MAX_DT_MS = 100;
  *   top: readonly {id: number}[]}) => boolean} | null} [director] the director's driver; while it holds the camera the
  *   follow does not step
  * @property {() => Record<string, any> | null} [getReady] the newest `ready` message, for the director
+ * @property {(id: number) => void} [select] selects an agent, so the inspector follows a handoff
  * @property {(frame: import('./renderer/stage.js').Frame) => void} [afterDraw] runs right after `scene.draw` (for `P` screenshots)
  */
 
@@ -270,6 +271,7 @@ function createCameraStep(deps, getLoop) {
         state: deps.state,
         getAgents: () => getLoop().agents,
         getPlayer: () => deps.refs.player,
+        select: deps.select,
     });
     const followAt = { dtMs: 0, nowMs: 0, available: false, paused: false };
     const directorAt = {

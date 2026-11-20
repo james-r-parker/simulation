@@ -292,6 +292,8 @@ describe('playEffects', () => {
         expect(player.story.birthMother[0]).toBe(7);
         expect(player.story.deathKiller[0]).toBe(30);
         expect(player.story.deathEaten[0]).toBe(1);
+        expect(player.life.count).toBe(3);
+        expect([player.life.genome[0], player.life.genome[1], player.life.genome[2]]).toEqual([20, 7, 30]);
     });
 
     it('beginEffects takes the view, the zoom band and the playhead rate into the budget', () => {

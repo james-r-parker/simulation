@@ -4,6 +4,7 @@
 
 import { createFollowInterest, noteFollowInterest } from '../follow-target.js';
 import { createStory, noteStory } from '../follow-handoff.js';
+import { createLifeLine, noteLife } from '../life-line.js';
 import { createFamilySlots } from '../family-slots.js';
 import { PALETTE } from './colors.js';
 import { spawnMateThread } from './mate-threads.js';
@@ -68,6 +69,7 @@ export { BIRTH_SIZE, JAW_REACH } from './effects-combat.js';
  * @property {import('./effects-terrain.js').CrossState} crossings each slot's side of the wall
  * @property {import('../follow-target.js').FollowInterest} followInterest recent subject events
  * @property {import('../follow-handoff.js').Story} story the deaths and births a follow hands off by
+ * @property {import('../life-line.js').LifeLine} life the recent events of every agent, for the inspector's life line
  * @property {{kinds: Record<string, number>, eatenCause: number, causeNames: readonly string[]}} storyCtx the layout
  *   codes `noteStory` reads
  * @property {import('../director/moment-log.js').MomentLog} moments the notable moments played, for the pointers and
@@ -147,6 +149,7 @@ export function createEffectsPlayer({
         crossings: /** @type {any} */ (null),
         followInterest: createFollowInterest(),
         story: createStory(),
+        life: createLifeLine(),
         storyCtx: /** @type {any} */ (null),
         moments: /** @type {any} */ (null),
         momentCtx: /** @type {any} */ (null),
@@ -283,6 +286,7 @@ export function playEffects(player, queue, agents, tick) {
         noteMoment(player.moments, e, player.momentCtx);
         noteFollowInterest(player.followInterest, e, player.momentCtx);
         noteStory(player.story, e, player.storyCtx);
+        noteLife(player.life, e, player.storyCtx);
         player.sink?.(e);
     }
     return played;

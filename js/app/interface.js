@@ -11,6 +11,7 @@ import { mountAudio } from './audio/audio.js';
 import { clipSupported, createCapture } from './capture.js';
 import { assignSlots } from './family-slots.js';
 import { createIdleTracker } from './idle.js';
+import { LIFE_EVENTS } from './life-line.js';
 import { refreshParts, REFRESH_MS } from './interface-refresh.js';
 import { dismissCard, firstVisit } from './interface-visit.js';
 import { mountTv } from './interface-tv.js';
@@ -210,6 +211,7 @@ function build(deps) {
         card: /** @type {any} */ (null),
         tvUi: /** @type {any} */ (null),
         plate: /** @type {any} */ (null),
+        lifeCodes: new Uint8Array(LIFE_EVENTS),
         peek: /** @type {any} */ (null),
         peekTracker: createPeekTracker(),
         shownCard: false,

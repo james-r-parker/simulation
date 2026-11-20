@@ -30,7 +30,11 @@ function setup({ drawer = null } = {}) {
         queue: { current: () => [] },
         tickerUpdate: () => log.push('ticker'),
         drawers: { state: () => drawer },
-        inspector: { update: () => log.push('inspector') },
+        lifeCodes: new Uint8Array(12),
+        inspector: {
+            update: () => log.push('inspector'),
+            setLife: (/** @type {any} */ _c, /** @type {number} */ n) => log.push(`life${n}`),
+        },
         charts: { update: () => log.push('charts') },
         plate: { element: { style: {} }, update: () => log.push('plate') },
         peek: { hide: () => log.push('peekHide'), show() {} },
@@ -61,6 +65,7 @@ describe('refreshParts', () => {
         const inspector = setup({ drawer: 'inspector' });
         refreshParts(inspector.ctx, 0);
         expect(inspector.log).toContain('inspector');
+        expect(inspector.log).toContain('life0');
         const charts = setup({ drawer: 'charts' });
         refreshParts(charts.ctx, 0);
         expect(charts.log).toContain('charts');

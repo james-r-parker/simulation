@@ -421,6 +421,44 @@ html.cursor-hidden * {
     color: var(--text-dim);
 }
 
+.inspector-life {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin: 0 0 0.5rem;
+    font-size: 0.75rem;
+}
+
+.life-chip {
+    padding: 0.0625rem 0.375rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+}
+
+.life-none {
+    color: var(--text-dim);
+}
+
+.life-chip.life-2,
+.life-chip.life-6 {
+    color: #ff5d73;
+}
+
+.life-chip.life-3 {
+    color: #ffb454;
+}
+
+.life-chip.life-1 {
+    color: #5ee6a8;
+}
+
+.life-chip.life-0,
+.life-chip.life-4,
+.life-chip.life-5 {
+    color: #6cc6ff;
+}
+
 .inspector-now {
     margin: 0 0 0.5rem;
     color: var(--text-dim);

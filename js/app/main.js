@@ -275,6 +275,11 @@ function createLoopDeps(app) {
         getPack: () => app.pack.slots(),
         director: app.driver,
         getReady: () => app.ready,
+        select(/** @type {number} */ id) {
+            app.state.selectedId = id;
+            app.supervisor.client()?.select(id);
+            app.iface.syncRays();
+        },
     };
 }
 

@@ -29,6 +29,7 @@ export function frameFollow(camera) {
  * @property {() => import('./interpolate.js').Interpolated} getAgents
  * @property {() => import('./renderer/effects-player.js').EffectsPlayer | null} getPlayer
  * @property {(level: 'info', event: string, fields: Record<string, any>) => void} [log]
+ * @property {(id: number) => void} [select] selects an agent in the app and the worker, so the inspector follows a handoff
  */
 
 /**
@@ -46,6 +47,7 @@ export function frameFollow(camera) {
  *   player: import('./renderer/effects-player.js').EffectsPlayer | null}} frameAt scratch for `frameSubject`
  * @property {number} quietMs unpaused ms the subject has gone with no event above the movement score
  * @property {boolean} manual whether the viewer picked this subject, which exempts it from boredom
+ * @property {boolean} wasSelected whether the subject was the selected agent when it was last seen alive
  * @property {number} seenSelected the selection last looked at, to tell a viewer's pick from a handoff's
  * @property {string} captionText the relation caption on screen
  * @property {number} captionUntilMs the wall time it goes
@@ -111,6 +113,11 @@ function switchTo(f, to, how) {
     const from = state.followId;
     state.followId = to;
     f.manual = false;
+    if (to !== 0 && f.wasSelected && (state.selectedId === from || state.selectedId === 0)) {
+        state.selectedId = to;
+        f.seenSelected = to;
+        f.deps.select?.(to);
+    }
     report(f, to === 0 ? 'empty' : how.reason, to);
     if (to !== 0) {
         (f.deps.log ?? appLog)('info', 'FollowHandoff', { from, to, relation: how.relation });
@@ -200,6 +207,7 @@ function stepFollow(f, at) {
     let i = subjectIndex(f, agents, at);
     if (i >= 0) {
         f.heldMs = 0;
+        f.wasSelected = state.selectedId === state.followId;
         bore(f, agents, { i, dtMs: at.dtMs, paused: at.paused });
         i = findAgent(agents, state.followId);
     }
@@ -232,6 +240,7 @@ export function createFollowController(deps) {
         heldMs: 0,
         quietMs: 0,
         manual: false,
+        wasSelected: false,
         seenSelected: 0,
         nowMs: 0,
         context,

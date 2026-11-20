@@ -18,6 +18,7 @@ function stubPlayer() {
 
 /** @param {any} [player] the effects player @returns {{camera: any, state: any, agents: any, logs: any[], follow: ReturnType<typeof createFollowController>}} a view */
 function setup(player = null) {
+    const selects = /** @type {number[]} */ ([]);
     const camera = createCameraController({
         canvas: { width: 1920, height: 1080 },
         world: { width: 14400, height: 8100 },
@@ -34,8 +35,9 @@ function setup(player = null) {
         getAgents: () => agents,
         getPlayer: () => player,
         log: (level, event, fields) => logs.push({ level, event, ...fields }),
+        select: (id) => selects.push(id),
     });
-    return { camera, state, agents, logs, follow };
+    return { camera, state, agents, logs, follow, selects };
 }
 
 /** @param {ReturnType<typeof setup>} s @param {number} dtMs @param {boolean} [paused] @returns {void} advances one visible frame */
@@ -55,7 +57,7 @@ describe('continuous follow', () => {
         expect(s.follow.choose()).toBe(0);
     });
 
-    it('holds a death briefly, then follows another living subject without changing selection or zoom', () => {
+    it('holds a death briefly, then follows another living subject moving the selection with it and keeping the zoom', () => {
         const s = setup();
         s.state.selectedId = s.state.followId = 7;
         step(s, 16);
@@ -67,7 +69,8 @@ describe('continuous follow', () => {
         expect(s.camera.targetX).toBe(100);
         step(s, 1);
         expect(s.state.followId).toBe(999);
-        expect(s.state.selectedId).toBe(7);
+        expect(s.state.selectedId).toBe(999);
+        expect(s.selects).toEqual([999]);
         expect(s.camera.targetZoom).toBe(0.8);
         expect(s.logs).toEqual([
             { level: 'info', event: 'FollowStarted', fromId: 0, toId: 7, reason: 'entry' },
@@ -311,5 +314,54 @@ describe('boredom', () => {
         s.agents.genomeId[0] = 7;
         idle(s, FOLLOW_BORED_MS + 1000);
         expect(s.state.followId).toBe(7);
+    });
+});
+
+describe('the inspector follows a handoff', () => {
+    /** @param {ReturnType<typeof setup>} s @returns {void} the subject dies and the hold runs out */
+    const die = (s) => {
+        s.agents.genomeId[0] = 999;
+        step(s, holdMsFor(null, 7));
+    };
+
+    it('moves the selection to the new subject even when the worker already reported the old one gone', () => {
+        const s = setup();
+        s.state.selectedId = s.state.followId = 7;
+        step(s, 16);
+        s.state.selectedId = 0;
+        die(s);
+        expect(s.state.selectedId).toBe(s.state.followId);
+        expect(s.selects).toEqual([s.state.followId]);
+    });
+
+    it('leaves a selection of another agent, and a selection the viewer cleared, alone', () => {
+        const other = setup();
+        other.state.selectedId = 8;
+        other.state.followId = 7;
+        step(other, 16);
+        die(other);
+        expect(other.state.selectedId).toBe(8);
+        const cleared = setup();
+        cleared.state.selectedId = cleared.state.followId = 7;
+        step(cleared, 16);
+        cleared.state.selectedId = 0;
+        step(cleared, 16);
+        die(cleared);
+        expect(cleared.state.selectedId).toBe(0);
+        expect(cleared.selects).toEqual([]);
+    });
+
+    it('does not count the selection it made as the viewer picking the new subject', () => {
+        const s = setup(stubPlayer());
+        s.state.selectedId = s.state.followId = 7;
+        step(s, 16);
+        die(s);
+        s.agents.count = 2;
+        expect(s.state.selectedId).toBe(s.state.followId);
+        for (let t = 0; t < FOLLOW_BORED_MS + 5000; t += 100) {
+            step(s, 100);
+        }
+        expect(s.logs.some((entry) => entry.relation === 'bored')).toBe(true);
+        expect(s.state.selectedId).toBe(s.state.followId);
     });
 });
