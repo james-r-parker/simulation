@@ -12,7 +12,13 @@ const NAME = 'eval.food_energy_per_1k@20k';
 
 describe('eval.food_energy_per_1k@20k', () => {
     it('is null with a reason when no checkpoint was taken', () => {
-        expect(foodEnergyEarly(bareObserver())).toEqual({ value: null, reason: 'no checkpoint by tick 20000' });
+        expect(foodEnergyEarly(bareObserver())).toEqual({ value: null, reason: 'no checkpoint at tick 20000' });
+    });
+
+    it('is null for a run shorter than 20000 ticks, whose last checkpoint is the whole run (D5)', () => {
+        const o = bareObserver();
+        addCheckpoint(o, { tick: 6000, foodEnergyTotal: 600, agentTicksTotal: 1000 });
+        expect(foodEnergyEarly(o)).toEqual({ value: null, reason: 'no checkpoint at tick 20000' });
     });
 
     it('is null with a reason when the first checkpoint is after the window', () => {
@@ -23,11 +29,11 @@ describe('eval.food_energy_per_1k@20k', () => {
 
     it('is null with a reason when the checkpoint holds no agent-ticks', () => {
         const o = bareObserver();
-        addCheckpoint(o, { tick: 100 });
+        addCheckpoint(o, { tick: EARLY_TICKS });
         expect(foodEnergyEarly(o)).toEqual({ value: null, reason: 'no agent-ticks' });
     });
 
-    it('reads the last checkpoint at or before 20000 and ignores later ones', () => {
+    it('reads the checkpoint at 20000 and ignores earlier and later ones', () => {
         const o = bareObserver();
         addCheckpoint(o, { tick: 10000, foodEnergyTotal: 10, agentTicksTotal: 1000 });
         addCheckpoint(o, { tick: EARLY_TICKS, foodEnergyTotal: 60, agentTicksTotal: 3000 });

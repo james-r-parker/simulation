@@ -20,7 +20,8 @@ export function statusOf(metric) {
 
 /**
  * @param {string} metric a metric name
- * @returns {boolean} whether the registry gives it unit `share`
+ * @returns {boolean} whether the registry gives it unit `share`; a difference of shares (unit `share difference`, which
+ *   goes negative) is not one and takes the relative floor
  */
 export function isShare(metric) {
     return Object.hasOwn(METRICS, metric) && METRICS[/** @type {keyof typeof METRICS} */ (metric)].unit === 'share';

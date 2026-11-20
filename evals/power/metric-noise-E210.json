@@ -94,6 +94,13 @@
       "eval.winter_basin_density",
       "eval.winter_pop_ratio",
       "eval.winter_shelter_distance"
+    ],
+    [
+      "eval.hunter_conversion_gain",
+      "eval.winter_band_shift",
+      "eval.refuge_prey_use_under_threat",
+      "eval.refuge_episode_entry",
+      "eval.refuge_use_under_threat"
     ]
   ],
   "splits": 1000,
@@ -178,7 +185,11 @@
     "eval.style_separation",
     "eval.winter_basin_density",
     "eval.winter_pop_ratio",
-    "eval.winter_shelter_distance"
+    "eval.winter_shelter_distance",
+    "eval.winter_band_shift",
+    "eval.refuge_prey_use_under_threat",
+    "eval.refuge_episode_entry",
+    "eval.refuge_use_under_threat"
   ],
   "includeWatch": true,
   "rows": [
@@ -1027,31 +1038,6 @@
       "falsePositive": null,
       "detectable": null,
       "detectableKind": "relative",
-      "note": "no verdict at this size"
-    },
-    {
-      "metric": "eval.hunter_conversion_gain",
-      "size": 16,
-      "falsePositive": null,
-      "detectable": null,
-      "detectableKind": "absolute",
-      "validShare": 0.06,
-      "note": "too few verdicts (6% of splits)"
-    },
-    {
-      "metric": "eval.hunter_conversion_gain",
-      "size": 32,
-      "falsePositive": null,
-      "detectable": null,
-      "detectableKind": "absolute",
-      "note": "no verdict at this size"
-    },
-    {
-      "metric": "eval.hunter_conversion_gain",
-      "size": 64,
-      "falsePositive": null,
-      "detectable": null,
-      "detectableKind": "absolute",
       "note": "no verdict at this size"
     },
     {
@@ -2217,6 +2203,139 @@
       "detectableKind": "relative",
       "validShare": 1,
       "direction": "higher"
+    },
+    {
+      "metric": "eval.hunter_conversion_gain",
+      "size": 16,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 0.06,
+      "note": "too few verdicts (6% of splits)"
+    },
+    {
+      "metric": "eval.hunter_conversion_gain",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.hunter_conversion_gain",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.winter_band_shift",
+      "size": 16,
+      "falsePositive": 0.062,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.winter_band_shift",
+      "size": 32,
+      "falsePositive": 0.083,
+      "detectable": 1,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.winter_band_shift",
+      "size": 64,
+      "falsePositive": 0.062,
+      "detectable": 0.75,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.refuge_prey_use_under_threat",
+      "size": 16,
+      "falsePositive": 0.10540540540540541,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 0.74,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.refuge_prey_use_under_threat",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 0.476,
+      "direction": "higher",
+      "note": "too few verdicts (48% of splits)"
+    },
+    {
+      "metric": "eval.refuge_prey_use_under_threat",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.refuge_episode_entry",
+      "size": 16,
+      "falsePositive": 0.1057347670250896,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 0.558,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.refuge_episode_entry",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 0.248,
+      "direction": "higher",
+      "note": "too few verdicts (25% of splits)"
+    },
+    {
+      "metric": "eval.refuge_episode_entry",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.refuge_use_under_threat",
+      "size": 16,
+      "falsePositive": 0.10643889618922471,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 0.761,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.refuge_use_under_threat",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 0.498,
+      "direction": "higher",
+      "note": "too few verdicts (50% of splits)"
+    },
+    {
+      "metric": "eval.refuge_use_under_threat",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
     }
   ]
 }

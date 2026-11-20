@@ -117,7 +117,7 @@ export const HUNTERS_2 = {
         meaning:
             'Higher means a hunter catches a larger share of its chases late (ages 3000 to 3999) than early (1000 to 1999).',
         counts: 'Mean over hunters with at least 2 chases in both windows of late catch share minus early catch share.',
-        unit: 'share',
+        unit: 'share difference',
         direction: 'higher',
         nullWhen: ['no hunter lived to both bands'],
         arithmetic: 'test/evo/scene-competence.test.js',
