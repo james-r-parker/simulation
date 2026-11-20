@@ -46,7 +46,7 @@ function championFile(archive, elite, { config, label }) {
  * @param {import('./archive.js').Archive} archive the archive
  * @returns {ReturnType<typeof refOf>[]} every occupied elite, in specialisation then cell order
  */
-function allElites(archive) {
+export function allElites(archive) {
     const elites = [];
     for (let cellIndex = 0; cellIndex < GENOME_SPECS.length * CELLS; cellIndex++) {
         const place = placeOf(Math.floor(cellIndex / CELLS), cellIndex % CELLS, ELITE);
