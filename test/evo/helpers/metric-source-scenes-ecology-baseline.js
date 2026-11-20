@@ -1,5 +1,6 @@
 // Expected outputs from a sourceRun with two after-burn-in starvation deaths and no scene activity.
 export default {
+    'eval.predators_at_end_terminal_window': { value: null, reason: 'no complete season after burn-in' },
     'eval.chase_reacquire_share': {
         value: null,
         reason: 'no resolved chases after burn-in',

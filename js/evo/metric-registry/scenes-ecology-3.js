@@ -294,4 +294,14 @@ export const SCENES_ECOLOGY_3 = {
         arithmetic: 'test/evo/scene-kinematics.test.js',
         source: 'test/evo/metric-source-ecology.test.js',
     }),
+    'eval.predators_at_end_terminal_window': entry('scenes-ecology', {
+        module: 'js/evo/scene-terminal-hunters.js',
+        meaning: 'Higher means more hunters were alive on average during the last complete season after burn-in.',
+        counts: 'Mean alive canHunt count at 1000-tick checkpoints in the last complete season after burn-in, including zero counts. The starting boundary belongs to the season and the ending boundary belongs to the next season.',
+        unit: 'agents',
+        direction: 'higher',
+        nullWhen: ['no complete season after burn-in', 'no complete season checkpoint series'],
+        arithmetic: 'test/evo/scene-terminal-hunters.test.js',
+        source: 'test/evo/scene-terminal-hunters.test.js',
+    }),
 };
