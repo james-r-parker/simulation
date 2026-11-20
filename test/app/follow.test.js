@@ -16,7 +16,8 @@ function stubPlayer() {
     };
 }
 
-/** @param {any} [player] the effects player @returns {{camera: any, state: any, agents: any, logs: any[], follow: ReturnType<typeof createFollowController>}} a view */
+/** @param {any} [player] the effects player @returns {{camera: any, state: any, agents: any, logs: any[], selects: number[],
+ *   follow: ReturnType<typeof createFollowController>}} a view */
 function setup(player = null) {
     const selects = /** @type {number[]} */ ([]);
     const camera = createCameraController({

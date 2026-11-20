@@ -2,7 +2,6 @@
 // aliased over one device pixel at any zoom, in place of the 32-sided polygon of line segments it was
 // (docs/designs/ambient-display.md, "Follow as a story"). Additive like the other lines.
 
-import { AdditiveBlending, MeshBasicNodeMaterial } from 'three/webgpu';
 import {
     abs,
     attribute,
@@ -11,11 +10,10 @@ import {
     length,
     positionGeometry,
     screenSize,
-    smoothstep,
     varying,
-    vec3,
 } from 'three/tsl';
 import { createInstances, instancedMesh, uploadInstances } from './instances.js';
+import { strokeMaterial } from './line-draw.js';
 import { toDisplay } from './palette.js';
 import { findAgent } from './overlays.js';
 
@@ -36,15 +34,9 @@ function ringMaterial(widthPx) {
     const pxWorld = float(2).div(cameraProjectionMatrix.element(0).x.mul(screenSize.x));
     const half = ring.z.add(float(widthPx / 2 + 1).mul(pxWorld));
     const world = ring.xy.add(positionGeometry.xy.mul(half));
-    const material = new MeshBasicNodeMaterial();
-    material.transparent = true;
-    material.depthTest = false;
-    material.depthWrite = false;
-    material.blending = AdditiveBlending;
-    material.positionNode = vec3(world, 0);
     const dPx = abs(length(varying(world).sub(ring.xy)).sub(ring.z)).div(pxWorld);
-    const cover = smoothstep(float(widthPx / 2 - 0.5), float(widthPx / 2 + 0.5), dPx).oneMinus();
-    material.colorNode = color.xyz.mul(cover);
+    const material = strokeMaterial(world, { dPx, widthPx });
+    material.colorNode = color.xyz.mul(material.userData.cover);
     return material;
 }
 
