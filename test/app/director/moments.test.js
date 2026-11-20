@@ -143,7 +143,7 @@ describe('findMoments: chases', () => {
 
     it('rejects a hunter that was not moving 1.5 s ago, a prey that is not smaller, a prey missing earlier and a prey that can hunt', () => {
         const hunting = { flags: 1 << 16 };
-        const run = (/** @type {Record<string, any>[]} */ now, /** @type {Record<string, any>[]} */ before) =>
+        const run = (/** @type {any[]} */ now, /** @type {any[]} */ before) =>
             findMoments({ snapshot: now, earlierSnapshot: before, info: INFO, layout: LAYOUT, tick: 600 });
         expect(run([hunter(hunting), prey({})], [hunter({ x: 100, speed: 0.1, ...hunting }), prey({})])).toEqual([]);
         expect(
