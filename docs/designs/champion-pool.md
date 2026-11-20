@@ -2,7 +2,7 @@
 
 **Status:** Proposed - a per-season pool of trained champions in D1 seeds new worlds, and browsers capture, test and submit the lineages worth keeping; Phase 1 (pool export, PR, release seed) first, after [training.md](training.md) T16.
 **Validated:** 26ae0c51 (2026-11-18)
-**Priority:** 14 - it builds on the trainer and the exam and is what comes next after them ([training-stages.md](training-stages.md) is rank 13); it changes no sim rule
+**Priority:** 14 - it builds on the trainer and the exam and is what comes next after them ([training-stages.md](training-stages.md) is rank 2); it changes no sim rule
 **Depends on:** [training.md](training.md), [training-stages.md](training-stages.md), [deployment-and-community.md](deployment-and-community.md), [worker-and-renderer.md](worker-and-renderer.md), [brain-reflex-tests.md](brain-reflex-tests.md)
 
 > Companion to [deployment-and-community.md](deployment-and-community.md): that doc owns the gene library, sign-in, the upload endpoint and the nightly league verification. This doc owns what feeds them and what they feed.
