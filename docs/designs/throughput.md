@@ -59,6 +59,8 @@ Prediction, written before the run (`E-TP-1`): at 16 workers `spin` keeps at lea
 | A     | T1, T2   | The bench window and the part table (code, Sonnet)             |
 | B     | T3 to T5 | The runs on a quiet machine, the verdict and the review (runs) |
 
+Re-measured on 2026-11-20 with `npm run bench:parallel` (noisy: two light jobs were running): 16 workers keep 64% of one world's speed at 500 agents and at 100 agents, and a loop with no memory traffic keeps 79%, so about 21 of the 36 points lost at 16 workers appear without memory traffic. Weights a fifth the size change nothing at 16. 24 workers give 10% more than 16. T2 to T4 confirm or replace this on a quiet, pinned machine before a Phase 2 row opens.
+
 ### Phase 2 - Memory and the machine
 
 **Targets:** bench.parallel_ticks_per_s@16, bench.parallel_ticks_per_s@32
@@ -90,6 +92,8 @@ Each is kept only outside the printed margin of `bench:parallel` (three alternat
 | `castSlot` and the sense glue (P6) | The per-hit class decision (`agentChannel`) for all of a caster's hits in one loop over the gather, and `writeBodyInputs`, `writeScentInputs` and `writeRefugeInputs` writing one agent's row in one call               |
 | The mating and split gates (P7)    | A per-tick scratch list of mature hunter slots, built in the lifecycle phase from the arrays and never kept across ticks, read by `territoryAllows`                                                                     |
 | `detCos`, `detLog` at rule sites   | Left alone unless T7's profile puts either above 1.5%: they are the determinism contract                                                                                                                                |
+
+Re-profiled on 2026-11-20 (the live policy, seed 1, 20000 ticks): the WASM kernels are 50.0% of an eval seed, the JS sim 37.9% and the observer and policy 11.2%. `collectPlants` in `js/sim/herd-graze.js` is the largest JS function at 10.1% (it scans all 3600 food slots per herd group per tick), `resolveBody` in `js/sim/herd-steering.js` is 3.6% and `trackCarcasses` in `js/evo/scene-carcass.js` is 3.2%. `bench:parts --area field` prints parts that sum to 0.05 ms of a 0.74 ms phase: the herd and mycelium loops have no row.
 
 A list built from the arrays each tick cannot go stale, which is why [wasm-kernels.md](wasm-kernels.md) T27 dropped a list kept across calls. Slot order is kept, so every RNG draw and event keeps its place. Each change is kept only outside the margin of `npm run bench:parts -- --area <phase> --compare <base>`.
 
@@ -183,11 +187,14 @@ The brain is a third of the step and its sums are exact by contract: `f32` weigh
 
 ### Phase 3 - Loops over what is alive
 
-| #   | Task                                                                                                                                                                           | Nature      | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- | ---------- |
-| T6  | Add `js/sim/food-live.js` and move the per-tick food loops onto it, the naive-scan test first; `bench:parts --area field --compare`                                            | [judgement] | T1         |
-| T7  | Re-profile (`node --cpu-prof`) after T6; fold the sense glue per caster and add the hunter scratch list to `territoryAllows`, each kept or reverted on `bench:parts --compare` | [judgement] | T6         |
-| T8  | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`; `bench-compare` against `origin/main`; the table of what was kept and reverted            | [judgement] | T6, T7     |
+| #   | Task                                                                                                                                                                           | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
+| T6  | Add `js/sim/food-live.js` and move the per-tick food loops onto it, the naive-scan test first; `bench:parts --area field --compare`                                            | [judgement]  | T1         |
+| T7  | Re-profile (`node --cpu-prof`) after T6; fold the sense glue per caster and add the hunter scratch list to `territoryAllows`, each kept or reverted on `bench:parts --compare` | [judgement]  | T6         |
+| T7a | Add part rows for the herd and mycelium loops to `bench:parts --area field` (`bench/micro/phase-parts.js`) so the phase's parts sum to the phase                               | [mechanical] | -          |
+| T7b | Walk the live meat list in `trackCarcasses` (`js/evo/scene-carcass.js`), with the metrics of a 20000-tick seed identical before and after                                      | [mechanical] | T6         |
+| T7c | Add a distance reject before the rock passes of `resolveBody` (`js/sim/herd-steering.js`), kept only if every golden `worldHash` is unchanged                                  | [judgement]  | -          |
+| T8  | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`; `bench-compare` against `origin/main`; the table of what was kept and reverted            | [judgement]  | T6, T7     |
 
 ### Phase 4 - Small worlds and dead worlds
 
