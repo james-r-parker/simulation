@@ -1,3 +1,4 @@
+// reads: .github/workflows
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { HEAVY_TESTS, STATISTICAL_TESTS } from '../scripts/lib/test-scope.mjs';
