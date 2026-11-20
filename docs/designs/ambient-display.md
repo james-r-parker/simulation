@@ -1,8 +1,8 @@
 # Ambient display
 
-**Status:** Proposed - the app as a screen left on all day: the director on air, a death that reads as a cell failing, follow as a story, a look that holds from across a room, and every reading one key away; Phase 1 (the director on air) is first.
+**Status:** Proposed - the app as a screen left on all day: the director on air, a death that reads as a cell failing, follow as a story, a look that holds from across a room, every reading one key away, and a reel of each scene for review; Phase 1 (the director on air) is first.
 **Validated:** 58f38443 (2026-11-20)
-**Priority:** 8 - the app is watched on a side screen all day and an idle screen shows a static camera today; it is app-only work on its own lane, so it runs beside the sim and training plans and waits on none of them
+**Priority:** 5 - the app is the product and is watched on a side screen all day; an idle screen shows a static camera today, and the scene reel (Phase 6) is how a behaviour change is reviewed; app-only work on its own lane
 **Depends on:** [crisp-renderer.md](crisp-renderer.md), [continuous-follow.md](continuous-follow.md), [worker-and-renderer.md](worker-and-renderer.md), [pack-worker.md](pack-worker.md)
 
 > Companion to [crisp-renderer.md](crisp-renderer.md), which owns the layers, the models, the clips and the frame budgets, and to [continuous-follow.md](continuous-follow.md), which owns follow as built. This doc owns the unattended experience: what the camera does with nobody at the keyboard, how a life ends on screen, what follow shows, the far-screen look, and the insights drawer.
@@ -93,6 +93,16 @@ The insights drawer opens with `D` and from the top bar (`I` stays the inspector
 
 `Shift+D` opens the same drawer as a full-screen board for a second monitor (`?board=1`), with the world drawn small in one corner.
 
+## The scene reel
+
+A behaviour change is reviewed by watching it. The reel is the clip of each scene, cut by the app, not chosen by hand.
+
+- While the app runs, `js/app/reel.js` keeps a ring of the last 12 s of frames' camera and subject, and on a moment of a scene kind (`js/app/scene-counters.js`) saves a 10 s clip through `js/app/capture.js`: 6 s before the moment, 4 s after, framed by the follow of this doc. It keeps the best-scored clip per scene per world.
+- The insights drawer gains a Reel tab: one tile per scene, the clip or `not seen yet`, the tick it happened and a button to jump the world's follow to a live instance.
+- `npm run reel -- --seed <n> --ticks <t> [--config <file.json>] [--policy <name>] --out <dir>` runs the app headless in Chromium (the browser smoke's session, `scripts/lib/browser-session.mjs`) at x8 and writes one clip per scene seen and `reel.json` (scene, tick, score, file). On the WebGL2 software path the look differs from the real GPU; the reel shows behaviour, not the look.
+- A PR that changes sim, evo or brain behaviour attaches the reel of seed 1 before and after for the scene it names (`create-pr` skill). The reel is a detector's companion, never fitness.
+- The weekly watch: once a week the user watches the reel of the default world and the champions, and what the user says becomes tasks in the plan that owns the scene (`docs/principles.md`, "How the principles are used").
+
 ## Phases
 
 ### Phase 1 - The director on air
@@ -140,6 +150,16 @@ The drawer open adds no long task and holds the frame budget.
 | Chunk | Tasks      | Builder |
 | ----- | ---------- | ------- |
 | E     | T23 to T28 | Sonnet  |
+
+### Phase 6 - The scene reel
+
+**Targets:** browser.frame_p95_ms, browser.draw_cpu_p95_ms
+
+Both stay inside budget with the reel's ring running; a clip is encoded off the frame.
+
+| Chunk | Tasks      | Builder |
+| ----- | ---------- | ------- |
+| F     | T29 to T33 | Sonnet  |
 
 ## Decisions
 
@@ -220,6 +240,16 @@ The drawer open adds no long task and holds the frame budget.
 | T26 | Add the Export tab (CSV and the replay command); tests                                                                                                                            | [mechanical] | T23        |
 | T27 | Add the full-screen board (`Shift+D`, `?board=1`); tests                                                                                                                          | [judgement]  | T24, T25   |
 | T28 | Conformance review of Phase 5 with `perf:browser` (drawer open)                                                                                                                   | [judgement]  | T26, T27   |
+
+### Phase 6 - The scene reel
+
+| #   | Task                                                                                                                                                         | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
+| T29 | Add `js/app/reel.js` (the ring, the 10 s clip on a scene moment, best clip per scene) on `js/app/capture.js`, with tests on fixture moments                  | [judgement]  | T24        |
+| T30 | Add the Reel tab to the insights drawer with the jump-to-live button; tests                                                                                  | [judgement]  | T29        |
+| T31 | Add `scripts/reel.mjs` and `npm run reel` on the smoke's browser session, writing clips and `reel.json`; a test on a 2000-tick world that it writes the file | [judgement]  | T29        |
+| T32 | Add the reel to the `create-pr` skill and `docs/commands.md`, and the weekly watch to `docs/principles.md`                                                   | [mechanical] | T31        |
+| T33 | Conformance review of Phase 6 with `perf:browser`                                                                                                            | [judgement]  | T30, T32   |
 
 ## Verification
 

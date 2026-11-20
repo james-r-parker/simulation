@@ -2,7 +2,7 @@
 
 **Status:** Proposed - a sprint that spends a store, so prey tire and a hunter's burst is short; judged first on the scripted chase envelope, then on the `hunt` rung, then on the live world; Phase 1 (the store behind a switch and the envelope screen) is first.
 **Validated:** 58f38443 (2026-11-20)
-**Priority:** 4 - the `hunt` rung passes on 0 of 16 offsets after twelve falsified trainer levers (E191 to E232), and the live world's hunters fail the same way; no trainer, recruitment or champion work can pass a chase the bodies do not allow
+**Priority:** 3 - the `hunt` rung passes on 0 of 16 offsets after twelve falsified trainer levers (E191 to E232), and the live world's hunters fail the same way; no trainer, recruitment or champion work can pass a chase the bodies do not allow
 **Depends on:** [senses-and-motor.md](senses-and-motor.md), [training-loop.md](training-loop.md)
 
 > Companion to [sprint-burst.md](sprint-burst.md), whose Phase 2 specifies the store and whose detectors this doc reads, and to [chase-physics.md](chase-physics.md), which owns heading inertia and terrain. This doc owns the store's build, the per-specialisation drain, and the three-step judgement. [training-stages.md](training-stages.md) T62 is this doc.

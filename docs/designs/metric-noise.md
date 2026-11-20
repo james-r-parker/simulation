@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 is built. Phase 2 has a terminal hunter count candidate with an E210 diagnostic; the longer verification runs are open. Phase 4 (six defects in the power, keep-rule and interval code found on 2026-11-20) is planned and is built first.
 **Validated:** bc55972e (2026-11-20)
-**Priority:** 37 - measurement tooling runs beside the queue; metric replacements wait for their own verification
+**Priority:** 2 - Phase 4 is built before any other read: the power readings, the keep rule and the 16-seed interval have defects (review of 2026-11-20), so no verdict is trusted until they are fixed; Phase 5 (the headline metrics) follows
 **Depends on:** [metric-trust.md](metric-trust.md)
 
 Active plans need detectors that can judge their Targets, done criteria and predictions. This work serves every scene
@@ -321,13 +321,30 @@ The scripts that proved each defect are kept, untracked, in `.sim/review-2026-11
 | ----- | --------- | ------- |
 | P     | T8 to T15 | Sonnet  |
 
+### Phase 5 - Headline metrics
+
+**Targets:** none - it chooses which existing metrics a decision reads; its reading is a headline for each scene that has a `verified` detector, and the list of scenes that have none
+
+A report holds 370 metrics; 54 of the 110 that carry a verdict can see a 20% change at 64 seeds. A decision reads the headlines; the rest stay in the report as diagnostics.
+
+- Each scene of `docs/principles.md` has at most one headline metric. It is the scene's `verified` detector (the `scenes` field of [agent-workflow.md](agent-workflow.md) T5 to T7) with a null share under 0.5 and the smallest detectable change at 64 seeds. A registry entry carries `headline: true`; a test holds one per scene.
+- A scene with no qualifying detector has no headline. The scorecard prints `no headline`, and the gap is a task in the plan that owns the scene.
+- Beside the scene headlines stand four world headlines: `eval.food_energy_per_1k`, `eval.births_per_1k`, `eval.fed_median_lifespan` and the keep-rule guard metric.
+- `npm run eval:compare` prints the headlines first, as one table with the verdict and the interval, then the keep rule. `--all` prints every metric as today.
+- An experiment record's `verdicts` holds the headlines and the plan's Targets, not every metric that moved.
+- A plan's `**Targets:**` line names headlines, or says why a diagnostic metric is the right reading.
+
+| Chunk | Tasks      | Builder |
+| ----- | ---------- | ------- |
+| Q     | T16 to T19 | Sonnet  |
+
 ## Decisions
 
 | Decision                     | Contract                                                                                                                                      |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | Interview delegated          | User authorizes planning choices and Phase 1 implementation; no additional interview or approval step precedes this PR                        |
 | Proposed status              | Phase 1 ships under Proposed by user request; Phase 2 starts with the first additive metric                                                   |
-| Queue rank 37                | Appends to the queue without editing another stream's plans; offline measurement needs no earlier world change                                |
+| A low queue rank at first    | Appends to the queue without editing another stream's plans; offline measurement needs no earlier world change                                |
 | Current registry membership  | The 2026-11-19 triage does not override current verification; no registry is rewritten by Phase 1                                             |
 | Conservative dependency scan | Done/prediction contexts include historical and conditional dependencies inside active docs; explicit no-prediction declarations are excluded |
 | Fixed E210 evidence          | Phase 1 and the first Phase 2 diagnostic read the saved E210 report; at most four power processes                                             |
@@ -386,6 +403,15 @@ The scripts that proved each defect are kept, untracked, in `.sim/review-2026-11
 | T13 | D4: the seeded null calibration test at 16, 32 and 64 seeds (failing at 16), then the studentised interval under 32 seeds in `bootstrapInterval` and `judge`                                      | [judgement]  | -                      |
 | T14 | D5 and D6: null `@20k` without its checkpoint, with a test; unit `share difference` on the ten metrics and its scoring in `js/evo/compare-rules.js`, with tests                                   | [mechanical] | -                      |
 | T15 | Conformance review of Phase 4                                                                                                                                                                     | [judgement]  | T9, T10, T12, T13, T14 |
+
+### Phase 5 - Headline metrics
+
+| #   | Task                                                                                                                                                                                                 | Nature      | Depends on |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T16 | After T9 and [agent-workflow.md](agent-workflow.md) T7: pick the headline for each scene by the rule above and add `headline` to the registry with the one-per-scene test; list the scenes with none | [judgement] | T9         |
+| T17 | Print the headline table first in `eval:compare` and add `--all`, with tests; print the headline column in `docs/scene-scorecard.md`                                                                 | [judgement] | T16        |
+| T18 | Point the `run-evolution-loop`, `create-plan` and `create-pr` skills at the headlines (Targets, the record's `verdicts`, the PR body), and write each `no headline` scene as a task in its plan      | [judgement] | T17        |
+| T19 | Conformance review of Phase 5                                                                                                                                                                        | [judgement] | T18        |
 
 ## Verification
 

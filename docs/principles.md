@@ -282,3 +282,8 @@ fitness and merit (K9), and the pack term paid standers-by (K11).
 - The combined world is adopted when, on 64 matched seeds against the current defaults, no keep-rule guard is worse
   and the scene the change serves is better on a verified detector or in the clip (user, 2026-11-11). Raw counts
   against a fixed line are not a test: the defaults themselves fail 12 of 16 more often than they pass.
+- The world is watched every week (user, 2026-11-20). The user watches the scene reel of the default world and of the
+  current champions ([ambient-display.md](designs/ambient-display.md), "The scene reel"); what the user says becomes
+  tasks in the plan that owns the scene. A behaviour change that has not been watched is not finished.
+- A decision reads the headline metrics, one per scene ([metric-noise.md](designs/metric-noise.md) Phase 5). The other
+  metrics explain a headline; they do not replace it.
