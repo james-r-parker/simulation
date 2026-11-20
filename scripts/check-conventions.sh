@@ -50,12 +50,15 @@ for (const field of ["dependencies", "devDependencies", "optionalDependencies"])
 }')
 
 mapfile -t sim_files < <(git ls-files --cached --others --exclude-standard -- 'js/sim/*.js' 'js/sim/**/*.js' 'js/evo/*.js' 'js/evo/**/*.js')
-for file in "${sim_files[@]}"; do
+# One grep over every file, not one per file: a process per file made this gate take seconds on every commit.
+if ((${#sim_files[@]} > 0)); then
   while IFS= read -r hit; do
-    fail "$file:${hit%%:*}: ${hit#*:} - the headless sim never uses browser globals, three or wall-clock randomness"
-  done < <(grep -nE "\b(Math\.random|Date\.now|performance\.now|window|document|navigator)\b|(from|import) ['\"]three(/[^'\"]*)?['\"]" "$file" \
-    | grep -vE '^[0-9]+:\s*(//|\*|/\*)')
-done
+    file="${hit%%:*}"
+    rest="${hit#*:}"
+    fail "$file:${rest%%:*}: ${rest#*:} - the headless sim never uses browser globals, three or wall-clock randomness"
+  done < <(grep -HnE "\b(Math\.random|Date\.now|performance\.now|window|document|navigator)\b|(from|import) ['\"]three(/[^'\"]*)?['\"]" "${sim_files[@]}" \
+    | grep -vE '^[^:]+:[0-9]+:\s*(//|\*|/\*)')
+fi
 
 for file in "${sim_files[@]}"; do
   test_file="test/${file#js/}"
@@ -148,13 +151,17 @@ if ((wasm_status != 0)) && [[ -z "$wasm_out" ]]; then
   fail "wasm: scripts/check-wasm.mjs exited $wasm_status with no output"
 fi
 
-while IFS= read -r file; do
+# One stat for all files (a path deleted from the working tree is skipped), then only the files over the limit reach
+# the loop: a stat per file was most of this gate's time.
+while IFS= read -r line; do
+  size="${line%% *}"
+  file="${line#* }"
   [[ -f "$file" ]] || continue
-  size=$(stat -c %s "$file")
-  if [[ $size -gt $LARGE_FILE_BYTES ]] && [[ ! " ${LARGE_FILE_ALLOWLIST[*]} " == *" $file "* ]]; then
+  if [[ ! " ${LARGE_FILE_ALLOWLIST[*]} " == *" $file "* ]]; then
     fail "$file: $((size / 1024 / 1024)) MB - tracked files stay under 5 MB (host large media elsewhere)"
   fi
-done < <(git ls-files --cached --others --exclude-standard)
+done < <(git ls-files --cached --others --exclude-standard -z | xargs -0 -r stat -c '%s %n' 2>/dev/null \
+  | awk -v max="$LARGE_FILE_BYTES" '$1 > max')
 
 # -I skips binary files; node_modules is untracked, but the pathspec keeps a checked-in copy out too. Run from a hook,
 # git exports GIT_INDEX_FILE, which git grep follows, so this reads the index being committed.
