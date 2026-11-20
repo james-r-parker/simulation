@@ -52,9 +52,9 @@ describe('evals/train-ladder-adaptive.json', () => {
 });
 
 describe('evals/train-screens/adaptive.grid.json', () => {
-    it('plans an adaptive arm and the fixed reference on offsets 0 to 120 by 8, up to hunt', () => {
+    it('plans an adaptive arm and the fixed reference on offsets 0 to 248 by 8, up to hunt', () => {
         const plan = planScreen(readJson('evals/train-screens/adaptive.grid.json'), (file) => readJson(file));
-        expect(plan.offsets).toEqual(Array.from({ length: 16 }, (_, i) => i * 8));
+        expect(plan.offsets).toEqual(Array.from({ length: 32 }, (_, i) => i * 8));
         expect(plan).toMatchObject({ until: 'hunt', generations: 380, reference: 'fixed', feasible: null });
         expect(plan.arms.map((a) => [a.name, a.curriculum])).toEqual([
             ['fixed', 'evals/train-ladder.json'],

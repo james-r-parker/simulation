@@ -34,7 +34,15 @@ Every command an agent runs on Blob Evolution, grouped by job. `rg -n '^### ' do
 
 ### What CI runs
 
-`scope` (`scripts/change-scope.sh`: `docs`, `release` or `full`; the Release Please pull request, a diff of only `CHANGELOG.md`, `package.json`, `package-lock.json` and `.release-please-manifest.json` on a `release-please--*` branch, runs `scope` alone and `check` still reports success), `static` (`scripts/check.sh --ci --skip=test`: the static gates, build and eval-smoke; a push to main runs the fast tests there instead), `test` (a matrix of coverage shards and statistical shards, `vitest run --shard`), `coverage` (`vitest run --merge-reports --coverage`, then `node scripts/quality-ratchet.mjs --check`), `browser-smoke`, `perf`, and the required `check`, which needs them all. `scripts/check.sh --ci` alone is the static half plus the fast tests
+`scope` (`scripts/change-scope.sh`: `docs`, `release` or `full`, and `scripts/affected.mjs`: the tests the change reaches and the `test` matrix, below; the Release Please pull request, a diff of only `CHANGELOG.md`, `package.json`, `package-lock.json` and `.release-please-manifest.json` on a `release-please--*` branch, runs `scope` alone and `check` still reports success), `static` (`scripts/check.sh --ci --skip=test`: the static gates, build and eval-smoke, and on a pull request the open-miss check), `test` (the matrix the `scope` job writes: shards, heavy and statistical files), `coverage` (the whole suite only: `vitest run --merge-reports --coverage`, then `node scripts/quality-ratchet.mjs --check`), `ratchet-related` (a pull request on the reached tests: `scripts/ratchet-related.mjs` on its changed files), `browser-smoke`, `perf`, `red-main` (a red push to main opens the issue), and the required `check`, which needs `scope`, `static`, `test`, `coverage` and `ratchet-related`; a skipped job passes. `scripts/check.sh --ci` alone is the static half plus the fast tests
+
+### Affected tests
+
+A pull request runs the tests its change can reach; the push to `main` runs the whole suite, the whole-suite ratchet and the browser smoke on the merged result (docs/designs/agent-workflow.md, Affected tests in CI).
+
+- `node scripts/affected.mjs <base-ref>` prints the mode (`docs`, `records`, `full` or `affected`), the reached test files and the `test` job matrix; `--stdin` reads the changed paths, `--full` asks for the whole suite, `--out <file>` writes the JSON (the `affected` artifact), `--github-output <file>` the workflow outputs. A path on the full list (`package.json`, the lockfile, `vitest.config.js`, the lint and TypeScript configs, `.github/workflows/`, `scripts/check.sh`, `scripts/lib/test-scope.mjs`, `wasm/`, `js/sim/wasm-binary.js`, `test/helpers/`, `.node-version`), an empty diff or an unreadable one is `full`.
+- `node scripts/data-deps.mjs --write` regenerates `test/data-deps.json`, the non-module paths each test reads (fixtures, data files, docs, the scripts it spawns); `--check` is part of the `conventions` gate. A test that builds a path the scan cannot see declares it with a `// reads: <path>, <path>` comment (`// reads: none` for a path that is no repo file, `// reads: **` for a test that depends on the git history and so runs for every change); the scan also covers what the modules and scripts a test imports or spawns read.
+- A failed test on `main` that the pull request did not reach is a miss: the `red-main` issue records it (`affected-miss`) and `node scripts/miss-ledger.mjs check` fails every pull request until the selection reaches that test from the recorded paths. Declare the edge (a `// reads:` comment) or teach `scripts/lib/affected.mjs`, in one pull request. Misses per 100 merged pull requests stay at 2 or fewer; above that the full list grows.
 
 ### Docs-only change
 
@@ -46,7 +54,7 @@ Every command an agent runs on Blob Evolution, grouped by job. `rg -n '^### ' do
 
 ### Skip gates
 
-`scripts/check.sh --fix --skip=<gate,...>` removes gates from the selection (CI's `static` job runs `scripts/check.sh --ci --skip=test`; the tests are the sharded `test` jobs)
+`scripts/check.sh --fix --skip=<gate,...>` removes gates from the selection (CI's `static` job runs `scripts/check.sh --ci --skip=test`; the tests are the `test` jobs)
 
 ### A subset of gates
 
@@ -196,9 +204,13 @@ Edit `wasm/src`, run `scripts/build-wasm.sh`, then `flock /tmp/claude-1000/cpu.l
 
 `npm run train:yield -- <dir> [<dir> ...]` (each a run directory or a quoted glob) (`--out <path>` writes JSON; each run's score (`reached + bestProgress`, one ordinal number per run: the index of the last stage it trained in plus its best progress there, 1 when the ladder finished) and CPU hours, then per stage the share of runs that passed it, the median generations to pass and the CPU hours per pass; reads each directory's `manifest.json`and`curve.jsonl`; docs/designs/training-loop.md; a detector, never fitness)
 
+### Where a training run's time goes
+
+`npm run train:profile -- --curriculum <ladder.json> --generations <g>` (the `train` options (`--workers`, `--episodes`, `--checkpoint-every`, `--until`, ...); `--out <dir>` (default `.sim/train-profile/<ladder>-g<g>`, refused when it already holds a run); `--from <run-dir>` reads a finished run's `train.jsonl` instead of training; per stage the share of wall time in episodes, checkpoints and archive writes (the `TrainTiming` record `train` logs each generation) and the worker busy share, in episodes and over the whole wall time; docs/designs/training-loop.md, Phase 5; a detector, never fitness)
+
 ### Compare two ladder arms
 
-`npm run train:compare -- <before-dir-glob> <after-dir-glob>` (quote the globs; `--out <path>` writes JSON; pairs the runs by `--seed-offset` and reads the per-offset score differences: an exact sign test (tied pairs left out) and a bootstrap interval of the mean, `better` or `worse` when the sign test is under 0.05 and the interval excludes 0, else `no verdict`; prints the pairs, the per-stage pass shares side by side, the CPU hours and the unmatched offsets; refuses under 16 matched offsets (tied pairs counted) with exit 2; docs/designs/training-loop.md; a detector, never fitness)
+`npm run train:compare -- <before-dir-glob> <after-dir-glob>` (quote the globs; `--out <path>` writes JSON; pairs the runs by `--seed-offset` and reads the per-offset score differences: an exact sign test (tied pairs left out) and a bootstrap interval of the mean, `better` or `worse` when the sign test is under 0.05 and the interval excludes 0, else `no verdict`; also prints each stage's exact pass test on the discordant offsets (`stageTests`: gained, lost, p, `better` or `worse` under 0.05, and the fewest flips one way that would read a verdict; 6 flips in 32 offsets with none back, 5 reads none); prints the pairs, the per-stage pass shares side by side, the CPU hours and the unmatched offsets; refuses under 16 matched offsets (tied pairs counted) with exit 2; docs/designs/training-loop.md; a detector, never fitness)
 
 ### Check a ladder is learnable
 
@@ -206,7 +218,7 @@ Edit `wasm/src`, run `scripts/build-wasm.sh`, then `flock /tmp/claude-1000/cpu.l
 
 ### Screen a ladder grid
 
-`npm run train:screen -- --grid <grid.json>` (`--out <dir>` (default `evals/train-screens/results/<grid>`), `--runs <dir>` (where the run directories go, default `--out`), `--workers <total>` (default `defaultWorkers()`; runs in flight is that over the grid's `workersPerRun`, 8), `--force`; a grid names a base `curriculum` ladder, the `offsets`, `until`, `generations`, `train` options and `arms` (a whole `curriculum`, `train` keys, and `stages: {<name>: {<entry key>: value}}` laid over the ladder's entries), and a `reference` arm (default an added arm `base`); runs every arm on every offset into `<out>/<arm>/o<offset>/` (a finished run whose manifest matches the arm's ladder hash, trainer options and offset is reused), then writes `yield.json`, `verdicts.json` (each arm's `compareYield` against the reference) and `table.md`; before training runs the learnability check once per distinct arm ladder (`feasible: {generations, seeds}` sizes it, default the probe sizes; `feasible: false` turns it off, as `plateau.grid.json` does), marks `unlearnable` stages in `verdicts.json` and writes `feasible.json`, and with `skipUnlearnable: true` leaves such arms out (never the reference); takes no CPU lock; example `evals/train-screens/plateau.grid.json`; docs/designs/training-loop.md)
+`npm run train:screen -- --grid <grid.json>` (`--out <dir>` (default `evals/train-screens/results/<grid>`), `--runs <dir>` (where the run directories go, default `--out`), `--workers <total>` (default `defaultWorkers()`; runs in flight is that over the grid's `workersPerRun`, 8), `--force`; a grid names a base `curriculum` ladder, the `offsets`, `until`, `generations`, `train` options and `arms` (a whole `curriculum`, `train` keys, and `stages: {<name>: {<entry key>: value}}` laid over the ladder's entries), and a `reference` arm (default an added arm `base`); runs every arm on every offset into `<out>/<arm>/o<offset>/` (a finished run whose manifest matches the arm's ladder hash, trainer options and offset is reused), then writes `yield.json`, `verdicts.json` (each arm's `compareYield` against the reference) and `table.md`; before training runs the learnability check once per distinct arm ladder (`feasible: {generations, seeds}` sizes it, default the probe sizes; `feasible: false` turns it off, as `plateau.grid.json` does), marks `unlearnable` stages in `verdicts.json` and writes `feasible.json`, and with `skipUnlearnable: true` leaves such arms out (never the reference); takes no CPU lock; warns when a grid with a reference and another arm has under 32 offsets (`screenWarnings`); example `evals/train-screens/plateau.grid.json`; docs/designs/training-loop.md)
 
 ### Tune the trainer overnight
 
