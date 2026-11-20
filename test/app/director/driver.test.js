@@ -86,6 +86,15 @@ describe('createDriver', () => {
         expect(driver.step(at(10))).toBe(true);
     });
 
+    it('tells the director when the canvas changes size', () => {
+        const { driver, camera, at } = setup();
+        driver.start();
+        driver.step(at(0));
+        camera.canvas.width = 1280;
+        camera.canvas.height = 720;
+        expect(driver.step(at(10))).toBe(true);
+    });
+
     it('hands over an era card once at each ten minute mark, from a wide shot', () => {
         const { driver, at } = setup();
         driver.start();

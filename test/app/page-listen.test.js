@@ -52,6 +52,21 @@ describe('listen', () => {
 });
 
 describe('observeSize', () => {
+    it('falls back to the plain content box where the device pixel box is refused', () => {
+        const observed = /** @type {any[]} */ ([]);
+        class Refusing {
+            observe(/** @type {any} */ target, /** @type {any} */ options) {
+                observed.push(options);
+                if (options !== undefined) {
+                    throw new Error('unsupported box');
+                }
+            }
+        }
+        vi.stubGlobal('ResizeObserver', Refusing);
+        observeSize(/** @type {any} */ ({}), () => {});
+        expect(observed).toEqual([{ box: 'device-pixel-content-box' }, undefined]);
+    });
+
     it('reports the canvas size when the observer fires', () => {
         const seen = /** @type {any[]} */ ([]);
         class FakeObserver {
