@@ -278,7 +278,7 @@ Both stay inside budget with the reel's ring running; a clip is encoded off the 
 | #   | Task                                                                                                                                            | Nature       | Depends on         |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------ |
 | T18 | TV rim weight and minimum size; the static-line dim and drift; the Look rules of [crisp-renderer.md](crisp-renderer.md) edited to match (built) | [judgement]  | T2                 |
-| T19 | Three parallax depth layers with slow drift; tests on the pack output                                                                           | [judgement]  | -                  |
+| T19 | Three parallax depth layers with slow drift; tests on the pack output (built)                                                                   | [judgement]  | -                  |
 | T20 | The event-only rim falloff (kill, birth, pack call), capped at 6 px and 500 ms; WebGL2 path; tests                                              | [judgement]  | T8                 |
 | T21 | Night dim by wall clock with `?dim` and the preference; tests with an injected clock                                                            | [mechanical] | -                  |
 | T22 | Conformance review of Phase 4 on the 4K OLED and the 1440p panel, with screenshots from 3 m                                                     | [judgement]  | T18, T19, T20, T21 |

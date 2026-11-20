@@ -82,6 +82,8 @@ function packFrame(frame, { world, ground, view, drift, groundView }) {
     groundView.seasonProgress = frame.seasonProgress;
     groundView.droughtBasin = s.droughtBasin;
     groundView.zoom = frame.camera.zoom;
+    groundView.cameraX = frame.camera.x;
+    groundView.cameraY = frame.camera.y;
     packGround(ground, groundView);
 }
 
@@ -103,7 +105,7 @@ export function createWorldLayers({ info, layout, seed }) {
     const dung = layout.zoneOrigins?.DUNG ?? 1;
     const view = { info, dung, levels: occupancy.level, timeSec: 0, shift: { x: 0, y: 0 } };
     const drift = { tv: false, nowMs: 0, zoom: 1 };
-    const groundView = { timeSec: 0, season: 0, seasonProgress: 0, droughtBasin: -1, zoom: 1 };
+    const groundView = { timeSec: 0, season: 0, seasonProgress: 0, droughtBasin: -1, zoom: 1, cameraX: 0, cameraY: 0 };
     if (!info.terrain) {
         appLog('warn', 'WorldTerrainMissing', {});
     }
