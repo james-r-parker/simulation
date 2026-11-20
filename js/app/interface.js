@@ -4,6 +4,7 @@
 // `interface-*.js` helpers.
 
 import { createChartData } from './interface-data.js';
+import { pushMilestone } from './history.js';
 import { createChartsLifecycle } from './interface-charts.js';
 import { createFailedBundleTaker, exportBundle } from './interface-exports.js';
 import { mountAudio } from './audio/audio.js';
@@ -15,6 +16,16 @@ import { dismissCard, firstVisit } from './interface-visit.js';
 import { mountTv } from './interface-tv.js';
 
 export { REFRESH_MS };
+
+/** The ticker kinds that are kept as milestones. */
+const MILESTONE_KINDS = new Set([
+    'extinct',
+    'last-stand',
+    'first-pack-kill',
+    'record-streak',
+    'record-age',
+    'new-leader',
+]);
 
 import { loadPrefs, savePrefs } from './prefs.js';
 import { familyCss } from './ui/css-color.js';
@@ -299,6 +310,21 @@ function createHooks(ctx) {
 }
 
 /**
+ * Keeps the notable ticker items for the charts drawer's milestones list.
+ * @param {Record<string, any>} ctx the shared parts
+ * @param {any[]} items a ticker message
+ * @returns {void}
+ */
+function noteMilestones(ctx, items) {
+    const data = ctx.chartData.data();
+    for (const item of items) {
+        if (data !== null && MILESTONE_KINDS.has(item.kind)) {
+            pushMilestone(data.history, item);
+        }
+    }
+}
+
+/**
  * @param {Record<string, any>} ctx the shared parts
  * @returns {Record<string, Function>} the worker client's listeners the interface needs
  */
@@ -322,6 +348,7 @@ function createListeners(ctx) {
         },
         onTicker(/** @type {{text: string, kind: string}[]} */ items) {
             ctx.queue.push(items, deps.now());
+            noteMilestones(ctx, items);
             deps.onTicker?.(items);
         },
         onArchive: (/** @type {string} */ json) =>
@@ -337,7 +364,8 @@ function createListeners(ctx) {
  *   afterDraw: (frame: {tick: number}) => void, openInspectorOnPick: (id?: number) => void,
  *   resize: () => void, pointer: (x: number, y: number) => void, peekAt: (x: number, y: number) => void,
  *   peekHide: () => void, noteInput: (event: import('./idle.js').InputEvent) => boolean,
- *   setTv: (on: boolean) => void, tvIdleMinutes: () => number, resetIdle: () => void, setCaption: (text: string) => void, idleMs: () => number}} the interface
+ *   setTv: (on: boolean) => void, tvIdleMinutes: () => number, resetIdle: () => void,
+ *   showEra: (world: {tick: number, ticksPerSecond: number}) => void, setCaption: (text: string) => void, idleMs: () => number}} the interface
  */
 export function createInterface(deps) {
     const ctx = build(deps);
@@ -368,6 +396,7 @@ export function createInterface(deps) {
         tvIdleMinutes: () => ctx.prefs.tvIdleMinutes,
         resetIdle: () => ctx.idle.reset(),
         setCaption: (text) => void ctx.tvUi.caption.set(text),
+        showEra: (world) => ctx.tvUi.showEra(world),
         idleMs: () => ctx.idle.idleMs(),
         resize: () => applyScale(ctx),
         tick(nowMs) {

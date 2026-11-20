@@ -5,7 +5,9 @@
 
 import { appLog } from '../app-log.js';
 import { createDirector } from './director.js';
+import { createEraSchedule } from './era-card.js';
 import { readSnapshotAgents } from './moments.js';
+import { paceFor } from './pace.js';
 
 /** How often the agents, effects and ticker are re-read, ms of wall time. */
 export const READ_MS = 250;
@@ -28,6 +30,8 @@ export const READ_MS = 250;
  * @property {string} caption the caption of the shot on screen
  * @property {string | null} shotKind the kind of the shot on screen
  * @property {number} readAt when the world was last read
+ * @property {ReturnType<typeof createEraSchedule>} era when the era card is due
+ * @property {{tick: number, ticksPerSecond: number} | null} eraDue the world time of a card waiting to be shown
  * @property {{width: number, height: number}} size the canvas the director knows
  * @property {import('./moments.js').AgentRecord[]} agents the agents at the last read
  * @property {{effects: any[], ticker: any[]}} recent the effects and ticker at the last read
@@ -75,6 +79,8 @@ function readyWorld(deps, d, ready) {
     }
     deps.feed.clear();
     d.readAt = -Infinity;
+    d.era = createEraSchedule(ready.info.ticksPerSecond);
+    d.eraDue = null;
 }
 
 /**
@@ -119,14 +125,48 @@ function directorInput({ camera, state }, d, { tick, dtMs, ready, top }) {
 }
 
 /**
- * @param {DriverDeps} deps the injected parts
- * @returns {{onReady: (ready: Record<string, any>) => void, start: () => void, stop: () => void,
- *   running: () => boolean, step: (at: {nowMs: number, dtMs: number, tick: number, ready: Record<string, any> | null,
- *   top: readonly {id: number}[]}) => boolean, caption: () => string, shotKind: () => string | null}} `step` runs the
- *   director for a frame and returns whether it holds the camera
+ * @param {DriverDeps['getClient']} getClient the current worker client
+ * @returns {NonNullable<DriverDeps['speedForState']>} the pace the worker sustains, from its measured tick cost
  */
-export function createDriver(deps) {
-    const { camera, state, getClient } = deps;
+function pacedBy(getClient) {
+    return (shotState, viewerSpeed, quiet) =>
+        paceFor({ state: shotState, quiet }, viewerSpeed, getClient()?.stats?.workerMsPerTick ?? 0);
+}
+
+/**
+ * Runs the director for one frame.
+ * @param {DriverDeps} deps the injected parts
+ * @param {DriverState} d the driver state
+ * @param {{nowMs: number, dtMs: number, tick: number, ready: Record<string, any> | null,
+ *   top: readonly {id: number}[]}} at the frame
+ * @returns {boolean} whether the director holds the camera
+ */
+function stepDriver(deps, d, { nowMs, dtMs, tick, ready, top }) {
+    const snapshot = deps.getClient()?.latest;
+    if (!d.running || d.director === null || !ready || !snapshot) {
+        return false;
+    }
+    reread(deps, d, { nowMs, tick, ready, snapshot });
+    const out = d.director.step(/** @type {any} */ (directorInput(deps, d, { tick, dtMs, ready, top })));
+    d.caption = out.caption;
+    d.shotKind = out.state;
+    if (out.active && d.era.due(tick, out.state)) {
+        d.eraDue = { tick, ticksPerSecond: ready.info.ticksPerSecond };
+    }
+    return out.active;
+}
+
+/**
+ * @param {DriverDeps} options the injected parts; `speedForState` defaults to `paceFor` over the worker's tick cost
+ * @returns {{onReady: (ready: Record<string, any>) => void, start: () => void, stop: () => void,
+ *   running: () => boolean, takeEra: () => {tick: number, ticksPerSecond: number} | null,
+ *   step: (at: {nowMs: number, dtMs: number, tick: number, ready: Record<string, any> | null,
+ *   top: readonly {id: number}[]}) => boolean, caption: () => string, shotKind: () => string | null}} `step` runs the
+ *   director for a frame and returns whether it holds the camera; `takeEra` hands over a due era card once
+ */
+export function createDriver(options) {
+    const deps = { speedForState: pacedBy(options.getClient), ...options };
+    const { camera, state } = deps;
     /** @type {DriverState} */
     const d = {
         director: null,
@@ -134,6 +174,8 @@ export function createDriver(deps) {
         caption: '',
         shotKind: null,
         readAt: -Infinity,
+        era: createEraSchedule(60),
+        eraDue: null,
         size: { width: camera.canvas.width, height: camera.canvas.height },
         agents: [],
         recent: { effects: [], ticker: [] },
@@ -153,18 +195,13 @@ export function createDriver(deps) {
             state.autoSpeed = 0;
         },
         running: () => d.running,
+        takeEra() {
+            const due = d.eraDue;
+            d.eraDue = null;
+            return due;
+        },
         caption: () => d.caption,
         shotKind: () => d.shotKind,
-        step({ nowMs, dtMs, tick, ready, top }) {
-            const snapshot = getClient()?.latest;
-            if (!d.running || d.director === null || ready === null || !snapshot) {
-                return false;
-            }
-            reread(deps, d, { nowMs, tick, ready, snapshot });
-            const out = d.director.step(/** @type {any} */ (directorInput(deps, d, { tick, dtMs, ready, top })));
-            d.caption = out.caption;
-            d.shotKind = out.shot?.moment?.kind ?? out.state;
-            return out.active;
-        },
+        step: (at) => stepDriver(deps, d, at),
     };
 }

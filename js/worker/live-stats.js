@@ -7,6 +7,14 @@ import { BORN_CAUSE, DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events
 import { specParams } from '../sim/spec-params.js';
 import { callsPerKiloTick, createCallWindow, largestSpec, noteCalls, predatorCount } from './world-numbers.js';
 import { createLineageBoard, rebuildCounts, topLineages, updateBoard } from './lineage-board.js';
+import {
+    ageItems,
+    createMilestones,
+    lineageItems,
+    packKillItems,
+    streakItems,
+    takeCentre,
+} from './ticker-milestones.js';
 
 /** Items held for the next `tickerEvents`; the oldest are dropped past this. */
 export const PENDING_CAP = 32;
@@ -28,7 +36,8 @@ const DEATH_CAUSES = Object.keys(DEATH_CAUSE).length;
 /**
  * @typedef {object} TickerItem
  * @property {number} tick the tick it happened
- * @property {string} kind `new-leader`, `extinct`, `hunt-streak`, `pack-kill`, `elder`, `elite` or `floor`
+ * @property {string} kind `new-leader`, `extinct`, `last-stand`, `hunt-streak`, `record-streak`, `pack-kill`,
+ *   `first-pack-kill`, `elder`, `record-age`, `elite` or `floor`
  * @property {string} text a plain-text line
  * @property {number} [genomeId] the agent concerned
  * @property {number} [lineageId] the lineage concerned
@@ -47,6 +56,7 @@ const DEATH_CAUSES = Object.keys(DEATH_CAUSE).length;
  * @property {import('./world-numbers.js').CallWindow} calls alarm and hunt calls in the last 1000 ticks
  * @property {number} lastElderScan the tick of the last elder scan
  * @property {{spec: number, cell: number, tick: number} | null} newestReplacement the latest `ArchiveReplaced`
+ * @property {import('./ticker-milestones.js').Milestones} milestones what has been announced once
  */
 
 /** @returns {LiveStats} state for a fresh run */
@@ -60,6 +70,7 @@ export function createLiveStats() {
         calls: createCallWindow(),
         lastElderScan: 0,
         newestReplacement: null,
+        milestones: createMilestones(),
     };
 }
 
@@ -106,23 +117,26 @@ function noteKill(live, { world, observer }, o) {
     const d = world.events.data;
     const killer = d[o + 5];
     const tick = d[o + 1];
+    const slot = observer.slotOf.get(killer);
+    const at = slot === undefined ? {} : { x: world.x[slot], y: world.y[slot] };
     if (d[o + 11] !== 0) {
         push(live, { tick, kind: 'pack-kill', text: 'pack kill', genomeId: killer, lineageId: d[o + 7] });
+        packKillItems(live.milestones, { tick, genomeId: killer, ...at }).forEach((item) => push(live, item));
     }
-    const slot = observer.slotOf.get(killer);
-    if (
-        slot !== undefined &&
-        observer.kills[slot] === HUNT_STREAK_KILLS &&
-        specParams(world.config, observer.spec[slot]).canHunt
-    ) {
-        const at = { x: world.x[slot], y: world.y[slot] };
-        push(live, {
-            tick,
-            kind: 'hunt-streak',
-            text: `hunter ${killer} has ${HUNT_STREAK_KILLS} kills`,
-            genomeId: killer,
-            ...at,
-        });
+    if (slot !== undefined && specParams(world.config, observer.spec[slot]).canHunt) {
+        const kills = observer.kills[slot];
+        if (kills === HUNT_STREAK_KILLS) {
+            push(live, {
+                tick,
+                kind: 'hunt-streak',
+                text: `hunter ${killer} has ${HUNT_STREAK_KILLS} kills`,
+                genomeId: killer,
+                ...at,
+            });
+        }
+        streakItems(live.milestones, { tick, genomeId: killer, kills, x: world.x[slot], y: world.y[slot] }).forEach(
+            (item) => push(live, item),
+        );
     }
 }
 
@@ -155,6 +169,7 @@ function scanElders(live, world) {
     const threshold = Math.floor(ELDER_SHARE * world.config.maxAgeTicks);
     const since = world.tick - live.lastElderScan;
     live.lastElderScan = world.tick;
+    ageItems(live.milestones, world, threshold).forEach((item) => push(live, item));
     const { alive, ageTicks } = world;
     for (let slot = 0; slot < alive.length; slot++) {
         const over = ageTicks[slot] - threshold;
@@ -270,6 +285,20 @@ function bornShare(observer) {
 }
 
 /**
+ * Queues the `extinct` items, with where each family was last seen, and the `last-stand` items.
+ * @param {LiveStats} live the state
+ * @param {{world: Record<string, any>, extinct: number[]}} source the world and the families that just died out
+ * @returns {void}
+ */
+function announceLineages(live, { world, extinct }) {
+    for (const id of extinct) {
+        const at = takeCentre(live.milestones, id) ?? {};
+        push(live, { tick: world.tick, kind: 'extinct', text: `lineage ${id} has died out`, lineageId: id, ...at });
+    }
+    lineageItems(live.milestones, world, live.board.big).forEach((item) => push(live, item));
+}
+
+/**
  * Builds the Stats table for a stats message and resets the "since the last message" counters. Also rebuilds the
  * lineage counts and queues the `new-leader`, `extinct` and `elder` items.
  * @param {LiveStats} live the state
@@ -287,9 +316,7 @@ export function collectStats(live, { world, observer, policy, generations }, run
     if (leader !== 0) {
         push(live, { tick, kind: 'new-leader', text: `lineage ${leader} takes the lead`, lineageId: leader });
     }
-    for (const id of extinct) {
-        push(live, { tick, kind: 'extinct', text: `lineage ${id} has died out`, lineageId: id });
-    }
+    announceLineages(live, { world, extinct });
     scanElders(live, world);
     const births = deltas(observer.births, live.lastBirths);
     const deaths = deltas(observer.deathsByCause, live.lastDeaths);

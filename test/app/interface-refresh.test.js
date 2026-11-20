@@ -25,7 +25,7 @@ function setup({ drawer = null } = {}) {
         fade: { tick: () => log.push('fade') },
         idle: { idleMs: () => 0 },
         card: { element: { style: {} }, visible: () => false, expired: () => false },
-        tvUi: { caption: { element: { style: {} } } },
+        tvUi: { caption: { element: { style: {} } }, era: { element: { style: {} } } },
         queue: { current: () => [] },
         tickerUpdate: () => log.push('ticker'),
         drawers: { state: () => drawer },

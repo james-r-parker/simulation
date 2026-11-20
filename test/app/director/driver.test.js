@@ -85,4 +85,16 @@ describe('createDriver', () => {
         expect(READ_MS).toBe(250);
         expect(driver.step(at(10))).toBe(true);
     });
+
+    it('hands over an era card once at each ten minute mark, from a wide shot', () => {
+        const { driver, at } = setup();
+        driver.start();
+        driver.step({ ...at(0), tick: 0 });
+        expect(driver.takeEra()).toBeNull();
+        driver.step({ ...at(1000), tick: 36000 });
+        expect(driver.takeEra()).toEqual({ tick: 36000, ticksPerSecond: 60 });
+        expect(driver.takeEra()).toBeNull();
+        driver.step({ ...at(2000), tick: 36100 });
+        expect(driver.takeEra()).toBeNull();
+    });
 });

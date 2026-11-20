@@ -372,6 +372,10 @@ function start() {
         app.loop.frame(now);
         app.iface.setCaption(app.driver.caption());
         app.tv.tick();
+        const era = app.driver.takeEra();
+        if (era !== null) {
+            app.iface.showEra(era);
+        }
         app.iface.tick(now);
         requestAnimationFrame(tick);
     };
