@@ -1,0 +1,9 @@
+{
+  "sprintStoreEnabled": true,
+  "sprintDrain": 0.004,
+  "specialisations": {
+    "scout": {
+      "sprintBoost": 0.75
+    }
+  }
+}

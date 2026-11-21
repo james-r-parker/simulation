@@ -1,0 +1,7 @@
+{
+  "specialisations": {
+    "predator": {
+      "maxEnergyMultiplier": 10
+    }
+  }
+}

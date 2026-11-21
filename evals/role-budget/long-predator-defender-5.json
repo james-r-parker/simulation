@@ -1,0 +1,5 @@
+{
+  "sprintStoreEnabled": true,
+  "sprintDrain": 0.004,
+  "maxVelocity": 4
+}

@@ -1,0 +1,9 @@
+{
+  "sprintStoreEnabled": true,
+  "sprintDrain": 0.004,
+  "specialisations": {
+    "forager": {
+      "sprintBoost": 0.5
+    }
+  }
+}
