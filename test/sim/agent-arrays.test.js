@@ -45,7 +45,8 @@ describe('the lists built from the entries', () => {
         expect(KERNEL_ORDER).toEqual(['brain', 'sense', 'hash', 'physics']);
         expect(ownerOf('size')).toBe('sense');
         expect(ownerOf('energy')).toBeUndefined();
-        expect(ownedFields('physics', ['alive', 'x', 'vx', 'vy', 'rayCos', 'spec'])).toEqual(['vx', 'vy', 'spec']);
+        expect(ownedFields('physics', ['alive', 'x', 'vx', 'vy', 'rayCos', 'spec'])).toEqual(['spec']);
+        expect(ownedFields('sense', ['alive', 'x', 'vx', 'vy', 'rayCos', 'spec'])).toEqual(['x', 'vx', 'vy']);
     });
 });
 

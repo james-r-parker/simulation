@@ -1,9 +1,12 @@
 // The ray march in the WASM kernels (docs/designs/wasm-kernels.md, Phase 2): one `sense_slot` call gathers a casting
 // agent's circles and finds every ray's nearest hit, bit-identical to the JS gather and nearest-hit loops it
-// replaced (deleted at T11). The circles' arrays and the spatial hash (built in the arena by `build_hash`, Phase 4) are
-// read in place. The hit classes, the mate sighting and the body and scent inputs are rules and stay in JS.
+// replaced (deleted at T11), and writes what each agent hit's body shows into `raySize`, `raySpeed` and `rayClosing`
+// (docs/designs/body-genes.md T53; the JS `bodySenseOf` it replaced is the tests' naive reference). The circles' arrays
+// and the spatial hash (built in the arena by `build_hash`, Phase 4) are read in place. The hit classes, the mate
+// sighting and the body and scent inputs are rules and stay in JS.
 
 import { ownedFields } from './agent-arrays.js';
+import { speedSenseSpan } from './body-sense.js';
 import { assertArenaHash, hashShape } from './wasm-hash.js';
 
 /** The arena arrays whose byte offsets head the sense parameter block, in `SenseParams` order (wasm/src/sense.rs). */
@@ -38,6 +41,11 @@ export const SENSE_ARRAYS = Object.freeze([
     'rayReachBySpec',
     'rayReach',
     'raySmoke',
+    'vx',
+    'vy',
+    'raySize',
+    'raySpeed',
+    'rayClosing',
 ]);
 
 /**
@@ -80,6 +88,7 @@ const WORDS = Object.freeze([
     'seePlant',
     'seeMeat',
     'spec',
+    'bodyFault',
 ]);
 
 /** Index of each named word in the sense parameter block. */
@@ -92,6 +101,7 @@ const D_WIDTH = 2;
 const D_HEIGHT = 3;
 const D_CELL_SIZE = 4;
 const D_SMOKE_PASS = 5;
+const D_SPEED_SPAN = 6;
 
 /**
  * @param {Record<string, any>} world the world, its fields not yet in an arena
@@ -108,7 +118,7 @@ export function senseSpecs(world) {
         ['rayReach', Float64Array, config.rayCount],
         ['raySmoke', Float64Array, config.rayCount],
         ['senseParams', Int32Array, SENSE_ARRAYS.length + WORDS.length],
-        ['senseDoubles', Float64Array, 6],
+        ['senseDoubles', Float64Array, 7],
     ];
 }
 
@@ -135,6 +145,7 @@ export function writeSenseParams(arena, world) {
     d[D_HERD_RADIUS] = config.herdRadius;
     d[D_WIDTH] = config.worldWidth;
     d[D_HEIGHT] = config.worldHeight;
+    d[D_SPEED_SPAN] = speedSenseSpan(config);
 }
 
 /**
@@ -156,10 +167,13 @@ export function beginSense(world, hash) {
 /**
  * Gathers one caster's circles (the food among them only of a kind it can eat) and finds every ray's nearest hit into
  * `rayBestT` and `rayBestKey`, each ray reaching its specialisation's share of the range (`rayReachBySpec`); a ray that
- * meets smoke sees on through it by the caster's smoke pass, marked in `raySmoke`. The caster's origin, range and heading must already be in `world.rayScratch`.
+ * meets smoke sees on through it by the caster's smoke pass, marked in `raySmoke`. Writes the caster's row of
+ * `raySize`, `raySpeed` and `rayClosing`: what each agent hit's body shows, 0 for any other ray. The caster's origin,
+ * range and heading must already be in `world.rayScratch`.
  * @param {Record<string, any>} world a world on the WASM kernels, begun by `beginSense` this tick
  * @param {number} slot the casting agent
  * @returns {number} the gathered row count in `world.rayLocal`
+ * @throws {Error} when a hit's size over the caster's is not finite (`detTanh` refuses it)
  */
 export function senseSlot(world, slot) {
     const arena = world.wasm;
@@ -173,5 +187,9 @@ export function senseSlot(world, slot) {
     // body-genes T13a: the share of a ray's remaining reach that passes on through smoke, the caster's `smokeSight` lane
     // above 1 (0 at its base of 1, where smoke ends the ray).
     arena.views.senseDoubles[D_SMOKE_PASS] = Math.min(1, Math.max(0, world.lanes.smokeSight[slot] - 1));
-    return arena.exports.sense_slot(arena.offsets.senseParams, slot);
+    const count = arena.exports.sense_slot(arena.offsets.senseParams, slot);
+    if (p[SENSE_WORD.bodyFault] !== 0) {
+        throw new Error(`senseSlot: slot ${slot} hit a body whose size over its own is not finite`);
+    }
+    return count;
 }
