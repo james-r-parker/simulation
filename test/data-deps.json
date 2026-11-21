@@ -322,6 +322,9 @@
     "test/evo/role-budget-check.test.js": [
         "evals/fair-chase/courser.json"
     ],
+    "test/evo/role-budget-effects.slow.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
     "test/evo/role-budget-frame.test.js": [
         "evals/fair-chase/courser.json"
     ],
@@ -549,6 +552,9 @@
         "wrangler.toml"
     ],
     "test/role-budget-drift.test.js": [
+        "scripts/role-budget.mjs"
+    ],
+    "test/role-budget-pack.test.js": [
         "scripts/role-budget.mjs"
     ],
     "test/role-budget-search-libs.test.js": [
