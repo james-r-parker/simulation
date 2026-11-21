@@ -9,7 +9,6 @@ import { BASIN_CHECKPOINT_TICKS, createBasinScene, sampleBasins } from './scene-
 import { createBalanceScene, sampleBalance } from './scene-balance.js';
 import { createCapacityScene, sampleCapacity } from './scene-capacity.js';
 import { createEatScene, sampleEat } from './scene-eat.js';
-import { createStrikeMissScene, tickStrikeMiss } from './scene-strike-miss.js';
 import { createEdgeScene, sampleEdge } from './scene-edge.js';
 import { createDivergenceScene, sampleDivergence } from './scene-divergence.js';
 import { createFamilyScene, sampleFamilies } from './scene-families.js';
@@ -18,10 +17,6 @@ import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
 import { createGuardScene, sampleGuards } from './scene-guards.js';
 import { createGuildScene, sampleGuilds, tickGuilds } from './scene-guilds.js';
 import { createKinProximityScene, sampleKinProximity } from './scene-kin-proximity.js';
-import { createBiteScene, tickBite } from './scene-bite.js';
-import { createBiteLifeScene, tickRecoil } from './scene-bite-life.js';
-import { createRecruitScene, tickRecruit } from './scene-recruit.js';
-import { createHunterScene, tickHunters } from './scene-hunters.js';
 import { createConditionScene, sampleCondition } from './scene-condition.js';
 import { createPatchScene, samplePatches } from './scene-patch.js';
 import { createSeasonScene, sampleSeason } from './scene-season.js';
@@ -47,11 +42,10 @@ export { resetSceneSlot } from './observer-scenes-events.js';
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
- * @param {number} [runTicks] the run length in ticks, for the last-quarter hunter ticks
  * @param {boolean} [lean] build only the style and terrain scenes (the policy core, lean-observer.md)
  * @returns {Record<string, any>} the scenes, each empty
  */
-export function createScenes(config, runTicks = 0, lean = false) {
+export function createScenes(config, lean = false) {
     if (lean) {
         return { lean: true, terrain: createTerrainScene(config), style: createStyle(config) };
     }
@@ -77,17 +71,12 @@ export function createScenes(config, runTicks = 0, lean = false) {
         mate: createMateScene(config),
         proof: createProofScene(config),
         disease: createDiseaseScene(config),
-        hunters: createHunterScene(runTicks, config),
-        recruit: createRecruitScene(config),
         guards: createGuardScene(config),
         guilds: createGuildScene(config),
         capacity: createCapacityScene(config),
         edge: createEdgeScene(),
         eat: createEatScene(config),
-        strikeMiss: createStrikeMissScene(),
         kin: createKinProximityScene(config),
-        bite: createBiteScene(config),
-        biteLife: createBiteLifeScene(),
     };
 }
 
@@ -99,7 +88,7 @@ export function createScenes(config, runTicks = 0, lean = false) {
  */
 export function createSceneLayer(config, { runTicks = 0, lean = false }) {
     const plan = compileDetectors(lean ? LEAN_DETECTORS : DETECTORS);
-    return { plan, scenes: { ...createScenes(config, runTicks, lean), ...createStates(plan, config, runTicks) } };
+    return { plan, scenes: { ...createScenes(config, lean), ...createStates(plan, config, runTicks) } };
 }
 
 /**
@@ -145,16 +134,11 @@ export function observeScenes(observer, world) {
     noteEvents(scenes, observer, world);
     noteDiseaseEvents(scenes.disease, world);
     dispatchEvents(observer.plan, observer, world);
-    tickHunters(scenes.hunters, world.tick);
-    tickRecruit(scenes.recruit);
     trackHerd(scenes.herd, world, observer);
     if (world.tick === 0) {
         tickDetectors(observer.plan, observer, world);
         return;
     }
-    tickBite(scenes.bite, world);
-    tickStrikeMiss(scenes.strikeMiss, world);
-    tickRecoil(scenes.biteLife, world);
     trackProof(scenes.proof, world);
     trackCarcasses(scenes.carcass, observer, world, scenes.scent);
     tickStyle(observer, world);

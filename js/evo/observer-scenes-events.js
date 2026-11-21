@@ -7,9 +7,6 @@ import { noteBasinBirth } from './scene-basin.js';
 import { noteCapacityDeath } from './scene-capacity.js';
 import { noteEdgeBirth, noteEdgeDeath } from './scene-edge.js';
 import { noteGuildAlarm, noteGuildBirth, noteGuildDeath } from './scene-guilds.js';
-import { noteBiteLifeRecord } from './scene-bite-life.js';
-import { noteRecruitBirth, noteRecruitRecord } from './scene-recruit.js';
-import { noteHunterBirth, noteHunterRecord } from './scene-hunters.js';
 import { flushCondition, resetConditionSlot } from './scene-condition.js';
 import { resetPatchSlot } from './scene-patch.js';
 import { noteSpendBirth, resetSpendSlot } from './scene-spend.js';
@@ -134,9 +131,6 @@ function noteFullDeath(scenes, observer, { world, o }) {
  */
 function noteFullRecord(scenes, world, o) {
     const d = world.events.data;
-    noteHunterRecord(scenes.hunters, d, o);
-    noteBiteLifeRecord(scenes.biteLife, d, o, world);
-    noteRecruitRecord(scenes.recruit, d, o);
     if (d[o] === EVENT_TYPE.ALARM_CALLED) {
         noteGuildAlarm(scenes.guilds, world, d[o + ALARM.SLOT]);
     }
@@ -144,8 +138,6 @@ function noteFullRecord(scenes, world, o) {
         return;
     }
     noteGuildBirth(scenes.guilds, { tick: d[o + EVENT_TICK], spec: d[o + BORN.SPEC], cause: d[o + BORN.CAUSE] });
-    noteHunterBirth(scenes.hunters, world, d[o + BORN.SLOT]);
-    noteRecruitBirth(scenes.recruit, world, d, o);
     noteEdgeBirth(scenes.edge, world, { cause: d[o + BORN.CAUSE], spec: d[o + BORN.SPEC] });
     resetSceneSlot(scenes, d[o + BORN.SLOT]);
     noteBasinBirth(scenes.basin, world, { slot: d[o + BORN.SLOT], cause: d[o + BORN.CAUSE] });

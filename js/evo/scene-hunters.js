@@ -291,3 +291,19 @@ export function hunterMetrics(scene, world) {
             scene.runTicks > 0 ? ok(scene.quarterTicks) : none('no run length (createObserver runTicks)'),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const huntersDetector = {
+    name: 'hunters',
+    modules: ['js/evo/scene-hunters.js', 'js/evo/scene-hunter-age.js'],
+    sourceTest: 'test/evo/metric-source-hunters.test.js',
+    atStart: true,
+    create: (config, { runTicks }) => createHunterScene(runTicks, config),
+    on: {
+        HUNTER_KILL: (scene, world, o) => noteHunterRecord(scene, world.events.data, o),
+        HUNTER_LEDGER: (scene, world, o) => noteHunterRecord(scene, world.events.data, o),
+        AGENT_BORN: (scene, world, o) => noteHunterBirth(scene, world, world.events.data[o + EVENT.AGENT_BORN.SLOT]),
+    },
+    onTick: (scene, world) => tickHunters(scene, world.tick),
+    metrics: (scene, world) => hunterMetrics(scene, world),
+};

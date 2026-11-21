@@ -12,11 +12,21 @@ import { matchedDetector } from './scene-matched.js';
 import { kinematicsDetector } from './scene-kinematics.js';
 import { budgetDetector } from './scene-recruit-budget.js';
 import { stillnessDetector } from './scene-stillness.js';
+import { huntersDetector } from './scene-hunters.js';
+import { recruitDetector } from './scene-recruit.js';
+import { biteDetector } from './scene-bite.js';
+import { biteLifeDetector } from './scene-bite-life.js';
+import { strikeMissDetector } from './scene-strike-miss.js';
 
 /** @type {readonly import('./observer-detectors.js').Detector[]} */
 export const DETECTORS = Object.freeze([
     floraDetector,
     scentDetector,
+    huntersDetector,
+    recruitDetector,
+    biteDetector,
+    strikeMissDetector,
+    biteLifeDetector,
     approachDetector,
     packLiftDetector,
     competenceDetector,

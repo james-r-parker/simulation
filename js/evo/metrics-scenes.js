@@ -4,13 +4,10 @@ import { detectorMetrics } from './observer-detectors.js';
 // They change no sim state and cost no per-tick allocation. Directions live in `js/evo/metric-registry/`.
 
 import { alarmReachMetrics } from './observer-alarm-reach.js';
-import { biteMetrics } from './scene-bite.js';
-import { biteLifeMetrics } from './scene-bite-life.js';
 import { balanceMetrics } from './scene-balance.js';
 import { basinMetrics } from './scene-basin.js';
 import { capacityMetrics } from './scene-capacity.js';
 import { eatMetrics } from './scene-eat.js';
-import { strikeMissMetrics } from './scene-strike-miss.js';
 import { edgeMetrics } from './scene-edge.js';
 import { divergenceMetrics } from './scene-divergence.js';
 import { familyMetrics } from './scene-families.js';
@@ -19,9 +16,7 @@ import { terminalHunterMetrics } from './scene-terminal-hunters.js';
 import { guardMetrics, summerMetrics } from './scene-guards.js';
 import { guildMetrics } from './scene-guilds.js';
 import { kinProximityMetrics } from './scene-kin-proximity.js';
-import { hunterMetrics } from './scene-hunters.js';
 import { carcassLossMetrics } from './scene-carcass-loss.js';
-import { recruitMetrics } from './scene-recruit.js';
 import { patchMetrics } from './scene-patch.js';
 import { rewardMetrics } from './metrics-reward.js';
 import { conditionMetrics } from './scene-condition.js';
@@ -59,8 +54,6 @@ export function sceneMetrics(observer, world) {
         ...styleMetrics(s.style),
         ...herdMetrics(s.herd, s.carcass, observer),
         ...diseaseMetrics(s.disease),
-        ...hunterMetrics(s.hunters, world),
-        ...recruitMetrics(s.recruit, world),
         ...carcassLossMetrics(s.carcass.loss, world, s.carcass.eaten),
         ...guardMetrics(s.guards),
         ...terminalHunterMetrics(s.guards, world),
@@ -69,12 +62,9 @@ export function sceneMetrics(observer, world) {
         ...capacityMetrics(s.capacity),
         ...edgeMetrics(s.edge),
         ...eatMetrics(s.eat),
-        ...strikeMissMetrics(s.strikeMiss, world),
         ...kinProximityMetrics(s.kin),
         ...alarmReachMetrics(observer),
         ...rewardMetrics(observer, world),
-        ...biteMetrics(s.bite),
-        ...biteLifeMetrics(s.biteLife, world),
         ...detectorMetrics(observer.plan, observer, world),
     };
 }
