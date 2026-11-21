@@ -373,6 +373,18 @@ Inside the `bench-check` margin; every golden `worldHash` is unchanged by each c
 | ----- | ---------- | ------------------------------------------------------------------------------------ |
 | E     | T40 to T45 | Haiku for T40 to T43 (each fully specified by the inventory), Sonnet for T44 and T45 |
 
+### Phase 6 - Later traits (user, 2026-11-21)
+
+**Targets:** none - planned in full (T47) before it is built, after Phase 3 sets the numbers
+
+`liver`, a trade trait in the shape of `gut` and `wideOrFar`: one trait with two opposite effects. A body with more `liver` takes less from poison (fewer stacks, or less damage a stack, from `js/sim/toxin.js` and the `toxic` effect of [status-effects.md](status-effects.md) Phase 4) and less energy from every meal (`plantFoodValue` and `meatFoodValue` both down). Nature does it: the koala lives on eucalyptus that poisons other animals and gets little from it.
+
+It serves **Same spec, different custom**: a lineage that specialises in food others cannot eat. Its condition: the world must hold enough toxic food (toxic plants, or toxic prey of a lineage with the `toxic` effect) that the bodies without it cannot use; otherwise `liver` is a pure cost and selection holds it at 0, which the contract tests would show. With toxic prey it makes a small arms race: toxic prey are a strong defence only while few hunters carry a high `liver`.
+
+| Chunk | Tasks      | Builder |
+| ----- | ---------- | ------- |
+| F     | T47 to T49 | Sonnet  |
+
 ## Decisions
 
 | Decision                                                                                                                                               | Holds because                                                                                                                                                                                                                                  |
@@ -489,6 +501,14 @@ Inside the `bench-check` margin; every golden `worldHash` is unchanged by each c
 | T43 | Move the remaining energy, sickness and learning readers to lanes, one commit, every golden unchanged                                                                                                                                                                                                                                                                                                                                          | [mechanical] | T5                 |
 | T44 | Fold the one-spec rules into `body` overrides and delete their keys (`scoutCallRadiusMultiplier`, `scoutAlarmCostMultiplier`, the `canHunt` tests on `huntUpkeep`, `juvenileBurn`, `predatorRestTicks`, `strikeMissCost`), delete `specParams`' per-call name loop and the dead key `foodSpawnRate`; a breaking commit with its `library/seasons.json` entry and the same behaviour, shown by an eval report identical but for the `rulesHash` | [judgement]  | T40, T41, T42, T43 |
 | T45 | Conformance review of Phase 5 by a fresh agent, in parallel with `scripts/check.sh`; a test fails any `config.<body key>` read left in `js/sim`                                                                                                                                                                                                                                                                                                | [judgement]  | T44                |
+
+### Phase 6 - Later traits (user, 2026-11-21)
+
+| #   | Task                                                                                                                                                                                                                                     | Nature      | Depends on |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T47 | Plan `liver` in full: its two effects and their lanes, its span and cost, where the toxic food comes from (`js/sim/toxin.js` plants, the `toxic` effect of status-effects.md T20), and the reading that shows a lineage uses it; no code | [judgement] | -          |
+| T48 | Add `liver` to `TRAITS` at a span of 0 with its lanes and the contract-test rows; every golden unchanged                                                                                                                                 | [judgement] | T47        |
+| T49 | Choose its span with the calculator and a screen, read it under the keep rule, and record whether a lineage holds a high `liver` where toxic food is common; conformance review                                                          | [judgement] | T48        |
 
 ## Verification
 
