@@ -14,7 +14,7 @@ import {
 import { renderState } from '../scripts/lib/state-format.mjs';
 import { nextTask, queueBlock, queueRows } from '../scripts/lib/state-queue.mjs';
 import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
-import { gatherState, readExperiments } from '../scripts/state.mjs';
+import { gatherState, main, readExperiments } from '../scripts/state.mjs';
 
 const README = `# Designs
 
@@ -218,6 +218,7 @@ const GH_STUB = `#!/usr/bin/env bash
 echo '[{"number":9,"title":"A change","headRefName":"feat/x","statusCheckRollup":[{"status":"COMPLETED","conclusion":"SUCCESS"}]}]'
 `;
 let dir = '';
+/** @type {Record<string, string | undefined>} */
 let env = {};
 
 /**
@@ -323,5 +324,74 @@ describe('npm run state', { timeout: scaleTimeout(60_000) }, () => {
 
     it('rejects an unknown argument', () => {
         expect(spawnSync('node', [STATE, '--nope'], { cwd: dir, encoding: 'utf8', env }).status).toBe(2);
+    });
+});
+
+describe('state.mjs in process', { timeout: scaleTimeout(60_000) }, () => {
+    /**
+     * @param {string[]} args main's arguments
+     * @param {string} [cwd] the directory it runs in
+     * @returns {{status: number, out: string, err: string}} the exit code and what it printed
+     */
+    function runMain(args, cwd) {
+        vi.stubEnv('PATH', String(env.PATH));
+        let out = '';
+        const write = vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
+            out += String(chunk);
+            return true;
+        });
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const status = main(args, cwd);
+        const err = error.mock.calls.flat().join('\n');
+        write.mockRestore();
+        error.mockRestore();
+        return { status, out, err };
+    }
+
+    it('prints the page for the working directory and the json form for --root', () => {
+        const repo = join(dir, 'repo');
+        const page = runMain([], repo);
+        expect(page.status).toBe(0);
+        expect(page.out).toContain('#9 pass');
+        const json = runMain(['--json', '--root', repo], dir);
+        expect(JSON.parse(json.out).queue[0].file).toBe('metric-noise.md');
+    });
+
+    it('rejects an unknown argument and a --root with no directory', () => {
+        expect(runMain(['--nope']).status).toBe(2);
+        const bare = runMain(['--root']);
+        expect(bare.status).toBe(2);
+        expect(bare.err).toContain('usage');
+    });
+
+    it('reads the ledger directory when there is one, and no records when neither source exists', () => {
+        const repo = join(dir, 'repo');
+        mkdirSync(join(repo, 'evals', 'ledger'));
+        const record = { id: 'E7', date: '2026-11-20', outcome: 'adopted' };
+        writeFileSync(join(repo, 'evals', 'ledger', 'E7.json'), JSON.stringify(record));
+        writeFileSync(join(repo, 'evals', 'ledger', 'notes.txt'), 'ignored');
+        expect(readExperiments(repo).map((r) => r.id)).toEqual(['E7']);
+        expect(readExperiments(join(dir, 'bin'))).toEqual([]);
+    });
+
+    it('reports no ladder, no pull requests and no worktrees where the sources are absent', () => {
+        const bare = join(dir, 'bare');
+        mkdirSync(join(bare, 'evals', 'train-screens', 'results', 'empty'), { recursive: true });
+        writeFileSync(join(dir, 'bin', 'gh'), '#!/usr/bin/env bash\nexit 1\n');
+        vi.stubEnv('PATH', String(env.PATH));
+        vi.stubEnv('GIT_CEILING_DIRECTORIES', dir);
+        const state = gatherState(bare, { today: '2026-11-20' });
+        expect(state.ladder).toBeNull();
+        expect(state.prs).toBeNull();
+        expect(state.worktrees).toBeNull();
+        expect(state.queue).toEqual([]);
+        rmSync(join(bare, 'evals', 'train-screens', 'results'), { recursive: true });
+        expect(gatherState(bare).ladder).toBeNull();
+    });
+
+    it('treats gh output that is not json as no pull requests', () => {
+        writeFileSync(join(dir, 'bin', 'gh'), '#!/usr/bin/env bash\necho "not json"\n');
+        vi.stubEnv('PATH', String(env.PATH));
+        expect(gatherState(join(dir, 'repo')).prs).toBeNull();
     });
 });

@@ -34,11 +34,12 @@ function procIds() {
  */
 export function processesIn(dir) {
     const out = [];
-    const prefix = dir.endsWith(sep) ? dir : dir + sep;
+    const root = dir.endsWith(sep) ? dir.slice(0, -1) : dir;
+    const prefix = root + sep;
     for (const pid of procIds()) {
         try {
             const cwd = readlinkSync(`/proc/${pid}/cwd`);
-            if (Number(pid) !== process.pid && (cwd === dir || cwd.startsWith(prefix))) {
+            if (Number(pid) !== process.pid && (cwd === root || cwd.startsWith(prefix))) {
                 out.push(Number(pid));
             }
         } catch {
@@ -172,14 +173,14 @@ function removeSafe(rows, cwd, all) {
  * @param {string[]} argv arguments after the script name
  * @returns {number} the exit code
  */
-export function main(argv) {
+export function main(argv, cwd = process.cwd()) {
     const flags = new Set(argv);
     const unknown = argv.filter((a) => !['--list', '--json', '--all'].includes(a));
     if (unknown.length > 0) {
         console.error('usage: worktree-gc.sh [--list] [--json] [--all]');
         return 2;
     }
-    const rows = listWorktrees(process.cwd());
+    const rows = listWorktrees(cwd);
     if (rows === null) {
         console.error('worktree-gc: not inside a git repository');
         return 1;
@@ -199,7 +200,7 @@ export function main(argv) {
                 .join(' '),
         );
     }
-    return flags.has('--list') ? 0 : removeSafe(rows, process.cwd(), flags.has('--all')) > 0 ? 1 : 0;
+    return flags.has('--list') ? 0 : removeSafe(rows, cwd, flags.has('--all')) > 0 ? 1 : 0;
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {

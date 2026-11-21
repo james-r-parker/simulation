@@ -2,9 +2,10 @@ import { spawn, spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 import { classify, countByClass, parseWorktreeList } from '../scripts/lib/worktree-gc.mjs';
+import { listWorktrees, main as gcMain, processesIn } from '../scripts/lib/worktree-gc-main.mjs';
 
 const clean = {
     path: '/w/a',
@@ -100,6 +101,7 @@ if [[ -f "$file" ]]; then cat "$file"; else echo "[]"; fi
 
 let dir = '';
 let main = '';
+/** @type {Record<string, string | undefined>} */
 let env = {};
 /** @type {import('node:child_process').ChildProcess[]} */
 let children = [];
@@ -185,6 +187,7 @@ beforeEach(() => {
     children = [];
 });
 afterEach(() => {
+    vi.unstubAllEnvs();
     for (const child of children) {
         child.kill();
     }
@@ -296,5 +299,85 @@ describe('worktree-gc.sh', { timeout: TIMEOUT }, () => {
     it('rejects an unknown argument and a directory outside a repository', () => {
         expect(gc(['--force']).status).toBe(2);
         expect(gc(['--list'], { cwd: tmpdir(), env: { GIT_CEILING_DIRECTORIES: tmpdir() } }).status).toBe(1);
+    });
+});
+
+describe('worktree-gc in process', { timeout: TIMEOUT }, () => {
+    /**
+     * Runs `main` here with the stub gh first on PATH.
+     * @param {string[]} args main's arguments
+     * @param {string} [cwd] the directory it runs in
+     * @returns {{status: number, out: string, err: string}} the exit code and what it printed
+     */
+    function runMain(args, cwd = main) {
+        vi.stubEnv('PATH', String(env.PATH));
+        vi.stubEnv('GH_DIR', join(dir, 'gh'));
+        const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const status = gcMain(args, cwd);
+        const out = log.mock.calls.flat().join('\n');
+        const err = error.mock.calls.flat().join('\n');
+        log.mockRestore();
+        error.mockRestore();
+        return { status, out, err };
+    }
+
+    /** @param {string} script the body of a replacement gh */
+    function stubGh(script) {
+        writeFileSync(join(dir, 'bin', 'gh'), `#!/usr/bin/env bash\n${script}\n`);
+    }
+
+    it('lists as text and as json, and removes the safe worktree', () => {
+        const safe = addWorktree('done', true);
+        addWorktree('open', false);
+        const listed = runMain(['--list']);
+        expect(listed.status).toBe(0);
+        expect(listed.out).toMatch(/^safe +.*\/done +feat\/done/m);
+        expect(listed.out).toContain('safe=1 dirty=0 unmerged=1 live=1 gone=0');
+        expect(JSON.parse(runMain(['--list', '--json']).out).counts.safe).toBe(1);
+        const removed = runMain([]);
+        expect(removed.status).toBe(0);
+        expect(removed.out).toContain(`removed ${safe}`);
+        expect(existsSync(safe)).toBe(false);
+    });
+
+    it('exits 1 and keeps the worktree when git refuses to remove a safe one', () => {
+        const racy = addWorktree('racy', true);
+        const real = join(dir, 'gh', 'feat_racy.json');
+        stubGh(`git worktree lock "$PWD"; cat "${real}"`);
+        const out = runMain([]);
+        expect(out.status).toBe(1);
+        expect(out.err).toContain(`kept ${racy}`);
+        expect(existsSync(racy)).toBe(true);
+    });
+
+    it('classes a worktree unmerged when gh prints something that is not json', () => {
+        addWorktree('done', true);
+        stubGh('echo "not json"');
+        const rows = listWorktrees(main) ?? [];
+        expect(rows.find((r) => r.path.endsWith('/done'))?.cls).toBe('unmerged');
+    });
+
+    it('classes a worktree whose directory is gone', () => {
+        const path = addWorktree('vanished', true);
+        rmSync(path, { recursive: true });
+        const rows = listWorktrees(main) ?? [];
+        expect(rows.find((r) => r.path.endsWith('/vanished'))).toMatchObject({ cls: 'gone', outside: false });
+    });
+
+    it('reports usage, and no repository', () => {
+        expect(runMain(['--force']).status).toBe(2);
+        vi.stubEnv('GIT_CEILING_DIRECTORIES', tmpdir());
+        expect(runMain(['--list'], tmpdir()).err).toContain('not inside a git repository');
+    });
+
+    it('finds the processes whose working directory is inside a directory', () => {
+        const path = addWorktree('busy', true);
+        expect(processesIn(path)).toEqual([]);
+        const child = spawn('sleep', ['60'], { cwd: path, stdio: 'ignore' });
+        children.push(child);
+        expect(processesIn(path)).toContain(child.pid);
+        expect(processesIn(`${path}${'/'}`)).toContain(child.pid);
+        expect(processesIn(join(dir, 'nowhere'))).toEqual([]);
     });
 });

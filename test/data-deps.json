@@ -468,6 +468,7 @@
         "docs/designs/README.md",
         "docs/designs/metric-noise.md",
         "evals/experiments.json",
+        "evals/train-screens/results",
         "scripts/state.mjs",
         "test"
     ],

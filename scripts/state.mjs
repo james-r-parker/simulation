@@ -108,9 +108,9 @@ export function gatherState(root, options = {}) {
  * @param {string[]} argv arguments after the script name
  * @returns {number} the exit code
  */
-export function main(argv) {
+export function main(argv, cwd = process.cwd()) {
     const rootAt = argv.indexOf('--root');
-    const root = rootAt >= 0 ? argv[rootAt + 1] : process.cwd();
+    const root = rootAt >= 0 ? argv[rootAt + 1] : cwd;
     const unknown = argv.filter((a, i) => !['--json', '--root'].includes(a) && argv[i - 1] !== '--root');
     if (unknown.length > 0 || (rootAt >= 0 && root === undefined)) {
         console.error('usage: npm run state [-- --json] [-- --root <dir>]');
