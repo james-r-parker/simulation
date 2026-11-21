@@ -272,7 +272,7 @@ Edit `wasm/src`, run `scripts/build-wasm.sh`, then `flock /tmp/claude-1000/cpu.l
 
 ### Score genomes on the brain-only reflex cases
 
-`npm run reflex -- --champions <dir>` or `--archive <file>` or `--policy <name>` (`--count <n>` elites for `--policy` (8), `--cases a,b` (default all six), `--seed <n>` (1), `--trials <n>` (16), `--config <file.json>`, `--level debug` (a record per failed trial), `--json`, `--out <path>`, `--workers <n>`; prints each genome's pass share and edge per case, its score, edge and first-row share, then each case's bars (random brains, constant brains, reference) and whether it is valid; a detector and filter, never fitness; logs to `.sim/logs/reflex-<seed>x<trials>.jsonl`)
+`npm run reflex -- --champions <dir>` or `--archive <file>` or `--policy <name>` (`--count <n>` elites for `--policy` (8), `--cases a,b` (default all), `--role <spec>` (the cases of one specialisation; with `--cases`, their intersection), `--seed <n>` (1), `--trials <n>` (16), `--config <file.json>`, `--level debug` (a record per failed trial), `--json`, `--out <path>`, `--workers <n>`; prints each genome's pass share and edge per case, its score, edge and first-row share, then each case's bars (random brains, constant brains, reference) and whether it is valid (`--json` adds `barSources`: where each threshold comes from, a role-budget row or a hand-set number, with the row's status); a detector and filter, never fitness; logs to `.sim/logs/reflex-<seed>x<trials>.jsonl`)
 
 ### Run the reflex validation study
 
