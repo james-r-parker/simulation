@@ -4,6 +4,7 @@
 import { appLog } from './app-log.js';
 import { followSubject, updateCamera } from './camera.js';
 import { createFrameState, enterFrame, frameSubject, handoffFrame, settleFrame } from './follow-frame.js';
+import { cancelHandoffMove, createHandoffMove, stepHandoffMove } from './follow-move.js';
 import { chooseHandoff, holdMsFor, RELATION, RELATION_CAPTIONS, RELATION_CAPTION_MS } from './follow-handoff.js';
 import { interestOf, MOVEMENT_SCORE, pickFollowAgent } from './follow-target.js';
 import { findAgent } from './renderer/overlays.js';
@@ -43,6 +44,7 @@ export function frameFollow(camera) {
  * @property {{id: number, relation: string}} choice scratch for `chooseHandoff`
  * @property {{from: number, pick: FollowState['context']}} handoff scratch: the subject that left and the pick's context
  * @property {import('./follow-frame.js').FrameState} frame the look-ahead, pair and zoom state
+ * @property {import('./follow-move.js').HandoffMove} handoffMove the calm move to a new subject after a handoff
  * @property {{dtMs: number, holdMs: number, nowMs: number, paused: boolean,
  *   player: import('./renderer/effects-player.js').EffectsPlayer | null}} frameAt scratch for `frameSubject`
  * @property {number} quietMs unpaused ms the subject has gone with no event above the movement score
@@ -60,6 +62,7 @@ function report(f, reason, toId) {
     if (toId !== 0) {
         (f.observedId === 0 ? enterFrame : handoffFrame)(f.frame);
     }
+    cancelHandoffMove(f.handoffMove);
     f.observedId = toId;
     f.heldMs = 0;
     f.quietMs = 0;
@@ -125,6 +128,7 @@ function switchTo(f, to, how) {
     }
     report(f, to === 0 ? 'empty' : how.reason, to);
     if (to !== 0) {
+        f.handoffMove.pending = true;
         (f.deps.log ?? appLog)('info', 'FollowHandoff', { from, to, relation: how.relation });
         f.captionText = RELATION_CAPTIONS[/** @type {keyof typeof RELATION_CAPTIONS} */ (how.relation)] ?? '';
         f.captionUntilMs = f.nowMs + RELATION_CAPTION_MS;
@@ -225,7 +229,10 @@ function stepFollow(f, at) {
         view.nowMs = at.nowMs;
         view.paused = at.paused;
         view.player = f.deps.getPlayer();
-        followSubject(camera, frameSubject(f.frame, agents, i, view), at.dtMs);
+        const subject = frameSubject(f.frame, agents, i, view);
+        if (!stepHandoffMove(f.handoffMove, camera, subject, at.paused ? 0 : at.dtMs)) {
+            followSubject(camera, subject, at.dtMs);
+        }
         settleFrame(f.frame);
     } else {
         camera.following = state.followId !== 0;
@@ -255,6 +262,7 @@ export function createFollowController(deps) {
         choice: { id: 0, relation: RELATION.PICK },
         handoff: { from: 0, pick: context },
         frame: createFrameState(deps.camera),
+        handoffMove: createHandoffMove(),
         frameAt: { dtMs: 0, holdMs: 0, nowMs: 0, paused: false, player: null },
         captionText: '',
         captionUntilMs: 0,

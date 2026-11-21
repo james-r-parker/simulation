@@ -172,17 +172,18 @@ export function pairZoom(c, s) {
 }
 
 /**
- * Aims the view at a followed body: ahead of it by its velocity times `LOOK_AHEAD_S`, at most `LOOK_AHEAD_CAP` of the
+ * Where a follow aims the view: ahead of the body by its velocity times `LOOK_AHEAD_S`, at most `LOOK_AHEAD_CAP` of the
  * shorter side; at the midpoint of a pursuit pair, whose zoom keeps both inside the middle `PAIR_SHARE` of the view.
+ * The zoom is the subject's wanted zoom (limited by the pair), or the camera's target zoom when it wants none.
  * @param {CameraController} c the controller
  * @param {FollowSubject} s the subject
- * @param {number} dtMs the frame time
- * @returns {void}
+ * @param {{x: number, y: number, zoom: number}} out receives the aim
+ * @returns {{x: number, y: number, zoom: number}} `out`
  */
-export function followSubject(c, s, dtMs) {
+export function followAim(c, s, out) {
     if (s.pair) {
-        c.targetX = (s.x + s.px) / 2;
-        c.targetY = (s.y + s.py) / 2;
+        out.x = (s.x + s.px) / 2;
+        out.y = (s.y + s.py) / 2;
     } else {
         let lx = s.vx * LOOK_AHEAD_S;
         let ly = s.vy * LOOK_AHEAD_S;
@@ -192,11 +193,28 @@ export function followSubject(c, s, dtMs) {
             lx *= cap / length;
             ly *= cap / length;
         }
-        c.targetX = s.x + lx;
-        c.targetY = s.y + ly;
+        out.x = s.x + lx;
+        out.y = s.y + ly;
     }
+    out.zoom = s.zoom > 0 ? (s.pair ? Math.min(s.zoom, pairZoom(c, s)) : s.zoom) : c.targetZoom;
+    return out;
+}
+
+const AIM = { x: 0, y: 0, zoom: 0 };
+
+/**
+ * Aims the view at a followed body (`followAim`) and eases towards it.
+ * @param {CameraController} c the controller
+ * @param {FollowSubject} s the subject
+ * @param {number} dtMs the frame time
+ * @returns {void}
+ */
+export function followSubject(c, s, dtMs) {
+    const aim = followAim(c, s, AIM);
+    c.targetX = aim.x;
+    c.targetY = aim.y;
     if (s.zoom > 0) {
-        c.targetZoom = s.pair ? Math.min(s.zoom, pairZoom(c, s)) : s.zoom;
+        c.targetZoom = aim.zoom;
     }
     c.following = true;
     limits(c);
