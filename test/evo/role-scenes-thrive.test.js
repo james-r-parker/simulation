@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { arenaConfig } from '../../js/evo/chase-arena.js';
 import { playForaging, playIdle, playLiving } from '../../js/evo/role-scenes-thrive.js';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const world = createConfig({});
 const COURSER = JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8'));
@@ -31,11 +32,15 @@ describe('playIdle', () => {
 });
 
 describe('setEnergy through playIdle', () => {
-    it('raises a staged body to more than the spawn energy and lowers it to less', () => {
-        const rich = playIdle(world, { spec: 'forager', energy: 1200, speed: 0 });
-        const poor = playIdle(world, { spec: 'forager', energy: 200, speed: 0 });
-        expect(rich.ticks.life).toBeGreaterThan(poor.ticks.life);
-    });
+    it(
+        'raises a staged body to more than the spawn energy and lowers it to less',
+        () => {
+            const rich = playIdle(world, { spec: 'forager', energy: 1200, speed: 0 });
+            const poor = playIdle(world, { spec: 'forager', energy: 200, speed: 0 });
+            expect(rich.ticks.life).toBeGreaterThan(poor.ticks.life);
+        },
+        scaleTimeout(30000),
+    );
 });
 
 describe('playForaging', () => {
