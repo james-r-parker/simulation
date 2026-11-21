@@ -6,6 +6,7 @@ import { laneTable } from '../../js/sim/body-lanes.js';
 import { TRAITS, traitRatio } from '../../js/sim/body-traits.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
+import { applyCosts } from '../../js/sim/energy.js';
 import { actAll } from '../../js/sim/physics.js';
 import { applyGenes } from '../../js/sim/traits.js';
 import { setGene, setSpan, traitWorld } from './helpers/trait-world.js';
@@ -20,6 +21,7 @@ const COSTS = [
     ['sprintStoreHeat', 'sprintStore', 0.3, 'sprintHeat', 1],
     ['fatSlow', 'fat', 0.3, 'fatSlowShare', 1],
     ['burnThrust', 'burn', 0.2, 'maxThrust', 1],
+    ['smokeSightRange', 'smokeSight', 0.3, 'visionRange', -1],
 ];
 
 /**
@@ -83,5 +85,44 @@ describe('the readers see a cost', () => {
         const priced = act({ sizeTurn: 1, burnThrust: 1 });
         expect(priced.turn).toBeLessThan(free.turn);
         expect(priced.thrust).toBeGreaterThan(free.thrust);
+    });
+});
+
+describe('the standing loss of hearing and nose (body-genes T46)', () => {
+    /**
+     * @param {string} name the trait, `hearing` or `nose`
+     * @param {number} gene its planted gene
+     * @param {Record<string, number>} over config overrides
+     * @returns {number} the energy a 100-energy slot has lost after one cost tick
+     */
+    const lost = (name, gene, over) => {
+        const { world, slot } = traitWorld();
+        const config = createConfig({ ...world.config, ...over });
+        const w = /** @type {Record<string, any>} */ ({ ...world, config, laneBases: laneTable(config) });
+        setSpan(w, slot, trait(name).index, 0.3);
+        setGene(w, slot, trait(name).index, gene);
+        applyGenes(w, slot);
+        w.alive[slot] = 1;
+        w.energy[slot] = 100;
+        w.size[slot] = 20;
+        applyCosts(/** @type {any} */ (w));
+        return 100 - w.energy[slot];
+    };
+
+    describe.each([
+        ['hearingCost', 'hearing'],
+        ['noseCost', 'nose'],
+    ])('%s', (key, name) => {
+        it('is 0 by default, so a longer ear or nose costs nothing extra', () => {
+            expect(createConfig()[key]).toBe(0);
+            expect(lost(name, 40, {})).toBe(lost(name, 0, {}));
+        });
+
+        it('charges passiveLoss x key x (ratio - 1) above ratio 1 only', () => {
+            const config = createConfig();
+            const extra = lost(name, 40, { [key]: 2 }) - lost(name, 0, { [key]: 2 });
+            expect(extra).toBeCloseTo(config.passiveLoss * 2 * 0.3 * Math.tanh(40), 9);
+            expect(lost(name, -40, { [key]: 2 })).toBe(lost(name, 0, { [key]: 2 }));
+        });
     });
 });

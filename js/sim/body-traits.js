@@ -151,7 +151,10 @@ const ENTRIES = Object.freeze([
         ],
         'scent and refuge sense reach',
     ),
-    entry(11, 'smokeSight', [['smokeSight', 1]], 'the share of a ray that passes through smoke'),
+    withCosts(
+        [['visionRange', 'smokeSightRange', -1]],
+        entry(11, 'smokeSight', [['smokeSight', 1]], 'the share of a ray that passes through smoke'),
+    ),
     entry(
         12,
         'eyesOrEars',

@@ -46,6 +46,31 @@ export function visionRatioOf(world, slot) {
     return world.lanes.visionRange[slot] / world.laneBases[world.spec[slot] * LANE_COUNT + VISION_LANE];
 }
 
+/** The `hearing` lane's place in `LANES`. */
+const HEARING_LANE = LANES.findIndex((lane) => lane.name === 'hearing');
+
+/** The `antennaReach` lane's place in `LANES`: the `nose` trait's scent reach. */
+const NOSE_LANE = LANES.findIndex((lane) => lane.name === 'antennaReach');
+
+/**
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the alive slot
+ * @returns {number} the slot's `hearing` lane over its specialisation's base: above 1 for a body that hears further
+ */
+export function hearingRatioOf(world, slot) {
+    return world.lanes.hearing[slot] / world.laneBases[world.spec[slot] * LANE_COUNT + HEARING_LANE];
+}
+
+/**
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the alive slot
+ * @returns {number} the slot's scent reach (`antennaReach` lane, which the `nose` trait scales) over its
+ *   specialisation's base: above 1 for a body with a longer nose
+ */
+export function noseRatioOf(world, slot) {
+    return world.lanes.antennaReach[slot] / world.laneBases[world.spec[slot] * LANE_COUNT + NOSE_LANE];
+}
+
 /**
  * @param {Record<string, any>} world the world
  * @param {number} slot the slot
