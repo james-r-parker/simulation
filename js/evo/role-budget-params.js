@@ -2,9 +2,12 @@
 // formulas read, resolved from the lane bases of body-genes.md (`laneBases`) so it follows whatever the config and the
 // spec's `body` overrides say. Plain numbers only; no function, no world, no RNG.
 
-import { LANES, laneBases } from '../sim/body-lanes.js';
+import { laneBases } from '../sim/body-lanes.js';
 import { checkTraits, lanesAt } from './role-budget-genes.js';
+import { checkEffects, lanesWithEffects, startWorld } from './role-budget-effects.js';
 import { EFFECT, effectFactor } from '../sim/effects.js';
+
+export { startWorld };
 
 /** The share of its store a body holds at the start of a scene: the arena's `STORE_SHARE` of `chase-body.js`. */
 export const STORE_SHARE = 0.5;
@@ -44,20 +47,6 @@ export const STORE_SHARE = 0.5;
  *   handling and digest windows (one `ateTimer` holds both), the share of the store at which it stops eating, and an item's
  *   energy and radius
  */
-
-/**
- * The one-slot world the temperature effects of `js/sim/effects.js` read: the spec's lane bases as lane arrays of one
- * slot, at the start temperature, so the budget reads the sim's own effect factors (the cold and heat bands on `maxThrust`,
- * the cold and hot ramps on the standing cost).
- * @param {Readonly<Record<string, any>>} config the validated config
- * @param {Record<string, number>} lane the spec's lane bases
- * @returns {import('../sim/world.js').World} the world, as far as those functions read it
- */
-export function startWorld(config, lane) {
-    const lanes = Object.fromEntries(Object.entries(lane).map(([name, value]) => [name, [value]]));
-    const laneArrays = LANES.map((l) => lanes[l.name]);
-    return /** @type {any} */ ({ config, lanes, laneArrays, temperature: [config.temperatureStart] });
-}
 
 /**
  * @param {Readonly<Record<string, any>>} config the validated config
@@ -139,15 +128,18 @@ function costOf(config, lane, { entry, burn }) {
  * @param {string} specName a specialisation name
  * @param {Record<string, number>} [traits] a ratio per trait, composed as `applyTraits` composes it (a trait left out is at
  *   1; `heatBand` is a shift in degrees); with every ratio 1 the lanes are `laneBases`
- * @param {{age?: 'adult' | 'juvenile', storeShare?: number}} [options] the age and the store share the body starts at
+ * @param {{age?: 'adult' | 'juvenile', storeShare?: number, effects?: Record<string, number>}} [options] the age and the
+ *   store share the body starts at, and `effects`: a level per effect that stores stacks (`rallied: 1`), composed as `liveOf`
+ *   composes it (docs/designs/status-effects.md); with every level 0, or none, the record is the one of today
  * @returns {Readonly<RoleParams>} the record
- * @throws {Error} on an unknown specialisation or a name in `traits` that is not a trait
+ * @throws {Error} on an unknown specialisation, a name in `traits` that is not a trait, or an effect that takes no level
  */
 export function roleParams(config, specName, traits = {}, options = {}) {
     checkTraits(config, specName, traits);
-    const { age = 'adult', storeShare = STORE_SHARE } = options;
+    const { age = 'adult', storeShare = STORE_SHARE, effects } = options;
+    checkEffects(effects ?? {});
     const entry = config.specialisations[specName];
-    const lane = lanesAt(config, laneBases(config, specName), traits);
+    const lane = lanesWithEffects(config, lanesAt(config, laneBases(config, specName), traits), effects);
     const energy = storeShare * lane.maxEnergy;
     const size = Math.max(lane.minSize, lane.baseSize + energy / lane.energyToSize);
     const fat = 1 - (lane.fatSlowShare * energy) / lane.maxEnergy;
