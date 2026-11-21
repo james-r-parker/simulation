@@ -185,7 +185,7 @@ export function tickCost(world, slot) {
             ? liveOf(world, slot, SPRINT_COST_LANE) * world.sprintFactor[slot]
             : 0;
     cost += sprint;
-    const upkeep = c.specMutationRate > 0 && sp.canHunt ? world.lanes.huntUpkeep[slot] : 0;
+    const upkeep = c.specMutationRate > 0 ? world.lanes.huntUpkeep[slot] : 0;
     cost += upkeep;
     if (sp.canHunt) {
         // The hunter ledger (hunter-ledger.js): standing is the passive terms and the upkeep, movement the rest of the base.
