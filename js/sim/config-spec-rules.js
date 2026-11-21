@@ -154,10 +154,18 @@ const defaultMenu = () =>
     Object.fromEntries(TRAITS.map((trait) => [trait.name, READ_TODAY.includes(trait.name) ? EXISTING_SPAN : 0]));
 
 /**
- * The default entry of every specialisation, in `SPECIALISATION_KEYS` order (frozen with `DEFAULTS`). `body` is empty
- * for all: a lane name to a multiplier of that lane for the specialisation (`bodyProblem`, body-lanes.js). `genes` is
- * the gene menu: a trait name to its span (`geneMenuProblem`, body-traits.js).
+ * The default entry of every specialisation, in `SPECIALISATION_KEYS` order (frozen with `DEFAULTS`). `body` is a lane
+ * name to a multiplier of that lane for the specialisation (`bodyProblem`, body-lanes.js): empty for the hunter, and
+ * for a body that cannot hunt the three hunter-only costs at 0 (the `canHunt` tests they replace: a lane at 0 is free,
+ * and no such body reaches them). `genes` is the gene menu: a trait name to its span (`geneMenuProblem`, body-traits.js).
  */
 export const SPECIALISATION_DEFAULTS = Object.fromEntries(
-    Object.entries(FIELD_DEFAULTS).map(([name, fields]) => [name, { ...fields, body: {}, genes: defaultMenu() }]),
+    Object.entries(FIELD_DEFAULTS).map(([name, fields]) => [
+        name,
+        {
+            ...fields,
+            body: fields.canHunt ? {} : { huntUpkeep: 0, predatorRestTicks: 0, strikeMissCost: 0 },
+            genes: defaultMenu(),
+        },
+    ]),
 );

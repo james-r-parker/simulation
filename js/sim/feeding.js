@@ -231,7 +231,7 @@ function applyBite(world, biter, victim) {
     noteFatalBiteObservation(world, biter, victim, fatal);
     const moved = world.transferGained + settleKill(world, biter, victim, fatal);
     const restTicks = world.lanes.predatorRestTicks[biter];
-    if (fatal && restTicks > 0 && specParams(config, world.spec[biter]).canHunt) {
+    if (fatal && restTicks > 0) {
         world.restTimer[biter] = restTicks;
     }
     gainTemperature(world, biter, (world.lanes.temperatureGainEat[biter] * moved) / config.foodEnergy);
@@ -324,7 +324,7 @@ function noteJaws(world, hunter, body) {
 }
 
 /**
- * eat-choice G4: a hunter holding `BITE` above 0 with no body in its jaws (`noteJaws`) loses `strikeMissCost` this tick,
+ * eat-choice G4: a body holding `BITE` above 0 with no body in its jaws (`noteJaws`) loses `strikeMissCost` this tick,
  * booked as a bite cost.
  * @param {Record<string, any>} world the world
  * @returns {void}
@@ -333,12 +333,7 @@ function chargeStrikeMisses(world) {
     const { alive, outputs, jawsStamp, lanes } = world;
     const stamp = world.tick + 1;
     for (let slot = 0; slot < alive.length; slot++) {
-        if (
-            alive[slot] === 1 &&
-            world.huntBySpec[world.spec[slot]] === 1 &&
-            outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 &&
-            jawsStamp[slot] !== stamp
-        ) {
+        if (alive[slot] === 1 && outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 && jawsStamp[slot] !== stamp) {
             world.ledgerBiteCost[slot] += removeEnergy(world, slot, lanes.strikeMissCost[slot], LOSS_CAUSE.COST);
         }
     }

@@ -174,7 +174,7 @@ export function roleParams(config, specName, traits = {}, options = {}) {
         ...combatOf(lane),
         cost: costOf(config, lane, { entry, burn }),
         contact: { restitution: config.restitution },
-        ...signalsOf(config, lane, specName),
+        ...signalsOf(config, lane),
     });
 }
 
@@ -243,23 +243,16 @@ function lifeNumbers(config, lane) {
 
 /**
  * @param {Readonly<Record<string, any>>} config the validated config
- * @param {Record<string, number>} lane the spec's lane bases
- * @param {string} specName the specialisation's name
- * @returns {Pick<RoleParams, 'call' | 'smoke' | 'repel' | 'heat' | 'repro' | 'feed'>} the call, smoke, repel, heat, life and feeding numbers; a scout's
- *   call is scaled by `scoutCallRadiusMultiplier` and `scoutAlarmCostMultiplier` (`callerRadius` and the alarm of
- *   js/sim/calls.js) until body-genes.md Phase 5 turns them into the scout's `body` entries
+ * @param {Record<string, number>} lane the spec's lane bases (a scout's call radius and alarm cost are its body entries, already in them)
+ * @returns {Pick<RoleParams, 'call' | 'smoke' | 'repel' | 'heat' | 'repro' | 'feed'>} the call numbers of the lanes, the smoke, repel, heat, life and feeding numbers
  */
-function signalsOf(config, lane, specName) {
-    const scout =
-        specName === 'scout'
-            ? { radius: config.scoutCallRadiusMultiplier, cost: config.scoutAlarmCostMultiplier }
-            : { radius: 1, cost: 1 };
+function signalsOf(config, lane) {
     return {
         call: {
-            radius: lane.callRadius * scout.radius,
+            radius: lane.callRadius,
             ticks: lane.callTicks,
             threshold: lane.alarmThreshold,
-            cost: lane.alarmCost * scout.cost,
+            cost: lane.alarmCost,
         },
         smoke: {
             radius: lane.smokeRadius,
