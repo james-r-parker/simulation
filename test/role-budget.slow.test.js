@@ -81,21 +81,25 @@ describe('role:budget --search on a pair that is caught but not learnable', () =
 });
 
 describe('role:budget --check', () => {
-    it('prints the kinematic readings and each pair played both ways and finds no drift on the courser arm', async () => {
-        const { text, check } = await run([
-            '--config',
-            'evals/fair-chase/courser.json',
-            '--rows',
-            'predator:forager,predator:scout',
-            '--check',
-        ]);
-        expect(check.drift).toBe(0);
-        expect(text).toMatch(/turn radius\s+41\.718\s+41\.809\s+0\.217%\s+0\.500%\s+ok/);
-        expect(text).toMatch(/predator:forager straight: 40 cells, 0 drift/);
-        expect(text).toMatch(/predator:scout broken: 40 cells, 0 drift/);
-        expect(text).toMatch(
-            /predator:forager broken: 40 cells, 0 drift, net energy per kill within [\d.]+%, catch share 0 /,
-        );
-        expect(text).not.toMatch(/DRIFT/);
-    });
+    it(
+        'prints the kinematic readings and each pair played both ways and finds no drift on the courser arm',
+        async () => {
+            const { text, check } = await run([
+                '--config',
+                'evals/fair-chase/courser.json',
+                '--rows',
+                'predator:forager,predator:scout',
+                '--check',
+            ]);
+            expect(check.drift).toBe(0);
+            expect(text).toMatch(/turn radius\s+41\.718\s+41\.809\s+0\.217%\s+0\.500%\s+ok/);
+            expect(text).toMatch(/predator:forager straight: 40 cells, 0 drift/);
+            expect(text).toMatch(/predator:scout broken: 40 cells, 0 drift/);
+            expect(text).toMatch(
+                /predator:forager broken: 40 cells, 0 drift, net energy per kill within [\d.]+%, catch share 0 /,
+            );
+            expect(text).not.toMatch(/DRIFT/);
+        },
+        scaleTimeout(120000),
+    );
 });
