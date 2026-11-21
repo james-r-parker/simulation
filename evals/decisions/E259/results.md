@@ -40,4 +40,11 @@ Rows: {"-":315,"unverified":40,"no-difference":19,"worse":2,"better":1} (`-` is 
 | eval.p90_fitness.defender              | 4139   | 4722   | better  |
 | eval.spec_effective                    | 3.555  | 3.014  | worse   |
 
-The two `worse` rows (`eval.hunter_conversion_matched.under1k`, `eval.spec_effective`) are not keep-rule guards. The step is slower by the thirteen inputs; see the PR body for the bench.
+The two `worse` rows (`eval.hunter_conversion_matched.under1k`, `eval.spec_effective`) are not keep-rule guards; they are reported as they read.
+
+## Provenance and confounds
+
+- The prediction text was written before the first seed finished, but it was committed together with these results, because the conventions hook refuses a compare record that has no verdicts.
+- BASE `83950c64` to HEAD covers all of body-genes Phase 1, plus fair-chase T7a (built in the same chunk by plan) and the herd centroid fix (PR 589). The read is therefore "no harm for those together", not for the layout change alone.
+- The prediction said the step would be slower by the thirteen inputs. It is not: step@500 1.8918 to 1.8702 ms, sense 0.50 to 0.47, brain 0.49 to 0.43 (the baseline predates several kernel changes). That part of the prediction missed.
+- Unverdicted movements, reported and not explained: `eval.population_mean` 190 to 232 and `eval.predator_share_cv` 1.71 to 2.22. Neither has a verdict at 16 seeds.

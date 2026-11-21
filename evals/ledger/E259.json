@@ -28,6 +28,6 @@
     "eval.predator_share_cv": "-"
   },
   "effect": "no-difference",
-  "note": "Prediction held: no keep-rule guard reads WORSE on 16 matched seeds (alive no-harm with 1 seed harmed and 6 recovered, under80 4/16 to 1/16 no-harm, held no-harm; the hunter catches guard needs 64 seeds and is unchecked). Headline metrics are within noise. Two non-guard metrics read worse: eval.hunter_conversion_matched.under1k and eval.spec_effective; one reads better (eval.p90_fitness.defender). Table in evals/decisions/E259/results.md.",
+  "note": "Provenance: the prediction was written before the first seed finished but committed with the results, since the conventions hook refuses a record without verdicts. Confound: BASE 83950c64 to HEAD covers all of Phase 1 plus fair-chase T7a and the herd centroid fix (PR 589), so the read is no harm for those together, not the layout alone. No keep-rule guard reads WORSE on 16 matched seeds (alive no-harm, 1 harmed and 6 recovered; under80 4/16 to 1/16 no-harm; held no-harm; the hunter catches guard needs 64 seeds and is unchecked). The step is not slower (step@500 1.8918 to 1.8702 ms, sense 0.50 to 0.47, brain 0.49 to 0.43): that part of the prediction missed. Unverdicted movements: population_mean 190 to 232, predator_share_cv 1.71 to 2.22. Non-guard verdicts: eval.hunter_conversion_matched.under1k and eval.spec_effective read worse; eval.p90_fitness.defender reads better. Table in evals/decisions/E259/results.md.",
   "reports": ["evals/decisions/E259/results.md"]
 }
