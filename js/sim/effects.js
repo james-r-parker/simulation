@@ -10,7 +10,7 @@ import { EFFECTS } from './effect-list.js';
 import { LANE_ID, LEVEL, NUMBER, REF, RESULT, SHARE, compileRef, numberOf } from './effect-refs.js';
 import { raiseEffect } from './effect-raise.js';
 import { ruleFactor } from './effect-factor.js';
-import { GROUP, compileGroups, liveIn, readGroup } from './effect-group.js';
+import { GROUP, compileGroups, foldGroup, liveIn } from './effect-group.js';
 import { GATE, GATE_COUNT, compileGates, compileRules, compileThen } from './effect-compile.js';
 
 export { GATE, GATE_COUNT, GROUP, LANE_ID, RESULT, compileRef, liveIn, numberOf };
@@ -492,22 +492,21 @@ export function fadeEffects(world) {
 }
 
 /**
- * Reads, once, every effect level the `maxTurn` and `maxThrust` rules name for the slot (`GROUP.MOTION`), for `liveIn`.
+ * Folds the `maxTurn` and `maxThrust` lanes of the slot (`GROUP.MOTION`), each effect level read once, for `liveIn`.
  * @param {any} world the world
  * @param {number} slot the agent slot
  * @returns {void}
  */
 export function motionFactors(world, slot) {
-    readGroup(SYSTEM.dispatch, world, slot, GROUP.MOTION);
+    foldGroup(SYSTEM.dispatch, world, slot, GROUP.MOTION);
 }
 
 /**
- * Reads, once, every effect level the rules of the six cost lanes of `tickCost` name for the slot (`GROUP.COST`), for
- * `liveIn`.
+ * Folds the six cost lanes of `tickCost` for the slot (`GROUP.COST`), each effect level read once, for `liveIn`.
  * @param {any} world the world
  * @param {number} slot the agent slot
  * @returns {void}
  */
 export function costFactors(world, slot) {
-    readGroup(SYSTEM.dispatch, world, slot, GROUP.COST);
+    foldGroup(SYSTEM.dispatch, world, slot, GROUP.COST);
 }
