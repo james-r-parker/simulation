@@ -147,9 +147,15 @@ describe('caseNamesFor', () => {
             'flee-on-alarm',
             'clear-the-herd',
         ]);
-        expect(caseNamesFor(1)).toEqual(['approach-prey', 'bite-discrimination', 'sprint-on-prey', 'hold-the-bite']);
-        expect(caseNamesFor(2)).toEqual([]);
-        expect(caseNamesFor(3)).toEqual(['call-on-threat']);
-        expect(caseNamesFor(4)).toEqual(['turn-to-alarm']);
+        expect(caseNamesFor(1)).toEqual([
+            'approach-prey',
+            'bite-discrimination',
+            'sprint-on-prey',
+            'hold-the-bite',
+            'clear-the-herd:predator',
+        ]);
+        expect(caseNamesFor(2)).toEqual(['flee-on-alarm:reproducer', 'clear-the-herd:reproducer']);
+        expect(caseNamesFor(3)).toEqual(['call-on-threat', 'clear-the-herd:scout']);
+        expect(caseNamesFor(4)).toEqual(['turn-to-alarm', 'clear-the-herd:defender']);
     });
 });

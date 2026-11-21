@@ -1,6 +1,6 @@
 # Ambient display
 
-**Status:** In progress - Phases 3 to 6 are built except the T17 and T22 reviews; Phase 7 (a calm camera) is built except T40 (`perf:browser`, the OLED walk); open: T5 review (Phase 7 is in); T6, T10b, T11 and T22 need the real GPU with the user watching.
+**Status:** In progress - Phases 1, 3, 5 and 6 are built; Phase 7 (a calm camera) is built except T40 (`perf:browser` at 240 Hz with `?tv=1`, the OLED walk); open: T6, T10b, T11 and T22 need the real GPU with the user watching, and T40 owes a 240 Hz `tv=1` run.
 **Validated:** 3c6f1225 (2026-11-21)
 **Priority:** 5 - App lead. The app is the product and is watched on a side screen all day; an idle screen shows a static camera today, and the scene reel (Phase 6) is how a behaviour change is reviewed; app-only work on its own lane
 **Depends on:** [crisp-renderer.md](crisp-renderer.md), [continuous-follow.md](continuous-follow.md), [worker-and-renderer.md](worker-and-renderer.md), [pack-worker.md](pack-worker.md)
@@ -41,7 +41,7 @@ Own work first: Phases 1 to 7 in order.
 TV mode is the unattended state. It starts with `?tv=1`, with the `T` key, and after 5 minutes without input (`createIdleTracker` in `js/app/idle.js`). Any input leaves it and restores the camera, the speed and the HUD.
 
 - In TV mode the director (`createDirector`) owns the camera: wide, glide, linger and pullback shots chosen from the moment scores of `js/app/director/scoring.js`. [worker-and-renderer.md](worker-and-renderer.md) T30 (the wiring, the caption, the TV border), T52 (`director/pace.js`), T51 (the era card) and T50 (`npm run director:dry`) are built as this doc's first chunk and marked built there.
-- A linger shot on one agent is a follow: the director calls the follow of this doc ("Follow as a story"), so the two never fight over the camera.
+- A linger shot on one agent holds that moment with the director's own spring (`applyShotToCamera` in `director/director.js`); the follow of this doc ("Follow as a story") does not step while the director holds the camera (`js/app/frame-loop.js`), so the two never fight over it.
 - The schedule has a floor and a ceiling: no shot under 30 s (6 s until Phase 7), no shot over 90 s, and a wide shot at least every 10 minutes.
 - A quiet world is paced: `director/pace.js` raises the sim speed while no moment scores above its threshold and restores x1 when one does, so a kill is never watched at x4.
 - Variety: the director keeps the last 20 shot kinds and subjects and scores a repeat down (`director.max_kind_share` in `director:dry`).
@@ -100,6 +100,18 @@ Read on 2026-11-21 with `npm run director:dry -- --seed <n>` (72000 ticks, the l
 
 The new bars are met on all four seeds (from 117 to 142 shots an hour to 42 to 51, and no shot under 30.4 s from its cut to its pullback), and `director.max_kind_share` holds. `director.chase_precision` has no reading: a chase is taken only while the camera is wide and the pursuit is the best moment, and with a wide of 30 to 60 s no run of 20 minutes took one. The four-times-longer run that read it before (`--ticks 288000`) was not repeated here; it is T40's.
 
+Read on 2026-11-21 at `--ticks 288000` (80 simulated minutes, four times the length, the same seeds, the same director; the four seeds run in parallel; T40's `director:dry` part):
+
+| Seed | `director.chase_precision` | Chase shots  | `director.max_kind_share` (bar at most 0.4) | `director.shots_per_hour` (bar 20 to 60) | `director.min_shot_hold_s` (bar at least 30) |
+| ---- | -------------------------- | ------------ | ------------------------------------------- | ---------------------------------------- | -------------------------------------------- |
+| 1    | 1.000                      | 3 (3 held)   | 0.242                                       | 46.5                                     | 30.43                                        |
+| 2    | 1.000                      | 4 (4 held)   | 0.254                                       | 50.3                                     | 30.43                                        |
+| 3    | 1.000                      | 4 (4 held)   | 0.238                                       | 47.3                                     | 30.43                                        |
+| 4    | 1.000                      | 2 (2 held)   | 0.219                                       | 48.0                                     | 30.45                                        |
+| All  | 1.000 pooled               | 13 (13 held) | 0.254 (largest)                             | 46.5 to 50.3                             | 30.43 (shortest)                             |
+
+Every bar is met on every seed, and `director.chase_precision` pooled over the four seeds is 1.000 of 13 chase shots (the rule: at least 0.6 with at least 10 chase shots in total). The calm camera takes a chase at 0.03 to 0.06 of its shots (2 to 4 a seed in 80 minutes, against 3 to 17 before Phase 7), because a chase is taken only while the camera is wide and the wide is now 30 to 60 s; the ones it takes hold. No change to the bar or the wide-only chase rule is proposed: precision is 1.000, and fewer chases is the price of the user's direction (2026-11-21: calm moves and few cuts come first, ahead of catching every chase). A single seed's 2 to 4 chase shots are too few to read alone; only the pool counts.
+
 ## A death that reads
 
 A death has three beats, all on the wall clock, all anchored to the body.
@@ -122,7 +134,7 @@ The `tear` value rides the existing fade lane of a dying row, so the 16-attribut
 ## Follow as a story
 
 - **Hold through the death.** `stepFollow` holds for the death clip's length plus 600 ms, then hands off.
-- **Hand off with a reason.** The next subject is, in order: the killer (when the death was `EATEN`), a living child, the nearest living kin of the same lineage, then `pickFollowAgent`. A caption names the relation for 3 s: "its killer", "its daughter", "its kin".
+- **Hand off with a reason.** The next subject is, in order: the killer (when the death was `EATEN`), a living child, the nearest living kin of the same lineage, then `pickFollowAgent`. A caption names the relation: "its killer", "its daughter", "its kin". It stays up while the calm move to the new subject runs and for 3 s after the move ends.
 - **Hand off calmly.** A handoff the follow makes on its own (after a death, or from boredom) is the calm move of "A calm camera" (`js/app/follow-move.js`): zoom out, pan, zoom in, on the wall clock, aimed each frame at where the follow aims now, and the spring takes over with no error. A viewer's own pick keeps the spring.
 - **Framing.** `followSubject` aims ahead of the body by its velocity times 0.4 s, capped at a fifth of the short side. During a pursuit (`js/app/pursuit.js`) it frames both bodies: the target is their midpoint and the zoom keeps both inside the middle 60% of the view.
 - **Zoom breathes.** Zoom eases toward a target set by state: closer when the subject eats, mates or gives birth, wider with speed and in a pursuit. Manual zoom overrides it until the next handoff.
@@ -189,13 +201,42 @@ The rule: **every change of subject is one eased move, and there are fewer of th
 - **Pace:** a wide shot at x4 would run its move at four times the cap, so `director.js` asks `pace.js` for x1 while any move is in flight and for the quiet speed only once the camera has settled.
 - **Less tight:** the closest frames widen from 1600, 2400 and 3600 world units across to 3600, 4800 and 6000: at most 4 times `homeZoom` (was 9), 1.07 pixels a world unit on a 4K canvas (was 2.4). A blob is still a few tens of pixels on the 4K OLED, and the viewer who wants closer presses `F` or zooms.
 
+### T5 review: Phase 1 against the code after Phase 7
+
+Reviewed on 2026-11-21 against `main` after PR 594. Every Phase 1 row holds in the code, and where Phase 7 changed a Phase 1 number the plan says so.
+
+| Row                                              | Verdict                                                                                                                                                        |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T1 the director wired, caption, TV border        | Held: `driver.js` runs `createDirector` for a frame and says whether it holds the camera; `frame-loop.js` skips the follow step while it does                  |
+| T2 `?tv=1`, `T` key, idle; leave on input        | Held: `tv-mode.js` and `idle.js` unchanged, tests green                                                                                                        |
+| T3 floor, ceiling, wide interval, repeat penalty | Held, floor superseded: `SHOT_CEILING_S` 90 and `WIDE_MAX_GAP_S` 600 stand; `SHOT_FLOOR_S` is 30 (was 6) by Phase 7 T36, as the Director section says          |
+| T4 `director:dry` bars and the `?tv=1` smoke     | Two bars superseded by Phase 7: `director.shots_per_hour` is 20 to 60 (was 60 to 240) and `director.min_shot_hold_s` is new; the 2026-11-21 reading meets both |
+| T4b chase shot found and held                    | Held in code. `director.chase_precision` has no reading since Phase 7 (a chase is taken only while wide); the 288000-tick re-read is T40's                     |
+| Linger "is a follow"                             | Wording wrong since Phase 1, fixed: the linger uses the director's own spring and the follow does not step while the director holds the camera                 |
+
+Real-GPU numbers, `npm run perf:browser` with `?tv=1` on the 240 Hz display, measured on 2026-11-21 **before** Phase 7 (the calm camera, PR 594): 241 Hz, `browser.frame_p95_ms` 4.22, `browser.draw_cpu_p95_ms` 2.23, `browser.gpu_frame_p95_ms` 0.13, 0 long tasks. Each is inside its [crisp-renderer.md](crisp-renderer.md) budget. A later run after Phase 7 read draw CPU p95 1.63 ms, but the display ran at 182 Hz, so its frame numbers are invalid and none is recorded. **Owed:** a 240 Hz `tv=1` run on the calm camera, with T40.
+
+### T17 review: Phase 3 against the calm move
+
+Reviewed on 2026-11-21. Handoffs the follow makes on its own now go through `stepHandoffMove` (`js/app/follow-move.js`), aimed each frame by `followAim`; a viewer's own pick keeps the spring.
+
+| Row                                | Verdict                                                                                                                                                                                                          |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T12 hold, killer, child, kin, pick | Held: `stepFollow` holds the clip plus 600 ms (`HOLD_AFTER_CLIP_MS`) and `chooseHandoff` keeps the order; the move starts after the choice                                                                       |
+| T12 relation caption               | Defect, fixed: the caption ran 3 s from the handoff, but a far move takes over 4 s, so it vanished before the camera arrived. It now lasts until the move ends plus 3 s (`stepFollow`; test in `follow.test.js`) |
+| T13 look-ahead                     | Kept: `followAim` holds `LOOK_AHEAD_S` 0.4 and the 0.2 cap for both the spring and the move; the velocity restarts at a handoff                                                                                  |
+| T13 pair framing                   | Kept: `followAim` aims at the midpoint and limits the zoom with `pairZoom`; the move zooms in to that aim, so a handoff into a pursuit lands framed on both                                                      |
+| T13 state zoom                     | Kept: `frameSubject` still sets the wanted zoom and the move's end zoom is `aim.zoom`; a viewer's zoom leaves `aim.zoom` at the camera target and the move ends there                                            |
+| T14 boredom                        | Kept: `bore` calls `switchTo`, so a boredom handoff is also a calm move, with no caption                                                                                                                         |
+| T15, T16 plate, ring, life line    | Unchanged by Phase 7; the plate fades after 6 s and returns on a change                                                                                                                                          |
+
 ## Phases
 
-### Phase 1 - The director on air
+### Phase 1 - The director on air (built)
 
 **Targets:** browser.frame_p95_ms, browser.draw_cpu_p95_ms
 
-Both stay inside their [crisp-renderer.md](crisp-renderer.md) budgets with the director running. The `director:dry` readings meet the bars above on seeds 1 to 4.
+Both stay inside their [crisp-renderer.md](crisp-renderer.md) budgets with the director running. The `director:dry` readings met the Phase 1 bars on seeds 1 to 4; Phase 7 superseded two of them (see "T5 review" below).
 
 | Chunk | Tasks    | Builder |
 | ----- | -------- | ------- |
@@ -212,7 +253,7 @@ Both stay inside budget at 1000 agents; the phase is judged by the clip.
 | ----- | --------- | ------- |
 | B     | T6 to T11 | Sonnet  |
 
-### Phase 3 - Follow as a story
+### Phase 3 - Follow as a story (built)
 
 **Targets:** none - camera and overlay logic on the main thread under 0.1 ms a frame; judged by the walk
 
@@ -274,6 +315,7 @@ Both stay inside budget (the move is a few arithmetic operations a frame). The `
 | Shots are 20 to 60 an hour, held at least 30 s                                         | The user wants far fewer jumps; a 66 s shortest cycle gives at most about 55 an hour and a quiet world gives fewer                                                     |
 | The bar `director.shots_per_hour` moves from 60 to 240 to 20 to 60                     | The user's direction, not a weakening: the old bar named the cadence that made the user sick                                                                           |
 | The closest frame is 3600 units across (4 times home), not 1600 (9 times)              | A blob is still tens of pixels on 4K; the viewer who wants closer presses `F`                                                                                          |
+| A handoff caption outlasts the calm move by 3 s                                        | A far move takes over 4 s; a 3 s caption from the handoff was gone before the camera arrived (T17)                                                                     |
 | A viewer's own pick keeps the spring                                                   | An input answers at once; only the unattended moves are eased                                                                                                          |
 | The move runs at x1                                                                    | A move at x4 would run at four times its cap; `pace.js` gives x4 back once the camera settles                                                                          |
 
@@ -304,7 +346,7 @@ Both stay inside budget (the move is a few arithmetic operations a frame). The `
 | T3  | (built) Build T52 (`director/pace.js`), T51 (the era card) and T49 (which T51 depends on) of that doc, with the shot floor, ceiling, wide interval and repeat penalty; tests                                                                                                                              | [judgement] | T1         |
 | T4  | (built) Build T50 (`npm run director:dry`) and record the three readings on seeds 1 to 4; add the `?tv=1` smoke spec and `--url-params` to `scripts/browser-perf.mjs` with a test                                                                                                                         | [judgement] | T3         |
 | T4b | Meet the `director:dry` bars without the `hunting` bit ([worker-and-renderer.md](worker-and-renderer.md) T48 waits on world-balance Phase 1): a chase shot found and held from pursuit geometry, more moment kinds so one kind cannot fill a world (seed 2); re-read seeds 1 to 4, bars unchanged (built) | [judgement] | T4         |
-| T5  | Conformance review of Phase 1 with `perf:browser` on the real GPU                                                                                                                                                                                                                                         | [judgement] | T2, T4b    |
+| T5  | (built) Conformance review of Phase 1 with `perf:browser` on the real GPU (the T5 review below)                                                                                                                                                                                                           | [judgement] | T2, T4b    |
 
 ### Phase 2 - A death that reads, and birth
 
@@ -327,7 +369,7 @@ Both stay inside budget (the move is a few arithmetic operations a frame). The `
 | T14 | Add the boredom timeout and the manual exemption; tests (built)                                                                                                                       | [mechanical] | T12                |
 | T15 | Add `ui/subject-plate.js` and the SDF ring; tests (built)                                                                                                                             | [judgement]  | -                  |
 | T16 | Make the inspector follow a handoff and add the 12-event life line; tests (built)                                                                                                     | [judgement]  | T12                |
-| T17 | Conformance review of Phase 3                                                                                                                                                         | [judgement]  | T13, T14, T15, T16 |
+| T17 | (built) Conformance review of Phase 3 against the calm move (the T17 review below)                                                                                                    | [judgement]  | T13, T14, T15, T16 |
 
 ### Phase 4 - The far-screen look
 
@@ -362,15 +404,15 @@ Both stay inside budget (the move is a few arithmetic operations a frame). The `
 
 ### Phase 7 - A calm camera
 
-| #   | Task                                                                                                                                                                                                                                                                                                | Nature       | Depends on    |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------- |
-| T34 | (built) Add `js/app/camera-move.js`: `planMove` and `movePose`, the three-leg move and the named caps `MAX_PAN_SCREENS_PER_S`, `SLOW_PAN_SCREENS_PER_S`, `MAX_ZOOM_FACTOR_PER_S`; tests that zoom out is monotone then pan then zoom in, no frame beats a cap, and pose and velocity are continuous | [judgement]  | T4b           |
-| T35 | (built) Drive `glide`, `pullback` and every `wide` framing in `shots.js` and `director.js` by the move (delete `glideDurationS` and `PULLBACK_DURATION_S`), blend the `wide` drift in over the move, ramp the `linger` spring in over `LINGER_EASE_IN_S`, hold x1 while a move is in flight; tests  | [judgement]  | T34           |
-| T36 | (built) Slow the cadence: `WIDE_MIN_S` 30, `WIDE_BASE_S` 30, `WIDE_SPAN_S` 30, `LINGER_BASE_S` 16, `LINGER_MAX_S` 40, `SHOT_FLOOR_S` 30 and `SHOT_HOLD_MIN_S` 30 enforced by `lingerOver` and `decideWide`; tests on the hold                                                                       | [judgement]  | T35           |
-| T37 | (built) Widen the closest frames in `momentFrameWidth` to 3600, 4800 and 6000 world units across; update the tests                                                                                                                                                                                  | [mechanical] | T35           |
-| T38 | (built) Ease a follow handoff: `js/app/follow-move.js` plans the move from the camera to the new subject's `followAim` (split out of `followSubject`) and runs it on the wall clock until the spring takes over with no error; tests                                                                | [judgement]  | T34           |
-| T39 | (built) Add `director.min_shot_hold_s` to `director:dry`, move the `director.shots_per_hour` bar to 20 to 60, update `docs/commands.md`; tests                                                                                                                                                      | [mechanical] | T36           |
-| T40 | Conformance review of Phase 7: `director:dry` on seeds 1 to 4 against the new bars, `perf:browser`, and the walk on the OLED                                                                                                                                                                        | [judgement]  | T37, T38, T39 |
+| #   | Task                                                                                                                                                                                                                                                                                                                                                                                                        | Nature       | Depends on    |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------- |
+| T34 | (built) Add `js/app/camera-move.js`: `planMove` and `movePose`, the three-leg move and the named caps `MAX_PAN_SCREENS_PER_S`, `SLOW_PAN_SCREENS_PER_S`, `MAX_ZOOM_FACTOR_PER_S`; tests that zoom out is monotone then pan then zoom in, no frame beats a cap, and pose and velocity are continuous                                                                                                         | [judgement]  | T4b           |
+| T35 | (built) Drive `glide`, `pullback` and every `wide` framing in `shots.js` and `director.js` by the move (delete `glideDurationS` and `PULLBACK_DURATION_S`), blend the `wide` drift in over the move, ramp the `linger` spring in over `LINGER_EASE_IN_S`, hold x1 while a move is in flight; tests                                                                                                          | [judgement]  | T34           |
+| T36 | (built) Slow the cadence: `WIDE_MIN_S` 30, `WIDE_BASE_S` 30, `WIDE_SPAN_S` 30, `LINGER_BASE_S` 16, `LINGER_MAX_S` 40, `SHOT_FLOOR_S` 30 and `SHOT_HOLD_MIN_S` 30 enforced by `lingerOver` and `decideWide`; tests on the hold                                                                                                                                                                               | [judgement]  | T35           |
+| T37 | (built) Widen the closest frames in `momentFrameWidth` to 3600, 4800 and 6000 world units across; update the tests                                                                                                                                                                                                                                                                                          | [mechanical] | T35           |
+| T38 | (built) Ease a follow handoff: `js/app/follow-move.js` plans the move from the camera to the new subject's `followAim` (split out of `followSubject`) and runs it on the wall clock until the spring takes over with no error; tests                                                                                                                                                                        | [judgement]  | T34           |
+| T39 | (built) Add `director.min_shot_hold_s` to `director:dry`, move the `director.shots_per_hour` bar to 20 to 60, update `docs/commands.md`; tests                                                                                                                                                                                                                                                              | [mechanical] | T36           |
+| T40 | Conformance review of Phase 7: `director:dry` on seeds 1 to 4 against the new bars, `perf:browser`, and the walk on the OLED (open: the `director:dry` part is read, on 2026-11-21 at 288000 ticks every bar is met on seeds 1 to 4 and `director.chase_precision` is 1.000 of 13 pooled chase shots, see Phase 7's readings; still owed: the 240 Hz `perf:browser` run and the user's 30-minute OLED walk) | [judgement]  | T37, T38, T39 |
 
 ## Verification
 

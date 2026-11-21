@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { createRng, fork } from '../../js/sim/rng.js';
-import { ALARM_BAR, ROLE_BARS, ROLE_CASES } from '../../js/evo/reflex-cases-roles.js';
+import { reflexBars } from '../../js/evo/reflex-bars.js';
+import { ROLE_CASES } from '../../js/evo/reflex-cases-roles.js';
 import { DEG, SEQUENCE_TICKS } from '../../js/evo/reflex-stage.js';
 
 const VIEW = 350;
+const BARS = reflexBars(createConfig());
+const ALARM_BAR = BARS.role.alarm;
 const SPACING = 360 / createConfig().rayCount;
 const byName = (/** @type {string} */ name) => {
     const found = ROLE_CASES.find((c) => c.name === name);
@@ -31,14 +34,19 @@ function otherFrame(tick) {
 }
 
 describe('ROLE_CASES', () => {
-    it('are the six role cases, each for its role, frozen', () => {
+    it('are the role cases, each for its role (a case a role other than its own faces has a `:<spec>` name), frozen', () => {
         expect(ROLE_CASES.map((c) => [c.name, c.spec])).toEqual([
             ['sprint-on-prey', 1],
             ['hold-the-bite', 1],
             ['call-on-threat', 3],
             ['turn-to-alarm', 4],
             ['flee-on-alarm', 0],
+            ['flee-on-alarm:reproducer', 2],
             ['clear-the-herd', 0],
+            ['clear-the-herd:predator', 1],
+            ['clear-the-herd:reproducer', 2],
+            ['clear-the-herd:scout', 3],
+            ['clear-the-herd:defender', 4],
         ]);
         expect(Object.isFrozen(ROLE_CASES)).toBe(true);
     });
@@ -71,7 +79,7 @@ describe('sprint-on-prey', () => {
 
     it('asks for a higher sprint effort as the prey nears and none without prey', () => {
         const { check } = byName('sprint-on-prey');
-        const { far, mid, near } = ROLE_BARS.sprint;
+        const { far, mid, near } = BARS.role.sprint;
         expect(far).toBeLessThan(mid);
         expect(mid).toBeLessThan(near);
         expect(check(out({ sprint: far }), staging('far'))).toBe(true);
@@ -133,7 +141,7 @@ describe('call-on-threat', () => {
 });
 
 describe('the heard-call cases', () => {
-    for (const name of ['turn-to-alarm', 'flee-on-alarm']) {
+    for (const name of ['turn-to-alarm', 'flee-on-alarm', 'flee-on-alarm:reproducer']) {
         it(`${name}: stage a loud alarm from 20 to 140 degrees, nothing else in view, mirrored`, () => {
             const stagings = plan(name);
             expect(stagings.map((s) => s.mirror)).toEqual([1, -1]);
@@ -171,6 +179,25 @@ describe('the heard-call cases', () => {
         expect(check(out({ turn: 0, thrust: 1 }), s)).toBe(false);
         expect(check(out({ turn: 1, thrust: 1 }), staging('alarm', -60 * DEG))).toBe(true);
     });
+
+    it('flee-on-alarm asks the forager for the turn the scout row needs, and the reproducer for its hand-set one', () => {
+        const turnAway = BARS.role.turnAway;
+        const s = staging('alarm', 60 * DEG);
+        const forager = byName('flee-on-alarm').check;
+        const reproducer = byName('flee-on-alarm:reproducer').check;
+        expect(turnAway.forager).toBeGreaterThan(turnAway.reproducer);
+        expect(forager(out({ turn: -turnAway.forager, thrust: 1 }), s)).toBe(true);
+        expect(forager(out({ turn: -turnAway.forager + 0.01, thrust: 1 }), s)).toBe(false);
+        expect(reproducer(out({ turn: -turnAway.reproducer, thrust: 1 }), s)).toBe(true);
+    });
+
+    it('reads the bars it is given, so a stricter set fails a turn the default passes', () => {
+        const { check } = byName('flee-on-alarm');
+        const s = staging('alarm', 60 * DEG);
+        const strict = { ...BARS, role: { ...BARS.role, turnAway: { ...BARS.role.turnAway, forager: 0.99 } } };
+        expect(check(out({ turn: -0.9, thrust: 1 }), s)).toBe(true);
+        expect(check(out({ turn: -0.9, thrust: 1 }), s, strict)).toBe(false);
+    });
 });
 
 describe('clear-the-herd', () => {
@@ -198,5 +225,16 @@ describe('clear-the-herd', () => {
         expect(check(out({ turn: 1, thrust: 1 }), s)).toBe(false);
         expect(check(out({ turn: -1, thrust: 0 }), s)).toBe(false);
         expect(check(out({ turn: 0, thrust: 1 }), s)).toBe(false);
+    });
+
+    it('is given to every specialisation, staged as its own body, with the same turn off the line', () => {
+        const herds = ROLE_CASES.filter((c) => c.name.startsWith('clear-the-herd'));
+        expect(herds.map((c) => c.spec)).toEqual([0, 1, 2, 3, 4]);
+        for (const c of herds) {
+            const [first] = plan(c.name);
+            expect(first.ticks[0].agents[0].spec).toBe(c.spec);
+            expect(c.check(out({ turn: -1, thrust: 1 }), staging('herd', 25 * DEG))).toBe(true);
+            expect(c.check(out({ turn: 1, thrust: 1 }), staging('herd', 25 * DEG))).toBe(false);
+        }
     });
 });

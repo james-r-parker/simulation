@@ -1,0 +1,5 @@
+{
+  "entrantEnergy": 400,
+  "herdRunSpeed": 5.5,
+  "specialisations": { "predator": { "sprintBoost": 2.4 } }
+}

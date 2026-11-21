@@ -151,6 +151,9 @@ describe('inspectorView on a real selected agent', () => {
             'fitness so far',
             'sex',
             ...ready.labels.traits.map((/** @type {{name: string}} */ trait) => `trait ${trait.name}`),
+            ...ready.labels.effects
+                .filter((/** @type {{visible: boolean}} */ effect) => effect.visible)
+                .map((/** @type {{name: string}} */ effect) => `effect ${effect.name}`),
         ]);
         expect(view.counters.find((c) => c.label === 'age')?.text).toMatch(/ticks \(.+ seasons\)$/);
         expect(view.counters.find((c) => c.label === 'energy')?.text).toMatch(/^\d+%$/);
