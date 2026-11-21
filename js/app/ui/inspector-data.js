@@ -6,7 +6,7 @@ import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../interpolate.js';
 import { familyName } from '../renderer/colors.js';
 import { familyCss } from './css-color.js';
 import { nowLine } from './hover-peek.js';
-import { geneRows, senseGroup } from './inspector-body.js';
+import { effectRows, geneRows, senseGroup } from './inspector-body.js';
 /** The hidden grid's width in cells. */
 export const HEATMAP_COLUMNS = 8;
 /** The class channels a spoke is coloured by, after the proximity channel. */
@@ -242,12 +242,18 @@ function outputsOf(f32, at, { labels, info }) {
  * @param {number} at where the trait rows start (after the counters)
  * @param {{layout: Record<string, number>, labels: Record<string, any>}} ready the layout and labels of `ready`
  * @returns {{counters: InspectorView['counters'], group: InspectorView['groups'][number]}} a counter row for each trait
- *   and the body sense bar group
+ *   and each visible effect, and the body sense bar group
  */
 function bodyOf(f32, at, { layout, labels }) {
     const senseAt = at + layout.traitCount;
     return {
-        counters: geneRows(f32.subarray(at, senseAt), labels.traits),
+        counters: [
+            ...geneRows(f32.subarray(at, senseAt), labels.traits),
+            ...effectRows(
+                f32.subarray(senseAt + layout.senseCount, senseAt + layout.senseCount + layout.effectCount),
+                labels.effects,
+            ),
+        ],
         group: senseGroup(f32.subarray(senseAt, senseAt + layout.senseCount), labels.bodySense),
     };
 }

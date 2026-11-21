@@ -2,7 +2,8 @@
 
 import { tallyEatContact } from './eat-contact.js';
 import { carryPollen } from './pollination.js';
-import { ingestToxin, isSick } from './toxin.js';
+import { EFFECT, GATE, LANE_ID, gateOpen, levelOf, liveOf } from './effects.js';
+import { ingestToxin } from './toxin.js';
 import { canBite, couldBite, inJaws } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
 import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, removeEnergy, transferEnergy } from './energy.js';
@@ -17,6 +18,10 @@ import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { specParams } from './spec-params.js';
 import { gainTemperature } from './temperature.js';
 import { REWARD_SOURCE, noteReward } from './reward.js';
+
+// The lanes this module reads, as constants: a property load from `LANE_ID` (a large object) in the loop boxes its number
+// when the compiler does not inline it.
+const BITE_TAKEN_MULTIPLIER_LANE = LANE_ID.biteTakenMultiplier;
 
 const HERD_CARCASS_BITE = 400;
 
@@ -33,7 +38,7 @@ function shareOf(world, slot, food) {
         return base;
     }
     const share = world.config.juvenilePlantShare;
-    if (share > 0 && world.huntBySpec[world.spec[slot]] === 1 && world.ageTicks[slot] < world.config.juvenileTicks) {
+    if (share > 0 && levelOf(world, slot, EFFECT.JUVENILE) > 0) {
         return share;
     }
     return 0;
@@ -108,20 +113,14 @@ function consumeFood(world, slot, food) {
 }
 
 /**
- * Satiation (T49): a full agent, or one still digesting its last meal, cannot eat. Both rules are off at 0.
+ * Satiation (T49): a full agent, one still digesting its last meal and a sick one cannot eat: the `eat` gate, which the
+ * `sated`, `digesting` and `sick` effects close. The first two rules are off at 0.
  * @param {Record<string, any>} world the world
  * @param {number} slot the agent
  * @returns {boolean} whether the agent may eat this tick
  */
 export function canEatNow(world, slot) {
-    if (isSick(world, slot)) {
-        return false;
-    }
-    const { satiationShare, digestTicks } = world.config;
-    if (satiationShare > 0 && world.energy[slot] >= satiationShare * world.lanes.maxEnergy[slot]) {
-        return false;
-    }
-    return digestTicks === 0 || world.ateTimer[slot] >= digestTicks;
+    return gateOpen(world, slot, GATE.EAT);
 }
 
 /**
@@ -213,15 +212,6 @@ function settleKill(world, biter, victim, fatal) {
 }
 
 /**
- * @param {Record<string, any>} world the world
- * @param {number} victim the bitten slot
- * @returns {number} `alarmBiteShare` while the victim's seen alarm runs (a threat was on its rays at the call), else 1
- */
-function alarmShare(world, victim) {
-    return world.alarmTimer[victim] > 0 && world.alarmSeen[victim] === 1 ? world.config.alarmBiteShare : 1;
-}
-
-/**
  * Resolves one bite: moves energy, records the loss, charges the biter's kick and deposits pheromones.
  * @param {Record<string, any>} world the world
  * @param {number} biter the biting slot
@@ -230,8 +220,9 @@ function alarmShare(world, victim) {
  */
 function applyBite(world, biter, victim) {
     const { config, x, y } = world;
-    const taken = specParams(config, world.spec[victim]).biteTakenMultiplier;
-    const bite = config.biteEnergy * world.biteBySpec[world.spec[biter]] * alarmShare(world, victim);
+    // The victim's `biteTakenMultiplier` lane, with the `alarmSeen` effect's `alarmBiteShare` while its seen alarm runs.
+    const taken = liveOf(world, victim, BITE_TAKEN_MULTIPLIER_LANE);
+    const bite = config.biteEnergy * world.biteBySpec[world.spec[biter]];
     const wasAlive = world.energy[victim] > 0;
     const kick = kickOf(world, biter, victim);
     transferEnergy(world, victim, biter, bite * taken);
