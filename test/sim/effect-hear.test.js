@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { CH_THREAT, OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { ENERGY_SOURCE, addEnergy } from '../../js/sim/energy.js';
-import { EFFECT, effectFactor } from '../../js/sim/effects.js';
+import { EFFECT, effectFactor, liveOf } from '../../js/sim/effects.js';
 import { HEARD_FROM_STRIDE } from '../../js/sim/agent-arrays.js';
 import { FORAGER, PREDATOR } from './helpers/bite-stage.js';
 import { hold, pack, stacks, tick } from './helpers/pack-stage.js';
@@ -49,6 +49,23 @@ describe('rallied', () => {
         for (let t = 0; t < 6; t++) {
             tick(w);
             expect(stacks(w, 1, 'rallied'), `tick ${t}`).toBe(2);
+        }
+    });
+
+    it('costs two hunters that only call at each other the rally burn and no hoarse stack, against two silent hunters', () => {
+        const calling = pack({ rallyBurn: 0.5, huntCallCost: 0 });
+        calling.parentA[0] = calling.genomeId[1];
+        hold(calling, 0, OUTPUT_INDEX.HUNT);
+        hold(calling, 1, OUTPUT_INDEX.HUNT);
+        const silent = pack({ rallyBurn: 0.5, huntCallCost: 0 });
+        for (let t = 0; t < 20; t++) {
+            tick(calling);
+            tick(silent);
+        }
+        for (const slot of [0, 1]) {
+            expect(stacks(calling, slot, 'hoarse')).toBe(0);
+            expect(stacks(calling, slot, 'rallied')).toBeGreaterThan(0);
+            expect(liveOf(calling, slot, 'passiveLoss')).toBeGreaterThan(liveOf(silent, slot, 'passiveLoss'));
         }
     });
 
