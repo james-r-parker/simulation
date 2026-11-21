@@ -159,6 +159,7 @@ function logFailure({ world, table, run }, { slot, index, tick }) {
             turn: world.outputs[o + OUTPUT_INDEX.TURN],
             sprint: world.outputs[o + OUTPUT_INDEX.SPRINT],
             bite: world.outputs[o + OUTPUT_INDEX.BITE],
+            alarm: world.outputs[o + OUTPUT_INDEX.ALARM],
         },
     });
 }
@@ -177,7 +178,7 @@ function logFailure({ world, table, run }, { slot, index, tick }) {
  */
 function scoreTick({ world, table, run }, { index, tick, marks }) {
     const { trial, staging } = table.sequences[index];
-    const outputs = { thrust: 0, turn: 0, sprint: 0, bite: 0 };
+    const outputs = { thrust: 0, turn: 0, sprint: 0, bite: 0, alarm: 0 };
     const scored = tick >= SETTLE_TICKS;
     for (let slot = 0; slot < marks.ok.length; slot++) {
         const pass = Number(run.check(readOutputs(world.outputs, slot, outputs), staging));

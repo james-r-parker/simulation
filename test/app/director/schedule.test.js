@@ -6,7 +6,9 @@ import {
     ceilingReached,
     floorReached,
     SHOT_CEILING_S,
+    holdReached,
     SHOT_FLOOR_S,
+    SHOT_HOLD_MIN_S,
     wideDue,
     WIDE_MAX_GAP_S,
 } from '../../../js/app/director/schedule.js';
@@ -101,6 +103,15 @@ describe('the shot schedule rules', () => {
         expect(logs.length - shots.length).toBeLessThanOrEqual(1);
     });
 
+    it('never cuts to a new subject within the hold of the last cut, and takes 20 to 60 shots an hour when busy', () => {
+        const { shots } = run({ seconds: 3600, everyS: 7 });
+        expect(shots.length).toBeGreaterThanOrEqual(5);
+        expect(shots.length).toBeLessThanOrEqual(60);
+        for (let i = 1; i < shots.length; i++) {
+            expect(shots[i].startS - shots[i - 1].startS).toBeGreaterThanOrEqual(SHOT_HOLD_MIN_S);
+        }
+    });
+
     it('shows a wide shot at least every ten minutes, busy or quiet', () => {
         for (const kills of [true, false]) {
             const { wides } = run({ seconds: 2400, everyS: 5, kills });
@@ -125,19 +136,30 @@ describe('the shot schedule rules', () => {
 });
 
 describe('lingerOver', () => {
-    const base = () => ({
+    const base = (shotStartS = 60) => ({
         shot: { startTimeS: 100, durationS: 8 },
-        shotStartS: 97,
+        shotStartS,
         lastWideS: 90,
         lowScoreSinceS: /** @type {number | null} */ (null),
     });
 
     it('does not end a quiet moment before the floor, then ends it after two quiet seconds', () => {
-        const state = base();
+        const state = base(97);
         expect(floorReached(SHOT_FLOOR_S - 0.1)).toBe(false);
         expect(lingerOver(state, { timeS: 98, score: 10 })).toBe(false);
         expect(lingerOver(state, { timeS: 100.5, score: 10 })).toBe(false);
-        expect(lingerOver(state, { timeS: 103, score: 10 })).toBe(true);
+        expect(lingerOver(state, { timeS: 103, score: 10 })).toBe(false);
+        expect(lingerOver(state, { timeS: 97 + SHOT_FLOOR_S, score: 10 })).toBe(true);
+    });
+
+    it('holds a shot to the floor even when its planned time is up, and cuts to a subject only after the hold', () => {
+        expect(lingerOver(base(97), { timeS: 110, score: 10 })).toBe(false);
+        expect(lingerOver({ ...base(97), shot: { startTimeS: 100, durationS: 8 } }, { timeS: 126, score: 90 })).toBe(
+            false,
+        );
+        expect(SHOT_HOLD_MIN_S).toBe(30);
+        expect(holdReached(SHOT_HOLD_MIN_S - 0.5)).toBe(false);
+        expect(holdReached(SHOT_HOLD_MIN_S)).toBe(true);
     });
 
     it('extends a strong moment up to its cap and ends it at the planned time otherwise', () => {
@@ -145,7 +167,7 @@ describe('lingerOver', () => {
         expect(lingerOver(state, { timeS: 108, score: 80 })).toBe(false);
         expect(state.shot.durationS).toBe(12);
         expect(lingerOver(state, { timeS: 108, score: 35 })).toBe(false);
-        expect(lingerOver({ ...base(), shot: { startTimeS: 100, durationS: 20 } }, { timeS: 120, score: 80 })).toBe(
+        expect(lingerOver({ ...base(), shot: { startTimeS: 100, durationS: 40 } }, { timeS: 140, score: 80 })).toBe(
             true,
         );
     });

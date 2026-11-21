@@ -73,7 +73,7 @@ const APPROACH_PREY = {
  * @param {{kind: string, energy: number, sizeGene?: number, parents?: [number, number]}} victim which victim
  * @returns {Staging} the victim just ahead of the subject, inside its jaws
  */
-function victimStaging(d, mirror, { kind, energy, sizeGene, parents }) {
+export function victimStaging(d, mirror, { kind, energy, sizeGene, parents }) {
     const bearing = mirror * d.offset;
     const gap = JAW_SHARE * (radiusOf(HUNTER_ENERGY) + radiusOf(energy, sizeGene));
     const subject = { ...subjectAgent(SPEC.PREDATOR, d.angle), parents };

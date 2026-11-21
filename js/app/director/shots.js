@@ -1,10 +1,11 @@
 // Shot planning and camera poses for the Phase 4 director (`docs/designs/worker-and-renderer.md`): `wide` frames the
 // middle 80% of agents (10th to 90th percentile, padded 10%, never below `homeZoom`: the whole world on a landscape
 // canvas, the height fill on a portrait one, so a shot never shows the world as a band) with a 90 s / 140 s Lissajous drift
-// of 3% world width; `glide` smoothersteps to the moment in 3 s (2 s for kills); `linger` holds on the focus; `pullback`
-// smoothersteps back to `wide` in 4 s.
+// of 3% world width; `glide` is a calm move (`../camera-move.js`: zoom out, pan, zoom in, at the comfort caps) to the
+// moment; `linger` holds on the focus; `pullback` is the same move back to `wide`, and so is every new `wide` framing.
 
-import { homeZoom, ZOOM_IN } from '../camera.js';
+import { homeZoom } from '../camera.js';
+import { ease, movePose, planMove } from '../camera-move.js';
 import { MOMENT_KIND } from './scoring.js';
 
 /** Shot machine states. */
@@ -19,52 +20,36 @@ export const SHOT_STATE = Object.freeze({
 export const WIDE_DRIFT_PERIOD_X_S = 90;
 export const WIDE_DRIFT_PERIOD_Y_S = 140;
 export const WIDE_DRIFT_AMPLITUDE = 0.03;
-/** Minimum and maximum durations of a `wide` shot in seconds. */
-export const WIDE_MIN_S = 8;
-export const WIDE_BASE_S = 20;
-export const WIDE_SPAN_S = 20;
+/** Minimum and base durations and random span of a `wide` shot's hold, in seconds, after its move. */
+export const WIDE_MIN_S = 30;
+export const WIDE_BASE_S = 30;
+export const WIDE_SPAN_S = 30;
 /** `linger` base duration, extension step, cap and low-score early-exit window in seconds. */
-export const LINGER_BASE_S = 8;
+export const LINGER_BASE_S = 16;
 export const LINGER_EXTEND_S = 4;
-export const LINGER_MAX_S = 20;
+export const LINGER_MAX_S = 40;
 export const LINGER_LOW_SCORE = 30;
 export const LINGER_LOW_WINDOW_S = 2;
-/** `pullback` duration in seconds. */
-export const PULLBACK_DURATION_S = 4;
 
 /** @type {Readonly<Record<string, number>>} */
 const FRAME_WIDTH_BY_KIND = Object.freeze({
-    [MOMENT_KIND.ALARM_CHORUS]: 2400,
-    [MOMENT_KIND.BIRTH_CLUSTER]: 2400,
-    [MOMENT_KIND.FAMILY_LEAD]: 3600,
+    [MOMENT_KIND.ALARM_CHORUS]: 4800,
+    [MOMENT_KIND.BIRTH_CLUSTER]: 4800,
+    [MOMENT_KIND.FAMILY_LEAD]: 6000,
 });
 
-/**
- * Quintic smootherstep on `[0, 1]`.
- * @param {number} t progress in `[0, 1]`
- * @returns {number} eased progress in `[0, 1]`
- */
-export function smootherstep(t) {
-    const x = Math.min(Math.max(t, 0), 1);
-    return x * x * x * (x * (x * 6 - 15) + 10);
-}
+/** The closest a shot goes, a multiple of `homeZoom`: 4 is a quarter of the world across (3600 units of 14400). */
+export const CLOSEST_ZOOM_IN = 4;
+
+export { ease as smootherstep } from '../camera-move.js';
 
 /**
- * World width framed by a close shot of `kind`: 1600 for combat/smoke, 2400 for clusters, 3600 for `family-lead`.
+ * World width framed by a close shot of `kind`: 3600 for combat/smoke, 4800 for clusters, 6000 for `family-lead`.
  * @param {string} kind moment kind
  * @returns {number} world units across
  */
 export function momentFrameWidth(kind) {
-    return FRAME_WIDTH_BY_KIND[kind] ?? 1600;
-}
-
-/**
- * Duration of a `glide` shot: 2 s for `pack-kill` and `kill`, 3 s for every other kind.
- * @param {string} kind moment kind
- * @returns {number} glide duration in seconds
- */
-export function glideDurationS(kind) {
-    return kind === MOMENT_KIND.PACK_KILL || kind === MOMENT_KIND.KILL ? 2 : 3;
+    return FRAME_WIDTH_BY_KIND[kind] ?? 3600;
 }
 
 /**
@@ -105,7 +90,7 @@ export function wideFraming(agents, { canvas, world, zoomScale = 1 }) {
     const spanX = Math.max(1, (maxX - minX) * 1.2);
     const spanY = Math.max(1, (maxY - minY) * 1.2);
     const boxZoom = Math.min(canvas.width / spanX, canvas.height / spanY);
-    const zoom = Math.min(home * ZOOM_IN, Math.max(home, boxZoom) * zoomScale);
+    const zoom = Math.min(home * CLOSEST_ZOOM_IN, Math.max(home, boxZoom) * zoomScale);
     return { x: (minX + maxX) / 2, y: (minY + maxY) / 2, zoom };
 }
 
@@ -113,10 +98,11 @@ export function wideFraming(agents, { canvas, world, zoomScale = 1 }) {
  * @typedef {object} PlannedShot
  * @property {'wide' | 'glide' | 'linger' | 'pullback'} state shot state
  * @property {number} startTimeS simulated time (s) when the shot started
- * @property {number} durationS planned duration in seconds
+ * @property {number} durationS planned duration in seconds; a `glide` and a `pullback` last as long as their move
  * @property {number} minDurationS earliest time (s) after `startTimeS` that `wide` may cut to a moment
  * @property {{x: number, y: number, zoom: number}} fromPose pose at the start of the shot
  * @property {{x: number, y: number, zoom: number}} toPose target pose of the shot
+ * @property {import('../camera-move.js').Move | null} move the move from `fromPose` to `toPose`; null for `linger`
  * @property {import('./moments.js').MomentCandidate | null} moment active moment for `glide` and `linger`
  */
 
@@ -132,9 +118,11 @@ export function wideFraming(agents, { canvas, world, zoomScale = 1 }) {
 function planCloseShot(state, startTimeS, moment, { fromPose, canvas, world }) {
     const home = homeZoom(canvas, world);
     const isGlide = state === SHOT_STATE.GLIDE;
-    const durationS = isGlide ? glideDurationS(moment.kind) : LINGER_BASE_S;
-    const zoom = isGlide ? Math.max(home, canvas.width / momentFrameWidth(moment.kind)) : (fromPose?.zoom ?? home);
+    const frameZoom = Math.min(home * CLOSEST_ZOOM_IN, Math.max(home, canvas.width / momentFrameWidth(moment.kind)));
+    const zoom = isGlide ? frameZoom : (fromPose?.zoom ?? home);
     const toPose = { x: moment.x, y: moment.y, zoom };
+    const move = isGlide ? planMove(fromPose ?? toPose, toPose, { canvas, world }) : null;
+    const durationS = move?.durationS ?? LINGER_BASE_S;
     return {
         state,
         startTimeS,
@@ -142,7 +130,34 @@ function planCloseShot(state, startTimeS, moment, { fromPose, canvas, world }) {
         minDurationS: durationS,
         fromPose: fromPose ?? toPose,
         toPose,
+        move,
         moment,
+    };
+}
+
+/**
+ * Plans a `wide` shot or a `pullback`: the move from `fromPose` to a wide framing of the agents.
+ * @param {'wide' | 'pullback'} state the shot state
+ * @param {number} startTimeS simulated start time in seconds
+ * @param {{fromPose?: {x: number, y: number, zoom: number}, agents: readonly {x: number, y: number}[],
+ *   canvas: {width: number, height: number}, world: {width: number, height: number},
+ *   rng?: {next: () => number}}} input starting pose, agents, dimensions and random source
+ * @returns {PlannedShot} the planned shot
+ */
+function planWideShot(state, startTimeS, { fromPose, agents, canvas, world, rng }) {
+    const draw = () => rng?.next() ?? 0;
+    const toPose = wideFraming(agents, { canvas, world, zoomScale: 1 + draw() * 0.15 });
+    const move = planMove(fromPose ?? toPose, toPose, { canvas, world });
+    const isWide = state === SHOT_STATE.WIDE;
+    return {
+        state,
+        startTimeS,
+        durationS: isWide ? move.durationS + WIDE_BASE_S + draw() * WIDE_SPAN_S : move.durationS,
+        minDurationS: isWide ? move.durationS + WIDE_MIN_S : move.durationS,
+        fromPose: fromPose ?? toPose,
+        toPose,
+        move,
+        moment: null,
     };
 }
 
@@ -158,48 +173,30 @@ export function planShot({ state, startTimeS, fromPose, moment = null, agents = 
     if ((state === SHOT_STATE.GLIDE || state === SHOT_STATE.LINGER) && moment !== null) {
         return planCloseShot(state, startTimeS, moment, { fromPose, canvas, world });
     }
-    const draw = () => rng?.next() ?? 0;
-    const zoomScale = 1 + draw() * 0.15;
-    const isWide = state === SHOT_STATE.WIDE;
-    const durationS = isWide ? WIDE_BASE_S + draw() * WIDE_SPAN_S : PULLBACK_DURATION_S;
-    const toPose = wideFraming(agents, { canvas, world, zoomScale });
-    return {
-        state: isWide ? SHOT_STATE.WIDE : SHOT_STATE.PULLBACK,
-        startTimeS,
-        durationS,
-        minDurationS: isWide ? WIDE_MIN_S : PULLBACK_DURATION_S,
-        fromPose: fromPose ?? toPose,
-        toPose,
-        moment: null,
-    };
+    const wideState = state === SHOT_STATE.WIDE ? SHOT_STATE.WIDE : SHOT_STATE.PULLBACK;
+    return planWideShot(wideState, startTimeS, { fromPose, agents, canvas, world, rng });
 }
 
 /**
- * Evaluates a planned shot's camera pose at `timeS`.
+ * Evaluates a planned shot's camera pose at `timeS`: `linger` holds on its focus; `glide`, `pullback` and `wide` run
+ * their move and then (`pullback`, `wide`) drift, the drift blended in over the move so the pose never steps.
  * @param {PlannedShot} shot the active shot
  * @param {number} timeS current simulated time in seconds
  * @param {{width: number, height: number}} world world dimensions
  * @returns {{x: number, y: number, zoom: number}} camera pose `{x, y, zoom}`
  */
 export function shotPose(shot, timeS, world) {
-    if (shot.state === SHOT_STATE.WIDE) {
-        const drift = wideDrift(timeS, world.width);
-        return {
-            x: Math.min(Math.max(shot.toPose.x + drift.dx, 0), world.width),
-            y: Math.min(Math.max(shot.toPose.y + drift.dy, 0), world.height),
-            zoom: shot.toPose.zoom,
-        };
-    }
-    if (shot.state === SHOT_STATE.LINGER) {
+    if (shot.state === SHOT_STATE.LINGER || shot.move === null) {
         return { x: shot.toPose.x, y: shot.toPose.y, zoom: shot.toPose.zoom };
     }
-    const u = smootherstep((timeS - shot.startTimeS) / shot.durationS);
-    const drift = shot.state === SHOT_STATE.PULLBACK ? wideDrift(timeS, world.width) : { dx: 0, dy: 0 };
-    const targetX = Math.min(Math.max(shot.toPose.x + drift.dx, 0), world.width);
-    const targetY = Math.min(Math.max(shot.toPose.y + drift.dy, 0), world.height);
-    return {
-        x: shot.fromPose.x + (targetX - shot.fromPose.x) * u,
-        y: shot.fromPose.y + (targetY - shot.fromPose.y) * u,
-        zoom: shot.fromPose.zoom + (shot.toPose.zoom - shot.fromPose.zoom) * u,
-    };
+    const elapsedS = timeS - shot.startTimeS;
+    const base = movePose(shot.move, elapsedS);
+    if (shot.state === SHOT_STATE.GLIDE) {
+        return base;
+    }
+    const blend = shot.move.durationS > 0 ? ease(elapsedS / shot.move.durationS) : 1;
+    const drift = wideDrift(timeS, world.width);
+    base.x = Math.min(Math.max(base.x + drift.dx * blend, 0), world.width);
+    base.y = Math.min(Math.max(base.y + drift.dy * blend, 0), world.height);
+    return base;
 }

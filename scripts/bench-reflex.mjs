@@ -6,7 +6,7 @@ import { performance } from 'node:perf_hooks';
 import { DRILLS } from '../js/evo/drill-scenarios.js';
 import { SOCIAL_DRILLS } from '../js/evo/drill-scenarios-social.js';
 import { drillSubject } from '../js/evo/drill.js';
-import { casesFor } from '../js/evo/reflex-cases.js';
+import { FORAGER_CASES } from '../js/evo/reflex-cases-forager.js';
 import { evalReflex } from '../js/evo/reflex-eval.js';
 import { REFLEX_RANDOM_BRAINS, reflexRandomBrains } from '../js/evo/reflex-score.js';
 import { REFLEX_TRIALS, SEQUENCE_TICKS } from '../js/evo/reflex-stage.js';
@@ -54,7 +54,7 @@ export function parseArgs(argv) {
  */
 function genomesOf(count) {
     const blocks = Array.from({ length: Math.ceil(count / REFLEX_RANDOM_BRAINS) }, (_, block) =>
-        reflexRandomBrains(casesFor(SPEC.FORAGER)[0], { seed: 7 + block }),
+        reflexRandomBrains(FORAGER_CASES[0], { seed: 7 + block }),
     );
     return blocks
         .flat()
@@ -69,7 +69,7 @@ function genomesOf(count) {
  *   costs (every tick of every sequence) and the milliseconds per genome
  */
 export function timeReflex({ genomes, reps }) {
-    const tables = casesFor(SPEC.FORAGER).map((c) => buildCaseTable(c, { trials: REFLEX_TRIALS }));
+    const tables = FORAGER_CASES.map((c) => buildCaseTable(c, { trials: REFLEX_TRIALS }));
     const subjects = genomesOf(genomes);
     evalReflex(subjects, tables);
     const start = performance.now();

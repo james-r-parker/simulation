@@ -1,4 +1,4 @@
-// Registry entries of the world family (part 4): the eat-choice detectors (docs/designs/eat-choice.md).
+// Registry entries of the world family (part 4): the eat-choice detectors (docs/designs/eat-choice.md) and the hunter-choice detectors (docs/designs/body-genes.md, T22).
 
 import { entry } from './entry.js';
 
@@ -77,5 +77,41 @@ export const WORLD_4 = {
         nullWhen: ['no hunter income'],
         arithmetic: 'test/evo/scene-strike-miss.test.js',
         source: 'test/evo/metric-source-strike-miss.test.js',
+    }),
+    'eval.hunter_defender_bite_ratio': entry('world', {
+        module: 'js/evo/scene-hunter-choice.js',
+        meaning: 'Under 1 means hunters avoid the defenders that shove; over 1 means they seek them out.',
+        counts: 'After burn-in, bites a hunter starts on defenders (a bite that landed in the step, on a body it was not biting within 3 ticks) per defender-in-view tick, over bites started on other prey per other-prey-in-view tick. A prey in view is a body the hunter couldBite with its centre inside visionOf; exposure is sampled every 5th tick and weighted by 5. A bite that kills in its first tick is not seen.',
+        unit: 'ratio',
+        direction: 'watch',
+        intended: 'lower',
+        nullWhen: [
+            'no defender or no other prey in a hunter view after burn-in',
+            'no bite started on a prey other than a defender after burn-in',
+        ],
+        arithmetic: 'test/evo/scene-hunter-choice.test.js',
+        source: 'test/evo/metric-source-hunter-choice.test.js',
+    }),
+    'eval.hunter_size_choice': entry('world', {
+        module: 'js/evo/scene-hunter-choice.js',
+        meaning: 'Below 0 means hunters pick the small of the prey in view.',
+        counts: 'Over bite starts after burn-in with at least one other prey in the hunter view, the bitten prey size minus the mean size of the other prey in view, averaged.',
+        unit: 'distance',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['fewer than 30 bite starts with two prey in view'],
+        arithmetic: 'test/evo/scene-hunter-choice.test.js',
+        source: 'test/evo/metric-source-hunter-choice.test.js',
+    }),
+    'eval.hunter_slow_choice': entry('world', {
+        module: 'js/evo/scene-hunter-choice.js',
+        meaning: 'Below 0 means hunters pick the slow of the prey in view.',
+        counts: 'Over bite starts after burn-in with at least one other prey in the hunter view, the bitten prey speed (hypot of vx and vy after the step) minus the mean speed of the other prey in view, averaged.',
+        unit: 'px per tick',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['fewer than 30 bite starts with two prey in view'],
+        arithmetic: 'test/evo/scene-hunter-choice.test.js',
+        source: 'test/evo/metric-source-hunter-choice.test.js',
     }),
 };
