@@ -16,9 +16,10 @@ Own work first: Phase 6 (role metrics, gate 2 before any training), then Phase 5
 
 | Step | Doc                                          | Built when                                                                                                                                 |
 | ---- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1    | [detector-baseline.md](detector-baseline.md) | The wave's `bench.observe_ms@500` price (T4) and the detector tasks of the plans it serves, read after Phase 4 corrects the power readings |
-| 2    | [lean-observer.md](lean-observer.md)         | One task left (T6); the lean observer is what training episodes run on (training-loop.md T31)                                              |
-| 3    | [improvement-loop.md](improvement-loop.md)   | Automates measuring and proposing once the headlines (Phase 5) say what a result is                                                        |
+| 1    | [registries.md](registries.md)               | Events, spec names and the per-slot list first; the detector interface before Phase 6 of this doc adds the role metrics                    |
+| 2    | [detector-baseline.md](detector-baseline.md) | The wave's `bench.observe_ms@500` price (T4) and the detector tasks of the plans it serves, read after Phase 4 corrects the power readings |
+| 3    | [lean-observer.md](lean-observer.md)         | One task left (T6); the lean observer is what training episodes run on (training-loop.md T31)                                              |
+| 4    | [improvement-loop.md](improvement-loop.md)   | Automates measuring and proposing once the headlines (Phase 5) say what a result is                                                        |
 
 ## Contract
 

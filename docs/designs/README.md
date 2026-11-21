@@ -8,9 +8,10 @@ Add or change a status in the doc itself, then re-run. Conventions: [STYLE.md](S
 Lead docs in priority order - 1 is built next. Set in each doc's `**Priority:**` line; the evolution loop proposes re-ranks. Under a lead, the docs it schedules in step order (each doc's `**Scheduled by:**` line); the lead's own next phase comes first unless its Order section says otherwise.
 
 1. [Metric noise](metric-noise.md) - Measurement lead. Phase 4 is built before any other read: the power readings, the keep rule and the 16-seed interval have defects (review of 2026-11-20), so no verdict is trusted until they are fixed; Phase 5 (the headline metrics) follows
-    1. [Detector baseline](detector-baseline.md) - the wave's `bench.observe_ms@500` price (T4) and the detector tasks of the plans it serves, read after Phase 4 corrects the power readings
-    2. [Lean observer](lean-observer.md) - one task left (T6); the lean observer is what training episodes run on (training-loop.md T31)
-    3. [Improvement loop](improvement-loop.md) - automates measuring and proposing once the headlines (Phase 5) say what a result is
+    1. [Registries](registries.md) - the detector interface is built before metric-noise.md Phase 6 adds the role metrics, since each detector added today touches 12 to 22 files
+    2. [Detector baseline](detector-baseline.md) - the wave's `bench.observe_ms@500` price (T4) and the detector tasks of the plans it serves, read after Phase 4 corrects the power readings
+    3. [Lean observer](lean-observer.md) - one task left (T6); the lean observer is what training episodes run on (training-loop.md T31)
+    4. [Improvement loop](improvement-loop.md) - automates measuring and proposing once the headlines (Phase 5) say what a result is
 2. [Fair chase](fair-chase.md) - Hunting lead. The `hunt` rung passes on 0 of 16 offsets after twelve falsified trainer levers (E191 to E232), and the live world's hunters fail the same way; no trainer, recruitment or champion work can pass a chase the bodies do not allow
     1. [Body genes](body-genes.md) - the next chunk of the hunting lane: Phase 1 (body and senses) is built before the calculator, which reads it; Phase 2 follows role-budget.md Phase 1, and Phase 3 chooses the numbers with the calculator
     2. [Status effects](status-effects.md) - built straight after body-genes.md Phase 1 and before the calculator, which reads the effects; every large rules change lands before any training
@@ -108,7 +109,7 @@ Partly built - the note says which phases are real.
 - [World balance and biology](world-balance.md) - Phases 1 to 4, Phase 5 round 1 and Phase 6 (the mating-edge screen, E145, E146: roaming range deleted, T103) are built. The post-feature queue was not run as wr... _(validated edd4cd4, 2026-11-07)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the screenshots script, the RE... _(validated d6ca3e6, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (10)
+## Proposed (11)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
@@ -119,6 +120,7 @@ Plans. Nothing built; do not read these as descriptions of the code.
 - [Hunter practice](hunter-practice.md) - Phase 1 T1 is built (#343) and the T6 baseline (E144) reads that matched conversion falls less with age than the pooled read, and dose is near 0. T2 and T3 (`pr... _(validated edd4cd4, 2026-11-07)_ _(depends on [hunter-learning.md](hunter-learning.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated d6ca3e6, 2026-11-07)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_
 - [Migration](migration.md) - migrants arrive at the map edges at a steady rate from a balanced mainland, whatever the headcount, and replace the floor refill that drops agents into an empti... _(validated e2455f2, 2026-11-11)_ _(depends on [eat-choice.md](eat-choice.md), [low-density-edge.md](low-density-edge.md))_
+- [Registries](registries.md) - the systems map of the sim, and three concepts that are spread over many files made into registries: events, the brain's inputs and outputs, and the observer's... _(validated 23e8cc6, 2026-11-21)_ _(depends on [body-genes.md](body-genes.md))_
 - [Role budget](role-budget.md) - a closed-form budget of each specialisation's job (hunt, defend, warn, eat and breed, clear a herd) with a margin per step, three performer tiers for the hunter... _(validated f77acde, 2026-11-21)_ _(depends on [body-genes.md](body-genes.md))_
 - [Seasonal movement](seasonal-movement.md) - Phase 1 T1 and T2 built (#343) and the T5 baseline run (`E142`, 32 floor-on seeds, in Baseline). T3 (`scripts/season-map.mjs`) and T6 (the sim-notes diagnosis a... _(validated f5c7880, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md))_
 - [Status effects](status-effects.md) - one registry of stacking, capped, timed effects on a body: every within-life modifier the sim has today (heat, cold, fat, grazing, handling, the rest after a ki... _(validated 23e8cc6, 2026-11-21)_ _(depends on [body-genes.md](body-genes.md))_
