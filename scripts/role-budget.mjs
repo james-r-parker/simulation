@@ -4,6 +4,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { arenaConfig } from '../js/evo/chase-arena.js';
+import { chaseCells, kinematicRows } from '../js/evo/role-budget-check.js';
 import { PREY_SPECS } from '../js/evo/role-budget-chase.js';
 import { PHASE1_ROWS, matrix } from '../js/evo/role-budget-matrix.js';
 import { validateModel } from '../js/evo/role-budget-model.js';
@@ -11,11 +12,11 @@ import { searchSettings, withPath } from '../js/evo/role-budget-search.js';
 import { configHash } from '../js/sim/config.js';
 import { emitReport, runAsMain, withLogFile } from './lib/audit-io.mjs';
 import { exitCodeOf, parseFlags } from './lib/cli-args.mjs';
-import { formatReport, formatSearch } from './lib/role-budget-report.mjs';
+import { formatCheck, formatReport, formatSearch } from './lib/role-budget-report.mjs';
 import { logRunConfig } from './lib/run-config.mjs';
 
 const USAGE =
-    'usage: role-budget [--config <file.json>] [--set <path>=<value> ...] [--model <file.json>] [--mix <spec=w,...>] [--rows <a,b>] [--search] [--reliable] [--out-dir <dir>] [--json] [--out <path>]';
+    'usage: role-budget [--config <file.json>] [--set <path>=<value> ...] [--model <file.json>] [--mix <spec=w,...>] [--rows <a,b>] [--search] [--check] [--reliable] [--out-dir <dir>] [--json] [--out <path>]';
 
 /** The most findings of one pair the search writes override files for. */
 const FILES_PER_PAIR = 5;
@@ -28,6 +29,7 @@ const FILES_PER_PAIR = 5;
  * @property {Record<string, number> | undefined} mix the weights of the `predator:average` row
  * @property {string[] | undefined} rows the rows to print
  * @property {boolean} search whether to search a single setting for each impossible row
+ * @property {boolean} check whether to play each row's scene beside the formula
  * @property {boolean} reliable whether the hunter acts only on a prey it reliably sees
  * @property {string} outDir where the search writes its override files
  * @property {boolean} json whether to print JSON
@@ -96,13 +98,14 @@ export function parseArgs(argv) {
             '--out-dir': (v) => ['outDir', String(v)],
             '--out': (v) => ['out', String(v)],
         },
-        booleanFlags: { '--search': 'search', '--reliable': 'reliable', '--json': 'json' },
+        booleanFlags: { '--search': 'search', '--check': 'check', '--reliable': 'reliable', '--json': 'json' },
         defaults: {
             config: null,
             model: null,
             mix: undefined,
             rows: undefined,
             search: false,
+            check: false,
             reliable: false,
             outDir: 'evals/role-budget',
             json: false,
@@ -188,9 +191,50 @@ function searchRows(config, overrides, result, { model, outDir, arm }) {
 }
 
 /**
+ * Plays the scene of each requested prey beside the formula, on both prey bounds, and the kinematics against the body table.
+ * @param {Record<string, any>} config an `arenaConfig`
+ * @param {string[]} preys the prey rows asked for
+ * @param {import('../js/sim/log.js').SimLog} log the log
+ * @returns {{kinematics: import('../js/evo/role-budget-check.js').KinematicRow[], pairs: any[], drift: number}} the check
+ */
+function crossCheck(config, preys, log) {
+    const kinematics = kinematicRows(config);
+    const pairs = preys.map((prey) => ({
+        pair: `predator:${prey}`,
+        straight: chaseCells(config, { hunter: 'predator', prey, straight: true }),
+        broken: chaseCells(config, { hunter: 'predator', prey, straight: false }),
+    }));
+    let drift = 0;
+    for (const k of kinematics.filter((row) => row.drift)) {
+        drift += 1;
+        log.log('warn', 'RoleBudgetDrift', {
+            row: k.spec,
+            step: k.what,
+            formula: k.formula,
+            scene: k.sim,
+            tolerance: k.tolerance,
+        });
+    }
+    for (const { pair, straight, broken } of pairs) {
+        for (const c of [...straight, ...broken].filter((cell) => cell.drift)) {
+            drift += 1;
+            log.log('warn', 'RoleBudgetDrift', {
+                row: pair,
+                step: `${c.distance}px@${c.bearing}`,
+                formula: c.formula,
+                scene: c.sim,
+                tolerance: 2,
+            });
+        }
+    }
+    return { kinematics, pairs, drift };
+}
+
+/**
  * @param {BudgetArgs} args the options
  * @param {{logDir?: string, print?: (text: string) => void}} [io] where the log goes and where the report prints
- * @returns {Promise<{result: ReturnType<typeof matrix>, searched: any[]}>} what was computed
+ * @returns {Promise<{result: ReturnType<typeof matrix>, searched: any[], check: any}>} what was computed
+ * @throws {Error} with `exitCode` 1 and `RoleBudgetDrift` when `--check` finds a cell outside its tolerance
  */
 export async function runBudget(args, { logDir = '.sim/logs', print = console.log } = {}) {
     const fileOverrides = args.config === null ? {} : JSON.parse(readFileSync(args.config, 'utf8'));
@@ -212,11 +256,24 @@ export async function runBudget(args, { logDir = '.sim/logs', print = console.lo
         const result = matrix(config, model, args.rows ?? PHASE1_ROWS, { mix: args.mix });
         logCells(config, result, hash, log);
         const searched = args.search ? searchRows(config, overrides, result, { model, outDir: args.outDir, arm }) : [];
+        const preys = (args.rows ?? PHASE1_ROWS)
+            .map((r) => r.slice('predator:'.length))
+            .filter((s) => PREY_SPECS.includes(s));
+        const check = args.check ? crossCheck(config, preys, log) : null;
         const text = args.json
-            ? JSON.stringify({ configHash: hash, ...result, searched }, null, 2)
-            : [formatReport(result, hash), ...(searched.length > 0 ? [formatSearch(searched)] : [])].join('\n\n');
+            ? JSON.stringify({ configHash: hash, ...result, searched, check }, null, 2)
+            : [
+                  formatReport(result, hash),
+                  ...(searched.length > 0 ? [formatSearch(searched)] : []),
+                  ...(check ? [formatCheck(check)] : []),
+              ].join('\n\n');
         emitReport(text, { print, out: args.out });
-        return { result, searched };
+        if (check !== null && check.drift > 0) {
+            throw Object.assign(new Error(`RoleBudgetDrift: ${check.drift} reading(s) outside their tolerance`), {
+                exitCode: 1,
+            });
+        }
+        return { result, searched, check };
     });
 }
 
