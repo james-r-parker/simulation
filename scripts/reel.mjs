@@ -7,7 +7,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LIVE_POLICY } from '../js/evo/policies/index.js';
 import { withBrowserSession } from './lib/browser-session.mjs';
-import { intValue, parseFlags } from './lib/cli-args.mjs';
+import { intFlag, parseFlags } from './lib/cli-args.mjs';
 import { reelManifest, reelPageUrl, writeReel } from './lib/reel-files.mjs';
 import { collectReel } from './lib/reel-page.mjs';
 import { resolvePolicyFlag } from './lib/run-config.mjs';
@@ -19,8 +19,8 @@ const MS_PER_TICK = 40;
 
 /** @type {Record<string, (value: string | undefined, flag: string) => [string, any]>} */
 const VALUE_FLAGS = {
-    '--seed': (value, flag) => ['seed', intValue(flag, value, 0, USAGE)],
-    '--ticks': (value, flag) => ['ticks', intValue(flag, value, 1, USAGE)],
+    '--seed': intFlag('seed', 0, USAGE),
+    '--ticks': intFlag('ticks', 1, USAGE),
     '--out': (value) => ['out', String(value)],
     '--config': (value) => ['config', String(value)],
     '--policy': (value) => ['policy', resolvePolicyFlag(value, USAGE)],
