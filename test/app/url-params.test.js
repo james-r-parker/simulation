@@ -21,6 +21,7 @@ describe('readParams', () => {
             policy: 'map-elites-v6',
             merit: true,
             hold: true,
+            config: null,
         });
     });
 
@@ -39,6 +40,7 @@ describe('readParams', () => {
             policy: null,
             merit: false,
             hold: false,
+            config: null,
         });
     });
 
@@ -58,6 +60,7 @@ describe('readParams', () => {
             policy: null,
             merit: false,
             hold: false,
+            config: null,
         });
         expect(readParams('?seed=4294967296').seed).toBeNull();
         expect(readParams('?seed=4294967295').seed).toBe(4294967295);
@@ -155,5 +158,44 @@ describe('policy and merit', () => {
         });
         const { createConfig } = await import('../../js/sim/config.js');
         expect(createConfig({ ...MERIT_PREVIEW, seed: 1 }).meritBirthBoost).toBe(0.25);
+    });
+});
+
+describe('the config parameter', () => {
+    /** @param {unknown} value @returns {string} base64url of its JSON */
+    const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
+
+    it('reads a base64url JSON object of numbers and booleans', () => {
+        const config = { seasonLength: 3600, someFlag: true, rate: 0.25 };
+        expect(readParams(`?config=${encode(config)}`).config).toEqual(config);
+    });
+
+    it('ignores anything else: not base64url, not an object, a bad value, too many keys or too long', () => {
+        const many = Object.fromEntries(Array.from({ length: 65 }, (_, i) => [`k${i}`, i]));
+        for (const bad of [
+            '!!',
+            encode([1]),
+            encode(7),
+            encode(null),
+            encode({}),
+            encode({ a: 'x' }),
+            encode({ a: null }),
+            encode(many),
+            'a'.repeat(4001),
+            'bm90IGpzb24',
+        ]) {
+            expect(readParams(`?config=${bad}`).config).toBeNull();
+        }
+        expect(readParams('').config).toBeNull();
+    });
+
+    it('is the base of the overrides: the agents, floor and merit settings win over it', () => {
+        expect(configOverrides(readParams(`?config=${encode({ a: 1 })}`))).toEqual({ a: 1 });
+        expect(configOverrides(readParams(`?merit=1&config=${encode({ a: 1, splitDeliberateMin: 5 })}`))).toEqual({
+            a: 1,
+            ...MERIT_PREVIEW,
+        });
+        const both = configOverrides(readParams(`?agents=50&config=${encode({ a: 1, initialAgents: 9 })}`));
+        expect(both).toMatchObject({ a: 1, initialAgents: 50 });
     });
 });

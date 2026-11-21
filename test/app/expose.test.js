@@ -10,12 +10,12 @@ function app() {
         deps: { scene: null, refs: { player: null }, gpuTimer: { reset: vi.fn(), samples: () => null } },
         pack: { slots: () => null },
         loop: { lateFrames: () => 0 },
-        iface: { reel: { reel: { clips: () => [] }, recorder: { running: () => true } } },
+        iface: { reel: { reel: { clips: () => [], pending: () => null }, recorder: { running: () => true } } },
     };
 }
 
 describe('exposeApp', () => {
-    it('exposes the liveness counters always, and the perf and reel readers in development', () => {
+    it('exposes the liveness counters and the reel always, and the perf reader in development', () => {
         const target = /** @type {any} */ ({});
         exposeApp({ app: app(), target, production: false, frames: 8 });
         expect(target.__blob.tick).toBe(42);
@@ -28,12 +28,12 @@ describe('exposeApp', () => {
         expect(target.__reel.clips()).toEqual([]);
     });
 
-    it('exposes only the liveness counters in a production build', () => {
+    it('exposes no perf reader in a production build', () => {
         const target = /** @type {any} */ ({});
         exposeApp({ app: app(), target, production: true, frames: 8 });
         expect(target.__blob.tick).toBe(42);
         expect(target.__perf).toBeUndefined();
-        expect(target.__reel).toBeUndefined();
+        expect(target.__reel.recording()).toBe(true);
     });
 
     it('resets the GPU timer with the frames when perf is reset', () => {

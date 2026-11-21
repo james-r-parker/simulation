@@ -1,5 +1,5 @@
-// What the page exposes on `window` for the browser smoke and the scripts: `__blob` (frames and tick, always), and in
-// development builds `__perf` (the frame times) and `__reel` (the scene reel's clips). A browser shell's wiring: the
+// What the page exposes on `window` for the browser smoke and the scripts: `__blob` (frames and tick) and `__reel` (the
+// scene reel's clips) always, and in development builds `__perf` (the frame times). A browser shell's wiring: the
 // readers it hands over are in `liveness.js`, `perf.js` and `reel-hook.js`.
 
 import { clearFrameStats } from './frame-stats.js';
@@ -26,5 +26,5 @@ export function exposeApp({ app, target, production, frames }) {
             app.deps.gpuTimer?.reset();
         },
     });
-    installReelHook(target, { production, part: app.iface.reel });
+    installReelHook(target, app.iface.reel);
 }
