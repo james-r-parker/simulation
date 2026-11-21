@@ -1,0 +1,238 @@
+{
+  "configHash": "472deb69343dae71",
+  "rows": [
+    {
+      "name": "defender:predator",
+      "cells": {
+        "hear": {
+          "margin": 48,
+          "unit": "ticks",
+          "distance": null,
+          "status": "ok",
+          "capped": false,
+          "binding": false
+        },
+        "turn": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "n/a",
+          "capped": false,
+          "binding": false
+        },
+        "run": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": true
+        },
+        "intercept": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": false
+        },
+        "smoke": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": false
+        }
+      },
+      "status": "impossible",
+      "binding": "repel: off",
+      "detail": {
+        "row": {
+          "name": "defender:predator",
+          "cells": {
+            "hear": {
+              "margin": 48,
+              "unit": "ticks",
+              "distance": null,
+              "status": "ok",
+              "capped": false,
+              "binding": false
+            },
+            "turn": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "n/a",
+              "capped": false,
+              "binding": false
+            },
+            "run": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": true
+            },
+            "intercept": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": false
+            },
+            "smoke": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": false
+            }
+          },
+          "status": "impossible",
+          "binding": "repel: off"
+        },
+        "cells": {
+          "hear": {
+            "margin": 48,
+            "unit": "ticks",
+            "distance": null,
+            "status": "ok",
+            "capped": false,
+            "binding": false
+          },
+          "turn": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "n/a",
+            "capped": false,
+            "binding": false
+          },
+          "run": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "impossible",
+            "capped": false,
+            "binding": true
+          },
+          "intercept": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "impossible",
+            "capped": false,
+            "binding": false
+          },
+          "smoke": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "impossible",
+            "capped": false,
+            "binding": false
+          }
+        },
+        "repel": {
+          "on": false,
+          "breaksBite": false,
+          "energy": 0,
+          "cost": 0,
+          "impulse": 0,
+          "prevented": 0
+        },
+        "run": {
+          "killTick": 27,
+          "contactTick": 23,
+          "alarmTick": 2,
+          "heardTick": 3,
+          "startTick": 5,
+          "interceptTick": null,
+          "repelTick": null,
+          "repels": 0,
+          "bites": 5,
+          "hunterEnergy": 5616.827056512527,
+          "faced": false
+        },
+        "baseline": {
+          "killTick": 27,
+          "contactTick": 23,
+          "alarmTick": 2,
+          "heardTick": -1,
+          "startTick": -1,
+          "interceptTick": null,
+          "repelTick": null,
+          "repels": 0,
+          "bites": 5,
+          "hunterEnergy": 5616.827056512527,
+          "faced": false
+        },
+        "smoke": {
+          "refused": false,
+          "releasePoint": 287,
+          "coast": 227.99999999999977,
+          "facingTicks": 14,
+          "runTicks": 22,
+          "releaseTick": 41,
+          "latestRelease": 7,
+          "hiddenTicks": 0,
+          "escapeNeed": 0,
+          "slackDefender": -34,
+          "slackCaller": -2,
+          "cloud": {
+            "x": 178,
+            "y": 0,
+            "r": 80
+          },
+          "cell": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "impossible",
+            "capped": false,
+            "binding": false
+          }
+        },
+        "defenderBite": {
+          "taken": 50,
+          "kick": 10.311111111111112
+        },
+        "binding": "repel: off"
+      }
+    }
+  ],
+  "model": {
+    "reactionTicks": 2,
+    "hearThreshold": 0.1,
+    "breakAngle": 1.5707963267948966,
+    "tightTicks": 5,
+    "preySprint": "rationed",
+    "hunterShare": 0.1,
+    "foodDensity": null,
+    "naiveEffort": 0.5,
+    "catchShare": 0.3,
+    "defenderGap": 150,
+    "smokeGap": 240,
+    "reliableSight": false
+  },
+  "rulesHash": "d5f14d01d84f566d",
+  "choice": null,
+  "searched": [],
+  "defenderSearch": [
+    {
+      "goal": "defence",
+      "findings": [],
+      "files": []
+    },
+    {
+      "goal": "smoke",
+      "findings": [],
+      "files": []
+    }
+  ],
+  "check": null
+}

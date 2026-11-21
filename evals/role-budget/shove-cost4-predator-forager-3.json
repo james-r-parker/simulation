@@ -1,0 +1,10 @@
+{
+  "defenderRepelEnergy": 40,
+  "defenderRepelImpulse": 4,
+  "defenderRepelCost": 4,
+  "specialisations": {
+    "forager": {
+      "sprintBoost": 0.5
+    }
+  }
+}
