@@ -1,7 +1,7 @@
 # Agent workflow
 
-**Status:** In progress - Phases 1 (the context diet) and 5 (start to merge) are built; Phase 3 (before the push) is next. The plan covers what every agent session reads, how an experiment is recorded and read back, what a branch learns before it pushes, how runs, worktrees and outside streams share the machine, and the two commands that take a chunk from a fresh branch to a merged PR.
-**Validated:** 58f38443 (2026-11-20)
+**Status:** In progress - Phases 1 and 5 are built; Phase 3 and Phase 6 are built except T30 and the reviews T21 and T40 (T40 needs 30 pull requests of history); Phase 4 T22 to T25 are built, review T27 open (worktree-gc not yet run on the real machine). Phase 2 (the ledger) is next.
+**Validated:** 3c6f1225 (2026-11-21)
 **Priority:** 3 - Workflow lead. Tooling that changes no sim rule; every session and every subagent pays the Phase 1 cost on its first token and every chunk ships through Phase 5, so both are built before the next training chunk
 **Depends on:** [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
 
@@ -399,21 +399,21 @@ Six of the 20 `full` pull requests changed `package.json` only to add an npm scr
 
 | #   | Task                                                                                                                                                                              | Nature       | Depends on |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T22 | Record `workers` in `runs.json` and print the under-use warning in `scripts/run-detached.sh`, with tests (built)                                                                  | [mechanical] | -          |
-| T23 | Add `scripts/worktree-gc.sh` (`--list`, remove `safe`) with tests on a fixture repo (built)                                                                                       | [judgement]  | -          |
-| T24 | Add `scripts/state.mjs` and `npm run state` with tests for each block (built)                                                                                                     | [judgement]  | T22, T23   |
-| T25 | Add `docs/handoffs/TEMPLATE.md`; rewrite "Delegating to subagents" in `AGENTS.md` for streams (one coordinator, one model family), the worker budget and `worktree-gc.sh` (built) | [judgement]  | T24        |
+| T22 | (built) Record `workers` in `runs.json` and print the under-use warning in `scripts/run-detached.sh`, with tests                                                                  | [mechanical] | -          |
+| T23 | (built) Add `scripts/worktree-gc.sh` (`--list`, remove `safe`) with tests on a fixture repo                                                                                       | [judgement]  | -          |
+| T24 | (built) Add `scripts/state.mjs` and `npm run state` with tests for each block                                                                                                     | [judgement]  | T22, T23   |
+| T25 | (built) Add `docs/handoffs/TEMPLATE.md`; rewrite "Delegating to subagents" in `AGENTS.md` for streams (one coordinator, one model family), the worker budget and `worktree-gc.sh` | [judgement]  | T24        |
 | T27 | Conformance review of Phase 4, with `scripts/worktree-gc.sh` run on the machine and the class counts before and after in the PR body                                              | [judgement]  | T24, T25   |
 
 ### Phase 5 - Start to merge (built)
 
-| #   | Task                                                                                                                                                                  | Nature       | Depends on |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T28 | Add `scripts/task-start.sh` with tests on a fixture repo                                                                                                              | [judgement]  | -          |
-| T29 | Add `scripts/lib/ship-steps.mjs` and `scripts/ship.sh` (steps 1 to 7, the exit codes, `.checklogs/ship.jsonl`) with tests on stubbed `gh` and `git`                   | [judgement]  | -          |
-| T31 | Move the test files of `test shard-6` over 60 s to a named heavy shard and pin the shard list in `test/workflows/`; record the shard times before and after in the PR | [mechanical] | -          |
-| T32 | Rewrite the `create-pr` and `resume-plan` skills and the `AGENTS.md` workflow around `task-start.sh` and `ship.sh`; add both to `docs/commands.md`                    | [judgement]  | T28, T29   |
-| T33 | Conformance review of Phase 5                                                                                                                                         | [judgement]  | T31, T32   |
+| #   | Task                                                                                                                                                                          | Nature       | Depends on |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T28 | (built) Add `scripts/task-start.sh` with tests on a fixture repo                                                                                                              | [judgement]  | -          |
+| T29 | (built) Add `scripts/lib/ship-steps.mjs` and `scripts/ship.sh` (steps 1 to 7, the exit codes, `.checklogs/ship.jsonl`) with tests on stubbed `gh` and `git`                   | [judgement]  | -          |
+| T31 | (built) Move the test files of `test shard-6` over 60 s to a named heavy shard and pin the shard list in `test/workflows/`; record the shard times before and after in the PR | [mechanical] | -          |
+| T32 | (built) Rewrite the `create-pr` and `resume-plan` skills and the `AGENTS.md` workflow around `task-start.sh` and `ship.sh`; add both to `docs/commands.md`                    | [judgement]  | T28, T29   |
+| T33 | (built) Conformance review of Phase 5                                                                                                                                         | [judgement]  | T31, T32   |
 
 ### Phase 6 - Affected tests in CI
 
