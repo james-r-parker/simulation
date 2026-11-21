@@ -5,22 +5,11 @@
 import { createConfig } from '../sim/config.js';
 import { detCos, detSin } from '../sim/det-math.js';
 import { nextFloat } from '../sim/rng.js';
-import { SPEC } from '../sim/specs.js';
+import { SPEC, SPEC_NAMES } from '../sim/specs.js';
 import { HUNTER_ENERGY, SUBJECT_ENERGY, heading } from './memory-probe-scenarios.js';
-import { PREDATOR_BARS, victimStaging } from './reflex-cases-predator.js';
+import { victimStaging } from './reflex-cases-predator.js';
+import { defaultBars } from './reflex-bars.js';
 import { DEG, SEQUENCE_TICKS, bearingPoint, signedBearing, subjectAgent, withMirrors } from './reflex-stage.js';
-
-/** The thresholds, as shares of the output range (starting values; T22 moves them to the role budget). */
-export const ROLE_BARS = Object.freeze({
-    turn: 0.15,
-    thrust: 0.3,
-    bite: PREDATOR_BARS.bite,
-    /** The `SPRINT` effort a prey in view asks for, by how near it is: higher as it nears. */
-    sprint: Object.freeze({ far: 0.15, mid: 0.35, near: 0.55 }),
-});
-const BAR = ROLE_BARS;
-/** `alarmThreshold`: the call output the sim fires above. */
-export const ALARM_BAR = createConfig().alarmThreshold;
 
 /** Where the prey stands in `sprint-on-prey`, as shares of the view. */
 const SPRINT_SHARES = Object.freeze({ far: 0.8, mid: 0.55, near: 0.3 });
@@ -106,8 +95,8 @@ const SPRINT_ON_PREY = {
         }));
         return [...seen, { kind: 'none', bearing: 0, mirror, ticks: [lone(d.angle, SPEC.PREDATOR)] }];
     }),
-    check(outputs, { kind }) {
-        return kind === 'none' ? outputs.sprint <= 0 : outputs.sprint >= BAR.sprint[/** @type {'far'} */ (kind)];
+    check(outputs, { kind }, bars = defaultBars()) {
+        return kind === 'none' ? outputs.sprint <= 0 : outputs.sprint >= bars.role.sprint[/** @type {'far'} */ (kind)];
     },
 };
 
@@ -125,8 +114,8 @@ const HOLD_THE_BITE = {
             { kind: 'empty', bearing: 0, mirror, ticks: [lone(d.angle, SPEC.PREDATOR)] },
         ];
     }),
-    check(outputs, { kind }) {
-        return kind === 'jaws' ? outputs.bite > BAR.bite : outputs.bite <= BAR.bite;
+    check(outputs, { kind }, bars = defaultBars()) {
+        return kind === 'jaws' ? outputs.bite > bars.role.bite : outputs.bite <= bars.role.bite;
     },
 };
 
@@ -151,8 +140,9 @@ const CALL_ON_THREAT = {
             ];
         });
     },
-    check(outputs, { kind }) {
-        return kind === 'threat' ? outputs.alarm > ALARM_BAR : outputs.alarm <= ALARM_BAR;
+    check(outputs, { kind }, bars = defaultBars()) {
+        const { alarm } = bars.role;
+        return kind === 'threat' ? outputs.alarm > alarm : outputs.alarm <= alarm;
     },
 };
 
@@ -176,8 +166,19 @@ const TURN_TO_ALARM = {
     scene: 'Family tolerance',
     spec: SPEC.DEFENDER,
     plan: heardPlan(SPEC.DEFENDER),
-    check: (outputs, { bearing }) => Math.sign(bearing) * outputs.turn >= BAR.turn && outputs.thrust > BAR.thrust,
+    check: (outputs, { bearing }, bars = defaultBars()) =>
+        Math.sign(bearing) * outputs.turn >= bars.role.turn && outputs.thrust > bars.role.thrust,
 };
+
+/**
+ * @param {number} spec the subject's specialisation
+ * @returns {ReflexCase['check']} a check that the body turns off the line to a heard call or a herd and keeps moving
+ */
+const awayCheck =
+    (spec) =>
+    (outputs, { bearing }, bars = defaultBars()) =>
+        Math.sign(bearing) * outputs.turn <= -bars.role.turnAway[SPEC_NAMES[spec]] &&
+        outputs.thrust >= bars.role.thrust;
 
 /** @type {ReflexCase} A forager hears the call, and goes the other way. */
 const FLEE_ON_ALARM = {
@@ -185,26 +186,47 @@ const FLEE_ON_ALARM = {
     scene: 'A real chase',
     spec: SPEC.FORAGER,
     plan: heardPlan(SPEC.FORAGER),
-    check: (outputs, { bearing }) => Math.sign(bearing) * outputs.turn <= -BAR.turn && outputs.thrust >= BAR.thrust,
+    check: awayCheck(SPEC.FORAGER),
 };
 
-/** @type {ReflexCase} A herd animal closes on the forward rays; the body turns off its line and keeps moving. */
-const CLEAR_THE_HERD = {
-    name: 'clear-the-herd',
-    scene: 'A real chase',
-    spec: SPEC.FORAGER,
-    plan(rng, view) {
-        const draw = { angle: heading(rng), bearing: forwardRay(rng) };
-        return withMirrors(draw, (d, mirror) => {
-            const bearing = mirror * d.bearing;
-            const ticks = Array.from({ length: SEQUENCE_TICKS }, (_, t) => {
-                const share = HERD_FROM + ((HERD_TO - HERD_FROM) * t) / (SEQUENCE_TICKS - 1);
-                return { ...lone(d.angle, SPEC.FORAGER), herd: bearingPoint(d.angle, bearing, share * view) };
-            });
-            return [{ kind: 'herd', bearing, mirror, ticks }];
+/**
+ * A herd animal closes on the forward rays.
+ * @param {number} spec the subject's specialisation
+ * @returns {ReflexCase['plan']} the plan
+ */
+const herdPlan = (spec) => (rng, view) => {
+    const draw = { angle: heading(rng), bearing: forwardRay(rng) };
+    return withMirrors(draw, (d, mirror) => {
+        const bearing = mirror * d.bearing;
+        const ticks = Array.from({ length: SEQUENCE_TICKS }, (_, t) => {
+            const share = HERD_FROM + ((HERD_TO - HERD_FROM) * t) / (SEQUENCE_TICKS - 1);
+            return { ...lone(d.angle, spec), herd: bearingPoint(d.angle, bearing, share * view) };
         });
-    },
-    check: (outputs, { bearing }) => Math.sign(bearing) * outputs.turn <= -BAR.turn && outputs.thrust >= BAR.thrust,
+        return [{ kind: 'herd', bearing, mirror, ticks }];
+    });
+};
+
+/**
+ * @param {number} spec the subject's specialisation
+ * @returns {ReflexCase} `clear-the-herd` for it: the body turns off the herd's line and keeps moving (the forager's keeps
+ *   the bare name)
+ */
+const clearTheHerd = (spec) => ({
+    name: spec === SPEC.FORAGER ? 'clear-the-herd' : `clear-the-herd:${SPEC_NAMES[spec]}`,
+    scene: 'A real chase',
+    spec,
+    plan: herdPlan(spec),
+    check: (outputs, { bearing }, bars = defaultBars()) =>
+        Math.sign(bearing) * outputs.turn <= -bars.role.herdTurn && outputs.thrust >= bars.role.herdThrust,
+});
+
+/** @type {ReflexCase} A reproducer hears the call, and goes the other way. */
+const FLEE_ON_ALARM_REPRODUCER = {
+    ...FLEE_ON_ALARM,
+    name: 'flee-on-alarm:reproducer',
+    spec: SPEC.REPRODUCER,
+    plan: heardPlan(SPEC.REPRODUCER),
+    check: awayCheck(SPEC.REPRODUCER),
 };
 
 export const ROLE_CASES = Object.freeze([
@@ -213,5 +235,6 @@ export const ROLE_CASES = Object.freeze([
     CALL_ON_THREAT,
     TURN_TO_ALARM,
     FLEE_ON_ALARM,
-    CLEAR_THE_HERD,
+    FLEE_ON_ALARM_REPRODUCER,
+    ...SPEC_NAMES.map((_, spec) => clearTheHerd(spec)),
 ]);

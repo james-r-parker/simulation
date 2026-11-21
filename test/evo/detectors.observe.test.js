@@ -178,6 +178,7 @@ describe('observeScenes', () => {
             'carcass',
             'competence',
             'condition',
+            'defender',
             'disease',
             'divergence',
             'eat',

@@ -19,7 +19,7 @@ const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-name
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(399);
+        expect(REPORT_NAMES).toHaveLength(400);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -224,6 +224,7 @@ const ADDED_AFTER_T8 = [
     'eval.hunter_size_choice',
     'eval.hunter_slow_choice',
     ...GENE_METRICS,
+    'eval.defender_bite_break_share',
 ];
 /** Watch metrics registered after the snapshot whose intended direction is lower. */
 const ADDED_INTENDED_LOWER = [

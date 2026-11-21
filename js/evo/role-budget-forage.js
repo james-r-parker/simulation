@@ -68,7 +68,7 @@ export function patchFoodDensity(world) {
 /**
  * @param {Context} ctx the context
  * @param {number} temperature a body temperature
- * @returns {number} the factor on the passive and size terms at that temperature (`passiveMultiplier`)
+ * @returns {number} the factor on the passive and size terms at that temperature (the cold and hot ramps on `passiveLoss`)
  */
 export function heatFactor(ctx, temperature) {
     ctx.thermal.temperature[0] = temperature;
