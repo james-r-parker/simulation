@@ -4,8 +4,9 @@
 //! Bit-identity rules (docs/designs/wasm-kernels.md): every value is computed with the JS operations in the JS order,
 //! each `f32` world value widens to `f64` before it is used, `Math.sqrt` and `Math.floor` are the IEEE instructions,
 //! and the gathered rows keep the JS order (obstacles, herd bodies, smoke clouds, then the hash cells row by row), so the
-//! mate scan and the `coverConceals` count that read them in order see the same rows. The class of an agent hit and
-//! everything else that is a rule stays in JS.
+//! mate scan and the `coverConceals` count that read them in order see the same rows. Each agent hit also writes what
+//! its body shows the caster (`raySize`, `raySpeed`, `rayClosing`: docs/designs/body-genes.md, "Raw lanes"), with the
+//! det-math `tanh`. The class of an agent hit and everything else that is a rule stays in JS.
 
 use core::arch::wasm32::{
     f64x2_add, f64x2_eq, f64x2_extract_lane, f64x2_ge, f64x2_gt, f64x2_lt, f64x2_mul, f64x2_neg, f64x2_splat,
@@ -13,7 +14,7 @@ use core::arch::wasm32::{
     v128_not, v128_or, v128_store,
 };
 
-use crate::det_math::floor;
+use crate::det_math::{det_tanh, floor};
 
 /// The parameter block JS writes (`js/sim/wasm-sense.js`, `writeSenseParams`): byte offsets of the arrays, then sizes.
 #[repr(C)]
@@ -48,6 +49,11 @@ pub struct SenseParams {
     ray_reach_by_spec: u32,
     ray_reach: u32,
     ray_smoke: u32,
+    vx: u32,
+    vy: u32,
+    ray_size: u32,
+    ray_speed: u32,
+    ray_closing: u32,
     max_agents: u32,
     stamp_count: u32,
     obs_count: u32,
@@ -61,6 +67,7 @@ pub struct SenseParams {
     see_plant: u32,
     see_meat: u32,
     spec: u32,
+    body_fault: u32,
 }
 
 /// Indices into the doubles block.
@@ -70,6 +77,7 @@ const D_WIDTH: usize = 2;
 const D_HEIGHT: usize = 3;
 const D_CELL_SIZE: usize = 4;
 const D_SMOKE_PASS: usize = 5;
+const D_SPEED_SPAN: usize = 6;
 
 /// Indices into `rayScratch` (`ray-gather.js` and `ray-march.js`).
 const OX: usize = 0;
@@ -119,6 +127,32 @@ fn js_min(a: f64, b: f64) -> f64 {
     }
 }
 
+/// `Math.min` of two doubles: NaN when either is NaN, else `js_min`.
+#[inline(always)]
+fn js_min_nan(a: f64, b: f64) -> f64 {
+    if a.is_nan() || b.is_nan() {
+        f64::NAN
+    } else {
+        js_min(a, b)
+    }
+}
+
+/// `Math.max` of two doubles: NaN when either is NaN, the larger, and +0 when they are equal zeros of either sign.
+#[inline(always)]
+fn js_max_nan(a: f64, b: f64) -> f64 {
+    if a.is_nan() || b.is_nan() {
+        f64::NAN
+    } else if a > b {
+        a
+    } else if b > a {
+        b
+    } else if a.is_sign_positive() {
+        a
+    } else {
+        b
+    }
+}
+
 /// Typed pointers resolved from `SenseParams`.
 struct Sense {
     s: *mut f64,
@@ -159,7 +193,7 @@ impl Sense {
 
     #[inline(always)]
     unsafe fn dbl(&self, i: usize) -> f64 {
-        // SAFETY: the doubles block holds six doubles.
+        // SAFETY: the doubles block holds seven doubles.
         unsafe { *self.d.add(i) }
     }
 
@@ -559,7 +593,11 @@ unsafe fn next_past_smoke(g: &Sense, count: usize, k: usize, span: (f64, f64), c
             wall_distance(g.sc(OX), dx, g.dbl(D_WIDTH)),
             wall_distance(g.sc(OY), dy, g.dbl(D_HEIGHT)),
         );
-        let mut best = if t_wall >= from && t_wall <= limit { t_wall } else { f64::INFINITY };
+        let mut best = if t_wall >= from && t_wall <= limit {
+            t_wall
+        } else {
+            f64::INFINITY
+        };
         let mut best_key = WALL * KIND_STRIDE;
         let ring = at::<u8>(g.p.cover_ring);
         for row in 0..count {
@@ -592,7 +630,11 @@ unsafe fn pass_smoke(g: &Sense, count: usize, slot: usize) {
         if pass <= 0.0 {
             return;
         }
-        let caster_ring = if g.p.conceals != 0 { Some(*at::<u8>(g.p.cover_ring).add(slot)) } else { None };
+        let caster_ring = if g.p.conceals != 0 {
+            Some(*at::<u8>(g.p.cover_ring).add(slot))
+        } else {
+            None
+        };
         for k in 0..rays {
             if !is_smoke(*g.best_key.add(k)) {
                 continue;
@@ -609,10 +651,94 @@ unsafe fn pass_smoke(g: &Sense, count: usize, slot: usize) {
     }
 }
 
+/// The caster's numbers `bodySenseOf` reads for every hit: position, velocity and size, widened from `f32`, and the
+/// speed span (`maxVelocity x SPEED_SENSE_SPAN`).
+struct Caster {
+    x: f64,
+    y: f64,
+    vx: f64,
+    vy: f64,
+    size: f64,
+    span: f64,
+}
+
+/// `bodySenseOf` (docs/designs/body-genes.md, "Raw lanes") of the agent in slot `hit`: its size against the caster's
+/// (`detTanh`), its speed over the span capped at 1, and the rate the gap shrinks over the span clamped to plus or minus
+/// 1 (0 when the centres coincide), each with the JS operations in the JS order. `None` when the size ratio is not
+/// finite, where `detTanh` throws.
+#[inline(always)]
+unsafe fn body_sense(p: &SenseParams, c: &Caster, hit: usize) -> Option<(f64, f64, f64)> {
+    // SAFETY: `hit` is an agent slot below `maxAgents`, and the five arrays hold `maxAgents` floats.
+    unsafe {
+        let hvx = *at::<f32>(p.vx).add(hit) as f64;
+        let hvy = *at::<f32>(p.vy).add(hit) as f64;
+        let ratio = *at::<f32>(p.size).add(hit) as f64 / c.size - 1.0;
+        if !ratio.is_finite() {
+            return None;
+        }
+        let size = det_tanh(ratio);
+        let speed = js_min_nan(1.0, sqrt(hvx * hvx + hvy * hvy) / c.span);
+        let dx = *at::<f32>(p.x).add(hit) as f64 - c.x;
+        let dy = *at::<f32>(p.y).add(hit) as f64 - c.y;
+        let d = sqrt(dx * dx + dy * dy);
+        if d == 0.0 {
+            return Some((size, speed, 0.0));
+        }
+        // 0 - rate, not -rate: a body crossing at a constant gap reads +0, never -0.
+        let rate = (hvx - c.vx) * dx + (hvy - c.vy) * dy;
+        Some((
+            size,
+            speed,
+            js_max_nan(-1.0, js_min_nan(1.0, (0.0 - rate) / d / c.span)),
+        ))
+    }
+}
+
+/// Writes every ray's body lanes at `slot x rayCount + k`: what the body shows for an agent hit, 0 on all three for any
+/// other hit or none. Returns false when a hit's size ratio is not finite (its lanes then read 0).
+unsafe fn write_body(g: &Sense, slot: usize) -> bool {
+    // SAFETY: the lanes hold `rayCount` floats per slot, the best arrays `rayCount` doubles, and `slot` is below
+    // `maxAgents`.
+    unsafe {
+        let p = g.p;
+        let rays = p.ray_count as usize;
+        let c = Caster {
+            x: *at::<f32>(p.x).add(slot) as f64,
+            y: *at::<f32>(p.y).add(slot) as f64,
+            vx: *at::<f32>(p.vx).add(slot) as f64,
+            vy: *at::<f32>(p.vy).add(slot) as f64,
+            size: *at::<f32>(p.size).add(slot) as f64,
+            span: g.dbl(D_SPEED_SPAN),
+        };
+        let base = slot * rays;
+        let (out_size, out_speed, out_closing) = (
+            at::<f32>(p.ray_size).add(base),
+            at::<f32>(p.ray_speed).add(base),
+            at::<f32>(p.ray_closing).add(base),
+        );
+        let mut ok = true;
+        for k in 0..rays {
+            let key = *g.best_key.add(k);
+            let mut lanes = (0.0, 0.0, 0.0);
+            if *g.best_t.add(k) != f64::INFINITY && (AGENT * KIND_STRIDE..OBSTACLE * KIND_STRIDE).contains(&key) {
+                match body_sense(p, &c, (key - AGENT * KIND_STRIDE) as usize) {
+                    Some(v) => lanes = v,
+                    None => ok = false,
+                }
+            }
+            *out_size.add(k) = lanes.0 as f32;
+            *out_speed.add(k) = lanes.1 as f32;
+            *out_closing.add(k) = lanes.2 as f32;
+        }
+        ok
+    }
+}
+
 /// Gathers the caster's circles within the full range and finds every ray's nearest hit within its own reach, then
-/// lets the rays that met smoke see on through it by the caster's smoke pass. The origin, range and heading are in
-/// `rayScratch`; the caster's specialisation is in `spec` and its smoke pass in the doubles block.
-/// Returns the gathered row count; with `conceals` the skipped count goes to `concealed`.
+/// lets the rays that met smoke see on through it by the caster's smoke pass, and writes every ray's body lanes. The
+/// origin, range and heading are in `rayScratch`; the caster's specialisation is in `spec` and its smoke pass and the
+/// speed span in the doubles block. Returns the gathered row count; with `conceals` the skipped count goes to
+/// `concealed`; `body_fault` is 1 when a hit's size ratio was not finite, else 0.
 ///
 /// # Safety
 /// `params` addresses a `SenseParams` block whose arrays lie inside the memory, and `slot` is below `maxAgents`.
@@ -628,6 +754,7 @@ pub unsafe fn sense_slot(params: u32, slot: usize) -> usize {
             nearest_all(&g, count);
         }
         pass_smoke(&g, count, slot);
+        p.body_fault = if write_body(&g, slot) { 0 } else { 1 };
         count
     }
 }

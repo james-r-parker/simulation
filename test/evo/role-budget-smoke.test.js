@@ -161,7 +161,7 @@ describe('defenderSmokeGeometry', () => {
         const stood = defenderSmokeGeometry(bodies, { ...MODEL_DEFAULTS, standing: -Math.PI / 2 });
         expect(stood.releaseTick).toBe(2 * MODEL_DEFAULTS.reactionTicks + 1 + stood.facingTicks);
         expect(stood.facingTicks).toBeGreaterThan(0);
-        const near = defenderSmokeGeometry(bodies, { ...MODEL_DEFAULTS, defenderGap: 30 });
+        const near = defenderSmokeGeometry(bodies, { ...MODEL_DEFAULTS, escortGap: 30 });
         expect(near.runTicks).toBeLessThan(g.runTicks);
     });
 

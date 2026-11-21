@@ -32,25 +32,35 @@ function pair(over, victimEnergy = 500) {
 }
 
 describe('a bite that leaves its victim alive', () => {
-    it('gives it one wounded and one panicked stack, sourced at the biter, with every number at 0 too', () => {
-        const { w, biter, victim } = pair({});
+    it('gives it one wounded and one panicked stack, sourced at the biter', () => {
+        const { w, biter, victim } = pair(ON);
         feedPairs(w, [biter, victim]);
         expect([stacks(w, victim, 'wounded'), stacks(w, victim, 'panicked')]).toEqual([1, 1]);
         expect([stacks(w, biter, 'wounded'), stacks(w, biter, 'panicked')]).toEqual([0, 0]);
         expect(w.events.data[EVENT.EFFECT_APPLIED.SOURCE]).toBe(biter);
-        expect(effectFactor(w, victim, EFFECT.WOUNDED, 'maxThrust')).toBe(1);
-        expect(effectFactor(w, victim, EFFECT.PANICKED, 'maxThrust')).toBe(1);
+    });
+
+    it.each([
+        ['every number at 0', {}, [0, 0]],
+        ['woundThrust alone', { woundThrust: 0.1 }, [1, 0]],
+        ['panicThrust alone', { panicThrust: 0.1 }, [0, 1]],
+        ['panicBurn alone', { panicBurn: 0.1 }, [0, 1]],
+        ['shakenThrust alone', { shakenThrust: 0.1 }, [0, 1]],
+    ])('raises only the stacks whose numbers can change the world, with %s', (_name, over, expected) => {
+        const { w, biter, victim } = pair(over);
+        feedPairs(w, [biter, victim]);
+        expect([stacks(w, victim, 'wounded'), stacks(w, victim, 'panicked')]).toEqual(expected);
     });
 
     it('gives a killed body nothing', () => {
-        const { w, biter, victim } = pair({}, 3);
+        const { w, biter, victim } = pair(ON, 3);
         feedPairs(w, [biter, victim]);
         expect(w.energy[victim]).toBe(0);
         expect([stacks(w, victim, 'wounded'), stacks(w, victim, 'panicked')]).toEqual([0, 0]);
     });
 
     it('caps wounded at 5 and panicked at 2, and logs each stack it drops', () => {
-        const { w, biter, victim } = pair({}, 600);
+        const { w, biter, victim } = pair(ON, 600);
         for (let bite = 0; bite < 6; bite++) {
             feedPairs(w, [biter, victim]);
         }

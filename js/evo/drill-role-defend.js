@@ -10,6 +10,7 @@ import { SPEC } from '../sim/specs.js';
 import { callerBrain, defenderBrain, pursuerBrain } from './chase-oracles.js';
 import { ROLE, ROLE_ARENA, ROLE_CONFIG, SLOT, creeping, paramsOf, perWorld, turned } from './drill-role-staging.js';
 import { heading } from './memory-probe-scenarios.js';
+import { escortGap } from './role-budget-escort.js';
 import { gapAtAwareness } from './role-budget-frame.js';
 import { MODEL_DEFAULTS } from './role-budget-model.js';
 import { MAX_TICKS } from './role-budget-timeline.js';
@@ -41,8 +42,9 @@ export function lostReason(ticks) {
  * @returns {import('./memory-probe-run.js').Plan} the trial
  */
 export function defendPlan(config, { angle, side }) {
-    const [hunter, caller] = paramsOf(config, 'predator', 'forager');
-    const { reactionTicks: reaction, defenderGap } = MODEL_DEFAULTS;
+    const [hunter, caller, defender] = paramsOf(config, 'predator', 'forager', 'defender');
+    const { reactionTicks: reaction } = MODEL_DEFAULTS;
+    const escort = escortGap(defender, caller, MODEL_DEFAULTS);
     const gap = gapAtAwareness(hunter, caller);
     const shoveOn = config.defenderRepelEnergy > 0 || config.defenderRepelImpulse > 0;
     const ticks = {
@@ -56,7 +58,7 @@ export function defendPlan(config, { angle, side }) {
         { role: ROLE.OTHER, ...turned(angle, { x: gap, y: 0 }), angle, spec: SPEC.FORAGER },
         {
             role: 'subject',
-            ...turned(angle, { x: gap, y: side * defenderGap }),
+            ...turned(angle, { x: gap, y: side * escort }),
             angle: angle - (side * Math.PI) / 2,
             spec: SPEC.DEFENDER,
         },

@@ -24,12 +24,12 @@ const BLIND = { maxVelocity: 5, specialisations: { predator: { visionRange: 100 
 const ARMS = [
     { name: 'defaults', config: {}, model: {} },
     { name: 'defaults, the shove on', config: { defenderRepelEnergy: 40, defenderRepelImpulse: 4 }, model: {} },
-    { name: 'slow, the shove on, defender beside the caller', config: SLOW, model: { defenderGap: 60 } },
-    { name: 'slow, the shove on, defender 150 px off', config: SLOW, model: {} },
+    { name: 'slow, the shove on, defender beside the caller', config: SLOW, model: { escortGap: 60 } },
+    { name: 'slow, the shove on, defender 150 px off', config: SLOW, model: { escortGap: 150 } },
     {
         name: 'slow, the shove off',
         config: { ...SLOW, defenderRepelEnergy: 0, defenderRepelImpulse: 0 },
-        model: { defenderGap: 60 },
+        model: { escortGap: 60 },
     },
     { name: 'a hunter with a short view', config: BLIND, model: {} },
     { name: 'a hunter with a short view, brains with no reaction', config: BLIND, model: { reactionTicks: 0 } },

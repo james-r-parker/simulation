@@ -9,6 +9,7 @@ import { cellRange } from './spatial-hash.js';
 import { noteHeard } from './effect-hear.js';
 import { huddlePass } from './effect-huddle.js';
 import { settleCalls } from './effect-social.js';
+import { callEffectsOn } from './effect-numbers.js';
 import { GATE, LANE_ID, gateOpen, liveOf } from './effects.js';
 import { specParams } from './spec-params.js';
 import { HEARD_STRIDE } from './world.js';
@@ -308,7 +309,9 @@ export function signalAll(world, hash) {
     hearPass(world, hash, world.alarmTimer, ALARM_HEARD);
     hearPass(world, hash, world.huntTimer, HUNT_HEARD);
     if (world.callScratch[CALLS_FIRED] > 0) {
-        settleCalls(world);
+        if (callEffectsOn(world.config)) {
+            settleCalls(world); // status-effects T28: no `hoarse` bookkeeping while the call effects have no strength
+        }
         world.callHeard.fill(0);
     }
     huddlePass(world, hash);

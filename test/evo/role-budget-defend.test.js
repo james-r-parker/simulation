@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { arenaConfig } from '../../js/evo/chase-arena.js';
 import { budgetDefend } from '../../js/evo/role-budget-defend.js';
 import { defenceTimeline } from '../../js/evo/role-budget-defence.js';
+import { escortGap } from '../../js/evo/role-budget-escort.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 
@@ -13,7 +14,8 @@ const SLOW = {
     defenderRepelCost: 2,
     specialisations: { predator: { sprintBoost: 0.5 } },
 };
-const NEAR = MODEL_DEFAULTS;
+/** The bisection below was first read with the defender 150 px off the caller. */
+const NEAR = { ...MODEL_DEFAULTS, escortGap: 150 };
 
 /** @param {Record<string, any>} overrides @param {import('../../js/evo/role-budget-model.js').RoleModel} [model] */
 const budget = (overrides, model = MODEL_DEFAULTS) => {
@@ -46,7 +48,8 @@ describe('budgetDefend at the defaults', () => {
     });
 
     it('caps the hear slack at the ticks the call stays audible, minus the first', () => {
-        expect(b.cells.hear.margin).toBe(48);
+        // the call is audible for 52 ticks at the escort distance (87 px) and 49 at 150 px
+        expect(b.cells.hear.margin).toBe(51);
     });
 });
 
@@ -69,7 +72,12 @@ describe('budgetDefend with the shove on in a world the defender can reach', () 
     it('finds the largest delay at a step by bisection: that delay completes and one more fails', () => {
         const [hunter, caller, defender] = b.bodies;
         const completes = (/** @type {Record<string, number>} */ delays) => {
-            const run = defenceTimeline(hunter, caller, defender, { reaction: 2, threshold: 0.1, side: 150, delays });
+            const run = defenceTimeline(hunter, caller, defender, {
+                reaction: 2,
+                threshold: 0.1,
+                side: escortGap(defender, caller, NEAR),
+                delays,
+            });
             const kill = /** @type {number} */ (b.baseline.killTick);
             return run.repelTick !== null && run.repelTick < kill;
         };
@@ -83,7 +91,7 @@ describe('budgetDefend with the shove on in a world the defender can reach', () 
     });
 
     it('a defender out of earshot hears nothing: hear is impossible and no later step is read', () => {
-        const far = budget(SLOW, { ...MODEL_DEFAULTS, defenderGap: 300 });
+        const far = budget(SLOW, { ...MODEL_DEFAULTS, escortGap: 300 });
         expect(far.cells.hear.status).toBe('impossible');
         expect(far.cells.turn.status).toBe('n/a');
         expect(far.cells.run.status).toBe('n/a');

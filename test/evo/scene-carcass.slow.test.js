@@ -16,7 +16,7 @@ import { runSeed } from '../../scripts/eval-worker.mjs';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const RECORDED_WORLD_HASH = 'af220e7209361ae7';
-const RECORDED_METRICS_SHA256 = '238920cba09b091dc0015db12592fcddb2e8441dbe4c43bba1f5a7a8f4c01d46';
+const RECORDED_METRICS_SHA256 = '4ff159404b9b680a3638d762d74fce3110883cf149152db8781d2a4d6b649bc2';
 
 describe('trackCarcasses skipping empty slots', () => {
     it(

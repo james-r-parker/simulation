@@ -6,19 +6,25 @@
 import { HEARD_FROM_STRIDE } from './agent-arrays.js';
 import { EVENT, EVENT_TYPE, pushEvent } from './events.js';
 import { HUNT_FROM } from './effect-hear.js';
-import { dropStack, raiseEffect } from './effect-raise.js';
-import { EFFECT, SYSTEM } from './effects.js';
+import { panicOn, woundOn } from './effect-numbers.js';
+import { dropStack } from './effect-raise.js';
+import { EFFECT, SYSTEM, raiseOn } from './effects.js';
 
 /**
- * A body that a bite leaves alive is `wounded` and `panicked`, one stack of each a bite (`applyBite`, js/sim/feeding.js).
+ * A body that a bite leaves alive is `wounded` and `panicked`, one stack of each a bite (`applyBite`, js/sim/feeding.js);
+ * each only while one of its numbers is above 0 (`woundOn`, `panicOn`), since at 0 its stacks change nothing.
  * @param {any} world the world
  * @param {number} victim the bitten slot, still alive
  * @param {number} biter the biting slot
  * @returns {void}
  */
 export function noteBitten(world, victim, biter) {
-    raiseEffect(SYSTEM, world, victim, { effect: EFFECT.WOUNDED, source: biter });
-    raiseEffect(SYSTEM, world, victim, { effect: EFFECT.PANICKED, source: biter });
+    if (woundOn(world.config)) {
+        raiseOn(world, victim, EFFECT.WOUNDED, biter);
+    }
+    if (panicOn(world.config)) {
+        raiseOn(world, victim, EFFECT.PANICKED, biter);
+    }
 }
 
 /**
@@ -51,13 +57,13 @@ function settleCaller(world, caller) {
     const callTicks = world.lanes.callTicks[caller];
     if (world.alarmTimer[caller] === callTicks) {
         if (world.alarmSeen[caller] === 0 || world.callHeard[caller * 2] === 0) {
-            raiseEffect(SYSTEM, world, caller, { effect: EFFECT.HOARSE, source: caller });
+            raiseOn(world, caller, EFFECT.HOARSE, caller);
         } else {
             dropStack(SYSTEM, world, caller, EFFECT.HOARSE);
         }
     }
     if (world.huntTimer[caller] === callTicks && world.callHeard[caller * 2 + 1] === 0) {
-        raiseEffect(SYSTEM, world, caller, { effect: EFFECT.HOARSE, source: caller });
+        raiseOn(world, caller, EFFECT.HOARSE, caller);
     }
 }
 
@@ -108,7 +114,7 @@ export function noteAnswered(world, biter, victim) {
     }
     const bit = world.prevBiter[victim] === world.genomeId[caller];
     if (bit && world.tick - world.prevBiteTick[victim] <= world.config.rallyTicks) {
-        raiseEffect(SYSTEM, world, caller, { effect: EFFECT.ANSWERED, source: biter });
+        raiseOn(world, caller, EFFECT.ANSWERED, biter);
         dropStack(SYSTEM, world, caller, EFFECT.HOARSE);
     }
 }
@@ -127,6 +133,6 @@ export function noteShoved(world, defender, target) {
     world.events.data[at + EVENT.DEFENDER_SHOVED.SLOT] = defender;
     world.events.data[at + EVENT.DEFENDER_SHOVED.TARGET] = target;
     if (world.config.staggerThrust > 0) {
-        raiseEffect(SYSTEM, world, target, { effect: EFFECT.STAGGERED, source: defender });
+        raiseOn(world, target, EFFECT.STAGGERED, defender);
     }
 }

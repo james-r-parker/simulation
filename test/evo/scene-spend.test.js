@@ -50,6 +50,15 @@ describe('eval.mother_wait_by_condition', () => {
         expect(read(r, 'mother_wait_by_condition').value).toBe(-80);
     });
 
+    it("notes the share of the mother's own maxEnergy lane", () => {
+        const r = observed({ maxAgents: 16 });
+        const mother = addBlob(r.world, { energy: 5000 });
+        r.world.lanes.maxEnergy[mother] = 20000;
+        r.world.tick = T0;
+        sampleSpend(r.observer.scenes.spend, r.world);
+        expect(r.observer.scenes.spend.readyShare[mother]).toBeCloseTo(0.25, 12);
+    });
+
     it('samples a mother once, only when she is ready and can bear, and not before burn-in', () => {
         const r = observed({ maxAgents: 16 });
         const ready = addBlob(r.world, { energy: 5000 });

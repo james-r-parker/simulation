@@ -175,3 +175,37 @@ describe('alert', () => {
         expect(effectFactor(w, 1, EFFECT.ALERT_GRAZING, 'maxThrust')).toBe(1);
     });
 });
+
+describe('the call bookkeeping at neutral numbers (status-effects T28)', () => {
+    const NEUTRAL = { rallyThrust: 0, rallyBurn: 0, answeredBite: 0, hoarseFactor: 1 };
+
+    it('keeps no heardFrom, no rally and no hoarse stack while every number of rallied, answered and hoarse is neutral', () => {
+        const alone = pack(NEUTRAL);
+        alone.parentA[1] = 0; // an unanswered call: it would earn a hoarse stack
+        hold(alone, 0, OUTPUT_INDEX.HUNT);
+        tick(alone);
+        expect(stacks(alone, 0, 'hoarse')).toBe(0);
+        const kin = pack(NEUTRAL);
+        hold(kin, 0, OUTPUT_INDEX.HUNT);
+        tick(kin);
+        expect(stacks(kin, 1, 'rallied')).toBe(0);
+        expect([...kin.heardFrom.subarray(HEARD_FROM_STRIDE + 3, HEARD_FROM_STRIDE + 6)]).toEqual([0, 0, 0]);
+    });
+
+    it.each([
+        ['rallyThrust', 0.1],
+        ['rallyBurn', 0.1],
+        ['answeredBite', 0.1],
+        ['hoarseFactor', 2],
+    ])('runs the rally and the settle once %s is %s', (key, value) => {
+        const kin = pack({ ...NEUTRAL, [key]: value });
+        hold(kin, 0, OUTPUT_INDEX.HUNT);
+        tick(kin);
+        expect(stacks(kin, 1, 'rallied')).toBe(1);
+        const alone = pack({ ...NEUTRAL, [key]: value });
+        alone.parentA[1] = 0;
+        hold(alone, 0, OUTPUT_INDEX.HUNT);
+        tick(alone);
+        expect(stacks(alone, 0, 'hoarse')).toBe(1);
+    });
+});

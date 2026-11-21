@@ -14,6 +14,8 @@ describe('MODEL_DEFAULTS', () => {
             naiveEffort: 0.5,
             catchShare: 0.3,
             defenderGap: 150,
+            escortGap: null,
+            guardPosture: null,
             smokeGap: 240,
             reliableSight: false,
         });
@@ -37,6 +39,8 @@ describe('validateModel', () => {
 
     it.each([
         ['defenderGap', 0],
+        ['escortGap', 0],
+        ['escortGap', 'x'],
         ['smokeGap', -1],
         ['reactionTicks', 1.5],
         ['reactionTicks', -1],

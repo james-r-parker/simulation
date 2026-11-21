@@ -47,10 +47,31 @@ describe('stageArena', () => {
         expect(world.weights[0]).toBe(0.25);
     });
 
+    it('starts a body with the velocity it is given, at rest or not, and the rest at 0', () => {
+        const { world } = stageArena(arenaConfig(), [
+            { spec: 0, x: 10, y: 20, angle: 0, vx: 1.5, vy: -2 },
+            { spec: 0, x: 40, y: 50, angle: 0 },
+        ]);
+        expect([world.vx[0], world.vy[0], world.vx[1], world.vy[1]]).toEqual([1.5, -2, 0, 0]);
+        const moving = stageArena(arenaConfig(), [{ spec: 0, x: 10, y: 20, angle: 0, vx: 3 }], { atRest: false });
+        expect([moving.world.vx[0], moving.world.vy[0]]).toEqual([3, 0]);
+    });
+
     it('refuses more rocks than the world has slots', () => {
         const rocks = Array.from({ length: 5000 }, () => ({ x: 0, y: 0, r: 1 }));
         expect(() => stageArena(arenaConfig(), [{ spec: 0, x: 1, y: 1, angle: 0 }], { rocks })).toThrow(
             /5000 rocks do not fit/,
         );
+    });
+});
+
+describe('stageArena energy share', () => {
+    it('is a share of the body maxEnergy lane, so a body that stores more starts with more', () => {
+        const stage = (/** @type {Record<string, any>} */ over) =>
+            stageArena(arenaConfig(over), [{ spec: 0, x: 1, y: 1, angle: 0, energyShare: 0.5 }]).world;
+        const base = stage({});
+        const fat = stage({ specialisations: { forager: { body: { maxEnergy: 2 } } } });
+        expect(base.energy[0]).toBeCloseTo(0.5 * base.lanes.maxEnergy[0], 6);
+        expect(fat.energy[0]).toBeCloseTo(2 * base.energy[0], 6);
     });
 });

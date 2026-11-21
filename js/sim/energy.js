@@ -2,9 +2,9 @@
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { causeList, causeMap } from './events.js';
-import { LANE_ID, liveOf, pinSlot, unpinSlot } from './effects.js';
+import { GROUP, LANE_ID, costFactors, liveIn } from './effects.js';
 import { specParams } from './spec-params.js';
-import { baseSizeOf, visionRatioOf } from './traits.js';
+import { baseSizeOf, hearingRatioOf, noseRatioOf, visionRatioOf } from './traits.js';
 import { stepTemperature } from './temperature.js';
 import { TIMER_CAP } from './world.js';
 
@@ -16,6 +16,7 @@ const SIZE_ENERGY_LOSS_LANE = LANE_ID.sizeEnergyLoss;
 const TURN_COST_LANE = LANE_ID.turnCost;
 const MOVEMENT_COST_LANE = LANE_ID.movementCost;
 const SPRINT_COST_LANE = LANE_ID.sprintCost;
+const COST = GROUP.COST;
 
 /** Why an agent last lost energy, in code order; `NONE` means it has not lost any. */
 export const LOSS_CAUSE_LIST = causeList([
@@ -150,7 +151,27 @@ function visionLoss(world, slot) {
     if (!(vision > 1)) {
         return 0;
     }
-    return world.config.passiveLoss * liveOf(world, slot, VISION_COST_LANE) * (vision - 1);
+    return world.config.passiveLoss * liveIn(world, slot, COST, VISION_COST_LANE) * (vision - 1);
+}
+
+/**
+ * @param {import('./world.js').World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} the extra passive loss of the longer ears and nose (body-genes T46): `passiveLoss x hearingCost x
+ *   (hearing - 1)` and `passiveLoss x noseCost x (nose - 1)`, each only above ratio 1 and 0 with its key at 0
+ */
+function senseLoss(world, slot) {
+    const c = world.config;
+    let loss = 0;
+    if (c.hearingCost > 0) {
+        const hearing = hearingRatioOf(world, slot);
+        loss += hearing > 1 ? c.passiveLoss * c.hearingCost * (hearing - 1) : 0;
+    }
+    if (c.noseCost > 0) {
+        const nose = noseRatioOf(world, slot);
+        loss += nose > 1 ? c.passiveLoss * c.noseCost * (nose - 1) : 0;
+    }
+    return loss;
 }
 
 /** The nominal standing, movement and sprint cost of the hunter `tickCost` last priced; a scratch for `applyCosts`. */
@@ -162,7 +183,7 @@ const nominal = new Float64Array(3);
  * @returns {number} the energy the agent loses this tick
  */
 export function tickCost(world, slot) {
-    pinSlot(slot); // each effect level is read once for the six lanes below; the body does not change in between
+    costFactors(world, slot); // each effect level is read once for the six lanes below
     const c = world.config;
     const sp = specParams(c, world.spec[slot]);
     const vx = world.vx[slot];
@@ -173,16 +194,18 @@ export function tickCost(world, slot) {
     // lane holds the spec's multiplier (and the `burn` trait); the size and vision terms take the spec's multiplier
     // alone, and the `movementCost` lane holds the spec's move multiplier, which the turn term takes on its own.
     const standing =
-        liveOf(world, slot, PASSIVE_LOSS_LANE) +
-        (liveOf(world, slot, SIZE_ENERGY_LOSS_LANE) * world.size[slot] + visionLoss(world, slot)) *
+        liveIn(world, slot, COST, PASSIVE_LOSS_LANE) +
+        (liveIn(world, slot, COST, SIZE_ENERGY_LOSS_LANE) * world.size[slot] +
+            visionLoss(world, slot) +
+            senseLoss(world, slot)) *
             sp.passiveLossMultiplier;
-    const turn = liveOf(world, slot, TURN_COST_LANE) * Math.abs(world.turnRate[slot]) * sp.moveCostMultiplier;
-    const base = (standing + liveOf(world, slot, MOVEMENT_COST_LANE) * (speed * speed) + turn) * drain;
+    const turn = liveIn(world, slot, COST, TURN_COST_LANE) * Math.abs(world.turnRate[slot]) * sp.moveCostMultiplier;
+    const base = (standing + liveIn(world, slot, COST, MOVEMENT_COST_LANE) * (speed * speed) + turn) * drain;
     let cost = base;
     // fair-chase: the cost of the sprint delivered, times the sprint-store factor (1 with the store off).
     const sprint =
         world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0
-            ? liveOf(world, slot, SPRINT_COST_LANE) * world.sprintFactor[slot]
+            ? liveIn(world, slot, COST, SPRINT_COST_LANE) * world.sprintFactor[slot]
             : 0;
     cost += sprint;
     const upkeep = c.specMutationRate > 0 ? world.lanes.huntUpkeep[slot] : 0;
@@ -193,7 +216,6 @@ export function tickCost(world, slot) {
         nominal[1] = base - standing * drain;
         nominal[2] = sprint;
     }
-    unpinSlot();
     return cost;
 }
 

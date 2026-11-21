@@ -137,3 +137,24 @@ describe('the feeding levels', () => {
         expect(levels.restingLevel(none.world, none.slot)).toBe(0);
     });
 });
+
+describe('bandLevels', () => {
+    it('leaves in BAND the five temperature levels their own readers give, across the whole range', () => {
+        const { world, slot } = bodyWorld();
+        const readers = [
+            levels.coldBandLevel,
+            levels.heatBandLevel,
+            coldRampLevel,
+            hotRampLevel,
+            levels.outOfBandLevel,
+        ];
+        expect(levels.BAND_EFFECTS).toEqual(['coldBand', 'heatBand', 'coldRamp', 'hotRamp', 'outOfBand']);
+        for (let t = 0; t <= world.config.temperatureMax; t += 0.25) {
+            world.temperature[slot] = t;
+            levels.bandLevels(world, slot);
+            readers.forEach((read, k) => {
+                expect(levels.BAND[k], `${levels.BAND_EFFECTS[k]} at ${t}`).toBe(read(world, slot));
+            });
+        }
+    });
+});

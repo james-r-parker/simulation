@@ -6,8 +6,8 @@
 // `noteAnswered` (js/sim/effect-social.js) which caller rallied a hunter. Allocates nothing, no RNG.
 
 import { HEARD_FROM_STRIDE } from './agent-arrays.js';
-import { EFFECT, SYSTEM } from './effects.js';
-import { raiseEffect } from './effect-raise.js';
+import { EFFECT, raiseOn } from './effects.js';
+import { callEffectsOn } from './effect-numbers.js';
 import { isKin } from './kin.js';
 
 /** Offset of the alarm half of a `heardFrom` row, the same as of a `heard` row. */
@@ -50,7 +50,7 @@ function noteCall(world, hearer, caller, half) {
 function rally(world, hearer, caller) {
     if (world.huntBySpec[world.spec[hearer]] === 1 && isKin(world, hearer, caller)) {
         if (noteCall(world, hearer, caller, HUNT_FROM)) {
-            raiseEffect(SYSTEM, world, hearer, { effect: EFFECT.RALLIED, source: caller });
+            raiseOn(world, hearer, EFFECT.RALLIED, caller);
         }
     }
 }
@@ -66,7 +66,7 @@ function rally(world, hearer, caller) {
 function alert(world, hearer, caller) {
     if (world.alarmSeen[caller] === 1 && world.huntBySpec[world.spec[hearer]] !== 1) {
         if (noteCall(world, hearer, caller, ALARM_FROM)) {
-            raiseEffect(SYSTEM, world, hearer, { effect: EFFECT.ALERT, source: caller });
+            raiseOn(world, hearer, EFFECT.ALERT, caller);
         }
     }
 }
@@ -85,7 +85,9 @@ export function noteHeard(world, hearer, loudness) {
     }
     const { callScratch } = world;
     if (callScratch[1] === HUNT_FROM) {
-        rally(world, hearer, callScratch[0]);
+        if (callEffectsOn(world.config)) {
+            rally(world, hearer, callScratch[0]);
+        }
     } else {
         alert(world, hearer, callScratch[0]);
     }

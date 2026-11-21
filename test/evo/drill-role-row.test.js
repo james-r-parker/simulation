@@ -43,7 +43,7 @@ describe('barOf', () => {
 
     it('takes the defence as a goal apart from the smoke: the row is impossible but the defence can be reached', () => {
         const bar = barOf('defender:predator', createConfig(REACHABLE), DEFEND_GOALS);
-        expect(bar).toMatchObject({ status: 'impossible', passable: true, slackTicks: 13 });
+        expect(bar).toMatchObject({ status: 'impossible', passable: true, slackTicks: 30 });
         expect(barOf('defender:predator', createConfig(REACHABLE)).passable).toBe(false);
     });
 
@@ -53,7 +53,7 @@ describe('barOf', () => {
         expect(barOf('defender:predator', config, [['turn']]).passable).toBe(false);
         expect(barOf('defender:predator', config, [['turn'], ['hear']])).toMatchObject({
             passable: true,
-            slackTicks: 48,
+            slackTicks: 51,
         });
     });
 });

@@ -19,12 +19,13 @@ export const DEG = Math.PI / 180;
  * @property {number} loudness the loudness in [0, 1]
  * @property {number} ux the x of the unit vector from the subject towards the caller, in the world frame
  * @property {number} uy the y of that vector
+ * @property {'alarm' | 'hunt'} [call] which call it is: the alarm half of the row (default) or the hunt half
  */
 
 /**
  * @typedef {Omit<import('./pool-discrimination-stage.js').Stage, 'seed' | 'agents'> & {agents: (import('./pool-discrimination-stage.js').StagedAgent & {sizeGene?: number})[], heard?: Heard, herd?: {x: number, y: number}}} StagedTick
  *   a `Stage` without its seed; an agent's `sizeGene` is turned into a weight row when the table is built, `heard` is
- *   written into the subject's `world.heard` alarm half before it senses, and `herd` places one live herd animal
+ *   written into the subject's `world.heard` (its alarm half, or its hunt half) before it senses, and `herd` places one live herd animal
  */
 
 /**

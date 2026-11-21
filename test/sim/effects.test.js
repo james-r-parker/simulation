@@ -8,11 +8,13 @@ import {
     RESULT,
     allocEffects,
     computeFactor,
+    createEffects,
     factorOf,
     fadeEffects,
     gateOpen,
     liveOf,
 } from '../../js/sim/effects.js';
+import { socialEffectsOn } from '../../js/sim/effect-numbers.js';
 import { allocBody } from './helpers/body.js';
 import { smallWorld } from './helpers/small-world.js';
 
@@ -83,6 +85,31 @@ describe('the rules a world folds', () => {
         expect(folds({ woundThrust: 0.1 }, EFFECT.WOUNDED)).toBe(true);
         expect(folds({}, EFFECT.COLD_BAND)).toBe(true);
         expect(folds({}, EFFECT.FAT)).toBe(true);
+    });
+
+    it('leaves out a table whose every entry is 1, and keeps it once one entry is not or it reads a lane', () => {
+        const world = smallWorld({ maxAgents: 4 });
+        const folded = (/** @type {any[]} */ levels, /** @type {number} */ factor) => {
+            world.config = { ...world.config, fixtureFactor: factor };
+            const step = { name: 'step', family: 'body', maxStacks: 1, level: 'step', read: () => 1 };
+            const effect = { ...step, scales: [{ lane: 'maxThrust', levels }], gates: [], drains: [], applier: null };
+            createEffects(/** @type {any} */ ([effect])).refreshConfig(world);
+            return world.laneRules[LANE_ID.maxThrust].length;
+        };
+        expect(folded([1, 1], 0)).toBe(0);
+        expect(folded([1, 'fixtureFactor', { key: 'fixtureFactor', scale: 2, offset: -1 }], 1)).toBe(0);
+        expect(folded([1, 'fixtureFactor'], 0.5)).toBe(1);
+        expect(folded([1, 'fatSlowShare'], 1)).toBe(1);
+    });
+
+    it('folds each lane over the Phase 1 rules alone while every Phase 2 number is at 0', () => {
+        const world = smallWorld({ maxAgents: 4 });
+        expect(socialEffectsOn(world.config)).toBe(false);
+        world.laneRules.forEach((/** @type {{effect: number}[] | undefined} */ rules, /** @type {number} */ lane) => {
+            for (const rule of rules ?? []) {
+                expect(rule.effect, `lane ${lane} folds ${EFFECTS[rule.effect].name}`).toBeLessThan(EFFECT.CHILLED);
+            }
+        });
     });
 
     it('treats a power rule as off at a factor of 1', () => {

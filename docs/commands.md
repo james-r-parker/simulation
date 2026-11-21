@@ -314,6 +314,10 @@ The inspector, the detectors and the calculator read the registry, so none is ed
 
 `node scripts/events-doc.mjs --write` (writes `docs/log-events.md` from `EVENTS` in `js/sim/events.js`: every event's code, log event, level and numbered fields, and the cause lists; `--check` fails when it is stale, and the `conventions` gate runs it; a new event or field is one entry in `EVENTS`)
 
+### Regenerate the effect level switch
+
+`node scripts/effect-dispatch.mjs --write` (writes `js/sim/effect-dispatch.js` from `EFFECTS` in `js/sim/effect-list.js`: `levelOfEffect`, one `switch` case per effect calling its level reader directly; `--check` fails when it is stale, and the `conventions` gate runs it; re-run it after adding, removing or reordering an effect)
+
 ### Regenerate the config key table
 
 `node scripts/config-doc.mjs --write` (writes `docs/config-keys.md` from `DEFAULTS` in `js/sim/config-defaults.js` and the rules in `js/sim/config-validate.js`: every key, its default and its rule; `--check` fails when it is stale, and the `conventions` gate runs it; a new key is added to the defaults and the rules, then this is re-run)
