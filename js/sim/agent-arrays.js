@@ -3,6 +3,8 @@
 // field lists read this one list, so a new array decides in its own entry whether it is hashed, and a contract test
 // (test/sim/world-state.contract.test.js) fails one that decides nothing.
 
+import { LANES, laneRowName } from './body-lanes.js';
+
 /** Floats per slot in `world.heard`: alarm loudness, `ux`, `uy`, hunt loudness, `ux`, `uy`. */
 export const HEARD_STRIDE = 6;
 
@@ -184,8 +186,8 @@ const HEADER_SAYS = 'its module says it is derived state outside `worldHash`';
 
 /**
  * The per-slot rows of the other groups in `allocAgentArrays` (kills, the hunter ledger, the proof rule, the split gate,
- * mate rank, the carcass, the rest timer) that `worldHash` does not cover, with why. The merit, disease and reward rows,
- * `birthRing` and `hidden` are hashed by their own lists in `world-hash.js`.
+ * mate rank, the carcass) that `worldHash` does not cover, with why. The merit, disease and reward rows, `birthRing`,
+ * `hidden`, the sprint store and the rest timer are hashed by their own lists in `world-hash.js`.
  * @type {Readonly<Record<string, string>>}
  */
 export const UNHASHED_ROWS = Object.freeze({
@@ -214,6 +216,10 @@ export const UNHASHED_ROWS = Object.freeze({
             'carcassHeld',
         ].map((name) => [name, HEADER_SAYS]),
     ),
-    restTimer:
-        'not hashed today: it holds a hunter at thrust 0 after a kill (`predatorRestTicks`, on by default), and the effect reaches the hashed `vx` and `vy` in the same tick',
+    ...Object.fromEntries(
+        LANES.map((lane) => [
+            laneRowName(lane.name),
+            'derived from `weights` and the spec by `applyGenes` (traits.js)',
+        ]),
+    ),
 });

@@ -20,7 +20,7 @@ function naive(w, a, b) {
         if (i < l.bHidden) {
             sd = 1 / Math.sqrt(l.inputCount + l.hidden);
         } else if (i >= l.wSkip) {
-            sd = 1 / Math.sqrt(56);
+            sd = 1 / Math.sqrt(69);
         }
         sum += Math.abs(w.weights[a * l.weightCount + i] - w.weights[b * l.weightCount + i]) / sd;
     }
@@ -120,7 +120,7 @@ function naiveTo(w, store, b) {
         if (i < l.bHidden) {
             sd = 1 / Math.sqrt(l.inputCount + l.hidden);
         } else if (i >= l.wSkip) {
-            sd = 1 / Math.sqrt(56);
+            sd = 1 / Math.sqrt(69);
         }
         sum += Math.abs(w.weights[b * l.weightCount + i] - store[k]) / sd;
     }

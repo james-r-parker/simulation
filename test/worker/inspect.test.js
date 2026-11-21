@@ -18,7 +18,7 @@ import { smallWorld } from '../sim/helpers/small-world.js';
 import { testPolicy } from '../sim/helpers/test-policy.js';
 
 describe('inspectLabels', () => {
-    it('names the 10 ray channels, the 36 body inputs and the 11 outputs', () => {
+    it('names the 10 ray channels, the 37 body inputs and the 11 outputs', () => {
         const labels = inspectLabels();
         expect(labels.rayChannels).toHaveLength(RAY_CHANNELS);
         expect(labels.rayChannels.at(-1)).toBe('megafauna');
@@ -40,7 +40,7 @@ describe('inspectLabels', () => {
 
     it('groups the body inputs as the inspector shows them', () => {
         const groups = inspectLabels().bodyInputs.map((input) => input.group);
-        expect(groups.filter((g) => g === 'Body')).toHaveLength(9);
+        expect(groups.filter((g) => g === 'Body')).toHaveLength(10);
         expect(groups.filter((g) => g === 'Senses')).toHaveLength(5);
         expect(groups.filter((g) => g === 'Temperature')).toHaveLength(4);
         expect(groups.filter((g) => g === 'Scent antennae')).toHaveLength(7);
@@ -80,7 +80,7 @@ describe('workerLayout', () => {
             herdStride: 6,
             zoneStride: 4,
             rayStride: 4,
-            inputCount: 4 * 10 + 36,
+            inputCount: 4 * 10 + 37,
         });
     });
 });

@@ -12,6 +12,7 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSy
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { checkSchemaConstants } from './lib/wasm-constants.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const BINARY = join(ROOT, 'wasm/blob-kernels.wasm');
@@ -201,6 +202,10 @@ if (
         ...checkHash(bytes, hashText),
         ...checkSources(recorded, sourceHashText()),
         ...(bytes === null ? [] : checkEmbed(bytes, embed)),
+        ...checkSchemaConstants({
+            sense: readFileSync(join(WASM_DIR, 'src/sense.rs'), 'utf8'),
+            brain: readFileSync(join(WASM_DIR, 'src/brain.rs'), 'utf8'),
+        }),
     ];
     if (problems.length === 0 && bytes !== null && !process.argv.includes('--no-rebuild')) {
         if (hasRebuildTools()) {

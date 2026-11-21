@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BRAIN_LAYOUT_NAME, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
+import { BRAIN_LAYOUT_NAME, EXTRA_INPUTS, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 import { FLORA_DEFAULTS } from '../../js/sim/config-flora.js';
 import { senseAll } from '../../js/sim/sensors.js';
 import { buildHash } from '../../js/sim/spatial-hash.js';
@@ -7,7 +7,7 @@ import { arenaConfig } from '../../js/evo/memory-probe-run.js';
 import { stageWorld } from '../../js/evo/pool-discrimination-stage.js';
 import { caseNamed } from '../../js/evo/reflex-cases.js';
 import { SEQUENCE_TICKS } from '../../js/evo/reflex-stage.js';
-import { assertTableFresh, buildCaseTable, tableFor } from '../../js/evo/reflex-table.js';
+import { RAY_LANES, assertTableFresh, buildCaseTable, tableFor } from '../../js/evo/reflex-table.js';
 
 /** Ray channels in a raw row. */
 const CH = { food: 1, threat: 2, prey: 3, other: 4, kin: 5, wall: 6, obstacle: 7 };
@@ -30,7 +30,7 @@ function rowAt(table, sequence, tick) {
  */
 function raysWith(row, channel) {
     const rays = [];
-    for (let k = 0; k < (row.length - 36) / RAY_CHANNELS; k++) {
+    for (let k = 0; k < (row.length - EXTRA_INPUTS) / RAY_CHANNELS; k++) {
         if (row[k * RAY_CHANNELS + channel] > 0) {
             rays.push(k);
         }
@@ -61,21 +61,21 @@ describe('buildCaseTable', () => {
         expect(a.rows).toEqual(b.rows);
         expect(a.rows).not.toEqual(c.rows);
         expect(a.rows).toHaveLength(18 * SEQUENCE_TICKS * a.rawInputCount);
-        expect(a.hues).toHaveLength(18 * SEQUENCE_TICKS * a.rayCount);
+        expect(a.rays).toHaveLength(18 * SEQUENCE_TICKS * RAY_LANES.length * a.rayCount);
     });
 
     it('stamps the layout name, the rules hash and the width of a row', () => {
         const table = buildCaseTable(caseNamed('approach-prey'), { trials: 1 });
         expect(table.layoutName).toBe(BRAIN_LAYOUT_NAME);
         expect(table.rulesHash).toMatch(/^[0-9a-f]{16}$/);
-        expect(table.rawInputCount).toBe(16 * RAY_CHANNELS + 36);
+        expect(table.rawInputCount).toBe(16 * RAY_CHANNELS + EXTRA_INPUTS);
         expect(table.spec).toBe(1);
     });
 
     it('changes with the ray count', () => {
         const wide = buildCaseTable(caseNamed('approach-food'), { trials: 1 });
         const narrow = buildCaseTable(caseNamed('approach-food'), { trials: 1, config: { rayCount: 8 } });
-        expect(narrow.rawInputCount).toBe(8 * RAY_CHANNELS + 36);
+        expect(narrow.rawInputCount).toBe(8 * RAY_CHANNELS + EXTRA_INPUTS);
         expect(narrow.rawInputCount).not.toBe(wide.rawInputCount);
         expect(narrow.rulesHash).not.toBe(wide.rulesHash);
     });
@@ -90,9 +90,20 @@ describe('buildCaseTable', () => {
         expect(nearest(5)).toBeGreaterThan(nearest(0));
     });
 
+    it('snapshots the size lane of the agent hits the pooled body sense is made from', () => {
+        const table = buildCaseTable(caseNamed('approach-prey'), { trials: 1 });
+        const rc = table.rayCount;
+        const sizes = table.rays.subarray(rc, 2 * rc);
+        const preyRays = raysWith(rowAt(table, 0, 0), CH.prey);
+        expect(preyRays.length).toBeGreaterThan(0);
+        expect(preyRays.some((k) => sizes[k] !== 0)).toBe(true);
+        const empty = [...Array(rc).keys()].filter((k) => rowAt(table, 0, 0)[k * RAY_CHANNELS] === 0);
+        expect(empty.every((k) => sizes[k] === 0)).toBe(true);
+    });
+
     it('snapshots the food hues the pooled hue inputs are made from', () => {
         const table = buildCaseTable(caseNamed('pick-safe-food'), { trials: 1 });
-        const hues = [...table.hues.subarray(0, table.rayCount)].filter((h) => h !== 0);
+        const hues = [...table.rays.subarray(0, table.rayCount)].filter((h) => h !== 0);
         expect(new Set(hues.map((h) => Math.fround(h)))).toEqual(
             new Set([Math.fround(FLORA_DEFAULTS.toxiccap.hue), Math.fround(FLORA_DEFAULTS.grass.hue)]),
         );

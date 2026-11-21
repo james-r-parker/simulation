@@ -5,7 +5,7 @@ import { validateConfig } from '../../js/sim/config-validate.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 
 const SPEC_FIELDS =
-    'index, visionRange, canHunt, moveCostMultiplier, biteTakenMultiplier, cooldownMultiplier, biteMultiplier, turnMultiplier, plantFoodValue, meatFoodValue, sprintBoost, passiveLossMultiplier, splitMinEnergyMultiplier, kickMultiplier, maxEnergyMultiplier, rearVisionShare, sprintDrainMultiplier';
+    'index, visionRange, canHunt, moveCostMultiplier, biteTakenMultiplier, cooldownMultiplier, biteMultiplier, turnMultiplier, plantFoodValue, meatFoodValue, sprintBoost, passiveLossMultiplier, splitMinEnergyMultiplier, kickMultiplier, maxEnergyMultiplier, rearVisionShare, sprintDrainMultiplier, body, genes';
 
 /**
  * Reference FNV-1a 64-bit over the characters of an ASCII string.
@@ -176,7 +176,7 @@ describe('validateConfig error text', () => {
     });
 
     it('states the weight storage limit and the product', () => {
-        const wc = 128 * (56 + 36 + 128 + 1 + 10) + 10 + 56 * 10 + 4 + 128;
+        const wc = 128 * (69 + 37 + 128 + 1 + 10) + 10 + 69 * 10 + 24 + 128;
         expect(message(() => createConfig({ ...SIMPLE_WORLD, maxAgents: 4096, rayCount: 64, brainHidden: 128 }))).toBe(
             `config.maxAgents is 4096; expected at most 16777216 / weightCount (maxAgents x weightCount is ${4096 * wc})`,
         );
@@ -184,10 +184,10 @@ describe('validateConfig error text', () => {
 
     it('accepts weight storage just under the limit', () => {
         expect(() =>
-            createConfig({ ...SIMPLE_WORLD, maxAgents: 554, rayCount: 64, brainHidden: 128, eventCapacity: 8192 }),
+            createConfig({ ...SIMPLE_WORLD, maxAgents: 520, rayCount: 64, brainHidden: 128, eventCapacity: 8192 }),
         ).not.toThrow();
         expect(() =>
-            createConfig({ ...SIMPLE_WORLD, maxAgents: 555, rayCount: 64, brainHidden: 128, eventCapacity: 8192 }),
+            createConfig({ ...SIMPLE_WORLD, maxAgents: 521, rayCount: 64, brainHidden: 128, eventCapacity: 8192 }),
         ).toThrow(/maxAgents/);
     });
 

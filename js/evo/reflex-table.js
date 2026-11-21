@@ -1,7 +1,7 @@
 // Builds a reflex case's input table (brain-reflex-tests.md, Input construction). Rows are never typed: each staged tick
 // goes through the sim's own `stageWorld`, `buildHash` and `senseAll`, and what the brain reads of the subject (its raw
-// `inputs` row and the `rayHue` of each ray, which pooling turns into the two food hue inputs) is copied out, so a
-// change to the sensing code or the layout changes the table, not a hand-kept index.
+// `inputs` row and the per-ray lanes of `RAY_LANES`, which pooling turns into the food hue and body sense inputs) is
+// copied out, so a change to the sensing code or the layout changes the table, not a hand-kept index.
 
 import { BRAIN_LAYOUT_NAME, TRAIT_INDEX, brainLayout } from '../sim/brain-layout.js';
 import { createConfig, rulesHash } from '../sim/config.js';
@@ -13,18 +13,25 @@ import { stageWorld } from './pool-discrimination-stage.js';
 import { REFLEX_TRIALS, SEQUENCE_TICKS } from './reflex-stage.js';
 
 /**
+ * The per-ray world lanes a table snapshots beside each raw row, in the order a tick's block holds them: the hue of a
+ * food hit, and the size, speed and closing of an agent hit (docs/designs/body-genes.md, "Raw lanes").
+ */
+export const RAY_LANES = Object.freeze(['rayHue', 'raySize', 'raySpeed', 'rayClosing']);
+
+/**
  * @typedef {object} CaseTable
  * @property {string} name the case's name
  * @property {number} spec the subject's specialisation
  * @property {string} layoutName `BRAIN_LAYOUT_NAME` when the table was built
  * @property {string} rulesHash the `rulesHash` of the config it was built under
  * @property {number} rawInputCount values per `inputs` row (`rayCount x RAY_CHANNELS + EXTRA_INPUTS`)
- * @property {number} rayCount values per `rayHue` row
+ * @property {number} rayCount values per ray lane row (`rayHue` and the rest of `RAY_LANES`)
  * @property {number} trials trials drawn
  * @property {number} view the ray length of the body the rows are of (vision gene 0)
  * @property {{trial: number, staging: import('./reflex-stage.js').Staging}[]} sequences every sequence, in trial order
  * @property {Float32Array} rows `sequences.length x SEQUENCE_TICKS x rawInputCount` values, sequence-major
- * @property {Float32Array} hues `sequences.length x SEQUENCE_TICKS x rayCount` values, sequence-major
+ * @property {Float32Array} rays `sequences.length x SEQUENCE_TICKS x RAY_LANES.length x rayCount` values,
+ *   sequence-major; a tick's block holds each lane's `rayCount` values in `RAY_LANES` order
  */
 
 /**
@@ -47,34 +54,34 @@ function withGenes(agents, config) {
 /**
  * @param {import('./pool-discrimination-stage.js').Stage} stage a staged tick
  * @param {Record<string, any>} config the config overrides the arena is built from
- * @returns {{inputs: Float32Array, hue: Float32Array}} the subject's (slot 0) raw `inputs` row and `rayHue` row for
- *   that tick, as `sense` writes them
+ * @returns {{inputs: Float32Array, rays: Float32Array}} the subject's (slot 0) raw `inputs` row and its rows of the
+ *   `RAY_LANES` for that tick, as `sense` writes them
  */
 function senseTick(stage, config) {
     const agents = /** @type {any} */ (withGenes(stage.agents, config));
     const { world } = stageWorld({ ...stage, agents, config: arenaConfig(config) });
     buildHash(world.hash, world);
     senseAll(world, world.hash);
-    return {
-        inputs: world.inputs.slice(0, world.layout.rawInputCount),
-        hue: world.rayHue.slice(0, world.config.rayCount),
-    };
+    const { rayCount } = world.config;
+    const rays = new Float32Array(RAY_LANES.length * rayCount);
+    RAY_LANES.forEach((lane, i) => rays.set(world[lane].subarray(0, rayCount), i * rayCount));
+    return { inputs: world.inputs.slice(0, world.layout.rawInputCount), rays };
 }
 
 /**
  * Senses a staging's distinct ticks (a static staging has one) and writes all `SEQUENCE_TICKS` rows.
  * @param {import('./reflex-stage.js').Staging} staging the staging
  * @param {{config: Record<string, any>, seed: number}} run the config overrides and the world seed
- * @param {{rows: Float32Array, hues: Float32Array, raw: number, rays: number, sequence: number}} into the table's
- *   arrays, the row widths and the staging's index
+ * @param {{rows: Float32Array, rays: Float32Array, raw: number, width: number, sequence: number}} into the table's
+ *   arrays, the widths of a raw row and of a tick's ray block, and the staging's index
  * @returns {void}
  */
-function writeSequence(staging, { config, seed }, { rows, hues, raw, rays, sequence }) {
+function writeSequence(staging, { config, seed }, { rows, rays, raw, width, sequence }) {
     const ticks = staging.ticks.map((tick) => senseTick({ ...tick, seed }, config));
     for (let t = 0; t < SEQUENCE_TICKS; t++) {
         const tick = ticks[Math.min(t, ticks.length - 1)];
         rows.set(tick.inputs, (sequence * SEQUENCE_TICKS + t) * raw);
-        hues.set(tick.hue, (sequence * SEQUENCE_TICKS + t) * rays);
+        rays.set(tick.rays, (sequence * SEQUENCE_TICKS + t) * width);
     }
 }
 
@@ -97,10 +104,11 @@ export function buildCaseTable(reflexCase, { config = {}, seed = 1, trials = REF
             sequences.push({ trial, staging });
         }
     }
+    const width = RAY_LANES.length * rays;
     const rows = new Float32Array(sequences.length * SEQUENCE_TICKS * raw);
-    const hues = new Float32Array(sequences.length * SEQUENCE_TICKS * rays);
+    const rayRows = new Float32Array(sequences.length * SEQUENCE_TICKS * width);
     sequences.forEach(({ staging }, sequence) =>
-        writeSequence(staging, { config, seed }, { rows, hues, raw, rays, sequence }),
+        writeSequence(staging, { config, seed }, { rows, rays: rayRows, raw, width, sequence }),
     );
     return {
         name: reflexCase.name,
@@ -113,7 +121,7 @@ export function buildCaseTable(reflexCase, { config = {}, seed = 1, trials = REF
         view,
         sequences,
         rows,
-        hues,
+        rays: rayRows,
     };
 }
 

@@ -3,6 +3,7 @@
 
 import { crossNeurons } from '../../evo/crossover.js';
 import { mutateSigma, mutateWeights } from '../../evo/mutation.js';
+import { mutateTraits } from '../../evo/trait-inherit.js';
 import { knockOutAndLog } from '../../evo/unit-knockout.js';
 import { decaySilentInputs } from '../../evo/weight-decay.js';
 import { applyHunterReflex } from '../../evo/instinct.js';
@@ -59,9 +60,9 @@ export function shareBirth(observer, birth) {
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
  * @param {import('../../sim/log.js').SimLog} [log] receives `UnitKnockedOut` when a birth knocks a unit
- * @returns {{sigma: Float32Array, fatherSigma: Float32Array, mutation: {traitStart: number, rate: number}, onMate: Function, childBrain: Function}}
+ * @returns {{sigma: Float32Array, fatherSigma: Float32Array, mutation: {traitStart: number, leakStart: number, rate: number, config: Record<string, any>}, onMate: Function, childBrain: Function}}
  *   the step sizes (per slot, and per mother for the coming child),
- *   `mutation` (the options every `mutateWeights` call takes) and the two hooks that use them
+ *   `mutation` (the options every `mutateWeights` and `mutateTraits` call takes) and the two hooks that use them
  */
 export function createBirth(config, log) {
     const sigma = new Float32Array(config.maxAgents);
@@ -69,6 +70,8 @@ export function createBirth(config, log) {
     const layout0 = brainLayout(config);
     const mutation = {
         traitStart: layout0.traitStart,
+        leakStart: layout0.leakStart,
+        config,
         rate: resolveMutationRate(config.mutationRate, layout0.weightCount),
     };
     /** @type {(Float32Array | undefined)[]} */
@@ -110,6 +113,7 @@ export function createBirth(config, log) {
         }
         applyBirthReflex(world, { child, mother, row });
         mutateWeights(row, childSigma, rng, mutation);
+        mutateTraits(row, layout, rng, mutation);
         knockOutAndLog(row, world, child, { rng, log, source: mate ? 'mate' : 'split' });
         if (config.weightDecay > 0) {
             decaySilentInputs(row, { layout, silent: world.inputActivity.rare, decay: config.weightDecay });

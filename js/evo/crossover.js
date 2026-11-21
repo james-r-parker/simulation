@@ -1,7 +1,8 @@
 // Neuron-block uniform crossover for mating.
 
-import { GENE_OUTPUTS, OUTPUT_INDEX, POOLED_VALUES, TRAIT_GENES } from '../sim/brain-layout.js';
+import { GENE_OUTPUTS, OUTPUT_INDEX, POOLED_VALUES } from '../sim/brain-layout.js';
 import { nextFloat } from '../sim/rng.js';
+import { crossTraits } from './trait-inherit.js';
 
 /**
  * Writes the skip block's columns, one `nextFloat` per output with genes: the whole column comes from the mother (below 0.5) or the
@@ -38,8 +39,8 @@ function crossSkip(child, mother, father, context) {
  * its whole block comes from the mother, otherwise from the father. A block is column h of `wIn` (every input into
  * h; `wIn` is input-major, so `wIn + i * hidden + h`), column h of `wRec` (`wRec + k * hidden + h`), `bHidden[h]`
  * row h of `wOut` (h's weights to every output with genes, `wOut + h * geneOutputs + g`) and leak gene h. `bOut` comes from the
- * mother. After the neurons, each trait gene in order draws one `nextFloat` and is taken whole from the mother (below
- * 0.5) or the father. Last, each output's skip column (`wSkip + i * geneOutputs + g` for every pooled value `i`) draws
+ * mother. After the neurons, `crossTraits` crosses the trait genes (each in order draws one `nextFloat` and is taken whole
+ * from the mother, below 0.5, or the father). Last, each output's skip column (`wSkip + i * geneOutputs + g` for every pooled value `i`) draws
  * one `nextFloat` and comes whole from one parent, so a reflex (food ahead to thrust) is inherited as a unit.
  * @param {Float32Array} child the child row, written in full
  * @param {Float32Array} mother the mother's row
@@ -68,8 +69,6 @@ export function crossNeurons(child, mother, father, context) {
     for (let g = 0; g < geneOutputs; g++) {
         child[layout.bOut + g] = mother[layout.bOut + g];
     }
-    for (let t = 0; t < TRAIT_GENES; t++) {
-        child[layout.traitStart + t] = (nextFloat(rng) < 0.5 ? mother : father)[layout.traitStart + t];
-    }
+    crossTraits(child, mother, father, context);
     return crossSkip(child, mother, father, context);
 }

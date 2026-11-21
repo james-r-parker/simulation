@@ -1,5 +1,5 @@
 // Formats the signal census for `npm run audit:signals`: one row per input and per output, merged over seeds.
-import { FOOD_HUE_VALUES, HIT_STRIDE, POOLED_CHANNELS, POOLED_HITS } from '../../js/sim/brain-layout.js';
+import { BRAIN_IO, FOOD_HUE_VALUES, HIT_STRIDE, POOLED_CHANNELS, POOLED_HITS } from '../../js/sim/brain-layout.js';
 import { inspectLabels } from '../../js/worker/inspect.js';
 import { padTable } from './drill-report.mjs';
 
@@ -7,7 +7,8 @@ const VERDICT_RANK = { dead: 0, unused: 1, alive: 2 };
 const HIT_PARTS = ['strength', 'cos', 'sin'];
 
 /**
- * @returns {string[]} the name of every input of the brain's row, in order
+ * @returns {string[]} the name of every input of the brain's row, in order: the channels, the body sense values, the
+ *   food hues, the body block
  */
 export function inputNames() {
     /** @type {string[]} */
@@ -18,6 +19,9 @@ export function inputNames() {
                 names.push(`${channel} hit${hit} ${part}`);
             }
         }
+    }
+    for (const group of BRAIN_IO.sense.filter((g) => g.name !== 'food.hue')) {
+        names.push(...group.labels.map((label) => label.replace('.', ' ')));
     }
     for (let h = 0; h < FOOD_HUE_VALUES; h++) {
         names.push(`food hue ${h + 1}`);

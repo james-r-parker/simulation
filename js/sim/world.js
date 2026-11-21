@@ -1,5 +1,6 @@
 // Allocates the world's typed arrays once and manages agent and food slots.
 
+import { BODY_SENSE_LANES } from './body-sense.js';
 import { agentSpecs } from './agent-arrays.js';
 import { allocateFlora } from './flora-state.js';
 import { releaseItem } from './patch-reserve.js';
@@ -24,6 +25,7 @@ import { rayReachTable } from './ray-reach.js';
 import { terrainRockCount } from './terrain.js';
 import { createObserverScratch } from './observer-scratch.js';
 import { attachWasm } from './wasm-arena.js';
+import { allocLanes } from './lane-state.js';
 import { allocSprintState, resetSprintSlot } from './sprint-store.js';
 import { specTable } from './spec-params.js';
 
@@ -115,6 +117,7 @@ function allocAgentArrays(world, layout) {
     );
     createMeritViews(world);
     allocSprintState(world);
+    allocLanes(world);
     allocLedgerState(world);
     allocCarcassLoss(world);
     allocDiseaseState(world);
@@ -282,6 +285,24 @@ function allocClouds(world) {
 }
 
 /**
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @returns {{rayHue: Float32Array, raySize: Float32Array, raySpeed: Float32Array, rayClosing: Float32Array,
+ *   bodySenseScratch: Float64Array}} the per-ray lanes the ray march writes and pooling reads, `rayCount` per slot: the
+ *   hue of a food hit, and the size, speed and closing of an agent hit (docs/designs/body-genes.md, "Raw lanes"); and
+ *   the scratch `bodySenseOf` writes them through
+ */
+function rayLanes(config) {
+    const n = config.maxAgents * config.rayCount;
+    return {
+        rayHue: new Float32Array(n),
+        raySize: new Float32Array(n),
+        raySpeed: new Float32Array(n),
+        rayClosing: new Float32Array(n),
+        bodySenseScratch: new Float64Array(BODY_SENSE_LANES),
+    };
+}
+
+/**
  * Allocates world arrays; `rng` is filled in later by `createWorld`.
  * @param {Readonly<Record<string, any>>} config the validated config
  * @returns {World}
@@ -311,7 +332,7 @@ export function allocateWorld(config) {
         antennaCos: new Float64Array([detCos(config.antennaAngle)]),
         antennaSin: new Float64Array([detSin(config.antennaAngle)]),
         cloudCount: 0,
-        rayHue: new Float32Array(config.maxAgents * config.rayCount),
+        ...rayLanes(config),
         rayScratch: new Float64Array(RAY_SCRATCH),
         rayStamp: new Int32Array(config.maxAgents + config.maxFood),
         rayLocal: new Float64Array(

@@ -6,6 +6,7 @@ import { rejectGenome } from '../../evo/genome.js';
 import { SPEC, SPEC_NAMES } from '../../sim/specs.js';
 import { randomGenome } from '../../evo/instinct.js';
 import { SIGMA_START, mutateSigma, mutateWeights } from '../../evo/mutation.js';
+import { mutateTraits } from '../../evo/trait-inherit.js';
 import { knockOutAndLog } from '../../evo/unit-knockout.js';
 import { nextFloat, nextInt } from '../../sim/rng.js';
 import { countSpecs } from '../../sim/spec-rescue.js';
@@ -207,6 +208,7 @@ function seedUnarchived({ birth, championSource, log }, { world, slot, row, rng 
     row.set(champion);
     birth.sigma[slot] = mutateSigma(SIGMA_START, world.layout.weightCount, rng);
     mutateWeights(row, birth.sigma[slot], rng, birth.mutation);
+    mutateTraits(row, world.layout, rng, birth.mutation);
     knockOutAndLog(row, world, slot, { rng, log, source: 'champion' });
     return 'champion';
 }
@@ -245,6 +247,7 @@ function seedBrain({ archive, birth, clones, log, mix, own, pool, championSource
         row.set(ref.row);
         birth.sigma[slot] = mutateSigma(ref.sigma, layout.weightCount, rng);
         mutateWeights(row, birth.sigma[slot], rng, birth.mutation);
+        mutateTraits(row, layout, rng, birth.mutation);
         knockOutAndLog(row, world, slot, { rng, log, source: 'archive' });
     } else {
         checkRow(ref.row, layout, log);

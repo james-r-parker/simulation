@@ -76,7 +76,7 @@ Floats in one weight row: `brainLayout(config).weightCount` in `../../js/sim/bra
 computed (no `genomeSize` function is added). T1a pins every cell below in `../../test/sim/brain-layout.test.js` against
 a per-block derivation, so this table and the test change in one commit. Blocks, in row order: `wIn` (inputs x H),
 `wRec` (H x H), `bHidden` (H), `wOut` (H x outputs with genes), `bOut`, `wSkip` (skip source values x outputs with
-genes), trait genes 4, leak genes H. Outputs with genes are 11, or 10 without `SPLIT` genes. `pooled-v2` here has 81
+genes), trait genes 4 (24 trait slots from `pooled-v6`), leak genes H. Outputs with genes are 11, or 10 without `SPLIT` genes. `pooled-v2` here has 81
 inputs (48 pooled and 33 body; the season inputs are deleted). Flora Phase 2 added two food hues in `pooled-v3`; Megafauna Phase 2 adds the ninth pooled channel in `pooled-v4`, now the built layout.
 
 | Layout and options                                                                                                                     | 16 hidden | 24 hidden | 32 hidden | 48 hidden | 64 hidden |
@@ -126,14 +126,21 @@ ray wins a tie), each as 3 values, so 6 values per channel and a channel's offse
 A missing detection is 0 in all three values; a channel with one hit leaves its second slot at 0. The brain tells a
 real hit from a missing one by `strength`. Every pooled input lies in [-1, 1].
 
+### Body sense
+
+Thirteen pooled values follow the channels (`BODY_SENSE_VALUES`, [body-genes.md](body-genes.md), "Pooled values"): at
+54 to 59 the size, speed and closing of the two strongest prey hits, at 60 to 62 those of the strongest threat hit
+(`inputOffsets().senseStart`), and at 63 to 66 the view share of threat, prey, other and kin
+(`inputOffsets().countStart`). A value with no hit is 0.
+
 ### Food hues
 
-The two strongest food hits have one linear hue each in [-1, 1], at pooled offsets 54 and 55. An absent food hit has hue 0. Its strength distinguishes absence from a real hue-0 item. `inputOffsets().foodHueStart` names the first slot. The body block follows at 56.
+The two strongest food hits have one linear hue each in [-1, 1], at pooled offsets 67 and 68. An absent food hit has hue 0. Its strength distinguishes absence from a real hue-0 item. `inputOffsets().foodHueStart` names the first slot. The body block follows at 69.
 
 ### Body inputs
 
-36 inputs after the pooled block, written by `writeBodyInputs`, `scent-inputs.js` and `refuge-sense.js`. The absolute input offset is the
-pooled value count (56 now) plus the body offset.
+37 inputs after the pooled block, written by `writeBodyInputs`, `scent-inputs.js` and `refuge-sense.js`. The absolute input offset is the
+pooled value count (69 now) plus the body offset.
 
 | Group             | Body offset | Count | Meaning                                                                                     |
 | ----------------- | ----------- | ----- | ------------------------------------------------------------------------------------------- |
@@ -150,17 +157,19 @@ pooled value count (56 now) plus the body offset.
 | Sex               | 30          | 1     | 0 female, 1 male                                                                            |
 | Memory read-back  | 31          | 2     | Last tick's `MEMORY_A` and `MEMORY_B` outputs                                               |
 | Refuge            | 33          | 3     | `refugeBearingSin`, `refugeBearingCos` and `refugeNear` (all 0 when `refugeSense` is false) |
+| Reserve           | 36          | 1     | The sprint store's level (1 when `sprintStoreEnabled` is false)                             |
 
 ### Planned extensions
 
 Each extension changes this schema, the test and `ARCHIVE_VERSION` in one task. The flora hue value of one food hit is
 a linear coordinate in [-1, 1] (not an angle); absent hit, 0.
 
-| Step                   | Change                                                                                                              | Inputs | Pooled values | 16 hidden | 24 hidden | 32 hidden | 48 hidden | 64 hidden |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------- | ------ | ------------- | --------- | --------- | --------- | --------- | --------- |
-| Built                  | Eight channels, 2 hits, two food hues, 33 body inputs (`pooled-v3`)                                                 | 83     | 50            | 2,290     | 3,370     | 4,578     | 7,378     | 10,690    |
-| Megafauna Phase 2 (+6) | A ninth channel `megafauna` after `smoke` (offset 48, 6 values); the two hue values move to 54 and 55 (`pooled-v4`) | 89     | 56            | 2,446     | 3,574     | 4,830     | 7,726     | 11,134    |
-| Refuge Phase 3 (+3)    | Three refuge body inputs after the memory read-back (offsets 33 to 35 of the body block, `pooled-v5`)               | 92     | 56            | 2,494     | 3,646     | 4,926     | 7,870     | 11,326    |
+| Step                     | Change                                                                                                              | Inputs | Pooled values | 16 hidden | 24 hidden | 32 hidden | 48 hidden | 64 hidden |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------- | ------ | ------------- | --------- | --------- | --------- | --------- | --------- |
+| Built                    | Eight channels, 2 hits, two food hues, 33 body inputs (`pooled-v3`)                                                 | 83     | 50            | 2,290     | 3,370     | 4,578     | 7,378     | 10,690    |
+| Megafauna Phase 2 (+6)   | A ninth channel `megafauna` after `smoke` (offset 48, 6 values); the two hue values move to 54 and 55 (`pooled-v4`) | 89     | 56            | 2,446     | 3,574     | 4,830     | 7,726     | 11,134    |
+| Refuge Phase 3 (+3)      | Three refuge body inputs after the memory read-back (offsets 33 to 35 of the body block, `pooled-v5`)               | 92     | 56            | 2,494     | 3,646     | 4,926     | 7,870     | 11,326    |
+| Body genes Phase 1 (+14) | Thirteen body sense values before the food hues (54 to 66), the body input `reserve`, 24 trait slots (`pooled-v6`)  | 106    | 69            | 2,868     | 4,132     | 5,524     | 8,692     | 12,372    |
 
 ## Hypotheses
 

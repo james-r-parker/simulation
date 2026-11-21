@@ -23,7 +23,7 @@ export const MAX_PAGES = 16384;
 export const ALIGN = 16;
 
 /** Int32 words in the brain kernel's parameter block (`Params` in wasm/src/brain.rs). */
-export const PARAM_WORDS = 40;
+export const PARAM_WORDS = 43;
 
 /** Float64 values in the brain kernel's parameter block. */
 export const PARAM_DOUBLES = 4;
@@ -57,6 +57,9 @@ export function arenaSpecs(config, layout) {
         ['leakRate', Float32Array, n * H],
         ['fastOut', Float32Array, n * H * layout.geneOutputs],
         ['rayHue', Float32Array, n * config.rayCount],
+        ['raySize', Float32Array, n * config.rayCount],
+        ['raySpeed', Float32Array, n * config.rayCount],
+        ['rayClosing', Float32Array, n * config.rayCount],
         ['rayCos', Float64Array, config.rayCount],
         ['raySin', Float64Array, config.rayCount],
         ['rewardScale', Float64Array, n],
