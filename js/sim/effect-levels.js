@@ -231,6 +231,9 @@ export function spentLevel(world, slot) {
     SHARE[0] = level >= store.floor ? 0 : 1 - level / store.floor;
 }
 
+/** The stored row of `alert`, found once: the registry imports this module, so it cannot read the registry's table here. */
+let alertRow = -1;
+
 /**
  * @param {World} world the world
  * @param {number} slot the agent slot
@@ -238,6 +241,9 @@ export function spentLevel(world, slot) {
  *   else 0
  */
 export function alertGrazingLevel(world, slot) {
-    const stacks = world['effect.alert.stacks'][slot];
+    if (alertRow < 0) {
+        alertRow = world.effectStacks.indexOf(world['effect.alert.stacks']);
+    }
+    const stacks = world.effectStacks[alertRow][slot];
     return stacks > 0 ? stacks * grazingLevel(world, slot) : 0;
 }
