@@ -78,7 +78,7 @@ describe('budgetThrive at the defaults', () => {
 
 describe('budgetThrive on a changed world', () => {
     it('cannot eat when a meal costs more than it returns: eat and breed are impossible', () => {
-        const b = thrive({ foodEnergy: 3 });
+        const b = thrive({ foodEnergy: 1 });
         expect(b.cells.eat.status).toBe('impossible');
         expect(b.cells.breed.status).toBe('impossible');
         expect(b.row.status).toBe('impossible');

@@ -330,6 +330,9 @@
     "test/evo/role-budget-shares.test.js": [
         "evals/fair-chase/courser.json"
     ],
+    "test/evo/role-budget-thrive.slow.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
     "test/evo/role-budget-thrive.test.js": [
         "evals/fair-chase/courser.json"
     ],
@@ -343,6 +346,9 @@
         "evals/fair-chase"
     ],
     "test/evo/role-budget-warn.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
+    "test/evo/role-scenes-thrive.test.js": [
         "evals/fair-chase/courser.json"
     ],
     "test/evo/role-scenes-warn.test.js": [

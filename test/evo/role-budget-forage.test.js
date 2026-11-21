@@ -108,29 +108,45 @@ describe('lifeOf', () => {
 });
 
 describe('forageCycle', () => {
-    it('searches at the grazing speed, handles at the product of the two gaits, and nets the income less both costs', () => {
+    it('walks the path one new item takes at the handling gait, then the grazing speed, and nets the income less both costs', () => {
         const ctx = ctxOf({});
         const speeds = eatingSpeeds(ctx.p);
         expect(speeds.graze).toBeCloseTo(5.985, 9);
         expect(speeds.handling).toBeCloseTo(0.105 * 0.6 * 19, 9);
         const density = patchFoodDensity(ctx.world);
-        const c = forageCycle(ctx, { density });
-        const find = density * 2 * (29 + 20) * speeds.graze;
-        expect(c.find).toBeCloseTo(find, 12);
+        const c = forageCycle(ctx, { density, energy: 200 });
+        const sweep = 2 * (ctx.p.sizing.base + 200 / ctx.p.sizing.perEnergy + 20);
+        expect(c.pathPerMeal).toBeCloseTo(1 / (density * sweep), 9);
+        const slow = speeds.handling * 20;
+        const ticks =
+            c.pathPerMeal <= slow ? c.pathPerMeal / speeds.handling : 20 + (c.pathPerMeal - slow) / speeds.graze;
+        expect(c.cycleTicks).toBeCloseTo(Math.max(10, ticks), 9);
+        const handle = Math.min(c.cycleTicks, 20);
         const spent =
-            gaitCost(ctx, { speed: speeds.graze, energy: 1000 }) / find +
-            20 * gaitCost(ctx, { speed: speeds.handling, energy: 1000 });
+            handle * gaitCost(ctx, { speed: speeds.handling, energy: 200 }) +
+            (c.cycleTicks - handle) * gaitCost(ctx, { speed: speeds.graze, energy: 200 });
         expect(c.netPerMeal).toBeCloseTo(100 - spent, 9);
-        expect(c.net).toBeCloseTo((100 - spent) / (1 / find + 20), 9);
+        expect(c.net).toBeCloseTo((100 - spent) / c.cycleTicks, 9);
+        expect(c.find).toBeCloseTo(density * sweep * speeds.graze, 12);
     });
 
-    it('overlaps the digest window with the handling window: the longer one sets the cycle', () => {
-        expect(forageCycle(ctxOf({ digestTicks: 30, handlingTicks: 20 }), { density: 1e-3 }).handleTicks).toBe(30);
-        expect(forageCycle(ctxOf({}), { density: 1e-3 }).handleTicks).toBe(20);
+    it('is held to a meal every digestTicks when food is so dense a meal needs no walking', () => {
+        const dense = forageCycle(ctxOf({}), { density: 1 });
+        expect(dense.cycleTicks).toBe(10);
+        expect(dense.searchTicks).toBe(0);
+        expect(forageCycle(ctxOf({ digestTicks: 25 }), { density: 1 }).cycleTicks).toBe(25);
     });
 
-    it('a thinner patch means a longer search and a lower rate', () => {
+    it('overlaps the digest window with the handling window: the longer one is at the handling gait', () => {
+        expect(forageCycle(ctxOf({ digestTicks: 30, handlingTicks: 20 }), { density: 1 }).handleTicks).toBe(30);
+        expect(forageCycle(ctxOf({}), { density: 1e-3 }).handleTicks).toBeLessThanOrEqual(20);
+    });
+
+    it('a thinner patch means a longer walk per meal and a lower rate', () => {
         const ctx = ctxOf({});
-        expect(forageCycle(ctx, { density: 1e-5 }).net).toBeLessThan(forageCycle(ctx, { density: 1e-3 }).net);
+        const thin = forageCycle(ctx, { density: 1e-5 });
+        const thick = forageCycle(ctx, { density: 1e-3 });
+        expect(thin.net).toBeLessThan(thick.net);
+        expect(thin.grazeTicks).toBeGreaterThan(0);
     });
 });

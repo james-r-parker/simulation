@@ -166,31 +166,43 @@ export function eatingSpeeds(p) {
 }
 
 /**
- * The meal cycle of a body in a patch: search at the grazing speed for `1 / find` ticks (`find = density x sweepWidth x speed`,
- * `sweepWidth = 2 (size + foodRadius)`), eat, then the handling gait for `max(handlingTicks, digestTicks)` ticks (one `ateTimer`
- * holds both windows, so they overlap, not add), the income being `foodEnergy x plantFoodValue`.
+ * The meal cycle of a body in a patch, from the sim's rules. A meal starts one `ateTimer`, which holds the body at the handling
+ * gait for `handlingTicks` and bars eating for `digestTicks` (the two windows overlap, so the next meal is `digestTicks` away at
+ * the soonest). Each meal eats an item, so the body lives on the items its path newly covers: it covers a strip of
+ * `sweepWidth = 2 (size + foodRadius)` and meets one item per `L = 1 / (density x sweepWidth)` px of path (the plan's `find =
+ * density x sweepWidth x speed` items a tick). The cycle is the longer of the digest and the ticks it takes to walk `L` at the
+ * handling gait for `handlingTicks` and the grazing speed after. (A body also starts with the 3 items under it at the defaults;
+ * a grid scene eats those in its first meals, then settles to this rate, within 20%.) The income is `foodEnergy x plantFoodValue`.
  * @param {Context} ctx the context
- * @param {{density: number, energy?: number}} options the food density and the energy the costs are read at (the body's start
- *   energy)
- * @returns {{find: number, searchTicks: number, handleTicks: number, cycleTicks: number, income: number, net: number,
- *   netPerMeal: number, density: number}} the cycle; `net` is the energy gained a tick, `netPerMeal` over a cycle
+ * @param {{density: number, energy?: number}} options the food density and the energy the costs and the size are read at (the
+ *   body's start energy)
+ * @returns {{find: number, pathPerMeal: number, searchTicks: number, handleTicks: number, grazeTicks: number, cycleTicks: number,
+ *   income: number, net: number, netPerMeal: number, density: number}} the cycle: the grazing find rate, the path a meal takes, the
+ *   ticks of the cycle past the digest, the ticks at each gait, the income, the net energy a tick and a meal
  */
 export function forageCycle(ctx, { density, energy = ctx.p.energy }) {
     const { p } = ctx;
     const speeds = eatingSpeeds(p);
-    const sweep = 2 * (p.size + p.feed.foodRadius);
-    const find = density * sweep * speeds.graze;
-    const searchTicks = 1 / find;
-    const handleTicks = Math.max(p.feed.handlingTicks, p.feed.digestTicks);
+    const size = Math.max(p.sizing.min, p.sizing.base + energy / p.sizing.perEnergy);
+    const sweep = 2 * (size + p.feed.foodRadius);
+    const pathPerMeal = 1 / (density * sweep);
+    const { digestTicks: digest, handlingTicks: handling } = p.feed;
+    const slowPath = speeds.handling * handling;
+    const walk =
+        pathPerMeal <= slowPath ? pathPerMeal / speeds.handling : handling + (pathPerMeal - slowPath) / speeds.graze;
+    const cycleTicks = Math.max(digest, walk);
+    const handleTicks = Math.min(cycleTicks, Math.max(handling, digest));
+    const grazeTicks = cycleTicks - handleTicks;
     const income = p.feed.foodEnergy * p.feed.plantValue;
     const spent =
-        searchTicks * gaitCost(ctx, { speed: speeds.graze, energy }) +
-        handleTicks * gaitCost(ctx, { speed: speeds.handling, energy });
-    const cycleTicks = searchTicks + handleTicks;
+        handleTicks * gaitCost(ctx, { speed: speeds.handling, energy }) +
+        grazeTicks * gaitCost(ctx, { speed: speeds.graze, energy });
     return {
-        find,
-        searchTicks,
+        find: density * sweep * speeds.graze,
+        pathPerMeal,
+        searchTicks: cycleTicks - digest,
         handleTicks,
+        grazeTicks,
         cycleTicks,
         income,
         net: (income - spent) / cycleTicks,
