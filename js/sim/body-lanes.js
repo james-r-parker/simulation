@@ -36,6 +36,8 @@ const MOVED = new Set([
     'sprintCost',
     'sprintDrain',
     'sprintRefill',
+    'sprintRestThrust',
+    'sprintFloor',
     'fatSlowShare',
     'visionRange',
     'maxEnergy',

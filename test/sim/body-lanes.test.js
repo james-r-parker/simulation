@@ -64,6 +64,8 @@ describe('LANES', () => {
             'sprintCost',
             'sprintDrain',
             'sprintRefill',
+            'sprintRestThrust',
+            'sprintFloor',
             'handlingThrust',
             'grazeThrust',
             'fatSlowShare',
