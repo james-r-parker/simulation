@@ -12,6 +12,14 @@ export const SEASON_MOTES = 384;
 export const DEPTH_POINTS = 1200;
 export const DEPTH_PX = 1.2;
 export const DEPTH_BRIGHTNESS = Object.freeze({ min: 0.12, max: 0.4 });
+/** The share of the camera's move each of the three depth layers follows on screen (0.2 is far, 0.8 near). */
+export const DEPTH_PARALLAX = Object.freeze([0.2, 0.5, 0.8]);
+/** How fast each layer drifts across the screen, in device px a minute: all under 2, the far layer slowest. */
+export const DEPTH_DRIFT_PX_PER_MIN = Object.freeze([0.4, 0.9, 1.5]);
+/** The heading of each layer's drift, radians. */
+const DEPTH_DRIFT_HEADING = Object.freeze([0.6, 2.4, 4.1]);
+/** The longest step the drift takes in one frame, seconds: a hidden tab does not fling the points. */
+const DEPTH_DRIFT_MAX_DT_S = 1;
 /** The share of a season after which motes start to switch to the next season's model. */
 export const MOTE_SWITCH_FROM = 0.95;
 const MOTE_DRIFT = 6;
@@ -101,15 +109,22 @@ function layMotes(prng, { W, H }) {
 /**
  * @param {{next: () => number}} prng the stream
  * @param {{W: number, H: number}} world the world size
- * @returns {{pose: Float32Array, neon: Float32Array, count: number}} the depth points: still specks across the world in
- *   dim greys (their radius is set each frame from the zoom)
+ * @returns {Record<string, any>} the depth points: specks across the world in dim greys, three parallax layers (`layer`
+ *   by point, `base` the home positions); each frame sets their positions and radius from the camera, the zoom and the time
  */
 function layDepth(prng, { W, H }) {
-    const depth = bucket(DEPTH_POINTS);
+    const depth = {
+        ...bucket(DEPTH_POINTS),
+        layer: new Uint8Array(DEPTH_POINTS),
+        base: new Float32Array(DEPTH_POINTS * 2),
+    };
     for (let i = 0; i < DEPTH_POINTS; i++) {
         const o = i * ITEM;
+        depth.layer[i] = i % DEPTH_PARALLAX.length;
         const k = DEPTH_BRIGHTNESS.min + (DEPTH_BRIGHTNESS.max - DEPTH_BRIGHTNESS.min) * prng.next() ** 2;
         put(depth, o, [prng.next() * W, prng.next() * H, 0, 1]);
+        depth.base[i * 2] = depth.pose[o];
+        depth.base[i * 2 + 1] = depth.pose[o + 1];
         depth.neon.set([k, k, k, 0], o);
     }
     depth.count = DEPTH_POINTS;
@@ -136,6 +151,7 @@ export function createGroundPack(info, seed) {
         motes: layMotes(prng, world),
         depth: layDepth(prng, world),
         moteBuckets: [0, 1, 2, 3].map(() => bucket(SEASON_MOTES)),
+        depthState: { drift: new Float64Array(DEPTH_PARALLAX.length * 2), driftAt: -1 },
         ...world,
     };
 }
@@ -152,13 +168,42 @@ function wrap(v, size) {
 }
 
 /**
- * @param {{pose: Float32Array, count: number}} depth the depth points
- * @param {number} zoom device px per world unit
+ * Moves each layer's drift on by the time since the last frame, at `DEPTH_DRIFT_PX_PER_MIN` of the layer in device px
+ * at this zoom.
+ * @param {{drift: Float64Array, driftAt: number}} state the accumulated offsets (x then y per layer) and the last time
+ * @param {{timeSec: number, zoom: number}} view the wall time and device px per world unit
  * @returns {void}
  */
-function sizeDepth(depth, zoom) {
+function stepDrift(state, { timeSec, zoom }) {
+    const dt = state.driftAt < 0 ? 0 : Math.min(Math.max(timeSec - state.driftAt, 0), DEPTH_DRIFT_MAX_DT_S);
+    state.driftAt = timeSec;
+    for (let l = 0; l < DEPTH_PARALLAX.length; l++) {
+        const step = (DEPTH_DRIFT_PX_PER_MIN[l] / 60 / Math.max(zoom, 1e-6)) * dt;
+        state.drift[l * 2] += Math.cos(DEPTH_DRIFT_HEADING[l]) * step;
+        state.drift[l * 2 + 1] += Math.sin(DEPTH_DRIFT_HEADING[l]) * step;
+    }
+}
+
+/**
+ * Places the depth points for this frame: a point of a layer with parallax p sits at its home plus `1 - p` of the
+ * camera's position plus the layer's drift, wrapped over the world, so it moves p of the camera's move on screen. Sizes
+ * them from the zoom.
+ * @param {Record<string, any>} pack the ground pack
+ * @param {{timeSec: number, zoom?: number, cameraX?: number, cameraY?: number}} view the time, the zoom (1 when absent) and
+ *   the camera (the world centre when absent)
+ * @returns {void}
+ */
+function placeDepth(pack, view) {
+    const { depth, W, H } = pack;
+    const { timeSec, zoom = 1, cameraX = W / 2, cameraY = H / 2 } = view;
+    stepDrift(pack.depthState, { timeSec, zoom });
     const speck = DEPTH_PX / 2 / Math.max(zoom, 1e-6);
+    const { drift } = pack.depthState;
     for (let i = 0; i < depth.count; i++) {
+        const l = depth.layer[i];
+        const follow = 1 - DEPTH_PARALLAX[l];
+        depth.pose[i * ITEM] = wrap(depth.base[i * 2] + follow * cameraX + drift[l * 2], W);
+        depth.pose[i * ITEM + 1] = wrap(depth.base[i * 2 + 1] + follow * cameraY + drift[l * 2 + 1], H);
         depth.pose[i * ITEM + 3] = speck;
     }
 }
@@ -166,12 +211,14 @@ function sizeDepth(depth, zoom) {
 /**
  * Writes this frame's depth point sizes, cracks and motes (frost is static).
  * @param {Record<string, any>} pack the ground pack
- * @param {{timeSec: number, season: number, seasonProgress: number, droughtBasin: number, zoom?: number}} view the
- *   wall time, the season index and progress, the basin under drought (-1 for none) and the zoom (device px per unit)
+ * @param {{timeSec: number, season: number, seasonProgress: number, droughtBasin: number, zoom?: number,
+ *   cameraX?: number, cameraY?: number}} view the wall time, the season index and progress, the basin under drought (-1
+ *   for none), the zoom (device px per unit) and the camera centre (the world centre when absent)
  * @returns {void}
  */
-export function packGround(pack, { timeSec, season, seasonProgress, droughtBasin, zoom = 1 }) {
-    sizeDepth(pack.depth, zoom);
+export function packGround(pack, view) {
+    const { timeSec, season, seasonProgress, droughtBasin } = view;
+    placeDepth(pack, view);
     pack.crack.count = 0;
     if (droughtBasin === 0 || droughtBasin === 1) {
         pack.crack.pose.set(

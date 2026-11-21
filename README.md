@@ -88,6 +88,7 @@ Read by `readParams` in `js/app/url-params.js`; a bad value is ignored, never an
 | `?backend=<webgpu\|webgl2>` | Force the GPU backend; by default WebGPU on a hardware adapter, WebGL2 otherwise                                                          |
 | `?gputime=1`             | Record GPU frame times through timestamp queries (what `npm run perf:browser` uses)                                                                  |
 | `?tv=1`                  | TV mode: HUD hidden, director running, wake lock on                                                                                                  |
+| `?dim=<auto\|0.3..1>`    | Night dim: `auto` (the default `dim` preference) eases the screen to 55% between 22:00 and 07:00 local in TV mode; a fixed level applies always |
 | `?audio=1`               | Start with generative audio on                                                                                                                       |
 | `?policy=<name>`         | Preview a registered policy such as `map-elites-v6` (an unknown name stops the worker and lists the known ones)                                      |
 | `?merit=1`               | Turn in-world merit on with `MERIT_PREVIEW` (see [Evolution](#evolution)); the help drawer's debug line shows the policy and whether merit is on     |

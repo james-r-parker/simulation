@@ -16,6 +16,7 @@ import {
 } from './models-world.js';
 import { FILL_SHARE, NEON } from './palette.js';
 import { createRefugeOccupancy, stepRefugeOccupancy } from './refuge-occupancy.js';
+import { staticLineDim, staticLineShift } from './static-lines.js';
 import { createWorldPack, packWorld } from './world-pack.js';
 
 const [FROST, CRACK, CLOUD] = MARK_MODELS;
@@ -56,10 +57,34 @@ function meshGroups({ world, ground }) {
             capacity: Math.max(one(world.rock), one(world.refuge)),
             buckets: [world.rock, world.refuge],
             more: ({ gate, extra }) => ({ blob: { amp: gate.xyz, phase: extra.xyz }, values: { level: gate.x } }),
+            dimmable: true,
         }),
         clouds: createModelMeshes([CLOUD], { capacity: one(world.cloud), buckets: [world.cloud] }),
         motes: createModelMeshes(MOTE_MODELS, { capacity: one(ground.moteBuckets[0]), buckets: ground.moteBuckets }),
     };
+}
+
+/**
+ * Packs the world and the ground for a frame that has a snapshot.
+ * @param {import('./stage.js').Frame} frame the frame
+ * @param {Record<string, any>} parts the packs and the reused views
+ * @returns {void}
+ */
+function packFrame(frame, { world, ground, view, drift, groundView }) {
+    view.timeSec = frame.nowMs / 1000;
+    drift.tv = frame.tv;
+    drift.nowMs = frame.nowMs;
+    drift.zoom = frame.camera.zoom;
+    staticLineShift(drift, view.shift);
+    const s = packWorld(/** @type {any} */ (frame.snapshot), world, view);
+    groundView.timeSec = view.timeSec;
+    groundView.season = frame.season;
+    groundView.seasonProgress = frame.seasonProgress;
+    groundView.droughtBasin = s.droughtBasin;
+    groundView.zoom = frame.camera.zoom;
+    groundView.cameraX = frame.camera.x;
+    groundView.cameraY = frame.camera.y;
+    packGround(ground, groundView);
 }
 
 /**
@@ -78,8 +103,9 @@ export function createWorldLayers({ info, layout, seed }) {
     const groups = meshGroups({ world, ground });
     const occupancy = createRefugeOccupancy(info);
     const dung = layout.zoneOrigins?.DUNG ?? 1;
-    const view = { info, dung, levels: occupancy.level, timeSec: 0 };
-    const groundView = { timeSec: 0, season: 0, seasonProgress: 0, droughtBasin: -1, zoom: 1 };
+    const view = { info, dung, levels: occupancy.level, timeSec: 0, shift: { x: 0, y: 0 } };
+    const drift = { tv: false, nowMs: 0, zoom: 1 };
+    const groundView = { timeSec: 0, season: 0, seasonProgress: 0, droughtBasin: -1, zoom: 1, cameraX: 0, cameraY: 0 };
     if (!info.terrain) {
         appLog('warn', 'WorldTerrainMissing', {});
     }
@@ -90,16 +116,12 @@ export function createWorldLayers({ info, layout, seed }) {
             object: group.object,
             update(frame) {
                 group.setPalette(frame.family?.palette);
+                if (name === 'rocks') {
+                    group.setDim(staticLineDim(frame.tv));
+                }
                 if (name === 'depth' && frame.snapshot !== null) {
                     stepRefugeOccupancy(occupancy, frame.agents, frame.nowMs);
-                    view.timeSec = frame.nowMs / 1000;
-                    const s = packWorld(frame.snapshot, world, view);
-                    groundView.timeSec = view.timeSec;
-                    groundView.season = frame.season;
-                    groundView.seasonProgress = frame.seasonProgress;
-                    groundView.droughtBasin = s.droughtBasin;
-                    groundView.zoom = frame.camera.zoom;
-                    packGround(ground, groundView);
+                    packFrame(frame, { world, ground, view, drift, groundView });
                 }
                 if (frame.snapshot === null) {
                     group.clear();

@@ -85,6 +85,7 @@ export function shouldOpenInspector(drawer, id, hudShown) {
  *   pixels on the canvas
  * @property {boolean} speedPinned whether `?speed=` fixed the speed, so a first visit does not start at x2
  * @property {boolean} tv whether `?tv=1` started TV mode
+ * @property {'auto' | number | null} [dim] the `?dim` setting, null or absent to use the `dim` preference
  * @property {boolean} audioOn whether `?audio=1` started with audio on
  * @property {(new () => any) | null} AudioContext the Web Audio constructor
  * @property {() => {x: number, y: number, zoom: number, canvas: {width: number, height: number}}} getCamera the camera
@@ -409,6 +410,7 @@ export function createInterface(deps) {
         resize: () => applyScale(ctx),
         tick(nowMs) {
             refreshParts(ctx, nowMs);
+            ctx.tvUi.tick();
         },
     };
 }

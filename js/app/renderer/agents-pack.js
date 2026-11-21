@@ -6,6 +6,7 @@ import { slotOf } from '../family-slots.js';
 import { createBodyTweens, tweenAge } from './body-tweens.js';
 import { ENERGY_FLOOR, familyColor, lineageColor } from './colors.js';
 import { isHidden } from './dying.js';
+import { createHalos, haloAt } from './rim-halo.js';
 import { easeJaw, jawTarget, JAW_RATE } from './hunt-cues.js';
 
 export { JAW_RATE };
@@ -82,6 +83,8 @@ export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
  * @property {Float32Array} body the state word's bits (0 to 15), gestation01, dose01 and strain / 255
  * @property {Float32Array} tear a dying body's tear: the bearing in the body frame, the depth and the signed width of the
  *   gap (a negative width repeats it); read by the rig for the rows with no agent index
+ * @property {Float32Array} halo each row's rim falloff strength, 0 to 1 (0 for a dying body): lit for a moment by a kill,
+ *   a birth or a pack call (`rim-halo.js`)
  * @property {Float32Array} fade each row's dying value, 0 to 2: the tear (0 to 1) plus the fade-out (0 to 1); 0 for a
  *   live one
  * @property {Int32Array} index each row's index in the blended agents, -1 for a dying body
@@ -94,7 +97,9 @@ export function motionOf(speedFrac, turn, smoothedPrev, genomeId) {
  * @property {Float32Array} jaw each slot's jaw openness, 0 to 1
  * @property {Float32Array} smoothedTurn each slot's smoothed turn rate
  * @property {Int8Array} meshOfSpec the mesh index for each `spec`, -1 for an unknown one
+ * @property {import('./rim-halo.js').Halos} halos when each slot's lit tween began, on the wall clock
  * @property {Float32Array} minPx the least each mesh's agents are drawn across, in device px
+ * @property {number} minScale the factor on `minPx` this frame: 1, or `TV_MIN_PX_SCALE` in TV mode (set by the pack host)
  * @property {number[]} rgb scratch for the colour
  * @property {import('./body-tweens.js').BodyTweens} tweens each slot's one-shot body tween
  * @property {import('./dying.js').Dying | null} dying the dying bodies (their live rows are skipped), null when none
@@ -123,6 +128,7 @@ export function createAgentStore(capacity, meshCount, meshOfSpec, minPx) {
             body: new Float32Array(capacity * ITEM),
             tear: new Float32Array(capacity * ITEM),
             fade: new Float32Array(capacity),
+            halo: new Float32Array(capacity),
             index: new Int32Array(capacity),
             count: 0,
         });
@@ -133,6 +139,8 @@ export function createAgentStore(capacity, meshCount, meshOfSpec, minPx) {
         smoothedTurn: new Float32Array(capacity),
         meshOfSpec: Int8Array.from(meshOfSpec),
         minPx: Float32Array.from(minPx),
+        minScale: 1,
+        halos: createHalos(capacity),
         rgb: [0, 0, 0],
         tweens: createBodyTweens(capacity),
         dents: null,
@@ -182,18 +190,27 @@ export function packBodyWord(body, o, s) {
  * Writes an agent's tween row (its running one-shot tween and age, and its call state) and its body row (the state
  * word unpacked).
  * @param {AgentStore} store the store
- * @param {{bucket: Bucket, o: number, i: number, tick: number}} at the bucket, the row offset, the agent's index and the
- *   playhead tick
+ * @param {{bucket: Bucket, o: number, i: number, tick: number, nowMs: number}} at the bucket, the row offset, the agent's
+ *   index, the playhead tick and the wall time
  * @param {import('../interpolate.js').Interpolated} agents the blended agents
  * @param {Record<string, number>} bits `ready.layout.flags`
  * @returns {void}
  */
-function packTween(store, { bucket, o, i, tick }, agents, bits) {
+function packTween(store, at, agents, bits) {
+    const { bucket, o, i, tick } = at;
     packBodyWord(bucket.body, o, agents.state[i]);
     const slot = agents.slot[i];
     const age = tweenAge(store.tweens, slot, agents.genomeId[i], tick);
     const flags = agents.flags[i];
-    bucket.tween[o] = age >= 0 ? store.tweens.kind[slot] : 0;
+    const kind = age >= 0 ? store.tweens.kind[slot] : 0;
+    bucket.tween[o] = kind;
+    bucket.halo[o / ITEM] = haloAt(store.halos, {
+        slot,
+        genome: agents.genomeId[i],
+        kind,
+        start: store.tweens.start[slot],
+        nowMs: at.nowMs,
+    });
     bucket.tween[o + 1] = Math.max(age, 0);
     bucket.tween[o + 2] = (flags & bits.ALARMING) !== 0 ? 1 : (flags & bits.HUNT_CALLING) !== 0 ? 2 : 0;
     bucket.tween[o + 3] = store.fleeing === null ? 0 : store.fleeing[i];
@@ -228,14 +245,14 @@ function packLook(store, { bucket, o, mesh }, { agents, i, slots, zoom }) {
     bucket.pose[o] = agents.x[i];
     bucket.pose[o + 1] = agents.y[i];
     bucket.pose[o + 2] = agents.angle[i];
-    bucket.pose[o + 3] = drawnRadius(agents.size[i], store.minPx[mesh], zoom);
+    bucket.pose[o + 3] = drawnRadius(agents.size[i], store.minPx[mesh] * store.minScale, zoom);
     bucket.color[o] = rgb[0];
     bucket.color[o + 1] = rgb[1];
     bucket.color[o + 2] = rgb[2];
     bucket.color[o + 3] = agents.energy[i];
 }
 
-const TWEEN_AT = { bucket: /** @type {Bucket} */ (/** @type {unknown} */ (null)), o: 0, i: 0, tick: 0 };
+const TWEEN_AT = { bucket: /** @type {Bucket} */ (/** @type {unknown} */ (null)), o: 0, i: 0, tick: 0, nowMs: 0 };
 
 /**
  * Writes every agent into its mesh's bucket and smooths the jaws.
@@ -243,10 +260,11 @@ const TWEEN_AT = { bucket: /** @type {Bucket} */ (/** @type {unknown} */ (null))
  * @param {AgentStore} store the store
  * @param {Record<string, number>} bits `ready.layout.flags`
  * @param {{dtMs: number, zoom: number, slots: import('../family-slots.js').FamilySlots, maxVelocity?: number,
- *   tick?: number}} view the frame time, zoom, colour slots, top speed and the playhead tick (for the tweens)
+ *   tick?: number, nowMs?: number}} view the frame time, zoom, colour slots, top speed, the playhead tick (for the tweens)
+ *   and the wall time (for the rim falloff)
  * @returns {void}
  */
-export function packAgents(agents, store, bits, { dtMs, zoom, slots, maxVelocity = 200, tick = 0 }) {
+export function packAgents(agents, store, bits, { dtMs, zoom, slots, maxVelocity = 200, tick = 0, nowMs = 0 }) {
     for (const bucket of store.buckets) {
         bucket.count = 0;
     }
@@ -284,6 +302,7 @@ export function packAgents(agents, store, bits, { dtMs, zoom, slots, maxVelocity
         TWEEN_AT.o = o;
         TWEEN_AT.i = i;
         TWEEN_AT.tick = tick;
+        TWEEN_AT.nowMs = nowMs;
         packTween(store, TWEEN_AT, agents, bits);
     }
 }

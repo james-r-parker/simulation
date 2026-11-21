@@ -33,13 +33,19 @@ const FLAGS = {
 const STATE = { RESTING: 1, SATED: 2, IN_COVER: 4, JUVENILE: 8 };
 const TABLE = bakeClips(CLIPS);
 
-/** @param {import('../helpers/snapshots.js').AgentSpec[]} specs agents @param {{tick?: number, setup?: (store: any) => void, ctx?: Record<string, any>}} [opts] */
+/** @param {import('../helpers/snapshots.js').AgentSpec[]} specs agents @param {{tick?: number, nowMs?: number, setup?: (store: any) => void, ctx?: Record<string, any>}} [opts] */
 function rigOf(specs, opts = {}) {
     const agents = createInterpolated(8);
     interpolateInto(null, makeSnapshot(1, specs), 1, agents);
     const store = createAgentStore(8, 1, [0], [12]);
     opts.setup?.(store);
-    packAgents(agents, store, FLAGS, { dtMs: 1000, zoom: 1, slots: createFamilySlots(), tick: opts.tick ?? 0 });
+    packAgents(agents, store, FLAGS, {
+        dtMs: 1000,
+        zoom: 1,
+        slots: createFamilySlots(),
+        tick: opts.tick ?? 0,
+        nowMs: opts.nowMs ?? 0,
+    });
     const rig = createAgentRig(8, 1);
     const ctx = {
         table: TABLE,
@@ -106,6 +112,25 @@ describe('rigBucket', () => {
         expect(out.gate2[2]).toBeCloseTo(128 / 255);
         expect(Array.from(out.call.slice(0, 3))).toEqual(NEON.alarm.map((v) => Math.fround(v)));
         expect(out.accent[3]).toBe(1);
+    });
+
+    it('carries the rim falloff strength in the fraction of the accent word, over the call kind', () => {
+        const idle = rigOf([{ slot: 0, genomeId: 1, flags: FLAGS.HUNT_CALLING }]);
+        expect(idle.accent[3]).toBe(2);
+        const lit = rigOf([{ slot: 0, genomeId: 1, flags: FLAGS.HUNT_CALLING }], {
+            setup: (store) => {
+                startTween(store.tweens, { slot: 0, genome: 1 }, TWEEN.KILL, 0);
+                Object.assign(store.halos, {
+                    start: Float64Array.of(0),
+                    genome: Uint32Array.of(1),
+                    began: Float64Array.of(750),
+                });
+            },
+            tick: 5,
+            nowMs: 1000,
+        });
+        expect(Math.floor(lit.accent[3])).toBe(2);
+        expect(lit.accent[3] - 2).toBeCloseTo(0.25, 3);
     });
 
     it('writes the running dent into the body frame, a flat lane otherwise, and the flagella thrust', () => {

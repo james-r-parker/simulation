@@ -33,6 +33,17 @@ describe('createModelMeshes', () => {
         meshes.dispose();
     });
 
+    it('gives a dimmable group a brightness multiplier and leaves the others alone', () => {
+        const dimmable = createModelMeshes([MODELS.MOTE], { buckets: [bucket()], dimmable: true });
+        dimmable.setDim(0.6);
+        expect(dimmable.object.children[0].material.colorNode).toBeDefined();
+        const plain = createModelMeshes([MODELS.MOTE], { buckets: [bucket()] });
+        plain.setDim(0.6);
+        expect(plain.object.children[0].material.colorNode).toBeDefined();
+        dimmable.dispose();
+        plain.dispose();
+    });
+
     it('sets the blending when asked', () => {
         const meshes = createModelMeshes([MODELS.MOTE], {
             capacity: 4,

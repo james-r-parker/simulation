@@ -135,6 +135,7 @@ function advanceWorld(client, deps, { loop, lenses }, { nowMs, interval }) {
                   zoom: deps.camera.zoom,
                   lenses,
                   family: deps.slots,
+                  tv: deps.state.tv,
               });
     loop.agents = agents ?? loop.empty;
     if (agents !== null && slots !== null) {

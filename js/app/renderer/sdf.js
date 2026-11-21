@@ -173,3 +173,18 @@ export function sdWave(p, { from, to, amp, freq, phase, width }) {
         .mul(0.8)
         .sub(float(width).mul(0.5));
 }
+
+/**
+ * @param {any} d distance to the outline (positive outside)
+ * @param {{strength: any, widthPx: any, px: any, alpha: number}} halo the event strength (0 to 1), the reach in device px
+ *   (0 turns it off), one device pixel and the opacity at the rim at strength 1
+ * @returns {any} the falloff opacity, as `haloCoverage` in sdf-math.js
+ */
+export function haloCoverage(d, { strength, widthPx, px, alpha }) {
+    const t = clamp(d.div(max(float(widthPx).mul(px), 1e-9)), 0, 1);
+    return select(
+        d.lessThan(0).or(float(widthPx).lessThanEqual(0)),
+        float(0),
+        t.oneMinus().mul(t.oneMinus()).mul(strength).mul(alpha),
+    );
+}

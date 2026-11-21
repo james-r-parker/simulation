@@ -301,6 +301,36 @@ describe('packAgents', () => {
         expect(store.buckets[1].tween).toBe(t);
     });
 
+    it('draws the least body size a third larger when the store is scaled for TV mode', () => {
+        const store = createAgentStore(16, 5, meshOfSpec, [24, 20, 20, 20, 20]);
+        const out = interp([{ slot: 0, genomeId: 10, spec: 0, size: 1 }]);
+        packAgents(out, store, BITS, { dtMs: 16, zoom: 1, slots: SLOTS, tick: 1 });
+        expect(store.buckets[0].pose[3]).toBe(12);
+        store.minScale = 32 / 24;
+        packAgents(out, store, BITS, { dtMs: 16, zoom: 1, slots: SLOTS, tick: 1 });
+        expect(store.buckets[0].pose[3]).toBeCloseTo(16);
+    });
+
+    it('lights a row for a kill or a birth for 500 ms of wall time, and leaves other rows and tweens flat', () => {
+        const store = createAgentStore(16, 5, meshOfSpec, MIN_PX);
+        const out = interp([
+            { slot: 0, genomeId: 10, spec: 1 },
+            { slot: 1, genomeId: 11, spec: 1 },
+            { slot: 2, genomeId: 12, spec: 1 },
+        ]);
+        startTween(store.tweens, { slot: 0, genome: 10 }, TWEEN.KILL, 100);
+        startTween(store.tweens, { slot: 1, genome: 11 }, TWEEN.LUNGE, 100);
+        const halos = (/** @type {number} */ nowMs) => {
+            packAgents(out, store, BITS, { dtMs: 16, zoom: 1, slots: SLOTS, tick: 102, nowMs });
+            return Array.from(store.buckets[1].halo.slice(0, 3));
+        };
+        expect(halos(1000)).toEqual([0, 0, 0]);
+        const [lit, lunge, idle] = halos(1100);
+        expect(lit).toBeGreaterThan(0.5);
+        expect([lunge, idle]).toEqual([0, 0]);
+        expect(halos(1500)[0]).toBe(0);
+    });
+
     it('unpacks the state word into the body row', () => {
         const store = createAgentStore(16, 5, meshOfSpec, MIN_PX);
         const out = interp([{ slot: 0, genomeId: 10, spec: 1, state: (7 << 24) | (255 << 16) | (51 << 8) | 0b1011 }]);

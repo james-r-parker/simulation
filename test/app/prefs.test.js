@@ -23,6 +23,17 @@ describe('prefs', () => {
         }
     });
 
+    it('keeps dim at auto by default, accepts auto or a level from 0.3 to 1 and rejects the rest', () => {
+        expect(defaultPrefs().dim).toBe('auto');
+        expect(sanitizePrefs({ dim: 'auto' }).dim).toBe('auto');
+        expect(sanitizePrefs({ dim: 0.3 }).dim).toBe(0.3);
+        expect(sanitizePrefs({ dim: 0.7 }).dim).toBe(0.7);
+        expect(sanitizePrefs({ dim: 1 }).dim).toBe(1);
+        for (const bad of [0.29, 1.01, 0, -1, '0.5', 'dark', null, Number.NaN]) {
+            expect(sanitizePrefs({ dim: bad }).dim).toBe('auto');
+        }
+    });
+
     it('round trips through a storage', () => {
         const storage = memory();
         const prefs = { ...defaultPrefs(), lenses: [true, false, true, false], hud: false, volume: 0.25 };
