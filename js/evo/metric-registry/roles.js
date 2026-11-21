@@ -28,7 +28,11 @@ export const ROLE_METRICS = Object.freeze({
     ]),
     reproducer: Object.freeze(['eval.child_survival', 'eval.offspring_per_life', 'eval.childshare_by_condition']),
     scout: Object.freeze(['eval.alarm_lift', 'eval.alarm_response', 'eval.scout_alarm_lead_share']),
-    defender: Object.freeze([]),
+    defender: Object.freeze([
+        'eval.defender_repel_per_1k',
+        'eval.defender_bite_break_share',
+        'eval.hunter_defender_bite_ratio',
+    ]),
     herd: Object.freeze(['eval.herd_dodge_share', 'eval.trampled_share', 'eval.herd_stampede_rate']),
 });
 
