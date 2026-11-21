@@ -280,7 +280,10 @@ pass, the lane's base read inside it, into the group's `live` row (`liveIn` read
 `js/sim/effect-numbers.js`); and the two heat lanes of `stepTemperature` are a third group, `GROUP.HEAT`, in place of two
 `liveOf` calls. The skip is world-neutral: each of the four effects reaches the world only through its scale rules
 (`chilled`: `passiveLoss` by `coldStackRate`; nothing reads its stacks for cold death or temperature), every one a factor of
-exactly 1 at those numbers, and `worldHash` leaves the stored rows out at neutral numbers. What it changes is the detectors:
+exactly 1 at those numbers, and `worldHash` leaves the stored rows out while every number of `SOCIAL_KEYS` is 0. (A
+config with another social number on, say `huddleWarmth` above 0 and `woundThrust` 0, hashes the stored rows and now finds
+these four at 0, so its `worldHash` differs from one recorded before T30 though its world is the same; no golden pins such a
+config.) What it changes is the detectors:
 `eval.effect_share` of `chilled`, `wounded`, `panicked` and `shaken` now reads 0 at neutral numbers (E270's 0.199, 0.015,
 0.003 and 0.004 were stacks that changed nothing), as every call effect and `staggered` already did, and the inspector shows
 no such stack until its number is on. Timed with the same harness as T29, five alternating rounds under the CPU lock at load
@@ -301,6 +304,12 @@ The level reads still go through `levelOfEffect`, whose four `switch` parts are 
 step for the Targets: a reader per group generated from its effect list (the `MOTION` levels read in place, as T26 wrote
 the dispatch), and reading a lane's base lazily in `liveIn` when the group's levels are all 0, so the `visionCost` and
 `sprintCost` lanes are read only when `tickCost` needs them.
+
+The T30 conformance review (a fresh agent, beside `scripts/check.sh`) found no defect in the code: no per-tick
+allocation, `foldGroup` multiplies in `liveOf`'s order, and no sim reader of the four skipped effects' stacks or events. It
+corrected two rows as built: T24's `effectLive` count is read by the fade pass only (`fold` and `gateOpen` do not check it;
+T25 has already dropped those rules at neutral numbers, so nothing is lost), and T27's `COST` group never held the two
+temperature lanes, which are `GROUP.HEAT` since T30.
 
 ## Decisions
 
