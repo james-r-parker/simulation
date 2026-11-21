@@ -177,13 +177,21 @@ export function probeGroup(subject, options = {}) {
             });
         scores[control] = huntScore(control, staged, { config, view, seed, trials, onTrial });
     }
+    return { scores, ...groupReading(scores), skipped: null };
+}
+
+/**
+ * @param {Record<string, number>} scores the kill shares of the three controls (`senses`, `kin-blind`, `solo`)
+ * @returns {{coordination: number, ratio: number | null, gain: number | null}} senses minus kin-blind; senses over
+ *   kin-blind (null when the blind trio never killed); kills per trio hunter over the solo hunter's (null when the
+ *   solo hunter never killed)
+ */
+export function groupReading(scores) {
     const { senses, [GROUP_CONTROL.BLIND]: blind, solo } = scores;
     return {
-        scores,
         coordination: senses - blind,
         ratio: blind > 0 ? senses / blind : null,
         gain: solo > 0 ? senses / TRIO / solo : null,
-        skipped: null,
     };
 }
 

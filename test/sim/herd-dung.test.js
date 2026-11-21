@@ -46,6 +46,20 @@ describe('herd dung zones', () => {
         expect([world.zoneX[firstDung], world.zoneY[firstDung]]).toEqual([300, 300]);
     });
 
+    it('replaces the most faded of two dung zones, whichever slot it is in, and skips live zones that are not dung', () => {
+        for (const fadedFirst of [true, false]) {
+            const world = build({ herdDungZoneMax: 2 });
+            addFertileZone(world, 100, 100, 25);
+            const a = addDungZone(world, 200, 200);
+            const b = addDungZone(world, 300, 300);
+            const [faded, fresh] = fadedFirst ? [a, b] : [b, a];
+            world.zoneFertility[faded] = world.zoneInitial[faded] * 0.2;
+            world.zoneFertility[fresh] = world.zoneInitial[fresh] * 0.9;
+            expect(addDungZone(world, 400, 400), `faded first ${fadedFirst}`).toBe(faded);
+            expect(world.zoneOrigin[0]).toBe(ZONE_ORIGIN.DEATH);
+        }
+    });
+
     it('uses only the available zone slot and allows dung to be disabled', () => {
         const world = build({ herdDungZoneMax: 0 });
         expect(addDungZone(world, 10, 20)).toBe(-1);

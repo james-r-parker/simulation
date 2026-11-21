@@ -79,7 +79,7 @@ export const BIT_KIN = 'bit-kin';
  * @param {import('./drill-kin-trace.js').KinTrace} kin the sibling's trace
  * @returns {string} why a trial was lost: `bit-kin` when the subject wished to bite its sibling, else the chase's reason
  */
-function lostReasonOf(preyTrace, kin) {
+export function lostReasonOf(preyTrace, kin) {
     return kin.biteTicks > 0 ? BIT_KIN : lostReason(preyTrace);
 }
 

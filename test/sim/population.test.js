@@ -78,6 +78,25 @@ describe('reap', () => {
         expect(log).toEqual([`death ${s} ${cause} 1 0`]);
     });
 
+    it.each([
+        ['disease', LOSS_CAUSE.DISEASE, DEATH_CAUSE.DISEASE],
+        ['cost', LOSS_CAUSE.COST, DEATH_CAUSE.DISEASE],
+        ['collision', LOSS_CAUSE.COLLISION, DEATH_CAUSE.COLLISION],
+    ])('kills an infected agent at 0 energy after a %s loss', (_n, loss, cause) => {
+        const w = lifeWorld();
+        const s = addBlob(w, { energy: 0, lastLoss: loss });
+        w.infection[s] = 1;
+        reap(w, recordingPolicy([]));
+        expect(event(w, 0)[4]).toBe(cause);
+    });
+
+    it('does not call an uninfected agent emptied by a disease loss a death of disease', () => {
+        const w = lifeWorld();
+        addBlob(w, { energy: 0, lastLoss: LOSS_CAUSE.DISEASE });
+        reap(w, recordingPolicy([]));
+        expect(event(w, 0)[4]).toBe(DEATH_CAUSE.STARVED);
+    });
+
     it('uses the last trample loss when a blob was also bitten that tick', () => {
         const w = lifeWorld();
         const s = addBlob(w, { energy: 0, lastLoss: LOSS_CAUSE.TRAMPLE, lastBiter: 77, lastHerdId: 91 });
