@@ -44,7 +44,7 @@ describe('role drill validity at the trial count of a gate checkpoint', () => {
     );
 
     it(
-        'make-a-living at the defaults has no passable bar: the row is impossible at eat and the reference wins none of 64',
+        'make-a-living at the defaults has no passable bar: the row is impossible at breed and the reference wins none of 64',
         () => {
             const v = roleDrillValidity(MAKE_A_LIVING, { trials: 64 });
             expect(v.bar.passable).toBe(false);

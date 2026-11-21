@@ -3,10 +3,10 @@
 // hunter, facing away, and runs from it as the oracle evader does (it breaks across the hunter's line when it is close); the
 // hunter must run it down and kill it, and the kill must pay for the chase: the trial is won when the prey is dead within
 // `MAX_TICKS` and the hunter's energy at the kill is above what it started with (the bites and the gorge less the kicks, the
-// costs and the strike misses: `simChase`'s `net`). The bar is the budget row `predator:living`, whose `eat` step is that net
-// at the reactive tier; at the defaults it is impossible (a chase costs more than a kill returns), so the reference wins no
-// trial and the drill has no passable bar there (`drill-role-validity.js` reports it). The `breed` step, the chases a life holds,
-// is the budget's, not a trial's.
+// costs and the strike misses: `simChase`'s `net`). The bar is the whole budget row `predator:living` (a drill gets a passable
+// bar only when its row's status is not `impossible`; a step that is possible does not make one): at the defaults the row is
+// impossible at `breed` (a life's chases do not reach the split gate), so the drill has no passable bar there and the reference,
+// which cannot net a kill at the defaults either, wins no trial (`drill-role-validity.js` reports it).
 
 import { nextFloat } from '../sim/rng.js';
 import { SPEC } from '../sim/specs.js';
@@ -19,8 +19,6 @@ import { MAX_TICKS } from './role-budget-timeline.js';
 
 /** The row the drill's bar is read from. */
 export const LIVING_ROW = 'predator:living';
-/** The step of the row a trial is: a kill that pays. */
-export const LIVING_GOALS = Object.freeze([Object.freeze(['eat'])]);
 /** The slots of the scene: the prey first, the hunter (the subject) second. */
 export const LIVING_SLOT = Object.freeze({ PREY: 0, SUBJECT: 1 });
 
@@ -85,7 +83,6 @@ export const MAKE_A_LIVING = {
     needsHunter: true,
     arena: ROLE_ARENA,
     row: LIVING_ROW,
-    goals: LIVING_GOALS,
     reference: hunterReference,
     plan: (rng, _view, config = ROLE_CONFIG) =>
         livingPlan(config, {

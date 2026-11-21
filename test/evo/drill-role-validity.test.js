@@ -45,15 +45,20 @@ describe('roleDrillValidity', () => {
         expect(v.reason).toBe('invalid: the reference wins 0 of 3');
     });
 
-    it('reports the hunter row at the defaults as impossible at eat: no passable bar, and a reference that wins nothing', () => {
+    it('reports the hunter row at the defaults as impossible at breed: no passable bar, and a reference that wins nothing', () => {
         const v = roleDrillValidity(MAKE_A_LIVING, { trials: 2 });
-        expect(v.bar).toMatchObject({ row: 'predator:living', status: 'impossible', binding: 'eat', passable: false });
+        expect(v.bar).toMatchObject({
+            row: 'predator:living',
+            status: 'impossible',
+            binding: 'breed',
+            passable: false,
+        });
         expect(v.reference.wins).toBe(0);
         expect(v).toMatchObject({ agreesWithRow: true, valid: false });
-        expect(v.reason).toBe('the row is impossible at "eat": no passable bar; the reference wins 0 of 2');
+        expect(v.reason).toBe('the row is impossible at "breed": no passable bar; the reference wins 0 of 2');
     });
 
-    it('reads the hunter drill as valid once its eat step is passable', () => {
+    it('reads the hunter drill as valid once its row is not impossible', () => {
         const v = roleDrillValidity(MAKE_A_LIVING, { trials: 3, config: LIVING });
         expect(v.bar).toMatchObject({ passable: true, status: 'ok', binding: 'eat' });
         expect(v).toMatchObject({ referencePasses: true, randomFails: true, valid: true });

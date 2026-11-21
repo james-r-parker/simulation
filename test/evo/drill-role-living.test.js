@@ -4,14 +4,7 @@ import { createRng, fork } from '../../js/sim/rng.js';
 import { SPEC, SPEC_NAMES } from '../../js/sim/specs.js';
 import { arenaConfig } from '../../js/evo/chase-arena.js';
 import { layerArena } from '../../js/evo/drill-body-rules.js';
-import {
-    LIVING_GOALS,
-    LIVING_ROW,
-    MAKE_A_LIVING,
-    hunterReference,
-    livingPlan,
-    reasonOf,
-} from '../../js/evo/drill-role-living.js';
+import { LIVING_ROW, MAKE_A_LIVING, hunterReference, livingPlan, reasonOf } from '../../js/evo/drill-role-living.js';
 import { ROLE_ARENA } from '../../js/evo/drill-role-staging.js';
 import { drillSubject, randomBrains } from '../../js/evo/drill.js';
 import { playTrial } from '../../js/evo/memory-probe-run.js';
@@ -45,8 +38,7 @@ describe('the make-a-living drill', () => {
             needsHunter: true,
             arena: ROLE_ARENA,
         });
-        expect(MAKE_A_LIVING.goals).toBe(LIVING_GOALS);
-        expect(LIVING_GOALS).toEqual([['eat']]);
+        expect(MAKE_A_LIVING.goals).toBeUndefined();
     });
 
     it('stages a prey ahead of the hunter at the gap it first sees it, facing away, one of the four preys from the stream', () => {
