@@ -381,9 +381,20 @@ Inside the `bench-check` margin; every golden `worldHash` is unchanged by each c
 
 It serves **Same spec, different custom**: a lineage that specialises in food others cannot eat. Its condition: the world must hold enough toxic food (toxic plants, or toxic prey of a lineage with the `toxic` effect) that the bodies without it cannot use; otherwise `liver` is a pure cost and selection holds it at 0, which the contract tests would show. With toxic prey it makes a small arms race: toxic prey are a strong defence only while few hunters carry a high `liver`.
 
+More trade traits for the same phase, each one trait with two opposite effects, each kept because nature makes the same trade, and each with the condition under which it pays (without it selection holds the trait at 0):
+
+| Trait        | Up                                                            | Down                                                           | In nature                    | Pays only when                                                               |
+| ------------ | ------------------------------------------------------------- | -------------------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------- |
+| `armour`     | smaller bites taken (`biteTakenMultiplier`)                   | heavier: more movement cost, a lower speed cap                 | turtle, armadillo            | hunters catch often enough that surviving a bite matters                     |
+| `paceOfLife` | matures sooner, breeds again sooner                           | a shorter life (`maxAgeTicks`)                                 | mouse against elephant       | the world changes faster than a long life pays back                          |
+| `warmOrCold` | a lower standing cost                                         | thrust and cost swing harder with temperature                  | reptile against mammal       | seasons are long enough to favour one strategy at a time                     |
+| `immunity`   | fewer infections and a shorter sickness (`js/sim/disease.js`) | a higher standing cost all the time                            | the cost of an immune system | disease is common, as in crowded worlds                                      |
+| `jaw`        | more energy a bite (hunters)                                  | slower handling and digestion (`handlingTicks`, `digestTicks`) | big cat against fox          | prey is scarce enough that a big kill beats many small ones                  |
+| `crypsis`    | harder to see                                                 | its own calls carry less far                                   | stick insect, cryptic prey   | the senses read visibility (the `still` effect of status-effects.md Phase 4) |
+
 | Chunk | Tasks      | Builder |
 | ----- | ---------- | ------- |
-| F     | T47 to T49 | Sonnet  |
+| F     | T47 to T50 | Sonnet  |
 
 ## Decisions
 
@@ -504,11 +515,12 @@ It serves **Same spec, different custom**: a lineage that specialises in food ot
 
 ### Phase 6 - Later traits (user, 2026-11-21)
 
-| #   | Task                                                                                                                                                                                                                                     | Nature      | Depends on |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
-| T47 | Plan `liver` in full: its two effects and their lanes, its span and cost, where the toxic food comes from (`js/sim/toxin.js` plants, the `toxic` effect of status-effects.md T20), and the reading that shows a lineage uses it; no code | [judgement] | -          |
-| T48 | Add `liver` to `TRAITS` at a span of 0 with its lanes and the contract-test rows; every golden unchanged                                                                                                                                 | [judgement] | T47        |
-| T49 | Choose its span with the calculator and a screen, read it under the keep rule, and record whether a lineage holds a high `liver` where toxic food is common; conformance review                                                          | [judgement] | T48        |
+| #   | Task                                                                                                                                                                                                                                           | Nature      | Depends on |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T47 | Plan `liver` in full: its two effects and their lanes, its span and cost, where the toxic food comes from (`js/sim/toxin.js` plants, the `toxic` effect of status-effects.md T20), and the reading that shows a lineage uses it; no code       | [judgement] | -          |
+| T48 | Add `liver` to `TRAITS` at a span of 0 with its lanes and the contract-test rows; every golden unchanged                                                                                                                                       | [judgement] | T47        |
+| T49 | Choose its span with the calculator and a screen, read it under the keep rule, and record whether a lineage holds a high `liver` where toxic food is common; conformance review                                                                | [judgement] | T48        |
+| T50 | Plan the other later trade traits of the Phase 6 table (`armour`, `paceOfLife`, `warmOrCold`, `immunity`, `jaw`, `crypsis`) in full as T47 plans `liver`, with the user's pick of which come first; then build and read each as T48 and T49 do | [judgement] | T47        |
 
 ## Verification
 
