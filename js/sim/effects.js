@@ -159,7 +159,8 @@ export class EffectSystem {
         /** The slot whose computed levels are memoised, -1 for none (`pin`). */
         this.pinned = -1;
         this.memo = new Float64Array(parts.list.length);
-        this.have = new Uint8Array(parts.list.length);
+        this.have = new Uint32Array(parts.list.length);
+        this.epoch = 0;
     }
 
     /**
@@ -170,7 +171,7 @@ export class EffectSystem {
      */
     pin(slot) {
         this.pinned = slot;
-        this.have.fill(0);
+        this.epoch = (this.epoch + 1) >>> 0;
     }
 
     /** Ends `pin`: levels are read from the body again. */
@@ -189,9 +190,9 @@ export class EffectSystem {
             return rule.read(world, slot);
         }
         const e = rule.effect;
-        if (this.have[e] === 0) {
+        if (this.have[e] !== this.epoch) {
             this.memo[e] = rule.read(world, slot);
-            this.have[e] = 1;
+            this.have[e] = this.epoch;
         }
         return this.memo[e];
     }
