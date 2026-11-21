@@ -12,7 +12,7 @@ import { createKindTally, kindScores, noteBite, notePass } from './reflex-kind-t
 import { stageWorld } from './pool-discrimination-stage.js';
 import { caseNamed } from './reflex-cases.js';
 import { SEQUENCE_TICKS, SETTLE_TICKS, readOutputs } from './reflex-stage.js';
-import { assertTableFresh } from './reflex-table.js';
+import { RAY_LANES, assertTableFresh } from './reflex-table.js';
 
 /** Slots in one batch. */
 export const BATCH_SLOTS = 512;
@@ -82,20 +82,36 @@ function resetState(world) {
 }
 
 /**
- * Copies one table row into every slot, then sets the two memory read-backs to the slot's own last outputs, as
- * `writeBodyInputs` does.
+ * Copies a tick's block of ray lanes into one slot's rows of the `RAY_LANES`.
  * @param {Record<string, any>} world the reflex world
- * @param {{row: Float32Array, hue: Float32Array}} tick the table's `inputs` row and `rayHue` row for the tick
+ * @param {Float32Array} rays the tick's block: each lane's `rayCount` values in `RAY_LANES` order
+ * @param {number} slot the slot
  * @returns {void}
  */
-function loadRow(world, { row, hue }) {
-    const raw = world.layout.rawInputCount;
+function loadRays(world, rays, slot) {
     const { rayCount } = world.config;
+    for (let lane = 0; lane < RAY_LANES.length; lane++) {
+        const into = world[RAY_LANES[lane]];
+        for (let k = 0; k < rayCount; k++) {
+            into[slot * rayCount + k] = rays[lane * rayCount + k];
+        }
+    }
+}
+
+/**
+ * Copies one table row and its ray lanes into every slot, then sets the two memory read-backs to the slot's own last
+ * outputs, as `writeBodyInputs` does.
+ * @param {Record<string, any>} world the reflex world
+ * @param {{row: Float32Array, rays: Float32Array}} tick the table's `inputs` row and ray lane block for the tick
+ * @returns {void}
+ */
+function loadRow(world, { row, rays }) {
+    const raw = world.layout.rawInputCount;
     const memory = inputOffsets(world.config).rawBodyStart;
     for (let slot = 0; slot < world.alive.length; slot++) {
         const at = slot * raw;
         world.inputs.set(row, at);
-        world.rayHue.set(hue, slot * rayCount);
+        loadRays(world, rays, slot);
         world.inputs[at + memory + BODY_INPUT.MEMORY_A] = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_A];
         world.inputs[at + memory + BODY_INPUT.MEMORY_B] = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_B];
     }
@@ -188,6 +204,7 @@ function runSequence(world, table, { index, run }) {
     const { trial } = table.sequences[index];
     const { tally } = run;
     const raw = table.rawInputCount;
+    const width = RAY_LANES.length * table.rayCount;
     const slots = world.alive.length;
     const marks = { ok: new Uint8Array(slots).fill(1), first: new Uint8Array(slots) };
     resetState(world);
@@ -195,7 +212,7 @@ function runSequence(world, table, { index, run }) {
         const at = index * SEQUENCE_TICKS + t;
         loadRow(world, {
             row: table.rows.subarray(at * raw, (at + 1) * raw),
-            hue: table.hues.subarray(at * table.rayCount, (at + 1) * table.rayCount),
+            rays: table.rays.subarray(at * width, (at + 1) * width),
         });
         run.think(world);
         run.hooks.observe?.({ world, table: table.name, sequence: index, tick: t });

@@ -80,6 +80,9 @@ const TODAYS_WORLD_FIELDS = [
     'leakRate',
     'fastOut',
     'rayHue',
+    'raySize',
+    'raySpeed',
+    'rayClosing',
     'rayCos',
     'raySin',
     'x',
@@ -149,6 +152,7 @@ const HASHED_ELSEWHERE = new Set([
     'birthRing',
     'hidden',
     'sprintLevel',
+    'restTimer',
 ]);
 
 /**
@@ -157,7 +161,8 @@ const HASHED_ELSEWHERE = new Set([
  * @returns {boolean} whether changing the first element of the row changes `hashWorld`
  */
 function hashSeesRow(world, name) {
-    const array = world[name] ?? (name === 'sprintLevel' ? world.sprintStore.level : undefined);
+    const laneName = name.startsWith('lanes.') ? name.slice('lanes.'.length) : undefined;
+    const array = world[name] ?? (name === 'sprintLevel' ? world.sprintStore.level : world.lanes[laneName ?? '']);
     const before = hashWorld(world);
     const saved = array[0];
     array[0] = saved === 7 ? 8 : 7;

@@ -47,7 +47,13 @@ describe('the scatter nursery world', () => {
     it(
         'still has a population and offers a death once the offer window is open',
         () => {
-            // At 20 items the founders starved before OFFER_FROM_TICK and E-TS-1m measured nothing.
+            // At 20 items the founders starved before OFFER_FROM_TICK and E-TS-1m measured nothing; 90 fixed that. Pooled-v6's
+            // longer genome row reshuffled every seed's streams and the 90-item fixture starved out again: population 0 at
+            // tick 11000 on seeds 1 to 4 (seed 1 was the only passing seed even on main, at 26 alive). The test checks the
+            // offer-window mechanism, not world survival, so the same lever moves again: this frozen fixture holds 200
+            // items (the shipped screen file keeps its own 90). Population at tick 11000 on 200 items, offers in the
+            // window: seed 1 has 48 and 4, seed 2 has 36 and 2, seed 3 has 32 and 3, seed 4 has 30 and 3. The lever is
+            // chaotic (seed 1 at 220 items has 1 alive), so 200 was picked for living on all four seeds.
             const snapshot = snapshotArchive(createTrainerArchive(createConfig(OVERRIDES)));
             const ticks = OFFER_FROM_TICK + 1000;
             const result = runTrainTask({ seed: 1, overrides: OVERRIDES, snapshot, ticks });

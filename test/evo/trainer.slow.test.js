@@ -96,12 +96,18 @@ describe('runEpisode with an opponent pool', () => {
     it(
         'replays bit for bit, and offers no pool founder: only its children can reach the archive',
         () => {
-            const a = runEpisode(task({ pool: fullPool() }));
-            expect(runEpisode(task({ pool: fullPool() }))).toEqual(a);
+            // Seed 4, not the file's seed 5: pooled-v6's longer genome row reshuffles each seed's streams, and the no-pool
+            // run on seed 5 now offers 0 founders, so the claim below had nothing to check. Founders the no-pool run
+            // offers at that HEAD, by seed: 1 has 2, 2 has 1, 3 has 1, 4 has 4, 5 has 0, 6 has 4.
+            const pooled = (/** @type {Record<string, any>} */ extra = {}) =>
+                task({ seed: 4, pool: fullPool(), ...extra });
+            const a = runEpisode(pooled());
+            expect(runEpisode(pooled())).toEqual(a);
             // Every initial agent (ids 1 to 40) is a pool founder at share 1, so none of them is offered; the same episode
-            // without the pool offers some of them.
+            // without the pool offers some of them (asserted, so the claim cannot pass on a run that offers nothing).
+            const plain = runEpisode(task({ seed: 4 }));
+            expect(plain.offers.filter((o) => o.id <= WORLD.initialAgents).length).toBeGreaterThan(0);
             expect(a.offers.every((o) => o.id > WORLD.initialAgents)).toBe(true);
-            expect(runEpisode(task()).offers.some((o) => o.id <= WORLD.initialAgents)).toBe(true);
         },
         scaleTimeout(20_000),
     );

@@ -5,6 +5,8 @@ import { DISEASE_RULES } from './config-disease.js';
 import { checkHerds, HERD_RULES } from './config-herds.js';
 import { brainLayout } from './brain-layout.js';
 import { BOOL, FEATURE_RULES, UNIT, int, num, positive } from './config-rules.js';
+import { bodyProblem } from './body-lanes.js';
+import { geneMenuProblem } from './body-traits.js';
 import { SPECIALISATION_FIELDS, SPECIALISATION_KEYS, SPEC_FIELD_RULES } from './config-spec-rules.js';
 
 /** @typedef {import('./config-rules.js').Rule} Rule */
@@ -284,6 +286,22 @@ function checkSeasons(seasons) {
     });
 }
 
+/** The rule types that validate a map, each with the function that says what is wrong with it. */
+const MAP_PROBLEMS = { bodyMap: bodyProblem, geneMenu: geneMenuProblem };
+
+/**
+ * @param {string} path the key path of a spec's `body` or `genes`
+ * @param {'bodyMap' | 'geneMenu'} type the rule type
+ * @param {unknown} map the value
+ * @returns {void}
+ */
+function checkMapField(path, type, map) {
+    const problem = MAP_PROBLEMS[type](map);
+    if (problem !== null) {
+        fail(path, map, problem);
+    }
+}
+
 /**
  * @param {unknown} specialisations the `specialisations` value
  * @returns {void}
@@ -299,7 +317,12 @@ function checkSpecialisations(specialisations) {
             fail(`${path}.index`, entry.index, `${order} (fixed by key order)`);
         }
         for (const field of SPECIALISATION_FIELDS.slice(1)) {
-            checkScalar(`${path}.${field}`, entry[field], SPEC_FIELD_RULES[field]);
+            const { type } = SPEC_FIELD_RULES[field];
+            if (type === 'bodyMap' || type === 'geneMenu') {
+                checkMapField(`${path}.${field}`, type, entry[field]);
+            } else {
+                checkScalar(`${path}.${field}`, entry[field], SPEC_FIELD_RULES[field]);
+            }
         }
     });
 }

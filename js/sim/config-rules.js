@@ -3,7 +3,7 @@
 
 /**
  * @typedef {object} Rule
- * @property {'int' | 'num' | 'bool' | 'enum' | 'mutationRate' | 'seasons' | 'specialisations' | 'flora'} type the value type
+ * @property {'int' | 'num' | 'bool' | 'enum' | 'mutationRate' | 'seasons' | 'specialisations' | 'flora' | 'bodyMap' | 'geneMenu'} type the value type
  * @property {readonly string[]} [values] the allowed strings of an `enum`
  * @property {number} [min] inclusive lower bound
  * @property {number} [gt] exclusive lower bound
@@ -88,6 +88,8 @@ export const FEATURE_RULES = {
     sprintFloor: { type: 'num', gt: 0, max: 1 },
     mutationRate: { type: 'mutationRate' },
     weightDecay: num(0, 0.1),
+    traitMutationSigma: num(0),
+    traitGeneClamp: { type: 'num', gt: 0, max: 8 },
     leakGeneStart: num(-4, 4),
     instinctWeight: num(0, 4),
     leakMin: { type: 'num', gt: 0, lt: 1 },

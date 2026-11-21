@@ -125,7 +125,7 @@ function fieldNames() {
 /**
  * Builds the byte views for the whole-array part of the hash, once per world.
  * @param {Record<string, any>} world the world
- * @returns {{ agents: Uint8Array[], merit: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, inputActive: Uint8Array, vision: Uint8Array, baseSize: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, disease: Uint8Array[], diseaseRngSource: Uint32Array | null, diseaseRng: Uint8Array | null, sprintStore: Uint8Array | null, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
+ * @returns {{ agents: Uint8Array[], merit: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, inputActive: Uint8Array, vision: Uint8Array, baseSize: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, disease: Uint8Array[], diseaseRngSource: Uint32Array | null, diseaseRng: Uint8Array | null, sprintStore: Uint8Array | null, restTimer: Uint8Array | null, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
  */
 function buildViews(world) {
     const { maxAgents } = world.config;
@@ -145,6 +145,7 @@ function buildViews(world) {
         diseaseRngSource: null,
         diseaseRng: null,
         sprintStore: world.sprintStore === undefined ? null : bytesOf(world.sprintStore, 'level'),
+        restTimer: world.restTimer === undefined ? null : bytesOf(world, 'restTimer'),
         rngSources: [],
         rngViews: [],
     };
@@ -185,7 +186,22 @@ function rngState(world, name) {
 }
 
 /**
- * Hashes the arrays that exist only with their feature on: `fastOut`, the input-activity counts (`weightDecay`), `vision` and `baseSize`, `birthRing`, `sex`, the disease state and the sprint store (`sprintStoreEnabled`).
+ * Hashes the per-slot state rows that exist only with their feature on: the sprint store (`sprintStoreEnabled`) and the
+ * rest timer after a kill (`predatorRestTicks`).
+ * @param {ReturnType<typeof buildViews>} views the cached byte views
+ * @returns {void}
+ */
+function hashStateRows(views) {
+    if (views.sprintStore !== null) {
+        fnv64Bytes(digest, views.sprintStore);
+    }
+    if (views.restTimer !== null) {
+        fnv64Bytes(digest, views.restTimer);
+    }
+}
+
+/**
+ * Hashes the arrays that exist only with their feature on: `fastOut`, the input-activity counts (`weightDecay`), `vision` and `baseSize`, `birthRing`, `sex`, the disease state, the sprint store (`sprintStoreEnabled`) and the rest timer (`predatorRestTicks`).
  * @param {Record<string, any>} world the world
  * @param {ReturnType<typeof buildViews>} views the cached byte views
  * @returns {void}
@@ -222,9 +238,7 @@ function hashOptionalArrays(world, views) {
         }
         fnv64Bytes(digest, bytes);
     }
-    if (views.sprintStore !== null) {
-        fnv64Bytes(digest, views.sprintStore);
-    }
+    hashStateRows(views);
 }
 
 /**

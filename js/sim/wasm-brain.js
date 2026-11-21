@@ -27,6 +27,9 @@ export const PARAM_ARRAYS = Object.freeze([
     'leakRate',
     'fastOut',
     'rayHue',
+    'raySize',
+    'raySpeed',
+    'rayClosing',
     'rayCos',
     'raySin',
     'rewardScale',
@@ -42,13 +45,16 @@ export const PARAM_ARRAYS = Object.freeze([
 export const BRAIN_FIELDS = Object.freeze([
     ...PARAM_ARRAYS.filter((name) => name === 'hidden' || ownedFields('brain', [name]).length > 0),
     'rayHue',
+    'raySize',
+    'raySpeed',
+    'rayClosing',
     'rayCos',
     'raySin',
 ]);
 
 /** Index of the fault slot and place the kernel writes in the parameter block (`status_slot`, `status_where`). */
-export const STATUS_SLOT = 38;
-export const STATUS_WHERE = 39;
+export const STATUS_SLOT = 41;
+export const STATUS_WHERE = 42;
 
 /** `flags` bit: Hebbian learning on. */
 const FLAG_LEARN = 1;

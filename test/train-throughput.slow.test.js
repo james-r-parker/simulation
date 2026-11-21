@@ -78,8 +78,8 @@ async function run(name, workers) {
 
 /** What the run wrote before T27 to T32 (recorded on the unchanged code). */
 const PINNED = {
-    archives: 'ad3c38fe1b1fcff326922901bd7c7d4fe7f9486cd46e700f67472d1cee7567c0',
-    curve: '4194dd56a0d86f091b58f17cb88271845bde4ba41aafd7d19a51daf39af95b5b',
+    archives: '638704b52405533bcb98954815d10761409478f7f29f271d89a162212e061193',
+    curve: '32635a967cbd4f631080e907f1565fec02d80170093482107c4327710a378f21',
 };
 
 describe('archive files at checkpoints only', () => {

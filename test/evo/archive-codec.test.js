@@ -85,9 +85,9 @@ describe('archive codec', () => {
 
     it('rejects an archive of the same sizes but another layout name, by name', () => {
         const json = viaText(encodeArchive(makeArchive(), config));
-        expect(json.layout.name).toBe('pooled-v5');
-        expect(() => decodeArchive({ ...json, layout: { ...json.layout, name: 'elman-v1' } }, config)).toThrow(
-            /archive\.layout\.name: expected pooled-v5, got elman-v1/,
+        expect(json.layout.name).toBe('pooled-v6');
+        expect(() => decodeArchive({ ...json, layout: { ...json.layout, name: 'pooled-v5' } }, config)).toThrow(
+            /archive\.layout\.name: expected pooled-v6, got pooled-v5/,
         );
     });
 
@@ -166,6 +166,6 @@ describe('archive codec', () => {
     it('rejects a current-version archive stamped with the old 179-input layout by the layout field', () => {
         const json = viaText(encodeArchive(makeArchive(), config));
         const old = { ...json, layout: { ...json.layout, inputCount: 179 } };
-        expect(() => decodeArchive(old, config)).toThrow(/archive\.layout\.inputCount: expected 92, got 179/);
+        expect(() => decodeArchive(old, config)).toThrow(/archive\.layout\.inputCount: expected 106, got 179/);
     });
 });

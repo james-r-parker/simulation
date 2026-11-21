@@ -26,7 +26,7 @@ describe('hueAwareSubject', () => {
         const subject = hueAwareSubject();
         const raw = table.rawInputCount;
         world.inputs.set(table.rows.subarray(0, raw), 0);
-        world.rayHue.set(table.hues.subarray(0, table.rayCount), 0);
+        world.rayHue.set(table.rays.subarray(0, table.rayCount), 0);
         subject.act?.(world);
         const safeBearing = table.sequences[0].staging.bearing;
         expect(Math.sign(world.outputs[OUTPUT_INDEX.TURN])).toBe(Math.sign(safeBearing));

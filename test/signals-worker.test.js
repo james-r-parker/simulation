@@ -14,7 +14,7 @@ describe('runSignals (direct)', () => {
             const result = runSignals({ seed: 3, ticks: 200, policy: 'map-elites-v6', overrides: SMALL });
             expect(result.seed).toBe(3);
             expect(result.samples).toBeGreaterThan(0);
-            expect(result.inputs).toHaveLength(92);
+            expect(result.inputs).toHaveLength(106);
             expect(result.outputs).toHaveLength(11);
         },
     );

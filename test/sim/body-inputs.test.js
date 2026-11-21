@@ -152,7 +152,7 @@ describe('writeBodyInputs', () => {
         w.temperature[slot] = 50;
         writeBodyInputs(w, slot);
         const end = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS + 17;
-        expect(end + 19).toBe((slot + 1) * w.layout.rawInputCount);
+        expect(end + 20).toBe((slot + 1) * w.layout.rawInputCount);
         expect(w.inputs.subarray(end, end + 13).every((/** @type {number} */ v) => v === 0)).toBe(true);
         expect(
             w.inputs
@@ -180,5 +180,23 @@ describe('sex input', () => {
         w.sex[slot] = 1;
         writeBodyInputs(w, slot);
         expect(w.inputs[at]).toBe(1);
+    });
+});
+
+describe('reserve input', () => {
+    it('is 1 in a world with no sprint store', () => {
+        const { w, slot } = ready();
+        const at = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS + BODY_INPUT.RESERVE;
+        writeBodyInputs(w, slot);
+        expect(w.inputs[at]).toBe(1);
+    });
+
+    it("is the sprint store's level when the world has one", () => {
+        const w = senseWorld({ sprintStoreEnabled: true });
+        const slot = addAgent(w, 500, 500, 25);
+        const at = slot * w.layout.rawInputCount + w.config.rayCount * RAY_CHANNELS + BODY_INPUT.RESERVE;
+        w.sprintStore.level[slot] = 0.375;
+        writeBodyInputs(w, slot);
+        expect(w.inputs[at]).toBe(0.375);
     });
 });

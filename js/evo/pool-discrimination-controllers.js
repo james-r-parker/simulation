@@ -1,12 +1,17 @@
 // The scripted controllers of the discrimination scenes. Each scene has two: one reads the raw rays and may use every
 // ray, the other reads only the pooled row (the two strongest hits per channel). Both aim with the same `steer`.
 
-import { HIT_STRIDE, OUTPUT_INDEX, RAY_CHANNELS, inputOffsets } from '../sim/brain-layout.js';
+import {
+    CH_FOOD,
+    CH_OBSTACLE,
+    CH_THREAT,
+    HIT_STRIDE,
+    OUTPUT_INDEX,
+    RAY_CHANNELS,
+    inputOffsets,
+} from '../sim/brain-layout.js';
 import { setOutput, write, writeForage } from './scripted-parts.js';
 
-const CH_FOOD = 1;
-const CH_THREAT = 2;
-const CH_OBSTACLE = 7;
 const AIM_GAIN = 4;
 const SEEK_THRUST = 0.5;
 const CORRIDOR_THRUST = 0.5;

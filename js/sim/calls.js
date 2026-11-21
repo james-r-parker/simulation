@@ -1,6 +1,6 @@
 // The signal phase: call timers, alarm and hunt calls, smoke releases, then who hears what.
 
-import { OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from './brain-layout.js';
+import { CH_THREAT, OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from './brain-layout.js';
 import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
 import { depositPheromone } from './pheromones.js';
@@ -16,8 +16,6 @@ import { SPEC } from './specs.js';
 /** Offsets of the alarm and hunt halves of a `heard` row. */
 const ALARM_HEARD = 0;
 const HUNT_HEARD = 3;
-/** Offset of the threat value (an agent that can bite the caster) in a ray's `RAY_CHANNELS` values. */
-const CH_THREAT = 2;
 
 /**
  * Effective call radius for `caller` (scouts get `scoutCallRadiusMultiplier`).
