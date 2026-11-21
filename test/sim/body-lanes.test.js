@@ -274,6 +274,21 @@ describe('bodyProblem', () => {
         }); // a body that cannot hunt keeps its hunter-only costs at 0 (the default)
     });
 
+    it('refuses canHunt true while a hunter cost of the body is 0, unless the config sets the costs', () => {
+        expect(() => createConfig({ specialisations: { forager: { canHunt: true } } })).toThrow(
+            /specialisations\.forager\.body is .*huntUpkeep above 0.*free hunter/,
+        );
+        expect(() =>
+            createConfig({
+                specialisations: { forager: { canHunt: true, body: { huntUpkeep: 1, predatorRestTicks: 1 } } },
+            }),
+        ).toThrow(/strikeMissCost above 0/);
+        const costs = { huntUpkeep: 1, predatorRestTicks: 1, strikeMissCost: 1 };
+        const forager = createConfig({ specialisations: { forager: { canHunt: true, body: costs } } }).specialisations;
+        expect(forager.forager.body).toEqual(costs);
+        expect(() => createConfig({ specialisations: { predator: { canHunt: false } } })).not.toThrow();
+    });
+
     it('accepts a spec body override of baseSize and childEnergyShare, which are read only through their lanes', () => {
         const body = { baseSize: 1.1, childEnergyShare: 0.9 };
         expect(bodyProblem(body)).toBeNull();
