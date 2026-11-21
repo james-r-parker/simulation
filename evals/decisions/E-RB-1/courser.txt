@@ -2,41 +2,41 @@ role budget  config 2135e314548bd20a  rules 44c93a3cf91c582e
 model {"reactionTicks":2,"hearThreshold":0.1,"breakAngle":1.5707963267948966,"tightTicks":5,"preySprint":"rationed","hunterShare":0.1,"foodDensity":null,"naiveEffort":0.5,"catchShare":0.3,"reliableSight":false}
 
 row                  see  turn  run  bite  status  binding
-predator:forager     163  74    163  157   ok      turn
-predator:reproducer  173  81    173  167   ok      turn
-predator:scout       146  55    146  145   ok      turn
-predator:defender    174  81    174  166   ok      turn
-predator:average     164  73    164  159   ok      turn
-predator:best        173  81    173  167   ok      turn
+predator:forager     163  73    163  157   ok      turn
+predator:reproducer  172  81    172  166   ok      turn
+predator:scout       141  56    141  140   ok      turn
+predator:defender    175  81    175  167   ok      turn
+predator:average     163  73    163  158   ok      turn
+predator:best        172  81    172  166   ok      turn
 
 predator:forager
-  catch margin (broken bound, px): +609  catchable yes  gap at awareness 345
-  tiers, margin straight/broken px: perfect +612/+609  reactive +497/-58  naive +270/+273
+  catch margin (broken bound, px): +608  catchable yes  gap at awareness 345
+  tiers, margin straight/broken px: perfect +611/+608  reactive +489/-58  naive +267/+270
   learn slope reactive  fit for the rung screen no
-  audit bearings closing 0.875  worst margin -91 px
-  chase energy: spent 224.4  kicks 17.0  returned 579.7  net +338.3  (holds 4700 above its birth reserve)
+  audit bearings closing 0.875  worst margin -92 px
+  chase energy: spent 313.4  kicks 17.1  returned 579.7  net +249.2  (holds 4700 above its birth reserve)
   chase heat: +0.930 of 15 headroom  refill after the burst: 184 ticks
 predator:reproducer
-  catch margin (broken bound, px): +659  catchable yes  gap at awareness 295
-  tiers, margin straight/broken px: perfect +662/+659  reactive +548/-8  naive +314/+323
+  catch margin (broken bound, px): +657  catchable yes  gap at awareness 295
+  tiers, margin straight/broken px: perfect +661/+657  reactive +539/-8  naive +314/+324
   learn slope reactive  fit for the rung screen no
-  audit bearings closing 0.875  worst margin -41 px
-  chase energy: spent 198.3  kicks 17.1  returned 583.8  net +368.5  (holds 4700 above its birth reserve)
-  chase heat: +0.830 of 15 headroom  refill after the burst: 164 ticks
+  audit bearings closing 0.875  worst margin -42 px
+  chase energy: spent 279.1  kicks 17.2  returned 583.4  net +287.2  (holds 4700 above its birth reserve)
+  chase heat: +0.840 of 15 headroom  refill after the burst: 164 ticks
 predator:scout
-  catch margin (broken bound, px): +510  catchable yes  gap at awareness 445
-  tiers, margin straight/broken px: perfect +512/+510  reactive +398/+400  naive +167/+173
+  catch margin (broken bound, px): +508  catchable yes  gap at awareness 445
+  tiers, margin straight/broken px: perfect +511/+508  reactive +389/+392  naive +164/+174
   learn slope ok  fit for the rung screen yes
-  audit bearings closing 0.875  worst margin -191 px
-  chase energy: spent 273.8  kicks 12.6  returned 602.2  net +315.8  (holds 4700 above its birth reserve)
-  chase heat: +1.050 of 15 headroom  refill after the burst: 226 ticks
+  audit bearings closing 0.875  worst margin -192 px
+  chase energy: spent 382.1  kicks 12.7  returned 600.2  net +205.5  (holds 4700 above its birth reserve)
+  chase heat: +1.100 of 15 headroom  refill after the burst: 223 ticks
 predator:defender
-  catch margin (broken bound, px): +662  catchable yes  gap at awareness 285
-  tiers, margin straight/broken px: perfect +671/+662  reactive +557/-208  naive +324/+330
+  catch margin (broken bound, px): +661  catchable yes  gap at awareness 285
+  tiers, margin straight/broken px: perfect +670/+661  reactive +548/-205  naive +324/+330
   learn slope reactive  fit for the rung screen no
-  audit bearings closing 0.875  worst margin -38 px
-  chase energy: spent 197.5  kicks 58.7  returned 543.0  net +286.8  (holds 4700 above its birth reserve)
-  chase heat: +0.840 of 15 headroom  refill after the burst: 166 ticks
+  audit bearings closing 0.875  worst margin -40 px
+  chase energy: spent 273.5  kicks 59.2  returned 543.8  net +211.2  (holds 4700 above its birth reserve)
+  chase heat: +0.830 of 15 headroom  refill after the burst: 166 ticks
 predator:average
   catchable share 1.00  choice gain 8.3 ticks
 predator:best
@@ -44,27 +44,27 @@ predator:best
 
 predator:forager: smallest single changes that give it
 factor  setting                               value  margin px  slope  fit  file
-x1.25   specialisations.predator.sprintBoost  2      +874       ok     fit  evals/role-budget/courser-predator-forager-1.json
-x0.75   specialisations.forager.sprintBoost   0.75   +667       ok     fit  evals/role-budget/courser-predator-forager-2.json
-x0.75   specialisations.predator.visionRange  300    +609       ok     fit  evals/role-budget/courser-predator-forager-3.json
-x1.25   sprintFloor                           0.375  +585       ok     fit  evals/role-budget/courser-predator-forager-4.json
-x1.25   maxThrust                             0.875  +581       ok     fit  evals/role-budget/courser-predator-forager-5.json
+x1.25   specialisations.predator.sprintBoost  2      +871       ok     fit  evals/role-budget/courser-predator-forager-1.json
+x0.75   specialisations.forager.sprintBoost   0.75   +666       ok     fit  evals/role-budget/courser-predator-forager-2.json
+x0.75   specialisations.predator.visionRange  300    +608       ok     fit  evals/role-budget/courser-predator-forager-3.json
+x1.25   maxThrust                             0.875  +580       ok     fit  evals/role-budget/courser-predator-forager-4.json
+x1.25   sprintFloor                           0.375  +579       ok     fit  evals/role-budget/courser-predator-forager-5.json
 
 predator:reproducer: smallest single changes that give it
 factor  setting                                 value  margin px  slope  fit  file
-x1.25   specialisations.predator.sprintBoost    2      +872       ok     fit  evals/role-budget/courser-predator-reproducer-1.json
-x0.75   specialisations.reproducer.visionRange  187.5  +651       ok     fit  evals/role-budget/courser-predator-reproducer-2.json
-x1.25   specialisations.reproducer.visionRange  312.5  +597       ok     fit  evals/role-budget/courser-predator-reproducer-3.json
-x0.75   maxVelocity                             6      +439       ok     fit  evals/role-budget/courser-predator-reproducer-4.json
-x0.75   specialisations.predator.sprintBoost    1.2    +414       ok     fit  evals/role-budget/courser-predator-reproducer-5.json
+x1.25   specialisations.predator.sprintBoost    2      +871       ok     fit  evals/role-budget/courser-predator-reproducer-1.json
+x0.75   specialisations.reproducer.visionRange  187.5  +650       ok     fit  evals/role-budget/courser-predator-reproducer-2.json
+x1.25   specialisations.reproducer.visionRange  312.5  +594       ok     fit  evals/role-budget/courser-predator-reproducer-3.json
+x0.75   maxVelocity                             6      +437       ok     fit  evals/role-budget/courser-predator-reproducer-4.json
+x0.75   specialisations.predator.sprintBoost    1.2    +411       ok     fit  evals/role-budget/courser-predator-reproducer-5.json
 
 predator:defender: smallest single changes that give it
 factor  setting                               value  margin px  slope  fit  file
 x0.75   maxVelocity                           6      +443       ok     fit  evals/role-budget/courser-predator-defender-1.json
 x1.5    specialisations.predator.sprintBoost  2.4    +1049      ok     fit  evals/role-budget/courser-predator-defender-2.json
 x0.5    specialisations.defender.sprintBoost  0.5    +704       ok     fit  evals/role-budget/courser-predator-defender-3.json
-x0.5    specialisations.predator.visionRange  200    +662       ok     fit  evals/role-budget/courser-predator-defender-4.json
-x1.5    specialisations.defender.visionRange  450    +542       ok     fit  evals/role-budget/courser-predator-defender-5.json
+x0.5    specialisations.predator.visionRange  200    +661       ok     fit  evals/role-budget/courser-predator-defender-4.json
+x1.5    specialisations.defender.visionRange  450    +539       ok     fit  evals/role-budget/courser-predator-defender-5.json
 
 body        reading                      formula  sim      difference  tolerance
 forager     energy per 100 ticks         102.725  102.725  0.000%      0.100%     ok
@@ -98,34 +98,34 @@ defender    sprint speed                 12.000   12.000   0.000%      0.010%   
 defender    turn radius                  21.537   21.509   0.131%      0.500%     ok
 defender    sprint turn radius           32.305   32.263   0.131%      0.500%     ok
 
-predator:forager straight: 40 cells, 0 drift
+predator:forager straight: 40 cells, 0 drift, net energy per kill within 0.2%, catch share 0 sign or rank drift
   400px@-45: formula 105 sim none (view edge)
   400px@45: formula 105 sim none (view edge)
 
-predator:forager broken: 40 cells, 0 drift
+predator:forager broken: 40 cells, 0 drift, net energy per kill within 0.2%, catch share 0 sign or rank drift
   400px@-45: formula 105 sim none (view edge)
   400px@45: formula 105 sim none (view edge)
 
-predator:reproducer straight: 40 cells, 0 drift
+predator:reproducer straight: 40 cells, 0 drift, net energy per kill within 0.2%, catch share 0 sign or rank drift
   400px@-45: formula 105 sim none (view edge)
   400px@45: formula 105 sim none (view edge)
 
-predator:reproducer broken: 40 cells, 0 drift
+predator:reproducer broken: 40 cells, 0 drift, net energy per kill within 0.2%, catch share 0 sign or rank drift
   400px@-45: formula 105 sim none (view edge)
   400px@45: formula 105 sim none (view edge)
 
-predator:scout straight: 40 cells, 0 drift
+predator:scout straight: 40 cells, 0 drift, net energy per kill within 0.3%, catch share 0 sign or rank drift
   400px@-45: formula 104 sim none (view edge)
   400px@45: formula 104 sim none (view edge)
 
-predator:scout broken: 40 cells, 0 drift
+predator:scout broken: 40 cells, 0 drift, net energy per kill within 0.2%, catch share 0 sign or rank drift
   400px@-45: formula 104 sim none (view edge)
   400px@45: formula 104 sim none (view edge)
 
-predator:defender straight: 40 cells, 0 drift
+predator:defender straight: 40 cells, 0 drift, net energy per kill within 0.3%, catch share 0 sign or rank drift
   400px@-45: formula 107 sim none (view edge)
   400px@45: formula 107 sim none (view edge)
 
-predator:defender broken: 40 cells, 0 drift
+predator:defender broken: 40 cells, 0 drift, net energy per kill within 0.2%, catch share 0 sign or rank drift
   400px@-45: formula 107 sim none (view edge)
   400px@45: formula 107 sim none (view edge)

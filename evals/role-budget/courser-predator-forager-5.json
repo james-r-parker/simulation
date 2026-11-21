@@ -6,5 +6,5 @@
       "sprintDrainMultiplier": 0.5
     }
   },
-  "maxThrust": 0.875
+  "sprintFloor": 0.375
 }

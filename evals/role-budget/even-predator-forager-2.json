@@ -1,5 +1,9 @@
 {
   "sprintStoreEnabled": true,
   "sprintDrain": 0.01,
-  "sprintFloor": 0.6
+  "specialisations": {
+    "predator": {
+      "sprintBoost": 3.2
+    }
+  }
 }

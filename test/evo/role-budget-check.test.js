@@ -3,7 +3,14 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { arenaConfig } from '../../js/evo/chase-arena.js';
 import { AUDIT_BEARINGS } from '../../js/evo/role-budget-chase.js';
-import { TOLERANCE, chaseCells, formulaChase, kinematicRows, simChase } from '../../js/evo/role-budget-check.js';
+import {
+    TOLERANCE,
+    chaseCells,
+    formulaChase,
+    judgeCell,
+    kinematicRows,
+    simChase,
+} from '../../js/evo/role-budget-check.js';
 
 const courser = arenaConfig(JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8')));
 const scene = { hunter: 'predator', prey: 'forager', distance: 240, bearing: 0, straight: true };
@@ -57,6 +64,55 @@ describe('the scene and the formula', () => {
         const behind = formulaChase(courser, { ...scene, distance: 160, bearing: Math.PI }).killTick;
         expect(ahead).not.toBeNull();
         expect(behind === null || behind > /** @type {number} */ (ahead)).toBe(true);
+    });
+});
+
+describe('the net energy per kill', () => {
+    it('is read by both: the formula gains within 5% of what the sim hunter gains over a straight chase', () => {
+        const f = formulaChase(courser, scene);
+        const w = simChase(courser, scene);
+        expect(f.net).not.toBeNull();
+        expect(w.net).not.toBeNull();
+        expect(Math.abs(/** @type {number} */ (f.net) - /** @type {number} */ (w.net))).toBeLessThan(
+            TOLERANCE.killNet * f.income,
+        );
+        expect(f.net).toBeGreaterThan(0);
+    });
+
+    it('is null for a chase that does not kill', () => {
+        const far = { ...scene, distance: 401, bearing: 1.5, straight: false };
+        expect(simChase(courser, far).net).toBeNull();
+        expect(formulaChase(courser, far).net).toBeNull();
+    });
+
+    it('flags a cell whose nets differ by more than 5% of the larger of the net and the income, and not one inside it', () => {
+        const kill = (/** @type {number} */ net) => ({ killTick: 60, net, income: 700 });
+        expect(judgeCell(kill(500), kill(500), false).drift).toBe(false);
+        expect(judgeCell(kill(500), kill(520), false)).toMatchObject({ drift: false });
+        expect(judgeCell(kill(500), kill(540), false)).toMatchObject({ drift: true });
+        // a chase that breaks even: 1.6 against 3.5 is nothing against the 700 that moved
+        expect(judgeCell(kill(3.5), kill(1.9), false).drift).toBe(false);
+        expect(judgeCell(kill(500), kill(500), false).netDifference).toBe(0);
+    });
+
+    it('flags kills 3 ticks apart, and kills that disagree away from the view edge but not at it', () => {
+        const run = (/** @type {number | null} */ tick) => ({
+            killTick: tick,
+            net: tick === null ? null : 500,
+            income: 700,
+        });
+        expect(judgeCell(run(60), run(63), false).drift).toBe(true);
+        expect(judgeCell(run(60), run(62), false).drift).toBe(false);
+        expect(judgeCell(run(60), run(null), false).drift).toBe(true);
+        expect(judgeCell(run(60), run(null), true).drift).toBe(false);
+    });
+
+    it('is carried by every cell that kills both ways', () => {
+        const cells = chaseCells(courser, { hunter: 'predator', prey: 'forager', straight: true }, [0.4]);
+        for (const c of cells.filter((x) => x.formula !== null && x.sim !== null)) {
+            expect(c.netDifference).not.toBeNull();
+            expect(c.netDifference).toBeLessThan(TOLERANCE.killNet);
+        }
     });
 });
 

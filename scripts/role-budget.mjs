@@ -6,6 +6,7 @@ import { basename, join } from 'node:path';
 import { arenaConfig } from '../js/evo/chase-arena.js';
 import { chaseCells, kinematicRows } from '../js/evo/role-budget-check.js';
 import { PREY_SPECS } from '../js/evo/role-budget-chase.js';
+import { catchShares } from '../js/evo/role-budget-shares.js';
 import { PHASE1_ROWS, matrix } from '../js/evo/role-budget-matrix.js';
 import { validateModel } from '../js/evo/role-budget-model.js';
 import { searchSettings, withPath } from '../js/evo/role-budget-search.js';
@@ -200,11 +201,16 @@ function searchRows(config, overrides, result, { model, outDir, arm }) {
  */
 function crossCheck(config, preys, log) {
     const kinematics = kinematicRows(config);
-    const pairs = preys.map((prey) => ({
-        pair: `predator:${prey}`,
-        straight: chaseCells(config, { hunter: 'predator', prey, straight: true }),
-        broken: chaseCells(config, { hunter: 'predator', prey, straight: false }),
-    }));
+    const pairs = preys.map((prey) => {
+        const straight = chaseCells(config, { hunter: 'predator', prey, straight: true });
+        const broken = chaseCells(config, { hunter: 'predator', prey, straight: false });
+        return {
+            pair: `predator:${prey}`,
+            straight,
+            broken,
+            shares: { straight: catchShares(straight), broken: catchShares(broken) },
+        };
+    });
     let drift = 0;
     for (const k of kinematics.filter((row) => row.drift)) {
         drift += 1;
@@ -216,7 +222,17 @@ function crossCheck(config, preys, log) {
             tolerance: k.tolerance,
         });
     }
-    for (const { pair, straight, broken } of pairs) {
+    for (const { pair, straight, broken, shares } of pairs) {
+        for (const [bound, share] of Object.entries(shares).filter((entry) => entry[1].drift > 0)) {
+            drift += share.drift;
+            log.log('warn', 'RoleBudgetDrift', {
+                row: pair,
+                step: `catch share ${bound}`,
+                formula: share.bearings.map((b) => b.formula),
+                scene: share.bearings.map((b) => b.sim),
+                tolerance: 'sign and rank per bearing',
+            });
+        }
         for (const c of [...straight, ...broken].filter((cell) => cell.drift)) {
             drift += 1;
             log.log('warn', 'RoleBudgetDrift', {

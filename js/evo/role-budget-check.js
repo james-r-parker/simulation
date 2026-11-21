@@ -15,14 +15,21 @@ import { chaseTimeline } from './role-budget-timeline.js';
 import { turnCircle } from './role-budget-kinematics.js';
 
 /** The tolerances of the plan's "Tolerances" table, as relative differences or ticks. */
-export const TOLERANCE = Object.freeze({ radius: 0.005, energy: 0.001, speed: 1e-4, contactTicks: 2 });
+export const TOLERANCE = Object.freeze({
+    radius: 0.005,
+    energy: 0.001,
+    speed: 1e-4,
+    contactTicks: 2,
+    killNet: 0.05,
+});
 
 /**
  * Plays one scripted chase in the sim: the pursuer at the arena's centre heading +x, the prey `distance` away at
  * `bearing`, facing away, both at rest and at half a store, the oracle brains, no jitter.
  * @param {Readonly<Record<string, any>>} config an `arenaConfig`
  * @param {{hunter: string, prey: string, distance: number, bearing: number, straight: boolean}} scene the scene
- * @returns {{killTick: number | null}} the tick the prey died, null when it did not inside `MAX_TICKS`
+ * @returns {{killTick: number | null, net: number | null}} the tick the prey died and the hunter's energy gained by then (the
+ *   bites and the gorge less the kicks, the costs and the strike misses), null when it did not die inside `MAX_TICKS`
  */
 export function simChase(config, { hunter, prey, distance, bearing, straight }) {
     const specs = /** @type {Record<string, any>} */ (config.specialisations);
@@ -42,16 +49,17 @@ export function simChase(config, { hunter, prey, distance, bearing, straight }) 
         hunt(w);
         flee(w);
     };
+    const start = world.energy[0];
     for (let tick = 1; tick <= MAX_TICKS; tick++) {
         step(world, policy, { brain });
         if (world.alive[1] === 0) {
-            return { killTick: tick };
+            return { killTick: tick, net: world.energy[0] - start };
         }
         if (world.alive[0] === 0) {
             break;
         }
     }
-    return { killTick: null };
+    return { killTick: null, net: null };
 }
 
 /**
@@ -59,16 +67,22 @@ export function simChase(config, { hunter, prey, distance, bearing, straight }) 
  * prey with the oracle evader's rationed sprint. The staged hunter is a newborn, so it pays the juvenile burn.
  * @param {Readonly<Record<string, any>>} config an `arenaConfig`
  * @param {{hunter: string, prey: string, distance: number, bearing: number, straight: boolean}} scene the scene
- * @returns {{killTick: number | null}} the formula's kill tick
+ * @returns {{killTick: number | null, net: number | null, income: number}} the formula's kill tick, the hunter's energy
+ *   gained by then and the energy the kill returned
  */
 export function formulaChase(config, { hunter, prey, distance, bearing, straight }) {
-    const run = chaseTimeline(roleParams(config, hunter, {}, { age: 'juvenile' }), roleParams(config, prey), {
+    const hunterParams = roleParams(config, hunter, {}, { age: 'juvenile' });
+    const run = chaseTimeline(hunterParams, roleParams(config, prey), {
         gap: distance,
         bearing,
         hunter: { sprint: 'view' },
         prey: straight ? { sprint: 'rationed', jink: 0 } : { sprint: 'rationed' },
     });
-    return { killTick: run.killTick };
+    return {
+        killTick: run.killTick,
+        net: run.killTick === null ? null : run.hunterEnergy - hunterParams.energy,
+        income: run.income,
+    };
 }
 
 /**
@@ -78,12 +92,43 @@ export function formulaChase(config, { hunter, prey, distance, bearing, straight
  * @property {boolean} straight whether the prey ran straight
  * @property {number | null} formula the formula's kill tick
  * @property {number | null} sim the sim's kill tick
+ * @property {number | null} netDifference when both kill, the difference of the hunter's net energy at the kill over the larger
+ *   of the sim's net and the energy the kill returned (a chase that breaks even has a net near 0, where a ratio says nothing)
  * @property {boolean} agrees whether both killed or both did not
  * @property {boolean} edge whether the start is at the hunter's view, where the sprint gate (`gap <= visionRange`) is
  *   decided by float32 rounding of the sim's positions, so a disagreement is not read
  * @property {boolean} drift whether the cell is outside its tolerance: the kills disagree away from the edge, or both
- *   kill more than `contactTicks` apart
+ *   kill more than `contactTicks` apart, or the net energy per kill differs by more than `killNet`
  */
+
+/**
+ * Reads one scene played both ways against the tolerances.
+ * @param {{killTick: number | null, net: number | null, income: number}} f the formula's chase
+ * @param {{killTick: number | null, net: number | null}} w the sim's chase
+ * @param {boolean} edge whether the start is at the hunter's view
+ * @returns {Pick<ChaseCell, 'formula' | 'sim' | 'netDifference' | 'agrees' | 'edge' | 'drift'>} the kill ticks, the net
+ *   difference when both kill, and whether the cell is outside its tolerance
+ */
+export function judgeCell(f, w, edge) {
+    const agrees = (f.killTick === null) === (w.killTick === null);
+    const both = f.net !== null && w.net !== null;
+    const apart =
+        both &&
+        Math.abs(/** @type {number} */ (f.killTick) - /** @type {number} */ (w.killTick)) > TOLERANCE.contactTicks;
+    const sim = both ? /** @type {number} */ (w.net) : 0;
+    const netDifference = both
+        ? Math.abs(/** @type {number} */ (f.net) - sim) / Math.max(Math.abs(sim), f.income)
+        : null;
+    const netApart = netDifference !== null && netDifference > TOLERANCE.killNet;
+    return {
+        formula: f.killTick,
+        sim: w.killTick,
+        netDifference,
+        agrees,
+        edge,
+        drift: (!agrees && !edge) || apart || netApart,
+    };
+}
 
 /**
  * Plays every start distance and audit bearing both ways for one pair and one prey bound.
@@ -97,21 +142,8 @@ export function chaseCells(config, { hunter, prey, straight }, shares = DISTANCE
     return shares.flatMap((share) =>
         AUDIT_BEARINGS.map((bearing) => {
             const scene = { hunter, prey, distance: share * view, bearing, straight };
-            const formula = formulaChase(config, scene).killTick;
-            const sim = simChase(config, scene).killTick;
-            const agrees = (formula === null) === (sim === null);
-            const edge = share >= 1;
-            const apart = formula !== null && sim !== null && Math.abs(formula - sim) > TOLERANCE.contactTicks;
-            return {
-                distance: scene.distance,
-                bearing,
-                straight,
-                formula,
-                sim,
-                agrees,
-                edge,
-                drift: (!agrees && !edge) || apart,
-            };
+            const cell = judgeCell(formulaChase(config, scene), simChase(config, scene), share >= 1);
+            return { distance: scene.distance, bearing, straight, ...cell };
         }),
     );
 }
