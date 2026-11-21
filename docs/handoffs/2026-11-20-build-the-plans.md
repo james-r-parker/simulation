@@ -245,7 +245,7 @@ plans for the later effects, `liver`, `armour` and the speed tasks ([607](https:
 ships as one PR with many commits; each chunk is built on its own branch from the batch and merged in). It holds
 body-genes T46, T51 (breaking: season 12's `rulesHash` moved in place to 5ea8af3e744bdb8f), T52, T53 and T55;
 status-effects T15 and T23 to T30; body-genes T17 (E271); brain-reflex-tests T21a and T22; the defender escort distance;
-E272 and this entry. Merge it on green if it is still open (no release PR merge: 503 deploys production).
+E272, the guard posture, this entry and the next session prompt (`docs/handoffs/2026-11-22-coordinator-prompt.md`). Merge it on green if it is still open (no release PR merge: 503 deploys production).
 
 Findings to carry:
 
@@ -258,9 +258,7 @@ Findings to carry:
   all, so `eval.effect_share.*` reads 0 for all ten at the defaults; E270's 0.199 `chilled` share is from before T30.
 - **The defender.** `defender:predator` is red at the defaults for every body number. The user chose escort distance
   (role-budget.md Decisions); it is built (87 px) and the row is still red at every distance from 150 to 10 px: the
-  defender starts at rest, side-on and at the grazing gait, while the hunter kills at tick 27. **Waiting on the user:**
-  how a good defender starts (the guard posture, facing the threat between it and the herd, was recommended; a faster
-  defender was the alternative).
+  defender starts at rest, side-on and at the grazing gait, while the hunter kills at tick 27. The user then chose the guard posture with speed as the fallback: the guard posture is built (`guardPosture: 'between'`, not the default) and wins the intercept, but the smoke cell stays red (a 180-degree turn to release, tick 26 against tick 5), and no turn or thrust multiplier up to x20 fixes it. **Waiting on the user:** a release without the turn, or the cloud dropped ahead of the releaser.
 - **Step 5.** E272 (16 seeds): step5-b and step5-d both do no harm to the keep rule's seed guards; step5-d is the
   finalist (1 better, 3 worse: `body_plan_coverage` 0.18 to 0.055 from the narrowed spans, the defender's fitness). No
   rally was raised on step5-d although `rallyThrust` is 0.1. Before T18: correct the calculator's cold-stack formula
