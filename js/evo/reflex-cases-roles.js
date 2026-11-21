@@ -2,14 +2,13 @@
 // the sim gives it - a sprint at prey, a bite held for the jaws, an alarm on a threat, a turn to a heard call, a flight
 // from one, and a step round a herd. Bearings are in the subject's frame, positive towards positive `TURN`.
 
-import { createConfig } from '../sim/config.js';
-import { detCos, detSin } from '../sim/det-math.js';
-import { nextFloat } from '../sim/rng.js';
 import { SPEC, SPEC_NAMES } from '../sim/specs.js';
 import { HUNTER_ENERGY, SUBJECT_ENERGY, heading } from './memory-probe-scenarios.js';
 import { victimStaging } from './reflex-cases-predator.js';
 import { defaultBars } from './reflex-bars.js';
-import { DEG, SEQUENCE_TICKS, bearingPoint, signedBearing, subjectAgent, withMirrors } from './reflex-stage.js';
+import { BODY_CASES } from './reflex-cases-body.js';
+import { forwardRay, heardPlan, lone, preyAt } from './reflex-roles-stage.js';
+import { SEQUENCE_TICKS, bearingPoint, signedBearing, withMirrors } from './reflex-stage.js';
 
 /** Where the prey stands in `sprint-on-prey`, as shares of the view. */
 const SPRINT_SHARES = Object.freeze({ far: 0.8, mid: 0.55, near: 0.3 });
@@ -19,55 +18,13 @@ const IN_VIEW_SHARE = 0.5;
 const AHEAD_DEG = 3;
 /** The threat stands this share of the view away: the edge of what the scout sees. */
 const EDGE_SHARE = 0.9;
-/** The ray spacing, and the farthest forward ray a threat or a herd stands on (ray 3 is 67.5 degrees off). */
-const RAY_SPACING = (2 * Math.PI) / createConfig().rayCount;
-const RAY_JITTER_DEG = 3;
-const FORWARD_RAYS = 3;
-/** A heard call is loud, and comes from this far off the heading. */
-const HEARD_LOUDNESS = 1;
-const HEARD_FROM_DEG = 20;
-const HEARD_TO_DEG = 140;
+/** @typedef {import('./reflex-stage.js').ReflexCase} ReflexCase */
+
 /** The herd animal closes from the first share of the view to the second over the sequence. */
 const HERD_FROM = 0.7;
 const HERD_TO = 0.4;
 
 /** @typedef {import('./reflex-stage.js').ReflexCase} ReflexCase */
-
-/**
- * @param {import('../sim/rng.js').Rng} rng the case's stream
- * @returns {number} a signed bearing on one of the forward rays (a whole number of ray spacings, 1 to `FORWARD_RAYS`)
- *   plus up to `RAY_JITTER_DEG` either way, so the item stands on that ray alone
- */
-function forwardRay(rng) {
-    const k = 1 + Math.floor(FORWARD_RAYS * nextFloat(rng));
-    const bearing = k * RAY_SPACING + (2 * nextFloat(rng) - 1) * RAY_JITTER_DEG * DEG;
-    return nextFloat(rng) < 0.5 ? -bearing : bearing;
-}
-
-/**
- * @param {number} angle the subject's heading
- * @param {number} spec the subject's specialisation
- * @param {import('./pool-discrimination-stage.js').StagedAgent[]} [others] the other agents
- * @returns {{foods: never[], rocks: never[], agents: import('./pool-discrimination-stage.js').StagedAgent[]}} a tick
- */
-const lone = (angle, spec, others = []) => ({
-    foods: [],
-    rocks: [],
-    agents: [subjectAgent(spec, angle), ...others],
-});
-
-/**
- * @param {number} angle the subject's heading
- * @param {number} bearing where the forager stands, in the subject's frame
- * @param {number} distance its distance
- * @returns {import('./pool-discrimination-stage.js').StagedAgent} a forager a predator can bite, facing along the heading
- */
-const preyAt = (angle, bearing, distance) => ({
-    ...bearingPoint(angle, bearing, distance),
-    angle,
-    spec: SPEC.FORAGER,
-    energy: SUBJECT_ENERGY,
-});
 
 /**
  * A plan that draws a heading and a small offset off it, and stages each orientation with `build`.
@@ -144,20 +101,6 @@ const CALL_ON_THREAT = {
         const { alarm } = bars.role;
         return kind === 'threat' ? outputs.alarm > alarm : outputs.alarm <= alarm;
     },
-};
-
-/**
- * A loud alarm heard from a bearing, with nothing in view.
- * @param {number} spec the subject's specialisation
- * @returns {ReflexCase['plan']} the plan
- */
-const heardPlan = (spec) => (rng) => {
-    const draw = { angle: heading(rng), bearing: signedBearing(rng, HEARD_FROM_DEG, HEARD_TO_DEG) };
-    return withMirrors(draw, (d, mirror) => {
-        const bearing = mirror * d.bearing;
-        const heard = { loudness: HEARD_LOUDNESS, ux: detCos(d.angle + bearing), uy: detSin(d.angle + bearing) };
-        return [{ kind: 'alarm', bearing, mirror, ticks: [{ ...lone(d.angle, spec), heard }] }];
-    });
 };
 
 /** @type {ReflexCase} A defender turns to a call and goes. */
@@ -237,4 +180,5 @@ export const ROLE_CASES = Object.freeze([
     FLEE_ON_ALARM,
     FLEE_ON_ALARM_REPRODUCER,
     ...SPEC_NAMES.map((_, spec) => clearTheHerd(spec)),
+    ...BODY_CASES,
 ]);

@@ -47,6 +47,12 @@ describe('ROLE_CASES', () => {
             ['clear-the-herd:reproducer', 2],
             ['clear-the-herd:scout', 3],
             ['clear-the-herd:defender', 4],
+            ['pick-the-weak', 1],
+            ['flee-what-closes', 0],
+            ['flee-what-closes:reproducer', 2],
+            ['flee-what-closes:scout', 3],
+            ['mind-the-numbers', 1],
+            ['answer-the-call', 1],
         ]);
         expect(Object.isFrozen(ROLE_CASES)).toBe(true);
     });
