@@ -44,6 +44,7 @@ export function createHerdScene(config) {
         episodeGenome: new Uint32Array(config.maxAgents),
         episodeHerd: new Uint32Array(config.maxAgents),
         episodeAge: new Uint16Array(config.maxAgents),
+        sizeMark: new Float64Array(config.maxAgents),
         lastGroupSide: new Uint8Array(config.herdCount),
         lastBasinOccupancy: new Uint8Array(2),
         basinCheckpointed: new Uint8Array(2),
@@ -65,6 +66,7 @@ export function resetHerdSlot(scene, slot) {
     scene.episodeGenome[slot] = 0;
     scene.episodeHerd[slot] = 0;
     scene.episodeAge[slot] = 0;
+    scene.sizeMark[slot] = 0;
 }
 
 /** @param {Record<string, any>} scene @param {number} slot @param {number} genomeId @param {number} herdId @returns {void} */
@@ -112,11 +114,15 @@ function inLane(world, slot, animal) {
     return lateral < world.config.herdRadius + world.size[slot];
 }
 
-/** @param {Record<string, any>} world @param {number} slot @param {number} animal @returns {boolean} */
-function touches(world, slot, animal) {
+/**
+ * Whether the body is in contact with the animal. A trample leaves the body at the reach of its size before the loss, and the loss
+ * shrinks it, so a body that lived through a trample is past its new reach: the larger of its size now and the tick before counts.
+ * @param {Record<string, any>} scene @param {Record<string, any>} world @param {number} slot @param {number} animal @returns {boolean}
+ */
+function touches(scene, world, slot, animal) {
     const dx = world.x[slot] - world.herdX[animal];
     const dy = world.y[slot] - world.herdY[animal];
-    const reach = world.size[slot] + world.config.herdRadius;
+    const reach = Math.max(world.size[slot], scene.sizeMark[slot]) + world.config.herdRadius;
     return dx * dx + dy * dy <= reach * reach;
 }
 
@@ -144,7 +150,7 @@ function updateOpenEpisode(scene, world, slot) {
     if (animal < 0) {
         scene.episodesClear++;
         resetHerdSlot(scene, slot);
-    } else if (touches(world, slot, animal)) {
+    } else if (touches(scene, world, slot, animal)) {
         scene.episodesHit++;
         resetHerdSlot(scene, slot);
     } else {
@@ -225,6 +231,7 @@ function trackAfterBurn(scene, world, observer) {
     for (let slot = 0; slot < world.alive.length; slot++) {
         if (world.alive[slot] === 1) {
             updateEpisode(scene, world, slot);
+            scene.sizeMark[slot] = world.size[slot];
         }
     }
 }

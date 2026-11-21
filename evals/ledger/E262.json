@@ -1,0 +1,19 @@
+{
+  "id": "E262",
+  "plan": "role-budget.md",
+  "task": "T22",
+  "stream": "role-budget-p5",
+  "date": "2026-11-21",
+  "branch": "feat/role-budget-p5",
+  "hypothesis": "E-RB-5 (role-budget T22): the role budget calculator, read on the five <spec>:herd rows at the defaults and on each arm of evals/fair-chase/, says whether a body can see a stampeding herd coming, turn and clear its half-width before the front arrives, and survive a trample, with every effect off.",
+  "prediction": "A forager, which sees the herd 271 px off, can clear it at a sprint with a few ticks to spare, and a body that sees less (a reproducer at 250 px, a defender at 240 behind it, a predator at 160 behind it) cannot; every plant eater survives about 3 tramples at the herd's speed; and the formula matches the scripted stampede on the front's arrival and the first trample.",
+  "targets": [],
+  "before": "pre-fix measurement of the herd (T21a): centroid 329 px by tick 80 and 516 by tick 360, peak speed 5.1, half-width 66",
+  "after": "defaults and every arm: forager tight (see 59, turn 47, run 8, survive 3), scout tight (74, 62, 23, 3), predator, reproducer and defender impossible on run; the front's arrival matches the sim exactly (59, 51, 74, 49 ticks) and the first trample within 2%; the herd alone travels 2227 px in 360 ticks at a peak of 6.50",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "A tool reading, not a run: npm run role:budget with --check on six configs, seconds each. Check: no RoleBudgetDrift. The prediction held; the herd rows do not depend on the arm. A body in the herd's path needs 52 ticks (reaction 2, turn 10.5, sprint clear 39) and the front covers 271 px in 59: the forager (271 px) and the scout (371 px) can, the reproducer (221 px), the defender (211 px behind it) and the predator (115 px behind it) cannot. A hunter-capable body starts its own stampede away from it within 200 px, so the predator row is the arithmetic of a body the herd does not read as a hunter.",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "reports": ["evals/decisions/E-RB-5/results.md"]
+}

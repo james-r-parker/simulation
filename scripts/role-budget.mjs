@@ -9,9 +9,10 @@ import { defenceCheck } from '../js/evo/role-budget-defence-check.js';
 import { warnCheck } from '../js/evo/role-budget-warn-check.js';
 import { thriveCheck } from '../js/evo/role-budget-thrive-check.js';
 import { PHASE4_ROWS } from '../js/evo/role-budget-matrix-thrive.js';
+import { herdCheck } from '../js/evo/role-budget-herd-check.js';
 import { PREY_SPECS } from '../js/evo/role-budget-chase.js';
 import { catchShares } from '../js/evo/role-budget-shares.js';
-import { BUILT_ROWS, matrix } from '../js/evo/role-budget-matrix.js';
+import { BUILT_ROWS, PHASE5_ROWS, matrix } from '../js/evo/role-budget-matrix.js';
 import { validateModel } from '../js/evo/role-budget-model.js';
 import { searchSettings, withPath } from '../js/evo/role-budget-search.js';
 import { configHash, createConfig } from '../js/sim/config.js';
@@ -19,11 +20,12 @@ import { emitReport, runAsMain, withLogFile } from './lib/audit-io.mjs';
 import { exitCodeOf, parseFlags } from './lib/cli-args.mjs';
 import { formatDefenderSearch, searchDefenderRows } from './lib/role-budget-defender-search.mjs';
 import { formatBirthSearch, searchBirthRows } from './lib/role-budget-birth-search.mjs';
+import { genesMode, readGenes } from './lib/role-budget-genes-report.mjs';
 import { formatCheck, formatReport, formatSearch } from './lib/role-budget-report.mjs';
 import { logRunConfig } from './lib/run-config.mjs';
 
 const USAGE =
-    'usage: role-budget [--config <file.json>] [--set <path>=<value> ...] [--model <file.json>] [--mix <spec=w,...>] [--rows <a,b>] [--search] [--check] [--reliable] [--out-dir <dir>] [--json] [--out <path>]';
+    'usage: role-budget [--config <file.json>] [--set <path>=<value> ...] [--model <file.json>] [--mix <spec=w,...>] [--rows <a,b>] [--search] [--check] [--reliable] [--genes none|best-vs-worst|worst-vs-best|corners] [--out-dir <dir>] [--json] [--out <path>]';
 
 /** The most findings of one pair the search writes override files for. */
 const FILES_PER_PAIR = 5;
@@ -38,6 +40,7 @@ const FILES_PER_PAIR = 5;
  * @property {boolean} search whether to search a single setting for each row that is not fit
  * @property {boolean} check whether to play each row's scene beside the formula
  * @property {boolean} reliable whether the hunter acts only on a prey it reliably sees
+ * @property {string} genes `none`, `best-vs-worst`, `worst-vs-best` or `corners`: the rows read at the corners of the trait menus
  * @property {string} outDir where the search writes its override files
  * @property {boolean} json whether to print JSON
  * @property {string | null} out a file to write the output to
@@ -102,6 +105,7 @@ export function parseArgs(argv) {
             '--model': (v) => ['model', String(v)],
             '--mix': (v) => ['mix', parseMix(v)],
             '--rows': (v) => ['rows', String(v).split(',')],
+            '--genes': (v) => ['genes', genesMode(v)],
             '--out-dir': (v) => ['outDir', String(v)],
             '--out': (v) => ['out', String(v)],
         },
@@ -114,6 +118,7 @@ export function parseArgs(argv) {
             search: false,
             check: false,
             reliable: false,
+            genes: 'none',
             outDir: 'evals/role-budget',
             json: false,
             out: null,
@@ -216,16 +221,17 @@ function chasePair(config, prey) {
 
 /**
  * @param {Record<string, any>} config an `arenaConfig`
- * @param {{defence: boolean, scout: boolean, thrive: Record<string, any> | null, model: import('../js/evo/role-budget-model.js').RoleModel}} asked whether the
+ * @param {{defence: boolean, scout: boolean, thrive: Record<string, any> | null, herd: Record<string, any> | null, model: import('../js/evo/role-budget-model.js').RoleModel}} asked whether the
  *   defender and the scout rows were asked for, and the model options
  * @returns {{readings: import('../js/evo/role-budget-defence-check.js').DefenceReading[], drift: number}} their scenes
  *   beside their formulas
  */
-function guildReadings(config, { defence, scout, thrive, model }) {
+function guildReadings(config, { defence, scout, thrive, herd, model }) {
     const parts = [
         defence ? defenceCheck(config, model) : null,
         scout ? warnCheck(config, model) : null,
         thrive === null ? null : thriveCheck(config, thrive, model),
+        herd === null ? null : herdCheck(herd, model),
     ];
     const played = parts.filter((part) => part !== null);
     return {
@@ -237,16 +243,16 @@ function guildReadings(config, { defence, scout, thrive, model }) {
 /**
  * Plays the scene of each requested prey beside the formula, on both prey bounds, and the kinematics against the body table.
  * @param {Record<string, any>} config an `arenaConfig`
- * @param {{preys: string[], defence: boolean, scout: boolean, thrive: Record<string, any> | null, model: import('../js/evo/role-budget-model.js').RoleModel}} asked
+ * @param {{preys: string[], defence: boolean, scout: boolean, thrive: Record<string, any> | null, herd: Record<string, any> | null, model: import('../js/evo/role-budget-model.js').RoleModel}} asked
  *   the prey rows asked for, whether the defender and scout rows were, and the model options
  * @param {import('../js/sim/log.js').SimLog} log the log
  * @returns {{kinematics: import('../js/evo/role-budget-check.js').KinematicRow[], pairs: any[],
  *   defence: import('../js/evo/role-budget-defence-check.js').DefenceReading[], drift: number}} the check
  */
-function crossCheck(config, { preys, defence, scout, thrive, model }, log) {
+function crossCheck(config, { preys, defence, scout, thrive, herd, model }, log) {
     const kinematics = kinematicRows(config);
     const pairs = preys.map((prey) => chasePair(config, prey));
-    const played = guildReadings(config, { defence, scout, thrive, model });
+    const played = guildReadings(config, { defence, scout, thrive, herd, model });
     let drift = played.drift;
     for (const r of played.readings.filter((reading) => reading.drift)) {
         log.log('warn', 'RoleBudgetDrift', {
@@ -310,20 +316,30 @@ function searchAll(config, { overrides, result, where }) {
 
 /**
  * @param {boolean} json whether to print JSON
- * @param {{hash: string, result: ReturnType<typeof matrix>, searched: any[], defence: any[], birth: any[], check: any}} parts the
- *   config hash, the matrix, the searches and the cross-check
+ * @param {{hash: string, result: ReturnType<typeof matrix>, searched: any[], defence: any[], birth: any[], check: any,
+ *   genes?: {text: string, data: any} | null}} parts the config hash, the matrix, the searches, the cross-check and the
+ *   rows read at the corners of the trait menus
  * @returns {string} the report: JSON, or the matrix followed by each part that was asked for
  */
-function render(json, { hash, result, searched, defence, birth, check }) {
+function render(json, { hash, result, searched, defence, birth, check, genes }) {
     if (json) {
         return JSON.stringify(
-            { configHash: hash, ...result, searched, defenderSearch: defence, birthSearch: birth, check },
+            {
+                configHash: hash,
+                ...result,
+                searched,
+                defenderSearch: defence,
+                birthSearch: birth,
+                check,
+                genes: genes?.data,
+            },
             null,
             2,
         );
     }
     return [
         formatReport(result, hash),
+        ...(genes ? [genes.text] : []),
         ...(searched.length > 0 ? [formatSearch(searched)] : []),
         ...(defence.length > 0 ? [formatDefenderSearch(defence)] : []),
         ...(birth.length > 0 ? [formatBirthSearch(birth)] : []),
@@ -335,7 +351,7 @@ function render(json, { hash, result, searched, defence, birth, check }) {
  * @param {readonly string[]} rows the rows asked for
  * @param {import('../js/evo/role-budget-model.js').RoleModel} model the model options
  * @param {Record<string, any>} world the default world's config, which the Phase 4 scenes read
- * @returns {{preys: string[], defence: boolean, scout: boolean, thrive: Record<string, any> | null, model: import('../js/evo/role-budget-model.js').RoleModel}}
+ * @returns {{preys: string[], defence: boolean, scout: boolean, thrive: Record<string, any> | null, herd: Record<string, any> | null, model: import('../js/evo/role-budget-model.js').RoleModel}}
  *   what the cross-check plays: the prey of each hunter row asked for, whether the defender and scout rows were, and the model
  */
 function asked(rows, model, world) {
@@ -348,6 +364,7 @@ function asked(rows, model, world) {
         defence: rows.includes('defender:predator'),
         scout: rows.includes('scout:predator'),
         thrive: rows.some((r) => PHASE4_ROWS.includes(r)) ? world : null,
+        herd: rows.some((r) => PHASE5_ROWS.includes(r)) ? world : null,
         model,
     };
 }
@@ -385,7 +402,11 @@ export async function runBudget(args, { logDir = '.sim/logs', print = console.lo
             : { searched: [], defence: [], birth: [] };
         const world = createConfig(overrides);
         const check = args.check ? crossCheck(config, asked(args.rows ?? BUILT_ROWS, model, world), log) : null;
-        const text = render(args.json, { hash, result, searched, defence, birth, check });
+        const genes =
+            args.genes === 'none'
+                ? null
+                : readGenes(args.genes, { config, worldConfig: world, model, mix: args.mix }, args.rows ?? BUILT_ROWS);
+        const text = render(args.json, { hash, result, searched, defence, birth, check, genes });
         emitReport(text, { print, out: args.out });
         if (check !== null && check.drift > 0) {
             throw Object.assign(new Error(`RoleBudgetDrift: ${check.drift} reading(s) outside their tolerance`), {

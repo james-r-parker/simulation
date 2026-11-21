@@ -56,11 +56,33 @@ function idleLines(d) {
 }
 
 /**
+ * @param {import('../../js/evo/role-budget-herd.js').HerdBudget} d the budget of a spec against a stampede
+ * @returns {string[]} its lines: the typical and the worst case, then the tramples
+ */
+function herdLines(d) {
+    const one = (/** @type {string} */ name, /** @type {import('../../js/evo/role-budget-herd.js').HerdCase} */ c) =>
+        `  ${name}: sees the front ${n(c.sight, 0)} px off, ${n(c.warning, 0)} ticks before it arrives (${n(c.constant)} at a constant run speed), at ${n(c.arrival, 2)} px a tick; turns ${n(c.turn)} ticks; clears ${n(c.half, 0)} px sideways in ${c.clear.cruise} ticks (cruise) or ${c.clear.sprint} (sprint); straight ahead ${n(c.straight.ahead)} against the herd's peak ${c.straight.outrun ? '(outruns it)' : '(does not)'}`;
+    const t = d.trample;
+    return [
+        ...(d.pulled
+            ? ['  the herd ring is wider than 4 herd radii: its front is pulled back, so the formula is too fast']
+            : []),
+        ...(d.row.status === 'n/a' ? [`  not read: ${d.binding}`] : []),
+        one('typical (facing the herd)', d.typical),
+        one('worst (facing away, rear view)', d.worst),
+        `  a trample takes ${n(t.arrival)} on arrival (${n(t.constant)} at the peak speed) and ${n(t.walk)} at the walk speed: ${t.survives} survived on arrival, ${t.walkSurvives} at the walk`,
+    ];
+}
+
+/**
  * @param {string} name the row's name
  * @param {any} d the row's budget
  * @returns {string[] | null} the lines of a Phase 4 row, null for any other
  */
 export function thriveDetail(name, d) {
+    if (d.worst !== undefined) {
+        return [name, ...herdLines(d)];
+    }
     if (d.cycle !== undefined) {
         return [name, ...thriveLines(d)];
     }
