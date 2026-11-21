@@ -19,7 +19,7 @@ const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-name
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(412);
+        expect(REPORT_NAMES).toHaveLength(413);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -238,6 +238,7 @@ const ADDED_AFTER_T8 = [
     'eval.rally_bite_share',
     'eval.hoarse_call_share',
     'eval.huddle_cold_gain',
+    'eval.defender_bite_break_share',
 ];
 /** Watch metrics registered after the snapshot whose intended direction is lower. */
 const ADDED_INTENDED_LOWER = [

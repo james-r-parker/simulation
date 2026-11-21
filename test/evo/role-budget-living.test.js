@@ -1,0 +1,120 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { createConfig } from '../../js/sim/config.js';
+import { PREY_SPECS, budgetChase } from '../../js/evo/role-budget-chase.js';
+import { contextOf } from '../../js/evo/role-budget-forage.js';
+import { budgetLiving, killIncome } from '../../js/evo/role-budget-living.js';
+import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
+import { roleParams } from '../../js/evo/role-budget-params.js';
+
+/** @param {Record<string, any>} overrides @param {Partial<typeof MODEL_DEFAULTS>} [extra] @returns {ReturnType<typeof budgetLiving>} */
+function living(overrides, extra = {}) {
+    const config = createConfig(overrides);
+    const model = { ...MODEL_DEFAULTS, ...extra };
+    const hunter = contextOf(config, 'predator', roleParams(config, 'predator'));
+    const preys = Object.fromEntries(PREY_SPECS.map((s) => [s, roleParams(config, s)]));
+    const budgets = Object.fromEntries(
+        PREY_SPECS.map((s) => [s, budgetChase(hunter.p, preys[s], model, { bearings: false })]),
+    );
+    const mix = Object.fromEntries(PREY_SPECS.map((s) => [s, 0.25]));
+    return budgetLiving(hunter, { budgets, preys, mix, model });
+}
+
+const COURSER = JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8'));
+
+describe('killIncome', () => {
+    it('is the bites and the gorge of the anchors: 700 on a forager and a reproducer, 760 on a scout, 700 on a defender', () => {
+        const config = createConfig({});
+        const hunter = roleParams(config, 'predator');
+        const of = (/** @type {string} */ s) => killIncome(hunter, roleParams(config, s));
+        expect(of('forager')).toBeCloseTo(700, 6);
+        expect(of('reproducer')).toBeCloseTo(700, 6);
+        expect(of('scout')).toBeCloseTo(760, 6);
+        expect(of('defender')).toBeCloseTo(700, 6);
+    });
+});
+
+describe('budgetLiving at the defaults', () => {
+    const b = living({});
+
+    it('charges a kill and a failed chase apart: a chase that kills pays at a catch share of 1, one that fails costs the 250 ticks', () => {
+        expect(b.chase.income).toBeCloseTo((700 + 700 + 760 + 700) / 4, 6);
+        expect(b.chase.killCost).toBeLessThan(b.chase.income);
+        expect(b.chase.failCost).toBeGreaterThan(2 * b.chase.killCost);
+        expect(b.chase.netAtFull).toBeCloseTo(b.chase.income - b.chase.killCost, 9);
+        expect(b.chase.netAtFull).toBeGreaterThan(0);
+    });
+
+    it('is red on eat at the catch share of 0.3, where the failed chases outweigh the kills', () => {
+        const share = living({}, { catchShare: 0.3 });
+        expect(share.chase.net).toBeCloseTo(
+            0.3 * share.chase.income - 0.3 * share.chase.killCost - 0.7 * share.chase.failCost,
+            9,
+        );
+        expect(share.chase.net).toBeLessThan(0);
+        expect(share.row.binding).toBe('breed');
+    });
+
+    it('is the cost of a killing chase at a catch share of 1 and of a failed one at 0', () => {
+        expect(living({}, { catchShare: 1 }).chase.cost).toBeCloseTo(b.chase.killCost, 9);
+        expect(living({}, { catchShare: 0 }).chase.cost).toBeCloseTo(b.chase.failCost, 9);
+    });
+
+    it('prints the resting cost and the ticks a full store lasts with no kill', () => {
+        expect(b.resting.rest).toBeGreaterThan(0.012);
+        expect(b.resting.storeTicks).toBeCloseTo(
+            roleParams(createConfig({}), 'predator').sizing.max / b.resting.rest,
+            6,
+        );
+    });
+
+    it('counts the chases a life holds from the prey density and the hunter strip', () => {
+        expect(b.split.perLife).toBeGreaterThan(500);
+        expect(b.split.ticksPerChase).toBeCloseTo(72000 / b.split.perLife, 9);
+    });
+});
+
+describe('chaseCosts with a weaker sprint', () => {
+    it('charges a failed chase less than the hunter of the defaults does', () => {
+        const weak = living({ specialisations: { predator: { sprintBoost: 0.2 } } });
+        const base = living({});
+        expect(weak.chase.failCost).toBeLessThan(base.chase.failCost);
+    });
+});
+
+describe('budgetLiving where a kill does not pay for its chase', () => {
+    it('is impossible on eat when the net at a catch share of 1 is 0 or less: the chase costs more than the kill returns', () => {
+        const b = living({ movementCost: 0.2 });
+        expect(b.chase.netAtFull).toBeLessThanOrEqual(0);
+        expect(b.cells.eat.status).toBe('impossible');
+        expect(b.row.binding).toBe('eat');
+    });
+});
+
+describe('budgetLiving where the hunter closes on its prey', () => {
+    it('pays at a catch share high enough, so a better share lifts the net by the kill income less the failed chase it spares', () => {
+        const low = living(COURSER, { catchShare: 0.3 });
+        const high = living(COURSER, { catchShare: 0.6 });
+        const spared = low.chase.failCost - low.chase.killCost;
+        expect(high.chase.net - low.chase.net).toBeCloseTo(0.3 * (low.chase.income + spared), 6);
+        expect(high.chase.netAtFull).toBe(low.chase.netAtFull);
+    });
+
+    it('is not impossible on eat when the net at a share of 1 is positive, and tight when the catch share does not pay', () => {
+        const b = living(COURSER, { catchShare: 0.1 });
+        if (b.chase.netAtFull > 0) {
+            expect(b.cells.eat.status).not.toBe('impossible');
+            expect(b.chase.net).toBeLessThan(b.chase.netAtFull);
+        }
+        expect(b.cells.eat.margin === null || b.cells.eat.margin >= 0).toBe(true);
+    });
+
+    it('reaches the split gate when every chase wins: the chases it needs are fewer than a life holds, and breed has slack', () => {
+        const b = living(COURSER, { catchShare: 1 });
+        expect(b.chase.net).toBeGreaterThan(0);
+        expect(b.split.chases).toBeCloseTo((b.split.gate - b.split.birth) / b.chase.net, 9);
+        expect(b.split.spare).toBeGreaterThan(0);
+        expect(b.cells.breed.status).not.toBe('impossible');
+        expect(b.row.status).not.toBe('impossible');
+    });
+});
