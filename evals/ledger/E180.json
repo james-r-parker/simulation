@@ -1,0 +1,19 @@
+{
+  "id": "E180",
+  "kind": "compare",
+  "outcome": "no-verdict",
+  "plan": "prey-guilds.md",
+  "hypothesis": "prey-guilds Phase 2: an active defender repel (defenderRepelEnergy, defenderRepelImpulse, defenderRepelCost) paired with defender mass/turn/split parity turns defender into a real anti-predator guard.",
+  "prediction": "On the 16-seed screen (prey-guilds-defender.grid.json, 400000 ticks), the finalist raises eval.defender_repel_per_1k > 0 and improves eval.hunt_abort_rate or eval.pack_lift, and the 64-seed keep rule reads no guard WORSE. Falsified when every arm reads eval.hunter_catches_per_1k or held WORSE.",
+  "targets": ["eval.hunt_abort_rate", "eval.pack_kills_per_eaten_death", "eval.spec_effective"],
+  "before": "control arm of evals/screens/prey-guilds-defender.grid.json (defenderRepelEnergy 0), seeds 1 to 16, 400000 ticks, floor on, policy live",
+  "after": "the defender repel arms of the same screen (repel-low, repel-med, repel-high)",
+  "verdicts": {},
+  "note": "Prediction recorded before the run (prey-guilds T5); the 16-seed screen and 64-seed keep-rule pass (T6) are not run yet.",
+  "reports": ["evals/decisions/E180/results.md"],
+  "date": "2026-11-15",
+  "branch": "feat/prey-guilds-t4-defender-repel",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "no-difference"
+}

@@ -205,7 +205,7 @@ pinned line number silently starts pointing at a closing brace. `scripts/designs
 | Why a change was made              | The commit body and the PR description                                                                       |
 | Audits, research, comparisons      | A `Reference` doc (e.g. `legacy-audit.md`)                                                                   |
 | Platform and library surprises     | `docs/notes/<YYYY-MM>.md`, indexed in [sim-notes.md](sim-notes.md) by `node scripts/notes-index.mjs --write` |
-| Results of an evolution experiment | `evals/experiments.json` (the `run-evolution-loop` skill)                                                    |
+| Results of an evolution experiment | `evals/ledger/E<id>.json` (the `run-evolution-loop` skill)                                                   |
 
 ## Notes (sparse callout)
 

@@ -1,0 +1,19 @@
+{
+  "id": "E207",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-loop.md",
+  "date": "2026-11-19",
+  "branch": "feat/training-loop-etl3",
+  "hypothesis": "E-TL-3 (training-loop T16): one hunt stage whose prey sprint is steered by the prey-ahead drill (adaptive difficulty) yields more ladder progress than the fixed hunt-weak, hunt-mid and hunt rungs.",
+  "prediction": "Written before the run (16 offsets, 0 to 120 by 8, until hunt, 2 arms = 32 runs): better on train:compare score, adaptive against fixed, with the adaptive arm passing hunt on at least 1 of 16 offsets. Falsified on no verdict or worse.",
+  "targets": [],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "fixed arm: evals/train-ladder.json (hunt-weak, hunt-mid, hunt)",
+  "after": "adaptive arm: evals/train-ladder-adaptive.json (one hunt stage with adapt); tables in evals/train-screens/results/adaptive/",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Falsified as configured (effect is the closest enum value; the verdict is incomparable). All 32 runs trained; the report crashed on the two ladders' different stages and was fixed. The adaptive difficulty never rose above its 0.10 floor on any run over 200 generations (the steering win share stayed under the 0.5 target); hunt was passed on 0 of 16 runs in both arms; fixed reached hunt on 3 of 16, adaptive entered it on 9 of 16 by its shape; the nursery stalls on the same 7 of 16 offsets in both arms; hunt gate losses at full sprint were about 120 of 128 never-in-jaws. CPU hours 19.9 against 42.6. T16a retests with from 0, target 0.15 and the steering share logged.",
+  "reports": ["evals/decisions/E207/results.md"]
+}

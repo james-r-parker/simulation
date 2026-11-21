@@ -2,7 +2,7 @@
 
 fair-chase.md Step 1 (T5). Scripted oracles in the empty arena, seed 1, 8 trials per distance and bearing (5 distances x 8
 bearings = 320 trials per pair), on the code of `feat/sprint-store` (T1 to T4). The prediction was committed in
-`evals/experiments.json` before any run.
+`evals/ledger/E253.json` before any run.
 
 ```
 npm run audit:chase -- --config evals/fair-chase/<arm>.json --pairs predator:forager,predator:scout,predator:defender,predator:reproducer --trials 8 --json

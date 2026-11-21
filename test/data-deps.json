@@ -93,12 +93,15 @@
     "test/check-digest.test.js": [
         "scripts/check.sh"
     ],
+    "test/check-experiments.shipped.test.js": [
+        "scripts/check-experiments.mjs"
+    ],
     "test/check-experiments.test.js": [
+        "AGENTS.md",
         "evals/decisions/.gitkeep",
         "evals/decisions/E151",
         "evals/experiments.schema.json",
-        "scripts/check-experiments.mjs",
-        "test/fixtures/bad-ledger.json"
+        "scripts/check-experiments.mjs"
     ],
     "test/check-flag-ledger.test.js": [
         "docs",
@@ -115,7 +118,6 @@
     ],
     "test/check-metric-names.test.js": [
         "docs/designs",
-        "evals/experiments.json",
         "js/evo/metric-registry/core.js"
     ],
     "test/check-run.test.js": [
@@ -343,6 +345,14 @@
         "test/fixtures/train-ladder.json",
         "test/fixtures/train-tune.json"
     ],
+    "test/experiment-new.test.js": [
+        "evals/ledger",
+        "evals/ledger/E5.json"
+    ],
+    "test/experiment.test.js": [
+        "evals/ledger",
+        "test"
+    ],
     "test/functions/release-serve.test.js": [
         "index.html",
         "test"
@@ -353,6 +363,9 @@
     ],
     "test/icon-files.test.js": [
         "public/icons/"
+    ],
+    "test/ledger.test.js": [
+        "evals"
     ],
     "test/library/library-db.test.js": [
         "migrations/0001_library.sql",
@@ -484,7 +497,8 @@
         "docs/designs",
         "docs/designs/README.md",
         "docs/designs/metric-noise.md",
-        "evals/experiments.json",
+        "evals/ledger",
+        "evals/ledger/E1.json",
         "evals/train-screens/results",
         "scripts/state.mjs",
         "test"

@@ -413,13 +413,13 @@ Definitions and directions: [evolution-evals.md](docs/designs/evolution-evals.md
 The `run-evolution-loop` skill (`.claude/skills/run-evolution-loop/SKILL.md`) is the rule for any change that claims to
 improve evolution or speed.
 
-1. **Predict first.** Add an entry to `evals/experiments.json` (`id`, `hypothesis`, `prediction`, `targets`, the policies) before running. A prediction written after the result is not one.
+1. **Predict first.** Add a record `evals/ledger/E<id>.json` (`id`, `hypothesis`, `prediction`, `targets`, the policies) before running. A prediction written after the result is not one.
 2. **Run both arms.** At least 16 seeds per arm, the same seeds on the same machine, on two seed sets (1-16 and 17-32); Targets that need it (lineage metrics, `eval.floor_episodes`) run 32 seeds.
 3. **Compare.** `eval:compare` with `--targets` and `--fail-on-worse`. `no-difference` stays `no-difference`; with about 25 metrics one stray verdict is expected by chance (experiment `E0` calibrates this).
 4. **Check for exploits.** A fitness gain with no gain in food or lifespan is replayed with `--follow` before it is believed.
 5. **Record and act.** Fill in the experiment with its verdicts; keep a `better` change, revert a `no-difference` one, never merge a `worse` target.
 
-A real one is `E47` (`evals/experiments.json`, `evals/experiments/E47-prediction.md`). After the predator fix, a predator
+A real one is `E47` (`evals/ledger/E47.json`, `evals/experiments/E47-prediction.md`). After the predator fix, a predator
 `biteMultiplier` of 12 had cost fed blobs some lifespan. The prediction, written before the run, was that 10 or 8 would
 keep the gain in catches and predator births while recovering that lifespan. On 32 seeds of 200,000 ticks, bite 8 against
 the reference (seeds 1-16 / 17-32):

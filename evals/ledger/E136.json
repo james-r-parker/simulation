@@ -1,0 +1,29 @@
+{
+  "id": "E136",
+  "date": "2026-11-06",
+  "branch": "eval/keepers-e135-e136",
+  "hypothesis": "realistic-keepers T11a: E134's 19% drop in satedBite's kill conversion 1k-2k is by construction - a sated hunter that chases and then declines to bite records an unconverted chase. Over chases opened while hungry (eval.hunter_kill_conversion_hungry.1k-2k) conversion is not worse.",
+  "prediction": "the runs reproduce E134 exactly on the old metrics (determinism: same code path, observer-only change). Hungry-chase conversion with satedBite is within noise of the defaults (no-difference), so satedBite passes the keep rule and is kept. If hungry-chase conversion is also worse, the drop is real competence loss and satedBite is deleted at T20. (Written before the runs, main 5c6800e, floor on, 16 seeds x 200000 ticks.)",
+  "targets": [
+    "eval.hunter_kill_conversion_hungry.1k-2k",
+    "eval.hunter_kill_conversion_by_age.1k-2k",
+    "eval.predators_at_end",
+    "eval.prey_extinctions",
+    "eval.prey_types_at_end",
+    "eval.spec_effective"
+  ],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "e136-off.json (defaults, 16 seeds, floor on)",
+  "after": "e136-sated.json (satedBite true)",
+  "verdicts": {
+    "eval.hunter_kill_conversion_hungry.1k-2k": "no-difference",
+    "eval.hunter_kill_conversion_by_age.1k-2k": "worse",
+    "eval.predators_at_end": "better",
+    "eval.prey_extinctions": "better",
+    "eval.prey_types_at_end": "no-difference",
+    "eval.spec_effective": "no-difference"
+  },
+  "effect": "better",
+  "note": "Ran 2026-11-06 at 5c6800e. The old metrics reproduce E134 to the digit (hunters alive 14/16 both, under 80 7 against 6, conversion 1k-2k 0.0831 -> 0.0672), so the observer-only change kept determinism. Hungry-chase conversion 0.0864 -> 0.0825 (-4.5%, interval [-0.015, 0.009]): not worse. The E134 drop came from sated hunters chasing without biting, by construction. predators at end 23.1 -> 42.9 better, prey extinctions 8.75 -> 5.0 better, population 194 -> 253. Verdict: satedBite passes the keep-realistic rule and is kept; it joins the combined run (T21). Prediction held."
+}
