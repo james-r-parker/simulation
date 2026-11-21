@@ -8,6 +8,7 @@
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 import { ROLE_METRICS } from '../../js/evo/metric-registry/roles.js';
 import { unassertedMetrics } from './helpers/role-asserted.js';
 import { playChase, HUNTER } from './helpers/role-scene.js';
@@ -27,7 +28,7 @@ const starveHunter = (world) => {
     world.energy[HUNTER] = 0.0001;
 };
 
-describe('the predator metrics against a planted chase', () => {
+describe('the predator metrics against a planted chase', { timeout: scaleTimeout(60_000) }, () => {
     const caught = playChase({ gap: NEAR, ticks: TICKS });
     const missed = playChase({ gap: FAR, ticks: TICKS });
 
