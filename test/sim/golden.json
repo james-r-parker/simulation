@@ -4,7 +4,7 @@
       "name": "default",
       "overrides": {},
       "ticks": 5000,
-      "worldHash": "7a2e64b9c972121b"
+      "worldHash": "f066265a2e08f763"
     },
     {
       "name": "busy",
@@ -23,7 +23,7 @@
         "coldMarginWidth": 0
       },
       "ticks": 5000,
-      "worldHash": "6413518fa94e3f2f"
+      "worldHash": "6334674c03f94b93"
     },
     {
       "name": "disease",
@@ -51,7 +51,7 @@
         "sprintStoreEnabled": true
       },
       "ticks": 2000,
-      "worldHash": "5cee78288a6dbb69"
+      "worldHash": "ba97df3edc447c33"
     }
   ],
   "shortCases": [
