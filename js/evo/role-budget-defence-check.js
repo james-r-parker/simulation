@@ -4,7 +4,8 @@
 
 import { roleParams } from './role-budget-params.js';
 import { defenceTimeline } from './role-budget-defence.js';
-import { defenderSmokeGeometry, smokeCell } from './role-budget-smoke.js';
+import { budgetDefend } from './role-budget-defend.js';
+import { defenderSmokeGeometry, segmentHitsCloud, smokeCell } from './role-budget-smoke.js';
 import { playDefence } from './role-scenes-defence.js';
 import { playDefenderSmoke, playSmoke } from './role-scenes-smoke.js';
 
@@ -77,10 +78,34 @@ function defenceReadings(config, model) {
             scene.outcome.defenderArrivedFirst,
         ]),
     ];
-    if (!shoves) {
-        readings.push(ticksReading(row, 'kill tick', [run.killTick, scene.ticks.killTick]));
+    readings.push(ticksReading(row, 'kill tick', [run.killTick, scene.ticks.killTick], inTicks(2)));
+    if (shoves) {
+        readings.push(...shoveReadings({ config, model }, { run, scene, lone }));
     }
     return readings;
+}
+
+/**
+ * The shove's readings: the tick of the first shove, whether it delays the kill and the bite energy that delay prevents, each
+ * against the scene (the kill tick of the run is read beside them by `defenceReadings`).
+ * @param {{config: Readonly<Record<string, any>>, model: import('./role-budget-model.js').RoleModel}} base the config and model
+ * @param {{run: import('./role-budget-defence.js').Defence, scene: ReturnType<typeof playDefence>,
+ *   lone: ReturnType<typeof playDefence>}} plays the formula's run with the defender, the scene's runs with it and without
+ * @returns {DefenceReading[]} the readings
+ */
+function shoveReadings({ config, model }, { run, scene, lone }) {
+    const [hunter, caller, defender] = ['predator', 'forager', 'defender'].map((s) => roleParams(config, s));
+    const formula = budgetDefend(defender, hunter, caller, model).repel;
+    const row = 'defender:predator';
+    const killed = scene.ticks.killTick;
+    const delayed = killed === null || (lone.ticks.killTick !== null && killed > lone.ticks.killTick);
+    const bite = hunter.bite.damage * caller.bite.taken;
+    const prevented = Math.max(0, lone.outcome.bites - scene.outcome.bites) * bite;
+    return [
+        ticksReading(row, 'first shove tick', [run.repelTick, scene.ticks.repelTick], inTicks(2)),
+        signReading(row, 'shove breaks the bite', [formula.breaksBite, delayed]),
+        ticksReading(row, 'bite energy prevented', [formula.prevented, prevented], { within: 1e-6, unit: 'energy' }),
+    ];
 }
 
 /**
@@ -145,6 +170,50 @@ function defenderReadings(config, model) {
     return readings;
 }
 
+/** The px of the caller's reach the walking defender's path may graze before the walk is read as bumped. */
+const CLEAR = 5;
+
+/** The tolerance of where the walking defender stops, in px: a stop is 100 ticks of damped motion from a start. */
+const STOP_PX = { within: 3, unit: 'px' };
+
+/**
+ * The defender's walk, turn and stop from its real start (150 px to the side of the caller, facing along the side): when it
+ * releases and where the cloud lands, with the hunter standing still so that no bump enters the reading.
+ * @param {Readonly<Record<string, any>>} config an `arenaConfig`
+ * @param {import('./role-budget-model.js').RoleModel} model the model options
+ * @returns {DefenceReading[]} the readings
+ */
+function walkReadings(config, model) {
+    const bodies = ['predator', 'forager', 'defender'].map((s) => roleParams(config, s));
+    const [hunter, caller, defender] = bodies;
+    const geometry = defenderSmokeGeometry(bodies, model);
+    const options = { reaction: model.reactionTicks, threshold: model.hearThreshold, side: model.defenderGap };
+    const heard = defenceTimeline(hunter, caller, defender, options).heardTick >= 0;
+    const spot = defenderSmokeGeometry(bodies, { ...model, standing: STANDING }).releasePoint;
+    const length = spot + caller.size + defender.size;
+    const path = [
+        { x: length, y: model.defenderGap },
+        { x: spot, y: 0 },
+    ];
+    const bump = { x: length, y: 0, r: caller.size + defender.size - CLEAR };
+    // not read when the defender is never heard, or when its path passes through the caller: the formula has no bumps
+    if (!heard || segmentHitsCloud(path[0], path[1], bump)) {
+        return [];
+    }
+    const scene = playDefenderSmoke(config, {
+        reaction: model.reactionTicks,
+        threshold: model.hearThreshold,
+        standing: STANDING,
+        walk: { side: model.defenderGap },
+    });
+    const row = 'smoke:defender walk';
+    return [
+        ticksReading(row, 'release tick', [geometry.releaseTick, scene.ticks.releaseTick], inTicks(2)),
+        ticksReading(row, 'cloud centre x, px ahead of the hunter', [geometry.cloud.x, scene.outcome.cloud.x], STOP_PX),
+        ticksReading(row, 'cloud centre y, px off the line', [geometry.cloud.y, scene.outcome.cloud.y], STOP_PX),
+    ];
+}
+
 /**
  * Plays the defence and both smoke scenes beside the formulas.
  * @param {Readonly<Record<string, any>>} config an `arenaConfig`
@@ -158,6 +227,7 @@ export function defenceCheck(config, model) {
         ...defenceReadings(config, model),
         ...preyReadings(config, model),
         ...defenderReadings(config, model),
+        ...walkReadings(config, model),
     ];
     return { readings, drift: readings.filter((r) => r.drift).length };
 }

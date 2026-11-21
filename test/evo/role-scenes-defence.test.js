@@ -104,7 +104,7 @@ describe('playDefence', () => {
         const run = playDefence(arenaConfig(), OPTIONS);
         expect(run.ticks).toMatchObject({ alarmTick: 2, heardTick: 3, startTick: 5, contactTick: 23, killTick: 27 });
         expect(run.ticks.interceptTick).toBeNull();
-        expect(run.outcome).toEqual({ killed: true, defenderArrivedFirst: false });
+        expect(run.outcome).toEqual({ killed: true, defenderArrivedFirst: false, bites: 5 });
         const alone = playDefence(arenaConfig(), { ...OPTIONS, absent: true });
         expect(alone.ticks.killTick).toBe(27);
         expect(alone.ticks.heardTick).toBe(-1);

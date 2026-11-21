@@ -24,6 +24,13 @@ hunter with nothing in its jaws, the hunter's start read through `frameOptions` 
 row, cell, binding and kill tick above is as before; the one number that moved is the search's `damping` x0.75 setting, whose hear
 and run slack read 24 and 68 ticks where they read 25 and 69 (its intercept slack is still 13).
 
+Re-run on 2026-11-21 after the Phase 2 review fixes (the defender's stop modelled by `walkAndStop`, the walk played from its real
+start, the shove's first tick, `breaksBite`, `prevented` and the kill tick read against the sim, the kill tick with a defender at
+2 ticks): **no verdict changes.** Every row, cell, status and binding above is as before, and `--check` exits 0 on all four arms
+(the defaults and the three shove arms, whose world is not the slow one). The one number that moved is the smoke slack of the
+defender: it releases at tick 53 (not 41) and the slack reads -45 ticks (not -34) for the defender, still -2 for the caller. The
+reading still has no way to turn green: the latest release is tick 8.
+
 ## Reading
 
 - **The prediction held:** every cell the defender needs is red at the defaults, and with the shove on the row is still red.
@@ -46,8 +53,13 @@ and run slack read 24 and 68 ticks where they read 25 and 69 (its intercept slac
 
 - The scene puts the defender 150 px from the caller, `defenderGap` of the model. A defender closer than the 58 px sum of the
   two sizes is pushed off by the caller; at any gap tried (0.1 to 150) the defaults are red.
-- The defender's smoke geometry assumes it stands on the line when it releases. A body at its sprint cap coasts about 228 px
-  when it stops pushing (`coast` in the report's source), so the defender cannot stop on the spot it walks to: the smoke cell
-  flatters the defender, and the cross-check plays the release from a defender already standing there.
+- The defender's smoke geometry now models its stop. A body at its sprint cap coasts about 228 px when it stops pushing
+  (`coast` in the report's source), so it cuts its thrust early and coasts down while it turns to face the caller; it stops about
+  47 px from the caller and 28 px off the line, so the cloud lands behind where it stopped, not behind the spot it walked to. The
+  cross-check plays that walk from the real start (`smoke:defender walk`: release tick 53 against 52, the cloud 1.6 px and 2.7 px
+  from the sim's, inside 2 ticks and 3 px).
 - The defender's cloud, blind ticks and the caller's escape are cross-checked only for a release before the hunter reaches the
   cloud; after that the hunter bumps the defender, which the formula does not model.
+- With the shove on and a hunter slow enough for the defender to arrive (the slow world of the slow test, not one of these
+  arms), the first shove tick, `breaksBite` and `prevented` agree with the sim; the kill tick does not, 116 in the formula against
+  201 in the sim, since the sim's hunter bites the defender dead and rests after that kill and the formula plays neither.
