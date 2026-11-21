@@ -1,0 +1,9 @@
+{
+  "sprintStoreEnabled": true,
+  "sprintDrain": 0.004,
+  "specialisations": {
+    "reproducer": {
+      "sprintBoost": 1.25
+    }
+  }
+}

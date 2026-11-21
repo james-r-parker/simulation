@@ -1,0 +1,8 @@
+{
+  "sprintStoreEnabled": false,
+  "specialisations": {
+    "defender": {
+      "sprintBoost": 0.5
+    }
+  }
+}

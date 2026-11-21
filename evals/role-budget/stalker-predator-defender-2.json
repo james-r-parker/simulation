@@ -1,0 +1,13 @@
+{
+  "sprintStoreEnabled": true,
+  "sprintDrain": 0.01,
+  "specialisations": {
+    "predator": {
+      "sprintDrainMultiplier": 2,
+      "sprintBoost": 2.2
+    },
+    "defender": {
+      "visionRange": 225
+    }
+  }
+}

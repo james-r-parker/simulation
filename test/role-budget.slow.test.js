@@ -32,7 +32,7 @@ describe('role:budget --search', () => {
         }
     });
 
-    it('searches nothing for a row that is not impossible', async () => {
+    it('searches nothing for a row that is fit for the rung screen (courser against the scout)', async () => {
         const outDir = dir();
         const { searched } = await run([
             '--config',
@@ -45,6 +45,25 @@ describe('role:budget --search', () => {
         ]);
         expect(searched).toEqual([]);
         expect(readdirSync(outDir)).toEqual([]);
+    });
+});
+
+describe('role:budget --search on a pair that is caught but not learnable', () => {
+    it('looks for a change that makes the courser arm fit against the forager, every finding fit', async () => {
+        const outDir = dir();
+        const { searched } = await run([
+            '--config',
+            'evals/fair-chase/courser.json',
+            '--rows',
+            'predator:forager',
+            '--search',
+            '--out-dir',
+            outDir,
+        ]);
+        expect(searched).toHaveLength(1);
+        expect(searched[0].findings.length).toBeGreaterThan(0);
+        expect(searched[0].findings.every((/** @type {any} */ f) => f.fit)).toBe(true);
+        expect(readdirSync(outDir)[0]).toBe('courser-predator-forager-1.json');
     });
 });
 

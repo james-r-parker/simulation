@@ -1,0 +1,19 @@
+{
+  "id": "E257",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "plan": "role-budget.md",
+  "task": "T7",
+  "stream": "role-budget",
+  "date": "2026-11-21",
+  "branch": "feat/role-budget-p1",
+  "hypothesis": "E-RB-1 (role-budget T7): the role budget calculator, read on the defaults and each of the five evals/fair-chase/ arms, says whether the predator can catch the forager on the broken bound and names the single settings that would make it so.",
+  "prediction": "Rows come out red at the defaults (role-budget.md: the predator:forager row is impossible with the store off); the courser arm leaves the forager catchable by a margin of hundreds of px; the search names a hunter sprintBoost rise for the defaults.",
+  "targets": [],
+  "before": "defaults: predator:forager impossible on the run step (broken-bound margin -102 px, straight +408)",
+  "after": "courser: predator:forager catchable (+601 px) but learnSlope names reactive; even +83 px; long and stalker impossible; the search: hunter sprintBoost x1.25 on courser gives a fit arm (+750 px)",
+  "verdicts": {},
+  "effect": "better",
+  "note": "A tool reading, not a run: npm run role:budget with --search and --check on six configs, under 2 minutes. Check: no RoleBudgetDrift on any arm. Gate of fair-chase.md T8: courser (+601) and even (+83) leave the forager catchable; no arm is fit (reactive catchable and slope ok) for the forager, only courser against the scout. Finding: the perfect tier (effort 1) is not an upper bound on the broken bound, since effort 1 overshoots the evader's break and the naive tier beats it on catchable rows of courser and even.",
+  "reports": ["evals/decisions/E-RB-1/results.md"]
+}

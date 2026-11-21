@@ -1,0 +1,8 @@
+{
+  "sprintStoreEnabled": false,
+  "specialisations": {
+    "predator": {
+      "maxEnergyMultiplier": 10
+    }
+  }
+}

@@ -1,0 +1,1006 @@
+{
+  "configHash": "f7c415b6ab9f09cf",
+  "rows": [
+    {
+      "name": "predator:forager",
+      "cells": {
+        "see": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "n/a",
+          "capped": false,
+          "binding": false
+        },
+        "turn": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "n/a",
+          "capped": false,
+          "binding": false
+        },
+        "run": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": -102.275390625,
+          "status": "impossible",
+          "capped": false,
+          "binding": true
+        },
+        "bite": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": false
+        }
+      },
+      "status": "impossible",
+      "binding": "run",
+      "detail": {
+        "row": {
+          "name": "predator:forager",
+          "cells": {
+            "see": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "n/a",
+              "capped": false,
+              "binding": false
+            },
+            "turn": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "n/a",
+              "capped": false,
+              "binding": false
+            },
+            "run": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": -102.275390625,
+              "status": "impossible",
+              "capped": false,
+              "binding": true
+            },
+            "bite": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": false
+            }
+          },
+          "status": "impossible",
+          "binding": "run"
+        },
+        "cells": {
+          "see": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "n/a",
+            "capped": false,
+            "binding": false
+          },
+          "turn": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "n/a",
+            "capped": false,
+            "binding": false
+          },
+          "run": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": -102.275390625,
+            "status": "impossible",
+            "capped": false,
+            "binding": true
+          },
+          "bite": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "impossible",
+            "capped": false,
+            "binding": false
+          }
+        },
+        "tiers": {
+          "perfect": {
+            "straight": 564.19921875,
+            "broken": -102.275390625
+          },
+          "reactive": {
+            "straight": 465.05859375,
+            "broken": -57.744140625
+          },
+          "naive": {
+            "straight": -132.36328125,
+            "broken": -153.134765625
+          }
+        },
+        "learnSlope": "naive",
+        "fit": false,
+        "catchable": false,
+        "catchMargin": -102.275390625,
+        "bearings": {
+          "margins": [
+            -345,
+            -345,
+            -249.111328125,
+            -345,
+            -102.275390625,
+            -345,
+            -249.111328125,
+            -345
+          ],
+          "share": 0,
+          "worst": -345
+        },
+        "chaseEnergy": {
+          "spent": 657.5629514013401,
+          "kick": 4.82285504743887,
+          "income": 100,
+          "net": -562.385806448779,
+          "holds": 4700
+        },
+        "chaseHeat": {
+          "gain": 2.4999999999999907,
+          "headroom": 15
+        },
+        "refillTicks": 500,
+        "gapAtAwareness": 345,
+        "binding": "run"
+      }
+    },
+    {
+      "name": "predator:reproducer",
+      "cells": {
+        "see": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "n/a",
+          "capped": false,
+          "binding": false
+        },
+        "turn": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "n/a",
+          "capped": false,
+          "binding": false
+        },
+        "run": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": -52.265625,
+          "status": "impossible",
+          "capped": false,
+          "binding": true
+        },
+        "bite": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": false
+        }
+      },
+      "status": "impossible",
+      "binding": "run",
+      "detail": {
+        "row": {
+          "name": "predator:reproducer",
+          "cells": {
+            "see": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "n/a",
+              "capped": false,
+              "binding": false
+            },
+            "turn": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "n/a",
+              "capped": false,
+              "binding": false
+            },
+            "run": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": -52.265625,
+              "status": "impossible",
+              "capped": false,
+              "binding": true
+            },
+            "bite": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": false
+            }
+          },
+          "status": "impossible",
+          "binding": "run"
+        },
+        "cells": {
+          "see": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "n/a",
+            "capped": false,
+            "binding": false
+          },
+          "turn": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "n/a",
+            "capped": false,
+            "binding": false
+          },
+          "run": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": -52.265625,
+            "status": "impossible",
+            "capped": false,
+            "binding": true
+          },
+          "bite": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "impossible",
+            "capped": false,
+            "binding": false
+          }
+        },
+        "tiers": {
+          "perfect": {
+            "straight": 614.208984375,
+            "broken": -52.265625
+          },
+          "reactive": {
+            "straight": 515.068359375,
+            "broken": -7.763671875
+          },
+          "naive": {
+            "straight": -73.564453125,
+            "broken": -104.208984375
+          }
+        },
+        "learnSlope": "naive",
+        "fit": false,
+        "catchable": false,
+        "catchMargin": -52.265625,
+        "bearings": {
+          "margins": [
+            -295,
+            -295,
+            -228.45703125,
+            -295,
+            -52.265625,
+            -295,
+            -228.45703125,
+            -295
+          ],
+          "share": 0,
+          "worst": -295
+        },
+        "chaseEnergy": {
+          "spent": 653.2718302329619,
+          "kick": 4.949687424175943,
+          "income": 100,
+          "net": -558.2215176571378,
+          "holds": 4700
+        },
+        "chaseHeat": {
+          "gain": 2.4999999999999907,
+          "headroom": 15
+        },
+        "refillTicks": 500,
+        "gapAtAwareness": 295,
+        "binding": "run"
+      }
+    },
+    {
+      "name": "predator:scout",
+      "cells": {
+        "see": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "n/a",
+          "capped": false,
+          "binding": false
+        },
+        "turn": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "n/a",
+          "capped": false,
+          "binding": false
+        },
+        "run": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": -186.73828125,
+          "status": "impossible",
+          "capped": false,
+          "binding": true
+        },
+        "bite": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": false
+        }
+      },
+      "status": "impossible",
+      "binding": "run",
+      "detail": {
+        "row": {
+          "name": "predator:scout",
+          "cells": {
+            "see": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "n/a",
+              "capped": false,
+              "binding": false
+            },
+            "turn": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "n/a",
+              "capped": false,
+              "binding": false
+            },
+            "run": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": -186.73828125,
+              "status": "impossible",
+              "capped": false,
+              "binding": true
+            },
+            "bite": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": false
+            }
+          },
+          "status": "impossible",
+          "binding": "run"
+        },
+        "cells": {
+          "see": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "n/a",
+            "capped": false,
+            "binding": false
+          },
+          "turn": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "n/a",
+            "capped": false,
+            "binding": false
+          },
+          "run": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": -186.73828125,
+            "status": "impossible",
+            "capped": false,
+            "binding": true
+          },
+          "bite": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "impossible",
+            "capped": false,
+            "binding": false
+          }
+        },
+        "tiers": {
+          "perfect": {
+            "straight": 464.150390625,
+            "broken": -186.73828125
+          },
+          "reactive": {
+            "straight": 364.98046875,
+            "broken": -146.19140625
+          },
+          "naive": {
+            "straight": -223.4765625,
+            "broken": -254.443359375
+          }
+        },
+        "learnSlope": "naive",
+        "fit": false,
+        "catchable": false,
+        "catchMargin": -186.73828125,
+        "bearings": {
+          "margins": [
+            -445,
+            -445,
+            -378.22265625,
+            -445,
+            -186.73828125,
+            -445,
+            -378.22265625,
+            -445
+          ],
+          "share": 0,
+          "worst": -445
+        },
+        "chaseEnergy": {
+          "spent": 665.9916535582253,
+          "kick": 4.696420140341936,
+          "income": 150,
+          "net": -520.6880736985672,
+          "holds": 4700
+        },
+        "chaseHeat": {
+          "gain": 2.4999999999999907,
+          "headroom": 15
+        },
+        "refillTicks": 500,
+        "gapAtAwareness": 445,
+        "binding": "run"
+      }
+    },
+    {
+      "name": "predator:defender",
+      "cells": {
+        "see": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "n/a",
+          "capped": false,
+          "binding": false
+        },
+        "turn": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "n/a",
+          "capped": false,
+          "binding": false
+        },
+        "run": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": -285,
+          "status": "impossible",
+          "capped": false,
+          "binding": true
+        },
+        "bite": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": false
+        }
+      },
+      "status": "impossible",
+      "binding": "run",
+      "detail": {
+        "row": {
+          "name": "predator:defender",
+          "cells": {
+            "see": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "n/a",
+              "capped": false,
+              "binding": false
+            },
+            "turn": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "n/a",
+              "capped": false,
+              "binding": false
+            },
+            "run": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": -285,
+              "status": "impossible",
+              "capped": false,
+              "binding": true
+            },
+            "bite": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": false
+            }
+          },
+          "status": "impossible",
+          "binding": "run"
+        },
+        "cells": {
+          "see": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "n/a",
+            "capped": false,
+            "binding": false
+          },
+          "turn": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "n/a",
+            "capped": false,
+            "binding": false
+          },
+          "run": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": -285,
+            "status": "impossible",
+            "capped": false,
+            "binding": true
+          },
+          "bite": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "impossible",
+            "capped": false,
+            "binding": false
+          }
+        },
+        "tiers": {
+          "perfect": {
+            "straight": 623.61328125,
+            "broken": -285
+          },
+          "reactive": {
+            "straight": 520.48828125,
+            "broken": -207.7734375
+          },
+          "naive": {
+            "straight": -72.275390625,
+            "broken": -97.6171875
+          }
+        },
+        "learnSlope": "naive",
+        "fit": false,
+        "catchable": false,
+        "catchMargin": -285,
+        "bearings": {
+          "margins": [
+            -285,
+            -285,
+            -285,
+            -285,
+            -285,
+            -285,
+            -285,
+            -285
+          ],
+          "share": 0,
+          "worst": -285
+        },
+        "chaseEnergy": {
+          "spent": 653.8523445873734,
+          "kick": 9.857787903675547,
+          "income": 50,
+          "net": -613.710132491049,
+          "holds": 4700
+        },
+        "chaseHeat": {
+          "gain": 2.4999999999999907,
+          "headroom": 15
+        },
+        "refillTicks": 500,
+        "gapAtAwareness": 285,
+        "binding": "run"
+      }
+    },
+    {
+      "name": "predator:average",
+      "cells": {
+        "see": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": true
+        },
+        "turn": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": false
+        },
+        "run": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": false
+        },
+        "bite": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": false
+        }
+      },
+      "status": "impossible",
+      "binding": "see",
+      "detail": {
+        "average": {
+          "name": "predator:average",
+          "cells": {
+            "see": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": true
+            },
+            "turn": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": false
+            },
+            "run": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": false
+            },
+            "bite": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": false
+            }
+          },
+          "status": "impossible",
+          "binding": "see"
+        },
+        "best": {
+          "name": "predator:best",
+          "cells": {
+            "see": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "n/a",
+              "capped": false,
+              "binding": false
+            },
+            "turn": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "n/a",
+              "capped": false,
+              "binding": false
+            },
+            "run": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": -102.275390625,
+              "status": "impossible",
+              "capped": false,
+              "binding": true
+            },
+            "bite": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": false
+            }
+          },
+          "status": "impossible",
+          "binding": "run",
+          "picks": "forager"
+        },
+        "catchableShare": 0,
+        "choiceGain": 0,
+        "mix": {
+          "forager": 0.25,
+          "reproducer": 0.25,
+          "scout": 0.25,
+          "defender": 0.25
+        }
+      }
+    },
+    {
+      "name": "predator:best",
+      "cells": {
+        "see": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "n/a",
+          "capped": false,
+          "binding": false
+        },
+        "turn": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "n/a",
+          "capped": false,
+          "binding": false
+        },
+        "run": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": -102.275390625,
+          "status": "impossible",
+          "capped": false,
+          "binding": true
+        },
+        "bite": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": false
+        }
+      },
+      "status": "impossible",
+      "binding": "run",
+      "picks": "forager",
+      "detail": {
+        "average": {
+          "name": "predator:average",
+          "cells": {
+            "see": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": true
+            },
+            "turn": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": false
+            },
+            "run": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": false
+            },
+            "bite": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": false
+            }
+          },
+          "status": "impossible",
+          "binding": "see"
+        },
+        "best": {
+          "name": "predator:best",
+          "cells": {
+            "see": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "n/a",
+              "capped": false,
+              "binding": false
+            },
+            "turn": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "n/a",
+              "capped": false,
+              "binding": false
+            },
+            "run": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": -102.275390625,
+              "status": "impossible",
+              "capped": false,
+              "binding": true
+            },
+            "bite": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": false
+            }
+          },
+          "status": "impossible",
+          "binding": "run",
+          "picks": "forager"
+        },
+        "catchableShare": 0,
+        "choiceGain": 0,
+        "mix": {
+          "forager": 0.25,
+          "reproducer": 0.25,
+          "scout": 0.25,
+          "defender": 0.25
+        }
+      }
+    }
+  ],
+  "model": {
+    "reactionTicks": 2,
+    "hearThreshold": 0.1,
+    "breakAngle": 1.5707963267948966,
+    "tightTicks": 5,
+    "preySprint": "rationed",
+    "hunterShare": 0.1,
+    "foodDensity": null,
+    "naiveEffort": 0.5,
+    "catchShare": 0.3,
+    "reliableSight": false
+  },
+  "rulesHash": "62c3820cb6770113",
+  "choice": {
+    "average": {
+      "name": "predator:average",
+      "cells": {
+        "see": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": true
+        },
+        "turn": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": false
+        },
+        "run": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": false
+        },
+        "bite": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": false
+        }
+      },
+      "status": "impossible",
+      "binding": "see"
+    },
+    "best": {
+      "name": "predator:best",
+      "cells": {
+        "see": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "n/a",
+          "capped": false,
+          "binding": false
+        },
+        "turn": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "n/a",
+          "capped": false,
+          "binding": false
+        },
+        "run": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": -102.275390625,
+          "status": "impossible",
+          "capped": false,
+          "binding": true
+        },
+        "bite": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": false
+        }
+      },
+      "status": "impossible",
+      "binding": "run",
+      "picks": "forager"
+    },
+    "catchableShare": 0,
+    "choiceGain": 0,
+    "mix": {
+      "forager": 0.25,
+      "reproducer": 0.25,
+      "scout": 0.25,
+      "defender": 0.25
+    }
+  },
+  "searched": [],
+  "check": null
+}

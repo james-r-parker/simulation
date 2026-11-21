@@ -28,7 +28,7 @@ const FILES_PER_PAIR = 5;
  * @property {string | null} model a file of overrides of `MODEL_DEFAULTS`
  * @property {Record<string, number> | undefined} mix the weights of the `predator:average` row
  * @property {string[] | undefined} rows the rows to print
- * @property {boolean} search whether to search a single setting for each impossible row
+ * @property {boolean} search whether to search a single setting for each row that is not fit
  * @property {boolean} check whether to play each row's scene beside the formula
  * @property {boolean} reliable whether the hunter acts only on a prey it reliably sees
  * @property {string} outDir where the search writes its override files
@@ -171,23 +171,24 @@ function logCells(config, result, hash, log) {
  * @param {ReturnType<typeof matrix>} result the matrix
  * @param {{model: any, outDir: string, arm: string}} where the model, the output directory and the arm's name
  * @returns {{pair: string, findings: import('../js/evo/role-budget-search.js').Finding[], files: string[]}[]} the search of
- *   each prey row that is impossible, and the override files written
+ *   each prey row that is not fit for the rung screen (impossible, or caught but not learnable), and the override files
+ *   written
  */
 function searchRows(config, overrides, result, { model, outDir, arm }) {
-    const impossible = result.rows.filter((r) => r.name.startsWith('predator:') && r.status === 'impossible');
-    return impossible
-        .filter((r) => PREY_SPECS.includes(r.name.slice('predator:'.length)))
-        .map((row) => {
-            const prey = row.name.slice('predator:'.length);
-            const findings = searchSettings(config, { hunter: 'predator', prey }, { overrides, model });
-            mkdirSync(outDir, { recursive: true });
-            const files = findings.slice(0, FILES_PER_PAIR).map((f, i) => {
-                const file = join(outDir, `${arm}-predator-${prey}-${i + 1}.json`);
-                writeFileSync(file, `${JSON.stringify(f.overrides, null, 2)}\n`);
-                return file;
-            });
-            return { pair: `predator:${prey}`, findings: findings.slice(0, FILES_PER_PAIR), files };
+    const unfit = result.rows.filter(
+        (r) => PREY_SPECS.includes(r.name.slice('predator:'.length)) && r.detail?.fit === false,
+    );
+    return unfit.map((row) => {
+        const prey = row.name.slice('predator:'.length);
+        const findings = searchSettings(config, { hunter: 'predator', prey }, { overrides, model });
+        mkdirSync(outDir, { recursive: true });
+        const files = findings.slice(0, FILES_PER_PAIR).map((f, i) => {
+            const file = join(outDir, `${arm}-predator-${prey}-${i + 1}.json`);
+            writeFileSync(file, `${JSON.stringify(f.overrides, null, 2)}\n`);
+            return file;
         });
+        return { pair: `predator:${prey}`, findings: findings.slice(0, FILES_PER_PAIR), files };
+    });
 }
 
 /**

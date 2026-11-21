@@ -1,0 +1,9 @@
+{
+  "sprintStoreEnabled": true,
+  "sprintDrain": 0.01,
+  "specialisations": {
+    "reproducer": {
+      "visionRange": 312.5
+    }
+  }
+}
