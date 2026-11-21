@@ -200,6 +200,8 @@ const DEFS = [
     },
     // A stack dropped at the effect's cap.
     { code: 38, name: 'EFFECT_CAPPED', log: 'EffectCapped', level: 'debug', fields: ['slot', 'effect'] },
+    // A defender's active repel landed on a hunter (`tryDefenderRepel`): the defender's slot and the hunter's.
+    { code: 39, name: 'DEFENDER_SHOVED', log: 'DefenderShoved', level: 'debug', fields: ['slot', 'target'] },
 ];
 
 /** Offset of the event type in a record. */

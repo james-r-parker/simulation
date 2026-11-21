@@ -153,4 +153,11 @@ export const FEATURE_RULES = {
     answeredTicks: int(1),
     hoarseCost: num(0),
     hoarseTicks: int(1),
+    alertBoost: num(0),
+    alertGraze: num(0, 1),
+    alertTicks: int(1),
+    huddleWarmth: num(0, 1),
+    huddleRange: positive(),
+    staggerThrust: num(0, 1),
+    staggerTicks: int(1),
 };

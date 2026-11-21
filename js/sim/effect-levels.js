@@ -228,3 +228,14 @@ export function spentLevel(world, slot) {
     const level = store.level[slot];
     return level >= store.floor ? 0 : 1 - level / store.floor;
 }
+
+/**
+ * @param {World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} `alertGrazing`: the `alert` stacks of a body that grazes this tick (it feeds less well while it watches),
+ *   else 0
+ */
+export function alertGrazingLevel(world, slot) {
+    const stacks = world['effect.alert.stacks'][slot];
+    return stacks > 0 ? stacks * grazingLevel(world, slot) : 0;
+}

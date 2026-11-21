@@ -48,6 +48,7 @@ still in the record for the observer and the effects.
 | 36   | `SPRINT_SPENT`         | `SprintSpent`        | debug | 2 slot, 3 genomeId, 4 spec                                                                                                                            |
 | 37   | `EFFECT_APPLIED`       | `EffectApplied`      | debug | 2 slot, 3 effect, 4 stacks, 5 source                                                                                                                  |
 | 38   | `EFFECT_CAPPED`        | `EffectCapped`       | debug | 2 slot, 3 effect                                                                                                                                      |
+| 39   | `DEFENDER_SHOVED`      | `DefenderShoved`     | debug | 2 slot, 3 target                                                                                                                                      |
 
 ## Birth causes
 

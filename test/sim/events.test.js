@@ -53,7 +53,7 @@ describe('EVENTS', () => {
     it('builds EVENT_TYPE with the codes of today, the unused PROVISIONED among them', () => {
         expect(Object.values(EVENT_TYPE)).toEqual([
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-            32, 33, 34, 35, 36, 37, 38,
+            32, 33, 34, 35, 36, 37, 38, 39,
         ]);
         expect(EVENT_TYPE.PROVISIONED).toBe(32);
         expect(EVENTS.filter((def) => def.log === null).map((def) => def.name)).toEqual(['PROVISIONED']);
@@ -203,6 +203,7 @@ describe('event codes', () => {
             SPRINT_SPENT: 36,
             EFFECT_APPLIED: 37,
             EFFECT_CAPPED: 38,
+            DEFENDER_SHOVED: 39,
         });
         expect(BORN_CAUSE).toEqual({ INITIAL: 0, MATE: 1, SPLIT: 2, FLOOR: 3, IMMIGRANT: 4 });
         expect(DEATH_CAUSE).toEqual({

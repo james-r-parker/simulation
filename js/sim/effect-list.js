@@ -4,6 +4,7 @@
 
 import {
     alarmCoolingLevel,
+    alertGrazingLevel,
     alarmSeenLevel,
     coldBandLevel,
     coldRampLevel,
@@ -240,6 +241,46 @@ export const EFFECTS = Object.freeze([
             { lane: 'huntCallCost', perStack: 'hoarseCost' },
         ],
         applier: 'noteCalled',
+        visible: true,
+    }),
+    // status-effects Phase 2, T11: the herd. `alert` goes to a non-hunter that hears a real alarm; `huddled` to a body with fed
+    // kin close by; `staggered` to a hunter a defender shoves. `staggered` closes `bite`, so it is raised only with a strength.
+    effect('alert', {
+        family: 'social',
+        level: 'stacks',
+        maxStacks: 2,
+        fades: { kind: 'ticks', key: 'alertTicks' },
+        scales: [
+            { lane: 'maxTurn', perStack: 'alertBoost', by: 'nerve' },
+            { lane: 'sprintBoost', perStack: 'alertBoost', by: 'nerve' },
+        ],
+        applier: 'noteHeard',
+        visible: true,
+    }),
+    // The cost of `alert`: a body that watches feeds less well. It reads the stacks of `alert`, so it is listed after it.
+    effect('alertGrazing', {
+        family: 'social',
+        level: 'step',
+        read: alertGrazingLevel,
+        scales: [{ lane: 'maxThrust', perStack: { key: 'alertGraze', scale: -1 }, by: 'nerve' }],
+    }),
+    effect('huddled', {
+        family: 'social',
+        level: 'stacks',
+        maxStacks: 4,
+        fades: { kind: 'held', key: 'huddleRange' },
+        scales: [{ lane: 'temperatureLossPassive', perStack: { key: 'huddleWarmth', scale: -1 } }],
+        applier: 'huddlePass',
+        visible: true,
+    }),
+    effect('staggered', {
+        family: 'combat',
+        level: 'stacks',
+        maxStacks: 3,
+        fades: { kind: 'ticks', key: 'staggerTicks' },
+        scales: [{ lane: 'maxThrust', perStack: { key: 'staggerThrust', scale: -1 } }],
+        gates: ['BITE'],
+        applier: 'noteShoved',
         visible: true,
     }),
 ]);

@@ -7,6 +7,7 @@ import { depositPheromone } from './pheromones.js';
 import { releaseSmoke } from './smoke.js';
 import { cellRange } from './spatial-hash.js';
 import { noteHeard } from './effect-hear.js';
+import { huddlePass } from './effect-huddle.js';
 import { noteCalled } from './effect-social.js';
 import { GATE, LANE_ID, gateOpen, liveOf } from './effects.js';
 import { specParams } from './spec-params.js';
@@ -286,7 +287,7 @@ function hearPass(world, hash, timers, offset) {
 
 /**
  * Runs the signal phase: ticks the timers, fires alarm, hunt and smoke actions in slot order, then rebuilds `heard`
- * from the live alarm and hunt calls of the agents in `hash`.
+ * from the live alarm and hunt calls of the agents in `hash`, then recounts the `huddled` stacks on every eighth tick.
  * @param {World} world the world
  * @param {SpatialHash} hash the hash built this tick
  * @returns {void}
@@ -297,4 +298,5 @@ export function signalAll(world, hash) {
     world.heard.fill(0);
     hearPass(world, hash, world.alarmTimer, ALARM_HEARD);
     hearPass(world, hash, world.huntTimer, HUNT_HEARD);
+    huddlePass(world, hash);
 }

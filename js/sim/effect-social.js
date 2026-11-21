@@ -4,6 +4,7 @@
 // or on a caller whose call a pack-mate answered with a kill it shared.
 
 import { HEARD_FROM_STRIDE } from './agent-arrays.js';
+import { EVENT, EVENT_TYPE, pushEvent } from './events.js';
 import { HUNT_FROM } from './effect-hear.js';
 import { dropStack, raiseEffect } from './effect-raise.js';
 import { EFFECT, SYSTEM } from './effects.js';
@@ -87,5 +88,23 @@ export function noteAnswered(world, biter, victim) {
     if (bit && world.tick - world.prevBiteTick[victim] <= world.config.rallyTicks) {
         raiseEffect(SYSTEM, world, caller, { effect: EFFECT.ANSWERED, source: biter });
         dropStack(SYSTEM, world, caller, EFFECT.HOARSE);
+    }
+}
+
+/**
+ * A hunter that a defender shoves (`tryDefenderRepel`, js/sim/defender-repel.js) is `staggered`: slower, and unable to bite
+ * while it lasts. The shove is logged as `DefenderShoved`. With `staggerThrust` at 0 no stack is raised, since the stack
+ * closes the `bite` gate whatever the numbers say.
+ * @param {any} world the world
+ * @param {number} defender the shoving slot
+ * @param {number} target the hunter it shoved
+ * @returns {void}
+ */
+export function noteShoved(world, defender, target) {
+    const at = pushEvent(world.events, EVENT_TYPE.DEFENDER_SHOVED, world.tick);
+    world.events.data[at + EVENT.DEFENDER_SHOVED.SLOT] = defender;
+    world.events.data[at + EVENT.DEFENDER_SHOVED.TARGET] = target;
+    if (world.config.staggerThrust > 0) {
+        raiseEffect(SYSTEM, world, target, { effect: EFFECT.STAGGERED, source: defender });
     }
 }

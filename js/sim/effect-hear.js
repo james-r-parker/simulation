@@ -20,15 +20,15 @@ export const HUNT_FROM = 3;
  * Notes a call as the last one that gave the hearer a stack, unless the hearer already holds it.
  * @param {any} world the world
  * @param {number} hearer the hearing slot
- * @param {{caller: number, half: number, timers: Uint16Array}} call the caller's slot, the half of the row it is heard in
- *   and that half's call timers
+ * @param {number} caller the calling slot
+ * @param {number} half `ALARM_FROM` or `HUNT_FROM`: the half of the row the call is heard in
  * @returns {boolean} whether the call is new to the hearer
  */
-export function noteCall(world, hearer, call) {
-    const { caller } = call;
+function noteCall(world, hearer, caller, half) {
+    const timers = half === HUNT_FROM ? world.huntTimer : world.alarmTimer;
     // The caller's timer counts down from `callTicks` as the tick counts up, so this is the tick its call began.
-    const start = world.tick - world.config.callTicks + call.timers[caller];
-    const row = hearer * HEARD_FROM_STRIDE + call.half;
+    const start = world.tick - world.config.callTicks + timers[caller];
+    const row = hearer * HEARD_FROM_STRIDE + half;
     const from = world.heardFrom;
     const genomeId = world.genomeId[caller];
     if (from[row + 1] === genomeId && from[row + 2] === start) {
@@ -38,6 +38,37 @@ export function noteCall(world, hearer, call) {
     from[row + 1] = genomeId;
     from[row + 2] = start;
     return true;
+}
+
+/**
+ * A hunt call heard by a hunter that is kin of the caller gives it one `rallied` stack, once per call.
+ * @param {any} world the world
+ * @param {number} hearer the hearing slot
+ * @param {number} caller the calling slot
+ * @returns {void}
+ */
+function rally(world, hearer, caller) {
+    if (world.huntBySpec[world.spec[hearer]] === 1 && isKin(world, hearer, caller)) {
+        if (noteCall(world, hearer, caller, HUNT_FROM)) {
+            raiseEffect(SYSTEM, world, hearer, { effect: EFFECT.RALLIED, source: caller });
+        }
+    }
+}
+
+/**
+ * An alarm that a caller with a threat on its rays gave (`alarmSeen`) gives a non-hunter one `alert` stack, once per call.
+ * An alarm with nothing in view gives none, so calling among kin for the boost does nothing.
+ * @param {any} world the world
+ * @param {number} hearer the hearing slot
+ * @param {number} caller the calling slot
+ * @returns {void}
+ */
+function alert(world, hearer, caller) {
+    if (world.alarmSeen[caller] === 1 && world.huntBySpec[world.spec[hearer]] !== 1) {
+        if (noteCall(world, hearer, caller, ALARM_FROM)) {
+            raiseEffect(SYSTEM, world, hearer, { effect: EFFECT.ALERT, source: caller });
+        }
+    }
 }
 
 /**
@@ -52,14 +83,10 @@ export function noteHeard(world, hearer, loudness) {
     if (loudness < world.config.hearThreshold) {
         return;
     }
-    const caller = world.callScratch[0];
-    if (
-        world.callScratch[1] === HUNT_FROM &&
-        world.huntBySpec[world.spec[hearer]] === 1 &&
-        isKin(world, hearer, caller)
-    ) {
-        if (noteCall(world, hearer, { caller, half: HUNT_FROM, timers: world.huntTimer })) {
-            raiseEffect(SYSTEM, world, hearer, { effect: EFFECT.RALLIED, source: caller });
-        }
+    const { callScratch } = world;
+    if (callScratch[1] === HUNT_FROM) {
+        rally(world, hearer, callScratch[0]);
+    } else {
+        alert(world, hearer, callScratch[0]);
     }
 }

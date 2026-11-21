@@ -253,4 +253,11 @@ export const DEFAULTS = deepFreeze({
     answeredTicks: 120, // status-effects T10: ticks an `answered` stack lasts
     hoarseCost: 0, // status-effects T10: the rise in alarm and hunt call cost a `hoarse` stack adds; 0 is off
     hoarseTicks: 60, // status-effects T10: ticks a `hoarse` stack lasts
+    alertBoost: 0, // status-effects T11: the turn and sprint boost an `alert` stack adds, times the body's nerve; 0 is off
+    alertGraze: 0, // status-effects T11: the grazing thrust an `alert` stack takes off while the body grazes, times its nerve; 0 is off
+    alertTicks: 90, // status-effects T11: ticks an `alert` stack lasts
+    huddleWarmth: 0, // status-effects T11: the passive heat loss a `huddled` stack saves (temperatureLossPassive x (1 - warmth x stacks)); 0 is off
+    huddleRange: 2, // status-effects T11: how near, in body sizes, a fed kin must be to give a `huddled` stack
+    staggerThrust: 0, // status-effects T11: the thrust a `staggered` stack takes off, and a staggered hunter cannot bite; 0 is off (no stack is raised)
+    staggerTicks: 30, // status-effects T11: ticks a `staggered` stack lasts
 });

@@ -171,14 +171,19 @@ function eatAround(world, hash, slot) {
 }
 
 /**
- * Whether `biter` bites `victim`: the brain wants to bite and the bite rule (`canBite`) allows it.
+ * Whether `biter` bites `victim`: the brain wants to bite, no effect has closed the `bite` gate (a staggered hunter cannot
+ * bite) and the bite rule (`canBite`) allows it.
  * @param {Record<string, any>} world the world
  * @param {number} biter the biting slot
  * @param {number} victim the bitten slot
  * @returns {boolean}
  */
 function bites(world, biter, victim) {
-    return world.outputs[biter * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 && canBite(world, biter, victim);
+    return (
+        world.outputs[biter * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 &&
+        gateOpen(world, biter, GATE.BITE) &&
+        canBite(world, biter, victim)
+    );
 }
 
 /**
