@@ -157,6 +157,19 @@ export function runSteppedCase({ overrides, ticks }) {
 }
 
 /**
+ * Runs every per-call and stepped case and returns the digests, as the fixture holds them (scripts/record-brain-reference.mjs
+ * writes them).
+ * @param {(world: Record<string, any>) => void} forward the brain phase to run in the per-call cases
+ * @returns {{ unit: Record<string, string[]>, stepped: Record<string, string[]> }} the digests by case
+ */
+export function recordReference(forward) {
+    return {
+        unit: Object.fromEntries(unitCases().map((c) => [c.key, runUnitCase(c, forward)])),
+        stepped: Object.fromEntries(STEPPED_CASES.map((c) => [c.name, runSteppedCase(c)])),
+    };
+}
+
+/**
  * @returns {{ unit: Record<string, string[]>, stepped: Record<string, string[]> }} the recorded JS digests
  */
 export function readReference() {

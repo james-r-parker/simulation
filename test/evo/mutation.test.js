@@ -9,7 +9,7 @@ import {
     TRAIT_SIGMA,
     WEIGHT_CLAMP,
 } from '../../js/evo/mutation.js';
-import { brainLayout } from '../../js/sim/brain-layout.js';
+import { POOLED_VALUES, brainLayout } from '../../js/sim/brain-layout.js';
 import { detExp } from '../../js/sim/det-math.js';
 import { createRng, nextFloat, nextGaussian } from '../../js/sim/rng.js';
 
@@ -172,8 +172,8 @@ describe('randomWeights', () => {
         expect(sd / expected).toBeLessThan(1.15);
     });
 
-    it('draws skip weights with sd 1 / sqrt(48), under the output weights', () => {
-        const expected = 1 / Math.sqrt(48);
+    it('draws skip weights with sd 1 / sqrt(POOLED_VALUES), under the output weights', () => {
+        const expected = 1 / Math.sqrt(POOLED_VALUES);
         const { mean, sd } = stats(row.subarray(layout.wSkip, layout.traitStart));
         expect(Math.abs(mean)).toBeLessThan(expected * 0.15);
         expect(sd / expected).toBeGreaterThan(0.9);

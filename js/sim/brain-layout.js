@@ -1,11 +1,11 @@
-// Computes the input count and the weight-row offsets of the Elman RNN brain (the pooled-v5 layout, top 2 hits per channel) from a config.
+// Computes the input count and the weight-row offsets of the Elman RNN brain (the pooled-v6 layout, top 2 hits per channel) from a config.
 
 /**
  * The name of the brain layout this file defines. Stamped into every genome, archive and champion file and checked on
  * load, so a file written under a layout of the same sizes but different meaning (another channel order, hit count or
  * block order) is refused by name. Change it whenever a gene's meaning or position changes.
  */
-export const BRAIN_LAYOUT_NAME = 'pooled-v5';
+export const BRAIN_LAYOUT_NAME = 'pooled-v6';
 
 /**
  * @typedef {object} IoChannel one raw ray channel
@@ -65,9 +65,20 @@ export const BRAIN_IO = Object.freeze({
             ].map(([name, display, pooled]) => Object.freeze({ name, display, pooled }))
         ),
     ),
-    /** The pooled values after the channels: the hues of the two pooled food hits. */
+    /**
+     * The pooled values after the channels (docs/designs/body-genes.md, "Pooled values"): the size, speed and closing of
+     * the two strongest prey hits and the strongest threat hit, the view share of four agent channels, then the hues of
+     * the two pooled food hits, which stay last.
+     */
     sense: Object.freeze(
-        /** @type {readonly IoSense[]} */ ([Object.freeze({ name: 'food.hue', labels: ['food.hue0', 'food.hue1'] })]),
+        /** @type {readonly IoSense[]} */ (
+            [
+                ['prey', ['prey.size0', 'prey.speed0', 'prey.closing0', 'prey.size1', 'prey.speed1', 'prey.closing1']],
+                ['threat', ['threat.size', 'threat.speed', 'threat.closing']],
+                ['share', ['share.threat', 'share.prey', 'share.other', 'share.kin']],
+                ['food.hue', ['food.hue0', 'food.hue1']],
+            ].map(([name, labels]) => Object.freeze({ name, labels: Object.freeze(labels) }))
+        ),
     ),
     /** The body block after the pooled values, one entry per input: body, senses, temperature, scent, calls, memory, refuge. */
     body: bodyInputs([
@@ -107,6 +118,7 @@ export const BRAIN_IO = Object.freeze({
         ['refuge.bearing_sin', 'refuge bearing sin', 'Refuge', 'REFUGE_BEARING_SIN'],
         ['refuge.bearing_cos', 'refuge bearing cos', 'Refuge', 'REFUGE_BEARING_COS'],
         ['refuge.near', 'refuge near', 'Refuge', 'REFUGE_NEAR'],
+        ['reserve', 'sprint reserve', 'Body', 'RESERVE'],
     ]),
     /**
      * The outputs in order. `SPRINT`, `MATE` and `BITE` fire above 0, the calls above their own thresholds
@@ -187,33 +199,80 @@ export const HIT_STRIDE = 3;
 /** Values per pooled channel: `POOLED_HITS x HIT_STRIDE`, the strongest hit first. */
 export const POOLED_STRIDE = POOLED_HITS * HIT_STRIDE;
 
-/** Hue values of the two pooled food hits. */
-export const FOOD_HUE_VALUES = BRAIN_IO.sense[0].labels.length;
+/**
+ * @param {string} name a group name of `BRAIN_IO.sense`
+ * @returns {readonly string[]} the group's labels
+ */
+const senseGroup = (name) => {
+    const group = BRAIN_IO.sense.find((g) => g.name === name);
+    if (group === undefined) {
+        throw new Error(`BRAIN_IO.sense: no group ${name}`);
+    }
+    return group.labels;
+};
 
-/** Pooled values at the head of the brain's input row: 54 ray values and two food hues (56). */
+/** Hue values of the two pooled food hits. */
+export const FOOD_HUE_VALUES = senseGroup('food.hue').length;
+
+/**
+ * The body sense values between the channels and the food hues: size, speed and closing of two prey hits and one threat
+ * hit (9), then the view shares of threat, prey, other and kin (4).
+ */
+export const BODY_SENSE_VALUES = BRAIN_IO.sense.reduce((sum, group) => sum + group.labels.length, 0) - FOOD_HUE_VALUES;
+
+/** Pooled values at the head of the brain's input row: 54 ray values, 13 body sense values and two food hues (69). */
 export const POOLED_VALUES =
     POOLED_CHANNELS.length * POOLED_STRIDE + BRAIN_IO.sense.reduce((sum, group) => sum + group.labels.length, 0);
 
 /**
  * Body inputs after the ray (or pooled) block: 17 of body and temperature, 13 scent and call inputs, `sex`, 2 memory,
- * 3 refuge (bearing sine and cosine, nearness): one per entry of the schema's `body`.
+ * 3 refuge (bearing sine and cosine, nearness) and `reserve` (the sprint store's level): one per entry of the schema's
+ * `body`.
  */
 export const EXTRA_INPUTS = BRAIN_IO.body.length;
 
 /**
  * Body input offsets, from the start of the body block, of the entries that carry a `key`: the scent block (antennae,
- * hunt scent, heard calls), the sex input, the two memory read-backs (last tick's `MEMORY_A` and `MEMORY_B`) and the
- * three refuge inputs.
+ * hunt scent, heard calls), the sex input, the two memory read-backs (last tick's `MEMORY_A` and `MEMORY_B`), the
+ * three refuge inputs and `reserve`.
  */
 export const BODY_INPUT = Object.freeze(
     Object.fromEntries(BRAIN_IO.body.flatMap((input, index) => (input.key === undefined ? [] : [[input.key, index]]))),
 );
 
-/** Trait genes after `bOut`: `sizeGene`, `visionGene`, `childShareGene`, `learnGene`. */
-export const TRAIT_GENES = 4;
+/**
+ * Trait gene slots after `wSkip` (docs/designs/body-genes.md, "The registry"): the eighteen named in `TRAIT_INDEX` and
+ * six spare slots, which are 0 and read by nothing, so a trait added later changes no genome layout.
+ */
+export const TRAIT_SLOTS = 24;
 
-/** Index of each trait gene within the trait block. */
-export const TRAIT_INDEX = Object.freeze({ SIZE: 0, VISION: 1, CHILD_SHARE: 2, LEARN: 3 });
+/** Trait genes in a weight row: every slot, named or spare. */
+export const TRAIT_GENES = TRAIT_SLOTS;
+
+/**
+ * Index of each named trait gene within the trait block. `SIZE`, `VISION`, `CHILD_SHARE` and `LEARN` are read today;
+ * the rest exist, start at 0 and are read by nothing until the trait registry (`js/sim/body-traits.js`) reads them.
+ */
+export const TRAIT_INDEX = Object.freeze({
+    SIZE: 0,
+    VISION: 1,
+    CHILD_SHARE: 2,
+    LEARN: 3,
+    SPEED: 4,
+    SPRINT_STORE: 5,
+    FAT: 6,
+    HEAT_BAND: 7,
+    BURN: 8,
+    HEARING: 9,
+    NOSE: 10,
+    SMOKE_SIGHT: 11,
+    EYES_OR_EARS: 12,
+    CLEAR_OR_SMOKE: 13,
+    AGILE_OR_FAST: 14,
+    WIDE_OR_FAR: 15,
+    GUT: 16,
+    NERVE: 17,
+});
 
 /**
  * @typedef {object} BrainLayout
@@ -229,7 +288,7 @@ export const TRAIT_INDEX = Object.freeze({ SIZE: 0, VISION: 1, CHILD_SHARE: 2, L
  * @property {number} wOut offset of the hidden-to-output block (`hidden x geneOutputs`, hidden-major)
  * @property {number} bOut offset of the output biases
  * @property {number} wSkip offset of the pooled-to-output skip block (`POOLED_VALUES x geneOutputs`, input-major)
- * @property {number} traitStart offset of the trait genes (`TRAIT_GENES`)
+ * @property {number} traitStart offset of the trait genes (`TRAIT_SLOTS`)
  * @property {number} leakStart offset of the leak genes (one per hidden unit)
  * @property {number} weightCount floats in one weight row
  */
@@ -288,7 +347,10 @@ export function layoutStamp(layout) {
  * @typedef {object} InputOffsets
  * @property {Readonly<Record<string, number>>} pooled index of each pooled channel's strongest hit in the brain's
  *   input row (its cosine and sine follow, then the second hit's three values); `kin` is among them
- * @property {number} foodHueStart index of the two food hues after the ray values
+ * @property {number} senseStart index of the body sense values after the channels (size, speed and closing of two prey
+ *   hits, then of one threat hit)
+ * @property {number} countStart index of the four view shares (threat, prey, other, kin)
+ * @property {number} foodHueStart index of the two food hues after the body sense values
  * @property {number} bodyStart index of the body block in the brain's input row
  * @property {number} scentStart index of the first scent input (the danger antennae)
  * @property {number} huntScent index of the hunt scent here (the left and right antennae follow)
@@ -298,6 +360,7 @@ export function layoutStamp(layout) {
  * @property {number} memoryA index of the `MEMORY_A` read-back
  * @property {number} memoryB index of the `MEMORY_B` read-back
  * @property {number} refuge index of `refugeBearingSin` (`refugeBearingCos` and `refugeNear` follow)
+ * @property {number} reserve index of `reserve`, the sprint store's level
  * @property {number} rawBodyStart index of the body block in the raw `inputs` row (after the ray block)
  */
 
@@ -313,8 +376,11 @@ export function inputOffsets(config) {
         pooled[name] = c * POOLED_STRIDE;
     });
     const at = (/** @type {number} */ offset) => POOLED_VALUES + offset;
+    const senseStart = POOLED_CHANNELS.length * POOLED_STRIDE;
     return Object.freeze({
         pooled: Object.freeze(pooled),
+        senseStart,
+        countStart: senseStart + senseGroup('prey').length + senseGroup('threat').length,
         foodHueStart: POOLED_VALUES - FOOD_HUE_VALUES,
         bodyStart: POOLED_VALUES,
         scentStart: at(BODY_INPUT.SCENT),
@@ -325,6 +391,7 @@ export function inputOffsets(config) {
         memoryA: at(BODY_INPUT.MEMORY_A),
         memoryB: at(BODY_INPUT.MEMORY_B),
         refuge: at(BODY_INPUT.REFUGE_BEARING_SIN),
+        reserve: at(BODY_INPUT.RESERVE),
         rawBodyStart: config.rayCount * RAY_CHANNELS,
     });
 }

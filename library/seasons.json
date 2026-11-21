@@ -63,8 +63,8 @@
     "season": 12,
     "rulesHash": "803dedf939a0c1df",
     "layout": {
-      "name": "pooled-v5",
-      "inputCount": 92,
+      "name": "pooled-v6",
+      "inputCount": 106,
       "brainHidden": 32,
       "outputCount": 11
     },

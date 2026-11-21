@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     BODY_INPUT,
+    BODY_SENSE_VALUES,
     BRAIN_IO,
     CH_FOOD,
     CH_KIN,
@@ -28,7 +29,7 @@ import { inputLabels, outputLabels } from '../../js/evo/brain-labels.js';
 import { inspectLabels } from '../../js/worker/inspect.js';
 
 describe('BRAIN_IO', () => {
-    it('holds the numbers pooled-v5 pinned before it was a schema', () => {
+    it('holds the numbers pooled-v6 pins', () => {
         expect(RAY_CHANNELS).toBe(10);
         expect([CH_FOOD, CH_THREAT, CH_PREY, CH_OTHER, CH_KIN, CH_WALL, CH_OBSTACLE, CH_SMOKE, CH_MEGAFAUNA]).toEqual([
             1, 2, 3, 4, 5, 6, 7, 8, 9,
@@ -44,7 +45,7 @@ describe('BRAIN_IO', () => {
             'smoke',
             'megafauna',
         ]);
-        expect([POOLED_VALUES, FOOD_HUE_VALUES, EXTRA_INPUTS]).toEqual([56, 2, 36]);
+        expect([POOLED_VALUES, BODY_SENSE_VALUES, FOOD_HUE_VALUES, EXTRA_INPUTS]).toEqual([69, 13, 2, 37]);
         expect([OUTPUT_COUNT, GENE_OUTPUT_COUNT]).toEqual([11, 10]);
         expect(OUTPUT_INDEX).toEqual({
             THRUST: 0,
@@ -72,6 +73,7 @@ describe('BRAIN_IO', () => {
             REFUGE_BEARING_SIN: 33,
             REFUGE_BEARING_COS: 34,
             REFUGE_NEAR: 35,
+            RESERVE: 36,
         });
     });
 
@@ -86,6 +88,7 @@ describe('BRAIN_IO', () => {
         expect(bodyAt(BODY_INPUT.SEX)).toBe('sex');
         expect(bodyAt(BODY_INPUT.MEMORY_B)).toBe('memory_b');
         expect(bodyAt(BODY_INPUT.REFUGE_NEAR)).toBe('refuge.near');
+        expect(bodyAt(BODY_INPUT.RESERVE)).toBe('reserve');
     });
 
     it('builds the layout and the offsets from the schema', () => {
@@ -94,14 +97,19 @@ describe('BRAIN_IO', () => {
         expect(layout.inputCount).toBe(POOLED_VALUES + BRAIN_IO.body.length);
         expect(layout.rawInputCount).toBe(config.rayCount * BRAIN_IO.channels.length + BRAIN_IO.body.length);
         expect(inputLabels()).toHaveLength(layout.inputCount);
-        expect(inputOffsets(config).foodHueStart).toBe(POOLED_VALUES - BRAIN_IO.sense[0].labels.length);
+        const hues = BRAIN_IO.sense.find((group) => group.name === 'food.hue');
+        expect(inputOffsets(config).foodHueStart).toBe(POOLED_VALUES - (hues?.labels.length ?? 0));
+        expect(BRAIN_IO.sense.at(-1)?.name).toBe('food.hue');
         expect(inputOffsets(config).sex).toBe(POOLED_VALUES + BRAIN_IO.body.findIndex((input) => input.key === 'SEX'));
     });
 
     it('labels the inputs, outputs and inspector from the same entries', () => {
         const labels = inputLabels();
-        expect(labels.slice(54, 56)).toEqual(['food.hue0', 'food.hue1']);
-        expect(labels.slice(56, 58)).toEqual(['energy', 'vel.forward']);
+        expect(labels.slice(54, 57)).toEqual(['prey.size0', 'prey.speed0', 'prey.closing0']);
+        expect(labels.slice(60, 63)).toEqual(['threat.size', 'threat.speed', 'threat.closing']);
+        expect(labels.slice(63, 67)).toEqual(['share.threat', 'share.prey', 'share.other', 'share.kin']);
+        expect(labels.slice(67, 69)).toEqual(['food.hue0', 'food.hue1']);
+        expect(labels.slice(69, 71)).toEqual(['energy', 'vel.forward']);
         expect(outputLabels()).toEqual([
             'thrust',
             'turn',

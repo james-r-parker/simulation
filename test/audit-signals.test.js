@@ -30,11 +30,15 @@ describe('parseArgs', () => {
 });
 
 describe('the report', () => {
-    it('names all 92 inputs', () => {
+    it('names all 106 inputs', () => {
         const names = inputNames();
-        expect(names).toHaveLength(92);
+        expect(names).toHaveLength(106);
         expect(names[0]).toBe('food hit1 strength');
-        expect(names[56]).toBe('energy');
+        expect(names.slice(54, 57)).toEqual(['prey size0', 'prey speed0', 'prey closing0']);
+        expect(names[63]).toBe('share threat');
+        expect(names[67]).toBe('food hue 1');
+        expect(names[69]).toBe('energy');
+        expect(names[105]).toBe('sprint reserve');
     });
 
     it('calls an input dead only when it is dead on every seed', () => {

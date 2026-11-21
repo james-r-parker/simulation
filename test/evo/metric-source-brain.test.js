@@ -3,7 +3,7 @@
 // with hand-built weight rows. Every test plants an event in the final tick and one in a tick a body dies.
 
 import { describe, expect, it } from 'vitest';
-import { GENE_OUTPUTS, OUTPUT_INDEX, POOLED_STRIDE } from '../../js/sim/brain-layout.js';
+import { GENE_OUTPUTS, OUTPUT_INDEX, POOLED_STRIDE, POOLED_VALUES } from '../../js/sim/brain-layout.js';
 import { ACTIVITY_SAMPLE_TICKS, RARE_MIN_SAMPLES } from '../../js/sim/input-activity.js';
 import { applyGenes } from '../../js/sim/traits.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
@@ -64,11 +64,12 @@ describe('input_active_share, input_active_share.threat and input_active_share.p
         r.tick(posePair);
         const m = r.metrics();
         // Ray 0 (`sin = 0`) hits once per sample for threat (on prey) and prey (on hunter): 2 nonzero values per sample.
-        // Body inputs active: hunter 5 (energy, size, spec, temp, |temp-mid|), prey 4, doomed 5 (+ ageTicks) = 31 total.
+        // Body inputs active: hunter 5 (energy, size, spec, temp, |temp-mid|), prey 4, doomed 5 (+ ageTicks) = 31 total,
+        // and `reserve` (1 with no sprint store) once per sample: 36.
         expect(world.inputActivity.samples).toBe(5);
         expect(m['eval.input_active_share.threat'].value).toBeCloseTo(4 / (5 * POOLED_STRIDE), 12);
         expect(m['eval.input_active_share.prey'].value).toBeCloseTo(4 / (5 * POOLED_STRIDE), 12);
-        expect(m['eval.input_active_share'].value).toBeCloseTo(31 / (5 * world.layout.inputCount), 12);
+        expect(m['eval.input_active_share'].value).toBeCloseTo(36 / (5 * world.layout.inputCount), 12);
     });
 });
 
@@ -135,7 +136,7 @@ describe('rare_input_saturation_jump', () => {
         const { layout } = world;
         const H = layout.hidden;
         // Five body inputs that are 0 when still/unaged/unfed and nonzero when set: turnRate, pregnancy, ate, bitten, age.
-        const rareInputs = [56 + 3, 56 + 5, 56 + 9, 56 + 10, 56 + 12];
+        const rareInputs = [3, 5, 9, 10, 12].map((offset) => POOLED_VALUES + offset);
         world.inputActivity.samples = RARE_MIN_SAMPLES;
         world.inputActivity.rareCount = rareInputs.length;
         rareInputs.forEach((inp, idx) => {

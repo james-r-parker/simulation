@@ -113,18 +113,18 @@ Every blob has an Elman recurrent network: its hidden layer feeds back into itse
 One tick, for every blob: `forwardAll` in `js/sim/brain.js` makes one call into the Rust kernel `brain_forward` (`wasm/src/brain.rs`, built by `scripts/build-wasm.sh`), which pools, steps the hidden layer, writes the outputs and applies Hebbian learning. It is attached at world birth by `attachWasm` (`js/sim/wasm-arena.js`), called from `allocateWorld`; the JS brain was deleted, so every world runs it. The diagram shows what it computes for one blob:
 
 ```
- rays (16 x 10) -> pool: 9 channels x 2 strongest hits x (strength, cos, sin) = 54 + 2 food hues --+
- body inputs (36) ------------------------------------------------------------------------+--> 92 inputs --W_in--> (+ hidden_prev x W_rec + bias) --tanh--> leaky mix --> 32 hidden
+ rays (16 x 10) -> pool: 9 channels x 2 hits x (strength, cos, sin) = 54 + 13 body sense + 2 hues --+
+ body inputs (37) ------------------------------------------------------------------------+--> 106 inputs --W_in--> (+ hidden_prev x W_rec + bias) --tanh--> leaky mix --> 32 hidden
                                                                                                          |
         last tick's MEMORY_A, MEMORY_B (body inputs 31, 32) <---------+                                      v
                                                           11 outputs = tanh( hidden x W_out + pooled x W_skip + bias )
 ```
 
-- **Size.** `brainLayout` in `js/sim/brain-layout.js`: `inputCount = POOLED_VALUES + EXTRA_INPUTS = 9 x 2 x 3 + 2 + 36 = 92` (`rawInputCount` 196),
-  `brainHidden = 32`, `OUTPUT_COUNT = 11`. One genome row is **4,926 floats** (`weightCount`; read the offsets from `brainLayout`, not from this page): `W_in` 92x32, `W_rec` 32x32, 32 hidden biases,
-  `W_out` 32x10, 10 output biases, `W_skip` 56x10, 4 trait genes and 32 leak genes. The `SPLIT` output keeps its slot in the
+- **Size.** `brainLayout` in `js/sim/brain-layout.js`: `inputCount = POOLED_VALUES + EXTRA_INPUTS = 9 x 2 x 3 + 13 + 2 + 37 = 106` (`rawInputCount` 197),
+  `brainHidden = 32`, `OUTPUT_COUNT = 11`. One genome row is **5,524 floats** (`weightCount`; read the offsets from `brainLayout`, not from this page): `W_in` 106x32, `W_rec` 32x32, 32 hidden biases,
+  `W_out` 32x10, 10 output biases, `W_skip` 69x10, 24 trait gene slots and 32 leak genes. The `SPLIT` output keeps its slot in the
   11-wide output row but has no genes and reads 0 (nothing reads it: a split needs energy and the gates).
-- **Skip.** `W_skip` joins the 56 pooled values straight to the outputs, before `tanh`, so a reflex (food ahead to thrust,
+- **Skip.** `W_skip` joins the 69 pooled values straight to the outputs, before `tanh`, so a reflex (food ahead to thrust,
   threat to turn away) needs no hidden unit. It sees only the pooled rays, never the body inputs, and is genome only.
 - **Activation.** `tanh` on hidden units and outputs, through `det_tanh` (`wasm/src/det_math.rs`, the same function as `js/sim/det-math.js`) so the result is the same
   on every machine. An output above 0 means "do it" for the on/off actions.
@@ -133,8 +133,8 @@ One tick, for every blob: `forwardAll` in `js/sim/brain.js` makes one call into 
   so evolution can pick slow and fast units. (3) Two spare outputs, `MEMORY_A` and `MEMORY_B`, are fed back as inputs next
   tick (`writeMemoryInputs` in `js/sim/body-inputs.js`). They do nothing else. A random genome starts every leak gene at 0
   (`leakGeneStart`, `a` about 0.5), so memory is there from generation 0.
-- **Inheritance.** A birth mutates each gene with probability `1 / sqrt(weightCount)` (`mutationRate` `invsqrt`, about 70 of
-  the 4,926 genes), and shrinks the `W_in` rows of silent inputs by `weightDecay` 0.005 (an input is silent when its active
+- **Inheritance.** A birth mutates each gene with probability `1 / sqrt(weightCount)` (`mutationRate` `invsqrt`, about 74 of
+  the 5,524 genes), and shrinks the `W_in` rows of silent inputs by `weightDecay` 0.005 (an input is silent when its active
   share is under 0.01 over at least 10,000 agent-samples; `world.inputActivity` in `js/sim/input-activity.js`).
 - **Lifetime learning.** With `hebbianRate > 0` (default 0.0001) the hidden-to-output block is plastic (inside the Rust kernel; constants in
   `js/sim/hebbian.js`). Each blob has its own copy, `fastOut`, which drifts by `eta x (hidden x output - 0.01 x (fastOut - genome weight))`
@@ -196,7 +196,8 @@ A genome (`js/evo/genome.js`) is one brain row (`weightCount` floats in `brainLa
 - **Crossover (mating).** `crossNeurons` (`js/evo/crossover.js`) takes whole neurons: for each hidden unit one coin flip decides whether all its
   incoming, recurrent and outgoing weights, its bias and its leak gene come from the mother or the father. Trait genes are taken whole from one parent too.
 - **Splitting** copies the mother's row and mutates it.
-- **Trait genes** (`TRAIT_INDEX`): `size`, `vision`, `childShare` and `learn`. A trait is `1 + 0.3 x tanh(gene)`, so 0.7x to 1.3x of the default
+- **Trait genes** (`TRAIT_INDEX`): `size`, `vision`, `childShare` and `learn` are read; the other fourteen named slots and six spare ones
+  (`TRAIT_SLOTS` 24) start at 0 and are read by nothing yet (docs/designs/body-genes.md). A trait is `1 + 0.3 x tanh(gene)`, so 0.7x to 1.3x of the default
   (`traitValue`). Vision costs extra passive energy above 1 (`visionCost`). `learn` scales Hebbian plasticity.
 - **Specialisation** is not a gene: a child takes its mother's, except with probability `specMutationRate` (0.02) a random other one (`js/sim/heritable-spec.js`).
 

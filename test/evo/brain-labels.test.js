@@ -3,10 +3,10 @@ import { GENE_OUTPUTS, OUTPUT_INDEX, POOLED_VALUES } from '../../js/sim/brain-la
 import { inputLabels, outputLabels, unitLabel } from '../../js/evo/brain-labels.js';
 
 describe('inputLabels', () => {
-    it('labels all pooled rays, food hues and body inputs in brain row order', () => {
+    it('labels all pooled rays, body sense values, food hues and body inputs in brain row order', () => {
         const labels = inputLabels();
 
-        expect(labels).toHaveLength(92);
+        expect(labels).toHaveLength(106);
         expect(labels.slice(0, 6)).toEqual([
             'food.hit0.strength',
             'food.hit0.cos',
@@ -22,12 +22,13 @@ describe('inputLabels', () => {
             'vel.forward',
             'vel.side',
         ]);
+        expect(labels.slice(54, 57)).toEqual(['prey.size0', 'prey.speed0', 'prey.closing0']);
         expect(labels.slice(-5)).toEqual([
-            'memory_a',
             'memory_b',
             'refuge.bearing_sin',
             'refuge.bearing_cos',
             'refuge.near',
+            'reserve',
         ]);
     });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    BODY_SENSE_VALUES,
     POOLED_CHANNELS,
     POOLED_STRIDE,
     POOLED_VALUES,
@@ -16,7 +17,8 @@ import { addAgent, addFood, rebuild, senseWorld } from './helpers/sense-world.js
  * The naive per-channel reference: scan every ray for the channel, keep the largest proximity (the first ray on a tie).
  * @param {ReturnType<typeof senseWorld>} w the world
  * @param {number} slot the slot
- * @returns {number[]} the 56 pooled values then the body block
+ * @returns {number[]} the 69 pooled values (the body sense values read 0 until the ray lanes are pooled) then the body
+ *   block
  */
 function reference(w, slot) {
     const { rayCount } = w.config;
@@ -40,7 +42,7 @@ function reference(w, slot) {
             out.push(...(k === undefined ? [0, 0, 0] : [proximity(k), w.rayCos[k], w.raySin[k]]));
         }
     }
-    out.push(...hues);
+    out.push(...new Array(BODY_SENSE_VALUES).fill(0), ...hues);
     const body = raw + rayCount * RAY_CHANNELS;
     out.push(...w.inputs.subarray(body, raw + w.layout.rawInputCount));
     return out.map(Math.fround);
@@ -140,7 +142,8 @@ describe('poolRays', () => {
         senseAll(w, rebuild(w));
         poolRays(w, me);
         const at = me * w.layout.inputCount;
-        expect(Array.from(w.pooled.subarray(at + 54, at + 56))).toEqual([-0.75, 0.5]);
+        const hue = at + inputOffsets(w.config).foodHueStart;
+        expect(Array.from(w.pooled.subarray(hue, hue + 2))).toEqual([-0.75, 0.5]);
         expect(w.pooled[at + 1]).toBe(1);
         expect(w.pooled[at + 4]).toBe(-1);
     });
@@ -153,8 +156,9 @@ describe('poolRays', () => {
         senseAll(w, rebuild(w));
         poolRays(w, me);
         const at = me * w.layout.inputCount;
+        const hue = at + inputOffsets(w.config).foodHueStart;
         expect(w.pooled[at]).toBeGreaterThan(0);
-        expect(w.pooled[at + 54]).toBe(0);
+        expect(w.pooled[hue]).toBe(0);
         w.foodHue[food] = 0.75;
         senseAll(w, rebuild(w));
         expect(w.rayHue[me * 8]).toBe(0.75);
@@ -164,8 +168,8 @@ describe('poolRays', () => {
         poolRays(w, me);
         expect(Array.from(w.rayHue.subarray(me * 8, (me + 1) * 8))).toEqual(new Array(8).fill(0));
         expect(w.pooled[at]).toBe(0);
-        expect(w.pooled[at + 54]).toBe(0);
-        expect(w.pooled[at + 55]).toBe(0);
+        expect(w.pooled[hue]).toBe(0);
+        expect(w.pooled[hue + 1]).toBe(0);
     });
 });
 
