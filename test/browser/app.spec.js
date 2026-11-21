@@ -311,6 +311,37 @@ test('C, I and ? open one drawer each, Escape closes it', async ({ page }) => {
     await expect(open).toHaveCount(0);
 });
 
+test('D opens the insights drawer with every tab filled, Shift+D makes it the board, Escape closes it', async ({
+    page,
+}) => {
+    await page.goto(appUrl() + WORLD);
+    await worldRunning(page);
+    await page.keyboard.press('KeyD');
+    await expect(page.locator('.drawer-insights.open')).toBeAttached();
+    await expect(page.locator('.insights-world .insights-readings .insights-row')).not.toHaveCount(0, {
+        timeout: 5_000,
+    });
+    await expect(page.locator('.drawer-insights .uplot')).toHaveCount(5, { timeout: 20_000 });
+    await page.locator('.insights-tab', { hasText: 'Scenes' }).click();
+    await expect(page.locator('.insights-scenes .insights-row')).toHaveCount(15);
+    await expect(page.locator('.insights-scenes .insights-row.muted')).toHaveCount(6);
+    await page.locator('.insights-tab', { hasText: 'Families' }).click();
+    await expect(page.locator('.insights-families .insights-row:not([hidden])')).not.toHaveCount(0, {
+        timeout: 5_000,
+    });
+    await page.locator('.insights-tab', { hasText: 'Records' }).click();
+    await expect(page.locator('.insights-records .insights-row:not([hidden])')).toHaveCount(4, { timeout: 5_000 });
+    await page.locator('.insights-tab', { hasText: 'Export' }).click();
+    await expect(page.locator('.insights-command')).toContainText('npm run replay -- --seed 3');
+    await page.keyboard.press('Shift+KeyD');
+    await expect(page.locator('.drawer-insights.insights-board.open')).toBeAttached();
+    await expect(page.locator('html.insights-board-on')).toBeAttached();
+    await expect(page.locator('.insights-panel:not([hidden])')).toHaveCount(5);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.drawer.open')).toHaveCount(0);
+    await expect(page.locator('html.insights-board-on')).toHaveCount(0);
+});
+
 test('keys 1 to 4 toggle the lenses and the choice is remembered', async ({ page }) => {
     await page.goto(appUrl() + WORLD);
     await worldRunning(page);

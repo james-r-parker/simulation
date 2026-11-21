@@ -91,6 +91,19 @@ describe('noteTick', () => {
         expect(tickerEvents(live)).toMatchObject([{ kind: 'hunt-streak', genomeId: 99, x: 40, y: 50 }]);
     });
 
+    it('queues record-streak when a hunter passes the longest streak announced', () => {
+        const { world, observer, live } = setup();
+        world.alive[2] = 1;
+        world.x[2] = 40;
+        world.y[2] = 50;
+        observer.slotOf.set(99, 2);
+        observer.spec[2] = 1;
+        observer.kills[2] = HUNT_STREAK_KILLS + 1;
+        event(world, EVENT_TYPE.AGENT_DIED, 60, [0, 7, DEATH_CAUSE.EATEN, 99, 0, 3]);
+        noteTick(live, world, observer);
+        expect(tickerEvents(live)).toMatchObject([{ kind: 'record-streak', genomeId: 99, x: 40, y: 50 }]);
+    });
+
     it('does not announce a fifth kill by an agent that cannot hunt', () => {
         const { world, observer, live } = setup();
         world.alive[2] = 1;
@@ -177,6 +190,50 @@ describe('collectStats', () => {
         });
         expect(stats.seasonProgress).toBeCloseTo(0.5, 9);
         expect([stats.generationMax, stats.generationMedian]).toEqual([0, 0]);
+    });
+
+    it('reports the families with their numbers, and the records with their holders', () => {
+        const { world, observer, live, policy } = setup();
+        for (const [slot, lineage, spec, age] of [
+            [0, 5, 0, 40],
+            [1, 5, 1, 90],
+            [2, 8, 1, 10],
+        ]) {
+            world.alive[slot] = 1;
+            world.lineageId[slot] = lineage;
+            world.spec[slot] = spec;
+            world.ageTicks[slot] = age;
+            world.genomeId[slot] = 100 + slot;
+        }
+        observer.kills[1] = 3;
+        world.population = 3;
+        const stats = collectStats(
+            live,
+            { world, observer, policy, generations: createGenerations(world.config) },
+            RUN,
+        );
+        expect(stats.families.map((/** @type {any} */ f) => [f.id, f.count, f.oldestGenomeId, f.kills])).toEqual([
+            [5, 2, 101, 3],
+            [8, 1, 102, 0],
+        ]);
+        expect(stats.records.longestLife).toEqual({ value: 90, genomeId: 101, alive: true });
+        expect(stats.records.mostKills).toEqual({ value: 3, genomeId: 101, alive: true });
+    });
+
+    it('reports the food energy and the mean temperature', () => {
+        const { world, observer, live, policy } = setup();
+        world.alive[0] = 1;
+        world.temperature[0] = 0.5;
+        world.population = 1;
+        world.foodAlive.fill(0);
+        world.foodAlive[0] = 1;
+        world.foodValue[0] = 42;
+        const stats = collectStats(
+            live,
+            { world, observer, policy, generations: createGenerations(world.config) },
+            RUN,
+        );
+        expect([stats.foodEnergy, stats.meanTemperature]).toEqual([42, 0.5]);
     });
 
     it('reports the predators, the calls per 1000 ticks and the largest specialisation', () => {

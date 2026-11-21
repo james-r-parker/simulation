@@ -215,6 +215,7 @@ describe('page actions', () => {
         const ui = {
             toggleDrawer: (/** @type {string} */ d) => calls.push(`drawer ${d}`),
             closeDrawer: () => (calls.push('closeDrawer'), drawerOpen),
+            toggleBoard: () => calls.push('board'),
             toggleHud: () => calls.push('hud'),
             toggleAudio: () => calls.push('audio'),
             volumeDown: () => calls.push('volDown'),
@@ -255,6 +256,7 @@ describe('page actions', () => {
             config: {},
         });
         for (const a of [
+            'toggleBoard',
             'toggleHud',
             'toggleAudio',
             'volumeDown',
@@ -276,6 +278,8 @@ describe('page actions', () => {
         for (const a of [
             'toggleCharts',
             'toggleInspector',
+            'toggleInsights',
+            'toggleBoard',
             'toggleHelp',
             'toggleHud',
             'toggleAudio',
@@ -294,6 +298,8 @@ describe('page actions', () => {
         expect(calls).toEqual([
             'drawer charts',
             'drawer inspector',
+            'drawer insights',
+            'board',
             'drawer help',
             'hud',
             'audio',

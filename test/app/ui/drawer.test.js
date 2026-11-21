@@ -33,7 +33,7 @@ describe('mountDrawers', () => {
             onOpen: (name, body) => calls.push(`open ${name} ${body.className}`),
             onClose: (name) => calls.push(`close ${name}`),
         });
-        expect(root.children).toHaveLength(3);
+        expect(root.children).toHaveLength(4);
         drawers.dispatch({ type: 'toggle', drawer: 'charts' });
         drawers.dispatch({ type: 'toggle', drawer: 'inspector' });
         drawers.dispatch({ type: 'closeAll' });
@@ -48,6 +48,16 @@ describe('mountDrawers', () => {
         const [panel] = byClass(root, 'drawer-charts');
         expect(panel.classList.contains('open')).toBe(false);
         expect(panel.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    it('reports the drawer as open to its own open hook, so the hook can build into it', () => {
+        const root = fakeDocument().createElement('div');
+        const seen = /** @type {unknown[]} */ ([]);
+        /** @type {ReturnType<typeof mountDrawers>} */
+        const drawers = mountDrawers(fakeDocument(), root, { onOpen: () => seen.push(drawers.state()) });
+        drawers.dispatch({ type: 'open', drawer: 'charts' });
+        drawers.dispatch({ type: 'open', drawer: 'help' });
+        expect(seen).toEqual(['charts', 'help']);
     });
 
     it('marks the open panel visible to assistive technology', () => {

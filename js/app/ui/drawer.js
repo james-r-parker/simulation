@@ -1,11 +1,11 @@
-// Which drawer is open: `charts`, `inspector`, `help` or none, at most one. `drawerReducer` is the whole rule;
-// `mountDrawers` owns three panel elements that slide in from the right and reports each open and close.
+// Which drawer is open: `charts`, `inspector`, `help`, `insights` or none, at most one. `drawerReducer` is the whole rule;
+// `mountDrawers` owns a panel element for each that slide in from the right and reports each open and close.
 
 /** The drawers, in the order the controls list them. */
-export const DRAWERS = Object.freeze(['charts', 'inspector', 'help']);
+export const DRAWERS = Object.freeze(['charts', 'inspector', 'help', 'insights']);
 
 /**
- * @typedef {'charts' | 'inspector' | 'help' | null} DrawerState
+ * @typedef {'charts' | 'inspector' | 'help' | 'insights' | null} DrawerState
  */
 
 /**
@@ -66,12 +66,12 @@ export function mountDrawers(doc, root, hooks = {}) {
                     panels[open].setAttribute('aria-hidden', 'true');
                     hooks.onClose?.(open, panels[open]);
                 }
+                open = next;
                 if (next !== null) {
                     panels[next].classList.add('open');
                     panels[next].setAttribute('aria-hidden', 'false');
                     hooks.onOpen?.(next, panels[next]);
                 }
-                open = next;
             }
             return open;
         },
