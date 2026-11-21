@@ -341,7 +341,8 @@ function chargeStrikeMisses(world) {
     const { alive, outputs, jawsStamp, lanes } = world;
     const stamp = world.tick + 1;
     for (let slot = 0; slot < alive.length; slot++) {
-        if (alive[slot] === 1 && outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 && jawsStamp[slot] !== stamp) {
+        const miss = alive[slot] === 1 && lanes.strikeMissCost[slot] > 0;
+        if (miss && outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 && jawsStamp[slot] !== stamp) {
             world.ledgerBiteCost[slot] += removeEnergy(world, slot, lanes.strikeMissCost[slot], LOSS_CAUSE.COST);
         }
     }
