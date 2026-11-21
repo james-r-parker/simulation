@@ -66,7 +66,7 @@ When one agent hands tasks to others (user, 2026-10-22):
 
 ### Pushing, deploying and releases
 
-Push and open PRs only when the user asks. A manual deploy needs the user's ask; merging the release PR deploys production automatically (a merge to `main` does not; it deploys `/next/` through `preview.yml`, and a pull request from this repo deploys a preview). A change to `rulesHash` is a breaking commit (`!`) that targets `season/next`; while uploads are closed there is no season gap, so the season opens on `main` as soon as its keep-rule read is done, with retrained champions and the league required only from Phase 3 (`docs/designs/deployment-and-community.md` Phase 1c). `CHANGELOG.md` and the `package.json` version are written by the release PR only. Secrets live in GitHub and Cloudflare, never in the repo.
+Push and open PRs only when the user asks. A manual deploy needs the user's ask; merging the release PR deploys production automatically (a merge to `main` does not; it deploys `/next/` through `preview.yml`, and a pull request from this repo deploys a preview). A change to `rulesHash` is a breaking commit (`!`) on `main` with a breaking PR title, and the same PR adds the next `library/seasons.json` entry (or moves the unreleased newest season's `rulesHash` in place); there is no `season/next` branch (user, 2026-11-21), and `release-check` enforces both. While uploads are closed there is no season gap, with retrained champions and the league required only from Phase 3 (`docs/designs/deployment-and-community.md` Phase 1c). `CHANGELOG.md` and the `package.json` version are written by the release PR only. Secrets live in GitHub and Cloudflare, never in the repo.
 
 ## Boundaries
 
