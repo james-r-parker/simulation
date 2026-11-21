@@ -4,7 +4,7 @@
 
 import { MAX_TICKS } from './role-budget-timeline.js';
 import { cell } from './role-budget-cell.js';
-import { escortGap } from './role-budget-escort.js';
+import { escortGap, guardPosture } from './role-budget-escort.js';
 import { charge, costOf, createBody, stepBody } from './role-budget-body.js';
 import { norm, speedStep, swingTicks } from './role-budget-kinematics.js';
 import { steerOut } from './role-budget-play.js';
@@ -215,6 +215,27 @@ function smokeMargin({ refused, state, slacks }) {
 
 /**
  * @param {Array<import('./role-budget-params.js').RoleParams>} bodies the hunter, the caller and the defender
+ * @param {{standing?: number} & import('./role-budget-model.js').RoleModel} model the model options
+ * @param {{length: number, spot: number}} line the hunter-to-caller length and the release spot's x
+ * @returns {{ticks: number, x: number, y: number, angle: number, turned: boolean}} where the defender releases from, the
+ *   ticks it walks there and whether it must turn to face the caller: a defender already `standing` on the spot, or guarding
+ *   between the hunter and the caller (on its post, facing the hunter), has walked nothing and turns; one beside the caller
+ *   walks to the spot, stopped
+ */
+function defenderWalk([, caller, defender], model, { length, spot }) {
+    if (model.standing !== undefined) {
+        return { ticks: 0, x: spot, y: 0, angle: model.standing, turned: true };
+    }
+    if (guardPosture(model) === 'between') {
+        return { ticks: 0, x: length - escortGap(defender, caller, model), y: 0, angle: Math.PI, turned: true };
+    }
+    const to = { x: spot, y: 0 };
+    const from = { x: length, y: escortGap(defender, caller, model) };
+    return { ...walkAndStop(defender, { from, angle: -Math.PI / 2, to }), turned: false };
+}
+
+/**
+ * @param {Array<import('./role-budget-params.js').RoleParams>} bodies the hunter, the caller and the defender
  * @param {import('./role-budget-model.js').RoleModel & {sinceRelease?: number, facing?: 'caller' | 'hunter',
  *   gap?: number, standing?: number}} model the model options; `facing` is where the defender faces when it releases
  *   (default the caller); `standing` is the heading of a defender already on the spot at rest (it walked there; default:
@@ -224,16 +245,8 @@ function smokeMargin({ refused, state, slacks }) {
 export function defenderSmokeGeometry([hunter, caller, defender], model) {
     const length = model.gap ?? viewReach(caller, Math.PI) + hunter.size;
     const spot = length - (caller.size + defender.size);
-    const walk =
-        model.standing === undefined
-            ? walkAndStop(defender, {
-                  from: { x: length, y: escortGap(defender, caller, model) },
-                  angle: -Math.PI / 2,
-                  to: { x: spot, y: 0 },
-              })
-            : { ticks: 0, x: spot, y: 0, angle: model.standing };
-    const facing =
-        model.standing === undefined ? 0 : Math.ceil(swingTicks(spread(walk.angle), defender.turnRate.start));
+    const walk = defenderWalk([hunter, caller, defender], model, { length, spot });
+    const facing = walk.turned ? Math.ceil(swingTicks(spread(walk.angle), defender.turnRate.start)) : 0;
     const cloud = { x: walk.x - (defender.size + defender.smoke.radius), y: walk.y, r: defender.smoke.radius };
     const releaseTick = 2 * model.reactionTicks + 1 + walk.ticks + facing;
     const xs = hunterXs(hunter, { speed: hunter.cap.cruise });

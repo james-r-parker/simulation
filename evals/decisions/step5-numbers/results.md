@@ -161,6 +161,35 @@ change it is not an escort distance but the defender's start (facing the hunter,
 speed, which is a body or behaviour question for the coordinator. The walk scene of `--check` is not read at 87 px (the path to
 the smoke spot grazes the caller, which the formula has no bumps for) and is read at 150 px in `test/evo/role-budget-defence-check.test.js`.
 
+## The defender row in a guard posture (2026-11-21)
+
+User decision (2026-11-21): try the guard posture first, fall back to speed. `guardPosture` `between` (a model option,
+`--model guardPosture=between`; the derived default stays `side`) stands the defender on the hunter's approach line, `escortGap` (87 px)
+from the caller, facing the hunter, at rest, and aims it straight at it (no lead). No world rule or sim key changed. Readings, the
+defaults and `evals/role-budget/step5-d.json` alike, every effect off, and with the shove on (`defenderRepelEnergy` 40,
+`defenderRepelImpulse` 4):
+
+| reading                         | side-on (before)       | guard, shove off       | guard, shove on                |
+| ------------------------------- | ---------------------- | ---------------------- | ------------------------------ |
+| status, binding                 | impossible, repel: off | impossible, repel: off | impossible, smoke              |
+| hear, turn, run                 | ok, n/a, X             | ok, ok, ok             | ok, ok, ok                     |
+| intercept                       | impossible             | impossible (shove off) | ok: touch and shove at tick 15 |
+| kill tick (27 with no defender) | 27                     | none in the run        | none in the run                |
+| smoke walk, release, latest     | 37, 42, 9              | 0, 26, 5               | 0, 26, 5                       |
+| smoke slack defender, caller    | -33, -2                | -21, -20               | -21, -20                       |
+
+The guard fixes the defence: the defender reaches the hunter at tick 15 and, with the shove on, shoves it, with every body number at
+its default. Caveat: the model's perfect hunter steers at the caller and has no path round a blocker, so it never kills in the run;
+the intercept slack is read against the 27-tick kill with no defender, and the no-kill is an upper bound. The row stays red on the
+**smoke**: a guard faces the hunter and the cloud drops behind the releaser, so it must turn 180 degrees first (release at tick 26
+against a latest release of tick 5).
+
+Speed fallback (guard on, shove on, step5-d, `turnMultiplier` with `body.maxThrust` x1 and x2 and `sprintBoost` 2): turn x1 smoke
+slack -21 (release tick 26), x2 -11 (16), x4 -6 (11), x8 -3 (8), x20 -2 (7), against a latest release of 5; the caller's smoke slack is
+-20 to -26 at every value; thrust x2 and `sprintBoost` 2 change nothing in the smoke. **No set up to x2 turns the row non-red** (turn
+x2 reads -11), and not even x20 does, so no arm `step5-e.json` was written. The defence needs no speed; the smoke needs a release
+without the 180 degree turn (behaviour, or a cloud dropped ahead of the releaser), which no body multiplier supplies.
+
 ## The three prey run rows
 
 `forager:predator` and `reproducer:predator` read `encountersPerLife` (138) against a perfect hunter over an adult life of 71400 ticks.

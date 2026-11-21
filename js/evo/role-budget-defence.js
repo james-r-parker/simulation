@@ -19,7 +19,9 @@ const STILL = Object.freeze({ turn: 0, sprint: 0, thrust: 0 });
  * @typedef {object} DefenceOptions
  * @property {number} reaction the ticks from a stimulus to the output (the model's `reactionTicks`)
  * @property {number} threshold the `heard` loudness a brain acts on
- * @property {number} side the distance of the defender from the caller, beside it
+ * @property {number} side the distance of the defender from the caller: beside it, or in front of it on the hunter's line
+ * @property {'side' | 'between'} [posture] where the defender stands (default `side`: beside the caller, at right angles to
+ *   the hunter, facing away from it); `between` stands it on the hunter's approach line, facing the hunter, at rest
  * @property {{hear?: number, turn?: number, run?: number}} [delays] ticks added at one step of the defender
  * @property {boolean} [absent] whether there is no defender (the baseline of the kill)
  * @property {'rest' | 'cruise'} [hunterStart] the hunter's speed at tick 0 (default `cruise`: it was creeping)
@@ -70,6 +72,9 @@ function shove(d, h) {
     h.vy += ny * repel.impulse;
 }
 
+/** @param {DefenceOptions} options the options @returns {boolean} whether the defender stands between the hunter and the caller */
+const guarding = (options) => options.posture === 'between';
+
 /**
  * @param {import('./role-budget-params.js').RoleParams} hunter the hunter
  * @param {import('./role-budget-params.js').RoleParams} caller the caller
@@ -85,7 +90,12 @@ function stage(hunter, caller, defender, options) {
     return {
         h: createBody(hunter, { x: 0, y: 0, angle: 0, speed }),
         c: createBody(caller, { x: gap, y: 0, angle: 0 }),
-        d: createBody(defender, { x: gap, y: options.side, angle: -Math.PI / 2 }),
+        d: createBody(
+            defender,
+            guarding(options)
+                ? { x: gap - options.side, y: 0, angle: Math.PI }
+                : { x: gap, y: options.side, angle: -Math.PI / 2 },
+        ),
     };
 }
 
@@ -288,6 +298,11 @@ function defenderOut(s, tick) {
     if (out.startTick < 0 || tick < out.startTick) {
         return STILL;
     }
-    const chase = hunterOut(d, h, { ...VIEW_PLAY, runAt: delays.run }, tick - out.startTick);
+    const chase = hunterOut(
+        d,
+        h,
+        { ...VIEW_PLAY, runAt: delays.run, lead: guarding(s.options) ? 0 : undefined },
+        tick - out.startTick,
+    );
     return { ...chase, thrust: d.p.thrust.graze / d.p.thrust.cruise };
 }
