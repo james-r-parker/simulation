@@ -1,0 +1,19 @@
+{
+  "id": "E270",
+  "plan": "status-effects.md",
+  "task": "T12",
+  "stream": "lane-b",
+  "date": "2026-11-21",
+  "branch": "docs/e270-effect-share",
+  "hypothesis": "With every Phase 2 effect at its neutral numbers, the stored effects whose raise does not depend on a social strength (the cold stack and the bite stacks) are on for a measurable share of agent-ticks, and the social effects whose raise or payoff is gated by a strength at 0 read 0, so eval.effect_share has a live baseline before status-effects Phase 3 chooses the numbers.",
+  "prediction": "chilled on for a large share (the cold already bites at the defaults); wounded, panicked and shaken small but above 0; rallied, answered, alert, huddled and staggered at 0; hoarse about 0; the rally and answer metrics null.",
+  "targets": [],
+  "before": "none: eval.effect_share.* had never been read on 16 seeds",
+  "after": "live policy, 16 seeds x 200000 ticks on main 7f404cdb: chilled 0.199, wounded 0.0149, shaken 0.0039, panicked 0.0032, hoarse 4.5e-7, rallied 0, answered 0, alert 0, huddled 0, staggered 0; eval.rally_bite_share, eval.hunt_call_answer and eval.alarm_response null on every seed",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "A baseline read, no arm and no default changed (npm run eval -- --seeds 16 --ticks 200000 --policy live, 1210 s on 12 workers, report evals/results/E270-effect-share.json, not committed). As predicted: the social effects stay at 0 while their strengths are 0, so their scene metrics are null and status-effects Phase 3 (T15 to T17) is what can move them. The cold stack is on for a fifth of agent-ticks at the defaults, which the birth-energy and cold numbers of step 5 should read.",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "reports": ["evals/decisions/e270-effect-share/results.md"]
+}

@@ -1,6 +1,6 @@
 # Status effects
 
-**Status:** In progress - Phases 1 and 2 are built: every modifier of today reads through `liveOf` and `gateOpen`, and the ten social effects exist with their numbers at 0 (both are fully reviewed, T8 and T14; the 16-seed share run is with the coordinator). Phase 3 has begun: T13, the calculator's `effects` and the `pack:forager` row, is built. Next: the numbers (T15 to T19).
+**Status:** In progress - Phases 1 and 2 are built: every modifier of today reads through `liveOf` and `gateOpen`, and the ten social effects exist with their numbers at 0 (both are fully reviewed, T8 and T14; the 16-seed share baseline is E270). Phase 3 has begun: T13, the calculator's `effects` and the `pack:forager` row, is built. Next: the numbers (T15 to T19).
 **Validated:** 23e8cc66 (2026-11-21)
 **Scheduled by:** [fair-chase.md](fair-chase.md) step 2 - built straight after body-genes.md Phase 1 and before the calculator, which reads the effects; every large rules change lands before any training
 **Depends on:** [body-genes.md](body-genes.md)
@@ -291,7 +291,7 @@ fixes reach the target first.
 | T9  | (built) Add `chilled` (the cold stack), `wounded`, `panicked` and `shaken` with their keys at 0, the `by` field with the `nerve` lane, and their applier tests                                                                                                                                                                           | [judgement] | T8           |
 | T10 | (built) Add `world.heardFrom` in `hearOne`, `hearThreshold`, and `rallied`, `answered` and `hoarse` with their keys at 0: one stack per call heard, `answered` on a kill both hunters bit, `hoarse` for a wasted call with a geometric cost (user, 2026-11-21) and the two ways a stack comes off; the applier tests of the Delivery row | [judgement] | T8           |
 | T11 | (built) Add `alert` (seen alarms only), `huddled` (fed kin only; the pass over the spatial hash every 8 ticks) and `staggered` (the `DefenderShoved` event in `tryDefenderRepel`) with their keys at 0                                                                                                                                   | [judgement] | T8           |
-| T12 | (built, the 16-seed run left to the coordinator) Add `js/evo/scene-effects.js` and the four detectors with their source tests and registry entries; run 16 seeds and record `eval.effect_share.*`                                                                                                                                        | [judgement] | T9, T10, T11 |
+| T12 | (built; the 16-seed run is E270: `chilled` 0.199, `wounded` 0.015, `shaken` 0.004, `panicked` 0.003, every social effect 0 at its neutral numbers) Add `js/evo/scene-effects.js` and the four detectors with their source tests and registry entries; run 16 seeds and record `eval.effect_share.*`                                      | [judgement] | T9, T10, T11 |
 | T14 | (built) Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh` (reviewed 2026-11-21, nothing blocking, see "As built in T14")                                                                                                                                                                               | [judgement] | T12          |
 
 ### Phase 3 - The numbers
