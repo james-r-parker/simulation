@@ -2,6 +2,7 @@
 // floor binds, whether lineages differ in their leak, and how much of a hidden row survives 16 ticks. They read the
 // checkpoint's sampled agents (`observer.sampled`, the slots `diversity` drew) and make no draw of their own. All `watch`.
 
+import { isKnockedOut } from '../sim/traits.js';
 import { stddev, ok, none, share } from './metrics-stats.js';
 
 /** A unit with `a` at most this is slow: a half-life of at least 6.6 ticks. */
@@ -45,6 +46,10 @@ export function createMemoryPools(config, options = {}) {
         leakUnits: 0,
         slowUnits: 0,
         floorUnits: 0,
+        knockedUnits: 0,
+        totalUnits: 0,
+        hunterKnockedUnits: 0,
+        hunterTotalUnits: 0,
         spreadSum: 0,
         spreadCheckpoints: 0,
         persistSum: 0,
@@ -88,16 +93,30 @@ function addLeak(pools, world, slot) {
     const { layout, weights, leakRate } = world;
     const H = layout.hidden;
     const genes = slot * layout.weightCount + layout.leakStart;
+    const hunts = world.huntBySpec[world.spec[slot]] === 1;
     let sum = 0;
+    let knocked = 0;
     for (let j = 0; j < H; j++) {
+        const gene = weights[genes + j];
+        if (isKnockedOut(gene)) {
+            knocked += 1;
+            continue;
+        }
         const a = leakRate[slot * H + j];
         sum += a;
         pools.slowUnits += a <= SLOW_LEAK ? 1 : 0;
-        pools.floorUnits += weights[genes + j] <= FLOOR_GENE ? 1 : 0;
+        pools.floorUnits += gene <= FLOOR_GENE ? 1 : 0;
+    }
+    const active = H - knocked;
+    pools.knockedUnits += knocked;
+    pools.totalUnits += H;
+    if (hunts) {
+        pools.hunterKnockedUnits += knocked;
+        pools.hunterTotalUnits += H;
     }
     pools.leakSum += sum;
-    pools.leakUnits += H;
-    return sum / H;
+    pools.leakUnits += active;
+    return active > 0 ? sum / active : NaN;
 }
 
 /**
@@ -112,6 +131,9 @@ function addSpread(pools, observer, slots) {
     const { agentMean, groupLineage, groupSum, groupCount, groupMean } = pools;
     let groups = 0;
     for (let i = 0; i < slots.length; i++) {
+        if (Number.isNaN(agentMean[i])) {
+            continue;
+        }
         const lineage = observer.lineageId[slots[i]];
         let g = 0;
         while (g < groups && groupLineage[g] !== lineage) {
@@ -203,6 +225,12 @@ export function memoryMetrics(observer) {
         'eval.leak_rate_mean': share(p.leakSum, p.leakUnits, no),
         'eval.leak_slow_share': share(p.slowUnits, p.leakUnits, no),
         'eval.leak_at_floor_share': share(p.floorUnits, p.leakUnits, no),
+        'eval.knockout_unit_share': share(p.knockedUnits, p.totalUnits, no),
+        'eval.knockout_unit_share.hunter': share(
+            p.hunterKnockedUnits,
+            p.hunterTotalUnits,
+            'no sampled hunter after burn-in',
+        ),
         'eval.leak_lineage_spread': spread,
         'eval.hidden_persistence': persistence,
     };

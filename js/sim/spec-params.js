@@ -18,3 +18,17 @@ export function specParams(config, index) {
     }
     throw new Error(`specParams: no specialisation has index ${index}`);
 }
+
+/**
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {string} field a numeric field of each specialisation entry
+ * @returns {Float64Array} that field of each specialisation, indexed by its `index`
+ */
+export function specTable(config, field) {
+    const specs = Object.values(config.specialisations);
+    const table = new Float64Array(Math.max(...specs.map((s) => s.index)) + 1);
+    for (const s of specs) {
+        table[s.index] = s[field];
+    }
+    return table;
+}

@@ -36,6 +36,7 @@ pub struct PhysicsParams {
     contacts: u32,
     doubles: u32,
     impact: u32,
+    sprint_factor: u32,
     max_agents: u32,
     obs_count: u32,
     output_count: u32,
@@ -162,7 +163,8 @@ impl Bodies {
         unsafe { *a.add(i) = v as f32 }
     }
 
-    /// `moveAgent`: damping, the speed cap (raised while sprinting) and the move of one agent.
+    /// `moveAgent`: damping, the speed cap (raised while sprinting, by the sprint boost times the agent's sprint-store
+    /// factor, 1 with the store off) and the move of one agent.
     unsafe fn move_agent(&self, i: usize, damping: f64, max_v: f64, sprint_mul: f64) {
         let p = self.p;
         // SAFETY: `i` is an agent slot, its output row and spec entry exist, and the spec indexes the table.
@@ -172,8 +174,9 @@ impl Bodies {
             Self::put(vy, i, Self::get(vy, i) * damping);
             let sprint = *at::<f32>(p.outputs).add(i * p.output_count as usize + p.sprint_output as usize);
             let boost = *at::<f64>(p.sprint_by_spec).add(*at::<u8>(p.spec).add(i) as usize);
+            let factor = *at::<f64>(p.sprint_factor).add(i);
             let cap = if sprint > 0.0 {
-                max_v * (1.0 + sprint_mul * boost)
+                max_v * (1.0 + sprint_mul * boost * factor)
             } else {
                 max_v
             };
@@ -411,7 +414,7 @@ pub unsafe fn resolve_contacts(params: u32) -> i32 {
 #[cfg(test)]
 mod tests {
     extern crate std;
-    use super::{PhysicsParams, bounce_rocks};
+    use super::{PhysicsParams, bounce_rocks, move_all};
     use std::{boxed::Box, vec, vec::Vec};
 
     /// One agent in slot 0 and the rocks given, laid out as `writePhysicsParams` would; only the fields `bounce_rocks`
@@ -465,6 +468,7 @@ mod tests {
                 contacts: 0,
                 doubles: 0,
                 impact: 0,
+                sprint_factor: 0,
                 max_agents: 1,
                 obs_count: rocks.len() as u32,
                 output_count: 0,
@@ -530,6 +534,53 @@ mod tests {
             &[[500.0, 500.0, 10.0], [900.0, 100.0, 10.0]],
         );
         assert_eq!(bounce(&mut s), (-1, 0.0));
+    }
+
+    /// The speed after one `move_all` of a sprinting agent in slot 0 moving +x at 20 with the given sprint-store factor:
+    /// no damping, a cap of 8, a sprint multiplier of 0.5 and a boost of 1.6, so the sprint cap is `8 x (1 + 0.8 x f)`.
+    fn sprint_speed(factor: f64) -> f32 {
+        let (mut x, mut y, mut vx, mut vy, mut size) = (vec![0f32], vec![0f32], vec![20f32], vec![0f32], vec![5f32]);
+        let (mut alive, mut spec, mut outputs) = (vec![1u8], vec![0u8], vec![1f32]);
+        let (mut boost, mut doubles, mut lane) = (vec![1.6f64], vec![1.0, 8.0, 0.5, 0.0, 0.0, 0.0, 0.0], vec![factor]);
+        let p = PhysicsParams {
+            alive: addr(&mut alive),
+            x: addr(&mut x),
+            y: addr(&mut y),
+            vx: addr(&mut vx),
+            vy: addr(&mut vy),
+            size: addr(&mut size),
+            spec: addr(&mut spec),
+            outputs: addr(&mut outputs),
+            sprint_by_spec: addr(&mut boost),
+            obs_x: 0,
+            obs_y: 0,
+            obs_radius: 0,
+            cell_start: 0,
+            entries: 0,
+            box_x: 0,
+            box_y: 0,
+            contacts: 0,
+            doubles: addr(&mut doubles),
+            impact: 0,
+            sprint_factor: addr(&mut lane),
+            max_agents: 1,
+            obs_count: 0,
+            output_count: 1,
+            sprint_output: 0,
+            cols: 0,
+            rows: 0,
+            max_contacts: 0,
+        };
+        // SAFETY: the block addresses the vectors above, which outlive the call.
+        unsafe { move_all(&p as *const PhysicsParams as usize as u32) };
+        vx[0]
+    }
+
+    #[test]
+    fn the_sprint_cap_scales_with_the_store_factor() {
+        assert_eq!(sprint_speed(1.0), (8.0 * (1.0 + 0.5 * 1.6)) as f32);
+        assert_eq!(sprint_speed(0.5), (8.0 * (1.0 + 0.5 * 1.6 * 0.5)) as f32);
+        assert_eq!(sprint_speed(0.0), 8.0);
     }
 
     #[test]

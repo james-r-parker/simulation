@@ -26,6 +26,8 @@ export const TOUCH_GAP = 1.01;
  * @property {boolean} preyDied whether the prey was dead at the last tick noted
  * @property {boolean} subjectDied whether the subject was dead at the last tick noted
  * @property {boolean} subjectStarvedOrRecoiled whether the subject starved or paid recoil on a death tick
+ * @property {number} pursuerStoreMin the subject's lowest sprint store while both lived (Infinity with the store off)
+ * @property {number} evaderStoreMin the prey's lowest sprint store while both lived (Infinity with the store off)
  */
 
 /** @returns {PreyTrace} a trace of a trial not yet played */
@@ -38,6 +40,8 @@ export function createPreyTrace() {
         preyDied: false,
         subjectDied: false,
         subjectStarvedOrRecoiled: false,
+        pursuerStoreMin: Infinity,
+        evaderStoreMin: Infinity,
     };
 }
 
@@ -86,6 +90,11 @@ function noteApproach(trace, world) {
     trace.jawTicks += inJaws ? 1 : 0;
     trace.biteTicks += biting ? 1 : 0;
     trace.biteJawTicks += biting && inJaws ? 1 : 0;
+    const store = world.sprintStore;
+    if (store !== undefined) {
+        trace.pursuerStoreMin = Math.min(trace.pursuerStoreMin, store.level[0]);
+        trace.evaderStoreMin = Math.min(trace.evaderStoreMin, store.level[1]);
+    }
 }
 
 /**
@@ -115,7 +124,8 @@ export function lostReason(trace) {
  * @param {PreyTrace} trace the finished trace
  * @param {boolean} won whether the trial was won
  * @returns {Record<string, any>} the `DrillTrial` fields: the closest approach (null when the two never stood together),
- *   the tick counts, `preyDied`, and `reason` (null for a won trial)
+ *   the tick counts, `preyDied`, `reason` (null for a won trial), and with the sprint store on the two bodies' lowest
+ *   stores (`pursuerStoreMin`, `evaderStoreMin`; fair-chase.md)
  */
 export function traceFields(trace, won) {
     return {
@@ -125,6 +135,9 @@ export function traceFields(trace, won) {
         biteJawTicks: trace.biteJawTicks,
         preyDied: trace.preyDied,
         reason: won ? null : lostReason(trace),
+        ...(Number.isFinite(trace.pursuerStoreMin)
+            ? { pursuerStoreMin: trace.pursuerStoreMin, evaderStoreMin: trace.evaderStoreMin }
+            : {}),
     };
 }
 

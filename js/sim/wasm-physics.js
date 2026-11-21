@@ -1,5 +1,6 @@
 // The physics phase's numeric loops in the WASM kernels (docs/designs/wasm-kernels.md, Phase 4): `move_agents` damps,
-// caps and moves every agent, `bounce_rocks` does one agent's rock bounce geometry (stopping at each damaging impact so
+// caps and moves every agent (the sprint's rise of the cap times the agent's `sprintFactor`, js/sim/sprint-store.js),
+// `bounce_rocks` does one agent's rock bounce geometry (stopping at each damaging impact so
 // JS applies the damage, with the impact's speed into the rock in `physicsImpact`), and `resolve_contacts` runs the
 // contact pass over the arena's spatial hash and the final clamp, bit-identical to the JS loops they replaced.
 // Steering, thrust, trampling, the walls and every energy rule stay in JS (`js/sim/physics.js`).
@@ -7,7 +8,7 @@
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 
 /** World fields the physics kernels read or write that no earlier kernel took into the arena. */
-export const PHYSICS_FIELDS = Object.freeze(['vx', 'vy', 'spec', 'sprintBySpec', 'contacts']);
+export const PHYSICS_FIELDS = Object.freeze(['vx', 'vy', 'spec', 'sprintBySpec', 'contacts', 'sprintFactor']);
 
 /** The arena arrays whose byte offsets head the physics parameter block, in `PhysicsParams` order. */
 const ARRAYS = Object.freeze([
@@ -30,6 +31,7 @@ const ARRAYS = Object.freeze([
     'contacts',
     'physicsDoubles',
     'physicsImpact',
+    'sprintFactor',
 ]);
 
 /** Words of the physics parameter block after the offsets, in `PhysicsParams` order. */

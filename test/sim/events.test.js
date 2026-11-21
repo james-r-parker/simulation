@@ -48,6 +48,7 @@ describe('event codes', () => {
             COVER_CONFIG: 33,
             COVER_TOTALS: 34,
             HUNTER_RECOIL_LIFE: 35,
+            SPRINT_SPENT: 36,
         });
         expect(BORN_CAUSE).toEqual({ INITIAL: 0, MATE: 1, SPLIT: 2, FLOOR: 3, IMMIGRANT: 4 });
         expect(DEATH_CAUSE).toEqual({

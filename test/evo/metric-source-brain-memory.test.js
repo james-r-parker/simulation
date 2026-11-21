@@ -82,6 +82,11 @@ describe('leak_rate_mean, leak_slow_share, leak_at_floor_share and leak_lineage_
     it('leak_lineage_spread is the SD of the three lineage mean leak rates across the 5 checkpoints', () => {
         expect(m['eval.leak_lineage_spread'].value).toBeCloseTo(stddev(Float64Array.from([r1, r2, r3])), 12);
     });
+
+    it('knockout_unit_share and its hunter variant are 0 when no unit is knocked', () => {
+        expect(m['eval.knockout_unit_share'].value).toBe(0);
+        expect(m['eval.knockout_unit_share.hunter'].value).toBe(null);
+    });
 });
 
 describe('hidden_persistence', () => {
