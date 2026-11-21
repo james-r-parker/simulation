@@ -26,18 +26,45 @@ climbs from the entrant's 200 to the split gate of 900 in 144 ticks of an adult 
 
 ## The hunter's living (`predator:living`)
 
-A kill returns 715 on average over the four prey (700, 700, 760, 700) and costs the `reactive` tier's chase 979 (defaults),
-692 (courser), 638 (even), 899 (long) and 578 (stalker) energy a chase, a failed chase included: the chase runs to the
-250-tick limit when the prey is not caught.
+A kill returns 715 on average over the four prey (700, 700, 760, 700). The cost model is the plan's: a chase is charged
+`catchShare x cost(a chase that kills) + (1 - catchShare) x cost(a chase that does not)`, so a kill's income is no longer paired
+with the cost of a chase that never kills (the first reading charged every chase the 250 ticks of one that fails, which read
+`eat` -264 at a catch share of 1 against an income of 715: a model artefact). A killing chase is the reactive tier's on the
+broken bound when it kills, else on the straight bound (the prey that does not break); a failed chase is the broken bound's, cut
+where the sim gives up. The give-up rule is the observer's lapse (`INTENT_WINDOW` 30 ticks with the prey off the rays or no
+closing on it; the reactive tier has no quit of its own), and at the defaults and on every arm it does not fire: a sprinting
+hunter keeps the broken prey on its rays and keeps closing, so a failed chase runs the 250 ticks. The slow cross-check plays the
+scripted chase in the sim and reads the same 250 ticks (formula and sim within 2 ticks, spent energy within 5%).
 
-| Arm      | eat (net at 0.3 / at 1) | breed | Status     | Binding |
-| -------- | ----------------------- | ----- | ---------- | ------- |
-| defaults | X (-765 / -264)         | X     | impossible | eat     |
-| control  | X (-765 / -264)         | X     | impossible | eat     |
-| courser  | 0! (-477 / +24)         | X     | impossible | breed   |
-| even     | 0! (-424 / +77)         | X     | impossible | breed   |
-| long     | X (-684 / -184)         | X     | impossible | eat     |
-| stalker  | 0! (-364 / +137)        | X     | impossible | breed   |
+| Arm      | kill chase cost / ticks | failed chase cost / ticks | cost at 0.3 / ticks | eat (net at 0.3 / at 1) | breed | Status     | Binding |
+| -------- | ----------------------- | ------------------------- | ------------------- | ----------------------- | ----- | ---------- | ------- |
+| defaults | 370 / 96                | 979 / 250                 | 796 / 204           | 0! (-582 / +345)        | X     | impossible | breed   |
+| control  | 370 / 96                | 979 / 250                 | 796 / 204           | 0! (-582 / +345)        | X     | impossible | breed   |
+| courser  | 311 / 82                | 691 / 216                 | 577 / 176           | 0! (-363 / +404)        | X     | impossible | breed   |
+| even     | 366 / 118               | 638 / 250                 | 557 / 210           | 0! (-342 / +349)        | X     | impossible | breed   |
+| long     | 334 / 88                | 898 / 250                 | 729 / 201           | 0! (-515 / +381)        | X     | impossible | breed   |
+| stalker  | 578 / 250               | 578 / 250                 | 578 / 250           | 0! (-364 / +137)        | X     | impossible | breed   |
+
+Where no chase kills (`stalker` on every prey, `even` on the scout) a kill is charged the failed chase's cost, so the net at 1 is
+the income less that cost.
+
+Verdicts that changed against the first reading of E-RB-4 (every arm; the numbers are the old `eat` net at 0.3 / at 1):
+
+| Row                 | Arm      | Before                              | After                               | Changed |
+| ------------------- | -------- | ----------------------------------- | ----------------------------------- | ------- |
+| predator:living     | defaults | X (-765 / -264), impossible, eat    | 0! (-582 / +345), impossible, breed | yes     |
+| predator:living     | control  | X (-765 / -264), impossible, eat    | 0! (-582 / +345), impossible, breed | yes     |
+| predator:living     | courser  | 0! (-477 / +24), impossible, breed  | 0! (-363 / +404), impossible, breed | no      |
+| predator:living     | even     | 0! (-424 / +77), impossible, breed  | 0! (-342 / +349), impossible, breed | no      |
+| predator:living     | long     | X (-684 / -184), impossible, eat    | 0! (-515 / +381), impossible, breed | yes     |
+| predator:living     | stalker  | 0! (-364 / +137), impossible, breed | 0! (-364 / +137), impossible, breed | no      |
+| predator:first-meal | all six  | impossible, eat (X)                 | impossible, eat (X)                 | no      |
+
+The `eat` cell of `predator:living` is no longer impossible on any arm (a kill pays for its chase everywhere), so the binding
+step is `breed` everywhere: at the default catch share of 0.3 the net per chase is negative, so a life never reaches the split
+gate. The row stays `impossible`, now because the hunter must catch more than the share at which a chase pays, not because a
+kill never pays. `predator:first-meal` is unchanged on every arm: its `eat` colour is inherited from the living row, which still
+has a negative net at 0.3, and only its printed net moved (for example -765 to -582 on the defaults).
 
 ## The first meal and the sitter
 
@@ -81,9 +108,11 @@ senses of the hunter, not the world's food or the cost of standing. The plan's t
   is `digestTicks` (10) apart at the soonest; the body lives on the items its path newly covers (3 are under it at the start,
   eaten in the first meals). The forager's settled rate in a grid of food is 5.7 a tick in the sim against the formula's 4.9
   (14% above), the formula being conservative.
-- **A failed chase costs the whole limit.** The living row charges the `reactive` tier's chase, which runs 250 ticks when the
-  prey is not caught; a hunter that gives up when the prey leaves its view would pay less. On `courser` and `even` the net at a
-  catch share of 1 is +24 and +77, so every chase must succeed for a hunter to gain at all; with `catchShare` 0.3, red on
-  every arm. This is the budget's reading, to be checked against a measured catch share before it is acted on.
+- **A failed chase costs the whole limit, a kill does not.** The living row charges a kill 311 to 578 energy over 82 to 250
+  ticks and a failed chase 578 to 979 over 216 to 250, so the net at a catch share of 1 is +137 to +404 on every arm and the
+  hunter's living turns on the catch share: with `catchShare` 0.3 the net is negative on every arm, so `breed` is the binding
+  step. The give-up rule (the observer's lapse) does not shorten a scripted hunter's failed chase; a hunter that gives up by its
+  own brain would pay less, and that is the evolved hunter's, not a bound of the budget. This is the budget's reading, to be
+  checked against a measured catch share before it is acted on.
 - **`hunterShare` is 0.1, not measured.** `encountersPerLife` is 138 for a forager, so the `run` cell's rule (impossible when
   the hunter closes) is the same at any share above 0.07%.
