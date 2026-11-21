@@ -190,7 +190,8 @@ function strike(s, tick) {
  *   pays `strikeMissCost` this tick, as `chaseTimeline` charges it
  */
 function inContact({ h, c, d, options }) {
-    return (touching(h, c) && inJaws(h, c)) || (!options.absent && touching(h, d) && inJaws(h, d));
+    const held = (/** @type {import('./role-budget-body.js').Body} */ b) => touching(h, b) && inJaws(h, b);
+    return held(c) || (!options.absent && held(d));
 }
 
 /**

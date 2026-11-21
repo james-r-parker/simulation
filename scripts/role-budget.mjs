@@ -197,7 +197,7 @@ function searchRows(config, overrides, result, { model, outDir, arm }) {
 /**
  * @param {Record<string, any>} config an `arenaConfig`
  * @param {string} prey the prey spec
- * @returns {{pair: string, straight: any[], broken: any[], shares: Record<string, any>}} the predator's cells on both bounds
+ * @returns {{pair: string, straight: any[], broken: any[], shares: Record<string, import('../js/evo/role-budget-shares.js').CatchShares>}} the predator's cells on both bounds
  */
 function chasePair(config, prey) {
     const straight = chaseCells(config, { hunter: 'predator', prey, straight: true });
