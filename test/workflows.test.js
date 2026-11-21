@@ -120,8 +120,9 @@ describe('workflows', () => {
             expect(nightly).not.toContain('merge_group');
         });
 
-        it('still checks every push to main, and to season/next, which preview.yml waits on', () => {
-            expect(check).toMatch(/push:\s*\n\s*branches: \[main, season\/next\]/);
+        it('still checks every push to main, which preview.yml waits on, and no other branch', () => {
+            expect(check).toMatch(/push:\s*\n\s*branches: \[main\]/);
+            expect(check).not.toContain('season/next');
         });
 
         it('runs the matrix the scope job writes, slow tests included, with one seed and coverage only on a whole run', () => {

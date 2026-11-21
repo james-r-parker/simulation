@@ -95,7 +95,9 @@ describe('parseShipArgs', () => {
             base: 'main',
             noMerge: true,
         });
-        expect(parseShipArgs(['--title', 'x', '--body', 'body.md', '--base', 'season/next']).base).toBe('season/next');
+        expect(parseShipArgs(['--title', 'x', '--body', 'body.md', '--base', 'feat/stacked']).base).toBe(
+            'feat/stacked',
+        );
     });
 
     it('exits 2 on an unknown flag, a missing value, a missing option or a missing body file', () => {

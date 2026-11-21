@@ -116,29 +116,25 @@ function bindingProblem({ production, preview }) {
 
 /**
  * @param {Record<string, any>} event the `workflow_run` event
- * @param {boolean} seasonNext whether `season/next` exists
  * @returns {{action: 'next' | 'preview', branch: string, pr: number} | string} the deploy, or the reason to skip
  */
-function target(event, seasonNext) {
+function target(event) {
     if (event.event === 'pull_request') {
         const pr = event.pull_requests?.[0]?.number;
         return Number.isInteger(pr) ? { action: 'preview', branch: `pr-${pr}`, pr } : 'no-pr';
     }
-    if (event.event === 'push' && event.head_branch === 'season/next') {
-        return { action: 'next', branch: 'next', pr: 0 };
-    }
     if (event.event === 'push' && event.head_branch === 'main') {
-        return { action: 'next', branch: seasonNext ? 'main-latest' : 'next', pr: 0 };
+        return { action: 'next', branch: 'next', pr: 0 };
     }
     return 'branch';
 }
 
 /**
- * @param {{event: Record<string, any>, repo: string, bindings: {production: Bindings, preview: Bindings}, seasonNext: boolean}} input
- *   the `workflow_run` event, `owner/name` of this repository, the base branch's bindings, and whether `season/next` exists
+ * @param {{event: Record<string, any>, repo: string, bindings: {production: Bindings, preview: Bindings}}} input
+ *   the `workflow_run` event, `owner/name` of this repository and the base branch's bindings
  * @returns {Plan} what to do
  */
-export function deployPlan({ event, repo, bindings, seasonNext }) {
+export function deployPlan({ event, repo, bindings }) {
     const sha = String(event.head_sha ?? '');
     const skipReason =
         event.conclusion === 'success'
@@ -146,7 +142,7 @@ export function deployPlan({ event, repo, bindings, seasonNext }) {
                 ? 'fork'
                 : bindingProblem(bindings)
             : `check-${event.conclusion}`;
-    const found = skipReason === null ? target(event, seasonNext) : skipReason;
+    const found = skipReason === null ? target(event) : skipReason;
     if (typeof found === 'string') {
         return { action: 'skip', branch: '', sha, pr: 0, reason: found };
     }
