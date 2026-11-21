@@ -1,0 +1,19 @@
+{
+  "id": "E202",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-stages.md",
+  "date": "2026-11-19",
+  "branch": "feat/training-stages-hunt",
+  "hypothesis": "E-TS-1k (training-stages Phase 6, T59, T60): with the kept passer, a passed rung is not sent back by the retention review, and more fresh offsets reach hunt-mid and hunt.",
+  "prediction": "Written before the run: 0 TrainReview events on every run; at least 2 of 8 fresh offsets pass hunt-mid; prey-ahead winShareOverReference above 0.12 on at least 1 run that reaches hunt. Falsified when a run has a review, fewer than 2 offsets pass hunt-mid, or no hunt reading exceeds 0.12.",
+  "targets": [],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "E-TS-1j (reviews sent runs back; best prey-ahead 0.12)",
+  "after": "npm run train --curriculum evals/train-ladder.json (keepPasser) --until habitat --generations 380 --ticks 4000 --offer-from 100 --workers 3, offsets 8, 24, 40, 56, 72, 88, 104, 120",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Falsified on two of three clauses (the third held). 0 TrainReview events on every run: held, and by construction (a kept passer repeats its reading). Passes of hunt-mid: 1 of 8 (offset 8; 88 stalled hunt-mid at -0.0134), needed 2. Max prey-ahead winShareOverReference over all 20 hunt checkpoints of o8: 0.0569 (generation 120), needed above 0.12. Stalls: o24, o72, o104, o120 at hunt-weak; o40 and o56 at nursery (food-behind 0.223); o8 at hunt after 200 hunt generations (prey-crossing -0.015, kin-spared -0.015). The kept passer stops cycling but does not raise the reading: the cause is the chase itself (T62).",
+  "reports": ["evals/decisions/E-TS-1k/results.md"]
+}

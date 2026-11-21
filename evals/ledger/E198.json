@@ -1,0 +1,19 @@
+{
+  "id": "E198",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-stages.md",
+  "date": "2026-11-19",
+  "branch": "feat/training-stages-hunt",
+  "hypothesis": "E-TS-1h (training-stages Phase 6, T52, T53): the hunt-mid rung at sprint 0.3, the step the hunt-weak passer own curve supports (6 of 64 wins at 0.2 and 0.3), is one the hunters can take.",
+  "prediction": "Written before the run (commit 3bf96152): offsets 0 and 192 repeat through hunt-weak; hunt-mid passes on at least 1 of them with no return to hunt-weak; nursery passes on at least 1 of the fresh offsets 80 and 144. Falsified when hunt-mid stalls on both offsets 0 and 192.",
+  "targets": [],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "E-TS-1g: hunt-mid at sprint 0.5",
+  "after": "npm run train -- --curriculum evals/train-ladder.json --until habitat --generations 380 --ticks 4000 --offer-from 100 --seed-offset <k> --workers 8, k = 0, 192, 80, 144, from feat/training-stages-hunt at 3bf96152",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "No eval ran, so no verdict. Offsets 0 and 192 repeat to the digit; hunt-mid stalls on both (-0.010; -0.007 to -0.015): falsified. Offset 80 stalls nursery (food-behind 0.223 to 0.272; the 4th of 8 offsets with the stall: 16, 48, 64, 80); offset 144 passes every rung through hunt-mid (hunt-weak 0.134, hunt-mid 0.040) and reaches hunt: prey-crossing passes (0.007 to 0.012), prey-ahead winShareOverReference 0.087, kin-spared -0.015. Offsets 0 and 192 pass hunt-weak by a margin of 0.007 against 0.134 on 144: the yield varies with the offset, not the rung step. Champions of offset 144 exported and run as CHAMP-v1-ets1h-64 (pending). Outcome to task: T55, T56 in training-stages.md Phase 6.",
+  "reports": ["evals/decisions/E-TS-1h/results.md"]
+}

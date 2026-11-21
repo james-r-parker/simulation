@@ -1,0 +1,23 @@
+{
+  "id": "E68",
+  "date": "2026-10-30",
+  "branch": "claude/big-bag-branch-status-730fab",
+  "hypothesis": "Predators survive when they are built like real ambush predators (principles: look to nature first): innate reflexes in random genomes (instinctWeight), a gorge-and-fast metabolism (low resting loss, a big fat store, a large meal per kill) and decisive bites (biteMultiplier 20).",
+  "prediction": "8 seeds x 200000 ticks, live policy, reference inst0 (the big-bang defaults). Instincts alone (inst1) lift predator_presence from 0.06 to 0.2 or more and the population above the floor on most seeds. Gorge-and-fast (passiveLossMultiplier 0.3, maxEnergyMultiplier 3, predatorKillEnergy 600) adds predator births. Decisive bites (biteMultiplier 20) turn catches into kills. The combination inst1-gorge-bite20 reaches presence 0.5 or more with spec_effective above 1.5; predators may boom and bust. Risk: bite20 raises the kill rate enough to starve the prey side.",
+  "targets": ["eval.predator_presence", "eval.spec_effective", "eval.floor_episodes", "eval.catch_rate"],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "evals/screens/results/instinct/inst0.report.json",
+  "after": "evals/screens/results/instinct/inst1-gorge-bite20.report.json (all arms and table.md in evals/screens/results/{predator-metabolism,predator-gorge,instinct}/)",
+  "verdicts": {
+    "eval.predator_presence": "better",
+    "eval.spec_effective": "better",
+    "eval.floor_episodes": "better",
+    "eval.catch_rate": "better",
+    "eval.mating_share": "no-difference",
+    "eval.deliberate_food_share": "better",
+    "eval.alarm_precision": "-"
+  },
+  "effect": "better",
+  "note": "Screens: predator-metabolism (6 arms: fast-0.3 / fast-0.15 resting loss, meal-600), predator-gorge (7 arms: the 3x store, bite 20 and 40), instinct (8 arms: instinctWeight 0, 0.5, 1, 2 with fast-meal, gorge and bite20). Metabolism alone: best fast-0.3-meal-600 presence 0.24, pop 203, pop > min 4/8. Gorge with bite20 alone: presence 0.09 to 0.28, still 1 to 4 of 8 seeds above min. Instincts alone (inst0.5/1/2): pop above min 8/8, catch 8/8, pop mean 423-482, but predator_presence only 0.01 to 0.09. Only inst1-gorge-bite20 clears the gate: predator_presence 0.67 (0.09 to 1.0 by seed), spec_effective 2.87 (1.90 to 4.06), floor episodes 1.0 per seed (seed 5 has 7; the other seven have 0 or 1), catch_rate 0.42, deliberate_food_share 0.53, alarm_precision 0.20 (only 2 of 8 seeds call), mating_share 0.54, pop mean 403, about 2972 predator births per run, spec_dominance 0.60. The screen table's own columns still read FAIL for it (popAboveMin fails on seed 5 at 0.55 of the samples, lineages >= 5 and spec <= 70% fail), judged on the plan's gate: final population above the floor on every seed (popBelowMax column 55 to 481, seed 5 lowest), presence, spec_effective. Known issue: predators boom and bust, alive at the end in 3 of 8 seeds; balancing follows. Prediction right on the gate and on instincts lifting survival, wrong on instincts alone lifting presence. Decision: adopt instinctWeight 1, predator passiveLossMultiplier 0.3, maxEnergyMultiplier 3, biteMultiplier 20 and predatorKillEnergy 600 as the defaults."
+}

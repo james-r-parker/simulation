@@ -70,7 +70,7 @@ export async function runInspect(args, { logDir = '.sim/logs' } = {}) {
 async function buildReport({ args, subject, drill, config, edits, log }) {
     const layout = brainLayout(createConfig(config));
     const labels = /** @type {{inputs: string[], outputs: string[], units: string[]}} */ ({
-        inputs: inputLabels(createConfig(config)),
+        inputs: inputLabels(),
         outputs: outputLabels(),
         units: Array.from({ length: layout.hidden }, (_, unit) => unitLabel(unit)),
     });

@@ -195,6 +195,8 @@ export const DEFAULTS = deepFreeze({
     unitKnockoutRate: 0, // unit-knockout Phase 1: probability per mutated birth of knocking out one hidden unit (off by default)
     weightDecay: 0.005, // brain plan big bang (H2): per birth shrink of the wIn rows of silent inputs (the world's input-activity mask); 0 is off
     instinctWeight: 1, // brain plan big bang, survival screen (instinct): the innate reflex prior of a random genome (js/evo/instinct.js), as a newborn animal has reflexes before it learns; 0 is random genomes
+    traitMutationSigma: 0.1, // body-genes T33: the step of a trait gene's mutation (the constant TRAIT_SIGMA before)
+    traitGeneClamp: 3, // body-genes T33: a trait gene is clamped to plus or minus this after mutation; tanh(3) is 0.995, so a gene cannot drift into the flat part of the curve
     leakGeneStart: 0, // brain plan big bang (H3): a random genome's leak genes; 0 gives a 0.5 (memory from generation 0), was 3 (0.955)
     leakMin: 0.02, // brain plan big bang (H7): the smallest leak rate (a half-life of 34 ticks, was 0.05 and 13.5); a unit with a very negative leak gene still moves 2% toward its target per tick
     meritMateBonus: 150, // new: fitness-and-selection T16 (merit, off)

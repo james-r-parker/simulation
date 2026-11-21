@@ -9,7 +9,7 @@ function fixture() {
     const layout = brainLayout(config);
     const weights = new Float32Array(layout.weightCount);
     const labels = {
-        inputs: inputLabels(config),
+        inputs: inputLabels(),
         outputs: outputLabels(),
         units: Array.from({ length: layout.hidden }, (_, unit) => unitLabel(unit)),
     };
@@ -68,15 +68,19 @@ describe('skipTable', () => {
 });
 
 describe('traitRow', () => {
-    it('returns all trait genes by name', () => {
+    it('returns all named trait genes by name, the new ones at 0', () => {
         const { layout, weights } = fixture();
         weights.set([0.1, 0.2, 0.3, 0.4], layout.traitStart);
 
-        expect(traitRow(weights, layout)).toEqual({
+        const row = traitRow(weights, layout);
+        expect(row).toMatchObject({
             size: Math.fround(0.1),
             vision: Math.fround(0.2),
             child_share: Math.fround(0.3),
             learn: Math.fround(0.4),
+            speed: 0,
+            nerve: 0,
         });
+        expect(Object.keys(row)).toHaveLength(18);
     });
 });

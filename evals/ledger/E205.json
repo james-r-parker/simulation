@@ -1,0 +1,19 @@
+{
+  "id": "E205",
+  "kind": "ladder",
+  "outcome": "no-verdict",
+  "plan": "training-loop.md",
+  "date": "2026-11-19",
+  "branch": "feat/training-loop-etl1",
+  "hypothesis": "E-TL-1 (training-loop T8): the ladder's plateauStop ends runs that have stopped closing without changing how many runs pass each stage, and saves CPU.",
+  "prediction": "Written before the run (16 offsets, 0 to 120 by 8, until hunt-mid, 2 arms = 32 runs): equal pass shares per stage in the stop and nostop arms; no verdict on train:compare score (a worse would mean the stop cuts runs that were still closing); at least 30% fewer CPU hours in the stop arm.",
+  "targets": [],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "nostop arm: evals/train-ladder.json with plateauStop 0 on nursery, hunt-contact, hunt-weak and hunt-mid",
+  "after": "stop arm: evals/train-ladder.json as committed (plateauStop on)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Prediction half met. No verdict on score (15 of 16 offsets tied, 1 down, mean difference -0.063 [-0.378, 0], sign test p 1.0). Pass shares equal except hunt-weak 31% to 25% (offset 104 lost it to the stop). CPU hours 26.7 to 21.9 (-18%), against at least 30% predicted: falsified. Median generations to pass is 10 at every stage (minGenerations). Nursery stalls on 7 of 16 offsets at best progress 0.67 to 0.83. Plateau stop 6 stays the default. Outcome to task: training-loop T8a, plateauStop 10 against 6 as a train:tune arm and the nursery stall as the next ladder lever. Run: scripts/run-detached.sh E-TL-1 --frozen -- npm run train:screen -- --grid evals/train-screens/plateau.grid.json",
+  "reports": ["evals/decisions/E205/results.md"]
+}

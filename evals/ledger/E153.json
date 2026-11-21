@@ -1,0 +1,19 @@
+{
+  "id": "E153",
+  "kind": "compare",
+  "outcome": "no-verdict",
+  "plan": "carrying-capacity.md",
+  "hypothesis": "carrying-capacity Phase 3, E-CC-2: once the world is held, hunters have a prey base to live on.",
+  "prediction": "On the held seeds of the switched world, hunters are alive at the last tick on 0.9 or more, with eval.chase_catch_share unchanged. Falsified when hunters die out on more than 0.1 of held seeds: skill or hunter economy is a cause of its own.",
+  "targets": ["eval.chase_catch_share"],
+  "before": "evals/decisions/E151/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d",
+  "after": "not run yet: Phase 3 (T18), seeds 65 to 128",
+  "note": "Not run: the plan stopped at Phase 2 (E152), so Phase 3 was not built. Prediction recorded before any arm ran; no verdict yet. `reports` names the committed reference and the food-ratio probe the arms are set from, and is extended with the screen reports when they exist. Run in Phase 3.",
+  "reports": ["evals/decisions/E151/defaults-floor-on.json"],
+  "date": "2026-11-11",
+  "branch": "feat/carrying-capacity-calibrate",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "no-difference",
+  "verdicts": {}
+}

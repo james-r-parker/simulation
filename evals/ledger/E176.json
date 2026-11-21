@@ -1,0 +1,27 @@
+{
+  "id": "E176",
+  "kind": "compare",
+  "outcome": "not-adopted",
+  "plan": "honest-budgets.md",
+  "hypothesis": "honest-budgets Phase 3: a wall or rock impact that costs by the speed into the surface above a deadband (impactDamage, impactDeadband), with the flat contact damages (obstacleDamage, wallDamage) at 0, stops charging blobs that brush, slide along or rest against a surface, so collision deaths come only from hard hits.",
+  "prediction": "On the 16-seed screen (honest-impact.grid.json, 400000 ticks), the finalist reads eval.collision_death_share better than control, and the 64-seed keep rule reads no guard WORSE. Falsified when eval.collision_death_share stays above 0.15 on every arm.",
+  "targets": ["eval.collision_death_share", "eval.refuge_episode_entry"],
+  "before": "control arm of evals/screens/honest-impact.grid.json (season 10 defaults), seeds 1 to 16, 400000 ticks, floor on, policy live",
+  "after": "the impact arms of the same screen (d2-x8, d4-x12, d4-x25)",
+  "verdicts": {
+    "eval.collision_death_share": "better",
+    "eval.refuge_episode_entry": "-"
+  },
+  "note": "Screen: every impact arm cuts collision_death_share from 0.225 to under 0.02; finalist d4-x25. Keep rule on 64 seeds against the Phase 2 defaults: WORSE on the hunter_catches_per_1k guard (1.35 to 1.20); alive no harm (55/64 against 46), held better (p 0.00016), collision_death_share 0.218 to 0.013 better. Switch not made; Phase 3 parked. Open: whether the catches loss is the speed denominator growing; d4-x12 untested at 64 seeds.",
+  "reports": [
+    "evals/decisions/E176/results.md",
+    "evals/decisions/E176/screen-table.md",
+    "evals/decisions/E176/d4-x25.report.json",
+    "evals/decisions/E176/defaults-s10b.report.json"
+  ],
+  "date": "2026-11-15",
+  "branch": "season/next",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "worse"
+}

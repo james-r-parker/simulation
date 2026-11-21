@@ -128,10 +128,10 @@ describe('checkMetricNames', () => {
         expect(problems({ 'js/a.js': 'const k = `eval.missing.${x}`;\n' })).toHaveLength(1);
     });
 
-    it('does not read the history: built Targets, experiments.json, results, fixtures and the registry itself', () => {
+    it('does not read the history: built Targets, evals/experiments/, results, fixtures and the registry itself', () => {
         const files = {
             'docs/designs/d.md': '### Phase 1 - X (built)\n**Targets:** eval.missing_doc\n',
-            'evals/experiments.json': '{"metric": "eval.missing_json"}\n',
+            'evals/experiments/E1.json': '{"metric": "eval.missing_json"}\n',
             'evals/results/r.json': '{"metric": "eval.missing_json"}\n',
             'test/fixtures/f.js': "export const m = 'eval.missing_fixture';\n",
             'js/evo/metric-registry/core.js': "export const m = 'eval.missing_registry';\n",

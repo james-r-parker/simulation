@@ -3,7 +3,7 @@
 // `isDeliberate` the observer now imports from here) and the escape episode state. Nothing here draws randomness
 // or allocates per tick. See docs/designs/fitness-and-selection.md (In-world merit).
 
-import { RAY_CHANNELS } from './brain-layout.js';
+import { CH_FOOD, CH_PREY, CH_THREAT, RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { visionOf } from './traits.js';
 
@@ -48,11 +48,6 @@ export const MERIT_TALLY_SIZE = 6;
 
 const NEVER = -Infinity;
 const CLOSING_MASK = (1 << CLOSING_BITS) - 1;
-
-// Class channels within a ray (see js/sim/ray-march.js).
-const CH_FOOD = 1;
-const CH_THREAT = 2;
-const CH_PREY = 3;
 
 /** Per-slot arrays as `[type, name, value a (re)allocated slot holds]`; every other value is 0. */
 /** @type {[any, string, number][]} */

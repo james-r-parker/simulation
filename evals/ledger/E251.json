@@ -1,0 +1,19 @@
+{
+  "id": "E251",
+  "kind": "ladder",
+  "outcome": "no-verdict",
+  "plan": "training-loop.md",
+  "date": "2026-11-20",
+  "branch": "eval/training-loop-t16a",
+  "hypothesis": "E-TL-3a (training-loop T16a): in E207 (T16), adaptive difficulty stayed at its 0.10 floor because the steering win share on prey-ahead stayed below the 0.5 target. Starting from preySprint 0 with target 0.15 lets the difficulty step above its floor as hunters learn, yielding more hunt progress than the fixed hunt-weak, hunt-mid and hunt rungs.",
+  "prediction": "Written before the run (evals/train-screens/adaptive.grid.json, 16 offsets 0 to 120 by 8, until hunt, 2 arms): in the adaptive arm, difficulty rises above 0 on at least 4 of the offsets that reach hunt (steerShare >= 0.15 on at least one checkpoint), and the adaptive arm passes hunt on at least 1 of 16 offsets (fixed passes 0 of 16). Falsified if difficulty stays at 0 on every run or hunt passes on 0 of 16 in both arms.",
+  "targets": [],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "fixed arm: evals/train-ladder.json (hunt-weak, hunt-mid, hunt)",
+  "after": "scripts/run-detached.sh E-TL-3a --frozen -- npm run train:screen -- --grid evals/train-screens/adaptive.grid.json --runs .sim/train-screens/adaptive-t16a",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "E-TL-3a exited 1 (9/16 adaptive runs failed on entering hunt): all 9 offsets that passed nursery and hunt-contact crashed with 'config.specialisations.forager.sprintBoost is 0; expected a finite number > 0' because validateAdapt allows from 0 while config-validate rejects sprintBoost 0. The 7 stalled offsets (8, 24, 32, 40, 56, 72, 96) matched fixed identically (0% nursery, mean score 0.65, 8.0 h cpu). Fixed arm (16/16): nursery 56%, hunt-contact 56%, hunt-weak 25%, hunt-mid 19%, hunt 0%, mean score 1.85, 21.5 h cpu. Verdict: incomparable, prediction falsified/blocked by sprintBoost > 0 rule.",
+  "reports": ["evals/decisions/E251/results.md"]
+}

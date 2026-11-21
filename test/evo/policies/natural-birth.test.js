@@ -5,6 +5,7 @@ import { createRng, nextFloat } from '../../../js/sim/rng.js';
 import { createSimLog } from '../../../js/sim/log.js';
 import { isKnockedOut, KNOCKOUT_LEAK_GENE } from '../../../js/sim/traits.js';
 import { mutateSigma, mutateWeights } from '../../../js/evo/mutation.js';
+import { mutateTraits } from '../../../js/evo/trait-inherit.js';
 import { createBirth } from '../../../js/evo/policies/natural-birth.js';
 import { smallWorld } from '../../sim/helpers/small-world.js';
 import { setup } from '../helpers/map-elites-world.js';
@@ -65,12 +66,13 @@ describe('birth mutation keys', () => {
         return { row: world.weights.slice(weightCount, 2 * weightCount), rng, birth, world };
     }
 
-    it('mutationRate 1 draws exactly as the unkeyed rule: sigma, then one Gaussian per gene', () => {
+    it('mutationRate 1 draws exactly as the unkeyed rule: sigma, then one Gaussian per gene, the trait genes last', () => {
         const { row, rng, world } = born({ mutationRate: 1 });
         const ref = createRng(31);
         const sigma = mutateSigma(Math.fround(0.05), world.layout.weightCount, ref);
         const expected = new Float32Array(world.layout.weightCount).fill(0.5);
-        mutateWeights(expected, sigma, ref, { traitStart: world.layout.traitStart });
+        mutateWeights(expected, sigma, ref, { traitStart: world.layout.traitStart, leakStart: world.layout.leakStart });
+        mutateTraits(expected, world.layout, ref, { config: world.config });
         expect(row).toEqual(expected);
         expect(rng.s).toEqual(ref.s);
     });
