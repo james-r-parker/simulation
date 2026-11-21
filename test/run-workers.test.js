@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     collectRuns,
     inFlight,
@@ -15,8 +15,13 @@ import {
 let dir = '';
 beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'run-workers-'));
+    // The budget rule under test is the workstation's (defaultWorkers keeps 8 cores back); CI takes every core.
+    vi.stubEnv('CI', '');
 });
-afterEach(() => rmSync(dir, { recursive: true, force: true }));
+afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+    vi.unstubAllEnvs();
+});
 
 describe('parseWorkers', () => {
     it('reads --workers in both spellings', () => {
@@ -29,6 +34,11 @@ describe('parseWorkers', () => {
         expect(parseWorkers('node scripts/screen.mjs --grid g.json', 16)).toBe(8);
         expect(parseWorkers('npm test', 32)).toBeNull();
         expect(parseWorkers('bash -c exit', 32)).toBeNull();
+    });
+
+    it('takes every core as the pool default on CI', () => {
+        vi.stubEnv('CI', 'true');
+        expect(parseWorkers('npm run eval -- --seeds 16', 32)).toBe(32);
     });
 });
 
