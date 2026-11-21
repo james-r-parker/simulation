@@ -10,8 +10,9 @@ Every row is read with every effect off (the user's rule of 2026-11-21, in the D
 status-effects.md): a role's job must work at the defaults for a good performer, and buffs only amplify teamwork.
 
 Built on `feat/role-budget-p5` (Phases 1 to 5) merged with `origin/main`; the merge reads the temperature through `effectFactor`, as
-e2ac2b72 resolved it. **Every `predator:living` and `predator:first-meal` reading is pre-fix:** the p4 cost model (catch-share
-weighted, a failed chase ending at the sim's give-up rule) is being fixed, and both rows will move.
+e2ac2b72 resolved it. The `predator:living` and `predator:first-meal` readings in "The matrix before" and "The matrix after" are pre-fix (the p4 cost
+model charged every chase its full cost); "Post-fix reading" below re-reads the candidates with 602's living fix (a chase charged by
+its outcome, a failed one ended at the sim's lapse).
 
 Cells: status, binding step, margin of the binding cell (ticks unless marked px; `+` capped). `red` is `impossible`.
 
@@ -120,6 +121,25 @@ turns three first-meal rows red and leaves every idle row tight).
 The predator's living under `step5-b`, pre-fix: a kill returns 715, the budgeted chase costs 692 over 216 ticks; net -477 a chase at
 `catchShare` 0.3 and +23.5 at 1. Under `step5-a`: 255 over 56 ticks; net -41 at 0.3 and +460 at 1.
 
+## Post-fix reading (602's living fix, merged into this branch)
+
+`npm run role:budget -- --config evals/role-budget/step5-<a|b|c>.json` after merging main (`chaseCosts`, `playToLapse`, the lapse
+check). The candidate set is unchanged. `predator:living` is red on `breed` and `predator:first-meal` red on `eat` on all three, as
+before the fix; the numbers moved:
+
+| per chase, `predator:living` | `step5-b` pre-fix | `step5-b` post-fix | `step5-a` pre-fix | `step5-a` post-fix |
+| ---------------------------- | ----------------- | ------------------ | ----------------- | ------------------ |
+| kill income                  | 715               | 715                | 715               | 715                |
+| chase cost (ticks)           | 692 (216)         | 577.4 (176)        | 255 (56)          | 255.2 (56)         |
+| net at `catchShare` 0.3      | -477              | -362.9             | -41               | -40.7              |
+| net at a catch share of 1    | +23.5             | +403.7             | +460              | +459.8             |
+
+So the fix helps `step5-b` (a failed chase now ends at the give-up rule, not at the 250-tick limit) and leaves `step5-a`, whose
+chases are short, where it was. No candidate turns `predator:living` green: at the catch share of 0.3 the net is still negative
+(the hunt pays only above a catch share of about 0.81 on `step5-b` and 0.36 on `step5-a`: income times share equals the chase cost), so the split gate takes infinite chases.
+`predator:first-meal` inherits it (450 meals of -362.9 and -40.7 net). Open question 2 is therefore not closed by the fix: the hunter's
+cost or the catch share it is read at is still a number for the screen to choose, on this reading, not on the pre-fix one.
+
 ## Check
 
 `npm run role:budget -- --config evals/role-budget/step5-<a|b>.json --check` exits 0 on both: every scene agrees with its formula
@@ -164,7 +184,7 @@ inside its tolerance, no `RoleBudgetDrift` (the effort-1 scout drift of `even` a
    holds without it.
 5. **Trait spans.** `role:budget --genes corners` is on `feat/body-genes-p2` (PR 610), not on this branch, so the candidate spans of
    body-genes.md T17 are not read here. The candidates above are spec and world numbers only.
-6. **`predator:living`** is re-read on these configs once the p4 fix lands, before the screen is written.
+6. **`predator:living`** is re-read on these configs after the p4 fix ("Post-fix reading"): still red on `breed`, net -362.9 (`step5-b`) and -40.7 (`step5-a`) at the catch share of 0.3.
 
 ## Reproduce
 

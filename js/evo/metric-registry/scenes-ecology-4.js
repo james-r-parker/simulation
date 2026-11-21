@@ -24,4 +24,16 @@ export const SCENES_ECOLOGY_4 = {
         nullWhen: ['no meat eaten after burn-in'],
         arithmetic: 'test/evo/scene-herd-metrics.test.js',
     }),
+    'eval.defender_bite_break_share': entry('scenes-ecology', {
+        module: 'js/evo/scene-defender.js',
+        meaning:
+            'Higher means more of the bite episodes on prey end in an escape after a defender shoved the biting hunter.',
+        counts: 'Bite episodes on non-hunters that resolved after burn-in and escaped (ESCAPE_TICKS from the last bite) with a shove landed on the hunter that bit the victim while the episode was open, over all resolved episodes (escaped, or the victim died).',
+        unit: 'share',
+        direction: 'higher',
+        nullWhen: ['no bite episode resolved after burn-in'],
+        expectedFlat: 'zero on defaults: the shove is off',
+        arithmetic: 'test/evo/scene-defender.test.js',
+        source: 'test/evo/role-metrics-defender.slow.test.js',
+    }),
 };

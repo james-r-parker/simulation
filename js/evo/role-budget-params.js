@@ -71,22 +71,15 @@ function thrustEfficiency(config, lane) {
 }
 
 /**
- * @param {import('../sim/world.js').World} world a one-slot world at the temperature wanted
- * @returns {number} what `passiveMultiplier` was: the cold and hot ramps' factor on the standing cost
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {Record<string, number>} lane the spec's lane bases
+ * @returns {number} what `passiveMultiplier` was: the cold and hot ramps' factor on the standing cost at the start temperature
  */
-export function passiveFactorAt(world) {
+function passiveMultiplier(config, lane) {
+    const world = startWorld(config, lane);
     return (
         effectFactor(world, 0, EFFECT.COLD_RAMP, 'passiveLoss') * effectFactor(world, 0, EFFECT.HOT_RAMP, 'passiveLoss')
     );
-}
-
-/**
- * @param {Readonly<Record<string, any>>} config the validated config
- * @param {Record<string, number>} lane the spec's lane bases
- * @returns {number} the passive factor at the start temperature
- */
-function passiveMultiplier(config, lane) {
-    return passiveFactorAt(startWorld(config, lane));
 }
 
 /**
