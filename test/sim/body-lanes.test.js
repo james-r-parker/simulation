@@ -30,7 +30,8 @@ describe('LANES', () => {
     it('makes every body key of the inventory a lane, except the listed non-lanes', () => {
         const keys = inventoryBodyKeys();
         expect(keys).toHaveLength(108);
-        for (const key of keys) {
+        for (const key of keys.filter((k) => k in config)) {
+            // the scout multipliers are body entries now (T44)
             const isLane = LANES.some((lane) => lane.key === key);
             expect(isLane || key in NOT_LANES, key).toBe(true);
             expect(isLane && key in NOT_LANES, key).toBe(false);
@@ -190,6 +191,7 @@ describe('laneBases', () => {
                 const expected =
                     (lane.key === null ? 1 : config[lane.key]) *
                     (lane.field === null ? 1 : spec[lane.field]) *
+                    (spec.body[lane.name] ?? 1) *
                     lane.base;
                 expect(bases[lane.name], `${specName}.${lane.name}`).toBe(expected);
             }
@@ -244,7 +246,8 @@ describe('bodyProblem', () => {
         expect(bodyProblem({ maxThrust: 1.2 }, moved)).toBeNull();
         expect(bodyProblem({ [HEAT_BAND]: -3 }, moved)).toBeNull();
         expect(bodyProblem({ [HEAT_BAND]: -3 }, moveOnly)).toMatch(/no heatBand override yet/);
-        expect(bodyProblem({ maxThrust: 0 }, moved)).toMatch(/above 0/);
+        expect(bodyProblem({ maxThrust: 0 }, moved)).toBeNull(); // a 0 override: a free lane a trait cannot scale
+        expect(bodyProblem({ maxThrust: -0.5 }, moved)).toMatch(/at least 0/);
         expect(bodyProblem({ maxThrust: Number.NaN }, moved)).toMatch(/finite number/);
         expect(bodyProblem({ maxThrust: '1' }, moved)).toMatch(/finite number/);
         expect(bodyProblem({ [HEAT_BAND]: 1 }, [])).toMatch(/no heatBand override yet/);
@@ -256,15 +259,17 @@ describe('bodyProblem', () => {
         );
         expect(
             createConfig({ specialisations: { scout: { body: { maxThrust: 2 } } } }).specialisations.scout.body,
-        ).toEqual({
-            maxThrust: 2,
-        });
-        expect(createConfig({ specialisations: { scout: { body: {} } } }).specialisations.scout.body).toEqual({});
+        ).toMatchObject({ maxThrust: 2 });
+        expect(createConfig({ specialisations: { scout: { body: {} } } }).specialisations.scout.body).toEqual({
+            huntUpkeep: 0,
+            predatorRestTicks: 0,
+            strikeMissCost: 0,
+        }); // a body that cannot hunt keeps its hunter-only costs at 0 (the default)
     });
 
     it('accepts a spec body override of baseSize and childEnergyShare, which are read only through their lanes', () => {
         const body = { baseSize: 1.1, childEnergyShare: 0.9 };
         expect(bodyProblem(body)).toBeNull();
-        expect(createConfig({ specialisations: { scout: { body } } }).specialisations.scout.body).toEqual(body);
+        expect(createConfig({ specialisations: { scout: { body } } }).specialisations.scout.body).toMatchObject(body);
     });
 });

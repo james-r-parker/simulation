@@ -232,6 +232,4 @@ export const DEFAULTS = deepFreeze({
     defenderRepelEnergy: 0, // prey-guilds Phase 2: energy a defender's active repel drains from a canHunt target in jaws; 0 is off
     defenderRepelCost: 0, // prey-guilds Phase 2: energy a defender pays when landing an active repel
     defenderRepelImpulse: 0, // prey-guilds Phase 2: knockback velocity added to the repelled hunter along the defender-to-hunter vector
-    scoutCallRadiusMultiplier: 1, // prey-guilds Phase 3: multiplier on `callRadius` when a scout (spec 3) calls alarm; 1 is off
-    scoutAlarmCostMultiplier: 1, // prey-guilds Phase 3: multiplier on `alarmCost` when a scout (spec 3) calls alarm; 1 is off
 });
