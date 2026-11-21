@@ -1,4 +1,4 @@
-// `window.__reel`: what `npm run reel` reads from the page (in every build, like `__blob`: the browser smoke runs the
+// `window.__reel`: what `npm run reel` reads from the page (installed only with `?reel=1`, in every build: the browser smoke runs the
 // reel against the production build). `clips()` lists the best clip of each scene seen so far (scene, tick, score,
 // subject, file name, object URL); the script fetches each URL inside the page to get the bytes. `recording()` says
 // whether the rolling recorder is running, so the script can tell a browser that cannot record from a world with nothing
