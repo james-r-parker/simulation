@@ -3,6 +3,7 @@
 import { entry } from './entry.js';
 
 /** The fields every `eval.gene_spread.<trait>` entry shares. */
+/** @type {{module: string, unit: string, intended: 'higher', direction: 'watch', nullWhen: string[], arithmetic: string, source: string}} */
 const SPREAD = {
     module: 'js/evo/scene-genes.js',
     unit: 'ratio',
