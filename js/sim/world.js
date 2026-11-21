@@ -1,6 +1,6 @@
 // Allocates the world's typed arrays once and manages agent and food slots.
 
-import { BODY_SENSE_LANES } from './body-sense.js';
+import { BODY_SENSE_SCRATCH } from './body-sense.js';
 import { agentSpecs } from './agent-arrays.js';
 import { allocateFlora } from './flora-state.js';
 import { releaseItem } from './patch-reserve.js';
@@ -304,7 +304,7 @@ function rayLanes(config) {
         raySize: new Float32Array(n),
         raySpeed: new Float32Array(n),
         rayClosing: new Float32Array(n),
-        bodySenseScratch: new Float64Array(BODY_SENSE_LANES),
+        bodySenseScratch: new Float64Array(BODY_SENSE_SCRATCH),
     };
 }
 

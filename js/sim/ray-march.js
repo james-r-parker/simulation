@@ -17,7 +17,7 @@ import {
     RAY_CHANNELS,
 } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
-import { bodySenseOf } from './body-sense.js';
+import { bodySenseBegin, bodySenseOf } from './body-sense.js';
 import { couldBite } from './bite-rule.js';
 import { isKin } from './kin.js';
 import { AGENT, FOOD, KIND_STRIDE, OX, OY, RANGE } from './ray-gather.js';
@@ -58,24 +58,24 @@ function agentChannel(world, slot, other) {
 }
 
 /**
- * Writes what the body in slot `other` shows the caster into the caster's per-ray lanes at `at`.
+ * Writes what the body in slot `other` shows the caster (read by `bodySenseBegin` in `castSlot`) into the caster's
+ * per-ray lanes at `at`.
  * @param {World} world the world
- * @param {number} slot the casting agent
  * @param {number} other the slot of the agent hit
  * @param {number} at the ray's index in `raySize`, `raySpeed` and `rayClosing`
  * @returns {void}
  */
-function writeBody(world, slot, other, at) {
+function writeBody(world, other, at) {
     const out = world.bodySenseScratch;
-    bodySenseOf(world, slot, other, out);
+    bodySenseOf(world, other, out);
     world.raySize[at] = out[0];
     world.raySpeed[at] = out[1];
     world.rayClosing[at] = out[2];
 }
 
 /**
- * Writes the current ray's best hit as `RAY_CHANNELS` input values at `base`, its food hue and its body lanes (each 0
- * when the hit is not of that kind).
+ * Writes the current ray's best hit as `RAY_CHANNELS` input values at `base`, its food hue (0 when the hit is not food)
+ * and, for an agent hit, its body lanes (`castSlot` zeroed the slot's body lanes before its rays).
  * @param {World} world the world
  * @param {number} slot the casting agent
  * @param {number} base index of the ray's first value in `world.inputs`
@@ -86,9 +86,6 @@ function writeRay(world, slot, base, ray) {
     const { inputs, rayScratch: s, rayHue } = world;
     const hue = slot * world.config.rayCount + ray;
     rayHue[hue] = 0;
-    world.raySize[hue] = 0;
-    world.raySpeed[hue] = 0;
-    world.rayClosing[hue] = 0;
     for (let ch = 0; ch < RAY_CHANNELS; ch++) {
         inputs[base + ch] = 0;
     }
@@ -105,7 +102,7 @@ function writeRay(world, slot, base, ray) {
     if (kind === AGENT) {
         const other = key - kind * KIND_STRIDE;
         inputs[base + agentChannel(world, slot, other)] = proximity;
-        writeBody(world, slot, other, hue);
+        writeBody(world, other, hue);
     } else {
         inputs[base + CHANNEL_OF_KIND[kind]] = 1;
     }
@@ -144,7 +141,13 @@ export function castSlot(world, slot) {
     noteMatesSeen(world, slot, count);
     const { rayBestT: bestT, rayBestKey: bestKey, raySmoke } = views;
     const rowBase = slot * world.layout.rawInputCount;
-    for (let k = 0; k < world.config.rayCount; k++) {
+    const rays = world.config.rayCount;
+    const lanes = slot * rays;
+    world.raySize.fill(0, lanes, lanes + rays);
+    world.raySpeed.fill(0, lanes, lanes + rays);
+    world.rayClosing.fill(0, lanes, lanes + rays);
+    bodySenseBegin(world, slot, world.bodySenseScratch);
+    for (let k = 0; k < rays; k++) {
         s[BEST_T] = bestT[k];
         s[BEST_KEY] = bestKey[k];
         const base = rowBase + k * RAY_CHANNELS;

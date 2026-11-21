@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BODY_SENSE_LANES, SPEED_SENSE_SPAN, bodySenseOf } from '../../js/sim/body-sense.js';
+import { BODY_SENSE_SCRATCH, SPEED_SENSE_SPAN, bodySenseBegin, bodySenseOf } from '../../js/sim/body-sense.js';
 import { detTanh } from '../../js/sim/det-math.js';
 import { addAgent, senseWorld } from './helpers/sense-world.js';
 
@@ -14,8 +14,9 @@ function sense({ casterSize = 20, hitSize = 20, at = [600, 500], hitV = [0, 0], 
     const hit = addAgent(w, at[0], at[1], hitSize);
     [w.vx[caster], w.vy[caster]] = casterV;
     [w.vx[hit], w.vy[hit]] = hitV;
-    const out = new Float64Array(BODY_SENSE_LANES);
-    bodySenseOf(w, caster, hit, out);
+    const out = new Float64Array(BODY_SENSE_SCRATCH);
+    bodySenseBegin(w, caster, out);
+    bodySenseOf(w, hit, out);
     return { out, w };
 }
 

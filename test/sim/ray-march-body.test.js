@@ -1,7 +1,7 @@
 // The body lanes the ray march writes beside the hue (docs/designs/body-genes.md, "Raw lanes"); the classes and the
 // proximity are in ray-march.test.js.
 import { describe, expect, it } from 'vitest';
-import { BODY_SENSE_LANES, bodySenseOf } from '../../js/sim/body-sense.js';
+import { BODY_SENSE_LANES, BODY_SENSE_SCRATCH, bodySenseBegin, bodySenseOf } from '../../js/sim/body-sense.js';
 import { castRays } from '../../js/sim/ray-march.js';
 import { addAgent, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
 
@@ -31,9 +31,10 @@ describe('castRays body lanes', () => {
         const them = addAgent(w, 600, 500, 10);
         w.vx[them] = -w.config.maxVelocity;
         cast(w, me);
-        const out = new Float64Array(BODY_SENSE_LANES);
-        bodySenseOf(w, me, them, out);
-        expect(lanes(w, me, 0)).toEqual(Array.from(out, Math.fround));
+        const out = new Float64Array(BODY_SENSE_SCRATCH);
+        bodySenseBegin(w, me, out);
+        bodySenseOf(w, them, out);
+        expect(lanes(w, me, 0)).toEqual(Array.from(out.subarray(0, BODY_SENSE_LANES), Math.fround));
         expect(lanes(w, me, 0)[0]).toBeLessThan(0);
         expect(lanes(w, me, 0)[2]).toBeGreaterThan(0);
     });
