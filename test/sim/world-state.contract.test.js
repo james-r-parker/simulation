@@ -88,6 +88,8 @@ const TODAYS_WORLD_FIELDS = [
     'x',
     'y',
     'size',
+    'vx',
+    'vy',
     'foodX',
     'foodY',
     'foodRadius',
@@ -110,8 +112,6 @@ const TODAYS_WORLD_FIELDS = [
     'attack',
     'hunt',
     'pheromoneScratch',
-    'vx',
-    'vy',
     'spec',
     'sprintBySpec',
     'contacts',
@@ -234,8 +234,9 @@ describe('the kernels that take a per-slot array', () => {
     it('take the world fields over in the order of today, each once, with the owner the first kernel to name it', () => {
         expect([...WORLD_FIELDS]).toEqual(TODAYS_WORLD_FIELDS);
         expect(new Set(WORLD_FIELDS).size).toBe(WORLD_FIELDS.length);
-        expect(['alive', 'x', 'vx', 'outputs', 'heard'].map((name) => ownerOf(name))).toEqual([
+        expect(['alive', 'x', 'vx', 'spec', 'outputs', 'heard'].map((name) => ownerOf(name))).toEqual([
             'brain',
+            'sense',
             'sense',
             'physics',
             'brain',
