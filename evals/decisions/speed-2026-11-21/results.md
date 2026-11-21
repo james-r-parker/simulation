@@ -100,5 +100,5 @@ signal, merit and field rows are within this machine's noise. This is the CI pha
    `stepTemperature` +33, huddle and hearing +18): the neutral-rule skip and the per-row live count remove it without
    touching the numbers.
 3. Not proposed for the WASM kernel: the readers touch about twenty per-slot arrays and the config; the JS fixes reach the
-   target first. The body sense is the exception (body-genes.md T52, Rust by Opus), since the sense kernel already holds
+   target first. The body sense is the exception (body-genes.md T53, Rust by Opus), since the sense kernel already holds
    the hit.

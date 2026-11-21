@@ -19,7 +19,7 @@ Speed work in other docs (cross-references, 2026-11-21; each doc keeps its own `
 schedules the build): the step regressions of 2026-11-21 are built after this doc's Phase 3 and before its Phase 1, so
 Phase 1 measures the repaired step. First [status-effects.md](status-effects.md) Phase 5 (T23 to T30: the effect registry's
 dispatch, lifecycle +42% and physics +16% after its Phase 1, +18% and +16% more with Phase 2), once its Phase 2 has merged;
-then [body-genes.md](body-genes.md) Phase 7 (T51 to T54: the body sense in the sense kernel, sense +7% in the wide world).
+then [body-genes.md](body-genes.md) Phase 7 (T52 to T55: the body sense in the sense kernel, sense +7% in the wide world).
 The profile is [evals/decisions/speed-2026-11-21/results.md](../../evals/decisions/speed-2026-11-21/results.md).
 
 | Step | Doc                                | Built when                                                                                                              |
