@@ -6,6 +6,7 @@ import { PREY_SPECS, budgetChase } from './role-budget-chase.js';
 import { normaliseMix, targetChoice } from './role-budget-choice.js';
 import { budgetDefend } from './role-budget-defend.js';
 import { budgetWarn } from './role-budget-warn.js';
+import { PHASE4_ROWS, phase4Budget, preysFor } from './role-budget-matrix-thrive.js';
 import { roleParams } from './role-budget-params.js';
 
 export { cell, rowOf } from './role-budget-cell.js';
@@ -23,8 +24,10 @@ export const PHASE2_ROWS = Object.freeze(['defender:predator']);
 /** The rows Phase 3 builds: the scout warning a forager of a hunter creeping up on it. */
 export const PHASE3_ROWS = Object.freeze(['scout:predator']);
 
+export { PHASE4_ROWS };
+
 /** Every row built, in the order of the matrix. */
-export const BUILT_ROWS = Object.freeze([...PHASE1_ROWS, ...PHASE2_ROWS, ...PHASE3_ROWS]);
+export const BUILT_ROWS = Object.freeze([...PHASE1_ROWS, ...PHASE2_ROWS, ...PHASE3_ROWS, ...PHASE4_ROWS]);
 
 /** @typedef {ReturnType<typeof import('./role-budget-cell.js').rowOf> & {detail?: any, picks?: string}} Row */
 
@@ -46,13 +49,15 @@ function guildBudget(name, { config, hunter, model }) {
  * @param {Readonly<Record<string, any>>} config the validated config
  * @param {import('./role-budget-model.js').RoleModel} model the model options
  * @param {readonly string[]} [rows] the rows to build (default every row of the built phases)
- * @param {{mix?: Record<string, number>}} [options] the weights of the `predator:average` row
+ * @param {{mix?: Record<string, number>, worldConfig?: Readonly<Record<string, any>>}} [options] the weights of the
+ *   `predator:average` row, and the config the rows of Phase 4 read the world from (the default world: the arena `config` is
+ *   empty of food and agents; default `config`)
  * @returns {{rows: Row[], model: import('./role-budget-model.js').RoleModel, rulesHash: string,
  *   choice: ReturnType<typeof targetChoice> | null}} the rows, the model they were built with, the rules hash of the
  *   config, and the target choice when a row asked for it
  * @throws {Error} on a row that is not built
  */
-export function matrix(config, model, rows = BUILT_ROWS, { mix } = {}) {
+export function matrix(config, model, rows = BUILT_ROWS, { mix, worldConfig = config } = {}) {
     for (const name of rows) {
         if (!BUILT_ROWS.includes(name)) {
             throw new Error(`role-budget: unknown row "${name}"; built: ${BUILT_ROWS.join(', ')}`);
@@ -60,7 +65,9 @@ export function matrix(config, model, rows = BUILT_ROWS, { mix } = {}) {
     }
     const hunter = roleParams(config, 'predator');
     const wantsChoice = rows.some((name) => name === 'predator:average' || name === 'predator:best');
-    const needed = wantsChoice ? PREY_SPECS : PREY_SPECS.filter((s) => rows.includes(`predator:${s}`));
+    const needed = wantsChoice
+        ? PREY_SPECS
+        : PREY_SPECS.filter((s) => rows.includes(`predator:${s}`) || rows.some((r) => preysFor(r).includes(s)));
     const budgets = Object.fromEntries(needed.map((s) => [s, budgetChase(hunter, roleParams(config, s), model)]));
     const choice = wantsChoice
         ? targetChoice(config, model, mix === undefined ? undefined : normaliseMix(mix), budgets)
@@ -72,6 +79,10 @@ export function matrix(config, model, rows = BUILT_ROWS, { mix } = {}) {
     const built = rows.map((name) => {
         if (name === 'defender:predator' || name === 'scout:predator') {
             const budget = guildBudget(name, { config, hunter, model });
+            return { ...budget.row, detail: budget };
+        }
+        if (PHASE4_ROWS.includes(name)) {
+            const budget = phase4Budget(name, { config: worldConfig, model, budgets, mix });
             return { ...budget.row, detail: budget };
         }
         if (name === 'predator:average' || name === 'predator:best') {

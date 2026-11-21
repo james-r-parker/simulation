@@ -12,10 +12,11 @@ import { catchShares } from '../js/evo/role-budget-shares.js';
 import { BUILT_ROWS, matrix } from '../js/evo/role-budget-matrix.js';
 import { validateModel } from '../js/evo/role-budget-model.js';
 import { searchSettings, withPath } from '../js/evo/role-budget-search.js';
-import { configHash } from '../js/sim/config.js';
+import { configHash, createConfig } from '../js/sim/config.js';
 import { emitReport, runAsMain, withLogFile } from './lib/audit-io.mjs';
 import { exitCodeOf, parseFlags } from './lib/cli-args.mjs';
 import { formatDefenderSearch, searchDefenderRows } from './lib/role-budget-defender-search.mjs';
+import { formatBirthSearch, searchBirthRows } from './lib/role-budget-birth-search.mjs';
 import { formatCheck, formatReport, formatSearch } from './lib/role-budget-report.mjs';
 import { logRunConfig } from './lib/run-config.mjs';
 
@@ -289,31 +290,37 @@ function crossCheck(config, { preys, defence, scout, model }, log) {
  * @param {Record<string, any>} config an `arenaConfig`
  * @param {{overrides: Record<string, any>, result: ReturnType<typeof matrix>, where: {model: any, outDir: string, arm: string}}} from
  *   the overrides that made it, the matrix and where the search writes
- * @returns {{searched: any[], defence: ReturnType<typeof searchDefenderRows>}} the search of each hunter row that is not
- *   fit, and of the defender row when it was asked for
+ * @returns {{searched: any[], defence: ReturnType<typeof searchDefenderRows>, birth: ReturnType<typeof searchBirthRows>}} the
+ *   search of each hunter row that is not fit, of the defender row and of each first-meal row that is red, when asked for
  */
 function searchAll(config, { overrides, result, where }) {
     const defender = result.rows.some((r) => r.name === 'defender:predator');
     return {
         searched: searchRows(config, overrides, result, where),
         defence: defender ? searchDefenderRows(config, { ...where, overrides }) : [],
+        birth: searchBirthRows(createConfig(overrides), { ...where, overrides, rows: result.rows }),
     };
 }
 
 /**
  * @param {boolean} json whether to print JSON
- * @param {{hash: string, result: ReturnType<typeof matrix>, searched: any[], defence: any[], check: any}} parts the config
- *   hash, the matrix, the searches and the cross-check
+ * @param {{hash: string, result: ReturnType<typeof matrix>, searched: any[], defence: any[], birth: any[], check: any}} parts the
+ *   config hash, the matrix, the searches and the cross-check
  * @returns {string} the report: JSON, or the matrix followed by each part that was asked for
  */
-function render(json, { hash, result, searched, defence, check }) {
+function render(json, { hash, result, searched, defence, birth, check }) {
     if (json) {
-        return JSON.stringify({ configHash: hash, ...result, searched, defenderSearch: defence, check }, null, 2);
+        return JSON.stringify(
+            { configHash: hash, ...result, searched, defenderSearch: defence, birthSearch: birth, check },
+            null,
+            2,
+        );
     }
     return [
         formatReport(result, hash),
         ...(searched.length > 0 ? [formatSearch(searched)] : []),
         ...(defence.length > 0 ? [formatDefenderSearch(defence)] : []),
+        ...(birth.length > 0 ? [formatBirthSearch(birth)] : []),
         ...(check ? [formatCheck(check)] : []),
     ].join('\n\n');
 }
@@ -355,13 +362,16 @@ export async function runBudget(args, { logDir = '.sim/logs', print = console.lo
             ticks: null,
             extra: { model },
         });
-        const result = matrix(config, model, args.rows ?? BUILT_ROWS, { mix: args.mix });
+        const result = matrix(config, model, args.rows ?? BUILT_ROWS, {
+            mix: args.mix,
+            worldConfig: createConfig(overrides),
+        });
         logCells(config, result, hash, log);
-        const { searched, defence } = args.search
+        const { searched, defence, birth } = args.search
             ? searchAll(config, { overrides, result, where: { model, outDir: args.outDir, arm } })
-            : { searched: [], defence: [] };
+            : { searched: [], defence: [], birth: [] };
         const check = args.check ? crossCheck(config, asked(args.rows ?? BUILT_ROWS, model), log) : null;
-        const text = render(args.json, { hash, result, searched, defence, check });
+        const text = render(args.json, { hash, result, searched, defence, birth, check });
         emitReport(text, { print, out: args.out });
         if (check !== null && check.drift > 0) {
             throw Object.assign(new Error(`RoleBudgetDrift: ${check.drift} reading(s) outside their tolerance`), {
