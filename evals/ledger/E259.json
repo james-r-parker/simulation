@@ -1,0 +1,33 @@
+{
+  "id": "E259",
+  "kind": "compare",
+  "outcome": "finding",
+  "plan": "body-genes.md",
+  "task": "T37",
+  "stream": "body-genes",
+  "date": "2026-11-21",
+  "branch": "feat/body-genes-close",
+  "hypothesis": "E-BG-0 (body-genes T37): the pooled-v6 layout change (PR 585: thirteen body-sense inputs, 24 trait slots, the lane catalogue, the trait registry at neutral spans) leaves the world as good as it was: no keep-rule guard reads WORSE on 16 matched seeds of 200000 ticks, origin/main against the commit before PR 585.",
+  "prediction": "Written before the run. The traits are neutral (every new span is 0) and the thirteen new inputs read zero-weight or randomly drawn brains, so the world is not bit-identical but its ecology is: no keep-rule guard reads WORSE, and every headline metric (population_mean, floor_episodes, kills, predators at the end) is within its noise at 16 seeds. A WORSE on any guard falsifies it and goes to the coordinator unexplained. The step is slower by the thirteen inputs (bench.phase_ms.brain and sense up, step_ms@500 inside the bench-check margin of the re-recorded baseline, T36).",
+  "targets": [],
+  "before": "evals/results/E259-base.json (commit 83950c64, the first parent of PR 585, 16 seeds x 200000 ticks, policy live)",
+  "after": "evals/results/E259-head.json (origin/main 4e56979d, the same 16 seeds)",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "verdicts": {
+    "guard.alive": "-",
+    "guard.under80": "-",
+    "guard.held": "-",
+    "guard.eval.hunter_catches_per_1k_settled": "-",
+    "eval.population_mean": "-",
+    "eval.floor_episodes": "-",
+    "eval.hunter_catches_per_1k_settled": "-",
+    "eval.hunter_kills_per_life_mean_settled": "-",
+    "eval.mean_fitness.predator": "-",
+    "eval.lineages_alive": "-",
+    "eval.predator_share_cv": "-"
+  },
+  "effect": "no-difference",
+  "note": "Prediction held: no keep-rule guard reads WORSE on 16 matched seeds (alive no-harm with 1 seed harmed and 6 recovered, under80 4/16 to 1/16 no-harm, held no-harm; the hunter catches guard needs 64 seeds and is unchecked). Headline metrics are within noise. Two non-guard metrics read worse: eval.hunter_conversion_matched.under1k and eval.spec_effective; one reads better (eval.p90_fitness.defender). Table in evals/decisions/E259/results.md.",
+  "reports": ["evals/decisions/E259/results.md"]
+}
