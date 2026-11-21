@@ -126,7 +126,7 @@ Every other run is full: `scripts/check.sh` locally (the `create-pr` skill runs 
 push, so the whole suite and the ratchet pass before each PR), and the nightly workflow, which passes `--ci --full`.
 `--skip=<gate,...>` removes gates from the selection; the `create-pr` skill runs `scripts/check.sh --fix --skip=browser-smoke`
 (the required `browser-smoke` job runs the same image on a clean runner) and, when no code changed afterwards, re-runs only
-`--only=designs-index,format` (the pre-commit hook does the conventions, format and lint check at commit time). On a push to `main` or `season/next` the `check` and `browser-smoke` jobs compute
+`--only=designs-index,format` (the pre-commit hook does the conventions, format and lint check at commit time). On a push to `main` the `check` and `browser-smoke` jobs compute
 their scope against the push's `before` sha (full or browser when it is unknown), so a docs-only merge skips what its PR passed.
 A slow test that breaks therefore shows up in the pre-push check or the next nightly run, not in the PR's CI job.
 

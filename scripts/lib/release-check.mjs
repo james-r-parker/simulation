@@ -1,6 +1,5 @@
 // The rules of the `release-check` gate, pure (docs/designs/deployment-and-community.md, "Release check"): a change to
-// `rulesHash` is a breaking change, and it lands on `season/next`, not on `main`.
-import { spawnSync } from 'node:child_process';
+// `rulesHash` is a breaking change on `main`, and it carries its `library/seasons.json` entry in the same pull request.
 
 /**
  * @param {string} message a commit message or a pull request title
@@ -12,25 +11,27 @@ export function isBreaking(message) {
 }
 
 /**
- * @typedef {{ok: true} | {ok: false, reason: 'rules-change-not-breaking' | 'rules-change-on-main'}} Verdict
+ * @typedef {{ok: true} | {ok: false, reason: 'rules-change-not-breaking' | 'rules-change-without-season'}} Verdict
  */
 
 /**
- * @param {{baseHash: string, headHash: string, messages: readonly string[], base: string, addsSeason: boolean,
- *   movesUnreleased?: boolean}} input `rulesHash` at the merge base and at HEAD, the pull request's commit messages and
- *   title, its base branch, whether it adds a `library/seasons.json` entry, and whether it moves the `rulesHash` of the
- *   newest season while that season has no release
+ * @param {{baseHash: string, headHash: string, messages: readonly string[], title?: string, base: string,
+ *   addsSeason: boolean, movesUnreleased?: boolean}} input `rulesHash` at the merge base and at HEAD, the pull
+ *   request's commit messages, its title (absent outside CI), its base branch, whether it adds a `library/seasons.json`
+ *   entry, and whether it moves the `rulesHash` of the newest season while that season has no release
  * @returns {Verdict} the verdict; a PR that leaves `rulesHash` alone always passes
  */
-export function releaseCheck({ baseHash, headHash, messages, base, addsSeason, movesUnreleased = false }) {
+export function releaseCheck({ baseHash, headHash, messages, title, base, addsSeason, movesUnreleased = false }) {
     if (baseHash === headHash) {
         return { ok: true };
     }
-    if (!messages.some(isBreaking)) {
+    // The title names the change in the release notes, so on a pull request it must say breaking itself; a local run
+    // has no title and reads the commits.
+    if (title ? !isBreaking(title) : !messages.some(isBreaking)) {
         return { ok: false, reason: 'rules-change-not-breaking' };
     }
     if (base === 'main' && !addsSeason && !movesUnreleased) {
-        return { ok: false, reason: 'rules-change-on-main' };
+        return { ok: false, reason: 'rules-change-without-season' };
     }
     return { ok: true };
 }
@@ -64,25 +65,4 @@ export function movesUnreleasedSeason(before, after, tags) {
     const sameSeason = old.season === next.season && old.major === next.major;
     const released = tags.some((tag) => tag.startsWith(`v${next.major}.`));
     return sameSeason && old.rulesHash !== next.rulesHash && !released;
-}
-
-/**
- * The branch the checks run for: the pull request's base in CI, else the checked-out branch (`season/next` is exempt
- * from the "newest season matches the rules" test, because its rules run ahead of the file).
- * @param {{env?: Record<string, string | undefined>, run?: (args: string[]) => string}} [options] the environment and a
- *   git runner, for tests
- * @returns {string} the branch name, empty when detached
- */
-export function currentBranch({ env = process.env, run = runGit } = {}) {
-    const fromCi = env.GITHUB_BASE_REF || env.GITHUB_REF_NAME;
-    return fromCi ? fromCi : run(['branch', '--show-current']).trim();
-}
-
-/**
- * @param {string[]} args git arguments
- * @returns {string} its standard output
- */
-function runGit(args) {
-    const done = spawnSync('git', args, { encoding: 'utf8' });
-    return done.status === 0 ? done.stdout : '';
 }
