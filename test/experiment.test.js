@@ -222,6 +222,25 @@ describe('renumber', () => {
         expect(readFileSync(join(repo, 'pic.png'), 'utf8')).toBe('E6');
     });
 
+    it('refuses when the new id already has a decisions directory', () => {
+        put(repo, `${LEDGER}/E6.json`, record('E6'));
+        put(repo, 'evals/decisions/E7/results.md', 'x');
+        expect(() => renumber(repo, 'E6', gitIn(repo))).toThrow('evals/decisions/E7 already exists');
+        expect(existsSync(join(repo, `${LEDGER}/E6.json`))).toBe(true);
+    });
+
+    it('refuses to move a record that origin/main already holds', () => {
+        expect(() => renumber(repo, 'E5', gitIn(repo))).toThrow('E5 is on origin/main');
+        expect(existsSync(join(repo, `${LEDGER}/E5.json`))).toBe(true);
+    });
+
+    it('does not rewrite a longer id or a hyphenated suffix of the old one', () => {
+        put(repo, `${LEDGER}/E6.json`, record('E6'));
+        put(repo, 'n.md', 'E6, E60, xE6, E6-foo\n');
+        renumber(repo, 'E6', gitIn(repo));
+        expect(readFileSync(join(repo, 'n.md'), 'utf8')).toBe('E7, E60, xE6, E6-foo\n');
+    });
+
     it('names a record that does not exist or an id that is not one', () => {
         vi.spyOn(console, 'error').mockImplementation(() => undefined);
         expect(() => renumber(repo, 'E99', gitIn(repo))).toThrow('no record E99');

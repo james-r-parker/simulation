@@ -51,16 +51,22 @@ export function renumber(root, from, git) {
     if (!/^E\d+$/.test(from) || !existsSync(source)) {
         throw new Error(`renumber: no record ${from} in evals/ledger/`);
     }
+    if (git(['ls-tree', '--name-only', 'origin/main', `evals/ledger/${from}.json`]).trim() !== '') {
+        throw new Error(`renumber: ${from} is on origin/main, so it is another lane's record; not moving it`);
+    }
     const to = nextId(root, git);
+    const decisions = join(root, 'evals', 'decisions');
+    if (existsSync(join(decisions, to))) {
+        throw new Error(`renumber: evals/decisions/${to} already exists; not overwriting it`);
+    }
     const files = branchFiles(git).map((file) =>
         file === `evals/ledger/${from}.json` ? `evals/ledger/${to}.json` : file,
     );
     renameSync(source, join(ledgerDir(root), `${to}.json`));
-    const decisions = join(root, 'evals', 'decisions');
     if (existsSync(join(decisions, from))) {
         renameSync(join(decisions, from), join(decisions, to));
     }
-    const pattern = new RegExp(`\\b${from}\\b`, 'g');
+    const pattern = new RegExp(`(?<![\\w-])${from}(?![\\w-])`, 'g');
     const moved = files.map((file) => file.replace(`evals/decisions/${from}/`, `evals/decisions/${to}/`));
     return { from, to, files: moved.filter((file) => rewrite(root, file, pattern, to)) };
 }
