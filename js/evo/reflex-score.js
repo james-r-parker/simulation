@@ -11,6 +11,7 @@ import { randomWeights } from './mutation.js';
 import { casesFor } from './reflex-cases.js';
 import { evalReflex } from './reflex-eval.js';
 import { hueAwareSubject } from './reflex-references.js';
+import { hasRoleReference, roleReference } from './reflex-references-roles.js';
 import { tableFor } from './reflex-table.js';
 
 /** Random brains whose mean pass share is a case's baseline (a reflex run is cheap, so the bar can be tight). */
@@ -88,10 +89,13 @@ export function constantBrains({ config = {} } = {}) {
 
 /**
  * @param {import('./reflex-stage.js').ReflexCase} reflexCase the case
- * @returns {ReflexSubject} the reference the case's bar uses: the memoryless controller, and for `pick-safe-food`,
- *   which needs the food's hue, the hue-aware one
+ * @returns {ReflexSubject} the reference the case's bar uses: the memoryless controller; for `pick-safe-food`, which
+ *   needs the food's hue, the hue-aware one; and for a role case its own (`reflex-references-roles.js`)
  */
 export function referenceFor(reflexCase) {
+    if (hasRoleReference(reflexCase.name)) {
+        return roleReference(reflexCase.name);
+    }
     return reflexCase.name === 'pick-safe-food' ? hueAwareSubject() : referenceSubject('memoryless');
 }
 

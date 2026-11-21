@@ -15,8 +15,16 @@ export const REFLEX_TRIALS = 16;
 export const DEG = Math.PI / 180;
 
 /**
- * @typedef {Omit<import('./pool-discrimination-stage.js').Stage, 'seed' | 'agents'> & {agents: (import('./pool-discrimination-stage.js').StagedAgent & {sizeGene?: number})[]}} StagedTick
- *   a `Stage` without its seed; an agent's `sizeGene` is turned into a weight row when the table is built
+ * @typedef {object} Heard a call the subject hears, as the signal phase would leave it in `world.heard`
+ * @property {number} loudness the loudness in [0, 1]
+ * @property {number} ux the x of the unit vector from the subject towards the caller, in the world frame
+ * @property {number} uy the y of that vector
+ */
+
+/**
+ * @typedef {Omit<import('./pool-discrimination-stage.js').Stage, 'seed' | 'agents'> & {agents: (import('./pool-discrimination-stage.js').StagedAgent & {sizeGene?: number})[], heard?: Heard, herd?: {x: number, y: number}}} StagedTick
+ *   a `Stage` without its seed; an agent's `sizeGene` is turned into a weight row when the table is built, `heard` is
+ *   written into the subject's `world.heard` alarm half before it senses, and `herd` places one live herd animal
  */
 
 /**
@@ -35,6 +43,7 @@ export const DEG = Math.PI / 180;
  * @property {number} turn `OUTPUT_INDEX.TURN`
  * @property {number} sprint `OUTPUT_INDEX.SPRINT`
  * @property {number} bite `OUTPUT_INDEX.BITE`
+ * @property {number} alarm `OUTPUT_INDEX.ALARM`
  */
 
 /**
@@ -94,7 +103,7 @@ export function subjectAgent(spec, angle) {
  * @param {Float32Array} outputs a world's `outputs` rows
  * @param {number} slot the slot
  * @param {ReflexOutputs} into the record to fill
- * @returns {ReflexOutputs} `into`, holding the slot's thrust, turn, sprint and bite
+ * @returns {ReflexOutputs} `into`, holding the slot's thrust, turn, sprint, bite and alarm
  */
 export function readOutputs(outputs, slot, into) {
     const o = slot * OUTPUT_COUNT;
@@ -102,5 +111,6 @@ export function readOutputs(outputs, slot, into) {
     into.turn = outputs[o + OUTPUT_INDEX.TURN];
     into.sprint = outputs[o + OUTPUT_INDEX.SPRINT];
     into.bite = outputs[o + OUTPUT_INDEX.BITE];
+    into.alarm = outputs[o + OUTPUT_INDEX.ALARM];
     return into;
 }

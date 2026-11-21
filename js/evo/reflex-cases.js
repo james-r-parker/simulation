@@ -3,9 +3,10 @@
 
 import { FORAGER_CASES } from './reflex-cases-forager.js';
 import { PREDATOR_CASES } from './reflex-cases-predator.js';
+import { ROLE_CASES } from './reflex-cases-roles.js';
 
-/** The six cases, foragers first. */
-export const REFLEX_CASES = Object.freeze([...FORAGER_CASES, ...PREDATOR_CASES]);
+/** The twelve cases: the foragers', the predators', then one for each role (Phase 5). */
+export const REFLEX_CASES = Object.freeze([...FORAGER_CASES, ...PREDATOR_CASES, ...ROLE_CASES]);
 
 /**
  * @param {number} spec a specialisation index
