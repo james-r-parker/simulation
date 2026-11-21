@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
-import { SOCIAL_KEYS, socialEffectsOn } from '../../js/sim/effect-numbers.js';
+import { SOCIAL_KEYS, callEffectsOn, socialEffectsOn } from '../../js/sim/effect-numbers.js';
 import { applyEffect } from '../../js/sim/effect-appliers.js';
 import { EFFECT } from '../../js/sim/effects.js';
 import { freeAgent } from '../../js/sim/world.js';
@@ -30,6 +30,17 @@ describe('socialEffectsOn', () => {
         for (const key of SOCIAL_KEYS.filter((k) => k in config)) {
             expect(config[key], key).toBe(0);
         }
+    });
+});
+
+describe('callEffectsOn', () => {
+    it('is off at the defaults, and on once a number of rallied or answered is above 0 or hoarse above 1', () => {
+        expect(callEffectsOn(createConfig())).toBe(false);
+        for (const key of ['rallyThrust', 'rallyBurn', 'answeredBite']) {
+            expect(callEffectsOn({ [key]: 0.1, hoarseFactor: 1 }), key).toBe(true);
+        }
+        expect(callEffectsOn({ hoarseFactor: 1.5 })).toBe(true);
+        expect(callEffectsOn({ alertBoost: 0.1, huddleWarmth: 0.1, hoarseFactor: 1 })).toBe(false);
     });
 });
 

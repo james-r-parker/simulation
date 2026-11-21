@@ -7,6 +7,7 @@
 
 import { HEARD_FROM_STRIDE } from './agent-arrays.js';
 import { EFFECT, raiseOn } from './effects.js';
+import { callEffectsOn } from './effect-numbers.js';
 import { isKin } from './kin.js';
 
 /** Offset of the alarm half of a `heardFrom` row, the same as of a `heard` row. */
@@ -84,7 +85,9 @@ export function noteHeard(world, hearer, loudness) {
     }
     const { callScratch } = world;
     if (callScratch[1] === HUNT_FROM) {
-        rally(world, hearer, callScratch[0]);
+        if (callEffectsOn(world.config)) {
+            rally(world, hearer, callScratch[0]);
+        }
     } else {
         alert(world, hearer, callScratch[0]);
     }
