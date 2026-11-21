@@ -296,7 +296,7 @@ describe('the report', () => {
         const off = await run(['--rows', 'predator:forager,defender:predator']);
         expect(off.text).toMatch(/row\s+see\s+turn\s+run\s+bite/);
         expect(off.text).toMatch(/row\s+hear\s+turn\s+run\s+intercept/);
-        expect(off.text).toMatch(/defender:predator\s+48\s+-\s+X\s+X\s+\S+\s+impossible\s+repel: off/);
+        expect(off.text).toMatch(/defender:predator\s+51\s+-\s+X\s+X\s+\S+\s+impossible\s+repel: off/);
         expect(off.text).toMatch(/shove off \(defenderRepelEnergy and defenderRepelImpulse are 0\)/);
         const on = await run([
             '--rows',

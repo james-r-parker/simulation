@@ -132,7 +132,34 @@ taken. The smoke cell stays `impossible` for every body number: the latest relea
 spot is 43 ticks at best. With `alarmBiteShare` as the lever instead (a global number, nature: an alarmed prey is hard to hold) the
 defender reaches the hunter only at 0.1 (kill at tick 63, touch at 52 to 58) and the smoke cell is still red. **The defender row is a
 geometry red, not a body-number red**: the model puts the defender 150 px from a caller that a creeping hunter kills 22 ticks after the
-alarm. A reading that stands the defender beside the herd it guards (`defenderGap`, a model constant) is the coordinator's call.
+alarm. A reading that stands the defender beside the herd it guards is built (`escortGap`, below) and does not turn the row green.
+
+## The defender row at an escort distance (2026-11-21)
+
+User decision (2026-11-21): the row reads the defender at an escort distance, a guard that stays near the herd it guards
+([role-budget.md](../../../docs/designs/role-budget.md), Decisions). `escortGap` derives it as the caller's size, the defender's
+size and one defender radius of air: 29 + 29 + 29 = 87 px, against the 150 px of the fixed `defenderGap`. No world rule or sim
+key changed. The reading, `npm run role:budget -- --rows defender:predator` on the defaults and with `--config
+evals/role-budget/step5-d.json` (the two are the same on this row), every effect off:
+
+| reading              | escort 150 px (before) | escort 87 px (now)             |
+| -------------------- | ---------------------- | ------------------------------ |
+| status, binding      | impossible, repel: off | impossible, repel: off         |
+| hear                 | ok 48                  | ok 51                          |
+| run, intercept       | X, X (touches never)   | X, X (touches never)           |
+| smoke walk, release  | 48, tick 53            | 37, tick 42 (latest release 9) |
+| smoke slack defender | -45                    | -33 (caller -2)                |
+
+Sweep of the escort at 150, 100, 87, 75, 60, 50, 40, 30, 25, 20, 15 and 10 px, on step5-d with the shove off and with it on
+(`defenderRepelEnergy` 40, `defenderRepelImpulse` 4): **the row is red at every one.** The walk to the smoke spot is 48 ticks at
+150 px, 41 at 100, 34 at 60, 33 at 40 and 38 at 10 (a defender under the two sizes' sum, 58 px, overlaps the caller and is
+pushed off it), against a latest release of tick 8 or 9; the smoke slack is -45, -38, -30, -29 and -34. The defender never
+touches the hunter: it starts to move at tick 5 at the grazing gait, from rest and at right angles to the hunter, while the hunter
+closes 14.4 px a tick and kills at tick 27. So the earlier reading ("a geometry red") is half right: the distance costs 10 to 15
+ticks of the walk, but it is not what binds, the defender's speed and heading are. Nothing was tuned to make it green. What would
+change it is not an escort distance but the defender's start (facing the hunter, or standing between it and the herd) or its
+speed, which is a body or behaviour question for the coordinator. The walk scene of `--check` is not read at 87 px (the path to
+the smoke spot grazes the caller, which the formula has no bumps for) and is read at 150 px in `test/evo/role-budget-defence-check.test.js`.
 
 ## The three prey run rows
 

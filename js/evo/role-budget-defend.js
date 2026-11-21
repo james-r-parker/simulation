@@ -2,6 +2,7 @@
 // intercept and smoke, each a slack in ticks found on `defenceTimeline`. Pure: it reads `RoleParams` and the model.
 
 import { defenceTimeline } from './role-budget-defence.js';
+import { escortGap } from './role-budget-escort.js';
 import { frameOptions, gapAtAwareness } from './role-budget-frame.js';
 import { SLACK_CAP, cell, rowOf } from './role-budget-cell.js';
 import { hearWindow } from './role-budget-senses.js';
@@ -46,7 +47,7 @@ function playDefence([hunter, caller, defender], model, play = {}) {
     return defenceTimeline(hunter, caller, defender, {
         reaction: model.reactionTicks,
         threshold: model.hearThreshold,
-        side: model.defenderGap,
+        side: escortGap(defender, caller, model),
         gap: start.gap,
         hunter: start.hunter,
         ...play,
@@ -116,7 +117,7 @@ function stepCells(bodies, model) {
     if (playDefence(bodies, model).heardTick < 0) {
         return { hear: cell(null, model), turn: none, run: none, intercept };
     }
-    const audible = hearWindow(model.defenderGap, bodies[1], model.hearThreshold).ticks - 1;
+    const audible = hearWindow(escortGap(bodies[2], bodies[1], model), bodies[1], model.hearThreshold).ticks - 1;
     const hear = (/** @type {number} */ slack) => cell(Math.min(slack, audible), model);
     if (!completes({})) {
         return { hear: hear(SLACK_CAP), turn: none, run: cell(null, model), intercept };

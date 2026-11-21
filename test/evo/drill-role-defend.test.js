@@ -19,7 +19,8 @@ import { noteMeeting, playDefence } from '../../js/evo/role-scenes-defence.js';
 
 /** The shove on and the damping the row's search found, so the defence is reachable (`--search` on `defender:predator`). */
 const REACHABLE = { defenderRepelEnergy: 40, defenderRepelImpulse: 4, damping: 0.7125 };
-const SCENE = { reaction: 2, threshold: 0.1, side: 150 };
+/** The defender stands at the escort distance: the caller's size, its own and one radius of air (29 + 29 + 29 px). */
+const SCENE = { reaction: 2, threshold: 0.1, side: 87 };
 
 /**
  * @param {Record<string, any>} over config overrides
@@ -49,7 +50,7 @@ describe('the defend-caller drill', () => {
         expect([hunter.spec, caller.spec, defender.spec]).toEqual([SPEC.PREDATOR, SPEC.FORAGER, SPEC.DEFENDER]);
         const gap = Math.hypot(caller.x - hunter.x, caller.y - hunter.y);
         expect(gap).toBeCloseTo(345, 0);
-        expect(Math.hypot(defender.x - caller.x, defender.y - caller.y)).toBeCloseTo(150, 6);
+        expect(Math.hypot(defender.x - caller.x, defender.y - caller.y)).toBeCloseTo(87, 6);
         expect(JSON.stringify(stage(2))).not.toBe(JSON.stringify(stage(1)));
     });
 
