@@ -1,7 +1,7 @@
 # Training loop
 
-**Status:** In progress - Phases 1 and 2 built (T1 to T12); Phase 3 and Phase 4 code built; adaptive difficulty is untested (E207 never left its floor, E251 stopped on a validation error; T16b, T16c); the tuning nights read no verdict (E208, E209, E230, E231); Phase 5 (verdict power and trainer throughput, T24 to T28) is next.
-**Validated:** 0254883d (2026-11-19)
+**Status:** In progress - Phases 1 and 2 built; Phases 3 and 4 code built, adaptive difficulty untested (E207, E251; T16b, T16c) and the tuning nights read no verdict (E208, E209, E230, E231). Phase 5: T24 to T27 and T29 to T32 built (T31 without world reuse); T33 (re-profile, one measured base arm) and the review T28 are open.
+**Validated:** 3c6f1225 (2026-11-21)
 **Priority:** 4 - Training lead. A ladder change cannot be judged (every `train:compare` read is `no verdict`) and a run's workers are 35 to 45% busy; Phase 5 fixes both before the next ladder screen, which is fair-chase.md Phase 2
 **Depends on:** [training-stages.md](training-stages.md), [training.md](training.md)
 
