@@ -14,7 +14,7 @@ describe('the corners of every built row', () => {
         'at neutral spans are one pair equal to the defaults',
         () => {
             const open = reading(arenaConfig(neutralMenus()));
-            const rows = BUILT_ROWS.filter((name) => !name.endsWith(':herd'));
+            const rows = BUILT_ROWS;
             const want = matrix(open.config, model, rows, { worldConfig: open.config }).rows;
             expect(want.length).toBe(rows.length);
             for (const row of want.filter((r) => r.status !== 'n/a')) {

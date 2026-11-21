@@ -4,6 +4,7 @@ import { HEAT_BAND, LANES, LANE_COUNT, NOT_LANES, bodyProblem, laneBases, laneTa
 import { createConfig } from '../../js/sim/config.js';
 import { SPECIALISATION_FIELDS } from '../../js/sim/config-spec-rules.js';
 import { SPEC_NAMES } from '../../js/sim/specs.js';
+import { TRAITS } from '../../js/sim/body-traits.js';
 
 const config = createConfig();
 
@@ -218,5 +219,17 @@ describe('bodyProblem', () => {
         const body = { baseSize: 1.1, childEnergyShare: 0.9 };
         expect(bodyProblem(body)).toBeNull();
         expect(createConfig({ specialisations: { scout: { body } } }).specialisations.scout.body).toEqual(body);
+    });
+});
+
+describe('the lanes a budget trait touches', () => {
+    it('are all moved, so the budget traits read them through the lane readers', () => {
+        const byName = new Map(LANES.map((lane) => [lane.name, lane]));
+        for (const trait of TRAITS.filter((t) => t.budget)) {
+            const touched = [...trait.effects.map((effect) => effect.lane), ...trait.costs.map((cost) => cost.lane)];
+            for (const name of touched) {
+                expect(byName.get(name)?.moved, `${trait.name} ${name}`).toBe(true);
+            }
+        }
     });
 });
