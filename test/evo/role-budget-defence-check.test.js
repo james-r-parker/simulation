@@ -22,10 +22,10 @@ describe('defenceCheck at the defaults', () => {
             'smoke:prey out of view when the cover ends',
             'smoke:defender release tick',
             'smoke:defender a defender facing the hunter is refused: the cloud is not between',
-            'smoke:defender walk release tick',
-            'smoke:defender walk cloud centre x, px ahead of the hunter',
-            'smoke:defender walk cloud centre y, px off the line',
         ]);
+        // at the escort distance the defender's path to the smoke spot grazes the caller (the formula has no bumps), so the
+        // walk is not read at the defaults; it is read from 150 px below
+        expect(readings.some((r) => r.row === 'smoke:defender walk')).toBe(false);
     });
 
     it('puts the formula beside the scene, with the tolerance in words', () => {
@@ -36,6 +36,8 @@ describe('defenceCheck at the defaults', () => {
 });
 
 describe('defenceCheck with other models', () => {
+    /** The scenes these tests pin were first read with the defender 150 px off the caller. */
+    const FAR = { ...MODEL_DEFAULTS, escortGap: 150 };
     const SLOW = {
         maxVelocity: 4.5,
         defenderRepelEnergy: 40,
@@ -45,13 +47,13 @@ describe('defenceCheck with other models', () => {
     };
 
     it('with the shove on, the defender lands its power before the kill in the formula and in the scene', () => {
-        const run = defenceCheck(arenaConfig(SLOW), MODEL_DEFAULTS);
+        const run = defenceCheck(arenaConfig(SLOW), FAR);
         const lands = run.readings.find((r) => r.what.startsWith('defender lands its power'));
         expect([lands?.formula, lands?.scene]).toEqual([true, true]);
     });
 
     it('with the shove on it reads the first shove, whether the bite breaks and the energy prevented, and they agree', () => {
-        const run = defenceCheck(arenaConfig(SLOW), MODEL_DEFAULTS);
+        const run = defenceCheck(arenaConfig(SLOW), FAR);
         const read = (/** @type {string} */ what) => run.readings.find((r) => r.what === what);
         expect(read('first shove tick')).toMatchObject({ formula: 39, scene: 39, drift: false, tolerance: '2 ticks' });
         expect(read('shove breaks the bite')).toMatchObject({ formula: true, scene: true, drift: false });
@@ -59,7 +61,7 @@ describe('defenceCheck with other models', () => {
     });
 
     it('with the shove on the kill tick drifts: the formula never has the hunter bite the defender and rest, the sim does', () => {
-        const run = defenceCheck(arenaConfig(SLOW), MODEL_DEFAULTS);
+        const run = defenceCheck(arenaConfig(SLOW), FAR);
         expect(run.readings.filter((r) => r.drift).map((r) => r.what)).toEqual(['kill tick']);
         const kill = run.readings.find((r) => r.what === 'kill tick');
         expect([kill?.formula, kill?.scene, kill?.tolerance]).toEqual([116, 201, '2 ticks']);
@@ -87,19 +89,17 @@ describe('defenceCheck with other models', () => {
     });
 
     it('the walk is read from the real start, and not for a defender never heard or one whose path runs through the caller', () => {
-        const walk = defenceCheck(arenaConfig(), MODEL_DEFAULTS).readings.filter(
-            (r) => r.row === 'smoke:defender walk',
-        );
+        const walk = defenceCheck(arenaConfig(), FAR).readings.filter((r) => r.row === 'smoke:defender walk');
         expect(walk.map((r) => r.drift)).toEqual([false, false, false]);
         expect(walk[0].formula).toBeGreaterThan(40);
         for (const gap of [300, 60]) {
-            const run = defenceCheck(arenaConfig(), { ...MODEL_DEFAULTS, defenderGap: gap });
+            const run = defenceCheck(arenaConfig(), { ...MODEL_DEFAULTS, escortGap: gap });
             expect(run.readings.some((r) => r.row === 'smoke:defender walk')).toBe(false);
         }
     });
 
     it('a defender out of earshot is never heard, in the formula and in the scene alike', () => {
-        const far = defenceCheck(arenaConfig(), { ...MODEL_DEFAULTS, defenderGap: 300 });
+        const far = defenceCheck(arenaConfig(), { ...MODEL_DEFAULTS, escortGap: 300 });
         expect(far.drift).toBe(0);
         expect([far.readings[1].formula, far.readings[1].scene]).toEqual([-1, -1]);
     });

@@ -4,6 +4,7 @@
 
 import { MAX_TICKS } from './role-budget-timeline.js';
 import { cell } from './role-budget-cell.js';
+import { escortGap } from './role-budget-escort.js';
 import { charge, costOf, createBody, stepBody } from './role-budget-body.js';
 import { norm, speedStep, swingTicks } from './role-budget-kinematics.js';
 import { steerOut } from './role-budget-play.js';
@@ -226,7 +227,7 @@ export function defenderSmokeGeometry([hunter, caller, defender], model) {
     const walk =
         model.standing === undefined
             ? walkAndStop(defender, {
-                  from: { x: length, y: model.defenderGap },
+                  from: { x: length, y: escortGap(defender, caller, model) },
                   angle: -Math.PI / 2,
                   to: { x: spot, y: 0 },
               })

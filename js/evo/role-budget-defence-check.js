@@ -5,6 +5,7 @@
 import { roleParams } from './role-budget-params.js';
 import { defenceTimeline } from './role-budget-defence.js';
 import { budgetDefend } from './role-budget-defend.js';
+import { escortGap } from './role-budget-escort.js';
 import { defenderSmokeGeometry, segmentHitsCloud, smokeCell } from './role-budget-smoke.js';
 import { playDefence } from './role-scenes-defence.js';
 import { playDefenderSmoke, playSmoke } from './role-scenes-smoke.js';
@@ -59,7 +60,11 @@ export function signReading(row, what, [formula, scene]) {
  */
 function defenceReadings(config, model) {
     const [hunter, caller, defender] = ['predator', 'forager', 'defender'].map((s) => roleParams(config, s));
-    const options = { reaction: model.reactionTicks, threshold: model.hearThreshold, side: model.defenderGap };
+    const options = {
+        reaction: model.reactionTicks,
+        threshold: model.hearThreshold,
+        side: escortGap(defender, caller, model),
+    };
     const shoves = defender.repel.energy > 0 || defender.repel.impulse > 0;
     const run = defenceTimeline(hunter, caller, defender, options);
     const alone = defenceTimeline(hunter, caller, defender, { ...options, absent: true });
@@ -177,7 +182,7 @@ const CLEAR = 5;
 const STOP_PX = { within: 3, unit: 'px' };
 
 /**
- * The defender's walk, turn and stop from its real start (150 px to the side of the caller, facing along the side): when it
+ * The defender's walk, turn and stop from its real start (the escort distance to the side of the caller, facing along the side): when it
  * releases and where the cloud lands, with the hunter standing still so that no bump enters the reading.
  * @param {Readonly<Record<string, any>>} config an `arenaConfig`
  * @param {import('./role-budget-model.js').RoleModel} model the model options
@@ -187,12 +192,16 @@ function walkReadings(config, model) {
     const bodies = ['predator', 'forager', 'defender'].map((s) => roleParams(config, s));
     const [hunter, caller, defender] = bodies;
     const geometry = defenderSmokeGeometry(bodies, model);
-    const options = { reaction: model.reactionTicks, threshold: model.hearThreshold, side: model.defenderGap };
+    const options = {
+        reaction: model.reactionTicks,
+        threshold: model.hearThreshold,
+        side: escortGap(defender, caller, model),
+    };
     const heard = defenceTimeline(hunter, caller, defender, options).heardTick >= 0;
     const spot = defenderSmokeGeometry(bodies, { ...model, standing: STANDING }).releasePoint;
     const length = spot + caller.size + defender.size;
     const path = [
-        { x: length, y: model.defenderGap },
+        { x: length, y: escortGap(defender, caller, model) },
         { x: spot, y: 0 },
     ];
     const bump = { x: length, y: 0, r: caller.size + defender.size - CLEAR };
@@ -204,7 +213,7 @@ function walkReadings(config, model) {
         reaction: model.reactionTicks,
         threshold: model.hearThreshold,
         standing: STANDING,
-        walk: { side: model.defenderGap },
+        walk: { side: escortGap(defender, caller, model) },
     });
     const row = 'smoke:defender walk';
     return [

@@ -22,7 +22,7 @@ describe('roleDrillValidity', () => {
 
     it('reads the defender drill as valid once the row is passable: the reference wins every trial and no random brain does', () => {
         const v = roleDrillValidity(DEFEND_CALLER, { trials: 8, config: REACHABLE });
-        expect(v.bar).toMatchObject({ passable: true, slackTicks: 13 });
+        expect(v.bar).toMatchObject({ passable: true, slackTicks: 30 });
         expect(v.reference).toMatchObject({ wins: 8, trials: 8 });
         expect(v.random).toMatchObject({ wins: 0, trials: 32 });
         expect(v).toMatchObject({ referencePasses: true, randomFails: true, agreesWithRow: true, valid: true });
