@@ -203,6 +203,9 @@ export const DEFAULTS = deepFreeze({
     sprintStoreHeat: 0, // body-genes T13: the sprint-store trait's cost, sprintHeat x r^sprintStoreHeat; 0 is off
     fatSlow: 0, // body-genes T13: the fat trait's cost, fatSlowShare x r^fatSlow; 0 is off
     burnThrust: 0, // body-genes T13: the burn trait's cost, thrust x r^burnThrust (a body that burns less has less power); 0 is off
+    hearingCost: 0, // body-genes T46: the hearing trait's cost, a standing loss of passiveLoss x hearingCost x (hearing - 1) above ratio 1; 0 is off
+    noseCost: 0, // body-genes T46: the nose trait's cost, a standing loss of passiveLoss x noseCost x (nose - 1) above ratio 1; 0 is off
+    smokeSightRange: 0, // body-genes T46: the smoke-sight trait's cost, the ray length x r^-smokeSightRange; 0 is off
     leakGeneStart: 0, // brain plan big bang (H3): a random genome's leak genes; 0 gives a 0.5 (memory from generation 0), was 3 (0.955)
     leakMin: 0.02, // brain plan big bang (H7): the smallest leak rate (a half-life of 34 ticks, was 0.05 and 13.5); a unit with a very negative leak gene still moves 2% toward its target per tick
     meritMateBonus: 150, // new: fitness-and-selection T16 (merit, off)

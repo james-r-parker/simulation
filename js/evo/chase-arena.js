@@ -114,7 +114,7 @@ function placeFoods(world, foods) {
  * @returns {void}
  */
 function placeBody(world, slot, body, atRest) {
-    const target = body.energy ?? (body.energyShare ?? 0.5) * world.maxEnergyBySpec[body.spec];
+    const target = body.energy ?? (body.energyShare ?? 0.5) * world.lanes.maxEnergy[slot];
     addEnergy(world, slot, target - world.energy[slot], ENERGY_SOURCE.INITIAL);
     world.x[slot] = body.x;
     world.y[slot] = body.y;

@@ -4,7 +4,7 @@ import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { causeList, causeMap } from './events.js';
 import { LANE_ID, liveOf, pinSlot, unpinSlot } from './effects.js';
 import { specParams } from './spec-params.js';
-import { baseSizeOf, visionRatioOf } from './traits.js';
+import { baseSizeOf, hearingRatioOf, noseRatioOf, visionRatioOf } from './traits.js';
 import { stepTemperature } from './temperature.js';
 import { TIMER_CAP } from './world.js';
 
@@ -153,6 +153,26 @@ function visionLoss(world, slot) {
     return world.config.passiveLoss * liveOf(world, slot, VISION_COST_LANE) * (vision - 1);
 }
 
+/**
+ * @param {import('./world.js').World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} the extra passive loss of the longer ears and nose (body-genes T46): `passiveLoss x hearingCost x
+ *   (hearing - 1)` and `passiveLoss x noseCost x (nose - 1)`, each only above ratio 1 and 0 with its key at 0
+ */
+function senseLoss(world, slot) {
+    const c = world.config;
+    let loss = 0;
+    if (c.hearingCost > 0) {
+        const hearing = hearingRatioOf(world, slot);
+        loss += hearing > 1 ? c.passiveLoss * c.hearingCost * (hearing - 1) : 0;
+    }
+    if (c.noseCost > 0) {
+        const nose = noseRatioOf(world, slot);
+        loss += nose > 1 ? c.passiveLoss * c.noseCost * (nose - 1) : 0;
+    }
+    return loss;
+}
+
 /** The nominal standing, movement and sprint cost of the hunter `tickCost` last priced; a scratch for `applyCosts`. */
 const nominal = new Float64Array(3);
 
@@ -174,7 +194,9 @@ export function tickCost(world, slot) {
     // alone, and the `movementCost` lane holds the spec's move multiplier, which the turn term takes on its own.
     const standing =
         liveOf(world, slot, PASSIVE_LOSS_LANE) +
-        (liveOf(world, slot, SIZE_ENERGY_LOSS_LANE) * world.size[slot] + visionLoss(world, slot)) *
+        (liveOf(world, slot, SIZE_ENERGY_LOSS_LANE) * world.size[slot] +
+            visionLoss(world, slot) +
+            senseLoss(world, slot)) *
             sp.passiveLossMultiplier;
     const turn = liveOf(world, slot, TURN_COST_LANE) * Math.abs(world.turnRate[slot]) * sp.moveCostMultiplier;
     const base = (standing + liveOf(world, slot, MOVEMENT_COST_LANE) * (speed * speed) + turn) * drain;
