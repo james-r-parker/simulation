@@ -3,18 +3,22 @@ import { describe, expect, it } from 'vitest';
 import { arenaConfig } from '../../js/evo/chase-arena.js';
 import {
     AUDIT_BEARINGS,
-    budgetChase,
+    budgetChase as typedBudgetChase,
     chaseTimeline,
     gapAtAwareness,
     maxCatchableGap,
-    stepSlack,
+    stepSlack as typedStepSlack,
 } from '../../js/evo/role-budget-chase.js';
 import { SLACK_CAP } from '../../js/evo/role-budget-cell.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 
-const arm = (name) => JSON.parse(readFileSync(`evals/fair-chase/${name}.json`, 'utf8'));
-const pair = (overrides, prey = 'forager') => {
+/** @type {any} the budget and the slack with their numbers left untyped for the asserts */
+const budgetChase = typedBudgetChase;
+/** @type {any} */
+const stepSlack = typedStepSlack;
+const arm = (/** @type {any} */ name) => JSON.parse(readFileSync(`evals/fair-chase/${name}.json`, 'utf8'));
+const pair = (/** @type {any} */ overrides, prey = 'forager') => {
     const config = arenaConfig(overrides);
     return { hunter: roleParams(config, 'predator'), prey: roleParams(config, prey) };
 };
@@ -60,7 +64,7 @@ describe('budgetChase on a catchable pair (the courser arm against the forager)'
         expect(AUDIT_BEARINGS).toHaveLength(8);
         expect(AUDIT_BEARINGS[0]).toBe(-Math.PI);
         expect(b.bearings.margins).toHaveLength(8);
-        expect(b.bearings.share).toBe(b.bearings.margins.filter((m) => m >= 0).length / 8);
+        expect(b.bearings.share).toBe(b.bearings.margins.filter((/** @type {any} */ m) => m >= 0).length / 8);
         expect(b.bearings.worst).toBe(Math.min(...b.bearings.margins));
         expect(b.bearings.margins[4]).toBeGreaterThanOrEqual(0);
     });
@@ -83,6 +87,10 @@ describe('budgetChase on a pair that does not close (the defaults against the fo
         expect(b.cells.run.distance).toBe(b.catchMargin);
         expect(b.row.status).toBe('impossible');
         expect(b.binding).toBe('run');
+    });
+
+    it('is still catchable on the straight bound, an upper bound on any hunter', () => {
+        expect(b.tiers.perfect.straight).toBeGreaterThan(0);
     });
 });
 
@@ -127,7 +135,7 @@ describe('stepSlack', () => {
 
     it('is the largest delay that still kills: one more tick of it fails', () => {
         const aware = gapAtAwareness(courser.hunter, courser.prey);
-        const killsWith = (delay) =>
+        const killsWith = (/** @type {any} */ delay) =>
             chaseTimeline(courser.hunter, courser.prey, {
                 gap: aware,
                 hunterStart: 'cruise',

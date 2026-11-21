@@ -1,19 +1,24 @@
 // The hunter against one prey (docs/designs/role-budget.md, "Phase 1 steps"): the slack of each step by bisection on a
-// delay, the prey's broken bound, the energy and the heat of the chase. Every number comes
+// delay, the two prey bounds, the three performer tiers, the energy and the heat of the chase. Every number comes
 // from `chaseTimeline`, so a margin cannot disagree with the verdict. Pure.
 
 import { MAX_TICKS } from './role-budget-timeline.js';
 import { SLACK_CAP, cell, rowOf } from './role-budget-cell.js';
 import { gapAtAwareness, maxCatchableGap, playFrame } from './role-budget-frame.js';
 import { refillTicks } from './role-budget-kinematics.js';
+import { fitForRung, learnSlope, tierMargins } from './role-budget-tiers.js';
 
 export { MAX_TICKS, chaseTimeline } from './role-budget-timeline.js';
 export { gapAtAwareness, gapAtSight, maxCatchableGap, playFrame } from './role-budget-frame.js';
+export { fitForRung, learnSlope, tierMargins } from './role-budget-tiers.js';
 
 /**
  * @typedef {object} ChaseBudget
  * @property {ReturnType<typeof rowOf>} row the matrix row of the four steps
  * @property {Record<string, import('./role-budget-cell.js').Cell>} cells the four cells
+ * @property {import('./role-budget-tiers.js').TierMargins} tiers the catch margin of each tier on both bounds, in px
+ * @property {string} learnSlope `ok` or the tier that fails
+ * @property {boolean} fit whether the pair is fit for the rung screen
  * @property {boolean} catchable whether the perfect hunter closes the broken bound
  * @property {number} catchMargin the perfect hunter's broken-bound margin, in px
  * @property {{margins: number[], share: number, worst: number} | null} bearings the broken-bound margin at each audit bearing
@@ -121,7 +126,7 @@ function bearingsOf(hunter, prey, model) {
 
 /**
  * The budget of a hunter against a prey: the four step cells of the perfect performer on the broken bound facing the
- * prey, the catch margin of the broken bound, and the chase's energy and heat.
+ * prey, the margins of both bounds and all three tiers, the learn slope, and the chase's energy and heat.
  * @param {import('./role-budget-params.js').RoleParams} hunter the hunter
  * @param {import('./role-budget-params.js').RoleParams} prey the prey
  * @param {import('./role-budget-model.js').RoleModel} model the model options
@@ -133,12 +138,16 @@ export function budgetChase(hunter, prey, model, { bearings = true } = {}) {
     const run = playFrame(hunter, prey, aware, { model });
     const cells = cellsOf(hunter, prey, model, run);
     const row = rowOf(`${hunter.spec}:${prey.spec}`, cells);
-    const margin = maxCatchableGap(hunter, prey, { model }) - aware;
+    const tiers = tierMargins(hunter, prey, model);
+    const slope = learnSlope(tiers, hunter, prey, model);
     return {
         row,
         cells,
-        catchable: margin >= 0,
-        catchMargin: margin,
+        tiers,
+        learnSlope: slope,
+        fit: fitForRung(tiers, slope),
+        catchable: tiers.perfect.broken >= 0,
+        catchMargin: tiers.perfect.broken,
         bearings: bearings ? bearingsOf(hunter, prey, model) : null,
         chaseEnergy: {
             spent: run.hunterSpent,
