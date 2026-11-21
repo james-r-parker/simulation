@@ -151,6 +151,7 @@ describe('plainBrain', () => {
 
         it('steps a spare trait slot (no registry entry) by traitMutationSigma alone', () => {
             const spare = { weightCount: 30, traitStart: 5, leakStart: 29 };
+            /** @type {Record<string, any>} */
             const world = {
                 ...makeWorld(30, 0),
                 layout: spare,
