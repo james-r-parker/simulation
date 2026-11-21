@@ -1,8 +1,9 @@
 // Measures herd grazing, trample deaths and whether blobs clear an approaching herd's path.
 
-import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE, EVENT_TICK } from '../sim/events.js';
+import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE, EVENT_TICK, EVENT } from '../sim/events.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { countSeedlings, samplePatchHerdFollowing } from './scene-herd-ecology.js';
+import { herdMetrics } from './scene-herd-metrics.js';
 
 const EPISODE_LIMIT = 120;
 const APPROACH_DISTANCE = 300;
@@ -289,3 +290,27 @@ function trackGroupCrossings(scene, world) {
         scene.lastGroupSide[group] = side;
     }
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const herdDetector = {
+    name: 'herd',
+    modules: ['js/evo/scene-herd.js', 'js/evo/scene-herd-metrics.js'],
+    atStart: true,
+    create: (config) => createHerdScene(config),
+    on: {
+        AGENT_DIED: (scene, world, o) => {
+            const d = world.events.data;
+            noteHerdDeath(scene, {
+                tick: d[o + EVENT_TICK],
+                slot: d[o + EVENT.AGENT_DIED.SLOT],
+                genomeId: d[o + EVENT.AGENT_DIED.GENOME_ID],
+                cause: d[o + EVENT.AGENT_DIED.CAUSE],
+                herdId: d[o + EVENT.AGENT_DIED.BY],
+                pinned: d[o + EVENT.AGENT_DIED.PARTNER] === 1,
+            });
+        },
+    },
+    onSlotFree: resetHerdSlot,
+    onTick: (scene, world, observer) => trackHerd(scene, world, observer),
+    metrics: (scene, world, observer) => herdMetrics(scene, observer.scenes.carcass, observer),
+};

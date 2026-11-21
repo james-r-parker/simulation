@@ -221,3 +221,19 @@ function reflexTotals(scene, world) {
     }
     return totals;
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const biteLifeDetector = {
+    name: 'biteLife',
+    modules: ['js/evo/scene-bite-life.js'],
+    sourceTest: 'test/evo/metric-source-hunter-bites.test.js',
+    create: () => createBiteLifeScene(),
+    on: {
+        AGENT_BORN: (scene, world, o) => noteBiteLifeRecord(scene, world.events.data, o, world),
+        HUNTER_KILL: (scene, world, o) => noteBiteLifeRecord(scene, world.events.data, o, world),
+        HUNTER_RECOIL_LIFE: (scene, world, o) => noteBiteLifeRecord(scene, world.events.data, o, world),
+        HUNTER_LEDGER: (scene, world, o) => noteBiteLifeRecord(scene, world.events.data, o, world),
+    },
+    onTick: (scene, world) => tickRecoil(scene, world),
+    metrics: (scene, world) => biteLifeMetrics(scene, world),
+};

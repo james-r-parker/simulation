@@ -20,6 +20,7 @@ import { none, ok } from './metrics-stats.js';
 import { KILL, killKind } from './observer-combat.js';
 import { SPEC_RADIX } from './hunter-table.js';
 import { createKeyed, rowOf } from './scene-keyed.js';
+import { DEATH_CAUSE, EVENT } from '../sim/events.js';
 
 /** Fewest paired kills for `eval.pack_lift`. */
 export const MIN_PAIRED_KILLS = 30;
@@ -136,3 +137,25 @@ export function packLiftMetrics(scene) {
             : none(`under ${MIN_SIZE_KILLS} pack kills or under ${MIN_SIZE_KILLS} solo kills`);
     return { 'eval.pack_lift': lift, 'eval.pack_prey_size_ratio': ratio };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const packLiftDetector = {
+    name: 'packLift',
+    modules: ['js/evo/scene-pack-lift.js'],
+    sourceTest: 'test/evo/metric-source-hunter-chases.test.js',
+    create: () => createPackLiftScene(),
+    on: {
+        AGENT_DIED: (scene, world, o, observer) => {
+            const d = world.events.data;
+            if (d[o + EVENT.AGENT_DIED.CAUSE] === DEATH_CAUSE.EATEN) {
+                notePackKill(scene, observer, {
+                    world,
+                    size: d[o + EVENT.AGENT_DIED.SIZE],
+                    killer: d[o + EVENT.AGENT_DIED.BY],
+                    previous: d[o + EVENT.AGENT_DIED.PARTNER],
+                });
+            }
+        },
+    },
+    metrics: (scene) => packLiftMetrics(scene),
+};

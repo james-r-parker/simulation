@@ -9,6 +9,8 @@
 
 import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './burn-in.js';
+import { EVENT } from '../sim/events.js';
+import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
 
 const NEUTRAL = 0;
 const STATES = 4;
@@ -141,3 +143,23 @@ export function conditionMetrics(scene, observer) {
     const reason = 'no agent sampled in both a neutral and a pregnant, cold or starving condition';
     return { 'eval.condition_gait_shift': agents > 0 ? ok(sum / agents) : none(reason) };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const conditionDetector = {
+    name: 'condition',
+    modules: ['js/evo/scene-condition.js'],
+    every: MOTION_SAMPLE_TICKS,
+    create: (config) => createConditionScene(config),
+    on: {
+        AGENT_DIED: (scene, world, o, observer) => {
+            const d = world.events.data;
+            const slot = d[o + EVENT.AGENT_DIED.SLOT];
+            if (observer.genomeId[slot] === d[o + EVENT.AGENT_DIED.GENOME_ID]) {
+                flushCondition(scene, observer.config, slot);
+            }
+        },
+    },
+    onSlotFree: resetConditionSlot,
+    onTick: (scene, world) => sampleCondition(scene, world),
+    metrics: (scene, world, observer) => conditionMetrics(scene, observer),
+};

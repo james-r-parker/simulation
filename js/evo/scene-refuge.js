@@ -15,7 +15,7 @@
 
 import { BURN_IN_TICKS } from './burn-in.js';
 import { none, ok } from './metrics-stats.js';
-import { THREAT_PROXIMITY } from './observer-intent-state.js';
+import { THREAT_PROXIMITY, GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
 import { inRefuge } from './scene-terrain.js';
 
 /** Ticks after an episode opens, or a ring exit, in which the entry or the meal still counts. */
@@ -281,3 +281,13 @@ export function refugeMetrics(scene) {
         'eval.refuge_exit_fed': scene.exits >= MIN_REFUGE_EXITS ? ok(scene.exitsFed / scene.exits) : none(few),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const refugeDetector = {
+    name: 'refuge',
+    modules: ['js/evo/scene-refuge.js'],
+    every: GROUP_SAMPLE_TICKS,
+    create: (config) => createRefugeScene(config),
+    onTick: (scene, world, observer) => sampleRefuge(scene, observer, world),
+    metrics: (scene) => refugeMetrics(scene),
+};

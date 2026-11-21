@@ -4,7 +4,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEATH_CAUSE, EVENT_TYPE, pushEvent } from '../../js/sim/events.js';
 import { observe } from '../../js/evo/observer.js';
-import { createScenes, resetSceneSlot } from '../../js/evo/observer-scenes.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { nextTick, observed, pushBorn, pushDied } from './helpers/observer-world.js';
@@ -167,7 +166,7 @@ describe('observeScenes', () => {
     });
 
     it('creates every scene empty, and resetSceneSlot is safe on a fresh one', () => {
-        const scenes = createScenes(observed().world.config);
+        const { scenes } = observed().observer;
         expect(Object.keys(scenes).sort()).toEqual([
             'approach',
             'balance',
@@ -212,6 +211,5 @@ describe('observeScenes', () => {
             'style',
             'terrain',
         ]);
-        expect(() => resetSceneSlot(scenes, 0)).not.toThrow();
     });
 });

@@ -19,4 +19,38 @@ describe('stageArena', () => {
         expect(world.energy[0]).toBeCloseTo(0.5 * world.maxEnergyBySpec[1], 3);
         expect(world.population).toBe(2);
     });
+
+    it('places rocks over every slot, foods before bodies, and a body with its own energy, size, kin and brain', () => {
+        const weights = new Float32Array([0.25]);
+        const { world } = stageArena(
+            arenaConfig(),
+            [
+                { spec: 0, x: 10, y: 20, angle: 0, energy: 900, baseSize: 30, parents: [4, 5], weights },
+                { spec: 0, x: 40, y: 50, angle: 0 },
+            ],
+            {
+                foods: [
+                    { x: 1, y: 2, hue: 0.5, toxicity: 0.25 },
+                    { x: 3, y: 4 },
+                ],
+                rocks: [{ x: 7, y: 8, r: 9 }],
+                atRest: false,
+            },
+        );
+        expect([world.obsX[0], world.obsY[0], world.obsRadius[0]]).toEqual([7, 8, 9]);
+        expect([world.obsX[1], world.obsRadius[1]]).toEqual([20000, 1]);
+        expect([world.foodX[0], world.foodHue[0], world.foodTox[0]]).toEqual([1, Math.fround(0.5), 0.25]);
+        expect(world.foodX[1]).toBe(3);
+        expect(world.energy[0]).toBeCloseTo(900, 3);
+        expect(world.lanes.baseSize[0]).toBe(30);
+        expect([world.parentA[0], world.parentB[0], world.parentA[1]]).toEqual([4, 5, 0]);
+        expect(world.weights[0]).toBe(0.25);
+    });
+
+    it('refuses more rocks than the world has slots', () => {
+        const rocks = Array.from({ length: 5000 }, () => ({ x: 0, y: 0, r: 1 }));
+        expect(() => stageArena(arenaConfig(), [{ spec: 0, x: 1, y: 1, angle: 0 }], { rocks })).toThrow(
+            /5000 rocks do not fit/,
+        );
+    });
 });

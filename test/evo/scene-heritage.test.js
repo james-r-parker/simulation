@@ -161,6 +161,25 @@ describe('creditGrandparents', () => {
         expect(Array.from(r.observer.scenes.heritage.grand.slice(0, 3))).toEqual([1, 0, 0]);
     });
 
+    it('credits each of two different living grandparents', () => {
+        const r = observed();
+        const [g1, g2, p1, p2, c] = [0, 1, 2, 3, 4].map(() => addBlob(r.world));
+        nextTick(r.world, 5);
+        const id = (/** @type {number} */ s) => r.world.genomeId[s];
+        pushBorn(r.world, { slot: g1, genomeId: id(g1), cause: BORN_CAUSE.INITIAL });
+        pushBorn(r.world, { slot: g2, genomeId: id(g2), cause: BORN_CAUSE.INITIAL });
+        pushBorn(r.world, { slot: p1, genomeId: id(p1), parentA: id(g1), parentB: id(g1), cause: BORN_CAUSE.SPLIT });
+        pushBorn(r.world, { slot: p2, genomeId: id(p2), parentA: id(g2), parentB: id(g2), cause: BORN_CAUSE.SPLIT });
+        pushBorn(r.world, { slot: c, genomeId: id(c), parentA: id(p1), parentB: id(p2), cause: BORN_CAUSE.MATE });
+        noteBirthLineage(r.observer, r.world.events.data, r.world.events.count);
+        for (const slot of [g1, g2]) {
+            r.observer.slotOf.set(id(slot), slot);
+        }
+        r.observer.genomeId[c] = id(c);
+        creditGrandparents(r.observer.scenes.heritage, r.observer, c);
+        expect(Array.from(r.observer.scenes.heritage.grand.slice(0, 2))).toEqual([1, 1]);
+    });
+
     it('credits nobody for a child that is not in the family tree', () => {
         const r = observed();
         const c = addBlob(r.world);

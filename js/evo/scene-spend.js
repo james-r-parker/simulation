@@ -20,6 +20,8 @@ import { createLog, ensureRoom } from './growable-log.js';
 import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { createKeyed, rowOf } from './scene-keyed.js';
+import { BORN_CAUSE, EVENT } from '../sim/events.js';
+import { GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
 
 /** Fewest mate births a lineage needs for the `childShare` slope. */
 export const MIN_SLOPE_BIRTHS = 20;
@@ -162,3 +164,25 @@ export function spendMetrics(scene) {
         'eval.childshare_by_condition': shareSlope(scene),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const spendDetector = {
+    name: 'spend',
+    modules: ['js/evo/scene-spend.js'],
+    every: GROUP_SAMPLE_TICKS,
+    create: (config) => createSpendScene(config),
+    on: {
+        AGENT_BORN: (scene, world, o) => {
+            const d = world.events.data;
+            if (d[o + EVENT.AGENT_BORN.CAUSE] === BORN_CAUSE.MATE) {
+                noteSpendBirth(scene, world, {
+                    child: d[o + EVENT.AGENT_BORN.SLOT],
+                    motherId: d[o + EVENT.AGENT_BORN.PARENT_A],
+                });
+            }
+        },
+    },
+    onSlotFree: resetSpendSlot,
+    onTick: (scene, world) => sampleSpend(scene, world),
+    metrics: (scene) => spendMetrics(scene),
+};

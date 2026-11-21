@@ -20,6 +20,8 @@ import { none, ok } from './metrics-stats.js';
 import { THREAT_PROXIMITY } from './observer-intent-state.js';
 import { createKeyed, rowOf } from './scene-keyed.js';
 import { inRefuge } from './scene-terrain.js';
+import { EVENT, EVENT_STRIDE, EVENT_TICK } from '../sim/events.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 
 /** A chain longer than this many ticks counts as this long. */
 export const STYLE_CHAIN_CAP = 60;
@@ -205,3 +207,25 @@ export function styleMetrics(style) {
                 : none(`no specialisation with two lineages of ${MIN_STYLE_DEATHS} deaths and a spread of style`),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const styleDetector = {
+    name: 'style',
+    modules: ['js/evo/style.js'],
+    lean: true,
+    create: (config) => createStyle(config),
+    on: {
+        AGENT_DIED: (scene, world, o, observer) => {
+            const d = world.events.data;
+            const slot = d[o + EVENT.AGENT_DIED.SLOT];
+            const genomeId = d[o + EVENT.AGENT_DIED.GENOME_ID];
+            noteStyleAtDeath(observer, o / EVENT_STRIDE, { slot, genomeId });
+            if (observer.genomeId[slot] === genomeId && d[o + EVENT_TICK] >= BURN_IN_TICKS) {
+                noteStyleDeath(observer, slot);
+            }
+        },
+    },
+    onSlotFree: resetStyleSlot,
+    onTick: (scene, world, observer) => tickStyle(observer, world),
+    metrics: (scene) => styleMetrics(scene),
+};

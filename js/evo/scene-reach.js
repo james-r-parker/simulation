@@ -13,6 +13,7 @@ import { BURN_IN_TICKS } from './burn-in.js';
 import { none, ok } from './metrics-stats.js';
 import { patchAt } from './scene-patch.js';
 import { refugeCentres, ringDistance } from './scene-terrain.js';
+import { GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
 
 /** A flight covers about 300 px; twice that is "within a dash" of cover. */
 export const DASH_PX = 600;
@@ -110,3 +111,13 @@ export function reachMetrics(scene) {
         'eval.prey_in_patch_share': enough ? ok(scene.inPatch / scene.samples) : none(few),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const reachDetector = {
+    name: 'reach',
+    modules: ['js/evo/scene-reach.js'],
+    every: GROUP_SAMPLE_TICKS,
+    create: () => createReachScene(),
+    onTick: (scene, world, observer) => sampleReach(scene, observer, world),
+    metrics: (scene) => reachMetrics(scene),
+};

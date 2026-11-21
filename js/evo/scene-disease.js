@@ -13,7 +13,7 @@
 // All four are `null` with reason `disease-off` while `diseaseSeedRate` is 0. The arrays are sized once from
 // `maxAgents`; a checkpoint allocates nothing.
 
-import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE, EVENT, EVENT_TICK } from '../sim/events.js';
+import { DEATH_CAUSE, EVENT, EVENT_TICK } from '../sim/events.js';
 import { geneticDistance } from '../sim/genetics.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { none, ok, share } from './metrics-stats.js';
@@ -64,30 +64,43 @@ function creditFamily(scene, slot, genomeId) {
 }
 
 /**
- * Reads the tick's contagion events and deaths.
+ * Counts an emerged strain.
  * @param {Record<string, any>} scene the scene
- * @param {Record<string, any>} world the world after the tick
  * @returns {void}
  */
-export function noteDiseaseEvents(scene, world) {
+function noteStrain(scene) {
+    if (scene.on) {
+        scene.strains += 1;
+    }
+}
+
+/**
+ * Counts an infection, in the host's family when it is near the strain's genotype.
+ * @param {Record<string, any>} scene the scene
+ * @param {Float64Array} d the event data
+ * @param {number} o the offset of the `AgentInfected` record
+ * @returns {void}
+ */
+function noteInfection(scene, d, o) {
     if (!scene.on) {
         return;
     }
-    scene.ticks = world.tick;
-    const d = world.events.data;
-    const end = world.events.count * EVENT_STRIDE;
-    for (let o = 0; o < end; o += EVENT_STRIDE) {
-        const type = d[o];
-        if (type === EVENT_TYPE.STRAIN_EMERGED) {
-            scene.strains += 1;
-        } else if (type === EVENT_TYPE.AGENT_INFECTED) {
-            scene.infections += 1;
-            scene.inFamily += d[o + EVENT.AGENT_INFECTED.DISTANCE] < FAMILY_DISTANCE ? 1 : 0;
-            creditFamily(scene, d[o + EVENT.AGENT_INFECTED.SLOT], d[o + EVENT.AGENT_INFECTED.GENOME_ID]);
-        } else if (type === EVENT_TYPE.AGENT_DIED && d[o + EVENT_TICK] > BURN_IN_TICKS) {
-            scene.deaths += 1;
-            scene.diseaseDeaths += d[o + EVENT.AGENT_DIED.CAUSE] === DEATH_CAUSE.DISEASE ? 1 : 0;
-        }
+    scene.infections += 1;
+    scene.inFamily += d[o + EVENT.AGENT_INFECTED.DISTANCE] < FAMILY_DISTANCE ? 1 : 0;
+    creditFamily(scene, d[o + EVENT.AGENT_INFECTED.SLOT], d[o + EVENT.AGENT_INFECTED.GENOME_ID]);
+}
+
+/**
+ * Counts a death after burn-in, and a disease death.
+ * @param {Record<string, any>} scene the scene
+ * @param {Float64Array} d the event data
+ * @param {number} o the offset of the `AgentDied` record
+ * @returns {void}
+ */
+function noteDiseaseDeath(scene, d, o) {
+    if (scene.on && d[o + EVENT_TICK] > BURN_IN_TICKS) {
+        scene.deaths += 1;
+        scene.diseaseDeaths += d[o + EVENT.AGENT_DIED.CAUSE] === DEATH_CAUSE.DISEASE ? 1 : 0;
     }
 }
 
@@ -189,3 +202,26 @@ export function diseaseMetrics(scene) {
         'eval.disease_frequency_slope': slopeOf(scene.fit),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const diseaseDetector = {
+    name: 'disease',
+    modules: ['js/evo/scene-disease.js'],
+    atStart: true,
+    every: 1,
+    create: (config) => createDiseaseScene(config),
+    on: {
+        STRAIN_EMERGED: (scene) => noteStrain(scene),
+        AGENT_INFECTED: (scene, world, o) => noteInfection(scene, world.events.data, o),
+        AGENT_DIED: (scene, world, o) => noteDiseaseDeath(scene, world.events.data, o),
+    },
+    onTick: (scene, world) => {
+        if (scene.on) {
+            scene.ticks = world.tick;
+        }
+        if (world.tick > 0 && world.tick % 1000 === 0) {
+            sampleDiseaseFamilies(scene, world);
+        }
+    },
+    metrics: (scene) => diseaseMetrics(scene),
+};

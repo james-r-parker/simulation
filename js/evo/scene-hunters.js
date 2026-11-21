@@ -21,7 +21,7 @@
 
 import { BIRTH_SOURCE } from '../sim/hunter-ledger.js';
 import { DEFAULTS } from '../sim/config-defaults.js';
-import { DEATH_CAUSE, EVENT_TYPE, EVENT, EVENT_TICK } from '../sim/events.js';
+import { DEATH_CAUSE, EVENT, EVENT_TICK } from '../sim/events.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { bySuffix, none, ok, quantile, share } from './metrics-stats.js';
@@ -123,21 +123,6 @@ export function noteHunterLedger(scene, d, o) {
  */
 export function noteHunterKill(scene, d, o) {
     noteAgeKill(scene.age, d, o);
-}
-
-/**
- * Notes one event record when it is a hunter's: a `HunterKill` or a `HunterLedger`.
- * @param {Record<string, any>} scene the hunter scene
- * @param {Float64Array} d the event ring data
- * @param {number} o the record offset
- * @returns {void}
- */
-export function noteHunterRecord(scene, d, o) {
-    if (d[o] === EVENT_TYPE.HUNTER_KILL) {
-        noteHunterKill(scene, d, o);
-    } else if (d[o] === EVENT_TYPE.HUNTER_LEDGER) {
-        noteHunterLedger(scene, d, o);
-    }
 }
 
 /**
@@ -291,3 +276,19 @@ export function hunterMetrics(scene, world) {
             scene.runTicks > 0 ? ok(scene.quarterTicks) : none('no run length (createObserver runTicks)'),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const huntersDetector = {
+    name: 'hunters',
+    modules: ['js/evo/scene-hunters.js', 'js/evo/scene-hunter-age.js'],
+    sourceTest: 'test/evo/metric-source-hunters.test.js',
+    atStart: true,
+    create: (config, { runTicks }) => createHunterScene(runTicks, config),
+    on: {
+        HUNTER_KILL: (scene, world, o) => noteHunterKill(scene, world.events.data, o),
+        HUNTER_LEDGER: (scene, world, o) => noteHunterLedger(scene, world.events.data, o),
+        AGENT_BORN: (scene, world, o) => noteHunterBirth(scene, world, world.events.data[o + EVENT.AGENT_BORN.SLOT]),
+    },
+    onTick: (scene, world) => tickHunters(scene, world.tick),
+    metrics: (scene, world) => hunterMetrics(scene, world),
+};
