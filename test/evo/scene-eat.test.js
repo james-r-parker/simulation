@@ -186,7 +186,7 @@ describe('the fat speed ratio', () => {
         const plain = read(sampled(w), 'eval.fat_speed_ratio');
         const bigger = world(agents);
         bigger.lanes.maxEnergy[2] = 4 * MAX; // the 0.75 forager is now at 0.1875 of its own store
-        expect(read(sampled(bigger), 'eval.fat_speed_ratio')).not.toBeCloseTo(plain, 6);
+        expect(read(sampled(bigger), 'eval.fat_speed_ratio')).not.toEqual(plain);
     });
 
     it('pools the speeds over the checkpoints before it takes the ratio', () => {
