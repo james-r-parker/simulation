@@ -171,4 +171,20 @@ describe('control arms', () => {
         expect(Object.keys(edge.arms ?? {})).toEqual(['solo', 'kin-blind']);
         expect(drillEdge(pack, oracleSubject('pack-converge'), { trials: 2 }).arms).toBeUndefined();
     });
+
+    it('hands the validated config to the drill plan, the one the trials run under', () => {
+        const seen = /** @type {any[]} */ ([]);
+        const probe = {
+            ...pack,
+            plan: (/** @type {any} */ rng, /** @type {number} */ view, /** @type {any} */ config) => (
+                seen.push(config),
+                pack.plan(rng, view)
+            ),
+        };
+        drillSubject(probe, zero(1), { trials: 2, config: { wallDamage: 5 } });
+        expect(seen).toHaveLength(2);
+        expect(seen[0]).toBe(seen[1]);
+        expect(seen[0].worldWidth).toBe(createConfig({ wallDamage: 0 }).worldWidth);
+        expect(seen[0].wallDamage).toBe(0);
+    });
 });

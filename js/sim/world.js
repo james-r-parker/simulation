@@ -26,6 +26,7 @@ import { terrainRockCount } from './terrain.js';
 import { createObserverScratch } from './observer-scratch.js';
 import { attachWasm } from './wasm-arena.js';
 import { allocLanes } from './lane-state.js';
+import { allocEffects } from './effects.js';
 import { allocSprintState, resetSprintSlot } from './sprint-store.js';
 import { specTable } from './spec-params.js';
 
@@ -121,6 +122,7 @@ function allocAgentArrays(world, layout) {
     createMeritViews(world);
     allocSprintState(world);
     allocLanes(world);
+    allocEffects(world);
     allocLedgerState(world);
     allocCarcassLoss(world);
     allocDiseaseState(world);
