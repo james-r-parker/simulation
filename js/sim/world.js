@@ -334,7 +334,6 @@ export function allocateWorld(config) {
         ...rayTables(config.rayCount),
         ...specTables(config),
         ...rayReachTable(config),
-        biteCos: new Float64Array([detCos(config.biteArc)]),
         antennaCos: new Float64Array([detCos(config.antennaAngle)]),
         antennaSin: new Float64Array([detSin(config.antennaAngle)]),
         cloudCount: 0,

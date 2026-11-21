@@ -16,13 +16,14 @@ const PI = 3.141592653589793;
  * @returns {boolean}
  */
 export function inJaws(world, biter, victim) {
-    if (world.lanes.biteArc[biter] >= PI) {
+    const arc = world.lanes.biteArc[biter];
+    if (arc >= PI) {
         return true;
     }
     const dx = world.x[victim] - world.x[biter];
     const dy = world.y[victim] - world.y[biter];
     const heading = world.angle[biter];
-    return dx * detCos(heading) + dy * detSin(heading) >= world.biteCos[0] * Math.sqrt(dx * dx + dy * dy);
+    return dx * detCos(heading) + dy * detSin(heading) >= detCos(arc) * Math.sqrt(dx * dx + dy * dy);
 }
 
 /**

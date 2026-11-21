@@ -62,6 +62,17 @@ describe('canBite', () => {
     });
 });
 
+describe('the jaws arc', () => {
+    it("is the biter's own biteArc lane, not the global key", () => {
+        const { w, biter, victim } = pair({ biteArc: Math.PI }, { facing: 0.5 });
+        expect(canBite(w, biter, victim)).toBe(true);
+        w.lanes.biteArc[biter] = 0.1; // the victim lies 0.5 rad off the heading: outside a cone of 0.1
+        expect(canBite(w, biter, victim)).toBe(false);
+        w.lanes.biteArc[biter] = 0.6;
+        expect(canBite(w, biter, victim)).toBe(true);
+    });
+});
+
 describe('couldBite', () => {
     it('ignores the jaws: a hunter facing away could still bite', () => {
         const { w, biter, victim } = pair({}, { facing: Math.PI });
