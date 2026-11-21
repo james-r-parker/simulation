@@ -21,4 +21,21 @@ describe('formulaLapse and simLapse', () => {
         expect(formula.lapse).toBeLessThanOrEqual(250);
         expect(sim.lapse).toBeLessThanOrEqual(250);
     });
+
+    it('lapse where a weak sprint is outrun: the formula gives up on the tick the sim does, well before the run ends', () => {
+        const weak = /** @type {any} */ (arenaConfig({ specialisations: { predator: { sprintBoost: 0.2 } } }));
+        const at = { hunter: 'predator', prey: 'forager', distance: 200 };
+        const sim = simLapse(weak, at);
+        const formula = formulaLapse(weak, at);
+        expect(sim.killTick).toBeNull();
+        expect(sim.lapse).toBeLessThan(250);
+        expect(Math.abs(formula.lapse - sim.lapse)).toBeLessThanOrEqual(2);
+    });
+
+    it('read a prey that is never closed on as a chase that never opened: the whole run, no give-up seen', () => {
+        const weak = /** @type {any} */ (arenaConfig({ specialisations: { predator: { sprintBoost: 0.2 } } }));
+        const at = { hunter: 'predator', prey: 'forager', distance: 900 };
+        expect(simLapse(weak, at).lapse).toBe(250);
+        expect(formulaLapse(weak, at).lapse).toBe(250);
+    });
 });

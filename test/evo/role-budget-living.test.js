@@ -74,6 +74,23 @@ describe('budgetLiving at the defaults', () => {
     });
 });
 
+describe('chaseCosts with a weaker sprint', () => {
+    it('charges a failed chase less than the hunter of the defaults does', () => {
+        const weak = living({ specialisations: { predator: { sprintBoost: 0.2 } } });
+        const base = living({});
+        expect(weak.chase.failCost).toBeLessThan(base.chase.failCost);
+    });
+});
+
+describe('budgetLiving where a kill does not pay for its chase', () => {
+    it('is impossible on eat when the net at a catch share of 1 is 0 or less: the chase costs more than the kill returns', () => {
+        const b = living({ movementCost: 0.2 });
+        expect(b.chase.netAtFull).toBeLessThanOrEqual(0);
+        expect(b.cells.eat.status).toBe('impossible');
+        expect(b.row.binding).toBe('eat');
+    });
+});
+
 describe('budgetLiving where the hunter closes on its prey', () => {
     it('pays at a catch share high enough, so a better share lifts the net by the kill income less the failed chase it spares', () => {
         const low = living(COURSER, { catchShare: 0.3 });

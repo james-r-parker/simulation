@@ -19,10 +19,10 @@ function play({ speed, gap, sight }, ticks) {
 }
 
 describe('lapseTicks', () => {
-    it('is 0 for a hunter that never closes: no chase opened', () => {
+    it('is the run for a hunter that never closes: no chase opened, so no give-up is seen', () => {
         const lapse = play({ speed: () => 1, gap: () => 100, sight: 500 }, 100);
         expect(lapse.opened).toBe(-1);
-        expect(lapseTicks(lapse, 100)).toBe(0);
+        expect(lapseTicks(lapse, 100)).toBe(100);
     });
 
     it('is the run for a hunter that keeps closing on a prey it sees: the chase never lapses', () => {

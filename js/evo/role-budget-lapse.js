@@ -63,12 +63,9 @@ export function noteLapse(lapse, { h, p, tick, maxVelocity, sight }) {
 /**
  * @param {Lapse} lapse the tracker at the end of a run
  * @param {number} maxTicks the run's length
- * @returns {number} the ticks a chase that does not kill lasts: to its first lapse, `maxTicks` when it never lapsed, 0 when it never
- *   opened (a hunter that never closed on a sighted prey)
+ * @returns {number} the ticks a chase that does not kill lasts: to its first lapse, and `maxTicks` when the rule never fires (it
+ *   lapsed never, or never opened: no give-up is seen)
  */
 export function lapseTicks(lapse, maxTicks) {
-    if (lapse.opened < 0) {
-        return 0;
-    }
     return lapse.ended > 0 ? lapse.ended : maxTicks;
 }

@@ -12,8 +12,11 @@ const courser = JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8')
 const configs = [
     ['defaults', arenaConfig()],
     ['courser', arenaConfig(courser)],
+    ['weak sprint (lapses)', arenaConfig({ specialisations: { predator: { sprintBoost: 0.2 } } })],
 ];
-const scenes = ['forager', 'scout'].flatMap((prey) => [200, 300, 400].map((distance) => ({ prey, distance })));
+const scenes = ['forager', 'scout'].flatMap((prey) =>
+    [100, 200, 300, 400, 600].map((distance) => ({ prey, distance })),
+);
 const TIMEOUT = scaleTimeout(120000);
 
 describe('a failed chase against the sim', () => {

@@ -144,3 +144,16 @@ export function chaseTimeline(hunter, prey, options) {
     }
     return result({ h, p, heat, tick: o.maxTicks - 1, tally, fatal: false, closing });
 }
+
+/**
+ * `chaseTimeline` cut where the sim gives up: played to `MAX_TICKS`, then, if the chase lapsed before that (`lapse` of the
+ * run), played again to the lapse so the hunter's energy and heat are those at the give-up.
+ * @param {import('./role-budget-params.js').RoleParams} hunter the hunter's numbers
+ * @param {import('./role-budget-params.js').RoleParams} prey the prey's numbers
+ * @param {TimelineOptions} options as `chaseTimeline`
+ * @returns {Timeline} the run to its lapse (to its kill, or to the limit when neither comes first)
+ */
+export function playToLapse(hunter, prey, options) {
+    const run = chaseTimeline(hunter, prey, options);
+    return run.lapse < run.ticks ? chaseTimeline(hunter, prey, { ...options, maxTicks: run.lapse }) : run;
+}

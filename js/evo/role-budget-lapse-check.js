@@ -4,12 +4,11 @@
 // two bodies' motion (the timeline's against the sim's physics), not the rule.
 
 import { step } from '../sim/step.js';
-import { ARENA_CENTRE, stageArena } from './chase-arena.js';
-import { evaderBrain, pursuerBrain } from './chase-oracles.js';
+import { stageChase } from './role-budget-check.js';
 import { createLapse, lapseTicks, noteLapse } from './role-budget-lapse.js';
 import { roleParams } from './role-budget-params.js';
 import { viewReach } from './role-budget-senses.js';
-import { MAX_TICKS, chaseTimeline } from './role-budget-timeline.js';
+import { MAX_TICKS, playToLapse } from './role-budget-timeline.js';
 
 /**
  * Plays the scripted chase in the sim and applies the give-up rule to it each tick.
@@ -19,18 +18,7 @@ import { MAX_TICKS, chaseTimeline } from './role-budget-timeline.js';
  *   (to its lapse, or `MAX_TICKS`) and the energy the hunter spent by then
  */
 export function simLapse(config, { hunter, prey, distance }) {
-    const specs = /** @type {Record<string, any>} */ (config.specialisations);
-    const bodies = [
-        { spec: specs[hunter].index, ...ARENA_CENTRE, angle: 0 },
-        { spec: specs[prey].index, x: ARENA_CENTRE.x + distance, y: ARENA_CENTRE.y, angle: 0 },
-    ];
-    const { world, policy } = stageArena(config, bodies);
-    const hunt = pursuerBrain({ pursuer: 0, evader: 1, sprint: true });
-    const flee = evaderBrain({ pursuer: 0, evader: 1, sprint: true });
-    const brain = (/** @type {Record<string, any>} */ w) => {
-        hunt(w);
-        flee(w);
-    };
+    const { world, policy, brain } = stageChase(config, { hunter, prey, distance, bearing: 0, straight: false });
     const params = roleParams(config, hunter, {}, { age: 'juvenile' });
     const sight = viewReach(params, 0) + roleParams(config, prey).size;
     const track = createLapse();
@@ -63,19 +51,12 @@ export function simLapse(config, { hunter, prey, distance }) {
  * @param {Readonly<Record<string, any>>} config an `arenaConfig`
  * @param {{hunter: string, prey: string, distance: number}} scene the same scene
  * @returns {{killTick: number | null, lapse: number, spent: number}} the formula's kill tick, the ticks its chase lasted and the
- *   energy spent by then (a rerun cut at the lapse)
+ *   energy spent by then (`playToLapse`)
  */
 export function formulaLapse(config, { hunter, prey, distance }) {
     const params = roleParams(config, hunter, {}, { age: 'juvenile' });
+    /** @type {import('./role-budget-timeline.js').TimelineOptions} */
     const options = { gap: distance, hunter: { sprint: 'view' }, prey: { sprint: 'rationed' } };
-    const run = chaseTimeline(params, roleParams(config, prey), options);
-    const cut =
-        run.killTick === null && run.lapse > 0
-            ? chaseTimeline(params, roleParams(config, prey), { ...options, maxTicks: run.lapse })
-            : run;
-    return {
-        killTick: run.killTick,
-        lapse: run.killTick === null ? run.lapse : run.ticks,
-        spent: cut.hunterSpent + cut.kick,
-    };
+    const run = playToLapse(params, roleParams(config, prey), options);
+    return { killTick: run.killTick, lapse: run.ticks, spent: run.hunterSpent + run.kick };
 }

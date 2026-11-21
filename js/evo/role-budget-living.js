@@ -6,7 +6,7 @@ import { SLACK_CAP, cell, rowOf } from './role-budget-cell.js';
 import { frameOptions, gapAtAwareness } from './role-budget-frame.js';
 import { gaitCost, splitGate } from './role-budget-forage.js';
 import { encountersPerLife, poorestBirth } from './role-budget-thrive.js';
-import { MAX_TICKS, chaseTimeline } from './role-budget-timeline.js';
+import { playToLapse } from './role-budget-timeline.js';
 
 /** The steps of the row, in order. */
 export const LIVING_STEPS = Object.freeze(['eat', 'breed']);
@@ -42,16 +42,10 @@ export function killIncome(hunter, prey) {
  */
 export function chaseCosts(hunter, prey, model) {
     const aware = gapAtAwareness(hunter, prey);
-    const play = (/** @type {'broken' | 'straight'} */ bound, /** @type {number} */ maxTicks = MAX_TICKS) => {
-        const options = frameOptions(hunter, prey, aware, { tier: 'reactive', bound, model });
-        return chaseTimeline(hunter, prey, { ...options, maxTicks });
-    };
-    const broken = play('broken');
-    const lapsed =
-        broken.killTick === null && broken.lapse > 0 && broken.lapse < broken.ticks
-            ? play('broken', broken.lapse)
-            : broken;
-    const kill = broken.killTick === null ? play('straight') : broken;
+    const play = (/** @type {'broken' | 'straight'} */ bound) =>
+        playToLapse(hunter, prey, frameOptions(hunter, prey, aware, { tier: 'reactive', bound, model }));
+    const lapsed = play('broken');
+    const kill = lapsed.killTick === null ? play('straight') : lapsed;
     const killing = kill.killTick === null ? lapsed : kill;
     const spent = (/** @type {import('./role-budget-timeline.js').Timeline} */ run) => run.hunterSpent + run.kick;
     return {
