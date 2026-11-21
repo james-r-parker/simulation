@@ -1,7 +1,7 @@
 # E255 (E-FC-2) - prey-ahead learnable under courser
 
 fair-chase.md Step 2 (T7). The prediction (courser makes prey-ahead learnable on 2 to 4 of 8 populations) was committed in
-`evals/experiments.json` before any run. **Verdict: falsified. Under courser prey-ahead is 1 of 8 (best 0.125 against a bar of
+`evals/ledger/E255.json` before any run. **Verdict: falsified. Under courser prey-ahead is 1 of 8 (best 0.125 against a bar of
 0.109), and the drills below it get worse, not better.**
 
 ## Two readings, and why the first is not a courser reading
