@@ -2,7 +2,7 @@
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { birthBudgetSpent } from './birth-budget.js';
-import { blocksMating } from './temperature.js';
+import { GATE, gateOpen } from './effects.js';
 import { geneticDistance } from './genetics.js';
 import { SEX } from './sex.js';
 import { territoryAllows } from './territory.js';
@@ -13,8 +13,8 @@ import { childShareOf } from './traits.js';
 /**
  * @param {World} world the world
  * @param {number} slot an alive agent
- * @returns {boolean} true when mature, not pregnant, off cooldown, above `mateMinEnergy` and not past a temperature stress
- *   threshold
+ * @returns {boolean} true when mature, not pregnant, off cooldown, above `mateMinEnergy` and the `mate` gate is open (no
+ *   effect closes it: a body past a temperature stress threshold cannot start a mating)
  */
 export function isReadyToMate(world, slot) {
     const { maturityTicks, mateMinEnergy } = world.config;
@@ -23,7 +23,7 @@ export function isReadyToMate(world, slot) {
         world.pregnancy[slot] === 0 &&
         world.cooldown[slot] === 0 &&
         world.energy[slot] > mateMinEnergy &&
-        !blocksMating(world, slot) &&
+        gateOpen(world, slot, GATE.MATE) &&
         territoryAllows(world, slot)
     );
 }

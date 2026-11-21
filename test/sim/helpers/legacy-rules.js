@@ -1,0 +1,64 @@
+// The rules the effect registry replaced (docs/designs/status-effects.md, Phase 1), read back through their effects under
+// their old names, so the tests that pinned each rule still pin the same numbers.
+
+import { EFFECT, effectFactor, levelOf } from '../../../js/sim/effects.js';
+
+/**
+ * @param {any} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} what `thrustEfficiency` returned: the factor of the cold and heat bands on `maxThrust`
+ */
+export function thrustEfficiency(world, slot) {
+    return (
+        effectFactor(world, slot, EFFECT.COLD_BAND, 'maxThrust') *
+        effectFactor(world, slot, EFFECT.HEAT_BAND, 'maxThrust')
+    );
+}
+
+/**
+ * @param {any} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} what `passiveMultiplier` returned: the factor of the cold and hot ramps on the passive loss
+ */
+export function passiveMultiplier(world, slot) {
+    return (
+        effectFactor(world, slot, EFFECT.COLD_RAMP, 'passiveLoss') *
+        effectFactor(world, slot, EFFECT.HOT_RAMP, 'passiveLoss')
+    );
+}
+
+/**
+ * @param {any} world the world
+ * @param {number} slot the agent slot
+ * @returns {boolean} what `blocksMating` returned: whether the `outOfBand` effect is on
+ */
+export function blocksMating(world, slot) {
+    return levelOf(world, slot, EFFECT.OUT_OF_BAND) > 0;
+}
+
+/**
+ * @param {any} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} what `fatFactor` returned: the factor of `fat` on `maxThrust`
+ */
+export function fatFactor(world, slot) {
+    return effectFactor(world, slot, EFFECT.FAT, 'maxThrust');
+}
+
+/**
+ * @param {any} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} what `juvenileBurnOf` returned: the factor of `juvenile` on the passive loss
+ */
+export function juvenileBurnOf(world, slot) {
+    return effectFactor(world, slot, EFFECT.JUVENILE, 'passiveLoss');
+}
+
+/**
+ * @param {any} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} what `storeFactor` returned: the factor of `spent` on `sprintBoost`
+ */
+export function storeFactor(world, slot) {
+    return effectFactor(world, slot, EFFECT.SPENT, 'sprintBoost');
+}

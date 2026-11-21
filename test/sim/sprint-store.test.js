@@ -13,9 +13,9 @@ import {
     createSprintStore,
     resetSprintSlot,
     sprintEffort,
-    stepSprintStore,
-    storeFactor,
+    stepSprintStore as stepStore,
 } from '../../js/sim/sprint-store.js';
+import { storeFactor } from './helpers/legacy-rules.js';
 
 const FORAGER = 0;
 const PREDATOR = 1;
@@ -25,6 +25,17 @@ const PREDATOR = 1;
  * @returns {Readonly<Record<string, any>>} a config with the store on
  */
 const storeConfig = (overrides = {}) => createConfig({ sprintStoreEnabled: true, ...overrides });
+
+/**
+ * The step on a hand-built world: the `spent` effect reads the store from `world.sprintStore`, which a real world holds.
+ * @param {import('../../js/sim/sprint-store.js').SprintStore} store the store
+ * @param {Record<string, any>} w the arrays
+ * @returns {void}
+ */
+function stepSprintStore(store, w) {
+    w.sprintStore = store;
+    stepStore(store, w);
+}
 
 /**
  * @param {number} n slots
@@ -92,7 +103,7 @@ describe('storeFactor', () => {
 
     it('is 1 at or above the floor, falls linearly under it and is 0 when empty', () => {
         store.level.set([1, 0.3, 0.15, 0]);
-        expect([0, 1, 2, 3].map((slot) => storeFactor(store, slot))).toEqual([1, 1, 0.5, 0]);
+        expect([0, 1, 2, 3].map((slot) => storeFactor({ sprintStore: store }, slot))).toEqual([1, 1, 0.5, 0]);
     });
 });
 
@@ -184,7 +195,9 @@ describe('stepSprintStore', () => {
                 const thrust = nextFloat(rng);
                 drive(w, slot, { sprint, thrust });
                 const effort = sprint < 0.05 ? 0 : sprint;
-                expected.push((ref[slot] >= config.sprintFloor ? 1 : ref[slot] / config.sprintFloor) * effort);
+                // The `spent` effect's factor is `1 + -1 x (1 - level / floor)`, which is `level / floor` to a rounding.
+                const spent = ref[slot] >= config.sprintFloor ? 0 : 1 - ref[slot] / config.sprintFloor;
+                expected.push((1 + -1 * spent) * effort);
                 const drain = config.sprintDrain * (slot % 2 === 1 ? 2 : 1);
                 if (effort > 0) {
                     ref[slot] = Math.max(0, ref[slot] - drain * effort);

@@ -2,10 +2,10 @@
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { causeList, causeMap } from './events.js';
-import { juvenileBurnOf } from './juvenile.js';
+import { liveOf } from './effects.js';
 import { specParams } from './spec-params.js';
 import { baseSizeOf, visionRatioOf } from './traits.js';
-import { passiveMultiplier, stepTemperature } from './temperature.js';
+import { stepTemperature } from './temperature.js';
 import { TIMER_CAP } from './world.js';
 
 /** Why an agent last lost energy, in code order; `NONE` means it has not lost any. */
@@ -133,14 +133,15 @@ export function transferEnergy(world, giver, receiver, amount) {
  * @param {import('./world.js').World} world the world
  * @param {number} slot the agent slot
  * @returns {number} the extra passive loss of a long-sighted body: `passiveLoss x visionCost x (vision - 1)` above 1,
- *   where `vision` is its ray length over its specialisation's base (`visionRatioOf`)
+ *   where `vision` is its ray length over its specialisation's base (`visionRatioOf`) and `visionCost` is its lane with
+ *   its effects applied
  */
 function visionLoss(world, slot) {
     const vision = visionRatioOf(world, slot);
     if (!(vision > 1)) {
         return 0;
     }
-    return world.config.passiveLoss * world.config.visionCost * (vision - 1);
+    return world.config.passiveLoss * liveOf(world, slot, 'visionCost') * (vision - 1);
 }
 
 /** The nominal standing, movement and sprint cost of the hunter `tickCost` last priced; a scratch for `applyCosts`. */
@@ -154,35 +155,31 @@ const nominal = new Float64Array(3);
 function tickCost(world, slot) {
     const c = world.config;
     const sp = specParams(c, world.spec[slot]);
-    const m = sp.moveCostMultiplier;
     const vx = world.vx[slot];
     const vy = world.vy[slot];
     const speed = Math.sqrt(vx * vx + vy * vy);
     const drain = c.seasons[world.season[0]].energyDrain;
-    // The `passiveLoss` lane holds the spec's multiplier (and the `burn` trait); the size and vision terms take the
-    // spec's multiplier alone.
+    // Every cost lane is read with its effects applied (the temperature ramps and a juvenile's burn). The `passiveLoss`
+    // lane holds the spec's multiplier (and the `burn` trait); the size and vision terms take the spec's multiplier
+    // alone, and the `movementCost` lane holds the spec's move multiplier, which the turn term takes on its own.
     const standing =
-        (world.lanes.passiveLoss[slot] +
-            (c.sizeEnergyLoss * world.size[slot] + visionLoss(world, slot)) * sp.passiveLossMultiplier) *
-        passiveMultiplier(world, slot);
-    const burn = juvenileBurnOf(world, slot);
-    const base =
-        (standing + c.movementCost * (speed * speed) * m + c.turnCost * Math.abs(world.turnRate[slot]) * m) *
-        drain *
-        burn;
+        liveOf(world, slot, 'passiveLoss') +
+        (liveOf(world, slot, 'sizeEnergyLoss') * world.size[slot] + visionLoss(world, slot)) * sp.passiveLossMultiplier;
+    const turn = liveOf(world, slot, 'turnCost') * Math.abs(world.turnRate[slot]) * sp.moveCostMultiplier;
+    const base = (standing + liveOf(world, slot, 'movementCost') * (speed * speed) + turn) * drain;
     let cost = base;
     // fair-chase: the cost of the sprint delivered, times the sprint-store factor (1 with the store off).
     const sprint =
         world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0
-            ? world.lanes.sprintCost[slot] * burn * world.sprintFactor[slot]
+            ? liveOf(world, slot, 'sprintCost') * world.sprintFactor[slot]
             : 0;
     cost += sprint;
     const upkeep = c.specMutationRate > 0 && sp.canHunt ? c.huntUpkeep : 0;
     cost += upkeep;
     if (sp.canHunt) {
         // The hunter ledger (hunter-ledger.js): standing is the passive terms and the upkeep, movement the rest of the base.
-        nominal[0] = standing * drain * burn + upkeep;
-        nominal[1] = base - standing * drain * burn;
+        nominal[0] = standing * drain + upkeep;
+        nominal[1] = base - standing * drain;
         nominal[2] = sprint;
     }
     return cost;
@@ -190,7 +187,7 @@ function tickCost(world, slot) {
 
 /**
  * Ages every alive agent, ticks its cooldown and timers, steps its temperature, and charges its per-tick energy cost
- * (loss cause `cost`); the passive and size terms are multiplied by `passiveMultiplier` of the new temperature.
+ * (loss cause `cost`); the cost lanes are read with the effects of the new temperature applied.
  * @param {import('./world.js').World} world the world
  * @returns {void}
  */

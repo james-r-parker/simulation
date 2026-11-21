@@ -6,7 +6,7 @@ import { isSick } from './toxin.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
-import { thrustEfficiency } from './temperature.js';
+import { liveOf } from './effects.js';
 import { trampleHerds } from './trample.js';
 import { assertArenaHash } from './wasm-hash.js';
 import { bounceRocksKernel, moveAgentsKernel, resolveContactsKernel, rockImpactSpeed } from './wasm-physics.js';
@@ -28,33 +28,17 @@ function grazeFactor(world, i) {
 }
 
 /**
- * eat-choice G2: a full store weighs an agent down, so thrust and turn rate are multiplied by
- * `1 - fatSlowShare x energy / maxEnergy`, both the agent's lanes; a full store slows every store size the same.
+ * The thrust an agent adds this tick: its output times its `maxThrust` lane with the effects of the body applied (its fat and
+ * its temperature's efficiency), then the graze, sprint (its boost times the sprint-store factor, 1 with the store off),
+ * rest, handling and sickness multipliers.
  * @param {import('./world.js').World} world the world
  * @param {number} i the agent slot
- * @returns {number} the multiplier, 1 when its `fatSlowShare` lane is 0
- */
-function fatFactor(world, i) {
-    const { lanes } = world;
-    const fatSlowShare = lanes.fatSlowShare[i];
-    if (fatSlowShare === 0) {
-        return 1;
-    }
-    return 1 - (fatSlowShare * world.energy[i]) / lanes.maxEnergy[i];
-}
-
-/**
- * The thrust an agent adds this tick: its output times its `maxThrust` lane and its temperature's efficiency, then the graze,
- * sprint (its boost times the sprint-store factor, 1 with the store off), rest, handling, sickness and fat multipliers.
- * @param {import('./world.js').World} world the world
- * @param {number} i the agent slot
- * @param {number} fat the agent's `fatFactor`
  * @returns {number} the thrust
  */
-function thrustOf(world, i, fat) {
+function thrustOf(world, i) {
     const { outputs, config } = world;
     const o = i * OUTPUT_COUNT;
-    let thrust = outputs[o + OUTPUT_INDEX.THRUST] * world.lanes.maxThrust[i] * thrustEfficiency(world, i);
+    let thrust = outputs[o + OUTPUT_INDEX.THRUST] * liveOf(world, i, 'maxThrust');
     thrust *= grazeFactor(world, i);
     if (outputs[o + OUTPUT_INDEX.SPRINT] > 0) {
         thrust *= 1 + config.sprintMultiplier * world.sprintBySpec[world.spec[i]] * world.sprintFactor[i];
@@ -69,21 +53,20 @@ function thrustOf(world, i, fat) {
     if (isSick(world, i)) {
         thrust *= config.sickThrust;
     }
-    return thrust * fat;
+    return thrust;
 }
 
 /**
- * Turns every alive agent by its output times its `maxTurn` lane, wraps the heading to [-PI, PI) and adds thrust
+ * Turns every alive agent by its output times its `maxTurn` lane with its effects applied, wraps the heading to [-PI, PI) and adds thrust
  * along the new heading.
  * @param {import('./world.js').World} world the world
  * @returns {void}
  */
 export function actAll(world) {
-    const { alive, angle, turnRate, vx, vy, outputs, lanes } = world;
+    const { alive, angle, turnRate, vx, vy, outputs } = world;
     for (let i = 0; i < alive.length; i++) {
         if (alive[i] === 1) {
-            const fat = fatFactor(world, i);
-            turnRate[i] = outputs[i * OUTPUT_COUNT + OUTPUT_INDEX.TURN] * lanes.maxTurn[i] * fat;
+            turnRate[i] = outputs[i * OUTPUT_COUNT + OUTPUT_INDEX.TURN] * liveOf(world, i, 'maxTurn');
             let a = angle[i] + turnRate[i];
             if (a >= PI) {
                 a -= 2 * PI;
@@ -91,7 +74,7 @@ export function actAll(world) {
                 a += 2 * PI;
             }
             angle[i] = a;
-            const thrust = thrustOf(world, i, fat);
+            const thrust = thrustOf(world, i);
             vx[i] += thrust * detCos(a);
             vy[i] += thrust * detSin(a);
         }

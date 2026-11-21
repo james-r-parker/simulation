@@ -2,6 +2,7 @@
 
 import { tallyEatContact } from './eat-contact.js';
 import { carryPollen } from './pollination.js';
+import { EFFECT, levelOf } from './effects.js';
 import { ingestToxin, isSick } from './toxin.js';
 import { canBite, couldBite, inJaws } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
@@ -33,7 +34,7 @@ function shareOf(world, slot, food) {
         return base;
     }
     const share = world.config.juvenilePlantShare;
-    if (share > 0 && world.huntBySpec[world.spec[slot]] === 1 && world.ageTicks[slot] < world.config.juvenileTicks) {
+    if (share > 0 && levelOf(world, slot, EFFECT.JUVENILE) > 0) {
         return share;
     }
     return 0;

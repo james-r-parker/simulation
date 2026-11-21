@@ -202,16 +202,54 @@ export class EffectSystem {
             return value;
         }
         for (let k = 0; k < rules.length; k++) {
-            const rule = rules[k];
-            const level = this.levelOf(world, slot, rule.effect);
-            if (rule.levels === null) {
-                const factor = 1 + numberOf(world, slot, /** @type {Compiled} */ (rule.per)) * level;
-                value *= factor > 0 ? factor : 0;
-            } else {
-                value *= numberOf(world, slot, rule.levels[level]);
+            value *= this.ruleFactor(world, slot, rules[k]);
+        }
+        return value;
+    }
+
+    /**
+     * @param {any} world the world
+     * @param {number} slot the agent slot
+     * @param {string} lane a lane's name
+     * @returns {number} the product of the factors of every effect that scales the lane, in registry order, 1 for a lane
+     *   no effect scales: `liveOf` without the base, for a number that carries the factor on (`sprintFactor`)
+     */
+    factorOf(world, slot, lane) {
+        let value = 1;
+        const rules = this.rules[lane];
+        if (rules !== undefined) {
+            for (let k = 0; k < rules.length; k++) {
+                value *= this.ruleFactor(world, slot, rules[k]);
             }
         }
         return value;
+    }
+
+    /**
+     * @param {any} world the world
+     * @param {number} slot the agent slot
+     * @param {number} effect an effect's index
+     * @param {string} lane a lane's name
+     * @returns {number} the factor that one effect puts on the lane now, 1 when it does not scale it
+     */
+    effectFactor(world, slot, effect, lane) {
+        const rule = (this.rules[lane] ?? []).find((candidate) => candidate.effect === effect);
+        return rule === undefined ? 1 : this.ruleFactor(world, slot, rule);
+    }
+
+    /**
+     * @param {any} world the world
+     * @param {number} slot the agent slot
+     * @param {Rule} rule one effect's rule on a lane
+     * @returns {number} its factor now: `1 + perStack x level` (never below 0), or the `levels` entry of the level
+     */
+    ruleFactor(world, slot, rule) {
+        const level = this.levelOf(world, slot, rule.effect);
+        if (rule.levels === null) {
+            const factor = 1 + numberOf(world, slot, /** @type {Compiled} */ (rule.per)) * level;
+            return factor > 0 ? factor : 0;
+        }
+        return numberOf(world, slot, rule.levels[level]);
     }
 
     /**
@@ -310,6 +348,27 @@ export const EFFECT = Object.freeze(
  */
 export function liveOf(world, slot, lane) {
     return SYSTEM.liveOf(world, slot, lane);
+}
+
+/**
+ * @param {any} world the world
+ * @param {number} slot the agent slot
+ * @param {string} lane a lane's name
+ * @returns {number} the product of the effects' factors on the lane (see `EffectSystem.factorOf`)
+ */
+export function factorOf(world, slot, lane) {
+    return SYSTEM.factorOf(world, slot, lane);
+}
+
+/**
+ * @param {any} world the world
+ * @param {number} slot the agent slot
+ * @param {number} effect an `EFFECT` code
+ * @param {string} lane a lane's name
+ * @returns {number} the factor that one effect puts on the lane now, 1 when it does not scale it
+ */
+export function effectFactor(world, slot, effect, lane) {
+    return SYSTEM.effectFactor(world, slot, effect, lane);
 }
 
 /**

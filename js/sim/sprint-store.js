@@ -6,6 +6,7 @@
 // `sprintStoreEnabled` off there is no store and the lane holds 1 for every slot. No RNG, no clock, no allocation per tick.
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
+import { factorOf } from './effects.js';
 import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 
 /**
@@ -42,16 +43,6 @@ export function allocSprintState(world) {
         world.sprintStore = createSprintStore(world.config, n);
         world.agentRows.push({ array: world.sprintStore.level, stride: 1, name: 'sprintLevel' });
     }
-}
-
-/**
- * @param {SprintStore} store the store
- * @param {number} slot the agent slot
- * @returns {number} the factor on the sprint: 1 at or above the floor, else the store over the floor (0 when empty)
- */
-export function storeFactor(store, slot) {
-    const level = store.level[slot];
-    return level >= store.floor ? 1 : level / store.floor;
 }
 
 /**
@@ -106,7 +97,7 @@ export function sprintEffort(world, slot) {
 
 /**
  * For every live slot, the sprint graded by its effort `e` (`effortOf`, fair-chase.md "Graded sprint"): writes the
- * factor of the store as the tick begins times `e` into `sprintFactor`, then drains the store by its `sprintDrain`
+ * factor of the store as the tick begins (the `spent` effect's factor on `sprintBoost`) times `e` into `sprintFactor`, then drains the store by its `sprintDrain`
  * lane times `e` while `e` is above 0, or refills it by its `sprintRefill` lane while `e` is 0 and `THRUST` is under
  * `sprintRestThrust`, clamped to 0 to 1. A store that falls under the floor in a sprint pushes one `SPRINT_SPENT`
  * event.
@@ -125,7 +116,7 @@ export function stepSprintStore(store, world) {
         }
         const o = i * OUTPUT_COUNT;
         const effort = effortOf(outputs[o + OUTPUT_INDEX.SPRINT]);
-        sprintFactor[i] = storeFactor(store, i) * effort;
+        sprintFactor[i] = factorOf(world, i, 'sprintBoost') * effort;
         if (effort > 0) {
             const before = level[i];
             level[i] = Math.max(0, before - sprintDrain[i] * effort);

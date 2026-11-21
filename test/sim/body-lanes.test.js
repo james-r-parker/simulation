@@ -49,7 +49,7 @@ describe('LANES', () => {
         expect(LANES.some((lane) => lane.field === 'canHunt')).toBe(false);
     });
 
-    it('names each lane once, after its key or else its field, with a family; the lanes moved in Phase 1 (T3, T13, T13a)', () => {
+    it('names each lane once, after its key or else its field, with a family; the lanes moved in Phase 1 (T3, T13, T13a) and by the body effects (status-effects T2)', () => {
         expect(new Set(LANES.map((lane) => lane.name)).size).toBe(LANE_COUNT);
         for (const lane of LANES) {
             expect(lane.name).toBe(lane.key ?? lane.field ?? lane.name);
@@ -70,8 +70,18 @@ describe('LANES', () => {
             'smokeSight',
             'maxEnergy',
             'passiveLoss',
+            'movementCost',
+            'turnCost',
+            'sizeEnergyLoss',
+            'visionCost',
+            'juvenileBurn',
             'temperatureGainMove',
             'temperatureLossPassive',
+            'temperaturePassiveLossFactor',
+            'temperatureEfficiencyColdSevere',
+            'temperatureEfficiencyColdModerate',
+            'temperatureEfficiencyHeatModerate',
+            'temperatureEfficiencyHeatSevere',
             'heatSpeedCap',
             'sprintHeat',
         ]);
