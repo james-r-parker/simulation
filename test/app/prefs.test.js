@@ -34,6 +34,16 @@ describe('prefs', () => {
         }
     });
 
+    it('keeps the insights tab to a known tab, the world by default', () => {
+        expect(defaultPrefs().insightsTab).toBe('world');
+        for (const tab of ['world', 'scenes', 'families', 'records', 'export']) {
+            expect(sanitizePrefs({ insightsTab: tab }).insightsTab).toBe(tab);
+        }
+        for (const bad of ['reel', '', 3, null]) {
+            expect(sanitizePrefs({ insightsTab: bad }).insightsTab).toBe('world');
+        }
+    });
+
     it('round trips through a storage', () => {
         const storage = memory();
         const prefs = { ...defaultPrefs(), lenses: [true, false, true, false], hud: false, volume: 0.25 };

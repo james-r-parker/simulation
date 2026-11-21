@@ -107,6 +107,19 @@ describe('validateMessage', () => {
         expect(() => validateMessage({ ...GOOD.stats, stats: { tick: 1 } })).toThrow('stats.stats');
     });
 
+    it('validates the stats readings the insights drawer reads', () => {
+        const stats = { tick: 5, ticksPerSecond: 60 };
+        expect(() =>
+            validateMessage({ ...GOOD.stats, stats: { ...stats, foodEnergy: 12.5, meanTemperature: 0.4 } }),
+        ).not.toThrow();
+        expect(() => validateMessage({ ...GOOD.stats, stats: { ...stats, foodEnergy: 'lots' } })).toThrow(
+            'stats.stats',
+        );
+        expect(() => validateMessage({ ...GOOD.stats, stats: { ...stats, meanTemperature: NaN } })).toThrow(
+            'stats.stats',
+        );
+    });
+
     it('accepts step only while paused when the receiver says it is running', () => {
         expect(() => validateMessage(GOOD.step, { paused: false })).toThrow('step is accepted only while paused');
         expect(() => validateMessage(GOOD.step, { paused: true })).not.toThrow();

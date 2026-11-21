@@ -654,3 +654,66 @@ html.tv-mode * {
     font-size: 0.875rem;
     color: var(--text-dim);
 }
+
+/* The insights drawer: tabs, tables, and the charts of the World tab. */
+.drawer-insights {
+    width: min(38vw, 34rem);
+}
+
+.insights-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.insights-panel[hidden],
+.insights-row[hidden] {
+    display: none;
+}
+
+.insights-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.insights-table th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-dim);
+}
+
+.insights-table td,
+.insights-table th {
+    padding: 0.125rem 0.5rem 0.125rem 0;
+}
+
+.insights-table td + td,
+.insights-table th + th {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.insights-row.pick {
+    cursor: pointer;
+}
+
+.insights-row.pick:hover,
+.insights-row.pick:focus-visible {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.insights-row.muted {
+    color: var(--text-dim);
+}
+
+.insights-row[style*='--swatch'] td:first-child::before {
+    content: '';
+    display: inline-block;
+    width: 0.625rem;
+    height: 0.625rem;
+    margin-right: 0.375rem;
+    border-radius: 50%;
+    background: var(--swatch);
+}

@@ -47,6 +47,8 @@ describe('mountControls', () => {
         expect(byClass(root, 'control-togglePause')[0].textContent).toBe('Resume');
         expect(byClass(root, 'control-toggleCharts')[0].classList.contains('on')).toBe(true);
         expect(byClass(root, 'control-toggleInspector')[0].classList.contains('on')).toBe(false);
+        controls.update({ paused: false, seed: 5, drawer: 'insights' });
+        expect(byClass(root, 'control-toggleInsights')[0].classList.contains('on')).toBe(true);
         controls.update({ paused: false, seed: 5, drawer: null });
         expect(byClass(root, 'control-togglePause')[0].textContent).toBe('Pause');
         expect(byClass(root, 'control-toggleCharts')[0].classList.contains('on')).toBe(false);

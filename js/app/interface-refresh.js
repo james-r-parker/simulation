@@ -18,6 +18,7 @@ export const REFRESH_MS = Object.freeze({
     ticker: 100,
     inspector: 33,
     charts: 1000,
+    insights: 1000,
     idle: 100,
     shift: 1000,
     card: 250,
@@ -140,6 +141,11 @@ const REFRESHERS = Object.freeze([
                 player === null ? 0 : lastEvents(player.life, view.header.genomeId, ctx.lifeCodes),
             );
         },
+    },
+    {
+        key: 'insights',
+        wanted: (/** @type {Record<string, any>} */ ctx) => ctx.drawers.state() === 'insights',
+        run: (/** @type {Record<string, any>} */ ctx) => ctx.insights.update(),
     },
     {
         key: 'charts',

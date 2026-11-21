@@ -33,6 +33,7 @@ describe('actionForKey', () => {
     it('maps each phase 3 shortcut to its action', () => {
         expect(actionForKey({ code: 'KeyC' })).toBe('toggleCharts');
         expect(actionForKey({ code: 'KeyI' })).toBe('toggleInspector');
+        expect(actionForKey({ code: 'KeyD' })).toBe('toggleInsights');
         expect(actionForKey({ code: 'Slash', shiftKey: true })).toBe('toggleHelp');
         expect(actionForKey({ code: 'F1' })).toBe('toggleHelp');
         expect(actionForKey({ code: 'KeyH' })).toBe('toggleHud');

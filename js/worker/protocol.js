@@ -67,7 +67,11 @@ const isTickerItems = (value) =>
     Array.isArray(value) &&
     value.every((item) => isObject(item) && isUint(item.tick) && isString(item.kind) && isString(item.text));
 /** @type {Check} */
-const isStats = (value) => isObject(value) && isNumber(value.tick) && isNumber(value.ticksPerSecond);
+const isStats = (value) =>
+    isObject(value) &&
+    isNumber(value.tick) &&
+    isNumber(value.ticksPerSecond) &&
+    [value.foodEnergy, value.meanTemperature].every((reading) => reading === undefined || isNumber(reading));
 
 /** @typedef {[string, Check, string]} Field a field's name, its check and what it must be */
 
@@ -130,7 +134,14 @@ const SHAPES = Object.freeze({
     },
     stats: {
         direction: DIRECTION.TO_MAIN,
-        fields: [EPOCH, ['stats', isStats, 'an object with tick and ticksPerSecond']],
+        fields: [
+            EPOCH,
+            [
+                'stats',
+                isStats,
+                'an object with tick and ticksPerSecond (and numbers for foodEnergy and meanTemperature when present)',
+            ],
+        ],
     },
     field: { direction: DIRECTION.TO_MAIN, fields: [EPOCH, TICK, BUFFER] },
     ticker: { direction: DIRECTION.TO_MAIN, fields: [['items', isTickerItems, 'an array of { tick, kind, text }']] },

@@ -6,6 +6,7 @@
 import { createChartData } from './interface-data.js';
 import { pushMilestone } from './history.js';
 import { createChartsLifecycle } from './interface-charts.js';
+import { mountInsightsPart } from './interface-insights.js';
 import { createFailedBundleTaker, exportBundle } from './interface-exports.js';
 import { mountAudio } from './audio/audio.js';
 import { clipSupported, createCapture } from './capture.js';
@@ -145,9 +146,10 @@ function mountParts(ctx) {
         colorOf: (/** @type {number} */ id) => familyCss(deps.slots, id),
     });
     ctx.drawers = mountDrawers(doc, elements.drawers, {
-        onOpen: (name) => name === 'charts' && ctx.charts.open(),
-        onClose: (name) => name === 'charts' && ctx.charts.close(),
+        onOpen: (name) => (name === 'charts' && ctx.charts.open()) || (name === 'insights' && ctx.insights.open()),
+        onClose: (name) => (name === 'charts' && ctx.charts.close()) || (name === 'insights' && ctx.insights.close()),
     });
+    ctx.insights = mountInsightsPart(ctx);
     ctx.inspector = mountInspector(doc, ctx.drawers.body('inspector'));
     ctx.help = mountHelp(doc, ctx.drawers.body('help'), {
         current: prefs.uiScale,
@@ -185,7 +187,7 @@ function build(deps) {
     prefs.lenses.forEach((on, i) => (state.lenses[i] = on));
     deps.slots.palette = prefs.palette;
     const toaster = createToaster({ doc, setTimer: deps.setTimer, parent: elements.hud });
-    const lastKeys = ['bar', 'ticker', 'inspector', 'charts', 'idle', 'shift', 'card', 'peek', 'plate'];
+    const lastKeys = ['bar', 'ticker', 'inspector', 'charts', 'insights', 'idle', 'shift', 'card', 'peek', 'plate'];
     const ctx = {
         deps,
         prefs,
@@ -208,6 +210,7 @@ function build(deps) {
         drawers: /** @type {any} */ (null),
         inspector: /** @type {any} */ (null),
         charts: /** @type {any} */ (null),
+        insights: /** @type {any} */ (null),
         help: /** @type {any} */ (null),
         card: /** @type {any} */ (null),
         tvUi: /** @type {any} */ (null),
@@ -342,6 +345,7 @@ function createListeners(ctx) {
     return {
         onReady(/** @type {Record<string, any>} */ ready) {
             ctx.chartData.ready(ready);
+            ctx.insights.noteReady(ready);
             ctx.queue.clear();
             ctx.charts.close();
             if (ctx.drawers.state() === 'charts') {
@@ -353,6 +357,7 @@ function createListeners(ctx) {
         onStats(/** @type {Record<string, any>} */ stats) {
             assignSlots(deps.slots, stats.lineages?.top ?? []);
             ctx.chartData.stats(stats, deps.now());
+            ctx.insights.noteStats(stats);
             ctx.audio.onStats(stats);
         },
         onTicker(/** @type {{text: string, kind: string}[]} */ items) {

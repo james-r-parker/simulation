@@ -242,6 +242,7 @@ const ACTIONS = Object.freeze({
     lens4: lensAction(3),
     toggleCharts: viaUi('toggleDrawer', 'charts'),
     toggleInspector: viaUi('toggleDrawer', 'inspector'),
+    toggleInsights: viaUi('toggleDrawer', 'insights'),
     toggleHelp: viaUi('toggleDrawer', 'help'),
     toggleHud: viaUi('toggleHud'),
     toggleTv: ({ toggleTv }) => toggleTv?.(),

@@ -5,7 +5,15 @@ import { coverage, occupiedCount } from '../evo/archive.js';
 import { generationStats } from './generation.js';
 import { BORN_CAUSE, DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
 import { specParams } from '../sim/spec-params.js';
-import { callsPerKiloTick, createCallWindow, largestSpec, noteCalls, predatorCount } from './world-numbers.js';
+import {
+    callsPerKiloTick,
+    createCallWindow,
+    foodEnergy,
+    largestSpec,
+    meanTemperature,
+    noteCalls,
+    predatorCount,
+} from './world-numbers.js';
 import { createLineageBoard, rebuildCounts, topLineages, updateBoard } from './lineage-board.js';
 import {
     ageItems,
@@ -335,6 +343,8 @@ export function collectStats(live, { world, observer, policy, generations }, run
         predators: predatorCount(world.config, bySpec),
         callsPerKiloTick: callsPerKiloTick(live.calls, tick),
         largestSpec: largestSpec(bySpec),
+        foodEnergy: foodEnergy(world),
+        meanTemperature: meanTemperature(world),
         bornShare: bornShare(observer),
         births: sum(births),
         birthsByCause: births,

@@ -33,7 +33,7 @@ describe('mountDrawers', () => {
             onOpen: (name, body) => calls.push(`open ${name} ${body.className}`),
             onClose: (name) => calls.push(`close ${name}`),
         });
-        expect(root.children).toHaveLength(3);
+        expect(root.children).toHaveLength(4);
         drawers.dispatch({ type: 'toggle', drawer: 'charts' });
         drawers.dispatch({ type: 'toggle', drawer: 'inspector' });
         drawers.dispatch({ type: 'closeAll' });

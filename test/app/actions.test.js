@@ -276,6 +276,7 @@ describe('page actions', () => {
         for (const a of [
             'toggleCharts',
             'toggleInspector',
+            'toggleInsights',
             'toggleHelp',
             'toggleHud',
             'toggleAudio',
@@ -294,6 +295,7 @@ describe('page actions', () => {
         expect(calls).toEqual([
             'drawer charts',
             'drawer inspector',
+            'drawer insights',
             'drawer help',
             'hud',
             'audio',

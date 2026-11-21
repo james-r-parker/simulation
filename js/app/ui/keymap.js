@@ -27,6 +27,7 @@ export const KEYMAP = Object.freeze([
     { action: 'lens4', codes: ['Digit4'], title: 'Vision and calls lens' },
     { action: 'toggleCharts', codes: ['KeyC'], title: 'Charts drawer' },
     { action: 'toggleInspector', codes: ['KeyI'], title: 'Inspector drawer' },
+    { action: 'toggleInsights', codes: ['KeyD'], title: 'Insights drawer (world, scenes, families, records, export)' },
     { action: 'toggleHelp', codes: ['Slash', 'F1'], title: 'Help' },
     { action: 'toggleHud', codes: ['KeyH'], title: 'Hide or show the HUD' },
     { action: 'toggleAudio', codes: ['KeyA'], title: 'Audio on or off' },

@@ -179,6 +179,22 @@ describe('collectStats', () => {
         expect([stats.generationMax, stats.generationMedian]).toEqual([0, 0]);
     });
 
+    it('reports the food energy and the mean temperature', () => {
+        const { world, observer, live, policy } = setup();
+        world.alive[0] = 1;
+        world.temperature[0] = 0.5;
+        world.population = 1;
+        world.foodAlive.fill(0);
+        world.foodAlive[0] = 1;
+        world.foodValue[0] = 42;
+        const stats = collectStats(
+            live,
+            { world, observer, policy, generations: createGenerations(world.config) },
+            RUN,
+        );
+        expect([stats.foodEnergy, stats.meanTemperature]).toEqual([42, 0.5]);
+    });
+
     it('reports the predators, the calls per 1000 ticks and the largest specialisation', () => {
         const { world, observer, live, policy } = setup();
         for (const [slot, spec] of [
