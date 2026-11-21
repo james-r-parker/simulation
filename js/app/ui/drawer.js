@@ -66,6 +66,7 @@ export function mountDrawers(doc, root, hooks = {}) {
                     panels[open].setAttribute('aria-hidden', 'true');
                     hooks.onClose?.(open, panels[open]);
                 }
+                open = next;
                 if (next !== null) {
                     panels[next].classList.add('open');
                     panels[next].setAttribute('aria-hidden', 'false');
