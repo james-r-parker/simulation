@@ -103,3 +103,27 @@ describe('role:budget --check', () => {
         scaleTimeout(120000),
     );
 });
+
+describe('role:budget --genes', () => {
+    it(
+        'prints the least and the most slack of each cell and the corner that gives each, then the extremes',
+        async () => {
+            const corners = await run(['--rows', 'defender:predator', '--genes', 'corners']);
+            expect(corners.text).toMatch(/defender:predator over 16 corner pairs \(performer \| pressure\)/);
+            expect(corners.text).toMatch(/step\s+least slack\s+most slack/);
+            expect(corners.text).toMatch(/size=0\.7 vision=0\.7/);
+            const extremes = await run(['--rows', 'defender:predator', '--genes', 'best-vs-worst']);
+            expect(extremes.text).toMatch(/--genes best-vs-worst/);
+            expect(extremes.text).toMatch(/defender:predator: performer .*; pressure /);
+        },
+        scaleTimeout(60000),
+    );
+
+    it(
+        'prints nothing of the corners by default',
+        async () => {
+            expect((await run(['--rows', 'defender:predator'])).text).not.toMatch(/corner pair/);
+        },
+        scaleTimeout(60000),
+    );
+});
