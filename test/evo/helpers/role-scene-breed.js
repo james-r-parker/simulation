@@ -74,7 +74,8 @@ function birthsOf(world, tick) {
  */
 function stageBreeders(config, bodies) {
     const arena = stageArena(config, bodies);
-    return { world: arena.world, policy: { ...arena.policy, childBrain() {} } };
+    const policy = /** @type {any} */ ({ ...arena.policy, childBrain() {} });
+    return { world: arena.world, policy };
 }
 
 /**
