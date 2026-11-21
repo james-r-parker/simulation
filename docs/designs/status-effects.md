@@ -1,6 +1,6 @@
 # Status effects
 
-**Status:** In progress - Phases 1 and 2 are built: every modifier of today reads through `liveOf` and `gateOpen`, and the ten social effects exist with their numbers at 0 (both are fully reviewed, T8 and T14; the 16-seed share run is with the coordinator). Phase 3 has begun: T13, the calculator's `effects` and the `pack:forager` row, is built. Next: the numbers (T15 to T19).
+**Status:** In progress - Phases 1 and 2 are built and reviewed (T8, T14; the 16-seed share run is with the coordinator). Phase 3: T13, the calculator's `effects` and the `pack:forager` row, is built. Phase 5 T23 to T29 are built, its Targets not met (T30 open). Next: the numbers (T15 to T19).
 **Validated:** 23e8cc66 (2026-11-21)
 **Scheduled by:** [fair-chase.md](fair-chase.md) step 2 - built straight after body-genes.md Phase 1 and before the calculator, which reads the effects; every large rules change lands before any training
 **Depends on:** [body-genes.md](body-genes.md)
@@ -237,6 +237,41 @@ fixes reach the target first.
 | ----- | ---------- | ------- |
 | E     | T23 to T30 | Sonnet  |
 
+**Measured (T29, 2026-11-21): the Targets are not met.** The machine was shared (load 5 to 30 on 32 cores), so the
+readings are relative and the bench was not re-recorded. `bench-compare --base 4e56979d --sizes=500 --runs=3` under the
+CPU lock, head against the pre-effects reading:
+
+| Tree                           | lifecycle@500 | physics@500 | step_ms@500 | brain@500 (noise check) |
+| ------------------------------ | ------------- | ----------- | ----------- | ----------------------- |
+| main 9de53ee7 (before Phase 5) | +157%         | +96%        | +70%        | +59%                    |
+| T24, stored rows read in place | +71%          | +23%        | +22%        | +22%                    |
+| T26, generated level switch    | +67%          | +25%        | +7%         | +3%                     |
+| T27, group reads               | +103%         | +71%        | +93%        | +17%                    |
+| T28, call bookkeeping skipped  | +48%          | +18%        | +4%         | 0%                      |
+
+T25 drops no rule at the default config (every Phase 1 table entry is a lane or a number other than 1), so it was not
+timed. The brain phase, which Phase 5 does not touch, moved up to 59% between runs: read the rows against it. Timed side
+by side in one process each (the bench world, 3000 ticks of the phase pass after 500, three alternating rounds, median
+milliseconds a tick):
+
+| Phase     | 4e56979d | main 9de53ee7 | head   | head against 4e56979d |
+| --------- | -------- | ------------- | ------ | --------------------- |
+| lifecycle | 0.155    | 0.225         | 0.218  | +41%                  |
+| physics   | 0.203    | 0.245         | 0.246  | +21%                  |
+| effects   | -        | 0.0056        | 0.0025 | -                     |
+
+The readers alone, same harness: `gateOpen` on `mate` 9.2 to 6.0 microseconds over the 473 slots, on `eat` 12.4 to 8.6,
+`liveOf` on `maxThrust` 39.9 to 34.3 and on `passiveLoss` 19.1 to 15.5. (`bench:micro -- --area effects --compare
+origin/main` read the two gates 32 to 37% slower under Vitest's worker on the loaded machine; the plain process reads them
+faster in four alternating runs.) A CPU profile of the same pass puts `effect*.js` at 5.1% of samples, from 5.6% on main:
+`liveIn` and `readGroup` (58 microseconds a tick) cost what `fold` did (70), so reading each level once saved the dispatch
+but not the fold. What is left of the growth from 4e56979d is in three places: the folds themselves (the arithmetic of
+about ten lanes a body a tick), the appliers that still run at neutral numbers (`stepChilled` raises `chilled` and a bite
+raises `wounded` and `panicked`, with their events and a fade walk of their rows), and lifecycle code outside the registry
+(the sprint store and body-genes readers). Next step for the Targets: fold each group's lanes in one pass with the base
+read inside it, and skip `chilled`, `wounded` and `panicked` while their numbers are 0 if the detectors' neutral readings
+may go to 0.
+
 ## Decisions
 
 | Decision                                                       | Holds because                                                                                                                                                                                                                                                                                                                                                              |
@@ -323,7 +358,7 @@ fixes reach the target first.
 | T26 | (built) Dispatch levels without the indirect call: `levelOfEffect(world, slot, effect)` is a `switch` on the effect index calling each reader directly, written by a generator from `EFFECTS` and checked by a test that fails when the list and the switch differ, so the compiler inlines the small readers; `level` and `gateOpen` call it in place of `rule.read`                                                                                                                                                                   | [judgement]  | T23                     |
 | T27 | (built) Read a slot's levels once for a group of lanes: `motionFactors` (the `maxThrust` and `maxTurn` lanes of `actAll`) and `costFactors` (the six lanes of `tickCost` and the two temperature lanes of `stepTemperature`, which then read inside the same window) each read every effect the group's rules name once, into a `Float64Array`, and multiply each lane's rules from it; the five temperature readers become one band read of `temperature[slot]` and its lanes; delete `pinSlot` and `unpinSlot` when no caller remains | [judgement]  | T24, T25, T26           |
 | T28 | (built) Skip the social passes at neutral numbers: no huddle search while `huddleWarmth` is 0, no `heardFrom` or `settleCalls` bookkeeping while every number of `rallied`, `answered` and `hoarse` is 0 (whatever PR 613 has not already trimmed); a test that each pass runs once its number is above 0                                                                                                                                                                                                                               | [mechanical] | T23                     |
-| T29 | Measure: `flock /tmp/claude-1000/cpu.lock node scripts/bench-compare.mjs --base 4e56979d --sizes=500 --runs=5` on a quiet machine, the three Targets against the 5% bar, and a CPU profile through the same script as the results file, recorded in this phase; re-record `bench/baseline.json` in its own commit if the step moved                                                                                                                                                                                                     | [judgement]  | T24, T25, T26, T27, T28 |
+| T29 | (built) Measure: `flock /tmp/claude-1000/cpu.lock node scripts/bench-compare.mjs --base 4e56979d --sizes=500 --runs=5` on a quiet machine, the three Targets against the 5% bar, and a CPU profile through the same script as the results file, recorded in this phase; re-record `bench/baseline.json` in its own commit if the step moved                                                                                                                                                                                             | [judgement]  | T24, T25, T26, T27, T28 |
 | T30 | Conformance review of Phase 5 by a fresh agent, in parallel with `scripts/check.sh`; every golden unchanged                                                                                                                                                                                                                                                                                                                                                                                                                             | [judgement]  | T29                     |
 
 ## Verification
