@@ -18,7 +18,11 @@ Every command an agent runs on Blob Evolution, grouped by job. `rg -n '^### ' do
 
 ### Ship a chunk
 
-`scripts/ship.sh --title <subject> --body <file> [--base main] [--no-merge]` (exit 2 uncommitted or on main, 3 merge conflict, 4 gate failed, 5 body fails the template, 6 push or `gh` failed, 1 checks red or none registered within 120 s, 7 green but not merged; merges `origin/<base>`, never rebases; auto-merge with a merge commit; `gh pr checks --watch` once the checks register; a rerun resumes on the same PR; logs `.checklogs/ship.jsonl`)
+`scripts/ship.sh --title <subject> --body <file> [--base main] [--no-merge]` (exit 2 uncommitted or on main, 3 merge conflict, 4 gate failed, 5 body fails the template, 6 push or `gh` failed, 1 checks red or none registered within 120 s, 7 green but not merged; merges `origin/<base>`, never rebases, and regenerates a conflict that is only in generated files (see Merge the base in); auto-merge with a merge commit; `gh pr checks --watch` once the checks register; a rerun resumes on the same PR; logs `.checklogs/ship.jsonl`)
+
+### Merge the base in
+
+`scripts/sync-main.sh [--base main]` or `npm run sync` (exit 0 merged or up to date, 3 a conflict that is not only generated files, merge left in progress, 2 a bad argument) merges `origin/<base>` into the current branch with a merge commit, never a rebase. When `git merge` conflicts and every conflicted path is a generated file (the generators in `scripts/lib/regen.mjs`: `docs/designs/README.md`, `docs/designs/metrics.md`, the index in `docs/designs/sim-notes.md`, `docs/log-events.md`, `docs/config-keys.md`, `docs/trait-table.md`, `docs/scene-scorecard.md`, `test/data-deps.json`) or a `docs/notes/<YYYY-MM>.md` where both sides only appended `### ` entries, it takes our side of the generated files, keeps both notes entries in date order, reruns every generator, stages what changed and commits; the merge commit body names the regenerated files. Any other conflicted path stops as a plain merge does. `scripts/ship.sh` step 2 does the same.
 
 ### Pre-push check (what an agent runs)
 

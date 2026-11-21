@@ -6,7 +6,8 @@
 #
 # Steps (scripts/lib/ship-steps.mjs; docs/designs/agent-workflow.md, Start to merge):
 #   1 fail on uncommitted files or a branch named main                      exit 2
-#   2 merge origin/<base> when behind (a merge commit, never a rebase)       exit 3 and the conflicted paths
+#   2 merge origin/<base> when behind (a merge commit, never a rebase);      exit 3 and the conflicted paths
+#     conflicts in generated files only are regenerated, not stopped on      (scripts/lib/merge-base.mjs)
 #   3 the gate the change scope needs, then commit what --fix wrote          exit 4 and the failed gates
 #   4 check the body file against the create-pr template                     exit 5 and the missing section
 #   5 push, open the PR (or find it), turn on auto-merge (merge commit)      exit 6 and the gh error

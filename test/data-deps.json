@@ -464,6 +464,14 @@
     "test/library/seasons-file.test.js": [
         "library/seasons.json"
     ],
+    "test/merge-base.test.js": [
+        ".git",
+        "docs/notes/2026-11.md",
+        "scripts/lib/merge-base.mjs",
+        "scripts/lib/notes-merge.mjs",
+        "scripts/lib/regen.mjs",
+        "test"
+    ],
     "test/metrics-doc.test.js": [
         "docs/designs/metrics.md"
     ],
