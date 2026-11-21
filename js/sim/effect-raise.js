@@ -6,6 +6,9 @@ import { EVENT, EVENT_TYPE, pushEvent } from './events.js';
 
 /** @typedef {import('./effects.js').EffectSystem} EffectSystem */
 
+/** The record `pushApplied` reads, reused so a raise allocates nothing. */
+const GAINED = { effect: 0, stacks: 0, source: 0 };
+
 /**
  * @param {EffectSystem} system the effect readers
  * @param {number} effect an effect's index
@@ -66,7 +69,10 @@ export function raiseEffect(system, world, slot, cause) {
         world.effectLive[row] += 1;
     }
     stacks[slot] += 1;
-    pushApplied(world, slot, { effect, stacks: stacks[slot], source });
+    GAINED.effect = effect;
+    GAINED.stacks = stacks[slot];
+    GAINED.source = source;
+    pushApplied(world, slot, GAINED);
     return true;
 }
 
@@ -85,7 +91,10 @@ export function setStacks(system, world, slot, to) {
     const stacks = world.effectStacks[row];
     const count = Math.min(to.count, system.list[to.effect].maxStacks);
     for (let n = stacks[slot] + 1; n <= count; n++) {
-        pushApplied(world, slot, { effect: to.effect, stacks: n, source: to.source });
+        GAINED.effect = to.effect;
+        GAINED.stacks = n;
+        GAINED.source = to.source;
+        pushApplied(world, slot, GAINED);
     }
     world.effectLive[row] += (count > 0 ? 1 : 0) - (stacks[slot] > 0 ? 1 : 0);
     stacks[slot] = count;

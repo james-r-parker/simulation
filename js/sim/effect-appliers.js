@@ -2,7 +2,7 @@
 // called at the site where the cause happens, in the phase it happens in. Allocates nothing, no RNG.
 
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
-import { SYSTEM, numberOf } from './effects.js';
+import { SYSTEM, numberOf, raiseOn } from './effects.js';
 import { dropStack, raiseEffect, setStacks } from './effect-raise.js';
 
 /** @typedef {import('./effects.js').EffectSystem} EffectSystem */
@@ -18,7 +18,7 @@ export const applyEffectOn = raiseEffect;
  * @returns {boolean} whether a stack was gained
  */
 export function applyEffect(world, slot, effect, source) {
-    return applyEffectOn(SYSTEM, world, slot, { effect, source });
+    return raiseOn(world, slot, effect, source);
 }
 
 /**

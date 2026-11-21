@@ -314,14 +314,17 @@ export class EffectSystem {
      */
     fadeRow(world, row) {
         const kind = /** @type {'ticks' | 'every'} */ (this.stored[row].fades?.kind);
-        const length = world.config[/** @type {NonNullable<Effect['fades']>} */ (this.stored[row].fades).key];
         const stacks = world.effectStacks[row];
-        const ticks = world.effectTicks[row];
+        FADE.stacks = stacks;
+        FADE.ticks = world.effectTicks[row];
+        FADE.length = world.config[/** @type {NonNullable<Effect['fades']>} */ (this.stored[row].fades).key];
         const then = this.storedThen[row];
         let held = 0;
         for (let slot = 0; slot < stacks.length; slot++) {
-            if (stacks[slot] > 0 && fadeSlot(kind, { stacks, ticks, length }, slot) && then >= 0) {
-                raiseEffect(this, world, slot, { effect: then, source: 0 });
+            if (stacks[slot] > 0 && fadeSlot(kind, slot) && then >= 0) {
+                CAUSE.effect = then;
+                CAUSE.source = 0;
+                raiseEffect(this, world, slot, CAUSE);
             }
             held += stacks[slot] > 0 ? 1 : 0;
         }
@@ -355,25 +358,45 @@ function isNeutral(rule, config) {
     return constantOf(/** @type {Compiled} */ (rule.per), config) === (rule.power ? 1 : 0);
 }
 
+/** The row the fade pass is walking: its stacks, its timers and the timer length, set once a row so a slot allocates nothing. */
+const FADE = { stacks: new Float64Array(0), ticks: new Float64Array(0), length: 0 };
+
+/** The cause `raiseOn` and the fade pass hand `raiseEffect`, reused so a raise allocates nothing (it reads it at once). */
+const CAUSE = { effect: 0, source: 0 };
+
 /**
  * @param {'ticks' | 'every'} kind the fade kind
- * @param {{stacks: Float64Array, ticks: Float64Array, length: number}} row the effect's stored rows and timer length
- * @param {number} slot a slot holding stacks
+ * @param {number} slot a slot holding stacks of the row in `FADE`
  * @returns {boolean} whether the slot's last stack ended
  */
-function fadeSlot(kind, row, slot) {
-    row.ticks[slot] -= 1;
-    if (row.ticks[slot] > 0) {
+function fadeSlot(kind, slot) {
+    const { stacks, ticks, length } = FADE;
+    ticks[slot] -= 1;
+    if (ticks[slot] > 0) {
         return false;
     }
     if (kind === 'ticks') {
-        row.stacks[slot] = 0;
-        row.ticks[slot] = 0;
+        stacks[slot] = 0;
+        ticks[slot] = 0;
         return true;
     }
-    row.stacks[slot] -= 1;
-    row.ticks[slot] = row.stacks[slot] > 0 ? row.length : 0;
+    stacks[slot] -= 1;
+    ticks[slot] = stacks[slot] > 0 ? length : 0;
     return false;
+}
+
+/**
+ * Raises one stack of a stored effect of `EFFECTS` on a slot (`raiseEffect` over `SYSTEM`), with no record built per call.
+ * @param {any} world the world
+ * @param {number} slot the agent slot
+ * @param {number} effect an `EFFECT` code of a `stacks` effect
+ * @param {number} source what raised it (an agent slot, or 0)
+ * @returns {boolean} whether a stack was gained
+ */
+export function raiseOn(world, slot, effect, source) {
+    CAUSE.effect = effect;
+    CAUSE.source = source;
+    return raiseEffect(SYSTEM, world, slot, CAUSE);
 }
 
 /** The effects of the sim, in registry order. */
