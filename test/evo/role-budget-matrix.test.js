@@ -11,8 +11,15 @@ const matrix = typedMatrix;
 const courser = arenaConfig(JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8')));
 
 describe('the rows of Phase 1', () => {
-    it('are the four prey rows', () => {
-        expect(PHASE1_ROWS).toEqual(['predator:forager', 'predator:reproducer', 'predator:scout', 'predator:defender']);
+    it('are the four prey rows, the average and the best', () => {
+        expect(PHASE1_ROWS).toEqual([
+            'predator:forager',
+            'predator:reproducer',
+            'predator:scout',
+            'predator:defender',
+            'predator:average',
+            'predator:best',
+        ]);
     });
 
     it('re-exports the cell and the row', () => {
@@ -39,11 +46,23 @@ describe('matrix', () => {
         expect(m.rows[0].name).toBe('predator:scout');
         expect(m.rows[0].detail.catchable).toBe(true);
         expect(m.rows[0].binding).toBe(m.rows[0].detail.binding);
+        expect(m.choice).toBeNull();
     });
 
-    it('builds only the prey it is asked for', () => {
+    it('builds only the prey it is asked for, and the average and best from all four', () => {
         const some = matrix(courser, model, ['predator:forager', 'predator:defender']);
         expect(some.rows.map((/** @type {any} */ r) => r.name)).toEqual(['predator:forager', 'predator:defender']);
+        const both = matrix(courser, model, ['predator:average', 'predator:best']);
+        expect(both.rows.map((/** @type {any} */ r) => r.name)).toEqual(['predator:average', 'predator:best']);
+        expect(both.choice.catchableShare).toBeGreaterThan(0);
+        expect(both.rows[1].detail.best.picks).toBe(both.choice.best.picks);
+    });
+
+    it('weights the average by --mix', () => {
+        const even = matrix(courser, model, ['predator:average']).choice;
+        const skewed = matrix(courser, model, ['predator:average'], { mix: { forager: 1 } }).choice;
+        expect(skewed.mix.forager).toBe(1);
+        expect(skewed.average.cells.see.margin).not.toBe(even.average.cells.see.margin);
     });
 
     it('refuses a row that is not built, naming the built ones', () => {
