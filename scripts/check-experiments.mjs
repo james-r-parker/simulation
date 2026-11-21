@@ -3,6 +3,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { checkCitations } from './lib/experiment-citations.mjs';
 import { RECORD_FILE } from './lib/ledger.mjs';
 import { validate } from './lib/json-schema-lite.mjs';
 
@@ -67,21 +68,23 @@ function checkReports(record, file, root) {
 }
 
 /**
- * Checks that a record names the fields its id requires: `kind` and `outcome` from `FIRST_TYPED_ID`, `plan` from
- * `FIRST_PLAN_ID`.
- * @param {{ id: string }} record a record that passed the schema
+ * Checks that a record names the fields its id requires: `kind` and `outcome` from `FIRST_TYPED_ID`, and from
+ * `FIRST_PLAN_ID` the `plan` and, for a `compare`, the `verdicts`.
+ * @param {{ id: string, kind?: string, verdicts?: object }} record a record that passed the schema
  * @param {string} file the record's file name
  * @returns {string[]} problems
  */
 function checkTyped(record, file) {
     const n = Number(record.id.slice(1));
     const fields = [...(n >= FIRST_TYPED_ID ? ['kind', 'outcome'] : []), ...(n >= FIRST_PLAN_ID ? ['plan'] : [])];
-    return fields
+    const missing = fields
         .filter((field) => !Object.hasOwn(record, field))
         .map(
             (field) =>
                 `${file}: from E${field === 'plan' ? FIRST_PLAN_ID : FIRST_TYPED_ID} on a record names its ${field}`,
         );
+    const empty = n >= FIRST_PLAN_ID && record.kind === 'compare' && Object.keys(record.verdicts ?? {}).length === 0;
+    return empty ? [...missing, `${file}: from E${FIRST_PLAN_ID} on a compare record names its verdicts`] : missing;
 }
 
 /**
@@ -156,15 +159,31 @@ const toPath = (path) => (path instanceof URL ? fileURLToPath(path) : path);
  * Reads, validates and reports the ledger.
  * @param {string | URL} ledgerDir the ledger directory
  * @param {string | URL} schemaPath the schema file
+ * @param {string | null} [citationRoot] the repo root whose docs are checked for ids with no record; the default is the
+ *   repo root when `ledgerDir` is the repo's ledger, and no check otherwise
  * @returns {string[]} the problems
  */
-export function checkFiles(ledgerDir = LEDGER, schemaPath = SCHEMA) {
+export function checkFiles(
+    ledgerDir = LEDGER,
+    schemaPath = SCHEMA,
+    citationRoot = ledgerDir === LEDGER ? REPO_ROOT : null,
+) {
     const schema = readJson(toPath(schemaPath));
     const dir = toPath(ledgerDir);
     if (schema.problem !== undefined) {
         return [schema.problem];
     }
-    return existsSync(dir) ? checkDirectory(dir, schema.value) : [unreadable('no such directory', dir)];
+    if (!existsSync(dir)) {
+        return [unreadable('no such directory', dir)];
+    }
+    const problems = checkDirectory(dir, schema.value);
+    if (citationRoot !== null) {
+        const recorded = new Set(
+            readdirSync(dir).flatMap((name) => RECORD_FILE.exec(name)?.slice(1, 2).map(Number) ?? []),
+        );
+        problems.push(...checkCitations(citationRoot, recorded));
+    }
+    return problems;
 }
 
 /* v8 ignore start -- thin CLI; the exported functions are tested */

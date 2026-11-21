@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { checkDirectory, checkFiles, checkRecord } from '../scripts/check-experiments.mjs';
+import { checkCitations } from '../scripts/lib/experiment-citations.mjs';
 import { validate } from '../scripts/lib/json-schema-lite.mjs';
 
 const schema = JSON.parse(readFileSync(new URL('../evals/experiments.schema.json', import.meta.url), 'utf8'));
@@ -119,6 +120,76 @@ describe('checkRecord kind, outcome and plan', () => {
         expect(problems[0]).toContain('/properties/kind/enum: at kind: "run" is not one of compare, ladder');
         expect(problems.join('\n')).toContain('/properties/plan/pattern');
         expect(problems.join('\n')).toContain('/properties/task/pattern');
+    });
+});
+
+describe('checkRecord compare verdicts', () => {
+    const at = (/** @type {Record<string, unknown>} */ record) =>
+        checkRecord({ ...record, plan: 'x.md', reports: ['evals/decisions/.gitkeep'] }, schema, `${record.id}.json`);
+
+    it('requires a compare record from E257 on to name its verdicts', () => {
+        expect(at(entry({ id: 'E257', verdicts: {} }))).toEqual([
+            'E257.json: from E257 on a compare record names its verdicts',
+        ]);
+        expect(at(entry({ id: 'E257' }))).toEqual([]);
+    });
+
+    it('lets an older compare record and any other kind have none', () => {
+        expect(at(entry({ id: 'E256', verdicts: {} }))).toEqual([]);
+        expect(at(entry({ id: 'E257', kind: 'ladder', verdicts: {} }))).toEqual([]);
+    });
+});
+
+describe('cited ids', () => {
+    /**
+     * @param {Record<string, string>} files path to contents, under a fresh repo root
+     * @returns {string} the root
+     */
+    function docs(files) {
+        const root = mkdtempSync(join(tmpdir(), 'cites-'));
+        for (const [path, text] of Object.entries(files)) {
+            mkdirSync(join(root, path, '..'), { recursive: true });
+            writeFileSync(join(root, path), text);
+        }
+        return root;
+    }
+    const recorded = new Set([151, 200]);
+
+    it('accepts an id with a record, an id below 151 and a word that only looks like one', () => {
+        const root = docs({
+            'AGENTS.md': 'E151 and E5 and E2E and E-TS-1m and E1500x\n',
+            'docs/a/b.md': 'see E200.\n',
+        });
+        expect(checkCitations(root, recorded)).toEqual([]);
+    });
+
+    it('names the file, line and id of a citation with no record, in docs and AGENTS.md', () => {
+        const root = docs({
+            'AGENTS.md': 'x\nE250 is here\n',
+            'docs/notes/n.md': 'E151, E300 and E300\n',
+            'docs/skip.txt': 'E999\n',
+        });
+        expect(checkCitations(root, recorded)).toEqual([
+            'AGENTS.md:2: E250 is cited and has no record in the ledger',
+            'docs/notes/n.md:1: E300 is cited and has no record in the ledger',
+            'docs/notes/n.md:1: E300 is cited and has no record in the ledger',
+        ]);
+    });
+
+    it('reads a root with no AGENTS.md or docs/ as citing nothing', () => {
+        expect(checkCitations(docs({}), recorded)).toEqual([]);
+    });
+
+    it('is run by checkFiles against a root, and not unless one is given for another directory', () => {
+        const dir = docs({
+            'ledger/E151.json': JSON.stringify(entry({ id: 'E151', reports: ['evals/decisions/.gitkeep'] })),
+        });
+        const root = docs({ 'docs/a.md': 'E152\n' });
+        const schemaPath = new URL('../evals/experiments.schema.json', import.meta.url);
+        expect(checkFiles(join(dir, 'ledger'), schemaPath)).toEqual([]);
+        expect(checkFiles(join(dir, 'ledger'), schemaPath, root)).toEqual([
+            'docs/a.md:1: E152 is cited and has no record in the ledger',
+        ]);
     });
 });
 

@@ -5,12 +5,12 @@ description: Use when an evolution or performance change needs measuring - after
 
 # run-evolution-loop
 
-> Note: `npm run eval`, `eval:compare`, `evals/experiments.json` and `npm run bench` exist. The anti-exploit suite and
+> Note: `npm run eval`, `eval:compare`, `evals/ledger/` (one `E<id>.json` per experiment) and `npm run bench` exist. The anti-exploit suite and
 > `npm run league` arrive with `evolution-evals.md` Phases 3 and 4.
 
 ## Overview
 
-One cycle: check the detector, hypothesise, run, check the eval, turn the outcome into tasks, record, act, measure, rebaseline. `evals/experiments.json` is the only
+One cycle: check the detector, hypothesise, run, check the eval, turn the outcome into tasks, record, act, measure, rebaseline. `evals/ledger/` is the only
 record of what was tried and what it did.
 
 **Core principle:** check the eval before blaming (or crediting) the simulation. Evolution is noisy: a change that
@@ -40,15 +40,22 @@ repeated. Three cases from 2026-11-07:
 
 ## 1. Hypothesise
 
-Before changing anything, add an entry to `evals/experiments.json` with:
+Before changing anything, run `node scripts/experiment.mjs new --plan <doc.md> [--task <T12>] [--stream <name>]`: it prints
+the next id (one above the highest on `origin/main` and every `origin/*` branch; no range is reserved by hand) and writes
+`evals/ledger/E<id>.json` with `outcome` unset. Fill in:
 
-- `id` (`E<n>`), `date`, `branch`
+- `kind`: `compare` (two eval reports), `ladder` (training runs), `diagnosis` (a cause found, no arm) or
+  `characterisation` (a reading, no arm)
+- `plan` (the design doc file name) and, when known, `task` and `stream`
+- `id` (`E<n>`), `date`, `branch` (written by `new`)
 - `hypothesis`: what the change does and why it should help
 - `prediction`: which metrics move, in which direction, and roughly by how much
 - `targets`: the `**Targets:**` metric names from the design doc phase, if any
 - `beforePolicy` and `afterPolicy`: the policy names; readers treat a missing one as `live`
 
-Ids are `E<n>`, unique and increasing; `E0` is the calibration (below).
+Ids are `E<n>` and unique; `E0` is the calibration (below). If two lanes drew one id before either pushed, the second PR
+runs `node scripts/experiment.mjs renumber <id>`, which moves the record to the next id and rewrites the branch's
+citations of the old one. `list` and `tally` read the ledger (`docs/commands.md`).
 
 Write the prediction first. A prediction written after the result is not a prediction.
 
@@ -150,9 +157,10 @@ bootstrap or the default config change, as a new entry.
 
 ## 4. Record
 
-Fill in the experiment entry: `before` and `after` report paths, the per-metric verdicts, `effect` (`better`,
-`worse`, `no-difference`, `exploit`), and a one-line `note`. The `conventions` gate checks the file against its
-schema.
+Fill in the experiment record: `outcome` (`adopted`, `not-adopted`, `falsified`, `no-verdict` or `finding`), `before`
+and `after` report paths, the per-metric verdicts (required and non-empty when `kind` is `compare`), `effect` (`better`,
+`worse`, `no-difference`, `exploit`), and a one-line `note`. The `conventions` gate checks every record against
+`evals/experiments.schema.json` and fails an `E<id>` of 151 or more cited in `docs/` or `AGENTS.md` that has no record.
 
 ## 5. Act
 

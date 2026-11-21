@@ -97,6 +97,7 @@
         "scripts/check-experiments.mjs"
     ],
     "test/check-experiments.test.js": [
+        "AGENTS.md",
         "evals/decisions/.gitkeep",
         "evals/decisions/E151",
         "evals/experiments.schema.json",
