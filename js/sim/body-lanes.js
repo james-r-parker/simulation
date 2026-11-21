@@ -25,6 +25,26 @@ const THRESHOLDS = [
     'temperatureHeatStress',
 ];
 
+/**
+ * The lanes whose sim readers read the lane and no longer the config key (body-genes.md Phase 1, T3): the movement,
+ * heat and energy lanes the first traits shift. The rest move family by family in Phase 5.
+ */
+const MOVED = new Set([
+    'maxVelocity',
+    'maxThrust',
+    'maxTurn',
+    'sprintCost',
+    'sprintDrain',
+    'sprintRefill',
+    'fatSlowShare',
+    'visionRange',
+    'maxEnergy',
+    'passiveLoss',
+    'temperatureGainMove',
+    'temperatureLossPassive',
+    ...THRESHOLDS,
+]);
+
 /** The spec fields that scale a lane that has a key, by the key (one lane, not two). */
 const FIELD_OF = {
     maxTurn: 'turnMultiplier',
@@ -100,14 +120,22 @@ export const LANES = Object.freeze(
                 field: /** @type {Record<string, string>} */ (FIELD_OF)[key] ?? null,
                 base: 1,
                 kind: THRESHOLDS.includes(key) ? 'offset' : 'ratio',
-                moved: false,
+                moved: MOVED.has(key),
             }),
         ),
         ...fields
             .split(' ')
             .filter((field) => field !== '')
             .map((field) =>
-                Object.freeze({ name: field, family, key: null, field, base: 1, kind: 'ratio', moved: false }),
+                Object.freeze({
+                    name: field,
+                    family,
+                    key: null,
+                    field,
+                    base: 1,
+                    kind: 'ratio',
+                    moved: MOVED.has(field),
+                }),
             ),
         ...Object.entries(added).map(([name, base]) =>
             Object.freeze({ name, family, key: null, field: null, base, kind: 'ratio', moved: false }),

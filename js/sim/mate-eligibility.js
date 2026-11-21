@@ -23,7 +23,7 @@ export function isReadyToMate(world, slot) {
         world.pregnancy[slot] === 0 &&
         world.cooldown[slot] === 0 &&
         world.energy[slot] > mateMinEnergy &&
-        !blocksMating(world.config, world.temperature[slot]) &&
+        !blocksMating(world, slot) &&
         territoryAllows(world, slot)
     );
 }

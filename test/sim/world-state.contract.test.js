@@ -116,6 +116,7 @@ const TODAYS_WORLD_FIELDS = [
     'sprintBySpec',
     'contacts',
     'sprintFactor',
+    'laneMaxVelocity',
 ];
 
 /** A world with every optional per-slot row on, so each one is allocated. */

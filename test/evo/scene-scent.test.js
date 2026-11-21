@@ -17,8 +17,7 @@ function world(tick = 100000) {
         y: new Float32Array([0]),
         tick,
         spec: new Uint8Array([0]),
-        vision: new Float32Array([1]),
-        visionBySpec: new Float32Array([100]),
+        lanes: { visionRange: new Float64Array([100]) },
     };
 }
 

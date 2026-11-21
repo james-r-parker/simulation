@@ -6,6 +6,7 @@
 import { BRAIN_FIELDS, writeBrainParams } from './wasm-brain.js';
 import { FIELD_FIELDS, fieldSpecs, writeFieldParams } from './wasm-field.js';
 import { HASH_FIELDS, arenaHash, hashSpecs } from './wasm-hash.js';
+import { rebindKernelLanes } from './lane-state.js';
 import { PHYSICS_FIELDS, physicsSpecs, writePhysicsParams } from './wasm-physics.js';
 import { SENSE_FIELDS, senseSpecs, writeSenseParams } from './wasm-sense.js';
 import { embeddedKernels } from './wasm-loader.js';
@@ -213,6 +214,7 @@ export function attachWasm(world, kernels = embeddedKernels(), { midRun = false 
         arena.views[name].set(world[name]);
         world[name] = arena.views[name];
     }
+    rebindKernelLanes(world);
     world.hash = arenaHash(arena, world, world.hash);
     writePhysicsParams(arena, world);
     world.wasm = arena;

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { laneBases } from '../../js/sim/body-lanes.js';
 import { createConfig } from '../../js/sim/config.js';
 import {
     blocksMating,
@@ -24,6 +25,32 @@ const config = createConfig({ ...SIMPLE_WORLD, ...LEGACY_RATES });
 const LOSS = [1.15, 0.55, 0.85, 1.45];
 
 /**
+ * @param {Readonly<Record<string, any>>} cfg the config
+ * @param {number} [shift] degrees added to every lane of a threshold
+ * @returns {Record<string, Float64Array>} one slot of every forager lane at its base, the thresholds shifted
+ */
+function lanesOf(cfg, shift = 0) {
+    const bases = laneBases(cfg, 'forager');
+    return Object.fromEntries(
+        Object.entries(bases).map(([name, v]) => [
+            name,
+            Float64Array.of(/^temperature(Cold|Heat|Optimal)/.test(name) ? v + shift : v),
+        ]),
+    );
+}
+
+/**
+ * One body at temperature `t`, for the threshold functions.
+ * @param {Readonly<Record<string, any>>} cfg the config
+ * @param {number} t the temperature
+ * @param {number} [shift] degrees added to the body's thresholds
+ * @returns {any} the world stand-in, the body in slot 0
+ */
+function bodyAt(cfg, t, shift = 0) {
+    return { config: cfg, temperature: Float64Array.of(t), lanes: lanesOf(cfg, shift) };
+}
+
+/**
  * A stand-in for the world: just the arrays `stepTemperature` and `gainTemperature` read.
  * @param {number} t starting temperature
  * @param {number} speed speed of the agent, along x
@@ -38,6 +65,7 @@ function fakeWorld(t, speed, season) {
         vy: Float32Array.of(0),
         y: Float32Array.of(1000),
         season: Uint32Array.of(season, 0),
+        lanes: lanesOf(config),
     };
 }
 
@@ -79,6 +107,7 @@ describe('stepTemperature', () => {
         expect(cold.temperature[0]).toBe(0);
         const hot = fakeWorld(99.999, 8, 0);
         hot.config = createConfig({ ...SIMPLE_WORLD, ...LEGACY_RATES, temperatureLossPassive: 0 });
+        hot.lanes = lanesOf(hot.config);
         stepTemperature(hot, 0);
         expect(hot.temperature[0]).toBe(100);
     });
@@ -88,8 +117,36 @@ describe('stepTemperature', () => {
         seasons[0].temperatureModifier = 60;
         const world = fakeWorld(50, 0, 0);
         world.config = createConfig({ ...SIMPLE_WORLD, ...LEGACY_RATES, seasons });
+        world.lanes = lanesOf(world.config);
         stepTemperature(world, 0);
         expect(world.temperature[0]).toBe(50);
+    });
+});
+
+describe('stepTemperature reads the body lanes', () => {
+    it('warms by the temperatureGainMove lane and cools by the temperatureLossPassive lane', () => {
+        const world = fakeWorld(50, 8, 1);
+        world.lanes.temperatureGainMove[0] = 0.05;
+        world.lanes.temperatureLossPassive[0] = 0.03;
+        stepTemperature(world, 0);
+        expect(world.temperature[0]).toBeCloseTo(50 + 0.05 - 0.03 * LOSS[1], 4);
+    });
+});
+
+describe('the threshold functions read the body lanes', () => {
+    it('move every band with a body whose thresholds are shifted', () => {
+        expect(thrustEfficiency(bodyAt(config, 32), 0)).toBe(0.7);
+        expect(thrustEfficiency(bodyAt(config, 32, 5), 0)).toBe(0.3);
+        expect(thrustEfficiency(bodyAt(config, 68, 5), 0)).toBe(1);
+        expect(blocksMating(bodyAt(config, 87, 5), 0)).toBe(false);
+        expect(blocksMating(bodyAt(config, 32, 5), 0)).toBe(true);
+        expect(passiveMultiplier(bodyAt(config, 68, 5), 0)).toBe(1);
+        expect(passiveMultiplier(bodyAt(config, 42, 5), 0)).toBeCloseTo(1 + (3 / 45) * 3, 12);
+        const out = new Float32Array(4);
+        temperatureInputs(bodyAt(config, 57.5, 5), 0, out, 0);
+        expect(out[1]).toBe(0);
+        temperatureInputs(bodyAt(config, 40, 5), 0, out, 0);
+        expect(out[2]).toBeCloseTo(0.5, 6);
     });
 });
 
@@ -106,26 +163,26 @@ describe('gainTemperature', () => {
 describe('passiveMultiplier', () => {
     it('is 1 across the optimal band', () => {
         for (const t of [40, 45, 52.5, 65]) {
-            expect(passiveMultiplier(config, t)).toBe(1);
+            expect(passiveMultiplier(bodyAt(config, t), 0)).toBe(1);
         }
     });
 
     it('reaches the factor at 0 and at temperatureMax', () => {
-        expect(passiveMultiplier(config, 0)).toBe(4);
-        expect(passiveMultiplier(config, 100)).toBe(4);
+        expect(passiveMultiplier(bodyAt(config, 0), 0)).toBe(4);
+        expect(passiveMultiplier(bodyAt(config, 100), 0)).toBe(4);
     });
 
     it('is linear between the band and the ends', () => {
-        expect(passiveMultiplier(config, 20)).toBeCloseTo(2.5, 12);
-        expect(passiveMultiplier(config, 30)).toBeCloseTo(1.75, 12);
-        expect(passiveMultiplier(config, 82.5)).toBeCloseTo(2.5, 12);
-        expect(passiveMultiplier(config, 70)).toBeCloseTo(1 + (5 / 35) * 3, 12);
+        expect(passiveMultiplier(bodyAt(config, 20), 0)).toBeCloseTo(2.5, 12);
+        expect(passiveMultiplier(bodyAt(config, 30), 0)).toBeCloseTo(1.75, 12);
+        expect(passiveMultiplier(bodyAt(config, 82.5), 0)).toBeCloseTo(2.5, 12);
+        expect(passiveMultiplier(bodyAt(config, 70), 0)).toBeCloseTo(1 + (5 / 35) * 3, 12);
     });
 
     it('is 1 everywhere when the factor is 1', () => {
         const flat = createConfig({ ...SIMPLE_WORLD, ...LEGACY_RATES, temperaturePassiveLossFactor: 1 });
         for (const t of [0, 10, 50, 90, 100]) {
-            expect(passiveMultiplier(flat, t)).toBe(1);
+            expect(passiveMultiplier(bodyAt(flat, t), 0)).toBe(1);
         }
     });
 });
@@ -144,19 +201,19 @@ describe('thrustEfficiency', () => {
         [85, 0.4],
         [100, 0.4],
     ])('is the band value at %f', (t, expected) => {
-        expect(thrustEfficiency(config, t)).toBe(expected);
+        expect(thrustEfficiency(bodyAt(config, t), 0)).toBe(expected);
     });
 });
 
 describe('blocksMating', () => {
     it('blocks past either stress threshold and not at them', () => {
-        expect(blocksMating(config, 29.99)).toBe(true);
-        expect(blocksMating(config, 30)).toBe(false);
-        expect(blocksMating(config, 50)).toBe(false);
-        expect(blocksMating(config, 85)).toBe(false);
-        expect(blocksMating(config, 85.01)).toBe(true);
-        expect(blocksMating(config, 0)).toBe(true);
-        expect(blocksMating(config, 100)).toBe(true);
+        expect(blocksMating(bodyAt(config, 29.99), 0)).toBe(true);
+        expect(blocksMating(bodyAt(config, 30), 0)).toBe(false);
+        expect(blocksMating(bodyAt(config, 50), 0)).toBe(false);
+        expect(blocksMating(bodyAt(config, 85), 0)).toBe(false);
+        expect(blocksMating(bodyAt(config, 85.01), 0)).toBe(true);
+        expect(blocksMating(bodyAt(config, 0), 0)).toBe(true);
+        expect(blocksMating(bodyAt(config, 100), 0)).toBe(true);
     });
 });
 
@@ -166,7 +223,7 @@ describe('blocksMating', () => {
  */
 function inputsAt(t) {
     const out = new Float32Array(6);
-    temperatureInputs(config, t, out, 1);
+    temperatureInputs(bodyAt(config, t), 0, out, 1);
     expect(out[0]).toBe(0);
     expect(out[5]).toBe(0);
     return Array.from(out.subarray(1, 5));
@@ -192,9 +249,9 @@ describe('temperatureInputs', () => {
     it('is 1 above the heat threshold when the moderate and stress thresholds coincide', () => {
         const same = createConfig({ ...SIMPLE_WORLD, ...LEGACY_RATES, temperatureHeatModerate: 85 });
         const out = new Float32Array(4);
-        temperatureInputs(same, 85.5, out, 0);
+        temperatureInputs(bodyAt(same, 85.5), 0, out, 0);
         expect(out[3]).toBe(1);
-        temperatureInputs(same, 85, out, 0);
+        temperatureInputs(bodyAt(same, 85), 0, out, 0);
         expect(out[3]).toBe(0);
     });
 });
@@ -248,10 +305,10 @@ describe('against a naive reference', () => {
         for (let i = 0; i < 200; i++) {
             const t = next() * 100;
             const ref = reference(t);
-            expect(passiveMultiplier(config, t), `passive at ${t}`).toBeCloseTo(ref.passive, 10);
-            expect(thrustEfficiency(config, t), `thrust at ${t}`).toBe(ref.thrust);
-            expect(blocksMating(config, t), `blocks at ${t}`).toBe(ref.blocks);
-            temperatureInputs(config, t, out, 0);
+            expect(passiveMultiplier(bodyAt(config, t), 0), `passive at ${t}`).toBeCloseTo(ref.passive, 10);
+            expect(thrustEfficiency(bodyAt(config, t), 0), `thrust at ${t}`).toBe(ref.thrust);
+            expect(blocksMating(bodyAt(config, t), 0), `blocks at ${t}`).toBe(ref.blocks);
+            temperatureInputs(bodyAt(config, t), 0, out, 0);
             ref.inputs.forEach((value, k) => expect(out[k], `input ${k} at ${t}`).toBeCloseTo(value, 5));
         }
     });

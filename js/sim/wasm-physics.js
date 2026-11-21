@@ -30,17 +30,20 @@ export const PHYSICS_ARRAYS = Object.freeze([
     'physicsDoubles',
     'physicsImpact',
     'sprintFactor',
+    'laneMaxVelocity',
 ]);
 
 /**
  * World fields the physics kernels read or write that no earlier kernel took into the arena: the agent arrays it owns
- * (`agent-arrays.js`), in `PHYSICS_ARRAYS` order, then the sprint tables and the contact list.
+ * (`agent-arrays.js`), in `PHYSICS_ARRAYS` order, then the sprint table, the contact list, the sprint-store factor and
+ * the `maxVelocity` lane (`KERNEL_LANES` in `js/sim/lane-state.js`).
  */
 export const PHYSICS_FIELDS = Object.freeze([
     ...ownedFields('physics', PHYSICS_ARRAYS),
     'sprintBySpec',
     'contacts',
     'sprintFactor',
+    'laneMaxVelocity',
 ]);
 
 /** Words of the physics parameter block after the offsets, in `PhysicsParams` order. */
@@ -49,7 +52,6 @@ const WORDS = Object.freeze(['maxAgents', 'obsCount', 'outputCount', 'sprintOutp
 /** The doubles block, in `D_*` order (wasm/src/physics.rs). */
 const DOUBLES = Object.freeze([
     'damping',
-    'maxVelocity',
     'sprintMultiplier',
     'restitution',
     'worldWidth',

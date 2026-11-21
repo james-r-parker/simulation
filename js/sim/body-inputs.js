@@ -45,7 +45,7 @@ export function writeBodyInputs(world, slot, cH = detCos(world.angle[slot]), sH 
     const vy = world.vy[slot];
     const x = world.x[slot];
     const y = world.y[slot];
-    const maxEnergy = world.maxEnergyBySpec[world.spec[slot]];
+    const maxEnergy = world.lanes.maxEnergy[slot];
     out[o] = world.energy[slot] / maxEnergy;
     out[o + 1] = (vx * cH + vy * sH) / maxVelocity;
     out[o + 2] = (-vx * sH + vy * cH) / maxVelocity;
@@ -59,7 +59,7 @@ export function writeBodyInputs(world, slot, cH = detCos(world.angle[slot]), sH 
     out[o + BODY_INPUT.BITTEN] = 1 - world.bittenTimer[slot] / TIMER_CAP;
     out[o + 11] = world.spec[slot] / SPEC_DIVISOR;
     out[o + 12] = world.ageTicks[slot] / maxAgeTicks;
-    temperatureInputs(world.config, world.temperature[slot], out, o + 13);
+    temperatureInputs(world, slot, out, o + 13);
     writeMemoryInputs(world, slot, o);
     writeRefugeInputs(world, slot, cH, sH);
 }

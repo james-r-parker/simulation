@@ -6,14 +6,11 @@
 // `sprintStoreEnabled` off there is no store and the lane holds 1 for every slot. No RNG, no clock, no allocation per tick.
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
-import { specTable } from './spec-params.js';
 import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 
 /**
  * @typedef {object} SprintStore
  * @property {Float64Array} level each slot's store, 0 to 1
- * @property {Float64Array} drainBySpec `sprintDrain x sprintDrainMultiplier` of each specialisation, indexed by `index`
- * @property {number} refill `sprintRefill`
  * @property {number} restThrust `sprintRestThrust`
  * @property {number} floor `sprintFloor`
  */
@@ -24,14 +21,8 @@ import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
  * @returns {SprintStore} a store with every slot full
  */
 export function createSprintStore(config, slots) {
-    const drainBySpec = specTable(config, 'sprintDrainMultiplier');
-    for (let k = 0; k < drainBySpec.length; k++) {
-        drainBySpec[k] *= config.sprintDrain;
-    }
     return {
         level: new Float64Array(slots).fill(1),
-        drainBySpec,
-        refill: config.sprintRefill,
         restThrust: config.sprintRestThrust,
         floor: config.sprintFloor,
     };
@@ -90,17 +81,18 @@ function noteSpent(world, slot) {
 
 /**
  * For every live slot: writes the factor of the store as the tick begins into `sprintFactor`, then drains the store by
- * its specialisation's drain while `SPRINT` is above 0, or refills it by `sprintRefill` while `SPRINT` is at or under 0
- * and `THRUST` is under `sprintRestThrust`, clamped to 0 to 1. A store that falls under the floor in a sprint pushes
- * one `SPRINT_SPENT` event.
+ * its `sprintDrain` lane while `SPRINT` is above 0, or refills it by its `sprintRefill` lane while `SPRINT` is at or
+ * under 0 and `THRUST` is under `sprintRestThrust`, clamped to 0 to 1. A store that falls under the floor in a sprint
+ * pushes one `SPRINT_SPENT` event.
  * @param {SprintStore} store the store
- * @param {Record<string, any>} world the world (or the arrays it reads, the lane it writes, `tick`, `genomeId` and
- *   `events`)
+ * @param {Record<string, any>} world the world (or the arrays it reads, its `lanes`, the factor it writes, `tick`,
+ *   `genomeId` and `events`)
  * @returns {void}
  */
 export function stepSprintStore(store, world) {
-    const { alive, spec, outputs, sprintFactor } = world;
-    const { level, drainBySpec, refill, restThrust } = store;
+    const { alive, outputs, sprintFactor } = world;
+    const { sprintDrain, sprintRefill } = world.lanes;
+    const { level, restThrust } = store;
     for (let i = 0; i < alive.length; i++) {
         if (alive[i] !== 1) {
             continue;
@@ -109,12 +101,12 @@ export function stepSprintStore(store, world) {
         const o = i * OUTPUT_COUNT;
         if (outputs[o + OUTPUT_INDEX.SPRINT] > 0) {
             const before = level[i];
-            level[i] = Math.max(0, before - drainBySpec[spec[i]]);
+            level[i] = Math.max(0, before - sprintDrain[i]);
             if (before >= store.floor && level[i] < store.floor) {
                 noteSpent(world, i);
             }
         } else if (outputs[o + OUTPUT_INDEX.THRUST] < restThrust) {
-            level[i] = Math.min(1, level[i] + refill);
+            level[i] = Math.min(1, level[i] + sprintRefill[i]);
         }
     }
 }

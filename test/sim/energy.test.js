@@ -1,4 +1,4 @@
-import { allocBody } from './helpers/body.js';
+import { allocBody, setSpec } from './helpers/body.js';
 import { describe, expect, it } from 'vitest';
 import {
     ENERGY_SOURCE,
@@ -267,7 +267,7 @@ describe('applyCosts', () => {
     it('ages, cools down, ticks timers and charges the formula cost with cause cost', () => {
         const world = worldWith(1);
         world.energy[0] = 100;
-        world.spec[0] = 3;
+        setSpec(world, 0, 3);
         world.vx[0] = 3;
         world.vy[0] = 4;
         world.turnRate[0] = -0.2;
@@ -307,7 +307,7 @@ describe('applyCosts', () => {
         const world = allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL, juvenileBurn: 0.4 }));
         world.temperature[allocBody(world)] = world.config.temperatureStart;
         world.energy[0] = 100;
-        world.spec[0] = 1;
+        setSpec(world, 0, 1);
         world.vx[0] = 3;
         world.vy[0] = 4;
         world.turnRate[0] = -0.2;

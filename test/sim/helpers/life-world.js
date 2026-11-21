@@ -38,7 +38,7 @@ export function lifeWorld(over = {}) {
  * @returns {number} the slot
  */
 export function addBlob(w, fields = {}) {
-    const slot = allocBody(w);
+    const slot = allocBody(w, fields.spec);
     w.genomeId[slot] = w.nextId++;
     w.lineageId[slot] = w.genomeId[slot];
     w.x[slot] = 500;

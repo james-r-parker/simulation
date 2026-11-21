@@ -59,7 +59,7 @@ export function updateSize(world, slot) {
 }
 
 /**
- * Adds energy from outside the world, capped at the agent's store (`maxEnergy` x its specialisation's `maxEnergyMultiplier`); books only the stored amount in `ledger[0]`.
+ * Adds energy from outside the world, capped at the agent's store (its `maxEnergy` lane); books only the stored amount in `ledger[0]`.
  * @param {import('./world.js').World} world the world
  * @param {number} slot the agent slot
  * @param {number} amount the energy offered, non-negative
@@ -72,7 +72,7 @@ export function addEnergy(world, slot, amount, source) {
         throw new Error(`addEnergy: slot ${slot} has unknown energy source ${source}`);
     }
     const { energy, ledger } = world;
-    const stored = Math.min(amount, world.maxEnergyBySpec[world.spec[slot]] - energy[slot]);
+    const stored = Math.min(amount, world.lanes.maxEnergy[slot] - energy[slot]);
     energy[slot] += stored;
     ledger[0] += stored;
     updateSize(world, slot);
@@ -104,7 +104,7 @@ export function removeEnergy(world, slot, amount, cause) {
 }
 
 /**
- * Moves energy from one agent to another. The giver loses up to `amount`; the receiver gains up to its own store (`maxEnergyBySpec`)
+ * Moves energy from one agent to another. The giver loses up to `amount`; the receiver gains up to its own store (its `maxEnergy` lane)
  * and the rest is booked in `ledger[1]`. Does not touch `lastLoss` or the ledger's inflow.
  * @param {import('./world.js').World} world the world
  * @param {number} giver the slot losing energy
@@ -119,7 +119,7 @@ export function transferEnergy(world, giver, receiver, amount) {
     }
     const { energy, ledger } = world;
     const moved = Math.min(amount, energy[giver]);
-    const gained = Math.min(moved, world.maxEnergyBySpec[world.spec[receiver]] - energy[receiver]);
+    const gained = Math.min(moved, world.lanes.maxEnergy[receiver] - energy[receiver]);
     energy[giver] -= moved;
     energy[receiver] += gained;
     ledger[1] += moved - gained;
@@ -157,10 +157,12 @@ function tickCost(world, slot) {
     const vy = world.vy[slot];
     const speed = Math.sqrt(vx * vx + vy * vy);
     const drain = c.seasons[world.season[0]].energyDrain;
+    // The `passiveLoss` lane holds the spec's multiplier (and the `burn` trait); the size and vision terms take the
+    // spec's multiplier alone.
     const standing =
-        (c.passiveLoss + c.sizeEnergyLoss * world.size[slot] + visionLoss(world, slot)) *
-        sp.passiveLossMultiplier *
-        passiveMultiplier(c, world.temperature[slot]);
+        (world.lanes.passiveLoss[slot] +
+            (c.sizeEnergyLoss * world.size[slot] + visionLoss(world, slot)) * sp.passiveLossMultiplier) *
+        passiveMultiplier(world, slot);
     const burn = juvenileBurnOf(world, slot);
     const base =
         (standing + c.movementCost * (speed * speed) * m + c.turnCost * Math.abs(world.turnRate[slot]) * m) *
@@ -170,7 +172,7 @@ function tickCost(world, slot) {
     // fair-chase: the cost of the sprint delivered, times the sprint-store factor (1 with the store off).
     const sprint =
         world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0
-            ? c.sprintCost * burn * world.sprintFactor[slot]
+            ? world.lanes.sprintCost[slot] * burn * world.sprintFactor[slot]
             : 0;
     cost += sprint;
     const upkeep = c.specMutationRate > 0 && sp.canHunt ? c.huntUpkeep : 0;

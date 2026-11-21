@@ -13,6 +13,7 @@ import { allocAgent, allocateWorld, freeAgent } from '../../js/sim/world.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { cloneWithNoisePolicy } from '../../js/sim/birth-policy.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
+import { writeLaneBases } from '../../js/sim/lane-state.js';
 
 const SMALL = {
     maxAgents: 8,
@@ -54,6 +55,7 @@ function sprinter(w, level, fields = {}) {
     for (const [k, v] of Object.entries(fields)) {
         w[k][slot] = v;
     }
+    writeLaneBases(w, slot);
     w.outputs.fill(0, slot * OUTPUT_COUNT, (slot + 1) * OUTPUT_COUNT);
     w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.THRUST] = 1;
     w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] = 1;

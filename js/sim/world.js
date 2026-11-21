@@ -246,7 +246,8 @@ function splitMinTable(config) {
 /**
  * @param {Readonly<Record<string, any>>} config the validated config
  * @returns {Float64Array} `maxEnergy` times each specialisation's `maxEnergyMultiplier`, indexed by `index`: the energy
- *   store of an agent of that specialisation
+ *   store of an agent of that specialisation at its base, the normaliser the detectors read (the sim reads each agent's
+ *   `maxEnergy` lane)
  */
 function maxEnergyTable(config) {
     const table = specTable(config, 'maxEnergyMultiplier');

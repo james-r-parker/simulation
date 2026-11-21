@@ -26,11 +26,11 @@ export function traitValue(gene) {
 /**
  * @param {Record<string, any>} world the world
  * @param {number} slot the alive slot
- * @returns {number} the slot's ray length: its specialisation's `visionRange` times its vision trait
+ * @returns {number} the slot's ray length: its `visionRange` lane (its specialisation's `visionRange` times the traits
+ *   that name the lane, the vision trait among them)
  */
 export function visionOf(world, slot) {
-    const base = world.visionBySpec[world.spec[slot]];
-    return base * world.vision[slot];
+    return world.lanes.visionRange[slot];
 }
 
 /**

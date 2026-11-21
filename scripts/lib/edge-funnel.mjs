@@ -59,8 +59,8 @@ function femaleClass(world, slot) {
     if (world.energy[slot] <= c.mateMinEnergy) {
         return 'energy';
     }
-    if (blocksMating(c, world.temperature[slot])) {
-        return world.temperature[slot] < c.temperatureColdStress ? 'cold' : 'heat';
+    if (blocksMating(world, slot)) {
+        return world.temperature[slot] < world.lanes.temperatureColdStress[slot] ? 'cold' : 'heat';
     }
     if (!territoryAllows(world, slot)) {
         return 'territory';
