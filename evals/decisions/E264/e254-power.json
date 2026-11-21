@@ -1,0 +1,542 @@
+{
+  "splits": 1000,
+  "powerSplits": 200,
+  "sizes": [
+    16,
+    32,
+    64
+  ],
+  "metrics": [
+    "eval.chase_catch_share",
+    "eval.pursuit_kill_share",
+    "eval.hunter_catches_per_1k_settled",
+    "eval.hunter_kills_per_life_mean",
+    "eval.bite_idle",
+    "eval.hunter_juvenile_death_share",
+    "eval.deliberate_food_share",
+    "eval.food_energy_per_1k",
+    "eval.births_per_1k",
+    "eval.chase_escape_share",
+    "eval.child_survival",
+    "eval.offspring_per_life",
+    "eval.childshare_by_condition",
+    "eval.alarm_lift",
+    "eval.alarm_response",
+    "eval.scout_alarm_lead_share",
+    "eval.defender_repel_per_1k",
+    "eval.herd_dodge_share",
+    "eval.trampled_share",
+    "eval.herd_stampede_rate"
+  ],
+  "includeWatch": true,
+  "rows": [
+    {
+      "metric": "eval.chase_catch_share",
+      "size": 16,
+      "falsePositive": 0.0451527224435591,
+      "detectable": 0.05,
+      "detectableKind": "absolute",
+      "validShare": 0.753,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.chase_catch_share",
+      "size": 32,
+      "falsePositive": 0.0496031746031746,
+      "detectable": 0.05,
+      "detectableKind": "absolute",
+      "validShare": 0.504,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.chase_catch_share",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "absolute",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.pursuit_kill_share",
+      "size": 16,
+      "falsePositive": 0.063,
+      "detectable": 0.1,
+      "detectableKind": "absolute",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.pursuit_kill_share",
+      "size": 32,
+      "falsePositive": 0.083,
+      "detectable": 0.075,
+      "detectableKind": "absolute",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.pursuit_kill_share",
+      "size": 64,
+      "falsePositive": 0.07,
+      "detectable": 0.05,
+      "detectableKind": "absolute",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.hunter_catches_per_1k_settled",
+      "size": 16,
+      "falsePositive": 0.04,
+      "detectable": 0.5,
+      "detectableKind": "relative",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.hunter_catches_per_1k_settled",
+      "size": 32,
+      "falsePositive": 0.061,
+      "detectable": 0.3,
+      "detectableKind": "relative",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.hunter_catches_per_1k_settled",
+      "size": 64,
+      "falsePositive": 0.075,
+      "detectable": 0.2,
+      "detectableKind": "relative",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.hunter_kills_per_life_mean",
+      "size": 16,
+      "falsePositive": 0.071,
+      "detectable": 0.3,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.hunter_kills_per_life_mean",
+      "size": 32,
+      "falsePositive": 0.074,
+      "detectable": 0.2,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.hunter_kills_per_life_mean",
+      "size": 64,
+      "falsePositive": 0.065,
+      "detectable": 0.15,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.bite_idle",
+      "size": 16,
+      "falsePositive": 0.045,
+      "detectable": 0.2,
+      "detectableKind": "absolute",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.bite_idle",
+      "size": 32,
+      "falsePositive": 0.072,
+      "detectable": 0.15,
+      "detectableKind": "absolute",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.bite_idle",
+      "size": 64,
+      "falsePositive": 0.037,
+      "detectable": 0.1,
+      "detectableKind": "absolute",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.hunter_juvenile_death_share",
+      "size": 16,
+      "falsePositive": 0.076,
+      "detectable": 0.15,
+      "detectableKind": "absolute",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.hunter_juvenile_death_share",
+      "size": 32,
+      "falsePositive": 0.099,
+      "detectable": 0.05,
+      "detectableKind": "absolute",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.hunter_juvenile_death_share",
+      "size": 64,
+      "falsePositive": 0.091,
+      "detectable": 0.05,
+      "detectableKind": "absolute",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.deliberate_food_share",
+      "size": 16,
+      "falsePositive": 0.048,
+      "detectable": 0.075,
+      "detectableKind": "absolute",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.deliberate_food_share",
+      "size": 32,
+      "falsePositive": 0.061,
+      "detectable": 0.05,
+      "detectableKind": "absolute",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.deliberate_food_share",
+      "size": 64,
+      "falsePositive": 0.025,
+      "detectable": 0.03,
+      "detectableKind": "absolute",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.food_energy_per_1k",
+      "size": 16,
+      "falsePositive": 0.05,
+      "detectable": 0.3,
+      "detectableKind": "relative",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.food_energy_per_1k",
+      "size": 32,
+      "falsePositive": 0.072,
+      "detectable": 0.15,
+      "detectableKind": "relative",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.food_energy_per_1k",
+      "size": 64,
+      "falsePositive": 0.047,
+      "detectable": 0.1,
+      "detectableKind": "relative",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.births_per_1k",
+      "size": 16,
+      "falsePositive": 0.036,
+      "detectable": 0.3,
+      "detectableKind": "relative",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.births_per_1k",
+      "size": 32,
+      "falsePositive": 0.063,
+      "detectable": 0.15,
+      "detectableKind": "relative",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.births_per_1k",
+      "size": 64,
+      "falsePositive": 0.065,
+      "detectable": 0.1,
+      "detectableKind": "relative",
+      "validShare": 1
+    },
+    {
+      "metric": "eval.chase_escape_share",
+      "size": 16,
+      "falsePositive": 0.05170068027210884,
+      "detectable": 0.075,
+      "detectableKind": "absolute",
+      "validShare": 0.735,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.chase_escape_share",
+      "size": 32,
+      "falsePositive": 0.07017543859649122,
+      "detectable": 0.05,
+      "detectableKind": "absolute",
+      "validShare": 0.513,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.chase_escape_share",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "absolute",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.child_survival",
+      "size": 16,
+      "falsePositive": 0.036,
+      "detectable": 0.05,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.child_survival",
+      "size": 32,
+      "falsePositive": 0.014,
+      "detectable": 0.03,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.child_survival",
+      "size": 64,
+      "falsePositive": 0.001,
+      "detectable": 0.03,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.offspring_per_life",
+      "size": 16,
+      "falsePositive": 0.02,
+      "detectable": 0.1,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.offspring_per_life",
+      "size": 32,
+      "falsePositive": 0.003,
+      "detectable": 0.1,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.offspring_per_life",
+      "size": 64,
+      "falsePositive": 0,
+      "detectable": 0.1,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.childshare_by_condition",
+      "size": 16,
+      "falsePositive": 0.079,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.childshare_by_condition",
+      "size": 32,
+      "falsePositive": 0.093,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.childshare_by_condition",
+      "size": 64,
+      "falsePositive": 0.076,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.alarm_lift",
+      "size": 16,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.alarm_lift",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.alarm_lift",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.alarm_response",
+      "size": 16,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.alarm_response",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.alarm_response",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "relative",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.scout_alarm_lead_share",
+      "size": 16,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "absolute",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.scout_alarm_lead_share",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "absolute",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.scout_alarm_lead_share",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "absolute",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.defender_repel_per_1k",
+      "size": 16,
+      "falsePositive": 0,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "note": "mean is 0"
+    },
+    {
+      "metric": "eval.defender_repel_per_1k",
+      "size": 32,
+      "falsePositive": 0,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "note": "mean is 0"
+    },
+    {
+      "metric": "eval.defender_repel_per_1k",
+      "size": 64,
+      "falsePositive": 0,
+      "detectable": null,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "note": "mean is 0"
+    },
+    {
+      "metric": "eval.herd_dodge_share",
+      "size": 16,
+      "falsePositive": 0.051181102362204724,
+      "detectable": 0.05,
+      "detectableKind": "absolute",
+      "validShare": 0.762,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.herd_dodge_share",
+      "size": 32,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "absolute",
+      "validShare": 0.478,
+      "direction": "higher",
+      "note": "too few verdicts (48% of splits)"
+    },
+    {
+      "metric": "eval.herd_dodge_share",
+      "size": 64,
+      "falsePositive": null,
+      "detectable": null,
+      "detectableKind": "absolute",
+      "note": "no verdict at this size"
+    },
+    {
+      "metric": "eval.trampled_share",
+      "size": 16,
+      "falsePositive": 0.005,
+      "detectable": 0.03,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.trampled_share",
+      "size": 32,
+      "falsePositive": 0,
+      "detectable": 0.03,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.trampled_share",
+      "size": 64,
+      "falsePositive": 0,
+      "detectable": 0.03,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.herd_stampede_rate",
+      "size": 16,
+      "falsePositive": 0.061,
+      "detectable": 1,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.herd_stampede_rate",
+      "size": 32,
+      "falsePositive": 0.058,
+      "detectable": 0.75,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.herd_stampede_rate",
+      "size": 64,
+      "falsePositive": 0.049,
+      "detectable": 0.5,
+      "detectableKind": "relative",
+      "validShare": 1,
+      "direction": "higher"
+    }
+  ]
+}
