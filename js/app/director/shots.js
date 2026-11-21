@@ -4,7 +4,7 @@
 // of 3% world width; `glide` is a calm move (`../camera-move.js`: zoom out, pan, zoom in, at the comfort caps) to the
 // moment; `linger` holds on the focus; `pullback` is the same move back to `wide`, and so is every new `wide` framing.
 
-import { homeZoom, ZOOM_IN } from '../camera.js';
+import { homeZoom } from '../camera.js';
 import { ease, movePose, planMove } from '../camera-move.js';
 import { MOMENT_KIND } from './scoring.js';
 
@@ -33,20 +33,23 @@ export const LINGER_LOW_WINDOW_S = 2;
 
 /** @type {Readonly<Record<string, number>>} */
 const FRAME_WIDTH_BY_KIND = Object.freeze({
-    [MOMENT_KIND.ALARM_CHORUS]: 2400,
-    [MOMENT_KIND.BIRTH_CLUSTER]: 2400,
-    [MOMENT_KIND.FAMILY_LEAD]: 3600,
+    [MOMENT_KIND.ALARM_CHORUS]: 4800,
+    [MOMENT_KIND.BIRTH_CLUSTER]: 4800,
+    [MOMENT_KIND.FAMILY_LEAD]: 6000,
 });
+
+/** The closest a shot goes, a multiple of `homeZoom`: 4 is a quarter of the world across (3600 units of 14400). */
+export const CLOSEST_ZOOM_IN = 4;
 
 export { ease as smootherstep } from '../camera-move.js';
 
 /**
- * World width framed by a close shot of `kind`: 1600 for combat/smoke, 2400 for clusters, 3600 for `family-lead`.
+ * World width framed by a close shot of `kind`: 3600 for combat/smoke, 4800 for clusters, 6000 for `family-lead`.
  * @param {string} kind moment kind
  * @returns {number} world units across
  */
 export function momentFrameWidth(kind) {
-    return FRAME_WIDTH_BY_KIND[kind] ?? 1600;
+    return FRAME_WIDTH_BY_KIND[kind] ?? 3600;
 }
 
 /**
@@ -87,7 +90,7 @@ export function wideFraming(agents, { canvas, world, zoomScale = 1 }) {
     const spanX = Math.max(1, (maxX - minX) * 1.2);
     const spanY = Math.max(1, (maxY - minY) * 1.2);
     const boxZoom = Math.min(canvas.width / spanX, canvas.height / spanY);
-    const zoom = Math.min(home * ZOOM_IN, Math.max(home, boxZoom) * zoomScale);
+    const zoom = Math.min(home * CLOSEST_ZOOM_IN, Math.max(home, boxZoom) * zoomScale);
     return { x: (minX + maxX) / 2, y: (minY + maxY) / 2, zoom };
 }
 
@@ -115,7 +118,8 @@ export function wideFraming(agents, { canvas, world, zoomScale = 1 }) {
 function planCloseShot(state, startTimeS, moment, { fromPose, canvas, world }) {
     const home = homeZoom(canvas, world);
     const isGlide = state === SHOT_STATE.GLIDE;
-    const zoom = isGlide ? Math.max(home, canvas.width / momentFrameWidth(moment.kind)) : (fromPose?.zoom ?? home);
+    const frameZoom = Math.min(home * CLOSEST_ZOOM_IN, Math.max(home, canvas.width / momentFrameWidth(moment.kind)));
+    const zoom = isGlide ? frameZoom : (fromPose?.zoom ?? home);
     const toPose = { x: moment.x, y: moment.y, zoom };
     const move = isGlide ? planMove(fromPose ?? toPose, toPose, { canvas, world }) : null;
     const durationS = move?.durationS ?? LINGER_BASE_S;

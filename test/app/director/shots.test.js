@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { fitZoom, homeZoom, ZOOM_IN } from '../../../js/app/camera.js';
+import { fitZoom, homeZoom } from '../../../js/app/camera.js';
 import { MOMENT_KIND } from '../../../js/app/director/scoring.js';
 import {
+    CLOSEST_ZOOM_IN,
     LINGER_BASE_S,
     momentFrameWidth,
     planShot,
@@ -33,13 +34,13 @@ describe('js/app/director/shots', () => {
     });
 
     it('returns the close-shot world width for each moment kind', () => {
-        expect(momentFrameWidth(MOMENT_KIND.CHASE)).toBe(1600);
-        expect(momentFrameWidth(MOMENT_KIND.PACK_KILL)).toBe(1600);
-        expect(momentFrameWidth(MOMENT_KIND.KILL)).toBe(1600);
-        expect(momentFrameWidth(MOMENT_KIND.SMOKE_SCREEN)).toBe(1600);
-        expect(momentFrameWidth(MOMENT_KIND.ALARM_CHORUS)).toBe(2400);
-        expect(momentFrameWidth(MOMENT_KIND.BIRTH_CLUSTER)).toBe(2400);
-        expect(momentFrameWidth(MOMENT_KIND.FAMILY_LEAD)).toBe(3600);
+        expect(momentFrameWidth(MOMENT_KIND.CHASE)).toBe(3600);
+        expect(momentFrameWidth(MOMENT_KIND.PACK_KILL)).toBe(3600);
+        expect(momentFrameWidth(MOMENT_KIND.KILL)).toBe(3600);
+        expect(momentFrameWidth(MOMENT_KIND.SMOKE_SCREEN)).toBe(3600);
+        expect(momentFrameWidth(MOMENT_KIND.ALARM_CHORUS)).toBe(4800);
+        expect(momentFrameWidth(MOMENT_KIND.BIRTH_CLUSTER)).toBe(4800);
+        expect(momentFrameWidth(MOMENT_KIND.FAMILY_LEAD)).toBe(6000);
     });
 
     it('computes the Lissajous drift with periods 90 s and 140 s and amplitude 3% of world width', () => {
@@ -89,7 +90,7 @@ describe('js/app/director/shots', () => {
 
         const singleAgent = [{ x: 3000, y: 2000 }];
         const clampedCeil = wideFraming(singleAgent, { canvas: CANVAS, world: WORLD, zoomScale: 1.15 });
-        expect(clampedCeil.zoom).toBeCloseTo(fit * ZOOM_IN, 5);
+        expect(clampedCeil.zoom).toBeCloseTo(fit * CLOSEST_ZOOM_IN, 5);
     });
 
     it('plans and evaluates poses at the start, middle and end of wide, glide, linger and pullback', () => {
@@ -129,7 +130,7 @@ describe('js/app/director/shots', () => {
         });
         expect(glide.durationS).toBe(glide.move?.durationS);
         expect(glide.durationS).toBeGreaterThan(3);
-        expect(glide.toPose.zoom).toBeCloseTo(CANVAS.width / 1600, 5);
+        expect(glide.toPose.zoom).toBeCloseTo(CANVAS.width / 3600, 5);
         const glideStart = shotPose(glide, 20, WORLD);
         expect(glideStart.x).toBeCloseTo(wideStart.x, 9);
         expect(glideStart.zoom).toBeCloseTo(wideStart.zoom, 9);
@@ -174,6 +175,23 @@ describe('js/app/director/shots', () => {
         expect(pullbackEnd.x).toBeCloseTo(pullback.toPose.x + endDrift.dx, 4);
         expect(pullbackEnd.y).toBeCloseTo(pullback.toPose.y + endDrift.dy, 4);
         expect(pullbackEnd.zoom).toBeCloseTo(pullback.toPose.zoom, 5);
+    });
+
+    it('never frames closer than the closest zoom, whatever the world', () => {
+        const big = { width: 28800, height: 16200 };
+        const moment = { kind: MOMENT_KIND.KILL, score: 80, x: 1000, y: 1000 };
+        const glide = planShot({ state: SHOT_STATE.GLIDE, startTimeS: 0, moment, canvas: CANVAS, world: big });
+        expect(CANVAS.width / momentFrameWidth(MOMENT_KIND.KILL)).toBeGreaterThan(
+            homeZoom(CANVAS, big) * CLOSEST_ZOOM_IN,
+        );
+        expect(glide.toPose.zoom).toBeCloseTo(homeZoom(CANVAS, big) * CLOSEST_ZOOM_IN, 9);
+        const wide = wideFraming([{ x: 1000, y: 1000 }], { canvas: CANVAS, world: big, zoomScale: 1.15 });
+        expect(wide.zoom).toBeCloseTo(homeZoom(CANVAS, big) * CLOSEST_ZOOM_IN, 9);
+        const small = { width: 3000, height: 1700 };
+        const near = planShot({ state: SHOT_STATE.GLIDE, startTimeS: 0, moment, canvas: CANVAS, world: small });
+        expect(near.toPose.zoom).toBeCloseTo(homeZoom(CANVAS, small), 9);
+        const landscape = planShot({ state: SHOT_STATE.GLIDE, startTimeS: 0, moment, canvas: CANVAS, world: WORLD });
+        expect(landscape.toPose.zoom).toBeCloseTo(homeZoom(CANVAS, WORLD) * CLOSEST_ZOOM_IN, 9);
     });
 
     it('falls back to default poses when fromPose or rng is omitted', () => {
