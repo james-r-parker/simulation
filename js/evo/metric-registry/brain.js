@@ -2,6 +2,21 @@
 
 import { entry } from './entry.js';
 
+/**
+ * @param {Omit<Parameters<typeof entry>[1], 'module' | 'direction' | 'intended' | 'arithmetic' | 'source'>} fields
+ *   entry fields for a `metrics-memory.js` metric
+ * @returns {import('./entry.js').MetricEntry} the registry entry
+ */
+const memoryEntry = (fields) =>
+    entry('brain', {
+        ...fields,
+        module: 'js/evo/metrics-memory.js',
+        direction: 'watch',
+        intended: 'higher',
+        arithmetic: 'test/evo/metrics-memory.test.js',
+        source: 'test/evo/metric-source-brain-memory.test.js',
+    });
+
 export const BRAIN = {
     'eval.input_active_share': entry('brain', {
         module: 'js/evo/metrics-weights.js',
@@ -83,64 +98,53 @@ export const BRAIN = {
         arithmetic: 'test/evo/metrics-weights.test.js',
         source: 'test/evo/metric-source-brain.test.js',
     }),
-    'eval.leak_rate_mean': entry('brain', {
-        module: 'js/evo/metrics-memory.js',
+    'eval.leak_rate_mean': memoryEntry({
         meaning: 'How fast the hidden units leak (a higher rate forgets faster).',
         counts: 'Mean leak rate over the hidden units of the sampled agents, checkpoints at or after burn-in.',
         unit: 'rate',
-        direction: 'watch',
-        intended: 'higher',
         nullWhen: ['no sampled agent after burn-in'],
-        arithmetic: 'test/evo/metrics-memory.test.js',
-        source: 'test/evo/metric-source-brain-memory.test.js',
     }),
-    'eval.leak_slow_share': entry('brain', {
-        module: 'js/evo/metrics-memory.js',
+    'eval.leak_slow_share': memoryEntry({
         meaning: 'How many hidden units are slow (leak rate at or under SLOW_LEAK 0.1).',
         counts: 'Sampled hidden units with leak rate at or under 0.1 over all sampled hidden units.',
         unit: 'share',
-        direction: 'watch',
-        intended: 'higher',
         nullWhen: ['no sampled agent after burn-in'],
         expectedFlat:
             'Reads 0 on every seed: no sampled hidden unit evolved a leak rate at or under 0.1 in 200000 ticks; it moves when selection favours slow memory units.',
-        arithmetic: 'test/evo/metrics-memory.test.js',
-        source: 'test/evo/metric-source-brain-memory.test.js',
     }),
-    'eval.leak_at_floor_share': entry('brain', {
-        module: 'js/evo/metrics-memory.js',
+    'eval.leak_at_floor_share': memoryEntry({
         meaning: 'How many hidden units have their leak gene on the floor.',
         counts: 'Sampled hidden units whose leak gene is at or below FLOOR_GENE (the gene that gives the minimum leak) over all sampled hidden units.',
         unit: 'share',
-        direction: 'watch',
-        intended: 'higher',
         nullWhen: ['no sampled agent after burn-in'],
         expectedFlat:
             'Reads 0 on every seed: no sampled leak gene reached FLOOR_GENE in 200000 ticks; it moves when selection pushes leak to the leakMin floor.',
-        arithmetic: 'test/evo/metrics-memory.test.js',
-        source: 'test/evo/metric-source-brain-memory.test.js',
     }),
-    'eval.leak_lineage_spread': entry('brain', {
-        module: 'js/evo/metrics-memory.js',
+    'eval.knockout_unit_share': memoryEntry({
+        meaning: 'How many hidden units are knocked out.',
+        counts: 'Knocked hidden units (leak gene at or below KNOCKOUT_LEAK_GENE) over all hidden units of sampled agents after burn-in.',
+        unit: 'share',
+        nullWhen: ['no sampled agent after burn-in'],
+        expectedFlat: 'Reads 0 on every seed while unitKnockoutRate is 0.',
+    }),
+    'eval.knockout_unit_share.hunter': memoryEntry({
+        meaning: 'How many hunter hidden units are knocked out.',
+        counts: 'Knocked hidden units over all hidden units of sampled agents whose specialisation canHunt after burn-in.',
+        unit: 'share',
+        nullWhen: ['no sampled hunter after burn-in'],
+        expectedFlat: 'Reads 0 on every seed while unitKnockoutRate is 0.',
+    }),
+    'eval.leak_lineage_spread': memoryEntry({
         meaning: 'Whether lineages differ in their leak.',
         counts: 'Mean over checkpoints of the standard deviation of lineage mean leak (lineages with at least 2 sampled agents, at least 3 such lineages); needs 5 checkpoints.',
         unit: 'rate',
-        direction: 'watch',
-        intended: 'higher',
         nullWhen: ['fewer than MIN_SPREAD_CHECKPOINTS checkpoints with MIN_LINEAGES qualifying lineages'],
-        arithmetic: 'test/evo/metrics-memory.test.js',
-        source: 'test/evo/metric-source-brain-memory.test.js',
     }),
-    'eval.hidden_persistence': entry('brain', {
-        module: 'js/evo/metrics-memory.js',
+    'eval.hidden_persistence': memoryEntry({
         meaning: 'How much of a hidden row survives 16 ticks.',
         counts: "Mean cosine similarity between an agent's hidden row now and 16 ticks before (same genome), over sampled agents at checkpoints; needs 30 pairs.",
         unit: 'correlation',
-        direction: 'watch',
-        intended: 'higher',
         nullWhen: ['fewer than MIN_PAIRS agent pairs'],
-        arithmetic: 'test/evo/metrics-memory.test.js',
-        source: 'test/evo/metric-source-brain-memory.test.js',
     }),
     'eval.memory_out_flat_share': entry('brain', {
         module: 'js/evo/metrics-memory-out.js',

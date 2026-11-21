@@ -155,6 +155,8 @@
     "eval.juvenile_sibling_distance": "watch",
     "eval.kin_within_call_radius": "watch",
     "eval.leak_at_floor_share": "watch",
+    "eval.knockout_unit_share": "watch",
+    "eval.knockout_unit_share.hunter": "watch",
     "eval.leak_flee_corr": "watch",
     "eval.leak_forage_corr": "watch",
     "eval.leak_hunt_corr": "watch",

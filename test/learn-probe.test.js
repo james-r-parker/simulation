@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { DRILLS } from '../js/evo/drill-scenarios.js';
+import { breed } from '../js/evo/learn-probe.js';
+import { brainLayout } from '../js/sim/brain-layout.js';
+import { createConfig } from '../js/sim/config.js';
+import { createRng } from '../js/sim/rng.js';
+import { isKnockedOut } from '../js/sim/traits.js';
 import { parseArgs } from '../scripts/learn-probe.mjs';
 import { formatLearn, summarise } from '../scripts/lib/learn-report.mjs';
 
@@ -47,5 +52,18 @@ describe('the report', () => {
         const text = formatLearn(summarise([run('a', [0.1], 0.2)]));
         expect(text.split('\n')).toHaveLength(2);
         expect(text).toMatch(/a\s+0\.20\s+0\.20\s+0 of 1\s+-/);
+    });
+});
+
+describe('breed', () => {
+    it('knocks out one hidden unit per child at unitKnockoutRate 1 and leaves the best parent intact', () => {
+        const config = createConfig({ unitKnockoutRate: 1, mutationRate: 1e-9 });
+        const layout = brainLayout(config);
+        const parent = { row: new Float32Array(layout.weightCount), sigma: 0.05 };
+        const children = breed([parent], { count: 4, config, rng: createRng(1) });
+        expect(children[0]).toBe(parent);
+        for (const child of children.slice(1)) {
+            expect(Array.from(child.row.subarray(layout.leakStart)).filter(isKnockedOut)).toHaveLength(1);
+        }
     });
 });

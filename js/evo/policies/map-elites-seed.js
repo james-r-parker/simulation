@@ -5,6 +5,7 @@ import { occupiedCount, nextClone, selectParent } from '../../evo/archive.js';
 import { GENOME_SPECS, rejectGenome } from '../../evo/genome.js';
 import { randomGenome } from '../../evo/instinct.js';
 import { SIGMA_START, mutateSigma, mutateWeights } from '../../evo/mutation.js';
+import { knockOutAndLog } from '../../evo/unit-knockout.js';
 import { nextFloat, nextInt } from '../../sim/rng.js';
 import { countSpecs } from '../../sim/spec-rescue.js';
 import { checkOpponents, createPoolDraw } from './map-elites-pool.js';
@@ -191,12 +192,13 @@ function markSeeded(clones, slot, cloned, fromArchive) {
 /**
  * Fills the row of a seeded agent the archive had no genome for: a mutated champion of its specialisation when the
  * seeder has a champion source and it holds one, else a random genome.
- * @param {{birth: Record<string, any>, championSource?: {draw: Function}}} seeder the shared sigma state and the champion source
+ * @param {{birth: Record<string, any>, championSource?: {draw: Function}, log?: import('../../sim/log.js').SimLog}} seeder
+ *   the shared sigma state, the champion source and the log
  * @param {{world: Record<string, any>, slot: number, row: Float32Array, rng: any}} target the world, the slot, its row
  *   and the `brain-init` stream
  * @returns {'champion' | 'random'} where the genome came from
  */
-function seedUnarchived({ birth, championSource }, { world, slot, row, rng }) {
+function seedUnarchived({ birth, championSource, log }, { world, slot, row, rng }) {
     const champion = championSource === undefined ? null : championSource.draw(world.spec[slot], rng);
     if (champion === null) {
         randomGenome(world, slot, { row, rng });
@@ -206,6 +208,7 @@ function seedUnarchived({ birth, championSource }, { world, slot, row, rng }) {
     row.set(champion);
     birth.sigma[slot] = mutateSigma(SIGMA_START, world.layout.weightCount, rng);
     mutateWeights(row, birth.sigma[slot], rng, birth.mutation);
+    knockOutAndLog(row, world, slot, { rng, log, source: 'champion' });
     return 'champion';
 }
 
@@ -237,12 +240,13 @@ function seedBrain({ archive, birth, clones, log, mix, own, pool, championSource
     /** @type {string} */
     let where = source;
     if (ref === null) {
-        where = seedUnarchived({ birth, championSource }, { world, slot, row, rng });
+        where = seedUnarchived({ birth, championSource, log }, { world, slot, row, rng });
     } else if (source === 'archive') {
         checkRow(ref.row, layout, log);
         row.set(ref.row);
         birth.sigma[slot] = mutateSigma(ref.sigma, layout.weightCount, rng);
         mutateWeights(row, birth.sigma[slot], rng, birth.mutation);
+        knockOutAndLog(row, world, slot, { rng, log, source: 'archive' });
     } else {
         checkRow(ref.row, layout, log);
         row.set(ref.row);

@@ -71,7 +71,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Sprint burst](sprint-burst.md) - Phase 1 detectors kept; Phase 2 gate not met on E210 (T3)
 - [Web presence](web-presence.md) - a designed icon in every size, Open Graph and Twitter cards, a full `<head>`, an installable web app manifest with a splash, `robots.txt` and `sitemap.xml`
 
-## In progress (26)
+## In progress (28)
 
 Partly built - the note says which phases are real.
 
@@ -82,6 +82,7 @@ Partly built - the note says which phases are real.
 - [Deployment and community](deployment-and-community.md) - Phase 1 (Release Please, `/v/`, `/s/`, `/next/` Functions, `preview.yml`, the D1 release index, `release-check`) and Phase 1c are built, except T5 (live verific... _(validated 626f040, 2026-11-13)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [Detector baseline](detector-baseline.md) - Phase 1 chunks A and B are built except the `bench.observe_ms@500` price (T4, behind the CPU lock) and the body-genes detector, so the wave is not complete. T7... _(validated 495482d, 2026-11-19)_ _(depends on [metric-trust.md](metric-trust.md))_
 - [Eat choice](eat-choice.md) - Phases 1 to 5 are built: the eat choice is the default on `main` (E159 to E164, E173) and `grazeThrust` 0.6 is the default from season 10 (E171, E172); the `eva... _(validated e2455f2, 2026-11-11)_ _(depends on [metric-trust.md](metric-trust.md), [low-density-edge.md](low-density-edge.md))_
+- [Fair chase](fair-chase.md) - Phase 1 is built: the sprint store behind `sprintStoreEnabled` (off) and the envelope reading E253, where only the `courser` arm gives a fair band. Phase 2 (the... _(validated 58f3844, 2026-11-20)_ _(depends on [senses-and-motor.md](senses-and-motor.md), [training-loop.md](training-loop.md))_
 - [Honest budgets](honest-budgets.md) - Phases 1, 2 and 4 are built; Phase 3 is parked on E176 and Phase 5 on E178. Phase 6: diagnostics built, `killGorgeShare` 0.4 adopted (E179, T37), and the closed... _(validated 390acd9, 2026-11-18)_ _(depends on [metric-trust.md](metric-trust.md))_
 - [Hunter learning](hunter-learning.md) - Phases 1 and 2 are built: the flip reflex, hunter territory and reward-gated learning are always on; [realistic-keepers.md](realistic-keepers.md) re-judged the... _(validated edd4cd4, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md), [training.md](training.md))_
 - [Lean observer](lean-observer.md) - Phase 1 built; the perf:browser comparison is open (no GPU Chrome on the build machine) _(validated 3f8bf12, 2026-11-12)_
@@ -97,12 +98,13 @@ Partly built - the note says which phases are real.
 - [Training](training.md) - Phases 1 (drills) and 2 (the trainer) are built apart from T13 (conformance review); arm d of T12 iteration 2 is weak (`prey-ahead` edge +0.16, `bite-discrimina... _(validated edd4cd4, 2026-11-07)_ _(depends on [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md))_
 - [Training loop](training-loop.md) - Phases 1 and 2 built (T1 to T12); Phase 3 and Phase 4 code built; adaptive difficulty is untested (E207 never left its floor, E251 stopped on a validation error... _(validated 0254883, 2026-11-19)_ _(depends on [training-stages.md](training-stages.md), [training.md](training.md))_
 - [Training stages](training-stages.md) - Phases 1 to 4 and 8 are built (the gated ladder of stage worlds, cross-play, the opponent pool, scene drills, `eliteSkill`, `nursery-scatter` adopted); Phase 5... _(validated 04e3b34, 2026-11-17)_ _(depends on [training.md](training.md), [senses-and-motor.md](senses-and-motor.md))_
+- [Unit knockout](unit-knockout.md) - Phase 1 built (T1 to T8); a loss-of-function mutation that switches one hidden unit off at birth, off by default on `season/next` _(validated 33c44fc, 2026-11-20)_ _(depends on [brain-inspection.md](brain-inspection.md))_
 - [WASM kernels](wasm-kernels.md) - Phases 1, 2, 4, 5 and 6 are built and adopted (T1 to T32): the brain, ray march, spatial hash, pheromone and physics loops run in the Rust/WASM kernels from bir... _(validated f5c7880, 2026-11-07)_ _(depends on [headless-sim-core.md](headless-sim-core.md))_
 - [Worker and renderer](worker-and-renderer.md) - the drawing parts are superseded by [crisp-renderer.md](crisp-renderer.md). Built: Phase 1 (the sim in a Web Worker), Phases 2 and 3 (merged, reviewed; the dev-... _(validated f5c7880, 2026-11-07)_ _(depends on [headless-sim-core.md](headless-sim-core.md), [evolution-rework.md](evolution-rework.md), [predator-prey.md](predator-prey.md), [body-temperature.md](body-temperature.md), [dev-workflow-and-gate.md](dev-workflow-and-gate.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
 - [World balance and biology](world-balance.md) - Phases 1 to 4, Phase 5 round 1 and Phase 6 (the mating-edge screen, E145, E146: roaming range deleted, T103) are built. The post-feature queue was not run as wr... _(validated edd4cd4, 2026-11-07)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the screenshots script, the RE... _(validated d6ca3e6, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (12)
+## Proposed (10)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
@@ -110,14 +112,12 @@ Plans. Nothing built; do not read these as descriptions of the code.
 - [Ambient display](ambient-display.md) - the app as a screen left on all day: the director on air, a death that reads as a cell failing, follow as a story, a look that holds from across a room, every r... _(validated 58f3844, 2026-11-20)_ _(depends on [crisp-renderer.md](crisp-renderer.md), [continuous-follow.md](continuous-follow.md), [worker-and-renderer.md](worker-and-renderer.md), [pack-worker.md](pack-worker.md))_
 - [Body genes](body-genes.md) - replace the five discrete `specialisations` templates with continuous, heritable body genes (jaw-vs-gut diet, bulk-vs-agility, sprint-vs-endurance, sight) so bo... _(validated 04e3b34, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [prey-guilds.md](prey-guilds.md))_
 - [Champion pool](champion-pool.md) - a per-season pool of trained champions in D1 seeds new worlds, and browsers capture, test and submit the lineages worth keeping; Phase 1 (pool export, PR, relea... _(validated 26ae0c5, 2026-11-18)_ _(depends on [training.md](training.md), [training-stages.md](training-stages.md), [deployment-and-community.md](deployment-and-community.md), [worker-and-renderer.md](worker-and-renderer.md), [brain-reflex-tests.md](brain-reflex-tests.md))_
-- [Fair chase](fair-chase.md) - a sprint that spends a store, so prey tire and a hunter's burst is short; judged first on the scripted chase envelope, then on the `hunt` rung, then on the live... _(validated 58f3844, 2026-11-20)_ _(depends on [senses-and-motor.md](senses-and-motor.md), [training-loop.md](training-loop.md))_
 - [Habitat cover](habitat-cover.md) - Phase 1 T1 built (#343) and the T2 baseline run (`E141`, 32 floor-on seeds, in Baseline); T3 (the conformance review) is open. Phase 2 puts rings on the rims of... _(validated f5c7880, 2026-11-07)_ _(depends on [refuge.md](refuge.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Hunter practice](hunter-practice.md) - Phase 1 T1 is built (#343) and the T6 baseline (E144) reads that matched conversion falls less with age than the pooled read, and dose is near 0. T2 and T3 (`pr... _(validated edd4cd4, 2026-11-07)_ _(depends on [hunter-learning.md](hunter-learning.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated d6ca3e6, 2026-11-07)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_
 - [Migration](migration.md) - migrants arrive at the map edges at a steady rate from a balanced mainland, whatever the headcount, and replace the floor refill that drops agents into an empti... _(validated e2455f2, 2026-11-11)_ _(depends on [eat-choice.md](eat-choice.md), [low-density-edge.md](low-density-edge.md))_
 - [Seasonal movement](seasonal-movement.md) - Phase 1 T1 and T2 built (#343) and the T5 baseline run (`E142`, 32 floor-on seeds, in Baseline). T3 (`scripts/season-map.mjs`) and T6 (the sim-notes diagnosis a... _(validated f5c7880, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md))_
 - [Throughput](throughput.md) - find and take the speed the kernel squeezes left: why 16 worlds on 16 cores run at 63% of one world's speed, loops over empty slots, set-up cost in small worlds... _(validated a1813ff, 2026-11-15)_ _(depends on [wasm-kernels.md](wasm-kernels.md))_
-- [Unit knockout](unit-knockout.md) - a loss-of-function mutation that switches one hidden unit off at birth; Phase 1 builds the operator off by default, on `season/next` _(validated 33c44fc, 2026-11-20)_ _(depends on [brain-inspection.md](brain-inspection.md))_
 
 ## Reference (5)
 
@@ -125,7 +125,7 @@ Not designs of the simulation - audits, research, learnings and guides.
 
 - [Headless sim core - implementation contracts](headless-sim-core-contracts.md) - exact rules for building [headless-sim-core.md](headless-sim-core.md); that doc carries the status, phases and tasks
 - [Legacy audit](legacy-audit.md) - defects and inefficiencies in the legacy app (`js/*.js`), by file and symbol, each with the doc that removes it
-- [Metrics](metrics.md) - the 375 eval metrics of a live report, generated from `js/evo/metric-registry/`: 179 verified, 193 unverified, 3 deprecated
+- [Metrics](metrics.md) - the 377 eval metrics of a live report, generated from `js/evo/metric-registry/`: 179 verified, 195 unverified, 3 deprecated
 - [Simulation notes](sim-notes.md) - verified platform and library facts, and learnings from each phase
 - [Training research](training-research.md) - a survey for [training-stages.md](training-stages.md): what the training tools are today, what their runs showed, how staged multi-agent training is done and ju...
 

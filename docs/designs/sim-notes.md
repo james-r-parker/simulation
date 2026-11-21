@@ -141,6 +141,8 @@ add one to the month file and run `node scripts/notes-index.mjs --write` in the 
 - 2026-11-19 - Trainer seed offsets repeat every 256, and a drill stages adult weights (training-stages E-TS-1b) - [2026-11](../notes/2026-11.md#2026-11-19---trainer-seed-offsets-repeat-every-256-and-a-drill-stages-adult-weights-training-stages-e-ts-1b)
 - 2026-11-20 - Follow uses displayed bodies and survives inspector death - [2026-11](../notes/2026-11.md#2026-11-20---follow-uses-displayed-bodies-and-survives-inspector-death)
 - 2026-11-20 - The nursery gate reads the top-lower-bound forager, and a scattered nursery makes the turn pay - [2026-11](../notes/2026-11.md#2026-11-20---the-nursery-gate-reads-the-top-lower-bound-forager-and-a-scattered-nursery-makes-the-turn-pay)
+- 2026-11-20 - Leak-gene knockout matches brain-inspection silence trial for trial (E-UK-0, E252) - [2026-11](../notes/2026-11.md#2026-11-20---leak-gene-knockout-matches-brain-inspection-silence-trial-for-trial-e-uk-0-e252)
+- 2026-11-20 - The sprint store changes the breaking chase only when the hunter outlasts its prey (E253, E-FC-1) - [2026-11](../notes/2026-11.md#2026-11-20---the-sprint-store-changes-the-breaking-chase-only-when-the-hunter-outlasts-its-prey-e253-e-fc-1)
 - 2026-11-20 - Where a 20-generation ladder run spends its wall time (training-loop T26) - [2026-11](../notes/2026-11.md#2026-11-20---where-a-20-generation-ladder-run-spends-its-wall-time-training-loop-t26)
 - 2026-10-11 - jscpd 5 has no exitCode option - [2026-10](../notes/2026-10.md#2026-10-11---jscpd-5-has-no-exitcode-option)
 - 2026-10-11 - Git hooks export GIT_DIR and GIT_INDEX_FILE - [2026-10](../notes/2026-10.md#2026-10-11---git-hooks-export-git_dir-and-git_index_file)

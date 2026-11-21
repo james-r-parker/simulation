@@ -47,7 +47,7 @@ describe('the leak metrics', () => {
         const { world, observer, slots } = setup(2);
         const genes = [
             [-6, -4, 0, 3],
-            [-3.9, 6, 6, -10],
+            [-3.9, 6, 6, -5],
         ];
         genes.forEach((g, i) => setLeak(world, slots[i], g));
         sampleMemory(observer.memory, observer, world);
@@ -77,7 +77,38 @@ describe('the leak metrics', () => {
                 .map(directionOf)
                 .every((d) => d === 'watch'),
         ).toBe(true);
-        expect(namesOf('js/evo/metrics-memory.js')).toHaveLength(5);
+        expect(namesOf('js/evo/metrics-memory.js')).toHaveLength(7);
+    });
+
+    it('reads knockout_unit_share and hunter share, and skips knocked units in leak metrics', () => {
+        const { world, observer, slots } = setup(2);
+        const predatorSpec = world.config.specialisations.predator.index;
+        const foragerSpec = world.config.specialisations.forager.index;
+        world.spec[slots[0]] = predatorSpec;
+        world.spec[slots[1]] = foragerSpec;
+        setLeak(world, slots[0], [-8, 0, 0, -9]);
+        setLeak(world, slots[1], [-8, 3, 3, 3]);
+        sampleMemory(observer.memory, observer, world);
+        const m = memoryMetrics(observer);
+        expect(m['eval.knockout_unit_share']?.value).toBe(3 / 8);
+        expect(m['eval.knockout_unit_share.hunter']?.value).toBe(2 / 4);
+        const activeRates = [0, 0, 3, 3, 3].map((g) => Math.fround(0.05 + 0.95 * detSigmoid(g)));
+        expect(m['eval.leak_rate_mean']?.value).toBeCloseTo(activeRates.reduce((a, b) => a + b) / 5, 6);
+        expect(m['eval.leak_at_floor_share']?.value).toBe(0);
+    });
+
+    it('skips an all-knocked agent in spread and returns null for hunter share when no hunter is sampled', () => {
+        const { world, observer, slots } = setup(1);
+        world.spec[slots[0]] = world.config.specialisations.forager.index;
+        setLeak(world, slots[0], [-8, -8, -8, -8]);
+        sampleMemory(observer.memory, observer, world);
+        const m = memoryMetrics(observer);
+        expect(m['eval.knockout_unit_share']?.value).toBe(1);
+        expect(m['eval.knockout_unit_share.hunter']).toEqual({
+            value: null,
+            reason: 'no sampled hunter after burn-in',
+        });
+        expect(m['eval.leak_rate_mean']).toEqual({ value: null, reason: 'no sampled agent after burn-in' });
     });
 });
 

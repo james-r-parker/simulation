@@ -41,6 +41,7 @@ export const EVENT_TYPE = Object.freeze({
     COVER_CONFIG: 33,
     COVER_TOTALS: 34,
     HUNTER_RECOIL_LIFE: 35,
+    SPRINT_SPENT: 36,
 });
 
 /** Why an agent was born, stored in the `cause` field of `AGENT_BORN`. */
