@@ -2,7 +2,6 @@
 // speed cap and move, the rock bounce geometry and the contact pass run in the WASM kernels (wasm/src/physics.rs); the
 // steering, thrust, trampling, walls and every energy rule (the contact damages and the impact cost) stay here.
 
-import { isSick } from './toxin.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
@@ -14,23 +13,9 @@ import { bounceRocksKernel, moveAgentsKernel, resolveContactsKernel, rockImpactS
 const PI = 3.141592653589793;
 
 /**
- * eat-choice G1b: a forager holding its mouth open to graze moves at `grazeThrust` of its thrust; a hunter never does.
- * @param {import('./world.js').World} world the world
- * @param {number} i the agent slot
- * @returns {number} the thrust multiplier, 1 when the agent does not graze or `grazeThrust` is 1
- */
-function grazeFactor(world, i) {
-    const { grazeThrust } = world.config;
-    if (grazeThrust === 1 || world.huntBySpec[world.spec[i]] === 1) {
-        return 1;
-    }
-    return world.outputs[i * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 ? grazeThrust : 1;
-}
-
-/**
- * The thrust an agent adds this tick: its output times its `maxThrust` lane with the effects of the body applied (its fat and
- * its temperature's efficiency), then the graze, sprint (its boost times the sprint-store factor, 1 with the store off),
- * rest, handling and sickness multipliers.
+ * The thrust an agent adds this tick: its output times its `maxThrust` lane with the effects of the body applied (fat,
+ * temperature, grazing, handling, rest and sickness), then the sprint (its boost times the sprint-store factor, 1 with
+ * the store off). A hunter's rest timer still counts down here, where the `resting` effect has just read it.
  * @param {import('./world.js').World} world the world
  * @param {number} i the agent slot
  * @returns {number} the thrust
@@ -39,19 +24,11 @@ function thrustOf(world, i) {
     const { outputs, config } = world;
     const o = i * OUTPUT_COUNT;
     let thrust = outputs[o + OUTPUT_INDEX.THRUST] * liveOf(world, i, 'maxThrust');
-    thrust *= grazeFactor(world, i);
     if (outputs[o + OUTPUT_INDEX.SPRINT] > 0) {
         thrust *= 1 + config.sprintMultiplier * world.sprintBySpec[world.spec[i]] * world.sprintFactor[i];
     }
-    if (config.predatorRestTicks > 0 && world.restTimer[i] > 0) {
+    if (world.restTimer !== undefined && world.restTimer[i] > 0) {
         world.restTimer[i] -= 1; // realistic-keepers T2: a hunter lies up after a kill
-        thrust = 0;
-    }
-    if (world.ateTimer[i] < config.handlingTicks) {
-        thrust *= config.handlingThrust;
-    }
-    if (isSick(world, i)) {
-        thrust *= config.sickThrust;
     }
     return thrust;
 }

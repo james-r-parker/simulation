@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import * as levels from '../../js/sim/effect-levels.js';
 import { allocBody } from './helpers/body.js';
 import { smallWorld } from './helpers/small-world.js';
@@ -84,5 +85,39 @@ describe('spent', () => {
             (level) => ((world.sprintStore.level[slot] = level), levels.spentLevel(world, slot)),
         );
         expect(read).toEqual([0, 0, 0.5, 1]);
+    });
+});
+
+describe('the feeding levels', () => {
+    it('reads grazing, handling, digesting and sated from the output, the meal timer and the store', () => {
+        const { world, slot } = bodyWorld({ handlingTicks: 20, digestTicks: 10, satiationShare: 0.5 });
+        const read = (/** @type {Function} */ level) => level(world, slot);
+        world.ateTimer[slot] = 255;
+        world.energy[slot] = 0;
+        world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = 0.5;
+        expect([levels.grazingLevel, levels.handlingLevel, levels.digestingLevel, levels.satedLevel].map(read)).toEqual(
+            [1, 0, 0, 0],
+        );
+        world.ateTimer[slot] = 9;
+        world.energy[slot] = world.lanes.maxEnergy[slot] / 2;
+        world.spec[slot] = 1;
+        expect([levels.grazingLevel, levels.handlingLevel, levels.digestingLevel, levels.satedLevel].map(read)).toEqual(
+            [0, 1, 1, 1],
+        );
+    });
+
+    it('reads resting from the rest timer, sick from the dose and diseased from the strain', () => {
+        const { world, slot } = bodyWorld({ predatorRestTicks: 10, sickDose: 0.3 });
+        expect([levels.restingLevel, levels.sickLevel, levels.diseasedLevel].map((l) => l(world, slot))).toEqual([
+            0, 0, 0,
+        ]);
+        world.restTimer[slot] = 3;
+        world.dose[slot] = 0.5;
+        world.infection[slot] = 2;
+        expect([levels.restingLevel, levels.sickLevel, levels.diseasedLevel].map((l) => l(world, slot))).toEqual([
+            1, 1, 1,
+        ]);
+        const none = bodyWorld();
+        expect(levels.restingLevel(none.world, none.slot)).toBe(0);
     });
 });

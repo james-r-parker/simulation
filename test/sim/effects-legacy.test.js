@@ -3,6 +3,9 @@
 
 import { describe, expect, it } from 'vitest';
 import { EFFECT, effectFactor, gateOpen, GATE, levelOf, liveOf } from '../../js/sim/effects.js';
+import { drainEffect } from '../../js/sim/effect-appliers.js';
+import { LOSS_CAUSE } from '../../js/sim/energy.js';
+import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { allocBody } from './helpers/body.js';
 import { smallWorld } from './helpers/small-world.js';
 
@@ -110,5 +113,72 @@ describe('spent', () => {
         }
         const off = bodyWorld({ sprintStoreEnabled: false });
         expect(levelOf(off.world, off.slot, EFFECT.SPENT)).toBe(0);
+    });
+});
+
+describe('the feeding effects', () => {
+    it('close the eat gate as canEatNow did: sick, full or digesting, with each rule off at 0', () => {
+        const { world, slot } = bodyWorld({ satiationShare: 0.9, digestTicks: 5, sickDose: 0.3 });
+        const store = world.lanes.maxEnergy[slot];
+        for (const dose of [0, 0.29, 0.3, 1]) {
+            for (const energy of [0, 0.89 * store, 0.9 * store, store]) {
+                for (const ateTimer of [0, 4, 5, 200]) {
+                    world.dose[slot] = dose;
+                    world.energy[slot] = energy;
+                    world.ateTimer[slot] = ateTimer;
+                    const old = !(Math.fround(dose) >= 0.3 || energy >= 0.9 * store || ateTimer < 5);
+                    expect(gateOpen(world, slot, GATE.EAT), `${dose} ${energy} ${ateTimer}`).toBe(old);
+                }
+            }
+        }
+        const off = bodyWorld({ satiationShare: 0, digestTicks: 0 });
+        off.world.energy[off.slot] = off.world.lanes.maxEnergy[off.slot];
+        off.world.ateTimer[off.slot] = 0;
+        expect(gateOpen(off.world, off.slot, GATE.EAT)).toBe(true);
+    });
+
+    it('scale thrust by the graze, handling and sickness numbers, and by 0 while resting', () => {
+        const { world, slot } = bodyWorld({
+            grazeThrust: 0.6,
+            handlingThrust: 0.2,
+            handlingTicks: 20,
+            sickThrust: 0.4,
+            predatorRestTicks: 60,
+        });
+        const factor = (/** @type {string} */ name) => effectFactor(world, slot, EFFECT[name], 'maxThrust');
+        world.ateTimer[slot] = 200;
+        expect([factor('GRAZING'), factor('HANDLING'), factor('SICK'), factor('RESTING')]).toEqual([1, 1, 1, 1]);
+        world.ateTimer[slot] = 19;
+        world.dose[slot] = 1;
+        world.restTimer[slot] = 1;
+        expect([factor('HANDLING'), factor('SICK'), factor('RESTING')]).toEqual([0.2, 0.4, 0]);
+        world.ateTimer[slot] = 20;
+        expect(factor('HANDLING')).toBe(1);
+    });
+
+    it('slow only a forager holding BITE above 0, by grazeThrust', () => {
+        const { world, slot } = bodyWorld({ grazeThrust: 0.6 });
+        const factor = () => effectFactor(world, slot, EFFECT.GRAZING, 'maxThrust');
+        world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = 1;
+        expect(factor()).toBe(0.6);
+        world.spec[slot] = 1;
+        expect(factor()).toBe(1);
+        world.spec[slot] = 0;
+        world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = 0;
+        expect(factor()).toBe(1);
+    });
+
+    it('drain the sick body by sickDrain x dose (cost) and the diseased one by diseaseDrain (disease)', () => {
+        const { world, slot } = bodyWorld({ sickDose: 0.3, sickDrain: 0.5, diseaseDrain: 2 });
+        world.dose[slot] = 0.4;
+        drainEffect(world, slot, EFFECT.SICK);
+        expect(world.energy[slot]).toBeCloseTo(50 - 0.2, 6);
+        expect(world.lastLoss[slot]).toBe(LOSS_CAUSE.COST);
+        drainEffect(world, slot, EFFECT.DISEASED);
+        expect(world.energy[slot]).toBeCloseTo(50 - 0.2, 6);
+        world.infection[slot] = 1;
+        drainEffect(world, slot, EFFECT.DISEASED);
+        expect(world.energy[slot]).toBeCloseTo(50 - 2.2, 6);
+        expect(world.lastLoss[slot]).toBe(LOSS_CAUSE.DISEASE);
     });
 });

@@ -1,9 +1,9 @@
 // The appliers (docs/designs/status-effects.md, "Appliers") on the fixture effects.
 
 import { describe, expect, it } from 'vitest';
-import { applyEffectOn, drainEffectOn } from '../../js/sim/effect-appliers.js';
+import { applyEffect, applyEffectOn, drainEffectOn } from '../../js/sim/effect-appliers.js';
 import { EVENT, EVENT_STRIDE, EVENT_TYPE } from '../../js/sim/events.js';
-import { createEffects } from '../../js/sim/effects.js';
+import { EFFECT, createEffects } from '../../js/sim/effects.js';
 import { CHILL_I, FAT_I, RALLY_I, SYSTEM, chill, fixtureWorld } from './helpers/effect-fixtures.js';
 
 describe('applyEffectOn', () => {
@@ -52,5 +52,11 @@ describe('drains', () => {
         world.dose[0] = 0.5;
         drainEffectOn(system, world, 0, 0);
         expect(world.energy[0]).toBe(49.75);
+    });
+});
+
+describe('applyEffect on the registry', () => {
+    it('refuses an effect that is computed from the body, since nothing raises it', () => {
+        expect(() => applyEffect(fixtureWorld(), 0, EFFECT.FAT, 0)).toThrow(/stores no stacks/);
     });
 });

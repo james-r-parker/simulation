@@ -2,8 +2,8 @@
 
 import { tallyEatContact } from './eat-contact.js';
 import { carryPollen } from './pollination.js';
-import { EFFECT, levelOf } from './effects.js';
-import { ingestToxin, isSick } from './toxin.js';
+import { EFFECT, GATE, gateOpen, levelOf } from './effects.js';
+import { ingestToxin } from './toxin.js';
 import { canBite, couldBite, inJaws } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
 import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, removeEnergy, transferEnergy } from './energy.js';
@@ -109,20 +109,14 @@ function consumeFood(world, slot, food) {
 }
 
 /**
- * Satiation (T49): a full agent, or one still digesting its last meal, cannot eat. Both rules are off at 0.
+ * Satiation (T49): a full agent, one still digesting its last meal and a sick one cannot eat: the `eat` gate, which the
+ * `sated`, `digesting` and `sick` effects close. The first two rules are off at 0.
  * @param {Record<string, any>} world the world
  * @param {number} slot the agent
  * @returns {boolean} whether the agent may eat this tick
  */
 export function canEatNow(world, slot) {
-    if (isSick(world, slot)) {
-        return false;
-    }
-    const { satiationShare, digestTicks } = world.config;
-    if (satiationShare > 0 && world.energy[slot] >= satiationShare * world.lanes.maxEnergy[slot]) {
-        return false;
-    }
-    return digestTicks === 0 || world.ateTimer[slot] >= digestTicks;
+    return gateOpen(world, slot, GATE.EAT);
 }
 
 /**

@@ -2,6 +2,7 @@
 // `step` effect, read from the body where the effect is read. Each function is one rule of the sim as it stood before the
 // registry, now stated once. Pure reads of the world: no writes, no RNG, no allocation.
 
+import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { isJuvenile } from './juvenile.js';
 
 /** @typedef {any} World */
@@ -82,6 +83,72 @@ export function outOfBandLevel(world, slot) {
  */
 export function juvenileLevel(world, slot) {
     return isJuvenile(world, slot) ? 1 : 0;
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} `grazing`: 1 for a non-hunter holding `BITE` above 0 this tick, else 0
+ */
+export function grazingLevel(world, slot) {
+    return world.huntBySpec[world.spec[slot]] !== 1 && world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0
+        ? 1
+        : 0;
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} `handling`: 1 while `ateTimer` is under the `handlingTicks` lane, else 0
+ */
+export function handlingLevel(world, slot) {
+    return world.ateTimer[slot] < world.lanes.handlingTicks[slot] ? 1 : 0;
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} `digesting`: 1 while `ateTimer` is under the `digestTicks` lane, else 0
+ */
+export function digestingLevel(world, slot) {
+    return world.ateTimer[slot] < world.lanes.digestTicks[slot] ? 1 : 0;
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} `sated`: 1 once energy is at or above the `satiationShare` lane of the store, 0 at a share of 0
+ */
+export function satedLevel(world, slot) {
+    const share = world.lanes.satiationShare[slot];
+    return share > 0 && world.energy[slot] >= share * world.lanes.maxEnergy[slot] ? 1 : 0;
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} `resting`: 1 while the rest timer a kill started is above 0 (it exists with `predatorRestTicks`)
+ */
+export function restingLevel(world, slot) {
+    return world.restTimer !== undefined && world.restTimer[slot] > 0 ? 1 : 0;
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} `sick`: 1 once the toxin dose is at or above the `sickDose` lane, else 0
+ */
+export function sickLevel(world, slot) {
+    return world.dose[slot] >= world.lanes.sickDose[slot] ? 1 : 0;
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} `diseased`: 1 while the slot carries a strain, else 0
+ */
+export function diseasedLevel(world, slot) {
+    return world.infection[slot] === 0 ? 0 : 1;
 }
 
 /**

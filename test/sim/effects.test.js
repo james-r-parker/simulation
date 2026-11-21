@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { EFFECTS } from '../../js/sim/effect-list.js';
 import { EFFECT, EFFECT_INDEX, GATE, allocEffects, fadeEffects, gateOpen, liveOf } from '../../js/sim/effects.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
+import { allocBody } from './helpers/body.js';
 import { smallWorld } from './helpers/small-world.js';
 
 describe('the default registry', () => {
@@ -12,10 +13,14 @@ describe('the default registry', () => {
 
     it('reads a lane at its base for an effect-free lane and opens every gate of a fresh slot', () => {
         const world = smallWorld({ maxAgents: 4 });
-        world.lanes.visionRange[0] = 7;
-        expect(liveOf(world, 0, 'visionRange')).toBe(7);
+        const slot = allocBody(world, 0);
+        world.temperature[slot] = 50;
+        world.energy[slot] = 1;
+        world.ateTimer[slot] = 255;
+        world.lanes.visionRange[slot] = 7;
+        expect(liveOf(world, slot, 'visionRange')).toBe(7);
         for (const gate of Object.values(GATE)) {
-            expect(gateOpen(world, 0, gate)).toBe(true);
+            expect(gateOpen(world, slot, gate)).toBe(true);
         }
     });
 

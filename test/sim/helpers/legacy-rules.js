@@ -39,6 +39,15 @@ export function blocksMating(world, slot) {
 /**
  * @param {any} world the world
  * @param {number} slot the agent slot
+ * @returns {boolean} what `isSick` returned: whether the `sick` effect is on
+ */
+export function isSick(world, slot) {
+    return levelOf(world, slot, EFFECT.SICK) > 0;
+}
+
+/**
+ * @param {any} world the world
+ * @param {number} slot the agent slot
  * @returns {number} what `fatFactor` returned: the factor of `fat` on `maxThrust`
  */
 export function fatFactor(world, slot) {
