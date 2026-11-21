@@ -2,7 +2,8 @@
 
 import { CELLS, CHALLENGER, ELITE, createArchive, placeOf } from './archive.js';
 import { decodeWeights, encodeWeights } from './base64.js';
-import { GENOME_SPECS, rejectGenome } from './genome.js';
+import { rejectGenome } from './genome.js';
+import { SPEC_NAMES } from '../sim/specs.js';
 import { descriptorV1 } from './descriptors.js';
 import { WELFORD_STRIDE } from './welford.js';
 import { brainLayout, layoutStamp } from '../sim/brain-layout.js';
@@ -37,13 +38,13 @@ function encodePlace(archive, place) {
  */
 export function encodeArchive(archive, config) {
     const cells = [];
-    for (let spec = 0; spec < GENOME_SPECS.length; spec++) {
+    for (let spec = 0; spec < SPEC_NAMES.length; spec++) {
         for (let cell = 0; cell < CELLS; cell++) {
             const elite = placeOf(spec, cell, ELITE);
             const chal = placeOf(spec, cell, CHALLENGER);
             if (archive.occupied[elite] === 1) {
                 cells.push({
-                    specialisation: GENOME_SPECS[spec],
+                    specialisation: SPEC_NAMES[spec],
                     cell,
                     elite: encodePlace(archive, elite),
                     challenger: archive.occupied[chal] === 1 ? encodePlace(archive, chal) : null,
@@ -115,7 +116,7 @@ export function decodeArchive(json, config, log, descriptor = descriptorV1) {
     assertFits(json, config, log, descriptor);
     const archive = createArchive(brainLayout(config), { descriptor });
     for (const entry of json.cells) {
-        const spec = GENOME_SPECS.indexOf(entry.specialisation);
+        const spec = SPEC_NAMES.indexOf(entry.specialisation);
         if (spec < 0 || !Number.isInteger(entry.cell) || entry.cell < 0 || entry.cell >= CELLS) {
             rejectGenome(log, {
                 field: 'archive.cells',

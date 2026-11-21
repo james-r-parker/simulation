@@ -3,6 +3,7 @@
 import { brainLayout, layoutStamp } from '../sim/brain-layout.js';
 import { createConfig, rulesHash } from '../sim/config.js';
 import { createWorld } from '../sim/spawn.js';
+import { SPEC_COUNT } from '../sim/specs.js';
 import { step } from '../sim/step.js';
 import { decodeWeights } from './base64.js';
 import { ELO_START, expectedScore, updateElo } from './elo.js';
@@ -14,8 +15,6 @@ export const MATCH_TICKS = 50000;
 export const MATCH_AGENTS = 100;
 /** The champion file format version. */
 export const CHAMPION_VERSION = 1;
-
-const SPEC_COUNT = 5;
 
 /**
  * @typedef {object} Champion a decoded champion file

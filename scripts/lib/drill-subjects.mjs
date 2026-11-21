@@ -1,7 +1,7 @@
 // Turns an archive or champion files into drill subjects.
 import { STYLE_NAMES, allElites, bestElitePerStyle, styleBandOf } from '../../js/evo/champion-export.js';
 import { archiveCv, lowerBound } from '../../js/evo/archive.js';
-import { GENOME_SPECS } from '../../js/evo/genome.js';
+import { SPEC_NAMES } from '../../js/sim/specs.js';
 import { validateChampion } from '../../js/evo/league.js';
 
 /**
@@ -12,7 +12,7 @@ import { validateChampion } from '../../js/evo/league.js';
  */
 export function eliteSubjects(archive) {
     return bestElitePerStyle(archive).map(({ elite, band, bound }) => ({
-        name: `elite-${GENOME_SPECS[elite.spec]}-cell${elite.cell}`,
+        name: `elite-${SPEC_NAMES[elite.spec]}-cell${elite.cell}`,
         id: elite.id,
         spec: elite.spec,
         style: STYLE_NAMES[band],
@@ -30,7 +30,7 @@ export function eliteSubjects(archive) {
 export function allEliteSubjects(archive) {
     const cv = archiveCv(archive);
     return allElites(archive).map((elite) => ({
-        name: `elite-${GENOME_SPECS[elite.spec]}-cell${elite.cell}`,
+        name: `elite-${SPEC_NAMES[elite.spec]}-cell${elite.cell}`,
         id: elite.id,
         spec: elite.spec,
         style: STYLE_NAMES[styleBandOf(elite.cell)],

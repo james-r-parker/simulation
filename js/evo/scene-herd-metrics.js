@@ -1,8 +1,7 @@
 // Aggregates the post-burn-in herd scene counters into the detector metrics.
 
+import { SPEC_NAMES } from '../sim/specs.js';
 import { bySuffix, none, ok, share } from './metrics-stats.js';
-
-export const HERD_SPEC_NAMES = Object.freeze(['forager', 'predator', 'reproducer', 'scout', 'defender']);
 
 /** @param {Record<string, any>} scene @param {Record<string, any>} carcassScene @param {Record<string, any>} observer */
 function carcassTotals(scene, carcassScene, observer) {
@@ -78,11 +77,11 @@ function carcassMetrics(scene, carcassScene, observer) {
 
 /** @param {Record<string, any>} scene @returns {import('./metrics-stats.js').MetricRecord} */
 function carcassShareBySpec(scene) {
-    return bySuffix('eval.herd_carcass_share', HERD_SPEC_NAMES, (spec) =>
+    return bySuffix('eval.herd_carcass_share', SPEC_NAMES, (spec) =>
         share(
             scene.carcassEatenBySpec[spec],
             scene.foodEatenBySpec[spec],
-            `no meals for ${HERD_SPEC_NAMES[spec]} after burn-in`,
+            `no meals for ${SPEC_NAMES[spec]} after burn-in`,
         ),
     );
 }

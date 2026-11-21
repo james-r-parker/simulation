@@ -8,6 +8,7 @@ import { releaseSmoke } from './smoke.js';
 import { cellRange } from './spatial-hash.js';
 import { specParams } from './spec-params.js';
 import { HEARD_STRIDE } from './world.js';
+import { SPEC } from './specs.js';
 
 /** @typedef {import('./world.js').World} World */
 /** @typedef {import('./spatial-hash.js').SpatialHash} SpatialHash */
@@ -17,8 +18,6 @@ const ALARM_HEARD = 0;
 const HUNT_HEARD = 3;
 /** Offset of the threat value (an agent that can bite the caster) in a ray's `RAY_CHANNELS` values. */
 const CH_THREAT = 2;
-/** Specialisation index of `scout`. */
-const SCOUT_SPEC = 3;
 
 /**
  * Effective call radius for `caller` (scouts get `scoutCallRadiusMultiplier`).
@@ -28,7 +27,7 @@ const SCOUT_SPEC = 3;
  */
 function callerRadius(world, caller) {
     const { callRadius, scoutCallRadiusMultiplier } = world.config;
-    return world.spec[caller] === SCOUT_SPEC ? callRadius * scoutCallRadiusMultiplier : callRadius;
+    return world.spec[caller] === SPEC.SCOUT ? callRadius * scoutCallRadiusMultiplier : callRadius;
 }
 
 /**
@@ -100,7 +99,7 @@ function threatInView(world, slot) {
  */
 function alarm(world, slot) {
     const { alarmCost, callTicks, alarmThreshold, scoutAlarmCostMultiplier } = world.config;
-    const cost = world.spec[slot] === SCOUT_SPEC ? alarmCost * scoutAlarmCostMultiplier : alarmCost;
+    const cost = world.spec[slot] === SPEC.SCOUT ? alarmCost * scoutAlarmCostMultiplier : alarmCost;
     const wanted = outputAbove(world, slot, OUTPUT_INDEX.ALARM, alarmThreshold) && world.alarmTimer[slot] === 0;
     if (!wanted || world.energy[slot] <= cost || specParams(world.config, world.spec[slot]).canHunt) {
         return;

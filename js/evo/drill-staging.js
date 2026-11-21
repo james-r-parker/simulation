@@ -6,14 +6,13 @@ import { createPreyTrace, noteTick, traceFields } from './drill-trace.js';
 import {
     CENTRE_X,
     CENTRE_Y,
-    FORAGER_SPEC,
     HUNTER_ENERGY,
-    PREDATOR_SPEC,
     PREY_VIEW_SHARE,
     SUBJECT_ENERGY,
     around,
     heading,
 } from './memory-probe-scenarios.js';
+import { SPEC } from '../sim/specs.js';
 
 const DEG = 6.283185307179586 / 360;
 
@@ -55,7 +54,7 @@ export function offset(rng, lowDeg, highDeg) {
  * @returns {Record<string, any>} the subject at the arena's centre
  */
 export function subjectAt(spec, angle) {
-    const energy = spec === PREDATOR_SPEC ? HUNTER_ENERGY : SUBJECT_ENERGY;
+    const energy = spec === SPEC.PREDATOR ? HUNTER_ENERGY : SUBJECT_ENERGY;
     return { role: 'subject', x: CENTRE_X, y: CENTRE_Y, angle, spec, energy };
 }
 
@@ -93,16 +92,16 @@ export function preyDrill(
     return {
         name,
         scene: abort ? 'Abort' : 'A real chase',
-        spec: PREDATOR_SPEC,
+        spec: SPEC.PREDATOR,
         needsHunter: true,
         plan(rng, view) {
             const angle = heading(rng);
             const spot = around(angle + offset(rng, 0, 45), PREY_VIEW_SHARE * view);
-            const prey = { role, ...spot, angle: preyAngle(rng, angle), spec: FORAGER_SPEC, energy, baseSize };
+            const prey = { role, ...spot, angle: preyAngle(rng, angle), spec: SPEC.FORAGER, energy, baseSize };
             let bitten = false;
             const trace = createPreyTrace();
             return {
-                stage: stage([subjectAt(PREDATOR_SPEC, angle), prey], []),
+                stage: stage([subjectAt(SPEC.PREDATOR, angle), prey], []),
                 timing: null,
                 scent: false,
                 maxTicks,

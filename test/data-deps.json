@@ -81,6 +81,7 @@
         "AGENTS.md",
         "README.md",
         "js/app/main.js",
+        "js/sim/specs.js",
         "scripts",
         "scripts/check-conventions.sh",
         "scripts/check-flag-ledger.mjs",

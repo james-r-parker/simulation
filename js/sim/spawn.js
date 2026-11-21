@@ -10,7 +10,7 @@ import { createRng, fork, nextFloat, nextInt } from './rng.js';
 import { placeTerrain, refugeCentresOf } from './terrain.js';
 import { rejectedByCover } from './cover.js';
 import { drawSex } from './sex.js';
-import { SPEC_COUNT } from './spec-rescue.js';
+import { SPEC_COUNT } from './specs.js';
 import { applyGenes, baseSizeOf } from './traits.js';
 import { sourceOfSpawn } from './hunter-ledger.js';
 import { TIMER_CAP, allocAgent, allocateWorld } from './world.js';

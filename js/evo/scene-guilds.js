@@ -7,6 +7,7 @@ import { BORN_CAUSE, DEATH_CAUSE } from '../sim/events.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { metricName } from './metric-registry/index.js';
 import { none, ok, per1k } from './metrics-stats.js';
+import { SPEC } from '../sim/specs.js';
 
 const NO_SHARE_SAMPLE = 'no 100-tick checkpoint after burn-in';
 const NO_GUILD_DEATH = 'no death of this guild after burn-in';
@@ -23,9 +24,6 @@ const GUILDS = /** @type {const} */ ([
 ]);
 
 const RECOVERY_POP_FLOOR = 120;
-const SCOUT_SPEC = 3;
-const REPRODUCER_SPEC = 2;
-const DEFENDER_SPEC = 4;
 
 /** @param {Record<string, any>} scene the guild scene @param {number} idx the prey guild index */
 function preySelectivity(scene, idx) {
@@ -103,7 +101,7 @@ export function sampleGuilds(scene, world) {
  * @returns {void}
  */
 export function noteGuildDeath(scene, { tick, spec, age, cause }) {
-    if (tick < BURN_IN_TICKS || spec === 1) {
+    if (tick < BURN_IN_TICKS || spec === SPEC.PREDATOR) {
         return;
     }
     scene.deathAgeSum[spec] += age / scene.maxAgeTicks;
@@ -126,7 +124,7 @@ export function noteGuildBirth(scene, { tick, spec, cause }) {
     }
     if (scene.prevPop < RECOVERY_POP_FLOOR) {
         scene.recoveryBirths += 1;
-        if (spec === REPRODUCER_SPEC) {
+        if (spec === SPEC.REPRODUCER) {
             scene.recoveryReproducerBirths += 1;
         }
     }
@@ -140,7 +138,7 @@ export function noteGuildBirth(scene, { tick, spec, cause }) {
  * @returns {void}
  */
 export function noteGuildAlarm(scene, world, caller) {
-    if (world.tick < BURN_IN_TICKS || world.spec[caller] !== SCOUT_SPEC || world.alarmSeen[caller] !== 1) {
+    if (world.tick < BURN_IN_TICKS || world.spec[caller] !== SPEC.SCOUT || world.alarmSeen[caller] !== 1) {
         return;
     }
     const leadDist = 0.5 * scene.callRadius;
@@ -179,7 +177,7 @@ export function tickGuilds(scene, world) {
     }
     const { alive, spec } = world;
     for (let s = 0; s < alive.length; s++) {
-        if (alive[s] === 1 && spec[s] === DEFENDER_SPEC) {
+        if (alive[s] === 1 && spec[s] === SPEC.DEFENDER) {
             scene.defenderTicks += 1;
         }
     }

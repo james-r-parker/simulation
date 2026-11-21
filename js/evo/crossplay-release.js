@@ -10,17 +10,9 @@ import { createRng, fork, nextFloat } from '../sim/rng.js';
 import { wilsonInterval } from './binomial.js';
 import { CROSS_SEED, CROSS_TRIALS } from './crossplay.js';
 import { ringRocks } from './drill-scenarios.js';
-import { GENOME_SPECS } from './genome.js';
+import { SPEC, SPEC_NAMES } from '../sim/specs.js';
 import { playTrial, viewOf } from './memory-probe-run.js';
-import {
-    CENTRE_X,
-    CENTRE_Y,
-    HUNTER_ENERGY,
-    PREDATOR_SPEC,
-    PREY_VIEW_SHARE,
-    around,
-    heading,
-} from './memory-probe-scenarios.js';
+import { CENTRE_X, CENTRE_Y, HUNTER_ENERGY, PREY_VIEW_SHARE, around, heading } from './memory-probe-scenarios.js';
 
 /** The opponent's body: a juvenile is this share of the mature base size (the staged world has no ageing). */
 export const JUVENILE_SIZE_SHARE = 0.6;
@@ -81,7 +73,7 @@ function stageOf(rng, view, { age, habitat }) {
     const spot = around(angle + (nextFloat(rng) - 0.5) * spread, share * view);
     const depleted = habitat === 'depleted';
     const size = age === 'juvenile' ? JUVENILE_SIZE_SHARE * createConfig({}).baseSize : undefined;
-    const hunter = { role: 'subject', x: CENTRE_X, y: CENTRE_Y, angle, spec: PREDATOR_SPEC };
+    const hunter = { role: 'subject', x: CENTRE_X, y: CENTRE_Y, angle, spec: SPEC.PREDATOR };
     return {
         foods: [],
         rocks: habitat === 'cover' ? ringRocks(spot) : [],
@@ -110,7 +102,7 @@ function stageOf(rng, view, { age, habitat }) {
  *   in the trials that did not kill (null when every trial killed)
  */
 export function playCondition(predator, opponent, { age, habitat, trials = CROSS_TRIALS, config = {} }) {
-    const view = viewOf({ spec: PREDATOR_SPEC, weights: null }, createConfig(config));
+    const view = viewOf({ spec: SPEC.PREDATOR, weights: null }, createConfig(config));
     let kills = 0;
     let spent = 0;
     let failed = 0;
@@ -184,7 +176,7 @@ export function playCondition(predator, opponent, { age, habitat, trials = CROSS
 export function releaseMatrix(predator, { candidate, opponents, trials, config }) {
     return opponents.flatMap((opponent) => {
         const { independent, reason } = independence(candidate, opponent.provenance);
-        const guild = GENOME_SPECS[opponent.subject.spec ?? 0];
+        const guild = SPEC_NAMES[opponent.subject.spec ?? 0];
         return AGES.flatMap((age) =>
             HABITATS.map((habitat) => ({
                 opponent: opponent.subject.name,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GENOME_SPECS } from '../../js/evo/genome.js';
+import { SPEC_NAMES as SIM_SPEC_NAMES } from '../../js/sim/specs.js';
 import { CHAMPION_VERSION, validateChampion } from '../../js/evo/league.js';
 import { canonicalChampion, championId } from '../../js/library/canonical.js';
 import { decodeCursor, encodeCursor, parseListQuery } from '../../js/library/query.js';
@@ -23,7 +23,7 @@ const layout = { inputCount: 10, brainHidden: 4, outputCount: 3 };
 
 describe('shapes', () => {
     it('stays equal to the evo constants it mirrors', () => {
-        expect([...SPEC_NAMES]).toEqual([...GENOME_SPECS]);
+        expect(SPEC_NAMES).toBe(SIM_SPEC_NAMES);
         expect(CHAMPION_FILE_VERSION).toBe(CHAMPION_VERSION);
         expect(DEFAULT_SEED_ELO).toBe(ELO_START);
     });

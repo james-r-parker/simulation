@@ -5,6 +5,7 @@ import { coverage, occupiedCount } from '../evo/archive.js';
 import { generationStats } from './generation.js';
 import { BORN_CAUSE, DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE, EVENT, EVENT_TICK } from '../sim/events.js';
 import { specParams } from '../sim/spec-params.js';
+import { SPEC_COUNT } from '../sim/specs.js';
 import {
     callsPerKiloTick,
     createCallWindow,
@@ -37,7 +38,6 @@ export const ELDER_SHARE = 0.9;
 /** `PopulationFloor` is announced only after this tick (before it the initial settling is expected). */
 export const FLOOR_AFTER_TICK = 10000;
 
-const SPEC_COUNT = 5;
 const SEASONS = 4;
 const BORN_CAUSES = Object.keys(BORN_CAUSE).length;
 const DEATH_CAUSES = Object.keys(DEATH_CAUSE).length;

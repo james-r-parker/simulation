@@ -9,7 +9,7 @@ import { wilsonInterval } from './binomial.js';
 import { DRILLS } from './drill-scenarios.js';
 import { GROUP_ARENA_RULES, TRIO, huntPlan } from './memory-probe-group.js';
 import { playTrial, viewOf } from './memory-probe-run.js';
-import { PREDATOR_SPEC } from './memory-probe-scenarios.js';
+import { SPEC } from '../sim/specs.js';
 
 /** Trials per cell. */
 export const CROSS_TRIALS = 64;
@@ -53,7 +53,7 @@ export function createMatrix(trials = CROSS_TRIALS) {
  */
 export function playCell(predator, forager, options = {}) {
     const { trials = CROSS_TRIALS, config = {}, group = false } = options;
-    const view = viewOf({ spec: PREDATOR_SPEC, weights: null }, createConfig(config));
+    const view = viewOf({ spec: SPEC.PREDATOR, weights: null }, createConfig(config));
     const opponent = /** @type {const} */ ({ role: 'prey', subject: forager });
     let kills = 0;
     for (let t = 0; t < trials; t++) {

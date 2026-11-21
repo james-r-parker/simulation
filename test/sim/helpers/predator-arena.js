@@ -7,13 +7,12 @@ import { BORN_CAUSE } from '../../../js/sim/events.js';
 import { spawnAgent, createWorld } from '../../../js/sim/spawn.js';
 import { step } from '../../../js/sim/step.js';
 import { SIMPLE_WORLD } from '../../helpers/simple-world.js';
+import { SPEC } from '../../../js/sim/specs.js';
 
 /** The hunter is slot 0 and the specialisation `predator`; the prey is slot 1 and a `forager`. */
 export const HUNTER = 0;
 export const PREY = 1;
 
-const PREDATOR_SPEC = 1;
-const FORAGER_SPEC = 0;
 const CH_PREY = 3;
 const CH_THREAT = 2;
 const TURN_GAIN = 4;
@@ -39,7 +38,7 @@ const ARENA = {
 
 /** @type {import('../../../js/sim/spawn.js').Policy} */
 const POLICY = {
-    initSpec: (_world, slot) => (slot === HUNTER ? PREDATOR_SPEC : FORAGER_SPEC),
+    initSpec: (_world, slot) => (slot === HUNTER ? SPEC.PREDATOR : SPEC.FORAGER),
     initBrain() {},
 };
 

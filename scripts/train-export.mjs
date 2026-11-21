@@ -7,7 +7,7 @@ import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exportBestPerStyle } from '../js/evo/champion-export.js';
 import { exportEligibility } from '../js/evo/export-eligibility.js';
-import { GENOME_SPECS } from '../js/evo/genome.js';
+import { SPEC_NAMES } from '../js/sim/specs.js';
 import { createConfig, rulesHash } from '../js/sim/config.js';
 import { exitCodeOf, parseFlags } from './lib/cli-args.mjs';
 import { decodeTrainerArchive } from './lib/archive-source.mjs';
@@ -79,7 +79,7 @@ export function runExport(args, print = () => {}) {
     }
     const index = files.map((f) => ({
         file: `${f.name}.json`,
-        specialisation: GENOME_SPECS[f.specialisation],
+        specialisation: SPEC_NAMES[f.specialisation],
         style: f.style,
         cell: f.cell,
         genomeId: f.genomeId,

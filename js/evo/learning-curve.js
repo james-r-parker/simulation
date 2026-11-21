@@ -2,7 +2,7 @@
 // the plateau finder that reads the rows. A checkpoint only reads the archive. Pure: no files, no clock.
 
 import { CELLS, ELITE, archiveCv, coverage, lowerBound, placeOf, qdScore } from './archive.js';
-import { GENOME_SPECS } from './genome.js';
+import { SPEC_NAMES } from '../sim/specs.js';
 
 /** The eval metrics a curve row carries, averaged over the checkpoint's eval seeds. */
 export const CURVE_METRICS = Object.freeze([
@@ -62,7 +62,7 @@ export function bestLowerBounds(archive) {
     const cv = archiveCv(archive);
     /** @type {Record<string, number | null>} */
     const out = {};
-    GENOME_SPECS.forEach((name, spec) => {
+    SPEC_NAMES.forEach((name, spec) => {
         let best = -Infinity;
         for (let cell = 0; cell < CELLS; cell++) {
             const place = placeOf(spec, cell, ELITE);

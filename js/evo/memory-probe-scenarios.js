@@ -5,6 +5,7 @@ import { detCos, detSin } from '../sim/det-math.js';
 import { nextFloat } from '../sim/rng.js';
 import { CH_PREY } from './scripted-parts.js';
 import { raySees, seesThreat, windowEnd } from './memory-probe-controls.js';
+import { SPEC } from '../sim/specs.js';
 
 /** The arena's centre (the staged world is 3000 x 4000). */
 export const CENTRE_X = 1500;
@@ -28,8 +29,6 @@ export const FOOD_VIEW_SHARE = 0.9;
 /** The hunter starts this far away, further than a forager can see; the prey is staged inside the subject's sight. */
 const HUNTER_DISTANCE = 500;
 export const PREY_VIEW_SHARE = 0.6;
-export const PREDATOR_SPEC = 1;
-export const FORAGER_SPEC = 0;
 export const SUBJECT_ENERGY = 800;
 export const HUNTER_ENERGY = 1500;
 const LONG_TRIAL_TICKS = 1200;
@@ -72,7 +71,7 @@ function foodThenBlind(blind) {
     return {
         name: long ? `food-then-blind@${blind}` : 'food-then-blind',
         metric: long ? `probe.food_reach@${blind}` : 'probe.food_reach',
-        spec: FORAGER_SPEC,
+        spec: SPEC.FORAGER,
         needsHunter: false,
         windowed: true,
         plan(rng, view) {
@@ -87,7 +86,7 @@ function foodThenBlind(blind) {
                             x: CENTRE_X,
                             y: CENTRE_Y,
                             angle: heading(rng),
-                            spec: FORAGER_SPEC,
+                            spec: SPEC.FORAGER,
                             energy: SUBJECT_ENERGY,
                         },
                     ],
@@ -106,7 +105,7 @@ function foodThenBlind(blind) {
 const PREDATOR_OUT_OF_VIEW = {
     name: 'predator-out-of-view',
     metric: 'probe.flee_survival',
-    spec: FORAGER_SPEC,
+    spec: SPEC.FORAGER,
     needsHunter: false,
     windowed: true,
     plan(rng) {
@@ -122,14 +121,14 @@ const PREDATOR_OUT_OF_VIEW = {
                         x: CENTRE_X,
                         y: CENTRE_Y,
                         angle: heading(rng),
-                        spec: FORAGER_SPEC,
+                        spec: SPEC.FORAGER,
                         energy: SUBJECT_ENERGY,
                     },
                     {
                         role: 'hunter',
                         ...hunter,
                         angle: theta + TWO_PI / 2,
-                        spec: PREDATOR_SPEC,
+                        spec: SPEC.PREDATOR,
                         energy: HUNTER_ENERGY,
                     },
                 ],
@@ -157,7 +156,7 @@ function sightTracker() {
 const SCENT_AFTER_SIGHT_LOSS = {
     name: 'scent-after-sight-loss',
     metric: 'probe.scent_follow',
-    spec: PREDATOR_SPEC,
+    spec: SPEC.PREDATOR,
     needsHunter: true,
     windowed: false,
     plan(rng, view) {
@@ -175,14 +174,14 @@ const SCENT_AFTER_SIGHT_LOSS = {
                         x: CENTRE_X,
                         y: CENTRE_Y,
                         angle: theta,
-                        spec: PREDATOR_SPEC,
+                        spec: SPEC.PREDATOR,
                         energy: HUNTER_ENERGY,
                     },
                     {
                         role: 'prey',
                         ...around(theta + (side * TWO_PI) / 6, PREY_VIEW_SHARE * view),
                         angle: theta + side * (TWO_PI / 4),
-                        spec: FORAGER_SPEC,
+                        spec: SPEC.FORAGER,
                         energy: SUBJECT_ENERGY,
                     },
                 ],

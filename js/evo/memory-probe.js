@@ -8,7 +8,8 @@ import { createRng, fork } from '../sim/rng.js';
 import { CONTROL } from './memory-probe-controls.js';
 import { GROUP_CONTROL, TRIO, huntScore } from './memory-probe-group.js';
 import { playTrial, viewOf } from './memory-probe-run.js';
-import { PREDATOR_SPEC, SCENARIOS } from './memory-probe-scenarios.js';
+import { SCENARIOS } from './memory-probe-scenarios.js';
+import { SPEC } from '../sim/specs.js';
 
 /** The name that selects the group-hunt probe. */
 export const GROUP_SCENARIO = 'group-hunt';
@@ -158,7 +159,7 @@ export function probeScenario(scenario, subject, options = {}) {
 export function probeGroup(subject, options = {}) {
     const { config = {}, seed = 1, trials = TRIALS, log } = options;
     const base = createConfig(config);
-    const staged = { ...subject, spec: subject.spec ?? PREDATOR_SPEC };
+    const staged = { ...subject, spec: subject.spec ?? SPEC.PREDATOR };
     if (!canHunt(staged.spec, base)) {
         return { scores: {}, coordination: null, ratio: null, gain: null, skipped: 'the specialisation cannot hunt' };
     }

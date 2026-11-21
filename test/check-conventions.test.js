@@ -256,3 +256,25 @@ describe('conventions test-data', { timeout: scaleTimeout(30_000) }, () => {
         expect(conventions({ 'scripts/x.mjs': "read('evals/train-ladder.json')\n" })).not.toContain('test-data');
     });
 });
+
+describe('conventions spec names', { timeout: scaleTimeout(30_000) }, () => {
+    it.each([
+        ['a local count', 'const SPEC_COUNT = 5;'],
+        ['a role index', 'const SCOUT_SPEC = 3;'],
+        ['a bare role index', 'const FORAGER = 0;'],
+        ['a numeric test', 'if (spec === 1) {}'],
+        ['a name list', "export const NAMES = ['forager', 'predator', 'reproducer', 'scout', 'defender'];"],
+    ])('flags %s in a js module', (_name, line) => {
+        const out = conventions({ 'js/evo/x.js': `${line}\n` });
+        expect(out).toContain('js/evo/x.js:1');
+        expect(out).toContain('spec-names');
+    });
+
+    it('allows js/sim/specs.js, a comment and an unrelated constant', () => {
+        const out = conventions({
+            'js/sim/specs.js': "export const SPEC_COUNT = 5;\nexport const NAMES = ['forager', 'predator'];\n",
+            'js/evo/y.js': '// const SCOUT_SPEC = 3;\nconst SPEC_BITS = 5;\nconst PREY_ENERGY = 800;\n',
+        });
+        expect(out).not.toContain('spec-names');
+    });
+});
