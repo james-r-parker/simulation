@@ -20,7 +20,7 @@ const PI = 3.141592653589793;
  * @param {number} i the agent slot
  * @returns {number} the thrust
  */
-function thrustOf(world, i) {
+export function thrustOf(world, i) {
     const { outputs, config } = world;
     const o = i * OUTPUT_COUNT;
     let thrust = outputs[o + OUTPUT_INDEX.THRUST] * liveOf(world, i, LANE_ID.maxThrust);

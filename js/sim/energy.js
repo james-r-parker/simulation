@@ -152,7 +152,7 @@ const nominal = new Float64Array(3);
  * @param {number} slot the agent slot
  * @returns {number} the energy the agent loses this tick
  */
-function tickCost(world, slot) {
+export function tickCost(world, slot) {
     pinSlot(slot); // each effect level is read once for the six lanes below; the body does not change in between
     const c = world.config;
     const sp = specParams(c, world.spec[slot]);
