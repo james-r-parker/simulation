@@ -7,9 +7,9 @@
 //   node scripts/events-doc.mjs            # print the doc to stdout
 //   node scripts/events-doc.mjs --write    # (re)write docs/log-events.md
 //   node scripts/events-doc.mjs --check    # exit 1 if the committed doc differs from the registry
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { BORN_CAUSES, DEATH_CAUSES, EVENT_FIELDS_AT, EVENTS } from '../js/sim/events.js';
+import { runGeneratedDoc } from './lib/generated-doc.mjs';
 import { renderTable } from './metrics-doc.mjs';
 
 const DOC_PATH = fileURLToPath(new URL('../docs/log-events.md', import.meta.url));
@@ -72,28 +72,12 @@ export function renderEventsDoc() {
  * @returns {number} the exit code
  */
 export function main(args, { path = DOC_PATH } = {}) {
-    const unknown = args.filter((arg) => arg !== '--write' && arg !== '--check');
-    if (unknown.length > 0) {
-        process.stderr.write(`unknown argument: ${unknown.join(' ')} (expected --write or --check)\n`);
-        return 2;
-    }
-    const markdown = renderEventsDoc();
-    if (args.includes('--check')) {
-        const current = existsSync(path) ? readFileSync(path, 'utf8') : '';
-        if (current !== markdown) {
-            process.stderr.write('docs/log-events.md is stale. Run: node scripts/events-doc.mjs --write\n');
-            return 1;
-        }
-        process.stdout.write('docs/log-events.md is up to date.\n');
-        return 0;
-    }
-    if (args.includes('--write')) {
-        writeFileSync(path, markdown);
-        process.stdout.write('Wrote docs/log-events.md\n');
-        return 0;
-    }
-    process.stdout.write(markdown);
-    return 0;
+    return runGeneratedDoc(args, {
+        path,
+        markdown: renderEventsDoc(),
+        file: 'docs/log-events.md',
+        command: 'node scripts/events-doc.mjs',
+    });
 }
 
 if (process.argv[1] && process.argv[1] === fileURLToPath(import.meta.url)) {

@@ -270,10 +270,11 @@ describe('conventions spec names', { timeout: scaleTimeout(30_000) }, () => {
         expect(out).toContain('spec-names');
     });
 
-    it('allows js/sim/specs.js, a comment and an unrelated constant', () => {
+    it('allows js/sim/specs.js, the standalone library, a comment and an unrelated constant', () => {
         const out = conventions({
             'js/sim/specs.js': "export const SPEC_COUNT = 5;\nexport const NAMES = ['forager', 'predator'];\n",
             'js/evo/y.js': '// const SCOUT_SPEC = 3;\nconst SPEC_BITS = 5;\nconst PREY_ENERGY = 800;\n',
+            'js/library/shapes.js': "export const NAMES = ['forager', 'predator'];\n",
         });
         expect(out).not.toContain('spec-names');
     });

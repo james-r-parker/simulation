@@ -3,31 +3,8 @@
 // replaced (deleted at T11). The circles' arrays and the spatial hash (built in the arena by `build_hash`, Phase 4) are
 // read in place. The hit classes, the mate sighting and the body and scent inputs are rules and stay in JS.
 
+import { ownedFields } from './agent-arrays.js';
 import { assertArenaHash, hashShape } from './wasm-hash.js';
-
-/** World fields the sense kernel reads or writes, taken over by the arena at their allocated type and length. */
-export const SENSE_FIELDS = Object.freeze([
-    'x',
-    'y',
-    'size',
-    'foodX',
-    'foodY',
-    'foodRadius',
-    'obsX',
-    'obsY',
-    'obsRadius',
-    'herdAlive',
-    'herdX',
-    'herdY',
-    'cloudX',
-    'cloudY',
-    'coverRing',
-    'rayLocal',
-    'rayStamp',
-    'rayScratch',
-    'foodKind',
-    'rayReachBySpec',
-]);
 
 /** The arena arrays whose byte offsets head the sense parameter block, in `SenseParams` order (wasm/src/sense.rs). */
 export const SENSE_ARRAYS = Object.freeze([
@@ -60,6 +37,31 @@ export const SENSE_ARRAYS = Object.freeze([
     'foodKind',
     'rayReachBySpec',
     'rayReach',
+]);
+
+/**
+ * World fields the sense kernel reads or writes, taken over by the arena at their allocated type and length: the agent
+ * arrays it owns (`agent-arrays.js`), in `SENSE_ARRAYS` order, then the food, obstacle, herd, cloud and ray fields.
+ */
+export const SENSE_FIELDS = Object.freeze([
+    ...ownedFields('sense', SENSE_ARRAYS),
+    'foodX',
+    'foodY',
+    'foodRadius',
+    'obsX',
+    'obsY',
+    'obsRadius',
+    'herdAlive',
+    'herdX',
+    'herdY',
+    'cloudX',
+    'cloudY',
+    'coverRing',
+    'rayLocal',
+    'rayStamp',
+    'rayScratch',
+    'foodKind',
+    'rayReachBySpec',
 ]);
 
 /** Words of the sense parameter block after the offsets, by name, in `SenseParams` order. */

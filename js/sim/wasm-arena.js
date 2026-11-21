@@ -3,7 +3,9 @@
 // 16-byte aligned offset, and `attachWasm` re-points the world's fields at views over those bytes, so the JS rules and
 // the kernels read and write the same memory. `allocateWorld` attaches every world as it is born.
 
-import { writeBrainParams } from './wasm-brain.js';
+import { BRAIN_FIELDS, writeBrainParams } from './wasm-brain.js';
+
+export { BRAIN_FIELDS };
 import { FIELD_FIELDS, fieldSpecs, writeFieldParams } from './wasm-field.js';
 import { HASH_FIELDS, arenaHash, hashSpecs } from './wasm-hash.js';
 import { PHYSICS_FIELDS, physicsSpecs, writePhysicsParams } from './wasm-physics.js';
@@ -25,21 +27,6 @@ export const PARAM_WORDS = 40;
 
 /** Float64 values in the brain kernel's parameter block. */
 export const PARAM_DOUBLES = 4;
-
-/** World fields of the brain kernel; every other entry in `arenaSpecs` is the kernels' own. */
-export const BRAIN_FIELDS = Object.freeze([
-    'alive',
-    'weights',
-    'hidden',
-    'inputs',
-    'pooled',
-    'outputs',
-    'leakRate',
-    'fastOut',
-    'rayHue',
-    'rayCos',
-    'raySin',
-]);
 
 /** Every world field the arena takes over: the brain kernel's, then the sense, hash, field and physics kernels'. */
 export const WORLD_FIELDS = Object.freeze([

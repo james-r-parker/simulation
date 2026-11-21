@@ -23,7 +23,7 @@ const layout = { inputCount: 10, brainHidden: 4, outputCount: 3 };
 
 describe('shapes', () => {
     it('stays equal to the evo constants it mirrors', () => {
-        expect(SPEC_NAMES).toBe(SIM_SPEC_NAMES);
+        expect([...SPEC_NAMES]).toEqual([...SIM_SPEC_NAMES]);
         expect(CHAMPION_FILE_VERSION).toBe(CHAMPION_VERSION);
         expect(DEFAULT_SEED_ELO).toBe(ELO_START);
     });

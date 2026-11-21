@@ -13,6 +13,7 @@ import {
     EVENTS,
     clearEvents,
     createEventRing,
+    offsetsOf,
     pushEvent,
     readEvents,
 } from '../../js/sim/events.js';
@@ -86,6 +87,21 @@ describe('EVENTS', () => {
         expect(EVENT.HUNTER_KILL).toMatchObject({ GENOME_ID: 2, AGE_TICKS: 3, KILLS: 4, DEPENDENT: 5 });
         expect(EVENT.LAST_HUNTER_DIED).toMatchObject({ GENOME_ID: 2, BASIN: 3, NON_PREDATORS_WEST: 4 });
         expect(EVENT.MERIT_SUMMARY).toMatchObject({ MERIT_MEAN: 2, DELIBERATE_READY_SHARE: 6 });
+    });
+});
+
+describe('offsetsOf', () => {
+    it('numbers the fields after the type and the tick', () => {
+        const def = { code: 99, name: 'X', log: null, level: /** @type {const} */ ('debug'), fields: ['aB', 'c'] };
+        expect(offsetsOf(def)).toEqual({ TYPE: 0, TICK: 1, A_B: 2, C: 3 });
+    });
+
+    it('throws for a field that does not fit the record, and for one that repeats an offset name', () => {
+        const base = { code: 99, name: 'X', log: null, level: /** @type {const} */ ('debug') };
+        const many = Array.from({ length: EVENT_STRIDE - 1 }, (_, i) => `f${i}`);
+        expect(() => offsetsOf({ ...base, fields: many })).toThrow('record holds 11');
+        expect(() => offsetsOf({ ...base, fields: ['a', 'a'] })).toThrow('twice');
+        expect(() => offsetsOf({ ...base, fields: ['tick'] })).toThrow('reuses TYPE or TICK');
     });
 });
 

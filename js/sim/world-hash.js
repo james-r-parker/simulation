@@ -1,54 +1,15 @@
-import { MYCELIUM_ARRAYS } from './mycelium.js';
 // Hashes a world's state bytes at a checkpoint, in the fixed order of the design doc's hashWorld section.
+
+import { HASHED_AGENT_ARRAYS } from './agent-arrays.js';
+import { MYCELIUM_ARRAYS } from './mycelium.js';
 import { FLORA_ARRAYS } from './flora-state.js';
 import { fnv64Bytes, fnv64Hex, fnv64Init } from './fnv.js';
 import { meritSpecs } from './merit-state.js';
 import { rewardHashBytes } from './reward-hash.js';
 import { DISEASE_AGENT_ARRAYS, DISEASE_STRAIN_ARRAYS } from './disease-state.js';
 
-/** Agent arrays hashed whole, in the World state table order; `hidden` is handled separately. */
-const AGENT_ARRAYS = [
-    'alive',
-    'spec',
-    'x',
-    'y',
-    'vx',
-    'vy',
-    'angle',
-    'turnRate',
-    'size',
-    'energy',
-    'foodEnergy',
-    'biteEnergy',
-    'ageTicks',
-    'cooldown',
-    'pregnancy',
-    'ateTimer',
-    'bittenTimer',
-    'lastLoss',
-    'temperature',
-    'dose',
-    'pollenPatch',
-    'pollenSerial',
-    'pollenTicks',
-    'genomeId',
-    'lineageId',
-    'parentA',
-    'parentB',
-    'lastBiter',
-    'lastHerdId',
-    'weights',
-    'fatherWeights',
-    'fatherId',
-    'fatherLineage',
-    'lastBiteTick',
-    'prevBiter',
-    'prevBiteTick',
-    'alarmTimer',
-    'huntTimer',
-    'smokeTimer',
-    'heard',
-];
+/** Agent arrays hashed whole, in the World state table order (`HASHED_AGENT_ARRAYS`, from `agentSpecs`); `hidden` is handled separately. */
+const AGENT_ARRAYS = HASHED_AGENT_ARRAYS;
 
 /**
  * Merit arrays hashed after the agent arrays, in `meritSpecs` order: the merit and stamp, the parent slots, the

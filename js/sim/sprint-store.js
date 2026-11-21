@@ -49,7 +49,7 @@ export function allocSprintState(world) {
     world.sprintFactor = new Float64Array(n).fill(1);
     if (world.config.sprintStoreEnabled) {
         world.sprintStore = createSprintStore(world.config, n);
-        world.agentRows.push({ array: world.sprintStore.level, stride: 1 });
+        world.agentRows.push({ array: world.sprintStore.level, stride: 1, name: 'sprintLevel' });
     }
 }
 

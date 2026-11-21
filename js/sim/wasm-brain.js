@@ -13,6 +13,7 @@ import {
     RAY_CHANNELS,
     TRAIT_INDEX,
 } from './brain-layout.js';
+import { ownedFields } from './agent-arrays.js';
 import { rewardScale } from './reward.js';
 
 /** The arena arrays whose byte offsets head the parameter block, in `Params` order (wasm/src/brain.rs). */
@@ -32,6 +33,17 @@ export const PARAM_ARRAYS = Object.freeze([
     'scratch',
     'geneOutputIndex',
     'terms',
+]);
+
+/**
+ * World fields of the brain kernel, in `PARAM_ARRAYS` order: the agent arrays it owns (`agent-arrays.js`) with `hidden`
+ * (allocated beside them), then the ray tables. Every other entry in `arenaSpecs` is the kernels' own.
+ */
+export const BRAIN_FIELDS = Object.freeze([
+    ...PARAM_ARRAYS.filter((name) => name === 'hidden' || ownedFields('brain', [name]).length > 0),
+    'rayHue',
+    'rayCos',
+    'raySin',
 ]);
 
 /** Index of the fault slot and place the kernel writes in the parameter block (`status_slot`, `status_where`). */

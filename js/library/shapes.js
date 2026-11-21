@@ -1,14 +1,12 @@
 // Response shapes and constants of the gene library, shared by the Pages Functions, the seed code and (later) the app.
-// Imports only `js/sim/specs.js`, which imports nothing: this file is read by every side of the library.
-
-import { SPEC_NAMES } from '../sim/specs.js';
-
-export { SPEC_NAMES };
+// Imports nothing: this file is read by every side of the library.
 
 /** Largest page a list request may ask for. */
 export const LIST_LIMIT_MAX = 50;
 /** Page size when a list request names none. */
 export const LIST_LIMIT_DEFAULT = 20;
+/** Specialisation names by index: `SPEC_NAMES` in js/sim/specs.js, which the library may not import (a test keeps them equal). */
+export const SPEC_NAMES = Object.freeze(['forager', 'predator', 'reproducer', 'scout', 'defender']);
 /** The sort orders a list accepts; the first is the default. */
 export const SORTS = Object.freeze(['elo', 'created']);
 /** The states of a champion row. Only `verified` rows are listed or served. */

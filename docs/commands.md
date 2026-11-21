@@ -280,6 +280,10 @@ Edit `wasm/src`, run `scripts/build-wasm.sh`, then `flock /tmp/claude-1000/cpu.l
 
 `node scripts/events-doc.mjs --write` (writes `docs/log-events.md` from `EVENTS` in `js/sim/events.js`: every event's code, log event, level and numbered fields, and the cause lists; `--check` fails when it is stale, and the `conventions` gate runs it; a new event or field is one entry in `EVENTS`)
 
+### Regenerate the config key table
+
+`node scripts/config-doc.mjs --write` (writes `docs/config-keys.md` from `DEFAULTS` in `js/sim/config-defaults.js` and the rules in `js/sim/config-validate.js`: every key, its default and its rule; `--check` fails when it is stale, and the `conventions` gate runs it; a new key is added to the defaults and the rules, then this is re-run)
+
 ### Regenerate target-metric power table
 
 `node scripts/metric-noise.mjs --write` (`--check` detects drift; `--metrics` lists the power command input and `--references` audits plan locations; uses the saved E210 reading in `evals/power/metric-noise-E210.json`)

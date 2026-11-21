@@ -25,6 +25,7 @@ export function createChartData() {
                 specs: ready.info.specs,
                 bornCauses: ready.layout.bornCauses,
                 deathCauses: ready.layout.deathCauses,
+                causeColours: ready.layout.causeColours,
             });
             const history = current === null ? createHistory(sampler) : current.history;
             clearHistory(history);

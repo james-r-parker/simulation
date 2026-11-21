@@ -213,7 +213,7 @@ function offsetKey(name) {
  * @param {EventDef} def an event definition
  * @returns {Readonly<Record<string, number>>} the offsets of its record: `TYPE`, `TICK` and one per field
  */
-function offsetsOf(def) {
+export function offsetsOf(def) {
     if (def.fields.length > EVENT_STRIDE - EVENT_FIELDS_AT) {
         throw new Error(
             `events: ${def.name} has ${def.fields.length} fields, the record holds ${EVENT_STRIDE - EVENT_FIELDS_AT}`,

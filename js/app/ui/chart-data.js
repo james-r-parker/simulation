@@ -26,10 +26,26 @@ function causeList(causes) {
 }
 
 /**
+ * @param {{born: Record<string, string>, died: Record<string, string>} | undefined} causeColours the layout's cause colours
+ * @returns {Record<string, string>} the colour of each cause series by its history name
+ */
+function coloursOf(causeColours) {
+    /** @type {Record<string, string>} */
+    const colours = {};
+    for (const kind of /** @type {const} */ (['born', 'died'])) {
+        for (const [key, colour] of Object.entries(causeColours?.[kind] ?? {})) {
+            colours[`${kind}.${words(key)}`] = colour;
+        }
+    }
+    return colours;
+}
+
+/**
  * @typedef {object} Sampler
  * @property {string[]} names the history's series names
  * @property {('level' | 'flow')[]} kinds how each series combines values
- * @property {{births: string[], deaths: string[], specs: string[]}} groups the names in each chart group
+ * @property {{births: string[], deaths: string[], specs: string[], colours: Record<string, string>}} groups the names in
+ *   each chart group, and the colour of each cause series the layout names (`born.mate`, `died.old age`)
  * @property {(stats: Record<string, any>, out: Float64Array) => void} fill writes one stats message's row into `out`
  * @property {() => void} reset forgets the running totals, for a new world
  */
@@ -76,10 +92,11 @@ function seriesFor({ specs, births, deaths }) {
 
 /**
  * @param {{specs: {index: number, name: string}[], bornCauses: Record<string, number>,
- *   deathCauses: Record<string, number>}} world `ready.info.specs` and `ready.layout`'s cause tables
+ *   deathCauses: Record<string, number>, causeColours?: {born: Record<string, string>, died: Record<string, string>}}} world
+ *   `ready.info.specs` and `ready.layout`'s cause tables and their colours
  * @returns {Sampler} the series and the row builder for this world
  */
-export function createSampler({ specs, bornCauses, deathCauses }) {
+export function createSampler({ specs, bornCauses, deathCauses, causeColours }) {
     const births = causeList(bornCauses).filter((c) => c.index > 0);
     const deaths = causeList(deathCauses);
     const series = seriesFor({ specs, births, deaths });
@@ -92,6 +109,7 @@ export function createSampler({ specs, bornCauses, deathCauses }) {
             births: births.map((c) => `born.${c.name}`),
             deaths: deaths.map((c) => `died.${c.name}`),
             specs: specs.map((s) => s.name),
+            colours: coloursOf(causeColours),
         },
         fill(stats, out) {
             series.forEach((s, i) => {

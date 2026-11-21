@@ -7,10 +7,10 @@
 //   node scripts/metrics-doc.mjs            # print the doc to stdout
 //   node scripts/metrics-doc.mjs --write    # (re)write docs/designs/metrics.md
 //   node scripts/metrics-doc.mjs --check    # exit 1 if the committed doc differs from the registry
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { METRICS, minSeedsFor } from '../js/evo/metric-registry/index.js';
 import { metricStatus } from '../js/evo/metric-registry/status.js';
+import { runGeneratedDoc } from './lib/generated-doc.mjs';
 
 const DOC_PATH = fileURLToPath(new URL('../docs/designs/metrics.md', import.meta.url));
 
@@ -123,28 +123,12 @@ export function renderMetricsDoc(metrics = METRICS) {
  * @returns {number} the exit code
  */
 export function main(args, { path = DOC_PATH, metrics = METRICS } = {}) {
-    const unknown = args.filter((arg) => arg !== '--write' && arg !== '--check');
-    if (unknown.length > 0) {
-        process.stderr.write(`unknown argument: ${unknown.join(' ')} (expected --write or --check)\n`);
-        return 2;
-    }
-    const markdown = renderMetricsDoc(metrics);
-    if (args.includes('--check')) {
-        const current = existsSync(path) ? readFileSync(path, 'utf8') : '';
-        if (current !== markdown) {
-            process.stderr.write('docs/designs/metrics.md is stale. Run: node scripts/metrics-doc.mjs --write\n');
-            return 1;
-        }
-        process.stdout.write('docs/designs/metrics.md is up to date.\n');
-        return 0;
-    }
-    if (args.includes('--write')) {
-        writeFileSync(path, markdown);
-        process.stdout.write('Wrote docs/designs/metrics.md\n');
-        return 0;
-    }
-    process.stdout.write(markdown);
-    return 0;
+    return runGeneratedDoc(args, {
+        path,
+        markdown: renderMetricsDoc(metrics),
+        file: 'docs/designs/metrics.md',
+        command: 'node scripts/metrics-doc.mjs',
+    });
 }
 
 if (process.argv[1] && process.argv[1] === fileURLToPath(import.meta.url)) {

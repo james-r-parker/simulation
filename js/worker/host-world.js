@@ -5,7 +5,7 @@ import { feedPolicy } from '../evo/feed-policy.js';
 import { createObserver, observerPhases } from '../evo/observer.js';
 import { SEASONS_PER_YEAR, yearTicks } from '../sim/eras.js';
 import { ZONE_ORIGIN } from '../sim/environment.js';
-import { DEATH_CAUSE, BORN_CAUSE } from '../sim/events.js';
+import { BORN_CAUSE, BORN_CAUSES, DEATH_CAUSE, DEATH_CAUSES } from '../sim/events.js';
 import { configHash, createConfig, fitEventCapacity, rulesHash } from '../sim/config.js';
 import { createRng, fork } from '../sim/rng.js';
 import { createWorld } from '../sim/spawn.js';
@@ -260,5 +260,9 @@ export function readyLayout(run) {
         stateBits: { ...SNAPSHOT_STATE },
         deathCauses: { ...DEATH_CAUSE },
         bornCauses: { ...BORN_CAUSE },
+        causeColours: {
+            born: Object.fromEntries(BORN_CAUSES.map((cause) => [cause.key, cause.colour])),
+            died: Object.fromEntries(DEATH_CAUSES.map((cause) => [cause.key, cause.colour])),
+        },
     };
 }
