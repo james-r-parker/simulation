@@ -52,6 +52,7 @@ export function createAppState(ticksPerSecond = DEFAULT_TICKS_PER_SECOND) {
  * @typedef {object} UiHooks
  * @property {(drawer: string) => void} toggleDrawer opens a drawer, or closes it when it is the open one
  * @property {() => boolean} closeDrawer closes the open drawer; false when none was open
+ * @property {() => void} toggleBoard opens the insights drawer as a full-screen board, or closes it when it is one
  * @property {() => void} toggleHud hides or shows the HUD
  * @property {() => void} toggleAudio turns generative audio on or off
  * @property {() => void} volumeDown lowers audio volume
@@ -71,6 +72,7 @@ export function createAppState(ticksPerSecond = DEFAULT_TICKS_PER_SECOND) {
 const NO_UI = Object.freeze({
     toggleDrawer() {},
     closeDrawer: () => false,
+    toggleBoard() {},
     toggleHud() {},
     toggleAudio() {},
     volumeDown() {},
@@ -243,6 +245,7 @@ const ACTIONS = Object.freeze({
     toggleCharts: viaUi('toggleDrawer', 'charts'),
     toggleInspector: viaUi('toggleDrawer', 'inspector'),
     toggleInsights: viaUi('toggleDrawer', 'insights'),
+    toggleBoard: viaUi('toggleBoard'),
     toggleHelp: viaUi('toggleDrawer', 'help'),
     toggleHud: viaUi('toggleHud'),
     toggleTv: ({ toggleTv }) => toggleTv?.(),

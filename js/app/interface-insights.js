@@ -19,6 +19,9 @@ import {
 import { familyCss } from './ui/css-color.js';
 import { mountInsights } from './ui/insights.js';
 
+/** The class on the page's root while the board is up: the world shrinks to a corner (`css/app.css`). */
+export const BOARD_CLASS = 'insights-board-on';
+
 /** The drawer's name in `drawer.js`. */
 export const INSIGHTS_DRAWER = 'insights';
 
@@ -83,6 +86,37 @@ function createFrameFeed(deps, scenes) {
 }
 
 /**
+ * @param {Record<string, any>} ctx the interface's shared parts
+ * @param {ReturnType<typeof mountInsights>} ui the drawer
+ * @param {() => void} refresh fills the drawer and builds or destroys the charts to match it
+ * @returns {{set: (on: boolean) => void, toggle: () => void}} `set` marks the board on or off (the drawer's layout and
+ *   the page's class that shrinks the world to a corner); `toggle` opens the drawer as the board, turns the open
+ *   drawer into it, or closes it when it is the board
+ */
+function createBoard(ctx, ui, refresh) {
+    const set = (/** @type {boolean} */ on) => {
+        ui.setBoard(on);
+        ctx.deps.doc.documentElement.classList.toggle(BOARD_CLASS, on);
+    };
+    return {
+        set,
+        toggle() {
+            const open = ctx.drawers.state() === INSIGHTS_DRAWER;
+            if (open && ui.board()) {
+                ctx.drawers.dispatch({ type: 'close', drawer: INSIGHTS_DRAWER });
+                return;
+            }
+            set(true);
+            if (open) {
+                refresh();
+            } else {
+                ctx.drawers.dispatch({ type: 'open', drawer: INSIGHTS_DRAWER });
+            }
+        },
+    };
+}
+
+/**
  * @param {{deps: Record<string, any>, data: ReturnType<typeof createInsightsData>,
  *   scenes: ReturnType<typeof createSceneCounters>}} source the page's deps and what the drawer reads
  * @returns {() => Record<string, any>} builds the drawer's view: each tab's part, from the data as it is now
@@ -115,39 +149,62 @@ function exportParts({ deps, toast }, view, data) {
 }
 
 /**
+ * @param {Record<string, any>} ctx the interface's shared parts
+ * @param {{data: ReturnType<typeof createInsightsData>, view: () => Record<string, any>,
+ *   charts: () => {sync: () => void}}} later what is built after the drawer, read when a click comes
+ * @returns {NonNullable<Parameters<typeof mountInsights>[2]>} the drawer's options: the tab it opens on, what a tab
+ *   change saves, and what a click on a row or an export button does
+ */
+function drawerOptions(ctx, later) {
+    const { deps } = ctx;
+    return {
+        tab: ctx.prefs.insightsTab,
+        hooks: {
+            onPick: (target) => deps.followTarget?.(target),
+            onExport: (what) => performExport(what, exportParts(ctx, later.view, later.data)),
+        },
+        onTab(id) {
+            ctx.prefs.insightsTab = id;
+            ctx.persist();
+            later.charts().sync();
+        },
+    };
+}
+
+/**
  * @param {Record<string, any>} ctx the interface's shared parts: `deps`, `prefs`, `drawers`, `toast`, `chartData` and
  *   `persist`
  * @returns {{open: () => void, close: () => void, update: () => void, noteReady: (ready: Record<string, any>) => void,
  *   noteStats: (stats: Record<string, any>) => void, noteEffect: (effect: any) => void,
- *   noteFrame: (nowMs: number) => void, ui: ReturnType<typeof mountInsights>, view: () => Record<string, any>}} `open`
- *   and `close` follow the drawer; `update` refreshes the shown tab; the `note` functions feed it what the app hears
+ *   noteFrame: (nowMs: number) => void, toggleBoard: () => void, ui: ReturnType<typeof mountInsights>,
+ *   view: () => Record<string, any>}} `open` and `close` follow the drawer; `toggleBoard` opens it as the full-screen board,
+ *   or closes it when it is one; `update` refreshes the shown tab; the `note` functions feed it what the app hears
  */
 export function mountInsightsPart(ctx) {
     const { deps } = ctx;
     const data = createInsightsData();
     const scenes = createSceneCounters();
-    const ui = mountInsights(deps.doc, ctx.drawers.body(INSIGHTS_DRAWER), {
-        tab: ctx.prefs.insightsTab,
-        hooks: { onPick: (target) => deps.followTarget?.(target), onExport: (what) => exportNow(what) },
-        onTab(id) {
-            ctx.prefs.insightsTab = id;
-            ctx.persist();
-            charts.sync();
-        },
-    });
+    const later = { data, view: () => view(), charts: () => charts };
+    const ui = mountInsights(deps.doc, ctx.drawers.body(INSIGHTS_DRAWER), drawerOptions(ctx, later));
     const charts = createWorldCharts(ctx, () => ui);
     const view = createView({ deps, data, scenes });
-    /** @param {string} what */
-    const exportNow = (what) => performExport(what, exportParts(ctx, view, data));
+    const refresh = () => {
+        ui.update(view());
+        charts.sync();
+    };
+    const board = createBoard(ctx, ui, refresh);
     return {
         ui,
         view,
         open() {
             appLog('info', 'InsightsOpened', { tab: ui.tab(), board: ui.board() });
-            ui.update(view());
-            charts.sync();
+            refresh();
         },
-        close: charts.close,
+        close() {
+            board.set(false);
+            charts.close();
+        },
+        toggleBoard: board.toggle,
         update() {
             ui.update(view());
             charts.update();

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createInterpolated } from '../../js/app/interpolate.js';
-import { INSIGHTS_DRAWER } from '../../js/app/interface-insights.js';
+import { BOARD_CLASS, INSIGHTS_DRAWER } from '../../js/app/interface-insights.js';
 import { PREFS_KEY } from '../../js/app/prefs.js';
 import { byClass } from './helpers/fake-dom.js';
 import { FakeUPlot, ready, setup } from './helpers/interface-setup.js';
@@ -283,5 +283,60 @@ describe('the insights drawer in the interface', () => {
         const { ui } = setup({ deps: { getAgents: () => agents } });
         ui.listeners.onReady(ready);
         expect(() => ui.tick(100)).not.toThrow();
+    });
+
+    it('opens the board with every tab filled, the world small in a corner, and closes it with a second press', async () => {
+        FakeUPlot.made.length = 0;
+        const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+        const { ui, elements, doc } = setup();
+        ui.listeners.onReady(ready);
+        ui.listeners.onStats({ tick: 5, ticksPerSecond: 60, population: 9 });
+        ui.hooks.toggleBoard();
+        await Promise.resolve();
+        await Promise.resolve();
+        const drawer = byClass(elements.drawers, 'drawer-insights')[0];
+        expect(drawer.classList.contains('open')).toBe(true);
+        expect(drawer.classList.contains('insights-board')).toBe(true);
+        expect(doc.documentElement.classList.contains(BOARD_CLASS)).toBe(true);
+        expect(byClass(elements.drawers, 'insights-panel').map((p) => p.hidden)).toEqual([
+            false,
+            false,
+            false,
+            false,
+            false,
+        ]);
+        expect(readings(elements).population).toBe('9');
+        expect(FakeUPlot.made).toHaveLength(5);
+        expect(info).toHaveBeenCalledWith({ level: 'info', event: 'InsightsOpened', tab: 'world', board: true });
+        ui.hooks.toggleBoard();
+        expect(drawer.classList.contains('open')).toBe(false);
+        expect(drawer.classList.contains('insights-board')).toBe(false);
+        expect(doc.documentElement.classList.contains(BOARD_CLASS)).toBe(false);
+        expect(FakeUPlot.made.every((u) => u.destroyed)).toBe(true);
+    });
+
+    it('turns the open drawer into the board, and leaves the board when the drawer closes any other way', async () => {
+        const { ui, elements, doc } = setup();
+        ui.listeners.onReady(ready);
+        await open(ui);
+        ui.hooks.toggleBoard();
+        expect(byClass(elements.drawers, 'drawer-insights')[0].classList.contains('insights-board')).toBe(true);
+        ui.hooks.toggleDrawer(INSIGHTS_DRAWER);
+        expect(doc.documentElement.classList.contains(BOARD_CLASS)).toBe(false);
+        expect(ui.hooks.closeDrawer()).toBe(false);
+    });
+
+    it('starts as the board when ?board=1 asked for it', () => {
+        const { elements, doc } = setup({ deps: { board: true } });
+        expect(byClass(elements.drawers, 'drawer-insights')[0].classList.contains('open')).toBe(true);
+        expect(doc.documentElement.classList.contains(BOARD_CLASS)).toBe(true);
+    });
+
+    it('sizes the HUD for the whole page while the canvas is a corner', () => {
+        const { ui, doc, width } = setup();
+        width.value = 480;
+        doc.documentElement.clientWidth = 3840;
+        ui.resize();
+        expect(doc.documentElement.style.fontSize).toBe('32px');
     });
 });

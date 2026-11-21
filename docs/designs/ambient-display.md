@@ -291,7 +291,7 @@ Both stay inside budget with the reel's ring running; a clip is encoded off the 
 | T24 | Add `js/app/scene-counters.js` and the Scenes tab, with click-to-follow; tests for each counter from fixture effect records (built)                                                       | [judgement]  | T23        |
 | T25 | Add the Families and Records tabs with click-to-follow; tests (built)                                                                                                                     | [judgement]  | T23        |
 | T26 | Add the Export tab (CSV and the replay command); tests (built)                                                                                                                            | [mechanical] | T23        |
-| T27 | Add the full-screen board (`Shift+D`, `?board=1`); tests                                                                                                                                  | [judgement]  | T24, T25   |
+| T27 | Add the full-screen board (`Shift+D`, `?board=1`); tests (built)                                                                                                                          | [judgement]  | T24, T25   |
 | T28 | Conformance review of Phase 5 with `perf:browser` (drawer open)                                                                                                                           | [judgement]  | T26, T27   |
 
 ### Phase 6 - The scene reel

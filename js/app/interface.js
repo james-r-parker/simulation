@@ -86,6 +86,7 @@ export function shouldOpenInspector(drawer, id, hudShown) {
  *   pixels on the canvas
  * @property {boolean} speedPinned whether `?speed=` fixed the speed, so a first visit does not start at x2
  * @property {boolean} tv whether `?tv=1` started TV mode
+ * @property {boolean} [board] whether `?board=1` started with the insights board up
  * @property {'auto' | number | null} [dim] the `?dim` setting, null or absent to use the `dim` preference
  * @property {boolean} audioOn whether `?audio=1` started with audio on
  * @property {(new () => any) | null} AudioContext the Web Audio constructor
@@ -228,6 +229,9 @@ function build(deps) {
         persist: () => persist(ctx),
     };
     mountParts(ctx);
+    if (deps.board) {
+        ctx.insights.toggleBoard();
+    }
     return ctx;
 }
 
@@ -237,7 +241,9 @@ function build(deps) {
  * @returns {void}
  */
 function applyScale({ deps, prefs, help }) {
-    deps.doc.documentElement.style.fontSize = `${uiScaleFor(deps.getWidth(), prefs.uiScale)}px`;
+    const { documentElement } = deps.doc;
+    // The board shrinks the canvas to a corner; the HUD keeps the size of the whole page.
+    documentElement.style.fontSize = `${uiScaleFor(Math.max(deps.getWidth(), documentElement.clientWidth ?? 0), prefs.uiScale)}px`;
     help?.setScale(prefs.uiScale);
 }
 
@@ -288,6 +294,7 @@ function createHooks(ctx) {
     const takeFailed = createFailedBundleTaker(deps.getFailedBundle);
     return {
         toggleDrawer: (name) => void ctx.drawers.dispatch({ type: 'toggle', drawer: name }),
+        toggleBoard: () => ctx.insights.toggleBoard(),
         closeDrawer() {
             const wasOpen = ctx.drawers.state() !== null;
             ctx.drawers.dispatch({ type: 'closeAll' });

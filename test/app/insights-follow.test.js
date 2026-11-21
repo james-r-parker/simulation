@@ -64,11 +64,13 @@ describe('viewDeps', () => {
         const agents = { count: 0 };
         const page = {
             ...a,
+            params: { board: false },
             loop: { agents: () => agents },
             deps: { refs: { player: { flee: { pursuits: { count: 2 } } } } },
         };
         const deps = viewDeps(/** @type {any} */ (page));
         expect(deps.getCamera()).toBe(a.camera);
+        expect(deps.board).toBe(false);
         expect(deps.getAgents()).toBe(agents);
         expect(deps.getFollowView()).toEqual({ agents, player: page.deps.refs.player });
         expect(deps.getPursuits()).toEqual({ count: 2 });
