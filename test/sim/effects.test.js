@@ -11,7 +11,7 @@ describe('the default registry', () => {
         expect(Object.values(EFFECT)).toEqual(Object.values(EFFECT_INDEX));
     });
 
-    it('reads a lane at its base for an effect-free lane and opens every gate of a fresh slot', () => {
+    it('leaves every scaled lane at its base and every gate open for a calm body, with every level at 0', () => {
         const world = smallWorld({ maxAgents: 4 });
         const slot = allocBody(world, 0);
         world.temperature[slot] = 50;
@@ -22,6 +22,9 @@ describe('the default registry', () => {
         expect(liveOf(world, slot, 'visionRange')).toBe(7);
         for (const gate of Object.values(GATE)) {
             expect(gateOpen(world, slot, gate)).toBe(true);
+        }
+        for (const lane of new Set(EFFECTS.flatMap((effect) => effect.scales.map((scale) => scale.lane)))) {
+            expect(liveOf(world, slot, lane), `${lane} of a calm body`).toBe(world.lanes[lane][slot]);
         }
     });
 

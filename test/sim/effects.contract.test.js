@@ -146,3 +146,17 @@ describe('createEffects', () => {
         expect(world.effectStacks).toEqual([]);
     });
 });
+
+describe('factorOf and effectFactor', () => {
+    it('give the product of the factors on a lane, and 1 for a lane or an effect that scales nothing', () => {
+        const world = fixtureWorld();
+        world.fixture.chill[0] = 1;
+        world.fixture.fat[0] = 0.5;
+        expect(SYSTEM.factorOf(world, 0, 'maxThrust')).toBe(0.5 * 0.75);
+        expect(SYSTEM.factorOf(world, 0, 'sprintCost')).toBe(1);
+        expect(SYSTEM.effectFactor(world, 0, 0, 'maxThrust')).toBe(0.5);
+        expect(SYSTEM.effectFactor(world, 0, 1, 'maxThrust')).toBe(0.75);
+        expect(SYSTEM.effectFactor(world, 0, 0, 'maxTurn')).toBe(1);
+        expect(SYSTEM.effectFactor(world, 0, 0, 'sprintCost')).toBe(1);
+    });
+});
