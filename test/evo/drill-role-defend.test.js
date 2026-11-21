@@ -11,12 +11,11 @@ import {
     defendPlan,
     defenderReference,
     lostReason,
-    noteDefence,
 } from '../../js/evo/drill-role-defend.js';
 import { ROLE_ARENA } from '../../js/evo/drill-role-staging.js';
 import { drillSubject, randomBrains } from '../../js/evo/drill.js';
 import { playTrial } from '../../js/evo/memory-probe-run.js';
-import { playDefence } from '../../js/evo/role-scenes-defence.js';
+import { noteMeeting, playDefence } from '../../js/evo/role-scenes-defence.js';
 
 /** The shove on and the damping the row's search found, so the defence is reachable (`--search` on `defender:predator`). */
 const REACHABLE = { defenderRepelEnergy: 40, defenderRepelImpulse: 4, damping: 0.7125 };
@@ -91,8 +90,8 @@ describe('the defend-caller drill', () => {
     });
 
     it('is lost by a defender that touches the hunter too late, and by one that never arrives', () => {
-        expect(lostReason({ touch: null, shove: null, kill: 27 })).toBe('never-reached');
-        expect(lostReason({ touch: 30, shove: null, kill: 27 })).toBe('late');
+        expect(lostReason({ interceptTick: null, repelTick: null, killTick: 27 })).toBe('never-reached');
+        expect(lostReason({ interceptTick: 30, repelTick: null, killTick: 27 })).toBe('late');
     });
 
     it('counts a caller the hunter does not kill as a win, whoever saved it', () => {
@@ -122,7 +121,7 @@ describe('the defend-caller drill', () => {
     });
 });
 
-describe('noteDefence', () => {
+describe('noteMeeting, the defender and the hunter in the drill', () => {
     /**
      * @param {{holds: boolean, shoveOn: boolean, facing: number}} at whether the defender holds BITE, whether the shove is on
      *   and its heading (0 faces the hunter)
@@ -136,18 +135,18 @@ describe('noteDefence', () => {
             { spec: SPEC.DEFENDER, x: x + 20, y, angle: Math.PI + facing },
         ]);
         world.outputs[2 * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = holds ? 1 : 0;
-        const ticks = { touch: null, shove: null, kill: null };
-        noteDefence(ticks, world, { n: 4, shoveOn });
+        const ticks = { interceptTick: null, repelTick: null };
+        noteMeeting(ticks, world, { n: 4, shove: shoveOn });
         return ticks;
     }
 
     it('notes the touch and, with the shove on, a defender that holds BITE with the hunter in its jaws', () => {
-        expect(meet({ holds: true, shoveOn: true, facing: 0 })).toEqual({ touch: 4, shove: 4, kill: null });
+        expect(meet({ holds: true, shoveOn: true, facing: 0 })).toEqual({ interceptTick: 4, repelTick: 4 });
     });
 
     it('notes the touch but no shove when the shove is off, BITE is not held or the hunter is not in the jaws', () => {
-        expect(meet({ holds: true, shoveOn: false, facing: 0 })).toEqual({ touch: 4, shove: null, kill: null });
-        expect(meet({ holds: false, shoveOn: true, facing: 0 })).toEqual({ touch: 4, shove: null, kill: null });
-        expect(meet({ holds: true, shoveOn: true, facing: Math.PI })).toEqual({ touch: 4, shove: null, kill: null });
+        expect(meet({ holds: true, shoveOn: false, facing: 0 })).toEqual({ interceptTick: 4, repelTick: null });
+        expect(meet({ holds: false, shoveOn: true, facing: 0 })).toEqual({ interceptTick: 4, repelTick: null });
+        expect(meet({ holds: true, shoveOn: true, facing: Math.PI })).toEqual({ interceptTick: 4, repelTick: null });
     });
 });
