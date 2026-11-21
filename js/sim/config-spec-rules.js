@@ -27,6 +27,7 @@ export const SPECIALISATION_FIELDS = [
     'maxEnergyMultiplier',
     'rearVisionShare',
     'sprintDrainMultiplier',
+    'body',
 ];
 
 /** @type {Record<string, Rule>} the rule of every field after `index` */
@@ -39,10 +40,11 @@ Object.assign(SPEC_FIELD_RULES, {
     splitMinEnergyMultiplier: num(0.25, 2),
     maxEnergyMultiplier: num(0.25, 10),
     rearVisionShare: num(0, 1),
+    body: { type: 'bodyMap' },
 });
 
-/** The default entry of every specialisation, in `SPECIALISATION_KEYS` order (frozen with `DEFAULTS`). */
-export const SPECIALISATION_DEFAULTS = {
+/** The per-field defaults of every specialisation, in `SPECIALISATION_KEYS` order, before `body` is added. */
+const FIELD_DEFAULTS = {
     // AGENT_CONFIGS maxRayDist; modifiers: SCOUT_ENERGY_COST_MULTIPLIER, DEFENDER_DAMAGE_REDUCTION, new
     forager: {
         index: 0,
@@ -140,3 +142,11 @@ export const SPECIALISATION_DEFAULTS = {
         sprintDrainMultiplier: 1, // fair-chase Phase 1: scales sprintDrain for this specialisation (read only with sprintStoreEnabled)
     },
 };
+
+/**
+ * The default entry of every specialisation, in `SPECIALISATION_KEYS` order (frozen with `DEFAULTS`). `body` is the last
+ * field and empty for all: a lane name to a multiplier of that lane for the specialisation (`bodyProblem`, body-lanes.js).
+ */
+export const SPECIALISATION_DEFAULTS = Object.fromEntries(
+    Object.entries(FIELD_DEFAULTS).map(([name, fields]) => [name, { ...fields, body: {} }]),
+);

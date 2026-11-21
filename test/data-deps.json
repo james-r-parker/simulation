@@ -447,6 +447,9 @@
         "scripts/ship.sh",
         "test"
     ],
+    "test/sim/body-lanes.test.js": [
+        "evals/decisions/body-genes/settings-inventory.md"
+    ],
     "test/sim/event-offsets.test.js": [
         "js"
     ],

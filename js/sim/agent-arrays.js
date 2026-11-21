@@ -3,6 +3,8 @@
 // field lists read this one list, so a new array decides in its own entry whether it is hashed, and a contract test
 // (test/sim/world-state.contract.test.js) fails one that decides nothing.
 
+import { LANES, laneRowName } from './body-lanes.js';
+
 /** Floats per slot in `world.heard`: alarm loudness, `ux`, `uy`, hunt loudness, `ux`, `uy`. */
 export const HEARD_STRIDE = 6;
 
@@ -213,6 +215,12 @@ export const UNHASHED_ROWS = Object.freeze({
             'maturedKids',
             'carcassHeld',
         ].map((name) => [name, HEADER_SAYS]),
+    ),
+    ...Object.fromEntries(
+        LANES.map((lane) => [
+            laneRowName(lane.name),
+            'derived from `weights` and the spec by `applyGenes` (traits.js)',
+        ]),
     ),
     restTimer:
         'not hashed today: it holds a hunter at thrust 0 after a kill (`predatorRestTicks`, on by default), and the effect reaches the hashed `vx` and `vy` in the same tick',

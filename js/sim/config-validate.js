@@ -5,6 +5,7 @@ import { DISEASE_RULES } from './config-disease.js';
 import { checkHerds, HERD_RULES } from './config-herds.js';
 import { brainLayout } from './brain-layout.js';
 import { BOOL, FEATURE_RULES, UNIT, int, num, positive } from './config-rules.js';
+import { bodyProblem } from './body-lanes.js';
 import { SPECIALISATION_FIELDS, SPECIALISATION_KEYS, SPEC_FIELD_RULES } from './config-spec-rules.js';
 
 /** @typedef {import('./config-rules.js').Rule} Rule */
@@ -285,6 +286,18 @@ function checkSeasons(seasons) {
 }
 
 /**
+ * @param {string} path the key path of a spec's `body`
+ * @param {unknown} body the `body` value
+ * @returns {void}
+ */
+function checkBodyMap(path, body) {
+    const problem = bodyProblem(body);
+    if (problem !== null) {
+        fail(path, body, problem);
+    }
+}
+
+/**
  * @param {unknown} specialisations the `specialisations` value
  * @returns {void}
  */
@@ -299,7 +312,11 @@ function checkSpecialisations(specialisations) {
             fail(`${path}.index`, entry.index, `${order} (fixed by key order)`);
         }
         for (const field of SPECIALISATION_FIELDS.slice(1)) {
-            checkScalar(`${path}.${field}`, entry[field], SPEC_FIELD_RULES[field]);
+            if (SPEC_FIELD_RULES[field].type === 'bodyMap') {
+                checkBodyMap(`${path}.${field}`, entry[field]);
+            } else {
+                checkScalar(`${path}.${field}`, entry[field], SPEC_FIELD_RULES[field]);
+            }
         }
     });
 }

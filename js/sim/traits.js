@@ -4,6 +4,7 @@
 import { TRAIT_INDEX } from './brain-layout.js';
 import { detSigmoid, detTanh } from './det-math.js';
 import { resetFastOut } from './hebbian.js';
+import { writeLaneBases } from './lane-state.js';
 import { resetReward } from './reward.js';
 
 /** A trait gene moves its trait by at most this fraction of the default: 0.7 to 1.3. */
@@ -85,6 +86,7 @@ export function applyGenes(world, slot) {
     world.vision[slot] = traitValue(weights[genes + TRAIT_INDEX.VISION]);
     world.baseSize[slot] = config.baseSize * traitValue(weights[genes + TRAIT_INDEX.SIZE]);
     world.childShare[slot] = config.childEnergyShare * traitValue(weights[genes + TRAIT_INDEX.CHILD_SHARE]);
+    writeLaneBases(world, slot);
     if (config.hebbianRate > 0) {
         resetFastOut(world, slot);
     }
