@@ -34,6 +34,17 @@ import { capacityDetector } from './scene-capacity.js';
 import { edgeDetector } from './scene-edge.js';
 import { diseaseDetector } from './scene-disease.js';
 import { guardsDetector } from './scene-guards.js';
+import { guildsDetector } from './scene-guilds.js';
+import { kinDetector } from './scene-kin-proximity.js';
+import { familiesDetector } from './scene-families.js';
+import { divergenceDetector } from './scene-divergence.js';
+import { spendDetector } from './scene-spend.js';
+import { proofDetector } from './scene-proof.js';
+import { heritageDetector } from './scene-heritage.js';
+import { nicheDetector } from './scene-niche.js';
+import { mateDetector } from './scene-mate.js';
+import { styleDetector } from './style.js';
+import { compileDetectors, createStates } from './observer-detectors.js';
 
 /** @type {readonly import('./observer-detectors.js').Detector[]} */
 export const DETECTORS = Object.freeze([
@@ -45,6 +56,7 @@ export const DETECTORS = Object.freeze([
     biteDetector,
     strikeMissDetector,
     biteLifeDetector,
+    proofDetector,
     approachDetector,
     packLiftDetector,
     competenceDetector,
@@ -54,22 +66,42 @@ export const DETECTORS = Object.freeze([
     kinematicsDetector,
     budgetDetector,
     carcassDetector,
+    styleDetector,
+    guildsDetector,
     refugeOutcomeDetector,
+    heritageDetector,
+    nicheDetector,
+    mateDetector,
     terrainDetector,
     refugeDetector,
     reachDetector,
     basinDetector,
+    spendDetector,
     patchDetector,
     conditionDetector,
     eatDetector,
     seasonDetector,
     seasonMapDetector,
     balanceDetector,
+    familiesDetector,
+    divergenceDetector,
     guardsDetector,
     capacityDetector,
     edgeDetector,
+    kinDetector,
     scentDetector,
 ]);
 
 /** The detectors a lean observer (the policy core, lean-observer.md) builds and feeds. */
 export const LEAN_DETECTORS = Object.freeze(DETECTORS.filter((detector) => detector.lean === true));
+
+/**
+ * The observer's scene layer: the compiled detector list and every detector's state.
+ * @param {Readonly<Record<string, any>>} config the world's config
+ * @param {{runTicks?: number, lean?: boolean}} options the observer's options (a lean one builds `LEAN_DETECTORS`)
+ * @returns {{plan: import('./observer-detectors.js').Plan, scenes: Record<string, any>}} `observer.plan` and `observer.scenes`
+ */
+export function createSceneLayer(config, { runTicks = 0, lean = false }) {
+    const plan = compileDetectors(lean ? LEAN_DETECTORS : DETECTORS);
+    return { plan, scenes: createStates(plan, config, runTicks) };
+}

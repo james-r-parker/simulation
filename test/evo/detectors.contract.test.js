@@ -37,7 +37,8 @@ describe('DETECTORS', () => {
                 .filter((metric) => detector.modules.includes(METRICS[metric].module))
                 .sort();
             expect(keys).toEqual(entries);
-            expect(keys.length).toBeGreaterThan(0);
+            // A rule scene (proof, heritage, niche, mate) names no module: `ruleMetrics` merges its metrics.
+            expect(keys.length > 0, name).toBe(detector.modules.length > 0);
         },
     );
 

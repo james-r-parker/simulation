@@ -11,8 +11,10 @@ import { bodyPlanOf, roleSkillOf } from './descriptors.js';
 import { chanceIntake, deliberateIntake } from './fitness-v6-skill.js';
 import { SPEC_RADIX } from './hunter-table.js';
 import { none, ok } from './metrics-stats.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 
 const CELLS = 100;
+const CHECKPOINT_TICKS = 1000;
 
 /**
  * @returns {Record<string, any>} an empty scene: the cell counts, the rare lineages and those with a matured child
@@ -100,3 +102,28 @@ export function nicheMetrics(scene) {
     const reason = 'no rare-niche lineage followed to a next checkpoint after burn-in';
     return { 'eval.niche_replacement': scene.eligible > 0 ? ok(scene.replaced / scene.eligible) : none(reason) };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const nicheDetector = {
+    name: 'niche',
+    modules: [],
+    create: () => createNicheScene(),
+    onTick: (scene, world, observer) => {
+        const { maturityTicks } = world.config;
+        const { alive, ageTicks, genomeId } = world;
+        for (let slot = 0; slot < alive.length; slot++) {
+            if (
+                alive[slot] === 1 &&
+                maturityTicks > 0 &&
+                ageTicks[slot] === maturityTicks &&
+                observer.genomeId[slot] === genomeId[slot]
+            ) {
+                noteNicheMatured(scene, observer, world, slot);
+            }
+        }
+        if (world.tick >= BURN_IN_TICKS && world.tick % CHECKPOINT_TICKS === 0) {
+            checkpointNiche(scene, observer, world);
+        }
+    },
+    metrics: () => ({}),
+};

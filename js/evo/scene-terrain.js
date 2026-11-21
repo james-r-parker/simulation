@@ -157,8 +157,13 @@ export function terrainMetrics(scene) {
 export const terrainDetector = {
     name: 'terrain',
     modules: ['js/evo/scene-terrain.js'],
+    lean: true,
     every: GROUP_SAMPLE_TICKS,
     create: (config) => createTerrainScene(config),
-    onTick: (scene, world, observer) => sampleTerrain(scene, observer, world),
+    onTick: (scene, world, observer) => {
+        if (!observer.lean) {
+            sampleTerrain(scene, observer, world);
+        }
+    },
     metrics: (scene) => terrainMetrics(scene),
 };

@@ -10,7 +10,7 @@ import { hashWorld } from '../../js/sim/world-hash.js';
 import { FOOD_KIND } from '../../js/sim/carcass.js';
 import { DEATH_CAUSE, EVENT_TYPE, clearEvents, pushEvent } from '../../js/sim/events.js';
 import { createObserver } from '../../js/evo/observer.js';
-import { observeScenes } from '../../js/evo/observer-scenes.js';
+import { tickDetectors } from '../../js/evo/observer-detectors.js';
 import { createRng, fork } from '../../js/sim/rng.js';
 import { loose, resultOf } from './helpers/metric-registry.js';
 
@@ -96,7 +96,7 @@ describe('flora diet detectors', () => {
         const w = smallWorld();
         const observer = createObserver(w.config, fork(createRng(w.config.seed), 'eval'));
         w.floraIntake[0] = 100;
-        observeScenes(observer, w);
+        tickDetectors(observer.plan, observer, w);
         expect(observer.scenes.flora.mark[0]).toBe(100);
     });
     it('reports exact poison death and sick agent-tick shares once per observed tick', () => {
