@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { REFLEX_CASES, caseNamed, casesFor } from '../../js/evo/reflex-cases.js';
 
 describe('REFLEX_CASES', () => {
-    it('lists the six cases, foragers first, frozen', () => {
+    it('lists the twelve cases, the foragers, predators and roles in turn, frozen', () => {
         expect(REFLEX_CASES.map((c) => c.name)).toEqual([
             'flee-threat',
             'approach-food',
@@ -10,6 +10,12 @@ describe('REFLEX_CASES', () => {
             'avoid-obstacle',
             'approach-prey',
             'bite-discrimination',
+            'sprint-on-prey',
+            'hold-the-bite',
+            'call-on-threat',
+            'turn-to-alarm',
+            'flee-on-alarm',
+            'clear-the-herd',
         ]);
         expect(Object.isFrozen(REFLEX_CASES)).toBe(true);
     });
@@ -17,7 +23,7 @@ describe('REFLEX_CASES', () => {
     it('names a scene, a spec, a plan and a check for every case', () => {
         for (const c of REFLEX_CASES) {
             expect(c.scene.length).toBeGreaterThan(0);
-            expect([0, 1]).toContain(c.spec);
+            expect([0, 1, 3, 4]).toContain(c.spec);
             expect(typeof c.plan).toBe('function');
             expect(typeof c.check).toBe('function');
         }
@@ -25,10 +31,12 @@ describe('REFLEX_CASES', () => {
 });
 
 describe('casesFor', () => {
-    it('gives foragers four cases and predators two, and any other specialisation none', () => {
-        expect(casesFor(0)).toHaveLength(4);
-        expect(casesFor(1)).toHaveLength(2);
+    it('gives foragers six cases, predators four, the scout and the defender one, and the reproducer none', () => {
+        expect(casesFor(0)).toHaveLength(6);
+        expect(casesFor(1)).toHaveLength(4);
         expect(casesFor(2)).toEqual([]);
+        expect(casesFor(3)).toHaveLength(1);
+        expect(casesFor(4)).toHaveLength(1);
     });
 });
 

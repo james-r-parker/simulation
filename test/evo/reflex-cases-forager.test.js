@@ -12,7 +12,13 @@ const byName = (/** @type {string} */ name) => {
     return found;
 };
 const plan = (/** @type {string} */ name, seed = 1) => byName(name).plan(fork(createRng(seed), `reflex:${name}`), VIEW);
-const out = (/** @type {number} */ thrust, /** @type {number} */ turn) => ({ thrust, turn, sprint: 0, bite: 0 });
+const out = (/** @type {number} */ thrust, /** @type {number} */ turn) => ({
+    thrust,
+    turn,
+    sprint: 0,
+    bite: 0,
+    alarm: 0,
+});
 
 /**
  * @param {any} stage a staged tick

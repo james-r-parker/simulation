@@ -52,14 +52,44 @@ function withGenes(agents, config) {
 }
 
 /**
- * @param {import('./pool-discrimination-stage.js').Stage} stage a staged tick
+ * Moves the world's one herd animal to a staged place (the world was built with `herdCount` and `herdSize` 1).
+ * @param {Record<string, any>} world the staged world
+ * @param {{x: number, y: number} | undefined} herd where the animal stands; undefined leaves the world without one
+ * @returns {void}
+ */
+function placeHerd(world, herd) {
+    if (herd !== undefined) {
+        world.herdX[0] = herd.x;
+        world.herdY[0] = herd.y;
+    }
+}
+
+/**
+ * Writes a heard alarm into the subject's `heard` row, where the signal phase leaves it for `senseAll` to read.
+ * @param {Record<string, any>} world the staged world
+ * @param {import('./reflex-stage.js').Heard | undefined} heard the call, if one is heard
+ * @returns {void}
+ */
+function hearAlarm(world, heard) {
+    if (heard !== undefined) {
+        world.heard[0] = heard.loudness;
+        world.heard[1] = heard.ux;
+        world.heard[2] = heard.uy;
+    }
+}
+
+/**
+ * @param {import('./reflex-stage.js').StagedTick & {seed: number}} stage a staged tick with the world seed
  * @param {Record<string, any>} config the config overrides the arena is built from
  * @returns {{inputs: Float32Array, rays: Float32Array}} the subject's (slot 0) raw `inputs` row and its rows of the
  *   `RAY_LANES` for that tick, as `sense` writes them
  */
 function senseTick(stage, config) {
     const agents = /** @type {any} */ (withGenes(stage.agents, config));
-    const { world } = stageWorld({ ...stage, agents, config: arenaConfig(config) });
+    const herd = stage.herd === undefined ? {} : { herdCount: 1, herdSize: 1, herdDungZoneMax: 0 };
+    const { world } = stageWorld({ ...stage, agents, config: arenaConfig({ ...config, ...herd }) });
+    placeHerd(world, stage.herd);
+    hearAlarm(world, stage.heard);
     buildHash(world.hash, world);
     senseAll(world, world.hash);
     const { rayCount } = world.config;

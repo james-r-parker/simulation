@@ -129,7 +129,7 @@ describe('evalReflex', () => {
         expect(records).toHaveLength(failed);
         expect(records[0]).toMatchObject({ e: 'ReflexCase', case: 'flee-threat', genomeId: 2, kind: 'threat' });
         expect(records[0].tick).toBeGreaterThanOrEqual(3);
-        expect(Object.keys(records[0].outputs)).toEqual(['thrust', 'turn', 'sprint', 'bite']);
+        expect(Object.keys(records[0].outputs)).toEqual(['thrust', 'turn', 'sprint', 'bite', 'alarm']);
         expect(new Set(records.map((r) => r.trial)).size).toBe(records.length);
     });
 

@@ -139,8 +139,17 @@ describe('reflexRow', () => {
 
 describe('caseNamesFor', () => {
     it('names the cases a specialisation faces', () => {
-        expect(caseNamesFor(0)).toEqual(['flee-threat', 'approach-food', 'pick-safe-food', 'avoid-obstacle']);
-        expect(caseNamesFor(1)).toEqual(['approach-prey', 'bite-discrimination']);
-        expect(caseNamesFor(3)).toEqual([]);
+        expect(caseNamesFor(0)).toEqual([
+            'flee-threat',
+            'approach-food',
+            'pick-safe-food',
+            'avoid-obstacle',
+            'flee-on-alarm',
+            'clear-the-herd',
+        ]);
+        expect(caseNamesFor(1)).toEqual(['approach-prey', 'bite-discrimination', 'sprint-on-prey', 'hold-the-bite']);
+        expect(caseNamesFor(2)).toEqual([]);
+        expect(caseNamesFor(3)).toEqual(['call-on-threat']);
+        expect(caseNamesFor(4)).toEqual(['turn-to-alarm']);
     });
 });
