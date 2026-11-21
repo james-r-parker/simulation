@@ -25,6 +25,7 @@ import { senseAll } from './sensors.js';
 import { stepCover } from './cover.js';
 import { ageSmoke } from './smoke.js';
 import { buildHash } from './spatial-hash.js';
+import { stepSprintStore } from './sprint-store.js';
 import { stepHerds } from './herd-motion.js';
 import { grazeHerds } from './herd-graze.js';
 import { ageAndReproduceHerds } from './herd-life.js';
@@ -82,6 +83,9 @@ function signal(world) {
  * @returns {void}
  */
 function physics(world) {
+    if (world.sprintStore !== undefined) {
+        stepSprintStore(world.sprintStore, world);
+    }
     actAll(world);
     integrate(world);
     buildHash(world.hash, world);

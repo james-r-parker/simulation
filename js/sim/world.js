@@ -23,6 +23,8 @@ import { rayReachTable } from './ray-reach.js';
 import { terrainRockCount } from './terrain.js';
 import { createObserverScratch } from './observer-scratch.js';
 import { attachWasm } from './wasm-arena.js';
+import { allocSprintState, resetSprintSlot } from './sprint-store.js';
+import { specTable } from './spec-params.js';
 
 /** Cap, in ticks, on `ateTimer` and `bittenTimer`. */
 export const TIMER_CAP = 30;
@@ -138,6 +140,7 @@ function allocAgentArrays(world, layout) {
         n,
     );
     createMeritViews(world);
+    allocSprintState(world);
     allocLedgerState(world);
     allocCarcassLoss(world);
     allocDiseaseState(world);
@@ -234,20 +237,6 @@ function allocPatches(world) {
     allocRows(world, singles(Float32Array, ['patchX', 'patchY']), floraPatchMax);
     allocRows(world, singles(Float64Array, ['patchStock', 'patchReserved']), floraPatchMax);
     allocateFlora(world);
-}
-
-/**
- * @param {Readonly<Record<string, any>>} config the validated config
- * @param {string} field a numeric field of each specialisation entry
- * @returns {Float64Array} that field of each specialisation, indexed by its `index`
- */
-function specTable(config, field) {
-    const specs = Object.values(config.specialisations);
-    const table = new Float64Array(Math.max(...specs.map((s) => s.index)) + 1);
-    for (const s of specs) {
-        table[s.index] = s[field];
-    }
-    return table;
 }
 
 /**
@@ -390,6 +379,9 @@ export function allocAgent(world) {
             world.biteSkipParent[slot] = 0;
             world.thrustSkipParent[slot] = 0;
             resetMeritSlot(world, slot);
+            if (world.sprintStore !== undefined) {
+                resetSprintSlot(world.sprintStore, world.sprintFactor, slot);
+            }
             return slot;
         }
     }

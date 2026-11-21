@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
-import { specParams } from '../../js/sim/spec-params.js';
+import { specParams, specTable } from '../../js/sim/spec-params.js';
 
 describe('specParams', () => {
     it('returns the entry whose index matches', () => {
@@ -11,5 +11,11 @@ describe('specParams', () => {
 
     it('throws for an unknown index', () => {
         expect(() => specParams(createConfig({}), 9)).toThrow(/no specialisation has index 9/);
+    });
+});
+
+describe('specTable', () => {
+    it('holds a field of each specialisation at its index', () => {
+        expect([...specTable(createConfig({}), 'sprintBoost')]).toEqual([1, 1.6, 1, 1, 1]);
     });
 });

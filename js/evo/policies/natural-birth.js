@@ -3,6 +3,7 @@
 
 import { crossNeurons } from '../../evo/crossover.js';
 import { mutateSigma, mutateWeights } from '../../evo/mutation.js';
+import { knockOutAndLog } from '../../evo/unit-knockout.js';
 import { decaySilentInputs } from '../../evo/weight-decay.js';
 import { applyHunterReflex } from '../../evo/instinct.js';
 import { brainLayout } from '../../sim/brain-layout.js';
@@ -57,11 +58,12 @@ export function shareBirth(observer, birth) {
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
+ * @param {import('../../sim/log.js').SimLog} [log] receives `UnitKnockedOut` when a birth knocks a unit
  * @returns {{sigma: Float32Array, fatherSigma: Float32Array, mutation: {traitStart: number, rate: number}, onMate: Function, childBrain: Function}}
  *   the step sizes (per slot, and per mother for the coming child),
  *   `mutation` (the options every `mutateWeights` call takes) and the two hooks that use them
  */
-export function createBirth(config) {
+export function createBirth(config, log) {
     const sigma = new Float32Array(config.maxAgents);
     const fatherSigma = new Float32Array(config.maxAgents);
     const layout0 = brainLayout(config);
@@ -108,6 +110,7 @@ export function createBirth(config) {
         }
         applyBirthReflex(world, { child, mother, row });
         mutateWeights(row, childSigma, rng, mutation);
+        knockOutAndLog(row, world, child, { rng, log, source: mate ? 'mate' : 'split' });
         if (config.weightDecay > 0) {
             decaySilentInputs(row, { layout, silent: world.inputActivity.rare, decay: config.weightDecay });
         }

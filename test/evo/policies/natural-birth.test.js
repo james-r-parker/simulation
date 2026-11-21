@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { BORN_CAUSE } from '../../../js/sim/events.js';
 import { GENE_OUTPUTS, OUTPUT_INDEX, inputOffsets } from '../../../js/sim/brain-layout.js';
-import { createRng } from '../../../js/sim/rng.js';
+import { createRng, nextFloat } from '../../../js/sim/rng.js';
+import { createSimLog } from '../../../js/sim/log.js';
+import { isKnockedOut, KNOCKOUT_LEAK_GENE } from '../../../js/sim/traits.js';
 import { mutateSigma, mutateWeights } from '../../../js/evo/mutation.js';
 import { createBirth } from '../../../js/evo/policies/natural-birth.js';
 import { smallWorld } from '../../sim/helpers/small-world.js';
@@ -222,5 +224,61 @@ describe('the hunter reflexes at birth', () => {
         expect(born({ over, mother: FORAGER, child: PREDATOR }).row).toEqual(
             born({ over: { instinctWeight: 0 }, mother: FORAGER, child: PREDATOR }).row,
         );
+    });
+});
+
+describe('birth unit knockout', () => {
+    it('knocks out one unit at unitKnockoutRate 1 and logs UnitKnockedOut', () => {
+        const records = /** @type {Record<string, any>[]} */ ([]);
+        const log = createSimLog((r) => records.push(r), { level: 'debug' });
+        const world = smallWorld({ unitKnockoutRate: 1, weightDecay: 0, mutationRate: 1e-9 });
+        const { layout } = world;
+        world.tick = 42;
+        world.alive[0] = 1;
+        world.genomeId[1] = 99;
+        const birth = createBirth(world.config, log);
+        birth.sigma[0] = 0.05;
+        birth.childBrain(world, 1, 0, { cause: BORN_CAUSE.SPLIT, rng: createRng(7) });
+        const row = world.weights.subarray(layout.weightCount, 2 * layout.weightCount);
+        const knocked = Array.from(row.subarray(layout.leakStart)).filter(isKnockedOut);
+        expect(knocked).toHaveLength(1);
+        expect(records.filter((r) => r.event === 'UnitKnockedOut')).toEqual([
+            expect.objectContaining({ tick: 42, slot: 1, genomeId: 99, source: 'split' }),
+        ]);
+    });
+
+    it('at unitKnockoutRate 0 leaves child row and RNG stream identical to no knockout', () => {
+        const world = smallWorld({ unitKnockoutRate: 0, weightDecay: 0 });
+        const { layout } = world;
+        const birth = createBirth(world.config);
+        birth.sigma[0] = 0.05;
+        const rng = createRng(11);
+        birth.childBrain(world, 1, 0, { cause: BORN_CAUSE.SPLIT, rng });
+
+        const refRng = createRng(11);
+        const refSigma = mutateSigma(Math.fround(0.05), layout.weightCount, refRng);
+        const refRow = new Float32Array(layout.weightCount);
+        mutateWeights(refRow, refSigma, refRng, { traitStart: layout.traitStart, rate: birth.mutation.rate });
+
+        const childRow = world.weights.subarray(layout.weightCount, 2 * layout.weightCount);
+        expect(childRow).toEqual(refRow);
+        expect(nextFloat(rng)).toBe(nextFloat(refRng));
+    });
+
+    it('passes a mother knocked unit to a mated child when crossover takes that neuron from her', () => {
+        const world = smallWorld({ unitKnockoutRate: 0, weightDecay: 0, mutationRate: 1e-9 });
+        const { layout } = world;
+        world.weights[layout.leakStart] = KNOCKOUT_LEAK_GENE;
+        world.fatherWeights.fill(0);
+        const birth = createBirth(world.config);
+        birth.sigma[0] = 0.05;
+        birth.fatherSigma[0] = 0.05;
+        for (let seed = 1; seed <= 20; seed++) {
+            birth.childBrain(world, 1, 0, { cause: BORN_CAUSE.MATE, rng: createRng(seed) });
+            if (isKnockedOut(world.weights[layout.weightCount + layout.leakStart])) {
+                return;
+            }
+        }
+        throw new Error('mother knocked unit never crossed to child');
     });
 });

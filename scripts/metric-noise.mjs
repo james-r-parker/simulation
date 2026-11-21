@@ -55,8 +55,9 @@ function updateTable(mode, targets, print) {
     const source = readFileSync(`${ROOT}evals/power/defaults-floor-on-E254.json`, 'utf8');
     validateEvidence(power, source);
     const report = withCurrentNames(JSON.parse(source));
+    const measured = targets.filter((target) => report.metrics[target.metric] !== undefined);
     const text = readFileSync(DOC, 'utf8');
-    const table = renderTable(targets, power.rows, report, METRICS);
+    const table = renderTable(measured, power.rows, report, METRICS);
     const next = replaceTable(text, table);
     if (mode === '--write') {
         writeFileSync(DOC, next);

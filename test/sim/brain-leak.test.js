@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { forwardAll } from '../../js/sim/brain.js';
 import { writeBodyInputs } from '../../js/sim/body-inputs.js';
 import { BODY_INPUT, OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
-import { applyGenes } from '../../js/sim/traits.js';
+import { applyGenes, KNOCKOUT_LEAK_GENE } from '../../js/sim/traits.js';
 import { createRng, nextGaussian } from '../../js/sim/rng.js';
 import { smallWorld } from './helpers/small-world.js';
 
@@ -47,13 +47,28 @@ describe('forwardAll with leaky hidden units', () => {
     it('derives its rates from the genes through applyGenes, and a unit with a low gene moves slowly', () => {
         const world = randomWorld({}, 8);
         const { layout } = world;
-        world.weights.fill(-40, layout.weightCount + layout.leakStart, 2 * layout.weightCount);
+        world.weights.fill(-7, layout.weightCount + layout.leakStart, 2 * layout.weightCount);
         applyGenes(world, 1);
         const old = Array.from(world.hidden.subarray(layout.hidden, 2 * layout.hidden));
         forwardAll(world);
         for (let j = 0; j < layout.hidden; j++) {
             expect(Math.abs(world.hidden[layout.hidden + j] - old[j])).toBeLessThanOrEqual(0.1);
         }
+    });
+
+    it('keeps a knocked unit at exactly 0 for 1000 ticks with nonzero inputs and hebbianRate 0.0001 while other units move', () => {
+        const world = randomWorld({ hebbianRate: 0.0001 }, 19);
+        const { layout } = world;
+        const H = layout.hidden;
+        world.hidden.fill(0, H, 2 * H);
+        world.weights[layout.weightCount + layout.leakStart] = KNOCKOUT_LEAK_GENE;
+        applyGenes(world, 1);
+        expect(world.leakRate[H]).toBe(0);
+        for (let tick = 0; tick < 1000; tick++) {
+            forwardAll(world);
+            expect(world.hidden[H]).toBe(0);
+        }
+        expect(Array.from(world.hidden.subarray(H + 1, 2 * H)).some((v) => Math.abs(v) > 0.01)).toBe(true);
     });
 
     it('keeps 95% of its old value at a leak rate of 0.05', () => {

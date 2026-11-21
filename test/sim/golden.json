@@ -44,6 +44,14 @@
       },
       "ticks": 5000,
       "worldHash": "e9b9da2c29deb250"
+    },
+    {
+      "name": "sprint-store",
+      "overrides": {
+        "sprintStoreEnabled": true
+      },
+      "ticks": 2000,
+      "worldHash": "cefed77e077681a5"
     }
   ],
   "shortCases": [
@@ -91,6 +99,14 @@
       },
       "ticks": 300,
       "worldHash": "3be270a043158c73"
+    },
+    {
+      "name": "sprint-store",
+      "overrides": {
+        "sprintStoreEnabled": true
+      },
+      "ticks": 300,
+      "worldHash": "6f2eca9822204f44"
     }
   ]
 }

@@ -49,14 +49,27 @@ export function childShareOf(world, slot) {
     return world.childShare[slot];
 }
 
+/** Leak gene at or below this value knocks a hidden unit out for life (state stays 0). */
+export const KNOCKOUT_LEAK_GENE = -8;
+
 /**
- * The share of the new value a hidden unit takes each tick.
  * @param {number} gene the unit's leak gene
- * @param {number} leakMin the smallest leak rate (`config.leakMin`): a unit with a very negative leak gene still moves
- *   this share toward its target each tick
- * @returns {number} `leakMin + (1 - leakMin) x sigmoid(gene)`, in `[leakMin, 1]`
+ * @returns {boolean} whether the unit is knocked out
+ */
+export function isKnockedOut(gene) {
+    return gene <= KNOCKOUT_LEAK_GENE;
+}
+
+/**
+ * The share of the new value a hidden unit takes each tick, or 0 when knocked out.
+ * @param {number} gene the unit's leak gene
+ * @param {number} leakMin the smallest leak rate (`config.leakMin`) for an active unit
+ * @returns {number} 0 when `isKnockedOut(gene)`, else `leakMin + (1 - leakMin) x sigmoid(gene)` in `[leakMin, 1]`
  */
 export function leakRateOf(gene, leakMin) {
+    if (isKnockedOut(gene)) {
+        return 0;
+    }
     return leakMin + (1 - leakMin) * detSigmoid(gene);
 }
 
