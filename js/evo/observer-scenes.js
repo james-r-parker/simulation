@@ -5,7 +5,6 @@ import { createHerdScene, trackHerd } from './scene-herd.js';
 // world is untouched, so the golden `worldHash` cannot move. Each scene lives in its own `scene-*.js` module; this one
 // creates them, hands them the tick's events and the 10-tick and 100-tick samples, and resets a slot on a birth.
 
-import { createApproachScene, trackApproaches } from './scene-approach.js';
 import { BASIN_CHECKPOINT_TICKS, createBasinScene, sampleBasins } from './scene-basin.js';
 import { createBalanceScene, sampleBalance } from './scene-balance.js';
 import { createCapacityScene, sampleCapacity } from './scene-capacity.js';
@@ -16,17 +15,12 @@ import { createDivergenceScene, sampleDivergence } from './scene-divergence.js';
 import { createFamilyScene, sampleFamilies } from './scene-families.js';
 import { createDiseaseScene, noteDiseaseEvents, sampleDiseaseFamilies } from './scene-disease.js';
 import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
-import { createCompetenceScene, noteChase } from './scene-competence.js';
-import { createMatchedScene, noteMatchedChase } from './scene-matched.js';
 import { createGuardScene, sampleGuards } from './scene-guards.js';
-import { createPackLiftScene, notePackBite } from './scene-pack-lift.js';
-import { createKinematicsScene, noteKinematicsChase, tickKinematics } from './scene-kinematics.js';
 import { createGuildScene, sampleGuilds, tickGuilds } from './scene-guilds.js';
 import { createKinProximityScene, sampleKinProximity } from './scene-kin-proximity.js';
 import { createBiteScene, tickBite } from './scene-bite.js';
 import { createBiteLifeScene, tickRecoil } from './scene-bite-life.js';
 import { createRecruitScene, tickRecruit } from './scene-recruit.js';
-import { createBudgetScene, noteBudgetChase, sampleBudget } from './scene-recruit-budget.js';
 import { createHunterScene, tickHunters } from './scene-hunters.js';
 import { createConditionScene, sampleCondition } from './scene-condition.js';
 import { createPatchScene, samplePatches } from './scene-patch.js';
@@ -45,38 +39,11 @@ import { createStyle, tickStyle } from './style.js';
 import { createReachScene, sampleReach } from './scene-reach.js';
 import { createRefugeScene, sampleRefuge } from './scene-refuge.js';
 import { createRefugeOutcomeScene, sampleRefugeOutcome, tickRefugeBites } from './scene-refuge-outcome.js';
-import { createStillnessScene, noteStillnessChase, tickStillness } from './scene-stillness.js';
 import { createTerrainScene, sampleTerrain } from './scene-terrain.js';
 import { GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
 import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
 
 export { resetSceneSlot } from './observer-scenes-events.js';
-
-/**
- * The scenes fed by each resolved chase: the approach scene resolves it and hands it to the others' hooks.
- * @param {Readonly<Record<string, any>>} config the world's config
- * @param {Record<string, any>} stillness the stillness detector state, which reads the approach opening tick
- * @returns {Record<string, any>} the approach, competence, matched, kinematics, pack-lift and budget scenes
- */
-function createChaseScenes(config, stillness) {
-    const competence = createCompetenceScene(config);
-    const matched = createMatchedScene(config);
-    const kinematics = createKinematicsScene(config);
-    const budget = createBudgetScene();
-    const packLift = createPackLiftScene();
-    const approach = createApproachScene(config, {
-        onChase: (world, chase) => {
-            noteChase(competence, world, chase);
-            noteMatchedChase(matched, world, chase);
-            noteKinematicsChase(kinematics, world, chase);
-            noteBudgetChase(budget, world, chase);
-            noteStillnessChase(stillness, chase);
-        },
-        onBite: (world, biter) => notePackBite(packLift, world, biter),
-    });
-    stillness.approachOpenedTick = approach.openedTick;
-    return { approach, competence, matched, kinematics, packLift, budget };
-}
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
@@ -88,11 +55,9 @@ export function createScenes(config, runTicks = 0, lean = false) {
     if (lean) {
         return { lean: true, terrain: createTerrainScene(config), style: createStyle(config) };
     }
-    const stillness = createStillnessScene(config);
     return {
         herd: createHerdScene(config),
         patch: createPatchScene(config),
-        ...createChaseScenes(config, stillness),
         terrain: createTerrainScene(config),
         refuge: createRefugeScene(config),
         reach: createReachScene(),
@@ -123,7 +88,6 @@ export function createScenes(config, runTicks = 0, lean = false) {
         kin: createKinProximityScene(config),
         bite: createBiteScene(config),
         biteLife: createBiteLifeScene(),
-        stillness,
     };
 }
 
@@ -164,7 +128,6 @@ function sampleCheckpoints(scenes, world) {
     sampleCapacity(scenes.capacity, world);
     sampleEdge(scenes.edge, world);
     sampleKinProximity(scenes.kin, world);
-    sampleBudget(scenes.budget, world);
 }
 
 /**
@@ -193,9 +156,6 @@ export function observeScenes(observer, world) {
     tickStrikeMiss(scenes.strikeMiss, world);
     tickRecoil(scenes.biteLife, world);
     trackProof(scenes.proof, world);
-    trackApproaches(scenes.approach, observer, world);
-    tickStillness(scenes.stillness, observer, world);
-    tickKinematics(scenes.kinematics, observer, world);
     trackCarcasses(scenes.carcass, observer, world, scenes.scent);
     tickStyle(observer, world);
     tickGuilds(scenes.guilds, world);

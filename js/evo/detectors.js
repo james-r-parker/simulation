@@ -5,9 +5,27 @@
 import { floraDetector } from './scene-flora.js';
 import { scentDetector } from './scene-scent.js';
 import { sprintDetector } from './scene-sprint.js';
+import { approachDetector } from './scene-approach.js';
+import { packLiftDetector } from './scene-pack-lift.js';
+import { competenceDetector } from './scene-competence.js';
+import { matchedDetector } from './scene-matched.js';
+import { kinematicsDetector } from './scene-kinematics.js';
+import { budgetDetector } from './scene-recruit-budget.js';
+import { stillnessDetector } from './scene-stillness.js';
 
 /** @type {readonly import('./observer-detectors.js').Detector[]} */
-export const DETECTORS = Object.freeze([floraDetector, sprintDetector, scentDetector]);
+export const DETECTORS = Object.freeze([
+    floraDetector,
+    scentDetector,
+    approachDetector,
+    packLiftDetector,
+    competenceDetector,
+    matchedDetector,
+    stillnessDetector,
+    sprintDetector,
+    kinematicsDetector,
+    budgetDetector,
+]);
 
 /** The detectors a lean observer (the policy core, lean-observer.md) builds and feeds. */
 export const LEAN_DETECTORS = Object.freeze(DETECTORS.filter((detector) => detector.lean === true));

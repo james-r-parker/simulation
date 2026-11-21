@@ -293,3 +293,18 @@ export function competenceMetrics(scene, world) {
         'eval.hunter_independent_kill_share': share(scene.independentKills, scene.kills, 'no deliberate kill'),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const competenceDetector = {
+    name: 'competence',
+    modules: ['js/evo/scene-competence.js'],
+    sourceTest: 'test/evo/metric-source-hunter-chases.test.js',
+    create: (config) => createCompetenceScene(config),
+    on: {
+        HUNTER_KILL: (scene, world, o) => noteCompetenceRecord(scene, world.events.data, o),
+        HUNTER_LEDGER: (scene, world, o) => noteCompetenceRecord(scene, world.events.data, o),
+        AGENT_BORN: (scene, world, o) =>
+            noteCompetenceBirth(scene, world, world.events.data[o + EVENT.AGENT_BORN.SLOT]),
+    },
+    metrics: (scene, world) => competenceMetrics(scene, world),
+};

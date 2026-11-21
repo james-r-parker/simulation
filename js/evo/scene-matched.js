@@ -212,3 +212,12 @@ export function matchedMetrics(scene) {
         'eval.hunter_conversion_by_dose': doseSlope(scene),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const matchedDetector = {
+    name: 'matched',
+    modules: ['js/evo/scene-matched.js'],
+    sourceTest: 'test/evo/metric-source-hunter-chases.test.js',
+    create: (config) => createMatchedScene(config),
+    metrics: (scene) => matchedMetrics(scene),
+};

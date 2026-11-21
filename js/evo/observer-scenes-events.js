@@ -2,14 +2,10 @@
 // or a birth makes (split from `observer-scenes.js`, which creates the scenes and feeds them the samples).
 
 import { noteHerdDeath, resetHerdSlot } from './scene-herd.js';
-import { BORN_CAUSE, EVENT, EVENT_STRIDE, EVENT_TICK, EVENT_TYPE, DEATH_CAUSE } from '../sim/events.js';
-import { noteApproachKill, resetApproachSlot } from './scene-approach.js';
+import { BORN_CAUSE, EVENT, EVENT_STRIDE, EVENT_TICK, EVENT_TYPE } from '../sim/events.js';
 import { noteBasinBirth } from './scene-basin.js';
 import { noteCapacityDeath } from './scene-capacity.js';
 import { noteEdgeBirth, noteEdgeDeath } from './scene-edge.js';
-import { noteCompetenceBirth, noteCompetenceRecord } from './scene-competence.js';
-import { notePackKill } from './scene-pack-lift.js';
-import { resetKinematicsSlot } from './scene-kinematics.js';
 import { noteGuildAlarm, noteGuildBirth, noteGuildDeath } from './scene-guilds.js';
 import { noteBiteLifeRecord } from './scene-bite-life.js';
 import { noteRecruitBirth, noteRecruitRecord } from './scene-recruit.js';
@@ -22,7 +18,6 @@ import { noteHeritageBirth, noteHeritageDeath, resetHeritageSlot } from './scene
 import { resetMateSlot } from './scene-mate.js';
 import { noteProofDeath, noteProofKill } from './scene-proof.js';
 import { noteStyleAtDeath, noteStyleDeath, resetStyleSlot } from './style.js';
-import { noteStillnessDeath, resetStillnessSlot } from './scene-stillness.js';
 
 const DIED = EVENT.AGENT_DIED;
 const ALARM = EVENT.ALARM_CALLED;
@@ -40,9 +35,6 @@ export function resetSceneSlot(scenes, slot) {
         return;
     }
     resetPatchSlot(scenes.patch, slot);
-    resetApproachSlot(scenes.approach, slot);
-    resetStillnessSlot(scenes.stillness, slot);
-    resetKinematicsSlot(scenes.kinematics, slot);
     resetStyleSlot(scenes.style, slot);
     resetConditionSlot(scenes.condition, slot);
     resetSpendSlot(scenes.spend, slot);
@@ -89,27 +81,6 @@ function noteLeanDeath(observer, d, o) {
 }
 
 /**
- * An eaten agent's notes to the scenes that read who killed it and how.
- * @param {Record<string, any>} scenes the scenes
- * @param {Record<string, any>} observer the observer
- * @param {{world: Record<string, any>, o: number}} record the world and the `AgentDied` record's offset
- * @returns {void}
- */
-function noteEatenDeath(scenes, observer, { world, o }) {
-    const d = world.events.data;
-    noteApproachKill(scenes.approach, observer, world, {
-        killerId: d[o + DIED.BY],
-        victimId: d[o + DIED.GENOME_ID],
-    });
-    notePackKill(scenes.packLift, observer, {
-        world,
-        size: d[o + DIED.SIZE],
-        killer: d[o + DIED.BY],
-        previous: d[o + DIED.PARTNER],
-    });
-}
-
-/**
  * A dying agent's notes to every scene.
  * @param {Record<string, any>} scenes the scenes
  * @param {Record<string, any>} observer the observer
@@ -126,12 +97,6 @@ function noteFullDeath(scenes, observer, { world, o }) {
         herdId: d[o + DIED.BY],
         pinned: d[o + DIED.PARTNER] === 1,
     });
-    if (d[o + DIED.CAUSE] === DEATH_CAUSE.EATEN) {
-        noteEatenDeath(scenes, observer, { world, o });
-    }
-    if (observer.genomeId[d[o + DIED.SLOT]] === d[o + DIED.GENOME_ID]) {
-        noteStillnessDeath(scenes.stillness, d[o + DIED.SLOT], d[o + EVENT_TICK]);
-    }
     noteCapacityDeath(scenes.capacity, { cause: d[o + DIED.CAUSE], foodEnergy: d[o + DIED.FOOD_ENERGY] });
     noteEdgeDeath(scenes.edge, world, {
         cause: d[o + DIED.CAUSE],
@@ -171,7 +136,6 @@ function noteFullRecord(scenes, world, o) {
     const d = world.events.data;
     noteHunterRecord(scenes.hunters, d, o);
     noteBiteLifeRecord(scenes.biteLife, d, o, world);
-    noteCompetenceRecord(scenes.competence, d, o);
     noteRecruitRecord(scenes.recruit, d, o);
     if (d[o] === EVENT_TYPE.ALARM_CALLED) {
         noteGuildAlarm(scenes.guilds, world, d[o + ALARM.SLOT]);
@@ -183,7 +147,6 @@ function noteFullRecord(scenes, world, o) {
     noteHunterBirth(scenes.hunters, world, d[o + BORN.SLOT]);
     noteRecruitBirth(scenes.recruit, world, d, o);
     noteEdgeBirth(scenes.edge, world, { cause: d[o + BORN.CAUSE], spec: d[o + BORN.SPEC] });
-    noteCompetenceBirth(scenes.competence, world, d[o + BORN.SLOT]);
     resetSceneSlot(scenes, d[o + BORN.SLOT]);
     noteBasinBirth(scenes.basin, world, { slot: d[o + BORN.SLOT], cause: d[o + BORN.CAUSE] });
     if (d[o + BORN.CAUSE] === BORN_CAUSE.MATE) {
