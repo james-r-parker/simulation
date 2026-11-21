@@ -445,6 +445,9 @@
         "scripts/ship.sh",
         "test"
     ],
+    "test/sim/events.test.js": [
+        "test/fixtures/event-log-reference.json"
+    ],
     "test/sim/sensory-schema-doc.test.js": [
         "docs/designs/brain-capacity-and-memory.md"
     ],

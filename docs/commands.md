@@ -276,6 +276,10 @@ Edit `wasm/src`, run `scripts/build-wasm.sh`, then `flock /tmp/claude-1000/cpu.l
 
 `node scripts/metrics-doc.mjs --write` (writes `docs/designs/metrics.md` from the registry in `js/evo/metric-registry/`; `--check` fails when it is stale, and the `conventions` gate runs it; a new metric is registered in the same commit)
 
+### Regenerate the log event table
+
+`node scripts/events-doc.mjs --write` (writes `docs/log-events.md` from `EVENTS` in `js/sim/events.js`: every event's code, log event, level and numbered fields, and the cause lists; `--check` fails when it is stale, and the `conventions` gate runs it; a new event or field is one entry in `EVENTS`)
+
 ### Regenerate target-metric power table
 
 `node scripts/metric-noise.mjs --write` (`--check` detects drift; `--metrics` lists the power command input and `--references` audits plan locations; uses the saved E210 reading in `evals/power/metric-noise-E210.json`)

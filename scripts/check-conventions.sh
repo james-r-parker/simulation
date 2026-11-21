@@ -148,6 +148,13 @@ if ((metrics_status != 0)); then
   fail "metrics-doc: ${metrics_out:-scripts/metrics-doc.mjs exited $metrics_status with no output}"
 fi
 
+# docs/log-events.md is the table `EVENTS` in js/sim/events.js generates; a stale one fails with the command that fixes it.
+events_out="$(node scripts/events-doc.mjs --check 2>&1)"
+events_status=$?
+if ((events_status != 0)); then
+  fail "events-doc: ${events_out:-scripts/events-doc.mjs exited $events_status with no output}"
+fi
+
 # docs/scene-scorecard.md is generated from the registry's `scenes` tags and the newest shared baseline; a stale one fails with the command that fixes it.
 scorecard_out="$(node scripts/scene-scorecard.mjs --check 2>&1)"
 scorecard_status=$?
