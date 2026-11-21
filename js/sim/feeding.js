@@ -218,7 +218,7 @@ function settleKill(world, biter, victim, fatal) {
  * @returns {void}
  */
 function applyBite(world, biter, victim) {
-    const { config, x, y } = world;
+    const { config } = world;
     // The victim's `biteTakenMultiplier` lane, with the `alarmSeen` effect's `alarmBiteShare` while its seen alarm runs.
     const taken = liveOf(world, victim, BITE_TAKEN_MULTIPLIER_LANE);
     const bite = world.lanes.biteEnergy[biter];
@@ -251,8 +251,8 @@ function applyBite(world, biter, victim) {
     }
     noteBiteLedger(world, biter, { gained: moved, fatal, kick: paid, victim });
     world.bittenTimer[victim] = 0;
-    depositPheromone(world, world.attack, x[biter], y[biter]);
-    depositPheromone(world, world.danger, x[victim], y[victim]);
+    depositPheromone(world, world.attack, biter);
+    depositPheromone(world, world.danger, victim);
 }
 
 /** @param {Record<string, any>} world sim world @param {number} biter biter @param {number} victim victim @param {boolean} fatal whether the bite killed */

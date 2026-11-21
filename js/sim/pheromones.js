@@ -23,14 +23,13 @@ function cellIndex(world, x, y) {
  * Adds a deposit to the cell under a point, capped at `pheromoneMax`.
  * @param {World} world the world
  * @param {Float32Array} grid `world.danger`, `world.attack` or `world.hunt`
- * @param {number} x world x
- * @param {number} y world y
+ * @param {number} slot the depositing agent: the cell under it, and its `pheromoneDeposit` lane as the amount
  * @returns {void}
  */
-export function depositPheromone(world, grid, x, y) {
-    const { pheromoneMax, pheromoneDeposit } = world.config;
-    const c = cellIndex(world, x, y);
-    grid[c] = Math.min(pheromoneMax, grid[c] + pheromoneDeposit);
+export function depositPheromone(world, grid, slot) {
+    const { pheromoneMax } = world.config;
+    const c = cellIndex(world, world.x[slot], world.y[slot]);
+    grid[c] = Math.min(pheromoneMax, grid[c] + world.lanes.pheromoneDeposit[slot]);
 }
 
 /**

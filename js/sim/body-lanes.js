@@ -110,6 +110,19 @@ const MOVED = new Set([
     'splitMateScarceTicks',
     'territoryRadius',
     'territoryMax',
+    // body-genes Phase 5 T42: the signalling readers (calls, the smoke release, the pheromone deposit, the timers).
+    'callRadius',
+    'callTicks',
+    'alarmCost',
+    'huntCallCost',
+    'alarmThreshold',
+    'huntCallThreshold',
+    'smokeCost',
+    'smokeRadius',
+    'smokeTicks',
+    'smokeCooldown',
+    'smokeThreshold',
+    'pheromoneDeposit',
     ...THRESHOLDS,
 ]);
 

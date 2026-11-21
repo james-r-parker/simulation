@@ -131,6 +131,18 @@ describe('LANES', () => {
             'splitMateScarceTicks',
             'territoryRadius',
             'territoryMax',
+            'callRadius',
+            'callTicks',
+            'alarmCost',
+            'huntCallCost',
+            'alarmThreshold',
+            'huntCallThreshold',
+            'smokeCost',
+            'smokeRadius',
+            'smokeTicks',
+            'smokeCooldown',
+            'smokeThreshold',
+            'pheromoneDeposit',
         ]);
         expect(LANES.filter((lane) => lane.kind === 'offset').every((lane) => lane.moved)).toBe(true);
         expect(LANE_COUNT).toBe(115);
