@@ -65,11 +65,12 @@ describe('input_active_share, input_active_share.threat and input_active_share.p
         const m = r.metrics();
         // Ray 0 (`sin = 0`) hits once per sample for threat (on prey) and prey (on hunter): 2 nonzero values per sample.
         // Body inputs active: hunter 5 (energy, size, spec, temp, |temp-mid|), prey 4, doomed 5 (+ ageTicks) = 31 total,
-        // and `reserve` (1 with no sprint store) once per sample: 36.
+        // and `reserve` (1 with no sprint store) once per sample: 36. In the 2 samples the pair is in view, each also reads
+        // the other's size and its channel's view share (the parked pair has no speed or closing): 4 x 2 = 8, so 44.
         expect(world.inputActivity.samples).toBe(5);
         expect(m['eval.input_active_share.threat'].value).toBeCloseTo(4 / (5 * POOLED_STRIDE), 12);
         expect(m['eval.input_active_share.prey'].value).toBeCloseTo(4 / (5 * POOLED_STRIDE), 12);
-        expect(m['eval.input_active_share'].value).toBeCloseTo(36 / (5 * world.layout.inputCount), 12);
+        expect(m['eval.input_active_share'].value).toBeCloseTo(44 / (5 * world.layout.inputCount), 12);
     });
 });
 

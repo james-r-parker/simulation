@@ -70,6 +70,15 @@ const AT_HIDDEN: i32 = 1;
 const AT_OUTPUT: i32 = 2;
 const AT_LEARN: i32 = 3;
 
+/// Raw ray channels of the agent classes whose hits carry a body (`CH_*` of `js/sim/brain-layout.js`, checked by
+/// `scripts/check-wasm.mjs`); a pooled channel index is its raw channel less 1.
+const CH_THREAT: usize = 2;
+const CH_PREY: usize = 3;
+const CH_KIN: usize = 5;
+
+/// Values of one body in the body sense: size, speed, closing.
+const BODY_VALUES: usize = 3;
+
 const HEBB_DECAY: f64 = 0.01;
 const HEBB_CLAMP: f64 = 4.0;
 
@@ -84,6 +93,9 @@ struct Brain {
     leak: *const f32,
     fast: *mut f32,
     hue: *const f32,
+    size: *const f32,
+    speed: *const f32,
+    closing: *const f32,
     cos: *const f64,
     sin: *const f64,
     reward: *const f64,
@@ -127,6 +139,9 @@ impl Brain {
                 leak: at(p.leak),
                 fast: at(p.fast_out),
                 hue: at(p.ray_hue),
+                size: at(p.ray_size),
+                speed: at(p.ray_speed),
+                closing: at(p.ray_closing),
                 cos: at(p.ray_cos),
                 sin: at(p.ray_sin),
                 reward: at(p.reward_scale),
@@ -143,7 +158,23 @@ impl Brain {
     }
 }
 
-/// `poolRays`: the two strongest hits per channel, the two food hues, then the body block.
+/// Writes the size, speed and closing lanes of ray `ray` at `at`.
+///
+/// # Safety
+/// `ray` is inside the lanes and `at + 2` inside the pooled row.
+#[inline(always)]
+unsafe fn write_body(b: &Brain, at: usize, ray: usize) {
+    // SAFETY: as documented.
+    unsafe {
+        *b.pooled.add(at) = *b.size.add(ray);
+        *b.pooled.add(at + 1) = *b.speed.add(ray);
+        *b.pooled.add(at + 2) = *b.closing.add(ray);
+    }
+}
+
+/// `poolRays`: the two strongest hits per channel, the body sense (the size, speed and closing of the two prey hits and
+/// the threat hit kept, carried through the demotion as the food hues are, then the share of rays won by threat, prey,
+/// other and kin), the two food hues, then the body block.
 ///
 /// # Safety
 /// `slot` is below `slots`.
@@ -154,6 +185,10 @@ unsafe fn pool(b: &Brain, slot: usize) {
     let raw = slot * p.raw_input_count as usize;
     let out = slot * p.input_count as usize;
     let hue_start = out + pv - 2;
+    let prey = out + p.pooled_channels as usize * p.pooled_stride as usize;
+    let threat = prey + 2 * BODY_VALUES;
+    let shares_at = threat + BODY_VALUES;
+    let mut shares = [0u32; CH_KIN + 1 - CH_THREAT];
     // SAFETY: every index stays inside the slot's rows.
     unsafe {
         let pooled = b.pooled;
@@ -176,12 +211,24 @@ unsafe fn pool(b: &Brain, slot: usize) {
             if c == usize::MAX {
                 continue;
             }
+            let raw_channel = c + 1;
+            if (CH_THREAT..=CH_KIN).contains(&raw_channel) {
+                shares[raw_channel - CH_THREAT] += 1;
+            }
+            let ray = slot * rc + k;
             let first = out + c * p.pooled_stride as usize;
             let second = first + p.hit_stride as usize;
             if proximity > *pooled.add(first) {
                 if c == 0 {
                     *pooled.add(hue_start + 1) = *pooled.add(hue_start);
-                    *pooled.add(hue_start) = *b.hue.add(slot * rc + k);
+                    *pooled.add(hue_start) = *b.hue.add(ray);
+                } else if raw_channel == CH_PREY {
+                    for i in 0..BODY_VALUES {
+                        *pooled.add(prey + BODY_VALUES + i) = *pooled.add(prey + i);
+                    }
+                    write_body(b, prey, ray);
+                } else if raw_channel == CH_THREAT {
+                    write_body(b, threat, ray);
                 }
                 *pooled.add(second) = *pooled.add(first);
                 *pooled.add(second + 1) = *pooled.add(first + 1);
@@ -191,12 +238,17 @@ unsafe fn pool(b: &Brain, slot: usize) {
                 *pooled.add(first + 2) = *b.sin.add(k) as f32;
             } else if proximity > *pooled.add(second) {
                 if c == 0 {
-                    *pooled.add(hue_start + 1) = *b.hue.add(slot * rc + k);
+                    *pooled.add(hue_start + 1) = *b.hue.add(ray);
+                } else if raw_channel == CH_PREY {
+                    write_body(b, prey + BODY_VALUES, ray);
                 }
                 *pooled.add(second) = proximity;
                 *pooled.add(second + 1) = *b.cos.add(k) as f32;
                 *pooled.add(second + 2) = *b.sin.add(k) as f32;
             }
+        }
+        for (i, &count) in shares.iter().enumerate() {
+            *pooled.add(shares_at + i) = (count as f64 / rc as f64) as f32;
         }
         let body = raw + rc * rch;
         for i in 0..p.extra_inputs as usize {

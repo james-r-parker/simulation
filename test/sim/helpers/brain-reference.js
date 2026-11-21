@@ -48,8 +48,8 @@ function draw(rng, edgy) {
 }
 
 /**
- * Fills the brain state of some slots with seeded values: weights, raw inputs (so pooling has hits), ray hues, hidden
- * rows, leak rates, plastic blocks and reward traces.
+ * Fills the brain state of some slots with seeded values: weights, raw inputs (so pooling has hits), ray hues and body
+ * lanes, hidden rows, leak rates, plastic blocks and reward traces.
  * @param {Record<string, any>} world the world
  * @param {number} seed the seed
  * @param {{ slots: number[], edgy?: boolean, scale?: number }} options the alive slots, edge values, weight scale
@@ -62,6 +62,9 @@ export function randomise(world, seed, { slots, edgy = false, scale = 1 }) {
         ['weights', weightCount, () => draw(rng, edgy) * scale],
         ['inputs', rawInputCount, () => Math.abs(draw(rng, edgy)) % 1.5],
         ['rayHue', world.config.rayCount, () => nextFloat(rng)],
+        ['raySize', world.config.rayCount, () => nextFloat(rng) * 2 - 1],
+        ['raySpeed', world.config.rayCount, () => nextFloat(rng)],
+        ['rayClosing', world.config.rayCount, () => nextFloat(rng) * 2 - 1],
         ['hidden', hidden, () => nextFloat(rng) * 2 - 1],
         ['leakRate', hidden, () => nextFloat(rng)],
         ['fastOut', hidden * geneOutputs, () => nextGaussian(rng)],
