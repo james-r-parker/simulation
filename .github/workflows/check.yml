@@ -75,8 +75,8 @@ jobs:
 
       # The tests the `test` job runs and the coverage it takes (docs/designs/agent-workflow.md, Affected tests in CI). A
       # pull request runs the tests its change can reach; every other event (the push to main, the merge queue) runs the
-      # whole suite, and so does a pull request whose diff the script cannot read or classify. The docs and release scopes
-      # run no test. The reached list is kept as the `affected` artifact, which the full run on main compares with its
+      # whole suite, and so does a pull request whose diff the script cannot read or classify. The docs, records and release
+      # scopes run no test. The reached list is kept as the `affected` artifact, which the full run on main compares with its
       # failures (the miss ledger).
       - name: Affected tests
         id: affected
@@ -85,7 +85,7 @@ jobs:
           SCOPE: ${{ steps.scope.outputs.scope }}
           BASE: ${{ format('origin/{0}', github.base_ref) }}
         run: |
-          if [[ "$SCOPE" == docs || "$SCOPE" == release ]]; then
+          if [[ "$SCOPE" == docs || "$SCOPE" == records || "$SCOPE" == release ]]; then
             {
               echo "mode=$SCOPE"
               echo has_tests=false
@@ -155,13 +155,13 @@ jobs:
         run: node scripts/release-check.mjs
 
       - name: Local gate
-        if: needs.scope.outputs.scope != 'docs'
+        if: needs.scope.outputs.scope != 'docs' && needs.scope.outputs.scope != 'records'
         run: scripts/check.sh --ci --skip=test
 
       # An open miss: a test that failed on main after the pull request that changed what it reads ran without it. The
       # change that declares the edge passes; every other change waits for it. A fork has no token, and the step skips.
       - name: Open affected-test misses
-        if: github.event_name == 'pull_request' && needs.scope.outputs.scope != 'docs'
+        if: github.event_name == 'pull_request' && needs.scope.outputs.scope != 'docs' && needs.scope.outputs.scope != 'records'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -169,8 +169,16 @@ jobs:
 
       # conventions, designs-index, format and the tests that read this repo's Markdown.
       - name: Local gate (docs only)
-        if: needs.scope.outputs.scope == 'docs'
+        if: needs.scope.outputs.scope == 'docs' || needs.scope.outputs.scope == 'records'
         run: scripts/check.sh --ci --docs
+
+      # A records change (only evals/ledger/, evals/decisions/ and docs/) runs no test, so the two ledger checks run on
+      # their own: every record valid and every cited id recorded, and the metric names the records use.
+      - name: Ledger checks (records only)
+        if: needs.scope.outputs.scope == 'records'
+        run: |
+          node scripts/check-experiments.mjs
+          node scripts/check-metric-names.mjs
 
       - name: Upload check logs
         if: failure()

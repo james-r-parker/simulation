@@ -12,7 +12,7 @@
 //
 // Per-slot arrays and fixed tables of at most `maxAgents` lineages; nothing is allocated per tick.
 
-import { DEATH_CAUSE } from '../sim/events.js';
+import { DEATH_CAUSE, EVENT, EVENT_TICK } from '../sim/events.js';
 import { WINTER } from '../sim/eras.js';
 import { isEstablished } from '../sim/proof.js';
 import { BURN_IN_TICKS } from './burn-in.js';
@@ -191,3 +191,26 @@ export function proofMetrics(scene) {
                 : none('no established lineage at a winter start or in a hunted year after burn-in'),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const proofDetector = {
+    name: 'proof',
+    modules: [],
+    create: (config) => createProofScene(config),
+    on: {
+        AGENT_DIED: (scene, world, o, observer) => {
+            const d = world.events.data;
+            noteProofDeath(scene, observer, {
+                slot: d[o + EVENT.AGENT_DIED.SLOT],
+                genomeId: d[o + EVENT.AGENT_DIED.GENOME_ID],
+                tick: d[o + EVENT_TICK],
+            });
+            noteProofKill(scene, {
+                cause: d[o + EVENT.AGENT_DIED.CAUSE],
+                lineageId: d[o + EVENT.AGENT_DIED.LINEAGE_ID],
+            });
+        },
+    },
+    onTick: (scene, world) => trackProof(scene, world),
+    metrics: () => ({}),
+};

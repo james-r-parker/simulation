@@ -105,11 +105,14 @@ function summarizeGroup(world, group) {
         vy += world.herdVy[slot];
     }
     world.groupAnimalCount[group] = count;
-    if (count > 0 && world.groupAlarm[group] === 0) {
+    if (count > 0) {
+        // The herd flees as a body: its centroid follows it. Only the flee vector is held while the alarm is up.
         world.groupCentroidX[group] = x / count;
         world.groupCentroidY[group] = y / count;
-        world.groupFleeX[group] = vx / count;
-        world.groupFleeY[group] = vy / count;
+        if (world.groupAlarm[group] === 0) {
+            world.groupFleeX[group] = vx / count;
+            world.groupFleeY[group] = vy / count;
+        }
     }
 }
 

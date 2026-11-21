@@ -164,3 +164,13 @@ export function divergenceMetrics(scene, world) {
         'eval.basin_divergence': ok((spec + cluster) / 2),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const divergenceDetector = {
+    name: 'divergence',
+    modules: ['js/evo/scene-divergence.js'],
+    every: 1000,
+    create: (config) => createDivergenceScene(config),
+    onTick: (scene, world) => sampleDivergence(scene, world),
+    metrics: (scene, world) => divergenceMetrics(scene, world),
+};

@@ -176,3 +176,31 @@ describe('stepHerds', () => {
         expect(world.groupStay[0]).toBe(0);
     });
 });
+
+describe('a startled herd', () => {
+    it('travels with its flee vector at the run speed, not around a held centroid', () => {
+        const world = build();
+        const { herdRunSpeed, herdRadius, herdStampedeTicks } = world.config;
+        const turn = 0.05;
+        const ticks = 70;
+        world.herdX[0] = 200;
+        world.herdY[0] = 400;
+        world.herdX[1] = 200 + herdRadius;
+        world.herdY[1] = 400;
+        world.patchAlive.fill(0);
+        world.groupAlarm[0] = herdStampedeTicks;
+        world.groupFleeX[0] = 1;
+        world.groupFleeY[0] = 0;
+        stepHerds(world);
+        const startX = world.groupCentroidX[0];
+        for (let tick = 1; tick < ticks; tick++) {
+            stepHerds(world);
+        }
+        stepHerds(world);
+        // A free run reaches the run speed in 1 / turn ticks, so it covers at least run x (ticks - 1 / turn); a held
+        // centroid pulls the animals back once they are 4 radii from it.
+        const travelled = world.groupCentroidX[0] - startX;
+        expect(travelled).toBeGreaterThan(0.8 * herdRunSpeed * (ticks - 1 / turn));
+        expect(world.groupFleeX[0]).toBeCloseTo(1, 10);
+    });
+});

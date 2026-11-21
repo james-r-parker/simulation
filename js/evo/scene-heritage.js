@@ -14,6 +14,7 @@
 import { createLog, ensureRoom } from './growable-log.js';
 import { none, ok, pearson } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './burn-in.js';
+import { BORN_CAUSE, EVENT, EVENT_TICK } from '../sim/events.js';
 
 /** The child meal at which its deliberate share is read. */
 export const TENTH_MEAL = 10;
@@ -226,3 +227,58 @@ function socialReturn(scene) {
 export function heritageMetrics(scene) {
     return { 'eval.skill_heritability': heritability(scene), 'eval.social_return': socialReturn(scene) };
 }
+
+/**
+ * @param {Record<string, any>} world the world
+ * @param {Record<string, any>} observer the observer
+ * @param {number} slot an alive slot
+ * @returns {boolean} whether the agent in the slot reaches `maturityTicks` this tick, and the observer tracks it under
+ *   this genome
+ */
+export function maturesNow(world, observer, slot) {
+    const { maturityTicks } = world.config;
+    return (
+        maturityTicks > 0 && world.ageTicks[slot] === maturityTicks && observer.genomeId[slot] === world.genomeId[slot]
+    );
+}
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const heritageDetector = {
+    name: 'heritage',
+    modules: [],
+    create: (config) => createHeritageScene(config),
+    on: {
+        AGENT_BORN: (scene, world, o) => {
+            const d = world.events.data;
+            const cause = d[o + EVENT.AGENT_BORN.CAUSE];
+            if (cause === BORN_CAUSE.MATE || cause === BORN_CAUSE.SPLIT) {
+                noteHeritageBirth(scene, world, d[o + EVENT.AGENT_BORN.SLOT]);
+            }
+        },
+        AGENT_DIED: (scene, world, o, observer) => {
+            const d = world.events.data;
+            const slot = d[o + EVENT.AGENT_DIED.SLOT];
+            const age = d[o + EVENT.AGENT_DIED.AGE_TICKS];
+            if (
+                observer.genomeId[slot] === d[o + EVENT.AGENT_DIED.GENOME_ID] &&
+                d[o + EVENT_TICK] >= BURN_IN_TICKS &&
+                age >= observer.config.maturityTicks
+            ) {
+                noteHeritageDeath(scene, observer, { slot, age });
+            }
+        },
+    },
+    onSlotFree: resetHeritageSlot,
+    onTick: (scene, world, observer) => {
+        for (let slot = 0; slot < world.alive.length; slot++) {
+            if (world.alive[slot] !== 1) {
+                continue;
+            }
+            trackHeritage(scene, world, slot);
+            if (maturesNow(world, observer, slot)) {
+                creditGrandparents(scene, observer, slot);
+            }
+        }
+    },
+    metrics: () => ({}),
+};

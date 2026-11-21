@@ -140,3 +140,12 @@ export function sprintMetrics(scene) {
             scene.energyRemoved === 0 ? none(NO_ENERGY_SPENT) : ok(scene.nominalSprintCharge / scene.energyRemoved),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const sprintDetector = {
+    name: 'sprint',
+    modules: ['js/evo/scene-sprint.js'],
+    create: (config) => createSprintScene(config),
+    onTick: (scene, world, observer) => tickSprint(scene, observer, world),
+    metrics: (scene) => sprintMetrics(scene),
+};

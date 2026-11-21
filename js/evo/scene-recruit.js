@@ -293,3 +293,19 @@ export function recruitMetrics(scene, world) {
         'eval.hunter_global_extinctions': ok(scene.globalExtinctions),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const recruitDetector = {
+    name: 'recruit',
+    modules: ['js/evo/scene-recruit.js'],
+    atStart: true,
+    create: (config) => createRecruitScene(config),
+    on: {
+        HUNTER_KILL: (scene, world, o) => noteRecruitRecord(scene, world.events.data, o),
+        HUNTER_LEDGER: (scene, world, o) => noteRecruitRecord(scene, world.events.data, o),
+        LAST_HUNTER_DIED: (scene, world, o) => noteRecruitRecord(scene, world.events.data, o),
+        AGENT_BORN: (scene, world, o) => noteRecruitBirth(scene, world, world.events.data, o),
+    },
+    onTick: (scene) => tickRecruit(scene),
+    metrics: (scene, world) => recruitMetrics(scene, world),
+};

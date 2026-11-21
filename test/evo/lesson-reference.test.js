@@ -1,18 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { BODY_INPUT, OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 import { FLORA_DEFAULTS } from '../../js/sim/config-flora.js';
-import { INPUT_READER, readerSubject } from '../../js/evo/lesson-reference.js';
+import { INPUT_READER, kinSparingSubject, readerSubject } from '../../js/evo/lesson-reference.js';
 import { REFERENCES, referenceSubject } from '../../js/evo/memory-probe-references.js';
 import { stageWorld } from '../../js/evo/pool-discrimination-stage.js';
-import { CH_FOOD, CH_PREY, CH_THREAT } from '../../js/evo/scripted-parts.js';
+import { CH_FOOD, CH_KIN, CH_PREY, CH_THREAT } from '../../js/evo/scripted-parts.js';
 
 /**
  * Runs the reader once on a staged agent whose rays are set by hand.
- * @param {{ray?: number, channel?: number, hue?: number, body?: Record<number, number>, also?: {ray: number, proximity: number}[]}} senses a hit on one ray (proximity
- *   0.8 in the channel, the food hue on it) and body inputs by offset
+ * @param {{ray?: number, channel?: number, hue?: number, body?: Record<number, number>, also?: {ray: number, proximity: number}[],
+ *   proximity?: number}} senses a hit on one ray (at `proximity`, default 0.8, in the channel, the food hue on it), more
+ *   hits in the same channel and body inputs by offset
  * @returns {Float32Array} the agent's outputs
  */
-function outputsFor({ ray = 0, channel = 0, hue = 0, body = {}, also = [] }) {
+function outputsFor({ ray = 0, channel = 0, hue = 0, body = {}, also = [], proximity = 0.8 }) {
     const { world } = stageWorld({
         foods: [],
         rocks: [],
@@ -21,12 +22,12 @@ function outputsFor({ ray = 0, channel = 0, hue = 0, body = {}, also = [] }) {
     });
     world.inputs.fill(0);
     if (channel > 0) {
-        world.inputs[ray * RAY_CHANNELS] = 0.8;
+        world.inputs[ray * RAY_CHANNELS] = proximity;
         world.inputs[ray * RAY_CHANNELS + channel] = 1;
         world.rayHue[ray] = hue;
     }
-    for (const { ray: other, proximity } of also) {
-        world.inputs[other * RAY_CHANNELS] = proximity;
+    for (const { ray: other, proximity: near } of also) {
+        world.inputs[other * RAY_CHANNELS] = near;
         world.inputs[other * RAY_CHANNELS + channel] = 1;
         world.rayHue[other] = hue;
     }
@@ -64,6 +65,36 @@ describe('the input reader', () => {
         expect(Math.sign(threat[OUTPUT_INDEX.TURN])).toBe(-Math.sign(prey[OUTPUT_INDEX.TURN]));
     });
 
+    it('turns square across a threat that is close, to the side nearer its heading', () => {
+        const leftBehind = outputsFor({ ray: 7, channel: CH_THREAT });
+        expect(leftBehind[OUTPUT_INDEX.TURN]).toBe(1);
+        const rightBehind = outputsFor({ ray: 9, channel: CH_THREAT });
+        expect(rightBehind[OUTPUT_INDEX.TURN]).toBe(-1);
+    });
+
+    it('steers away from a far threat in proportion to the gap, reading every threat ray', () => {
+        const turn = outputsFor({ ray: 8, channel: CH_THREAT, proximity: 0.3, also: [{ ray: 9, proximity: 0.1 }] })[
+            OUTPUT_INDEX.TURN
+        ];
+        expect(turn).toBeGreaterThan(0);
+        expect(turn).toBeLessThan(1);
+        expect(outputsFor({ ray: 0, channel: CH_THREAT, proximity: 0.3 })[OUTPUT_INDEX.TURN]).toBe(1);
+        const balanced = outputsFor({
+            ray: 4,
+            channel: CH_THREAT,
+            proximity: 0.3,
+            also: [{ ray: 12, proximity: 0.3 }],
+        });
+        expect(balanced[OUTPUT_INDEX.TURN]).toBeCloseTo(0, 6);
+    });
+
+    it('sprints from a threat only once it is near, and runs at full thrust either way', () => {
+        expect(outputsFor({ ray: 8, channel: CH_THREAT })[OUTPUT_INDEX.SPRINT]).toBe(1);
+        const far = outputsFor({ ray: 8, channel: CH_THREAT, proximity: 0.05 });
+        expect(far[OUTPUT_INDEX.SPRINT]).toBe(0);
+        expect(far[OUTPUT_INDEX.THRUST]).toBe(1);
+    });
+
     it('flees to the refuge when the body inputs name one', () => {
         const body = {
             [BODY_INPUT.REFUGE_NEAR]: 0.5,
@@ -98,5 +129,25 @@ describe('the input reader', () => {
         const out = outputsFor({});
         expect(out[OUTPUT_INDEX.THRUST]).toBe(0);
         expect(out[OUTPUT_INDEX.TURN]).toBe(1);
+    });
+
+    it('spares a clone nearer than the prey, and bites the prey when it is nearer (the kin-sparing reader)', () => {
+        const biteWith = (/** @type {number} */ kinNear) => {
+            const { world } = stageWorld({
+                foods: [],
+                rocks: [],
+                agents: [{ x: 1500, y: 2000, angle: 0, spec: 0, energy: 800 }],
+                seed: 1,
+            });
+            world.inputs.fill(0);
+            world.inputs[RAY_CHANNELS] = 0.5;
+            world.inputs[RAY_CHANNELS + CH_PREY] = 1;
+            world.inputs[2 * RAY_CHANNELS] = kinNear;
+            world.inputs[2 * RAY_CHANNELS + CH_KIN] = 1;
+            kinSparingSubject().act?.(world);
+            return world.outputs[OUTPUT_INDEX.BITE];
+        };
+        expect(biteWith(0.8)).toBe(0);
+        expect(biteWith(0.2)).toBe(1);
     });
 });

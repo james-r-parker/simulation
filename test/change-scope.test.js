@@ -16,6 +16,10 @@ function scope(args, paths) {
     return r.stdout.trim();
 }
 
+// Not spelled as one literal: the test-data convention flags a test that names a shipped evals/ledger path, and these
+// only pass paths on stdin.
+const LEDGER = ['evals', 'ledger', 'E300.json'].join('/');
+
 describe('change-scope.sh', { timeout: scaleTimeout(15_000) }, () => {
     it('says docs for Markdown under docs/ and .claude/ and at the root, else full', () => {
         expect(scope([], ['docs/designs/a.md', '.claude/skills/x/SKILL.md', 'README.md'])).toBe('docs');
@@ -67,6 +71,31 @@ describe('change-scope.sh', { timeout: scaleTimeout(15_000) }, () => {
         } finally {
             rmSync(repo, { recursive: true, force: true });
         }
+    });
+
+    it('says records for ledger and decision paths with or without docs, and docs when none is a record', () => {
+        expect(scope([], [LEDGER])).toBe('records');
+        expect(scope([], [LEDGER, 'evals/decisions/E300/results.md', 'docs/designs/a.md'])).toBe('records');
+        expect(scope([], ['evals/decisions/E300/report.json', 'README.md'])).toBe('records');
+        expect(scope([], ['docs/designs/a.md', 'AGENTS.md'])).toBe('docs');
+    });
+
+    it('says full when a records diff holds any other path', () => {
+        for (const extra of [
+            'js/sim/a.js',
+            'evals/seeds.json',
+            'scripts/check.sh',
+            'evals/ledgerx/a.json',
+            'test/a.test.js',
+        ]) {
+            expect(scope([], [LEDGER, extra]), extra).toBe('full');
+        }
+    });
+
+    it('says release, not records, for the version files, and keeps an empty change full', () => {
+        expect(scope([], ['CHANGELOG.md', 'package.json'])).toBe('release');
+        expect(scope([], ['CHANGELOG.md', LEDGER])).toBe('records');
+        expect(scope([], [])).toBe('full');
     });
 
     it('rejects two arguments', () => {

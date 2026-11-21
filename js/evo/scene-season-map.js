@@ -131,3 +131,13 @@ export function seasonMapMetrics(scene) {
         'eval.herd_season_shift': shift(scene.herds, 'a herd group'),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const seasonMapDetector = {
+    name: 'seasonMap',
+    modules: ['js/evo/scene-season-map.js'],
+    every: 1000,
+    create: () => createSeasonMapScene(),
+    onTick: (scene, world) => sampleSeasonMap(scene, world),
+    metrics: (scene) => seasonMapMetrics(scene),
+};

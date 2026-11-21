@@ -8,9 +8,10 @@
 //
 // Only the `basins` layout has basins; any other layout reads `null`. Per-basin state only; nothing is allocated.
 
-import { BORN_CAUSE } from '../sim/events.js';
+import { BORN_CAUSE, EVENT } from '../sim/events.js';
 import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './burn-in.js';
+import { GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
 
 /** Alive agents a basin needs after an extinction to count as recolonised. */
 export const RECOLONISED_MIN = 5;
@@ -113,3 +114,19 @@ export function basinMetrics(scene) {
         'eval.basin_recolonisations': ok(scene.recolonised),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const basinDetector = {
+    name: 'basin',
+    modules: ['js/evo/scene-basin.js'],
+    every: GROUP_SAMPLE_TICKS,
+    create: () => createBasinScene(),
+    on: {
+        AGENT_BORN: (scene, world, o) => {
+            const d = world.events.data;
+            noteBasinBirth(scene, world, { slot: d[o + EVENT.AGENT_BORN.SLOT], cause: d[o + EVENT.AGENT_BORN.CAUSE] });
+        },
+    },
+    onTick: (scene, world) => sampleBasins(scene, world),
+    metrics: (scene) => basinMetrics(scene),
+};

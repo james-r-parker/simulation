@@ -26,6 +26,7 @@ import { createLog, ensureRoom } from './growable-log.js';
 import { none, ok } from './metrics-stats.js';
 import { BASIN_CHECKPOINT_TICKS } from './scene-basin.js';
 import { SEASONS_PER_YEAR } from '../sim/eras.js';
+import { terminalHunterMetrics } from './scene-terminal-hunters.js';
 
 /** The hunters must reach this multiple of their trough for a boom. */
 export const BOOM_FACTOR = 2;
@@ -270,3 +271,17 @@ export function summerMetrics(scene) {
     }
     return { 'eval.prey_summer_min': ok(scene.summerMin) };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const guardsDetector = {
+    name: 'guards',
+    modules: ['js/evo/scene-guards.js', 'js/evo/scene-terminal-hunters.js'],
+    every: 1000,
+    create: (config) => createGuardScene(config),
+    onTick: (scene, world) => sampleGuards(scene, world),
+    metrics: (scene, world) => ({
+        ...guardMetrics(scene),
+        ...terminalHunterMetrics(scene, world),
+        ...summerMetrics(scene),
+    }),
+};

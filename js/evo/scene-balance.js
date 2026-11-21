@@ -174,3 +174,13 @@ export function balanceMetrics(scene, world) {
     const { predators, preyTypes } = endState(world);
     return { 'eval.predators_at_end': ok(predators), 'eval.prey_types_at_end': ok(preyTypes), ...families };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const balanceDetector = {
+    name: 'balance',
+    modules: ['js/evo/scene-balance.js'],
+    every: 1000,
+    create: () => createBalanceScene(),
+    onTick: (scene, world) => sampleBalance(scene, world),
+    metrics: (scene, world) => balanceMetrics(scene, world),
+};

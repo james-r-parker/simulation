@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { MERIT_PREVIEW, configOverrides, readParams } from '../../js/app/url-params.js';
+import { MERIT_PREVIEW, configOverrides, readParams, reelConfigError } from '../../js/app/url-params.js';
 
 describe('readParams', () => {
     it('reads every parameter', () => {
         expect(
             readParams(
-                '?seed=42&agents=300&speed=4&backend=webgl2&gputime=1&tv=1&board=1&audio=true&policy=map-elites-v6&merit=1&hold=1&dim=0.6',
+                '?seed=42&agents=300&speed=4&backend=webgl2&gputime=1&tv=1&board=1&reel=1&audio=true&policy=map-elites-v6&merit=1&hold=1&dim=0.6',
             ),
         ).toEqual({
             seed: 42,
@@ -15,11 +15,13 @@ describe('readParams', () => {
             gputime: true,
             tv: true,
             board: true,
+            reel: true,
             dim: 0.6,
             audio: true,
             policy: 'map-elites-v6',
             merit: true,
             hold: true,
+            config: null,
         });
     });
 
@@ -32,11 +34,13 @@ describe('readParams', () => {
             gputime: false,
             tv: false,
             board: false,
+            reel: false,
             dim: null,
             audio: false,
             policy: null,
             merit: false,
             hold: false,
+            config: null,
         });
     });
 
@@ -50,11 +54,13 @@ describe('readParams', () => {
             gputime: false,
             tv: false,
             board: false,
+            reel: false,
             dim: null,
             audio: false,
             policy: null,
             merit: false,
             hold: false,
+            config: null,
         });
         expect(readParams('?seed=4294967296').seed).toBeNull();
         expect(readParams('?seed=4294967295').seed).toBe(4294967295);
@@ -152,5 +158,62 @@ describe('policy and merit', () => {
         });
         const { createConfig } = await import('../../js/sim/config.js');
         expect(createConfig({ ...MERIT_PREVIEW, seed: 1 }).meritBirthBoost).toBe(0.25);
+    });
+});
+
+describe('the config parameter', () => {
+    /** @param {unknown} value @returns {string} base64url of its JSON */
+    const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
+
+    it('reads a base64url JSON object of numbers and booleans', () => {
+        const config = { seasonLength: 3600, someFlag: true, rate: 0.25 };
+        expect(readParams(`?config=${encode(config)}`).config).toEqual(config);
+    });
+
+    it('ignores anything else: not base64url, not an object, a bad value, too many keys or too long', () => {
+        const many = Object.fromEntries(Array.from({ length: 65 }, (_, i) => [`k${i}`, i]));
+        for (const bad of [
+            '!!',
+            encode([1]),
+            encode(7),
+            encode(null),
+            encode({}),
+            encode({ a: 'x' }),
+            encode({ a: null }),
+            encode(many),
+            'a'.repeat(4001),
+            'bm90IGpzb24',
+        ]) {
+            expect(readParams(`?config=${bad}`).config).toBeNull();
+        }
+        expect(readParams('').config).toBeNull();
+    });
+
+    it('is the base of the overrides: the agents, floor and merit settings win over it', () => {
+        expect(configOverrides(readParams(`?config=${encode({ a: 1 })}`))).toEqual({ a: 1 });
+        expect(configOverrides(readParams(`?merit=1&config=${encode({ a: 1, splitDeliberateMin: 5 })}`))).toEqual({
+            a: 1,
+            ...MERIT_PREVIEW,
+        });
+        const both = configOverrides(readParams(`?agents=50&config=${encode({ a: 1, initialAgents: 9 })}`));
+        expect(both).toMatchObject({ a: 1, initialAgents: 50 });
+    });
+});
+
+describe('reelConfigError', () => {
+    const good = Buffer.from(JSON.stringify({ a: 1 })).toString('base64url');
+
+    it('names the config parameter when a reel link carries one that does not parse', () => {
+        const bad = ['!!!', Buffer.from('{nope').toString('base64url'), Buffer.from('{"a":"x"}').toString('base64url')];
+        for (const value of bad) {
+            expect(reelConfigError(`?reel=1&config=${value}`)).toMatch(/config/);
+        }
+    });
+
+    it('is null for a good config, no config, or a link that is not a reel (a bad link still opens)', () => {
+        expect(reelConfigError(`?reel=1&config=${good}`)).toBeNull();
+        expect(reelConfigError('?reel=1')).toBeNull();
+        expect(reelConfigError('?config=!!!')).toBeNull();
+        expect(readParams('?config=!!!').config).toBeNull();
     });
 });

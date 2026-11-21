@@ -16,6 +16,7 @@ import {
     resetSceneCounters,
     sceneRows,
 } from './scene-counters.js';
+import { createReelPart, reelTiles } from './interface-reel.js';
 import { familyCss } from './ui/css-color.js';
 import { mountInsights } from './ui/insights.js';
 
@@ -118,17 +119,33 @@ function createBoard(ctx, ui, refresh) {
 
 /**
  * @param {{deps: Record<string, any>, data: ReturnType<typeof createInsightsData>,
- *   scenes: ReturnType<typeof createSceneCounters>}} source the page's deps and what the drawer reads
+ *   scenes: ReturnType<typeof createSceneCounters>, reel: ReturnType<typeof createReelPart>}} source the page's deps and
+ *   what the drawer reads
  * @returns {() => Record<string, any>} builds the drawer's view: each tab's part, from the data as it is now
  */
-function createView({ deps, data, scenes }) {
-    return () => ({
+function createView({ deps, data, scenes, reel }) {
+    return () => {
+        const rows = sceneRows(scenes, data.stats?.tick ?? scenes.tick);
+        return {
+            ...tabsView({ deps, data, scenes }),
+            scenes: rows,
+            reel: reelTiles(rows, reel.reel.clipOf),
+        };
+    };
+}
+
+/**
+ * @param {{deps: Record<string, any>, data: ReturnType<typeof createInsightsData>,
+ *   scenes: ReturnType<typeof createSceneCounters>}} source the page's deps and what the drawer reads
+ * @returns {Record<string, any>} the tabs other than Scenes and Reel, from the data as it is now
+ */
+function tabsView({ deps, data, scenes }) {
+    return {
         world: worldView(data),
-        scenes: sceneRows(scenes, data.stats?.tick ?? scenes.tick),
         families: familyTableRows(data, (id) => familyCss(deps.slots, id)),
         records: recordTableRows(data, longestChase(deps, scenes)),
         export: replayView({ ready: deps.getReady(), stats: data.stats, overrides: deps.overrides }),
-    });
+    };
 }
 
 /**
@@ -177,25 +194,28 @@ function drawerOptions(ctx, later) {
  * @returns {{open: () => void, close: () => void, update: () => void, noteReady: (ready: Record<string, any>) => void,
  *   noteStats: (stats: Record<string, any>) => void, noteEffect: (effect: any) => void,
  *   noteFrame: (nowMs: number) => void, toggleBoard: () => void, ui: ReturnType<typeof mountInsights>,
- *   view: () => Record<string, any>}} `open` and `close` follow the drawer; `toggleBoard` opens it as the full-screen board,
+ *   view: () => Record<string, any>, reel: ReturnType<typeof createReelPart>}} `open` and `close` follow the drawer; `toggleBoard` opens it as the full-screen board,
  *   or closes it when it is one; `update` refreshes the shown tab; the `note` functions feed it what the app hears
  */
 export function mountInsightsPart(ctx) {
     const { deps } = ctx;
     const data = createInsightsData();
     const scenes = createSceneCounters();
+    const reel = createReelPart(deps, scenes);
     const later = { data, view: () => view(), charts: () => charts };
     const ui = mountInsights(deps.doc, ctx.drawers.body(INSIGHTS_DRAWER), drawerOptions(ctx, later));
     const charts = createWorldCharts(ctx, () => ui);
-    const view = createView({ deps, data, scenes });
+    const view = createView({ deps, data, scenes, reel });
     const refresh = () => {
         ui.update(view());
         charts.sync();
     };
     const board = createBoard(ctx, ui, refresh);
+    const feed = createFrameFeed(deps, scenes);
     return {
         ui,
         view,
+        reel,
         open() {
             appLog('info', 'InsightsOpened', { tab: ui.tab(), board: ui.board() });
             refresh();
@@ -212,6 +232,7 @@ export function mountInsightsPart(ctx) {
         noteReady(ready) {
             readyInsights(data, ready);
             resetSceneCounters(scenes, ready);
+            reel.reset();
             charts.close();
             charts.sync();
         },
@@ -220,6 +241,9 @@ export function mountInsightsPart(ctx) {
             advanceSeason(scenes, stats.tick);
         },
         noteEffect: (effect) => noteSceneEffect(scenes, effect),
-        noteFrame: createFrameFeed(deps, scenes),
+        noteFrame(nowMs) {
+            feed(nowMs);
+            reel.tick(nowMs);
+        },
     };
 }

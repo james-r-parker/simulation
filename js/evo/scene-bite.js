@@ -174,3 +174,13 @@ export function biteMetrics(scene) {
         'eval.bite_off_other_view': viewShare(VIEW.OTHER),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const biteDetector = {
+    name: 'bite',
+    modules: ['js/evo/scene-bite.js'],
+    sourceTest: 'test/evo/metric-source-hunter-bites.test.js',
+    create: (config) => createBiteScene(config),
+    onTick: (scene, world) => tickBite(scene, world),
+    metrics: (scene) => biteMetrics(scene),
+};

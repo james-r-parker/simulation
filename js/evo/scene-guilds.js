@@ -3,7 +3,7 @@
 // before a hunter closes within `callRadius * 0.5`), and reproducer share of births during post-bust recovery ticks
 // (`population < 120`). Observer state only; zero per-tick allocations.
 
-import { BORN_CAUSE, DEATH_CAUSE } from '../sim/events.js';
+import { BORN_CAUSE, DEATH_CAUSE, EVENT, EVENT_TICK } from '../sim/events.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { metricName } from './metric-registry/index.js';
 import { none, ok, per1k } from './metrics-stats.js';
@@ -211,3 +211,37 @@ export function guildMetrics(scene) {
             : ok(scene.recoveryReproducerBirths / scene.recoveryBirths);
     return out;
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const guildsDetector = {
+    name: 'guilds',
+    modules: ['js/evo/scene-guilds.js'],
+    create: (config) => createGuildScene(config),
+    on: {
+        AGENT_DIED: (scene, world, o) => {
+            const d = world.events.data;
+            noteGuildDeath(scene, {
+                tick: d[o + EVENT_TICK],
+                spec: d[o + EVENT.AGENT_DIED.SPEC],
+                age: d[o + EVENT.AGENT_DIED.AGE_TICKS],
+                cause: d[o + EVENT.AGENT_DIED.CAUSE],
+            });
+        },
+        ALARM_CALLED: (scene, world, o) => noteGuildAlarm(scene, world, world.events.data[o + EVENT.ALARM_CALLED.SLOT]),
+        AGENT_BORN: (scene, world, o) => {
+            const d = world.events.data;
+            noteGuildBirth(scene, {
+                tick: d[o + EVENT_TICK],
+                spec: d[o + EVENT.AGENT_BORN.SPEC],
+                cause: d[o + EVENT.AGENT_BORN.CAUSE],
+            });
+        },
+    },
+    onTick: (scene, world) => {
+        tickGuilds(scene, world);
+        if (world.tick % 1000 === 0) {
+            sampleGuilds(scene, world);
+        }
+    },
+    metrics: (scene) => guildMetrics(scene),
+};

@@ -23,7 +23,7 @@
 // The checkpoint is one pass over the agent slots; an event adds to a few running totals; nothing is allocated per tick.
 // The scene reads the world and writes only itself, so no hash can move.
 
-import { BORN_CAUSE, DEATH_CAUSE } from '../sim/events.js';
+import { BORN_CAUSE, DEATH_CAUSE, EVENT } from '../sim/events.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { createEdgeGates, edgeGateMetrics, sampleEdgeGates } from './scene-edge-gates.js';
@@ -241,3 +241,27 @@ export function edgeMetrics(scene) {
         ...edgeGateMetrics(scene.gates),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const edgeDetector = {
+    name: 'edge',
+    modules: ['js/evo/scene-edge.js', 'js/evo/scene-edge-gates.js'],
+    every: 1000,
+    create: () => createEdgeScene(),
+    on: {
+        AGENT_DIED: (scene, world, o) => {
+            const d = world.events.data;
+            noteEdgeDeath(scene, world, {
+                cause: d[o + EVENT.AGENT_DIED.CAUSE],
+                spec: d[o + EVENT.AGENT_DIED.SPEC],
+                foodEnergy: d[o + EVENT.AGENT_DIED.FOOD_ENERGY],
+            });
+        },
+        AGENT_BORN: (scene, world, o) => {
+            const d = world.events.data;
+            noteEdgeBirth(scene, world, { cause: d[o + EVENT.AGENT_BORN.CAUSE], spec: d[o + EVENT.AGENT_BORN.SPEC] });
+        },
+    },
+    onTick: (scene, world) => sampleEdge(scene, world),
+    metrics: (scene) => edgeMetrics(scene),
+};

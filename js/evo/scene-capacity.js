@@ -18,7 +18,7 @@
 // The checkpoint is one pass over the agent slots and the food slots every 1000 ticks, and a death adds two numbers to the
 // run's totals; nothing is allocated per tick. The scene reads the world and writes only itself, so no hash can move.
 
-import { DEATH_CAUSE } from '../sim/events.js';
+import { DEATH_CAUSE, EVENT } from '../sim/events.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { mean, none, ok } from './metrics-stats.js';
@@ -213,3 +213,22 @@ export function capacityMetrics(scene) {
         'eval.density_intake_slope': slopeResult(scene, 'intake'),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const capacityDetector = {
+    name: 'capacity',
+    modules: ['js/evo/scene-capacity.js'],
+    every: 1000,
+    create: (config) => createCapacityScene(config),
+    on: {
+        AGENT_DIED: (scene, world, o) => {
+            const d = world.events.data;
+            noteCapacityDeath(scene, {
+                cause: d[o + EVENT.AGENT_DIED.CAUSE],
+                foodEnergy: d[o + EVENT.AGENT_DIED.FOOD_ENERGY],
+            });
+        },
+    },
+    onTick: (scene, world) => sampleCapacity(scene, world),
+    metrics: (scene) => capacityMetrics(scene),
+};

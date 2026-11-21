@@ -132,3 +132,13 @@ export function familyMetrics(scene, world) {
     }
     return metrics;
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const familiesDetector = {
+    name: 'families',
+    modules: ['js/evo/scene-families.js'],
+    every: 1000,
+    create: (config) => createFamilyScene(config),
+    onTick: (scene, world) => sampleFamilies(scene, world),
+    metrics: (scene, world) => familyMetrics(scene, world),
+};

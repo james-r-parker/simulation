@@ -4,6 +4,7 @@ import { BURN_IN_TICKS } from './burn-in.js';
 import { CHASE_OUTCOME } from './chase-outcome.js';
 import { none, ok } from './metrics-stats.js';
 import { RING_SPEED } from './style.js';
+import { EVENT, EVENT_TICK } from '../sim/events.js';
 
 export const AMBUSH_STILL_TICKS = 60;
 
@@ -170,3 +171,21 @@ export function stillnessMetrics(scene) {
                 : ok(scene.ambushCatches / scene.caughtApproaches),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const stillnessDetector = {
+    name: 'stillness',
+    modules: ['js/evo/scene-stillness.js'],
+    create: (config) => createStillnessScene(config),
+    on: {
+        AGENT_DIED: (scene, world, o, observer) => {
+            const d = world.events.data;
+            if (observer.genomeId[d[o + EVENT.AGENT_DIED.SLOT]] === d[o + EVENT.AGENT_DIED.GENOME_ID]) {
+                noteStillnessDeath(scene, d[o + EVENT.AGENT_DIED.SLOT], d[o + EVENT_TICK]);
+            }
+        },
+    },
+    onSlotFree: resetStillnessSlot,
+    onTick: (scene, world, observer) => tickStillness(scene, observer, world),
+    metrics: (scene) => stillnessMetrics(scene),
+};
