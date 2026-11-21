@@ -98,6 +98,7 @@ export function shouldOpenInspector(drawer, id, hudShown) {
  * @property {() => import('./interpolate.js').Interpolated} [getAgents] the frame's agents, for the scene counters
  * @property {() => {count: number, hunter: Int32Array} | null} [getPursuits] the renderer's pursuit table, for the scene
  *   counters
+ * @property {boolean} [reelMode] whether `?reel=1` makes each scene moment follow its subject
  * @property {(text: string) => Promise<unknown> | unknown} [copyText] puts text on the clipboard, for the insights export
  * @property {(target: import('./insights-follow.js').InsightTarget) => void} [followTarget] follows what an insights row
  *   names
@@ -229,9 +230,7 @@ function build(deps) {
         persist: () => persist(ctx),
     };
     mountParts(ctx);
-    if (deps.board) {
-        ctx.insights.toggleBoard();
-    }
+    void (deps.board && ctx.insights.toggleBoard());
     return ctx;
 }
 
@@ -387,6 +386,7 @@ function createListeners(ctx) {
  * @param {InterfaceDeps} deps the injected parts
  * @returns {{hooks: import('./actions.js').UiHooks, listeners: Record<string, Function>, tick: (nowMs: number) => void,
  *   syncRays: () => void, startWorld: (seed: number) => void, toast: (text: string) => void,
+ *   reel: ReturnType<typeof import('./interface-reel.js').createReelPart>,
  *   onEffect: (effect: import('./renderer/effects-player.js').Effect) => void,
  *   afterDraw: (frame: {tick: number}) => void, openInspectorOnPick: (id?: number) => void,
  *   resize: () => void, pointer: (x: number, y: number) => void, peekAt: (x: number, y: number) => void,
@@ -402,6 +402,7 @@ export function createInterface(deps) {
         syncRays: () => syncRays(ctx),
         startWorld: (seed) => startWorld(ctx, seed),
         toast: ctx.toast,
+        reel: ctx.insights.reel,
         onEffect(effect) {
             ctx.audio.onEffect(effect);
             ctx.insights.noteEffect(effect);

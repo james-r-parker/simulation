@@ -124,7 +124,7 @@ Waits on [worker-and-renderer.md](worker-and-renderer.md) Phase 5 (`archive-stor
 
 #### Worth keeping
 
-`js/evo/scene-keeper.js` (`createKeeperScene`, `noteKeeperBirth`, `noteKeeperDeath`, `tickKeeper`, `keeperCandidates`), registered in [observer-scenes.js](../../js/evo/observer-scenes.js) like the recruit scene ([scene-recruit.js](../../js/evo/scene-recruit.js)). A lineage nominates one genome when all hold:
+`js/evo/scene-keeper.js` (`createKeeperScene`, `noteKeeperBirth`, `noteKeeperDeath`, `tickKeeper`, `keeperCandidates`), registered in `js/evo/detectors.js` as a detector (registries.md Phase 3) like the recruit scene ([scene-recruit.js](../../js/evo/scene-recruit.js)). A lineage nominates one genome when all hold:
 
 1. **A hard stretch.** The lineage was alive through at least one of: a winter ([eras.js](../../js/sim/eras.js) season), a population crash (the world under 40% of its peak over `KEEPER_WINDOW_TICKS`), or a stretch of `KEEPER_HUNTED_TICKS` with a hunter within `callRadius` of one of its members.
 2. **The grandchildren repeat the skill.** At least `KEEPER_GRANDCHILDREN` (4) grandchildren of the nominee, born after the stretch began, each performed the skill of the specialisation: a hunter made a deliberate kill, a forager left a depleted patch, prey escaped a chase (the counters of [observer-lineage-counters.js](../../js/evo/observer-lineage-counters.js)). Descendants of a pool founder count like any other.

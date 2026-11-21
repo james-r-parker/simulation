@@ -57,6 +57,7 @@
         ".github/workflows/check.yml",
         ".github/workflows/nightly.yml",
         ".release-please-manifest.json",
+        "AGENTS.md",
         "CHANGELOG.md",
         "README.md",
         "bench/baseline.json",
@@ -193,6 +194,10 @@
     ],
     "test/evo/curriculum.test.js": [
         "test/fixtures/train-curriculum.json"
+    ],
+    "test/evo/detectors.contract.test.js": [
+        "js/evo/metrics-combat.js",
+        "test/fixtures/metric-names.json"
     ],
     "test/evo/drill-adrift.test.js": [
         "test/fixtures/stages/hunt-weak.json"

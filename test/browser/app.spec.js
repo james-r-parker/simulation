@@ -336,7 +336,7 @@ test('D opens the insights drawer with every tab filled, Shift+D makes it the bo
     await page.keyboard.press('Shift+KeyD');
     await expect(page.locator('.drawer-insights.insights-board.open')).toBeAttached();
     await expect(page.locator('html.insights-board-on')).toBeAttached();
-    await expect(page.locator('.insights-panel:not([hidden])')).toHaveCount(5);
+    await expect(page.locator('.insights-panel:not([hidden])')).toHaveCount(6);
     await page.keyboard.press('Escape');
     await expect(page.locator('.drawer.open')).toHaveCount(0);
     await expect(page.locator('html.insights-board-on')).toHaveCount(0);

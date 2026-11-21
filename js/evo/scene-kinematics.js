@@ -160,3 +160,13 @@ export function kinematicsMetrics(scene, tally) {
             scene.totalTurnPairs === 0 ? none(NO_TURN_PAIRS) : ok(scene.totalTurnReversals / scene.totalTurnPairs),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const kinematicsDetector = {
+    name: 'kinematics',
+    modules: ['js/evo/scene-kinematics.js'],
+    create: (config) => createKinematicsScene(config),
+    onSlotFree: resetKinematicsSlot,
+    onTick: (scene, world, observer) => tickKinematics(scene, observer, world),
+    metrics: (scene, world, observer) => kinematicsMetrics(scene, observer.scenes.approach.tally),
+};

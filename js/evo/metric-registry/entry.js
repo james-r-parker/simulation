@@ -44,7 +44,7 @@
  * Source tests); an entry's own `source` wins.
  * @type {Readonly<Record<string, string>>}
  */
-const SOURCE_BY_MODULE = Object.freeze({
+export const SOURCE_BY_MODULE = Object.freeze({
     'js/evo/scene-hunters.js': 'test/evo/metric-source-hunters.test.js',
     'js/evo/scene-hunter-age.js': 'test/evo/metric-source-hunters.test.js',
     'js/evo/scene-bite.js': 'test/evo/metric-source-hunter-bites.test.js',

@@ -22,7 +22,7 @@ export const LENS_COUNT = 4;
  * @property {number} tvIdleMinutes minutes without input before TV mode starts by itself; 0 turns it off
  * @property {boolean} followPlate whether a followed subject shows its plate
  * @property {'auto' | number} dim the night dim: `auto` (by the clock, in TV mode) or a fixed brightness from 0.3 to 1
- * @property {string} insightsTab the insights drawer's tab: `world`, `scenes`, `families`, `records` or `export`
+ * @property {string} insightsTab the insights drawer's tab: `world`, `scenes`, `families`, `records`, `export` or `reel`
  */
 
 /** The lowest fixed night dim: the screen never goes darker than this. */
@@ -32,7 +32,7 @@ export const DIM_MIN = 0.3;
 export const TV_IDLE_MINUTES = 5;
 
 /** The insights drawer's tabs, in order (`js/app/ui/insights.js` holds the same list). */
-export const INSIGHTS_TABS = Object.freeze(['world', 'scenes', 'families', 'records', 'export']);
+export const INSIGHTS_TABS = Object.freeze(['world', 'scenes', 'families', 'records', 'export', 'reel']);
 
 /** The `uiScale` values. */
 const UI_SCALES = ['auto', 1, 1.25, 1.5, 2];

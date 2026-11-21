@@ -5,6 +5,7 @@
 import { mountExportTab } from './insights-export.js';
 import { mountFamiliesTab } from './insights-families.js';
 import { mountRecordsTab } from './insights-records.js';
+import { mountReelTab } from './insights-reel.js';
 import { mountScenesTab } from './insights-scenes.js';
 import { mountWorldTab } from './insights-world.js';
 
@@ -25,6 +26,7 @@ export const TABS = Object.freeze([
     { id: 'families', label: 'Families', mount: mountFamiliesTab },
     { id: 'records', label: 'Records', mount: mountRecordsTab },
     { id: 'export', label: 'Export', mount: mountExportTab },
+    { id: 'reel', label: 'Reel', mount: mountReelTab },
 ]);
 
 /** The tab shown when none is chosen. */

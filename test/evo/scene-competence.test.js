@@ -10,7 +10,7 @@ import {
     createCompetenceScene,
     noteChase,
     noteCompetenceBirth,
-    noteCompetenceRecord,
+    competenceDetector,
 } from '../../js/evo/scene-competence.js';
 import { directionOf, namesOf } from './helpers/metric-registry.js';
 
@@ -62,7 +62,8 @@ function record(scene, type, [id, age, kills = 0, dependent = 0]) {
     const ring = createEventRing(1);
     const o = pushEvent(ring, type, 1);
     ring.data.set([id, age, kills, dependent], o + 2);
-    noteCompetenceRecord(scene, ring.data, o);
+    const event = type === EVENT_TYPE.HUNTER_KILL ? 'HUNTER_KILL' : 'HUNTER_LEDGER';
+    competenceDetector.on?.[event](scene, { events: ring }, o, {});
 }
 
 /**

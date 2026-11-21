@@ -15,7 +15,7 @@
 import { FOOD_GONE } from '../sim/world.js';
 import { FOOD_KIND, FOOD_ORIGIN } from '../sim/carcass.js';
 import { BURN_IN_TICKS } from './burn-in.js';
-import { createLossScene, noteLossBase } from './scene-carcass-loss.js';
+import { createLossScene, noteLossBase, carcassLossMetrics } from './scene-carcass-loss.js';
 import { noteScavengeMeal, tickScent } from './scene-scent.js';
 
 /**
@@ -157,3 +157,12 @@ function sameCarcass(scene, world, food) {
         world.foodAge[food] === scene.age[food] + Math.max(1, world.tick - scene.lastTick)
     );
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const carcassDetector = {
+    name: 'carcass',
+    modules: ['js/evo/scene-carcass-loss.js'],
+    create: (config) => createCarcassScene(config),
+    onTick: (scene, world, observer) => trackCarcasses(scene, observer, world, observer.scenes.scent),
+    metrics: (scene, world) => carcassLossMetrics(scene.loss, world, scene.eaten),
+};

@@ -6,6 +6,7 @@
 
 import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './burn-in.js';
+import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
 
 /** Ticks between the sample that finds an agent in a depleted patch and the one that reads where it is. */
 export const PATCH_STAY_TICKS = 300;
@@ -138,3 +139,14 @@ export function patchMetrics(scene) {
         'eval.patch_leave_depleted': total > 0 ? ok(scene.leave / total) : empty,
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const patchDetector = {
+    name: 'patch',
+    modules: ['js/evo/scene-patch.js'],
+    every: MOTION_SAMPLE_TICKS,
+    create: (config) => createPatchScene(config),
+    onSlotFree: resetPatchSlot,
+    onTick: (scene, world) => samplePatches(scene, world),
+    metrics: (scene) => patchMetrics(scene),
+};

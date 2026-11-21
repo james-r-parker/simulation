@@ -20,7 +20,7 @@
 //
 // Observer state outside `worldHash`; nothing is allocated per tick.
 
-import { EVENT_TYPE, EVENT } from '../sim/events.js';
+import { EVENT } from '../sim/events.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { kaplanMeier } from './kaplan-meier.js';
@@ -210,21 +210,6 @@ function noteCompetenceDeath(scene, d, o) {
 }
 
 /**
- * Notes one event record when it is a hunter's first kill or death.
- * @param {Record<string, any>} scene the competence scene
- * @param {Float64Array} d the event ring data
- * @param {number} o the record offset
- * @returns {void}
- */
-export function noteCompetenceRecord(scene, d, o) {
-    if (d[o] === EVENT_TYPE.HUNTER_KILL) {
-        noteCompetenceKill(scene, d, o);
-    } else if (d[o] === EVENT_TYPE.HUNTER_LEDGER) {
-        noteCompetenceDeath(scene, d, o);
-    }
-}
-
-/**
  * @param {Record<string, any>} scene the competence scene
  * @param {Record<string, any>} world the world at the last tick; one without agents leaves the open observations out
  * @returns {{times: Float64Array, events: Uint8Array}} the closed observations, and the open ones of the hunters alive at the
@@ -293,3 +278,18 @@ export function competenceMetrics(scene, world) {
         'eval.hunter_independent_kill_share': share(scene.independentKills, scene.kills, 'no deliberate kill'),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const competenceDetector = {
+    name: 'competence',
+    modules: ['js/evo/scene-competence.js'],
+    sourceTest: 'test/evo/metric-source-hunter-chases.test.js',
+    create: (config) => createCompetenceScene(config),
+    on: {
+        HUNTER_KILL: (scene, world, o) => noteCompetenceKill(scene, world.events.data, o),
+        HUNTER_LEDGER: (scene, world, o) => noteCompetenceDeath(scene, world.events.data, o),
+        AGENT_BORN: (scene, world, o) =>
+            noteCompetenceBirth(scene, world, world.events.data[o + EVENT.AGENT_BORN.SLOT]),
+    },
+    metrics: (scene, world) => competenceMetrics(scene, world),
+};
