@@ -4,9 +4,18 @@
 import { describe, expect, it } from 'vitest';
 import { cloneWithNoisePolicy } from '../../js/sim/birth-policy.js';
 import { createConfig } from '../../js/sim/config.js';
-import { GROUP_LANES, compileGroups, readGroup } from '../../js/sim/effect-group.js';
+import { GROUP_LANES, compileGroups, foldGroup } from '../../js/sim/effect-group.js';
 import { LEVEL, LANE_ID } from '../../js/sim/effect-refs.js';
-import { EFFECT, GROUP, SYSTEM, costFactors, liveIn, liveOf, motionFactors } from '../../js/sim/effects.js';
+import {
+    EFFECT,
+    GROUP,
+    SYSTEM,
+    costFactors,
+    heatFactors,
+    liveIn,
+    liveOf,
+    motionFactors,
+} from '../../js/sim/effects.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
 
@@ -28,7 +37,7 @@ const ON = {
  * @returns {number} the lanes compared
  */
 function compareSlot(world, slot, differ) {
-    const read = [motionFactors, costFactors];
+    const read = [motionFactors, costFactors, heatFactors];
     let compared = 0;
     for (let group = 0; group < GROUP_LANES.length; group++) {
         read[group](world, slot);
@@ -95,15 +104,48 @@ describe('the group reads', () => {
         const cost = world.effectGroups[GROUP.COST];
         expect(Array.from(cost.effects)).toEqual([EFFECT.JUVENILE]);
         expect(Array.from(cost.band)).toEqual([-1, -1, EFFECT.COLD_RAMP, EFFECT.HOT_RAMP, -1]);
+        const heat = world.effectGroups[GROUP.HEAT];
+        expect([Array.from(heat.effects), heat.banded]).toEqual([[], false]);
+        expect(Array.from(heat.lanes)).toEqual([LANE_ID.temperatureGainMove, LANE_ID.temperatureLossPassive]);
     });
 
-    it('reads a group with no temperature effect without the band read', () => {
+    it('reads the heat lanes through the adrenaline, rally and huddle effects once their numbers are on', () => {
+        const world = createWorld(
+            createConfig({ seed: 9, initialAgents: 4, minAgents: 4, maxAgents: 8, ...ON, huddleWarmth: 0.1 }),
+            cloneWithNoisePolicy(),
+        );
+        expect(Array.from(world.effectGroups[GROUP.HEAT].effects)).toEqual(
+            [EFFECT.PANICKED, EFFECT.RALLIED, EFFECT.HUDDLED].sort((a, b) => a - b),
+        );
+    });
+
+    it('folds every lane of the group in the one call, so liveIn reads the folded row and folds nothing', () => {
+        const world = createWorld(
+            createConfig({ seed: 9, initialAgents: 4, minAgents: 4, maxAgents: 8 }),
+            cloneWithNoisePolicy(),
+        );
+        const slot = world.alive.indexOf(1);
+        costFactors(world, slot);
+        const lanes = GROUP_LANES[GROUP.COST];
+        const folded = lanes.map((lane) => liveOf(world, slot, lane));
+        for (const lane of lanes) {
+            world.laneArrays[lane][slot] *= 3;
+        }
+        expect(lanes.map((lane) => liveIn(world, slot, GROUP.COST, lane))).toEqual(folded);
+        expect(Array.from(world.effectGroups[GROUP.COST].live)).toEqual(folded);
+    });
+
+    it('reads a group with no temperature effect without the band read, and folds its lanes from the levels', () => {
+        /** @type {any[]} a rule of a fixture effect: `1 + 1 x level` on `maxTurn` */
         const laneRules = [];
-        laneRules[LANE_ID.maxTurn] = [{ effect: 0 }];
+        laneRules[LANE_ID.maxTurn] = [{ effect: 0, per: { kind: 0, value: 1 }, levels: null, by: -1, power: false }];
         const effectGroups = compileGroups([{ name: 'calm' }], laneRules);
         expect(effectGroups[GROUP.MOTION].banded).toBe(false);
-        const world = { effectGroups, temperature: null };
-        readGroup(
+        const laneArrays = [];
+        laneArrays[LANE_ID.maxTurn] = Float64Array.of(2);
+        laneArrays[LANE_ID.maxThrust] = Float64Array.of(5);
+        const world = { effectGroups, laneArrays, temperature: null };
+        foldGroup(
             () => {
                 LEVEL[0] = 0.5;
             },
@@ -112,5 +154,6 @@ describe('the group reads', () => {
             GROUP.MOTION,
         );
         expect(effectGroups[GROUP.MOTION].levels[0]).toBe(0.5);
+        expect(Array.from(effectGroups[GROUP.MOTION].live)).toEqual([2 * 1.5, 5]);
     });
 });

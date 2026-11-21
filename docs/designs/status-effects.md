@@ -1,6 +1,6 @@
 # Status effects
 
-**Status:** In progress - Phases 1 and 2 are built and reviewed (T8, T14; the 16-seed share baseline is E270). Phase 3: T13, the calculator's `effects` and the `pack:forager` row, is built. Phase 5 T23 to T29 are built, its Targets not met (T30 open). Next: the numbers (T15 to T19).
+**Status:** In progress - Phases 1 and 2 are built and reviewed (T8, T14; the 16-seed share baseline is E270). Phase 3: T13, the calculator's `effects` and the `pack:forager` row, is built. Phase 5 T23 to T30 are built, its Targets not met (lifecycle +57%, physics +19%; the next lever is in Phase 5). Next: the numbers (T15 to T19).
 **Validated:** 23e8cc66 (2026-11-21)
 **Scheduled by:** [fair-chase.md](fair-chase.md) step 2 - built straight after body-genes.md Phase 1 and before the calculator, which reads the effects; every large rules change lands before any training
 **Depends on:** [body-genes.md](body-genes.md)
@@ -274,6 +274,45 @@ raises `wounded` and `panicked`, with their events and a fade walk of their rows
 read inside it, and skip `chilled`, `wounded` and `panicked` while their numbers are 0 if the detectors' neutral readings
 may go to 0.
 
+**Measured (T30, 2026-11-21): the Targets are still not met.** Three changes, each with every golden `worldHash` and
+`effects-divergence.slow.test.js` unchanged: `foldGroup` reads a group's levels and folds every lane of the group in one
+pass, the lane's base read inside it, into the group's `live` row (`liveIn` reads it; with every level 0 no rule is walked);
+`stepChilled` keeps no clock while `coldStackRate` is 0 and a bite raises `wounded` only with `woundThrust` above 0 and
+`panicked` only with `panicThrust`, `panicBurn` or `shakenThrust` above 0 (`chilledOn`, `woundOn`, `panicOn` in
+`js/sim/effect-numbers.js`); and the two heat lanes of `stepTemperature` are a third group, `GROUP.HEAT`, in place of two
+`liveOf` calls. The skip is world-neutral: each of the four effects reaches the world only through its scale rules
+(`chilled`: `passiveLoss` by `coldStackRate`; nothing reads its stacks for cold death or temperature), every one a factor of
+exactly 1 at those numbers, and `worldHash` leaves the stored rows out while every number of `SOCIAL_KEYS` is 0. (A
+config with another social number on, say `huddleWarmth` above 0 and `woundThrust` 0, hashes the stored rows and now finds
+these four at 0, so its `worldHash` differs from one recorded before T30 though its world is the same; no golden pins such a
+config.) What it changes is the detectors:
+`eval.effect_share` of `chilled`, `wounded`, `panicked` and `shaken` now reads 0 at neutral numbers (E270's 0.199, 0.015,
+0.003 and 0.004 were stacks that changed nothing), as every call effect and `staggered` already did, and the inspector shows
+no such stack until its number is on. Timed with the same harness as T29, five alternating rounds under the CPU lock at load
+25 to 40 on 32 cores, median milliseconds a tick:
+
+| Phase     | 4e56979d | batch head before T30 | T30 head | T30 head against 4e56979d |
+| --------- | -------- | --------------------- | -------- | ------------------------- |
+| lifecycle | 0.211    | 0.344 (+63%)          | 0.332    | +57%                      |
+| physics   | 0.329    | 0.399 (+21%)          | 0.390    | +19%                      |
+| brain     | 1.140    | 1.248 (+10%)          | 1.164    | +2% (noise check)         |
+
+The gain is a few percent, inside the noise of the loaded machine. A CPU profile of the same pass, the two trees back to
+back, puts the gap in `foldGroup` itself: 166 ms of samples under lifecycle (the `COST` and `HEAT` groups) and 129 ms under
+physics (`MOTION`), of a lifecycle gap of 270 ms and a physics gap of 155 ms; `effect*.js` holds 5.3% of all samples. At
+the defaults every body reads `fat` above 0, so `MOTION` folds two rules for every body, and `grazing` is on for 40%;
+`COST` has any level above 0 for 19% of bodies (`juvenile`), so most of its cost is the level reads and the six base reads.
+The level reads still go through `levelOfEffect`, whose four `switch` parts are calls the compiler does not inline. Next
+step for the Targets: a reader per group generated from its effect list (the `MOTION` levels read in place, as T26 wrote
+the dispatch), and reading a lane's base lazily in `liveIn` when the group's levels are all 0, so the `visionCost` and
+`sprintCost` lanes are read only when `tickCost` needs them.
+
+The T30 conformance review (a fresh agent, beside `scripts/check.sh`) found no defect in the code: no per-tick
+allocation, `foldGroup` multiplies in `liveOf`'s order, and no sim reader of the four skipped effects' stacks or events. It
+corrected two rows as built: T24's `effectLive` count is read by the fade pass only (`fold` and `gateOpen` do not check it;
+T25 has already dropped those rules at neutral numbers, so nothing is lost), and T27's `COST` group never held the two
+temperature lanes, which are `GROUP.HEAT` since T30.
+
 ## Decisions
 
 | Decision                                                       | Holds because                                                                                                                                                                                                                                                                                                                                                              |
@@ -361,7 +400,7 @@ may go to 0.
 | T27 | (built) Read a slot's levels once for a group of lanes: `motionFactors` (the `maxThrust` and `maxTurn` lanes of `actAll`) and `costFactors` (the six lanes of `tickCost` and the two temperature lanes of `stepTemperature`, which then read inside the same window) each read every effect the group's rules name once, into a `Float64Array`, and multiply each lane's rules from it; the five temperature readers become one band read of `temperature[slot]` and its lanes; delete `pinSlot` and `unpinSlot` when no caller remains | [judgement]  | T24, T25, T26           |
 | T28 | (built) Skip the social passes at neutral numbers: no huddle search while `huddleWarmth` is 0, no `heardFrom` or `settleCalls` bookkeeping while every number of `rallied`, `answered` and `hoarse` is 0 (whatever PR 613 has not already trimmed); a test that each pass runs once its number is above 0                                                                                                                                                                                                                               | [mechanical] | T23                     |
 | T29 | (built) Measure: `flock /tmp/claude-1000/cpu.lock node scripts/bench-compare.mjs --base 4e56979d --sizes=500 --runs=5` on a quiet machine, the three Targets against the 5% bar, and a CPU profile through the same script as the results file, recorded in this phase; re-record `bench/baseline.json` in its own commit if the step moved                                                                                                                                                                                             | [judgement]  | T24, T25, T26, T27, T28 |
-| T30 | Conformance review of Phase 5 by a fresh agent, in parallel with `scripts/check.sh`; every golden unchanged                                                                                                                                                                                                                                                                                                                                                                                                                             | [judgement]  | T29                     |
+| T30 | (built; the Targets still not met, see "Measured (T30)") Conformance review of Phase 5 by a fresh agent, in parallel with `scripts/check.sh`; every golden unchanged                                                                                                                                                                                                                                                                                                                                                                    | [judgement]  | T29                     |
 
 ## Verification
 

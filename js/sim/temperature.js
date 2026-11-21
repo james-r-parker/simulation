@@ -2,12 +2,13 @@
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { stepChilled } from './effect-chilled.js';
-import { LANE_ID, liveOf } from './effects.js';
+import { GROUP, LANE_ID, heatFactors, liveIn } from './effects.js';
 import { coldFactor } from './terrain.js';
 
 // The lanes read here, as constants: a property load from `LANE_ID` in a hot loop boxes its number.
 const TEMPERATURE_GAIN_MOVE_LANE = LANE_ID.temperatureGainMove;
 const TEMPERATURE_LOSS_PASSIVE_LANE = LANE_ID.temperatureLossPassive;
+const HEAT = GROUP.HEAT;
 
 /** @typedef {import('./world.js').World} World */
 
@@ -27,7 +28,7 @@ export function gainTemperature(world, slot, amount) {
  * (capped at its `heatSpeedCap` lane, 1 by default) times its `temperatureGainMove` lane, its `temperatureLossPassive`
  * lane cools it, scaled by the season, and a sprint warms it by its `sprintHeat` lane times the sprint delivered
  * (`sprintFactor`, 1 with the store off); then clamps to 0 to `temperatureMax` and advances the `chilled` clock. The heat
- * lanes are read with the effects applied (`liveOf`: the adrenaline effects warm a body, a huddle cools it less).
+ * lanes are read with the effects applied (`heatFactors`: the adrenaline effects warm a body, a huddle cools it less).
  * @param {World} world the world
  * @param {number} slot the agent slot
  * @returns {void}
@@ -41,10 +42,12 @@ export function stepTemperature(world, slot) {
     const modifier = c.seasons[world.season[0]].temperatureModifier;
     const loss = Math.max(0, 1 - modifier * c.temperatureSeasonSlope);
     const sprinting = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0;
+    heatFactors(world, slot); // each effect level is read once for the two heat lanes
     const next =
         world.temperature[slot] +
-        Math.min(speed / c.maxVelocity, lanes.heatSpeedCap[slot]) * liveOf(world, slot, TEMPERATURE_GAIN_MOVE_LANE) -
-        liveOf(world, slot, TEMPERATURE_LOSS_PASSIVE_LANE) * loss * coldFactor(c, world.y[slot]) +
+        Math.min(speed / c.maxVelocity, lanes.heatSpeedCap[slot]) *
+            liveIn(world, slot, HEAT, TEMPERATURE_GAIN_MOVE_LANE) -
+        liveIn(world, slot, HEAT, TEMPERATURE_LOSS_PASSIVE_LANE) * loss * coldFactor(c, world.y[slot]) +
         (sprinting ? lanes.sprintHeat[slot] * world.sprintFactor[slot] : 0);
     world.temperature[slot] = Math.min(c.temperatureMax, Math.max(0, next));
     stepChilled(world, slot);
