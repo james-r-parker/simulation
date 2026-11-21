@@ -21,6 +21,8 @@ import { exitCodeOf, parseFlags } from './lib/cli-args.mjs';
 import { formatDefenderSearch, searchDefenderRows } from './lib/role-budget-defender-search.mjs';
 import { formatBirthSearch, searchBirthRows } from './lib/role-budget-birth-search.mjs';
 import { genesMode, readGenes } from './lib/role-budget-genes-report.mjs';
+import { logCells } from './lib/role-budget-log.mjs';
+import { readAmplifiers, splitRows } from './lib/role-budget-pack-report.mjs';
 import { formatCheck, formatReport, formatSearch } from './lib/role-budget-report.mjs';
 import { logRunConfig } from './lib/run-config.mjs';
 
@@ -153,28 +155,6 @@ export function applySets(overrides, set) {
         }
         return withPath(acc, pair.slice(0, at), /** @type {any} */ (valueOf(pair.slice(at + 1))));
     }, overrides);
-}
-
-/**
- * @param {Record<string, any>} config an `arenaConfig`
- * @param {ReturnType<typeof matrix>} result the matrix
- * @param {string} hash the config hash
- * @param {import('../js/sim/log.js').SimLog} log the log
- * @returns {void}
- */
-function logCells(config, result, hash, log) {
-    for (const row of result.rows) {
-        for (const [step, c] of Object.entries(row.cells)) {
-            log.log('debug', 'RoleBudgetCell', {
-                row: row.name,
-                step,
-                margin: c.margin,
-                status: c.status,
-                binding: c.binding,
-                configHash: hash,
-            });
-        }
-    }
 }
 
 /**
@@ -317,11 +297,11 @@ function searchAll(config, { overrides, result, where }) {
 /**
  * @param {boolean} json whether to print JSON
  * @param {{hash: string, result: ReturnType<typeof matrix>, searched: any[], defence: any[], birth: any[], check: any,
- *   genes?: {text: string, data: any} | null}} parts the config hash, the matrix, the searches, the cross-check and the
- *   rows read at the corners of the trait menus
+ *   genes?: {text: string, data: any} | null, amplifiers?: {text: string, data: any} | null}} parts the config hash, the
+ *   matrix, the searches, the cross-check, the rows read at the corners of the trait menus and the amplifier rows
  * @returns {string} the report: JSON, or the matrix followed by each part that was asked for
  */
-function render(json, { hash, result, searched, defence, birth, check, genes }) {
+function render(json, { hash, result, searched, defence, birth, check, genes, amplifiers }) {
     if (json) {
         return JSON.stringify(
             {
@@ -332,6 +312,7 @@ function render(json, { hash, result, searched, defence, birth, check, genes }) 
                 birthSearch: birth,
                 check,
                 genes: genes?.data,
+                amplifiers: amplifiers?.data,
             },
             null,
             2,
@@ -339,6 +320,7 @@ function render(json, { hash, result, searched, defence, birth, check, genes }) 
     }
     return [
         formatReport(result, hash),
+        ...(amplifiers ? [amplifiers.text] : []),
         ...(genes ? [genes.text] : []),
         ...(searched.length > 0 ? [formatSearch(searched)] : []),
         ...(defence.length > 0 ? [formatDefenderSearch(defence)] : []),
@@ -392,7 +374,8 @@ export async function runBudget(args, { logDir = '.sim/logs', print = console.lo
             ticks: null,
             extra: { model },
         });
-        const result = matrix(config, model, args.rows ?? BUILT_ROWS, {
+        const { gate, amplifiers: amplifierRows } = splitRows(args.rows, BUILT_ROWS);
+        const result = matrix(config, model, gate, {
             mix: args.mix,
             worldConfig: createConfig(overrides),
         });
@@ -401,12 +384,13 @@ export async function runBudget(args, { logDir = '.sim/logs', print = console.lo
             ? searchAll(config, { overrides, result, where: { model, outDir: args.outDir, arm } })
             : { searched: [], defence: [], birth: [] };
         const world = createConfig(overrides);
-        const check = args.check ? crossCheck(config, asked(args.rows ?? BUILT_ROWS, model, world), log) : null;
+        const check = args.check ? crossCheck(config, asked(gate, model, world), log) : null;
         const genes =
             args.genes === 'none'
                 ? null
-                : readGenes(args.genes, { config, worldConfig: world, model, mix: args.mix }, args.rows ?? BUILT_ROWS);
-        const text = render(args.json, { hash, result, searched, defence, birth, check, genes });
+                : readGenes(args.genes, { config, worldConfig: world, model, mix: args.mix }, gate);
+        const amplifiers = readAmplifiers(config, model, amplifierRows);
+        const text = render(args.json, { hash, result, searched, defence, birth, check, genes, amplifiers });
         emitReport(text, { print, out: args.out });
         if (check !== null && check.drift > 0) {
             throw Object.assign(new Error(`RoleBudgetDrift: ${check.drift} reading(s) outside their tolerance`), {

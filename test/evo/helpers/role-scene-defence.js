@@ -46,9 +46,12 @@ function inContacts(world, a, b) {
  * in its jaws: the condition of `tryDefenderRepel`), never by the metrics.
  * @param {Readonly<Record<string, any>>} config an `arenaConfig`
  * @param {DefenceScene} scene the scene
- * @returns {{metrics: Record<string, any>, shoveTicks: number[], firstShoveAt: number, defenderTicks: number,
- *   killTick: number | null}} the readings and the planted truth: the ticks (counted from 1 after burn-in) of the shoves, the
- *   world tick of the first (-1: none), the observed ticks a defender was alive in and the tick the caller died
+ * @returns {{metrics: Record<string, any>, shoveTicks: number[], kickTicks: Array<{tick: number, speed: number}>,
+ *   firstShoveAt: number, defenderTicks: number, killTick: number | null}} the readings and the planted truth: the ticks (counted
+ *   from 1 after burn-in) of the shoves by the contact list, the same by the sim's effect (`kickTicks`: per tick the hunter's
+ *   velocity change along the defender-to-hunter line, which `defenderRepelImpulse` alone moves by that much; independent of
+ *   `world.contacts`), the world tick of the first shove (-1: none), the observed ticks a defender was alive in and the tick the
+ *   caller died
  */
 export function playDefenceObserved(config, scene) {
     const { callerReaction = 2, defenderReaction = 2, letGo = false, ticks = 400, side } = scene;
@@ -72,11 +75,22 @@ export function playDefenceObserved(config, scene) {
     const shoveTicks = /** @type {number[]} */ ([]);
     const killed = { tick: /** @type {number | null} */ (null) };
     let defenderTicks = world.alive[2] === 1 ? 1 : 0;
+    const prior = { vx: 0, vy: 0 };
+    const kickTicks = /** @type {Array<{tick: number, speed: number}>} */ ([]);
     const { metrics } = playObserved(staged, {
         config,
         ticks,
         brains,
+        before(w) {
+            [prior.vx, prior.vy] = [w.vx[0], w.vy[0]];
+        },
         after(w, t) {
+            if (w.alive[0] === 1 && w.alive[2] === 1) {
+                const dx = w.x[0] - w.x[2];
+                const dy = w.y[0] - w.y[2];
+                const d = Math.hypot(dx, dy) || 1;
+                kickTicks.push({ tick: t, speed: ((w.vx[0] - prior.vx) * dx + (w.vy[0] - prior.vy) * dy) / d });
+            }
             defenderTicks += w.alive[2] === 1 ? 1 : 0;
             killed.tick ??= w.alive[1] === 0 ? t : null;
             const holds = w.outputs[2 * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0;
@@ -86,7 +100,7 @@ export function playDefenceObserved(config, scene) {
             }
         },
     });
-    return { metrics, shoveTicks, firstShoveAt: shoved.at, defenderTicks, killTick: killed.tick };
+    return { kickTicks, metrics, shoveTicks, firstShoveAt: shoved.at, defenderTicks, killTick: killed.tick };
 }
 
 /**

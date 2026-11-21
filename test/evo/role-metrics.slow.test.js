@@ -8,7 +8,9 @@
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 import { ROLE_METRICS } from '../../js/evo/metric-registry/roles.js';
+import { unassertedMetrics } from './helpers/role-asserted.js';
 import { playChase, HUNTER } from './helpers/role-scene.js';
 
 const TICKS = 300;
@@ -26,7 +28,7 @@ const starveHunter = (world) => {
     world.energy[HUNTER] = 0.0001;
 };
 
-describe('the predator metrics against a planted chase', () => {
+describe('the predator metrics against a planted chase', { timeout: scaleTimeout(60_000) }, () => {
     const caught = playChase({ gap: NEAR, ticks: TICKS });
     const missed = playChase({ gap: FAR, ticks: TICKS });
 
@@ -90,15 +92,19 @@ describe('the predator metrics against a planted chase', () => {
 });
 
 describe('every role of the registry', () => {
-    it('has each of its tagged metrics read against a planted scene in a role-metrics test', () => {
+    it('has each of its tagged metrics asserted by value against a planted scene in a role-metrics test', () => {
         const dir = new URL('.', import.meta.url);
         const sources = readdirSync(dir)
             .filter((file) => /^role-metrics.*\.slow\.test\.js$/.test(file))
-            .map((file) => readFileSync(new URL(file, dir), 'utf8'))
-            .join('\n');
-        const unread = Object.values(ROLE_METRICS)
-            .flat()
-            .filter((name) => !sources.includes(`'${name}'`));
-        expect(unread).toEqual([]);
+            .map((file) => readFileSync(new URL(file, dir), 'utf8'));
+        expect(unassertedMetrics(sources, Object.values(ROLE_METRICS).flat())).toEqual([]);
+    });
+
+    it('does not count a metric that is only quoted or checked for presence', () => {
+        const quoted = `const A = 'eval.bite_idle'; expect(Object.hasOwn(m, A)).toBe(true); const l = ['eval.bite_idle'];`;
+        const read = `const A = 'eval.bite_idle'; expect(run.metrics[A].value).toBeCloseTo(1, 9);`;
+        const literal = `expect(run.metrics['eval.alarm_lift'].value).toBeNull();`;
+        expect(unassertedMetrics([quoted], ['eval.bite_idle'])).toEqual(['eval.bite_idle']);
+        expect(unassertedMetrics([quoted, read, literal], ['eval.bite_idle', 'eval.alarm_lift'])).toEqual([]);
     });
 });
