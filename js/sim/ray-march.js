@@ -1,5 +1,6 @@
 // Casts each agent's rays against the circles near it, writing proximity and the hit's class to its inputs row.
-// An agent class channel holds the hit's proximity; fixture channels hold 1. The gather and the nearest hit of every
+// An agent class channel holds the hit's proximity; fixture channels hold 1. An agent hit also writes what its body
+// shows (size, speed, closing: `bodySenseOf`) to the per-ray lanes beside `rayHue`. The gather and the nearest hit of every
 // ray run in the sense kernel (`sense_slot` in wasm/src/sense.rs, docs/designs/wasm-kernels.md); the JS ray march was
 // deleted when the kernel was adopted (T11). The hit classes are rules and stay here.
 
@@ -16,6 +17,7 @@ import {
     RAY_CHANNELS,
 } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
+import { bodySenseOf } from './body-sense.js';
 import { couldBite } from './bite-rule.js';
 import { isKin } from './kin.js';
 import { AGENT, FOOD, KIND_STRIDE, OX, OY, RANGE } from './ray-gather.js';
@@ -56,7 +58,24 @@ function agentChannel(world, slot, other) {
 }
 
 /**
- * Writes the current ray's best hit as `RAY_CHANNELS` input values at `base`.
+ * Writes what the body in slot `other` shows the caster into the caster's per-ray lanes at `at`.
+ * @param {World} world the world
+ * @param {number} slot the casting agent
+ * @param {number} other the slot of the agent hit
+ * @param {number} at the ray's index in `raySize`, `raySpeed` and `rayClosing`
+ * @returns {void}
+ */
+function writeBody(world, slot, other, at) {
+    const out = world.bodySenseScratch;
+    bodySenseOf(world, slot, other, out);
+    world.raySize[at] = out[0];
+    world.raySpeed[at] = out[1];
+    world.rayClosing[at] = out[2];
+}
+
+/**
+ * Writes the current ray's best hit as `RAY_CHANNELS` input values at `base`, its food hue and its body lanes (each 0
+ * when the hit is not of that kind).
  * @param {World} world the world
  * @param {number} slot the casting agent
  * @param {number} base index of the ray's first value in `world.inputs`
@@ -67,6 +86,9 @@ function writeRay(world, slot, base, ray) {
     const { inputs, rayScratch: s, rayHue } = world;
     const hue = slot * world.config.rayCount + ray;
     rayHue[hue] = 0;
+    world.raySize[hue] = 0;
+    world.raySpeed[hue] = 0;
+    world.rayClosing[hue] = 0;
     for (let ch = 0; ch < RAY_CHANNELS; ch++) {
         inputs[base + ch] = 0;
     }
@@ -81,7 +103,9 @@ function writeRay(world, slot, base, ray) {
         rayHue[hue] = world.foodHue[key];
     }
     if (kind === AGENT) {
-        inputs[base + agentChannel(world, slot, key - kind * KIND_STRIDE)] = proximity;
+        const other = key - kind * KIND_STRIDE;
+        inputs[base + agentChannel(world, slot, other)] = proximity;
+        writeBody(world, slot, other, hue);
     } else {
         inputs[base + CHANNEL_OF_KIND[kind]] = 1;
     }

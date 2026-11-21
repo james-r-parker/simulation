@@ -1,5 +1,6 @@
 // Allocates the world's typed arrays once and manages agent and food slots.
 
+import { BODY_SENSE_LANES } from './body-sense.js';
 import { agentSpecs } from './agent-arrays.js';
 import { allocateFlora } from './flora-state.js';
 import { releaseItem } from './patch-reserve.js';
@@ -285,9 +286,10 @@ function allocClouds(world) {
 
 /**
  * @param {Readonly<Record<string, any>>} config the validated config
- * @returns {{rayHue: Float32Array, raySize: Float32Array, raySpeed: Float32Array, rayClosing: Float32Array}} the
- *   per-ray lanes the ray march writes and pooling reads, `rayCount` per slot: the hue of a food hit, and the size, speed
- *   and closing of an agent hit (docs/designs/body-genes.md, "Raw lanes")
+ * @returns {{rayHue: Float32Array, raySize: Float32Array, raySpeed: Float32Array, rayClosing: Float32Array,
+ *   bodySenseScratch: Float64Array}} the per-ray lanes the ray march writes and pooling reads, `rayCount` per slot: the
+ *   hue of a food hit, and the size, speed and closing of an agent hit (docs/designs/body-genes.md, "Raw lanes"); and
+ *   the scratch `bodySenseOf` writes them through
  */
 function rayLanes(config) {
     const n = config.maxAgents * config.rayCount;
@@ -296,6 +298,7 @@ function rayLanes(config) {
         raySize: new Float32Array(n),
         raySpeed: new Float32Array(n),
         rayClosing: new Float32Array(n),
+        bodySenseScratch: new Float64Array(BODY_SENSE_LANES),
     };
 }
 

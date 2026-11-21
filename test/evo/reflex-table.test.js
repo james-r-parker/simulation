@@ -90,6 +90,17 @@ describe('buildCaseTable', () => {
         expect(nearest(5)).toBeGreaterThan(nearest(0));
     });
 
+    it('snapshots the size lane of the agent hits the pooled body sense is made from', () => {
+        const table = buildCaseTable(caseNamed('approach-prey'), { trials: 1 });
+        const rc = table.rayCount;
+        const sizes = table.rays.subarray(rc, 2 * rc);
+        const preyRays = raysWith(rowAt(table, 0, 0), CH.prey);
+        expect(preyRays.length).toBeGreaterThan(0);
+        expect(preyRays.some((k) => sizes[k] !== 0)).toBe(true);
+        const empty = [...Array(rc).keys()].filter((k) => rowAt(table, 0, 0)[k * RAY_CHANNELS] === 0);
+        expect(empty.every((k) => sizes[k] === 0)).toBe(true);
+    });
+
     it('snapshots the food hues the pooled hue inputs are made from', () => {
         const table = buildCaseTable(caseNamed('pick-safe-food'), { trials: 1 });
         const hues = [...table.rays.subarray(0, table.rayCount)].filter((h) => h !== 0);
