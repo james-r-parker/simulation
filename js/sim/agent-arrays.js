@@ -6,6 +6,9 @@
 import { LANES, laneRowName } from './body-lanes.js';
 import { EFFECTS } from './effect-list.js';
 
+/** Numbers per slot in `world.heardFrom`: for the alarm and then the hunt half, the caller's slot, its genome id and the tick its call began. */
+export const HEARD_FROM_STRIDE = 6;
+
 /** Floats per slot in `world.heard`: alarm loudness, `ux`, `uy`, hunt loudness, `ux`, `uy`. */
 export const HEARD_STRIDE = 6;
 
@@ -14,8 +17,9 @@ export const KERNEL_ORDER = Object.freeze(['brain', 'sense', 'hash', 'physics'])
 
 /**
  * @typedef {object} AgentArrayInfo
- * @property {number | 'optional' | false} hashed the place among the arrays `hashWorld` hashes first, in order (1 is
- *   first); `'optional'` when it is hashed later, after the merit arrays, by `hashOptionalArrays`; `false` when it is not
+ * @property {number | 'optional' | 'effects' | false} hashed the place among the arrays `hashWorld` hashes first, in order
+ *   (1 is first); `'optional'` when it is hashed later, after the merit arrays, by `hashOptionalArrays`; `'effects'` when
+ *   it is hashed there only with a social effect on (`socialEffectsOn`); `false` when it is not
  * @property {string} [excuse] why a `hashed: false` array is outside the hash (required then)
  * @property {readonly string[]} [kernels] the kernels whose parameter block holds its pointer (`KERNEL_ORDER` names)
  */
@@ -90,15 +94,13 @@ const FIXED_ROWS = [
     [Uint16Array, 'huntTimer', 1, hashedAt(38)],
     [Uint16Array, 'smokeTimer', 1, hashedAt(39)],
     [Float32Array, 'heard', HEARD_STRIDE, hashedAt(40)],
+    [Uint32Array, 'heardFrom', HEARD_FROM_STRIDE, { hashed: 'effects' }],
 ];
-
-/** The first place among the hashed arrays after the fixed rows, where the stored effect rows go. */
-const FIRST_EFFECT_PLACE = 41;
 
 /**
  * The stored rows of the effects that keep stacks (docs/designs/status-effects.md, "The registry"): for each, its stack count
- * and its timer, `Float64Array` rows hashed in registry order after `heard`. No kernel takes them. None exist while no effect
- * stores stacks, so the hash of a world is unchanged until one does.
+ * and its timer, `Float64Array` rows. No kernel takes them. They are hashed by `hashWorld` only once a social effect has a
+ * strength above 0 (`socialEffectsOn`, effect-numbers.js), so a world whose numbers are all 0 hashes as it did before them.
  * @param {readonly {name: string, level: string}[]} [list] the effects (a parameter for tests)
  * @returns {AgentSpec[]} the rows, named `effect.<name>.stacks` and `effect.<name>.ticks`
  */
@@ -106,7 +108,7 @@ export function effectSpecs(list = EFFECTS) {
     const names = list
         .filter((effect) => effect.level === 'stacks')
         .flatMap((effect) => [`effect.${effect.name}.stacks`, `effect.${effect.name}.ticks`]);
-    return names.map((name, i) => [Float64Array, name, 1, hashedAt(FIRST_EFFECT_PLACE + i)]);
+    return names.map((name) => [Float64Array, name, 1, { hashed: 'effects' }]);
 }
 
 /**
@@ -176,6 +178,11 @@ export const HASHED_AGENT_ARRAYS = Object.freeze(hashedNames(ENTRIES));
 /** The names `hashOptionalArrays` hashes, after the merit arrays. */
 export const OPTIONAL_AGENT_ARRAYS = Object.freeze(
     ENTRIES.filter((entry) => entry.hashed === 'optional').map((e) => e.name),
+);
+
+/** The names `hashEffectRows` hashes, after the optional arrays and only with a social effect on: the stored stacks and `heardFrom`. */
+export const EFFECT_AGENT_ARRAYS = Object.freeze(
+    ENTRIES.filter((entry) => entry.hashed === 'effects').map((e) => e.name),
 );
 
 /**

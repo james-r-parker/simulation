@@ -6,6 +6,7 @@ import { inJaws } from './bite-rule.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
+import { noteShoved } from './effect-social.js';
 import { SPEC } from './specs.js';
 
 /**
@@ -56,5 +57,6 @@ export function tryDefenderRepel(world, defender, target) {
         removeEnergy(world, target, config.defenderRepelEnergy, LOSS_CAUSE.COST);
     }
     applyImpulse(world, defender, target, config.defenderRepelImpulse);
+    noteShoved(world, defender, target);
     return true;
 }

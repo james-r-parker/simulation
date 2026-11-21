@@ -3,6 +3,7 @@
 import { tallyEatContact } from './eat-contact.js';
 import { carryPollen } from './pollination.js';
 import { EFFECT, GATE, LANE_ID, gateOpen, levelOf, liveOf } from './effects.js';
+import { noteBiteEffects } from './effect-social.js';
 import { ingestToxin } from './toxin.js';
 import { canBite, couldBite, inJaws } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
@@ -22,6 +23,7 @@ import { REWARD_SOURCE, noteReward } from './reward.js';
 // The lanes this module reads, as constants: a property load from `LANE_ID` (a large object) in the loop boxes its number
 // when the compiler does not inline it.
 const BITE_TAKEN_MULTIPLIER_LANE = LANE_ID.biteTakenMultiplier;
+const BITE_ENERGY_LANE = LANE_ID.biteEnergy;
 
 const HERD_CARCASS_BITE = 400;
 
@@ -174,14 +176,19 @@ function eatAround(world, hash, slot) {
 }
 
 /**
- * Whether `biter` bites `victim`: the brain wants to bite and the bite rule (`canBite`) allows it.
+ * Whether `biter` bites `victim`: the brain wants to bite, no effect has closed the `bite` gate (a staggered hunter cannot
+ * bite) and the bite rule (`canBite`) allows it.
  * @param {Record<string, any>} world the world
  * @param {number} biter the biting slot
  * @param {number} victim the bitten slot
  * @returns {boolean}
  */
 function bites(world, biter, victim) {
-    return world.outputs[biter * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 && canBite(world, biter, victim);
+    return (
+        world.outputs[biter * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 &&
+        gateOpen(world, biter, GATE.BITE) &&
+        canBite(world, biter, victim)
+    );
 }
 
 /**
@@ -222,7 +229,7 @@ function applyBite(world, biter, victim) {
     const { config, x, y } = world;
     // The victim's `biteTakenMultiplier` lane, with the `alarmSeen` effect's `alarmBiteShare` while its seen alarm runs.
     const taken = liveOf(world, victim, BITE_TAKEN_MULTIPLIER_LANE);
-    const bite = config.biteEnergy * world.biteBySpec[world.spec[biter]];
+    const bite = liveOf(world, biter, BITE_ENERGY_LANE);
     const wasAlive = world.energy[victim] > 0;
     const kick = kickOf(world, biter, victim);
     transferEnergy(world, victim, biter, bite * taken);
@@ -248,6 +255,7 @@ function applyBite(world, biter, victim) {
         world.lastBiter[victim] = biterId;
         world.lastBiteTick[victim] = world.tick;
     }
+    noteBiteEffects(world, biter, victim, fatal);
     noteBiteLedger(world, biter, { gained: moved, fatal, kick: paid, victim });
     world.bittenTimer[victim] = 0;
     depositPheromone(world, world.attack, x[biter], y[biter]);

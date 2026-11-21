@@ -1,10 +1,18 @@
 // The appliers (docs/designs/status-effects.md, "Appliers") on the fixture effects.
 
 import { describe, expect, it } from 'vitest';
-import { applyEffect, applyEffectOn, drainEffectOn } from '../../js/sim/effect-appliers.js';
+import {
+    applyEffect,
+    applyEffectOn,
+    dropEffect,
+    drainEffectOn,
+    setEffectStacks,
+} from '../../js/sim/effect-appliers.js';
 import { EVENT, EVENT_STRIDE, EVENT_TYPE } from '../../js/sim/events.js';
 import { EFFECT, createEffects } from '../../js/sim/effects.js';
 import { CHILL_I, FAT_I, RALLY_I, SYSTEM, chill, fixtureWorld } from './helpers/effect-fixtures.js';
+import { allocBody } from './helpers/body.js';
+import { smallWorld } from './helpers/small-world.js';
 
 describe('applyEffectOn', () => {
     it('never pass maxStacks: a stack past the cap is dropped and logged', () => {
@@ -58,5 +66,19 @@ describe('drains', () => {
 describe('applyEffect on the registry', () => {
     it('refuses an effect that is computed from the body, since nothing raises it', () => {
         expect(() => applyEffect(fixtureWorld(), 0, EFFECT.FAT, 0)).toThrow(/stores no stacks/);
+    });
+});
+
+describe('dropEffect and setEffectStacks on the registry', () => {
+    it('takes one stack off a wounded body, and sets the stacks of a held effect with a record for each gained', () => {
+        const world = smallWorld({ maxAgents: 4 });
+        const slot = allocBody(world, 0);
+        expect(dropEffect(world, slot, EFFECT.WOUNDED)).toBe(false);
+        applyEffect(world, slot, EFFECT.WOUNDED, 0);
+        expect(dropEffect(world, slot, EFFECT.WOUNDED)).toBe(true);
+        expect(world['effect.wounded.stacks'][slot]).toBe(0);
+        const before = world.events.count;
+        setEffectStacks(world, slot, { effect: EFFECT.CHILLED, count: 3, source: 2 });
+        expect([world['effect.chilled.stacks'][slot], world.events.count - before]).toEqual([3, 3]);
     });
 });

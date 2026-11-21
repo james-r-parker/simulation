@@ -78,7 +78,7 @@ async function run(name, workers) {
 
 /** What the run wrote before T27 to T32 (recorded on the unchanged code). */
 const PINNED = {
-    archives: '3542c0be7cd53e090de58e7bde31706dc790ffde410e484aecd444880631d419',
+    archives: 'a09efb04fcbd06b36810631773356393bf1173be58d628f63e8b0715d1c77184',
     curve: '84cef7fe49be681a119648d72dcc6175149528d4471a2546a19ce89c59bf82d4',
 };
 

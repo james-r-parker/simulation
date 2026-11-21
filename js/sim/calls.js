@@ -6,13 +6,20 @@ import { LOSS_CAUSE, removeEnergy } from './energy.js';
 import { depositPheromone } from './pheromones.js';
 import { releaseSmoke } from './smoke.js';
 import { cellRange } from './spatial-hash.js';
-import { GATE, gateOpen } from './effects.js';
+import { noteHeard } from './effect-hear.js';
+import { huddlePass } from './effect-huddle.js';
+import { settleCalls } from './effect-social.js';
+import { GATE, LANE_ID, gateOpen, liveOf } from './effects.js';
 import { specParams } from './spec-params.js';
 import { HEARD_STRIDE } from './world.js';
 import { SPEC } from './specs.js';
 
 /** @typedef {import('./world.js').World} World */
 /** @typedef {import('./spatial-hash.js').SpatialHash} SpatialHash */
+
+// The lanes read here, as constants: a property load from `LANE_ID` in a hot loop boxes its number.
+const ALARM_COST_LANE = LANE_ID.alarmCost;
+const HUNT_CALL_COST_LANE = LANE_ID.huntCallCost;
 
 /** Offsets of the alarm and hunt halves of a `heard` row. */
 const ALARM_HEARD = 0;
@@ -97,15 +104,20 @@ function threatInView(world, slot) {
  * @returns {void}
  */
 function alarm(world, slot) {
-    const { alarmCost, callTicks, alarmThreshold, scoutAlarmCostMultiplier } = world.config;
-    const cost = world.spec[slot] === SPEC.SCOUT ? alarmCost * scoutAlarmCostMultiplier : alarmCost;
+    const { callTicks, alarmThreshold, scoutAlarmCostMultiplier } = world.config;
     const wanted = outputAbove(world, slot, OUTPUT_INDEX.ALARM, alarmThreshold) && gateOpen(world, slot, GATE.ALARM);
-    if (!wanted || world.energy[slot] <= cost || specParams(world.config, world.spec[slot]).canHunt) {
+    if (!wanted || specParams(world.config, world.spec[slot]).canHunt) {
+        return;
+    }
+    const cost =
+        liveOf(world, slot, ALARM_COST_LANE) * (world.spec[slot] === SPEC.SCOUT ? scoutAlarmCostMultiplier : 1);
+    if (world.energy[slot] <= cost) {
         return;
     }
     removeEnergy(world, slot, cost, LOSS_CAUSE.COST);
     world.alarmTimer[slot] = callTicks;
-    world.alarmSeen[slot] = threatInView(world, slot) ? 1 : 0;
+    const threat = threatInView(world, slot);
+    world.alarmSeen[slot] = threat ? 1 : 0;
     depositPheromone(world, world.danger, world.x[slot], world.y[slot]);
     pushCall(world, EVENT_TYPE.ALARM_CALLED, slot);
 }
@@ -117,12 +129,16 @@ function alarm(world, slot) {
  * @returns {void}
  */
 function huntCall(world, slot) {
-    const { huntCallCost, callTicks, huntCallThreshold } = world.config;
+    const { callTicks, huntCallThreshold } = world.config;
     const wanted = outputAbove(world, slot, OUTPUT_INDEX.HUNT, huntCallThreshold) && gateOpen(world, slot, GATE.HUNT);
-    if (!wanted || world.energy[slot] <= huntCallCost || !specParams(world.config, world.spec[slot]).canHunt) {
+    if (!wanted || !specParams(world.config, world.spec[slot]).canHunt) {
         return;
     }
-    removeEnergy(world, slot, huntCallCost, LOSS_CAUSE.COST);
+    const cost = liveOf(world, slot, HUNT_CALL_COST_LANE);
+    if (world.energy[slot] <= cost) {
+        return;
+    }
+    removeEnergy(world, slot, cost, LOSS_CAUSE.COST);
     world.huntTimer[slot] = callTicks;
     depositPheromone(world, world.hunt, world.x[slot], world.y[slot]);
     pushCall(world, EVENT_TYPE.PACK_CALLED, slot);
@@ -189,6 +205,7 @@ function hearOne(world, hearer) {
         return;
     }
     const loudness = Math.fround((1 - d / radius) * strength);
+    noteHeard(world, hearer, loudness);
     const row = hearer * HEARD_STRIDE + offset;
     if (loudness > world.heard[row]) {
         world.heard[row] = loudness;
@@ -272,7 +289,7 @@ function hearPass(world, hash, timers, offset) {
 
 /**
  * Runs the signal phase: ticks the timers, fires alarm, hunt and smoke actions in slot order, then rebuilds `heard`
- * from the live alarm and hunt calls of the agents in `hash`.
+ * from the live alarm and hunt calls of the agents in `hash`, then recounts the `huddled` stacks on every eighth tick.
  * @param {World} world the world
  * @param {SpatialHash} hash the hash built this tick
  * @returns {void}
@@ -281,6 +298,9 @@ export function signalAll(world, hash) {
     tickTimers(world);
     fireCalls(world);
     world.heard.fill(0);
+    world.callHeard.fill(0);
     hearPass(world, hash, world.alarmTimer, ALARM_HEARD);
     hearPass(world, hash, world.huntTimer, HUNT_HEARD);
+    settleCalls(world);
+    huddlePass(world, hash);
 }

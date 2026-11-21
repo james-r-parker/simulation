@@ -1084,5 +1084,12 @@
   "tick": 187,
   "slot": 25,
   "effect": 28
+ },
+ {
+  "level": "debug",
+  "event": "DefenderShoved",
+  "tick": 188,
+  "slot": 25.5,
+  "target": 28.5
  }
 ]

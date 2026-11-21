@@ -4,6 +4,7 @@
 
 import { floraDetector } from './scene-flora.js';
 import { scentDetector } from './scene-scent.js';
+import { effectsDetector } from './scene-effects.js';
 import { sprintDetector } from './scene-sprint.js';
 import { approachDetector } from './scene-approach.js';
 import { packLiftDetector } from './scene-pack-lift.js';
@@ -66,6 +67,7 @@ export const DETECTORS = Object.freeze([
     matchedDetector,
     stillnessDetector,
     sprintDetector,
+    effectsDetector,
     kinematicsDetector,
     budgetDetector,
     carcassDetector,
