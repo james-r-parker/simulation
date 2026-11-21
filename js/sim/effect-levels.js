@@ -77,6 +77,33 @@ export function outOfBandLevel(world, slot) {
     return t < world.lanes.temperatureColdStress[slot] || t > world.lanes.temperatureHeatStress[slot] ? 1 : 0;
 }
 
+/** The temperature effects `bandLevels` reads at once, in the order of `BAND`. */
+export const BAND_EFFECTS = Object.freeze(['coldBand', 'heatBand', 'coldRamp', 'hotRamp', 'outOfBand']);
+
+/** Where `bandLevels` leaves the level of each of `BAND_EFFECTS`. */
+export const BAND = new Float64Array(BAND_EFFECTS.length);
+
+/**
+ * Reads the five temperature effects of a body at once, from one read of `temperature[slot]` and its band lanes: the same
+ * expressions as `coldBandLevel`, `heatBandLevel`, `coldRampLevel`, `hotRampLevel` and `outOfBandLevel`, so the same levels.
+ * @param {World} world the world
+ * @param {number} slot the agent slot
+ * @returns {void} leaves the levels in `BAND`, in the order of `BAND_EFFECTS`
+ */
+export function bandLevels(world, slot) {
+    const t = world.temperature[slot];
+    const { lanes } = world;
+    const coldStress = lanes.temperatureColdStress[slot];
+    const heatStress = lanes.temperatureHeatStress[slot];
+    const min = lanes.temperatureOptimalMin[slot];
+    const max = lanes.temperatureOptimalMax[slot];
+    BAND[0] = t < coldStress ? 2 : t < lanes.temperatureColdModerate[slot] ? 1 : 0;
+    BAND[1] = t <= max ? 0 : t < heatStress ? 1 : 2;
+    BAND[2] = t < min ? (min - t) / min : 0;
+    BAND[3] = t > max ? (t - max) / (world.config.temperatureMax - max) : 0;
+    BAND[4] = t < coldStress || t > heatStress ? 1 : 0;
+}
+
 /**
  * @param {World} world the world
  * @param {number} slot the agent slot

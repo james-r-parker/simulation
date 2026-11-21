@@ -37,6 +37,8 @@ describe('levelOfEffect', () => {
             policy,
         );
         let compared = 0;
+        /** @type {string[]} */
+        const differ = [];
         for (let t = 0; t < 60; t++) {
             step(world, policy);
             for (let slot = 0; slot < world.alive.length; slot++) {
@@ -46,12 +48,16 @@ describe('levelOfEffect', () => {
                 world.effectStacks[1][slot] = (slot + t) % 3; // a stored row with stacks on
                 for (let e = 0; e < EFFECTS.length; e++) {
                     levelOfEffect(world, slot, e);
-                    expect(LEVEL[0], `${EFFECTS[e].name} of slot ${slot}`).toBe(naiveLevel(world, slot, e));
+                    const level = LEVEL[0];
+                    if (level !== naiveLevel(world, slot, e)) {
+                        differ.push(`${EFFECTS[e].name} of slot ${slot} at tick ${t}`);
+                    }
                     compared += 1;
                 }
                 world.effectStacks[1][slot] = 0;
             }
         }
+        expect(differ).toEqual([]);
         expect(compared).toBeGreaterThan(1000);
     });
 

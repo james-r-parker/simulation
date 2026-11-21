@@ -7,11 +7,13 @@
 
 import { levelOfEffect } from './effect-dispatch.js';
 import { EFFECTS } from './effect-list.js';
-import { LANE_ID, LEVEL, NUMBER, REF, RESULT, SHARE, compileRef, numberInto, numberOf } from './effect-refs.js';
+import { LANE_ID, LEVEL, NUMBER, REF, RESULT, SHARE, compileRef, numberOf } from './effect-refs.js';
 import { raiseEffect } from './effect-raise.js';
+import { ruleFactor } from './effect-factor.js';
+import { GROUP, compileGroups, liveIn, readGroup } from './effect-group.js';
 import { GATE, GATE_COUNT, compileGates, compileRules, compileThen } from './effect-compile.js';
 
-export { GATE, GATE_COUNT, LANE_ID, RESULT, compileRef, numberOf };
+export { GATE, GATE_COUNT, GROUP, LANE_ID, RESULT, compileRef, liveIn, numberOf };
 
 /** @typedef {import('./effect-refs.js').Ref} Ref */
 /** @typedef {import('./effect-refs.js').Compiled} Compiled */
@@ -139,47 +141,6 @@ export class EffectSystem {
         this.configKeys = parts.configKeys;
         /** Each stored row's follow-on effect, -1 for none. */
         this.storedThen = parts.stored.map((effect) => parts.thenOf[parts.list.indexOf(effect)]);
-        /** The slot whose computed levels are memoised, -1 for none (`pin`). */
-        this.pinned = -1;
-        this.memo = new Float64Array(parts.list.length);
-        this.have = new Uint32Array(parts.list.length);
-        this.epoch = 0;
-    }
-
-    /**
-     * Memoises each effect's level for one slot until `unpin`, for a caller that reads several lanes of a slot while the body
-     * does not change (the cost of a tick, the thrust and turn of a slot): a level is read once, not once a lane.
-     * @param {number} slot the agent slot
-     * @returns {void}
-     */
-    pin(slot) {
-        this.pinned = slot;
-        this.epoch = (this.epoch + 1) >>> 0;
-    }
-
-    /** Ends `pin`: levels are read from the body again. */
-    unpin() {
-        this.pinned = -1;
-    }
-
-    /**
-     * Leaves in `LEVEL[0]` the effect's level for the slot (through `dispatch`), from the memo while the slot is pinned.
-     * @param {any} world the world
-     * @param {number} slot the agent slot
-     * @param {number} e an effect's index
-     * @returns {void}
-     */
-    level(world, slot, e) {
-        const pinned = this.pinned === slot;
-        if (pinned && this.have[e] === this.epoch) {
-            LEVEL[0] = this.memo[e];
-            return;
-        }
-        this.dispatch(world, slot, e);
-        if (pinned) {
-            this.memo[e] = LEVEL[0];
-            this.have[e] = this.epoch;
-        }
     }
 
     /**
@@ -189,7 +150,7 @@ export class EffectSystem {
      * @returns {number} its level now: the stored count of a `stacks` effect, else what its reader computes from the body
      */
     levelOf(world, slot, effect) {
-        this.level(world, slot, effect);
+        this.dispatch(world, slot, effect);
         return LEVEL[0];
     }
 
@@ -243,54 +204,12 @@ export class EffectSystem {
     fold(world, slot, id, fromLane) {
         RESULT[0] = fromLane ? world.laneArrays[id][slot] : 1;
         const rules = world.laneRules[id];
-        if (rules !== undefined) {
-            for (let k = 0; k < rules.length; k++) {
-                this.factorOfRule(world, slot, rules[k]);
+        for (let k = 0; rules !== undefined && k < rules.length; k++) {
+            this.dispatch(world, slot, rules[k].effect);
+            if (LEVEL[0] !== 0) {
+                ruleFactor(world, slot, rules[k]);
                 RESULT[0] *= NUMBER[0];
             }
-        }
-    }
-
-    /**
-     * Leaves in `NUMBER[0]` the rule's factor now: 1 at level 0, else `1 + perStack x level` (never below 0) or the
-     * `levels` entry of the level.
-     * @param {any} world the world
-     * @param {number} slot the agent slot
-     * @param {Rule} rule one effect's rule on a lane
-     * @returns {void}
-     */
-    factorOfRule(world, slot, rule) {
-        this.level(world, slot, rule.effect);
-        const level = LEVEL[0];
-        if (level === 0) {
-            NUMBER[0] = 1;
-        } else if (rule.levels === null) {
-            numberInto(world, slot, /** @type {Compiled} */ (rule.per));
-            if (rule.power) {
-                this.raise(level);
-                return;
-            }
-            NUMBER[0] *= level;
-            if (rule.by >= 0) {
-                NUMBER[0] *= world.laneArrays[rule.by][slot];
-            }
-            const factor = 1 + NUMBER[0];
-            NUMBER[0] = factor > 0 ? factor : 0;
-        } else {
-            numberInto(world, slot, rule.levels[level]);
-        }
-    }
-
-    /**
-     * Leaves in `NUMBER[0]` its value raised to a whole power, by repeated multiplication (the same bits on every machine).
-     * @param {number} level the power
-     * @returns {void}
-     */
-    raise(level) {
-        const base = NUMBER[0];
-        NUMBER[0] = 1;
-        for (let k = 0; k < level; k++) {
-            NUMBER[0] *= base;
         }
     }
 
@@ -306,7 +225,11 @@ export class EffectSystem {
         const rules = this.rules[id];
         for (let k = 0; rules !== undefined && k < rules.length; k++) {
             if (rules[k].effect === effect) {
-                this.factorOfRule(world, slot, rules[k]);
+                this.dispatch(world, slot, effect);
+                if (LEVEL[0] === 0) {
+                    return 1;
+                }
+                ruleFactor(world, slot, rules[k]);
                 return NUMBER[0];
             }
         }
@@ -322,7 +245,7 @@ export class EffectSystem {
     gateOpen(world, slot, gate) {
         const closing = this.gates[gate];
         for (let k = 0; k < closing.length; k++) {
-            this.level(world, slot, closing[k]);
+            this.dispatch(world, slot, closing[k]);
             if (LEVEL[0] > 0) {
                 return false;
             }
@@ -362,6 +285,7 @@ export class EffectSystem {
     refreshConfig(world) {
         world.effectConfig = Float64Array.from(this.configKeys, (key) => world.config[key]);
         world.laneRules = this.rules.map((rules) => rules?.filter((rule) => !isNeutral(rule, world.effectConfig)));
+        world.effectGroups = compileGroups(this.list, world.laneRules);
     }
 
     /**
@@ -545,15 +469,22 @@ export function fadeEffects(world) {
 }
 
 /**
- * Memoises the effect levels of one slot until `unpinSlot` (see `EffectSystem.pin`).
+ * Reads, once, every effect level the `maxTurn` and `maxThrust` rules name for the slot (`GROUP.MOTION`), for `liveIn`.
+ * @param {any} world the world
  * @param {number} slot the agent slot
  * @returns {void}
  */
-export function pinSlot(slot) {
-    SYSTEM.pin(slot);
+export function motionFactors(world, slot) {
+    readGroup(SYSTEM.dispatch, world, slot, GROUP.MOTION);
 }
 
-/** Ends `pinSlot`. */
-export function unpinSlot() {
-    SYSTEM.unpin();
+/**
+ * Reads, once, every effect level the rules of the six cost lanes of `tickCost` name for the slot (`GROUP.COST`), for
+ * `liveIn`.
+ * @param {any} world the world
+ * @param {number} slot the agent slot
+ * @returns {void}
+ */
+export function costFactors(world, slot) {
+    readGroup(SYSTEM.dispatch, world, slot, GROUP.COST);
 }
