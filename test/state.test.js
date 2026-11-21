@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { chmodSync, mkdirSync, mkdtempSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     experimentsBlock,
     ladderBlock,
@@ -241,6 +241,8 @@ function listing(root) {
 }
 
 beforeEach(() => {
+    // The Machine block's budget is the workstation rule; defaultWorkers takes every core when CI is set.
+    vi.stubEnv('CI', '');
     dir = realpathSync(mkdtempSync(join(tmpdir(), 'state-')));
     mkdirSync(join(dir, 'bin'));
     writeFileSync(join(dir, 'bin', 'gh'), GH_STUB);
@@ -288,7 +290,10 @@ beforeEach(() => {
     git(repo, ['add', '.']);
     git(repo, ['commit', '-q', '-m', 'init']);
 });
-afterEach(() => rmSync(dir, { recursive: true, force: true }));
+afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+    vi.unstubAllEnvs();
+});
 
 describe('npm run state', { timeout: scaleTimeout(60_000) }, () => {
     it('gathers every block from a fixture repository', () => {
