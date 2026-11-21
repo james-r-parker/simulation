@@ -9,13 +9,11 @@ import { SPEC_NAMES } from './specs.js';
  * @throws {Error} when no specialisation has that index
  */
 export function specParams(config, index) {
-    const specs = config.specialisations;
-    for (let k = 0; k < SPEC_NAMES.length; k++) {
-        if (specs[SPEC_NAMES[k]].index === index) {
-            return specs[SPEC_NAMES[k]];
-        }
+    const entry = config.specialisations[SPEC_NAMES[index]];
+    if (entry === undefined || entry.index !== index) {
+        throw new Error(`specParams: no specialisation has index ${index}`);
     }
-    throw new Error(`specParams: no specialisation has index ${index}`);
+    return entry;
 }
 
 /**

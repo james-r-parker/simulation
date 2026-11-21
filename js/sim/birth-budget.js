@@ -18,7 +18,7 @@ export function birthRingSpec(maxBirthsPerWindow) {
  * @returns {number} the index of the oldest entry in her ring (an empty one first)
  */
 function oldestIndex(world, slot) {
-    const stride = world.config.maxBirthsPerWindow;
+    const stride = world.birthStride;
     const ring = world.birthRing;
     const base = slot * stride;
     let at = base;
@@ -37,12 +37,11 @@ function oldestIndex(world, slot) {
  *   always false when the budget is off
  */
 export function birthBudgetSpent(world, slot) {
-    const { maxBirthsPerWindow, birthWindowTicks } = world.config;
-    if (maxBirthsPerWindow === 0) {
+    if (world.lanes.maxBirthsPerWindow[slot] === 0) {
         return false;
     }
     const oldest = world.birthRing[oldestIndex(world, slot)];
-    return oldest !== 0 && world.tick - (oldest - 1) < birthWindowTicks;
+    return oldest !== 0 && world.tick - (oldest - 1) < world.lanes.birthWindowTicks[slot];
 }
 
 /**
@@ -52,7 +51,7 @@ export function birthBudgetSpent(world, slot) {
  * @returns {void}
  */
 export function recordBirth(world, slot) {
-    if (world.config.maxBirthsPerWindow !== 0) {
+    if (world.lanes.maxBirthsPerWindow[slot] !== 0) {
         world.birthRing[oldestIndex(world, slot)] = world.tick + 1;
     }
 }

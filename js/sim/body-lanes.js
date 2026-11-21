@@ -87,6 +87,58 @@ const MOVED = new Set([
     'defenderRepelImpulse',
     'kickMultiplier',
     'predatorRestTicks',
+    // body-genes Phase 5 T41: the reproduction and life-history readers (mating, splits, births, age, territory).
+    'juvenileTicks',
+    'mateSizeRatio',
+    'mateDistanceMax',
+    'mateMinEnergy',
+    'mateCost',
+    'mateRange',
+    'childEnergyMin',
+    'splitMinEnergy',
+    'birthWindowTicks',
+    'maxBirthsPerWindow',
+    'reproductionCooldown',
+    'splitCooldownMultiplier',
+    'pregnancyTicks',
+    'maturityTicks',
+    'maxAgeTicks',
+    'birthReserve',
+    'splitDeliberateMin',
+    'splitDeliberateShareMin',
+    'splitMaxPerLife',
+    'splitMateScarceTicks',
+    'territoryRadius',
+    'territoryMax',
+    // body-genes Phase 5 T42: the signalling readers (calls, the smoke release, the pheromone deposit, the timers).
+    'callRadius',
+    'callTicks',
+    'alarmCost',
+    'huntCallCost',
+    'alarmThreshold',
+    'huntCallThreshold',
+    'smokeCost',
+    'smokeRadius',
+    'smokeTicks',
+    'smokeCooldown',
+    'smokeThreshold',
+    'pheromoneDeposit',
+    // body-genes Phase 5 T43: the energy, sickness, reward and food readers (size, upkeep, the store's satiation, the
+    // toxin and disease, the reward trace, the food values and the juvenile plant share, the eat's heat).
+    'minSize',
+    'huntUpkeep',
+    'satiationShare',
+    'juvenilePlantShare',
+    'sickDose',
+    'doseDecay',
+    'lethalDose',
+    'diseaseTicks',
+    'plantFoodValue',
+    'meatFoodValue',
+    'temperatureGainEat',
+    'rewardGain',
+    'rewardBase',
+    'rewardDecay',
     ...THRESHOLDS,
 ]);
 
@@ -257,6 +309,17 @@ export function bodyProblem(body, lanes = LANES) {
         }
     }
     return null;
+}
+
+/**
+ * The largest base of a lane over every spec: a world-level size (an array's stride) reads it, since an array cannot
+ * differ by body.
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {string} name a lane's name
+ * @returns {number}
+ */
+export function laneMaxOverSpecs(config, name) {
+    return Math.max(...SPEC_NAMES.map((specName) => laneBases(config, specName)[name]));
 }
 
 /**

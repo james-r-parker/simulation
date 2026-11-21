@@ -4,6 +4,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { cloneWithNoisePolicy } from '../../../js/sim/birth-policy.js';
+import { writeLaneBases } from '../../../js/sim/lane-state.js';
 import { createConfig } from '../../../js/sim/config.js';
 import { createRng, nextFloat, nextGaussian } from '../../../js/sim/rng.js';
 import { createWorld } from '../../../js/sim/spawn.js';
@@ -56,6 +57,9 @@ function draw(rng, edgy) {
  * @returns {void}
  */
 export function randomise(world, seed, { slots, edgy = false, scale = 1 }) {
+    for (const slot of slots) {
+        writeLaneBases(world, slot); // the randomised slots are bodies: their lanes at their spec bases, as a birth writes them
+    }
     const rng = createRng(seed);
     const { weightCount, rawInputCount, hidden, geneOutputs } = world.layout;
     const rows = /** @type {[string, number, () => number][]} */ ([

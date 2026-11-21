@@ -145,7 +145,7 @@ describe('canMatePair genetic distance', () => {
     it('refuses a distance equal to mateDistanceMax', () => {
         const w = pair();
         w.weights.fill(5, w.layout.weightCount, 2 * w.layout.weightCount);
-        w.config = { ...w.config, mateDistanceMax: geneticDistance(w, 0, 1) };
+        w.lanes.mateDistanceMax.fill(geneticDistance(w, 0, 1));
         expect(canMatePair(w, 0, 1)).toBe(false);
     });
 });

@@ -32,8 +32,16 @@ export const STORE_SHARE = 0.5;
  * @property {{radius: number, ticks: number, cooldown: number, cost: number, threshold: number}} smoke
  * @property {{energy: number, cost: number, impulse: number}} repel the defender's shove (`tryDefenderRepel`): the energy it drains
  *   from a hunter in its jaws, what it costs the defender, and the knockback; 0 and 0 energy and impulse is off
- * @property {{gainMove: number, lossPassive: number, optimalMax: number, start: number, efficiency: number}} heat
- * @property {{splitMin: number, birthReserve: number, childShare: number, mateMin: number, mateCost: number, maturityTicks: number, maxAgeTicks: number}} repro
+ * @property {{gainMove: number, lossPassive: number, optimalMax: number, start: number, efficiency: number, optimalMin: number,
+ *   max: number, passiveFactor: number, speedCap: number, seasonLoss: number}} heat the heat numbers; `seasonLoss` is the first
+ *   season's factor on the passive cooling, `max(0, 1 - temperatureModifier x temperatureSeasonSlope)`
+ * @property {{splitMin: number, birthReserve: number, childShare: number, mateMin: number, mateCost: number, maturityTicks: number, maxAgeTicks: number,
+ *   founderEnergy: number, entrantEnergy: number, childMin: number}} repro the life numbers and the three birth energies
+ *   (`initialEnergy`, `entrantEnergy` with 0 reading as `initialEnergy`, and `childEnergyMin`)
+ * @property {{plantValue: number, meatValue: number, handlingTicks: number, digestTicks: number, satiation: number,
+ *   foodEnergy: number, foodRadius: number}} feed the feeding numbers: a spec's share of a plant item and of a carcass, the
+ *   handling and digest windows (one `ateTimer` holds both), the share of the store at which it stops eating, and an item's
+ *   energy and radius
  */
 
 /**
@@ -44,7 +52,7 @@ export const STORE_SHARE = 0.5;
  * @param {Record<string, number>} lane the spec's lane bases
  * @returns {import('../sim/world.js').World} the world, as far as those functions read it
  */
-function startWorld(config, lane) {
+export function startWorld(config, lane) {
     const lanes = Object.fromEntries(Object.entries(lane).map(([name, value]) => [name, [value]]));
     const laneArrays = LANES.map((l) => lanes[l.name]);
     return /** @type {any} */ ({ config, lanes, laneArrays, temperature: [config.temperatureStart] });
@@ -201,8 +209,51 @@ function combatOf(lane) {
 /**
  * @param {Readonly<Record<string, any>>} config the validated config
  * @param {Record<string, number>} lane the spec's lane bases
+ * @returns {Pick<RoleParams, 'heat' | 'repro' | 'feed'>} the heat, life and feeding numbers
+ */
+function lifeNumbers(config, lane) {
+    return {
+        heat: {
+            gainMove: lane.temperatureGainMove,
+            lossPassive: lane.temperatureLossPassive,
+            optimalMax: lane.temperatureOptimalMax,
+            start: config.temperatureStart,
+            efficiency: thrustEfficiency(config, lane),
+            optimalMin: lane.temperatureOptimalMin,
+            max: config.temperatureMax,
+            passiveFactor: config.temperaturePassiveLossFactor,
+            speedCap: lane.heatSpeedCap,
+            seasonLoss: Math.max(0, 1 - config.seasons[0].temperatureModifier * config.temperatureSeasonSlope),
+        },
+        repro: {
+            splitMin: lane.splitMinEnergy,
+            birthReserve: lane.birthReserve,
+            childShare: lane.childEnergyShare,
+            mateMin: lane.mateMinEnergy,
+            mateCost: lane.mateCost,
+            maturityTicks: lane.maturityTicks,
+            maxAgeTicks: lane.maxAgeTicks,
+            founderEnergy: config.initialEnergy,
+            entrantEnergy: config.entrantEnergy === 0 ? config.initialEnergy : config.entrantEnergy,
+            childMin: lane.childEnergyMin,
+        },
+        feed: {
+            plantValue: lane.plantFoodValue,
+            meatValue: lane.meatFoodValue,
+            handlingTicks: lane.handlingTicks,
+            digestTicks: lane.digestTicks,
+            satiation: lane.satiationShare,
+            foodEnergy: config.foodEnergy,
+            foodRadius: config.foodRadius,
+        },
+    };
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {Record<string, number>} lane the spec's lane bases
  * @param {string} specName the specialisation's name
- * @returns {Pick<RoleParams, 'call' | 'smoke' | 'repel' | 'heat' | 'repro'>} the call, smoke, heat and life numbers; a scout's
+ * @returns {Pick<RoleParams, 'call' | 'smoke' | 'repel' | 'heat' | 'repro' | 'feed'>} the call, smoke, repel, heat, life and feeding numbers; a scout's
  *   call is scaled by `scoutCallRadiusMultiplier` and `scoutAlarmCostMultiplier` (`callerRadius` and the alarm of
  *   js/sim/calls.js) until body-genes.md Phase 5 turns them into the scout's `body` entries
  */
@@ -230,21 +281,6 @@ function signalsOf(config, lane, specName) {
             cost: lane.defenderRepelCost,
             impulse: lane.defenderRepelImpulse,
         },
-        heat: {
-            gainMove: lane.temperatureGainMove,
-            lossPassive: lane.temperatureLossPassive,
-            optimalMax: lane.temperatureOptimalMax,
-            start: config.temperatureStart,
-            efficiency: thrustEfficiency(config, lane),
-        },
-        repro: {
-            splitMin: lane.splitMinEnergy,
-            birthReserve: lane.birthReserve,
-            childShare: lane.childEnergyShare,
-            mateMin: lane.mateMinEnergy,
-            mateCost: lane.mateCost,
-            maturityTicks: lane.maturityTicks,
-            maxAgeTicks: lane.maxAgeTicks,
-        },
+        ...lifeNumbers(config, lane),
     };
 }

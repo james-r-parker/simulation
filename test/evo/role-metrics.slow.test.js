@@ -1,7 +1,8 @@
 // Gate 2 of fair-chase.md, "Before any training": each role metric against a planted scene (docs/designs/metric-noise.md,
 // Phase 6, T21). A scene is a staged arena where the role's job happens and one where it does not; the metric must read
-// the difference, equal to what the scene fixes. Only the predator's scene is built (role-budget.md Phase 1 stages the
-// chase); the other roles wait on the scenes of role-budget.md Phases 2 to 5, listed in the last test.
+// the difference, equal to what the scene fixes. This file holds the predator's chase (role-budget.md Phase 1); the defender
+// is in role-metrics-defender.slow.test.js and the scout in role-metrics-scout.slow.test.js (Phases 2 and 3). The roles
+// that wait on the scenes of role-budget.md Phases 4 and 5 are listed in the last test.
 
 import { describe, expect, it } from 'vitest';
 import { ROLE_METRICS } from '../../js/evo/metric-registry/roles.js';
@@ -85,11 +86,10 @@ describe('the predator metrics against a planted chase', () => {
     });
 });
 
-describe('the roles that wait on the scenes of role-budget.md Phases 2 to 5', () => {
+describe('the roles that wait on the scenes of role-budget.md Phases 4 and 5', () => {
     it('are the roles with a tagged metric and no planted scene yet', () => {
-        const waiting = Object.entries(ROLE_METRICS)
-            .filter(([role]) => role !== 'predator')
-            .map(([role]) => role);
-        expect(waiting).toEqual(['forager', 'reproducer', 'scout', 'defender', 'herd']);
+        const built = ['predator', 'scout', 'defender'];
+        const waiting = Object.keys(ROLE_METRICS).filter((role) => !built.includes(role));
+        expect(waiting).toEqual(['forager', 'reproducer', 'herd']);
     });
 });

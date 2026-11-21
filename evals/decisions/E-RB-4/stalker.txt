@@ -1,0 +1,160 @@
+role budget  config 33020ece451d5e75  rules dfc811309599c0bf
+model {"reactionTicks":2,"hearThreshold":0.1,"breakAngle":1.5707963267948966,"tightTicks":5,"preySprint":"rationed","hunterShare":0.1,"foodDensity":null,"naiveEffort":0.5,"catchShare":0.3,"defenderGap":150,"smokeGap":240,"reliableSight":false}
+
+row                  eat   breed  run  status      binding
+forager:predator     >487  >200   6    ok          run
+reproducer:predator  >487  >200   X    impossible  run
+
+row              eat  breed  status      binding
+predator:living  0!   X      impossible  breed
+
+row                    reach  find  eat   status      binding
+forager:first-meal     >200   X     >200  impossible  find
+predator:first-meal    >200   >200  X     impossible  eat
+reproducer:first-meal  >200   X     >200  impossible  find
+scout:first-meal       >200   X     >200  impossible  find
+defender:first-meal    >200   X     >200  impossible  find
+
+row              sit      status  binding
+forager:idle     -1237!   tight   sit
+predator:idle    -16299!  tight   sit
+reproducer:idle  -1237!   tight   sit
+scout:idle       -1043!   tight   sit
+defender:idle    -1237!   tight   sit
+
+forager:predator
+  meal cycle: 20.2 ticks (digest 10, then walking 25 px of new food: 20.0 at the handling gait, 0.2 grazing; density 4.387e-4); income 100, net 98.1 a meal, 4.87 a tick
+  split: gate 900 from 200 takes 144 ticks of an adult life of 71400; slack 71256
+  hunters met in a life 138; flight slack 16 px
+reproducer:predator
+  meal cycle: 20.2 ticks (digest 10, then walking 25 px of new food: 20.0 at the handling gait, 0.2 grazing; density 4.387e-4); income 100, net 98.1 a meal, 4.87 a tick
+  split: gate 900 from 200 takes 144 ticks of an adult life of 71400; slack 71256
+  hunters met in a life 138; flight slack 16 px
+predator:living
+  per chase: kill income 715.0, chase cost 578.4 over 250 ticks; net -363.9 at the catch share, 136.6 at 1
+  split: gate 600 from 200 takes inf chases; a life holds 1244 (one per 58 ticks), spare inf
+  at rest: 0.0153 a tick; a full store lasts 654022 ticks with no kill
+forager:first-meal
+  source: 16 of radius 400, view strip 300, holds 221 meals of 98.3 net
+  founder: 800 energy walks 2.11 a tick for 11527 px; nearest edge 959 px (p90 1912), reach share 1.00; blind path 5207 px, find share 0.89; eat 0.7 of 221 meals
+  entrant: 200 energy walks 2.10 a tick for 3172 px; nearest edge 959 px (p90 1912), reach share 1.00; blind path 5207 px, find share 0.46; eat 0.6 of 221 meals
+  child: 450 energy walks 2.11 a tick for 6921 px; nearest edge 0 px (p90 0), reach share 1.00; blind path 0 px, find share 1.00; eat 0.0 of 221 meals
+predator:first-meal
+  source: 450 of radius 29, view strip 280, holds 450 meals of -363.9 net
+  founder: 800 energy walks 1.06 a tick for 31382 px; nearest edge 226 px (p90 407), reach share 1.00; blind path 419 px, find share 1.00; eat inf of 450 meals
+  entrant: 200 energy walks 1.05 a tick for 8781 px; nearest edge 226 px (p90 407), reach share 1.00; blind path 419 px, find share 1.00; eat inf of 450 meals
+  child: 300 energy walks 1.05 a tick for 12553 px; nearest edge 0 px (p90 0), reach share 1.00; blind path 0 px, find share 1.00; eat inf of 450 meals
+reproducer:first-meal
+  source: 16 of radius 400, view strip 250, holds 221 meals of 98.3 net
+  founder: 800 energy walks 2.11 a tick for 11527 px; nearest edge 959 px (p90 1912), reach share 1.00; blind path 5608 px, find share 0.87; eat 0.7 of 221 meals
+  entrant: 200 energy walks 2.10 a tick for 3172 px; nearest edge 959 px (p90 1912), reach share 1.00; blind path 5608 px, find share 0.43; eat 0.6 of 221 meals
+  child: 450 energy walks 2.11 a tick for 6921 px; nearest edge 0 px (p90 0), reach share 1.00; blind path 0 px, find share 1.00; eat 0.0 of 221 meals
+scout:first-meal
+  source: 16 of radius 400, view strip 400, holds 221 meals of 97.9 net
+  founder: 800 energy walks 2.41 a tick for 10534 px; nearest edge 959 px (p90 1912), reach share 1.00; blind path 4556 px, find share 0.90; eat 0.7 of 221 meals
+  entrant: 200 energy walks 2.40 a tick for 2781 px; nearest edge 959 px (p90 1912), reach share 0.99; blind path 4556 px, find share 0.46; eat 0.7 of 221 meals
+  child: 450 energy walks 2.40 a tick for 6196 px; nearest edge 0 px (p90 0), reach share 1.00; blind path 0 px, find share 1.00; eat 0.0 of 221 meals
+defender:first-meal
+  source: 16 of radius 400, view strip 270, holds 221 meals of 98.2 net
+  founder: 800 energy walks 1.93 a tick for 10465 px; nearest edge 959 px (p90 1912), reach share 1.00; blind path 5440 px, find share 0.85; eat 0.7 of 221 meals
+  entrant: 200 energy walks 1.92 a tick for 2896 px; nearest edge 959 px (p90 1912), reach share 0.99; blind path 5440 px, find share 0.41; eat 0.7 of 221 meals
+  child: 450 energy walks 1.92 a tick for 6299 px; nearest edge 0 px (p90 0), reach share 1.00; blind path 0 px, find share 1.00; eat 0.0 of 221 meals
+forager:idle
+  founder: 800 energy, sits 7741 ticks, searches 5452; idle ratio 1.42; coldest 0.0
+  entrant: 200 energy, sits 2744 ticks, searches 1507; idle ratio 1.82; coldest 26.3
+  child: 450 energy, sits 5098 ticks, searches 3282; idle ratio 1.55; coldest 6.0
+predator:idle
+  founder: 800 energy, sits 46002 ticks, searches 29703; idle ratio 1.55; coldest 0.0
+  entrant: 200 energy, sits 12704 ticks, searches 8341; idle ratio 1.52; coldest 0.0
+  child: 300 energy, sits 18272 ticks, searches 11917; idle ratio 1.53; coldest 0.0
+reproducer:idle
+  founder: 800 energy, sits 7741 ticks, searches 5452; idle ratio 1.42; coldest 0.0
+  entrant: 200 energy, sits 2744 ticks, searches 1507; idle ratio 1.82; coldest 26.3
+  child: 450 energy, sits 5098 ticks, searches 3282; idle ratio 1.55; coldest 6.0
+scout:idle
+  founder: 800 energy, sits 6356 ticks, searches 4370; idle ratio 1.45; coldest 0.0
+  entrant: 200 energy, sits 2202 ticks, searches 1159; idle ratio 1.90; coldest 31.0
+  child: 450 energy, sits 4207 ticks, searches 2577; idle ratio 1.63; coldest 13.7
+defender:idle
+  founder: 800 energy, sits 7741 ticks, searches 5422; idle ratio 1.43; coldest 0.0
+  entrant: 200 energy, sits 2744 ticks, searches 1507; idle ratio 1.82; coldest 26.3
+  child: 450 energy, sits 5098 ticks, searches 3272; idle ratio 1.56; coldest 6.0
+
+forager:first-meal: smallest changes that turn it ok with the idle ratio not above the baseline
+changes                 idle ratio  file
+entrantEnergy=400 (x2)  1.59        evals/role-budget/stalker-forager-birth-1.json
+entrantEnergy=600 (x3)  1.55        evals/role-budget/stalker-forager-birth-2.json
+entrantEnergy=800 (x4)  1.55        evals/role-budget/stalker-forager-birth-3.json
+
+reproducer:first-meal: smallest changes that turn it ok with the idle ratio not above the baseline
+changes                 idle ratio  file
+entrantEnergy=400 (x2)  1.59        evals/role-budget/stalker-reproducer-birth-1.json
+entrantEnergy=600 (x3)  1.55        evals/role-budget/stalker-reproducer-birth-2.json
+entrantEnergy=800 (x4)  1.55        evals/role-budget/stalker-reproducer-birth-3.json
+
+scout:first-meal: smallest changes that turn it ok with the idle ratio not above the baseline
+changes                 idle ratio  file
+entrantEnergy=400 (x2)  1.67        evals/role-budget/stalker-scout-birth-1.json
+entrantEnergy=600 (x3)  1.63        evals/role-budget/stalker-scout-birth-2.json
+entrantEnergy=800 (x4)  1.63        evals/role-budget/stalker-scout-birth-3.json
+
+defender:first-meal: smallest changes that turn it ok with the idle ratio not above the baseline
+changes                 idle ratio  file
+entrantEnergy=400 (x2)  1.59        evals/role-budget/stalker-defender-birth-1.json
+entrantEnergy=600 (x3)  1.56        evals/role-budget/stalker-defender-birth-2.json
+entrantEnergy=800 (x4)  1.56        evals/role-budget/stalker-defender-birth-3.json
+
+body        reading                      formula  sim      difference  tolerance
+forager     energy per 100 ticks         102.725  102.725  0.000%      0.100%     ok
+forager     sprint energy per 100 ticks  227.725  227.725  0.000%      0.100%     ok
+forager     cruise speed                 8.000    8.000    0.000%      0.010%     ok
+forager     sprint speed                 12.000   12.000   0.000%      0.010%     ok
+forager     turn radius                  21.537   21.509   0.131%      0.500%     ok
+forager     sprint turn radius           32.305   32.263   0.131%      0.500%     ok
+predator    energy per 100 ticks         58.655   58.655   0.000%      0.100%     ok
+predator    sprint energy per 100 ticks  258.071  258.071  0.000%      0.100%     ok
+predator    cruise speed                 8.000    8.000    0.000%      0.010%     ok
+predator    sprint speed                 16.800   16.800   0.000%      0.010%     ok
+predator    turn radius                  41.718   41.809   0.217%      0.500%     ok
+predator    sprint turn radius           87.607   87.798   0.217%      0.500%     ok
+reproducer  energy per 100 ticks         102.725  102.725  0.000%      0.100%     ok
+reproducer  sprint energy per 100 ticks  227.725  227.725  0.000%      0.100%     ok
+reproducer  cruise speed                 8.000    8.000    0.000%      0.010%     ok
+reproducer  sprint speed                 12.000   12.000   0.000%      0.010%     ok
+reproducer  turn radius                  21.537   21.509   0.131%      0.500%     ok
+reproducer  sprint turn radius           32.305   32.263   0.131%      0.500%     ok
+scout       energy per 100 ticks         104.743  104.742  0.000%      0.100%     ok
+scout       sprint energy per 100 ticks  229.743  229.742  0.000%      0.100%     ok
+scout       cruise speed                 8.000    8.000    0.000%      0.010%     ok
+scout       sprint speed                 12.000   12.000   0.000%      0.010%     ok
+scout       turn radius                  21.537   21.509   0.131%      0.500%     ok
+scout       sprint turn radius           32.305   32.263   0.131%      0.500%     ok
+defender    energy per 100 ticks         121.925  121.925  0.000%      0.100%     ok
+defender    sprint energy per 100 ticks  270.925  270.925  0.000%      0.100%     ok
+defender    cruise speed                 8.000    8.000    0.000%      0.010%     ok
+defender    sprint speed                 12.000   12.000   0.000%      0.010%     ok
+defender    turn radius                  21.537   21.509   0.131%      0.500%     ok
+defender    sprint turn radius           32.305   32.263   0.131%      0.500%     ok
+
+row                 reading                                                            formula  scene  tolerance
+forager:idle        founder sits                                                       7741     7741   0.5%                           ok
+forager:idle        founder searches                                                   5452     5462   2%                             ok
+forager:idle        entrant sits                                                       2744     2744   0.5%                           ok
+forager:idle        entrant searches                                                   1507     1521   2%                             ok
+forager:idle        child sits                                                         5098     5098   0.5%                           ok
+forager:idle        child searches                                                     3282     3294   2%                             ok
+forager:predator    net energy a tick from the fourth meal                             4.87     5.67   30%                            ok
+predator:living     forager: kill tick                                                 none     none   2 ticks                        ok
+predator:living     forager: a kill or none                                            false    false  agree                          ok
+predator:living     reproducer: kill tick                                              none     none   2 ticks                        ok
+predator:living     reproducer: a kill or none                                         false    false  agree                          ok
+predator:living     scout: kill tick                                                   none     none   2 ticks                        ok
+predator:living     scout: a kill or none                                              false    false  agree                          ok
+predator:living     defender: kill tick                                                none     none   2 ticks                        ok
+predator:living     defender: a kill or none                                           false    false  agree                          ok
+forager:first-meal  founder: reach share                                               1        0.94   0.2 absolute                   ok
+forager:first-meal  founder: find share (a free plane: rocks and walls only lower it)  0.89     0.52   an upper bound, 0.15 absolute  ok
+forager:first-meal  entrant: reach share                                               1        0.86   0.2 absolute                   ok
+forager:first-meal  entrant: find share (a free plane: rocks and walls only lower it)  0.46     0.43   an upper bound, 0.15 absolute  ok
+forager:first-meal  child: reach share                                                 1        1      0.2 absolute                   ok
+forager:first-meal  child: find share (a free plane: rocks and walls only lower it)    1        1      an upper bound, 0.15 absolute  ok

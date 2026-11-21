@@ -63,8 +63,8 @@ function checkAmount(fn, slot, amount) {
  * @returns {void}
  */
 export function updateSize(world, slot) {
-    const { config, energy, size } = world;
-    size[slot] = Math.max(config.minSize, baseSizeOf(world, slot) + energy[slot] / config.energyToSize);
+    const { energy, size, lanes } = world;
+    size[slot] = Math.max(lanes.minSize[slot], baseSizeOf(world, slot) + energy[slot] / lanes.energyToSize[slot]);
 }
 
 /**
@@ -185,7 +185,7 @@ export function tickCost(world, slot) {
             ? liveOf(world, slot, SPRINT_COST_LANE) * world.sprintFactor[slot]
             : 0;
     cost += sprint;
-    const upkeep = c.specMutationRate > 0 && sp.canHunt ? c.huntUpkeep : 0;
+    const upkeep = c.specMutationRate > 0 && sp.canHunt ? world.lanes.huntUpkeep[slot] : 0;
     cost += upkeep;
     if (sp.canHunt) {
         // The hunter ledger (hunter-ledger.js): standing is the passive terms and the upkeep, movement the rest of the base.

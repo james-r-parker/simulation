@@ -10,20 +10,25 @@
  *   mate search); true otherwise. Stops scanning once the count passes the limit.
  */
 export function territoryAllows(world, slot) {
-    const { territoryRadius, territoryMax, maturityTicks } = world.config;
+    const { territoryRadius, territoryMax, maturityTicks } = world.lanes;
     if (world.huntBySpec[world.spec[slot]] !== 1) {
         return true;
     }
     const { alive, spec, ageTicks, huntBySpec, x, y } = world;
-    const limit = territoryRadius * territoryRadius;
+    const limit = territoryRadius[slot] * territoryRadius[slot];
     let count = 0;
     for (let other = 0; other < alive.length; other++) {
-        if (other === slot || alive[other] !== 1 || huntBySpec[spec[other]] !== 1 || ageTicks[other] < maturityTicks) {
+        if (
+            other === slot ||
+            alive[other] !== 1 ||
+            huntBySpec[spec[other]] !== 1 ||
+            ageTicks[other] < maturityTicks[other]
+        ) {
             continue;
         }
         const dx = x[other] - x[slot];
         const dy = y[other] - y[slot];
-        if (dx * dx + dy * dy <= limit && ++count > territoryMax) {
+        if (dx * dx + dy * dy <= limit && ++count > territoryMax[slot]) {
             return false;
         }
     }

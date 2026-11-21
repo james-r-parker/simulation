@@ -1,6 +1,7 @@
 // Hashes a world's state bytes at a checkpoint, in the fixed order of the design doc's hashWorld section.
 
 import { HASHED_AGENT_ARRAYS } from './agent-arrays.js';
+import { laneMaxOverSpecs } from './body-lanes.js';
 import { MYCELIUM_ARRAYS } from './mycelium.js';
 import { FLORA_ARRAYS } from './flora-state.js';
 import { fnv64Bytes, fnv64Hex, fnv64Init } from './fnv.js';
@@ -217,7 +218,7 @@ function hashOptionalArrays(world, views) {
         fnv64Bytes(digest, sampleCountBytes);
         fnv64Bytes(digest, views.inputActive);
     }
-    if (config.maxBirthsPerWindow > 0) {
+    if (laneMaxOverSpecs(config, 'maxBirthsPerWindow') > 0) {
         fnv64Bytes(digest, views.birthRing);
     }
     fnv64Bytes(digest, views.sex);

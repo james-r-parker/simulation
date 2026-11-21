@@ -34,6 +34,7 @@ const SOURCE_METRICS = [
     'eval.herd_seeded_patches',
     'eval.herd_carcass_meal_share',
     'eval.carcass_meal_share',
+    'eval.defender_bite_break_share',
     'eval.carcass_hunter_share',
     'eval.herd_carcass_share.forager',
     'eval.herd_carcass_share.predator',
@@ -181,7 +182,7 @@ describe('ecology metrics from a scripted source run', () => {
         const registryNames = Object.entries(METRICS)
             .filter(([, entry]) => entry.family === 'scenes-ecology')
             .map(([name]) => name);
-        expect(names).toHaveLength(102);
+        expect(names).toHaveLength(103);
         expect(names).toEqual(registryNames);
         expect(Object.fromEntries(names.map((name) => [name, actual[name]]))).toEqual(expected);
         expect(run.observer.deathCount).toBe(2);

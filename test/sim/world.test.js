@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { OUTPUT_COUNT } from '../../js/sim/brain-layout.js';
 import { detCos, detSin } from '../../js/sim/det-math.js';
+import { laneBases } from '../../js/sim/body-lanes.js';
 import { createConfig } from '../../js/sim/config.js';
 import { terrainRockCount } from '../../js/sim/terrain.js';
 import { EVENT_STRIDE } from '../../js/sim/events.js';
@@ -49,7 +50,11 @@ describe('allocateWorld', () => {
 
     it('tabulates the bite, turn and sprint multipliers and the antenna by specialisation', () => {
         const w = smallWorld({ antennaAngle: 0.5 });
-        expect(Array.from(w.biteBySpec)).toEqual([1, 8, 1, 1, 1]);
+        // The bite multiplier is the biteEnergy lane now (no table): the predator's base is 8 times the forager's.
+        expect(laneBases(w.config, 'predator').biteEnergy / laneBases(w.config, 'forager').biteEnergy).toBeCloseTo(
+            8,
+            12,
+        );
         expect(Array.from(w.turnBySpec)).toEqual([1, 0.7, 1, 1, 1]);
         expect(Array.from(w.sprintBySpec)).toEqual([1, 1.6, 1, 1, 1]);
         expect(w.antennaCos).toEqual(new Float64Array([detCos(0.5)]));
