@@ -1,7 +1,9 @@
 // The record of detached runs (scripts/run-detached.sh): a JSON array in <runs dir>/runs.json, one entry per run.
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { collectRuns, inFlight, parseWorkers, underUseWarning } from './run-workers.mjs';
 
 /**
  * @typedef {object} RunRecord
@@ -12,6 +14,8 @@ import { fileURLToPath } from 'node:url';
  * @property {string} cwd where the command runs (the frozen copy when there is one)
  * @property {string | null} frozen the frozen copy's directory, or null
  * @property {string} started ISO start time
+ * @property {number | null} [workers] pool workers the run claims (`--workers <n>`, else the pool default; null when
+ *   the command is no pool)
  */
 
 /**
@@ -47,6 +51,21 @@ export function addRun(file, record) {
 }
 
 /**
+ * @param {string} cwd the directory the run starts in
+ * @returns {string[]} the `.runs/runs.json` of every worktree of the repository there (none outside a repository)
+ */
+function worktreeRegistries(cwd) {
+    const r = spawnSync('git', ['worktree', 'list', '--porcelain'], { cwd, encoding: 'utf8' });
+    if (r.status !== 0) {
+        return [];
+    }
+    return r.stdout
+        .split('\n')
+        .filter((l) => l.startsWith('worktree '))
+        .map((l) => join(l.slice(9), '.runs', 'runs.json'));
+}
+
+/**
  * Runs the CLI: `add <file> <name> <cmd> <pid> <dir> <cwd> <frozen|-> <started>`.
  * @param {string[]} argv arguments after the script name
  * @returns {number} exit status
@@ -58,7 +77,22 @@ export function main(argv) {
         return 2;
     }
     try {
-        addRun(file, { name, cmd, pid: Number(pid), dir, cwd, frozen: frozen === '-' ? null : frozen, started });
+        const others = collectRuns([file, ...worktreeRegistries(cwd)]).filter(inFlight);
+        const workers = parseWorkers(cmd);
+        addRun(file, {
+            name,
+            cmd,
+            pid: Number(pid),
+            dir,
+            cwd,
+            frozen: frozen === '-' ? null : frozen,
+            started,
+            workers,
+        });
+        const warning = underUseWarning(workers, others);
+        if (warning) {
+            console.error(warning);
+        }
         return 0;
     } catch (error) {
         console.error(`${error}`);

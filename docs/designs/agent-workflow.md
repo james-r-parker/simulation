@@ -336,6 +336,7 @@ Six of the 20 `full` pull requests changed `package.json` only to add an npm scr
 | `ship.sh` merges the base in and never rebases                         | a force push is refused in agent sessions, and three PRs were closed and reopened over it (472, 506, 512)                                                                                                                                           |
 | A pull request runs affected tests and the merged result runs them all | a selection by imports can miss an edge; the full run on the merged result catches it before the next change builds on it, and the miss ledger closes the edge                                                                                      |
 | No merge queue                                                         | GitHub offers it only to organisation-owned repositories; this one is owned by a user account. The ruleset's required checks are not strict, so a green PR merges without an up-to-date branch, and the full run on `main` checks the merged result |
+| `worktree-gc` removes only agent worktrees by default                  | a worktree outside `.claude/worktrees` is a named stream checkout that a person or session reuses                                                                                                                                                   |
 | Agent permissions stay a user step                                     | a plan does not edit the settings that bound the agents that build it                                                                                                                                                                               |
 
 ## Delivery requirements
@@ -396,13 +397,13 @@ Six of the 20 `full` pull requests changed `package.json` only to add an npm scr
 
 ### Phase 4 - The state of the machine
 
-| #   | Task                                                                                                                                                                      | Nature       | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T22 | Record `workers` in `runs.json` and print the under-use warning in `scripts/run-detached.sh`, with tests                                                                  | [mechanical] | -          |
-| T23 | Add `scripts/worktree-gc.sh` (`--list`, remove `safe`) with tests on a fixture repo                                                                                       | [judgement]  | -          |
-| T24 | Add `scripts/state.mjs` and `npm run state` with tests for each block                                                                                                     | [judgement]  | T22, T23   |
-| T25 | Add `docs/handoffs/TEMPLATE.md`; rewrite "Delegating to subagents" in `AGENTS.md` for streams (one coordinator, one model family), the worker budget and `worktree-gc.sh` | [judgement]  | T24        |
-| T27 | Conformance review of Phase 4, with `scripts/worktree-gc.sh` run on the machine and the class counts before and after in the PR body                                      | [judgement]  | T24, T25   |
+| #   | Task                                                                                                                                                                              | Nature       | Depends on |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T22 | Record `workers` in `runs.json` and print the under-use warning in `scripts/run-detached.sh`, with tests (built)                                                                  | [mechanical] | -          |
+| T23 | Add `scripts/worktree-gc.sh` (`--list`, remove `safe`) with tests on a fixture repo (built)                                                                                       | [judgement]  | -          |
+| T24 | Add `scripts/state.mjs` and `npm run state` with tests for each block (built)                                                                                                     | [judgement]  | T22, T23   |
+| T25 | Add `docs/handoffs/TEMPLATE.md`; rewrite "Delegating to subagents" in `AGENTS.md` for streams (one coordinator, one model family), the worker budget and `worktree-gc.sh` (built) | [judgement]  | T24        |
+| T27 | Conformance review of Phase 4, with `scripts/worktree-gc.sh` run on the machine and the class counts before and after in the PR body                                              | [judgement]  | T24, T25   |
 
 ### Phase 5 - Start to merge (built)
 
