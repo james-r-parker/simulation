@@ -5,14 +5,14 @@ import { drillSubject } from '../../js/evo/drill.js';
 import { DRILLS, WEAK_SPRINT_BOOST } from '../../js/evo/drill-scenarios.js';
 import { oracleSubject } from '../../js/evo/lesson-oracles.js';
 import { playTrial, viewOf } from '../../js/evo/memory-probe-run.js';
-import { PREDATOR_SPEC } from '../../js/evo/memory-probe-scenarios.js';
 import { OUTPUT_COUNT } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
+import { SPEC } from '../../js/sim/specs.js';
 
 const byName = (/** @type {string} */ name) => /** @type {any} */ (DRILLS.find((d) => d.name === name));
-const view = viewOf({ spec: PREDATOR_SPEC, weights: null }, createConfig({}));
+const view = viewOf({ spec: SPEC.PREDATOR, weights: null }, createConfig({}));
 const stream = () => fork(createRng(3), 'adrift');
-const idle = { name: 'idle', id: 0, spec: PREDATOR_SPEC, weights: null, act: () => {} };
+const idle = { name: 'idle', id: 0, spec: SPEC.PREDATOR, weights: null, act: () => {} };
 
 describe('prey-adrift', () => {
     it('stages the prey-ahead trial with the prey in the adrift role, and prey-ahead keeps its fleeing prey', () => {

@@ -1,6 +1,6 @@
 # Registries
 
-**Status:** Proposed - the systems map of the sim, and three concepts that are spread over many files made into registries: events, the brain's inputs and outputs, and the observer's detectors; Phase 1 (events, the spec names and the per-slot state list) is first.
+**Status:** In progress - Phase 1 is built: the events, the spec names and the per-slot state list are each one declared list, with contract tests; every golden `worldHash` is unchanged. Phase 2 (the brain schema) is built inside body-genes.md T6a, and Phase 3 (detectors) is next.
 **Validated:** 23e8cc66 (2026-11-21)
 **Scheduled by:** [metric-noise.md](metric-noise.md) step 1 - the detector interface is built before metric-noise.md Phase 6 adds the role metrics, since each detector added today touches 12 to 22 files
 
@@ -10,21 +10,21 @@ A registry is one declarative list that everything else loops over: the list say
 
 ## The systems map
 
-| System                   | Holds                                                                                                              | State on 2026-11-21                                                                                                                         |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Step phases              | the order of a tick (`STEP_PHASES` in `js/sim/step.js`)                                                            | a registry; left as it is                                                                                                                   |
-| Config                   | 230 keys in eight `js/sim/config-*.js` files, defaults and rules as parallel maps, checked by exact-key validation | parallel but loud: a missed entry fails at start. Left as it is, with a generated key table (T4)                                            |
-| Lanes and traits         | every body setting and what a gene may shift                                                                       | planned: [body-genes.md](body-genes.md)                                                                                                     |
-| Effects                  | every within-life modifier                                                                                         | planned: [status-effects.md](status-effects.md)                                                                                             |
-| Metric registry          | what each of 377 metrics means, its direction, tests, liveness and power (`js/evo/metric-registry/`)               | a registry of descriptions; the computation is tied to it by name strings (Phase 3)                                                         |
-| Events                   | 34 event codes with 13 positional fields (`EVENT_TYPE` in `js/sim/events.js`)                                      | spread: no declared field layout; 34 hand-written emitters in `js/sim/log.js`; consumers read by number in 9 files (Phase 1)                |
-| Brain inputs and outputs | ray channels, body inputs, outputs and their thresholds                                                            | spread: `BODY_INPUT` names 11 of 36 offsets, the labels are a second list, channel numbers are re-declared in 6 files (Phase 2)             |
-| Detectors                | 48 scene modules behind the observer                                                                               | spread: each wired by hand in `js/evo/observer-scenes.js`; adding one touched 12, 19 and 22 files in the last three cases (Phase 3)         |
-| Specialisations          | the five specs                                                                                                     | numbers in one table; names in five arrays and 21 local numeric constants in 16 files (Phase 1)                                             |
-| Per-slot state           | every per-agent array                                                                                              | allocation and reset from one list (`agentSpecs`); the hash, the WASM pointer tables and the snapshot strides from parallel lists (Phase 1) |
-| Training stages          | `evals/stages/*.json`, the ladder files                                                                            | declarative; left as they are                                                                                                               |
-| Scenarios                | drills, reflex cases, chase arenas, role scenes                                                                    | four arena stagers and three entry shapes; one stager and one shape when [role-budget.md](role-budget.md) adds its scenes (T11)             |
-| Food and entity kinds    | plants, meat, carcasses; agents, rocks, smoke, herds                                                               | per-kind arrays by design, for speed; not a registry                                                                                        |
+| System                   | Holds                                                                                                              | State on 2026-11-21                                                                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Step phases              | the order of a tick (`STEP_PHASES` in `js/sim/step.js`)                                                            | a registry; left as it is                                                                                                                                                   |
+| Config                   | 230 keys in eight `js/sim/config-*.js` files, defaults and rules as parallel maps, checked by exact-key validation | parallel but loud: a missed entry fails at start. Left as it is, with the generated key table `docs/config-keys.md` (built)                                                 |
+| Lanes and traits         | every body setting and what a gene may shift                                                                       | planned: [body-genes.md](body-genes.md)                                                                                                                                     |
+| Effects                  | every within-life modifier                                                                                         | planned: [status-effects.md](status-effects.md)                                                                                                                             |
+| Metric registry          | what each of 377 metrics means, its direction, tests, liveness and power (`js/evo/metric-registry/`)               | a registry of descriptions; the computation is tied to it by name strings (Phase 3)                                                                                         |
+| Events                   | 34 event codes with 13 positional fields (`EVENT_TYPE` in `js/sim/events.js`)                                      | a registry: `EVENTS` names every field, one emitter in `js/sim/log.js`, consumers read by named offset, a generated table (Phase 1, built)                                  |
+| Brain inputs and outputs | ray channels, body inputs, outputs and their thresholds                                                            | spread: `BODY_INPUT` names 11 of 36 offsets, the labels are a second list, channel numbers are re-declared in 6 files (Phase 2)                                             |
+| Detectors                | 48 scene modules behind the observer                                                                               | spread: each wired by hand in `js/evo/observer-scenes.js`; adding one touched 12, 19 and 22 files in the last three cases (Phase 3)                                         |
+| Specialisations          | the five specs                                                                                                     | a registry: `js/sim/specs.js`; a `conventions` rule refuses a local count, index or name list (Phase 1, built)                                                              |
+| Per-slot state           | every per-agent array                                                                                              | `agentSpecs` (`js/sim/agent-arrays.js`) says for each array how it is hashed and which kernels take it; the hash order and the arena's field lists read it (Phase 1, built) |
+| Training stages          | `evals/stages/*.json`, the ladder files                                                                            | declarative; left as they are                                                                                                                                               |
+| Scenarios                | drills, reflex cases, chase arenas, role scenes                                                                    | four arena stagers and three entry shapes; one stager and one shape when [role-budget.md](role-budget.md) adds its scenes (T11)                                             |
+| Food and entity kinds    | plants, meat, carcasses; agents, rocks, smoke, herds                                                               | per-kind arrays by design, for speed; not a registry                                                                                                                        |
 
 Not made into registries: a generic entity system (kinds share only a position and a radius, and an array per kind is the speed design), physics and collision per kind, the kernels, the renderer's draw modules, a timer system apart from the effects.
 
@@ -42,6 +42,18 @@ Two riders in the same phase, both small:
 
 - **Spec names.** `js/sim/specs.js` exports `SPEC`, `SPEC_NAMES`, `SPEC_COUNT` and the role tests; the five arrays and the 21 local constants (`SCOUT_SPEC = 3`, `spec === 1`) go, and a `conventions` rule refuses a new one.
 - **Per-slot state.** An entry of `agentSpecs` in `js/sim/world.js` gains `hashed` (or the reason it is not) and the kernels that take its pointer; `world-hash.js` and the `wasm-*.js` pointer tables filter that one list in today's order. A contract test fails an array that is neither hashed nor excused.
+
+### As built (Phase 1)
+
+Where the code differs from the text above, and what the plan did not say:
+
+- **Events.** A field's name is `lowerCamel` and its offset `UPPER_SNAKE` (`EVENT.AGENT_DIED.FOOD_ENERGY`); `EVENT_FIELDS_AT` and `EVENT_TICK` name the first field and the tick. The log's decodings (cause names, flags, the packed hunter-ledger word, the fields the log leaves out, the `FloorGuard` record) are `js/sim/log-rules.js`; `drainEvents` is the one emitter. The log's table is `docs/log-events.md`, generated by `scripts/events-doc.mjs` and checked by the `conventions` gate. `PROVISIONED` (code 32) stays in `EVENTS` with no log name, so its code is not reused.
+- **Cause lists.** `DEATH_CAUSES`, `BORN_CAUSES` and `LOSS_CAUSE_LIST` are the lists of `{code, key, name, colour}`; `DEATH_CAUSE`, `BORN_CAUSE` and `LOSS_CAUSE` stay as the keyed maps of codes, built from them, since about a hundred call sites read `DEATH_CAUSE.EATEN`. `DISEASE` shares `STARVED`'s colour, as the flow charts' six-colour palette always wrapped; The app may not import `js/sim/`, so the colours reach it in the worker's layout (`layout.causeColours`), through `createSampler` to the flow chart, and `css-color.js` keeps the six-colour palette for a series that names no cause. `EFFECT_SOURCE` in `js/worker/effect-ring.js` names the event of each `EFFECT_KIND`.
+- **Readers.** `js/evo/observer-scenes.js` stood at the 300-line limit, so its event pass moved to `js/evo/observer-scenes-events.js`. `test/sim/event-offsets.test.js` is the check that no bare offset is left under `js/`.
+- **Spec names.** `SPEC_NAMES` replaced `GENOME_SPECS`, `HERD_SPEC_NAMES`, `spec-params.js`'s list and `SPECIALISATION_KEYS`; `js/library/shapes.js` keeps its own copy, since the library may import nothing from `js/sim/` (the `library-standalone` rule), and a test keeps it equal to `SPEC_NAMES`; the `conventions` rule leaves `js/library/` out.
+- **Per-slot state.** `agentSpecs` moved to `js/sim/agent-arrays.js` (no imports, so the WASM modules can read it without a cycle) and `HEARD_STRIDE` with it. An entry has `hashed` (its place in the first block of the hash, `'optional'` for the four arrays `hashOptionalArrays` covers, or `false` with an `excuse`) and `kernels`. `world-hash.js` takes the first block from the places, in today's order. The arena's owned field lists (`BRAIN_FIELDS`, `SENSE_FIELDS`, `PHYSICS_FIELDS`) take their agent arrays from `kernels` in the order of the owner's parameter table. The parameter tables themselves stay written out: the Rust parameter structs fix their order, so `test/sim/world-state.contract.test.js` checks both ways that each table holds exactly the agent arrays naming that kernel.
+- **Rows outside the agent list.** The other groups of `allocAgentArrays` are hashed by their own lists, or are named with a reason in `UNHASHED_ROWS` (their modules say they are derived state outside `worldHash`). One is a gap and is kept as one: `restTimer` holds a hunter at thrust 0 after a kill (`predatorRestTicks`, 60 by default) and is not hashed; its effect reaches the hashed `vx` and `vy` the same tick, and hashing it moves every golden, so it is a decision for a PR that re-pins.
+- **Config.** `docs/config-keys.md` is generated by `scripts/config-doc.mjs` and checked by the `conventions` gate.
 
 ## Brain inputs and outputs (Phase 2)
 
@@ -73,7 +85,7 @@ A detector is a module with one shape, and the observer loops over a list of the
 
 ## Phases
 
-### Phase 1 - Events, spec names and the per-slot list
+### Phase 1 - Events, spec names and the per-slot list (built)
 
 **Targets:** none - a refactor; every golden `worldHash` and an eval report are unchanged
 
@@ -126,7 +138,7 @@ Inside the `bench-check` margin; an eval report is byte-identical before and aft
 
 ## Task breakdown
 
-### Phase 1 - Events, spec names and the per-slot list
+### Phase 1 - Events, spec names and the per-slot list (built)
 
 | #   | Task                                                                                                                                                                                                           | Nature       | Depends on |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |

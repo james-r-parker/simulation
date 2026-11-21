@@ -6,6 +6,7 @@
 import { evaderBrain, steer } from './chase-oracles.js';
 import { SEEK_THRUST, setOutput, write } from './scripted-parts.js';
 import { OUTPUT_INDEX } from '../sim/brain-layout.js';
+import { SPEC } from '../sim/specs.js';
 
 /** The subject's slot in every drill. */
 const SUBJECT = 0;
@@ -159,16 +160,13 @@ function selectiveStriker(world) {
     setOutput(world, SUBJECT, OUTPUT_INDEX.BITE, near ? 1 : 0);
 }
 
-/** The specialisation index of a forager: in `pack-converge` the only forager is the prey. */
-const PREY_SPEC = 0;
-
 /**
  * @param {Record<string, any>} world the world
  * @returns {number} the slot of the first alive forager (the prey of `pack-converge`), or -1
  */
 function preySlot(world) {
     for (let slot = 0; slot < world.alive.length; slot++) {
-        if (world.alive[slot] === 1 && world.spec[slot] === PREY_SPEC) {
+        if (world.alive[slot] === 1 && world.spec[slot] === SPEC.FORAGER) {
             return slot;
         }
     }

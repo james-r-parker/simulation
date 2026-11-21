@@ -2,7 +2,8 @@
 // specialisation (a random elite's when `specMutationRate` is above 0), then a genome from the archive, a clone of one, or a random one.
 
 import { occupiedCount, nextClone, selectParent } from '../../evo/archive.js';
-import { GENOME_SPECS, rejectGenome } from '../../evo/genome.js';
+import { rejectGenome } from '../../evo/genome.js';
+import { SPEC, SPEC_NAMES } from '../../sim/specs.js';
 import { randomGenome } from '../../evo/instinct.js';
 import { SIGMA_START, mutateSigma, mutateWeights } from '../../evo/mutation.js';
 import { knockOutAndLog } from '../../evo/unit-knockout.js';
@@ -46,17 +47,17 @@ export function leastPopulatedSpec(world, slot, counts) {
 export function randomEliteSpec(archive, rng) {
     const cells = occupiedCount(/** @type {any} */ (archive));
     if (cells < MIN_ARCHIVE_CELLS) {
-        return nextInt(rng, GENOME_SPECS.length);
+        return nextInt(rng, SPEC_NAMES.length);
     }
     let left = nextInt(rng, cells);
-    for (let spec = 0; spec < GENOME_SPECS.length - 1; spec++) {
+    for (let spec = 0; spec < SPEC_NAMES.length - 1; spec++) {
         const here = occupiedCount(/** @type {any} */ (archive), spec);
         if (left < here) {
             return spec;
         }
         left -= here;
     }
-    return GENOME_SPECS.length - 1;
+    return SPEC_NAMES.length - 1;
 }
 
 /**
@@ -98,10 +99,8 @@ function checkRow(row, layout, log) {
     }
 }
 
-/** The hunting specialisation: the one a `preyShare` quota keeps out of the prey. */
-const HUNTER_SPEC = GENOME_SPECS.indexOf('predator');
 /** The specialisations a `preyShare` quota fills, in index order. */
-const PREY_SPECS = GENOME_SPECS.flatMap((_, spec) => (spec === HUNTER_SPEC ? [] : [spec]));
+const PREY_SPECS = SPEC_NAMES.flatMap((_, spec) => (spec === SPEC.PREDATOR ? [] : [spec]));
 
 /**
  * The specialisation under a `preyShare` quota: a prey specialisation (the least populated, ties to the lowest index)
@@ -118,10 +117,10 @@ export function quotaSpec(world, slot, { counts, preyShare }) {
     let prey = 0;
     for (let spec = 0; spec < counts.length; spec++) {
         alive += counts[spec];
-        prey += spec === HUNTER_SPEC ? 0 : counts[spec];
+        prey += spec === SPEC.PREDATOR ? 0 : counts[spec];
     }
     if (prey >= Math.round(preyShare * (alive + 1))) {
-        return HUNTER_SPEC;
+        return SPEC.PREDATOR;
     }
     return PREY_SPECS.reduce((best, spec) => (counts[spec] < counts[best] ? spec : best), PREY_SPECS[0]);
 }
@@ -289,7 +288,7 @@ export function createSeeder({
     checkPreyShare(preyShare);
     checkOpponents(opponents);
     const mix = { cellDraws, archiveShare, cloneShareEnd };
-    const counts = new Int32Array(GENOME_SPECS.length);
+    const counts = new Int32Array(SPEC_NAMES.length);
     const pool = createPoolDraw(opponents);
     const seeder = {
         archive,

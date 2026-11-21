@@ -77,9 +77,28 @@ describe('playCondition', () => {
         expect(stander.failedCost).toBeGreaterThan(0);
     });
 
+    it('counts a predator that dies in the trial as a failed pursuit that spent all its energy', () => {
+        const mortal = { age: 'mature', habitat: 'open', trials: 2, config: { maxAgeTicks: 5 } };
+        const died = playCondition(scripted('stand', 1), prey, mortal);
+        expect(died).toMatchObject({ kills: 0, trials: 2 });
+        expect(died.failedCost).toBeGreaterThan(0);
+    });
+
     it('replays bit for bit', () => {
         const again = playCondition(hunter, prey, { age: 'mature', habitat: 'sparse', trials });
         expect(again).toEqual(playCondition(hunter, prey, { age: 'mature', habitat: 'sparse', trials }));
+    });
+});
+
+describe('releaseMatrix guild', () => {
+    it('reads an opponent with no specialisation as a forager', () => {
+        const nameless = { name: 'nameless', id: 0, spec: null, weights: null, act: () => {} };
+        const [row] = releaseMatrix(scripted('stand', 1), {
+            candidate,
+            opponents: [{ subject: nameless, provenance: ME }],
+            trials: 1,
+        });
+        expect(row.guild).toBe('forager');
     });
 });
 

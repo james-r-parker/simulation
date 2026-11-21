@@ -1,7 +1,7 @@
 // Render effects: turns each tick's event records and the alive slots into bite, birth, death, call and smoke effects
 // (and, through effects-world.js, herd, dung, wilt and first-kill effects), and writes the pending ones into a snapshot's effects part. Reads the world and never changes it.
 
-import { BORN_CAUSE, DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { BORN_CAUSE, DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE, EVENT, EVENT_TICK } from '../sim/events.js';
 import { TIMER_CAP } from '../sim/world.js';
 import { beginEffect, EFFECT_CAPACITY, EFFECT_KIND, EFFECT_WORDS, placeEffect } from './effect-ring.js';
 import { addWorldEffect } from './effects-world.js';
@@ -88,13 +88,13 @@ function lineageOf(log, world, slot, genomeId) {
  */
 function addMatedSingleTick(log, world, o, slotOf) {
     const d = world.events.data;
-    const motherGenome = d[o + 6];
-    const fatherGenome = d[o + 7];
+    const motherGenome = d[o + EVENT.AGENT_BORN.PARENT_A];
+    const fatherGenome = d[o + EVENT.AGENT_BORN.PARENT_B];
     const motherSlot = slotOf?.get(motherGenome);
     let x;
     let y;
-    let spec = d[o + 5];
-    let lineage = d[o + 4];
+    let spec = d[o + EVENT.AGENT_BORN.SPEC];
+    let lineage = d[o + EVENT.AGENT_BORN.LINEAGE_ID];
     if (motherSlot !== undefined && aliveIn(world, motherSlot, motherGenome)) {
         x = world.x[motherSlot];
         y = world.y[motherSlot];
@@ -106,11 +106,11 @@ function addMatedSingleTick(log, world, o, slotOf) {
         spec = log.cacheSpec[motherSlot];
         lineage = log.cacheLineage[motherSlot];
     } else {
-        const childSlot = d[o + 2];
+        const childSlot = d[o + EVENT.AGENT_BORN.SLOT];
         x = world.x[childSlot];
         y = world.y[childSlot];
     }
-    const m = beginEffect(log, EFFECT_KIND.MATED, d[o + 1]);
+    const m = beginEffect(log, EFFECT_KIND.MATED, d[o + EVENT_TICK]);
     placeEffect(log, m, x, y);
     log.u32[m + 4] = motherGenome;
     log.u32[m + 5] = fatherGenome;
@@ -129,16 +129,16 @@ function addMatedSingleTick(log, world, o, slotOf) {
  */
 function addBorn(log, world, o, slotOf) {
     const d = world.events.data;
-    const slot = d[o + 2];
-    if (aliveIn(world, slot, d[o + 3])) {
-        const w = beginEffect(log, EFFECT_KIND.BORN, d[o + 1]);
+    const slot = d[o + EVENT.AGENT_BORN.SLOT];
+    if (aliveIn(world, slot, d[o + EVENT.AGENT_BORN.GENOME_ID])) {
+        const w = beginEffect(log, EFFECT_KIND.BORN, d[o + EVENT_TICK]);
         placeEffect(log, w, world.x[slot], world.y[slot]);
-        log.u32[w + 4] = d[o + 3];
-        log.u32[w + 5] = d[o + 4];
-        log.u32[w + 6] = d[o + 6];
-        log.u32[w + 7] = d[o + 8];
+        log.u32[w + 4] = d[o + EVENT.AGENT_BORN.GENOME_ID];
+        log.u32[w + 5] = d[o + EVENT.AGENT_BORN.LINEAGE_ID];
+        log.u32[w + 6] = d[o + EVENT.AGENT_BORN.PARENT_A];
+        log.u32[w + 7] = d[o + EVENT.AGENT_BORN.CAUSE];
     }
-    if (world.config.pregnancyTicks === 1 && d[o + 8] === BORN_CAUSE.MATE) {
+    if (world.config.pregnancyTicks === 1 && d[o + EVENT.AGENT_BORN.CAUSE] === BORN_CAUSE.MATE) {
         addMatedSingleTick(log, world, o, slotOf);
     }
 }
@@ -153,17 +153,18 @@ function addBorn(log, world, o, slotOf) {
  */
 function addDied(log, world, o) {
     const d = world.events.data;
-    const slot = d[o + 2];
-    if (log.cacheGenome[slot] !== d[o + 3]) {
+    const slot = d[o + EVENT.AGENT_DIED.SLOT];
+    if (log.cacheGenome[slot] !== d[o + EVENT.AGENT_DIED.GENOME_ID]) {
         return;
     }
-    const w = beginEffect(log, EFFECT_KIND.DIED, d[o + 1]);
+    const w = beginEffect(log, EFFECT_KIND.DIED, d[o + EVENT_TICK]);
     placeEffect(log, w, log.cacheX[slot], log.cacheY[slot]);
-    const pack = d[o + 4] === DEATH_CAUSE.EATEN && d[o + 11] !== 0 ? PACK_FLAG : 0;
-    log.u32[w + 4] = d[o + 3];
-    log.u32[w + 5] = d[o + 5];
-    log.u32[w + 6] = d[o + 6] + d[o + 4] * DEATH_CAUSE_SHIFT + pack;
-    log.u32[w + 7] = d[o + 7];
+    const pack =
+        d[o + EVENT.AGENT_DIED.CAUSE] === DEATH_CAUSE.EATEN && d[o + EVENT.AGENT_DIED.PARTNER] !== 0 ? PACK_FLAG : 0;
+    log.u32[w + 4] = d[o + EVENT.AGENT_DIED.GENOME_ID];
+    log.u32[w + 5] = d[o + EVENT.AGENT_DIED.BY];
+    log.u32[w + 6] = d[o + EVENT.AGENT_DIED.SPEC] + d[o + EVENT.AGENT_DIED.CAUSE] * DEATH_CAUSE_SHIFT + pack;
+    log.u32[w + 7] = d[o + EVENT.AGENT_DIED.LINEAGE_ID];
 }
 
 /**
@@ -176,20 +177,20 @@ function addDied(log, world, o) {
 function addCall(log, world, o) {
     const d = world.events.data;
     const type = d[o];
-    const slot = d[o + 2];
-    const genomeId = d[o + 3];
+    const slot = d[o + EVENT.ALARM_CALLED.SLOT];
+    const genomeId = d[o + EVENT.ALARM_CALLED.GENOME_ID];
     const kind = type === EVENT_TYPE.ALARM_CALLED ? EFFECT_KIND.ALARM : EFFECT_KIND.PACK_CALL;
     const smoke = type === EVENT_TYPE.SMOKE_RELEASED;
-    const w = beginEffect(log, smoke ? EFFECT_KIND.SMOKE : kind, d[o + 1]);
-    placeEffect(log, w, d[o + 5], d[o + 6]);
+    const w = beginEffect(log, smoke ? EFFECT_KIND.SMOKE : kind, d[o + EVENT_TICK]);
+    placeEffect(log, w, d[o + EVENT.ALARM_CALLED.X], d[o + EVENT.ALARM_CALLED.Y]);
     log.u32[w + 4] = genomeId;
     log.u32[w + 5] = 0;
     if (smoke) {
         const bitten = aliveIn(world, slot, genomeId) && world.bittenTimer[slot] < TIMER_CAP ? 1 : 0;
-        log.u32[w + 6] = d[o + 4] + bitten * (1 << SPEC_SHIFT);
-        log.u32[w + 7] = d[o + 7];
+        log.u32[w + 6] = d[o + EVENT.ALARM_CALLED.SPEC] + bitten * (1 << SPEC_SHIFT);
+        log.u32[w + 7] = d[o + EVENT.SMOKE_RELEASED.CLOUD];
     } else {
-        log.u32[w + 6] = d[o + 4];
+        log.u32[w + 6] = d[o + EVENT.ALARM_CALLED.SPEC];
         log.u32[w + 7] = lineageOf(log, world, slot, genomeId);
     }
 }
@@ -201,20 +202,20 @@ function addCall(log, world, o) {
  * @returns {void}
  */
 function addPollinated(log, events, at) {
-    const w = beginEffect(log, EFFECT_KIND.POLLINATED, events[at + 1]);
-    placeEffect(log, w, events[at + 7], events[at + 8]);
-    log.u32[w + 4] = Math.round((events[at + 6] + 1) * 0.5 * 4095);
+    const w = beginEffect(log, EFFECT_KIND.POLLINATED, events[at + EVENT_TICK]);
+    placeEffect(log, w, events[at + EVENT.PATCH_SEEDED.X], events[at + EVENT.PATCH_SEEDED.Y]);
+    log.u32[w + 4] = Math.round((events[at + EVENT.PATCH_SEEDED.HUE] + 1) * 0.5 * 4095);
     log.u32[w + 5] = log.u32[w + 6] = log.u32[w + 7] = 0;
 }
 
 /** A herd stampede yields one dust effect at the group's current centre. @param {EffectLog} log @param {Record<string, any>} world @param {number} o event offset @returns {void} */
 function addStampede(log, world, o) {
     const d = world.events.data;
-    const group = d[o + 2];
-    const w = beginEffect(log, EFFECT_KIND.STAMPEDE, d[o + 1]);
-    placeEffect(log, w, d[o + 5], d[o + 6]);
+    const group = d[o + EVENT.HERD_STAMPEDE.GROUP];
+    const w = beginEffect(log, EFFECT_KIND.STAMPEDE, d[o + EVENT_TICK]);
+    placeEffect(log, w, d[o + EVENT.HERD_STAMPEDE.X], d[o + EVENT.HERD_STAMPEDE.Y]);
     log.u32[w + 4] = group;
-    log.u32[w + 5] = d[o + 4];
+    log.u32[w + 5] = d[o + EVENT.HERD_STAMPEDE.ANIMALS];
     log.u32[w + 6] = 0;
     log.u32[w + 7] = 0;
 }
@@ -222,11 +223,11 @@ function addStampede(log, world, o) {
 /** A strain's emergence yields one ring at its first host. @param {EffectLog} log @param {Record<string, any>} world @param {number} o event offset @returns {void} */
 function addStrainEmerged(log, world, o) {
     const d = world.events.data;
-    const host = d[o + 3];
-    const w = beginEffect(log, EFFECT_KIND.STRAIN_EMERGED, d[o + 1]);
+    const host = d[o + EVENT.STRAIN_EMERGED.HOST_SLOT];
+    const w = beginEffect(log, EFFECT_KIND.STRAIN_EMERGED, d[o + EVENT_TICK]);
     placeEffect(log, w, world.x[host], world.y[host]);
-    log.u32[w + 4] = d[o + 2];
-    log.u32[w + 5] = d[o + 4];
+    log.u32[w + 4] = d[o + EVENT.STRAIN_EMERGED.STRAIN];
+    log.u32[w + 5] = d[o + EVENT.STRAIN_EMERGED.HOST_GENOME_ID];
     log.u32[w + 6] = 0;
     log.u32[w + 7] = 0;
 }

@@ -6,8 +6,7 @@ import { ENERGY_SOURCE, addEnergy } from '../../js/sim/energy.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { addAgent, senseWorld } from './helpers/sense-world.js';
-
-const HUNTER_SPEC = 1;
+import { SPEC } from '../../js/sim/specs.js';
 
 /**
  * Two agents 50 apart on the x axis; the biter faces `facing`.
@@ -15,7 +14,7 @@ const HUNTER_SPEC = 1;
  * @param {{spec?: number, size?: number, facing?: number, kin?: boolean}} [biterOver] the biter
  * @returns {{w: ReturnType<typeof senseWorld>, biter: number, victim: number}}
  */
-function pair(over, { spec = HUNTER_SPEC, size = 30, facing = 0, kin = false } = {}) {
+function pair(over, { spec = SPEC.PREDATOR, size = 30, facing = 0, kin = false } = {}) {
     // the fixtures state the ratio they assume (1.01, the pre-T15d default), so the default's change does not move them
     const w = senseWorld({ huntSizeRatio: 1.01, ...over });
     const biter = addAgent(w, 500, 500, size);

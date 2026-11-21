@@ -3,7 +3,7 @@
 
 import { DISEASE_MAX_STRAINS } from './config-disease.js';
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
-import { EVENT_TYPE, pushEvent } from './events.js';
+import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { distanceToGenotype, sampleGenotype, SIMILARITY_DIMS } from './genetics.js';
 import { firstScannedCell } from './mate-search.js';
 import { nextFloat, nextInt } from './rng.js';
@@ -29,10 +29,10 @@ function infect(world, slot, strain, distance) {
     world.strainTotal[strain] += 1;
     const o = pushEvent(world.events, EVENT_TYPE.AGENT_INFECTED, world.tick);
     const d = world.events.data;
-    d[o + 2] = slot;
-    d[o + 3] = world.genomeId[slot];
-    d[o + 4] = strain;
-    d[o + 5] = distance;
+    d[o + EVENT.AGENT_INFECTED.SLOT] = slot;
+    d[o + EVENT.AGENT_INFECTED.GENOME_ID] = world.genomeId[slot];
+    d[o + EVENT.AGENT_INFECTED.STRAIN] = strain;
+    d[o + EVENT.AGENT_INFECTED.DISTANCE] = distance;
 }
 
 /**
@@ -44,9 +44,9 @@ function infect(world, slot, strain, distance) {
 function endStrain(world, strain) {
     const o = pushEvent(world.events, EVENT_TYPE.STRAIN_EXTINCT, world.tick);
     const d = world.events.data;
-    d[o + 2] = strain;
-    d[o + 3] = world.strainTotal[strain];
-    d[o + 4] = world.tick - world.strainBornTick[strain];
+    d[o + EVENT.STRAIN_EXTINCT.STRAIN] = strain;
+    d[o + EVENT.STRAIN_EXTINCT.INFECTED_TOTAL] = world.strainTotal[strain];
+    d[o + EVENT.STRAIN_EXTINCT.TICKS_ALIVE] = world.tick - world.strainBornTick[strain];
     world.strainAlive[strain] = 0;
     world.strainTotal[strain] = 0;
     world.strainFounderLineage[strain] = 0;
@@ -129,10 +129,10 @@ export function emergeStrain(world) {
     sampleGenotype(world, host, world.strainGenotype, strain * SIMILARITY_DIMS);
     const o = pushEvent(world.events, EVENT_TYPE.STRAIN_EMERGED, world.tick);
     const d = world.events.data;
-    d[o + 2] = strain;
-    d[o + 3] = host;
-    d[o + 4] = world.genomeId[host];
-    d[o + 5] = world.lineageId[host];
+    d[o + EVENT.STRAIN_EMERGED.STRAIN] = strain;
+    d[o + EVENT.STRAIN_EMERGED.HOST_SLOT] = host;
+    d[o + EVENT.STRAIN_EMERGED.HOST_GENOME_ID] = world.genomeId[host];
+    d[o + EVENT.STRAIN_EMERGED.HOST_LINEAGE_ID] = world.lineageId[host];
     infect(world, host, strain, 0);
     return strain;
 }

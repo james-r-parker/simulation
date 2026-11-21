@@ -1,10 +1,12 @@
 // The `specialisations` config: the key order that fixes the indices, the fields, each field's rule and the defaults.
 
 import { BOOL, num, positive } from './config-rules.js';
+import { SPEC_NAMES } from './specs.js';
 
 /** @typedef {import('./config-rules.js').Rule} Rule */
 
-export const SPECIALISATION_KEYS = ['forager', 'predator', 'reproducer', 'scout', 'defender'];
+/** The specialisation keys, in index order: a copy of `SPEC_NAMES`. */
+export const SPECIALISATION_KEYS = [...SPEC_NAMES];
 
 /** The fields of an entry, `index` first (it is fixed by key order and has no rule). */
 export const SPECIALISATION_FIELDS = [

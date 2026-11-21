@@ -2,17 +2,9 @@
 // three that cannot, and a trio against a solo hunter, on a prey too big to kill in one bite.
 
 import { createRng, fork } from '../sim/rng.js';
-import {
-    CENTRE_X,
-    CENTRE_Y,
-    FORAGER_SPEC,
-    HUNTER_ENERGY,
-    PREDATOR_SPEC,
-    PREY_VIEW_SHARE,
-    around,
-    heading,
-} from './memory-probe-scenarios.js';
+import { CENTRE_X, CENTRE_Y, HUNTER_ENERGY, PREY_VIEW_SHARE, around, heading } from './memory-probe-scenarios.js';
 import { playTrial } from './memory-probe-run.js';
+import { SPEC } from '../sim/specs.js';
 
 /** Ticks in a hunt. */
 export const HUNT_TICKS = 600;
@@ -43,11 +35,11 @@ export function huntPlan(rng, view, hunters) {
         x: CENTRE_X,
         y: CENTRE_Y + (i - (hunters - 1) / 2) * HUNTER_SPACING,
         angle: theta,
-        spec: PREDATOR_SPEC,
+        spec: SPEC.PREDATOR,
         energy: HUNTER_ENERGY,
         parents: [SHARED_PARENT, 0],
     }));
-    agents.push({ role: 'prey', ...prey, angle: theta, spec: FORAGER_SPEC, energy: PREY_ENERGY, parents: [0, 0] });
+    agents.push({ role: 'prey', ...prey, angle: theta, spec: SPEC.FORAGER, energy: PREY_ENERGY, parents: [0, 0] });
     return {
         stage: { foods: [], rocks: [], agents },
         timing: null,

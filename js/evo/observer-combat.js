@@ -3,7 +3,7 @@
 // victim is still found by its genome id. It reads the world and draws nothing.
 
 import { ESCAPE_TICKS } from '../sim/merit-state.js';
-import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE, EVENT } from '../sim/events.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { hunterTable, SPEC_RADIX } from './hunter-table.js';
 import { createAlarmFollow, noteAlarm, resolveAlarms } from './observer-alarm.js';
@@ -119,7 +119,7 @@ export function killKind(combat, killer, previous) {
  */
 function countEaten(combat, d, o, tick) {
     combat.eatenDeaths += 1;
-    const kind = killKind(combat, d[o + 5], d[o + 11]);
+    const kind = killKind(combat, d[o + EVENT.AGENT_DIED.BY], d[o + EVENT.AGENT_DIED.PARTNER]);
     combat.huntKills += kind >= KILL.HUNT ? 1 : 0;
     combat.settledHuntKills += kind >= KILL.HUNT && tick >= BURN_IN_TICKS ? 1 : 0;
     combat.packKills += kind === KILL.PACK ? 1 : 0;
@@ -134,14 +134,14 @@ function countEaten(combat, d, o, tick) {
  * @returns {void}
  */
 function onDeath(combat, d, o, tick) {
-    const eaten = d[o + 4] === DEATH_CAUSE.EATEN;
+    const eaten = d[o + EVENT.AGENT_DIED.CAUSE] === DEATH_CAUSE.EATEN;
     if (eaten) {
         countEaten(combat, d, o, tick);
     }
-    if (combat.hunterSpec[d[o + 6]] === 0) {
-        closeEpisode(combat, d[o + 2], d[o + 3], eaten);
+    if (combat.hunterSpec[d[o + EVENT.AGENT_DIED.SPEC]] === 0) {
+        closeEpisode(combat, d[o + EVENT.AGENT_DIED.SLOT], d[o + EVENT.AGENT_DIED.GENOME_ID], eaten);
     }
-    combat.diedAt.set(d[o + 3], tick);
+    combat.diedAt.set(d[o + EVENT.AGENT_DIED.GENOME_ID], tick);
 }
 
 /**
@@ -156,17 +156,29 @@ function applyCombatEvents(combat, world) {
     for (let o = 0; o < end; o += EVENT_STRIDE) {
         switch (d[o]) {
             case EVENT_TYPE.AGENT_BORN:
-                combat.knownAgents.set(d[o + 3], d[o + 4] * SPEC_RADIX + d[o + 5]);
+                combat.knownAgents.set(
+                    d[o + EVENT.AGENT_BORN.GENOME_ID],
+                    d[o + EVENT.AGENT_BORN.LINEAGE_ID] * SPEC_RADIX + d[o + EVENT.AGENT_BORN.SPEC],
+                );
                 break;
             case EVENT_TYPE.AGENT_DIED:
                 onDeath(combat, d, o, world.tick);
                 break;
             case EVENT_TYPE.ALARM_CALLED:
-                noteAlarm(combat.alarm, world, d[o + 2]);
-                noteAlarmReach(combat.alarmReach, { hunterSpec: combat.hunterSpec, world, caller: d[o + 2] });
+                noteAlarm(combat.alarm, world, d[o + EVENT.ALARM_CALLED.SLOT]);
+                noteAlarmReach(combat.alarmReach, {
+                    hunterSpec: combat.hunterSpec,
+                    world,
+                    caller: d[o + EVENT.ALARM_CALLED.SLOT],
+                });
                 break;
             case EVENT_TYPE.SMOKE_RELEASED:
-                noteSmokeRelease(combat.smoke, world, d[o + 2], d[o + 3]);
+                noteSmokeRelease(
+                    combat.smoke,
+                    world,
+                    d[o + EVENT.SMOKE_RELEASED.SLOT],
+                    d[o + EVENT.SMOKE_RELEASED.GENOME_ID],
+                );
                 break;
             default:
         }

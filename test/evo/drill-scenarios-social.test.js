@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createRng, fork } from '../../js/sim/rng.js';
-import { SOCIAL_DRILLS } from '../../js/evo/drill-scenarios-social.js';
+import { BIT_KIN, SOCIAL_DRILLS, lostReasonOf } from '../../js/evo/drill-scenarios-social.js';
 import { DRILLS } from '../../js/evo/drill-scenarios.js';
+import { createKinTrace } from '../../js/evo/drill-kin-trace.js';
+import { createPreyTrace, lostReason } from '../../js/evo/drill-trace.js';
+import { drillSubject } from '../../js/evo/drill.js';
+import { oracleSubject } from '../../js/evo/lesson-oracles.js';
 import { CENTRE_X, CENTRE_Y, PREY_VIEW_SHARE } from '../../js/evo/memory-probe-scenarios.js';
 
 const byName = (/** @type {string} */ name) => /** @type {any} */ (SOCIAL_DRILLS.find((d) => d.name === name));
@@ -162,5 +166,31 @@ describe('pack-converge', () => {
             false,
             true,
         ]);
+    });
+});
+
+describe('kin-spared played out', () => {
+    it('is lost by an idle subject for want of a kill, with the chase reason, and is won only without biting kin', () => {
+        const idle = { name: 'idle', id: 0, spec: 1, weights: null, act: () => {} };
+        const result = drillSubject(byName('kin-spared'), idle, { seed: 1, trials: 2 });
+        expect(result.wins).toBe(0);
+        const oracle = drillSubject(byName('kin-spared'), oracleSubject('kin-spared'), { seed: 1, trials: 4 });
+        expect(oracle.wins).toBeGreaterThan(0);
+    });
+});
+
+describe('lostReasonOf', () => {
+    it('names bit-kin when the subject wished to bite its sibling, else the chase reason', () => {
+        const prey = createPreyTrace();
+        const kin = createKinTrace();
+        expect(lostReasonOf(prey, kin)).toBe(lostReason(prey));
+        kin.biteTicks = 3;
+        expect(lostReasonOf(prey, kin)).toBe(BIT_KIN);
+    });
+
+    it('is reported by the trace of a lost trial only', () => {
+        const plan = byName('kin-spared').plan(stream('kin-spared'), 400);
+        expect(plan.trace(true).reason).toBeNull();
+        expect(typeof plan.trace(false).reason).toBe('string');
     });
 });

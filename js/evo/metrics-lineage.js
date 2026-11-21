@@ -6,7 +6,7 @@
 //
 // A "child" is a birth with cause `mate` or `split`; initial, floor and immigrant entrants are founders, not children.
 
-import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE, EVENT, EVENT_TICK } from '../sim/events.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { none, ok, quantile } from './metrics-stats.js';
 
@@ -43,8 +43,8 @@ export function createLineagePools({ burnIn, runTicks, maturityTicks }) {
  *   before the run end, so the run end decides whether it matured
  */
 export function isEligibleChild(pools, d, o) {
-    const cause = d[o + 8];
-    const tick = d[o + 1];
+    const cause = d[o + EVENT.AGENT_BORN.CAUSE];
+    const tick = d[o + EVENT_TICK];
     const child = cause === BORN_CAUSE.MATE || cause === BORN_CAUSE.SPLIT;
     return child && tick >= pools.burnIn && tick <= pools.lastEligibleBirth;
 }
@@ -85,22 +85,22 @@ export function noteLineages(pools, d, count) {
         if (d[o] !== EVENT_TYPE.AGENT_BORN) {
             continue;
         }
-        let row = rows.get(d[o + 4]);
+        let row = rows.get(d[o + EVENT.AGENT_BORN.LINEAGE_ID]);
         if (row === undefined) {
             row = rows.size;
             ensureRoom(log, row);
-            rows.set(d[o + 4], row);
-            log.first[row] = d[o + 1];
-            log.last[row] = d[o + 1];
+            rows.set(d[o + EVENT.AGENT_BORN.LINEAGE_ID], row);
+            log.first[row] = d[o + EVENT_TICK];
+            log.last[row] = d[o + EVENT_TICK];
         }
         log.alive[row] += 1;
     }
     for (let i = 0; i < count; i++) {
         const o = i * EVENT_STRIDE;
-        const row = d[o] === EVENT_TYPE.AGENT_DIED ? rows.get(d[o + 7]) : undefined;
+        const row = d[o] === EVENT_TYPE.AGENT_DIED ? rows.get(d[o + EVENT.AGENT_DIED.LINEAGE_ID]) : undefined;
         if (row !== undefined) {
             log.alive[row] -= 1;
-            log.last[row] = d[o + 1];
+            log.last[row] = d[o + EVENT_TICK];
         }
     }
 }

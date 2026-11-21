@@ -1,21 +1,25 @@
 // Moves energy between agents and the world ledger, keeps each agent's size in step with its energy, and charges per-tick costs.
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
+import { causeList, causeMap } from './events.js';
 import { juvenileBurnOf } from './juvenile.js';
 import { specParams } from './spec-params.js';
 import { baseSizeOf } from './traits.js';
 import { passiveMultiplier, stepTemperature } from './temperature.js';
 import { TIMER_CAP } from './world.js';
 
+/** Why an agent last lost energy, in code order; `NONE` means it has not lost any. */
+export const LOSS_CAUSE_LIST = causeList([
+    ['NONE', 'none', '#8a9bb0'],
+    ['COST', 'cost', '#6cc6ff'],
+    ['BITE', 'bite', '#ff5d73'],
+    ['COLLISION', 'collision', '#ffb454'],
+    ['TRAMPLE', 'trample', '#b48cff'],
+    ['DISEASE', 'disease', '#5ee6a8'],
+]);
+
 /** Why an agent last lost energy, stored in `lastLoss`; `NONE` means it has not lost any. */
-export const LOSS_CAUSE = Object.freeze({
-    NONE: 0,
-    COST: 1,
-    BITE: 2,
-    COLLISION: 3,
-    TRAMPLE: 4,
-    DISEASE: 5,
-});
+export const LOSS_CAUSE = causeMap(LOSS_CAUSE_LIST);
 
 /** Where energy entered the world from outside, for `addEnergy`. Each one is booked in `ledger[0]`. */
 export const ENERGY_SOURCE = Object.freeze({

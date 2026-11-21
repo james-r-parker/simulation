@@ -12,6 +12,7 @@
 //
 // All are observer state outside `worldHash`; a death or a kill appends nothing larger than a row of a growable log.
 
+import { EVENT, EVENT_TICK } from '../sim/events.js';
 import { BIRTH_SOURCE } from '../sim/hunter-ledger.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { createLog, ensureRoom } from './growable-log.js';
@@ -89,10 +90,10 @@ function addLife(bandTicks, juvenileTicks, age) {
  * @returns {void}
  */
 export function noteAgeKill(scene, d, o) {
-    scene.bandKills[bandOf(d[o + 3], scene.juvenileTicks)] += 1;
-    if (d[o + 4] === 1) {
+    scene.bandKills[bandOf(d[o + EVENT.HUNTER_KILL.AGE_TICKS], scene.juvenileTicks)] += 1;
+    if (d[o + EVENT.HUNTER_KILL.KILLS] === 1) {
         ensureRoom(scene.firstKill, scene.firstKills);
-        scene.firstKill.age[scene.firstKills++] = d[o + 3];
+        scene.firstKill.age[scene.firstKills++] = d[o + EVENT.HUNTER_KILL.AGE_TICKS];
     }
 }
 
@@ -104,8 +105,8 @@ export function noteAgeKill(scene, d, o) {
  * @returns {void}
  */
 export function noteAgeDeath(scene, d, o) {
-    const age = d[o + 3];
-    const packed = d[o + 4];
+    const age = d[o + EVENT.HUNTER_LEDGER.AGE_TICKS];
+    const packed = d[o + EVENT.HUNTER_LEDGER.PACKED];
     addLife(scene.bandTicks, scene.juvenileTicks, age);
     const source = BIRTH_INDEX[packed % 8];
     if (source !== undefined) {
@@ -114,7 +115,7 @@ export function noteAgeDeath(scene, d, o) {
     }
     scene.deaths += 1;
     scene.juvenileDeaths += age < scene.juvenileTicks ? 1 : 0;
-    if (d[o + 1] >= BURN_IN_TICKS) {
+    if (d[o + EVENT_TICK] >= BURN_IN_TICKS) {
         scene.settledDeaths += 1;
         scene.settledJuvenileDeaths += age < scene.juvenileTicks ? 1 : 0;
     }

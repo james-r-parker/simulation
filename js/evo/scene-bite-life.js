@@ -11,7 +11,7 @@
 //
 // Both are detectors, never fitness. One growable log; nothing is allocated per tick.
 
-import { BORN_CAUSE, EVENT_TYPE } from '../sim/events.js';
+import { BORN_CAUSE, EVENT_TYPE, EVENT } from '../sim/events.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { splitHunterIncome } from './hunter-income-split.js';
 import { none, ok } from './metrics-stats.js';
@@ -45,7 +45,7 @@ export function createBiteLifeScene() {
  * @returns {void}
  */
 export function noteBiteLifeRecord(scene, d, o, world) {
-    if (d[o] === EVENT_TYPE.AGENT_BORN && d[o + 8] === BORN_CAUSE.MATE) {
+    if (d[o] === EVENT_TYPE.AGENT_BORN && d[o + EVENT.AGENT_BORN.CAUSE] === BORN_CAUSE.MATE) {
         noteMatingBirth(scene, d, o, world);
         return;
     }
@@ -68,7 +68,7 @@ function noteMatingBirth(scene, d, o, world) {
     if (world === undefined) {
         return;
     }
-    const slot = d[o + 2];
+    const slot = d[o + EVENT.AGENT_BORN.SLOT];
     if (world.huntBySpec[world.spec[slot]] !== 1) {
         return;
     }
@@ -80,7 +80,7 @@ function noteMatingBirth(scene, d, o, world) {
 
 /** @param {Record<string, any>} scene scene @param {Float64Array} d event ring @param {number} o offset */
 function noteCohortKill(scene, d, o) {
-    const cohort = scene.reflexCohorts.get(d[o + 2]);
+    const cohort = scene.reflexCohorts.get(d[o + EVENT.HUNTER_KILL.GENOME_ID]);
     if (cohort !== undefined) {
         cohort.kills = (cohort.kills ?? 0) + 1;
     }
@@ -90,29 +90,29 @@ function noteCohortKill(scene, d, o) {
 function noteRecoil(scene, d, o) {
     const row = scene.recoilRows++;
     ensureRoom(scene.recoilLives, row);
-    scene.recoilLives.energy[row] = d[o + 3];
+    scene.recoilLives.energy[row] = d[o + EVENT.HUNTER_RECOIL_LIFE.ENERGY];
 }
 
 /** @param {Record<string, any>} scene scene @param {Float64Array} d event ring @param {number} o offset */
 function noteLedger(scene, d, o) {
-    const cohort = scene.reflexCohorts.get(d[o + 2]);
+    const cohort = scene.reflexCohorts.get(d[o + EVENT.HUNTER_LEDGER.GENOME_ID]);
     if (cohort !== undefined) {
-        const kills = Math.floor(d[o + 4] / 64);
+        const kills = Math.floor(d[o + EVENT.HUNTER_LEDGER.PACKED] / 64);
         if (cohort.split) {
             scene.reflexSplitKills += kills;
-            scene.reflexSplitTicks += d[o + 3];
+            scene.reflexSplitTicks += d[o + EVENT.HUNTER_LEDGER.AGE_TICKS];
         } else {
             scene.reflexSameKills += kills;
-            scene.reflexSameTicks += d[o + 3];
+            scene.reflexSameTicks += d[o + EVENT.HUNTER_LEDGER.AGE_TICKS];
         }
-        scene.reflexCohorts.delete(d[o + 2]);
+        scene.reflexCohorts.delete(d[o + EVENT.HUNTER_LEDGER.GENOME_ID]);
     }
     const row = scene.rows++;
     ensureRoom(scene.log, row);
-    scene.log.kills[row] = Math.floor(d[o + 4] / 64);
-    scene.log.carcassEnergy[row] = d[o + 5];
-    scene.log.killEnergy[row] = d[o + 9];
-    scene.log.biteGainEnergy[row] = d[o + 10];
+    scene.log.kills[row] = Math.floor(d[o + EVENT.HUNTER_LEDGER.PACKED] / 64);
+    scene.log.carcassEnergy[row] = d[o + EVENT.HUNTER_LEDGER.CARCASS_ENERGY];
+    scene.log.killEnergy[row] = d[o + EVENT.HUNTER_LEDGER.KILL_ENERGY];
+    scene.log.biteGainEnergy[row] = d[o + EVENT.HUNTER_LEDGER.BITE_GAIN_ENERGY];
 }
 
 /**

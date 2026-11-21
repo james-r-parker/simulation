@@ -8,9 +8,8 @@ import { decodeArchive } from '../../js/evo/archive-codec.js';
 import { exportBestPerStyle } from '../../js/evo/champion-export.js';
 import { DRILLS } from '../../js/evo/drill-scenarios.js';
 import { drillReadings } from '../../js/evo/gate-readings.js';
-import { GENOME_SPECS } from '../../js/evo/genome.js';
+import { SPEC, SPEC_NAMES } from '../../js/sim/specs.js';
 import { MATCH_TICKS, validateChampion } from '../../js/evo/league.js';
-import { PREDATOR_SPEC } from '../../js/evo/memory-probe-scenarios.js';
 import { partitionSeed } from '../../js/evo/partitions.js';
 import { REFLEX_CASES } from '../../js/evo/reflex-cases.js';
 import { GATE_TRIALS } from '../../js/evo/stage-gate.js';
@@ -202,10 +201,10 @@ export function styleReadings(table, named, trials) {
     /** @type {Record<string, string[]>} */
     const filled = {};
     for (const subject of table.subjects) {
-        const spec = GENOME_SPECS[/** @type {number} */ (subject.spec)];
+        const spec = SPEC_NAMES[/** @type {number} */ (subject.spec)];
         filled[spec] = [...(filled[spec] ?? []), /** @type {string} */ (subject.style)];
     }
-    const predators = table.subjects.filter((s) => s.spec === PREDATOR_SPEC);
+    const predators = table.subjects.filter((s) => s.spec === SPEC.PREDATOR);
     const low = predators.find((s) => s.style === 'low');
     const high = predators.find((s) => s.style === 'high');
     const matched = matchedTrials({ low: low ?? null, high: high ?? null }, { seed: EXAM_SEED, trials });

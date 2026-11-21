@@ -2,7 +2,7 @@
 // `sense` phase so the rays and `feed` read this tick's positions. Derived from positions, so it is outside `worldHash`
 // and a world restored from a snapshot computes it before first use. Does nothing in a world without refuge rings.
 
-import { EVENT_TYPE, pushEvent } from './events.js';
+import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { refugeCentresOf, refugeIndexAt, ringRadius } from './terrain.js';
 
 /** @typedef {import('./world.js').World} World */
@@ -71,16 +71,16 @@ function pushCoverRecords(world) {
     if (world.tick === 0) {
         const { config } = world;
         const o = pushEvent(world.events, EVENT_TYPE.COVER_CONFIG, world.tick);
-        d[o + 2] = config.refugeCount;
-        d[o + 3] = 2 * config.refugeSizeMax;
-        d[o + 4] = ringRadius(config);
+        d[o + EVENT.COVER_CONFIG.REFUGE_COUNT] = config.refugeCount;
+        d[o + EVENT.COVER_CONFIG.APERTURE_PX] = 2 * config.refugeSizeMax;
+        d[o + EVENT.COVER_CONFIG.INTERIOR_RADIUS] = ringRadius(config);
     } else if (world.tick % COVER_LOG_TICKS === 0) {
         const t = world.coverTotals;
         const o = pushEvent(world.events, EVENT_TYPE.COVER_TOTALS, world.tick);
-        d[o + 2] = t[COVER_TOTALS.IN_RINGS];
-        d[o + 3] = t[COVER_TOTALS.AGENT_TICKS];
-        d[o + 4] = t[COVER_TOTALS.CONCEALED_HITS];
-        d[o + 5] = t[COVER_TOTALS.FOOD_REJECTED];
+        d[o + EVENT.COVER_TOTALS.AGENTS_IN_RINGS] = t[COVER_TOTALS.IN_RINGS];
+        d[o + EVENT.COVER_TOTALS.AGENT_TICKS_IN_RINGS] = t[COVER_TOTALS.AGENT_TICKS];
+        d[o + EVENT.COVER_TOTALS.CONCEALED_HITS] = t[COVER_TOTALS.CONCEALED_HITS];
+        d[o + EVENT.COVER_TOTALS.FOOD_REJECTED] = t[COVER_TOTALS.FOOD_REJECTED];
     }
 }
 

@@ -2,7 +2,7 @@
 
 import { detCos, detSin } from './det-math.js';
 import { ENERGY_SOURCE, addEnergy } from './energy.js';
-import { BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
+import { BORN_CAUSE, EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { spawnFloraItem } from './flora-spawn.js';
 import { createPatches } from './food-patches.js';
 import { createHerds } from './herds.js';
@@ -10,7 +10,7 @@ import { createRng, fork, nextFloat, nextInt } from './rng.js';
 import { placeTerrain, refugeCentresOf } from './terrain.js';
 import { rejectedByCover } from './cover.js';
 import { drawSex } from './sex.js';
-import { SPEC_COUNT } from './spec-rescue.js';
+import { SPEC_COUNT } from './specs.js';
 import { applyGenes, baseSizeOf } from './traits.js';
 import { sourceOfSpawn } from './hunter-ledger.js';
 import { TIMER_CAP, allocAgent, allocateWorld } from './world.js';
@@ -233,12 +233,12 @@ export function spawnAgent(world, policy, cause) {
     addEnergy(world, slot, energy, source);
     const o = pushEvent(world.events, EVENT_TYPE.AGENT_BORN, world.tick);
     const d = world.events.data;
-    d[o + 2] = slot;
-    d[o + 3] = id;
-    d[o + 4] = id;
-    d[o + 5] = world.spec[slot];
-    d[o + 8] = cause;
-    d[o + 9] = world.sex[slot];
+    d[o + EVENT.AGENT_BORN.SLOT] = slot;
+    d[o + EVENT.AGENT_BORN.GENOME_ID] = id;
+    d[o + EVENT.AGENT_BORN.LINEAGE_ID] = id;
+    d[o + EVENT.AGENT_BORN.SPEC] = world.spec[slot];
+    d[o + EVENT.AGENT_BORN.CAUSE] = cause;
+    d[o + EVENT.AGENT_BORN.SEX] = world.sex[slot];
     return slot;
 }
 

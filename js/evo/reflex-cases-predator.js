@@ -3,8 +3,9 @@
 
 import { createConfig } from '../sim/config.js';
 import { traitValue } from '../sim/traits.js';
-import { FORAGER_SPEC, HUNTER_ENERGY, PREDATOR_SPEC, SUBJECT_ENERGY, heading } from './memory-probe-scenarios.js';
+import { HUNTER_ENERGY, SUBJECT_ENERGY, heading } from './memory-probe-scenarios.js';
 import { bearingPoint, signedBearing, subjectAgent, withMirrors } from './reflex-stage.js';
+import { SPEC } from '../sim/specs.js';
 
 /** The thresholds, as shares of the output range (starting values of the doc, calibrated by T4). */
 export const PREDATOR_BARS = Object.freeze({ turn: 0.15, thrust: 0.3, bite: 0 });
@@ -46,7 +47,7 @@ const radiusOf = (energy, gene = 0) =>
 const APPROACH_PREY = {
     name: 'approach-prey',
     scene: 'A real chase',
-    spec: PREDATOR_SPEC,
+    spec: SPEC.PREDATOR,
     plan(rng, view) {
         const draw = { angle: heading(rng), bearing: signedBearing(rng, 15, 60), preyAngle: heading(rng) };
         return withMirrors(draw, (d, mirror) => {
@@ -54,10 +55,10 @@ const APPROACH_PREY = {
             const prey = {
                 ...bearingPoint(d.angle, bearing, PREY_SHARE * view),
                 angle: d.preyAngle,
-                spec: FORAGER_SPEC,
+                spec: SPEC.FORAGER,
                 energy: SUBJECT_ENERGY,
             };
-            const stage = { foods: [], rocks: [], agents: [subjectAgent(PREDATOR_SPEC, d.angle), prey] };
+            const stage = { foods: [], rocks: [], agents: [subjectAgent(SPEC.PREDATOR, d.angle), prey] };
             return [{ kind: 'prey', bearing, mirror, ticks: [stage] }];
         });
     },
@@ -75,9 +76,9 @@ const APPROACH_PREY = {
 function victimStaging(d, mirror, { kind, energy, sizeGene, parents }) {
     const bearing = mirror * d.offset;
     const gap = JAW_SHARE * (radiusOf(HUNTER_ENERGY) + radiusOf(energy, sizeGene));
-    const subject = { ...subjectAgent(PREDATOR_SPEC, d.angle), parents };
+    const subject = { ...subjectAgent(SPEC.PREDATOR, d.angle), parents };
     const at = bearingPoint(d.angle, bearing, gap);
-    const victim = { ...at, angle: d.angle, spec: FORAGER_SPEC, energy, parents, sizeGene };
+    const victim = { ...at, angle: d.angle, spec: SPEC.FORAGER, energy, parents, sizeGene };
     return { kind, bearing, mirror, ticks: [{ foods: [], rocks: [], agents: [subject, victim] }] };
 }
 
@@ -85,7 +86,7 @@ function victimStaging(d, mirror, { kind, energy, sizeGene, parents }) {
 const BITE_DISCRIMINATION = {
     name: 'bite-discrimination',
     scene: 'A real chase; Abort; Family tolerance',
-    spec: PREDATOR_SPEC,
+    spec: SPEC.PREDATOR,
     plan(rng) {
         const draw = { angle: heading(rng), offset: signedBearing(rng, 0, BITE_OFF_DEG) };
         return withMirrors(draw, (d, mirror) => [

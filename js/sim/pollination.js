@@ -1,6 +1,6 @@
 // Carries pollen between living source identities and seeds local plant descendants.
 import { FLORA_NAMES } from './config-flora.js';
-import { EVENT_TYPE, pushEvent } from './events.js';
+import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { placeSeed } from './flora-placement.js';
 import { blendTraits, copyTraits, mutateTraits } from './flora-traits.js';
 import { nextFloat } from './rng.js';
@@ -64,9 +64,9 @@ export function reportSeedingRefused(world, { patch, reason, source, slot = -1 }
         world.pollenRefusalTick[slot] = stamp;
     }
     const at = pushEvent(world.events, EVENT_TYPE.SEEDING_REFUSED, world.tick);
-    world.events.data[at + 2] = world.patchSpecies[patch];
-    world.events.data[at + 3] = reason;
-    world.events.data[at + 4] = source;
+    world.events.data[at + EVENT.SEEDING_REFUSED.SPECIES] = world.patchSpecies[patch];
+    world.events.data[at + EVENT.SEEDING_REFUSED.REASON] = reason;
+    world.events.data[at + EVENT.SEEDING_REFUSED.SOURCE] = source;
 }
 
 /**
@@ -153,13 +153,13 @@ export function seedPatch(world, slot, parentA, parentB) {
     });
     const species = world.patchSpecies[parentB];
     const at = pushEvent(world.events, EVENT_TYPE.PATCH_SEEDED, world.tick);
-    world.events.data[at + 2] = species;
-    world.events.data[at + 3] = seedling;
-    world.events.data[at + 4] = parentA;
-    world.events.data[at + 5] = parentB;
-    world.events.data[at + 6] = world.patchHue[seedling];
-    world.events.data[at + 7] = world.patchX[seedling];
-    world.events.data[at + 8] = world.patchY[seedling];
+    world.events.data[at + EVENT.PATCH_SEEDED.SPECIES] = species;
+    world.events.data[at + EVENT.PATCH_SEEDED.PATCH] = seedling;
+    world.events.data[at + EVENT.PATCH_SEEDED.PARENT_A] = parentA;
+    world.events.data[at + EVENT.PATCH_SEEDED.PARENT_B] = parentB;
+    world.events.data[at + EVENT.PATCH_SEEDED.HUE] = world.patchHue[seedling];
+    world.events.data[at + EVENT.PATCH_SEEDED.X] = world.patchX[seedling];
+    world.events.data[at + EVENT.PATCH_SEEDED.Y] = world.patchY[seedling];
     return seedling;
 }
 

@@ -7,15 +7,8 @@ import { detCos, detSin } from '../sim/det-math.js';
 import { REFUGE_ROCKS, REFUGE_ROCK_RADIUS, ringRadius } from '../sim/terrain.js';
 import { SOCIAL_DRILLS } from './drill-scenarios-social.js';
 import { offset, preyDrill, stage, subjectAt } from './drill-staging.js';
-import {
-    FOOD_VIEW_SHARE,
-    FORAGER_SPEC,
-    HUNTER_ENERGY,
-    PREDATOR_SPEC,
-    SUBJECT_ENERGY,
-    around,
-    heading,
-} from './memory-probe-scenarios.js';
+import { FOOD_VIEW_SHARE, HUNTER_ENERGY, SUBJECT_ENERGY, around, heading } from './memory-probe-scenarios.js';
+import { SPEC } from '../sim/specs.js';
 
 const TWO_PI = 6.283185307179586;
 const HUNTER_DISTANCE = 500;
@@ -89,14 +82,14 @@ function foodDrill(name, { share, fromDeg, toDeg, maxTicks }) {
     return {
         name,
         scene: 'Leave a dying patch',
-        spec: FORAGER_SPEC,
+        spec: SPEC.FORAGER,
         needsHunter: false,
         plan(rng, view) {
             const angle = heading(rng);
             const food = around(angle + offset(rng, fromDeg, toDeg), share * view);
             const eaten = (/** @type {Record<string, any>} */ world) => aliveFoodCount(world) === 0;
             return {
-                stage: stage([subjectAt(FORAGER_SPEC, angle)], [food]),
+                stage: stage([subjectAt(SPEC.FORAGER, angle)], [food]),
                 timing: null,
                 scent: false,
                 maxTicks,
@@ -111,7 +104,7 @@ function foodDrill(name, { share, fromDeg, toDeg, maxTicks }) {
 const TWO_FOODS = {
     name: 'two-foods',
     scene: 'Season changes the map',
-    spec: FORAGER_SPEC,
+    spec: SPEC.FORAGER,
     needsHunter: false,
     plan(rng, view) {
         const angle = heading(rng);
@@ -119,7 +112,7 @@ const TWO_FOODS = {
         const safe = around(angle + offset(rng, 40, 80), SAFE_SHARE * view);
         return {
             stage: stage(
-                [subjectAt(FORAGER_SPEC, angle)],
+                [subjectAt(SPEC.FORAGER, angle)],
                 [
                     { ...toxic, hue: TOXIC.hue, toxicity: TOXIC.toxicity },
                     { ...safe, hue: SAFE.hue, toxicity: SAFE.toxicity },
@@ -171,14 +164,14 @@ function hunterDrill(withRing) {
     return {
         name: withRing ? 'rock-refuge' : 'hunter-closing',
         scene: withRing ? 'Refuge' : 'A real chase',
-        spec: FORAGER_SPEC,
+        spec: SPEC.FORAGER,
         needsHunter: false,
         plan(rng) {
             const theta = heading(rng);
             const hunter = { role: 'hunter', ...around(theta, HUNTER_DISTANCE) };
             const agents = [
-                subjectAt(FORAGER_SPEC, heading(rng)),
-                { ...hunter, angle: theta + TWO_PI / 2, spec: PREDATOR_SPEC, energy: HUNTER_ENERGY },
+                subjectAt(SPEC.FORAGER, heading(rng)),
+                { ...hunter, angle: theta + TWO_PI / 2, spec: SPEC.PREDATOR, energy: HUNTER_ENERGY },
             ];
             const ring = around(theta + TWO_PI / 2, RING_DISTANCE);
             let entered = false;

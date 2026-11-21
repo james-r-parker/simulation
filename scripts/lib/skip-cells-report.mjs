@@ -2,7 +2,7 @@
 // predator genomes carry from prey, kin and other strength into `BITE`, `THRUST` and `TURN`.
 import { bestElitePerStyle, bestElites } from '../../js/evo/champion-export.js';
 import { SKIP_CELLS, skipCells } from '../../js/evo/champion-skip-cells.js';
-import { GENOME_SPECS } from '../../js/evo/genome.js';
+import { SPEC_NAMES } from '../../js/sim/specs.js';
 import { brainLayout } from '../../js/sim/brain-layout.js';
 import { padTable } from './drill-report.mjs';
 
@@ -68,7 +68,7 @@ export function archiveSkipCells(archive, config) {
     /** @type {Record<string, import('../../js/evo/champion-skip-cells.js').SkipCells>} */
     const elites = {};
     for (const spec of specs) {
-        elites[GENOME_SPECS[spec]] = skipCells(
+        elites[SPEC_NAMES[spec]] = skipCells(
             bestElites(archive, { spec, count: ELITE_COUNT }).map((e) => e.row),
             layout,
         );

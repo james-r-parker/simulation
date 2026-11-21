@@ -11,6 +11,15 @@ const WORLD = {
 };
 
 describe('createSampler', () => {
+    it('gives each cause series the colour the layout names for it, and none when the layout names none', () => {
+        const colours = createSampler({
+            ...WORLD,
+            causeColours: { born: { MATE: '#111111', SPLIT: '#222222' }, died: { OLD_AGE: '#333333' } },
+        }).groups.colours;
+        expect(colours).toEqual({ 'born.mate': '#111111', 'born.split': '#222222', 'died.old age': '#333333' });
+        expect(createSampler(WORLD).groups.colours).toEqual({});
+    });
+
     it('names a series for each chart quantity, leaving out the initial births', () => {
         const { names, kinds, groups } = createSampler(WORLD);
         expect(groups.births).toEqual(['born.mate', 'born.split']);

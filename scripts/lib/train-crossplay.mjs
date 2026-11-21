@@ -14,10 +14,10 @@ import {
 } from '../../js/evo/crossplay.js';
 import { currentEntry } from '../../js/evo/curriculum.js';
 import { stagePassSnapshot } from '../../js/evo/opponent-pool.js';
-import { FORAGER_SPEC, PREDATOR_SPEC } from '../../js/evo/memory-probe-scenarios.js';
 import { TRAINER_DESCRIPTOR } from '../../js/evo/trainer.js';
 import { createConfig, rulesHash } from '../../js/sim/config.js';
 import { eliteSubjects } from './drill-subjects.mjs';
+import { SPEC } from '../../js/sim/specs.js';
 
 /**
  * @typedef {object} CrossplayState
@@ -55,8 +55,8 @@ function bestOf(subjects, spec) {
  */
 export function playerOf(archive) {
     const subjects = eliteSubjects(archive);
-    const predator = bestOf(subjects, PREDATOR_SPEC);
-    const forager = bestOf(subjects, FORAGER_SPEC);
+    const predator = bestOf(subjects, SPEC.PREDATOR);
+    const forager = bestOf(subjects, SPEC.FORAGER);
     return predator === undefined || forager === undefined ? null : { predator, forager };
 }
 

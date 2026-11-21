@@ -62,14 +62,19 @@ const bar = (label, color, paths) => ({
 /**
  * @param {string[]} names history series names, bottom band first
  * @param {number} sign 1 upward, -1 downward
+ * @param {Record<string, string>} colours the layout's colour of each cause series; a series it omits takes the palette
  * @returns {Pick<ChartDef, 'series' | 'data'>} stacked bars: the series highest first, and the cumulative data
  */
-function stacked(names, sign) {
+function stacked(names, sign, colours) {
     const order = [...names].reverse();
     return {
         series: (paths) =>
             order.map((n) =>
-                bar(n.replace(/^(born|died)\./, ''), CAUSE_CSS[names.indexOf(n) % CAUSE_CSS.length], paths),
+                bar(
+                    n.replace(/^(born|died)\./, ''),
+                    colours[n] ?? CAUSE_CSS[names.indexOf(n) % CAUSE_CSS.length],
+                    paths,
+                ),
             ),
         data: (cols) =>
             stackLayers(
@@ -139,12 +144,12 @@ function populationDef(specs) {
 }
 
 /**
- * @param {{births: string[], deaths: string[]}} groups the cause names
+ * @param {{births: string[], deaths: string[], colours: Record<string, string>}} groups the cause names and colours
  * @returns {ChartDef} births stacked up and deaths stacked down
  */
-function flowDef({ births, deaths }) {
-    const up = stacked(births, 1);
-    const down = stacked(deaths, -1);
+function flowDef({ births, deaths, colours }) {
+    const up = stacked(births, 1, colours);
+    const down = stacked(deaths, -1, colours);
     return {
         id: 'flow',
         title: 'Births (up) and deaths (down)',
@@ -188,7 +193,8 @@ function archiveDef(specs) {
 }
 
 /**
- * @param {{births: string[], deaths: string[], specs: string[]}} groups the history names in each chart group
+ * @param {{births: string[], deaths: string[], specs: string[], colours: Record<string, string>}} groups the history names
+ *   in each chart group and the cause colours
  * @param {(lineageId: number) => string} colorOf a family's CSS colour
  * @returns {ChartDef[]} the five charts, in drawer order (the milestones list follows them)
  */

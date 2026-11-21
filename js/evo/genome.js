@@ -2,11 +2,10 @@
 
 import { decodeWeights, encodeWeights } from './base64.js';
 import { BRAIN_LAYOUT_NAME, brainLayout } from '../sim/brain-layout.js';
+import { SPEC_NAMES } from '../sim/specs.js';
 
 /** The genome format version. */
 export const GENOME_VERSION = 2;
-/** The specialisation names a genome may carry. */
-export const GENOME_SPECS = Object.freeze(['forager', 'predator', 'reproducer', 'scout', 'defender']);
 
 /**
  * @typedef {object} Genome
@@ -14,7 +13,7 @@ export const GENOME_SPECS = Object.freeze(['forager', 'predator', 'reproducer', 
  * @property {number} id the agent's `genomeId`
  * @property {number} lineageId the agent's `lineageId`
  * @property {[number, number]} parents `[parentA, parentB]`, `[0, 0]` for a random genome
- * @property {string} specialisation one of `GENOME_SPECS`
+ * @property {string} specialisation one of `SPEC_NAMES`
  * @property {{ name: string, inputCount: number, brainHidden: number, outputCount: number }} layout `name` is
  *   `BRAIN_LAYOUT_NAME`; the sizes alone cannot tell two layouts of the same length apart
  * @property {number} sigma the genome's own mutation step size
@@ -55,8 +54,8 @@ export function assertGenomeFits(genome, layout) {
     if (genome.version !== GENOME_VERSION) {
         mismatch('version', genome.version, GENOME_VERSION);
     }
-    if (!GENOME_SPECS.includes(genome.specialisation)) {
-        mismatch('specialisation', genome.specialisation, `one of ${GENOME_SPECS.join(', ')}`);
+    if (!SPEC_NAMES.includes(genome.specialisation)) {
+        mismatch('specialisation', genome.specialisation, `one of ${SPEC_NAMES.join(', ')}`);
     }
     if (genome.layout.name !== BRAIN_LAYOUT_NAME) {
         mismatch('layout.name', genome.layout.name, BRAIN_LAYOUT_NAME);

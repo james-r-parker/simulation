@@ -201,3 +201,13 @@ Open, not merged: the plan PR (role-budget.md new, body-genes.md rewritten, fair
 Run logs kept in worktrees: E254 in `agent-a049f978c889fc87d/.runs/`, E255 in `agent-ae27dc64e8e848bcc/.runs/`.
 
 Next per lane once the plan PR is approved: A - agent-workflow Phase 2 (the ledger), then T30 and the reviews. B - role-budget.md Phase 1, then training-loop T33, then E256. C - ambient-display Phase 6 (the scene reel). Follow-up tasks offered in the app: hold the `scripts` coverage aggregate before the push; count slow tests in the pull-request `ratchet-related` job.
+
+## Progress - coordinator session 2026-11-21 (lane B, Direction order)
+
+Lane B step 1: [registries.md](../designs/registries.md) Phase 1 (T1 to T5) lands in the PR that carries this entry (branch `refactor/registries-phase1`). It is a refactor that moves no golden. It adds `EVENTS` with named fields and one emitter, `js/sim/specs.js`, and `agentSpecs` with `hashed` and `kernels` in `js/sim/agent-arrays.js`. It also adds the generated `docs/log-events.md` and `docs/config-keys.md`. The same PR regenerates the stale E254 table in metric-noise.md, which had turned `main` red since PR 578.
+
+- Found by the T4 contract test: `restTimer` (a hunter's rest after a kill) is in no hash list. It is kept in `UNHASHED_ROWS` with that reason. Hashing it re-pins every golden, so it rides the next golden re-pin, which is body-genes.md T7.
+- body-genes.md T1 is done with no corrections. All 230 config keys are classed, and all 108 class B reader counts match `origin/main` by the inventory's own method (`rg -c -w`, lines, not matches).
+- Waiting on the user: the worktree `docs-body-genes-inventory` holds a discarded diff and needs removing by hand, because a hook stops this session from writing in another worktree. Subagents meet the same hook: build them in an isolated worktree, or ship from the coordinator's worktree.
+
+Next per lane: B - body-genes.md Phase 1 from T2, with fair-chase.md T7a (Sonnet for the chunk, Opus for T3 and T7). A - agent-workflow.md Phase 2. C - ambient-display.md Phase 6.

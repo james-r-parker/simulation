@@ -241,6 +241,8 @@ describe('worldInfo and readyLayout', () => {
         expect(layout.flags.MALE).toBe(1 << 14);
         expect(layout.deathCauses.EATEN).toBe(1);
         expect(layout.bornCauses.MATE).toBe(1);
+        expect(layout.causeColours.born.MATE).toMatch(/^#[0-9a-f]{6}$/);
+        expect(Object.keys(layout.causeColours.died)).toEqual(Object.keys(layout.deathCauses));
         expect(layout.fieldBytes).toBe(fieldBytes(run));
         expect(fieldBytes(run)).toBe(16 * 10 * 3 * 4);
     });

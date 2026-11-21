@@ -1,6 +1,6 @@
 // The observer's event handling: a tick's AgentDied and AgentBorn records, PopulationFloor and the slot reset.
 
-import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE, EVENT, EVENT_TICK } from '../sim/events.js';
 import { clearCells } from './cell-grid.js';
 import { noteDeath } from './metrics-environment.js';
 import { noteMateBirth, noteMeritDeath } from './metrics-merit.js';
@@ -51,16 +51,16 @@ function creditRelations(observer, d, count) {
     for (let i = 0; i < count; i++) {
         const o = i * EVENT_STRIDE;
         if (d[o] === EVENT_TYPE.AGENT_DIED) {
-            const killer = slotOf.get(d[o + 5]);
+            const killer = slotOf.get(d[o + EVENT.AGENT_DIED.BY]);
             if (killer !== undefined) {
                 observer.kills[killer] += 1;
             }
         } else if (d[o] === EVENT_TYPE.AGENT_BORN) {
-            const a = slotOf.get(d[o + 6]);
-            const b = slotOf.get(d[o + 7]);
+            const a = slotOf.get(d[o + EVENT.AGENT_BORN.PARENT_A]);
+            const b = slotOf.get(d[o + EVENT.AGENT_BORN.PARENT_B]);
             if (a !== undefined) {
                 observer.children[a] += 1;
-                observer.childrenFromSplit[a] += d[o + 8] === BORN_CAUSE.SPLIT ? 1 : 0;
+                observer.childrenFromSplit[a] += d[o + EVENT.AGENT_BORN.CAUSE] === BORN_CAUSE.SPLIT ? 1 : 0;
             }
             if (b !== undefined && b !== a) {
                 observer.children[b] += 1;
@@ -99,42 +99,42 @@ function logDeath(observer, { slot, eventIndex }, fitness) {
  */
 function finishDeath(observer, record, fitness) {
     const { world, d, o } = record;
-    const slot = d[o + 2];
-    const genomeId = d[o + 3];
+    const slot = d[o + EVENT.AGENT_DIED.SLOT];
+    const genomeId = d[o + EVENT.AGENT_DIED.GENOME_ID];
     if (observer.genomeId[slot] !== genomeId) {
         // Born and died within one tick: the slot holds an older agent, so rebuild it from the record.
         resetSlot(observer, slot);
         observer.genomeId[slot] = genomeId;
-        observer.lineageId[slot] = d[o + 7];
-        observer.spec[slot] = d[o + 6];
+        observer.lineageId[slot] = d[o + EVENT.AGENT_DIED.LINEAGE_ID];
+        observer.spec[slot] = d[o + EVENT.AGENT_DIED.SPEC];
         observer.ghosts.add(genomeId);
         if (!observer.lean) {
             noteBody(observer, slot, 1, 1);
         }
     }
-    observer.ageTicks[slot] = d[o + 8];
+    observer.ageTicks[slot] = d[o + EVENT.AGENT_DIED.AGE_TICKS];
     readDescendants(observer, slot, genomeId);
     if (observer.eligibleChild[slot] === 1) {
-        noteChildDeath(observer.lineage, d[o + 8]);
+        noteChildDeath(observer.lineage, d[o + EVENT.AGENT_DIED.AGE_TICKS]);
     }
-    observer.foodEnergy[slot] = d[o + 9];
-    observer.biteEnergy[slot] = d[o + 10];
+    observer.foodEnergy[slot] = d[o + EVENT.AGENT_DIED.FOOD_ENERGY];
+    observer.biteEnergy[slot] = d[o + EVENT.AGENT_DIED.BITE_ENERGY];
     logDeath(
         observer,
         { slot, eventIndex: o / EVENT_STRIDE },
         fitness ? fitness(observer, slot, observer.config) : NaN,
     );
-    observer.deathsByCause[d[o + 4]] += 1;
-    if (d[o + 1] >= BURN_IN_TICKS && !observer.lean) {
-        noteDeath(observer.environment, d[o + 4]);
-        noteVisitDeath(observer.watch, slot, d[o + 8]);
-        noteBrainDeath(observer, world, { slot, genomeId, ageTicks: d[o + 8] });
-        if (d[o + 8] >= observer.config.maturityTicks && !observer.ghosts.has(genomeId)) {
+    observer.deathsByCause[d[o + EVENT.AGENT_DIED.CAUSE]] += 1;
+    if (d[o + EVENT_TICK] >= BURN_IN_TICKS && !observer.lean) {
+        noteDeath(observer.environment, d[o + EVENT.AGENT_DIED.CAUSE]);
+        noteVisitDeath(observer.watch, slot, d[o + EVENT.AGENT_DIED.AGE_TICKS]);
+        noteBrainDeath(observer, world, { slot, genomeId, ageTicks: d[o + EVENT.AGENT_DIED.AGE_TICKS] });
+        if (d[o + EVENT.AGENT_DIED.AGE_TICKS] >= observer.config.maturityTicks && !observer.ghosts.has(genomeId)) {
             const logged = observer.deaths.fitness[observer.deathCount - 1];
-            noteMeritDeath(observer.merit, { slot, tick: d[o + 1], fitness: logged });
+            noteMeritDeath(observer.merit, { slot, tick: d[o + EVENT_TICK], fitness: logged });
         }
     }
-    observer.foodEnergyDead += d[o + 9];
+    observer.foodEnergyDead += d[o + EVENT.AGENT_DIED.FOOD_ENERGY];
     if (observer.slotOf.get(genomeId) === slot) {
         observer.slotOf.delete(genomeId);
     }
@@ -151,8 +151,8 @@ function finishDeath(observer, record, fitness) {
  * @returns {void}
  */
 function setLineage(observer, d, o) {
-    const slot = d[o + 2];
-    const packed = observer.parentage.get(d[o + 3]);
+    const slot = d[o + EVENT.AGENT_BORN.SLOT];
+    const packed = observer.parentage.get(d[o + EVENT.AGENT_BORN.GENOME_ID]);
     if (packed === undefined) {
         observer.archiveLineage[slot] = observer.archiveDraw?.(slot) ? 1 : 0;
         return;
@@ -174,14 +174,17 @@ function noteParentage(observer, d, count) {
     parentage.clear();
     for (let i = 0; i < count; i++) {
         const o = i * EVENT_STRIDE;
-        if (d[o] !== EVENT_TYPE.AGENT_BORN || (d[o + 8] !== BORN_CAUSE.MATE && d[o + 8] !== BORN_CAUSE.SPLIT)) {
+        if (
+            d[o] !== EVENT_TYPE.AGENT_BORN ||
+            (d[o + EVENT.AGENT_BORN.CAUSE] !== BORN_CAUSE.MATE && d[o + EVENT.AGENT_BORN.CAUSE] !== BORN_CAUSE.SPLIT)
+        ) {
             continue;
         }
-        const a = slotOf.get(d[o + 6]);
-        const b = slotOf.get(d[o + 7]);
+        const a = slotOf.get(d[o + EVENT.AGENT_BORN.PARENT_A]);
+        const b = slotOf.get(d[o + EVENT.AGENT_BORN.PARENT_B]);
         const depth = 1 + Math.max(a === undefined ? 0 : generation[a], b === undefined ? 0 : generation[b]);
         const flag = Math.max(a === undefined ? 0 : archiveLineage[a], b === undefined ? 0 : archiveLineage[b]);
-        parentage.set(d[o + 3], depth * 2 + flag);
+        parentage.set(d[o + EVENT.AGENT_BORN.GENOME_ID], depth * 2 + flag);
     }
 }
 
@@ -194,11 +197,11 @@ function noteParentage(observer, d, count) {
  * @returns {void}
  */
 function noteDietBirth(observer, world, d, o) {
-    if (d[o + 8] === BORN_CAUSE.MATE) {
-        noteMateBirth(observer.merit, world, d[o + 2], d[o + 7]);
-        noteMateParents(observer.diet, world, d[o + 2], d[o + 7]);
-    } else if (d[o + 8] === BORN_CAUSE.SPLIT) {
-        noteSplitBirth(observer.diet, world, d[o + 2]);
+    if (d[o + EVENT.AGENT_BORN.CAUSE] === BORN_CAUSE.MATE) {
+        noteMateBirth(observer.merit, world, d[o + EVENT.AGENT_BORN.SLOT], d[o + EVENT.AGENT_BORN.PARENT_B]);
+        noteMateParents(observer.diet, world, d[o + EVENT.AGENT_BORN.SLOT], d[o + EVENT.AGENT_BORN.PARENT_B]);
+    } else if (d[o + EVENT.AGENT_BORN.CAUSE] === BORN_CAUSE.SPLIT) {
+        noteSplitBirth(observer.diet, world, d[o + EVENT.AGENT_BORN.SLOT]);
     }
 }
 
@@ -212,12 +215,12 @@ function noteDietBirth(observer, world, d, o) {
  */
 function noteEvalBirth(observer, world, d, o) {
     noteHunterBirth(observer, d, o);
-    if (d[o + 1] >= BURN_IN_TICKS) {
+    if (d[o + EVENT_TICK] >= BURN_IN_TICKS) {
         noteDietBirth(observer, world, d, o);
     }
     const child = isEligibleChild(observer.lineage, d, o);
     if (child) {
-        noteChild(observer.lineage, observer.ghosts.has(d[o + 3]));
+        noteChild(observer.lineage, observer.ghosts.has(d[o + EVENT.AGENT_BORN.GENOME_ID]));
     }
     return child;
 }
@@ -231,30 +234,30 @@ function noteEvalBirth(observer, world, d, o) {
  * @returns {void}
  */
 function startBirth(observer, world, d, o) {
-    const slot = d[o + 2];
-    observer.births[d[o + 8]] += 1;
-    if (d[o + 1] >= BURN_IN_TICKS) {
-        observer.birthsAfterBurnIn[d[o + 8]] += 1;
+    const slot = d[o + EVENT.AGENT_BORN.SLOT];
+    observer.births[d[o + EVENT.AGENT_BORN.CAUSE]] += 1;
+    if (d[o + EVENT_TICK] >= BURN_IN_TICKS) {
+        observer.birthsAfterBurnIn[d[o + EVENT.AGENT_BORN.CAUSE]] += 1;
     }
     const lean = observer.lean;
     const child = lean ? false : noteEvalBirth(observer, world, d, o);
-    if (observer.ghosts.has(d[o + 3])) {
+    if (observer.ghosts.has(d[o + EVENT.AGENT_BORN.GENOME_ID])) {
         return;
     }
     resetSlot(observer, slot);
-    observer.genomeId[slot] = d[o + 3];
-    observer.lineageId[slot] = d[o + 4];
-    observer.spec[slot] = d[o + 5];
-    observer.birthTick[slot] = d[o + 1];
+    observer.genomeId[slot] = d[o + EVENT.AGENT_BORN.GENOME_ID];
+    observer.lineageId[slot] = d[o + EVENT.AGENT_BORN.LINEAGE_ID];
+    observer.spec[slot] = d[o + EVENT.AGENT_BORN.SPEC];
+    observer.birthTick[slot] = d[o + EVENT_TICK];
     if (!lean) {
         observer.priorSpec[slot] = priorSpecOf(observer, d, o);
         observer.eligibleChild[slot] = child ? 1 : 0;
-        noteBirthBody(observer, world, slot, d[o + 3]);
-        noteBrainBirth(observer, world, slot, d[o + 3]);
+        noteBirthBody(observer, world, slot, d[o + EVENT.AGENT_BORN.GENOME_ID]);
+        noteBrainBirth(observer, world, slot, d[o + EVENT.AGENT_BORN.GENOME_ID]);
         setLineage(observer, d, o);
     }
     recordParents(observer, d, o);
-    observer.slotOf.set(d[o + 3], slot);
+    observer.slotOf.set(d[o + EVENT.AGENT_BORN.GENOME_ID], slot);
 }
 
 /**
@@ -267,13 +270,13 @@ function startBirth(observer, world, d, o) {
  * @returns {number} the specialisation index
  */
 function priorSpecOf(observer, d, o) {
-    if (d[o + 8] === BORN_CAUSE.MATE || d[o + 8] === BORN_CAUSE.SPLIT) {
-        const mother = observer.slotOf.get(d[o + 6]);
+    if (d[o + EVENT.AGENT_BORN.CAUSE] === BORN_CAUSE.MATE || d[o + EVENT.AGENT_BORN.CAUSE] === BORN_CAUSE.SPLIT) {
+        const mother = observer.slotOf.get(d[o + EVENT.AGENT_BORN.PARENT_A]);
         if (mother !== undefined) {
             return observer.priorSpec[mother];
         }
     }
-    return d[o + 5];
+    return d[o + EVENT.AGENT_BORN.SPEC];
 }
 
 /**
@@ -323,7 +326,7 @@ export function applyEvents(observer, world, fitness) {
     }
     for (let i = 0; i < count; i++) {
         if (d[i * EVENT_STRIDE] === EVENT_TYPE.POPULATION_FLOOR) {
-            noteFloor(observer, d[i * EVENT_STRIDE + 1]);
+            noteFloor(observer, d[i * EVENT_STRIDE + EVENT_TICK]);
         }
     }
 }

@@ -3,7 +3,7 @@
 // and this world's records (the longest life, the most kills, the most children) with whether the holder is alive.
 // Reads the world, the observer and the generation depths; never steps and never touches the sim.
 
-const SPEC_COUNT = 5;
+import { SPEC_COUNT } from '../sim/specs.js';
 
 /**
  * @typedef {object} FamilyRow

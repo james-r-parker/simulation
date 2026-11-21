@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { SPEC_COUNT, countSpecs } from '../../js/sim/spec-rescue.js';
+import { countSpecs } from '../../js/sim/spec-rescue.js';
+import { SPEC_COUNT } from '../../js/sim/specs.js';
 import { addBlob, lifeWorld } from './helpers/life-world.js';
 
 describe('countSpecs', () => {

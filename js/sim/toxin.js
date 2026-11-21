@@ -1,5 +1,5 @@
 // Applies toxin doses, sickness costs and recovery to agents.
-import { EVENT_TYPE, pushEvent } from './events.js';
+import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
 
 /**
@@ -24,9 +24,9 @@ export function ingestToxin(world, slot, value, toxicity) {
     world.dose[slot] += toxicity * world.config.toxinDose;
     if (!before && isSick(world, slot)) {
         const at = pushEvent(world.events, EVENT_TYPE.AGENT_SICKENED, world.tick);
-        world.events.data[at + 2] = slot;
-        world.events.data[at + 3] = world.genomeId[slot];
-        world.events.data[at + 4] = world.dose[slot];
+        world.events.data[at + EVENT.AGENT_SICKENED.SLOT] = slot;
+        world.events.data[at + EVENT.AGENT_SICKENED.GENOME_ID] = world.genomeId[slot];
+        world.events.data[at + EVENT.AGENT_SICKENED.DOSE] = world.dose[slot];
     }
     const net = value * (1 - toxicity * world.config.toxinCost);
     if (net < 0) {

@@ -2,7 +2,7 @@
 // that dies, and a hunter's first deliberate kill, each from its existing sim event. Positions come from the world arrays
 // the events point at, which the sim leaves set when the thing dies. Reads the world and never changes it.
 
-import { EVENT_TYPE } from '../sim/events.js';
+import { EVENT_TYPE, EVENT, EVENT_TICK } from '../sim/events.js';
 import { beginEffect, EFFECT_KIND, placeEffect } from './effect-ring.js';
 
 /**
@@ -28,10 +28,10 @@ function words(log, w, [a, b, c, d]) {
 function addHerdAnimal(log, world, o) {
     const d = world.events.data;
     const died = d[o] === EVENT_TYPE.HERD_ANIMAL_DIED;
-    const animal = d[o + 3];
-    const w = beginEffect(log, died ? EFFECT_KIND.HERD_DIED : EFFECT_KIND.CALF_BORN, d[o + 1]);
+    const animal = d[o + EVENT.HERD_ANIMAL_DIED.ANIMAL];
+    const w = beginEffect(log, died ? EFFECT_KIND.HERD_DIED : EFFECT_KIND.CALF_BORN, d[o + EVENT_TICK]);
     placeEffect(log, w, world.herdX[animal], world.herdY[animal]);
-    words(log, w, [d[o + 2], animal, 0, 0]);
+    words(log, w, [d[o + EVENT.HERD_ANIMAL_DIED.HERD], animal, 0, 0]);
 }
 
 /**
@@ -42,9 +42,14 @@ function addHerdAnimal(log, world, o) {
  */
 function addDung(log, world, o) {
     const d = world.events.data;
-    const w = beginEffect(log, EFFECT_KIND.DUNG_DROPPED, d[o + 1]);
-    placeEffect(log, w, d[o + 7], d[o + 8]);
-    words(log, w, [d[o + 6], d[o + 5], Math.round((world.patchHue[d[o + 5]] + 1) * 0.5 * 4095), 0]);
+    const w = beginEffect(log, EFFECT_KIND.DUNG_DROPPED, d[o + EVENT_TICK]);
+    placeEffect(log, w, d[o + EVENT.HERD_SEEDED.X], d[o + EVENT.HERD_SEEDED.Y]);
+    words(log, w, [
+        d[o + EVENT.HERD_SEEDED.SPECIES],
+        d[o + EVENT.HERD_SEEDED.PATCH],
+        Math.round((world.patchHue[d[o + EVENT.HERD_SEEDED.PATCH]] + 1) * 0.5 * 4095),
+        0,
+    ]);
 }
 
 /**
@@ -55,10 +60,10 @@ function addDung(log, world, o) {
  */
 function addWilt(log, world, o) {
     const d = world.events.data;
-    const patch = d[o + 2];
-    const w = beginEffect(log, EFFECT_KIND.PATCH_WILTED, d[o + 1]);
+    const patch = d[o + EVENT.PATCH_DIED.PATCH];
+    const w = beginEffect(log, EFFECT_KIND.PATCH_WILTED, d[o + EVENT_TICK]);
     placeEffect(log, w, world.patchX[patch], world.patchY[patch]);
-    words(log, w, [d[o + 3], Math.round((world.patchHue[patch] + 1) * 0.5 * 4095), 0, 0]);
+    words(log, w, [d[o + EVENT.PATCH_DIED.SPECIES], Math.round((world.patchHue[patch] + 1) * 0.5 * 4095), 0, 0]);
 }
 
 /**
@@ -71,12 +76,17 @@ function addWilt(log, world, o) {
  */
 function addFirstKill(log, world, o, slotOf) {
     const d = world.events.data;
-    const genome = d[o + 2];
+    const genome = d[o + EVENT.HUNTER_KILL.GENOME_ID];
     const slot = slotOf?.get(genome);
-    if (d[o + 4] !== 1 || slot === undefined || world.alive[slot] !== 1 || world.genomeId[slot] !== genome) {
+    if (
+        d[o + EVENT.HUNTER_KILL.KILLS] !== 1 ||
+        slot === undefined ||
+        world.alive[slot] !== 1 ||
+        world.genomeId[slot] !== genome
+    ) {
         return;
     }
-    const w = beginEffect(log, EFFECT_KIND.FIRST_KILL, d[o + 1]);
+    const w = beginEffect(log, EFFECT_KIND.FIRST_KILL, d[o + EVENT_TICK]);
     placeEffect(log, w, world.x[slot], world.y[slot]);
     words(log, w, [genome, world.spec[slot], world.lineageId[slot], 0]);
 }

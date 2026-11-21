@@ -1,7 +1,6 @@
 // Looks up a specialisation's config entry from its index without allocating.
 
-/** The specialisation names, in index order; config validation fixes the indices. */
-const SPEC_NAMES = Object.freeze(['forager', 'predator', 'reproducer', 'scout', 'defender']);
+import { SPEC_NAMES } from './specs.js';
 
 /**
  * @param {Readonly<Record<string, any>>} config the validated config

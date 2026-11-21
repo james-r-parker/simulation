@@ -1,8 +1,7 @@
 // A child's specialisation: its mother's, except with probability `specMutationRate` a random other one.
 
 import { nextFloat, nextInt } from './rng.js';
-
-const SPEC_COUNT = 5;
+import { SPEC_COUNT } from './specs.js';
 
 /**
  * Picks a child's specialisation from the `mutation` stream. With `specMutationRate` 0 the child keeps its mother's

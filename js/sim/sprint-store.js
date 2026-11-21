@@ -7,7 +7,7 @@
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { specTable } from './spec-params.js';
-import { EVENT_TYPE, pushEvent } from './events.js';
+import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 
 /**
  * @typedef {object} SprintStore
@@ -49,7 +49,7 @@ export function allocSprintState(world) {
     world.sprintFactor = new Float64Array(n).fill(1);
     if (world.config.sprintStoreEnabled) {
         world.sprintStore = createSprintStore(world.config, n);
-        world.agentRows.push({ array: world.sprintStore.level, stride: 1 });
+        world.agentRows.push({ array: world.sprintStore.level, stride: 1, name: 'sprintLevel' });
     }
 }
 
@@ -83,9 +83,9 @@ export function resetSprintSlot(store, factor, slot) {
  */
 function noteSpent(world, slot) {
     const o = pushEvent(world.events, EVENT_TYPE.SPRINT_SPENT, world.tick);
-    world.events.data[o + 2] = slot;
-    world.events.data[o + 3] = world.genomeId[slot];
-    world.events.data[o + 4] = world.spec[slot];
+    world.events.data[o + EVENT.SPRINT_SPENT.SLOT] = slot;
+    world.events.data[o + EVENT.SPRINT_SPENT.GENOME_ID] = world.genomeId[slot];
+    world.events.data[o + EVENT.SPRINT_SPENT.SPEC] = world.spec[slot];
 }
 
 /**

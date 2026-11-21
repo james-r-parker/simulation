@@ -1,69 +1,57 @@
 import { createFloraScene, trackFlora } from './scene-flora.js';
-import { createHerdScene, noteHerdDeath, resetHerdSlot, trackHerd } from './scene-herd.js';
+import { createHerdScene, trackHerd } from './scene-herd.js';
 // The scene detectors' state and per-tick feed (natural-selection.md, Detectors). `observeScenes` runs inside
 // `observe`, after the intent state is current for the tick and before `applyEvents` reassigns slots, so a dying
 // agent's slot still holds its counters. It reads the world and the observer and writes only `observer.scenes`; the
 // world is untouched, so the golden `worldHash` cannot move. Each scene lives in its own `scene-*.js` module; this one
 // creates them, hands them the tick's events and the 10-tick and 100-tick samples, and resets a slot on a birth.
 
-import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE, DEATH_CAUSE } from '../sim/events.js';
-import { createApproachScene, noteApproachKill, resetApproachSlot, trackApproaches } from './scene-approach.js';
-import { BASIN_CHECKPOINT_TICKS, createBasinScene, noteBasinBirth, sampleBasins } from './scene-basin.js';
+import { createApproachScene, trackApproaches } from './scene-approach.js';
+import { BASIN_CHECKPOINT_TICKS, createBasinScene, sampleBasins } from './scene-basin.js';
 import { createBalanceScene, sampleBalance } from './scene-balance.js';
-import { createCapacityScene, noteCapacityDeath, sampleCapacity } from './scene-capacity.js';
+import { createCapacityScene, sampleCapacity } from './scene-capacity.js';
 import { createEatScene, sampleEat } from './scene-eat.js';
 import { createStrikeMissScene, tickStrikeMiss } from './scene-strike-miss.js';
-import { createEdgeScene, noteEdgeBirth, noteEdgeDeath, sampleEdge } from './scene-edge.js';
+import { createEdgeScene, sampleEdge } from './scene-edge.js';
 import { createDivergenceScene, sampleDivergence } from './scene-divergence.js';
 import { createFamilyScene, sampleFamilies } from './scene-families.js';
 import { createDiseaseScene, noteDiseaseEvents, sampleDiseaseFamilies } from './scene-disease.js';
 import { createCarcassScene, trackCarcasses } from './scene-carcass.js';
-import { createCompetenceScene, noteChase, noteCompetenceBirth, noteCompetenceRecord } from './scene-competence.js';
+import { createCompetenceScene, noteChase } from './scene-competence.js';
 import { createMatchedScene, noteMatchedChase } from './scene-matched.js';
 import { createGuardScene, sampleGuards } from './scene-guards.js';
-import { createPackLiftScene, notePackBite, notePackKill } from './scene-pack-lift.js';
-import { createKinematicsScene, noteKinematicsChase, resetKinematicsSlot, tickKinematics } from './scene-kinematics.js';
-import {
-    createGuildScene,
-    noteGuildAlarm,
-    noteGuildBirth,
-    noteGuildDeath,
-    sampleGuilds,
-    tickGuilds,
-} from './scene-guilds.js';
+import { createPackLiftScene, notePackBite } from './scene-pack-lift.js';
+import { createKinematicsScene, noteKinematicsChase, tickKinematics } from './scene-kinematics.js';
+import { createGuildScene, sampleGuilds, tickGuilds } from './scene-guilds.js';
 import { createKinProximityScene, sampleKinProximity } from './scene-kin-proximity.js';
 import { createBiteScene, tickBite } from './scene-bite.js';
-import { createBiteLifeScene, noteBiteLifeRecord, tickRecoil } from './scene-bite-life.js';
-import { createRecruitScene, noteRecruitBirth, noteRecruitRecord, tickRecruit } from './scene-recruit.js';
+import { createBiteLifeScene, tickRecoil } from './scene-bite-life.js';
+import { createRecruitScene, tickRecruit } from './scene-recruit.js';
 import { createBudgetScene, noteBudgetChase, sampleBudget } from './scene-recruit-budget.js';
-import { createHunterScene, noteHunterBirth, noteHunterRecord, tickHunters } from './scene-hunters.js';
-import { createConditionScene, flushCondition, resetConditionSlot, sampleCondition } from './scene-condition.js';
-import { createPatchScene, resetPatchSlot, samplePatches } from './scene-patch.js';
+import { createHunterScene, tickHunters } from './scene-hunters.js';
+import { createConditionScene, sampleCondition } from './scene-condition.js';
+import { createPatchScene, samplePatches } from './scene-patch.js';
 import { createSeasonScene, sampleSeason } from './scene-season.js';
 import { createSeasonMapScene, sampleSeasonMap } from './scene-season-map.js';
-import { createSpendScene, noteSpendBirth, resetSpendSlot, sampleSpend } from './scene-spend.js';
-import { BURN_IN_TICKS } from './burn-in.js';
-import { createHeritageScene, noteHeritageBirth, noteHeritageDeath, resetHeritageSlot } from './scene-heritage.js';
-import { createMateScene, resetMateSlot } from './scene-mate.js';
+import { createSpendScene, sampleSpend } from './scene-spend.js';
+import { createHeritageScene } from './scene-heritage.js';
+import { createMateScene } from './scene-mate.js';
 import { createNicheScene } from './scene-niche.js';
-import { createProofScene, noteProofDeath, noteProofKill, trackProof } from './scene-proof.js';
+import { createProofScene, trackProof } from './scene-proof.js';
+import { noteEvents } from './observer-scenes-events.js';
 import { trackSlots } from './observer-scenes-slots.js';
-import { createStyle, noteStyleAtDeath, noteStyleDeath, resetStyleSlot, tickStyle } from './style.js';
+import { createStyle, tickStyle } from './style.js';
 import { createReachScene, sampleReach } from './scene-reach.js';
 import { createRefugeScene, sampleRefuge } from './scene-refuge.js';
 import { createRefugeOutcomeScene, sampleRefugeOutcome, tickRefugeBites } from './scene-refuge-outcome.js';
 import { createSprintScene, tickSprint } from './scene-sprint.js';
-import { createScentScene, resetScentSlot } from './scene-scent.js';
-import {
-    createStillnessScene,
-    noteStillnessChase,
-    noteStillnessDeath,
-    resetStillnessSlot,
-    tickStillness,
-} from './scene-stillness.js';
+import { createScentScene } from './scene-scent.js';
+import { createStillnessScene, noteStillnessChase, tickStillness } from './scene-stillness.js';
 import { createTerrainScene, sampleTerrain } from './scene-terrain.js';
 import { GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
 import { MOTION_SAMPLE_TICKS } from './observer-tick.js';
+
+export { resetSceneSlot } from './observer-scenes-events.js';
 
 /**
  * The scenes fed by each resolved chase: the approach scene resolves it and hands it to the others' hooks.
@@ -141,166 +129,6 @@ export function createScenes(config, runTicks = 0, lean = false) {
         scent: createScentScene(config),
         stillness,
     };
-}
-
-/**
- * Clears the per-slot state of a slot whose agent died or was replaced.
- * @param {Record<string, any>} scenes the scenes
- * @param {number} slot the slot
- * @returns {void}
- */
-export function resetSceneSlot(scenes, slot) {
-    if (scenes.lean === true) {
-        resetStyleSlot(scenes.style, slot);
-        return;
-    }
-    resetPatchSlot(scenes.patch, slot);
-    resetApproachSlot(scenes.approach, slot);
-    resetStillnessSlot(scenes.stillness, slot);
-    resetScentSlot(scenes.scent, slot);
-    resetKinematicsSlot(scenes.kinematics, slot);
-    resetStyleSlot(scenes.style, slot);
-    resetConditionSlot(scenes.condition, slot);
-    resetSpendSlot(scenes.spend, slot);
-    resetHeritageSlot(scenes.heritage, slot);
-    resetMateSlot(scenes.mate, slot);
-    resetHerdSlot(scenes.herd, slot);
-}
-
-/**
- * Moves a dying agent's per-life counters into the run totals. A slot the observer does not track under this genome (born
- * and died in one tick) has nothing to move.
- * @param {Record<string, any>} scenes the scenes
- * @param {Record<string, any>} observer the observer
- * @param {{slot: number, genomeId: number, tick: number, age: number}} death the dying agent
- * @returns {void}
- */
-function noteDeath(scenes, observer, { slot, genomeId, tick, age }) {
-    if (observer.genomeId[slot] !== genomeId) {
-        return;
-    }
-    flushCondition(scenes.condition, observer.config, slot);
-    if (tick >= BURN_IN_TICKS) {
-        noteStyleDeath(observer, slot);
-        if (age >= observer.config.maturityTicks) {
-            noteHeritageDeath(scenes.heritage, observer, { slot, age });
-        }
-    }
-}
-
-/**
- * The lean observer's death note: only the style scene sees it.
- * @param {Record<string, any>} observer the observer
- * @param {Float64Array} d the event data
- * @param {number} o the record offset of the `AgentDied`
- * @returns {void}
- */
-function noteLeanDeath(observer, d, o) {
-    const slot = d[o + 2];
-    noteStyleAtDeath(observer, o / EVENT_STRIDE, { slot, genomeId: d[o + 3] });
-    if (observer.genomeId[slot] === d[o + 3] && d[o + 1] >= BURN_IN_TICKS) {
-        noteStyleDeath(observer, slot);
-    }
-    resetSceneSlot(observer.scenes, slot);
-}
-
-/**
- * A dying agent's notes to every scene.
- * @param {Record<string, any>} scenes the scenes
- * @param {Record<string, any>} observer the observer
- * @param {{world: Record<string, any>, o: number}} record the world and the `AgentDied` record's offset
- * @returns {void}
- */
-function noteFullDeath(scenes, observer, { world, o }) {
-    const d = world.events.data;
-    noteHerdDeath(scenes.herd, {
-        tick: d[o + 1],
-        slot: d[o + 2],
-        genomeId: d[o + 3],
-        cause: d[o + 4],
-        herdId: d[o + 5],
-        pinned: d[o + 11] === 1,
-    });
-    if (d[o + 4] === DEATH_CAUSE.EATEN) {
-        noteApproachKill(scenes.approach, observer, world, { killerId: d[o + 5], victimId: d[o + 3] });
-        notePackKill(scenes.packLift, observer, { world, size: d[o + 12], killer: d[o + 5], previous: d[o + 11] });
-    }
-    if (observer.genomeId[d[o + 2]] === d[o + 3]) {
-        noteStillnessDeath(scenes.stillness, d[o + 2], d[o + 1]);
-    }
-    noteCapacityDeath(scenes.capacity, { cause: d[o + 4], foodEnergy: d[o + 9] });
-    noteEdgeDeath(scenes.edge, world, { cause: d[o + 4], spec: d[o + 6], foodEnergy: d[o + 9] });
-    noteGuildDeath(scenes.guilds, { tick: d[o + 1], spec: d[o + 6], age: d[o + 8], cause: d[o + 4] });
-    noteStyleAtDeath(observer, o / EVENT_STRIDE, { slot: d[o + 2], genomeId: d[o + 3] });
-    noteDeath(scenes, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1], age: d[o + 8] });
-    noteProofDeath(scenes.proof, observer, { slot: d[o + 2], genomeId: d[o + 3], tick: d[o + 1] });
-    noteProofKill(scenes.proof, { cause: d[o + 4], lineageId: d[o + 7] });
-    resetSceneSlot(scenes, d[o + 2]);
-}
-
-/**
- * One event record's notes to every scene, after the tick's deaths: the records the scenes read and the births.
- * @param {Record<string, any>} scenes the scenes
- * @param {Record<string, any>} world the world
- * @param {number} o the record offset
- * @returns {void}
- */
-function noteFullRecord(scenes, world, o) {
-    const d = world.events.data;
-    noteHunterRecord(scenes.hunters, d, o);
-    noteBiteLifeRecord(scenes.biteLife, d, o, world);
-    noteCompetenceRecord(scenes.competence, d, o);
-    noteRecruitRecord(scenes.recruit, d, o);
-    if (d[o] === EVENT_TYPE.ALARM_CALLED) {
-        noteGuildAlarm(scenes.guilds, world, d[o + 2]);
-    }
-    if (d[o] !== EVENT_TYPE.AGENT_BORN) {
-        return;
-    }
-    noteGuildBirth(scenes.guilds, { tick: d[o + 1], spec: d[o + 5], cause: d[o + 8] });
-    noteHunterBirth(scenes.hunters, world, d[o + 2]);
-    noteRecruitBirth(scenes.recruit, world, d, o);
-    noteEdgeBirth(scenes.edge, world, { cause: d[o + 8], spec: d[o + 5] });
-    noteCompetenceBirth(scenes.competence, world, d[o + 2]);
-    resetSceneSlot(scenes, d[o + 2]);
-    noteBasinBirth(scenes.basin, world, { slot: d[o + 2], cause: d[o + 8] });
-    if (d[o + 8] === BORN_CAUSE.MATE) {
-        noteSpendBirth(scenes.spend, world, { child: d[o + 2], motherId: d[o + 6] });
-    }
-    if (d[o + 8] === BORN_CAUSE.MATE || d[o + 8] === BORN_CAUSE.SPLIT) {
-        noteHeritageBirth(scenes.heritage, world, d[o + 2]);
-    }
-}
-
-/**
- * Applies a tick's deaths, then its births, as `applyEvents` orders them. A lean observer's scenes (`scenes.lean`)
- * note only the style scene.
- * @param {Record<string, any>} scenes the scenes
- * @param {Record<string, any>} observer the observer
- * @param {Record<string, any>} world the world
- * @returns {void}
- */
-function noteEvents(scenes, observer, world) {
-    const d = world.events.data;
-    const end = world.events.count * EVENT_STRIDE;
-    const lean = scenes.lean === true;
-    for (let o = 0; o < end; o += EVENT_STRIDE) {
-        if (d[o] !== EVENT_TYPE.AGENT_DIED) {
-            continue;
-        }
-        if (lean) {
-            noteLeanDeath(observer, d, o);
-        } else {
-            noteFullDeath(scenes, observer, { world, o });
-        }
-    }
-    for (let o = 0; o < end; o += EVENT_STRIDE) {
-        if (!lean) {
-            noteFullRecord(scenes, world, o);
-        } else if (d[o] === EVENT_TYPE.AGENT_BORN) {
-            resetSceneSlot(scenes, d[o + 2]);
-        }
-    }
 }
 
 /**

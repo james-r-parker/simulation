@@ -5,7 +5,7 @@
 export const LIST_LIMIT_MAX = 50;
 /** Page size when a list request names none. */
 export const LIST_LIMIT_DEFAULT = 20;
-/** Specialisation names by index (the order of `GENOME_SPECS` in js/evo/genome.js; a test keeps them equal). */
+/** Specialisation names by index: `SPEC_NAMES` in js/sim/specs.js, which the library may not import (a test keeps them equal). */
 export const SPEC_NAMES = Object.freeze(['forager', 'predator', 'reproducer', 'scout', 'defender']);
 /** The sort orders a list accepts; the first is the default. */
 export const SORTS = Object.freeze(['elo', 'created']);

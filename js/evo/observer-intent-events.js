@@ -2,7 +2,7 @@
 // idle, hunt calls queued and answered, and eaten deaths read for pursuit and pack convergence.
 
 import { TIMER_CAP } from '../sim/world.js';
-import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE, EVENT } from '../sim/events.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { KILL, killKind } from './observer-combat.js';
 import { findAlive } from './observer-intent.js';
@@ -74,9 +74,9 @@ function creditAgent(observer, world, counter, genomeId) {
 export function noteIntentDeath(observer, world, o) {
     const { intent, combat } = observer;
     const d = world.events.data;
-    const slot = d[o + 2];
-    const killerId = d[o + 5];
-    const previousId = d[o + 11];
+    const slot = d[o + EVENT.AGENT_DIED.SLOT];
+    const killerId = d[o + EVENT.AGENT_DIED.BY];
+    const previousId = d[o + EVENT.AGENT_DIED.PARTNER];
     // The sim's verdict on the fatal bite (`isDeliberateKill`), pushed as a HunterKill ahead of the AgentDied: the
     // victim's slot is freed by now, so the observer cannot ask the world.
     const left = intent.fatalKillers.get(killerId) ?? 0;
@@ -156,15 +156,18 @@ export function noteIntentEvents(observer, world) {
     for (let o = 0; o < end; o += EVENT_STRIDE) {
         const type = d[o];
         if (type === EVENT_TYPE.HUNTER_KILL) {
-            intent.fatalKillers.set(d[o + 2], (intent.fatalKillers.get(d[o + 2]) ?? 0) + 1);
-        } else if (type === EVENT_TYPE.AGENT_DIED && d[o + 4] === DEATH_CAUSE.EATEN) {
+            intent.fatalKillers.set(
+                d[o + EVENT.HUNTER_KILL.GENOME_ID],
+                (intent.fatalKillers.get(d[o + EVENT.HUNTER_KILL.GENOME_ID]) ?? 0) + 1,
+            );
+        } else if (type === EVENT_TYPE.AGENT_DIED && d[o + EVENT.AGENT_DIED.CAUSE] === DEATH_CAUSE.EATEN) {
             noteIntentDeath(observer, world, o);
         } else if (
             type === EVENT_TYPE.ALARM_CALLED ||
             type === EVENT_TYPE.PACK_CALLED ||
             type === EVENT_TYPE.SMOKE_RELEASED
         ) {
-            noteCall(intent, world, type, d[o + 2]);
+            noteCall(intent, world, type, d[o + EVENT.ALARM_CALLED.SLOT]);
         }
     }
     let answered = popResolvedHuntCall(intent.calls, world.tick, intent.packWindow);

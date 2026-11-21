@@ -12,14 +12,13 @@ import { GROUP_ARENA_RULES, GROUP_CONTROL, TRIO, huntPlan } from './memory-probe
 import {
     CENTRE_X,
     CENTRE_Y,
-    FORAGER_SPEC,
     HUNTER_ENERGY,
-    PREDATOR_SPEC,
     PREY_VIEW_SHARE,
     SUBJECT_ENERGY,
     around,
     heading,
 } from './memory-probe-scenarios.js';
+import { SPEC } from '../sim/specs.js';
 
 const TWO_PI = 6.283185307179586;
 const HUNTER_DISTANCE = 500;
@@ -41,7 +40,7 @@ const PREY_CROSSING = preyDrill('prey-crossing', {
 const HUNTER_FLANK = {
     name: 'hunter-flank',
     scene: 'A real chase',
-    spec: FORAGER_SPEC,
+    spec: SPEC.FORAGER,
     needsHunter: false,
     plan(rng) {
         const facing = heading(rng);
@@ -50,11 +49,11 @@ const HUNTER_FLANK = {
             role: 'hunter',
             ...around(bearing, HUNTER_DISTANCE),
             angle: bearing + TWO_PI / 2,
-            spec: PREDATOR_SPEC,
+            spec: SPEC.PREDATOR,
             energy: HUNTER_ENERGY,
         };
         return {
-            stage: stage([subjectAt(FORAGER_SPEC, facing), hunter], []),
+            stage: stage([subjectAt(SPEC.FORAGER, facing), hunter], []),
             timing: null,
             scent: false,
             maxTicks: 600,
@@ -80,7 +79,7 @@ export const BIT_KIN = 'bit-kin';
  * @param {import('./drill-kin-trace.js').KinTrace} kin the sibling's trace
  * @returns {string} why a trial was lost: `bit-kin` when the subject wished to bite its sibling, else the chase's reason
  */
-function lostReasonOf(preyTrace, kin) {
+export function lostReasonOf(preyTrace, kin) {
     return kin.biteTicks > 0 ? BIT_KIN : lostReason(preyTrace);
 }
 
@@ -88,24 +87,24 @@ function lostReasonOf(preyTrace, kin) {
 const KIN_SPARED = {
     name: 'kin-spared',
     scene: 'Kin is not a stranger',
-    spec: PREDATOR_SPEC,
+    spec: SPEC.PREDATOR,
     needsHunter: true,
     plan(rng, view) {
         const angle = heading(rng);
         const side = offset(rng, KIN_PREY_DEG[0], KIN_PREY_DEG[1]);
         const spot = around(angle + side, PREY_VIEW_SHARE * view);
         const bearing = angle - Math.sign(side) * SIBLING_DEG * (TWO_PI / 360);
-        const prey = { role: 'prey', ...spot, angle: heading(rng), spec: FORAGER_SPEC, energy: SUBJECT_ENERGY };
+        const prey = { role: 'prey', ...spot, angle: heading(rng), spec: SPEC.FORAGER, energy: SUBJECT_ENERGY };
         const sibling = {
             role: 'sibling',
             x: CENTRE_X + SIBLING_GAP * detCos(bearing),
             y: CENTRE_Y + SIBLING_GAP * detSin(bearing),
             angle,
-            spec: PREDATOR_SPEC,
+            spec: SPEC.PREDATOR,
             energy: HUNTER_ENERGY,
             parents: [SHARED_PARENT, 0],
         };
-        const subject = { ...subjectAt(PREDATOR_SPEC, angle), parents: [SHARED_PARENT, 0] };
+        const subject = { ...subjectAt(SPEC.PREDATOR, angle), parents: [SHARED_PARENT, 0] };
         const preyTrace = createPreyTrace();
         const kin = createKinTrace();
         return {
@@ -133,7 +132,7 @@ const KIN_SPARED = {
 const PACK_CONVERGE = {
     name: 'pack-converge',
     scene: 'Pack, or loner',
-    spec: PREDATOR_SPEC,
+    spec: SPEC.PREDATOR,
     needsHunter: true,
     arena: GROUP_ARENA_RULES,
     plan: (rng, view) => huntPlan(rng, view, TRIO),

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
     ENERGY_SOURCE,
     LOSS_CAUSE,
+    LOSS_CAUSE_LIST,
     addEnergy,
     applyCosts,
     removeEnergy,
@@ -65,6 +66,19 @@ describe('energy codes', () => {
         expect(ENERGY_SOURCE).toEqual({ FOOD: 0, INITIAL: 1, FLOOR: 2, IMMIGRANT: 3 });
         expect(Object.isFrozen(LOSS_CAUSE)).toBe(true);
         expect(Object.isFrozen(ENERGY_SOURCE)).toBe(true);
+    });
+
+    it('lists each loss cause with its code, name and colour, in code order', () => {
+        expect(LOSS_CAUSE_LIST.map((cause) => cause.code)).toEqual([0, 1, 2, 3, 4, 5]);
+        expect(LOSS_CAUSE_LIST.map((cause) => cause.name)).toEqual([
+            'none',
+            'cost',
+            'bite',
+            'collision',
+            'trample',
+            'disease',
+        ]);
+        expect(LOSS_CAUSE_LIST.every((cause) => /^#[0-9a-f]{6}$/.test(cause.colour))).toBe(true);
     });
 });
 

@@ -338,3 +338,31 @@ describe('local and global extinction', () => {
         expect(recruitMetrics(scene, world)['eval.hunter_lineage_extinctions']).toEqual({ value: 1 });
     });
 });
+
+describe('repeat births and lineage bookkeeping', () => {
+    it('keeps the cohort whole when a parent breeds twice and a kill follows, crediting the one first kill', () => {
+        const scene = fresh();
+        const world = makeWorld();
+        born(scene, world, { slot: 0, genome: 60 });
+        const mate = { cause: BORN_CAUSE.MATE, source: BIRTH_SOURCE.MATE_HUNTER };
+        born(scene, world, { slot: 1, genome: 61, ...mate, a: 60 });
+        born(scene, world, { slot: 2, genome: 62, ...mate, a: 60 });
+        killed(scene, 60, 1);
+        world.ageTicks[0] = 300;
+        world.ageTicks[1] = 300;
+        world.ageTicks[2] = 300;
+        const m = recruitMetrics(scene, world);
+        expect(m['eval.recruit_cohort']).toEqual({ value: 3 });
+        expect(m['eval.recruit_first_kill_share']?.value).toBeCloseTo(1 / 3, 12);
+    });
+
+    it('ends a lineage when its last hunter dies, even if the count of hunters in it was never started', () => {
+        const scene = fresh();
+        const world = makeWorld();
+        born(scene, world, { slot: 0, genome: 70, lineage: 9 });
+        scene.lineageHunters.delete(9);
+        died(scene, world, { genome: 70, age: 50, slot: 0, tick: BURN_IN_TICKS + 100 });
+        expect(scene.alive).toBe(0);
+        expect(scene.pendingLineages).toBe(1);
+    });
+});

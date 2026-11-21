@@ -81,6 +81,8 @@
         "AGENTS.md",
         "README.md",
         "js/app/main.js",
+        "js/library/shapes.js",
+        "js/sim/specs.js",
         "scripts",
         "scripts/check-conventions.sh",
         "scripts/check-flag-ledger.mjs",
@@ -444,6 +446,12 @@
         "scripts/lib/ship-steps.mjs",
         "scripts/ship.sh",
         "test"
+    ],
+    "test/sim/event-offsets.test.js": [
+        "js"
+    ],
+    "test/sim/events.test.js": [
+        "test/fixtures/event-log-reference.json"
     ],
     "test/sim/sensory-schema-doc.test.js": [
         "docs/designs/brain-capacity-and-memory.md"

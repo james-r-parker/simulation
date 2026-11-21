@@ -19,6 +19,7 @@
 #   is built while its key still exists (scripts/check-flag-ledger.mjs).
 # - wasm/blob-kernels.wasm matches its .sha256 and wasm/blob-kernels.src.sha256 its sources, and a fresh build matches
 #   where cargo exists (scripts/check-wasm.mjs).
+# - No local specialisation count, role index or name list outside js/sim/specs.js (docs/designs/registries.md).
 # - The index in docs/designs/sim-notes.md matches docs/notes/ (scripts/notes-index.mjs --check).
 # - test/data-deps.json matches the paths the tests read, and no test has an undeclared dynamic path (scripts/data-deps.mjs --check).
 # - AGENTS.md stays at or under AGENTS_MAX_BYTES (16000): an agent reads it before its first command, so detail lives in
@@ -146,6 +147,27 @@ metrics_out="$(node scripts/metrics-doc.mjs --check 2>&1)"
 metrics_status=$?
 if ((metrics_status != 0)); then
   fail "metrics-doc: ${metrics_out:-scripts/metrics-doc.mjs exited $metrics_status with no output}"
+fi
+
+# The five specialisations' names, count and indices are js/sim/specs.js's (docs/designs/registries.md, Spec names): no
+# module holds its own count, role index, `spec === <number>` test or name array (js/library keeps a copy: it is standalone).
+while IFS= read -r hit; do
+  fail "$hit - spec-names: import SPEC, SPEC_NAMES or SPEC_COUNT from js/sim/specs.js instead of a local number or name list"
+done < <(git grep -InE "const (SPEC_COUNT|[A-Z]+_SPEC|FORAGER|PREDATOR|SCOUT|DEFENDER|REPRODUCER) = [0-9]+;|\\bspec(Id|Index)? (===|!==) [0-9]\\b|\\['forager', 'predator'" -- 'js/*.js' 'js/**/*.js' 'scripts/*.mjs' 'scripts/**/*.mjs' ':(exclude)js/sim/specs.js' ':(exclude)js/library/**' \
+  | grep -vE '^[^:]+:[0-9]+:\s*(//|\*|/\*)' | cut -c1-160)
+
+# docs/log-events.md is the table `EVENTS` in js/sim/events.js generates; a stale one fails with the command that fixes it.
+events_out="$(node scripts/events-doc.mjs --check 2>&1)"
+events_status=$?
+if ((events_status != 0)); then
+  fail "events-doc: ${events_out:-scripts/events-doc.mjs exited $events_status with no output}"
+fi
+
+# docs/config-keys.md is the key table generated from the config's defaults and rules; a stale one fails with the command.
+config_out="$(node scripts/config-doc.mjs --check 2>&1)"
+config_status=$?
+if ((config_status != 0)); then
+  fail "config-doc: ${config_out:-scripts/config-doc.mjs exited $config_status with no output}"
 fi
 
 # docs/scene-scorecard.md is generated from the registry's `scenes` tags and the newest shared baseline; a stale one fails with the command that fixes it.

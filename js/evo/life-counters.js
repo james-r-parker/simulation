@@ -6,7 +6,7 @@
 // `resetLifeSlot` is exported for callers that track births themselves.
 
 import { RAY_CHANNELS } from '../sim/brain-layout.js';
-import { EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { EVENT_STRIDE, EVENT_TYPE, EVENT } from '../sim/events.js';
 import { isKin } from '../sim/kin.js';
 import { specParams } from '../sim/spec-params.js';
 import { clearCells, createCellGrid, markCell } from './cell-grid.js';
@@ -155,7 +155,7 @@ function resetNewborns(counters, world) {
     const d = world.events.data;
     for (let i = 0; i < world.events.count; i++) {
         if (d[i * EVENT_STRIDE] === EVENT_TYPE.AGENT_BORN) {
-            resetLifeSlot(counters, d[i * EVENT_STRIDE + 2]);
+            resetLifeSlot(counters, d[i * EVENT_STRIDE + EVENT.AGENT_BORN.SLOT]);
         }
     }
 }

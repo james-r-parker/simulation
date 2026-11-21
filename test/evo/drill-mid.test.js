@@ -5,13 +5,13 @@ import { drillSubject } from '../../js/evo/drill.js';
 import { DRILLS, MID_SPRINT_BOOST, WEAK_SPRINT_BOOST } from '../../js/evo/drill-scenarios.js';
 import { oracleSubject } from '../../js/evo/lesson-oracles.js';
 import { viewOf } from '../../js/evo/memory-probe-run.js';
-import { PREDATOR_SPEC } from '../../js/evo/memory-probe-scenarios.js';
 import { createConfig } from '../../js/sim/config.js';
+import { SPEC } from '../../js/sim/specs.js';
 
 const byName = (/** @type {string} */ name) => /** @type {any} */ (DRILLS.find((d) => d.name === name));
-const view = viewOf({ spec: PREDATOR_SPEC, weights: null }, createConfig({}));
+const view = viewOf({ spec: SPEC.PREDATOR, weights: null }, createConfig({}));
 const stream = () => fork(createRng(3), 'mid');
-const idle = { name: 'idle', id: 0, spec: PREDATOR_SPEC, weights: null, act: () => {} };
+const idle = { name: 'idle', id: 0, spec: SPEC.PREDATOR, weights: null, act: () => {} };
 
 describe('prey-mid', () => {
     it('is the prey-ahead staging with a sprint between the weak rung and the default, and the oracle wins it', () => {

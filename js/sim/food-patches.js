@@ -3,7 +3,7 @@
 import { PATCH_FLOOR_SHARE, stepPatchLife } from './patch-life.js';
 import { assignFlora } from './flora-state.js';
 import { refreshFruiting } from './fruiting.js';
-import { EVENT_TYPE, pushEvent } from './events.js';
+import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { patchRegrowFactor } from './eras.js';
 import { basinPatchX } from './terrain.js';
 import { nextFloat } from './rng.js';
@@ -35,8 +35,8 @@ export function createPatches(world) {
     refreshFruiting(world);
     if (foodPatchCount > 0) {
         const o = pushEvent(world.events, EVENT_TYPE.FOOD_PATCHES_CREATED, world.tick);
-        world.events.data[o + 2] = foodPatchCount;
-        world.events.data[o + 3] = foodPatchRadius;
+        world.events.data[o + EVENT.FOOD_PATCHES_CREATED.COUNT] = foodPatchCount;
+        world.events.data[o + EVENT.FOOD_PATCHES_CREATED.RADIUS] = foodPatchRadius;
     }
 }
 

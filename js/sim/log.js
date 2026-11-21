@@ -1,27 +1,13 @@
 // Level-filtered sim log: records go to an injected sink, and event-ring records become named log events.
 
-import { EVENT_STRIDE, EVENT_TYPE, readEvents } from './events.js';
-import { emitHunterKill } from './log-hunter.js';
-import { emitCoverConfig, emitCoverTotals } from './log-cover.js';
+import { EVENT_BY_CODE, EVENT_FIELDS_AT, EVENT_STRIDE, EVENT_TICK, readEvents } from './events.js';
+import { LOG_RULES } from './log-rules.js';
 
 /** Log levels by severity; a record is kept when its value is at least the log's level. */
 export const LOG_LEVEL = Object.freeze({ debug: 10, info: 20, warn: 30, error: 40 });
 
-const BORN_NAMES = Object.freeze(['initial', 'mate', 'split', 'floor', 'immigrant']);
-const SOURCE_NAMES = Object.freeze([
-    'initial',
-    'mate',
-    'split',
-    'floor',
-    'immigrant',
-    'spec-flip',
-    'mate-hunter-parent',
-    'split-hunter-parent',
-]);
-const DIED_NAMES = Object.freeze(['starved', 'eaten', 'collision', 'old-age', 'poisoned', 'trampled', 'disease']);
-const SEED_REFUSED_NAMES = Object.freeze(['pool', 'cooldown', 'near']);
-const SEED_SOURCE_NAMES = Object.freeze(['pollen', 'herd']);
-const BLOCKED_NAMES = Object.freeze(['capacity', 'energy']);
+/** The rule of an event the log copies field for field. */
+const NO_RULE = Object.freeze({});
 
 /**
  * @typedef {object} SimLog
@@ -60,438 +46,48 @@ export function createSimLog(sink, { level = 'info' } = {}) {
 }
 
 /**
- * Names a cause code, throwing on one outside the table.
- * @param {readonly string[]} names cause names indexed by code
- * @param {number} code the stored cause code
- * @param {string} event the event the code belongs to
- * @returns {string} the cause name
+ * Builds the keys one record writes: its tick, then each field in order (decoded, expanded or left out as its rule says).
+ * @param {import('./events.js').EventDef} def the event
+ * @param {import('./log-rules.js').LogRule} rule how the log writes it
+ * @param {Float64Array} d ring data
+ * @param {number} o record offset
+ * @returns {Record<string, any>} the log fields
  */
-function causeName(names, code, event) {
-    const name = names[code];
-    if (name === undefined) {
-        throw new Error(`drainEvents: ${event} has unknown cause code ${code}`);
+function writtenFields(def, rule, d, o) {
+    /** @type {Record<string, any>} */
+    const written = { tick: d[o + EVENT_TICK] };
+    for (let i = 0; i < def.fields.length; i++) {
+        const field = def.fields[i];
+        const value = d[o + EVENT_FIELDS_AT + i];
+        if (rule.hidden?.includes(field)) {
+            continue;
+        }
+        const expand = rule.expand?.[field];
+        if (expand === undefined) {
+            written[field] = rule.decode?.[field]?.(value) ?? value;
+        } else {
+            Object.assign(written, expand(value, written));
+        }
     }
-    return name;
+    return written;
 }
 
 /**
- * Emits one `AgentBorn` event.
+ * Writes one record of the event ring: the log event of its type, and the records its rule adds.
  * @param {SimLog} log the log
+ * @param {import('./events.js').EventDef} def the event
  * @param {Float64Array} d ring data
  * @param {number} o record offset
  * @returns {void}
  */
-function emitBorn(log, d, o) {
-    log.log('debug', 'AgentBorn', {
-        tick: d[o + 1],
-        slot: d[o + 2],
-        genomeId: d[o + 3],
-        lineageId: d[o + 4],
-        spec: d[o + 5],
-        parentA: d[o + 6],
-        parentB: d[o + 7],
-        cause: causeName(BORN_NAMES, d[o + 8], 'AgentBorn'),
-    });
+function emit(log, def, d, o) {
+    const rule = LOG_RULES[def.name] ?? NO_RULE;
+    const written = writtenFields(def, rule, d, o);
+    log.log(def.level, /** @type {string} */ (def.log), written);
+    for (const extra of rule.also?.(written, d, o) ?? []) {
+        log.log(extra.level, extra.event, extra.fields);
+    }
 }
-
-/**
- * Emits one `AgentDied` event.
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitDied(log, d, o) {
-    const cause = causeName(DIED_NAMES, d[o + 4], 'AgentDied');
-    log.log('debug', 'AgentDied', {
-        tick: d[o + 1],
-        slot: d[o + 2],
-        genomeId: d[o + 3],
-        cause,
-        by: d[o + 5],
-        spec: d[o + 6],
-        lineageId: d[o + 7],
-        ageTicks: d[o + 8],
-        foodEnergy: d[o + 9],
-        biteEnergy: d[o + 10],
-        prevBiter: cause === 'eaten' ? d[o + 11] : 0,
-        ...(cause === 'trampled' ? { pinned: d[o + 11] === 1 } : {}),
-    });
-}
-
-/**
- * Emits one `HunterLedger` event: a hunter's life account at its death (field 4 packs kills, death cause and birth source).
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitHunterLedger(log, d, o) {
-    const packed = d[o + 4];
-    log.log('debug', 'HunterLedger', {
-        tick: d[o + 1],
-        genomeId: d[o + 2],
-        ageTicks: d[o + 3],
-        cause: causeName(DIED_NAMES, Math.floor(packed / 8) % 8, 'HunterLedger'),
-        birth: causeName(SOURCE_NAMES, packed % 8, 'HunterLedger'),
-        kills: Math.floor(packed / 64),
-        carcassEnergy: d[o + 5],
-        standingEnergy: d[o + 6],
-        moveEnergy: d[o + 7],
-        sprintEnergy: d[o + 8],
-        killEnergy: d[o + 9],
-        biteGainEnergy: d[o + 10],
-        biteCostEnergy: d[o + 11],
-    });
-}
-
-/** Emits the recoil energy charged over a hunter's life. */
-/** @param {SimLog} log sim log @param {Float64Array} d event ring @param {number} o record offset */
-function emitHunterRecoilLife(log, d, o) {
-    log.log('debug', 'HunterRecoilLife', { tick: d[o + 1], slot: d[o + 2], energy: d[o + 3] });
-}
-
-/**
- * Emits one `LastHunterDied` event: the last hunter died, in a basin, with the non-hunters alive in each.
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitLastHunterDied(log, d, o) {
-    log.log('debug', 'LastHunterDied', {
-        tick: d[o + 1],
-        genomeId: d[o + 2],
-        basin: d[o + 3] === 0 ? 'west' : 'east',
-        nonPredatorsWest: d[o + 4],
-        nonPredatorsEast: d[o + 5],
-    });
-}
-
-/**
- * Emits one `BirthBlocked` event.
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitBlocked(log, d, o) {
-    log.log('warn', 'BirthBlocked', {
-        tick: d[o + 1],
-        slot: d[o + 2],
-        cause: causeName(BLOCKED_NAMES, d[o + 3], 'BirthBlocked'),
-    });
-}
-
-/**
- * Emits one `PopulationFloor` event, and the `FloorGuard` record beside it (the population before the refill and
- * the agents spawned).
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitFloor(log, d, o) {
-    log.log('info', 'PopulationFloor', { tick: d[o + 1], added: d[o + 2] });
-    log.log('info', 'FloorGuard', { tick: d[o + 1], population: d[o + 3], spawned: d[o + 2] });
-}
-
-/**
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {{slot: number, genomeId: number, spec: number, x: number, y: number}} the caller fields of a call record
- */
-function callerFields(d, o) {
-    return { slot: d[o + 2], genomeId: d[o + 3], spec: d[o + 4], x: d[o + 5], y: d[o + 6] };
-}
-
-/**
- * Emits one `AlarmCalled` event.
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitAlarm(log, d, o) {
-    log.log('debug', 'AlarmCalled', { tick: d[o + 1], ...callerFields(d, o) });
-}
-
-/**
- * Emits one `PackCalled` event.
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitPack(log, d, o) {
-    log.log('debug', 'PackCalled', { tick: d[o + 1], ...callerFields(d, o) });
-}
-
-/**
- * Emits one `SmokeReleased` event.
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitSmoke(log, d, o) {
-    log.log('debug', 'SmokeReleased', { tick: d[o + 1], ...callerFields(d, o), cloud: d[o + 7] });
-}
-
-/**
- * Emits one `SmokeRefused` event.
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitRefused(log, d, o) {
-    log.log('debug', 'SmokeRefused', { tick: d[o + 1], slot: d[o + 2], genomeId: d[o + 3] });
-}
-
-/**
- * Emits one `FoodPatchesCreated` event.
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitPatches(log, d, o) {
-    log.log('info', 'FoodPatchesCreated', { tick: d[o + 1], count: d[o + 2], radius: d[o + 3] });
-}
-
-/**
- * Emits one `SeasonChanged` event.
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitSeason(log, d, o) {
-    log.log('info', 'SeasonChanged', { tick: d[o + 1], season: d[o + 2], year: d[o + 3] });
-}
-
-/**
- * Emits one `DroughtStarted` event.
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitDrought(log, d, o) {
-    log.log('info', 'DroughtStarted', { tick: d[o + 1], basin: d[o + 2], year: d[o + 3] });
-}
-
-/**
- * Emits one `MeritSummary` event.
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitMeritSummary(log, d, o) {
-    log.log('debug', 'MeritSummary', {
-        tick: d[o + 1],
-        meritMean: d[o + 2],
-        meritP90: d[o + 3],
-        readyToSplit: d[o + 4],
-        gatedSplits: d[o + 5],
-        deliberateReadyShare: d[o + 6],
-    });
-}
-
-/**
- * Emits one `LineProven` event: a child proved itself, so its parents' line is established.
- * @param {SimLog} log the log
- * @param {Float64Array} d ring data
- * @param {number} o record offset
- * @returns {void}
- */
-function emitLineProven(log, d, o) {
-    log.log('debug', 'LineProven', {
-        tick: d[o + 1],
-        slot: d[o + 2],
-        genomeId: d[o + 3],
-        parentA: d[o + 4],
-        parentB: d[o + 5],
-        lineageId: d[o + 6],
-    });
-}
-
-/**
- * @param {SimLog} log the log
- * @param {Float64Array} d event data
- * @param {number} o event offset
- * @returns {void}
- */
-function emitSickened(log, d, o) {
-    log.log('debug', 'AgentSickened', { tick: d[o + 1], slot: d[o + 2], genomeId: d[o + 3], dose: d[o + 4] });
-}
-
-/**
- * @param {SimLog} log the log
- * @param {Float64Array} d event data
- * @param {number} o event offset
- * @returns {void}
- */
-function emitPatchDied(log, d, o) {
-    log.log('debug', 'PatchDied', { tick: d[o + 1], patch: d[o + 2], species: d[o + 3] });
-}
-
-/**
- * @param {SimLog} log the log
- * @param {Float64Array} d event data
- * @param {number} o event offset
- * @returns {void}
- */
-function emitPatchSeeded(log, d, o) {
-    log.log('debug', 'PatchSeeded', {
-        tick: d[o + 1],
-        species: d[o + 2],
-        patch: d[o + 3],
-        parentA: d[o + 4],
-        parentB: d[o + 5],
-        hue: d[o + 6],
-        x: d[o + 7],
-        y: d[o + 8],
-    });
-}
-
-/**
- * @param {SimLog} log the log
- * @param {Float64Array} d event data
- * @param {number} o event offset
- * @returns {void}
- */
-function emitSeedingRefused(log, d, o) {
-    log.log('debug', 'SeedingRefused', {
-        tick: d[o + 1],
-        species: d[o + 2],
-        reason: causeName(SEED_REFUSED_NAMES, d[o + 3], 'SeedingRefused'),
-        source: causeName(SEED_SOURCE_NAMES, d[o + 4], 'SeedingRefused source'),
-    });
-}
-
-/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
-function emitHerdRouteChanged(log, d, o) {
-    log.log('debug', 'HerdRouteChanged', { tick: d[o + 1], group: d[o + 2], patch: d[o + 3] });
-}
-
-/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
-function emitHerdStampede(log, d, o) {
-    log.log('debug', 'HerdStampede', { tick: d[o + 1], group: d[o + 2], hunter: d[o + 3], animals: d[o + 4] });
-}
-
-/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
-function emitHerdAnimalDied(log, d, o) {
-    log.log('debug', 'HerdAnimalDied', {
-        tick: d[o + 1],
-        herd: d[o + 2],
-        animal: d[o + 3],
-        age: d[o + 4],
-        store: d[o + 5],
-        old: d[o + 6] === 1,
-    });
-}
-
-/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
-function emitHerdAnimalBorn(log, d, o) {
-    log.log('debug', 'HerdAnimalBorn', { tick: d[o + 1], herd: d[o + 2], animal: d[o + 3] });
-}
-
-/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
-function emitHerdCarcassLost(log, d, o) {
-    log.log('warn', 'HerdCarcassLost', { tick: d[o + 1], herd: d[o + 2] });
-}
-
-/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
-function emitHerdSeeded(log, d, o) {
-    log.log('debug', 'HerdSeeded', {
-        tick: d[o + 1],
-        herd: d[o + 2],
-        animal: d[o + 3],
-        source: d[o + 4],
-        patch: d[o + 5],
-        species: d[o + 6],
-        x: d[o + 7],
-        y: d[o + 8],
-    });
-}
-
-/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
-function emitStrainEmerged(log, d, o) {
-    log.log('info', 'StrainEmerged', {
-        tick: d[o + 1],
-        strain: d[o + 2],
-        hostSlot: d[o + 3],
-        hostGenomeId: d[o + 4],
-        hostLineageId: d[o + 5],
-    });
-}
-
-/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
-function emitAgentInfected(log, d, o) {
-    log.log('debug', 'AgentInfected', {
-        tick: d[o + 1],
-        slot: d[o + 2],
-        genomeId: d[o + 3],
-        strain: d[o + 4],
-        distance: d[o + 5],
-    });
-}
-
-/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
-function emitStrainExtinct(log, d, o) {
-    log.log('info', 'StrainExtinct', {
-        tick: d[o + 1],
-        strain: d[o + 2],
-        infectedTotal: d[o + 3],
-        ticksAlive: d[o + 4],
-    });
-}
-
-/** @param {SimLog} log @param {Float64Array} d @param {number} o @returns {void} */
-function emitSprintSpent(log, d, o) {
-    log.log('debug', 'SprintSpent', { tick: d[o + 1], slot: d[o + 2], genomeId: d[o + 3], spec: d[o + 4] });
-}
-
-/** Emitter and level per event type; the level lets a record be skipped before any object is built. */
-/** @type {Readonly<Record<number, { level: number, emit: (log: SimLog, d: Float64Array, o: number) => void }>>} */
-const EMITTERS = Object.freeze({
-    [EVENT_TYPE.AGENT_BORN]: { level: LOG_LEVEL.debug, emit: emitBorn },
-    [EVENT_TYPE.AGENT_DIED]: { level: LOG_LEVEL.debug, emit: emitDied },
-    [EVENT_TYPE.BIRTH_BLOCKED]: { level: LOG_LEVEL.warn, emit: emitBlocked },
-    [EVENT_TYPE.POPULATION_FLOOR]: { level: LOG_LEVEL.info, emit: emitFloor },
-    [EVENT_TYPE.ALARM_CALLED]: { level: LOG_LEVEL.debug, emit: emitAlarm },
-    [EVENT_TYPE.SMOKE_RELEASED]: { level: LOG_LEVEL.debug, emit: emitSmoke },
-    [EVENT_TYPE.PACK_CALLED]: { level: LOG_LEVEL.debug, emit: emitPack },
-    [EVENT_TYPE.SMOKE_REFUSED]: { level: LOG_LEVEL.debug, emit: emitRefused },
-    [EVENT_TYPE.FOOD_PATCHES_CREATED]: { level: LOG_LEVEL.info, emit: emitPatches },
-    [EVENT_TYPE.SEASON_CHANGED]: { level: LOG_LEVEL.info, emit: emitSeason },
-    [EVENT_TYPE.DROUGHT_STARTED]: { level: LOG_LEVEL.info, emit: emitDrought },
-    [EVENT_TYPE.MERIT_SUMMARY]: { level: LOG_LEVEL.debug, emit: emitMeritSummary },
-    [EVENT_TYPE.LINE_PROVEN]: { level: LOG_LEVEL.debug, emit: emitLineProven },
-    [EVENT_TYPE.PATCH_SEEDED]: { level: LOG_LEVEL.debug, emit: emitPatchSeeded },
-    [EVENT_TYPE.SEEDING_REFUSED]: { level: LOG_LEVEL.debug, emit: emitSeedingRefused },
-    [EVENT_TYPE.PATCH_DIED]: { level: LOG_LEVEL.debug, emit: emitPatchDied },
-    [EVENT_TYPE.AGENT_SICKENED]: { level: LOG_LEVEL.debug, emit: emitSickened },
-    [EVENT_TYPE.HERD_ROUTE_CHANGED]: { level: LOG_LEVEL.debug, emit: emitHerdRouteChanged },
-    [EVENT_TYPE.HERD_STAMPEDE]: { level: LOG_LEVEL.debug, emit: emitHerdStampede },
-    [EVENT_TYPE.HERD_ANIMAL_DIED]: { level: LOG_LEVEL.debug, emit: emitHerdAnimalDied },
-    [EVENT_TYPE.HERD_ANIMAL_BORN]: { level: LOG_LEVEL.debug, emit: emitHerdAnimalBorn },
-    [EVENT_TYPE.HERD_CARCASS_LOST]: { level: LOG_LEVEL.warn, emit: emitHerdCarcassLost },
-    [EVENT_TYPE.HERD_SEEDED]: { level: LOG_LEVEL.debug, emit: emitHerdSeeded },
-    [EVENT_TYPE.STRAIN_EMERGED]: { level: LOG_LEVEL.info, emit: emitStrainEmerged },
-    [EVENT_TYPE.AGENT_INFECTED]: { level: LOG_LEVEL.debug, emit: emitAgentInfected },
-    [EVENT_TYPE.STRAIN_EXTINCT]: { level: LOG_LEVEL.info, emit: emitStrainExtinct },
-    [EVENT_TYPE.HUNTER_LEDGER]: { level: LOG_LEVEL.debug, emit: emitHunterLedger },
-    [EVENT_TYPE.LAST_HUNTER_DIED]: { level: LOG_LEVEL.debug, emit: emitLastHunterDied },
-    [EVENT_TYPE.HUNTER_KILL]: { level: LOG_LEVEL.debug, emit: emitHunterKill },
-    [EVENT_TYPE.HUNTER_RECOIL_LIFE]: { level: LOG_LEVEL.debug, emit: emitHunterRecoilLife },
-    [EVENT_TYPE.COVER_CONFIG]: { level: LOG_LEVEL.info, emit: emitCoverConfig },
-    [EVENT_TYPE.COVER_TOTALS]: { level: LOG_LEVEL.debug, emit: emitCoverTotals },
-    [EVENT_TYPE.SPRINT_SPENT]: { level: LOG_LEVEL.debug, emit: emitSprintSpent },
-});
 
 /**
  * Turns the world's event-ring records into log events, in order. Call it after each step.
@@ -506,12 +102,12 @@ export function drainEvents(world, log) {
     const d = world.events.data;
     for (let i = 0; i < count; i++) {
         const o = i * EVENT_STRIDE;
-        const entry = EMITTERS[d[o]];
-        if (entry === undefined) {
+        const def = EVENT_BY_CODE[d[o]];
+        if (def === undefined || def.log === null) {
             throw new Error(`drainEvents: unknown event type ${d[o]} at record ${i}`);
         }
-        if (entry.level >= min) {
-            entry.emit(log, d, o);
+        if (LOG_LEVEL[def.level] >= min) {
+            emit(log, def, d, o);
         }
     }
 }

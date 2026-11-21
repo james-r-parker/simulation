@@ -12,8 +12,8 @@ import { REFLEX_RANDOM_BRAINS, reflexRandomBrains } from '../js/evo/reflex-score
 import { REFLEX_TRIALS, SEQUENCE_TICKS } from '../js/evo/reflex-stage.js';
 import { buildCaseTable } from '../js/evo/reflex-table.js';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
+import { SPEC } from '../js/sim/specs.js';
 
-const FORAGER = 0;
 const USAGE =
     'usage: bench-reflex [--genomes <n>] [--reps <n>] [--drill-genomes <n>] [--drill-trials <n>] [--no-drill] [--json]';
 
@@ -54,7 +54,7 @@ export function parseArgs(argv) {
  */
 function genomesOf(count) {
     const blocks = Array.from({ length: Math.ceil(count / REFLEX_RANDOM_BRAINS) }, (_, block) =>
-        reflexRandomBrains(casesFor(FORAGER)[0], { seed: 7 + block }),
+        reflexRandomBrains(casesFor(SPEC.FORAGER)[0], { seed: 7 + block }),
     );
     return blocks
         .flat()
@@ -69,7 +69,7 @@ function genomesOf(count) {
  *   costs (every tick of every sequence) and the milliseconds per genome
  */
 export function timeReflex({ genomes, reps }) {
-    const tables = casesFor(FORAGER).map((c) => buildCaseTable(c, { trials: REFLEX_TRIALS }));
+    const tables = casesFor(SPEC.FORAGER).map((c) => buildCaseTable(c, { trials: REFLEX_TRIALS }));
     const subjects = genomesOf(genomes);
     evalReflex(subjects, tables);
     const start = performance.now();
@@ -92,8 +92,8 @@ export function timeReflex({ genomes, reps }) {
  */
 export function timeDrills({ drillGenomes, drillTrials }) {
     // The five forager drills of the original seven: the social drills would change what `bench.reflex_vs_drill` ratios.
-    const drills = DRILLS.filter((d) => d.spec === FORAGER && !SOCIAL_DRILLS.includes(d));
-    const subjects = genomesOf(drillGenomes).map((s) => ({ ...s, spec: FORAGER }));
+    const drills = DRILLS.filter((d) => d.spec === SPEC.FORAGER && !SOCIAL_DRILLS.includes(d));
+    const subjects = genomesOf(drillGenomes).map((s) => ({ ...s, spec: SPEC.FORAGER }));
     const start = performance.now();
     for (const subject of subjects) {
         for (const drill of drills) {

@@ -3,7 +3,7 @@
 
 import { CELLS, CELLS_PER_AXIS, ELITE, archiveCv, lowerBound, placeOf, refOf } from './archive.js';
 import { encodeWeights } from './base64.js';
-import { GENOME_SPECS } from './genome.js';
+import { SPEC_NAMES } from '../sim/specs.js';
 import { CHAMPION_VERSION } from './league.js';
 import { layoutStamp } from '../sim/brain-layout.js';
 import { rulesHash } from '../sim/config.js';
@@ -31,7 +31,7 @@ export function styleBandOf(cell) {
 function championFile(archive, elite, { config, label }) {
     return {
         version: CHAMPION_VERSION,
-        name: `${label}-${GENOME_SPECS[elite.spec]}-cell${elite.cell}`,
+        name: `${label}-${SPEC_NAMES[elite.spec]}-cell${elite.cell}`,
         rulesHash: rulesHash(config),
         layout: layoutStamp(archive.layout),
         specialisation: elite.spec,
@@ -48,7 +48,7 @@ function championFile(archive, elite, { config, label }) {
  */
 export function allElites(archive) {
     const elites = [];
-    for (let cellIndex = 0; cellIndex < GENOME_SPECS.length * CELLS; cellIndex++) {
+    for (let cellIndex = 0; cellIndex < SPEC_NAMES.length * CELLS; cellIndex++) {
         const place = placeOf(Math.floor(cellIndex / CELLS), cellIndex % CELLS, ELITE);
         if (archive.occupied[place] === 1) {
             elites.push(refOf(archive, place));

@@ -1,7 +1,7 @@
 // Selects patch routes and advances scripted herd animals without per-tick allocation.
 
 import { nextFloat } from './rng.js';
-import { EVENT_TYPE, pushEvent } from './events.js';
+import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { steerGroup } from './herd-steering.js';
 import { senseHunters } from './herd-startle.js';
 
@@ -81,8 +81,8 @@ function setRoute(world, group, patch) {
         world.groupPatchWeight[group] = world.patchWeight[patch];
     }
     const offset = pushEvent(world.events, EVENT_TYPE.HERD_ROUTE_CHANGED, world.tick);
-    world.events.data[offset + 2] = group;
-    world.events.data[offset + 3] = patch;
+    world.events.data[offset + EVENT.HERD_ROUTE_CHANGED.GROUP] = group;
+    world.events.data[offset + EVENT.HERD_ROUTE_CHANGED.PATCH] = patch;
 }
 
 /** @param {World} world @param {number} group @returns {void} */

@@ -5,8 +5,9 @@
 import { createConfig } from '../sim/config.js';
 import { FLORA_DEFAULTS } from '../sim/config-flora.js';
 import { nextFloat } from '../sim/rng.js';
-import { CENTRE_Y, FORAGER_SPEC, HUNTER_ENERGY, PREDATOR_SPEC, heading } from './memory-probe-scenarios.js';
+import { CENTRE_Y, HUNTER_ENERGY, heading } from './memory-probe-scenarios.js';
 import { DEG, SEQUENCE_TICKS, bearingPoint, signedBearing, subjectAgent, withMirrors } from './reflex-stage.js';
+import { SPEC } from '../sim/specs.js';
 
 /** The thresholds, as shares of the output range (starting values of the doc, calibrated by T4). */
 export const FORAGER_BARS = Object.freeze({
@@ -48,7 +49,7 @@ const WIDE_MAX_DEG = 160;
  * @param {number} angle the subject's heading
  * @returns {import('./pool-discrimination-stage.js').StagedAgent} a forager subject
  */
-const forager = (angle) => subjectAgent(FORAGER_SPEC, angle);
+const forager = (angle) => subjectAgent(SPEC.FORAGER, angle);
 
 /** @typedef {import('./reflex-stage.js').Staging} Staging */
 /** @typedef {import('./reflex-stage.js').ReflexOutputs} ReflexOutputs */
@@ -66,7 +67,7 @@ function turnToward(outputs, bearing) {
 const FLEE_THREAT = {
     name: 'flee-threat',
     scene: 'A real chase',
-    spec: FORAGER_SPEC,
+    spec: SPEC.FORAGER,
     plan(rng, view) {
         const draw = { angle: heading(rng), bearing: signedBearing(rng, 20, 180) };
         return withMirrors(draw, (d, mirror) => {
@@ -77,7 +78,7 @@ const FLEE_THREAT = {
                 const hunter = {
                     ...at,
                     angle: d.angle + bearing + Math.PI,
-                    spec: PREDATOR_SPEC,
+                    spec: SPEC.PREDATOR,
                     energy: HUNTER_ENERGY,
                 };
                 return { foods: [], rocks: [], agents: [forager(d.angle), hunter] };
@@ -97,7 +98,7 @@ const FLEE_THREAT = {
 const APPROACH_FOOD = {
     name: 'approach-food',
     scene: 'Leave a dying patch',
-    spec: FORAGER_SPEC,
+    spec: SPEC.FORAGER,
     plan(rng, view) {
         const draw = {
             angle: heading(rng),
@@ -140,7 +141,7 @@ function nearRay(rng, rays) {
 const PICK_SAFE_FOOD = {
     name: 'pick-safe-food',
     scene: 'Season changes the map',
-    spec: FORAGER_SPEC,
+    spec: SPEC.FORAGER,
     plan(rng, view) {
         const side = nextFloat(rng) < 0.5 ? -1 : 1;
         const draw = { angle: heading(rng), side, toxic: nearRay(rng, 2), safe: nearRay(rng, 3) };
@@ -199,7 +200,7 @@ function obstacleStagings(d, mirror) {
 const AVOID_OBSTACLE = {
     name: 'avoid-obstacle',
     scene: 'A real chase; Refuge',
-    spec: FORAGER_SPEC,
+    spec: SPEC.FORAGER,
     plan(rng, view) {
         const draw = {
             angle: heading(rng),

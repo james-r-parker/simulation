@@ -5,7 +5,7 @@ import { createConfig } from '../sim/config.js';
 import { createRng, fork } from '../sim/rng.js';
 import { createWorld } from '../sim/spawn.js';
 import { step } from '../sim/step.js';
-import { GENOME_SPECS } from './genome.js';
+import { SPEC_NAMES } from '../sim/specs.js';
 import { feedPolicy } from './feed-policy.js';
 import { createObserver, observerPhases } from './observer.js';
 import { LIVE_POLICY, getPolicy } from './policies/index.js';
@@ -15,10 +15,10 @@ import { LIVE_POLICY, getPolicy } from './policies/index.js';
  * @returns {Record<string, number>} the alive agents of each specialisation
  */
 export function countBySpec(world) {
-    const counts = Object.fromEntries(GENOME_SPECS.map((name) => [name, 0]));
+    const counts = Object.fromEntries(SPEC_NAMES.map((name) => [name, 0]));
     for (let slot = 0; slot < world.alive.length; slot++) {
         if (world.alive[slot] === 1) {
-            counts[GENOME_SPECS[world.spec[slot]]] += 1;
+            counts[SPEC_NAMES[world.spec[slot]]] += 1;
         }
     }
     return counts;

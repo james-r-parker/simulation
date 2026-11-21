@@ -1,7 +1,7 @@
 // The count behind `eval.predator_births`: children (cause `mate` or `split`) of a `canHunt` specialisation born at or
 // after burn-in. Kept apart from `metrics-watch.js` because the event handling imports it.
 
-import { BORN_CAUSE } from '../sim/events.js';
+import { BORN_CAUSE, EVENT, EVENT_TICK } from '../sim/events.js';
 
 /**
  * Counts one `AgentBorn` record in `observer.watch.hunterBirths` when it is a mate or split birth at or after burn-in
@@ -12,8 +12,8 @@ import { BORN_CAUSE } from '../sim/events.js';
  * @returns {void}
  */
 export function noteHunterBirth(observer, d, o) {
-    const cause = d[o + 8];
-    if (d[o + 1] >= observer.lineage.burnIn && (cause === BORN_CAUSE.MATE || cause === BORN_CAUSE.SPLIT)) {
-        observer.watch.hunterBirths += observer.combat.hunterSpec[d[o + 5]];
+    const cause = d[o + EVENT.AGENT_BORN.CAUSE];
+    if (d[o + EVENT_TICK] >= observer.lineage.burnIn && (cause === BORN_CAUSE.MATE || cause === BORN_CAUSE.SPLIT)) {
+        observer.watch.hunterBirths += observer.combat.hunterSpec[d[o + EVENT.AGENT_BORN.SPEC]];
     }
 }

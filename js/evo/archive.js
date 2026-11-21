@@ -6,7 +6,8 @@
 // A clone's `archiveRef` is `spec * 100 + cell` (the doc's encoding); the policy also keeps the cloned genome's
 // id (`refId`), and a clone's fitness is added only to the place in that cell that still holds `refId`.
 
-import { GENOME_SPECS, rejectGenome } from './genome.js';
+import { rejectGenome } from './genome.js';
+import { SPEC_COUNT, SPEC_NAMES } from '../sim/specs.js';
 import { WELFORD_STRIDE, welfordAdd, welfordMean, welfordSd } from './welford.js';
 import { nextInt } from '../sim/rng.js';
 import { descriptorV1 } from './descriptors.js';
@@ -30,7 +31,6 @@ export const ELITE = 0;
 /** The challenger place of a cell. */
 export const CHALLENGER = 1;
 
-const SPEC_COUNT = GENOME_SPECS.length;
 const PLACES = SPEC_COUNT * CELLS * 2;
 
 /**
@@ -103,7 +103,7 @@ export function createArchive(layout, { descriptor = descriptorV1, nCap = 0 } = 
 }
 
 /**
- * @param {number} spec specialisation index (`GENOME_SPECS`)
+ * @param {number} spec specialisation index (`SPEC_NAMES`)
  * @param {number} cell cell 0 .. 99 (`y * 10 + x`)
  * @param {number} which `ELITE` or `CHALLENGER`
  * @returns {number} the place index
@@ -370,7 +370,7 @@ export function offer(archive, item, log) {
  * @throws {Error} naming the field when the cell or the row length does not fit
  */
 export function seedArchive(archive, champion, log) {
-    const spec = champion.spec ?? GENOME_SPECS.indexOf(/** @type {string} */ (champion.specialisation));
+    const spec = champion.spec ?? SPEC_NAMES.indexOf(/** @type {string} */ (champion.specialisation));
     if (
         spec < 0 ||
         spec >= SPEC_COUNT ||

@@ -3,8 +3,9 @@
 
 import { coverage, occupiedCount } from '../evo/archive.js';
 import { generationStats } from './generation.js';
-import { BORN_CAUSE, DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { BORN_CAUSE, DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE, EVENT, EVENT_TICK } from '../sim/events.js';
 import { specParams } from '../sim/spec-params.js';
+import { SPEC_COUNT } from '../sim/specs.js';
 import {
     callsPerKiloTick,
     createCallWindow,
@@ -37,7 +38,6 @@ export const ELDER_SHARE = 0.9;
 /** `PopulationFloor` is announced only after this tick (before it the initial settling is expected). */
 export const FLOOR_AFTER_TICK = 10000;
 
-const SPEC_COUNT = 5;
 const SEASONS = 4;
 const BORN_CAUSES = Object.keys(BORN_CAUSE).length;
 const DEATH_CAUSES = Object.keys(DEATH_CAUSE).length;
@@ -110,10 +110,18 @@ export function noteTick(live, world, observer) {
     const d = world.events.data;
     for (let i = 0; i < world.events.count; i++) {
         const o = i * EVENT_STRIDE;
-        if (d[o] === EVENT_TYPE.AGENT_DIED && d[o + 4] === DEATH_CAUSE.EATEN && d[o + 5] !== 0) {
+        if (
+            d[o] === EVENT_TYPE.AGENT_DIED &&
+            d[o + EVENT.AGENT_DIED.CAUSE] === DEATH_CAUSE.EATEN &&
+            d[o + EVENT.AGENT_DIED.BY] !== 0
+        ) {
             noteKill(live, { world, observer }, o);
-        } else if (d[o] === EVENT_TYPE.POPULATION_FLOOR && d[o + 1] > FLOOR_AFTER_TICK) {
-            push(live, { tick: d[o + 1], kind: 'floor', text: `population floor: ${d[o + 2]} agents added` });
+        } else if (d[o] === EVENT_TYPE.POPULATION_FLOOR && d[o + EVENT_TICK] > FLOOR_AFTER_TICK) {
+            push(live, {
+                tick: d[o + EVENT_TICK],
+                kind: 'floor',
+                text: `population floor: ${d[o + EVENT.POPULATION_FLOOR.ADDED]} agents added`,
+            });
         }
     }
 }
@@ -126,12 +134,18 @@ export function noteTick(live, world, observer) {
  */
 function noteKill(live, { world, observer }, o) {
     const d = world.events.data;
-    const killer = d[o + 5];
-    const tick = d[o + 1];
+    const killer = d[o + EVENT.AGENT_DIED.BY];
+    const tick = d[o + EVENT_TICK];
     const slot = observer.slotOf.get(killer);
     const at = slot === undefined ? {} : { x: world.x[slot], y: world.y[slot] };
-    if (d[o + 11] !== 0) {
-        push(live, { tick, kind: 'pack-kill', text: 'pack kill', genomeId: killer, lineageId: d[o + 7] });
+    if (d[o + EVENT.AGENT_DIED.PARTNER] !== 0) {
+        push(live, {
+            tick,
+            kind: 'pack-kill',
+            text: 'pack kill',
+            genomeId: killer,
+            lineageId: d[o + EVENT.AGENT_DIED.LINEAGE_ID],
+        });
         packKillItems(live.milestones, { tick, genomeId: killer, ...at }).forEach((item) => push(live, item));
     }
     if (slot !== undefined && specParams(world.config, observer.spec[slot]).canHunt) {

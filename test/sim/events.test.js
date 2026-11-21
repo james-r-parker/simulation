@@ -1,15 +1,167 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
     BLOCKED_CAUSE,
     BORN_CAUSE,
+    BORN_CAUSES,
     DEATH_CAUSE,
+    DEATH_CAUSES,
+    EVENT,
+    EVENT_BY_CODE,
     EVENT_STRIDE,
     EVENT_TYPE,
+    EVENTS,
     clearEvents,
     createEventRing,
+    offsetsOf,
     pushEvent,
     readEvents,
 } from '../../js/sim/events.js';
+import { LOG_LEVEL, createSimLog, drainEvents } from '../../js/sim/log.js';
+import { LOGGED_CODES, buildReferenceRing } from './helpers/event-rings.js';
+
+/** The records of the reference ring as the log wrote them before the events were a registry (test/fixtures). */
+const REFERENCE = JSON.parse(readFileSync(new URL('../fixtures/event-log-reference.json', import.meta.url), 'utf8'));
+
+/**
+ * @param {import('../../js/sim/events.js').EventRing} ring the ring to drain
+ * @param {'debug' | 'info' | 'warn'} level the log level
+ * @returns {Record<string, any>[]} the records drained
+ */
+function drain(ring, level) {
+    /** @type {Record<string, any>[]} */
+    const records = [];
+    drainEvents(
+        { events: ring },
+        createSimLog((r) => records.push(r), { level }),
+    );
+    return records;
+}
+
+describe('EVENTS', () => {
+    it('lists every event once, with its code, a level and distinct field names that fit the record', () => {
+        expect(new Set(EVENTS.map((def) => def.code)).size).toBe(EVENTS.length);
+        expect(new Set(EVENTS.map((def) => def.name)).size).toBe(EVENTS.length);
+        for (const def of EVENTS) {
+            expect(Object.keys(LOG_LEVEL)).toContain(def.level);
+            expect(new Set(def.fields).size).toBe(def.fields.length);
+            expect(def.fields.length).toBeLessThanOrEqual(EVENT_STRIDE - 2);
+            expect(EVENT_BY_CODE[def.code]).toBe(def);
+        }
+    });
+
+    it('builds EVENT_TYPE with the codes of today, the unused PROVISIONED among them', () => {
+        expect(Object.values(EVENT_TYPE)).toEqual([
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+            32, 33, 34, 35, 36,
+        ]);
+        expect(EVENT_TYPE.PROVISIONED).toBe(32);
+        expect(EVENTS.filter((def) => def.log === null).map((def) => def.name)).toEqual(['PROVISIONED']);
+    });
+
+    it('numbers each field from offset 2, after the type and the tick', () => {
+        for (const def of EVENTS) {
+            expect(EVENT[def.name].TYPE).toBe(0);
+            expect(EVENT[def.name].TICK).toBe(1);
+            expect(Object.values(EVENT[def.name]).slice(2)).toEqual(def.fields.map((_, i) => 2 + i));
+        }
+    });
+
+    it('keeps the offsets the emitters wrote before the registry, including those the log leaves out', () => {
+        expect(EVENT.AGENT_BORN).toMatchObject({ SLOT: 2, GENOME_ID: 3, LINEAGE_ID: 4, SPEC: 5, PARENT_A: 6 });
+        expect(EVENT.AGENT_BORN).toMatchObject({ PARENT_B: 7, CAUSE: 8, SEX: 9 });
+        expect(EVENT.AGENT_DIED).toMatchObject({ SLOT: 2, GENOME_ID: 3, CAUSE: 4, BY: 5, SPEC: 6, LINEAGE_ID: 7 });
+        expect(EVENT.AGENT_DIED).toMatchObject({
+            AGE_TICKS: 8,
+            FOOD_ENERGY: 9,
+            BITE_ENERGY: 10,
+            PARTNER: 11,
+            SIZE: 12,
+        });
+        expect(EVENT.POPULATION_FLOOR).toMatchObject({ ADDED: 2, POPULATION: 3 });
+        expect(EVENT.SMOKE_RELEASED).toMatchObject({ SPEC: 4, X: 5, Y: 6, CLOUD: 7 });
+        expect(EVENT.HERD_STAMPEDE).toMatchObject({ GROUP: 2, HUNTER: 3, ANIMALS: 4, X: 5, Y: 6 });
+        expect(EVENT.HERD_SEEDED).toMatchObject({ HERD: 2, ANIMAL: 3, SOURCE: 4, PATCH: 5, SPECIES: 6, X: 7, Y: 8 });
+        expect(EVENT.PATCH_SEEDED).toMatchObject({ SPECIES: 2, PATCH: 3, PARENT_A: 4, HUE: 6, X: 7, Y: 8 });
+        expect(EVENT.HUNTER_LEDGER).toMatchObject({ GENOME_ID: 2, AGE_TICKS: 3, PACKED: 4, BITE_COST_ENERGY: 11 });
+        expect(EVENT.HUNTER_KILL).toMatchObject({ GENOME_ID: 2, AGE_TICKS: 3, KILLS: 4, DEPENDENT: 5 });
+        expect(EVENT.LAST_HUNTER_DIED).toMatchObject({ GENOME_ID: 2, BASIN: 3, NON_PREDATORS_WEST: 4 });
+        expect(EVENT.MERIT_SUMMARY).toMatchObject({ MERIT_MEAN: 2, DELIBERATE_READY_SHARE: 6 });
+    });
+});
+
+describe('offsetsOf', () => {
+    it('numbers the fields after the type and the tick', () => {
+        const def = { code: 99, name: 'X', log: null, level: /** @type {const} */ ('debug'), fields: ['aB', 'c'] };
+        expect(offsetsOf(def)).toEqual({ TYPE: 0, TICK: 1, A_B: 2, C: 3 });
+    });
+
+    it('throws for a field that does not fit the record, and for one that repeats an offset name', () => {
+        const base = { code: 99, name: 'X', log: null, level: /** @type {const} */ ('debug') };
+        const many = Array.from({ length: EVENT_STRIDE - 1 }, (_, i) => `f${i}`);
+        expect(() => offsetsOf({ ...base, fields: many })).toThrow('record holds 11');
+        expect(() => offsetsOf({ ...base, fields: ['a', 'a'] })).toThrow('twice');
+        expect(() => offsetsOf({ ...base, fields: ['tick'] })).toThrow('reuses TYPE or TICK');
+    });
+});
+
+describe('the cause lists', () => {
+    it('carry code, name and colour, in code order, and build the keyed maps', () => {
+        for (const list of [BORN_CAUSES, DEATH_CAUSES]) {
+            expect(list.map((cause) => cause.code)).toEqual(list.map((_, i) => i));
+            for (const cause of list) {
+                expect(cause.name).toMatch(/^[a-z-]+$/);
+                expect(cause.colour).toMatch(/^#[0-9a-f]{6}$/);
+            }
+        }
+        expect(BORN_CAUSES.map((cause) => cause.name)).toEqual(['initial', 'mate', 'split', 'floor', 'immigrant']);
+        expect(DEATH_CAUSES.map((cause) => cause.name)).toEqual([
+            'starved',
+            'eaten',
+            'collision',
+            'old-age',
+            'poisoned',
+            'trampled',
+            'disease',
+        ]);
+        expect(BORN_CAUSE.SPLIT).toBe(2);
+        expect(DEATH_CAUSE.OLD_AGE).toBe(3);
+    });
+});
+
+describe('drainEvents with the one emitter', () => {
+    it('writes what each hand-written emitter wrote, field for field and key for key, on a record of every event', () => {
+        const written = drain(buildReferenceRing(), 'debug');
+        expect(written).toEqual(REFERENCE);
+        expect(written.map((r) => JSON.stringify(r))).toEqual(
+            REFERENCE.map((/** @type {unknown} */ r) => JSON.stringify(r)),
+        );
+    });
+
+    it('covers every logged event of the registry', () => {
+        expect(LOGGED_CODES).toEqual(EVENTS.filter((def) => def.log !== null).map((def) => def.code));
+    });
+
+    it('skips a record below the log level and writes its warn and info records at info', () => {
+        const levels = new Set(drain(buildReferenceRing(), 'info').map((r) => r.level));
+        expect([...levels].sort()).toEqual(['info', 'warn']);
+    });
+
+    it('throws on the unused PROVISIONED code and on a code with no event', () => {
+        for (const code of [EVENT_TYPE.PROVISIONED, 12]) {
+            const ring = createEventRing(1);
+            pushEvent(ring, code, 3);
+            expect(() => drain(ring, 'debug')).toThrow(`unknown event type ${code} at record 0`);
+        }
+    });
+
+    it('throws naming the event when a cause code is outside its table', () => {
+        const ring = createEventRing(1);
+        const o = pushEvent(ring, EVENT_TYPE.AGENT_DIED, 3);
+        ring.data[o + EVENT.AGENT_DIED.CAUSE] = 9;
+        expect(() => drain(ring, 'debug')).toThrow('AgentDied has unknown cause code 9');
+    });
+});
 
 describe('event codes', () => {
     it('exports the record stride and the frozen code sets', () => {

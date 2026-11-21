@@ -21,7 +21,7 @@
 
 import { BIRTH_SOURCE } from '../sim/hunter-ledger.js';
 import { DEFAULTS } from '../sim/config-defaults.js';
-import { DEATH_CAUSE, EVENT_TYPE } from '../sim/events.js';
+import { DEATH_CAUSE, EVENT_TYPE, EVENT, EVENT_TICK } from '../sim/events.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { bySuffix, none, ok, quantile, share } from './metrics-stats.js';
@@ -99,12 +99,12 @@ export function noteHunterBirth(scene, world, slot) {
  * @returns {void}
  */
 export function noteHunterLedger(scene, d, o) {
-    const packed = d[o + 4];
+    const packed = d[o + EVENT.HUNTER_LEDGER.PACKED];
     const row = scene.rows++;
     ensureRoom(scene.log, row);
-    scene.log.age[row] = d[o + 3];
+    scene.log.age[row] = d[o + EVENT.HUNTER_LEDGER.AGE_TICKS];
     scene.log.kills[row] = Math.floor(packed / 64);
-    if (d[o + 1] >= BURN_IN_TICKS) {
+    if (d[o + EVENT_TICK] >= BURN_IN_TICKS) {
         scene.lives += 1;
         scene.zeroKill += scene.log.kills[row] === 0 ? 1 : 0;
         scene.settledKills += scene.log.kills[row];

@@ -10,6 +10,7 @@ import { poolRays } from '../sim/ray-pool.js';
 import { followCorridor, flee, seekFood, seekFoodHue } from './pool-discrimination-controllers.js';
 import { stageWorld } from './pool-discrimination-stage.js';
 import { COMBAT_CONTROLLERS } from './scripted-combat.js';
+import { SPEC } from '../sim/specs.js';
 
 /** The pooled score must reach this share of the raw score for a scene to pass. */
 export const PASS_SHARE = 0.9;
@@ -17,8 +18,6 @@ export const PASS_SHARE = 0.9;
 const TWO_PI = 6.283185307179586;
 const CENTRE_X = 1500;
 const CENTRE_Y = 2000;
-const FORAGER = 0;
-const PREDATOR = 1;
 const HUNTER_ENERGY = 1500;
 const SUBJECT_ENERGY = 800;
 const PASSAGE_ROCK = 50;
@@ -60,7 +59,7 @@ const TWO_FOOD_OPPOSITE = {
                 { x: CENTRE_X - dx, y: CENTRE_Y - dy },
             ],
             rocks: [],
-            agents: [{ x: CENTRE_X, y: CENTRE_Y, angle: heading(rng), spec: FORAGER, energy: SUBJECT_ENERGY }],
+            agents: [{ x: CENTRE_X, y: CENTRE_Y, angle: heading(rng), spec: SPEC.FORAGER, energy: SUBJECT_ENERGY }],
         };
     },
     act: seekFood,
@@ -78,14 +77,14 @@ const TWO_THREATS_APART = {
             x: CENTRE_X + 250 * detCos(angle),
             y: CENTRE_Y + 250 * detSin(angle),
             angle: angle + TWO_PI / 2,
-            spec: PREDATOR,
+            spec: SPEC.PREDATOR,
             energy: HUNTER_ENERGY,
         });
         return {
             foods: [],
             rocks: [],
             agents: [
-                { x: CENTRE_X, y: CENTRE_Y, angle: heading(rng), spec: FORAGER, energy: SUBJECT_ENERGY },
+                { x: CENTRE_X, y: CENTRE_Y, angle: heading(rng), spec: SPEC.FORAGER, energy: SUBJECT_ENERGY },
                 hunter(first),
                 hunter(first + TWO_PI / 3),
             ],
@@ -118,7 +117,7 @@ const CORRIDOR = {
                     x: 900,
                     y: CENTRE_Y + (nextFloat(rng) - 0.5) * 60,
                     angle: (nextFloat(rng) - 0.5) * 0.6,
-                    spec: FORAGER,
+                    spec: SPEC.FORAGER,
                     energy: SUBJECT_ENERGY,
                 },
             ],
@@ -144,7 +143,7 @@ const FOOD_HUE_CHOICE = {
                 { x: CENTRE_X - dx, y: CENTRE_Y - dy, hue: 0.75 },
             ],
             rocks: [],
-            agents: [{ x: CENTRE_X, y: CENTRE_Y, angle: theta, spec: FORAGER, energy: SUBJECT_ENERGY }],
+            agents: [{ x: CENTRE_X, y: CENTRE_Y, angle: theta, spec: SPEC.FORAGER, energy: SUBJECT_ENERGY }],
         };
     },
     act: seekFoodHue,

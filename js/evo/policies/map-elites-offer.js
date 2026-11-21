@@ -8,7 +8,7 @@
 
 import { cellOf, offer } from '../../evo/archive.js';
 import { createProofLedger } from './archive-proof.js';
-import { EVENT_TYPE } from '../../sim/events.js';
+import { EVENT_TYPE, EVENT, EVENT_TICK } from '../../sim/events.js';
 
 /**
  * Per-slot copies of the dying agents' genomes, preallocated.
@@ -59,19 +59,21 @@ function createOfferBuilder({ pending, observer, counters, descriptor }) {
         refId: 0,
     };
     return (d, o, row) => {
-        const slot = d[o + 2];
-        if (pending.id[slot] !== d[o + 3]) {
-            throw new Error(`map-elites-v1: no pending row for genome ${d[o + 3]} in slot ${slot}`);
+        const slot = d[o + EVENT.AGENT_DIED.SLOT];
+        if (pending.id[slot] !== d[o + EVENT.AGENT_DIED.GENOME_ID]) {
+            throw new Error(
+                `map-elites-v1: no pending row for genome ${d[o + EVENT.AGENT_DIED.GENOME_ID]} in slot ${slot}`,
+            );
         }
         source.deaths = observer.deaths;
         source.row = row;
         source.slot = slot;
         descriptor.point(source, point);
-        item.spec = d[o + 6];
+        item.spec = d[o + EVENT.AGENT_DIED.SPEC];
         item.cell = cellOf(point[0], point[1]);
         item.row = pending.views[slot];
         item.sigma = pending.sigma[slot];
-        item.id = d[o + 3];
+        item.id = d[o + EVENT.AGENT_DIED.GENOME_ID];
         item.fitness = observer.deaths.fitness[row];
         item.isClone = pending.isClone[slot] === 1;
         item.archiveRef = pending.archiveRef[slot];
@@ -148,10 +150,12 @@ export function createOffers({ config, archive, onOffer, observer, counters, clo
 
     /** A child proved itself: each parent held in the pending table is established and offered. */
     function onProven(/** @type {Float64Array} */ d, /** @type {number} */ o) {
-        for (const id of d[o + 4] === d[o + 5] ? [d[o + 4]] : [d[o + 4], d[o + 5]]) {
+        for (const id of d[o + EVENT.LINE_PROVEN.PARENT_A] === d[o + EVENT.LINE_PROVEN.PARENT_B]
+            ? [d[o + EVENT.LINE_PROVEN.PARENT_A]]
+            : [d[o + EVENT.LINE_PROVEN.PARENT_A], d[o + EVENT.LINE_PROVEN.PARENT_B]]) {
             const taken = ledger.table.take(id);
             if (taken !== undefined) {
-                offerScored({ archive, log, onOffer }, { tick: d[o + 1], item: taken, extra: taken.extra });
+                offerScored({ archive, log, onOffer }, { tick: d[o + EVENT_TICK], item: taken, extra: taken.extra });
             }
         }
     }
@@ -167,14 +171,14 @@ export function createOffers({ config, archive, onOffer, observer, counters, clo
         if (d[o] !== EVENT_TYPE.AGENT_DIED) {
             return;
         }
-        const row = scoredRow(d[o + 3]);
-        if (d[o + 8] >= config.maturityTicks) {
+        const row = scoredRow(d[o + EVENT.AGENT_DIED.GENOME_ID]);
+        if (d[o + EVENT.AGENT_DIED.AGE_TICKS] >= config.maturityTicks) {
             const item = offerOf(d, o, row);
             const extra = scoreFields?.(row);
-            if (ledger.settle(d[o + 2], { tick: d[o + 1], item, extra })) {
-                offerScored({ archive, log, onOffer }, { tick: d[o + 1], item, extra });
+            if (ledger.settle(d[o + EVENT.AGENT_DIED.SLOT], { tick: d[o + EVENT_TICK], item, extra })) {
+                offerScored({ archive, log, onOffer }, { tick: d[o + EVENT_TICK], item, extra });
             }
-            pending.id[d[o + 2]] = 0;
+            pending.id[d[o + EVENT.AGENT_DIED.SLOT]] = 0;
         }
     }
 

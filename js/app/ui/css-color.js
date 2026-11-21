@@ -16,7 +16,7 @@ export const SPEC_CSS = Object.freeze({
 /** The colour of anything with no colour of its own. */
 export const NEUTRAL_CSS = '#8a9bb0';
 
-/** Cause colours, used in order for the births, deaths and combat bars. */
+/** The palette of the flow chart's series that name no cause, and of the combat bars; the causes' own colours come in the layout. */
 export const CAUSE_CSS = Object.freeze(['#5ee6a8', '#6cc6ff', '#ffb454', '#ff5d73', '#b48cff', '#8a9bb0']);
 
 /**

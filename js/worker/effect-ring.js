@@ -21,6 +21,29 @@ export const EFFECT_KIND = Object.freeze({
     FIRST_KILL: 16,
 });
 
+/**
+ * The event of `EVENTS` each effect kind is made from, by `EFFECT_KIND` name; null for a kind the renderer-side flag edges
+ * make (`BITE`, `ESCAPED`), which no event carries. `MATED` is made from the `AGENT_BORN` of a mating child.
+ */
+export const EFFECT_SOURCE = Object.freeze({
+    BORN: 'AGENT_BORN',
+    DIED: 'AGENT_DIED',
+    BITE: null,
+    ALARM: 'ALARM_CALLED',
+    PACK_CALL: 'PACK_CALLED',
+    SMOKE: 'SMOKE_RELEASED',
+    ESCAPED: null,
+    MATED: 'AGENT_BORN',
+    POLLINATED: 'PATCH_SEEDED',
+    STAMPEDE: 'HERD_STAMPEDE',
+    STRAIN_EMERGED: 'STRAIN_EMERGED',
+    HERD_DIED: 'HERD_ANIMAL_DIED',
+    DUNG_DROPPED: 'HERD_SEEDED',
+    CALF_BORN: 'HERD_ANIMAL_BORN',
+    PATCH_WILTED: 'PATCH_DIED',
+    FIRST_KILL: 'HUNTER_KILL',
+});
+
 /** Records the log holds; when full the oldest are dropped. */
 export const EFFECT_CAPACITY = 512;
 

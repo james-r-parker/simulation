@@ -19,7 +19,7 @@
 // The arrays are derived state beside the split-gate counters: zeroed by `freeAgent`, outside `worldHash`, no RNG, no
 // allocation per tick.
 
-import { EVENT_TYPE, pushEvent } from './events.js';
+import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 
 /** Unproven living children at which a proven parent stops splitting. */
 export const UNPROVEN_KIDS_BRAKE = 2;
@@ -108,11 +108,11 @@ function releaseParents(world, child, establish) {
 function pushProven(world, slot) {
     const o = pushEvent(world.events, EVENT_TYPE.LINE_PROVEN, world.tick);
     const d = world.events.data;
-    d[o + 2] = slot;
-    d[o + 3] = world.genomeId[slot];
-    d[o + 4] = world.parentA[slot];
-    d[o + 5] = world.parentB[slot];
-    d[o + 6] = world.lineageId[slot];
+    d[o + EVENT.LINE_PROVEN.SLOT] = slot;
+    d[o + EVENT.LINE_PROVEN.GENOME_ID] = world.genomeId[slot];
+    d[o + EVENT.LINE_PROVEN.PARENT_A] = world.parentA[slot];
+    d[o + EVENT.LINE_PROVEN.PARENT_B] = world.parentB[slot];
+    d[o + EVENT.LINE_PROVEN.LINEAGE_ID] = world.lineageId[slot];
 }
 
 /**

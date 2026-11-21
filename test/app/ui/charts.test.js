@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { columns, createHistory, pushSample } from '../../../js/app/history.js';
 import { chartDefs, mountCharts, riverSeries, tickLabel } from '../../../js/app/ui/charts.js';
 import { createSampler } from '../../../js/app/ui/chart-data.js';
+import { CAUSE_CSS } from '../../../js/app/ui/css-color.js';
 import { fakeDocument } from '../helpers/fake-dom.js';
 
 /** @param {number} id @returns {string} a colour per family */
@@ -65,6 +66,18 @@ function filled() {
     }
     return { sampler, history };
 }
+
+describe('the flow chart colours', () => {
+    it('draws a cause series in the colour the layout names for it, else from the palette', () => {
+        const sampler = createSampler({ ...WORLD, causeColours: { born: { MATE: '#123456' }, died: {} } });
+        const flow = chartDefs(sampler.groups, COLOR_OF)[2];
+        const bars = flow.series({ bars: () => 'bars-path' });
+        const stroke = (/** @type {string} */ label) => bars.find((/** @type {any} */ s) => s.label === label)?.stroke;
+        expect(stroke('mate')).toBe('#123456');
+        expect(stroke('split')).toBe(CAUSE_CSS[1]);
+        expect(stroke('eaten')).toBe(CAUSE_CSS[1]);
+    });
+});
 
 describe('chartDefs', () => {
     it('lists the five charts in drawer order', () => {

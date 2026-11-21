@@ -6,7 +6,7 @@ import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from '
 import { dirname, join } from 'node:path';
 import { decodeArchive } from '../js/evo/archive-codec.js';
 import { CELLS, ELITE, archiveCv, lowerBound, placeOf, refOf } from '../js/evo/archive.js';
-import { GENOME_SPECS } from '../js/evo/genome.js';
+import { SPEC, SPEC_NAMES } from '../js/sim/specs.js';
 import { createConfig } from '../js/sim/config.js';
 import { brainLayout } from '../js/sim/brain-layout.js';
 import { createRng, fork } from '../js/sim/rng.js';
@@ -141,14 +141,14 @@ export function verdictOf(pairs, outcomes) {
  */
 function archiveSubjects(archive, group) {
     const cv = archiveCv(archive);
-    return GENOME_SPECS.flatMap((_, spec) =>
+    return SPEC_NAMES.flatMap((_, spec) =>
         Array.from({ length: CELLS }, (__, cell) => placeOf(spec, cell, ELITE))
             .filter((place) => archive.occupied[place] === 1)
             .map((place) => {
                 const elite = refOf(archive, place);
                 const bound = lowerBound(archive, place, cv);
                 return {
-                    name: `${group}-${GENOME_SPECS[spec]}-cell${elite.cell}`,
+                    name: `${group}-${SPEC_NAMES[spec]}-cell${elite.cell}`,
                     id: elite.id,
                     spec,
                     weights: Float32Array.from(elite.row),
@@ -400,8 +400,8 @@ export async function runStudy(args, { print = () => {} } = {}) {
     for (const line of skipped) {
         print(`skipped ${line}`);
     }
-    const foragers = subjects.filter((s) => s.spec === 0).length;
-    const predators = subjects.filter((s) => s.spec === 1).length;
+    const foragers = subjects.filter((s) => s.spec === SPEC.FORAGER).length;
+    const predators = subjects.filter((s) => s.spec === SPEC.PREDATOR).length;
     if (subjects.length < 120 || foragers < 40 || predators < 40) {
         print(
             `warning: ${subjects.length} genomes (${foragers} forager, ${predators} predator); the study wants 120 and 40 each`,

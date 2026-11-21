@@ -5,13 +5,11 @@
 // contact pass over the arena's spatial hash and the final clamp, bit-identical to the JS loops they replaced.
 // Steering, thrust, trampling, the walls and every energy rule stay in JS (`js/sim/physics.js`).
 
+import { ownedFields } from './agent-arrays.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 
-/** World fields the physics kernels read or write that no earlier kernel took into the arena. */
-export const PHYSICS_FIELDS = Object.freeze(['vx', 'vy', 'spec', 'sprintBySpec', 'contacts', 'sprintFactor']);
-
 /** The arena arrays whose byte offsets head the physics parameter block, in `PhysicsParams` order. */
-const ARRAYS = Object.freeze([
+export const PHYSICS_ARRAYS = Object.freeze([
     'alive',
     'x',
     'y',
@@ -31,6 +29,17 @@ const ARRAYS = Object.freeze([
     'contacts',
     'physicsDoubles',
     'physicsImpact',
+    'sprintFactor',
+]);
+
+/**
+ * World fields the physics kernels read or write that no earlier kernel took into the arena: the agent arrays it owns
+ * (`agent-arrays.js`), in `PHYSICS_ARRAYS` order, then the sprint tables and the contact list.
+ */
+export const PHYSICS_FIELDS = Object.freeze([
+    ...ownedFields('physics', PHYSICS_ARRAYS),
+    'sprintBySpec',
+    'contacts',
     'sprintFactor',
 ]);
 
@@ -57,7 +66,7 @@ const DOUBLES = Object.freeze([
 export function physicsSpecs(world) {
     return [
         ...PHYSICS_FIELDS.map((name) => /** @type {any} */ ([name, world[name].constructor, world[name].length])),
-        ['physicsParams', Int32Array, ARRAYS.length + WORDS.length],
+        ['physicsParams', Int32Array, PHYSICS_ARRAYS.length + WORDS.length],
         ['physicsDoubles', Float64Array, DOUBLES.length],
         ['physicsImpact', Float64Array, world.config.maxAgents],
     ];
@@ -72,7 +81,7 @@ export function physicsSpecs(world) {
 export function writePhysicsParams(arena, world) {
     const { config, hash } = world;
     arena.views.physicsParams.set([
-        ...ARRAYS.map((name) => arena.offsets[name]),
+        ...PHYSICS_ARRAYS.map((name) => arena.offsets[name]),
         config.maxAgents,
         world.obsX.length,
         OUTPUT_COUNT,

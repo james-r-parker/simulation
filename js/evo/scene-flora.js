@@ -1,6 +1,6 @@
 // Measures plant diet composition and the change of diet between seasons.
 import { FOOD_KIND } from '../sim/carcass.js';
-import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE, EVENT, EVENT_TICK } from '../sim/events.js';
 import { FLORA_NAMES } from '../sim/config-flora.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { bySuffix, none, ok } from './metrics-stats.js';
@@ -101,15 +101,15 @@ function trackCondition(scene, world) {
 function trackEvents(scene, world) {
     const { data, count } = world.events;
     for (let at = 0; at < count * EVENT_STRIDE; at += EVENT_STRIDE) {
-        if (data[at + 1] < BURN_IN_TICKS) {
+        if (data[at + EVENT_TICK] < BURN_IN_TICKS) {
             continue;
         }
         if (data[at] === EVENT_TYPE.AGENT_DIED) {
             scene.deaths++;
-            scene.poisoned += Number(data[at + 4] === DEATH_CAUSE.POISONED);
+            scene.poisoned += Number(data[at + EVENT.AGENT_DIED.CAUSE] === DEATH_CAUSE.POISONED);
         } else if (data[at] === EVENT_TYPE.PATCH_SEEDED) {
             scene.pollinations++;
-        } else if (data[at] === EVENT_TYPE.PATCH_DIED && data[at + 1] > BURN_IN_TICKS) {
+        } else if (data[at] === EVENT_TYPE.PATCH_DIED && data[at + EVENT_TICK] > BURN_IN_TICKS) {
             scene.patchDeaths++;
         }
     }

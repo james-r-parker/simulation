@@ -3,7 +3,8 @@
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
 import { nextFloat } from '../sim/rng.js';
-import { CENTRE_X, CENTRE_Y, HUNTER_ENERGY, PREDATOR_SPEC, SUBJECT_ENERGY, around } from './memory-probe-scenarios.js';
+import { CENTRE_X, CENTRE_Y, HUNTER_ENERGY, SUBJECT_ENERGY, around } from './memory-probe-scenarios.js';
+import { SPEC } from '../sim/specs.js';
 
 /** Rows in a sequence, and the leading rows `check` is not asked about (a recurrent brain may need a tick to commit). */
 export const SEQUENCE_TICKS = 6;
@@ -85,7 +86,7 @@ export function signedBearing(rng, lowDeg, highDeg) {
  * @returns {import('./pool-discrimination-stage.js').StagedAgent} the subject at the arena's centre, slot 0
  */
 export function subjectAgent(spec, angle) {
-    const energy = spec === PREDATOR_SPEC ? HUNTER_ENERGY : SUBJECT_ENERGY;
+    const energy = spec === SPEC.PREDATOR ? HUNTER_ENERGY : SUBJECT_ENERGY;
     return { x: CENTRE_X, y: CENTRE_Y, angle, spec, energy };
 }
 

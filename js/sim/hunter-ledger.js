@@ -4,7 +4,7 @@
 // (hunter-learning.md T1); `drainEvents` logs it at debug level. The arrays are zeroed by
 // `freeAgent` and are outside `worldHash` and the snapshot, so no golden moves. No RNG, no clock, no allocation.
 
-import { BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
+import { BORN_CAUSE, EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { basinOf } from './eras.js';
 import { slotOfGenome } from './merit-state.js';
 import { isDependentKiller } from './dependent-killer.js';
@@ -129,10 +129,10 @@ export function noteBiteLedger(world, biter, { gained, fatal, kick, victim }) {
 function pushHunterKill(world, killer) {
     const o = pushEvent(world.events, EVENT_TYPE.HUNTER_KILL, world.tick);
     const d = world.events.data;
-    d[o + 2] = world.genomeId[killer];
-    d[o + 3] = world.ageTicks[killer];
-    d[o + 4] = world.ledgerKills[killer];
-    d[o + 5] = isDependentKiller(world, killer) ? 1 : 0;
+    d[o + EVENT.HUNTER_KILL.GENOME_ID] = world.genomeId[killer];
+    d[o + EVENT.HUNTER_KILL.AGE_TICKS] = world.ageTicks[killer];
+    d[o + EVENT.HUNTER_KILL.KILLS] = world.ledgerKills[killer];
+    d[o + EVENT.HUNTER_KILL.DEPENDENT] = isDependentKiller(world, killer) ? 1 : 0;
 }
 
 /**
@@ -163,19 +163,19 @@ export function noteLedgerKill(world, victim) {
 export function noteHunterDeath(world, slot, cause) {
     const o = pushEvent(world.events, EVENT_TYPE.HUNTER_LEDGER, world.tick);
     const d = world.events.data;
-    d[o + 2] = world.genomeId[slot];
-    d[o + 3] = world.ageTicks[slot];
-    d[o + 4] = (world.ledgerKills[slot] * 8 + cause) * 8 + world.birthSource[slot];
-    d[o + 5] = world.ledgerCarcass[slot];
-    d[o + 6] = world.ledgerStanding[slot];
-    d[o + 7] = world.ledgerMove[slot];
-    d[o + 8] = world.ledgerSprint[slot];
-    d[o + 9] = world.ledgerKillEnergy[slot];
-    d[o + 10] = world.ledgerBiteGain[slot];
-    d[o + 11] = world.ledgerBiteCost[slot];
+    d[o + EVENT.HUNTER_LEDGER.GENOME_ID] = world.genomeId[slot];
+    d[o + EVENT.HUNTER_LEDGER.AGE_TICKS] = world.ageTicks[slot];
+    d[o + EVENT.HUNTER_LEDGER.PACKED] = (world.ledgerKills[slot] * 8 + cause) * 8 + world.birthSource[slot];
+    d[o + EVENT.HUNTER_LEDGER.CARCASS_ENERGY] = world.ledgerCarcass[slot];
+    d[o + EVENT.HUNTER_LEDGER.STANDING_ENERGY] = world.ledgerStanding[slot];
+    d[o + EVENT.HUNTER_LEDGER.MOVE_ENERGY] = world.ledgerMove[slot];
+    d[o + EVENT.HUNTER_LEDGER.SPRINT_ENERGY] = world.ledgerSprint[slot];
+    d[o + EVENT.HUNTER_LEDGER.KILL_ENERGY] = world.ledgerKillEnergy[slot];
+    d[o + EVENT.HUNTER_LEDGER.BITE_GAIN_ENERGY] = world.ledgerBiteGain[slot];
+    d[o + EVENT.HUNTER_LEDGER.BITE_COST_ENERGY] = world.ledgerBiteCost[slot];
     const recoil = pushEvent(world.events, EVENT_TYPE.HUNTER_RECOIL_LIFE, world.tick);
-    world.events.data[recoil + 2] = slot;
-    world.events.data[recoil + 3] = world.recoilEnergyLife[slot];
+    world.events.data[recoil + EVENT.HUNTER_RECOIL_LIFE.SLOT] = slot;
+    world.events.data[recoil + EVENT.HUNTER_RECOIL_LIFE.ENERGY] = world.recoilEnergyLife[slot];
     const tally = world.hunterTally;
     tally[0] += 1;
     tally[1] = basinOf(world, world.x[slot]);
@@ -216,8 +216,8 @@ export function closeHunterTally(world) {
     }
     const o = pushEvent(world.events, EVENT_TYPE.LAST_HUNTER_DIED, world.tick);
     const d = world.events.data;
-    d[o + 2] = tally[2];
-    d[o + 3] = tally[1];
-    d[o + 4] = west;
-    d[o + 5] = east;
+    d[o + EVENT.LAST_HUNTER_DIED.GENOME_ID] = tally[2];
+    d[o + EVENT.LAST_HUNTER_DIED.BASIN] = tally[1];
+    d[o + EVENT.LAST_HUNTER_DIED.NON_PREDATORS_WEST] = west;
+    d[o + EVENT.LAST_HUNTER_DIED.NON_PREDATORS_EAST] = east;
 }

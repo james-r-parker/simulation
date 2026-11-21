@@ -53,6 +53,14 @@ describe('oracleSubject', () => {
         expect(left[OUTPUT_INDEX.BITE]).toBeGreaterThan(0);
     });
 
+    it('turns round to food behind it in food-behind, as it does for food ahead, and bites', () => {
+        const left = act('food-behind', scene({ foods: [{ x: 1300, y: 2100 }] }));
+        const right = act('food-behind', scene({ foods: [{ x: 1300, y: 1900 }] }));
+        expect(left[OUTPUT_INDEX.TURN]).not.toBe(0);
+        expect(Math.sign(left[OUTPUT_INDEX.TURN])).toBe(-Math.sign(right[OUTPUT_INDEX.TURN]));
+        expect(left[OUTPUT_INDEX.BITE]).toBeGreaterThan(0);
+    });
+
     it('goes for the safe food of two-foods, round the toxic one that sits on the way', () => {
         const world = scene({
             foods: [

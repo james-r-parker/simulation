@@ -4,7 +4,7 @@
 
 import { OUTPUT_INDEX } from '../sim/brain-layout.js';
 import { canBite } from '../sim/bite-rule.js';
-import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE, EVENT } from '../sim/events.js';
 
 /**
  * The most the pair's distance may exceed the summed radii at the end of a tick and still count as touching: contact
@@ -71,8 +71,11 @@ function noteSubjectDeath(trace, world) {
     const { data, count } = world.events;
     for (let i = 0; i < count; i++) {
         const o = i * EVENT_STRIDE;
-        const starved = data[o] === EVENT_TYPE.AGENT_DIED && data[o + 2] === 0 && data[o + 4] === DEATH_CAUSE.STARVED;
-        const recoiled = data[o] === EVENT_TYPE.HUNTER_RECOIL_LIFE && data[o + 2] === 0;
+        const starved =
+            data[o] === EVENT_TYPE.AGENT_DIED &&
+            data[o + EVENT.AGENT_DIED.SLOT] === 0 &&
+            data[o + EVENT.AGENT_DIED.CAUSE] === DEATH_CAUSE.STARVED;
+        const recoiled = data[o] === EVENT_TYPE.HUNTER_RECOIL_LIFE && data[o + EVENT.HUNTER_RECOIL_LIFE.SLOT] === 0;
         if (starved || recoiled) {
             trace.subjectStarvedOrRecoiled = true;
         }

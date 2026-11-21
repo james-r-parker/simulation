@@ -1,5 +1,5 @@
 // Ages depleted patches and their soil seed banks in slot order.
-import { EVENT_TYPE, pushEvent } from './events.js';
+import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { nextFloat } from './rng.js';
 
 /** Stock below this share of the floor is continuously depleted. */
@@ -49,7 +49,7 @@ export function stepPatchLife(world, patch) {
     world.patchLowTicks[patch] = 0;
     world.patchBank[patch] = c.seedBankTicks;
     const at = pushEvent(world.events, EVENT_TYPE.PATCH_DIED, world.tick);
-    world.events.data[at + 2] = patch;
-    world.events.data[at + 3] = world.patchSpecies[patch];
+    world.events.data[at + EVENT.PATCH_DIED.PATCH] = patch;
+    world.events.data[at + EVENT.PATCH_DIED.SPECIES] = world.patchSpecies[patch];
     return false;
 }
