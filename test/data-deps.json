@@ -176,6 +176,9 @@
     "test/eslint-scope.test.js": [
         "js/sim/step.js"
     ],
+    "test/eval-compare.test.js": [
+        "test"
+    ],
     "test/eval-power.slow.test.js": [
         "evals/power/defaults-floor-on-E150.json"
     ],
