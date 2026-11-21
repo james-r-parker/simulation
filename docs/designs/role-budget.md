@@ -1,6 +1,6 @@
 # Role budget
 
-**Status:** In progress - Phases 1 to 3 are built (T1 to T7: the hunter against each prey, the tiers, the search, `npm run role:budget`, the cross-check, E257; T9 to T12: the defender, its smoke, its scenes and E258; T14 and T15: the scout, its scene and E260); the conformance reviews T8, T13 and T16 are next, then Phase 4 (T17). All five phases are read before any training starts (fair-chase.md, Before any training).
+**Status:** In progress - Phases 1 to 3 are built (T1 to T7, E257; T9 to T12, E258; T14 and T15, E260); the conformance reviews T8, T13 and T16 are next, then Phase 4 (T17). All five phases are read before any training starts (fair-chase.md, Before any training).
 **Validated:** 0c8aa65d (2026-11-21)
 **Scheduled by:** [fair-chase.md](fair-chase.md) step 3 - gate 1 of fair-chase.md "Before any training": Phases 1 to 5 are built on the spec table of body-genes.md Phase 1 and read before T7b and T8 there
 **Depends on:** [body-genes.md](body-genes.md)

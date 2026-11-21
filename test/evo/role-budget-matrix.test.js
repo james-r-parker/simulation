@@ -37,10 +37,10 @@ describe('matrix', () => {
         expect(m.rulesHash).toBe(rulesHash(courser));
         for (const row of m.rows) {
             expect(['ok', 'tight', 'impossible', 'n/a']).toContain(row.status);
-            const steps = {
+            const steps = /** @type {Record<string, string[]>} */ ({
                 'defender:predator': ['hear', 'turn', 'run', 'intercept', 'smoke'],
                 'scout:predator': ['see', 'hear', 'warn', 'turn', 'run'],
-            }[row.name] ?? ['see', 'turn', 'run', 'bite'];
+            })[row.name] ?? ['see', 'turn', 'run', 'bite'];
             expect(Object.keys(row.cells)).toEqual(steps);
         }
     });

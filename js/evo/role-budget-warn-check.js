@@ -35,7 +35,7 @@ export function warnCheck(config, model) {
         ticksReading(row, 'gap when the forager moves', [chain.gapAtStart, scene.ticks.gapAtStart], PX),
         signReading(row, 'the forager gains on the hunter while it turns: the formula holds it still', [
             true,
-            (scene.ticks.gapAtRun ?? 0) >= chain.gapAtRun,
+            Number(scene.ticks.gapAtRun) >= chain.gapAtRun,
         ]),
         signReading(row, 'a forager the formula calls safe is safe in the sim: the formula never flatters it', [
             true,
