@@ -12,7 +12,7 @@ defender:predator
 
 defender:predator defence: smallest single changes that give it
 factor  setting    value   hear turn run intercept smoke  status      file
-x0.75   damping    0.7125  25 200 69 13 X                 impossible  evals/role-budget/shove-cost4-defender-predator-defence-1.json
+x0.75   damping    0.7125  24 200 68 13 X                 impossible  evals/role-budget/shove-cost4-defender-predator-defence-1.json
 x0.5    maxThrust  0.35    8 27 32 8 X                    impossible  evals/role-budget/shove-cost4-defender-predator-defence-2.json
 
 defender:predator smoke: no single setting at the factors tried gives it (or it is already given)

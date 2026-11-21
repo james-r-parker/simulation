@@ -1,282 +1,64 @@
-{
-  "configHash": "66691ce4fb8eec9d",
-  "rows": [
-    {
-      "name": "defender:predator",
-      "cells": {
-        "hear": {
-          "margin": 48,
-          "unit": "ticks",
-          "distance": null,
-          "status": "ok",
-          "capped": false,
-          "binding": false
-        },
-        "turn": {
-          "margin": null,
-          "unit": "ticks",
-          "distance": null,
-          "status": "n/a",
-          "capped": false,
-          "binding": false
-        },
-        "run": {
-          "margin": null,
-          "unit": "ticks",
-          "distance": null,
-          "status": "impossible",
-          "capped": false,
-          "binding": true
-        },
-        "intercept": {
-          "margin": null,
-          "unit": "ticks",
-          "distance": null,
-          "status": "impossible",
-          "capped": false,
-          "binding": false
-        },
-        "smoke": {
-          "margin": null,
-          "unit": "ticks",
-          "distance": null,
-          "status": "impossible",
-          "capped": false,
-          "binding": false
-        }
-      },
-      "status": "impossible",
-      "binding": "run",
-      "detail": {
-        "row": {
-          "name": "defender:predator",
-          "cells": {
-            "hear": {
-              "margin": 48,
-              "unit": "ticks",
-              "distance": null,
-              "status": "ok",
-              "capped": false,
-              "binding": false
-            },
-            "turn": {
-              "margin": null,
-              "unit": "ticks",
-              "distance": null,
-              "status": "n/a",
-              "capped": false,
-              "binding": false
-            },
-            "run": {
-              "margin": null,
-              "unit": "ticks",
-              "distance": null,
-              "status": "impossible",
-              "capped": false,
-              "binding": true
-            },
-            "intercept": {
-              "margin": null,
-              "unit": "ticks",
-              "distance": null,
-              "status": "impossible",
-              "capped": false,
-              "binding": false
-            },
-            "smoke": {
-              "margin": null,
-              "unit": "ticks",
-              "distance": null,
-              "status": "impossible",
-              "capped": false,
-              "binding": false
-            }
-          },
-          "status": "impossible",
-          "binding": "run"
-        },
-        "cells": {
-          "hear": {
-            "margin": 48,
-            "unit": "ticks",
-            "distance": null,
-            "status": "ok",
-            "capped": false,
-            "binding": false
-          },
-          "turn": {
-            "margin": null,
-            "unit": "ticks",
-            "distance": null,
-            "status": "n/a",
-            "capped": false,
-            "binding": false
-          },
-          "run": {
-            "margin": null,
-            "unit": "ticks",
-            "distance": null,
-            "status": "impossible",
-            "capped": false,
-            "binding": true
-          },
-          "intercept": {
-            "margin": null,
-            "unit": "ticks",
-            "distance": null,
-            "status": "impossible",
-            "capped": false,
-            "binding": false
-          },
-          "smoke": {
-            "margin": null,
-            "unit": "ticks",
-            "distance": null,
-            "status": "impossible",
-            "capped": false,
-            "binding": false
-          }
-        },
-        "repel": {
-          "on": true,
-          "breaksBite": false,
-          "energy": 40,
-          "cost": 4,
-          "impulse": 4,
-          "prevented": 0
-        },
-        "run": {
-          "killTick": 27,
-          "contactTick": 23,
-          "alarmTick": 2,
-          "heardTick": 3,
-          "startTick": 5,
-          "interceptTick": null,
-          "repelTick": null,
-          "repels": 0,
-          "bites": 5,
-          "hunterEnergy": 5616.827056512527,
-          "faced": false
-        },
-        "baseline": {
-          "killTick": 27,
-          "contactTick": 23,
-          "alarmTick": 2,
-          "heardTick": -1,
-          "startTick": -1,
-          "interceptTick": null,
-          "repelTick": null,
-          "repels": 0,
-          "bites": 5,
-          "hunterEnergy": 5616.827056512527,
-          "faced": false
-        },
-        "smoke": {
-          "refused": false,
-          "releasePoint": 287,
-          "coast": 227.99999999999977,
-          "facingTicks": 14,
-          "runTicks": 22,
-          "releaseTick": 41,
-          "latestRelease": 7,
-          "hiddenTicks": 0,
-          "escapeNeed": 0,
-          "slackDefender": -34,
-          "slackCaller": -2,
-          "cloud": {
-            "x": 178,
-            "y": 0,
-            "r": 80
-          },
-          "cell": {
-            "margin": null,
-            "unit": "ticks",
-            "distance": null,
-            "status": "impossible",
-            "capped": false,
-            "binding": false
-          }
-        },
-        "defenderBite": {
-          "taken": 50,
-          "kick": 10.311111111111112
-        },
-        "binding": "run"
-      }
-    }
-  ],
-  "model": {
-    "reactionTicks": 2,
-    "hearThreshold": 0.1,
-    "breakAngle": 1.5707963267948966,
-    "tightTicks": 5,
-    "preySprint": "rationed",
-    "hunterShare": 0.1,
-    "foodDensity": null,
-    "naiveEffort": 0.5,
-    "catchShare": 0.3,
-    "defenderGap": 150,
-    "smokeGap": 240,
-    "reliableSight": false
-  },
-  "rulesHash": "433cbf9ce687a085",
-  "choice": null,
-  "searched": [],
-  "defenderSearch": [
-    {
-      "goal": "defence",
-      "findings": [
-        {
-          "path": "damping",
-          "factor": 0.75,
-          "value": 0.7124999999999999,
-          "goal": "defence",
-          "margins": {
-            "hear": 25,
-            "turn": 200,
-            "run": 69,
-            "intercept": 13,
-            "smoke": null
-          },
-          "status": "impossible",
-          "overrides": {
-            "defenderRepelEnergy": 40,
-            "defenderRepelImpulse": 4,
-            "defenderRepelCost": 4,
-            "damping": 0.7124999999999999
-          }
-        },
-        {
-          "path": "maxThrust",
-          "factor": 0.5,
-          "value": 0.35,
-          "goal": "defence",
-          "margins": {
-            "hear": 8,
-            "turn": 27,
-            "run": 32,
-            "intercept": 8,
-            "smoke": null
-          },
-          "status": "impossible",
-          "overrides": {
-            "defenderRepelEnergy": 40,
-            "defenderRepelImpulse": 4,
-            "defenderRepelCost": 4,
-            "maxThrust": 0.35
-          }
-        }
-      ],
-      "files": [
-        "evals/role-budget/shove-cost4-defender-predator-defence-1.json",
-        "evals/role-budget/shove-cost4-defender-predator-defence-2.json"
-      ]
-    },
-    {
-      "goal": "smoke",
-      "findings": [],
-      "files": []
-    }
-  ],
-  "check": null
-}
+role budget  config 66691ce4fb8eec9d  rules 433cbf9ce687a085
+model {"reactionTicks":2,"hearThreshold":0.1,"breakAngle":1.5707963267948966,"tightTicks":5,"preySprint":"rationed","hunterShare":0.1,"foodDensity":null,"naiveEffort":0.5,"catchShare":0.3,"defenderGap":150,"smokeGap":240,"reliableSight":false}
+
+row                hear  turn  run  intercept  smoke  status      binding
+defender:predator  48    -     X    X          X      impossible  run
+
+defender:predator
+  alarm tick 2  heard tick 3  defender moves tick 5  touches the hunter never  caller dies tick 27 (no defender) / tick 27
+  shove on (energy 40, impulse 4, cost 4): breaks the bite no, prevents 0 bite energy, takes 40 from the hunter
+  a hunter's bite on the defender takes 50 and costs the hunter 10.3 of kick
+  smoke: release at tick 41 (walk 22, turn 14), latest 7; hidden 0 ticks, caller needs 0 to leave the view; slack defender -34, caller -2
+
+defender:predator defence: smallest single changes that give it
+factor  setting    value   hear turn run intercept smoke  status      file
+x0.75   damping    0.7125  24 200 68 13 X                 impossible  evals/role-budget/shove-cost4-defender-predator-defence-1.json
+x0.5    maxThrust  0.35    8 27 32 8 X                    impossible  evals/role-budget/shove-cost4-defender-predator-defence-2.json
+
+defender:predator smoke: no single setting at the factors tried gives it (or it is already given)
+
+body        reading                      formula  sim      difference  tolerance
+forager     energy per 100 ticks         102.725  102.725  0.000%      0.100%     ok
+forager     sprint energy per 100 ticks  227.725  227.725  0.000%      0.100%     ok
+forager     cruise speed                 8.000    8.000    0.000%      0.010%     ok
+forager     sprint speed                 12.000   12.000   0.000%      0.010%     ok
+forager     turn radius                  21.537   21.509   0.131%      0.500%     ok
+forager     sprint turn radius           32.305   32.263   0.131%      0.500%     ok
+predator    energy per 100 ticks         58.655   58.655   0.000%      0.100%     ok
+predator    sprint energy per 100 ticks  190.679  190.679  0.000%      0.100%     ok
+predator    cruise speed                 8.000    8.000    0.000%      0.010%     ok
+predator    sprint speed                 14.400   14.400   0.000%      0.010%     ok
+predator    turn radius                  41.718   41.809   0.217%      0.500%     ok
+predator    sprint turn radius           75.092   75.255   0.217%      0.500%     ok
+reproducer  energy per 100 ticks         102.725  102.725  0.000%      0.100%     ok
+reproducer  sprint energy per 100 ticks  227.725  227.725  0.000%      0.100%     ok
+reproducer  cruise speed                 8.000    8.000    0.000%      0.010%     ok
+reproducer  sprint speed                 12.000   12.000   0.000%      0.010%     ok
+reproducer  turn radius                  21.537   21.509   0.131%      0.500%     ok
+reproducer  sprint turn radius           32.305   32.263   0.131%      0.500%     ok
+scout       energy per 100 ticks         104.743  104.742  0.000%      0.100%     ok
+scout       sprint energy per 100 ticks  229.743  229.742  0.000%      0.100%     ok
+scout       cruise speed                 8.000    8.000    0.000%      0.010%     ok
+scout       sprint speed                 12.000   12.000   0.000%      0.010%     ok
+scout       turn radius                  21.537   21.509   0.131%      0.500%     ok
+scout       sprint turn radius           32.305   32.263   0.131%      0.500%     ok
+defender    energy per 100 ticks         121.925  121.925  0.000%      0.100%     ok
+defender    sprint energy per 100 ticks  270.925  270.925  0.000%      0.100%     ok
+defender    cruise speed                 8.000    8.000    0.000%      0.010%     ok
+defender    sprint speed                 12.000   12.000   0.000%      0.010%     ok
+defender    turn radius                  21.537   21.509   0.131%      0.500%     ok
+defender    sprint turn radius           32.305   32.263   0.131%      0.500%     ok
+
+row                reading                                                            formula  scene   tolerance
+defender:predator  alarm tick                                                         2        2       0 ticks         ok
+defender:predator  heard tick                                                         3        3       0 ticks         ok
+defender:predator  defender moves                                                     5        5       0 ticks         ok
+defender:predator  kill tick, no defender                                             27       27      2 ticks         ok
+defender:predator  defender touches the hunter                                        none     none    10% or 2 ticks  ok
+defender:predator  defender lands its power before the kill                           false    false   agree           ok
+smoke:prey         hidden ticks                                                       15       15      10% or 2 ticks  ok
+smoke:prey         cloud centre, px ahead of the hunter                               131      131.08  1 px            ok
+smoke:prey         cloud life                                                         179      179     0 ticks         ok
+smoke:prey         out of view when the cover ends                                    false    false   agree           ok
+smoke:defender     release tick                                                       16       16      10% or 2 ticks  ok
+smoke:defender     a defender facing the hunter is refused: the cloud is not between  true     true    agree           ok

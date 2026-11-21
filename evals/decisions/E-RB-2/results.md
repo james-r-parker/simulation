@@ -19,6 +19,11 @@ model's `defenderGap`) and facing it, hears the call 1 tick later, moves 2 ticks
 | shove cost 2 | 48   | -    | X   | X         | X     | impossible | run        | never              | tick 27 / tick 27                | 2 settings          | none              |
 | shove cost 4 | 48   | -    | X   | X         | X     | impossible | run        | never              | tick 27 / tick 27                | 2 settings          | none              |
 
+Re-run on 2026-11-21 after the Phase 1 review fixes (the size gate read on each bite by `mayBite`, `strikeMissCost` charged to a
+hunter with nothing in its jaws, the hunter's start read through `frameOptions` for the `perfect` tier): no verdict changes. Every
+row, cell, binding and kill tick above is as before; the one number that moved is the search's `damping` x0.75 setting, whose hear
+and run slack read 24 and 68 ticks where they read 25 and 69 (its intercept slack is still 13).
+
 ## Reading
 
 - **The prediction held:** every cell the defender needs is red at the defaults, and with the shove on the row is still red.
