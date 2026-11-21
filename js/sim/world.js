@@ -25,6 +25,7 @@ import { rayReachTable } from './ray-reach.js';
 import { terrainRockCount } from './terrain.js';
 import { createObserverScratch } from './observer-scratch.js';
 import { attachWasm } from './wasm-arena.js';
+import { laneOnForAnySpec } from './body-lanes.js';
 import { allocLanes } from './lane-state.js';
 import { allocEffects } from './effects.js';
 import { allocSprintState, resetSprintSlot } from './sprint-store.js';
@@ -115,7 +116,7 @@ function allocAgentArrays(world, layout) {
             ...diseaseSpecs(),
             ...mateRankSpecs(),
             ...rewardSpecs(),
-            ...(world.config.predatorRestTicks > 0 ? singles(Uint16Array, ['restTimer']) : []),
+            ...(laneOnForAnySpec(world.config, 'predatorRestTicks') ? singles(Uint16Array, ['restTimer']) : []),
         ],
         n,
     );
