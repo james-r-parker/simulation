@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1 and 2 are built: the flip reflex, hunter territory and reward-gated learning are always on; [realistic-keepers.md](realistic-keepers.md) re-judged the removed mechanisms (E137, E138) and kept all but provisioning. Phase 3 (proposed, T26 to T37) teaches the bite reflex to say no; it waits for the bite diagnosis of [training.md](training.md) (T20).
 **Validated:** edd4cd4b (2026-11-07)
-**Scheduled by:** [fair-chase.md](fair-chase.md) step 7 - the refusal wires and the too-big body, after hunter-practice.md names what a hunter still gets wrong
+**Scheduled by:** [fair-chase.md](fair-chase.md) step 8 - the refusal wires and the too-big body, after hunter-practice.md names what a hunter still gets wrong
 **Depends on:** [natural-selection.md](natural-selection.md), [training.md](training.md)
 
 On the world after E112 (`maxFood` 3600, short-lived toxic caps) hunters live on carcasses and chance bites and starve:

@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1, 2 and 5 are built (interface checks; `audit:chase` with E-SM-1 falsified, E185; hunter eyes adopted on a 64-seed keep rule, E186). Phase 3 code is built (T6 to T9: `audit:signals`, the lesson oracles, `probe:learn`); its runs (T10 to T12) and Phase 4 are not. An audit of what a brain is told and what its outputs do.
 **Validated:** f5ebac76 (2026-11-15)
-**Scheduled by:** [fair-chase.md](fair-chase.md) step 3 - the chase envelope runs (T10 to T12) and Phase 4 are read on the bodies the sprint store leaves
+**Scheduled by:** [fair-chase.md](fair-chase.md) step 4 - the chase envelope runs (T10 to T12) and Phase 4 are read on the bodies the sprint store leaves
 **Depends on:** [training.md](training.md)
 
 A brain reads 92 inputs (54 pooled ray values, 2 food hues, 36 body inputs: `brainLayout` in `js/sim/brain-layout.js`, `writeBodyInputs` in `js/sim/body-inputs.js`) and writes 11 outputs (`OUTPUT_INDEX`). `actAll` in `js/sim/physics.js` turns two of them into motion. Trained predators learn to close and do not learn to kill ([training.md](training.md), T12 to T22), and the scripted `memoryless` reference wins `prey-ahead` on 0.31 of trials. Three causes fit that: selection, a fault or a limit in the interface, or a chase the body cannot win. This doc tests the second and third. It answers four questions: is the interface correct, is the chase fair, is each input and output alive, and is each lesson both reachable by evolution and possible with these senses.

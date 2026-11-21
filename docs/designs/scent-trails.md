@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 detectors and E-ST2-1 baseline complete (E210); the trail probe remains before Phase 2.
 **Validated:** 3a150d75 (2026-11-17)
-**Scheduled by:** [fair-chase.md](fair-chase.md) step 8 - trail and carrion scent; it builds on stillness.md and on body-priced carcasses
+**Scheduled by:** [fair-chase.md](fair-chase.md) step 9 - trail and carrion scent; it builds on stillness.md and on body-priced carcasses
 **Depends on:** [honest-budgets.md](honest-budgets.md), [senses-and-motor.md](senses-and-motor.md)
 
 Today, when a fleeing prey breaks line of sight behind a rock ring or slips between the 16 rays at `300`–`400` px, it ceases to exist for the pursuer. Likewise, a fresh carcass is invisible outside `visionRange`, so scavengers and juvenile predators only find kills by stumbling within sight. Meanwhile, the brain already has left/right scent antennae (`BODY_INPUT.SCENT` and `BODY_INPUT.HUNT_SCENT` in `js/sim/brain-layout.js`) reading `world.danger` and `world.attack` pheromone grids.

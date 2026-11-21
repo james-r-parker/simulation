@@ -2,7 +2,7 @@
 
 **Status:** Proposed - a closed-form budget of each specialisation's job (hunt, defend, warn, eat and breed, clear a herd) with a margin per step, three performer tiers for the hunter and a cross-check of every cell against a scripted scene; Phase 1 is first, and all five phases are read before any training starts (fair-chase.md, Before any training).
 **Validated:** f77acde1 (2026-11-21)
-**Scheduled by:** [fair-chase.md](fair-chase.md) step 2 - gate 1 of fair-chase.md "Before any training": Phases 1 to 5 are built on the spec table of body-genes.md Phase 1 and read before T7b and T8 there
+**Scheduled by:** [fair-chase.md](fair-chase.md) step 3 - gate 1 of fair-chase.md "Before any training": Phases 1 to 5 are built on the spec table of body-genes.md Phase 1 and read before T7b and T8 there
 **Depends on:** [body-genes.md](body-genes.md)
 
 > Companion to [senses-and-motor.md](senses-and-motor.md), whose `npm run audit:chase` oracles are the first cross-check, and to [body-genes.md](body-genes.md), which lets the budget read a spec's gene ranges.
@@ -17,22 +17,23 @@ Scenes served: **A real chase** (the hunter's budget), and every scene where a r
 
 Rows are a performer against the pressure on it; columns are the steps. A cell holds the margin of that step, or `-` when the step is not part of the job.
 
-| Row                   | Steps used                                                                                             | Phase |
-| --------------------- | ------------------------------------------------------------------------------------------------------ | ----- |
-| `predator:forager`    | see, turn, run, bite                                                                                   | 1     |
-| `predator:reproducer` | see, turn, run, bite                                                                                   | 1     |
-| `predator:scout`      | see, turn, run, bite                                                                                   | 1     |
-| `predator:defender`   | see, turn, run, bite                                                                                   | 1     |
-| `predator:average`    | the weighted mean of the four rows above (a hunter that cannot tell its targets apart)                 | 1     |
-| `predator:best`       | the row with the largest slack (a hunter that picks its target)                                        | 1     |
-| `defender:predator`   | hear, turn, run, intercept, smoke (the defender's and the caller's)                                    | 2     |
-| `scout:predator`      | see, hear, warn, turn, run                                                                             | 3     |
-| `forager:predator`    | eat, breed, run                                                                                        | 4     |
-| `reproducer:predator` | eat, breed, run                                                                                        | 4     |
-| `predator:living`     | eat, breed (a hunter's life: do its kills pay for its chases and reach the split gate)                 | 4     |
-| `<spec>:first-meal`   | reach, find, eat (each of the five specs, from where and with what it is born, to its first good meal) | 4     |
-| `<spec>:idle`         | sit (a body that never moves, against one that searches: the sitter dies first, or the row is red)     | 4     |
-| `<spec>:herd`         | see, turn, run, survive (each of the five specs against a stampeding herd)                             | 5     |
+| Row                   | Steps used                                                                                                               | Phase |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----- |
+| `predator:forager`    | see, turn, run, bite                                                                                                     | 1     |
+| `predator:reproducer` | see, turn, run, bite                                                                                                     | 1     |
+| `predator:scout`      | see, turn, run, bite                                                                                                     | 1     |
+| `predator:defender`   | see, turn, run, bite                                                                                                     | 1     |
+| `predator:average`    | the weighted mean of the four rows above (a hunter that cannot tell its targets apart)                                   | 1     |
+| `predator:best`       | the row with the largest slack (a hunter that picks its target)                                                          | 1     |
+| `defender:predator`   | hear, turn, run, intercept, smoke (the defender's and the caller's)                                                      | 2     |
+| `scout:predator`      | see, hear, warn, turn, run                                                                                               | 3     |
+| `forager:predator`    | eat, breed, run                                                                                                          | 4     |
+| `reproducer:predator` | eat, breed, run                                                                                                          | 4     |
+| `predator:living`     | eat, breed (a hunter's life: do its kills pay for its chases and reach the split gate)                                   | 4     |
+| `<spec>:first-meal`   | reach, find, eat (each of the five specs, from where and with what it is born, to its first good meal)                   | 4     |
+| `<spec>:idle`         | sit (a body that never moves, against one that searches: the sitter dies first, or the row is red)                       | 4     |
+| `<spec>:herd`         | see, turn, run, survive (each of the five specs against a stampeding herd)                                               | 5     |
+| `pack:forager`        | two hunters, one rallied by the other's call, against one alone: `packGain` ([status-effects.md](status-effects.md) T13) | 1     |
 
 A cell is `{margin, unit, distance, status, binding}`. `margin` is the slack in ticks. `status` is `ok` (margin at least `tightTicks`), `tight` (0 to under `tightTicks`), `impossible` (a perfect performer fails; margin `null`) or `n/a`. `binding` names the step whose slack is smallest in the row. A row is `impossible` when any of its cells is.
 
@@ -219,7 +220,7 @@ A body that stands still and does nothing is common in the first generations. Se
 
 At the defaults a still body cools from `temperatureStart` 50 by 0.0075 a tick, so it leaves the optimal band (40) only after about 1330 ticks, and the cold can at most double its passive loss; a body cruising in search spends about 1.03 energy a tick, almost all of it on movement. These are readings of the keys, not anchors: T17c computes `idleLife`, `activeLife` and the ratio for each spec and birth rule.
 
-The row gates any rise in birth energy (`entrantEnergy`, `initialEnergy`, `childEnergyMin`): `--search` on a first-meal row that is red tries the birth energy together with the cold settings, and accepts a change only when the first-meal row turns `ok` and `idleRatio` does not rise. The cold settings it may move are `temperatureStart`, `temperatureLossPassive`, `temperaturePassiveLossFactor` and the cold stack of [body-genes.md](body-genes.md) Phase 3 (`coldStackRate`, `coldStackMax`).
+The row gates any rise in birth energy (`entrantEnergy`, `initialEnergy`, `childEnergyMin`): `--search` on a first-meal row that is red tries the birth energy together with the cold settings, and accepts a change only when the first-meal row turns `ok` and `idleRatio` does not rise. The cold settings it may move are `temperatureStart`, `temperatureLossPassive`, `temperaturePassiveLossFactor` and the `chilled` effect of [status-effects.md](status-effects.md) (`coldStackRate`, `coldStackMax`).
 
 ### A hunter's living (`predator:living`)
 
