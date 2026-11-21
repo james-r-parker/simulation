@@ -2,6 +2,7 @@
 
 import { BODY_INPUT, OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
+import { EFFECT, levelOf } from './effects.js';
 import { isReadyToMate } from './mate-eligibility.js';
 import { writeRefugeInputs } from './refuge-sense.js';
 import { samplePheromone } from './pheromones.js';
@@ -51,7 +52,7 @@ export function writeBodyInputs(world, slot, cH = detCos(world.angle[slot]), sH 
     out[o + 2] = (-vx * sH + vy * cH) / maxVelocity;
     out[o + 3] = world.turnRate[slot] / maxTurn;
     out[o + 4] = world.size[slot] / (baseSize + maxEnergy / energyToSize);
-    out[o + 5] = world.pregnancy[slot] > 0 ? 1 : 0;
+    out[o + 5] = levelOf(world, slot, EFFECT.PREGNANT);
     out[o + 6] = isReadyToMate(world, slot) ? 1 : 0;
     out[o + 7] = samplePheromone(world, world.danger, x, y);
     out[o + 8] = samplePheromone(world, world.attack, x, y);

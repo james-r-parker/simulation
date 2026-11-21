@@ -10,6 +10,8 @@ import {
     RAY_CHANNELS,
     TRAIT_SLOTS,
 } from '../sim/brain-layout.js';
+import { EFFECTS } from '../sim/effect-list.js';
+import { levelOf } from '../sim/effects.js';
 import { snapshotLayout } from '../sim/snapshot.js';
 import { EFFECT_CAPACITY, EFFECT_HEADER_WORDS, EFFECT_WORDS } from './effects.js';
 
@@ -41,9 +43,9 @@ const BODY_SENSE_LABELS = BRAIN_IO.sense.flatMap((group) => group.labels).slice(
 /**
  * The names the inspector labels its bars with.
  * @returns {{rayChannels: string[], bodyInputs: {name: string, group: string}[], outputs: string[],
- *   traits: {name: string, kind: string, describe: string}[], bodySense: string[]}} the ten ray channel names, the
- *   37 body inputs with their group, the eleven output names in `OUTPUT_INDEX` order, each trait of the registry and
- *   the thirteen body sense names
+ *   traits: {name: string, kind: string, describe: string}[], bodySense: string[], effects: {name: string, visible: boolean}[]}}
+ *   the ten ray channel names, the 37 body inputs with their group, the eleven output names in `OUTPUT_INDEX` order,
+ *   each trait of the registry, the thirteen body sense names and each effect of the registry
  */
 export function inspectLabels() {
     return {
@@ -52,6 +54,7 @@ export function inspectLabels() {
         outputs: BRAIN_IO.outputs.map((output) => output.name),
         traits: TRAITS.map((trait) => ({ name: trait.name, kind: trait.kind, describe: trait.describe })),
         bodySense: [...BODY_SENSE_LABELS],
+        effects: EFFECTS.map((effect) => ({ name: effect.name, visible: effect.visible })),
     };
 }
 
@@ -76,7 +79,8 @@ export function workerLayout(config) {
         outputCount +
         INSPECT_COUNTERS.length +
         TRAITS.length +
-        BODY_SENSE_VALUES;
+        BODY_SENSE_VALUES +
+        EFFECTS.length;
     return {
         ...sim,
         simBytes: sim.bytes,
@@ -91,6 +95,7 @@ export function workerLayout(config) {
         counterCount: INSPECT_COUNTERS.length,
         traitCount: TRAITS.length,
         senseCount: BODY_SENSE_VALUES,
+        effectCount: EFFECTS.length,
     };
 }
 
@@ -156,6 +161,19 @@ function writeBody(f32, start, { world, slot }) {
 }
 
 /**
+ * Writes each effect's level for the slot in `EFFECTS` order (0 for off, 1 for on, a share or a stack count above that).
+ * @param {Float32Array} f32 the float view
+ * @param {number} start the first word to write
+ * @param {{world: Record<string, any>, slot: number}} agent the world and the agent's slot
+ * @returns {void}
+ */
+function writeEffects(f32, start, { world, slot }) {
+    for (let e = 0; e < EFFECTS.length; e++) {
+        f32[start + e] = levelOf(world, slot, e);
+    }
+}
+
+/**
  * @param {number} mask an 8-bit mask
  * @returns {number} the bits set
  */
@@ -194,5 +212,6 @@ export function writeInspect({ u32, f32 }, layout, source, selected) {
     w = copyRow(f32, w, world.outputs, { from: slot * layout.outputCount, count: layout.outputCount });
     writeCounters(f32, w, { source, slot });
     writeBody(f32, w + INSPECT_COUNTERS.length, { world, slot });
+    writeEffects(f32, w + INSPECT_COUNTERS.length + TRAITS.length + BODY_SENSE_VALUES, { world, slot });
     return true;
 }
