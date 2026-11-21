@@ -213,4 +213,24 @@ describe('playTrial with an opponent', () => {
         after30({ opponent });
         expect(driven).toBe(30);
     });
+
+    it("drives a role of the plan's own controllers on every agent of that role, and leaves the others to their brains", () => {
+        const seen = /** @type {number[]} */ ([]);
+        const agents = [
+            { role: 'subject', x: 1500, y: 2000, angle: 0, spec: 0, energy: 800 },
+            { role: 'stalker', x: 1700, y: 2000, angle: 0, spec: 1, energy: 800 },
+            { role: 'stalker', x: 1900, y: 2000, angle: 0, spec: 1, energy: 800 },
+            { role: 'bystander', x: 2100, y: 2000, angle: 0, spec: 1, energy: 800 },
+        ];
+        const controllers = { stalker: (/** @type {any} */ world) => seen.push(world.tick) };
+        const trial = plan({ stage: { foods: [], rocks: [], agents }, controllers, maxTicks: 3 });
+        playTrial({
+            plan: trial,
+            subject: { name: 'i', id: 0, spec: 0, weights: null, act: () => {} },
+            controlSpec: { name: 'intact' },
+            seed: 1,
+            config: {},
+        });
+        expect(seen).toEqual([0, 1, 2]);
+    });
 });

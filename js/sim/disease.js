@@ -2,7 +2,8 @@
 // contact to neighbours whose genomes are close to that sample, drains its hosts, and leaves survivors immune.
 
 import { DISEASE_MAX_STRAINS } from './config-disease.js';
-import { LOSS_CAUSE, removeEnergy } from './energy.js';
+import { drainEffect } from './effect-appliers.js';
+import { EFFECT } from './effects.js';
 import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { distanceToGenotype, sampleGenotype, SIMILARITY_DIMS } from './genetics.js';
 import { firstScannedCell } from './mate-search.js';
@@ -209,12 +210,12 @@ export function transmit(world) {
  * @returns {void}
  */
 export function advanceInfections(world) {
-    const { alive, infection, infectionTicks, immuneMask, config } = world;
+    const { alive, infection, infectionTicks, immuneMask } = world;
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] !== 1 || infection[slot] === 0) {
             continue;
         }
-        removeEnergy(world, slot, config.diseaseDrain, LOSS_CAUSE.DISEASE);
+        drainEffect(world, slot, EFFECT.DISEASED);
         infectionTicks[slot] -= 1;
         if (infectionTicks[slot] <= 0) {
             immuneMask[slot] |= 1 << (infection[slot] - 1);

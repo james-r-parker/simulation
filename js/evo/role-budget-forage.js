@@ -3,7 +3,7 @@
 // cycle. Pure: it reads a config, a spec's `RoleParams` and the model options, and creates no world.
 
 import { laneBases } from '../sim/body-lanes.js';
-import { passiveMultiplier } from '../sim/temperature.js';
+import { EFFECT, effectFactor } from '../sim/effects.js';
 import { steadySpeed } from './role-budget-kinematics.js';
 import { startWorld } from './role-budget-params.js';
 
@@ -73,7 +73,10 @@ export function patchFoodDensity(world) {
  */
 export function heatFactor(ctx, temperature) {
     ctx.thermal.temperature[0] = temperature;
-    return passiveMultiplier(ctx.thermal, 0);
+    return (
+        effectFactor(ctx.thermal, 0, EFFECT.COLD_RAMP, 'passiveLoss') *
+        effectFactor(ctx.thermal, 0, EFFECT.HOT_RAMP, 'passiveLoss')
+    );
 }
 
 /**

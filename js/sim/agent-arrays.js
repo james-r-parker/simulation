@@ -4,6 +4,7 @@
 // (test/sim/world-state.contract.test.js) fails one that decides nothing.
 
 import { LANES, laneRowName } from './body-lanes.js';
+import { EFFECTS } from './effect-list.js';
 
 /** Floats per slot in `world.heard`: alarm loudness, `ux`, `uy`, hunt loudness, `ux`, `uy`. */
 export const HEARD_STRIDE = 6;
@@ -91,6 +92,23 @@ const FIXED_ROWS = [
     [Float32Array, 'heard', HEARD_STRIDE, hashedAt(40)],
 ];
 
+/** The first place among the hashed arrays after the fixed rows, where the stored effect rows go. */
+const FIRST_EFFECT_PLACE = 41;
+
+/**
+ * The stored rows of the effects that keep stacks (docs/designs/status-effects.md, "The registry"): for each, its stack count
+ * and its timer, `Float64Array` rows hashed in registry order after `heard`. No kernel takes them. None exist while no effect
+ * stores stacks, so the hash of a world is unchanged until one does.
+ * @param {readonly {name: string, level: string}[]} [list] the effects (a parameter for tests)
+ * @returns {AgentSpec[]} the rows, named `effect.<name>.stacks` and `effect.<name>.ticks`
+ */
+export function effectSpecs(list = EFFECTS) {
+    const names = list
+        .filter((effect) => effect.level === 'stacks')
+        .flatMap((effect) => [`effect.${effect.name}.stacks`, `effect.${effect.name}.ticks`]);
+    return names.map((name, i) => [Float64Array, name, 1, hashedAt(FIRST_EFFECT_PLACE + i)]);
+}
+
 /**
  * @param {Pick<import('./brain-layout.js').BrainLayout, 'rawInputCount' | 'inputCount' | 'outputCount' | 'hidden' | 'geneOutputs' | 'weightCount'>} layout
  *   the brain layout, for the strides
@@ -119,7 +137,7 @@ function layoutRows(layout) {
  * @returns {AgentSpec[]} the per-agent arrays other than `hidden`, with how each is hashed and which kernels take it
  */
 export function agentSpecs(layout) {
-    return [...FIXED_ROWS, ...layoutRows(layout)];
+    return [...FIXED_ROWS, ...effectSpecs(), ...layoutRows(layout)];
 }
 
 const NO_LAYOUT = { rawInputCount: 0, inputCount: 0, outputCount: 0, hidden: 0, geneOutputs: 0, weightCount: 0 };

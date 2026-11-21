@@ -1,15 +1,8 @@
 // Applies toxin doses, sickness costs and recovery to agents.
 import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
-
-/**
- * @param {import('./world.js').World} world the world
- * @param {number} slot agent slot
- * @returns {boolean} whether the agent is sick
- */
-export function isSick(world, slot) {
-    return world.dose[slot] >= world.config.sickDose;
-}
+import { drainEffect } from './effect-appliers.js';
+import { EFFECT, levelOf } from './effects.js';
 
 /**
  * Adds a dose and returns the nonnegative energy offered by a plant meal; a negative net meal is booked as a cost.
@@ -20,9 +13,9 @@ export function isSick(world, slot) {
  * @returns {number} nonnegative meal energy, for the caller to store through addEnergy
  */
 export function ingestToxin(world, slot, value, toxicity) {
-    const before = isSick(world, slot);
+    const before = levelOf(world, slot, EFFECT.SICK) > 0;
     world.dose[slot] += toxicity * world.config.toxinDose;
-    if (!before && isSick(world, slot)) {
+    if (!before && levelOf(world, slot, EFFECT.SICK) > 0) {
         const at = pushEvent(world.events, EVENT_TYPE.AGENT_SICKENED, world.tick);
         world.events.data[at + EVENT.AGENT_SICKENED.SLOT] = slot;
         world.events.data[at + EVENT.AGENT_SICKENED.GENOME_ID] = world.genomeId[slot];
@@ -47,9 +40,7 @@ export function stepToxin(world) {
         if (alive[slot] !== 1 || dose[slot] === 0) {
             continue;
         }
-        if (isSick(world, slot)) {
-            removeEnergy(world, slot, config.sickDrain * dose[slot], LOSS_CAUSE.COST);
-        }
+        drainEffect(world, slot, EFFECT.SICK);
         dose[slot] = Math.max(0, dose[slot] - config.doseDecay);
     }
 }

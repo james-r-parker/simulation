@@ -52,6 +52,11 @@ const RULE_KEYS = Object.freeze([
  *   whether the trial is over, read after each step
  * @property {(world: Record<string, any>) => boolean} won whether the trial scored
  * @property {(won: boolean) => Record<string, any>} [trace] the trial's trace fields once it is over (drills log them)
+ * @property {(world: Record<string, any>) => void} [prepare] sets the staged world up before the first step (the role drills put
+ *   the herd of the stampede in place), after the agents are placed
+ * @property {Record<string, (world: Record<string, any>) => void>} [controllers] scripted controllers by role, for the
+ *   roles the combat controllers do not cover (the role drills' `stalker`, `caller` and `herd`): each drives every staged
+ *   agent of its role, as the `hunter` and `prey` controllers do
  */
 
 /**
@@ -105,16 +110,17 @@ const inert = eachAlive((world, slot) => {
  * @param {Record<string, any>} world the world
  * @param {import('../sim/rng.js').Rng} rng the `scripted` stream
  * @param {{subject: Subject, control: import('./memory-probe-controls.js').Control, slots: Record<string, number[]>,
- *   opponent?: Opponent}} run the subject, its control, the slots by role and the opponent that replaces a role's
- *   controller
+ *   opponent?: Opponent, controllers?: Plan['controllers']}} run the subject, its control, the slots by role, the
+ *   opponent that replaces a role's controller and the plan's own controllers
  * @returns {(world: Record<string, any>) => void} the `brain` phase body
  */
-function createBrain(world, rng, { subject, control, slots, opponent }) {
+function createBrain(world, rng, { subject, control, slots, opponent, controllers = {} }) {
     const saved = new Float32Array(world.outputs.length);
     const scripted = [
         { role: 'hunter', act: COMBAT_CONTROLLERS.hunter({ world, rng }) },
         { role: 'prey', act: COMBAT_CONTROLLERS.fleer({ world, rng }) },
         { role: 'adrift', act: inert },
+        ...Object.entries(controllers).map(([role, act]) => ({ role, act })),
     ].flatMap(({ role, act }) => {
         const driver = opponent?.role === role ? opponent.subject.act : act;
         return (slots[role] ?? []).length > 0 && driver !== null ? [{ slots: slots[role], act: driver }] : [];
@@ -174,8 +180,15 @@ export function playTrial({ plan, subject, controlSpec, seed, config, opponent, 
         seed,
         config: arena,
     });
+    plan.prepare?.(world);
     const control = createControl(world.config, { timing: plan.timing, scent: plan.scent, ...controlSpec });
-    const brain = createBrain(world, fork(createRng(seed), 'scripted'), { subject, control, slots, opponent });
+    const brain = createBrain(world, fork(createRng(seed), 'scripted'), {
+        subject,
+        control,
+        slots,
+        opponent,
+        controllers: plan.controllers,
+    });
     for (let t = 0; t < plan.maxTicks; t++) {
         step(world, policy, { brain });
         onTick?.(world, slots, t);

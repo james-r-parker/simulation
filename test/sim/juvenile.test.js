@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
 import { applyCosts } from '../../js/sim/energy.js';
-import { juvenileBurnOf } from '../../js/sim/juvenile.js';
+import { juvenileBurnOf } from './helpers/legacy-rules.js';
 import { allocateWorld } from '../../js/sim/world.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 import { allocBody } from './helpers/body.js';

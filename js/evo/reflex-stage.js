@@ -53,7 +53,8 @@ export const DEG = Math.PI / 180;
  * @property {number} spec the subject's specialisation (forager 0, predator 1)
  * @property {(rng: import('../sim/rng.js').Rng, view: number) => Staging[]} plan one trial's stagings, drawn from the
  *   case's stream; `view` is the subject's ray length
- * @property {(outputs: ReflexOutputs, staging: Staging) => boolean} check whether one scored tick's outputs pass
+ * @property {(outputs: ReflexOutputs, staging: Staging, bars?: import('./reflex-bars.js').ReflexBars) => boolean} check whether one
+ *   scored tick's outputs pass; `bars` are the thresholds at the run's config (default: the default config's)
  */
 
 /**

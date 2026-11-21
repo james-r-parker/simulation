@@ -4,12 +4,14 @@
 // never called, so a genome's score is a function of its weights and the table alone, whatever the batch.
 
 import { forwardAll } from '../sim/brain.js';
+import { createConfig } from '../sim/config.js';
 import { BODY_INPUT, OUTPUT_COUNT, OUTPUT_INDEX, inputOffsets } from '../sim/brain-layout.js';
 import { resetFastOut } from '../sim/hebbian.js';
 import { applyGenes } from '../sim/traits.js';
 import { arenaConfig } from './memory-probe-run.js';
 import { createKindTally, kindScores, noteBite, notePass } from './reflex-kind-tally.js';
 import { stageWorld } from './pool-discrimination-stage.js';
+import { reflexBars } from './reflex-bars.js';
 import { caseNamed } from './reflex-cases.js';
 import { SEQUENCE_TICKS, SETTLE_TICKS, readOutputs } from './reflex-stage.js';
 import { RAY_LANES, assertTableFresh } from './reflex-table.js';
@@ -240,17 +242,25 @@ function countOf(flags, slot, trials) {
  * Plays every sequence of a case for every slot.
  * @param {Record<string, any>} world the reflex world
  * @param {import('./reflex-table.js').CaseTable} table the case's table
- * @param {Pick<Run, 'think' | 'ids' | 'hooks'>} how what runs the brains, the genome ids and the hooks
+ * @param {Pick<Run, 'think' | 'ids' | 'hooks'> & {bars: import('./reflex-bars.js').ReflexBars}} how what runs the brains, the
+ *   genome ids, the hooks and the bars at the run's config
  * @returns {CaseScore[]} one score per slot
  */
-function runCase(world, table, { think, ids, hooks }) {
+function runCase(world, table, { think, ids, hooks, bars }) {
     const slots = world.alive.length;
     const tally = {
         passed: new Uint8Array(slots * table.trials).fill(1),
         fast: new Uint8Array(slots * table.trials).fill(1),
         kinds: createKindTally(table.sequences, slots),
     };
-    const run = { think, tally, check: caseNamed(table.name).check, ids, hooks };
+    const { check } = caseNamed(table.name);
+    const run = {
+        think,
+        tally,
+        check: (/** @type {any} */ o, /** @type {any} */ st) => check(o, st, bars),
+        ids,
+        hooks,
+    };
     for (let index = 0; index < table.sequences.length; index++) {
         runSequence(world, table, { index, run });
     }
@@ -277,8 +287,10 @@ function evalBrains(subjects, tables, { config, hooks }) {
     const world = createReflexWorld(config, subjects.length, tables[0].spec);
     subjects.forEach((s, slot) => loadGenome(world, slot, /** @type {Float32Array} */ (s.weights)));
     const scores = subjects.map(() => /** @type {Record<string, CaseScore>} */ ({}));
+    const bars = reflexBars(createConfig(config));
+    const ids = subjects.map((x) => x.id);
     for (const table of tables) {
-        runCase(world, table, { think: forwardAll, ids: subjects.map((x) => x.id), hooks }).forEach((score, i) => {
+        runCase(world, table, { think: forwardAll, ids, hooks, bars }).forEach((score, i) => {
             scores[i][table.name] = score;
         });
     }
@@ -295,9 +307,10 @@ function evalReference(subject, tables, { config, hooks }) {
     const world = createReflexWorld(config, 1, tables[0].spec);
     /** @type {Record<string, CaseScore>} */
     const scores = {};
+    const bars = reflexBars(createConfig(config));
     for (const table of tables) {
         const think = /** @type {Think} */ (subject.act);
-        scores[table.name] = runCase(world, table, { think, ids: [subject.id], hooks })[0];
+        scores[table.name] = runCase(world, table, { think, ids: [subject.id], hooks, bars })[0];
     }
     return scores;
 }
