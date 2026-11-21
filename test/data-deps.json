@@ -460,6 +460,18 @@
     "test/smoke-flakes.test.js": [
         "playwright.config.js"
     ],
+    "test/state.test.js": [
+        ".git",
+        ".gitignore",
+        "README.md",
+        "docs/designs",
+        "docs/designs/README.md",
+        "docs/designs/metric-noise.md",
+        "evals/experiments.json",
+        "evals/train-screens/results",
+        "scripts/state.mjs",
+        "test"
+    ],
     "test/task-start.test.js": [
         ".gitignore",
         "docs",
@@ -569,6 +581,12 @@
         "package.json",
         "scripts/browser-smoke.sh",
         "scripts/lib/nightly-digest.mjs",
+        "test"
+    ],
+    "test/worktree-gc.test.js": [
+        ".claude",
+        ".gitignore",
+        "scripts/worktree-gc.sh",
         "test"
     ]
 }
