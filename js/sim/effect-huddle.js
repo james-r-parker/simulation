@@ -37,26 +37,38 @@ function givesWarmth(world, slot, other) {
 /**
  * @param {any} world the world
  * @param {import('./spatial-hash.js').SpatialHash} hash the hash built this tick
+ * @param {number} slot the counting body
+ * @param {number} cell a cell index
+ * @returns {number} the fed kin of the body that have their box's start in the cell
+ */
+function warmthInCell(world, hash, slot, cell) {
+    const { cellStart, entries, boxX, boxY, cols, rows, cellSize } = hash;
+    let count = 0;
+    for (let e = cellStart[cell]; e < cellStart[cell + 1]; e++) {
+        // A body sits in every cell its box covers: count it in the cell its box starts in.
+        const home = cellOf(boxY[e], cellSize, rows - 1) * cols + cellOf(boxX[e], cellSize, cols - 1);
+        if (entries[e] < hash.maxAgents && home === cell && givesWarmth(world, slot, entries[e])) {
+            count += 1;
+        }
+    }
+    return count;
+}
+
+/**
+ * @param {any} world the world
+ * @param {import('./spatial-hash.js').SpatialHash} hash the hash built this tick
  * @param {number} slot an alive slot
  * @returns {number} the fed kin near the slot, counted up to the cap
  */
 function countWarmth(world, hash, slot) {
-    const reach = world.config.huddleRange * world.size[slot];
-    const range = cellRange(hash, world.x[slot], world.y[slot], reach);
-    const { cellStart, entries, boxX, boxY, cols, cellSize, rows } = hash;
+    const range = cellRange(hash, world.x[slot], world.y[slot], world.config.huddleRange * world.size[slot]);
     let count = 0;
-    for (let row = range[1]; row <= range[3]; row++) {
-        for (let cell = row * cols + range[0]; cell <= row * cols + range[2]; cell++) {
-            for (let e = cellStart[cell]; e < cellStart[cell + 1] && count < CAP; e++) {
-                // A body sits in every cell its box covers: count it in the cell its box starts in.
-                const home = cellOf(boxY[e], cellSize, rows - 1) * cols + cellOf(boxX[e], cellSize, cols - 1);
-                if (entries[e] < hash.maxAgents && home === cell && givesWarmth(world, slot, entries[e])) {
-                    count += 1;
-                }
-            }
+    for (let row = range[1]; row <= range[3] && count < CAP; row++) {
+        for (let cell = row * hash.cols + range[0]; cell <= row * hash.cols + range[2]; cell++) {
+            count += warmthInCell(world, hash, slot, cell);
         }
     }
-    return count;
+    return Math.min(count, CAP);
 }
 
 /**

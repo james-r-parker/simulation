@@ -10,6 +10,11 @@ import { trampleHerds } from './trample.js';
 import { assertArenaHash } from './wasm-hash.js';
 import { bounceRocksKernel, moveAgentsKernel, resolveContactsKernel, rockImpactSpeed } from './wasm-physics.js';
 
+// The lanes this module reads, as constants: a property load from `LANE_ID` (a large object) in the loop boxes its number
+// when the compiler does not inline it.
+const MAX_THRUST_LANE = LANE_ID.maxThrust;
+const MAX_TURN_LANE = LANE_ID.maxTurn;
+
 const PI = 3.141592653589793;
 
 /**
@@ -23,7 +28,7 @@ const PI = 3.141592653589793;
 export function thrustOf(world, i) {
     const { outputs, config } = world;
     const o = i * OUTPUT_COUNT;
-    let thrust = outputs[o + OUTPUT_INDEX.THRUST] * liveOf(world, i, LANE_ID.maxThrust);
+    let thrust = outputs[o + OUTPUT_INDEX.THRUST] * liveOf(world, i, MAX_THRUST_LANE);
     if (outputs[o + OUTPUT_INDEX.SPRINT] > 0) {
         thrust *= 1 + config.sprintMultiplier * world.sprintBySpec[world.spec[i]] * world.sprintFactor[i];
     }
@@ -44,7 +49,7 @@ export function actAll(world) {
     for (let i = 0; i < alive.length; i++) {
         if (alive[i] === 1) {
             pinSlot(i); // `fat` is read once for the turn and the thrust
-            turnRate[i] = outputs[i * OUTPUT_COUNT + OUTPUT_INDEX.TURN] * liveOf(world, i, LANE_ID.maxTurn);
+            turnRate[i] = outputs[i * OUTPUT_COUNT + OUTPUT_INDEX.TURN] * liveOf(world, i, MAX_TURN_LANE);
             let a = angle[i] + turnRate[i];
             if (a >= PI) {
                 a -= 2 * PI;

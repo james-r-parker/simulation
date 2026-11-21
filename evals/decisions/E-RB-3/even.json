@@ -1,0 +1,51 @@
+role budget  config 4e19932d789612ad  rules 1bab682bb447478f
+model {"reactionTicks":2,"hearThreshold":0.1,"breakAngle":1.5707963267948966,"tightTicks":5,"preySprint":"rationed","hunterShare":0.1,"foodDensity":null,"naiveEffort":0.5,"catchShare":0.3,"defenderGap":150,"smokeGap":240,"reliableSight":false}
+
+row             see  hear  warn  turn  run  status      binding
+scout:predator  12   48    7     -     X    impossible  run
+
+scout:predator
+  scout sees the hunter at 445 px  alarm tick 2  forager hears tick 3  starts to turn tick 5 at 405 px  runs tick 16 at 289 px
+  forager sees the hunter itself at 345 px; the hunter closes on it from 481 px or less; it creeps at 8 px a tick
+  bites to kill a forager 5, with its alarm seen 5
+
+body        reading                      formula  sim      difference  tolerance
+forager     energy per 100 ticks         102.725  102.725  0.000%      0.100%     ok
+forager     sprint energy per 100 ticks  227.725  227.725  0.000%      0.100%     ok
+forager     cruise speed                 8.000    8.000    0.000%      0.010%     ok
+forager     sprint speed                 12.000   12.000   0.000%      0.010%     ok
+forager     turn radius                  21.537   21.509   0.131%      0.500%     ok
+forager     sprint turn radius           32.305   32.263   0.131%      0.500%     ok
+predator    energy per 100 ticks         58.655   58.655   0.000%      0.100%     ok
+predator    sprint energy per 100 ticks  190.679  190.679  0.000%      0.100%     ok
+predator    cruise speed                 8.000    8.000    0.000%      0.010%     ok
+predator    sprint speed                 14.400   14.400   0.000%      0.010%     ok
+predator    turn radius                  41.718   41.809   0.217%      0.500%     ok
+predator    sprint turn radius           75.092   75.255   0.217%      0.500%     ok
+reproducer  energy per 100 ticks         102.725  102.725  0.000%      0.100%     ok
+reproducer  sprint energy per 100 ticks  227.725  227.725  0.000%      0.100%     ok
+reproducer  cruise speed                 8.000    8.000    0.000%      0.010%     ok
+reproducer  sprint speed                 12.000   12.000   0.000%      0.010%     ok
+reproducer  turn radius                  21.537   21.509   0.131%      0.500%     ok
+reproducer  sprint turn radius           32.305   32.263   0.131%      0.500%     ok
+scout       energy per 100 ticks         104.743  104.742  0.000%      0.100%     ok
+scout       sprint energy per 100 ticks  229.743  229.742  0.000%      0.100%     ok
+scout       cruise speed                 8.000    8.000    0.000%      0.010%     ok
+scout       sprint speed                 12.000   12.000   0.000%      0.010%     ok
+scout       turn radius                  21.537   21.509   0.131%      0.500%     ok
+scout       sprint turn radius           32.305   32.263   0.131%      0.500%     ok
+defender    energy per 100 ticks         121.925  121.925  0.000%      0.100%     ok
+defender    sprint energy per 100 ticks  270.925  270.925  0.000%      0.100%     ok
+defender    cruise speed                 8.000    8.000    0.000%      0.010%     ok
+defender    sprint speed                 12.000   12.000   0.000%      0.010%     ok
+defender    turn radius                  21.537   21.509   0.131%      0.500%     ok
+defender    sprint turn radius           32.305   32.263   0.131%      0.500%     ok
+
+row             reading                                                                                           formula  scene  tolerance
+scout:predator  alarm tick                                                                                        2        2      0 ticks    ok
+scout:predator  forager hears                                                                                     3        3      0 ticks    ok
+scout:predator  forager moves                                                                                     5        5      0 ticks    ok
+scout:predator  gap when the forager moves                                                                        405      405    1 px       ok
+scout:predator  the forager gains on the hunter while it turns: the formula holds it still                        true     true   agree      ok
+scout:predator  a forager the formula calls safe is safe in the sim: the formula never flatters it                true     true   agree      ok
+scout:predator  at effort 1, the oracle hunter's, the formula and the sim agree on whether the forager is caught  false    true   agree      DRIFT

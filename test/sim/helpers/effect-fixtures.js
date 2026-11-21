@@ -2,6 +2,7 @@
 // stored timer that loses a stack at a time), and a small world that holds their rows.
 
 import { createEffects } from '../../../js/sim/effects.js';
+import { SHARE } from '../../../js/sim/effect-refs.js';
 import { smallWorld } from './small-world.js';
 
 /** A step effect that halves `maxThrust` at level 1 and closes `EAT`. */
@@ -24,7 +25,9 @@ export const FAT = {
     family: 'body',
     maxStacks: 1,
     level: 'share',
-    read: (/** @type {any} */ world, /** @type {number} */ slot) => world.fixture.fat[slot],
+    read: (/** @type {any} */ world, /** @type {number} */ slot) => {
+        SHARE[0] = world.fixture.fat[slot];
+    },
     scales: [
         { lane: 'maxThrust', perStack: -0.5 },
         { lane: 'maxTurn', perStack: { key: 'fatSlowShare', scale: -1 } },

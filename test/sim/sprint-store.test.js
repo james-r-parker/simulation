@@ -103,38 +103,6 @@ describe('createSprintStore', () => {
     });
 });
 
-// First in the file: the optimizing compiler inlines the effect readers only while their call sites have seen few shapes,
-// and the tests below drive other worlds through the same code.
-describe('stepSprintStore allocation', () => {
-    it('allocates nothing', () => {
-        v8.setFlagsFromString('--expose-gc');
-        const gc = vm.runInNewContext('gc');
-        const config = storeConfig();
-        const store = createSprintStore(config, 500);
-        const w = bodies(500, config);
-        for (let slot = 0; slot < 500; slot++) {
-            drive(w, slot, { sprint: slot % 2, thrust: 0 });
-        }
-        const passes = 300;
-        const run = () => {
-            for (let i = 0; i < passes; i++) {
-                stepSprintStore(store, w);
-            }
-        };
-        for (let warm = 0; warm < 5; warm++) {
-            run(); // the optimizing compiler needs a few passes through the effect readers to inline them
-        }
-        let best = Infinity;
-        for (let window = 0; window < 10; window++) {
-            gc();
-            const before = process.memoryUsage().heapUsed;
-            run();
-            best = Math.min(best, process.memoryUsage().heapUsed - before);
-        }
-        expect(best).toBeLessThan(passes * 4);
-    });
-});
-
 describe('storeFactor', () => {
     const store = createSprintStore(storeConfig({ sprintFloor: 0.3 }), 4);
 
@@ -276,6 +244,32 @@ describe('stepSprintStore', () => {
         stepSprintStore(store, w);
         expect(store.level[0]).toBeCloseTo(0.6, 9);
         expect(store.level[1]).toBeLessThan(0.5);
+    });
+
+    it('allocates nothing', () => {
+        v8.setFlagsFromString('--expose-gc');
+        const gc = vm.runInNewContext('gc');
+        const config = storeConfig();
+        const store = createSprintStore(config, 500);
+        const w = bodies(500, config);
+        for (let slot = 0; slot < 500; slot++) {
+            drive(w, slot, { sprint: slot % 2, thrust: 0 });
+        }
+        const passes = 300;
+        const run = () => {
+            for (let i = 0; i < passes; i++) {
+                stepSprintStore(store, w);
+            }
+        };
+        run();
+        let best = Infinity;
+        for (let window = 0; window < 10; window++) {
+            gc();
+            const before = process.memoryUsage().heapUsed;
+            run();
+            best = Math.min(best, process.memoryUsage().heapUsed - before);
+        }
+        expect(best).toBeLessThan(passes * 4);
     });
 });
 

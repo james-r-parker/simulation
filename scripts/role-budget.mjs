@@ -6,6 +6,7 @@ import { basename, join } from 'node:path';
 import { arenaConfig } from '../js/evo/chase-arena.js';
 import { chaseCells, kinematicRows } from '../js/evo/role-budget-check.js';
 import { defenceCheck } from '../js/evo/role-budget-defence-check.js';
+import { warnCheck } from '../js/evo/role-budget-warn-check.js';
 import { PREY_SPECS } from '../js/evo/role-budget-chase.js';
 import { catchShares } from '../js/evo/role-budget-shares.js';
 import { BUILT_ROWS, matrix } from '../js/evo/role-budget-matrix.js';
@@ -211,18 +212,34 @@ function chasePair(config, prey) {
 }
 
 /**
+ * @param {Record<string, any>} config an `arenaConfig`
+ * @param {{defence: boolean, scout: boolean, model: import('../js/evo/role-budget-model.js').RoleModel}} asked whether the
+ *   defender and the scout rows were asked for, and the model options
+ * @returns {{readings: import('../js/evo/role-budget-defence-check.js').DefenceReading[], drift: number}} their scenes
+ *   beside their formulas
+ */
+function guildReadings(config, { defence, scout, model }) {
+    const parts = [defence ? defenceCheck(config, model) : null, scout ? warnCheck(config, model) : null];
+    const played = parts.filter((part) => part !== null);
+    return {
+        readings: played.flatMap((part) => part.readings),
+        drift: played.reduce((sum, part) => sum + part.drift, 0),
+    };
+}
+
+/**
  * Plays the scene of each requested prey beside the formula, on both prey bounds, and the kinematics against the body table.
  * @param {Record<string, any>} config an `arenaConfig`
- * @param {{preys: string[], defence: boolean, model: import('../js/evo/role-budget-model.js').RoleModel}} asked the prey
- *   rows asked for, whether the defender row was, and the model options
+ * @param {{preys: string[], defence: boolean, scout: boolean, model: import('../js/evo/role-budget-model.js').RoleModel}} asked
+ *   the prey rows asked for, whether the defender and scout rows were, and the model options
  * @param {import('../js/sim/log.js').SimLog} log the log
  * @returns {{kinematics: import('../js/evo/role-budget-check.js').KinematicRow[], pairs: any[],
  *   defence: import('../js/evo/role-budget-defence-check.js').DefenceReading[], drift: number}} the check
  */
-function crossCheck(config, { preys, defence, model }, log) {
+function crossCheck(config, { preys, defence, scout, model }, log) {
     const kinematics = kinematicRows(config);
     const pairs = preys.map((prey) => chasePair(config, prey));
-    const played = defence ? defenceCheck(config, model) : { readings: [], drift: 0 };
+    const played = guildReadings(config, { defence, scout, model });
     let drift = played.drift;
     for (const r of played.readings.filter((reading) => reading.drift)) {
         log.log('warn', 'RoleBudgetDrift', {
@@ -304,15 +321,15 @@ function render(json, { hash, result, searched, defence, check }) {
 /**
  * @param {readonly string[]} rows the rows asked for
  * @param {import('../js/evo/role-budget-model.js').RoleModel} model the model options
- * @returns {{preys: string[], defence: boolean, model: import('../js/evo/role-budget-model.js').RoleModel}} what the
- *   cross-check plays: the prey of each hunter row asked for, whether the defender row was asked for, and the model
+ * @returns {{preys: string[], defence: boolean, scout: boolean, model: import('../js/evo/role-budget-model.js').RoleModel}}
+ *   what the cross-check plays: the prey of each hunter row asked for, whether the defender and scout rows were, and the model
  */
 function asked(rows, model) {
     const preys = rows
         .filter((r) => r.startsWith('predator:'))
         .map((r) => r.slice('predator:'.length))
         .filter((s) => PREY_SPECS.includes(s));
-    return { preys, defence: rows.includes('defender:predator'), model };
+    return { preys, defence: rows.includes('defender:predator'), scout: rows.includes('scout:predator'), model };
 }
 
 /**

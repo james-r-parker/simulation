@@ -127,6 +127,8 @@ Hearing gains an owner: `hearOne` in `js/sim/calls.js` keeps the loudest call's 
 
 A `perStack` number of 0 leaves the effect's stacks counted and its lanes untouched, so Phase 2 changes no behaviour and its detectors read how often each effect would be on.
 
+As built in T11: `alert`'s grazing cost is the computed effect `alertGrazing` (its level is the `alert` stacks of a body that grazes this tick; it scales `maxThrust` by `-alertGraze` a stack, times `nerve`), because the `grazing` table reads `grazeThrust` without effects. `staggered` closes `bite`, which a gate cannot make neutral, so `noteShoved` raises it only with `staggerThrust` above 0; the shove itself is logged as `DefenderShoved` (`slot`, `target`) either way, and `bites` in `js/sim/feeding.js` is the reader of the `bite` gate. `huddled` counts a kin inside `huddleRange` times the counting body's size, centre to centre, and a body counts once however many cells it covers; its fed test is the neighbour's energy above half its store. `alert` needs no kin: any non-hunter that hears an alarm with a threat in view gains a stack.
+
 ## Detectors
 
 Computed by the eval observer in `js/evo/scene-effects.js`; none is a reward.
@@ -227,7 +229,7 @@ The numbers are chosen with the calculator and read on the default world with [b
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------ |
 | T9  | Add `chilled` (the cold stack), `wounded`, `panicked` and `shaken` with their keys at 0, the `by` field with the `nerve` lane, and their applier tests                                                                                                                    | [judgement] | T8           |
 | T10 | (built) Add `world.heardFrom` in `hearOne`, `hearThreshold`, and `rallied`, `answered` and `hoarse` with their keys at 0: one stack per call heard, `answered` on a kill both hunters bit, the two ways a `hoarse` stack comes off; the applier tests of the Delivery row | [judgement] | T8           |
-| T11 | Add `alert` (seen alarms only), `huddled` (fed kin only; the pass over the spatial hash every 8 ticks) and `staggered` (the `DefenderShoved` event in `tryDefenderRepel`) with their keys at 0                                                                            | [judgement] | T8           |
+| T11 | (built) Add `alert` (seen alarms only), `huddled` (fed kin only; the pass over the spatial hash every 8 ticks) and `staggered` (the `DefenderShoved` event in `tryDefenderRepel`) with their keys at 0                                                                    | [judgement] | T8           |
 | T12 | Add `js/evo/scene-effects.js` and the four detectors with their source tests and registry entries; run 16 seeds and record `eval.effect_share.*`                                                                                                                          | [judgement] | T9, T10, T11 |
 | T14 | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                                       | [judgement] | T12          |
 

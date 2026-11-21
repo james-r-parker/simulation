@@ -17,6 +17,10 @@ import { SPEC } from './specs.js';
 /** @typedef {import('./world.js').World} World */
 /** @typedef {import('./spatial-hash.js').SpatialHash} SpatialHash */
 
+// The lanes read here, as constants: a property load from `LANE_ID` in a hot loop boxes its number.
+const ALARM_COST_LANE = LANE_ID.alarmCost;
+const HUNT_CALL_COST_LANE = LANE_ID.huntCallCost;
+
 /** Offsets of the alarm and hunt halves of a `heard` row. */
 const ALARM_HEARD = 0;
 const HUNT_HEARD = 3;
@@ -106,7 +110,7 @@ function alarm(world, slot) {
         return;
     }
     const cost =
-        liveOf(world, slot, LANE_ID.alarmCost) * (world.spec[slot] === SPEC.SCOUT ? scoutAlarmCostMultiplier : 1);
+        liveOf(world, slot, ALARM_COST_LANE) * (world.spec[slot] === SPEC.SCOUT ? scoutAlarmCostMultiplier : 1);
     if (world.energy[slot] <= cost) {
         return;
     }
@@ -131,7 +135,7 @@ function huntCall(world, slot) {
     if (!wanted || !specParams(world.config, world.spec[slot]).canHunt) {
         return;
     }
-    const cost = liveOf(world, slot, LANE_ID.huntCallCost);
+    const cost = liveOf(world, slot, HUNT_CALL_COST_LANE);
     if (world.energy[slot] <= cost) {
         return;
     }

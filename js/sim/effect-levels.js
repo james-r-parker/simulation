@@ -3,6 +3,7 @@
 // registry, now stated once. Pure reads of the world: no writes, no RNG, no allocation.
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
+import { SHARE } from './effect-refs.js';
 import { isJuvenile } from './juvenile.js';
 
 /** @typedef {any} World */
@@ -10,10 +11,10 @@ import { isJuvenile } from './juvenile.js';
 /**
  * @param {World} world the world
  * @param {number} slot the agent slot
- * @returns {number} `fat`: the energy over the store, in [0, 1]
+ * @returns {void} leaves in `SHARE[0]` `fat`: the energy over the store, in [0, 1]
  */
 export function fatLevel(world, slot) {
-    return world.energy[slot] / world.lanes.maxEnergy[slot];
+    SHARE[0] = world.energy[slot] / world.lanes.maxEnergy[slot];
 }
 
 /**
@@ -47,23 +48,23 @@ export function heatBandLevel(world, slot) {
 /**
  * @param {World} world the world
  * @param {number} slot the agent slot
- * @returns {number} `coldRamp`: `(min - t) / min` under the `temperatureOptimalMin` lane, else 0
+ * @returns {void} leaves in `SHARE[0]` `coldRamp`: `(min - t) / min` under the `temperatureOptimalMin` lane, else 0
  */
 export function coldRampLevel(world, slot) {
     const t = world.temperature[slot];
     const min = world.lanes.temperatureOptimalMin[slot];
-    return t < min ? (min - t) / min : 0;
+    SHARE[0] = t < min ? (min - t) / min : 0;
 }
 
 /**
  * @param {World} world the world
  * @param {number} slot the agent slot
- * @returns {number} `hotRamp`: `(t - max) / (temperatureMax - max)` over the `temperatureOptimalMax` lane, else 0
+ * @returns {void} leaves in `SHARE[0]` `hotRamp`: `(t - max) / (temperatureMax - max)` over the `temperatureOptimalMax` lane, else 0
  */
 export function hotRampLevel(world, slot) {
     const t = world.temperature[slot];
     const max = world.lanes.temperatureOptimalMax[slot];
-    return t > max ? (t - max) / (world.config.temperatureMax - max) : 0;
+    SHARE[0] = t > max ? (t - max) / (world.config.temperatureMax - max) : 0;
 }
 
 /**
@@ -217,16 +218,17 @@ export function smokeCoolingLevel(world, slot) {
 /**
  * @param {World} world the world
  * @param {number} slot the agent slot
- * @returns {number} `spent`: how far the sprint store is under `sprintFloor`, `1 - level / floor` (0 at or above the
+ * @returns {void} leaves in `SHARE[0]` `spent`: how far the sprint store is under `sprintFloor`, `1 - level / floor` (0 at or above the
  *   floor, and 0 with the store off)
  */
 export function spentLevel(world, slot) {
     const store = world.sprintStore;
     if (store === undefined) {
-        return 0;
+        SHARE[0] = 0;
+        return;
     }
     const level = store.level[slot];
-    return level >= store.floor ? 0 : 1 - level / store.floor;
+    SHARE[0] = level >= store.floor ? 0 : 1 - level / store.floor;
 }
 
 /**

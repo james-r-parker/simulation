@@ -198,3 +198,57 @@ describe('answered', () => {
         expect(stacks(idle, 0, 'hoarse')).toBeGreaterThan(0);
     });
 });
+
+/**
+ * A defender in contact with a hunter, and a prey the hunter touches.
+ * @param {Record<string, any>} over config overrides
+ * @returns {{w: any, defender: number, hunter: number, prey: number}} the staged world
+ */
+function shove(over) {
+    const { w, slots } = stage({ defenderRepelEnergy: 1, ...over }, [
+        { x: 100, spec: 4, energy: 2000, bite: true },
+        { x: 110, spec: PREDATOR, energy: 2000 },
+        { x: 120, y: 130, spec: FORAGER, energy: 500 },
+    ]);
+    return { w, defender: slots[0], hunter: slots[1], prey: slots[2] };
+}
+
+describe('staggered', () => {
+    it('is raised on a hunter a defender shoves, which is logged, slowed and cannot bite while it lasts', () => {
+        const { w, defender, hunter, prey } = shove({ staggerThrust: 0.4 });
+        feedPairs(w, [defender, hunter]);
+        expect(stacks(w, hunter, 'staggered')).toBe(1);
+        expect(effectFactor(w, hunter, EFFECT.STAGGERED, 'maxThrust')).toBeCloseTo(0.6, 12);
+        const before = w.energy[prey];
+        feedPairs(w, [hunter, prey]);
+        expect(w.energy[prey]).toBe(before);
+        w['effect.staggered.stacks'][hunter] = 0;
+        feedPairs(w, [hunter, prey]);
+        expect(w.energy[prey]).toBeLessThan(before);
+    });
+
+    it('stops at 3 stacks and ends together after staggerTicks', () => {
+        const { w, defender, hunter } = shove({ staggerThrust: 0.1, staggerTicks: 2 });
+        for (let n = 0; n < 4; n++) {
+            feedPairs(w, [defender, hunter]);
+        }
+        expect(stacks(w, hunter, 'staggered')).toBe(3);
+        fadeEffects(w);
+        fadeEffects(w);
+        expect(stacks(w, hunter, 'staggered')).toBe(0);
+    });
+
+    it('raises no stack with staggerThrust at 0, since a stack closes the bite gate, but still logs the shove', () => {
+        const { w, defender, hunter, prey } = shove({});
+        feedPairs(w, [defender, hunter]);
+        expect(stacks(w, hunter, 'staggered')).toBe(0);
+        let shoved = 0;
+        for (let i = 0; i < w.events.count; i++) {
+            shoved += w.events.data[i * 13] === EVENT_TYPE.DEFENDER_SHOVED ? 1 : 0;
+        }
+        expect(shoved).toBe(1);
+        const before = w.energy[prey];
+        feedPairs(w, [hunter, prey]);
+        expect(w.energy[prey]).toBeLessThan(before);
+    });
+});

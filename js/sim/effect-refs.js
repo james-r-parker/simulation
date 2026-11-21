@@ -12,6 +12,17 @@ import { LANES } from './body-lanes.js';
 
 /** @typedef {{kind: number, value: number, index: number, scale: number, offset: number}} Compiled */
 
+/**
+ * Where a reader leaves a number. A function that returns a number that is not a small whole one boxes it (a heap
+ * allocation) whenever the compiler does not inline the call, so the engine passes the share of a `share` effect, a number
+ * read from a reference and a folded result through these one-element arrays: `SHARE` (a `share` or `stacks` effect's
+ * reader writes it), `LEVEL` (the level of the rule last read), `NUMBER` (`numberInto`) and `RESULT` (a fold).
+ */
+export const SHARE = new Float64Array(1);
+export const LEVEL = new Float64Array(1);
+export const NUMBER = new Float64Array(1);
+export const RESULT = new Float64Array(1);
+
 /** What a compiled reference reads. */
 export const REF = Object.freeze({ LITERAL: 0, LANE: 1, CONFIG: 2 });
 
@@ -39,15 +50,29 @@ export function compileRef(ref, configKeys) {
 }
 
 /**
+ * Leaves in `NUMBER[0]` the value of a reference for a slot: a literal, or `scale x (the lane at the slot, or the config
+ * key) + offset`.
  * @param {any} world the world
  * @param {number} slot the agent slot
  * @param {Compiled} ref a compiled reference
- * @returns {number} its value for the slot: a literal, or `scale x (the lane at the slot, or the config key) + offset`
+ * @returns {void}
  */
-export function numberOf(world, slot, ref) {
+export function numberInto(world, slot, ref) {
     if (ref.kind === REF.LITERAL) {
-        return ref.value;
+        NUMBER[0] = ref.value;
+        return;
     }
     const value = ref.kind === REF.LANE ? world.laneArrays[ref.index][slot] : world.effectConfig[ref.index];
-    return ref.scale * value + ref.offset;
+    NUMBER[0] = ref.scale * value + ref.offset;
+}
+
+/**
+ * @param {any} world the world
+ * @param {number} slot the agent slot
+ * @param {Compiled} ref a compiled reference
+ * @returns {number} its value for the slot (see `numberInto`; this one returns it, for a caller off the hot path)
+ */
+export function numberOf(world, slot, ref) {
+    numberInto(world, slot, ref);
+    return NUMBER[0];
 }

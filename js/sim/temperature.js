@@ -5,6 +5,10 @@ import { stepChilled } from './effect-chilled.js';
 import { LANE_ID, liveOf } from './effects.js';
 import { coldFactor } from './terrain.js';
 
+// The lanes read here, as constants: a property load from `LANE_ID` in a hot loop boxes its number.
+const TEMPERATURE_GAIN_MOVE_LANE = LANE_ID.temperatureGainMove;
+const TEMPERATURE_LOSS_PASSIVE_LANE = LANE_ID.temperatureLossPassive;
+
 /** @typedef {import('./world.js').World} World */
 
 /**
@@ -39,8 +43,8 @@ export function stepTemperature(world, slot) {
     const sprinting = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0;
     const next =
         world.temperature[slot] +
-        Math.min(speed / c.maxVelocity, lanes.heatSpeedCap[slot]) * liveOf(world, slot, LANE_ID.temperatureGainMove) -
-        liveOf(world, slot, LANE_ID.temperatureLossPassive) * loss * coldFactor(c, world.y[slot]) +
+        Math.min(speed / c.maxVelocity, lanes.heatSpeedCap[slot]) * liveOf(world, slot, TEMPERATURE_GAIN_MOVE_LANE) -
+        liveOf(world, slot, TEMPERATURE_LOSS_PASSIVE_LANE) * loss * coldFactor(c, world.y[slot]) +
         (sprinting ? lanes.sprintHeat[slot] * world.sprintFactor[slot] : 0);
     world.temperature[slot] = Math.min(c.temperatureMax, Math.max(0, next));
     stepChilled(world, slot);
