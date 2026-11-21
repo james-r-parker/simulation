@@ -8,6 +8,7 @@ import {
     BUILT_ROWS,
     PHASE1_ROWS,
     PHASE4_ROWS,
+    PHASE5_ROWS,
     cell,
     matrix as typedMatrix,
     rowOf,
@@ -40,7 +41,13 @@ describe('matrix', () => {
     it('builds every row of the built phases by default, with the model and the rules hash of the config', () => {
         const m = matrix(courser, model);
         expect(m.rows.map((/** @type {any} */ r) => r.name)).toEqual(BUILT_ROWS);
-        expect(BUILT_ROWS).toEqual([...PHASE1_ROWS, 'defender:predator', 'scout:predator', ...PHASE4_ROWS]);
+        expect(BUILT_ROWS).toEqual([
+            ...PHASE1_ROWS,
+            'defender:predator',
+            'scout:predator',
+            ...PHASE4_ROWS,
+            ...PHASE5_ROWS,
+        ]);
         expect(m.model).toBe(model);
         expect(m.rulesHash).toBe(rulesHash(courser));
         for (const row of m.rows) {
@@ -52,6 +59,7 @@ describe('matrix', () => {
                     'forager:predator': ['eat', 'breed', 'run'],
                     'reproducer:predator': ['eat', 'breed', 'run'],
                     'predator:living': ['eat', 'breed'],
+                    ...Object.fromEntries(PHASE5_ROWS.map((r) => [r, ['see', 'turn', 'run', 'survive']])),
                 })[row.name] ??
                 (row.name.endsWith(':first-meal')
                     ? ['reach', 'find', 'eat']
@@ -88,8 +96,8 @@ describe('matrix', () => {
     });
 
     it('refuses a row that is not built, naming the built ones', () => {
-        expect(() => matrix(courser, model, ['predator:herd'])).toThrow(
-            /unknown row "predator:herd"; built: predator:forager/,
+        expect(() => matrix(courser, model, ['predator:nothing'])).toThrow(
+            /unknown row "predator:nothing"; built: predator:forager/,
         );
     });
 
@@ -135,5 +143,20 @@ describe('the rows of Phase 4', () => {
         expect(m.rows[0].status).toBe('impossible');
         expect(m.rows[0].binding).toBe('find');
         expect(m.rows[1].status).toBe('impossible');
+    });
+});
+
+describe('the rows of Phase 5', () => {
+    it('are each spec against the herd, read from the default world', () => {
+        expect(PHASE5_ROWS).toEqual(['forager', 'predator', 'reproducer', 'scout', 'defender'].map((s) => `${s}:herd`));
+        const m = matrix(arenaConfig(), model, PHASE5_ROWS, { worldConfig: createConfig({}) });
+        expect(m.rows.map((/** @type {any} */ r) => r.status)).toEqual([
+            'tight',
+            'impossible',
+            'impossible',
+            'tight',
+            'impossible',
+        ]);
+        expect(m.rows[0].detail.worst.warning).toBe(59);
     });
 });

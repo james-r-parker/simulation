@@ -181,7 +181,7 @@ describe('runBudget', () => {
     });
 
     it('refuses a row that is not built', async () => {
-        await expect(run(['--rows', 'predator:herd'])).rejects.toThrow(/unknown row/);
+        await expect(run(['--rows', 'predator:nothing'])).rejects.toThrow(/unknown row/);
     });
 
     it('finishes the matrix of the built phases in under 2 s without --check', async () => {

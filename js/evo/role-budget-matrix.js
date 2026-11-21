@@ -6,7 +6,9 @@ import { PREY_SPECS, budgetChase } from './role-budget-chase.js';
 import { normaliseMix, targetChoice } from './role-budget-choice.js';
 import { budgetDefend } from './role-budget-defend.js';
 import { budgetWarn } from './role-budget-warn.js';
+import { budgetHerd } from './role-budget-herd.js';
 import { PHASE4_ROWS, phase4Budget, preysFor } from './role-budget-matrix-thrive.js';
+import { SPEC_NAMES } from '../sim/specs.js';
 import { roleParams } from './role-budget-params.js';
 
 export { cell, rowOf } from './role-budget-cell.js';
@@ -24,10 +26,19 @@ export const PHASE2_ROWS = Object.freeze(['defender:predator']);
 /** The rows Phase 3 builds: the scout warning a forager of a hunter creeping up on it. */
 export const PHASE3_ROWS = Object.freeze(['scout:predator']);
 
+/** The rows Phase 5 builds: each spec against a stampeding herd. */
+export const PHASE5_ROWS = Object.freeze(SPEC_NAMES.map((s) => `${s}:herd`));
+
 export { PHASE4_ROWS };
 
 /** Every row built, in the order of the matrix. */
-export const BUILT_ROWS = Object.freeze([...PHASE1_ROWS, ...PHASE2_ROWS, ...PHASE3_ROWS, ...PHASE4_ROWS]);
+export const BUILT_ROWS = Object.freeze([
+    ...PHASE1_ROWS,
+    ...PHASE2_ROWS,
+    ...PHASE3_ROWS,
+    ...PHASE4_ROWS,
+    ...PHASE5_ROWS,
+]);
 
 /** @typedef {ReturnType<typeof import('./role-budget-cell.js').rowOf> & {detail?: any, picks?: string}} Row */
 
@@ -79,6 +90,10 @@ export function matrix(config, model, rows = BUILT_ROWS, { mix, worldConfig = co
     const built = rows.map((name) => {
         if (name === 'defender:predator' || name === 'scout:predator') {
             const budget = guildBudget(name, { config, hunter, model });
+            return { ...budget.row, detail: budget };
+        }
+        if (PHASE5_ROWS.includes(name)) {
+            const budget = budgetHerd(worldConfig, roleParams(worldConfig, name.slice(0, name.indexOf(':'))), model);
             return { ...budget.row, detail: budget };
         }
         if (PHASE4_ROWS.includes(name)) {
