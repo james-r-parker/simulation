@@ -474,6 +474,9 @@
     "test/sim/body-lanes.test.js": [
         "evals/decisions/body-genes/settings-inventory.md"
     ],
+    "test/sim/effects-complete.test.js": [
+        "js/sim/*.js"
+    ],
     "test/sim/event-offsets.test.js": [
         "js"
     ],
