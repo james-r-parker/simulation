@@ -147,6 +147,7 @@ add one to the month file and run `node scripts/notes-index.mjs --write` in the 
 - 2026-11-21 - The per-slot state contract found one array outside worldHash (registries Phase 1) - [2026-11](../notes/2026-11.md#2026-11-21---the-per-slot-state-contract-found-one-array-outside-worldhash-registries-phase-1)
 - 2026-11-21 - A startled herd's held centroid was a defect, not a design (role-budget T21a) - [2026-11](../notes/2026-11.md#2026-11-21---a-startled-herds-held-centroid-was-a-defect-not-a-design-role-budget-t21a)
 - 2026-11-21 - Detector order is behaviour (registries Phase 3) - [2026-11](../notes/2026-11.md#2026-11-21---detector-order-is-behaviour-registries-phase-3)
+- 2026-11-21 - A defender that holds BITE walks at the grazing gait, and nothing that sprints can stop where it walks to (role-budget Phase 2, E258) - [2026-11](../notes/2026-11.md#2026-11-21---a-defender-that-holds-bite-walks-at-the-grazing-gait-and-nothing-that-sprints-can-stop-where-it-walks-to-role-budget-phase-2-e258)
 - 2026-11-21 - The perfect hunter is not the best hunter against a breaking prey (role-budget Phase 1, E257) - [2026-11](../notes/2026-11.md#2026-11-21---the-perfect-hunter-is-not-the-best-hunter-against-a-breaking-prey-role-budget-phase-1-e257)
 - 2026-10-11 - jscpd 5 has no exitCode option - [2026-10](../notes/2026-10.md#2026-10-11---jscpd-5-has-no-exitcode-option)
 - 2026-10-11 - Git hooks export GIT_DIR and GIT_INDEX_FILE - [2026-10](../notes/2026-10.md#2026-10-11---git-hooks-export-git_dir-and-git_index_file)

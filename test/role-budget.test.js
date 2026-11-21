@@ -181,7 +181,7 @@ describe('runBudget', () => {
     });
 
     it('refuses a row that is not built', async () => {
-        await expect(run(['--rows', 'defender:predator'])).rejects.toThrow(/unknown row/);
+        await expect(run(['--rows', 'scout:predator'])).rejects.toThrow(/unknown row/);
     });
 
     it('finishes the matrix of the built phases in under 2 s without --check', async () => {
@@ -259,5 +259,36 @@ describe('the report', () => {
         ]);
         expect(text).toMatch(/maxVelocity\s+4\s+\+64\s+naive\s+-\s+evals\/role-budget\/x-1.json/);
         expect(text).toMatch(/predator:scout: no single setting/);
+    });
+
+    it('--check plays the defence and both smokes beside their formulas and reports no drift at the defaults', async () => {
+        const { text, check } = await run(['--rows', 'defender:predator', '--check']);
+        expect(check.drift).toBe(0);
+        expect(check.defence.map((/** @type {any} */ r) => r.what)).toContain('heard tick');
+        expect(text).toMatch(/defender:predator\s+heard tick\s+3\s+3\s+0 ticks\s+ok/);
+        expect(text).toMatch(/smoke:prey\s+cloud life\s+179\s+179/);
+    });
+
+    it('--check reads no defence for a run of hunter rows alone', async () => {
+        const { check } = await run(['--rows', 'predator:scout', '--check']);
+        expect(check.defence).toEqual([]);
+    });
+
+    it('prints the defender row in a table of its own, with its binding and the shove line', async () => {
+        const off = await run(['--rows', 'predator:forager,defender:predator']);
+        expect(off.text).toMatch(/row\s+see\s+turn\s+run\s+bite/);
+        expect(off.text).toMatch(/row\s+hear\s+turn\s+run\s+intercept/);
+        expect(off.text).toMatch(/defender:predator\s+48\s+-\s+X\s+X\s+\S+\s+impossible\s+repel: off/);
+        expect(off.text).toMatch(/shove off \(defenderRepelEnergy and defenderRepelImpulse are 0\)/);
+        const on = await run([
+            '--rows',
+            'defender:predator',
+            '--set',
+            'defenderRepelEnergy=40',
+            '--set',
+            'defenderRepelImpulse=4',
+        ]);
+        expect(on.text).toMatch(/shove on \(energy 40, impulse 4, cost 0\)/);
+        expect(on.result.rows[0].binding).not.toBe('repel: off');
     });
 });

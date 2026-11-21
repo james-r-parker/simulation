@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { arenaConfig } from '../../js/evo/chase-arena.js';
 import { rulesHash } from '../../js/sim/config.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
-import { PHASE1_ROWS, cell, matrix as typedMatrix, rowOf } from '../../js/evo/role-budget-matrix.js';
+import { BUILT_ROWS, PHASE1_ROWS, cell, matrix as typedMatrix, rowOf } from '../../js/evo/role-budget-matrix.js';
 
 const model = MODEL_DEFAULTS;
 /** @type {any} the matrix with its detail left untyped for the asserts */
@@ -31,12 +31,16 @@ describe('the rows of Phase 1', () => {
 describe('matrix', () => {
     it('builds every row of the built phases by default, with the model and the rules hash of the config', () => {
         const m = matrix(courser, model);
-        expect(m.rows.map((/** @type {any} */ r) => r.name)).toEqual(PHASE1_ROWS);
+        expect(m.rows.map((/** @type {any} */ r) => r.name)).toEqual(BUILT_ROWS);
+        expect(BUILT_ROWS).toEqual([...PHASE1_ROWS, 'defender:predator']);
         expect(m.model).toBe(model);
         expect(m.rulesHash).toBe(rulesHash(courser));
         for (const row of m.rows) {
             expect(['ok', 'tight', 'impossible', 'n/a']).toContain(row.status);
-            expect(Object.keys(row.cells)).toEqual(['see', 'turn', 'run', 'bite']);
+            const steps = row.name.startsWith('defender:')
+                ? ['hear', 'turn', 'run', 'intercept', 'smoke']
+                : ['see', 'turn', 'run', 'bite'];
+            expect(Object.keys(row.cells)).toEqual(steps);
         }
     });
 
@@ -66,8 +70,8 @@ describe('matrix', () => {
     });
 
     it('refuses a row that is not built, naming the built ones', () => {
-        expect(() => matrix(courser, model, ['defender:predator'])).toThrow(
-            /unknown row "defender:predator"; built: predator:forager/,
+        expect(() => matrix(courser, model, ['scout:predator'])).toThrow(
+            /unknown row "scout:predator"; built: predator:forager/,
         );
     });
 

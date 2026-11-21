@@ -13,6 +13,8 @@ describe('MODEL_DEFAULTS', () => {
             foodDensity: null,
             naiveEffort: 0.5,
             catchShare: 0.3,
+            defenderGap: 150,
+            smokeGap: 240,
             reliableSight: false,
         });
         expect(Object.isFrozen(MODEL_DEFAULTS)).toBe(true);
@@ -34,6 +36,8 @@ describe('validateModel', () => {
     });
 
     it.each([
+        ['defenderGap', 0],
+        ['smokeGap', -1],
         ['reactionTicks', 1.5],
         ['reactionTicks', -1],
         ['hearThreshold', 1],

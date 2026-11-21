@@ -30,6 +30,8 @@ export const STORE_SHARE = 0.5;
  * @property {{restitution: number}} contact the contact impulse of `resolveContacts`
  * @property {{radius: number, ticks: number, threshold: number, cost: number}} call
  * @property {{radius: number, ticks: number, cooldown: number, cost: number, threshold: number}} smoke
+ * @property {{energy: number, cost: number, impulse: number}} repel the defender's shove (`tryDefenderRepel`): the energy it drains
+ *   from a hunter in its jaws, what it costs the defender, and the knockback; 0 and 0 energy and impulse is off
  * @property {{gainMove: number, lossPassive: number, optimalMax: number, start: number, efficiency: number}} heat
  * @property {{splitMin: number, birthReserve: number, childShare: number, mateMin: number, mateCost: number, maturityTicks: number, maxAgeTicks: number}} repro
  */
@@ -174,7 +176,7 @@ function combatOf(lane) {
  * @param {Readonly<Record<string, any>>} config the validated config
  * @param {Record<string, number>} lane the spec's lane bases
  * @param {string} specName the specialisation's name
- * @returns {Pick<RoleParams, 'call' | 'smoke' | 'heat' | 'repro'>} the call, smoke, heat and life numbers; a scout's
+ * @returns {Pick<RoleParams, 'call' | 'smoke' | 'repel' | 'heat' | 'repro'>} the call, smoke, heat and life numbers; a scout's
  *   call is scaled by `scoutCallRadiusMultiplier` and `scoutAlarmCostMultiplier` (`callerRadius` and the alarm of
  *   js/sim/calls.js) until body-genes.md Phase 5 turns them into the scout's `body` entries
  */
@@ -196,6 +198,11 @@ function signalsOf(config, lane, specName) {
             cooldown: lane.smokeCooldown,
             cost: lane.smokeCost,
             threshold: lane.smokeThreshold,
+        },
+        repel: {
+            energy: lane.defenderRepelEnergy,
+            cost: lane.defenderRepelCost,
+            impulse: lane.defenderRepelImpulse,
         },
         heat: {
             gainMove: lane.temperatureGainMove,

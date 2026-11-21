@@ -4,6 +4,7 @@
 import { rulesHash } from '../sim/config.js';
 import { PREY_SPECS, budgetChase } from './role-budget-chase.js';
 import { normaliseMix, targetChoice } from './role-budget-choice.js';
+import { budgetDefend } from './role-budget-defend.js';
 import { roleParams } from './role-budget-params.js';
 
 export { cell, rowOf } from './role-budget-cell.js';
@@ -14,6 +15,12 @@ export const PHASE1_ROWS = Object.freeze([
     'predator:average',
     'predator:best',
 ]);
+
+/** The rows Phase 2 builds: the defender against the hunter, the forager standing as the caller. */
+export const PHASE2_ROWS = Object.freeze(['defender:predator']);
+
+/** Every row built, in the order of the matrix. */
+export const BUILT_ROWS = Object.freeze([...PHASE1_ROWS, ...PHASE2_ROWS]);
 
 /** @typedef {ReturnType<typeof import('./role-budget-cell.js').rowOf> & {detail?: any, picks?: string}} Row */
 
@@ -27,10 +34,10 @@ export const PHASE1_ROWS = Object.freeze([
  *   config, and the target choice when a row asked for it
  * @throws {Error} on a row that is not built
  */
-export function matrix(config, model, rows = PHASE1_ROWS, { mix } = {}) {
+export function matrix(config, model, rows = BUILT_ROWS, { mix } = {}) {
     for (const name of rows) {
-        if (!PHASE1_ROWS.includes(name)) {
-            throw new Error(`role-budget: unknown row "${name}"; built: ${PHASE1_ROWS.join(', ')}`);
+        if (!BUILT_ROWS.includes(name)) {
+            throw new Error(`role-budget: unknown row "${name}"; built: ${BUILT_ROWS.join(', ')}`);
         }
     }
     const hunter = roleParams(config, 'predator');
@@ -45,6 +52,10 @@ export function matrix(config, model, rows = PHASE1_ROWS, { mix } = {}) {
         detail: choice,
     });
     const built = rows.map((name) => {
+        if (name === 'defender:predator') {
+            const budget = budgetDefend(roleParams(config, 'defender'), hunter, roleParams(config, 'forager'), model);
+            return { ...budget.row, detail: budget };
+        }
         if (name === 'predator:average' || name === 'predator:best') {
             return choiceRow(name === 'predator:average' ? 'average' : 'best');
         }

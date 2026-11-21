@@ -1,0 +1,10 @@
+{
+  "defenderRepelEnergy": 40,
+  "defenderRepelImpulse": 4,
+  "defenderRepelCost": 0,
+  "specialisations": {
+    "predator": {
+      "sprintBoost": 2
+    }
+  }
+}

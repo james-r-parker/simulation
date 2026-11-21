@@ -205,21 +205,32 @@ export function inJaws(h, p) {
 }
 
 /**
+ * @param {Body} h the biter
+ * @param {Body} p the victim
+ * @returns {boolean} whether the size gate lets `h` bite `p` as the sizes stand now (`couldBite` reads it on each bite, so a
+ *   gate refused at first contact opens once the victim has shrunk)
+ */
+export function mayBite(h, p) {
+    return h.size > h.p.bite.sizeRatio * p.size;
+}
+
+/**
  * Lands one bite if the prey is in the jaws: the victim loses `biteEnergy x alarm x its biteTaken`, the hunter gains it, a
  * fatal bite (the victim at or under its kill line) also gives the gorge, and the hunter pays the kick, read before the bite.
  * @param {Body} h the biter, updated in place
  * @param {Body} p the victim, updated in place
  * @param {{bites: number, income: number, kick: number}} tally the bites, energy returned and kicks, updated in place
+ * @param {boolean} [alarmed] whether the victim's seen alarm is running, which cuts the bite to `alarmBiteShare`
  * @returns {boolean} whether the bite killed
  */
-export function bite(h, p, tally) {
+export function bite(h, p, tally, alarmed = false) {
     if (!inJaws(h, p)) {
         return false;
     }
     const hp = h.p;
     const vp = p.p;
     const kick = hp.bite.cost * (p.size / h.size) * (0.5 + p.energy / vp.sizing.max) * vp.bite.kick;
-    const moved = Math.min(hp.bite.damage * hp.bite.alarm * vp.bite.taken, p.energy);
+    const moved = Math.min(hp.bite.damage * (alarmed ? hp.bite.alarm : 1) * vp.bite.taken, p.energy);
     const gained = Math.min(moved, hp.sizing.max - h.energy);
     p.energy -= moved;
     h.energy += gained;

@@ -5,14 +5,16 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { arenaConfig } from '../js/evo/chase-arena.js';
 import { chaseCells, kinematicRows } from '../js/evo/role-budget-check.js';
+import { defenceCheck } from '../js/evo/role-budget-defence-check.js';
 import { PREY_SPECS } from '../js/evo/role-budget-chase.js';
 import { catchShares } from '../js/evo/role-budget-shares.js';
-import { PHASE1_ROWS, matrix } from '../js/evo/role-budget-matrix.js';
+import { BUILT_ROWS, matrix } from '../js/evo/role-budget-matrix.js';
 import { validateModel } from '../js/evo/role-budget-model.js';
 import { searchSettings, withPath } from '../js/evo/role-budget-search.js';
 import { configHash } from '../js/sim/config.js';
 import { emitReport, runAsMain, withLogFile } from './lib/audit-io.mjs';
 import { exitCodeOf, parseFlags } from './lib/cli-args.mjs';
+import { formatDefenderSearch, searchDefenderRows } from './lib/role-budget-defender-search.mjs';
 import { formatCheck, formatReport, formatSearch } from './lib/role-budget-report.mjs';
 import { logRunConfig } from './lib/run-config.mjs';
 
@@ -193,25 +195,44 @@ function searchRows(config, overrides, result, { model, outDir, arm }) {
 }
 
 /**
+ * @param {Record<string, any>} config an `arenaConfig`
+ * @param {string} prey the prey spec
+ * @returns {{pair: string, straight: any[], broken: any[], shares: Record<string, import('../js/evo/role-budget-shares.js').CatchShares>}} the predator's cells on both bounds
+ */
+function chasePair(config, prey) {
+    const straight = chaseCells(config, { hunter: 'predator', prey, straight: true });
+    const broken = chaseCells(config, { hunter: 'predator', prey, straight: false });
+    return {
+        pair: `predator:${prey}`,
+        straight,
+        broken,
+        shares: { straight: catchShares(straight), broken: catchShares(broken) },
+    };
+}
+
+/**
  * Plays the scene of each requested prey beside the formula, on both prey bounds, and the kinematics against the body table.
  * @param {Record<string, any>} config an `arenaConfig`
- * @param {string[]} preys the prey rows asked for
+ * @param {{preys: string[], defence: boolean, model: import('../js/evo/role-budget-model.js').RoleModel}} asked the prey
+ *   rows asked for, whether the defender row was, and the model options
  * @param {import('../js/sim/log.js').SimLog} log the log
- * @returns {{kinematics: import('../js/evo/role-budget-check.js').KinematicRow[], pairs: any[], drift: number}} the check
+ * @returns {{kinematics: import('../js/evo/role-budget-check.js').KinematicRow[], pairs: any[],
+ *   defence: import('../js/evo/role-budget-defence-check.js').DefenceReading[], drift: number}} the check
  */
-function crossCheck(config, preys, log) {
+function crossCheck(config, { preys, defence, model }, log) {
     const kinematics = kinematicRows(config);
-    const pairs = preys.map((prey) => {
-        const straight = chaseCells(config, { hunter: 'predator', prey, straight: true });
-        const broken = chaseCells(config, { hunter: 'predator', prey, straight: false });
-        return {
-            pair: `predator:${prey}`,
-            straight,
-            broken,
-            shares: { straight: catchShares(straight), broken: catchShares(broken) },
-        };
-    });
-    let drift = 0;
+    const pairs = preys.map((prey) => chasePair(config, prey));
+    const played = defence ? defenceCheck(config, model) : { readings: [], drift: 0 };
+    let drift = played.drift;
+    for (const r of played.readings.filter((reading) => reading.drift)) {
+        log.log('warn', 'RoleBudgetDrift', {
+            row: r.row,
+            step: r.what,
+            formula: r.formula,
+            scene: r.scene,
+            tolerance: r.tolerance,
+        });
+    }
     for (const k of kinematics.filter((row) => row.drift)) {
         drift += 1;
         log.log('warn', 'RoleBudgetDrift', {
@@ -244,13 +265,60 @@ function crossCheck(config, preys, log) {
             });
         }
     }
-    return { kinematics, pairs, drift };
+    return { kinematics, pairs, defence: played.readings, drift };
+}
+
+/**
+ * @param {Record<string, any>} config an `arenaConfig`
+ * @param {{overrides: Record<string, any>, result: ReturnType<typeof matrix>, where: {model: any, outDir: string, arm: string}}} from
+ *   the overrides that made it, the matrix and where the search writes
+ * @returns {{searched: any[], defence: ReturnType<typeof searchDefenderRows>}} the search of each hunter row that is not
+ *   fit, and of the defender row when it was asked for
+ */
+function searchAll(config, { overrides, result, where }) {
+    const defender = result.rows.some((r) => r.name === 'defender:predator');
+    return {
+        searched: searchRows(config, overrides, result, where),
+        defence: defender ? searchDefenderRows(config, { ...where, overrides }) : [],
+    };
+}
+
+/**
+ * @param {boolean} json whether to print JSON
+ * @param {{hash: string, result: ReturnType<typeof matrix>, searched: any[], defence: any[], check: any}} parts the config
+ *   hash, the matrix, the searches and the cross-check
+ * @returns {string} the report: JSON, or the matrix followed by each part that was asked for
+ */
+function render(json, { hash, result, searched, defence, check }) {
+    if (json) {
+        return JSON.stringify({ configHash: hash, ...result, searched, defenderSearch: defence, check }, null, 2);
+    }
+    return [
+        formatReport(result, hash),
+        ...(searched.length > 0 ? [formatSearch(searched)] : []),
+        ...(defence.length > 0 ? [formatDefenderSearch(defence)] : []),
+        ...(check ? [formatCheck(check)] : []),
+    ].join('\n\n');
+}
+
+/**
+ * @param {readonly string[]} rows the rows asked for
+ * @param {import('../js/evo/role-budget-model.js').RoleModel} model the model options
+ * @returns {{preys: string[], defence: boolean, model: import('../js/evo/role-budget-model.js').RoleModel}} what the
+ *   cross-check plays: the prey of each hunter row asked for, whether the defender row was asked for, and the model
+ */
+function asked(rows, model) {
+    const preys = rows
+        .filter((r) => r.startsWith('predator:'))
+        .map((r) => r.slice('predator:'.length))
+        .filter((s) => PREY_SPECS.includes(s));
+    return { preys, defence: rows.includes('defender:predator'), model };
 }
 
 /**
  * @param {BudgetArgs} args the options
  * @param {{logDir?: string, print?: (text: string) => void}} [io] where the log goes and where the report prints
- * @returns {Promise<{result: ReturnType<typeof matrix>, searched: any[], check: any}>} what was computed
+ * @returns {Promise<{result: ReturnType<typeof matrix>, searched: any[], defenderSearch: any[], check: any}>} what was computed
  * @throws {Error} with `exitCode` 1 and `RoleBudgetDrift` when `--check` finds a cell outside its tolerance
  */
 export async function runBudget(args, { logDir = '.sim/logs', print = console.log } = {}) {
@@ -270,27 +338,20 @@ export async function runBudget(args, { logDir = '.sim/logs', print = console.lo
             ticks: null,
             extra: { model },
         });
-        const result = matrix(config, model, args.rows ?? PHASE1_ROWS, { mix: args.mix });
+        const result = matrix(config, model, args.rows ?? BUILT_ROWS, { mix: args.mix });
         logCells(config, result, hash, log);
-        const searched = args.search ? searchRows(config, overrides, result, { model, outDir: args.outDir, arm }) : [];
-        const preys = (args.rows ?? PHASE1_ROWS)
-            .map((r) => r.slice('predator:'.length))
-            .filter((s) => PREY_SPECS.includes(s));
-        const check = args.check ? crossCheck(config, preys, log) : null;
-        const text = args.json
-            ? JSON.stringify({ configHash: hash, ...result, searched, check }, null, 2)
-            : [
-                  formatReport(result, hash),
-                  ...(searched.length > 0 ? [formatSearch(searched)] : []),
-                  ...(check ? [formatCheck(check)] : []),
-              ].join('\n\n');
+        const { searched, defence } = args.search
+            ? searchAll(config, { overrides, result, where: { model, outDir: args.outDir, arm } })
+            : { searched: [], defence: [] };
+        const check = args.check ? crossCheck(config, asked(args.rows ?? BUILT_ROWS, model), log) : null;
+        const text = render(args.json, { hash, result, searched, defence, check });
         emitReport(text, { print, out: args.out });
         if (check !== null && check.drift > 0) {
             throw Object.assign(new Error(`RoleBudgetDrift: ${check.drift} reading(s) outside their tolerance`), {
                 exitCode: 1,
             });
         }
-        return { result, searched, check };
+        return { result, searched, defenderSearch: defence, check };
     });
 }
 

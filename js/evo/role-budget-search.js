@@ -100,6 +100,24 @@ function budgetOf(config, pair, model) {
 }
 
 /**
+ * Scales one setting of a config and rebuilds it.
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {{overrides: Record<string, any>, path: string, factor: number}} change the overrides that made the config, the
+ *   setting's dotted path and the factor to scale it by
+ * @returns {{value: number, overrides: Record<string, any>, config: Readonly<Record<string, any>>} | null} the new value, the
+ *   overrides with it and the config they make; null when the config refuses the value
+ */
+export function scaled(config, { overrides, path, factor }) {
+    const value = getPath(config, path) * factor;
+    const changed = withPath(overrides, path, value);
+    try {
+        return { value, overrides: changed, config: arenaConfig(changed) };
+    } catch {
+        return null;
+    }
+}
+
+/**
  * @param {{hunter: string, prey: string, overrides: Record<string, any>, config: Readonly<Record<string, any>>,
  *   model: import('./role-budget-model.js').RoleModel}} from the pair and what to change it from
  * @param {string} path a candidate path
@@ -107,23 +125,19 @@ function budgetOf(config, pair, model) {
  * @returns {Finding | null} the finding, null when the config refuses the value
  */
 function tryChange(from, path, factor) {
-    const value = getPath(from.config, path) * factor;
-    const changed = withPath(from.overrides, path, value);
-    let next;
-    try {
-        next = arenaConfig(changed);
-    } catch {
+    const next = scaled(from.config, { overrides: from.overrides, path, factor });
+    if (next === null) {
         return null;
     }
-    const budget = budgetOf(next, from, from.model);
+    const budget = budgetOf(next.config, from, from.model);
     return {
         path,
         factor,
-        value,
+        value: next.value,
         margin: budget.catchMargin,
         learnSlope: budget.learnSlope,
         fit: budget.fit,
-        overrides: changed,
+        overrides: next.overrides,
     };
 }
 

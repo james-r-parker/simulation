@@ -1,0 +1,6 @@
+{
+  "defenderRepelEnergy": 40,
+  "defenderRepelImpulse": 4,
+  "defenderRepelCost": 4,
+  "maxThrust": 0.35
+}
