@@ -2,6 +2,7 @@
 // energy and heat lines. Every number is rounded here, never by a module (docs/designs/role-budget.md).
 import { padTable } from './drill-report.mjs';
 
+/** The steps of each kind of row, by the first step of its cells. */
 const STEPS = ['see', 'turn', 'run', 'bite'];
 
 /** @param {number} v a number @param {number} [digits] the decimals @returns {string} the number, signed */
@@ -24,18 +25,33 @@ export function cellText(cell) {
 }
 
 /**
- * @param {import('../../js/evo/role-budget-matrix.js').Row[]} rows the matrix rows
- * @returns {string} the matrix: a row per line, the four steps, the row's status and its binding step
+ * @param {import('../../js/evo/role-budget-matrix.js').Row[]} rows the rows, all with the same steps
+ * @returns {string} one table: a row per line, its steps, its status and its binding step
  */
-export function formatMatrix(rows) {
-    const head = ['row', ...STEPS, 'status', 'binding'];
+function matrixTable(rows) {
+    const steps = Object.keys(rows[0].cells).length > 0 ? Object.keys(rows[0].cells) : STEPS;
+    const head = ['row', ...steps, 'status', 'binding'];
     const body = rows.map((row) => [
         row.name,
-        ...STEPS.map((step) => cellText(row.cells[step])),
+        ...steps.map((step) => cellText(row.cells[step])),
         row.status,
         row.binding ?? '-',
     ]);
     return padTable([head, ...body]).join('\n');
+}
+
+/**
+ * @param {import('../../js/evo/role-budget-matrix.js').Row[]} rows the matrix rows
+ * @returns {string} the matrix: a table per set of steps (the hunter's rows, then the defender's), a row per line, each
+ *   with its status and its binding step
+ */
+export function formatMatrix(rows) {
+    const groups = new Map();
+    for (const row of rows) {
+        const key = Object.keys(row.cells).join(',');
+        groups.set(key, [...(groups.get(key) ?? []), row]);
+    }
+    return [...groups.values()].map(matrixTable).join('\n\n');
 }
 
 /**
@@ -71,6 +87,23 @@ function budgetLines(budget) {
 }
 
 /**
+ * @param {import('../../js/evo/role-budget-defend.js').DefendBudget} budget the defender's budget
+ * @returns {string[]} the lines that go under its row: the scene's ticks, the shove, the bite on the defender, the smoke
+ */
+function defendLines(budget) {
+    const { run, baseline, repel, defenderBite } = budget;
+    const at = (/** @type {number | null} */ t) => (t === null || t < 0 ? 'never' : `tick ${t}`);
+    const shove = repel.on
+        ? `on (energy ${repel.energy}, impulse ${repel.impulse}, cost ${repel.cost}): breaks the bite ${repel.breaksBite ? 'yes' : 'no'}, prevents ${repel.prevented.toFixed(0)} bite energy, takes ${repel.energy} from the hunter`
+        : 'off (defenderRepelEnergy and defenderRepelImpulse are 0): no power on arrival';
+    return [
+        `  alarm ${at(run.alarmTick)}  heard ${at(run.heardTick)}  defender moves ${at(run.startTick)}  touches the hunter ${at(run.interceptTick)}  caller dies ${at(baseline.killTick)} (no defender) / ${at(run.killTick)}`,
+        `  shove ${shove}`,
+        `  a hunter's bite on the defender takes ${defenderBite.taken.toFixed(0)} and costs the hunter ${defenderBite.kick.toFixed(1)} of kick`,
+    ];
+}
+
+/**
  * @param {import('../../js/evo/role-budget-matrix.js').Row[]} rows the matrix rows
  * @returns {string} the detail of each row: its bounds, tiers, energy and heat, or the average and best row's choice
  */
@@ -86,7 +119,7 @@ export function formatDetail(rows) {
                 const share = `catchable share ${d.catchableShare.toFixed(2)}  choice gain ${d.choiceGain.toFixed(1)} ticks`;
                 return [row.name, `  ${share}${picks}`];
             }
-            return [row.name, ...budgetLines(d)];
+            return [row.name, ...(d.repel === undefined ? budgetLines(d) : defendLines(d))];
         })
         .join('\n');
 }

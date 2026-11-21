@@ -12,6 +12,7 @@
  * @property {number | null} foodDensity food items per px2 inside a patch, null to derive it from the config
  * @property {number} naiveEffort the constant sprint effort of the `naive` tier
  * @property {number} catchShare the share of chases a hunter wins
+ * @property {number} defenderGap the distance of the defender from the caller at the start of a defence, in px
  * @property {boolean} reliableSight whether the hunter acts only on a prey that two neighbouring rays cannot both miss
  */
 
@@ -26,6 +27,7 @@ export const MODEL_DEFAULTS = Object.freeze({
     foodDensity: null,
     naiveEffort: 0.5,
     catchShare: 0.3,
+    defenderGap: 150,
     reliableSight: false,
 });
 
@@ -40,6 +42,7 @@ const VALID = {
     foodDensity: (v) => v === null || (typeof v === 'number' && v > 0),
     naiveEffort: (v) => typeof v === 'number' && v > 0 && v <= 1,
     catchShare: (v) => typeof v === 'number' && v > 0 && v <= 1,
+    defenderGap: (v) => typeof v === 'number' && v > 0,
     reliableSight: (v) => typeof v === 'boolean',
 };
 

@@ -180,7 +180,7 @@ describe('runBudget', () => {
     });
 
     it('refuses a row that is not built', async () => {
-        await expect(run(['--rows', 'defender:predator'])).rejects.toThrow(/unknown row/);
+        await expect(run(['--rows', 'scout:predator'])).rejects.toThrow(/unknown row/);
     });
 
     it('finishes the matrix of the built phases in under 2 s without --check', async () => {
@@ -256,5 +256,23 @@ describe('the report', () => {
         ]);
         expect(text).toMatch(/maxVelocity\s+4\s+\+64\s+naive\s+-\s+evals\/role-budget\/x-1.json/);
         expect(text).toMatch(/predator:scout: no single setting/);
+    });
+
+    it('prints the defender row in a table of its own, with its binding and the shove line', async () => {
+        const off = await run(['--rows', 'predator:forager,defender:predator']);
+        expect(off.text).toMatch(/row\s+see\s+turn\s+run\s+bite/);
+        expect(off.text).toMatch(/row\s+hear\s+turn\s+run\s+intercept/);
+        expect(off.text).toMatch(/defender:predator\s+48\s+-\s+X\s+X\s+impossible\s+repel: off/);
+        expect(off.text).toMatch(/shove off \(defenderRepelEnergy and defenderRepelImpulse are 0\)/);
+        const on = await run([
+            '--rows',
+            'defender:predator',
+            '--set',
+            'defenderRepelEnergy=40',
+            '--set',
+            'defenderRepelImpulse=4',
+        ]);
+        expect(on.text).toMatch(/shove on \(energy 40, impulse 4, cost 0\)/);
+        expect(on.result.rows[0].binding).not.toBe('repel: off');
     });
 });

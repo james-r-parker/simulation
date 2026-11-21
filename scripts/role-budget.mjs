@@ -6,7 +6,7 @@ import { basename, join } from 'node:path';
 import { arenaConfig } from '../js/evo/chase-arena.js';
 import { chaseCells, kinematicRows } from '../js/evo/role-budget-check.js';
 import { PREY_SPECS } from '../js/evo/role-budget-chase.js';
-import { PHASE1_ROWS, matrix } from '../js/evo/role-budget-matrix.js';
+import { BUILT_ROWS, matrix } from '../js/evo/role-budget-matrix.js';
 import { validateModel } from '../js/evo/role-budget-model.js';
 import { searchSettings, withPath } from '../js/evo/role-budget-search.js';
 import { configHash } from '../js/sim/config.js';
@@ -254,10 +254,11 @@ export async function runBudget(args, { logDir = '.sim/logs', print = console.lo
             ticks: null,
             extra: { model },
         });
-        const result = matrix(config, model, args.rows ?? PHASE1_ROWS, { mix: args.mix });
+        const result = matrix(config, model, args.rows ?? BUILT_ROWS, { mix: args.mix });
         logCells(config, result, hash, log);
         const searched = args.search ? searchRows(config, overrides, result, { model, outDir: args.outDir, arm }) : [];
-        const preys = (args.rows ?? PHASE1_ROWS)
+        const preys = (args.rows ?? BUILT_ROWS)
+            .filter((r) => r.startsWith('predator:'))
             .map((r) => r.slice('predator:'.length))
             .filter((s) => PREY_SPECS.includes(s));
         const check = args.check ? crossCheck(config, preys, log) : null;
