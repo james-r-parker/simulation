@@ -8,7 +8,7 @@ import { releaseSmoke } from './smoke.js';
 import { cellRange } from './spatial-hash.js';
 import { noteHeard } from './effect-hear.js';
 import { huddlePass } from './effect-huddle.js';
-import { noteCalled } from './effect-social.js';
+import { settleCalls } from './effect-social.js';
 import { GATE, LANE_ID, gateOpen, liveOf } from './effects.js';
 import { specParams } from './spec-params.js';
 import { HEARD_STRIDE } from './world.js';
@@ -118,7 +118,6 @@ function alarm(world, slot) {
     world.alarmTimer[slot] = callTicks;
     const threat = threatInView(world, slot);
     world.alarmSeen[slot] = threat ? 1 : 0;
-    noteCalled(world, slot, threat);
     depositPheromone(world, world.danger, world.x[slot], world.y[slot]);
     pushCall(world, EVENT_TYPE.ALARM_CALLED, slot);
 }
@@ -141,7 +140,6 @@ function huntCall(world, slot) {
     }
     removeEnergy(world, slot, cost, LOSS_CAUSE.COST);
     world.huntTimer[slot] = callTicks;
-    noteCalled(world, slot, false);
     depositPheromone(world, world.hunt, world.x[slot], world.y[slot]);
     pushCall(world, EVENT_TYPE.PACK_CALLED, slot);
 }
@@ -300,7 +298,9 @@ export function signalAll(world, hash) {
     tickTimers(world);
     fireCalls(world);
     world.heard.fill(0);
+    world.callHeard.fill(0);
     hearPass(world, hash, world.alarmTimer, ALARM_HEARD);
     hearPass(world, hash, world.huntTimer, HUNT_HEARD);
+    settleCalls(world);
     huddlePass(world, hash);
 }

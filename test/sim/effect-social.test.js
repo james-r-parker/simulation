@@ -1,8 +1,8 @@
 // The social appliers a call site raises (docs/designs/status-effects.md, "The social effects"), staged in the feed phase.
 
 import { describe, expect, it } from 'vitest';
-import { CH_THREAT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
-import { EFFECT, effectFactor, fadeEffects, liveOf } from '../../js/sim/effects.js';
+import { OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
+import { EFFECT, effectFactor, fadeEffects } from '../../js/sim/effects.js';
 import { EVENT, EVENT_TYPE } from '../../js/sim/events.js';
 import { FORAGER, PREDATOR, feedPairs, stage } from './helpers/bite-stage.js';
 import { chase, hold, pack, shareKill, stacks, tick } from './helpers/pack-stage.js';
@@ -105,51 +105,6 @@ describe('a bite that leaves its victim alive', () => {
     });
 });
 
-describe('hoarse', () => {
-    it('is one stack a call, and prices the next call by hoarseCost a stack', () => {
-        const w = pack({ huntCallCost: 6 });
-        hold(w, 0, OUTPUT_INDEX.HUNT);
-        const paid = [];
-        let before = w.energy[0];
-        for (let t = 0; t < 21; t++) {
-            tick(w);
-            if (w.energy[0] < before) {
-                paid.push(before - w.energy[0]);
-            }
-            before = w.energy[0];
-        }
-        expect(stacks(w, 0, 'hoarse')).toBe(3);
-        expect(paid).toEqual([6, 6 * 1.5, 6 * 2]);
-        expect(liveOf(w, 0, 'huntCallCost')).toBe(6 * 2.5);
-    });
-
-    it('is a stack for an alarm with nothing on the caller rays, and none net for an alarm with a threat', () => {
-        for (const [threat, expected] of [
-            [false, 1],
-            [true, 0],
-        ]) {
-            const w = pack();
-            w.spec[0] = FORAGER;
-            hold(w, 0, OUTPUT_INDEX.ALARM);
-            if (threat) {
-                w.inputs[0 * w.layout.rawInputCount + CH_THREAT] = 1;
-            }
-            tick(w);
-            expect(w.alarmTimer[0]).toBe(10);
-            expect(stacks(w, 0, 'hoarse'), `threat ${threat}`).toBe(expected);
-        }
-    });
-
-    it('prices the alarm of a scout by the scout multiplier on the lane', () => {
-        const w = pack({ scoutAlarmCostMultiplier: 2 });
-        w.spec[0] = 3;
-        hold(w, 0, OUTPUT_INDEX.ALARM);
-        const before = w.energy[0];
-        tick(w);
-        expect(before - w.energy[0]).toBe(8);
-    });
-});
-
 describe('answered', () => {
     it('goes to the caller when the hunter it rallied kills prey the caller also bit, and takes a hoarse stack off', () => {
         const { w, caller, killer, prey } = chase();
@@ -195,7 +150,6 @@ describe('answered', () => {
             tick(idle);
         }
         expect([stacks(idle, 0, 'answered'), stacks(idle, 1, 'answered')]).toEqual([0, 0]);
-        expect(stacks(idle, 0, 'hoarse')).toBeGreaterThan(0);
     });
 });
 

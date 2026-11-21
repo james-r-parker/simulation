@@ -151,7 +151,7 @@ export const FEATURE_RULES = {
     rallyTicks: int(1),
     answeredBite: num(0),
     answeredTicks: int(1),
-    hoarseCost: num(0),
+    hoarseFactor: num(1),
     hoarseTicks: int(1),
     alertBoost: num(0),
     alertGraze: num(0, 1),

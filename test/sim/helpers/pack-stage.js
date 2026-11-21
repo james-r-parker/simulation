@@ -14,7 +14,7 @@ export const OVER = {
     alarmCost: 4,
     huntCallCost: 6,
     rallyThrust: 0.1,
-    hoarseCost: 0.5,
+    hoarseFactor: 2,
 };
 
 /**

@@ -251,7 +251,7 @@ export const DEFAULTS = deepFreeze({
     rallyTicks: 120, // status-effects T10: ticks a `rallied` stack lasts, and how recent the caller's bite must be for an `answered` kill
     answeredBite: 0, // status-effects T10: the bite energy an `answered` stack adds (biteEnergy x (1 + answeredBite x stacks)); 0 is off
     answeredTicks: 120, // status-effects T10: ticks an `answered` stack lasts
-    hoarseCost: 0, // status-effects T10: the rise in alarm and hunt call cost a `hoarse` stack adds; 0 is off
+    hoarseFactor: 1, // status-effects T10: a call costs this much more for each `hoarse` stack (cost x factor^stacks); 1 is off, 2 doubles
     hoarseTicks: 60, // status-effects T10: ticks a `hoarse` stack lasts
     alertBoost: 0, // status-effects T11: the turn and sprint boost an `alert` stack adds, times the body's nerve; 0 is off
     alertGraze: 0, // status-effects T11: the grazing thrust an `alert` stack takes off while the body grazes, times its nerve; 0 is off

@@ -20,6 +20,11 @@ describe('socialEffectsOn', () => {
         }
     });
 
+    it('is true for a hoarseFactor above 1, whose neutral value is 1', () => {
+        expect(socialEffectsOn({ hoarseFactor: 1 })).toBe(false);
+        expect(socialEffectsOn({ hoarseFactor: 2 })).toBe(true);
+    });
+
     it('names only keys the config knows, each 0 by default', () => {
         const config = createConfig();
         for (const key of SOCIAL_KEYS.filter((k) => k in config)) {

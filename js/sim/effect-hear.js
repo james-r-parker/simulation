@@ -37,6 +37,7 @@ function noteCall(world, hearer, caller, half) {
     from[row] = caller;
     from[row + 1] = genomeId;
     from[row + 2] = start;
+    world.callHeard[caller * 2 + (half === HUNT_FROM ? 1 : 0)] = 1;
     return true;
 }
 

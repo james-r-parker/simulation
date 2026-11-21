@@ -105,7 +105,7 @@ with one and not the other when the world starts. 264 keys.
 | `herdStoreMax`                      | 3000      | num > 0                       |
 | `herdWalkSpeed`                     | 1.5       | num >= 0                      |
 | `herdWary`                          | 1         | num >= 0 <= 4                 |
-| `hoarseCost`                        | 0         | num >= 0                      |
+| `hoarseFactor`                      | 1         | num >= 1                      |
 | `hoarseTicks`                       | 60        | int >= 1                      |
 | `huddleRange`                       | 2         | num > 0                       |
 | `huddleWarmth`                      | 0         | num >= 0 <= 1                 |

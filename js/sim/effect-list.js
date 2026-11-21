@@ -237,10 +237,10 @@ export const EFFECTS = Object.freeze([
         maxStacks: 5,
         fades: { kind: 'every', key: 'hoarseTicks' },
         scales: [
-            { lane: 'alarmCost', perStack: 'hoarseCost' },
-            { lane: 'huntCallCost', perStack: 'hoarseCost' },
+            { lane: 'alarmCost', perStack: 'hoarseFactor', power: true },
+            { lane: 'huntCallCost', perStack: 'hoarseFactor', power: true },
         ],
-        applier: 'noteCalled',
+        applier: 'settleCalls',
         visible: true,
     }),
     // status-effects Phase 2, T11: the herd. `alert` goes to a non-hunter that hears a real alarm; `huddled` to a body with fed

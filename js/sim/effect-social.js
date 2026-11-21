@@ -39,17 +39,39 @@ export function noteBiteEffects(world, biter, victim, fatal) {
 }
 
 /**
- * A call is paid for with a `hoarse` stack, one a call; an alarm fired with a threat on the caller's rays takes one off at
- * once, so a call that warns of something real stays cheap (`alarm` and `huntCall`, js/sim/calls.js).
+ * Prices the calls made this tick, after the hearing passes (`signalAll`, js/sim/calls.js). A wasted call earns the caller a
+ * `hoarse` stack, and each stack multiplies the cost of its next call: an alarm that nobody heard, one raised with no threat
+ * in the caller's view, or a hunt call no kin hunter answered. A call that was heard and had a reason adds none, and an
+ * alarm that warned of a real threat takes one stack off, so a rare false alarm stays cheap and spam burns out.
  * @param {any} world the world
- * @param {number} caller the calling slot
- * @param {boolean} honest whether the call warns of a real threat
+ * @param {number} caller the calling slot, whose alarm or hunt timer was set this tick
  * @returns {void}
  */
-export function noteCalled(world, caller, honest) {
-    raiseEffect(SYSTEM, world, caller, { effect: EFFECT.HOARSE, source: caller });
-    if (honest) {
-        dropStack(SYSTEM, world, caller, EFFECT.HOARSE);
+function settleCaller(world, caller) {
+    const { callTicks } = world.config;
+    if (world.alarmTimer[caller] === callTicks) {
+        if (world.alarmSeen[caller] === 0 || world.callHeard[caller * 2] === 0) {
+            raiseEffect(SYSTEM, world, caller, { effect: EFFECT.HOARSE, source: caller });
+        } else {
+            dropStack(SYSTEM, world, caller, EFFECT.HOARSE);
+        }
+    }
+    if (world.huntTimer[caller] === callTicks && world.callHeard[caller * 2 + 1] === 0) {
+        raiseEffect(SYSTEM, world, caller, { effect: EFFECT.HOARSE, source: caller });
+    }
+}
+
+/**
+ * Settles every call made this tick (`settleCaller`).
+ * @param {any} world the world
+ * @returns {void}
+ */
+export function settleCalls(world) {
+    const { alive } = world;
+    for (let slot = 0; slot < alive.length; slot++) {
+        if (alive[slot] === 1) {
+            settleCaller(world, slot);
+        }
     }
 }
 

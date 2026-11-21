@@ -8,7 +8,6 @@ export const SOCIAL_KEYS = Object.freeze([
     'rallyThrust',
     'rallyBurn',
     'answeredBite',
-    'hoarseCost',
     'alertBoost',
     'alertGraze',
     'huddleWarmth',
@@ -22,9 +21,13 @@ export const SOCIAL_KEYS = Object.freeze([
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
- * @returns {boolean} whether any social effect has a strength above 0, so its stored stacks can move the world
+ * @returns {boolean} whether any social effect has a strength above 0 (`hoarseFactor`: above 1), so its stored stacks can
+ *   move the world
  */
 export function socialEffectsOn(config) {
+    if (config.hoarseFactor > 1) {
+        return true;
+    }
     for (let k = 0; k < SOCIAL_KEYS.length; k++) {
         if (config[SOCIAL_KEYS[k]] > 0) {
             return true;
