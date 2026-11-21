@@ -62,7 +62,12 @@ describe('the clear-herd drills', () => {
         const plan = clearHerdOf('scout').plan(fork(createRng(1), 'drill:clear-herd-scout'), 300, createConfig(CONFIG));
         expect(plan.stage.agents).toHaveLength(1);
         expect(plan.stage.agents[0]).toMatchObject({ role: 'subject', spec: SPEC.SCOUT });
-        const { world } = stageWorld({ ...plan.stage, seed: 1, config: CONFIG });
+        const { world } = stageWorld({
+            ...plan.stage,
+            agents: /** @type {any} */ (plan.stage.agents),
+            seed: 1,
+            config: CONFIG,
+        });
         placeHerd(world, { sign: 1, seeGap: 400 });
         expect(world.groupAlarm[0]).toBe(world.config.herdStampedeTicks);
         expect([world.groupFleeX[0], world.groupFleeY[0]]).toEqual([1, 0]);
@@ -87,7 +92,9 @@ describe('the clear-herd drills', () => {
                 expect(won).toBe(false);
                 expect(trace.reason).toBe('trampled');
                 // the mirrored scene rounds a position a tick apart from the scene's
-                expect(Math.abs(trace.trampleTick - scene.ticks.arrival)).toBeLessThanOrEqual(1);
+                expect(Math.abs(trace.trampleTick - /** @type {number} */ (scene.ticks.arrival))).toBeLessThanOrEqual(
+                    1,
+                );
                 expect(trace.tramples).toBeGreaterThan(1);
             }
         }

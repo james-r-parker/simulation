@@ -125,7 +125,7 @@ describe('noteMeeting, the defender and the hunter in the drill', () => {
     /**
      * @param {{holds: boolean, shoveOn: boolean, facing: number}} at whether the defender holds BITE, whether the shove is on
      *   and its heading (0 faces the hunter)
-     * @returns {{touch: number | null, shove: number | null, kill: number | null}} the readings after one tick
+     * @returns {{interceptTick: number | null, repelTick: number | null}} the readings after one tick
      */
     function meet({ holds, shoveOn, facing }) {
         const { x, y } = ARENA_CENTRE;
