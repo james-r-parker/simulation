@@ -1,5 +1,8 @@
 {
   "id": "E256",
+  "kind": "ladder",
+  "outcome": "no-verdict",
+  "plan": "fair-chase.md",
   "date": "2026-11-20",
   "branch": "exp/fair-chase-rung",
   "hypothesis": "E-FC-3 (fair-chase T8): with the courser sprint store over the stage worlds, more of the 32 tune offsets pass the hunt rung than on the ladder as it is, read with the per-stage exact paired test of training-loop.md T25 (p under 0.05; 6 passes against 0 is the smallest such count).",

@@ -1,5 +1,8 @@
 {
   "id": "E254",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "plan": "metric-noise.md",
   "date": "2026-11-20",
   "branch": "feat/settled-guard",
   "hypothesis": "metric-noise T12 (D3): the settled hunter catch metric eval.hunter_catches_per_1k_settled, counted from BURN_IN_TICKS, reads lower than the whole-run eval.hunter_catches_per_1k (founders no longer count) and has a detectable change at 64 seeds no larger than the whole-run metric's, so the keep-rule guard can move to it.",

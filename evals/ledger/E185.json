@@ -1,5 +1,8 @@
 {
   "id": "E185",
+  "kind": "characterisation",
+  "outcome": "falsified",
+  "plan": "senses-and-motor.md",
   "hypothesis": "senses-and-motor Phase 2 (plan id E-SM-1): on the default bodies a predator at a sprint can catch a forager and a fair band exists inside the pursuer's view.",
   "prediction": "The oracle predator at a sprint catches a forager from inside 0.6 of its view at every bearing, a fair band (catch share 0.2 to 0.8) exists between 0.6 and 1.0 of view, and a kill returns more energy than the chase costs only inside the fair band's near half. Falsified when no fair band exists between 0.6 and 1.0 of view.",
   "targets": [],

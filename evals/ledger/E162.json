@@ -1,5 +1,8 @@
 {
   "id": "E162",
+  "kind": "compare",
+  "outcome": "adopted",
+  "plan": "eat-choice.md",
   "hypothesis": "eat-choice Phase 3 (T16): the switched world reads no keep-rule guard worse than main on fresh seeds, and only chosen meals warm a body (E-EC-3).",
   "prediction": "On seeds 65 to 128 the head reads no guard worse against origin/main, eval.full_contact_bite_share lower than G1 alone, eval.deliberate_food_share, eval.food_energy_per_1k and eval.median_lifespan not worse, and eval.heat_stress_share lower. Falsified when a guard reads WORSE.",
   "targets": [

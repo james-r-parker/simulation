@@ -1,5 +1,8 @@
 {
   "id": "E197",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-stages.md",
   "date": "2026-11-19",
   "branch": "feat/training-stages-hunt",
   "hypothesis": "E-TS-1g (training-stages Phase 6, T48, T49): a hunt-mid rung (the hunt world with the prey sprintBoost 0.5, gate drill.prey-mid.edgeLow 0.001) carries the hunters from hunt-weak (0.2) towards hunt.",

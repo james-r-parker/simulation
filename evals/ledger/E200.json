@@ -1,5 +1,8 @@
 {
   "id": "E200",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-stages.md",
   "date": "2026-11-19",
   "branch": "feat/training-stages-hunt",
   "hypothesis": "E-TS-1j (training-stages Phase 6, T57, T58): hunt simply needs longer than 60 generations; with maxGenerations 200 and the bar unchanged, prey-ahead winShareOverReference keeps rising.",

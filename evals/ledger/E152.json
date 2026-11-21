@@ -1,5 +1,8 @@
 {
   "id": "E152",
+  "kind": "compare",
+  "outcome": "falsified",
+  "plan": "carrying-capacity.md",
   "hypothesis": "carrying-capacity Phase 2, E-CC-1: food is the brake. Cutting foodRegrowPerArea to the eaten rate (0.016, from 1.59 plant meals per tick, evals/decisions/E152/food-ratio-8x200000.json) makes intake per agent fall with density, so the world settles under the cap and fewer seeds crash.",
   "prediction": "A food arm at or under the eaten rate raises the held share from about 0.23 to 0.6 or more on 64 seeds and lowers eval.cap_share. A flat season with default food does not. eval.chance_food_energy_per_1k falls below the deliberate figure. Falsified when no food arm reads held better, or a food arm reads held or alive worse.",
   "targets": [

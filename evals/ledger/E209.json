@@ -1,5 +1,8 @@
 {
   "id": "E209",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-loop.md",
   "date": "2026-11-19",
   "branch": "feat/training-loop-e209",
   "hypothesis": "E-TL-5 (training-loop T22a): E208 showed episodes 48 raising hunt-mid passes from 19% to 38% on the 16 tune offsets with no verdict (11 up, 4 down, sign p 0.118); the 16 held-out offsets 128 to 248 test whether that holds.",

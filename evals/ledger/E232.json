@@ -1,5 +1,8 @@
 {
   "id": "E232",
+  "kind": "ladder",
+  "outcome": "finding",
+  "plan": "training-stages.md",
   "date": "2026-11-20",
   "branch": "docs/e-ts-1m-record",
   "hypothesis": "E-TS-1m (training-stages T67, T68): a nursery of scattered food (90 items, foodBackgroundShare 1), or a forage-turn rung on it before the nursery, passes the 7 offsets whose nursery stalls on drill.food-behind.edgeLow.",

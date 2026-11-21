@@ -1,5 +1,8 @@
 {
   "id": "E181",
+  "kind": "compare",
+  "outcome": "no-verdict",
+  "plan": "prey-guilds.md",
   "hypothesis": "prey-guilds Phase 3: giving scout a longer alarm call radius (scoutCallRadiusMultiplier), cheaper alarm calls (scoutAlarmCostMultiplier), and a moderate sprint boost makes scouts effective early-warning sentinels.",
   "prediction": "On the 16-seed screen (prey-guilds-scout.grid.json, 400000 ticks), the finalist raises eval.scout_alarm_lead_ticks and eval.alarm_to_flee_rate, and the 64-seed keep rule reads no guard WORSE. Falsified when every arm reads eval.spec_effective or held WORSE or eval.scout_alarm_lead_ticks shows no gain.",
   "targets": ["eval.scout_alarm_lead_ticks", "eval.alarm_to_flee_rate", "eval.spec_effective"],

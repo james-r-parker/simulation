@@ -1,5 +1,8 @@
 {
   "id": "E160",
+  "kind": "compare",
+  "outcome": "falsified",
+  "plan": "eat-choice.md",
   "hypothesis": "eat-choice Phase 2, E-EC-2 and the second pass: with fatSlowShare above 0 as well as grazeThrust below 1, agents near a full store stop eating once a full store costs speed.",
   "prediction": "bite-graze-fat (grazeThrust 0.5, fatSlowShare 0.5) reads a lower eval.full_contact_bite_share than bite-graze-5, with no keep-rule guard worse against main's defaults. Falsified when it reads no lower share than bite-graze-5. The same pass reads G3 (bite vs main defaults), G1+G1b (bite-graze-5), G2 (bite-fat-5) and G4 (bite-strike-2, eval.bite_idle lower by the sign test) against main's defaults by the keep rule.",
   "targets": [

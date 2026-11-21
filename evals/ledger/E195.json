@@ -1,5 +1,8 @@
 {
   "id": "E195",
+  "kind": "compare",
+  "outcome": "no-verdict",
+  "plan": "training.md",
   "date": "2026-11-19",
   "branch": "feat/training-stages-hunt",
   "hypothesis": "training.md Phase 3 style trial: champions-v1 seeded with the six champions of E-TS-1c offset 0 (hunt-weak passed, hunt stalled; exam rows 1 and 3 pass, row 8 fails) is better than the live policy on food income. An experiment only: LIVE_POLICY unchanged.",

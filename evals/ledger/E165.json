@@ -1,5 +1,8 @@
 {
   "id": "E165",
+  "kind": "compare",
+  "outcome": "falsified",
+  "plan": "low-density-edge.md",
   "hypothesis": "low-density-edge T14 (E-LD-2, E-LD-2b at 64 seeds): on the eat-choice world, the leading heat arm (eat-1) or the leading combined arm (eat-1-food-24) holds more seeds above 100 than the defaults, with no fewer seeds keeping hunters alive.",
   "prediction": "eat-1 or eat-1-food-24 reads held better against defaults with alive not worse and a higher edge_birth_death_ratio (E-LD-2); eat-1-food-24 reads held better than eat-1 (E-LD-2b). flat and reach read no guard worse. Falsified when no arm reads held better with alive not worse, or the combined arm is not better than eat-1.",
   "targets": ["eval.births_per_1k", "eval.edge_birth_death_ratio", "eval.heat_stress_share"],

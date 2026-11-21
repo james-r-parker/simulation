@@ -1,5 +1,8 @@
 {
   "id": "E205",
+  "kind": "ladder",
+  "outcome": "no-verdict",
+  "plan": "training-loop.md",
   "date": "2026-11-19",
   "branch": "feat/training-loop-etl1",
   "hypothesis": "E-TL-1 (training-loop T8): the ladder's plateauStop ends runs that have stopped closing without changing how many runs pass each stage, and saves CPU.",

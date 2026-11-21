@@ -1,5 +1,8 @@
 {
   "id": "E203",
+  "kind": "compare",
+  "outcome": "finding",
+  "plan": "training.md",
   "date": "2026-11-19",
   "branch": "feat/training-stages-hunt",
   "hypothesis": "training.md Phase 3 style trial: champions-v1 seeded with the champions of E-TS-1h offset 144 (nursery to hunt-mid passed; archive-159.json) is better than the live policy on food income, at 64 seeds with the keep rule. An experiment only: LIVE_POLICY unchanged.",

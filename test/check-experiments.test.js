@@ -15,6 +15,8 @@ const schema = JSON.parse(readFileSync(new URL('../evals/experiments.schema.json
 function entry(over = {}) {
     return {
         id: 'E1',
+        kind: 'compare',
+        outcome: 'adopted',
         date: '2026-10-16',
         branch: 'feat/x',
         hypothesis: 'h',
@@ -80,6 +82,43 @@ describe('checkRecord', () => {
         expect(checkRecord(entry({ id: 'E2' }), schema, 'E1.json')).toEqual([
             'E1.json: the file name must match the id E2 (E2.json)',
         ]);
+    });
+});
+
+describe('checkRecord kind, outcome and plan', () => {
+    /** @param {Record<string, unknown>} record a record @returns {string[]} problems */
+    const at = (record) => checkRecord(record, schema, `${record.id}.json`);
+    const bare = (/** @type {string} */ id) => {
+        const record = entry({ id, reports: ['evals/decisions/.gitkeep'] });
+        delete record.kind;
+        delete record.outcome;
+        return record;
+    };
+
+    it('asks nothing of a record before E151 and accepts the new fields on one', () => {
+        expect(at(bare('E150'))).toEqual([]);
+        expect(at(entry({ id: 'E7', plan: 'x-y.md', task: 'T12a', stream: 'lane-b' }))).toEqual([]);
+    });
+
+    it('requires kind and outcome from E151 on', () => {
+        expect(at(bare('E151'))).toEqual([
+            'E151.json: from E151 on a record names its kind',
+            'E151.json: from E151 on a record names its outcome',
+        ]);
+    });
+
+    it('requires plan from E257 on', () => {
+        const record = entry({ id: 'E257', reports: ['evals/decisions/.gitkeep'] });
+        expect(at(record)).toEqual(['E257.json: from E257 on a record names its plan']);
+        expect(at({ ...record, plan: 'agent-workflow.md' })).toEqual([]);
+    });
+
+    it('names a kind, an outcome, a plan and a task that are not allowed', () => {
+        const problems = at(entry({ kind: 'run', outcome: 'won', plan: 'x', task: '12' }));
+        expect(problems).toHaveLength(4);
+        expect(problems[0]).toContain('/properties/kind/enum: at kind: "run" is not one of compare, ladder');
+        expect(problems.join('\n')).toContain('/properties/plan/pattern');
+        expect(problems.join('\n')).toContain('/properties/task/pattern');
     });
 });
 

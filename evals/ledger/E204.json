@@ -1,5 +1,8 @@
 {
   "id": "E204",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-stages.md",
   "date": "2026-11-19",
   "branch": "feat/training-stages-hunt",
   "hypothesis": "E-TS-1l (training-stages Phase 6, T61): an opponent pool share of 0.2 on hunt-mid and hunt (founders from earlier champions) lifts prey-ahead winShareOverReference at hunt.",

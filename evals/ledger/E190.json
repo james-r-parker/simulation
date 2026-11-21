@@ -1,5 +1,8 @@
 {
   "id": "E190",
+  "kind": "diagnosis",
+  "outcome": "finding",
+  "plan": "honest-budgets.md",
   "date": "2026-11-18",
   "branch": "feat/honest-budgets-juvenile-diagnosis",
   "hypothesis": "Diagnosis after E189 (honest-budgets Phase 6): eval.hunter_juvenile_death_share (0.86) is the share of hunter deaths under juvenileTicks 3000, a lifespan statistic, and hunters die young because they hold BITE on most ticks with no body in their jaws, so strikeMissCost and recoil burn the energy a hunter needs to reach its first meal; the E189 levers act on the first hundred ticks and cannot move it.",

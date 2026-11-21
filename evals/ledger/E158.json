@@ -1,5 +1,8 @@
 {
   "id": "E158",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "plan": "eat-choice.md",
   "hypothesis": "eat-choice Phase 1, T3: the eat-choice detectors (eval.food_contact_bite_share, eval.full_contact_bite_share, eval.fat_speed_ratio) need a 128-seed floor-on reference of the defaults, so Phase 2 can read its eat and fat arms against one report.",
   "prediction": "Same configHash as E155 (ff8d890a5a70c14d) and the same 128 seeds; every metric E155 holds reads as it does there (the sim is unchanged); the three new detectors are live; the forager BITE is near a coin flip at food and does not fall when full, and fatter agents move faster.",
   "targets": ["eval.food_contact_bite_share", "eval.full_contact_bite_share", "eval.fat_speed_ratio", "eval.bite_idle"],

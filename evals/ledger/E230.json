@@ -1,5 +1,8 @@
 {
   "id": "E230",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-loop.md",
   "date": "2026-11-20",
   "branch": "feat/training-loop-night2",
   "hypothesis": "E-TL-6 (training-loop T22b, tuning night 2): the nursery stage stalls on 7 of 16 tune offsets at best progress 0.67 to 0.83; the plateau stop (plateauStop 10 at the base) ends it before more checkpoints can lift progress. A longer patience should let those runs pass.",

@@ -1,5 +1,8 @@
 {
   "id": "E159",
+  "kind": "compare",
+  "outcome": "no-verdict",
+  "plan": "eat-choice.md",
   "hypothesis": "eat-choice Phase 2, E-EC-1: when holding BITE slows a forager (grazeThrust below 1), foragers bite at food and lift the bite to move, so the share of food contacts that bite falls below the plain bite arm's.",
   "prediction": "With grazeThrust below 1, eval.food_contact_bite_share falls below bite's, with no keep-rule guard worse. Falsified when the share does not fall below bite's, or a guard reads WORSE.",
   "targets": [

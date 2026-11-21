@@ -1,5 +1,8 @@
 {
   "id": "E252",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "plan": "unit-knockout.md",
   "date": "2026-11-20",
   "branch": "feat/unit-knockout-p1",
   "hypothesis": "E-UK-0 (unit-knockout T7): setting a hidden unit's leak gene to KNOCKOUT_LEAK_GENE (-8) reproduces brain inspection's silence edit on the same trials.",

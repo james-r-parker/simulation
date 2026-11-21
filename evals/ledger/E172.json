@@ -1,5 +1,8 @@
 {
   "id": "E172",
+  "kind": "compare",
+  "outcome": "adopted",
+  "plan": "eat-choice.md",
   "hypothesis": "eat-choice T28: grazeThrust 0.6 keeps its E171 result on the other seed half.",
   "prediction": "On seeds 1 to 64 at 200000 ticks, grazeThrust 0.6 against the defaults reads eval.deliberate_food_share better and no keep-rule guard WORSE, hunter_catches_per_1k included. Falsified when the share is not better or a guard reads WORSE.",
   "targets": ["eval.deliberate_food_share", "eval.hunter_catches_per_1k"],

@@ -1,5 +1,8 @@
 {
   "id": "E191",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-stages.md",
   "date": "2026-11-18",
   "branch": "feat/training-stages-ets1",
   "hypothesis": "E-TS-1 (training-stages Phase 6): the stage ladder of evals/train-ladder.json trains its first stages on three offsets; nursery passes and hunt-contact passes because prey with turnMultiplier 0.5 give the contact the T20 trace found missing.",

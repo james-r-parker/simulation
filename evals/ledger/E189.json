@@ -1,5 +1,8 @@
 {
   "id": "E189",
+  "kind": "compare",
+  "outcome": "not-adopted",
+  "plan": "honest-budgets.md",
   "date": "2026-11-18",
   "branch": "feat/honest-budgets-t39",
   "hypothesis": "honest-budgets Phase 6 (T39): without specFlipNoHunt, which E179 showed empties the hunters world, one recruitment lever per arm (territoryMax 4 with territoryRadius 250, predator splitMinEnergyMultiplier 0.85, juvenilePlantShare 0.25, huntSizeRatio 0.9) or all four together lowers hunter juvenile deaths on the killGorgeShare 0.4 defaults.",

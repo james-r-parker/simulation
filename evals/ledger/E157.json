@@ -1,5 +1,8 @@
 {
   "id": "E157",
+  "kind": "compare",
+  "outcome": "falsified",
+  "plan": "low-density-edge.md",
   "hypothesis": "low-density-edge Phase 3, E-LD-2b: a heat lever lifts births and the food brake holds the top, so the crash that follows more births is shallower.",
   "prediction": "A heat arm with the food brake (foodRegrowPerArea 0.016 or 0.024 on eat-1 or cool-5) holds more seeds (held of 16) than the same heat arm alone and than defaults, with alive not worse. Falsified when no combined arm holds more seeds than its heat arm alone, or the leading combined arm holds no more than defaults, or its alive guard reads worse.",
   "targets": ["eval.edge_birth_death_ratio", "eval.heat_stress_share", "eval.births_per_1k"],

@@ -1,5 +1,8 @@
 {
   "id": "E198",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-stages.md",
   "date": "2026-11-19",
   "branch": "feat/training-stages-hunt",
   "hypothesis": "E-TS-1h (training-stages Phase 6, T52, T53): the hunt-mid rung at sprint 0.3, the step the hunt-weak passer own curve supports (6 of 64 wins at 0.2 and 0.3), is one the hunters can take.",

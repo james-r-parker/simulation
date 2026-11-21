@@ -1,5 +1,8 @@
 {
   "id": "E231",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-loop.md",
   "date": "2026-11-20",
   "branch": "feat/training-loop-e231",
   "hypothesis": "E-TL-7 (training-loop T22c): nursery is capped by both maxGenerations 40 and plateauStop 6 (E208 and E230 each moved one and tied on 16 of 16), so lifting both together should let the 7 stalled offsets pass.",

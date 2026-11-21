@@ -1,5 +1,8 @@
 {
   "id": "E206",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "plan": "training-loop.md",
   "date": "2026-11-19",
   "branch": "feat/training-loop-p2",
   "hypothesis": "E-TL-2 (training-loop T11): the learnability check says which rungs of the current ladder a random-brain population can learn, so a stage that no brain can reach is found before a ladder spends runs on it.",

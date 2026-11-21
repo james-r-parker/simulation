@@ -1,5 +1,8 @@
 {
   "id": "E207",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-loop.md",
   "date": "2026-11-19",
   "branch": "feat/training-loop-etl3",
   "hypothesis": "E-TL-3 (training-loop T16): one hunt stage whose prey sprint is steered by the prey-ahead drill (adaptive difficulty) yields more ladder progress than the fixed hunt-weak, hunt-mid and hunt rungs.",

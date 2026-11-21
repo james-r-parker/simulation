@@ -1,5 +1,8 @@
 {
   "id": "E161",
+  "kind": "compare",
+  "outcome": "finding",
+  "plan": "eat-choice.md",
   "hypothesis": "eat-choice: a gentle strike cost pays back the hunter catches that graze plus fat loses, without the hunter die-off strike 2 caused, so G1 lands as a bundle.",
   "prediction": "bite-graze-fat with strikeMissCost 0.5 or 1 reads no keep-rule guard worse against main's defaults on seeds 1 to 64 (held, alive, under80 and hunter catches). Falsified when every arm reads WORSE.",
   "targets": [

@@ -1,5 +1,8 @@
 {
   "id": "E176",
+  "kind": "compare",
+  "outcome": "not-adopted",
+  "plan": "honest-budgets.md",
   "hypothesis": "honest-budgets Phase 3: a wall or rock impact that costs by the speed into the surface above a deadband (impactDamage, impactDeadband), with the flat contact damages (obstacleDamage, wallDamage) at 0, stops charging blobs that brush, slide along or rest against a surface, so collision deaths come only from hard hits.",
   "prediction": "On the 16-seed screen (honest-impact.grid.json, 400000 ticks), the finalist reads eval.collision_death_share better than control, and the 64-seed keep rule reads no guard WORSE. Falsified when eval.collision_death_share stays above 0.15 on every arm.",
   "targets": ["eval.collision_death_share", "eval.refuge_episode_entry"],

@@ -1,5 +1,8 @@
 {
   "id": "E210",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "plan": "detector-baseline.md",
   "date": "2026-11-19",
   "branch": "chore/detector-topup",
   "hypothesis": "detector-baseline shared detector top-up: E188 (rulesHash 38be2908ad820c86) predates the sprint, stillness, scent-trail and prey-selectivity metrics. A 128-seed floor-on run on the same unchanged defaults measures liveness and power for all registered metrics and tests the Phase 1 predictions of sprint-burst, stillness, scent-trails and prey-guilds.",

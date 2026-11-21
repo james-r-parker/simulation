@@ -1,5 +1,8 @@
 {
   "id": "E194",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-stages.md",
   "date": "2026-11-19",
   "branch": "feat/training-stages-hunt",
   "hypothesis": "E-TS-1d (training-stages Phase 6, T43): offering the first ticks of short episodes (--ticks 4000 --offer-from 100) lets the hunt family select on its lesson, because the hunt worlds run out of prey by tick 500 while only deaths from tick 10000 were offered.",

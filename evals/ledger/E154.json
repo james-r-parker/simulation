@@ -1,5 +1,8 @@
 {
   "id": "E154",
+  "kind": "compare",
+  "outcome": "no-verdict",
+  "plan": "carrying-capacity.md",
   "hypothesis": "carrying-capacity Phase 3, E-CC-3: on a world food holds, the clonal cap does no harm, as for aphids.",
   "prediction": "On the switched world the clonal cap does no harm: cap on against splitClonalMax 100000 reads no guard WORSE. Falsified when a guard reads WORSE with the cap on: the cap is deleted (T15).",
   "targets": [],

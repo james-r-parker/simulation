@@ -1,5 +1,8 @@
 {
   "id": "E188",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "plan": "detector-baseline.md",
   "date": "2026-11-16",
   "branch": "eval/shared-baseline-e188",
   "hypothesis": "detector-baseline T7 re-record: E187 went stale when gorge (PR 477, killGorgeShare 0.4) moved season 10 rulesHash to 38be2908ad820c86, and PR 478 fixed eval.pack_prey_size_ratio (it read the victim size after reap). One 128-seed floor-on and floor-off run of the current defaults replaces E187 as the shared baseline.",

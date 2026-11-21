@@ -1,5 +1,8 @@
 {
   "id": "E151",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "plan": "carrying-capacity.md",
   "date": "2026-11-11",
   "branch": "chore/carrying-capacity-reference",
   "beforePolicy": "live",

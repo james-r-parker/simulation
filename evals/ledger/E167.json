@@ -1,5 +1,8 @@
 {
   "id": "E167",
+  "kind": "compare",
+  "outcome": "adopted",
+  "plan": "low-density-edge.md",
   "hypothesis": "low-density-edge Phase 4 (T21, T22): the switch (reach and flat, the unused heat keys deleted) does no harm on fresh seeds, and keeps hunters alive on held seeds (E-LD-3).",
   "prediction": "On seeds 65 to 128 no keep-rule guard reads worse against main; held is not expected to read better; hunters alive at the last tick on 0.9 or more of held seeds with chase_catch_share not worse; lineages_alive, spec_effective and chase_catch_share not worse. Falsified when a guard reads worse, or hunters die out on more than 0.1 of held seeds.",
   "targets": ["eval.births_per_1k", "eval.mating_share", "eval.edge_birth_death_ratio"],

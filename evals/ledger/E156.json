@@ -1,5 +1,8 @@
 {
   "id": "E156",
+  "kind": "compare",
+  "outcome": "no-verdict",
+  "plan": "low-density-edge.md",
   "hypothesis": "low-density-edge Phase 3, E-LD-2: a heat lever (temperatureCoolingExcess, temperatureMatingMax or temperatureGainEat) lets prey mate at low density without removing heat as a pressure.",
   "prediction": "A heat arm reads held better at 64 seeds with the alive guard not worse, and raises eval.edge_birth_death_ratio; heat-stressed mating blocks fall. Falsified when no arm reads held better, or the leading arm's alive guard reads worse, or its edge ratio does not rise.",
   "targets": ["eval.edge_birth_death_ratio", "eval.heat_stress_share", "eval.births_per_1k"],

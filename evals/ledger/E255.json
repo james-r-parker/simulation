@@ -1,5 +1,8 @@
 {
   "id": "E255",
+  "kind": "characterisation",
+  "outcome": "falsified",
+  "plan": "fair-chase.md",
   "date": "2026-11-20",
   "branch": "exp/fair-chase-rung",
   "hypothesis": "E-FC-2 (fair-chase T7): with the courser sprint store (sprintStoreEnabled, drain 0.01, predator sprintDrainMultiplier 0.5) laid over the rung worlds, the hunt rung's drill prey-ahead is learnable from random brains: at least 2 of 8 populations reach its bar. On the ladder as it is (E-feasible record above) prey-ahead is 0/8, best 0.03 against a bar of 0.109.",

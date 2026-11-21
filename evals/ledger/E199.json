@@ -1,5 +1,8 @@
 {
   "id": "E199",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-stages.md",
   "date": "2026-11-19",
   "branch": "feat/training-stages-hunt",
   "hypothesis": "E-TS-1i (training-stages Phase 6, T55, T56): a denser nursery world (1800 x 1200, foodPatchRadius 280, hashCellSize 560: 1.8 times the food per area) lets the offsets that stall the nursery food-behind gate pass it.",

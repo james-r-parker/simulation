@@ -12,6 +12,10 @@ const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
 
 /** The first experiment id that must name committed reports (carrying-capacity.md, C6). */
 export const FIRST_REPORT_ID = 151;
+/** The first id that must carry `kind` and `outcome` (the backfill of agent-workflow.md, Phase 2 starts here). */
+export const FIRST_TYPED_ID = 151;
+/** The first id the allocator issues (`scripts/experiment.mjs new`); a record from it on names its `plan`. */
+export const FIRST_PLAN_ID = 257;
 /** Where the reports a record names must live. */
 export const REPORT_DIR = 'evals/decisions/';
 
@@ -63,6 +67,24 @@ function checkReports(record, file, root) {
 }
 
 /**
+ * Checks that a record names the fields its id requires: `kind` and `outcome` from `FIRST_TYPED_ID`, `plan` from
+ * `FIRST_PLAN_ID`.
+ * @param {{ id: string }} record a record that passed the schema
+ * @param {string} file the record's file name
+ * @returns {string[]} problems
+ */
+function checkTyped(record, file) {
+    const n = Number(record.id.slice(1));
+    const fields = [...(n >= FIRST_TYPED_ID ? ['kind', 'outcome'] : []), ...(n >= FIRST_PLAN_ID ? ['plan'] : [])];
+    return fields
+        .filter((field) => !Object.hasOwn(record, field))
+        .map(
+            (field) =>
+                `${file}: from E${field === 'plan' ? FIRST_PLAN_ID : FIRST_TYPED_ID} on a record names its ${field}`,
+        );
+}
+
+/**
  * Validates one record.
  * @param {unknown} record the parsed record
  * @param {Record<string, any>} schema the parsed schema (describes one record)
@@ -79,6 +101,7 @@ export function checkRecord(record, schema, file, root = REPO_ROOT) {
     const named = `${entry.id}.json`;
     return [
         ...(named === file ? [] : [`${file}: the file name must match the id ${entry.id} (${named})`]),
+        ...checkTyped(entry, file),
         ...checkReports(entry, file, root),
     ];
 }

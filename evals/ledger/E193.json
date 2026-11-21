@@ -1,5 +1,8 @@
 {
   "id": "E193",
+  "kind": "compare",
+  "outcome": "not-adopted",
+  "plan": "honest-budgets.md",
   "date": "2026-11-18",
   "branch": "feat/honest-budgets-t41",
   "hypothesis": "After E192 (blind biting never leaves because the birth reflex leaves the BITE bias at 0 and clones copy it): a hunter born with its BITE bias closed (hunterBiteBias x instinctWeight, an innate releasing mechanism, released by prey through the +2 prey-to-BITE skip weight) strikes at air less, so fewer juveniles starve of the strike-miss drain.",

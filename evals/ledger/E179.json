@@ -1,5 +1,8 @@
 {
   "id": "E179",
+  "kind": "compare",
+  "outcome": "no-verdict",
+  "plan": "honest-budgets.md",
   "hypothesis": "honest-budgets Phase 6: leaving real carcasses (killGorgeShare), relaxing territory clustering, raising predator splitMinEnergyMultiplier, blocking canHunt-crossing spec flips (specFlipNoHunt), and giving cubs a juvenile plant share or size parity raises predator recruitment and juvenile survival.",
   "prediction": "On the 16-seed screen (honest-recruit.grid.json, 400000 ticks), the finalist (cub-plant, cub-size, or recruit) lowers eval.hunter_juvenile_death_share below 0.55 while keeping eval.hunter_catches_per_1k and eval.hunter_income_share.carcass alive, and the 64-seed keep rule reads no guard WORSE. Falsified when every arm reads eval.hunter_catches_per_1k or held WORSE. Addition made before the run (2026-11-16, after the T33a and T33b detectors merged, PR 467): the finalist also raises eval.recruit_matured_share and the replaced share of its hunter births (eval.recruit_replaced_share.<source>), and eval.recruit_lineage_share. Screen verdicts (power at 16 seeds, sim-notes 2026-11-16): eval.recruit_matured_share (detectable 0.10) and eval.recruit_lineage_share (0.10) only. Context only, no verdict at 16 seeds: eval.recruit_replaced_share.* (no verdict, or above 0.20), eval.carcass_loss_share.* (a full pool loses 4 percent of carcass energy on the defaults, not material, so it should not move).",
   "targets": [

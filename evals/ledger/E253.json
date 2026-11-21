@@ -1,5 +1,8 @@
 {
   "id": "E253",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "plan": "fair-chase.md",
   "date": "2026-11-20",
   "branch": "feat/sprint-store",
   "hypothesis": "E-FC-1 (fair-chase T5; the plan calls this record E-FC-1): a sprint that spends a per-agent store (sprintStoreEnabled, js/sim/sprint-store.js) widens the chase envelope's fair band. Today (control) the predator on a breaking forager is fair at one start distance (0.2 of view) and 0 beyond; with the store the prey tires and the hunter's burst is short, so who empties first decides the chase.",

@@ -1,5 +1,8 @@
 {
   "id": "E196",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-stages.md",
   "date": "2026-11-19",
   "branch": "feat/training-stages-hunt",
   "hypothesis": "E-TS-1f (training-stages Phase 6, T45 to T47): a prey share of 0.9 in the seeding of the hunt-weak and hunt stage worlds (T46) keeps the prey alive to tick 500 and lets hunt-weak select on its lesson and stay passed.",

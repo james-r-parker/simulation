@@ -1,5 +1,8 @@
 {
   "id": "E201",
+  "kind": "diagnosis",
+  "outcome": "finding",
+  "plan": "training-stages.md",
   "date": "2026-11-19",
   "branch": "feat/training-stages-hunt",
   "hypothesis": "Consolidated outcome record of the hunt rung after nine ladder iterations (E191, E194, E196 to E200 and the b and c records): why longer, graded sprint and prey share do not climb to full-sprint prey-ahead, and what the retention review costs.",

@@ -1,5 +1,8 @@
 {
   "id": "E202",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-stages.md",
   "date": "2026-11-19",
   "branch": "feat/training-stages-hunt",
   "hypothesis": "E-TS-1k (training-stages Phase 6, T59, T60): with the kept passer, a passed rung is not sent back by the retention review, and more fresh offsets reach hunt-mid and hunt.",

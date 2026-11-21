@@ -1,5 +1,8 @@
 {
   "id": "E187",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "plan": "detector-baseline.md",
   "hypothesis": "detector-baseline T7: one 128-seed floor-on and floor-off run of the season 10 defaults (hunter-vision switch, PR 464) gives the shared baseline that the planned detectors read against, in place of seven 16-seed runs. Training-stages T5 (E-TS-0) is read from its first 16 floor-on seeds, not run again.",
   "prediction": "Carried from training-stages E-TS-0 on the first 16 floor-on seeds (seeds 1 to 16 of evals/seeds.json): eval.chase_lost_share is the largest part of the give-up share; eval.chase_quit_share is under 0.15; eval.pack_lift is within 0.2 of 1. On all 128 floor-on seeds the same three hold in direction (lost above quit, quit under 0.15, pack_lift near 1). The floor-off run is extinction-dominated on most seeds (E110: floor-off kills every world between 41k and 149k ticks), so its hunter and chase reads are characterization, not a baseline for verdicts. Falsified when the 16-seed subset contradicts a written E-TS-0 statement on the same seeds, or when the 128-seed floor-on mean of eval.pack_lift is outside 0.8 to 1.2.",
   "targets": ["eval.chase_lost_share", "eval.chase_quit_share", "eval.pack_lift"],

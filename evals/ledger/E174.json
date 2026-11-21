@@ -1,5 +1,8 @@
 {
   "id": "E174",
+  "kind": "compare",
+  "outcome": "adopted",
+  "plan": "honest-budgets.md",
   "hypothesis": "honest-budgets Phase 1: patch stock that pays for plant spawns makes intake fall with local density, so food becomes the brake and leaving a dying patch pays.",
   "prediction": "On the 16-seed screen (honest-food.grid.json, 400000 ticks), at least one patchStockEnergy arm reads eval.density_starve_slope median above 0, eval.patch_leave_depleted higher than control, and chance food energy below deliberate food energy. Falsified when every energy arm keeps the slope at or under 0.",
   "targets": [

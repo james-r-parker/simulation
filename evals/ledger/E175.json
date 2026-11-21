@@ -1,5 +1,8 @@
 {
   "id": "E175",
+  "kind": "compare",
+  "outcome": "adopted",
+  "plan": "honest-budgets.md",
   "hypothesis": "honest-budgets Phase 2: a kill that takes the victim's body (killShare, killGorgeCap, no kill payment) and a carcass that holds what the body held and fades make hunter income come from the bodies they eat, so zero-kill lives stop living on carcasses.",
   "prediction": "On the 16-seed screen (honest-kill.grid.json, 400000 ticks), the finalist reads eval.hunter_zero_kill_carcass_share lower than control, and the 64-seed keep rule reads no guard WORSE, eval.hunter_catches_per_1k included. Falsified when every arm reads hunter catches WORSE.",
   "targets": ["eval.hunter_zero_kill_carcass_share", "eval.hunter_catches_per_1k", "eval.hunter_income_share.carcass"],

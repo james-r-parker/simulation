@@ -1,5 +1,8 @@
 {
   "id": "E169",
+  "kind": "compare",
+  "outcome": "finding",
+  "plan": "eat-choice.md",
   "hypothesis": "eat-choice T26 (G1b reopened): with the graze hold on, a lighter graze slowdown lets foragers keep closing on food while holding BITE, so more of their meals are deliberate.",
   "prediction": "An arm with grazeThrust 0.75 or 1 reads eval.deliberate_food_share better than the defaults (0.5) on seeds 1 to 64 at 400000 ticks, with no keep-rule guard WORSE. Falsified when neither arm lifts the share, or the arm that does reads a guard WORSE.",
   "targets": ["eval.deliberate_food_share"],

@@ -1,5 +1,8 @@
 {
   "id": "E192",
+  "kind": "diagnosis",
+  "outcome": "finding",
+  "plan": "honest-budgets.md",
   "date": "2026-11-18",
   "branch": "feat/honest-budgets-t40",
   "hypothesis": "Diagnosis after E190 (honest-budgets Phase 6, T40): under Selection rules 1, 4 and 6 a hunter that bites at nothing should starve and its genes die out, so blind biting must be refilled from somewhere: the floor, the archive or a spec-flip putting losing genomes back, split clones carrying hitchhiker weights, mutation noise on the BITE output, or a birth reflex that seeds a BITE bias. The strike-price screen first planned for T40 was withdrawn by the user as a rescue.",

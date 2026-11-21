@@ -1,5 +1,8 @@
 {
   "id": "E208",
+  "kind": "ladder",
+  "outcome": "no-verdict",
+  "plan": "training-loop.md",
   "date": "2026-11-19",
   "branch": "feat/training-loop-etl4",
   "hypothesis": "E-TL-4 (training-loop T22, the first tuning night): the nursery stage stalls on 7 of 16 tune offsets at best progress 0.67 to 0.83 around generations 35 to 40 (E-TL-1, E-TL-3); raising its maxGenerations from 40 to 80 lets more runs pass it.",

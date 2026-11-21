@@ -1,5 +1,8 @@
 {
   "id": "E155",
+  "kind": "diagnosis",
+  "outcome": "falsified",
+  "plan": "low-density-edge.md",
   "hypothesis": "low-density-edge Phase 2, E-LD-1: under 100 prey the prey lose more than they replace, and the mating rate is what falls furthest below its value at 100 to 400 prey.",
   "prediction": "eval.edge_birth_death_ratio is under 0.6 on at least half the seeds with an edge span, and the mate-birth swap (the seed's edge mating-birth rate replaced by its reference-span rate) closes the largest median share of the edge deficit (prey deaths minus prey births in edge spans) of the four swaps: mate births, split births, starvation, predation. Falsified when the ratio is 0.6 or more on more than half those seeds, or the starvation or predation swap closes a larger share.",
   "targets": [

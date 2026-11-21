@@ -1,5 +1,8 @@
 {
   "id": "E186",
+  "kind": "compare",
+  "outcome": "adopted",
+  "plan": "senses-and-motor.md",
   "hypothesis": "senses-and-motor Phase 5 (plan id E-SM-4): giving the hunter the longest forward reach (predator visionRange 400, equal only to the scout; defender down to 300) with a short rear reach (rearVisionShare 0.3 to 0.6) lets predators start chases from further ahead and raises their catch rate, without costing hunters alive or held seeds.",
   "prediction": "On the 16-seed screen (evals/screens/hunter-vision.grid.json, 400000 ticks, floor on, policy live) the range-plus-rear arms raise eval.hunter_catches_per_1k by at least a tenth over control with the keep rule's seed guards (hunters alive, held) not worse; range alone moves catches less than range with s 0.4; eval.chase_catch_share rises with them; eval.collision_death_share does not rise. Falsified when no arm raises eval.hunter_catches_per_1k beyond the screen's margin.",
   "targets": ["eval.hunter_catches_per_1k", "eval.chase_catch_share"],

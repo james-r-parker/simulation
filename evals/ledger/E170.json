@@ -1,5 +1,8 @@
 {
   "id": "E170",
+  "kind": "compare",
+  "outcome": "falsified",
+  "plan": "eat-choice.md",
   "hypothesis": "eat-choice T26: the grazeThrust 0.75 switch keeps its E169 gains on fresh seeds.",
   "prediction": "On seeds 65 to 128 at 200000 ticks the switch against main reads no keep-rule guard WORSE and eval.deliberate_food_share better; held leans better. Falsified when a guard reads WORSE or the deliberate share is not better.",
   "targets": ["eval.deliberate_food_share"],
