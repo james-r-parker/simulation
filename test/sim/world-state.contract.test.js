@@ -152,6 +152,7 @@ const HASHED_ELSEWHERE = new Set([
     'birthRing',
     'hidden',
     'sprintLevel',
+    'restTimer',
 ]);
 
 /**
