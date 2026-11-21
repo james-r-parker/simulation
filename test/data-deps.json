@@ -38,6 +38,9 @@
         "scripts/bench-check.mjs",
         "test"
     ],
+    "test/bench-check-main.test.js": [
+        "scripts/bench-check.mjs"
+    ],
     "test/bench-compare.test.js": [
         "package-lock.json",
         "package.json"
@@ -172,6 +175,9 @@
     "test/designs-index.test.js": [
         "README.md",
         "docs/designs"
+    ],
+    "test/director-dry-main.test.js": [
+        "scripts/director-dry.mjs"
     ],
     "test/eslint-scope.test.js": [
         "js/sim/step.js"
@@ -464,6 +470,9 @@
     "test/icon-files.test.js": [
         "public/icons/"
     ],
+    "test/learn-worker.test.js": [
+        "scripts/learn-worker.mjs"
+    ],
     "test/ledger.test.js": [
         "evals"
     ],
@@ -473,6 +482,14 @@
     ],
     "test/library/seasons-file.test.js": [
         "library/seasons.json"
+    ],
+    "test/merge-base.test.js": [
+        ".git",
+        "docs/notes/2026-11.md",
+        "scripts/lib/merge-base.mjs",
+        "scripts/lib/notes-merge.mjs",
+        "scripts/lib/regen.mjs",
+        "test"
     ],
     "test/metrics-doc.test.js": [
         "docs/designs/metrics.md"
@@ -540,6 +557,10 @@
     "test/role-budget-pack.test.js": [
         "scripts/role-budget.mjs"
     ],
+    "test/role-budget-search-libs.test.js": [
+        "scripts/lib/role-budget-birth-search.mjs",
+        "scripts/lib/role-budget-defender-search.mjs"
+    ],
     "test/role-budget.slow.test.js": [
         "evals/fair-chase/courser.json",
         "scripts/role-budget.mjs"
@@ -548,6 +569,9 @@
         "evals/fair-chase/courser.json",
         "evals/role-budget",
         "scripts/role-budget.mjs"
+    ],
+    "test/role-metric-table.test.js": [
+        "scripts/role-metric-table.mjs"
     ],
     "test/run-detached.test.js": [
         ".git",
@@ -623,6 +647,10 @@
         "evals/train-screens/results",
         "scripts/state.mjs",
         "test"
+    ],
+    "test/sync-main.test.js": [
+        "scripts/lib/merge-base.mjs",
+        "scripts/lib/sync-main.mjs"
     ],
     "test/task-start.test.js": [
         ".gitignore",

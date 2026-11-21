@@ -5,6 +5,7 @@
 //   6 push or gh failed   1 checks red   7 green but not merged after the wait
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { mergeBase } from './merge-base.mjs';
 import { bodyProblems } from './ship-body.mjs';
 import { CHECKS_GRACE_S, sleep, waitForChecks } from './ship-wait.mjs';
 
@@ -97,16 +98,15 @@ export function stepGuard(ctx) {
 export function stepMergeBase(ctx) {
     const { base } = ctx.opts;
     git(ctx, ['fetch', 'origin']);
-    if (Number(git(ctx, ['rev-list', '--count', `HEAD..origin/${base}`])) === 0) {
-        return;
-    }
-    const r = ctx.sh('git', ['merge', '--no-edit', `origin/${base}`]);
-    if (r.status !== 0) {
-        const paths = ctx.sh('git', ['diff', '--name-only', '--diff-filter=U']).stdout.trim();
+    const result = mergeBase(ctx.sh, base);
+    if (result.status === 'resolved') {
+        console.log(`ship: merged origin/${base}; regenerated ${result.regenerated.join(', ')}`);
+    } else if (result.status === 'conflict') {
+        const why = result.message ? `${result.message}\n` : '';
         throw new ShipError(
             3,
             'conflict',
-            `ship: merging origin/${base} conflicts (merge left in progress; resolve, commit, rerun):\n${paths}`,
+            `ship: merging origin/${base} conflicts (merge left in progress; resolve, commit, rerun):\n${why}${result.paths.join('\n')}`,
         );
     }
 }
