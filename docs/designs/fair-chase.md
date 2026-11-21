@@ -156,6 +156,7 @@ The keep rule gains a second metric guard before this read: `eval.hunter_kills_p
 | The envelope comes before any training or eval                       | It runs in minutes on scripted bodies, and twelve trainer levers were spent on a chase the envelope already showed has one fair distance                             |
 | The prey sprint is not lowered and the hunter is not sped up alone   | Either is a number tuned around a free sprint; a store is what nature does, and it gives the courser and the stalker different bodies (Same spec, different custom)  |
 | [chase-physics.md](chase-physics.md) Phase 2 waits for this doc      | `speedTurnDrag` widens the predator's 75-unit sprint circle; it is screened on the bodies this doc leaves                                                            |
+| Stage drills carry the stage's body rules                            | A drill under the default config cannot tell a hunter that outlasts tiring prey from one that does not; food, density and world size stay the drill's own (`DRILL_BODY_KEYS`, `js/evo/drill-body-rules.js`) |
 | `rulesHash` moves in Phase 1                                         | A new config key changes `rulesHash` even with the switch off, so every phase is built on `season/next`; the season opens on `main` after the Phase 3 keep-rule read |
 
 ## Delivery requirements
