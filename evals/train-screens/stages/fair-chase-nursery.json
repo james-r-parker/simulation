@@ -1,0 +1,21 @@
+{
+  "worldWidth": 2400,
+  "worldHeight": 1600,
+  "initialAgents": 40,
+  "maxAgents": 80,
+  "minAgents": 0,
+  "maxFood": 90,
+  "initialFood": 90,
+  "wallGaps": 1,
+  "herdCount": 0,
+  "refugeCount": 0,
+  "coldMarginWidth": 0,
+  "foodBackgroundShare": 1,
+  "sprintStoreEnabled": true,
+  "sprintDrain": 0.01,
+  "specialisations": {
+    "predator": {
+      "sprintDrainMultiplier": 0.5
+    }
+  }
+}
