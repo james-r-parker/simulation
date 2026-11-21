@@ -5,7 +5,7 @@ describe('readParams', () => {
     it('reads every parameter', () => {
         expect(
             readParams(
-                '?seed=42&agents=300&speed=4&backend=webgl2&gputime=1&tv=1&board=1&audio=true&policy=map-elites-v6&merit=1&hold=1&dim=0.6',
+                '?seed=42&agents=300&speed=4&backend=webgl2&gputime=1&tv=1&board=1&reel=1&audio=true&policy=map-elites-v6&merit=1&hold=1&dim=0.6',
             ),
         ).toEqual({
             seed: 42,
@@ -15,6 +15,7 @@ describe('readParams', () => {
             gputime: true,
             tv: true,
             board: true,
+            reel: true,
             dim: 0.6,
             audio: true,
             policy: 'map-elites-v6',
@@ -32,6 +33,7 @@ describe('readParams', () => {
             gputime: false,
             tv: false,
             board: false,
+            reel: false,
             dim: null,
             audio: false,
             policy: null,
@@ -50,6 +52,7 @@ describe('readParams', () => {
             gputime: false,
             tv: false,
             board: false,
+            reel: false,
             dim: null,
             audio: false,
             policy: null,

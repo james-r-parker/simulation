@@ -1,4 +1,4 @@
-// The query-string parameters the page reads: seed, agents, speed, backend, gputime, tv, dim, board, audio, policy, merit and hold. A value that is missing or
+// The query-string parameters the page reads: seed, agents, speed, backend, gputime, tv, dim, board, reel, audio, policy, merit and hold. A value that is missing or
 // invalid is ignored (null, or false for a flag), never an error: a bad link still opens the app.
 
 import { TICKS_PER_SECOND_CHOICES } from '../worker/protocol.js';
@@ -16,6 +16,7 @@ export const MAX_AGENTS_PARAM = 4096;
  * @property {boolean} gputime record GPU frame times through timestamp queries
  * @property {boolean} tv TV mode: HUD hidden, director running, wake lock on
  * @property {boolean} board start with the insights drawer open as a full-screen board, the world small in a corner
+ * @property {boolean} reel frame each scene moment of the reel by following its subject (`npm run reel`, dev switch)
  * @property {'auto' | number | null} dim the night dim: `auto`, or a fixed brightness from 0.3 to 1; null leaves it to the
  *   `dim` preference
  * @property {boolean} audio start with audio on
@@ -111,6 +112,7 @@ export function readParams(search) {
         tv: flagOf(query.get('tv')),
         dim: dimOf(query.get('dim')),
         board: flagOf(query.get('board')),
+        reel: flagOf(query.get('reel')),
         audio: flagOf(query.get('audio')),
         policy: policyOf(query.get('policy')),
         merit: flagOf(query.get('merit')),

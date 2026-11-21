@@ -15,8 +15,8 @@ import { createFrameLoop } from './frame-loop.js';
 import { bootPack, startPack } from './pack/pack-boot.js';
 import { requireIsolation } from './isolation.js';
 import { showRenderFailure } from './ui/render-failure.js';
-import { clearFrameStats, createFrameStats } from './frame-stats.js';
-import { createAppLiveness, readAppPerf, startReporting } from './liveness.js';
+import { createFrameStats } from './frame-stats.js';
+import { exposeApp } from './expose.js';
 import { MIN_CSS_PX_TOUCH, minPxTable } from './display-size.js';
 import { clientToDevice, deviceToClient, devicePerCss } from './canvas-geometry.js';
 import { agentAt } from './hover-pick.js';
@@ -344,25 +344,13 @@ function start() {
         return;
     }
     const app = createApp(container);
-    window.__blob = createAppLiveness({
-        readFrames: () => app.stats.drawCalls,
-        readTick: () => app.supervisor.tick(),
-        resetFrames: () => clearFrameStats(app.stats, PERF_FRAMES),
-    });
+    const production = typeof __PRODUCTION__ !== 'undefined' && __PRODUCTION__;
+    exposeApp({ app, target: /** @type {any} */ (window), production, frames: PERF_FRAMES });
     observeSize(container, (next) => {
         Object.assign(app.size, next);
         app.deps.scene?.resize(next.width, next.height);
         app.iface.resize();
         resizeCamera(app.camera, next);
-    });
-    startReporting({
-        target: /** @type {any} */ (window),
-        production: typeof __PRODUCTION__ !== 'undefined' && __PRODUCTION__,
-        read: () => readAppPerf(app),
-        reset: () => {
-            clearFrameStats(app.stats, PERF_FRAMES);
-            app.deps.gpuTimer?.reset();
-        },
     });
     const tick = (/** @type {number} */ now) => {
         app.loop.frame(now);
