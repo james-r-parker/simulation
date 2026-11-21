@@ -84,6 +84,10 @@ export function readConfig(file) {
 export async function runReel(page, { baseUrl, args }) {
     const config = readConfig(args.config);
     await page.goto(reelPageUrl(baseUrl, { seed: args.seed, policy: args.policy, config }));
+    const refused = await page.evaluate(() => /** @type {any} */ (globalThis).__reelError ?? null);
+    if (refused !== null) {
+        throw new Error(`the page refused the config parameter: ${refused}`);
+    }
     const reel = await collectReel(page, {
         ticks: args.ticks,
         timeoutMs: Math.max(MIN_TIMEOUT_MS, args.ticks * MS_PER_TICK),

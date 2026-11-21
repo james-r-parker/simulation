@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MERIT_PREVIEW, configOverrides, readParams } from '../../js/app/url-params.js';
+import { MERIT_PREVIEW, configOverrides, readParams, reelConfigError } from '../../js/app/url-params.js';
 
 describe('readParams', () => {
     it('reads every parameter', () => {
@@ -197,5 +197,23 @@ describe('the config parameter', () => {
         });
         const both = configOverrides(readParams(`?agents=50&config=${encode({ a: 1, initialAgents: 9 })}`));
         expect(both).toMatchObject({ a: 1, initialAgents: 50 });
+    });
+});
+
+describe('reelConfigError', () => {
+    const good = Buffer.from(JSON.stringify({ a: 1 })).toString('base64url');
+
+    it('names the config parameter when a reel link carries one that does not parse', () => {
+        const bad = ['!!!', Buffer.from('{nope').toString('base64url'), Buffer.from('{"a":"x"}').toString('base64url')];
+        for (const value of bad) {
+            expect(reelConfigError(`?reel=1&config=${value}`)).toMatch(/config/);
+        }
+    });
+
+    it('is null for a good config, no config, or a link that is not a reel (a bad link still opens)', () => {
+        expect(reelConfigError(`?reel=1&config=${good}`)).toBeNull();
+        expect(reelConfigError('?reel=1')).toBeNull();
+        expect(reelConfigError('?config=!!!')).toBeNull();
+        expect(readParams('?config=!!!').config).toBeNull();
     });
 });

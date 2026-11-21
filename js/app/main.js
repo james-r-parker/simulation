@@ -30,7 +30,7 @@ import { chooseSeed } from './seed.js';
 import { createSupervisor } from './supervisor.js';
 import { createDownloader } from './ui/download.js';
 import { safeStorage, unsupportedReason } from './support.js';
-import { configOverrides, readParams } from './url-params.js';
+import { configOverrides, readParams, reelConfigError } from './url-params.js';
 import { createFxDev, fxAfterDraw, fxSink, readFxParams } from './fx-dev.js';
 import { createWakeLock } from './wake-lock.js';
 
@@ -338,6 +338,11 @@ function start() {
     });
     if (reason !== null) {
         return showMessage(container, reason);
+    }
+    const reelError = reelConfigError(location.search);
+    if (reelError !== null) {
+        /** @type {any} */ (window).__reelError = reelError;
+        return showMessage(container, reelError);
     }
     // No isolation, no shared memory, no snapshots: show the card and start no worker (docs/designs/pack-worker.md).
     if (!requireIsolation({ scope: globalThis, container, log: appLog, show: showRenderFailure })) {

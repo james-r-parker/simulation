@@ -106,6 +106,19 @@ function configOf(text) {
 }
 
 /**
+ * A normal link with a bad `config` still opens the default world; a reel run must not silently measure the wrong one.
+ * @param {string} search the query string, e.g. `location.search`
+ * @returns {string | null} a message naming the `config` parameter when `reel=1` carries one that does not parse, else null
+ */
+export function reelConfigError(search) {
+    const query = new URLSearchParams(search);
+    if (!flagOf(query.get('reel')) || !query.has('config') || configOf(query.get('config')) !== null) {
+        return null;
+    }
+    return 'The config parameter is not base64url of a non-empty JSON object of numbers and booleans, so the reel will not run.';
+}
+
+/**
  * @param {number | null} n a parsed value
  * @param {number} min the lowest valid value
  * @param {number} max the highest valid value

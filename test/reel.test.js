@@ -90,7 +90,7 @@ describe('runReel', () => {
     it('opens the reel URL, collects to the ticks and writes the clips and reel.json', async () => {
         const goto = vi.fn(async () => {});
         const out = join(tmp(), 'out');
-        const file = await runReel(/** @type {any} */ ({ goto }), {
+        const file = await runReel(/** @type {any} */ ({ goto, evaluate: async () => null }), {
             baseUrl: 'http://host:1/',
             args: { seed: 1, ticks: 2000, out, config: null, policy: LIVE_POLICY, headed: false },
         });
@@ -111,10 +111,18 @@ describe('runReel', () => {
     });
 
     it('waits longer for a long run', async () => {
-        await runReel(/** @type {any} */ ({ goto: async () => {} }), {
+        await runReel(/** @type {any} */ ({ goto: async () => {}, evaluate: async () => null }), {
             baseUrl: 'http://host:1/',
             args: { seed: 1, ticks: 100_000, out: join(tmp(), 'o'), config: null, policy: LIVE_POLICY, headed: false },
         });
         expect(collectReel).toHaveBeenLastCalledWith(expect.anything(), { ticks: 100_000, timeoutMs: 4_000_000 });
+    });
+
+    it('fails naming the config parameter when the page reports it did not parse', async () => {
+        vi.mocked(collectReel).mockClear();
+        const page = { goto: async () => {}, evaluate: async () => 'config does not parse' };
+        const args = { seed: 1, ticks: 100, out: join(tmp(), 'o'), config: null, policy: LIVE_POLICY, headed: false };
+        await expect(runReel(/** @type {any} */ (page), { baseUrl: 'http://host:1/', args })).rejects.toThrow(/config/);
+        expect(collectReel).not.toHaveBeenCalled();
     });
 });
