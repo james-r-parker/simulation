@@ -29,6 +29,8 @@ export const KERNEL_ORDER = Object.freeze(['brain', 'sense', 'hash', 'physics'])
 const BRAIN = ['brain'];
 const DERIVED = 'derived from `weights` by `applyGenes` (traits.js), which is hashed';
 const REWRITTEN = 'rewritten every tick before it is read';
+const CALL_HEARD =
+    'whether a call the slot made this tick was heard (alarm, then hunt): cleared and rewritten in every signal phase, read in the same one (`settleCalls`)';
 const STAMP = 'a stamp compared with `tick + 1` in the tick it is written, so a stale value is never read as current';
 
 /**
@@ -95,6 +97,7 @@ const FIXED_ROWS = [
     [Uint16Array, 'smokeTimer', 1, hashedAt(39)],
     [Float32Array, 'heard', HEARD_STRIDE, hashedAt(40)],
     [Uint32Array, 'heardFrom', HEARD_FROM_STRIDE, { hashed: 'effects' }],
+    [Uint8Array, 'callHeard', 2, { hashed: false, excuse: CALL_HEARD }],
 ];
 
 /**

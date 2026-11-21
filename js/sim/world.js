@@ -350,8 +350,6 @@ export function allocateWorld(config) {
                     config.herdCount * config.herdSize),
         ),
         callScratch: new Float64Array(CALL_SCRATCH),
-        // Per slot, whether a call it made this tick was heard (alarm, then hunt): derived, cleared every signal phase.
-        callHeard: new Uint8Array(config.maxAgents * 2),
         brainScratch: new Float64Array(Math.max(config.brainHidden, OUTPUT_COUNT)),
     });
     allocAgentArrays(world, world.layout);
