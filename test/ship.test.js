@@ -100,7 +100,15 @@ beforeEach(() => {
     git(dir, ['clone', origin, work]);
     mkdirSync(join(work, 'scripts/lib'), { recursive: true });
     cpSync(resolve('scripts/ship.sh'), join(work, 'scripts/ship.sh'));
-    for (const f of ['ship-main.mjs', 'ship-steps.mjs', 'ship-body.mjs', 'ship-wait.mjs']) {
+    for (const f of [
+        'ship-main.mjs',
+        'ship-steps.mjs',
+        'ship-body.mjs',
+        'ship-wait.mjs',
+        'merge-base.mjs',
+        'notes-merge.mjs',
+        'regen.mjs',
+    ]) {
         cpSync(resolve('scripts/lib', f), join(work, 'scripts/lib', f));
     }
     // Stub gates: change-scope prints $SCOPE; check.sh records its flags, optionally writes a file or fails.
