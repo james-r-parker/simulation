@@ -170,7 +170,7 @@ function sourceOf(ctx, model, hunting) {
  * @returns {FirstMealBudget} the budget
  */
 export function budgetFirstMeal(ctx, { model, hunting = undefined }) {
-    const source = sourceOf(ctx, model, ctx.p.feed.plantValue > 0 ? null : (hunting ?? null));
+    const source = sourceOf(ctx, model, hunting ?? null);
     const rules = /** @type {FirstMealBudget['rules']} */ (
         Object.fromEntries(
             ['founder', 'entrant', 'child'].map((rule) => [

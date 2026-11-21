@@ -31,7 +31,7 @@ export const THRIVE_TOLERANCE = Object.freeze({
  * @returns {import('./role-budget-defence-check.js').DefenceReading} the reading
  */
 export function rateReading(row, what, [formula, scene], { relative, absolute }) {
-    const allowed = relative === undefined ? (absolute ?? 0) : relative * Math.abs(scene ?? 0);
+    const allowed = relative === undefined ? Number(absolute) : relative * Math.abs(scene ?? 0);
     const drift = formula === null || scene === null ? formula !== scene : Math.abs(formula - scene) > allowed;
     const tolerance = relative === undefined ? `${absolute} absolute` : `${relative * 100}%`;
     return { row, what, formula, scene, tolerance, drift };

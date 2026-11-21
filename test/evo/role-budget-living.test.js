@@ -20,6 +20,8 @@ function living(overrides, extra = {}) {
     return budgetLiving(hunter, { budgets, preys, mix, model });
 }
 
+const COURSER = JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8'));
+
 describe('killIncome', () => {
     it('is the bites and the gorge of the anchors: 700 on a forager and a reproducer, 760 on a scout, 700 on a defender', () => {
         const config = createConfig({});
@@ -57,21 +59,28 @@ describe('budgetLiving at the defaults', () => {
 });
 
 describe('budgetLiving where the hunter closes on its prey', () => {
-    const courser = JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8'));
-
     it('pays at a catch share high enough, so a better share lifts the net by the kill income', () => {
-        const low = living(courser, { catchShare: 0.3 });
-        const high = living(courser, { catchShare: 0.6 });
+        const low = living(COURSER, { catchShare: 0.3 });
+        const high = living(COURSER, { catchShare: 0.6 });
         expect(high.chase.net - low.chase.net).toBeCloseTo(0.3 * low.chase.income, 6);
         expect(high.chase.netAtFull).toBe(low.chase.netAtFull);
     });
 
     it('is not impossible on eat when the net at a share of 1 is positive, and tight when the catch share does not pay', () => {
-        const b = living(courser, { catchShare: 0.1 });
+        const b = living(COURSER, { catchShare: 0.1 });
         if (b.chase.netAtFull > 0) {
             expect(b.cells.eat.status).not.toBe('impossible');
             expect(b.chase.net).toBeLessThan(b.chase.netAtFull);
         }
         expect(b.cells.eat.margin === null || b.cells.eat.margin >= 0).toBe(true);
+    });
+
+    it('reaches the split gate when every chase wins: the chases it needs are fewer than a life holds, and breed has slack', () => {
+        const b = living(COURSER, { catchShare: 1 });
+        expect(b.chase.net).toBeGreaterThan(0);
+        expect(b.split.chases).toBeCloseTo((b.split.gate - b.split.birth) / b.chase.net, 9);
+        expect(b.split.spare).toBeGreaterThan(0);
+        expect(b.cells.breed.status).not.toBe('impossible');
+        expect(b.row.status).not.toBe('impossible');
     });
 });

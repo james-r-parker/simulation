@@ -30,6 +30,14 @@ describe('playIdle', () => {
     });
 });
 
+describe('setEnergy through playIdle', () => {
+    it('raises a staged body to more than the spawn energy and lowers it to less', () => {
+        const rich = playIdle(world, { spec: 'forager', energy: 1200, speed: 0 });
+        const poor = playIdle(world, { spec: 'forager', energy: 200, speed: 0 });
+        expect(rich.ticks.life).toBeGreaterThan(poor.ticks.life);
+    });
+});
+
 describe('playForaging', () => {
     it('eats the first meal at once from a grid with food under the body, then settles to a rate', () => {
         const density = (3600 * 0.98) / (16 * Math.PI * 400 * 400);

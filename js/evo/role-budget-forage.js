@@ -92,7 +92,7 @@ export function gaitCost(ctx, { speed, energy, heat = 1, stacks = 0 }) {
 
 /**
  * The gait that goes furthest on a unit of energy: cost is `A + B speed^2` (the standing terms and the movement term), so the
- * energy per px is least at `sqrt(A / B)`, capped at the cruise cap. Read at the heat factor 1 and the energy given.
+ * energy per px is least at `sqrt(A / B)`, capped at the cruise cap (a body whose movement is free walks at it). Read at the heat factor 1 and the energy given.
  * @param {Context} ctx the context
  * @param {number} energy the energy it holds
  * @returns {number} the speed in px a tick
@@ -101,7 +101,7 @@ export function bestRangeSpeed(ctx, energy) {
     const { cost, cap } = ctx.p;
     const standing = gaitCost(ctx, { speed: 0, energy });
     const move = cost.move * cost.drain * cost.juvenile;
-    return move === 0 ? cap.cruise : Math.min(cap.cruise, Math.sqrt(standing / move));
+    return Math.min(cap.cruise, Math.sqrt(standing / move));
 }
 
 /**

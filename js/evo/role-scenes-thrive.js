@@ -12,6 +12,8 @@ import { roleParams } from './role-budget-params.js';
 
 /** The width of the arena of the idle scene: wide enough that a walk of a founder's range ends before the wall of rocks. */
 const IDLE_WIDTH = 40000;
+/** The items along a side of the grid of the foraging scene. */
+const GRID_SIDE = 36;
 /** The longest a scene runs, in ticks. */
 const LIMIT = 80000;
 
@@ -29,6 +31,7 @@ function emptied(config, width) {
         initialAgents: 0,
         minAgents: 0,
         initialFood: 0,
+        maxFood: Math.max(config.maxFood, GRID_SIDE * GRID_SIDE),
         foodSpawnRate: 0,
         fertileZoneMax: 0,
         refugeCount: 0,
@@ -45,7 +48,7 @@ function emptied(config, width) {
  * @param {number} energy the energy to hold
  * @returns {void}
  */
-function setEnergy(world, slot, energy) {
+export function setEnergy(world, slot, energy) {
     const delta = energy - world.energy[slot];
     if (delta >= 0) {
         addEnergy(world, slot, delta, ENERGY_SOURCE.INITIAL);
@@ -104,7 +107,7 @@ function readForaging(w, { settled, first, n }) {
 function stageGrid(config, { spec, density, energy }) {
     const world = emptied(config, 16000);
     const specs = /** @type {Record<string, any>} */ (world.specialisations);
-    const foods = gridOf(ARENA_CENTRE, 1 / Math.sqrt(density), 36);
+    const foods = gridOf(ARENA_CENTRE, 1 / Math.sqrt(density), GRID_SIDE);
     const staged = stageArena(world, [{ spec: specs[spec].index, ...ARENA_CENTRE, angle: 0 }], { foods });
     const w = staged.world;
     for (let i = 0; i < w.foodAlive.length; i++) {

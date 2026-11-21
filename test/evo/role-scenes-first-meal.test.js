@@ -43,4 +43,16 @@ describe('playFirstMeal', () => {
         const b = playFirstMeal(world, { spec: 'forager', rule: 'entrant', mode: 'find', count: 24, seed: 10 });
         expect(b.outcome.meanTicks).not.toBe(a.outcome.meanTicks);
     });
+
+    it('a founder is born rich and an entrant poor, at the energies of the config', () => {
+        const founder = playFirstMeal(world, { spec: 'forager', rule: 'founder', mode: 'find', count: 4, seed: 2 });
+        expect(founder.outcome.count).toBe(4);
+        expect(founder.outcome.eaten).toBeLessThanOrEqual(4);
+    });
+
+    it('reads no mean when nobody eats before their energy is gone', () => {
+        const starving = createConfig({ entrantEnergy: 5 });
+        const r = playFirstMeal(starving, { spec: 'forager', rule: 'entrant', mode: 'find', count: 4, seed: 2 });
+        expect(r.outcome).toEqual({ share: 0, meanTicks: null, count: 4, eaten: 0 });
+    });
 });

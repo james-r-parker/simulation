@@ -5,7 +5,6 @@
 
 import { detCos, detSin } from '../sim/det-math.js';
 import { BORN_CAUSE } from '../sim/events.js';
-import { ENERGY_SOURCE, LOSS_CAUSE, addEnergy, removeEnergy } from '../sim/energy.js';
 import { createConfig } from '../sim/config.js';
 import { createRng, fork, nextFloat } from '../sim/rng.js';
 import { createWorld, spawnAgent } from '../sim/spawn.js';
@@ -13,6 +12,7 @@ import { step } from '../sim/step.js';
 import { wayfarerBrain } from './forage-oracles.js';
 import { bestRangeSpeed, contextOf, lifeOf } from './role-budget-forage.js';
 import { roleParams } from './role-budget-params.js';
+import { setEnergy } from './role-scenes-thrive.js';
 import { viewReach } from './role-budget-senses.js';
 
 const TWO_PI = 2 * Math.PI;
@@ -73,12 +73,7 @@ function bornInPatch(world, { slot, energy, rng }) {
     const theta = nextFloat(rng) * TWO_PI;
     world.x[slot] = world.patchX[patch] + radius * detCos(theta);
     world.y[slot] = world.patchY[patch] + radius * detSin(theta);
-    const delta = energy - world.energy[slot];
-    if (delta >= 0) {
-        addEnergy(world, slot, delta, ENERGY_SOURCE.FLOOR);
-    } else {
-        removeEnergy(world, slot, -delta, LOSS_CAUSE.COST);
-    }
+    setEnergy(world, slot, energy);
 }
 
 /**

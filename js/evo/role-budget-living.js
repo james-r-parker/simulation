@@ -39,7 +39,7 @@ export function killIncome(hunter, prey) {
 function perChase(hunter, { budgets, preys, mix, model }) {
     const sum = { income: 0, cost: 0, chaseTicks: 0 };
     for (const spec of Object.keys(budgets)) {
-        const weight = mix[spec] ?? 0;
+        const weight = mix[spec];
         const prey = preys[spec];
         const run = playFrame(hunter.p, prey, gapAtAwareness(hunter.p, prey), {
             tier: 'reactive',
