@@ -1,0 +1,19 @@
+{
+  "id": "E264",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "plan": "metric-noise.md",
+  "task": "T23",
+  "stream": "metric-noise",
+  "date": "2026-11-21",
+  "branch": "eval/role-metric-power",
+  "hypothesis": "E-MN-T23 (metric-noise T23): every ROLE_METRICS metric is live and powered on 16 seeds of 200000 ticks of the live policy, at the defaults and with the defender's shove on (defenderRepelEnergy 40, defenderRepelImpulse 4), so each role has a metric a training decision can rest on.",
+  "prediction": "Predator, forager, reproducer and herd metrics are live with a decision metric each; the scout's three read null on nearly every seed; the defender's shove count reads 0 on every seed at the defaults and non-zero with the shove on. Committed with the results, not before the run.",
+  "targets": [],
+  "before": "evals/decisions/E264/base.json (16 seeds x 200000 ticks, defaults, commit 837fa6db)",
+  "after": "evals/decisions/E264/shove.json (the same seeds, shove on)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Power comes from E254 (128 seeds, rulesHash 38be2908ad820c86), stale since season 12; a 16-seed report cannot be split for power. Decision metrics: predator eval.chase_catch_share (16 seeds), forager eval.deliberate_food_share (32), reproducer eval.child_survival (16), herd eval.trampled_share (16). Scout none yet (alarm metrics null on 15 or 16 of 16 seeds, 116 to 127 of 128 in E254). Defender none yet (shove count 0 on every default seed, 0.07 with the shove; no shove baseline to power it).",
+  "reports": ["evals/decisions/E264/results.md"]
+}
