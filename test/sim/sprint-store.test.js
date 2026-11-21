@@ -2,11 +2,20 @@ import v8 from 'node:v8';
 import vm from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
+import { laneBases } from '../../js/sim/body-lanes.js';
 import { createConfig } from '../../js/sim/config.js';
+import { SPEC_NAMES } from '../../js/sim/specs.js';
 import { EVENT_TYPE, createEventRing } from '../../js/sim/events.js';
 import { createSimLog, drainEvents } from '../../js/sim/log.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
-import { createSprintStore, resetSprintSlot, stepSprintStore, storeFactor } from '../../js/sim/sprint-store.js';
+import {
+    SPRINT_REST_EFFORT,
+    createSprintStore,
+    resetSprintSlot,
+    sprintEffort,
+    stepSprintStore,
+    storeFactor,
+} from '../../js/sim/sprint-store.js';
 
 const FORAGER = 0;
 const PREDATOR = 1;
@@ -19,11 +28,18 @@ const storeConfig = (overrides = {}) => createConfig({ sprintStoreEnabled: true,
 
 /**
  * @param {number} n slots
- * @returns {Record<string, any>} the arrays the step reads and writes, every slot alive and a forager, with a tick and an
- *   event ring
+ * @param {Readonly<Record<string, any>>} config the config the lanes come from
+ * @returns {Record<string, any>} the arrays the step reads and writes, every slot alive and a forager with its lanes,
+ *   with a tick and an event ring
  */
-function bodies(n) {
+function bodies(n, config) {
+    const { sprintDrain, sprintRefill } = laneBases(config, SPEC_NAMES[FORAGER]);
     return {
+        config,
+        lanes: {
+            sprintDrain: new Float64Array(n).fill(sprintDrain),
+            sprintRefill: new Float64Array(n).fill(sprintRefill),
+        },
         alive: new Uint8Array(n).fill(1),
         spec: new Uint8Array(n),
         genomeId: new Uint32Array(n).map((_, slot) => 100 + slot),
@@ -32,6 +48,19 @@ function bodies(n) {
         tick: 0,
         events: createEventRing(2 * n + 8),
     };
+}
+
+/**
+ * Makes a body of another specialisation, its lanes at that specialisation's bases.
+ * @param {ReturnType<typeof bodies>} w the arrays
+ * @param {number} slot the body
+ * @param {number} spec the specialisation
+ */
+function specAs(w, slot, spec) {
+    const bases = laneBases(w.config, SPEC_NAMES[spec]);
+    w.spec[slot] = spec;
+    w.lanes.sprintDrain[slot] = bases.sprintDrain;
+    w.lanes.sprintRefill[slot] = bases.sprintRefill;
 }
 
 /**
@@ -45,16 +74,16 @@ function drive(w, slot, { sprint, thrust }) {
 }
 
 describe('createSprintStore', () => {
-    it('starts every slot full and prices the drain per specialisation', () => {
+    it('starts every slot full, and the drain lane is priced per specialisation', () => {
         const config = storeConfig({
             sprintDrain: 0.01,
             specialisations: { predator: { sprintDrainMultiplier: 2 } },
         });
         const store = createSprintStore(config, 4);
         expect([...store.level]).toEqual([1, 1, 1, 1]);
-        expect(store.drainBySpec[FORAGER]).toBe(0.01);
-        expect(store.drainBySpec[PREDATOR]).toBe(0.02);
-        expect([store.refill, store.restThrust, store.floor]).toEqual([0.002, 0.2, 0.3]);
+        expect(laneBases(config, 'forager').sprintDrain).toBe(0.01);
+        expect(laneBases(config, 'predator').sprintDrain).toBe(0.02);
+        expect([store.restThrust, store.floor]).toEqual([0.2, 0.3]);
     });
 });
 
@@ -69,8 +98,9 @@ describe('storeFactor', () => {
 
 describe('stepSprintStore', () => {
     it('drains while sprinting and writes the factor of the store as the tick began', () => {
-        const store = createSprintStore(storeConfig({ sprintDrain: 0.1, sprintFloor: 0.3 }), 1);
-        const w = bodies(1);
+        const config = storeConfig({ sprintDrain: 0.1, sprintFloor: 0.3 });
+        const store = createSprintStore(config, 1);
+        const w = bodies(1, config);
         drive(w, 0, { sprint: 1, thrust: 1 });
         store.level[0] = 0.35;
         stepSprintStore(store, w);
@@ -87,8 +117,9 @@ describe('stepSprintStore', () => {
     });
 
     it('refills only while not sprinting and thrust is under sprintRestThrust, never above 1', () => {
-        const store = createSprintStore(storeConfig({ sprintRefill: 0.25, sprintRestThrust: 0.2 }), 3);
-        const w = bodies(3);
+        const config = storeConfig({ sprintRefill: 0.25, sprintRestThrust: 0.2 });
+        const store = createSprintStore(config, 3);
+        const w = bodies(3, config);
         store.level.set([0.5, 0.5, 0.9]);
         drive(w, 0, { sprint: 0, thrust: 0.1 });
         drive(w, 1, { sprint: 0, thrust: 0.2 });
@@ -103,8 +134,8 @@ describe('stepSprintStore', () => {
             specialisations: { predator: { sprintDrainMultiplier: 0.5 } },
         });
         const store = createSprintStore(config, 2);
-        const w = bodies(2);
-        w.spec[1] = PREDATOR;
+        const w = bodies(2, config);
+        specAs(w, 1, PREDATOR);
         drive(w, 0, { sprint: 1, thrust: 1 });
         drive(w, 1, { sprint: 1, thrust: 1 });
         stepSprintStore(store, w);
@@ -112,9 +143,23 @@ describe('stepSprintStore', () => {
         expect(1 - store.level[1]).toBeCloseTo(0.005, 12);
     });
 
+    it('drains and refills each body by its own lanes, so two bodies of one specialisation can differ', () => {
+        const config = storeConfig({ sprintDrain: 0.1, sprintRefill: 0.1, sprintRestThrust: 0.5 });
+        const store = createSprintStore(config, 4);
+        const w = bodies(4, config);
+        w.lanes.sprintDrain[1] = 0.05;
+        w.lanes.sprintRefill[3] = 0.2;
+        store.level.set([1, 1, 0.5, 0.5]);
+        drive(w, 0, { sprint: 1, thrust: 1 });
+        drive(w, 1, { sprint: 1, thrust: 1 });
+        stepSprintStore(store, w);
+        expect([...store.level].map((v) => Math.round(v * 1e9) / 1e9)).toEqual([0.9, 0.95, 0.6, 0.7]);
+    });
+
     it('leaves dead slots alone', () => {
-        const store = createSprintStore(storeConfig(), 2);
-        const w = bodies(2);
+        const config = storeConfig();
+        const store = createSprintStore(config, 2);
+        const w = bodies(2, config);
         w.alive[1] = 0;
         w.sprintFactor[1] = 7;
         drive(w, 1, { sprint: 1, thrust: 1 });
@@ -122,26 +167,27 @@ describe('stepSprintStore', () => {
         expect([store.level[1], w.sprintFactor[1]]).toEqual([1, 7]);
     });
 
-    it('matches a naive reference over 1000 random ticks', () => {
+    it('matches a naive reference of the graded sprint over 1000 random ticks', () => {
         const config = storeConfig({ specialisations: { predator: { sprintDrainMultiplier: 2 } } });
         const n = 6;
         const store = createSprintStore(config, n);
-        const w = bodies(n);
+        const w = bodies(n, config);
         for (let slot = 0; slot < n; slot++) {
-            w.spec[slot] = slot % 2;
+            specAs(w, slot, slot % 2);
         }
         const ref = Array.from({ length: n }, () => 1);
         const rng = createRng(7);
         for (let t = 0; t < 1000; t++) {
             const expected = [];
             for (let slot = 0; slot < n; slot++) {
-                const sprint = nextFloat(rng) < 0.6 ? 1 : -1;
+                const sprint = Math.fround(2 * nextFloat(rng) - 1);
                 const thrust = nextFloat(rng);
                 drive(w, slot, { sprint, thrust });
-                expected.push(ref[slot] >= config.sprintFloor ? 1 : ref[slot] / config.sprintFloor);
+                const effort = sprint < 0.05 ? 0 : sprint;
+                expected.push((ref[slot] >= config.sprintFloor ? 1 : ref[slot] / config.sprintFloor) * effort);
                 const drain = config.sprintDrain * (slot % 2 === 1 ? 2 : 1);
-                if (sprint > 0) {
-                    ref[slot] = Math.max(0, ref[slot] - drain);
+                if (effort > 0) {
+                    ref[slot] = Math.max(0, ref[slot] - drain * effort);
                 } else if (Math.fround(thrust) < config.sprintRestThrust) {
                     ref[slot] = Math.min(1, ref[slot] + config.sprintRefill);
                 }
@@ -152,11 +198,42 @@ describe('stepSprintStore', () => {
         }
     });
 
+    it.each([
+        [0, 0, 1],
+        [0.5, 0.5, 1 - 0.1 * 0.5],
+        [1, 1, 0.9],
+        [0.04, 0, 1],
+    ])(
+        'at SPRINT %f writes the factor %f and drains the store to %f (effort 0, 0.5 and 1, and a trace)',
+        (sprint, factor, left) => {
+            const config = storeConfig({ sprintDrain: 0.1, sprintRestThrust: 0.2 });
+            const store = createSprintStore(config, 1);
+            const w = bodies(1, config);
+            drive(w, 0, { sprint, thrust: 0.5 });
+            stepSprintStore(store, w);
+            expect(w.sprintFactor[0]).toBeCloseTo(factor, 6);
+            expect(store.level[0]).toBeCloseTo(left, 6);
+        },
+    );
+
+    it('refills only at effort 0: a trace of effort under SPRINT_REST_EFFORT does not block it', () => {
+        const config = storeConfig({ sprintRefill: 0.1, sprintRestThrust: 0.2 });
+        const store = createSprintStore(config, 2);
+        const w = bodies(2, config);
+        store.level.set([0.5, 0.5]);
+        drive(w, 0, { sprint: SPRINT_REST_EFFORT / 2, thrust: 0 });
+        drive(w, 1, { sprint: 0.3, thrust: 0 });
+        stepSprintStore(store, w);
+        expect(store.level[0]).toBeCloseTo(0.6, 9);
+        expect(store.level[1]).toBeLessThan(0.5);
+    });
+
     it('allocates nothing', () => {
         v8.setFlagsFromString('--expose-gc');
         const gc = vm.runInNewContext('gc');
-        const store = createSprintStore(storeConfig(), 500);
-        const w = bodies(500);
+        const config = storeConfig();
+        const store = createSprintStore(config, 500);
+        const w = bodies(500, config);
         for (let slot = 0; slot < 500; slot++) {
             drive(w, slot, { sprint: slot % 2, thrust: 0 });
         }
@@ -180,9 +257,10 @@ describe('stepSprintStore', () => {
 
 describe('SprintSpent', () => {
     it('is pushed once, when a store first falls under the floor in a sprint, and logged at debug', () => {
-        const store = createSprintStore(storeConfig({ sprintDrain: 0.1, sprintFloor: 0.3 }), 2);
-        const w = bodies(2);
-        w.spec[1] = PREDATOR;
+        const config = storeConfig({ sprintDrain: 0.1, sprintFloor: 0.3 });
+        const store = createSprintStore(config, 2);
+        const w = bodies(2, config);
+        specAs(w, 1, PREDATOR);
         drive(w, 1, { sprint: 1, thrust: 1 });
         store.level[1] = 0.45;
         for (let t = 0; t < 4; t++) {
@@ -225,5 +303,24 @@ describe('the sprint store keys', () => {
         expect(() => createConfig({ specialisations: { scout: { sprintDrainMultiplier: 0 } } })).toThrow(
             /sprintDrainMultiplier/,
         );
+    });
+});
+
+describe('sprintEffort', () => {
+    it('is the graded effort with the store on and the all-or-nothing sprint with it off', () => {
+        const on = bodies(1, storeConfig());
+        on.sprintStore = createSprintStore(storeConfig(), 1);
+        const off = bodies(1, createConfig({}));
+        for (const [sprint, graded, whole] of [
+            [-0.5, 0, 0],
+            [0.03, 0, 1],
+            [0.5, 0.5, 1],
+            [1, 1, 1],
+        ]) {
+            drive(on, 0, { sprint, thrust: 0 });
+            drive(off, 0, { sprint, thrust: 0 });
+            expect(sprintEffort(on, 0)).toBeCloseTo(graded, 6);
+            expect(sprintEffort(off, 0)).toBe(whole);
+        }
     });
 });

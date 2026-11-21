@@ -4,6 +4,7 @@ import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { addAgent, addCloud, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
 import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 import { describe, expect, it } from 'vitest';
+import { setSpec } from './helpers/body.js';
 
 const CH = { prox: 0, food: 1, threat: 2, prey: 3, other: 4, kin: 5, wall: 6, obstacle: 7, smoke: 8, megafauna: 9 };
 const VISION = 300;
@@ -62,8 +63,8 @@ describe('castRays classes', () => {
         const w = senseWorld({ huntSizeRatio: 1.01 });
         const me = addAgent(w, 500, 500, 20);
         const them = addAgent(w, 600, 500, otherSize);
-        w.spec[me] = meSpec;
-        w.spec[them] = other;
+        setSpec(w, me, meSpec);
+        setSpec(w, them, other);
         w.angle[them] = Math.PI;
         cast(w, me);
         const r = rayValues(w, me, 0);
@@ -77,8 +78,8 @@ describe('castRays classes', () => {
         const w = senseWorld({ huntSizeRatio: 0.8 });
         const me = addAgent(w, 500, 500, 20);
         const them = addAgent(w, 600, 500, 20);
-        w.spec[me] = 1;
-        w.spec[them] = 1;
+        setSpec(w, me, 1);
+        setSpec(w, them, 1);
         w.angle[them] = Math.PI;
         cast(w, me);
         const r = rayValues(w, me, 0);
@@ -90,7 +91,7 @@ describe('castRays classes', () => {
         const w = senseWorld();
         const me = addAgent(w, 500, 500, 20);
         const them = addAgent(w, 600, 500, 40);
-        w.spec[them] = 1;
+        setSpec(w, them, 1);
         w.angle[them] = 0;
         cast(w, me);
         expect(rayValues(w, me, 0)[CH.threat]).toBeGreaterThan(0);
@@ -103,7 +104,7 @@ describe('castRays classes', () => {
         const w = senseWorld();
         const me = addAgent(w, 500, 500, 20);
         const child = addAgent(w, 600, 500, 40);
-        w.spec[child] = 1;
+        setSpec(w, child, 1);
         w.angle[child] = Math.PI;
         w.parentA[child] = w.genomeId[me];
         cast(w, me);
@@ -173,7 +174,7 @@ describe('castRays classes', () => {
         const w = senseWorld();
         const me = addAgent(w, 500, 500, 20);
         const big = addAgent(w, 500 + 128 * 2, 500, 120);
-        w.spec[big] = 1;
+        setSpec(w, big, 1);
         w.angle[big] = Math.PI;
         cast(w, me);
         expect(rayValues(w, me, 0)[CH.threat]).toBeGreaterThan(0);
@@ -199,7 +200,7 @@ describe('castRays classes', () => {
         const me = addAgent(w, 500, 500, 20);
         const first = addAgent(w, 600, 500, 40);
         addAgent(w, 600, 500, 40);
-        w.spec[first] = 1;
+        setSpec(w, first, 1);
         w.angle[first] = Math.PI;
         w.size[2] = 10;
         w.x[2] = 590;
@@ -412,7 +413,7 @@ describe('castRays against a brute-force caster', () => {
         for (let i = 0; i < 12; i++) {
             const a = addAgent(w, place(), place(), 10 + nextFloat(rng) * 40);
             w.angle[a] = (nextFloat(rng) - 0.5) * 6;
-            w.spec[a] = Math.floor(nextFloat(rng) * 4);
+            setSpec(w, a, Math.floor(nextFloat(rng) * 4));
         }
         w.parentA[3] = w.genomeId[2];
         w.parentA[7] = w.genomeId[1];

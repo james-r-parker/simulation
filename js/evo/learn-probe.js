@@ -10,6 +10,7 @@ import { resolveMutationRate } from '../sim/mutation-rate.js';
 import { createRng, fork } from '../sim/rng.js';
 import { drillSubject } from './drill.js';
 import { SIGMA_START, mutateSigma, mutateWeights, randomWeights } from './mutation.js';
+import { mutateTraits } from './trait-inherit.js';
 import { knockOutUnit } from './unit-knockout.js';
 
 /** Populations the probe evolves per lesson. */
@@ -75,7 +76,8 @@ export function breed(parents, { count, config, rng }) {
         const parent = parents[(i - 1) % parents.length];
         const sigma = mutateSigma(parent.sigma, layout.weightCount, rng);
         const row = Float32Array.from(parent.row);
-        mutateWeights(row, sigma, rng, { traitStart: layout.traitStart, rate });
+        mutateWeights(row, sigma, rng, { traitStart: layout.traitStart, leakStart: layout.leakStart, rate });
+        mutateTraits(row, layout, rng, { rate, config });
         knockOutUnit(row, layout, rng, config.unitKnockoutRate);
         children.push({ row, sigma });
     }

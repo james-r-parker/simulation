@@ -125,7 +125,7 @@ function placeBody(world, slot, body, atRest) {
         world.vy[slot] = 0;
     }
     if (body.baseSize !== undefined) {
-        world.baseSize[slot] = body.baseSize;
+        world.lanes.baseSize[slot] = body.baseSize;
         updateSize(world, slot);
     }
     world.parentA[slot] = body.parents?.[0] ?? 0;

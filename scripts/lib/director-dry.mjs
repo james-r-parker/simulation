@@ -1,7 +1,7 @@
 // The director measured in Node (docs/designs/worker-and-renderer.md T50, docs/designs/ambient-display.md): runs the
 // real sim host over a fake port and clock, feeds every snapshot, effect and ticker item to the real director on a
-// simulated clock (decisions every 500 ms, time is ticks / 60), and reads three numbers off the shots it takes:
-// `director.chase_precision`, `director.max_kind_share` and `director.shots_per_hour`. The director draws from its
+// simulated clock (decisions every 500 ms, time is ticks / 60), and reads four numbers off the shots it takes:
+// `director.chase_precision`, `director.max_kind_share`, `director.shots_per_hour` and `director.min_shot_hold_s`. The director draws from its
 // seeded prng, so a seed's shot list replays. A detector, never fitness.
 
 import { createDirector } from '../../js/app/director/director.js';
@@ -9,8 +9,11 @@ import { MOMENT_KIND } from '../../js/app/director/scoring.js';
 import { createRingViews, holdFrom, READER, RELEASED } from '../../js/worker/snapshot-ring.js';
 import { createSimHost } from '../../js/worker/sim-host.js';
 
-/** The bars of ambient-display.md: chase precision at least, max kind share at most, shots per hour between. */
-export const BARS = Object.freeze({ chasePrecision: 0.6, maxKindShare: 0.4, shotsPerHour: [60, 240] });
+/**
+ * The bars of ambient-display.md: chase precision at least, max kind share at most, shots per hour between (20 to 60
+ * since Phase 7, a calm camera) and the shortest shot, its cut to its pullback, at least `minShotHoldS` seconds.
+ */
+export const BARS = Object.freeze({ chasePrecision: 0.6, maxKindShare: 0.4, shotsPerHour: [20, 60], minShotHoldS: 30 });
 
 /** Ticks a second at x1. */
 const TPS = 60;
@@ -78,15 +81,17 @@ function resolvesChase(e, shot, kinds) {
  * @typedef {object} DryResult
  * @property {number} seed the seed
  * @property {number} ticks the ticks run
- * @property {{tick: number, kind: string, score: number, resolved: boolean}[]} shots one per shot, in order
+ * @property {{tick: number, kind: string, score: number, resolved: boolean, holdS: number | null}[]} shots one per
+ *   shot, in order; `holdS` is the seconds from its cut to its pullback, null for a shot the run ended in
  * @property {Record<string, number>} shares each kind's share of the shots
  * @property {number | null} chasePrecision chase shots that saw the pair bite, die or escape; null with no chase shot
  * @property {number} maxKindShare the largest share one kind holds
  * @property {number} shotsPerHour shots per simulated hour
+ * @property {number | null} minShotHoldS the shortest `holdS` of the shots that ended; null when none did
  */
 
 /**
- * @param {{tick: number, kind: string, score: number, resolved: boolean}[]} list every shot
+ * @param {DryResult['shots']} list every shot
  * @param {{seed: number, ticks: number}} run the seed and the length
  * @returns {DryResult} the readings
  */
@@ -98,6 +103,7 @@ function summarise(list, { seed, ticks }) {
     }
     const shares = Object.fromEntries(Object.entries(counts).map(([k, n]) => [k, n / Math.max(list.length, 1)]));
     const chases = list.filter((s) => s.kind === MOMENT_KIND.CHASE);
+    const holds = list.flatMap((s) => (s.holdS === null ? [] : [s.holdS]));
     return {
         seed,
         ticks,
@@ -106,23 +112,25 @@ function summarise(list, { seed, ticks }) {
         chasePrecision: chases.length === 0 ? null : chases.filter((s) => s.resolved).length / chases.length,
         maxKindShare: Math.max(0, ...Object.values(shares)),
         shotsPerHour: (list.length * 3600 * TPS) / ticks,
+        minShotHoldS: holds.length === 0 ? null : Math.min(...holds),
     };
 }
 
 /**
  * Keeps the shot on screen and the shots taken: a shot opens at its glide, closes at its pullback, and a chase shot is
  * resolved when a bite, a death or an escape between its pair arrives while it is open.
- * @returns {{list: {tick: number, kind: string, score: number, resolved: boolean}[],
+ * @returns {{list: DryResult['shots'],
  *   noteEffects: (effects: Record<string, number>[], kinds: Record<string, number>) => void,
  *   noteStep: (out: Record<string, any>, tick: number) => void, close: () => void}} the tracker
  */
 function createShotTracker() {
-    const list = /** @type {{tick: number, kind: string, score: number, resolved: boolean}[]} */ ([]);
-    let open = /** @type {(OpenShot & {tick: number, score: number}) | null} */ (null);
+    const list = /** @type {DryResult['shots']} */ ([]);
+    let open = /** @type {(OpenShot & {tick: number, score: number, endTick: number | null}) | null} */ (null);
     let last = /** @type {object | null} */ (null);
     const close = () => {
         if (open !== null) {
-            list.push({ tick: open.tick, kind: open.kind, score: open.score, resolved: open.resolved });
+            const holdS = open.endTick === null ? null : (open.endTick - open.tick) / TPS;
+            list.push({ tick: open.tick, kind: open.kind, score: open.score, resolved: open.resolved, holdS });
             open = null;
         }
     };
@@ -152,8 +160,12 @@ function createShotTracker() {
                     hunterId: m.hunterId ?? -1,
                     preyId: m.preyId ?? -1,
                     resolved: false,
+                    endTick: null,
                 };
             } else if (out.state === 'pullback') {
+                if (open !== null) {
+                    open.endTick = tick;
+                }
                 close();
             }
         },
@@ -304,7 +316,8 @@ export function runDirectorDry({ seed, ticks, overrides = {}, createPolicy, poli
 
 /**
  * @param {DryResult} r one seed's result
- * @returns {{chasePrecision: boolean | null, maxKindShare: boolean, shotsPerHour: boolean}} whether each reading meets its bar
+ * @returns {{chasePrecision: boolean | null, maxKindShare: boolean, shotsPerHour: boolean,
+ *   minShotHoldS: boolean | null}} whether each reading meets its bar; null when it has no reading
  */
 export function meetsBars(r) {
     const [low, high] = BARS.shotsPerHour;
@@ -312,5 +325,6 @@ export function meetsBars(r) {
         chasePrecision: r.chasePrecision === null ? null : r.chasePrecision >= BARS.chasePrecision,
         maxKindShare: r.maxKindShare <= BARS.maxKindShare,
         shotsPerHour: r.shotsPerHour >= low && r.shotsPerHour <= high,
+        minShotHoldS: r.minShotHoldS === null ? null : r.minShotHoldS >= BARS.minShotHoldS - 1e-9,
     };
 }

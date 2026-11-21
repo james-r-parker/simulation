@@ -6,6 +6,7 @@ import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../interpolate.js';
 import { familyName } from '../renderer/colors.js';
 import { familyCss } from './css-color.js';
 import { nowLine } from './hover-peek.js';
+import { geneRows, senseGroup } from './inspector-body.js';
 /** The hidden grid's width in cells. */
 export const HEATMAP_COLUMNS = 8;
 /** The class channels a spoke is coloured by, after the proximity channel. */
@@ -40,12 +41,9 @@ const COUNTER_AT = Object.freeze({
     kills: 6,
     children: 7,
     fitnessSoFar: 8,
-    vision: 12,
-    baseSize: 13,
-    childShare: 14,
-    dose: 15,
-    infection: 16,
-    immuneStrains: 17,
+    dose: 12,
+    infection: 13,
+    immuneStrains: 14,
 });
 
 /**
@@ -55,11 +53,11 @@ const COUNTER_AT = Object.freeze({
  *   who it is; `color` is the family's CSS colour and `now` what it is doing
  * @property {{lengths: Float32Array, channels: Int8Array}} radar each spoke's length (0 to 1) and strongest class
  *   channel (an index into `CLASS_CHANNELS`, -1 when the ray saw nothing)
- * @property {{name: string, bars: {label: string, value: number}[]}[]} groups the body inputs by group, each value
- *   clamped to -1..1
+ * @property {{name: string, bars: {label: string, value: number}[]}[]} groups the body inputs by group, then the body
+ *   sense values as the group `Body sense`, each value clamped to -1..1
  * @property {Float32Array} hidden the hidden activations
  * @property {{label: string, value: number, firing: boolean}[]} outputs the outputs, values clamped to -1..1
- * @property {{label: string, text: string}[]} counters the counters as text
+ * @property {{label: string, text: string}[]} counters the counters as text, then each trait's ratio
  * @property {{ageSeasons: number, kills: number, children: number}} stats the numbers the subject plate reads
  */
 
@@ -192,7 +190,7 @@ function countersOf(c, { specName, family, info, male }) {
         { label: 'children', text: grouped(c[COUNTER_AT.children]) },
         { label: 'fitness so far', text: c[COUNTER_AT.fitnessSoFar].toFixed(2) },
     ];
-    return [...rows, { label: 'sex', text: male ? 'male' : 'female' }, ...traitRows(c)];
+    return [...rows, { label: 'sex', text: male ? 'male' : 'female' }];
 }
 
 /**
@@ -206,18 +204,6 @@ export function diseaseText(c) {
         return `infected, strain ${infection - 1}`;
     }
     return immune > 0 ? `immune to ${immune} strain${immune === 1 ? '' : 's'}` : 'healthy';
-}
-
-/**
- * @param {Float32Array} c the counters
- * @returns {InspectorView['counters']} the vision, size and child share traits
- */
-function traitRows(c) {
-    return [
-        { label: 'vision', text: `x${c[COUNTER_AT.vision].toFixed(2)}` },
-        { label: 'size', text: c[COUNTER_AT.baseSize].toFixed(1) },
-        { label: 'child share', text: `${Math.round(c[COUNTER_AT.childShare] * 100)}%` },
-    ];
 }
 
 /** The outputs that light only above a threshold, as the worker's output name and the `info` key it reads (as `calls.js` does). */
@@ -235,6 +221,35 @@ const FIRING_THRESHOLD_KEY = Object.freeze({
 export function firingThreshold(label, info) {
     const key = /** @type {Record<string, string>} */ (FIRING_THRESHOLD_KEY)[label];
     return key === undefined ? 0 : info[key];
+}
+
+/**
+ * @param {Float32Array} f32 the snapshot's floats
+ * @param {number} at where the output row starts
+ * @param {{labels: string[], info: Record<string, any>}} outputs the worker's output names and `ready.info`
+ * @returns {InspectorView['outputs']} the labelled outputs, values clamped to -1..1
+ */
+function outputsOf(f32, at, { labels, info }) {
+    return labels.map((label, i) => ({
+        label: /** @type {Record<string, string>} */ (OUTPUT_TITLES)[label] ?? label,
+        value: clamp1(f32[at + i]),
+        firing: f32[at + i] > firingThreshold(label, info),
+    }));
+}
+
+/**
+ * @param {Float32Array} f32 the snapshot's floats
+ * @param {number} at where the trait rows start (after the counters)
+ * @param {{layout: Record<string, number>, labels: Record<string, any>}} ready the layout and labels of `ready`
+ * @returns {{counters: InspectorView['counters'], group: InspectorView['groups'][number]}} a counter row for each trait
+ *   and the body sense bar group
+ */
+function bodyOf(f32, at, { layout, labels }) {
+    const senseAt = at + layout.traitCount;
+    return {
+        counters: geneRows(f32.subarray(at, senseAt), labels.traits),
+        group: senseGroup(f32.subarray(senseAt, senseAt + layout.senseCount), labels.bodySense),
+    };
 }
 
 /**
@@ -259,6 +274,7 @@ export function inspectorView({ snapshot, ready, slots }) {
     const found = findInSnapshot(snapshot, genomeId);
     const spec = found.specIndex < 0 ? '' : String(info.specs[found.specIndex]?.name ?? '');
     const counters = snapshot.f32.subarray(countersAt, countersAt + layout.counterCount);
+    const body = bodyOf(snapshot.f32, countersAt + layout.counterCount, { layout, labels });
     const family = familyName(ready.seed, found.lineageId, slots.top);
     return {
         valid: true,
@@ -272,17 +288,13 @@ export function inspectorView({ snapshot, ready, slots }) {
             genomeId,
         },
         radar: radarOf(inputs, info.rayCount),
-        groups: groupsOf(inputs, { rayCount: info.rayCount, labels: labels.bodyInputs }),
+        groups: [...groupsOf(inputs, { rayCount: info.rayCount, labels: labels.bodyInputs }), body.group],
         hidden: Float32Array.from(snapshot.f32.subarray(hiddenAt, outputsAt)),
-        outputs: labels.outputs.map((/** @type {string} */ label, /** @type {number} */ i) => {
-            const value = snapshot.f32[outputsAt + i];
-            return {
-                label: /** @type {Record<string, string>} */ (OUTPUT_TITLES)[label] ?? label,
-                value: clamp1(value),
-                firing: value > firingThreshold(label, info),
-            };
-        }),
-        counters: countersOf(counters, { specName: spec, family, info, male: (found.flags & layout.flags.MALE) !== 0 }),
+        outputs: outputsOf(snapshot.f32, outputsAt, { labels: labels.outputs, info }),
+        counters: [
+            ...countersOf(counters, { specName: spec, family, info, male: (found.flags & layout.flags.MALE) !== 0 }),
+            ...body.counters,
+        ],
         stats: {
             ageSeasons: counters[COUNTER_AT.ageTicks] / info.seasonLength,
             kills: counters[COUNTER_AT.kills],

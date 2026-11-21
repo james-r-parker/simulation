@@ -36,13 +36,15 @@ describe('refreshLingerMoment', () => {
 describe('lingerOver', () => {
     it('ends a quiet moment only after the floor, and a strong one at its extended end', () => {
         const state = {
-            shot: { startTimeS: 3, durationS: 8 },
+            shot: { startTimeS: 3, durationS: 16 },
             shotStartS: 0,
             lastWideS: 0,
             lowScoreSinceS: /** @type {number | null} */ (null),
         };
         expect(lingerOver(state, { timeS: 4, score: 10 })).toBe(false);
-        expect(lingerOver(state, { timeS: 6.5, score: 10 })).toBe(true);
+        // quiet for over two seconds, but the 30 s floor holds the shot
+        expect(lingerOver(state, { timeS: 6.5, score: 10 })).toBe(false);
+        expect(lingerOver(state, { timeS: 30, score: 10 })).toBe(true);
         expect(lingerOver({ ...state, lowScoreSinceS: null }, { timeS: 11, score: 90 })).toBe(false);
     });
 });

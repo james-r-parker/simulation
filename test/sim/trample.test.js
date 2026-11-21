@@ -56,7 +56,7 @@ describe('trampleHerds', () => {
         const energy = world.energy[slot];
         const expectedX = world.herdX[0] - world.config.herdRadius - world.size[slot];
         const ratio = 1 / world.config.maxVelocity;
-        const amount = world.config.trampleDamage * ratio * ratio * (world.size[slot] / world.baseSize[slot]);
+        const amount = world.config.trampleDamage * ratio * ratio * (world.size[slot] / world.lanes.baseSize[slot]);
         trampleHerds(world, slot);
         expect(world.x[slot]).toBe(Math.fround(expectedX));
         expect(world.vx[slot]).toBe(-1);
@@ -176,7 +176,7 @@ function trampleHerdsReference(world, slot) {
         vx[slot] -= 2 * vn * nx;
         vy[slot] -= 2 * vn * ny;
         const ratio = -vn / world.config.maxVelocity;
-        const amount = world.config.trampleDamage * ratio * ratio * (size[slot] / world.baseSize[slot]);
+        const amount = world.config.trampleDamage * ratio * ratio * (size[slot] / world.lanes.baseSize[slot]);
         if (removeEnergy(world, slot, amount, LOSS_CAUSE.TRAMPLE) > 0) {
             world.lastHerdId[slot] = world.herdId[animal];
         }

@@ -74,17 +74,19 @@ describe('subjectAgent', () => {
 });
 
 describe('readOutputs', () => {
-    it('reads thrust, turn, sprint and bite of one slot', () => {
+    it('reads thrust, turn, sprint, bite and alarm of one slot', () => {
         const outputs = new Float32Array(2 * OUTPUT_COUNT);
         outputs[OUTPUT_COUNT + OUTPUT_INDEX.THRUST] = 0.5;
         outputs[OUTPUT_COUNT + OUTPUT_INDEX.TURN] = -0.25;
         outputs[OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] = 1;
         outputs[OUTPUT_COUNT + OUTPUT_INDEX.BITE] = -1;
-        expect(readOutputs(outputs, 1, { thrust: 0, turn: 0, sprint: 0, bite: 0 })).toEqual({
+        outputs[OUTPUT_COUNT + OUTPUT_INDEX.ALARM] = 0.75;
+        expect(readOutputs(outputs, 1, { thrust: 0, turn: 0, sprint: 0, bite: 0, alarm: 0 })).toEqual({
             thrust: 0.5,
             turn: -0.25,
             sprint: 1,
             bite: -1,
+            alarm: 0.75,
         });
     });
 });

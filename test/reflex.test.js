@@ -25,7 +25,7 @@ describe('parseArgs', () => {
     it('defaults to every case, 16 trials, seed 1, 8 elites and the info level', () => {
         const args = parseArgs(['--champions', 'd']);
         expect(args).toMatchObject({ champions: 'd', seed: 1, trials: 16, count: 8, level: 'info', json: false });
-        expect(args.cases).toHaveLength(6);
+        expect(args.cases).toHaveLength(12);
     });
 
     it('reads every flag', () => {
@@ -186,15 +186,22 @@ describe('runReflex', () => {
             'approach-food',
             'pick-safe-food',
             'avoid-obstacle',
+            'flee-on-alarm',
+            'clear-the-herd',
         ]);
-        expect(Object.keys(rows[1].row?.cases ?? {})).toEqual(['approach-prey', 'bite-discrimination']);
-        expect(Object.keys(bars)).toHaveLength(6);
+        expect(Object.keys(rows[1].row?.cases ?? {})).toEqual([
+            'approach-prey',
+            'bite-discrimination',
+            'sprint-on-prey',
+            'hold-the-bite',
+        ]);
+        expect(Object.keys(bars)).toHaveLength(12);
         expect(lines.join('\n')).toContain('reference');
         const log = readFileSync(join(root, 'logs', 'reflex-1x2.jsonl'), 'utf8')
             .split('\n')
             .filter(Boolean)
             .map((l) => JSON.parse(l));
-        expect(log.filter((l) => l.event === 'ReflexResult')).toHaveLength(6);
+        expect(log.filter((l) => l.event === 'ReflexResult')).toHaveLength(10);
         expect(log.filter((l) => l.event === 'ReflexCase').length).toBeGreaterThan(0);
     });
 

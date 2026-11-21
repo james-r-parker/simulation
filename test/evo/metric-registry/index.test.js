@@ -18,7 +18,7 @@ const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-name
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(377);
+        expect(REPORT_NAMES).toHaveLength(380);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -217,6 +217,9 @@ const ADDED_AFTER_T8 = [
     'eval.ambush_kill_share',
     'eval.chase_reacquire_share',
     'eval.scavenge_approach_share',
+    'eval.hunter_defender_bite_ratio',
+    'eval.hunter_size_choice',
+    'eval.hunter_slow_choice',
 ];
 /** Watch metrics registered after the snapshot whose intended direction is lower. */
 const ADDED_INTENDED_LOWER = [
@@ -245,6 +248,7 @@ const ADDED_INTENDED_LOWER = [
     'eval.prey_selectivity.defender',
     'eval.sprint_share.hunter',
     'eval.sprint_share.prey',
+    'eval.hunter_defender_bite_ratio',
 ];
 const SNAPSHOT = JSON.parse(readFileSync(new URL('../../fixtures/metric-directions.json', import.meta.url), 'utf8'));
 

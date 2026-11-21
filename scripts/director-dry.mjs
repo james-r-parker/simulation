@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // `npm run director:dry -- --seed <n> --ticks <t>`: runs the director over a headless world and prints one line per shot
-// and the three readings (docs/designs/ambient-display.md): `director.chase_precision`, `director.max_kind_share` and
-// `director.shots_per_hour`, each with the bar it is read against. `--seed 1,2,3,4` runs several seeds one after another,
+// and the four readings (docs/designs/ambient-display.md): `director.chase_precision`, `director.max_kind_share`,
+// `director.shots_per_hour` and `director.min_shot_hold_s`, each with the bar it is read against. `--seed 1,2,3,4` runs several seeds one after another,
 // `--policy <name>` runs a registered policy (the live one by default), `--config <file.json>` overrides the config and
 // `--json` prints the results as JSON. A detector, never fitness.
 
@@ -40,7 +40,7 @@ export function parseDryArgs(argv) {
 
 /**
  * @param {import('./lib/director-dry.mjs').DryResult} r one seed's result
- * @returns {string[]} the report lines: one per shot, then the three readings with their bars
+ * @returns {string[]} the report lines: one per shot, then the four readings with their bars
  */
 export function reportLines(r) {
     const ok = meetsBars(r);
@@ -52,6 +52,7 @@ export function reportLines(r) {
         `director.chase_precision seed=${r.seed} ${r.chasePrecision === null ? 'n/a' : r.chasePrecision.toFixed(3)} (bar >= ${BARS.chasePrecision}: ${mark(ok.chasePrecision)})`,
         `director.max_kind_share seed=${r.seed} ${r.maxKindShare.toFixed(3)} (bar <= ${BARS.maxKindShare}: ${mark(ok.maxKindShare)})`,
         `director.shots_per_hour seed=${r.seed} ${r.shotsPerHour.toFixed(1)} (bar ${BARS.shotsPerHour.join(' to ')}: ${mark(ok.shotsPerHour)})`,
+        `director.min_shot_hold_s seed=${r.seed} ${r.minShotHoldS === null ? 'n/a' : r.minShotHoldS.toFixed(1)} (bar >= ${BARS.minShotHoldS}: ${mark(ok.minShotHoldS)})`,
         `shares seed=${r.seed} ${Object.entries(r.shares)
             .map(([k, v]) => `${k}=${v.toFixed(2)}`)
             .join(' ')}`,

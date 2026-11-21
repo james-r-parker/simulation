@@ -77,5 +77,5 @@ export function lingerOver(state, { timeS, score }) {
             return true;
         }
     }
-    return plannedTimeUp(state.shot, score, timeS - state.shot.startTimeS);
+    return plannedTimeUp(state.shot, score, timeS - state.shot.startTimeS) && floorReached(shotElapsedS);
 }

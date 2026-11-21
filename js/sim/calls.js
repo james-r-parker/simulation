@@ -169,7 +169,8 @@ function fireCalls(world) {
 }
 
 /**
- * Records the call in `callScratch` against one hearer when it is within `callRadius`, keeping the loudest call.
+ * Records the call in `callScratch` against one hearer when it is within the caller's radius times the hearer's
+ * `hearing` lane, keeping the loudest call: its loudness is `1 - d / (radius x hearing)` times the call's strength.
  * @param {World} world the world
  * @param {number} hearer the other agent
  * @returns {void}
@@ -179,7 +180,7 @@ function hearOne(world, hearer) {
     const caller = scratch[0];
     const offset = scratch[1];
     const strength = scratch[2];
-    const radius = callerRadius(world, caller);
+    const radius = callerRadius(world, caller) * world.lanes.hearing[hearer];
     const dx = world.x[caller] - world.x[hearer];
     const dy = world.y[caller] - world.y[hearer];
     const d = Math.sqrt(dx * dx + dy * dy);
@@ -212,20 +213,38 @@ function hearInCell(world, hash, cell) {
 }
 
 /**
- * Lets every hashed agent within `callRadius` of the caller in `callScratch` hear it.
+ * Lets every hashed agent within the caller's radius times its own `hearing` lane hear the caller in `callScratch`;
+ * the cells searched reach the radius times the largest `hearing` lane of the pass.
  * @param {World} world the world
  * @param {SpatialHash} hash the hash built this tick
  * @returns {void}
  */
 function spread(world, hash) {
     const caller = world.callScratch[0];
-    const range = cellRange(hash, world.x[caller], world.y[caller], callerRadius(world, caller));
+    const reach = callerRadius(world, caller) * world.callScratch[3];
+    const range = cellRange(hash, world.x[caller], world.y[caller], reach);
     for (let row = range[1]; row <= range[3]; row++) {
         const rowStart = row * hash.cols;
         for (let cell = rowStart + range[0]; cell <= rowStart + range[2]; cell++) {
             hearInCell(world, hash, cell);
         }
     }
+}
+
+/**
+ * @param {World} world the world
+ * @returns {number} the largest `hearing` lane of an alive slot, at least 1
+ */
+function largestHearing(world) {
+    const { alive } = world;
+    const { hearing } = world.lanes;
+    let most = 1;
+    for (let slot = 0; slot < alive.length; slot++) {
+        if (alive[slot] === 1 && hearing[slot] > most) {
+            most = hearing[slot];
+        }
+    }
+    return most;
 }
 
 /**
@@ -239,6 +258,7 @@ function spread(world, hash) {
 function hearPass(world, hash, timers, offset) {
     const { alive, callScratch } = world;
     const { callTicks } = world.config;
+    callScratch[3] = largestHearing(world);
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1 && timers[slot] > 0) {
             callScratch[0] = slot;

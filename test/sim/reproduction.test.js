@@ -288,7 +288,8 @@ describe('the split gift and birthReserve', () => {
      */
     function splitOnce(over, share) {
         const w = lifeWorld({ ...SPLIT, ...over });
-        const mother = addBlob(w, { energy: 1700, spec: 2, childShare: share });
+        const mother = addBlob(w, { energy: 1700, spec: 2 });
+        w.lanes.childEnergyShare[mother] = share;
         splitAll(w, recordingPolicy([]));
         return { w, mother, born: w.population === 2 };
     }

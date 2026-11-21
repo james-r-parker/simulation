@@ -37,6 +37,7 @@ pub struct PhysicsParams {
     doubles: u32,
     impact: u32,
     sprint_factor: u32,
+    max_velocity: u32,
     max_agents: u32,
     obs_count: u32,
     output_count: u32,
@@ -48,12 +49,11 @@ pub struct PhysicsParams {
 
 /// Indices into the doubles block.
 const D_DAMPING: usize = 0;
-const D_MAX_VELOCITY: usize = 1;
-const D_SPRINT_MULTIPLIER: usize = 2;
-const D_RESTITUTION: usize = 3;
-const D_WIDTH: usize = 4;
-const D_HEIGHT: usize = 5;
-const D_CELL_SIZE: usize = 6;
+const D_SPRINT_MULTIPLIER: usize = 1;
+const D_RESTITUTION: usize = 2;
+const D_WIDTH: usize = 3;
+const D_HEIGHT: usize = 4;
+const D_CELL_SIZE: usize = 5;
 
 #[inline(always)]
 fn at<T>(base: u32) -> *mut T {
@@ -163,12 +163,13 @@ impl Bodies {
         unsafe { *a.add(i) = v as f32 }
     }
 
-    /// `moveAgent`: damping, the speed cap (raised while sprinting, by the sprint boost times the agent's sprint-store
-    /// factor, 1 with the store off) and the move of one agent.
-    unsafe fn move_agent(&self, i: usize, damping: f64, max_v: f64, sprint_mul: f64) {
+    /// `moveAgent`: damping, the speed cap (the agent's `maxVelocity` lane, raised while sprinting, by the sprint boost
+    /// times the agent's sprint-store factor, 1 with the store off) and the move of one agent.
+    unsafe fn move_agent(&self, i: usize, damping: f64, sprint_mul: f64) {
         let p = self.p;
-        // SAFETY: `i` is an agent slot, its output row and spec entry exist, and the spec indexes the table.
+        // SAFETY: `i` is an agent slot, its output row, lane entries and spec entry exist, and the spec indexes the table.
         unsafe {
+            let max_v = *at::<f64>(p.max_velocity).add(i);
             let (x, y, vx, vy) = (self.x, self.y, self.vx, self.vy);
             Self::put(vx, i, Self::get(vx, i) * damping);
             Self::put(vy, i, Self::get(vy, i) * damping);
@@ -335,10 +336,10 @@ pub unsafe fn move_all(params: u32) {
     unsafe {
         let g = Bodies::new(params);
         let alive = at::<u8>(g.p.alive);
-        let (damping, max_v, sprint_mul) = (g.dbl(D_DAMPING), g.dbl(D_MAX_VELOCITY), g.dbl(D_SPRINT_MULTIPLIER));
+        let (damping, sprint_mul) = (g.dbl(D_DAMPING), g.dbl(D_SPRINT_MULTIPLIER));
         for i in 0..g.p.max_agents as usize {
             if *alive.add(i) == 1 {
-                g.move_agent(i, damping, max_v, sprint_mul);
+                g.move_agent(i, damping, sprint_mul);
             }
         }
     }
@@ -469,6 +470,7 @@ mod tests {
                 doubles: 0,
                 impact: 0,
                 sprint_factor: 0,
+                max_velocity: 0,
                 max_agents: 1,
                 obs_count: rocks.len() as u32,
                 output_count: 0,
@@ -536,12 +538,14 @@ mod tests {
         assert_eq!(bounce(&mut s), (-1, 0.0));
     }
 
-    /// The speed after one `move_all` of a sprinting agent in slot 0 moving +x at 20 with the given sprint-store factor:
-    /// no damping, a cap of 8, a sprint multiplier of 0.5 and a boost of 1.6, so the sprint cap is `8 x (1 + 0.8 x f)`.
-    fn sprint_speed(factor: f64) -> f32 {
+    /// The speed after one `move_all` of an agent in slot 0 moving +x at 20 with the given sprint output, sprint-store
+    /// factor and `maxVelocity` lane: no damping, a sprint multiplier of 0.5 and a boost of 1.6, so the sprint cap is
+    /// `cap x (1 + 0.8 x f)`.
+    fn capped_speed(sprint: f32, factor: f64, cap: f64) -> f32 {
         let (mut x, mut y, mut vx, mut vy, mut size) = (vec![0f32], vec![0f32], vec![20f32], vec![0f32], vec![5f32]);
-        let (mut alive, mut spec, mut outputs) = (vec![1u8], vec![0u8], vec![1f32]);
-        let (mut boost, mut doubles, mut lane) = (vec![1.6f64], vec![1.0, 8.0, 0.5, 0.0, 0.0, 0.0, 0.0], vec![factor]);
+        let (mut alive, mut spec, mut outputs) = (vec![1u8], vec![0u8], vec![sprint]);
+        let (mut boost, mut doubles, mut lane) = (vec![1.6f64], vec![1.0, 0.5, 0.0, 0.0, 0.0, 0.0], vec![factor]);
+        let mut max_velocity = vec![cap];
         let p = PhysicsParams {
             alive: addr(&mut alive),
             x: addr(&mut x),
@@ -563,6 +567,7 @@ mod tests {
             doubles: addr(&mut doubles),
             impact: 0,
             sprint_factor: addr(&mut lane),
+            max_velocity: addr(&mut max_velocity),
             max_agents: 1,
             obs_count: 0,
             output_count: 1,
@@ -578,9 +583,16 @@ mod tests {
 
     #[test]
     fn the_sprint_cap_scales_with_the_store_factor() {
-        assert_eq!(sprint_speed(1.0), (8.0 * (1.0 + 0.5 * 1.6)) as f32);
-        assert_eq!(sprint_speed(0.5), (8.0 * (1.0 + 0.5 * 1.6 * 0.5)) as f32);
-        assert_eq!(sprint_speed(0.0), 8.0);
+        assert_eq!(capped_speed(1.0, 1.0, 8.0), (8.0 * (1.0 + 0.5 * 1.6)) as f32);
+        assert_eq!(capped_speed(1.0, 0.5, 8.0), (8.0 * (1.0 + 0.5 * 1.6 * 0.5)) as f32);
+        assert_eq!(capped_speed(1.0, 0.0, 8.0), 8.0);
+    }
+
+    #[test]
+    fn the_cap_is_the_agents_max_velocity_lane() {
+        assert_eq!(capped_speed(0.0, 1.0, 8.0), 8.0);
+        assert_eq!(capped_speed(0.0, 1.0, 6.5), 6.5);
+        assert_eq!(capped_speed(1.0, 1.0, 6.5), (6.5 * (1.0 + 0.5 * 1.6)) as f32);
     }
 
     #[test]

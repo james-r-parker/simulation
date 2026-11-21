@@ -26,7 +26,7 @@ describe('inspectorView on a real selected agent', () => {
         );
     });
 
-    it('groups the body inputs under the seven labels, each bar clamped to -1..1', () => {
+    it('groups the body inputs under the seven labels and the body sense, each bar clamped to -1..1', () => {
         expect(view.groups.map((g) => g.name)).toEqual([
             'Body',
             'Senses',
@@ -35,9 +35,10 @@ describe('inspectorView on a real selected agent', () => {
             'Heard calls',
             'Memory',
             'Refuge',
+            'Body sense',
         ]);
         const bars = view.groups.flatMap((g) => g.bars);
-        expect(bars).toHaveLength(ready.layout.inputCount - ready.info.rayCount * 10);
+        expect(bars).toHaveLength(ready.layout.inputCount - ready.info.rayCount * 10 + 13);
         expect(bars.every((b) => b.value >= -1 && b.value <= 1 && b.label !== '')).toBe(true);
     });
 
@@ -100,23 +101,23 @@ describe('inspectorView on a real selected agent', () => {
     it('shows toxin dose from the appended worker counter', () => {
         const state = selectedWorld();
         const l = state.ready.layout;
-        const at = l.inspectOffset + 3 + l.inputCount + l.hidden + l.outputCount + 15;
+        const at = l.inspectOffset + 3 + l.inputCount + l.hidden + l.outputCount + 12;
         state.snapshot.f32[at] = 0.36;
         const result = inspectorView({ ...state, slots: createFamilySlots() });
         expect(result.counters.find((c) => c.label === 'toxin dose')?.text).toBe('0.36');
     });
 
     it('reads a missing infection counter as healthy and says one strain in the singular', () => {
-        expect(diseaseText(new Float32Array(16))).toBe('healthy');
-        const c = new Float32Array(18);
-        c[17] = 1;
+        expect(diseaseText(new Float32Array(13))).toBe('healthy');
+        const c = new Float32Array(15);
+        c[14] = 1;
         expect(diseaseText(c)).toBe('immune to 1 strain');
     });
 
     it('shows the infection, or the strains the agent is immune to, from the appended worker counters', () => {
         const state = selectedWorld();
         const l = state.ready.layout;
-        const at = l.inspectOffset + 3 + l.inputCount + l.hidden + l.outputCount + 16;
+        const at = l.inspectOffset + 3 + l.inputCount + l.hidden + l.outputCount + 13;
         const text = () =>
             inspectorView({ ...state, slots: createFamilySlots() }).counters.find((c) => c.label === 'disease')?.text;
         expect(text()).toBe('healthy');
@@ -149,9 +150,7 @@ describe('inspectorView on a real selected agent', () => {
             'children',
             'fitness so far',
             'sex',
-            'vision',
-            'size',
-            'child share',
+            ...ready.labels.traits.map((/** @type {{name: string}} */ trait) => `trait ${trait.name}`),
         ]);
         expect(view.counters.find((c) => c.label === 'age')?.text).toMatch(/ticks \(.+ seasons\)$/);
         expect(view.counters.find((c) => c.label === 'energy')?.text).toMatch(/^\d+%$/);
@@ -197,7 +196,7 @@ describe('temperatureBand', () => {
 });
 
 describe('inspectorView sex and trait rows', () => {
-    it('adds a sex row and the trait rows', () => {
+    it('adds a sex row, then a row for each trait of the registry', () => {
         const { ready, snapshot } = selectedWorld();
         const slots = createFamilySlots();
         const labels = (/** @type {any} */ info, /** @type {number} */ flagBits = 0) => {
@@ -210,10 +209,33 @@ describe('inspectorView sex and trait rows', () => {
         const on = ready.info;
         expect(labels(on).find((c) => c.label === 'sex')?.text).toBe('female');
         expect(labels(on, ready.layout.flags.MALE).find((c) => c.label === 'sex')?.text).toBe('male');
-        expect(
-            labels(on)
-                .slice(-3)
-                .map((c) => c.label),
-        ).toEqual(['vision', 'size', 'child share']);
+        const rows = labels(on).map((c) => c.label);
+        expect(rows.slice(rows.indexOf('sex'), rows.indexOf('sex') + 4)).toEqual([
+            'sex',
+            'trait size',
+            'trait vision',
+            'trait childShare',
+        ]);
+    });
+});
+
+describe('inspectorView trait ratios and body sense', () => {
+    it('reads each trait ratio and the thirteen sense values from the rows after the counters', () => {
+        const { ready, snapshot, genomeId } = selectedWorld();
+        const { layout, labels } = ready;
+        const at =
+            layout.inspectOffset + 3 + layout.inputCount + layout.hidden + layout.outputCount + layout.counterCount;
+        expect(layout.traitCount).toBe(labels.traits.length);
+        expect(layout.senseCount).toBe(13);
+        snapshot.f32[at] = 1.25;
+        snapshot.f32[at + layout.traitCount] = 0.5;
+        snapshot.f32[at + layout.traitCount + 12] = 7;
+        const view = inspectorView({ snapshot, ready, slots: createFamilySlots() });
+        expect(view.header.genomeId).toBe(genomeId);
+        expect(view.counters.find((c) => c.label === `trait ${labels.traits[0].name}`)?.text).toBe('x1.25');
+        const sense = view.groups.at(-1);
+        expect(sense?.bars.map((b) => b.label)).toEqual(labels.bodySense);
+        expect(sense?.bars[0].value).toBe(0.5);
+        expect(sense?.bars[12].value).toBe(1);
     });
 });

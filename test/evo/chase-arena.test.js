@@ -42,7 +42,7 @@ describe('stageArena', () => {
         expect([world.foodX[0], world.foodHue[0], world.foodTox[0]]).toEqual([1, Math.fround(0.5), 0.25]);
         expect(world.foodX[1]).toBe(3);
         expect(world.energy[0]).toBeCloseTo(900, 3);
-        expect(world.baseSize[0]).toBe(30);
+        expect(world.lanes.baseSize[0]).toBe(30);
         expect([world.parentA[0], world.parentB[0], world.parentA[1]]).toEqual([4, 5, 0]);
         expect(world.weights[0]).toBe(0.25);
     });

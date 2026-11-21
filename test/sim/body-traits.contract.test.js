@@ -134,8 +134,13 @@ describe.each(TRAITS.map((trait) => [trait.name, trait]))('trait %s', (_, trait)
         const { world, slot } = traitWorld();
         setSpan(world, slot, trait.index, top);
         for (const { lane, exponentKey, sign } of trait.costs) {
+            // A cost lane at a base of 0 (sprintHeat, fatSlowShare by default) has nothing to scale: give it a base of 1.
+            const laneBases = Float64Array.from(world.laneBases);
+            const at0 = world.spec[slot] * LANES.length + LANES.findIndex((candidate) => candidate.name === lane);
+            laneBases[at0] = laneBases[at0] === 0 ? 1 : laneBases[at0];
             const priced = /** @type {Record<string, any>} */ ({
                 ...world,
+                laneBases,
                 config: { ...world.config, [exponentKey]: 1 },
             });
             const at = (/** @type {number} */ gene) => {
