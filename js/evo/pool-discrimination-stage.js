@@ -69,7 +69,7 @@ const STAGE_CONFIG = Object.freeze({
 /**
  * Builds the world: the rocks, the food items and the agents in slot order, through the one stager (`stageArena`).
  * @param {Stage} stage what to place
- * @returns {{world: Record<string, any>, policy: import('../sim/spawn.js').Policy}} the world and the policy to step it with
+ * @returns {{world: any, policy: any}} the world and the policy to step it with
  * @throws {Error} when the world has too few rock slots for the stage
  */
 export function stageWorld({ foods, rocks, agents, seed, config = {} }) {

@@ -17,7 +17,9 @@ import { observed } from './helpers/observer-world.js';
  * @returns {[string, any][]} its per-slot arrays: typed arrays holding a whole number of values per slot
  */
 function slotArrays(state, n) {
-    return Object.entries(state).filter(([, value]) => ArrayBuffer.isView(value) && value.length % n === 0);
+    return Object.entries(state).filter(
+        ([, value]) => ArrayBuffer.isView(value) && /** @type {any} */ (value).length % n === 0,
+    );
 }
 
 /** @param {any} array a per-slot array @param {number} n the number of slots @param {number} slot @returns {number[]} the slot's values */
@@ -36,7 +38,9 @@ describe('DETECTORS', () => {
             const state = r.observer.scenes[name];
             const keys = Object.keys(detector.metrics(state, r.world, r.observer)).sort();
             const entries = Object.keys(METRICS)
-                .filter((metric) => detector.modules.includes(METRICS[metric].module))
+                .filter((metric) =>
+                    detector.modules.includes(/** @type {Record<string, any>} */ (METRICS)[metric].module),
+                )
                 .sort();
             expect(keys).toEqual(entries);
             // A rule scene (proof, heritage, niche, mate) names no module: `ruleMetrics` merges its metrics.

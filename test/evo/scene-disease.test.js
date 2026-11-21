@@ -107,10 +107,13 @@ describe('the scene while the contagion is off', () => {
         const w = world({ diseaseSeedRate: 0 });
         addBlob(w);
         const scene = createDiseaseScene(w.config);
+        w.tick = BURN_IN_TICKS + 1;
         push(w, EVENT_TYPE.STRAIN_EMERGED, [0, 0, 1, 1]);
+        push(w, EVENT_TYPE.AGENT_INFECTED, [1, 11, 0, 0]);
+        push(w, EVENT_TYPE.AGENT_DIED, [5, 15, DEATH_CAUSE.DISEASE]);
         noteDiseaseEvents(scene, w);
         sampleDiseaseFamilies(scene, w);
-        expect(scene.strains).toBe(0);
+        expect([scene.strains, scene.infections, scene.deaths, scene.ticks]).toEqual([0, 0, 0, 0]);
         expect(scene.alive).toBe(0);
     });
 });

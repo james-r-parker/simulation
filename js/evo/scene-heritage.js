@@ -228,6 +228,20 @@ export function heritageMetrics(scene) {
     return { 'eval.skill_heritability': heritability(scene), 'eval.social_return': socialReturn(scene) };
 }
 
+/**
+ * @param {Record<string, any>} world the world
+ * @param {Record<string, any>} observer the observer
+ * @param {number} slot an alive slot
+ * @returns {boolean} whether the agent in the slot reaches `maturityTicks` this tick, and the observer tracks it under
+ *   this genome
+ */
+export function maturesNow(world, observer, slot) {
+    const { maturityTicks } = world.config;
+    return (
+        maturityTicks > 0 && world.ageTicks[slot] === maturityTicks && observer.genomeId[slot] === world.genomeId[slot]
+    );
+}
+
 /** @type {import('./observer-detectors.js').Detector} */
 export const heritageDetector = {
     name: 'heritage',
@@ -256,14 +270,12 @@ export const heritageDetector = {
     },
     onSlotFree: resetHeritageSlot,
     onTick: (scene, world, observer) => {
-        const { maturityTicks } = world.config;
-        const { alive, ageTicks, genomeId } = world;
-        for (let slot = 0; slot < alive.length; slot++) {
-            if (alive[slot] !== 1) {
+        for (let slot = 0; slot < world.alive.length; slot++) {
+            if (world.alive[slot] !== 1) {
                 continue;
             }
             trackHeritage(scene, world, slot);
-            if (maturityTicks > 0 && ageTicks[slot] === maturityTicks && observer.genomeId[slot] === genomeId[slot]) {
+            if (maturesNow(world, observer, slot)) {
                 creditGrandparents(scene, observer, slot);
             }
         }

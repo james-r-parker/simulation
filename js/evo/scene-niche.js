@@ -11,6 +11,7 @@ import { bodyPlanOf, roleSkillOf } from './descriptors.js';
 import { chanceIntake, deliberateIntake } from './fitness-v6-skill.js';
 import { SPEC_RADIX } from './hunter-table.js';
 import { none, ok } from './metrics-stats.js';
+import { maturesNow } from './scene-heritage.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 
 const CELLS = 100;
@@ -109,15 +110,8 @@ export const nicheDetector = {
     modules: [],
     create: () => createNicheScene(),
     onTick: (scene, world, observer) => {
-        const { maturityTicks } = world.config;
-        const { alive, ageTicks, genomeId } = world;
-        for (let slot = 0; slot < alive.length; slot++) {
-            if (
-                alive[slot] === 1 &&
-                maturityTicks > 0 &&
-                ageTicks[slot] === maturityTicks &&
-                observer.genomeId[slot] === genomeId[slot]
-            ) {
+        for (let slot = 0; slot < world.alive.length; slot++) {
+            if (world.alive[slot] === 1 && maturesNow(world, observer, slot)) {
                 noteNicheMatured(scene, observer, world, slot);
             }
         }
