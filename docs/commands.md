@@ -146,7 +146,7 @@ The digest under its `✗` line, then `.checklogs/<gate>.log` (kept until the ne
 
 ### Measure the director in Node
 
-`npm run director:dry` (`--seed <n>[,<n>...]` (1), `--ticks <t>` (72000), `--policy <name>` (the live one), `--config <file.json>`, `--json`; runs the sim host over a fake port and clock and the real director on a simulated clock (decisions every 500 ms, time is ticks / 60); prints a line per shot and `director.chase_precision` (at least 0.6), `director.max_kind_share` (at most 0.4) and `director.shots_per_hour` (60 to 240) with each bar; about 2 minutes a seed; a detector, never fitness; docs/designs/ambient-display.md)
+`npm run director:dry` (`--seed <n>[,<n>...]` (1), `--ticks <t>` (72000), `--policy <name>` (the live one), `--config <file.json>`, `--json`; runs the sim host over a fake port and clock and the real director on a simulated clock (decisions every 500 ms, time is ticks / 60); prints a line per shot and `director.chase_precision` (at least 0.6), `director.max_kind_share` (at most 0.4), `director.shots_per_hour` (20 to 60) and `director.min_shot_hold_s` (at least 30, the shortest shot from its cut to its pullback) with each bar; about 2 minutes a seed; a detector, never fitness; docs/designs/ambient-display.md)
 
 ### Time the reflex cases
 
