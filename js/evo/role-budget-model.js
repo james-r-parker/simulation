@@ -13,6 +13,7 @@
  * @property {number} naiveEffort the constant sprint effort of the `naive` tier
  * @property {number} catchShare the share of chases a hunter wins
  * @property {number} defenderGap the distance of the defender from the caller at the start of a defence, in px
+ * @property {number} smokeGap the centre gap at which a body releases smoke, in px
  * @property {boolean} reliableSight whether the hunter acts only on a prey that two neighbouring rays cannot both miss
  */
 
@@ -28,6 +29,7 @@ export const MODEL_DEFAULTS = Object.freeze({
     naiveEffort: 0.5,
     catchShare: 0.3,
     defenderGap: 150,
+    smokeGap: 240,
     reliableSight: false,
 });
 
@@ -43,6 +45,7 @@ const VALID = {
     naiveEffort: (v) => typeof v === 'number' && v > 0 && v <= 1,
     catchShare: (v) => typeof v === 'number' && v > 0 && v <= 1,
     defenderGap: (v) => typeof v === 'number' && v > 0,
+    smokeGap: (v) => typeof v === 'number' && v > 0,
     reliableSight: (v) => typeof v === 'boolean',
 };
 

@@ -38,7 +38,7 @@ describe('matrix', () => {
         for (const row of m.rows) {
             expect(['ok', 'tight', 'impossible', 'n/a']).toContain(row.status);
             const steps = row.name.startsWith('defender:')
-                ? ['hear', 'turn', 'run', 'intercept']
+                ? ['hear', 'turn', 'run', 'intercept', 'smoke']
                 : ['see', 'turn', 'run', 'bite'];
             expect(Object.keys(row.cells)).toEqual(steps);
         }

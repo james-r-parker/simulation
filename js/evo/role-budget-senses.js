@@ -15,6 +15,17 @@ export function viewReach(params, bearing) {
 }
 
 /**
+ * @param {{view: {range: number, rearShare: number}}} params a body's numbers
+ * @param {number} cosine the cosine of the bearing of the thing seen from the body's heading
+ * @returns {number} the same reach as `viewReach` from the cosine alone, for a bearing found by vectors: `reachFactor` of
+ *   js/sim/ray-reach.js is `min(1, share + (1 - share) (1 + cos) / 2)`
+ */
+export function viewReachCos(params, cosine) {
+    const { range, rearShare } = params.view;
+    return range * Math.min(1, rearShare + ((1 - rearShare) * (1 + cosine)) / 2);
+}
+
+/**
  * @param {{view: {rays: number}}} params a body's numbers
  * @param {number} targetSize the target's size
  * @returns {number} the centre distance within which two neighbouring rays cannot both miss the target

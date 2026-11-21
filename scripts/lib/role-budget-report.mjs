@@ -91,7 +91,7 @@ function budgetLines(budget) {
  * @returns {string[]} the lines that go under its row: the scene's ticks, the shove, the bite on the defender, the smoke
  */
 function defendLines(budget) {
-    const { run, baseline, repel, defenderBite } = budget;
+    const { run, baseline, repel, smoke, defenderBite } = budget;
     const at = (/** @type {number | null} */ t) => (t === null || t < 0 ? 'never' : `tick ${t}`);
     const shove = repel.on
         ? `on (energy ${repel.energy}, impulse ${repel.impulse}, cost ${repel.cost}): breaks the bite ${repel.breaksBite ? 'yes' : 'no'}, prevents ${repel.prevented.toFixed(0)} bite energy, takes ${repel.energy} from the hunter`
@@ -100,6 +100,7 @@ function defendLines(budget) {
         `  alarm ${at(run.alarmTick)}  heard ${at(run.heardTick)}  defender moves ${at(run.startTick)}  touches the hunter ${at(run.interceptTick)}  caller dies ${at(baseline.killTick)} (no defender) / ${at(run.killTick)}`,
         `  shove ${shove}`,
         `  a hunter's bite on the defender takes ${defenderBite.taken.toFixed(0)} and costs the hunter ${defenderBite.kick.toFixed(1)} of kick`,
+        `  smoke: ${smoke.refused ? 'refused (the defender faces the hunter) ' : ''}release at tick ${smoke.releaseTick} (walk ${smoke.runTicks}, turn ${smoke.facingTicks}), latest ${smoke.latestRelease}; hidden ${smoke.hiddenTicks} ticks, caller needs ${smoke.escapeNeed} to leave the view; slack defender ${smoke.slackDefender ?? 'X'}, caller ${smoke.slackCaller ?? 'X'}`,
     ];
 }
 

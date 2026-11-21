@@ -4,18 +4,22 @@
 import { defenceTimeline } from './role-budget-defence.js';
 import { SLACK_CAP, cell, rowOf } from './role-budget-cell.js';
 import { hearWindow } from './role-budget-senses.js';
+import { defenderSmokeGeometry } from './role-budget-smoke.js';
+
+export { defenderSmokeGeometry, smokeCell } from './role-budget-smoke.js';
 
 /** The steps of the defender's row, in order. */
-export const DEFEND_STEPS = Object.freeze(['hear', 'turn', 'run', 'intercept']);
+export const DEFEND_STEPS = Object.freeze(['hear', 'turn', 'run', 'intercept', 'smoke']);
 
 /**
  * @typedef {object} DefendBudget
  * @property {ReturnType<typeof rowOf>} row the matrix row `defender:predator`
- * @property {Record<string, import('./role-budget-cell.js').Cell>} cells the four cells
+ * @property {Record<string, import('./role-budget-cell.js').Cell>} cells the five cells
  * @property {{on: boolean, breaksBite: boolean, energy: number, cost: number, impulse: number, prevented: number}} repel
  *   whether the shove is on, whether it delays or stops the kill, its numbers and the bite energy the delay prevents
  * @property {import('./role-budget-defence.js').Defence} run the defence with no delay
  * @property {import('./role-budget-defence.js').Defence} baseline the same scene with no defender
+ * @property {import('./role-budget-smoke.js').DefenderSmoke} smoke the defender's smoke
  * @property {{taken: number, kick: number}} defenderBite what a hunter's bite on the defender takes of it and costs the hunter
  * @property {string | null} binding the step of least slack, `repel: off` when the shove is off
  */
@@ -145,7 +149,7 @@ function repelOf(bodies, model) {
 
 /**
  * The defender's budget against a hunter closing on a caller (a standing forager, reproducer or scout): the cells hear,
- * turn, run and intercept. With the shove off (`defenderRepelEnergy` and `defenderRepelImpulse` both 0, the default)
+ * turn, run, intercept and smoke. With the shove off (`defenderRepelEnergy` and `defenderRepelImpulse` both 0, the default)
  * the defender has no power on arrival, the intercept cell is impossible and the row's binding is `repel: off`.
  * @param {import('./role-budget-params.js').RoleParams} defender the defender
  * @param {import('./role-budget-params.js').RoleParams} hunter the hunter
@@ -155,7 +159,8 @@ function repelOf(bodies, model) {
  */
 export function budgetDefend(defender, hunter, caller, model) {
     const bodies = [hunter, caller, defender];
-    const cells = stepCells(bodies, model);
+    const smoke = defenderSmokeGeometry(bodies, model);
+    const cells = { ...stepCells(bodies, model), smoke: smoke.cell };
     const row = rowOf(`defender:${hunter.spec}`, cells);
     const repel = repelOf(bodies, model);
     const kick = hunter.bite.cost * (defender.size / hunter.size) * (0.5 + defender.energy / defender.sizing.max);
@@ -166,6 +171,7 @@ export function budgetDefend(defender, hunter, caller, model) {
         repel,
         run: playDefence(bodies, model),
         baseline: playDefence(bodies, model, { absent: true }),
+        smoke,
         defenderBite: { taken: hunter.bite.damage * defender.bite.taken, kick: kick * defender.bite.kick },
         binding,
     };
