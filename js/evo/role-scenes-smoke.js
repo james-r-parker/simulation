@@ -4,7 +4,6 @@
 // budget), as the budget assumes. Each reading carries the field name of the formula it checks.
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
-import { HEARD_STRIDE } from '../sim/agent-arrays.js';
 import { detCos, detSin } from '../sim/det-math.js';
 import { ARENA_CENTRE, stageArena } from './chase-arena.js';
 import { callerBrain, pursuerBrain, smokerBrain, steer, wrap } from './chase-oracles.js';
@@ -14,6 +13,7 @@ import { roleParams } from './role-budget-params.js';
 import { viewReachCos } from './role-budget-senses.js';
 import { segmentHitsCloud } from './role-budget-smoke.js';
 import { runScene, stageTrio } from './role-scenes-defence.js';
+import { actingRow, walkerBrain } from './role-scenes-walk.js';
 
 /**
  * @param {Record<string, any>} world the world
@@ -142,6 +142,14 @@ export function playSmoke(config, { gap }) {
     return { ticks: { releaseTick: 0, hiddenTicks, cloudLife }, outcome };
 }
 
+/**
+ * @param {number} slot the body
+ * @returns {(world: Record<string, any>) => void} a `brain` phase body that holds every output at 0
+ */
+function standBrain(slot) {
+    return (world) => world.outputs.fill(0, slot * OUTPUT_COUNT, (slot + 1) * OUTPUT_COUNT);
+}
+
 /** The heading error under which the defender counts as facing its aim (the angle is stored as a float32). */
 const FACING = 1e-4;
 
@@ -156,13 +164,8 @@ const FACING = 1e-4;
 function releaserBrain({ defender, aim, reaction, threshold }) {
     const state = { heardTick: -1, startTick: -1, releaseTick: -1 };
     const brain = (/** @type {Record<string, any>} */ world) => {
-        const row = defender * OUTPUT_COUNT;
-        world.outputs.fill(0, row, row + OUTPUT_COUNT);
-        if (state.heardTick < 0 && world.heard[defender * HEARD_STRIDE] > threshold) {
-            state.heardTick = world.tick;
-            state.startTick = world.tick + reaction;
-        }
-        if (state.startTick < 0 || world.tick < state.startTick || state.releaseTick >= 0) {
+        const row = actingRow(world, state, { defender, reaction, threshold });
+        if (row < 0) {
             return;
         }
         const gap = wrap((aim > 0 ? 0 : Math.PI) - world.angle[defender]);
@@ -206,23 +209,37 @@ function fleeingCaller(slots) {
  * face the caller (or the hunter) and drops a cloud; the caller runs sideways once it lies there.
  * @param {Readonly<Record<string, any>>} config an `arenaConfig`
  * @param {{reaction: number, threshold: number, standing: number, facing?: 'caller' | 'hunter',
- *   trace?: (world: Record<string, any>, n: number) => void}} options the reaction ticks, the loudness the defender acts on,
- *   the heading the defender stands with, which way it faces to release and a hook called after every tick
+ *   trace?: (world: Record<string, any>, n: number) => void, walk?: {side: number}}} options the reaction ticks, the loudness
+ *   the defender acts on, the heading the defender stands with, which way it faces to release and a hook called after every
+ *   tick; with `walk` the defender starts `side` px to the side of the caller facing `standing`, walks onto the spot and stops
+ *   there (`walkerBrain`), and the hunter stands still, so the walk is read without a hunter's bumps
  * @returns {SmokeScene & {ticks: {heardTick: number, startTick: number}}} the readings from the real sim
  */
-export function playDefenderSmoke(config, { reaction, threshold, standing, facing = 'caller', trace }) {
+export function playDefenderSmoke(config, options) {
+    const { reaction, threshold, standing, facing = 'caller', trace, walk } = options;
     let spot = 0;
     const { staged, hunter, gap, origin } = stageTrio(config, (at) => {
         spot = at.gap - (at.caller.size + at.defender.size);
-        return { x: spot, y: 0, angle: standing };
+        return walk ? { x: at.gap, y: walk.side, angle: standing } : { x: spot, y: 0, angle: standing };
     });
-    const release = releaserBrain({ defender: 2, aim: facing === 'caller' ? 1 : -1, reaction, threshold });
+    const release = walk
+        ? walkerBrain({
+              defender: 2,
+              to: { x: origin.x + spot, y: origin.y },
+              p: roleParams(config, 'defender'),
+              reaction,
+              threshold,
+          })
+        : releaserBrain({ defender: 2, aim: facing === 'caller' ? 1 : -1, reaction, threshold });
     const follow = followCloud({ hunter: 0, body: 1, origin, view: hunter });
     const brains = [
-        blindHunter({ hunter: 0, target: 1 }),
+        walk ? standBrain(0) : blindHunter({ hunter: 0, target: 1 }),
         fleeingCaller({ caller: 1, hunter: 0, seeGap: gap, reaction }),
         release,
     ];
+    if (walk) {
+        staged.world.vx[0] = 0;
+    }
     const observe = (/** @type {Record<string, any>} */ world, /** @type {number} */ n) => {
         trace?.(world, n);
         return follow.observe(world);
