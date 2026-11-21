@@ -3,6 +3,10 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+/**
+ * @typedef {{ id: string, date: string, outcome?: string, plan?: string, kind?: string, [field: string]: any }} LedgerRecord
+ */
+
 /** The file name of one record. */
 export const RECORD_FILE = /^E(\d+)\.json$/;
 
@@ -16,7 +20,7 @@ export function ledgerDir(root) {
 
 /**
  * @param {string} root the repository root
- * @returns {Record<string, any>[]} every record in `evals/ledger/`, in id order; empty when the directory is absent
+ * @returns {LedgerRecord[]} every record in `evals/ledger/`, in id order; empty when the directory is absent
  */
 export function readLedger(root) {
     const dir = ledgerDir(root);

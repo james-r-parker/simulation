@@ -20,7 +20,11 @@ export const USAGE = `usage: node scripts/experiment.mjs new --plan <doc.md> [--
        node scripts/experiment.mjs tally [--since <YYYY-MM-DD>]
        node scripts/experiment.mjs renumber <E<id>>`;
 
-const text = (/** @type {string} */ key) => (/** @type {string | undefined} */ value) => {
+/**
+ * @param {string} key the option the flag sets
+ * @returns {(value: string | undefined) => [string, string]} a `parseFlags` value parser that needs a non-empty value
+ */
+const text = (key) => (value) => {
     if (value === undefined || value === '') {
         throw new Error(`a flag needs a value\n${USAGE}`);
     }
