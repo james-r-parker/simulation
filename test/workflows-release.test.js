@@ -103,7 +103,9 @@ describe('check.yml release scope', { timeout: scaleTimeout(30_000) }, () => {
         expect(job('test')).toContain("needs.scope.outputs.has_tests == 'true'");
         expect(job('coverage')).toContain("needs.scope.outputs.coverage == 'whole'");
         expect(job('ratchet-related')).toContain("needs.scope.outputs.coverage == 'related'");
-        expect(stepScript('scope', 'Affected tests')).toContain('SCOPE" == docs || "$SCOPE" == release');
+        expect(stepScript('scope', 'Affected tests')).toContain(
+            'SCOPE" == docs || "$SCOPE" == records || "$SCOPE" == release',
+        );
         for (const id of ['scope', 'check', 'browser-smoke']) {
             expect(job(id), `${id} is never skipped by scope`).not.toMatch(/^ {4}if: .*scope\.outputs\.scope/m);
         }
