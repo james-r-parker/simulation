@@ -43,8 +43,9 @@ export function followInsight({ state, camera }, target) {
  *   loop: {agents: () => import('./interpolate.js').Interpolated}, deps: {refs: {player: any}}}} app the page
  * @returns {{getCamera: () => import('./camera.js').CameraController, getFollowView: () => {agents: any, player: any},
  *   getAgents: () => import('./interpolate.js').Interpolated, getPursuits: () => any,
- *   followTarget: (target: InsightTarget) => void}} what the interface reads of the view and how it moves it: the
- *   camera, the frame's agents and effects player, the renderer's pursuit table, and the follow an insights row asks for
+ *   followTarget: (target: InsightTarget) => void, copyText: (text: string) => Promise<void> | undefined}} what the
+ *   interface reads of the view and how it moves it: the camera, the frame's agents and effects player, the renderer's
+ *   pursuit table, the follow an insights row asks for, and the clipboard the export copies to
  */
 export function viewDeps(app) {
     return {
@@ -53,5 +54,6 @@ export function viewDeps(app) {
         getAgents: () => app.loop.agents(),
         getPursuits: () => app.deps.refs.player?.flee?.pursuits ?? null,
         followTarget: (target) => void followInsight(app, target),
+        copyText: (text) => navigator.clipboard?.writeText(text),
     };
 }

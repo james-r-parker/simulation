@@ -3,6 +3,9 @@
 
 import { mountNote, mountTable } from './insights-table.js';
 
+/** The columns of the Records tab's table. */
+export const RECORD_COLUMNS = Object.freeze(['record', 'value', 'holder']);
+
 /**
  * @param {{createElement: (tag: string) => any}} doc the document
  * @param {any} panel the tab's element
@@ -12,7 +15,7 @@ import { mountNote, mountTable } from './insights-table.js';
 export function mountRecordsTab(doc, panel, hooks) {
     const table = mountTable(doc, panel, {
         title: "This world's records",
-        columns: ['record', 'value', 'holder'],
+        columns: RECORD_COLUMNS,
         onPick: hooks.onPick,
     });
     mountNote(doc, panel, 'Click a record to follow its holder, while the holder is alive.');

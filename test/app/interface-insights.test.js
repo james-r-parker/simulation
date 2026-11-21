@@ -249,6 +249,35 @@ describe('the insights drawer in the interface', () => {
         expect(targets).toEqual([{ kind: 'record', genomeId: 60 }]);
     });
 
+    it('downloads the drawer tables as CSV and copies the replay command from the Export tab', async () => {
+        vi.spyOn(console, 'info').mockImplementation(() => {});
+        const copied = /** @type {string[]} */ ([]);
+        const stored = { [PREFS_KEY]: JSON.stringify({ seen: true, insightsTab: 'export' }) };
+        const { ui, elements, files } = setup({
+            stored,
+            deps: { copyText: (/** @type {string} */ t) => (copied.push(t), Promise.resolve()) },
+        });
+        ui.listeners.onReady(ready);
+        ui.listeners.onStats({ tick: 77, ticksPerSecond: 60, population: 3, bySpec: [3, 0, 0, 0, 0] });
+        ui.hooks.toggleDrawer(INSIGHTS_DRAWER);
+        const panel = byClass(elements.drawers, 'insights-export')[0].parent;
+        expect(byClass(panel, 'insights-command')[0].textContent).toContain(`--seed ${ready.seed}`);
+        expect(byClass(panel, 'insights-command')[0].textContent).toContain('--ticks 77');
+        expect(byClass(panel, 'insights-config')[0].textContent).toBe('{\n  "maxAgents": 40\n}');
+        byClass(panel, 'insights-export-csv')[0].dispatch('click');
+        expect(files[0].name).toBe(`blob-insights-${ready.seed}-77.csv`);
+        expect(files[0].text).toContain('# scenes\nscene,last 4 seasons\nLeave a dying patch,no live signal');
+        expect(files[0].text).toContain('# population by type\ntype,alive\nforager,3');
+        byClass(panel, 'insights-export-command')[0].dispatch('click');
+        await Promise.resolve();
+        await Promise.resolve();
+        expect(copied[0]).toContain('--ticks 77');
+        expect(byClass(elements.hud, 'toast').map((t) => t.textContent)).toEqual([
+            'Tables saved',
+            'Replay command copied',
+        ]);
+    });
+
     it('treats a missing pursuit table as no pursuits', () => {
         const agents = createInterpolated(8);
         const { ui } = setup({ deps: { getAgents: () => agents } });

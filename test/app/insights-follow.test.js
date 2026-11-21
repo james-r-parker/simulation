@@ -72,6 +72,11 @@ describe('viewDeps', () => {
         expect(deps.getAgents()).toBe(agents);
         expect(deps.getFollowView()).toEqual({ agents, player: page.deps.refs.player });
         expect(deps.getPursuits()).toEqual({ count: 2 });
+        const copied = /** @type {string[]} */ ([]);
+        vi.stubGlobal('navigator', { clipboard: { writeText: (/** @type {string} */ t) => copied.push(t) } });
+        deps.copyText('replay me');
+        expect(copied).toEqual(['replay me']);
+        vi.unstubAllGlobals();
         deps.followTarget({ genomeId: 5 });
         expect(a.state.followId).toBe(5);
         page.deps.refs.player = /** @type {any} */ (null);

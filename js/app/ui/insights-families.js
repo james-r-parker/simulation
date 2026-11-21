@@ -3,6 +3,9 @@
 
 import { mountNote, mountTable } from './insights-table.js';
 
+/** The columns of the Families tab's table. */
+export const FAMILY_COLUMNS = Object.freeze(['family', 'size', 'oldest', 'mix', 'kills', 'deepest']);
+
 /**
  * @param {{createElement: (tag: string) => any}} doc the document
  * @param {any} panel the tab's element
@@ -12,7 +15,7 @@ import { mountNote, mountTable } from './insights-table.js';
 export function mountFamiliesTab(doc, panel, hooks) {
     const table = mountTable(doc, panel, {
         title: 'The 12 largest families',
-        columns: ['family', 'size', 'oldest', 'mix', 'kills', 'deepest'],
+        columns: FAMILY_COLUMNS,
         onPick: hooks.onPick,
     });
     mountNote(doc, panel, 'Click a family to follow its oldest member.');

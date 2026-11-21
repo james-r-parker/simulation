@@ -22,7 +22,7 @@ function setup(options = {}) {
 describe('the insights drawer', () => {
     it('lists the tabs the preference accepts', () => {
         expect(TABS.map((t) => t.id)).toEqual(INSIGHTS_TABS.slice(0, TABS.length));
-        expect(TABS.map((t) => t.label)).toEqual(['World', 'Scenes', 'Families', 'Records']);
+        expect(TABS.map((t) => t.label)).toEqual(['World', 'Scenes', 'Families', 'Records', 'Export']);
         expect(tabOrDefault('reel')).toBe(DEFAULT_TAB);
         expect(tabOrDefault('world')).toBe('world');
     });

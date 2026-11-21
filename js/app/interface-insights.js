@@ -5,6 +5,7 @@
 
 import { appLog } from './app-log.js';
 import { createChartsLifecycle } from './interface-charts.js';
+import { performExport, replayView } from './insights-export.js';
 import { familyTableRows, recordTableRows } from './insights-lists.js';
 import { createInsightsData, noteInsightStats, readyInsights, worldView } from './insights-data.js';
 import {
@@ -82,6 +83,38 @@ function createFrameFeed(deps, scenes) {
 }
 
 /**
+ * @param {{deps: Record<string, any>, data: ReturnType<typeof createInsightsData>,
+ *   scenes: ReturnType<typeof createSceneCounters>}} source the page's deps and what the drawer reads
+ * @returns {() => Record<string, any>} builds the drawer's view: each tab's part, from the data as it is now
+ */
+function createView({ deps, data, scenes }) {
+    return () => ({
+        world: worldView(data),
+        scenes: sceneRows(scenes, data.stats?.tick ?? scenes.tick),
+        families: familyTableRows(data, (id) => familyCss(deps.slots, id)),
+        records: recordTableRows(data, longestChase(deps, scenes)),
+        export: replayView({ ready: deps.getReady(), stats: data.stats, overrides: deps.overrides }),
+    });
+}
+
+/**
+ * @param {Record<string, any>} ctx the interface's shared parts
+ * @param {() => Record<string, any>} view the drawer's view
+ * @param {ReturnType<typeof createInsightsData>} data what the drawer reads
+ * @returns {Parameters<typeof performExport>[1]} what an export button needs of the page
+ */
+function exportParts({ deps, toast }, view, data) {
+    return {
+        view,
+        ready: deps.getReady(),
+        stats: data.stats,
+        download: deps.download,
+        copyText: deps.copyText,
+        toast,
+    };
+}
+
+/**
  * @param {Record<string, any>} ctx the interface's shared parts: `deps`, `prefs`, `drawers`, `toast`, `chartData` and
  *   `persist`
  * @returns {{open: () => void, close: () => void, update: () => void, noteReady: (ready: Record<string, any>) => void,
@@ -95,7 +128,7 @@ export function mountInsightsPart(ctx) {
     const scenes = createSceneCounters();
     const ui = mountInsights(deps.doc, ctx.drawers.body(INSIGHTS_DRAWER), {
         tab: ctx.prefs.insightsTab,
-        hooks: { onPick: (target) => deps.followTarget?.(target) },
+        hooks: { onPick: (target) => deps.followTarget?.(target), onExport: (what) => exportNow(what) },
         onTab(id) {
             ctx.prefs.insightsTab = id;
             ctx.persist();
@@ -103,12 +136,9 @@ export function mountInsightsPart(ctx) {
         },
     });
     const charts = createWorldCharts(ctx, () => ui);
-    const view = () => ({
-        world: worldView(data),
-        scenes: sceneRows(scenes, data.stats?.tick ?? scenes.tick),
-        families: familyTableRows(data, (id) => familyCss(deps.slots, id)),
-        records: recordTableRows(data, longestChase(deps, scenes)),
-    });
+    const view = createView({ deps, data, scenes });
+    /** @param {string} what */
+    const exportNow = (what) => performExport(what, exportParts(ctx, view, data));
     return {
         ui,
         view,

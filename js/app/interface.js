@@ -97,6 +97,7 @@ export function shouldOpenInspector(drawer, id, hudShown) {
  * @property {() => import('./interpolate.js').Interpolated} [getAgents] the frame's agents, for the scene counters
  * @property {() => {count: number, hunter: Int32Array} | null} [getPursuits] the renderer's pursuit table, for the scene
  *   counters
+ * @property {(text: string) => Promise<unknown> | unknown} [copyText] puts text on the clipboard, for the insights export
  * @property {(target: import('./insights-follow.js').InsightTarget) => void} [followTarget] follows what an insights row
  *   names
  * @property {() => {agents: import('./interpolate.js').Interpolated,

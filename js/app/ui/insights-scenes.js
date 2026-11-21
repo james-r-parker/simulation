@@ -4,6 +4,9 @@
 
 import { mountNote, mountTable } from './insights-table.js';
 
+/** The columns of the Scenes tab's table. */
+export const SCENE_COLUMNS = Object.freeze(['scene', 'last 4 seasons']);
+
 /** What a scene with no on-screen signature reads. */
 export const NO_SIGNAL = 'no live signal';
 
@@ -41,7 +44,7 @@ export function sceneTableRows(scenes) {
 export function mountScenesTab(doc, panel, hooks) {
     const table = mountTable(doc, panel, {
         title: 'Scenes in the last 4 seasons',
-        columns: ['scene', 'seen'],
+        columns: SCENE_COLUMNS,
         onPick: hooks.onPick,
     });
     mountNote(doc, panel, 'Click a scene that has been seen to follow a live instance.');

@@ -2,6 +2,7 @@
 // panel on the board). It owns no data: the view comes from `insights-data.js`, `scene-counters.js` and the lists, and
 // a click on a row reports its target. Over an injected document.
 
+import { mountExportTab } from './insights-export.js';
 import { mountFamiliesTab } from './insights-families.js';
 import { mountRecordsTab } from './insights-records.js';
 import { mountScenesTab } from './insights-scenes.js';
@@ -23,6 +24,7 @@ export const TABS = Object.freeze([
     { id: 'scenes', label: 'Scenes', mount: mountScenesTab },
     { id: 'families', label: 'Families', mount: mountFamiliesTab },
     { id: 'records', label: 'Records', mount: mountRecordsTab },
+    { id: 'export', label: 'Export', mount: mountExportTab },
 ]);
 
 /** The tab shown when none is chosen. */
