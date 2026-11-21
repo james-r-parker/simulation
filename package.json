@@ -29,6 +29,7 @@
     "eval": "node scripts/eval.mjs",
     "food:ratio": "node scripts/food-ratio.mjs",
     "audit:chase": "node scripts/audit-chase.mjs",
+    "role:budget": "node scripts/role-budget.mjs",
     "director:dry": "node scripts/director-dry.mjs",
     "audit:signals": "node scripts/audit-signals.mjs",
     "probe:learn": "node scripts/learn-probe.mjs",

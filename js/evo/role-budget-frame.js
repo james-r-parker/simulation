@@ -3,7 +3,7 @@
 // awareness gap the hunter still closes. Pure; every function reads `RoleParams` records and the model.
 
 import { JINK_RANGE } from './chase-oracles.js';
-import { viewReach } from './role-budget-senses.js';
+import { reliableView, viewReach } from './role-budget-senses.js';
 import { chaseTimeline } from './role-budget-timeline.js';
 
 /** The largest start gap the bisection looks at: `MAX_TICKS` of the fastest sprint, inside the arena. */
@@ -38,10 +38,12 @@ export function gapAtAwareness(hunter, prey) {
 /**
  * @param {import('./role-budget-params.js').RoleParams} hunter the hunter
  * @param {import('./role-budget-params.js').RoleParams} prey the prey
- * @returns {number} the centre gap at which the hunter first sees the prey: its reach ahead plus the prey's size
+ * @param {boolean} [reliable] whether the hunter acts only inside `reliableView` of the prey
+ * @returns {number} the centre gap at which the hunter first sees the prey: its reach ahead plus the prey's size, or the
+ *   range at which two neighbouring rays cannot both miss it
  */
-export function gapAtSight(hunter, prey) {
-    return viewReach(hunter, 0) + prey.size;
+export function gapAtSight(hunter, prey, reliable = false) {
+    return reliable ? reliableView(hunter, prey.size) : viewReach(hunter, 0) + prey.size;
 }
 
 /**
@@ -51,6 +53,18 @@ export function gapAtSight(hunter, prey) {
 function preyPlay({ bound = 'broken', model }) {
     const sprint = model.preySprint === 'always' ? 'always' : 'rationed';
     return bound === 'straight' ? { sprint, jink: 0 } : { sprint, jink: JINK_RANGE, breakAngle: model.breakAngle };
+}
+
+/**
+ * @param {import('./role-budget-params.js').RoleParams} hunter the hunter
+ * @param {import('./role-budget-params.js').RoleParams} prey the prey
+ * @param {Frame} frame the frame
+ * @returns {{wait: number, runAt: number, slowTicks: number, seeGap: number}} the hunter's delays, and the gap inside
+ *   which it acts: unlimited, or `reliableView` of the prey with `reliableSight`
+ */
+function delayedPlay(hunter, prey, { delays = {}, model }) {
+    const seeGap = model.reliableSight ? reliableView(hunter, prey.size) : Infinity;
+    return { wait: delays.see ?? 0, runAt: delays.run ?? 0, slowTicks: delays.turn ?? 0, seeGap };
 }
 
 /**
@@ -65,16 +79,16 @@ function preyPlay({ bound = 'broken', model }) {
  * @returns {import('./role-budget-timeline.js').TimelineOptions} the options of `chaseTimeline`
  */
 export function frameOptions(hunter, prey, aware, frame) {
-    const { tier = 'perfect', bearing = 0, delays = {}, model } = frame;
+    const { tier = 'perfect', bearing = 0, model } = frame;
     const play = preyPlay(frame);
-    const hunterPlay = { wait: delays.see ?? 0, runAt: delays.run ?? 0, slowTicks: delays.turn ?? 0 };
+    const hunterPlay = delayedPlay(hunter, prey, frame);
     if (tier === 'perfect') {
         return { gap: aware, bearing, hunterStart: 'cruise', hunter: hunterPlay, prey: play };
     }
     const late = tier === 'reactive' ? model.reactionTicks + hunterPlay.wait : hunterPlay.wait;
     const effort = tier === 'naive' ? model.naiveEffort : 1;
     return {
-        gap: Math.max(gapAtSight(hunter, prey), aware),
+        gap: Math.max(gapAtSight(hunter, prey, model.reliableSight), aware),
         bearing,
         hunterStart: 'rest',
         hunter: { ...hunterPlay, wait: late, effort },

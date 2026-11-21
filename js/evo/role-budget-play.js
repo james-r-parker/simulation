@@ -20,6 +20,7 @@ const REST = 0.05;
  * @property {number} wait ticks it cruises straight, blind to the prey, before it acts (the `see` delay)
  * @property {number} runAt the tick the sprint may start (the `run` delay)
  * @property {number} slowTicks ticks its speed is held at the turn circle's (the `turn` delay)
+ * @property {number} seeGap the centre gap inside which it acts: it cruises straight, blind, while the prey is further
  */
 
 /**
@@ -32,7 +33,14 @@ const REST = 0.05;
  */
 
 /** @type {Readonly<HunterPlay>} */
-export const HUNTER_PERFECT = Object.freeze({ sprint: 'always', effort: 1, wait: 0, runAt: 0, slowTicks: 0 });
+export const HUNTER_PERFECT = Object.freeze({
+    sprint: 'always',
+    effort: 1,
+    wait: 0,
+    runAt: 0,
+    slowTicks: 0,
+    seeGap: Infinity,
+});
 
 /**
  * @param {import('./role-budget-body.js').Body} b the steering body
@@ -60,12 +68,12 @@ export function steerOut(b, aim) {
  * @returns {import('./role-budget-body.js').Out} what the hunter holds
  */
 export function hunterOut(h, p, play, tick) {
-    if (tick < play.wait) {
-        return { turn: 0, sprint: 0 };
-    }
     const dx = p.x - h.x;
     const dy = p.y - h.y;
     const dist = norm(dx, dy);
+    if (tick < play.wait || dist > play.seeGap) {
+        return { turn: 0, sprint: 0 };
+    }
     const lead = Math.min(dist / Math.max(speedOf(h), 1), LEAD_MAX);
     const turn = steerOut(h, { x: dx + lead * p.vx, y: dy + lead * p.vy });
     const inView = play.sprint === 'always' || h.p.store.on === 0 || dist <= h.p.view.range;

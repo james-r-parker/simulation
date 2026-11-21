@@ -48,7 +48,7 @@ describe('frameOptions', () => {
             delays: { see: 3, turn: 4, run: 5 },
         });
         expect(o).toMatchObject({ gap: 345, bearing: 1, hunterStart: 'cruise' });
-        expect(o.hunter).toEqual({ wait: 3, runAt: 5, slowTicks: 4 });
+        expect(o.hunter).toEqual({ wait: 3, runAt: 5, slowTicks: 4, seeGap: Infinity });
         expect(o.prey).toMatchObject({ sprint: 'rationed', jink: 120 });
     });
 
@@ -70,6 +70,28 @@ describe('frameOptions', () => {
         expect(straight.prey.jink).toBe(0);
         const always = frameOptions(defaults.hunter, defaults.prey, 345, { model: { ...model, preySprint: 'always' } });
         expect(always.prey.sprint).toBe('always');
+    });
+});
+
+describe('reliableSight', () => {
+    const reliable = { ...model, reliableSight: true };
+
+    it('has the hunter act inside reliableView of the prey: 148.65 for a size 29 forager', () => {
+        const o = frameOptions(defaults.hunter, defaults.prey, 345, { model: reliable });
+        expect(o.hunter.seeGap).toBeCloseTo(148.65, 2);
+        expect(gapAtSight(defaults.hunter, defaults.prey, true)).toBeCloseTo(148.65, 2);
+        expect(gapAtSight(defaults.hunter, defaults.prey)).toBe(429);
+    });
+
+    it('starts a reactive hunter at the awareness gap when that is further than where it reliably sees', () => {
+        const o = frameOptions(defaults.hunter, defaults.prey, 345, { model: reliable, tier: 'reactive' });
+        expect(o.gap).toBe(345);
+    });
+
+    it('leaves a hunter that sees the prey only at 148 px with less margin than one that acts at once', () => {
+        const at = (/** @type {any} */ m) =>
+            maxCatchableGap(courser.hunter, courser.prey, { model: m, bound: 'straight' });
+        expect(at(reliable)).toBeLessThan(at(model));
     });
 });
 

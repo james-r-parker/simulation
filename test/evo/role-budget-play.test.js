@@ -88,6 +88,12 @@ describe('the hunter play', () => {
         expect(hunterOut(h, p, { ...HUNTER_PERFECT, effort: 0.5 }, 0).sprint).toBe(0.5);
     });
 
+    it('cruises blind while the prey is outside its seeGap', () => {
+        const { h, p } = pair({ gap: 200, bearing: 1 });
+        expect(hunterOut(h, p, { ...HUNTER_PERFECT, seeGap: 150 }, 0)).toEqual({ turn: 0, sprint: 0 });
+        expect(hunterOut(h, p, { ...HUNTER_PERFECT, seeGap: 250 }, 0).sprint).toBe(1);
+    });
+
     it('sprints on `view` only with the prey inside its vision when the store is on', () => {
         const near = pair({ gap: 350, bearing: 0 });
         const far = pair({ gap: 450, bearing: 0 });

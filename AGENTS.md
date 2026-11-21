@@ -49,6 +49,7 @@ The ones used in every session:
 - Tests: `npm test`; one file `npx vitest run <file>`; one test `npx vitest run -t '<name>'`; fast only
   `TEST_SCOPE=fast npx vitest run`.
 - Replay a world: `npm run replay -- --seed <n> --ticks <n>`.
+- Budget a role from the config (no world): `npm run role:budget -- --rows predator:forager [--config <arm.json>] [--search]`.
 - Eval a policy: `npm run eval -- --seeds <n> --ticks <t> --policy <name>`; compare two reports:
   `npm run eval:compare -- <before.json> <after.json>`.
 - Detach a long run, then wait: `scripts/run-detached.sh <name> -- <cmd...>`, then `scripts/wait-run.sh <name>`.

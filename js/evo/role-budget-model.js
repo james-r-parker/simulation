@@ -12,6 +12,7 @@
  * @property {number | null} foodDensity food items per px2 inside a patch, null to derive it from the config
  * @property {number} naiveEffort the constant sprint effort of the `naive` tier
  * @property {number} catchShare the share of chases a hunter wins
+ * @property {boolean} reliableSight whether the hunter acts only on a prey that two neighbouring rays cannot both miss
  */
 
 /** @type {Readonly<RoleModel>} */
@@ -25,6 +26,7 @@ export const MODEL_DEFAULTS = Object.freeze({
     foodDensity: null,
     naiveEffort: 0.5,
     catchShare: 0.3,
+    reliableSight: false,
 });
 
 /** @type {Record<string, (value: unknown) => boolean>} the test of each option's value */
@@ -38,6 +40,7 @@ const VALID = {
     foodDensity: (v) => v === null || (typeof v === 'number' && v > 0),
     naiveEffort: (v) => typeof v === 'number' && v > 0 && v <= 1,
     catchShare: (v) => typeof v === 'number' && v > 0 && v <= 1,
+    reliableSight: (v) => typeof v === 'boolean',
 };
 
 /**

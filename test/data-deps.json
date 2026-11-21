@@ -458,6 +458,10 @@
         "package.json",
         "wrangler.toml"
     ],
+    "test/role-budget.test.js": [
+        "evals/fair-chase/courser.json",
+        "scripts/role-budget.mjs"
+    ],
     "test/run-detached.test.js": [
         ".git",
         "package.json",

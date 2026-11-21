@@ -13,6 +13,7 @@ describe('MODEL_DEFAULTS', () => {
             foodDensity: null,
             naiveEffort: 0.5,
             catchShare: 0.3,
+            reliableSight: false,
         });
         expect(Object.isFrozen(MODEL_DEFAULTS)).toBe(true);
     });
@@ -43,6 +44,7 @@ describe('validateModel', () => {
         ['foodDensity', 0],
         ['naiveEffort', 0],
         ['catchShare', 1.1],
+        ['reliableSight', 1],
     ])('refuses %s = %j, naming the key', (key, value) => {
         expect(() => validateModel({ [key]: value })).toThrow(new RegExp(`bad value for "${key}"`));
     });
