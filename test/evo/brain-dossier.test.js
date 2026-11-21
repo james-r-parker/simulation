@@ -9,7 +9,7 @@ function fixture() {
     const layout = brainLayout(config);
     const weights = new Float32Array(layout.weightCount);
     const labels = {
-        inputs: inputLabels(config),
+        inputs: inputLabels(),
         outputs: outputLabels(),
         units: Array.from({ length: layout.hidden }, (_, unit) => unitLabel(unit)),
     };

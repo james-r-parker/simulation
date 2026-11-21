@@ -562,6 +562,10 @@
         "scripts/browser-smoke.sh",
         "test"
     ],
+    "test/wasm-constants.test.js": [
+        "wasm/src/brain.rs",
+        "wasm/src/sense.rs"
+    ],
     "test/web-presence.test.js": [
         "index.html",
         "public",

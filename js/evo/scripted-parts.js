@@ -1,20 +1,24 @@
 // Shared pieces of the scripted controllers: channel constants, the output writer and the food-seeking behaviour.
 
-import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
+import {
+    CH_FOOD,
+    CH_KIN,
+    CH_PREY,
+    CH_SMOKE,
+    CH_THREAT,
+    CH_WALL,
+    OUTPUT_COUNT,
+    OUTPUT_INDEX,
+} from '../sim/brain-layout.js';
 import { detCos, detSin } from '../sim/det-math.js';
 import { turnTowards } from '../sim/merit-state.js';
 import { nextFloat } from '../sim/rng.js';
 import { nearestClassRay } from './observer-tick.js';
 
 // Class channels within a ray (see js/sim/ray-march.js): THREAT can bite the caster, PREY can be bitten by it.
-export const CH_FOOD = 1;
-export const CH_THREAT = 2;
-export const CH_PREY = 3;
-export const CH_FIRST_AGENT = 2;
-export const CH_LAST_AGENT = 5;
-export const CH_KIN = 5;
-export const CH_WALL = 6;
-export const CH_SMOKE = 8;
+export { CH_FOOD, CH_KIN, CH_PREY, CH_SMOKE, CH_THREAT, CH_WALL };
+export const CH_FIRST_AGENT = CH_THREAT;
+export const CH_LAST_AGENT = CH_KIN;
 
 /**
  * Thrust while seeking food: the speed at which a scripted forager population grows on the default economy; full thrust

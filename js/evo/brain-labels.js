@@ -1,70 +1,18 @@
 // Labels the pooled brain inputs, gene outputs and hidden units for inspection reports.
 
-import { GENE_OUTPUTS, POOLED_CHANNELS, POOLED_HITS, inputOffsets } from '../sim/brain-layout.js';
+import { BRAIN_IO, GENE_OUTPUTS, POOLED_CHANNELS, POOLED_HITS } from '../sim/brain-layout.js';
 
 const HIT_VALUES = Object.freeze(['strength', 'cos', 'sin']);
-const GENE_OUTPUT_NAMES = Object.freeze([
-    'thrust',
-    'turn',
-    'sprint',
-    'mate',
-    'bite',
-    'alarm',
-    'smoke',
-    'hunt',
-    'memory_a',
-    'memory_b',
-]);
-const BODY_LABELS = Object.freeze([
-    'energy',
-    'vel.forward',
-    'vel.side',
-    'turn_rate',
-    'size',
-    'pregnant',
-    'ready_to_mate',
-    'danger.here',
-    'attack.here',
-    'ate',
-    'bitten',
-    'spec',
-    'age',
-    'temp.0',
-    'temp.1',
-    'temp.2',
-    'temp.3',
-    'danger.left',
-    'danger.right',
-    'attack.left',
-    'attack.right',
-    'hunt_scent.here',
-    'hunt_scent.left',
-    'hunt_scent.right',
-    'heard_alarm.loudness',
-    'heard_alarm.ahead',
-    'heard_alarm.side',
-    'heard_hunt.loudness',
-    'heard_hunt.ahead',
-    'heard_hunt.side',
-    'sex',
-    'memory_a',
-    'memory_b',
-    'refuge.bearing_sin',
-    'refuge.bearing_cos',
-    'refuge.near',
-]);
-
 /**
- * Labels every pooled-row input in the same order as `world.pooled`.
- * @param {Readonly<Record<string, any>>} config the simulation config
+ * Labels every pooled-row input in the same order as `world.pooled`, from `BRAIN_IO`.
  * @returns {string[]} one label per brain input
  */
-export function inputLabels(config) {
-    const labels = pooledLabels();
-    const offsets = inputOffsets(config);
-    labels.splice(offsets.foodHueStart, 0, 'food.hue0', 'food.hue1');
-    labels.push(...BODY_LABELS);
-    return labels;
+export function inputLabels() {
+    return [
+        ...pooledLabels(),
+        ...BRAIN_IO.sense.flatMap((group) => group.labels),
+        ...BRAIN_IO.body.map((input) => input.label),
+    ];
 }
 
 /**
@@ -72,7 +20,7 @@ export function inputLabels(config) {
  * @returns {string[]} one label per gene output column
  */
 export function outputLabels() {
-    return GENE_OUTPUT_NAMES.slice(0, GENE_OUTPUTS.length);
+    return GENE_OUTPUTS.map((output) => BRAIN_IO.outputs[output].name);
 }
 
 /**

@@ -3,7 +3,18 @@
 // ray run in the sense kernel (`sense_slot` in wasm/src/sense.rs, docs/designs/wasm-kernels.md); the JS ray march was
 // deleted when the kernel was adopted (T11). The hit classes are rules and stay here.
 
-import { CH_MEGAFAUNA, RAY_CHANNELS } from './brain-layout.js';
+import {
+    CH_FOOD,
+    CH_KIN,
+    CH_MEGAFAUNA,
+    CH_OBSTACLE,
+    CH_OTHER,
+    CH_PREY,
+    CH_SMOKE,
+    CH_THREAT,
+    CH_WALL,
+    RAY_CHANNELS,
+} from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { couldBite } from './bite-rule.js';
 import { isKin } from './kin.js';
@@ -23,16 +34,6 @@ const BEST_KEY = 7;
 /** Where `castRays` leaves the casting agent's heading cosine and sine in `world.rayScratch`, for the other sensors. */
 export const COS_H = 8;
 export const SIN_H = 9;
-
-// Offsets of each class flag within a ray's channels.
-const CH_FOOD = 1;
-const CH_THREAT = 2;
-const CH_PREY = 3;
-const CH_OTHER = 4;
-const CH_KIN = 5;
-const CH_WALL = 6;
-const CH_OBSTACLE = 7;
-const CH_SMOKE = 8;
 
 /** Class channel of each hit kind; an agent's channel depends on its class, so its entry is unused. */
 const CHANNEL_OF_KIND = Object.freeze([CH_FOOD, CH_THREAT, CH_OBSTACLE, CH_WALL, CH_SMOKE, CH_MEGAFAUNA]);

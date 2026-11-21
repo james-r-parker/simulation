@@ -1,7 +1,7 @@
 // The selected agent's inspector data: the label tables the app reads once in `ready`, the buffer layout that adds the
 // effects and inspect parts to the snapshot, and the writer for the inspect part. Reads; never changes the world.
 
-import { OUTPUT_INDEX, RAY_CHANNELS } from '../sim/brain-layout.js';
+import { BRAIN_IO, OUTPUT_INDEX, RAY_CHANNELS } from '../sim/brain-layout.js';
 import { snapshotLayout } from '../sim/snapshot.js';
 import { EFFECT_CAPACITY, EFFECT_HEADER_WORDS, EFFECT_WORDS } from './effects.js';
 
@@ -30,72 +30,16 @@ export const INSPECT_COUNTERS = Object.freeze([
     'immuneStrains',
 ]);
 
-const RAY_CHANNEL_NAMES = Object.freeze([
-    'proximity',
-    'food',
-    'can bite me',
-    'I can bite it',
-    'other',
-    'kin',
-    'wall',
-    'obstacle',
-    'smoke',
-    'megafauna',
-]);
-
-/** @type {readonly [string, string][]} body input names with their group, in input order */
-const BODY_INPUTS = Object.freeze([
-    ['energy', 'Body'],
-    ['forward speed', 'Body'],
-    ['lateral speed', 'Body'],
-    ['turn rate', 'Body'],
-    ['size', 'Body'],
-    ['pregnant', 'Body'],
-    ['ready to mate', 'Body'],
-    ['danger here', 'Senses'],
-    ['attack here', 'Senses'],
-    ['ate recently', 'Senses'],
-    ['bitten recently', 'Senses'],
-    ['type', 'Senses'],
-    ['age', 'Body'],
-    ['temperature', 'Temperature'],
-    ['distance from optimal', 'Temperature'],
-    ['cold stress', 'Temperature'],
-    ['heat stress', 'Temperature'],
-    ['danger left', 'Scent antennae'],
-    ['danger right', 'Scent antennae'],
-    ['attack left', 'Scent antennae'],
-    ['attack right', 'Scent antennae'],
-    ['hunt here', 'Scent antennae'],
-    ['hunt left', 'Scent antennae'],
-    ['hunt right', 'Scent antennae'],
-    ['alarm loudness', 'Heard calls'],
-    ['alarm ahead', 'Heard calls'],
-    ['alarm side', 'Heard calls'],
-    ['hunt loudness', 'Heard calls'],
-    ['hunt ahead', 'Heard calls'],
-    ['hunt side', 'Heard calls'],
-    ['sex', 'Body'],
-    ['memory A', 'Memory'],
-    ['memory B', 'Memory'],
-    ['refuge bearing sin', 'Refuge'],
-    ['refuge bearing cos', 'Refuge'],
-    ['refuge near', 'Refuge'],
-]);
-
 /**
  * The names the inspector labels its bars with.
  * @returns {{rayChannels: string[], bodyInputs: {name: string, group: string}[], outputs: string[]}} the ten ray
  *   channel names, the 36 body inputs with their group, and the eleven output names in `OUTPUT_INDEX` order
  */
 export function inspectLabels() {
-    const outputs = Object.entries(OUTPUT_INDEX)
-        .sort((a, b) => a[1] - b[1])
-        .map(([name]) => name.toLowerCase());
     return {
-        rayChannels: [...RAY_CHANNEL_NAMES],
-        bodyInputs: BODY_INPUTS.map(([name, group]) => ({ name, group })),
-        outputs,
+        rayChannels: BRAIN_IO.channels.map((channel) => channel.display),
+        bodyInputs: BRAIN_IO.body.map((input) => ({ name: input.display, group: input.group })),
+        outputs: BRAIN_IO.outputs.map((output) => output.name),
     };
 }
 
@@ -108,7 +52,7 @@ export function inspectLabels() {
  */
 export function workerLayout(config) {
     const sim = snapshotLayout(config);
-    const inputCount = config.rayCount * RAY_CHANNELS + BODY_INPUTS.length;
+    const inputCount = config.rayCount * RAY_CHANNELS + BRAIN_IO.body.length;
     const outputCount = Object.keys(OUTPUT_INDEX).length;
     const effectsOffset = sim.bytes / 4;
     const effectsWords = EFFECT_HEADER_WORDS + EFFECT_CAPACITY * EFFECT_WORDS;

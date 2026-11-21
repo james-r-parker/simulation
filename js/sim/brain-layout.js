@@ -7,58 +7,176 @@
  */
 export const BRAIN_LAYOUT_NAME = 'pooled-v5';
 
-/** Outputs per brain: thrust, turn, sprint, mate, bite, alarm, smoke, hunt call, split and two memory outputs. */
-export const OUTPUT_COUNT = 11;
+/**
+ * @typedef {object} IoChannel one raw ray channel
+ * @property {string} name the channel's name, the suffix of its `CH_` constant
+ * @property {string} display its name in the inspector
+ * @property {boolean} pooled whether the brain's pooled row has a channel for it (every channel but `proximity`)
+ */
 
 /**
- * Index of each output in an agent's output row. `BITE`, `SPRINT` and `MATE` fire when their output is above 0; the
- * calls fire above their own thresholds (`ALARM` above `alarmThreshold`, `HUNT` above `huntCallThreshold`, `SMOKE` above
- * `smokeThreshold`, all in `js/sim/calls.js`); `THRUST` and `TURN` are continuous; `SPLIT` reads 0; the memory
- * outputs are written back as hidden state.
+ * @typedef {object} IoSense a group of pooled values that are not a ray channel
+ * @property {string} name the group's name
+ * @property {readonly string[]} labels one label per value, in order
  */
-export const OUTPUT_INDEX = Object.freeze({
-    THRUST: 0,
-    TURN: 1,
-    SPRINT: 2,
-    MATE: 3,
-    BITE: 4,
-    ALARM: 5,
-    SMOKE: 6,
-    HUNT: 7,
-    SPLIT: 8,
-    MEMORY_A: 9,
-    MEMORY_B: 10,
+
+/**
+ * @typedef {object} IoBody one body input
+ * @property {string} label its label in reports
+ * @property {string} display its name in the inspector
+ * @property {string} group its group in the inspector
+ * @property {string} [key] its `BODY_INPUT` name, for an input the code reads by offset
+ */
+
+/**
+ * @typedef {object} IoOutput one output
+ * @property {string} name its name; `OUTPUT_INDEX` names it in upper case
+ * @property {boolean} gene whether it has genes (a column in `wOut`, `bOut` and `wSkip`)
+ * @property {string | null} threshold the config key above which it fires, null when it fires above 0 or is continuous
+ */
+
+/**
+ * @param {readonly (readonly [string, string, string, string?])[]} rows label, inspector name, group and `BODY_INPUT` key
+ * @returns {readonly IoBody[]} the body inputs, one per value
+ */
+const bodyInputs = (rows) =>
+    Object.freeze(rows.map(([label, display, group, key]) => Object.freeze({ label, display, group, key })));
+
+/**
+ * The schema of the brain's inputs and outputs (docs/designs/registries.md, "Brain inputs and outputs"). Every offset,
+ * count and label below is built from it, and so are the inspector's names and the checks of the Rust constants
+ * (`scripts/check-wasm.mjs`). A body input or an output is added by one entry.
+ */
+export const BRAIN_IO = Object.freeze({
+    /** The raw ray channels in order: channel 0 is the proximity, the rest set one class per ray. */
+    channels: Object.freeze(
+        /** @type {readonly IoChannel[]} */ (
+            [
+                ['proximity', 'proximity', false],
+                ['food', 'food', true],
+                ['threat', 'can bite me', true],
+                ['prey', 'I can bite it', true],
+                ['other', 'other', true],
+                ['kin', 'kin', true],
+                ['wall', 'wall', true],
+                ['obstacle', 'obstacle', true],
+                ['smoke', 'smoke', true],
+                ['megafauna', 'megafauna', true],
+            ].map(([name, display, pooled]) => Object.freeze({ name, display, pooled }))
+        ),
+    ),
+    /** The pooled values after the channels: the hues of the two pooled food hits. */
+    sense: Object.freeze(
+        /** @type {readonly IoSense[]} */ ([Object.freeze({ name: 'food.hue', labels: ['food.hue0', 'food.hue1'] })]),
+    ),
+    /** The body block after the pooled values, one entry per input: body, senses, temperature, scent, calls, memory, refuge. */
+    body: bodyInputs([
+        ['energy', 'energy', 'Body'],
+        ['vel.forward', 'forward speed', 'Body'],
+        ['vel.side', 'lateral speed', 'Body'],
+        ['turn_rate', 'turn rate', 'Body'],
+        ['size', 'size', 'Body'],
+        ['pregnant', 'pregnant', 'Body'],
+        ['ready_to_mate', 'ready to mate', 'Body'],
+        ['danger.here', 'danger here', 'Senses'],
+        ['attack.here', 'attack here', 'Senses'],
+        ['ate', 'ate recently', 'Senses'],
+        ['bitten', 'bitten recently', 'Senses', 'BITTEN'],
+        ['spec', 'type', 'Senses'],
+        ['age', 'age', 'Body'],
+        ['temp.0', 'temperature', 'Temperature'],
+        ['temp.1', 'distance from optimal', 'Temperature'],
+        ['temp.2', 'cold stress', 'Temperature'],
+        ['temp.3', 'heat stress', 'Temperature'],
+        ['danger.left', 'danger left', 'Scent antennae', 'SCENT'],
+        ['danger.right', 'danger right', 'Scent antennae'],
+        ['attack.left', 'attack left', 'Scent antennae'],
+        ['attack.right', 'attack right', 'Scent antennae'],
+        ['hunt_scent.here', 'hunt here', 'Scent antennae', 'HUNT_SCENT'],
+        ['hunt_scent.left', 'hunt left', 'Scent antennae'],
+        ['hunt_scent.right', 'hunt right', 'Scent antennae'],
+        ['heard_alarm.loudness', 'alarm loudness', 'Heard calls', 'HEARD_ALARM'],
+        ['heard_alarm.ahead', 'alarm ahead', 'Heard calls'],
+        ['heard_alarm.side', 'alarm side', 'Heard calls'],
+        ['heard_hunt.loudness', 'hunt loudness', 'Heard calls', 'HEARD_HUNT'],
+        ['heard_hunt.ahead', 'hunt ahead', 'Heard calls'],
+        ['heard_hunt.side', 'hunt side', 'Heard calls'],
+        ['sex', 'sex', 'Body', 'SEX'],
+        ['memory_a', 'memory A', 'Memory', 'MEMORY_A'],
+        ['memory_b', 'memory B', 'Memory', 'MEMORY_B'],
+        ['refuge.bearing_sin', 'refuge bearing sin', 'Refuge', 'REFUGE_BEARING_SIN'],
+        ['refuge.bearing_cos', 'refuge bearing cos', 'Refuge', 'REFUGE_BEARING_COS'],
+        ['refuge.near', 'refuge near', 'Refuge', 'REFUGE_NEAR'],
+    ]),
+    /**
+     * The outputs in order. `SPRINT`, `MATE` and `BITE` fire above 0, the calls above their own thresholds
+     * (`js/sim/calls.js`), `THRUST` and `TURN` are continuous, `SPLIT` reads 0 (the split rule reads energy and age, not
+     * the brain), and the memory outputs are written back as hidden state.
+     */
+    outputs: Object.freeze(
+        /** @type {readonly IoOutput[]} */ (
+            [
+                ['thrust', true, null],
+                ['turn', true, null],
+                ['sprint', true, null],
+                ['mate', true, null],
+                ['bite', true, null],
+                ['alarm', true, 'alarmThreshold'],
+                ['smoke', true, 'smokeThreshold'],
+                ['hunt', true, 'huntCallThreshold'],
+                ['split', false, null],
+                ['memory_a', true, null],
+                ['memory_b', true, null],
+            ].map(([name, gene, threshold]) => Object.freeze({ name, gene, threshold }))
+        ),
+    ),
 });
+
+/** Outputs per brain: thrust, turn, sprint, mate, bite, alarm, smoke, hunt call, split and two memory outputs. */
+export const OUTPUT_COUNT = BRAIN_IO.outputs.length;
+
+/**
+ * Index of each output in an agent's output row, by upper-case name (`THRUST`, `SPLIT`, `MEMORY_A`), from the
+ * schema's `outputs`.
+ */
+export const OUTPUT_INDEX = Object.freeze(
+    Object.fromEntries(BRAIN_IO.outputs.map((output, index) => [output.name.toUpperCase(), index])),
+);
 
 /**
  * The outputs that have genes (weights in `wOut`, a bias in `bOut`, a column in `wSkip`), in column order: every output
- * but `SPLIT`, which has none and reads 0 (the split rule reads energy and age, not the brain). Gene column `g` drives
- * output `GENE_OUTPUTS[g]`.
+ * but `SPLIT`, which has none and reads 0. Gene column `g` drives output `GENE_OUTPUTS[g]`.
  */
-export const GENE_OUTPUTS = Object.freeze(
-    Array.from({ length: OUTPUT_COUNT }, (_, o) => o).filter((o) => o !== OUTPUT_INDEX.SPLIT),
-);
+export const GENE_OUTPUTS = Object.freeze(BRAIN_IO.outputs.flatMap((output, index) => (output.gene ? [index] : [])));
 
 /** Outputs with genes: `OUTPUT_COUNT` less the `SPLIT` output (10). */
 export const GENE_OUTPUT_COUNT = GENE_OUTPUTS.length;
 
 /** Values per ray: proximity, food, can bite me, I can bite it, other, kin, wall, obstacle, smoke, megafauna. */
-export const RAY_CHANNELS = 10;
+export const RAY_CHANNELS = BRAIN_IO.channels.length;
+
+/**
+ * @param {string} name a channel name of `BRAIN_IO.channels`
+ * @returns {number} its raw channel index
+ */
+const channelOf = (name) => BRAIN_IO.channels.findIndex((channel) => channel.name === name);
+
+/** The raw ray channels, by the name `CH_` constants carry: each ray row's `[CH_x]` is that class's strength. */
+export const CH_FOOD = channelOf('food');
+export const CH_THREAT = channelOf('threat');
+export const CH_PREY = channelOf('prey');
+export const CH_OTHER = channelOf('other');
+export const CH_KIN = channelOf('kin');
+export const CH_WALL = channelOf('wall');
+export const CH_OBSTACLE = channelOf('obstacle');
+export const CH_SMOKE = channelOf('smoke');
 /** Raw ray channel for herd bodies, appended after the Phase 1 smoke channel. */
-export const CH_MEGAFAUNA = 9;
+export const CH_MEGAFAUNA = channelOf('megafauna');
 
 /** Pooled channels, in order: the ray channels 1 to 9 (food, threat, prey, other, kin, wall, obstacle, smoke, megafauna). */
-export const POOLED_CHANNELS = Object.freeze([
-    'food',
-    'threat',
-    'prey',
-    'other',
-    'kin',
-    'wall',
-    'obstacle',
-    'smoke',
-    'megafauna',
-]);
+export const POOLED_CHANNELS = Object.freeze(
+    BRAIN_IO.channels.filter((channel) => channel.pooled).map((channel) => channel.name),
+);
 
 /** Hits kept per pooled channel: the two strongest rays. */
 export const POOLED_HITS = 2;
@@ -70,34 +188,26 @@ export const HIT_STRIDE = 3;
 export const POOLED_STRIDE = POOLED_HITS * HIT_STRIDE;
 
 /** Hue values of the two pooled food hits. */
-export const FOOD_HUE_VALUES = 2;
+export const FOOD_HUE_VALUES = BRAIN_IO.sense[0].labels.length;
 
 /** Pooled values at the head of the brain's input row: 54 ray values and two food hues (56). */
-export const POOLED_VALUES = POOLED_CHANNELS.length * POOLED_STRIDE + FOOD_HUE_VALUES;
+export const POOLED_VALUES =
+    POOLED_CHANNELS.length * POOLED_STRIDE + BRAIN_IO.sense.reduce((sum, group) => sum + group.labels.length, 0);
 
 /**
  * Body inputs after the ray (or pooled) block: 17 of body and temperature, 13 scent and call inputs, `sex`, 2 memory,
- * 3 refuge (bearing sine and cosine, nearness).
+ * 3 refuge (bearing sine and cosine, nearness): one per entry of the schema's `body`.
  */
-export const EXTRA_INPUTS = 36;
+export const EXTRA_INPUTS = BRAIN_IO.body.length;
 
 /**
- * Body input offsets, from the start of the body block: the scent block (antennae, hunt scent, heard calls), the sex
- * input, the two memory read-backs (last tick's `MEMORY_A` and `MEMORY_B`) and the three refuge inputs.
+ * Body input offsets, from the start of the body block, of the entries that carry a `key`: the scent block (antennae,
+ * hunt scent, heard calls), the sex input, the two memory read-backs (last tick's `MEMORY_A` and `MEMORY_B`) and the
+ * three refuge inputs.
  */
-export const BODY_INPUT = Object.freeze({
-    BITTEN: 10,
-    SCENT: 17,
-    HUNT_SCENT: 21,
-    HEARD_ALARM: 24,
-    HEARD_HUNT: 27,
-    SEX: 30,
-    MEMORY_A: 31,
-    MEMORY_B: 32,
-    REFUGE_BEARING_SIN: 33,
-    REFUGE_BEARING_COS: 34,
-    REFUGE_NEAR: 35,
-});
+export const BODY_INPUT = Object.freeze(
+    Object.fromEntries(BRAIN_IO.body.flatMap((input, index) => (input.key === undefined ? [] : [[input.key, index]]))),
+);
 
 /** Trait genes after `bOut`: `sizeGene`, `visionGene`, `childShareGene`, `learnGene`. */
 export const TRAIT_GENES = 4;
