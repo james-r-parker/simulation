@@ -57,6 +57,7 @@
         ".github/workflows/check.yml",
         ".github/workflows/nightly.yml",
         ".release-please-manifest.json",
+        "AGENTS.md",
         "CHANGELOG.md",
         "README.md",
         "bench/baseline.json",

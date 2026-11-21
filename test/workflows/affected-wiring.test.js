@@ -79,8 +79,8 @@ if (fail === 'any' || (fail === 'selection' && !args.includes('--full'))) proces
         };
     }
 
-    it('runs no test for the docs and release scopes, whatever the event', () => {
-        for (const scope of ['docs', 'release']) {
+    it('runs no test for the docs, records and release scopes, whatever the event', () => {
+        for (const scope of ['docs', 'records', 'release']) {
             const result = runStep({ event: 'pull_request', scope });
             expect(result.calls, scope).toEqual([]);
             expect(result.output).toBe(`mode=${scope}\nhas_tests=false\ncoverage=none\nmatrix={"include":[]}\n`);
@@ -126,6 +126,29 @@ if (fail === 'any' || (fail === 'selection' && !args.includes('--full'))) proces
         );
         expect(lines).toMatchObject({ mode: 'full', has_tests: 'true', coverage: 'whole' });
         expect(JSON.parse(lines.matrix ?? '').include).toEqual(fullMatrix());
+    });
+});
+
+describe('check.yml records scope', () => {
+    const steps = job('static').split('\n      - ');
+
+    it('runs the docs gate and then the two ledger checks, and no other gate', () => {
+        const docs = steps.find((s) => s.includes('scripts/check.sh --ci --docs')) ?? '';
+        expect(docs).toContain("scope == 'docs' || needs.scope.outputs.scope == 'records'");
+        const ledger = steps.find((s) => s.startsWith('name: Ledger checks')) ?? '';
+        expect(ledger).toContain("scope == 'records'");
+        expect(ledger).toContain('node scripts/check-experiments.mjs');
+        expect(ledger).toContain('node scripts/check-metric-names.mjs');
+        for (const name of ['Local gate\n', 'Open affected-test misses']) {
+            const step = steps.find((s) => s.startsWith(`name: ${name}`)) ?? '';
+            expect(step, name).toContain("scope != 'records'");
+        }
+    });
+
+    it('leaves the test, coverage and related-ratchet jobs to the selection, which reaches none', () => {
+        expect(job('test')).toContain("has_tests == 'true'");
+        expect(job('coverage')).toContain("coverage == 'whole'");
+        expect(job('ratchet-related')).toContain("coverage == 'related'");
     });
 });
 
