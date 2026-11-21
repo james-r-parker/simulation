@@ -2,10 +2,12 @@
 
 import { describe, expect, it } from 'vitest';
 import { CH_THREAT, OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
+import { ENERGY_SOURCE, addEnergy } from '../../js/sim/energy.js';
 import { EFFECT, effectFactor } from '../../js/sim/effects.js';
 import { HEARD_FROM_STRIDE } from '../../js/sim/agent-arrays.js';
 import { FORAGER, PREDATOR } from './helpers/bite-stage.js';
 import { hold, pack, stacks, tick } from './helpers/pack-stage.js';
+import { addAgent } from './helpers/sense-world.js';
 
 describe('rallied', () => {
     it('gives a kin hunter one stack on the tick it first hears a hunt call, not one for each tick the call lasts', () => {
@@ -34,6 +36,20 @@ describe('rallied', () => {
         expect(seen[10]).toBe(2);
         expect(seen[20]).toBe(3);
         expect(seen[49]).toBe(3);
+    });
+
+    it('gives a hearer in range of two live calls exactly one stack from each, not one a tick', () => {
+        const w = pack({ huntCallCost: 0 });
+        const second = addAgent(w, 650, 500, 20);
+        w.spec[second] = PREDATOR;
+        addEnergy(w, second, 100, ENERGY_SOURCE.INITIAL);
+        w.parentB[1] = w.genomeId[second];
+        hold(w, 0, OUTPUT_INDEX.HUNT);
+        hold(w, second, OUTPUT_INDEX.HUNT);
+        for (let t = 0; t < 6; t++) {
+            tick(w);
+            expect(stacks(w, 1, 'rallied'), `tick ${t}`).toBe(2);
+        }
     });
 
     it('gives nothing for its own call, to a non-kin, to a non-hunter, or below hearThreshold', () => {

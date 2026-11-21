@@ -1,7 +1,7 @@
 // The effects a heard call raises (docs/designs/status-effects.md, "The social effects"): `hearOne` (js/sim/calls.js) calls
 // `noteHeard` for each hearer that a call reaches. A hunt call a kin hunter hears at or above `hearThreshold` rallies it; an
 // alarm that a caller with a threat on its rays gave alerts a non-hunter. A hearer gains a stack once per call, on the tick
-// it first hears it: `world.heardFrom` keeps, for each half, the last call that gave the hearer a stack (the caller's slot
+// the call starts: `world.heardFrom` keeps, for each half, the last call that gave the hearer a stack (the caller's slot
 // and genome id, and the tick the call began), and a call it already holds is not counted again. The same row tells
 // `noteAnswered` (js/sim/effect-social.js) which caller rallied a hunter. Allocates nothing, no RNG.
 
@@ -17,26 +17,25 @@ export const ALARM_FROM = 0;
 export const HUNT_FROM = 3;
 
 /**
- * Notes a call as the last one that gave the hearer a stack, unless the hearer already holds it.
+ * Notes a call as the last one that gave the hearer a stack, on the tick the call starts only: a call is counted once, not
+ * once a tick, however many live calls the hearer is in range of (`heardFrom` keeps just the last call, so comparing it
+ * against a call that is still running would see a new one every tick). A hearer that comes into range later hears the call
+ * but gains no stack from it.
  * @param {any} world the world
  * @param {number} hearer the hearing slot
  * @param {number} caller the calling slot
  * @param {number} half `ALARM_FROM` or `HUNT_FROM`: the half of the row the call is heard in
- * @returns {boolean} whether the call is new to the hearer
+ * @returns {boolean} whether the call starts this tick
  */
 function noteCall(world, hearer, caller, half) {
     const timers = half === HUNT_FROM ? world.huntTimer : world.alarmTimer;
-    // The caller's timer counts down from `callTicks` as the tick counts up, so this is the tick its call began.
-    const start = world.tick - world.config.callTicks + timers[caller];
-    const row = hearer * HEARD_FROM_STRIDE + half;
-    const from = world.heardFrom;
-    const genomeId = world.genomeId[caller];
-    if (from[row + 1] === genomeId && from[row + 2] === start) {
+    if (timers[caller] !== world.config.callTicks) {
         return false;
     }
-    from[row] = caller;
-    from[row + 1] = genomeId;
-    from[row + 2] = start;
+    const row = hearer * HEARD_FROM_STRIDE + half;
+    world.heardFrom[row] = caller;
+    world.heardFrom[row + 1] = world.genomeId[caller];
+    world.heardFrom[row + 2] = world.tick;
     world.callHeard[caller * 2 + (half === HUNT_FROM ? 1 : 0)] = 1;
     return true;
 }
