@@ -19,7 +19,7 @@ import { childShareOf } from './traits.js';
 export function isReadyToMate(world, slot) {
     // The cheap tests first: most bodies fail on energy and never reach the gate.
     return (
-        world.energy[slot] > world.config.mateMinEnergy &&
+        world.energy[slot] > world.lanes.mateMinEnergy[slot] &&
         gateOpen(world, slot, GATE.MATE) &&
         territoryAllows(world, slot)
     );
@@ -52,7 +52,7 @@ export function motherOf(world, a, b) {
 export function canBear(world, mother) {
     return (
         !birthBudgetSpent(world, mother) &&
-        world.energy[mother] > world.config.childEnergyMin / childShareOf(world, mother)
+        world.energy[mother] > world.lanes.childEnergyMin[mother] / childShareOf(world, mother)
     );
 }
 
@@ -71,14 +71,15 @@ export function canMatePair(world, a, b) {
     if (world.sex[a] === world.sex[b]) {
         return false;
     }
-    if (!canBear(world, motherOf(world, a, b))) {
+    const mother = motherOf(world, a, b);
+    if (!canBear(world, mother)) {
         return false;
     }
     const ratio = world.size[a] / world.size[b];
-    const limit = world.config.mateSizeRatio;
+    const limit = world.lanes.mateSizeRatio[mother];
     if (ratio > limit || ratio < 1 / limit) {
         return false;
     }
-    const { mateDistanceMax } = world.config;
+    const mateDistanceMax = world.lanes.mateDistanceMax[mother];
     return mateDistanceMax === Infinity || geneticDistance(world, a, b) < mateDistanceMax;
 }

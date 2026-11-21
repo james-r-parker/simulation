@@ -29,7 +29,7 @@ export const HUNT_FROM = 3;
  */
 function noteCall(world, hearer, caller, half) {
     const timers = half === HUNT_FROM ? world.huntTimer : world.alarmTimer;
-    if (timers[caller] !== world.config.callTicks) {
+    if (timers[caller] !== world.lanes.callTicks[caller]) {
         return false;
     }
     const row = hearer * HEARD_FROM_STRIDE + half;

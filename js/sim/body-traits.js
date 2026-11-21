@@ -75,6 +75,9 @@ function entry(index, name, effects, describe) {
  */
 const withKind = (kind, trait) => Object.freeze({ ...trait, kind });
 
+/** The traits role-budget.md reads (body-genes.md, "The calculator reads the menu"). */
+const BUDGET_TRAITS = new Set(['vision', 'speed', 'sprintStore', 'fat', 'size', 'burn', 'heatBand']);
+
 /**
  * @param {Array<[string, string, 1 | -1]>} costs each cost lane, its exponent key and its sign
  * @param {Readonly<Trait>} trait an entry
@@ -86,8 +89,8 @@ const withCosts = (costs, trait) =>
         costs: Object.freeze(costs.map(([lane, exponentKey, sign]) => Object.freeze({ lane, exponentKey, sign }))),
     });
 
-/** @type {readonly Readonly<Trait>[]} the named traits, in gene order */
-export const TRAITS = Object.freeze([
+/** @type {readonly Readonly<Trait>[]} the entries, in gene order, before `budget` is marked */
+const ENTRIES = Object.freeze([
     withCosts([['maxTurn', 'sizeTurn', -1]], entry(0, 'size', [['baseSize', 1]], 'body size')),
     entry(1, 'vision', [['visionRange', 1]], 'ray length'),
     entry(2, 'childShare', [['childEnergyShare', 1]], 'the share of energy a mother gives a child'),
@@ -198,6 +201,11 @@ export const TRAITS = Object.freeze([
     entry(17, 'nerve', [['nerve', 1]], 'the strength of the adrenaline effects'),
 ]);
 
+/** @type {readonly Readonly<Trait>[]} the named traits, in gene order */
+export const TRAITS = Object.freeze(
+    ENTRIES.map((trait) => (BUDGET_TRAITS.has(trait.name) ? Object.freeze({ ...trait, budget: true }) : trait)),
+);
+
 /**
  * @param {Readonly<Trait>} trait a trait
  * @returns {number} the largest span its menu may hold
@@ -275,7 +283,7 @@ function raise(ratio, power) {
  * @param {number} r the trait's ratio (its shift for an `offset` trait)
  * @returns {void}
  */
-function applyOne(world, slot, trait, r) {
+export function applyOne(world, slot, trait, r) {
     const { lanes, config } = world;
     for (let e = 0; e < trait.effects.length; e++) {
         const { lane, power } = trait.effects[e];

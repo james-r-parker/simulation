@@ -15,6 +15,7 @@ import { BORN_CAUSE } from '../../js/sim/events.js';
 import { terrainRockCount } from '../../js/sim/terrain.js';
 import { FOOD_KIND } from '../../js/sim/carcass.js';
 import { smallWorld } from './helpers/small-world.js';
+import { writeLaneBases } from '../../js/sim/lane-state.js';
 import { testPolicy } from './helpers/test-policy.js';
 import { setSpec } from './helpers/body.js';
 
@@ -272,6 +273,7 @@ describe('writeSnapshot agent extras', () => {
     function oneAgent(over = {}) {
         const world = smallWorld(over);
         world.alive[0] = 1;
+        writeLaneBases(world, 0); // a birth writes the lanes at the spec's bases
         const views = createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes));
         return { world, views };
     }

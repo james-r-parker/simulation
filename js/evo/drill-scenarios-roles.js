@@ -6,7 +6,12 @@
 // archive rank.
 
 import { DEFEND_CALLER } from './drill-role-defend.js';
+import { CLEAR_HERD } from './drill-role-herd.js';
+import { MAKE_A_LIVING } from './drill-role-living.js';
 import { WARN_HERD } from './drill-role-warn.js';
 
-/** The role drills built so far: `defend-caller` and `warn-herd`. `clear-herd` and `make-a-living` follow with their scenes. */
-export const ROLE_DRILLS = Object.freeze([DEFEND_CALLER, WARN_HERD]);
+/**
+ * The four role drills: `defend-caller`, `warn-herd`, `clear-herd` (the forager's seat; `CLEAR_HERD_BY_SPEC` of
+ * `drill-role-herd.js` has one for each of the four specs that do not hunt) and `make-a-living`.
+ */
+export const ROLE_DRILLS = Object.freeze([DEFEND_CALLER, WARN_HERD, CLEAR_HERD, MAKE_A_LIVING]);

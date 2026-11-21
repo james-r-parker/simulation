@@ -2,12 +2,13 @@
 // ticks to the cap, turn rate and radius, speed on a held turn, energy per 100 ticks, the courser store, views, reliableView,
 // hearing. The other rows are tested where they live: the bites, the kick and the straight-chase table (contact ticks, the
 // largest gap closed, the rationed contacts) in role-budget-timeline.test.js and role-budget-body.test.js; the herd rows
-// (ring radius, ticks to clear, one trample) have no test yet, they belong to the herd phase. The anchors were computed from
+// (ring radius, half-width, ticks to clear, one trample) are asserted here from role-budget-herd.js. The anchors were computed from
 // the code on 2026-11-21 (evals/decisions/role-budget/anchors.md); a row that stops reproducing means the code, or the
 // formula, moved.
 
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { clearTicks, herdNumbers, trampleLoss } from '../../js/evo/role-budget-herd.js';
 import { arenaConfig } from '../../js/evo/chase-arena.js';
 import {
     burstTicks,
@@ -154,5 +155,31 @@ describe('anchors: the senses', () => {
 
     it('a body that can see from behind sees the hunter at its rear reach plus the hunter size, 345 for a forager', () => {
         expect(viewReach(p('forager'), Math.PI) + p('predator').size).toBe(345);
+    });
+});
+
+describe('the herd anchors', () => {
+    const herd = herdNumbers(config);
+    const body = (/** @type {string} */ s) => p(s);
+
+    it('the ring is 224.09 px and the half-width with a body 333.09 for a prey and 349.09 for a predator', () => {
+        expect(herd.ring).toBeCloseTo(224.09, 2);
+        expect(herd.ring + herd.radius + body('forager').size).toBeCloseTo(333.09, 2);
+        expect(herd.ring + herd.radius + body('predator').size).toBeCloseTo(349.09, 2);
+    });
+
+    it('the ticks to clear are 53 at cruise and 39 sprinting for a prey, 55 and 36 for a predator', () => {
+        const half = (/** @type {string} */ s) => herd.ring + herd.radius + body(s).size;
+        expect(clearTicks(body('forager'), { distance: half('forager'), sprint: false })).toBe(53);
+        expect(clearTicks(body('forager'), { distance: half('forager'), sprint: true })).toBe(39);
+        expect(clearTicks(body('predator'), { distance: half('predator'), sprint: false })).toBe(55);
+        expect(clearTicks(body('predator'), { distance: half('predator'), sprint: true })).toBe(36);
+    });
+
+    it('one trample at the run and walk speed is 306.3 and 16.3 for a prey, 475.3 and 25.3 for a predator', () => {
+        expect(trampleLoss(herd, body('forager'), 6.5)).toBeCloseTo(306.3, 1);
+        expect(trampleLoss(herd, body('forager'), 1.5)).toBeCloseTo(16.3, 1);
+        expect(trampleLoss(herd, body('predator'), 6.5)).toBeCloseTo(475.3, 1);
+        expect(trampleLoss(herd, body('predator'), 1.5)).toBeCloseTo(25.3, 1);
     });
 });

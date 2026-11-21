@@ -48,7 +48,7 @@ export function noteBiteEffects(world, biter, victim, fatal) {
  * @returns {void}
  */
 function settleCaller(world, caller) {
-    const { callTicks } = world.config;
+    const callTicks = world.lanes.callTicks[caller];
     if (world.alarmTimer[caller] === callTicks) {
         if (world.alarmSeen[caller] === 0 || world.callHeard[caller * 2] === 0) {
             raiseEffect(SYSTEM, world, caller, { effect: EFFECT.HOARSE, source: caller });

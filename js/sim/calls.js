@@ -35,8 +35,8 @@ const HUNT_HEARD = 3;
  * @returns {number} radius in world units
  */
 function callerRadius(world, caller) {
-    const { callRadius, scoutCallRadiusMultiplier } = world.config;
-    return world.spec[caller] === SPEC.SCOUT ? callRadius * scoutCallRadiusMultiplier : callRadius;
+    const callRadius = world.lanes.callRadius[caller];
+    return world.spec[caller] === SPEC.SCOUT ? callRadius * world.config.scoutCallRadiusMultiplier : callRadius;
 }
 
 /**
@@ -107,22 +107,24 @@ function threatInView(world, slot) {
  * @returns {void}
  */
 function alarm(world, slot) {
-    const { callTicks, alarmThreshold, scoutAlarmCostMultiplier } = world.config;
-    const wanted = outputAbove(world, slot, OUTPUT_INDEX.ALARM, alarmThreshold) && gateOpen(world, slot, GATE.ALARM);
+    const { alarmThreshold, callTicks } = world.lanes;
+    const wanted =
+        outputAbove(world, slot, OUTPUT_INDEX.ALARM, alarmThreshold[slot]) && gateOpen(world, slot, GATE.ALARM);
     if (!wanted || specParams(world.config, world.spec[slot]).canHunt) {
         return;
     }
     const cost =
-        liveOf(world, slot, ALARM_COST_LANE) * (world.spec[slot] === SPEC.SCOUT ? scoutAlarmCostMultiplier : 1);
+        liveOf(world, slot, ALARM_COST_LANE) *
+        (world.spec[slot] === SPEC.SCOUT ? world.config.scoutAlarmCostMultiplier : 1);
     if (world.energy[slot] <= cost) {
         return;
     }
     removeEnergy(world, slot, cost, LOSS_CAUSE.COST);
-    world.alarmTimer[slot] = callTicks;
+    world.alarmTimer[slot] = callTicks[slot];
     world.callScratch[CALLS_FIRED] += 1;
     const threat = threatInView(world, slot);
     world.alarmSeen[slot] = threat ? 1 : 0;
-    depositPheromone(world, world.danger, world.x[slot], world.y[slot]);
+    depositPheromone(world, world.danger, slot);
     pushCall(world, EVENT_TYPE.ALARM_CALLED, slot);
 }
 
@@ -133,8 +135,9 @@ function alarm(world, slot) {
  * @returns {void}
  */
 function huntCall(world, slot) {
-    const { callTicks, huntCallThreshold } = world.config;
-    const wanted = outputAbove(world, slot, OUTPUT_INDEX.HUNT, huntCallThreshold) && gateOpen(world, slot, GATE.HUNT);
+    const { callTicks, huntCallThreshold } = world.lanes;
+    const wanted =
+        outputAbove(world, slot, OUTPUT_INDEX.HUNT, huntCallThreshold[slot]) && gateOpen(world, slot, GATE.HUNT);
     if (!wanted || !specParams(world.config, world.spec[slot]).canHunt) {
         return;
     }
@@ -143,9 +146,9 @@ function huntCall(world, slot) {
         return;
     }
     removeEnergy(world, slot, cost, LOSS_CAUSE.COST);
-    world.huntTimer[slot] = callTicks;
+    world.huntTimer[slot] = callTicks[slot];
     world.callScratch[CALLS_FIRED] += 1;
-    depositPheromone(world, world.hunt, world.x[slot], world.y[slot]);
+    depositPheromone(world, world.hunt, slot);
     pushCall(world, EVENT_TYPE.PACK_CALLED, slot);
 }
 
@@ -157,19 +160,21 @@ function huntCall(world, slot) {
  * @returns {void}
  */
 function smoke(world, slot) {
-    const { smokeCost, smokeCooldown, smokeThreshold, maxClouds } = world.config;
-    const wanted = outputAbove(world, slot, OUTPUT_INDEX.SMOKE, smokeThreshold) && gateOpen(world, slot, GATE.SMOKE);
-    if (!wanted || world.energy[slot] <= smokeCost) {
+    const { smokeCost, smokeCooldown, smokeThreshold } = world.lanes;
+    const { maxClouds } = world.config;
+    const wanted =
+        outputAbove(world, slot, OUTPUT_INDEX.SMOKE, smokeThreshold[slot]) && gateOpen(world, slot, GATE.SMOKE);
+    if (!wanted || world.energy[slot] <= smokeCost[slot]) {
         return;
     }
-    world.smokeTimer[slot] = smokeCooldown;
+    world.smokeTimer[slot] = smokeCooldown[slot];
     if (world.cloudCount >= maxClouds) {
         const o = pushEvent(world.events, EVENT_TYPE.SMOKE_REFUSED, world.tick);
         world.events.data[o + EVENT.SMOKE_REFUSED.SLOT] = slot;
         world.events.data[o + EVENT.SMOKE_REFUSED.GENOME_ID] = world.genomeId[slot];
         return;
     }
-    removeEnergy(world, slot, smokeCost, LOSS_CAUSE.COST);
+    removeEnergy(world, slot, smokeCost[slot], LOSS_CAUSE.COST);
     const cloud = releaseSmoke(world, slot);
     world.events.data[pushCall(world, EVENT_TYPE.SMOKE_RELEASED, slot) + EVENT.SMOKE_RELEASED.CLOUD] = cloud;
 }
@@ -280,13 +285,13 @@ function largestHearing(world) {
  */
 function hearPass(world, hash, timers, offset) {
     const { alive, callScratch } = world;
-    const { callTicks } = world.config;
+    const { callTicks } = world.lanes;
     callScratch[3] = largestHearing(world);
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1 && timers[slot] > 0) {
             callScratch[0] = slot;
             callScratch[1] = offset;
-            callScratch[2] = timers[slot] / callTicks;
+            callScratch[2] = timers[slot] / callTicks[slot];
             spread(world, hash);
         }
     }

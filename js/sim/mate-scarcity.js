@@ -22,7 +22,7 @@ export function isPossibleMate(world, slot, other) {
     return (
         world.spec[other] === world.spec[slot] &&
         world.sex[other] !== world.sex[slot] &&
-        world.ageTicks[other] >= world.config.maturityTicks
+        world.ageTicks[other] >= world.lanes.maturityTicks[other]
     );
 }
 
@@ -36,7 +36,7 @@ export function isPossibleMate(world, slot, other) {
 function inReach(world, slot, other, at) {
     const dx = world.rayLocal[at - 3];
     const dy = world.rayLocal[at - 2];
-    return Math.sqrt(dx * dx + dy * dy) < world.size[slot] + world.size[other] + world.config.mateRange;
+    return Math.sqrt(dx * dx + dy * dy) < world.size[slot] + world.size[other] + world.lanes.mateRange[slot];
 }
 
 /**
@@ -78,5 +78,5 @@ export function noteMateScarcityBirth(world, child) {
  * @returns {boolean} true when the agent has seen no possible mate for `splitMateScarceTicks` (always at 0)
  */
 export function mateScarce(world, slot) {
-    return world.tick - world.mateSeenAt[slot] >= world.config.splitMateScarceTicks;
+    return world.tick - world.mateSeenAt[slot] >= world.lanes.splitMateScarceTicks[slot];
 }

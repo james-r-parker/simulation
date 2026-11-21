@@ -110,7 +110,7 @@ function stage(config, { reaction, threshold, side, absent = false }) {
  * @param {{n: number, shove: boolean}} at the tick (from 1) and whether the shove is on
  * @returns {void}
  */
-function noteMeeting(ticks, world, { n, shove }) {
+export function noteMeeting(ticks, world, { n, shove }) {
     if (!touching(world, 2, 0)) {
         return;
     }

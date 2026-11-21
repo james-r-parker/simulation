@@ -216,10 +216,10 @@ function checkTimer(world, slot, value, limit) {
  * @returns {void}
  */
 function checkSlotCalls(world, slot) {
-    const { callTicks, smokeCooldown } = world.config;
-    checkTimer(world, slot, world.alarmTimer[slot], callTicks);
-    checkTimer(world, slot, world.huntTimer[slot], callTicks);
-    checkTimer(world, slot, world.smokeTimer[slot], smokeCooldown);
+    const { callTicks, smokeCooldown } = world.lanes;
+    checkTimer(world, slot, world.alarmTimer[slot], callTicks[slot]);
+    checkTimer(world, slot, world.huntTimer[slot], callTicks[slot]);
+    checkTimer(world, slot, world.smokeTimer[slot], smokeCooldown[slot]);
     for (let k = 0; k < 2; k++) {
         const loudness = world.heard[slot * HEARD_STRIDE + 3 * k];
         if (!(loudness >= 0 && loudness <= 1)) {

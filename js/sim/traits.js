@@ -96,16 +96,16 @@ export function leakRateOf(gene, leakMin) {
  * @returns {void}
  */
 export function applyGenes(world, slot) {
-    const { config, layout, weights } = world;
+    const { layout, weights } = world;
     writeLaneBases(world, slot);
     applyTraits(world, slot);
-    if (config.hebbianRate > 0) {
+    if (world.lanes.hebbianRate[slot] > 0) {
         resetFastOut(world, slot);
     }
     resetReward(world, slot);
     const H = layout.hidden;
     const leakGenes = slot * layout.weightCount + layout.leakStart;
     for (let j = 0; j < H; j++) {
-        world.leakRate[slot * H + j] = leakRateOf(weights[leakGenes + j], config.leakMin);
+        world.leakRate[slot * H + j] = leakRateOf(weights[leakGenes + j], world.config.leakMin);
     }
 }

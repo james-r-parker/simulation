@@ -44,12 +44,12 @@ export function proofSpecs() {
  * @returns {boolean} whether the agent has met the split gate on its own intake and meal share (no per-life cap)
  */
 function meetsProof(world, slot) {
-    const { splitDeliberateMin, splitDeliberateShareMin } = world.config;
+    const { splitDeliberateMin, splitDeliberateShareMin } = world.lanes;
     const total = world.mealsTotal[slot];
     return (
-        world.deliberateIntake[slot] >= splitDeliberateMin &&
+        world.deliberateIntake[slot] >= splitDeliberateMin[slot] &&
         total > 0 &&
-        world.mealsDeliberate[slot] >= splitDeliberateShareMin * total
+        world.mealsDeliberate[slot] >= splitDeliberateShareMin[slot] * total
     );
 }
 

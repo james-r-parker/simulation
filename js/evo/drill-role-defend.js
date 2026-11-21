@@ -5,8 +5,6 @@
 // row `defender:predator`; at the defaults that row is impossible (the shove is off and the smoke comes too late), so the
 // reference wins no trial and the drill has no passable bar there (`drill-role-validity.js` reports it).
 
-import { inJaws } from '../sim/bite-rule.js';
-import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
 import { nextFloat } from '../sim/rng.js';
 import { SPEC } from '../sim/specs.js';
 import { callerBrain, defenderBrain, pursuerBrain } from './chase-oracles.js';
@@ -15,7 +13,7 @@ import { heading } from './memory-probe-scenarios.js';
 import { gapAtAwareness } from './role-budget-frame.js';
 import { MODEL_DEFAULTS } from './role-budget-model.js';
 import { MAX_TICKS } from './role-budget-timeline.js';
-import { touching } from './role-scenes-defence.js';
+import { noteMeeting } from './role-scenes-defence.js';
 
 /** The row the drill's bar is read from. */
 export const DEFEND_ROW = 'defender:predator';
@@ -29,29 +27,11 @@ export const DEFEND_GOALS = Object.freeze([
 ]);
 
 /**
- * Notes, after a step, the first tick the defender touches the hunter and the first tick its shove can land (the shove is on,
- * the defender holds `BITE` and the hunter is in its jaws: `tryDefenderRepel`, read from the world as the sim reads it), and
- * the tick the caller died.
- * @param {{touch: number | null, shove: number | null, kill: number | null}} ticks the readings, updated in place
- * @param {Record<string, any>} world the world after the step
- * @param {{n: number, shoveOn: boolean}} at the step (from 1) and whether the shove is on
- * @returns {void}
- */
-export function noteDefence(ticks, world, { n, shoveOn }) {
-    if (touching(world, SLOT.SUBJECT, SLOT.HUNTER)) {
-        ticks.touch ??= n;
-        const holds = world.outputs[SLOT.SUBJECT * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0;
-        ticks.shove ??= shoveOn && holds && inJaws(world, SLOT.SUBJECT, SLOT.HUNTER) ? n : null;
-    }
-    ticks.kill = world.alive[SLOT.OTHER] === 0 ? n : null;
-}
-
-/**
- * @param {{touch: number | null, shove: number | null, kill: number | null}} ticks the readings
+ * @param {{interceptTick: number | null, repelTick: number | null, killTick: number | null}} ticks the readings
  * @returns {string | null} why the defender lost: it never reached the hunter, or its power landed too late (or never)
  */
 export function lostReason(ticks) {
-    return ticks.touch === null ? 'never-reached' : 'late';
+    return ticks.interceptTick === null ? 'never-reached' : 'late';
 }
 
 /**
@@ -66,9 +46,9 @@ export function defendPlan(config, { angle, side }) {
     const gap = gapAtAwareness(hunter, caller);
     const shoveOn = config.defenderRepelEnergy > 0 || config.defenderRepelImpulse > 0;
     const ticks = {
-        touch: /** @type {number | null} */ (null),
-        shove: /** @type {number | null} */ (null),
-        kill: /** @type {number | null} */ (null),
+        interceptTick: /** @type {number | null} */ (null),
+        repelTick: /** @type {number | null} */ (null),
+        killTick: /** @type {number | null} */ (null),
     };
     let n = 0;
     const agents = [
@@ -94,16 +74,19 @@ export function defendPlan(config, { angle, side }) {
             [ROLE.OTHER]: callerBrain({ caller: SLOT.OTHER, hunter: SLOT.HUNTER, seeGap: gap, reaction }),
         },
         trace: (won) => ({
-            touchTick: ticks.touch,
-            shoveTick: ticks.shove,
-            killTick: ticks.kill,
+            touchTick: ticks.interceptTick,
+            shoveTick: ticks.repelTick,
+            killTick: ticks.killTick,
             reason: won ? null : lostReason(ticks),
         }),
         done: (world) => {
-            noteDefence(ticks, world, { n: ++n, shoveOn });
-            return ticks.kill !== null || world.alive[SLOT.HUNTER] === 0;
+            n += 1;
+            noteMeeting(ticks, world, { n, shove: shoveOn });
+            ticks.killTick = world.alive[SLOT.OTHER] === 0 ? n : null;
+            return ticks.killTick !== null || world.alive[SLOT.HUNTER] === 0;
         },
-        won: (world) => world.alive[SLOT.OTHER] === 1 || (ticks.shove !== null && ticks.shove !== ticks.kill),
+        won: (world) =>
+            world.alive[SLOT.OTHER] === 1 || (ticks.repelTick !== null && ticks.repelTick !== ticks.killTick),
     };
 }
 

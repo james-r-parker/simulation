@@ -31,7 +31,6 @@ const ARENA = {
     initialAgents: 0,
     minAgents: 0,
     initialFood: 0,
-    foodSpawnRate: 0,
     fertileZoneMax: 0,
     checkInvariants: true,
 };

@@ -34,12 +34,12 @@ const HERD_CARCASS_BITE = 400;
  * @returns {number} the share of the food's value the agent's specialisation takes (0 for none)
  */
 function shareOf(world, slot, food) {
-    const table = world.foodKind[food] === FOOD_KIND.MEAT ? world.meatFoodBySpec : world.plantFoodBySpec;
-    const base = table[world.spec[slot]];
-    if (base > 0 || world.foodKind[food] === FOOD_KIND.MEAT) {
+    const meat = world.foodKind[food] === FOOD_KIND.MEAT;
+    const base = meat ? world.lanes.meatFoodValue[slot] : world.lanes.plantFoodValue[slot];
+    if (base > 0 || meat) {
         return base;
     }
-    const share = world.config.juvenilePlantShare;
+    const share = world.lanes.juvenilePlantShare[slot];
     if (share > 0 && levelOf(world, slot, EFFECT.JUVENILE) > 0) {
         return share;
     }
@@ -89,8 +89,8 @@ function consumeFood(world, slot, food) {
         noteReward(world, slot, REWARD_SOURCE.SCAVENGE, stored);
     }
     world.foodEatenBySpec[world.spec[slot]] += stored;
-    const { temperatureGainEat, foodEnergy } = world.config;
-    gainTemperature(world, slot, (temperatureGainEat * stored) / foodEnergy);
+    const { foodEnergy } = world.config;
+    gainTemperature(world, slot, (world.lanes.temperatureGainEat[slot] * stored) / foodEnergy);
     world.ateTimer[slot] = 0;
     if (!isMeat) {
         carryPollen(world, slot, food);
@@ -201,10 +201,9 @@ function bites(world, biter, victim) {
  * @returns {number} the energy the biter loses
  */
 function kickOf(world, biter, victim) {
-    const { config } = world;
     const sizeRatio = world.size[victim] / world.size[biter];
     const fullness = 0.5 + world.energy[victim] / world.lanes.maxEnergy[victim];
-    return config.biteCost * sizeRatio * fullness * specParams(config, world.spec[victim]).kickMultiplier;
+    return world.lanes.biteCost[biter] * sizeRatio * fullness * world.lanes.kickMultiplier[victim];
 }
 
 /**
@@ -226,7 +225,7 @@ function settleKill(world, biter, victim, fatal) {
  * @returns {void}
  */
 function applyBite(world, biter, victim) {
-    const { config, x, y } = world;
+    const { config } = world;
     // The victim's `biteTakenMultiplier` lane, with the `alarmSeen` effect's `alarmBiteShare` while its seen alarm runs.
     const taken = liveOf(world, victim, BITE_TAKEN_MULTIPLIER_LANE);
     const bite = liveOf(world, biter, BITE_ENERGY_LANE);
@@ -234,13 +233,15 @@ function applyBite(world, biter, victim) {
     const kick = kickOf(world, biter, victim);
     transferEnergy(world, victim, biter, bite * taken);
     world.biteEnergy[biter] += world.transferGained;
-    const fatal = wasAlive && world.energy[victim] <= killLine(config, world.lanes.maxEnergy[victim]);
+    const fatal =
+        wasAlive && world.energy[victim] <= killLine(world.lanes.killShare[victim], world.lanes.maxEnergy[victim]);
     noteFatalBiteObservation(world, biter, victim, fatal);
     const moved = world.transferGained + settleKill(world, biter, victim, fatal);
-    if (fatal && config.predatorRestTicks > 0 && specParams(config, world.spec[biter]).canHunt) {
-        world.restTimer[biter] = config.predatorRestTicks;
+    const restTicks = world.lanes.predatorRestTicks[biter];
+    if (fatal && restTicks > 0 && specParams(config, world.spec[biter]).canHunt) {
+        world.restTimer[biter] = restTicks;
     }
-    gainTemperature(world, biter, (config.temperatureGainEat * moved) / config.foodEnergy);
+    gainTemperature(world, biter, (world.lanes.temperatureGainEat[biter] * moved) / config.foodEnergy);
     const paid = removeEnergy(world, biter, kick, LOSS_CAUSE.COST);
     noteReward(world, biter, fatal ? REWARD_SOURCE.KILL : REWARD_SOURCE.BITE, moved);
     world.lastLoss[victim] = LOSS_CAUSE.BITE;
@@ -258,8 +259,8 @@ function applyBite(world, biter, victim) {
     noteBiteEffects(world, biter, victim, fatal);
     noteBiteLedger(world, biter, { gained: moved, fatal, kick: paid, victim });
     world.bittenTimer[victim] = 0;
-    depositPheromone(world, world.attack, x[biter], y[biter]);
-    depositPheromone(world, world.danger, x[victim], y[victim]);
+    depositPheromone(world, world.attack, biter);
+    depositPheromone(world, world.danger, victim);
 }
 
 /** @param {Record<string, any>} world sim world @param {number} biter biter @param {number} victim victim @param {boolean} fatal whether the bite killed */
@@ -292,7 +293,7 @@ function recoil(world, hunter, target) {
         return;
     }
     recoilStamp[hunter] = world.tick + 1;
-    const charged = removeEnergy(world, hunter, config.recoilEnergy, LOSS_CAUSE.COST);
+    const charged = removeEnergy(world, hunter, world.lanes.recoilEnergy[hunter], LOSS_CAUSE.COST);
     world.ledgerBiteCost[hunter] += charged;
     world.recoilEnergyLife[hunter] += charged;
 }
@@ -311,7 +312,7 @@ function lunge(world, biter, other) {
     }
     if (bites(world, biter, other)) {
         applyBite(world, biter, other);
-    } else if (!tryDefenderRepel(world, biter, other) && world.config.recoilEnergy > 0) {
+    } else if (!tryDefenderRepel(world, biter, other) && world.lanes.recoilEnergy[biter] > 0) {
         recoil(world, biter, other);
     }
 }
@@ -337,7 +338,7 @@ function noteJaws(world, hunter, body) {
  * @returns {void}
  */
 function chargeStrikeMisses(world) {
-    const { alive, outputs, jawsStamp, config } = world;
+    const { alive, outputs, jawsStamp, lanes } = world;
     const stamp = world.tick + 1;
     for (let slot = 0; slot < alive.length; slot++) {
         if (
@@ -346,7 +347,7 @@ function chargeStrikeMisses(world) {
             outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 &&
             jawsStamp[slot] !== stamp
         ) {
-            world.ledgerBiteCost[slot] += removeEnergy(world, slot, config.strikeMissCost, LOSS_CAUSE.COST);
+            world.ledgerBiteCost[slot] += removeEnergy(world, slot, lanes.strikeMissCost[slot], LOSS_CAUSE.COST);
         }
     }
 }
@@ -366,7 +367,7 @@ export function feed(world, hash) {
             eatAround(world, hash, slot);
         }
     }
-    const strikes = world.config.strikeMissCost > 0;
+    const strikes = world.strikesOn;
     for (let c = 0; c < contactCount; c++) {
         const a = contacts[2 * c];
         const b = contacts[2 * c + 1];

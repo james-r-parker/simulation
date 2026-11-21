@@ -111,7 +111,7 @@ function bestInCell(world, a, cell, reach) {
  */
 export function findMale(world, a) {
     const hash = world.hash;
-    const reach = world.config.mateRange;
+    const reach = world.lanes.mateRange[a];
     const range = cellRange(hash, world.x[a], world.y[a], world.size[a] + reach);
     let best = -1;
     for (let row = range[1]; row <= range[3]; row++) {

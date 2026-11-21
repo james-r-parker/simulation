@@ -87,9 +87,9 @@ describe('writeBodyInputs', () => {
 
     it('samples the danger and attack pheromones at the agent', () => {
         const { w, slot } = ready();
-        depositPheromone(w, w.danger, 500, 500);
-        depositPheromone(w, w.attack, 500, 500);
-        depositPheromone(w, w.attack, 500, 500);
+        depositPheromone(w, w.danger, slot);
+        depositPheromone(w, w.attack, slot);
+        depositPheromone(w, w.attack, slot);
         expect(body(w, slot).slice(7, 9)).toEqual([1, 1]);
         w.attack.fill(0);
         expect(body(w, slot)[8]).toBe(0);

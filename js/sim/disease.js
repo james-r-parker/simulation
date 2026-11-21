@@ -25,7 +25,7 @@ const HOST_COUNTS = new Int32Array(DISEASE_MAX_STRAINS);
  */
 function infect(world, slot, strain, distance) {
     world.infection[slot] = strain + 1;
-    world.infectionTicks[slot] = world.config.diseaseTicks;
+    world.infectionTicks[slot] = world.lanes.diseaseTicks[slot];
     world.strainInfected[strain] += 1;
     world.strainTotal[strain] += 1;
     const o = pushEvent(world.events, EVENT_TYPE.AGENT_INFECTED, world.tick);
@@ -189,10 +189,9 @@ function spreadInCell(world, a, col, row) {
  * @returns {void}
  */
 export function transmit(world) {
-    const { alive, infection, infectionTicks, hash } = world;
-    const fresh = world.config.diseaseTicks;
+    const { alive, infection, infectionTicks, hash, lanes } = world;
     for (let a = 0; a < alive.length; a++) {
-        if (alive[a] !== 1 || infection[a] === 0 || infectionTicks[a] === fresh) {
+        if (alive[a] !== 1 || infection[a] === 0 || infectionTicks[a] === lanes.diseaseTicks[a]) {
             continue;
         }
         const range = cellRange(hash, world.x[a], world.y[a], world.config.diseaseRadius);

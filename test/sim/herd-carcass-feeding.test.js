@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allocBody } from './helpers/body.js';
+import { allocBody, setSpec } from './helpers/body.js';
 import { ENERGY_SOURCE, addEnergy } from '../../js/sim/energy.js';
 import { FOOD_KIND, FOOD_ORIGIN } from '../../js/sim/carcass.js';
 import { OUTPUT_COUNT } from '../../js/sim/brain-layout.js';
@@ -13,7 +13,7 @@ describe('herd carcass feeding', () => {
         const agent = allocBody(world);
         world.x[agent] = 100;
         world.y[agent] = 100;
-        world.spec[agent] = 1;
+        setSpec(world, agent, 1);
         world.outputs.fill(0, agent * OUTPUT_COUNT, (agent + 1) * OUTPUT_COUNT);
         addEnergy(world, agent, 20, ENERGY_SOURCE.INITIAL);
         const food = 0;

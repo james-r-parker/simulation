@@ -38,8 +38,8 @@ function applyImpulse(world, defender, target, impulse) {
  * @returns {boolean} whether a repel fired
  */
 export function tryDefenderRepel(world, defender, target) {
-    const { config } = world;
-    if (config.defenderRepelEnergy <= 0 && config.defenderRepelImpulse <= 0) {
+    const { lanes } = world;
+    if (lanes.defenderRepelEnergy[defender] <= 0 && lanes.defenderRepelImpulse[defender] <= 0) {
         return false;
     }
     if (
@@ -50,13 +50,13 @@ export function tryDefenderRepel(world, defender, target) {
     ) {
         return false;
     }
-    if (config.defenderRepelCost > 0) {
-        removeEnergy(world, defender, config.defenderRepelCost, LOSS_CAUSE.COST);
+    if (lanes.defenderRepelCost[defender] > 0) {
+        removeEnergy(world, defender, lanes.defenderRepelCost[defender], LOSS_CAUSE.COST);
     }
-    if (config.defenderRepelEnergy > 0) {
-        removeEnergy(world, target, config.defenderRepelEnergy, LOSS_CAUSE.COST);
+    if (lanes.defenderRepelEnergy[defender] > 0) {
+        removeEnergy(world, target, lanes.defenderRepelEnergy[defender], LOSS_CAUSE.COST);
     }
-    applyImpulse(world, defender, target, config.defenderRepelImpulse);
+    applyImpulse(world, defender, target, lanes.defenderRepelImpulse[defender]);
     noteShoved(world, defender, target);
     return true;
 }

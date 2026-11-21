@@ -57,7 +57,9 @@ describe('validateConfig types and ranges', () => {
     });
 
     it('rejects NaN', () => {
-        expect(() => createConfig({ ...SIMPLE_WORLD, foodSpawnRate: NaN })).toThrow(/foodSpawnRate/);
+        expect(() => createConfig({ ...SIMPLE_WORLD, scoutAlarmCostMultiplier: NaN })).toThrow(
+            /scoutAlarmCostMultiplier/,
+        );
     });
 
     it('rejects a non-integer where an integer is expected', () => {

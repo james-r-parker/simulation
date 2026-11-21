@@ -38,7 +38,7 @@ function writeMemoryInputs(world, slot, o) {
  * @returns {void}
  */
 export function writeBodyInputs(world, slot, cH = detCos(world.angle[slot]), sH = detSin(world.angle[slot])) {
-    const { maxVelocity, maxTurn, baseSize, energyToSize, maxAgeTicks, rayCount } = world.config;
+    const { maxVelocity, maxTurn, baseSize, energyToSize, rayCount } = world.config;
     const o = slot * world.layout.rawInputCount + rayCount * RAY_CHANNELS;
     const out = world.inputs;
     const vx = world.vx[slot];
@@ -58,7 +58,7 @@ export function writeBodyInputs(world, slot, cH = detCos(world.angle[slot]), sH 
     out[o + 9] = 1 - world.ateTimer[slot] / TIMER_CAP;
     out[o + BODY_INPUT.BITTEN] = 1 - world.bittenTimer[slot] / TIMER_CAP;
     out[o + 11] = world.spec[slot] / SPEC_DIVISOR;
-    out[o + 12] = world.ageTicks[slot] / maxAgeTicks;
+    out[o + 12] = world.ageTicks[slot] / world.lanes.maxAgeTicks[slot];
     temperatureInputs(world, slot, out, o + 13);
     writeMemoryInputs(world, slot, o);
     writeRefugeInputs(world, slot, cH, sH);
