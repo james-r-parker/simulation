@@ -12,12 +12,13 @@ Lead docs in priority order - 1 is built next. Set in each doc's `**Priority:**`
     2. [Lean observer](lean-observer.md) - one task left (T6); the lean observer is what training episodes run on (training-loop.md T31)
     3. [Improvement loop](improvement-loop.md) - automates measuring and proposing once the headlines (Phase 5) say what a result is
 2. [Fair chase](fair-chase.md) - Hunting lead. The `hunt` rung passes on 0 of 16 offsets after twelve falsified trainer levers (E191 to E232), and the live world's hunters fail the same way; no trainer, recruitment or champion work can pass a chase the bodies do not allow
-    1. [Senses and motor](senses-and-motor.md) - the chase envelope runs (T10 to T12) and Phase 4 are read on the bodies the sprint store leaves
-    2. [Chase physics and terrain](chase-physics.md) - heading inertia and terrain, screened on those bodies; `speedTurnDrag` widens the predator's sprint circle
-    3. [Stillness](stillness.md) - the ambusher and the freezing prey; it changes the ray march every scene reads, so it follows the store and the turn
-    4. [Hunter practice](hunter-practice.md) - the bite detectors and the within-lifetime gain, read once a hunter can reach its prey
-    5. [Hunter learning](hunter-learning.md) - the refusal wires and the too-big body, after hunter-practice.md names what a hunter still gets wrong
-    6. [Scent trails and carrion scent](scent-trails.md) - trail and carrion scent; it builds on stillness.md and on body-priced carcasses
+    1. [Role budget](role-budget.md) - runs before fair-chase.md Phase 2: the rung screen needs a hunter that can reach its prey
+    2. [Senses and motor](senses-and-motor.md) - the chase envelope runs (T10 to T12) and Phase 4 are read on the bodies the sprint store leaves
+    3. [Chase physics and terrain](chase-physics.md) - heading inertia and terrain, screened on those bodies; `speedTurnDrag` widens the predator's sprint circle
+    4. [Stillness](stillness.md) - the ambusher and the freezing prey; it changes the ray march every scene reads, so it follows the store and the turn
+    5. [Hunter practice](hunter-practice.md) - the bite detectors and the within-lifetime gain, read once a hunter can reach its prey
+    6. [Hunter learning](hunter-learning.md) - the refusal wires and the too-big body, after hunter-practice.md names what a hunter still gets wrong
+    7. [Scent trails and carrion scent](scent-trails.md) - trail and carrion scent; it builds on stillness.md and on body-priced carcasses
 3. [Agent workflow](agent-workflow.md) - Workflow lead. Tooling that changes no sim rule; every session and every subagent pays the Phase 1 cost on its first token and every chunk ships through Phase 5, so both are built before the next training chunk
     1. [Quality gates and test tiers](quality-gates-and-test-tiers.md) - the rest of Phase 3; its merge-queue step is a user step this lead's `ship.sh` relies on
     2. [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - the last legacy and docs tasks (T7 to T10), after the context diet has moved the docs
@@ -44,7 +45,7 @@ Lead docs in priority order - 1 is built next. Set in each doc's `**Priority:**`
     7. [Realistic keepers](realistic-keepers.md) - the Phase 3 perf check and the Phase 4 freeze with its reward-gating screen
     8. [Alarm calls](alarm-calls.md) - the Call, or don't scene is absent; a call needs prey near kin and a hunter that can bite
     9. [Prey guilds](prey-guilds.md) - needs a standing prey population and working kill budgets
-    10. [Body genes](body-genes.md) - builds on prey-guilds.md, which shows which trade-offs hold niches
+    10. [Body genes](body-genes.md) - builds on prey-guilds.md, which shows which trade-offs hold niches, and on role-budget.md Phase 1, which reads the gene ranges
 
 ## Implemented (20)
 
@@ -104,18 +105,19 @@ Partly built - the note says which phases are real.
 - [World balance and biology](world-balance.md) - Phases 1 to 4, Phase 5 round 1 and Phase 6 (the mating-edge screen, E145, E146: roaming range deleted, T103) are built. The post-feature queue was not run as wr... _(validated edd4cd4, 2026-11-07)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the screenshots script, the RE... _(validated d6ca3e6, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (10)
+## Proposed (11)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
 - [Alarm calls](alarm-calls.md) - Phase 1 instruments built (T1 to T3, #343) and the T4 baseline run (`E143`, 16 floor-on seeds, in Baseline): no call on any seed, and the audience a call would... _(validated f5c7880, 2026-11-07)_ _(depends on [realistic-keepers.md](realistic-keepers.md), [refuge.md](refuge.md))_
 - [Ambient display](ambient-display.md) - the app as a screen left on all day: the director on air, a death that reads as a cell failing, follow as a story, a look that holds from across a room, every r... _(validated 58f3844, 2026-11-20)_ _(depends on [crisp-renderer.md](crisp-renderer.md), [continuous-follow.md](continuous-follow.md), [worker-and-renderer.md](worker-and-renderer.md), [pack-worker.md](pack-worker.md))_
-- [Body genes](body-genes.md) - replace the five discrete `specialisations` templates with continuous, heritable body genes (jaw-vs-gut diet, bulk-vs-agility, sprint-vs-endurance, sight) so bo... _(validated 04e3b34, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [prey-guilds.md](prey-guilds.md))_
+- [Body genes](body-genes.md) - five specialisations keep their roles, the body settings that should differ by spec move into the spec table, and each spec declares a gene menu of the body tra... _(validated f77acde, 2026-11-21)_ _(depends on [honest-budgets.md](honest-budgets.md), [prey-guilds.md](prey-guilds.md), [role-budget.md](role-budget.md))_
 - [Champion pool](champion-pool.md) - a per-season pool of trained champions in D1 seeds new worlds, and browsers capture, test and submit the lineages worth keeping; Phase 1 (pool export, PR, relea... _(validated 26ae0c5, 2026-11-18)_ _(depends on [training.md](training.md), [training-stages.md](training-stages.md), [deployment-and-community.md](deployment-and-community.md), [worker-and-renderer.md](worker-and-renderer.md), [brain-reflex-tests.md](brain-reflex-tests.md))_
 - [Habitat cover](habitat-cover.md) - Phase 1 T1 built (#343) and the T2 baseline run (`E141`, 32 floor-on seeds, in Baseline); T3 (the conformance review) is open. Phase 2 puts rings on the rims of... _(validated f5c7880, 2026-11-07)_ _(depends on [refuge.md](refuge.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Hunter practice](hunter-practice.md) - Phase 1 T1 is built (#343) and the T6 baseline (E144) reads that matched conversion falls less with age than the pooled read, and dose is near 0. T2 and T3 (`pr... _(validated edd4cd4, 2026-11-07)_ _(depends on [hunter-learning.md](hunter-learning.md), [realistic-keepers.md](realistic-keepers.md))_
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated d6ca3e6, 2026-11-07)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_
 - [Migration](migration.md) - migrants arrive at the map edges at a steady rate from a balanced mainland, whatever the headcount, and replace the floor refill that drops agents into an empti... _(validated e2455f2, 2026-11-11)_ _(depends on [eat-choice.md](eat-choice.md), [low-density-edge.md](low-density-edge.md))_
+- [Role budget](role-budget.md) - a closed-form budget for every specialisation's job (hunt, defend, warn, eat and breed), a margin per step and a matrix of red and green cells, each cross-check... _(validated f77acde, 2026-11-21)_
 - [Seasonal movement](seasonal-movement.md) - Phase 1 T1 and T2 built (#343) and the T5 baseline run (`E142`, 32 floor-on seeds, in Baseline). T3 (`scripts/season-map.mjs`) and T6 (the sim-notes diagnosis a... _(validated f5c7880, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md))_
 - [Throughput](throughput.md) - find and take the speed the kernel squeezes left: why 16 worlds on 16 cores run at 63% of one world's speed, loops over empty slots, set-up cost in small worlds... _(validated a1813ff, 2026-11-15)_ _(depends on [wasm-kernels.md](wasm-kernels.md))_
 

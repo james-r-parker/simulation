@@ -13,16 +13,17 @@ Scene: **A real chase** ("Bite arc, vision, and sprint are limited"). Selection 
 
 This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
 
-Own work first: Phase 1 (the store and the envelope), Phase 2 (the rung, after training-loop.md T24 and T25), Phase 3 (the world).
+Own work first: Phase 1 (the store and the envelope, built). Step 1 (role-budget.md Phase 1, the chase budget) runs next and gates Phase 2: the rung is screened only on an arm the budget shows leaves a catchable window, or on the arm it finds by tuning. Then Phase 2 (the rung, after training-loop.md T24 and T25) and Phase 3 (the world), then steps 2 onward.
 
 | Step | Doc                                        | Built when                                                                                                           |
 | ---- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| 1    | [senses-and-motor.md](senses-and-motor.md) | The chase envelope runs (T10 to T12) and Phase 4 are read on the bodies the sprint store leaves                      |
-| 2    | [chase-physics.md](chase-physics.md)       | Heading inertia and terrain, screened on those bodies; `speedTurnDrag` widens the predator's sprint circle           |
-| 3    | [stillness.md](stillness.md)               | The ambusher and the freezing prey; it changes the ray march every scene reads, so it follows the store and the turn |
-| 4    | [hunter-practice.md](hunter-practice.md)   | The bite detectors and the within-lifetime gain, read once a hunter can reach its prey                               |
-| 5    | [hunter-learning.md](hunter-learning.md)   | The refusal wires and the too-big body, after hunter-practice.md names what a hunter still gets wrong                |
-| 6    | [scent-trails.md](scent-trails.md)         | Trail and carrion scent; it builds on stillness.md and on body-priced carcasses                                      |
+| 1    | [role-budget.md](role-budget.md)           | Phase 1: the hunter's budget and the one-setting search read the arm, before Phase 2 of this doc screens it          |
+| 2    | [senses-and-motor.md](senses-and-motor.md) | The chase envelope runs (T10 to T12) and Phase 4 are read on the bodies the sprint store leaves                      |
+| 3    | [chase-physics.md](chase-physics.md)       | Heading inertia and terrain, screened on those bodies; `speedTurnDrag` widens the predator's sprint circle           |
+| 4    | [stillness.md](stillness.md)               | The ambusher and the freezing prey; it changes the ray march every scene reads, so it follows the store and the turn |
+| 5    | [hunter-practice.md](hunter-practice.md)   | The bite detectors and the within-lifetime gain, read once a hunter can reach its prey                               |
+| 6    | [hunter-learning.md](hunter-learning.md)   | The refusal wires and the too-big body, after hunter-practice.md names what a hunter still gets wrong                |
+| 7    | [scent-trails.md](scent-trails.md)         | Trail and carrion scent; it builds on stillness.md and on body-priced carcasses                                      |
 
 ## Measured on 2026-11-20
 
@@ -100,6 +101,8 @@ An arm passes when, against the breaking evader, the predator-on-forager fair ba
 Read on 2026-11-20 (`E253`, `E-FC-1`; `evals/decisions/E253/results.md`, 8 trials per cell): only `courser` passes. Its predator-on-forager band covers all five distances (catch share 0.50, 0.42, 0.67, 0.63, 0.25) and its full-view straight share is 0.25. `even` and `long` are identical to `control` against the breaking evader (0.17 at 0.2, 0 beyond: no band), because the jink, not the store, decides those chases; `stalker` catches only close (0.19 at 0.2). Only a hunter that outlasts its prey changes the breaking chase. **Phase 2 reads `courser` alone**; no second arm passes.
 
 ### Step 2 - The rung (hours, trained)
+
+This step runs only after [role-budget.md](role-budget.md) Phase 1 is built and `npm run role:budget -- --config evals/fair-chase/<arm>.json --rows predator>forager` shows the arm leaves a catchable window: `catchable` on the `broken` bound with a `catchMargin` above 0. An arm that does not is tuned first with `--search`, and the override file the search writes becomes the arm.
 
 This step needs the 32-offset screens and the per-stage pass test of [training-loop.md](training-loop.md) Phase 5 (T24, T25) built first. For each arm from step 1, with the arm's keys laid over every stage world of `evals/train-ladder.json`:
 
@@ -189,12 +192,12 @@ The keep rule gains a second metric guard before this read: `eval.hunter_kills_p
 
 ### Phase 2 - The rung
 
-| #   | Task                                                                                                                                                                                                   | Nature       | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
-| T7  | Write `evals/train-screens/fair-chase.grid.json` (the Phase 1 arms over every stage world, 32 offsets, `until` `hunt`) and run `train:feasible` on each arm ladder; record `E-FC-2`                    | [mechanical] | T6         |
-| T8  | Run the ladder screen detached (`E-FC-3`); record the `hunt` pass counts, the exact paired test and the yield table; name the arm for Phase 3 or the stop                                              | [judgement]  | T7         |
-| T8a | Only when T8 names no arm: delete `sprintStoreEnabled`, `js/sim/sprint-store.js`, its reads, keys, golden case, kernel lane and ledger entry; move this doc to `Reference` with the `E-FC-3` record id | [mechanical] | T8         |
-| T9  | Conformance review of Phase 2 (after T8a when T8 names no arm)                                                                                                                                         | [judgement]  | T8         |
+| #   | Task                                                                                                                                                                                                                                                                             | Nature       | Depends on |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T7  | After [role-budget.md](role-budget.md) Phase 1 is built and its matrix leaves the arm a catchable window: write `evals/train-screens/fair-chase.grid.json` (that arm over every stage world, 32 offsets, `until` `hunt`) and run `train:feasible` on its ladder; record `E-FC-2` | [mechanical] | T6         |
+| T8  | Run the ladder screen detached (`E-FC-3`); record the `hunt` pass counts, the exact paired test and the yield table; name the arm for Phase 3 or the stop                                                                                                                        | [judgement]  | T7         |
+| T8a | Only when T8 names no arm: delete `sprintStoreEnabled`, `js/sim/sprint-store.js`, its reads, keys, golden case, kernel lane and ledger entry; move this doc to `Reference` with the `E-FC-3` record id                                                                           | [mechanical] | T8         |
+| T9  | Conformance review of Phase 2 (after T8a when T8 names no arm)                                                                                                                                                                                                                   | [judgement]  | T8         |
 
 ### Phase 3 - The world, then adopt or delete
 
