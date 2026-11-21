@@ -2,9 +2,10 @@ name: check
 
 on:
   pull_request:
-  # season/next batches the rule changes of the next season (docs/designs/deployment-and-community.md)
+  # Every push to main: preview.yml waits on it to deploy /next/. A rules change lands on main too, as a breaking pull
+  # request that carries its library/seasons.json entry (docs/designs/deployment-and-community.md).
   push:
-    branches: [main, season/next]
+    branches: [main]
   # The merge queue: `check` and `browser-smoke` (the required checks on main) run on the queued merge commit, which is
   # main plus the PR, so a PR no longer has to be re-run each time main moves.
   merge_group:
@@ -143,8 +144,9 @@ jobs:
           restore-keys: |
             prettier-${{ hashFiles('package-lock.json', '.prettierrc.json', '.prettierignore', '.editorconfig') }}-
 
-      # A change to rulesHash is a breaking commit that targets season/next (scripts/lib/release-check.mjs). The title is
-      # passed through the environment, never interpolated into the script.
+      # A change to rulesHash needs a breaking title (`!`) and a new library/seasons.json entry in the same pull request,
+      # or the unreleased newest season's rulesHash moved in place (scripts/lib/release-check.mjs). The title is passed
+      # through the environment, never interpolated into the script.
       - name: Release check
         if: github.event_name == 'pull_request'
         env:
@@ -335,8 +337,7 @@ jobs:
           [[ " $RESULTS " != *" failure "* && " $RESULTS " != *" cancelled "* ]]
 
   # A red full run on main opens an issue (or adds to the open one) that names the merge commit, the failed jobs and test
-  # files, and the misses: failed tests the merged pull request did not reach (scripts/miss-ledger.mjs report). Only main:
-  # season/next batches rule changes and is read by the season, not by this issue.
+  # files, and the misses: failed tests the merged pull request did not reach (scripts/miss-ledger.mjs report).
   red-main:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && always() && needs.check.result == 'failure'
     needs: [check]

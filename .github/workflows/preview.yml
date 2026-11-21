@@ -1,8 +1,8 @@
 name: preview
 
-# docs/designs/deployment-and-community.md, "Preview workflow". After a green `check`, a push to main (or season/next)
-# goes to /next/ and a pull request from this repo goes to a preview. It never deploys production: production follows a
-# release (deploy.yml), and every deploy here goes to a non-production Pages branch (`next`, `main-latest`, `pr-<n>`)
+# docs/designs/deployment-and-community.md, "Preview workflow". After a green `check`, a push to main goes to /next/
+# and a pull request from this repo goes to a preview. It never deploys production: production follows a
+# release (deploy.yml), and every deploy here goes to a non-production Pages branch (`next` or `pr-<n>`)
 # with the `-preview` database.
 #
 # Four jobs, so no job runs repository code and holds a secret:
@@ -138,8 +138,8 @@ jobs:
         run: |
           # The default shell is `bash -e` without pipefail: without this, a failed wrangler piped into tee would pass.
           set -o pipefail
-          # plan only returns pr-<n>, next or main-latest; a production branch name is refused here as well.
-          if [[ ! "$BRANCH" =~ ^(pr-[0-9]+|next|main-latest)$ ]]; then
+          # plan only returns pr-<n> or next; a production branch name is refused here as well.
+          if [[ ! "$BRANCH" =~ ^(pr-[0-9]+|next)$ ]]; then
             echo "::error::refusing to deploy to branch '$BRANCH' from the preview workflow"
             exit 1
           fi
