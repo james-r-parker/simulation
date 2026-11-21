@@ -1,4 +1,4 @@
-role budget  config 472deb69343dae71  rules d5f14d01d84f566d
+role budget  config 11cdff5d46443280  rules 82fb63974d2cdd42
 model {"reactionTicks":2,"hearThreshold":0.1,"breakAngle":1.5707963267948966,"tightTicks":5,"preySprint":"rationed","hunterShare":0.1,"foodDensity":null,"naiveEffort":0.5,"catchShare":0.3,"defenderGap":150,"smokeGap":240,"reliableSight":false}
 
 row                hear  turn  run  intercept  smoke  status      binding
