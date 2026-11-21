@@ -2,7 +2,7 @@
 // the same for any list, so what holds for these holds for every entry of `EFFECTS`.
 
 import { describe, expect, it } from 'vitest';
-import { GATE, GATE_COUNT, compileRef, createEffects, numberOf } from '../../js/sim/effects.js';
+import { GATE, GATE_COUNT, LANE_ID, compileRef, createEffects, numberOf } from '../../js/sim/effects.js';
 import { applyEffectOn } from '../../js/sim/effect-appliers.js';
 import { freeAgent } from '../../js/sim/world.js';
 import { RALLY_I, HOARSE_I, SYSTEM, chill, fixtureWorld } from './helpers/effect-fixtures.js';
@@ -139,6 +139,7 @@ describe('createEffects', () => {
         expect(make({ scales: [{ lane: 'maxThrust' }] })).toThrow(/exactly one/);
         expect(make({ scales: [{ lane: 'maxThrust', perStack: 1, levels: [1] }] })).toThrow(/exactly one/);
         expect(make({ level: 'stacks' })).toThrow(/needs fades/);
+        expect(make({ scales: [{ lane: 'maxThrust', levels: [0.9, 0.5] }] })).toThrow(/level 0 is not 1/);
     });
 
     it('stores nothing for an empty list', () => {
@@ -160,6 +161,7 @@ describe('factorOf and effectFactor', () => {
         expect(SYSTEM.effectFactor(world, 0, 0, 'maxThrust')).toBe(0.5);
         expect(SYSTEM.effectFactor(world, 0, 1, 'maxThrust')).toBe(0.75);
         expect(SYSTEM.effectFactor(world, 0, 0, 'maxTurn')).toBe(1);
+        expect(SYSTEM.effectFactor(world, 0, 1, LANE_ID.maxThrust)).toBe(0.75);
         expect(SYSTEM.effectFactor(world, 0, 0, 'sprintCost')).toBe(1);
     });
 });

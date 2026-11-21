@@ -216,18 +216,7 @@ export class EffectSystem {
      */
     liveOf(world, slot, lane) {
         const id = typeof lane === 'number' ? lane : /** @type {Record<string, number>} */ (LANE_ID)[lane];
-        let value = world.laneArrays[id][slot];
-        const rules = this.rules[id];
-        if (rules !== undefined) {
-            for (let k = 0; k < rules.length; k++) {
-                const rule = rules[k];
-                const level = this.level(world, slot, rule);
-                if (level !== 0) {
-                    value *= this.factorAt(world, slot, rule, level);
-                }
-            }
-        }
-        return value;
+        return this.fold(world, slot, { id, start: world.laneArrays[id][slot] });
     }
 
     /**
@@ -239,7 +228,18 @@ export class EffectSystem {
      */
     factorOf(world, slot, lane) {
         const id = typeof lane === 'number' ? lane : /** @type {Record<string, number>} */ (LANE_ID)[lane];
-        let value = 1;
+        return this.fold(world, slot, { id, start: 1 });
+    }
+
+    /**
+     * @param {any} world the world
+     * @param {number} slot the agent slot
+     * @param {{id: number, start: number}} from the lane's index and the value the factors multiply: its base, or 1
+     * @returns {number} `start` times the factor of each rule on the lane in registry order; a rule at level 0
+     *   multiplies by exactly 1 and is skipped
+     */
+    fold(world, slot, { id, start }) {
+        let value = start;
         const rules = this.rules[id];
         if (rules !== undefined) {
             for (let k = 0; k < rules.length; k++) {
