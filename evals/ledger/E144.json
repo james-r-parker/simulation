@@ -1,0 +1,18 @@
+{
+  "id": "E144",
+  "date": "2026-11-07",
+  "branch": "eval/instrument-baselines",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "no-difference",
+  "hypothesis": "Matched baseline (hunter-practice T6): matched detectors remove most of the age-driven fall in conversion seen in E124.",
+  "prediction": "Matched conversion falls less with age than pooled.",
+  "targets": ["eval.hunter_conversion_matched", "eval.hunter_conversion_by_dose"],
+  "before": "hunter-practice.md Phase 1 premise (no comparison arm)",
+  "after": "matched-baseline.json: defaults, floor on, 200000 ticks, configHash ff8d890a5a70c14d, 16 seeds",
+  "verdicts": {
+    "eval.hunter_conversion_matched": "-",
+    "eval.hunter_conversion_by_dose": "-"
+  },
+  "note": "Single-arm baseline. Matched fall 0.039 vs pooled 0.053, smaller on 13/16 seeds, no paired interval; by_dose -0.0002. catch_rate 0.213, chase_catch_share 0.054. hunter_kills_per_life is a median and 0 on 15/16 seeds."
+}

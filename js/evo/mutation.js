@@ -33,6 +33,8 @@ export function mutateSigma(parentSigma, weightCount, rng) {
  * @typedef {object} MutateOptions
  * @property {number} [traitStart] the first index mutated with `TRAIT_SIGMA`; the default, the row length, uses
  *   `sigma` throughout (callers pass the layout's `traitStart`)
+ * @property {number} [leakStart] the end of the trait block, which is skipped (`mutateTraits` mutates it); the
+ *   default, `traitStart`, skips nothing
  * @property {number} [rate] the probability that a gene mutates (`resolveMutationRate`); 1, the default, mutates every
  *   gene
  */
@@ -49,8 +51,23 @@ function stepGene(row, i, size, rng) {
 }
 
 /**
+ * @param {number} i the gene
+ * @param {{traitStart: number, leakStart: number, rate: number}} bounds the trait block and the per-gene probability
+ * @param {import('../sim/rng.js').Rng} rng the mutation stream
+ * @returns {boolean} whether gene i is left alone: it is in the trait block, or (below rate 1, after one `nextFloat`)
+ *   the draw is at or above the rate
+ */
+function skipsGene(i, { traitStart, leakStart, rate }, rng) {
+    if (i >= traitStart && i < leakStart) {
+        return true;
+    }
+    return rate < 1 && nextFloat(rng) >= rate;
+}
+
+/**
  * Adds `sigma x N(0, 1)` to genes in place, then clamps to plus or minus `WEIGHT_CLAMP`. From `traitStart` to the end
- * of the row (the trait and leak genes) the step is `TRAIT_SIGMA` instead of `sigma`.
+ * of the row the step is `TRAIT_SIGMA` instead of `sigma`, and the genes from `traitStart` to `leakStart` (the trait
+ * block) are skipped: `mutateTraits` in `trait-inherit.js` steps them.
  * Draw order at rate 1 (the default): one Gaussian per gene, index 0 up. Below 1: per gene, one `nextFloat`, then one
  * Gaussian when it is below the rate, so about `rate x length` genes move.
  * @param {Float32Array} row the weight row (a `subarray` view is fine)
@@ -60,9 +77,9 @@ function stepGene(row, i, size, rng) {
  * @returns {void}
  */
 export function mutateWeights(row, sigma, rng, options = {}) {
-    const { traitStart = row.length, rate = 1 } = options;
+    const { traitStart = row.length, leakStart = traitStart, rate = 1 } = options;
     for (let i = 0; i < row.length; i++) {
-        if (rate < 1 && nextFloat(rng) >= rate) {
+        if (skipsGene(i, { traitStart, leakStart, rate }, rng)) {
             continue;
         }
         stepGene(row, i, i < traitStart ? sigma : TRAIT_SIGMA, rng);

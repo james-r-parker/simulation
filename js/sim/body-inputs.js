@@ -1,4 +1,4 @@
-// Writes an agent's body inputs 0 to 16 and 30 to 35 after its ray block; scent-inputs.js writes 17 to 29.
+// Writes an agent's body inputs 0 to 16 and 30 to 36 after its ray block; scent-inputs.js writes 17 to 29.
 
 import { BODY_INPUT, OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
@@ -14,7 +14,8 @@ const SPEC_DIVISOR = 4;
 
 /**
  * Writes body inputs 30 to 32: `sex` (0 female, 1 male) and last tick's `MEMORY_A` and
- * `MEMORY_B` outputs (the outputs row still holds them, as the brain runs after sensing).
+ * `MEMORY_B` outputs (the outputs row still holds them, as the brain runs after sensing), and `reserve` (36): the sprint
+ * store's level, 1 when the world has no store (`sprintStoreEnabled` off), as its sprint factor is.
  * @param {World} world the world
  * @param {number} slot the alive agent
  * @param {number} o the offset of the agent's body block in `world.inputs`
@@ -25,10 +26,11 @@ function writeMemoryInputs(world, slot, o) {
     out[o + BODY_INPUT.SEX] = world.sex[slot];
     out[o + BODY_INPUT.MEMORY_A] = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_A];
     out[o + BODY_INPUT.MEMORY_B] = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.MEMORY_B];
+    out[o + BODY_INPUT.RESERVE] = world.sprintStore === undefined ? 1 : world.sprintStore.level[slot];
 }
 
 /**
- * Writes body inputs 0 to 16 and 30 to 35 at `rayCount x RAY_CHANNELS` into the agent's inputs row.
+ * Writes body inputs 0 to 16 and 30 to 36 at `rayCount x RAY_CHANNELS` into the agent's inputs row.
  * @param {World} world the world
  * @param {number} slot the alive agent
  * @param {number} [cH] the cosine of the agent's heading, when the caller has it

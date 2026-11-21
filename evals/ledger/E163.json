@@ -1,0 +1,19 @@
+{
+  "id": "E163",
+  "kind": "compare",
+  "outcome": "adopted",
+  "plan": "eat-choice.md",
+  "hypothesis": "eat-choice Phase 4 (T19): with the graze hold (T18), a forager grazing a patch it reached deliberately scores its meals as deliberate, so eval.deliberate_food_share on the switched world is no longer worse than main.",
+  "prediction": "On seeds 65 to 128, 400000 ticks, the head reads eval.deliberate_food_share not worse than evals/decisions/E162/main.report.json (0.43), and the keep rule still reads no guard WORSE. Falsified when deliberate_food_share reads worse against main.",
+  "targets": ["eval.deliberate_food_share"],
+  "before": "evals/decisions/E162/main.report.json: origin/main 4faea422 defaults, seeds 65 to 128, 400000 ticks",
+  "after": "evals/decisions/E163/head.report.json: feat/graze-hold-detector (T18), seeds 65 to 128, 400000 ticks",
+  "date": "2026-11-12",
+  "branch": "feat/graze-hold-detector",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "reports": ["evals/decisions/E163/results.md", "evals/decisions/E163/head.report.json"],
+  "verdicts": {},
+  "effect": "better",
+  "note": "Prediction falsified: deliberate_food_share 0.43 (main) to 0.35, worse; against the unheld switch (E162 head) it reads better (0.31 to 0.35). The hold is a gain: keep rule alive 5 vs 18 and under80 7 vs 23 better than the unheld switch, population mean +34%, diversity +7%, toxic_avoidance +4%; lineages_alive -10% worse. Hold kept; G1b reopened (T26). See evals/decisions/E163/results.md."
+}

@@ -1,0 +1,19 @@
+{
+  "id": "E250",
+  "kind": "ladder",
+  "outcome": "adopted",
+  "plan": "training-stages.md",
+  "date": "2026-11-20",
+  "branch": "docs/e-ts-1n-held-out",
+  "hypothesis": "E-TS-1n (training-stages T69): on the held-out offsets 128 to 248 the scattered nursery passes nursery on more offsets than base, and train:compare of nursery-scatter against base is not worse.",
+  "prediction": "Written before the run (training-stages T69): nursery-scatter passes nursery on more of the 16 held-out offsets than base, and train:compare reads better or no verdict; falsified when it passes no more offsets than base or reads worse.",
+  "targets": [],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "base ladder on offsets 128 to 248: nursery 81%, passed last stage 5, cpu 20.1 h",
+  "after": "scripts/run-detached.sh E-TS-1n -- npm run train:screen -- --grid evals/train-screens/food-behind-holdout.grid.json --runs .sim/train-screens/food-behind-holdout",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Backfilled from commit 4b98eb7e (the result) and 3dc3a220 (the adoption); the record was cited as E250 in training-stages.md and had none. Prediction held: nursery-scatter passes nursery on 14 of 16 offsets against base 13 of 16 (88% against 81%), train:compare 6 up, 9 down, 1 tied, mean score difference -0.175 [-0.954, 0.788], sign test p 0.6072, no verdict. Downstream hunt-weak 56 to 31% and hunt-mid 31 to 25% were lower. Adopted into evals/stages/nursery.json (T70).",
+  "reports": ["evals/decisions/E-TS-1m/results.md"]
+}

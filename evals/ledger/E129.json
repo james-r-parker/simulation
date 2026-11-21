@@ -1,0 +1,20 @@
+{
+  "id": "E129",
+  "date": "2026-11-06",
+  "branch": "eval/boom-damp",
+  "hypothesis": "E128's margin-150 arm (splits stop 150 slots short of maxAgents instead of 50) lowers floor-off collapses on 16 seeds without harm floor on.",
+  "prediction": "Within noise of the defaults on both: E127 and E128 showed floor-off collapse counts barely move with levers, so the 8-seed 2 against 3 is most likely noise. Adopt only if seeds under 80 fall floor off and the keep rule holds floor on.",
+  "targets": ["eval.population_mean", "eval.predators_at_end", "eval.prey_types_at_end", "eval.spec_effective"],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "evals/results/e129-def-off.json, e129-def-on.json (defaults, 16 seeds)",
+  "after": "evals/results/e129-m150-off.json, e129-m150-on.json (splitCapMargin 150)",
+  "verdicts": {
+    "eval.population_mean": "-",
+    "eval.predators_at_end": "-",
+    "eval.prey_types_at_end": "-",
+    "eval.spec_effective": "-"
+  },
+  "effect": "worse",
+  "note": "Ran 2026-11-06 at 6f8c4c1, 16 seeds x 200000 ticks. Floor off: seeds under 80 7 -> 9, hunters alive 10/16 -> 9/16, population mean 228 -> 201, predators at end 27.2 -> 9.0, prey types 2.38 -> 1.81. Floor on: seeds under 80 2 -> 5, hunters alive 14/16 -> 11/16 (fails the keep rule), population 254 -> 222, predators at end 37.1 -> 10.3, prey types 3.50 -> 3.31, spec_effective 4.01 -> 3.66. Rejected. The 8-seed lead was noise, as predicted. Decision (balance autonomy): stop tuning for floor-off survival. Principles rule 1 lets the archive breed once the living have failed to fill the map; the floor acts only under minAgents 40 and gives 0.7% of births in the default world (E123), so the floor-on default world is within the principles and passes the keep rule. Three rounds (T64 reruns, E127, E128/E129) show floor-off worlds sit at a tipping point that ordinary levers only reshuffle; floor off stays a stress test read beside floor on, not a target."
+}

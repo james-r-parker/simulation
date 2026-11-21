@@ -1,5 +1,5 @@
-// What a tuning night writes (docs/designs/training-loop.md, Tuning lane): `summary.md` and the draft `evals/experiments.json`
-// entry. Pure: the night's records arrive as data.
+// What a tuning night writes (docs/designs/training-loop.md, Tuning lane): `summary.md` and the draft `evals/ledger/E<id>.json`
+// record. Pure: the night's records arrive as data.
 import { WORLD_METRICS } from './train-tune-world.mjs';
 
 /**
@@ -89,7 +89,7 @@ export function summaryText({ date, ladderHash, until, arms, world }) {
 
 /**
  * @param {Record<string, any>} night the night, as for `summaryText`
- * @returns {Record<string, any>} a draft `evals/experiments.json` entry: the id, prediction and note are for the adopting
+ * @returns {Record<string, any>} a draft `evals/ledger/E<id>.json` record: the id, prediction and note are for the adopting
  *   PR to write (the ledger's id pattern is `E<number>`)
  */
 export function draftExperiment({ date, arms, world }) {

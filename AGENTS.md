@@ -78,7 +78,7 @@ four columns (`#`, `Task`, `Nature`, `Depends on`), `T`-numbered ids and `[mecha
    runs the gate, pushes, opens the PR, turns on auto-merge and waits until it is merged or red (push and PR only when
    the user asks).
 5. **Measuring a change** - the `run-evolution-loop` skill: check the detector first, prediction first, at least 16 seeds
-   per arm, `eval:compare` verdicts, experiments recorded in `evals/experiments.json`; every outcome becomes tasks through
+   per arm, `eval:compare` verdicts, experiments recorded in `evals/ledger/`; every outcome becomes tasks through
    its "Outcome to task" record.
 6. **Something misbehaves** - the `debug-sim` skill: find the event in the logs, replay from seed and config,
    failing test, fix.

@@ -1,0 +1,15 @@
+{
+  "id": "E103",
+  "date": "2026-11-05",
+  "branch": "eval/e98-hunters-fed",
+  "hypothesis": "E102's store-specmut arm (predator maxEnergyMultiplier 5, specMutationRate 0.02: a bigger fat store bridges the gaps between kills, and more children take the hunter role) keeps hunters in the world on 16 seeds without costing viability.",
+  "prediction": "Against E95's food15-cap report (the post-#254 defaults, same 16 seeds): predator presence and prey types at end rise with intervals excluding 0; population mean, fed median lifespan and families no worse. Sent to confirmation although E102 counted 3 seeds under 80 against 1 for defaults, because its mean population was higher (140 vs 126) and 16 seeds settle a 3-vs-1 count.",
+  "targets": ["eval.predator_presence", "eval.prey_types_at_end", "eval.predators_at_end", "eval.population_mean"],
+  "beforePolicy": "map-elites-v6",
+  "afterPolicy": "map-elites-v6",
+  "before": "evals/experiments/E95-food15-cap.json",
+  "after": "evals/experiments/E103-store-specmut.json",
+  "verdicts": {},
+  "effect": "better",
+  "note": "Adopted (feat commit aa01255). eval:compare: predator_presence 0.239 to 0.392 (interval 0.079 to 0.232, better); prey_types_at_end 2.19 to 3.50 (0.69 to 1.75, better); predator_births 9.3 to 34.8 (better); mean fitness predator 683 to 1095 and scout 2332 to 2832 (better); terrain_death_share 0.194 to 0.167 (better); predators_at_end 0.44 to 0.81 (interval -0.75 to 1.25, no difference); population_mean 112.5 to 128.8 (+14%, interval -10.6 to 49.2); fed median lifespan, basin_family_effective, lineage_dominance no difference; herd seeded patches -26% and herd carcass meal share -12% (both intervals include 0). Worse: merit_mate_gain 0.090 to -0.016 (interval -0.227 to -0.013), kept as a watch item. Reasoning: the first lever of this round with a significant gain for hunters and prey diversity, with no viability loss; the mate-merit cost is small next to a world that keeps its hunters. Hunters still mostly starve (77% of deaths in two replays); next lever: scavenging."
+}

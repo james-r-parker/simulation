@@ -1,0 +1,30 @@
+{
+  "id": "E6",
+  "date": "2026-10-16",
+  "branch": "feat/reachable-births",
+  "hypothesis": "Mating within a range, child energy as a share, a lower split threshold and a richer, cheaper economy let map-elites-v1 breed.",
+  "prediction": "better on eval.births_per_1k and lower eval.floor_episodes than E3.",
+  "targets": ["eval.births_per_1k", "eval.floor_episodes"],
+  "beforePolicy": "map-elites-v1",
+  "afterPolicy": "map-elites-v1",
+  "before": "evals/experiments/E3-map-elites-v1.json",
+  "after": "evals/experiments/E6-map-elites-v1.json",
+  "verdicts": {
+    "eval.behaviour_coverage": "better",
+    "eval.births_per_1k": "better",
+    "eval.coverage": "better",
+    "eval.diversity": "better",
+    "eval.floor_episodes": "better",
+    "eval.food_energy_per_1k": "better",
+    "eval.lineage_turnover": "better",
+    "eval.lineages_alive": "worse",
+    "eval.median_lifespan": "better",
+    "eval.motion_coverage": "-",
+    "eval.population_mean": "-",
+    "eval.predation_per_1k": "-",
+    "eval.predator_share_cv": "-",
+    "eval.qd_score": "better"
+  },
+  "effect": "better",
+  "note": "8 seeds x 200000 ticks with --allow-config-diff for the eight changed keys, judged before the 16-seed and 5% rule (E3 ran under rules that no longer exist, so it cannot be rerun). births_per_1k 0.0005 -> 0.073, floor_episodes 5660 -> 2708, food 48 -> 141, median lifespan 2985 -> 3635, lineage_turnover 0 -> 6.4, qd_score 136 -> 673; every verdict is far above 5%. lineages_alive falls 100 -> 83 as families form. born_share 0.31. Population mean stays at the floor (100.8)."
+}

@@ -1,0 +1,39 @@
+{
+  "id": "E139",
+  "date": "2026-11-07",
+  "branch": "eval/ns-e84",
+  "hypothesis": "natural-selection T43 (E84): the brain values weightDecay (0 vs 0.005) and mutationRate (1, 0.1 vs invsqrt) were never measured; the defaults are near the best.",
+  "prediction": "wd0 inside the noise on hunters alive and seeds under 80; mr1 and mr0.1 lose (about 4500 and 450 genes mutate per birth against about 67), hunters alive below 12 of 16 and skill_trend down; no arm adopted.",
+  "targets": [
+    "eval.population_mean",
+    "eval.predators_at_end",
+    "eval.prey_types_at_end",
+    "eval.spec_effective",
+    "eval.hunter_kill_conversion_by_age.1k-2k",
+    "eval.prey_extinctions",
+    "eval.hunter_ticks_last_quarter",
+    "eval.predator_births",
+    "eval.catch_rate",
+    "share.hunters_alive",
+    "share.under_80"
+  ],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "defaults arm, seeds 1-32 (two 16-seed screens), floor on, 200000 ticks",
+  "after": "wd0, mr0.1 on seeds 1-32; mr1 on seeds 1-16 only (collapsed)",
+  "verdicts": {
+    "eval.population_mean": "no-difference",
+    "eval.predators_at_end": "no-difference",
+    "eval.prey_types_at_end": "no-difference",
+    "eval.spec_effective": "no-difference",
+    "eval.hunter_kill_conversion_by_age.1k-2k": "worse",
+    "eval.prey_extinctions": "no-difference",
+    "eval.hunter_ticks_last_quarter": "worse",
+    "eval.predator_births": "worse",
+    "eval.catch_rate": "worse",
+    "share.hunters_alive": "worse",
+    "share.under_80": "no-difference"
+  },
+  "effect": "worse",
+  "note": "Verdicts are mr0.1 against the defaults on 32 paired seeds (hunters alive 23/32 vs 27/32, 10 vs 9 under 80); it gains only diversity. mr1 collapsed (alive 0.3, 13/16 under 80). wd0: 28/32 vs 27/32 alive, no guard worse by interval but hunter_ticks_last_quarter -33%, not adopted. The 16-seed read of mr0.1 looked better and misled (seeds 17-32 are harsher, E130). Defaults held; no golden re-pin."
+}

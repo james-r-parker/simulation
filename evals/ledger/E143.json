@@ -1,0 +1,18 @@
+{
+  "id": "E143",
+  "date": "2026-11-07",
+  "branch": "eval/instrument-baselines",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "no-difference",
+  "hypothesis": "Alarm reach baseline (alarm-calls T4): calls are absent but call opportunities exist.",
+  "prediction": "No calls; neighbours and kin present within call range.",
+  "targets": ["eval.call_opportunity_neighbours", "eval.call_opportunity_kin"],
+  "before": "alarm-calls.md Phase 1 premise (no comparison arm)",
+  "after": "alarm-reach-baseline.json: defaults, floor on, 200000 ticks, configHash ff8d890a5a70c14d, 16 seeds",
+  "verdicts": {
+    "eval.call_opportunity_neighbours": "-",
+    "eval.call_opportunity_kin": "-"
+  },
+  "note": "Single-arm baseline. No call on any seed, so hearer metrics are null by construction; neighbours 3.17 (1.5-5.6), kin 2.44. eval:power refuses 16-seed reports."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "E82",
+  "date": "2026-10-30",
+  "branch": "evals/balance-screen",
+  "hypothesis": "A bite and meal pair below the adopted corner (biteMultiplier 20, predatorKillEnergy 600) keeps predators and a prey type alive at the end with families in each basin.",
+  "prediction": "Weak bites with small meals lose predators on 2 or more of 8 seeds; the defaults keep them on at least 7; the adopted arm is bite16 or bite12 with kill600 or kill300; risk: no arm passes the 7-of-8 row.",
+  "targets": [
+    "eval.predators_at_end",
+    "eval.prey_types_at_end",
+    "eval.basin_lineage_effective",
+    "eval.predator_presence"
+  ],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "evals/screens/results/balance/bite20-kill600.report.json",
+  "after": "evals/screens/results/balance/ (table.md, 12 arms x 8 seeds x 200000 ticks)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "A screen, not a verdict. No arm passes: predators alive at the end on 0 to 4 of 8 (best bite20-kill300 at 4, the defaults 3), basin effective at least 3 on 0 of 8 in every arm, a prey type on 8 of 8 everywhere. Presence rises with the bite (0.10 at bite8-kill150 to 0.67 at the defaults) and so does the split share of births (11.6% to 52.2%). Nothing adopted; reported to the user (no rescue), and the clonal limits (E85) were planned from it."
+}

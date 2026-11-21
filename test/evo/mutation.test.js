@@ -9,7 +9,7 @@ import {
     TRAIT_SIGMA,
     WEIGHT_CLAMP,
 } from '../../js/evo/mutation.js';
-import { brainLayout } from '../../js/sim/brain-layout.js';
+import { POOLED_VALUES, brainLayout } from '../../js/sim/brain-layout.js';
 import { detExp } from '../../js/sim/det-math.js';
 import { createRng, nextFloat, nextGaussian } from '../../js/sim/rng.js';
 
@@ -87,6 +87,21 @@ describe('mutateWeights', () => {
         const sd = stats(rowB.subarray(10000)).sd;
         expect(sd).toBeGreaterThan(0.97 * TRAIT_SIGMA);
         expect(sd).toBeLessThan(1.03 * TRAIT_SIGMA);
+    });
+
+    it('skips the trait block from traitStart to leakStart, with no draw, and steps the genes after it', () => {
+        const row = new Float32Array(30).fill(1);
+        const rng = createRng(9);
+        mutateWeights(row, 0.1, rng, { traitStart: 10, leakStart: 18 });
+        expect(Array.from(row.subarray(10, 18))).toEqual(new Array(8).fill(1));
+        const ref = createRng(9);
+        for (let i = 0; i < 10; i++) {
+            expect(row[i]).toBe(Math.fround(1 + 0.1 * nextGaussian(ref)));
+        }
+        for (let i = 18; i < 30; i++) {
+            expect(row[i]).toBe(Math.fround(1 + TRAIT_SIGMA * nextGaussian(ref)));
+        }
+        expect(rng.s).toEqual(ref.s);
     });
 
     it('is the weight sigma throughout without a traitStart', () => {
@@ -172,8 +187,8 @@ describe('randomWeights', () => {
         expect(sd / expected).toBeLessThan(1.15);
     });
 
-    it('draws skip weights with sd 1 / sqrt(48), under the output weights', () => {
-        const expected = 1 / Math.sqrt(48);
+    it('draws skip weights with sd 1 / sqrt(POOLED_VALUES), under the output weights', () => {
+        const expected = 1 / Math.sqrt(POOLED_VALUES);
         const { mean, sd } = stats(row.subarray(layout.wSkip, layout.traitStart));
         expect(Math.abs(mean)).toBeLessThan(expected * 0.15);
         expect(sd / expected).toBeGreaterThan(0.9);

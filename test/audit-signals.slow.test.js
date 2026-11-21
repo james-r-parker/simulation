@@ -26,7 +26,7 @@ describe('npm run audit:signals', () => {
                 .split('\n')
                 .map((l) => JSON.parse(l));
             expect(lines[0].event).toBe('RunConfig');
-            expect(lines.filter((l) => l.event === 'SignalCensusRow' && l.kind === 'input')).toHaveLength(92);
+            expect(lines.filter((l) => l.event === 'SignalCensusRow' && l.kind === 'input')).toHaveLength(106);
             expect(lines.filter((l) => l.event === 'SignalCensusRow' && l.kind === 'output')).toHaveLength(11);
         },
         scaleTimeout(60_000),

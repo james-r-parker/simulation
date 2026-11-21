@@ -1,0 +1,25 @@
+{
+  "id": "E72",
+  "date": "2026-11-01",
+  "branch": "docs/flora-calibration-contract",
+  "hypothesis": "Screen pollination and patch persistence levers independently against defaults.",
+  "prediction": "8 seeds x 200000 ticks, live policy; exactly one defaults arm and no factorial combinations. Retain each default unless an OAT value improves the named seed/hue signal and passes local economy constraints. Record global survival/family results as balancing diagnostics. Report each E72 detector's mean, per-seed values and count of nonzero seeds: pool-full share (saturation), patch-death rate and pollination rate (separate turnover signals), seed-bank occupancy (persistence), and hue spread (evolution). Do not infer one signal from another or assign an unregistered healthy range.",
+  "targets": [
+    "eval.pollination_rate",
+    "eval.flora_hue_spread",
+    "eval.flora_patch_pool_full_share",
+    "eval.flora_patch_death_rate",
+    "eval.flora_seed_bank_occupancy_share",
+    "eval.predators_at_end",
+    "eval.prey_types_at_end",
+    "eval.basin_family_effective",
+    "eval.food_energy_per_1k"
+  ],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "pre-promotion Flora defaults, toxinDose 0.45 pinned in grid base",
+  "after": "evals/screens/results/flora-pollen/ (11 arms x 8 seeds x 200000 ticks)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "OAT only. Reports include each detector's per-seed values, mean and nonzero-seed count. `floraPatchMax: 48` improves measured pool saturation, patch death/seed-bank activity and pollination relative to Flora defaults, but remains diagnostic because local economy comparisons need the paired 16-seed E73 run. No setting is adopted. E69 economy and global survival/family measures remain balancing diagnostics."
+}
