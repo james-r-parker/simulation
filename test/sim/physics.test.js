@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
 import { LOSS_CAUSE } from '../../js/sim/energy.js';
-import { actAll, integrate, resolveContacts } from '../../js/sim/physics.js';
+import { actAll, integrate, resolveContacts, thrustOf } from '../../js/sim/physics.js';
+import { LANE_ID, liveOf } from '../../js/sim/effects.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { allocateWorld } from '../../js/sim/world.js';
@@ -80,6 +81,15 @@ function rebuilt(w) {
     buildHash(hash, w);
     return hash;
 }
+
+describe('thrustOf', () => {
+    it('is the thrust output times the maxThrust lane with its effects, read on its own', () => {
+        const w = setup();
+        put(w, 0, { angle: 0 });
+        setOut(w, 0, [0.5, 0, 0, 0, 0]);
+        expect(thrustOf(w, 0)).toBe(0.5 * liveOf(w, 0, LANE_ID.maxThrust));
+    });
+});
 
 describe('actAll', () => {
     it('turns by output times maxTurn', () => {

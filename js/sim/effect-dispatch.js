@@ -65,11 +65,9 @@ function part0(world, slot, effect) {
         case 7: // handling
             LEVEL[0] = handlingLevel(world, slot);
             return;
-        case 8: // digesting
+        default: // 8, digesting
             LEVEL[0] = digestingLevel(world, slot);
             return;
-        default:
-            throw new Error(`levelOfEffect: no effect ${effect}`);
     }
 }
 
@@ -107,11 +105,9 @@ function part1(world, slot, effect) {
         case 16: // recovering
             LEVEL[0] = recoveringLevel(world, slot);
             return;
-        case 17: // pregnant
+        default: // 17, pregnant
             LEVEL[0] = pregnantLevel(world, slot);
             return;
-        default:
-            throw new Error(`levelOfEffect: no effect ${effect}`);
     }
 }
 
@@ -148,11 +144,9 @@ function part2(world, slot, effect) {
         case 25: // panicked
             LEVEL[0] = world.effectStacks[3][slot];
             return;
-        case 26: // rallied
+        default: // 26, rallied
             LEVEL[0] = world.effectStacks[4][slot];
             return;
-        default:
-            throw new Error(`levelOfEffect: no effect ${effect}`);
     }
 }
 

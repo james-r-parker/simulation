@@ -14,7 +14,8 @@ describe('renderDispatch', () => {
         const source = renderDispatch();
         let row = 0;
         EFFECTS.forEach((effect, i) => {
-            expect(source).toContain(`case ${i}: // ${effect.name}`);
+            const lastOfPart = i % CASES_PER_PART === CASES_PER_PART - 1 && i < EFFECTS.length - 1;
+            expect(source).toContain(lastOfPart ? `default: // ${i}, ${effect.name}` : `case ${i}: // ${effect.name}`);
             if (effect.level === 'stacks') {
                 expect(source).toContain(`LEVEL[0] = world.effectStacks[${row++}][slot];`);
             } else {

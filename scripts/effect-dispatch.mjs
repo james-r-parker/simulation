@@ -54,16 +54,24 @@ function renderPart(list, part) {
         `function part${part}(world, slot, effect) {`,
         '    switch (effect) {',
     ];
-    for (let e = first; e < last; e++) {
+    // `levelOfEffect` sends a part only the effects of its range, so a part's last effect is its `default` (a case that
+    // could never miss would be an untaken branch); the last part's default refuses an index past the list.
+    const final = last === list.length;
+    const caseEnd = final ? last : last - 1;
+    for (let e = first; e < caseEnd; e++) {
         lines.push(
             `        case ${e}: // ${list[e].name}`,
             ...bodies[e].map((line) => `            ${line}`),
             '            return;',
         );
     }
+    const fallback = final
+        ? ['            throw new Error(`levelOfEffect: no effect ${effect}`);']
+        : bodies[last - 1].map((line) => `            ${line}`);
     lines.push(
-        '        default:',
-        '            throw new Error(`levelOfEffect: no effect ${effect}`);',
+        final ? '        default:' : `        default: // ${last - 1}, ${list[last - 1].name}`,
+        ...fallback,
+        ...(final ? [] : ['            return;']),
         '    }',
         '}',
         '',

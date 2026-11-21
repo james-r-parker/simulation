@@ -4,7 +4,8 @@
 import { describe, expect, it } from 'vitest';
 import { cloneWithNoisePolicy } from '../../js/sim/birth-policy.js';
 import { createConfig } from '../../js/sim/config.js';
-import { GROUP_LANES } from '../../js/sim/effect-group.js';
+import { GROUP_LANES, compileGroups, readGroup } from '../../js/sim/effect-group.js';
+import { LEVEL, LANE_ID } from '../../js/sim/effect-refs.js';
 import { EFFECT, GROUP, SYSTEM, costFactors, liveIn, liveOf, motionFactors } from '../../js/sim/effects.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
@@ -94,5 +95,22 @@ describe('the group reads', () => {
         const cost = world.effectGroups[GROUP.COST];
         expect(Array.from(cost.effects)).toEqual([EFFECT.JUVENILE]);
         expect(Array.from(cost.band)).toEqual([-1, -1, EFFECT.COLD_RAMP, EFFECT.HOT_RAMP, -1]);
+    });
+
+    it('reads a group with no temperature effect without the band read', () => {
+        const laneRules = [];
+        laneRules[LANE_ID.maxTurn] = [{ effect: 0 }];
+        const effectGroups = compileGroups([{ name: 'calm' }], laneRules);
+        expect(effectGroups[GROUP.MOTION].banded).toBe(false);
+        const world = { effectGroups, temperature: null };
+        readGroup(
+            () => {
+                LEVEL[0] = 0.5;
+            },
+            world,
+            0,
+            GROUP.MOTION,
+        );
+        expect(effectGroups[GROUP.MOTION].levels[0]).toBe(0.5);
     });
 });
