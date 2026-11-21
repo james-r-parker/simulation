@@ -73,7 +73,9 @@ describe('the rules a world folds', () => {
      */
     function folds(over, effect) {
         const world = smallWorld({ maxAgents: 4, ...over });
-        return world.laneRules[LANE_ID.maxThrust].some((rule) => rule.effect === effect);
+        return world.laneRules[LANE_ID.maxThrust].some(
+            (/** @type {{effect: number}} */ rule) => rule.effect === effect,
+        );
     }
 
     it('leaves out a rule whose strength is 0, and keeps one that is on, a table and a rule that reads a lane', () => {
@@ -86,7 +88,7 @@ describe('the rules a world folds', () => {
     it('treats a power rule as off at a factor of 1', () => {
         const hoarse = (/** @type {Record<string, any>} */ over) =>
             smallWorld({ maxAgents: 4, ...over }).laneRules[LANE_ID.alarmCost].some(
-                (rule) => rule.effect === EFFECT.HOARSE,
+                (/** @type {{effect: number}} */ rule) => rule.effect === EFFECT.HOARSE,
             );
         expect(hoarse({})).toBe(false);
         expect(hoarse({ hoarseFactor: 2 })).toBe(true);

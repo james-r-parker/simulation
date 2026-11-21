@@ -243,7 +243,7 @@ export class EffectSystem {
      */
     fold(world, slot, id, fromLane) {
         RESULT[0] = fromLane ? world.laneArrays[id][slot] : 1;
-        const rules = world.laneRules === undefined ? this.rules[id] : world.laneRules[id];
+        const rules = world.laneRules[id];
         if (rules !== undefined) {
             for (let k = 0; k < rules.length; k++) {
                 this.factorOfRule(world, slot, rules[k]);
