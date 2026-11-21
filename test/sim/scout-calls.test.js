@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { signalAll } from '../../js/sim/calls.js';
+import { createConfig } from '../../js/sim/config.js';
 import { ENERGY_SOURCE, addEnergy } from '../../js/sim/energy.js';
 import { addAgent, rebuild, senseWorld } from './helpers/sense-world.js';
+import { setSpec } from './helpers/body.js';
 
 const FORAGER = 0;
 const SCOUT = 3;
@@ -24,20 +26,30 @@ function build(over = {}) {
 }
 
 /**
+ * The scout's `body` overrides (its call radius and alarm cost are body entries), as config overrides.
+ * @param {Record<string, number>} body the lane multipliers
+ * @returns {Record<string, any>}
+ */
+function scoutBody(body) {
+    const base = createConfig().specialisations;
+    return { specialisations: { ...base, scout: { ...base.scout, body } } };
+}
+
+/**
  * @param {ReturnType<typeof senseWorld>} w the world
  * @param {{x?: number, y?: number, spec?: number, energy?: number}} [a] agent options
  * @returns {number} the slot
  */
 function agent(w, { x = 500, y = 500, spec = FORAGER, energy = 100 } = {}) {
     const slot = addAgent(w, x, y, 20);
-    w.spec[slot] = spec;
+    setSpec(w, slot, spec); // a birth writes the lanes at the spec's bases
     addEnergy(w, slot, energy, ENERGY_SOURCE.INITIAL);
     return slot;
 }
 
 describe('scout call multipliers (prey-guilds T9)', () => {
     it('scales alarmCost by scoutAlarmCostMultiplier for scouts only', () => {
-        const w = build({ scoutAlarmCostMultiplier: 0.5 });
+        const w = build(scoutBody({ alarmCost: 0.5 }));
         const scout = agent(w, { x: 500, y: 500, spec: SCOUT, energy: 100 });
         const forager = agent(w, { x: 900, y: 500, spec: FORAGER, energy: 100 });
         w.outputs[scout * OUTPUT_COUNT + OUTPUT_INDEX.ALARM] = 1;
@@ -50,7 +62,7 @@ describe('scout call multipliers (prey-guilds T9)', () => {
     });
 
     it('allows a scout with low energy to call when scoutAlarmCostMultiplier makes the cost affordable', () => {
-        const w = build({ scoutAlarmCostMultiplier: 0 });
+        const w = build(scoutBody({ alarmCost: 0 }));
         const scout = agent(w, { x: 500, y: 500, spec: SCOUT, energy: 1 });
         w.outputs[scout * OUTPUT_COUNT + OUTPUT_INDEX.ALARM] = 1;
 
@@ -61,7 +73,7 @@ describe('scout call multipliers (prey-guilds T9)', () => {
     });
 
     it('scales callRadius by scoutCallRadiusMultiplier for scouts only', () => {
-        const w = build({ scoutCallRadiusMultiplier: 1.5 });
+        const w = build(scoutBody({ callRadius: 1.5 }));
         const scout = agent(w, { x: 500, y: 500, spec: SCOUT });
         const hearerNearScout = agent(w, { x: 850, y: 500, spec: FORAGER });
         const forager = agent(w, { x: 1500, y: 500, spec: FORAGER });

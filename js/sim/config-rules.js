@@ -133,6 +133,4 @@ export const FEATURE_RULES = {
     defenderRepelEnergy: num(0),
     defenderRepelCost: num(0),
     defenderRepelImpulse: num(0),
-    scoutCallRadiusMultiplier: positive(),
-    scoutAlarmCostMultiplier: num(0),
 };

@@ -15,7 +15,7 @@ const ARMS = ['control', 'courser', 'even', 'long', 'stalker'];
 const configs = [
     { name: 'defaults', config: {} },
     ...ARMS.map((name) => ({ name, config: JSON.parse(readFileSync(`evals/fair-chase/${name}.json`, 'utf8')) })),
-    { name: 'a short-ranged scout', config: { scoutCallRadiusMultiplier: 0.6 } },
+    { name: 'a short-ranged scout', config: { specialisations: { scout: { body: { callRadius: 0.6 } } } } },
 ];
 
 const EFFORT_ONE = "at effort 1, the oracle hunter's, the formula and the sim agree on whether the forager is caught";

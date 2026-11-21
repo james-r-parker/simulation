@@ -68,7 +68,7 @@ describe('budgetWarn', () => {
     });
 
     it('a forager outside the scout call radius never hears: hear is impossible and no step after it is read', () => {
-        const b = budget({ scoutCallRadiusMultiplier: 0.4 });
+        const b = budget({ specialisations: { scout: { body: { callRadius: 0.4 } } } });
         expect(b.cells.hear.status).toBe('impossible');
         expect(['warn', 'turn', 'run'].map((s) => b.cells[s].status)).toEqual(['n/a', 'n/a', 'n/a']);
         expect(b.binding).toBe('hear');
