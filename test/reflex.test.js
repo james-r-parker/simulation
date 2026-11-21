@@ -5,7 +5,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { main, parseArgs, runReflex } from '../scripts/reflex.mjs';
 import { formatBars, formatKinds, formatReport, formatRows, reportJson } from '../scripts/lib/reflex-report.mjs';
 import { runReflexTask } from '../scripts/reflex-worker.mjs';
-import { caseNamed } from '../js/evo/reflex-cases.js';
+import { REFLEX_CASES, caseNamed } from '../js/evo/reflex-cases.js';
 import { reflexRandomBrains } from '../js/evo/reflex-score.js';
 import { makeChampionFile } from './evo/helpers/champion-file.js';
 
@@ -25,7 +25,7 @@ describe('parseArgs', () => {
     it('defaults to every case, 16 trials, seed 1, 8 elites and the info level', () => {
         const args = parseArgs(['--champions', 'd']);
         expect(args).toMatchObject({ champions: 'd', seed: 1, trials: 16, count: 8, level: 'info', json: false });
-        expect(args.cases).toHaveLength(12);
+        expect(args.cases).toHaveLength(REFLEX_CASES.length);
     });
 
     it('reads every flag', () => {
@@ -60,6 +60,23 @@ describe('parseArgs', () => {
             out: 'o.txt',
             workers: 2,
         });
+    });
+
+    it('takes the cases of one specialisation with --role, narrowed by --cases when both are given', () => {
+        const forager = parseArgs(['--champions', 'd', '--role', 'forager']).cases;
+        expect(forager).toEqual(REFLEX_CASES.filter((c) => c.spec === 0).map((c) => c.name));
+        expect(forager).toContain('clear-the-herd');
+        expect(parseArgs(['--champions', 'd', '--role', 'reproducer']).cases).toEqual([
+            'flee-on-alarm:reproducer',
+            'clear-the-herd:reproducer',
+        ]);
+        expect(
+            parseArgs(['--champions', 'd', '--role', 'forager', '--cases', 'flee-threat,sprint-on-prey']).cases,
+        ).toEqual(['flee-threat']);
+        expect(
+            parseArgs(['--champions', 'd', '--cases', 'flee-threat,sprint-on-prey', '--role', 'forager']).cases,
+        ).toEqual(['flee-threat']);
+        expect(() => parseArgs(['--champions', 'd', '--role', 'wizard'])).toThrow(/unknown specialisation "wizard"/);
     });
 
     it('needs exactly one source, known cases and a known level', () => {
@@ -194,14 +211,15 @@ describe('runReflex', () => {
             'bite-discrimination',
             'sprint-on-prey',
             'hold-the-bite',
+            'clear-the-herd:predator',
         ]);
-        expect(Object.keys(bars)).toHaveLength(12);
+        expect(Object.keys(bars)).toHaveLength(REFLEX_CASES.length);
         expect(lines.join('\n')).toContain('reference');
         const log = readFileSync(join(root, 'logs', 'reflex-1x2.jsonl'), 'utf8')
             .split('\n')
             .filter(Boolean)
             .map((l) => JSON.parse(l));
-        expect(log.filter((l) => l.event === 'ReflexResult')).toHaveLength(10);
+        expect(log.filter((l) => l.event === 'ReflexResult')).toHaveLength(11);
         expect(log.filter((l) => l.event === 'ReflexCase').length).toBeGreaterThan(0);
     });
 
@@ -249,6 +267,7 @@ describe('runReflex', () => {
         const json = JSON.parse(readFileSync(out, 'utf8'));
         expect(json.rows).toHaveLength(2);
         expect(json.bars['flee-threat'].reference).toBeGreaterThanOrEqual(0);
+        expect(json.barSources.find((/** @type {any} */ b) => b.bar === 'role.turnAway.forager').source).toBe('budget');
     });
 });
 

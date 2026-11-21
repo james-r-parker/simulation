@@ -113,10 +113,16 @@ const BEHAVIOURS = Object.freeze({
 });
 
 /**
+ * @param {string} name a case's name, `<case>` or `<case>:<spec>` (a case given to another specialisation)
+ * @returns {string} the case's name without the specialisation
+ */
+const baseName = (name) => name.split(':')[0];
+
+/**
  * @param {string} name a case's name
  * @returns {boolean} whether it is a role case with a reference here
  */
-export const hasRoleReference = (name) => Object.hasOwn(BEHAVIOURS, name);
+export const hasRoleReference = (name) => Object.hasOwn(BEHAVIOURS, baseName(name));
 
 /**
  * @param {string} name the name of a role case
@@ -127,6 +133,6 @@ export function roleReference(name) {
     if (!hasRoleReference(name)) {
         throw new Error(`roleReference: no reference for "${name}"; known: ${Object.keys(BEHAVIOURS).join(', ')}`);
     }
-    const behave = BEHAVIOURS[/** @type {keyof typeof BEHAVIOURS} */ (name)];
+    const behave = BEHAVIOURS[/** @type {keyof typeof BEHAVIOURS} */ (baseName(name))];
     return { name: `role-${name}`, id: 0, weights: null, act: eachAlive(behave) };
 }
