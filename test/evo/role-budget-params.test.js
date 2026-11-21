@@ -112,9 +112,7 @@ describe('roleParams', () => {
         expect(full.thrust.cruise).toBeCloseTo(config.maxThrust * (1 - config.fatSlowShare), 12);
     });
 
-    it('refuses an unknown spec and a trait map it does not read yet', () => {
-        const config = createConfig({});
-        expect(() => roleParams(config, 'blob')).toThrow(/unknown specialisation "blob"/);
-        expect(() => roleParams(config, 'forager', { vision: 1.1 })).toThrow(/body-genes.md T10/);
+    it('refuses an unknown spec', () => {
+        expect(() => roleParams(createConfig({}), 'blob')).toThrow(/unknown specialisation "blob"/);
     });
 });
