@@ -44,35 +44,35 @@ predator:best
 
 predator:forager: smallest single changes that give it
 factor  setting                                         value   margin px  slope  fit  file
-x1.25   specialisations.predator.sprintBoost            2.75    +60        ok     fit  evals/role-budget/stalker-predator-forager-1.json
-x1.25   maxVelocity                                     10      +51        ok     -    evals/role-budget/stalker-predator-forager-2.json
-x0.75   specialisations.predator.sprintDrainMultiplier  1.5     +50        ok     fit  evals/role-budget/stalker-predator-forager-3.json
-x0.75   sprintDrain                                     0.0075  +50        ok     fit  evals/role-budget/stalker-predator-forager-4.json
-x0.75   specialisations.forager.visionRange             225     +41        naive  -    evals/role-budget/stalker-predator-forager-5.json
+x1.25   specialisations.predator.sprintBoost            2.75    +62        ok     fit  evals/role-budget/stalker-predator-forager-1.json
+x0.75   specialisations.predator.sprintDrainMultiplier  1.5     +54        ok     fit  evals/role-budget/stalker-predator-forager-2.json
+x1.25   maxVelocity                                     10      +51        ok     -    evals/role-budget/stalker-predator-forager-3.json
+x0.75   sprintDrain                                     0.0075  +51        ok     fit  evals/role-budget/stalker-predator-forager-4.json
+x0.75   specialisations.forager.visionRange             225     +43        naive  -    evals/role-budget/stalker-predator-forager-5.json
 
 predator:reproducer: smallest single changes that give it
 factor  setting                                         value   margin px  slope  fit  file
-x1.25   specialisations.predator.sprintBoost            2.75    +106       ok     fit  evals/role-budget/stalker-predator-reproducer-1.json
-x0.75   specialisations.predator.sprintDrainMultiplier  1.5     +97        ok     fit  evals/role-budget/stalker-predator-reproducer-2.json
+x1.25   specialisations.predator.sprintBoost            2.75    +108       ok     fit  evals/role-budget/stalker-predator-reproducer-1.json
+x0.75   specialisations.predator.sprintDrainMultiplier  1.5     +105       ok     fit  evals/role-budget/stalker-predator-reproducer-2.json
 x0.75   sprintDrain                                     0.0075  +97        ok     fit  evals/role-budget/stalker-predator-reproducer-3.json
-x0.75   specialisations.reproducer.sprintBoost          0.75    +53        ok     fit  evals/role-budget/stalker-predator-reproducer-4.json
+x0.75   specialisations.reproducer.sprintBoost          0.75    +55        ok     fit  evals/role-budget/stalker-predator-reproducer-4.json
 x0.5    sprintDrain                                     0.005   +300       ok     fit  evals/role-budget/stalker-predator-reproducer-5.json
 
 predator:scout: smallest single changes that give it
 factor  setting                                         value  margin px  slope     fit  file
-x0.5    specialisations.predator.sprintDrainMultiplier  1      +158       reactive  -    evals/role-budget/stalker-predator-scout-1.json
-x0.5    sprintDrain                                     0.005  +158       ok        fit  evals/role-budget/stalker-predator-scout-2.json
-x0.5    specialisations.scout.visionRange               200    +76        naive     -    evals/role-budget/stalker-predator-scout-3.json
-x1.5    specialisations.predator.sprintBoost            3.3    +70        ok        -    evals/role-budget/stalker-predator-scout-4.json
-x2      specialisations.predator.sprintBoost            4.4    +234       ok        fit  evals/role-budget/stalker-predator-scout-5.json
+x1.25   maxVelocity                                     10     +61        ok        -    evals/role-budget/stalker-predator-scout-1.json
+x0.5    specialisations.predator.sprintDrainMultiplier  1      +217       reactive  -    evals/role-budget/stalker-predator-scout-2.json
+x0.5    sprintDrain                                     0.005  +158       ok        fit  evals/role-budget/stalker-predator-scout-3.json
+x0.5    specialisations.scout.visionRange               200    +76        naive     -    evals/role-budget/stalker-predator-scout-4.json
+x1.5    specialisations.predator.sprintBoost            3.3    +70        ok        -    evals/role-budget/stalker-predator-scout-5.json
 
 predator:defender: smallest single changes that give it
-factor  setting                               value   margin px  slope     fit  file
-x1.25   specialisations.predator.sprintBoost  2.75    +69        ok        fit  evals/role-budget/stalker-predator-defender-1.json
-x0.75   specialisations.defender.visionRange  225     +54        naive     -    evals/role-budget/stalker-predator-defender-2.json
-x0.75   specialisations.defender.sprintBoost  0.75    +45        ok        -    evals/role-budget/stalker-predator-defender-3.json
-x1.25   maxVelocity                           10      +36        reactive  -    evals/role-budget/stalker-predator-defender-4.json
-x1.25   killShare                             0.3125  +17        naive     -    evals/role-budget/stalker-predator-defender-5.json
+factor  setting                                         value  margin px  slope     fit  file
+x0.75   specialisations.predator.sprintDrainMultiplier  1.5    +101       ok        fit  evals/role-budget/stalker-predator-defender-1.json
+x1.25   maxVelocity                                     10     +84        reactive  -    evals/role-budget/stalker-predator-defender-2.json
+x1.25   specialisations.predator.sprintBoost            2.75   +70        ok        fit  evals/role-budget/stalker-predator-defender-3.json
+x0.75   specialisations.defender.visionRange            225    +56        naive     -    evals/role-budget/stalker-predator-defender-4.json
+x0.75   specialisations.defender.sprintBoost            0.75   +45        ok        -    evals/role-budget/stalker-predator-defender-5.json
 
 body        reading                      formula  sim      difference  tolerance
 forager     energy per 100 ticks         102.725  102.725  0.000%      0.100%     ok

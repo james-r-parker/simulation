@@ -69,7 +69,7 @@ x0.5    specialisations.scout.sprintBoost     0.5     +788       ok     fit  eva
 predator:defender: smallest single changes that give it
 factor  setting                                       value  margin px  slope    fit  file
 x0.5    maxVelocity                                   4      +121       naive    -    evals/role-budget/control-predator-defender-1.json
-x0.5    specialisations.defender.sprintBoost          0.5    +89        perfect  -    evals/role-budget/control-predator-defender-2.json
+x0.5    specialisations.defender.sprintBoost          0.5    +104       perfect  -    evals/role-budget/control-predator-defender-2.json
 x1.5    specialisations.predator.sprintBoost          2.4    +75        perfect  -    evals/role-budget/control-predator-defender-3.json
 x2      specialisations.predator.sprintBoost          3.2    +1997      ok       fit  evals/role-budget/control-predator-defender-4.json
 x2      specialisations.predator.maxEnergyMultiplier  10     +471       naive    -    evals/role-budget/control-predator-defender-5.json

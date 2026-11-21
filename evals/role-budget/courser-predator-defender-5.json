@@ -6,7 +6,7 @@
       "sprintDrainMultiplier": 0.5
     },
     "defender": {
-      "sprintBoost": 0.5
+      "visionRange": 450
     }
   }
 }

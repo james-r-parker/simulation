@@ -4,7 +4,7 @@
   "specialisations": {
     "predator": {
       "sprintDrainMultiplier": 2,
-      "sprintBoost": 4.4
+      "sprintBoost": 3.3000000000000003
     }
   }
 }

@@ -2,8 +2,8 @@
   "sprintStoreEnabled": true,
   "sprintDrain": 0.01,
   "specialisations": {
-    "scout": {
-      "visionRange": 300
+    "predator": {
+      "sprintBoost": 3.2
     }
   }
 }

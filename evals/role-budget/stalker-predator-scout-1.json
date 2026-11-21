@@ -3,8 +3,9 @@
   "sprintDrain": 0.01,
   "specialisations": {
     "predator": {
-      "sprintDrainMultiplier": 1,
+      "sprintDrainMultiplier": 2,
       "sprintBoost": 2.2
     }
-  }
+  },
+  "maxVelocity": 10
 }

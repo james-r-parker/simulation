@@ -1,78 +1,77 @@
 role budget  config f7c415b6ab9f09cf  rules 62c3820cb6770113
 model {"reactionTicks":2,"hearThreshold":0.1,"breakAngle":1.5707963267948966,"tightTicks":5,"preySprint":"rationed","hunterShare":0.1,"foodDensity":null,"naiveEffort":0.5,"catchShare":0.3,"reliableSight":false}
 
-row                  see  turn  run  bite  status      binding
-predator:forager     -    -     X    X     impossible  run
-predator:reproducer  -    -     X    X     impossible  run
-predator:scout       -    -     X    X     impossible  run
-predator:defender    -    -     X    X     impossible  run
-predator:average     X    X     X    X     impossible  see
-predator:best        -    -     X    X     impossible  run
+row                  see  turn  run  bite  status  binding
+predator:forager     71   36    71   65    ok      turn
+predator:reproducer  70   35    70   64    ok      turn
+predator:scout       56   25    56   56    ok      turn
+predator:defender    69   35    69   63    ok      turn
+predator:average     67   33    67   62    ok      turn
+predator:best        71   36    71   65    ok      turn
 
 predator:forager
-  catch margin (broken bound, px): -102  catchable no  gap at awareness 345
-  tiers, margin straight/broken px: perfect +564/-102  reactive +465/-58  naive -132/-153
+  catch margin (broken bound, px): +289  catchable yes  gap at awareness 345
+  tiers, margin straight/broken px: perfect +564/+289  reactive +465/-58  naive -132/-153
   learn slope naive  fit for the rung screen no
-  audit bearings closing 0.000  worst margin -345 px
-  chase energy: spent 657.6  kicks 4.8  returned 100.0  net -562.4  (holds 4700 above its birth reserve)
-  chase heat: +2.500 of 15 headroom  refill after the burst: 500 ticks
+  audit bearings closing 0.625  worst margin -345 px
+  chase energy: spent 445.3  kicks 7.9  returned 370.4  net -82.9  (holds 4700 above its birth reserve)
+  chase heat: +1.850 of 15 headroom  refill after the burst: 274 ticks
 predator:reproducer
-  catch margin (broken bound, px): -52  catchable no  gap at awareness 295
-  tiers, margin straight/broken px: perfect +614/-52  reactive +515/-8  naive -74/-104
+  catch margin (broken bound, px): +266  catchable yes  gap at awareness 295
+  tiers, margin straight/broken px: perfect +614/+266  reactive +515/-8  naive -74/-104
   learn slope naive  fit for the rung screen no
-  audit bearings closing 0.000  worst margin -295 px
-  chase energy: spent 653.3  kicks 4.9  returned 100.0  net -558.2  (holds 4700 above its birth reserve)
-  chase heat: +2.500 of 15 headroom  refill after the burst: 500 ticks
+  audit bearings closing 0.625  worst margin -295 px
+  chase energy: spent 426.3  kicks 7.9  returned 369.8  net -64.4  (holds 4700 above its birth reserve)
+  chase heat: +1.860 of 15 headroom  refill after the burst: 257 ticks
 predator:scout
-  catch margin (broken bound, px): -187  catchable no  gap at awareness 445
-  tiers, margin straight/broken px: perfect +464/-187  reactive +365/-146  naive -223/-254
+  catch margin (broken bound, px): +250  catchable yes  gap at awareness 445
+  tiers, margin straight/broken px: perfect +464/+250  reactive +365/-146  naive -223/-254
   learn slope naive  fit for the rung screen no
-  audit bearings closing 0.000  worst margin -445 px
-  chase energy: spent 666.0  kicks 4.7  returned 150.0  net -520.7  (holds 4700 above its birth reserve)
-  chase heat: +2.500 of 15 headroom  refill after the burst: 500 ticks
+  audit bearings closing 0.375  worst margin -445 px
+  chase energy: spent 491.6  kicks 4.1  returned 334.5  net -161.2  (holds 4700 above its birth reserve)
+  chase heat: +1.940 of 15 headroom  refill after the burst: 307 ticks
 predator:defender
-  catch margin (broken bound, px): -285  catchable no  gap at awareness 285
-  tiers, margin straight/broken px: perfect +624/-285  reactive +520/-208  naive -72/-98
+  catch margin (broken bound, px): +262  catchable yes  gap at awareness 285
+  tiers, margin straight/broken px: perfect +624/+262  reactive +520/-208  naive -72/-98
   learn slope naive  fit for the rung screen no
-  audit bearings closing 0.000  worst margin -285 px
-  chase energy: spent 653.9  kicks 9.9  returned 50.0  net -613.7  (holds 4700 above its birth reserve)
-  chase heat: +2.500 of 15 headroom  refill after the burst: 500 ticks
+  audit bearings closing 0.625  worst margin -285 px
+  chase energy: spent 424.4  kicks 15.3  returned 281.0  net -158.7  (holds 4700 above its birth reserve)
+  chase heat: +1.870 of 15 headroom  refill after the burst: 254 ticks
 predator:average
-  catchable share 0.00  choice gain 0.0 ticks
+  catchable share 1.00  choice gain 3.3 ticks
 predator:best
-  catchable share 0.00  choice gain 0.0 ticks  picks forager
+  catchable share 1.00  choice gain 3.3 ticks  picks forager
 
 predator:forager: smallest single changes that give it
-factor  setting                               value  margin px  slope  fit  file
-x1.25   specialisations.predator.sprintBoost  2      +1005      ok     fit  evals/role-budget/long-predator-forager-1.json
-x1.25   maxThrust                             0.875  +61        naive  -    evals/role-budget/long-predator-forager-2.json
-x0.75   maxThrust                             0.525  +53        naive  -    evals/role-budget/long-predator-forager-3.json
-x0.75   maxVelocity                           6      +3         naive  -    evals/role-budget/long-predator-forager-4.json
-x1.5    specialisations.predator.sprintBoost  2.4    +1416      ok     fit  evals/role-budget/long-predator-forager-5.json
+factor  setting                                       value  margin px  slope  fit  file
+x1.25   specialisations.predator.sprintBoost          2      +1005      ok     fit  evals/role-budget/long-predator-forager-1.json
+x1.5    specialisations.predator.sprintBoost          2.4    +1416      ok     fit  evals/role-budget/long-predator-forager-2.json
+x0.5    specialisations.forager.sprintBoost           0.5    +900       ok     fit  evals/role-budget/long-predator-forager-3.json
+x2      specialisations.predator.sprintBoost          3.2    +2147      ok     fit  evals/role-budget/long-predator-forager-4.json
+x2      specialisations.predator.maxEnergyMultiplier  10     +613       ok     fit  evals/role-budget/long-predator-forager-5.json
 
 predator:reproducer: smallest single changes that give it
-factor  setting                                         value  margin px  slope  fit  file
-x1.25   specialisations.predator.sprintBoost            2      +1061      ok     fit  evals/role-budget/long-predator-reproducer-1.json
-x0.75   maxThrust                                       0.525  +103       naive  -    evals/role-budget/long-predator-reproducer-2.json
-x0.75   specialisations.predator.sprintDrainMultiplier  0.75   +62        naive  -    evals/role-budget/long-predator-reproducer-3.json
-x0.75   maxVelocity                                     6      +53        naive  -    evals/role-budget/long-predator-reproducer-4.json
-x1.25   specialisations.reproducer.sprintBoost          1.25   +21        naive  -    evals/role-budget/long-predator-reproducer-5.json
+factor  setting                                       value  margin px  slope  fit  file
+x1.25   specialisations.predator.sprintBoost          2      +1061      ok     fit  evals/role-budget/long-predator-reproducer-1.json
+x1.5    specialisations.predator.sprintBoost          2.4    +1470      ok     fit  evals/role-budget/long-predator-reproducer-2.json
+x0.5    specialisations.reproducer.sprintBoost        0.5    +953       ok     fit  evals/role-budget/long-predator-reproducer-3.json
+x2      specialisations.predator.sprintBoost          3.2    +2197      ok     fit  evals/role-budget/long-predator-reproducer-4.json
+x2      specialisations.predator.maxEnergyMultiplier  10     +659       ok     fit  evals/role-budget/long-predator-reproducer-5.json
 
 predator:scout: smallest single changes that give it
 factor  setting                               value  margin px  slope  fit  file
 x1.25   specialisations.predator.sprintBoost  2      +915       ok     fit  evals/role-budget/long-predator-scout-1.json
 x0.75   specialisations.scout.sprintBoost     0.75   +644       ok     fit  evals/role-budget/long-predator-scout-2.json
-x0.75   specialisations.predator.sprintBoost  1.2    +44        naive  -    evals/role-budget/long-predator-scout-3.json
-x1.5    specialisations.predator.sprintBoost  2.4    +1328      ok     fit  evals/role-budget/long-predator-scout-4.json
-x0.5    specialisations.scout.sprintBoost     0.5    +810       ok     fit  evals/role-budget/long-predator-scout-5.json
+x1.5    specialisations.predator.sprintBoost  2.4    +1328      ok     fit  evals/role-budget/long-predator-scout-3.json
+x0.5    specialisations.scout.sprintBoost     0.5    +810       ok     fit  evals/role-budget/long-predator-scout-4.json
+x2      specialisations.predator.sprintBoost  3.2    +2057      ok     fit  evals/role-budget/long-predator-scout-5.json
 
 predator:defender: smallest single changes that give it
 factor  setting                                       value  margin px  slope  fit  file
-x1.25   specialisations.defender.sprintBoost          1.25   +24        naive  -    evals/role-budget/long-predator-defender-1.json
-x1.25   specialisations.predator.maxEnergyMultiplier  6.25   +0         naive  -    evals/role-budget/long-predator-defender-2.json
-x1.5    specialisations.predator.sprintBoost          2.4    +1422      ok     fit  evals/role-budget/long-predator-defender-3.json
-x0.5    specialisations.defender.sprintBoost          0.5    +920       ok     fit  evals/role-budget/long-predator-defender-4.json
-x0.5    maxVelocity                                   4      +146       naive  -    evals/role-budget/long-predator-defender-5.json
+x1.5    specialisations.predator.sprintBoost          2.4    +1422      ok     fit  evals/role-budget/long-predator-defender-1.json
+x0.5    specialisations.defender.sprintBoost          0.5    +920       ok     fit  evals/role-budget/long-predator-defender-2.json
+x2      specialisations.predator.sprintBoost          3.2    +2173      ok     fit  evals/role-budget/long-predator-defender-3.json
+x2      specialisations.predator.maxEnergyMultiplier  10     +656       ok     fit  evals/role-budget/long-predator-defender-4.json
 
 body        reading                      formula  sim      difference  tolerance
 forager     energy per 100 ticks         102.725  102.725  0.000%      0.100%     ok

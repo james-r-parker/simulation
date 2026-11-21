@@ -2,8 +2,8 @@
   "sprintStoreEnabled": true,
   "sprintDrain": 0.004,
   "specialisations": {
-    "predator": {
-      "maxEnergyMultiplier": 6.25
+    "defender": {
+      "sprintBoost": 0.5
     }
   }
 }

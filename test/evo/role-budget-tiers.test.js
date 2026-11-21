@@ -31,6 +31,22 @@ describe('tierMargins', () => {
     });
 });
 
+describe('the perfect tier is an upper bound on the other two', () => {
+    const specs = ['forager', 'reproducer', 'scout', 'defender'];
+    it.each(['courser', 'even'])('is at least the reactive and the naive margin on every row of the %s arm', (name) => {
+        for (const spec of specs) {
+            const { hunter, prey } = pair(arm(name), spec);
+            const m = tierMargins(hunter, prey, model);
+            for (const bound of /** @type {const} */ (['straight', 'broken'])) {
+                expect(m.perfect[bound], `${name} ${spec} ${bound} vs naive`).toBeGreaterThanOrEqual(m.naive[bound]);
+                expect(m.perfect[bound], `${name} ${spec} ${bound} vs reactive`).toBeGreaterThanOrEqual(
+                    m.reactive[bound],
+                );
+            }
+        }
+    });
+});
+
 describe('a naive hunter at effort 1 burns out as E255 saw: about tick 140 on the courser arm', () => {
     it('holds a full factor for 140 ticks, then falls under the floor and the speed with it', () => {
         const { hunter, prey } = pair(arm('courser'));

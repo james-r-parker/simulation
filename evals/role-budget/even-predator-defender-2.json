@@ -1,5 +1,9 @@
 {
   "sprintStoreEnabled": true,
   "sprintDrain": 0.01,
-  "maxVelocity": 6
+  "specialisations": {
+    "defender": {
+      "sprintBoost": 0.5
+    }
+  }
 }

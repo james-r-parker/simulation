@@ -4,10 +4,7 @@
   "specialisations": {
     "predator": {
       "sprintDrainMultiplier": 2,
-      "sprintBoost": 2.2
-    },
-    "defender": {
-      "sprintBoost": 0.75
+      "sprintBoost": 2.75
     }
   }
 }

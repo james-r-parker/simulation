@@ -3,7 +3,7 @@
 // two bodies, so the timeline and the scripted chase of `audit:chase` steer the same way. Steering uses vectors.
 
 import { detCos, detSin } from '../sim/det-math.js';
-import { JINK_RANGE, EVADER_SPRINT_JINKS, steer } from './chase-oracles.js';
+import { JINK_RANGE, EVADER_SPRINT_JINKS } from './chase-oracles.js';
 import { aboveFloor, speedOf } from './role-budget-body.js';
 import { norm } from './role-budget-kinematics.js';
 
@@ -45,12 +45,17 @@ export const HUNTER_PERFECT = Object.freeze({
 /**
  * @param {import('./role-budget-body.js').Body} b the steering body
  * @param {{x: number, y: number}} aim the direction wanted (not unit)
- * @returns {number} the `TURN` output that closes the gap to the aim in one tick: `steer` of chase-oracles.js itself, read
- *   from a one-body view of the numbers it takes, so the budget cannot steer differently from the oracle
+ * @returns {number} the `TURN` output that closes the gap to the aim in one tick: `steer` of chase-oracles.js, written out
+ *   over the body's cached heading so a chase takes no trigonometry here (the test holds it equal to `steer`)
  */
 export function steerOut(b, aim) {
-    const view = { config: { maxTurn: b.p.turnRate.max }, turnBySpec: [1], spec: [0], angle: [b.angle] };
-    return steer(view, 0, aim);
+    const size = Math.sqrt(aim.x * aim.x + aim.y * aim.y) || 1;
+    const cross = (b.ch * aim.y - b.sh * aim.x) / size;
+    const dot = (b.ch * aim.x + b.sh * aim.y) / size;
+    if (dot < 0) {
+        return Math.sign(cross) || 1;
+    }
+    return Math.max(-1, Math.min(1, cross / b.p.turnRate.max));
 }
 
 /**
@@ -100,7 +105,7 @@ export function preyOut(h, p, play) {
  *   the side the prey stands on, so the hunter must turn through the most
  */
 function breakAim(h, away, angle) {
-    const t = speedOf(h) > REST ? { x: h.vx, y: h.vy } : { x: detCos(h.angle), y: detSin(h.angle) };
+    const t = speedOf(h) > REST ? { x: h.vx, y: h.vy } : { x: h.ch, y: h.sh };
     const side = Math.sign(t.x * away.y - t.y * away.x) || 1;
     const c = detCos(side * angle);
     const s = detSin(side * angle);
