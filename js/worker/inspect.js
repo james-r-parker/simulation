@@ -11,7 +11,6 @@ import {
     TRAIT_SLOTS,
 } from '../sim/brain-layout.js';
 import { snapshotLayout } from '../sim/snapshot.js';
-import { baseSizeOf, childShareOf, visionRatioOf } from '../sim/traits.js';
 import { EFFECT_CAPACITY, EFFECT_HEADER_WORDS, EFFECT_WORDS } from './effects.js';
 
 /** Words of the inspect header: `genomeId`, `slot` and `valid`. */
@@ -31,9 +30,6 @@ export const INSPECT_COUNTERS = Object.freeze([
     'lastLoss',
     'bittenTimer',
     'ateTimer',
-    'vision',
-    'baseSize',
-    'childShare',
     'dose',
     'infection',
     'immuneStrains',
@@ -133,12 +129,9 @@ function writeCounters(f32, start, { source, slot }) {
     f32[start + 9] = world.lastLoss[slot];
     f32[start + 10] = world.bittenTimer[slot];
     f32[start + 11] = world.ateTimer[slot];
-    f32[start + 12] = visionRatioOf(world, slot);
-    f32[start + 13] = baseSizeOf(world, slot);
-    f32[start + 14] = childShareOf(world, slot);
-    f32[start + 15] = world.dose[slot];
-    f32[start + 16] = world.infection[slot];
-    f32[start + 17] = bitCount(world.immuneMask[slot]);
+    f32[start + 12] = world.dose[slot];
+    f32[start + 13] = world.infection[slot];
+    f32[start + 14] = bitCount(world.immuneMask[slot]);
 }
 
 /**
