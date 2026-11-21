@@ -84,10 +84,14 @@ describe('TV mode with the driver and pace', () => {
         });
         tv.enter('key');
         driver.step({ nowMs: 0, dtMs: 16, tick: 0, ready: READY, top: [] });
-        expect(speeds).toEqual([240]);
+        // the camera is still moving to the first wide framing, and a move runs at x1
+        expect(speeds).toEqual([60]);
+        expect(state.autoSpeed).toBe(0);
+        driver.step({ nowMs: 25_000, dtMs: 16, tick: 1500, ready: READY, top: [] });
+        expect(speeds).toEqual([60, 240]);
         expect(state.autoSpeed).toBe(240);
         tv.noteInput({ type: 'pointerdown' });
-        expect(speeds).toEqual([240, 60]);
+        expect(speeds).toEqual([60, 240, 60]);
         expect(state.autoSpeed).toBe(0);
         expect(state.requestedTicksPerSecond).toBe(60);
     });

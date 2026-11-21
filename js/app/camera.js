@@ -117,12 +117,13 @@ export function createCameraController({ canvas, world }) {
  * Eases the view towards its target.
  * @param {CameraController} c the controller
  * @param {number} dtMs the frame time
+ * @param {number} [rateScale] a share of both rates, 0 to 1; a spring that starts at 0 starts at rest
  * @returns {void}
  */
-export function updateCamera(c, dtMs) {
-    c.x = springStep(c.x, c.targetX, POSITION_RATE, dtMs);
-    c.y = springStep(c.y, c.targetY, POSITION_RATE, dtMs);
-    c.zoom = springStep(c.zoom, c.targetZoom, ZOOM_RATE, dtMs);
+export function updateCamera(c, dtMs, rateScale = 1) {
+    c.x = springStep(c.x, c.targetX, POSITION_RATE * rateScale, dtMs);
+    c.y = springStep(c.y, c.targetY, POSITION_RATE * rateScale, dtMs);
+    c.zoom = springStep(c.zoom, c.targetZoom, ZOOM_RATE * rateScale, dtMs);
 }
 
 /**

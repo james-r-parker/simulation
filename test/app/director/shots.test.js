@@ -2,11 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { fitZoom, homeZoom, ZOOM_IN } from '../../../js/app/camera.js';
 import { MOMENT_KIND } from '../../../js/app/director/scoring.js';
 import {
-    glideDurationS,
     LINGER_BASE_S,
     momentFrameWidth,
     planShot,
-    PULLBACK_DURATION_S,
     SHOT_STATE,
     shotPose,
     smootherstep,
@@ -34,7 +32,7 @@ describe('js/app/director/shots', () => {
         expect(smootherstep(0.25)).toBeLessThan(0.5);
     });
 
-    it('returns the close-shot world width and glide duration for each moment kind', () => {
+    it('returns the close-shot world width for each moment kind', () => {
         expect(momentFrameWidth(MOMENT_KIND.CHASE)).toBe(1600);
         expect(momentFrameWidth(MOMENT_KIND.PACK_KILL)).toBe(1600);
         expect(momentFrameWidth(MOMENT_KIND.KILL)).toBe(1600);
@@ -42,11 +40,6 @@ describe('js/app/director/shots', () => {
         expect(momentFrameWidth(MOMENT_KIND.ALARM_CHORUS)).toBe(2400);
         expect(momentFrameWidth(MOMENT_KIND.BIRTH_CLUSTER)).toBe(2400);
         expect(momentFrameWidth(MOMENT_KIND.FAMILY_LEAD)).toBe(3600);
-
-        expect(glideDurationS(MOMENT_KIND.PACK_KILL)).toBe(2);
-        expect(glideDurationS(MOMENT_KIND.KILL)).toBe(2);
-        expect(glideDurationS(MOMENT_KIND.CHASE)).toBe(3);
-        expect(glideDurationS(MOMENT_KIND.FAMILY_LEAD)).toBe(3);
     });
 
     it('computes the Lissajous drift with periods 90 s and 140 s and amplitude 3% of world width', () => {
@@ -115,6 +108,7 @@ describe('js/app/director/shots', () => {
             rng,
         });
         expect(wide.state).toBe(SHOT_STATE.WIDE);
+        expect(wide.move?.durationS).toBe(0);
         expect(wide.minDurationS).toBe(WIDE_MIN_S);
         expect(wide.durationS).toBeCloseTo(WIDE_BASE_S + 0.5 * WIDE_SPAN_S, 6);
         const wideStart = shotPose(wide, 10, WORLD);
@@ -133,13 +127,18 @@ describe('js/app/director/shots', () => {
             canvas: CANVAS,
             world: WORLD,
         });
-        expect(glide.durationS).toBe(2);
+        expect(glide.durationS).toBe(glide.move?.durationS);
+        expect(glide.durationS).toBeGreaterThan(3);
         expect(glide.toPose.zoom).toBeCloseTo(CANVAS.width / 1600, 5);
-        expect(shotPose(glide, 20, WORLD)).toEqual(wideStart);
-        const glideMid = shotPose(glide, 21, WORLD);
-        expect(glideMid.x).toBeCloseTo((wideStart.x + 5000) / 2, 4);
-        expect(glideMid.y).toBeCloseTo((wideStart.y + 3000) / 2, 4);
-        expect(shotPose(glide, 22, WORLD)).toEqual(glide.toPose);
+        const glideStart = shotPose(glide, 20, WORLD);
+        expect(glideStart.x).toBeCloseTo(wideStart.x, 9);
+        expect(glideStart.zoom).toBeCloseTo(wideStart.zoom, 9);
+        const glideEnd = shotPose(glide, 20 + glide.durationS, WORLD);
+        expect(glideEnd.x).toBeCloseTo(5000, 6);
+        expect(glideEnd.y).toBeCloseTo(3000, 6);
+        expect(glideEnd.zoom).toBeCloseTo(glide.toPose.zoom, 9);
+        // the zoom out comes first: the first quarter of the move never closes in
+        expect(shotPose(glide, 20 + glide.durationS * 0.1, WORLD).zoom).toBeLessThanOrEqual(wideStart.zoom + 1e-9);
 
         const linger = planShot({
             state: SHOT_STATE.LINGER,
@@ -163,12 +162,15 @@ describe('js/app/director/shots', () => {
             world: WORLD,
             rng,
         });
-        expect(pullback.durationS).toBe(PULLBACK_DURATION_S);
-        expect(shotPose(pullback, 30, WORLD)).toEqual(linger.toPose);
-        const pullbackMid = shotPose(pullback, 32, WORLD);
-        expect(pullbackMid.zoom).toBeCloseTo((linger.toPose.zoom + pullback.toPose.zoom) / 2, 4);
-        const pullbackEnd = shotPose(pullback, 34, WORLD);
-        const endDrift = wideDrift(34, WORLD.width);
+        expect(pullback.durationS).toBe(pullback.move?.durationS);
+        const pullbackStart = shotPose(pullback, 30, WORLD);
+        expect(pullbackStart.x).toBeCloseTo(linger.toPose.x, 9);
+        expect(pullbackStart.zoom).toBeCloseTo(linger.toPose.zoom, 9);
+        const pullbackMid = shotPose(pullback, 30 + pullback.durationS / 2, WORLD);
+        expect(pullbackMid.zoom).toBeLessThan(linger.toPose.zoom);
+        const pullbackEndS = 30 + pullback.durationS;
+        const pullbackEnd = shotPose(pullback, pullbackEndS, WORLD);
+        const endDrift = wideDrift(pullbackEndS, WORLD.width);
         expect(pullbackEnd.x).toBeCloseTo(pullback.toPose.x + endDrift.dx, 4);
         expect(pullbackEnd.y).toBeCloseTo(pullback.toPose.y + endDrift.dy, 4);
         expect(pullbackEnd.zoom).toBeCloseTo(pullback.toPose.zoom, 5);
@@ -184,6 +186,7 @@ describe('js/app/director/shots', () => {
             world: WORLD,
         });
         expect(glideNoFrom.fromPose).toEqual(glideNoFrom.toPose);
+        expect(glideNoFrom.durationS).toBe(0);
 
         const lingerNoFrom = planShot({
             state: SHOT_STATE.LINGER,
@@ -221,5 +224,36 @@ describe('js/app/director/shots', () => {
         expect(glide.toPose.zoom).toBeGreaterThanOrEqual(home);
         const landscape = wideFraming(spread, { canvas: CANVAS, world: WORLD });
         expect(landscape.zoom).toBeCloseTo(fitZoom(CANVAS, WORLD), 6);
+    });
+
+    it('moves a new wide framing from the last pose, blending the drift in so the pose never steps', () => {
+        const agents = [
+            { x: 2000, y: 1000 },
+            { x: 9000, y: 5000 },
+        ];
+        const fromPose = { x: 6000, y: 3000, zoom: 0.5 };
+        const wide = planShot({
+            state: SHOT_STATE.WIDE,
+            startTimeS: 100,
+            fromPose,
+            agents,
+            canvas: CANVAS,
+            world: WORLD,
+        });
+        const moveS = wide.move?.durationS ?? 0;
+        expect(moveS).toBeGreaterThan(0);
+        expect(wide.minDurationS).toBeCloseTo(moveS + WIDE_MIN_S, 9);
+        expect(wide.durationS).toBeCloseTo(moveS + WIDE_BASE_S, 9);
+        expect(shotPose(wide, 100, WORLD)).toEqual(fromPose);
+        let last = shotPose(wide, 100, WORLD);
+        for (let t = 100.05; t < 100 + moveS + 5; t += 0.05) {
+            const pose = shotPose(wide, t, WORLD);
+            expect((Math.hypot(pose.x - last.x, pose.y - last.y) * pose.zoom) / CANVAS.width / 0.05).toBeLessThan(0.35);
+            expect(Math.abs(Math.log(pose.zoom / last.zoom))).toBeLessThan(0.04);
+            last = pose;
+        }
+        const settled = shotPose(wide, 100 + moveS + 10, WORLD);
+        const drift = wideDrift(100 + moveS + 10, WORLD.width);
+        expect(settled.x).toBeCloseTo(wide.toPose.x + drift.dx, 6);
     });
 });
