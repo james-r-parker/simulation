@@ -2,7 +2,7 @@
 // the same for any list, so what holds for these holds for every entry of `EFFECTS`.
 
 import { describe, expect, it } from 'vitest';
-import { GATE, GATE_COUNT, createEffects, numberOf } from '../../js/sim/effects.js';
+import { GATE, GATE_COUNT, compileRef, createEffects, numberOf } from '../../js/sim/effects.js';
 import { applyEffectOn } from '../../js/sim/effect-appliers.js';
 import { freeAgent } from '../../js/sim/world.js';
 import { RALLY_I, HOARSE_I, SYSTEM, chill, fixtureWorld } from './helpers/effect-fixtures.js';
@@ -37,8 +37,11 @@ describe('liveOf', () => {
     it('reads a config key named by a string, with a scale or an offset alone', () => {
         const world = fixtureWorld();
         world.config.fixtureRate = 0.25;
-        const rate = (/** @type {any} */ perStack) =>
-            createEffects([chill({ scales: [{ lane: 'maxThrust', perStack }], read: () => 1 })]);
+        const rate = (/** @type {any} */ perStack) => {
+            const system = createEffects([chill({ scales: [{ lane: 'maxThrust', perStack }], read: () => 1 })]);
+            system.refreshConfig(world);
+            return system;
+        };
         expect(rate('fixtureRate').liveOf(world, 0, 'maxThrust')).toBe(2.5);
         expect(rate({ key: 'fixtureRate', scale: 2 }).liveOf(world, 0, 'maxThrust')).toBe(3);
         expect(rate({ key: 'fixtureRate', offset: 1 }).liveOf(world, 0, 'maxThrust')).toBe(2 * (1 + 1.25));
@@ -50,8 +53,8 @@ describe('liveOf', () => {
         world.lanes.maxTurn[0] = 1;
         world.lanes.fatSlowShare[0] = 0.5;
         expect(SYSTEM.liveOf(world, 0, 'maxTurn')).toBe(0.75);
-        expect(numberOf(world, 0, { kind: 'literal', value: 7 })).toBe(7);
-        expect(numberOf(world, 0, { kind: 'key', key: 'maxTurn', scale: 2, offset: -1 })).toBe(1);
+        expect(numberOf(world, 0, compileRef(7, []))).toBe(7);
+        expect(numberOf(world, 0, compileRef({ key: 'maxTurn', scale: 2, offset: -1 }, []))).toBe(1);
     });
 
     it('never goes below 0', () => {

@@ -17,9 +17,10 @@ import { childShareOf } from './traits.js';
  *   out-of-band body cannot start a mating), above `mateMinEnergy` and allowed by its territory
  */
 export function isReadyToMate(world, slot) {
+    // The cheap tests first: most bodies fail on energy and never reach the gate.
     return (
-        gateOpen(world, slot, GATE.MATE) &&
         world.energy[slot] > world.config.mateMinEnergy &&
+        gateOpen(world, slot, GATE.MATE) &&
         territoryAllows(world, slot)
     );
 }

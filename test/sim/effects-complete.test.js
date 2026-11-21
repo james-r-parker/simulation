@@ -52,7 +52,7 @@ describe('the readers of the registry', () => {
         for (const term of ['temperature', 'dose', 'ateTimer', 'handling', 'graze', 'BITE', 'fat', 'isSick']) {
             expect(body, term).not.toContain(term);
         }
-        expect(body).toContain("liveOf(world, i, 'maxThrust')");
+        expect(body).toContain('liveOf(world, i, LANE_ID.maxThrust)');
     });
 
     it('keep no effect condition in tickCost: no temperature band, juvenile or ramp term', () => {
@@ -60,7 +60,7 @@ describe('the readers of the registry', () => {
         for (const term of ['temperature', 'juvenile', 'ageTicks', 'burn', 'Ramp']) {
             expect(body, term).not.toContain(term);
         }
-        expect(body).toContain("liveOf(world, slot, 'passiveLoss')");
+        expect(body).toContain('liveOf(world, slot, LANE_ID.passiveLoss)');
     });
 
     it('make canEatNow the eat gate and nothing more', () => {

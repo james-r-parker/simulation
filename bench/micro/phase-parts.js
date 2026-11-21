@@ -3,10 +3,10 @@
 // whole phase. The phases change the world, and each bench file runs in its own worker, so a suite steps its own copy
 // of the fixture world forward; the cost per call is what is compared, not the state it ends in. The brain phase has
 // its own suite (`brain-parts.bench.js`), which times the private parts of `forwardAll` as differences.
+import { existsSync } from 'node:fs';
 import { signalAll } from '../../js/sim/calls.js';
 import { cloneWithNoisePolicy } from '../../js/sim/birth-policy.js';
 import { applyCosts } from '../../js/sim/energy.js';
-import { fadeEffects } from '../../js/sim/effects.js';
 import { decayFertileZones, updateSeason } from '../../js/sim/environment.js';
 import { advanceEra } from '../../js/sim/eras.js';
 import { stepHerds } from '../../js/sim/herd-motion.js';
@@ -30,6 +30,10 @@ import { ageSmoke } from '../../js/sim/smoke.js';
 import { buildHash } from '../../js/sim/spatial-hash.js';
 import { STEP_PHASES } from '../../js/sim/step.js';
 import { microSuite, microWorld } from './fixture.js';
+
+/** The effects module is read only where it exists, so `--compare <ref>` can time a ref from before it. */
+const EFFECTS_URL = new URL('../../js/sim/effects.js', import.meta.url);
+const fadeEffects = existsSync(EFFECTS_URL) ? (await import(EFFECTS_URL.href)).fadeEffects : () => {};
 
 /** @typedef {(world: Record<string, any>, policy: any) => void} Part */
 

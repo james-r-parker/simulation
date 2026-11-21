@@ -323,8 +323,8 @@ export function splitGateOpen(world, slot) {
  */
 export function readyBeforeGate(world, slot) {
     return (
-        gateOpen(world, slot, GATE.SPLIT) &&
         world.energy[slot] > world.splitMinBySpec[world.spec[slot]] &&
+        gateOpen(world, slot, GATE.SPLIT) &&
         !birthBudgetSpent(world, slot) &&
         territoryAllows(world, slot)
     );

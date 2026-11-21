@@ -2,7 +2,7 @@
 
 import { tallyEatContact } from './eat-contact.js';
 import { carryPollen } from './pollination.js';
-import { EFFECT, GATE, gateOpen, levelOf, liveOf } from './effects.js';
+import { EFFECT, GATE, LANE_ID, gateOpen, levelOf, liveOf } from './effects.js';
 import { ingestToxin } from './toxin.js';
 import { canBite, couldBite, inJaws } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
@@ -217,7 +217,7 @@ function settleKill(world, biter, victim, fatal) {
 function applyBite(world, biter, victim) {
     const { config, x, y } = world;
     // The victim's `biteTakenMultiplier` lane, with the `alarmSeen` effect's `alarmBiteShare` while its seen alarm runs.
-    const taken = liveOf(world, victim, 'biteTakenMultiplier');
+    const taken = liveOf(world, victim, LANE_ID.biteTakenMultiplier);
     const bite = config.biteEnergy * world.biteBySpec[world.spec[biter]];
     const wasAlive = world.energy[victim] > 0;
     const kick = kickOf(world, biter, victim);

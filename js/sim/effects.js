@@ -1,11 +1,14 @@
 // The effect registry's engine (docs/designs/status-effects.md, "The registry"): an effect is a stacked, capped, timed
 // change to what a body can do. It multiplies a lane (`liveOf` reads the lane with every effect applied) or closes a gate
 // (`gateOpen`), for as long as its level is above 0. The effects themselves are the list in `effect-list.js`;
-// `createEffects` builds the readers over any list, so the contract test runs them on fixture effects.
-// Nothing here allocates per call and nothing draws from the RNG.
+// `createEffects` builds the readers over any list, so the contract test runs them on fixture effects. A lane is read by
+// its index (`LANE_ID`), each rule holds its level reader and its numbers compiled, and a rule at level 0 is skipped:
+// its factor is exactly 1. Nothing here allocates per call and nothing draws from the RNG.
 
-import { LANES } from './body-lanes.js';
 import { EFFECTS } from './effect-list.js';
+import { LANE_ID, compileRef, numberOf } from './effect-refs.js';
+
+export { LANE_ID, compileRef, numberOf };
 
 /**
  * The gates an effect can close, by name. `ALARM` and `HUNT` are the two halves of the plan's `call` gate: an alarm
@@ -16,17 +19,14 @@ export const GATE = Object.freeze({ EAT: 0, MATE: 1, SPLIT: 2, BITE: 3, ALARM: 4
 /** The number of gates. */
 export const GATE_COUNT = Object.keys(GATE).length;
 
-/**
- * A number a rule reads: a literal, a config key or lane name, or `{key, scale, offset}` for `scale x value + offset`
- * (a ramp's `temperaturePassiveLossFactor - 1`, a drag's `-fatSlowShare`).
- * @typedef {number | string | {key: string, scale?: number, offset?: number}} Ref
- */
+/** @typedef {import('./effect-refs.js').Ref} Ref */
+/** @typedef {import('./effect-refs.js').Compiled} Compiled */
 
 /**
  * @typedef {object} Scale
  * @property {string} lane the lane multiplied (a name of `LANES`)
  * @property {Ref} [perStack] the lane is multiplied by `1 + perStack x level`, never below 0
- * @property {readonly Ref[]} [levels] the lane is multiplied by `levels[level]` (level 0 first)
+ * @property {readonly Ref[]} [levels] the lane is multiplied by `levels[level]` (level 0 first, and 1)
  */
 
 /**
@@ -45,39 +45,9 @@ export const GATE_COUNT = Object.keys(GATE).length;
  * @property {boolean} visible whether the renderer and the inspector show it
  */
 
-/** @typedef {{kind: 'literal', value: number} | {kind: 'key', key: string, scale: number, offset: number}} Compiled */
-
-/**
- * @param {Ref} ref a reference
- * @returns {Compiled} the reference in the form `numberOf` reads
- */
-function compileRef(ref) {
-    if (typeof ref === 'number') {
-        return { kind: 'literal', value: ref };
-    }
-    if (typeof ref === 'string') {
-        return { kind: 'key', key: ref, scale: 1, offset: 0 };
-    }
-    return { kind: 'key', key: ref.key, scale: ref.scale ?? 1, offset: ref.offset ?? 0 };
-}
-
-/**
- * @param {any} world the world
- * @param {number} slot the agent slot
- * @param {Compiled} ref a compiled reference
- * @returns {number} its value for the slot: a literal, or `scale x (the lane at the slot, else the config key) + offset`
- */
-export function numberOf(world, slot, ref) {
-    if (ref.kind === 'literal') {
-        return ref.value;
-    }
-    const lane = world.lanes[ref.key];
-    const value = lane === undefined ? world.config[ref.key] : lane[slot];
-    return ref.scale * value + ref.offset;
-}
-
 /**
  * @typedef {object} Rule one effect's multiplication of one lane
+ * @property {(world: any, slot: number) => number} read the effect's level reader
  * @property {number} effect the effect's index
  * @property {Compiled | null} per the `perStack` reference
  * @property {Compiled[] | null} levels the `levels` references
@@ -85,23 +55,30 @@ export function numberOf(world, slot, ref) {
 
 /**
  * @param {readonly Effect[]} list the effects
- * @returns {Record<string, Rule[]>} each lane's rules in registry order
- * @throws {Error} for a lane that is not in the catalogue, or a scale that has neither form or both
+ * @param {{reads: Array<(world: any, slot: number) => number>, configKeys: string[]}} ctx the level readers and the
+ *   config keys compiled so far
+ * @returns {Rule[][]} each lane's rules in registry order, by lane index
+ * @throws {Error} for a lane that is not in the catalogue, or a scale that has neither form or both, or a table whose
+ *   level 0 is not 1
  */
-function compileRules(list) {
-    /** @type {Record<string, Rule[]>} */
-    const rules = Object.create(null);
+function compileRules(list, ctx) {
+    /** @type {Rule[][]} */
+    const rules = [];
     list.forEach((effect, index) => {
         for (const scale of effect.scales) {
-            if (!LANES.some((lane) => lane.name === scale.lane)) {
+            const id = /** @type {Record<string, number>} */ (LANE_ID)[scale.lane];
+            if (id === undefined) {
                 throw new Error(`effects: ${effect.name} scales ${scale.lane}, which is not a lane`);
             }
             if ((scale.perStack === undefined) === (scale.levels === undefined)) {
                 throw new Error(`effects: ${effect.name} scales ${scale.lane} by perStack or levels, exactly one`);
             }
-            const per = scale.perStack === undefined ? null : compileRef(scale.perStack);
-            const levels = scale.levels === undefined ? null : scale.levels.map(compileRef);
-            (rules[scale.lane] ??= []).push({ effect: index, per, levels });
+            if (scale.levels !== undefined && scale.levels[0] !== 1) {
+                throw new Error(`effects: ${effect.name} scales ${scale.lane} with a table whose level 0 is not 1`);
+            }
+            const per = scale.perStack === undefined ? null : compileRef(scale.perStack, ctx.configKeys);
+            const levels = scale.levels === undefined ? null : scale.levels.map((r) => compileRef(r, ctx.configKeys));
+            (rules[id] ??= []).push({ read: ctx.reads[index], effect: index, per, levels });
         }
     });
     return rules;
@@ -142,16 +119,19 @@ export function createEffects(list) {
             throw new Error(`effects: ${effect.name} stores stacks, so it needs fades`);
         }
     }
-    const rules = compileRules(list);
-    const gates = compileGates(list);
-    /** The effects that store a count, by their row in `world.effectStacks`; -1 for an effect that stores nothing. */
-    const rowOf = list.map(() => -1);
     const stored = list.filter((effect) => effect.level === 'stacks');
-    stored.forEach((effect) => {
-        rowOf[list.indexOf(effect)] = stored.indexOf(effect);
+    const rowOf = list.map((effect) => (effect.level === 'stacks' ? stored.indexOf(effect) : -1));
+    const reads = list.map((effect, i) => {
+        const row = rowOf[i];
+        return row >= 0
+            ? (/** @type {any} */ world, /** @type {number} */ slot) => world.effectStacks[row][slot]
+            : /** @type {(world: any, slot: number) => number} */ (effect.read);
     });
-    const drainRefs = list.map((effect) => effect.drains.map((drain) => compileRef(drain.perTick)));
-    return new EffectSystem({ list, rules, gates, rowOf, stored, drainRefs });
+    const ctx = { reads, configKeys: /** @type {string[]} */ ([]) };
+    const rules = compileRules(list, ctx);
+    const gates = compileGates(list);
+    const drainRefs = list.map((effect) => effect.drains.map((drain) => compileRef(drain.perTick, ctx.configKeys)));
+    return new EffectSystem({ list, rules, gates, rowOf, stored, drainRefs, reads, configKeys: ctx.configKeys });
 }
 
 /** The readers over one effect list. Construct through `createEffects`. */
@@ -159,11 +139,13 @@ export class EffectSystem {
     /**
      * @param {object} parts what `createEffects` compiled
      * @param {readonly Effect[]} parts.list the effects
-     * @param {Record<string, Rule[]>} parts.rules each lane's rules
+     * @param {Rule[][]} parts.rules each lane's rules, by lane index
      * @param {number[][]} parts.gates each gate's effect indices
      * @param {number[]} parts.rowOf each effect's stored row, -1 for none
      * @param {readonly Effect[]} parts.stored the effects that store a count, in row order
      * @param {Compiled[][]} parts.drainRefs each effect's drains' `perTick` references
+     * @param {Array<(world: any, slot: number) => number>} parts.reads each effect's level reader
+     * @param {string[]} parts.configKeys the config keys the rules read, in the order of `world.effectConfig`
      */
     constructor(parts) {
         this.list = parts.list;
@@ -172,6 +154,46 @@ export class EffectSystem {
         this.rowOf = parts.rowOf;
         this.stored = parts.stored;
         this.drainRefs = parts.drainRefs;
+        this.reads = parts.reads;
+        this.configKeys = parts.configKeys;
+        /** The slot whose computed levels are memoised, -1 for none (`pin`). */
+        this.pinned = -1;
+        this.memo = new Float64Array(parts.list.length);
+        this.have = new Uint8Array(parts.list.length);
+    }
+
+    /**
+     * Memoises each effect's level for one slot until `unpin`, for a caller that reads several lanes of a slot while the body
+     * does not change (the cost of a tick, the thrust and turn of a slot): a level is read once, not once a lane.
+     * @param {number} slot the agent slot
+     * @returns {void}
+     */
+    pin(slot) {
+        this.pinned = slot;
+        this.have.fill(0);
+    }
+
+    /** Ends `pin`: levels are read from the body again. */
+    unpin() {
+        this.pinned = -1;
+    }
+
+    /**
+     * @param {any} world the world
+     * @param {number} slot the agent slot
+     * @param {Rule} rule one effect's rule on a lane
+     * @returns {number} the effect's level for the slot, from the memo while the slot is pinned
+     */
+    level(world, slot, rule) {
+        if (this.pinned !== slot) {
+            return rule.read(world, slot);
+        }
+        const e = rule.effect;
+        if (this.have[e] === 0) {
+            this.memo[e] = rule.read(world, slot);
+            this.have[e] = 1;
+        }
+        return this.memo[e];
     }
 
     /**
@@ -181,28 +203,28 @@ export class EffectSystem {
      * @returns {number} its level now: the stored count of a `stacks` effect, else what its `read` computes from the body
      */
     levelOf(world, slot, effect) {
-        const row = this.rowOf[effect];
-        if (row >= 0) {
-            return world.effectStacks[row][slot];
-        }
-        return /** @type {(world: any, slot: number) => number} */ (this.list[effect].read)(world, slot);
+        return this.reads[effect](world, slot);
     }
 
     /**
      * @param {any} world the world
      * @param {number} slot the agent slot
-     * @param {string} lane a lane's name
+     * @param {number | string} lane a lane's index (`LANE_ID`), or its name
      * @returns {number} the lane at the slot times the factor of every effect that scales it, in registry order, each
-     *   read from the state as it stands now
+     *   read from the state as it stands now; a rule at level 0 multiplies by exactly 1 and is skipped
      */
     liveOf(world, slot, lane) {
-        let value = world.lanes[lane][slot];
-        const rules = this.rules[lane];
-        if (rules === undefined) {
-            return value;
-        }
-        for (let k = 0; k < rules.length; k++) {
-            value *= this.ruleFactor(world, slot, rules[k]);
+        const id = typeof lane === 'number' ? lane : /** @type {Record<string, number>} */ (LANE_ID)[lane];
+        let value = world.laneArrays[id][slot];
+        const rules = this.rules[id];
+        if (rules !== undefined) {
+            for (let k = 0; k < rules.length; k++) {
+                const rule = rules[k];
+                const level = this.level(world, slot, rule);
+                if (level !== 0) {
+                    value *= this.factorAt(world, slot, rule, level);
+                }
+            }
         }
         return value;
     }
@@ -210,16 +232,21 @@ export class EffectSystem {
     /**
      * @param {any} world the world
      * @param {number} slot the agent slot
-     * @param {string} lane a lane's name
+     * @param {number | string} lane a lane's index (`LANE_ID`), or its name
      * @returns {number} the product of the factors of every effect that scales the lane, in registry order, 1 for a lane
      *   no effect scales: `liveOf` without the base, for a number that carries the factor on (`sprintFactor`)
      */
     factorOf(world, slot, lane) {
+        const id = typeof lane === 'number' ? lane : /** @type {Record<string, number>} */ (LANE_ID)[lane];
         let value = 1;
-        const rules = this.rules[lane];
+        const rules = this.rules[id];
         if (rules !== undefined) {
             for (let k = 0; k < rules.length; k++) {
-                value *= this.ruleFactor(world, slot, rules[k]);
+                const rule = rules[k];
+                const level = this.level(world, slot, rule);
+                if (level !== 0) {
+                    value *= this.factorAt(world, slot, rule, level);
+                }
             }
         }
         return value;
@@ -229,11 +256,12 @@ export class EffectSystem {
      * @param {any} world the world
      * @param {number} slot the agent slot
      * @param {number} effect an effect's index
-     * @param {string} lane a lane's name
+     * @param {number | string} lane a lane's index or name
      * @returns {number} the factor that one effect puts on the lane now, 1 when it does not scale it
      */
     effectFactor(world, slot, effect, lane) {
-        const rule = (this.rules[lane] ?? []).find((candidate) => candidate.effect === effect);
+        const id = typeof lane === 'number' ? lane : /** @type {Record<string, number>} */ (LANE_ID)[lane];
+        const rule = (this.rules[id] ?? []).find((candidate) => candidate.effect === effect);
         return rule === undefined ? 1 : this.ruleFactor(world, slot, rule);
     }
 
@@ -241,10 +269,21 @@ export class EffectSystem {
      * @param {any} world the world
      * @param {number} slot the agent slot
      * @param {Rule} rule one effect's rule on a lane
-     * @returns {number} its factor now: `1 + perStack x level` (never below 0), or the `levels` entry of the level
+     * @returns {number} its factor now (1 at level 0)
      */
     ruleFactor(world, slot, rule) {
-        const level = this.levelOf(world, slot, rule.effect);
+        const level = rule.read(world, slot);
+        return level === 0 ? 1 : this.factorAt(world, slot, rule, level);
+    }
+
+    /**
+     * @param {any} world the world
+     * @param {number} slot the agent slot
+     * @param {Rule} rule one effect's rule on a lane
+     * @param {number} level the effect's level, above 0
+     * @returns {number} `1 + perStack x level` (never below 0), or the `levels` entry of the level
+     */
+    factorAt(world, slot, rule, level) {
         if (rule.levels === null) {
             const factor = 1 + numberOf(world, slot, /** @type {Compiled} */ (rule.per)) * level;
             return factor > 0 ? factor : 0;
@@ -261,7 +300,7 @@ export class EffectSystem {
     gateOpen(world, slot, gate) {
         const closing = this.gates[gate];
         for (let k = 0; k < closing.length; k++) {
-            if (this.levelOf(world, slot, closing[k]) > 0) {
+            if (this.reads[closing[k]](world, slot) > 0) {
                 return false;
             }
         }
@@ -269,8 +308,9 @@ export class EffectSystem {
     }
 
     /**
-     * Allocates the stored rows of a world being built: `effectStacks[row][slot]` and `effectTicks[row][slot]` for each
-     * `stacks` effect, `Float64Array` rows of `maxAgents`, also pushed onto `agentRows` so a freed slot is zeroed.
+     * Allocates what a world being built holds for the effects: the stored rows, `effectStacks[row][slot]` and
+     * `effectTicks[row][slot]`, `Float64Array` rows of `maxAgents` that are also pushed onto `agentRows` (so a freed slot is
+     * zeroed), and `effectConfig`, the config numbers the rules read.
      * @param {any} world the world being built, its `agentRows` allocated
      * @returns {void}
      */
@@ -282,6 +322,16 @@ export class EffectSystem {
             world.agentRows.push({ array: world.effectStacks[row], stride: 1, name: `effect.${effect.name}.stacks` });
             world.agentRows.push({ array: world.effectTicks[row], stride: 1, name: `effect.${effect.name}.ticks` });
         });
+        this.refreshConfig(world);
+    }
+
+    /**
+     * Reads the config numbers of the rules into `world.effectConfig` again: call it after the config changes.
+     * @param {any} world the world
+     * @returns {void}
+     */
+    refreshConfig(world) {
+        world.effectConfig = Float64Array.from(this.configKeys, (key) => world.config[key]);
     }
 
     /**
@@ -343,7 +393,7 @@ export const EFFECT = Object.freeze(
 /**
  * @param {any} world the world
  * @param {number} slot the agent slot
- * @param {string} lane a lane's name
+ * @param {number | string} lane a lane's index (`LANE_ID`) or name
  * @returns {number} the lane with every effect applied (see `EffectSystem.liveOf`)
  */
 export function liveOf(world, slot, lane) {
@@ -353,7 +403,7 @@ export function liveOf(world, slot, lane) {
 /**
  * @param {any} world the world
  * @param {number} slot the agent slot
- * @param {string} lane a lane's name
+ * @param {number | string} lane a lane's index (`LANE_ID`) or name
  * @returns {number} the product of the effects' factors on the lane (see `EffectSystem.factorOf`)
  */
 export function factorOf(world, slot, lane) {
@@ -364,7 +414,7 @@ export function factorOf(world, slot, lane) {
  * @param {any} world the world
  * @param {number} slot the agent slot
  * @param {number} effect an `EFFECT` code
- * @param {string} lane a lane's name
+ * @param {number | string} lane a lane's index or name
  * @returns {number} the factor that one effect puts on the lane now, 1 when it does not scale it
  */
 export function effectFactor(world, slot, effect, lane) {
@@ -405,4 +455,18 @@ export function allocEffects(world) {
  */
 export function fadeEffects(world) {
     SYSTEM.fade(world);
+}
+
+/**
+ * Memoises the effect levels of one slot until `unpinSlot` (see `EffectSystem.pin`).
+ * @param {number} slot the agent slot
+ * @returns {void}
+ */
+export function pinSlot(slot) {
+    SYSTEM.pin(slot);
+}
+
+/** Ends `pinSlot`. */
+export function unpinSlot() {
+    SYSTEM.unpin();
 }

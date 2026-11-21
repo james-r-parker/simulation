@@ -1,7 +1,20 @@
 // The rules the effect registry replaced (docs/designs/status-effects.md, Phase 1), read back through their effects under
 // their old names, so the tests that pinned each rule still pin the same numbers.
 
-import { EFFECT, effectFactor, levelOf } from '../../../js/sim/effects.js';
+import { LANES } from '../../../js/sim/body-lanes.js';
+import { EFFECT, effectFactor as factor, levelOf } from '../../../js/sim/effects.js';
+
+/**
+ * @param {any} world a world, or a hand-built stand-in with a `lanes` map
+ * @param {number} slot the agent slot
+ * @param {number} effect an `EFFECT` code
+ * @param {string} lane a lane's name
+ * @returns {number} the effect's factor on the lane (a stand-in gets its `laneArrays`, which the readers index)
+ */
+function effectFactor(world, slot, effect, lane) {
+    world.laneArrays ??= LANES.map((l) => world.lanes?.[l.name]);
+    return factor(world, slot, effect, lane);
+}
 
 /**
  * @param {any} world the world

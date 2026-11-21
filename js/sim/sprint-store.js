@@ -6,7 +6,7 @@
 // `sprintStoreEnabled` off there is no store and the lane holds 1 for every slot. No RNG, no clock, no allocation per tick.
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
-import { factorOf } from './effects.js';
+import { LANE_ID, factorOf } from './effects.js';
 import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 
 /**
@@ -116,7 +116,7 @@ export function stepSprintStore(store, world) {
         }
         const o = i * OUTPUT_COUNT;
         const effort = effortOf(outputs[o + OUTPUT_INDEX.SPRINT]);
-        sprintFactor[i] = factorOf(world, i, 'sprintBoost') * effort;
+        sprintFactor[i] = factorOf(world, i, LANE_ID.sprintBoost) * effort;
         if (effort > 0) {
             const before = level[i];
             level[i] = Math.max(0, before - sprintDrain[i] * effort);
