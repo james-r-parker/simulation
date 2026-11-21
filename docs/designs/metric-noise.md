@@ -1,6 +1,6 @@
 # Metric noise
 
-**Status:** In progress - Phases 1 and 4 are built (the keep-rule guard reads the settled catch metric on the E254 baseline). Phase 2 has a terminal hunter count candidate; its longer runs are open. Phase 6 (role metrics against planted scenes) is next: it is gate 2 before any training. Phase 5 (headline metrics) follows.
+**Status:** In progress - Phases 1 and 4 are built (the keep-rule guard reads the settled catch metric on the E254 baseline). Phase 2 has a terminal hunter count candidate; its longer runs are open. Phase 6 (role metrics against planted scenes, gate 2 before any training) has T20 and the predator slice of T21 built; the other roles wait on role-budget.md Phases 2 to 5. Phase 5 (headline metrics) follows.
 **Validated:** bc55972e (2026-11-20)
 **Priority:** 1 - Measurement lead. Phase 4 (the statistics layer) is built. Next: step 1 (registries.md: events, then the detector interface), then Phase 6 (every role's metrics against planted scenes, gate 2 before any training), then Phase 5 (the headline metrics)
 **Depends on:** [metric-trust.md](metric-trust.md)
@@ -462,13 +462,13 @@ Training selects on what the metrics report, so a role whose metric is wrong can
 
 ### Phase 6 - Role metrics
 
-| #   | Task                                                                                                                                                                                                                  | Nature       | Depends on |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T20 | Add the `roles` field to the registry with its tests, tag the metrics of the table above, and add `--role` to `eval:compare`                                                                                          | [mechanical] | -          |
-| T21 | Add `test/evo/role-metrics.slow.test.js`: run each [role-budget.md](role-budget.md) scene under the eval observer and assert each tagged metric reads the scene's planted outcome; list every metric that does not    | [judgement]  | T20        |
-| T22 | Fix each defect T21 finds, a failing test first; add the defender's metrics (`eval.defender_shoves_per_1k`, `eval.defender_bite_break_share`) with arithmetic and source tests                                        | [judgement]  | T21        |
-| T23 | Read liveness and power of every role metric on the shared baseline and with the defender's shove on; record, per role, the metric a training decision rests on and the seeds it needs, or that the role has none yet | [judgement]  | T22        |
-| T24 | Conformance review of Phase 6                                                                                                                                                                                         | [judgement]  | T23        |
+| #   | Task                                                                                                                                                                                                                                                                                                                                                       | Nature       | Depends on |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T20 | (built) Add the `roles` field to the registry with its tests, tag the metrics of the table above, and add `--role` to `eval:compare`                                                                                                                                                                                                                       | [mechanical] | -          |
+| T21 | (predator built; forager, reproducer, scout, defender and herd wait on the scenes of role-budget.md Phases 2 to 5, which are not built) Add `test/evo/role-metrics.slow.test.js`: run each [role-budget.md](role-budget.md) scene under the eval observer and assert each tagged metric reads the scene's planted outcome; list every metric that does not | [judgement]  | T20        |
+| T22 | (waits: the predator scene found no defect; the defender's shove is not in the sim and the other roles have no scene yet) Fix each defect T21 finds, a failing test first; add the defender's metrics (`eval.defender_shoves_per_1k`, `eval.defender_bite_break_share`) with arithmetic and source tests                                                   | [judgement]  | T21        |
+| T23 | (waits on T22) Read liveness and power of every role metric on the shared baseline and with the defender's shove on; record, per role, the metric a training decision rests on and the seeds it needs, or that the role has none yet                                                                                                                       | [judgement]  | T22        |
+| T24 | Conformance review of Phase 6                                                                                                                                                                                                                                                                                                                              | [judgement]  | T23        |
 
 ## Verification
 
