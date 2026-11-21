@@ -91,6 +91,19 @@ describe('noteTick', () => {
         expect(tickerEvents(live)).toMatchObject([{ kind: 'hunt-streak', genomeId: 99, x: 40, y: 50 }]);
     });
 
+    it('queues record-streak when a hunter passes the longest streak announced', () => {
+        const { world, observer, live } = setup();
+        world.alive[2] = 1;
+        world.x[2] = 40;
+        world.y[2] = 50;
+        observer.slotOf.set(99, 2);
+        observer.spec[2] = 1;
+        observer.kills[2] = HUNT_STREAK_KILLS + 1;
+        event(world, EVENT_TYPE.AGENT_DIED, 60, [0, 7, DEATH_CAUSE.EATEN, 99, 0, 3]);
+        noteTick(live, world, observer);
+        expect(tickerEvents(live)).toMatchObject([{ kind: 'record-streak', genomeId: 99, x: 40, y: 50 }]);
+    });
+
     it('does not announce a fifth kill by an agent that cannot hunt', () => {
         const { world, observer, live } = setup();
         world.alive[2] = 1;
