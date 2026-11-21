@@ -24,8 +24,6 @@ const EDGE_SHARE = 0.9;
 const HERD_FROM = 0.7;
 const HERD_TO = 0.4;
 
-/** @typedef {import('./reflex-stage.js').ReflexCase} ReflexCase */
-
 /**
  * A plan that draws a heading and a small offset off it, and stages each orientation with `build`.
  * @param {(d: {angle: number, offset: number}, mirror: 1 | -1, view: number) => import('./reflex-stage.js').Staging[]} build

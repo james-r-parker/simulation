@@ -1,6 +1,6 @@
 # Brain reflex tests
 
-**Status:** In progress - Phase 1 built: six cases (four forager, two predator), the table builder, the batched evaluator, the bars, `npm run reflex` and `npm run bench:reflex` (522 genomes per second); Phase 5 (a case for each role) is built through T22 (the role cases, the body-sense and call cases of T21a, and every bar from `reflexBars`; its conformance review T24 follows `E-RT-1`), then Phase 2's study `E-RT-1`, which has not run.
+**Status:** In progress - Phase 1 built: six cases (four forager, two predator), the table builder, the batched evaluator, the bars, `npm run reflex` and `npm run bench:reflex` (522 genomes per second); Phase 5 (a case for each role) is built through T22 (T23 and T24 follow), then Phase 2's study `E-RT-1`, which has not run.
 **Validated:** edd4cd4b (2026-11-07)
 **Scheduled by:** [training-loop.md](training-loop.md) step 1 - gate 3 of fair-chase.md "Before any training": Phase 5 (a case for each role, bars from the role budget) and then Phase 2 (the validation study) come before any training run
 **Depends on:** [training.md](training.md)
