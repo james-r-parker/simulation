@@ -308,20 +308,24 @@ export class EffectSystem {
     }
 
     /**
-     * Allocates what a world being built holds for the effects: the stored rows, `effectStacks[row][slot]` and
-     * `effectTicks[row][slot]`, `Float64Array` rows of `maxAgents` that are also pushed onto `agentRows` (so a freed slot is
-     * zeroed), and `effectConfig`, the config numbers the rules read.
+     * Gathers what a world being built holds for the effects: the stored rows, `effectStacks[row][slot]` and
+     * `effectTicks[row][slot]` (`Float64Array` rows of `maxAgents`, declared by `effectSpecs` in `agent-arrays.js`, so hashed
+     * and zeroed with a freed slot like every per-slot array), and `effectConfig`, the config numbers the rules read.
      * @param {any} world the world being built, its `agentRows` allocated
      * @returns {void}
      */
     allocRows(world) {
         const n = world.config.maxAgents;
-        world.effectStacks = this.stored.map(() => new Float64Array(n));
-        world.effectTicks = this.stored.map(() => new Float64Array(n));
-        this.stored.forEach((effect, row) => {
-            world.agentRows.push({ array: world.effectStacks[row], stride: 1, name: `effect.${effect.name}.stacks` });
-            world.agentRows.push({ array: world.effectTicks[row], stride: 1, name: `effect.${effect.name}.ticks` });
-        });
+        const rowOf = (/** @type {string} */ name) => {
+            if (world[name] === undefined) {
+                // Not declared by `agentSpecs` (a fixture list): allocate it, and zero it with the slot.
+                world[name] = new Float64Array(n);
+                world.agentRows.push({ array: world[name], stride: 1, name });
+            }
+            return world[name];
+        };
+        world.effectStacks = this.stored.map((effect) => rowOf(`effect.${effect.name}.stacks`));
+        world.effectTicks = this.stored.map((effect) => rowOf(`effect.${effect.name}.ticks`));
         this.refreshConfig(world);
     }
 
