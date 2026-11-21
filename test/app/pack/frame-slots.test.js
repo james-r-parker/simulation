@@ -136,6 +136,8 @@ describe('requests', () => {
         expect(lensBits({ temperature: true, scent: true, territory: true, vision: true, calls: true })).toBe(
             LENS.TEMPERATURE | LENS.SCENT | LENS.TERRITORY | LENS.VISION | LENS.CALLS,
         );
+        expect(lensBits({ temperature: false }, true)).toBe(LENS.TV);
+        expect(lensBits({ temperature: true }, true)).toBe(LENS.TV | LENS.TEMPERATURE);
         expect(paletteIndex('cvd-safe')).toBe(1);
         expect(paletteIndex('nonsense')).toBe(0);
     });

@@ -21,6 +21,30 @@ describe('packWorld', () => {
         }
     });
 
+    it('moves the rocks and refuge rings by the static lines drift and nothing else', () => {
+        const ready = smallReady();
+        const info = { ...ready.info, terrain: { ...ready.info.terrain, refuges: [{ x: 100, y: 120, radius: 30 }] } };
+        const pack = createWorldPack(info, 3);
+        const levels = new Float32Array(1);
+        const base = { info, dung: 1, levels, timeSec: 0 };
+        packWorld(ready.snapshot, pack, base);
+        const rocks = Array.from(pack.rock.pose);
+        const rings = Array.from(pack.refuge.pose);
+        packWorld(ready.snapshot, pack, { ...base, shift: { x: 1.5, y: -2 } });
+        expect(pack.rock.count).toBeGreaterThan(0);
+        expect(pack.refuge.count).toBeGreaterThan(0);
+        for (let r = 0; r < pack.rock.count; r++) {
+            expect(pack.rock.pose[r * 4]).toBeCloseTo(rocks[r * 4] + 1.5);
+            expect(pack.rock.pose[r * 4 + 1]).toBeCloseTo(rocks[r * 4 + 1] - 2);
+            expect(pack.rock.pose[r * 4 + 3]).toBe(rocks[r * 4 + 3]);
+        }
+        for (let r = 0; r < pack.refuge.count; r++) {
+            expect(pack.refuge.pose[r * 4]).toBeCloseTo(rings[r * 4] + 1.5);
+            expect(pack.refuge.pose[r * 4 + 1]).toBeCloseTo(rings[r * 4 + 1] - 2);
+            expect(pack.refuge.pose[r * 4 + 3]).toBe(rings[r * 4 + 3]);
+        }
+    });
+
     it('marks ripe patches, splits fertile from dung zones and fades clouds', () => {
         const info = {
             obstacleCount: 0,

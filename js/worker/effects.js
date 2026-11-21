@@ -119,7 +119,8 @@ function addMatedSingleTick(log, world, o, slotOf) {
 }
 
 /**
- * A newborn that is still alive yields `BORN`; one that was born and died within the tick yields nothing.
+ * A newborn that is still alive yields `BORN`, carrying its mother's genome id (0 for a founder or an arrival) so a
+ * follow can find a dead subject's living child; one that was born and died within the tick yields nothing.
  * @param {EffectLog} log the log
  * @param {Record<string, any>} world the world
  * @param {number} o the event record offset
@@ -134,7 +135,7 @@ function addBorn(log, world, o, slotOf) {
         placeEffect(log, w, world.x[slot], world.y[slot]);
         log.u32[w + 4] = d[o + 3];
         log.u32[w + 5] = d[o + 4];
-        log.u32[w + 6] = d[o + 5];
+        log.u32[w + 6] = d[o + 6];
         log.u32[w + 7] = d[o + 8];
     }
     if (world.config.pregnancyTicks === 1 && d[o + 8] === BORN_CAUSE.MATE) {

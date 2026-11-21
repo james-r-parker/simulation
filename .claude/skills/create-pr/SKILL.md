@@ -7,9 +7,11 @@ description: Use when committing, pushing or opening a pull request, or when the
 
 ## Overview
 
-**The PR gate is CI** (`.github/workflows/check.yml`, whose final job is the required `check`). On a quiet runner it
-runs the whole test suite, `*.slow.test.js` included, sharded over parallel jobs with coverage, then the coverage ratchet
-on the merged coverage, the static gates (`scripts/check.sh --ci --skip=test`) and the browser smoke, in about 6 minutes;
+**The PR gate is CI** (`.github/workflows/check.yml`, whose final job is the required `check`). On a pull request it
+runs the tests the change can reach (`scripts/affected.mjs`: `*.slow.test.js` included, a few jobs for most changes), the
+static gates (`scripts/check.sh --ci --skip=test`), `ratchet-related` on the changed files and the browser smoke; a path on
+the full list (`package.json`, the workflows, `vitest.config.js`, `test/helpers/`, ...) runs the whole suite as a push to
+`main` does, with the coverage ratchet on the merged coverage, in about 6 minutes;
 a docs-only PR (`scripts/change-scope.sh`) runs `scripts/check.sh --ci --docs`. The local machine is shared with evals,
 so a full local gate times out on load rather than on code. Locally an agent runs the quick pre-push check; the full
 local gate is only for performance PRs.
@@ -139,13 +141,17 @@ On a red `check` (exit 1) the digest names the job; for more, `gh run view <run-
 
 - `static`: the "Local gate" step shows the digest under each `✗` line; for more, `gh run download <run-id> -n
 check-logs` (`.checklogs/` and `TestResults/`). A `format` or `designs-index` failure is fixed by `scripts/check.sh --fix`.
-- `test <pass> <i>/<n>`: the log names the failed test and its assertion; the shard's seed is `github.run_id`, so
+- `test <id>` (`shard-<i>`, `heavy-<file>` or `statistical-<file>`): the log names the failed test and its assertion; the shard's seed is `github.run_id`, so
   `TEST_SCOPE=<shard, heavy or statistical> npx vitest run --sequence.shuffle --sequence.seed=<run id> <file>` replays the
   order for one file. A test that times out on a quiet runner is a real slow test: speed it up or move it to a
   `.slow.test.js` file's own limit, never skip it.
 - `coverage`: the ratchet line names the scope and metric below its baseline, and the lines under it name the files
   with the most uncovered lines, branches or functions; add tests for the uncovered code (never
   lower `scripts/quality-baseline.json`). After a failed shard its numbers are partial, so fix the shard first.
+- `static` also fails `data-deps` (`node scripts/data-deps.mjs --write`; a test with a path the scan cannot resolve gets a
+  `// reads: <path>` comment) and, on a pull request, `affected-misses`: a test that failed on `main` after a pull
+  request that did not reach it; declare the edge it names, in `// reads:` or `scripts/lib/affected.mjs`.
+- A red `main` opens a `red-main` issue naming the commit, the failed tests and any miss: fix forward.
 - Reproduce, fix the root cause, commit the fix, rerun `scripts/ship.sh`. Do not just re-run the job.
 
 Never merge while `check` is red or pending.

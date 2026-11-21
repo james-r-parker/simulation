@@ -51,6 +51,17 @@ describe('modelMaterial', () => {
         }
     });
 
+    it('grows the quad and lays the event falloff when the inputs carry one', () => {
+        const inputs = { ...allInputs(), halo: float(0.5), haloPx: uniform(6), pad: float(0.2) };
+        const withHalo = modelMaterial(MODELS.predator, { inputs, look: LOOK });
+        expect(withHalo.positionNode.isNode).toBe(true);
+        expect(withHalo.colorNode.isNode).toBe(true);
+        const without = modelMaterial(MODELS.predator, { inputs: allInputs(), look: LOOK });
+        expect(without.colorNode.isNode).toBe(true);
+        const noReach = modelMaterial(MODELS.predator, { inputs: { ...inputs, haloPx: undefined }, look: LOOK });
+        expect(noReach.colorNode.isNode).toBe(true);
+    });
+
     it('builds without a rig (every channel at rest)', () => {
         const inputs = { ...allInputs(), rig: null };
         expect(() => modelMaterial(MODELS.rock, { inputs, look: LOOK })).not.toThrow();

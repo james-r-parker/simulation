@@ -12,6 +12,7 @@ import { createConfig } from '../js/sim/config.js';
 import { loadRun } from '../scripts/lib/exam-readings.mjs';
 import { main, runExam } from '../scripts/train-exam.mjs';
 import { makeChampionFile } from './evo/helpers/champion-file.js';
+import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 
 const root = mkdtempSync(join(tmpdir(), 'train-exam-'));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -73,7 +74,7 @@ describe('loadRun', () => {
     });
 });
 
-describe('runExam', () => {
+describe('runExam', { timeout: scaleTimeout(60_000) }, () => {
     it('prints ten rows, writes exam.json and logs an ExamRow per row', async () => {
         const crossplay = { hunterProgress: { low: 0.2 }, preyProgress: { low: 0.1 }, cycleShare: 0.05 };
         const dir = runDir('exam', { crossplay });

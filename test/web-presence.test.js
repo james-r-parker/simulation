@@ -1,4 +1,5 @@
 // The page head, the manifest and the committed icon files agree (docs/designs/web-presence.md).
+// reads: public, index.html
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {

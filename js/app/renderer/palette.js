@@ -7,6 +7,20 @@ export const NEON_LIGHTNESS = 0.62;
 export const MAX_SATURATION = 0.72;
 /** Rim width in device pixels, by palette. */
 export const RIM_PX = Object.freeze({ default: 1.5, 'cvd-safe': 1.5, 'high-contrast': 2.5 });
+/** TV mode draws every body rim 1.5 times as wide (1.5 px to 2.25 px by default) and its least size a third larger. */
+export const TV_RIM_SCALE = 1.5;
+export const TV_MIN_PX_SCALE = 32 / 24;
+
+/**
+ * @param {string | undefined} palette the family palette name
+ * @param {boolean} tv whether TV mode is on
+ * @returns {number} the rim width in device px for the palette, wider in TV mode
+ */
+export function rimPxFor(palette, tv) {
+    const px = RIM_PX[/** @type {keyof typeof RIM_PX} */ (palette)] ?? RIM_PX.default;
+    return tv ? px * TV_RIM_SCALE : px;
+}
+
 /** The share of the rim colour a part's flat fill takes, by palette. */
 export const FILL_SHARE = Object.freeze({ default: 0.18, 'cvd-safe': 0.18, 'high-contrast': 0.3 });
 /** The fill share of an agent at zero energy; full energy fills at `FILL_SHARE`. */

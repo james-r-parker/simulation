@@ -8,6 +8,7 @@ import { REFRESH_MS, refreshParts } from '../../js/app/interface-refresh.js';
 function setup({ drawer = null } = {}) {
     const log = /** @type {string[]} */ ([]);
     const ctx = {
+        prefs: { followPlate: true },
         last: Object.fromEntries(Object.keys(REFRESH_MS).map((k) => [k, -Infinity])),
         shifted: { x: 0, y: 0 },
         deps: {
@@ -29,8 +30,13 @@ function setup({ drawer = null } = {}) {
         queue: { current: () => [] },
         tickerUpdate: () => log.push('ticker'),
         drawers: { state: () => drawer },
-        inspector: { update: () => log.push('inspector') },
+        lifeCodes: new Uint8Array(12),
+        inspector: {
+            update: () => log.push('inspector'),
+            setLife: (/** @type {any} */ _c, /** @type {number} */ n) => log.push(`life${n}`),
+        },
         charts: { update: () => log.push('charts') },
+        plate: { element: { style: {} }, update: () => log.push('plate') },
         peek: { hide: () => log.push('peekHide'), show() {} },
         peekTracker: { position: () => ({ x: 0, y: 0 }), rested: () => false },
     };
@@ -41,7 +47,9 @@ describe('refreshParts', () => {
     it('refreshes the always-on parts at their rates and leaves the drawer parts alone while closed', () => {
         const { ctx, log } = setup();
         refreshParts(ctx, 1000);
-        expect(log).toEqual(expect.arrayContaining(['fade', 'bar', 'debug', 'controls', 'peekHide', 'ticker']));
+        expect(log).toEqual(
+            expect.arrayContaining(['fade', 'bar', 'debug', 'controls', 'peekHide', 'ticker', 'plate']),
+        );
         expect(log).not.toContain('inspector');
         expect(log).not.toContain('charts');
         log.length = 0;
@@ -57,6 +65,7 @@ describe('refreshParts', () => {
         const inspector = setup({ drawer: 'inspector' });
         refreshParts(inspector.ctx, 0);
         expect(inspector.log).toContain('inspector');
+        expect(inspector.log).toContain('life0');
         const charts = setup({ drawer: 'charts' });
         refreshParts(charts.ctx, 0);
         expect(charts.log).toContain('charts');

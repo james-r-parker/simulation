@@ -8,12 +8,29 @@ function memory() {
 }
 
 describe('prefs', () => {
+    it('shows the follow plate by default and keeps only a boolean choice', () => {
+        expect(defaultPrefs().followPlate).toBe(true);
+        expect(sanitizePrefs({ followPlate: false }).followPlate).toBe(false);
+        expect(sanitizePrefs({ followPlate: 'no' }).followPlate).toBe(true);
+    });
+
     it('keeps tvIdleMinutes at 5 by default, accepts 0 to a day and rejects the rest', () => {
         expect(defaultPrefs().tvIdleMinutes).toBe(5);
         expect(sanitizePrefs({ tvIdleMinutes: 0 }).tvIdleMinutes).toBe(0);
         expect(sanitizePrefs({ tvIdleMinutes: 30 }).tvIdleMinutes).toBe(30);
         for (const bad of [-1, 1441, 2.5, '5', null, Number.NaN]) {
             expect(sanitizePrefs({ tvIdleMinutes: bad }).tvIdleMinutes).toBe(5);
+        }
+    });
+
+    it('keeps dim at auto by default, accepts auto or a level from 0.3 to 1 and rejects the rest', () => {
+        expect(defaultPrefs().dim).toBe('auto');
+        expect(sanitizePrefs({ dim: 'auto' }).dim).toBe('auto');
+        expect(sanitizePrefs({ dim: 0.3 }).dim).toBe(0.3);
+        expect(sanitizePrefs({ dim: 0.7 }).dim).toBe(0.7);
+        expect(sanitizePrefs({ dim: 1 }).dim).toBe(1);
+        for (const bad of [0.29, 1.01, 0, -1, '0.5', 'dark', null, Number.NaN]) {
+            expect(sanitizePrefs({ dim: bad }).dim).toBe('auto');
         }
     });
 
