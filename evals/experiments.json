@@ -5206,8 +5206,8 @@
       "before": "base: npm run train:feasible -- --curriculum evals/train-ladder.json --until hunt --workers 16",
       "after": "courser: the same, on the ladder with evals/train-screens/stages/fair-chase-<stage>.json as each stage's config (evals/train-screens/fair-chase.grid.json, arm courser)",
       "verdicts": {},
-      "effect": "better",
-      "note": "Prediction only; results follow in this record.",
+      "effect": "worse",
+      "note": "Prediction FALSIFIED: courser prey-ahead 1/8 (best 0.125, bar 0.109), under the 2 needed. The check as run (fc2-feasible) used the default config for drills (DRILL_CONFIG = {} in scripts/lib/feasible-run.mjs; fixed by PR 571), so base and courser read identically (prey-ahead 0/8 best 0.03; prey-mid 1/8 0.56; prey-crossing 2/8 0.81; kin-spared 0/8; prey-weak 3/8 0.88; food and prey-adrift 8/8). The courser numbers come from a one-off script (scripts/fc2-courser-drills.mjs, not committed) calling learnLesson with evals/fair-chase/courser.json as the drill config at the check sizes: prey-adrift 8/8 (1.00), prey-weak 2/8 (0.25), prey-mid 0/8 (0), prey-ahead 1/8 (0.125, bar 0.109), prey-crossing 0/8 (0), kin-spared 0/8. Per-drill table in the report.",
       "reports": ["evals/decisions/E255/results.md"]
     },
     {
