@@ -5,6 +5,7 @@
 // its index (`LANE_ID`), each rule holds its level reader and its numbers compiled, and a rule at level 0 is skipped:
 // its factor is exactly 1. Nothing here allocates per call and nothing draws from the RNG.
 
+import { levelOfEffect } from './effect-dispatch.js';
 import { EFFECTS } from './effect-list.js';
 import { LANE_ID, LEVEL, NUMBER, REF, RESULT, SHARE, compileRef, numberInto, numberOf } from './effect-refs.js';
 import { raiseEffect } from './effect-raise.js';
@@ -47,9 +48,6 @@ export { GATE, GATE_COUNT, LANE_ID, RESULT, compileRef, numberOf };
 
 /**
  * @typedef {object} Rule one effect's multiplication of one lane
- * @property {((world: any, slot: number) => number | void) | null} read the effect's level reader, null for a stored effect
- * @property {boolean} share whether the reader leaves a share in `SHARE[0]` (a `share` effect)
- * @property {number} row the effect's stored row, whose stacks are its level; -1 for a computed effect
  * @property {number} effect the effect's index
  * @property {Compiled | null} per the `perStack` reference
  * @property {Compiled[] | null} levels the `levels` references
@@ -58,11 +56,35 @@ export { GATE, GATE_COUNT, LANE_ID, RESULT, compileRef, numberOf };
  */
 
 /**
+ * @param {readonly Effect[]} list the effects
+ * @param {number[]} rowOf each effect's stored row, -1 for none
+ * @returns {(world: any, slot: number, effect: number) => void} a level dispatch over any list: leaves in `LEVEL[0]` the
+ *   effect's stored stacks, or what its reader computes. One call site sees every reader, so the sim's own list uses the
+ *   generated `levelOfEffect` in its place.
+ */
+function readerDispatch(list, rowOf) {
+    return (world, slot, effect) => {
+        const row = rowOf[effect];
+        const read = /** @type {Function} */ (list[effect].read);
+        if (row >= 0) {
+            LEVEL[0] = world.effectStacks[row][slot];
+        } else if (list[effect].level === 'share') {
+            read(world, slot);
+            LEVEL[0] = SHARE[0];
+        } else {
+            LEVEL[0] = read(world, slot);
+        }
+    };
+}
+
+/**
  * Builds the readers over a list of effects.
  * @param {readonly Effect[]} list the effects, in registry order
+ * @param {{dispatch?: (world: any, slot: number, effect: number) => void}} [options] `dispatch`, a level dispatch written
+ *   for this list (`levelOfEffect` for `EFFECTS`); by default one that calls each effect's reader
  * @returns {EffectSystem} the readers, the stored rows and the fade pass of the list
  */
-export function createEffects(list) {
+export function createEffects(list, options = {}) {
     const names = list.map((effect) => effect.name);
     if (new Set(names).size !== names.length) {
         throw new Error('effects: every effect needs its own name');
@@ -75,25 +97,10 @@ export function createEffects(list) {
     const thenOf = compileThen(list);
     const stored = list.filter((effect) => effect.level === 'stacks');
     const rowOf = list.map((effect) => (effect.level === 'stacks' ? stored.indexOf(effect) : -1));
-    // A stored effect has no reader: `level` reads its row, `world.effectStacks[row][slot]`, in place.
-    const reads = list.map(
-        (effect) => /** @type {(world: any, slot: number) => number | void} */ (effect.read ?? null),
-    );
-    const shares = list.map((effect) => effect.level !== 'step');
-    const ctx = { reads, shares, rows: rowOf, configKeys: /** @type {string[]} */ ([]) };
+    const ctx = { configKeys: /** @type {string[]} */ ([]) };
     const rules = compileRules(list, ctx);
     const gates = compileGates(list);
     const drainRefs = list.map((effect) => effect.drains.map((drain) => compileRef(drain.perTick, ctx.configKeys)));
-    const probes = list.map((_, effect) => ({
-        read: reads[effect],
-        share: shares[effect],
-        row: rowOf[effect],
-        effect,
-        per: null,
-        levels: null,
-        by: -1,
-        power: false,
-    }));
     return new EffectSystem({
         list,
         rules,
@@ -101,7 +108,7 @@ export function createEffects(list) {
         rowOf,
         stored,
         drainRefs,
-        probes,
+        dispatch: options.dispatch ?? readerDispatch(list, rowOf),
         thenOf,
         configKeys: ctx.configKeys,
     });
@@ -117,7 +124,7 @@ export class EffectSystem {
      * @param {number[]} parts.rowOf each effect's stored row, -1 for none
      * @param {readonly Effect[]} parts.stored the effects that store a count, in row order
      * @param {Compiled[][]} parts.drainRefs each effect's drains' `perTick` references
-     * @param {Rule[]} parts.probes each effect as a rule that scales nothing, to read its level
+     * @param {(world: any, slot: number, effect: number) => void} parts.dispatch leaves an effect's level in `LEVEL[0]`
      * @param {number[]} parts.thenOf each effect's follow-on effect, -1 for none
      * @param {string[]} parts.configKeys the config keys the rules read, in the order of `world.effectConfig`
      */
@@ -128,7 +135,7 @@ export class EffectSystem {
         this.rowOf = parts.rowOf;
         this.stored = parts.stored;
         this.drainRefs = parts.drainRefs;
-        this.probes = parts.probes;
+        this.dispatch = parts.dispatch;
         this.configKeys = parts.configKeys;
         /** Each stored row's follow-on effect, -1 for none. */
         this.storedThen = parts.stored.map((effect) => parts.thenOf[parts.list.indexOf(effect)]);
@@ -156,27 +163,19 @@ export class EffectSystem {
     }
 
     /**
-     * Leaves in `LEVEL[0]` the effect's level for the slot, from the memo while the slot is pinned.
+     * Leaves in `LEVEL[0]` the effect's level for the slot (through `dispatch`), from the memo while the slot is pinned.
      * @param {any} world the world
      * @param {number} slot the agent slot
-     * @param {Rule} rule one effect's rule on a lane, or its probe
+     * @param {number} e an effect's index
      * @returns {void}
      */
-    level(world, slot, rule) {
-        const e = rule.effect;
+    level(world, slot, e) {
         const pinned = this.pinned === slot;
         if (pinned && this.have[e] === this.epoch) {
             LEVEL[0] = this.memo[e];
             return;
         }
-        if (rule.row >= 0) {
-            LEVEL[0] = world.effectStacks[rule.row][slot];
-        } else if (rule.share) {
-            /** @type {Function} */ (rule.read)(world, slot);
-            LEVEL[0] = SHARE[0];
-        } else {
-            LEVEL[0] = /** @type {Function} */ (rule.read)(world, slot);
-        }
+        this.dispatch(world, slot, e);
         if (pinned) {
             this.memo[e] = LEVEL[0];
             this.have[e] = this.epoch;
@@ -190,7 +189,7 @@ export class EffectSystem {
      * @returns {number} its level now: the stored count of a `stacks` effect, else what its reader computes from the body
      */
     levelOf(world, slot, effect) {
-        this.level(world, slot, this.probes[effect]);
+        this.level(world, slot, effect);
         return LEVEL[0];
     }
 
@@ -261,7 +260,7 @@ export class EffectSystem {
      * @returns {void}
      */
     factorOfRule(world, slot, rule) {
-        this.level(world, slot, rule);
+        this.level(world, slot, rule.effect);
         const level = LEVEL[0];
         if (level === 0) {
             NUMBER[0] = 1;
@@ -323,7 +322,7 @@ export class EffectSystem {
     gateOpen(world, slot, gate) {
         const closing = this.gates[gate];
         for (let k = 0; k < closing.length; k++) {
-            this.level(world, slot, this.probes[closing[k]]);
+            this.level(world, slot, closing[k]);
             if (LEVEL[0] > 0) {
                 return false;
             }
@@ -456,8 +455,8 @@ function fadeSlot(kind, row, slot) {
 /** The effects of the sim, in registry order. */
 export const EFFECT_LIST = EFFECTS;
 
-/** The readers over `EFFECTS`. */
-export const SYSTEM = createEffects(EFFECTS);
+/** The readers over `EFFECTS`, each level read through the generated switch. */
+export const SYSTEM = createEffects(EFFECTS, { dispatch: levelOfEffect });
 
 /** An effect's index by name: `EFFECT_INDEX.fat`. */
 export const EFFECT_INDEX = Object.freeze(Object.fromEntries(EFFECTS.map((effect, i) => [effect.name, i])));

@@ -22,6 +22,7 @@
 # - No local specialisation count, role index or name list outside js/sim/specs.js (docs/designs/registries.md).
 # - docs/trait-table.md matches the trait registry and the default config (scripts/traits.mjs --check).
 # - The index in docs/designs/sim-notes.md matches docs/notes/ (scripts/notes-index.mjs --check).
+# - js/sim/effect-dispatch.js matches the effect list (scripts/effect-dispatch.mjs --check).
 # - test/data-deps.json matches the paths the tests read, and no test has an undeclared dynamic path (scripts/data-deps.mjs --check).
 # - AGENTS.md stays at or under AGENTS_MAX_BYTES (16000): an agent reads it before its first command, so detail lives in
 #   docs/ (docs/designs/agent-workflow.md, Context diet).
@@ -169,6 +170,13 @@ events_out="$(node scripts/events-doc.mjs --check 2>&1)"
 events_status=$?
 if ((events_status != 0)); then
   fail "events-doc: ${events_out:-scripts/events-doc.mjs exited $events_status with no output}"
+fi
+
+# js/sim/effect-dispatch.js is the level switch generated from `EFFECTS`; a stale one fails with the command that fixes it.
+dispatch_out="$(node scripts/effect-dispatch.mjs --check 2>&1)"
+dispatch_status=$?
+if ((dispatch_status != 0)); then
+  fail "effect-dispatch: ${dispatch_out:-scripts/effect-dispatch.mjs exited $dispatch_status with no output}"
 fi
 
 # docs/config-keys.md is the key table generated from the config's defaults and rules; a stale one fails with the command.
