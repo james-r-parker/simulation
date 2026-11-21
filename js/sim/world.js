@@ -270,7 +270,6 @@ function maxEnergyTable(config) {
 function specTables(config) {
     return {
         visionBySpec: specTable(config, 'visionRange'),
-        biteBySpec: specTable(config, 'biteMultiplier'),
         huntBySpec: specTable(config, 'canHunt'),
         splitMinBySpec: splitMinTable(config),
         maxEnergyBySpec: maxEnergyTable(config),

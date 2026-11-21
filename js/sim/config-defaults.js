@@ -52,7 +52,6 @@ export const DEFAULTS = deepFreeze({
     floorTrigger: 8, // the floor guard acts only when fewer than this many are alive (natural-selection T3); 0 turns it off
     maxFood: 3600, // E112 (was 2400, E95; 1600, E20; legacy FOOD_SPAWN_CAP 800): room for the short-lived caps
     initialFood: 300, // new
-    foodSpawnRate: 0.02, // FOOD_SPAWN_RATE
     foodEnergy: 100, // FOOD_ENERGY_NORMAL_BASE, raised for the reachable-births economy
     foodRadius: 20, // FOOD_SIZE_NORMAL
     obstacleDamage: 50, // OBSTACLE_COLLISION_PENALTY
