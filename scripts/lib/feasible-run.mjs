@@ -1,15 +1,9 @@
 // Runs the learnability check over a ladder (docs/designs/training-loop.md, Learnability check): the learn probe on each gate
 // drill of each gated stage, in the stage's config, judged against the bar the gate condition implies. A detector only.
+import { drillBodyRules } from '../../js/evo/drill-body-rules.js';
 import { BITE_DRILLS, baselineShares, barOf, fairBands, judge, parseGate } from '../../js/evo/feasible.js';
 import { LEARN_GENERATIONS, LEARN_POPULATION, LEARN_SEEDS, LEARN_TRIALS } from '../../js/evo/learn-probe.js';
 import { runPool } from './worker-pool.mjs';
-
-/**
- * The config the gate's drills run under. The trainer's gate drills its champions under the default config (`config: {}` in
- * `keeperReadings`), and each drill sets its own arena (a weakened forager's sprint), so the check does the same: a stage's
- * world size and agent counts would break the staged scenes. The stage's config is read for the chase's fair band only.
- */
-const DRILL_CONFIG = Object.freeze({});
 
 const WORKER_URL = new URL('../learn-worker.mjs', import.meta.url);
 
@@ -90,7 +84,7 @@ export async function checkLadder(ladder, options) {
                 generations: size.generations,
                 population: size.population,
                 trials: size.trials,
-                config: DRILL_CONFIG,
+                config: plan.drillConfig,
             })),
         ),
     );
@@ -109,17 +103,19 @@ export async function checkLadder(ladder, options) {
 /**
  * @param {Record<string, any>} entry a gated stage
  * @param {(file: string) => Record<string, any>} readConfig reads a stage's config file
- * @returns {{entry: Record<string, any>, config: Record<string, any>, drills: {drill: string, bar: number}[], unchecked: string[]}}
+ * @returns {{entry: Record<string, any>, config: Record<string, any>, drillConfig: Record<string, any>, drills: {drill: string, bar: number}[], unchecked: string[]}}
  *   the stage with the bar of each gate drill
  */
 function planStage(entry, readConfig) {
     const config = entry.config === null ? {} : readConfig(entry.config);
+    // The trainer's gate drills run under the stage's body rules, so the learn probe and its bar do too (never its world size).
+    const drillConfig = drillBodyRules(config);
     const { needs, unchecked } = parseGate(entry.gate);
     const drills = [...needs].map(([drill, list]) => ({
         drill,
-        bar: barOf(list, baselineShares(drill, { config: DRILL_CONFIG })),
+        bar: barOf(list, baselineShares(drill, { config: drillConfig })),
     }));
-    return { entry, config, drills, unchecked };
+    return { entry, config, drillConfig, drills, unchecked };
 }
 
 /**

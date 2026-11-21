@@ -102,6 +102,19 @@ describe('createInterface', () => {
         expect(FakeUPlot.made.every((u) => u.destroyed)).toBe(true);
     });
 
+    it('builds the charts again the second time the drawer opens', async () => {
+        FakeUPlot.made.length = 0;
+        const { ui } = setup();
+        ui.listeners.onReady(ready);
+        for (let opened = 1; opened <= 2; opened++) {
+            ui.hooks.toggleDrawer('charts');
+            await Promise.resolve();
+            await Promise.resolve();
+            expect(FakeUPlot.made).toHaveLength(5 * opened);
+            ui.hooks.toggleDrawer('charts');
+        }
+    });
+
     it('keeps notable ticker items as milestones in the charts drawer, and shows the era card from the history', async () => {
         FakeUPlot.made.length = 0;
         const { ui, elements, doc, setClock, timers, client } = setup();

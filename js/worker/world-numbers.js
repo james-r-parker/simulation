@@ -87,3 +87,35 @@ export function largestSpec(bySpec) {
     }
     return { index, share: total === 0 ? 0 : bySpec[index] / total };
 }
+
+/**
+ * @param {Record<string, any>} world the world
+ * @returns {number} the energy lying in the food that is alive now (the insights drawer's food reading)
+ */
+export function foodEnergy(world) {
+    const { foodAlive, foodValue } = world;
+    let total = 0;
+    for (let i = 0; i < foodAlive.length; i++) {
+        if (foodAlive[i] === 1) {
+            total += foodValue[i];
+        }
+    }
+    return total;
+}
+
+/**
+ * @param {Record<string, any>} world the world
+ * @returns {number} the mean body temperature of the alive agents, 0 when none are alive
+ */
+export function meanTemperature(world) {
+    const { alive, temperature } = world;
+    let total = 0;
+    let n = 0;
+    for (let slot = 0; slot < alive.length; slot++) {
+        if (alive[slot] === 1) {
+            total += temperature[slot];
+            n++;
+        }
+    }
+    return n === 0 ? 0 : total / n;
+}

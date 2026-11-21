@@ -22,6 +22,7 @@ import { clientToDevice, deviceToClient, devicePerCss } from './canvas-geometry.
 import { agentAt } from './hover-pick.js';
 import { gpuTimeFor } from './gpu-time.js';
 import { createInterface } from './interface.js';
+import { viewDeps } from './insights-follow.js';
 import { listen, observeSize } from './page-listen.js';
 import { createPointerInput } from './pointer-input.js';
 import { createStage } from './renderer/stage.js';
@@ -250,8 +251,7 @@ function makeInterface(app) {
         dim: app.params.dim,
         audioOn: app.params.audio,
         AudioContext: /** @type {any} */ (globalThis).AudioContext ?? null,
-        getCamera: () => app.camera,
-        getFollowView: () => ({ agents: app.loop.agents(), player: app.deps.refs.player }),
+        ...viewDeps(app),
         setWakeLock: (on) => wakeLock.setEnabled(on),
     });
 }

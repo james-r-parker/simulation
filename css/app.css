@@ -654,3 +654,117 @@ html.tv-mode * {
     font-size: 0.875rem;
     color: var(--text-dim);
 }
+
+/* The insights drawer: tabs, tables, and the charts of the World tab. */
+.drawer-insights {
+    width: min(38vw, 34rem);
+}
+
+.insights-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.insights-panel[hidden],
+.insights-row[hidden] {
+    display: none;
+}
+
+.insights-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.insights-table th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-dim);
+}
+
+.insights-table td,
+.insights-table th {
+    padding: 0.125rem 0.5rem 0.125rem 0;
+}
+
+.insights-table td + td,
+.insights-table th + th {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.insights-row.pick {
+    cursor: pointer;
+}
+
+.insights-row.pick:hover,
+.insights-row.pick:focus-visible {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.insights-row.muted {
+    color: var(--text-dim);
+}
+
+.insights-row[style*='--swatch'] td:first-child::before {
+    content: '';
+    display: inline-block;
+    width: 0.625rem;
+    height: 0.625rem;
+    margin-right: 0.375rem;
+    border-radius: 50%;
+    background: var(--swatch);
+}
+
+/* The board (Shift+D, ?board=1): every tab at once over the whole page, the world drawn small in the bottom right. */
+.drawer-insights.insights-board {
+    top: 0;
+    left: 0;
+    width: auto;
+    min-width: 0;
+    padding: calc(var(--bar-height) + 0.75rem) 1.25rem calc(14vw + 2rem);
+    background: #05070b;
+    border-left: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+    align-content: start;
+    gap: 0.5rem 1.5rem;
+}
+
+.insights-board .insights-tabs {
+    display: none;
+}
+
+.insights-board .insights-panel {
+    min-width: 0;
+}
+
+html.insights-board-on #canvas-container {
+    inset: auto 1rem 1rem auto;
+    width: 24vw;
+    height: 13.5vw;
+    z-index: 1;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.insights-note {
+    margin: 0.5rem 0 0;
+    color: var(--text-dim);
+}
+
+.insights-command,
+.insights-config {
+    margin: 0.5rem 0 0;
+    padding: 0.5rem;
+    overflow-x: auto;
+    background: rgba(255, 255, 255, 0.05);
+    font: 0.75rem/1.4 ui-monospace, monospace;
+    white-space: pre-wrap;
+    user-select: text;
+}
+
+.insights-export {
+    margin: 0 0.375rem 0.5rem 0;
+}

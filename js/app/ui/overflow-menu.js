@@ -6,6 +6,8 @@ import { buttonTitle } from './controls.js';
 
 /** The menu's items, in order: the action each runs, its text and its description. */
 export const OVERFLOW_ITEMS = Object.freeze([
+    { action: 'toggleInsights', text: 'Insights', label: 'Insights drawer' },
+    { action: 'toggleBoard', text: 'Insights board', label: 'Insights as a full-screen board' },
     { action: 'step10', text: 'Step 10', label: 'Step ten ticks (paused)' },
     { action: 'lens1', text: 'Temperature', label: 'Temperature lens' },
     { action: 'lens2', text: 'Scent trails', label: 'Scent trails lens' },

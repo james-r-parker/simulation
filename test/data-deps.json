@@ -23,6 +23,9 @@
     "test/app/hud-css.test.js": [
         "css/app.css"
     ],
+    "test/app/scene-counters.test.js": [
+        "docs/principles.md"
+    ],
     "test/archive-source.test.js": [
         "test/fixtures/stages/hunt-contact.json"
     ],
@@ -189,6 +192,9 @@
     ],
     "test/evo/drill-adrift.test.js": [
         "test/fixtures/stages/hunt-weak.json"
+    ],
+    "test/evo/drill-body-rules.test.js": [
+        "evals/fair-chase/courser.json"
     ],
     "test/evo/drill-mid.test.js": [
         "test/fixtures/stages/hunt-mid.json"
@@ -487,6 +493,9 @@
     ],
     "test/timeout-lint.test.js": [
         "./"
+    ],
+    "test/train-drill-body-rules.slow.test.js": [
+        "evals/fair-chase/courser.json"
     ],
     "test/train-feasible.slow.test.js": [
         "test/fixtures/stages/hunt-mid.json"

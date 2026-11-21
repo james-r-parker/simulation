@@ -6,6 +6,7 @@
 import { createChartData } from './interface-data.js';
 import { pushMilestone } from './history.js';
 import { createChartsLifecycle } from './interface-charts.js';
+import { mountInsightsPart } from './interface-insights.js';
 import { createFailedBundleTaker, exportBundle } from './interface-exports.js';
 import { mountAudio } from './audio/audio.js';
 import { clipSupported, createCapture } from './capture.js';
@@ -85,6 +86,7 @@ export function shouldOpenInspector(drawer, id, hudShown) {
  *   pixels on the canvas
  * @property {boolean} speedPinned whether `?speed=` fixed the speed, so a first visit does not start at x2
  * @property {boolean} tv whether `?tv=1` started TV mode
+ * @property {boolean} [board] whether `?board=1` started with the insights board up
  * @property {'auto' | number | null} [dim] the `?dim` setting, null or absent to use the `dim` preference
  * @property {boolean} audioOn whether `?audio=1` started with audio on
  * @property {(new () => any) | null} AudioContext the Web Audio constructor
@@ -93,6 +95,12 @@ export function shouldOpenInspector(drawer, id, hudShown) {
  * @property {(event: import('./idle.js').InputEvent) => void} [onInput] hears each input that counted, for TV mode
  * @property {(items: any[]) => void} [onTicker] hears each ticker message, for the director's feed
  * @property {() => number} getWidth the canvas width in CSS px, for the automatic HUD size
+ * @property {() => import('./interpolate.js').Interpolated} [getAgents] the frame's agents, for the scene counters
+ * @property {() => {count: number, hunter: Int32Array} | null} [getPursuits] the renderer's pursuit table, for the scene
+ *   counters
+ * @property {(text: string) => Promise<unknown> | unknown} [copyText] puts text on the clipboard, for the insights export
+ * @property {(target: import('./insights-follow.js').InsightTarget) => void} [followTarget] follows what an insights row
+ *   names
  * @property {() => {agents: import('./interpolate.js').Interpolated,
  *   player: import('./renderer/effects-player.js').EffectsPlayer | null} | null} [getFollowView] the frame's agents and
  *   effects player, for the subject plate
@@ -145,9 +153,10 @@ function mountParts(ctx) {
         colorOf: (/** @type {number} */ id) => familyCss(deps.slots, id),
     });
     ctx.drawers = mountDrawers(doc, elements.drawers, {
-        onOpen: (name) => name === 'charts' && ctx.charts.open(),
-        onClose: (name) => name === 'charts' && ctx.charts.close(),
+        onOpen: (name) => (name === 'charts' && ctx.charts.open()) || (name === 'insights' && ctx.insights.open()),
+        onClose: (name) => (name === 'charts' && ctx.charts.close()) || (name === 'insights' && ctx.insights.close()),
     });
+    ctx.insights = mountInsightsPart(ctx);
     ctx.inspector = mountInspector(doc, ctx.drawers.body('inspector'));
     ctx.help = mountHelp(doc, ctx.drawers.body('help'), {
         current: prefs.uiScale,
@@ -185,7 +194,7 @@ function build(deps) {
     prefs.lenses.forEach((on, i) => (state.lenses[i] = on));
     deps.slots.palette = prefs.palette;
     const toaster = createToaster({ doc, setTimer: deps.setTimer, parent: elements.hud });
-    const lastKeys = ['bar', 'ticker', 'inspector', 'charts', 'idle', 'shift', 'card', 'peek', 'plate'];
+    const lastKeys = ['bar', 'ticker', 'inspector', 'charts', 'insights', 'idle', 'shift', 'card', 'peek', 'plate'];
     const ctx = {
         deps,
         prefs,
@@ -208,6 +217,7 @@ function build(deps) {
         drawers: /** @type {any} */ (null),
         inspector: /** @type {any} */ (null),
         charts: /** @type {any} */ (null),
+        insights: /** @type {any} */ (null),
         help: /** @type {any} */ (null),
         card: /** @type {any} */ (null),
         tvUi: /** @type {any} */ (null),
@@ -219,6 +229,9 @@ function build(deps) {
         persist: () => persist(ctx),
     };
     mountParts(ctx);
+    if (deps.board) {
+        ctx.insights.toggleBoard();
+    }
     return ctx;
 }
 
@@ -228,7 +241,9 @@ function build(deps) {
  * @returns {void}
  */
 function applyScale({ deps, prefs, help }) {
-    deps.doc.documentElement.style.fontSize = `${uiScaleFor(deps.getWidth(), prefs.uiScale)}px`;
+    const { documentElement } = deps.doc;
+    // The board shrinks the canvas to a corner; the HUD keeps the size of the whole page.
+    documentElement.style.fontSize = `${uiScaleFor(Math.max(deps.getWidth(), documentElement.clientWidth ?? 0), prefs.uiScale)}px`;
     help?.setScale(prefs.uiScale);
 }
 
@@ -279,6 +294,7 @@ function createHooks(ctx) {
     const takeFailed = createFailedBundleTaker(deps.getFailedBundle);
     return {
         toggleDrawer: (name) => void ctx.drawers.dispatch({ type: 'toggle', drawer: name }),
+        toggleBoard: () => ctx.insights.toggleBoard(),
         closeDrawer() {
             const wasOpen = ctx.drawers.state() !== null;
             ctx.drawers.dispatch({ type: 'closeAll' });
@@ -342,6 +358,7 @@ function createListeners(ctx) {
     return {
         onReady(/** @type {Record<string, any>} */ ready) {
             ctx.chartData.ready(ready);
+            ctx.insights.noteReady(ready);
             ctx.queue.clear();
             ctx.charts.close();
             if (ctx.drawers.state() === 'charts') {
@@ -353,6 +370,7 @@ function createListeners(ctx) {
         onStats(/** @type {Record<string, any>} */ stats) {
             assignSlots(deps.slots, stats.lineages?.top ?? []);
             ctx.chartData.stats(stats, deps.now());
+            ctx.insights.noteStats(stats);
             ctx.audio.onStats(stats);
         },
         onTicker(/** @type {{text: string, kind: string}[]} */ items) {
@@ -384,7 +402,10 @@ export function createInterface(deps) {
         syncRays: () => syncRays(ctx),
         startWorld: (seed) => startWorld(ctx, seed),
         toast: ctx.toast,
-        onEffect: (effect) => ctx.audio.onEffect(effect),
+        onEffect(effect) {
+            ctx.audio.onEffect(effect);
+            ctx.insights.noteEffect(effect);
+        },
         afterDraw: (frame) => ctx.capture.afterDraw(frame),
         openInspectorOnPick(id = deps.state.selectedId) {
             if (shouldOpenInspector(ctx.drawers.state(), id, !ctx.hidden)) {
@@ -409,6 +430,7 @@ export function createInterface(deps) {
         idleMs: () => ctx.idle.idleMs(),
         resize: () => applyScale(ctx),
         tick(nowMs) {
+            ctx.insights.noteFrame(nowMs);
             refreshParts(ctx, nowMs);
             ctx.tvUi.tick();
         },

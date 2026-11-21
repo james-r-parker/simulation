@@ -28,8 +28,10 @@ export class FakeUPlot {
 }
 
 /**
- * @param {{stored?: Record<string, string>, failed?: any, seen?: boolean, speedPinned?: boolean, tv?: boolean, audioOn?: boolean}} [options] stored
- *   preferences, the failed bundle, whether the title card was seen, whether `?speed=` pinned the speed, `?tv=1` and `?audio=1`
+ * @param {{stored?: Record<string, string>, failed?: any, seen?: boolean, speedPinned?: boolean, tv?: boolean, audioOn?: boolean,
+ *   deps?: Record<string, any>}} [options] stored
+ *   preferences, the failed bundle, whether the title card was seen, whether `?speed=` pinned the speed, `?tv=1`, `?audio=1`
+ *   and deps laid over the fakes
  * @returns {any} an interface over fakes, with everything it was asked to do
  */
 export function setup({
@@ -39,6 +41,7 @@ export function setup({
     speedPinned = false,
     tv = false,
     audioOn = false,
+    deps = {},
 } = {}) {
     const doc = fakeDocument();
     doc.body = doc.createElement('body');
@@ -99,6 +102,7 @@ export function setup({
         AudioContext: FakeAudioContext,
         getCamera: () => ({ x: 500, y: 500, zoom: 1, canvas: { width: 1000, height: 1000 } }),
         setWakeLock: (on) => wakeLocks.push(on),
+        ...deps,
     });
     const setClock = (/** @type {number} */ t) => (clock = t);
     return { ui, pick, client, slots, width, elements, state, store, sent, files, timers, wakeLocks, doc, setClock };

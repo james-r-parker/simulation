@@ -3,7 +3,9 @@ import {
     CALL_WINDOW_TICKS,
     callsPerKiloTick,
     createCallWindow,
+    foodEnergy,
     largestSpec,
+    meanTemperature,
     noteCalls,
     predatorCount,
 } from '../../js/worker/world-numbers.js';
@@ -75,5 +77,30 @@ describe('predatorCount and largestSpec', () => {
         expect(largestSpec([1, 2, 0, 8, 1])).toEqual({ index: 3, share: 8 / 12 });
         expect(largestSpec([2, 2, 0, 0, 0])).toEqual({ index: 0, share: 0.5 });
         expect(largestSpec([0, 0, 0, 0, 0])).toEqual({ index: 0, share: 0 });
+    });
+});
+
+describe('foodEnergy and meanTemperature', () => {
+    it('sums the food that is alive and ignores the eaten', () => {
+        const world = smallWorld();
+        world.foodAlive.fill(0);
+        world.foodAlive[0] = 1;
+        world.foodAlive[2] = 1;
+        world.foodValue[0] = 3;
+        world.foodValue[1] = 100;
+        world.foodValue[2] = 4.5;
+        expect(foodEnergy(world)).toBe(7.5);
+    });
+
+    it('averages the temperature of the alive agents, 0 when none', () => {
+        const world = smallWorld();
+        world.alive.fill(0);
+        expect(meanTemperature(world)).toBe(0);
+        world.alive[0] = 1;
+        world.alive[3] = 1;
+        world.temperature[0] = 0.25;
+        world.temperature[3] = 0.75;
+        world.temperature[1] = 9;
+        expect(meanTemperature(world)).toBe(0.5);
     });
 });
