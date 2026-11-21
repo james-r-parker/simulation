@@ -14,7 +14,8 @@ import {
 import { renderState } from '../scripts/lib/state-format.mjs';
 import { nextTask, queueBlock, queueRows } from '../scripts/lib/state-queue.mjs';
 import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
-import { gatherState, main, readExperiments } from '../scripts/state.mjs';
+import { readLedger } from '../scripts/lib/ledger.mjs';
+import { gatherState, main } from '../scripts/state.mjs';
 
 const README = `# Designs
 
@@ -306,7 +307,7 @@ describe('npm run state', { timeout: scaleTimeout(60_000) }, () => {
         expect(state.experiments.tally).toEqual({ unrecorded: 1 });
         expect(state.ships).toEqual({ ships: 1, medianMinutes: 8, firstRunGreen: 1 });
         expect(state.worktrees).toMatchObject({ live: 1 });
-        expect(readExperiments(join(dir, 'repo'))).toHaveLength(1);
+        expect(readLedger(join(dir, 'repo'))).toHaveLength(1);
     });
 
     it('prints the page and the json form, and writes no file', () => {
@@ -362,16 +363,6 @@ describe('state.mjs in process', { timeout: scaleTimeout(60_000) }, () => {
         const bare = runMain(['--root']);
         expect(bare.status).toBe(2);
         expect(bare.err).toContain('usage');
-    });
-
-    it('reads the ledger directory when there is one, and no records when neither source exists', () => {
-        const repo = join(dir, 'repo');
-        mkdirSync(join(repo, 'evals', 'ledger'));
-        const record = { id: 'E7', date: '2026-11-20', outcome: 'adopted' };
-        writeFileSync(join(repo, 'evals', 'ledger', 'E7.json'), JSON.stringify(record));
-        writeFileSync(join(repo, 'evals', 'ledger', 'notes.txt'), 'ignored');
-        expect(readExperiments(repo).map((r) => r.id)).toEqual(['E7']);
-        expect(readExperiments(join(dir, 'bin'))).toEqual([]);
     });
 
     it('reports no ladder, no pull requests and no worktrees where the sources are absent', () => {

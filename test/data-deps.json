@@ -354,6 +354,10 @@
     "test/icon-files.test.js": [
         "public/icons/"
     ],
+    "test/ledger.test.js": [
+        "evals",
+        "evals/experiments.json"
+    ],
     "test/library/library-db.test.js": [
         "migrations/0001_library.sql",
         "migrations/0002_champion_files.sql"
