@@ -75,6 +75,17 @@ describe('the model catalogue', () => {
         expect(validateModel(AGENT_MODELS.predator)).toEqual([]);
     });
 
+    it('marks the body membrane of every agent model for the event rim falloff, and no other part', () => {
+        for (const [name, model] of Object.entries(AGENT_MODELS)) {
+            const parts = /** @type {any[]} */ (/** @type {unknown} */ (model.parts));
+            const marked = parts.filter((part) => part.halo === true);
+            expect(
+                marked.map((part) => part.shape),
+                name,
+            ).toEqual(['membrane']);
+        }
+    });
+
     it('marks the thin strokes as lines (lips, flagella, cilia) and leaves filled or decorative parts alone', () => {
         const lines = Object.values(AGENT_MODELS).flatMap((m) =>
             m.parts

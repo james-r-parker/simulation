@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     coverage,
+    haloCoverage,
     rimCoverage,
     sdArc,
     sdBlob,
@@ -97,6 +98,20 @@ describe('coverage', () => {
         expect(coverage(0, 0.1)).toBeCloseTo(0.5);
         expect(coverage(-0.1, 0.1)).toBeGreaterThan(0.99);
         expect(coverage(0.1, 0.1)).toBeLessThan(0.01);
+    });
+
+    it('halo: half the alpha x strength at most, falling to 0 at the reach and none inside or when off', () => {
+        const halo = { strength: 1, widthPx: 6, px: 0.1, alpha: 0.5 };
+        expect(haloCoverage(0, halo)).toBeCloseTo(0.5);
+        expect(haloCoverage(0.3, halo)).toBeCloseTo(0.5 * 0.25);
+        expect(haloCoverage(0.6, halo)).toBeCloseTo(0, 12);
+        expect(haloCoverage(5, halo)).toBe(0);
+        expect(haloCoverage(-0.01, halo)).toBe(0);
+        expect(haloCoverage(0.1, { ...halo, strength: 0.5 })).toBeCloseTo(0.5 * 0.5 * (1 - 1 / 6) ** 2);
+        expect(haloCoverage(0.1, { ...halo, widthPx: 0 })).toBe(0);
+        for (let d = 0; d < 1; d += 0.01) {
+            expect(haloCoverage(d, halo)).toBeLessThanOrEqual(0.5);
+        }
     });
 
     it('rim: centred on the edge, rimPx wide', () => {

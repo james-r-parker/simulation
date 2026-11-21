@@ -53,6 +53,15 @@ describe('exchangeFrame', () => {
         expect(feed.late).toBe(0);
     });
 
+    it('sets the TV bit of the lens word in TV mode', () => {
+        const feed = createPackFeed();
+        const s = slots();
+        exchangeFrame(feed, s, { ...inputs(), tv: true });
+        const out = createRequest();
+        readRequest(s, out);
+        expect(out.lens).toBe(LENS.TEMPERATURE | LENS.VISION | LENS.CALLS | LENS.TV);
+    });
+
     it('sends prevSeq 0 when only one snapshot is held', () => {
         const feed = createPackFeed();
         const s = slots();

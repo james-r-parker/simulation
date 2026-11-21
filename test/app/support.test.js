@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { unsupportedReason } from '../../js/app/support.js';
+import { safeStorage, unsupportedReason } from '../../js/app/support.js';
 
 const canvasWith = (/** @type {() => unknown} */ getContext) => () => ({ getContext });
 
@@ -18,5 +18,18 @@ describe('unsupportedReason', () => {
             throw new Error('no gl');
         });
         expect(unsupportedReason({ Worker: class {}, createCanvas: throwing })).toMatch(/WebGL2/);
+    });
+});
+
+describe('safeStorage', () => {
+    it('returns the storage it reads, and null where reading throws or there is none', () => {
+        const store = {};
+        expect(safeStorage(() => /** @type {any} */ (store))).toBe(store);
+        expect(
+            safeStorage(() => {
+                throw new Error('blocked');
+            }),
+        ).toBeNull();
+        expect(safeStorage()).toBeNull();
     });
 });

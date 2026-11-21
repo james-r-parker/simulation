@@ -2,15 +2,18 @@
 // screen. The viewer's own HUD choice (`ctx.hidden`) is never touched, so leaving TV mode brings the HUD back as it was.
 
 import { eraCardFor, ERA_SHOW_MS } from './director/era-card.js';
+import { createNightDim } from './night-dim.js';
 import { mountCaption, mountEraCard } from './ui/caption.js';
+import { mountNightDim } from './ui/night-dim-view.js';
 import { familyName } from './renderer/colors.js';
 
 /**
  * @param {Record<string, any>} ctx the interface's shared parts: `deps` and `hidden`
  * @returns {{caption: ReturnType<typeof mountCaption>, era: ReturnType<typeof mountEraCard>,
- *   setTv: (on: boolean) => void, hudHidden: () => boolean,
+ *   setTv: (on: boolean) => void, hudHidden: () => boolean, tick: () => void,
  *   showEra: (world: {tick: number, ticksPerSecond: number}) => void}} the caption, the era card, the TV switch,
- *   whether the HUD should be hidden now and `showEra`, which reads the card from the chart history and shows it
+ *   whether the HUD should be hidden now, `tick`, which eases the night dim by the clock, and `showEra`, which reads the
+ *   card from the chart history and shows it
  */
 export function mountTv(ctx) {
     const { doc } = ctx.deps;
@@ -18,7 +21,14 @@ export function mountTv(ctx) {
     const era = mountEraCard(doc, doc.body);
     ctx.tv = false;
     const hudHidden = () => ctx.hidden || ctx.tv;
+    const dim = createNightDim({
+        now: () => Date.now(),
+        getMode: () => ctx.deps.dim ?? ctx.prefs.dim,
+        isTv: () => ctx.tv,
+        apply: mountNightDim(doc, doc.body).set,
+    });
     return {
+        tick: dim.tick,
         caption,
         era,
         hudHidden,

@@ -10,7 +10,7 @@ import { createInstances, instancedMesh, uploadInstances } from './instances.js'
 import { modelMaterial } from './model-material.js';
 import { standardInputs } from './model-meshes.js';
 import { HERD_MODEL } from './models-world.js';
-import { FILL_SHARE, RIM_PX } from './palette.js';
+import { FILL_SHARE, RIM_PX, rimPxFor } from './palette.js';
 
 /**
  * @param {{info: Record<string, any>}} context `ready.info` (`herdMax`, `herdRadius`, `herdRunSpeed`)
@@ -44,7 +44,7 @@ export function createHerdDraw({ info }) {
             }
             trackHerds(frame.prevSnapshot ?? null, frame.snapshot, frame.alpha, rules);
             ctx.timeSec = frame.nowMs / 1000;
-            rimPx.value = RIM_PX[/** @type {keyof typeof RIM_PX} */ (frame.family?.palette)] ?? RIM_PX.default;
+            rimPx.value = rimPxFor(frame.family?.palette, frame.tv);
             uploadInstances(instances, packHerds(track, pack, ctx));
         },
         dispose() {

@@ -4,7 +4,7 @@
 // the slot the frame drew into its mesh's own buffer.
 
 import { Group } from 'three/webgpu';
-import { attribute, max, min, mix, uniform, vec3 } from 'three/tsl';
+import { attribute, fract, max, min, mix, step, uniform, vec3 } from 'three/tsl';
 import { appLog } from '../app-log.js';
 import { SLOT } from '../pack/frame-slots.js';
 import { AGENT_LANES } from './agent-lanes.js';
@@ -12,7 +12,8 @@ import { createInstances, instancedMesh, takeRows } from './instances.js';
 import { modelMaterial } from './model-material.js';
 import { standardInputs } from './model-meshes.js';
 import { modelFor } from './models.js';
-import { FILL_SHARE, NEON, RIM_PX } from './palette.js';
+import { FILL_SHARE, NEON, RIM_PX, rimPxFor } from './palette.js';
+import { HALO_PX } from './rim-halo.js';
 
 /** How far the scent lens dims the agents. */
 export const SCENT_DIM = 0.55;
@@ -20,10 +21,11 @@ export const SCENT_DIM = 0.55;
 export const CALL_RING_FLOOR = 0.5;
 
 /**
- * @param {{dim: any, ringFloor: any}} uniforms the scent-lens dim and the calls-lens ring floor
+ * @param {{dim: any, ringFloor: any, haloPx: any, zoom: any}} uniforms the scent-lens dim, the calls-lens ring floor, the
+ *   reach of an event's rim falloff (0 outside TV mode) and the camera zoom
  * @returns {import('./model-material.js').ModelInputs} the agent inputs, read from the instance attributes
  */
-function agentInputs({ dim, ringFloor }) {
+function agentInputs({ dim, ringFloor, haloPx, zoom }) {
     const gate = attribute('iGate', 'vec4');
     const gate2 = attribute('iGate2', 'vec4');
     const call = attribute('iCall', 'vec4');
@@ -32,6 +34,11 @@ function agentInputs({ dim, ringFloor }) {
     // the dent lane's fourth value is a dying body's tear (0 to 1: the colour drains to rot as the membrane opens) plus
     // its fade (1 to 2: the opacity falls); a live body holds 0
     const drain = min(dent.w, 1);
+    // the accent lane's fourth value is the call kind (a whole number) plus an event's rim falloff strength (its fraction)
+    const halo = fract(attribute('iAccent', 'vec4').w);
+    const pad = step(0.002, halo)
+        .mul(haloPx)
+        .div(max(standard.radius.mul(zoom), 1));
     return {
         ...standard,
         color: mix(standard.color, vec3(NEON.rot[0], NEON.rot[1], NEON.rot[2]), drain),
@@ -51,12 +58,15 @@ function agentInputs({ dim, ringFloor }) {
         fade: max(dent.w.sub(1), 0),
         dim,
         ringFloor,
+        halo,
+        haloPx,
+        pad,
     };
 }
 
 /**
  * @param {Record<string, any>} info `ready.info`
- * @param {{rimPx: any, dim: any, ringFloor: any}} uniforms the shared uniforms
+ * @param {{rimPx: any, dim: any, ringFloor: any, haloPx: any, zoom: any}} uniforms the shared uniforms
  * @returns {{instances: import('./instances.js').Instances, material: any, mesh: any}[]} one mesh per spec, over its
  *   own buffer (the rows arrive interleaved from the pack worker, so it has no lanes)
  */
@@ -74,13 +84,15 @@ function buildMeshes(info, uniforms) {
 /**
  * Sets the frame's values on the shared uniforms.
  * @param {import('./stage.js').Frame} frame the frame
- * @param {{rimPx: any, dim: any, ringFloor: any}} uniforms the shared uniforms
+ * @param {{rimPx: any, dim: any, ringFloor: any, haloPx: any, zoom: any}} uniforms the shared uniforms
  * @returns {void}
  */
-function applyFrame(frame, uniforms) {
-    uniforms.rimPx.value = RIM_PX[/** @type {keyof typeof RIM_PX} */ (frame.family.palette)];
+export function applyFrame(frame, uniforms) {
+    uniforms.rimPx.value = rimPxFor(frame.family.palette, frame.tv);
     uniforms.dim.value = frame.lenses.scent ? SCENT_DIM : 1;
     uniforms.ringFloor.value = frame.lenses.calls ? CALL_RING_FLOOR : 0;
+    uniforms.haloPx.value = frame.tv ? HALO_PX : 0;
+    uniforms.zoom.value = frame.camera.zoom;
 }
 
 /** No rows: a mesh with nothing to draw before the worker's first frame. */
@@ -115,7 +127,13 @@ function takeSlotRows(frame, { meshes, seen }) {
  * @returns {import('./stage.js').Layer} the layer: one mesh per spec in a group, in `info.specs` order
  */
 export function createAgentDraw({ info }) {
-    const uniforms = { rimPx: uniform(RIM_PX.default), dim: uniform(1), ringFloor: uniform(0) };
+    const uniforms = {
+        rimPx: uniform(RIM_PX.default),
+        dim: uniform(1),
+        ringFloor: uniform(0),
+        haloPx: uniform(0),
+        zoom: uniform(1),
+    };
     const meshes = buildMeshes(info, uniforms);
     const group = new Group();
     meshes.forEach((m) => group.add(m.mesh));

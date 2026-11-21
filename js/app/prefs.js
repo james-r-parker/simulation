@@ -20,7 +20,12 @@ export const LENS_COUNT = 4;
  * @property {string} palette the family palette: `default`, `cvd-safe` or `high-contrast`
  * @property {boolean} seen whether the title card has been shown
  * @property {number} tvIdleMinutes minutes without input before TV mode starts by itself; 0 turns it off
+ * @property {boolean} followPlate whether a followed subject shows its plate
+ * @property {'auto' | number} dim the night dim: `auto` (by the clock, in TV mode) or a fixed brightness from 0.3 to 1
  */
+
+/** The lowest fixed night dim: the screen never goes darker than this. */
+export const DIM_MIN = 0.3;
 
 /** Minutes without input before TV mode starts, by default. */
 export const TV_IDLE_MINUTES = 5;
@@ -43,6 +48,8 @@ export function defaultPrefs() {
         palette: 'default',
         seen: false,
         tvIdleMinutes: TV_IDLE_MINUTES,
+        followPlate: true,
+        dim: 'auto',
     };
 }
 
@@ -62,6 +69,15 @@ function boolOf(value, fallback) {
  */
 function minutesOf(value, fallback) {
     return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 1440 ? value : fallback;
+}
+
+/**
+ * @param {unknown} value a stored value
+ * @param {'auto' | number} fallback the default
+ * @returns {'auto' | number} `auto`, or the value when it is a number from `DIM_MIN` to 1, else the default
+ */
+function dimOf(value, fallback) {
+    return value === 'auto' || (typeof value === 'number' && value >= DIM_MIN && value <= 1) ? value : fallback;
 }
 
 /**
@@ -87,6 +103,8 @@ export function sanitizePrefs(stored) {
         palette: PALETTE_NAMES.includes(/** @type {any} */ (s.palette)) ? /** @type {any} */ (s.palette) : base.palette,
         seen: boolOf(s.seen, base.seen),
         tvIdleMinutes: minutesOf(s.tvIdleMinutes, base.tvIdleMinutes),
+        followPlate: boolOf(s.followPlate, base.followPlate),
+        dim: dimOf(s.dim, base.dim),
     };
 }
 

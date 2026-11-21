@@ -7,8 +7,10 @@ import { MeshBasicNodeMaterial } from 'three/webgpu';
 import { cos, float, fwidth, max, min, mix, positionGeometry, sin, varying, vec2, vec3 } from 'three/tsl';
 import { JAW_OPEN, modelBounds } from './models.js';
 import { NEON } from './palette.js';
+import { HALO_ALPHA } from './rim-halo.js';
 import {
     coverage,
+    haloCoverage,
     rimCoverage,
     sdArc,
     sdBlob,
@@ -38,6 +40,9 @@ import {
  * @property {any} [ringFloor] float the least opacity of a `ring`-bound part (the calls lens raises it)
  * @property {{angle: any, depth: any, width: any}} [dent] floats: a membrane part's dent (bearing, signed depth, width)
  * @property {any} [fade] float 0 to 1: how far the whole model has faded out (a dying body)
+ * @property {any} [halo] float 0 to 1: the strength of an event's rim falloff on the parts marked `halo` (none when absent)
+ * @property {any} [haloPx] float how far the falloff reaches in device px (0 turns it off)
+ * @property {any} [pad] float extra model units the quad grows by on every side, so the falloff is not cut at its edge
  */
 
 /**
@@ -265,6 +270,24 @@ function over(acc, color, alpha) {
 }
 
 /**
+ * Lays the event's rim falloff under a `halo` part: its colour fading outward from the outline.
+ * @param {{rgb: any, a: any}} acc the accumulated colour
+ * @param {Record<string, any>} part the part
+ * @param {{d: any, px: any, color: any, inputs: ModelInputs}} at the part's distance, one pixel, its colour and the inputs
+ * @returns {{rgb: any, a: any}} the accumulation, unchanged for a part that is not marked or a model with no `halo`
+ */
+function paintHalo(acc, part, { d, px, color, inputs }) {
+    if (part.halo !== true || inputs.halo === undefined) {
+        return acc;
+    }
+    return over(
+        acc,
+        color,
+        haloCoverage(d, { strength: inputs.halo, widthPx: inputs.haloPx ?? 0, px, alpha: HALO_ALPHA }),
+    );
+}
+
+/**
  * @param {{rgb: any, a: any}} acc the accumulated colour
  * @param {Record<string, any>} part the part
  * @param {{p: any, px: any, rig: Rig, inputs: ModelInputs, look: {rimPx: number, fillShare: number}}} at the model point, the pixel size, the rig, the inputs and the look
@@ -287,6 +310,7 @@ function paintPart(acc, part, { p, px, rig, inputs, look }) {
         return over(out, color, coverage(d, px).mul(gate));
     }
     if (style === 'shape') {
+        out = paintHalo(out, part, { d, px, color, inputs });
         out = over(out, color.mul(inputs.fill ?? look.fillShare), coverage(d, px).mul(gate));
     }
     return over(out, color, rimCoverage(d, look.rimPx, px).mul(gate));
@@ -307,8 +331,9 @@ export function modelMaterial(model, { inputs, look, flash = 0.6 }) {
     material.transparent = true;
     material.depthTest = false;
     material.depthWrite = false;
-    material.positionNode = vec3(turn(corner.mul(inputs.radius.mul(bound)), inputs.angle).add(inputs.center), 0);
-    const raw = varying(corner.mul(bound));
+    const reach = inputs.pad === undefined ? bound : float(bound).add(inputs.pad);
+    material.positionNode = vec3(turn(corner.mul(inputs.radius.mul(reach)), inputs.angle).add(inputs.center), 0);
+    const raw = varying(corner.mul(reach));
     const spread = max(fwidth(raw.x), fwidth(raw.y));
     const local = turn(raw.sub(vec2(rig.tx, rig.ty)), rig.rot.negate()).div(vec2(rig.sx, rig.sy));
     const px = spread.div(min(rig.sx, rig.sy));

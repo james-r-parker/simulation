@@ -209,3 +209,18 @@ export function sdWave(x, y, { from, to, amp, freq, phase, width }) {
     const ay = amp * t * Math.sin(freq * Math.abs(ax - from) - phase);
     return Math.hypot(x - ax, y - ay) * 0.8 - width / 2;
 }
+
+/**
+ * @param {number} d a signed distance to the outline (positive outside)
+ * @param {{strength: number, widthPx: number, px: number, alpha: number}} halo the event strength 0 to 1, how far the
+ *   falloff reaches in device px, one device pixel in the distance's units and the opacity at the rim at strength 1
+ * @returns {number} the falloff's opacity: `alpha x strength` at the outline, falling quadratically to 0 at `widthPx`
+ *   and 0 inside and beyond it
+ */
+export function haloCoverage(d, { strength, widthPx, px, alpha }) {
+    if (!(widthPx > 0) || d < 0) {
+        return 0;
+    }
+    const t = Math.min(d / (widthPx * px), 1);
+    return alpha * strength * (1 - t) * (1 - t);
+}
