@@ -35,13 +35,25 @@ export const STORE_SHARE = 0.5;
  */
 
 /**
+ * The one-slot world the temperature functions of `js/sim/temperature.js` read: the spec's lane bases as lane arrays of one
+ * slot, at the start temperature, so the budget calls the sim's own `thrustEfficiency` and `passiveMultiplier`.
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {Record<string, number>} lane the spec's lane bases
+ * @returns {import('../sim/world.js').World} the world, as far as those functions read it
+ */
+function startWorld(config, lane) {
+    const lanes = Object.fromEntries(Object.entries(lane).map(([name, value]) => [name, [value]]));
+    return /** @type {any} */ ({ config, lanes, temperature: [config.temperatureStart] });
+}
+
+/**
  * @param {Readonly<Record<string, any>>} config the validated config
  * @param {Record<string, number>} lane the spec's lane bases
  * @param {number} fat the fat factor at the start energy
  * @returns {RoleParams['thrust']} the thrust numbers
  */
 function thrustOf(config, lane, fat) {
-    const base = lane.maxThrust * thrustEfficiency(config, config.temperatureStart);
+    const base = lane.maxThrust * thrustEfficiency(startWorld(config, lane), 0);
     const gain = config.sprintMultiplier * lane.sprintBoost;
     const cruise = base * fat;
     return {
@@ -73,7 +85,7 @@ function costOf(config, lane, { entry, burn }) {
         juvenile: burn,
         standingMult: entry.passiveLossMultiplier,
         drain: config.seasons[0].energyDrain,
-        heat: passiveMultiplier(config, config.temperatureStart),
+        heat: passiveMultiplier(startWorld(config, lane), 0),
     };
 }
 
@@ -190,7 +202,7 @@ function signalsOf(config, lane, specName) {
             lossPassive: lane.temperatureLossPassive,
             optimalMax: lane.temperatureOptimalMax,
             start: config.temperatureStart,
-            efficiency: thrustEfficiency(config, config.temperatureStart),
+            efficiency: thrustEfficiency(startWorld(config, lane), 0),
         },
         repro: {
             splitMin: lane.splitMinEnergy,
