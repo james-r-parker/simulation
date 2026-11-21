@@ -59,9 +59,9 @@ function check(/** @type {any} */ config, /** @type {any} */ name) {
     expect(p.cost.move).toBeCloseTo(e.move, 12);
     expect(p.cost.upkeep).toBe(e.upkeep);
     expect(p.repro.splitMin).toBeCloseTo(e.splitMin, 9);
-    const scout = name === 'scout';
-    expect(p.call.radius).toBe(config.callRadius * (scout ? config.scoutCallRadiusMultiplier : 1));
-    expect(p.call.cost).toBe(config.alarmCost * (scout ? config.scoutAlarmCostMultiplier : 1));
+    const body = config.specialisations[name].body;
+    expect(p.call.radius).toBe(config.callRadius * (body.callRadius ?? 1));
+    expect(p.call.cost).toBe(config.alarmCost * (body.alarmCost ?? 1));
 }
 
 describe('roleParams', () => {
@@ -75,11 +75,12 @@ describe('roleParams', () => {
     it('follows an overridden config, a spec field and a body override alike', () => {
         const config = arenaConfig({
             maxThrust: 0.9,
-            scoutCallRadiusMultiplier: 1.5,
-            scoutAlarmCostMultiplier: 2,
             sprintStoreEnabled: true,
             sprintDrain: 0.02,
-            specialisations: { predator: { sprintBoost: 2, sprintDrainMultiplier: 0.5 }, scout: { visionRange: 500 } },
+            specialisations: {
+                predator: { sprintBoost: 2, sprintDrainMultiplier: 0.5 },
+                scout: { visionRange: 500, body: { callRadius: 1.5, alarmCost: 2 } },
+            },
         });
         for (const name of SPEC_NAMES) {
             check(config, name);
