@@ -1,6 +1,6 @@
 # Body genes
 
-**Status:** In progress - Phase 1 is built: the lane catalogue, `BRAIN_IO`, the `pooled-v6` layout (106 inputs) with the thirteen body-sense inputs live, the trait registry (18 traits, 24 slots, neutral), inheritance, the lane readers, the cost keys, the gene detectors, the inspector, the trait table, the re-recorded bench baseline and the layout keep-rule read (E259, no guard WORSE). Next: Phase 2 (T10), which follows role-budget.md T5; T46 adds the hearing, nose and smoke-sight cost keys before any of those spans leaves 0.
+**Status:** In progress - Phase 1 is built: the lane catalogue, the `pooled-v6` layout with the thirteen body-sense inputs, the 18-trait registry (neutral), the lane readers and cost keys, the gene detectors, and the layout keep-rule read (E259, no guard WORSE). Next: Phase 2 (T10), after role-budget.md T5.
 **Validated:** f77acde1 (2026-11-21)
 **Scheduled by:** [fair-chase.md](fair-chase.md) step 1 - the next chunk of the hunting lane: Phase 1 (body and senses) is built before the calculator, which reads it; Phase 2 follows role-budget.md Phase 1, and Phase 3 chooses the numbers with the calculator
 **Depends on:** [fair-chase.md](fair-chase.md)
