@@ -97,11 +97,12 @@ export function drillSubject(drill, subject, options = {}) {
     const { seed = 1, trials = DRILL_TRIALS, log, arms = false } = options;
     const config = layerArena(options.config, drill.arena);
     const staged = { ...subject, spec: subject.spec ?? drill.spec };
-    const view = viewOf(staged, createConfig(config));
+    const rules = createConfig(config);
+    const view = viewOf(staged, rules);
     const rng = fork(createRng(seed), `drill:${drill.name}`);
     let wins = 0;
     for (let trial = 0; trial < trials; trial++) {
-        const plan = drill.plan(rng, view);
+        const plan = drill.plan(rng, view, rules);
         const controlSpec = { name: 'intact' };
         const won = playTrial({ plan, subject: staged, controlSpec, seed: seed + trial, config });
         wins += Number(won);
