@@ -36,23 +36,41 @@ recorded falsification.
 - **Headlines.** A decision reads one headline metric per scene (metric-noise.md Phase 5), not 370 metrics.
 - **After the chase is fair,** the hunt rung co-evolves prey with hunters (training-stages.md Phase 9).
 
-## Direction (user, 2026-11-21) - read this before the Focus rules above it
+## Direction (user, 2026-11-21) - this section overrides the Focus rules above and the Build order below for lane B
 
-- **No training until three gates are read** ([fair-chase.md](../designs/fair-chase.md), "Before any training"): every
-  role's calculation ([role-budget.md](../designs/role-budget.md) Phases 1 to 5), every role's metrics against planted
-  scenes ([metric-noise.md](../designs/metric-noise.md) Phase 6), and the reflex tier with a case for each role
-  ([brain-reflex-tests.md](../designs/brain-reflex-tests.md) Phase 5, then its study). This replaces the narrower freeze.
-- **Big chunks:** one phase to a pull request, not 4 to 8 tasks.
-- **Straight to `main`:** the user is the only user. A rules change is a breaking commit on `main` with the next
-  `library/seasons.json` entry in the same PR. There is no `season/next`.
-- **Decisions:** the sprint is graded with the store on (fair-chase.md T7a); agents read the size and speed of what they
-  see, never a spec label ([body-genes.md](../designs/body-genes.md) Phase 4); a defender that arrives shoves the
-  hunter off (the repel of prey-guilds.md Phase 2, on in the defender rows and screens); body genes is built now, as
-  fair-chase step 2; herds are a row for every spec in the calculator.
-- **Order for lane B:** role-budget.md Phase 1 with fair-chase.md T7a and body-genes.md Phase 1; role-budget.md Phases 2
-  to 5; metric-noise.md Phase 6; brain-reflex-tests.md Phase 5 and `E-RT-1`; then fair-chase.md T7b and T8.
-- **Left for a code PR:** `.github/workflows/check.yml`, `preview.yml` and `scripts/lib/release-check.mjs` still name
-  `season/next`.
+**No training run, ladder screen or champion export starts until the gates below are read.** Every large rules change
+lands first, in big chunks (one phase to a pull request), straight on `main` (a rules change is a breaking PR with its
+`library/seasons.json` change; there is no `season/next`). Every mechanism in the world stays on.
+
+### Lane B, in order
+
+| Step | Build                                                                                                                                                                                                                                                                                                 | Plan                                                                                                                                | Why here                                                                         |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 1    | Events with named fields, spec names, the per-slot state list                                                                                                                                                                                                                                         | [registries.md](../designs/registries.md) Phase 1                                                                                   | a refactor that moves no hash; everything after adds events, state and detectors |
+| 2    | Body and senses: the lane catalogue, the brain input and output schema (T6a), the `pooled-v6` layout with 13 sense inputs and `reserve`, the trait registry with 18 traits in 24 slots at neutral numbers, the inheritance routine, the graded sprint ([fair-chase.md](../designs/fair-chase.md) T7a) | [body-genes.md](../designs/body-genes.md) Phase 1                                                                                   | one layout change before any training; the calculator reads the lanes            |
+| 3    | The effects registry, every within-life modifier of today moved into it, then the social and adrenaline effects at neutral numbers                                                                                                                                                                    | [status-effects.md](../designs/status-effects.md) Phases 1 and 2                                                                    | the calculator reads the effects                                                 |
+| 4    | The calculator: all five phases, with the trait corners (body-genes.md Phase 2) and the pack row (status-effects.md T13)                                                                                                                                                                              | [role-budget.md](../designs/role-budget.md)                                                                                         | gate 1: can each role work, can a newborn reach food, does a sitter die first    |
+| 5    | The numbers: trait spans and costs, effect strengths, birth energy with the cold stack; one 16-seed screen and one 64-seed keep-rule pair on the live policy                                                                                                                                          | body-genes.md Phase 3, status-effects.md Phase 3                                                                                    | chosen with the calculator, not before it                                        |
+| 6    | The detector interface, then every role's metrics against planted scenes                                                                                                                                                                                                                              | registries.md Phase 3, [metric-noise.md](../designs/metric-noise.md) Phase 6                                                        | gate 2                                                                           |
+| 7    | A reflex case and a drill for each role, bars from the calculator, then the reflex validation study                                                                                                                                                                                                   | [brain-reflex-tests.md](../designs/brain-reflex-tests.md) Phase 5 then Phase 2; [training-loop.md](../designs/training-loop.md) T34 | gate 3: level one and level two measure the right things                         |
+| 8    | Training: `train:feasible` on the graded-sprint arm, then the ladder screen                                                                                                                                                                                                                           | fair-chase.md T7b, T8                                                                                                               | the first training runs                                                          |
+
+Beside lane B, with no order between them: body-genes.md Phase 5 (the remaining readers move to lanes, mechanical),
+training-loop.md T33 and T28, and lanes A and C as listed under "Progress".
+
+### Decisions behind the plans
+
+- **Perception is physical:** size, speed, closing rate and how much of the view a kind fills; never a spec label. The
+  inputs are always on and judged after the first training run (body-genes.md Phase 4).
+- **Traits:** one registry, per-spec menus where a span of 0 fixes a trait (no flags), one inheritance routine, contract
+  tests over every entry. A trade between two abilities is one trait with two opposite effects.
+- **Effects:** stacking, capped, timed. No effect pays a body for an act: `answered` needs a kill both hunters bit.
+- **The defender shoves** (the repel that exists and is off). **The sprint is graded** with the store on.
+- **The calculator's anchors** were computed from the code: `evals/decisions/role-budget/anchors.md`. The settings
+  inventory is `evals/decisions/body-genes/settings-inventory.md`.
+- **To check before trusting the herd rows:** a startled herd's centroid is held, so a stampede travels about 516 px in
+  360 ticks (role-budget.md T21a).
+- Rust and WASM work goes to Opus. One coordinator; subagents may open their own pull requests.
 
 ## Build order
 
