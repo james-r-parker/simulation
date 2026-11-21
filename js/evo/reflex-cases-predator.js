@@ -4,12 +4,9 @@
 import { createConfig } from '../sim/config.js';
 import { traitValue } from '../sim/traits.js';
 import { HUNTER_ENERGY, SUBJECT_ENERGY, heading } from './memory-probe-scenarios.js';
+import { defaultBars } from './reflex-bars.js';
 import { bearingPoint, signedBearing, subjectAgent, withMirrors } from './reflex-stage.js';
 import { SPEC } from '../sim/specs.js';
-
-/** The thresholds, as shares of the output range (starting values of the doc, calibrated by T4). */
-export const PREDATOR_BARS = Object.freeze({ turn: 0.15, thrust: 0.3, bite: 0 });
-const BAR = PREDATOR_BARS;
 
 /**
  * A too-big victim: full energy and the size gene at its top, so its size passes the hunter's `huntSizeRatio` limit and
@@ -62,8 +59,8 @@ const APPROACH_PREY = {
             return [{ kind: 'prey', bearing, mirror, ticks: [stage] }];
         });
     },
-    check(outputs, { bearing }) {
-        return Math.sign(bearing) * outputs.turn >= BAR.turn && outputs.thrust > BAR.thrust;
+    check(outputs, { bearing }, bars = defaultBars()) {
+        return Math.sign(bearing) * outputs.turn >= bars.predator.turn && outputs.thrust > bars.predator.thrust;
     },
 };
 
@@ -95,8 +92,8 @@ const BITE_DISCRIMINATION = {
             victimStaging(d, mirror, { kind: 'kin', energy: SUBJECT_ENERGY, parents: [SHARED_PARENT, SHARED_PARENT] }),
         ]);
     },
-    check(outputs, { kind }) {
-        return kind === 'prey' ? outputs.bite > BAR.bite : outputs.bite <= BAR.bite;
+    check(outputs, { kind }, bars = defaultBars()) {
+        return kind === 'prey' ? outputs.bite > bars.predator.bite : outputs.bite <= bars.predator.bite;
     },
 };
 

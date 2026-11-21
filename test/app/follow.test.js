@@ -201,8 +201,37 @@ describe('follow as a story', () => {
         expect(s.follow.caption()).toBe('its killer');
         s.follow.step({ dtMs: 16, nowMs: 1000 + 2999, available: true, paused: false });
         expect(s.follow.caption()).toBe('its killer');
-        s.follow.step({ dtMs: 16, nowMs: 1000 + 3000, available: true, paused: false });
+    });
+
+    it('keeps the caption up while the calm move to a far subject runs, then 3 s after it ends', () => {
+        const player = stubPlayer();
+        const s = setup(player);
+        noteStory(player.story, { kind: 2, x: 100, y: 0, a: 7, b: 8, c: 256, d: 5 }, CTX);
+        s.state.followId = 7;
+        s.follow.step({ dtMs: 16, nowMs: 0, available: true, paused: false });
+        s.agents.genomeId[0] = 999;
+        s.agents.x[1] = 12000;
+        s.camera.x = s.camera.targetX = 100;
+        s.camera.zoom = s.camera.targetZoom = 2;
+        let nowMs = 0;
+        const frame = (/** @type {number} */ dtMs) => {
+            nowMs += dtMs;
+            s.follow.step({ dtMs, nowMs, available: true, paused: false });
+        };
+        frame(holdMsFor(player.story, 7));
+        const handedAt = nowMs;
+        expect(s.state.followId).toBe(8);
+        while (nowMs - handedAt < 4000) {
+            frame(100);
+        }
+        expect(Math.abs(s.camera.x - 12000)).toBeGreaterThan(100);
+        expect(s.follow.caption()).toBe('its killer');
+        while (s.follow.caption() !== '' && nowMs - handedAt < 60000) {
+            frame(100);
+        }
         expect(s.follow.caption()).toBe('');
+        expect(nowMs - handedAt).toBeGreaterThan(7000);
+        expect(Math.abs(s.camera.x - 12000)).toBeLessThan(1);
     });
 
     it('names a child, and says nothing for a plain pick; cancelling and reset clear the caption', () => {
