@@ -50,8 +50,10 @@ describe('traitRows', () => {
 
     it('gives each lane of a trait the base times 1 - span, 1 and 1 + span', () => {
         const base = laneBases(config, 'predator');
-        const speed = rows.filter((row) => row.trait === 'speed');
-        expect(speed.map((row) => row.lane)).toEqual(['maxVelocity', 'maxThrust']);
+        const all = rows.filter((row) => row.trait === 'speed');
+        // body-genes T13: the speed trait's paired cost (speedHeat, 0 by default) follows its effect lanes.
+        expect(all.map((row) => row.lane)).toEqual(['maxVelocity', 'maxThrust', 'temperatureGainMove (cost)']);
+        const speed = all.filter((row) => !row.lane.endsWith(' (cost)'));
         for (const row of speed) {
             const [min, mid, max] = row.values;
             expect(mid).toBeCloseTo(base[row.lane], 12);
