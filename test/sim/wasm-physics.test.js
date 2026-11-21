@@ -8,6 +8,7 @@ import { PHYSICS_FIELDS, bounceRocksKernel, rockImpactSpeed } from '../../js/sim
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 import { PHYSICS_CASES, readPhysicsReference, runPhysicsCase, runPhysicsFuzz } from './helpers/physics-reference.js';
 import { smallWorld } from './helpers/small-world.js';
+import { writeLaneBases } from '../../js/sim/lane-state.js';
 
 const TIMEOUT_MS = scaleTimeout(60_000);
 
@@ -42,10 +43,25 @@ function place(world, x, y, size) {
     world.y[slot] = y;
     world.size[slot] = size;
     world.energy[slot] = 100;
+    writeLaneBases(world, slot);
     return slot;
 }
 
 describe('the physics arena', () => {
+    it("caps each agent's speed at its own maxVelocity lane, which world.lanes shares with the arena", () => {
+        const world = smallWorld();
+        expect(world.lanes.maxVelocity).toBe(world.laneMaxVelocity);
+        expect(world.laneMaxVelocity.buffer).toBe(world.wasm.memory.buffer);
+        const slow = place(world, 300, 300, 5);
+        const fast = place(world, 600, 600, 5);
+        world.lanes.maxVelocity[slow] = 2;
+        world.vx[slow] = 50;
+        world.vx[fast] = 50;
+        integrate(world);
+        expect(world.vx[slow]).toBeCloseTo(2, 5);
+        expect(world.vx[fast]).toBeCloseTo(world.config.maxVelocity, 5);
+    });
+
     it('holds the physics fields', () => {
         const world = smallWorld();
         for (const name of PHYSICS_FIELDS) {

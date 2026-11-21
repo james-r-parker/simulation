@@ -7,6 +7,7 @@ import { poolRays } from '../../../js/sim/ray-pool.js';
 import { senseAll } from '../../../js/sim/sensors.js';
 import { visionOf } from '../../../js/sim/traits.js';
 import { addAgent, addCloud, addFood, rebuild, senseWorld } from './sense-world.js';
+import { setSpec } from './body.js';
 
 export const FORAGER = 0;
 export const PREDATOR = 1;
@@ -39,7 +40,7 @@ export const KINDS = Object.freeze({
  */
 function putAgent(w, x, y, { spec, kin = false }) {
     const slot = addAgent(w, x, y, BODY_SIZE);
-    w.spec[slot] = spec;
+    setSpec(w, slot, spec);
     if (kin) {
         w.parentA[slot] = w.genomeId[0];
     }
@@ -75,7 +76,7 @@ export function stageSubject(over = {}) {
  */
 export function addSubject(w, { spec = FORAGER, angle = 0, at = { x: CENTRE, y: CENTRE } } = {}) {
     const slot = addAgent(w, at.x, at.y, BODY_SIZE);
-    w.spec[slot] = spec;
+    setSpec(w, slot, spec);
     w.angle[slot] = angle;
     w.energy[slot] = w.maxEnergyBySpec[spec] / 2;
     return slot;

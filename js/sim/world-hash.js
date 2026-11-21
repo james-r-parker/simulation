@@ -125,7 +125,7 @@ function fieldNames() {
 /**
  * Builds the byte views for the whole-array part of the hash, once per world.
  * @param {Record<string, any>} world the world
- * @returns {{ agents: Uint8Array[], merit: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, inputActive: Uint8Array, vision: Uint8Array, baseSize: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, disease: Uint8Array[], diseaseRngSource: Uint32Array | null, diseaseRng: Uint8Array | null, sprintStore: Uint8Array | null, restTimer: Uint8Array | null, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
+ * @returns {{ agents: Uint8Array[], merit: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, inputActive: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, disease: Uint8Array[], diseaseRngSource: Uint32Array | null, diseaseRng: Uint8Array | null, sprintStore: Uint8Array | null, restTimer: Uint8Array | null, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
  */
 function buildViews(world) {
     const { maxAgents } = world.config;
@@ -137,8 +137,6 @@ function buildViews(world) {
         hidden: new Uint8Array(hiddenRows.buffer, hiddenRows.byteOffset, hiddenRows.byteLength),
         fastOut: bytesOf(world, 'fastOut'),
         inputActive: bytesOf(world.inputActivity, 'active'),
-        vision: bytesOf(world, 'vision'),
-        baseSize: bytesOf(world, 'baseSize'),
         sex: bytesOf(world, 'sex'),
         birthRing: bytesOf(world, 'birthRing'),
         disease: [...DISEASE_AGENT_ARRAYS, ...DISEASE_STRAIN_ARRAYS].map((name) => bytesOf(world, name)),
@@ -201,7 +199,7 @@ function hashStateRows(views) {
 }
 
 /**
- * Hashes the arrays that exist only with their feature on: `fastOut`, the input-activity counts (`weightDecay`), `vision` and `baseSize`, `birthRing`, `sex`, the disease state, the sprint store (`sprintStoreEnabled`) and the rest timer (`predatorRestTicks`).
+ * Hashes the arrays that exist only with their feature on: `fastOut`, the input-activity counts (`weightDecay`), `birthRing`, `sex`, the disease state, the sprint store (`sprintStoreEnabled`) and the rest timer (`predatorRestTicks`).
  * @param {Record<string, any>} world the world
  * @param {ReturnType<typeof buildViews>} views the cached byte views
  * @returns {void}
@@ -219,8 +217,6 @@ function hashOptionalArrays(world, views) {
         fnv64Bytes(digest, sampleCountBytes);
         fnv64Bytes(digest, views.inputActive);
     }
-    fnv64Bytes(digest, views.vision);
-    fnv64Bytes(digest, views.baseSize);
     if (config.maxBirthsPerWindow > 0) {
         fnv64Bytes(digest, views.birthRing);
     }

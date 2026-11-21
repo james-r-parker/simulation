@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { noteBirthBody, noteBody } from '../../js/evo/observer-body.js';
 import { observe } from '../../js/evo/observer.js';
 import { addBorn, nextTick, observed, pushBorn, pushDied } from './helpers/observer-world.js';
+import { setVisionRatio } from '../sim/helpers/body.js';
 
 describe('noteBody', () => {
     it('stores the traits of the slot', () => {
@@ -16,8 +17,8 @@ describe('noteBirthBody', () => {
     it('reads the newborn traits from the world as multiples of the defaults', () => {
         const { world, observer } = observed({ hashCellSize: 256 });
         const slot = addBorn(world);
-        world.baseSize[slot] = world.config.baseSize * 0.8;
-        world.vision[slot] = 1.25;
+        world.lanes.baseSize[slot] = world.config.baseSize * 0.8;
+        setVisionRatio(world, slot, 1.25);
         noteBirthBody(observer, world, slot, world.genomeId[slot]);
         expect(observer.sizeTrait[slot]).toBeCloseTo(0.8, 6);
         expect(observer.visionTrait[slot]).toBeCloseTo(1.25, 6);
@@ -26,7 +27,7 @@ describe('noteBirthBody', () => {
     it('gives the default traits when the slot holds another genome', () => {
         const { world, observer } = observed({ hashCellSize: 256 });
         const slot = addBorn(world);
-        world.baseSize[slot] = world.config.baseSize * 0.8;
+        world.lanes.baseSize[slot] = world.config.baseSize * 0.8;
         noteBirthBody(observer, world, slot, world.genomeId[slot] + 1);
         expect([observer.sizeTrait[slot], observer.visionTrait[slot]]).toEqual([1, 1]);
     });
@@ -37,15 +38,15 @@ describe('the observer at birth and death', () => {
         const { world, observer } = observed({ hashCellSize: 256 });
         nextTick(world, 0);
         const slot = addBorn(world);
-        world.baseSize[slot] = world.config.baseSize * 1.2;
-        world.vision[slot] = 1.3;
+        world.lanes.baseSize[slot] = world.config.baseSize * 1.2;
+        setVisionRatio(world, slot, 1.3);
         observe(observer, world);
         expect(observer.sizeTrait[slot]).toBeCloseTo(1.2, 6);
         expect(observer.visionTrait[slot]).toBeCloseTo(1.3, 6);
         nextTick(world, 1);
         pushDied(world, { slot, genomeId: world.genomeId[slot] });
         world.alive[slot] = 0;
-        world.baseSize[slot] = 0;
+        world.lanes.baseSize[slot] = 0;
         observe(observer, world);
         expect(observer.sizeTrait[slot]).toBeCloseTo(1.2, 6);
     });

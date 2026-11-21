@@ -11,8 +11,8 @@ const byName = Object.fromEntries(cases.map((/** @type {any} */ c) => [c.name, c
 const TIMEOUT_MS = scaleTimeout(300_000);
 
 /** The FNV hash of the busy golden world's effect stream (every effect record, in order). A self-pin; re-pinned by the one kill rule (metric-trust T14), which drops one HunterKill record, again by the eat choice becoming the default (eat-choice T13), by the graze hold (eat-choice T18), by grazeThrust 0.6 (eat-choice T28), by the hunter's eyes (senses-and-motor T20), and by killGorgeShare 0.4 (honest-budgets T37). */
-const BUSY_EFFECT_HASH = '6f11dde3c55708ae';
-const BUSY_EFFECT_RECORDS = 1046;
+const BUSY_EFFECT_HASH = 'd98db95f00c63546';
+const BUSY_EFFECT_RECORDS = 967;
 
 describe('the golden world through the host', () => {
     it(

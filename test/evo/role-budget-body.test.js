@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { arenaConfig, ARENA_CENTRE, stageArena } from '../../js/evo/chase-arena.js';
 import { OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
+import { stepSprintStore } from '../../js/sim/sprint-store.js';
 import { applyCosts } from '../../js/sim/energy.js';
 import { actAll, integrate } from '../../js/sim/physics.js';
 import {
@@ -51,11 +52,7 @@ describe('stepBody against the sim', () => {
             world.outputs[OUTPUT_INDEX.TURN] = out.turn;
             world.outputs[OUTPUT_INDEX.SPRINT] = out.sprint > 0 ? 1 : 0;
             // the sim's store step, then act, integrate and costs
-            const level = world.sprintStore.level[0];
-            world.sprintFactor[0] = level >= world.sprintStore.floor ? 1 : level / world.sprintStore.floor;
-            if (out.sprint > 0) {
-                world.sprintStore.level[0] = Math.max(0, level - world.sprintStore.drainBySpec[world.spec[0]]);
-            }
+            stepSprintStore(world.sprintStore, world);
             actAll(world);
             integrate(world);
             applyCosts(world);

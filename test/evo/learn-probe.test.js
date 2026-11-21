@@ -3,10 +3,14 @@ import {
     LEARN_GENERATIONS,
     LEARN_POPULATION,
     LEARN_SEEDS,
+    breed,
     generationsToReach,
     learnLesson,
 } from '../../js/evo/learn-probe.js';
 import { DRILLS } from '../../js/evo/drill-scenarios.js';
+import { brainLayout } from '../../js/sim/brain-layout.js';
+import { createConfig } from '../../js/sim/config.js';
+import { createRng } from '../../js/sim/rng.js';
 
 /** @type {import('../../js/evo/drill-scenarios.js').Drill} a lesson one output decides: move forward at all in 10 ticks */
 const FORWARD = {
@@ -75,5 +79,20 @@ describe('generationsToReach', () => {
 describe('the probe sizes', () => {
     it('are the plan: 8 populations of 64 brains for 200 generations', () => {
         expect([LEARN_SEEDS, LEARN_POPULATION, LEARN_GENERATIONS]).toEqual([8, 64, 200]);
+    });
+});
+
+describe('breed', () => {
+    it('steps the trait genes only through mutateTraits: with traitMutationSigma 0 a child keeps the trait block', () => {
+        const config = createConfig({ traitMutationSigma: 0, mutationRate: 1 });
+        const layout = brainLayout(config);
+        const row = new Float32Array(layout.weightCount);
+        row.fill(0.5, layout.traitStart, layout.leakStart);
+        row[layout.traitStart] = 3.5;
+        const [, child] = breed([{ row, sigma: 0.1 }], { count: 2, config, rng: createRng(5) });
+        const traits = Array.from(child.row.subarray(layout.traitStart, layout.leakStart));
+        expect(traits[0]).toBe(config.traitGeneClamp);
+        expect(traits.slice(1)).toEqual(new Array(traits.length - 1).fill(0.5));
+        expect(child.row[layout.leakStart]).not.toBe(row[layout.leakStart]);
     });
 });

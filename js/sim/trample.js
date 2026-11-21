@@ -26,7 +26,7 @@ function resolveContact(world, slot, animal) {
     world.vx[slot] -= 2 * vn * nx;
     world.vy[slot] -= 2 * vn * ny;
     const ratio = closing / world.config.maxVelocity;
-    const amount = world.config.trampleDamage * ratio * ratio * (world.size[slot] / world.baseSize[slot]);
+    const amount = world.config.trampleDamage * ratio * ratio * (world.size[slot] / world.lanes.baseSize[slot]);
     if (removeEnergy(world, slot, amount, LOSS_CAUSE.TRAMPLE) > 0) {
         world.lastHerdId[slot] = world.herdId[animal];
     }

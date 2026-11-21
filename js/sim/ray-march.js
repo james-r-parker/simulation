@@ -142,12 +142,16 @@ export function castSlot(world, slot) {
         world.coverTotals[COVER_TOTALS.CONCEALED_HITS] += views.senseParams[SENSE_WORD.concealed];
     }
     noteMatesSeen(world, slot, count);
-    const { rayBestT: bestT, rayBestKey: bestKey } = views;
+    const { rayBestT: bestT, rayBestKey: bestKey, raySmoke } = views;
     const rowBase = slot * world.layout.rawInputCount;
     for (let k = 0; k < world.config.rayCount; k++) {
         s[BEST_T] = bestT[k];
         s[BEST_KEY] = bestKey[k];
-        writeRay(world, slot, rowBase + k * RAY_CHANNELS, k);
+        const base = rowBase + k * RAY_CHANNELS;
+        writeRay(world, slot, base, k);
+        if (raySmoke[k] === 1) {
+            world.inputs[base + CH_SMOKE] = 1; // body-genes T13a: the ray saw through smoke to its hit
+        }
     }
     return count;
 }

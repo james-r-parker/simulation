@@ -11,6 +11,7 @@ import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import { RESPONSE_WINDOW } from '../../js/evo/observer-intent-state.js';
 import { MOTION_SAMPLE_TICKS } from '../../js/evo/observer-tick.js';
 import { eaten, sourceRun, starve } from './helpers/source-world.js';
+import { setVisionRatio } from '../sim/helpers/body.js';
 
 const PREDATOR = 1;
 
@@ -242,21 +243,21 @@ describe('trait_spread, body_plan_coverage and sex_balance', () => {
         const { world } = r;
         const b0 = world.config.baseSize;
         // Agent a: bin (0, 0), female; Agent b: bin (4, 4), female; Agent c: bin (2, 2), male; doomed: bin (0, 0), female.
-        world.baseSize[a] = 0.6 * b0;
-        world.vision[a] = 0.6;
-        world.childShare[a] = 0.3;
+        world.lanes.baseSize[a] = 0.6 * b0;
+        setVisionRatio(world, a, 0.6);
+        world.lanes.childEnergyShare[a] = 0.3;
         world.sex[a] = SEX.FEMALE;
-        world.baseSize[b] = 1.4 * b0;
-        world.vision[b] = 1.4;
-        world.childShare[b] = 0.7;
+        world.lanes.baseSize[b] = 1.4 * b0;
+        setVisionRatio(world, b, 1.4);
+        world.lanes.childEnergyShare[b] = 0.7;
         world.sex[b] = SEX.FEMALE;
-        world.baseSize[c] = b0;
-        world.vision[c] = 1;
-        world.childShare[c] = 0.5;
+        world.lanes.baseSize[c] = b0;
+        setVisionRatio(world, c, 1);
+        world.lanes.childEnergyShare[c] = 0.5;
         world.sex[c] = SEX.MALE;
-        world.baseSize[doomed] = 0.6 * b0;
-        world.vision[doomed] = 0.6;
-        world.childShare[doomed] = 0.3;
+        world.lanes.baseSize[doomed] = 0.6 * b0;
+        setVisionRatio(world, doomed, 0.6);
+        world.lanes.childEnergyShare[doomed] = 0.3;
         world.sex[doomed] = SEX.FEMALE;
         r.jump(BURN_IN_TICKS);
         // Checkpoint 1 after `doomed` dies: alive [a, b, c] (2 females of 3 -> |2/3 - 0.5| = 1/6; 3 cells occupied).

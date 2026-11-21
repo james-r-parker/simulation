@@ -7,6 +7,7 @@ import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
 import { allocateWorld } from '../../js/sim/world.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
+import { writeLaneBases } from '../../js/sim/lane-state.js';
 
 const PI = Math.PI;
 const SMALL = {
@@ -45,6 +46,7 @@ function put(w, slot, fields) {
     for (const [k, v] of Object.entries(fields)) {
         w[k][slot] = v;
     }
+    writeLaneBases(w, slot);
     return slot;
 }
 

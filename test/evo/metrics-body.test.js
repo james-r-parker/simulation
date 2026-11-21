@@ -9,6 +9,8 @@ import { SEX } from '../../js/sim/sex.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { nextTick, observed } from './helpers/observer-world.js';
 import { loose } from './helpers/metric-registry.js';
+import { laneBases } from '../../js/sim/body-lanes.js';
+import { SPEC_NAMES } from '../../js/sim/specs.js';
 
 const ON = { hashCellSize: 256 };
 const NAMES = ['trait_spread', 'body_plan_coverage', 'sex_balance'];
@@ -35,9 +37,10 @@ function checkpointWith({ world, observer }, tick, bodies) {
             addBlob(world);
         }
         const b = bodies[slot];
-        world.baseSize[slot] = baseSize * (b.size ?? 1);
-        world.vision[slot] = b.vision ?? 1;
-        world.childShare[slot] = childEnergyShare * (b.share ?? 1);
+        world.lanes.baseSize[slot] = baseSize * (b.size ?? 1);
+        world.lanes.visionRange[slot] =
+            laneBases(world.config, SPEC_NAMES[world.spec[slot]]).visionRange * (b.vision ?? 1);
+        world.lanes.childEnergyShare[slot] = childEnergyShare * (b.share ?? 1);
         world.sex[slot] = b.sex ?? SEX.FEMALE;
     }
     world.tick = tick;

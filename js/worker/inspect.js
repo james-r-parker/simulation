@@ -30,9 +30,6 @@ export const INSPECT_COUNTERS = Object.freeze([
     'lastLoss',
     'bittenTimer',
     'ateTimer',
-    'vision',
-    'baseSize',
-    'childShare',
     'dose',
     'infection',
     'immuneStrains',
@@ -121,7 +118,7 @@ function copyRow(f32, start, source, { from, count }) {
 function writeCounters(f32, start, { source, slot }) {
     const { world, observer, policy, generations } = source;
     f32[start] = world.ageTicks[slot];
-    f32[start + 1] = world.energy[slot] / world.maxEnergyBySpec[world.spec[slot]];
+    f32[start + 1] = world.energy[slot] / world.lanes.maxEnergy[slot];
     f32[start + 2] = world.temperature[slot];
     f32[start + 3] = generations.depth[slot];
     f32[start + 4] = observer.foodEnergy[slot];
@@ -132,12 +129,9 @@ function writeCounters(f32, start, { source, slot }) {
     f32[start + 9] = world.lastLoss[slot];
     f32[start + 10] = world.bittenTimer[slot];
     f32[start + 11] = world.ateTimer[slot];
-    f32[start + 12] = world.vision[slot];
-    f32[start + 13] = world.baseSize[slot];
-    f32[start + 14] = world.childShare[slot];
-    f32[start + 15] = world.dose[slot];
-    f32[start + 16] = world.infection[slot];
-    f32[start + 17] = bitCount(world.immuneMask[slot]);
+    f32[start + 12] = world.dose[slot];
+    f32[start + 13] = world.infection[slot];
+    f32[start + 14] = bitCount(world.immuneMask[slot]);
 }
 
 /**

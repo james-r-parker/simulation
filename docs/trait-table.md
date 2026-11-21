@@ -11,22 +11,25 @@ row. `npm run traits` with `--config` or `--set` prints the table for another co
 | Trait        | Span | Lane               | Min  | 0   | Max  |
 | ------------ | ---- | ------------------ | ---- | --- | ---- |
 | `size`       | 0.3  | `baseSize`         | 17.5 | 25  | 32.5 |
+| `size`       | 0.3  | `maxTurn (cost)`   | 0.2  | 0.2 | 0.2  |
 | `vision`     | 0.3  | `visionRange`      | 210  | 300 | 390  |
 | `childShare` | 0.3  | `childEnergyShare` | 0.35 | 0.5 | 0.65 |
 
 ## predator
 
-| Trait        | Span | Lane               | Min  | 0   | Max  |
-| ------------ | ---- | ------------------ | ---- | --- | ---- |
-| `size`       | 0.3  | `baseSize`         | 17.5 | 25  | 32.5 |
-| `vision`     | 0.3  | `visionRange`      | 280  | 400 | 520  |
-| `childShare` | 0.3  | `childEnergyShare` | 0.35 | 0.5 | 0.65 |
+| Trait        | Span | Lane               | Min  | 0    | Max  |
+| ------------ | ---- | ------------------ | ---- | ---- | ---- |
+| `size`       | 0.3  | `baseSize`         | 17.5 | 25   | 32.5 |
+| `size`       | 0.3  | `maxTurn (cost)`   | 0.14 | 0.14 | 0.14 |
+| `vision`     | 0.3  | `visionRange`      | 280  | 400  | 520  |
+| `childShare` | 0.3  | `childEnergyShare` | 0.35 | 0.5  | 0.65 |
 
 ## reproducer
 
 | Trait        | Span | Lane               | Min  | 0   | Max  |
 | ------------ | ---- | ------------------ | ---- | --- | ---- |
 | `size`       | 0.3  | `baseSize`         | 17.5 | 25  | 32.5 |
+| `size`       | 0.3  | `maxTurn (cost)`   | 0.2  | 0.2 | 0.2  |
 | `vision`     | 0.3  | `visionRange`      | 175  | 250 | 325  |
 | `childShare` | 0.3  | `childEnergyShare` | 0.35 | 0.5 | 0.65 |
 
@@ -35,6 +38,7 @@ row. `npm run traits` with `--config` or `--set` prints the table for another co
 | Trait        | Span | Lane               | Min  | 0   | Max  |
 | ------------ | ---- | ------------------ | ---- | --- | ---- |
 | `size`       | 0.3  | `baseSize`         | 17.5 | 25  | 32.5 |
+| `size`       | 0.3  | `maxTurn (cost)`   | 0.2  | 0.2 | 0.2  |
 | `vision`     | 0.3  | `visionRange`      | 280  | 400 | 520  |
 | `childShare` | 0.3  | `childEnergyShare` | 0.35 | 0.5 | 0.65 |
 
@@ -43,5 +47,6 @@ row. `npm run traits` with `--config` or `--set` prints the table for another co
 | Trait        | Span | Lane               | Min  | 0   | Max  |
 | ------------ | ---- | ------------------ | ---- | --- | ---- |
 | `size`       | 0.3  | `baseSize`         | 17.5 | 25  | 32.5 |
+| `size`       | 0.3  | `maxTurn (cost)`   | 0.2  | 0.2 | 0.2  |
 | `vision`     | 0.3  | `visionRange`      | 210  | 300 | 390  |
 | `childShare` | 0.3  | `childEnergyShare` | 0.35 | 0.5 | 0.65 |

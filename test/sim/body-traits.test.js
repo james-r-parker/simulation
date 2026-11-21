@@ -178,7 +178,6 @@ describe('applyTraits', () => {
         setSpan(world, slot, TRAIT_INDEX.SIZE, 0.3);
         setGene(world, slot, TRAIT_INDEX.SIZE, 1);
         applyGenes(world, slot);
-        expect(world.lanes.baseSize[slot]).toBeCloseTo(world.baseSize[slot], 5);
         expect(world.lanes.baseSize[slot]).toBeCloseTo(world.config.baseSize * traitValue(1), 9);
     });
 
