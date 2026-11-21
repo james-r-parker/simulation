@@ -259,8 +259,20 @@ describe('main exit codes', () => {
         expect(forager.out[0]).toMatch(/eval\.food_energy_per_1k/);
         const scout = run([same, better, '--role', 'scout', '--json']);
         expect(JSON.parse(scout.out[0]).rows).toEqual([]);
+        const herd = run([same, better, '--role', 'herd', '--json']);
+        expect(JSON.parse(herd.out[0]).rows).toEqual([]);
         expect(run([same, better, '--role', 'sloth']).code).toBe(2);
         expect(run([same, better, '--role']).code).toBe(2);
+    });
+
+    it('--role narrows the rows only: --keep-rule is still printed, and --fail-on-worse reads the rows of the role', () => {
+        const kept = run([same, better, '--role', 'herd', '--keep-rule', '--json']);
+        const json = JSON.parse(kept.out[0]);
+        expect(json.rows).toEqual([]);
+        expect(json.keepRule).toBeDefined();
+        expect(run([same, better, '--role', 'forager', '--keep-rule']).out[0]).toMatch(/keep rule:/);
+        expect(run([same, worse, '--role', 'herd', '--fail-on-worse']).code).toBe(0);
+        expect(run([same, worse, '--role', 'forager', '--fail-on-worse']).code).toBe(1);
     });
 });
 

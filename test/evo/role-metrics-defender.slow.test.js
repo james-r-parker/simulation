@@ -42,6 +42,19 @@ describe('the defender metrics against a planted defence', { timeout }, () => {
         expect(armed.metrics[SHOVES].value).toBeCloseTo((1000 * armed.shoveTicks.length) / armed.defenderTicks, 6);
     });
 
+    it('defender_repel_per_1k reads the shoves the hunter felt: its velocity jumps by the impulse at each, and at no other tick', () => {
+        // independent of `world.contacts`: only a shove moves the hunter that fast along the defender-to-hunter line
+        const felt = armed.kickTicks
+            .filter(({ speed }) => speed > SHOVE_ON.defenderRepelImpulse * 0.75)
+            .map(({ tick }) => tick);
+        expect(felt.length).toBeGreaterThan(0);
+        expect(felt).toEqual(armed.shoveTicks);
+        expect(armed.metrics[SHOVES].value).toBeCloseTo((1000 * felt.length) / armed.defenderTicks, 6);
+        expect(Math.max(...disarmed.kickTicks.map(({ speed }) => speed))).toBeLessThan(
+            SHOVE_ON.defenderRepelImpulse * 0.75,
+        );
+    });
+
     it('defender_repel_per_1k reads 0 with the shove off and with no defender in reach', () => {
         expect(disarmed.metrics[SHOVES].value).toBe(0);
         expect(absent.metrics[SHOVES].value).toBe(0);
