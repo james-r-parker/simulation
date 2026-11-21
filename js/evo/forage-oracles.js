@@ -32,8 +32,8 @@ export function walkThrust(world, slot, speed) {
     const { lanes, config } = world;
     const fat = 1 - (lanes.fatSlowShare[slot] * world.energy[slot]) / lanes.maxEnergy[slot];
     const efficiency =
-        effectFactor(/** @type {any} */ (world), slot, EFFECT.COLD_BAND, 'maxThrust') *
-        effectFactor(/** @type {any} */ (world), slot, EFFECT.HEAT_BAND, 'maxThrust');
+        effectFactor(world, slot, EFFECT.COLD_BAND, 'maxThrust') *
+        effectFactor(world, slot, EFFECT.HEAT_BAND, 'maxThrust');
     const per = (lanes.maxThrust[slot] * efficiency * fat * config.damping) / (1 - config.damping);
     return Math.min(1, speed / per);
 }
