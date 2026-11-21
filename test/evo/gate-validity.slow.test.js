@@ -25,7 +25,12 @@ describe('a frozen copy of the committed ladder', () => {
             }
             const level = (/** @type {string} */ read) => rows.find((r) => r.read === read)?.level;
             expect(level('drill.kin-spared.edgeLow')).toBe('senses');
-            expect(level('drill.hunter-closing.edgeLow')).toBe('senses');
+            // pooled-v6 (body-genes.md T7, T31): the senses reference still wins 6 of 64, but random brains now win 22 of 256
+            // (0 of 256 under pooled-v5), since the `reserve` input reads 1 and the body sense is live; its edge falls from
+            // +0.029 to -0.083 and only the oracle (52 of 64) passes. The forager first senses the hunter at about 65 px and
+            // `rayClosing` reads about 0 in an equal-speed chase, so no sense rule tried beat 6 of 64. brain-reflex-tests.md
+            // T21b makes the condition passable from the senses again before any training reads it (user, 2026-11-21).
+            expect(level('drill.hunter-closing.edgeLow')).toBe('oracle');
         },
         scaleTimeout(120000),
     );
