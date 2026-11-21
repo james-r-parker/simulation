@@ -1,8 +1,8 @@
 # Brain reflex tests
 
-**Status:** In progress - Phase 1 built: the six cases, the table builder, the batched evaluator, the bars, `npm run reflex` and `npm run bench:reflex` (522 genomes per second, 776 times the drills); Phase 2 has its study script (T9) but `E-RT-1` has not run, so the tier has no verdict and no use yet.
+**Status:** In progress - Phase 1 built: six cases (four forager, two predator), the table builder, the batched evaluator, the bars, `npm run reflex` and `npm run bench:reflex` (522 genomes per second); Phase 5 (a case for each role) is next, then Phase 2's study `E-RT-1`, which has not run.
 **Validated:** edd4cd4b (2026-11-07)
-**Scheduled by:** [training-loop.md](training-loop.md) step 5 - the reflex validation study (T10 onward), a filter in front of the drills once champions exist to validate it on
+**Scheduled by:** [training-loop.md](training-loop.md) step 1 - gate 3 of fair-chase.md "Before any training": Phase 5 (a case for each role, bars from the role budget) and then Phase 2 (the validation study) come before any training run
 **Depends on:** [training.md](training.md)
 
 Idea (user, 2026-11-07): train or test a brain on its own, with known inputs and known good outputs - danger in sight: run; food to one side: turn towards it; do not crash. A brain that passes these fast checks is then trained in a sim.
@@ -180,6 +180,32 @@ Only if Phase 2's verdict is "both". `npm run train:reflex`, `--founders`, and `
 | E     | T15 to T16 | The pre-trainer, the `--founders` flag and their tests                                      |
 | F     | T17 to T19 | The paired 16-seed runs, the keep or delete verdict and its cleanup, the conformance review |
 
+### Phase 5 - A case for each role
+
+**Targets:** none - a brain-only tier; its readings are a valid case for each role's first skill and the verdict of `E-RT-1` with those cases in
+
+The reflex tier is the fastest measure there is (522 genomes a second, 776 times the drills), so it is the first rung a brain meets, and it measures the right things before any training (gate 3 of [fair-chase.md](fair-chase.md), "Before any training"). Today it holds four forager cases and two predator cases and nothing for the scout, the defender, the reproducer or a herd. This phase is built before Phase 2's study runs, so `E-RT-1` validates the tier as it will be used.
+
+| Case               | Role                       | The input row                                                                                                                                     | Passes when                                                                                        |
+| ------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `sprint-on-prey`   | predator                   | prey on the forward rays at three distances, then no prey                                                                                         | the graded `SPRINT` effort is higher with prey in view than without, and rises as the prey nears   |
+| `hold-the-bite`    | predator                   | prey in the jaws, then nothing in the jaws                                                                                                        | `BITE` is above its threshold in the first row and below it in the second (the blind bite of E190) |
+| `call-on-threat`   | scout                      | a threat on a ray at the edge of view, then the same ray empty                                                                                    | the alarm output is above `alarmThreshold` in the first row only                                   |
+| `turn-to-alarm`    | defender                   | `heard` loud from a bearing, no threat in view                                                                                                    | `TURN` is toward the bearing and `THRUST` is above its bar                                         |
+| `flee-on-alarm`    | forager, reproducer        | `heard` loud, no threat in view                                                                                                                   | `THRUST` is above its bar and `TURN` is away from the bearing                                      |
+| `clear-the-herd`   | every spec                 | megafauna on the forward rays, closing                                                                                                            | `TURN` is toward the nearer flank and `THRUST` is above its bar                                    |
+| `pick-the-weak`    | predator                   | two prey in view, one smaller and slower (the body sense of [body-genes.md](body-genes.md) Phase 4; built with it)                                | `TURN` is toward the smaller, slower one                                                           |
+| `flee-what-closes` | forager, reproducer, scout | a threat at one distance, closing in the first row and leaving in the second (the closing value of [body-genes.md](body-genes.md), built with it) | `THRUST` away is above its bar in the first row only                                               |
+| `mind-the-numbers` | predator                   | one prey in view, then prey filling half the view with threats on the other rays (the view shares of [body-genes.md](body-genes.md))              | the outputs differ between the rows by more than the bar: the brain reads the count                |
+
+- A case's bars come from [role-budget.md](role-budget.md): the reaction a row's `reactive` tier needs (`reactionTicks`, the turn inside `swingTicks`), not a hand-set number. `reflexBars(config)` in `js/evo/reflex-bars.js` computes them, so a config change moves the bars with the budget.
+- Each case passes the validity rule of Phase 1: random brains and constant brains fail it and the scripted reference (`js/evo/reflex-references.js`) passes it.
+- `npm run reflex -- --role <spec>` scores one role's cases.
+
+| Chunk | Tasks                  | Builder |
+| ----- | ---------------------- | ------- |
+| E     | T20 to T24 (with T21a) | Sonnet  |
+
 ## Decisions
 
 | Decision                                                                                 | Why                                                                                                                                                                                          | Who                                           |
@@ -265,6 +291,17 @@ Only if Phase 2's verdict is "both". `npm run train:reflex`, `--founders`, and `
 | T17 | Write the `E-RT-2` prediction, run the paired 16-seed training arms (pre-trained against random founders) and `eval:compare` on the checkpoint evals; record the experiment (placeholder id) and a table in [sim-notes.md](sim-notes.md) | [mechanical] | T16        |
 | T18 | Apply the verdict: keep the arm as an option, or delete `scripts/reflex-pretrain.mjs`, `js/evo/reflex-pretrain.js`, `--founders`, their tests and the `AGENTS.md` row                                                                    | [judgement]  | T17        |
 | T19 | Conformance review of Phase 4, in parallel with `scripts/check.sh`; mark the phase `(built)` and move the Status line                                                                                                                    | [judgement]  | T17, T18   |
+
+### Phase 5 - A case for each role
+
+| #    | Task                                                                                                                                                                                                                                                                                                                                                          | Nature      | Depends on |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T20  | Write the inventory: for each role, the first skill its job needs ([role-budget.md](role-budget.md) rows), the reflex case that reads it today or none, and the drill that reads it; record it in this doc                                                                                                                                                    | [judgement] | -          |
+| T21  | Add `js/evo/reflex-cases-roles.js` (`sprint-on-prey`, `hold-the-bite`, `call-on-threat`, `turn-to-alarm`, `flee-on-alarm`, `clear-the-herd`) with their references, the `--role` flag and tests of each case's validity                                                                                                                                       | [judgement] | T20        |
+| T21a | After [body-genes.md](body-genes.md) Phase 1 and [status-effects.md](status-effects.md) T10: add `pick-the-weak`, `flee-what-closes`, `mind-the-numbers` and `answer-the-call` (a hunter with a kin's hunt call heard from a bearing and no prey in view turns to the bearing) to `js/evo/reflex-cases-roles.js`, with their references and validity tests    | [judgement] | T21        |
+| T22  | Add `js/evo/reflex-bars.js` (`reflexBars` from the role budget) and move every case's bars to it, with a test that a config change moves a bar                                                                                                                                                                                                                | [judgement] | T21, T21a  |
+| T23  | Run T10 (`E-RT-1`) with the role cases in, on `pooled-v6` genomes: the elites of live-policy evals saved with `--save-champions` (16 seeds, 200000 ticks) and random brains, since every earlier champion and the league are refused by the new layout; the study's league row is left out until a league exists. Apply T11's decision rule on the drill rows | [judgement] | T22        |
+| T24  | Conformance review of Phase 5, in parallel with `scripts/check.sh`                                                                                                                                                                                                                                                                                            | [judgement] | T23        |
 
 ## Verification
 

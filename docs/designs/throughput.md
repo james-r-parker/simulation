@@ -1,7 +1,7 @@
 # Throughput
 
-**Status:** Proposed - find and take the speed the kernel squeezes left: why 16 worlds on 16 cores run at 63% of one world's speed, loops over empty slots, set-up cost in small worlds, and a bench that reads one window; Phase 1 (measure) is first.
-**Validated:** a1813ff3 (2026-11-15)
+**Status:** In progress - Phase 3 T6, T7a and T7b are built (`grazeHerds` +432%, the field phase +136% at 500 agents); T7, T7c and the review T8 are open. Phase 1 (measure, T1 to T5), Phase 2 and Phases 4 to 6 are not started.
+**Validated:** 3c6f1225 (2026-11-21)
 **Priority:** 6 - Speed lead. Every eval and screen waits on ticks per second; Phases 1 to 4 change no behaviour, and Phase 3 (the loops over what is alive) has measured prototypes
 **Depends on:** [wasm-kernels.md](wasm-kernels.md)
 

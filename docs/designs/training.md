@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1 (drills) and 2 (the trainer) are built apart from T13 (conformance review); arm d of T12 iteration 2 is weak (`prey-ahead` edge +0.16, `bite-discrimination` 0.00). Phase 3 code is built (T14, T15); T16, T17 are not. Phases 4 to 6 (T18 to T37) train the bite: code tasks T18, T19, T21, T27, T29, T32 to T35 are built; the runs T20, T24, T30, T36 and closing records are not.
 **Validated:** edd4cd4b (2026-11-07)
-**Scheduled by:** [training-loop.md](training-loop.md) step 3 - the world gate and the champions' adoption, after a ladder run passes `hunt`
+**Scheduled by:** [training-loop.md](training-loop.md) step 4 - the world gate and the champions' adoption, after a ladder run passes `hunt`
 **Depends on:** [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md)
 
 > Companion to [evolution-rework.md](evolution-rework.md), whose Phases 1 and 2 built the genome, the archive and the live policy. This doc replaces its Phase 3. [training-stages.md](training-stages.md) plans the gated stage ladder, cross-play, the opponent pool and the exam that judges a champion set.

@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1 to 4 and 8 are built (the gated ladder of stage worlds, cross-play, the opponent pool, scene drills, `eliteSkill`, `nursery-scatter` adopted); Phase 5 (`train:exam`) is built for T22 and T23, with T23a and T23b open; Phase 6 ran the ladder (E-TS-1 to E-TS-1j, E201): `hunt-contact` passes, `hunt` stalls. T5, T6, T37, T38, T44, T51, T54 and T60 to T63 are open.
 **Validated:** 04e3b340 (2026-11-17)
-**Scheduled by:** [training-loop.md](training-loop.md) step 1 - Phase 6 is open: the `hunt` rung passes on 0 of 16 offsets and waits on fair-chase.md (T62); T64 (kin-spared in its own stage) is next; Phase 9 (co-evolved rungs) follows a fair chase; Phase 7 waits for the world gate of training.md
+**Scheduled by:** [training-loop.md](training-loop.md) step 2 - Phase 6 is open: the `hunt` rung passes on 0 of 16 offsets and waits on fair-chase.md (T62); T64 (kin-spared in its own stage) is next; Phase 9 (co-evolved rungs) follows a fair chase; Phase 7 waits for the world gate of training.md
 **Depends on:** [training.md](training.md), [senses-and-motor.md](senses-and-motor.md)
 
 > Companion to [training.md](training.md), which holds the drills, the trainer, the curve and the export this doc extends. The survey behind it is [training-research.md](training-research.md).

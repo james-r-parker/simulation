@@ -2,7 +2,7 @@
 
 **Status:** Proposed - Phase 1 T1 is built (#343) and the T6 baseline (E144) reads that matched conversion falls less with age than the pooled read, and dose is near 0. T2 and T3 (`probe:practice`) are open, so T5 waits; Phase 1b re-bases the catch read per attempt before Phase 2 is judged. Phase 1c (proposed, T20 to T25) adds the live bite detectors that training.md Phase 4 reads.
 **Validated:** edd4cd4b (2026-11-07)
-**Scheduled by:** [fair-chase.md](fair-chase.md) step 4 - the bite detectors and the within-lifetime gain, read once a hunter can reach its prey
+**Scheduled by:** [fair-chase.md](fair-chase.md) step 7 - the bite detectors and the within-lifetime gain, read once a hunter can reach its prey
 **Depends on:** [hunter-learning.md](hunter-learning.md), [realistic-keepers.md](realistic-keepers.md)
 
 Real predators are poor hunters when young and good hunters when old, and the gap closes through practice, not through

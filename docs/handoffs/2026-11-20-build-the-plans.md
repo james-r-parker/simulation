@@ -1,5 +1,7 @@
 # Handoff 2026-11-20 - build the improvement plans
 
+**Read "Direction (user, 2026-11-21)" first.** It is the current order. The Focus, Build order and Progress sections are the record of 2026-11-20 and of the first coordinator's nights; where they disagree with Direction (which step is next, what gates training, `season/next`), Direction holds.
+
 For the session that builds the plans written on 2026-11-20. Read `AGENTS.md` and `docs/principles.md` first, then the
 plan for the lane being started (the `resume-plan` skill).
 
@@ -35,6 +37,49 @@ recorded falsification.
   watches the reel weekly.
 - **Headlines.** A decision reads one headline metric per scene (metric-noise.md Phase 5), not 370 metrics.
 - **After the chase is fair,** the hunt rung co-evolves prey with hunters (training-stages.md Phase 9).
+
+## Direction (user, 2026-11-21) - this section overrides the Focus rules above and the Build order below for lane B
+
+**No training run, ladder screen or champion export starts until the gates below are read.** Every large rules change
+lands first, in big chunks (one phase to a pull request), straight on `main` (a rules change is a breaking PR with its
+`library/seasons.json` change; there is no `season/next`). Every mechanism in the world stays on.
+
+### Lane B, in order
+
+| Step | Build                                                                                                                                                                                                                                                                                                 | Plan                                                                                                                                | Why here                                                                         |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 1    | Events with named fields, spec names, the per-slot state list                                                                                                                                                                                                                                         | [registries.md](../designs/registries.md) Phase 1                                                                                   | a refactor that moves no hash; everything after adds events, state and detectors |
+| 2    | Body and senses: the lane catalogue, the brain input and output schema (T6a), the `pooled-v6` layout with 13 sense inputs and `reserve`, the trait registry with 18 traits in 24 slots at neutral numbers, the inheritance routine, the graded sprint ([fair-chase.md](../designs/fair-chase.md) T7a) | [body-genes.md](../designs/body-genes.md) Phase 1                                                                                   | one layout change before any training; the calculator reads the lanes            |
+| 3    | The effects registry, every within-life modifier of today moved into it, then the social and adrenaline effects at neutral numbers                                                                                                                                                                    | [status-effects.md](../designs/status-effects.md) Phases 1 and 2                                                                    | the calculator reads the effects                                                 |
+| 4    | The calculator: all five phases, with the trait corners (body-genes.md Phase 2) and the pack row (status-effects.md T13)                                                                                                                                                                              | [role-budget.md](../designs/role-budget.md)                                                                                         | gate 1: can each role work, can a newborn reach food, does a sitter die first    |
+| 5    | The numbers: trait spans and costs, effect strengths, birth energy with the cold stack; one 16-seed screen and one 64-seed keep-rule pair on the live policy                                                                                                                                          | body-genes.md Phase 3, status-effects.md Phase 3                                                                                    | chosen with the calculator, not before it                                        |
+| 6    | The detector interface, then every role's metrics against planted scenes                                                                                                                                                                                                                              | registries.md Phase 3, [metric-noise.md](../designs/metric-noise.md) Phase 6                                                        | gate 2                                                                           |
+| 7    | A reflex case and a drill for each role, bars from the calculator, then the reflex validation study                                                                                                                                                                                                   | [brain-reflex-tests.md](../designs/brain-reflex-tests.md) Phase 5 then Phase 2; [training-loop.md](../designs/training-loop.md) T34 | gate 3: level one and level two measure the right things                         |
+| 8    | Training: `train:feasible` on the graded-sprint arm, then the ladder screen                                                                                                                                                                                                                           | fair-chase.md T7b, T8                                                                                                               | the first training runs                                                          |
+
+Beside lane B: body-genes.md Phase 5 (the remaining readers move to lanes, mechanical), and lanes A and C as listed under "Progress". After step 8: training-loop.md T33 (it is a training run) and T28.
+
+**Do not run before step 8:** `npm run train`, `train:feasible`, `train:screen`, `train:tune`, `train:profile` on a real ladder, or a champion export. Evals of the live policy (`npm run eval`, `eval:compare`, the screens of step 5) are not training and may run.
+
+**Rust, by Opus:** body-genes.md T3 (`move_all`), T7 and T31 (`wasm/src/brain.rs`), T13a (`wasm/src/sense.rs`). fair-chase.md T7a needs no Rust change.
+
+**Step 5 before gate 2:** the screen of step 5 is judged by the keep rule's settled guard, which metric-noise.md Phase 4 already verified; the role metrics that step 6 checks are reported there, not decided on.
+
+**History in other plans:** `season/next` in eat-choice.md, low-density-edge.md, carrying-capacity.md and unit-knockout.md describes how built phases landed; it is not a rule.
+
+### Decisions behind the plans
+
+- **Perception is physical:** size, speed, closing rate and how much of the view a kind fills; never a spec label. The
+  inputs are always on and judged after the first training run (body-genes.md Phase 4).
+- **Traits:** one registry, per-spec menus where a span of 0 fixes a trait (no flags), one inheritance routine, contract
+  tests over every entry. A trade between two abilities is one trait with two opposite effects.
+- **Effects:** stacking, capped, timed. No effect pays a body for an act: `answered` needs a kill both hunters bit.
+- **The defender shoves** (the repel that exists and is off). **The sprint is graded** with the store on.
+- **The calculator's anchors** were computed from the code: `evals/decisions/role-budget/anchors.md`. The settings
+  inventory is `evals/decisions/body-genes/settings-inventory.md`.
+- **To check before trusting the herd rows:** a startled herd's centroid is held, so a stampede travels about 516 px in
+  360 ticks (role-budget.md T21a).
+- Rust and WASM work goes to Opus. One coordinator; subagents may open their own pull requests.
 
 ## Build order
 
