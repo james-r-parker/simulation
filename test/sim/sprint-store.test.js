@@ -110,7 +110,10 @@ describe('createSprintStore', () => {
 
 describe('storeFactor', () => {
     const store = createSprintStore(4);
-    const world = { ...bodies(4, storeConfig({ sprintFloor: 0.3 })), sprintStore: store };
+    const world = /** @type {Record<string, any>} */ ({
+        ...bodies(4, storeConfig({ sprintFloor: 0.3 })),
+        sprintStore: store,
+    });
 
     it('is 1 at or above the floor, falls linearly under it and is 0 when empty', () => {
         store.level.set([1, 0.3, 0.15, 0]);

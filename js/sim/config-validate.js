@@ -286,12 +286,13 @@ function checkSeasons(seasons) {
 }
 
 /** The rule types that validate a map, each with the function that says what is wrong with it. */
-const MAP_PROBLEMS = { bodyMap: specBodyProblem, geneMenu: (genes) => geneMenuProblem(genes) };
+const MAP_PROBLEMS = { bodyMap: specBodyProblem, geneMenu: (/** @type {unknown} */ genes) => geneMenuProblem(genes) };
 
 /**
  * @param {string} path the key path of a spec's `body` or `genes`
  * @param {'bodyMap' | 'geneMenu'} type the rule type
  * @param {unknown} map the value
+ * @param {Record<string, any>} entry the spec the map belongs to
  * @returns {void}
  */
 function checkMapField(path, type, map, entry) {
