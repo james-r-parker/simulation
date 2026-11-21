@@ -1,7 +1,7 @@
 // The signal phase: call timers, alarm and hunt calls, smoke releases, then who hears what.
 
 import { OUTPUT_COUNT, OUTPUT_INDEX, RAY_CHANNELS } from './brain-layout.js';
-import { EVENT_TYPE, pushEvent } from './events.js';
+import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
 import { depositPheromone } from './pheromones.js';
 import { releaseSmoke } from './smoke.js';
@@ -57,11 +57,11 @@ function tickTimers(world) {
 function pushCall(world, type, slot) {
     const o = pushEvent(world.events, type, world.tick);
     const d = world.events.data;
-    d[o + 2] = slot;
-    d[o + 3] = world.genomeId[slot];
-    d[o + 4] = world.spec[slot];
-    d[o + 5] = world.x[slot];
-    d[o + 6] = world.y[slot];
+    d[o + EVENT.ALARM_CALLED.SLOT] = slot;
+    d[o + EVENT.ALARM_CALLED.GENOME_ID] = world.genomeId[slot];
+    d[o + EVENT.ALARM_CALLED.SPEC] = world.spec[slot];
+    d[o + EVENT.ALARM_CALLED.X] = world.x[slot];
+    d[o + EVENT.ALARM_CALLED.Y] = world.y[slot];
     return o;
 }
 
@@ -146,13 +146,13 @@ function smoke(world, slot) {
     world.smokeTimer[slot] = smokeCooldown;
     if (world.cloudCount >= maxClouds) {
         const o = pushEvent(world.events, EVENT_TYPE.SMOKE_REFUSED, world.tick);
-        world.events.data[o + 2] = slot;
-        world.events.data[o + 3] = world.genomeId[slot];
+        world.events.data[o + EVENT.SMOKE_REFUSED.SLOT] = slot;
+        world.events.data[o + EVENT.SMOKE_REFUSED.GENOME_ID] = world.genomeId[slot];
         return;
     }
     removeEnergy(world, slot, smokeCost, LOSS_CAUSE.COST);
     const cloud = releaseSmoke(world, slot);
-    world.events.data[pushCall(world, EVENT_TYPE.SMOKE_RELEASED, slot) + 7] = cloud;
+    world.events.data[pushCall(world, EVENT_TYPE.SMOKE_RELEASED, slot) + EVENT.SMOKE_RELEASED.CLOUD] = cloud;
 }
 
 /**

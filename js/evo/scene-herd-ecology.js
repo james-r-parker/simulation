@@ -1,13 +1,13 @@
 // Observed ecology outcomes from dung zones and seeded plant patches.
 
-import { EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { EVENT_STRIDE, EVENT_TYPE, EVENT_TICK } from '../sim/events.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 
 /** Counts current-tick herd seed events after burn-in. @param {Record<string, any>} scene @param {Record<string, any>} world @returns {void} */
 export function countSeedlings(scene, world) {
     const { data, count } = world.events;
     for (let offset = 0; offset < count * EVENT_STRIDE; offset += EVENT_STRIDE) {
-        if (data[offset] === EVENT_TYPE.HERD_SEEDED && data[offset + 1] > BURN_IN_TICKS) {
+        if (data[offset] === EVENT_TYPE.HERD_SEEDED && data[offset + EVENT_TICK] > BURN_IN_TICKS) {
             scene.herdSeededPatches++;
         }
     }

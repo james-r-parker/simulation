@@ -1,7 +1,7 @@
 // Ages herd animals, births calves into clear nearby space, and returns part of dead animals' stores as food.
 
 import { detCos, detSin } from './det-math.js';
-import { EVENT_TYPE, pushEvent } from './events.js';
+import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { addFertileZone } from './environment.js';
 import { addMyceliumMark } from './mycelium.js';
 import { nextFloat } from './rng.js';
@@ -48,14 +48,14 @@ function die(world, group, animal) {
     const store = world.herdStore[animal];
     const old = age >= world.herdLife[animal];
     const offset = pushEvent(world.events, EVENT_TYPE.HERD_ANIMAL_DIED, world.tick);
-    world.events.data[offset + 2] = group;
-    world.events.data[offset + 3] = animal;
-    world.events.data[offset + 4] = age;
-    world.events.data[offset + 5] = store;
-    world.events.data[offset + 6] = Number(old);
+    world.events.data[offset + EVENT.HERD_ANIMAL_DIED.HERD] = group;
+    world.events.data[offset + EVENT.HERD_ANIMAL_DIED.ANIMAL] = animal;
+    world.events.data[offset + EVENT.HERD_ANIMAL_DIED.AGE] = age;
+    world.events.data[offset + EVENT.HERD_ANIMAL_DIED.STORE] = store;
+    world.events.data[offset + EVENT.HERD_ANIMAL_DIED.OLD] = Number(old);
     if (!leaveHerdCarcass(world, animal)) {
         const lost = pushEvent(world.events, EVENT_TYPE.HERD_CARCASS_LOST, world.tick);
-        world.events.data[lost + 2] = group;
+        world.events.data[lost + EVENT.HERD_CARCASS_LOST.HERD] = group;
     }
     addFertileZone(world, world.herdX[animal], world.herdY[animal], world.config.herdRadius);
     addMyceliumMark(world, { x: world.herdX[animal], y: world.herdY[animal], size: world.config.herdRadius });
@@ -194,8 +194,8 @@ function tryBirth(world, group) {
     world.groupAnimalCount[group]++;
     world.groupBirthTimer[group] = world.config.herdBirthTicks;
     const offset = pushEvent(world.events, EVENT_TYPE.HERD_ANIMAL_BORN, world.tick);
-    world.events.data[offset + 2] = group;
-    world.events.data[offset + 3] = calf;
+    world.events.data[offset + EVENT.HERD_ANIMAL_BORN.HERD] = group;
+    world.events.data[offset + EVENT.HERD_ANIMAL_BORN.ANIMAL] = calf;
 }
 
 /** Advances one live animal's age and removes it at its lifespan. @param {World} world @param {number} group @param {number} animal @returns {void} */

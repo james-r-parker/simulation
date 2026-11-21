@@ -3,7 +3,7 @@
 // it closes. uPlot is passed in, so nothing here loads it and the tests use a fake.
 
 import { columns } from '../history.js';
-import { CAUSE_CSS, NEUTRAL_CSS, specCss } from './css-color.js';
+import { CAUSE_CSS, causeCss, NEUTRAL_CSS, specCss } from './css-color.js';
 import { RIVER_BANDS, riverSeries, stackLayers } from './chart-data.js';
 import { mountMilestones } from './milestones.js';
 
@@ -67,10 +67,7 @@ const bar = (label, color, paths) => ({
 function stacked(names, sign) {
     const order = [...names].reverse();
     return {
-        series: (paths) =>
-            order.map((n) =>
-                bar(n.replace(/^(born|died)\./, ''), CAUSE_CSS[names.indexOf(n) % CAUSE_CSS.length], paths),
-            ),
+        series: (paths) => order.map((n) => bar(n.replace(/^(born|died)\./, ''), causeCss(n, names.indexOf(n)), paths)),
         data: (cols) =>
             stackLayers(
                 names.map((n) => cols[n]),

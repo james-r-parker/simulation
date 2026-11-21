@@ -1,6 +1,6 @@
 // Measures herd grazing, trample deaths and whether blobs clear an approaching herd's path.
 
-import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE, EVENT_TICK } from '../sim/events.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { countSeedlings, samplePatchHerdFollowing } from './scene-herd-ecology.js';
 
@@ -232,7 +232,7 @@ function trackAfterBurn(scene, world, observer) {
 function countStampedes(scene, world) {
     const { data, count } = world.events;
     for (let offset = 0; offset < count * EVENT_STRIDE; offset += EVENT_STRIDE) {
-        if (data[offset] === EVENT_TYPE.HERD_STAMPEDE && data[offset + 1] > BURN_IN_TICKS) {
+        if (data[offset] === EVENT_TYPE.HERD_STAMPEDE && data[offset + EVENT_TICK] > BURN_IN_TICKS) {
             scene.stampedes++;
         }
     }

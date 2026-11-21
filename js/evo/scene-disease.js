@@ -13,7 +13,7 @@
 // All four are `null` with reason `disease-off` while `diseaseSeedRate` is 0. The arrays are sized once from
 // `maxAgents`; a checkpoint allocates nothing.
 
-import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE, EVENT, EVENT_TICK } from '../sim/events.js';
 import { geneticDistance } from '../sim/genetics.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { none, ok, share } from './metrics-stats.js';
@@ -82,11 +82,11 @@ export function noteDiseaseEvents(scene, world) {
             scene.strains += 1;
         } else if (type === EVENT_TYPE.AGENT_INFECTED) {
             scene.infections += 1;
-            scene.inFamily += d[o + 5] < FAMILY_DISTANCE ? 1 : 0;
-            creditFamily(scene, d[o + 2], d[o + 3]);
-        } else if (type === EVENT_TYPE.AGENT_DIED && d[o + 1] > BURN_IN_TICKS) {
+            scene.inFamily += d[o + EVENT.AGENT_INFECTED.DISTANCE] < FAMILY_DISTANCE ? 1 : 0;
+            creditFamily(scene, d[o + EVENT.AGENT_INFECTED.SLOT], d[o + EVENT.AGENT_INFECTED.GENOME_ID]);
+        } else if (type === EVENT_TYPE.AGENT_DIED && d[o + EVENT_TICK] > BURN_IN_TICKS) {
             scene.deaths += 1;
-            scene.diseaseDeaths += d[o + 4] === DEATH_CAUSE.DISEASE ? 1 : 0;
+            scene.diseaseDeaths += d[o + EVENT.AGENT_DIED.CAUSE] === DEATH_CAUSE.DISEASE ? 1 : 0;
         }
     }
 }

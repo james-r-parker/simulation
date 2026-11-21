@@ -3,7 +3,7 @@
 // through `meritPeek`, so logging never changes stored state. Sorts the world's `capKeys` scratch (the birth cap
 // restamps it before every use), so a summary allocates one view and nothing per agent.
 
-import { EVENT_TYPE, pushEvent } from './events.js';
+import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { TALLY } from './merit-state.js';
 import { MERIT_LOG_TICKS, meritPeek } from './merit.js';
 
@@ -57,9 +57,10 @@ export function pushMeritSummary(world) {
     }
     const o = pushEvent(world.events, EVENT_TYPE.MERIT_SUMMARY, world.tick);
     const d = world.events.data;
-    d[o + 2] = count === 0 ? 0 : sum / count;
-    d[o + 3] = count === 0 ? 0 : world.capKeys.subarray(0, count).sort()[Math.ceil(P90 * count) - 1];
-    d[o + 4] = ready;
-    d[o + 5] = gated;
-    d[o + 6] = ready === 0 ? 0 : deliberate / ready;
+    d[o + EVENT.MERIT_SUMMARY.MERIT_MEAN] = count === 0 ? 0 : sum / count;
+    d[o + EVENT.MERIT_SUMMARY.MERIT_P90] =
+        count === 0 ? 0 : world.capKeys.subarray(0, count).sort()[Math.ceil(P90 * count) - 1];
+    d[o + EVENT.MERIT_SUMMARY.READY_TO_SPLIT] = ready;
+    d[o + EVENT.MERIT_SUMMARY.GATED_SPLITS] = gated;
+    d[o + EVENT.MERIT_SUMMARY.DELIBERATE_READY_SHARE] = ready === 0 ? 0 : deliberate / ready;
 }

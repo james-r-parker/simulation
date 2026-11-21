@@ -1,6 +1,6 @@
 // Detects nearby hunters on a staggered cadence and gives threatened herds a seeded-world flee direction.
 
-import { EVENT_TYPE, pushEvent } from './events.js';
+import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { specParams } from './spec-params.js';
 
 const SENSE_INTERVAL = 8;
@@ -60,11 +60,11 @@ function startStampede(world, group, hunter) {
     world.groupAlarm[group] = world.config.herdStampedeTicks;
     setFleeDirection(world, group, hunter);
     const offset = pushEvent(world.events, EVENT_TYPE.HERD_STAMPEDE, world.tick);
-    world.events.data[offset + 2] = group;
-    world.events.data[offset + 3] = hunter;
-    world.events.data[offset + 4] = world.groupAnimalCount[group];
-    world.events.data[offset + 5] = world.groupCentroidX[group];
-    world.events.data[offset + 6] = world.groupCentroidY[group];
+    world.events.data[offset + EVENT.HERD_STAMPEDE.GROUP] = group;
+    world.events.data[offset + EVENT.HERD_STAMPEDE.HUNTER] = hunter;
+    world.events.data[offset + EVENT.HERD_STAMPEDE.ANIMALS] = world.groupAnimalCount[group];
+    world.events.data[offset + EVENT.HERD_STAMPEDE.X] = world.groupCentroidX[group];
+    world.events.data[offset + EVENT.HERD_STAMPEDE.Y] = world.groupCentroidY[group];
 }
 
 /** @param {World} world @param {number} group @returns {void} */

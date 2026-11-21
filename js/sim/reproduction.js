@@ -2,7 +2,7 @@
 
 import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy, transferEnergy } from './energy.js';
-import { BLOCKED_CAUSE, BORN_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
+import { BLOCKED_CAUSE, BORN_CAUSE, EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { birthBudgetSpent, recordBirth } from './birth-budget.js';
 import { meritCapOn, pickBest, stampKeys } from './birth-cap.js';
 import { readyToMate } from './mate-eligibility.js';
@@ -119,8 +119,8 @@ export function mate(world, policy) {
  */
 function pushBlocked(world, mother, cause) {
     const o = pushEvent(world.events, EVENT_TYPE.BIRTH_BLOCKED, world.tick);
-    world.events.data[o + 2] = mother;
-    world.events.data[o + 3] = cause;
+    world.events.data[o + EVENT.BIRTH_BLOCKED.SLOT] = mother;
+    world.events.data[o + EVENT.BIRTH_BLOCKED.CAUSE] = cause;
 }
 
 /**
@@ -227,14 +227,14 @@ function giveBirth(world, policy, mother, cause) {
     placeChild(world, child, mother);
     const o = pushEvent(world.events, EVENT_TYPE.AGENT_BORN, world.tick);
     const d = world.events.data;
-    d[o + 2] = child;
-    d[o + 3] = world.genomeId[child];
-    d[o + 4] = world.lineageId[child];
-    d[o + 5] = world.spec[child];
-    d[o + 6] = world.parentA[child];
-    d[o + 7] = world.parentB[child];
-    d[o + 8] = cause;
-    d[o + 9] = world.sex[child];
+    d[o + EVENT.AGENT_BORN.SLOT] = child;
+    d[o + EVENT.AGENT_BORN.GENOME_ID] = world.genomeId[child];
+    d[o + EVENT.AGENT_BORN.LINEAGE_ID] = world.lineageId[child];
+    d[o + EVENT.AGENT_BORN.SPEC] = world.spec[child];
+    d[o + EVENT.AGENT_BORN.PARENT_A] = world.parentA[child];
+    d[o + EVENT.AGENT_BORN.PARENT_B] = world.parentB[child];
+    d[o + EVENT.AGENT_BORN.CAUSE] = cause;
+    d[o + EVENT.AGENT_BORN.SEX] = world.sex[child];
     return child;
 }
 

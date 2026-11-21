@@ -3,7 +3,7 @@ import { addMyceliumMark } from './mycelium.js';
 
 import { addFertileZone } from './environment.js';
 import { LOSS_CAUSE } from './energy.js';
-import { BORN_CAUSE, DEATH_CAUSE, EVENT_TYPE, pushEvent } from './events.js';
+import { BORN_CAUSE, DEATH_CAUSE, EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { leaveCarcass } from './carcass.js';
 import { releaseInfection } from './disease.js';
 import { noteKill } from './kills.js';
@@ -85,22 +85,22 @@ function pinnedAgainstObstacle(world, slot) {
 function pushDied(world, slot, cause) {
     const o = pushEvent(world.events, EVENT_TYPE.AGENT_DIED, world.tick);
     const d = world.events.data;
-    d[o + 2] = slot;
-    d[o + 3] = world.genomeId[slot];
-    d[o + 4] = cause;
-    d[o + 5] =
+    d[o + EVENT.AGENT_DIED.SLOT] = slot;
+    d[o + EVENT.AGENT_DIED.GENOME_ID] = world.genomeId[slot];
+    d[o + EVENT.AGENT_DIED.CAUSE] = cause;
+    d[o + EVENT.AGENT_DIED.BY] =
         cause === DEATH_CAUSE.EATEN
             ? world.lastBiter[slot]
             : cause === DEATH_CAUSE.TRAMPLED
               ? world.lastHerdId[slot]
               : 0;
-    d[o + 6] = world.spec[slot];
-    d[o + 7] = world.lineageId[slot];
-    d[o + 8] = world.ageTicks[slot];
-    d[o + 9] = world.foodEnergy[slot];
-    d[o + 10] = world.biteEnergy[slot];
-    d[o + 12] = world.size[slot];
-    d[o + 11] =
+    d[o + EVENT.AGENT_DIED.SPEC] = world.spec[slot];
+    d[o + EVENT.AGENT_DIED.LINEAGE_ID] = world.lineageId[slot];
+    d[o + EVENT.AGENT_DIED.AGE_TICKS] = world.ageTicks[slot];
+    d[o + EVENT.AGENT_DIED.FOOD_ENERGY] = world.foodEnergy[slot];
+    d[o + EVENT.AGENT_DIED.BITE_ENERGY] = world.biteEnergy[slot];
+    d[o + EVENT.AGENT_DIED.SIZE] = world.size[slot];
+    d[o + EVENT.AGENT_DIED.PARTNER] =
         cause === DEATH_CAUSE.EATEN
             ? packPartner(world, slot)
             : cause === DEATH_CAUSE.TRAMPLED && pinnedAgainstObstacle(world, slot)
@@ -179,6 +179,6 @@ export function fillFloor(world, policy) {
         added += 1;
     }
     const o = pushEvent(world.events, EVENT_TYPE.POPULATION_FLOOR, world.tick);
-    world.events.data[o + 2] = added;
-    world.events.data[o + 3] = before;
+    world.events.data[o + EVENT.POPULATION_FLOOR.ADDED] = added;
+    world.events.data[o + EVENT.POPULATION_FLOOR.POPULATION] = before;
 }

@@ -12,7 +12,7 @@
 //
 // Nothing here touches the world, and nothing allocates per tick but a Map entry per birth.
 
-import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE, EVENT } from '../sim/events.js';
 
 /** How many generations back a birth counts as a descendant: the parents are generation 1. `FAMILY_CAP` is 10. */
 export const DEPTH = 8;
@@ -183,8 +183,14 @@ export function noteBirthLineage(observer, d, count) {
         if (d[o] !== EVENT_TYPE.AGENT_BORN) {
             continue;
         }
-        const child = d[o + 8] === BORN_CAUSE.MATE || d[o + 8] === BORN_CAUSE.SPLIT;
-        addNode(observer.family, d[o + 3], child ? d[o + 6] : 0, child ? d[o + 7] : 0);
+        const child =
+            d[o + EVENT.AGENT_BORN.CAUSE] === BORN_CAUSE.MATE || d[o + EVENT.AGENT_BORN.CAUSE] === BORN_CAUSE.SPLIT;
+        addNode(
+            observer.family,
+            d[o + EVENT.AGENT_BORN.GENOME_ID],
+            child ? d[o + EVENT.AGENT_BORN.PARENT_A] : 0,
+            child ? d[o + EVENT.AGENT_BORN.PARENT_B] : 0,
+        );
     }
 }
 
@@ -196,9 +202,9 @@ export function noteBirthLineage(observer, d, count) {
  * @returns {void}
  */
 export function recordParents(observer, d, o) {
-    if (d[o + 8] === BORN_CAUSE.MATE || d[o + 8] === BORN_CAUSE.SPLIT) {
-        observer.parentGenomeA[d[o + 2]] = d[o + 6];
-        observer.parentGenomeB[d[o + 2]] = d[o + 7];
+    if (d[o + EVENT.AGENT_BORN.CAUSE] === BORN_CAUSE.MATE || d[o + EVENT.AGENT_BORN.CAUSE] === BORN_CAUSE.SPLIT) {
+        observer.parentGenomeA[d[o + EVENT.AGENT_BORN.SLOT]] = d[o + EVENT.AGENT_BORN.PARENT_A];
+        observer.parentGenomeB[d[o + EVENT.AGENT_BORN.SLOT]] = d[o + EVENT.AGENT_BORN.PARENT_B];
     }
 }
 
@@ -224,7 +230,7 @@ export function readDescendants(observer, slot, genomeId) {
 export function releaseDeaths(observer, d, count) {
     for (let i = 0; i < count; i++) {
         if (d[i * EVENT_STRIDE] === EVENT_TYPE.AGENT_DIED) {
-            removeNode(observer.family, d[i * EVENT_STRIDE + 3]);
+            removeNode(observer.family, d[i * EVENT_STRIDE + EVENT.AGENT_DIED.GENOME_ID]);
         }
     }
 }

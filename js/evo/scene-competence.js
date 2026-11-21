@@ -20,7 +20,7 @@
 //
 // Observer state outside `worldHash`; nothing is allocated per tick.
 
-import { EVENT_TYPE } from '../sim/events.js';
+import { EVENT_TYPE, EVENT } from '../sim/events.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { kaplanMeier } from './kaplan-meier.js';
@@ -182,9 +182,13 @@ function closeObservation(scene, { genomeId, time, event }) {
  */
 function noteCompetenceKill(scene, d, o) {
     scene.kills += 1;
-    scene.independentKills += d[o + 5] === 1 ? 0 : 1;
-    if (d[o + 4] === 1) {
-        closeObservation(scene, { genomeId: d[o + 2], time: d[o + 3], event: 1 });
+    scene.independentKills += d[o + EVENT.HUNTER_KILL.DEPENDENT] === 1 ? 0 : 1;
+    if (d[o + EVENT.HUNTER_KILL.KILLS] === 1) {
+        closeObservation(scene, {
+            genomeId: d[o + EVENT.HUNTER_KILL.GENOME_ID],
+            time: d[o + EVENT.HUNTER_KILL.AGE_TICKS],
+            event: 1,
+        });
     }
 }
 
@@ -197,8 +201,12 @@ function noteCompetenceKill(scene, d, o) {
  * @returns {void}
  */
 function noteCompetenceDeath(scene, d, o) {
-    closeObservation(scene, { genomeId: d[o + 2], time: d[o + 3], event: 0 });
-    scene.rowOf.delete(d[o + 2]);
+    closeObservation(scene, {
+        genomeId: d[o + EVENT.HUNTER_LEDGER.GENOME_ID],
+        time: d[o + EVENT.HUNTER_LEDGER.AGE_TICKS],
+        event: 0,
+    });
+    scene.rowOf.delete(d[o + EVENT.HUNTER_LEDGER.GENOME_ID]);
 }
 
 /**

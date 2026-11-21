@@ -1,6 +1,6 @@
 // Generation depth per slot: how many mate or split births separate an agent from the initial population.
 
-import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../sim/events.js';
+import { BORN_CAUSE, EVENT_STRIDE, EVENT_TYPE, EVENT } from '../sim/events.js';
 
 /**
  * @typedef {object} Generations
@@ -44,17 +44,17 @@ export function noteBirths(generations, world, slotOf) {
     for (let i = 0; i < count; i++) {
         const o = i * EVENT_STRIDE;
         if (d[o] === EVENT_TYPE.AGENT_BORN) {
-            const cause = d[o + 8];
+            const cause = d[o + EVENT.AGENT_BORN.CAUSE];
             const inherits = cause === BORN_CAUSE.MATE || cause === BORN_CAUSE.SPLIT;
-            const a = parentDepth(generations, slotOf, d[o + 6]);
-            const b = parentDepth(generations, slotOf, d[o + 7]);
+            const a = parentDepth(generations, slotOf, d[o + EVENT.AGENT_BORN.PARENT_A]);
+            const b = parentDepth(generations, slotOf, d[o + EVENT.AGENT_BORN.PARENT_B]);
             pending[i] = inherits ? Math.max(a, b) + 1 : 0;
         }
     }
     for (let i = 0; i < count; i++) {
         const o = i * EVENT_STRIDE;
         if (d[o] === EVENT_TYPE.AGENT_BORN) {
-            generations.depth[d[o + 2]] = pending[i];
+            generations.depth[d[o + EVENT.AGENT_BORN.SLOT]] = pending[i];
         }
     }
 }

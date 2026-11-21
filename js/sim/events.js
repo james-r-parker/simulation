@@ -257,7 +257,7 @@ export const EVENT_BY_CODE = Object.freeze(Object.fromEntries(EVENTS.map((def) =
  * @param {Array<[string, string, string]>} rows `[key, name, colour]` in code order
  * @returns {readonly Cause[]} the causes, code `i` for row `i`
  */
-function causeList(rows) {
+export function causeList(rows) {
     return Object.freeze(rows.map(([key, name, colour], code) => Object.freeze({ code, key, name, colour })));
 }
 
@@ -265,7 +265,7 @@ function causeList(rows) {
  * @param {readonly Cause[]} list a cause list
  * @returns {Readonly<Record<string, number>>} the keyed map of its codes
  */
-function causeMap(list) {
+export function causeMap(list) {
     return Object.freeze(Object.fromEntries(list.map((cause) => [cause.key, cause.code])));
 }
 
@@ -334,8 +334,8 @@ export function pushEvent(ring, type, tick) {
     const offset = ring.count * EVENT_STRIDE;
     const { data } = ring;
     data[offset] = type;
-    data[offset + 1] = tick;
-    data.fill(0, offset + 2, offset + EVENT_STRIDE);
+    data[offset + EVENT_TICK] = tick;
+    data.fill(0, offset + EVENT_FIELDS_AT, offset + EVENT_STRIDE);
     ring.count += 1;
     return offset;
 }

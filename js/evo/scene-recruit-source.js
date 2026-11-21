@@ -1,6 +1,6 @@
 // The birth facts the recruit scene reads from an `AgentBorn` record: the cohort source of a hunter and the cohort rows of its parents.
 
-import { BORN_CAUSE } from '../sim/events.js';
+import { BORN_CAUSE, EVENT } from '../sim/events.js';
 import { BIRTH_SOURCE } from '../sim/hunter-ledger.js';
 
 /** The index of the `floor` source in `RECRUIT_SOURCES`, which also holds an entrant of an unlisted source (an immigrant). */
@@ -29,11 +29,14 @@ export function cohortSource(birthSource) {
  *   outside the cohort, for a split's second parent (it names the mother twice) and for any other birth
  */
 export function hunterBirthParents(scene, d, o) {
-    const cause = d[o + 8];
+    const cause = d[o + EVENT.AGENT_BORN.CAUSE];
     if (cause !== BORN_CAUSE.MATE && cause !== BORN_CAUSE.SPLIT) {
         return { parentA: -1, parentB: -1 };
     }
-    const parentA = scene.rowOf.get(d[o + 6]) ?? -1;
-    const parentB = d[o + 7] === d[o + 6] ? -1 : (scene.rowOf.get(d[o + 7]) ?? -1);
+    const parentA = scene.rowOf.get(d[o + EVENT.AGENT_BORN.PARENT_A]) ?? -1;
+    const parentB =
+        d[o + EVENT.AGENT_BORN.PARENT_B] === d[o + EVENT.AGENT_BORN.PARENT_A]
+            ? -1
+            : (scene.rowOf.get(d[o + EVENT.AGENT_BORN.PARENT_B]) ?? -1);
     return { parentA, parentB };
 }

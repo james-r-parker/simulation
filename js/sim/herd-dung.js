@@ -3,7 +3,7 @@
 import { fertileZoneSlot, writeFertileZone, ZONE_ORIGIN } from './environment.js';
 import { FLORA_NAMES } from './config-flora.js';
 import { FOOD_KIND } from './carcass.js';
-import { EVENT_TYPE, pushEvent } from './events.js';
+import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { plantSeedling, reportSeedingRefused, SEED_REFUSED, SEED_SOURCE } from './pollination.js';
 import { nextFloat } from './rng.js';
 
@@ -189,11 +189,11 @@ function releaseHerdSeed(world, animal, x, y) {
         return;
     }
     const at = pushEvent(world.events, EVENT_TYPE.HERD_SEEDED, world.tick);
-    world.events.data[at + 2] = world.herdGroup[animal];
-    world.events.data[at + 3] = animal;
-    world.events.data[at + 4] = parent;
-    world.events.data[at + 5] = seedling;
-    world.events.data[at + 6] = world.patchSpecies[seedling];
-    world.events.data[at + 7] = x;
-    world.events.data[at + 8] = y;
+    world.events.data[at + EVENT.HERD_SEEDED.HERD] = world.herdGroup[animal];
+    world.events.data[at + EVENT.HERD_SEEDED.ANIMAL] = animal;
+    world.events.data[at + EVENT.HERD_SEEDED.SOURCE] = parent;
+    world.events.data[at + EVENT.HERD_SEEDED.PATCH] = seedling;
+    world.events.data[at + EVENT.HERD_SEEDED.SPECIES] = world.patchSpecies[seedling];
+    world.events.data[at + EVENT.HERD_SEEDED.X] = x;
+    world.events.data[at + EVENT.HERD_SEEDED.Y] = y;
 }

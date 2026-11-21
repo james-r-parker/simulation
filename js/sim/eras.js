@@ -1,7 +1,7 @@
 // Eras (world-balance T53): seasons that last minutes, winter and summer acting on patch regrowth, and a drought that
 // stops one basin's patches regrowing for a summer.
 
-import { EVENT_TYPE, pushEvent } from './events.js';
+import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
 import { nextFloat } from './rng.js';
 
 /** @typedef {import('./world.js').World} World */
@@ -63,8 +63,8 @@ function updateDrought(world, year) {
     if (nextFloat(rng) < world.config.droughtChance) {
         world.era[0] = nextFloat(rng) < 0.5 ? 0 : 1;
         const o = pushEvent(world.events, EVENT_TYPE.DROUGHT_STARTED, world.tick);
-        world.events.data[o + 2] = world.era[0];
-        world.events.data[o + 3] = year;
+        world.events.data[o + EVENT.DROUGHT_STARTED.BASIN] = world.era[0];
+        world.events.data[o + EVENT.DROUGHT_STARTED.YEAR] = year;
     }
 }
 
@@ -80,7 +80,7 @@ export function advanceEra(world) {
     }
     const year = Math.floor(world.tick / (SEASONS_PER_YEAR * eraSeasonTicks));
     const o = pushEvent(world.events, EVENT_TYPE.SEASON_CHANGED, world.tick);
-    world.events.data[o + 2] = world.season[0];
-    world.events.data[o + 3] = year;
+    world.events.data[o + EVENT.SEASON_CHANGED.SEASON] = world.season[0];
+    world.events.data[o + EVENT.SEASON_CHANGED.YEAR] = year;
     updateDrought(world, year);
 }

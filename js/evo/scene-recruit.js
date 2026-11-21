@@ -16,7 +16,7 @@
 //
 // Observer state outside `worldHash`; a birth or death appends one row to a growable log, and nothing is allocated per tick.
 
-import { DEATH_CAUSE, EVENT_TYPE } from '../sim/events.js';
+import { DEATH_CAUSE, EVENT_TYPE, EVENT, EVENT_TICK } from '../sim/events.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { bySuffix, none, ok, quantile } from './metrics-stats.js';
@@ -96,8 +96,8 @@ function startHunter(scene, genomeId, lineage) {
  * @returns {void}
  */
 export function noteRecruitBirth(scene, world, d, o) {
-    const slot = d[o + 2];
-    if (world.genomeId[slot] !== d[o + 3]) {
+    const slot = d[o + EVENT.AGENT_BORN.SLOT];
+    if (world.genomeId[slot] !== d[o + EVENT.AGENT_BORN.GENOME_ID]) {
         return;
     }
     const { parentA, parentB } = hunterBirthParents(scene, d, o);
@@ -106,11 +106,11 @@ export function noteRecruitBirth(scene, world, d, o) {
             setFlag(scene, parent, BRED);
         }
     }
-    if (world.huntBySpec[d[o + 5]] !== 1) {
+    if (world.huntBySpec[d[o + EVENT.AGENT_BORN.SPEC]] !== 1) {
         return;
     }
-    startHunter(scene, d[o + 3], d[o + 4]);
-    if (d[o + 1] < BURN_IN_TICKS) {
+    startHunter(scene, d[o + EVENT.AGENT_BORN.GENOME_ID], d[o + EVENT.AGENT_BORN.LINEAGE_ID]);
+    if (d[o + EVENT_TICK] < BURN_IN_TICKS) {
         return;
     }
     const row = scene.rows++;
@@ -119,7 +119,7 @@ export function noteRecruitBirth(scene, world, d, o) {
     log.source[row] = cohortSource(world.birthSource[slot]);
     log.parentA[row] = parentA;
     log.parentB[row] = parentB;
-    scene.rowOf.set(d[o + 3], row);
+    scene.rowOf.set(d[o + EVENT.AGENT_BORN.GENOME_ID], row);
 }
 
 /**
@@ -153,15 +153,15 @@ function endHunter(scene, genomeId, tick) {
  * @returns {void}
  */
 function closeRow(scene, d, o) {
-    const row = scene.rowOf.get(d[o + 2]);
+    const row = scene.rowOf.get(d[o + EVENT.HUNTER_LEDGER.GENOME_ID]);
     if (row === undefined) {
         return;
     }
-    scene.log.endAge[row] = d[o + 3];
+    scene.log.endAge[row] = d[o + EVENT.HUNTER_LEDGER.AGE_TICKS];
     scene.log.flags[row] |= ENDED;
-    if (Math.floor(d[o + 4] / 8) % 8 === DEATH_CAUSE.STARVED) {
+    if (Math.floor(d[o + EVENT.HUNTER_LEDGER.PACKED] / 8) % 8 === DEATH_CAUSE.STARVED) {
         ensureRoom(scene.starved, scene.starvedRows);
-        scene.starved.age[scene.starvedRows++] = d[o + 3];
+        scene.starved.age[scene.starvedRows++] = d[o + EVENT.HUNTER_LEDGER.AGE_TICKS];
     }
 }
 
@@ -175,15 +175,15 @@ function closeRow(scene, d, o) {
  */
 export function noteRecruitRecord(scene, d, o) {
     const type = d[o];
-    if (type === EVENT_TYPE.HUNTER_KILL && d[o + 4] === 1) {
-        const row = scene.rowOf.get(d[o + 2]);
+    if (type === EVENT_TYPE.HUNTER_KILL && d[o + EVENT.HUNTER_KILL.KILLS] === 1) {
+        const row = scene.rowOf.get(d[o + EVENT.HUNTER_KILL.GENOME_ID]);
         if (row !== undefined) {
             scene.log.flags[row] |= KILLED;
         }
     } else if (type === EVENT_TYPE.HUNTER_LEDGER) {
         closeRow(scene, d, o);
-        endHunter(scene, d[o + 2], d[o + 1]);
-    } else if (type === EVENT_TYPE.LAST_HUNTER_DIED && d[o + 1] >= BURN_IN_TICKS) {
+        endHunter(scene, d[o + EVENT.HUNTER_LEDGER.GENOME_ID], d[o + EVENT_TICK]);
+    } else if (type === EVENT_TYPE.LAST_HUNTER_DIED && d[o + EVENT_TICK] >= BURN_IN_TICKS) {
         scene.globalExtinctions += 1;
     }
 }
