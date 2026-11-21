@@ -193,16 +193,14 @@ const FAMILIES = {
 };
 
 /**
- * The body settings that are not lanes, each with its reason: the medium's and the scale's constants, and the two
- * global keys one spec's rules become `body` entries for in Phase 5.
+ * The body settings that are not lanes, each with its reason: the medium's and the scale's constants, and the flag
+ * that stays a flag.
  * @type {Readonly<Record<string, string>>}
  */
 export const NOT_LANES = Object.freeze({
     sprintMultiplier: 'the unit of `sprintBoost`',
     temperatureMax: 'the scale of temperature',
     temperatureStart: 'the scale of temperature',
-    scoutCallRadiusMultiplier: "becomes the scout's `body.callRadius` in Phase 5",
-    scoutAlarmCostMultiplier: "becomes the scout's `body.alarmCost` in Phase 5",
     canHunt: 'a flag, not a number',
 });
 
@@ -287,12 +285,12 @@ function entryProblem(name, value, lanes) {
     if (!lane.moved) {
         return `no override of ${name} yet: its sim readers still read the config key`;
     }
-    return value > 0 ? null : `a number above 0 at ${name}`;
+    return value >= 0 ? null : `a number at least 0 at ${name}`;
 }
 
 /**
  * Says what is wrong with a spec's `body` map: a name that is not a lane (or `heatBand`), an override of a lane whose
- * readers have not moved, a threshold named directly, or a value that is not a positive number (a degree count for
+ * readers have not moved, a threshold named directly, or a value below 0 (a degree count for
  * `heatBand`).
  * @param {unknown} body the `body` value
  * @param {readonly Lane[]} [lanes] the lane list (a parameter for tests)

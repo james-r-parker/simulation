@@ -232,8 +232,6 @@ export const DEFAULTS = deepFreeze({
     defenderRepelEnergy: 0, // prey-guilds Phase 2: energy a defender's active repel drains from a canHunt target in jaws; 0 is off
     defenderRepelCost: 0, // prey-guilds Phase 2: energy a defender pays when landing an active repel
     defenderRepelImpulse: 0, // prey-guilds Phase 2: knockback velocity added to the repelled hunter along the defender-to-hunter vector
-    scoutCallRadiusMultiplier: 1, // prey-guilds Phase 3: multiplier on `callRadius` when a scout (spec 3) calls alarm; 1 is off
-    scoutAlarmCostMultiplier: 1, // prey-guilds Phase 3: multiplier on `alarmCost` when a scout (spec 3) calls alarm; 1 is off
     coldStackRate: 0, // status-effects T9: the standing cost `chilled` adds a stack (passiveLoss x (1 + rate x stacks)); 0 is off
     coldStackTicks: 60, // status-effects T9: ticks under `temperatureOptimalMin` that add one `chilled` stack
     coldRecoverTicks: 15, // status-effects T9: ticks at or above `temperatureOptimalMin` that take one `chilled` stack off

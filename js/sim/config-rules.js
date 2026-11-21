@@ -133,8 +133,6 @@ export const FEATURE_RULES = {
     defenderRepelEnergy: num(0),
     defenderRepelCost: num(0),
     defenderRepelImpulse: num(0),
-    scoutCallRadiusMultiplier: positive(),
-    scoutAlarmCostMultiplier: num(0),
     coldStackRate: num(0),
     coldStackTicks: int(1),
     coldRecoverTicks: int(1),

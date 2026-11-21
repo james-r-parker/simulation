@@ -86,7 +86,7 @@ describe('a change moves a bar', () => {
     });
 
     it('a config whose scout row leaves no turn slack falls back to the hand-set bar and records the row status', () => {
-        const mute = reflexBars(createConfig({ scoutCallRadiusMultiplier: 0.05 }));
+        const mute = reflexBars(createConfig({ specialisations: { scout: { body: { callRadius: 0.05 } } } }));
         const source = bar(mute, 'role.turnAway.forager');
         expect(mute.role.turnAway.forager).toBe(HAND_SET.role.turn);
         expect(source).toMatchObject({ source: 'hand-set', row: 'scout:predator', rowStatus: 'impossible' });

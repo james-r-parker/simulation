@@ -12,7 +12,6 @@ import { settleCalls } from './effect-social.js';
 import { GATE, LANE_ID, gateOpen, liveOf } from './effects.js';
 import { specParams } from './spec-params.js';
 import { HEARD_STRIDE } from './world.js';
-import { SPEC } from './specs.js';
 
 /** @typedef {import('./world.js').World} World */
 /** @typedef {import('./spatial-hash.js').SpatialHash} SpatialHash */
@@ -29,14 +28,13 @@ const ALARM_HEARD = 0;
 const HUNT_HEARD = 3;
 
 /**
- * Effective call radius for `caller` (scouts get `scoutCallRadiusMultiplier`).
+ * Effective call radius for `caller`: its `callRadius` lane (a scout's `body.callRadius` is already in it).
  * @param {World} world the world
  * @param {number} caller the calling slot
  * @returns {number} radius in world units
  */
 function callerRadius(world, caller) {
-    const callRadius = world.lanes.callRadius[caller];
-    return world.spec[caller] === SPEC.SCOUT ? callRadius * world.config.scoutCallRadiusMultiplier : callRadius;
+    return world.lanes.callRadius[caller];
 }
 
 /**
@@ -113,9 +111,7 @@ function alarm(world, slot) {
     if (!wanted || specParams(world.config, world.spec[slot]).canHunt) {
         return;
     }
-    const cost =
-        liveOf(world, slot, ALARM_COST_LANE) *
-        (world.spec[slot] === SPEC.SCOUT ? world.config.scoutAlarmCostMultiplier : 1);
+    const cost = liveOf(world, slot, ALARM_COST_LANE);
     if (world.energy[slot] <= cost) {
         return;
     }

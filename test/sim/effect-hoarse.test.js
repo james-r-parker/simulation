@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { CH_THREAT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { liveOf } from '../../js/sim/effects.js';
+import { setSpec } from './helpers/body.js';
 import { FORAGER, PREDATOR } from './helpers/bite-stage.js';
 import { hold, pack, stacks, tick } from './helpers/pack-stage.js';
 
@@ -94,9 +95,9 @@ describe('what a stack costs', () => {
         }
     });
 
-    it('prices the alarm of a scout by the scout multiplier on the lane', () => {
-        const w = pack({ scoutAlarmCostMultiplier: 2 });
-        w.spec[0] = 3;
+    it('prices the alarm of a scout by its body entry on the lane', () => {
+        const w = pack({ specialisations: { scout: { body: { alarmCost: 2 } } } });
+        setSpec(w, 0, 3);
         hold(w, 0, OUTPUT_INDEX.ALARM);
         const before = w.energy[0];
         tick(w);
