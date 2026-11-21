@@ -1,0 +1,19 @@
+{
+  "id": "E261",
+  "plan": "role-budget.md",
+  "task": "T19",
+  "stream": "role-budget-p4",
+  "date": "2026-11-21",
+  "branch": "feat/role-budget-p4",
+  "hypothesis": "E-RB-4 (role-budget T19): the role budget calculator, read on the forager, reproducer, hunter-living, first-meal and sitter rows at the defaults and on each arm of evals/fair-chase/, says whether a body can eat, breed and survive, and whether a newborn can find its first meal, with every effect off.",
+  "prediction": "Eat and breed are green on every arm and run is red where the hunter closes (courser, even, long); the first-meal rows are red on find (a newborn's range of about 1560 px against about 5200 px of blind walk to a patch); and a sitter outlives a searcher (the sitter row is not green).",
+  "targets": [],
+  "before": "defaults: forager:predator ok (eat 4.87 a tick, breed 144 ticks, run 14), predator:living impossible on eat, <spec>:first-meal impossible on find for the four plant eaters and on eat for the predator, <spec>:idle tight",
+  "after": "control as the defaults; courser, even and long impossible on run for the forager and the reproducer; stalker impossible on run for the reproducer only; predator:living impossible on every arm (eat on defaults, control, long; breed on courser, even, stalker)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "A tool reading, not a run: npm run role:budget with --check and --search on six configs, about a minute each. Check: no RoleBudgetDrift on any arm. Findings: the prediction held with two corrections. The entrant's range is 3172 px at the gait that goes furthest per energy (not 1560 px) against 5207 px of blind walk, find share 0.46; the sitter lives 1.42 to 1.90 times as long as a searcher (tight, not red). A birth-energy fix exists: entrantEnergy x2 turns the first meal ok and lowers the largest idle ratio from 1.82 to 1.59. The sim's plants are a mixture (60 to 180 energy, 14 to 26 px, in season), not the plan's one item of 100 energy, so the formulas are the grass-only world; and a failed chase costs the hunter the 250-tick limit, so predator:living is red on every arm. hunterShare was not measured: the 16-seed 200000-tick run is an eval.",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "reports": ["evals/decisions/E-RB-4/results.md"]
+}

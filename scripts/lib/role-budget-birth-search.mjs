@@ -7,7 +7,7 @@ import { searchBirth } from '../../js/evo/role-budget-search-birth.js';
 import { padTable } from './drill-report.mjs';
 
 /** The most findings of one spec the search writes override files for. */
-const FILES_PER_SPEC = 5;
+const FILES_PER_SPEC = 3;
 
 /**
  * @param {Readonly<Record<string, any>>} config the validated world config
