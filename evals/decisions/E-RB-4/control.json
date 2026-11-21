@@ -1,0 +1,2271 @@
+{
+  "configHash": "11cdff5d46443280",
+  "rows": [
+    {
+      "name": "forager:predator",
+      "cells": {
+        "eat": {
+          "margin": 486.87799273139206,
+          "unit": "energy per 100 ticks",
+          "distance": null,
+          "status": "ok",
+          "capped": true,
+          "binding": false
+        },
+        "breed": {
+          "margin": 200,
+          "unit": "ticks",
+          "distance": null,
+          "status": "ok",
+          "capped": true,
+          "binding": false
+        },
+        "run": {
+          "margin": 14,
+          "unit": "ticks",
+          "distance": 118.333984375,
+          "status": "ok",
+          "capped": false,
+          "binding": true
+        }
+      },
+      "status": "ok",
+      "binding": "run",
+      "detail": {
+        "row": {
+          "name": "forager:predator",
+          "cells": {
+            "eat": {
+              "margin": 486.87799273139206,
+              "unit": "energy per 100 ticks",
+              "distance": null,
+              "status": "ok",
+              "capped": true,
+              "binding": false
+            },
+            "breed": {
+              "margin": 200,
+              "unit": "ticks",
+              "distance": null,
+              "status": "ok",
+              "capped": true,
+              "binding": false
+            },
+            "run": {
+              "margin": 14,
+              "unit": "ticks",
+              "distance": 118.333984375,
+              "status": "ok",
+              "capped": false,
+              "binding": true
+            }
+          },
+          "status": "ok",
+          "binding": "run"
+        },
+        "cells": {
+          "eat": {
+            "margin": 486.87799273139206,
+            "unit": "energy per 100 ticks",
+            "distance": null,
+            "status": "ok",
+            "capped": true,
+            "binding": false
+          },
+          "breed": {
+            "margin": 200,
+            "unit": "ticks",
+            "distance": null,
+            "status": "ok",
+            "capped": true,
+            "binding": false
+          },
+          "run": {
+            "margin": 14,
+            "unit": "ticks",
+            "distance": 118.333984375,
+            "status": "ok",
+            "capped": false,
+            "binding": true
+          }
+        },
+        "cycle": {
+          "find": 0.2404907445230645,
+          "pathPerMeal": 24.886612629809534,
+          "searchTicks": 10.15816418209015,
+          "handleTicks": 20,
+          "grazeTicks": 0.15816418209015026,
+          "cycleTicks": 20.15816418209015,
+          "income": 100,
+          "net": 4.868779927313921,
+          "netPerMeal": 98.14566514125896,
+          "density": 0.0004386708118970365
+        },
+        "split": {
+          "gate": 900,
+          "birth": 200,
+          "ticks": 143.77318557221915,
+          "life": 71400,
+          "slack": 71256.22681442778
+        },
+        "hunters": {
+          "encounters": 138.2716049382716,
+          "flight": 16
+        },
+        "binding": "run"
+      }
+    },
+    {
+      "name": "reproducer:predator",
+      "cells": {
+        "eat": {
+          "margin": 486.87799273139206,
+          "unit": "energy per 100 ticks",
+          "distance": null,
+          "status": "ok",
+          "capped": true,
+          "binding": false
+        },
+        "breed": {
+          "margin": 200,
+          "unit": "ticks",
+          "distance": null,
+          "status": "ok",
+          "capped": true,
+          "binding": false
+        },
+        "run": {
+          "margin": 8,
+          "unit": "ticks",
+          "distance": 68.32421875,
+          "status": "ok",
+          "capped": false,
+          "binding": true
+        }
+      },
+      "status": "ok",
+      "binding": "run",
+      "detail": {
+        "row": {
+          "name": "reproducer:predator",
+          "cells": {
+            "eat": {
+              "margin": 486.87799273139206,
+              "unit": "energy per 100 ticks",
+              "distance": null,
+              "status": "ok",
+              "capped": true,
+              "binding": false
+            },
+            "breed": {
+              "margin": 200,
+              "unit": "ticks",
+              "distance": null,
+              "status": "ok",
+              "capped": true,
+              "binding": false
+            },
+            "run": {
+              "margin": 8,
+              "unit": "ticks",
+              "distance": 68.32421875,
+              "status": "ok",
+              "capped": false,
+              "binding": true
+            }
+          },
+          "status": "ok",
+          "binding": "run"
+        },
+        "cells": {
+          "eat": {
+            "margin": 486.87799273139206,
+            "unit": "energy per 100 ticks",
+            "distance": null,
+            "status": "ok",
+            "capped": true,
+            "binding": false
+          },
+          "breed": {
+            "margin": 200,
+            "unit": "ticks",
+            "distance": null,
+            "status": "ok",
+            "capped": true,
+            "binding": false
+          },
+          "run": {
+            "margin": 8,
+            "unit": "ticks",
+            "distance": 68.32421875,
+            "status": "ok",
+            "capped": false,
+            "binding": true
+          }
+        },
+        "cycle": {
+          "find": 0.2404907445230645,
+          "pathPerMeal": 24.886612629809534,
+          "searchTicks": 10.15816418209015,
+          "handleTicks": 20,
+          "grazeTicks": 0.15816418209015026,
+          "cycleTicks": 20.15816418209015,
+          "income": 100,
+          "net": 4.868779927313921,
+          "netPerMeal": 98.14566514125896,
+          "density": 0.0004386708118970365
+        },
+        "split": {
+          "gate": 900,
+          "birth": 200,
+          "ticks": 143.77318557221915,
+          "life": 71400,
+          "slack": 71256.22681442778
+        },
+        "hunters": {
+          "encounters": 138.2716049382716,
+          "flight": 16
+        },
+        "binding": "run"
+      }
+    },
+    {
+      "name": "predator:living",
+      "cells": {
+        "eat": {
+          "margin": 0,
+          "unit": "energy per chase",
+          "distance": null,
+          "status": "tight",
+          "capped": false,
+          "binding": false
+        },
+        "breed": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": true
+        }
+      },
+      "status": "impossible",
+      "binding": "breed",
+      "detail": {
+        "row": {
+          "name": "predator:living",
+          "cells": {
+            "eat": {
+              "margin": 0,
+              "unit": "energy per chase",
+              "distance": null,
+              "status": "tight",
+              "capped": false,
+              "binding": false
+            },
+            "breed": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": true
+            }
+          },
+          "status": "impossible",
+          "binding": "breed"
+        },
+        "cells": {
+          "eat": {
+            "margin": 0,
+            "unit": "energy per chase",
+            "distance": null,
+            "status": "tight",
+            "capped": false,
+            "binding": false
+          },
+          "breed": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "impossible",
+            "capped": false,
+            "binding": true
+          }
+        },
+        "chase": {
+          "income": 715,
+          "cost": 796.443774949606,
+          "killCost": 369.84486646540637,
+          "failCost": 979.2718785856915,
+          "chaseTicks": 203.87499999999997,
+          "net": -581.943774949606,
+          "netAtFull": 345.15513353459363
+        },
+        "split": {
+          "gate": 600,
+          "birth": 200,
+          "chases": null,
+          "perLife": 1244.4444444444446,
+          "spare": null,
+          "ticksPerChase": 57.857142857142854
+        },
+        "resting": {
+          "rest": 0.01529,
+          "storeTicks": 654022.2367560497
+        },
+        "binding": "breed"
+      }
+    },
+    {
+      "name": "forager:first-meal",
+      "cells": {
+        "reach": {
+          "margin": 200,
+          "unit": "ticks",
+          "distance": null,
+          "status": "ok",
+          "capped": true,
+          "binding": false
+        },
+        "find": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": true
+        },
+        "eat": {
+          "margin": 200,
+          "unit": "ticks",
+          "distance": null,
+          "status": "ok",
+          "capped": true,
+          "binding": false
+        }
+      },
+      "status": "impossible",
+      "binding": "find",
+      "detail": {
+        "row": {
+          "name": "forager:first-meal",
+          "cells": {
+            "reach": {
+              "margin": 200,
+              "unit": "ticks",
+              "distance": null,
+              "status": "ok",
+              "capped": true,
+              "binding": false
+            },
+            "find": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": true
+            },
+            "eat": {
+              "margin": 200,
+              "unit": "ticks",
+              "distance": null,
+              "status": "ok",
+              "capped": true,
+              "binding": false
+            }
+          },
+          "status": "impossible",
+          "binding": "find"
+        },
+        "cells": {
+          "reach": {
+            "margin": 200,
+            "unit": "ticks",
+            "distance": null,
+            "status": "ok",
+            "capped": true,
+            "binding": false
+          },
+          "find": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "impossible",
+            "capped": false,
+            "binding": true
+          },
+          "eat": {
+            "margin": 200,
+            "unit": "ticks",
+            "distance": null,
+            "status": "ok",
+            "capped": true,
+            "binding": false
+          }
+        },
+        "rules": {
+          "founder": {
+            "energy": 800,
+            "speed": 2.1142374511865976,
+            "range": 11526.82258386933,
+            "reach": {
+              "mean": 959.0063433647405,
+              "p90": 1911.5147665180575,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "find": {
+              "path": 5207.142857142858,
+              "share": 0.8906996754657431,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "eat": {
+              "meals": 0.6772620351325079,
+              "holds": 220.5,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            }
+          },
+          "entrant": {
+            "energy": 200,
+            "speed": 2.1047565179849186,
+            "range": 3171.868072603272,
+            "reach": {
+              "mean": 959.0063433647405,
+              "p90": 1911.5147665180575,
+              "share": 0.9959054837559161,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "find": {
+              "path": 5207.142857142858,
+              "share": 0.45618050696365875,
+              "cell": {
+                "margin": null,
+                "unit": "ticks",
+                "distance": null,
+                "status": "impossible",
+                "capped": false,
+                "binding": false
+              }
+            },
+            "eat": {
+              "meals": 0.6153061179618564,
+              "holds": 220.5,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            }
+          },
+          "child": {
+            "energy": 450,
+            "speed": 2.1087120871912948,
+            "range": 6920.79307016183,
+            "reach": {
+              "mean": 0,
+              "p90": 0,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "find": {
+              "path": 0,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "eat": {
+              "meals": 0,
+              "holds": 220.5,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            }
+          }
+        },
+        "source": {
+          "n": 16,
+          "rho": 400,
+          "strip": 300,
+          "area": 116640000,
+          "meal": {
+            "perMeal": 98.27546938594655,
+            "ticks": 19.433053014258054
+          },
+          "holds": 220.5
+        },
+        "binding": "find"
+      }
+    },
+    {
+      "name": "predator:first-meal",
+      "cells": {
+        "reach": {
+          "margin": 200,
+          "unit": "ticks",
+          "distance": null,
+          "status": "ok",
+          "capped": true,
+          "binding": false
+        },
+        "find": {
+          "margin": 200,
+          "unit": "ticks",
+          "distance": null,
+          "status": "ok",
+          "capped": true,
+          "binding": false
+        },
+        "eat": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": true
+        }
+      },
+      "status": "impossible",
+      "binding": "eat",
+      "detail": {
+        "row": {
+          "name": "predator:first-meal",
+          "cells": {
+            "reach": {
+              "margin": 200,
+              "unit": "ticks",
+              "distance": null,
+              "status": "ok",
+              "capped": true,
+              "binding": false
+            },
+            "find": {
+              "margin": 200,
+              "unit": "ticks",
+              "distance": null,
+              "status": "ok",
+              "capped": true,
+              "binding": false
+            },
+            "eat": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": true
+            }
+          },
+          "status": "impossible",
+          "binding": "eat"
+        },
+        "cells": {
+          "reach": {
+            "margin": 200,
+            "unit": "ticks",
+            "distance": null,
+            "status": "ok",
+            "capped": true,
+            "binding": false
+          },
+          "find": {
+            "margin": 200,
+            "unit": "ticks",
+            "distance": null,
+            "status": "ok",
+            "capped": true,
+            "binding": false
+          },
+          "eat": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "impossible",
+            "capped": false,
+            "binding": true
+          }
+        },
+        "rules": {
+          "founder": {
+            "energy": 800,
+            "speed": 1.0565141845816468,
+            "range": 31381.640824628656,
+            "reach": {
+              "mean": 225.6566696009011,
+              "p90": 406.8634043247353,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "find": {
+              "path": 419.41747572815535,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "eat": {
+              "meals": null,
+              "holds": 450,
+              "cell": {
+                "margin": null,
+                "unit": "ticks",
+                "distance": null,
+                "status": "impossible",
+                "capped": false,
+                "binding": false
+              }
+            }
+          },
+          "entrant": {
+            "energy": 200,
+            "speed": 1.0527213412020402,
+            "range": 8780.748706966217,
+            "reach": {
+              "mean": 225.6566696009011,
+              "p90": 406.8634043247353,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "find": {
+              "path": 419.41747572815535,
+              "share": 0.9999999991912906,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "eat": {
+              "meals": null,
+              "holds": 450,
+              "cell": {
+                "margin": null,
+                "unit": "ticks",
+                "distance": null,
+                "status": "impossible",
+                "capped": false,
+                "binding": false
+              }
+            }
+          },
+          "child": {
+            "energy": 300,
+            "speed": 1.0533544301684763,
+            "range": 12552.824744317732,
+            "reach": {
+              "mean": 0,
+              "p90": 0,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "find": {
+              "path": 0,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "eat": {
+              "meals": null,
+              "holds": 450,
+              "cell": {
+                "margin": null,
+                "unit": "ticks",
+                "distance": null,
+                "status": "impossible",
+                "capped": false,
+                "binding": false
+              }
+            }
+          }
+        },
+        "source": {
+          "n": 450,
+          "rho": 29,
+          "strip": 280,
+          "area": 116640000,
+          "meal": {
+            "perMeal": -581.943774949606,
+            "ticks": 57.857142857142854
+          },
+          "holds": 450
+        },
+        "binding": "eat"
+      }
+    },
+    {
+      "name": "reproducer:first-meal",
+      "cells": {
+        "reach": {
+          "margin": 200,
+          "unit": "ticks",
+          "distance": null,
+          "status": "ok",
+          "capped": true,
+          "binding": false
+        },
+        "find": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": true
+        },
+        "eat": {
+          "margin": 200,
+          "unit": "ticks",
+          "distance": null,
+          "status": "ok",
+          "capped": true,
+          "binding": false
+        }
+      },
+      "status": "impossible",
+      "binding": "find",
+      "detail": {
+        "row": {
+          "name": "reproducer:first-meal",
+          "cells": {
+            "reach": {
+              "margin": 200,
+              "unit": "ticks",
+              "distance": null,
+              "status": "ok",
+              "capped": true,
+              "binding": false
+            },
+            "find": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": true
+            },
+            "eat": {
+              "margin": 200,
+              "unit": "ticks",
+              "distance": null,
+              "status": "ok",
+              "capped": true,
+              "binding": false
+            }
+          },
+          "status": "impossible",
+          "binding": "find"
+        },
+        "cells": {
+          "reach": {
+            "margin": 200,
+            "unit": "ticks",
+            "distance": null,
+            "status": "ok",
+            "capped": true,
+            "binding": false
+          },
+          "find": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "impossible",
+            "capped": false,
+            "binding": true
+          },
+          "eat": {
+            "margin": 200,
+            "unit": "ticks",
+            "distance": null,
+            "status": "ok",
+            "capped": true,
+            "binding": false
+          }
+        },
+        "rules": {
+          "founder": {
+            "energy": 800,
+            "speed": 2.1142374511865976,
+            "range": 11526.82258386933,
+            "reach": {
+              "mean": 959.0063433647405,
+              "p90": 1911.5147665180575,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "find": {
+              "path": 5607.692307692308,
+              "share": 0.8719760131026295,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "eat": {
+              "meals": 0.6772620351325079,
+              "holds": 220.5,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            }
+          },
+          "entrant": {
+            "energy": 200,
+            "speed": 2.1047565179849186,
+            "range": 3171.868072603272,
+            "reach": {
+              "mean": 959.0063433647405,
+              "p90": 1911.5147665180575,
+              "share": 0.9959054837559161,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "find": {
+              "path": 5607.692307692308,
+              "share": 0.4319967005323081,
+              "cell": {
+                "margin": null,
+                "unit": "ticks",
+                "distance": null,
+                "status": "impossible",
+                "capped": false,
+                "binding": false
+              }
+            },
+            "eat": {
+              "meals": 0.6153061179618564,
+              "holds": 220.5,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            }
+          },
+          "child": {
+            "energy": 450,
+            "speed": 2.1087120871912948,
+            "range": 6920.79307016183,
+            "reach": {
+              "mean": 0,
+              "p90": 0,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "find": {
+              "path": 0,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "eat": {
+              "meals": 0,
+              "holds": 220.5,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            }
+          }
+        },
+        "source": {
+          "n": 16,
+          "rho": 400,
+          "strip": 250,
+          "area": 116640000,
+          "meal": {
+            "perMeal": 98.27546938594655,
+            "ticks": 19.433053014258054
+          },
+          "holds": 220.5
+        },
+        "binding": "find"
+      }
+    },
+    {
+      "name": "scout:first-meal",
+      "cells": {
+        "reach": {
+          "margin": 200,
+          "unit": "ticks",
+          "distance": null,
+          "status": "ok",
+          "capped": true,
+          "binding": false
+        },
+        "find": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": true
+        },
+        "eat": {
+          "margin": 200,
+          "unit": "ticks",
+          "distance": null,
+          "status": "ok",
+          "capped": true,
+          "binding": false
+        }
+      },
+      "status": "impossible",
+      "binding": "find",
+      "detail": {
+        "row": {
+          "name": "scout:first-meal",
+          "cells": {
+            "reach": {
+              "margin": 200,
+              "unit": "ticks",
+              "distance": null,
+              "status": "ok",
+              "capped": true,
+              "binding": false
+            },
+            "find": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": true
+            },
+            "eat": {
+              "margin": 200,
+              "unit": "ticks",
+              "distance": null,
+              "status": "ok",
+              "capped": true,
+              "binding": false
+            }
+          },
+          "status": "impossible",
+          "binding": "find"
+        },
+        "cells": {
+          "reach": {
+            "margin": 200,
+            "unit": "ticks",
+            "distance": null,
+            "status": "ok",
+            "capped": true,
+            "binding": false
+          },
+          "find": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "impossible",
+            "capped": false,
+            "binding": true
+          },
+          "eat": {
+            "margin": 200,
+            "unit": "ticks",
+            "distance": null,
+            "status": "ok",
+            "capped": true,
+            "binding": false
+          }
+        },
+        "rules": {
+          "founder": {
+            "energy": 800,
+            "speed": 2.410601584667197,
+            "range": 10534.32892499565,
+            "reach": {
+              "mean": 959.0063433647405,
+              "p90": 1911.5147665180575,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "find": {
+              "path": 4556.25,
+              "share": 0.9009431368124268,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "eat": {
+              "meals": 0.7440386779766603,
+              "holds": 220.5,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            }
+          },
+          "entrant": {
+            "energy": 200,
+            "speed": 2.3997916576236364,
+            "range": 2781.3585311857946,
+            "reach": {
+              "mean": 959.0063433647405,
+              "p90": 1911.5147665180575,
+              "share": 0.9872422645899235,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "find": {
+              "path": 4556.25,
+              "share": 0.4568930734763357,
+              "cell": {
+                "margin": null,
+                "unit": "ticks",
+                "distance": null,
+                "status": "impossible",
+                "capped": false,
+                "binding": false
+              }
+            },
+            "eat": {
+              "meals": 0.7045071750767296,
+              "holds": 220.5,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            }
+          },
+          "child": {
+            "energy": 450,
+            "speed": 2.404301700425025,
+            "range": 6195.885481995289,
+            "reach": {
+              "mean": 0,
+              "p90": 0,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "find": {
+              "path": 0,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "eat": {
+              "meals": 0,
+              "holds": 220.5,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            }
+          }
+        },
+        "source": {
+          "n": 16,
+          "rho": 400,
+          "strip": 400,
+          "area": 116640000,
+          "meal": {
+            "perMeal": 97.8834075413839,
+            "ticks": 19.433053014258054
+          },
+          "holds": 220.5
+        },
+        "binding": "find"
+      }
+    },
+    {
+      "name": "defender:first-meal",
+      "cells": {
+        "reach": {
+          "margin": 200,
+          "unit": "ticks",
+          "distance": null,
+          "status": "ok",
+          "capped": true,
+          "binding": false
+        },
+        "find": {
+          "margin": null,
+          "unit": "ticks",
+          "distance": null,
+          "status": "impossible",
+          "capped": false,
+          "binding": true
+        },
+        "eat": {
+          "margin": 200,
+          "unit": "ticks",
+          "distance": null,
+          "status": "ok",
+          "capped": true,
+          "binding": false
+        }
+      },
+      "status": "impossible",
+      "binding": "find",
+      "detail": {
+        "row": {
+          "name": "defender:first-meal",
+          "cells": {
+            "reach": {
+              "margin": 200,
+              "unit": "ticks",
+              "distance": null,
+              "status": "ok",
+              "capped": true,
+              "binding": false
+            },
+            "find": {
+              "margin": null,
+              "unit": "ticks",
+              "distance": null,
+              "status": "impossible",
+              "capped": false,
+              "binding": true
+            },
+            "eat": {
+              "margin": 200,
+              "unit": "ticks",
+              "distance": null,
+              "status": "ok",
+              "capped": true,
+              "binding": false
+            }
+          },
+          "status": "impossible",
+          "binding": "find"
+        },
+        "cells": {
+          "reach": {
+            "margin": 200,
+            "unit": "ticks",
+            "distance": null,
+            "status": "ok",
+            "capped": true,
+            "binding": false
+          },
+          "find": {
+            "margin": null,
+            "unit": "ticks",
+            "distance": null,
+            "status": "impossible",
+            "capped": false,
+            "binding": true
+          },
+          "eat": {
+            "margin": 200,
+            "unit": "ticks",
+            "distance": null,
+            "status": "ok",
+            "capped": true,
+            "binding": false
+          }
+        },
+        "rules": {
+          "founder": {
+            "energy": 800,
+            "speed": 1.9300259065618783,
+            "range": 10464.600465378504,
+            "reach": {
+              "mean": 959.0063433647405,
+              "p90": 1911.5147665180575,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "find": {
+              "path": 5440.298507462686,
+              "share": 0.8539102677949539,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "eat": {
+              "meals": 0.7466429763976115,
+              "holds": 220.5,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            }
+          },
+          "entrant": {
+            "energy": 200,
+            "speed": 1.9213710382606133,
+            "range": 2895.5061546587444,
+            "reach": {
+              "mean": 959.0063433647405,
+              "p90": 1911.5147665180575,
+              "share": 0.9907230602981508,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "find": {
+              "path": 5440.298507462686,
+              "share": 0.41270789283162057,
+              "cell": {
+                "margin": null,
+                "unit": "ticks",
+                "distance": null,
+                "status": "impossible",
+                "capped": false,
+                "binding": false
+              }
+            },
+            "eat": {
+              "meals": 0.6746074797415589,
+              "holds": 220.5,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            }
+          },
+          "child": {
+            "energy": 450,
+            "speed": 1.9249819623974547,
+            "range": 6298.540980964472,
+            "reach": {
+              "mean": 0,
+              "p90": 0,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "find": {
+              "path": 0,
+              "share": 1,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            },
+            "eat": {
+              "meals": 0,
+              "holds": 220.5,
+              "cell": {
+                "margin": 200,
+                "unit": "ticks",
+                "distance": null,
+                "status": "ok",
+                "capped": true,
+                "binding": false
+              }
+            }
+          }
+        },
+        "source": {
+          "n": 16,
+          "rho": 400,
+          "strip": 270,
+          "area": 116640000,
+          "meal": {
+            "perMeal": 98.19193782617764,
+            "ticks": 19.433053014258054
+          },
+          "holds": 220.5
+        },
+        "binding": "find"
+      }
+    },
+    {
+      "name": "forager:idle",
+      "cells": {
+        "sit": {
+          "margin": -1237,
+          "unit": "ticks",
+          "distance": null,
+          "status": "tight",
+          "capped": false,
+          "binding": true
+        }
+      },
+      "status": "tight",
+      "binding": "sit",
+      "detail": {
+        "row": {
+          "name": "forager:idle",
+          "cells": {
+            "sit": {
+              "margin": -1237,
+              "unit": "ticks",
+              "distance": null,
+              "status": "tight",
+              "capped": false,
+              "binding": true
+            }
+          },
+          "status": "tight",
+          "binding": "sit"
+        },
+        "cells": {
+          "sit": {
+            "margin": -1237,
+            "unit": "ticks",
+            "distance": null,
+            "status": "tight",
+            "capped": false,
+            "binding": true
+          }
+        },
+        "rules": {
+          "founder": {
+            "energy": 800,
+            "idleLife": 7741,
+            "activeLife": 5452,
+            "ratio": 1.41984592809978,
+            "coldest": 0
+          },
+          "entrant": {
+            "energy": 200,
+            "idleLife": 2744,
+            "activeLife": 1507,
+            "ratio": 1.820836098208361,
+            "coldest": 26.332999999996566
+          },
+          "child": {
+            "energy": 450,
+            "idleLife": 5098,
+            "activeLife": 3282,
+            "ratio": 1.5533211456429006,
+            "coldest": 6.029749999997925
+          }
+        },
+        "ratio": 1.820836098208361,
+        "binding": "sit"
+      }
+    },
+    {
+      "name": "predator:idle",
+      "cells": {
+        "sit": {
+          "margin": -16299,
+          "unit": "ticks",
+          "distance": null,
+          "status": "tight",
+          "capped": false,
+          "binding": true
+        }
+      },
+      "status": "tight",
+      "binding": "sit",
+      "detail": {
+        "row": {
+          "name": "predator:idle",
+          "cells": {
+            "sit": {
+              "margin": -16299,
+              "unit": "ticks",
+              "distance": null,
+              "status": "tight",
+              "capped": false,
+              "binding": true
+            }
+          },
+          "status": "tight",
+          "binding": "sit"
+        },
+        "cells": {
+          "sit": {
+            "margin": -16299,
+            "unit": "ticks",
+            "distance": null,
+            "status": "tight",
+            "capped": false,
+            "binding": true
+          }
+        },
+        "rules": {
+          "founder": {
+            "energy": 800,
+            "idleLife": 46002,
+            "activeLife": 29703,
+            "ratio": 1.5487324512675487,
+            "coldest": 0
+          },
+          "entrant": {
+            "energy": 200,
+            "idleLife": 12704,
+            "activeLife": 8341,
+            "ratio": 1.5230787675338688,
+            "coldest": 0
+          },
+          "child": {
+            "energy": 300,
+            "idleLife": 18272,
+            "activeLife": 11917,
+            "ratio": 1.5332717965931022,
+            "coldest": 0
+          }
+        },
+        "ratio": 1.5487324512675487,
+        "binding": "sit"
+      }
+    },
+    {
+      "name": "reproducer:idle",
+      "cells": {
+        "sit": {
+          "margin": -1237,
+          "unit": "ticks",
+          "distance": null,
+          "status": "tight",
+          "capped": false,
+          "binding": true
+        }
+      },
+      "status": "tight",
+      "binding": "sit",
+      "detail": {
+        "row": {
+          "name": "reproducer:idle",
+          "cells": {
+            "sit": {
+              "margin": -1237,
+              "unit": "ticks",
+              "distance": null,
+              "status": "tight",
+              "capped": false,
+              "binding": true
+            }
+          },
+          "status": "tight",
+          "binding": "sit"
+        },
+        "cells": {
+          "sit": {
+            "margin": -1237,
+            "unit": "ticks",
+            "distance": null,
+            "status": "tight",
+            "capped": false,
+            "binding": true
+          }
+        },
+        "rules": {
+          "founder": {
+            "energy": 800,
+            "idleLife": 7741,
+            "activeLife": 5452,
+            "ratio": 1.41984592809978,
+            "coldest": 0
+          },
+          "entrant": {
+            "energy": 200,
+            "idleLife": 2744,
+            "activeLife": 1507,
+            "ratio": 1.820836098208361,
+            "coldest": 26.332999999996566
+          },
+          "child": {
+            "energy": 450,
+            "idleLife": 5098,
+            "activeLife": 3282,
+            "ratio": 1.5533211456429006,
+            "coldest": 6.029749999997925
+          }
+        },
+        "ratio": 1.820836098208361,
+        "binding": "sit"
+      }
+    },
+    {
+      "name": "scout:idle",
+      "cells": {
+        "sit": {
+          "margin": -1043,
+          "unit": "ticks",
+          "distance": null,
+          "status": "tight",
+          "capped": false,
+          "binding": true
+        }
+      },
+      "status": "tight",
+      "binding": "sit",
+      "detail": {
+        "row": {
+          "name": "scout:idle",
+          "cells": {
+            "sit": {
+              "margin": -1043,
+              "unit": "ticks",
+              "distance": null,
+              "status": "tight",
+              "capped": false,
+              "binding": true
+            }
+          },
+          "status": "tight",
+          "binding": "sit"
+        },
+        "cells": {
+          "sit": {
+            "margin": -1043,
+            "unit": "ticks",
+            "distance": null,
+            "status": "tight",
+            "capped": false,
+            "binding": true
+          }
+        },
+        "rules": {
+          "founder": {
+            "energy": 800,
+            "idleLife": 6356,
+            "activeLife": 4370,
+            "ratio": 1.454462242562929,
+            "coldest": 0
+          },
+          "entrant": {
+            "energy": 200,
+            "idleLife": 2202,
+            "activeLife": 1159,
+            "ratio": 1.899913718723037,
+            "coldest": 31.00774999999578
+          },
+          "child": {
+            "energy": 450,
+            "idleLife": 4207,
+            "activeLife": 2577,
+            "ratio": 1.6325184322856034,
+            "coldest": 13.714624999998216
+          }
+        },
+        "ratio": 1.899913718723037,
+        "binding": "sit"
+      }
+    },
+    {
+      "name": "defender:idle",
+      "cells": {
+        "sit": {
+          "margin": -1237,
+          "unit": "ticks",
+          "distance": null,
+          "status": "tight",
+          "capped": false,
+          "binding": true
+        }
+      },
+      "status": "tight",
+      "binding": "sit",
+      "detail": {
+        "row": {
+          "name": "defender:idle",
+          "cells": {
+            "sit": {
+              "margin": -1237,
+              "unit": "ticks",
+              "distance": null,
+              "status": "tight",
+              "capped": false,
+              "binding": true
+            }
+          },
+          "status": "tight",
+          "binding": "sit"
+        },
+        "cells": {
+          "sit": {
+            "margin": -1237,
+            "unit": "ticks",
+            "distance": null,
+            "status": "tight",
+            "capped": false,
+            "binding": true
+          }
+        },
+        "rules": {
+          "founder": {
+            "energy": 800,
+            "idleLife": 7741,
+            "activeLife": 5422,
+            "ratio": 1.4277019549981556,
+            "coldest": 0
+          },
+          "entrant": {
+            "energy": 200,
+            "idleLife": 2744,
+            "activeLife": 1507,
+            "ratio": 1.820836098208361,
+            "coldest": 26.332999999996566
+          },
+          "child": {
+            "energy": 450,
+            "idleLife": 5098,
+            "activeLife": 3272,
+            "ratio": 1.5580684596577017,
+            "coldest": 6.029749999997925
+          }
+        },
+        "ratio": 1.820836098208361,
+        "binding": "sit"
+      }
+    }
+  ],
+  "model": {
+    "reactionTicks": 2,
+    "hearThreshold": 0.1,
+    "breakAngle": 1.5707963267948966,
+    "tightTicks": 5,
+    "preySprint": "rationed",
+    "hunterShare": 0.1,
+    "foodDensity": null,
+    "naiveEffort": 0.5,
+    "catchShare": 0.3,
+    "defenderGap": 150,
+    "smokeGap": 240,
+    "reliableSight": false
+  },
+  "rulesHash": "82fb63974d2cdd42",
+  "choice": null,
+  "searched": [],
+  "defenderSearch": [],
+  "birthSearch": [],
+  "check": {
+    "kinematics": [
+      {
+        "spec": "forager",
+        "what": "energy per 100 ticks",
+        "formula": 102.725,
+        "sim": 102.72489728927212,
+        "difference": 9.998620644768863e-7,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "forager",
+        "what": "sprint energy per 100 ticks",
+        "formula": 227.725,
+        "sim": 227.72477226257024,
+        "difference": 0.0000010000555823452828,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "forager",
+        "what": "cruise speed",
+        "formula": 8,
+        "sim": 8,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "forager",
+        "what": "sprint speed",
+        "formula": 12,
+        "sim": 12,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "forager",
+        "what": "turn radius",
+        "formula": 21.536965359442533,
+        "sim": 21.508851624429518,
+        "difference": 0.001307077453688077,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "forager",
+        "what": "sprint turn radius",
+        "formula": 32.3054480391638,
+        "sim": 32.263275735049035,
+        "difference": 0.0013071302635569992,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "energy per 100 ticks",
+        "formula": 58.65499999999999,
+        "sim": 58.654992961874086,
+        "difference": 1.1999193150202814e-7,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "sprint energy per 100 ticks",
+        "formula": 190.679,
+        "sim": 190.6789672355444,
+        "difference": 1.7183046496782595e-7,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "cruise speed",
+        "formula": 8,
+        "sim": 8,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "sprint speed",
+        "formula": 14.4,
+        "sim": 14.399999618530273,
+        "difference": 2.6490953874969136e-8,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "turn radius",
+        "formula": 41.71784901003581,
+        "sim": 41.808606111386936,
+        "difference": 0.0021707755840825183,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "sprint turn radius",
+        "formula": 75.09212821806446,
+        "sim": 75.25548668463908,
+        "difference": 0.002170718359170043,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "energy per 100 ticks",
+        "formula": 102.725,
+        "sim": 102.72489728927212,
+        "difference": 9.998620644768863e-7,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "sprint energy per 100 ticks",
+        "formula": 227.725,
+        "sim": 227.72477226257024,
+        "difference": 0.0000010000555823452828,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "cruise speed",
+        "formula": 8,
+        "sim": 8,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "sprint speed",
+        "formula": 12,
+        "sim": 12,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "turn radius",
+        "formula": 21.536965359442533,
+        "sim": 21.508851624429518,
+        "difference": 0.001307077453688077,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "sprint turn radius",
+        "formula": 32.3054480391638,
+        "sim": 32.263275735049035,
+        "difference": 0.0013071302635569992,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "energy per 100 ticks",
+        "formula": 104.7425,
+        "sim": 104.74236381054425,
+        "difference": 0.0000013002327883260278,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "sprint energy per 100 ticks",
+        "formula": 229.7425,
+        "sim": 229.74220133781955,
+        "difference": 0.000001299988329206414,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "cruise speed",
+        "formula": 8,
+        "sim": 8,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "sprint speed",
+        "formula": 12,
+        "sim": 12,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "turn radius",
+        "formula": 21.536965359442533,
+        "sim": 21.508851624429518,
+        "difference": 0.001307077453688077,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "sprint turn radius",
+        "formula": 32.3054480391638,
+        "sim": 32.263275735049035,
+        "difference": 0.0013071302635569992,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "energy per 100 ticks",
+        "formula": 121.925,
+        "sim": 121.9248780727412,
+        "difference": 0.0000010000195262982459,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "sprint energy per 100 ticks",
+        "formula": 270.92499999999995,
+        "sim": 270.92472906113017,
+        "difference": 0.0000010000521943887009,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "cruise speed",
+        "formula": 8,
+        "sim": 8,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "sprint speed",
+        "formula": 12,
+        "sim": 12,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "turn radius",
+        "formula": 21.536965359442533,
+        "sim": 21.508851624429518,
+        "difference": 0.001307077453688077,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "sprint turn radius",
+        "formula": 32.3054480391638,
+        "sim": 32.263275735049035,
+        "difference": 0.0013071302635569992,
+        "tolerance": 0.005,
+        "drift": false
+      }
+    ],
+    "pairs": [],
+    "defence": [
+      {
+        "row": "forager:idle",
+        "what": "founder sits",
+        "formula": 7741,
+        "scene": 7741,
+        "tolerance": "0.5%",
+        "drift": false
+      },
+      {
+        "row": "forager:idle",
+        "what": "founder searches",
+        "formula": 5452,
+        "scene": 5462,
+        "tolerance": "2%",
+        "drift": false
+      },
+      {
+        "row": "forager:idle",
+        "what": "entrant sits",
+        "formula": 2744,
+        "scene": 2744,
+        "tolerance": "0.5%",
+        "drift": false
+      },
+      {
+        "row": "forager:idle",
+        "what": "entrant searches",
+        "formula": 1507,
+        "scene": 1521,
+        "tolerance": "2%",
+        "drift": false
+      },
+      {
+        "row": "forager:idle",
+        "what": "child sits",
+        "formula": 5098,
+        "scene": 5098,
+        "tolerance": "0.5%",
+        "drift": false
+      },
+      {
+        "row": "forager:idle",
+        "what": "child searches",
+        "formula": 3282,
+        "scene": 3294,
+        "tolerance": "2%",
+        "drift": false
+      },
+      {
+        "row": "forager:predator",
+        "what": "net energy a tick from the fourth meal",
+        "formula": 4.868779927313921,
+        "scene": 5.672659638771767,
+        "tolerance": "30%",
+        "drift": false
+      },
+      {
+        "row": "predator:living",
+        "what": "forager: kill tick",
+        "formula": null,
+        "scene": null,
+        "tolerance": "2 ticks",
+        "drift": false
+      },
+      {
+        "row": "predator:living",
+        "what": "forager: a kill or none",
+        "formula": false,
+        "scene": false,
+        "tolerance": "agree",
+        "drift": false
+      },
+      {
+        "row": "predator:living",
+        "what": "reproducer: kill tick",
+        "formula": null,
+        "scene": null,
+        "tolerance": "2 ticks",
+        "drift": false
+      },
+      {
+        "row": "predator:living",
+        "what": "reproducer: a kill or none",
+        "formula": false,
+        "scene": false,
+        "tolerance": "agree",
+        "drift": false
+      },
+      {
+        "row": "predator:living",
+        "what": "scout: kill tick",
+        "formula": null,
+        "scene": null,
+        "tolerance": "2 ticks",
+        "drift": false
+      },
+      {
+        "row": "predator:living",
+        "what": "scout: a kill or none",
+        "formula": false,
+        "scene": false,
+        "tolerance": "agree",
+        "drift": false
+      },
+      {
+        "row": "predator:living",
+        "what": "defender: kill tick",
+        "formula": null,
+        "scene": null,
+        "tolerance": "2 ticks",
+        "drift": false
+      },
+      {
+        "row": "predator:living",
+        "what": "defender: a kill or none",
+        "formula": false,
+        "scene": false,
+        "tolerance": "agree",
+        "drift": false
+      },
+      {
+        "row": "forager:first-meal",
+        "what": "founder: reach share",
+        "formula": 1,
+        "scene": 0.9375,
+        "tolerance": "0.2 absolute",
+        "drift": false
+      },
+      {
+        "row": "forager:first-meal",
+        "what": "founder: find share (a free plane: rocks and walls only lower it)",
+        "formula": 0.8906996754657431,
+        "scene": 0.5234375,
+        "tolerance": "an upper bound, 0.15 absolute",
+        "drift": false
+      },
+      {
+        "row": "forager:first-meal",
+        "what": "entrant: reach share",
+        "formula": 0.9959054837559161,
+        "scene": 0.85546875,
+        "tolerance": "0.2 absolute",
+        "drift": false
+      },
+      {
+        "row": "forager:first-meal",
+        "what": "entrant: find share (a free plane: rocks and walls only lower it)",
+        "formula": 0.45618050696365875,
+        "scene": 0.42578125,
+        "tolerance": "an upper bound, 0.15 absolute",
+        "drift": false
+      },
+      {
+        "row": "forager:first-meal",
+        "what": "child: reach share",
+        "formula": 1,
+        "scene": 0.99609375,
+        "tolerance": "0.2 absolute",
+        "drift": false
+      },
+      {
+        "row": "forager:first-meal",
+        "what": "child: find share (a free plane: rocks and walls only lower it)",
+        "formula": 1,
+        "scene": 0.99609375,
+        "tolerance": "an upper bound, 0.15 absolute",
+        "drift": false
+      }
+    ],
+    "drift": 0
+  }
+}

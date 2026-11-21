@@ -50,7 +50,6 @@ export function createGuildScene(config) {
         deathAgeSum: new Float64Array(5),
         deathCount: new Uint32Array(5),
         defenderTicks: 0,
-        repelCount: 0,
         scoutThreatAlarms: 0,
         scoutLeadAlarms: 0,
         recoveryBirths: 0,
@@ -185,9 +184,10 @@ export function tickGuilds(scene, world) {
 
 /**
  * @param {Record<string, any>} scene the guild scene
+ * @param {number} [shoves] the shoves the defender detector counted after burn-in (`scene-defender.js`)
  * @returns {import('./metrics-stats.js').MetricRecord} the 11 prey-guild metrics
  */
-export function guildMetrics(scene) {
+export function guildMetrics(scene, shoves = 0) {
     /** @type {import('./metrics-stats.js').MetricRecord} */
     const out = {};
     for (const [name, idx] of GUILDS) {
@@ -202,7 +202,7 @@ export function guildMetrics(scene) {
         out[metricName('eval.prey_selectivity', name)] = preySelectivity(scene, idx);
     }
     out['eval.defender_repel_per_1k'] =
-        scene.defenderTicks === 0 ? none(NO_DEFENDER_TICKS) : per1k(scene.repelCount, scene.defenderTicks);
+        scene.defenderTicks === 0 ? none(NO_DEFENDER_TICKS) : per1k(shoves, scene.defenderTicks);
     out['eval.scout_alarm_lead_share'] =
         scene.scoutThreatAlarms === 0 ? none(NO_SCOUT_ALARM) : ok(scene.scoutLeadAlarms / scene.scoutThreatAlarms);
     out['eval.reproducer_recovery_rate'] =
@@ -243,5 +243,5 @@ export const guildsDetector = {
             sampleGuilds(scene, world);
         }
     },
-    metrics: (scene) => guildMetrics(scene),
+    metrics: (scene, _world, observer) => guildMetrics(scene, observer.scenes.defender.shoves),
 };

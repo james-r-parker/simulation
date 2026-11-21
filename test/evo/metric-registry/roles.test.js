@@ -16,7 +16,7 @@ describe('the role tags of the registry', () => {
         const tagged = Object.entries(METRICS).filter(([, entry]) => entry.roles !== undefined);
         const listed = new Set(Object.values(ROLE_METRICS).flat());
         expect(tagged.map(([name]) => name).sort()).toEqual([...listed].sort());
-        expect(listed.size).toBe(19);
+        expect(listed.size).toBe(22);
     });
 
     it('hold only known roles', () => {
@@ -25,14 +25,18 @@ describe('the role tags of the registry', () => {
         }
     });
 
-    it('list the metrics of a role, and none for the defender until its metrics exist', () => {
+    it('list the metrics of a role, the three of the defender', () => {
         expect(metricsForRole(METRICS, 'scout').sort()).toEqual([
             'eval.alarm_lift',
             'eval.alarm_response',
             'eval.scout_alarm_lead_share',
         ]);
         expect(metricsForRole(METRICS, 'predator')).toContain('eval.chase_catch_share');
-        expect(metricsForRole(METRICS, 'defender')).toEqual([]);
+        expect(metricsForRole(METRICS, 'defender').sort()).toEqual([
+            'eval.defender_bite_break_share',
+            'eval.defender_repel_per_1k',
+            'eval.hunter_defender_bite_ratio',
+        ]);
     });
 
     it('refuse an unknown role', () => {

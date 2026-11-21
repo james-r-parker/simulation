@@ -76,6 +76,7 @@
   "eval.collision_death_share",
   "eval.condition_gait_shift",
   "eval.coverage",
+  "eval.defender_bite_break_share",
   "eval.defender_repel_per_1k",
   "eval.deliberate_food_energy_per_1k",
   "eval.deliberate_food_share",

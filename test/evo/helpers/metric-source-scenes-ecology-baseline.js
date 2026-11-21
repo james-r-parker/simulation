@@ -339,6 +339,10 @@ export default {
         value: null,
         reason: 'no defender tick after burn-in',
     },
+    'eval.defender_bite_break_share': {
+        value: null,
+        reason: 'no bite episode resolved after burn-in',
+    },
     'eval.scout_alarm_lead_share': {
         value: null,
         reason: 'no scout alarm with a threat after burn-in',

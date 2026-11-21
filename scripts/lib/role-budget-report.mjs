@@ -1,6 +1,7 @@
 // Formats the role budget for `npm run role:budget`: the matrix (rows by steps), then per row the bounds, the tiers, the
 // energy and heat lines. Every number is rounded here, never by a module (docs/designs/role-budget.md).
 import { padTable } from './drill-report.mjs';
+import { thriveDetail } from './role-budget-thrive-report.mjs';
 
 /** The steps of each kind of row, by the first step of its cells. */
 const STEPS = ['see', 'turn', 'run', 'bite'];
@@ -20,7 +21,9 @@ export function cellText(cell) {
     if (cell.status === 'n/a') {
         return '-';
     }
-    const text = cell.capped ? `>${cell.margin}` : String(Math.round(/** @type {number} */ (cell.margin)));
+    const text = cell.capped
+        ? `>${Math.round(/** @type {number} */ (cell.margin))}`
+        : String(Math.round(/** @type {number} */ (cell.margin)));
     return cell.status === 'tight' ? `${text}!` : text;
 }
 
@@ -134,6 +137,10 @@ export function formatDetail(rows) {
                 const picks = row.name === 'predator:best' ? `  picks ${d.best.picks}` : '';
                 const share = `catchable share ${d.catchableShare.toFixed(2)}  choice gain ${d.choiceGain.toFixed(1)} ticks`;
                 return [row.name, `  ${share}${picks}`];
+            }
+            const thrive = thriveDetail(row.name, d);
+            if (thrive !== null) {
+                return thrive;
             }
             if (d.chain !== undefined) {
                 return [row.name, ...warnLines(d)];

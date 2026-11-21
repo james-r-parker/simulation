@@ -318,6 +318,12 @@
     "test/evo/role-budget-kinematics.test.js": [
         "evals/fair-chase/courser.json"
     ],
+    "test/evo/role-budget-lapse-check.slow.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
+    "test/evo/role-budget-living.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
     "test/evo/role-budget-matrix.test.js": [
         "evals/fair-chase/courser.json"
     ],
@@ -325,6 +331,15 @@
         "evals/fair-chase/courser.json"
     ],
     "test/evo/role-budget-shares.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
+    "test/evo/role-budget-thrive-check.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
+    "test/evo/role-budget-thrive.slow.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
+    "test/evo/role-budget-thrive.test.js": [
         "evals/fair-chase/courser.json"
     ],
     "test/evo/role-budget-tiers.test.js": [
@@ -339,6 +354,9 @@
     "test/evo/role-budget-warn.test.js": [
         "evals/fair-chase/courser.json"
     ],
+    "test/evo/role-scenes-thrive.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
     "test/evo/role-scenes-warn.test.js": [
         "evals/fair-chase/courser.json"
     ],
@@ -350,6 +368,9 @@
     ],
     "test/evo/scene-competence.test.js": [
         "js/evo/scene-competence.js"
+    ],
+    "test/evo/scene-defender.test.js": [
+        "js/evo/scene-defender.js"
     ],
     "test/evo/scene-eat.test.js": [
         "js/evo/scene-eat.js"
