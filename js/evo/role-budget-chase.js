@@ -29,6 +29,9 @@ export { fitForRung, learnSlope, tierMargins } from './role-budget-tiers.js';
  * @property {string | null} binding the step of least slack
  */
 
+/** The prey rows of the matrix, in order: the specialisations a hunter is budgeted against. */
+export const PREY_SPECS = Object.freeze(['forager', 'reproducer', 'scout', 'defender']);
+
 /** The bearings of `audit:chase`: eight, from -PI in steps of PI / 4. */
 export const AUDIT_BEARINGS = Object.freeze(Array.from({ length: 8 }, (_, b) => (2 * Math.PI * b) / 8 - Math.PI));
 

@@ -299,6 +299,12 @@
     "test/evo/role-budget-kinematics.test.js": [
         "evals/fair-chase/courser.json"
     ],
+    "test/evo/role-budget-matrix.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
+    "test/evo/role-budget-search.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
     "test/evo/role-budget-tiers.test.js": [
         "evals/fair-chase"
     ],
