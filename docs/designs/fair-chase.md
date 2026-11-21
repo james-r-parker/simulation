@@ -13,18 +13,18 @@ Scene: **A real chase** ("Bite arc, vision, and sprint are limited"). Selection 
 
 This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
 
-Own work first: Phase 1 (the store and the envelope, built). The three gates of "Before any training" come next: step 1 (role-budget.md, all five phases) with T7a of this doc and body-genes.md Phase 1, then metric-noise.md Phase 6 and brain-reflex-tests.md Phase 5. T7b and T8 of Phase 2 (the rung) run after the gates, on the arm the budget shows is catchable and learnable; Phase 3 (the world) follows. Steps 2 to 8 are built beside and after this, in order.
+Own work first: Phase 1 (the store and the envelope, built). The order is: step 1 Phase 1 (body and senses) with T7a of this doc, as one chunk; step 2 (the calculator, all five phases) with step 1's Phase 2; step 1's Phase 3 (the numbers, chosen with the calculator); metric-noise.md Phase 6 and brain-reflex-tests.md Phase 5 (gates 2 and 3); then T7b and T8 of Phase 2 (the rung), the first training runs, on the arm the budget shows is catchable and learnable; Phase 3 (the world) follows. Steps 3 to 8 are built beside and after this, in order.
 
-| Step | Doc                                        | Built when                                                                                                                     |
-| ---- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| 1    | [role-budget.md](role-budget.md)           | Gate 1 before any training: all five phases; Phase 1 (T7, E-RB-1) names the arm T7b and T8 of this doc run on                  |
-| 2    | [body-genes.md](body-genes.md)             | Built beside the chase work: Phase 1 (the spec table) first, since role-budget.md reads it; Phases 2 to 4 each behind a switch |
-| 3    | [senses-and-motor.md](senses-and-motor.md) | The chase envelope runs (T10 to T12) and Phase 4 are read on the bodies the sprint store leaves                                |
-| 4    | [chase-physics.md](chase-physics.md)       | Heading inertia and terrain, screened on those bodies; `speedTurnDrag` widens the predator's sprint circle                     |
-| 5    | [stillness.md](stillness.md)               | The ambusher and the freezing prey; it changes the ray march every scene reads, so it follows the store and the turn           |
-| 6    | [hunter-practice.md](hunter-practice.md)   | The bite detectors and the within-lifetime gain, read once a hunter can reach its prey                                         |
-| 7    | [hunter-learning.md](hunter-learning.md)   | The refusal wires and the too-big body, after hunter-practice.md names what a hunter still gets wrong                          |
-| 8    | [scent-trails.md](scent-trails.md)         | Trail and carrion scent; it builds on stillness.md and on body-priced carcasses                                                |
+| Step | Doc                                        | Built when                                                                                                                                                                                                                                  |
+| ---- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [body-genes.md](body-genes.md)             | The next chunk: Phase 1 (body and senses: the spec table, the six inputs, the trait system with neutral numbers, one layout version), with T7a of this doc; Phase 2 after step 2's Phase 1; Phase 3 chooses the numbers with the calculator |
+| 2    | [role-budget.md](role-budget.md)           | Gate 1 before any training: all five phases, built on the spec table of step 1; Phase 1 (T7, E-RB-1) names the arm T7b and T8 of this doc run on                                                                                            |
+| 3    | [senses-and-motor.md](senses-and-motor.md) | The chase envelope runs (T10 to T12) and Phase 4 are read on the bodies the sprint store leaves                                                                                                                                             |
+| 4    | [chase-physics.md](chase-physics.md)       | Heading inertia and terrain, screened on those bodies; `speedTurnDrag` widens the predator's sprint circle                                                                                                                                  |
+| 5    | [stillness.md](stillness.md)               | The ambusher and the freezing prey; it changes the ray march every scene reads, so it follows the store and the turn                                                                                                                        |
+| 6    | [hunter-practice.md](hunter-practice.md)   | The bite detectors and the within-lifetime gain, read once a hunter can reach its prey                                                                                                                                                      |
+| 7    | [hunter-learning.md](hunter-learning.md)   | The refusal wires and the too-big body, after hunter-practice.md names what a hunter still gets wrong                                                                                                                                       |
+| 8    | [scent-trails.md](scent-trails.md)         | Trail and carrion scent; it builds on stillness.md and on body-priced carcasses                                                                                                                                                             |
 
 ## Before any training
 
@@ -36,7 +36,7 @@ No training run, ladder screen or champion export starts until the three reading
 | 2. Each role's metrics are right       | Every metric that says a spec does its job reads the planted truth of the role's scripted scene, and the reading a decision rests on is powered                                                                                                                                                                                                       | [metric-noise.md](metric-noise.md) Phase 6                    |
 | 3. Level one measures the right things | The reflex cases (the brain-only tier, 522 genomes a second) hold a case for each role's first skill, with bars taken from the role budget, and the tier's validation study has a verdict                                                                                                                                                             | [brain-reflex-tests.md](brain-reflex-tests.md) Phases 5 and 2 |
 
-The graded sprint (T7a) and the spec table ([body-genes.md](body-genes.md) Phase 1) are built with gate 1, since the budget reads both. T7b and T8 of this doc are the first training runs after the gates.
+The body comes first, since the budget reads it: [body-genes.md](body-genes.md) Phase 1 (the spec table, the six inputs, the trait system) and the graded sprint (T7a) are one chunk, built before gate 1. T7b and T8 of this doc are the first training runs after the gates.
 
 ## Measured on 2026-11-20
 
