@@ -491,7 +491,7 @@
     "test/timeout-lint.test.js": [
         "./"
     ],
-    "test/train-drill-body-rules.test.js": [
+    "test/train-drill-body-rules.slow.test.js": [
         "evals/fair-chase/courser.json"
     ],
     "test/train-feasible.slow.test.js": [

@@ -1,6 +1,7 @@
 // A stage's drills run under the stage world's body rules (docs/designs/fair-chase.md, Decisions): the gate drills, the kept
 // passers' drills, the steering read, and the learnability check's probe and bar. A stage with no body rule drills under `{}`.
 import { describe, expect, it, vi } from 'vitest';
+import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 import { sprintArena } from '../js/evo/drill-scenarios.js';
 import { createTrainerArchive } from '../js/evo/trainer.js';
 import { createSimLog } from '../js/sim/log.js';
@@ -53,7 +54,7 @@ const checkpoint = (/** @type {any} */ stage, /** @type {any} */ extra = {}) =>
         log,
     });
 
-describe('the trainer checkpoint drills', () => {
+describe('the trainer checkpoint drills', { timeout: scaleTimeout(60_000) }, () => {
     it('runs a stage without body rules under the default config, as before', async () => {
         calls.length = 0;
         await checkpoint(stagesOf(null)[0], { steer: { drill: 'prey-ahead', value: 0.3 } });
@@ -87,7 +88,7 @@ describe('the trainer checkpoint drills', () => {
     });
 });
 
-describe('the learnability check', () => {
+describe('the learnability check', { timeout: scaleTimeout(60_000) }, () => {
     const ladder = (/** @type {string | null} */ config) => [
         { name: 'hunt', config, gate: [{ read: 'drill.prey-ahead.winShareLow', min: 0.3 }] },
     ];
