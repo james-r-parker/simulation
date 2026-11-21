@@ -1,0 +1,9 @@
+{
+  "sprintStoreEnabled": true,
+  "sprintDrain": 0.01,
+  "entrantEnergy": 400,
+  "herdRunSpeed": 5.5,
+  "temperatureLossPassive": 0.015,
+  "temperaturePassiveLossFactor": 3,
+  "specialisations": { "predator": { "sprintDrainMultiplier": 0.5 } }
+}
