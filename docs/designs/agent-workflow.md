@@ -1,6 +1,6 @@
 # Agent workflow
 
-**Status:** In progress - Phases 1, 2, 3 and 5 are built (the Phase 2 review T15 is the coordinator's); Phase 6 is built except T40 (it needs 30 pull requests of history); Phase 4 T22 to T25 are built, review T27 open (worktree-gc not yet run on the real machine).
+**Status:** In progress - Phases 1 to 5 are built (the Phase 2 review T15 is the coordinator's); Phase 6 is built except T40 (it needs 30 pull requests of history).
 **Validated:** 3c6f1225 (2026-11-21)
 **Priority:** 3 - Workflow lead. Tooling that changes no sim rule; every session and every subagent pays the Phase 1 cost on its first token and every chunk ships through Phase 5, so both are built before the next training chunk
 **Depends on:** [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
@@ -13,7 +13,7 @@ The repo is built by coding agents: a coordinator, its subagents, and outside st
 
 This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
 
-Own work first: Phases 5, 1, 2, 3 and 4 are built; Phase 6 is built except T40. Next: the open reviews (T15 among them).
+Own work first: Phases 1 to 5 are built; Phase 6 is built except T40. Next: the open reviews (T15 among them).
 
 | Step | Doc                                                                | Built when                                                                               |
 | ---- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
@@ -152,6 +152,7 @@ The 200 `check` runs before Phase 3 landed (the 200 newest runs created before 2
 | Machine       | threads, load, the worker budget (`defaultWorkers` in `scripts/lib/worker-pool.mjs`), workers claimed by in-flight runs, workers free                 |
 | Ladder        | the newest `evals/train-screens/results/*/yield.json`: pass share per stage for its reference arm                                                     |
 | Experiments   | the last 10 ledger records (`experiment.mjs list`) and the `tally` since 7 days                                                                       |
+| Ships         | the median minutes from push to merge and the share merged on the first CI run, over the last 20 merged runs of `ship.sh` (`.checklogs/ship.jsonl`)   |
 | Pull requests | open PRs with their check state (`gh pr list`), skipped when `gh` is absent                                                                           |
 | Worktrees     | counts by class from `worktree-gc.sh --list`                                                                                                          |
 
@@ -159,14 +160,19 @@ The 200 `check` runs before Phase 3 landed (the 200 newest runs created before 2
 
 ### `scripts/worktree-gc.sh`
 
-`scripts/worktree-gc.sh --list` classes every worktree; with no flag it removes the `safe` class with `git worktree remove` (never `--force`) and deletes their local branches.
+`scripts/worktree-gc.sh --list [--json]` classes every worktree; with no flag it removes the `safe` class under `.claude/worktrees/` with `git worktree remove` (never `--force`) and deletes their local branches. A worktree outside that directory is listed as `outside` and removed only with `--all`. The first matching class wins, in the order below.
 
-| Class      | Rule                                                                                         | Action       |
-| ---------- | -------------------------------------------------------------------------------------------- | ------------ |
-| `safe`     | branch has a merged PR, `git status --porcelain` is empty, no run in flight from its `.runs` | removed      |
-| `dirty`    | uncommitted files                                                                            | listed, kept |
-| `unmerged` | commits not on `origin/main` and no merged PR                                                | listed, kept |
-| `live`     | a run in flight, or the worktree of the calling session                                      | kept         |
+| Class      | Rule                                                                                                                                  | Action       |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `live`     | the main checkout, the calling session's worktree, a locked one, a process running in it, a run in flight or a run log in its `.runs` | kept         |
+| `dirty`    | uncommitted or untracked files                                                                                                        | listed, kept |
+| `unmerged` | detached HEAD, no merged PR (or `gh` cannot say), or commits the merged PR does not hold                                              | listed, kept |
+| `gone`     | the directory is missing (`git worktree prune` clears it)                                                                             | listed, kept |
+| `safe`     | a merged PR holds all of HEAD and the tree is clean                                                                                   | removed      |
+
+### Review of Phase 4
+
+Each row was checked on 2026-11-21: T22 `workers` in `runs.json` and the under-use warning (`test/run-detached.test.js`), T23 `scripts/worktree-gc.sh` (`test/worktree-gc.test.js`), T24 `npm run state` with every block printed on the real machine (`test/state.test.js`; runs from before T22 show `workers -`), T25 `docs/handoffs/TEMPLATE.md` and the rewritten "Delegating to subagents" in `AGENTS.md`. The 57 tests of the three test files pass and no code defect was found. The plan disagreed with the code in two places, fixed above: the `Ships` block of `npm run state` was missing from the block table, and the class table of `worktree-gc.sh` lacked the `gone` class, the full `live` rule (locked, a process in the worktree, a run log) and the `unmerged` rule (detached HEAD, `gh` unable to say). `scripts/worktree-gc.sh --list` read safe 1, dirty 16, unmerged 8, live 15, gone 0 before the run and safe 0 with the others unchanged after it: the Phase 4 target (no `safe` worktree left) holds. The one removal was the merged `feat/experiment-ledger` worktree; no hook or permission refused it.
 
 ### Streams and handoffs
 
@@ -275,7 +281,7 @@ An affected run that passes where the full run on the merged result fails is a m
 | ----- | --------------- | ------- |
 | D     | T16 to T21, T30 | Sonnet  |
 
-### Phase 4 - The state of the machine
+### Phase 4 - The state of the machine (built)
 
 **Targets:** none - it moves no sim metric; its readings are `npm run state` listing every in-flight run on the machine and `worktree-gc.sh` leaving no `safe` worktree
 
@@ -402,7 +408,7 @@ Six of the 20 `full` pull requests changed `package.json` only to add an npm scr
 | T30 | (built) Report `records` from `scripts/change-scope.sh` and run the docs gate plus the two ledger checks for it in `check.yml`, with tests                                 | [judgement]  | T11, T14, T18           |
 | T21 | (built) Conformance review of Phase 3, with the failure-class count of the 200 `check` runs before                                                                         | [judgement]  | T17, T18, T19, T20, T30 |
 
-### Phase 4 - The state of the machine
+### Phase 4 - The state of the machine (built)
 
 | #   | Task                                                                                                                                                                              | Nature       | Depends on |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
@@ -410,7 +416,7 @@ Six of the 20 `full` pull requests changed `package.json` only to add an npm scr
 | T23 | (built) Add `scripts/worktree-gc.sh` (`--list`, remove `safe`) with tests on a fixture repo                                                                                       | [judgement]  | -          |
 | T24 | (built) Add `scripts/state.mjs` and `npm run state` with tests for each block                                                                                                     | [judgement]  | T22, T23   |
 | T25 | (built) Add `docs/handoffs/TEMPLATE.md`; rewrite "Delegating to subagents" in `AGENTS.md` for streams (one coordinator, one model family), the worker budget and `worktree-gc.sh` | [judgement]  | T24        |
-| T27 | Conformance review of Phase 4, with `scripts/worktree-gc.sh` run on the machine and the class counts before and after in the PR body                                              | [judgement]  | T24, T25   |
+| T27 | (built) Conformance review of Phase 4, with `scripts/worktree-gc.sh` run on the machine and the class counts before and after in the PR body                                      | [judgement]  | T24, T25   |
 
 ### Phase 5 - Start to merge (built)
 
