@@ -22,7 +22,6 @@ import { noteHeritageBirth, noteHeritageDeath, resetHeritageSlot } from './scene
 import { resetMateSlot } from './scene-mate.js';
 import { noteProofDeath, noteProofKill } from './scene-proof.js';
 import { noteStyleAtDeath, noteStyleDeath, resetStyleSlot } from './style.js';
-import { resetScentSlot } from './scene-scent.js';
 import { noteStillnessDeath, resetStillnessSlot } from './scene-stillness.js';
 
 const DIED = EVENT.AGENT_DIED;
@@ -43,7 +42,6 @@ export function resetSceneSlot(scenes, slot) {
     resetPatchSlot(scenes.patch, slot);
     resetApproachSlot(scenes.approach, slot);
     resetStillnessSlot(scenes.stillness, slot);
-    resetScentSlot(scenes.scent, slot);
     resetKinematicsSlot(scenes.kinematics, slot);
     resetStyleSlot(scenes.style, slot);
     resetConditionSlot(scenes.condition, slot);

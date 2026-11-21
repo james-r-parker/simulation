@@ -1,4 +1,4 @@
-import { floraMetrics } from './scene-flora.js';
+import { detectorMetrics } from './observer-detectors.js';
 // The scene metrics (natural-selection.md, Detectors): instruments for the scenes the world should show, read from
 // `observer.scenes`. Each is `null` with a reason when nothing fed it.
 // They change no sim state and cost no per-tick allocation. Directions live in `js/evo/metric-registry/`.
@@ -41,9 +41,7 @@ import { refugeOutcomeMetrics } from './scene-refuge-outcome.js';
 import { terrainMetrics } from './scene-terrain.js';
 import { styleMetrics } from './style.js';
 import { herdMetrics } from './scene-herd-metrics.js';
-import { sprintMetrics } from './scene-sprint.js';
 import { stillnessMetrics } from './scene-stillness.js';
-import { scentMetrics } from './scene-scent.js';
 
 /**
  * @param {Record<string, any>} observer the observer, fed every tick
@@ -53,7 +51,6 @@ import { scentMetrics } from './scene-scent.js';
 export function sceneMetrics(observer, world) {
     const s = observer.scenes;
     return {
-        ...floraMetrics(s.flora),
         ...patchMetrics(s.patch),
         ...approachMetrics(s.approach),
         ...lapseMetrics(s.approach.lapse, s.approach.tally),
@@ -93,8 +90,7 @@ export function sceneMetrics(observer, world) {
         ...rewardMetrics(observer, world),
         ...biteMetrics(s.bite),
         ...biteLifeMetrics(s.biteLife, world),
-        ...sprintMetrics(s.sprint),
         ...stillnessMetrics(s.stillness),
-        ...scentMetrics(s.scent, s.approach.tally),
+        ...detectorMetrics(observer.plan, observer, world),
     };
 }

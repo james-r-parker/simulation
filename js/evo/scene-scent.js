@@ -128,3 +128,12 @@ export function scentMetrics(scene, tally) {
             scene.carcassMeals === 0 ? none(NO_CARCASS_MEALS) : ok(scene.approachedMeals / scene.carcassMeals),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const scentDetector = {
+    name: 'scent',
+    modules: ['js/evo/scene-scent.js'],
+    create: (config) => createScentScene(config),
+    onSlotFree: (scene, slot) => resetScentSlot(scene, slot),
+    metrics: (scene, world, observer) => scentMetrics(scene, observer.scenes.approach.tally),
+};

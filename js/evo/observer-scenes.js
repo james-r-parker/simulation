@@ -1,4 +1,3 @@
-import { createFloraScene, trackFlora } from './scene-flora.js';
 import { createHerdScene, trackHerd } from './scene-herd.js';
 // The scene detectors' state and per-tick feed (natural-selection.md, Detectors). `observeScenes` runs inside
 // `observe`, after the intent state is current for the tick and before `applyEvents` reassigns slots, so a dying
@@ -38,14 +37,14 @@ import { createHeritageScene } from './scene-heritage.js';
 import { createMateScene } from './scene-mate.js';
 import { createNicheScene } from './scene-niche.js';
 import { createProofScene, trackProof } from './scene-proof.js';
+import { DETECTORS, LEAN_DETECTORS } from './detectors.js';
+import { compileDetectors, createStates, dispatchEvents, tickDetectors } from './observer-detectors.js';
 import { noteEvents } from './observer-scenes-events.js';
 import { trackSlots } from './observer-scenes-slots.js';
 import { createStyle, tickStyle } from './style.js';
 import { createReachScene, sampleReach } from './scene-reach.js';
 import { createRefugeScene, sampleRefuge } from './scene-refuge.js';
 import { createRefugeOutcomeScene, sampleRefugeOutcome, tickRefugeBites } from './scene-refuge-outcome.js';
-import { createSprintScene, tickSprint } from './scene-sprint.js';
-import { createScentScene } from './scene-scent.js';
 import { createStillnessScene, noteStillnessChase, tickStillness } from './scene-stillness.js';
 import { createTerrainScene, sampleTerrain } from './scene-terrain.js';
 import { GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
@@ -91,7 +90,6 @@ export function createScenes(config, runTicks = 0, lean = false) {
     }
     const stillness = createStillnessScene(config);
     return {
-        flora: createFloraScene(),
         herd: createHerdScene(config),
         patch: createPatchScene(config),
         ...createChaseScenes(config, stillness),
@@ -125,10 +123,19 @@ export function createScenes(config, runTicks = 0, lean = false) {
         kin: createKinProximityScene(config),
         bite: createBiteScene(config),
         biteLife: createBiteLifeScene(),
-        sprint: createSprintScene(config),
-        scent: createScentScene(config),
         stillness,
     };
+}
+
+/**
+ * The observer's scene layer: the compiled detector list and every scene's state.
+ * @param {Readonly<Record<string, any>>} config the world's config
+ * @param {{runTicks?: number, lean?: boolean}} options the observer's options
+ * @returns {{plan: import('./observer-detectors.js').Plan, scenes: Record<string, any>}} `observer.plan` and `observer.scenes`
+ */
+export function createSceneLayer(config, { runTicks = 0, lean = false }) {
+    const plan = compileDetectors(lean ? LEAN_DETECTORS : DETECTORS);
+    return { plan, scenes: { ...createScenes(config, runTicks, lean), ...createStates(plan, config, runTicks) } };
 }
 
 /**
@@ -174,11 +181,12 @@ export function observeScenes(observer, world) {
     }
     noteEvents(scenes, observer, world);
     noteDiseaseEvents(scenes.disease, world);
+    dispatchEvents(observer.plan, observer, world);
     tickHunters(scenes.hunters, world.tick);
     tickRecruit(scenes.recruit);
-    trackFlora(scenes.flora, world);
     trackHerd(scenes.herd, world, observer);
     if (world.tick === 0) {
+        tickDetectors(observer.plan, observer, world);
         return;
     }
     tickBite(scenes.bite, world);
@@ -187,13 +195,13 @@ export function observeScenes(observer, world) {
     trackProof(scenes.proof, world);
     trackApproaches(scenes.approach, observer, world);
     tickStillness(scenes.stillness, observer, world);
-    tickSprint(scenes.sprint, observer, world);
     tickKinematics(scenes.kinematics, observer, world);
     trackCarcasses(scenes.carcass, observer, world, scenes.scent);
     tickStyle(observer, world);
     tickGuilds(scenes.guilds, world);
     tickRefugeBites(scenes.refugeOutcome, observer, world);
     trackSlots(scenes, observer, world);
+    tickDetectors(observer.plan, observer, world);
     if (world.tick % GROUP_SAMPLE_TICKS === 0) {
         sampleTerrain(scenes.terrain, observer, world);
         sampleRefuge(scenes.refuge, observer, world);
