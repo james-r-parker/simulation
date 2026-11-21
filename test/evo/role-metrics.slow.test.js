@@ -1,9 +1,12 @@
+// reads: test/evo/role-metrics-defender.slow.test.js, test/evo/role-metrics-scout.slow.test.js, test/evo/role-metrics-forager.slow.test.js, test/evo/role-metrics-reproducer.slow.test.js, test/evo/role-metrics-herd.slow.test.js
 // Gate 2 of fair-chase.md, "Before any training": each role metric against a planted scene (docs/designs/metric-noise.md,
 // Phase 6, T21). A scene is a staged arena where the role's job happens and one where it does not; the metric must read
 // the difference, equal to what the scene fixes. This file holds the predator's chase (role-budget.md Phase 1); the defender
-// is in role-metrics-defender.slow.test.js and the scout in role-metrics-scout.slow.test.js (Phases 2 and 3). The roles
-// that wait on the scenes of role-budget.md Phases 4 and 5 are listed in the last test.
+// is in role-metrics-defender.slow.test.js, the scout in role-metrics-scout.slow.test.js (Phases 2 and 3), the forager in
+// role-metrics-forager.slow.test.js, the reproducer in role-metrics-reproducer.slow.test.js (Phase 4) and the herd in
+// role-metrics-herd.slow.test.js (Phase 5). The last test checks every tagged metric is read by one of them.
 
+import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ROLE_METRICS } from '../../js/evo/metric-registry/roles.js';
 import { playChase, HUNTER } from './helpers/role-scene.js';
@@ -86,10 +89,16 @@ describe('the predator metrics against a planted chase', () => {
     });
 });
 
-describe('the roles that wait on the scenes of role-budget.md Phases 4 and 5', () => {
-    it('are the roles with a tagged metric and no planted scene yet', () => {
-        const built = ['predator', 'scout', 'defender'];
-        const waiting = Object.keys(ROLE_METRICS).filter((role) => !built.includes(role));
-        expect(waiting).toEqual(['forager', 'reproducer', 'herd']);
+describe('every role of the registry', () => {
+    it('has each of its tagged metrics read against a planted scene in a role-metrics test', () => {
+        const dir = new URL('.', import.meta.url);
+        const sources = readdirSync(dir)
+            .filter((file) => /^role-metrics.*\.slow\.test\.js$/.test(file))
+            .map((file) => readFileSync(new URL(file, dir), 'utf8'))
+            .join('\n');
+        const unread = Object.values(ROLE_METRICS)
+            .flat()
+            .filter((name) => !sources.includes(`'${name}'`));
+        expect(unread).toEqual([]);
     });
 });
