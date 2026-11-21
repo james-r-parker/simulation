@@ -287,6 +287,12 @@
         "js/sim",
         "js/worker"
     ],
+    "test/evo/role-budget-anchors.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
+    "test/evo/role-budget-kinematics.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
     "test/evo/scene-bite.test.js": [
         "js/evo/scene-bite.js"
     ],
