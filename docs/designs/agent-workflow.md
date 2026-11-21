@@ -1,6 +1,6 @@
 # Agent workflow
 
-**Status:** In progress - Phases 1 to 5 are built (the Phase 2 review T15 is the coordinator's); Phase 6 is built except T40 (it needs 30 pull requests of history).
+**Status:** In progress - Phases 1 to 5 are built and reviewed; Phase 6 is built except T40 (it needs 30 pull requests of history).
 **Validated:** 3c6f1225 (2026-11-21)
 **Priority:** 3 - Workflow lead. Tooling that changes no sim rule; every session and every subagent pays the Phase 1 cost on its first token and every chunk ships through Phase 5, so both are built before the next training chunk
 **Depends on:** [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
@@ -387,14 +387,14 @@ Six of the 20 `full` pull requests changed `package.json` only to add an npm scr
 
 ### Phase 2 - Experiment ledger (built)
 
-| #   | Task                                                                                                                                                                                                              | Nature       | Depends on |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T10 | (built) Add `readLedger` in `scripts/lib/ledger.mjs` (it reads `evals/ledger/` when the directory exists, else `evals/experiments.json`) and move every reader to it, with tests of both sources                  | [mechanical] | -          |
-| T11 | (built) Split `evals/experiments.json` into `evals/ledger/E<id>.json`, delete the old file and `readLedger`'s old-file branch, make the schema describe one record, and move `check-experiments` to the directory | [mechanical] | T10        |
-| T12 | (built) Add `kind`, `outcome`, `plan`, `task` and `stream` to the schema; backfill `kind` and `outcome` on every record from E151 and `plan` where the hypothesis names it; backfill E250                         | [judgement]  | T11        |
-| T13 | (built) Add `scripts/experiment.mjs` (`new`, `list`, `tally`, `renumber`) with tests                                                                                                                              | [judgement]  | T12        |
-| T14 | (built) Add the cited-id check and the `compare` needs `verdicts` check to `check-experiments`, with tests; update the `run-evolution-loop` skill and `docs/commands.md`                                          | [mechanical] | T12        |
-| T15 | Conformance review of Phase 2                                                                                                                                                                                     | [judgement]  | T13, T14   |
+| #   | Task                                                                                                                                                                                                                | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T10 | (built) Add `readLedger` in `scripts/lib/ledger.mjs` (it reads `evals/ledger/` when the directory exists, else `evals/experiments.json`) and move every reader to it, with tests of both sources                    | [mechanical] | -          |
+| T11 | (built) Split `evals/experiments.json` into `evals/ledger/E<id>.json`, delete the old file and `readLedger`'s old-file branch, make the schema describe one record, and move `check-experiments` to the directory   | [mechanical] | T10        |
+| T12 | (built) Add `kind`, `outcome`, `plan`, `task` and `stream` to the schema; backfill `kind` and `outcome` on every record from E151 and `plan` where the hypothesis names it; backfill E250                           | [judgement]  | T11        |
+| T13 | (built) Add `scripts/experiment.mjs` (`new`, `list`, `tally`, `renumber`) with tests                                                                                                                                | [judgement]  | T12        |
+| T14 | (built) Add the cited-id check and the `compare` needs `verdicts` check to `check-experiments`, with tests; update the `run-evolution-loop` skill and `docs/commands.md`                                            | [mechanical] | T12        |
+| T15 | (built, #584) Conformance review of Phase 2: no record lost in the split (191 ids, every field equal but the added `kind`, `outcome`, `plan`); E240 and E250 match their sources; `renumber` guards added on review | [judgement]  | T13, T14   |
 
 ### Phase 3 - Before the push (built)
 
