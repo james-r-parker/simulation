@@ -47,8 +47,9 @@ export { GATE, GATE_COUNT, LANE_ID, RESULT, compileRef, numberOf };
 
 /**
  * @typedef {object} Rule one effect's multiplication of one lane
- * @property {(world: any, slot: number) => number | void} read the effect's level reader
- * @property {boolean} share whether the reader leaves a share in `SHARE[0]` (a `share` or `stacks` effect)
+ * @property {((world: any, slot: number) => number | void) | null} read the effect's level reader, null for a stored effect
+ * @property {boolean} share whether the reader leaves a share in `SHARE[0]` (a `share` effect)
+ * @property {number} row the effect's stored row, whose stacks are its level; -1 for a computed effect
  * @property {number} effect the effect's index
  * @property {Compiled | null} per the `perStack` reference
  * @property {Compiled[] | null} levels the `levels` references
@@ -74,22 +75,19 @@ export function createEffects(list) {
     const thenOf = compileThen(list);
     const stored = list.filter((effect) => effect.level === 'stacks');
     const rowOf = list.map((effect) => (effect.level === 'stacks' ? stored.indexOf(effect) : -1));
-    const reads = list.map((effect, i) => {
-        const row = rowOf[i];
-        return row >= 0
-            ? (/** @type {any} */ world, /** @type {number} */ slot) => {
-                  SHARE[0] = world.effectStacks[row][slot];
-              }
-            : /** @type {(world: any, slot: number) => number | void} */ (effect.read);
-    });
+    // A stored effect has no reader: `level` reads its row, `world.effectStacks[row][slot]`, in place.
+    const reads = list.map(
+        (effect) => /** @type {(world: any, slot: number) => number | void} */ (effect.read ?? null),
+    );
     const shares = list.map((effect) => effect.level !== 'step');
-    const ctx = { reads, shares, configKeys: /** @type {string[]} */ ([]) };
+    const ctx = { reads, shares, rows: rowOf, configKeys: /** @type {string[]} */ ([]) };
     const rules = compileRules(list, ctx);
     const gates = compileGates(list);
     const drainRefs = list.map((effect) => effect.drains.map((drain) => compileRef(drain.perTick, ctx.configKeys)));
     const probes = list.map((_, effect) => ({
         read: reads[effect],
         share: shares[effect],
+        row: rowOf[effect],
         effect,
         per: null,
         levels: null,
@@ -171,11 +169,13 @@ export class EffectSystem {
             LEVEL[0] = this.memo[e];
             return;
         }
-        if (rule.share) {
-            rule.read(world, slot);
+        if (rule.row >= 0) {
+            LEVEL[0] = world.effectStacks[rule.row][slot];
+        } else if (rule.share) {
+            /** @type {Function} */ (rule.read)(world, slot);
             LEVEL[0] = SHARE[0];
         } else {
-            LEVEL[0] = /** @type {number} */ (rule.read(world, slot));
+            LEVEL[0] = /** @type {Function} */ (rule.read)(world, slot);
         }
         if (pinned) {
             this.memo[e] = LEVEL[0];
@@ -334,7 +334,8 @@ export class EffectSystem {
     /**
      * Gathers what a world being built holds for the effects: the stored rows, `effectStacks[row][slot]` and
      * `effectTicks[row][slot]` (`Float64Array` rows of `maxAgents`, declared by `effectSpecs` in `agent-arrays.js`, so hashed
-     * and zeroed with a freed slot like every per-slot array), and `effectConfig`, the config numbers the rules read.
+     * and zeroed with a freed slot like every per-slot array), `effectLive`, each row's count of slots holding a stack (kept by
+     * `effect-raise.js` and the fade pass), and `effectConfig`, the config numbers the rules read.
      * @param {any} world the world being built, its `agentRows` allocated
      * @returns {void}
      */
@@ -350,6 +351,7 @@ export class EffectSystem {
         };
         world.effectStacks = this.stored.map((effect) => rowOf(`effect.${effect.name}.stacks`));
         world.effectTicks = this.stored.map((effect) => rowOf(`effect.${effect.name}.ticks`));
+        world.effectLive = new Int32Array(this.stored.length);
         this.refreshConfig(world);
     }
 
@@ -367,26 +369,40 @@ export class EffectSystem {
      * The one pass over stored stacks, the last phase of a tick. A `ticks` effect counts its timer down and drops all its
      * stacks when it ends (and raises its `then` effect); an `every` effect drops one stack each time its timer runs out
      * and restarts the timer while stacks remain; a `held` effect is left to its applier. A follow-on is listed before its
-     * cause in the registry, so this pass has already read its row and its timer starts on the next tick.
+     * cause in the registry, so this pass has already read its row and its timer starts on the next tick. A row no slot holds
+     * a stack of (`effectLive` 0) is skipped, and the walk of any other row recounts it.
      * @param {any} world the world
      * @returns {void}
      */
     fade(world) {
+        const live = world.effectLive;
         for (let row = 0; row < this.stored.length; row++) {
-            const fades = /** @type {NonNullable<Effect['fades']>} */ (this.stored[row].fades);
-            if (fades.kind === 'held') {
-                continue;
-            }
-            const length = world.config[fades.key];
-            const stacks = world.effectStacks[row];
-            const ticks = world.effectTicks[row];
-            const then = this.storedThen[row];
-            for (let slot = 0; slot < stacks.length; slot++) {
-                if (stacks[slot] > 0 && fadeSlot(fades.kind, { stacks, ticks, length }, slot) && then >= 0) {
-                    raiseEffect(this, world, slot, { effect: then, source: 0 });
-                }
+            if (this.stored[row].fades?.kind !== 'held' && live[row] !== 0) {
+                live[row] = this.fadeRow(world, row);
             }
         }
+    }
+
+    /**
+     * Fades one `ticks` or `every` row over every slot (see `fade`).
+     * @param {any} world the world
+     * @param {number} row the stored row
+     * @returns {number} the slots that still hold a stack of it
+     */
+    fadeRow(world, row) {
+        const kind = /** @type {'ticks' | 'every'} */ (this.stored[row].fades?.kind);
+        const length = world.config[/** @type {NonNullable<Effect['fades']>} */ (this.stored[row].fades).key];
+        const stacks = world.effectStacks[row];
+        const ticks = world.effectTicks[row];
+        const then = this.storedThen[row];
+        let held = 0;
+        for (let slot = 0; slot < stacks.length; slot++) {
+            if (stacks[slot] > 0 && fadeSlot(kind, { stacks, ticks, length }, slot) && then >= 0) {
+                raiseEffect(this, world, slot, { effect: then, source: 0 });
+            }
+            held += stacks[slot] > 0 ? 1 : 0;
+        }
+        return held;
     }
 }
 

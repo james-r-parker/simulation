@@ -4,6 +4,8 @@
 import { describe, expect, it } from 'vitest';
 import { GATE, GATE_COUNT, LANE_ID, compileRef, createEffects, numberOf } from '../../js/sim/effects.js';
 import { applyEffectOn } from '../../js/sim/effect-appliers.js';
+import { dropStack, setStacks } from '../../js/sim/effect-raise.js';
+import { createRng, nextInt } from '../../js/sim/rng.js';
 import { freeAgent } from '../../js/sim/world.js';
 import { RALLY_I, HOARSE_I, SYSTEM, chill, fixtureWorld } from './helpers/effect-fixtures.js';
 import { smallWorld } from './helpers/small-world.js';
@@ -117,6 +119,50 @@ describe('stored stacks', () => {
             seen.push(world.effectStacks[1][1]);
         }
         expect(seen).toEqual([3, 3, 2, 2, 2, 1, 1, 1, 0, 0]);
+    });
+
+    it('keep a live count per row equal to a scan of the row, through raises, drops, recounts, fades and frees', () => {
+        const world = fixtureWorld();
+        for (let slot = 2; slot < 4; slot++) {
+            world.alive[slot] = 1;
+            world.population += 1;
+        }
+        const rng = createRng(7);
+        const scan = (/** @type {number} */ row) =>
+            world.effectStacks[row].filter((/** @type {number} */ s) => s > 0).length;
+        for (let op = 0; op < 400; op++) {
+            const slot = nextInt(rng, 4);
+            const kind = nextInt(rng, 5);
+            if (kind === 0) {
+                applyEffectOn(SYSTEM, world, slot, { effect: nextInt(rng, 2) === 0 ? RALLY_I : HOARSE_I, source: 0 });
+            } else if (kind === 1) {
+                dropStack(SYSTEM, world, slot, HOARSE_I);
+            } else if (kind === 2) {
+                setStacks(SYSTEM, world, slot, { effect: RALLY_I, count: nextInt(rng, 4), source: 0 });
+            } else if (kind === 3) {
+                SYSTEM.fade(world);
+            } else if (world.alive[slot] === 1) {
+                freeAgent(world, slot);
+                world.alive[slot] = 1;
+                world.population += 1;
+            }
+            for (let row = 0; row < world.effectStacks.length; row++) {
+                expect(world.effectLive[row], `row ${row} after op ${op}`).toBe(scan(row));
+            }
+        }
+    });
+
+    it('skip a row no slot holds a stack of, and fade it again once one is raised', () => {
+        const world = fixtureWorld();
+        expect(Array.from(world.effectLive)).toEqual([0, 0]);
+        SYSTEM.fade(world);
+        applyEffectOn(SYSTEM, world, 1, { effect: HOARSE_I, source: 0 });
+        expect(Array.from(world.effectLive)).toEqual([0, 1]);
+        for (let tick = 0; tick < 3; tick++) {
+            SYSTEM.fade(world);
+        }
+        expect(world.effectStacks[1][1]).toBe(0);
+        expect(Array.from(world.effectLive)).toEqual([0, 0]);
     });
 
     it('are zeroed with the rest of a freed slot', () => {
