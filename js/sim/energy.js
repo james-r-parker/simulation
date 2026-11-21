@@ -4,7 +4,7 @@ import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { causeList, causeMap } from './events.js';
 import { juvenileBurnOf } from './juvenile.js';
 import { specParams } from './spec-params.js';
-import { baseSizeOf } from './traits.js';
+import { baseSizeOf, visionRatioOf } from './traits.js';
 import { passiveMultiplier, stepTemperature } from './temperature.js';
 import { TIMER_CAP } from './world.js';
 
@@ -132,13 +132,15 @@ export function transferEnergy(world, giver, receiver, amount) {
 /**
  * @param {import('./world.js').World} world the world
  * @param {number} slot the agent slot
- * @returns {number} the extra passive loss of a long-sighted body: `passiveLoss x visionCost x (vision - 1)` above 1
+ * @returns {number} the extra passive loss of a long-sighted body: `passiveLoss x visionCost x (vision - 1)` above 1,
+ *   where `vision` is its ray length over its specialisation's base (`visionRatioOf`)
  */
 function visionLoss(world, slot) {
-    if (!(world.vision[slot] > 1)) {
+    const vision = visionRatioOf(world, slot);
+    if (!(vision > 1)) {
         return 0;
     }
-    return world.config.passiveLoss * world.config.visionCost * (world.vision[slot] - 1);
+    return world.config.passiveLoss * world.config.visionCost * (vision - 1);
 }
 
 /** The nominal standing, movement and sprint cost of the hunter `tickCost` last priced; a scratch for `applyCosts`. */

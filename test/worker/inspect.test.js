@@ -16,6 +16,7 @@ import {
 import { EFFECT_CAPACITY, EFFECT_WORDS } from '../../js/worker/effects.js';
 import { smallWorld } from '../sim/helpers/small-world.js';
 import { testPolicy } from '../sim/helpers/test-policy.js';
+import { setVisionRatio } from '../sim/helpers/body.js';
 
 describe('inspectLabels', () => {
     it('names the 10 ray channels, the 37 body inputs and the 11 outputs', () => {
@@ -103,9 +104,9 @@ describe('writeInspect', () => {
         world.lastLoss[slot] = 2;
         world.bittenTimer[slot] = 7;
         world.ateTimer[slot] = 8;
-        world.vision[slot] = 1.1;
-        world.baseSize[slot] = 6;
-        world.childShare[slot] = 0.5;
+        setVisionRatio(world, slot, 1.1);
+        world.lanes.baseSize[slot] = 6;
+        world.lanes.childEnergyShare[slot] = 0.5;
         world.dose[slot] = 0.36;
         world.infection[slot] = 3;
         world.immuneMask[slot] = 0b101;

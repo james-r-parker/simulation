@@ -3,7 +3,7 @@
 // checkpoint at or after burn-in and adds to run-long sums in `observer.body` (outside `observer.series`, which the
 // worker drains); the metrics read those sums at report time. Nothing here runs per tick or allocates.
 
-import { TRAIT_SPAN } from '../sim/traits.js';
+import { TRAIT_SPAN, visionRatioOf } from '../sim/traits.js';
 import { SEX } from '../sim/sex.js';
 import { none, ok } from './metrics-stats.js';
 
@@ -51,7 +51,8 @@ function variation(sum, sumSq, n) {
  * @returns {void}
  */
 export function sampleBody(pools, world) {
-    const { config, baseSize, vision, childShare, sex, alive } = world;
+    const { config, sex, alive } = world;
+    const { baseSize, childEnergyShare: childShare } = world.lanes;
     let n = 0;
     let females = 0;
     let s0 = 0;
@@ -66,11 +67,12 @@ export function sampleBody(pools, world) {
             females += sex[slot] === SEX.FEMALE ? 1 : 0;
             s0 += baseSize[slot];
             q0 += baseSize[slot] * baseSize[slot];
-            s1 += vision[slot];
-            q1 += vision[slot] * vision[slot];
+            const vision = visionRatioOf(world, slot);
+            s1 += vision;
+            q1 += vision * vision;
             s2 += childShare[slot];
             q2 += childShare[slot] * childShare[slot];
-            pools.cells[binOf(baseSize[slot] / config.baseSize) * GRID_BINS + binOf(vision[slot])] = 1;
+            pools.cells[binOf(baseSize[slot] / config.baseSize) * GRID_BINS + binOf(vision)] = 1;
         }
     }
     if (n === 0) {

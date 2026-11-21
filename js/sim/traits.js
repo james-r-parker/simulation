@@ -1,7 +1,7 @@
 // Per-slot values derived from an agent's genome row: leak rates, body traits and the plastic `fastOut` block.
 // `applyGenes` runs after every write of a weight row, so nothing derived is ever stale.
 
-import { TRAIT_INDEX } from './brain-layout.js';
+import { LANES, LANE_COUNT } from './body-lanes.js';
 import { applyTraits } from './body-traits.js';
 import { detSigmoid, detTanh } from './det-math.js';
 import { resetFastOut } from './hebbian.js';
@@ -33,22 +33,35 @@ export function visionOf(world, slot) {
     return world.lanes.visionRange[slot];
 }
 
+/** The `visionRange` lane's place in `LANES`, for its base in `world.laneBases`. */
+const VISION_LANE = LANES.findIndex((lane) => lane.name === 'visionRange');
+
+/**
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the alive slot
+ * @returns {number} the slot's ray length over its specialisation's base ray length: 1 for a body whose traits leave
+ *   its sight at the base, above 1 for one that sees further
+ */
+export function visionRatioOf(world, slot) {
+    return world.lanes.visionRange[slot] / world.laneBases[world.spec[slot] * LANE_COUNT + VISION_LANE];
+}
+
 /**
  * @param {Record<string, any>} world the world
  * @param {number} slot the slot
- * @returns {number} the slot's base size: `baseSize` times its size trait
+ * @returns {number} the slot's base size: its `baseSize` lane (`baseSize` times its size trait)
  */
 export function baseSizeOf(world, slot) {
-    return world.baseSize[slot];
+    return world.lanes.baseSize[slot];
 }
 
 /**
  * @param {Record<string, any>} world the world
  * @param {number} slot the mother's slot
- * @returns {number} the share of its energy the mother gives a mating child
+ * @returns {number} the share of its energy the mother gives a mating child: its `childEnergyShare` lane
  */
 export function childShareOf(world, slot) {
-    return world.childShare[slot];
+    return world.lanes.childEnergyShare[slot];
 }
 
 /** Leak gene at or below this value knocks a hidden unit out for life (state stays 0). */
@@ -76,17 +89,14 @@ export function leakRateOf(gene, leakMin) {
 }
 
 /**
- * Derives the slot's per-slot values from its weight row.
+ * Derives the slot's per-slot values from its weight row: its lanes (bases, then every trait of the registry, the size,
+ * vision and child-share traits among them), its fast weights, its reward state and its leak rates.
  * @param {Record<string, any>} world the world
  * @param {number} slot the slot whose `weights` row was just written
  * @returns {void}
  */
 export function applyGenes(world, slot) {
     const { config, layout, weights } = world;
-    const genes = slot * layout.weightCount + layout.traitStart;
-    world.vision[slot] = traitValue(weights[genes + TRAIT_INDEX.VISION]);
-    world.baseSize[slot] = config.baseSize * traitValue(weights[genes + TRAIT_INDEX.SIZE]);
-    world.childShare[slot] = config.childEnergyShare * traitValue(weights[genes + TRAIT_INDEX.CHILD_SHARE]);
     writeLaneBases(world, slot);
     applyTraits(world, slot);
     if (config.hebbianRate > 0) {

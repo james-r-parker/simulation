@@ -94,7 +94,7 @@ function setParents(world, slot, parents) {
  */
 function setBaseSize(world, slot, baseSize) {
     if (baseSize !== undefined) {
-        world.baseSize[slot] = baseSize;
+        world.lanes.baseSize[slot] = baseSize;
         updateSize(world, slot);
     }
 }
