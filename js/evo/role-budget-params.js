@@ -242,6 +242,7 @@ function lifeNumbers(config, lane) {
 }
 
 /**
+ * @param {Readonly<Record<string, any>>} config the validated config
  * @param {Record<string, number>} lane the spec's lane bases (a scout's call radius and alarm cost are its body entries, already in them)
  * @returns {Pick<RoleParams, 'call' | 'smoke' | 'repel' | 'heat' | 'repro' | 'feed'>} the call numbers of the lanes, the smoke, repel, heat, life and feeding numbers
  */
