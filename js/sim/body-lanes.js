@@ -36,6 +36,8 @@ const MOVED = new Set([
     'sprintCost',
     'sprintDrain',
     'sprintRefill',
+    'sprintRestThrust',
+    'sprintFloor',
     'fatSlowShare',
     'visionRange',
     'maxEnergy',
@@ -117,9 +119,8 @@ const MOVED = new Set([
     'huntCallCost',
     'alarmThreshold',
     'huntCallThreshold',
+    // smokeRadius and smokeTicks wait on a per-slot cloud radius in the sense kernel (`D_SMOKE_RADIUS`) and `writeClouds`, T42.
     'smokeCost',
-    'smokeRadius',
-    'smokeTicks',
     'smokeCooldown',
     'smokeThreshold',
     'pheromoneDeposit',
@@ -367,4 +368,24 @@ export function laneTable(config) {
         });
     });
     return table;
+}
+
+/** The costs a hunter pays, which a body that cannot hunt keeps at 0 (`SPECIALISATION_DEFAULTS`). */
+const HUNTER_COSTS = ['huntUpkeep', 'predatorRestTicks', 'strikeMissCost'];
+
+/**
+ * A spec that can hunt with a hunter cost at 0 is a free hunter: usually a non-hunter's default `body` left in place by a
+ * config that only set `canHunt: true`.
+ * @param {unknown} body the spec's `body`
+ * @param {{ canHunt?: unknown }} entry the spec
+ * @returns {string | null} what was expected of `body`, or null when it is valid
+ */
+export function specBodyProblem(body, entry) {
+    const problem = bodyProblem(body);
+    const costs = /** @type {Record<string, unknown>} */ (body);
+    const free =
+        problem === null && entry.canHunt === true ? HUNTER_COSTS.find((name) => costs[name] === 0) : undefined;
+    return free === undefined
+        ? problem
+        : `${free} above 0 for a spec with canHunt true (a free hunter): set ${HUNTER_COSTS.join(', ')} in its body`;
 }

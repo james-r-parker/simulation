@@ -64,6 +64,8 @@ describe('LANES', () => {
             'sprintCost',
             'sprintDrain',
             'sprintRefill',
+            'sprintRestThrust',
+            'sprintFloor',
             'handlingThrust',
             'grazeThrust',
             'fatSlowShare',
@@ -151,8 +153,6 @@ describe('LANES', () => {
             'alarmThreshold',
             'huntCallThreshold',
             'smokeCost',
-            'smokeRadius',
-            'smokeTicks',
             'smokeCooldown',
             'smokeThreshold',
             'pheromoneDeposit',
@@ -237,9 +237,17 @@ describe('bodyProblem', () => {
 
     it('refuses an unknown name, an unmoved lane and a threshold named directly', () => {
         expect(bodyProblem({ speed: 1 })).toMatch(/speed is neither/);
-        expect(bodyProblem({ sprintFloor: 1.2 })).toMatch(/no override of sprintFloor yet/);
+        expect(bodyProblem({ hebbianRate: 1.2 })).toMatch(/no override of hebbianRate yet/);
         expect(bodyProblem({ temperatureColdStress: 1 }, moved)).toMatch(/shift the thresholds with heatBand/);
         expect(bodyProblem({ [HEAT_BAND]: 1 }, unmoved)).toMatch(/no heatBand override yet/);
+    });
+
+    it('refuses a smokeRadius and a smokeTicks override: the kernel and the cloud writer read the global keys', () => {
+        expect(bodyProblem({ smokeRadius: 1.2 })).toMatch(/no override of smokeRadius yet/);
+        expect(bodyProblem({ smokeTicks: 1.2 })).toMatch(/no override of smokeTicks yet/);
+        expect(() => createConfig({ specialisations: { scout: { body: { smokeRadius: 2 } } } })).toThrow(
+            /no override of smokeRadius yet/,
+        );
     });
 
     it('accepts a moved lane above 0 and heatBand once the thresholds have moved, and refuses the rest', () => {
@@ -255,8 +263,8 @@ describe('bodyProblem', () => {
     });
 
     it('is the rule createConfig applies to a spec body', () => {
-        expect(() => createConfig({ specialisations: { scout: { body: { sprintFloor: 2 } } } })).toThrow(
-            /config\.specialisations\.scout\.body is .*no override of sprintFloor yet/,
+        expect(() => createConfig({ specialisations: { scout: { body: { hebbianRate: 2 } } } })).toThrow(
+            /config\.specialisations\.scout\.body is .*no override of hebbianRate yet/,
         );
         expect(
             createConfig({ specialisations: { scout: { body: { maxThrust: 2 } } } }).specialisations.scout.body,
@@ -266,6 +274,21 @@ describe('bodyProblem', () => {
             predatorRestTicks: 0,
             strikeMissCost: 0,
         }); // a body that cannot hunt keeps its hunter-only costs at 0 (the default)
+    });
+
+    it('refuses canHunt true while a hunter cost of the body is 0, unless the config sets the costs', () => {
+        expect(() => createConfig({ specialisations: { forager: { canHunt: true } } })).toThrow(
+            /specialisations\.forager\.body is .*huntUpkeep above 0.*free hunter/,
+        );
+        expect(() =>
+            createConfig({
+                specialisations: { forager: { canHunt: true, body: { huntUpkeep: 1, predatorRestTicks: 1 } } },
+            }),
+        ).toThrow(/strikeMissCost above 0/);
+        const costs = { huntUpkeep: 1, predatorRestTicks: 1, strikeMissCost: 1 };
+        const forager = createConfig({ specialisations: { forager: { canHunt: true, body: costs } } }).specialisations;
+        expect(forager.forager.body).toEqual(costs);
+        expect(() => createConfig({ specialisations: { predator: { canHunt: false } } })).not.toThrow();
     });
 
     it('accepts a spec body override of baseSize and childEnergyShare, which are read only through their lanes', () => {

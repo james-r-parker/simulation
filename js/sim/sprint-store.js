@@ -16,20 +16,15 @@ const SPRINT_BOOST_LANE = LANE_ID.sprintBoost;
 /**
  * @typedef {object} SprintStore
  * @property {Float64Array} level each slot's store, 0 to 1
- * @property {number} restThrust `sprintRestThrust`
- * @property {number} floor `sprintFloor`
  */
 
 /**
- * @param {Readonly<Record<string, any>>} config the validated config
  * @param {number} slots the agent slots (`maxAgents`)
  * @returns {SprintStore} a store with every slot full
  */
-export function createSprintStore(config, slots) {
+export function createSprintStore(slots) {
     return {
         level: new Float64Array(slots).fill(1),
-        restThrust: config.sprintRestThrust,
-        floor: config.sprintFloor,
     };
 }
 
@@ -44,7 +39,7 @@ export function allocSprintState(world) {
     const n = world.config.maxAgents;
     world.sprintFactor = new Float64Array(n).fill(1);
     if (world.config.sprintStoreEnabled) {
-        world.sprintStore = createSprintStore(world.config, n);
+        world.sprintStore = createSprintStore(n);
         world.agentRows.push({ array: world.sprintStore.level, stride: 1, name: 'sprintLevel' });
     }
 }
@@ -112,8 +107,8 @@ export function sprintEffort(world, slot) {
  */
 export function stepSprintStore(store, world) {
     const { alive, outputs, sprintFactor } = world;
-    const { sprintDrain, sprintRefill } = world.lanes;
-    const { level, restThrust } = store;
+    const { sprintDrain, sprintRefill, sprintRestThrust, sprintFloor } = world.lanes;
+    const { level } = store;
     for (let i = 0; i < alive.length; i++) {
         if (alive[i] !== 1) {
             continue;
@@ -127,10 +122,10 @@ export function stepSprintStore(store, world) {
             const before = level[i];
             const drained = before - sprintDrain[i] * effort; // a comparison, not Math.max: a builtin call boxes its doubles when it is not inlined
             level[i] = drained > 0 ? drained : 0;
-            if (before >= store.floor && level[i] < store.floor) {
+            if (before >= sprintFloor[i] && level[i] < sprintFloor[i]) {
                 noteSpent(world, i);
             }
-        } else if (outputs[o + OUTPUT_INDEX.THRUST] < restThrust) {
+        } else if (outputs[o + OUTPUT_INDEX.THRUST] < sprintRestThrust[i]) {
             const refilled = level[i] + sprintRefill[i];
             level[i] = refilled < 1 ? refilled : 1;
         }

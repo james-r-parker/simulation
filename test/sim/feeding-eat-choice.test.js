@@ -135,6 +135,18 @@ describe('feed: strikeMissCost (eat-choice G4)', () => {
         expect(strike({ cost: 0 }).w.energy[0]).toBe(500);
     });
 
+    it('makes no removal for a slot whose cost lane is 0: its size is not recomputed', () => {
+        const w = smallWorld({ strikeMissCost: 5, biteArc: Math.PI / 4, biteCost: 0, recoilEnergy: 0 });
+        const free = eater(w, { spec: PREDATOR, bite: 1, energy: 500 });
+        const paying = eater(w, { spec: PREDATOR, bite: 1, energy: 500 });
+        w.lanes.strikeMissCost[free] = 0;
+        w.size[free] = 123;
+        w.size[paying] = 123;
+        run(w);
+        expect(w.size[free]).toBe(123);
+        expect(w.size[paying]).not.toBe(123);
+    });
+
     it('charges a biting hunter with nothing in its jaws, as a bite cost', () => {
         const { w, hunter } = strike({ cost: 5 });
         expect(w.energy[hunter]).toBe(495);

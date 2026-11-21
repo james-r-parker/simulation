@@ -46,7 +46,11 @@ describe('eval.predator_births', () => {
     });
 
     it('counts every specialisation that can hunt', () => {
-        const r = observed({ specialisations: { scout: { canHunt: true } } });
+        const r = observed({
+            specialisations: {
+                scout: { canHunt: true, body: { huntUpkeep: 1, predatorRestTicks: 1, strikeMissCost: 1 } },
+            },
+        });
         tickWith(r, 10001, [
             [SCOUT, BORN_CAUSE.SPLIT, 10001],
             [PREDATOR, BORN_CAUSE.MATE, 10001],

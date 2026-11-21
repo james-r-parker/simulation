@@ -228,7 +228,8 @@ export function spentLevel(world, slot) {
         return;
     }
     const level = store.level[slot];
-    SHARE[0] = level >= store.floor ? 0 : 1 - level / store.floor;
+    const floor = world.lanes.sprintFloor[slot];
+    SHARE[0] = level >= floor ? 0 : 1 - level / floor;
 }
 
 /** The stored row of `alert`, found once: the registry imports this module, so it cannot read the registry's table here. */
