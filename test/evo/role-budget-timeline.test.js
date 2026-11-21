@@ -74,10 +74,18 @@ describe('the straight chase of the anchors table', () => {
             }
             return lo;
         };
-        // a gap is 2.4 px a tick at the end of the run, so 2 ticks is about 6 px
-        expect(Math.abs(largest(courser, {}) - 796)).toBeLessThan(6);
-        expect(Math.abs(largest(courser, { effort: 0.5 }) - 540)).toBeLessThan(6);
-        expect(Math.abs(largest(defaults, {}) - 647)).toBeLessThan(6);
+        // The anchors held the size sum at 74; the timeline lets the bodies shrink as they burn, so contact needs a smaller gap:
+        // always under the anchor, by 3.2, 2.6 and 5.4 px. The plan's tolerance is 6 px (about 2 ticks at 2.4 px a tick).
+        const reads = [
+            [largest(courser, {}), 796, 792.8],
+            [largest(courser, { effort: 0.5 }), 540, 537.4],
+            [largest(defaults, {}), 647, 641.6],
+        ];
+        for (const [got, anchor, recorded] of reads) {
+            expect(anchor - got).toBeGreaterThan(0);
+            expect(anchor - got).toBeLessThan(6);
+            expect(Math.abs(got - recorded)).toBeLessThan(0.1);
+        }
     });
 
     it('never catches a sprinting forager at effort 0.5 at the defaults (11.2 against 12)', () => {
