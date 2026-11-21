@@ -87,11 +87,11 @@ function travelOf(world, from) {
 /**
  * @param {Record<string, any>} world the world
  * @param {number} slot a body
- * @returns {boolean} whether its sprint store is above `sprintFloor`; true with the store off
+ * @returns {boolean} whether its sprint store is above its `sprintFloor` lane; true with the store off
  */
 export function storeAboveFloor(world, slot) {
     const store = world.sprintStore;
-    return store === undefined || store.level[slot] > store.floor;
+    return store === undefined || store.level[slot] > world.lanes.sprintFloor[slot];
 }
 
 /**

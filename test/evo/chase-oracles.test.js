@@ -136,7 +136,7 @@ describe('the oracles with the sprint store on', () => {
     it('sprint while their stores are above the floor, and stop under it', () => {
         const w = stored({ x: 4200, y: 4000 });
         expect(sprinting(w)).toEqual([1, 1]);
-        const { floor } = w.sprintStore;
+        const floor = w.lanes.sprintFloor[0];
         w.sprintStore.level[0] = floor;
         w.sprintStore.level[1] = floor / 2;
         expect([storeAboveFloor(w, 0), storeAboveFloor(w, 1)]).toEqual([false, false]);
