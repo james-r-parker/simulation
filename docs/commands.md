@@ -34,7 +34,7 @@ Every command an agent runs on Blob Evolution, grouped by job. `rg -n '^### ' do
 
 ### What CI runs
 
-`scope` (`scripts/change-scope.sh`: `docs`, `release` or `full`, and `scripts/affected.mjs`: the tests the change reaches and the `test` matrix, below; the Release Please pull request, a diff of only `CHANGELOG.md`, `package.json`, `package-lock.json` and `.release-please-manifest.json` on a `release-please--*` branch, runs `scope` alone and `check` still reports success), `static` (`scripts/check.sh --ci --skip=test`: the static gates, build and eval-smoke, and on a pull request the open-miss check), `test` (the matrix the `scope` job writes: shards, heavy and statistical files), `coverage` (the whole suite only: `vitest run --merge-reports --coverage`, then `node scripts/quality-ratchet.mjs --check`), `ratchet-related` (a pull request on the reached tests: `scripts/ratchet-related.mjs` on its changed files), `browser-smoke`, `perf`, `red-main` (a red push to main opens the issue), and the required `check`, which needs `scope`, `static`, `test`, `coverage` and `ratchet-related`; a skipped job passes. `scripts/check.sh --ci` alone is the static half plus the fast tests
+`scope` (`scripts/change-scope.sh`: `docs`, `records`, `release` or `full`, and `scripts/affected.mjs`: the tests the change reaches and the `test` matrix, below; the Release Please pull request, a diff of only `CHANGELOG.md`, `package.json`, `package-lock.json` and `.release-please-manifest.json` on a `release-please--*` branch, runs `scope` alone and `check` still reports success), `static` (`scripts/check.sh --ci --skip=test`: the static gates, build and eval-smoke, and on a pull request the open-miss check), `test` (the matrix the `scope` job writes: shards, heavy and statistical files), `coverage` (the whole suite only: `vitest run --merge-reports --coverage`, then `node scripts/quality-ratchet.mjs --check`), `ratchet-related` (a pull request on the reached tests: `scripts/ratchet-related.mjs` on its changed files), `browser-smoke`, `perf`, `red-main` (a red push to main opens the issue), and the required `check`, which needs `scope`, `static`, `test`, `coverage` and `ratchet-related`; a skipped job passes. `scripts/check.sh --ci` alone is the static half plus the fast tests
 
 ### Affected tests
 
@@ -46,7 +46,7 @@ A pull request runs the tests its change can reach; the push to `main` runs the 
 
 ### Docs-only change
 
-`scripts/check.sh --fix --docs` (conventions, designs-index, format, design-doc tests; what CI runs when `scripts/change-scope.sh` says `docs`)
+`scripts/check.sh --fix --docs` (conventions, designs-index, format, design-doc tests; what CI runs when `scripts/change-scope.sh` says `docs`, and for `records` (only `evals/ledger/`, `evals/decisions/` and docs) with `scripts/check-experiments.mjs` and `scripts/check-metric-names.mjs` after it)
 
 ### Only failures and the summary
 
