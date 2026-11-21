@@ -13,17 +13,17 @@ import { detCos, detSin } from './det-math.js';
  * @throws {Error} when the pool already holds `maxClouds` clouds
  */
 export function releaseSmoke(world, slot) {
-    const { maxClouds, smokeRadius, smokeTicks, worldWidth, worldHeight } = world.config;
+    const { maxClouds, worldWidth, worldHeight } = world.config;
     const index = world.cloudCount;
     if (index >= maxClouds) {
         throw new Error(`releaseSmoke: the cloud pool is full (maxClouds ${maxClouds}) at tick ${world.tick}`);
     }
-    const back = world.size[slot] + smokeRadius;
+    const back = world.size[slot] + world.lanes.smokeRadius[slot];
     const x = world.x[slot] - back * detCos(world.angle[slot]);
     const y = world.y[slot] - back * detSin(world.angle[slot]);
     world.cloudX[index] = Math.min(worldWidth, Math.max(0, x));
     world.cloudY[index] = Math.min(worldHeight, Math.max(0, y));
-    world.cloudTtl[index] = smokeTicks;
+    world.cloudTtl[index] = world.lanes.smokeTicks[slot];
     world.cloudCount = index + 1;
     return index;
 }

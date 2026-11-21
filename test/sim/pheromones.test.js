@@ -2,13 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { depositPheromone, samplePheromone, updatePheromones } from '../../js/sim/pheromones.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { smallWorld } from './helpers/small-world.js';
+import { writeLaneBases } from '../../js/sim/lane-state.js';
 
 const CELL = 100;
 const COLS = 10;
 
 /** @returns {ReturnType<typeof smallWorld>} */
 function build() {
-    return smallWorld({ pheromoneCellSize: CELL, pheromoneDecay: 0.1, pheromoneDiffusion: 0.4 });
+    const w = smallWorld({ pheromoneCellSize: CELL, pheromoneDecay: 0.1, pheromoneDiffusion: 0.4 });
+    writeLaneBases(w, 0); // the depositing slot 0 carries its lanes, as a birth writes them
+    return w;
 }
 
 /**
@@ -19,10 +22,24 @@ function total(grid) {
     return grid.reduce((a, b) => a + b, 0);
 }
 
+/**
+ * Deposits from slot 0 standing at (x, y): the deposit reads the agent's position and its lane.
+ * @param {ReturnType<typeof smallWorld>} w the world
+ * @param {Float32Array} grid the grid
+ * @param {number} x world x
+ * @param {number} y world y
+ * @returns {void}
+ */
+function depositAt(w, grid, x, y) {
+    w.x[0] = x;
+    w.y[0] = y;
+    depositPheromone(w, grid, 0);
+}
+
 describe('depositPheromone', () => {
     it('adds the deposit to the cell under the point', () => {
         const w = build();
-        depositPheromone(w, w.danger, 250, 340);
+        depositAt(w, w.danger, 250, 340);
         expect(w.danger[3 * COLS + 2]).toBe(1);
         expect(total(w.attack)).toBe(0);
     });
@@ -30,22 +47,22 @@ describe('depositPheromone', () => {
     it('caps at pheromoneMax', () => {
         const w = build();
         for (let i = 0; i < 20; i++) {
-            depositPheromone(w, w.attack, 5, 5);
+            depositAt(w, w.attack, 5, 5);
         }
         expect(w.attack[0]).toBe(5);
     });
 
     it('deposits on the hunt grid like the others', () => {
         const w = build();
-        depositPheromone(w, w.hunt, 250, 340);
+        depositAt(w, w.hunt, 250, 340);
         expect(w.hunt[3 * COLS + 2]).toBe(1);
         expect(total(w.danger) + total(w.attack)).toBe(0);
     });
 
     it('clamps points outside the world to the edge cells', () => {
         const w = build();
-        depositPheromone(w, w.danger, -50, -50);
-        depositPheromone(w, w.danger, 1000, 1500);
+        depositAt(w, w.danger, -50, -50);
+        depositAt(w, w.danger, 1000, 1500);
         expect(w.danger[0]).toBe(1);
         expect(w.danger[w.danger.length - COLS + COLS - 1]).toBe(1);
     });

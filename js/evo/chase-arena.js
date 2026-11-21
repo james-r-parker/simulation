@@ -28,7 +28,6 @@ const EMPTY = Object.freeze({
     initialAgents: 0,
     minAgents: 0,
     initialFood: 0,
-    foodSpawnRate: 0,
     fertileZoneMax: 0,
     refugeCount: 0,
     herdCount: 0,

@@ -127,8 +127,8 @@ describe('validateConfig error text', () => {
     });
 
     it('describes an unbounded number rule without an upper bound', () => {
-        expect(message(() => createConfig({ ...SIMPLE_WORLD, foodSpawnRate: -1 }))).toBe(
-            'config.foodSpawnRate is -1; expected a finite number >= 0',
+        expect(message(() => createConfig({ ...SIMPLE_WORLD, scoutAlarmCostMultiplier: -1 }))).toBe(
+            'config.scoutAlarmCostMultiplier is -1; expected a finite number >= 0',
         );
     });
 

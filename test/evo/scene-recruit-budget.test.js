@@ -13,9 +13,15 @@ import { budgetMetrics, createBudgetScene, noteBudgetChase, sampleBudget } from 
  */
 function worldOf(agents, config = {}) {
     const n = agents.length;
+    const cfg = { maturityTicks: 100, territoryRadius: 50, territoryMax: 1, ...config };
     const world = {
         tick: BURN_IN_TICKS + 1000,
-        config: { maturityTicks: 100, territoryRadius: 50, territoryMax: 1, ...config },
+        config: cfg,
+        lanes: {
+            maturityTicks: new Float64Array(n).fill(cfg.maturityTicks),
+            territoryRadius: new Float64Array(n).fill(cfg.territoryRadius),
+            territoryMax: new Float64Array(n).fill(cfg.territoryMax),
+        },
         alive: new Uint8Array(n).fill(1),
         spec: new Uint8Array(n),
         huntBySpec: new Float64Array([0, 1]),

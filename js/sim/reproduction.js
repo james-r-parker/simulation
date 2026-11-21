@@ -15,7 +15,6 @@ import { creditMating, meritPeek } from './merit.js';
 import { SEX, drawSex } from './sex.js';
 import { nextFloat } from './rng.js';
 import { GATE, gateOpen } from './effects.js';
-import { specParams } from './spec-params.js';
 import { applyGenes, childShareOf } from './traits.js';
 import { slotOfGenome } from './merit-state.js';
 import { noteProofBirth, splitBraked } from './proof.js';
@@ -42,10 +41,7 @@ const PI = 3.141592653589793;
  * @returns {number} the cooldown in ticks, rounded down
  */
 function cooldownFor(world, slot, multiplier) {
-    const { reproductionCooldown } = world.config;
-    return Math.floor(
-        reproductionCooldown * specParams(world.config, world.spec[slot]).cooldownMultiplier * multiplier,
-    );
+    return Math.floor(world.lanes.reproductionCooldown[slot] * multiplier);
 }
 
 /**
@@ -57,10 +53,10 @@ function cooldownFor(world, slot, multiplier) {
  * @returns {void}
  */
 function startMating(world, policy, mother, father) {
-    const { mateCost, pregnancyTicks } = world.config;
+    const { mateCost, pregnancyTicks } = world.lanes;
     const count = world.layout.weightCount;
-    removeEnergy(world, mother, mateCost, LOSS_CAUSE.COST);
-    removeEnergy(world, father, mateCost, LOSS_CAUSE.COST);
+    removeEnergy(world, mother, mateCost[mother], LOSS_CAUSE.COST);
+    removeEnergy(world, father, mateCost[father], LOSS_CAUSE.COST);
     world.cooldown[mother] = cooldownFor(world, mother, 1);
     world.cooldown[father] = cooldownFor(world, father, 1);
     const { weights, fatherWeights } = world;
@@ -71,7 +67,7 @@ function startMating(world, policy, mother, father) {
     }
     world.fatherId[mother] = world.genomeId[father];
     world.fatherLineage[mother] = world.lineageId[father];
-    world.pregnancy[mother] = pregnancyTicks;
+    world.pregnancy[mother] = pregnancyTicks[mother];
     creditMating(world, mother);
     creditMating(world, father);
     if (policy.onMate) {
@@ -178,8 +174,11 @@ export function giftOf(world, mother) {
  *   `birthReserve` (0 is off)
  */
 function giftBlocked(world, { mother, gift, isMate }) {
-    const { childEnergyMin, birthReserve } = world.config;
-    return (isMate && gift < childEnergyMin) || (birthReserve > 0 && world.energy[mother] - gift < birthReserve);
+    const { childEnergyMin, birthReserve } = world.lanes;
+    return (
+        (isMate && gift < childEnergyMin[mother]) ||
+        (birthReserve[mother] > 0 && world.energy[mother] - gift < birthReserve[mother])
+    );
 }
 
 /**
@@ -307,7 +306,7 @@ export function advancePregnancies(world, policy) {
  * @returns {boolean} true when the gate lets the agent split
  */
 export function splitGateOpen(world, slot) {
-    const { splitDeliberateMin } = world.config;
+    const splitDeliberateMin = world.lanes.splitDeliberateMin[slot];
     return (
         (splitDeliberateMin === 0 || world.deliberateIntake[slot] >= splitDeliberateMin) &&
         splitKeysAllow(world, slot) &&
@@ -323,7 +322,7 @@ export function splitGateOpen(world, slot) {
  */
 export function readyBeforeGate(world, slot) {
     return (
-        world.energy[slot] > world.splitMinBySpec[world.spec[slot]] &&
+        world.energy[slot] > world.lanes.splitMinEnergy[slot] &&
         gateOpen(world, slot, GATE.SPLIT) &&
         !birthBudgetSpent(world, slot) &&
         territoryAllows(world, slot)
@@ -348,7 +347,7 @@ function readyToSplit(world, slot) {
  */
 function splitRanked(world, policy) {
     const { alive, capSlots } = world;
-    const { splitCooldownMultiplier, maxAgents, splitCapMargin } = world.config;
+    const { maxAgents, splitCapMargin } = world.config;
     const free = maxAgents - splitCapMargin - world.population;
     let ready = 0;
     for (let slot = 0; free > 0 && slot < alive.length; slot++) {
@@ -364,7 +363,7 @@ function splitRanked(world, policy) {
     for (let i = 0; i < count; i++) {
         const slot = ranked ? pickBest(world, ready, i) : capSlots[i];
         giveBirth(world, policy, slot, BORN_CAUSE.SPLIT);
-        world.cooldown[slot] = cooldownFor(world, slot, splitCooldownMultiplier);
+        world.cooldown[slot] = cooldownFor(world, slot, world.lanes.splitCooldownMultiplier[slot]);
     }
 }
 
@@ -381,10 +380,9 @@ export function splitAll(world, policy) {
         return;
     }
     const { alive } = world;
-    const { splitCooldownMultiplier } = world.config;
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1 && readyToSplit(world, slot) && giveBirth(world, policy, slot, BORN_CAUSE.SPLIT) >= 0) {
-            world.cooldown[slot] = cooldownFor(world, slot, splitCooldownMultiplier);
+            world.cooldown[slot] = cooldownFor(world, slot, world.lanes.splitCooldownMultiplier[slot]);
         }
     }
 }

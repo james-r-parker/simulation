@@ -62,7 +62,7 @@ function trackEscape(world, slot) {
  */
 export function meritPhase(world) {
     const { alive } = world;
-    const { maturityTicks } = world.config;
+    const { maturityTicks } = world.lanes;
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] === 1) {
             trackMerit(world, slot);
@@ -73,7 +73,7 @@ export function meritPhase(world) {
         if (alive[slot] === 1) {
             creditEnergy(world, slot);
             trackEscape(world, slot);
-            if (world.ageTicks[slot] === maturityTicks) {
+            if (world.ageTicks[slot] === maturityTicks[slot]) {
                 creditMatured(world, slot);
             }
         }

@@ -16,9 +16,18 @@ const BREAK = 'eval.defender_bite_break_share';
  */
 function makeWorld(config = {}) {
     const n = 4;
+    /** @type {Record<string, any>} */
+    const cfg = { defenderRepelEnergy: 40, defenderRepelImpulse: 4, biteArc: Math.PI, huntSizeRatio: 0.8, ...config };
+    const lanes = Object.fromEntries(
+        ['biteArc', 'huntSizeRatio', 'defenderRepelEnergy', 'defenderRepelCost', 'defenderRepelImpulse'].map((key) => [
+            key,
+            new Float64Array(n).fill(cfg[key] ?? 0),
+        ]),
+    );
     const world = {
         tick: BURN_IN_TICKS,
-        config: { defenderRepelEnergy: 40, defenderRepelImpulse: 4, biteArc: Math.PI, ...config },
+        config: cfg,
+        lanes,
         alive: Uint8Array.of(1, 1, 1, 0),
         spec: Uint8Array.of(1, 0, 4, 0),
         huntBySpec: Uint8Array.of(0, 1, 0, 0, 0),

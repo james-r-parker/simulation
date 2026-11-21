@@ -8,5 +8,5 @@
  * @returns {boolean} whether the body hunts and is younger than `juvenileTicks`
  */
 export function isJuvenile(world, slot) {
-    return world.huntBySpec[world.spec[slot]] === 1 && world.ageTicks[slot] < world.config.juvenileTicks;
+    return world.huntBySpec[world.spec[slot]] === 1 && world.ageTicks[slot] < world.lanes.juvenileTicks[slot];
 }
