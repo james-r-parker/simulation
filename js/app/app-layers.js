@@ -8,6 +8,7 @@ import { createScentContours, createTerritoryContours } from './renderer/contour
 import { createWorldStores } from './pack/effect-stores.js';
 import { createEffectsPlayer } from './renderer/effects-player.js';
 import { createFoodDraw } from './renderer/food-draw.js';
+import { createFollowRing } from './renderer/follow-ring.js';
 import { createFxBudget } from './renderer/fx-budget.js';
 import { createFxLayers } from './renderer/fx-draw.js';
 import { createFxPointersLayer } from './renderer/fx-pointers.js';
@@ -83,7 +84,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
         world.patches,
         scent,
         createTerritoryContours({ info }),
-        createFoodDraw({ info }),
+        createFoodDraw({ info, dying: stores.dying, causeNames: player.causeNames }),
         world.rocks,
         world.clouds,
         createHerdDraw({ info }),
@@ -93,6 +94,7 @@ function buildFor(refs, { info, layout, seed, slots, sink }) {
         createChaseLayer({ info, pursuits: player.flee.pursuits, fleeing: player.flee.fleeing }),
         createMateThreadLayer({ pool: threads }),
         createOverlays({ info }),
+        createFollowRing(),
         particles,
         flashes,
         createFxPointersLayer({ moments: player.moments }),

@@ -13,7 +13,10 @@ import {
     NEON,
     NEON_LIGHTNESS,
     RIM_PX,
+    rimPxFor,
     roleColor,
+    TV_MIN_PX_SCALE,
+    TV_RIM_SCALE,
     SPEC_ROLE,
     toDisplay,
 } from '../../../js/app/renderer/palette.js';
@@ -49,6 +52,15 @@ describe('palette', () => {
             expect(roleColor(/** @type {any} */ (role))).toHaveLength(3);
         }
         expect(() => roleColor(/** @type {any} */ ('nope'))).toThrow(/unknown role/);
+    });
+
+    it('widens the rim by half in TV mode: 1.5 px to 2.25 px, and the least body size from 24 px to 32 px', () => {
+        expect(rimPxFor('default', false)).toBe(1.5);
+        expect(rimPxFor('default', true)).toBe(2.25);
+        expect(rimPxFor('high-contrast', true)).toBe(2.5 * TV_RIM_SCALE);
+        expect(rimPxFor(undefined, true)).toBe(2.25);
+        expect(rimPxFor('nope', false)).toBe(1.5);
+        expect(24 * TV_MIN_PX_SCALE).toBeCloseTo(32);
     });
 
     it('has rim and fill settings for every family palette', () => {

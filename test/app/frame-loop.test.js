@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createAppState } from '../../js/app/actions.js';
 import { createCameraController } from '../../js/app/camera.js';
 import { createFrameLoop } from '../../js/app/frame-loop.js';
+import { holdMsFor } from '../../js/app/follow-handoff.js';
 import { createFrameStats, frameReport } from '../../js/app/frame-stats.js';
 import { AGENT_FIELD, HEADER_WORDS } from '../../js/app/interpolate.js';
 import { createRequest, readRequest, SLOT } from '../../js/app/pack/frame-slots.js';
@@ -59,6 +60,9 @@ function fakeWorld() {
     const pack = fakePack();
     return { client: pack.client, pack };
 }
+
+/** The hold of a subject with no death remembered. */
+const HOLD_MS = holdMsFor(null, 0);
 
 describe('createFrameLoop', () => {
     it('draws the snapshot with the selection and the leading lineage', () => {
@@ -205,12 +209,28 @@ describe('createFrameLoop', () => {
         deps.state.followId = 999999;
         loop.frame(1033);
         expect(deps.state.followId).toBe(999999);
-        for (let t = 1133; t <= 1833; t += 100) {
+        for (let t = 1133; t <= 1133 + HOLD_MS; t += 100) {
             pack.step(loop, t);
         }
         expect(deps.state.followId).not.toBe(999999);
         expect(deps.state.followId).not.toBe(0);
         expect(loop.followAgent(deps.state.followId)).toBe(deps.state.followId);
+        expect(loop.followCaption()).toBe('');
+    });
+
+    it('keeps easing the camera towards the follow subject when every frame is slower than MAX_DT_MS', () => {
+        const { client, pack } = fakeWorld();
+        const genome = client.latest.u32[HEADER_WORDS + AGENT_FIELD.GENOME];
+        const { deps, loop } = setup(client, pack);
+        deps.state.followId = genome;
+        pack.step(loop, 1000);
+        pack.step(loop, 1150);
+        const before = { x: deps.camera.x, y: deps.camera.y };
+        for (let t = 1300; t <= 2500; t += 150) {
+            pack.step(loop, t);
+        }
+        expect(deps.camera.following).toBe(true);
+        expect(deps.camera.x !== before.x || deps.camera.y !== before.y, 'the camera moved on slow frames').toBe(true);
     });
 
     it('does not count a suspended hidden-tab interval toward a pending death handoff', () => {
@@ -229,6 +249,10 @@ describe('createFrameLoop', () => {
         pack.step(loop, 10000);
         expect(deps.state.followId).toBe(999999);
         pack.step(loop, 10050);
+        expect(deps.state.followId).toBe(999999);
+        for (let t = 10150; t <= 10150 + HOLD_MS; t += 100) {
+            pack.step(loop, t);
+        }
         expect(deps.state.followId).not.toBe(999999);
         expect(deps.state.followId).not.toBe(0);
     });
@@ -349,5 +373,32 @@ describe('the pack worker exchange', () => {
             .slice(SLOT.BUCKETS, SLOT.BUCKETS + pack.w.slots.buckets)
             .reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
         expect(rows).toBe(drawn.at(-1).agents.count);
+    });
+
+    it('lets the director hold the camera instead of the follow, and tells the layers about TV mode', () => {
+        const { client, pack } = fakeWorld();
+        const { deps, drawn, loop } = setup(client, pack);
+        const seen = /** @type {any[]} */ ([]);
+        deps.director = { step: (/** @type {any} */ at) => (seen.push({ ...at }), true) };
+        deps.getReady = () => ({ seed: 3 });
+        deps.state.tv = true;
+        deps.state.followId = 999999;
+        pack.step(loop, 1000);
+        pack.step(loop, 1016);
+        expect(seen).toHaveLength(2);
+        expect(seen[1]).toMatchObject({ nowMs: 1016, ready: { seed: 3 }, top: [] });
+        expect(deps.state.followId).toBe(999999);
+        expect(deps.camera.following).toBe(false);
+        expect(drawn.at(-1).tv).toBe(true);
+    });
+
+    it('runs the follow when the director does not hold the camera', () => {
+        const { client, pack } = fakeWorld();
+        const { deps, loop } = setup(client, pack);
+        deps.director = { step: () => false };
+        deps.state.followId = client.latest.u32[HEADER_WORDS + AGENT_FIELD.GENOME];
+        pack.step(loop, 1000);
+        pack.step(loop, 1016);
+        expect(deps.camera.following).toBe(true);
     });
 });

@@ -1,5 +1,5 @@
 // Whether this browser can run the app: module workers and WebGL2 are required. The page shows the reason instead of a
-// blank canvas.
+// blank canvas. Also the one guarded read of `localStorage`.
 
 /**
  * @param {() => {getContext: (kind: string) => unknown}} createCanvas a canvas factory
@@ -25,4 +25,16 @@ export function unsupportedReason({ Worker, createCanvas }) {
     return hasWebGl2(createCanvas)
         ? null
         : 'This browser or its graphics driver offers no WebGL2, which Blob Evolution needs. Use a current desktop Chrome, Edge or Firefox.';
+}
+
+/**
+ * @param {() => Storage} [read] reads `localStorage`
+ * @returns {Storage | null} the storage, or null where reading it throws (blocked site data)
+ */
+export function safeStorage(read = () => localStorage) {
+    try {
+        return read();
+    } catch {
+        return null;
+    }
 }

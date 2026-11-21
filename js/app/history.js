@@ -5,6 +5,8 @@
 
 /** Samples a series holds. */
 export const HISTORY_SIZE = 1024;
+/** Milestones kept. */
+export const MILESTONES_MAX = 100;
 /** The first sampling interval, in ms of wall time. */
 export const INITIAL_SAMPLE_MS = 5000;
 
@@ -20,6 +22,14 @@ export const INITIAL_SAMPLE_MS = 5000;
  * @property {Float64Array[]} data one array per series
  * @property {Float64Array} latest the newest level of each series
  * @property {Float64Array} pending the flow counts since the last sample
+ * @property {Milestone[]} milestones the notable events of the world, oldest first, at most `MILESTONES_MAX`
+ */
+
+/**
+ * @typedef {object} Milestone
+ * @property {number} tick the tick it happened
+ * @property {string} kind the ticker kind, such as `extinct` or `record-age`
+ * @property {string} text a plain-text line
  */
 
 /**
@@ -46,6 +56,7 @@ export function createHistory({ names, kinds, capacity = HISTORY_SIZE, sampleMs 
         data: names.map(() => new Float64Array(capacity)),
         latest: new Float64Array(names.length),
         pending: new Float64Array(names.length),
+        milestones: [],
     };
 }
 
@@ -124,6 +135,20 @@ export function clearHistory(h) {
     h.lastMs = -Infinity;
     h.latest.fill(0);
     h.pending.fill(0);
+    h.milestones.length = 0;
+}
+
+/**
+ * Keeps a notable event for the charts drawer's list; the oldest go past `MILESTONES_MAX`.
+ * @param {History} h the history
+ * @param {Milestone} milestone the event
+ * @returns {void}
+ */
+export function pushMilestone(h, { tick, kind, text }) {
+    h.milestones.push({ tick, kind, text });
+    if (h.milestones.length > MILESTONES_MAX) {
+        h.milestones.shift();
+    }
 }
 
 /**

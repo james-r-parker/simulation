@@ -69,6 +69,7 @@ function seriesFor({ specs, births, deaths }) {
         flow('escaped', (st) => st.combat?.escaped ?? 0),
         level('population', (st) => st.population ?? 0),
         level('coverage', (st) => st.archive?.coverage ?? 0),
+        level('generation', (st) => st.generationMax ?? 0),
         ...specs.map((s) => level(`occupied.${s.name}`, (st) => st.archive?.occupiedCount?.[s.index] ?? 0)),
     ];
 }

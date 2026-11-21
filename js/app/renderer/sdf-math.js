@@ -167,6 +167,9 @@ export function arcBetween(a, b) {
     return Math.atan2(Math.sin(a - b), Math.cos(a - b));
 }
 
+/** The bearings a scattered tear (a dent of negative `width`) repeats at round the membrane. */
+export const TEAR_FOLDS = 3;
+
 /**
  * @param {number} x
  * @param {number} y
@@ -174,8 +177,9 @@ export function arcBetween(a, b) {
  *   dent?: {angle: number, depth: number, width: number}}} cell a cell membrane: an ellipse of half axes `rx`, `ry`
  *   whose outline ripples by `amp` (a share of the radius) in `lobes` waves, turned by `phase`. `taper` scales the
  *   half height by `1 + taper * x / rx` (positive: widest in front, narrowing to the tail). A `dent` pushes the outline
- *   in by `depth` (a share of the radius, negative bulges out) about the bearing `angle`, over an arc of about `width`
- *   radians
+ *   in by `depth` (a share of the radius, negative bulges out) about the bearing `angle`, over an arc of about
+ *   `|width|` radians; a negative `width` repeats it `TEAR_FOLDS` times round the membrane, which is how a dying body's
+ *   membrane tears (a depth near 1 opens a gap from the rim to the centre)
  * @returns {number} the approximate distance to the membrane (exact on a still circle, scaled by 0.9 elsewhere)
  */
 export function sdMembrane(x, y, { rx, ry, amp, lobes, phase, taper = 0, dent }) {
@@ -184,7 +188,8 @@ export function sdMembrane(x, y, { rx, ry, amp, lobes, phase, taper = 0, dent })
     const bearing = Math.atan2(qy, qx);
     let ripple = amp * Math.sin(lobes * bearing + phase);
     if (dent !== undefined) {
-        const da = arcBetween(bearing, dent.angle) / dent.width;
+        const folds = dent.width < 0 ? TEAR_FOLDS : 1;
+        const da = arcBetween(bearing * folds, dent.angle * folds) / (folds * Math.abs(dent.width));
         ripple -= dent.depth * Math.exp(-da * da);
     }
     return (Math.hypot(qx, qy) - 1 - ripple) * Math.min(rx, ry) * 0.9;
@@ -203,4 +208,19 @@ export function sdWave(x, y, { from, to, amp, freq, phase, width }) {
     const ax = from + (to - from) * t;
     const ay = amp * t * Math.sin(freq * Math.abs(ax - from) - phase);
     return Math.hypot(x - ax, y - ay) * 0.8 - width / 2;
+}
+
+/**
+ * @param {number} d a signed distance to the outline (positive outside)
+ * @param {{strength: number, widthPx: number, px: number, alpha: number}} halo the event strength 0 to 1, how far the
+ *   falloff reaches in device px, one device pixel in the distance's units and the opacity at the rim at strength 1
+ * @returns {number} the falloff's opacity: `alpha x strength` at the outline, falling quadratically to 0 at `widthPx`
+ *   and 0 inside and beyond it
+ */
+export function haloCoverage(d, { strength, widthPx, px, alpha }) {
+    if (!(widthPx > 0) || d < 0) {
+        return 0;
+    }
+    const t = Math.min(d / (widthPx * px), 1);
+    return alpha * strength * (1 - t) * (1 - t);
 }

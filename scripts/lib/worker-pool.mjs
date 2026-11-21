@@ -7,6 +7,8 @@ import { Worker, parentPort } from 'node:worker_threads';
  * @property {URL | string} workerUrl The module each worker runs; it should call `serveTasks`.
  * @property {number} [workers] Pool size; defaults to `defaultWorkers()`, capped at the task count.
  * @property {(index: number, result: any) => void} [onResult] Called as each task finishes (finish order).
+ * @property {Pool} [pool] A pool from `createPool` to run on instead of a fresh one; `workerUrl` and `workers` are then
+ *   ignored and its workers stay alive afterwards.
  */
 
 /** Cores a default pool leaves free on a big machine, so evals and screens do not starve the gates beside them. */
@@ -31,13 +33,17 @@ export function defaultWorkers(cores = availableParallelism(), env = process.env
  * Resolves and validates the pool size.
  * @param {number | undefined} requested The caller's `workers` option.
  * @param {number} taskCount How many tasks there are.
+ * @param {{even?: boolean}} [options] `even`: for tasks of equal length, take the fewest workers that finish in as many
+ *   waves as `requested` workers would (32 tasks on 12 workers run in 3 waves, and 11 workers run them in 3 too), so no
+ *   worker idles through a wave a smaller pool would have run.
  * @returns {number} The number of workers to start (at least 1).
  */
-export function resolvePoolSize(requested, taskCount) {
+export function resolvePoolSize(requested, taskCount, { even = false } = {}) {
     if (requested !== undefined && (!Number.isInteger(requested) || requested < 1)) {
         throw new RangeError(`workers must be a positive integer, got ${String(requested)}`);
     }
-    return Math.max(1, Math.min(requested ?? defaultWorkers(), taskCount));
+    const size = Math.max(1, Math.min(requested ?? defaultWorkers(), taskCount));
+    return even && taskCount > 0 ? Math.ceil(taskCount / Math.ceil(taskCount / size)) : size;
 }
 
 /**
@@ -57,63 +63,150 @@ function taskError(index, detail) {
  */
 
 /**
- * Runs every task on a pool of workers. Each worker gets one task message at a time and replies with one result.
- * Rejects on the first failed task (a posted error, a throw, or an exit mid-task) and always terminates the workers.
+ * @typedef {object} Batch One `Pool.run` in flight.
+ * @property {readonly any[]} tasks The task messages.
+ * @property {any[]} results The results so far, by task index.
+ * @property {number} next The next task to hand out.
+ * @property {number} done How many tasks have finished.
+ * @property {(results: any[]) => void} resolve Settles the run.
+ * @property {(error: Error) => void} reject Fails the run.
+ * @property {((index: number, result: any) => void) | undefined} onResult Called as each task finishes.
+ */
+
+/**
+ * @typedef {object} Pool
+ * @property {(tasks: readonly any[], onResult?: (index: number, result: any) => void) => Promise<any[]>} run Runs the
+ *   tasks on the pool's workers (started on first use, kept after), results in task order; one run at a time. Rejects on
+ *   the first failed task and then terminates every worker, so the next run starts fresh ones.
+ * @property {() => Promise<void>} close Terminates the workers; the pool can still be used (it starts new ones).
+ */
+
+/** The pool behind `createPool`: its workers and the batch in flight. */
+class WorkerPool {
+    /** @param {URL | string} workerUrl the worker module @param {number} limit the most workers to start */
+    constructor(workerUrl, limit) {
+        this.workerUrl = workerUrl;
+        this.limit = limit;
+        /** @type {PoolWorker[]} */
+        this.started = [];
+        /** @type {Batch | null} */
+        this.active = null;
+    }
+
+    /** @returns {Promise<void>} terminates the workers; the next run starts new ones */
+    async close() {
+        const stopped = this.started;
+        this.started = [];
+        await Promise.allSettled(stopped.map((w) => w.terminate()));
+    }
+
+    /** @param {Error} error why the batch in flight failed @returns {void} rejects it once the workers are gone */
+    fail(error) {
+        const batch = this.active;
+        this.active = null;
+        if (batch) {
+            this.close().then(() => batch.reject(error));
+        }
+    }
+
+    /** @param {PoolWorker} worker the idle worker @param {Batch} batch the batch @returns {void} hands it the next task */
+    dispatch(worker, batch) {
+        worker.index = batch.next < batch.tasks.length ? batch.next : -1;
+        if (worker.index >= 0) {
+            worker.postMessage(batch.tasks[batch.next++]);
+        }
+    }
+
+    /** @param {PoolWorker} worker the replying worker @param {any} message its reply @returns {void} */
+    onMessage(worker, message) {
+        const batch = this.active;
+        if (!batch || worker.index < 0) {
+            return;
+        }
+        if (!message?.ok) {
+            return this.fail(taskError(worker.index, message?.error));
+        }
+        batch.results[worker.index] = message.result;
+        batch.onResult?.(worker.index, message.result);
+        if (++batch.done === batch.tasks.length) {
+            this.active = null;
+            worker.index = -1;
+            return batch.resolve(batch.results);
+        }
+        this.dispatch(worker, batch);
+    }
+
+    /** @returns {PoolWorker} a new worker, listening */
+    spawn() {
+        const worker = Object.assign(new Worker(this.workerUrl), { index: -1 });
+        worker.on('message', (message) => this.onMessage(worker, message));
+        worker.on('error', (error) => this.fail(taskError(worker.index, error)));
+        worker.on('exit', (code) => {
+            // A worker that exits mid-task never replies, whatever its exit code.
+            if (worker.index >= 0) {
+                this.fail(taskError(worker.index, { message: `worker exited with code ${code}` }));
+            }
+        });
+        return worker;
+    }
+
+    /**
+     * @param {readonly any[]} tasks the task messages
+     * @param {((index: number, result: any) => void) | undefined} onResult called as each task finishes
+     * @returns {Promise<any[]>} the results in task order
+     */
+    run(tasks, onResult) {
+        if (this.active) {
+            return Promise.reject(new Error('a pool runs one batch of tasks at a time'));
+        }
+        if (tasks.length === 0) {
+            return Promise.resolve([]);
+        }
+        return new Promise((resolve, reject) => {
+            const batch = { tasks, results: new Array(tasks.length), next: 0, done: 0, resolve, reject, onResult };
+            this.active = batch;
+            const size = Math.min(this.limit, tasks.length);
+            while (this.started.length < size) {
+                this.started.push(this.spawn());
+            }
+            this.started.slice(0, size).forEach((worker) => this.dispatch(worker, batch));
+        });
+    }
+}
+
+/**
+ * A pool whose workers outlive a batch of tasks: a caller with many batches (a trainer's generations) pays each
+ * worker's start-up and warm-up once. Each worker gets one task message at a time and replies with one result.
+ * @param {{workerUrl: URL | string, workers?: number}} options The worker module and the most workers to start
+ *   (default `defaultWorkers()`).
+ * @returns {Pool} The pool; no worker starts until `run`.
+ */
+export function createPool({ workerUrl, workers }) {
+    const pool = new WorkerPool(workerUrl, resolvePoolSize(workers, Number.MAX_SAFE_INTEGER));
+    return { run: (tasks, onResult) => pool.run(tasks, onResult), close: () => pool.close() };
+}
+
+/**
+ * Runs every task on a fresh pool of workers, or on `pool` when one is given (its workers stay alive afterwards).
+ * Rejects on the first failed task (a posted error, a throw, or an exit mid-task) and always terminates a fresh pool's
+ * workers.
  * @param {readonly any[]} tasks Structured-cloneable task messages.
  * @param {PoolOptions} options The worker module, pool size and progress callback.
  * @returns {Promise<any[]>} The results, indexed like `tasks`.
  */
-export function runPool(tasks, { workerUrl, workers, onResult }) {
+export function runPool(tasks, { workerUrl, workers, onResult, pool }) {
     const size = resolvePoolSize(workers, tasks.length);
-    /** @type {any[]} */
-    const results = new Array(tasks.length);
-    if (tasks.length === 0) {
-        return Promise.resolve(results);
+    if (pool) {
+        return pool.run(tasks, onResult);
     }
-    return new Promise((resolve, reject) => {
-        /** @type {PoolWorker[]} */
-        const pool = [];
-        let next = 0;
-        let done = 0;
-        let settled = false;
-        const finish = (/** @type {Error | undefined} */ error) => {
-            if (settled) {
-                return;
-            }
-            settled = true;
-            Promise.allSettled(pool.map((w) => w.terminate())).then(() => (error ? reject(error) : resolve(results)));
-        };
-        const dispatch = (/** @type {PoolWorker} */ worker) => {
-            worker.index = next < tasks.length ? next : -1;
-            if (worker.index >= 0) {
-                worker.postMessage(tasks[next++]);
-            }
-        };
-        const onMessage = (/** @type {PoolWorker} */ worker, /** @type {any} */ message) => {
-            if (!message?.ok) {
-                return finish(taskError(worker.index, message?.error));
-            }
-            results[worker.index] = message.result;
-            onResult?.(worker.index, message.result);
-            if (++done === tasks.length) {
-                return finish(undefined);
-            }
-            dispatch(worker);
-        };
-        for (let i = 0; i < size; i++) {
-            const worker = Object.assign(new Worker(workerUrl), { index: -1 });
-            pool.push(worker);
-            worker.on('message', (message) => onMessage(worker, message));
-            worker.on('error', (error) => finish(taskError(worker.index, error)));
-            worker.on('exit', (code) => {
-                // A worker that exits mid-task never replies, whatever its exit code.
-                if (worker.index >= 0) {
-                    finish(taskError(worker.index, { message: `worker exited with code ${code}` }));
-                }
-            });
-            dispatch(worker);
-        }
-    });
+    if (tasks.length === 0) {
+        return Promise.resolve([]);
+    }
+    const fresh = createPool({ workerUrl, workers: size });
+    return fresh.run(tasks, onResult).then(
+        (results) => fresh.close().then(() => results),
+        (error) => fresh.close().then(() => Promise.reject(error)),
+    );
 }
 
 /**

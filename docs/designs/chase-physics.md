@@ -1,6 +1,6 @@
 # Chase physics and terrain
 
-**Status:** In progress - add turning inertia, speed-coupled turn radius, asymmetric reverse thrust, and terrain drag/cover zones so chases are about momentum, banking and landscape rather than instant 180-degree reversals; only Phase 1 T1 (the `scene-kinematics.js` detectors, #449) is built, on the shared chase record of [detector-baseline.md](detector-baseline.md); T2 (the `E-CP-1` baseline), T1a (the premise read) and T3 (conformance review) are not done, so Phase 1 is not `(built)` and no lever is open.
+**Status:** In progress - adds turning inertia, speed-coupled turn radius, asymmetric reverse thrust and terrain drag so chases are about momentum and landscape. Only Phase 1 T1 (the `scene-kinematics.js` detectors, #449) is built; T2 (the E-CP-1 baseline), T1a (the premise read) and T3 (conformance review) are open, so Phase 1 is not `(built)` and no lever is open.
 **Validated:** a8013e98 (2026-11-15)
 **Scheduled by:** [fair-chase.md](fair-chase.md) step 2 - heading inertia and terrain, screened on those bodies; `speedTurnDrag` widens the predator's sprint circle
 **Depends on:** [senses-and-motor.md](senses-and-motor.md), [sprint-burst.md](sprint-burst.md), [fair-chase.md](fair-chase.md)

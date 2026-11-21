@@ -126,6 +126,21 @@ export function saveArchive(dir, { archive, stages, generation, state, pool, kee
 }
 
 /**
+ * Whether a generation writes its `archive-<g>.json`: encoding and writing the archive is a share of a generation's time,
+ * so a run with checkpoints writes it at the checkpoints and at its last generation (a `--resume` continues from one of
+ * those); a run with none writes every generation, as the archive is then its only output.
+ * @param {{args: {checkpointEvery: number, generations: number}, stages: readonly {checkpointEvery?: number}[],
+ *   state: {status: string}, generation: number, checkpointed: boolean}} generation the options, the stages, the state
+ *   after the generation, its 0-based index and whether it took a checkpoint
+ * @returns {boolean} true when the archive is written
+ */
+export function archiveDue({ args, stages, state, generation, checkpointed }) {
+    const last = state.status !== 'running' || generation + 1 >= args.generations;
+    const noCheckpoints = args.checkpointEvery === 0 && stages.every((s) => s.checkpointEvery === undefined);
+    return checkpointed || last || noCheckpoints;
+}
+
+/**
  * @param {string} path an `archive-<g>.json`
  * @param {{stages: StageInfo[], total: number, log: import('../../js/sim/log.js').SimLog}} run the run's stages and
  *   generations, and the log that receives `GenomeRejected` before a throw

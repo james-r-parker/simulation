@@ -13,6 +13,7 @@ describe('parseArgs', () => {
             cdp: '',
             app: 'v6',
             agents: 500,
+            urlParams: '',
             viewport: { width: 3840, height: 2160 },
         });
     });
@@ -28,6 +29,7 @@ describe('parseArgs', () => {
                 '--cdp=http://127.0.0.1:9222',
                 '--agents=300',
                 '--viewport=2560x1440',
+                '--url-params=tv=1',
             ]),
         ).toEqual({
             seconds: 5,
@@ -38,8 +40,17 @@ describe('parseArgs', () => {
             cdp: 'http://127.0.0.1:9222',
             app: 'v6',
             agents: 300,
+            urlParams: 'tv=1',
             viewport: { width: 2560, height: 1440 },
         });
+    });
+
+    it('reads --url-params with or without a leading ?, as one value or the next argument', () => {
+        expect(parseArgs(['--url-params', 'tv=1']).urlParams).toBe('tv=1');
+        expect(parseArgs(['--url-params=?tv=1&dim=on']).urlParams).toBe('tv=1&dim=on');
+        expect(() => parseArgs(['--url-params'])).toThrow(/requires a value/);
+        expect(() => parseArgs(['--url-params=seed=2'])).toThrow(/cannot set "seed"/);
+        expect(() => parseArgs(['--url-params=tv=1 x'])).toThrow('--url-params');
     });
 
     it('rejects an unknown flag with or without a value', () => {

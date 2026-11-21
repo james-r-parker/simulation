@@ -1,12 +1,14 @@
 // Packs the dying bodies into the agent buckets, after the live rows: the body's own model draws it, a death tween kind
-// plays the clip of its cause over the death's progress, and the row's `fade` takes it out. Pure; nothing allocates.
+// plays the clip of its cause over the death's progress, and the row's `fade` takes it out. The live lanes (motion, body
+// word, status, temperature) stay on from the last frame the agent was seen, its speed decaying to rest, so the body
+// keeps swimming as it fails. Pure; nothing allocates.
 
 import { drawnRadius } from '../display-size.js';
 import { slotOf } from '../family-slots.js';
-import { claimRow, colorUnslotted, ITEM, PHI_FRAC } from './agents-pack.js';
+import { claimRow, colorUnslotted, ITEM, packBodyWord, packStatus, PHI_FRAC } from './agents-pack.js';
 import { familyColor } from './colors.js';
-import { animFor, fadeOf, progressOf } from './death-anim.js';
-import { isPlaying, isUsed, MAX_DYING, positionOf } from './dying.js';
+import { animFor, breakOf, laneOf, tearBearing } from './death-anim.js';
+import { DRIFT, isPlaying, isUsed, MAX_DYING, positionOf, speedShare } from './dying.js';
 
 const COLOR_AGENT = { mesh: 0, lineageId: 0, neutral: false, energy01: 0 };
 
@@ -28,13 +30,73 @@ function colorOf(store, slots, d, { k, mesh }) {
     return rgb;
 }
 
+/** The top speed the dying bodies' speed is scaled by when the view gives none, as `packAgents` does. */
+const MAX_VELOCITY = 200;
+const NO_BITS = {};
+
+/**
+ * Writes the lanes of a body that is still living as it fails: the last state, status flags and temperature, and a
+ * motion lane whose speed has decayed to rest since the body vanished.
+ * @param {import('./agents-pack.js').Bucket} bucket the bucket
+ * @param {{d: import('./dying.js').Dying, k: number, o: number, nowMs: number}} body the dying bodies, the body, its row
+ *   offset and wall time
+ * @param {{flagBits?: Record<string, number>, maxVelocity?: number}} view the flag bits and the speed scale
+ * @returns {void}
+ */
+function packLive(bucket, { d, k, o, nowMs }, view) {
+    const perTick = (Math.hypot(d.pose[5][k], d.pose[6][k]) * 1000) / DRIFT.ticksPerSec;
+    const speed01 = (perTick / (view.maxVelocity ?? MAX_VELOCITY)) * speedShare(nowMs - d.since[k]);
+    bucket.state.fill(0, o, o + ITEM);
+    bucket.state[o] = d.pose[7][k];
+    bucket.extra.fill(0, o, o + ITEM);
+    packStatus(bucket.extra, o, d.flags[k], view.flagBits ?? NO_BITS);
+    bucket.extra[o + 1] = COLOR_AGENT.neutral ? 1 : 0;
+    packBodyWord(bucket.body, o, d.word[k]);
+    bucket.motion[o] = Math.min(speed01, 1);
+    bucket.motion[o + 1] = 0;
+    bucket.motion[o + 2] = (d.genome[k] * PHI_FRAC) % 1;
+    bucket.motion[o + 3] = 0;
+    bucket.tween.fill(0, o, o + ITEM);
+    bucket.tear[o] = 0;
+    bucket.tear[o + 1] = 0;
+    bucket.tear[o + 2] = REST_WIDTH;
+    bucket.tear[o + 3] = 0;
+}
+
+/**
+ * Writes a playing body's death: the clip over the breaking beat, and the tear of its membrane.
+ * @param {import('./agents-pack.js').Bucket} bucket the bucket
+ * @param {{d: import('./dying.js').Dying, k: number, o: number, nowMs: number}} body the dying bodies, the body, its row
+ *   offset and wall time
+ * @param {readonly string[]} causeNames the cause names by number
+ * @returns {number} the row's dying value (`laneOf`)
+ */
+function packBeats(bucket, { d, k, o, nowMs }, causeNames) {
+    const anim = animFor(causeNames[d.cause[k]]);
+    const elapsed = nowMs - d.start[k];
+    const lane = laneOf(anim, elapsed);
+    bucket.tween[o] = anim.kind;
+    bucket.tween[o + 1] = breakOf(anim, elapsed);
+    BODY.bearing = d.bearing[k];
+    BODY.genome = d.genome[k];
+    bucket.tear[o] = tearBearing(anim.tear, BODY) - d.pose[2][k];
+    bucket.tear[o + 1] = anim.tear.depth * Math.min(lane, 1);
+    bucket.tear[o + 2] = anim.tear.scatter ? -anim.tear.width : anim.tear.width;
+    return lane;
+}
+
+const BODY = { bearing: 0, genome: 0 };
+/** The tear's default width in the lane of a body not tearing: the shader divides by it. */
+const REST_WIDTH = 0.6;
+
 /**
  * Writes one dying body's row.
  * @param {import('./agents-pack.js').AgentStore} store the store
  * @param {{d: import('./dying.js').Dying, k: number, mesh: number, nowMs: number}} body the dying bodies, the body, its
  *   mesh and wall time
- * @param {{slots: import('../family-slots.js').FamilySlots, zoom: number, causeNames: readonly string[]}} view the
- *   colour slots, the zoom and the cause names by number
+ * @param {{slots: import('../family-slots.js').FamilySlots, zoom: number, causeNames: readonly string[],
+ *   flagBits?: Record<string, number>, maxVelocity?: number}} view the colour slots, the zoom, the cause names by
+ *   number, the flag bits and the speed scale
  * @returns {void}
  */
 function packBody(store, { d, k, mesh, nowMs }, view) {
@@ -45,27 +107,14 @@ function packBody(store, { d, k, mesh, nowMs }, view) {
     bucket.pose[o] = at.x;
     bucket.pose[o + 1] = at.y;
     bucket.pose[o + 2] = d.pose[2][k];
-    bucket.pose[o + 3] = drawnRadius(d.pose[3][k], store.minPx[mesh], view.zoom);
+    bucket.pose[o + 3] = drawnRadius(d.pose[3][k], store.minPx[mesh] * store.minScale, view.zoom);
     bucket.color[o] = rgb[0];
     bucket.color[o + 1] = rgb[1];
     bucket.color[o + 2] = rgb[2];
     bucket.color[o + 3] = d.pose[4][k];
-    bucket.state.fill(0, o, o + ITEM);
-    bucket.extra.fill(0, o, o + ITEM);
-    bucket.extra[o + 1] = COLOR_AGENT.neutral ? 1 : 0;
-    bucket.motion.fill(0, o, o + ITEM);
-    bucket.motion[o + 2] = (d.genome[k] * PHI_FRAC) % 1;
-    bucket.body.fill(0, o, o + ITEM);
-    bucket.tween.fill(0, o, o + ITEM);
-    let fade = 0;
-    if (isPlaying(d, k)) {
-        const anim = animFor(view.causeNames[d.cause[k]]);
-        const progress = progressOf(anim, nowMs - d.start[k]);
-        bucket.tween[o] = anim.kind;
-        bucket.tween[o + 1] = progress;
-        fade = fadeOf(anim, progress);
-    }
-    bucket.fade[o / ITEM] = fade;
+    packLive(bucket, { d, k, o, nowMs }, view);
+    bucket.halo[o / ITEM] = 0;
+    bucket.fade[o / ITEM] = isPlaying(d, k) ? packBeats(bucket, { d, k, o, nowMs }, view.causeNames) : 0;
 }
 
 /**
@@ -73,7 +122,8 @@ function packBody(store, { d, k, mesh, nowMs }, view) {
  * @param {import('./dying.js').Dying} d the dying bodies
  * @param {import('./agents-pack.js').AgentStore} store the store `packAgents` just filled
  * @param {{slots: import('../family-slots.js').FamilySlots, zoom: number, causeNames: readonly string[],
- *   nowMs: number}} view the colour slots, zoom, cause names and wall time
+ *   nowMs: number, flagBits?: Record<string, number>, maxVelocity?: number}} view the colour slots, zoom, cause
+ *   names, wall time, the flag bits and the speed scale
  * @returns {number} bodies packed
  */
 export function packDying(d, store, view) {

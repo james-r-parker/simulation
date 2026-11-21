@@ -74,28 +74,39 @@ function inputsOf(bucket, more) {
 }
 
 /**
+ * @param {Bucket} bucket a bucket
+ * @returns {Record<string, Float32Array>} its lanes by instance attribute name
+ */
+function sharedLanes(bucket) {
+    /** @type {Record<string, Float32Array>} */
+    const shared = {};
+    for (const [key, name] of NAMES) {
+        const array = /** @type {any} */ (bucket)[key];
+        if (array !== undefined) {
+            shared[name] = array;
+        }
+    }
+    return shared;
+}
+
+/**
  * @param {readonly {name: string, parts: readonly object[]}[]} models the models, one per bucket
  * @param {{capacity?: number, buckets: Bucket[], more?: (lanes: {gate: any, extra: any}) => Record<string, any>,
- *   blending?: number}} options the buckets (each mesh holds as many rows as its bucket's `pose`), the model-specific
- *   inputs and an optional blending
+ *   blending?: number, dimmable?: boolean}} options the buckets (each mesh holds as many rows as its bucket's `pose`),
+ *   the model-specific inputs, an optional blending and `dimmable`, which gives the meshes a brightness multiplier
  * @returns {{object: any, rimPx: any, upload: () => void, clear: () => void, setPalette: (name: string) => void,
- *   dispose: () => void}} the group, the rim width uniform and the per-frame calls
+ *   setDim: (value: number) => void, dispose: () => void}} the group, the rim width uniform and the per-frame calls;
+ *   `setDim` sets the brightness multiplier of a `dimmable` group (it does nothing to another)
  */
-export function createModelMeshes(models, { buckets, more = () => ({}), blending }) {
+export function createModelMeshes(models, { buckets, more = () => ({}), blending, dimmable = false }) {
     const rimPx = uniform(RIM_PX.default);
+    const dim = uniform(1);
     const meshes = models.map((model, k) => {
         const bucket = buckets[k];
-        /** @type {Record<string, Float32Array>} */
-        const shared = {};
-        for (const [key, name] of NAMES) {
-            const array = /** @type {any} */ (bucket)[key];
-            if (array !== undefined) {
-                shared[name] = array;
-            }
-        }
+        const shared = sharedLanes(bucket);
         const instances = createInstances(bucket.pose.length / 4, Object.keys(shared), shared);
         const material = modelMaterial(model, {
-            inputs: inputsOf(bucket, more),
+            inputs: dimmable ? { ...inputsOf(bucket, more), dim } : inputsOf(bucket, more),
             look: { rimPx, fillShare: FILL_SHARE.default },
         });
         if (blending !== undefined) {
@@ -117,6 +128,9 @@ export function createModelMeshes(models, { buckets, more = () => ({}), blending
             for (const m of meshes) {
                 uploadInstances(m.instances, 0);
             }
+        },
+        setDim(value) {
+            dim.value = value;
         },
         setPalette(name) {
             rimPx.value = RIM_PX[/** @type {keyof typeof RIM_PX} */ (name)] ?? RIM_PX.default;

@@ -1,6 +1,6 @@
 # Agent workflow
 
-**Status:** Proposed - what every agent session reads, how an experiment is recorded and read back, what a branch learns before it pushes, how runs, worktrees and outside streams share the machine, and the two commands that take a chunk from a fresh branch to a merged PR; Phase 1 (the context diet) and Phase 5 (start to merge) are first.
+**Status:** In progress - Phases 1 (the context diet) and 5 (start to merge) are built; Phase 3 (before the push) is next. The plan covers what every agent session reads, how an experiment is recorded and read back, what a branch learns before it pushes, how runs, worktrees and outside streams share the machine, and the two commands that take a chunk from a fresh branch to a merged PR.
 **Validated:** 58f38443 (2026-11-20)
 **Priority:** 3 - Workflow lead. Tooling that changes no sim rule; every session and every subagent pays the Phase 1 cost on its first token and every chunk ships through Phase 5, so both are built before the next training chunk
 **Depends on:** [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
@@ -224,9 +224,9 @@ A pull request runs the tests its change can reach. The full suite runs once on 
 
 The reached set is the union of three sources:
 
-- **Imports.** The test files whose module graph holds a changed file (`vitest related`, the selection the pre-commit `test-related` gate uses).
+- **Imports.** The test files whose module graph holds a changed file (a static walk of relative `import`, `export ... from` and `import()` specifiers, `scripts/lib/import-graph.mjs`, instead of `vitest related`, which the pre-commit `test-related` gate uses and which needs a Vite server per tree: the walk also runs on the tree of any past commit, which the replay below needs).
 - **Changed tests.** Every changed file under `test/`.
-- **Data and spawned scripts.** `test/data-deps.json` maps each test file to the non-module paths it reads (fixtures, `evals/` files, `bench/` baselines, docs) and the scripts it spawns. `scripts/data-deps.mjs --write` generates it by scanning the tests for `readFileSync`, `new URL(..., import.meta.url)`, `spawnSync` and `execFileSync` arguments; `--check` fails when it is stale and the `conventions` gate runs it. A test that builds a path the scan cannot resolve declares it in a `// reads: <glob>` comment, and the scan fails a test with an unresolved dynamic path and no declaration.
+- **Data and spawned scripts.** `test/data-deps.json` maps each test file to the non-module paths it reads (fixtures, `evals/` files, `bench/` baselines, docs) and the scripts it spawns. `scripts/data-deps.mjs --write` generates it by scanning the tests for `readFileSync`, `new URL(..., import.meta.url)`, `spawnSync` and `execFileSync` arguments; `--check` fails when it is stale and the `conventions` gate runs it. A test that builds a path the scan cannot resolve declares it in a `// reads: <glob>` comment (`none` for a path that is no repo file, `**` for a test that depends on the git history and so runs for every change), and the scan fails a test with an unresolved dynamic path and no declaration. The scan also runs over the modules and scripts a test imports or spawns (`scripts/lib/module-reads.mjs`, at selection time, not stored): `test/metric-noise.test.js` names no doc, the script it spawns reads `docs/designs/`. A test that names a path the change removed is reached too.
 
 A heavy or statistical file runs in its own job only when it is in the reached set. A change under `js/sim/` or `js/evo/` reaches most of the suite through imports, so sim and evo work keeps today's coverage; app-only, script-only and worker-only changes do not pay for it.
 
@@ -243,7 +243,7 @@ An affected run that passes where the full run on the merged result fails is a m
 
 ## Phases
 
-### Phase 1 - Context diet
+### Phase 1 - Context diet (built)
 
 **Targets:** none - it moves no sim, bench or browser metric; its readings are `AGENTS.md` at or under 16000 bytes, a generated `docs/scene-scorecard.md`, and no status line over 400 characters
 
@@ -276,7 +276,7 @@ An affected run that passes where the full run on the merged result fails is a m
 | ----- | ---------- | ------- |
 | E     | T22 to T27 | Sonnet  |
 
-### Phase 5 - Start to merge
+### Phase 5 - Start to merge (built)
 
 **Targets:** none - it moves no sim metric; its readings are the upper quartile of PR create to merge over the 20 chunk PRs after it merges (against 151 minutes), `check` wall time on a green PR (against 7 to 9 minutes), and no test shard over 4 minutes
 
@@ -291,6 +291,40 @@ An affected run that passes where the full run on the merged result fails is a m
 | Chunk | Tasks      | Builder |
 | ----- | ---------- | ------- |
 | G     | T34 to T40 | Sonnet  |
+
+#### Replay of the last 100 merged pull requests (T36)
+
+Read on 2026-11-20 with `scripts/lib/affected.mjs` on the tree of each merge commit (pull requests 456 to 561): the diff is the merge commit against its first parent, the suite is the test files of that tree, and the data map is a fresh scan of it. `gh run list` gave 37 failed `pull_request` runs of these pull requests; `gh run view --log-failed` named the failing test files, and each failing head commit was replayed on its own tree and diff (every head was still in the repository, so no run was left out).
+
+| Mode       | Pull requests | Reading                                                                                                                                                                                                                                                        |
+| ---------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs`     | 16            | no test job                                                                                                                                                                                                                                                    |
+| `records`  | 1             | no test job                                                                                                                                                                                                                                                    |
+| `full`     | 20            | 8 on `package.json` or `package-lock.json` (6 only add an npm script, 1 is a dependency bump, 1 the release), 6 on `.github/workflows/`, 2 on the ESLint config, 1 each on `vitest.config.js`, `scripts/check.sh`, `test/helpers/` and `js/sim/wasm-binary.js` |
+| `affected` | 63            | median 50 test files of about 880 (6.3%), mean 17%; 28 reach 5% or less, 45 reach 25% or less, 6 reach over half (up to 632 files, a `js/sim` change)                                                                                                          |
+
+The `test` matrix: the 63 `affected` pull requests ran a median of 2 jobs (30 of them 1, the largest 18), against 18 for every one of the 83 non-docs pull requests today (8 shards, 5 heavy, 5 statistical). Counting each `full` pull request as 18, the median over the 83 is 5 jobs and the mean 8.6.
+
+Each historical test failure, replayed on the diff of the head commit that failed:
+
+| Pull request | Failing test                                                                              | Head diff mode             | Reached                                                  |
+| ------------ | ----------------------------------------------------------------------------------------- | -------------------------- | -------------------------------------------------------- |
+| 483          | `test/check-hook-env.test.js`                                                             | `full`                     | yes                                                      |
+| 486          | `test/evo/anti-exploit.slow.test.js`, `test/evo/trainer.slow.test.js`                     | `full`                     | yes                                                      |
+| 504          | `test/train-exam.slow.test.js`                                                            | `full`                     | yes                                                      |
+| 516 (5 runs) | `test/train-tune.test.js`, `test/train-tune-world.test.js`                                | `full` (4), `affected` (1) | yes                                                      |
+| 521          | `test/train-tune.test.js`, `test/evo/train-tune.test.js`, `test/train-tune-world.test.js` | `full`                     | yes                                                      |
+| 539          | `test/release-check.slow.test.js`                                                         | `affected`                 | no, then yes: it reads the git history, not a file       |
+| 553          | `test/metric-noise.test.js`                                                               | `affected`                 | no, then yes: the script it spawns reads `docs/designs/` |
+
+Thirteen of the 15 failing test files were on a head whose diff was on the full list, so the full suite would have run them. Two were unreached by the first version of the selection and are fixed before T37:
+
+- `test/release-check.slow.test.js` passes or fails on the checkout's ancestry (`origin/main`, `origin/season/next`), which no changed path predicts. It declares `// reads: **`, and a test that declares `**` runs for every `affected` change.
+- `test/metric-noise.test.js` spawns `scripts/metric-noise.mjs`, which reads `docs/designs/*.md`, a path the test never names. The scan now also covers the modules and scripts a test imports or spawns (`scripts/lib/module-reads.mjs`): a test is reached when a module in its graph, or in the graph of a script it spawns, reads the changed path. The scan also reads a path under a root variable (`${ROOT}docs/designs/${name}`).
+
+After both fixes every failure above is reached. Failures that were not tests: 17 runs failed only the `coverage` job, on a whole-directory ratchet drop (`js/evo` 8, `js/app` 4, `scripts` 4, `js/worker` 2; one run dropped two directories), and each pull request had changed a file in the directory it dropped. `ratchet-related` (T17) holds a changed file under a 100% baseline (`js/sim`, `js/evo`, `js/worker`, `js/app`) to 100% on the pull request. The four `scripts` drops are an aggregate baseline (96.06% lines) that `ratchet-related` does not hold per file, so the whole-suite ratchet on the push to `main` reads them and they count in the miss ledger. Eight further runs failed `static`, `browser-smoke`, `perf` or `check` alone, which the selection does not change.
+
+Six of the 20 `full` pull requests changed `package.json` only to add an npm script. A `package.json` diff inside `scripts` could read as `affected` (the tests that read `package.json` are in the data map); it stays on the full list until the miss ledger has a month of readings.
 
 ## Decisions
 
@@ -324,18 +358,18 @@ An affected run that passes where the full run on the merged result fails is a m
 
 ### Phase 1 - Context diet
 
-| #   | Task                                                                                                                                                                                                                          | Nature       | Depends on          |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------- |
-| T1  | Move the Commands table to `docs/commands.md` under the eight headings, one `###` per command; leave the 12-row table and the link in `AGENTS.md`; point `audit-docs` and the skills at the new file                          | [judgement]  | -                   |
-| T2  | Add the `agents-size` check (16000 bytes) to `scripts/check-conventions.sh` with its tests; trim `AGENTS.md` under it without dropping a hard rule or a boundary                                                              | [judgement]  | T1                  |
-| T3  | Add `scripts/notes-index.mjs`; move every dated entry to `docs/notes/<YYYY-MM>.md` in date order; regenerate `sim-notes.md` as the index; run `--check` in `conventions`; update the notes rule in `AGENTS.md` and `STYLE.md` | [mechanical] | -                   |
-| T4  | Add the 400-character status cap to `readStatus` with its test and shorten every doc over it                                                                                                                                  | [judgement]  | -                   |
-| T4a | (built) The `**Scheduled by:**` line, the lead and step rendering of the Build queue and their tests; `STYLE.md` and the `AGENTS.md` Build order state the rule                                                               | [judgement]  | -                   |
-| T5  | Add `SCENES` in `js/evo/metric-registry/scenes.js` and the optional `scenes` field, with the registry tests                                                                                                                   | [mechanical] | -                   |
-| T6  | Tag every registry metric the three principles tables and the flora, megafauna and disease paragraphs name with its scenes                                                                                                    | [judgement]  | T5                  |
-| T7  | Add `scripts/scene-scorecard.mjs` (`--write`, `--check`), its tests, the generated `docs/scene-scorecard.md`, and the `conventions` check                                                                                     | [judgement]  | T6                  |
-| T8  | Cut `docs/principles.md` to the stable sections, link the scorecard, move "Known violations today" to `natural-selection.md`, and fix every link to the moved sections                                                        | [judgement]  | T7                  |
-| T9  | Conformance review of Phase 1                                                                                                                                                                                                 | [judgement]  | T2, T3, T4, T4a, T8 |
+| #   | Task                                                                                                                                                                                                                                  | Nature       | Depends on          |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------- |
+| T1  | (built) Move the Commands table to `docs/commands.md` under the eight headings, one `###` per command; leave the 12-row table and the link in `AGENTS.md`; point `audit-docs` and the skills at the new file                          | [judgement]  | -                   |
+| T2  | (built) Add the `agents-size` check (16000 bytes) to `scripts/check-conventions.sh` with its tests; trim `AGENTS.md` under it without dropping a hard rule or a boundary                                                              | [judgement]  | T1                  |
+| T3  | (built) Add `scripts/notes-index.mjs`; move every dated entry to `docs/notes/<YYYY-MM>.md` in date order; regenerate `sim-notes.md` as the index; run `--check` in `conventions`; update the notes rule in `AGENTS.md` and `STYLE.md` | [mechanical] | -                   |
+| T4  | (built) Add the 400-character status cap to `readStatus` with its test and shorten every doc over it                                                                                                                                  | [judgement]  | -                   |
+| T4a | (built) The `**Scheduled by:**` line, the lead and step rendering of the Build queue and their tests; `STYLE.md` and the `AGENTS.md` Build order state the rule                                                                       | [judgement]  | -                   |
+| T5  | (built) Add `SCENES` in `js/evo/metric-registry/scenes.js` and the optional `scenes` field, with the registry tests                                                                                                                   | [mechanical] | -                   |
+| T6  | (built) Tag every registry metric the three principles tables and the flora, megafauna and disease paragraphs name with its scenes                                                                                                    | [judgement]  | T5                  |
+| T7  | (built) Add `scripts/scene-scorecard.mjs` (`--write`, `--check`), its tests, the generated `docs/scene-scorecard.md`, and the `conventions` check                                                                                     | [judgement]  | T6                  |
+| T8  | (built) Cut `docs/principles.md` to the stable sections, link the scorecard, move "Known violations today" to `natural-selection.md`, and fix every link to the moved sections                                                        | [judgement]  | T7                  |
+| T9  | (built) Conformance review of Phase 1                                                                                                                                                                                                 | [judgement]  | T2, T3, T4, T4a, T8 |
 
 ### Phase 2 - Experiment ledger
 
@@ -350,15 +384,15 @@ An affected run that passes where the full run on the merged result fails is a m
 
 ### Phase 3 - Before the push
 
-| #   | Task                                                                                                                                                               | Nature       | Depends on              |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ----------------------- |
-| T16 | Print the per-file detail from `scripts/quality-ratchet.mjs --check` on a miss, with tests                                                                         | [judgement]  | -                       |
-| T17 | Add the `ratchet-related` gate to `scripts/check.sh --quick` with tests; update the `create-pr` skill                                                              | [judgement]  | T16                     |
-| T18 | Move every test that reads a shipped `evals/` data file to `test/fixtures/`, add `*.shipped.test.js` where a shipped file needs a parse check, and add `test-data` | [judgement]  | -                       |
-| T19 | Rerun a failed smoke spec once, write `.checklogs/smoke-flakes.json`, upload it in CI and list flaked specs in the `nightly-failure` issue, with tests             | [judgement]  | -                       |
-| T20 | Report `release` from `scripts/change-scope.sh` for the Release Please diff and run `scope` only for it in `check.yml`, with tests                                 | [mechanical] | -                       |
-| T30 | Report `records` from `scripts/change-scope.sh` and run the docs gate plus the two ledger checks for it in `check.yml`, with tests                                 | [judgement]  | T11, T14, T18           |
-| T21 | Conformance review of Phase 3, with the failure-class count of the 200 `check` runs before                                                                         | [judgement]  | T17, T18, T19, T20, T30 |
+| #   | Task                                                                                                                                                                       | Nature       | Depends on              |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------------------- |
+| T16 | (built) Print the per-file detail from `scripts/quality-ratchet.mjs --check` on a miss, with tests                                                                         | [judgement]  | -                       |
+| T17 | (built) Add the `ratchet-related` gate to `scripts/check.sh --quick` with tests; update the `create-pr` skill                                                              | [judgement]  | T16                     |
+| T18 | (built) Move every test that reads a shipped `evals/` data file to `test/fixtures/`, add `*.shipped.test.js` where a shipped file needs a parse check, and add `test-data` | [judgement]  | -                       |
+| T19 | (built) Rerun a failed smoke spec once, write `.checklogs/smoke-flakes.json`, upload it in CI and list flaked specs in the `nightly-failure` issue, with tests             | [judgement]  | -                       |
+| T20 | (built) Report `release` from `scripts/change-scope.sh` for the Release Please diff and run `scope` only for it in `check.yml`, with tests                                 | [mechanical] | -                       |
+| T30 | Report `records` from `scripts/change-scope.sh` and run the docs gate plus the two ledger checks for it in `check.yml`, with tests                                         | [judgement]  | T11, T14, T18           |
+| T21 | Conformance review of Phase 3, with the failure-class count of the 200 `check` runs before                                                                                 | [judgement]  | T17, T18, T19, T20, T30 |
 
 ### Phase 4 - The state of the machine
 
@@ -370,7 +404,7 @@ An affected run that passes where the full run on the merged result fails is a m
 | T25 | Add `docs/handoffs/TEMPLATE.md`; rewrite "Delegating to subagents" in `AGENTS.md` for streams (one coordinator, one model family), the worker budget and `worktree-gc.sh` | [judgement]  | T24        |
 | T27 | Conformance review of Phase 4, with `scripts/worktree-gc.sh` run on the machine and the class counts before and after in the PR body                                      | [judgement]  | T24, T25   |
 
-### Phase 5 - Start to merge
+### Phase 5 - Start to merge (built)
 
 | #   | Task                                                                                                                                                                  | Nature       | Depends on |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
@@ -382,15 +416,15 @@ An affected run that passes where the full run on the merged result fails is a m
 
 ### Phase 6 - Affected tests in CI
 
-| #   | Task                                                                                                                                                                                                                                                                                        | Nature       | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T34 | Add `scripts/data-deps.mjs` (`--write`, `--check`), the `// reads:` declaration, the generated `test/data-deps.json` and the `conventions` check, with tests on fixture test files                                                                                                          | [judgement]  | T18        |
-| T35 | Add `scripts/lib/affected.mjs` and `scripts/affected.mjs`: the four modes, the full list, the three sources and the matrix sizing, with tests (a script-only change reaches its test; a `js/sim` change reaches the statistical files; a full-list path is `full`; an empty diff is `full`) | [judgement]  | T34        |
-| T36 | Replay the last 100 merged pull requests through `affectedTests` offline: for each, the reached count against the suite and, where CI history shows a failed test on the PR, whether it was reached; record the table and fix every unreached failure before T37                            | [judgement]  | T35        |
-| T37 | Drive the `test` matrix of `check.yml` from the `scope` job's output, run `ratchet-related` as the pull-request `coverage` job, and keep `check` the one required status; `test/workflows/` pins the wiring                                                                                 | [judgement]  | T17, T36   |
-| T38 | Run the full suite, the whole-suite ratchet and the browser smoke on the push to `main`, with the red-main issue and the miss comparison                                                                                                                                                    | [judgement]  | T37        |
-| T39 | Update `AGENTS.md`, `docs/commands.md`, the `create-pr` skill and [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md) for the modes and the miss ledger                                                                                                                      | [mechanical] | T38        |
-| T40 | Conformance review of Phase 6, with the wall time by mode over the first 30 pull requests                                                                                                                                                                                                   | [judgement]  | T39        |
+| #   | Task                                                                                                                                                                                                                                                                                                | Nature       | Depends on |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T34 | (built) Add `scripts/data-deps.mjs` (`--write`, `--check`), the `// reads:` declaration, the generated `test/data-deps.json` and the `conventions` check, with tests on fixture test files                                                                                                          | [judgement]  | T18        |
+| T35 | (built) Add `scripts/lib/affected.mjs` and `scripts/affected.mjs`: the four modes, the full list, the three sources and the matrix sizing, with tests (a script-only change reaches its test; a `js/sim` change reaches the statistical files; a full-list path is `full`; an empty diff is `full`) | [judgement]  | T34        |
+| T36 | (built) Replay the last 100 merged pull requests through `affectedTests` offline: for each, the reached count against the suite and, where CI history shows a failed test on the PR, whether it was reached; record the table and fix every unreached failure before T37                            | [judgement]  | T35        |
+| T37 | (built) Drive the `test` matrix of `check.yml` from the `scope` job's output, run `ratchet-related` as the pull-request `coverage` job, and keep `check` the one required status; `test/workflows/` pins the wiring                                                                                 | [judgement]  | T17, T36   |
+| T38 | (built) Run the full suite, the whole-suite ratchet and the browser smoke on the push to `main`, with the red-main issue and the miss comparison                                                                                                                                                    | [judgement]  | T37        |
+| T39 | (built) Update `AGENTS.md`, `docs/commands.md`, the `create-pr` skill and [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md) for the modes and the miss ledger                                                                                                                      | [mechanical] | T38        |
+| T40 | Conformance review of Phase 6, with the wall time by mode over the first 30 pull requests                                                                                                                                                                                                           | [judgement]  | T39        |
 
 ## Verification
 

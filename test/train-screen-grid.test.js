@@ -1,9 +1,9 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
     DEFAULT_WORKERS_PER_RUN,
     ladderText,
     planScreen,
+    screenWarnings,
     screenRuns,
     textHash,
     trainArgs,
@@ -120,24 +120,17 @@ describe('the run list', () => {
     });
 });
 
-describe('evals/train-screens/plateau.grid.json', () => {
-    it('is the current ladder with and without plateauStop on matched offsets 0 to 120, to hunt-mid', () => {
-        const readFile = (/** @type {string} */ file) =>
-            JSON.parse(readFileSync(new URL(`../${file}`, import.meta.url), 'utf8'));
-        const plan = planScreen(readFile('evals/train-screens/plateau.grid.json'), readFile);
-        expect(plan.offsets).toEqual(Array.from({ length: 16 }, (_, i) => i * 8));
-        expect(plan).toMatchObject({ until: 'hunt-mid', generations: 380, workersPerRun: 8, reference: 'nostop' });
-        expect(plan.feasible).toBeNull();
-        expect(plan.arms.map((a) => a.train)).toEqual([{ checkpointEvery: 5 }, { checkpointEvery: 5 }]);
-        const stops = (/** @type {string} */ name) =>
-            plan.arms.find((a) => a.name === name)?.ladder.map((e) => [e.name, e.plateauStop]);
-        const ladder = readFile('evals/train-ladder.json');
-        expect(stops('stop')).toEqual(ladder.map((/** @type {any} */ e) => [e.name, e.plateauStop]));
-        expect(stops('nostop')?.slice(0, 4)).toEqual([
-            ['nursery', 0],
-            ['hunt-contact', 0],
-            ['hunt-weak', 0],
-            ['hunt-mid', 0],
-        ]);
+describe('screenWarnings', () => {
+    const offsets = (/** @type {number} */ n) => Array.from({ length: n }, (_, i) => i * 8);
+    it('warns when a grid that compares arms runs under 32 offsets', () => {
+        const warnings = screenWarnings(planScreen(grid({ offsets: offsets(16), arms: { a: {} } }), read));
+        expect(warnings).toHaveLength(1);
+        expect(warnings[0]).toMatch(/16 offsets is under 32/);
+    });
+
+    it('is quiet at 32 offsets, and for a grid with a single arm', () => {
+        expect(screenWarnings(planScreen(grid({ offsets: offsets(32), arms: { a: {} } }), read))).toEqual([]);
+        const solo = grid({ offsets: offsets(4), reference: 'only', arms: { only: {} } });
+        expect(screenWarnings(planScreen(solo, read))).toEqual([]);
     });
 });

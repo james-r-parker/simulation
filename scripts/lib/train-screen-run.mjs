@@ -18,6 +18,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ladderText, screenRuns, textHash, trainArgs } from './train-screen-grid.mjs';
 import { parseArgs as parseTrainArgs } from './train-args.mjs';
+import { seedListHash } from './train-manifest.mjs';
 
 const TRAIN_SCRIPT = fileURLToPath(new URL('../train.mjs', import.meta.url));
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
@@ -58,6 +59,7 @@ function expectedOptions(argv) {
         ticks: args.ticks ?? null,
         checkpointEvery: args.checkpointEvery,
         offerFrom: args.offerFrom ?? null,
+        seedListHash: seedListHash(),
     };
 }
 

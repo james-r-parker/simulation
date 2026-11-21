@@ -45,6 +45,28 @@ export function formatStages(before, after) {
 
 /**
  * @param {import('../../js/evo/yield-compare.js').YieldCompare} compare a `compareYield` result
+ * @returns {string[]} one line per stage: the offsets that gained and lost it, the exact p and its verdict, and the
+ *   fewest flips one way that would read a verdict; none when the comparison carries no stage tests
+ */
+export function formatStageTests(compare) {
+    if (compare.stageTests.length === 0) {
+        return [];
+    }
+    const header = ['stage', 'gained', 'lost', 'same', 'pass test p', 'verdict', 'flips needed'];
+    const body = compare.stageTests.map((t) => [
+        t.stage,
+        String(t.gained),
+        String(t.lost),
+        String(t.same),
+        t.p.toFixed(4),
+        t.verdict,
+        t.leastFlips === null ? '-' : String(t.leastFlips),
+    ]);
+    return ['stage pass test (exact, discordant offsets):', ...padTable([header, ...body]), ''];
+}
+
+/**
+ * @param {import('../../js/evo/yield-compare.js').YieldCompare} compare a `compareYield` result
  * @param {{before: ReturnType<typeof import('../../js/evo/ladder-yield.js').ladderYield>, after: ReturnType<typeof import('../../js/evo/ladder-yield.js').ladderYield>}} arms
  *   the two arms' yields
  * @returns {string[]} the pairs, the stages side by side, the CPU hours, the unmatched offsets and the verdict
@@ -62,6 +84,7 @@ export function formatCompare(compare, { before, after }) {
     if (compare.onlyBefore.length > 0 || compare.onlyAfter.length > 0) {
         lines.push(`unmatched offsets: before only [${compare.onlyBefore}], after only [${compare.onlyAfter}]`);
     }
+    lines.push(...formatStageTests(compare));
     const { low, high } = compare.interval;
     lines.push(
         `mean score difference ${compare.meanDiff.toFixed(3)} [${low.toFixed(3)}, ${high.toFixed(3)}], sign test p ${compare.p.toFixed(4)}`,

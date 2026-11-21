@@ -140,6 +140,68 @@ export function followStep(c, x, y, dtMs) {
     updateCamera(c, dtMs);
 }
 
+/** How far ahead of a followed body the view aims, in seconds of its displayed velocity. */
+export const LOOK_AHEAD_S = 0.4;
+/** The most the look-ahead may move the view, as a share of the canvas's shorter side. */
+export const LOOK_AHEAD_CAP = 0.2;
+/** The share of the view, centred, that both bodies of a pursuit stay inside. */
+export const PAIR_SHARE = 0.6;
+
+/**
+ * @typedef {object} FollowSubject what a follow shows this frame
+ * @property {number} x the subject, world units
+ * @property {number} y the subject, world units
+ * @property {number} vx its displayed velocity, world units per second
+ * @property {number} vy its displayed velocity, world units per second
+ * @property {boolean} pair whether it is in a pursuit whose other body frames with it
+ * @property {number} px the other body, world units
+ * @property {number} py the other body, world units
+ * @property {number} zoom the zoom wanted, 0 to leave the zoom as it is
+ */
+
+/**
+ * @param {CameraController} c the controller
+ * @param {FollowSubject} s the subject
+ * @returns {number} the highest zoom at which both bodies of the pair sit inside the middle `PAIR_SHARE` of the view
+ */
+export function pairZoom(c, s) {
+    const halfX = Math.max(Math.abs(s.x - s.px) / 2, 1e-6);
+    const halfY = Math.max(Math.abs(s.y - s.py) / 2, 1e-6);
+    return Math.min((PAIR_SHARE / 2) * (c.canvas.width / halfX), (PAIR_SHARE / 2) * (c.canvas.height / halfY));
+}
+
+/**
+ * Aims the view at a followed body: ahead of it by its velocity times `LOOK_AHEAD_S`, at most `LOOK_AHEAD_CAP` of the
+ * shorter side; at the midpoint of a pursuit pair, whose zoom keeps both inside the middle `PAIR_SHARE` of the view.
+ * @param {CameraController} c the controller
+ * @param {FollowSubject} s the subject
+ * @param {number} dtMs the frame time
+ * @returns {void}
+ */
+export function followSubject(c, s, dtMs) {
+    if (s.pair) {
+        c.targetX = (s.x + s.px) / 2;
+        c.targetY = (s.y + s.py) / 2;
+    } else {
+        let lx = s.vx * LOOK_AHEAD_S;
+        let ly = s.vy * LOOK_AHEAD_S;
+        const cap = (Math.min(c.canvas.width, c.canvas.height) / c.zoom) * LOOK_AHEAD_CAP;
+        const length = Math.hypot(lx, ly);
+        if (length > cap) {
+            lx *= cap / length;
+            ly *= cap / length;
+        }
+        c.targetX = s.x + lx;
+        c.targetY = s.y + ly;
+    }
+    if (s.zoom > 0) {
+        c.targetZoom = s.pair ? Math.min(s.zoom, pairZoom(c, s)) : s.zoom;
+    }
+    c.following = true;
+    limits(c);
+    updateCamera(c, dtMs);
+}
+
 /**
  * Pans by a drag. Dragging right moves the world right, so the view moves left; screen y points down, world y up.
  * Releases a follow.

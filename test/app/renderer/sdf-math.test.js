@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     coverage,
+    haloCoverage,
     rimCoverage,
     sdArc,
     sdBlob,
@@ -99,6 +100,20 @@ describe('coverage', () => {
         expect(coverage(0.1, 0.1)).toBeLessThan(0.01);
     });
 
+    it('halo: half the alpha x strength at most, falling to 0 at the reach and none inside or when off', () => {
+        const halo = { strength: 1, widthPx: 6, px: 0.1, alpha: 0.5 };
+        expect(haloCoverage(0, halo)).toBeCloseTo(0.5);
+        expect(haloCoverage(0.3, halo)).toBeCloseTo(0.5 * 0.25);
+        expect(haloCoverage(0.6, halo)).toBeCloseTo(0, 12);
+        expect(haloCoverage(5, halo)).toBe(0);
+        expect(haloCoverage(-0.01, halo)).toBe(0);
+        expect(haloCoverage(0.1, { ...halo, strength: 0.5 })).toBeCloseTo(0.5 * 0.5 * (1 - 1 / 6) ** 2);
+        expect(haloCoverage(0.1, { ...halo, widthPx: 0 })).toBe(0);
+        for (let d = 0; d < 1; d += 0.01) {
+            expect(haloCoverage(d, halo)).toBeLessThanOrEqual(0.5);
+        }
+    });
+
     it('rim: centred on the edge, rimPx wide', () => {
         expect(rimCoverage(0, 1.5, 0.1)).toBe(1);
         expect(rimCoverage(0.075, 1.5, 0.1)).toBeCloseTo(0.5);
@@ -144,6 +159,31 @@ describe('cell primitives', () => {
         expect(sdMembrane(-1, 0, { ...still, dent })).toBeCloseTo(0, 5);
         const bulge = { angle: 0, depth: -0.3, width: 0.5 };
         expect(sdMembrane(1.3, 0, { ...still, dent: bulge })).toBeCloseTo(0, 5);
+    });
+
+    it('membrane tear: a deep dent opens a gap to the centre, and a negative width repeats it three times', async () => {
+        const { sdMembrane, TEAR_FOLDS } = await import('../../../js/app/renderer/sdf-math.js');
+        const still = { rx: 1, ry: 1, amp: 0, lobes: 3, phase: 0 };
+        const tear = { angle: 0, depth: 1.1, width: 0.3 };
+        expect(sdMembrane(0.5, 0, { ...still, dent: tear })).toBeGreaterThan(0);
+        expect(sdMembrane(-0.5, 0, { ...still, dent: tear })).toBeLessThan(0);
+        expect(sdMembrane(-1, 0, { ...still, dent: tear })).toBeCloseTo(0, 5);
+        const scatter = { angle: 0, depth: 1.1, width: -0.3 };
+        expect(TEAR_FOLDS).toBe(3);
+        for (let k = 0; k < TEAR_FOLDS; k++) {
+            const a = (k * 2 * Math.PI) / TEAR_FOLDS;
+            expect(sdMembrane(0.5 * Math.cos(a), 0.5 * Math.sin(a), { ...still, dent: scatter })).toBeGreaterThan(0);
+        }
+        const between = Math.PI / TEAR_FOLDS;
+        expect(sdMembrane(0.5 * Math.cos(between), 0.5 * Math.sin(between), { ...still, dent: scatter })).toBeLessThan(
+            0,
+        );
+        const one = { angle: 0, depth: 0.3, width: 0.5 };
+        const same = { angle: 0, depth: 0.3, width: -0.5 };
+        expect(sdMembrane(0.7, 0, { ...still, dent: same })).toBeCloseTo(
+            sdMembrane(0.7, 0, { ...still, dent: one }),
+            5,
+        );
     });
 
     it('arcBetween: the shortest signed arc, across the wrap', async () => {

@@ -5,6 +5,7 @@
 import { columns } from '../history.js';
 import { CAUSE_CSS, NEUTRAL_CSS, specCss } from './css-color.js';
 import { RIVER_BANDS, riverSeries, stackLayers } from './chart-data.js';
+import { mountMilestones } from './milestones.js';
 
 export { riverSeries };
 
@@ -189,7 +190,7 @@ function archiveDef(specs) {
 /**
  * @param {{births: string[], deaths: string[], specs: string[]}} groups the history names in each chart group
  * @param {(lineageId: number) => string} colorOf a family's CSS colour
- * @returns {ChartDef[]} the five charts, in drawer order
+ * @returns {ChartDef[]} the five charts, in drawer order (the milestones list follows them)
  */
 export function chartDefs(groups, colorOf) {
     return [populationDef(groups.specs), riverDef(colorOf), flowDef(groups), combatDef(), archiveDef(groups.specs)];
@@ -237,10 +238,13 @@ export function mountCharts({ doc, root, UPlot, history, groups, colorOf }) {
         const cols = columns(history);
         return new UPlot(optionsFor(def, { UPlot, width }), [cols.t, ...def.data(cols)], box);
     });
+    const milestones = mountMilestones(doc, root);
+    milestones.update(history.milestones);
     return {
         update() {
             const cols = columns(history);
             instances.forEach((u, i) => u.setData([cols.t, ...defs[i].data(cols)]));
+            milestones.update(history.milestones);
         },
         destroy() {
             instances.forEach((u) => u.destroy());

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { createInterpolated, interpolateInto } from '../../../js/app/interpolate.js';
-import { createAgentRig, JUVENILE_EYE, rigBucket } from '../../../js/app/renderer/agent-rig.js';
+import {
+    createAgentRig,
+    failingShare,
+    FAILING_FROM,
+    JUVENILE_EYE,
+    rigBucket,
+} from '../../../js/app/renderer/agent-rig.js';
 import { createAgentStore, ITEM, packAgents } from '../../../js/app/renderer/agents-pack.js';
 import { createDents, startDent } from '../../../js/app/renderer/dents.js';
 import { startTween, TWEEN } from '../../../js/app/renderer/body-tweens.js';
@@ -27,13 +33,19 @@ const FLAGS = {
 const STATE = { RESTING: 1, SATED: 2, IN_COVER: 4, JUVENILE: 8 };
 const TABLE = bakeClips(CLIPS);
 
-/** @param {import('../helpers/snapshots.js').AgentSpec[]} specs agents @param {{tick?: number, setup?: (store: any) => void, ctx?: Record<string, any>}} [opts] */
+/** @param {import('../helpers/snapshots.js').AgentSpec[]} specs agents @param {{tick?: number, nowMs?: number, setup?: (store: any) => void, ctx?: Record<string, any>}} [opts] */
 function rigOf(specs, opts = {}) {
     const agents = createInterpolated(8);
     interpolateInto(null, makeSnapshot(1, specs), 1, agents);
     const store = createAgentStore(8, 1, [0], [12]);
     opts.setup?.(store);
-    packAgents(agents, store, FLAGS, { dtMs: 1000, zoom: 1, slots: createFamilySlots(), tick: opts.tick ?? 0 });
+    packAgents(agents, store, FLAGS, {
+        dtMs: 1000,
+        zoom: 1,
+        slots: createFamilySlots(),
+        tick: opts.tick ?? 0,
+        nowMs: opts.nowMs ?? 0,
+    });
     const rig = createAgentRig(8, 1);
     const ctx = {
         table: TABLE,
@@ -102,6 +114,25 @@ describe('rigBucket', () => {
         expect(out.accent[3]).toBe(1);
     });
 
+    it('carries the rim falloff strength in the fraction of the accent word, over the call kind', () => {
+        const idle = rigOf([{ slot: 0, genomeId: 1, flags: FLAGS.HUNT_CALLING }]);
+        expect(idle.accent[3]).toBe(2);
+        const lit = rigOf([{ slot: 0, genomeId: 1, flags: FLAGS.HUNT_CALLING }], {
+            setup: (store) => {
+                startTween(store.tweens, { slot: 0, genome: 1 }, TWEEN.KILL, 0);
+                Object.assign(store.halos, {
+                    start: Float64Array.of(0),
+                    genome: Uint32Array.of(1),
+                    began: Float64Array.of(750),
+                });
+            },
+            tick: 5,
+            nowMs: 1000,
+        });
+        expect(Math.floor(lit.accent[3])).toBe(2);
+        expect(lit.accent[3] - 2).toBeCloseTo(0.25, 3);
+    });
+
     it('writes the running dent into the body frame, a flat lane otherwise, and the flagella thrust', () => {
         const dents = createDents(8);
         startDent(dents, { slot: 0, genome: 1 }, { angle: 1, depth: 0.3, tick: 0 });
@@ -156,5 +187,33 @@ describe('wavePhase', () => {
         const fast = wavePhase(0.1, 1, 0);
         expect(fast).toBeGreaterThan(slow);
         expect(wavePhase(100.37, 0.5, 0.9)).toBeLessThan(Math.PI * 2);
+    });
+});
+
+describe('a failing body', () => {
+    it('keeps the full swim and fill from 15% energy up and loses both together below it', () => {
+        expect(FAILING_FROM).toBe(0.15);
+        expect(failingShare(0.15)).toBe(1);
+        expect(failingShare(0.9)).toBe(1);
+        expect(failingShare(0.075)).toBeCloseTo(0.5);
+        expect(failingShare(-1)).toBe(0);
+        const weak = rigOf([{ slot: 0, genomeId: 1, energy: 0.075 }]);
+        const full = FILL_SHARE.default;
+        expect(weak.neon[3]).toBeCloseTo(FILL_FLOOR + (full - FILL_FLOOR) * 0.075 * 0.5);
+        const fed = rigOf([{ slot: 0, genomeId: 1, energy: 0.15 }]);
+        expect(fed.neon[3]).toBeCloseTo(FILL_FLOOR + (full - FILL_FLOOR) * 0.15);
+    });
+
+    it('sags on the failing loop, which a fed body does not play', () => {
+        const lowest = (/** @type {number} */ energy) => {
+            let low = 9;
+            for (let t = 0; t < 4; t += 0.25) {
+                const out = rigOf([{ slot: 0, genomeId: 1, energy }], { ctx: { timeSec: t, hunter: false } });
+                low = Math.min(low, out.rig1[0]);
+            }
+            return low;
+        };
+        expect(lowest(0.01)).toBeLessThan(0.95);
+        expect(lowest(0.6)).toBeGreaterThan(0.97);
     });
 });

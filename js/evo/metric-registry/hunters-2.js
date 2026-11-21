@@ -117,7 +117,7 @@ export const HUNTERS_2 = {
         meaning:
             'Higher means a hunter catches a larger share of its chases late (ages 3000 to 3999) than early (1000 to 1999).',
         counts: 'Mean over hunters with at least 2 chases in both windows of late catch share minus early catch share.',
-        unit: 'share',
+        unit: 'share difference',
         direction: 'higher',
         nullWhen: ['no hunter lived to both bands'],
         arithmetic: 'test/evo/scene-competence.test.js',
@@ -202,6 +202,7 @@ export const HUNTERS_2 = {
     }),
     'eval.hunter_catches_per_1k': entry('hunters', {
         module: 'js/evo/metrics-combat.js',
+        scenes: ['A real chase'],
         meaning: 'Higher means hunters turn more of their time into fatal bites.',
         counts: 'Eaten deaths whose killer is a known hunter (killKind is HUNT or PACK, deliberate or not), over the whole run, per 1000 hunter agent-ticks.',
         unit: 'per 1k hunter agent-ticks',
@@ -212,6 +213,7 @@ export const HUNTERS_2 = {
     }),
     'eval.escape_share': entry('hunters', {
         module: 'js/evo/metrics-combat.js',
+        scenes: ['A real chase', 'G4'],
         meaning: 'Higher means more bitten non-hunters survive the bite episode.',
         counts: 'Bite episodes on non-hunters that resolve as escaped (ESCAPE_TICKS after the last bite, still alive) over caught plus escaped, whole run.',
         unit: 'share',
@@ -223,6 +225,7 @@ export const HUNTERS_2 = {
     }),
     'eval.pack_kills_per_eaten_death': entry('hunters', {
         module: 'js/evo/metrics-combat.js',
+        scenes: ['Pack, or loner', 'G3'],
         meaning: "Higher means more eaten deaths follow a bite from a second hunter of the killer's lineage.",
         counts: 'Eaten deaths whose killer and previous biter are hunters of one lineage within packWindow, over all eaten deaths (not over hunter kills).',
         unit: 'share',
@@ -233,6 +236,7 @@ export const HUNTERS_2 = {
     }),
     'eval.alarm_response': entry('hunters', {
         module: 'js/evo/metrics-combat.js',
+        scenes: ["Call, or don't", 'G2'],
         meaning: 'Higher means agents that hear an alarm speed up more than matched agents that do not.',
         counts: "Mean over alarm calls with a matched control of the hearers' speed change ALARM_RESPONSE_TICKS (10) after the call, minus the control mean of the same distance band to the nearest hunter, over maxVelocity.",
         unit: 'speed change over max speed',

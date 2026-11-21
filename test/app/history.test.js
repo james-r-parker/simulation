@@ -6,6 +6,8 @@ import {
     HISTORY_SIZE,
     INITIAL_SAMPLE_MS,
     lookback,
+    MILESTONES_MAX,
+    pushMilestone,
     pushSample,
 } from '../../js/app/history.js';
 
@@ -99,5 +101,19 @@ describe('lookback', () => {
         expect(lookback(h, { series: 'pop', agoMs: 10000 })).toBe(103);
         expect(lookback(h, { series: 'pop', agoMs: 0 })).toBe(105);
         expect(lookback(h, { series: 'missing', agoMs: 0 })).toBeNull();
+    });
+});
+
+describe('milestones', () => {
+    it('keeps the newest MILESTONES_MAX in order and forgets them with the world', () => {
+        const h = createHistory({ names: ['a'], kinds: ['level'] });
+        for (let i = 0; i < MILESTONES_MAX + 5; i++) {
+            pushMilestone(h, { tick: i, kind: 'extinct', text: `m${i}` });
+        }
+        expect(h.milestones).toHaveLength(MILESTONES_MAX);
+        expect(h.milestones[0]).toEqual({ tick: 5, kind: 'extinct', text: 'm5' });
+        expect(h.milestones.at(-1)?.tick).toBe(MILESTONES_MAX + 4);
+        clearHistory(h);
+        expect(h.milestones).toEqual([]);
     });
 });

@@ -55,6 +55,23 @@ export function packSegments(lines, out, rgb) {
     return count;
 }
 
+/**
+ * @param {any} world the vertex's world position node
+ * @param {{dPx: any, widthPx: number}} stroke the pixel distance node from the stroke's centre line and its width
+ * @returns {any} an additive, never-depth-tested material whose fragments are the unit colour across the stroke's
+ *   anti-aliased cover, for the caller to scale by its colour node
+ */
+export function strokeMaterial(world, { dPx, widthPx }) {
+    const material = new MeshBasicNodeMaterial();
+    material.transparent = true;
+    material.depthTest = false;
+    material.depthWrite = false;
+    material.blending = AdditiveBlending;
+    material.positionNode = vec3(world, 0);
+    material.userData.cover = smoothstep(float(widthPx / 2 - 0.5), float(widthPx / 2 + 0.5), dPx).oneMinus();
+    return material;
+}
+
 /** @param {number} widthPx the stroke width @returns {any} the capsule material */
 function lineMaterial(widthPx) {
     const seg = attribute('iSeg', 'vec4');
@@ -69,18 +86,11 @@ function lineMaterial(widthPx) {
     const corner = positionGeometry.xy;
     const along = a.add(delta.mul(corner.x.add(1).mul(0.5))).add(dir.mul(corner.x.mul(half)));
     const world = along.add(across.mul(corner.y.mul(half)));
-    const material = new MeshBasicNodeMaterial();
-    material.transparent = true;
-    material.depthTest = false;
-    material.depthWrite = false;
-    material.blending = AdditiveBlending;
-    material.positionNode = vec3(world, 0);
-    const p = varying(world);
-    const pa = p.sub(a);
+    const pa = varying(world).sub(a);
     const h = clamp(dot(pa, delta).div(max(dot(delta, delta), 1e-8)), 0, 1);
     const dPx = length(pa.sub(delta.mul(h))).div(pxWorld);
-    const cover = smoothstep(float(widthPx / 2 - 0.5), float(widthPx / 2 + 0.5), dPx).oneMinus();
-    material.colorNode = color.xyz.mul(cover);
+    const material = strokeMaterial(world, { dPx, widthPx });
+    material.colorNode = color.xyz.mul(material.userData.cover);
     return material;
 }
 
@@ -122,5 +132,11 @@ export function createBorderLines({ info }) {
     }
     const mesh = createLineMesh(lines);
     mesh.upload();
-    return { object: mesh.object, dispose: mesh.dispose };
+    return {
+        object: mesh.object,
+        update(frame) {
+            mesh.object.visible = !frame.tv;
+        },
+        dispose: mesh.dispose,
+    };
 }

@@ -62,6 +62,7 @@ describe('noteTick', () => {
         noteTick(live, world, observer);
         expect(tickerEvents(live)).toEqual([
             { tick: 50, kind: 'pack-kill', text: 'pack kill', genomeId: 99, lineageId: 3 },
+            { tick: 50, kind: 'first-pack-kill', text: 'first pack kill', genomeId: 99 },
         ]);
     });
 
@@ -305,6 +306,33 @@ describe('collectStats', () => {
         expect(tickerEvents(live).map((i) => i.kind)).toContain('extinct');
     });
 
+    it('queues last-stand once a big family is down to one, and extinct with where it was last seen', () => {
+        const { world, observer, live, policy } = setup({ maxAgents: 16 });
+        const stats = () =>
+            collectStats(live, { world, observer, policy, generations: createGenerations(world.config) }, RUN);
+        world.tick = 20000;
+        for (let slot = 0; slot < 12; slot++) {
+            world.alive[slot] = 1;
+            world.lineageId[slot] = 7;
+            world.x[slot] = 100 + slot;
+            world.y[slot] = 200;
+        }
+        stats();
+        tickerEvents(live);
+        world.alive.fill(0);
+        world.alive[3] = 1;
+        world.lineageId[3] = 7;
+        stats();
+        expect(tickerEvents(live).filter((i) => i.kind === 'last-stand')).toMatchObject([
+            { lineageId: 7, x: 103, y: 200 },
+        ]);
+        world.alive[3] = 0;
+        world.alive[4] = 1;
+        world.lineageId[4] = 8;
+        stats();
+        expect(tickerEvents(live)).toMatchObject([{ kind: 'extinct', lineageId: 7, x: 103, y: 200 }]);
+    });
+
     it('queues an elder item once as an agent crosses 90% of maxAgeTicks', () => {
         const { world, observer, live, policy } = setup({ maxAgeTicks: 1000 });
         world.alive[0] = 1;
@@ -316,7 +344,10 @@ describe('collectStats', () => {
         world.tick = 110;
         world.ageTicks[0] = 909;
         collectStats(live, { world, observer, policy, generations: createGenerations(world.config) }, RUN);
-        expect(tickerEvents(live)).toMatchObject([{ kind: 'elder', genomeId: 33 }]);
+        expect(tickerEvents(live)).toMatchObject([
+            { kind: 'record-age', genomeId: 33 },
+            { kind: 'elder', genomeId: 33 },
+        ]);
         world.tick = 120;
         world.ageTicks[0] = 919;
         collectStats(live, { world, observer, policy, generations: createGenerations(world.config) }, RUN);

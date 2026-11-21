@@ -18,8 +18,9 @@ Every doc opens with exactly one status line, in this format:
 **Status:** <Keyword> - optional detail.
 ```
 
-The keyword comes from this closed set. Detail after the dash is free text - name the phase, the PR, what is
-left.
+The keyword comes from this closed set. Detail after the dash is free text - name the built phases and the next
+task. The whole line holds at most 400 characters (`readStatus` rejects a longer one); a run's result is in its
+experiment record, not here.
 
 | Keyword       | Means                                                                             |
 | ------------- | --------------------------------------------------------------------------------- |
@@ -199,12 +200,12 @@ pinned line number silently starts pointing at a closing brace. `scripts/designs
 
 ## Where rationale and learnings live
 
-| Kind                               | Home                                                            |
-| ---------------------------------- | --------------------------------------------------------------- |
-| Why a change was made              | The commit body and the PR description                          |
-| Audits, research, comparisons      | A `Reference` doc (e.g. `legacy-audit.md`)                      |
-| Platform and library surprises     | [sim-notes.md](sim-notes.md), under `## Learned while building` |
-| Results of an evolution experiment | `evals/experiments.json` (the `run-evolution-loop` skill)       |
+| Kind                               | Home                                                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Why a change was made              | The commit body and the PR description                                                                       |
+| Audits, research, comparisons      | A `Reference` doc (e.g. `legacy-audit.md`)                                                                   |
+| Platform and library surprises     | `docs/notes/<YYYY-MM>.md`, indexed in [sim-notes.md](sim-notes.md) by `node scripts/notes-index.mjs --write` |
+| Results of an evolution experiment | `evals/experiments.json` (the `run-evolution-loop` skill)                                                    |
 
 ## Notes (sparse callout)
 

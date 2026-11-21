@@ -7,11 +7,13 @@
 // - `eval.hunter_kill_rate_by_age.<band>`: kills per 1,000 life ticks in the band: `juvenile` below `juvenileTicks`, `young`
 //   below 4 x `juvenileTicks`, `adult` beyond.
 // - `eval.hunter_juvenile_death_share`: the share of hunter deaths with an age below `juvenileTicks`.
+// - `eval.hunter_juvenile_death_share_settled`: the same over deaths at or after `BURN_IN_TICKS`, so founders do not decide it.
 // - `eval.hunter_kill_rate_by_source.<source>`: kills per 1,000 life ticks by birth source (`HUNTER_BIRTH_NAMES`).
 //
 // All are observer state outside `worldHash`; a death or a kill appends nothing larger than a row of a growable log.
 
 import { BIRTH_SOURCE } from '../sim/hunter-ledger.js';
+import { BURN_IN_TICKS } from './burn-in.js';
 import { createLog, ensureRoom } from './growable-log.js';
 import { bySuffix, none, ok, per1k, quantile, share } from './metrics-stats.js';
 
@@ -51,6 +53,8 @@ export function createAgeScene(juvenileTicks) {
         sourceTicks: new Float64Array(HUNTER_BIRTH_NAMES.length),
         deaths: 0,
         juvenileDeaths: 0,
+        settledDeaths: 0,
+        settledJuvenileDeaths: 0,
     };
 }
 
@@ -110,6 +114,10 @@ export function noteAgeDeath(scene, d, o) {
     }
     scene.deaths += 1;
     scene.juvenileDeaths += age < scene.juvenileTicks ? 1 : 0;
+    if (d[o + 1] >= BURN_IN_TICKS) {
+        scene.settledDeaths += 1;
+        scene.settledJuvenileDeaths += age < scene.juvenileTicks ? 1 : 0;
+    }
 }
 
 /**
@@ -153,6 +161,11 @@ export function ageMetrics(scene, world) {
     return {
         'eval.hunter_first_kill_age': first ?? none('no hunter made a deliberate kill'),
         'eval.hunter_juvenile_death_share': share(scene.juvenileDeaths, scene.deaths, 'no hunter deaths'),
+        'eval.hunter_juvenile_death_share_settled': share(
+            scene.settledJuvenileDeaths,
+            scene.settledDeaths,
+            'no hunter deaths after burn-in',
+        ),
         ...bySuffix('eval.hunter_kill_rate_by_age', AGE_BAND_NAMES, (i) =>
             per1k(scene.bandKills[i], totals.bandTicks[i]),
         ),

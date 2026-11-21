@@ -26,14 +26,21 @@ concurrency:
 
 jobs:
   # Classifies the change once, for the jobs below: `docs` when every changed path is Markdown that no build or test reads
-  # beyond the design-doc tests (scripts/change-scope.sh), `full` otherwise. A push computes it against the previous tip;
-  # anything unclassifiable takes the full path.
+  # beyond the design-doc tests (scripts/change-scope.sh), `release` for the Release Please pull request (a diff of only
+  # CHANGELOG.md, package.json, package-lock.json and .release-please-manifest.json on a `release-please--*` branch: it
+  # runs this job and nothing else, and `check` reports success because it counts a skipped job as passed), `full`
+  # otherwise. A push is always `full`: the push to main is the first run of the merged result, so it runs the whole suite
+  # (docs/designs/agent-workflow.md, Affected tests in CI); anything unclassifiable takes the full path.
   scope:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       scope: ${{ steps.scope.outputs.scope }}
+      mode: ${{ steps.affected.outputs.mode }}
+      has_tests: ${{ steps.affected.outputs.has_tests }}
+      coverage: ${{ steps.affected.outputs.coverage }}
+      matrix: ${{ steps.affected.outputs.matrix }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -46,26 +53,73 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event_name == 'merge_group' && github.event.merge_group.base_sha || format('origin/{0}', github.base_ref) }}
-          BEFORE: ${{ github.event.before }}
+          HEAD_REF: ${{ github.head_ref }}
         run: |
           scope=full
           if [[ "$EVENT" == pull_request || "$EVENT" == merge_group ]]; then
             scope="$(scripts/change-scope.sh "$BASE" || echo full)"
-          elif [[ "$EVENT" == push && ! "$BEFORE" =~ ^0+$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
-            # A push re-checks only what changed since the previous tip; its PR already passed the rest.
-            scope="$(scripts/change-scope.sh "$BEFORE" || echo full)"
+          fi
+          # The release scope needs the Release Please branch: a dependency bump touches the same package files and
+          # must run the whole gate. A push or a queue run has no such branch, so it takes the full path.
+          if [[ "$scope" == release && "$HEAD_REF" != release-please--* ]]; then
+            scope=full
           fi
           echo "scope=$scope" >>"$GITHUB_OUTPUT"
           echo "Change scope: $scope"
 
+      # scripts/affected.mjs uses only Node's own modules, so the job needs no `npm ci`.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+
+      # The tests the `test` job runs and the coverage it takes (docs/designs/agent-workflow.md, Affected tests in CI). A
+      # pull request runs the tests its change can reach; every other event (the push to main, the merge queue) runs the
+      # whole suite, and so does a pull request whose diff the script cannot read or classify. The docs and release scopes
+      # run no test. The reached list is kept as the `affected` artifact, which the full run on main compares with its
+      # failures (the miss ledger).
+      - name: Affected tests
+        id: affected
+        env:
+          EVENT: ${{ github.event_name }}
+          SCOPE: ${{ steps.scope.outputs.scope }}
+          BASE: ${{ format('origin/{0}', github.base_ref) }}
+        run: |
+          if [[ "$SCOPE" == docs || "$SCOPE" == release ]]; then
+            {
+              echo "mode=$SCOPE"
+              echo has_tests=false
+              echo coverage=none
+              echo 'matrix={"include":[]}'
+            } >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+          args=(--out affected.json --github-output "$GITHUB_OUTPUT")
+          if [[ "$EVENT" == pull_request ]]; then
+            node scripts/affected.mjs "$BASE" "${args[@]}" || node scripts/affected.mjs --full "${args[@]}"
+          else
+            node scripts/affected.mjs --full "${args[@]}"
+          fi
+
+      - name: Upload the reached tests
+        if: github.event_name == 'pull_request' && steps.affected.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: affected
+          path: affected.json
+          if-no-files-found: ignore
+
   # The static gates and the build (scripts/check.sh --ci): conventions, designs-index, format, lint, typecheck, deps,
-  # dupes, build and eval-smoke. On a pull request and in the merge queue the tests are the `test` and `coverage` jobs
-  # below (`--skip=test`); a push to main or season/next runs the fast tests here instead, because the queue already ran the
-  # whole suite on the same commit.
+  # dupes, build and eval-smoke. The tests are the `test` and `coverage` jobs below on every event (`--skip=test`): the
+  # reached tests on a pull request, the whole suite on a push. A pull request also fails while an open affected-test miss
+  # (a red-main issue labelled `affected-miss`) is still not reached by the selection (scripts/miss-ledger.mjs check).
   static:
     needs: scope
+    if: needs.scope.outputs.scope != 'release'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: read
     steps:
       - uses: actions/checkout@v7
         with:
@@ -100,12 +154,16 @@ jobs:
 
       - name: Local gate
         if: needs.scope.outputs.scope != 'docs'
+        run: scripts/check.sh --ci --skip=test
+
+      # An open miss: a test that failed on main after the pull request that changed what it reads ran without it. The
+      # change that declares the edge passes; every other change waits for it. A fork has no token, and the step skips.
+      - name: Open affected-test misses
+        if: github.event_name == 'pull_request' && needs.scope.outputs.scope != 'docs'
         env:
-          EVENT: ${{ github.event_name }}
-        run: |
-          skip=()
-          [[ "$EVENT" == push ]] || skip=(--skip=test)
-          scripts/check.sh --ci ${skip[@]+"${skip[@]}"}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: node scripts/miss-ledger.mjs check
 
       # conventions, designs-index, format and the tests that read this repo's Markdown.
       - name: Local gate (docs only)
@@ -123,39 +181,25 @@ jobs:
           if-no-files-found: ignore
           include-hidden-files: true
 
-  # The whole test suite, `*.slow.test.js` included, on every pull request and merge-queue run
-  # (docs/designs/quality-gates-and-test-tiers.md, Phase 4). The jobs run side by side on their own runners, one TEST_SCOPE
-  # each (scripts/lib/test-scope.mjs): `shard` (everything with coverage except the two lists below, split by path hash),
-  # `heavy` (HEAVY_TESTS, each file in a job of its own with coverage, so no shard waits on one) and `statistical`
-  # (STATISTICAL_TESTS, one job per file, no coverage because their ray casts wrap V8's block counters). Every job uses one shuffle seed,
-  # the run id, so a rerun replays the order. A job with coverage uploads its blob report for the `coverage` job. A push
-  # does not run this job.
+  # The tests a run needs, `*.slow.test.js` included (docs/designs/quality-gates-and-test-tiers.md, Phase 4, and
+  # docs/designs/agent-workflow.md, Affected tests in CI). The matrix is the `scope` job's output (scripts/affected.mjs,
+  # scripts/lib/affected-matrix.mjs): a pull request gets the shards and the heavy and statistical files its change can
+  # reach, every other run (the push to main) the whole suite. The jobs run side by side on their own runners, one TEST_SCOPE
+  # each (scripts/lib/test-scope.mjs): `shard` (the numbered shards of everything with coverage except the two lists below,
+  # or the reached files), `heavy` (HEAVY_TESTS, each file in a job of its own, so no shard waits on one) and `statistical`
+  # (STATISTICAL_TESTS, one job per file, no coverage because their ray casts wrap V8's block counters). Every job uses one
+  # shuffle seed, the run id, so a rerun replays the order. A run with whole-suite coverage uploads each blob report for the
+  # `coverage` job; a pull request on the reached tests takes no coverage here and the `ratchet-related` job holds its
+  # changed files. A run that reaches no test skips this job, which `check` counts as passed.
   test:
     name: test ${{ matrix.id }}
     needs: scope
-    if: github.event_name != 'push' && needs.scope.outputs.scope != 'docs'
+    if: needs.scope.outputs.has_tests == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - { pass: shard, id: shard-1, shard: 1/8 }
-          - { pass: shard, id: shard-2, shard: 2/8 }
-          - { pass: shard, id: shard-3, shard: 3/8 }
-          - { pass: shard, id: shard-4, shard: 4/8 }
-          - { pass: shard, id: shard-5, shard: 5/8 }
-          - { pass: shard, id: shard-6, shard: 6/8 }
-          - { pass: shard, id: shard-7, shard: 7/8 }
-          - { pass: shard, id: shard-8, shard: 8/8 }
-          - { pass: heavy, id: heavy-train-pool, files: test/train-pool.slow.test.js }
-          - { pass: heavy, id: heavy-scripted-temperature, files: test/evo/scripted-temperature.slow.test.js }
-          - { pass: heavy, id: heavy-train, files: test/train.slow.test.js }
-          - { pass: statistical, id: statistical-deliberate, files: test/evo/deliberate-controllers.slow.test.js }
-          - { pass: statistical, id: statistical-survivable-world, files: test/evo/survivable-world.slow.test.js }
-          - { pass: statistical, id: statistical-anti-exploit, files: test/evo/anti-exploit.slow.test.js }
-          - { pass: statistical, id: statistical-practice, files: test/sim/practice.slow.test.js }
-          - { pass: statistical, id: statistical-metric-invariants, files: test/evo/metric-invariants.slow.test.js }
+      matrix: ${{ fromJSON(needs.scope.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -177,12 +221,13 @@ jobs:
           SHARD: ${{ matrix.shard }}
           FILES: ${{ matrix.files }}
           SEED: ${{ github.run_id }}
+          COVERAGE: ${{ needs.scope.outputs.coverage }}
         run: |
           echo "test order seed: $SEED, job $ID (scope $TEST_SCOPE)"
           args=(--sequence.shuffle --sequence.seed="$SEED" --passWithNoTests
             --reporter=default --reporter=junit --outputFile.junit="TestResults/junit-$ID.xml")
           [[ -z "$SHARD" ]] || args+=(--shard="$SHARD")
-          if [[ "$TEST_SCOPE" != statistical ]]; then
+          if [[ "$TEST_SCOPE" != statistical && "$COVERAGE" == whole ]]; then
             args+=(--coverage --coverage.reportOnFailure --reporter=blob --outputFile.blob=".vitest-reports/blob-$ID.json")
           fi
           # FILES is a path filter: unquoted on purpose, it is one file or none.
@@ -190,7 +235,7 @@ jobs:
           npx vitest run "${args[@]}" $FILES
 
       - name: Upload the blob report
-        if: ${{ !cancelled() && matrix.pass != 'statistical' }}
+        if: ${{ !cancelled() && matrix.pass != 'statistical' && needs.scope.outputs.coverage == 'whole' }}
         uses: actions/upload-artifact@v7
         with:
           name: blob-${{ matrix.id }}
@@ -207,11 +252,12 @@ jobs:
           if-no-files-found: ignore
 
   # Merges the blob reports of the jobs with coverage into one coverage summary and runs the coverage ratchet on it
-  # (scripts/quality-ratchet.mjs --check). It runs when a shard failed too, so a failing test never hides a coverage drop;
-  # then the summary may lack the failed shard's files and the ratchet's numbers are informational.
+  # (scripts/quality-ratchet.mjs --check). It runs on the whole suite only (a push, or a pull request on the full list)
+  # and when a shard failed too, so a failing test never hides a coverage drop; then the summary may lack the failed
+  # shard's files and the ratchet's numbers are informational.
   coverage:
     needs: [scope, test]
-    if: ${{ !cancelled() && needs.test.result != 'skipped' }}
+    if: ${{ !cancelled() && needs.scope.outputs.coverage == 'whole' && needs.test.result != 'skipped' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -242,11 +288,42 @@ jobs:
           node scripts/quality-ratchet.mjs --check || status=$?
           exit $status
 
+  # A pull request that runs the reached tests only holds the files it changed to their coverage baseline: it runs the tests
+  # related to them with coverage and fails a changed file under a 100% baseline that is not at 100%
+  # (scripts/ratchet-related.mjs, exit 3 when no changed file is under one). The whole-suite ratchet runs with the full
+  # suite on the push to main.
+  ratchet-related:
+    needs: scope
+    if: needs.scope.outputs.coverage == 'related'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Changed files at their coverage baseline
+        env:
+          BASE: ${{ format('origin/{0}', github.base_ref) }}
+        run: |
+          status=0
+          node scripts/ratchet-related.mjs --base "$BASE" || status=$?
+          [[ $status -eq 0 || $status -eq 3 ]]
+
   # The required check: it reports on every pull request and merge-queue run, whichever jobs ran, and fails when any job
-  # failed or was cancelled. A job skipped by scope (docs) or event (the push) counts as passed.
+  # failed or was cancelled. A job skipped by scope (docs, release) or because the change reaches no test counts as passed, so the release
+  # pull request, which runs `scope` alone, still reports `check` as success.
   check:
     if: github.event_name != 'workflow_dispatch' && always()
-    needs: [scope, static, test, coverage]
+    needs: [scope, static, test, coverage, ratchet-related]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -257,11 +334,38 @@ jobs:
           echo "job results: $RESULTS"
           [[ " $RESULTS " != *" failure "* && " $RESULTS " != *" cancelled "* ]]
 
+  # A red full run on main opens an issue (or adds to the open one) that names the merge commit, the failed jobs and test
+  # files, and the misses: failed tests the merged pull request did not reach (scripts/miss-ledger.mjs report). Only main:
+  # season/next batches rule changes and is read by the season, not by this issue.
+  red-main:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && always() && needs.check.result == 'failure'
+    needs: [check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+
+      - name: Open the red-main issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: node scripts/miss-ledger.mjs report
+
   # The browser smoke runs in the official Playwright image (about 2 GB), whose version is the exact @playwright/test
   # pin in package.json: scripts/browser-smoke.sh derives the tag from that pin and `docker run`s the image. The job has
   # no `container:`, because a job container is pulled before the first step even when every step is skipped. The job
   # always runs and reports (a required check must not go missing); only its steps are skipped, so the image is pulled
-  # only when a path the app is built from changed (scripts/change-scope.sh --browser) or the scope is unknown.
+  # only when a path the app is built from changed (scripts/change-scope.sh --browser) or the scope is unknown. A push
+  # always runs it: the push to main is the first run of the merged result.
   browser-smoke:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -276,14 +380,15 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event_name == 'merge_group' && github.event.merge_group.base_sha || format('origin/{0}', github.base_ref) }}
-          BEFORE: ${{ github.event.before }}
+          HEAD_REF: ${{ github.head_ref }}
         run: |
           scope=browser
           if [[ "$EVENT" == pull_request || "$EVENT" == merge_group ]]; then
             scope="$(scripts/change-scope.sh --browser "$BASE" || echo browser)"
-          elif [[ "$EVENT" == push && ! "$BEFORE" =~ ^0+$ ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
-            # A push re-checks only what changed since the previous tip; its PR already passed the rest.
-            scope="$(scripts/change-scope.sh --browser "$BEFORE" || echo browser)"
+            # The Release Please pull request changes version files only: its steps are skipped, the job still reports.
+            if [[ "$EVENT" == pull_request && "$HEAD_REF" == release-please--* && "$(scripts/change-scope.sh "$BASE" || echo full)" == release ]]; then
+              scope=none
+            fi
           fi
           echo "scope=$scope" >>"$GITHUB_OUTPUT"
           echo "Browser scope: $scope"
@@ -301,6 +406,17 @@ jobs:
       - name: Browser smoke
         if: steps.scope.outputs.scope == 'browser'
         run: scripts/check.sh --ci --only=browser-smoke
+
+      # A spec that failed and passed on its rerun is written to .checklogs/smoke-flakes.json (scripts/browser-smoke.sh);
+      # the nightly `smoke-flakes` job lists the last 7 days of them.
+      - name: Upload smoke flakes
+        if: always() && steps.scope.outputs.scope == 'browser'
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-flakes
+          path: .checklogs/smoke-flakes.json
+          if-no-files-found: ignore
+          include-hidden-files: true
 
       - name: Upload check logs
         if: failure()

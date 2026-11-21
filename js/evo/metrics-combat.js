@@ -34,6 +34,7 @@ export function combatMetrics(observer) {
     const resolved = combat.caughtEpisodes + combat.escapedEpisodes;
     return {
         'eval.hunter_catches_per_1k': catchShare(combat.huntKills, combat.hunterAgentTicks),
+        'eval.hunter_catches_per_1k_settled': catchShare(combat.settledHuntKills, combat.settledHunterAgentTicks),
         'eval.escape_share': share(combat.escapedEpisodes, resolved, 'no resolved bite episode'),
         'eval.pack_kills_per_eaten_death': share(combat.packKills, combat.eatenDeaths, 'no eaten death'),
         'eval.alarm_response': alarmResponse(combat.alarm),

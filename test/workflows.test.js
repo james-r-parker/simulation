@@ -1,5 +1,7 @@
+// reads: .github/workflows
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { fullMatrix } from '../scripts/lib/affected-matrix.mjs';
 import { HEAVY_TESTS, STATISTICAL_TESTS } from '../scripts/lib/test-scope.mjs';
 
 const DIR = '.github/workflows';
@@ -52,16 +54,15 @@ describe('workflows', () => {
             }
         });
 
-        it('scopes a push against the previous tip, falling back to the full scope when it is unknown', () => {
+        it('takes the full scope and the browser smoke on every push, which is the first run of the merged result', () => {
             for (const [id, fallback] of [
                 ['scope', 'full'],
                 ['browser-smoke', 'browser'],
             ]) {
                 const text = job(id);
-                expect(text).toContain('BEFORE: ${{ github.event.before }}');
-                expect(text).toContain('"$BEFORE"');
-                expect(text).toContain('^0+$');
-                expect(text).toContain('git cat-file -e');
+                // No diff against the previous tip: only a pull request or a queue run is classified.
+                expect(text).not.toContain('BEFORE');
+                expect(text).not.toContain('git cat-file');
                 expect(text).toContain(`|| echo ${fallback})`);
                 expect(text).toContain(`scope=${fallback}\n`);
             }
@@ -92,10 +93,10 @@ describe('workflows', () => {
         it('runs the docs gate for the docs scope and the whole gate otherwise', () => {
             const steps = job('static').split('\n      - ');
             expect(steps.find((s) => s.includes('scripts/check.sh --ci --docs'))).toContain("scope == 'docs'");
-            const full = steps.find((s) => s.includes('scripts/check.sh --ci ${skip'));
+            const full = steps.find((s) => s.includes('scripts/check.sh --ci --skip=test'));
             expect(full).toContain("scope != 'docs'");
-            // The pull request and queue legs leave the tests to the `test` and `coverage` jobs; a push keeps the fast ones.
-            expect(full).toContain('[[ "$EVENT" == push ]] || skip=(--skip=test)');
+            // Every event leaves the tests to the `test` and `coverage` jobs: the reached ones on a pull request, all on a push.
+            expect(full).not.toContain('EVENT');
         });
 
         it('skips the browser smoke steps, not the job, when no app path changed', () => {
@@ -123,43 +124,37 @@ describe('workflows', () => {
             expect(check).toMatch(/push:\s*\n\s*branches: \[main, season\/next\]/);
         });
 
-        it('shards the whole suite, slow tests included, on a pull request and in the queue, never on a push', () => {
+        it('runs the matrix the scope job writes, slow tests included, with one seed and coverage only on a whole run', () => {
             const text = job('test');
-            expect(text).toContain("if: github.event_name != 'push' && needs.scope.outputs.scope != 'docs'");
+            expect(text).toContain("if: needs.scope.outputs.has_tests == 'true'");
+            expect(text).toContain('matrix: ${{ fromJSON(needs.scope.outputs.matrix) }}');
             expect(text).toContain('fail-fast: false');
             // Slow tests are not left out (no TEST_SCOPE=fast), and every job shares one seed.
             expect(text).not.toContain('TEST_SCOPE: fast');
             expect(text).toContain('TEST_SCOPE: ${{ matrix.pass }}');
             expect(text).toContain('--sequence.seed="$SEED"');
-            const entries = [...text.matchAll(/^ {10}- \{ (.*) \}$/gm)].map((m) =>
-                Object.fromEntries(m[1].split(', ').map((pair) => pair.split(': '))),
-            );
-            const ids = entries.map((entry) => entry.id);
-            expect(new Set(ids).size, 'ids are unique, so blob reports and artifacts do not collide').toBe(ids.length);
-            expect(new Set(entries.map((entry) => entry.pass))).toEqual(new Set(['shard', 'heavy', 'statistical']));
-            // The shard pass has every shard from 1 to its total, once.
-            const mine = entries
-                .filter((entry) => entry.pass === 'shard')
-                .map((entry) => entry.shard.split('/').map(Number));
-            const total = mine[0][1];
-            expect(mine.map(([i]) => i)).toEqual(Array.from({ length: total }, (_, i) => i + 1));
-            expect(mine.every(([, n]) => n === total)).toBe(true);
-            const statistical = entries.filter((entry) => entry.pass === 'statistical').map((entry) => entry.files);
+            // The jobs of a whole run are the full matrix (test/workflows/heavy-shards.test.js pins it): every shard once, and
+            // one job per heavy and per statistical file, with unique ids so blob reports and artifacts do not collide.
+            const jobs = fullMatrix();
+            expect(new Set(jobs.map((entry) => entry.id)).size).toBe(jobs.length);
+            expect(new Set(jobs.map((entry) => entry.pass))).toEqual(new Set(['shard', 'heavy', 'statistical']));
+            const statistical = jobs.filter((entry) => entry.pass === 'statistical').map((entry) => entry.files);
             expect([...statistical].sort()).toEqual([...STATISTICAL_TESTS].sort());
-            // One job per heavy file, and no other: the list in the matrix is the list the config uses.
-            const heavy = entries.filter((entry) => entry.pass === 'heavy').map((entry) => entry.files);
+            const heavy = jobs.filter((entry) => entry.pass === 'heavy').map((entry) => entry.files);
             expect([...heavy].sort()).toEqual([...HEAVY_TESTS].sort());
-            // Only the jobs with coverage carry coverage and a blob report.
+            // Only a whole run on a job with coverage carries coverage and a blob report.
             expect(text).toMatch(
-                /!= statistical \]\]; then\n\s+args\+=\(--coverage --coverage.reportOnFailure --reporter=blob/,
+                /"\$COVERAGE" == whole \]\]; then\n\s+args\+=\(--coverage --coverage.reportOnFailure --reporter=blob/,
             );
-            expect(text).toContain("matrix.pass != 'statistical'");
+            expect(text).toContain("matrix.pass != 'statistical' && needs.scope.outputs.coverage == 'whole'");
         });
 
         it('merges the shards coverage and runs the ratchet on it, even after a failed shard', () => {
             const text = job('coverage');
             expect(text).toContain('needs: [scope, test]');
-            expect(text).toContain("if: ${{ !cancelled() && needs.test.result != 'skipped' }}");
+            expect(text).toContain(
+                "if: ${{ !cancelled() && needs.scope.outputs.coverage == 'whole' && needs.test.result != 'skipped' }}",
+            );
             expect(text).toContain('pattern: blob-*');
             expect(text).toContain('npx vitest run --merge-reports=.vitest-reports --coverage');
             expect(text).toContain('node scripts/quality-ratchet.mjs --check');
@@ -167,12 +162,12 @@ describe('workflows', () => {
 
         it('has one required check that needs every job and fails when one failed or was cancelled', () => {
             const text = job('check');
-            expect(text).toContain('needs: [scope, static, test, coverage]');
+            expect(text).toContain('needs: [scope, static, test, coverage, ratchet-related]');
             expect(text).toContain('*" failure "*');
             expect(text).toContain('*" cancelled "*');
         });
 
-        it('runs the static gates without the tests on a pull request, and the fast tests on a push', () => {
+        it('runs the static gates without the tests on every event', () => {
             expect(job('static')).toContain('needs: scope');
             expect(job('static')).toContain('--skip=test');
         });
@@ -237,5 +232,26 @@ describe('workflows', () => {
         expect(job).toContain('nightly-failure');
         expect(job).toContain('scripts/lib/nightly-digest.mjs');
         expect(nightly).toContain('reports/nightly-summary.txt');
+    });
+
+    it('upload the browser smoke flakes as an artifact whatever the smoke result', () => {
+        const check = workflows.find(({ name }) => name === 'check.yml')?.text ?? '';
+        const job = check.slice(check.indexOf('\n  browser-smoke:'), check.indexOf('\n  perf:'));
+        const step = job.slice(job.indexOf('- name: Upload smoke flakes'));
+        expect(step).toContain('if: always()');
+        expect(step).toContain('name: smoke-flakes');
+        expect(step).toContain('path: .checklogs/smoke-flakes.json');
+        expect(step).toContain('if-no-files-found: ignore');
+    });
+
+    it('list the last 7 days of smoke flakes in one nightly issue', () => {
+        const nightly = workflows.find(({ name }) => name === 'nightly.yml')?.text ?? '';
+        const job = nightly.slice(nightly.indexOf('\n  smoke-flakes:'));
+        expect(job).toMatch(/actions:\s*read/);
+        expect(job).toMatch(/issues:\s*write/);
+        expect(job).toContain('7 days ago');
+        expect(job).toContain('gh run download "$id" --name smoke-flakes');
+        expect(job).toContain('scripts/lib/smoke-flakes.mjs digest');
+        expect(job).toContain('gh issue edit "$open"');
     });
 });

@@ -6,10 +6,12 @@ import { HUNTERS } from './hunters.js';
 import { HUNTERS_2 } from './hunters-2.js';
 import { HUNTERS_3 } from './hunters-3.js';
 import { HUNTERS_4 } from './hunters-4.js';
+import { HUNTERS_SETTLED } from './hunters-settled.js';
 import { INTENT } from './intent.js';
 import { SCENES_ECOLOGY } from './scenes-ecology.js';
 import { SCENES_ECOLOGY_2 } from './scenes-ecology-2.js';
 import { SCENES_ECOLOGY_3 } from './scenes-ecology-3.js';
+import { SCENES_ECOLOGY_4 } from './scenes-ecology-4.js';
 import { SCENES_SPRINT } from './scenes-sprint.js';
 import { SCENES_STILLNESS } from './scenes-stillness.js';
 import { SCENES_SCENT } from './scenes-scent.js';
@@ -70,8 +72,10 @@ export const METRICS = Object.freeze({
     ...withPower(withLiveness(HUNTERS_2)),
     ...withPower(withLiveness(HUNTERS_3)),
     ...withPower(withLiveness(HUNTERS_4)),
+    ...withPower(withLiveness(HUNTERS_SETTLED)),
     ...withPower(withLiveness(INTENT)),
     ...withPower(withLiveness(SCENES_ECOLOGY)),
+    ...withPower(withLiveness(SCENES_ECOLOGY_4)),
     ...withPower(withLiveness(SCENES_ECOLOGY_2)),
     ...withPower(withLiveness(SCENES_ECOLOGY_3)),
     ...withPower(withLiveness(SCENES_SPRINT)),

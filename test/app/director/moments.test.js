@@ -61,51 +61,99 @@ describe('readSnapshotAgents', () => {
 });
 
 describe('findMoments: chases', () => {
-    it('detects a gap-closing chase inside the jaw arc and rejects pairs that fail any chase rule', () => {
-        const earlier = [
-            { genomeId: 1, lineageId: 1, spec: 0, x: 100, y: 100, angle: 0, size: 14, speed: 2.2, flags: 1 << 16 },
-            { genomeId: 2, lineageId: 2, spec: 1, x: 400, y: 100, angle: 0, size: 10, speed: 2.2, flags: 0 },
-            // Non-closing prey (gap stays 300):
-            { genomeId: 3, lineageId: 2, spec: 1, x: 400, y: 120, angle: 0, size: 10, speed: 1, flags: 0 },
-        ];
-        const current = makeRawSnapshot([
-            // Hunter 1 now at x=200, prey 2 at x=400 (distance shrank from 300 to 200 <= 240):
-            { genomeId: 1, lineageId: 1, spec: 0, x: 200, y: 100, angle: 0, size: 14, speed: 2.2, flags: 1 << 16 },
-            { genomeId: 2, lineageId: 2, spec: 1, x: 400, y: 100, angle: 0, size: 10, speed: 2.2, flags: 0 },
-            // Prey 3 at x=500 (distance 300, did not shrink by 20%):
-            { genomeId: 3, lineageId: 2, spec: 1, x: 500, y: 120, angle: 0, size: 10, speed: 1, flags: 0 },
-            // Prey 4 heading towards hunter (angle PI, opposite to bearing 0):
-            { genomeId: 4, lineageId: 2, spec: 1, x: 300, y: 100, angle: Math.PI, size: 10, speed: 1, flags: 0 },
-            // Prey 5 too far (> 400):
-            { genomeId: 5, lineageId: 2, spec: 1, x: 700, y: 100, angle: 0, size: 10, speed: 1, flags: 0 },
-            // Hunter without hunting flag:
-            { genomeId: 6, lineageId: 1, spec: 0, x: 200, y: 100, angle: 0, size: 14, speed: 2.2, flags: 0 },
-            // Hunter missing from earlierSnapshot:
-            { genomeId: 7, lineageId: 1, spec: 0, x: 200, y: 100, angle: 0, size: 14, speed: 2.2, flags: 1 << 16 },
-        ]);
-        const earlierWithExtras = [
-            ...earlier,
-            { genomeId: 4, lineageId: 2, spec: 1, x: 500, y: 100, angle: Math.PI, size: 10, speed: 1, flags: 0 },
-            { genomeId: 5, lineageId: 2, spec: 1, x: 900, y: 100, angle: 0, size: 10, speed: 1, flags: 0 },
-        ];
-        const moments = findMoments({
-            snapshot: current,
-            earlierSnapshot: earlierWithExtras,
+    const hunter = (/** @type {Record<string, number>} */ over) => ({
+        genomeId: 1,
+        lineageId: 1,
+        spec: 0,
+        x: 200,
+        y: 100,
+        angle: 0,
+        size: 40,
+        speed: 2,
+        flags: 0,
+        ...over,
+    });
+    const prey = (/** @type {Record<string, number>} */ over) => ({
+        genomeId: 2,
+        lineageId: 2,
+        spec: 1,
+        x: 270,
+        y: 100,
+        angle: 0,
+        size: 10,
+        speed: 2,
+        flags: 0,
+        ...over,
+    });
+    /** The pursuit as it was 1.5 s ago: the hunter 100 units further back. */
+    const EARLIER = [hunter({ x: 100 }), prey({})];
+    const chases = (/** @type {Record<string, number>} */ h, /** @type {Record<string, number>} */ p) =>
+        findMoments({
+            snapshot: [hunter(h), prey(p)],
+            earlierSnapshot: EARLIER,
             info: INFO,
-            layout: { ...LAYOUT, flags: {} },
+            layout: LAYOUT,
             tick: 600,
-        });
-        expect(moments).toHaveLength(1);
-        expect(moments[0]).toMatchObject({
-            kind: MOMENT_KIND.CHASE,
-            x: 300,
+        }).filter((m) => m.kind === MOMENT_KIND.CHASE);
+
+    it('finds a chase from the geometry alone while the snapshot has no hunting bit, and needs the bit once it has one', () => {
+        const input = { snapshot: [hunter({}), prey({})], earlierSnapshot: EARLIER, info: INFO, tick: 600 };
+        const noBit = findMoments({ ...input, layout: { ...LAYOUT, flags: {} } });
+        expect(noBit.map((m) => m.kind)).toEqual([MOMENT_KIND.CHASE]);
+        expect(findMoments({ ...input, layout: LAYOUT })).toEqual([]);
+    });
+
+    it('finds a sustained pursuit: near, closing, aimed, moving and no slower than the prey', () => {
+        const found = chases({ flags: 1 << 16 }, {});
+        expect(found).toHaveLength(1);
+        expect(found[0]).toMatchObject({
+            x: 235,
             y: 100,
             hunterId: 1,
             preyId: 2,
             hunterSpec: 'predator',
             preySpec: 'forager',
         });
-        expect(moments[0].score).toBeCloseTo(95);
+        // 65 + 20 x (1 - 70 / 100): reach is 2.5 hunter sizes
+        expect(found[0].score).toBeCloseTo(71);
+    });
+
+    it('rejects a pursuit that fails any rule', () => {
+        const hunting = { flags: 1 << 16 };
+        // Beyond 2.5 hunter sizes (100 units): the prey is 130 away
+        expect(chases(hunting, { x: 330 })).toEqual([]);
+        // Aimed 0.5 rad off its prey, wider than the 0.3 rad alignment and inside the jaw arc
+        expect(chases({ ...hunting, angle: 0.5 }, {})).toEqual([]);
+        // Drifting: slower than 0.35 of maxVelocity now
+        expect(chases({ ...hunting, speed: 0.5 }, {})).toEqual([]);
+        // The prey is faster than the hunter
+        expect(chases(hunting, { speed: 2.5 })).toEqual([]);
+        // The prey runs at the hunter
+        expect(chases(hunting, { angle: Math.PI })).toEqual([]);
+        // The gap did not close by 20%
+        const flat = findMoments({
+            snapshot: [hunter(hunting), prey({})],
+            earlierSnapshot: [hunter({ x: 190, ...hunting }), prey({})],
+            info: INFO,
+            layout: LAYOUT,
+            tick: 600,
+        });
+        expect(flat).toEqual([]);
+    });
+
+    it('rejects a hunter that was not moving 1.5 s ago, a prey that is not smaller, a prey missing earlier and a prey that can hunt', () => {
+        const hunting = { flags: 1 << 16 };
+        const run = (/** @type {any[]} */ now, /** @type {any[]} */ before) =>
+            findMoments({ snapshot: now, earlierSnapshot: before, info: INFO, layout: LAYOUT, tick: 600 });
+        expect(run([hunter(hunting), prey({})], [hunter({ x: 100, speed: 0.1, ...hunting }), prey({})])).toEqual([]);
+        expect(
+            run([hunter(hunting), prey({ size: 40 })], [hunter({ x: 100, ...hunting }), prey({ size: 40 })]),
+        ).toEqual([]);
+        expect(run([hunter(hunting), prey({})], [hunter({ x: 100, ...hunting })])).toEqual([]);
+        expect(run([hunter(hunting), prey({ spec: 0 })], [hunter({ x: 100, ...hunting }), prey({ spec: 0 })])).toEqual(
+            [],
+        );
+        expect(run([hunter({ ...hunting, genomeId: 9 }), prey({})], EARLIER)).toEqual([]);
     });
 });
 

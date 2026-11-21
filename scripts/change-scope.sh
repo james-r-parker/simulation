@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
-# Which check a change needs: prints "docs" when every changed path is Markdown that no build or test reads beyond
-# the design-doc tests, else "full". CI runs `scripts/check.sh --docs` for "docs" and the whole gate for "full".
+# Which check a change needs: prints "release" when the change is a Release Please version bump, "docs" when every
+# changed path is Markdown that no build or test reads beyond the design-doc tests, else "full". CI runs
+# `scripts/check.sh --docs` for "docs", nothing but the `scope` job for "release" (only on a release-please-- branch,
+# which check.yml tests) and the whole gate for "full".
 #
 # Usage:
 #   scripts/change-scope.sh <base-ref>     # the paths changed on HEAD since it left <base-ref> (git diff <base-ref>...HEAD)
 #   git diff --name-only | scripts/change-scope.sh     # the paths on stdin, one per line
 #   scripts/change-scope.sh --browser [<base-ref>]     # the same input; prints "browser" or "none" (see below)
+#
+# Release paths: CHANGELOG.md, package.json, package-lock.json and .release-please-manifest.json, and nothing else. A
+# dependency bump (package.json and package-lock.json alone) reads "release" here too, so the caller must also check
+# the branch (check.yml: release-please--*). Release is tested before docs, since CHANGELOG.md is Markdown.
 #
 # <base-ref> is any ref or sha: `origin/main` on a pull request, the merge group's `base_sha` in the merge queue.
 #
@@ -27,7 +33,7 @@ if [[ "${1:-}" == --browser ]]; then
   shift
 fi
 case "${1:-}" in
-  -h | --help) sed -n '2,20p' "$0"; exit 0 ;;
+  -h | --help) sed -n '2,26p' "$0"; exit 0 ;;
 esac
 [[ $# -le 1 ]] || { echo "usage: scripts/change-scope.sh [--browser] [<base-ref>]" >&2; exit 2; }
 
@@ -65,6 +71,24 @@ if [[ $mode == browser ]]; then
   fi
   echo "none: no path the browser smoke reads" >&2
   echo none
+  exit 0
+fi
+
+release_only() {
+  case "$1" in
+    CHANGELOG.md | package.json | package-lock.json | .release-please-manifest.json) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+release=1
+while IFS= read -r path; do
+  [[ -z "$path" ]] && continue
+  release_only "$path" || release=0
+done <<<"$paths"
+if [[ $release -eq 1 && -n "${paths//[$'\n']/}" ]]; then
+  echo "release: only version-bump files changed" >&2
+  echo release
   exit 0
 fi
 

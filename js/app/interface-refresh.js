@@ -2,6 +2,8 @@
 // title card, the ticker, the inspector and the charts. Works on the interface's shared parts.
 
 import { lookback } from './history.js';
+import { refreshPlate } from './interface-plate.js';
+import { lastEvents } from './life-line.js';
 import { dismissCard } from './interface-visit.js';
 import { peekView } from './ui/hover-peek.js';
 import { persistentNodes } from './ui/hud-fade.js';
@@ -20,6 +22,7 @@ export const REFRESH_MS = Object.freeze({
     shift: 1000,
     card: 250,
     peek: 50,
+    plate: 200,
 });
 
 /**
@@ -69,7 +72,13 @@ const REFRESHERS = Object.freeze([
         wanted: () => true,
         run(/** @type {Record<string, any>} */ ctx, /** @type {number} */ now) {
             applyPixelShift(
-                persistentNodes({ ...ctx.deps.elements, title: ctx.card.element }),
+                persistentNodes({
+                    ...ctx.deps.elements,
+                    title: ctx.card.element,
+                    caption: ctx.tvUi.caption.element,
+                    era: ctx.tvUi.era.element,
+                    plate: ctx.plate.element,
+                }),
                 now / 1000,
                 ctx.shifted,
             );
@@ -98,6 +107,11 @@ const REFRESHERS = Object.freeze([
         run: (/** @type {Record<string, any>} */ ctx, /** @type {number} */ now) => refreshPeek(ctx, now),
     },
     {
+        key: 'plate',
+        wanted: () => true,
+        run: (/** @type {Record<string, any>} */ ctx, /** @type {number} */ now) => refreshPlate(ctx, now),
+    },
+    {
         key: 'card',
         wanted: (/** @type {Record<string, any>} */ ctx) => ctx.card.visible(),
         run(/** @type {Record<string, any>} */ ctx, /** @type {number} */ now) {
@@ -118,8 +132,12 @@ const REFRESHERS = Object.freeze([
         run(/** @type {Record<string, any>} */ ctx) {
             const snapshot = ctx.deps.getClient()?.latest;
             const ready = ctx.deps.getReady();
-            ctx.inspector.update(
-                snapshot && ready ? inspectorView({ snapshot, ready, slots: ctx.deps.slots }) : NO_INSPECTION,
+            const view = snapshot && ready ? inspectorView({ snapshot, ready, slots: ctx.deps.slots }) : NO_INSPECTION;
+            ctx.inspector.update(view);
+            const player = ctx.deps.getFollowView?.()?.player ?? null;
+            ctx.inspector.setLife(
+                ctx.lifeCodes,
+                player === null ? 0 : lastEvents(player.life, view.header.genomeId, ctx.lifeCodes),
             );
         },
     },

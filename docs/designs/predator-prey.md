@@ -1,6 +1,6 @@
 # Predator and prey
 
-**Status:** Implemented - Phases 1 and 2 built: scent, calls, smoke, jaws and the tuned economy in the sim core (E19, E20), and the five combat metrics with the hunter, fleer and spammer controllers (T17 figures in sim-notes). Phase 3 is closed as superseded by [fitness-and-selection.md](fitness-and-selection.md), which built `fitnessV6`, `descriptorV6`, `map-elites-v6` and the v6 exploit controllers instead of `fitnessV2` and `map-elites-v2`; only T19 (the six new intent counters) was built here.
+**Status:** Implemented - Phases 1 and 2 are built: scent, calls, smoke, jaws and the tuned economy (E19, E20) and the five combat metrics with the hunter, fleer and spammer controllers. Phase 3 is closed as superseded by [fitness-and-selection.md](fitness-and-selection.md), which built the v6 fitness and archive instead; only T19 (the six intent counters) was built here.
 **Depends on:** [headless-sim-core.md](headless-sim-core.md), [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [body-temperature.md](body-temperature.md), [world-balance.md](world-balance.md) (Phase 1, for Phase 3), [fitness-and-selection.md](fitness-and-selection.md) (replaces Phase 3)
 
 Hunters follow and kill prey; prey flee, raise alarms and hide in smoke. Nothing here scripts a behaviour: the sim core

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
     CARCASS,
+    CARCASS_REACH,
     createFoodPack,
+    fadeCarcassesIn,
     FOOD_MIN_PX,
     packFood,
     spotHash,
@@ -9,6 +11,9 @@ import {
 } from '../../../js/app/renderer/food-pack.js';
 import { NEON, toDisplay } from '../../../js/app/renderer/palette.js';
 import { floraColor } from '../../../js/app/renderer/flora-colors.js';
+import { DEATH_ANIMS, FAIL_MS } from '../../../js/app/renderer/death-anim.js';
+import { beginDeath, createDying, trackBodies } from '../../../js/app/renderer/dying.js';
+import { createInterpolated } from '../../../js/app/interpolate.js';
 import { makeSnapshot } from '../helpers/snapshots.js';
 
 describe('packFood', () => {
@@ -89,5 +94,76 @@ describe('packFood', () => {
                 Array.from(fresh.buckets[k].rig0.slice(0, n)).map((v) => v.toFixed(4)),
             );
         }
+    });
+});
+
+describe('fadeCarcassesIn', () => {
+    const NAMES = ['STARVED', 'EATEN'];
+    const VIEW = { zoom: 1, timeSec: 0 };
+
+    /**
+     * @param {number[]} genomes bodies, each at x = 100 * index, that vanished and died of `cause`
+     * @param {number} cause the cause number
+     * @returns {ReturnType<typeof createDying>} the dying bodies, started at 0
+     */
+    function dyingOf(genomes, cause) {
+        const d = createDying(8);
+        const a = createInterpolated(8);
+        a.count = genomes.length;
+        genomes.forEach((g, i) => {
+            a.slot[i] = i;
+            a.genomeId[i] = g;
+            a.x[i] = 100 * i;
+            a.size[i] = 10;
+        });
+        trackBodies(d, a, 0);
+        trackBodies(d, createInterpolated(8), 0);
+        genomes.forEach((g) => beginDeath(d, { genome: g, cause, nowMs: 0 }));
+        return d;
+    }
+
+    /** @returns {ReturnType<typeof createFoodPack>} a pack of two carcasses, at x 0 and x 100 */
+    function twoCarcasses() {
+        const pack = createFoodPack(4);
+        const foods = [
+            [0, 0, -7, 0, 0, 0],
+            [100, 0, -7, 0, 0, 0],
+        ];
+        packFood(makeSnapshot(1, [], { foods }), pack, VIEW);
+        return pack;
+    }
+
+    it('keeps the carcass of an eaten body dark while it breaks, brightens it as the body fades, and restores it', () => {
+        const anim = DEATH_ANIMS.EATEN;
+        const pack = twoCarcasses();
+        const base = pack.buckets[CARCASS].neon[0];
+        const d = dyingOf([30], 1);
+        fadeCarcassesIn(pack, d, { nowMs: FAIL_MS + 100, causeNames: NAMES });
+        expect(pack.buckets[CARCASS].neon[0]).toBe(0);
+        expect(pack.buckets[CARCASS].neon[4]).toBeCloseTo(base);
+        fadeCarcassesIn(pack, d, { nowMs: FAIL_MS + anim.breakMs + anim.leaveMs / 2, causeNames: NAMES });
+        expect(pack.buckets[CARCASS].neon[0]).toBeCloseTo(base * 0.5);
+        fadeCarcassesIn(pack, d, { nowMs: anim.ms, causeNames: NAMES });
+        expect(pack.buckets[CARCASS].neon[0]).toBeCloseTo(base);
+        expect(pack.carcassFaded).toBe(false);
+    });
+
+    it('takes the nearest carcass within reach only, leaves other causes alone, and ignores a pending body', () => {
+        const pack = twoCarcasses();
+        const base = pack.buckets[CARCASS].neon[0];
+        const starved = dyingOf([30], 0);
+        fadeCarcassesIn(pack, starved, { nowMs: 100, causeNames: NAMES });
+        expect(pack.buckets[CARCASS].neon[0]).toBeCloseTo(base);
+        const far = dyingOf([30, 31], 1);
+        far.pose[0][0] = 5000;
+        far.pose[1][0] = 5000;
+        fadeCarcassesIn(pack, far, { nowMs: 100, causeNames: NAMES });
+        expect(pack.buckets[CARCASS].neon[0]).toBeCloseTo(base);
+        expect(pack.buckets[CARCASS].neon[4]).toBe(0);
+        expect(CARCASS_REACH).toBeGreaterThan(1);
+        const pending = createDying(8);
+        fadeCarcassesIn(pack, pending, { nowMs: 100, causeNames: NAMES });
+        expect(pack.buckets[CARCASS].neon[4]).toBeCloseTo(base);
+        expect(pack.carcassFaded).toBe(false);
     });
 });

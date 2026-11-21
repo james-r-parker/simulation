@@ -92,6 +92,13 @@ describe('topBarView', () => {
         expect(topBarView(input({ ticksPerSecond: 150 }), state, false).speed).toBe('x4 (x2.5)');
     });
 
+    it('says auto beside the speed the director set, and shows that speed instead of the viewer one', () => {
+        const state = { requestedTicksPerSecond: 60, autoSpeed: 240, notice: '' };
+        expect(topBarView(input({ ticksPerSecond: 240 }), state, false).speed).toBe('x4 auto');
+        expect(topBarView(input({ ticksPerSecond: 150 }), state, false).speed).toBe('x4 auto (x2.5)');
+        expect(topBarView(input({ ticksPerSecond: 60 }), { ...state, autoSpeed: 0 }, false).speed).toBe('x1');
+    });
+
     it('says paused while paused and carries the notice', () => {
         const state = { requestedTicksPerSecond: 60, notice: 'hello' };
         expect(topBarView(null, state, true)).toMatchObject({ speed: 'paused', notice: 'hello' });

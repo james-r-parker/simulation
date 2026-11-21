@@ -14,6 +14,7 @@ import { createAgentStore, packAgents } from '../renderer/agents-pack.js';
 import { temperatureBands } from '../renderer/colors.js';
 import { packDying } from '../renderer/dying-pack.js';
 import { interleaveRows } from '../renderer/interleave.js';
+import { TV_MIN_PX_SCALE } from '../renderer/palette.js';
 import { holdFrom, READER, RELEASED, slotOfSeq } from '../../worker/snapshot-ring.js';
 import { FAMILY_SLOTS } from '../family-slots.js';
 import { claimFrameSlot, LENS, noteSkipped, publishFrame, SLOT, writeSlotMeta } from './frame-slots.js';
@@ -44,9 +45,9 @@ export const MAX_GAP_MS = 100;
  * @property {Float32Array[][]} lanes per bucket, its lanes in instance attribute order
  * @property {import('../family-slots.js').FamilySlots} family the family colour slots, copied from each request
  * @property {{dtMs: number, zoom: number, slots: import('../family-slots.js').FamilySlots, maxVelocity: number,
- *   tick: number}} view the packing view
+ *   tick: number, nowMs: number}} view the packing view
  * @property {{slots: import('../family-slots.js').FamilySlots, zoom: number, causeNames: readonly string[],
- *   nowMs: number}} dyingView the dying bodies' view
+ *   nowMs: number, flagBits: Record<string, number>, maxVelocity: number}} dyingView the dying bodies' view
  * @property {{rig: ReturnType<typeof createAgentRig>, out: any, ctx: import('../renderer/agent-rig.js').RigContext}} into
  *   the rig call's argument, reused
  * @property {number} lastNowMs the wall time of the last packed request, 0 before one
@@ -77,8 +78,15 @@ export function createPackHost(init) {
         rules: pursuitRules(info),
         lanes: store.buckets.map((bucket, b) => bucketLanes(bucket, /** @type {any} */ (rig.arrays[b]))),
         family,
-        view: { dtMs: 0, zoom: 1, slots: family, maxVelocity: info.maxVelocity, tick: 0 },
-        dyingView: { slots: family, zoom: 1, causeNames: init.causeNames, nowMs: 0 },
+        view: { dtMs: 0, zoom: 1, slots: family, maxVelocity: info.maxVelocity, tick: 0, nowMs: 0 },
+        dyingView: {
+            slots: family,
+            zoom: 1,
+            causeNames: init.causeNames,
+            nowMs: 0,
+            flagBits: layout.flags,
+            maxVelocity: info.maxVelocity,
+        },
         into: { rig, out: rig.arrays[0], ctx },
         lastNowMs: 0,
     };
@@ -111,9 +119,11 @@ function applyRequest(host, request) {
     view.dtMs = Math.min(Math.max(gap, 0), MAX_GAP_MS);
     view.zoom = request.zoom;
     view.tick = request.tick;
+    view.nowMs = request.nowMs;
     family.ids.set(request.family);
     family.palette = PALETTE_NAMES[request.palette] ?? PALETTE_NAMES[0];
     dyingView.zoom = request.zoom;
+    host.store.minScale = (request.lens & LENS.TV) !== 0 ? TV_MIN_PX_SCALE : 1;
     dyingView.nowMs = request.nowMs;
     ctx.timeSec = request.nowMs / 1000;
     ctx.tick = request.tick;

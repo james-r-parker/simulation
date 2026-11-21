@@ -19,6 +19,7 @@ import {
     smoothstep,
     vec2,
 } from 'three/tsl';
+import { TEAR_FOLDS } from './sdf-math.js';
 
 const TAU = Math.PI * 2;
 
@@ -135,7 +136,8 @@ export function sdBlob(p, { amp, phase }) {
 /**
  * @param {any} p point
  * @param {{rx: any, ry: any, amp: any, lobes: number, phase: any, taper?: number,
- *   dent?: {angle: any, depth: any, width: any}}} cell the membrane (`sdMembrane` in sdf-math.js)
+ *   dent?: {angle: any, depth: any, width: any}}} cell the membrane (`sdMembrane` in sdf-math.js; a negative dent width
+ *   repeats the dent `TEAR_FOLDS` times)
  * @returns {any} the approximate distance to the rippling membrane
  */
 export function sdMembrane(p, { rx, ry, amp, lobes, phase, taper = 0, dent }) {
@@ -144,8 +146,9 @@ export function sdMembrane(p, { rx, ry, amp, lobes, phase, taper = 0, dent }) {
     const bearing = atan(qy, qx);
     let ripple = float(amp).mul(sin(bearing.mul(lobes).add(phase)));
     if (dent !== undefined) {
-        const delta = bearing.sub(dent.angle);
-        const da = atan(sin(delta), cos(delta)).div(dent.width);
+        const folds = select(float(dent.width).lessThan(0), TEAR_FOLDS, 1);
+        const delta = bearing.sub(dent.angle).mul(folds);
+        const da = atan(sin(delta), cos(delta)).div(folds.mul(abs(dent.width)));
         ripple = ripple.sub(float(dent.depth).mul(exp(da.mul(da).negate())));
     }
     return length(vec2(qx, qy))
@@ -169,4 +172,19 @@ export function sdWave(p, { from, to, amp, freq, phase, width }) {
     return length(vec2(p.x.sub(ax), p.y.sub(ay)))
         .mul(0.8)
         .sub(float(width).mul(0.5));
+}
+
+/**
+ * @param {any} d distance to the outline (positive outside)
+ * @param {{strength: any, widthPx: any, px: any, alpha: number}} halo the event strength (0 to 1), the reach in device px
+ *   (0 turns it off), one device pixel and the opacity at the rim at strength 1
+ * @returns {any} the falloff opacity, as `haloCoverage` in sdf-math.js
+ */
+export function haloCoverage(d, { strength, widthPx, px, alpha }) {
+    const t = clamp(d.div(max(float(widthPx).mul(px), 1e-9)), 0, 1);
+    return select(
+        d.lessThan(0).or(float(widthPx).lessThanEqual(0)),
+        float(0),
+        t.oneMinus().mul(t.oneMinus()).mul(strength).mul(alpha),
+    );
 }

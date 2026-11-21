@@ -51,7 +51,7 @@ const WAVE = { in: 'wave' };
  * @param {Record<string, number>} shape the membrane's half axes, ripple share and lobes
  * @returns {object} the cell membrane, rippling with the agent's wave phase
  */
-const membrane = (shape) => ({ name: 'membrane', shape: 'membrane', phase: WAVE, ...shape });
+const membrane = (shape) => ({ name: 'membrane', shape: 'membrane', phase: WAVE, halo: true, ...shape });
 
 /**
  * @param {number} x where the nucleus sits on the heading axis

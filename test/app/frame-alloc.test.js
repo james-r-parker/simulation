@@ -74,7 +74,7 @@ describe('per-frame scratch reuse', () => {
             const frame = { agents, snapshot, camera, selectedId: 1, followId: 2, leadLineageId: 5, lenses: {} };
             layer.update?.(/** @type {any} */ (frame));
         }
-        expect(seen.circles.length).toBe(20 * 3);
+        expect(seen.circles.length).toBe(20 * 2);
         expect(new Set(seen.circles).size).toBe(1);
         layer.dispose();
     });

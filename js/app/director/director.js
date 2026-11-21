@@ -7,86 +7,21 @@ import { followStep, moveCameraTo } from '../camera.js';
 import { createPrng } from '../prng.js';
 import { captionFor } from './captions.js';
 import { findMoments, readSnapshotAgents } from './moments.js';
-import { MOMENT_KIND } from './scoring.js';
-import {
-    LINGER_EXTEND_S,
-    LINGER_LOW_SCORE,
-    LINGER_LOW_WINDOW_S,
-    LINGER_MAX_S,
-    planShot,
-    SHOT_STATE,
-    shotPose,
-} from './shots.js';
+import { SHOT_CEILING_S } from './schedule.js';
+import { lingerOver, refreshLingerMoment } from './linger.js';
+import { DECISION_INTERVAL_S, updateSnapshotHistory } from './snapshot-history.js';
+import { applyVariety, createShotHistory, noteShot, subjectOf } from './variety.js';
+import { LINGER_BASE_S, planShot, SHOT_STATE, shotPose } from './shots.js';
 
 /** XOR mask applied to the world seed for the director's private PRNG. */
 export const DIRECTOR_SEED_XOR = 0x9e3779b9;
 /** Idle threshold (in ms) before the director takes over the camera. */
 export const DIRECTOR_IDLE_MS = 10_000;
-/** Decision interval in seconds (500 ms). */
-export const DECISION_INTERVAL_S = 0.5;
 /** Minimum score (after adding `rng.next() * 5`) required to start a `glide` shot. */
 export const MOMENT_THRESHOLD = 45;
 /** Random score draw range added to the highest moment candidate. */
 export const MOMENT_RANDOM_BONUS = 5;
-/** Lookback window (in simulated seconds) for the earlier snapshot used by `chase` gap detection. */
-export const SNAPSHOT_LOOKBACK_S = 1.5;
-/** Fixed bound on stored decision snapshots. */
-export const MAX_SNAPSHOT_HISTORY = 16;
-
-/**
- * Records a snapshot in the bounded history ring and returns the entry from ~1.5 s earlier.
- * @param {{timeS: number, agents: import('./moments.js').AgentRecord[]}[]} history bounded ring of snapshots
- * @param {number} timeS current simulated time in seconds
- * @param {import('./moments.js').AgentRecord[]} agents current alive agents
- * @returns {import('./moments.js').AgentRecord[]} agents from ~1.5 s ago (or empty array)
- */
-function updateSnapshotHistory(history, timeS, agents) {
-    if (history.length > 0 && timeS < history[history.length - 1].timeS) {
-        history.length = 0;
-    }
-    const targetTimeS = timeS - SNAPSHOT_LOOKBACK_S;
-    let earlier = /** @type {import('./moments.js').AgentRecord[]} */ ([]);
-    for (let i = history.length - 1; i >= 0; i--) {
-        if (history[i].timeS <= targetTimeS + 1e-6) {
-            earlier = history[i].agents;
-            break;
-        }
-    }
-    if (history.length === 0 || timeS - history[history.length - 1].timeS >= DECISION_INTERVAL_S - 1e-6) {
-        history.push({ timeS, agents });
-        if (history.length > MAX_SNAPSHOT_HISTORY) {
-            history.shift();
-        }
-    }
-    return earlier;
-}
-
-/**
- * Finds the matching candidate in a fresh scan to refresh an ongoing `linger` shot's score and focus.
- * @param {import('./moments.js').MomentCandidate} moment the moment currently being lingered on
- * @param {readonly import('./moments.js').MomentCandidate[]} rawCandidates fresh candidates without repeat penalty
- * @param {readonly import('./moments.js').AgentRecord[]} agents current alive agents
- * @returns {{score: number, x: number, y: number}} refreshed score and focus coordinates
- */
-function refreshLingerMoment(moment, rawCandidates, agents) {
-    const match = rawCandidates.find((c) => c.kind === moment.kind);
-    if (match) {
-        return { score: match.score, x: match.x, y: match.y };
-    }
-    if (moment.kind === MOMENT_KIND.CHASE) {
-        const hunter = agents.find((a) => a.genomeId === moment.hunterId);
-        const prey = agents.find((a) => a.genomeId === moment.preyId);
-        if (hunter && prey) {
-            return { score: 0, x: (hunter.x + prey.x) / 2, y: (hunter.y + prey.y) / 2 };
-        }
-    } else if (moment.kind === MOMENT_KIND.ESCAPE || moment.kind === MOMENT_KIND.SMOKE_ESCAPE) {
-        const victim = agents.find((a) => a.genomeId === moment.victimId);
-        if (victim) {
-            return { score: 0, x: victim.x, y: victim.y };
-        }
-    }
-    return { score: 0, x: moment.x, y: moment.y };
-}
+export { DECISION_INTERVAL_S, MAX_SNAPSHOT_HISTORY, SNAPSHOT_LOOKBACK_S } from './snapshot-history.js';
 
 /**
  * Plans and enters a new `wide`, `glide`, `linger` or `pullback` shot on `state`.
@@ -98,6 +33,9 @@ function refreshLingerMoment(moment, rawCandidates, agents) {
  * @returns {void}
  */
 function enterShot(state, shotState, { startTimeS, agents, fromPose, moment = null }) {
+    if (shotState === SHOT_STATE.WIDE) {
+        state.lastWideS = startTimeS;
+    }
     state.shot = planShot({
         state: shotState,
         startTimeS,
@@ -129,16 +67,20 @@ function decideWide(state, { timeS, agents, candidates, worldMeta }) {
     if (top !== undefined && top.score + state.rng.next() * MOMENT_RANDOM_BONUS > MOMENT_THRESHOLD) {
         enterShot(state, SHOT_STATE.GLIDE, { startTimeS: timeS, agents, fromPose, moment: top });
         state.lastShownS[top.kind] = timeS;
+        state.shotStartS = timeS;
+        noteShot(state.history, { kind: top.kind, subject: subjectOf(top), timeS });
         state.caption = captionFor(top, worldMeta);
         state.log('info', 'DirectorShot', {
             kind: top.kind,
+            subject: subjectOf(top),
             score: Math.round(top.score * 10) / 10,
+            ms: Math.round((state.shot.durationS + LINGER_BASE_S) * 1000),
             x: Math.round(top.x),
             y: Math.round(top.y),
         });
         return;
     }
-    if (elapsedS >= shot.durationS) {
+    if (elapsedS >= Math.min(shot.durationS, SHOT_CEILING_S)) {
         enterShot(state, SHOT_STATE.WIDE, { startTimeS: timeS, agents, fromPose });
     }
 }
@@ -157,29 +99,10 @@ function decideLinger(state, { timeS, agents, rawCandidates, currentPose }) {
     const refreshed = refreshLingerMoment(shot.moment, rawCandidates, agents);
     shot.toPose.x = refreshed.x;
     shot.toPose.y = refreshed.y;
-
-    if (refreshed.score < LINGER_LOW_SCORE) {
-        state.lowScoreSinceS = state.lowScoreSinceS ?? timeS;
-        if (timeS - state.lowScoreSinceS >= LINGER_LOW_WINDOW_S - 1e-6) {
-            state.caption = '';
-            state.lowScoreSinceS = null;
-            enterShot(state, SHOT_STATE.PULLBACK, { startTimeS: timeS, agents, fromPose: currentPose });
-            return;
-        }
-    } else {
+    if (lingerOver(state, { timeS, score: refreshed.score })) {
+        state.caption = '';
         state.lowScoreSinceS = null;
-    }
-
-    const elapsedS = timeS - shot.startTimeS;
-    if (elapsedS >= shot.durationS - 1e-6) {
-        if (refreshed.score >= MOMENT_THRESHOLD && shot.durationS < LINGER_MAX_S) {
-            shot.durationS = Math.min(LINGER_MAX_S, shot.durationS + LINGER_EXTEND_S);
-        }
-        if (elapsedS >= shot.durationS - 1e-6) {
-            state.caption = '';
-            state.lowScoreSinceS = null;
-            enterShot(state, SHOT_STATE.PULLBACK, { startTimeS: timeS, agents, fromPose: currentPose });
-        }
+        enterShot(state, SHOT_STATE.PULLBACK, { startTimeS: timeS, agents, fromPose: currentPose });
     }
 }
 
@@ -234,7 +157,7 @@ function syncDirectorSpeed(state, shotState) {
     if (!state.onSpeed || !state.speedForState) {
         return;
     }
-    const desired = state.speedForState(shotState, state.viewerSpeed);
+    const desired = state.speedForState(shotState, state.viewerSpeed, state.quiet);
     if (desired !== state.appliedSpeed) {
         state.appliedSpeed = desired;
         state.onSpeed(desired);
@@ -289,6 +212,8 @@ function runDecisionIfDue(state, ctx) {
     };
     if (state.shot.state === SHOT_STATE.WIDE) {
         const candidates = findMoments({ ...baseInput, lastShownS: state.lastShownS });
+        applyVariety(state.history, candidates, ctx.timeS);
+        state.quiet = candidates[0] === undefined || candidates[0].score < MOMENT_THRESHOLD;
         decideWide(state, { timeS: ctx.timeS, agents: ctx.agents, candidates, worldMeta: ctx.worldMeta });
     } else if (state.shot.state === SHOT_STATE.LINGER) {
         const rawCandidates = findMoments(baseInput);
@@ -400,7 +325,7 @@ export function stepDirector(director, input) {
  * @param {{seed: number, canvas: {width: number, height: number}, world: {width: number, height: number},
  *   enabled?: boolean, viewerSpeed?: number, log?: typeof appLog,
  *   onSelect?: (genomeId: number) => void, onSpeed?: (speed: number) => void,
- *   speedForState?: (shotState: string, viewerSpeed: number) => number}} opts director configuration
+ *   speedForState?: (shotState: string, viewerSpeed: number, quiet: boolean) => number}} opts director configuration
  * @returns {{step: (input: Parameters<typeof stepDirector>[1]) => ReturnType<typeof stepDirector>,
  *   noteInput: () => void, startNow: () => void, setEnabled: (enabled: boolean) => void,
  *   isEnabled: () => boolean, isActive: () => boolean, setViewerSpeed: (speed: number) => void,
@@ -423,6 +348,10 @@ export function createDirector(opts) {
         appliedSpeed: /** @type {number | null} */ (null),
         shot: /** @type {import('./shots.js').PlannedShot | null} */ (null),
         caption: '',
+        quiet: true,
+        history: createShotHistory(),
+        lastWideS: -Infinity,
+        shotStartS: 0,
         lastDecisionS: -Infinity,
         lowScoreSinceS: /** @type {number | null} */ (null),
         lastShownS: /** @type {Record<string, number>} */ ({}),
@@ -441,6 +370,7 @@ export function createDirector(opts) {
             (state.rng = createPrng((nextSeed ^ DIRECTOR_SEED_XOR) >>> 0)),
             (state.snapshots.length = 0),
             (state.lastShownS = {}),
+            (state.history = createShotHistory()),
             (state.lastDecisionS = -Infinity)
         ),
         step: (input) => stepDirectorState(state, input),

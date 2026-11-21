@@ -4,16 +4,29 @@
 // `interface-*.js` helpers.
 
 import { createChartData } from './interface-data.js';
+import { pushMilestone } from './history.js';
 import { createChartsLifecycle } from './interface-charts.js';
 import { createFailedBundleTaker, exportBundle } from './interface-exports.js';
 import { mountAudio } from './audio/audio.js';
 import { clipSupported, createCapture } from './capture.js';
 import { assignSlots } from './family-slots.js';
 import { createIdleTracker } from './idle.js';
+import { LIFE_EVENTS } from './life-line.js';
 import { refreshParts, REFRESH_MS } from './interface-refresh.js';
 import { dismissCard, firstVisit } from './interface-visit.js';
+import { mountTv } from './interface-tv.js';
 
 export { REFRESH_MS };
+
+/** The ticker kinds that are kept as milestones. */
+const MILESTONE_KINDS = new Set([
+    'extinct',
+    'last-stand',
+    'first-pack-kill',
+    'record-streak',
+    'record-age',
+    'new-leader',
+]);
 
 import { loadPrefs, savePrefs } from './prefs.js';
 import { familyCss } from './ui/css-color.js';
@@ -27,6 +40,7 @@ import { mountHelp } from './ui/help.js';
 import { mountInspector } from './ui/inspector.js';
 import { wantsRays } from './ui/lenses.js';
 import { createTickerQueue, mountTicker } from './ui/ticker.js';
+import { mountSubjectPlate } from './ui/subject-plate.js';
 import { mountTitleCard } from './ui/title-card.js';
 import { createToaster } from './ui/toast.js';
 import { mountTopBar } from './ui/top-bar.js';
@@ -71,11 +85,17 @@ export function shouldOpenInspector(drawer, id, hudShown) {
  *   pixels on the canvas
  * @property {boolean} speedPinned whether `?speed=` fixed the speed, so a first visit does not start at x2
  * @property {boolean} tv whether `?tv=1` started TV mode
+ * @property {'auto' | number | null} [dim] the `?dim` setting, null or absent to use the `dim` preference
  * @property {boolean} audioOn whether `?audio=1` started with audio on
  * @property {(new () => any) | null} AudioContext the Web Audio constructor
  * @property {() => {x: number, y: number, zoom: number, canvas: {width: number, height: number}}} getCamera the camera
  * @property {(on: boolean) => void} setWakeLock turns the screen wake lock on or off
+ * @property {(event: import('./idle.js').InputEvent) => void} [onInput] hears each input that counted, for TV mode
+ * @property {(items: any[]) => void} [onTicker] hears each ticker message, for the director's feed
  * @property {() => number} getWidth the canvas width in CSS px, for the automatic HUD size
+ * @property {() => {agents: import('./interpolate.js').Interpolated,
+ *   player: import('./renderer/effects-player.js').EffectsPlayer | null} | null} [getFollowView] the frame's agents and
+ *   effects player, for the subject plate
  */
 
 /**
@@ -148,9 +168,11 @@ function mountParts(ctx) {
     });
     ctx.card = mountTitleCard(doc, elements.hud);
     ctx.peek = mountPeek(doc, elements.hud);
+    ctx.tvUi = mountTv(ctx);
+    ctx.plate = mountSubjectPlate(doc, doc.body);
     mountServices(ctx);
     applyScale(ctx);
-    elements.hud.classList.toggle('hud-hidden', ctx.hidden);
+    elements.hud.classList.toggle('hud-hidden', ctx.tvUi.hudHidden());
 }
 
 /**
@@ -163,7 +185,7 @@ function build(deps) {
     prefs.lenses.forEach((on, i) => (state.lenses[i] = on));
     deps.slots.palette = prefs.palette;
     const toaster = createToaster({ doc, setTimer: deps.setTimer, parent: elements.hud });
-    const lastKeys = ['bar', 'ticker', 'inspector', 'charts', 'idle', 'shift', 'card', 'peek'];
+    const lastKeys = ['bar', 'ticker', 'inspector', 'charts', 'idle', 'shift', 'card', 'peek', 'plate'];
     const ctx = {
         deps,
         prefs,
@@ -188,6 +210,9 @@ function build(deps) {
         charts: /** @type {any} */ (null),
         help: /** @type {any} */ (null),
         card: /** @type {any} */ (null),
+        tvUi: /** @type {any} */ (null),
+        plate: /** @type {any} */ (null),
+        lifeCodes: new Uint8Array(LIFE_EVENTS),
         peek: /** @type {any} */ (null),
         peekTracker: createPeekTracker(),
         shownCard: false,
@@ -242,7 +267,7 @@ function persist({ deps, prefs, hidden }) {
  */
 function setHud(ctx, hidden) {
     ctx.hidden = hidden;
-    ctx.deps.elements.hud.classList.toggle('hud-hidden', hidden);
+    ctx.deps.elements.hud.classList.toggle('hud-hidden', ctx.tvUi.hudHidden());
 }
 
 /**
@@ -294,6 +319,21 @@ function createHooks(ctx) {
 }
 
 /**
+ * Keeps the notable ticker items for the charts drawer's milestones list.
+ * @param {Record<string, any>} ctx the shared parts
+ * @param {any[]} items a ticker message
+ * @returns {void}
+ */
+function noteMilestones(ctx, items) {
+    const data = ctx.chartData.data();
+    for (const item of items) {
+        if (data !== null && MILESTONE_KINDS.has(item.kind)) {
+            pushMilestone(data.history, item);
+        }
+    }
+}
+
+/**
  * @param {Record<string, any>} ctx the shared parts
  * @returns {Record<string, Function>} the worker client's listeners the interface needs
  */
@@ -315,7 +355,11 @@ function createListeners(ctx) {
             ctx.chartData.stats(stats, deps.now());
             ctx.audio.onStats(stats);
         },
-        onTicker: (/** @type {{text: string, kind: string}[]} */ items) => ctx.queue.push(items, deps.now()),
+        onTicker(/** @type {{text: string, kind: string}[]} */ items) {
+            ctx.queue.push(items, deps.now());
+            noteMilestones(ctx, items);
+            deps.onTicker?.(items);
+        },
         onArchive: (/** @type {string} */ json) =>
             deps.download({ name: `blob-archive-${deps.getReady()?.seed ?? 0}.json`, text: json }),
     };
@@ -328,7 +372,9 @@ function createListeners(ctx) {
  *   onEffect: (effect: import('./renderer/effects-player.js').Effect) => void,
  *   afterDraw: (frame: {tick: number}) => void, openInspectorOnPick: (id?: number) => void,
  *   resize: () => void, pointer: (x: number, y: number) => void, peekAt: (x: number, y: number) => void,
- *   peekHide: () => void, noteInput: (event: import('./idle.js').InputEvent) => boolean}} the interface
+ *   peekHide: () => void, noteInput: (event: import('./idle.js').InputEvent) => boolean,
+ *   setTv: (on: boolean) => void, tvIdleMinutes: () => number, resetIdle: () => void,
+ *   showEra: (world: {tick: number, ticksPerSecond: number}) => void, setCaption: (text: string) => void, idleMs: () => number}} the interface
  */
 export function createInterface(deps) {
     const ctx = build(deps);
@@ -351,12 +397,20 @@ export function createInterface(deps) {
             const counted = ctx.idle.input(event);
             if (counted) {
                 dismissCard(ctx);
+                deps.onInput?.(event);
             }
             return counted;
         },
+        setTv: (on) => ctx.tvUi.setTv(on),
+        tvIdleMinutes: () => ctx.prefs.tvIdleMinutes,
+        resetIdle: () => ctx.idle.reset(),
+        setCaption: (text) => void ctx.tvUi.caption.set(text),
+        showEra: (world) => ctx.tvUi.showEra(world),
+        idleMs: () => ctx.idle.idleMs(),
         resize: () => applyScale(ctx),
         tick(nowMs) {
             refreshParts(ctx, nowMs);
+            ctx.tvUi.tick();
         },
     };
 }

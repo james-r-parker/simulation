@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+    appQuery,
+    baselineKey,
     BUDGETS,
     buildV6Entry,
     checkRefresh,
@@ -9,6 +11,7 @@ import {
     longTasksAfterWarmup,
     mergeBaseline,
     overBudget,
+    parseUrlParams,
     parseViewport,
     sumGcPauseMs,
     maxGcPauseMs,
@@ -246,5 +249,30 @@ describe('formatReport', () => {
             },
         };
         expect(formatReport({ viewport: 'v', entry: gpuOnly }).at(-1)).toBe('Budgets: not met');
+    });
+});
+
+describe('the page query of a run', () => {
+    it('is the run own parameters, then any extra ones', () => {
+        expect(appQuery({ agents: 1000, seed: 1 })).toBe('agents=1000&seed=1&gputime=1&hold=1');
+        expect(appQuery({ agents: 1000, seed: 1, urlParams: 'tv=1' })).toBe('agents=1000&seed=1&gputime=1&hold=1&tv=1');
+    });
+
+    it('keys a run with extra parameters apart from the plain one', () => {
+        expect(baselineKey('3840x2160')).toBe('3840x2160');
+        expect(baselineKey('3840x2160', '')).toBe('3840x2160');
+        expect(baselineKey('3840x2160', 'tv=1')).toBe('3840x2160?tv=1');
+    });
+
+    it('parses a query and refuses one that is empty, has spaces or a hash, or sets the run own parameters', () => {
+        expect(parseUrlParams('x', 'tv=1')).toBe('tv=1');
+        expect(parseUrlParams('x', '?tv=1&dim=on')).toBe('tv=1&dim=on');
+        expect(() => parseUrlParams('x', '')).toThrow('--url-params');
+        expect(() => parseUrlParams('x', '?')).toThrow('--url-params');
+        expect(() => parseUrlParams('x', 'tv=1#a')).toThrow('--url-params');
+        expect(() => parseUrlParams('x', 'tv=1&&a=1')).toThrow('--url-params');
+        for (const name of ['agents', 'seed', 'gputime', 'hold']) {
+            expect(() => parseUrlParams('x', `${name}=1`)).toThrow(`cannot set "${name}"`);
+        }
     });
 });

@@ -1,5 +1,7 @@
 // The shell of the release-check gate on this repository: it hashes the rules at the merge base in a temporary worktree,
 // so it needs `origin/main` (a full checkout, as check.yml fetches).
+// It reads the git history, not a file, so any change can alter its result: it runs for every change.
+// reads: **
 import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';

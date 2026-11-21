@@ -107,6 +107,7 @@ const RUN_TOTALS = [
     'huntBiteDeliberate',
     'huntBiteChance',
     'huntKillsDeliberate',
+    'huntKillsDeliberateSettled',
     'packKillsConvergent',
     'escapedResponded',
     'groupThreatSum',

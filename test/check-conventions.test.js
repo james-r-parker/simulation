@@ -121,6 +121,29 @@ describe('conventions metrics doc', { timeout: scaleTimeout(30_000) }, () => {
     });
 });
 
+describe('conventions scene scorecard', { timeout: scaleTimeout(30_000) }, () => {
+    const STUB = 'scripts/scene-scorecard.mjs';
+
+    it('reports a stale scorecard with the command that fixes it', () => {
+        const out = conventions({
+            [STUB]: "console.error('docs/scene-scorecard.md is stale. Run: node scripts/scene-scorecard.mjs --write');\nprocess.exitCode = 1;\n",
+        });
+        expect(out).toContain(
+            'scene-scorecard: docs/scene-scorecard.md is stale. Run: node scripts/scene-scorecard.mjs --write',
+        );
+    });
+
+    it('reports a check that fails without printing anything', () => {
+        expect(conventions({ [STUB]: 'process.exitCode = 3;\n' })).toContain(
+            'scene-scorecard: scripts/scene-scorecard.mjs exited 3 with no output',
+        );
+    });
+
+    it('stays quiet when the scorecard is up to date', () => {
+        expect(conventions({ [STUB]: "console.log('up to date');\n" })).not.toContain('scene-scorecard');
+    });
+});
+
 describe('conventions legacy guard', { timeout: scaleTimeout(30_000) }, () => {
     it('flags a file directly under js/ but not one in a module directory', () => {
         expect(conventions({ 'js/game.js': 'x\n' })).toContain('js/game.js: sits directly under js/');
@@ -174,5 +197,62 @@ describe('conventions checks that read every file in one pass', { timeout: scale
         });
         expect(out).toContain('media/big.bin: 6 MB - tracked files stay under 5 MB');
         expect(out).not.toContain('small file.bin');
+    });
+});
+
+describe('conventions agents-size', { timeout: scaleTimeout(30_000) }, () => {
+    it('flags an AGENTS.md over 16000 bytes with its size', () => {
+        const out = conventions({ 'AGENTS.md': 'x'.repeat(16_001) });
+        expect(out).toContain('AGENTS.md: 16001 bytes - it stays at or under 16000');
+    });
+
+    it('accepts an AGENTS.md at exactly 16000 bytes', () => {
+        expect(conventions({ 'AGENTS.md': 'x'.repeat(16_000) })).not.toContain('AGENTS.md: ');
+    });
+});
+
+describe('conventions test-data', { timeout: scaleTimeout(30_000) }, () => {
+    /**
+     * @param {string} line a line of test code
+     * @param {string} [path] the file that holds it
+     * @returns {string} the conventions output for a repo with that file
+     */
+    const run = (line, path = 'test/a.test.js') => conventions({ [path]: `${line}\n` });
+
+    it.each([
+        "readFileSync('evals/train-tune.json', 'utf8')",
+        "readFileSync('evals/train-ladder.json', 'utf8')",
+        "readFileSync('evals/train-ladder-adaptive.json', 'utf8')",
+        "parseArgs(['--curriculum', 'evals/train-curriculum-iter2-a.json'])",
+        "readFileSync(`evals/stages/${name}.json`, 'utf8')",
+        "readdirSync('evals/train-screens')",
+        "readFileSync('evals/ledger/E250.json', 'utf8')",
+        "const FILES = readdirSync('evals').filter((f) => /^train-curriculum.*\\.json$/.test(f));",
+    ])('flags a test that reads %s', (line) => {
+        const out = run(line);
+        expect(out).toContain('test/a.test.js:1');
+        expect(out).toContain('test-data');
+    });
+
+    it('flags it in a nested slow test as well', () => {
+        expect(run("read('evals/stages/hunt.json')", 'test/evo/b.slow.test.js')).toContain('test-data');
+    });
+
+    it('lets a *.shipped.test.js and a *.shipped.slow.test.js read the shipped files', () => {
+        expect(run("read('evals/train-ladder.json')", 'test/a.shipped.test.js')).not.toContain('test-data');
+        expect(run("read('evals/stages/hunt.json')", 'test/evo/b.shipped.slow.test.js')).not.toContain('test-data');
+    });
+
+    it('lets a test read a frozen copy under test/fixtures/ and skips comment lines', () => {
+        expect(run("read('test/fixtures/train-ladder.json')")).not.toContain('test-data');
+        expect(run("read('../fixtures/train-curriculum.json')")).not.toContain('test-data');
+        expect(run('// evals/train-ladder.json is the shipped ladder')).not.toContain('test-data');
+        expect(run(' * reads evals/stages/hunt.json')).not.toContain('test-data');
+    });
+
+    it('leaves the other evals/ files and non-test files alone', () => {
+        expect(run("read('evals/micro-world.json')")).not.toContain('test-data');
+        expect(run("read('evals/seeds.json')")).not.toContain('test-data');
+        expect(conventions({ 'scripts/x.mjs': "read('evals/train-ladder.json')\n" })).not.toContain('test-data');
     });
 });

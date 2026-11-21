@@ -3,6 +3,7 @@
 import { configHash } from '../sim/config.js';
 import { detExp, detLog } from '../sim/det-math.js';
 import { createRng, fork, nextInt } from '../sim/rng.js';
+import { STUDENTISED_BELOW, studentisedInterval } from './bootstrap-t.js';
 import { DEFAULT_MIN_SEEDS, METRICS, minSeedsFor } from './metric-registry/index.js';
 import { withCurrentNames } from './metric-registry/renames.js';
 import { effectFloor, SHARE_MIN_EFFECT, SIGN_ALPHA, sparseSignP, statusOf } from './compare-rules.js';
@@ -168,7 +169,8 @@ function bootstrapMeans(values, rng) {
 }
 
 /**
- * BCa bootstrap confidence interval of the mean. Bias correction z0 is the normal quantile of the share of bootstrap
+ * Bootstrap confidence interval of the mean: studentised under `STUDENTISED_BELOW` (32) values, where BCa under-covers (D4),
+ * BCa from there. BCa: bias correction z0 is the normal quantile of the share of bootstrap
  * means below the observed mean (clamped to half a resample from 0 and 1); acceleration comes from the jackknife.
  * Equal values give [v, v] without drawing. Each call forks `createRng(1)` as `bootstrap`, so a metric's interval does
  * not depend on which other metrics are compared.
@@ -185,7 +187,11 @@ export function bootstrapInterval(values, level = 0.95) {
     if (values.every((v) => v === values[0])) {
         return { low: values[0], high: values[0] };
     }
-    const means = bootstrapMeans(values, fork(createRng(BOOTSTRAP_SEED), 'bootstrap'));
+    const rng = fork(createRng(BOOTSTRAP_SEED), 'bootstrap');
+    if (values.length < STUDENTISED_BELOW) {
+        return studentisedInterval(values, { rng, resamples: RESAMPLES, level });
+    }
+    const means = bootstrapMeans(values, rng);
     let below = 0;
     while (below < RESAMPLES && means[below] < observed) {
         below++;

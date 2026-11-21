@@ -5,7 +5,7 @@ describe('readParams', () => {
     it('reads every parameter', () => {
         expect(
             readParams(
-                '?seed=42&agents=300&speed=4&backend=webgl2&gputime=1&tv=1&audio=true&policy=map-elites-v6&merit=1&hold=1',
+                '?seed=42&agents=300&speed=4&backend=webgl2&gputime=1&tv=1&audio=true&policy=map-elites-v6&merit=1&hold=1&dim=0.6',
             ),
         ).toEqual({
             seed: 42,
@@ -14,6 +14,7 @@ describe('readParams', () => {
             backend: 'webgl2',
             gputime: true,
             tv: true,
+            dim: 0.6,
             audio: true,
             policy: 'map-elites-v6',
             merit: true,
@@ -29,6 +30,7 @@ describe('readParams', () => {
             backend: null,
             gputime: false,
             tv: false,
+            dim: null,
             audio: false,
             policy: null,
             merit: false,
@@ -45,6 +47,7 @@ describe('readParams', () => {
             backend: null,
             gputime: false,
             tv: false,
+            dim: null,
             audio: false,
             policy: null,
             merit: false,
@@ -54,6 +57,16 @@ describe('readParams', () => {
         expect(readParams('?seed=4294967295').seed).toBe(4294967295);
         expect(readParams('?agents=4097').agents).toBeNull();
         expect(readParams('?seed=abc&speed=fast').seed).toBeNull();
+    });
+
+    it('reads dim as auto or a level from 0.3 to 1, and ignores the rest', () => {
+        expect(readParams('?dim=auto').dim).toBe('auto');
+        expect(readParams('?dim=0.3').dim).toBe(0.3);
+        expect(readParams('?dim=.5').dim).toBe(0.5);
+        expect(readParams('?dim=1').dim).toBe(1);
+        for (const bad of ['0.29', '1.5', '0', '-0.5', 'night', '', '0.5x']) {
+            expect(readParams(`?dim=${bad}`).dim, bad).toBeNull();
+        }
     });
 
     it('accepts the fractional speeds and either backend', () => {

@@ -10,7 +10,28 @@ const allowlist = JSON.parse(readFileSync(new URL('./known-console-errors.json',
 /** @type {RegExp[]} */
 const knownErrors = allowlist.patterns.map((/** @type {string} */ pattern) => new RegExp(pattern));
 
-test('the app loads, animates and logs no unexpected errors', async ({ page }) => {
+/** The pages the smoke loads: the app as it opens, and in TV mode (`?tv=1`), which must also report TV mode on. */
+const CASES = [
+    { name: 'the app loads, animates and logs no unexpected errors', query: '', tv: false },
+    {
+        name: 'the app in TV mode (?tv=1) animates, reports TV mode on and logs no unexpected errors',
+        query: '?tv=1',
+        tv: true,
+    },
+];
+
+for (const { name, query, tv } of CASES) {
+    test(name, async ({ page }) => {
+        await smoke(page, { query, tv });
+    });
+}
+
+/**
+ * @param {import('@playwright/test').Page} page the page
+ * @param {{query: string, tv: boolean}} options the query to open the app with and whether TV mode must be on
+ * @returns {Promise<void>}
+ */
+async function smoke(page, { query, tv }) {
     const url = process.env.SMOKE_URL;
     if (!url) {
         throw new Error('SMOKE_URL is not set: run scripts/browser-smoke.sh');
@@ -27,7 +48,7 @@ test('the app loads, animates and logs no unexpected errors', async ({ page }) =
     });
 
     try {
-        await page.goto(url);
+        await page.goto(`${url}${query}`);
         // The server sends COOP and COEP, so the page is cross-origin isolated and has SharedArrayBuffer.
         expect(await page.evaluate(() => globalThis.crossOriginIsolated), 'page is cross-origin isolated').toBe(true);
         await expect(page.locator('#canvas-container canvas').first()).toBeAttached();
@@ -42,6 +63,8 @@ test('the app loads, animates and logs no unexpected errors', async ({ page }) =
         expect(sample.ready, `the app recorded a frame within ${STARTUP_TIMEOUT_MS} ms`).toBe(true);
         expect(sample.frames, `app frames recorded in ${FRAME_WINDOW_MS} ms`).toBeGreaterThanOrEqual(MIN_FRAMES);
         await expect.poll(() => page.evaluate(() => globalThis.__blob?.tick ?? 0)).toBeGreaterThan(startingTick);
+        const tvOn = await page.evaluate(() => globalThis.document.documentElement.classList.contains('tv-mode'));
+        expect(tvOn, 'TV mode on').toBe(tv);
         expect(pageErrors, 'uncaught page errors').toEqual([]);
         expect(unexpected, 'console.error messages not in known-console-errors.json').toEqual([]);
     } catch (error) {
@@ -53,4 +76,4 @@ test('the app loads, animates and logs no unexpected errors', async ({ page }) =
         }
         throw error;
     }
-});
+}

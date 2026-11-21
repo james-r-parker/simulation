@@ -202,7 +202,7 @@ describe('playEffects', () => {
             playEffects(player, queueOf([[1, 5, 1, 2, 7, 3, 1, cause]]), agents, 5);
             counts[cause] = liveFx(player.fx.pool, 6);
             if (cause > 0) {
-                expect(player.tweens.kind[3], `cause ${cause}`).toBe(TWEEN.BIRTH_POP);
+                expect(player.tweens.kind[3], `cause ${cause}`).toBe(cause === 2 ? TWEEN.FISSION : TWEEN.BUD);
             }
         }
         expect(counts).toEqual({ 0: 0, 1: 11, 2: 5, 3: 8, 4: 8 });
@@ -282,6 +282,18 @@ describe('playEffects', () => {
         expect(player.followInterest.subject[0]).toBe(11);
         expect(player.followInterest.partner[0]).toBe(22);
         expect(player.followInterest.count).toBe(1);
+    });
+
+    it('remembers a death with its killer and a birth with its mother for the follow', () => {
+        const { player } = build();
+        const kinds = player.kinds;
+        playEffects(player, queueOf([[kinds.BORN, 3, 0, 0, 20, 5, 7, 1]]), alive([]), 3);
+        playEffects(player, queueOf([[kinds.DIED, 4, 0, 0, 7, 30, 256, 5]]), alive([]), 4);
+        expect(player.story.birthMother[0]).toBe(7);
+        expect(player.story.deathKiller[0]).toBe(30);
+        expect(player.story.deathEaten[0]).toBe(1);
+        expect(player.life.count).toBe(3);
+        expect([player.life.genome[0], player.life.genome[1], player.life.genome[2]]).toEqual([20, 7, 30]);
     });
 
     it('beginEffects takes the view, the zoom band and the playhead rate into the budget', () => {

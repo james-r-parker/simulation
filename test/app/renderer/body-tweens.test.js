@@ -35,8 +35,8 @@ describe.each(LANE_KINDS)('body tweens (%s lanes)', (_kind, lanes) => {
         startTween(t, WHO, TWEEN.FLINCH, 100);
         expect(startTween(t, WHO, TWEEN.GULP, 101)).toBe(false);
         expect(t.kind[3]).toBe(TWEEN.FLINCH);
-        expect(startTween(t, WHO, TWEEN.BIRTH_POP, 102)).toBe(true);
-        expect(t.kind[3]).toBe(TWEEN.BIRTH_POP);
+        expect(startTween(t, WHO, TWEEN.BUD, 102)).toBe(true);
+        expect(t.kind[3]).toBe(TWEEN.BUD);
         expect(startTween(t, WHO, TWEEN.GULP, 200)).toBe(true);
     });
 
