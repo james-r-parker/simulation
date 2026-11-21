@@ -407,19 +407,29 @@ export class EffectSystem {
 }
 
 /**
+ * @param {Compiled} ref a compiled reference
+ * @param {Float64Array} config the config numbers of the rules (`world.effectConfig`)
+ * @returns {number} its value with this config, the same arithmetic as `numberInto`; NaN for a lane, which varies by body
+ */
+function constantOf(ref, config) {
+    if (ref.kind === REF.LANE) {
+        return NaN;
+    }
+    return ref.kind === REF.LITERAL ? ref.value : ref.scale * config[ref.index] + ref.offset;
+}
+
+/**
  * @param {Rule} rule one effect's rule on a lane
  * @param {Float64Array} config the config numbers of the rules (`world.effectConfig`)
  * @returns {boolean} whether the rule's factor is exactly 1 at every level with this config: a `perStack` number of 0 (or 1
- *   for a `power` rule). The fold leaves such a rule out, so an effect whose strength is off costs a lane nothing; a rule
- *   that reads a lane, or a table, is kept.
+ *   for a `power` rule), or a `levels` table whose every entry is 1. The fold leaves such a rule out, so an effect whose
+ *   strength is off costs a lane nothing; a rule that reads a lane is kept.
  */
 function isNeutral(rule, config) {
-    const per = rule.per;
-    if (per === null || per.kind === REF.LANE) {
-        return false;
+    if (rule.levels !== null) {
+        return rule.levels.every((ref) => constantOf(ref, config) === 1);
     }
-    const value = per.kind === REF.LITERAL ? per.value : per.scale * config[per.index] + per.offset;
-    return value === (rule.power ? 1 : 0);
+    return constantOf(/** @type {Compiled} */ (rule.per), config) === (rule.power ? 1 : 0);
 }
 
 /**
