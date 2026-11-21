@@ -148,5 +148,28 @@ describe('plainBrain', () => {
             }
             expect(Array.from(world.weights.subarray(15))).toEqual(expected.map((d) => Math.fround(d)));
         });
+
+        it('steps a spare trait slot (no registry entry) by traitMutationSigma alone', () => {
+            const spare = { weightCount: 30, traitStart: 5, leakStart: 29 };
+            const world = {
+                ...makeWorld(30, 0),
+                layout: spare,
+                config: { traitMutationSigma: 0.2, traitGeneClamp: 3 },
+            };
+            const rng = createRng(11);
+            brain.childBrain(world, 1, 0, { cause: BORN_CAUSE.SPLIT, rng });
+            const ref = createRng(11);
+            for (let i = 0; i < 5; i++) {
+                nextGaussian(ref);
+                nextFloat(ref);
+            }
+            const registered = TRAITS.length;
+            for (let g = 0; g < 24; g++) {
+                const step = nextGaussian(ref) * 0.2;
+                if (g >= registered) {
+                    expect(world.weights[30 + 5 + g]).toBe(Math.fround(step));
+                }
+            }
+        });
     });
 });
