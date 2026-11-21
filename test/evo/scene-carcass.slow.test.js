@@ -4,7 +4,8 @@
 // when the trait genes' inheritance (body-genes T33) left seed 1 with no carcass meal (its precondition read null), and
 // re-pinned for the herd centroid fix, the body lanes (body-genes T3 to T13a) the hunter-choice metrics (T22) and the gene metrics (T9),
 // and again for the effect registry (status-effects T2: the factors multiply on the lane in registry order, so thrust and
-// cost round differently; carcass meal share 0.148 and scavenge events 0.378 per 1k as before).
+// cost round differently; carcass meal share 0.148 and scavenge events 0.378 per 1k as before), and for the 13 effect
+// metrics of status-effects T12 (the digest of every other metric is the previous pin; the world hash is unchanged).
 
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
@@ -13,7 +14,7 @@ import { runSeed } from '../../scripts/eval-worker.mjs';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const RECORDED_WORLD_HASH = 'af220e7209361ae7';
-const RECORDED_METRICS_SHA256 = '8a940e841a81379b995208f1275b49facd603edd61102f04c44c61938f740084';
+const RECORDED_METRICS_SHA256 = '22125da5b5a6e1dd5475c2e6eb25594c1190142103585ebf0c7be3d538f7abad';
 
 describe('trackCarcasses skipping empty slots', () => {
     it(

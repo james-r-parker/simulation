@@ -233,6 +233,10 @@
         "test/fixtures/metric-directions.json",
         "test/fixtures/metric-names.json"
     ],
+    "test/evo/metric-registry/scenes-effects.test.js": [
+        "js/evo/scene-effects.js",
+        "test/evo/scene-effects.test.js"
+    ],
     "test/evo/metric-registry/scenes.test.js": [
         "js/evo/metrics.js"
     ],
@@ -360,6 +364,9 @@
     "test/evo/scene-edge.test.js": [
         "js/evo/scene-edge-gates.js",
         "js/evo/scene-edge.js"
+    ],
+    "test/evo/scene-effects.test.js": [
+        "js/evo/scene-effects.js"
     ],
     "test/evo/scene-genes.test.js": [
         "js/evo/scene-genes.js"

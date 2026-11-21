@@ -19,11 +19,11 @@ const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-name
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(399);
+        expect(REPORT_NAMES).toHaveLength(412);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
-    it('puts every metric in one of the seven families', () => {
+    it('puts every metric in one of the eight families', () => {
         const families = new Set(Object.values(METRICS).map((e) => e.family));
         expect([...families].sort()).toEqual([
             'brain',
@@ -31,6 +31,7 @@ describe('METRICS', () => {
             'hunters',
             'intent',
             'scenes-ecology',
+            'scenes-effects',
             'scenes-social',
             'world',
         ]);
@@ -224,9 +225,24 @@ const ADDED_AFTER_T8 = [
     'eval.hunter_size_choice',
     'eval.hunter_slow_choice',
     ...GENE_METRICS,
+    'eval.effect_share.chilled',
+    'eval.effect_share.wounded',
+    'eval.effect_share.panicked',
+    'eval.effect_share.shaken',
+    'eval.effect_share.rallied',
+    'eval.effect_share.answered',
+    'eval.effect_share.hoarse',
+    'eval.effect_share.alert',
+    'eval.effect_share.huddled',
+    'eval.effect_share.staggered',
+    'eval.rally_bite_share',
+    'eval.hoarse_call_share',
+    'eval.huddle_cold_gain',
 ];
 /** Watch metrics registered after the snapshot whose intended direction is lower. */
 const ADDED_INTENDED_LOWER = [
+    'eval.hoarse_call_share',
+    'eval.huddle_cold_gain',
     'eval.carcass_loss_share.lost',
     'eval.carcass_loss_share.faded',
     'eval.carcass_lost_per_1k',

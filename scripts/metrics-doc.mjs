@@ -21,6 +21,7 @@ const FAMILIES = Object.freeze([
     ['intent', 'Intent'],
     ['scenes-ecology', 'Scenes - ecology'],
     ['scenes-social', 'Scenes - social'],
+    ['scenes-effects', 'Scenes - effects'],
     ['brain', 'Brain'],
     ['world', 'World'],
 ]);
