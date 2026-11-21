@@ -38,6 +38,9 @@
         "scripts/bench-check.mjs",
         "test"
     ],
+    "test/bench-check-main.test.js": [
+        "scripts/bench-check.mjs"
+    ],
     "test/bench-compare.test.js": [
         "package-lock.json",
         "package.json"
@@ -172,6 +175,9 @@
     "test/designs-index.test.js": [
         "README.md",
         "docs/designs"
+    ],
+    "test/director-dry-main.test.js": [
+        "scripts/director-dry.mjs"
     ],
     "test/eslint-scope.test.js": [
         "js/sim/step.js"
@@ -461,6 +467,9 @@
     "test/icon-files.test.js": [
         "public/icons/"
     ],
+    "test/learn-worker.test.js": [
+        "scripts/learn-worker.mjs"
+    ],
     "test/ledger.test.js": [
         "evals"
     ],
@@ -554,6 +563,9 @@
         "evals/fair-chase/courser.json",
         "evals/role-budget",
         "scripts/role-budget.mjs"
+    ],
+    "test/role-metric-table.test.js": [
+        "scripts/role-metric-table.mjs"
     ],
     "test/run-detached.test.js": [
         ".git",
