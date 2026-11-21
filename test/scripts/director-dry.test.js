@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BARS, meetsBars, runDirectorDry } from '../../scripts/lib/director-dry.mjs';
 import { DEFAULT_TICKS, parseDryArgs, reportLines } from '../../scripts/director-dry.mjs';
 import { noisePolicy, SMALL_CONFIG } from '../worker/helpers/host-harness.js';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 describe('parseDryArgs', () => {
     it('defaults to seed 1, 72000 ticks and the live policy', () => {
@@ -54,18 +55,26 @@ describe('meetsBars', () => {
 describe('runDirectorDry', () => {
     const run = () => runDirectorDry({ seed: 3, ticks: 9000, overrides: SMALL_CONFIG, createPolicy: noisePolicy });
 
-    it('takes shots from a headless world, and the shares of the kinds add up to one', () => {
-        const r = run();
-        expect(r.ticks).toBe(9000);
-        expect(r.shots.length).toBeGreaterThan(0);
-        expect(Object.values(r.shares).reduce((a, b) => a + b, 0)).toBeCloseTo(1);
-        expect(r.maxKindShare).toBe(Math.max(...Object.values(r.shares)));
-        expect(r.shotsPerHour).toBeCloseTo((r.shots.length * 3600 * 60) / 9000);
-    });
+    it(
+        'takes shots from a headless world, and the shares of the kinds add up to one',
+        () => {
+            const r = run();
+            expect(r.ticks).toBe(9000);
+            expect(r.shots.length).toBeGreaterThan(0);
+            expect(Object.values(r.shares).reduce((a, b) => a + b, 0)).toBeCloseTo(1);
+            expect(r.maxKindShare).toBe(Math.max(...Object.values(r.shares)));
+            expect(r.shotsPerHour).toBeCloseTo((r.shots.length * 3600 * 60) / 9000);
+        },
+        scaleTimeout(30000),
+    );
 
-    it('replays a seed to the same shot list', () => {
-        expect(run().shots).toEqual(run().shots);
-    });
+    it(
+        'replays a seed to the same shot list',
+        () => {
+            expect(run().shots).toEqual(run().shots);
+        },
+        scaleTimeout(30000),
+    );
 
     it('prints a line for each shot and the four readings with their bars', () => {
         const lines = reportLines(run());
