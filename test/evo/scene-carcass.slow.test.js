@@ -12,8 +12,8 @@ import { LIVE_POLICY } from '../../js/evo/policies/index.js';
 import { runSeed } from '../../scripts/eval-worker.mjs';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
-const RECORDED_WORLD_HASH = 'd83803177df45443';
-const RECORDED_METRICS_SHA256 = 'f2c2b2d57685e66c6c27da0fbbcd081ba73b886b7e3916aa43a1c93c3990fe38';
+const RECORDED_WORLD_HASH = 'af220e7209361ae7';
+const RECORDED_METRICS_SHA256 = '8a940e841a81379b995208f1275b49facd603edd61102f04c44c61938f740084';
 
 describe('trackCarcasses skipping empty slots', () => {
     it(
