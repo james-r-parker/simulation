@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { arenaConfig } from '../../js/evo/chase-arena.js';
 import { budgetDefend } from '../../js/evo/role-budget-defend.js';
-import { ESCORT_CLEARANCE, escortGap } from '../../js/evo/role-budget-escort.js';
+import { ESCORT_CLEARANCE, escortGap, guardPosture } from '../../js/evo/role-budget-escort.js';
 import { validateModel } from '../../js/evo/role-budget-model.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 
@@ -61,5 +61,65 @@ describe('the defender row against the escort distance', () => {
                 expect(budget.smoke.cell.status).toBe('impossible');
             }
         }
+    });
+});
+
+describe('the guard posture', () => {
+    const BETWEEN = { guardPosture: 'between' };
+    const SHOVED = { ...STEP5_D, ...SHOVE };
+
+    it('is derived as `side` and is overridable to `between`, and a bad value is refused', () => {
+        expect(guardPosture(validateModel({}))).toBe('side');
+        expect(guardPosture(validateModel(BETWEEN))).toBe('between');
+        expect(guardPosture(validateModel({ guardPosture: 'side' }))).toBe('side');
+        expect(() => validateModel({ guardPosture: 'behind' })).toThrow(/guardPosture/);
+    });
+
+    it('improves the defender against a hunter closing side-on: it touches the hunter and the walk to the smoke spot goes', () => {
+        for (const overrides of [{}, STEP5_D]) {
+            const side = read(overrides).budget;
+            const guard = read(overrides, BETWEEN).budget;
+            expect(side.run.interceptTick).toBeNull();
+            expect(guard.run.interceptTick).not.toBeNull();
+            expect(guard.run.interceptTick).toBeLessThan(/** @type {number} */ (side.baseline.killTick));
+            expect(guard.smoke.runTicks).toBe(0);
+            expect(/** @type {number} */ (guard.smoke.slackDefender)).toBeGreaterThan(
+                /** @type {number} */ (side.smoke.slackDefender),
+            );
+        }
+    });
+
+    it('with the shove on the guard lands it before the kill and holds the kill off; the row is still red on the smoke', () => {
+        const { budget } = read(SHOVED, BETWEEN);
+        expect(budget.run.repelTick).not.toBeNull();
+        expect(budget.run.killTick).toBeNull();
+        for (const step of ['hear', 'turn', 'run', 'intercept']) {
+            expect(budget.cells[step].status).toBe('ok');
+        }
+        expect(budget.cells.smoke.status).toBe('impossible');
+        expect(budget.row.status).toBe('impossible');
+        expect(budget.binding).toBe('smoke');
+        expect(read(SHOVED).budget.run.repelTick).toBeNull();
+    });
+
+    it('is not rescued by body speed: a defender with 20 times the turn still cannot release in time (the guard faces the hunter)', () => {
+        const fast = {
+            ...SHOVED,
+            specialisations: {
+                ...STEP5_D.specialisations,
+                defender: {
+                    ...STEP5_D.specialisations.defender,
+                    turnMultiplier: 20,
+                    sprintBoost: 2,
+                    body: { maxThrust: 2 },
+                },
+            },
+        };
+        const slow = read(SHOVED, BETWEEN).budget.smoke;
+        const { smoke } = read(fast, BETWEEN).budget;
+        expect(smoke.releaseTick).toBeLessThan(slow.releaseTick);
+        expect(smoke.latestRelease).toBe(slow.latestRelease);
+        expect(smoke.releaseTick).toBeGreaterThan(smoke.latestRelease);
+        expect(smoke.cell.status).toBe('impossible');
     });
 });

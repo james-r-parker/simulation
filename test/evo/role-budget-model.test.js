@@ -15,6 +15,7 @@ describe('MODEL_DEFAULTS', () => {
             catchShare: 0.3,
             defenderGap: 150,
             escortGap: null,
+            guardPosture: null,
             smokeGap: 240,
             reliableSight: false,
         });

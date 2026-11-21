@@ -19,3 +19,16 @@ export const ESCORT_CLEARANCE = 1;
 export function escortGap(defender, caller, model) {
     return model.escortGap ?? caller.size + defender.size * (1 + ESCORT_CLEARANCE);
 }
+
+/**
+ * Where the defender stands when the hunter closes. A guard faces the threat between it and the herd, the way musk oxen face
+ * outward, and that is `between`: the defender on the hunter's approach line, `escortGap` from the caller, facing the hunter,
+ * at rest. `side` is the first reading: beside the caller, at right angles to the hunter, facing away. The derived default is
+ * `side` while the row stays red with `between` on (the smoke cell is `impossible` either way, so the guard does not yet
+ * change the row's status and changes no number the plan quotes); `--model guardPosture=between` reads the guard.
+ * @param {{guardPosture: 'side' | 'between' | null}} model the model options
+ * @returns {'side' | 'between'} the posture: the model's `guardPosture`, or `side` when it is null
+ */
+export function guardPosture(model) {
+    return model.guardPosture ?? 'side';
+}

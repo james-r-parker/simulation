@@ -15,6 +15,9 @@
  * @property {number} defenderGap the distance a scout stands from the forager it warns, in px (the 0.5 of `callRadius` of the hearing anchor)
  * @property {number | null} escortGap the distance of the defender from the caller when a hunter closes, in px, null to derive it
  *   (`escortGap` of js/evo/role-budget-escort.js: the guard stands one body radius clear of the caller)
+ * @property {'side' | 'between' | null} guardPosture where the defender stands when a hunter closes, null to derive it
+ *   (`guardPosture` of js/evo/role-budget-escort.js: `side` until the guard turns the row green; `between` stands the defender
+ *   on the hunter's line, facing it)
  * @property {number} smokeGap the centre gap at which a body releases smoke, in px
  * @property {boolean} reliableSight whether the hunter acts only on a prey that two neighbouring rays cannot both miss
  */
@@ -32,6 +35,7 @@ export const MODEL_DEFAULTS = Object.freeze({
     catchShare: 0.3,
     defenderGap: 150,
     escortGap: null,
+    guardPosture: null,
     smokeGap: 240,
     reliableSight: false,
 });
@@ -49,6 +53,7 @@ const VALID = {
     catchShare: (v) => typeof v === 'number' && v > 0 && v <= 1,
     defenderGap: (v) => typeof v === 'number' && v > 0,
     escortGap: (v) => v === null || (typeof v === 'number' && v > 0),
+    guardPosture: (v) => v === null || v === 'side' || v === 'between',
     smokeGap: (v) => typeof v === 'number' && v > 0,
     reliableSight: (v) => typeof v === 'boolean',
 };

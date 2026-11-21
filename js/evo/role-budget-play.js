@@ -21,6 +21,7 @@ const REST = 0.05;
  * @property {number} runAt the tick the sprint may start (the `run` delay)
  * @property {number} slowTicks ticks its speed is held at the turn circle's (the `turn` delay)
  * @property {number} seeGap the centre gap inside which it acts: it cruises straight, blind, while the prey is further
+ * @property {number} [lead] the most ticks of the prey's motion it leads its aim (default `LEAD_MAX`; 0 aims at the prey where it is)
  */
 
 /**
@@ -69,6 +70,14 @@ function steerXY(b, ax, ay) {
 }
 
 /**
+ * @param {import('./role-budget-body.js').Body} h the pursuer
+ * @param {number} dist the centre gap to the prey
+ * @param {HunterPlay} play the pursuer's play
+ * @returns {number} the ticks of the prey's motion it leads its aim: the time to close the gap, at most `play.lead`
+ */
+const leadOf = (h, dist, play) => Math.min(dist / Math.max(speedOf(h), 1), play.lead ?? LEAD_MAX);
+
+/**
  * @param {import('./role-budget-body.js').Body} h the hunter
  * @param {import('./role-budget-body.js').Body} p the prey
  * @param {HunterPlay} play the hunter's play
@@ -82,7 +91,7 @@ export function hunterOut(h, p, play, tick) {
     if (tick < play.wait || dist > play.seeGap) {
         return { turn: 0, sprint: 0 };
     }
-    const lead = Math.min(dist / Math.max(speedOf(h), 1), LEAD_MAX);
+    const lead = leadOf(h, dist, play);
     const turn = steerXY(h, dx + lead * p.vx, dy + lead * p.vy);
     const inView = play.sprint === 'always' || h.p.store.on === 0 || dist <= h.p.view.range;
     const lasts = play.sprint === 'always' || aboveFloor(h);
