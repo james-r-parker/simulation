@@ -62,6 +62,9 @@ const MOVED = new Set([
     'sickThrust',
     'sickDrain',
     'diseaseDrain',
+    // status-effects T4: the seen alarm's bite share.
+    'alarmBiteShare',
+    'biteTakenMultiplier',
     'temperaturePassiveLossFactor',
     'temperatureEfficiencyColdSevere',
     'temperatureEfficiencyColdModerate',

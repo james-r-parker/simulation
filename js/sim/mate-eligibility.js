@@ -13,17 +13,13 @@ import { childShareOf } from './traits.js';
 /**
  * @param {World} world the world
  * @param {number} slot an alive agent
- * @returns {boolean} true when mature, not pregnant, off cooldown, above `mateMinEnergy` and the `mate` gate is open (no
- *   effect closes it: a body past a temperature stress threshold cannot start a mating)
+ * @returns {boolean} true when the `mate` gate is open (no effect closes it: an immature, pregnant, recovering or
+ *   out-of-band body cannot start a mating), above `mateMinEnergy` and allowed by its territory
  */
 export function isReadyToMate(world, slot) {
-    const { maturityTicks, mateMinEnergy } = world.config;
     return (
-        world.ageTicks[slot] >= maturityTicks &&
-        world.pregnancy[slot] === 0 &&
-        world.cooldown[slot] === 0 &&
-        world.energy[slot] > mateMinEnergy &&
         gateOpen(world, slot, GATE.MATE) &&
+        world.energy[slot] > world.config.mateMinEnergy &&
         territoryAllows(world, slot)
     );
 }

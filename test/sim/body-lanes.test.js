@@ -91,6 +91,8 @@ describe('LANES', () => {
             'temperatureEfficiencyHeatSevere',
             'heatSpeedCap',
             'sprintHeat',
+            'alarmBiteShare',
+            'biteTakenMultiplier',
         ]);
         expect(LANES.filter((lane) => lane.kind === 'offset').every((lane) => lane.moved)).toBe(true);
         expect(LANE_COUNT).toBe(115);

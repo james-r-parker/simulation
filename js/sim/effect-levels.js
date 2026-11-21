@@ -154,6 +154,69 @@ export function diseasedLevel(world, slot) {
 /**
  * @param {World} world the world
  * @param {number} slot the agent slot
+ * @returns {number} `immature`: 1 while `ageTicks` is under the `maturityTicks` lane
+ */
+export function immatureLevel(world, slot) {
+    return world.ageTicks[slot] < world.lanes.maturityTicks[slot] ? 1 : 0;
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} `recovering`: 1 while the reproduction cooldown is above 0
+ */
+export function recoveringLevel(world, slot) {
+    return world.cooldown[slot] > 0 ? 1 : 0;
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} `pregnant`: 1 while the pregnancy timer is above 0
+ */
+export function pregnantLevel(world, slot) {
+    return world.pregnancy[slot] > 0 ? 1 : 0;
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} `alarmSeen`: 1 while the slot's alarm runs and a threat was on its rays at the call
+ */
+export function alarmSeenLevel(world, slot) {
+    return world.alarmTimer[slot] > 0 && world.alarmSeen[slot] === 1 ? 1 : 0;
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} `alarmCooling`: 1 while the alarm timer, which also sets the call's loudness, is above 0
+ */
+export function alarmCoolingLevel(world, slot) {
+    return world.alarmTimer[slot] > 0 ? 1 : 0;
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} `huntCooling`: 1 while the hunt timer, which also sets the call's loudness, is above 0
+ */
+export function huntCoolingLevel(world, slot) {
+    return world.huntTimer[slot] > 0 ? 1 : 0;
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} slot the agent slot
+ * @returns {number} `smokeCooling`: 1 while the smoke cooldown is above 0
+ */
+export function smokeCoolingLevel(world, slot) {
+    return world.smokeTimer[slot] > 0 ? 1 : 0;
+}
+
+/**
+ * @param {World} world the world
+ * @param {number} slot the agent slot
  * @returns {number} `spent`: how far the sprint store is under `sprintFloor`, `1 - level / floor` (0 at or above the
  *   floor, and 0 with the store off)
  */

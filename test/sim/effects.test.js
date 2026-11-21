@@ -17,6 +17,7 @@ describe('the default registry', () => {
         world.temperature[slot] = 50;
         world.energy[slot] = 1;
         world.ateTimer[slot] = 255;
+        world.ageTicks[slot] = world.config.maturityTicks;
         world.lanes.visionRange[slot] = 7;
         expect(liveOf(world, slot, 'visionRange')).toBe(7);
         for (const gate of Object.values(GATE)) {

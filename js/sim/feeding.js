@@ -2,7 +2,7 @@
 
 import { tallyEatContact } from './eat-contact.js';
 import { carryPollen } from './pollination.js';
-import { EFFECT, GATE, gateOpen, levelOf } from './effects.js';
+import { EFFECT, GATE, gateOpen, levelOf, liveOf } from './effects.js';
 import { ingestToxin } from './toxin.js';
 import { canBite, couldBite, inJaws } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
@@ -208,15 +208,6 @@ function settleKill(world, biter, victim, fatal) {
 }
 
 /**
- * @param {Record<string, any>} world the world
- * @param {number} victim the bitten slot
- * @returns {number} `alarmBiteShare` while the victim's seen alarm runs (a threat was on its rays at the call), else 1
- */
-function alarmShare(world, victim) {
-    return world.alarmTimer[victim] > 0 && world.alarmSeen[victim] === 1 ? world.config.alarmBiteShare : 1;
-}
-
-/**
  * Resolves one bite: moves energy, records the loss, charges the biter's kick and deposits pheromones.
  * @param {Record<string, any>} world the world
  * @param {number} biter the biting slot
@@ -225,8 +216,9 @@ function alarmShare(world, victim) {
  */
 function applyBite(world, biter, victim) {
     const { config, x, y } = world;
-    const taken = specParams(config, world.spec[victim]).biteTakenMultiplier;
-    const bite = config.biteEnergy * world.biteBySpec[world.spec[biter]] * alarmShare(world, victim);
+    // The victim's `biteTakenMultiplier` lane, with the `alarmSeen` effect's `alarmBiteShare` while its seen alarm runs.
+    const taken = liveOf(world, victim, 'biteTakenMultiplier');
+    const bite = config.biteEnergy * world.biteBySpec[world.spec[biter]];
     const wasAlive = world.energy[victim] > 0;
     const kick = kickOf(world, biter, victim);
     transferEnergy(world, victim, biter, bite * taken);

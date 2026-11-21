@@ -3,6 +3,8 @@
 // numbers it scales by are config keys (or lanes, where a lane has moved), so a number is tuned where it always was.
 
 import {
+    alarmCoolingLevel,
+    alarmSeenLevel,
     coldBandLevel,
     coldRampLevel,
     digestingLevel,
@@ -12,11 +14,16 @@ import {
     handlingLevel,
     heatBandLevel,
     hotRampLevel,
+    huntCoolingLevel,
+    immatureLevel,
     juvenileLevel,
     outOfBandLevel,
+    pregnantLevel,
+    recoveringLevel,
     restingLevel,
     satedLevel,
     sickLevel,
+    smokeCoolingLevel,
     spentLevel,
 } from './effect-levels.js';
 
@@ -138,4 +145,22 @@ export const EFFECTS = Object.freeze([
         })),
         visible: true,
     }),
+    effect('immature', {
+        family: 'body',
+        level: 'step',
+        read: immatureLevel,
+        gates: ['MATE', 'SPLIT'],
+        visible: true,
+    }),
+    effect('recovering', { level: 'step', read: recoveringLevel, gates: ['MATE', 'SPLIT'] }),
+    effect('pregnant', { level: 'step', read: pregnantLevel, gates: ['MATE', 'SPLIT'], visible: true }),
+    effect('alarmSeen', {
+        family: 'combat',
+        level: 'step',
+        read: alarmSeenLevel,
+        scales: [{ lane: 'biteTakenMultiplier', levels: [1, 'alarmBiteShare'] }],
+    }),
+    effect('alarmCooling', { family: 'social', level: 'step', read: alarmCoolingLevel, gates: ['ALARM'] }),
+    effect('huntCooling', { family: 'social', level: 'step', read: huntCoolingLevel, gates: ['HUNT'] }),
+    effect('smokeCooling', { family: 'social', level: 'step', read: smokeCoolingLevel, gates: ['SMOKE'] }),
 ]);

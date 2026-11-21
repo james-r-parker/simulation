@@ -70,7 +70,7 @@ describe('the temperature effects', () => {
             const standing = liveOf(world, slot, 'passiveLoss') / world.lanes.passiveLoss[slot];
             expect(thrust, `efficiency at ${t}`).toBe(efficiency);
             expect(standing, `passive ramp at ${t}`).toBeCloseTo(ramp, 12);
-            expect(gateOpen(world, slot, GATE.MATE), `mating at ${t}`).toBe(!blocks);
+            expect(levelOf(world, slot, EFFECT.OUT_OF_BAND) > 0, `mating block at ${t}`).toBe(blocks);
         }
     });
 
@@ -180,5 +180,55 @@ describe('the feeding effects', () => {
         drainEffect(world, slot, EFFECT.DISEASED);
         expect(world.energy[slot]).toBeCloseTo(50 - 2.2, 6);
         expect(world.lastLoss[slot]).toBe(LOSS_CAUSE.DISEASE);
+    });
+});
+
+describe('the life and signal effects', () => {
+    it('close the mate and split gates as the tests of today did: immature, recovering, pregnant', () => {
+        const { world, slot } = bodyWorld({ maturityTicks: 100 });
+        const grid = [];
+        for (const age of [0, 99, 100, 500]) {
+            for (const cooldown of [0, 7]) {
+                for (const pregnancy of [0, 3]) {
+                    world.ageTicks[slot] = age;
+                    world.cooldown[slot] = cooldown;
+                    world.pregnancy[slot] = pregnancy;
+                    const old = age >= 100 && pregnancy === 0 && cooldown === 0;
+                    grid.push(
+                        [gateOpen(world, slot, GATE.MATE), gateOpen(world, slot, GATE.SPLIT)].join() ===
+                            [old, old].join(),
+                    );
+                }
+            }
+        }
+        expect(grid.every(Boolean)).toBe(true);
+        expect(grid).toHaveLength(16);
+    });
+
+    it('close each call and the smoke gate only while its own timer runs', () => {
+        const { world, slot } = bodyWorld();
+        const open = () => [GATE.ALARM, GATE.HUNT, GATE.SMOKE].map((gate) => gateOpen(world, slot, gate));
+        world.ageTicks[slot] = 1000;
+        expect(open()).toEqual([true, true, true]);
+        world.alarmTimer[slot] = 5;
+        expect(open()).toEqual([false, true, true]);
+        world.alarmTimer[slot] = 0;
+        world.huntTimer[slot] = 5;
+        expect(open()).toEqual([true, false, true]);
+        world.huntTimer[slot] = 0;
+        world.smokeTimer[slot] = 5;
+        expect(open()).toEqual([true, true, false]);
+    });
+
+    it('share the bite a victim takes by alarmBiteShare while its seen alarm runs', () => {
+        const { world, slot } = bodyWorld({ alarmBiteShare: 0.5 });
+        const taken = () => liveOf(world, slot, 'biteTakenMultiplier') / world.lanes.biteTakenMultiplier[slot];
+        expect(taken()).toBe(1);
+        world.alarmTimer[slot] = 4;
+        expect(taken()).toBe(1);
+        world.alarmSeen[slot] = 1;
+        expect(taken()).toBe(0.5);
+        world.alarmTimer[slot] = 0;
+        expect(taken()).toBe(1);
     });
 });
