@@ -15,6 +15,7 @@ describe('warnCheck at the defaults', () => {
             'gap when the forager moves',
             'the forager gains on the hunter while it turns: the formula holds it still',
             'a forager the formula calls safe is safe in the sim: the formula never flatters it',
+            "at effort 1, the oracle hunter's, the formula and the sim agree on whether the forager is caught",
         ]);
         expect(readings.every((r) => r.row === 'scout:predator')).toBe(true);
     });
@@ -23,6 +24,11 @@ describe('warnCheck at the defaults', () => {
         const [alarm, , , gap] = readings;
         expect([alarm.formula, alarm.scene, alarm.tolerance, alarm.drift]).toEqual([2, 2, '0 ticks', false]);
         expect([gap.formula, gap.tolerance]).toEqual([405, '1 px']);
+    });
+
+    it('reads the sign at effort 1 both ways: the formula and the sim both say the forager escapes at the defaults', () => {
+        const read = readings.find((r) => r.what.startsWith('at effort 1'));
+        expect([read?.formula, read?.scene, read?.tolerance, read?.drift]).toEqual([true, true, 'agree', false]);
     });
 
     it('flags a reading outside its tolerance: a scout that sees a tick late no longer matches the scene', () => {

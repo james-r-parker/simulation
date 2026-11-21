@@ -272,7 +272,7 @@ describe('the report', () => {
     it('prints the scout row in a table of its own, with its chain, and --check plays the warning beside it', async () => {
         const { text, check } = await run(['--rows', 'scout:predator', '--check']);
         expect(text).toMatch(/row\s+see\s+hear\s+warn\s+turn\s+run/);
-        expect(text).toMatch(/scout:predator\s+12\s+9\s+7\s+9\s+9\s+ok\s+warn/);
+        expect(text).toMatch(/scout:predator\s+12\s+5\s+7\s+3!\s+3!\s+tight\s+turn/);
         expect(text).toMatch(/scout sees the hunter at 445 px {2}alarm tick 2/);
         expect(check.drift).toBe(0);
         expect(check.defence.map((/** @type {any} */ r) => r.what)).toContain('forager moves');

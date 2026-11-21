@@ -7,6 +7,7 @@ import { SLACK_CAP, cell, rowOf } from './role-budget-cell.js';
 import { createBody, bite } from './role-budget-body.js';
 import { gapAtAwareness, maxCatchableGap } from './role-budget-frame.js';
 import { swingTicks } from './role-budget-kinematics.js';
+import { hunterXs } from './role-budget-smoke.js';
 import { hearLoudness, hearWindow, seeLead, viewReach } from './role-budget-senses.js';
 
 /** The steps of the scout's row, in order. */
@@ -42,7 +43,9 @@ export const FORAGER_TURN = Math.PI / 2;
 /**
  * The warning chain: the hunter has reached `gapSee`, the scout's alarm fires `reactionTicks` later, the forager tests the
  * call one tick after that (plus the `hear` delay) and acts `reactionTicks` after hearing it, turns through `FORAGER_TURN`
- * and runs; the hunter creeps at its cruise speed throughout.
+ * and runs. The hunter creeps at its cruise speed until the forager acts and sprints from that tick (`startTick`): Phase 1's
+ * convention, where the hunter acts the tick the prey is aware (it sees the forager react). The forager is held still while it
+ * turns, which the sim does not (it gains about 25 px, a known gap of the formula).
  * @param {{scout: import('./role-budget-params.js').RoleParams, forager: import('./role-budget-params.js').RoleParams,
  *   hunter: import('./role-budget-params.js').RoleParams}} bodies the scout, the forager and the hunter
  * @param {import('./role-budget-model.js').RoleModel} model the model options
@@ -51,16 +54,37 @@ export const FORAGER_TURN = Math.PI / 2;
  */
 export function warnTimeline({ scout, forager, hunter }, model, delays = {}) {
     const gapSee = viewReach(scout, 0) + hunter.size;
-    const seen = delays.see ?? 0;
-    const hear = delays.hear ?? 0;
-    const alarmTick = seen + model.reactionTicks;
-    const audible = hearLoudness(model.defenderGap, hear, scout) > model.hearThreshold;
-    const heardTick = audible ? alarmTick + 1 + hear : -1;
+    const late = { see: 0, hear: 0, turn: 0, run: 0, ...delays };
+    const alarmTick = late.see + model.reactionTicks;
+    const audible = hearLoudness(model.defenderGap, late.hear, scout) > model.hearThreshold;
+    const heardTick = audible ? alarmTick + 1 + late.hear : -1;
     const startTick = audible ? heardTick + model.reactionTicks : -1;
-    const turn = Math.ceil(swingTicks(FORAGER_TURN, forager.turnRate.start)) + (delays.turn ?? 0);
-    const runTick = audible ? startTick + turn + (delays.run ?? 0) : -1;
+    const wait = Math.ceil(swingTicks(FORAGER_TURN, forager.turnRate.start)) + late.turn + late.run;
+    const runTick = audible ? startTick + wait : -1;
     const at = (/** @type {number} */ tick) => gapSee - hunter.cap.cruise * tick;
-    return { gapSee, alarmTick, heardTick, startTick, runTick, gapAtStart: at(startTick), gapAtRun: at(runTick) };
+    const sprinted = audible ? hunterXs(hunter, { speed: hunter.cap.cruise, ticks: wait })[wait] : 0;
+    const gapAtStart = at(startTick);
+    const gapAtRun = audible ? gapAtStart - sprinted : at(runTick);
+    return { gapSee, alarmTick, heardTick, startTick, runTick, gapAtStart, gapAtRun };
+}
+
+/**
+ * @param {{scout: import('./role-budget-params.js').RoleParams, forager: import('./role-budget-params.js').RoleParams,
+ *   hunter: import('./role-budget-params.js').RoleParams}} bodies the scout, the forager and the hunter
+ * @param {{model: import('./role-budget-model.js').RoleModel, catchable: number, step: 'turn' | 'run'}} read the model, the
+ *   largest awareness gap the hunter closes and the step delayed
+ * @returns {number | null} the most ticks of delay at the step for which the forager still runs from beyond `catchable`: the
+ *   hunter sprints through each of them, so a tick costs its sprint travel and not its creep (null when none)
+ */
+function delaySlack(bodies, { model, catchable, step }) {
+    let slack = null;
+    for (let d = 0; d <= SLACK_CAP; d++) {
+        if (warnTimeline(bodies, model, { [step]: d }).gapAtRun < catchable) {
+            break;
+        }
+        slack = d;
+    }
+    return slack;
 }
 
 /**
@@ -106,11 +130,12 @@ export function budgetWarn(scout, forager, hunter, model) {
     const own = gapAtAwareness(hunter, forager);
     const catchable = maxCatchableGap(hunter, forager, { model });
     const heard = chain.heardTick >= 0;
-    const run = heard ? ticksOf(chain.gapAtRun - catchable, speed) : null;
+    const run = heard ? delaySlack({ scout, forager, hunter }, { model, catchable, step: 'run' }) : null;
+    const creep = heard ? ticksOf(chain.gapAtRun - catchable, speed) : null;
     const audible = hearWindow(model.defenderGap, scout, model.hearThreshold).ticks - 1;
     const cells = {
         see: cell(ticksOf(seeLead(scout, forager, Math.PI), speed), model),
-        hear: heard ? cell(Math.min(run ?? SLACK_CAP, audible), model) : cell(null, model),
+        hear: heard ? cell(Math.min(creep ?? SLACK_CAP, audible), model) : cell(null, model),
         warn: heard ? cell(ticksOf(chain.gapAtStart - own, speed), model) : cell(undefined, model),
         turn: heard && run !== null ? cell(run, model) : cell(undefined, model),
         run: heard ? cell(run, model, { distance: chain.gapAtRun - catchable }) : cell(undefined, model),

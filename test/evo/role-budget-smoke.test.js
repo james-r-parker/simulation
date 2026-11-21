@@ -121,11 +121,27 @@ describe('defenderSmokeGeometry', () => {
     const bodies = [hunter, prey, defender];
     const length = viewReach(prey, Math.PI) + hunter.size;
 
-    it('releases facing the caller, so the cloud lies between the hunter and the defender, on the line', () => {
-        const g = defenderSmokeGeometry(bodies, MODEL_DEFAULTS);
+    it('a defender already standing on the spot releases facing the caller: the cloud lies between, on the line', () => {
+        const g = defenderSmokeGeometry(bodies, { ...MODEL_DEFAULTS, standing: -Math.PI / 2 });
         expect(g.releasePoint).toBeCloseTo(length - (prey.size + defender.size), 9);
         expect(g.cloud.x).toBeCloseTo(g.releasePoint - (defender.size + R), 9);
         expect(g.cloud.y).toBe(0);
+        expect(g.refused).toBe(false);
+    });
+
+    it('a standing defender turns the short way round: a quarter turn either side takes as long', () => {
+        const left = defenderSmokeGeometry(bodies, { ...MODEL_DEFAULTS, standing: Math.PI / 2 });
+        const right = defenderSmokeGeometry(bodies, { ...MODEL_DEFAULTS, standing: -Math.PI / 2 });
+        expect(left.facingTicks).toBe(right.facingTicks);
+    });
+
+    it('a walking defender stops where its coast leaves it, and the cloud lies behind that point, not behind the spot', () => {
+        const g = defenderSmokeGeometry(bodies, MODEL_DEFAULTS);
+        const spot = length - (prey.size + defender.size);
+        expect(g.releasePoint).not.toBeCloseTo(spot, 0);
+        expect(g.cloud.x).toBeCloseTo(g.releasePoint - (defender.size + R), 9);
+        expect(g.cloud.y).toBeCloseTo(g.offLine, 9);
+        expect(g.coast).toBeGreaterThan(200);
         expect(g.refused).toBe(false);
     });
 
@@ -138,10 +154,13 @@ describe('defenderSmokeGeometry', () => {
         expect(reach(g.latestRelease + 1)).toBeGreaterThan(near);
     });
 
-    it('the release waits for the walk and the turn, after the 2 x reactionTicks + 1 of hearing', () => {
+    it('the release waits for the walk, the turn and the stop, after the 2 x reactionTicks + 1 of hearing', () => {
         const g = defenderSmokeGeometry(bodies, MODEL_DEFAULTS);
-        expect(g.releaseTick).toBe(2 * MODEL_DEFAULTS.reactionTicks + 1 + g.runTicks + g.facingTicks);
-        expect(g.facingTicks).toBeGreaterThan(0);
+        expect(g.releaseTick).toBe(2 * MODEL_DEFAULTS.reactionTicks + 1 + g.runTicks);
+        expect(g.facingTicks).toBe(0);
+        const stood = defenderSmokeGeometry(bodies, { ...MODEL_DEFAULTS, standing: -Math.PI / 2 });
+        expect(stood.releaseTick).toBe(2 * MODEL_DEFAULTS.reactionTicks + 1 + stood.facingTicks);
+        expect(stood.facingTicks).toBeGreaterThan(0);
         const near = defenderSmokeGeometry(bodies, { ...MODEL_DEFAULTS, defenderGap: 30 });
         expect(near.runTicks).toBeLessThan(g.runTicks);
     });

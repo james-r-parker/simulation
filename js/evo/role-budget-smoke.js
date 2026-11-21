@@ -7,6 +7,7 @@ import { cell } from './role-budget-cell.js';
 import { charge, costOf, createBody, stepBody } from './role-budget-body.js';
 import { norm, speedStep, swingTicks } from './role-budget-kinematics.js';
 import { steerOut } from './role-budget-play.js';
+import { walkAndStop } from './role-budget-walk.js';
 import { viewReach, viewReachCos } from './role-budget-senses.js';
 
 const TWO_PI = 2 * Math.PI;
@@ -152,24 +153,6 @@ export function smokeCell(hunter, prey, model) {
 }
 
 /**
- * @param {import('./role-budget-params.js').RoleParams} defender the defender
- * @param {{from: {x: number, y: number}, angle: number, to: {x: number, y: number}}} walk where it starts, which way it faces
- *   and the point it walks to
- * @returns {{ticks: number, angle: number}} the ticks to come within its size of the point, sprinting while steering at it
- *   (`Infinity` when it does not inside `MAX_TICKS`), and the heading it arrives on
- */
-function walkTo(defender, { from, angle, to }) {
-    const b = createBody(defender, { x: from.x, y: from.y, angle });
-    for (let t = 0; t < MAX_TICKS; t++) {
-        if (norm(to.x - b.x, to.y - b.y) < defender.size) {
-            return { ticks: t, angle: b.angle };
-        }
-        stepBody(b, { turn: steerOut(b, { x: to.x - b.x, y: to.y - b.y }), sprint: 1 });
-    }
-    return { ticks: Infinity, angle: b.angle };
-}
-
-/**
  * @param {number} a an angle
  * @returns {number} its size once wrapped into [0, PI]
  */
@@ -182,11 +165,14 @@ function spread(a) {
  * @typedef {object} DefenderSmoke
  * @property {boolean} refused whether the geometry refuses the release: the defender faces the hunter, so the cloud lands
  *   behind it on the caller's side and the hunter's rays meet the defender first
- * @property {number} releasePoint the defender's position along the hunter-to-caller segment (hunter at 0)
- * @property {number} coast the distance a defender at its sprint cap coasts when it stops pushing, the stop the geometry
- *   assumes it makes on the spot
- * @property {number} facingTicks the ticks to turn its back to the hunter
- * @property {number} runTicks the ticks to walk onto the segment
+ * @property {number} releasePoint where the defender stands along the hunter-to-caller segment when it releases (hunter at 0):
+ *   the spot, or where its stop leaves it (`walkAndStop` of role-budget-walk.js)
+ * @property {number} offLine how far it stands off that segment, px (0 for a defender standing on the spot)
+ * @property {number} coast the distance a defender at its sprint cap coasts when it stops pushing: the stop is modelled, so
+ *   this explains the cut (the thrust is cut that far short) and is not a correction
+ * @property {number} facingTicks the ticks to turn its back to the hunter, for a defender already standing on the spot (a
+ *   walking defender turns while it coasts to a stop, inside `runTicks`)
+ * @property {number} runTicks the ticks to walk onto the spot, turn and stop there
  * @property {number} releaseTick the tick it releases
  * @property {number} latestRelease the last tick at which the cloud's near edge is still ahead of the hunter
  * @property {number} hiddenTicks the ticks the hunter's rays to the caller meet the cloud
@@ -237,16 +223,17 @@ function smokeMargin({ refused, state, slacks }) {
 export function defenderSmokeGeometry([hunter, caller, defender], model) {
     const length = model.gap ?? viewReach(caller, Math.PI) + hunter.size;
     const spot = length - (caller.size + defender.size);
-    const cloud = { x: spot - (defender.size + defender.smoke.radius), y: 0, r: defender.smoke.radius };
     const walk =
         model.standing === undefined
-            ? walkTo(defender, {
+            ? walkAndStop(defender, {
                   from: { x: length, y: model.defenderGap },
                   angle: -Math.PI / 2,
                   to: { x: spot, y: 0 },
               })
-            : { ticks: 0, angle: model.standing };
-    const facing = Math.ceil(swingTicks(spread(walk.angle), defender.turnRate.start));
+            : { ticks: 0, x: spot, y: 0, angle: model.standing };
+    const facing =
+        model.standing === undefined ? 0 : Math.ceil(swingTicks(spread(walk.angle), defender.turnRate.start));
+    const cloud = { x: walk.x - (defender.size + defender.smoke.radius), y: walk.y, r: defender.smoke.radius };
     const releaseTick = 2 * model.reactionTicks + 1 + walk.ticks + facing;
     const xs = hunterXs(hunter, { speed: hunter.cap.cruise });
     const latest = latestRelease(xs, { cloud, reaction: model.reactionTicks, speed: hunter.cap.cruise });
@@ -267,7 +254,8 @@ export function defenderSmokeGeometry([hunter, caller, defender], model) {
     const slack = smokeMargin({ refused, state, slacks: [slackDefender, slackCaller] });
     return {
         refused,
-        releasePoint: spot,
+        releasePoint: walk.x,
+        offLine: walk.y,
         coast: (defender.cap.sprint * defender.damping) / (1 - defender.damping),
         facingTicks: facing,
         runTicks: walk.ticks,

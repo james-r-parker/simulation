@@ -50,11 +50,11 @@ function stage(config, { side, gapSee }) {
  * started to move and when the hunter started to sprint, and the tick the forager died.
  * @param {WarnScene['ticks']} ticks the readings, updated in place
  * @param {Record<string, any>} world the world after the step
- * @param {{n: number, start: number, goAt: number}} at the step (from 1), the tick the forager moves (-1: never) and the tick
- *   the hunter sprints
+ * @param {{n: number, start: number, runAt: number}} at the step (from 1), the tick the forager moves (-1: never) and the tick
+ *   the forager has turned and runs
  * @returns {void}
  */
-function note(ticks, world, { n, start, goAt }) {
+function note(ticks, world, { n, start, runAt }) {
     const gap = norm(world.x[PREY_SLOT] - world.x[HUNTER], world.y[PREY_SLOT] - world.y[HUNTER]);
     if (ticks.alarmTick < 0 && world.alarmTimer[CALLER_SLOT] > 0) {
         ticks.alarmTick = n - 1;
@@ -62,7 +62,7 @@ function note(ticks, world, { n, start, goAt }) {
     if (Number.isNaN(ticks.gapAtStart) && start >= 0 && world.tick >= start) {
         ticks.gapAtStart = gap;
     }
-    if (ticks.gapAtRun === null && world.tick >= goAt) {
+    if (ticks.gapAtRun === null && world.tick >= runAt) {
         ticks.gapAtRun = gap;
     }
     ticks.killTick = world.alive[PREY_SLOT] === 0 ? n : null;
@@ -72,11 +72,12 @@ function note(ticks, world, { n, start, goAt }) {
  * Plays the warning: the scout sees the hunter at tick 0 (the hunter is `gapSee` from it), calls alarm `reaction` ticks later,
  * the forager hears it, turns and runs, and the hunter keeps creeping until `goAt` and then sprints at it.
  * @param {Readonly<Record<string, any>>} config an `arenaConfig`
- * @param {{reaction: number, threshold: number, side: number, goAt: number}} options the brains' reaction ticks, the loudness
- *   the forager acts on, the scout's distance from the forager and the tick the hunter starts to sprint
+ * @param {{reaction: number, threshold: number, side: number, goAt: number, runAt?: number}} options the brains' reaction
+ *   ticks, the loudness the forager acts on, the scout's distance from the forager, the tick the hunter starts to sprint and the
+ *   tick the forager has turned (default `goAt`), at which the gap is read and from which the follow-up runs
  * @returns {WarnScene} the ticks, the gaps and the outcome, from the real sim
  */
-export function playWarning(config, { reaction, threshold, side, goAt }) {
+export function playWarning(config, { reaction, threshold, side, goAt, runAt = goAt }) {
     const [hunter, scout] = ['predator', 'scout'].map((s) => roleParams(config, s));
     const gapSee = viewReach(scout, 0) + hunter.size;
     const staged = stage(config, { side, gapSee });
@@ -98,8 +99,12 @@ export function playWarning(config, { reaction, threshold, side, goAt }) {
     runScene(staged, {
         brains,
         observe(world, n) {
-            note(ticks, world, { n, start: fleer.state.startTick, goAt });
-            return world.alive[PREY_SLOT] === 0 || world.alive[HUNTER] === 0 || world.tick > goAt + CHASE_TICKS;
+            note(ticks, world, { n, start: fleer.state.startTick, runAt });
+            return (
+                world.alive[PREY_SLOT] === 0 ||
+                world.alive[HUNTER] === 0 ||
+                world.tick > Math.max(goAt, runAt) + CHASE_TICKS
+            );
         },
     });
     ticks.heardTick = fleer.state.heardTick;
