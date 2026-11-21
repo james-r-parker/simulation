@@ -31,7 +31,7 @@ export const KEYMAP = Object.freeze([
         action: 'toggleInsights',
         codes: ['KeyD'],
         shift: false,
-        title: 'Insights drawer (world, scenes, families, records, export)',
+        title: 'Insights drawer (world, scenes, families, records, export, reel)',
     },
     { action: 'toggleBoard', codes: ['KeyD'], shift: true, title: 'Insights as a full-screen board' },
     { action: 'toggleHelp', codes: ['Slash', 'F1'], title: 'Help' },

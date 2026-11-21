@@ -45,6 +45,10 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
    On any `perf(...)` commit, or a change to a function under `bench/micro/`, also attach `npm run bench:micro -- --compare origin/main` (per-function ops/s and change; a tool beside the whole-step `bench-compare`, which stays the gate).
    These commands arrive with `headless-sim-core.md`, `evolution-evals.md` and `dev-workflow-and-gate.md` Phase 2;
    before then, a phase with Targets cannot be marked built.
+   A PR that changes sim, evo or brain behaviour also attaches the scene reel of seed 1 before and after for the scene
+   it names: `npm run reel -- --seed 1 --ticks 20000 --out <dir>` on `origin/main` and on the branch (a `--config <file>`
+   for a PR that changes config), and in the body the two `reel.json` rows of that scene (tick, score) with the clip
+   files; a scene with no clip in the after run is said so. The reel is a detector's companion, never fitness.
 5. **Docs in sync:** if the change touched config keys, npm scripts, gate commands, log events or behaviour
    described in `AGENTS.md` or `README.md`, run the `audit-docs` skill and apply the approved edits.
 6. **Design doc phase:** if the work delivers a phase of a design doc:
@@ -98,7 +102,7 @@ environment specifies:
 
 ## Measurements
 
-<bench / browser-perf / eval:compare output for each Target, or "No targets">
+<bench / browser-perf / eval:compare output for each Target, or "No targets"; for a behaviour change, the scene reel rows of seed 1 before and after>
 
 ## Verification
 

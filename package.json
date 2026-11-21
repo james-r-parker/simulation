@@ -25,6 +25,7 @@
     "bench:micro": "node scripts/bench-micro.mjs",
     "bench:parts": "node scripts/bench-micro.mjs",
     "bench:parallel": "node scripts/bench-parallel.mjs",
+    "reel": "node scripts/reel.mjs",
     "replay": "node scripts/replay.mjs",
     "eval": "node scripts/eval.mjs",
     "food:ratio": "node scripts/food-ratio.mjs",
