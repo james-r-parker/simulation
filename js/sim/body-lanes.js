@@ -117,9 +117,8 @@ const MOVED = new Set([
     'huntCallCost',
     'alarmThreshold',
     'huntCallThreshold',
+    // smokeRadius and smokeTicks wait on a per-slot cloud radius in the sense kernel (`D_SMOKE_RADIUS`) and `writeClouds`, T42.
     'smokeCost',
-    'smokeRadius',
-    'smokeTicks',
     'smokeCooldown',
     'smokeThreshold',
     'pheromoneDeposit',
