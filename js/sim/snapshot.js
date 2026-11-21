@@ -130,7 +130,7 @@ function agentFlags(world, slot) {
  * @returns {number} sickness, infection and carried-pollen render bits
  */
 function floraFlags(world, slot) {
-    let flags = world.dose[slot] >= world.config.sickDose ? SNAPSHOT_FLAG.SICK : 0;
+    let flags = world.dose[slot] >= world.lanes.sickDose[slot] ? SNAPSHOT_FLAG.SICK : 0;
     flags |= world.infection[slot] !== 0 ? SNAPSHOT_FLAG.INFECTED : 0;
     const patch = world.pollenPatch[slot] - 1;
     if (

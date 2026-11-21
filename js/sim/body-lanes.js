@@ -123,6 +123,22 @@ const MOVED = new Set([
     'smokeCooldown',
     'smokeThreshold',
     'pheromoneDeposit',
+    // body-genes Phase 5 T43: the energy, sickness, reward and food readers (size, upkeep, the store's satiation, the
+    // toxin and disease, the reward trace, the food values and the juvenile plant share, the eat's heat).
+    'minSize',
+    'huntUpkeep',
+    'satiationShare',
+    'juvenilePlantShare',
+    'sickDose',
+    'doseDecay',
+    'lethalDose',
+    'diseaseTicks',
+    'plantFoodValue',
+    'meatFoodValue',
+    'temperatureGainEat',
+    'rewardGain',
+    'rewardBase',
+    'rewardDecay',
     ...THRESHOLDS,
 ]);
 

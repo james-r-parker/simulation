@@ -1,6 +1,6 @@
 // The contact tally (eat-choice T27): counted in the feed phase before the item is removed, so a biting forager's contact
 // counts although it eats the item.
-import { allocBody } from './helpers/body.js';
+import { allocBody, setSpec } from './helpers/body.js';
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { FOOD_KIND } from '../../js/sim/carcass.js';
@@ -22,7 +22,7 @@ function eater(w, a) {
     const slot = allocBody(w);
     w.x[slot] = a.x ?? 100;
     w.y[slot] = 100;
-    w.spec[slot] = a.spec ?? FORAGER;
+    setSpec(w, slot, a.spec ?? FORAGER);
     w.genomeId[slot] = slot + 1;
     addEnergy(w, slot, (a.fraction ?? 0.5) * w.maxEnergyBySpec[w.spec[slot]], ENERGY_SOURCE.INITIAL);
     w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = a.bite;
@@ -108,8 +108,8 @@ describe('the feed-phase contact tally', () => {
 
     it('does not count food the specialisation does not take', () => {
         const w = smallWorld();
-        eater(w, { bite: -1 });
-        w.meatFoodBySpec[FORAGER] = 0;
+        const slot = eater(w, { bite: -1 });
+        w.lanes.meatFoodValue[slot] = 0; // the eater's meatFoodValue lane is what it takes
         w.foodKind[item(w)] = FOOD_KIND.MEAT;
         expect(tallied(w)).toEqual([0, 0, 0, 0]);
     });

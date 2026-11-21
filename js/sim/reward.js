@@ -53,8 +53,8 @@ export function noteReward(world, slot, source, stored) {
  * @returns {number} the factor
  */
 export function rewardScale(world, slot) {
-    const { rewardBase, rewardGain, rewardDecay } = world.config;
+    const { rewardBase, rewardGain, rewardDecay } = world.lanes;
     const trace = world.rewardTrace[slot];
-    world.rewardTrace[slot] = trace * (1 - rewardDecay);
-    return rewardBase + rewardGain * trace;
+    world.rewardTrace[slot] = trace * (1 - rewardDecay[slot]);
+    return rewardBase[slot] + rewardGain[slot] * trace;
 }

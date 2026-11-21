@@ -71,7 +71,7 @@ describe('the agent state word', () => {
             pregnancy: [0],
             dose: [10],
             infection: [0],
-            lanes: { maxEnergy: [100], juvenileTicks: [1] },
+            lanes: { maxEnergy: [100], juvenileTicks: [1], sickDose: [0], satiationShare: [0] },
             spec: [0],
             energy: [0],
             ageTicks: [1],

@@ -32,12 +32,12 @@ const HERD_CARCASS_BITE = 400;
  * @returns {number} the share of the food's value the agent's specialisation takes (0 for none)
  */
 function shareOf(world, slot, food) {
-    const table = world.foodKind[food] === FOOD_KIND.MEAT ? world.meatFoodBySpec : world.plantFoodBySpec;
-    const base = table[world.spec[slot]];
-    if (base > 0 || world.foodKind[food] === FOOD_KIND.MEAT) {
+    const meat = world.foodKind[food] === FOOD_KIND.MEAT;
+    const base = meat ? world.lanes.meatFoodValue[slot] : world.lanes.plantFoodValue[slot];
+    if (base > 0 || meat) {
         return base;
     }
-    const share = world.config.juvenilePlantShare;
+    const share = world.lanes.juvenilePlantShare[slot];
     if (share > 0 && levelOf(world, slot, EFFECT.JUVENILE) > 0) {
         return share;
     }
@@ -87,8 +87,8 @@ function consumeFood(world, slot, food) {
         noteReward(world, slot, REWARD_SOURCE.SCAVENGE, stored);
     }
     world.foodEatenBySpec[world.spec[slot]] += stored;
-    const { temperatureGainEat, foodEnergy } = world.config;
-    gainTemperature(world, slot, (temperatureGainEat * stored) / foodEnergy);
+    const { foodEnergy } = world.config;
+    gainTemperature(world, slot, (world.lanes.temperatureGainEat[slot] * stored) / foodEnergy);
     world.ateTimer[slot] = 0;
     if (!isMeat) {
         carryPollen(world, slot, food);
@@ -234,7 +234,7 @@ function applyBite(world, biter, victim) {
     if (fatal && restTicks > 0 && specParams(config, world.spec[biter]).canHunt) {
         world.restTimer[biter] = restTicks;
     }
-    gainTemperature(world, biter, (config.temperatureGainEat * moved) / config.foodEnergy);
+    gainTemperature(world, biter, (world.lanes.temperatureGainEat[biter] * moved) / config.foodEnergy);
     const paid = removeEnergy(world, biter, kick, LOSS_CAUSE.COST);
     noteReward(world, biter, fatal ? REWARD_SOURCE.KILL : REWARD_SOURCE.BITE, moved);
     world.lastLoss[victim] = LOSS_CAUSE.BITE;

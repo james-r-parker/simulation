@@ -166,8 +166,8 @@ export function senseSlot(world, slot) {
     const p = arena.views.senseParams;
     const spec = world.spec[slot];
     // eat-choice G3: the caster's rays see only the food it can eat.
-    p[SENSE_WORD.seePlant] = world.plantFoodBySpec[spec] > 0 ? 1 : 0;
-    p[SENSE_WORD.seeMeat] = world.meatFoodBySpec[spec] > 0 ? 1 : 0;
+    p[SENSE_WORD.seePlant] = world.lanes.plantFoodValue[slot] > 0 ? 1 : 0;
+    p[SENSE_WORD.seeMeat] = world.lanes.meatFoodValue[slot] > 0 ? 1 : 0;
     // senses-and-motor Phase 5: the caster's row of `rayReachBySpec` shapes each ray's reach.
     p[SENSE_WORD.spec] = spec;
     // body-genes T13a: the share of a ray's remaining reach that passes on through smoke, the caster's `smokeSight` lane
