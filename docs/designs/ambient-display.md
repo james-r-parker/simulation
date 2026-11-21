@@ -1,6 +1,6 @@
 # Ambient display
 
-**Status:** In progress - Phases 3 to 6 are built except their reviews (T17, T22 on the OLED, T28, T33); Phase 7 (a calm camera) is the next work; Phase 1 is built except T5, Phase 2 except T6 (real-GPU before-clips), T10b (organelle drift) and T11 (review), all needing the real GPU.
+**Status:** In progress - Phases 3 to 6 are built except their reviews (T17, T22 on the OLED, T28, T33); Phase 7 (a calm camera) is built except T40 (`perf:browser`, the OLED walk); Phase 1 is built except T5, Phase 2 except T6 (real-GPU before-clips), T10b (organelle drift) and T11 (review), all needing the real GPU.
 **Validated:** 3c6f1225 (2026-11-21)
 **Priority:** 5 - App lead. The app is the product and is watched on a side screen all day; an idle screen shows a static camera today, and the scene reel (Phase 6) is how a behaviour change is reviewed; app-only work on its own lane
 **Depends on:** [crisp-renderer.md](crisp-renderer.md), [continuous-follow.md](continuous-follow.md), [worker-and-renderer.md](worker-and-renderer.md), [pack-worker.md](pack-worker.md)
@@ -88,6 +88,17 @@ Read on 2026-11-20 at `--ticks 288000` (four times the length, the same seeds, t
 | All  | 0.949 pooled               | 39 (37 held) | 0.266 (largest)           | 122.3 to 141.8            | 1902                    |
 
 Both the per-seed bars `director.max_kind_share` and `director.shots_per_hour` are met on every seed, and `director.chase_precision` pooled over the four seeds is 0.949 of 39 chase shots (the rule: at least 0.6 with at least 10 chase shots in total). T4b is built. A "sustained pursuit seen" is a distinct hunter and prey pair that passes the chase rule at a decision, counted again after 10 simulated seconds without one; most last a decision or two and a chase shot is taken only when the pursuit is the highest-scoring moment while the camera is wide, so shots are a small share of pursuits seen (the figures come from a throwaway wrapper over `director:dry` that counts the pairs; the shots, shares and rates are `director:dry`'s own).
+
+Read on 2026-11-21 with `npm run director:dry -- --seed <n>` (72000 ticks, the live policy, the default world; the director after Phase 7, T34 to T39):
+
+| Seed | `director.chase_precision` | `director.max_kind_share` | `director.shots_per_hour` (bar 20 to 60) | `director.min_shot_hold_s` (bar at least 30) |
+| ---- | -------------------------- | ------------------------- | ---------------------------------------- | -------------------------------------------- |
+| 1    | n/a (no chase shot)        | 0.286                     | 42.0                                     | 30.5                                         |
+| 2    | n/a (no chase shot)        | 0.250                     | 48.0                                     | 30.4                                         |
+| 3    | n/a (no chase shot)        | 0.313                     | 48.0                                     | 30.4                                         |
+| 4    | n/a (no chase shot)        | 0.235                     | 51.0                                     | 30.4                                         |
+
+The new bars are met on all four seeds (from 117 to 142 shots an hour to 42 to 51, and no shot under 30.4 s from its cut to its pullback), and `director.max_kind_share` holds. `director.chase_precision` has no reading: a chase is taken only while the camera is wide and the pursuit is the best moment, and with a wide of 30 to 60 s no run of 20 minutes took one. The four-times-longer run that read it before (`--ticks 288000`) was not repeated here; it is T40's.
 
 ## A death that reads
 
@@ -351,15 +362,15 @@ Both stay inside budget (the move is a few arithmetic operations a frame). The `
 
 ### Phase 7 - A calm camera
 
-| #   | Task                                                                                                                                                                                                                                                                                        | Nature       | Depends on    |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------- |
-| T34 | Add `js/app/camera-move.js`: `planMove` and `movePose`, the three-leg move and the named caps `MAX_PAN_SCREENS_PER_S`, `SLOW_PAN_SCREENS_PER_S`, `MAX_ZOOM_FACTOR_PER_S`; tests that zoom out is monotone then pan then zoom in, no frame beats a cap, and pose and velocity are continuous | [judgement]  | T4b           |
-| T35 | Drive `glide`, `pullback` and every `wide` framing in `shots.js` and `director.js` by the move (delete `glideDurationS` and `PULLBACK_DURATION_S`), blend the `wide` drift in over the move, ramp the `linger` spring in over `LINGER_EASE_IN_S`, hold x1 while a move is in flight; tests  | [judgement]  | T34           |
-| T36 | Slow the cadence: `WIDE_MIN_S` 30, `WIDE_BASE_S` 30, `WIDE_SPAN_S` 30, `LINGER_BASE_S` 16, `LINGER_MAX_S` 40, `SHOT_FLOOR_S` 30 and `SHOT_HOLD_MIN_S` 30 enforced by `lingerOver` and `decideWide`; tests on the hold                                                                       | [judgement]  | T35           |
-| T37 | Widen the closest frames in `momentFrameWidth` to 3600, 4800 and 6000 world units across; update the tests                                                                                                                                                                                  | [mechanical] | T35           |
-| T38 | Ease a follow handoff: `js/app/follow-move.js` plans the move from the camera to the new subject's `followAim` (split out of `followSubject`) and runs it on the wall clock until the spring takes over with no error; tests                                                                | [judgement]  | T34           |
-| T39 | Add `director.min_shot_hold_s` to `director:dry`, move the `director.shots_per_hour` bar to 20 to 60, update `docs/commands.md`; tests                                                                                                                                                      | [mechanical] | T36           |
-| T40 | Conformance review of Phase 7: `director:dry` on seeds 1 to 4 against the new bars, `perf:browser`, and the walk on the OLED                                                                                                                                                                | [judgement]  | T37, T38, T39 |
+| #   | Task                                                                                                                                                                                                                                                                                                | Nature       | Depends on    |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------- |
+| T34 | (built) Add `js/app/camera-move.js`: `planMove` and `movePose`, the three-leg move and the named caps `MAX_PAN_SCREENS_PER_S`, `SLOW_PAN_SCREENS_PER_S`, `MAX_ZOOM_FACTOR_PER_S`; tests that zoom out is monotone then pan then zoom in, no frame beats a cap, and pose and velocity are continuous | [judgement]  | T4b           |
+| T35 | (built) Drive `glide`, `pullback` and every `wide` framing in `shots.js` and `director.js` by the move (delete `glideDurationS` and `PULLBACK_DURATION_S`), blend the `wide` drift in over the move, ramp the `linger` spring in over `LINGER_EASE_IN_S`, hold x1 while a move is in flight; tests  | [judgement]  | T34           |
+| T36 | (built) Slow the cadence: `WIDE_MIN_S` 30, `WIDE_BASE_S` 30, `WIDE_SPAN_S` 30, `LINGER_BASE_S` 16, `LINGER_MAX_S` 40, `SHOT_FLOOR_S` 30 and `SHOT_HOLD_MIN_S` 30 enforced by `lingerOver` and `decideWide`; tests on the hold                                                                       | [judgement]  | T35           |
+| T37 | (built) Widen the closest frames in `momentFrameWidth` to 3600, 4800 and 6000 world units across; update the tests                                                                                                                                                                                  | [mechanical] | T35           |
+| T38 | (built) Ease a follow handoff: `js/app/follow-move.js` plans the move from the camera to the new subject's `followAim` (split out of `followSubject`) and runs it on the wall clock until the spring takes over with no error; tests                                                                | [judgement]  | T34           |
+| T39 | (built) Add `director.min_shot_hold_s` to `director:dry`, move the `director.shots_per_hour` bar to 20 to 60, update `docs/commands.md`; tests                                                                                                                                                      | [mechanical] | T36           |
+| T40 | Conformance review of Phase 7: `director:dry` on seeds 1 to 4 against the new bars, `perf:browser`, and the walk on the OLED                                                                                                                                                                        | [judgement]  | T37, T38, T39 |
 
 ## Verification
 
