@@ -86,22 +86,20 @@ function reached(budget, goal) {
  */
 function tryChange(from, path, factor) {
     const next = scaled(from.config, { overrides: from.overrides, path, factor });
-    if (next === null) {
+    const ran = next === null ? null : { next, budget: budgetOf(next.config, from.model) };
+    if (ran === null || !reached(ran.budget, from.goal)) {
         return null;
     }
-    const budget = budgetOf(next.config, from.model);
-    if (!reached(budget, from.goal)) {
-        return null;
-    }
+    const { budget } = ran;
     const margins = Object.fromEntries(Object.entries(budget.cells).map(([step, c]) => [step, c.margin]));
     return {
         path,
         factor,
-        value: next.value,
+        value: ran.next.value,
         goal: from.goal,
         margins,
         status: budget.row.status,
-        overrides: next.overrides,
+        overrides: ran.next.overrides,
     };
 }
 
