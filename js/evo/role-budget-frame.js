@@ -131,10 +131,10 @@ function refine(kills, { near, far, answer }) {
  * Walks from a gap at which `kills` has one answer to the nearest gap with the other, in steps of `STEP`, then refines.
  * @param {(gap: number) => boolean} kills whether a kill lands from a gap
  * @param {{from: number, direction: 1 | -1, limit: number}} walk the start, the way and the last gap to look at
- * @returns {number | null} the last gap before the answer flips (the one nearest the start that has the start's answer),
- *   or null when it does not flip before the limit
+ * @param {number} fallback what to return when the answer does not flip before the limit
+ * @returns {number} the last gap before the answer flips (the one nearest the start that has the start's answer)
  */
-function boundary(kills, { from, direction, limit }) {
+function boundary(kills, { from, direction, limit }, fallback) {
     const answer = kills(from);
     let last = from;
     for (let gap = from + direction * STEP; direction * (limit - gap) >= 0; gap += direction * STEP) {
@@ -143,7 +143,7 @@ function boundary(kills, { from, direction, limit }) {
         }
         last = gap;
     }
-    return null;
+    return fallback;
 }
 
 /**
@@ -161,7 +161,7 @@ function boundary(kills, { from, direction, limit }) {
 export function maxCatchableGap(hunter, prey, frame, aware = gapAtAwareness(hunter, prey)) {
     const kills = (/** @type {number} */ gap) => playFrame(hunter, prey, gap, frame).killTick !== null;
     if (kills(aware)) {
-        return boundary(kills, { from: aware, direction: 1, limit: GAP_LIMIT }) ?? GAP_LIMIT;
+        return boundary(kills, { from: aware, direction: 1, limit: GAP_LIMIT }, GAP_LIMIT);
     }
-    return boundary(kills, { from: aware, direction: -1, limit: MIN_GAP }) ?? 0;
+    return boundary(kills, { from: aware, direction: -1, limit: MIN_GAP }, 0);
 }

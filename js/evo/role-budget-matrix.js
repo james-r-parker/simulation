@@ -40,12 +40,13 @@ export function matrix(config, model, rows = PHASE1_ROWS, { mix } = {}) {
     const choice = wantsChoice
         ? targetChoice(config, model, mix === undefined ? undefined : normaliseMix(mix), budgets)
         : null;
+    const choiceRow = (/** @type {'average' | 'best'} */ which) => ({
+        .../** @type {any} */ (choice)[which],
+        detail: choice,
+    });
     const built = rows.map((name) => {
-        if (name === 'predator:average') {
-            return { ...(choice?.average ?? {}), detail: choice };
-        }
-        if (name === 'predator:best') {
-            return { ...(choice?.best ?? {}), detail: choice };
+        if (name === 'predator:average' || name === 'predator:best') {
+            return choiceRow(name === 'predator:average' ? 'average' : 'best');
         }
         const budget = budgets[name.slice('predator:'.length)];
         return { ...budget.row, detail: budget };

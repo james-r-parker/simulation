@@ -103,6 +103,13 @@ describe('the bite step', () => {
         expect(b.row.status).toBe('impossible');
     });
 
+    it('is the chase length alone when a strike at nothing costs nothing', () => {
+        const free = pair({ ...arm('courser'), strikeMissCost: 0 });
+        const b = budgetChase(free.hunter, free.prey, model, { bearings: false });
+        expect(b.cells.bite.margin).toBeGreaterThan(100);
+        expect(b.cells.bite.margin).toBeLessThanOrEqual(200);
+    });
+
     it('is limited by the chase length, not the energy, for a rich hunter, and by the energy for a poor one', () => {
         const rich = budgetChase(courser.hunter, courser.prey, model, { bearings: false });
         expect(rich.cells.bite.margin).toBeLessThan(250);

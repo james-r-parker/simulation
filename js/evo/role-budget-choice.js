@@ -78,7 +78,7 @@ export function targetChoice(config, model, mix = DEFAULT_MIX, budgets = preyBud
         if (budgets[spec].row.status === 'impossible') {
             return 0;
         }
-        return c.status === 'n/a' ? null : (c.margin ?? 0);
+        return c.status === 'n/a' ? null : c.margin;
     };
     const catchableShare = PREY_SPECS.filter((s) => budgets[s].row.status !== 'impossible').reduce(
         (sum, s) => sum + weights[s],

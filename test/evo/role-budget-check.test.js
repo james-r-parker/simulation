@@ -47,6 +47,11 @@ describe('the scene and the formula', () => {
         expect(simChase(courser, { ...scene, distance: 401, bearing: 1.5 }).killTick).toBeNull();
     });
 
+    it('ends the scene when the hunter dies before the kill', () => {
+        const starving = arenaConfig({ huntUpkeep: 1e6 });
+        expect(simChase(starving, scene).killTick).toBeNull();
+    });
+
     it('play the bearing of the start: a prey behind the hunter takes longer than one ahead', () => {
         const ahead = formulaChase(courser, { ...scene, distance: 160 }).killTick;
         const behind = formulaChase(courser, { ...scene, distance: 160, bearing: Math.PI }).killTick;

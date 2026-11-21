@@ -45,6 +45,16 @@ describe('validateModel', () => {
         ['naiveEffort', 0],
         ['catchShare', 1.1],
         ['reliableSight', 1],
+        ['reactionTicks', 'x'],
+        ['hearThreshold', 'x'],
+        ['breakAngle', 'x'],
+        ['breakAngle', 4],
+        ['tightTicks', -1],
+        ['hunterShare', 'x'],
+        ['foodDensity', 'x'],
+        ['naiveEffort', 'x'],
+        ['naiveEffort', 2],
+        ['catchShare', 'x'],
     ])('refuses %s = %j, naming the key', (key, value) => {
         expect(() => validateModel({ [key]: value })).toThrow(new RegExp(`bad value for "${key}"`));
     });

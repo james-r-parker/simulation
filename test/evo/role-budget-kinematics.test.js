@@ -53,6 +53,8 @@ describe('ticksToSpeed', () => {
     it('is infinite when the steady speed is under the cap', () => {
         expect(ticksToSpeed(0.1, 0.95, 8)).toBe(Infinity);
         expect(ticksToSpeed(1, 0.95, 1e9)).toBe(Infinity);
+        // a steady speed exactly at the cap is approached and never passed
+        expect(ticksToSpeed(0.5, 0.5, 0.5)).toBe(Infinity);
     });
 });
 

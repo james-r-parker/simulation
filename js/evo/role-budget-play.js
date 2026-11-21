@@ -3,7 +3,7 @@
 // two bodies, so the timeline and the scripted chase of `audit:chase` steer the same way. Steering uses vectors.
 
 import { detCos, detSin } from '../sim/det-math.js';
-import { JINK_RANGE, EVADER_SPRINT_JINKS } from './chase-oracles.js';
+import { JINK_RANGE, EVADER_SPRINT_JINKS, steer } from './chase-oracles.js';
 import { aboveFloor, speedOf } from './role-budget-body.js';
 import { norm } from './role-budget-kinematics.js';
 
@@ -45,19 +45,12 @@ export const HUNTER_PERFECT = Object.freeze({
 /**
  * @param {import('./role-budget-body.js').Body} b the steering body
  * @param {{x: number, y: number}} aim the direction wanted (not unit)
- * @returns {number} the `TURN` output that closes the gap to the aim in one tick (`steer` of chase-oracles.js)
+ * @returns {number} the `TURN` output that closes the gap to the aim in one tick: `steer` of chase-oracles.js itself, read
+ *   from a one-body view of the numbers it takes, so the budget cannot steer differently from the oracle
  */
 export function steerOut(b, aim) {
-    const rate = b.p.turnRate.max;
-    const hx = detCos(b.angle);
-    const hy = detSin(b.angle);
-    const size = norm(aim.x, aim.y) || 1;
-    const cross = (hx * aim.y - hy * aim.x) / size;
-    const dot = (hx * aim.x + hy * aim.y) / size;
-    if (dot < 0) {
-        return Math.sign(cross) || 1;
-    }
-    return Math.max(-1, Math.min(1, cross / rate));
+    const view = { config: { maxTurn: b.p.turnRate.max }, turnBySpec: [1], spec: [0], angle: [b.angle] };
+    return steer(view, 0, aim);
 }
 
 /**

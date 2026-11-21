@@ -38,20 +38,19 @@ export function steadySpeed(a, d) {
  * @param {number} d the damping
  * @param {number} cap the speed cap
  * @returns {number} the first tick count at which a body from rest is at the cap, `Infinity` when the steady speed
- *   is under it
+ *   does not pass it
  */
 export function ticksToSpeed(a, d, cap) {
-    if (steadySpeed(a, d) < cap) {
+    if (steadySpeed(a, d) <= cap) {
         return Infinity;
     }
     let v = 0;
-    for (let n = 1; n < MAX_COUNT; n++) {
+    let n = 0;
+    while (v < cap) {
         v = (v + a) * d;
-        if (v >= cap) {
-            return n;
-        }
+        n += 1;
     }
-    return Infinity;
+    return n;
 }
 
 /**

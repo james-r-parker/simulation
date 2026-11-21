@@ -74,11 +74,8 @@ export function stepSlack(hunter, prey, step, frame) {
  *   run, after the kill; null when the size gate refuses the bite
  */
 function biteSlack(run, hunter) {
-    if (!run.gate || run.killTick === null) {
-        return null;
-    }
     const byEnergy = hunter.bite.miss > 0 ? Math.floor(run.hunterEnergy / hunter.bite.miss) : SLACK_CAP;
-    return Math.min(SLACK_CAP, MAX_TICKS - run.killTick, byEnergy);
+    return Math.min(SLACK_CAP, MAX_TICKS - /** @type {number} */ (run.killTick), byEnergy);
 }
 
 /**
