@@ -1,15 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { DEATH_CAUSE, EVENT_TYPE, pushEvent } from '../../js/sim/events.js';
+import { DEATH_CAUSE, EVENT_BY_CODE, EVENT_STRIDE, EVENT_TYPE, pushEvent } from '../../js/sim/events.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import {
     createDiseaseScene,
     diseaseMetrics,
+    diseaseDetector,
     MIN_SLOPE_POINTS,
-    noteDiseaseEvents,
     sampleDiseaseFamilies,
 } from '../../js/evo/scene-disease.js';
 import { addBlob, lifeWorld } from '../sim/helpers/life-world.js';
 import { resultOf } from './helpers/metric-registry.js';
+
+/**
+ * Feeds the detector one tick: its tick hook, then each record to the handler that names its event.
+ * @param {any} scene the disease scene
+ * @param {any} w the world
+ * @returns {void}
+ */
+function noteDiseaseEvents(scene, w) {
+    diseaseDetector.onTick?.(scene, w, {});
+    for (let o = 0; o < w.events.count * EVENT_STRIDE; o += EVENT_STRIDE) {
+        diseaseDetector.on?.[EVENT_BY_CODE[w.events.data[o]].name]?.(scene, w, o, {});
+    }
+}
 
 /**
  * @param {Record<string, any>} [over] config overrides

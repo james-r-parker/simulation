@@ -182,3 +182,13 @@ export function eatMetrics(scene) {
         ...lingerMetrics(scene.linger),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const eatDetector = {
+    name: 'eat',
+    modules: ['js/evo/scene-eat.js', 'js/evo/scene-graze.js', 'js/evo/scene-linger.js'],
+    every: EAT_SAMPLE_TICKS,
+    create: (config) => createEatScene(config),
+    onTick: (scene, world) => sampleEat(scene, world),
+    metrics: (scene) => eatMetrics(scene),
+};

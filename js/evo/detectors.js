@@ -17,13 +17,31 @@ import { recruitDetector } from './scene-recruit.js';
 import { biteDetector } from './scene-bite.js';
 import { biteLifeDetector } from './scene-bite-life.js';
 import { strikeMissDetector } from './scene-strike-miss.js';
+import { herdDetector } from './scene-herd.js';
+import { patchDetector } from './scene-patch.js';
+import { terrainDetector } from './scene-terrain.js';
+import { refugeDetector } from './scene-refuge.js';
+import { reachDetector } from './scene-reach.js';
+import { refugeOutcomeDetector } from './scene-refuge-outcome.js';
+import { basinDetector } from './scene-basin.js';
+import { balanceDetector } from './scene-balance.js';
+import { seasonDetector } from './scene-season.js';
+import { seasonMapDetector } from './scene-season-map.js';
+import { carcassDetector } from './scene-carcass.js';
+import { conditionDetector } from './scene-condition.js';
+import { eatDetector } from './scene-eat.js';
+import { capacityDetector } from './scene-capacity.js';
+import { edgeDetector } from './scene-edge.js';
+import { diseaseDetector } from './scene-disease.js';
+import { guardsDetector } from './scene-guards.js';
 
 /** @type {readonly import('./observer-detectors.js').Detector[]} */
 export const DETECTORS = Object.freeze([
+    herdDetector,
     floraDetector,
-    scentDetector,
     huntersDetector,
     recruitDetector,
+    diseaseDetector,
     biteDetector,
     strikeMissDetector,
     biteLifeDetector,
@@ -35,6 +53,22 @@ export const DETECTORS = Object.freeze([
     sprintDetector,
     kinematicsDetector,
     budgetDetector,
+    carcassDetector,
+    refugeOutcomeDetector,
+    terrainDetector,
+    refugeDetector,
+    reachDetector,
+    basinDetector,
+    patchDetector,
+    conditionDetector,
+    eatDetector,
+    seasonDetector,
+    seasonMapDetector,
+    balanceDetector,
+    guardsDetector,
+    capacityDetector,
+    edgeDetector,
+    scentDetector,
 ]);
 
 /** The detectors a lean observer (the policy core, lean-observer.md) builds and feeds. */

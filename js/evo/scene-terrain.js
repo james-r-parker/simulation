@@ -12,7 +12,7 @@
 import { refugeCentresOf, ringRadius } from '../sim/terrain.js';
 import { none, ok } from './metrics-stats.js';
 import { BURN_IN_TICKS } from './burn-in.js';
-import { THREAT_PROXIMITY } from './observer-intent-state.js';
+import { THREAT_PROXIMITY, GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
 import { createKeyed, rowOf } from './scene-keyed.js';
 
 /** Fewest agent-samples a lineage needs for the crossing metrics. */
@@ -152,3 +152,13 @@ export function terrainMetrics(scene) {
         'eval.gap_never_share': lineages > 0 ? ok(never / lineages) : noLineage,
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const terrainDetector = {
+    name: 'terrain',
+    modules: ['js/evo/scene-terrain.js'],
+    every: GROUP_SAMPLE_TICKS,
+    create: (config) => createTerrainScene(config),
+    onTick: (scene, world, observer) => sampleTerrain(scene, observer, world),
+    metrics: (scene) => terrainMetrics(scene),
+};

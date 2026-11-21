@@ -145,3 +145,13 @@ export function seasonMetrics(scene) {
             : none('no winter and no other checkpoint with an alive agent after burn-in'),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const seasonDetector = {
+    name: 'season',
+    modules: ['js/evo/scene-season.js'],
+    every: 1000,
+    create: () => createSeasonScene(),
+    onTick: (scene, world, observer) => sampleSeason(scene, observer.scenes.terrain, world),
+    metrics: (scene) => seasonMetrics(scene),
+};

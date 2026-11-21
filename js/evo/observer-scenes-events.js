@@ -1,14 +1,8 @@
 // The scenes' event pass: a tick's deaths, then its births and the records the scenes read, and the slot reset a death
 // or a birth makes (split from `observer-scenes.js`, which creates the scenes and feeds them the samples).
 
-import { noteHerdDeath, resetHerdSlot } from './scene-herd.js';
 import { BORN_CAUSE, EVENT, EVENT_STRIDE, EVENT_TICK, EVENT_TYPE } from '../sim/events.js';
-import { noteBasinBirth } from './scene-basin.js';
-import { noteCapacityDeath } from './scene-capacity.js';
-import { noteEdgeBirth, noteEdgeDeath } from './scene-edge.js';
 import { noteGuildAlarm, noteGuildBirth, noteGuildDeath } from './scene-guilds.js';
-import { flushCondition, resetConditionSlot } from './scene-condition.js';
-import { resetPatchSlot } from './scene-patch.js';
 import { noteSpendBirth, resetSpendSlot } from './scene-spend.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { noteHeritageBirth, noteHeritageDeath, resetHeritageSlot } from './scene-heritage.js';
@@ -31,13 +25,10 @@ export function resetSceneSlot(scenes, slot) {
         resetStyleSlot(scenes.style, slot);
         return;
     }
-    resetPatchSlot(scenes.patch, slot);
     resetStyleSlot(scenes.style, slot);
-    resetConditionSlot(scenes.condition, slot);
     resetSpendSlot(scenes.spend, slot);
     resetHeritageSlot(scenes.heritage, slot);
     resetMateSlot(scenes.mate, slot);
-    resetHerdSlot(scenes.herd, slot);
 }
 
 /**
@@ -52,7 +43,6 @@ function noteDeath(scenes, observer, { slot, genomeId, tick, age }) {
     if (observer.genomeId[slot] !== genomeId) {
         return;
     }
-    flushCondition(scenes.condition, observer.config, slot);
     if (tick >= BURN_IN_TICKS) {
         noteStyleDeath(observer, slot);
         if (age >= observer.config.maturityTicks) {
@@ -86,20 +76,6 @@ function noteLeanDeath(observer, d, o) {
  */
 function noteFullDeath(scenes, observer, { world, o }) {
     const d = world.events.data;
-    noteHerdDeath(scenes.herd, {
-        tick: d[o + EVENT_TICK],
-        slot: d[o + DIED.SLOT],
-        genomeId: d[o + DIED.GENOME_ID],
-        cause: d[o + DIED.CAUSE],
-        herdId: d[o + DIED.BY],
-        pinned: d[o + DIED.PARTNER] === 1,
-    });
-    noteCapacityDeath(scenes.capacity, { cause: d[o + DIED.CAUSE], foodEnergy: d[o + DIED.FOOD_ENERGY] });
-    noteEdgeDeath(scenes.edge, world, {
-        cause: d[o + DIED.CAUSE],
-        spec: d[o + DIED.SPEC],
-        foodEnergy: d[o + DIED.FOOD_ENERGY],
-    });
     noteGuildDeath(scenes.guilds, {
         tick: d[o + EVENT_TICK],
         spec: d[o + DIED.SPEC],
@@ -138,9 +114,7 @@ function noteFullRecord(scenes, world, o) {
         return;
     }
     noteGuildBirth(scenes.guilds, { tick: d[o + EVENT_TICK], spec: d[o + BORN.SPEC], cause: d[o + BORN.CAUSE] });
-    noteEdgeBirth(scenes.edge, world, { cause: d[o + BORN.CAUSE], spec: d[o + BORN.SPEC] });
     resetSceneSlot(scenes, d[o + BORN.SLOT]);
-    noteBasinBirth(scenes.basin, world, { slot: d[o + BORN.SLOT], cause: d[o + BORN.CAUSE] });
     if (d[o + BORN.CAUSE] === BORN_CAUSE.MATE) {
         noteSpendBirth(scenes.spend, world, { child: d[o + BORN.SLOT], motherId: d[o + BORN.PARENT_A] });
     }

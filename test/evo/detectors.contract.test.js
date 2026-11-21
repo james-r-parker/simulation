@@ -9,9 +9,19 @@ import { compileDetectors } from '../../js/evo/observer-detectors.js';
 import { EVENTS } from '../../js/sim/events.js';
 import { observed } from './helpers/observer-world.js';
 
-/** @param {Record<string, any>} state @param {number} n @returns {[string, any][]} the per-slot arrays of a state */
+/**
+ * @param {Record<string, any>} state a detector's state
+ * @param {number} n the number of slots
+ * @returns {[string, any][]} its per-slot arrays: typed arrays holding a whole number of values per slot
+ */
 function slotArrays(state, n) {
-    return Object.entries(state).filter(([, value]) => ArrayBuffer.isView(value) && value.length === n);
+    return Object.entries(state).filter(([, value]) => ArrayBuffer.isView(value) && value.length % n === 0);
+}
+
+/** @param {any} array a per-slot array @param {number} n the number of slots @param {number} slot @returns {number[]} the slot's values */
+function region(array, n, slot) {
+    const stride = array.length / n;
+    return Array.from(array.slice(slot * stride, (slot + 1) * stride));
 }
 
 describe('DETECTORS', () => {
@@ -44,13 +54,14 @@ describe('DETECTORS', () => {
             /** @type {(state: any, slot: number) => void} */ (detector.onSlotFree)(dirty, 3);
             // A reset may leave a field that another field gates (an idle approach's last closing tick); what it does
             // write is the fresh value, for this slot only, and it writes something.
-            const written = arrays.filter(([, array]) => array[3] !== 7);
+            const stays = (/** @type {number[]} */ values) => values.every((value) => value === 7);
+            const written = arrays.filter(([, array]) => !stays(region(array, n, 3)));
             expect(written.length, `${name} resets something`).toBeGreaterThan(0);
             for (const [key, array] of arrays) {
-                expect(array[2], `${name}.${key} neighbour`).toBe(7);
+                expect(stays(region(array, n, 2)), `${name}.${key} neighbour`).toBe(true);
             }
             for (const [key, array] of written) {
-                expect(array[3], `${name}.${key}`).toBe(fresh[key][3]);
+                expect(region(array, n, 3), `${name}.${key}`).toEqual(region(fresh[key], n, 3));
             }
         },
     );
