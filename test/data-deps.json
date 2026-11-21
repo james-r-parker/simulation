@@ -323,6 +323,9 @@
     "test/evo/scene-hunter-age.test.js": [
         "js/evo/scene-hunter-age.js"
     ],
+    "test/evo/scene-hunter-choice.test.js": [
+        "js/evo/scene-hunter-choice.js"
+    ],
     "test/evo/scene-kin-proximity.test.js": [
         "js/evo/scene-kin-proximity.js"
     ],
