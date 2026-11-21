@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { configHash } from '../js/sim/config.js';
-import { main, parseArgs } from '../scripts/eval-compare.mjs';
+import { main, parseArgs, roleRows } from '../scripts/eval-compare.mjs';
 
 const BASE = [10, 12, 9, 11, 13, 10, 12, 11, 10, 12, 9, 11, 13, 10, 12, 11];
 const SEEDS = Array.from({ length: 16 }, (_, i) => i + 1);
@@ -93,6 +93,7 @@ describe('parseArgs', () => {
             failOnWorse: true,
             keepRule: false,
             json: true,
+            role: null,
             allowSeedDiff: false,
             allowConfigDiff: ['k'],
             minEffect: 0.05,
@@ -250,5 +251,31 @@ describe('main exit codes', () => {
         expect(run([same, write('bad.json', { version: 1 })]).code).toBe(2);
         expect(run([same]).code).toBe(2);
         expect(run([same, join(dir, 'missing.json')]).code).toBe(2);
+    });
+
+    it('--role prints only the metrics tagged with that role, and refuses an unknown role', () => {
+        const forager = run([same, better, '--role', 'forager']);
+        expect(forager.code).toBe(0);
+        expect(forager.out[0]).toMatch(/eval\.food_energy_per_1k/);
+        const scout = run([same, better, '--role', 'scout', '--json']);
+        expect(JSON.parse(scout.out[0]).rows).toEqual([]);
+        expect(run([same, better, '--role', 'sloth']).code).toBe(2);
+        expect(run([same, better, '--role']).code).toBe(2);
+    });
+});
+
+describe('roleRows', () => {
+    const rows = [
+        { metric: 'eval.alarm_lift' },
+        { metric: 'eval.food_energy_per_1k@20k' },
+        { metric: ['eval.trampled_share', 'forager'].join('.') },
+        { metric: ['eval.alarm_lift', 'off'].join('') },
+    ];
+
+    it('keeps the rows of a role by name, checkpoint and parameter suffix, and every row for no role', () => {
+        expect(roleRows({ rows }, null)).toBe(rows);
+        expect(roleRows({ rows }, 'scout').map((r) => r.metric)).toEqual(['eval.alarm_lift']);
+        expect(roleRows({ rows }, 'forager').map((r) => r.metric)).toEqual(['eval.food_energy_per_1k@20k']);
+        expect(roleRows({ rows }, 'herd').map((r) => r.metric)).toEqual([rows[2].metric]);
     });
 });

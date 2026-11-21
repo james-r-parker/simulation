@@ -6,10 +6,12 @@ import { formatKeepRule, keepRule } from '../js/evo/keep-rule.js';
 import { SHARE_MIN_EFFECT } from '../js/evo/compare-rules.js';
 import { canonicalOptions } from '../js/evo/policy-options.js';
 import { validateReport } from '../js/evo/report.js';
+import { METRICS } from '../js/evo/metric-registry/index.js';
+import { metricsForRole, ROLES } from '../js/evo/metric-registry/roles.js';
 import { parseFlags } from './lib/cli-args.mjs';
 
 const USAGE =
-    'usage: eval:compare <before.json> <after.json> [--targets <m,...>] [--fail-on-worse] [--allow-config-diff <key,...>] [--allow-seed-diff] [--min-effect <fraction>] [--share-min-effect <fraction>] [--keep-rule] [--json]';
+    'usage: eval:compare <before.json> <after.json> [--targets <m,...>] [--fail-on-worse] [--allow-config-diff <key,...>] [--allow-seed-diff] [--min-effect <fraction>] [--share-min-effect <fraction>] [--keep-rule] [--role <spec|herd>] [--json]';
 
 /**
  * @param {string | undefined} value a comma-separated list
@@ -37,15 +39,43 @@ function fraction(value, flag) {
 }
 
 /**
+ * @param {string | undefined} value a role name
+ * @param {string} flag the flag name
+ * @returns {string} the role
+ */
+function roleName(value, flag) {
+    if (value === undefined || !ROLES.includes(value)) {
+        throw new Error(`${flag} needs one of ${ROLES.join(', ')}, got ${value}\n${USAGE}`);
+    }
+    return value;
+}
+
+/**
+ * @param {{ rows: any[] }} result the comparison
+ * @param {string | null} role a role, or `null` for every row
+ * @returns {any[]} the rows of the metrics tagged with the role (a parameterised row `<name>.<suffix>` and a checkpoint row `<name>@<tick>` count)
+ */
+export function roleRows({ rows }, role) {
+    if (role === null) {
+        return rows;
+    }
+    const names = metricsForRole(METRICS, role);
+    return rows.filter((r) => {
+        const base = r.metric.replace(/@.*$/, '');
+        return names.some((name) => base === name || base.startsWith(`${name}.`));
+    });
+}
+
+/**
  * @param {string[]} argv command-line arguments after the script name
- * @returns {{ files: string[], targets: string[], failOnWorse: boolean, allowConfigDiff: string[], allowSeedDiff: boolean, minEffect: number, shareMinEffect: number, keepRule: boolean, json: boolean }}
+ * @returns {{ files: string[], targets: string[], failOnWorse: boolean, allowConfigDiff: string[], allowSeedDiff: boolean, minEffect: number, shareMinEffect: number, keepRule: boolean, json: boolean, role: string | null }}
  *   parsed options
  */
 export function parseArgs(argv) {
     const flagged = argv.filter(
         (arg, i) =>
             arg.startsWith('--') ||
-            (i > 0 && /^--(targets|allow-config-diff|min-effect|share-min-effect)$/.test(argv[i - 1])),
+            (i > 0 && /^--(targets|allow-config-diff|min-effect|share-min-effect|role)$/.test(argv[i - 1])),
     );
     const files = argv.filter((arg) => !flagged.includes(arg));
     const opts = parseFlags(flagged, {
@@ -54,6 +84,7 @@ export function parseArgs(argv) {
             '--allow-config-diff': (value, flag) => ['allowConfigDiff', list(value, flag)],
             '--min-effect': (value, flag) => ['minEffect', fraction(value, flag)],
             '--share-min-effect': (value, flag) => ['shareMinEffect', fraction(value, flag)],
+            '--role': (value, flag) => ['role', roleName(value, flag)],
         },
         booleanFlags: {
             '--fail-on-worse': 'failOnWorse',
@@ -69,6 +100,7 @@ export function parseArgs(argv) {
             failOnWorse: false,
             keepRule: false,
             json: false,
+            role: null,
             allowSeedDiff: false,
         },
         usage: USAGE,
@@ -184,13 +216,14 @@ function run(args, { print, error }) {
     const reports = args.files.map(loadReport);
     const [before, after] = reports;
     const options = optionsOf(reports);
-    const result = compareReports(before, after, {
+    const full = compareReports(before, after, {
         minEffect: args.minEffect,
         shareMinEffect: args.shareMinEffect,
         allowConfigDiff: args.allowConfigDiff,
         allowSeedDiff: args.allowSeedDiff,
         log: { log: (level, event, fields) => error(JSON.stringify({ level, event, ...fields })) },
     });
+    const result = { ...full, rows: roleRows(full, args.role) };
     const unknown = args.targets.filter((t) => !result.rows.some((r) => r.metric === t));
     if (unknown.length > 0) {
         error(`unknown target metrics: ${unknown.join(', ')}`);
