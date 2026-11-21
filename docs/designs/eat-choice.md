@@ -187,7 +187,7 @@ mechanisms stay under the keep rule (principles.md); Phase 4 fixes the detector 
 `isDeliberate` counts a meal only while the eater closes on the food, so a forager grazing in place under G1b scores its
 later bites as chance. A meal also counts as deliberate when the eater holds `BITE` on food it reached by a deliberate
 approach in the same contact, without leaving it. `isDeliberate` lives in js/sim/merit-state.js; if merit or fitness reads it, the change moves the
-hash and goes to `season/next`. The bar is re-read on seeds 65 to 128 with the new detector.
+hash and is a PR to `main` with a breaking title that adds the next `library/seasons.json` entry (or moves the unreleased newest season's `rulesHash` in place). The bar is re-read on seeds 65 to 128 with the new detector.
 
 | Chunk | Tasks    | Contents                            |
 | ----- | -------- | ----------------------------------- |

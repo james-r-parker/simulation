@@ -13,8 +13,8 @@ The improvement loop proposes measured changes between sessions:
   propose experiments, config changes and Build queue re-ranks.
 - CI runs each proposed experiment and posts its `eval:compare` output on the PR.
 - Every proposal waits for the user. Nothing in the loop merges, closes, force-pushes, deletes or writes to `main`.
-- A proposal that changes `rulesHash` (a swept default) takes `season/next` as its base, so weekly proposals batch into
-  one season at most every 4 weeks ([deployment-and-community.md](deployment-and-community.md) Seasons).
+- A proposal that changes `rulesHash` (a swept default) is a PR to `main` with a breaking title that adds the next `library/seasons.json` entry (or moves the unreleased newest season's `rulesHash` in place), so weekly proposals batch into the open season
+  until its release ([deployment-and-community.md](deployment-and-community.md), Rules changes on main).
 
 ## Standing permissions
 
@@ -31,11 +31,11 @@ asks", for exactly these actions. `AGENTS.md` Hard rules lists them as the one e
   force-pushes or deletes a branch.
 - A re-rank never moves a doc whose `**Priority:**` reason starts with `pinned`.
 - Experiment PRs change only `js/evo/`, `js/sim/config-defaults.js` with `test/sim/golden.slow.test.js`, and `evals/`. A PR
-  that changes `rulesHash` takes `season/next` as its base; `releaseCheck` refuses it against `main`.
+  that changes `rulesHash` has a breaking title and carries its `library/seasons.json` change; `releaseCheck` refuses
+  it otherwise.
 
 The guard is the `main` ruleset (built, 2026-10-17): changes only through pull requests, required checks `check` and
-`browser-smoke`, branches strictly up to date, no bypass actors, force-push and deletion blocked, auto-merge enabled. The
-`season/next` branch gets the same ruleset. The workflows' `GITHUB_TOKEN` cannot be scoped to one branch, so the ruleset,
+`browser-smoke`, branches strictly up to date, no bypass actors, force-push and deletion blocked, auto-merge enabled. The workflows' `GITHUB_TOKEN` cannot be scoped to one branch, so the ruleset,
 not the token, protects `main`.
 
 ## Nightly history (Phase 1)
@@ -109,10 +109,9 @@ the PR. Report artifacts' URLs go into the entry's `before` and `after`.
 - Writes `evals/sweeps/<key>-<date>.json`: per value the report artifact paths and each verdict, for both seed sets.
 - `--propose` opens a draft PR whose single commit changes the default in `js/sim/config-defaults.js` and the
   golden `worldHash` together, with the sweep table in the body and a breaking subject (`feat(sim)!:`). Its base is
-  `season/next`, created from `main` when absent, so the new `rulesHash` invalidates `public/champions/v1/` and
-  `evals/league.json` only when the season opens; a second draft PR rebaselines
-  `evals/baselines/` on `season/next` once the first merges. `sweep.yml` evaluates `season/next` when it exists, so each
-  sweep builds on the batched defaults, and `main` otherwise.
+  `main`, and the same commit moves the unreleased newest `library/seasons.json` entry's `rulesHash`, or adds the next
+  entry when the newest season has a release; a second draft PR rebaselines `evals/baselines/` once the first merges.
+  `sweep.yml` evaluates `main`, so each sweep builds on the merged defaults.
 - `evals/sweep-plan.json` lists `{ key, values, primary }` entries; the weekly routine sweeps one a week, in order,
   through `.github/workflows/sweep.yml` (same shape as `experiment.yml`).
 
@@ -145,14 +144,14 @@ These are user actions, done once when Phase 1 is built:
 2. Create the labels `eval-trend` and `run-experiment`, and the pinned `Weekly improvement report` issue.
 3. Create the weekly routine with the `schedule` skill from `.claude/routines/weekly-improvement.md`.
 
-The `main` ruleset exists; the first `season/next` branch gets the same one when the line opens.
+The `main` ruleset exists.
 
 ## Decisions
 
 | Decision                                                                                                                | Reason                                                                                                                                         | By                |
 | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
 | The `main` ruleset is built and is the guard for every actor in the loop                                                | `GITHUB_TOKEN` cannot be scoped to one branch, and nothing guarded `main` before 2026-10-17                                                    | User              |
-| Proposals that change `rulesHash` (sweeps, rules experiments) take `season/next` as their base                          | Weekly default changes would otherwise open a season every week; a season opens at most every 4 weeks                                          | User              |
+| Proposals that change `rulesHash` (sweeps, rules experiments) target `main` with their `library/seasons.json` change    | Weekly default changes would otherwise open a season every week; a season opens at most every 4 weeks                                          | User              |
 | `nightly-eval` runs 16 seeds, and `nightly-eval-wide` runs 32 for the metrics whose `minSeedsFor` is 32                 | `compareReports` refuses fewer than 16 seeds, so the 8-seed nightly could never produce a verdict; the noisy lineage and floor metrics need 32 | Specialist review |
 | The trend check skips a metric whose `minSeedsFor` exceeds the segment's seeds                                          | A metric without a verdict at that seed count must not open an `eval-trend` issue                                                              | Specialist review |
 | `timeout-minutes` of the nightly evals is set from a measured `bench:parallel -- --counts 4` on the hosted runner (T1b) | The 7950X3D rate is not the rate of a 4 vCPU runner                                                                                            | Specialist review |
@@ -217,11 +216,11 @@ dashboard steps.
 
 ### Phase 2 - Config sweeps
 
-| #   | Task                                                                                                                        | Nature       | Depends on |
-| --- | --------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T8  | Add `scripts/lib/sweep.mjs`, `scripts/sweep.mjs` (`--propose` against `season/next`) and `npm run sweep` with tests         | [judgement]  | T7         |
-| T9  | Add `.github/workflows/sweep.yml` (base `season/next` when it exists), `evals/sweep-plan.json` and the routine's sweep step | [mechanical] | T8         |
-| T10 | Conformance review of Phase 2                                                                                               | [judgement]  | T8, T9     |
+| #   | Task                                                                                                                                  | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T8  | Add `scripts/lib/sweep.mjs`, `scripts/sweep.mjs` (`--propose` against `main`, with the seasons change) and `npm run sweep` with tests | [judgement]  | T7         |
+| T9  | Add `.github/workflows/sweep.yml` (evaluates `main`), `evals/sweep-plan.json` and the routine's sweep step                            | [mechanical] | T8         |
+| T10 | Conformance review of Phase 2                                                                                                         | [judgement]  | T8, T9     |
 
 ### Phase 3 - Retros and dashboard
 

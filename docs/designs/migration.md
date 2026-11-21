@@ -39,7 +39,7 @@ not the island's archive.
 
 No flag is added: `migrantsPer1k` and `migrantEdgeBand` are numbers, so `scripts/flag-ledger.json` does not list them.
 At `migrantsPer1k` 0 nothing spawns and nothing is drawn. Any new key changes `rulesHash`, so the screen runs from an
-unmerged branch and the switch targets `season/next`. When the finalist is `migrantsPer1k` 0, the migration code and keys
+unmerged branch and the switch is a PR to `main` with a breaking title that adds the next `library/seasons.json` entry (or moves the unreleased newest season's `rulesHash` in place). When the finalist is `migrantsPer1k` 0, the migration code and keys
 are deleted and the floor stays.
 
 ## Detectors
@@ -106,7 +106,7 @@ migrantsPer1k`, then the leading arm with the floor off (`floorTrigger` 0) again
 
 **Targets:** eval.births_per_1k, eval.lineages_alive, bench.step_ms@500
 
-One PR, a breaking commit to `season/next`: the finalist's `migrantsPer1k` as the default, `fillFloor` and its keys
+One PR to `main` with a breaking title and its `library/seasons.json` change: the finalist's `migrantsPer1k` as the default, `fillFloor` and its keys
 deleted (M6), the goldens re-pinned, the bench baseline re-recorded, and the paired check on seeds 65 to 128 with
 `--keep-rule`. Done when `held` reads `better`, `alive` not worse, `eval.basin_recolonisations` not worse, and both share
 bars hold on those seeds.
