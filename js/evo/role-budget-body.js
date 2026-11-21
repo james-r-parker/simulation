@@ -205,6 +205,16 @@ export function inJaws(h, p) {
 }
 
 /**
+ * @param {Body} h the biter
+ * @param {Body} p the victim
+ * @returns {boolean} whether the size gate lets `h` bite `p` as the sizes stand now (`couldBite` reads it on each bite, so a
+ *   gate refused at first contact opens once the victim has shrunk)
+ */
+export function mayBite(h, p) {
+    return h.size > h.p.bite.sizeRatio * p.size;
+}
+
+/**
  * Lands one bite if the prey is in the jaws: the victim loses `biteEnergy x alarm x its biteTaken`, the hunter gains it, a
  * fatal bite (the victim at or under its kill line) also gives the gorge, and the hunter pays the kick, read before the bite.
  * @param {Body} h the biter, updated in place

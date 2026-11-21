@@ -6,7 +6,7 @@
 
 import { detCos, detSin } from '../sim/det-math.js';
 import { norm, turnCircle } from './role-budget-kinematics.js';
-import { bite, charge, collide, costOf, createBody, inJaws, speedOf, stepBody } from './role-budget-body.js';
+import { bite, charge, collide, costOf, createBody, inJaws, mayBite, speedOf, stepBody } from './role-budget-body.js';
 import { HUNTER_PERFECT, hunterOut, preyOut } from './role-budget-play.js';
 import { JINK_RANGE } from './chase-oracles.js';
 
@@ -85,7 +85,7 @@ function touchStep(h, p, tick, tally) {
         return NO_JAWS;
     }
     tally.contact ??= tick + 1;
-    const may = h.size > h.p.bite.sizeRatio * p.size;
+    const may = mayBite(h, p);
     tally.gate ||= may;
     collide(h, p);
     if (may && bite(h, p, tally)) {

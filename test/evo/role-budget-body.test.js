@@ -12,6 +12,7 @@ import {
     createBody,
     factorOf,
     fatOf,
+    mayBite,
     sizeOf,
     speedOf,
     stepBody,
@@ -218,5 +219,17 @@ describe('bite', () => {
         const t = tally();
         expect(bite(h, p, t)).toBe(true);
         expect(t.income).toBe(0);
+    });
+});
+
+describe('mayBite', () => {
+    it('reads the size gate as the sizes stand: a victim that shrinks opens a gate refused before', () => {
+        const [hunterSet, preySet] = ['predator', 'forager'].map((n) => roleParams(arenaConfig(), n));
+        const h = createBody(hunterSet, { x: 0, y: 0, angle: 0 });
+        const p = createBody(preySet, { x: 0, y: 0, angle: 0 });
+        p.size = (h.size / hunterSet.bite.sizeRatio) * 1.01;
+        expect(mayBite(h, p)).toBe(false);
+        p.size *= 0.9;
+        expect(mayBite(h, p)).toBe(true);
     });
 });

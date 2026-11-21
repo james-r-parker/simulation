@@ -2,6 +2,7 @@
 // intercept and smoke, each a slack in ticks found on `defenceTimeline`. Pure: it reads `RoleParams` and the model.
 
 import { defenceTimeline } from './role-budget-defence.js';
+import { frameOptions, gapAtAwareness } from './role-budget-frame.js';
 import { SLACK_CAP, cell, rowOf } from './role-budget-cell.js';
 import { hearWindow } from './role-budget-senses.js';
 import { defenderSmokeGeometry } from './role-budget-smoke.js';
@@ -41,11 +42,13 @@ const repelOn = (defender) => defender.repel.energy > 0 || defender.repel.impuls
  * @returns {import('./role-budget-defence.js').Defence} the defence
  */
 function playDefence([hunter, caller, defender], model, play = {}) {
-    const side = model.defenderGap;
+    const start = frameOptions(hunter, caller, gapAtAwareness(hunter, caller), { tier: 'perfect', model });
     return defenceTimeline(hunter, caller, defender, {
         reaction: model.reactionTicks,
         threshold: model.hearThreshold,
-        side,
+        side: model.defenderGap,
+        gap: start.gap,
+        hunter: start.hunter,
         ...play,
     });
 }

@@ -4,7 +4,7 @@
 // cannot step differently from the chase. The defender's shove is `tryDefenderRepel` of js/sim/defender-repel.js.
 
 import { norm, turnCircle } from './role-budget-kinematics.js';
-import { bite, charge, collide, costOf, createBody, inJaws, speedOf, stepBody } from './role-budget-body.js';
+import { bite, charge, collide, costOf, createBody, inJaws, mayBite, speedOf, stepBody } from './role-budget-body.js';
 import { HUNTER_PERFECT, hunterOut } from './role-budget-play.js';
 import { gapAtAwareness } from './role-budget-frame.js';
 import { hearLoudness } from './role-budget-senses.js';
@@ -25,6 +25,9 @@ const STILL = Object.freeze({ turn: 0, sprint: 0, thrust: 0 });
  * @property {'rest' | 'cruise'} [hunterStart] the hunter's speed at tick 0 (default `cruise`: it was creeping)
  * @property {number[][]} [trace] when given, receives `[tick, hunter x, hunter y, defender x, defender y]` each tick
  * @property {number} [gap] the centre gap from the hunter to the caller at tick 0 (default the awareness gap)
+ * @property {Partial<import('./role-budget-play.js').HunterPlay>} [hunter] the hunter's play, as `frameOptions` gives the
+ *   `perfect` tier (default `HUNTER_PERFECT`); it sprints only with the caller in view
+
  */
 
 /**
@@ -97,7 +100,8 @@ function stage(hunter, caller, defender, options) {
  *   defender: import('./role-budget-params.js').RoleParams}} p the numbers
  * @property {DefenceOptions} options the options
  * @property {{hear: number, turn: number, run: number}} delays the delays
- * @property {{sawAt: number, gate: boolean}} memo the tick the caller first saw the hunter, and the size gate
+ * @property {import('./role-budget-play.js').HunterPlay} play the hunter's play
+ * @property {{sawAt: number}} memo the tick the caller first saw the hunter
  */
 
 /**
@@ -127,7 +131,7 @@ function observe(s, tick) {
  */
 function move(s, tick) {
     const { h, c, d, out, p, delays } = s;
-    const ho = hunterOut(h, c, VIEW_PLAY, tick);
+    const ho = hunterOut(h, c, s.play, tick);
     const dout = defenderOut(s, tick);
     const factors = [stepBody(h, ho), stepBody(c, STILL), stepBody(d, dout)];
     const turn = p.defender.turnRate.start;
@@ -163,7 +167,7 @@ function meet(s, tick) {
 }
 
 /**
- * The hunter touches the caller: they collide and, past the size gate, the hunter bites.
+ * The hunter touches the caller: they collide and, past the size gate as the sizes stand on this bite, the hunter bites.
  * @param {State} s the run, updated in place
  * @param {number} tick the tick
  * @returns {boolean} whether the bite killed the caller
@@ -174,12 +178,19 @@ function strike(s, tick) {
         return false;
     }
     out.contactTick ??= tick + 1;
-    if (out.contactTick === tick + 1) {
-        s.memo.gate = h.size > p.hunter.bite.sizeRatio * c.size;
-    }
+    const may = mayBite(h, c);
     collide(h, c);
     const alarmed = out.alarmTick >= 0 && tick < out.alarmTick + p.caller.call.ticks;
-    return s.memo.gate && bite(h, c, tally, alarmed);
+    return may && bite(h, c, tally, alarmed);
+}
+
+/**
+ * @param {State} s the run
+ * @returns {boolean} whether the hunter has the caller or the defender in its jaws; with neither, a hunter holding `BITE`
+ *   pays `strikeMissCost` this tick, as `chaseTimeline` charges it
+ */
+function inContact({ h, c, d, options }) {
+    return (touching(h, c) && inJaws(h, c)) || (!options.absent && touching(h, d) && inJaws(h, d));
 }
 
 /**
@@ -211,7 +222,8 @@ export function defenceTimeline(hunter, caller, defender, options) {
         p: { hunter, caller, defender },
         options,
         delays: { hear: 0, turn: 0, run: 0, ...options.delays },
-        memo: { sawAt: -1, gate: false },
+        play: { ...VIEW_PLAY, ...options.hunter, sprint: 'view' },
+        memo: { sawAt: -1 },
     });
     for (let tick = 0; tick < MAX_TICKS; tick++) {
         observe(s, tick);
@@ -220,6 +232,9 @@ export function defenceTimeline(hunter, caller, defender, options) {
         if (strike(s, tick)) {
             out.killTick = tick + 1;
             break;
+        }
+        if (!inContact(s)) {
+            charge(s.h, hunter.bite.miss);
         }
         charge(s.h, costOf(s.h, ho, factors[0]));
         charge(s.c, costOf(s.c, STILL, factors[1]));

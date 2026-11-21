@@ -91,4 +91,10 @@ describe('defenceTimeline', () => {
         const rest = play({}, { absent: true, hunterStart: 'rest' });
         expect(/** @type {number} */ (rest.contactTick)).toBeGreaterThan(/** @type {number} */ (creeping.contactTick));
     });
+
+    it('charges strikeMissCost each tick the hunter has nothing in its jaws, as the chase does', () => {
+        const free = play({ strikeMissCost: 0 }, { absent: true });
+        const paid = play({ strikeMissCost: 2 }, { absent: true });
+        expect(paid.hunterEnergy).toBeLessThan(free.hunterEnergy);
+    });
 });
