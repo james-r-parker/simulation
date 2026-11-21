@@ -6,6 +6,7 @@
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { bodyProblems } from './ship-body.mjs';
+import { CHECKS_GRACE_S, sleep, waitForChecks } from './ship-wait.mjs';
 
 export class ShipError extends Error {
     /**
@@ -224,11 +225,17 @@ function failureReport({ sh, state }) {
 }
 
 /**
- * Step 6: waits for the checks with gh's own watch.
+ * Step 6: waits for the checks to register, then watches them with gh's own watch.
  * @param {Ctx} ctx the context
+ * @param {{graceS?: number, pollS?: number, pause?: (seconds: number) => void}} [wait] how long to wait for the checks
+ *   to register (`waitForChecks`)
  */
-export function stepWatch(ctx) {
+export function stepWatch(ctx, wait = {}) {
     const { sh, state } = ctx;
+    if (!waitForChecks(sh, state.pr, wait)) {
+        const graceS = wait.graceS ?? CHECKS_GRACE_S;
+        throw new ShipError(1, 'no-checks', `ship: no checks registered on PR #${state.pr} after ${graceS} s`);
+    }
     const r = sh('gh', ['pr', 'checks', String(state.pr), '--watch', '--fail-fast'], { inherit: true });
     const runs = sh('gh', [
         'run',
@@ -246,11 +253,6 @@ export function stepWatch(ctx) {
     if (r.status !== 0) {
         throw new ShipError(1, 'red', failureReport(ctx));
     }
-}
-
-/** @param {number} seconds how long to block */
-function sleep(seconds) {
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, seconds * 1000);
 }
 
 /**

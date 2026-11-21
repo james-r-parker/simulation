@@ -18,7 +18,7 @@ Every command an agent runs on Blob Evolution, grouped by job. `rg -n '^### ' do
 
 ### Ship a chunk
 
-`scripts/ship.sh --title <subject> --body <file> [--base main] [--no-merge]` (exit 2 uncommitted or on main, 3 merge conflict, 4 gate failed, 5 body fails the template, 6 push or `gh` failed, 1 checks red, 7 green but not merged; merges `origin/<base>`, never rebases; auto-merge with a merge commit; `gh pr checks --watch`; a rerun resumes on the same PR; logs `.checklogs/ship.jsonl`)
+`scripts/ship.sh --title <subject> --body <file> [--base main] [--no-merge]` (exit 2 uncommitted or on main, 3 merge conflict, 4 gate failed, 5 body fails the template, 6 push or `gh` failed, 1 checks red or none registered within 120 s, 7 green but not merged; merges `origin/<base>`, never rebases; auto-merge with a merge commit; `gh pr checks --watch` once the checks register; a rerun resumes on the same PR; logs `.checklogs/ship.jsonl`)
 
 ### Pre-push check (what an agent runs)
 

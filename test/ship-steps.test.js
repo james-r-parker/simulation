@@ -253,15 +253,38 @@ describe('stepPush', () => {
 });
 
 describe('stepWatch', () => {
+    const registered = ok(JSON.stringify([{ name: 'static', bucket: 'pass', link: '' }]));
     const rules = (/** @type {any} */ watch) => [
         ['gh pr checks 9 --watch', watch],
+        ['gh pr checks 9 --json state', registered],
         ['gh run list', ok('3\n')],
     ];
+    const noWait = { pause: () => {} };
 
     it('records the CI run count on green checks', () => {
         const ctx = ctxOf(fake(rules(ok())).sh, { pr: 9, branch: 'feat/x' });
-        stepWatch(ctx);
+        stepWatch(ctx, noWait);
         expect(ctx.state.ciRuns).toBe(3);
+    });
+
+    it('waits for the checks to register before watching them', () => {
+        let looks = 0;
+        const later = () => (++looks < 3 ? { status: 1, stdout: '', stderr: 'no checks reported' } : registered);
+        const { sh, calls } = fake([['gh pr checks 9 --json state', later], ...rules(ok())]);
+        stepWatch(ctxOf(sh, { pr: 9, branch: 'feat/x' }), noWait);
+        expect(looks).toBe(3);
+        expect(calls.findIndex((c) => c.includes('--watch'))).toBe(3);
+    });
+
+    it('exits 1 with no-checks when none register in the grace period, never reading it as green', () => {
+        const none = { status: 1, stdout: '', stderr: 'no checks reported' };
+        const { sh, calls } = fake([['gh pr checks 9 --json state', none], ...rules(ok())]);
+        const error = code(() =>
+            stepWatch(ctxOf(sh, { pr: 9, branch: 'feat/x' }), { graceS: 10, pollS: 5, ...noWait }),
+        );
+        expect([error.exitCode, error.result]).toEqual([1, 'no-checks']);
+        expect(error.message).toContain('no checks registered on PR #9 after 10 s');
+        expect(calls.some((c) => c.includes('--watch'))).toBe(false);
     });
 
     it('exits 1 with the failed job names and the log tail of each failed run', () => {
@@ -358,6 +381,7 @@ describe('runShip', () => {
         ['git rev-list', ok('0')],
         ['git diff', ok('docs/a.md')],
         ['gh pr create', ok('https://github.com/o/r/pull/9')],
+        ['gh pr checks 9 --json state', ok('[{"state":"SUCCESS"}]')],
         ['gh pr view', ok(JSON.stringify({ state: 'MERGED', url: 'https://x/pull/9' }))],
         ['gh run list', ok('1')],
     ];
