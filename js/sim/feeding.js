@@ -3,6 +3,7 @@
 import { tallyEatContact } from './eat-contact.js';
 import { carryPollen } from './pollination.js';
 import { EFFECT, GATE, LANE_ID, gateOpen, levelOf, liveOf } from './effects.js';
+import { noteBitten } from './effect-social.js';
 import { ingestToxin } from './toxin.js';
 import { canBite, couldBite, inJaws } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
@@ -225,6 +226,9 @@ function applyBite(world, biter, victim) {
     world.biteEnergy[biter] += world.transferGained;
     const fatal = wasAlive && world.energy[victim] <= killLine(config, world.lanes.maxEnergy[victim]);
     noteFatalBiteObservation(world, biter, victim, fatal);
+    if (!fatal && world.energy[victim] > 0) {
+        noteBitten(world, victim, biter);
+    }
     const moved = world.transferGained + settleKill(world, biter, victim, fatal);
     if (fatal && config.predatorRestTicks > 0 && specParams(config, world.spec[biter]).canHunt) {
         world.restTimer[biter] = config.predatorRestTicks;

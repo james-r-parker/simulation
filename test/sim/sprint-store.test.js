@@ -15,6 +15,7 @@ import {
     sprintEffort,
     stepSprintStore as stepStore,
 } from '../../js/sim/sprint-store.js';
+import { withEffectRows } from './helpers/effect-stand-in.js';
 import { storeFactor } from './helpers/legacy-rules.js';
 
 const FORAGER = 0;
@@ -45,21 +46,24 @@ function stepSprintStore(store, w) {
  */
 function bodies(n, config) {
     const { sprintDrain, sprintRefill } = laneBases(config, SPEC_NAMES[FORAGER]);
-    return {
-        config,
-        lanes: {
-            sprintDrain: new Float64Array(n).fill(sprintDrain),
-            sprintRefill: new Float64Array(n).fill(sprintRefill),
+    return withEffectRows(
+        {
+            config,
+            lanes: {
+                sprintDrain: new Float64Array(n).fill(sprintDrain),
+                sprintRefill: new Float64Array(n).fill(sprintRefill),
+            },
+            alive: new Uint8Array(n).fill(1),
+            spec: new Uint8Array(n),
+            genomeId: new Uint32Array(n).map((_, slot) => 100 + slot),
+            outputs: new Float32Array(n * OUTPUT_COUNT),
+            sprintFactor: new Float64Array(n).fill(1),
+            tick: 0,
+            events: createEventRing(2 * n + 8),
+            sprintStore: undefined,
         },
-        alive: new Uint8Array(n).fill(1),
-        spec: new Uint8Array(n),
-        genomeId: new Uint32Array(n).map((_, slot) => 100 + slot),
-        outputs: new Float32Array(n * OUTPUT_COUNT),
-        sprintFactor: new Float64Array(n).fill(1),
-        tick: 0,
-        events: createEventRing(2 * n + 8),
-        sprintStore: undefined,
-    };
+        n,
+    );
 }
 
 /**

@@ -35,8 +35,8 @@ const RAMP = { key: 'temperaturePassiveLossFactor', offset: -1 };
 
 /**
  * @param {string} name the effect's name
- * @param {Partial<import('./effects.js').Effect> & Pick<import('./effects.js').Effect, 'level' | 'read'>} fields what
- *   differs from an effect that is on or off, scales nothing, closes nothing and drains nothing
+ * @param {Partial<import('./effects.js').Effect> & Pick<import('./effects.js').Effect, 'level'>} fields what differs from
+ *   an effect that is on or off, scales nothing, closes nothing and drains nothing
  * @returns {Readonly<import('./effects.js').Effect>} the effect
  */
 function effect(name, fields) {
@@ -163,4 +163,46 @@ export const EFFECTS = Object.freeze([
     effect('alarmCooling', { family: 'social', level: 'step', read: alarmCoolingLevel, gates: ['ALARM'] }),
     effect('huntCooling', { family: 'social', level: 'step', read: huntCoolingLevel, gates: ['HUNT'] }),
     effect('smokeCooling', { family: 'social', level: 'step', read: smokeCoolingLevel, gates: ['SMOKE'] }),
+    // status-effects Phase 2, T9: the stacks the body keeps. All four numbers of each are 0 by default, so none changes a lane.
+    // `shaken` is listed before `panicked`: the fade pass raises it as `panicked` ends, after its own row has been read.
+    effect('chilled', {
+        level: 'stacks',
+        maxStacks: 10,
+        fades: { kind: 'held', key: 'coldStackTicks' },
+        scales: [{ lane: 'passiveLoss', perStack: 'coldStackRate' }],
+        applier: 'stepChilled',
+        visible: true,
+    }),
+    effect('wounded', {
+        family: 'combat',
+        level: 'stacks',
+        maxStacks: 5,
+        fades: { kind: 'every', key: 'woundTicks' },
+        scales: [{ lane: 'maxThrust', perStack: { key: 'woundThrust', scale: -1 } }],
+        applier: 'noteBitten',
+        visible: true,
+    }),
+    effect('shaken', {
+        family: 'combat',
+        level: 'stacks',
+        fades: { kind: 'ticks', key: 'shakenTicks', by: 'nerve' },
+        scales: [{ lane: 'maxThrust', perStack: { key: 'shakenThrust', scale: -1 } }],
+        applier: 'panicked',
+        visible: true,
+    }),
+    effect('panicked', {
+        family: 'combat',
+        level: 'stacks',
+        maxStacks: 2,
+        fades: { kind: 'ticks', key: 'panicTicks' },
+        then: 'shaken',
+        scales: [
+            { lane: 'maxThrust', perStack: 'panicThrust', by: 'nerve' },
+            { lane: 'sprintBoost', perStack: 'panicThrust', by: 'nerve' },
+            { lane: 'passiveLoss', perStack: 'panicBurn', by: 'nerve' },
+            { lane: 'temperatureGainMove', perStack: 'panicBurn', by: 'nerve' },
+        ],
+        applier: 'noteBitten',
+        visible: true,
+    }),
 ]);

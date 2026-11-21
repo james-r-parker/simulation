@@ -7,6 +7,7 @@
 
 import { EFFECTS } from './effect-list.js';
 import { LANE_ID, compileRef, numberOf } from './effect-refs.js';
+import { raiseEffect } from './effect-raise.js';
 
 export { LANE_ID, compileRef, numberOf };
 
@@ -27,6 +28,7 @@ export const GATE_COUNT = Object.keys(GATE).length;
  * @property {string} lane the lane multiplied (a name of `LANES`)
  * @property {Ref} [perStack] the lane is multiplied by `1 + perStack x level`, never below 0
  * @property {readonly Ref[]} [levels] the lane is multiplied by `levels[level]` (level 0 first, and 1)
+ * @property {string} [by] a lane of the body that multiplies `perStack` (the `nerve` of the adrenaline effects)
  */
 
 /**
@@ -36,7 +38,9 @@ export const GATE_COUNT = Object.keys(GATE).length;
  * @property {number} maxStacks the cap, 1 for an effect that is on or off
  * @property {'stacks' | 'share' | 'step'} level a stored count, or a number computed from the body when read
  * @property {(world: any, slot: number) => number} [read] the level of a `share` or `step` effect
- * @property {{kind: 'ticks' | 'every', key: string}} [fades] a `stacks` effect's timer, its length a config key
+ * @property {{kind: 'ticks' | 'every' | 'held', key: string, by?: string}} [fades] a `stacks` effect's timer, its length a
+ *   config key (times the `by` lane of the body, when it names one); a `held` effect's applier keeps the clock itself
+ * @property {string} [then] the effect raised on a slot when this one's `ticks` timer ends (`panicked` hands over to `shaken`)
  * @property {readonly Scale[]} scales the lanes it multiplies
  * @property {readonly string[]} gates the gates it closes while its level is above 0 (`GATE` names)
  * @property {readonly {perTick: Ref, cause: string, times?: string}[]} drains the energy removed each tick it is on,
@@ -51,7 +55,22 @@ export const GATE_COUNT = Object.keys(GATE).length;
  * @property {number} effect the effect's index
  * @property {Compiled | null} per the `perStack` reference
  * @property {Compiled[] | null} levels the `levels` references
+ * @property {number} by the lane that multiplies `perStack`, -1 for none
  */
+
+/**
+ * @param {string} effect the effect's name, for the message
+ * @param {string} lane a lane's name
+ * @returns {number} the lane's index
+ * @throws {Error} for a lane that is not in the catalogue
+ */
+function laneIdOf(effect, lane) {
+    const id = /** @type {Record<string, number>} */ (LANE_ID)[lane];
+    if (id === undefined) {
+        throw new Error(`effects: ${effect} names ${lane}, which is not a lane`);
+    }
+    return id;
+}
 
 /**
  * @param {readonly Effect[]} list the effects
@@ -66,10 +85,7 @@ function compileRules(list, ctx) {
     const rules = [];
     list.forEach((effect, index) => {
         for (const scale of effect.scales) {
-            const id = /** @type {Record<string, number>} */ (LANE_ID)[scale.lane];
-            if (id === undefined) {
-                throw new Error(`effects: ${effect.name} scales ${scale.lane}, which is not a lane`);
-            }
+            const id = laneIdOf(effect.name, scale.lane);
             if ((scale.perStack === undefined) === (scale.levels === undefined)) {
                 throw new Error(`effects: ${effect.name} scales ${scale.lane} by perStack or levels, exactly one`);
             }
@@ -78,7 +94,8 @@ function compileRules(list, ctx) {
             }
             const per = scale.perStack === undefined ? null : compileRef(scale.perStack, ctx.configKeys);
             const levels = scale.levels === undefined ? null : scale.levels.map((r) => compileRef(r, ctx.configKeys));
-            (rules[id] ??= []).push({ read: ctx.reads[index], effect: index, per, levels });
+            const by = scale.by === undefined ? -1 : laneIdOf(effect.name, scale.by);
+            (rules[id] ??= []).push({ read: ctx.reads[index], effect: index, per, levels, by });
         }
     });
     return rules;
@@ -119,6 +136,14 @@ export function createEffects(list) {
             throw new Error(`effects: ${effect.name} stores stacks, so it needs fades`);
         }
     }
+    const thenOf = list.map((effect) => (effect.then === undefined ? -1 : names.indexOf(effect.then)));
+    list.forEach((effect, i) => {
+        if (effect.then !== undefined && (thenOf[i] < 0 || effect.fades?.kind !== 'ticks')) {
+            throw new Error(
+                `effects: ${effect.name} hands over to ${effect.then}, which needs a \`ticks\` fade and a listed effect`,
+            );
+        }
+    });
     const stored = list.filter((effect) => effect.level === 'stacks');
     const rowOf = list.map((effect) => (effect.level === 'stacks' ? stored.indexOf(effect) : -1));
     const reads = list.map((effect, i) => {
@@ -131,7 +156,17 @@ export function createEffects(list) {
     const rules = compileRules(list, ctx);
     const gates = compileGates(list);
     const drainRefs = list.map((effect) => effect.drains.map((drain) => compileRef(drain.perTick, ctx.configKeys)));
-    return new EffectSystem({ list, rules, gates, rowOf, stored, drainRefs, reads, configKeys: ctx.configKeys });
+    return new EffectSystem({
+        list,
+        rules,
+        gates,
+        rowOf,
+        stored,
+        drainRefs,
+        reads,
+        thenOf,
+        configKeys: ctx.configKeys,
+    });
 }
 
 /** The readers over one effect list. Construct through `createEffects`. */
@@ -145,6 +180,7 @@ export class EffectSystem {
      * @param {readonly Effect[]} parts.stored the effects that store a count, in row order
      * @param {Compiled[][]} parts.drainRefs each effect's drains' `perTick` references
      * @param {Array<(world: any, slot: number) => number>} parts.reads each effect's level reader
+     * @param {number[]} parts.thenOf each effect's follow-on effect, -1 for none
      * @param {string[]} parts.configKeys the config keys the rules read, in the order of `world.effectConfig`
      */
     constructor(parts) {
@@ -155,6 +191,9 @@ export class EffectSystem {
         this.stored = parts.stored;
         this.drainRefs = parts.drainRefs;
         this.reads = parts.reads;
+        this.thenOf = parts.thenOf;
+        /** Each stored row's follow-on effect, -1 for none. */
+        this.storedThen = parts.stored.map((effect) => parts.thenOf[parts.list.indexOf(effect)]);
         this.configKeys = parts.configKeys;
         /** The slot whose computed levels are memoised, -1 for none (`pin`). */
         this.pinned = -1;
@@ -286,7 +325,11 @@ export class EffectSystem {
      */
     factorAt(world, slot, rule, level) {
         if (rule.levels === null) {
-            const factor = 1 + numberOf(world, slot, /** @type {Compiled} */ (rule.per)) * level;
+            let amount = numberOf(world, slot, /** @type {Compiled} */ (rule.per)) * level;
+            if (rule.by >= 0) {
+                amount *= world.laneArrays[rule.by][slot];
+            }
+            const factor = 1 + amount;
             return factor > 0 ? factor : 0;
         }
         return numberOf(world, slot, rule.levels[level]);
@@ -341,20 +384,25 @@ export class EffectSystem {
 
     /**
      * The one pass over stored stacks, the last phase of a tick. A `ticks` effect counts its timer down and drops all its
-     * stacks when it ends; an `every` effect drops one stack each time its timer runs out and restarts the timer while
-     * stacks remain.
+     * stacks when it ends (and raises its `then` effect); an `every` effect drops one stack each time its timer runs out
+     * and restarts the timer while stacks remain; a `held` effect is left to its applier. A follow-on is listed before its
+     * cause in the registry, so this pass has already read its row and its timer starts on the next tick.
      * @param {any} world the world
      * @returns {void}
      */
     fade(world) {
         for (let row = 0; row < this.stored.length; row++) {
             const fades = /** @type {NonNullable<Effect['fades']>} */ (this.stored[row].fades);
+            if (fades.kind === 'held') {
+                continue;
+            }
             const length = world.config[fades.key];
             const stacks = world.effectStacks[row];
             const ticks = world.effectTicks[row];
+            const then = this.storedThen[row];
             for (let slot = 0; slot < stacks.length; slot++) {
-                if (stacks[slot] > 0) {
-                    fadeSlot(fades.kind, { stacks, ticks, length }, slot);
+                if (stacks[slot] > 0 && fadeSlot(fades.kind, { stacks, ticks, length }, slot) && then >= 0) {
+                    raiseEffect(this, world, slot, { effect: then, source: 0 });
                 }
             }
         }
@@ -365,20 +413,21 @@ export class EffectSystem {
  * @param {'ticks' | 'every'} kind the fade kind
  * @param {{stacks: Float64Array, ticks: Float64Array, length: number}} row the effect's stored rows and timer length
  * @param {number} slot a slot holding stacks
- * @returns {void}
+ * @returns {boolean} whether the slot's last stack ended
  */
 function fadeSlot(kind, row, slot) {
     row.ticks[slot] -= 1;
     if (row.ticks[slot] > 0) {
-        return;
+        return false;
     }
     if (kind === 'ticks') {
         row.stacks[slot] = 0;
         row.ticks[slot] = 0;
-        return;
+        return true;
     }
     row.stacks[slot] -= 1;
     row.ticks[slot] = row.stacks[slot] > 0 ? row.length : 0;
+    return false;
 }
 
 /** The effects of the sim, in registry order. */

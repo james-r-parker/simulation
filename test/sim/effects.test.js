@@ -27,14 +27,15 @@ describe('the default registry', () => {
         }
     });
 
-    it('allocates a row pair for each stored effect only, and fades nothing it has not stored', () => {
+    it('allocates a row pair for each stored effect only, once, and fades nothing it has not stored', () => {
         const world = smallWorld({ maxAgents: 4 });
         const stored = EFFECTS.filter((effect) => effect.level === 'stacks').length;
         expect(world.effectStacks).toHaveLength(stored);
         expect(world.effectTicks).toHaveLength(stored);
         const rows = world.agentRows.length;
         allocEffects(world);
-        expect(world.agentRows).toHaveLength(rows + 2 * stored);
+        // The rows are declared by `agentSpecs`, so a second call finds them and adds none.
+        expect(world.agentRows).toHaveLength(rows);
         fadeEffects(world);
     });
 });

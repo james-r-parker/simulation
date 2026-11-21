@@ -140,6 +140,7 @@ function fullWorld() {
             sprintStoreEnabled: true,
             diseaseSeedRate: 0.001,
             predatorRestTicks: 5,
+            woundThrust: 0.1,
         }),
         testPolicy,
     );

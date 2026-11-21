@@ -4,6 +4,7 @@ import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
 import { gainTemperature, stepTemperature, temperatureInputs } from '../../js/sim/temperature.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
+import { withEffectRows } from './helpers/effect-stand-in.js';
 import { blocksMating, passiveMultiplier, thrustEfficiency } from './helpers/legacy-rules.js';
 
 // The legacy rates, pinned so these tests check the formulas rather than the tuned defaults.
@@ -53,7 +54,7 @@ function bodyAt(cfg, t, shift = 0) {
  * @returns {any}
  */
 function fakeWorld(t, speed, season) {
-    return {
+    return withEffectRows({
         config,
         temperature: Float32Array.of(t),
         vx: Float32Array.of(speed),
@@ -63,7 +64,7 @@ function fakeWorld(t, speed, season) {
         outputs: new Float32Array(OUTPUT_COUNT),
         sprintFactor: Float64Array.of(1),
         lanes: lanesOf(config),
-    };
+    });
 }
 
 describe('stepTemperature', () => {
