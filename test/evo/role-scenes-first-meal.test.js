@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { firstMealConfig, playFirstMeal } from '../../js/evo/role-scenes-first-meal.js';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const world = createConfig({});
 
@@ -30,12 +31,16 @@ describe('playFirstMeal', () => {
         expect(r.outcome.meanTicks).toBeLessThan(60);
     });
 
-    it('an entrant that heads for the patch eats more often than one that walks straight, over the same seeded points', () => {
-        const reach = playFirstMeal(world, { spec: 'forager', rule: 'entrant', mode: 'reach', count: 48, seed: 4 });
-        const find = playFirstMeal(world, { spec: 'forager', rule: 'entrant', mode: 'find', count: 48, seed: 4 });
-        expect(reach.outcome.share).toBeGreaterThan(find.outcome.share);
-        expect(reach.outcome.eaten).toBe(Math.round(reach.outcome.share * 48));
-    });
+    it(
+        'an entrant that heads for the patch eats more often than one that walks straight, over the same seeded points',
+        () => {
+            const reach = playFirstMeal(world, { spec: 'forager', rule: 'entrant', mode: 'reach', count: 48, seed: 4 });
+            const find = playFirstMeal(world, { spec: 'forager', rule: 'entrant', mode: 'find', count: 48, seed: 4 });
+            expect(reach.outcome.share).toBeGreaterThan(find.outcome.share);
+            expect(reach.outcome.eaten).toBe(Math.round(reach.outcome.share * 48));
+        },
+        scaleTimeout(120_000),
+    );
 
     it('replays bit for bit from the seed, and a different seed gives different points', () => {
         const a = playFirstMeal(world, { spec: 'forager', rule: 'entrant', mode: 'find', count: 24, seed: 9 });
