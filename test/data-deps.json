@@ -542,6 +542,10 @@
     "test/role-budget-drift.test.js": [
         "scripts/role-budget.mjs"
     ],
+    "test/role-budget-search-libs.test.js": [
+        "scripts/lib/role-budget-birth-search.mjs",
+        "scripts/lib/role-budget-defender-search.mjs"
+    ],
     "test/role-budget.slow.test.js": [
         "evals/fair-chase/courser.json",
         "scripts/role-budget.mjs"
@@ -622,6 +626,10 @@
         "evals/train-screens/results",
         "scripts/state.mjs",
         "test"
+    ],
+    "test/sync-main.test.js": [
+        "scripts/lib/merge-base.mjs",
+        "scripts/lib/sync-main.mjs"
     ],
     "test/task-start.test.js": [
         ".gitignore",

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { mergeBase } from './merge-base.mjs';
 
 /** @type {import('./regen.mjs').Sh} */
-const sh = (cmd, args) => {
+export const sh = (cmd, args) => {
     const r = spawnSync(cmd, args, { encoding: 'utf8' });
     return { status: r.status ?? 1, stdout: r.stdout ?? '', stderr: r.stderr ?? '' };
 };
