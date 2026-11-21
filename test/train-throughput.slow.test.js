@@ -78,7 +78,7 @@ async function run(name, workers) {
 
 /** What the run wrote before T27 to T32 (recorded on the unchanged code). */
 const PINNED = {
-    archives: 'e4c7b639c8c218c257cf6cd0b57776dcbb2d3997d9a6cac2a3c1a89a3a246aff', // main's pin with the rulesHash of the status effects (the archives carry it)
+    archives: '0b2ffff34267b1f96fb02bcd2161bff38757d9c2c75bf9cd70cca37bfd7d9a60', // the pin with the rulesHash of body-genes T46 (the archives carry it)
     curve: '84cef7fe49be681a119648d72dcc6175149528d4471a2546a19ce89c59bf82d4',
 };
 
