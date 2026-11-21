@@ -194,6 +194,23 @@ function subjectIndex(f, agents, at) {
 }
 
 /**
+ * Moves the camera for a frame: the calm move after a handoff while it runs (the caption stays up until 3 s after it
+ * ends), the spring otherwise.
+ * @param {FollowState} f the controller
+ * @param {import('./camera.js').FollowSubject} subject what the follow shows this frame
+ * @param {{dtMs: number, paused: boolean}} at frame time
+ * @returns {void}
+ */
+function aimCamera(f, subject, at) {
+    const { camera } = f.deps;
+    if (stepHandoffMove(f.handoffMove, camera, subject, at.paused ? 0 : at.dtMs)) {
+        f.captionUntilMs = f.captionUntilMs > 0 ? f.nowMs + RELATION_CAPTION_MS : 0;
+    } else {
+        followSubject(camera, subject, at.dtMs);
+    }
+}
+
+/**
  * @param {FollowState} f the controller
  * @param {{dtMs: number, holdMs?: number, nowMs: number, available: boolean, paused: boolean}} at frame time and
  *   availability; `dtMs` eases the camera (a slow frame still moves it), `holdMs` is what counts towards the death
@@ -230,9 +247,7 @@ function stepFollow(f, at) {
         view.paused = at.paused;
         view.player = f.deps.getPlayer();
         const subject = frameSubject(f.frame, agents, i, view);
-        if (!stepHandoffMove(f.handoffMove, camera, subject, at.paused ? 0 : at.dtMs)) {
-            followSubject(camera, subject, at.dtMs);
-        }
+        aimCamera(f, subject, at);
         settleFrame(f.frame);
     } else {
         camera.following = state.followId !== 0;
