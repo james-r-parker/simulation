@@ -4,14 +4,14 @@
 // the kernels read and write the same memory. `allocateWorld` attaches every world as it is born.
 
 import { BRAIN_FIELDS, writeBrainParams } from './wasm-brain.js';
-
-export { BRAIN_FIELDS };
 import { FIELD_FIELDS, fieldSpecs, writeFieldParams } from './wasm-field.js';
 import { HASH_FIELDS, arenaHash, hashSpecs } from './wasm-hash.js';
 import { PHYSICS_FIELDS, physicsSpecs, writePhysicsParams } from './wasm-physics.js';
 import { SENSE_FIELDS, senseSpecs, writeSenseParams } from './wasm-sense.js';
 import { embeddedKernels } from './wasm-loader.js';
 import { hasHashViews } from './world-hash.js';
+
+export { BRAIN_FIELDS };
 
 /** Bytes per WebAssembly page. */
 export const PAGE_BYTES = 65536;
