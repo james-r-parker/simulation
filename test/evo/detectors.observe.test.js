@@ -188,6 +188,7 @@ describe('observeScenes', () => {
             'guilds',
             'herd',
             'heritage',
+            'hunterChoice',
             'hunters',
             'kin',
             'kinematics',

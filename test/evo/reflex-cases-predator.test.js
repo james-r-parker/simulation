@@ -16,6 +16,7 @@ const out = (/** @type {number} */ turn, /** @type {number} */ thrust, /** @type
     turn,
     thrust,
     sprint: 0,
+    alarm: 0,
     bite,
 });
 

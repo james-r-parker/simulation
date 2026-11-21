@@ -3,16 +3,19 @@
 // in TV mode) and returns control to the viewer on any input.
 
 import { appLog } from '../app-log.js';
-import { followStep, moveCameraTo } from '../camera.js';
+import { moveCameraTo, updateCamera } from '../camera.js';
+import { ease } from '../camera-move.js';
 import { createPrng } from '../prng.js';
 import { captionFor } from './captions.js';
 import { findMoments, readSnapshotAgents } from './moments.js';
-import { SHOT_CEILING_S } from './schedule.js';
+import { holdReached, SHOT_CEILING_S } from './schedule.js';
 import { lingerOver, refreshLingerMoment } from './linger.js';
 import { DECISION_INTERVAL_S, updateSnapshotHistory } from './snapshot-history.js';
 import { applyVariety, createShotHistory, noteShot, subjectOf } from './variety.js';
 import { LINGER_BASE_S, planShot, SHOT_STATE, shotPose } from './shots.js';
 
+/** The pace state while the camera runs a move: a move at a faster speed would run past its caps, so it is x1. */
+const MOVING = 'moving';
 /** XOR mask applied to the world seed for the director's private PRNG. */
 export const DIRECTOR_SEED_XOR = 0x9e3779b9;
 /** Idle threshold (in ms) before the director takes over the camera. */
@@ -21,6 +24,8 @@ export const DIRECTOR_IDLE_MS = 10_000;
 export const MOMENT_THRESHOLD = 45;
 /** Random score draw range added to the highest moment candidate. */
 export const MOMENT_RANDOM_BONUS = 5;
+/** Seconds a `linger` takes to bring its follow spring up to full rate, so the camera never lurches to a moment that moved. */
+export const LINGER_EASE_IN_S = 3;
 export { DECISION_INTERVAL_S, MAX_SNAPSHOT_HISTORY, SNAPSHOT_LOOKBACK_S } from './snapshot-history.js';
 
 /**
@@ -62,9 +67,10 @@ function decideWide(state, { timeS, agents, candidates, worldMeta }) {
     if (elapsedS < shot.minDurationS) {
         return;
     }
+    const holdOver = holdReached(timeS - state.shotStartS);
     const fromPose = shotPose(shot, timeS, state.world);
     const top = candidates[0];
-    if (top !== undefined && top.score + state.rng.next() * MOMENT_RANDOM_BONUS > MOMENT_THRESHOLD) {
+    if (holdOver && top !== undefined && top.score + state.rng.next() * MOMENT_RANDOM_BONUS > MOMENT_THRESHOLD) {
         enterShot(state, SHOT_STATE.GLIDE, { startTimeS: timeS, agents, fromPose, moment: top });
         state.lastShownS[top.kind] = timeS;
         state.shotStartS = timeS;
@@ -127,20 +133,23 @@ function advanceShotArrivals(state, timeS, agents) {
 }
 
 /**
- * Applies the active shot's pose to the camera (`followStep` in `linger`, `moveCameraTo` in other states).
+ * Applies the active shot's pose to the camera (a spring in `linger`, `moveCameraTo` in other states).
  * @param {import('../camera.js').CameraController | undefined} camera optional camera controller
  * @param {import('./shots.js').PlannedShot} shot active shot
  * @param {{x: number, y: number, zoom: number}} pose evaluated pose
- * @param {number} dtMs frame delta in ms
+ * @param {{dtMs: number, lingerS: number}} at frame delta in ms and seconds since the shot began
  * @returns {{x: number, y: number, zoom: number}} current camera pose
  */
-function applyShotToCamera(camera, shot, pose, dtMs) {
+function applyShotToCamera(camera, shot, pose, { dtMs, lingerS }) {
     if (!camera) {
         return pose;
     }
     if (shot.state === SHOT_STATE.LINGER) {
         camera.targetZoom = pose.zoom;
-        followStep(camera, pose.x, pose.y, dtMs);
+        camera.targetX = pose.x;
+        camera.targetY = pose.y;
+        camera.following = true;
+        updateCamera(camera, dtMs, ease(lingerS / LINGER_EASE_IN_S));
     } else {
         moveCameraTo(camera, pose, true);
     }
@@ -259,6 +268,7 @@ function ensureActive(state, { idleMs, timeS, agents, camPose }) {
     if (!state.active) {
         state.active = true;
         state.lastDecisionS = -Infinity;
+        state.shotStartS = -Infinity;
         state.lowScoreSinceS = null;
         state.caption = '';
         state.onSelect?.(0);
@@ -296,8 +306,10 @@ function stepDirectorState(state, input) {
         worldMeta: input.world ?? { seed: state.seed, top: [] },
         currentPose: camPose ?? prePose,
     });
-    const pose = applyShotToCamera(input.camera, state.shot, shotPose(state.shot, timeS, state.world), dtMs);
-    syncDirectorSpeed(state, state.shot.state);
+    const { shot } = state;
+    const lingerS = timeS - shot.startTimeS;
+    const pose = applyShotToCamera(input.camera, shot, shotPose(shot, timeS, state.world), { dtMs, lingerS });
+    syncDirectorSpeed(state, shot.move !== null && lingerS < shot.move.durationS ? MOVING : shot.state);
     return { active: true, state: state.shot.state, pose, caption: state.caption, shot: state.shot };
 }
 
@@ -351,7 +363,7 @@ export function createDirector(opts) {
         quiet: true,
         history: createShotHistory(),
         lastWideS: -Infinity,
-        shotStartS: 0,
+        shotStartS: -Infinity,
         lastDecisionS: -Infinity,
         lowScoreSinceS: /** @type {number | null} */ (null),
         lastShownS: /** @type {Record<string, number>} */ ({}),

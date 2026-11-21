@@ -79,7 +79,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 Partly built - the note says which phases are real.
 
 - [Agent workflow](agent-workflow.md) - Phases 1 to 5 are built and reviewed; Phase 6 is built except T40 (it needs 30 pull requests of history) _(validated 3c6f122, 2026-11-21)_ _(depends on [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md))_
-- [Ambient display](ambient-display.md) - Phases 3 to 6 are built except the T17 and T22 reviews; open: T5 review (waits for Phase 7, the calm camera rewrites the director); T6, T10b, T11 and T22 need t... _(validated 3c6f122, 2026-11-21)_ _(depends on [crisp-renderer.md](crisp-renderer.md), [continuous-follow.md](continuous-follow.md), [worker-and-renderer.md](worker-and-renderer.md), [pack-worker.md](pack-worker.md))_
+- [Ambient display](ambient-display.md) - Phases 3 to 6 are built except the T17 and T22 reviews; Phase 7 (a calm camera) is built except T40 (`perf:browser`, the OLED walk); open: T5 review (Phase 7 is... _(validated 3c6f122, 2026-11-21)_ _(depends on [crisp-renderer.md](crisp-renderer.md), [continuous-follow.md](continuous-follow.md), [worker-and-renderer.md](worker-and-renderer.md), [pack-worker.md](pack-worker.md))_
 - [Body genes](body-genes.md) - Phase 1 part one is built: the lane catalogue (113 lanes), `BRAIN_IO`, the `pooled-v6` layout (106 inputs) with the thirteen body-sense inputs live, the trait r... _(validated f77acde, 2026-11-21)_ _(depends on [fair-chase.md](fair-chase.md))_
 - [Brain capacity and memory](brain-capacity-and-memory.md) - the big bang (user, 2026-10-30) is built: chunk B1 instruments, chunk B2 probes (`npm run probe:memory`) and chunk B3, the chosen brain (sparse mutation, silent... _(validated d6ca3e6, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md), [fitness-and-selection.md](fitness-and-selection.md), [evolution-evals.md](evolution-evals.md), [world-balance.md](world-balance.md))_
 - [Brain reflex tests](brain-reflex-tests.md) - Phase 1 built: six cases (four forager, two predator), the table builder, the batched evaluator, the bars, `npm run reflex` and `npm run bench:reflex` (522 geno... _(validated edd4cd4, 2026-11-07)_ _(depends on [training.md](training.md))_
@@ -131,7 +131,7 @@ Not designs of the simulation - audits, research, learnings and guides.
 
 - [Headless sim core - implementation contracts](headless-sim-core-contracts.md) - exact rules for building [headless-sim-core.md](headless-sim-core.md); that doc carries the status, phases and tasks
 - [Legacy audit](legacy-audit.md) - defects and inefficiencies in the legacy app (`js/*.js`), by file and symbol, each with the doc that removes it
-- [Metrics](metrics.md) - the 377 eval metrics of a live report, generated from `js/evo/metric-registry/`: 179 verified, 195 unverified, 3 deprecated
+- [Metrics](metrics.md) - the 380 eval metrics of a live report, generated from `js/evo/metric-registry/`: 179 verified, 198 unverified, 3 deprecated
 - [Simulation notes](sim-notes.md) - verified platform and library facts, and learnings from each phase
 - [Training research](training-research.md) - a survey for [training-stages.md](training-stages.md): what the training tools are today, what their runs showed, how staged multi-agent training is done and ju...
 

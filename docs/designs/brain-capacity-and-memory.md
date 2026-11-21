@@ -77,18 +77,20 @@ computed (no `genomeSize` function is added). T1a pins every cell below in `../.
 a per-block derivation, so this table and the test change in one commit. Blocks, in row order: `wIn` (inputs x H),
 `wRec` (H x H), `bHidden` (H), `wOut` (H x outputs with genes), `bOut`, `wSkip` (skip source values x outputs with
 genes), trait genes 4 (24 trait slots from `pooled-v6`), leak genes H. Outputs with genes are 11, or 10 without `SPLIT` genes. `pooled-v2` here has 81
-inputs (48 pooled and 33 body; the season inputs are deleted). Flora Phase 2 added two food hues in `pooled-v3`; Megafauna Phase 2 adds the ninth pooled channel in `pooled-v4`, now the built layout.
+inputs (48 pooled and 33 body; the season inputs are deleted). Flora Phase 2 added two food hues in `pooled-v3`; Megafauna Phase 2 added the ninth pooled channel in `pooled-v4`; Refuge Phase 3 added three refuge body inputs in `pooled-v5`; body-genes Phase 1 built `pooled-v6` (106 inputs and 24 trait slots), now the built layout.
 
-| Layout and options                                                                                                                     | 16 hidden | 24 hidden | 32 hidden | 48 hidden | 64 hidden |
-| -------------------------------------------------------------------------------------------------------------------------------------- | --------- | --------- | --------- | --------- | --------- |
-| `elman-v1`, 179 inputs (deleted; the record)                                                                                           | 3,343     | 5,199     | 7,183     | 11,535    | 16,399    |
-| `pooled-v2` top 2, 81 inputs, `SPLIT` genes kept, no skip (built until B3)                                                             | 1,775     | 2,847     | 4,047     | 6,831     | 10,127    |
-| `pooled-v2` top 2, `SPLIT` genes kept, `brainSkip` (48 x 11)                                                                           | 2,303     | 3,375     | 4,575     | 7,359     | 10,655    |
-| `pooled-v2` top 2, no `SPLIT` genes, no skip                                                                                           | 1,758     | 2,822     | 4,014     | 6,782     | 10,062    |
-| `pooled-v2` top 2, no `SPLIT` genes, `brainSkip` (48 x 10) (built before flora Phase 2)                                                | 2,238     | 3,302     | 4,494     | 7,262     | 10,542    |
-| `pooled-v3` top 2, two food hues, no `SPLIT` genes, `brainSkip` (50 x 10) (the built layout)                                           | 2,290     | 3,370     | 4,578     | 7,378     | 10,690    |
-| `pooled-v4` top 2, nine channels and two food hues, no `SPLIT` genes, `brainSkip` (56 x 10) (Megafauna Phase 2)                        | 2,446     | 3,574     | 4,830     | 7,726     | 11,134    |
-| (the earlier 57-input strongest-hit variant, never built, had 1,391 / 2,271 / 3,279 / 5,679 / 8,591 for the `SPLIT`-kept, no-skip row) |           |           |           |           |           |
+| Layout and options                                                                                                                      | 16 hidden | 24 hidden | 32 hidden | 48 hidden | 64 hidden |
+| --------------------------------------------------------------------------------------------------------------------------------------- | --------- | --------- | --------- | --------- | --------- |
+| `elman-v1`, 179 inputs (deleted; the record)                                                                                            | 3,343     | 5,199     | 7,183     | 11,535    | 16,399    |
+| `pooled-v2` top 2, 81 inputs, `SPLIT` genes kept, no skip (built until B3)                                                              | 1,775     | 2,847     | 4,047     | 6,831     | 10,127    |
+| `pooled-v2` top 2, `SPLIT` genes kept, `brainSkip` (48 x 11)                                                                            | 2,303     | 3,375     | 4,575     | 7,359     | 10,655    |
+| `pooled-v2` top 2, no `SPLIT` genes, no skip                                                                                            | 1,758     | 2,822     | 4,014     | 6,782     | 10,062    |
+| `pooled-v2` top 2, no `SPLIT` genes, `brainSkip` (48 x 10) (built before flora Phase 2)                                                 | 2,238     | 3,302     | 4,494     | 7,262     | 10,542    |
+| `pooled-v3` top 2, two food hues, no `SPLIT` genes, `brainSkip` (50 x 10) (the built layout)                                            | 2,290     | 3,370     | 4,578     | 7,378     | 10,690    |
+| `pooled-v4` top 2, nine channels and two food hues, no `SPLIT` genes, `brainSkip` (56 x 10) (Megafauna Phase 2)                         | 2,446     | 3,574     | 4,830     | 7,726     | 11,134    |
+| `pooled-v5`, 92 inputs, three refuge body inputs (Refuge Phase 3)                                                                       | 2,494     | 3,646     | 4,926     | 7,870     | 11,326    |
+| `pooled-v6`, 106 inputs, thirteen body sense values, `reserve`, 24 trait slots, `brainSkip` (69 x 10) (body-genes T7; the built layout) | 2,868     | 4,132     | 5,524     | 8,692     | 12,372    |
+| (the earlier 57-input strongest-hit variant, never built, had 1,391 / 2,271 / 3,279 / 5,679 / 8,591 for the `SPLIT`-kept, no-skip row)  |           |           |           |           |           |
 
 ## Sensory schema
 
@@ -161,7 +163,7 @@ pooled value count (69 now) plus the body offset.
 
 ### Planned extensions
 
-Each extension changes this schema, the test and `ARCHIVE_VERSION` in one task. The flora hue value of one food hit is
+Each extension changed this schema, the test and `ARCHIVE_VERSION` in one task, and all four rows are built (the last is body-genes T7, `pooled-v6`). The flora hue value of one food hit is
 a linear coordinate in [-1, 1] (not an angle); absent hit, 0.
 
 | Step                     | Change                                                                                                              | Inputs | Pooled values | 16 hidden | 24 hidden | 32 hidden | 48 hidden | 64 hidden |

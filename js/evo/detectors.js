@@ -17,6 +17,7 @@ import { recruitDetector } from './scene-recruit.js';
 import { biteDetector } from './scene-bite.js';
 import { biteLifeDetector } from './scene-bite-life.js';
 import { strikeMissDetector } from './scene-strike-miss.js';
+import { hunterChoiceDetector } from './scene-hunter-choice.js';
 import { herdDetector } from './scene-herd.js';
 import { patchDetector } from './scene-patch.js';
 import { terrainDetector } from './scene-terrain.js';
@@ -55,6 +56,7 @@ export const DETECTORS = Object.freeze([
     diseaseDetector,
     biteDetector,
     strikeMissDetector,
+    hunterChoiceDetector,
     biteLifeDetector,
     proofDetector,
     approachDetector,

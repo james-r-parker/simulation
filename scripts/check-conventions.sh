@@ -20,6 +20,7 @@
 # - wasm/blob-kernels.wasm matches its .sha256 and wasm/blob-kernels.src.sha256 its sources, and a fresh build matches
 #   where cargo exists (scripts/check-wasm.mjs).
 # - No local specialisation count, role index or name list outside js/sim/specs.js (docs/designs/registries.md).
+# - docs/trait-table.md matches the trait registry and the default config (scripts/traits.mjs --check).
 # - The index in docs/designs/sim-notes.md matches docs/notes/ (scripts/notes-index.mjs --check).
 # - test/data-deps.json matches the paths the tests read, and no test has an undeclared dynamic path (scripts/data-deps.mjs --check).
 # - AGENTS.md stays at or under AGENTS_MAX_BYTES (16000): an agent reads it before its first command, so detail lives in
@@ -147,6 +148,13 @@ metrics_out="$(node scripts/metrics-doc.mjs --check 2>&1)"
 metrics_status=$?
 if ((metrics_status != 0)); then
   fail "metrics-doc: ${metrics_out:-scripts/metrics-doc.mjs exited $metrics_status with no output}"
+fi
+
+# docs/trait-table.md is the table the trait registry and the default config generate (docs/designs/body-genes.md, The table).
+traits_out="$(node scripts/traits.mjs --check 2>&1)"
+traits_status=$?
+if ((traits_status != 0)); then
+  fail "trait-table: ${traits_out:-scripts/traits.mjs exited $traits_status with no output}"
 fi
 
 # The five specialisations' names, count and indices are js/sim/specs.js's (docs/designs/registries.md, Spec names): no
