@@ -18,7 +18,7 @@ const ENUMS = {
 /** The codes with a log event (32 is unused). */
 export const LOGGED_CODES = [
     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 33, 34,
-    35, 36,
+    35, 36, 37, 38,
 ];
 
 /**

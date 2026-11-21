@@ -6,6 +6,7 @@ import { LOSS_CAUSE, removeEnergy } from './energy.js';
 import { depositPheromone } from './pheromones.js';
 import { releaseSmoke } from './smoke.js';
 import { cellRange } from './spatial-hash.js';
+import { GATE, gateOpen } from './effects.js';
 import { specParams } from './spec-params.js';
 import { HEARD_STRIDE } from './world.js';
 import { SPEC } from './specs.js';
@@ -98,7 +99,7 @@ function threatInView(world, slot) {
 function alarm(world, slot) {
     const { alarmCost, callTicks, alarmThreshold, scoutAlarmCostMultiplier } = world.config;
     const cost = world.spec[slot] === SPEC.SCOUT ? alarmCost * scoutAlarmCostMultiplier : alarmCost;
-    const wanted = outputAbove(world, slot, OUTPUT_INDEX.ALARM, alarmThreshold) && world.alarmTimer[slot] === 0;
+    const wanted = outputAbove(world, slot, OUTPUT_INDEX.ALARM, alarmThreshold) && gateOpen(world, slot, GATE.ALARM);
     if (!wanted || world.energy[slot] <= cost || specParams(world.config, world.spec[slot]).canHunt) {
         return;
     }
@@ -117,7 +118,7 @@ function alarm(world, slot) {
  */
 function huntCall(world, slot) {
     const { huntCallCost, callTicks, huntCallThreshold } = world.config;
-    const wanted = outputAbove(world, slot, OUTPUT_INDEX.HUNT, huntCallThreshold) && world.huntTimer[slot] === 0;
+    const wanted = outputAbove(world, slot, OUTPUT_INDEX.HUNT, huntCallThreshold) && gateOpen(world, slot, GATE.HUNT);
     if (!wanted || world.energy[slot] <= huntCallCost || !specParams(world.config, world.spec[slot]).canHunt) {
         return;
     }
@@ -136,7 +137,7 @@ function huntCall(world, slot) {
  */
 function smoke(world, slot) {
     const { smokeCost, smokeCooldown, smokeThreshold, maxClouds } = world.config;
-    const wanted = outputAbove(world, slot, OUTPUT_INDEX.SMOKE, smokeThreshold) && world.smokeTimer[slot] === 0;
+    const wanted = outputAbove(world, slot, OUTPUT_INDEX.SMOKE, smokeThreshold) && gateOpen(world, slot, GATE.SMOKE);
     if (!wanted || world.energy[slot] <= smokeCost) {
         return;
     }

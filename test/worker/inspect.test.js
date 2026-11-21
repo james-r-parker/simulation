@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TRAITS, traitRatio } from '../../js/sim/body-traits.js';
+import { EFFECTS } from '../../js/sim/effect-list.js';
+import { EFFECT, levelOf } from '../../js/sim/effects.js';
 import { createObserver } from '../../js/evo/observer.js';
 import { EXTRA_INPUTS, inputOffsets, OUTPUT_COUNT, RAY_CHANNELS, TRAIT_SLOTS } from '../../js/sim/brain-layout.js';
 import { BORN_CAUSE } from '../../js/sim/events.js';
@@ -80,9 +82,16 @@ describe('workerLayout', () => {
         expect(layout.inspectOffset).toBe(layout.effectsOffset + layout.effectsWords);
         const inputs = config.rayCount * RAY_CHANNELS + EXTRA_INPUTS;
         expect(layout.inspectWords).toBe(
-            INSPECT_HEADER_WORDS + inputs + config.brainHidden + OUTPUT_COUNT + 15 + TRAITS.length + 13,
+            INSPECT_HEADER_WORDS +
+                inputs +
+                config.brainHidden +
+                OUTPUT_COUNT +
+                15 +
+                TRAITS.length +
+                13 +
+                EFFECTS.length,
         );
-        expect([layout.traitCount, layout.senseCount]).toEqual([TRAITS.length, 13]);
+        expect([layout.traitCount, layout.senseCount, layout.effectCount]).toEqual([TRAITS.length, 13, EFFECTS.length]);
         expect(layout.bytes).toBe((layout.inspectOffset + layout.inspectWords) * 4);
     });
 
@@ -203,7 +212,19 @@ describe('writeInspect', () => {
         world.pooled = undefined;
         writeInspect(views, layout, source, { genomeId: world.genomeId[0], slot: 0 });
         const end = layout.inspectOffset + layout.inspectWords;
-        expect(Array.from(views.f32.subarray(end - 13, end))).toEqual(new Array(13).fill(0));
+        const senseEnd = end - EFFECTS.length;
+        expect(Array.from(views.f32.subarray(senseEnd - 13, senseEnd))).toEqual(new Array(13).fill(0));
+    });
+
+    it('writes the level of each effect after the sense values, and names them in the labels', () => {
+        const { world, source, layout, views } = setup();
+        world.dose[0] = 1;
+        writeInspect(views, layout, source, { genomeId: world.genomeId[0], slot: 0 });
+        const end = layout.inspectOffset + layout.inspectWords;
+        const levels = Array.from(views.f32.subarray(end - EFFECTS.length, end));
+        expect(levels).toEqual(EFFECTS.map((_, e) => Math.fround(levelOf(world, 0, e))));
+        expect(levels[EFFECT.SICK]).toBe(1);
+        expect(inspectLabels().effects.map((effect) => effect.name)).toEqual(EFFECTS.map((effect) => effect.name));
     });
 
     it('writes only the header, with valid 0, once the agent has died', () => {
