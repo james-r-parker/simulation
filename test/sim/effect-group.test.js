@@ -136,6 +136,7 @@ describe('the group reads', () => {
     });
 
     it('reads a group with no temperature effect without the band read, and folds its lanes from the levels', () => {
+        /** @type {any[]} a rule of a fixture effect: `1 + 1 x level` on `maxTurn` */
         const laneRules = [];
         laneRules[LANE_ID.maxTurn] = [{ effect: 0, per: { kind: 0, value: 1 }, levels: null, by: -1, power: false }];
         const effectGroups = compileGroups([{ name: 'calm' }], laneRules);

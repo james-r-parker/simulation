@@ -2,8 +2,10 @@
 // every effect that a rule of the group's lanes names at the current config (`world.laneRules`) once, into the group's level
 // row, and folds every lane of the group from it in the same pass, its base read inside it; `liveIn` reads a folded lane.
 // The turn and thrust of a slot (`MOTION`, in `actAll`), the six cost lanes of `tickCost` (`COST`) and the two heat lanes
-// of `stepTemperature` (`HEAT`) each read their levels once, where each lane read them again. The temperature effects are read by one band read of `temperature[slot]` and its lanes. The levels are the same numbers read from the
-// same state at the same point of the tick, multiplied in the same order, so a lane folds to the bits `liveOf` gives.
+// of `stepTemperature` (`HEAT`) each read their levels once, where each lane read them again. The temperature effects are
+// read by one band read of `temperature[slot]` and its lanes. The levels are the same numbers read from the same state at
+// the same point of the tick, multiplied in the same order, so a lane folds to the bits `liveOf` gives. `liveIn` reads the
+// row the last fold left, so a caller folds a slot's group before it reads that slot's lanes.
 // Allocates nothing per call; no RNG.
 
 import { LANE_ID, LEVEL, NUMBER, RESULT } from './effect-refs.js';
