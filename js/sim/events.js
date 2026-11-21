@@ -190,6 +190,16 @@ const DEFS = [
     },
     { code: 35, name: 'HUNTER_RECOIL_LIFE', log: 'HunterRecoilLife', level: 'debug', fields: ['slot', 'energy'] },
     { code: 36, name: 'SPRINT_SPENT', log: 'SprintSpent', level: 'debug', fields: ['slot', 'genomeId', 'spec'] },
+    // A stack gained, once per stack and never per tick (status-effects.md, Logging and diagnostics).
+    {
+        code: 37,
+        name: 'EFFECT_APPLIED',
+        log: 'EffectApplied',
+        level: 'debug',
+        fields: ['slot', 'effect', 'stacks', 'source'],
+    },
+    // A stack dropped at the effect's cap.
+    { code: 38, name: 'EFFECT_CAPPED', log: 'EffectCapped', level: 'debug', fields: ['slot', 'effect'] },
 ];
 
 /** Offset of the event type in a record. */
