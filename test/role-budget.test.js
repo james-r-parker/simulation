@@ -7,6 +7,7 @@ import { PHASE1_ROWS, matrix } from '../js/evo/role-budget-matrix.js';
 import { MODEL_DEFAULTS } from '../js/evo/role-budget-model.js';
 import { arenaConfig } from '../js/evo/chase-arena.js';
 import { applySets, main, parseArgs, runBudget } from '../scripts/role-budget.mjs';
+import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 import {
     cellText,
     formatDetail,
@@ -184,9 +185,11 @@ describe('runBudget', () => {
     });
 
     it('finishes the matrix of the built phases in under 2 s without --check', async () => {
+        // 2 s is the uninstrumented budget (role-budget.md, Performance budget); scaleTimeout scales it the same way as
+        // every explicit test limit, for V8 coverage and machine load (scripts/lib/test-timeout.mjs).
         const start = performance.now();
         await run(['--config', COURSER]);
-        expect(performance.now() - start).toBeLessThan(2000);
+        expect(performance.now() - start).toBeLessThan(scaleTimeout(2000));
     });
 
     it('weights the average row by --mix', async () => {
