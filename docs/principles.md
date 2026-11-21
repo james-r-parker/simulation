@@ -175,6 +175,10 @@ a reward changes who breeds.
   living on stored energy; rewards are added only where the "Measure scenes, reward them almost never" rule allows.
 - The app is checked by eye as well as by metrics: a phase that changes behaviour ends with a clip of the default
   world (`Shift+P`) for the user.
+- The weekly watch: once a week the user watches the reel of the default world and of the champions
+  (`npm run reel -- --seed 1 --ticks 60000 --out <dir>`, and the same with `--config <file>` for a champion world's
+  config; the Reel tab of the insights drawer shows the same clips live). What the user says becomes tasks in the plan that owns the scene,
+  through the practice below; the reel is a detector's companion, never fitness.
 - A gap marked "none yet" is planned as a metric before a change claims to fix it.
 - An evaluation outcome (an eval, screen, ladder, probe, long run, training, drill or reflex run) becomes new tasks only
   through the practice in the `run-evolution-loop` skill ("Check the detector first" and "Outcome to task"): the

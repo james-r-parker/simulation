@@ -304,6 +304,7 @@ describe('the insights drawer in the interface', () => {
             false,
             false,
             false,
+            false,
         ]);
         expect(readings(elements).population).toBe('9');
         expect(FakeUPlot.made).toHaveLength(5);

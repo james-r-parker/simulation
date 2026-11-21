@@ -36,10 +36,10 @@ describe('prefs', () => {
 
     it('keeps the insights tab to a known tab, the world by default', () => {
         expect(defaultPrefs().insightsTab).toBe('world');
-        for (const tab of ['world', 'scenes', 'families', 'records', 'export']) {
+        for (const tab of ['world', 'scenes', 'families', 'records', 'export', 'reel']) {
             expect(sanitizePrefs({ insightsTab: tab }).insightsTab).toBe(tab);
         }
-        for (const bad of ['reel', '', 3, null]) {
+        for (const bad of ['nope', '', 3, null]) {
             expect(sanitizePrefs({ insightsTab: bad }).insightsTab).toBe('world');
         }
     });

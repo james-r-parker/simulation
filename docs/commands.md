@@ -162,6 +162,10 @@ Edit `wasm/src`, run `scripts/build-wasm.sh`, then `flock /tmp/claude-1000/cpu.l
 
 `npm run replay -- --seed <n> --ticks <n>` (`--config <file.json>`, `--dump <tick>`, `--level debug`, `--check-invariants`, `--policy <name>`, `--follow <genomeId>`); logs go to `.sim/logs/<runId>.jsonl`
 
+### Cut the scene reel of a world
+
+`npm run reel -- --seed <n> --ticks <t> --out <dir>` (`--config <file.json>` (config overrides, as `replay --config` reads), `--policy <name>|live`, `--headed`; runs the app headless in Chromium at x8 on the browser smoke's session (`scripts/lib/browser-session.mjs`), pauses at the tick, and writes the best 10 s clip of each scene seen (`<scene>-<tick>.webm`, 6 s before the moment and 4 s after) and `reel.json` (`scene`, `tick`, `score`, `file` per clip, and `endTick`, `recording`); a scene that never showed has no clip; about 15 s for 2000 ticks; on the WebGL2 software path the look differs from the real GPU, the reel shows behaviour, not the look; a detector's companion, never fitness; docs/designs/ambient-display.md)
+
 ### Evaluate a policy on fixed seeds
 
 `npm run eval -- --seeds <n> --ticks <t> --policy <name>` (defaults 16 seeds, 200000 ticks; `--seed-offset <k>`, `--config <file.json>`, `--policy-options <file.json>` (policy options: `fitnessOverrides` weights, `archiveShare`, `cloneShareEnd`, `descriptor`; checked before the run, written to the report), `--out <path>`, `--workers <n>`, `--save-champions <n>` (writes each seed's top `<n>` archive elites as champion files in `<out>-champions/`; off by default); seeds come from `evals/seeds.json`; reports go to `evals/results/`, logs to `.sim/logs/eval-<id>.jsonl`)
