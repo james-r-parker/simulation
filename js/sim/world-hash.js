@@ -1,7 +1,8 @@
 // Hashes a world's state bytes at a checkpoint, in the fixed order of the design doc's hashWorld section.
 
-import { HASHED_AGENT_ARRAYS } from './agent-arrays.js';
+import { EFFECT_AGENT_ARRAYS, HASHED_AGENT_ARRAYS } from './agent-arrays.js';
 import { laneMaxOverSpecs } from './body-lanes.js';
+import { socialEffectsOn } from './effect-numbers.js';
 import { MYCELIUM_ARRAYS } from './mycelium.js';
 import { FLORA_ARRAYS } from './flora-state.js';
 import { fnv64Bytes, fnv64Hex, fnv64Init } from './fnv.js';
@@ -126,13 +127,14 @@ function fieldNames() {
 /**
  * Builds the byte views for the whole-array part of the hash, once per world.
  * @param {Record<string, any>} world the world
- * @returns {{ agents: Uint8Array[], merit: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, inputActive: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, disease: Uint8Array[], diseaseRngSource: Uint32Array | null, diseaseRng: Uint8Array | null, sprintStore: Uint8Array | null, restTimer: Uint8Array | null, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
+ * @returns {{ agents: Uint8Array[], effects: Uint8Array[], merit: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, inputActive: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, disease: Uint8Array[], diseaseRngSource: Uint32Array | null, diseaseRng: Uint8Array | null, sprintStore: Uint8Array | null, restTimer: Uint8Array | null, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
  */
 function buildViews(world) {
     const { maxAgents } = world.config;
     const hiddenRows = world.hidden.subarray(0, maxAgents * world.layout.hidden);
     return {
         agents: AGENT_ARRAYS.map((name) => bytesOf(world, name)),
+        effects: EFFECT_AGENT_ARRAYS.map((name) => bytesOf(world, name)),
         merit: MERIT_ARRAYS.map((name) => bytesOf(world, name)),
         fields: fieldNames().map((name) => bytesOf(world, name)),
         hidden: new Uint8Array(hiddenRows.buffer, hiddenRows.byteOffset, hiddenRows.byteLength),
@@ -200,7 +202,23 @@ function hashStateRows(views) {
 }
 
 /**
- * Hashes the arrays that exist only with their feature on: `fastOut`, the input-activity counts (`weightDecay`), `birthRing`, `sex`, the disease state, the sprint store (`sprintStoreEnabled`) and the rest timer (`predatorRestTicks`).
+ * Hashes the stored effect stacks and `heardFrom`, once a social effect has a strength above 0 (`socialEffectsOn`): while
+ * every number is 0 the stacks cannot reach the rest of the world, so a neutral world hashes as it did without them.
+ * @param {Record<string, any>} config the world's config
+ * @param {ReturnType<typeof buildViews>} views the cached byte views
+ * @returns {void}
+ */
+function hashEffectRows(config, views) {
+    if (socialEffectsOn(config)) {
+        for (const bytes of views.effects) {
+            fnv64Bytes(digest, bytes);
+        }
+    }
+}
+
+/**
+ * Hashes the arrays that exist only with their feature on: `fastOut`, the input-activity counts (`weightDecay`), `birthRing`, `sex`, the disease state, the sprint store (`sprintStoreEnabled`), the rest timer (`predatorRestTicks`) and, with a social effect above 0
+ * (`socialEffectsOn`), the stored effect stacks and `heardFrom`.
  * @param {Record<string, any>} world the world
  * @param {ReturnType<typeof buildViews>} views the cached byte views
  * @returns {void}
@@ -236,6 +254,7 @@ function hashOptionalArrays(world, views) {
         fnv64Bytes(digest, bytes);
     }
     hashStateRows(views);
+    hashEffectRows(config, views);
 }
 
 /**

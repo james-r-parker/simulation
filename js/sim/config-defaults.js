@@ -232,4 +232,29 @@ export const DEFAULTS = deepFreeze({
     defenderRepelEnergy: 0, // prey-guilds Phase 2: energy a defender's active repel drains from a canHunt target in jaws; 0 is off
     defenderRepelCost: 0, // prey-guilds Phase 2: energy a defender pays when landing an active repel
     defenderRepelImpulse: 0, // prey-guilds Phase 2: knockback velocity added to the repelled hunter along the defender-to-hunter vector
+    coldStackRate: 0, // status-effects T9: the standing cost `chilled` adds a stack (passiveLoss x (1 + rate x stacks)); 0 is off
+    coldStackTicks: 60, // status-effects T9: ticks under `temperatureOptimalMin` that add one `chilled` stack
+    coldRecoverTicks: 15, // status-effects T9: ticks at or above `temperatureOptimalMin` that take one `chilled` stack off
+    woundThrust: 0, // status-effects T9: the thrust a `wounded` stack takes off (maxThrust x (1 - woundThrust x stacks)); 0 is off
+    woundTicks: 300, // status-effects T9: ticks a `wounded` stack lasts
+    panicThrust: 0, // status-effects T9: the thrust and sprint boost a `panicked` stack adds, times the body's nerve; 0 is off
+    panicBurn: 0, // status-effects T9: the passive cost and heat gain a `panicked` stack adds, times the body's nerve; 0 is off
+    panicTicks: 60, // status-effects T9: ticks a `panicked` body is panicked (it is `shaken` when this ends)
+    shakenThrust: 0, // status-effects T9: the thrust a `shaken` body loses after a panic; 0 is off
+    shakenTicks: 120, // status-effects T9: ticks a body is `shaken`, times its nerve
+    hearThreshold: 0.1, // status-effects T10: the loudness at or above which a heard call raises an effect (`rallied`, `alert`); role-budget.md reads it too
+    rallyThrust: 0, // status-effects T10: the thrust and sprint boost a `rallied` stack adds, times the body's nerve; 0 is off
+    rallyBurn: 0, // status-effects T10: the passive cost and heat gain a `rallied` stack adds, times the body's nerve; 0 is off
+    rallyTicks: 120, // status-effects T10: ticks a `rallied` stack lasts, and how recent the caller's bite must be for an `answered` kill
+    answeredBite: 0, // status-effects T10: the bite energy an `answered` stack adds (biteEnergy x (1 + answeredBite x stacks)); 0 is off
+    answeredTicks: 120, // status-effects T10: ticks an `answered` stack lasts
+    hoarseFactor: 1, // status-effects T10: a call costs this much more for each `hoarse` stack (cost x factor^stacks); 1 is off, 2 doubles
+    hoarseTicks: 60, // status-effects T10: ticks a `hoarse` stack lasts
+    alertBoost: 0, // status-effects T11: the turn and sprint boost an `alert` stack adds, times the body's nerve; 0 is off
+    alertGraze: 0, // status-effects T11: the grazing thrust an `alert` stack takes off while the body grazes, times its nerve; 0 is off
+    alertTicks: 90, // status-effects T11: ticks an `alert` stack lasts
+    huddleWarmth: 0, // status-effects T11: the passive heat loss a `huddled` stack saves (temperatureLossPassive x (1 - warmth x stacks)); 0 is off
+    huddleRange: 2, // status-effects T11: how near, in body sizes, a fed kin must be to give a `huddled` stack
+    staggerThrust: 0, // status-effects T11: the thrust a `staggered` stack takes off, and a staggered hunter cannot bite; 0 is off (no stack is raised)
+    staggerTicks: 30, // status-effects T11: ticks a `staggered` stack lasts
 });

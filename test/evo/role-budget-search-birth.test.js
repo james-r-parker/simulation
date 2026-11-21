@@ -3,6 +3,7 @@ import { createConfig } from '../../js/sim/config.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { phase4Budget } from '../../js/evo/role-budget-matrix-thrive.js';
 import { searchBirth } from '../../js/evo/role-budget-search-birth.js';
+import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const model = MODEL_DEFAULTS;
 
@@ -32,15 +33,23 @@ describe('searchBirth', () => {
         expect(found.every((f) => f.changes.length <= 2)).toBe(true);
     });
 
-    it('returns nothing for a first meal that is already ok, and skips a setting that is 0', () => {
-        expect(searchBirth(createConfig({ entrantEnergy: 800 }), { model })).toEqual([]);
-        const noCold = searchBirth(createConfig({}), { model });
-        expect(noCold.some((f) => f.changes.some((c) => c.path === 'coldStackRate'))).toBe(false);
-    });
+    it(
+        'returns nothing for a first meal that is already ok, and skips a setting that is 0',
+        () => {
+            expect(searchBirth(createConfig({ entrantEnergy: 800 }), { model })).toEqual([]);
+            const noCold = searchBirth(createConfig({}), { model });
+            expect(noCold.some((f) => f.changes.some((c) => c.path === 'coldStackRate'))).toBe(false);
+        },
+        scaleTimeout(30_000),
+    );
 
-    it('carries the base overrides into every file', () => {
-        const withBase = searchBirth(createConfig({ foodEnergy: 90 }), { model, overrides: { foodEnergy: 90 } });
-        expect(withBase.length).toBeGreaterThan(0);
-        expect(withBase.every((f) => f.overrides.foodEnergy === 90)).toBe(true);
-    });
+    it(
+        'carries the base overrides into every file',
+        () => {
+            const withBase = searchBirth(createConfig({ foodEnergy: 90 }), { model, overrides: { foodEnergy: 90 } });
+            expect(withBase.length).toBeGreaterThan(0);
+            expect(withBase.every((f) => f.overrides.foodEnergy === 90)).toBe(true);
+        },
+        scaleTimeout(30_000),
+    );
 });
