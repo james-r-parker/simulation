@@ -6,7 +6,7 @@
 
 import { detCos, detSin } from '../sim/det-math.js';
 import { norm, turnCircle } from './role-budget-kinematics.js';
-import { bite, charge, collide, costOf, createBody, speedOf, stepBody } from './role-budget-body.js';
+import { bite, charge, collide, costOf, createBody, inJaws, speedOf, stepBody } from './role-budget-body.js';
 import { HUNTER_PERFECT, hunterOut, preyOut } from './role-budget-play.js';
 import { JINK_RANGE } from './chase-oracles.js';
 
@@ -28,7 +28,7 @@ export const MAX_TICKS = 250;
  * @property {number | null} contactTick the first tick the centre gap is under the two sizes, null for none
  * @property {number | null} killTick the tick the fatal bite lands, null for none
  * @property {number} bites the bites landed
- * @property {boolean} gate whether the size gate of `couldBite` held at the first contact
+ * @property {boolean} gate whether the size gate of `couldBite` held on any contact tick (it is read on each, as bodies shrink)
  * @property {number} hunterEnergy the hunter's energy at the end (after the bites, the gorge and the kicks)
  * @property {number} preyEnergy the prey's energy at the end
  * @property {number} hunterSpent the energy the hunter's costs took
@@ -65,6 +65,35 @@ function result({ h, p, heat, tick, tally, fatal }) {
     };
 }
 
+/** What a tick's contact came to: nothing, the prey in the jaws, a fatal bite. */
+const NO_JAWS = 0;
+const IN_JAWS = 1;
+const FATAL = 2;
+
+/**
+ * The contact of one tick: when the bodies touch, the first contact is noted, the size gate is read as the sizes stand
+ * (`couldBite` reads it on each bite), the overlap is resolved and a bite lands if the gate allows it and the prey is in the jaws.
+ * Allocates nothing: a chase plays this every tick.
+ * @param {import('./role-budget-body.js').Body} h the hunter
+ * @param {import('./role-budget-body.js').Body} p the prey
+ * @param {number} tick the tick, from 0
+ * @param {{bites: number, income: number, kick: number, contact: number | null, gate: boolean}} tally updated in place
+ * @returns {number} `NO_JAWS` when the prey is not in the hunter's jaws (or not touched), `IN_JAWS`, or `FATAL` when the bite killed
+ */
+function touchStep(h, p, tick, tally) {
+    if (norm(p.x - h.x, p.y - h.y) >= h.size + p.size) {
+        return NO_JAWS;
+    }
+    tally.contact ??= tick + 1;
+    const may = h.size > h.p.bite.sizeRatio * p.size;
+    tally.gate ||= may;
+    collide(h, p);
+    if (may && bite(h, p, tally)) {
+        return FATAL;
+    }
+    return inJaws(h, p) ? IN_JAWS : NO_JAWS;
+}
+
 /**
  * Plays one chase from tick 0 until the kill or the end of `maxTicks`.
  * @param {import('./role-budget-params.js').RoleParams} hunter the hunter's numbers (a `roleParams`)
@@ -95,13 +124,13 @@ export function chaseTimeline(hunter, prey, options) {
             h.vy *= slow / speedOf(h);
         }
         heat += Math.min(speedOf(h) / hunter.cap.cruise, 1) * hunter.heat.gainMove;
-        if (norm(p.x - h.x, p.y - h.y) < h.size + p.size) {
-            tally.contact ??= tick + 1;
-            tally.gate = tally.contact === tick + 1 ? h.size > hunter.bite.sizeRatio * p.size : tally.gate;
-            collide(h, p);
-            if (tally.gate && bite(h, p, tally)) {
-                return result({ h, p, heat, tick, tally, fatal: true });
-            }
+        const touch = touchStep(h, p, tick, tally);
+        if (touch === FATAL) {
+            return result({ h, p, heat, tick, tally, fatal: true });
+        }
+        // a hunter holding BITE with no body in its jaws pays `strikeMissCost` (the feed phase of the sim)
+        if (touch === NO_JAWS) {
+            charge(h, hunter.bite.miss);
         }
         charge(h, costOf(h, ho, hf));
         charge(p, costOf(p, po, pf));

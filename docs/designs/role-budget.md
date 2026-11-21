@@ -344,7 +344,7 @@ A straight chase: the predator sprints from tick 0 at a forager that sprints fro
 | 240       | 79                      | 80 and 83                              | 156                             | 81                     | 82 and 85           |
 | 300       | 93                      | 93 and 96                              | 175                             | 106                    | 107 and 109         |
 
-The largest gap closed in 250 ticks is 796 on `courser`, 540 on `courser` at effort 0.5 and 647 at the defaults (the anchors held the size sum at 74; the timeline lets the bodies shrink as they burn, so contact needs a smaller gap, and reads 792.8, 537.4 and 641.6: 3.2, 2.6 and 5.4 px under the anchors, always under, inside the 6 px of "Tolerances", which is about 2 ticks of the 2.4 px a tick the gap closes at the end of the run). At the defaults a hunter at effort 0.5 never catches a sprinting forager (11.2 against 12). With the rationed play on `courser`, a gap of 240 contacts at tick 74, 400 at tick 100, and 401 never.
+The largest gap closed in 250 ticks is 796 on `courser`, 540 on `courser` at effort 0.5 and 647 at the defaults (the anchors held the size sum at 74; the timeline lets the bodies shrink as they burn and pay `strikeMissCost` on every tick with nothing in the jaws, which the anchors left out, so contact needs a smaller gap, and reads 792.2, 536.6 and 640.8: 3.8, 3.4 and 6.2 px under the anchors, always under, inside the 7 px of "Tolerances", which is about 3 ticks of the 2.4 px a tick the gap closes at the end of the run). At the defaults a hunter at effort 0.5 never catches a sprinting forager (11.2 against 12). With the rationed play on `courser`, a gap of 240 contacts at tick 74, 400 at tick 100, and 401 never.
 
 `npm run audit:chase` on `predator:forager`, catch share at 80, 160, 240, 320 and 400 px (2 trials a cell, so a cell reads 0, 0.5 or 1 per bearing):
 
@@ -357,7 +357,7 @@ The largest gap closed in 250 ticks is 796 on `courser`, 540 on `courser` at eff
 
 ## Tolerances
 
-`--check` and the slow cross-check tests fail a cell outside these, with `RoleBudgetDrift`.
+`--check` and the slow cross-check tests fail a cell outside these, with `RoleBudgetDrift`. The scene of the cross-check stages a newborn hunter, which pays the juvenile burn, so the formula plays a juvenile hunter there (`formulaChase`); the budget's own rows play an adult. Both charge `strikeMissCost` on every tick the hunter holds BITE with nothing in its jaws, as the feed phase does.
 
 | Reading                                                                                          | Tolerance                                                                                        |
 | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
@@ -365,8 +365,8 @@ The largest gap closed in 250 ticks is 796 on `courser`, 540 on `courser` at eff
 | turn radius against `bodyTable`                                                                  | 0.5%                                                                                             |
 | energy per 100 ticks against `bodyTable`                                                         | 0.1%                                                                                             |
 | a straight chase's contact tick against the sim                                                  | 2 ticks                                                                                          |
-| the largest gap closed in 250 ticks against the anchor (a size sum held at 74)                   | 6 px, the timeline under the anchor: the bodies shrink as they burn (about 2 ticks at the end)   |
-| the kill tick                                                                                    | `contact + bites - 1`, within 2 ticks                                                            |
+| the largest gap closed in 250 ticks against the anchor (a size sum held at 74)                   | 7 px, the timeline under the anchor: the bodies shrink as they burn and pay the strike misses    |
+| the kill tick                                                                                    | the tick the last bite lands (no sooner than `contact + bites - 1`), within 2 ticks of the sim   |
 | the hunter's net energy per kill                                                                 | 5%                                                                                               |
 | a catch share against the audit                                                                  | sign and rank per bearing only                                                                   |
 | the herd rows                                                                                    | the scene's reading until T21a settles the stampede; then 10% on the warning and the clear ticks |

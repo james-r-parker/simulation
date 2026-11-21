@@ -195,7 +195,7 @@ export function collide(h, p) {
  * @param {Body} p the victim
  * @returns {boolean} whether the victim's centre lies within `biteArc` of the biter's heading (`inJaws`)
  */
-function inJaws(h, p) {
+export function inJaws(h, p) {
     if (h.p.bite.arc >= PI) {
         return true;
     }

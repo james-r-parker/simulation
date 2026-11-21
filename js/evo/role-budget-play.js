@@ -49,9 +49,19 @@ export const HUNTER_PERFECT = Object.freeze({
  *   over the body's cached heading so a chase takes no trigonometry here (the test holds it equal to `steer`)
  */
 export function steerOut(b, aim) {
-    const size = Math.sqrt(aim.x * aim.x + aim.y * aim.y) || 1;
-    const cross = (b.ch * aim.y - b.sh * aim.x) / size;
-    const dot = (b.ch * aim.x + b.sh * aim.y) / size;
+    return steerXY(b, aim.x, aim.y);
+}
+
+/**
+ * @param {import('./role-budget-body.js').Body} b the steering body
+ * @param {number} ax the aim's x
+ * @param {number} ay the aim's y
+ * @returns {number} `steerOut` of the aim, without the object (the chase steers twice a tick)
+ */
+function steerXY(b, ax, ay) {
+    const size = Math.sqrt(ax * ax + ay * ay) || 1;
+    const cross = (b.ch * ay - b.sh * ax) / size;
+    const dot = (b.ch * ax + b.sh * ay) / size;
     if (dot < 0) {
         return Math.sign(cross) || 1;
     }
@@ -73,7 +83,7 @@ export function hunterOut(h, p, play, tick) {
         return { turn: 0, sprint: 0 };
     }
     const lead = Math.min(dist / Math.max(speedOf(h), 1), LEAD_MAX);
-    const turn = steerOut(h, { x: dx + lead * p.vx, y: dy + lead * p.vy });
+    const turn = steerXY(h, dx + lead * p.vx, dy + lead * p.vy);
     const inView = play.sprint === 'always' || h.p.store.on === 0 || dist <= h.p.view.range;
     const lasts = play.sprint === 'always' || aboveFloor(h);
     const on = play.sprint !== 'never' && inView && tick >= play.runAt && lasts;
@@ -93,8 +103,8 @@ export function preyOut(h, p, play) {
     if (dist > play.awareGap) {
         return { turn: 0, sprint: 0, thrust: 0 };
     }
-    const aim = dist < play.jink ? breakAim(h, { x: dx, y: dy }, play.breakAngle) : { x: dx, y: dy };
-    return { turn: steerOut(p, aim), sprint: preySprints(p, play, dist) ? 1 : 0 };
+    const turn = dist < play.jink ? steerOut(p, breakAim(h, { x: dx, y: dy }, play.breakAngle)) : steerXY(p, dx, dy);
+    return { turn, sprint: preySprints(p, play, dist) ? 1 : 0 };
 }
 
 /**

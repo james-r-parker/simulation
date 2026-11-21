@@ -56,13 +56,13 @@ export function simChase(config, { hunter, prey, distance, bearing, straight }) 
 
 /**
  * The timeline of the same scene: the hunter from rest, sprinting while the prey is in its view and the store lasts, the
- * prey with the oracle evader's rationed sprint.
+ * prey with the oracle evader's rationed sprint. The staged hunter is a newborn, so it pays the juvenile burn.
  * @param {Readonly<Record<string, any>>} config an `arenaConfig`
  * @param {{hunter: string, prey: string, distance: number, bearing: number, straight: boolean}} scene the scene
  * @returns {{killTick: number | null}} the formula's kill tick
  */
 export function formulaChase(config, { hunter, prey, distance, bearing, straight }) {
-    const run = chaseTimeline(roleParams(config, hunter), roleParams(config, prey), {
+    const run = chaseTimeline(roleParams(config, hunter, {}, { age: 'juvenile' }), roleParams(config, prey), {
         gap: distance,
         bearing,
         hunter: { sprint: 'view' },

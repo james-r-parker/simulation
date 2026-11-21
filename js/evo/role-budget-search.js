@@ -3,7 +3,7 @@
 // overrides object in the format `audit:chase --config` reads. Pure; the script writes the files.
 
 import { arenaConfig } from './chase-arena.js';
-import { budgetChase } from './role-budget-chase.js';
+import { fitForRung, learnSlope, tierMargins } from './role-budget-tiers.js';
 import { roleParams } from './role-budget-params.js';
 
 /** The factors each candidate is scaled by. */
@@ -83,10 +83,20 @@ export function withPath(root, path, value) {
  * @param {Readonly<Record<string, any>>} config a validated config
  * @param {{hunter: string, prey: string}} pair the two specialisations
  * @param {import('./role-budget-model.js').RoleModel} model the model options
- * @returns {ReturnType<typeof budgetChase>} the pair's budget without the bearings
+ * @returns {{catchMargin: number, catchable: boolean, learnSlope: string, fit: boolean}} what the search reads of the pair's
+ *   budget: the tiers, not the step cells (the slack bisections cost more than the rest of the budget together)
  */
 function budgetOf(config, pair, model) {
-    return budgetChase(roleParams(config, pair.hunter), roleParams(config, pair.prey), model, { bearings: false });
+    const hunter = roleParams(config, pair.hunter);
+    const prey = roleParams(config, pair.prey);
+    const tiers = tierMargins(hunter, prey, model);
+    const slope = learnSlope(tiers, hunter, prey, model);
+    return {
+        catchMargin: tiers.perfect.broken,
+        catchable: tiers.perfect.broken >= 0,
+        learnSlope: slope,
+        fit: fitForRung(tiers, slope),
+    };
 }
 
 /**

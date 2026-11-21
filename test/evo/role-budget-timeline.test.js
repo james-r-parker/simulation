@@ -39,10 +39,18 @@ describe('the straight chase of the anchors table', () => {
         },
     );
 
-    it('kills at contact + bites - 1, within 2 ticks, on a straight chase', () => {
+    it('kills on the tick the last bite lands: one tick earlier the same chase has one bite fewer and no kill', () => {
         for (const gap of [60, 120, 180, 240, 300]) {
             const run = straight(courser, gap);
-            expect(Math.abs(run.killTick - (run.contactTick + run.bites - 1))).toBeLessThanOrEqual(2);
+            // a bite lands on a tick the hunter touches the prey, so the kill is no sooner than one tick a bite
+            expect(run.killTick).toBeGreaterThanOrEqual(run.contactTick + run.bites - 1);
+            const before = chaseTimeline(courser.hunter, courser.prey, {
+                gap,
+                prey: { sprint: 'always', jink: 0 },
+                maxTicks: run.killTick - 1,
+            });
+            expect(before.killTick).toBeNull();
+            expect(before.bites).toBe(run.bites - 1);
         }
     });
 
@@ -74,16 +82,17 @@ describe('the straight chase of the anchors table', () => {
             }
             return lo;
         };
-        // The anchors held the size sum at 74; the timeline lets the bodies shrink as they burn, so contact needs a smaller gap:
-        // always under the anchor, by 3.2, 2.6 and 5.4 px. The plan's tolerance is 6 px (about 2 ticks at 2.4 px a tick).
+        // The anchors held the size sum at 74 and left out the strike misses; the timeline lets the bodies shrink as they burn
+        // and charges the misses, so contact needs a smaller gap: always under the anchor, by 3.8, 3.4 and 6.2 px. The plan's
+        // tolerance is 7 px (about 3 ticks at 2.4 px a tick).
         const reads = [
-            [largest(courser, {}), 796, 792.8],
-            [largest(courser, { effort: 0.5 }), 540, 537.4],
-            [largest(defaults, {}), 647, 641.6],
+            [largest(courser, {}), 796, 792.2],
+            [largest(courser, { effort: 0.5 }), 540, 536.6],
+            [largest(defaults, {}), 647, 640.8],
         ];
         for (const [got, anchor, recorded] of reads) {
             expect(anchor - got).toBeGreaterThan(0);
-            expect(anchor - got).toBeLessThan(6);
+            expect(anchor - got).toBeLessThan(7);
             expect(Math.abs(got - recorded)).toBeLessThan(0.1);
         }
     });
@@ -130,6 +139,37 @@ describe('chaseTimeline', () => {
         expect(run.gate).toBe(false);
         expect(run.killTick).toBeNull();
         expect(run.bites).toBe(0);
+    });
+
+    it('reads the size gate on each bite, as couldBite does: a gate refused at the first contact holds once the prey has shrunk', () => {
+        const base = JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8'));
+        const play = { gap: 240, prey: { sprint: 'always', jink: 0 } };
+        const at = (/** @type {number} */ ratio, /** @type {any} */ extra = {}) => {
+            const set = bodies({ ...base, huntSizeRatio: ratio });
+            return chaseTimeline(set.hunter, set.prey, { ...play, ...extra });
+        };
+        let found = null;
+        for (let ratio = 1.5; ratio <= 1.6 && found === null; ratio += 0.002) {
+            const full = at(ratio);
+            if (full.contactTick !== null && !at(ratio, { maxTicks: full.contactTick }).gate && full.gate) {
+                found = full;
+            }
+        }
+        expect(found).not.toBeNull();
+        expect(found.bites).toBeGreaterThan(0);
+        expect(found.killTick).not.toBeNull();
+    });
+
+    it('charges strikeMissCost each tick the hunter holds BITE with no body in its jaws, as the feed phase of the sim does', () => {
+        const off = bodies({ ...overrides, strikeMissCost: 0 });
+        const on = bodies({ ...overrides, strikeMissCost: 2 });
+        const far = (/** @type {any} */ set) =>
+            chaseTimeline(set.hunter, set.prey, { gap: 3000, maxTicks: 20, prey: { sprint: 'never', jink: 0 } });
+        expect(far(on).hunterSpent - far(off).hunterSpent).toBeCloseTo(40, 0);
+        // a tick with the prey in the jaws is not charged: contact from tick 1, five bites in a row
+        const near = (/** @type {any} */ set) =>
+            chaseTimeline(set.hunter, set.prey, { gap: 60, prey: { sprint: 'always', jink: 0 } });
+        expect(near(on).hunterSpent - near(off).hunterSpent).toBeLessThan(2 * near(on).killTick);
     });
 
     it('does not kill a breaking prey a fresh hunter reaches at the defaults, and does kill a spent one on courser', () => {
