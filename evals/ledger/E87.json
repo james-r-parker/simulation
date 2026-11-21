@@ -1,0 +1,15 @@
+{
+  "id": "E87",
+  "date": "2026-10-31",
+  "branch": "evals/balance-screen",
+  "hypothesis": "Patchy space with dispersal (more or wider wall gaps, spread refuges) keeps hunters by recolonisation and raises families per basin by gene flow.",
+  "prediction": "More or wider gaps raise basin_lineage_effective though under 3, and keep predators; spread refuges keep prey but may starve hunters.",
+  "targets": ["eval.predators_at_end", "eval.prey_types_at_end", "eval.basin_lineage_effective", "eval.mating_share"],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "evals/screens/results/space/defaults.report.json",
+  "after": "evals/screens/results/space/ (5 arms x 8 seeds x 200000 ticks)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "A screen. No arm beats the defaults: predators at the end 0-3/8, maternal lines 1.0-1.2 effective everywhere, one seed lost every prey type with spread refuges. Prediction wrong."
+}

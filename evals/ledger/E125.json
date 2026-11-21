@@ -1,0 +1,17 @@
+{
+  "id": "E125",
+  "date": "2026-11-06",
+  "branch": "feat/hunter-practice-verdict",
+  "hypothesis": "Planned 16-seed confirmation of the best E124 reward arm against the shuffled-reward and no-plasticity controls. Planned as E118 in hunter-learning.md.",
+  "prediction": "Not run. The adopt rule (T22) needs the best reward arm to beat the shuffled arm on the age-matched conversion gain; in E124 the shuffled arm had the best point estimate of all nine arms (-0.005 against the best reward arm's -0.020), and in this project 8-seed gains have shrunk at 16 seeds (E116, E120), never appeared. A 16-seed run cannot turn a point-estimate loss into an interval that excludes 0 in the reward arm's favour often enough to justify the CPU.",
+  "targets": ["eval.hunter_conversion_gain"],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "-",
+  "after": "-",
+  "verdicts": {
+    "eval.hunter_conversion_gain": "-"
+  },
+  "effect": "no-difference",
+  "note": "Skipped by decision (balance autonomy): T22 takes the loss path on E124 and deletes reward.js, the Hebbian scaling, the reward keys and the shuffled-reward control. eval.hunter_conversion_gain stays as a detector."
+}

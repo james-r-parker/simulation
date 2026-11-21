@@ -1,0 +1,19 @@
+{
+  "id": "E231",
+  "kind": "ladder",
+  "outcome": "falsified",
+  "plan": "training-loop.md",
+  "date": "2026-11-20",
+  "branch": "feat/training-loop-e231",
+  "hypothesis": "E-TL-7 (training-loop T22c): nursery is capped by both maxGenerations 40 and plateauStop 6 (E208 and E230 each moved one and tied on 16 of 16), so lifting both together should let the 7 stalled offsets pass.",
+  "prediction": "Written before the run: nursery passes on at least 11 of 16 offsets against 9 and the screen reads better; falsified if the stalled offsets still stall (then nursery is a skill limit, not a budget limit).",
+  "targets": [],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "base ladder: nursery passes on 9 of 16 tune offsets",
+  "after": "scripts/run-detached.sh E-TL-7 --frozen -- npm run train:screen -- --grid evals/train-screens/nursery-both.grid.json",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Prediction falsified: the stalled offsets still stall, so nursery is a skill limit, not a budget limit. Run E-TL-7 (arm nursery-80-nostop: maxGenerations 80, plateauStop 0, against base, offsets 0-120). 1 up, 0 down, 15 tied, mean diff +0.08 [0, 0.239], sign test p 1.0, no verdict. Nursery passes 56 to 63% (one of 7 stalled offsets, 32, rescued), hunt-contact 56 to 63, hunt-weak 25 to 25, hunt-mid 19 to 19, passed last stage 3 to 3; cpu 17.6 to 23.3 h (+32%). Failing drill on the 7 stalled base offsets: drill.food-behind.edgeLow (min 0.3) fails on all 7 at the last gate (best 0.07 to 0.52); food-ahead passes at some gate on 6 (best 0.658) and fails on offset 24 (best -0.29, food-behind -0.14). The 80-generation arm reads the same on the 6 remaining stalled offsets.",
+  "reports": ["evals/decisions/E231/results.md"]
+}

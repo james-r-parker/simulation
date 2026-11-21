@@ -1,0 +1,13 @@
+{
+  "id": "E43",
+  "date": "2026-10-23",
+  "branch": "eval/fs-t15g-predator-economy",
+  "hypothesis": "With the predator rescue on (predatorRescueMin 3, predatorRescueInterval 450), a combination of predatorKillEnergy, predator passiveLossMultiplier and splitMinEnergyMultiplier lifts eval.predator_births to about 30 per seed without a population collapse.",
+  "prediction": "base fixes presence but births stay under 10; no single lever reaches 30; kill-300 is the strongest single lever; kill300-passive0.6-split0.6 is the first to reach about 30; the wide carcass arm is the plague risk.",
+  "targets": ["eval.predator_births", "eval.catch_rate", "eval.predator_presence"],
+  "before": "evals/screens/results/predator-economy/defaults.report.json",
+  "after": "evals/screens/results/predator-economy/<arm>.report.json (one per arm; table in evals/screens/results/predator-economy/table.md)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "T15g screen, 15 arms x 4 seeds (offset 28) x 200000 ticks, policy live. Id E43 chosen to avoid the plan E36-E42 reservations. Presence 0.37 to 1.00 with the rescue; predator births 4.5 (reference) and 5 (rescue only) up to 41-44 on the three split-0.6 combinations, carried by one seed each (10-17 on the others); split-0.6 alone 59.8; kill payment idle (kill-300 4.0); catch_rate 0.003-0.022 everywhere. Proposed: kill150-passive0.6-split0.6. See sim-notes 2026-10-23 \"Predator economy screen\"."
+}

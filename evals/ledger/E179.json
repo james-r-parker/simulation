@@ -1,0 +1,42 @@
+{
+  "id": "E179",
+  "kind": "compare",
+  "outcome": "no-verdict",
+  "plan": "honest-budgets.md",
+  "hypothesis": "honest-budgets Phase 6: leaving real carcasses (killGorgeShare), relaxing territory clustering, raising predator splitMinEnergyMultiplier, blocking canHunt-crossing spec flips (specFlipNoHunt), and giving cubs a juvenile plant share or size parity raises predator recruitment and juvenile survival.",
+  "prediction": "On the 16-seed screen (honest-recruit.grid.json, 400000 ticks), the finalist (cub-plant, cub-size, or recruit) lowers eval.hunter_juvenile_death_share below 0.55 while keeping eval.hunter_catches_per_1k and eval.hunter_income_share.carcass alive, and the 64-seed keep rule reads no guard WORSE. Falsified when every arm reads eval.hunter_catches_per_1k or held WORSE. Addition made before the run (2026-11-16, after the T33a and T33b detectors merged, PR 467): the finalist also raises eval.recruit_matured_share and the replaced share of its hunter births (eval.recruit_replaced_share.<source>), and eval.recruit_lineage_share. Screen verdicts (power at 16 seeds, sim-notes 2026-11-16): eval.recruit_matured_share (detectable 0.10) and eval.recruit_lineage_share (0.10) only. Context only, no verdict at 16 seeds: eval.recruit_replaced_share.* (no verdict, or above 0.20), eval.carcass_loss_share.* (a full pool loses 4 percent of carcass energy on the defaults, not material, so it should not move).",
+  "targets": [
+    "eval.hunter_juvenile_death_share",
+    "eval.hunter_catches_per_1k",
+    "eval.hunter_income_share.carcass",
+    "eval.boom_bust_count",
+    "eval.recruit_matured_share",
+    "eval.recruit_replaced_share.split-hunter-parent",
+    "eval.recruit_replaced_share.spec-flip",
+    "eval.recruit_replaced_share.mate-hunter-parent",
+    "eval.recruit_replaced_share.floor",
+    "eval.recruit_lineage_share",
+    "eval.carcass_loss_share.lost",
+    "eval.carcass_loss_share.eaten",
+    "eval.carcass_loss_share.faded"
+  ],
+  "before": "control arm of evals/screens/honest-recruit.grid.json (killGorgeShare 1), seeds 1 to 16, 400000 ticks, floor on, policy live",
+  "after": "the recruit arms of the same screen (gorge, recruit, cub-plant, cub-size)",
+  "verdicts": {
+    "eval.hunter_juvenile_death_share": "no-difference",
+    "eval.hunter_catches_per_1k": "no-difference",
+    "eval.hunter_income_share.carcass": "-",
+    "eval.boom_bust_count": "-"
+  },
+  "note": "T36: gorge (killGorgeShare 0.4) against the defaults on seeds 65 to 128, 400000 ticks, keep rule reads no harm (alive 13 harmed and 14 recovered, smallest loss 28 seeds; under80 2 and 4; held 0 and 3; catches +5.4 percent, no difference). Targets: juvenile death share 0.863 to 0.855 (no difference), carcass income share 0.005 to 0.152, carcass energy eaten 0.16 to 0.57; the Done-when row is missed (hunters alive 41 of 64 against 48). The screen falsified recruit, cub-plant and cub-size (specFlipNoHunt empties the hunters world). The user adopted killGorgeShare 0.4 as a narrow T37 on 2026-11-16 (season 10 in place); T36a is not run and Phase 6 stays open (T39: a screen without specFlipNoHunt).",
+  "reports": [
+    "evals/decisions/E179/results.md",
+    "evals/decisions/E179/compare.txt",
+    "evals/decisions/E179/compare.json"
+  ],
+  "date": "2026-11-15",
+  "branch": "feat/honest-budgets-t34-recruit",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "no-difference"
+}

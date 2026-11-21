@@ -1,0 +1,23 @@
+{
+  "id": "E188",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "plan": "detector-baseline.md",
+  "date": "2026-11-16",
+  "branch": "eval/shared-baseline-e188",
+  "hypothesis": "detector-baseline T7 re-record: E187 went stale when gorge (PR 477, killGorgeShare 0.4) moved season 10 rulesHash to 38be2908ad820c86, and PR 478 fixed eval.pack_prey_size_ratio (it read the victim size after reap). One 128-seed floor-on and floor-off run of the current defaults replaces E187 as the shared baseline.",
+  "prediction": "Characterization, no arm compared; the E187 prediction is not re-tested. Checked: npm run baseline:status reads current against this report, and eval.pack_prey_size_ratio is non-null on most floor-on seeds now that PR 478 reads the size from the death record.",
+  "targets": ["eval.pack_prey_size_ratio", "eval.pack_lift", "eval.hunter_catches_per_1k"],
+  "before": "not applicable: a baseline of the defaults; E187 is the stale predecessor (rules before gorge, broken pack size reading)",
+  "after": "npm run eval -- --seeds 128 --ticks 200000 --policy live --workers 12 --save-champions 2 (floor on), and the same with --config evals/floor-off-config.json (floor off), launched with scripts/run-detached.sh --frozen on origin/main 835f98cb",
+  "verdicts": {
+    "eval.pack_prey_size_ratio": "-",
+    "eval.pack_lift": "-",
+    "eval.hunter_catches_per_1k": "-"
+  },
+  "note": "Floor-on reads (128 seeds): eval.pack_prey_size_ratio non-null on 120 (0 on E187), mean 1.000; eval.pack_lift non-null on 112, mean 1.628; eval.hunter_catches_per_1k 1.290 on all 128; eval.scout_alarm_lead_share non-null on 1 (alarm calls with a threat stay rare, not a detector bug: PR 478). baseline:status reads current. Power, liveness and the Baseline tables from this report are T8a, held for the user go-ahead (2026-11-16).",
+  "reports": ["evals/decisions/E188/defaults-floor-on.json", "evals/decisions/E188/defaults-floor-off.json"],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "no-difference"
+}

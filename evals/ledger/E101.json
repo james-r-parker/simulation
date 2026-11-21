@@ -1,0 +1,21 @@
+{
+  "id": "E101",
+  "date": "2026-11-05",
+  "branch": "feat/herd-body-radius",
+  "hypothesis": "E99's body60 arm (+21% population on 8 seeds) holds on 16 seeds",
+  "prediction": "population +10% or more with the interval excluding 0 and herd roles within 30%",
+  "targets": [
+    "eval.population_mean",
+    "eval.trampled_share",
+    "eval.herd_seeded_patches",
+    "eval.herd_carcass_meal_share",
+    "eval.predators_at_end"
+  ],
+  "beforePolicy": "map-elites-v6",
+  "afterPolicy": "map-elites-v6",
+  "before": "evals/experiments/E95-food15-cap.json",
+  "after": "evals/experiments/E101-body60.json",
+  "verdicts": {},
+  "effect": "worse",
+  "note": "16 seeds x 200000 ticks. Population 112.5 to 131.5 (+16.9%, interval -16.97 to 52.93, no verdict). Predators at the end 0.4375 to 0 (interval -2 to -0.125, worse). Trampled share 0.0400 to 0.0389 (no change). Herd seeded patches 0.00757 to 0.00625 (n.s.). Herd carcass meal share 0.0162 to 0.0188 (n.s.). Fed median lifespan 4599 to 4647 (no difference). Group cohesion under threat worse. Verdict: not adopted; herdBodyRadius deleted."
+}

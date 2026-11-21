@@ -1,0 +1,47 @@
+{
+  "id": "E152",
+  "kind": "compare",
+  "outcome": "falsified",
+  "plan": "carrying-capacity.md",
+  "hypothesis": "carrying-capacity Phase 2, E-CC-1: food is the brake. Cutting foodRegrowPerArea to the eaten rate (0.016, from 1.59 plant meals per tick, evals/decisions/E152/food-ratio-8x200000.json) makes intake per agent fall with density, so the world settles under the cap and fewer seeds crash.",
+  "prediction": "A food arm at or under the eaten rate raises the held share from about 0.23 to 0.6 or more on 64 seeds and lowers eval.cap_share. A flat season with default food does not. eval.chance_food_energy_per_1k falls below the deliberate figure. Falsified when no food arm reads held better, or a food arm reads held or alive worse.",
+  "targets": [
+    "eval.cap_share",
+    "eval.density_starve_slope",
+    "eval.food_standing_share",
+    "eval.births_per_1k",
+    "eval.lineages_alive",
+    "eval.spec_effective",
+    "eval.deliberate_food_share",
+    "eval.collision_death_share"
+  ],
+  "before": "evals/decisions/E151/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d",
+  "after": "evals/decisions/E152/screen16/: 10 arms x 16 seeds (1 to 16), floor on, live policy, 200000 ticks; the plan stopped at the first pass, T10 (64 seeds) not run",
+  "note": "Plan STOPPED at Phase 2: E-CC-1 falsified. Paired exact test, defaults against each food arm on seeds 1 to 16: held reads worse on all eight food arms (6 seeds lost, 0 gained, p 0.031; the defaults hold 6 of 16, every food arm 0 of 16); alive reads worse on food-0.5x and flat-food-0.5x (9 lost, 1 gained, p 0.021) and no-harm on the other six (food-0.75x and food-1.0x 6/1, p 0.13). Food brakes (eval.cap_share 0 to 0.04, starvation elasticity positive 0.02 to 0.22) but every food arm crashes as deep as the defaults, more often and with larger swings, at a smaller size; a flat season does not help (flat-defaults held 4/16). Seeds under 40 after burn-in: defaults 9/16, food-0.75x and food-0.5x 16/16. Detectors are unverified at 16 seeds, so this is a stop by the plan's rule, not a metric verdict. Next: the mating Allee edge, a new plan. T10 skipped (see Decisions in carrying-capacity.md).",
+  "reports": [
+    "evals/decisions/E151/defaults-floor-on.json",
+    "evals/decisions/E152/food-ratio-8x200000.json",
+    "evals/decisions/E152/screen16/defaults.report.json",
+    "evals/decisions/E152/screen16/flat-defaults.report.json",
+    "evals/decisions/E152/screen16/flat-food-0.5x.report.json",
+    "evals/decisions/E152/screen16/flat-food-0.75x.report.json",
+    "evals/decisions/E152/screen16/flat-food-1.0x.report.json",
+    "evals/decisions/E152/screen16/flat-food-1.5x.report.json",
+    "evals/decisions/E152/screen16/food-0.5x.report.json",
+    "evals/decisions/E152/screen16/food-0.75x.report.json",
+    "evals/decisions/E152/screen16/food-1.0x.report.json",
+    "evals/decisions/E152/screen16/food-1.5x.report.json",
+    "evals/decisions/E152/screen16-rank.md",
+    "evals/decisions/E152/screen16-traces.md"
+  ],
+  "date": "2026-11-11",
+  "branch": "feat/carrying-capacity-calibrate",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "worse",
+  "verdicts": {
+    "guard.held": "worse",
+    "guard.alive": "-",
+    "eval.cap_share": "-"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "E38",
+  "date": "2026-10-28",
+  "branch": "eval/fs-t43-t44",
+  "hypothesis": "Round A screen (fitness-and-selection T44): each in-world merit lever alone, on policy map-elites-v6 with the default fitnessV6 weights, moves eval.deliberate_food_share and eval.skill_trend up without a collapse. The newborn arms (maturityTicks 1200, childEnergyMin 50) test whether a longer immaturity or a smaller minimum gift changes child survival and lineage success.",
+  "prediction": "Screen of 9 arms x 4 seeds (29-32) x 200000 ticks, policy map-elites-v6, base = merit off; not a verdict, 4 seeds are noisy.\n- merit-only (credits and tracker, every lever 0): metrics equal base exactly or within noise (merit changes nothing the sim reads).\n- mate-0.005: within noise of base; mate-0.02: mating choice tilts to high-merit males, deliberate_food_share up a little (+5 to +15%), skill_trend not clearly different at 4 seeds.\n- birth-0.25: small effect, deliberate share up slightly; births and population near base.\n- split-100: gate blocks some splits (floor population 80 keeps it open below that); births_per_1k down 5 to 15%, deliberate share up. split-300: a stronger gate (typical lifetime deliberate intake is a few hundred), births_per_1k down more than 15% so it is CUT by Scorecard item 3, or lineages_alive falls.\n- maturity-1200: fewer matured children, population and births lower; child_survival lower. childmin-50: more, weaker births; births_per_1k up, child_survival down.\n- Expected survivors for round B: merit-only (as the switch), mate-0.005, mate-0.02, birth-0.25, split-100. No arm collapses (population above minAgents on 4 of 4) except possibly split-300.",
+  "targets": [
+    "eval.deliberate_food_share",
+    "eval.skill_trend",
+    "eval.births_per_1k",
+    "eval.lineages_alive",
+    "eval.spec_dominance"
+  ],
+  "beforePolicy": "map-elites-v6",
+  "afterPolicy": "map-elites-v6",
+  "before": "evals/screens/results/fitness-a/base.report.json",
+  "after": "evals/screens/results/fitness-a/<arm>.report.json (one per arm; table in evals/screens/results/fitness-a/table.md)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "T44 screen, 9 arms x 4 seeds (offset 28, benchmark seeds 29-32) x 200000 ticks, policy map-elites-v6, grid evals/screens/fitness-a.grid.json; a screen, not a verdict. Scorecard: merit-only, mate-0.005, mate-0.02, birth-0.25, split-100, split-300 CUT by item 3 (births_per_1k -16% to -28%); maturity-1200 and childmin-50 pass; none collapses (item 1 ok everywhere). Prediction wrong on the central point: merit-only was predicted equal to base, but meritEnabled switches on merit ranking of free slots at the population cap (birth-cap.js, T21a), so merit-only alone gives births -24%, mating 0.199 to 0.155, fed lifespan 5547 to 8304; the 3000-tick identity test never reaches the cap. Against merit-only: split-300 deliberate_food_share 0.134 (+14%), skill_trend +0.012, births +7%; split-100 share +7%; mate-0.005 equals merit-only; mate-0.02 worse; birth-0.25 share +1%. Predicted split-300 cut and maturity-1200/childmin-50 effects held in direction (childmin-50 mating +42%, births +4%; maturity-1200 mating -38%, child_survival 0.88). See sim-notes 2026-10-28 \"Round A\"."
+}

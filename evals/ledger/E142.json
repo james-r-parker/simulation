@@ -1,0 +1,25 @@
+{
+  "id": "E142",
+  "date": "2026-11-07",
+  "branch": "eval/instrument-baselines",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "no-difference",
+  "hypothesis": "Season baseline (seasonal-movement T5): the season barely changes where agents live.",
+  "prediction": "season_map_distance and winter_band_shift near flat on the defaults.",
+  "targets": [
+    "eval.season_map_distance",
+    "eval.herd_season_shift",
+    "eval.winter_band_shift",
+    "eval.winter_patch_proximity"
+  ],
+  "before": "seasonal-movement.md Phase 1 premise (no comparison arm)",
+  "after": "season-baseline.json: defaults, floor on, 200000 ticks, configHash ff8d890a5a70c14d, 32 seeds",
+  "verdicts": {
+    "eval.season_map_distance": "-",
+    "eval.herd_season_shift": "-",
+    "eval.winter_band_shift": "-",
+    "eval.winter_patch_proximity": "-"
+  },
+  "note": "Single-arm baseline. season_map_distance 0.346, herd_season_shift 0.619, winter_band_shift 0.016 (near 0, needs absolute units), winter_patch_proximity -0.115; season_map_distance direction unsettled (watch?)."
+}

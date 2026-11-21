@@ -1,0 +1,25 @@
+{
+  "id": "E195",
+  "kind": "compare",
+  "outcome": "no-verdict",
+  "plan": "training.md",
+  "date": "2026-11-19",
+  "branch": "feat/training-stages-hunt",
+  "hypothesis": "training.md Phase 3 style trial: champions-v1 seeded with the six champions of E-TS-1c offset 0 (hunt-weak passed, hunt stalled; exam rows 1 and 3 pass, row 8 fails) is better than the live policy on food income. An experiment only: LIVE_POLICY unchanged.",
+  "prediction": "The plan's done line (training.md Phase 3): better on eval.food_energy_per_1k and eval.food_energy_per_1k@20k, not worse on eval.floor_episodes. Not committed before the run: written afterwards from the plan's line.",
+  "targets": ["eval.food_energy_per_1k", "eval.food_energy_per_1k@20k", "eval.floor_episodes"],
+  "beforePolicy": "live",
+  "afterPolicy": "champions-v1",
+  "before": "npm run eval -- --seeds 16 --ticks 200000 --policy live, from origin/main 60b8a0d9",
+  "after": "same with --policy champions-v1 --policy-options {championsDir: .sim/champions/ets-1c-o0}",
+  "verdicts": {
+    "eval.food_energy_per_1k": "no-difference",
+    "eval.behaviour_coverage": "better",
+    "eval.deliberate_food_share": "better",
+    "eval.chase_turn_jitter": "better",
+    "eval.bite_on_prey_view": "worse"
+  },
+  "effect": "no-difference",
+  "note": "food_energy_per_1k 426.5 to 483.6 (+13.4%, interval [-11.3, 101.7]), no-difference; @20k 399.8 to 372.8 (-6.7%), unverified; floor_episodes 0.25 to 0.4375, needs 32 seeds: the plan's done line is not met at 16 seeds. Directional (unverified or needs more seeds): bite_idle 0.65 to 0.34, predators_at_end 9.9 to 22.5, hunter_juvenile_death_share 0.87 to 0.74, hunter_catches_per_1k 1.385 to 0.843; bite_on_prey_view is the one worse (0.990 to 0.970). 64 seeds (offset 64, --keep-rule, CHAMP-v1-ets1c-64): food_energy_per_1k +12.5% better [26.0, 77.2], @20k -6.7% unverified, keep rule WORSE on hunter_catches_per_1k (-44.9%; hunter_median_lifespan +55%, kills per life +5.4%): not adoptable. See compare-64.txt.",
+  "reports": ["evals/decisions/E195/results.md", "evals/decisions/E195/compare.txt"]
+}

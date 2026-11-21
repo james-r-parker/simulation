@@ -1,0 +1,19 @@
+{
+  "id": "E201",
+  "kind": "diagnosis",
+  "outcome": "finding",
+  "plan": "training-stages.md",
+  "date": "2026-11-19",
+  "branch": "feat/training-stages-hunt",
+  "hypothesis": "Consolidated outcome record of the hunt rung after nine ladder iterations (E191, E194, E196 to E200 and the b and c records): why longer, graded sprint and prey share do not climb to full-sprint prey-ahead, and what the retention review costs.",
+  "prediction": "Not applicable: an outcome record, no run; its levers carry their own predictions when built.",
+  "targets": [],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "none (no arm compared)",
+  "after": "none",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "No run, no verdict. prey-ahead winShareOverReference has not read above 0.12 in any run; elites never reach the jaws (never-in-jaws 121 to 128 of 128); the rungs help only offsets already past them; the retention review drags runs back to nursery or hunt-weak; nursery stalls on 4 of 8 offsets. Ranked levers: config or curriculum (keep the best passing elite through a review, more offsets, pool opponents in hunt) and sim rule or keep-rule read (prey stamina, hunter stamina, T44 kin inhibition). Tasks T59 to T63.",
+  "reports": ["evals/decisions/E201/results.md"]
+}

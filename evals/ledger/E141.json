@@ -1,0 +1,19 @@
+{
+  "id": "E141",
+  "date": "2026-11-07",
+  "branch": "eval/instrument-baselines",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "no-difference",
+  "hypothesis": "Reach baseline (habitat-cover T2): on the defaults prey live far from cover and inside the food patches.",
+  "prediction": "prey_cover_distance large, prey_within_dash_share low; the premise for rim rings holds.",
+  "targets": ["eval.prey_cover_distance", "eval.prey_within_dash_share", "eval.prey_in_patch_share"],
+  "before": "habitat-cover.md Phase 1 premise (no comparison arm)",
+  "after": "reach-baseline.json: defaults, floor on, 200000 ticks, configHash ff8d890a5a70c14d, 32 seeds",
+  "verdicts": {
+    "eval.prey_cover_distance": "-",
+    "eval.prey_within_dash_share": "-",
+    "eval.prey_in_patch_share": "-"
+  },
+  "note": "Single-arm baseline. prey_cover_distance 2070 px (1430-3150), within_dash 0.103, in_patch 0.341; premise holds. eval:power detectable change 30% / 50% / 15%."
+}

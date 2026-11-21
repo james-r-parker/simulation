@@ -14,7 +14,7 @@
 #   none of the deleted legacy paths (LEGACY_PATHS) comes back, and AGENTS.md, README.md and the skills under
 #   .claude/skills/ do not use the word "legacy" except on a line that links legacy-audit.md or bench/legacy-baseline.json.
 # - One source per served worker: a file in public/ has no same-named copy under js/.
-# - evals/experiments.json is valid against evals/experiments.schema.json (scripts/check-experiments.mjs).
+# - every record in evals/ledger/ is valid against evals/experiments.schema.json (scripts/check-experiments.mjs).
 # - scripts/flag-ledger.json lists every boolean or enum config rule, names no key that is gone, and names no plan that
 #   is built while its key still exists (scripts/check-flag-ledger.mjs).
 # - wasm/blob-kernels.wasm matches its .sha256 and wasm/blob-kernels.src.sha256 its sources, and a fresh build matches

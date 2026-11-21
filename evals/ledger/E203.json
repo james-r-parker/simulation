@@ -1,0 +1,25 @@
+{
+  "id": "E203",
+  "kind": "compare",
+  "outcome": "finding",
+  "plan": "training.md",
+  "date": "2026-11-19",
+  "branch": "feat/training-stages-hunt",
+  "hypothesis": "training.md Phase 3 style trial: champions-v1 seeded with the champions of E-TS-1h offset 144 (nursery to hunt-mid passed; archive-159.json) is better than the live policy on food income, at 64 seeds with the keep rule. An experiment only: LIVE_POLICY unchanged.",
+  "prediction": "The plan's done line (training.md Phase 3): better on eval.food_energy_per_1k and eval.food_energy_per_1k@20k, not worse on eval.floor_episodes. Not a new prediction: it was written beforehand in that doc, not for this run.",
+  "targets": ["eval.food_energy_per_1k", "eval.food_energy_per_1k@20k", "eval.floor_episodes"],
+  "beforePolicy": "live",
+  "afterPolicy": "champions-v1",
+  "before": "npm run eval -- --seeds 64 --seed-offset 64 --ticks 200000 --policy live (.sim/evals/live-64.json)",
+  "after": "same with --policy champions-v1 --policy-options {championsDir: .sim/champions/keep/ets-1h-o144} (.sim/evals/champions-ets1h-64.json)",
+  "verdicts": {
+    "eval.food_energy_per_1k": "better",
+    "eval.hunter_catches_per_1k": "better",
+    "eval.median_lifespan": "worse",
+    "eval.diversity": "worse",
+    "eval.collision_death_share": "worse"
+  },
+  "effect": "better",
+  "note": "Keep rule: all guards no harm. food_energy_per_1k 411.5 to 447.1 (+8.7%, better), hunter_catches_per_1k +20.4% better; @20k 378.8 to 436.3 (+15.2%) unverified; floor_episodes 0.34 to 0.25 unverified (interval [-0.36, 0.11]). Worse: median_lifespan -10%, diversity -16.8%, collision_death_share +19%, defender and reproducer fitness -5 to -6%. The done line is not met as written (@20k and floor_episodes are unverified). LIVE_POLICY unchanged pending the user's watch.",
+  "reports": ["evals/decisions/E203/results.md", "evals/decisions/E203/compare.txt"]
+}

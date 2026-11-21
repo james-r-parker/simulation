@@ -1,0 +1,19 @@
+{
+  "id": "E240",
+  "kind": "compare",
+  "outcome": "no-verdict",
+  "plan": "metric-noise.md",
+  "date": "2026-11-20",
+  "branch": "unknown",
+  "hypothesis": "metric-noise stream: two 128-seed, 600000-tick evals, the long-window reads that metric-noise.md T4 needs.",
+  "prediction": "None recorded: the run was stopped before any read, and the prediction was not written to a record at the time.",
+  "targets": [],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "not produced",
+  "after": "not produced",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Backfilled from docs/handoffs/2026-11-20-build-the-plans.md, which cites E240 with no record. The run ran at 13% of the machine for a day and was stopped on the user's word at 27 of 128 seeds, so it gave no verdict. Rerun at 8 workers per arm when metric-noise.md T4 is picked up.",
+  "reports": ["evals/decisions/E240/results.md"]
+}

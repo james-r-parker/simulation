@@ -8,6 +8,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { availableParallelism, loadavg } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readLedger } from './lib/ledger.mjs';
 import { collectRuns, inFlight, seedsDoneOf } from './lib/run-workers.mjs';
 import { experimentsBlock, ladderBlock, machineBlock, prsBlock, runsBlock, shipsBlock } from './lib/state-blocks.mjs';
 import { renderState } from './lib/state-format.mjs';
@@ -25,22 +26,6 @@ function readText(file) {
     } catch {
         return null;
     }
-}
-
-/**
- * @param {string} root the repository root
- * @returns {{id: string, date: string, outcome?: string}[]} the experiment records: the ledger directory when it exists,
- *   else the single file it replaces
- */
-export function readExperiments(root) {
-    const ledger = join(root, 'evals', 'ledger');
-    if (existsSync(ledger)) {
-        return readdirSync(ledger)
-            .filter((f) => /^E\d+\.json$/.test(f))
-            .map((f) => JSON.parse(readFileSync(join(ledger, f), 'utf8')));
-    }
-    const text = readText(join(root, 'evals', 'experiments.json'));
-    return text === null ? [] : (JSON.parse(text).experiments ?? []);
 }
 
 /**
@@ -97,7 +82,7 @@ export function gatherState(root, options = {}) {
         runs,
         machine: machineBlock(runs, { threads: availableParallelism(), load: loadavg()[0] }),
         ladder: newestLadder(root),
-        experiments: experimentsBlock(readExperiments(root), options.today ?? new Date().toISOString().slice(0, 10)),
+        experiments: experimentsBlock(readLedger(root), options.today ?? new Date().toISOString().slice(0, 10)),
         ships: shipsBlock(readText(join(root, '.checklogs', 'ship.jsonl')) ?? ''),
         prs: openPrs(root),
         worktrees: trees ? countByClass(/** @type {any} */ (trees)) : null,

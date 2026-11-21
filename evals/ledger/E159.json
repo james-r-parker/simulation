@@ -1,0 +1,38 @@
+{
+  "id": "E159",
+  "kind": "compare",
+  "outcome": "no-verdict",
+  "plan": "eat-choice.md",
+  "hypothesis": "eat-choice Phase 2, E-EC-1: when holding BITE slows a forager (grazeThrust below 1), foragers bite at food and lift the bite to move, so the share of food contacts that bite falls below the plain bite arm's.",
+  "prediction": "With grazeThrust below 1, eval.food_contact_bite_share falls below bite's, with no keep-rule guard worse. Falsified when the share does not fall below bite's, or a guard reads WORSE.",
+  "targets": [
+    "eval.food_contact_bite_share",
+    "eval.deliberate_food_share",
+    "eval.food_energy_per_1k",
+    "eval.median_lifespan",
+    "eval.bite_idle"
+  ],
+  "before": "evals/decisions/E159/bite.report.json: G1 and G3 with the default config, seeds 1 to 16, 400000 ticks",
+  "after": "evals/decisions/E159/bite-graze-5.report.json and bite-graze-3.report.json (grazeThrust 0.5 and 0.3), same seeds; main's defaults in main-defaults.report.json",
+  "note": "First pass done. food_contact_bite_share: bite 0.204, graze-5 0.145 (interval includes 0), graze-3 0.136 (interval excludes 0); no keep-rule guard worse on either. Ranking by held, alive: strike-2 (8/16, 10/16), graze-5 (3, 15), graze-3 (3, 12), fat-5 (2, 12), fat-3 (2, 11); strike-5 kills hunters (WORSE alive); grazemiss-1 not ranked (44 floor episodes, population mean 22). G1 against main halves population mean (198 to 98), no guard worse at 16 seeds. Direction holds; the 64-seed pass (E160) decides. See evals/decisions/E159/results.md.",
+  "reports": [
+    "evals/decisions/E159/plan.md",
+    "evals/decisions/E159/results.md",
+    "evals/decisions/E159/table.md",
+    "evals/decisions/E159/main-defaults.report.json",
+    "evals/decisions/E159/bite.report.json",
+    "evals/decisions/E159/bite-graze-5.report.json",
+    "evals/decisions/E159/bite-graze-3.report.json",
+    "evals/decisions/E159/bite-fat-3.report.json",
+    "evals/decisions/E159/bite-fat-5.report.json",
+    "evals/decisions/E159/bite-strike-2.report.json",
+    "evals/decisions/E159/bite-strike-5.report.json",
+    "evals/decisions/E159/bite-grazemiss-1.report.json"
+  ],
+  "date": "2026-11-12",
+  "branch": "exp/eat-choice-screen",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "better",
+  "verdicts": {}
+}

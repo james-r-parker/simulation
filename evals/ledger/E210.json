@@ -1,0 +1,53 @@
+{
+  "id": "E210",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "plan": "detector-baseline.md",
+  "date": "2026-11-19",
+  "branch": "chore/detector-topup",
+  "hypothesis": "detector-baseline shared detector top-up: E188 (rulesHash 38be2908ad820c86) predates the sprint, stillness, scent-trail and prey-selectivity metrics. A 128-seed floor-on run on the same unchanged defaults measures liveness and power for all registered metrics and tests the Phase 1 predictions of sprint-burst, stillness, scent-trails and prey-guilds.",
+  "prediction": "Written before the run: sprint-burst (T3): eval.sprint_share.hunter > 0.5 and eval.chase_sprint_lift < 1.2 (Phase 2 gate: any sprint share > 0.5 or eval.sprint_cost_share < 0.02); stillness (T3): eval.freeze_under_threat <= 0, eval.freeze_survival_gain interval includes 0, eval.ambush_kill_share < 0.1; scent-trails (E-ST2-1): eval.chase_reacquire_share < 0.1, eval.scavenge_approach_share < 0.05; prey-guilds (E-PG-1): eval.prey_selectivity.{forager,reproducer,scout,defender} each within 0.2 of 1.",
+  "targets": [
+    "eval.sprint_share.hunter",
+    "eval.sprint_share.prey",
+    "eval.chase_sprint_lift",
+    "eval.flee_sprint_lift",
+    "eval.sprint_cost_share",
+    "eval.freeze_under_threat",
+    "eval.freeze_survival_gain",
+    "eval.ambush_kill_share",
+    "eval.chase_reacquire_share",
+    "eval.scavenge_approach_share",
+    "eval.prey_selectivity.forager",
+    "eval.prey_selectivity.reproducer",
+    "eval.prey_selectivity.scout",
+    "eval.prey_selectivity.defender"
+  ],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "not applicable: shared detector top-up on the same gorge defaults as E188 (rulesHash 38be2908ad820c86)",
+  "after": "npm run eval -- --seeds 128 --ticks 200000 --policy live --workers 8 --out evals/power/defaults-floor-on-E210.json",
+  "verdicts": {
+    "eval.sprint_share.hunter": "-",
+    "eval.sprint_share.prey": "-",
+    "eval.chase_sprint_lift": "-",
+    "eval.flee_sprint_lift": "-",
+    "eval.sprint_cost_share": "-",
+    "eval.freeze_under_threat": "-",
+    "eval.freeze_survival_gain": "-",
+    "eval.ambush_kill_share": "-",
+    "eval.chase_reacquire_share": "-",
+    "eval.scavenge_approach_share": "-",
+    "eval.prey_selectivity.forager": "-",
+    "eval.prey_selectivity.reproducer": "-",
+    "eval.prey_selectivity.scout": "-",
+    "eval.prey_selectivity.defender": "-"
+  },
+  "effect": "no-difference",
+  "note": "Plan verdicts (the per-metric verdicts field cannot hold them): sprint-burst: Phase 1 prediction falsified (eval.sprint_share.hunter 0.41 is not above 0.5, though eval.chase_sprint_lift 1.12 is under 1.2), Phase 2 gate not met, Phase 2 is not built; stillness: prediction holds, gate met; scent-trails: partially falsified; prey-guilds: partially falsified. 128 seeds x 200000 ticks, floor on only (no floor-off run), defaults, rulesHash 38be2908ad820c86 (matches E188). Registry status counts: 199 verified, 168 unverified, 3 deprecated -> 204 verified, 163 unverified, 3 deprecated (370 total). Verdicts: (1) sprint-burst (T3): sprint_share.hunter 0.4086, sprint_share.prey 0.4463, chase_sprint_lift 1.117, flee_sprint_lift 1.105, sprint_cost_share 0.05363 (verified@64) -> Phase 1 prediction falsified (sprint_share.hunter 0.4086 is not above 0.5, though chase_sprint_lift 1.117 is under 1.2); Phase 2 gate NOT met (neither sprint share > 0.5 nor sprint_cost_share < 0.02), Phase 2 is not built; closes with Phase 1 detectors kept. (2) stillness (T3): freeze_under_threat -0.1121, freeze_survival_gain 0.000894 (per-seed range -0.008615 to 0.01076, not a confidence interval), ambush_kill_share 0.0005704 (verified@16) -> prediction holds, Phase 2 gate met. (3) scent-trails (E-ST2-1): chase_reacquire_share 0.394 (verified@32), scavenge_approach_share 0.0234 (verified@16) -> partially falsified (scavenge < 0.05 holds, chase_reacquire > 0.1). (4) prey-guilds (E-PG-1): prey_selectivity.{forager,reproducer,scout,defender} 1.289, 1.476, 1.601, 1.291 (all >64 seeds / unverified) -> partially falsified (above 0.8-1.2 band due to per-seed ratio variance); defender_repel_per_1k 0, scout_alarm_lead_share 0, guild_survival.* spread 0.0023 < 0.05 hold. Unverified triage (163): 26 null share > 0.1, 3 distinct < 2, 19 FPR > 0.1, 115 MDE > bar.",
+  "reports": [
+    "evals/decisions/E210/defaults-floor-on.json",
+    "evals/decisions/E210/power.json",
+    "evals/decisions/E210/unverified-2026-11-19.md"
+  ]
+}

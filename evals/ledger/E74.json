@@ -1,0 +1,33 @@
+{
+  "id": "E74",
+  "date": "2026-11-01",
+  "branch": "docs/flora-calibration-contract",
+  "hypothesis": "The selected E73 Flora candidate, or current defaults if neither passes, retains its feature and local-economy behavior over a 600000-tick horizon.",
+  "prediction": "16 seeds x 600000 ticks, live policy. If an E73 candidate is selected, compare it to the paired current Flora defaults; if neither passes, run the retained defaults only. Report Flora feature signals, local-economy metrics, and inherited survival/family plus E69 economy differences for balancing. The historical E69 baseline and global survival/family criteria are not E74 pass/fail gates.",
+  "targets": [
+    "eval.seasonal_diet_shift",
+    "eval.toxic_death_share",
+    "eval.toxic_avoidance",
+    "eval.flora_patch_pool_full_share",
+    "eval.flora_patch_death_rate",
+    "eval.flora_seed_bank_occupancy_share",
+    "eval.pollination_rate",
+    "eval.flora_hue_spread",
+    "eval.food_energy_per_1k",
+    "eval.fed_median_lifespan",
+    "eval.deliberate_food_share",
+    "eval.patch_leave_depleted",
+    "eval.carcass_meal_share",
+    "eval.winter_basin_density",
+    "eval.predators_at_end",
+    "eval.prey_types_at_end",
+    "eval.basin_family_effective"
+  ],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "pre-promotion reference, toxinDose 0.45 pinned in grid base",
+  "after": "evals/screens/flora-e74.grid.json (defaults and toxinDose 1.2, 16 matched seeds x 600000 ticks)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Ran successfully: 16 matched seeds x 600000 ticks, pre-promotion defaults and toxinDose 1.2. Paired eval:compare at 5% min effect is in evals/screens/results/flora-e74/C1-vs-defaults.compare.json; raw per-seed reports/table are in the same directory and evals/screens/results/flora/E74-summary.md. Toxic-death share 0.01583 (16/16 seeds) and avoidance 0.9712 vs 0.9150 defaults (paired gain +0.0562, CI +0.0350 to +0.0863). Food energy -3.20% and fed median lifespan -4.54% are no-difference at the registered 5% minimum effect; no clear >=5% local-economy regression. Adopt toxinDose 1.2 as the measured Flora default; retain floraPatchMax 32. The E72/E74 pollination and hue thresholds remain unmet and are carried to balancing. Shared population/species screen verdict remains FAIL and global predator/family outcomes remain balancing diagnostics, not Flora gates. E69 is pre-Flora and 200k ticks, so E69 economy differences are descriptive balancing context only."
+}
