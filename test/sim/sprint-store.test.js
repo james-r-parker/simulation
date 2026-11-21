@@ -109,18 +109,20 @@ describe('createSprintStore', () => {
 });
 
 describe('storeFactor', () => {
-    const store = createSprintStore(4);
-    const world = /** @type {Record<string, any>} */ ({
-        ...bodies(4, storeConfig({ sprintFloor: 0.3 })),
-        sprintStore: store,
-    });
+    /** @returns {{ store: import('../../js/sim/sprint-store.js').SprintStore, world: Record<string, any> }} a fresh world */
+    function fresh() {
+        const store = createSprintStore(4);
+        return { store, world: { ...bodies(4, storeConfig({ sprintFloor: 0.3 })), sprintStore: store } };
+    }
 
     it('is 1 at or above the floor, falls linearly under it and is 0 when empty', () => {
+        const { store, world } = fresh();
         store.level.set([1, 0.3, 0.15, 0]);
         expect([0, 1, 2, 3].map((slot) => storeFactor(world, slot))).toEqual([1, 1, 0.5, 0]);
     });
 
     it("reads each slot's own sprintFloor lane", () => {
+        const { store, world } = fresh();
         store.level.set([0.3, 0.3, 0.3, 0.3]);
         world.lanes.sprintFloor.set([0.3, 0.6, 0.3, 0.3]);
         expect([0, 1].map((slot) => storeFactor(world, slot))).toEqual([1, 0.5]);
