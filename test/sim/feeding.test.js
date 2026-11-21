@@ -30,7 +30,7 @@ function agent(w, a) {
     w.x[slot] = a.x;
     w.y[slot] = a.y;
     w.angle[slot] = a.angle ?? 0;
-    w.spec[slot] = a.spec ?? FORAGER;
+    setSpec(w, slot, a.spec ?? FORAGER); // its lanes are its specialisation's: the bite reads the `biteEnergy` lane
     w.genomeId[slot] = a.genomeId ?? slot + 1;
     addEnergy(w, slot, a.energy, ENERGY_SOURCE.INITIAL);
     // A non-hunter eats only while it holds BITE (eat-choice G1), so it bites unless the test says otherwise.

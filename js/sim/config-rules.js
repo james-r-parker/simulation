@@ -145,4 +145,12 @@ export const FEATURE_RULES = {
     panicTicks: int(1),
     shakenThrust: num(0, 1),
     shakenTicks: int(1),
+    hearThreshold: { type: 'num', gt: 0, lt: 1 },
+    rallyThrust: num(0),
+    rallyBurn: num(0),
+    rallyTicks: int(1),
+    answeredBite: num(0),
+    answeredTicks: int(1),
+    hoarseCost: num(0),
+    hoarseTicks: int(1),
 };

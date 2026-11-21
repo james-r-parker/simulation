@@ -245,4 +245,12 @@ export const DEFAULTS = deepFreeze({
     panicTicks: 60, // status-effects T9: ticks a `panicked` body is panicked (it is `shaken` when this ends)
     shakenThrust: 0, // status-effects T9: the thrust a `shaken` body loses after a panic; 0 is off
     shakenTicks: 120, // status-effects T9: ticks a body is `shaken`, times its nerve
+    hearThreshold: 0.1, // status-effects T10: the loudness at or above which a heard call raises an effect (`rallied`, `alert`); role-budget.md reads it too
+    rallyThrust: 0, // status-effects T10: the thrust and sprint boost a `rallied` stack adds, times the body's nerve; 0 is off
+    rallyBurn: 0, // status-effects T10: the passive cost and heat gain a `rallied` stack adds, times the body's nerve; 0 is off
+    rallyTicks: 120, // status-effects T10: ticks a `rallied` stack lasts, and how recent the caller's bite must be for an `answered` kill
+    answeredBite: 0, // status-effects T10: the bite energy an `answered` stack adds (biteEnergy x (1 + answeredBite x stacks)); 0 is off
+    answeredTicks: 120, // status-effects T10: ticks an `answered` stack lasts
+    hoarseCost: 0, // status-effects T10: the rise in alarm and hunt call cost a `hoarse` stack adds; 0 is off
+    hoarseTicks: 60, // status-effects T10: ticks a `hoarse` stack lasts
 });

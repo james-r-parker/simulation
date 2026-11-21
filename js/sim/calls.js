@@ -6,7 +6,9 @@ import { LOSS_CAUSE, removeEnergy } from './energy.js';
 import { depositPheromone } from './pheromones.js';
 import { releaseSmoke } from './smoke.js';
 import { cellRange } from './spatial-hash.js';
-import { GATE, gateOpen } from './effects.js';
+import { noteHeard } from './effect-hear.js';
+import { noteCalled } from './effect-social.js';
+import { GATE, LANE_ID, gateOpen, liveOf } from './effects.js';
 import { specParams } from './spec-params.js';
 import { HEARD_STRIDE } from './world.js';
 import { SPEC } from './specs.js';
@@ -97,15 +99,21 @@ function threatInView(world, slot) {
  * @returns {void}
  */
 function alarm(world, slot) {
-    const { alarmCost, callTicks, alarmThreshold, scoutAlarmCostMultiplier } = world.config;
-    const cost = world.spec[slot] === SPEC.SCOUT ? alarmCost * scoutAlarmCostMultiplier : alarmCost;
+    const { callTicks, alarmThreshold, scoutAlarmCostMultiplier } = world.config;
     const wanted = outputAbove(world, slot, OUTPUT_INDEX.ALARM, alarmThreshold) && gateOpen(world, slot, GATE.ALARM);
-    if (!wanted || world.energy[slot] <= cost || specParams(world.config, world.spec[slot]).canHunt) {
+    if (!wanted || specParams(world.config, world.spec[slot]).canHunt) {
+        return;
+    }
+    const cost =
+        liveOf(world, slot, LANE_ID.alarmCost) * (world.spec[slot] === SPEC.SCOUT ? scoutAlarmCostMultiplier : 1);
+    if (world.energy[slot] <= cost) {
         return;
     }
     removeEnergy(world, slot, cost, LOSS_CAUSE.COST);
     world.alarmTimer[slot] = callTicks;
-    world.alarmSeen[slot] = threatInView(world, slot) ? 1 : 0;
+    const threat = threatInView(world, slot);
+    world.alarmSeen[slot] = threat ? 1 : 0;
+    noteCalled(world, slot, threat);
     depositPheromone(world, world.danger, world.x[slot], world.y[slot]);
     pushCall(world, EVENT_TYPE.ALARM_CALLED, slot);
 }
@@ -117,13 +125,18 @@ function alarm(world, slot) {
  * @returns {void}
  */
 function huntCall(world, slot) {
-    const { huntCallCost, callTicks, huntCallThreshold } = world.config;
+    const { callTicks, huntCallThreshold } = world.config;
     const wanted = outputAbove(world, slot, OUTPUT_INDEX.HUNT, huntCallThreshold) && gateOpen(world, slot, GATE.HUNT);
-    if (!wanted || world.energy[slot] <= huntCallCost || !specParams(world.config, world.spec[slot]).canHunt) {
+    if (!wanted || !specParams(world.config, world.spec[slot]).canHunt) {
         return;
     }
-    removeEnergy(world, slot, huntCallCost, LOSS_CAUSE.COST);
+    const cost = liveOf(world, slot, LANE_ID.huntCallCost);
+    if (world.energy[slot] <= cost) {
+        return;
+    }
+    removeEnergy(world, slot, cost, LOSS_CAUSE.COST);
     world.huntTimer[slot] = callTicks;
+    noteCalled(world, slot, false);
     depositPheromone(world, world.hunt, world.x[slot], world.y[slot]);
     pushCall(world, EVENT_TYPE.PACK_CALLED, slot);
 }
@@ -189,6 +202,7 @@ function hearOne(world, hearer) {
         return;
     }
     const loudness = Math.fround((1 - d / radius) * strength);
+    noteHeard(world, hearer, loudness);
     const row = hearer * HEARD_STRIDE + offset;
     if (loudness > world.heard[row]) {
         world.heard[row] = loudness;

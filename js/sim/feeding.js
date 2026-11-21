@@ -3,7 +3,7 @@
 import { tallyEatContact } from './eat-contact.js';
 import { carryPollen } from './pollination.js';
 import { EFFECT, GATE, LANE_ID, gateOpen, levelOf, liveOf } from './effects.js';
-import { noteBitten } from './effect-social.js';
+import { noteBiteEffects } from './effect-social.js';
 import { ingestToxin } from './toxin.js';
 import { canBite, couldBite, inJaws } from './bite-rule.js';
 import { cellRange } from './spatial-hash.js';
@@ -219,16 +219,13 @@ function applyBite(world, biter, victim) {
     const { config, x, y } = world;
     // The victim's `biteTakenMultiplier` lane, with the `alarmSeen` effect's `alarmBiteShare` while its seen alarm runs.
     const taken = liveOf(world, victim, LANE_ID.biteTakenMultiplier);
-    const bite = config.biteEnergy * world.biteBySpec[world.spec[biter]];
+    const bite = liveOf(world, biter, LANE_ID.biteEnergy);
     const wasAlive = world.energy[victim] > 0;
     const kick = kickOf(world, biter, victim);
     transferEnergy(world, victim, biter, bite * taken);
     world.biteEnergy[biter] += world.transferGained;
     const fatal = wasAlive && world.energy[victim] <= killLine(config, world.lanes.maxEnergy[victim]);
     noteFatalBiteObservation(world, biter, victim, fatal);
-    if (!fatal && world.energy[victim] > 0) {
-        noteBitten(world, victim, biter);
-    }
     const moved = world.transferGained + settleKill(world, biter, victim, fatal);
     if (fatal && config.predatorRestTicks > 0 && specParams(config, world.spec[biter]).canHunt) {
         world.restTimer[biter] = config.predatorRestTicks;
@@ -248,6 +245,7 @@ function applyBite(world, biter, victim) {
         world.lastBiter[victim] = biterId;
         world.lastBiteTick[victim] = world.tick;
     }
+    noteBiteEffects(world, biter, victim, fatal);
     noteBiteLedger(world, biter, { gained: moved, fatal, kick: paid, victim });
     world.bittenTimer[victim] = 0;
     depositPheromone(world, world.attack, x[biter], y[biter]);

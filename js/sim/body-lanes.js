@@ -72,6 +72,10 @@ const MOVED = new Set([
     'temperatureEfficiencyColdModerate',
     'temperatureEfficiencyHeatModerate',
     'temperatureEfficiencyHeatSevere',
+    // status-effects T10: the bite and the two call costs, read through `liveOf` for `answered` and `hoarse`.
+    'biteEnergy',
+    'alarmCost',
+    'huntCallCost',
     ...THRESHOLDS,
 ]);
 

@@ -1,9 +1,11 @@
 // The social appliers a call site raises (docs/designs/status-effects.md, "The social effects"), staged in the feed phase.
 
 import { describe, expect, it } from 'vitest';
-import { EFFECT, effectFactor, fadeEffects } from '../../js/sim/effects.js';
+import { CH_THREAT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
+import { EFFECT, effectFactor, fadeEffects, liveOf } from '../../js/sim/effects.js';
 import { EVENT, EVENT_TYPE } from '../../js/sim/events.js';
 import { FORAGER, PREDATOR, feedPairs, stage } from './helpers/bite-stage.js';
+import { chase, hold, pack, shareKill, stacks, tick } from './helpers/pack-stage.js';
 
 /** The two numbers that make a bite leave a body wounded and panicked. */
 const ON = {
@@ -28,14 +30,6 @@ function pair(over, victimEnergy = 500) {
     ]);
     return { w, biter: slots[0], victim: slots[1] };
 }
-
-/**
- * @param {any} w the world
- * @param {number} slot the slot
- * @param {string} name an effect's name
- * @returns {number} the stacks it holds
- */
-const stacks = (w, slot, name) => w[`effect.${name}.stacks`][slot];
 
 describe('a bite that leaves its victim alive', () => {
     it('gives it one wounded and one panicked stack, sourced at the biter, with every number at 0 too', () => {
@@ -85,7 +79,7 @@ describe('a bite that leaves its victim alive', () => {
         w.lanes.nerve[victim] = 1.5;
         feedPairs(w, [biter, victim]);
         const seen = [];
-        for (let tick = 0; tick < 9; tick++) {
+        for (let fade = 0; fade < 9; fade++) {
             fadeEffects(w);
             seen.push([stacks(w, victim, 'wounded'), stacks(w, victim, 'panicked'), stacks(w, victim, 'shaken')]);
         }
@@ -108,5 +102,99 @@ describe('a bite that leaves its victim alive', () => {
         const { w, victim } = pair(ON);
         w['effect.shaken.stacks'][victim] = 1;
         expect(effectFactor(w, victim, EFFECT.SHAKEN, 'maxThrust')).toBeCloseTo(0.7, 12);
+    });
+});
+
+describe('hoarse', () => {
+    it('is one stack a call, and prices the next call by hoarseCost a stack', () => {
+        const w = pack({ huntCallCost: 6 });
+        hold(w, 0, OUTPUT_INDEX.HUNT);
+        const paid = [];
+        let before = w.energy[0];
+        for (let t = 0; t < 21; t++) {
+            tick(w);
+            if (w.energy[0] < before) {
+                paid.push(before - w.energy[0]);
+            }
+            before = w.energy[0];
+        }
+        expect(stacks(w, 0, 'hoarse')).toBe(3);
+        expect(paid).toEqual([6, 6 * 1.5, 6 * 2]);
+        expect(liveOf(w, 0, 'huntCallCost')).toBe(6 * 2.5);
+    });
+
+    it('is a stack for an alarm with nothing on the caller rays, and none net for an alarm with a threat', () => {
+        for (const [threat, expected] of [
+            [false, 1],
+            [true, 0],
+        ]) {
+            const w = pack();
+            w.spec[0] = FORAGER;
+            hold(w, 0, OUTPUT_INDEX.ALARM);
+            if (threat) {
+                w.inputs[0 * w.layout.rawInputCount + CH_THREAT] = 1;
+            }
+            tick(w);
+            expect(w.alarmTimer[0]).toBe(10);
+            expect(stacks(w, 0, 'hoarse'), `threat ${threat}`).toBe(expected);
+        }
+    });
+
+    it('prices the alarm of a scout by the scout multiplier on the lane', () => {
+        const w = pack({ scoutAlarmCostMultiplier: 2 });
+        w.spec[0] = 3;
+        hold(w, 0, OUTPUT_INDEX.ALARM);
+        const before = w.energy[0];
+        tick(w);
+        expect(before - w.energy[0]).toBe(8);
+    });
+});
+
+describe('answered', () => {
+    it('goes to the caller when the hunter it rallied kills prey the caller also bit, and takes a hoarse stack off', () => {
+        const { w, caller, killer, prey } = chase();
+        shareKill(w, { caller, killer, prey });
+        expect(w.energy[prey]).toBe(0);
+        expect([stacks(w, caller, 'answered'), stacks(w, caller, 'hoarse')]).toEqual([1, 1]);
+        expect([stacks(w, killer, 'answered'), stacks(w, prey, 'answered')]).toEqual([0, 0]);
+        expect(effectFactor(w, caller, EFFECT.ANSWERED, 'biteEnergy')).toBe(1.5);
+    });
+
+    it('pays nothing for standing by, an unrallied killer, a bite outside rallyTicks, a gone caller or a bite that does not kill', () => {
+        for (const [name, over, edit] of /** @type {[string, Record<string, any>, (c: any) => void][]} */ ([
+            ['stood by', {}, (c) => (c.skip = true)],
+            ['unrallied', {}, (c) => (c.w['effect.rallied.stacks'][c.killer] = 0)],
+            ['too late', {}, (c) => (c.gap = c.w.config.rallyTicks + 1)],
+            ['caller gone', {}, (c) => (c.w.alive[c.caller] = 0)],
+            ['caller replaced', {}, (c) => (c.w.genomeId[c.caller] += 50)],
+            ['survives', { biteEnergy: 1 }, () => {}],
+        ])) {
+            const c = { ...chase(over), gap: 1, skip: false };
+            edit(c);
+            if (c.skip) {
+                feedPairs(c.w, [c.killer, c.prey]);
+                c.w.tick += 1;
+                feedPairs(c.w, [c.killer, c.prey]);
+            } else {
+                shareKill(c.w, c, c.gap);
+            }
+            expect(stacks(c.w, c.caller, 'answered'), name).toBe(0);
+            expect(stacks(c.w, c.caller, 'hoarse'), name).toBe(2);
+        }
+    });
+
+    it('stops at 2 stacks, and two hunters calling at each other with no kill earn none', () => {
+        const { w, caller } = chase();
+        w['effect.answered.stacks'][caller] = 2;
+        shareKill(w, { caller, killer: 1, prey: 2 });
+        expect(stacks(w, caller, 'answered')).toBe(2);
+        const idle = pack();
+        hold(idle, 0, OUTPUT_INDEX.HUNT);
+        hold(idle, 1, OUTPUT_INDEX.HUNT);
+        for (let t = 0; t < 30; t++) {
+            tick(idle);
+        }
+        expect([stacks(idle, 0, 'answered'), stacks(idle, 1, 'answered')]).toEqual([0, 0]);
+        expect(stacks(idle, 0, 'hoarse')).toBeGreaterThan(0);
     });
 });

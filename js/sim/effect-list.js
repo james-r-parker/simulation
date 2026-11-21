@@ -205,4 +205,41 @@ export const EFFECTS = Object.freeze([
         applier: 'noteBitten',
         visible: true,
     }),
+    // status-effects Phase 2, T10: the pack. `rallied` goes to the hearer and costs it, `answered` pays the caller only for
+    // a pack-mate's kill that it also bit, `hoarse` prices the call. No effect pays a body for calling.
+    effect('rallied', {
+        family: 'social',
+        level: 'stacks',
+        maxStacks: 3,
+        fades: { kind: 'ticks', key: 'rallyTicks' },
+        scales: [
+            { lane: 'maxThrust', perStack: 'rallyThrust', by: 'nerve' },
+            { lane: 'sprintBoost', perStack: 'rallyThrust', by: 'nerve' },
+            { lane: 'passiveLoss', perStack: 'rallyBurn', by: 'nerve' },
+            { lane: 'temperatureGainMove', perStack: 'rallyBurn', by: 'nerve' },
+        ],
+        applier: 'noteHeard',
+        visible: true,
+    }),
+    effect('answered', {
+        family: 'social',
+        level: 'stacks',
+        maxStacks: 2,
+        fades: { kind: 'ticks', key: 'answeredTicks' },
+        scales: [{ lane: 'biteEnergy', perStack: 'answeredBite' }],
+        applier: 'noteAnswered',
+        visible: true,
+    }),
+    effect('hoarse', {
+        family: 'social',
+        level: 'stacks',
+        maxStacks: 5,
+        fades: { kind: 'every', key: 'hoarseTicks' },
+        scales: [
+            { lane: 'alarmCost', perStack: 'hoarseCost' },
+            { lane: 'huntCallCost', perStack: 'hoarseCost' },
+        ],
+        applier: 'noteCalled',
+        visible: true,
+    }),
 ]);
