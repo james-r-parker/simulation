@@ -7,9 +7,15 @@ import { describe, expect, it } from 'vitest';
 import { DETECTORS } from '../../js/evo/detectors.js';
 import { SOURCE_BY_MODULE } from '../../js/evo/metric-registry/entry.js';
 import { METRICS } from '../../js/evo/metric-registry/index.js';
+import { computeMetrics } from '../../js/evo/metrics.js';
 import { compileDetectors } from '../../js/evo/observer-detectors.js';
 import { EVENTS } from '../../js/sim/events.js';
 import { observed } from './helpers/observer-world.js';
+
+/** @returns {string[]} the metric names the committed report holds (`test/fixtures/metric-names.json`) */
+function committedNames() {
+    return JSON.parse(readFileSync(new URL('../fixtures/metric-names.json', import.meta.url), 'utf8'));
+}
 
 /**
  * @param {Record<string, any>} state a detector's state
@@ -102,12 +108,23 @@ describe('DETECTORS', () => {
     });
 
     it('lists every metric a detector returns in the committed report names', () => {
-        /** @type {string[]} */
-        const names = JSON.parse(readFileSync(new URL('../fixtures/metric-names.json', import.meta.url), 'utf8'));
+        const names = committedNames();
         for (const detector of DETECTORS) {
             for (const metric of Object.keys(detector.metrics(r.observer.scenes[detector.name], r.world, r.observer))) {
                 expect(names, `${detector.name} returns ${metric}`).toContain(metric);
             }
+        }
+    });
+
+    it('names in the committed report only metrics the report produces', () => {
+        // The report is `computeMetrics` (js/evo/metrics.js). Its keys are the detectors' `metrics()`, the rule metrics
+        // (`ruleMetrics`, reached through `selectionMetrics`), the alarm-reach and reward metrics (through
+        // `sceneMetrics`), and the other `metrics-*.js` modules (combat, intent, trend, lineage, body, ...), which
+        // produce the names the detectors do not. A fresh observer, so the rng draws of an earlier test do not matter.
+        const fresh = observed();
+        const produced = new Set(Object.keys(computeMetrics(fresh.observer, fresh.world)));
+        for (const name of committedNames()) {
+            expect(produced.has(name), `${name} is in the committed report names and nothing produces it`).toBe(true);
         }
     });
 });
