@@ -37,11 +37,27 @@ describe('killIncome', () => {
 describe('budgetLiving at the defaults', () => {
     const b = living({});
 
-    it('is red on eat: the chases cost more than a kill returns even at a catch share of 1', () => {
+    it('charges a kill and a failed chase apart: a chase that kills pays at a catch share of 1, one that fails costs the 250 ticks', () => {
         expect(b.chase.income).toBeCloseTo((700 + 700 + 760 + 700) / 4, 6);
-        expect(b.chase.netAtFull).toBeLessThan(0);
-        expect(b.cells.eat.status).toBe('impossible');
-        expect(b.row.binding).toBe('eat');
+        expect(b.chase.killCost).toBeLessThan(b.chase.income);
+        expect(b.chase.failCost).toBeGreaterThan(2 * b.chase.killCost);
+        expect(b.chase.netAtFull).toBeCloseTo(b.chase.income - b.chase.killCost, 9);
+        expect(b.chase.netAtFull).toBeGreaterThan(0);
+    });
+
+    it('is red on eat at the catch share of 0.3, where the failed chases outweigh the kills', () => {
+        const share = living({}, { catchShare: 0.3 });
+        expect(share.chase.net).toBeCloseTo(
+            0.3 * share.chase.income - 0.3 * share.chase.killCost - 0.7 * share.chase.failCost,
+            9,
+        );
+        expect(share.chase.net).toBeLessThan(0);
+        expect(share.row.binding).toBe('breed');
+    });
+
+    it('is the cost of a killing chase at a catch share of 1 and of a failed one at 0', () => {
+        expect(living({}, { catchShare: 1 }).chase.cost).toBeCloseTo(b.chase.killCost, 9);
+        expect(living({}, { catchShare: 0 }).chase.cost).toBeCloseTo(b.chase.failCost, 9);
     });
 
     it('prints the resting cost and the ticks a full store lasts with no kill', () => {
@@ -59,10 +75,11 @@ describe('budgetLiving at the defaults', () => {
 });
 
 describe('budgetLiving where the hunter closes on its prey', () => {
-    it('pays at a catch share high enough, so a better share lifts the net by the kill income', () => {
+    it('pays at a catch share high enough, so a better share lifts the net by the kill income less the failed chase it spares', () => {
         const low = living(COURSER, { catchShare: 0.3 });
         const high = living(COURSER, { catchShare: 0.6 });
-        expect(high.chase.net - low.chase.net).toBeCloseTo(0.3 * low.chase.income, 6);
+        const spared = low.chase.failCost - low.chase.killCost;
+        expect(high.chase.net - low.chase.net).toBeCloseTo(0.3 * (low.chase.income + spared), 6);
         expect(high.chase.netAtFull).toBe(low.chase.netAtFull);
     });
 

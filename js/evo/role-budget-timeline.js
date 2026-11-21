@@ -8,7 +8,9 @@ import { detCos, detSin } from '../sim/det-math.js';
 import { norm, turnCircle } from './role-budget-kinematics.js';
 import { bite, charge, collide, costOf, createBody, inJaws, mayBite, speedOf, stepBody } from './role-budget-body.js';
 import { HUNTER_PERFECT, hunterOut, preyOut } from './role-budget-play.js';
+import { viewReach } from './role-budget-senses.js';
 import { JINK_RANGE } from './chase-oracles.js';
+import { createLapse, lapseTicks, noteLapse } from './role-budget-lapse.js';
 
 /** The longest a chase runs, in ticks: `MAX_TICKS` of chase-envelope.js. */
 export const MAX_TICKS = 250;
@@ -37,17 +39,18 @@ export const MAX_TICKS = 250;
  * @property {number} hunterLevel the hunter's store at the end
  * @property {number} speed the hunter's speed at the end
  * @property {number} ticks the ticks played
+ * @property {number} lapse the ticks a chase that does not kill lasts: the sim's give-up (`lapseTicks`), at most the ticks played
  * @property {number} heat the heat the hunter gained: its speed over `maxVelocity` each tick, times `gainMove`
  */
 
 /**
  * @param {{h: import('./role-budget-body.js').Body, p: import('./role-budget-body.js').Body, heat: number,
  *   tick: number, tally: {bites: number, income: number, kick: number, contact: number | null, gate: boolean},
- *   fatal: boolean}} at the hunter, the prey, the heat gained so far, the tick played (from 0), the bites so far and
- *   whether the last bite killed
+ *   fatal: boolean, closing: import('./role-budget-lapse.js').Lapse}} at the hunter, the prey, the heat gained so far, the tick played
+ *   (from 0), the bites so far, whether the last bite killed and the closing tracker
  * @returns {Timeline} the run as it stands
  */
-function result({ h, p, heat, tick, tally, fatal }) {
+function result({ h, p, heat, tick, tally, fatal, closing }) {
     return {
         contactTick: tally.contact,
         killTick: fatal ? tick + 1 : null,
@@ -61,6 +64,7 @@ function result({ h, p, heat, tick, tally, fatal }) {
         hunterLevel: h.level,
         speed: speedOf(h),
         ticks: tick + 1,
+        lapse: lapseTicks(closing, tick + 1),
         heat,
     };
 }
@@ -113,6 +117,8 @@ export function chaseTimeline(hunter, prey, options) {
     const p = createBody(prey, { x: o.gap * detCos(o.bearing), y: o.gap * detSin(o.bearing), angle: o.bearing });
     const slow = turnCircle(hunter.thrust.cruise, hunter.damping, hunter.turnRate.start, hunter.cap.cruise).speed;
     const tally = { bites: 0, income: 0, kick: 0, contact: /** @type {number | null} */ (null), gate: false };
+    const closing = createLapse();
+    const sight = viewReach(hunter, 0) + prey.size;
     let heat = 0;
     for (let tick = 0; tick < o.maxTicks; tick++) {
         const ho = hunterOut(h, p, hunterPlay, tick);
@@ -124,9 +130,10 @@ export function chaseTimeline(hunter, prey, options) {
             h.vy *= slow / speedOf(h);
         }
         heat += Math.min(speedOf(h) / hunter.cap.cruise, 1) * hunter.heat.gainMove;
+        noteLapse(closing, { h, p, tick, maxVelocity: hunter.cap.cruise, sight });
         const touch = touchStep(h, p, tick, tally);
         if (touch === FATAL) {
-            return result({ h, p, heat, tick, tally, fatal: true });
+            return result({ h, p, heat, tick, tally, fatal: true, closing });
         }
         // a hunter holding BITE with no body in its jaws pays `strikeMissCost` (the feed phase of the sim)
         if (touch === NO_JAWS) {
@@ -135,5 +142,5 @@ export function chaseTimeline(hunter, prey, options) {
         charge(h, costOf(h, ho, hf));
         charge(p, costOf(p, po, pf));
     }
-    return result({ h, p, heat, tick: o.maxTicks - 1, tally, fatal: false });
+    return result({ h, p, heat, tick: o.maxTicks - 1, tally, fatal: false, closing });
 }
