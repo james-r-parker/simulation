@@ -366,6 +366,9 @@
     "test/evo/scene-competence.test.js": [
         "js/evo/scene-competence.js"
     ],
+    "test/evo/scene-defender.test.js": [
+        "js/evo/scene-defender.js"
+    ],
     "test/evo/scene-eat.test.js": [
         "js/evo/scene-eat.js"
     ],
