@@ -27,17 +27,27 @@ describe('parseDryArgs', () => {
 
 describe('meetsBars', () => {
     it('reads each reading against its bar, and a missing chase precision as not applicable', () => {
-        const base = { chasePrecision: 0.6, maxKindShare: 0.4, shotsPerHour: 60 };
+        const base = { chasePrecision: 0.6, maxKindShare: 0.4, shotsPerHour: 60, minShotHoldS: 30 };
         expect(meetsBars(/** @type {any} */ (base))).toEqual({
             chasePrecision: true,
             maxKindShare: true,
             shotsPerHour: true,
+            minShotHoldS: true,
         });
-        expect(meetsBars(/** @type {any} */ ({ chasePrecision: 0.59, maxKindShare: 0.41, shotsPerHour: 241 }))).toEqual(
-            { chasePrecision: false, maxKindShare: false, shotsPerHour: false },
-        );
-        expect(meetsBars(/** @type {any} */ ({ ...base, chasePrecision: null })).chasePrecision).toBeNull();
-        expect(BARS.shotsPerHour).toEqual([60, 240]);
+        const missed = { chasePrecision: 0.59, maxKindShare: 0.41, shotsPerHour: 61, minShotHoldS: 29.5 };
+        expect(meetsBars(/** @type {any} */ (missed))).toEqual({
+            chasePrecision: false,
+            maxKindShare: false,
+            shotsPerHour: false,
+            minShotHoldS: false,
+        });
+        expect(meetsBars(/** @type {any} */ ({ ...base, shotsPerHour: 19.9 })).shotsPerHour).toBe(false);
+        expect(meetsBars(/** @type {any} */ ({ ...base, shotsPerHour: 20 })).shotsPerHour).toBe(true);
+        const none = meetsBars(/** @type {any} */ ({ ...base, chasePrecision: null, minShotHoldS: null }));
+        expect(none.chasePrecision).toBeNull();
+        expect(none.minShotHoldS).toBeNull();
+        expect(BARS.shotsPerHour).toEqual([20, 60]);
+        expect(BARS.minShotHoldS).toBe(30);
     });
 });
 
@@ -57,12 +67,13 @@ describe('runDirectorDry', () => {
         expect(run().shots).toEqual(run().shots);
     });
 
-    it('prints a line for each shot and the three readings with their bars', () => {
+    it('prints a line for each shot and the four readings with their bars', () => {
         const lines = reportLines(run());
         expect(lines.filter((l) => l.startsWith('director.')).map((l) => l.split(' ')[0])).toEqual([
             'director.chase_precision',
             'director.max_kind_share',
             'director.shots_per_hour',
+            'director.min_shot_hold_s',
         ]);
         expect(lines.some((l) => /^seed 3 tick \d+ /.test(l))).toBe(true);
         expect(lines.join('\n')).toMatch(/bar <= 0.4/);
