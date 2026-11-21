@@ -1,7 +1,7 @@
 # Unit knockout
 
-**Status:** In progress - Phase 1 built (T1 to T8); a loss-of-function mutation that switches one hidden unit off at birth, off by default on `season/next`.
-**Validated:** 33c44fc1 (2026-11-20)
+**Status:** In progress - Phase 1 (T1 to T8) is built and on main in season 11, off by default (`unitKnockoutRate` 0); T9 (the screen and ladder grids) is built. The rate screen E-UK-1 (T10), the 64-seed eval, the ladder and drills, and the adopt-or-delete call are open.
+**Validated:** 3c6f1225 (2026-11-21)
 **Scheduled by:** [training-loop.md](training-loop.md) step 2 - silencing one hidden unit lifts a champion from 6 to 24 of 128 on `prey-ahead`, a gain no small weight step reaches; cheap and needs no sim rule
 **Depends on:** [brain-inspection.md](brain-inspection.md)
 
