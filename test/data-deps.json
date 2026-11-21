@@ -344,6 +344,10 @@
         "test/fixtures/train-ladder.json",
         "test/fixtures/train-tune.json"
     ],
+    "test/experiment.test.js": [
+        "evals/ledger",
+        "test"
+    ],
     "test/functions/release-serve.test.js": [
         "index.html",
         "test"
