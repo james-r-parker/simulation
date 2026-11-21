@@ -197,6 +197,13 @@ export const DEFAULTS = deepFreeze({
     instinctWeight: 1, // brain plan big bang, survival screen (instinct): the innate reflex prior of a random genome (js/evo/instinct.js), as a newborn animal has reflexes before it learns; 0 is random genomes
     traitMutationSigma: 0.1, // body-genes T33: the step of a trait gene's mutation (the constant TRAIT_SIGMA before)
     traitGeneClamp: 3, // body-genes T33: a trait gene is clamped to plus or minus this after mutation; tanh(3) is 0.995, so a gene cannot drift into the flat part of the curve
+    sizeTurn: 0, // body-genes T13: the size trait's cost, the turn rate x r^-sizeTurn; 0 is off
+    speedHeat: 0, // body-genes T13: the speed trait's cost, the heat gain of movement x r^speedHeat; 0 is off
+    heatSpeedCap: 1, // body-genes T13: the cap on speed / maxVelocity in the heat gain of movement (a lane); 1 is today, where a body over the cruise cap warms no faster
+    sprintHeat: 0, // body-genes T13: heat added per sprinting tick at sprint-store ratio 1 (a lane), times the sprint delivered; 0 is off
+    sprintStoreHeat: 0, // body-genes T13: the sprint-store trait's cost, sprintHeat x r^sprintStoreHeat; 0 is off
+    fatSlow: 0, // body-genes T13: the fat trait's cost, fatSlowShare x r^fatSlow; 0 is off
+    burnThrust: 0, // body-genes T13: the burn trait's cost, thrust x r^burnThrust (a body that burns less has less power); 0 is off
     leakGeneStart: 0, // brain plan big bang (H3): a random genome's leak genes; 0 gives a 0.5 (memory from generation 0), was 3 (0.955)
     leakMin: 0.02, // brain plan big bang (H7): the smallest leak rate (a half-life of 34 ticks, was 0.05 and 13.5); a unit with a very negative leak gene still moves 2% toward its target per tick
     meritMateBonus: 150, // new: fitness-and-selection T16 (merit, off)

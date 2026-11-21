@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { laneBases } from '../../js/sim/body-lanes.js';
+import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
 import {
     blocksMating,
@@ -65,6 +66,8 @@ function fakeWorld(t, speed, season) {
         vy: Float32Array.of(0),
         y: Float32Array.of(1000),
         season: Uint32Array.of(season, 0),
+        outputs: new Float32Array(OUTPUT_COUNT),
+        sprintFactor: Float64Array.of(1),
         lanes: lanesOf(config),
     };
 }
@@ -130,6 +133,33 @@ describe('stepTemperature reads the body lanes', () => {
         world.lanes.temperatureLossPassive[0] = 0.03;
         stepTemperature(world, 0);
         expect(world.temperature[0]).toBeCloseTo(50 + 0.05 - 0.03 * LOSS[1], 4);
+    });
+});
+
+describe('the heat costs of the body lanes (body-genes T13)', () => {
+    it('lets a body over the cruise cap warm faster only when its heatSpeedCap lane lifts the cap', () => {
+        const capped = fakeWorld(50, 12, 1);
+        stepTemperature(capped, 0);
+        const lifted = fakeWorld(50, 12, 1);
+        lifted.lanes.heatSpeedCap[0] = 2;
+        stepTemperature(lifted, 0);
+        expect(capped.temperature[0]).toBeCloseTo(50 + 0.025 - 0.015 * LOSS[1], 5);
+        expect(lifted.temperature[0]).toBeCloseTo(50 + 1.5 * 0.025 - 0.015 * LOSS[1], 5);
+    });
+
+    it('adds the sprintHeat lane times the sprint delivered while SPRINT is above 0, and nothing at its default', () => {
+        const still = fakeWorld(50, 0, 1);
+        still.outputs[OUTPUT_INDEX.SPRINT] = 1;
+        stepTemperature(still, 0);
+        expect(still.temperature[0]).toBeCloseTo(50 - 0.015 * LOSS[1], 5);
+        const hot = fakeWorld(50, 0, 1);
+        hot.lanes.sprintHeat[0] = 0.2;
+        hot.sprintFactor[0] = 0.5;
+        stepTemperature(hot, 0);
+        expect(hot.temperature[0]).toBeCloseTo(50 - 0.015 * LOSS[1], 5);
+        hot.outputs[OUTPUT_INDEX.SPRINT] = 0.5;
+        stepTemperature(hot, 0);
+        expect(hot.temperature[0]).toBeCloseTo(50 - 2 * 0.015 * LOSS[1] + 0.1, 5);
     });
 });
 

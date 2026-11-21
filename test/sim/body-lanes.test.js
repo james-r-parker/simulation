@@ -68,9 +68,11 @@ describe('LANES', () => {
             'passiveLoss',
             'temperatureGainMove',
             'temperatureLossPassive',
+            'heatSpeedCap',
+            'sprintHeat',
         ]);
         expect(LANES.filter((lane) => lane.kind === 'offset').every((lane) => lane.moved)).toBe(true);
-        expect(LANE_COUNT).toBe(113);
+        expect(LANE_COUNT).toBe(115);
         expect(LANES.filter((lane) => lane.kind === 'offset').map((lane) => lane.name)).toHaveLength(6);
     });
 

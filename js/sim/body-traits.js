@@ -75,31 +75,48 @@ function entry(index, name, effects, describe) {
  */
 const withKind = (kind, trait) => Object.freeze({ ...trait, kind });
 
+/**
+ * @param {Array<[string, string, 1 | -1]>} costs each cost lane, its exponent key and its sign
+ * @param {Readonly<Trait>} trait an entry
+ * @returns {Readonly<Trait>} the entry with those paired costs
+ */
+const withCosts = (costs, trait) =>
+    Object.freeze({
+        ...trait,
+        costs: Object.freeze(costs.map(([lane, exponentKey, sign]) => Object.freeze({ lane, exponentKey, sign }))),
+    });
+
 /** @type {readonly Readonly<Trait>[]} the named traits, in gene order */
 export const TRAITS = Object.freeze([
-    entry(0, 'size', [['baseSize', 1]], 'body size'),
+    withCosts([['maxTurn', 'sizeTurn', -1]], entry(0, 'size', [['baseSize', 1]], 'body size')),
     entry(1, 'vision', [['visionRange', 1]], 'ray length'),
     entry(2, 'childShare', [['childEnergyShare', 1]], 'the share of energy a mother gives a child'),
     withKind('raw', entry(3, 'learn', [], 'the Hebbian rate multiplier')),
-    entry(
-        4,
-        'speed',
-        [
-            ['maxVelocity', 1],
-            ['maxThrust', 1],
-        ],
-        'speed cap and thrust',
+    withCosts(
+        [['temperatureGainMove', 'speedHeat', 1]],
+        entry(
+            4,
+            'speed',
+            [
+                ['maxVelocity', 1],
+                ['maxThrust', 1],
+            ],
+            'speed cap and thrust',
+        ),
     ),
-    entry(
-        5,
-        'sprintStore',
-        [
-            ['sprintDrain', -1],
-            ['sprintRefill', -1],
-        ],
-        'length of a sprint burst and refill',
+    withCosts(
+        [['sprintHeat', 'sprintStoreHeat', 1]],
+        entry(
+            5,
+            'sprintStore',
+            [
+                ['sprintDrain', -1],
+                ['sprintRefill', -1],
+            ],
+            'length of a sprint burst and refill',
+        ),
     ),
-    entry(6, 'fat', [['maxEnergy', 1]], 'the energy store'),
+    withCosts([['fatSlowShare', 'fatSlow', 1]], entry(6, 'fat', [['maxEnergy', 1]], 'the energy store')),
     withKind(
         'offset',
         entry(
@@ -109,14 +126,17 @@ export const TRAITS = Object.freeze([
             'the six temperature thresholds, in degrees',
         ),
     ),
-    entry(
-        8,
-        'burn',
-        [
-            ['passiveLoss', 1],
-            ['sprintCost', 1],
-        ],
-        'standing and sprint energy burn',
+    withCosts(
+        [['maxThrust', 'burnThrust', 1]],
+        entry(
+            8,
+            'burn',
+            [
+                ['passiveLoss', 1],
+                ['sprintCost', 1],
+            ],
+            'standing and sprint energy burn',
+        ),
     ),
     entry(9, 'hearing', [['hearing', 1]], 'the distance at which a call is heard'),
     entry(

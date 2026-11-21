@@ -42,6 +42,8 @@ const MOVED = new Set([
     'passiveLoss',
     'temperatureGainMove',
     'temperatureLossPassive',
+    'heatSpeedCap',
+    'sprintHeat',
     ...THRESHOLDS,
 ]);
 
@@ -77,7 +79,7 @@ const FAMILIES = {
         fields: 'plantFoodValue meatFoodValue',
     },
     heat: {
-        keys: `temperatureGainMove temperatureGainEat temperatureLossPassive temperaturePassiveLossFactor ${THRESHOLDS.join(' ')} temperatureEfficiencyColdSevere temperatureEfficiencyColdModerate temperatureEfficiencyHeatModerate temperatureEfficiencyHeatSevere`,
+        keys: `temperatureGainMove temperatureGainEat temperatureLossPassive temperaturePassiveLossFactor ${THRESHOLDS.join(' ')} temperatureEfficiencyColdSevere temperatureEfficiencyColdModerate temperatureEfficiencyHeatModerate temperatureEfficiencyHeatSevere heatSpeedCap sprintHeat`,
         fields: '',
     },
     combat: {
