@@ -78,6 +78,7 @@ describe('LANES', () => {
             'turnCost',
             'sizeEnergyLoss',
             'visionCost',
+            'baseSize',
             'digestTicks',
             'juvenileBurn',
             'sickDrain',
@@ -93,6 +94,7 @@ describe('LANES', () => {
             'sprintHeat',
             'alarmBiteShare',
             'biteTakenMultiplier',
+            'childEnergyShare',
         ]);
         expect(LANES.filter((lane) => lane.kind === 'offset').every((lane) => lane.moved)).toBe(true);
         expect(LANE_COUNT).toBe(115);
@@ -196,5 +198,11 @@ describe('bodyProblem', () => {
             maxThrust: 2,
         });
         expect(createConfig({ specialisations: { scout: { body: {} } } }).specialisations.scout.body).toEqual({});
+    });
+
+    it('accepts a spec body override of baseSize and childEnergyShare, which are read only through their lanes', () => {
+        const body = { baseSize: 1.1, childEnergyShare: 0.9 };
+        expect(bodyProblem(body)).toBeNull();
+        expect(createConfig({ specialisations: { scout: { body } } }).specialisations.scout.body).toEqual(body);
     });
 });

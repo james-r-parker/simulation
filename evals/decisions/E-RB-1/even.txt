@@ -1,0 +1,114 @@
+role budget  config 1785a38f7fe249d0  rules be928abf8334b734
+model {"reactionTicks":2,"hearThreshold":0.1,"breakAngle":1.5707963267948966,"tightTicks":5,"preySprint":"rationed","hunterShare":0.1,"foodDensity":null,"naiveEffort":0.5,"catchShare":0.3,"reliableSight":false}
+
+row                  see  turn  run  bite  status  binding
+predator:forager     95   17    95   74    ok      turn
+predator:reproducer  108  28    108  90    ok      turn
+predator:scout       51   2!    51   37    tight   turn
+predator:defender    175  12    175  167   ok      turn
+predator:average     107  15    107  92    ok      turn
+predator:best        108  28    108  90    ok      turn
+
+predator:forager
+  catch margin (broken bound, px): +136  catchable yes  gap at awareness 345
+  tiers, margin straight/broken px: perfect +171/+136  reactive +15/-58  naive +51/+38
+  learn slope reactive  fit for the rung screen no
+  audit bearings closing 0.375  worst margin -345 px
+  chase energy: spent 460.3  kicks 12.7  returned 487.0  net +13.9  (holds 4700 above its birth reserve)
+  chase heat: +1.760 of 15 headroom  refill after the burst: 334 ticks
+predator:reproducer
+  catch margin (broken bound, px): +185  catchable yes  gap at awareness 295
+  tiers, margin straight/broken px: perfect +223/+185  reactive +65/-8  naive +101/+88
+  learn slope reactive  fit for the rung screen no
+  audit bearings closing 0.375  worst margin -295 px
+  chase energy: spent 414.7  kicks 12.8  returned 493.7  net +66.2  (holds 4700 above its birth reserve)
+  chase heat: +1.600 of 15 headroom  refill after the burst: 296 ticks
+predator:scout
+  catch margin (broken bound, px): +50  catchable yes  gap at awareness 445
+  tiers, margin straight/broken px: perfect +72/+50  reactive -85/-146  naive -49/-55
+  learn slope reactive  fit for the rung screen no
+  audit bearings closing 0.375  worst margin -445 px
+  chase energy: spent 543.9  kicks 8.6  returned 476.5  net -75.9  (holds 4700 above its birth reserve)
+  chase heat: +2.130 of 15 headroom  refill after the burst: 362 ticks
+predator:defender
+  catch margin (broken bound, px): +143  catchable yes  gap at awareness 285
+  tiers, margin straight/broken px: perfect +231/+143  reactive +66/-205  naive +111/+69
+  learn slope reactive  fit for the rung screen no
+  audit bearings closing 0.375  worst margin -285 px
+  chase energy: spent 273.5  kicks 59.2  returned 543.8  net +211.2  (holds 4700 above its birth reserve)
+  chase heat: +0.830 of 15 headroom  refill after the burst: 332 ticks
+predator:average
+  catchable share 1.00  choice gain 13.3 ticks
+predator:best
+  catchable share 1.00  choice gain 13.3 ticks  picks reproducer
+
+predator:forager: smallest single changes that give it
+factor  setting                               value  margin px  slope  fit  file
+x1.5    sprintFloor                           0.45   +96        ok     fit  evals/role-budget/even-predator-forager-1.json
+x2      specialisations.predator.sprintBoost  3.2    +636       ok     fit  evals/role-budget/even-predator-forager-2.json
+x2      sprintFloor                           0.6    +106       ok     fit  evals/role-budget/even-predator-forager-3.json
+
+predator:reproducer: smallest single changes that give it
+factor  setting                                 value  margin px  slope  fit  file
+x0.75   specialisations.reproducer.visionRange  187.5  +249       ok     fit  evals/role-budget/even-predator-reproducer-1.json
+x0.5    specialisations.reproducer.sprintBoost  0.5    +252       ok     fit  evals/role-budget/even-predator-reproducer-2.json
+x2      specialisations.predator.sprintBoost    3.2    +686       ok     fit  evals/role-budget/even-predator-reproducer-3.json
+
+predator:scout: smallest single changes that give it
+factor  setting                                         value  margin px  slope  fit  file
+x0.5    specialisations.predator.sprintDrainMultiplier  0.5    +508       ok     fit  evals/role-budget/even-predator-scout-1.json
+x2      specialisations.predator.sprintBoost            3.2    +544       ok     fit  evals/role-budget/even-predator-scout-2.json
+
+predator:defender: smallest single changes that give it
+factor  setting                               value  margin px  slope  fit  file
+x1.5    specialisations.predator.sprintBoost  2.4    +415       ok     fit  evals/role-budget/even-predator-defender-1.json
+x0.5    specialisations.defender.sprintBoost  0.5    +201       ok     fit  evals/role-budget/even-predator-defender-2.json
+x2      specialisations.predator.sprintBoost  3.2    +665       ok     fit  evals/role-budget/even-predator-defender-3.json
+
+body        reading                      formula  sim      difference  tolerance
+forager     energy per 100 ticks         102.725  102.725  0.000%      0.100%     ok
+forager     sprint energy per 100 ticks  227.725  227.725  0.000%      0.100%     ok
+forager     cruise speed                 8.000    8.000    0.000%      0.010%     ok
+forager     sprint speed                 12.000   12.000   0.000%      0.010%     ok
+forager     turn radius                  21.537   21.509   0.131%      0.500%     ok
+forager     sprint turn radius           32.305   32.263   0.131%      0.500%     ok
+predator    energy per 100 ticks         58.655   58.655   0.000%      0.100%     ok
+predator    sprint energy per 100 ticks  190.679  190.679  0.000%      0.100%     ok
+predator    cruise speed                 8.000    8.000    0.000%      0.010%     ok
+predator    sprint speed                 14.400   14.400   0.000%      0.010%     ok
+predator    turn radius                  41.718   41.809   0.217%      0.500%     ok
+predator    sprint turn radius           75.092   75.255   0.217%      0.500%     ok
+reproducer  energy per 100 ticks         102.725  102.725  0.000%      0.100%     ok
+reproducer  sprint energy per 100 ticks  227.725  227.725  0.000%      0.100%     ok
+reproducer  cruise speed                 8.000    8.000    0.000%      0.010%     ok
+reproducer  sprint speed                 12.000   12.000   0.000%      0.010%     ok
+reproducer  turn radius                  21.537   21.509   0.131%      0.500%     ok
+reproducer  sprint turn radius           32.305   32.263   0.131%      0.500%     ok
+scout       energy per 100 ticks         104.743  104.742  0.000%      0.100%     ok
+scout       sprint energy per 100 ticks  229.743  229.742  0.000%      0.100%     ok
+scout       cruise speed                 8.000    8.000    0.000%      0.010%     ok
+scout       sprint speed                 12.000   12.000   0.000%      0.010%     ok
+scout       turn radius                  21.537   21.509   0.131%      0.500%     ok
+scout       sprint turn radius           32.305   32.263   0.131%      0.500%     ok
+defender    energy per 100 ticks         121.925  121.925  0.000%      0.100%     ok
+defender    sprint energy per 100 ticks  270.925  270.925  0.000%      0.100%     ok
+defender    cruise speed                 8.000    8.000    0.000%      0.010%     ok
+defender    sprint speed                 12.000   12.000   0.000%      0.010%     ok
+defender    turn radius                  21.537   21.509   0.131%      0.500%     ok
+defender    sprint turn radius           32.305   32.263   0.131%      0.500%     ok
+
+predator:forager straight: 40 cells, 0 drift, net energy per kill within 0.2%, catch share 0 sign or rank drift
+
+predator:forager broken: 40 cells, 0 drift, net energy per kill within 0.1%, catch share 0 sign or rank drift
+
+predator:reproducer straight: 40 cells, 0 drift, net energy per kill within 0.2%, catch share 0 sign or rank drift
+
+predator:reproducer broken: 40 cells, 0 drift, net energy per kill within 0.1%, catch share 0 sign or rank drift
+
+predator:scout straight: 40 cells, 0 drift, net energy per kill within 0.3%, catch share 0 sign or rank drift
+
+predator:scout broken: 40 cells, 0 drift, net energy per kill within 0.1%, catch share 0 sign or rank drift
+
+predator:defender straight: 40 cells, 0 drift, net energy per kill within 0.3%, catch share 0 sign or rank drift
+
+predator:defender broken: 40 cells, 0 drift, net energy per kill within 0.1%, catch share 0 sign or rank drift

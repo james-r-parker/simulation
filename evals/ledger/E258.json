@@ -1,0 +1,19 @@
+{
+  "id": "E258",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "plan": "role-budget.md",
+  "task": "T12",
+  "stream": "role-budget",
+  "date": "2026-11-21",
+  "branch": "feat/role-budget-p2",
+  "hypothesis": "E-RB-2 (role-budget T12): the role budget calculator, read on the defender row at the defaults and with the defender's shove on at defenderRepelEnergy 40, defenderRepelImpulse 4 and defenderRepelCost 0, 2 and 4, says whether a defender beside a calling forager can reach a hunter before the kill, and whether its smoke can hide the caller.",
+  "prediction": "The defender row is red at the defaults (the shove is off, so the intercept cell is impossible with the binding repel: off); with the shove on the defender still arrives too late, since the hunter reaches the caller 23 ticks after it is seen and kills it at tick 27, 5 ticks after the defender first moves; the smoke cell is red.",
+  "targets": [],
+  "before": "defaults: defender:predator impossible, binding repel: off (hear 48, run X, intercept X, smoke X)",
+  "after": "shove on at cost 0, 2 and 4: impossible on the run step (the defender never touches the hunter before the kill at tick 27); the search names damping x0.75 and maxThrust x0.5 for the defence and nothing for the smoke",
+  "verdicts": {},
+  "effect": "better",
+  "note": "A tool reading, not a run: npm run role:budget with --search and --check on four configs, under a minute. Check: no RoleBudgetDrift on any arm. The shove cost does not move the row, because the defender never arrives; the 0, 2 and 4 readings are identical. Finding: even a defender at the caller's side cannot touch a hunter that kills in 27 ticks; the single settings that let it are a slower world, not a stronger shove.",
+  "reports": ["evals/decisions/E-RB-2/results.md"]
+}

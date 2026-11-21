@@ -1,0 +1,7 @@
+{
+  "specialisations": {
+    "scout": {
+      "sprintBoost": 0.5
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "sprintStoreEnabled": false,
+  "specialisations": {
+    "forager": {
+      "visionRange": 150
+    }
+  }
+}

@@ -295,6 +295,44 @@
         "js/sim",
         "js/worker"
     ],
+    "test/evo/role-budget-anchors.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
+    "test/evo/role-budget-chase.slow.test.js": [
+        "evals/fair-chase",
+        "evals/fair-chase/control.json",
+        "evals/fair-chase/courser.json",
+        "evals/fair-chase/even.json",
+        "evals/fair-chase/long.json",
+        "evals/fair-chase/stalker.json"
+    ],
+    "test/evo/role-budget-chase.test.js": [
+        "evals/fair-chase"
+    ],
+    "test/evo/role-budget-check.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
+    "test/evo/role-budget-frame.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
+    "test/evo/role-budget-kinematics.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
+    "test/evo/role-budget-matrix.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
+    "test/evo/role-budget-search.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
+    "test/evo/role-budget-shares.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
+    "test/evo/role-budget-tiers.test.js": [
+        "evals/fair-chase"
+    ],
+    "test/evo/role-budget-timeline.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
     "test/evo/scene-bite.test.js": [
         "js/evo/scene-bite.js"
     ],
@@ -313,6 +351,9 @@
     "test/evo/scene-edge.test.js": [
         "js/evo/scene-edge-gates.js",
         "js/evo/scene-edge.js"
+    ],
+    "test/evo/scene-genes.test.js": [
+        "js/evo/scene-genes.js"
     ],
     "test/evo/scene-graze.test.js": [
         "js/evo/scene-graze.js"
@@ -444,6 +485,18 @@
         "library/seasons.json",
         "package.json",
         "wrangler.toml"
+    ],
+    "test/role-budget-drift.test.js": [
+        "scripts/role-budget.mjs"
+    ],
+    "test/role-budget.slow.test.js": [
+        "evals/fair-chase/courser.json",
+        "scripts/role-budget.mjs"
+    ],
+    "test/role-budget.test.js": [
+        "evals/fair-chase/courser.json",
+        "evals/role-budget",
+        "scripts/role-budget.mjs"
     ],
     "test/run-detached.test.js": [
         ".git",

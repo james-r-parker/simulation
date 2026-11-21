@@ -44,6 +44,7 @@ import { proofDetector } from './scene-proof.js';
 import { heritageDetector } from './scene-heritage.js';
 import { nicheDetector } from './scene-niche.js';
 import { mateDetector } from './scene-mate.js';
+import { genesDetector } from './scene-genes.js';
 import { styleDetector } from './style.js';
 import { compileDetectors, createStates } from './observer-detectors.js';
 
@@ -92,6 +93,7 @@ export const DETECTORS = Object.freeze([
     edgeDetector,
     kinDetector,
     scentDetector,
+    genesDetector,
 ]);
 
 /** The detectors a lean observer (the policy core, lean-observer.md) builds and feeds. */
