@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import * as levels from '../../js/sim/effect-levels.js';
+import { SHARE } from '../../js/sim/effect-refs.js';
 import { allocBody } from './helpers/body.js';
 import { smallWorld } from './helpers/small-world.js';
 
@@ -31,6 +32,21 @@ function atEach(world, slot, level, temperatures) {
     });
 }
 
+/**
+ * @param {(world: any, slot: number) => void} reader a `share` reader, which leaves its share in `SHARE[0]`
+ * @returns {(world: any, slot: number) => number} the same read as a returned number
+ */
+const shared = (reader) => (world, slot) => {
+    reader(world, slot);
+    return SHARE[0];
+};
+const [fatLevel, coldRampLevel, hotRampLevel, spentLevel] = [
+    levels.fatLevel,
+    levels.coldRampLevel,
+    levels.hotRampLevel,
+    levels.spentLevel,
+].map(shared);
+
 describe('the temperature levels, against the default thresholds 30, 40, 65 and 85', () => {
     const { world, slot } = bodyWorld();
 
@@ -43,9 +59,9 @@ describe('the temperature levels, against the default thresholds 30, 40, 65 and 
     });
 
     it('ramps the cold and hot shares from the optimal band to the ends', () => {
-        const cold = atEach(world, slot, levels.coldRampLevel, [0, 20, 40, 65]);
+        const cold = atEach(world, slot, coldRampLevel, [0, 20, 40, 65]);
         expect(cold).toEqual([1, 0.5, 0, 0]);
-        const hot = atEach(world, slot, levels.hotRampLevel, [40, 65, 82.5, 100]);
+        const hot = atEach(world, slot, hotRampLevel, [40, 65, 82.5, 100]);
         expect(hot).toEqual([0, 0, 0.5, 1]);
     });
 
@@ -57,9 +73,9 @@ describe('the temperature levels, against the default thresholds 30, 40, 65 and 
 describe('fat', () => {
     it('is the energy over the store', () => {
         const { world, slot } = bodyWorld();
-        expect(levels.fatLevel(world, slot)).toBe(0.5);
+        expect(fatLevel(world, slot)).toBe(0.5);
         world.energy[slot] = 0;
-        expect(levels.fatLevel(world, slot)).toBe(0);
+        expect(fatLevel(world, slot)).toBe(0);
     });
 });
 
@@ -79,10 +95,10 @@ describe('juvenile', () => {
 describe('spent', () => {
     it('is 0 with the store off, 0 at or above the floor and rises to 1 as the store empties', () => {
         const off = bodyWorld();
-        expect(levels.spentLevel(off.world, off.slot)).toBe(0);
+        expect(spentLevel(off.world, off.slot)).toBe(0);
         const { world, slot } = bodyWorld({ sprintStoreEnabled: true, sprintFloor: 0.5 });
         const read = [1, 0.5, 0.25, 0].map(
-            (level) => ((world.sprintStore.level[slot] = level), levels.spentLevel(world, slot)),
+            (level) => ((world.sprintStore.level[slot] = level), spentLevel(world, slot)),
         );
         expect(read).toEqual([0, 0, 0.5, 1]);
     });

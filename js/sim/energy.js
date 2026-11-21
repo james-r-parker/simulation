@@ -8,6 +8,15 @@ import { baseSizeOf, visionRatioOf } from './traits.js';
 import { stepTemperature } from './temperature.js';
 import { TIMER_CAP } from './world.js';
 
+// The lanes this module reads, as constants: a property load from `LANE_ID` (a large object) in the loop boxes its number
+// when the compiler does not inline it.
+const VISION_COST_LANE = LANE_ID.visionCost;
+const PASSIVE_LOSS_LANE = LANE_ID.passiveLoss;
+const SIZE_ENERGY_LOSS_LANE = LANE_ID.sizeEnergyLoss;
+const TURN_COST_LANE = LANE_ID.turnCost;
+const MOVEMENT_COST_LANE = LANE_ID.movementCost;
+const SPRINT_COST_LANE = LANE_ID.sprintCost;
+
 /** Why an agent last lost energy, in code order; `NONE` means it has not lost any. */
 export const LOSS_CAUSE_LIST = causeList([
     ['NONE', 'none', '#8a9bb0'],
@@ -141,7 +150,7 @@ function visionLoss(world, slot) {
     if (!(vision > 1)) {
         return 0;
     }
-    return world.config.passiveLoss * liveOf(world, slot, LANE_ID.visionCost) * (vision - 1);
+    return world.config.passiveLoss * liveOf(world, slot, VISION_COST_LANE) * (vision - 1);
 }
 
 /** The nominal standing, movement and sprint cost of the hunter `tickCost` last priced; a scratch for `applyCosts`. */
@@ -164,16 +173,16 @@ export function tickCost(world, slot) {
     // lane holds the spec's multiplier (and the `burn` trait); the size and vision terms take the spec's multiplier
     // alone, and the `movementCost` lane holds the spec's move multiplier, which the turn term takes on its own.
     const standing =
-        liveOf(world, slot, LANE_ID.passiveLoss) +
-        (liveOf(world, slot, LANE_ID.sizeEnergyLoss) * world.size[slot] + visionLoss(world, slot)) *
+        liveOf(world, slot, PASSIVE_LOSS_LANE) +
+        (liveOf(world, slot, SIZE_ENERGY_LOSS_LANE) * world.size[slot] + visionLoss(world, slot)) *
             sp.passiveLossMultiplier;
-    const turn = liveOf(world, slot, LANE_ID.turnCost) * Math.abs(world.turnRate[slot]) * sp.moveCostMultiplier;
-    const base = (standing + liveOf(world, slot, LANE_ID.movementCost) * (speed * speed) + turn) * drain;
+    const turn = liveOf(world, slot, TURN_COST_LANE) * Math.abs(world.turnRate[slot]) * sp.moveCostMultiplier;
+    const base = (standing + liveOf(world, slot, MOVEMENT_COST_LANE) * (speed * speed) + turn) * drain;
     let cost = base;
     // fair-chase: the cost of the sprint delivered, times the sprint-store factor (1 with the store off).
     const sprint =
         world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0
-            ? liveOf(world, slot, LANE_ID.sprintCost) * world.sprintFactor[slot]
+            ? liveOf(world, slot, SPRINT_COST_LANE) * world.sprintFactor[slot]
             : 0;
     cost += sprint;
     const upkeep = c.specMutationRate > 0 && sp.canHunt ? c.huntUpkeep : 0;

@@ -19,6 +19,10 @@ import { specParams } from './spec-params.js';
 import { gainTemperature } from './temperature.js';
 import { REWARD_SOURCE, noteReward } from './reward.js';
 
+// The lanes this module reads, as constants: a property load from `LANE_ID` (a large object) in the loop boxes its number
+// when the compiler does not inline it.
+const BITE_TAKEN_MULTIPLIER_LANE = LANE_ID.biteTakenMultiplier;
+
 const HERD_CARCASS_BITE = 400;
 
 /**
@@ -217,7 +221,7 @@ function settleKill(world, biter, victim, fatal) {
 function applyBite(world, biter, victim) {
     const { config, x, y } = world;
     // The victim's `biteTakenMultiplier` lane, with the `alarmSeen` effect's `alarmBiteShare` while its seen alarm runs.
-    const taken = liveOf(world, victim, LANE_ID.biteTakenMultiplier);
+    const taken = liveOf(world, victim, BITE_TAKEN_MULTIPLIER_LANE);
     const bite = config.biteEnergy * world.biteBySpec[world.spec[biter]];
     const wasAlive = world.energy[victim] > 0;
     const kick = kickOf(world, biter, victim);

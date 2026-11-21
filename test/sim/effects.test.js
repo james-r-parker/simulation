@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { EFFECTS } from '../../js/sim/effect-list.js';
-import { EFFECT, EFFECT_INDEX, GATE, allocEffects, fadeEffects, gateOpen, liveOf } from '../../js/sim/effects.js';
+import {
+    EFFECT,
+    EFFECT_INDEX,
+    GATE,
+    RESULT,
+    allocEffects,
+    computeFactor,
+    factorOf,
+    fadeEffects,
+    gateOpen,
+    liveOf,
+} from '../../js/sim/effects.js';
 import { allocBody } from './helpers/body.js';
 import { smallWorld } from './helpers/small-world.js';
 
@@ -25,6 +36,19 @@ describe('the default registry', () => {
         for (const lane of new Set(EFFECTS.flatMap((effect) => effect.scales.map((scale) => scale.lane)))) {
             expect(liveOf(world, slot, lane), `${lane} of a calm body`).toBe(world.lanes[lane][slot]);
         }
+    });
+
+    it('gives the product of the factors on a lane, returned by factorOf and left in RESULT by computeFactor', () => {
+        const world = smallWorld({ maxAgents: 4 });
+        const slot = allocBody(world, 0);
+        world.temperature[slot] = 50;
+        world.energy[slot] = world.lanes.maxEnergy[slot] / 2;
+        world.ateTimer[slot] = 255;
+        const fat = 1 - world.lanes.fatSlowShare[slot] * 0.5;
+        expect(factorOf(world, slot, 'maxThrust')).toBeCloseTo(fat, 12);
+        computeFactor(world, slot, 'maxThrust');
+        expect(RESULT[0]).toBe(factorOf(world, slot, 'maxThrust'));
+        expect(factorOf(world, slot, 'sprintCost')).toBe(1);
     });
 
     it('allocates a row pair for each stored effect only, and fades nothing it has not stored', () => {
