@@ -86,7 +86,7 @@ describe('shadowRun', () => {
     it('a body that cannot leave the view has an infinite escape', () => {
         const still = Array.from({ length: 60 }, () => 0);
         const cloud = { x: 100, y: 0, r: R };
-        const slow = { ...prey, cap: { ...prey.cap, sprint: 0 } };
+        const slow = { ...prey, thrust: { ...prey.thrust, base: 0 } };
         expect(shadowRun(hunter, slow, { xs: still, from: 0, at: { x: 120, y: 0 }, cloud, life: 180 }).escapeNeed).toBe(
             Infinity,
         );

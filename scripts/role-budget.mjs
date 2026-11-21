@@ -5,6 +5,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { arenaConfig } from '../js/evo/chase-arena.js';
 import { chaseCells, kinematicRows } from '../js/evo/role-budget-check.js';
+import { defenceCheck } from '../js/evo/role-budget-defence-check.js';
 import { PREY_SPECS } from '../js/evo/role-budget-chase.js';
 import { BUILT_ROWS, matrix } from '../js/evo/role-budget-matrix.js';
 import { validateModel } from '../js/evo/role-budget-model.js';
@@ -194,18 +195,30 @@ function searchRows(config, overrides, result, { model, outDir, arm }) {
 /**
  * Plays the scene of each requested prey beside the formula, on both prey bounds, and the kinematics against the body table.
  * @param {Record<string, any>} config an `arenaConfig`
- * @param {string[]} preys the prey rows asked for
+ * @param {{preys: string[], defence: boolean, model: import('../js/evo/role-budget-model.js').RoleModel}} asked the prey
+ *   rows asked for, whether the defender row was, and the model options
  * @param {import('../js/sim/log.js').SimLog} log the log
- * @returns {{kinematics: import('../js/evo/role-budget-check.js').KinematicRow[], pairs: any[], drift: number}} the check
+ * @returns {{kinematics: import('../js/evo/role-budget-check.js').KinematicRow[], pairs: any[],
+ *   defence: import('../js/evo/role-budget-defence-check.js').DefenceReading[], drift: number}} the check
  */
-function crossCheck(config, preys, log) {
+function crossCheck(config, { preys, defence, model }, log) {
     const kinematics = kinematicRows(config);
     const pairs = preys.map((prey) => ({
         pair: `predator:${prey}`,
         straight: chaseCells(config, { hunter: 'predator', prey, straight: true }),
         broken: chaseCells(config, { hunter: 'predator', prey, straight: false }),
     }));
-    let drift = 0;
+    const played = defence ? defenceCheck(config, model) : { readings: [], drift: 0 };
+    let drift = played.drift;
+    for (const r of played.readings.filter((reading) => reading.drift)) {
+        log.log('warn', 'RoleBudgetDrift', {
+            row: r.row,
+            step: r.what,
+            formula: r.formula,
+            scene: r.scene,
+            tolerance: r.tolerance,
+        });
+    }
     for (const k of kinematics.filter((row) => row.drift)) {
         drift += 1;
         log.log('warn', 'RoleBudgetDrift', {
@@ -228,7 +241,21 @@ function crossCheck(config, preys, log) {
             });
         }
     }
-    return { kinematics, pairs, drift };
+    return { kinematics, pairs, defence: played.readings, drift };
+}
+
+/**
+ * @param {readonly string[]} rows the rows asked for
+ * @param {import('../js/evo/role-budget-model.js').RoleModel} model the model options
+ * @returns {{preys: string[], defence: boolean, model: import('../js/evo/role-budget-model.js').RoleModel}} what the
+ *   cross-check plays: the prey of each hunter row asked for, whether the defender row was asked for, and the model
+ */
+function asked(rows, model) {
+    const preys = rows
+        .filter((r) => r.startsWith('predator:'))
+        .map((r) => r.slice('predator:'.length))
+        .filter((s) => PREY_SPECS.includes(s));
+    return { preys, defence: rows.includes('defender:predator'), model };
 }
 
 /**
@@ -257,11 +284,7 @@ export async function runBudget(args, { logDir = '.sim/logs', print = console.lo
         const result = matrix(config, model, args.rows ?? BUILT_ROWS, { mix: args.mix });
         logCells(config, result, hash, log);
         const searched = args.search ? searchRows(config, overrides, result, { model, outDir: args.outDir, arm }) : [];
-        const preys = (args.rows ?? BUILT_ROWS)
-            .filter((r) => r.startsWith('predator:'))
-            .map((r) => r.slice('predator:'.length))
-            .filter((s) => PREY_SPECS.includes(s));
-        const check = args.check ? crossCheck(config, preys, log) : null;
+        const check = args.check ? crossCheck(config, asked(args.rows ?? BUILT_ROWS, model), log) : null;
         const text = args.json
             ? JSON.stringify({ configHash: hash, ...result, searched, check }, null, 2)
             : [

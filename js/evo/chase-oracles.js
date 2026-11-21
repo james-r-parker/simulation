@@ -4,6 +4,7 @@
 // better evader would lower it. Steering uses vectors (no `atan2`), so the same inputs give the same outputs everywhere.
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
+import { HEARD_STRIDE } from '../sim/agent-arrays.js';
 import { detCos, detSin } from '../sim/det-math.js';
 
 const PI = Math.PI;
@@ -12,6 +13,8 @@ const TWO_PI = 2 * PI;
 export const JINK_RANGE = 120;
 /** The longest the pursuer leads its aim, in ticks of the evader's motion. */
 const LEAD_MAX = 30;
+/** The offset of the alarm loudness in a `heard` row (`ALARM_HEARD` of js/sim/calls.js). */
+const HEARD_ALARM = 0;
 /** A speed under this is "at rest" for choosing a direction. */
 const REST = 0.05;
 /** With the sprint store on (docs/designs/fair-chase.md, Step 1), the evader sprints only inside this many `JINK_RANGE`s. */
@@ -154,5 +157,79 @@ export function evaderBrain({ pursuer, evader, sprint, jinkRange = JINK_RANGE, w
         const near = world.sprintStore === undefined || length(dx, dy) < EVADER_SPRINT_JINKS * JINK_RANGE;
         const burst = sprint && near && storeAboveFloor(world, evader);
         drive(world, evader, { turn: steer(world, evader, aim), sprint: burst, bite: false });
+    };
+}
+
+/**
+ * Zeroes a body's output row: it stands, holding nothing.
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the body
+ * @returns {number} the offset of its output row
+ */
+function stand(world, slot) {
+    const row = slot * OUTPUT_COUNT;
+    world.outputs.fill(0, row, row + OUTPUT_COUNT);
+    return row;
+}
+
+/**
+ * The caller's brain (docs/designs/role-budget.md, Phase 2): it stands with nothing held until the hunter is within `seeGap`
+ * of it, then holds `ALARM` from `reaction` ticks later, so its alarm fires once and again as the timer runs out.
+ * @param {{caller: number, hunter: number, seeGap: number, reaction: number}} slots the caller, the hunter it watches, the
+ *   centre gap at which it sees the hunter and the ticks from seeing to calling
+ * @returns {(world: Record<string, any>) => void} a `brain` phase body
+ */
+export function callerBrain({ caller, hunter, seeGap, reaction }) {
+    let saw = -1;
+    return (world) => {
+        const row = stand(world, caller);
+        const gap = length(world.x[hunter] - world.x[caller], world.y[hunter] - world.y[caller]);
+        saw = saw < 0 && gap <= seeGap ? world.tick : saw;
+        if (saw >= 0 && world.tick >= saw + reaction) {
+            world.outputs[row + OUTPUT_INDEX.ALARM] = 1;
+        }
+    };
+}
+
+/**
+ * The defender's brain: it stands until its `heard` alarm loudness is above `threshold`, then, `reaction` ticks later, runs
+ * at the hunter as the pursuer does and holds `BITE` (the shove needs it). It records the tick it heard and the tick it moved.
+ * @param {{defender: number, hunter: number, reaction: number, threshold: number}} slots the defender, the hunter, the ticks
+ *   from hearing to moving and the loudness it acts on
+ * @returns {((world: Record<string, any>) => void) & {state: {heardTick: number, startTick: number}}} a `brain` phase body
+ *   and its readings
+ */
+export function defenderBrain({ defender, hunter, reaction, threshold }) {
+    const state = { heardTick: -1, startTick: -1 };
+    const chase = pursuerBrain({ pursuer: defender, evader: hunter, sprint: true });
+    const brain = (/** @type {Record<string, any>} */ world) => {
+        if (state.heardTick < 0 && world.heard[defender * HEARD_STRIDE + HEARD_ALARM] > threshold) {
+            state.heardTick = world.tick;
+            state.startTick = world.tick + reaction;
+        }
+        if (state.startTick >= 0 && world.tick >= state.startTick) {
+            chase(world);
+        } else {
+            stand(world, defender);
+        }
+    };
+    return Object.assign(brain, { state });
+}
+
+/**
+ * The prey's smoke brain: at tick `release` it holds `SMOKE` (the cloud lands behind it along its heading), and from then on
+ * runs at full sprint at the aim `(0, 1)`, sideways to a hunter that comes along +x.
+ * @param {{prey: number, release: number}} slots the prey and the tick it releases
+ * @returns {(world: Record<string, any>) => void} a `brain` phase body
+ */
+export function smokerBrain({ prey, release }) {
+    return (world) => {
+        const row = stand(world, prey);
+        world.outputs[row + OUTPUT_INDEX.THRUST] = 1;
+        world.outputs[row + OUTPUT_INDEX.SMOKE] = world.tick === release ? 1 : 0;
+        if (world.tick >= release) {
+            world.outputs[row + OUTPUT_INDEX.TURN] = steer(world, prey, { x: 0, y: 1 });
+            world.outputs[row + OUTPUT_INDEX.SPRINT] = 1;
+        }
     };
 }

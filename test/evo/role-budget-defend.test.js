@@ -13,7 +13,7 @@ const SLOW = {
     defenderRepelCost: 2,
     specialisations: { predator: { sprintBoost: 0.5 } },
 };
-const NEAR = { ...MODEL_DEFAULTS, defenderGap: 40 };
+const NEAR = MODEL_DEFAULTS;
 
 /** @param {Record<string, any>} overrides @param {import('../../js/evo/role-budget-model.js').RoleModel} [model] */
 const budget = (overrides, model = MODEL_DEFAULTS) => {
@@ -69,11 +69,12 @@ describe('budgetDefend with the shove on in a world the defender can reach', () 
     it('finds the largest delay at a step by bisection: that delay completes and one more fails', () => {
         const [hunter, caller, defender] = b.bodies;
         const completes = (/** @type {Record<string, number>} */ delays) => {
-            const run = defenceTimeline(hunter, caller, defender, { reaction: 2, threshold: 0.1, side: 40, delays });
+            const run = defenceTimeline(hunter, caller, defender, { reaction: 2, threshold: 0.1, side: 150, delays });
             const kill = /** @type {number} */ (b.baseline.killTick);
             return run.repelTick !== null && run.repelTick < kill;
         };
-        for (const step of ['turn', 'run']) {
+        expect(b.cells.turn.capped).toBe(true);
+        for (const step of ['hear', 'run']) {
             const slack = /** @type {number} */ (b.cells[step].margin);
             expect(slack).toBeLessThan(200);
             expect(completes({ [step]: slack })).toBe(true);

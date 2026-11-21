@@ -142,13 +142,16 @@ function move(s, tick) {
 }
 
 /**
- * The defender touches the hunter: they collide, and with the shove on and the hunter in its jaws the defender shoves.
+ * The defender bumps the caller if they overlap, and touches the hunter: they collide, and with the shove on and the hunter in its jaws the defender shoves.
  * @param {State} s the run, updated in place
  * @param {number} tick the tick
  * @returns {void}
  */
 function meet(s, tick) {
-    const { h, d, out, p, options } = s;
+    const { h, c, d, out, p, options } = s;
+    if (!options.absent && touching(c, d)) {
+        collide(c, d);
+    }
     if (options.absent || !touching(h, d)) {
         return;
     }
@@ -262,12 +265,14 @@ function listen(s, tick) {
 /**
  * @param {State} s the run
  * @param {number} tick the tick
- * @returns {import('./role-budget-body.js').Out} what the defender holds: nothing until it moves, then the hunter's pursuit
+ * @returns {import('./role-budget-body.js').Out} what the defender holds: nothing until it moves, then the hunter's pursuit,
+ *   at the grazing gait since it holds `BITE` (a non-hunter holding `BITE` moves at `grazeThrust`; the shove needs it)
  */
 function defenderOut(s, tick) {
     const { out, d, h, delays } = s;
     if (out.startTick < 0 || tick < out.startTick) {
         return STILL;
     }
-    return hunterOut(d, h, { ...VIEW_PLAY, runAt: delays.run }, tick - out.startTick);
+    const chase = hunterOut(d, h, { ...VIEW_PLAY, runAt: delays.run }, tick - out.startTick);
+    return { ...chase, thrust: d.p.thrust.graze / d.p.thrust.cruise };
 }

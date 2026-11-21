@@ -258,6 +258,19 @@ describe('the report', () => {
         expect(text).toMatch(/predator:scout: no single setting/);
     });
 
+    it('--check plays the defence and both smokes beside their formulas and reports no drift at the defaults', async () => {
+        const { text, check } = await run(['--rows', 'defender:predator', '--check']);
+        expect(check.drift).toBe(0);
+        expect(check.defence.map((/** @type {any} */ r) => r.what)).toContain('heard tick');
+        expect(text).toMatch(/defender:predator\s+heard tick\s+3\s+3\s+0 ticks\s+ok/);
+        expect(text).toMatch(/smoke:prey\s+cloud life\s+179\s+179/);
+    });
+
+    it('--check reads no defence for a run of hunter rows alone', async () => {
+        const { check } = await run(['--rows', 'predator:scout', '--check']);
+        expect(check.defence).toEqual([]);
+    });
+
     it('prints the defender row in a table of its own, with its binding and the shove line', async () => {
         const off = await run(['--rows', 'predator:forager,defender:predator']);
         expect(off.text).toMatch(/row\s+see\s+turn\s+run\s+bite/);

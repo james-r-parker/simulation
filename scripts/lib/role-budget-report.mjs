@@ -161,6 +161,24 @@ export function formatSearch(searched) {
 }
 
 /**
+ * @param {import('../../js/evo/role-budget-defence-check.js').DefenceReading[]} readings the readings
+ * @returns {string} a line per reading: the formula beside the scene, its tolerance and whether it drifts
+ */
+function formatDefenceCheck(readings) {
+    const show = (/** @type {number | boolean | null} */ v) =>
+        v === null ? 'none' : String(typeof v === 'number' ? Number(v.toFixed(2)) : v);
+    const rows = readings.map((r) => [
+        r.row,
+        r.what,
+        show(r.formula),
+        show(r.scene),
+        r.tolerance,
+        r.drift ? 'DRIFT' : 'ok',
+    ]);
+    return padTable([['row', 'reading', 'formula', 'scene', 'tolerance', ''], ...rows]).join('\n');
+}
+
+/**
  * @param {{kinematics: import('../../js/evo/role-budget-check.js').KinematicRow[], pairs: {pair: string, straight: any[], broken: any[]}[]}} check the cross-check
  * @returns {string} the kinematic readings and, per pair and bound, the cells that disagree or drift
  */
@@ -192,6 +210,9 @@ export function formatCheck(check) {
                 `${pair} ${bound}: ${cells.length} cells, ${drift} drift${detail.length > 0 ? `\n  ${detail.join('\n  ')}` : ''}`,
             );
         }
+    }
+    if (check.defence?.length > 0) {
+        lines.push(formatDefenceCheck(check.defence));
     }
     return lines.join('\n\n');
 }

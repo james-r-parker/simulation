@@ -4,7 +4,7 @@
 
 import { MAX_TICKS } from './role-budget-timeline.js';
 import { cell } from './role-budget-cell.js';
-import { createBody, stepBody } from './role-budget-body.js';
+import { charge, costOf, createBody, stepBody } from './role-budget-body.js';
 import { norm, speedStep, swingTicks } from './role-budget-kinematics.js';
 import { steerOut } from './role-budget-play.js';
 import { viewReach, viewReachCos } from './role-budget-senses.js';
@@ -60,29 +60,42 @@ export function hunterXs(hunter, { speed, sprint = true, ticks = MAX_TICKS }) {
  */
 
 /**
- * The hidden body runs straight sideways from the release; the hunter keeps its heading along `xs`. The hunter's view is
- * its reach at the bearing of the body from its heading, plus the body's size.
+ * @param {import('./role-budget-params.js').RoleParams} hunter the hunter, heading along +x at `hx`
+ * @param {import('./role-budget-body.js').Body} body the other body
+ * @param {number} hx the hunter's position
+ * @returns {boolean} whether the body is inside the hunter's view: closer than its reach at the bearing, plus the body's size
+ */
+function inView(hunter, body, hx) {
+    const dx = body.x - hx;
+    const dist = norm(dx, body.y);
+    return dist < viewReachCos(hunter, dist === 0 ? 1 : dx / dist) + body.size;
+}
+
+/**
+ * The hidden body runs sideways from the release at full sprint, steering at `(0, 1)` on the body law of the sim (it turns
+ * and gathers speed, it does not jump to its cap); the hunter keeps its heading along `xs`. The hunter's view is its reach
+ * at the bearing of the body from its heading, plus the body's size.
  * @param {import('./role-budget-params.js').RoleParams} hunter the hunter
  * @param {import('./role-budget-params.js').RoleParams} runner the hidden body
- * @param {{xs: number[], from: number, at: {x: number, y: number}, cloud: Cloud, life: number}} scene the hunter's
- *   profile and the index of the release in it, where the body stands, the cloud and its life in ticks
+ * @param {{xs: number[], from: number, at: {x: number, y: number}, cloud: Cloud, life: number, paid?: number, lag?: number}} scene
+ *   the hunter's profile and the index of the release in it, where the body stands (facing +x), the cloud, its life in ticks,
+ *   the energy the body paid to release (0 when another body released) and the ticks before it starts to run (1 for a body
+ *   that senses a cloud another body released, which exists from that tick's signal phase)
  * @returns {Hidden} the hidden and the escape ticks
  */
-export function shadowRun(hunter, runner, { xs, from, at, cloud, life }) {
-    const speed = runner.cap.sprint;
+export function shadowRun(hunter, runner, { xs, from, at, cloud, life, paid = 0, lag = 0 }) {
+    const b = createBody(runner, { x: at.x, y: at.y, angle: 0 });
+    charge(b, paid);
     let hidden = 0;
     let blind = true;
     let seen = -1;
     for (let t = 0; from + t < xs.length; t++) {
         const hx = xs[from + t];
-        const body = { x: at.x, y: at.y + speed * t };
-        const dx = body.x - hx;
-        const dist = norm(dx, body.y);
-        if (dist < viewReachCos(hunter, dist === 0 ? 1 : dx / dist) + runner.size) {
-            seen = t;
-        }
-        blind = blind && t <= life && segmentHitsCloud({ x: hx, y: 0 }, body, cloud);
+        seen = inView(hunter, b, hx) ? t : seen;
+        blind = blind && t <= life && segmentHitsCloud({ x: hx, y: 0 }, b, cloud);
         hidden += blind ? 1 : 0;
+        const out = t < lag ? { turn: 0, sprint: 0, thrust: 0 } : { turn: steerOut(b, { x: 0, y: 1 }), sprint: 1 };
+        charge(b, costOf(b, out, stepBody(b, out)));
     }
     const last = xs.length - from - 1;
     return { hiddenTicks: Math.min(hidden, life), escapeNeed: seen >= last ? Infinity : seen + 1 };
@@ -123,7 +136,8 @@ export function smokeCell(hunter, prey, model) {
         from: 0,
         at: { x: gap, y: 0 },
         cloud,
-        life: prey.smoke.ticks,
+        life: prey.smoke.ticks - 1,
+        paid: prey.smoke.cost,
     });
     const state = mayRelease(prey, model, model);
     const margin = hiddenTicks - escapeNeed - model.reactionTicks;
@@ -170,6 +184,8 @@ function spread(a) {
  * @property {boolean} refused whether the geometry refuses the release: the defender faces the hunter, so the cloud lands
  *   behind it on the caller's side and the hunter's rays meet the defender first
  * @property {number} releasePoint the defender's position along the hunter-to-caller segment (hunter at 0)
+ * @property {number} coast the distance a defender at its sprint cap coasts when it stops pushing, the stop the geometry
+ *   assumes it makes on the spot
  * @property {number} facingTicks the ticks to turn its back to the hunter
  * @property {number} runTicks the ticks to walk onto the segment
  * @property {number} releaseTick the tick it releases
@@ -214,24 +230,36 @@ function smokeMargin({ refused, state, slacks }) {
 /**
  * @param {Array<import('./role-budget-params.js').RoleParams>} bodies the hunter, the caller and the defender
  * @param {import('./role-budget-model.js').RoleModel & {sinceRelease?: number, facing?: 'caller' | 'hunter',
- *   gap?: number}} model the model options; `facing` is where the defender faces when it releases (default the caller)
+ *   gap?: number, standing?: number}} model the model options; `facing` is where the defender faces when it releases
+ *   (default the caller); `standing` is the heading of a defender already on the spot at rest (it walked there; default:
+ *   it walks from beside the caller)
  * @returns {DefenderSmoke} where and when the defender must release so that the cloud lies on the hunter-to-caller line
  */
 export function defenderSmokeGeometry([hunter, caller, defender], model) {
     const length = model.gap ?? viewReach(caller, Math.PI) + hunter.size;
     const spot = length - (caller.size + defender.size);
     const cloud = { x: spot - (defender.size + defender.smoke.radius), y: 0, r: defender.smoke.radius };
-    const walk = walkTo(defender, {
-        from: { x: length, y: model.defenderGap },
-        angle: -Math.PI / 2,
-        to: { x: spot, y: 0 },
-    });
+    const walk =
+        model.standing === undefined
+            ? walkTo(defender, {
+                  from: { x: length, y: model.defenderGap },
+                  angle: -Math.PI / 2,
+                  to: { x: spot, y: 0 },
+              })
+            : { ticks: 0, angle: model.standing };
     const facing = Math.ceil(swingTicks(spread(walk.angle), defender.turnRate.start));
     const releaseTick = 2 * model.reactionTicks + 1 + walk.ticks + facing;
     const xs = hunterXs(hunter, { speed: hunter.cap.cruise });
     const latest = latestRelease(xs, { cloud, reaction: model.reactionTicks, speed: hunter.cap.cruise });
     const from = Number.isFinite(releaseTick) ? Math.min(releaseTick, xs.length - 1) : 0;
-    const hidden = shadowRun(hunter, caller, { xs, from, at: { x: length, y: 0 }, cloud, life: defender.smoke.ticks });
+    const hidden = shadowRun(hunter, caller, {
+        xs,
+        from,
+        at: { x: length, y: 0 },
+        cloud,
+        life: defender.smoke.ticks - 1,
+        lag: 1,
+    });
     const slackDefender = Number.isFinite(releaseTick) ? latest - releaseTick : null;
     const margin = hidden.hiddenTicks - hidden.escapeNeed - model.reactionTicks;
     const slackCaller = Number.isFinite(margin) ? margin : null;
@@ -241,6 +269,7 @@ export function defenderSmokeGeometry([hunter, caller, defender], model) {
     return {
         refused,
         releasePoint: spot,
+        coast: (defender.cap.sprint * defender.damping) / (1 - defender.damping),
         facingTicks: facing,
         runTicks: walk.ticks,
         releaseTick,
