@@ -8,7 +8,7 @@ import { ease } from '../camera-move.js';
 import { createPrng } from '../prng.js';
 import { captionFor } from './captions.js';
 import { findMoments, readSnapshotAgents } from './moments.js';
-import { SHOT_CEILING_S } from './schedule.js';
+import { holdReached, SHOT_CEILING_S } from './schedule.js';
 import { lingerOver, refreshLingerMoment } from './linger.js';
 import { DECISION_INTERVAL_S, updateSnapshotHistory } from './snapshot-history.js';
 import { applyVariety, createShotHistory, noteShot, subjectOf } from './variety.js';
@@ -67,9 +67,10 @@ function decideWide(state, { timeS, agents, candidates, worldMeta }) {
     if (elapsedS < shot.minDurationS) {
         return;
     }
+    const holdOver = holdReached(timeS - state.shotStartS);
     const fromPose = shotPose(shot, timeS, state.world);
     const top = candidates[0];
-    if (top !== undefined && top.score + state.rng.next() * MOMENT_RANDOM_BONUS > MOMENT_THRESHOLD) {
+    if (holdOver && top !== undefined && top.score + state.rng.next() * MOMENT_RANDOM_BONUS > MOMENT_THRESHOLD) {
         enterShot(state, SHOT_STATE.GLIDE, { startTimeS: timeS, agents, fromPose, moment: top });
         state.lastShownS[top.kind] = timeS;
         state.shotStartS = timeS;
@@ -267,6 +268,7 @@ function ensureActive(state, { idleMs, timeS, agents, camPose }) {
     if (!state.active) {
         state.active = true;
         state.lastDecisionS = -Infinity;
+        state.shotStartS = -Infinity;
         state.lowScoreSinceS = null;
         state.caption = '';
         state.onSelect?.(0);
@@ -361,7 +363,7 @@ export function createDirector(opts) {
         quiet: true,
         history: createShotHistory(),
         lastWideS: -Infinity,
-        shotStartS: 0,
+        shotStartS: -Infinity,
         lastDecisionS: -Infinity,
         lowScoreSinceS: /** @type {number | null} */ (null),
         lastShownS: /** @type {Record<string, number>} */ ({}),

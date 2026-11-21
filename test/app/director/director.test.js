@@ -119,11 +119,13 @@ describe('js/app/director/director', () => {
         });
         expect(snap.state).toBe(SHOT_STATE.WIDE);
 
-        const packKillAt9s = [{ tick: 540, kind: LAYOUT.effectKinds.DIED, x: 5000, y: 3000, a: 1, b: 2, c: packKillC }];
+        const packKillAtCut = [
+            { tick: 2340, kind: LAYOUT.effectKinds.DIED, x: 5000, y: 3000, a: 1, b: 2, c: packKillC },
+        ];
         snap = stepDirector(director, {
-            tick: 540,
+            tick: 2340,
             snapshot: SAMPLE_AGENTS,
-            effects: packKillAt9s,
+            effects: packKillAtCut,
             info: INFO,
             layout: LAYOUT,
             camera,
@@ -138,9 +140,9 @@ describe('js/app/director/director', () => {
         expect(shift).toBeGreaterThan(0);
 
         snap = stepDirector(director, {
-            tick: 660 + shift,
+            tick: 2460 + shift,
             snapshot: SAMPLE_AGENTS,
-            effects: packKillAt9s,
+            effects: packKillAtCut,
             info: INFO,
             layout: LAYOUT,
             camera,
@@ -148,10 +150,10 @@ describe('js/app/director/director', () => {
         expect(snap.state).toBe(SHOT_STATE.LINGER);
 
         const packKillLate = [
-            { tick: 840 + shift, kind: LAYOUT.effectKinds.DIED, x: 5000, y: 3000, a: 1, b: 2, c: packKillC },
+            { tick: 2640 + shift, kind: LAYOUT.effectKinds.DIED, x: 5000, y: 3000, a: 1, b: 2, c: packKillC },
         ];
         snap = stepDirector(director, {
-            tick: 900 + shift,
+            tick: 2700 + shift,
             snapshot: SAMPLE_AGENTS,
             effects: packKillLate,
             info: INFO,
@@ -161,7 +163,7 @@ describe('js/app/director/director', () => {
         expect(snap.state).toBe(SHOT_STATE.LINGER);
 
         // the moment goes quiet: two quiet seconds later the shot pulls back, and the pullback move runs at x1
-        for (const tick of [1020 + shift, 1140 + shift]) {
+        for (const tick of [2820 + shift, 5040 + shift]) {
             snap = stepDirector(director, {
                 tick,
                 snapshot: SAMPLE_AGENTS,
@@ -176,7 +178,7 @@ describe('js/app/director/director', () => {
         expect(speeds).toEqual([4, 1]);
 
         snap = stepDirector(director, {
-            tick: 1260 + shift + 3600,
+            tick: 9000 + shift,
             snapshot: SAMPLE_AGENTS,
             effects: [],
             info: INFO,
@@ -186,7 +188,7 @@ describe('js/app/director/director', () => {
         expect(snap.state).toBe(SHOT_STATE.WIDE);
     });
 
-    it('extends linger by 4 s at a time up to 20 s while score >= 45 and tracks moving focus', () => {
+    it('extends linger by 4 s at a time up to 40 s while score >= 45 and tracks moving focus', () => {
         const camera = createCameraController({ canvas: CANVAS, world: WORLD });
         const director = createDirector({ seed: 99, canvas: CANVAS, world: WORLD, log: () => {} });
         const stepAt = (/** @type {number} */ timeS, xOffset = 0) =>
@@ -200,23 +202,32 @@ describe('js/app/director/director', () => {
             });
 
         stepDirector(director, { timeS: 0, snapshot: SAMPLE_AGENTS, info: INFO, layout: LAYOUT });
-        let snap = stepAt(9, 0);
+        // the first wide holds 30 s, so the first cut is after that
+        let snap = stepAt(31, 0);
         expect(snap.state).toBe(SHOT_STATE.GLIDE);
         expect(snap.caption).toBe('Chase - predator after forager');
 
         // the glide is a calm move as long as its caps need; the linger begins when it lands
-        const lingerAt = 9 + (snap.shot?.durationS ?? 0);
+        const lingerAt = 31 + (snap.shot?.durationS ?? 0);
         snap = stepAt(lingerAt, 20);
         expect(snap.state).toBe(SHOT_STATE.LINGER);
-        expect(snap.shot?.durationS).toBe(8);
+        expect(snap.shot?.durationS).toBe(16);
 
-        snap = stepAt(lingerAt + 8, 100);
-        expect(snap.shot?.durationS).toBe(12);
-        stepAt(lingerAt + 12, 150);
-        snap = stepAt(lingerAt + 16, 200);
+        snap = stepAt(lingerAt + 16, 100);
         expect(snap.shot?.durationS).toBe(20);
+        for (const [after, offset] of [
+            [20, 150],
+            [24, 200],
+            [28, 250],
+            [32, 300],
+        ]) {
+            snap = stepAt(lingerAt + after, offset);
+        }
+        expect(snap.shot?.durationS).toBe(36);
+        snap = stepAt(lingerAt + 36, 350);
+        expect(snap.shot?.durationS).toBe(40);
 
-        snap = stepAt(lingerAt + 20, 250);
+        snap = stepAt(lingerAt + 40, 400);
         expect(snap.state).toBe(SHOT_STATE.PULLBACK);
     });
 
@@ -234,8 +245,8 @@ describe('js/app/director/director', () => {
                 camera,
             });
         stepDirector(director, { timeS: 0, snapshot: SAMPLE_AGENTS, info: INFO, layout: LAYOUT });
-        const glide = stepAt(9, 0);
-        const landS = 9 + (glide.shot?.durationS ?? 0);
+        const glide = stepAt(31, 0);
+        const landS = 31 + (glide.shot?.durationS ?? 0);
         stepAt(landS, 0);
         const landedX = camera.x;
         stepAt(landS + 0.5, 2000);
@@ -253,7 +264,7 @@ describe('js/app/director/director', () => {
 
         const escapeEffects = [
             {
-                tick: 540,
+                tick: 2340,
                 kind: LAYOUT.effectKinds.ESCAPED,
                 x: 3000,
                 y: 2000,
@@ -263,14 +274,14 @@ describe('js/app/director/director', () => {
             },
         ];
         let snap = stepDirector(director, {
-            tick: 540,
+            tick: 2340,
             snapshot: SAMPLE_AGENTS,
             effects: escapeEffects,
             info: INFO,
             layout: LAYOUT,
         });
         expect(snap.state).toBe(SHOT_STATE.GLIDE);
-        const landTick = 540 + Math.ceil((snap.shot?.durationS ?? 0) * 60);
+        const landTick = 2340 + Math.ceil((snap.shot?.durationS ?? 0) * 60);
 
         const movedVictim = [
             { genomeId: 1, lineageId: 10, spec: 0, x: 3450, y: 2150, angle: 0, size: 12, speed: 4, flags: 0 },
@@ -293,13 +304,13 @@ describe('js/app/director/director', () => {
         stepDirector(director, { timeS: 0, snapshot: SAMPLE_AGENTS, info: INFO, layout: LAYOUT });
         const activeChase = makeChasePair(0);
         const chaseShot = stepDirector(director, {
-            timeS: 9,
+            timeS: 31,
             snapshot: activeChase,
             earlierSnapshot: EARLIER_CHASE,
             info: INFO,
             layout: LAYOUT,
         });
-        const chaseLandS = 9 + (chaseShot.shot?.durationS ?? 0);
+        const chaseLandS = 31 + (chaseShot.shot?.durationS ?? 0);
         const brokenChaseStillAlive = [
             { genomeId: 10, lineageId: 1, spec: 1, x: 4500, y: 3200, angle: Math.PI, size: 18, speed: 4, flags: 0 },
             { genomeId: 11, lineageId: 2, spec: 0, x: 4700, y: 3400, angle: 0, size: 12, speed: 4, flags: 0 },
@@ -323,16 +334,16 @@ describe('js/app/director/director', () => {
         expect(snap.pose?.x).toBe(4200);
     });
 
-    it('produces identical choices for the same seed and applies the 0.6 repeat penalty within 30 s', () => {
+    it('produces identical choices for the same seed and holds a subject through the hold', () => {
         /** @param {number} seed */
         const runSequence = (seed) => {
             const d = createDirector({ seed, canvas: CANVAS, world: WORLD, log: () => {} });
             const states = [];
-            for (let t = 0; t <= 45; t += 0.5) {
+            for (let t = 0; t <= 100; t += 0.5) {
                 const ticker =
-                    t === 9
+                    t === 31
                         ? [{ tick: Math.round(t * 60), kind: 'new-leader', lineageId: 10 }]
-                        : t === 30
+                        : t === 90
                           ? [{ tick: Math.round(t * 60), kind: 'new-leader', lineageId: 20 }]
                           : [];
                 const res = stepDirector(d, { timeS: t, snapshot: SAMPLE_AGENTS, ticker, info: INFO, layout: LAYOUT });
@@ -344,11 +355,12 @@ describe('js/app/director/director', () => {
         const first = runSequence(12345);
         const second = runSequence(12345);
         expect(first).toEqual(second);
-        expect(first.find((s) => s.t === 9)?.state).toBe(SHOT_STATE.GLIDE);
-        expect(first.find((s) => s.t === 30)?.state).toBe(SHOT_STATE.WIDE);
+        expect(first.find((s) => s.t === 31)?.state).toBe(SHOT_STATE.GLIDE);
+        // 59 s on, the shot has not gone back to a wide shot: the linger holds the subject through the hold
+        expect(first.find((s) => s.t === 60)?.state).not.toBe(SHOT_STATE.GLIDE);
     });
 
-    it('re-plans wide after its random 20..40 s duration when no moment fires, and bounds snapshot history', () => {
+    it('re-plans wide after its random 30..60 s duration when no moment fires, and bounds snapshot history', () => {
         const disabledInit = createDirector({ seed: 1, canvas: CANVAS, world: WORLD, enabled: false });
         expect(disabledInit.isEnabled()).toBe(false);
         const director = createDirector({ seed: 5, canvas: CANVAS, world: WORLD, log: () => {} });
@@ -371,13 +383,13 @@ describe('js/app/director/director', () => {
             }
         }
         const afterReplan = stepDirector(director, {
-            timeS: 45,
+            timeS: 200,
             idleMs: 0,
             snapshot: SAMPLE_AGENTS,
             info: INFO,
             layout: LAYOUT,
         });
-        expect(firstStart).toBeGreaterThanOrEqual(20);
+        expect(firstStart).toBeGreaterThanOrEqual(30);
         expect(afterReplan.shot?.startTimeS).toBeGreaterThan(0);
 
         stepDirector(director, { timeS: 0, idleMs: 0, snapshot: SAMPLE_AGENTS, info: INFO, layout: LAYOUT });

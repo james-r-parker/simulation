@@ -20,14 +20,14 @@ export const SHOT_STATE = Object.freeze({
 export const WIDE_DRIFT_PERIOD_X_S = 90;
 export const WIDE_DRIFT_PERIOD_Y_S = 140;
 export const WIDE_DRIFT_AMPLITUDE = 0.03;
-/** Minimum and maximum durations of a `wide` shot in seconds. */
-export const WIDE_MIN_S = 8;
-export const WIDE_BASE_S = 20;
-export const WIDE_SPAN_S = 20;
+/** Minimum and base durations and random span of a `wide` shot's hold, in seconds, after its move. */
+export const WIDE_MIN_S = 30;
+export const WIDE_BASE_S = 30;
+export const WIDE_SPAN_S = 30;
 /** `linger` base duration, extension step, cap and low-score early-exit window in seconds. */
-export const LINGER_BASE_S = 8;
+export const LINGER_BASE_S = 16;
 export const LINGER_EXTEND_S = 4;
-export const LINGER_MAX_S = 20;
+export const LINGER_MAX_S = 40;
 export const LINGER_LOW_SCORE = 30;
 export const LINGER_LOW_WINDOW_S = 2;
 
