@@ -30,12 +30,22 @@ const DEG = 6.283185307179586 / 360;
  * @property {string} scene the scene it detects (principles.md)
  * @property {number} spec the specialisation the subject is staged with
  * @property {boolean} needsHunter whether the subject must have a `canHunt` specialisation
- * @property {(rng: import('../sim/rng.js').Rng, view: number) => import('./memory-probe-run.js').Plan} plan one
- *   trial's staging, drawn from the drill's stream; `view` is the subject's ray length
+ * @property {(rng: import('../sim/rng.js').Rng, view: number, config?: Readonly<Record<string, any>>) => import('./memory-probe-run.js').Plan} plan
+ *   one trial's staging, drawn from the drill's stream; `view` is the subject's ray length and `config` the validated config
+ *   the trial runs under (a role drill reads its bodies' numbers from it; the other drills ignore it)
  * @property {Record<string, any>} [arena] config overrides the drill's trials run under (the arena rules)
  * @property {readonly DrillArm[]} [arms] control arms a subject is also played on when the caller asks for them
  *   (`pack-converge`: the lone hunter, and the trio that cannot sense each other)
  */
+
+/**
+ * @typedef {object} RoleFields
+ * @property {string} row the budget row the drill's bar is read from (`drill-role-row.js`)
+ * @property {readonly (readonly string[])[]} [goals] the sets of steps by which the drill can be won (default: all the row's steps)
+ * @property {() => import('./memory-probe-run.js').Subject} reference a fresh scripted reference subject
+ */
+
+/** @typedef {Drill & RoleFields} RoleDrill a drill whose bar is a budget row */
 
 /**
  * @param {import('../sim/rng.js').Rng} rng the drill's stream
