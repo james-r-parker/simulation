@@ -38,7 +38,9 @@ describe('LANES', () => {
     });
 
     it('makes every spec field a lane (the field of one, or a lane of its own) except canHunt and index', () => {
-        for (const field of SPECIALISATION_FIELDS.slice(1).filter((f) => f !== 'canHunt' && f !== 'body')) {
+        for (const field of SPECIALISATION_FIELDS.slice(1).filter(
+            (f) => f !== 'canHunt' && f !== 'body' && f !== 'genes',
+        )) {
             expect(
                 LANES.some((lane) => lane.field === field),
                 field,
@@ -50,17 +52,28 @@ describe('LANES', () => {
     it('names each lane once, after its key or else its field, with a family and nothing moved yet', () => {
         expect(new Set(LANES.map((lane) => lane.name)).size).toBe(LANE_COUNT);
         for (const lane of LANES) {
-            expect(lane.name).toBe(lane.key ?? lane.field);
+            expect(lane.name).toBe(lane.key ?? lane.field ?? lane.name);
             expect(lane.family).toMatch(/^[a-z]+$/);
             expect(lane.moved).toBe(false);
         }
-        expect(LANE_COUNT).toBe(110);
+        expect(LANE_COUNT).toBe(113);
         expect(LANES.filter((lane) => lane.kind === 'offset').map((lane) => lane.name)).toHaveLength(6);
     });
 
     it('reads only keys the config holds', () => {
         for (const lane of LANES) {
             expect(lane.key === null || lane.key in config, lane.name).toBe(true);
+        }
+    });
+});
+
+describe('the lanes a trait adds', () => {
+    it('are hearing and nerve at 1 and smokeSight at 0, for every spec, with no key and no field', () => {
+        const added = LANES.filter((lane) => lane.key === null && lane.field === null);
+        expect(added.map((lane) => lane.name)).toEqual(['hearing', 'smokeSight', 'nerve']);
+        for (const specName of SPEC_NAMES) {
+            const bases = laneBases(config, specName);
+            expect([bases.hearing, bases.smokeSight, bases.nerve]).toEqual([1, 0, 1]);
         }
     });
 });
@@ -72,7 +85,9 @@ describe('laneBases', () => {
             const spec = config.specialisations[specName];
             for (const lane of LANES.filter((l) => l.kind === 'ratio')) {
                 const expected =
-                    (lane.key === null ? 1 : config[lane.key]) * (lane.field === null ? 1 : spec[lane.field]);
+                    (lane.key === null ? 1 : config[lane.key]) *
+                    (lane.field === null ? 1 : spec[lane.field]) *
+                    lane.base;
                 expect(bases[lane.name], `${specName}.${lane.name}`).toBe(expected);
             }
         }

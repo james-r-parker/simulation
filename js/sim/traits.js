@@ -2,6 +2,7 @@
 // `applyGenes` runs after every write of a weight row, so nothing derived is ever stale.
 
 import { TRAIT_INDEX } from './brain-layout.js';
+import { applyTraits } from './body-traits.js';
 import { detSigmoid, detTanh } from './det-math.js';
 import { resetFastOut } from './hebbian.js';
 import { writeLaneBases } from './lane-state.js';
@@ -87,6 +88,7 @@ export function applyGenes(world, slot) {
     world.baseSize[slot] = config.baseSize * traitValue(weights[genes + TRAIT_INDEX.SIZE]);
     world.childShare[slot] = config.childEnergyShare * traitValue(weights[genes + TRAIT_INDEX.CHILD_SHARE]);
     writeLaneBases(world, slot);
+    applyTraits(world, slot);
     if (config.hebbianRate > 0) {
         resetFastOut(world, slot);
     }

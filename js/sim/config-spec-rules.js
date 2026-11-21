@@ -1,5 +1,6 @@
 // The `specialisations` config: the key order that fixes the indices, the fields, each field's rule and the defaults.
 
+import { EXISTING_SPAN, TRAITS } from './body-traits.js';
 import { BOOL, num, positive } from './config-rules.js';
 import { SPEC_NAMES } from './specs.js';
 
@@ -28,6 +29,7 @@ export const SPECIALISATION_FIELDS = [
     'rearVisionShare',
     'sprintDrainMultiplier',
     'body',
+    'genes',
 ];
 
 /** @type {Record<string, Rule>} the rule of every field after `index` */
@@ -41,6 +43,7 @@ Object.assign(SPEC_FIELD_RULES, {
     maxEnergyMultiplier: num(0.25, 10),
     rearVisionShare: num(0, 1),
     body: { type: 'bodyMap' },
+    genes: { type: 'geneMenu' },
 });
 
 /** The per-field defaults of every specialisation, in `SPECIALISATION_KEYS` order, before `body` is added. */
@@ -143,10 +146,18 @@ const FIELD_DEFAULTS = {
     },
 };
 
+/** The traits read today, which have a span in every default menu; every other trait is fixed (span 0). */
+const READ_TODAY = ['size', 'vision', 'childShare', 'learn'];
+
+/** @returns {Record<string, number>} a default `genes` menu: every trait of the registry, the four read today at 0.3 */
+const defaultMenu = () =>
+    Object.fromEntries(TRAITS.map((trait) => [trait.name, READ_TODAY.includes(trait.name) ? EXISTING_SPAN : 0]));
+
 /**
- * The default entry of every specialisation, in `SPECIALISATION_KEYS` order (frozen with `DEFAULTS`). `body` is the last
- * field and empty for all: a lane name to a multiplier of that lane for the specialisation (`bodyProblem`, body-lanes.js).
+ * The default entry of every specialisation, in `SPECIALISATION_KEYS` order (frozen with `DEFAULTS`). `body` is empty
+ * for all: a lane name to a multiplier of that lane for the specialisation (`bodyProblem`, body-lanes.js). `genes` is
+ * the gene menu: a trait name to its span (`geneMenuProblem`, body-traits.js).
  */
 export const SPECIALISATION_DEFAULTS = Object.fromEntries(
-    Object.entries(FIELD_DEFAULTS).map(([name, fields]) => [name, { ...fields, body: {} }]),
+    Object.entries(FIELD_DEFAULTS).map(([name, fields]) => [name, { ...fields, body: {}, genes: defaultMenu() }]),
 );

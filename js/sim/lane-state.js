@@ -2,6 +2,7 @@
 // lane, written once per birth by `applyGenes`. Until a trait gene moves a lane (T32 and after) a lane holds its base.
 
 import { LANES, LANE_COUNT, laneRowName, laneTable } from './body-lanes.js';
+import { spanTable } from './body-traits.js';
 
 /**
  * Allocates `world.lanes` and the per-spec base table for a world being built.
@@ -11,6 +12,7 @@ import { LANES, LANE_COUNT, laneRowName, laneTable } from './body-lanes.js';
 export function allocLanes(world) {
     const n = world.config.maxAgents;
     world.laneBases = laneTable(world.config);
+    world.traitSpans = spanTable(world.config);
     world.laneArrays = LANES.map(() => new Float64Array(n));
     world.lanes = Object.fromEntries(LANES.map((lane, i) => [lane.name, world.laneArrays[i]]));
     LANES.forEach((lane, i) => {

@@ -10,6 +10,7 @@ import { SPEC_COUNT, SPEC_NAMES } from './specs.js';
  * @property {string} family the family the lane is listed under
  * @property {string | null} key the global config key, null for a lane that has none
  * @property {string | null} field the spec field that scales it, null for a lane that has none
+ * @property {number} base the lane's own base, the factor of a lane with neither key nor field (1 for every other)
  * @property {'ratio' | 'offset'} kind `offset` for the six temperature thresholds, which a body shifts by a sum
  * @property {boolean} moved whether every sim reader reads the lane and no longer the config key
  */
@@ -36,7 +37,11 @@ const FIELD_OF = {
     splitMinEnergy: 'splitMinEnergyMultiplier',
 };
 
-/** Per family: the config keys that are lanes, then the spec fields that are lanes of their own (no key). */
+/**
+ * Per family: the config keys that are lanes, then the spec fields that are lanes of their own (no key), then the lanes
+ * a trait adds (`added`: no key and no field, the name to its base).
+ */
+/** @type {Record<string, {keys: string, fields: string, added?: Record<string, number>}>} */
 const FAMILIES = {
     movement: {
         keys: 'maxThrust maxTurn maxVelocity sprintCost sprintDrain sprintRefill sprintRestThrust sprintFloor handlingThrust grazeThrust fatSlowShare sickThrust predatorRestTicks',
@@ -45,6 +50,7 @@ const FAMILIES = {
     senses: {
         keys: 'antennaAngle antennaReach refugeSenseRange',
         fields: 'visionRange rearVisionShare',
+        added: { hearing: 1, smokeSight: 0, nerve: 1 },
     },
     energy: {
         keys: 'handlingTicks maxEnergy passiveLoss movementCost turnCost sizeEnergyLoss visionCost huntUpkeep baseSize minSize energyToSize satiationShare digestTicks juvenileBurn juvenilePlantShare sickDose sickDrain doseDecay lethalDose diseaseDrain diseaseTicks',
@@ -85,13 +91,14 @@ export const NOT_LANES = Object.freeze({
 
 /** @type {readonly Lane[]} the lanes, family by family, keys first */
 export const LANES = Object.freeze(
-    Object.entries(FAMILIES).flatMap(([family, { keys, fields }]) => [
+    Object.entries(FAMILIES).flatMap(([family, { keys, fields, added = {} }]) => [
         ...keys.split(' ').map((key) =>
             Object.freeze({
                 name: key,
                 family,
                 key,
                 field: /** @type {Record<string, string>} */ (FIELD_OF)[key] ?? null,
+                base: 1,
                 kind: THRESHOLDS.includes(key) ? 'offset' : 'ratio',
                 moved: false,
             }),
@@ -99,7 +106,12 @@ export const LANES = Object.freeze(
         ...fields
             .split(' ')
             .filter((field) => field !== '')
-            .map((field) => Object.freeze({ name: field, family, key: null, field, kind: 'ratio', moved: false })),
+            .map((field) =>
+                Object.freeze({ name: field, family, key: null, field, base: 1, kind: 'ratio', moved: false }),
+            ),
+        ...Object.entries(added).map(([name, base]) =>
+            Object.freeze({ name, family, key: null, field: null, base, kind: 'ratio', moved: false }),
+        ),
     ]),
 );
 
@@ -191,7 +203,7 @@ export function laneBases(config, specName) {
         } else {
             const key = lane.key === null ? 1 : config[lane.key];
             const field = lane.field === null ? 1 : entry[lane.field];
-            bases[lane.name] = key * field * (body[lane.name] ?? 1);
+            bases[lane.name] = key * field * lane.base * (body[lane.name] ?? 1);
         }
     }
     return bases;
