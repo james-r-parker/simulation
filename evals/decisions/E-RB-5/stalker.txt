@@ -3,7 +3,7 @@ model {"reactionTicks":2,"hearThreshold":0.1,"breakAngle":1.5707963267948966,"ti
 
 row              see  turn  run  survive  status      binding
 forager:herd     59   47    8    3!       tight       survive
-predator:herd    33   16    X    14       impossible  run
+predator:herd    -    -     -    -        n/a         the herd turns from a hunter
 reproducer:herd  51   39    X    3!       impossible  run
 scout:herd       74   62    23   3!       tight       survive
 defender:herd    49   37    X    3!       impossible  run
@@ -13,6 +13,7 @@ forager:herd
   worst (facing away, rear view): sees the front 271 px off, 59 ticks before it arrives (41.7 at a constant run speed), at 6.42 px a tick; turns 10.5 ticks; clears 333 px sideways in 53 ticks (cruise) or 39 (sprint); straight ahead 8.0 against the herd's peak (outruns it)
   a trample takes 299.1 on arrival (306.3 at the peak speed) and 16.3 at the walk speed: 3 survived on arrival, 61 at the walk
 predator:herd
+  not read: the herd turns from a hunter
   typical (facing the herd): sees the front 355 px off, 72 ticks before it arrives (54.6 at a constant run speed), at 6.50 px a tick; turns 15.0 ticks; clears 349 px sideways in 55 ticks (cruise) or 32 (sprint); straight ahead 8.0 against the herd's peak (outruns it)
   worst (facing away, rear view): sees the front 115 px off, 33 ticks before it arrives (17.7 at a constant run speed), at 5.51 px a tick; turns 15.0 ticks; clears 349 px sideways in 55 ticks (cruise) or 32 (sprint); straight ahead 8.0 against the herd's peak (outruns it)
   a trample takes 341.3 on arrival (475.3 at the peak speed) and 25.3 at the walk speed: 14 survived on arrival, 197 at the walk

@@ -160,18 +160,18 @@
       "name": "predator:herd",
       "cells": {
         "see": {
-          "margin": 33,
+          "margin": null,
           "unit": "ticks",
           "distance": null,
-          "status": "ok",
+          "status": "n/a",
           "capped": false,
           "binding": false
         },
         "turn": {
-          "margin": 16.040034982905745,
+          "margin": null,
           "unit": "ticks",
           "distance": null,
-          "status": "ok",
+          "status": "n/a",
           "capped": false,
           "binding": false
         },
@@ -179,38 +179,38 @@
           "margin": null,
           "unit": "ticks",
           "distance": null,
-          "status": "impossible",
+          "status": "n/a",
           "capped": false,
-          "binding": true
+          "binding": false
         },
         "survive": {
-          "margin": 14,
-          "unit": "tramples",
+          "margin": null,
+          "unit": "ticks",
           "distance": null,
-          "status": "ok",
+          "status": "n/a",
           "capped": false,
           "binding": false
         }
       },
-      "status": "impossible",
-      "binding": "run",
+      "status": "n/a",
+      "binding": "the herd turns from a hunter",
       "detail": {
         "row": {
           "name": "predator:herd",
           "cells": {
             "see": {
-              "margin": 33,
+              "margin": null,
               "unit": "ticks",
               "distance": null,
-              "status": "ok",
+              "status": "n/a",
               "capped": false,
               "binding": false
             },
             "turn": {
-              "margin": 16.040034982905745,
+              "margin": null,
               "unit": "ticks",
               "distance": null,
-              "status": "ok",
+              "status": "n/a",
               "capped": false,
               "binding": false
             },
@@ -218,36 +218,36 @@
               "margin": null,
               "unit": "ticks",
               "distance": null,
-              "status": "impossible",
+              "status": "n/a",
               "capped": false,
-              "binding": true
+              "binding": false
             },
             "survive": {
-              "margin": 14,
-              "unit": "tramples",
+              "margin": null,
+              "unit": "ticks",
               "distance": null,
-              "status": "ok",
+              "status": "n/a",
               "capped": false,
               "binding": false
             }
           },
-          "status": "impossible",
-          "binding": "run"
+          "status": "n/a",
+          "binding": "the herd turns from a hunter"
         },
         "cells": {
           "see": {
-            "margin": 33,
+            "margin": null,
             "unit": "ticks",
             "distance": null,
-            "status": "ok",
+            "status": "n/a",
             "capped": false,
             "binding": false
           },
           "turn": {
-            "margin": 16.040034982905745,
+            "margin": null,
             "unit": "ticks",
             "distance": null,
-            "status": "ok",
+            "status": "n/a",
             "capped": false,
             "binding": false
           },
@@ -255,15 +255,15 @@
             "margin": null,
             "unit": "ticks",
             "distance": null,
-            "status": "impossible",
+            "status": "n/a",
             "capped": false,
-            "binding": true
+            "binding": false
           },
           "survive": {
-            "margin": 14,
-            "unit": "tramples",
+            "margin": null,
+            "unit": "ticks",
             "distance": null,
-            "status": "ok",
+            "status": "n/a",
             "capped": false,
             "binding": false
           }
@@ -308,7 +308,7 @@
           "survives": 14,
           "walkSurvives": 197
         },
-        "binding": "run"
+        "binding": "the herd turns from a hunter"
       }
     },
     {
@@ -796,5 +796,410 @@
   "searched": [],
   "defenderSearch": [],
   "birthSearch": [],
-  "check": null
+  "check": {
+    "kinematics": [
+      {
+        "spec": "forager",
+        "what": "energy per 100 ticks",
+        "formula": 102.725,
+        "sim": 102.72489728927212,
+        "difference": 9.998620644768863e-7,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "forager",
+        "what": "sprint energy per 100 ticks",
+        "formula": 227.725,
+        "sim": 227.72477226257024,
+        "difference": 0.0000010000555823452828,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "forager",
+        "what": "cruise speed",
+        "formula": 8,
+        "sim": 8,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "forager",
+        "what": "sprint speed",
+        "formula": 12,
+        "sim": 12,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "forager",
+        "what": "turn radius",
+        "formula": 21.536965359442533,
+        "sim": 21.508851624429518,
+        "difference": 0.001307077453688077,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "forager",
+        "what": "sprint turn radius",
+        "formula": 32.3054480391638,
+        "sim": 32.263275735049035,
+        "difference": 0.0013071302635569992,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "energy per 100 ticks",
+        "formula": 58.65499999999999,
+        "sim": 58.654992961874086,
+        "difference": 1.1999193150202814e-7,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "sprint energy per 100 ticks",
+        "formula": 258.0709999999999,
+        "sim": 258.07094596102615,
+        "difference": 2.0939580602785668e-7,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "cruise speed",
+        "formula": 8,
+        "sim": 8,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "sprint speed",
+        "formula": 16.8,
+        "sim": 16.799999237060547,
+        "difference": 4.5413064864163744e-8,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "turn radius",
+        "formula": 41.71784901003581,
+        "sim": 41.808606111386936,
+        "difference": 0.0021707755840825183,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "sprint turn radius",
+        "formula": 87.6074829210752,
+        "sim": 87.79807217645698,
+        "difference": 0.002170768112068955,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "energy per 100 ticks",
+        "formula": 102.725,
+        "sim": 102.72489728927212,
+        "difference": 9.998620644768863e-7,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "sprint energy per 100 ticks",
+        "formula": 227.725,
+        "sim": 227.72477226257024,
+        "difference": 0.0000010000555823452828,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "cruise speed",
+        "formula": 8,
+        "sim": 8,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "sprint speed",
+        "formula": 12,
+        "sim": 12,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "turn radius",
+        "formula": 21.536965359442533,
+        "sim": 21.508851624429518,
+        "difference": 0.001307077453688077,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "sprint turn radius",
+        "formula": 32.3054480391638,
+        "sim": 32.263275735049035,
+        "difference": 0.0013071302635569992,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "energy per 100 ticks",
+        "formula": 104.7425,
+        "sim": 104.74236381054425,
+        "difference": 0.0000013002327883260278,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "sprint energy per 100 ticks",
+        "formula": 229.7425,
+        "sim": 229.74220133781955,
+        "difference": 0.000001299988329206414,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "cruise speed",
+        "formula": 8,
+        "sim": 8,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "sprint speed",
+        "formula": 12,
+        "sim": 12,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "turn radius",
+        "formula": 21.536965359442533,
+        "sim": 21.508851624429518,
+        "difference": 0.001307077453688077,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "sprint turn radius",
+        "formula": 32.3054480391638,
+        "sim": 32.263275735049035,
+        "difference": 0.0013071302635569992,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "energy per 100 ticks",
+        "formula": 121.925,
+        "sim": 121.9248780727412,
+        "difference": 0.0000010000195262982459,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "sprint energy per 100 ticks",
+        "formula": 270.92499999999995,
+        "sim": 270.92472906113017,
+        "difference": 0.0000010000521943887009,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "cruise speed",
+        "formula": 8,
+        "sim": 8,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "sprint speed",
+        "formula": 12,
+        "sim": 12,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "turn radius",
+        "formula": 21.536965359442533,
+        "sim": 21.508851624429518,
+        "difference": 0.001307077453688077,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "sprint turn radius",
+        "formula": 32.3054480391638,
+        "sim": 32.263275735049035,
+        "difference": 0.0013071302635569992,
+        "tolerance": 0.005,
+        "drift": false
+      }
+    ],
+    "pairs": [],
+    "defence": [
+      {
+        "row": "forager:herd",
+        "what": "the front arrives",
+        "formula": 59,
+        "scene": 59,
+        "tolerance": "10% or 2 ticks",
+        "drift": false
+      },
+      {
+        "row": "forager:herd",
+        "what": "the first trample, energy",
+        "formula": 299.0667527241008,
+        "scene": 304.0618893450621,
+        "tolerance": "10%",
+        "drift": false
+      },
+      {
+        "row": "forager:herd",
+        "what": "ticks to clear: the formula is an upper bound",
+        "formula": 51.47197551196598,
+        "scene": 45,
+        "tolerance": "an upper bound, 10%",
+        "drift": false
+      },
+      {
+        "row": "forager:herd",
+        "what": "a body the formula calls clear is not trampled",
+        "formula": true,
+        "scene": true,
+        "tolerance": "agree",
+        "drift": false
+      },
+      {
+        "row": "reproducer:herd",
+        "what": "the front arrives",
+        "formula": 51,
+        "scene": 51,
+        "tolerance": "10% or 2 ticks",
+        "drift": false
+      },
+      {
+        "row": "reproducer:herd",
+        "what": "the first trample, energy",
+        "formula": 283.8006899964921,
+        "scene": 288.5470956678316,
+        "tolerance": "10%",
+        "drift": false
+      },
+      {
+        "row": "reproducer:herd",
+        "what": "ticks to clear: the formula is an upper bound",
+        "formula": 51.47197551196598,
+        "scene": 45,
+        "tolerance": "an upper bound, 10%",
+        "drift": false
+      },
+      {
+        "row": "reproducer:herd",
+        "what": "a body the formula calls clear is not trampled",
+        "formula": true,
+        "scene": true,
+        "tolerance": "agree",
+        "drift": false
+      },
+      {
+        "row": "scout:herd",
+        "what": "the front arrives",
+        "formula": 74,
+        "scene": 74,
+        "tolerance": "10% or 2 ticks",
+        "drift": false
+      },
+      {
+        "row": "scout:herd",
+        "what": "the first trample, energy",
+        "formula": 306.3125,
+        "scene": 308.6637947527702,
+        "tolerance": "10%",
+        "drift": false
+      },
+      {
+        "row": "scout:herd",
+        "what": "ticks to clear: the formula is an upper bound",
+        "formula": 51.47197551196598,
+        "scene": 45,
+        "tolerance": "an upper bound, 10%",
+        "drift": false
+      },
+      {
+        "row": "scout:herd",
+        "what": "a body the formula calls clear is not trampled",
+        "formula": true,
+        "scene": true,
+        "tolerance": "agree",
+        "drift": false
+      },
+      {
+        "row": "defender:herd",
+        "what": "the front arrives",
+        "formula": 49,
+        "scene": 49,
+        "tolerance": "10% or 2 ticks",
+        "drift": false
+      },
+      {
+        "row": "defender:herd",
+        "what": "the first trample, energy",
+        "formula": 278.9854628779361,
+        "scene": 284.1200993017825,
+        "tolerance": "10%",
+        "drift": false
+      },
+      {
+        "row": "defender:herd",
+        "what": "ticks to clear: the formula is an upper bound",
+        "formula": 51.47197551196598,
+        "scene": 45,
+        "tolerance": "an upper bound, 10%",
+        "drift": false
+      },
+      {
+        "row": "defender:herd",
+        "what": "a body the formula calls clear is not trampled",
+        "formula": true,
+        "scene": true,
+        "tolerance": "agree",
+        "drift": false
+      }
+    ],
+    "drift": 0
+  }
 }
