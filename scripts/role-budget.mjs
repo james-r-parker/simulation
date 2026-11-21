@@ -7,6 +7,7 @@ import { arenaConfig } from '../js/evo/chase-arena.js';
 import { chaseCells, kinematicRows } from '../js/evo/role-budget-check.js';
 import { defenceCheck } from '../js/evo/role-budget-defence-check.js';
 import { PREY_SPECS } from '../js/evo/role-budget-chase.js';
+import { catchShares } from '../js/evo/role-budget-shares.js';
 import { BUILT_ROWS, matrix } from '../js/evo/role-budget-matrix.js';
 import { validateModel } from '../js/evo/role-budget-model.js';
 import { searchSettings, withPath } from '../js/evo/role-budget-search.js';
@@ -194,6 +195,22 @@ function searchRows(config, overrides, result, { model, outDir, arm }) {
 }
 
 /**
+ * @param {Record<string, any>} config an `arenaConfig`
+ * @param {string} prey the prey spec
+ * @returns {{pair: string, straight: any[], broken: any[], shares: Record<string, any>}} the predator's cells on both bounds
+ */
+function chasePair(config, prey) {
+    const straight = chaseCells(config, { hunter: 'predator', prey, straight: true });
+    const broken = chaseCells(config, { hunter: 'predator', prey, straight: false });
+    return {
+        pair: `predator:${prey}`,
+        straight,
+        broken,
+        shares: { straight: catchShares(straight), broken: catchShares(broken) },
+    };
+}
+
+/**
  * Plays the scene of each requested prey beside the formula, on both prey bounds, and the kinematics against the body table.
  * @param {Record<string, any>} config an `arenaConfig`
  * @param {{preys: string[], defence: boolean, model: import('../js/evo/role-budget-model.js').RoleModel}} asked the prey
@@ -204,11 +221,7 @@ function searchRows(config, overrides, result, { model, outDir, arm }) {
  */
 function crossCheck(config, { preys, defence, model }, log) {
     const kinematics = kinematicRows(config);
-    const pairs = preys.map((prey) => ({
-        pair: `predator:${prey}`,
-        straight: chaseCells(config, { hunter: 'predator', prey, straight: true }),
-        broken: chaseCells(config, { hunter: 'predator', prey, straight: false }),
-    }));
+    const pairs = preys.map((prey) => chasePair(config, prey));
     const played = defence ? defenceCheck(config, model) : { readings: [], drift: 0 };
     let drift = played.drift;
     for (const r of played.readings.filter((reading) => reading.drift)) {
@@ -230,7 +243,17 @@ function crossCheck(config, { preys, defence, model }, log) {
             tolerance: k.tolerance,
         });
     }
-    for (const { pair, straight, broken } of pairs) {
+    for (const { pair, straight, broken, shares } of pairs) {
+        for (const [bound, share] of Object.entries(shares).filter((entry) => entry[1].drift > 0)) {
+            drift += share.drift;
+            log.log('warn', 'RoleBudgetDrift', {
+                row: pair,
+                step: `catch share ${bound}`,
+                formula: share.bearings.map((b) => b.formula),
+                scene: share.bearings.map((b) => b.sim),
+                tolerance: 'sign and rank per bearing',
+            });
+        }
         for (const c of [...straight, ...broken].filter((cell) => cell.drift)) {
             drift += 1;
             log.log('warn', 'RoleBudgetDrift', {

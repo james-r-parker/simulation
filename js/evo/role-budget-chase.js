@@ -4,12 +4,12 @@
 
 import { MAX_TICKS } from './role-budget-timeline.js';
 import { SLACK_CAP, cell, rowOf } from './role-budget-cell.js';
-import { gapAtAwareness, maxCatchableGap, playFrame } from './role-budget-frame.js';
+import { bestEffort, gapAtAwareness, maxCatchableGap, playFrame } from './role-budget-frame.js';
 import { refillTicks } from './role-budget-kinematics.js';
 import { fitForRung, learnSlope, tierMargins } from './role-budget-tiers.js';
 
 export { MAX_TICKS, chaseTimeline } from './role-budget-timeline.js';
-export { gapAtAwareness, gapAtSight, maxCatchableGap, playFrame } from './role-budget-frame.js';
+export { bestEffort, gapAtAwareness, gapAtSight, maxCatchableGap, playFrame } from './role-budget-frame.js';
 export { fitForRung, learnSlope, tierMargins } from './role-budget-tiers.js';
 
 /**
@@ -81,14 +81,15 @@ function biteSlack(run, hunter) {
 /**
  * @param {import('./role-budget-params.js').RoleParams} hunter the hunter
  * @param {import('./role-budget-params.js').RoleParams} prey the prey
- * @param {import('./role-budget-model.js').RoleModel} model the model options
+ * @param {import('./role-budget-frame.js').Frame} frame the frame of the perfect chase: the model and the best sprint effort
+ *   (`bestEffort`)
  * @param {import('./role-budget-timeline.js').Timeline} run the perfect chase at the awareness gap
  * @returns {Record<string, import('./role-budget-cell.js').Cell>} the four cells: the slack of each step; when the
  *   chase does not end in a kill the steps are not read, the one that fails (the run, or the bite when the size gate
  *   refuses it or the prey is not held) is impossible
  */
-function cellsOf(hunter, prey, model, run) {
-    const frame = { model };
+function cellsOf(hunter, prey, frame, run) {
+    const { model } = frame;
     const unread = () => cell(undefined, model);
     const margin = maxCatchableGap(hunter, prey, frame) - gapAtAwareness(hunter, prey);
     if (run.contactTick !== null && !run.gate) {
@@ -112,11 +113,16 @@ function cellsOf(hunter, prey, model, run) {
  * @param {import('./role-budget-params.js').RoleParams} prey the prey
  * @param {import('./role-budget-model.js').RoleModel} model the model options
  * @returns {{margins: number[], share: number, worst: number}} the broken-bound catch margin in px at each bearing of
- *   `audit:chase`, the share of bearings that close, and the worst margin
+ *   `audit:chase` (the first pass of the effort sweep only, except straight ahead, which is the headline: a little under it), the share of bearings that close, and the worst margin
  */
 function bearingsOf(hunter, prey, model) {
     const aware = gapAtAwareness(hunter, prey);
-    const margins = AUDIT_BEARINGS.map((bearing) => maxCatchableGap(hunter, prey, { bearing, model }) - aware);
+    // the chase is mirror-symmetric about the hunter's heading (the break goes to the side the prey stands on), so a bearing
+    // reads as its mirror; -PI is on the axis and is read as itself
+    const mirrored = (/** @type {number} */ bearing) => (bearing === -Math.PI ? bearing : Math.abs(bearing));
+    const margins = AUDIT_BEARINGS.map(
+        (bearing) => maxCatchableGap(hunter, prey, { bearing: mirrored(bearing), model, fine: bearing === 0 }) - aware,
+    );
     return {
         margins,
         share: margins.filter((m) => m >= 0).length / margins.length,
@@ -135,8 +141,9 @@ function bearingsOf(hunter, prey, model) {
  */
 export function budgetChase(hunter, prey, model, { bearings = true } = {}) {
     const aware = gapAtAwareness(hunter, prey);
-    const run = playFrame(hunter, prey, aware, { model });
-    const cells = cellsOf(hunter, prey, model, run);
+    const { effort } = bestEffort(hunter, prey, { model }, aware);
+    const run = playFrame(hunter, prey, aware, { model, effort });
+    const cells = cellsOf(hunter, prey, { model, effort }, run);
     const row = rowOf(`${hunter.spec}:${prey.spec}`, cells);
     const tiers = tierMargins(hunter, prey, model);
     const slope = learnSlope(tiers, hunter, prey, model);

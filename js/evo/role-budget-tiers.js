@@ -22,10 +22,11 @@ export const TIERS = Object.freeze(['perfect', 'reactive', 'naive']);
  */
 export function tierMargins(hunter, prey, model, bearing = 0) {
     const aware = gapAtAwareness(hunter, prey);
-    const read = (/** @type {import('./role-budget-frame.js').Tier} */ tier) => ({
-        straight: maxCatchableGap(hunter, prey, { tier, bound: 'straight', bearing, model }) - aware,
-        broken: maxCatchableGap(hunter, prey, { tier, bound: 'broken', bearing, model }) - aware,
-    });
+    const read = (/** @type {import('./role-budget-frame.js').Tier} */ tier) => {
+        // the broken bound first: the best effort of its sweep is where the straight bound's sweep starts looking
+        const broken = maxCatchableGap(hunter, prey, { tier, bound: 'broken', bearing, model }) - aware;
+        return { straight: maxCatchableGap(hunter, prey, { tier, bound: 'straight', bearing, model }) - aware, broken };
+    };
     return { perfect: read('perfect'), reactive: read('reactive'), naive: read('naive') };
 }
 

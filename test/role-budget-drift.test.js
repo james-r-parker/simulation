@@ -32,14 +32,19 @@ describe('role:budget --check on drift', () => {
         expect(code).toBe(1);
         expect(printed.join('\n')).toMatch(/turn radius\s+41\.700\s+45\.000\s+7\.000%\s+0\.500%\s+DRIFT/);
         expect(printed.join('\n')).toMatch(
-            /predator:scout straight: 1 cells, 1 drift\n\s+160px@0: formula 52 sim none/,
+            /predator:scout straight: 1 cells, 1 drift, net energy per kill within [\d.]+%, catch share \d+ sign or rank drift\n\s+160px@0: formula 52 sim none/,
         );
         const events = readFileSync(join(logDir, readdirSync(logDir)[0]), 'utf8')
             .trim()
             .split('\n')
             .map((line) => JSON.parse(line))
             .filter((e) => e.event === 'RoleBudgetDrift');
-        expect(events).toHaveLength(3);
+        // the kinematic reading, the cell on each bound, and the catch share of each bound (one bearing where only the formula kills)
+        expect(events).toHaveLength(5);
+        expect(events.filter((e) => String(e.step).startsWith('catch share')).map((e) => e.step)).toEqual([
+            'catch share straight',
+            'catch share broken',
+        ]);
         expect(events[0]).toMatchObject({
             level: 'warn',
             row: 'predator',

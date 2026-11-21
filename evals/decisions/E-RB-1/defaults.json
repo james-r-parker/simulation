@@ -23,7 +23,7 @@
         "run": {
           "margin": null,
           "unit": "ticks",
-          "distance": -102.275390625,
+          "distance": -102.333984375,
           "status": "impossible",
           "capped": false,
           "binding": true
@@ -62,7 +62,7 @@
             "run": {
               "margin": null,
               "unit": "ticks",
-              "distance": -102.275390625,
+              "distance": -102.333984375,
               "status": "impossible",
               "capped": false,
               "binding": true
@@ -99,7 +99,7 @@
           "run": {
             "margin": null,
             "unit": "ticks",
-            "distance": -102.275390625,
+            "distance": -102.333984375,
             "status": "impossible",
             "capped": false,
             "binding": true
@@ -115,29 +115,29 @@
         },
         "tiers": {
           "perfect": {
-            "straight": 407.578125,
-            "broken": -102.275390625
+            "straight": 406.640625,
+            "broken": -102.333984375
           },
           "reactive": {
-            "straight": 295.78125,
-            "broken": -57.744140625
+            "straight": 295.01953125,
+            "broken": -57.83203125
           },
           "naive": {
-            "straight": -258.720703125,
-            "broken": -270.1171875
+            "straight": -259.072265625,
+            "broken": -268.0078125
           }
         },
         "learnSlope": "naive",
         "fit": false,
         "catchable": false,
-        "catchMargin": -102.275390625,
+        "catchMargin": -102.333984375,
         "bearings": {
           "margins": [
             -345,
             -345,
             -345,
             -345,
-            -102.275390625,
+            -102.333984375,
             -345,
             -345,
             -345
@@ -146,10 +146,10 @@
           "worst": -345
         },
         "chaseEnergy": {
-          "spent": 748.0057318861125,
-          "kick": 4.82285504743887,
+          "spent": 999.478117751683,
+          "kick": 4.85165132488037,
           "income": 100,
-          "net": -652.8285869335514,
+          "net": -904.3297690765634,
           "holds": 4700
         },
         "chaseHeat": {
@@ -183,7 +183,7 @@
         "run": {
           "margin": null,
           "unit": "ticks",
-          "distance": -52.265625,
+          "distance": -52.32421875,
           "status": "impossible",
           "capped": false,
           "binding": true
@@ -222,7 +222,7 @@
             "run": {
               "margin": null,
               "unit": "ticks",
-              "distance": -52.265625,
+              "distance": -52.32421875,
               "status": "impossible",
               "capped": false,
               "binding": true
@@ -259,7 +259,7 @@
           "run": {
             "margin": null,
             "unit": "ticks",
-            "distance": -52.265625,
+            "distance": -52.32421875,
             "status": "impossible",
             "capped": false,
             "binding": true
@@ -275,29 +275,29 @@
         },
         "tiers": {
           "perfect": {
-            "straight": 457.587890625,
-            "broken": -52.265625
+            "straight": 456.62109375,
+            "broken": -52.32421875
           },
           "reactive": {
-            "straight": 345.76171875,
-            "broken": -7.763671875
+            "straight": 345,
+            "broken": -7.822265625
           },
           "naive": {
-            "straight": -208.7109375,
-            "broken": -217.91015625
+            "straight": -209.091796875,
+            "broken": -217.998046875
           }
         },
         "learnSlope": "naive",
         "fit": false,
         "catchable": false,
-        "catchMargin": -52.265625,
+        "catchMargin": -52.32421875,
         "bearings": {
           "margins": [
             -295,
             -295,
             -295,
             -295,
-            -52.265625,
+            -52.32421875,
             -295,
             -295,
             -295
@@ -306,10 +306,10 @@
           "worst": -295
         },
         "chaseEnergy": {
-          "spent": 747.1955422251743,
-          "kick": 4.949687424175943,
+          "spent": 997.3246022737166,
+          "kick": 4.973445108119406,
           "income": 100,
-          "net": -652.1452296493503,
+          "net": -902.298047381836,
           "holds": 4700
         },
         "chaseHeat": {
@@ -343,7 +343,7 @@
         "run": {
           "margin": null,
           "unit": "ticks",
-          "distance": -186.73828125,
+          "distance": -186.85546875,
           "status": "impossible",
           "capped": false,
           "binding": true
@@ -382,7 +382,7 @@
             "run": {
               "margin": null,
               "unit": "ticks",
-              "distance": -186.73828125,
+              "distance": -186.85546875,
               "status": "impossible",
               "capped": false,
               "binding": true
@@ -419,7 +419,7 @@
           "run": {
             "margin": null,
             "unit": "ticks",
-            "distance": -186.73828125,
+            "distance": -186.85546875,
             "status": "impossible",
             "capped": false,
             "binding": true
@@ -435,29 +435,29 @@
         },
         "tiers": {
           "perfect": {
-            "straight": 307.529296875,
-            "broken": -186.73828125
+            "straight": 306.591796875,
+            "broken": -186.85546875
           },
           "reactive": {
-            "straight": 195.732421875,
-            "broken": -146.19140625
+            "straight": 194.970703125,
+            "broken": -146.279296875
           },
           "naive": {
-            "straight": -358.2421875,
-            "broken": -367.880859375
+            "straight": -359.150390625,
+            "broken": -367.939453125
           }
         },
         "learnSlope": "naive",
         "fit": false,
         "catchable": false,
-        "catchMargin": -186.73828125,
+        "catchMargin": -186.85546875,
         "bearings": {
           "margins": [
             -445,
             -445,
             -445,
             -445,
-            -186.73828125,
+            -186.85546875,
             -445,
             -445,
             -445
@@ -466,10 +466,10 @@
           "worst": -445
         },
         "chaseEnergy": {
-          "spent": 755.9783919127893,
-          "kick": 4.5574916295106265,
+          "spent": 1006.1095575285258,
+          "kick": 4.606972323460569,
           "income": 150,
-          "net": -610.5358835423,
+          "net": -860.7165298519864,
           "holds": 4700
         },
         "chaseHeat": {
@@ -595,16 +595,16 @@
         },
         "tiers": {
           "perfect": {
-            "straight": 467.080078125,
+            "straight": 466.142578125,
             "broken": -285
           },
           "reactive": {
-            "straight": 355.283203125,
-            "broken": -207.7734375
+            "straight": 354.521484375,
+            "broken": -204.873046875
           },
           "naive": {
-            "straight": -200.15625,
-            "broken": -210.498046875
+            "straight": -200.537109375,
+            "broken": -211.11328125
           }
         },
         "learnSlope": "naive",
@@ -626,10 +626,10 @@
           "worst": -285
         },
         "chaseEnergy": {
-          "spent": 747.7906744262357,
-          "kick": 9.857787903675547,
+          "spent": 998.035254316215,
+          "kick": 9.901468740144034,
           "income": 50,
-          "net": -707.6484623299112,
+          "net": -957.936723056359,
           "holds": 4700
         },
         "chaseHeat": {
@@ -741,7 +741,7 @@
             "run": {
               "margin": null,
               "unit": "ticks",
-              "distance": -102.275390625,
+              "distance": -102.333984375,
               "status": "impossible",
               "capped": false,
               "binding": true
@@ -791,7 +791,7 @@
         "run": {
           "margin": null,
           "unit": "ticks",
-          "distance": -102.275390625,
+          "distance": -102.333984375,
           "status": "impossible",
           "capped": false,
           "binding": true
@@ -870,7 +870,7 @@
             "run": {
               "margin": null,
               "unit": "ticks",
-              "distance": -102.275390625,
+              "distance": -102.333984375,
               "status": "impossible",
               "capped": false,
               "binding": true
@@ -974,7 +974,7 @@
         "run": {
           "margin": null,
           "unit": "ticks",
-          "distance": -102.275390625,
+          "distance": -102.333984375,
           "status": "impossible",
           "capped": false,
           "binding": true

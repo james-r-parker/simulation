@@ -1,3 +1,7 @@
 {
-  "maxVelocity": 4
+  "specialisations": {
+    "forager": {
+      "visionRange": 150
+    }
+  }
 }

@@ -1,5 +1,9 @@
 {
   "sprintStoreEnabled": true,
   "sprintDrain": 0.004,
-  "maxThrust": 0.5249999999999999
+  "specialisations": {
+    "forager": {
+      "sprintBoost": 0.5
+    }
+  }
 }

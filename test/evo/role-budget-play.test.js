@@ -38,6 +38,7 @@ describe('steerOut', () => {
             { x: 100, y: -300 },
             { x: -50, y: 40 },
             { x: -50, y: -40 },
+            { x: -50, y: 0 },
             { x: 0, y: 0 },
         ]) {
             expect(steerOut(h, aim)).toBeCloseTo(steer(world, 0, aim), 12);

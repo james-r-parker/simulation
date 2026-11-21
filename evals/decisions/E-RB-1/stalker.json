@@ -23,7 +23,7 @@
         "run": {
           "margin": null,
           "unit": "ticks",
-          "distance": -33.779296875,
+          "distance": -33.837890625,
           "status": "impossible",
           "capped": false,
           "binding": true
@@ -62,7 +62,7 @@
             "run": {
               "margin": null,
               "unit": "ticks",
-              "distance": -33.779296875,
+              "distance": -33.837890625,
               "status": "impossible",
               "capped": false,
               "binding": true
@@ -99,7 +99,7 @@
           "run": {
             "margin": null,
             "unit": "ticks",
-            "distance": -33.779296875,
+            "distance": -33.837890625,
             "status": "impossible",
             "capped": false,
             "binding": true
@@ -115,29 +115,29 @@
         },
         "tiers": {
           "perfect": {
-            "straight": -26.66015625,
-            "broken": -33.779296875
+            "straight": -26.71875,
+            "broken": -33.837890625
           },
           "reactive": {
-            "straight": -52.79296875,
-            "broken": -65.80078125
+            "straight": -52.8515625,
+            "broken": -65.888671875
           },
           "naive": {
-            "straight": -113.3203125,
-            "broken": -269.23828125
+            "straight": -113.4375,
+            "broken": -266.71875
           }
         },
         "learnSlope": "naive",
         "fit": false,
         "catchable": false,
-        "catchMargin": -33.779296875,
+        "catchMargin": -33.837890625,
         "bearings": {
           "margins": [
             -345,
             -345,
             -345,
             -345,
-            -33.779296875,
+            -33.837890625,
             -345,
             -345,
             -345
@@ -146,14 +146,14 @@
           "worst": -345
         },
         "chaseEnergy": {
-          "spent": 352.28179873381237,
+          "spent": 602.3227126244846,
           "kick": 0,
           "income": 0,
-          "net": -352.28179873381237,
+          "net": -602.3227126244846,
           "holds": 4700
         },
         "chaseHeat": {
-          "gain": 2.49998268192282,
+          "gain": 2.499997512031886,
           "headroom": 15
         },
         "refillTicks": 500,
@@ -183,7 +183,7 @@
         "run": {
           "margin": 3,
           "unit": "ticks",
-          "distance": 19.365234375,
+          "distance": 19.306640625,
           "status": "tight",
           "capped": false,
           "binding": false
@@ -222,7 +222,7 @@
             "run": {
               "margin": 3,
               "unit": "ticks",
-              "distance": 19.365234375,
+              "distance": 19.306640625,
               "status": "tight",
               "capped": false,
               "binding": false
@@ -259,7 +259,7 @@
           "run": {
             "margin": 3,
             "unit": "ticks",
-            "distance": 19.365234375,
+            "distance": 19.306640625,
             "status": "tight",
             "capped": false,
             "binding": false
@@ -275,29 +275,29 @@
         },
         "tiers": {
           "perfect": {
-            "straight": 23.349609375,
-            "broken": 19.365234375
+            "straight": 23.291015625,
+            "broken": 19.306640625
           },
           "reactive": {
-            "straight": -2.783203125,
-            "broken": -15.791015625
+            "straight": -2.841796875,
+            "broken": -15.87890625
           },
           "naive": {
-            "straight": -63.310546875,
-            "broken": -213.33984375
+            "straight": -63.427734375,
+            "broken": -213.3984375
           }
         },
         "learnSlope": "naive",
         "fit": false,
         "catchable": true,
-        "catchMargin": 19.365234375,
+        "catchMargin": 19.306640625,
         "bearings": {
           "margins": [
             -295,
             -295,
             -295,
             -295,
-            19.365234375,
+            19.306640625,
             -295,
             -295,
             -295
@@ -306,10 +306,10 @@
           "worst": -295
         },
         "chaseEnergy": {
-          "spent": 121.55730235501277,
-          "kick": 21.74614872796495,
-          "income": 678.7715049507976,
-          "net": 535.4680538678199,
+          "spent": 154.5922880052402,
+          "kick": 21.81007108514177,
+          "income": 678.7786814750168,
+          "net": 502.3763223846348,
           "holds": 4700
         },
         "chaseHeat": {
@@ -343,7 +343,7 @@
         "run": {
           "margin": null,
           "unit": "ticks",
-          "distance": -124.423828125,
+          "distance": -124.482421875,
           "status": "impossible",
           "capped": false,
           "binding": true
@@ -382,7 +382,7 @@
             "run": {
               "margin": null,
               "unit": "ticks",
-              "distance": -124.423828125,
+              "distance": -124.482421875,
               "status": "impossible",
               "capped": false,
               "binding": true
@@ -419,7 +419,7 @@
           "run": {
             "margin": null,
             "unit": "ticks",
-            "distance": -124.423828125,
+            "distance": -124.482421875,
             "status": "impossible",
             "capped": false,
             "binding": true
@@ -435,29 +435,29 @@
         },
         "tiers": {
           "perfect": {
-            "straight": -123.57421875,
-            "broken": -124.423828125
+            "straight": -123.6328125,
+            "broken": -124.482421875
           },
           "reactive": {
-            "straight": -152.783203125,
-            "broken": -152.783203125
+            "straight": -152.841796875,
+            "broken": -152.841796875
           },
           "naive": {
-            "straight": -213.310546875,
-            "broken": -363.310546875
+            "straight": -213.427734375,
+            "broken": -363.3984375
           }
         },
         "learnSlope": "naive",
         "fit": false,
         "catchable": false,
-        "catchMargin": -124.423828125,
+        "catchMargin": -124.482421875,
         "bearings": {
           "margins": [
             -445,
             -445,
             -445,
             -445,
-            -124.423828125,
+            -124.482421875,
             -445,
             -445,
             -445
@@ -466,10 +466,10 @@
           "worst": -445
         },
         "chaseEnergy": {
-          "spent": 352.094537095474,
+          "spent": 602.1332797744841,
           "kick": 0,
           "income": 0,
-          "net": -352.094537095474,
+          "net": -602.1332797744841,
           "holds": 4700
         },
         "chaseHeat": {
@@ -503,7 +503,7 @@
         "run": {
           "margin": null,
           "unit": "ticks",
-          "distance": -6.4453125,
+          "distance": -6.474609375,
           "status": "impossible",
           "capped": false,
           "binding": true
@@ -542,7 +542,7 @@
             "run": {
               "margin": null,
               "unit": "ticks",
-              "distance": -6.4453125,
+              "distance": -6.474609375,
               "status": "impossible",
               "capped": false,
               "binding": true
@@ -579,7 +579,7 @@
           "run": {
             "margin": null,
             "unit": "ticks",
-            "distance": -6.4453125,
+            "distance": -6.474609375,
             "status": "impossible",
             "capped": false,
             "binding": true
@@ -595,29 +595,29 @@
         },
         "tiers": {
           "perfect": {
-            "straight": 19.98046875,
-            "broken": -6.4453125
+            "straight": 19.951171875,
+            "broken": -6.474609375
           },
           "reactive": {
-            "straight": -47.16796875,
-            "broken": -61.669921875
+            "straight": -47.28515625,
+            "broken": -61.787109375
           },
           "naive": {
-            "straight": -53.3203125,
-            "broken": -209.82421875
+            "straight": -53.4375,
+            "broken": -210
           }
         },
         "learnSlope": "naive",
         "fit": false,
         "catchable": false,
-        "catchMargin": -6.4453125,
+        "catchMargin": -6.474609375,
         "bearings": {
           "margins": [
             -285,
             -285,
             -285,
             -285,
-            -6.4453125,
+            -6.474609375,
             -285,
             -285,
             -285
@@ -626,14 +626,14 @@
           "worst": -285
         },
         "chaseEnergy": {
-          "spent": 341.18859900019845,
-          "kick": 70.59771493008427,
+          "spent": 583.2699783684478,
+          "kick": 70.79397629306992,
           "income": 400,
-          "net": -11.786313930282745,
+          "net": -254.06395466151776,
           "holds": 4700
         },
         "chaseHeat": {
-          "gain": 2.4957631818087314,
+          "gain": 2.4960069152062316,
           "headroom": 15
         },
         "refillTicks": 500,
@@ -741,7 +741,7 @@
             "run": {
               "margin": null,
               "unit": "ticks",
-              "distance": -33.779296875,
+              "distance": -33.837890625,
               "status": "impossible",
               "capped": false,
               "binding": true
@@ -791,7 +791,7 @@
         "run": {
           "margin": null,
           "unit": "ticks",
-          "distance": -33.779296875,
+          "distance": -33.837890625,
           "status": "impossible",
           "capped": false,
           "binding": true
@@ -870,7 +870,7 @@
             "run": {
               "margin": null,
               "unit": "ticks",
-              "distance": -33.779296875,
+              "distance": -33.837890625,
               "status": "impossible",
               "capped": false,
               "binding": true
@@ -974,7 +974,7 @@
         "run": {
           "margin": null,
           "unit": "ticks",
-          "distance": -33.779296875,
+          "distance": -33.837890625,
           "status": "impossible",
           "capped": false,
           "binding": true

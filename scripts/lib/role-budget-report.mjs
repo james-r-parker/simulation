@@ -179,7 +179,7 @@ function formatDefenceCheck(readings) {
 }
 
 /**
- * @param {{kinematics: import('../../js/evo/role-budget-check.js').KinematicRow[], pairs: {pair: string, straight: any[], broken: any[]}[], defence: import('../../js/evo/role-budget-defence-check.js').DefenceReading[]}} check the cross-check
+ * @param {{kinematics: import('../../js/evo/role-budget-check.js').KinematicRow[], pairs: {pair: string, straight: any[], broken: any[], shares: Record<string, import('../../js/evo/role-budget-shares.js').CatchShares>}[], defence: import('../../js/evo/role-budget-defence-check.js').DefenceReading[]}} check the cross-check
  * @returns {string} the kinematic readings and, per pair and bound, the cells that disagree or drift
  */
 export function formatCheck(check) {
@@ -193,7 +193,7 @@ export function formatCheck(check) {
         k.drift ? 'DRIFT' : 'ok',
     ]);
     const lines = [padTable([['body', 'reading', 'formula', 'sim', 'difference', 'tolerance', ''], ...kin]).join('\n')];
-    for (const { pair, straight, broken } of check.pairs) {
+    for (const { pair, straight, broken, shares } of check.pairs) {
         /** @type {[string, any[]][]} */
         const bounds = [
             ['straight', straight],
@@ -206,8 +206,10 @@ export function formatCheck(check) {
                 (c) =>
                     `${c.distance.toFixed(0)}px@${((c.bearing * 180) / Math.PI).toFixed(0)}: formula ${c.formula ?? 'none'} sim ${c.sim ?? 'none'}${c.edge ? ' (view edge)' : ''}`,
             );
+            const share = shares[bound];
+            const netWorst = Math.max(0, ...cells.map((c) => c.netDifference ?? 0));
             lines.push(
-                `${pair} ${bound}: ${cells.length} cells, ${drift} drift${detail.length > 0 ? `\n  ${detail.join('\n  ')}` : ''}`,
+                `${pair} ${bound}: ${cells.length} cells, ${drift} drift, net energy per kill within ${(netWorst * 100).toFixed(1)}%, catch share ${share.drift} sign or rank drift${detail.length > 0 ? `\n  ${detail.join('\n  ')}` : ''}`,
             );
         }
     }

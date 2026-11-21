@@ -80,6 +80,9 @@ describe('role:budget --check', () => {
         expect(text).toMatch(/turn radius\s+41\.718\s+41\.809\s+0\.217%\s+0\.500%\s+ok/);
         expect(text).toMatch(/predator:forager straight: 40 cells, 0 drift/);
         expect(text).toMatch(/predator:scout broken: 40 cells, 0 drift/);
+        expect(text).toMatch(
+            /predator:forager broken: 40 cells, 0 drift, net energy per kill within [\d.]+%, catch share 0 /,
+        );
         expect(text).not.toMatch(/DRIFT/);
     });
 });

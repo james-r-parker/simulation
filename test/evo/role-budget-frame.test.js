@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { arenaConfig } from '../../js/evo/chase-arena.js';
 import {
+    EFFORTS,
+    bestEffort as typedBestEffort,
     frameOptions as typedFrameOptions,
     gapAtAwareness,
     gapAtSight,
@@ -22,6 +24,7 @@ const model = MODEL_DEFAULTS;
 /** @type {any} the frame functions with their options left untyped for the asserts */
 const frameOptions = typedFrameOptions;
 /** @type {any} */
+const bestEffort = /** @type {any} */ (typedBestEffort);
 const maxCatchableGap = typedMaxCatchableGap;
 /** @type {any} */
 const playFrame = typedPlayFrame;
@@ -48,7 +51,8 @@ describe('frameOptions', () => {
             delays: { see: 3, turn: 4, run: 5 },
         });
         expect(o).toMatchObject({ gap: 345, bearing: 1, hunterStart: 'cruise' });
-        expect(o.hunter).toEqual({ wait: 3, runAt: 5, slowTicks: 4, seeGap: Infinity });
+        expect(o.hunter).toEqual({ wait: 3, runAt: 5, slowTicks: 4, seeGap: Infinity, effort: 1 });
+        expect(frameOptions(defaults.hunter, defaults.prey, 345, { model, effort: 0.4 }).hunter.effort).toBe(0.4);
         expect(o.prey).toMatchObject({ sprint: 'rationed', jink: 120 });
     });
 
@@ -97,11 +101,35 @@ describe('reliableSight', () => {
 
 describe('maxCatchableGap', () => {
     it('is the first gap past which the kill fails when the hunter kills at the awareness gap: it kills at the gap and not 1 px beyond', () => {
-        const frame = { model, bound: 'straight' };
-        const gap = maxCatchableGap(courser.hunter, courser.prey, frame);
+        const base = { model, bound: /** @type {const} */ ('straight') };
+        const { effort, gap } = bestEffort(courser.hunter, courser.prey, base);
+        const frame = { ...base, effort };
+        expect(maxCatchableGap(courser.hunter, courser.prey, base)).toBe(gap);
         expect(gap).toBeGreaterThan(gapAtAwareness(courser.hunter, courser.prey));
         expect(playFrame(courser.hunter, courser.prey, gap, frame).killTick).not.toBeNull();
         expect(playFrame(courser.hunter, courser.prey, gap + 1, frame).killTick).toBeNull();
+    });
+
+    it.each([
+        ['courser', 'broken'],
+        ['courser', 'straight'],
+        ['defaults', 'broken'],
+    ])('reads the best of the sprint-effort sweep for a perfect hunter on %s, %s', (set, bound) => {
+        const { hunter, prey } = set === 'courser' ? courser : defaults;
+        const base = { model, bound: /** @type {'straight' | 'broken'} */ (bound) };
+        const best = bestEffort(hunter, prey, base);
+        const at = (/** @type {number} */ effort) => maxCatchableGap(hunter, prey, { ...base, effort });
+        expect(maxCatchableGap(hunter, prey, base)).toBe(best.gap);
+        expect(at(best.effort)).toBe(best.gap);
+        // the first pass: no effort of the 0.05 grid reaches further
+        expect(best.gap).toBe(Math.max(best.gap, ...EFFORTS.map(at)));
+        // the second pass: none of the 0.01 efforts within 0.04 of the best reaches further
+        for (let k = -4; k <= 4; k++) {
+            const effort = Math.min(1, Math.max(0, Math.round((best.effort + k * 0.01) * 100) / 100));
+            expect(best.gap).toBeGreaterThanOrEqual(at(effort));
+        }
+        expect(EFFORTS).toContain(model.naiveEffort);
+        expect(EFFORTS[0]).toBe(1);
     });
 
     it('is the nearest gap inside the awareness gap that kills when it does not kill at the awareness gap', () => {

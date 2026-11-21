@@ -6,7 +6,7 @@
       "sprintDrainMultiplier": 0.5
     },
     "reproducer": {
-      "sprintBoost": 1.25
+      "visionRange": 187.5
     }
   }
 }

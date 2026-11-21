@@ -2,8 +2,8 @@
   "sprintStoreEnabled": true,
   "sprintDrain": 0.004,
   "specialisations": {
-    "predator": {
-      "sprintDrainMultiplier": 0.75
+    "reproducer": {
+      "sprintBoost": 0.5
     }
   }
 }

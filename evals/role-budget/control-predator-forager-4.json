@@ -1,8 +1,4 @@
 {
   "sprintStoreEnabled": false,
-  "specialisations": {
-    "predator": {
-      "maxEnergyMultiplier": 7.5
-    }
-  }
+  "maxVelocity": 4
 }

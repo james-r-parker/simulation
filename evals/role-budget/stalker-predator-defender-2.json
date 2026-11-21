@@ -5,9 +5,7 @@
     "predator": {
       "sprintDrainMultiplier": 2,
       "sprintBoost": 2.2
-    },
-    "defender": {
-      "visionRange": 225
     }
-  }
+  },
+  "maxVelocity": 10
 }

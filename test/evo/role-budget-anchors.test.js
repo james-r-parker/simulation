@@ -1,6 +1,10 @@
-// Every closed-form row of "Anchors" in docs/designs/role-budget.md, asserted from the module that owns it. The anchors
-// were computed from the code on 2026-11-21 (evals/decisions/role-budget/anchors.md); a row that stops reproducing means
-// the code, or the formula, moved.
+// The closed-form rows of "Anchors" in docs/designs/role-budget.md for the bodies, the store and the senses: size, thrust, caps,
+// ticks to the cap, turn rate and radius, speed on a held turn, energy per 100 ticks, the courser store, views, reliableView,
+// hearing. The other rows are tested where they live: the bites, the kick and the straight-chase table (contact ticks, the
+// largest gap closed, the rationed contacts) in role-budget-timeline.test.js and role-budget-body.test.js; the herd rows
+// (ring radius, ticks to clear, one trample) have no test yet, they belong to the herd phase. The anchors were computed from
+// the code on 2026-11-21 (evals/decisions/role-budget/anchors.md); a row that stops reproducing means the code, or the
+// formula, moved.
 
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';

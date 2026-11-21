@@ -3,8 +3,8 @@
   "sprintDrain": 0.01,
   "specialisations": {
     "predator": {
-      "sprintDrainMultiplier": 0.5
+      "sprintDrainMultiplier": 0.5,
+      "visionRange": 300
     }
-  },
-  "maxThrust": 0.875
+  }
 }

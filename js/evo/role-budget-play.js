@@ -3,7 +3,7 @@
 // two bodies, so the timeline and the scripted chase of `audit:chase` steer the same way. Steering uses vectors.
 
 import { detCos, detSin } from '../sim/det-math.js';
-import { JINK_RANGE, EVADER_SPRINT_JINKS, steer } from './chase-oracles.js';
+import { JINK_RANGE, EVADER_SPRINT_JINKS } from './chase-oracles.js';
 import { aboveFloor, speedOf } from './role-budget-body.js';
 import { norm } from './role-budget-kinematics.js';
 
@@ -45,12 +45,27 @@ export const HUNTER_PERFECT = Object.freeze({
 /**
  * @param {import('./role-budget-body.js').Body} b the steering body
  * @param {{x: number, y: number}} aim the direction wanted (not unit)
- * @returns {number} the `TURN` output that closes the gap to the aim in one tick: `steer` of chase-oracles.js itself, read
- *   from a one-body view of the numbers it takes, so the budget cannot steer differently from the oracle
+ * @returns {number} the `TURN` output that closes the gap to the aim in one tick: `steer` of chase-oracles.js, written out
+ *   over the body's cached heading so a chase takes no trigonometry here (the test holds it equal to `steer`)
  */
 export function steerOut(b, aim) {
-    const view = { config: { maxTurn: b.p.turnRate.max }, turnBySpec: [1], spec: [0], angle: [b.angle] };
-    return steer(view, 0, aim);
+    return steerXY(b, aim.x, aim.y);
+}
+
+/**
+ * @param {import('./role-budget-body.js').Body} b the steering body
+ * @param {number} ax the aim's x
+ * @param {number} ay the aim's y
+ * @returns {number} `steerOut` of the aim, without the object (the chase steers twice a tick)
+ */
+function steerXY(b, ax, ay) {
+    const size = Math.sqrt(ax * ax + ay * ay) || 1;
+    const cross = (b.ch * ay - b.sh * ax) / size;
+    const dot = (b.ch * ax + b.sh * ay) / size;
+    if (dot < 0) {
+        return Math.sign(cross) || 1;
+    }
+    return Math.max(-1, Math.min(1, cross / b.p.turnRate.max));
 }
 
 /**
@@ -68,7 +83,7 @@ export function hunterOut(h, p, play, tick) {
         return { turn: 0, sprint: 0 };
     }
     const lead = Math.min(dist / Math.max(speedOf(h), 1), LEAD_MAX);
-    const turn = steerOut(h, { x: dx + lead * p.vx, y: dy + lead * p.vy });
+    const turn = steerXY(h, dx + lead * p.vx, dy + lead * p.vy);
     const inView = play.sprint === 'always' || h.p.store.on === 0 || dist <= h.p.view.range;
     const lasts = play.sprint === 'always' || aboveFloor(h);
     const on = play.sprint !== 'never' && inView && tick >= play.runAt && lasts;
@@ -88,8 +103,8 @@ export function preyOut(h, p, play) {
     if (dist > play.awareGap) {
         return { turn: 0, sprint: 0, thrust: 0 };
     }
-    const aim = dist < play.jink ? breakAim(h, { x: dx, y: dy }, play.breakAngle) : { x: dx, y: dy };
-    return { turn: steerOut(p, aim), sprint: preySprints(p, play, dist) ? 1 : 0 };
+    const turn = dist < play.jink ? steerOut(p, breakAim(h, { x: dx, y: dy }, play.breakAngle)) : steerXY(p, dx, dy);
+    return { turn, sprint: preySprints(p, play, dist) ? 1 : 0 };
 }
 
 /**
@@ -100,7 +115,7 @@ export function preyOut(h, p, play) {
  *   the side the prey stands on, so the hunter must turn through the most
  */
 function breakAim(h, away, angle) {
-    const t = speedOf(h) > REST ? { x: h.vx, y: h.vy } : { x: detCos(h.angle), y: detSin(h.angle) };
+    const t = speedOf(h) > REST ? { x: h.vx, y: h.vy } : { x: h.ch, y: h.sh };
     const side = Math.sign(t.x * away.y - t.y * away.x) || 1;
     const c = detCos(side * angle);
     const s = detSin(side * angle);

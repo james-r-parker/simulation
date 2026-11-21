@@ -2,8 +2,8 @@
   "sprintStoreEnabled": true,
   "sprintDrain": 0.01,
   "specialisations": {
-    "predator": {
-      "sprintBoost": 2
+    "reproducer": {
+      "visionRange": 187.5
     }
   }
 }

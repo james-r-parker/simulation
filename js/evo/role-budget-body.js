@@ -23,6 +23,8 @@ const TWO_PI = 2 * PI;
  * @property {number} vx
  * @property {number} vy
  * @property {number} angle
+ * @property {number} ch the cosine of the angle, kept with it so the steering reads no trigonometry
+ * @property {number} sh the sine of the angle
  * @property {number} energy
  * @property {number} size
  * @property {number} level the sprint store, 0 to 1
@@ -43,6 +45,8 @@ export function createBody(p, { x, y, angle, speed = 0 }) {
         vx: speed * detCos(angle),
         vy: speed * detSin(angle),
         angle,
+        ch: detCos(angle),
+        sh: detSin(angle),
         energy: p.energy,
         size: p.size,
         level: 1,
@@ -103,8 +107,10 @@ export function stepBody(b, out) {
     a = a >= PI ? a - TWO_PI : a < -PI ? a + TWO_PI : a;
     b.angle = a;
     const thrust = p.thrust.base * gain * fat * (out.thrust ?? 1);
-    b.vx = (b.vx + thrust * detCos(a)) * p.damping;
-    b.vy = (b.vy + thrust * detSin(a)) * p.damping;
+    b.ch = detCos(a);
+    b.sh = detSin(a);
+    b.vx = (b.vx + thrust * b.ch) * p.damping;
+    b.vy = (b.vy + thrust * b.sh) * p.damping;
     const cap = p.cap.cruise * gain;
     const speed = speedOf(b);
     if (speed > cap) {

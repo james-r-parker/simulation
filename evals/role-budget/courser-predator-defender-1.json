@@ -4,9 +4,7 @@
   "specialisations": {
     "predator": {
       "sprintDrainMultiplier": 0.5
-    },
-    "defender": {
-      "visionRange": 375
     }
-  }
+  },
+  "maxVelocity": 6
 }
