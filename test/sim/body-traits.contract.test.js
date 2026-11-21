@@ -1,11 +1,37 @@
 // One suite over every registry entry (docs/designs/body-genes.md, "The contract tests"): a new trait is covered by
-// adding its entry. The inheritance rows are in T33 (the inheritance rows).
+// adding its entry.
 
 import { describe, expect, it } from 'vitest';
+import { crossTraits, mutateTraits } from '../../js/evo/trait-inherit.js';
 import { LANES } from '../../js/sim/body-lanes.js';
 import { MAX_OFFSET_SPAN, MAX_TRAIT_SPAN, TRAITS, maxSpanOf, traitRatio } from '../../js/sim/body-traits.js';
-import { TRAIT_INDEX, TRAIT_SLOTS } from '../../js/sim/brain-layout.js';
+import { TRAIT_INDEX, TRAIT_SLOTS, brainLayout } from '../../js/sim/brain-layout.js';
+import { createConfig } from '../../js/sim/config.js';
+import { createRng } from '../../js/sim/rng.js';
 import { rebuild, setGene, setSpan, traitWorld } from './helpers/trait-world.js';
+
+const BIRTHS = 10000;
+const config = createConfig();
+const layout = brainLayout({ rayCount: 2, brainHidden: 4 });
+
+/**
+ * Runs `BIRTHS` mutations of an all-0 trait block and keeps every slot's step.
+ * @param {readonly any[]} traits the registry
+ * @returns {Float64Array[]} per slot, the gene after each birth
+ */
+function steps(traits) {
+    const out = Array.from({ length: TRAIT_SLOTS }, () => new Float64Array(BIRTHS));
+    const rng = createRng(11);
+    const row = new Float32Array(layout.weightCount);
+    for (let birth = 0; birth < BIRTHS; birth++) {
+        row.fill(0);
+        mutateTraits(row, layout, rng, { config, traits });
+        for (let slot = 0; slot < TRAIT_SLOTS; slot++) {
+            out[slot][birth] = row[layout.traitStart + slot];
+        }
+    }
+    return out;
+}
 
 const GENES = [-50, -3, -1, -0.2, 0, 0.2, 1, 3, 50];
 
@@ -148,4 +174,57 @@ describe('composition', () => {
         expect(MAX_TRAIT_SPAN).toBe(0.5);
         expect(MAX_OFFSET_SPAN).toBeGreaterThanOrEqual(8);
     });
+});
+
+describe.each(
+    /** @type {[string, any][]} */ ([
+        ['as registered', TRAITS],
+        ['with every trait blended and scaled by 2', TRAITS.map((t) => ({ ...t, inherit: 'blend', sigmaScale: 2 }))],
+    ]),
+)('inheritance, %s', (_, traits) => {
+    const parents = () => {
+        const mother = new Float32Array(layout.weightCount).map((__, i) => Math.fround(Math.sin(i + 1)));
+        const father = new Float32Array(layout.weightCount).map((__, i) => Math.fround(Math.cos(i * 2 + 1)));
+        return { mother, father };
+    };
+
+    it.each(TRAITS.map((trait) => [trait.name, trait.index]))(
+        'gives a child of %s one parent gene (either) or their mean (blend) before mutation',
+        (_name, index) => {
+            const { mother, father } = parents();
+            const child = new Float32Array(layout.weightCount);
+            const at = layout.traitStart + index;
+            const kinds = new Set();
+            for (let seed = 1; seed <= 16; seed++) {
+                crossTraits(child, mother, father, { layout, rng: createRng(seed), traits });
+                const blend = traits.find((/** @type {any} */ t) => t.index === index).inherit === 'blend';
+                const mean = Math.fround((mother[at] + father[at]) / 2);
+                const either = child[at] === mother[at] || child[at] === father[at];
+                expect(blend ? child[at] === mean : either, `seed ${seed}`).toBe(true);
+                kinds.add(child[at]);
+            }
+            expect(kinds.size).toBe(
+                traits.find((/** @type {any} */ t) => t.index === index).inherit === 'blend' ? 1 : 2,
+            );
+        },
+    );
+
+    const all = steps(traits);
+
+    it.each(TRAITS.map((trait) => [trait.name, trait.index]))(
+        'steps %s by traitMutationSigma x sigmaScale, within 5%, and never leaves the clamp',
+        (_name, index) => {
+            const sigma =
+                config.traitMutationSigma * traits.find((/** @type {any} */ t) => t.index === index).sigmaScale;
+            const values = all[index];
+            const mean = values.reduce((a, b) => a + b, 0) / BIRTHS;
+            const sd = Math.sqrt(values.reduce((a, b) => a + (b - mean) ** 2, 0) / BIRTHS);
+            expect(sd / sigma).toBeGreaterThan(0.95);
+            expect(sd / sigma).toBeLessThan(1.05);
+            const row = new Float32Array(layout.weightCount).fill(config.traitGeneClamp);
+            mutateTraits(row, layout, createRng(index + 1), { config: { ...config, traitMutationSigma: 9 }, traits });
+            const gene = row[layout.traitStart + index];
+            expect(Math.abs(gene)).toBeLessThanOrEqual(config.traitGeneClamp);
+        },
+    );
 });

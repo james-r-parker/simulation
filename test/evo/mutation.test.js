@@ -89,6 +89,21 @@ describe('mutateWeights', () => {
         expect(sd).toBeLessThan(1.03 * TRAIT_SIGMA);
     });
 
+    it('skips the trait block from traitStart to leakStart, with no draw, and steps the genes after it', () => {
+        const row = new Float32Array(30).fill(1);
+        const rng = createRng(9);
+        mutateWeights(row, 0.1, rng, { traitStart: 10, leakStart: 18 });
+        expect(Array.from(row.subarray(10, 18))).toEqual(new Array(8).fill(1));
+        const ref = createRng(9);
+        for (let i = 0; i < 10; i++) {
+            expect(row[i]).toBe(Math.fround(1 + 0.1 * nextGaussian(ref)));
+        }
+        for (let i = 18; i < 30; i++) {
+            expect(row[i]).toBe(Math.fround(1 + TRAIT_SIGMA * nextGaussian(ref)));
+        }
+        expect(rng.s).toEqual(ref.s);
+    });
+
     it('is the weight sigma throughout without a traitStart', () => {
         const a = new Float32Array(100);
         const b = new Float32Array(100);

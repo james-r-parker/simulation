@@ -88,6 +88,8 @@ export const FEATURE_RULES = {
     sprintFloor: { type: 'num', gt: 0, max: 1 },
     mutationRate: { type: 'mutationRate' },
     weightDecay: num(0, 0.1),
+    traitMutationSigma: num(0),
+    traitGeneClamp: { type: 'num', gt: 0, max: 8 },
     leakGeneStart: num(-4, 4),
     instinctWeight: num(0, 4),
     leakMin: { type: 'num', gt: 0, lt: 1 },
