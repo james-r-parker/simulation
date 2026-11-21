@@ -2,6 +2,7 @@
 // champions that passed it; at every later gate checkpoint it drills them on that stage's own drills and offers the
 // readings to the retention read (`readings.keepers.<stage>`, `js/evo/stage-run.js`). A detector and a trainer memory
 // only: a kept passer is never put back into the archive or the world.
+import { drillBodyRules } from '../../js/evo/drill-body-rules.js';
 import { drillReadings } from '../../js/evo/gate-readings.js';
 import { drillGenomes } from '../drill.mjs';
 
@@ -59,9 +60,9 @@ export function gateDrills(gate) {
 }
 
 /**
- * Drills each stage's kept passers on that stage's gate drills.
+ * Drills each stage's kept passers on that stage's gate drills, under that stage world's body rules.
  * @param {Record<string, KeptSubject[]>} keepers the kept passers by stage
- * @param {{stages: readonly {name: string, gate?: any[]}[], seed: number, trials: number, workers: number | undefined,
+ * @param {{stages: readonly {name: string, gate?: any[], overrides?: Record<string, any>}[], seed: number, trials: number, workers: number | undefined,
  *   cache?: import('./drill-cache.mjs').DrillCache, log: import('../../js/sim/log.js').SimLog}} at the stages, the gate's
  *   drill seed and trials, the pool size, the run's drill cache (none: no cache) and the log
  * @returns {Promise<Record<string, Record<string, any>>>} `<stage>` -> the drill readings of its kept passers
@@ -78,7 +79,7 @@ export async function keeperReadings(keepers, { stages, seed, trials, workers, c
         const genomes = fromKept(kept);
         const rows = await drillGenomes(/** @type {any} */ ({ drills, seed, trials, workers, cache }), {
             genomes,
-            config: {},
+            config: drillBodyRules(stage.overrides ?? {}),
             log,
         });
         out[stage.name] = drillReadings(/** @type {any} */ (rows), genomes.length, drills);

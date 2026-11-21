@@ -3,6 +3,7 @@
 import { isMainThread } from 'node:worker_threads';
 import { DRILLS } from '../js/evo/drill-scenarios.js';
 import { ablateUnit, editTrials } from '../js/evo/brain-ablation.js';
+import { layerArena } from '../js/evo/drill-body-rules.js';
 import { createTraceRecorder } from '../js/evo/brain-trace.js';
 import { brainLayout } from '../js/sim/brain-layout.js';
 import { createConfig } from '../js/sim/config.js';
@@ -95,7 +96,7 @@ function taskPlan({ subject, drill, seed, trial, config }) {
  * @returns {Record<string, any>} shared state for drill trial generation
  */
 function replayContext({ subject, drill, seed, config }) {
-    const arena = { ...config, ...drill.arena };
+    const arena = layerArena(config, drill.arena);
     const staged = { ...subject, spec: subject.spec ?? drill.spec };
     const base = createConfig(arena);
     const view = viewOf(staged, base);

@@ -4,6 +4,7 @@ import { appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pooledWinShare } from '../../js/evo/adaptive-difficulty.js';
+import { drillBodyRules, layerArena } from '../../js/evo/drill-body-rules.js';
 import { DRILLS, sprintArena } from '../../js/evo/drill-scenarios.js';
 import { drillReadings } from '../../js/evo/gate-readings.js';
 import { partitionSeed } from '../../js/evo/partitions.js';
@@ -85,12 +86,12 @@ export function averageMetrics(results) {
  */
 
 /**
- * Runs the drills on the archive's champions.
+ * Runs the drills on the archive's champions, under the stage world's body rules (`drillBodyRules`).
  * @param {CheckpointRun} run the checkpoint
  * @returns {Promise<{edges: Record<string, number | null>, reasons: Record<string, Record<string, number> | null>, readings: Record<string, any> | null, subjects: any[]}>}
  *   each drill's mean edge and summed loss reasons, and the gate's drill readings when the checkpoint is a gate's
  */
-async function drillPart({ archive, options, log }) {
+async function drillPart({ archive, stage, options, log }) {
     const genomes = eliteSubjects(archive);
     const names = DRILLS.map((d) => d.name);
     const gate = options.gate ?? null;
@@ -105,7 +106,7 @@ async function drillPart({ archive, options, log }) {
         workers: options.workers,
         cache: options.drillCache,
     });
-    const rows = await drillGenomes(args, { genomes, config: {}, log });
+    const rows = await drillGenomes(args, { genomes, config: drillBodyRules(stage.overrides), log });
     return {
         edges: drillEdges(rows, genomes.length),
         reasons: drillLossReasons(rows, genomes.length),
@@ -122,7 +123,7 @@ async function drillPart({ archive, options, log }) {
  * @returns {Promise<{drill: string, value: number, winShare: number | null} | null>} the pooled win share, or null when the
  *   checkpoint is not steered
  */
-async function steerPart({ options, log }, subjects) {
+async function steerPart({ stage, options, log }, subjects) {
     const { steer, gate } = options;
     if (!steer || !gate) {
         return null;
@@ -138,7 +139,11 @@ async function steerPart({ options, log }, subjects) {
         workers: options.workers,
         cache: options.drillCache,
     });
-    const rows = await drillGenomes(args, { genomes: subjects, config: sprintArena(value), log });
+    const rows = await drillGenomes(args, {
+        genomes: subjects,
+        config: layerArena(drillBodyRules(stage.overrides), sprintArena(value)),
+        log,
+    });
     return { drill, value, winShare: pooledWinShare(/** @type {any} */ (rows), subjects.length, drill) };
 }
 
