@@ -74,7 +74,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Sprint burst](sprint-burst.md) - Phase 1 detectors kept; Phase 2 gate not met on E210 (T3)
 - [Web presence](web-presence.md) - a designed icon in every size, Open Graph and Twitter cards, a full `<head>`, an installable web app manifest with a splash, `robots.txt` and `sitemap.xml`
 
-## In progress (33)
+## In progress (34)
 
 Partly built - the note says which phases are real.
 
@@ -101,6 +101,7 @@ Partly built - the note says which phases are real.
 - [Role budget](role-budget.md) - Phases 1 to 3 are built (T1 to T7, E257; T9 to T12, E258; T14 and T15, E260); the conformance reviews T8, T13 and T16 are next, then Phase 4 (T17). All five pha... _(validated 0c8aa65, 2026-11-21)_ _(depends on [body-genes.md](body-genes.md))_
 - [Scent trails and carrion scent](scent-trails.md) - Phase 1 detectors and E-ST2-1 baseline complete (E210); the trail probe remains before Phase 2 _(validated 3a150d7, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [senses-and-motor.md](senses-and-motor.md))_
 - [Senses and motor](senses-and-motor.md) - Phases 1, 2 and 5 are built (interface checks; `audit:chase` with E-SM-1 falsified, E185; hunter eyes adopted on a 64-seed keep rule, E186). Phase 3 code is bui... _(validated f5ebac7, 2026-11-15)_ _(depends on [training.md](training.md))_
+- [Status effects](status-effects.md) - Phase 1 is built: the registry and every modifier of today (body, feeding, life and signal families) read through `liveOf` and `gateOpen`, with the effect rows... _(validated 23e8cc6, 2026-11-21)_ _(depends on [body-genes.md](body-genes.md))_
 - [Stillness](stillness.md) - Phase 1 detectors and E210 baseline complete; Phase 2 gate met _(validated 3ca2b1f, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [habitat-cover.md](habitat-cover.md), [training-stages.md](training-stages.md))_
 - [Throughput](throughput.md) - Phase 3 T6, T7a and T7b are built (`grazeHerds` +432%, the field phase +136% at 500 agents); T7, T7c and the review T8 are open. Phase 1 (measure, T1 to T5), Ph... _(validated 3c6f122, 2026-11-21)_ _(depends on [wasm-kernels.md](wasm-kernels.md))_
 - [Training](training.md) - Phases 1 (drills) and 2 (the trainer) are built apart from T13 (conformance review); arm d of T12 iteration 2 is weak (`prey-ahead` edge +0.16, `bite-discrimina... _(validated edd4cd4, 2026-11-07)_ _(depends on [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md))_
@@ -112,7 +113,7 @@ Partly built - the note says which phases are real.
 - [World balance and biology](world-balance.md) - Phases 1 to 4, Phase 5 round 1 and Phase 6 (the mating-edge screen, E145, E146: roaming range deleted, T103) are built. The post-feature queue was not run as wr... _(validated edd4cd4, 2026-11-07)_ _(depends on [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md))_
 - [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - Phase 1 built: the legacy app, its tooling and the superseded policies are gone and a `conventions` rule keeps them out; Phase 2 (the screenshots script, the RE... _(validated d6ca3e6, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md), [improvement-loop.md](improvement-loop.md))_
 
-## Proposed (8)
+## Proposed (7)
 
 Plans. Nothing built; do not read these as descriptions of the code.
 
@@ -123,7 +124,6 @@ Plans. Nothing built; do not read these as descriptions of the code.
 - [Improvement loop](improvement-loop.md) - Phase 1 adds the nightly eval history, trend detection and the weekly improvement routine _(validated d6ca3e6, 2026-11-07)_ _(depends on [evolution-evals.md](evolution-evals.md), [evolution-rework.md](evolution-rework.md), [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), [world-balance.md](world-balance.md), [deployment-and-community.md](deployment-and-community.md))_
 - [Migration](migration.md) - migrants arrive at the map edges at a steady rate from a balanced mainland, whatever the headcount, and replace the floor refill that drops agents into an empti... _(validated e2455f2, 2026-11-11)_ _(depends on [eat-choice.md](eat-choice.md), [low-density-edge.md](low-density-edge.md))_
 - [Seasonal movement](seasonal-movement.md) - Phase 1 T1 and T2 built (#343) and the T5 baseline run (`E142`, 32 floor-on seeds, in Baseline). T3 (`scripts/season-map.mjs`) and T6 (the sim-notes diagnosis a... _(validated f5c7880, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md))_
-- [Status effects](status-effects.md) - one registry of stacking, capped, timed effects on a body: every within-life modifier the sim has today (heat, cold, fat, grazing, handling, the rest after a ki... _(validated 23e8cc6, 2026-11-21)_ _(depends on [body-genes.md](body-genes.md))_
 
 ## Reference (5)
 

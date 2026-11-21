@@ -1068,5 +1068,21 @@
   "slot": 24,
   "genomeId": 27,
   "spec": 30
+ },
+ {
+  "level": "debug",
+  "event": "EffectApplied",
+  "tick": 186,
+  "slot": 24.5,
+  "effect": 27.5,
+  "stacks": 30.5,
+  "source": 33.5
+ },
+ {
+  "level": "debug",
+  "event": "EffectCapped",
+  "tick": 187,
+  "slot": 25,
+  "effect": 28
  }
 ]

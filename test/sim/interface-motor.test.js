@@ -9,7 +9,7 @@ import { applyCosts } from '../../js/sim/energy.js';
 import { feed } from '../../js/sim/feeding.js';
 import { readyToMate } from '../../js/sim/mate-eligibility.js';
 import { actAll, integrate } from '../../js/sim/physics.js';
-import { thrustEfficiency } from '../../js/sim/temperature.js';
+import { thrustEfficiency } from './helpers/legacy-rules.js';
 import { addFood, rebuild } from './helpers/sense-world.js';
 import { FORAGER, PREDATOR, addSubject, bodyInput, brainRow, stageSubject } from './helpers/interface-stage.js';
 
