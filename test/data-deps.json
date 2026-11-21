@@ -333,7 +333,13 @@
     "test/evo/role-budget-timeline.test.js": [
         "evals/fair-chase/courser.json"
     ],
+    "test/evo/role-budget-warn.slow.test.js": [
+        "evals/fair-chase"
+    ],
     "test/evo/role-budget-warn.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
+    "test/evo/role-scenes-warn.test.js": [
         "evals/fair-chase/courser.json"
     ],
     "test/evo/scene-bite.test.js": [
