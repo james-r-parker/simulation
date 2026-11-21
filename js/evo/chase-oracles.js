@@ -44,7 +44,7 @@ const length = (x, y) => Math.sqrt(x * x + y * y);
  *   (its angle for a small gap), clamped to [-1, 1]; a full turn to the nearer side when the aim is behind
  */
 export function steer(world, slot, aim) {
-    const rate = world.config.maxTurn * world.turnBySpec[world.spec[slot]];
+    const rate = world.lanes.maxTurn[slot];
     const hx = detCos(world.angle[slot]);
     const hy = detSin(world.angle[slot]);
     const size = length(aim.x, aim.y) || 1;
@@ -107,7 +107,7 @@ export function pursuerBrain({ pursuer, evader, sprint }) {
         const speed = Math.max(length(world.vx[pursuer], world.vy[pursuer]), 1);
         const lead = Math.min(length(dx, dy) / speed, LEAD_MAX);
         const aim = { x: dx + lead * world.vx[evader], y: dy + lead * world.vy[evader] };
-        const inView = world.sprintStore === undefined || length(dx, dy) <= world.visionBySpec[world.spec[pursuer]];
+        const inView = world.sprintStore === undefined || length(dx, dy) <= world.lanes.visionRange[pursuer];
         const burst = sprint && inView && storeAboveFloor(world, pursuer);
         drive(world, pursuer, { turn: steer(world, pursuer, aim), sprint: burst, bite: true });
     };

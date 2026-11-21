@@ -8,7 +8,7 @@
 //     `meatFoodBySpec` above 0) while `canEatNow` holds, the share where `BITE` is above 0. A contact is one agent and one
 //     item in a tick, by the test of `tryEat` (`sqrt(dx*dx + dy*dy) < size + foodRadius`).
 //   - `eval.full_contact_bite_share` (lower): the same among contacts of agents whose store is at least `FULL_SHARE` (0.8)
-//     of `maxEnergyBySpec`. `canEatNow` closes at `satiationShare` (0.95), so the band is 0.8 up to `satiationShare`, where
+//     of its `maxEnergy` lane. `canEatNow` closes at `satiationShare` (0.95), so the band is 0.8 up to `satiationShare`, where
 //     eating is still possible; with `satiationShare` 0 it runs to a full store.
 // - `eval.fat_speed_ratio` (watch): every `EAT_SAMPLE_TICKS` (100) ticks from `BURN_IN_TICKS`, after the step, per
 //   specialisation, the mean speed of the moving non-hunters (speed above 0) whose store fraction is above the
@@ -98,7 +98,7 @@ function tallyFat(scene, world) {
             if (world.alive[slot] !== 1 || world.huntBySpec[spec] === 1 || speed === 0) {
                 continue;
             }
-            const fraction = world.energy[slot] / world.maxEnergyBySpec[spec];
+            const fraction = world.energy[slot] / world.lanes.maxEnergy[slot];
             if (pass === 0) {
                 scene.moving[spec] += 1;
                 scene.fraction[spec] += fraction;

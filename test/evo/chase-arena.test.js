@@ -54,3 +54,14 @@ describe('stageArena', () => {
         );
     });
 });
+
+describe('stageArena energy share', () => {
+    it('is a share of the body maxEnergy lane, so a body that stores more starts with more', () => {
+        const stage = (/** @type {Record<string, any>} */ over) =>
+            stageArena(arenaConfig(over), [{ spec: 0, x: 1, y: 1, angle: 0, energyShare: 0.5 }]).world;
+        const base = stage({});
+        const fat = stage({ specialisations: { forager: { body: { maxEnergy: 2 } } } });
+        expect(base.energy[0]).toBeCloseTo(0.5 * base.lanes.maxEnergy[0], 6);
+        expect(fat.energy[0]).toBeCloseTo(2 * base.energy[0], 6);
+    });
+});

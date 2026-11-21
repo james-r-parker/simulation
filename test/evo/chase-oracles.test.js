@@ -115,6 +115,14 @@ describe('steer', () => {
         expect(steer(w, 0, { x: -50, y: 0 })).toBe(1);
         expect(steer(w, 0, { x: -50, y: -1 })).toBe(-1);
     });
+
+    it('scales with the turn lane of the body: a body that turns twice as fast steers half as hard', () => {
+        const w = pair({ x: 4100, y: 4000 });
+        const aim = { x: 1000, y: 10 };
+        const slow = steer(w, 0, aim);
+        w.lanes.maxTurn[0] *= 2;
+        expect(steer(w, 0, aim)).toBeCloseTo(slow / 2, 12);
+    });
 });
 
 describe('the oracles with the sprint store on', () => {
@@ -144,11 +152,23 @@ describe('the oracles with the sprint store on', () => {
     });
 
     it('the pursuer sprints only with the evader in view, the evader only with the pursuer near', () => {
-        const view = stored({ x: 4000, y: 4000 }).visionBySpec[PREDATOR];
+        const view = stored({ x: 4000, y: 4000 }).lanes.visionRange[0];
         const far = stored({ x: 4000 + view + 10, y: 4000 });
         expect(sprinting(far)).toEqual([0, 0]);
         const mid = stored({ x: 4000 + EVADER_SPRINT_JINKS * JINK_RANGE + 10, y: 4000 });
         expect(sprinting(mid)).toEqual([1, 0]);
+    });
+
+    it('the pursuer sprints at an evader inside its vision lane, and not outside it', () => {
+        const w = stored({ x: 4400, y: 4000 });
+        const sprints = () => {
+            pursuerBrain({ pursuer: 0, evader: 1, sprint: true })(w);
+            return out(w, 0, OUTPUT_INDEX.SPRINT);
+        };
+        w.lanes.visionRange[0] = 500;
+        expect(sprints()).toBe(1);
+        w.lanes.visionRange[0] = 300;
+        expect(sprints()).toBe(0);
     });
 
     it('sprint as asked whatever the distance with the store off', () => {

@@ -67,7 +67,7 @@ export function sampleSpend(scene, world) {
         const mother = world.alive[slot] === 1 && world.sex[slot] === SEX.FEMALE;
         if (mother && scene.readySince[slot] < 0 && isReadyToMate(world, slot) && canBear(world, slot)) {
             scene.readySince[slot] = world.tick;
-            scene.readyShare[slot] = world.energy[slot] / world.maxEnergyBySpec[world.spec[slot]];
+            scene.readyShare[slot] = world.energy[slot] / world.lanes.maxEnergy[slot];
         }
     }
 }
@@ -109,7 +109,7 @@ export function noteSpendBirth(scene, world, { child, motherId }) {
         scene.waits.wait[row] = world.tick - scene.readySince[mother] - world.config.pregnancyTicks;
         scene.readySince[mother] = -1;
     }
-    const store = world.maxEnergyBySpec[world.spec[mother]];
+    const store = world.lanes.maxEnergy[mother];
     addSlope(scene, world, { mother, x: (world.energy[mother] + world.energy[child]) / store });
 }
 

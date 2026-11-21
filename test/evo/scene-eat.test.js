@@ -50,7 +50,7 @@ function world(agents, config = {}) {
             ...config,
         },
         huntBySpec: Float64Array.from([0, 1, 0]),
-        maxEnergyBySpec: Float64Array.from([MAX, MAX, MAX]),
+        lanes: { maxEnergy: new Float64Array(n).fill(MAX) },
         plantFoodBySpec: Float64Array.from([1, 0, 0]),
         meatFoodBySpec: Float64Array.from([0, 1, 1]),
         alive: new Uint8Array(n),
@@ -179,6 +179,14 @@ describe('the fat speed ratio', () => {
 
     it('is the mean over the specialisations of the speed above their mean store over the speed below it', () => {
         expect(read(sampled(world(agents)), 'eval.fat_speed_ratio')).toBeCloseTo((0.25 + 1.5) / 2, 12);
+    });
+
+    it('reads each body store from its maxEnergy lane', () => {
+        const w = world(agents);
+        const plain = read(sampled(w), 'eval.fat_speed_ratio');
+        const bigger = world(agents);
+        bigger.lanes.maxEnergy[2] = 4 * MAX; // the 0.75 forager is now at 0.1875 of its own store
+        expect(read(sampled(bigger), 'eval.fat_speed_ratio')).not.toBeCloseTo(plain, 6);
     });
 
     it('pools the speeds over the checkpoints before it takes the ratio', () => {

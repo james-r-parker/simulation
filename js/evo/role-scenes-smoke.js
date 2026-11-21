@@ -174,9 +174,8 @@ function releaserBrain({ defender, aim, reaction, threshold }) {
             world.outputs[row + OUTPUT_INDEX.SMOKE] = 1;
         } else {
             const { config } = world;
-            const spec = world.spec[defender];
-            const fat = 1 - (config.fatSlowShare * world.energy[defender]) / world.maxEnergyBySpec[spec];
-            const rate = config.maxTurn * world.turnBySpec[spec] * fat;
+            const fat = 1 - (config.fatSlowShare * world.energy[defender]) / world.lanes.maxEnergy[defender];
+            const rate = world.lanes.maxTurn[defender] * fat;
             world.outputs[row + OUTPUT_INDEX.TURN] = Math.max(-1, Math.min(1, gap / rate));
         }
     };

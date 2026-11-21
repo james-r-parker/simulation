@@ -164,7 +164,7 @@ export function sampleWatchability(pools, world) {
         }
         pools.agents += 1;
         pools.saturationSum += saturated / OUTPUT_COUNT;
-        pools.energyShareSum += world.energy[slot] / world.maxEnergyBySpec[world.spec[slot]];
+        pools.energyShareSum += world.energy[slot] / world.lanes.maxEnergy[slot];
         pools.overSplitSum += world.energy[slot] / world.splitMinBySpec[world.spec[slot]];
     }
 }
