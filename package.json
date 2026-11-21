@@ -56,7 +56,8 @@
     "screen": "node scripts/screen.mjs",
     "aspire:dashboard": "aspire dashboard run --frontend-url http://127.0.0.1:18888 --otlp-grpc-url http://127.0.0.1:4317 --otlp-http-url http://127.0.0.1:4318 --allow-anonymous",
     "baseline:table": "node scripts/baseline-table.mjs",
-    "baseline:status": "node scripts/baseline-status.mjs"
+    "baseline:status": "node scripts/baseline-status.mjs",
+    "state": "node scripts/state.mjs"
   },
   "keywords": [
     "simulation",

@@ -284,6 +284,18 @@ describe('playEffects', () => {
         expect(player.followInterest.count).toBe(1);
     });
 
+    it('remembers a death with its killer and a birth with its mother for the follow', () => {
+        const { player } = build();
+        const kinds = player.kinds;
+        playEffects(player, queueOf([[kinds.BORN, 3, 0, 0, 20, 5, 7, 1]]), alive([]), 3);
+        playEffects(player, queueOf([[kinds.DIED, 4, 0, 0, 7, 30, 256, 5]]), alive([]), 4);
+        expect(player.story.birthMother[0]).toBe(7);
+        expect(player.story.deathKiller[0]).toBe(30);
+        expect(player.story.deathEaten[0]).toBe(1);
+        expect(player.life.count).toBe(3);
+        expect([player.life.genome[0], player.life.genome[1], player.life.genome[2]]).toEqual([20, 7, 30]);
+    });
+
     it('beginEffects takes the view, the zoom band and the playhead rate into the budget', () => {
         const { player } = build();
         const camera = createCameraController({

@@ -34,7 +34,15 @@ Every command an agent runs on Blob Evolution, grouped by job. `rg -n '^### ' do
 
 ### What CI runs
 
-`scope` (`scripts/change-scope.sh`: `docs`, `release` or `full`; the Release Please pull request, a diff of only `CHANGELOG.md`, `package.json`, `package-lock.json` and `.release-please-manifest.json` on a `release-please--*` branch, runs `scope` alone and `check` still reports success), `static` (`scripts/check.sh --ci --skip=test`: the static gates, build and eval-smoke; a push to main runs the fast tests there instead), `test` (a matrix of coverage shards and statistical shards, `vitest run --shard`), `coverage` (`vitest run --merge-reports --coverage`, then `node scripts/quality-ratchet.mjs --check`), `browser-smoke`, `perf`, and the required `check`, which needs them all. `scripts/check.sh --ci` alone is the static half plus the fast tests
+`scope` (`scripts/change-scope.sh`: `docs`, `release` or `full`, and `scripts/affected.mjs`: the tests the change reaches and the `test` matrix, below; the Release Please pull request, a diff of only `CHANGELOG.md`, `package.json`, `package-lock.json` and `.release-please-manifest.json` on a `release-please--*` branch, runs `scope` alone and `check` still reports success), `static` (`scripts/check.sh --ci --skip=test`: the static gates, build and eval-smoke, and on a pull request the open-miss check), `test` (the matrix the `scope` job writes: shards, heavy and statistical files), `coverage` (the whole suite only: `vitest run --merge-reports --coverage`, then `node scripts/quality-ratchet.mjs --check`), `ratchet-related` (a pull request on the reached tests: `scripts/ratchet-related.mjs` on its changed files), `browser-smoke`, `perf`, `red-main` (a red push to main opens the issue), and the required `check`, which needs `scope`, `static`, `test`, `coverage` and `ratchet-related`; a skipped job passes. `scripts/check.sh --ci` alone is the static half plus the fast tests
+
+### Affected tests
+
+A pull request runs the tests its change can reach; the push to `main` runs the whole suite, the whole-suite ratchet and the browser smoke on the merged result (docs/designs/agent-workflow.md, Affected tests in CI).
+
+- `node scripts/affected.mjs <base-ref>` prints the mode (`docs`, `records`, `full` or `affected`), the reached test files and the `test` job matrix; `--stdin` reads the changed paths, `--full` asks for the whole suite, `--out <file>` writes the JSON (the `affected` artifact), `--github-output <file>` the workflow outputs. A path on the full list (`package.json`, the lockfile, `vitest.config.js`, the lint and TypeScript configs, `.github/workflows/`, `scripts/check.sh`, `scripts/lib/test-scope.mjs`, `wasm/`, `js/sim/wasm-binary.js`, `test/helpers/`, `.node-version`), an empty diff or an unreadable one is `full`.
+- `node scripts/data-deps.mjs --write` regenerates `test/data-deps.json`, the non-module paths each test reads (fixtures, data files, docs, the scripts it spawns); `--check` is part of the `conventions` gate. A test that builds a path the scan cannot see declares it with a `// reads: <path>, <path>` comment (`// reads: none` for a path that is no repo file, `// reads: **` for a test that depends on the git history and so runs for every change); the scan also covers what the modules and scripts a test imports or spawns read.
+- A failed test on `main` that the pull request did not reach is a miss: the `red-main` issue records it (`affected-miss`) and `node scripts/miss-ledger.mjs check` fails every pull request until the selection reaches that test from the recorded paths. Declare the edge (a `// reads:` comment) or teach `scripts/lib/affected.mjs`, in one pull request. Misses per 100 merged pull requests stay at 2 or fewer; above that the full list grows.
 
 ### Docs-only change
 
@@ -46,7 +54,7 @@ Every command an agent runs on Blob Evolution, grouped by job. `rg -n '^### ' do
 
 ### Skip gates
 
-`scripts/check.sh --fix --skip=<gate,...>` removes gates from the selection (CI's `static` job runs `scripts/check.sh --ci --skip=test`; the tests are the sharded `test` jobs)
+`scripts/check.sh --fix --skip=<gate,...>` removes gates from the selection (CI's `static` job runs `scripts/check.sh --ci --skip=test`; the tests are the `test` jobs)
 
 ### A subset of gates
 
@@ -75,6 +83,14 @@ The digest under its `✗` line, then `.checklogs/<gate>.log` (kept until the ne
 ### Detach a long run, then wait for it
 
 `scripts/run-detached.sh <name> [--frozen] -- <cmd...>` (writes `.runs/<name>.log` and `.runs/<name>.done`, the exit code; records the run in `.runs/runs.json`; refuses a name already used; `--frozen` runs from a new `.runs/frozen-<name>-<timestamp>` copy of the tree; `$RUNS_DIR` moves the directory), then `scripts/wait-run.sh <name> [--timeout <s>]` (blocks until `.done` exists, prints the exit code and log tail, exits with the run's code, 124 on timeout, 125 when the run was killed). Never `nohup`, `until` or `pgrep -f` loops
+
+### What is running, queued and shipped
+
+`npm run state` (`-- --json` for the object, `-- --root <dir>`; read-only, writes no file): the first 5 Build queue rows with each doc's next unbuilt task, every run in flight or recently done under any worktree's `.runs/runs.json` (name, workers, start, seeds done from the log), the machine (threads, load, worker budget, workers claimed by runs in flight, workers free), the newest `yield.json`'s pass share per stage, the last 10 experiments and the outcome tally of the last 7 days, the median minutes and first-run green share of the last 20 ships (`.checklogs/ship.jsonl`), open PRs with their check state (skipped when `gh` fails) and the worktree class counts. Read it before choosing `--workers` for a long run. `run-detached.sh` records `workers` in `runs.json` (`--workers <n>`, else the pool default, else null) and prints one warning line when a lone run claims under half the free workers.
+
+### Clear merged worktrees
+
+`scripts/worktree-gc.sh --list [--json] [--all]` prints each worktree's class and reason, then the count per class; with no flag it removes the `safe` class under `<main checkout>/.claude/worktrees/` with `git worktree remove` (never `--force`) and deletes their local branches. `safe`: a merged PR holds all of HEAD (`gh pr list --state merged`) and the tree is clean. Never `safe`: the main checkout, the calling session's worktree, a locked one, a process running in it, a run in flight or a run log under its `.runs/` (`live`); uncommitted or untracked files (`dirty`); no merged PR, a detached HEAD, `gh` failing, or commits the merged PR does not hold (`unmerged`); a missing directory (`gone`). A worktree outside `.claude/worktrees/` is a named stream checkout: it lists with its class and an `outside` mark, and is removed only with `--all`.
 
 ### Worker budget for evals, screens and training
 

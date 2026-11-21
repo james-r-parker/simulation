@@ -58,8 +58,8 @@ export const SLOT = Object.freeze({
 /** Float64 words of a slot's meta: what the request that made it asked for. */
 export const SLOT_F64 = Object.freeze({ ALPHA: 0, TICK: 1, NOW_MS: 2 });
 
-/** The lens bits of a request: the main thread writes every lens; the pack reads only `TEMPERATURE` (the rim colour), the other lenses act on the main thread's uniforms and layers. */
-export const LENS = Object.freeze({ TEMPERATURE: 1, SCENT: 2, TERRITORY: 4, VISION: 8, CALLS: 16 });
+/** The lens bits of a request: the main thread writes every lens; the pack reads `TEMPERATURE` (the rim colour) and `TV` (the larger least body size), the other lenses act on the main thread's uniforms and layers. */
+export const LENS = Object.freeze({ TEMPERATURE: 1, SCENT: 2, TERRITORY: 4, VISION: 8, CALLS: 16, TV: 32 });
 
 /**
  * @typedef {object} Request one frame's request, rewritten in place
@@ -170,10 +170,12 @@ export function createFrameSlots(memory, info) {
 
 /**
  * @param {Record<string, boolean>} lenses the frame's lens flags (`temperature`, `scent`, `territory`, `vision`, `calls`)
- * @returns {number} the lens bits
+ * @param {boolean} [tv] whether TV mode is on
+ * @returns {number} the lens bits, with `TV` set in TV mode
  */
-export function lensBits(lenses) {
+export function lensBits(lenses, tv = false) {
     return (
+        (tv ? LENS.TV : 0) |
         (lenses.temperature ? LENS.TEMPERATURE : 0) |
         (lenses.scent ? LENS.SCENT : 0) |
         (lenses.territory ? LENS.TERRITORY : 0) |

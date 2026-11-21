@@ -1,3 +1,4 @@
+// reads: none
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { serveNext, serveSeason, serveVersion } from '../../functions/_lib/release-serve.js';
 import { releaseSql } from '../../js/library/releases.js';

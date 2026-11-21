@@ -3,6 +3,7 @@
 // on) emits only registered names, and every entry is emitted or says why not (`expectedFlat`). Every entry is
 // complete, names a module that exists, and names test files that contain its name.
 
+// reads: js, test, evals/metric-registry-world.json
 import { existsSync, readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { LIVE_POLICY } from '../../js/evo/policies/index.js';

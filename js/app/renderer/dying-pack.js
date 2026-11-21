@@ -107,12 +107,13 @@ function packBody(store, { d, k, mesh, nowMs }, view) {
     bucket.pose[o] = at.x;
     bucket.pose[o + 1] = at.y;
     bucket.pose[o + 2] = d.pose[2][k];
-    bucket.pose[o + 3] = drawnRadius(d.pose[3][k], store.minPx[mesh], view.zoom);
+    bucket.pose[o + 3] = drawnRadius(d.pose[3][k], store.minPx[mesh] * store.minScale, view.zoom);
     bucket.color[o] = rgb[0];
     bucket.color[o + 1] = rgb[1];
     bucket.color[o + 2] = rgb[2];
     bucket.color[o + 3] = d.pose[4][k];
     packLive(bucket, { d, k, o, nowMs }, view);
+    bucket.halo[o / ITEM] = 0;
     bucket.fade[o / ITEM] = isPlaying(d, k) ? packBeats(bucket, { d, k, o, nowMs }, view.causeNames) : 0;
 }
 

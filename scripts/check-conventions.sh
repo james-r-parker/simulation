@@ -20,6 +20,7 @@
 # - wasm/blob-kernels.wasm matches its .sha256 and wasm/blob-kernels.src.sha256 its sources, and a fresh build matches
 #   where cargo exists (scripts/check-wasm.mjs).
 # - The index in docs/designs/sim-notes.md matches docs/notes/ (scripts/notes-index.mjs --check).
+# - test/data-deps.json matches the paths the tests read, and no test has an undeclared dynamic path (scripts/data-deps.mjs --check).
 # - AGENTS.md stays at or under AGENTS_MAX_BYTES (16000): an agent reads it before its first command, so detail lives in
 #   docs/ (docs/designs/agent-workflow.md, Context diet).
 # - No merge conflict markers (a line starting <<<<<<< , ||||||| or >>>>>>> , or exactly =======) in tracked text files.
@@ -159,6 +160,17 @@ notes_out="$(node scripts/notes-index.mjs --check 2>&1)"
 notes_status=$?
 if ((notes_status != 0)); then
   fail "notes-index: ${notes_out:-scripts/notes-index.mjs exited $notes_status with no output}"
+fi
+
+# test/data-deps.json lists the non-module paths each test reads, which scripts/affected.mjs uses to pick a pull request's
+# tests; a stale file, or a test with a path the scan cannot resolve and no `// reads:` declaration, fails with the command.
+deps_out="$(node scripts/data-deps.mjs --check 2>&1)"
+deps_status=$?
+while IFS= read -r line; do
+  [[ -n "$line" ]] && fail "data-deps: $line"
+done <<<"$deps_out"
+if ((deps_status != 0)) && [[ -z "$deps_out" ]]; then
+  fail "data-deps: scripts/data-deps.mjs exited $deps_status with no output"
 fi
 
 # The committed WASM kernels match their hash and their sources; without cargo the rebuild is skipped with a note.
