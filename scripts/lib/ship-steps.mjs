@@ -324,6 +324,22 @@ function exitFor(error, state) {
 }
 
 /**
+ * @param {Record<string, string | undefined>} env the environment
+ * @returns {{wait: {waitS: number, pollS: number}, checks: {graceS: number, pollS: number}}} the merge wait
+ *   (SHIP_MERGE_WAIT_S, SHIP_MERGE_POLL_S) and the wait for the checks to register (SHIP_CHECKS_GRACE_S,
+ *   SHIP_CHECKS_POLL_S), in seconds
+ */
+function waitsFrom(env) {
+    return {
+        wait: { waitS: Number(env.SHIP_MERGE_WAIT_S ?? 600), pollS: Number(env.SHIP_MERGE_POLL_S ?? 10) },
+        checks: {
+            graceS: Number(env.SHIP_CHECKS_GRACE_S ?? CHECKS_GRACE_S),
+            pollS: Number(env.SHIP_CHECKS_POLL_S ?? 5),
+        },
+    };
+}
+
+/**
  * @param {string[]} argv arguments after the script name
  * @param {{sh?: Sh, env?: Record<string, string | undefined>}} [deps] test seams
  * @returns {number} the exit code
@@ -332,10 +348,11 @@ export function runShip(argv, { sh = realSh, env = process.env } = {}) {
     const state = {};
     try {
         const ctx = { opts: parseShipArgs(argv), sh, state };
-        const wait = { waitS: Number(env.SHIP_MERGE_WAIT_S ?? 600), pollS: Number(env.SHIP_MERGE_POLL_S ?? 10) };
-        for (const step of [stepGuard, stepMergeBase, stepGate, stepBody, stepPush, stepWatch]) {
+        const { wait, checks } = waitsFrom(env);
+        for (const step of [stepGuard, stepMergeBase, stepGate, stepBody, stepPush]) {
             step(ctx);
         }
+        stepWatch(ctx, checks);
         stepConfirm(ctx, wait);
         appendLog(state, ctx.opts.noMerge ? 'green' : 'merged');
         return 0;
