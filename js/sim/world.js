@@ -43,7 +43,7 @@ export { HEARD_STRIDE } from './agent-arrays.js';
  * Elements of the per-world call scratch row: the calling slot, the `heard` offset, the call's strength and the
  * largest `hearing` lane of the pass (how far beyond the caller's radius a call may be heard).
  */
-export const CALL_SCRATCH = 4;
+export const CALL_SCRATCH = 5;
 
 const BYTE_PAIR = 0x0102;
 

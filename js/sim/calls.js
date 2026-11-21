@@ -17,6 +17,9 @@ import { SPEC } from './specs.js';
 /** @typedef {import('./world.js').World} World */
 /** @typedef {import('./spatial-hash.js').SpatialHash} SpatialHash */
 
+/** The `callScratch` slot that counts the alarm and hunt calls fired this tick, so a tick with none settles nothing. */
+const CALLS_FIRED = 4;
+
 // The lanes read here, as constants: a property load from `LANE_ID` in a hot loop boxes its number.
 const ALARM_COST_LANE = LANE_ID.alarmCost;
 const HUNT_CALL_COST_LANE = LANE_ID.huntCallCost;
@@ -116,6 +119,7 @@ function alarm(world, slot) {
     }
     removeEnergy(world, slot, cost, LOSS_CAUSE.COST);
     world.alarmTimer[slot] = callTicks;
+    world.callScratch[CALLS_FIRED] += 1;
     const threat = threatInView(world, slot);
     world.alarmSeen[slot] = threat ? 1 : 0;
     depositPheromone(world, world.danger, world.x[slot], world.y[slot]);
@@ -140,6 +144,7 @@ function huntCall(world, slot) {
     }
     removeEnergy(world, slot, cost, LOSS_CAUSE.COST);
     world.huntTimer[slot] = callTicks;
+    world.callScratch[CALLS_FIRED] += 1;
     depositPheromone(world, world.hunt, world.x[slot], world.y[slot]);
     pushCall(world, EVENT_TYPE.PACK_CALLED, slot);
 }
@@ -296,11 +301,14 @@ function hearPass(world, hash, timers, offset) {
  */
 export function signalAll(world, hash) {
     tickTimers(world);
+    world.callScratch[CALLS_FIRED] = 0;
     fireCalls(world);
     world.heard.fill(0);
-    world.callHeard.fill(0);
     hearPass(world, hash, world.alarmTimer, ALARM_HEARD);
     hearPass(world, hash, world.huntTimer, HUNT_HEARD);
-    settleCalls(world);
+    if (world.callScratch[CALLS_FIRED] > 0) {
+        settleCalls(world);
+        world.callHeard.fill(0);
+    }
     huddlePass(world, hash);
 }
