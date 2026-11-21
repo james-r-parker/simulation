@@ -22,7 +22,7 @@ import { freeAgent } from './world.js';
  *   tick's costs took the last of the energy and overwrote `lastLoss`
  */
 function deathCause(world, slot) {
-    if (world.ageTicks[slot] >= world.config.maxAgeTicks) {
+    if (world.ageTicks[slot] >= world.lanes.maxAgeTicks[slot]) {
         return DEATH_CAUSE.OLD_AGE;
     }
     if (world.dose[slot] >= world.config.lethalDose) {

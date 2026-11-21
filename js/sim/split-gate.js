@@ -50,15 +50,16 @@ export function noteSplit(world, slot) {
  * @returns {boolean} true when `splitDeliberateShareMin`, `splitMaxPerLife` and `mateScarce` all let the agent split
  */
 export function splitKeysAllow(world, slot) {
-    const { splitDeliberateShareMin, splitMaxPerLife } = world.config;
-    if (splitMaxPerLife > 0 && world.splitsDone[slot] >= splitMaxPerLife) {
+    const { splitDeliberateShareMin, splitMaxPerLife } = world.lanes;
+    if (splitMaxPerLife[slot] > 0 && world.splitsDone[slot] >= splitMaxPerLife[slot]) {
         return false;
     }
     if (!mateScarce(world, slot)) {
         return false;
     }
     return (
-        splitDeliberateShareMin === 0 ||
-        (world.mealsTotal[slot] > 0 && world.mealsDeliberate[slot] >= splitDeliberateShareMin * world.mealsTotal[slot])
+        splitDeliberateShareMin[slot] === 0 ||
+        (world.mealsTotal[slot] > 0 &&
+            world.mealsDeliberate[slot] >= splitDeliberateShareMin[slot] * world.mealsTotal[slot])
     );
 }

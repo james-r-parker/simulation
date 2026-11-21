@@ -35,7 +35,7 @@ function stateBits(world, slot) {
     const max = world.lanes.maxEnergy[slot];
     bits |= config.satiationShare > 0 && world.energy[slot] >= config.satiationShare * max ? SNAPSHOT_STATE.SATED : 0;
     bits |= world.coverRing !== undefined && world.coverRing[slot] > 0 ? SNAPSHOT_STATE.IN_COVER : 0;
-    return bits | (world.ageTicks[slot] < config.juvenileTicks ? SNAPSHOT_STATE.JUVENILE : 0);
+    return bits | (world.ageTicks[slot] < world.lanes.juvenileTicks[slot] ? SNAPSHOT_STATE.JUVENILE : 0);
 }
 
 /**
@@ -45,7 +45,7 @@ function stateBits(world, slot) {
  */
 export function agentState(world, slot) {
     const { config } = world;
-    const gestation = world.pregnancy[slot] > 0 ? 1 - world.pregnancy[slot] / config.pregnancyTicks : 0;
+    const gestation = world.pregnancy[slot] > 0 ? 1 - world.pregnancy[slot] / world.lanes.pregnancyTicks[slot] : 0;
     const dose = config.sickDose > 0 ? world.dose[slot] / config.sickDose : 0;
     return (
         (stateBits(world, slot) |

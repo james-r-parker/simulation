@@ -25,7 +25,7 @@ import { rayReachTable } from './ray-reach.js';
 import { terrainRockCount } from './terrain.js';
 import { createObserverScratch } from './observer-scratch.js';
 import { attachWasm } from './wasm-arena.js';
-import { laneOnForAnySpec } from './body-lanes.js';
+import { laneMaxOverSpecs, laneOnForAnySpec } from './body-lanes.js';
 import { allocLanes } from './lane-state.js';
 import { allocEffects } from './effects.js';
 import { allocSprintState, resetSprintSlot } from './sprint-store.js';
@@ -105,7 +105,7 @@ function allocAgentArrays(world, layout) {
         world,
         [
             ...agentSpecs(layout),
-            birthRingSpec(world.config.maxBirthsPerWindow),
+            birthRingSpec(laneMaxOverSpecs(world.config, 'maxBirthsPerWindow')),
             ...meritSpecs(),
             ...splitGateSpecs(),
             ...proofSpecs(),

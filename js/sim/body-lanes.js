@@ -87,6 +87,29 @@ const MOVED = new Set([
     'defenderRepelImpulse',
     'kickMultiplier',
     'predatorRestTicks',
+    // body-genes Phase 5 T41: the reproduction and life-history readers (mating, splits, births, age, territory).
+    'juvenileTicks',
+    'mateSizeRatio',
+    'mateDistanceMax',
+    'mateMinEnergy',
+    'mateCost',
+    'mateRange',
+    'childEnergyMin',
+    'splitMinEnergy',
+    'birthWindowTicks',
+    'maxBirthsPerWindow',
+    'reproductionCooldown',
+    'splitCooldownMultiplier',
+    'pregnancyTicks',
+    'maturityTicks',
+    'maxAgeTicks',
+    'birthReserve',
+    'splitDeliberateMin',
+    'splitDeliberateShareMin',
+    'splitMaxPerLife',
+    'splitMateScarceTicks',
+    'territoryRadius',
+    'territoryMax',
     ...THRESHOLDS,
 ]);
 
@@ -257,6 +280,17 @@ export function bodyProblem(body, lanes = LANES) {
         }
     }
     return null;
+}
+
+/**
+ * The largest base of a lane over every spec: a world-level size (an array's stride) reads it, since an array cannot
+ * differ by body.
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {string} name a lane's name
+ * @returns {number}
+ */
+export function laneMaxOverSpecs(config, name) {
+    return Math.max(...SPEC_NAMES.map((specName) => laneBases(config, specName)[name]));
 }
 
 /**

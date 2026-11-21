@@ -6,6 +6,7 @@ import { SNAPSHOT_STATE } from '../../js/sim/snapshot-state.js';
 import { agentState } from '../../js/sim/snapshot-state.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { smallWorld } from './helpers/small-world.js';
+import { writeLaneBases } from '../../js/sim/lane-state.js';
 
 const STATE = HEADER_WORDS + 12;
 
@@ -16,6 +17,7 @@ const STATE = HEADER_WORDS + 12;
 function oneAgent(over = {}) {
     const world = smallWorld(over);
     world.alive[0] = 1;
+    writeLaneBases(world, 0); // a birth writes the lanes at the spec's bases
     return { world, views: createSnapshotViews(new ArrayBuffer(snapshotLayout(world.config).bytes)) };
 }
 
@@ -69,7 +71,7 @@ describe('the agent state word', () => {
             pregnancy: [0],
             dose: [10],
             infection: [0],
-            lanes: { maxEnergy: [100] },
+            lanes: { maxEnergy: [100], juvenileTicks: [1] },
             spec: [0],
             energy: [0],
             ageTicks: [1],
