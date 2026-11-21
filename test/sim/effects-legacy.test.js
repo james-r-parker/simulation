@@ -38,6 +38,21 @@ describe('fat', () => {
     });
 });
 
+describe('fat past a share of 1', () => {
+    it('is clamped at 0 where the old factor went negative, and equal to it everywhere the config allows', () => {
+        const { world, slot } = bodyWorld({ fatSlowShare: 0.9 });
+        world.temperature[slot] = 50;
+        world.energy[slot] = world.lanes.maxEnergy[slot];
+        const factor = () => effectFactor(world, slot, EFFECT.FAT, 'maxThrust');
+        expect(factor()).toBeCloseTo(1 - 0.9, 12);
+        // The config key is under 1, but a trait or a body override can lift the lane to 1 or more.
+        world.lanes.fatSlowShare[slot] = 1.5;
+        const old = 1 - (1.5 * world.energy[slot]) / world.lanes.maxEnergy[slot];
+        expect(old).toBeLessThan(0);
+        expect(factor()).toBe(0);
+    });
+});
+
 describe('the temperature effects', () => {
     it('gives the efficiency, the passive ramp and the mating block of the band the function gave', () => {
         const config = { temperaturePassiveLossFactor: 3, temperatureEfficiencyHeatModerate: 0.8 };
