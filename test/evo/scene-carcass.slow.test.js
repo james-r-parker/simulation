@@ -1,7 +1,8 @@
 // trackCarcasses skips slots that held no tracked meat and hold none now. The skip must change no metric: the hashes
 // below were recorded from the loop over every slot (origin/main before the skip), live policy, seed 1, 20000 ticks,
 // and re-pinned when pooled-v6 and its pooled body sense (body-genes T7, T31) changed every world, then moved to seed 2
-// when the trait genes' inheritance (body-genes T33) left seed 1 with no carcass meal (its precondition read null).
+// when the trait genes' inheritance (body-genes T33) left seed 1 with no carcass meal (its precondition read null), and
+// re-pinned for the herd centroid fix and the body lanes (body-genes T3 to T13a).
 
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
@@ -9,8 +10,8 @@ import { LIVE_POLICY } from '../../js/evo/policies/index.js';
 import { runSeed } from '../../scripts/eval-worker.mjs';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
-const RECORDED_WORLD_HASH = 'e8d647460cb1e26a';
-const RECORDED_METRICS_SHA256 = '3c39e84d6577bc70544ee5f3947de8be6a6d3dec9ef36933ea5dea73e08aed45';
+const RECORDED_WORLD_HASH = 'd83803177df45443';
+const RECORDED_METRICS_SHA256 = '5e7022cd8c84d77be349d74e7df9f6dbd2b2ca2452458e30b7d9a0612c42f9c0';
 
 describe('trackCarcasses skipping empty slots', () => {
     it(
