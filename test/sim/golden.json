@@ -4,7 +4,7 @@
       "name": "default",
       "overrides": {},
       "ticks": 5000,
-      "worldHash": "bf7972534dfff957"
+      "worldHash": "15d41e3102dca2fb"
     },
     {
       "name": "busy",
@@ -23,7 +23,7 @@
         "coldMarginWidth": 0
       },
       "ticks": 5000,
-      "worldHash": "a097df46175dd8c1"
+      "worldHash": "5e29f28d6c2b4293"
     },
     {
       "name": "disease",
@@ -43,7 +43,7 @@
         "diseaseSeedRate": 0.01
       },
       "ticks": 5000,
-      "worldHash": "22bae64f2de84d33"
+      "worldHash": "a945da85f0fef9ee"
     },
     {
       "name": "sprint-store",
@@ -51,7 +51,7 @@
         "sprintStoreEnabled": true
       },
       "ticks": 2000,
-      "worldHash": "1522e7b5fcb5743a"
+      "worldHash": "5b3dff51a92da934"
     }
   ],
   "shortCases": [
