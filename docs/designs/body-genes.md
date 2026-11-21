@@ -442,6 +442,37 @@ reads the caster's size and velocity again each ray. The sense kernel already ho
 | E-BG-3 | T15  | Does the menu with costs pass the keep rule?                       | No guard reads `WORSE` on 64 matched seeds; `eval.gene_spread.speed` of predators is above 0.05                                                                                                                                                                                          |
 | E-BG-4 | T26  | Do trained brains use the size and speed of what they see?         | The thirteen inputs read `alive`, and the intact drills beat the ablated ones on `prey-ahead` or `prey-crossing`; falsified when the ablation changes nothing                                                                                                                            |
 
+### The corner table (T17, E271)
+
+Read on the `step5-d` base (every effect off), working in `evals/decisions/step5-numbers/results.md`. `--genes corners` refuses a hunter
+row at these menus (16384 pairs, at most 4096), so every pair of corners was read with the module calls `--genes` makes, the predator's
+`heatBand` and `burn` closed in the 4096-pair reads (`--genes worst-vs-best` reads them open). E-BG-1 is **falsified at the candidate spans** above:
+`predator:defender` had 176 of 1024 pairs `impossible`, and the S2 narrowing of the predator alone left `predator:reproducer`, `:forager` and
+`:scout` with 16, 128 and 328. The size gate (`huntSizeRatio` 0.8) names the predator's `size` span, 0.1 (0.2 fails against a prey at 1.3), and
+a small, fat prey outrunning a weak hunter names the prey's `size`, `fat` and `speed`. The chosen spans differ from the candidates in these
+cells (every other span as in the candidate table):
+
+| Trait         | forager | predator | reproducer | scout | defender |
+| ------------- | ------- | -------- | ---------- | ----- | -------- |
+| `size`        | 0.15    | 0.1      | 0.15       | 0.15  | 0.15     |
+| `vision`      | 0.15    | 0.15     | 0.15       | 0.15  | 0.15     |
+| `fat`         | 0.1     | 0.1      | 0.1        | 0.1   | 0.15     |
+| `speed`       | 0.1     | 0.05     | 0.05       | 0.1   | 0        |
+| `sprintStore` | 0.15    | 0.1      | 0          | 0.1   | 0        |
+
+| Row                 | corner pairs | impossible | least slack (ticks) |
+| ------------------- | ------------ | ---------- | ------------------- |
+| predator:forager    | 4096         | 0          | 9                   |
+| predator:reproducer | 2048         | 0          | 32                  |
+| predator:scout      | 4096         | 0          | 0 (tight)           |
+| predator:defender   | 1024         | 0          | 39                  |
+| predator:average    | 128          | 0          | 8 (turn)            |
+| predator:best       | 128          | 0          | 13 (turn)           |
+
+`defender:predator` is `impossible` at every corner and at the centre (`repel: off`, role-budget.md Phase 2), so it is not a span result.
+The `heatBand` and `burn` spans are as the candidate table and were read open only by `worst-vs-best`. The narrowing is a read of the calculator, not a
+decision on how wide a menu must be: `eval.gene_edge_share` of the screen (E-BG-2) says whether the narrower menus are too narrow.
+
 ## Delivery requirements
 
 | Concern                 | Names                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -498,7 +529,7 @@ reads the caster's size and velocity again each ray. The sense kernel already ho
 | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
 | T46  | (built) Add the cost keys `hearingCost`, `noseCost` and `smokeSightRange` (settings above, default 0) as the `costs` of `hearing`, `nose` and `smokeSight` (the standing loss above ratio 1 for the first two, `visionRange` x `r^-smokeSightRange` for the third), each a no-op at its default, with a test per key; done before any of those three spans leaves 0, since until then the traits would be free | [judgement]  | T13a       |
 | T51  | (built) Move `maxEnergyBySpec`, `visionBySpec` and `turnBySpec` (js/evo normalisers in the detectors and oracles) to read lanes, so they scale with `fat` and `speed` genes once spans leave 0; before T17                                                                                                                                                                                                     | [mechanical] | T10        |
-| T17  | Run `role:budget --genes corners` at the candidate spans (`E-BG-1`); narrow any span whose corner makes a predator or defender row `impossible`, and record the corner table                                                                                                                                                                                                                                   | [judgement]  | T12        |
+| T17  | (spans chosen in `evals/role-budget/step5-d.json`, E271; the corner table is in "The corner table (T17, E271)" below) Run `role:budget --genes corners` at the candidate spans (`E-BG-1`); narrow any span whose corner makes a predator or defender row `impossible`, and record the corner table                                                                                                             | [judgement]  | T12        |
 | T14  | Write `evals/screens/body-genes-costs.grid.json` (arms `control` (every new span 0), `no-cost` (the spans of T17), `heat-only`, `fat-only`, `all-costs`) with its prediction; run the 16-seed screen `E-BG-2`                                                                                                                                                                                                  | [judgement]  | T17        |
 | T14a | Choose the birth energies and the cold stack (`chilled` of [status-effects.md](status-effects.md)) together from the first-meal and idle rows of [role-budget.md](role-budget.md), and add the arm `first-meal` and the social arms of status-effects.md T15 to the screen of T14; read with the keep rule in T15                                                                                              | [judgement]  | T17        |
 | T15  | Run the finalist against `control` on 64 matched floor-on seeds with `eval:compare --keep-rule` (`E-BG-3`); record every guard with its smallest detectable loss                                                                                                                                                                                                                                               | [mechanical] | T14, T14a  |

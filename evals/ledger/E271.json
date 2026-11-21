@@ -1,0 +1,19 @@
+{
+  "id": "E271",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "plan": "body-genes.md",
+  "task": "T17",
+  "stream": "step5-numbers",
+  "date": "2026-11-21",
+  "branch": "docs/step5-numbers",
+  "hypothesis": "E-BG-1 (body-genes T17, with status-effects T15): at the candidate spans no predator or defender row is impossible at any corner of the menus, every effect off, and the calculator can choose the effect numbers and a cold stack that leave every gated row as it was.",
+  "prediction": "No hunter row and no defender row is impossible at a corner of role:budget --genes corners at the candidate spans; falsified by any red corner, which names the span to narrow.",
+  "targets": [],
+  "before": "step5-b (E263): 10 ok / 9 tight / 6 red; candidate spans of body-genes.md: 176 of 1024 predator:defender corner pairs impossible",
+  "after": "step5-d (evals/role-budget/step5-d.json): 13 ok / 6 tight / 6 red; narrowed spans: 0 impossible pairs on the four hunter rows (least slack 9, 32, 0, 39 ticks)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "A tool reading, not a run: npm run role:budget and module calls, no training, no default changed. Falsified at the candidate spans: the predator size span 0.2 breaks the size gate against a prey at 1.3 (0.1 holds), and a small fat prey outruns a weak hunter, so the prey size, vision and fat spans (0.15, 0.15, 0.1) and the speed and sprint-store spans are narrowed (body-genes.md, The corner table). Effect numbers: rallyThrust 0.1 (packGain 8.3 ticks over tightTicks 5), rallyBurn 4, staggerThrust 0.5 and staggerTicks 30 (not read by the calculator), coldStackRate 0.4 with entrantEnergy 700 (idle ratios 0.96 to 1.08, first-meal rows ok). Still red: defender:predator (geometry: no body number short of 6x thrust, 3x turn and 3x sprint boost reaches the hunter, and the smoke cell is red for every body), scout:predator, predator:living, predator:first-meal; forager:predator and reproducer:predator are ok when read over the encounters before the first split. --check on step5-d exits 1 on five forager:idle readings (the formula's cold stack, 3.9% short).",
+  "reports": ["evals/decisions/step5-numbers/results.md"]
+}

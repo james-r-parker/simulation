@@ -1,0 +1,17 @@
+{
+  "sprintStoreEnabled": true,
+  "sprintDrain": 0.01,
+  "entrantEnergy": 700,
+  "herdRunSpeed": 5.5,
+  "coldStackRate": 0.4,
+  "defenderRepelEnergy": 40,
+  "defenderRepelImpulse": 4,
+  "specialisations": {
+    "predator": { "sprintDrainMultiplier": 0.5 },
+    "defender": {
+      "sprintBoost": 3,
+      "turnMultiplier": 3,
+      "body": { "maxThrust": 6, "grazeThrust": 1.66 }
+    }
+  }
+}
