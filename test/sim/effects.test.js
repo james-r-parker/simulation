@@ -4,6 +4,7 @@ import {
     EFFECT,
     EFFECT_INDEX,
     GATE,
+    LANE_ID,
     RESULT,
     allocEffects,
     computeFactor,
@@ -61,5 +62,33 @@ describe('the default registry', () => {
         // The rows are declared by `agentSpecs`, so a second call finds them and adds none.
         expect(world.agentRows).toHaveLength(rows);
         fadeEffects(world);
+    });
+});
+
+describe('the rules a world folds', () => {
+    /**
+     * @param {Record<string, any>} over config overrides
+     * @param {number} effect an `EFFECT` code
+     * @returns {boolean} whether the world folds the effect's rule on `maxThrust`
+     */
+    function folds(over, effect) {
+        const world = smallWorld({ maxAgents: 4, ...over });
+        return world.laneRules[LANE_ID.maxThrust].some((rule) => rule.effect === effect);
+    }
+
+    it('leaves out a rule whose strength is 0, and keeps one that is on, a table and a rule that reads a lane', () => {
+        expect(folds({}, EFFECT.WOUNDED)).toBe(false);
+        expect(folds({ woundThrust: 0.1 }, EFFECT.WOUNDED)).toBe(true);
+        expect(folds({}, EFFECT.COLD_BAND)).toBe(true);
+        expect(folds({}, EFFECT.FAT)).toBe(true);
+    });
+
+    it('treats a power rule as off at a factor of 1', () => {
+        const hoarse = (/** @type {Record<string, any>} */ over) =>
+            smallWorld({ maxAgents: 4, ...over }).laneRules[LANE_ID.alarmCost].some(
+                (rule) => rule.effect === EFFECT.HOARSE,
+            );
+        expect(hoarse({})).toBe(false);
+        expect(hoarse({ hoarseFactor: 2 })).toBe(true);
     });
 });

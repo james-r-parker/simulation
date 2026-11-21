@@ -6,7 +6,7 @@
 // its factor is exactly 1. Nothing here allocates per call and nothing draws from the RNG.
 
 import { EFFECTS } from './effect-list.js';
-import { LANE_ID, LEVEL, NUMBER, RESULT, SHARE, compileRef, numberInto, numberOf } from './effect-refs.js';
+import { LANE_ID, LEVEL, NUMBER, REF, RESULT, SHARE, compileRef, numberInto, numberOf } from './effect-refs.js';
 import { raiseEffect } from './effect-raise.js';
 import { GATE, GATE_COUNT, compileGates, compileRules, compileThen } from './effect-compile.js';
 
@@ -243,7 +243,7 @@ export class EffectSystem {
      */
     fold(world, slot, id, fromLane) {
         RESULT[0] = fromLane ? world.laneArrays[id][slot] : 1;
-        const rules = this.rules[id];
+        const rules = world.laneRules === undefined ? this.rules[id] : world.laneRules[id];
         if (rules !== undefined) {
             for (let k = 0; k < rules.length; k++) {
                 this.factorOfRule(world, slot, rules[k]);
@@ -360,6 +360,7 @@ export class EffectSystem {
      */
     refreshConfig(world) {
         world.effectConfig = Float64Array.from(this.configKeys, (key) => world.config[key]);
+        world.laneRules = this.rules.map((rules) => rules?.filter((rule) => !isNeutral(rule, world.effectConfig)));
     }
 
     /**
@@ -387,6 +388,22 @@ export class EffectSystem {
             }
         }
     }
+}
+
+/**
+ * @param {Rule} rule one effect's rule on a lane
+ * @param {Float64Array} config the config numbers of the rules (`world.effectConfig`)
+ * @returns {boolean} whether the rule's factor is exactly 1 at every level with this config: a `perStack` number of 0 (or 1
+ *   for a `power` rule). The fold leaves such a rule out, so an effect whose strength is off costs a lane nothing; a rule
+ *   that reads a lane, or a table, is kept.
+ */
+function isNeutral(rule, config) {
+    const per = rule.per;
+    if (per === null || per.kind === REF.LANE) {
+        return false;
+    }
+    const value = per.kind === REF.LITERAL ? per.value : per.scale * config[per.index] + per.offset;
+    return value === (rule.power ? 1 : 0);
 }
 
 /**
